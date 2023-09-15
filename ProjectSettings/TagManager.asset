@@ -3,7 +3,11 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - DetectionArea
+  - Dialoger
+  - Enviroment
+  - Shadow
   layers:
   - Default
   - TransparentFX
@@ -38,6 +42,18 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: 3
+    uniqueID: 1014068995
+    locked: 0
+  - name: 2
+    uniqueID: 2513694689
+    locked: 0
+  - name: 1
+    uniqueID: 4009378445
+    locked: 0
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: -1
+    uniqueID: 4139541215
     locked: 0
