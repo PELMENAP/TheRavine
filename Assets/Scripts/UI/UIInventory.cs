@@ -65,7 +65,7 @@ public class UIInventory : MonoBehaviour
             if (!slot.isEmpty)
             {
                 IInventoryItem item = activeCells[activeCell - 1]._uiInventoryItem.item;
-                print(item.state.amount);
+                // print(item.state.amount);
                 GameObject plob = item.info.prefab;
                 if (plob != null)
                 {

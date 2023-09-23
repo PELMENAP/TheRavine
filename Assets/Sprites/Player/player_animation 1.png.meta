@@ -507,7 +507,7 @@ TextureImporter:
       213: 8936824355915440342
     second: player_animation 1_167
   externalObjects: {}
-  serializedVersion: 11
+  serializedVersion: 12
   mipmaps:
     mipMapMode: 0
     enableMipMap: 0
@@ -524,11 +524,12 @@ TextureImporter:
     externalNormalMap: 0
     heightScale: 0.25
     normalMapFilter: 0
-  isReadable: 0
+    flipGreenChannel: 0
+  isReadable: 1
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   vTOnly: 0
-  ignoreMasterTextureLimit: 0
+  ignoreMipmapLimit: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
   cubemapConvolution: 0
@@ -567,6 +568,8 @@ TextureImporter:
   textureFormatSet: 0
   ignorePngGamma: 0
   applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 1
   platformSettings:
   - serializedVersion: 3
     buildTarget: DefaultTexturePlatform
@@ -4134,177 +4137,176 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      player_animation 1_114: -3894606355923108939
-      player_animation 1_30: -4559752875847273774
-      player_animation 1_137: -4444063733475599989
-      player_animation 1_51: 2726538739714838930
-      player_animation 1_98: 5887390012904428778
-      player_animation 1_22: 7444634861041798539
-      player_animation 1_34: -7305538542683849165
-      player_animation 1_106: -3247057852143903730
-      player_animation 1_72: 4099575380874155417
-      player_animation 1_49: 8888282515126560316
-      player_animation 1_144: -1262302077806271643
-      player_animation 1_41: 6005955673802153669
-      player_animation 1_124: 887547701441259534
-      player_animation 1_43: -8234901303697209714
-      player_animation 1_65: -2248403335394067079
-      player_animation 1_103: -4430786828190822004
-      player_animation 1_155: -6429952624125796157
-      player_animation 1_14: -2974893535468032298
-      player_animation 1_158: -2273947199117829779
-      player_animation 1_6: 1824283119122568355
-      player_animation 1_68: 3608084278575519298
-      player_animation 1_86: 3863040692095908473
-      player_animation 1_60: 72227674487435853
-      player_animation 1_64: 4604829604968579602
-      player_animation 1_31: 3791237246521498106
-      player_animation 1_134: 4489124626538434866
-      player_animation 1_9: 8198837672563946935
-      player_animation 1_59: -2792747086592124601
-      player_animation 1_96: -7570066472073706199
-      player_animation 1_66: 7881432452449105505
-      player_animation 1_11: -4106576404703204762
-      player_animation 1_73: 1116787202635417387
-      player_animation 1_112: -1760230756517965302
-      player_animation 1_78: 4944844703706704697
-      player_animation 1_63: 7321538462471947210
-      player_animation 1_70: -8354729394124441121
-      player_animation 1_33: 660014378867900129
-      player_animation 1_3: 6335430060816414712
-      player_animation 1_7: -1671653004824603733
-      player_animation 1_90: -8564508224346291600
-      player_animation 1_53: -5602495143268101499
-      player_animation 1_122: -5850877946827672878
-      player_animation 1_18: 6677408701969526831
-      player_animation 1_54: -7565343663364450198
-      player_animation 1_127: -2531189092874711259
-      player_animation 1_115: -7167745758444226802
-      player_animation 1_154: -7609517880471749945
-      player_animation 1_121: -539420130096947760
-      player_animation 1_140: 777932796215823781
-      player_animation 1_62: -3456769416987327323
-      player_animation 1_1: -5297361088298928851
-      player_animation 1_50: 6607402909866271893
-      player_animation 1_147: -486581011949366709
-      player_animation 1_143: 7726138435269896310
-      player_animation 1_44: -9057302173138266469
-      player_animation 1_56: 729762394203590100
-      player_animation 1_159: 8576270356336190299
-      player_animation 1_108: 2526595730873257138
-      player_animation 1_100: -245763976131824331
-      player_animation 1_17: 6816225638181832436
-      player_animation 1_132: -7087860011894741146
-      player_animation 1_84: 7676402770544636651
-      player_animation 1_29: -8191580580650959234
-      player_animation 1_46: 3905244341311843239
-      player_animation 1_138: 590734907959265988
-      player_animation 1_2: 7592576793777632730
-      player_animation 1_81: 5931264033367564488
-      player_animation 1_139: 3677758479298055971
-      player_animation 1_165: -2207056666105596593
-      player_animation 1_45: -3984431994157329250
-      player_animation 1_24: 7334273617532079137
-      player_animation 1_89: -8445533075802338858
-      player_animation 1_152: -6308946636849020953
-      player_animation 1_99: -2235070612860374790
-      player_animation 1_151: 7869042242313161384
-      player_animation 1_107: 4489854409726082606
-      player_animation 1_21: 1205031904109900124
-      player_animation 1_13: 7189063797441804882
-      player_animation 1_163: -7919616957221275679
-      player_animation 1_120: 8443684243173202339
-      player_animation 1_102: -3640551450853416672
-      player_animation 1_156: -6043936872738550036
-      player_animation 1_130: 582353525347168545
-      player_animation 1_57: 3241401298910181789
-      player_animation 1_104: 7677189445387452496
-      player_animation 1_117: -3993743827693770507
-      player_animation 1_12: -1166256059816605748
-      player_animation 1_36: -2508486177831646728
       player_animation 1_0: -403723162864706593
-      player_animation 1_42: -8601587780606749064
-      player_animation 1_149: 5041070515617219764
-      player_animation 1_157: 5669247167277858946
-      player_animation 1_47: -6407026483441565596
-      player_animation 1_148: 23959738906467736
-      player_animation 1_131: -2489609326400598217
-      player_animation 1_136: -5816277971588550588
-      player_animation 1_146: 7552218229044091711
-      player_animation 1_8: 56882421887063580
-      player_animation 1_153: -2062007602696242306
-      player_animation 1_167: 8936824355915440342
-      player_animation 1_52: -4764242545989394816
-      player_animation 1_111: 2889593298591248464
-      player_animation 1_39: -9137705831987096650
-      player_animation 1_92: 7483988788263002518
-      player_animation 1_27: -284959381720739239
-      player_animation 1_80: 3333755209354294332
-      player_animation 1_105: 1186078151753216337
-      player_animation 1_110: 5313768642350172230
-      player_animation 1_109: 3396177169338460821
-      player_animation 1_77: 7670140220783187833
-      player_animation 1_145: -5412371533250792263
-      player_animation 1_93: 5300789815096291590
-      player_animation 1_113: -3223029350227286499
-      player_animation 1_162: 198947464594346087
-      player_animation 1_166: 9147152477796818918
-      player_animation 1_129: 6111298652062905545
-      player_animation 1_95: -2537548274035590485
-      player_animation 1_26: -1430100485396678061
-      player_animation 1_141: 912987647107472574
-      player_animation 1_161: -6308888084067651541
-      player_animation 1_5: -8415750467221843142
-      player_animation 1_20: 7332694422110038006
-      player_animation 1_40: -6639322097362727517
-      player_animation 1_83: 570092976535318111
-      player_animation 1_16: -6488288021013858441
-      player_animation 1_142: 793057751309713076
-      player_animation 1_116: -6909459590839747318
-      player_animation 1_32: 890228435360505823
-      player_animation 1_75: 595702155919545165
-      player_animation 1_15: -7622759517065118668
-      player_animation 1_101: -8652867683572416490
-      player_animation 1_85: 6874445397995063693
-      player_animation 1_88: -4271494304710340954
-      player_animation 1_123: -5121231817656923237
-      player_animation 1_4: 4654737395275848485
-      player_animation 1_37: -8270043079020791099
-      player_animation 1_48: -7278903067711022081
-      player_animation 1_58: -7186595207253480720
-      player_animation 1_23: 2218036938556997676
-      player_animation 1_28: -4432354512024333614
-      player_animation 1_94: 2334384382011968934
-      player_animation 1_35: -7892042404255134091
-      player_animation 1_74: -2931246661638965842
-      player_animation 1_25: -1912628409722975271
-      player_animation 1_79: 197938950611611405
-      player_animation 1_119: 2813071762978666252
-      player_animation 1_150: -8634291529483537006
-      player_animation 1_69: 2461410975334634483
-      player_animation 1_61: 1284575992285204154
-      player_animation 1_87: -2887979942033156269
-      player_animation 1_91: -8474429502090830581
-      player_animation 1_71: -4114350558566075692
-      player_animation 1_38: -279992060043232993
-      player_animation 1_126: 6600053725124016823
-      player_animation 1_67: -3361937975340774025
-      player_animation 1_118: 671815970831484258
-      player_animation 1_135: -5067972230783078797
-      player_animation 1_160: -6259343982472851867
-      player_animation 1_76: -442444519270323967
-      player_animation 1_125: -7489956947731874642
-      player_animation 1_164: 6030098258786501238
+      player_animation 1_1: -5297361088298928851
       player_animation 1_10: -8634807202603138166
-      player_animation 1_82: 7894284224598179512
+      player_animation 1_100: -245763976131824331
+      player_animation 1_101: -8652867683572416490
+      player_animation 1_102: -3640551450853416672
+      player_animation 1_103: -4430786828190822004
+      player_animation 1_104: 7677189445387452496
+      player_animation 1_105: 1186078151753216337
+      player_animation 1_106: -3247057852143903730
+      player_animation 1_107: 4489854409726082606
+      player_animation 1_108: 2526595730873257138
+      player_animation 1_109: 3396177169338460821
+      player_animation 1_11: -4106576404703204762
+      player_animation 1_110: 5313768642350172230
+      player_animation 1_111: 2889593298591248464
+      player_animation 1_112: -1760230756517965302
+      player_animation 1_113: -3223029350227286499
+      player_animation 1_114: -3894606355923108939
+      player_animation 1_115: -7167745758444226802
+      player_animation 1_116: -6909459590839747318
+      player_animation 1_117: -3993743827693770507
+      player_animation 1_118: 671815970831484258
+      player_animation 1_119: 2813071762978666252
+      player_animation 1_12: -1166256059816605748
+      player_animation 1_120: 8443684243173202339
+      player_animation 1_121: -539420130096947760
+      player_animation 1_122: -5850877946827672878
+      player_animation 1_123: -5121231817656923237
+      player_animation 1_124: 887547701441259534
+      player_animation 1_125: -7489956947731874642
+      player_animation 1_126: 6600053725124016823
+      player_animation 1_127: -2531189092874711259
       player_animation 1_128: 2086296738977819645
-      player_animation 1_55: -8151954812386096047
+      player_animation 1_129: 6111298652062905545
+      player_animation 1_13: 7189063797441804882
+      player_animation 1_130: 582353525347168545
+      player_animation 1_131: -2489609326400598217
+      player_animation 1_132: -7087860011894741146
       player_animation 1_133: -2968363721066400643
+      player_animation 1_134: 4489124626538434866
+      player_animation 1_135: -5067972230783078797
+      player_animation 1_136: -5816277971588550588
+      player_animation 1_137: -4444063733475599989
+      player_animation 1_138: 590734907959265988
+      player_animation 1_139: 3677758479298055971
+      player_animation 1_14: -2974893535468032298
+      player_animation 1_140: 777932796215823781
+      player_animation 1_141: 912987647107472574
+      player_animation 1_142: 793057751309713076
+      player_animation 1_143: 7726138435269896310
+      player_animation 1_144: -1262302077806271643
+      player_animation 1_145: -5412371533250792263
+      player_animation 1_146: 7552218229044091711
+      player_animation 1_147: -486581011949366709
+      player_animation 1_148: 23959738906467736
+      player_animation 1_149: 5041070515617219764
+      player_animation 1_15: -7622759517065118668
+      player_animation 1_150: -8634291529483537006
+      player_animation 1_151: 7869042242313161384
+      player_animation 1_152: -6308946636849020953
+      player_animation 1_153: -2062007602696242306
+      player_animation 1_154: -7609517880471749945
+      player_animation 1_155: -6429952624125796157
+      player_animation 1_156: -6043936872738550036
+      player_animation 1_157: 5669247167277858946
+      player_animation 1_158: -2273947199117829779
+      player_animation 1_159: 8576270356336190299
+      player_animation 1_16: -6488288021013858441
+      player_animation 1_160: -6259343982472851867
+      player_animation 1_161: -6308888084067651541
+      player_animation 1_162: 198947464594346087
+      player_animation 1_163: -7919616957221275679
+      player_animation 1_164: 6030098258786501238
+      player_animation 1_165: -2207056666105596593
+      player_animation 1_166: 9147152477796818918
+      player_animation 1_167: 8936824355915440342
+      player_animation 1_17: 6816225638181832436
+      player_animation 1_18: 6677408701969526831
       player_animation 1_19: -2180724648747216110
+      player_animation 1_2: 7592576793777632730
+      player_animation 1_20: 7332694422110038006
+      player_animation 1_21: 1205031904109900124
+      player_animation 1_22: 7444634861041798539
+      player_animation 1_23: 2218036938556997676
+      player_animation 1_24: 7334273617532079137
+      player_animation 1_25: -1912628409722975271
+      player_animation 1_26: -1430100485396678061
+      player_animation 1_27: -284959381720739239
+      player_animation 1_28: -4432354512024333614
+      player_animation 1_29: -8191580580650959234
+      player_animation 1_3: 6335430060816414712
+      player_animation 1_30: -4559752875847273774
+      player_animation 1_31: 3791237246521498106
+      player_animation 1_32: 890228435360505823
+      player_animation 1_33: 660014378867900129
+      player_animation 1_34: -7305538542683849165
+      player_animation 1_35: -7892042404255134091
+      player_animation 1_36: -2508486177831646728
+      player_animation 1_37: -8270043079020791099
+      player_animation 1_38: -279992060043232993
+      player_animation 1_39: -9137705831987096650
+      player_animation 1_4: 4654737395275848485
+      player_animation 1_40: -6639322097362727517
+      player_animation 1_41: 6005955673802153669
+      player_animation 1_42: -8601587780606749064
+      player_animation 1_43: -8234901303697209714
+      player_animation 1_44: -9057302173138266469
+      player_animation 1_45: -3984431994157329250
+      player_animation 1_46: 3905244341311843239
+      player_animation 1_47: -6407026483441565596
+      player_animation 1_48: -7278903067711022081
+      player_animation 1_49: 8888282515126560316
+      player_animation 1_5: -8415750467221843142
+      player_animation 1_50: 6607402909866271893
+      player_animation 1_51: 2726538739714838930
+      player_animation 1_52: -4764242545989394816
+      player_animation 1_53: -5602495143268101499
+      player_animation 1_54: -7565343663364450198
+      player_animation 1_55: -8151954812386096047
+      player_animation 1_56: 729762394203590100
+      player_animation 1_57: 3241401298910181789
+      player_animation 1_58: -7186595207253480720
+      player_animation 1_59: -2792747086592124601
+      player_animation 1_6: 1824283119122568355
+      player_animation 1_60: 72227674487435853
+      player_animation 1_61: 1284575992285204154
+      player_animation 1_62: -3456769416987327323
+      player_animation 1_63: 7321538462471947210
+      player_animation 1_64: 4604829604968579602
+      player_animation 1_65: -2248403335394067079
+      player_animation 1_66: 7881432452449105505
+      player_animation 1_67: -3361937975340774025
+      player_animation 1_68: 3608084278575519298
+      player_animation 1_69: 2461410975334634483
+      player_animation 1_7: -1671653004824603733
+      player_animation 1_70: -8354729394124441121
+      player_animation 1_71: -4114350558566075692
+      player_animation 1_72: 4099575380874155417
+      player_animation 1_73: 1116787202635417387
+      player_animation 1_74: -2931246661638965842
+      player_animation 1_75: 595702155919545165
+      player_animation 1_76: -442444519270323967
+      player_animation 1_77: 7670140220783187833
+      player_animation 1_78: 4944844703706704697
+      player_animation 1_79: 197938950611611405
+      player_animation 1_8: 56882421887063580
+      player_animation 1_80: 3333755209354294332
+      player_animation 1_81: 5931264033367564488
+      player_animation 1_82: 7894284224598179512
+      player_animation 1_83: 570092976535318111
+      player_animation 1_84: 7676402770544636651
+      player_animation 1_85: 6874445397995063693
+      player_animation 1_86: 3863040692095908473
+      player_animation 1_87: -2887979942033156269
+      player_animation 1_88: -4271494304710340954
+      player_animation 1_89: -8445533075802338858
+      player_animation 1_9: 8198837672563946935
+      player_animation 1_90: -8564508224346291600
+      player_animation 1_91: -8474429502090830581
+      player_animation 1_92: 7483988788263002518
+      player_animation 1_93: 5300789815096291590
+      player_animation 1_94: 2334384382011968934
+      player_animation 1_95: -2537548274035590485
+      player_animation 1_96: -7570066472073706199
       player_animation 1_97: 8268348755118966517
-  spritePackingTag: 
+      player_animation 1_98: 5887390012904428778
+      player_animation 1_99: -2235070612860374790
+  mipmapLimitGroupName: 
   pSDRemoveMatte: 0
-  pSDShowRemoveMatteOption: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 

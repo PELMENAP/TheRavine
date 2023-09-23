@@ -2,6 +2,7 @@ using UnityEngine.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Events;
+using TMPro;
 
 public class UIInventoryItem : UIItem, IDropHandler
 {
@@ -11,7 +12,7 @@ public class UIInventoryItem : UIItem, IDropHandler
     private Color ImainColor;
     private Color TmainColor;
     [SerializeField] private Image _imageIcon;
-    [SerializeField] private Text _textAmount;
+    [SerializeField] private TextMeshProUGUI _textAmount;
 
     public IInventoryItem item { get; private set; }
 

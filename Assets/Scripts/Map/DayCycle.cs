@@ -1,92 +1,126 @@
 using UnityEngine;
 using Unity.Jobs;
+using UnityEngine.Jobs;
 using Unity.Collections;
 using System.Collections;
+using UnityEngine.Rendering.Universal;
 using System;
 
 public class DayCycle : MonoBehaviour
 {
-    public static bool isday, closeThread, shadow;
+    public static bool isday, closeThread;
     public static event Action newDay;
     [SerializeField] private float startDay, speed;
     [SerializeField] private Gradient sunGradient;
     [SerializeField] private Transform player;
-    private UnityEngine.Rendering.Universal.Light2D sun;
+    private Light2D sun;
     private NativeArray<float> TimeBridge;
     private NativeArray<bool> IsdayBridge;
-    private NativeArray<Vector3> ShadowsBridge;
-    private NativeArray<Quaternion> RotationsBridge;
-    private GameObject[] shadows;
+
+
+    private NativeArray<Vector3> Light2DBridge;
+    private NativeArray<float> Light2DIntensityBridge;
+
+    TransformAccessArray shadowsTransform;
+
+    private Transform[] shadows, lightsTransform;
 
     private void Start()
     {
-        sun = (UnityEngine.Rendering.Universal.Light2D)GetComponent("UnityEngine.Rendering.Universal.Light2D");
-        if (shadow)
+        GetLightsAndShadows();
+    }
+
+    private void GetLightsAndShadows(){
+        TimeBridge = new NativeArray<float>(5, Allocator.Persistent);
+        IsdayBridge = new NativeArray<bool>(1, Allocator.Persistent);
+        TimeBridge[0] = startDay;
+        TimeBridge[4] = speed;
+        sun = this.GetComponent<Light2D>();
+        GameObject[] shadowsObjects = GameObject.FindGameObjectsWithTag("Shadow");
+        if (Settings.isShadow)
         {
-            shadows = GameObject.FindGameObjectsWithTag("Shadow");
-            RotationsBridge = new NativeArray<Quaternion>(shadows.Length, Allocator.Persistent);
-            ShadowsBridge = new NativeArray<Vector3>(shadows.Length + 1, Allocator.Persistent);
-            ShadowsBridge[0] = sun.transform.position;
-            for (int i = 0; i < shadows.Length; i++)
+            Light2D[] lights = GameObject.FindObjectsByType<Light2D>(FindObjectsSortMode.None);
+            shadows = new Transform[shadowsObjects.Length];
+            for (int i = 0; i < shadowsObjects.Length; i++)
             {
-                shadows[i].SetActive(true);
-                ShadowsBridge[i + 1] = shadows[i].transform.position;
+                shadowsObjects[i].SetActive(true);
+                shadows[i] = shadowsObjects[i].transform;
+            }
+            shadowsTransform = new TransformAccessArray(shadows);
+            
+            Light2DBridge = new NativeArray<Vector3>(lights.Length, Allocator.Persistent);
+            Light2DIntensityBridge = new NativeArray<float>(lights.Length, Allocator.Persistent);
+            lightsTransform = new Transform[lights.Length];
+            for(int i = 0; i < lights.Length; i++){
+                lightsTransform[i] = lights[i].transform;
+                Light2DIntensityBridge[i] = lights[i].intensity;
+            }
+            UpdateProperties();
+        }
+        else{
+            for (int i = 0; i < shadowsObjects.Length; i++)
+            {
+                shadowsObjects[i].SetActive(false);
             }
         }
         closeThread = true;
         StartCoroutine(UpdateDay());
     }
 
+    private void UpdateProperties(){    
+        for(int i = 0; i < lightsTransform.Length; i++){
+            Light2DBridge[i] = lightsTransform[i].position;
+        }
+    }
+
+    private void UpdateSunValues(){
+        sun.color = sunGradient.Evaluate(TimeBridge[0]);
+        sun.transform.position = new Vector3(TimeBridge[1], TimeBridge[2], 0) + player.position;
+        sun.intensity = TimeBridge[3] * 100;
+    }
+
     private IEnumerator UpdateDay()
     {
-        TimeBridge = new NativeArray<float>(5, Allocator.Persistent);
-        IsdayBridge = new NativeArray<bool>(1, Allocator.Persistent);
-        TimeBridge[0] = startDay;
-        TimeBridge[4] = speed;
-        var dayjob = new DayJob()
+        var dayJob = new DayJob()
         {
             timeBridge = TimeBridge,
             isdayBridge = IsdayBridge
         };
-        // JobHandle dayHande = dayjob.Schedule();
-        // dayHande.Complete();
+        var shadowJob = new ShadowsJob()
+        {
+            lightsBridge = Light2DBridge,
+            ligthsIntensity = Light2DIntensityBridge
+        };
         while (closeThread)
         {
-            JobHandle dayHande = dayjob.Schedule();
+            UnityEngine.Profiling.Profiler.BeginSample("Day Cycle");
+
+            JobHandle dayHande = dayJob.Schedule();
             dayHande.Complete();
-            sun.color = sunGradient.Evaluate(TimeBridge[0]);
-            sun.transform.position = new Vector3(TimeBridge[1], TimeBridge[2], 0) + player.position;
-            sun.intensity = TimeBridge[3];
+            UpdateSunValues();
             if (isday != IsdayBridge[0])
             {
                 isday = IsdayBridge[0];
                 newDay?.Invoke();
             }
-            yield return new WaitForFixedUpdate();
-            if (shadow)
+            if (Settings.isShadow)
             {
-                ShadowsBridge[0] = sun.transform.position;
-                var shadowJob = new ShadowsJob()
-                {
-                    shadowsBridge = ShadowsBridge,
-                    rotationsBridge = RotationsBridge
-                };
-                JobHandle shadowsHande = shadowJob.Schedule();
+                UpdateProperties();
+                JobHandle shadowsHande = shadowJob.Schedule(shadowsTransform);
                 shadowsHande.Complete();
-                for (int i = 0; i < shadows.Length; i++)
-                {
-                    shadows[i].transform.rotation = RotationsBridge[i];
-                }
             }
             if (Input.GetKeyUp(KeyCode.Space))
             {
                 closeThread = false;
             }
+            UnityEngine.Profiling.Profiler.EndSample();
+            yield return new WaitForFixedUpdate();
         }
         TimeBridge.Dispose();
         IsdayBridge.Dispose();
-        ShadowsBridge.Dispose();
-        RotationsBridge.Dispose();
+        Light2DBridge.Dispose();
+        Light2DIntensityBridge.Dispose();
+        shadowsTransform.Dispose();
     }
 
     public struct DayJob : IJob
@@ -114,18 +148,30 @@ public class DayCycle : MonoBehaviour
         }
     }
 
-    public struct ShadowsJob : IJob
+    public struct ShadowsJob : IJobParallelForTransform
     {
-        public NativeArray<Vector3> shadowsBridge;
-        public NativeArray<Quaternion> rotationsBridge;
-        public void Execute()
+        [ReadOnly]
+        public NativeArray<Vector3> lightsBridge;
+        [ReadOnly]
+        public NativeArray<float> ligthsIntensity;
+
+        private int lightIndex;
+        private float maxWeight, lightWeight;
+        private Vector3 shadowPosition, direction;
+
+        public void Execute(int index, TransformAccess shadowTransform)
         {
-            Vector3 direction;
-            for (int i = 1; i < shadowsBridge.Length; i++)
-            {
-                direction = shadowsBridge[i] - shadowsBridge[0];
-                rotationsBridge[i - 1] = Quaternion.Euler(0, 0, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90);
+            shadowPosition = shadowTransform.position;
+            maxWeight = 0;
+            for(int i = 0; i < lightsBridge.Length; i++){
+                lightWeight = ligthsIntensity[i] / Vector3.Distance(shadowPosition, lightsBridge[i]);
+                if(lightWeight > maxWeight){
+                    maxWeight = lightWeight;
+                    lightIndex = i;
+                }
             }
+            direction = shadowPosition - lightsBridge[lightIndex];
+            shadowTransform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90);
         }
     }
 }

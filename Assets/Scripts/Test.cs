@@ -15,9 +15,9 @@ public class Test : MonoBehaviour
     public MeshFilter meshFilter;
 
     public MeshFilter meshFilterTest;
-    private void Awake()
-    {
-        DayCycle.shadow = true;
+
+    private void Awake() {
+        Settings.isShadow = true;
     }
 
 

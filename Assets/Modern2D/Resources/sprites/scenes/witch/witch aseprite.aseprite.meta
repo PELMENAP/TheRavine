@@ -1,0 +1,640 @@
+fileFormatVersion: 2
+guid: 457bc632f8d07c4478a95fff94f2bfeb
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 62a9f0aa5b59740cfbadc7e5f9823bb0, type: 3}
+  textureImporterSettings:
+    alphaSource: 1
+    mipMapMode: 0
+    enableMipMap: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+    convertToNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+    swizzle: 50462976
+    isReadable: 0
+    streamingMipmaps: 0
+    streamingMipmapsPriority: 0
+    vTOnly: 0
+    ignoreMipmapLimit: 0
+    nPOTScale: 1
+    sRGBTexture: 1
+    spriteMode: 2
+    spriteExtrude: 1
+    spriteMeshType: 1
+    alignment: 0
+    spritePivot: {x: 0.5, y: 0.5}
+    spritePixelsToUnits: 100
+    spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+    spriteGenerateFallbackPhysicsShape: 0
+    generateCubemap: 6
+    cubemapConvolution: 0
+    seamlessCubemap: 0
+    alphaIsTransparency: 1
+    spriteTessellationDetail: -1
+    textureType: 8
+    textureShape: 1
+    singleChannelComponent: 0
+    flipbookRows: 0
+    flipbookColumns: 0
+    ignorePngGamma: 0
+    cookieMode: 0
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+    normalMap: 0
+    textureFormat: 0
+    maxTextureSize: 0
+    lightmap: 0
+    compressionQuality: 0
+    linearTexture: 0
+    grayScaleToAlpha: 0
+    rGBM: 0
+    cubemapConvolutionSteps: 0
+    cubemapConvolutionExponent: 0
+    maxTextureSizeSet: 0
+    compressionQualitySet: 0
+    textureFormatSet: 0
+    applyGammaDecoding: 0
+  previousAsepriteImporterSettings:
+    fileImportMode: 1
+    importHiddenLayers: 0
+    layerImportMode: 1
+    defaultPivotSpace: 0
+    defaultPivotAlignment: 7
+    customPivotPosition: {x: 0.5, y: 0.5}
+    spritePadding: 0
+    generateModelPrefab: 1
+    generateAnimationClips: 1
+    addSortingGroup: 1
+    addShadowCasters: 0
+  asepriteImporterSettings:
+    fileImportMode: 1
+    importHiddenLayers: 0
+    layerImportMode: 1
+    defaultPivotSpace: 0
+    defaultPivotAlignment: 7
+    customPivotPosition: {x: 0.5, y: 0.5}
+    spritePadding: 0
+    generateModelPrefab: 1
+    generateAnimationClips: 1
+    addSortingGroup: 1
+    addShadowCasters: 0
+  importFileNodeState: 1
+  platformSettingsDirtyTick: 0
+  textureAssetName: 
+  singleSpriteImportData:
+  - name: 
+    originalName: 
+    pivot: {x: 0, y: 0}
+    alignment: 0
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 0
+      height: 0
+    spriteID: 
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 0, y: 0}
+  animatedSpriteImportData:
+  - name: witch aseprite_Frame_6
+    originalName: 
+    pivot: {x: 0.58536583, y: -0.1304348}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 4
+      y: 114
+      width: 41
+      height: 46
+    spriteID: e576bdb185940794fbda2ea71abef5c0
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 4, y: 114}
+  - name: witch aseprite_Frame_7
+    originalName: 
+    pivot: {x: 0.58536583, y: -0.1304348}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 4
+      y: 168
+      width: 41
+      height: 46
+    spriteID: f3ce1112586b98148bfaeb75c2e241d7
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 4, y: 168}
+  - name: witch aseprite_Frame_8
+    originalName: 
+    pivot: {x: 0.58536583, y: -0.12765957}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 4
+      y: 4
+      width: 41
+      height: 47
+    spriteID: 4108f592daff7714091bac01bf194eaf
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 4, y: 4}
+  - name: witch aseprite_Frame_9
+    originalName: 
+    pivot: {x: 0.58536583, y: -0.12765957}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 4
+      y: 59
+      width: 41
+      height: 47
+    spriteID: d014cce47f290a8409e17a34eefc9925
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 4, y: 59}
+  - name: witch aseprite_Frame_10
+    originalName: 
+    pivot: {x: 0.58536583, y: -0.13636364}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 53
+      y: 4
+      width: 41
+      height: 44
+    spriteID: 16d77dc7261a67c4d96ceb2b8ae895d0
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 53, y: 4}
+  - name: witch aseprite_Frame_0
+    originalName: 
+    pivot: {x: 0.48, y: -0.10416667}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 53
+      y: 113
+      width: 25
+      height: 48
+    spriteID: 43e2015307816f34190e67e0931213ab
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 53, y: 113}
+  - name: witch aseprite_Frame_1
+    originalName: 
+    pivot: {x: 0.48, y: -0.10416667}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 53
+      y: 169
+      width: 25
+      height: 48
+    spriteID: 47da3ba39f263e4428fab6c69102956c
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 53, y: 169}
+  - name: witch aseprite_Frame_2
+    originalName: 
+    pivot: {x: 0.50000006, y: -0.108695656}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 135
+      y: 58
+      width: 22
+      height: 46
+    spriteID: 114cfb52448bbd042bf433bf769b92ea
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 135, y: 58}
+  - name: witch aseprite_Frame_3
+    originalName: 
+    pivot: {x: 0.5217391, y: -0.108695656}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 135
+      y: 4
+      width: 23
+      height: 46
+    spriteID: 47d863e1b37611643b7509f516f5182c
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 135, y: 4}
+  - name: witch aseprite_Frame_4
+    originalName: 
+    pivot: {x: 0.48, y: -0.10416667}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 102
+      y: 4
+      width: 25
+      height: 48
+    spriteID: 87b74eb2a6fe2a34e95e422ea8b1aef8
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 102, y: 4}
+  - name: witch aseprite_Frame_5
+    originalName: 
+    pivot: {x: 0.5, y: -0.10000001}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 102
+      y: 60
+      width: 24
+      height: 50
+    spriteID: 011e05f45e401754aa4fa72b1bba44a7
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 102, y: 60}
+  - name: witch aseprite_Frame_11
+    originalName: 
+    pivot: {x: 0.48, y: -0.10204082}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 53
+      y: 56
+      width: 25
+      height: 49
+    spriteID: 8baa9ec048752f549a9500ea42ad180d
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 53, y: 56}
+  - name: witch aseprite_Frame_12
+    originalName: 
+    pivot: {x: 0.5, y: -0.14634147}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 166
+      y: 4
+      width: 24
+      height: 41
+    spriteID: 15a16278151ddaa46a40ff2622a00854
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 166, y: 4}
+  - name: witch aseprite_Frame_16
+    originalName: 
+    pivot: {x: 0.5, y: -0.12244898}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 102
+      y: 174
+      width: 24
+      height: 49
+    spriteID: 0d9f27e7ec395f44691e6c164f626315
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 102, y: 174}
+  - name: witch aseprite_Frame_17
+    originalName: 
+    pivot: {x: 0.48, y: -0.10416667}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 102
+      y: 118
+      width: 25
+      height: 48
+    spriteID: 4a6377a9d9181fc4eb5345f9da155644
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 102, y: 118}
+  - name: witch aseprite_Frame_13
+    originalName: 
+    pivot: {x: 0.5, y: -0.19354838}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 166
+      y: 53
+      width: 24
+      height: 31
+    spriteID: fe48646c82a0e6945b3a2899a5c7e490
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 166, y: 53}
+  - name: witch aseprite_Frame_14
+    originalName: 
+    pivot: {x: 0.48, y: -0.18181819}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 53
+      y: 225
+      width: 25
+      height: 22
+    spriteID: 973f13eb96b8da54786041d88cb3c5a8
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 53, y: 225}
+  - name: witch aseprite_Frame_15
+    originalName: 
+    pivot: {x: 0.49999997, y: -0.20000002}
+    alignment: 9
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 4
+      y: 222
+      width: 26
+      height: 20
+    spriteID: 8d3c28d2c79097749a52264105d56bbf
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 4, y: 222}
+  spriteSheetImportData: []
+  asepriteLayers:
+  - layerIndex: 0
+    guid: -13548068
+    name: witch aseprite
+    layerFlags: 0
+    layerType: 0
+    blendMode: 0
+    cells:
+    - name: witch aseprite_Frame_6
+      frameIndex: 6
+      cellRect:
+        x: 24
+        y: 6
+        width: 41
+        height: 46
+      spriteId: e576bdb185940794fbda2ea71abef5c0
+    - name: witch aseprite_Frame_7
+      frameIndex: 7
+      cellRect:
+        x: 24
+        y: 6
+        width: 41
+        height: 46
+      spriteId: f3ce1112586b98148bfaeb75c2e241d7
+    - name: witch aseprite_Frame_8
+      frameIndex: 8
+      cellRect:
+        x: 24
+        y: 6
+        width: 41
+        height: 47
+      spriteId: 4108f592daff7714091bac01bf194eaf
+    - name: witch aseprite_Frame_9
+      frameIndex: 9
+      cellRect:
+        x: 24
+        y: 6
+        width: 41
+        height: 47
+      spriteId: d014cce47f290a8409e17a34eefc9925
+    - name: witch aseprite_Frame_10
+      frameIndex: 10
+      cellRect:
+        x: 24
+        y: 6
+        width: 41
+        height: 44
+      spriteId: 16d77dc7261a67c4d96ceb2b8ae895d0
+    - name: witch aseprite_Frame_0
+      frameIndex: 0
+      cellRect:
+        x: 36
+        y: 5
+        width: 25
+        height: 48
+      spriteId: 43e2015307816f34190e67e0931213ab
+    - name: witch aseprite_Frame_1
+      frameIndex: 1
+      cellRect:
+        x: 36
+        y: 5
+        width: 25
+        height: 48
+      spriteId: 47da3ba39f263e4428fab6c69102956c
+    - name: witch aseprite_Frame_2
+      frameIndex: 2
+      cellRect:
+        x: 37
+        y: 5
+        width: 22
+        height: 46
+      spriteId: 114cfb52448bbd042bf433bf769b92ea
+    - name: witch aseprite_Frame_3
+      frameIndex: 3
+      cellRect:
+        x: 36
+        y: 5
+        width: 23
+        height: 46
+      spriteId: 47d863e1b37611643b7509f516f5182c
+    - name: witch aseprite_Frame_4
+      frameIndex: 4
+      cellRect:
+        x: 36
+        y: 5
+        width: 25
+        height: 48
+      spriteId: 87b74eb2a6fe2a34e95e422ea8b1aef8
+    - name: witch aseprite_Frame_5
+      frameIndex: 5
+      cellRect:
+        x: 36
+        y: 5
+        width: 24
+        height: 50
+      spriteId: 011e05f45e401754aa4fa72b1bba44a7
+    - name: witch aseprite_Frame_11
+      frameIndex: 11
+      cellRect:
+        x: 36
+        y: 5
+        width: 25
+        height: 49
+      spriteId: 8baa9ec048752f549a9500ea42ad180d
+    - name: witch aseprite_Frame_12
+      frameIndex: 12
+      cellRect:
+        x: 36
+        y: 6
+        width: 24
+        height: 41
+      spriteId: 15a16278151ddaa46a40ff2622a00854
+    - name: witch aseprite_Frame_16
+      frameIndex: 16
+      cellRect:
+        x: 36
+        y: 6
+        width: 24
+        height: 49
+      spriteId: 0d9f27e7ec395f44691e6c164f626315
+    - name: witch aseprite_Frame_17
+      frameIndex: 17
+      cellRect:
+        x: 36
+        y: 5
+        width: 25
+        height: 48
+      spriteId: 4a6377a9d9181fc4eb5345f9da155644
+    - name: witch aseprite_Frame_13
+      frameIndex: 13
+      cellRect:
+        x: 36
+        y: 6
+        width: 24
+        height: 31
+      spriteId: fe48646c82a0e6945b3a2899a5c7e490
+    - name: witch aseprite_Frame_14
+      frameIndex: 14
+      cellRect:
+        x: 36
+        y: 4
+        width: 25
+        height: 22
+      spriteId: 973f13eb96b8da54786041d88cb3c5a8
+    - name: witch aseprite_Frame_15
+      frameIndex: 15
+      cellRect:
+        x: 35
+        y: 4
+        width: 26
+        height: 20
+      spriteId: 8d3c28d2c79097749a52264105d56bbf
+    linkedCells: []
+    parentIndex: -1
+  platformSettings: []
+  secondarySpriteTextures: []
+  spritePackingTag: 
+  canvasSize: {x: 96, y: 60}

@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+guid: c30e696dca018e7449716927e6ad1c81
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - myTexture: {fileID: 2800000, guid: c5e737065332d804386f329152bb70d5, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
