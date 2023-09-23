@@ -15,7 +15,6 @@ MonoBehaviour:
   _id: porchini
   _title: Porchini
   _maxItemsInInventorySlot: 99
-  _spriteIcon: {fileID: 2288768979443741509, guid: aa9800be3d316dbba82a4a13d8bd4d1f,
-    type: 3}
+  _spriteIcon: {fileID: -1551819893, guid: 8837d63393fff123ba02503d5ebdf73f, type: 3}
   _infoSprite: {fileID: -1516517819, guid: 7c2a870de4fe8c8a6824b4d14f9c7496, type: 3}
   _prefab: {fileID: 8079554152659468491, guid: eac9ac9f7b106c63593abaabcb67837c, type: 3}

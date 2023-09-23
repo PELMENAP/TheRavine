@@ -1,0 +1,27 @@
+{
+  "name": "com.gdriviw.modern2dshadows",
+  "version": "1.2.0",
+  "displayName": "Modern 2D Shadows",
+  "description": "Automatic shadow creation tools, modern 2d shaders and other graphics utils\n\nIncludes:\nCustomizable water,\nLeafs on wind and star particle systems,\n8 demo scenes,\nsprite rim light generator,\nand MANY more.",
+  "unity": "2021.1",
+  "unityRelease": "0b5",
+  "dependencies": {
+  },
+  "keywords": [
+    "shadows",
+    "shaders",
+    "Pixel art",
+    "2D Water",
+    "lighting",
+    "shaders",
+    "particles",
+    "FX",
+    "Light",
+    "realtime lighting"
+  ],
+  "author": {
+    "name": "Leafousio",
+    "email": "gdriviw@outlook.com",
+    "url": "https://assetstore.unity.com/publishers/72230"
+  }
+}

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-public class PlayerController : AEntity
+public class PlayerController : AEntity, IControllable
 {
     public Camera cachedCamera;
     public static Transform entityTrans;
@@ -18,12 +18,10 @@ public class PlayerController : AEntity
     #region [INSPECTOR]
     [SerializeField] private int score;
     [SerializeField] private float MOVEMENT_BASE_SPEED, CROSSHAIR_DISTANSE, movementSpeed, offset, timeLimit;
-    [SerializeField] private Vector2 movementDirection, movementAndroid, movementPC, aim;
-    [SerializeField] private Animator animator, shadow;
+    [SerializeField] private Vector2 movementDirection, aim;
+    [SerializeField] private Animator animator;
     public Transform crosshair;
     [SerializeField] private Transform playerMark;
-    [SerializeField] private Joystick joystick;
-    [SerializeField] private bool isShadow;
     #endregion
 
     public PlayerUI ui;
@@ -75,7 +73,7 @@ public class PlayerController : AEntity
     {
         behavioursMap = new Dictionary<Type, IPlayerBehaviour>();
         PlayerBehaviourIdle Idle = new PlayerBehaviourIdle();
-        Idle.behaviourIdle += Move;
+        Idle.behaviourIdle += MoveInternal;
         Idle.behaviourIdle += Animate;
         Idle.behaviourIdle += Aim;
         Idle.behaviourIdle += AimSkills;
@@ -114,19 +112,23 @@ public class PlayerController : AEntity
 
     #endregion
 
-    private void Move()
+    public void Move(Vector2 direction){
+        movementDirection = direction;
+    }
+
+    private void MoveInternal()
     {
         if (!moving)
             return;
-        movementPC = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
-        movementAndroid = new Vector2(joystick.Horizontal, joystick.Vertical);
-        if (movementAndroid.magnitude < 0.5f)
-            movementAndroid = Vector2.zero;
-        movementDirection = movementPC.magnitude >= movementAndroid.magnitude ? movementPC : movementAndroid;
         movementSpeed = Mathf.Clamp(movementDirection.magnitude, 0.0f, 1.0f);
         movementDirection.Normalize();
         rb.velocity = movementDirection * movementSpeed * MOVEMENT_BASE_SPEED;
         MoveMark();
+    }
+
+
+    public void Jump(){
+
     }
 
     private void MoveMark()
@@ -144,15 +146,6 @@ public class PlayerController : AEntity
             animator.SetFloat("Vertical", movementDirection.y);
         }
         animator.SetFloat("Speed", movementSpeed);
-        if (DayCycle.shadow || isShadow)
-        {
-            if (movementDirection != Vector2.zero)
-            {
-                shadow.SetFloat("Horizontal", movementDirection.x);
-                shadow.SetFloat("Vertical", movementDirection.y);
-            }
-            shadow.SetFloat("Speed", movementSpeed);
-        }
     }
 
     private void Aim()
@@ -215,12 +208,8 @@ public class PlayerController : AEntity
     {
         moving = false;
         animator.SetBool("isPrick", true);
-        if (DayCycle.shadow)
-            shadow.SetBool("isPrick", true);
         yield return new WaitForSeconds(1);
         animator.SetBool("isPrick", false);
-        if (DayCycle.shadow)
-            shadow.SetBool("isPrick", false);
         moving = true;
     }
 }

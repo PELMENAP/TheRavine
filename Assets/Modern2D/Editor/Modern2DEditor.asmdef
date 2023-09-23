@@ -1,0 +1,18 @@
+{
+    "name": "Modern2DEditor",
+    "rootNamespace": "Modern2DEditor",
+    "references": [
+        "GUID:25833bd1b6ff4584bb131a55e72bf378",
+        "GUID:c579267770062bf448e75eb160330b7f",
+        "GUID:d8b63aba1907145bea998dd612889d6b"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
