@@ -17,25 +17,25 @@ public class UIInventoryTester
 
     public void FillSlots(bool filling)
     {
-        // if (filling)
-        // {
-        //     var allSlots = inventory.GetAllSlots();
-        //     var availableSlots = new List<IInventorySlot>(allSlots);
-        //     var filledSlots = 10;
-        //     for (int i = 0; i < filledSlots; i++)
-        //     {
-        //         int index = 0;
-        //         do
-        //         {
-        //             var rSlot = availableSlots[Random.Range(0, availableSlots.Count)];
-        //             var item = PData.pdata.GetItem(index, Random.Range(1, 50));
-        //             inventory.TryToAddSlot(this, rSlot, item);
-        //             availableSlots.Remove(rSlot);
-        //             index++;
-        //         }
-        //         while (PData.pdata.GetItem(index, 0) != null);
-        //     }
-        // }
+        if (filling)
+        {
+            // var allSlots = inventory.GetAllSlots();
+            // var availableSlots = new List<IInventorySlot>(allSlots);
+            // var filledSlots = 10;
+            // for (int i = 0; i < filledSlots; i++)
+            // {
+            //     int index = 0;
+            //     do
+            //     {
+            //         var rSlot = availableSlots[Random.Range(0, availableSlots.Count)];
+            //         var item = PData.pdata.GetItem(index, Random.Range(1, 50));
+            //         inventory.TryToAddSlot(this, rSlot, item);
+            //         availableSlots.Remove(rSlot);
+            //         index++;
+            //     }
+            //     while (PData.pdata.GetItem(index, 0) != null);
+            // }
+        }
         SetupInventoryUI(inventory);
     }
 

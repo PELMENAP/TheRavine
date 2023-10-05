@@ -4,22 +4,22 @@ using System.Threading.Tasks;
 public class CollisionRequire : MonoBehaviour
 {
     private IDetector _idetector;
-    private RoamMoveController controller;
+    // private RoamMoveController controller;
     [SerializeField] private Transform detectCircle;
 
     private void Awake()
     {
         _idetector = GetComponentInParent<Detector>();
-        controller = GetComponentInParent<RoamMoveController>();
+        // controller = GetComponentInParent<RoamMoveController>();
         _idetector.OnGameObjectDetectedEvent += OnDetectedEvent;
-        controller.setRandomPointComplete += OnSetRandomPointEvent;
-        controller.setRandomPointStart += OnAlreadySetRandomPointEvent;
+        // controller.setRandomPointComplete += OnSetRandomPointEvent;
+        // controller.setRandomPointStart += OnAlreadySetRandomPointEvent;
     }
 
     private void OnSetRandomPointEvent()
     {
         detectCircle.gameObject.SetActive(true);
-        detectCircle.localPosition = controller.randomD;
+        // detectCircle.localPosition = controller.randomD;
     }
 
     private void OnAlreadySetRandomPointEvent()
@@ -28,6 +28,6 @@ public class CollisionRequire : MonoBehaviour
     }
     private void OnDetectedEvent(GameObject source, GameObject detectedObject)
     {
-        controller.UpdateRandomMove(true);
+        // controller.UpdateRandomMove(true);
     }
 }

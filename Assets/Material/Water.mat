@@ -65,6 +65,7 @@ Material:
     - _Alpha: 0.5
     - _NoisePower: 0.001
     - _NoiseScale: 10
+    - _NormalPower: 0.1
     - _PenaEffect: 1
     - _Power: -9.86
     - _QueueControl: 0
@@ -78,9 +79,10 @@ Material:
     m_Colors:
     - _Color: {r: 0.24448201, g: 0.5678227, b: 0.7735849, a: 1}
     - _PatternSizeReduction: {r: 2, g: 2, b: 0, a: 0}
+    - _SkyDirection: {r: -0.01, g: 0, b: 0, a: 0}
     - _Tiling: {r: -0.98, g: -0.98, b: 0, a: 0}
     - _TilingNoise: {r: -0.9, g: -0.9, b: 0, a: 0}
-    - _TilingSky: {r: -0.98, g: -0.98, b: 0, a: 0}
+    - _TilingSky: {r: 0.01, g: 0.01, b: 0, a: 0}
     - _TilingTurbulenceWave: {r: -0.99, g: -0.99, b: 0, a: 0}
     - _TilingTurbulenceWaveDown: {r: -0.95, g: -0.95, b: 0, a: 0}
   m_BuildTextureStacks: []

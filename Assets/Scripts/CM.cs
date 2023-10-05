@@ -12,8 +12,8 @@ public class CM : MonoBehaviour
     private void Start()
     {
         cameraForMap = false;
-        offset = cameratrans.position - PlayerController.entityTrans.position;
-        cameratrans.position = PlayerController.entityTrans.position + new Vector3(0, 0, -1);
+        offset = cameratrans.position - PlayerData.instance.entityTrans.position;
+        cameratrans.position = PlayerData.instance.entityTrans.position + new Vector3(0, 0, -1);
     }
 
     private void LateUpdate()
@@ -22,7 +22,7 @@ public class CM : MonoBehaviour
         {
             if (cameraForMap)
             {
-                cameratrans.position = PlayerController.entityTrans.position + new Vector3(0, 0, -1);
+                cameratrans.position = PlayerData.instance.entityTrans.position + new Vector3(0, 0, -1);
                 mainCam.orthographicSize = 20;
             }
             else
@@ -50,12 +50,12 @@ public class CM : MonoBehaviour
 
     private void UpdateForGame()
     {
-        if (PlayerController.entityTrans == null)
+        if (PlayerData.instance.entityTrans == null)
         {
             return;
         }
-        targetPos = PlayerController.entityTrans.position + offset;
-        if (PlayerController.entityTrans == null || Vector3.Distance(cameratrans.position, targetPos) < MinDistance)
+        targetPos = PlayerData.instance.entityTrans.position + offset;
+        if (PlayerData.instance.entityTrans == null || Vector3.Distance(cameratrans.position, targetPos) < MinDistance)
         {
             return;
         }

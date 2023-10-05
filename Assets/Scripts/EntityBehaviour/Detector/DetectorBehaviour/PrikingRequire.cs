@@ -22,13 +22,13 @@ public class PrikingRequire : MonoBehaviour
         {
             if (isDelay)
             {
-                PlayerController.instance.Priking();
+                // PlayerController.instance.Priking();
                 render.sprite = batteredNettle;
                 Delay();
             }
             else if (Random.Range(1, 10) == 1)
             {
-                PlayerController.instance.Priking();
+                // PlayerController.instance.Priking();
             }
         }
     }

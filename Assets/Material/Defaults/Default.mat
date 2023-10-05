@@ -21,17 +21,21 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Default
-  m_Shader: {fileID: -6465566751694194690, guid: b54f9dc98b4460fa794652286c4b085f,
-    type: 3}
+  m_Shader: {fileID: 4800000, guid: e260cfa7296ee7642b167f1eb5be5023, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords:
-  - _SUNDISK_HIGH_QUALITY
+  - _ALPHATEST_ON
+  - _RECEIVE_SHADOWS_OFF
+  - _SPECULAR_SETUP
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -71,6 +75,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _DetailTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _EMISSION_COLOR_MAP:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -84,7 +92,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 574f0c6554c3908fd8f31360aa651713, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Mask0:
@@ -167,6 +175,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _SampleTexture2D_f9dc8b078fe542f5b1dc7ef0ce4c8f80_Texture_1_Texture2D:
+        m_Texture: {fileID: 2800000, guid: 506627b59892091469fd12c516397bc8, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _SpecGlossMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -199,6 +211,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _Texture2DAsset_f718a0256b87463baebfd7860e02d449_Out_0_Texture2D:
+        m_Texture: {fileID: 2800000, guid: 9146d648e92db2d4ba635ca52c26f88b, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -213,26 +229,36 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - PixelSnap: 0
-    - _AlphaClip: 0
+    - PixelSnap: 1
+    - _AlphaClip: 1
+    - _AlphaToMask: 1
     - _AtmosphereThickness: 1
     - _BASE_COLOR_WEIGHT: 1
     - _BUMP_MAP_STRENGTH: 0.3
-    - _Blend: 0
+    - _Blend: 3
+    - _BlendModePreserveSpecular: 1
+    - _BotDarken: 0
+    - _BotTransparency: 1
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
+    - _ColorMask: 15
     - _Cull: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
+    - _DstBlendAlpha: 0
     - _EMISSION_WEIGHT: 1
     - _EnableExternalAlpha: 0
     - _EnableHeightBlend: 0
     - _EnableInstancedPerPixelNormal: 1
     - _EnvironmentReflections: 1
     - _Exposure: 1
+    - _FalloffBottom: 0
+    - _FalloffLeft: 0
+    - _FalloffRight: 0
+    - _FalloffTop: 0
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossinessSource: 0
@@ -253,7 +279,7 @@ Material:
     - _REFLECTIONS_IOR: 1.52
     - _REFLECTIONS_ROUGHNESS: 1
     - _REFLECTIONS_WEIGHT: 1
-    - _ReceiveShadows: 1
+    - _ReceiveShadows: 0
     - _Rotation: 0
     - _SPECULAR_IOR: 1.5
     - _SPECULAR_ROUGHNESS: 0
@@ -268,26 +294,40 @@ Material:
     - _SpecSource: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
+    - _SrcBlendAlpha: 1
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
     - _SunDisk: 2
     - _SunSize: 0.04
     - _SunSizeConvergence: 5
     - _Surface: 0
     - _TRANSPARENCY: 0
     - _UVSec: 0
-    - _WorkflowMode: 1
+    - _UseUIAlphaClip: 0
+    - _WindQuality: 0
+    - _WorkflowMode: 0
     - _ZWrite: 1
+    - _smoothness: 0
     m_Colors:
     - _BASE_COLOR: {r: 0, g: 0, b: 0, a: 0}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EMISSION_COLOR: {r: 0, g: 0, b: 0, a: 0}
-    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _EmissionColor: {r: 0.77906656, g: 0.5387834, b: 0.5387834, a: 1}
     - _Flip: {r: 1, g: 1, b: 1, a: 1}
     - _GroundColor: {r: 0.36899996, g: 0.34899998, b: 0.34099993, a: 1}
+    - _HueVariation: {r: 1, g: 0.5, b: 0, a: 0.1}
     - _REFLECTIONS_COLOR: {r: 1, g: 1, b: 1, a: 1}
     - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
     - _SPECULAR_COLOR: {r: 1, g: 1, b: 1, a: 0}
     - _SkyTint: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-    - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+    - _SpecColor: {r: 1, g: 1, b: 1, a: 0.547}
     - _Tint: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
+    - _gradientBottom: {r: 0.43158588, g: 0.39493588, b: 0.6698113, a: 1}
+    - _gradientLeft: {r: 0.6584014, g: 0.8867924, b: 0.5061409, a: 1}
+    - _gradientRight: {r: 0.29592374, g: 0.50141346, b: 0.6603774, a: 1}
+    - _gradientTop: {r: 0.62264144, g: 0.49063718, b: 0.32013166, a: 1}
   m_BuildTextureStacks: []

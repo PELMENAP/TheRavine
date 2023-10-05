@@ -121,7 +121,7 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0, y: -0.4}
   m_Radius: 1
 --- !u!114 &15243296
 MonoBehaviour:
@@ -135,9 +135,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc940621e0c1a5c7aa74348d853e19f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  amount: 0
-  mayPickUp: 1
-  id: 
+  amount: 1
+  id: toadstool
+  itemInfo: {fileID: 11400000, guid: 62dd738876dff01248c3ab1fdcbe2927, type: 2}
 --- !u!114 &15243297
 MonoBehaviour:
   m_ObjectHideFlags: 0

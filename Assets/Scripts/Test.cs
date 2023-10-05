@@ -16,9 +16,9 @@ public class Test : MonoBehaviour
 
     public MeshFilter meshFilterTest;
 
-    private void Awake() {
-        Settings.isShadow = true;
-    }
+    // private void Awake() {
+    //     Settings.isShadow = true;
+    // }
 
 
     private Mesh GetQuadMeshMap(int[,] meshMap, int countOfQuads, int sizeMap, int scale, int xCord, int yCord)
