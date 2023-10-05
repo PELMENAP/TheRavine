@@ -8,6 +8,7 @@ public class FaderOnTransit : MonoBehaviour
 
     [SerializeField] private Animator animator;
     [SerializeField] private TextMeshProUGUI loadingText;
+    [SerializeField] private Camera _camera;
     private static FaderOnTransit _instance;
 
     public static FaderOnTransit instance
@@ -65,4 +66,6 @@ public class FaderOnTransit : MonoBehaviour
     public void SetLogs(string text){
         loadingText.text = text;
     }
+
+    public Camera GetFaderCamera() => _camera;
 }

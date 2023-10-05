@@ -55,7 +55,7 @@ public class EndlessTerrain : MonoBehaviour
         objusenumUpdate = new int[objuseLength];
         for (int i = 0; i < objuseLength; i++)
         {
-            PoolManager.instance.CreatePool(objuse[i], objusenum[i], false);
+            PoolManager.instance.CreatePool(objuse[i], objusenum[i]);
         }
         viewerPosition = new Vector2(-viewer.position.x - 50f, viewer.position.y + 50f) / scale;
         StartCoroutine(UpdateVisibleChunks());
@@ -100,7 +100,7 @@ public class EndlessTerrain : MonoBehaviour
                     objusenumUpdate[j] += terrainChunkDictionary[terrainChunksVisibleUpdate[i]].numLand[j];
                     if (objusenumUpdate[j] > objusenum[j])
                     {
-                        PoolManager.instance.CreatePool(objuse[j], objusenumUpdate[j] - objusenum[j], objusenum[j] != 0);
+                        PoolManager.instance.CreatePool(objuse[j], objusenumUpdate[j] - objusenum[j]);
                         objusenum[j] = objusenumUpdate[j];
                     }
                 }

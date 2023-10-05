@@ -17,5 +17,7 @@ public class BootstrapState : IState<Bootstrap>, IEnterable, IExitable
 
     public void OnExit(){
         FaderOnTransit.instance.SetLogs("Точка входа создана");
+        if(!Initializer.isTest)
+            Initializer.AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
     }
 }

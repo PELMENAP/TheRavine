@@ -12,6 +12,8 @@ public class GameState : IState<Bootstrap>, IEnterable, IExitable
 
     public void OnEnter()
     {
+        Initializer.StartSun();
+        PlayerData.instance.SetUp();
         FaderOnTransit.instance.SetLogs("Начало игры");
         FaderOnTransit.instance.SetLogs("");
         FaderOnTransit.instance.FadeOut(() => aboba = true);

@@ -25,7 +25,7 @@ public class TaskRequire : MonoBehaviour
     {
         if (source.CompareTag("Player") && alreadyCalled)
         {
-            StartCoroutine(PlayerDialogControoller.instance.TypeLine(speechStart));
+            // StartCoroutine(PlayerDialogControoller.instance.TypeLine(speechStart));
         }
     }
 
@@ -33,7 +33,7 @@ public class TaskRequire : MonoBehaviour
     {
         if (source.CompareTag("Player") && alreadyCalled)
         {
-            StartCoroutine(PlayerDialogControoller.instance.TypeLine(speechEnd));
+            // StartCoroutine(PlayerDialogControoller.instance.TypeLine(speechEnd));
             findOfDelivery?.Invoke();
             alreadyCalled = false;
         }

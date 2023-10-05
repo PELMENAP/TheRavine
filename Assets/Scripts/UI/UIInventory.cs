@@ -1,10 +1,12 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
+using System;
 
 public class UIInventory : MonoBehaviour
 {
-    [SerializeField] private GameObject grid, activeBar;
+    [SerializeField] private GameObject grid, activeBar, buttons, inputField;
     [SerializeField] private bool filling;
     [SerializeField] private UIInventorySlot[] activeCells;
     [SerializeField]
@@ -24,19 +26,33 @@ public class UIInventory : MonoBehaviour
         tester.FillSlots(filling);
         isActive = false;
         grid.SetActive(isActive);
-        PlayerController.instance.placeObject += PlaceObject;
+        activeBar.SetActive(isActive);
+        buttons.SetActive(isActive);
+        inputField.SetActive(isActive);
+        PlayerData.instance.placeObject += PlaceObject;
+        PlayerData.instance.aimRaise += AimRaise;
+        StartCoroutine(SetUpCanvas());
+    }
+
+    private IEnumerator SetUpCanvas(){
+        yield return new WaitForSeconds(3f);
+        activeBar.SetActive(true);
+        yield return new WaitForSeconds(3f);
+        buttons.SetActive(true);
+        yield return new WaitForSeconds(3f);
+        inputField.SetActive(true);
     }
 
     private void Update()
     {
-        if (Input.GetKeyUp("e") && !Input.GetMouseButton(0) && PlayerController.instance.moving && !PlayerController.instance.dialog.activeSelf)
+        if (Input.GetKeyUp("e") && !Input.GetMouseButton(0) && !PlayerData.instance.dialog.activeSelf)
         {
             isActive = !isActive;
             grid.SetActive(isActive);
             if (isActive)
-                PlayerController.instance.SetBehaviourSit();
+                PlayerData.instance.SetBehaviourSit();
             else
-                PlayerController.instance.SetBehaviourIdle();
+                PlayerData.instance.SetBehaviourIdle();
         }
         if (Input.GetKeyDown("1"))
             SetActiveCell(1);
@@ -54,8 +70,14 @@ public class UIInventory : MonoBehaviour
             SetActiveCell(7);
         else if (Input.GetKeyDown("8"))
             SetActiveCell(8);
-        AimRaise();
     }
+
+    private void SetActiveCell(int index)
+    {
+        activeCell = index;
+        cell.anchoredPosition = new Vector2(55 + 120 * (index - 1), -50);
+    }
+
 
     private void PlaceObject(Vector3 position)
     {
@@ -69,21 +91,25 @@ public class UIInventory : MonoBehaviour
                 GameObject plob = item.info.prefab;
                 if (plob != null)
                 {
-                    item.state.amount--;
-                    if (slot.amount <= 0)
-                        slot.Clear();
-                    activeCells[activeCell - 1].Refresh();
-                    RaycastHit2D[] hits = Physics2D.RaycastAll(position, transform.forward);
-                    for (int i = 0; i < hits.Length; i++)
-                    {
-                        PickUpRequire component = hits[i].collider.gameObject.GetComponent<PickUpRequire>();
-                        if (component != null && component.id == item.info.id)
-                        {
-                            component.amount++;
-                            return;
-                        }
+                    if(InterObjectManager.instance.SetObjectByPosition(new Vector2(position.x, position.y), item.info.id, 1, plob)){
+                        item.state.amount--;
+                        if (slot.amount <= 0)
+                            slot.Clear();
+                        activeCells[activeCell - 1].Refresh();
                     }
-                    Instantiate(plob, position, Quaternion.identity);
+
+                    // RaycastHit2D[] hits = Physics2D.RaycastAll(position, transform.forward);
+                    // for (int i = 0; i < hits.Length; i++)
+                    // {
+                    //     PickUpRequire component = hits[i].collider.gameObject.GetComponent<PickUpRequire>();
+                    //     print(component.id);
+                    //     print(item.info.id);
+                    //     if (component != null && component.id == item.info.id)
+                    //     {
+                    //         component.amount++;
+                    //         return;
+                    //     }
+                    // }
                 }
             }
         }
@@ -93,47 +119,46 @@ public class UIInventory : MonoBehaviour
         }
     }
 
-    private void SetActiveCell(int index)
+    private void AimRaise(Vector3 position)
     {
-        activeCell = index;
-        cell.anchoredPosition = new Vector2(55 + 120 * (index - 1), -50);
-    }
-    private void AimRaise()
-    {
-        if (Input.GetKey("f"))
-        {
-            RaycastHit2D[] hits;
-            if (Input.GetMouseButton(1))
-                hits = Physics2D.RaycastAll(PlayerController.instance.crosshair.position, transform.forward);
-            else
-                hits = Physics2D.RaycastAll(PlayerController.entityTrans.position, transform.forward);
-            GameObject pickedObject;
-            for (int i = 0; i < hits.Length; i++)
+        Triple<string, int, GameObject> triple = InterObjectManager.instance.GetObjectByPosition(new Vector2(position.x, position.y));
+        if(triple != null){
+            PickUpRequire component = triple.Third.GetComponent<PickUpRequire>();
+            if(component != null)
             {
-                pickedObject = hits[i].collider.gameObject;
-                try
-                {
-                    PickUpRequire component = pickedObject.GetComponent<PickUpRequire>();
-                    if (component.mayPickUp)
-                    {
-                        inventory.TryToAdd(pickedObject, PData.pdata.GetItem(component.id, component.amount));
-                        try
-                        {
-                            EndlessTerrain.instance.loosers.Add(new Vector2(pickedObject.transform.position.x, pickedObject.transform.position.y));
-                            pickedObject.SetActive(false);
-                        }
-                        catch
-                        {
-
-                        }
-                        Destroy(pickedObject);
-                    }
-                }
-                catch
-                {
-
-                }
+                IInventoryItem item = InfoManager.GetInventoryItem(triple.First, triple.Second);
+                inventory.TryToAdd(triple.Third, item);
+                InterObjectManager.instance.SetObjectByPosition(new Vector2(position.x, position.y), triple.First, -triple.Second, triple.Third);
             }
+            else
+                throw new Exception("There's no pickable component");
         }
+        // GameObject pickedObject;
+        // for (int i = 0; i < hits.Length; i++)
+        // {
+        //     pickedObject = hits[i].collider.gameObject;
+        //     if(pickedObject.CompareTag("Player"))
+        //         continue;
+        //     PickUpRequire component = pickedObject.GetComponent<PickUpRequire>();
+        //     if(component != null)
+        //     {
+        //         IInventoryItem item = InfoManager.GetInventoryItem(component.id, component.itemInfo, component.amount);
+        //         inventory.TryToAdd(pickedObject, item);
+        //         try
+        //         {
+        //             // EndlessTerrain.instance.loosers.Add(new Vector2(pickedObject.transform.position.x, pickedObject.transform.position.y));
+        //             pickedObject.SetActive(false);
+        //         }
+        //         catch
+        //         {
+        //         }
+        //         Destroy(pickedObject);
+        //         break;
+        //     }
+        //     else
+        //     {
+        //         throw new Exception("There's no pickable component");
+        //     }
+        // }
     }
 }

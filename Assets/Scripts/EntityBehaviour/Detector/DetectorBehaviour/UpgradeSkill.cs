@@ -41,10 +41,10 @@ public class UpgradeSkill : MonoBehaviour
             yield return new WaitForSeconds(3);
             if (Input.GetKey("f"))
             {
-                StartCoroutine(PlayerDialogControoller.instance.TypeLine(speech));
-                PlayerController.instance.ui.RemoveSkill("Rush");
-                PData.pdata.dushImage.sprite = sprite;
-                PlayerController.instance.ui.AddSkill(new SkillRush(coolDown, reloadSpeed, power), PData.pdata.dushParent, PData.pdata.dushImage, "Rush");
+                // StartCoroutine(PlayerDialogControoller.instance.TypeLine(speech));
+                // PlayerController.instance.ui.RemoveSkill("Rush");
+                // PData.pdata.dushImage.sprite = sprite;
+                // PlayerController.instance.ui.AddSkill(new SkillRush(coolDown, reloadSpeed, power), PData.pdata.dushParent, PData.pdata.dushImage, "Rush");
                 isUpgrade = false;
                 yield return new WaitForSeconds(3);
                 Destroy(this.gameObject);

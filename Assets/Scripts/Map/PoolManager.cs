@@ -36,6 +36,13 @@ public class PoolManager : MonoBehaviour
         }
     }
 
+    public bool IsAlreadyCreated(GameObject prefab){
+        if(poolDictionary.ContainsKey(prefab.GetInstanceID()))
+            return true;
+        else
+            return false;
+    }
+
     public void ReuseObject(GameObject prefab, Vector2 position, bool visible)
     {
         LinkedList<ObjectInstance> poDick = poolDictionary[prefab.GetInstanceID()];
@@ -56,9 +63,6 @@ public class PoolManager : MonoBehaviour
             gameObject = objectInstance;
             transform = gameObject.transform;
             gameObject.isStatic = true;
-            if (gameObject.tag == "Enviroment")
-            {
-            }
             // if (gameObject.GetComponent<PoolObject>())
             // {
             //     hasPoolObjectComponent = true;

@@ -120,7 +120,7 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0, y: -0.4}
   m_Radius: 1
 --- !u!114 &15243296
 MonoBehaviour:
@@ -135,5 +135,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   amount: 1
-  mayPickUp: 1
-  id: 
+  id: boletus
+  itemInfo: {fileID: 11400000, guid: f1b335d14a7c40c2ab89d9460b8287d4, type: 2}

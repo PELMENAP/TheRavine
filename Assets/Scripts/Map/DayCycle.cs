@@ -12,7 +12,6 @@ public class DayCycle : MonoBehaviour
     public static event Action newDay;
     [SerializeField] private float startDay, speed;
     [SerializeField] private Gradient sunGradient;
-    [SerializeField] private Transform player;
     private Light2D sun;
     private NativeArray<float> TimeBridge;
     private NativeArray<bool> IsdayBridge;
@@ -25,7 +24,7 @@ public class DayCycle : MonoBehaviour
 
     private Transform[] shadows, lightsTransform;
 
-    private void Start()
+    public void StartUniverse()
     {
         GetLightsAndShadows();
     }
@@ -37,6 +36,7 @@ public class DayCycle : MonoBehaviour
         TimeBridge[4] = speed;
         sun = this.GetComponent<Light2D>();
         GameObject[] shadowsObjects = GameObject.FindGameObjectsWithTag("Shadow");
+        print(Settings.isShadow);
         if (Settings.isShadow)
         {
             Light2D[] lights = GameObject.FindObjectsByType<Light2D>(FindObjectsSortMode.None);
@@ -54,10 +54,14 @@ public class DayCycle : MonoBehaviour
             for(int i = 0; i < lights.Length; i++){
                 lightsTransform[i] = lights[i].transform;
                 Light2DIntensityBridge[i] = lights[i].intensity;
+                if(lights[i].transform.gameObject.CompareTag("Sun")){
+                    Light2DIntensityBridge[i] = 100;
+                }
             }
             UpdateProperties();
         }
         else{
+            print("not shadow");
             for (int i = 0; i < shadowsObjects.Length; i++)
             {
                 shadowsObjects[i].SetActive(false);
@@ -75,8 +79,8 @@ public class DayCycle : MonoBehaviour
 
     private void UpdateSunValues(){
         sun.color = sunGradient.Evaluate(TimeBridge[0]);
-        sun.transform.position = new Vector3(TimeBridge[1], TimeBridge[2], 0) + player.position;
-        sun.intensity = TimeBridge[3] * 100;
+        sun.transform.position = new Vector3(TimeBridge[1], TimeBridge[2], 0);
+        sun.intensity = TimeBridge[3];
     }
 
     private IEnumerator UpdateDay()
