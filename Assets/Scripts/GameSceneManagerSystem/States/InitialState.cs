@@ -15,6 +15,7 @@ public class InitialState : IState<Bootstrap>, IEnterable, IExitable, ITickable
 
     public void OnEnter()
     {
+        Initializer.StartGenerator();
         FaderOnTransit.instance.SetLogs("Загрузка ресурсов");
     }
 
@@ -27,13 +28,14 @@ public class InitialState : IState<Bootstrap>, IEnterable, IExitable, ITickable
     {
 
         timer += 1f;
-        if(Initializer.isTest){
+        if (Initializer.isTest)
+        {
             timer += 1f;
         }
 
         if (timer > 100f && !isChangeState)
         {
-            if(Initializer.isTest)
+            if (Initializer.isTest)
                 Initializer.StateMachine.SwitchState<GameState>();
             Initializer.StateMachine.SwitchState<LoadingState>();
             isChangeState = true;
@@ -41,7 +43,7 @@ public class InitialState : IState<Bootstrap>, IEnterable, IExitable, ITickable
 
         if ((int)timer >= timerStep * 10 && !isChangeState)
         {
-            if(Initializer.isTest)
+            if (Initializer.isTest)
                 Initializer.InstantiateRequiredPrefab(timerStep - 1);
             FaderOnTransit.instance.SetLogs($"Объект {timerStep} создан");
             timerStep += 1;

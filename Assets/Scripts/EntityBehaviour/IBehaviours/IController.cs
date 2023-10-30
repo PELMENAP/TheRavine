@@ -1,6 +1,7 @@
 using UnityEngine;
-public interface IController 
+public interface IController
 {
     Vector2 GetMove();
     void GetJump();
+    void MeetEnds();
 }

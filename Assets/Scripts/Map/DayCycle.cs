@@ -29,14 +29,15 @@ public class DayCycle : MonoBehaviour
         GetLightsAndShadows();
     }
 
-    private void GetLightsAndShadows(){
+    private void GetLightsAndShadows()
+    {
         TimeBridge = new NativeArray<float>(5, Allocator.Persistent);
         IsdayBridge = new NativeArray<bool>(1, Allocator.Persistent);
         TimeBridge[0] = startDay;
         TimeBridge[4] = speed;
         sun = this.GetComponent<Light2D>();
         GameObject[] shadowsObjects = GameObject.FindGameObjectsWithTag("Shadow");
-        print(Settings.isShadow);
+        // print(Settings.isShadow);
         if (Settings.isShadow)
         {
             Light2D[] lights = GameObject.FindObjectsByType<Light2D>(FindObjectsSortMode.None);
@@ -47,39 +48,42 @@ public class DayCycle : MonoBehaviour
                 shadows[i] = shadowsObjects[i].transform;
             }
             shadowsTransform = new TransformAccessArray(shadows);
-            
+
             Light2DBridge = new NativeArray<Vector3>(lights.Length, Allocator.Persistent);
             Light2DIntensityBridge = new NativeArray<float>(lights.Length, Allocator.Persistent);
             lightsTransform = new Transform[lights.Length];
-            for(int i = 0; i < lights.Length; i++){
+            for (int i = 0; i < lights.Length; i++)
+            {
                 lightsTransform[i] = lights[i].transform;
                 Light2DIntensityBridge[i] = lights[i].intensity;
-                if(lights[i].transform.gameObject.CompareTag("Sun")){
+                if (lights[i].transform.gameObject.CompareTag("Sun"))
+                {
                     Light2DIntensityBridge[i] = 100;
                 }
             }
             UpdateProperties();
         }
-        else{
-            print("not shadow");
+        else
+        {
             for (int i = 0; i < shadowsObjects.Length; i++)
-            {
                 shadowsObjects[i].SetActive(false);
-            }
         }
         closeThread = true;
         StartCoroutine(UpdateDay());
     }
 
-    private void UpdateProperties(){    
-        for(int i = 0; i < lightsTransform.Length; i++){
+    private void UpdateProperties()
+    {
+        for (int i = 0; i < lightsTransform.Length; i++)
+        {
             Light2DBridge[i] = lightsTransform[i].position;
         }
     }
 
-    private void UpdateSunValues(){
+    private void UpdateSunValues()
+    {
         sun.color = sunGradient.Evaluate(TimeBridge[0]);
-        sun.transform.position = new Vector3(TimeBridge[1], TimeBridge[2], 0);
+        sun.transform.localPosition = new Vector3(TimeBridge[1], TimeBridge[2], 0);
         sun.intensity = TimeBridge[3];
     }
 
@@ -167,9 +171,11 @@ public class DayCycle : MonoBehaviour
         {
             shadowPosition = shadowTransform.position;
             maxWeight = 0;
-            for(int i = 0; i < lightsBridge.Length; i++){
+            for (int i = 0; i < lightsBridge.Length; i++)
+            {
                 lightWeight = ligthsIntensity[i] / Vector3.Distance(shadowPosition, lightsBridge[i]);
-                if(lightWeight > maxWeight){
+                if (lightWeight > maxWeight)
+                {
                     maxWeight = lightWeight;
                     lightIndex = i;
                 }

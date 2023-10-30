@@ -8,9 +8,10 @@ public class UIInventory : MonoBehaviour
 {
     [SerializeField] private GameObject grid, activeBar, buttons, inputField;
     [SerializeField] private bool filling;
-    [SerializeField] private UIInventorySlot[] activeCells;
-    [SerializeField]
-    private RectTransform cell;
+    [SerializeField] private UIInventorySlot[] activeCells, craftCells;
+    [SerializeField] private UIInventorySlot result;
+    [SerializeField] private RectTransform cell;
+    [SerializeField] private InventoryCraftInfo[] CraftInfo;
     private bool isActive;
     private int activeCell = 1;
     public InventoryWithSlots inventory => tester.inventory;
@@ -24,6 +25,8 @@ public class UIInventory : MonoBehaviour
         // // uiSlot = uiSlot.Concat(uiSlotBar).ToArray();
         tester = new UIInventoryTester(uiSlot);
         tester.FillSlots(filling);
+        inventory.OnInventoryStateChangedEvent += OnInventoryStateChanged;
+        CraftInfo = InfoManager.GetAllCraftRecepts();
         isActive = false;
         grid.SetActive(isActive);
         activeBar.SetActive(isActive);
@@ -34,7 +37,8 @@ public class UIInventory : MonoBehaviour
         StartCoroutine(SetUpCanvas());
     }
 
-    private IEnumerator SetUpCanvas(){
+    private IEnumerator SetUpCanvas()
+    {
         yield return new WaitForSeconds(3f);
         activeBar.SetActive(true);
         yield return new WaitForSeconds(3f);
@@ -88,28 +92,13 @@ public class UIInventory : MonoBehaviour
             {
                 IInventoryItem item = activeCells[activeCell - 1]._uiInventoryItem.item;
                 // print(item.state.amount);
-                GameObject plob = item.info.prefab;
-                if (plob != null)
+                ObjectInstance objectToUse = PoolManager.inst.GetObjectByID(item.info.prefab.GetInstanceID());
+                if (PoolManager.inst.SetObjectByPosition(new Vector2(position.x, position.y), item.info.id, 1, objectToUse))
                 {
-                    if(InterObjectManager.instance.SetObjectByPosition(new Vector2(position.x, position.y), item.info.id, 1, plob)){
-                        item.state.amount--;
-                        if (slot.amount <= 0)
-                            slot.Clear();
-                        activeCells[activeCell - 1].Refresh();
-                    }
-
-                    // RaycastHit2D[] hits = Physics2D.RaycastAll(position, transform.forward);
-                    // for (int i = 0; i < hits.Length; i++)
-                    // {
-                    //     PickUpRequire component = hits[i].collider.gameObject.GetComponent<PickUpRequire>();
-                    //     print(component.id);
-                    //     print(item.info.id);
-                    //     if (component != null && component.id == item.info.id)
-                    //     {
-                    //         component.amount++;
-                    //         return;
-                    //     }
-                    // }
+                    item.state.amount--;
+                    if (slot.amount <= 0)
+                        slot.Clear();
+                    activeCells[activeCell - 1].Refresh();
                 }
             }
         }
@@ -119,19 +108,72 @@ public class UIInventory : MonoBehaviour
         }
     }
 
-    private void AimRaise(Vector3 position)
+    [SerializeField] private string[] names = new string[8], sortedNames, sortedIngr;
+    [SerializeField] private GameObject craftLine;
+    private void OnInventoryStateChanged(object sender)
     {
-        Triple<string, int, GameObject> triple = InterObjectManager.instance.GetObjectByPosition(new Vector2(position.x, position.y));
-        if(triple != null){
-            PickUpRequire component = triple.Third.GetComponent<PickUpRequire>();
-            if(component != null)
+        print(" start shecking");
+        names = new string[8];
+        for (int i = 0; i < craftCells.Length; i++)
+        {
+            IInventorySlot slot = craftCells[i].slot;
+            if (!slot.isEmpty)
+                names[i] = craftCells[i]._uiInventoryItem.item.info.id;
+        }
+        for (int i = 0; i < CraftInfo.Length; i++)
+        {
+            bool ispossible = true;
+            if (CraftInfo[i].isorder)
             {
-                IInventoryItem item = InfoManager.GetInventoryItem(triple.First, triple.Second);
-                inventory.TryToAdd(triple.Third, item);
-                InterObjectManager.instance.SetObjectByPosition(new Vector2(position.x, position.y), triple.First, -triple.Second, triple.Third);
+                for (int j = 0; j < CraftInfo[i].ingr.Length; j++)
+                    if (CraftInfo[i].ingr[j] != null && String.Compare(CraftInfo[i].ingr[j].id, names[j], StringComparison.OrdinalIgnoreCase) != 0)
+                        ispossible = false;
             }
             else
-                throw new Exception("There's no pickable component");
+            {
+                InventoryItemInfo[] itemInfoArray = (InventoryItemInfo[])CraftInfo[i].ingr.Clone();
+                sortedIngr = new string[8];
+                for (int j = 0; j < itemInfoArray.Length; j++)
+                    if (itemInfoArray[j] != null)
+                        sortedIngr[j] = itemInfoArray[j].id;
+                sortedNames = (string[])names.Clone();
+                Array.Sort(sortedIngr);
+                Array.Reverse(sortedIngr);
+                Array.Sort(sortedNames);
+                Array.Reverse(sortedNames);
+                for (int j = 0; j < CraftInfo[i].ingr.Length; j++)
+                    if (String.Compare(sortedIngr[j], sortedNames[j], StringComparison.OrdinalIgnoreCase) != 0)
+                        ispossible = false;
+                    else
+                    {
+                        print(sortedIngr[j] + " " + sortedNames[j]);
+                        print(j);
+                    }
+            }
+            if (ispossible)
+            {
+                print("is posible");
+                CraftPosible(true);
+                break;
+            }
+            else
+                CraftPosible(false);
+        }
+    }
+
+    private void CraftPosible(bool isActive)
+    {
+        craftLine.SetActive(isActive);
+    }
+
+    private void AimRaise(Vector3 position)
+    {
+        Triple<string, int, ObjectInstance> triple = PoolManager.inst.GetObjectByPosition(new Vector2(position.x, position.y));
+        if (triple != null)
+        {
+            IInventoryItem item = InfoManager.GetInventoryItem(triple.First, triple.Second);
+            inventory.TryToAdd(triple.Third.gameObject, item);
+            PoolManager.inst.SetObjectByPosition(new Vector2(position.x, position.y), triple.First, -triple.Second, triple.Third);
         }
         // GameObject pickedObject;
         // for (int i = 0; i < hits.Length; i++)

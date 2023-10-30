@@ -7,53 +7,28 @@ public class AudioNatureController : MonoBehaviour
     [SerializeField] private AudioSource[] audioSource;
     [SerializeField] private AudioClip[] audioClipday, audioClipnight;
 
-    private bool isFade = false;
-    private int audioSourceNext = 0;
-    private float speedFade = 0.001f;
+    [SerializeField] private AudioSource OSTSource;
+    [SerializeField] private AudioClip[] OSTClip;
+    private int currentOST;
+    private float speedFade = 0.002f, lenghtOST;
 
     private void Start()
     {
-        for (int i = 0; i < audioSource.Length; i++)
-        {
-            if (!audioSource[i].isPlaying)
-            {
-                audioSource[i].clip = audioClipday[0];
-                audioSource[i].Play();
-                break;
-            }
-        }
         StartCoroutine(Audio());
+        StartCoroutine(OSTController());
     }
-    private void Update()
+    private IEnumerator ChangeAudio(int from, int to)
     {
-        if (isFade)
+        while (true)
         {
-            if (audioSourceNext == 0)
+            audioSource[to].volume += speedFade;
+            audioSource[from].volume -= speedFade;
+            if (audioSource[from].volume <= 0.2)
             {
-                audioSource[0].volume += speedFade;
-                audioSource[1].volume -= speedFade;
-                if (audioSource[1].volume == 0)
-                {
-                    audioSource[1].Stop();
-                }
+                audioSource[from].Stop();
+                yield break;
             }
-            else
-            {
-                audioSource[0].volume -= speedFade;
-                audioSource[1].volume += speedFade;
-                if (audioSource[0].volume == 0)
-                {
-                    audioSource[0].Stop();
-                }
-            }
-        }
-        if (audioSource[0].volume > 0.5f)
-        {
-            audioSource[0].volume = 0.5f;
-        }
-        if (audioSource[1].volume > 0.5f)
-        {
-            audioSource[1].volume = 0.5f;
+            yield return new WaitForEndOfFrame();
         }
     }
 
@@ -61,19 +36,54 @@ public class AudioNatureController : MonoBehaviour
     {
         while (true)
         {
-            yield return new WaitForSeconds(Random.Range(30, 120));
-            for (int i = 0; i < audioSource.Length; i++)
+            if (!audioSource[0].isPlaying)
             {
-                if (!audioSource[i].isPlaying)
-                {
-                    audioSource[i].clip = DayCycle.isday ? audioClipday[Random.Range(0, audioClipday.Length)] : audioClipnight[Random.Range(0, audioClipnight.Length)];
-                    audioSource[i].Play();
-                    audioSource[i].volume = 0;
-                    isFade = true;
-                    audioSourceNext = i;
-                    break;
-                }
+                audioSource[0].clip = DayCycle.isday ? audioClipday[Random.Range(0, audioClipday.Length)] : audioClipnight[Random.Range(0, audioClipnight.Length)];
+                audioSource[0].Play();
+                yield return StartCoroutine(ChangeAudio(1, 0));
             }
+            else
+            {
+                audioSource[1].clip = DayCycle.isday ? audioClipday[Random.Range(0, audioClipday.Length)] : audioClipnight[Random.Range(0, audioClipnight.Length)];
+                audioSource[1].Play();
+                yield return StartCoroutine(ChangeAudio(0, 1));
+            }
+            yield return new WaitForSeconds(Random.Range(30, 120));
+        }
+    }
+
+    private IEnumerator OSTController()
+    {
+        while (true)
+        {
+            OSTSource.Stop();
+            yield return new WaitForSeconds(Random.Range(50, 200));
+            currentOST = Random.Range(0, OSTClip.Length);
+            yield return StartCoroutine(PlayOST(currentOST));
+        }
+    }
+    private IEnumerator PlayOST(int current)
+    {
+        bool change = true;
+        OSTSource.clip = OSTClip[current];
+        lenghtOST = OSTSource.clip.length;
+        OSTSource.Play();
+        while (change)
+        {
+            OSTSource.volume += speedFade;
+            if (OSTSource.volume >= 0.9)
+                change = false;
+            yield return new WaitForEndOfFrame();
+        }
+
+        yield return new WaitForSeconds(lenghtOST - Random.Range(lenghtOST / 8, lenghtOST / 2));
+
+        while (!change)
+        {
+            OSTSource.volume -= speedFade;
+            if (OSTSource.volume <= 0)
+                yield break;
+            yield return new WaitForEndOfFrame();
         }
     }
 }

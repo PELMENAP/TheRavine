@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEngine;
 
 public class InfoManager
@@ -15,4 +16,7 @@ public class InfoManager
         else
             throw new Exception("There's no exist class");
     }
+
+    public static InventoryCraftInfo[] GetAllCraftRecepts() => Resources.LoadAll("ItemInfo/CraftInfo", typeof(InventoryCraftInfo)).Cast<InventoryCraftInfo>().ToArray();
+    
 }
