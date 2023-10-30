@@ -169,7 +169,6 @@ MonoBehaviour:
   entityTrans: {fileID: 1671218706617821319}
   crosshair: {fileID: 1671218707826521824}
   playerMark: {fileID: 0}
-  score: 0
 --- !u!50 &1671218706617821318
 Rigidbody2D:
   serializedVersion: 4
@@ -258,7 +257,7 @@ CircleCollider2D:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1671218706617821313}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Density: 1
   m_Material: {fileID: 0}

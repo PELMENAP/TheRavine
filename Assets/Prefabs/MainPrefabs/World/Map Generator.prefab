@@ -1,0 +1,173 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1468572631891131511
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4691744732032779522}
+  - component: {fileID: 5672764651937099841}
+  - component: {fileID: 1712398924227795344}
+  m_Layer: 0
+  m_Name: Map Generator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 4294967295
+  m_IsActive: 1
+--- !u!4 &4691744732032779522
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1468572631891131511}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5672764651937099841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1468572631891131511}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ada8191267f8b34f94dca3a3d8c3c80, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  noiseScale: 200
+  octaves: 5
+  persistance: 0.2
+  lacunarity: 3
+  regions:
+  - height: 0
+    colour: {r: 0, g: 0.27847648, b: 0.509434, a: 1}
+  - height: 0.15
+    colour: {r: 0.23891956, g: 0.5616342, b: 0.8584906, a: 1}
+  - height: 0.25
+    colour: {r: 0.77907234, g: 0.7830189, b: 0.32133323, a: 1}
+  - height: 0.26
+    colour: {r: 0.4930185, g: 0.7735849, b: 0.14231044, a: 1}
+  - height: 0.3
+    colour: {r: 0.16642934, g: 0.6415094, b: 0.20865868, a: 1}
+  - height: 0.45
+    colour: {r: 0.22604938, g: 0.5471698, b: 0.1522784, a: 1}
+  - height: 0.7
+    colour: {r: 0.2260092, g: 0.5, b: 0.13915095, a: 1}
+  - height: 0.9
+    colour: {r: 0.14324489, g: 0.3490566, b: 0.060920257, a: 1}
+  - height: 1.15
+    colour: {r: 0.6320754, g: 0.5873135, b: 0.10435206, a: 1}
+--- !u!114 &1712398924227795344
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1468572631891131511}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df216539a5814134d835f615669f9a61, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  loosers: []
+  mapFragment: {fileID: 2195396287859197761, guid: a5df7c112821a294dad48f33f7b79c4a,
+    type: 3}
+  terra: {fileID: 1084726618118622823, guid: 938038af5222e01579fc5a9fd409440d, type: 3}
+  water: {fileID: 5587749228048272065, guid: 0f9009cba39fa6f63970ae3aa49ec79c, type: 3}
+  drawMap: 1
+  placeObj: 1
+  mapGenerator: {fileID: 5672764651937099841}
+  viewerPositionOld: {x: 0, y: 0}
+  viewerPosition: {x: 0, y: 0}
+  viewer: {fileID: 0}
+  watSprite: {fileID: 21300000, guid: eaf3433dc0b7c23738b9febbbd15294c, type: 3}
+  terSprite: {fileID: 831746879, guid: fcbc464ad50fd4c0cac5dc4ed1285bf9, type: 3}
+  objnorm:
+  - ground: {fileID: -1492639771, guid: fcbc464ad50fd4c0cac5dc4ed1285bf9, type: 3}
+    objList: []
+    structsList: []
+    chance: 
+    spread: 
+  - ground: {fileID: -1492639771, guid: fcbc464ad50fd4c0cac5dc4ed1285bf9, type: 3}
+    objList: []
+    structsList: []
+    chance: 
+    spread: 
+  - ground: {fileID: -1360561644, guid: fcbc464ad50fd4c0cac5dc4ed1285bf9, type: 3}
+    objList: []
+    structsList: []
+    chance: 
+    spread: 
+  - ground: {fileID: -9641568, guid: fcbc464ad50fd4c0cac5dc4ed1285bf9, type: 3}
+    objList: []
+    structsList: []
+    chance: 
+    spread: 
+  - ground: {fileID: 831746879, guid: fcbc464ad50fd4c0cac5dc4ed1285bf9, type: 3}
+    objList:
+    - {fileID: 948248636415433774, guid: e487b2f5e2401d74a9e583e59e72f6ce, type: 3}
+    structsList: []
+    chance: 1e000000
+    spread: 01
+  - ground: {fileID: 1268006094, guid: fcbc464ad50fd4c0cac5dc4ed1285bf9, type: 3}
+    objList:
+    - {fileID: 948248636415433774, guid: e487b2f5e2401d74a9e583e59e72f6ce, type: 3}
+    - {fileID: 8079554152659468491, guid: cf647ee06476156918555c7d1e90b593, type: 3}
+    structsList:
+    - {fileID: 3342464082932924806, guid: 0ce6600976cb8d13f9bd64e597604e91, type: 3}
+    chance: 140000005a000000e9030000
+    spread: 010101
+  - ground: {fileID: 2010861780, guid: fcbc464ad50fd4c0cac5dc4ed1285bf9, type: 3}
+    objList:
+    - {fileID: 948248636415433774, guid: e487b2f5e2401d74a9e583e59e72f6ce, type: 3}
+    - {fileID: 3577697167160119698, guid: 0b72511b56e1ab54ca9f90bba1505377, type: 3}
+    - {fileID: 6908429162828912622, guid: adae632f026b24118899a930b4e1619f, type: 3}
+    - {fileID: 8079554152659468491, guid: cf647ee06476156918555c7d1e90b593, type: 3}
+    - {fileID: 4512673236963690204, guid: bce32925144431cacacacba4a24b33d1, type: 3}
+    structsList: []
+    chance: 1e00000028000000320000005000000055000000
+    spread: 0101010101
+  - ground: {fileID: -1165584532, guid: fcbc464ad50fd4c0cac5dc4ed1285bf9, type: 3}
+    objList:
+    - {fileID: 6908429162828912622, guid: adae632f026b24118899a930b4e1619f, type: 3}
+    - {fileID: 3577697167160119698, guid: 0b72511b56e1ab54ca9f90bba1505377, type: 3}
+    - {fileID: 8079554152659468491, guid: b4ca380ab861563c1868b8b809fbf5e6, type: 3}
+    - {fileID: 8079554152659468491, guid: eac9ac9f7b106c63593abaabcb67837c, type: 3}
+    structsList:
+    - {fileID: 2964899833500323089, guid: 27d846b817e4ad96cb6c3a06e95e743f, type: 3}
+    chance: 28000000320000005000000078000000f4010000
+    spread: 0101010100
+  - ground: {fileID: -1360561644, guid: fcbc464ad50fd4c0cac5dc4ed1285bf9, type: 3}
+    objList: []
+    structsList:
+    - {fileID: 2340660867394423825, guid: 93f80c223639fead698b1dc82e4de42a, type: 3}
+    chance: e8030000
+    spread: 01
+  objuse:
+  - {fileID: 6908429162828912622, guid: adae632f026b24118899a930b4e1619f, type: 3}
+  - {fileID: 8079554152659468491, guid: b4ca380ab861563c1868b8b809fbf5e6, type: 3}
+  - {fileID: 8079554152659468491, guid: cf647ee06476156918555c7d1e90b593, type: 3}
+  - {fileID: 4512673236963690204, guid: bce32925144431cacacacba4a24b33d1, type: 3}
+  - {fileID: 8079554152659468491, guid: eac9ac9f7b106c63593abaabcb67837c, type: 3}
+  - {fileID: 2340660867394423825, guid: 93f80c223639fead698b1dc82e4de42a, type: 3}
+  - {fileID: 948248636415433774, guid: e487b2f5e2401d74a9e583e59e72f6ce, type: 3}
+  - {fileID: 3577697167160119698, guid: 0b72511b56e1ab54ca9f90bba1505377, type: 3}
+  - {fileID: 3342464082932924806, guid: 0ce6600976cb8d13f9bd64e597604e91, type: 3}
+  - {fileID: 2964899833500323089, guid: 27d846b817e4ad96cb6c3a06e95e743f, type: 3}
+  structs:
+  - {fileID: 2340660867394423825, guid: 93f80c223639fead698b1dc82e4de42a, type: 3}
+  - {fileID: 3342464082932924806, guid: 0ce6600976cb8d13f9bd64e597604e91, type: 3}
+  - {fileID: 2964899833500323089, guid: 27d846b817e4ad96cb6c3a06e95e743f, type: 3}
+  objusenum: 64000000140000001400000014000000140000000100000032000000320000000200000003000000
+  maxStructObject: 010000000300000014000000

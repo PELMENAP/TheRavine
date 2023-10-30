@@ -1,6 +1,6 @@
 
 using UnityEngine;
-using UnityEngine.Rendering.Universal; 
+using UnityEngine.Rendering.Universal;
 
 public class Bootstrap : MonoBehaviour
 {
@@ -9,7 +9,8 @@ public class Bootstrap : MonoBehaviour
     [SerializeField] private InsObject[] instanceObjects;
     [SerializeField] private Camera _camera;
     [SerializeField] private DayCycle sun;
-    public bool isTest; 
+    [SerializeField] private MapGenerator generator;
+    public bool isTest;
 
     public void Start()
     {
@@ -19,7 +20,8 @@ public class Bootstrap : MonoBehaviour
         //     StateMachine.SwitchState<GameState>();
         //     return;
         // }
-        if(Settings.SceneNumber == 1 || Settings.SceneNumber == 0){
+        if (Settings.SceneNumber == 1 || Settings.SceneNumber == 0)
+        {
             StateMachine = new StateMachine<Bootstrap>(
             new BootstrapState(this),
             new InitialState(this),
@@ -49,17 +51,25 @@ public class Bootstrap : MonoBehaviour
         {
 
         }
+        CreateBaseInstance();
         StartGame();
     }
 
-    public void InstantiateRequiredPrefab(int i){
-        if((i + 1) > instanceObjects.Length || instanceObjects[i].gameObject == null)
+    public void CreateBaseInstance()
+    {
+        for (int i = 0; i < instanceObjects.Length; i++)
+        {
+            if (instanceObjects[i].gameObject == null)
+                continue;
+            PoolManager.inst.CreatePool(instanceObjects[i].gameObject, 5);
+        }
+    }
+
+    public void InstantiateRequiredPrefab(int i)
+    {
+        if ((i + 1) > instanceObjects.Length || instanceObjects[i].gameObject == null)
             return;
-        PickUpRequire component = instanceObjects[i].gameObject.GetComponent<PickUpRequire>();
-        if(component != null){
-            InterObjectManager.instance.SetObjectByPosition(new Vector2(instanceObjects[i].position.x, instanceObjects[i].position.y), component.id, component.amount, instanceObjects[i].gameObject);        }
-        else{
-        Instantiate(instanceObjects[i].gameObject, instanceObjects[i].position, Quaternion.identity);}
+        PoolManager.inst.ReuseObjectToPosition(instanceObjects[i].gameObject.GetInstanceID(), instanceObjects[i].position);
     }
 
     public void StartGame()
@@ -68,19 +78,26 @@ public class Bootstrap : MonoBehaviour
         StateMachine.SwitchState<BootstrapState>();
     }
 
-    public void AddCameraToStack(Camera _cameraToAdd){
+    public void AddCameraToStack(Camera _cameraToAdd)
+    {
         var cameraData = _camera.GetUniversalAdditionalCameraData();
         cameraData.cameraStack.Add(_cameraToAdd);
     }
 
-    public void StartSun(){
+    public void StartGenerator()
+    {
+        generator.SetUp();
+    }
+
+    public void StartSun()
+    {
         sun.StartUniverse();
     }
 
-[System.Serializable]
+    [System.Serializable]
     public struct InsObject
     {
         public GameObject gameObject;
-        public Vector3 position;
+        public Vector2 position;
     }
 }
