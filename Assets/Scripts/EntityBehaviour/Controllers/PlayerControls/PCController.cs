@@ -9,10 +9,8 @@ public class PCController : IController
 
     }
 
-    public Vector2 GetMove()
-    {
-        return GData.GInput.Gameplay.Movement.ReadValue<Vector2>();
-    }
+    public Vector2 GetMove() => GData.GInput.Gameplay.Movement.ReadValue<Vector2>();
+
 
     public void GetJump()
     {

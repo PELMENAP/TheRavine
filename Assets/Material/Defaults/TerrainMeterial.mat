@@ -97,5 +97,6 @@ Material:
     - _Tile: 0.5
     - _Voronoi: 0.02
     - _WaterHeight: 0
+    - _strength: 0
     m_Colors: []
   m_BuildTextureStacks: []

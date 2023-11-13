@@ -5,10 +5,8 @@ public static class Noise
 
     public enum NormalizeMode { Local, Global };
 
-    public static float[,] GenerateNoiseMap(int mapWidth, int mapHeight, int seed, float scale, int octaves, float persistance, float lacunarity, Vector2 offset, NormalizeMode normalizeMode)
+    public static void GenerateNoiseMap(ref float[,] noiseMap, int mapChunkSize, int seed, float scale, int octaves, float persistance, float lacunarity, Vector2 offset, NormalizeMode normalizeMode)
     {
-        float[,] noiseMap = new float[mapWidth, mapHeight];
-
         System.Random prng = new System.Random(seed);
         Vector2[] octaveOffsets = new Vector2[octaves];
 
@@ -18,9 +16,7 @@ public static class Noise
 
         for (int i = 0; i < octaves; i++)
         {
-            float offsetX = prng.Next(-100000, 100000) + offset.x;
-            float offsetY = prng.Next(-100000, 100000) - offset.y;
-            octaveOffsets[i] = new Vector2(offsetX, offsetY);
+            octaveOffsets[i] = new Vector2(prng.Next(-100000, 100000) + offset.x, prng.Next(-100000, 100000) - offset.y);
 
             maxPossibleHeight += amplitude;
             amplitude *= persistance;
@@ -34,13 +30,13 @@ public static class Noise
         float maxLocalNoiseHeight = float.MinValue;
         float minLocalNoiseHeight = float.MaxValue;
 
-        float halfWidth = mapWidth / 2f;
-        float halfHeight = mapHeight / 2f;
+        float halfWidth = mapChunkSize / 2f;
+        float halfHeight = mapChunkSize / 2f;
 
 
-        for (int y = 0; y < mapHeight; y++)
+        for (int y = 0; y < mapChunkSize; y++)
         {
-            for (int x = 0; x < mapWidth; x++)
+            for (int x = 0; x < mapChunkSize; x++)
             {
 
                 amplitude = 1;
@@ -71,9 +67,9 @@ public static class Noise
             }
         }
 
-        for (int y = 0; y < mapHeight; y++)
+        for (int y = 0; y < mapChunkSize; y++)
         {
-            for (int x = 0; x < mapWidth; x++)
+            for (int x = 0; x < mapChunkSize; x++)
             {
                 if (normalizeMode == NormalizeMode.Local)
                 {
@@ -86,8 +82,6 @@ public static class Noise
                 }
             }
         }
-
-        return noiseMap;
     }
 
 }

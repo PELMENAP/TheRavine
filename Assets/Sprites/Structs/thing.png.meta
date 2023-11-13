@@ -20,11 +20,12 @@ TextureImporter:
     externalNormalMap: 0
     heightScale: 0.25
     normalMapFilter: 0
+    flipGreenChannel: 0
   isReadable: 1
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   vTOnly: 0
-  ignoreMasterTextureLimit: 0
+  ignoreMipmapLimit: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
   cubemapConvolution: 0
@@ -63,11 +64,12 @@ TextureImporter:
   textureFormatSet: 0
   ignorePngGamma: 0
   applyGammaDecoding: 0
+  swizzle: 50462976
   cookieLightType: 0
   platformSettings:
   - serializedVersion: 3
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 1024
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -640,43 +642,42 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      thing_6: 1157330087
       thing_0: 1536964852
-      thing_11: -1061070943
-      thing_32: -1855716129
-      thing_15: -1442417430
-      thing_30: 535215416
-      thing_33: -2031658443
-      thing_7: -946467561
-      thing_8: -1831744820
-      thing_10: 424206344
-      thing_26: 2140870058
-      thing_24: -1551819893
-      thing_18: 178018523
-      thing_21: 373508306
-      thing_23: 605634512
-      thing_22: 587365103
-      thing_17: 891385090
-      thing_3: -1236431370
-      thing_2: 935358272
-      thing_13: -376282639
-      thing_20: 1740761180
-      thing_14: 1550234369
-      thing_29: -1305200577
-      thing_5: 2023491020
-      thing_12: 843371871
       thing_1: -678204666
+      thing_10: 424206344
+      thing_11: -1061070943
+      thing_12: 843371871
+      thing_13: -376282639
+      thing_14: 1550234369
+      thing_15: -1442417430
       thing_16: -1627074099
+      thing_17: 891385090
+      thing_18: 178018523
       thing_19: -1924166649
+      thing_2: 935358272
+      thing_20: 1740761180
+      thing_21: 373508306
+      thing_22: 587365103
+      thing_23: 605634512
+      thing_24: -1551819893
+      thing_25: -307333775
+      thing_26: 2140870058
       thing_27: 1622304795
       thing_28: 611186553
-      thing_9: -1368981285
+      thing_29: -1305200577
+      thing_3: -1236431370
+      thing_30: 535215416
       thing_31: -96905321
+      thing_32: -1855716129
+      thing_33: -2031658443
       thing_4: -1987451455
-      thing_25: -307333775
-  spritePackingTag: 
+      thing_5: 2023491020
+      thing_6: 1157330087
+      thing_7: -946467561
+      thing_8: -1831744820
+      thing_9: -1368981285
+  mipmapLimitGroupName: 
   pSDRemoveMatte: 0
-  pSDShowRemoveMatteOption: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 

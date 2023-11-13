@@ -55,7 +55,7 @@ public class EndlessTerrainOld : MonoBehaviour
         objusenumUpdate = new int[objuseLength];
         for (int i = 0; i < objuseLength; i++)
         {
-            PoolManager.inst.CreatePool(objuse[i], objusenum[i]);
+            //PoolManager.inst.CreatePool(objuse[i], objusenum[i]);
         }
         viewerPosition = new Vector2(-viewer.position.x - 50f, viewer.position.y + 50f) / scale;
         StartCoroutine(UpdateVisibleChunks());
@@ -100,7 +100,7 @@ public class EndlessTerrainOld : MonoBehaviour
                     objusenumUpdate[j] += terrainChunkDictionary[terrainChunksVisibleUpdate[i]].numLand[j];
                     if (objusenumUpdate[j] > objusenum[j])
                     {
-                        PoolManager.inst.CreatePool(objuse[j], objusenumUpdate[j] - objusenum[j]);
+                        //PoolManager.inst.CreatePool(objuse[j], objusenumUpdate[j] - objusenum[j]);
                         objusenum[j] = objusenumUpdate[j];
                     }
                 }
@@ -108,11 +108,11 @@ public class EndlessTerrainOld : MonoBehaviour
                 {
                     if (loosers.Contains(item.Key))
                     {
-                        PoolManager.inst.ReuseObjectToPosition(objuse[item.Value].GetInstanceID(), item.Key);
+                        //PoolManager.inst.ReuseObjectToPosition(objuse[item.Value].GetInstanceID(), item.Key);
                     }
                     else
                     {
-                        PoolManager.inst.ReuseObjectToPosition(objuse[item.Value].GetInstanceID(), item.Key);
+                        //PoolManager.inst.ReuseObjectToPosition(objuse[item.Value].GetInstanceID(), item.Key);
                     }
                 }
                 terrainChunkDictionary[terrainChunksVisibleUpdate[i]].SetTerrain(true);
@@ -251,8 +251,8 @@ public class EndlessTerrainOld : MonoBehaviour
             if (-pos.x >= 200 || -pos.x <= -200 || pos.y >= 200 || pos.y <= -200)
                 return;
             MapData mapData = EndlessTerrainOld.instance.mapGenerator.GetMapData(new Vector2(-pos.x, pos.y));
-            if (EndlessTerrainOld.instance.drawMap)
-                mapFragment.GetComponent<SpriteRenderer>().sprite = Sprite.Create(TextureGenerator.TextureFromColourMap(mapData.colourMap, chunkSize, chunkSize), new Rect(0, 0, chunkSize, chunkSize), new Vector2(0.5f, 0.5f));
+            // if (EndlessTerrainOld.instance.drawMap)
+            //     mapFragment.GetComponent<SpriteRenderer>().sprite = Sprite.Create(TextureGenerator.TextureFromColourMap(mapData.colourMap, chunkSize, chunkSize), new Rect(0, 0, chunkSize, chunkSize), new Vector2(0.5f, 0.5f));
             if (EndlessTerrainOld.instance.placeObj)
                 PlaceObject(mapData.objectMap, mapData.heightMap, new Vector2(pos.x, pos.y) * scale, parent);
         }

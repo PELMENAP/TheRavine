@@ -21,7 +21,7 @@ TextureImporter:
       213: -7109089566699471895
     second: andgb_ooze_5
   externalObjects: {}
-  serializedVersion: 11
+  serializedVersion: 12
   mipmaps:
     mipMapMode: 0
     enableMipMap: 0
@@ -38,11 +38,12 @@ TextureImporter:
     externalNormalMap: 0
     heightScale: 0.25
     normalMapFilter: 0
+    flipGreenChannel: 0
   isReadable: 0
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   vTOnly: 0
-  ignoreMasterTextureLimit: 0
+  ignoreMipmapLimit: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
   cubemapConvolution: 0
@@ -81,10 +82,12 @@ TextureImporter:
   textureFormatSet: 0
   ignorePngGamma: 0
   applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 1
   platformSettings:
   - serializedVersion: 3
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 1024
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -270,15 +273,14 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      andgb_ooze_3: 67811758457359032
-      andgb_ooze_4: 8218354142301088570
       andgb_ooze_0: -2153985985726560839
       andgb_ooze_1: 223828164841906157
       andgb_ooze_2: 5820478279979751503
+      andgb_ooze_3: 67811758457359032
+      andgb_ooze_4: 8218354142301088570
       andgb_ooze_5: -7109089566699471895
-  spritePackingTag: 
+  mipmapLimitGroupName: 
   pSDRemoveMatte: 0
-  pSDShowRemoveMatteOption: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 
