@@ -64,21 +64,21 @@ Material:
     m_Floats:
     - _Alpha: 0.5
     - _NoisePower: 0.001
-    - _NoiseScale: 10
+    - _NoiseScale: 1
     - _NormalPower: 0.1
     - _PenaEffect: 1
     - _Power: -9.86
     - _QueueControl: 0
     - _QueueOffset: 0
     - _Refraction: -150
-    - _SizePena: 0.5
+    - _SizePena: 1
     - _SkySpeed: 0.1
     - _Tiling: 0
     - _TurbulencesStrength: 1
-    - _WaterSpeed: 0.1
+    - _WaterSpeed: 0.3
     m_Colors:
-    - _Color: {r: 0.14039803, g: 0.24812947, b: 0.4080943, a: 1}
-    - _PatternSizeReduction: {r: 2, g: 2, b: 0, a: 0}
+    - _Color: {r: 0.14117648, g: 0.24705882, b: 0.40784314, a: 1}
+    - _PatternSizeReduction: {r: 1, g: 1, b: 0, a: 0}
     - _SkyDirection: {r: -0.01, g: 0, b: 0, a: 0}
     - _Tiling: {r: -0.98, g: -0.98, b: 0, a: 0}
     - _TilingNoise: {r: -0.9, g: -0.9, b: 0, a: 0}

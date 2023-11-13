@@ -20,11 +20,12 @@ TextureImporter:
     externalNormalMap: 0
     heightScale: 0.25
     normalMapFilter: 0
+    flipGreenChannel: 0
   isReadable: 0
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   vTOnly: 0
-  ignoreMasterTextureLimit: 0
+  ignoreMipmapLimit: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
   cubemapConvolution: 0
@@ -63,11 +64,12 @@ TextureImporter:
   textureFormatSet: 0
   ignorePngGamma: 0
   applyGammaDecoding: 0
+  swizzle: 50462976
   cookieLightType: 1
   platformSettings:
   - serializedVersion: 3
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 1024
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -715,45 +717,44 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      menu_button_4: -802444518
-      menu_button_17: -1516517819
-      menu_button_34: -1241454320
       menu_button_0: 509811968
-      menu_button_33: -704963675
+      menu_button_1: -526923082
+      menu_button_10: 900121243
+      menu_button_11: 917687778
+      menu_button_12: 290751072
+      menu_button_13: -1736776363
+      menu_button_14: 1505954607
+      menu_button_15: 1248844484
+      menu_button_16: -280151790
+      menu_button_17: -1516517819
+      menu_button_18: -1857465614
       menu_button_19: -898610753
       menu_button_2: 72802412
-      menu_button_7: 654482878
-      menu_button_14: 1505954607
-      menu_button_35: 145659940
-      menu_button_28: -916474769
-      menu_button_13: -1736776363
-      menu_button_32: 2124213766
-      menu_button_12: 290751072
-      menu_button_6: 1853336199
-      menu_button_25: -663646022
-      menu_button_1: -526923082
-      menu_button_3: 1350087269
-      menu_button_10: 900121243
-      menu_button_31: -7639494
-      menu_button_5: 42821290
-      menu_button_27: -1028465476
-      menu_button_24: 1480193484
-      menu_button_15: 1248844484
-      menu_button_29: -1223106471
-      menu_button_30: 427617902
-      menu_button_21: 1498407120
-      menu_button_26: 1007326098
-      menu_button_8: -922947349
       menu_button_20: -959072867
-      menu_button_11: 917687778
+      menu_button_21: 1498407120
       menu_button_22: 124086316
-      menu_button_16: -280151790
-      menu_button_9: 83107553
-      menu_button_18: -1857465614
       menu_button_23: 1904578537
-  spritePackingTag: 
+      menu_button_24: 1480193484
+      menu_button_25: -663646022
+      menu_button_26: 1007326098
+      menu_button_27: -1028465476
+      menu_button_28: -916474769
+      menu_button_29: -1223106471
+      menu_button_3: 1350087269
+      menu_button_30: 427617902
+      menu_button_31: -7639494
+      menu_button_32: 2124213766
+      menu_button_33: -704963675
+      menu_button_34: -1241454320
+      menu_button_35: 145659940
+      menu_button_4: -802444518
+      menu_button_5: 42821290
+      menu_button_6: 1853336199
+      menu_button_7: 654482878
+      menu_button_8: -922947349
+      menu_button_9: 83107553
+  mipmapLimitGroupName: 
   pSDRemoveMatte: 0
-  pSDShowRemoveMatteOption: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 

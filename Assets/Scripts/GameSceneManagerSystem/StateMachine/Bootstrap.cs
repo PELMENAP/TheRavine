@@ -6,6 +6,7 @@ public class Bootstrap : MonoBehaviour
 {
     public StateMachine<Bootstrap> StateMachine { get; private set; }
 
+    [SerializeField] private ObjectInstance[] objectInstances;
     [SerializeField] private InsObject[] instanceObjects;
     [SerializeField] private Camera _camera;
     [SerializeField] private DayCycle sun;
@@ -61,7 +62,7 @@ public class Bootstrap : MonoBehaviour
         {
             if (instanceObjects[i].gameObject == null)
                 continue;
-            PoolManager.inst.CreatePool(instanceObjects[i].gameObject, 5);
+            // ObjectSystem.inst.PoolManagerBase.CreatePool(instanceObjects[i].gameObject, 5);
         }
     }
 
@@ -69,7 +70,7 @@ public class Bootstrap : MonoBehaviour
     {
         if ((i + 1) > instanceObjects.Length || instanceObjects[i].gameObject == null)
             return;
-        PoolManager.inst.ReuseObjectToPosition(instanceObjects[i].gameObject.GetInstanceID(), instanceObjects[i].position);
+        //PoolManager.inst.ReuseObjectToPosition(instanceObjects[i].gameObject.GetInstanceID(), instanceObjects[i].position);
     }
 
     public void StartGame()

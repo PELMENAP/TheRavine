@@ -6,7 +6,7 @@ using System;
 
 public class UIInventory : MonoBehaviour
 {
-    [SerializeField] private GameObject grid, activeBar, buttons, inputField;
+    [SerializeField] private GameObject grid;
     [SerializeField] private bool filling;
     [SerializeField] private UIInventorySlot[] activeCells, craftCells;
     [SerializeField] private UIInventorySlot result;
@@ -21,31 +21,25 @@ public class UIInventory : MonoBehaviour
     private void Start()
     {
         var uiSlot = GetComponentsInChildren<UIInventorySlot>();
+        var slotList = new List<UIInventorySlot>();
+        slotList.AddRange(uiSlot);
+        slotList.AddRange(activeCells);
         // var uiSlotBar = activeBar.GetComponentsInChildren<UIInventorySlot>();
         // // uiSlot = uiSlot.Concat(uiSlotBar).ToArray();
-        tester = new UIInventoryTester(uiSlot);
+        tester = new UIInventoryTester(slotList.ToArray());
         tester.FillSlots(filling);
         inventory.OnInventoryStateChangedEvent += OnInventoryStateChanged;
         CraftInfo = InfoManager.GetAllCraftRecepts();
         isActive = false;
         grid.SetActive(isActive);
-        activeBar.SetActive(isActive);
-        buttons.SetActive(isActive);
-        inputField.SetActive(isActive);
         PlayerData.instance.placeObject += PlaceObject;
         PlayerData.instance.aimRaise += AimRaise;
-        StartCoroutine(SetUpCanvas());
     }
 
-    private IEnumerator SetUpCanvas()
-    {
-        yield return new WaitForSeconds(3f);
-        activeBar.SetActive(true);
-        yield return new WaitForSeconds(3f);
-        buttons.SetActive(true);
-        yield return new WaitForSeconds(3f);
-        inputField.SetActive(true);
-    }
+    // private IEnumerator SetUpCanvas()
+    // {
+    //     yield return new WaitForSeconds(3f);
+    // }
 
     private void Update()
     {
@@ -85,27 +79,19 @@ public class UIInventory : MonoBehaviour
 
     private void PlaceObject(Vector3 position)
     {
-        try
-        {
-            IInventorySlot slot = activeCells[activeCell - 1].slot;
-            if (!slot.isEmpty)
-            {
-                IInventoryItem item = activeCells[activeCell - 1]._uiInventoryItem.item;
-                // print(item.state.amount);
-                ObjectInstance objectToUse = PoolManager.inst.GetObjectByID(item.info.prefab.GetInstanceID());
-                if (PoolManager.inst.SetObjectByPosition(new Vector2(position.x, position.y), item.info.id, 1, objectToUse))
-                {
-                    item.state.amount--;
-                    if (slot.amount <= 0)
-                        slot.Clear();
-                    activeCells[activeCell - 1].Refresh();
-                }
-            }
-        }
-        catch
-        {
+        IInventorySlot slot = activeCells[activeCell - 1].slot;
+        if (slot.isEmpty)
+            return;
+        IInventoryItem item = activeCells[activeCell - 1]._uiInventoryItem.item;
+        // print(item.state.amount);
+        // if (PoolManager.inst.SetObjectByPosition(new Vector2(position.x, position.y), item.info.id, 1, item.info.prefab.GetInstanceID()))
+        // {
+        //     item.state.amount--;
+        //     if (slot.amount <= 0)
+        //         slot.Clear();
+        //     activeCells[activeCell - 1].Refresh();
+        // }
 
-        }
     }
 
     [SerializeField] private string[] names = new string[8], sortedNames, sortedIngr;
@@ -168,39 +154,13 @@ public class UIInventory : MonoBehaviour
 
     private void AimRaise(Vector3 position)
     {
-        Triple<string, int, ObjectInstance> triple = PoolManager.inst.GetObjectByPosition(new Vector2(position.x, position.y));
-        if (triple != null)
-        {
-            IInventoryItem item = InfoManager.GetInventoryItem(triple.First, triple.Second);
-            inventory.TryToAdd(triple.Third.gameObject, item);
-            PoolManager.inst.SetObjectByPosition(new Vector2(position.x, position.y), triple.First, -triple.Second, triple.Third);
-        }
-        // GameObject pickedObject;
-        // for (int i = 0; i < hits.Length; i++)
-        // {
-        //     pickedObject = hits[i].collider.gameObject;
-        //     if(pickedObject.CompareTag("Player"))
-        //         continue;
-        //     PickUpRequire component = pickedObject.GetComponent<PickUpRequire>();
-        //     if(component != null)
-        //     {
-        //         IInventoryItem item = InfoManager.GetInventoryItem(component.id, component.itemInfo, component.amount);
-        //         inventory.TryToAdd(pickedObject, item);
-        //         try
-        //         {
-        //             // EndlessTerrain.instance.loosers.Add(new Vector2(pickedObject.transform.position.x, pickedObject.transform.position.y));
-        //             pickedObject.SetActive(false);
-        //         }
-        //         catch
-        //         {
-        //         }
-        //         Destroy(pickedObject);
-        //         break;
-        //     }
-        //     else
-        //     {
-        //         throw new Exception("There's no pickable component");
-        //     }
-        // }
+        // Triple<string, int, ObjectInstance> triple = PoolManager.inst.GetObjectByPosition(new Vector2(position.x, position.y));
+        // if (triple == null)
+        //     return;
+        // IInventoryItem item = InfoManager.GetInventoryItem(triple.First, triple.Second);
+        // if (item == null)
+        //     return;
+        // inventory.TryToAdd(triple.Third.gameObject, item);
+        // PoolManager.inst.SetObjectByPosition(new Vector2(position.x, position.y), triple.First, -triple.Second, triple.Third);
     }
 }

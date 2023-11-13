@@ -27,7 +27,7 @@ TextureImporter:
       213: -8484211296486739956
     second: effect2_7
   externalObjects: {}
-  serializedVersion: 11
+  serializedVersion: 12
   mipmaps:
     mipMapMode: 0
     enableMipMap: 0
@@ -44,11 +44,12 @@ TextureImporter:
     externalNormalMap: 0
     heightScale: 0.25
     normalMapFilter: 0
+    flipGreenChannel: 0
   isReadable: 0
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   vTOnly: 0
-  ignoreMasterTextureLimit: 0
+  ignoreMipmapLimit: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
   cubemapConvolution: 0
@@ -87,10 +88,12 @@ TextureImporter:
   textureFormatSet: 0
   ignorePngGamma: 0
   applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 1
   platformSettings:
   - serializedVersion: 3
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 64
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -294,17 +297,16 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
+      effect2_0: -7158813693357147371
+      effect2_1: 861048366620365521
       effect2_2: 7981864427885111977
       effect2_3: -3073226149826396484
       effect2_4: 4502179582117627898
+      effect2_5: 2938470570783865546
       effect2_6: -6359402688530946091
       effect2_7: -8484211296486739956
-      effect2_5: 2938470570783865546
-      effect2_0: -7158813693357147371
-      effect2_1: 861048366620365521
-  spritePackingTag: 
+  mipmapLimitGroupName: 
   pSDRemoveMatte: 0
-  pSDShowRemoveMatteOption: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 

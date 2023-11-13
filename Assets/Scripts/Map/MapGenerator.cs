@@ -5,12 +5,20 @@ using NaughtyAttributes;
 
 public class MapGenerator : MonoBehaviour
 {
-    public Dictionary<Vector2, ChunkData> mapData = new Dictionary<Vector2, ChunkData>();
+    private Dictionary<Vector2, ChunkData> mapData = new Dictionary<Vector2, ChunkData>();
+
+    public ChunkData GetMapData(Vector2 position)
+    {
+        if (!mapData.ContainsKey(position))
+            mapData[position] = GenerateMapData(position);
+        return mapData[position];
+    }
     public Transform terrainT, waterT;
     public MeshFilter terrainF, waterF;
     public int seed;
     public const int mapChunkSize = 16, chunkCount = 3, scale = 5, generationSize = scale * mapChunkSize, waterLevel = 1;
-    public const float sqrViewerMoveThresholdForChunkUpdate = 40f;
+    public const float sqrViewerMoveThresholdForChunkUpdate = 100f;
+    public static Vector2 vectorOffset = new Vector2(generationSize, generationSize) / 2;
     public Vector3 rotation;
     [SerializeField] private float noiseScale;
     [SerializeField] private int octaves;
@@ -24,7 +32,21 @@ public class MapGenerator : MonoBehaviour
     [Button]
     private void Test()
     {
-        SetUp();
+        if (endlessFlag[0])
+            endless.Add(new EndlessTerrain(this));
+        if (endlessFlag[1])
+            endless.Add(new EndlessLiquids(this));
+        // if (endlessFlag[2])
+        //     endless.Add(new EndlessObjects(this));
+        Vector2 centre;
+        for (int i = -20; i < 20; i++)
+        {
+            for (int j = -20; j < 20; j++)
+            {
+                centre = new Vector2(-i, j);
+                mapData[centre] = GenerateMapData(centre);
+            }
+        }
         Vector3 position = new Vector3(viewer.position.x, viewer.position.y, 0) / (scale * mapChunkSize);
         foreach (var generator in endless)
             generator.UpdateChunk(position);
@@ -48,24 +70,27 @@ public class MapGenerator : MonoBehaviour
                 mapData[centre] = GenerateMapData(centre);
             }
         }
-        position = new Vector3(viewer.position.x, viewer.position.y, 0) / (scale * mapChunkSize);
         foreach (var generator in endless)
+        {
             generator.UpdateChunk(position);
+        }
         StartCoroutine(GenerationUpdate());
     }
 
-    private float[,] noiseMap;
-    private Color[] colourMap;
-    private int[,] heightMap;
+    private float[,] noiseMap = new float[mapChunkSize, mapChunkSize];
+    private int[] countOfHeights = new int[9];
+    bool isEqual;
+    float currentHeight;
     public ChunkData GenerateMapData(Vector2 centre)
     {
-        noiseMap = Noise.GenerateNoiseMap(mapChunkSize, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, centre * mapChunkSize, Noise.NormalizeMode.Global);
-        colourMap = new Color[mapChunkSize * mapChunkSize];
-        heightMap = new int[mapChunkSize, mapChunkSize];
-        float currentHeight;
-        for (int y = 0; y < mapChunkSize; y++)
+        Dictionary<Vector2, GameObject> objectsToInst = new Dictionary<Vector2, GameObject>();
+        Color[] colourMap = new Color[mapChunkSize * mapChunkSize];
+        int[,] heightMap = new int[mapChunkSize, mapChunkSize];
+        Noise.GenerateNoiseMap(ref noiseMap, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, centre * mapChunkSize, Noise.NormalizeMode.Global);
+        isEqual = true;
+        for (int x = 0; x < mapChunkSize; x++)
         {
-            for (int x = 0; x < mapChunkSize; x++)
+            for (int y = 0; y < mapChunkSize; y++)
             {
                 currentHeight = noiseMap[x, y];
                 for (int i = 0; i < regions.Length; i++)
@@ -78,25 +103,41 @@ public class MapGenerator : MonoBehaviour
                     else
                         break;
                 }
+                if (heightMap[x, y] != heightMap[0, 0])
+                    isEqual = false;
+                for (int i = 0; i < regions[heightMap[x, y]].objects.Length; i++)
+                {
+                    if ((x * y + (int)centre.x * centre.y + seed % 100) % regions[heightMap[x, y]].objects[i].Chance == 0)
+                    {
+                        objectsToInst[new Vector2(x, y)] = regions[heightMap[x, y]].objects[i].Prefab;
+                        break;
+                    }
+                }
             }
         }
-        return new ChunkData(noiseMap, colourMap, heightMap, centre);
+        return new ChunkData(colourMap, heightMap, centre, isEqual, objectsToInst);
     }
+
+
 
     private Vector3 OldVposition, position;
     private IEnumerator GenerationUpdate()
     {
-        if ((OldVposition - viewer.position).sqrMagnitude > sqrViewerMoveThresholdForChunkUpdate)
+        while (true)
         {
-            OldVposition = viewer.position;
-            position = new Vector3(viewer.position.x, viewer.position.y, 0) / (scale * mapChunkSize);
-            foreach (var generator in endless)
+            if (Vector3.Distance(OldVposition, viewer.position) > sqrViewerMoveThresholdForChunkUpdate)
             {
-                yield return new WaitForFixedUpdate();
-                generator.UpdateChunk(position);
+                OldVposition = viewer.position;
+                position = new Vector3(viewer.position.x, viewer.position.y, 0) / (scale * mapChunkSize);
+                foreach (var generator in endless)
+                {
+                    yield return new WaitForFixedUpdate();
+                    generator.UpdateChunk(position);
+                }
+                print("update");
             }
+            yield return new WaitForFixedUpdate();
         }
-        yield return new WaitForFixedUpdate();
     }
 }
 
@@ -105,20 +146,35 @@ public struct TerrainType
 {
     public float height;
     public Color colour;
-
+    public ObjectInfo[] objects;
 }
 
+[System.Serializable]
+public struct ObjectInfo
+{
+    public int Chance;
+    public GameObject Prefab;
+    public InstanceType Itype;
+}
+public enum InstanceType
+{
+    Static,
+    Inter
+}
 public struct ChunkData
 {
-    public readonly float[,] noiseMap;
     public readonly Color[] colourMap;
     public readonly int[,] heightMap;
     public readonly Vector2 centre;
-    public ChunkData(float[,] noiseMap, Color[] colourMap, int[,] heightMap, Vector2 centre)
+    public readonly bool isEqual;
+    public readonly Dictionary<Vector2, GameObject> objectsToInst;
+
+    public ChunkData(Color[] colourMap, int[,] heightMap, Vector2 centre, bool isEqual, Dictionary<Vector2, GameObject> objectsToInst)
     {
-        this.noiseMap = noiseMap;
         this.colourMap = colourMap;
         this.heightMap = heightMap;
         this.centre = centre;
+        this.isEqual = isEqual;
+        this.objectsToInst = objectsToInst;
     }
 }
