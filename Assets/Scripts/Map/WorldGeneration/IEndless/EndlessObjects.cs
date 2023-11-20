@@ -4,8 +4,7 @@ using UnityEngine;
 public class EndlessObjects : IEndless
 {
     private MapGenerator generator;
-    private const int chunkCount = MapGenerator.chunkCount, mapChunkSize = MapGenerator.mapChunkSize;
-    private int scale = MapGenerator.scale, generationSize = MapGenerator.generationSize;
+    private const int chunkCount = MapGenerator.chunkCount;
     private Vector2 vectorOffset = MapGenerator.vectorOffset;
     private List<Vector2> terrainChunksVisibleUpdate = new List<Vector2>(chunkCount * chunkCount);
     private List<Vector2> terrainChunksVisibleLastUpdate = new List<Vector2>(chunkCount * chunkCount);
@@ -14,7 +13,7 @@ public class EndlessObjects : IEndless
         generator = _generator;
     }
     private int currentChunkCoordX, currentChunkCoordY;
-    private Dictionary<Vector2, GameObject> map;
+    private Dictionary<Vector2, int> map;
     public void UpdateChunk(Vector3 Vposition)
     {
         currentChunkCoordX = Mathf.RoundToInt(Vposition.x);
@@ -24,15 +23,18 @@ public class EndlessObjects : IEndless
         {
             for (int xOffset = 0; xOffset < chunkCount; xOffset++)
             {
-                Vector3 chunkCoord = new Vector2(currentChunkCoordX + xOffset, currentChunkCoordY + yOffset);
+                Vector2 chunkCoord = new Vector2(currentChunkCoordX + xOffset, currentChunkCoordY + yOffset);
                 terrainChunksVisibleUpdate.Add(chunkCoord);
-                if (terrainChunksVisibleLastUpdate.Contains(chunkCoord))
-                    continue;
+                // if (terrainChunksVisibleLastUpdate.Contains(chunkCoord))
+                //     continue;
                 map = generator.GetMapData(new Vector2(-chunkCoord.x, chunkCoord.y)).objectsToInst;
                 foreach (var item in map)
                 {
-                    Vector2 posobj = new Vector2(chunkCoord.x * generationSize + -item.Key.x * scale, chunkCoord.y * generationSize + -item.Key.y * scale) - vectorOffset;
-                    ObjectSystem.inst.InstantiatePoolByPosition(posobj, item.Value);
+                    if (ObjectSystem.inst.Changed(item.Key))
+                        continue;
+                    ObjectSystem.inst.Reuse(item.Value, item.Key);
+                    // ObjectSystem.inst.PoolManagerBase.Reuse(item.Value, posobj);
+                    // ObjectSystem.inst.InstantiatePoolByPosition(posobj, item.Value);
                 }
                 countOfIteration++;
             }

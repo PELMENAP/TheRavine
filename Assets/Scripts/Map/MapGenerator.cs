@@ -17,7 +17,7 @@ public class MapGenerator : MonoBehaviour
     public MeshFilter terrainF, waterF;
     public int seed;
     public const int mapChunkSize = 16, chunkCount = 3, scale = 5, generationSize = scale * mapChunkSize, waterLevel = 1;
-    public const float sqrViewerMoveThresholdForChunkUpdate = 100f;
+    public const float sqrViewerMoveThresholdForChunkUpdate = 60f;
     public static Vector2 vectorOffset = new Vector2(generationSize, generationSize) / 2;
     public Vector3 rotation;
     [SerializeField] private float noiseScale;
@@ -28,6 +28,11 @@ public class MapGenerator : MonoBehaviour
     [SerializeField] private Transform viewer;
     [SerializeField] private bool[] endlessFlag;
     private List<IEndless> endless = new List<IEndless>();
+
+    // private void Start()
+    // {
+    //     SetUp();
+    // }
 
     [Button]
     private void Test()
@@ -51,8 +56,6 @@ public class MapGenerator : MonoBehaviour
         foreach (var generator in endless)
             generator.UpdateChunk(position);
     }
-
-    public GameObject prefab;
     public void SetUp()
     {
         if (endlessFlag[0])
@@ -83,7 +86,7 @@ public class MapGenerator : MonoBehaviour
     float currentHeight;
     public ChunkData GenerateMapData(Vector2 centre)
     {
-        Dictionary<Vector2, GameObject> objectsToInst = new Dictionary<Vector2, GameObject>();
+        Dictionary<Vector2, int> objectsToInst = new Dictionary<Vector2, int>();
         Color[] colourMap = new Color[mapChunkSize * mapChunkSize];
         int[,] heightMap = new int[mapChunkSize, mapChunkSize];
         Noise.GenerateNoiseMap(ref noiseMap, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, centre * mapChunkSize, Noise.NormalizeMode.Global);
@@ -107,9 +110,15 @@ public class MapGenerator : MonoBehaviour
                     isEqual = false;
                 for (int i = 0; i < regions[heightMap[x, y]].objects.Length; i++)
                 {
-                    if ((x * y + (int)centre.x * centre.y + seed % 100) % regions[heightMap[x, y]].objects[i].Chance == 0)
+                    ObjectInfoGeneration info = regions[heightMap[x, y]].objects[i];
+                    if ((x * y + (int)centre.x * centre.y + seed % 100) % info.Chance == 0)
                     {
-                        objectsToInst[new Vector2(x, y)] = regions[heightMap[x, y]].objects[i].Prefab;
+                        Vector2 posobj = new Vector2(centre.x * generationSize + (mapChunkSize - y) * scale, centre.y * generationSize + x * scale);
+                        Vector2 curposobj = new Vector2(-posobj.x, posobj.y) - 2 * vectorOffset;
+                        int id = info.Prefab.GetInstanceID();
+                        objectsToInst[curposobj] = id;
+                        PrefabInfo prInfo = ObjectSystem.inst.GetPrefabInfo(id);
+                        ObjectSystem.inst.AddToGlobal(curposobj, prInfo.name, prInfo.amount, prInfo.type);
                         break;
                     }
                 }
@@ -146,15 +155,14 @@ public struct TerrainType
 {
     public float height;
     public Color colour;
-    public ObjectInfo[] objects;
+    public ObjectInfoGeneration[] objects;
 }
 
 [System.Serializable]
-public struct ObjectInfo
+public struct ObjectInfoGeneration
 {
     public int Chance;
     public GameObject Prefab;
-    public InstanceType Itype;
 }
 public enum InstanceType
 {
@@ -167,9 +175,9 @@ public struct ChunkData
     public readonly int[,] heightMap;
     public readonly Vector2 centre;
     public readonly bool isEqual;
-    public readonly Dictionary<Vector2, GameObject> objectsToInst;
+    public readonly Dictionary<Vector2, int> objectsToInst;
 
-    public ChunkData(Color[] colourMap, int[,] heightMap, Vector2 centre, bool isEqual, Dictionary<Vector2, GameObject> objectsToInst)
+    public ChunkData(Color[] colourMap, int[,] heightMap, Vector2 centre, bool isEqual, Dictionary<Vector2, int> objectsToInst)
     {
         this.colourMap = colourMap;
         this.heightMap = heightMap;
