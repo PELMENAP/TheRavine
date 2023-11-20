@@ -163,4 +163,11 @@ public class UIInventory : MonoBehaviour
         // inventory.TryToAdd(triple.Third.gameObject, item);
         // PoolManager.inst.SetObjectByPosition(new Vector2(position.x, position.y), triple.First, -triple.Second, triple.Third);
     }
+
+    private void OnDisable()
+    {
+        inventory.OnInventoryStateChangedEvent -= OnInventoryStateChanged;
+        PlayerData.instance.placeObject -= PlaceObject;
+        PlayerData.instance.aimRaise -= AimRaise;
+    }
 }

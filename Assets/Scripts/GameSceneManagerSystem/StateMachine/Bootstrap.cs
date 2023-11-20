@@ -5,8 +5,6 @@ using UnityEngine.Rendering.Universal;
 public class Bootstrap : MonoBehaviour
 {
     public StateMachine<Bootstrap> StateMachine { get; private set; }
-
-    [SerializeField] private ObjectInstance[] objectInstances;
     [SerializeField] private InsObject[] instanceObjects;
     [SerializeField] private Camera _camera;
     [SerializeField] private DayCycle sun;

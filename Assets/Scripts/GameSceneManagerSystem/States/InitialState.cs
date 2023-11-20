@@ -15,7 +15,6 @@ public class InitialState : IState<Bootstrap>, IEnterable, IExitable, ITickable
 
     public void OnEnter()
     {
-        Initializer.StartGenerator();
         FaderOnTransit.instance.SetLogs("Загрузка ресурсов");
     }
 

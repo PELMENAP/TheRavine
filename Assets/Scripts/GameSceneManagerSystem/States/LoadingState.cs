@@ -17,12 +17,13 @@ public class LoadingState : IState<Bootstrap>, IEnterable, IExitable, ITickable
     public void OnEnter()
     {
         FaderOnTransit.instance.SetLogs("Создание сцены");
-        if(skipLoading)
+        if (skipLoading)
             Initializer.StateMachine.SwitchState<GameState>();
     }
 
     public void OnExit()
     {
+        Initializer.StartGenerator();
         FaderOnTransit.instance.SetLogs("Сцена создана");
     }
 
