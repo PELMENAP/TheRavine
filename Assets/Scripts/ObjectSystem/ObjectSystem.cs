@@ -6,18 +6,33 @@ using UnityEditor;
 
 public class ObjectSystem : MonoBehaviour
 {
+    public const int PoolSize = 50;
     public static ObjectSystem inst;
     [SerializeField] private GameObject[] _prefab;
     [SerializeField] private PrefabInfo[] _info;
-    private Dictionary<int, PrefabInfo> info = new Dictionary<int, PrefabInfo>();
+    private Dictionary<int, PrefabInfo> info = new Dictionary<int, PrefabInfo>(16);
     public PrefabInfo GetPrefabInfo(int id) => info[id];
-    private Dictionary<Vector2, ObjectInstInfo> global = new Dictionary<Vector2, ObjectInstInfo>();
+    //
+    private Dictionary<Vector2, ObjectInstInfo> global = new Dictionary<Vector2, ObjectInstInfo>(512);
+    public ObjectInstInfo GetGlobalObjectInfo(Vector2 position)
+    {
+        if (!global.ContainsKey(position))
+            return new ObjectInstInfo();
+        return global[position];
+    }
+    public bool AddToGlobal(Vector2 position, int _prefabID, string _name, int _amount, InstanceType _objectType)
+    {
+        if (global.ContainsKey(position))
+            return false;
+        global[position] = new ObjectInstInfo(_prefabID, _name, _amount, _objectType);
+        return true;
+    }
+    //
     private Dictionary<Vector2, ObjectInstInfo> changes = new Dictionary<Vector2, ObjectInstInfo>();
     public bool Changed(Vector2 position) => changes.ContainsKey(position);
     // private List<Transform> trans = new List<Transform>();
+    //
     private IPoolManager<GameObject> PoolManagerBase = new PoolManager();
-    public void AddToGlobal(Vector2 position, string _name, int _amount, InstanceType _objectType) => global[position] = new ObjectInstInfo(_name, _amount, _objectType);
-
     public void CreatePool(GameObject prefab, int poolSize) => PoolManagerBase.CreatePool(prefab, poolSize);
     public void Reuse(int prefabID, Vector2 position) => PoolManagerBase.Reuse(prefabID, position);
     private void Awake()
@@ -136,26 +151,18 @@ public class ObjectSystem : MonoBehaviour
     }
 }
 
-public class ObjectInstInfo
+public struct ObjectInstInfo
 {
-    private string name;
-    private int amount;
-    private InstanceType objectType;
-    public ObjectInstInfo(string _name, int _amount, InstanceType _objectType)
+    public string name { get; private set; }
+    public int amount;
+    public int prefabID { get; private set; }
+    public InstanceType objectType { get; private set; }
+    public ObjectInstInfo(int _prefabID = 0, string _name = "therivinetop", int _amount = 1, InstanceType _objectType = InstanceType.Static)
     {
         name = _name;
         amount = _amount;
+        prefabID = _prefabID;
         objectType = _objectType;
-    }
-    public string GetName() => name;
-    public int GetAmount() => amount;
-    public InstanceType GetObjectType() => objectType;
-    public bool SetAmount(int _amount)
-    {
-        amount += _amount;
-        if (amount < 0)
-            return false;
-        return true;
     }
 }
 

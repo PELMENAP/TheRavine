@@ -76,7 +76,7 @@ public class Test : MonoBehaviour
         }
         foreach (var item in map.objectsToInst)
         {
-            print(item.Key);
+            print(item);
         }
     }
 
@@ -97,9 +97,9 @@ public class Test : MonoBehaviour
         Vector2 playerPos = RoundVector(new Vector2(viewer.position.x, viewer.position.y));
         Vector2 realChunk = RoundVector(new Vector2(viewer.position.x, viewer.position.y) / (5 * 16));
         ChunkData map = generator.GetMapData(new Vector2(-position.x - 1, position.y + 1));
-        if (map.objectsToInst.ContainsKey(playerPos))
-        {
-            print(map.objectsToInst[playerPos]);
-        }
+        // if (map.objectsToInst.ContainsKey(playerPos))
+        // {
+        //     print(map.objectsToInst[playerPos]);
+        // }
     }
 }

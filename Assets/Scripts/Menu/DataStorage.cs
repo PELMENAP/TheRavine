@@ -14,20 +14,20 @@ public class DataStorage : MonoBehaviour
         if (loadkey)
         {
             SaveLoad.Load(ref data);
-            PlayerData.instance.entityTrans.position = PlayerData.instance.cachedCamera.transform.position = new Vector3(data.playerPosition.x, data.playerPosition.y, 0);
+            PlayerData.instance.entityTrans.position = PlayerData.instance.cachedCamera.transform.position = new Vector3(data.PlPos.x, data.PlPos.y, 0);
             PlayerData.instance.cachedCamera.transform.position += new Vector3(0, 0, -1);
-            MapGeneratorOld.seed = data.seed;
+            // MapGeneratorOld.seed = data.seed;
         }
         else
         {
-            MapGeneratorOld.seed = Random.Range(1, 10000);
+            // MapGeneratorOld.seed = Random.Range(1, 10000);
         }
     }
 
     public void Save()
     {
-        data.playerPosition = new Data.Vec3(PlayerData.instance.entityTrans.position);
-        data.seed = MapGeneratorOld.seed;
+        data.PlPos = new Data.Vec3(PlayerData.instance.entityTrans.position);
+        // data.seed = MapGeneratorOld.seed;
         SaveLoad.Save(data);
     }
 
@@ -49,18 +49,12 @@ public class DataStorage : MonoBehaviour
     public class Data
     {
         public int seed;
-        public Vec3 playerPosition;
+        public Vec3 PlPos;
 
         [System.Serializable]
         public struct Vec3
         {
             public float x, y, z;
-            public Vec3(float x, float y, float z)
-            {
-                this.x = x;
-                this.y = y;
-                this.z = z;
-            }
             public Vec3(Vector3 position)
             {
                 this.x = position.x;

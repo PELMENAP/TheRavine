@@ -19,7 +19,7 @@ public class EndlessTerrain : IEndless
         currentChunkCoordY = Mathf.RoundToInt(Vposition.y);
         for (int yOffset = 0; yOffset < chunkCount; yOffset++)
             for (int xOffset = 0; xOffset < chunkCount; xOffset++)
-                map[xOffset, yOffset] = generator.GetMapData(new Vector2(-(currentChunkCoordX + xOffset), currentChunkCoordY + yOffset));
+                map[xOffset, yOffset] = generator.GetMapData(new Vector2(currentChunkCoordX + xOffset, currentChunkCoordY + yOffset));
         TerrainGenerator(map);
     }
 
@@ -76,10 +76,10 @@ public class EndlessTerrain : IEndless
                 vertices[x * (mapChunkSize + 1) + y] = new Vector3(x * scale, y * scale, heightMap[x, y]);
 
         for (int x = 0; x < mapChunkSize; x++)
-            vertices[x * (mapChunkSize + 1) + mapChunkSize] = new Vector3(x * scale, generationSize, generator.GetMapData(centre + new Vector2(0, -1)).heightMap[x, 0]);
+            vertices[x * (mapChunkSize + 1) + mapChunkSize] = new Vector3(x * scale, generationSize, generator.GetMapData(centre + new Vector2(0, 1)).heightMap[x, 0]);
         for (int y = 0; y < mapChunkSize; y++)
             vertices[mapChunkSize * (mapChunkSize + 1) + y] = new Vector3(generationSize, y * scale, generator.GetMapData(centre + new Vector2(1, 0)).heightMap[0, y]);
-        vertices[mapChunkSize * (mapChunkSize + 1) + mapChunkSize] = new Vector3(generationSize, generationSize, generator.GetMapData(centre + new Vector2(1, -1)).heightMap[0, 0]);
+        vertices[mapChunkSize * (mapChunkSize + 1) + mapChunkSize] = new Vector3(generationSize, generationSize, generator.GetMapData(centre + new Vector2(1, 1)).heightMap[0, 0]);
 
         for (int x = 0; x < mapChunkSize; x++)
         {
