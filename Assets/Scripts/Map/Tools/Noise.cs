@@ -16,7 +16,7 @@ public static class Noise
 
         for (int i = 0; i < octaves; i++)
         {
-            octaveOffsets[i] = new Vector2(prng.Next(-100000, 100000) + offset.x, prng.Next(-100000, 100000) - offset.y);
+            octaveOffsets[i] = new Vector2(prng.Next(-100000, 100000) - offset.x, prng.Next(-100000, 100000) - offset.y);
 
             maxPossibleHeight += amplitude;
             amplitude *= persistance;

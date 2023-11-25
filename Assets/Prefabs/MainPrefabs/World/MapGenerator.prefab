@@ -1,0 +1,98 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7784986139299065775
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2172697054823260749}
+  - component: {fileID: 2265691849651761453}
+  m_Layer: 0
+  m_Name: MapGenerator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 2147483647
+  m_IsActive: 1
+--- !u!4 &2172697054823260749
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7784986139299065775}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2265691849651761453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7784986139299065775}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67bf66de7fb1634b68c674b2859b2ae4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  terrainT: {fileID: 0}
+  waterT: {fileID: 0}
+  terrainF: {fileID: 0}
+  waterF: {fileID: 0}
+  seed: 16
+  rotation: {x: 0, y: 0, z: 0}
+  noiseScale: 200
+  octaves: 8
+  persistance: 0.25
+  lacunarity: 3
+  regions:
+  - height: 0
+    colour: {r: 0, g: 0, b: 0, a: 0}
+    objects: []
+  - height: 0.15
+    colour: {r: 0, g: 0, b: 0, a: 0}
+    objects: []
+  - height: 0.25
+    colour: {r: 0, g: 0, b: 0, a: 0}
+    objects: []
+  - height: 0.26
+    colour: {r: 0, g: 0, b: 0, a: 0}
+    objects: []
+  - height: 0.3
+    colour: {r: 0, g: 0, b: 0, a: 0}
+    objects: []
+  - height: 0.45
+    colour: {r: 0, g: 0, b: 0, a: 0}
+    objects:
+    - Chance: 60
+      Prefab: {fileID: 8079554152659468491, guid: eac9ac9f7b106c63593abaabcb67837c,
+        type: 3}
+    - Chance: 70
+      Prefab: {fileID: 6908429162828912622, guid: adae632f026b24118899a930b4e1619f,
+        type: 3}
+    - Chance: 65
+      Prefab: {fileID: 7852824295285712418, guid: b3d15d59ad9aa87a38c26c1e97de6448,
+        type: 3}
+    - Chance: 50
+      Prefab: {fileID: 948248636415433774, guid: e487b2f5e2401d74a9e583e59e72f6ce,
+        type: 3}
+  - height: 0.7
+    colour: {r: 0, g: 0, b: 0, a: 0}
+    objects: []
+  - height: 0.9
+    colour: {r: 0, g: 0, b: 0, a: 0}
+    objects: []
+  - height: 1.15
+    colour: {r: 0, g: 0, b: 0, a: 0}
+    objects: []
+  viewer: {fileID: 0}
+  endlessFlag: 010101

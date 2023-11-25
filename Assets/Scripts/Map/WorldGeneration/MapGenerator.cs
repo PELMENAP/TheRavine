@@ -18,7 +18,7 @@ public class MapGenerator : MonoBehaviour
     public int seed;
     public const int mapChunkSize = 16, chunkCount = 3, scale = 5, generationSize = scale * mapChunkSize, waterLevel = 1;
     public const float sqrViewerMoveThresholdForChunkUpdate = 60f;
-    public static Vector2 vectorOffset = new Vector2(generationSize, generationSize) / 2;
+    public static Vector2 vectorOffset = new Vector2(generationSize, generationSize) * 3 / 2;
     public Vector3 rotation;
     [SerializeField] private float noiseScale;
     [SerializeField] private int octaves;
@@ -41,8 +41,8 @@ public class MapGenerator : MonoBehaviour
             endless.Add(new EndlessTerrain(this));
         if (endlessFlag[1])
             endless.Add(new EndlessLiquids(this));
-        // if (endlessFlag[2])
-        //     endless.Add(new EndlessObjects(this));
+        if (endlessFlag[2])
+            endless.Add(new EndlessObjects(this));
         Vector2 centre;
         for (int i = -20; i < 20; i++)
         {
@@ -86,7 +86,7 @@ public class MapGenerator : MonoBehaviour
     float currentHeight;
     public ChunkData GenerateMapData(Vector2 centre)
     {
-        Dictionary<Vector2, int> objectsToInst = new Dictionary<Vector2, int>();
+        List<Vector2> objectsToInst = new List<Vector2>();
         Color[] colourMap = new Color[mapChunkSize * mapChunkSize];
         int[,] heightMap = new int[mapChunkSize, mapChunkSize];
         Noise.GenerateNoiseMap(ref noiseMap, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, centre * mapChunkSize, Noise.NormalizeMode.Global);
@@ -101,24 +101,26 @@ public class MapGenerator : MonoBehaviour
                     if (currentHeight >= regions[i].height)
                     {
                         colourMap[y * mapChunkSize + x] = regions[i].colour;
-                        heightMap[x, y] = i;
+                        heightMap[(mapChunkSize - x - 1), (mapChunkSize - y - 1)] = i;
                     }
                     else
                         break;
                 }
                 if (heightMap[x, y] != heightMap[0, 0])
                     isEqual = false;
+                if (!endlessFlag[2])
+                    continue;
                 for (int i = 0; i < regions[heightMap[x, y]].objects.Length; i++)
                 {
                     ObjectInfoGeneration info = regions[heightMap[x, y]].objects[i];
                     if ((x * y + (int)centre.x * centre.y + seed % 100) % info.Chance == 0)
                     {
-                        Vector2 posobj = new Vector2(centre.x * generationSize + (mapChunkSize - y) * scale, centre.y * generationSize + x * scale);
-                        Vector2 curposobj = new Vector2(-posobj.x, posobj.y) - 2 * vectorOffset;
+                        Vector2 posobj = new Vector2(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale) - vectorOffset;
                         int id = info.Prefab.GetInstanceID();
-                        objectsToInst[curposobj] = id;
                         PrefabInfo prInfo = ObjectSystem.inst.GetPrefabInfo(id);
-                        ObjectSystem.inst.AddToGlobal(curposobj, prInfo.name, prInfo.amount, prInfo.type);
+                        if (!ObjectSystem.inst.AddToGlobal(posobj, id, prInfo.name, prInfo.amount, prInfo.type))
+                            break;
+                        objectsToInst.Add(posobj);
                         break;
                     }
                 }
@@ -175,9 +177,9 @@ public struct ChunkData
     public readonly int[,] heightMap;
     public readonly Vector2 centre;
     public readonly bool isEqual;
-    public readonly Dictionary<Vector2, int> objectsToInst;
+    public readonly List<Vector2> objectsToInst;
 
-    public ChunkData(Color[] colourMap, int[,] heightMap, Vector2 centre, bool isEqual, Dictionary<Vector2, int> objectsToInst)
+    public ChunkData(Color[] colourMap, int[,] heightMap, Vector2 centre, bool isEqual, List<Vector2> objectsToInst)
     {
         this.colourMap = colourMap;
         this.heightMap = heightMap;
