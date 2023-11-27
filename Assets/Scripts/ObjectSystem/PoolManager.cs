@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class PoolManager : IPoolManager<GameObject>
 {
-    Dictionary<int, Queue<ObjectInstance>> poolDictionary = new Dictionary<int, Queue<ObjectInstance>>();
+    Dictionary<int, LinkedList<ObjectInstance>> poolDictionary = new Dictionary<int, LinkedList<ObjectInstance>>();
     Dictionary<int, Transform> poolObjectDictionary = new Dictionary<int, Transform>();
     public void CreatePool(GameObject prefab, int poolSize = 1)
     {
@@ -11,7 +11,7 @@ public class PoolManager : IPoolManager<GameObject>
 
         if (!poolDictionary.ContainsKey(poolKey))
         {
-            poolDictionary.Add(poolKey, new Queue<ObjectInstance>());
+            poolDictionary.Add(poolKey, new LinkedList<ObjectInstance>());
             GameObject poolHolder = new GameObject(prefab.name + " pool");
             poolHolder.isStatic = true;
             poolHolder.transform.parent = ObjectSystem.inst.transform;
@@ -20,18 +20,26 @@ public class PoolManager : IPoolManager<GameObject>
         for (int i = 0; i < poolSize; i++)
         {
             ObjectInstance newObject = new ObjectInstance(ObjectSystem.inst.InstantiatePoolObject(new Vector2(0, 0), prefab));
-            poolDictionary[poolKey].Enqueue(newObject);
+            poolDictionary[poolKey].AddFirst(newObject);
             newObject.SetParent(poolObjectDictionary[poolKey]);
         }
     }
     public void Reuse(int prefabID, Vector2 position)
     {
-        Queue<ObjectInstance> poDick = poolDictionary[prefabID];
-        ObjectInstance objectToReuse = poDick.Dequeue();
+        LinkedList<ObjectInstance> poDick = poolDictionary[prefabID];
+        ObjectInstance objectToReuse = poDick.First.Value;
+        poDick.RemoveFirst();
         objectToReuse.Reuse(position);
-        poDick.Enqueue(objectToReuse);
+        poDick.AddLast(objectToReuse);
     }
-
+    public void Deactivate(int prefabID)
+    {
+        LinkedList<ObjectInstance> poDick = poolDictionary[prefabID];
+        ObjectInstance objectToReuse = poDick.First.Value;
+        poDick.RemoveFirst();
+        objectToReuse.ActiveSelf(false);
+        poDick.AddLast(objectToReuse);
+    }
     public class ObjectInstance
     {
         public GameObject gameObject;
@@ -56,5 +64,6 @@ public class PoolManager : IPoolManager<GameObject>
         {
             gameObject.SetActive(active);
         }
+        public bool GetActive() => gameObject.activeSelf;
     }
 }

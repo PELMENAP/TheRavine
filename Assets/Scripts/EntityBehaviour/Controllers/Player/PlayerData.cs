@@ -4,9 +4,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-public class PlayerData : AEntity
+public class PlayerData : AEntity, ISetAble
 {
-    public Camera cachedCamera;
+    public CM cameraMen;
+    public Camera cachedCamera { get; private set; }
     public static PlayerData instance;
     public GameObject dialog;
     public TextMeshProUGUI InputWindow;
@@ -23,16 +24,16 @@ public class PlayerData : AEntity
     //Debug.Log("activate");
 
     #region [MONO]
-    private void Awake()
+
+    public void SetUp()
     {
         instance = this;
         entityTrans = this.transform;
+        cameraMen.SetUp();
+        cachedCamera = cameraMen.mainCam;
         dialog.SetActive(false);
         controller = GetComponent<IControllable>();
         // ui.AddSkill(new SkillRush(10f, 0.05f, 20), PData.pdata.dushParent, PData.pdata.dushImage, "Rush");
-    }
-
-    public void SetUp(){
         Init();
         controller.SetInitialValues();
     }
@@ -48,7 +49,10 @@ public class PlayerData : AEntity
     private void FixedUpdate()
     {
         if (behaviourCurrent != null)
+        {
             behaviourCurrent.Update();
+            cameraMen.CameraUpdate();
+        }
     }
 
     protected override void Init()

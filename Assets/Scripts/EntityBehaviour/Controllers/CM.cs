@@ -1,22 +1,22 @@
 ﻿using UnityEngine;
 
-public class CM : MonoBehaviour
+public class CM : MonoBehaviour, ISetAble
 {
     [SerializeField] private Transform cameratrans;
     [SerializeField] private float Velocity, MinDistance;
-    [SerializeField] private Camera mainCam;
+    public Camera mainCam;
     public static bool cameraForMap;
     private Vector3 offset, playerOffset, targetPos;
     private bool changeCam = false;
 
-    private void Start()
+    public void SetUp()
     {
         cameraForMap = false;
         offset = cameratrans.position - PlayerData.instance.entityTrans.position;
         cameratrans.position = PlayerData.instance.entityTrans.position + new Vector3(0, 0, -1);
     }
 
-    private void LateUpdate()
+    public void CameraUpdate()
     {
         if ((changeCam || (Input.GetKeyUp("p")) && Input.GetKeyDown(KeyCode.LeftControl)))
         {

@@ -6,13 +6,15 @@ public class EndlessLiquids : IEndless
     private MapGenerator generator;
     private const int chunkCount = MapGenerator.chunkCount, mapChunkSize = MapGenerator.mapChunkSize;
     private int scale = MapGenerator.scale, generationSize = MapGenerator.generationSize;
+    private Vector2 vectorOffset = MapGenerator.vectorOffset;
+
     public EndlessLiquids(MapGenerator _generator)
     {
         generator = _generator;
     }
 
     private int currentChunkCoordX, currentChunkCoordY, countOfQuads;
-    private int[,] map;
+    private byte[,] map;
     private bool[,] meshMap = new bool[mapChunkSize * chunkCount, mapChunkSize * chunkCount];
     public void UpdateChunk(Vector3 Vposition)
     {
@@ -23,24 +25,24 @@ public class EndlessLiquids : IEndless
         {
             for (int yOffset = 0; yOffset < chunkCount; yOffset++)
             {
-                map = generator.GetMapData(new Vector2(-(currentChunkCoordX + xOffset), currentChunkCoordY + yOffset)).heightMap;
+                map = generator.GetMapData(new Vector2(currentChunkCoordX + xOffset, currentChunkCoordY + yOffset)).heightMap;
                 for (int x = 0; x < mapChunkSize; x++)
                     for (int y = 0; y < mapChunkSize; y++)
                     {
                         if (map[x, y] <= MapGenerator.waterLevel)
                         {
-                            meshMap[(chunkCount - 1 - xOffset) * mapChunkSize + x, (chunkCount - 1 - yOffset) * mapChunkSize + y] = true;
+                            meshMap[xOffset * mapChunkSize + x, yOffset * mapChunkSize + y] = true;
                             countOfQuads++;
                         }
                         else
                         {
-                            meshMap[(chunkCount - 1 - xOffset) * mapChunkSize + x, (chunkCount - 1 - yOffset) * mapChunkSize + y] = false;
+                            meshMap[xOffset * mapChunkSize + x, yOffset * mapChunkSize + y] = false;
                         }
                     }
             }
         }
         generator.waterF.mesh = GetQuadWaterMeshMap(meshMap, countOfQuads, mapChunkSize * chunkCount);
-        generator.waterT.position = new Vector3(currentChunkCoordX, currentChunkCoordY) * generationSize + new Vector3(generationSize, generationSize) / 2 * 3;
+        generator.waterT.position = new Vector2(currentChunkCoordX, currentChunkCoordY) * generationSize - vectorOffset;
     }
 
     Mesh mesh;

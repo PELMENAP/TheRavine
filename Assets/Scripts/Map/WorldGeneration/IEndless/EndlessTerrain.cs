@@ -49,7 +49,7 @@ public class EndlessTerrain : IEndless
     Vector2[] uv = new Vector2[(mapChunkSize + 1) * (mapChunkSize + 1)], Muv = new Vector2[4];
     int[] triangles = new int[6 * mapChunkSize * mapChunkSize], Mtriangles = new int[6];
 
-    private Mesh GetTerrainMeshMap(int[,] heightMap, Vector2 centre, bool isEqual)
+    private Mesh GetTerrainMeshMap(byte[,] heightMap, Vector2 centre, bool isEqual)
     {
         Mesh mesh = new Mesh();
         if (isEqual)

@@ -15,7 +15,7 @@ Material:
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
-  m_DoubleSidedGI: 1
+  m_DoubleSidedGI: 0
   m_CustomRenderQueue: 3000
   stringTagMap: {}
   disabledShaderPasses: []
@@ -43,10 +43,10 @@ Material:
     - _alpha: 0.26
     - _cloudAlphaMax: 0.67
     - _cloudMode: 2
-    - _fastMode: 0
+    - _fastMode: 1
     - _scale: 1
-    - _speed1: 5
-    - _speed2: 4
+    - _speed1: 3
+    - _speed2: 3
     - _step: 1
     m_Colors:
     - _Color: {r: 1, g: 0.1273585, b: 0.1273585, a: 1}

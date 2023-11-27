@@ -6,11 +6,17 @@ public class EndlessObjects : IEndless
     private MapGenerator generator;
     private const int chunkCount = MapGenerator.chunkCount;
     private Vector2[] terrainChunksVisibleUpdate = new Vector2[chunkCount * chunkCount];
-    private List<Vector2> terrainChunksVisibleLastUpdate = new List<Vector2>();
+    private PrefabInfo[] prefabInfo = ObjectSystem.inst._info;
+    private Dictionary<int, byte> objectUpdate;
     public EndlessObjects(MapGenerator _generator)
     {
         generator = _generator;
+        objectUpdate = new Dictionary<int, byte>();
+        for (int i = 0; i < prefabInfo.Length; i++)
+            objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
     }
+
+    private static EnumerableSnapshot<int> objectsSnapshot;
     public void UpdateChunk(Vector3 Vposition)
     {
         int currentChunkCoordX = Mathf.RoundToInt(Vposition.x);
@@ -22,22 +28,31 @@ public class EndlessObjects : IEndless
             {
                 Vector2 chunkCoord = new Vector2(currentChunkCoordX + xOffset, currentChunkCoordY + yOffset);
                 terrainChunksVisibleUpdate[countOfIteration] = chunkCoord;
-                if (terrainChunksVisibleLastUpdate.Contains(chunkCoord))
-                    continue;
-                List<Vector2> map = generator.GetMapData(new Vector2(-chunkCoord.x, chunkCoord.y)).objectsToInst;
+                List<Vector2> map = generator.GetMapData(chunkCoord).objectsToInst;
                 foreach (var item in map)
                 {
                     ObjectInstInfo info = ObjectSystem.inst.GetGlobalObjectInfo(item);
                     if (info.name == "therivinetop")
                         continue;
+                    objectUpdate[info.prefabID]++;
+                    PrefabData objectInfo = ObjectSystem.inst.GetPrefabInfo(info.prefabID);
+                    if (objectUpdate[info.prefabID] > objectInfo.poolSize)
+                    {
+                        objectInfo.poolSize++;
+                        ObjectSystem.inst.CreatePool(objectInfo.prefab, 1);
+                    }
                     ObjectSystem.inst.Reuse(info.prefabID, item);
                 }
                 countOfIteration++;
             }
         }
-        terrainChunksVisibleLastUpdate.Clear();
-        terrainChunksVisibleLastUpdate.AddRange(terrainChunksVisibleUpdate);
-        // Debug.Log(countOfIteration);
+        objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
+        foreach (var ID in objectsSnapshot)
+        {
+            for (int j = 0; j < ObjectSystem.inst.GetPrefabInfo(ID).poolSize - objectUpdate[ID]; j++)
+                ObjectSystem.inst.Deactivate(ID);
+            objectUpdate[ID] = 0;
+        }
     }
 
     private Texture2D texture;
