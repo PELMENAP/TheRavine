@@ -30,16 +30,6 @@ public class PlayerController : MonoBehaviour, IControllable
         }
     }
 
-    public void OnDisable()
-    {
-        BreakUp();
-    }
-
-    public void BreakUp()
-    {
-        currentController.MeetEnds();
-    }
-
     public void SetZeroValues()
     {
         movementSpeed = 0f;
@@ -146,5 +136,15 @@ public class PlayerController : MonoBehaviour, IControllable
         PlayerData.instance.placeObject?.Invoke(new Vector3(Mathf.RoundToInt(crosshair.position.x), Mathf.RoundToInt(crosshair.position.y), 0));
         yield return new WaitForSeconds(timeLimit);
         act = true;
+    }
+
+    public void OnDisable()
+    {
+        BreakUp();
+    }
+
+    public void BreakUp()
+    {
+        currentController.MeetEnds();
     }
 }

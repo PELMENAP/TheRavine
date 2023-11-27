@@ -4,14 +4,12 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEditor;
 
-public class ObjectSystem : MonoBehaviour
+public class ObjectSystem : MonoBehaviour, ISetAble
 {
-    public const int PoolSize = 50;
     public static ObjectSystem inst;
-    [SerializeField] private GameObject[] _prefab;
-    [SerializeField] private PrefabInfo[] _info;
-    private Dictionary<int, PrefabInfo> info = new Dictionary<int, PrefabInfo>(16);
-    public PrefabInfo GetPrefabInfo(int id) => info[id];
+    public PrefabInfo[] _info;
+    private Dictionary<int, PrefabData> info = new Dictionary<int, PrefabData>(32);
+    public PrefabData GetPrefabInfo(int id) => info[id];
     //
     private Dictionary<Vector2, ObjectInstInfo> global = new Dictionary<Vector2, ObjectInstInfo>(512);
     public ObjectInstInfo GetGlobalObjectInfo(Vector2 position)
@@ -20,7 +18,7 @@ public class ObjectSystem : MonoBehaviour
             return new ObjectInstInfo();
         return global[position];
     }
-    public bool AddToGlobal(Vector2 position, int _prefabID, string _name, int _amount, InstanceType _objectType)
+    public bool AddToGlobal(Vector2 position, ushort _prefabID, string _name, ushort _amount, InstanceType _objectType)
     {
         if (global.ContainsKey(position))
             return false;
@@ -35,11 +33,12 @@ public class ObjectSystem : MonoBehaviour
     private IPoolManager<GameObject> PoolManagerBase = new PoolManager();
     public void CreatePool(GameObject prefab, int poolSize) => PoolManagerBase.CreatePool(prefab, poolSize);
     public void Reuse(int prefabID, Vector2 position) => PoolManagerBase.Reuse(prefabID, position);
-    private void Awake()
+    public void Deactivate(int prefabID) => PoolManagerBase.Deactivate(prefabID);
+    public void SetUp()
     {
         inst = this;
         for (int i = 0; i < _info.Length; i++)
-            info[_prefab[i].GetInstanceID()] = _info[i];
+            info[_info[i].prefab.GetInstanceID()] = new PrefabData(_info[i].name, _info[i].amount, _info[i].poolSize, _info[i].type, _info[i].prefab);
         // NAL().Forget();
         FirstInstance().Forget();
     }
@@ -48,8 +47,9 @@ public class ObjectSystem : MonoBehaviour
     {
         for (int i = 0; i < _info.Length; i++)
         {
-            CreatePool(_prefab[i], 50);
-            await UniTask.Delay(100);
+            CreatePool(_info[i].prefab, _info[i].poolSize);
+            await UniTask.Delay(500);
+            FaderOnTransit.instance.SetLogs("Созданы: " + _info[i].prefab.name);
         }
     }
 
@@ -154,10 +154,10 @@ public class ObjectSystem : MonoBehaviour
 public struct ObjectInstInfo
 {
     public string name { get; private set; }
-    public int amount;
-    public int prefabID { get; private set; }
+    public ushort amount;
+    public ushort prefabID { get; private set; }
     public InstanceType objectType { get; private set; }
-    public ObjectInstInfo(int _prefabID = 0, string _name = "therivinetop", int _amount = 1, InstanceType _objectType = InstanceType.Static)
+    public ObjectInstInfo(ushort _prefabID = 0, string _name = "therivinetop", ushort _amount = 1, InstanceType _objectType = InstanceType.Static)
     {
         name = _name;
         amount = _amount;
@@ -166,10 +166,28 @@ public struct ObjectInstInfo
     }
 }
 
+public class PrefabData
+{
+    public string name;
+    public ushort amount, poolSize;
+    public InstanceType type;
+    public GameObject prefab;
+
+    public PrefabData(string _name, ushort _amount, ushort _poolSize, InstanceType _type, GameObject _prefab)
+    {
+        name = _name;
+        amount = _amount;
+        poolSize = _poolSize;
+        type = _type;
+        prefab = _prefab;
+    }
+}
+
 [System.Serializable]
 public struct PrefabInfo
 {
     public string name;
-    public int amount;
+    public ushort amount, poolSize;
     public InstanceType type;
+    public GameObject prefab;
 }

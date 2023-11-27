@@ -16,6 +16,7 @@ public class LoadingState : IState<Bootstrap>, IEnterable, IExitable, ITickable
 
     public void OnEnter()
     {
+        Initializer.StartNewServise();
         FaderOnTransit.instance.SetLogs("Создание сцены");
         if (skipLoading)
             Initializer.StateMachine.SwitchState<GameState>();
@@ -23,7 +24,6 @@ public class LoadingState : IState<Bootstrap>, IEnterable, IExitable, ITickable
 
     public void OnExit()
     {
-        Initializer.StartGenerator();
         FaderOnTransit.instance.SetLogs("Сцена создана");
     }
 

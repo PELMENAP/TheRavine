@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using NaughtyAttributes;
 
-public class MapGenerator : MonoBehaviour
+public class MapGenerator : MonoBehaviour, ISetAble
 {
     private Dictionary<Vector2, ChunkData> mapData = new Dictionary<Vector2, ChunkData>();
 
@@ -88,15 +88,15 @@ public class MapGenerator : MonoBehaviour
     {
         List<Vector2> objectsToInst = new List<Vector2>();
         Color[] colourMap = new Color[mapChunkSize * mapChunkSize];
-        int[,] heightMap = new int[mapChunkSize, mapChunkSize];
+        byte[,] heightMap = new byte[mapChunkSize, mapChunkSize];
         Noise.GenerateNoiseMap(ref noiseMap, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, centre * mapChunkSize, Noise.NormalizeMode.Global);
         isEqual = true;
-        for (int x = 0; x < mapChunkSize; x++)
+        for (byte x = 0; x < mapChunkSize; x++)
         {
-            for (int y = 0; y < mapChunkSize; y++)
+            for (byte y = 0; y < mapChunkSize; y++)
             {
                 currentHeight = noiseMap[x, y];
-                for (int i = 0; i < regions.Length; i++)
+                for (byte i = 0; i < regions.Length; i++)
                 {
                     if (currentHeight >= regions[i].height)
                     {
@@ -116,8 +116,8 @@ public class MapGenerator : MonoBehaviour
                     if ((x * y + (int)centre.x * centre.y + seed % 100) % info.Chance == 0)
                     {
                         Vector2 posobj = new Vector2(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale) - vectorOffset;
-                        int id = info.Prefab.GetInstanceID();
-                        PrefabInfo prInfo = ObjectSystem.inst.GetPrefabInfo(id);
+                        ushort id = (ushort)info.Prefab.GetInstanceID();
+                        PrefabData prInfo = ObjectSystem.inst.GetPrefabInfo(id);
                         if (!ObjectSystem.inst.AddToGlobal(posobj, id, prInfo.name, prInfo.amount, prInfo.type))
                             break;
                         objectsToInst.Add(posobj);
@@ -145,7 +145,7 @@ public class MapGenerator : MonoBehaviour
                     yield return new WaitForFixedUpdate();
                     generator.UpdateChunk(position);
                 }
-                print("update");
+                // print("update");
             }
             yield return new WaitForFixedUpdate();
         }
@@ -174,12 +174,12 @@ public enum InstanceType
 public struct ChunkData
 {
     public readonly Color[] colourMap;
-    public readonly int[,] heightMap;
+    public readonly byte[,] heightMap;
     public readonly Vector2 centre;
     public readonly bool isEqual;
     public readonly List<Vector2> objectsToInst;
 
-    public ChunkData(Color[] colourMap, int[,] heightMap, Vector2 centre, bool isEqual, List<Vector2> objectsToInst)
+    public ChunkData(Color[] colourMap, byte[,] heightMap, Vector2 centre, bool isEqual, List<Vector2> objectsToInst)
     {
         this.colourMap = colourMap;
         this.heightMap = heightMap;

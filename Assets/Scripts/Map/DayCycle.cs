@@ -6,7 +6,7 @@ using System.Collections;
 using UnityEngine.Rendering.Universal;
 using System;
 
-public class DayCycle : MonoBehaviour
+public class DayCycle : MonoBehaviour, ISetAble
 {
     public static bool isday, closeThread;
     public static event Action newDay;
@@ -24,7 +24,7 @@ public class DayCycle : MonoBehaviour
 
     private Transform[] shadows, lightsTransform;
 
-    public void StartUniverse()
+    public void SetUp()
     {
         GetLightsAndShadows();
     }
@@ -101,8 +101,6 @@ public class DayCycle : MonoBehaviour
         };
         while (closeThread)
         {
-            UnityEngine.Profiling.Profiler.BeginSample("Day Cycle");
-
             JobHandle dayHande = dayJob.Schedule();
             dayHande.Complete();
             UpdateSunValues();
@@ -117,13 +115,17 @@ public class DayCycle : MonoBehaviour
                 JobHandle shadowsHande = shadowJob.Schedule(shadowsTransform);
                 shadowsHande.Complete();
             }
-            if (Input.GetKeyUp(KeyCode.Space))
-            {
-                closeThread = false;
-            }
-            UnityEngine.Profiling.Profiler.EndSample();
             yield return new WaitForFixedUpdate();
         }
+        TimeBridge.Dispose();
+        IsdayBridge.Dispose();
+        Light2DBridge.Dispose();
+        Light2DIntensityBridge.Dispose();
+        shadowsTransform.Dispose();
+    }
+
+    private void OnDisable()
+    {
         TimeBridge.Dispose();
         IsdayBridge.Dispose();
         Light2DBridge.Dispose();

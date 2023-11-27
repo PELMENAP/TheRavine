@@ -1,4 +1,4 @@
-
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -6,13 +6,22 @@ public class Bootstrap : MonoBehaviour
 {
     public StateMachine<Bootstrap> StateMachine { get; private set; }
     [SerializeField] private InsObject[] instanceObjects;
+    private Queue<ISetAble> _setAble = new Queue<ISetAble>();
     [SerializeField] private Camera _camera;
     [SerializeField] private DayCycle sun;
     [SerializeField] private MapGenerator generator;
+    [SerializeField] private ObjectSystem objectSystem;
+
+    [SerializeField] private PlayerData playerData;
+
     public bool isTest;
 
-    public void Start()
+    private void Awake()
     {
+        _setAble.Enqueue((ISetAble)sun);
+        _setAble.Enqueue((ISetAble)objectSystem);
+        _setAble.Enqueue((ISetAble)generator);
+        _setAble.Enqueue((ISetAble)playerData);
         // if(isTest){
         //     StateMachine = new StateMachine<Bootstrap>(
         //     new GameState(this));
@@ -50,7 +59,6 @@ public class Bootstrap : MonoBehaviour
         {
 
         }
-        CreateBaseInstance();
         StartGame();
     }
 
@@ -64,11 +72,9 @@ public class Bootstrap : MonoBehaviour
         }
     }
 
-    public void InstantiateRequiredPrefab(int i)
+    public void StartNewServise()
     {
-        if ((i + 1) > instanceObjects.Length || instanceObjects[i].gameObject == null)
-            return;
-        //PoolManager.inst.ReuseObjectToPosition(instanceObjects[i].gameObject.GetInstanceID(), instanceObjects[i].position);
+        _setAble.Dequeue().SetUp();
     }
 
     public void StartGame()
@@ -81,16 +87,6 @@ public class Bootstrap : MonoBehaviour
     {
         var cameraData = _camera.GetUniversalAdditionalCameraData();
         cameraData.cameraStack.Add(_cameraToAdd);
-    }
-
-    public void StartGenerator()
-    {
-        generator.SetUp();
-    }
-
-    public void StartSun()
-    {
-        sun.StartUniverse();
     }
 
     [System.Serializable]
