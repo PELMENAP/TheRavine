@@ -33,7 +33,7 @@ public class EndlessTerrain : IEndless
         {
             for (int j = 0; j < chunkCount; j++)
             {
-                combine[count].mesh = GetTerrainMeshMap(map[i, j].heightMap, map[i, j].centre, map[i, j].isEqual);
+                combine[count].mesh = GetTerrainMeshMap(map[i, j].heightMap, new Vector2(currentChunkCoordX + i, currentChunkCoordY + j), map[i, j].isEqual);
                 combine[count].transform = Matrix4x4.TRS(new Vector3(i * generationSize, j * generationSize, 0), Quaternion.Euler(0, 0, generator.rotation.z), new Vector3(1, 1, 1)); ;
                 count++;
             }

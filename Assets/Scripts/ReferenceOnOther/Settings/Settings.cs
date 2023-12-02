@@ -22,14 +22,13 @@ public class Settings : MonoBehaviour
     {
         dropdown.AddOptions(QualitySettings.names.ToList());
         dropdown.value = QualitySettings.GetQualityLevel();
-        print(isJoistick);
-        print(isShadow);
         joisticToggle.isOn = isJoistick;
         shadowToggle.isOn = isShadow;
     }
 
-    public void SetJoistick(){
-        if(joisticToggle.isOn)
+    public void SetJoistick()
+    {
+        if (joisticToggle.isOn)
             _controlType = ControlType.Mobile;
         else
             _controlType = ControlType.Personal;

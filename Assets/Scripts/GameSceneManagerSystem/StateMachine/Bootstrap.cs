@@ -11,49 +11,33 @@ public class Bootstrap : MonoBehaviour
     [SerializeField] private DayCycle sun;
     [SerializeField] private MapGenerator generator;
     [SerializeField] private ObjectSystem objectSystem;
-
+    [SerializeField] private UIInventory inventory;
     [SerializeField] private PlayerData playerData;
 
-    public bool isTest;
+    public bool result = true;
 
     private void Awake()
     {
-        _setAble.Enqueue((ISetAble)sun);
         _setAble.Enqueue((ISetAble)objectSystem);
-        _setAble.Enqueue((ISetAble)generator);
         _setAble.Enqueue((ISetAble)playerData);
-        // if(isTest){
-        //     StateMachine = new StateMachine<Bootstrap>(
-        //     new GameState(this));
-        //     StateMachine.SwitchState<GameState>();
-        //     return;
-        // }
+        _setAble.Enqueue((ISetAble)inventory);
+        _setAble.Enqueue((ISetAble)generator);
+        _setAble.Enqueue((ISetAble)sun);
         if (Settings.SceneNumber == 1 || Settings.SceneNumber == 0)
         {
             StateMachine = new StateMachine<Bootstrap>(
             new BootstrapState(this),
-            new InitialState(this),
+            new InitialState(this, Settings.isLoad),
             new LoadingState(this),
             new GameState(this));
         }
         else if (Settings.SceneNumber == 2)
         {
-            if (Settings.isLoad)
-            {
-                StateMachine = new StateMachine<Bootstrap>(
-            new BootstrapState(this),
-            new InitialState(this),
-            new LoadingState(this),
-            new GameState(this));
-            }
-            else
-            {
-                StateMachine = new StateMachine<Bootstrap>(
-            new BootstrapState(this),
-            new InitialState(this),
-            new LoadingState(this),
-            new GameState(this));
-            }
+            StateMachine = new StateMachine<Bootstrap>(
+        new BootstrapState(this),
+        new InitialState(this, Settings.isLoad),
+        new LoadingState(this),
+        new GameState(this));
         }
         else if (Settings.SceneNumber == 3)
         {
@@ -74,7 +58,7 @@ public class Bootstrap : MonoBehaviour
 
     public void StartNewServise()
     {
-        _setAble.Dequeue().SetUp();
+        _setAble.Dequeue().SetUp(ref result);
     }
 
     public void StartGame()
@@ -87,6 +71,11 @@ public class Bootstrap : MonoBehaviour
     {
         var cameraData = _camera.GetUniversalAdditionalCameraData();
         cameraData.cameraStack.Add(_cameraToAdd);
+    }
+
+    public void Finally()
+    {
+        PlayerData.instance.init();
     }
 
     [System.Serializable]

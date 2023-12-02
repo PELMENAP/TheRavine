@@ -4,38 +4,38 @@ using UnityEngine.Jobs;
 using Unity.Collections;
 using System.Collections;
 using UnityEngine.Rendering.Universal;
+using Cysharp.Threading.Tasks;
 using System;
 
 public class DayCycle : MonoBehaviour, ISetAble
 {
     public static bool isday, closeThread;
-    public static event Action newDay;
+    public static Action newDay;
     [SerializeField] private float startDay, speed;
     [SerializeField] private Gradient sunGradient;
     private Light2D sun;
-    private NativeArray<float> TimeBridge;
+    private NativeArray<float> TimeBridge, Light2DIntensityBridge;
     private NativeArray<bool> IsdayBridge;
-
-
     private NativeArray<Vector3> Light2DBridge;
-    private NativeArray<float> Light2DIntensityBridge;
-
-    TransformAccessArray shadowsTransform;
-
+    private TransformAccessArray shadowsTransform;
     private Transform[] shadows, lightsTransform;
-
-    public void SetUp()
-    {
-        GetLightsAndShadows();
-    }
-
-    private void GetLightsAndShadows()
+    DayJob dayJob;
+    ShadowsJob shadowJob;
+    public void SetUp(ref bool result)
     {
         TimeBridge = new NativeArray<float>(5, Allocator.Persistent);
         IsdayBridge = new NativeArray<bool>(1, Allocator.Persistent);
         TimeBridge[0] = startDay;
         TimeBridge[4] = speed;
         sun = this.GetComponent<Light2D>();
+        newDay += GetLightsAndShadows;
+        GetLightsAndShadows();
+        closeThread = true;
+        UpdateDay().Forget();
+    }
+
+    private void GetLightsAndShadows()
+    {
         GameObject[] shadowsObjects = GameObject.FindGameObjectsWithTag("Shadow");
         // print(Settings.isShadow);
         if (Settings.isShadow)
@@ -48,7 +48,6 @@ public class DayCycle : MonoBehaviour, ISetAble
                 shadows[i] = shadowsObjects[i].transform;
             }
             shadowsTransform = new TransformAccessArray(shadows);
-
             Light2DBridge = new NativeArray<Vector3>(lights.Length, Allocator.Persistent);
             Light2DIntensityBridge = new NativeArray<float>(lights.Length, Allocator.Persistent);
             lightsTransform = new Transform[lights.Length];
@@ -68,8 +67,16 @@ public class DayCycle : MonoBehaviour, ISetAble
             for (int i = 0; i < shadowsObjects.Length; i++)
                 shadowsObjects[i].SetActive(false);
         }
-        closeThread = true;
-        StartCoroutine(UpdateDay());
+        dayJob = new DayJob()
+        {
+            timeBridge = TimeBridge,
+            isdayBridge = IsdayBridge
+        };
+        shadowJob = new ShadowsJob()
+        {
+            lightsBridge = Light2DBridge,
+            ligthsIntensity = Light2DIntensityBridge
+        };
     }
 
     private void UpdateProperties()
@@ -87,18 +94,8 @@ public class DayCycle : MonoBehaviour, ISetAble
         sun.intensity = TimeBridge[3];
     }
 
-    private IEnumerator UpdateDay()
+    private async UniTaskVoid UpdateDay()
     {
-        var dayJob = new DayJob()
-        {
-            timeBridge = TimeBridge,
-            isdayBridge = IsdayBridge
-        };
-        var shadowJob = new ShadowsJob()
-        {
-            lightsBridge = Light2DBridge,
-            ligthsIntensity = Light2DIntensityBridge
-        };
         while (closeThread)
         {
             JobHandle dayHande = dayJob.Schedule();
@@ -108,6 +105,7 @@ public class DayCycle : MonoBehaviour, ISetAble
             {
                 isday = IsdayBridge[0];
                 newDay?.Invoke();
+                await UniTask.Delay(1000);
             }
             if (Settings.isShadow)
             {
@@ -115,7 +113,7 @@ public class DayCycle : MonoBehaviour, ISetAble
                 JobHandle shadowsHande = shadowJob.Schedule(shadowsTransform);
                 shadowsHande.Complete();
             }
-            yield return new WaitForFixedUpdate();
+            await UniTask.WaitForFixedUpdate();
         }
         TimeBridge.Dispose();
         IsdayBridge.Dispose();
@@ -141,9 +139,7 @@ public class DayCycle : MonoBehaviour, ISetAble
         {
             timeBridge[0] += (TimeUpdate.globalDeltaTime / 600) * timeBridge[4];
             if (timeBridge[0] > 1f)
-            {
                 timeBridge[0] = 0f;
-            }
             if (timeBridge[0] >= 0.2f && timeBridge[0] <= 0.8f)
             {
                 timeBridge[1] = -Mathf.Cos((timeBridge[0] - 0.2f) / 0.6f * 3) * 200;
@@ -152,9 +148,7 @@ public class DayCycle : MonoBehaviour, ISetAble
                 isdayBridge[0] = true;
             }
             else
-            {
                 isdayBridge[0] = false;
-            }
         }
     }
 
@@ -164,11 +158,9 @@ public class DayCycle : MonoBehaviour, ISetAble
         public NativeArray<Vector3> lightsBridge;
         [ReadOnly]
         public NativeArray<float> ligthsIntensity;
-
         private int lightIndex;
         private float maxWeight, lightWeight;
         private Vector3 shadowPosition, direction;
-
         public void Execute(int index, TransformAccess shadowTransform)
         {
             shadowPosition = shadowTransform.position;
@@ -183,7 +175,7 @@ public class DayCycle : MonoBehaviour, ISetAble
                 }
             }
             direction = shadowPosition - lightsBridge[lightIndex];
-            shadowTransform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90);
+            shadowTransform.rotation = Quaternion.Euler(50, 0, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90);
         }
     }
 }

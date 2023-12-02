@@ -18,13 +18,9 @@ public class ObjectSystem : MonoBehaviour, ISetAble
             return new ObjectInstInfo();
         return global[position];
     }
-    public bool AddToGlobal(Vector2 position, ushort _prefabID, string _name, ushort _amount, InstanceType _objectType)
-    {
-        if (global.ContainsKey(position))
-            return false;
-        global[position] = new ObjectInstInfo(_prefabID, _name, _amount, _objectType);
-        return true;
-    }
+    public bool AddToGlobal(Vector2 position, ushort _prefabID, string _name, ushort _amount, InstanceType _objectType) => global.TryAdd(position, new ObjectInstInfo(_prefabID, _name, _amount, _objectType));
+    public bool RemoveFromGlobal(Vector2 position) => global.Remove(position);
+    public bool ContainsGlobal(Vector2 position) => global.ContainsKey(position);
     //
     private Dictionary<Vector2, ObjectInstInfo> changes = new Dictionary<Vector2, ObjectInstInfo>();
     public bool Changed(Vector2 position) => changes.ContainsKey(position);
@@ -34,7 +30,7 @@ public class ObjectSystem : MonoBehaviour, ISetAble
     public void CreatePool(GameObject prefab, int poolSize) => PoolManagerBase.CreatePool(prefab, poolSize);
     public void Reuse(int prefabID, Vector2 position) => PoolManagerBase.Reuse(prefabID, position);
     public void Deactivate(int prefabID) => PoolManagerBase.Deactivate(prefabID);
-    public void SetUp()
+    public void SetUp(ref bool result)
     {
         inst = this;
         for (int i = 0; i < _info.Length; i++)

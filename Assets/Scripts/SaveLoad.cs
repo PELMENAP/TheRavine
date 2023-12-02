@@ -24,4 +24,42 @@ public static class SaveLoad
         }
         return default(T);
     }
+
+    // Сохранение данных
+    public static void SaveData(string key, string value)
+    {
+        PlayerPrefs.SetString(key, value);
+        PlayerPrefs.Save();
+    }
+
+    // Получение данных
+    public static string LoadData(string key)
+    {
+        return PlayerPrefs.GetString(key, ""); // Возвращает значение по ключу, если ключ не найден - возвращает пустую строку
+    }
+    // Сохранение настроек с шифрованием
+    public static void SaveEncryptedSettings(string volume, string fullscreen)
+    {
+        string encryptedVolume = EncryptionUtility.Encrypt(volume, "yourEncryptionKey");
+        string encryptedFullscreen = EncryptionUtility.Encrypt(fullscreen, "yourEncryptionKey");
+
+        PlayerPrefs.SetString("EncryptedVolume", encryptedVolume);
+        PlayerPrefs.SetString("EncryptedFullscreen", encryptedFullscreen);
+        PlayerPrefs.Save();
+    }
+
+    // Получение настроек с расшифровкой
+    public static string LoadDecryptedVolume()
+    {
+        string encryptedVolume = PlayerPrefs.GetString("EncryptedVolume", "");
+        return EncryptionUtility.Decrypt(encryptedVolume, "yourEncryptionKey");
+    }
+
+    public static string LoadDecryptedFullscreen()
+    {
+        string encryptedFullscreen = PlayerPrefs.GetString("EncryptedFullscreen", "");
+        return EncryptionUtility.Decrypt(encryptedFullscreen, "yourEncryptionKey");
+    }
+
+
 }

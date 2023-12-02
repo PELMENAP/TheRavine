@@ -6,20 +6,18 @@ public class LoadingState : IState<Bootstrap>, IEnterable, IExitable, ITickable
 
     private float timer = 0;
     private int timerStep = 1;
-    private bool isChangeState = false, skipLoading;
+    private bool isChangeState = false;
 
-    public LoadingState(Bootstrap initializer, bool _skipLoading = false)
+    public LoadingState(Bootstrap initializer)
     {
         Initializer = initializer;
-        skipLoading = _skipLoading;
     }
 
     public void OnEnter()
     {
+        Initializer.result = false;
         Initializer.StartNewServise();
         FaderOnTransit.instance.SetLogs("Создание сцены");
-        if (skipLoading)
-            Initializer.StateMachine.SwitchState<GameState>();
     }
 
     public void OnExit()
@@ -32,7 +30,7 @@ public class LoadingState : IState<Bootstrap>, IEnterable, IExitable, ITickable
 
         timer += 1f;
 
-        if (timer > 100f && !isChangeState)
+        if (timer > 100f && !isChangeState && Initializer.result)
         {
             isChangeState = true;
             Initializer.StateMachine.SwitchState<GameState>();
@@ -42,11 +40,6 @@ public class LoadingState : IState<Bootstrap>, IEnterable, IExitable, ITickable
         {
             FaderOnTransit.instance.SetLogs($"Загрузка сцены {timer}%");
             timerStep += 1;
-            if (!Settings.isLoad)
-            {
-                Initializer.StateMachine.SwitchState<GameState>();
-                FaderOnTransit.instance.SetLogs("Загрузка сцены 100%");
-            }
         }
     }
 }

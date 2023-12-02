@@ -4,12 +4,11 @@ using System.Collections;
 using System.Linq;
 using System;
 
-public class UIInventory : MonoBehaviour
+public class UIInventory : MonoBehaviour, ISetAble
 {
     [SerializeField] private GameObject grid;
     [SerializeField] private bool filling;
     [SerializeField] private UIInventorySlot[] activeCells, craftCells;
-    [SerializeField] private UIInventorySlot result;
     [SerializeField] private RectTransform cell;
     [SerializeField] private InventoryCraftInfo[] CraftInfo;
     private bool isActive;
@@ -18,7 +17,7 @@ public class UIInventory : MonoBehaviour
 
     private UIInventoryTester tester;
 
-    private void Start()
+    public void SetUp(ref bool result)
     {
         var uiSlot = GetComponentsInChildren<UIInventorySlot>();
         var slotList = new List<UIInventorySlot>();
@@ -28,10 +27,10 @@ public class UIInventory : MonoBehaviour
         // // uiSlot = uiSlot.Concat(uiSlotBar).ToArray();
         tester = new UIInventoryTester(slotList.ToArray());
         tester.FillSlots(filling);
-        inventory.OnInventoryStateChangedEvent += OnInventoryStateChanged;
         CraftInfo = InfoManager.GetAllCraftRecepts();
         isActive = false;
         grid.SetActive(isActive);
+        inventory.OnInventoryStateChangedEvent += OnInventoryStateChanged;
         PlayerData.instance.placeObject += PlaceObject;
         PlayerData.instance.aimRaise += AimRaise;
     }
@@ -43,7 +42,7 @@ public class UIInventory : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyUp("e") && !Input.GetMouseButton(0) && !PlayerData.instance.dialog.activeSelf)
+        if (Input.GetKeyUp("e") && !Input.GetMouseButton(0))
         {
             isActive = !isActive;
             grid.SetActive(isActive);
@@ -94,7 +93,8 @@ public class UIInventory : MonoBehaviour
 
     }
 
-    [SerializeField] private string[] names = new string[8], sortedNames, sortedIngr;
+    [SerializeField] private string[] names, sortedNames, sortedIngr;
+    [SerializeField] private UIInventorySlot result;
     [SerializeField] private GameObject craftLine;
     private void OnInventoryStateChanged(object sender)
     {

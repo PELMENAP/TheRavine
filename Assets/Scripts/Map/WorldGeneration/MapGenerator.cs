@@ -18,7 +18,7 @@ public class MapGenerator : MonoBehaviour, ISetAble
     public int seed;
     public const int mapChunkSize = 16, chunkCount = 3, scale = 5, generationSize = scale * mapChunkSize, waterLevel = 1;
     public const float sqrViewerMoveThresholdForChunkUpdate = 60f;
-    public static Vector2 vectorOffset = new Vector2(generationSize, generationSize) * 3 / 2;
+    public static Vector2 vectorOffset = new Vector2(generationSize, generationSize) * chunkCount / 2;
     public Vector3 rotation;
     [SerializeField] private float noiseScale;
     [SerializeField] private int octaves;
@@ -56,7 +56,7 @@ public class MapGenerator : MonoBehaviour, ISetAble
         foreach (var generator in endless)
             generator.UpdateChunk(position);
     }
-    public void SetUp()
+    public void SetUp(ref bool result)
     {
         if (endlessFlag[0])
             endless.Add(new EndlessTerrain(this));
@@ -78,6 +78,7 @@ public class MapGenerator : MonoBehaviour, ISetAble
             generator.UpdateChunk(position);
         }
         StartCoroutine(GenerationUpdate());
+        result = true;
     }
 
     private float[,] noiseMap = new float[mapChunkSize, mapChunkSize];
@@ -87,9 +88,11 @@ public class MapGenerator : MonoBehaviour, ISetAble
     public ChunkData GenerateMapData(Vector2 centre)
     {
         List<Vector2> objectsToInst = new List<Vector2>();
-        Color[] colourMap = new Color[mapChunkSize * mapChunkSize];
         byte[,] heightMap = new byte[mapChunkSize, mapChunkSize];
-        Noise.GenerateNoiseMap(ref noiseMap, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, centre * mapChunkSize, Noise.NormalizeMode.Global);
+        if (centre.x > 1000000 || centre.y > 1000000)
+            Noise.GenerateNoiseMap(ref noiseMap, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, centre * mapChunkSize, Noise.NormalizeMode.Local);
+        else
+            Noise.GenerateNoiseMap(ref noiseMap, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, centre * mapChunkSize, Noise.NormalizeMode.Global);
         isEqual = true;
         for (byte x = 0; x < mapChunkSize; x++)
         {
@@ -99,10 +102,7 @@ public class MapGenerator : MonoBehaviour, ISetAble
                 for (byte i = 0; i < regions.Length; i++)
                 {
                     if (currentHeight >= regions[i].height)
-                    {
-                        colourMap[y * mapChunkSize + x] = regions[i].colour;
                         heightMap[(mapChunkSize - x - 1), (mapChunkSize - y - 1)] = i;
-                    }
                     else
                         break;
                 }
@@ -126,7 +126,7 @@ public class MapGenerator : MonoBehaviour, ISetAble
                 }
             }
         }
-        return new ChunkData(colourMap, heightMap, centre, isEqual, objectsToInst);
+        return new ChunkData(heightMap, isEqual, objectsToInst);
     }
 
 
@@ -150,13 +150,18 @@ public class MapGenerator : MonoBehaviour, ISetAble
             yield return new WaitForFixedUpdate();
         }
     }
+
+    public void ExtraUpdate()
+    {
+        position = new Vector3(viewer.position.x, viewer.position.y, 0) / (scale * mapChunkSize);
+        endless[2].UpdateChunk(position);
+    }
 }
 
 [System.Serializable]
 public struct TerrainType
 {
     public float height;
-    public Color colour;
     public ObjectInfoGeneration[] objects;
 }
 
@@ -173,17 +178,12 @@ public enum InstanceType
 }
 public struct ChunkData
 {
-    public readonly Color[] colourMap;
     public readonly byte[,] heightMap;
-    public readonly Vector2 centre;
     public readonly bool isEqual;
-    public readonly List<Vector2> objectsToInst;
-
-    public ChunkData(Color[] colourMap, byte[,] heightMap, Vector2 centre, bool isEqual, List<Vector2> objectsToInst)
+    public List<Vector2> objectsToInst;
+    public ChunkData(byte[,] heightMap, bool isEqual, List<Vector2> objectsToInst)
     {
-        this.colourMap = colourMap;
         this.heightMap = heightMap;
-        this.centre = centre;
         this.isEqual = isEqual;
         this.objectsToInst = objectsToInst;
     }

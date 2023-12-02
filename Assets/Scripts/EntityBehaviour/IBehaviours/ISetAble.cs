@@ -1,4 +1,4 @@
 public interface ISetAble
 {
-    void SetUp();
+    void SetUp(ref bool result);
 }

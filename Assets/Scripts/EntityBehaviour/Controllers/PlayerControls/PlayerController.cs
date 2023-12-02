@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using System.Collections;
 using System;
 
@@ -9,6 +10,7 @@ public class PlayerController : MonoBehaviour, IControllable
     [SerializeField] private Vector2 movementDirection, aim;
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Animator animator, shadowAnimator;
+    [SerializeField] private InputActionReference MovementRef;
     private IController currentController;
     private bool act = true;
     private Transform crosshair, entityTrans, playerMark;
@@ -22,7 +24,7 @@ public class PlayerController : MonoBehaviour, IControllable
         switch (Settings._controlType)
         {
             case ControlType.Personal:
-                currentController = new PCController();
+                currentController = new PCController(MovementRef);
                 break;
             case ControlType.Mobile:
                 currentController = new JoistickController(PlayerData.instance.joystick);
@@ -80,9 +82,9 @@ public class PlayerController : MonoBehaviour, IControllable
 
     public void Aim()
     {
-        if (Input.GetMouseButton(1))
+        if (Mouse.current.rightButton.isPressed)
         {
-            aim = PlayerData.instance.cachedCamera.ScreenToWorldPoint(Input.mousePosition) - entityTrans.position;
+            aim = PlayerData.instance.cachedCamera.ScreenToWorldPoint(Mouse.current.position.ReadValue()) - entityTrans.position;
             if (aim.magnitude > 2)
             {
                 aim.Normalize();
@@ -104,7 +106,7 @@ public class PlayerController : MonoBehaviour, IControllable
 
     private void AimRaise(Vector3 position, bool isAccurance)
     {
-        if (Input.GetKeyDown("f"))
+        if (Mouse.current.leftButton.wasPressedThisFrame)
         {
             if (!isAccurance)
             {
@@ -138,13 +140,12 @@ public class PlayerController : MonoBehaviour, IControllable
         act = true;
     }
 
-    public void OnDisable()
-    {
-        BreakUp();
-    }
-
     public void BreakUp()
     {
         currentController.MeetEnds();
+    }
+    private void OnDisable()
+    {
+        BreakUp();
     }
 }

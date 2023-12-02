@@ -56,22 +56,16 @@ MonoBehaviour:
   lacunarity: 3
   regions:
   - height: 0
-    colour: {r: 0, g: 0, b: 0, a: 0}
     objects: []
   - height: 0.15
-    colour: {r: 0, g: 0, b: 0, a: 0}
     objects: []
   - height: 0.25
-    colour: {r: 0, g: 0, b: 0, a: 0}
     objects: []
   - height: 0.26
-    colour: {r: 0, g: 0, b: 0, a: 0}
     objects: []
   - height: 0.3
-    colour: {r: 0, g: 0, b: 0, a: 0}
     objects: []
   - height: 0.45
-    colour: {r: 0, g: 0, b: 0, a: 0}
     objects:
     - Chance: 60
       Prefab: {fileID: 8079554152659468491, guid: eac9ac9f7b106c63593abaabcb67837c,
@@ -86,13 +80,10 @@ MonoBehaviour:
       Prefab: {fileID: 948248636415433774, guid: e487b2f5e2401d74a9e583e59e72f6ce,
         type: 3}
   - height: 0.7
-    colour: {r: 0, g: 0, b: 0, a: 0}
     objects: []
   - height: 0.9
-    colour: {r: 0, g: 0, b: 0, a: 0}
     objects: []
   - height: 1.15
-    colour: {r: 0, g: 0, b: 0, a: 0}
     objects: []
   viewer: {fileID: 0}
   endlessFlag: 010101

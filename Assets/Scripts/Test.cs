@@ -25,13 +25,7 @@ public class Test : MonoBehaviour
     public ControlType control;
     public GameObject prefab;
 
-    [Button]
-    private void TEst()
-    {
-        print(prefab.transform.rotation.z);
-    }
-
-    private Vector2Int RoundVector(Vector2 vec) => new Vector2Int((int)vec.x, (int)vec.y);
+    private Vector2 RoundVector(Vector2 vec) => new Vector2((int)vec.x, (int)vec.y);
 
     private void Awake()
     {
@@ -47,6 +41,33 @@ public class Test : MonoBehaviour
         if (Input.GetKeyDown("f"))
         {
             position = RoundVector(new Vector2(viewer.position.x, viewer.position.y));
+            if (ObjectSystem.inst.ContainsGlobal(position))
+                return;
+            generator.GetMapData(RoundVector((position + new Vector2(80, 80) * 3 / 2) / (5 * 16))).objectsToInst.Add(position);
+            ushort id = (ushort)prefab.GetInstanceID();
+            PrefabData data = ObjectSystem.inst.GetPrefabInfo(id);
+            ObjectSystem.inst.AddToGlobal(position, id, data.name, data.amount, data.type);
+            generator.ExtraUpdate();
+        }
+
+        if (Input.GetKeyDown("g"))
+        {
+            int size = 1;
+            for (int x = -size; x <= size; x++)
+            {
+                for (int y = -size; y <= size; y++)
+                {
+                    position = RoundVector(new Vector2(viewer.position.x, viewer.position.y)) + new Vector2(x, y);
+                    if (!ObjectSystem.inst.ContainsGlobal(position))
+                        continue;
+                    if (ObjectSystem.inst.GetGlobalObjectInfo(position).objectType == InstanceType.Inter)
+                    {
+                        ObjectSystem.inst.RemoveFromGlobal(position);
+                        generator.GetMapData(RoundVector((position + new Vector2(80, 80) * 3 / 2) / (5 * 16))).objectsToInst.Remove(position);
+                    }
+                }
+            }
+            generator.ExtraUpdate();
         }
     }
     private void TestSimilarity()
@@ -77,11 +98,10 @@ public class Test : MonoBehaviour
     // }
 
     [Button]
-
     private void TestPosition()
     {
         position = new Vector2(viewer.position.x, viewer.position.y);
-        Vector2Int chunkPos = RoundVector(position / (5 * 16));
+        Vector2 chunkPos = RoundVector((position + new Vector2(80, 80) * 3 / 2) / (5 * 16));
         Vector2 playerPos = RoundVector(position);
         Vector2 XYpos = (playerPos - chunkPos * (5 * 16)) / 5;
         print(chunkPos);
