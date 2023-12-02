@@ -9,7 +9,6 @@ public class PlayerData : AEntity, ISetAble
     public CM cameraMen;
     public Camera cachedCamera { get; private set; }
     public static PlayerData instance;
-    public GameObject dialog;
     public TextMeshProUGUI InputWindow;
     public float reloadSpeed;
     public Action<Vector3> placeObject, aimRaise;
@@ -25,26 +24,28 @@ public class PlayerData : AEntity, ISetAble
 
     #region [MONO]
 
-    public void SetUp()
+    public void SetUp(ref bool result)
     {
         instance = this;
         entityTrans = this.transform;
-        cameraMen.SetUp();
+        cameraMen.SetUp(ref result);
         cachedCamera = cameraMen.mainCam;
-        dialog.SetActive(false);
         controller = GetComponent<IControllable>();
         // ui.AddSkill(new SkillRush(10f, 0.05f, 20), PData.pdata.dushParent, PData.pdata.dushImage, "Rush");
-        Init();
         controller.SetInitialValues();
+        result = true;
     }
 
-    private void Update()
-    {
-        if (Input.GetKeyUp("="))
-            ui.ActivateSkill("Rush");
-        else if (Input.GetKeyUp("-"))
-            ui.DeactivateSkill("Rush");
-    }
+    public void init() => Init();
+
+
+    // private void Update()
+    // {
+    //     if (Input.GetKeyUp("="))
+    //         ui.ActivateSkill("Rush");
+    //     else if (Input.GetKeyUp("-"))
+    //         ui.DeactivateSkill("Rush");
+    // }
 
     private void FixedUpdate()
     {
@@ -77,13 +78,11 @@ public class PlayerData : AEntity, ISetAble
         idleAction += ReloadSkills;
         PlayerBehaviourIdle Idle = new PlayerBehaviourIdle(controller, idleAction);
         behavioursMap[typeof(PlayerBehaviourIdle)] = Idle;
-
         idleAction = controller.Animate;
         idleAction += controller.Aim;
         idleAction += ReloadSkills;
         PlayerBehaviourDialoge Dialoge = new PlayerBehaviourDialoge();
         behavioursMap[typeof(PlayerBehaviourDialoge)] = Dialoge;
-
         idleAction = controller.Animate;
         idleAction += controller.Aim;
         idleAction += ReloadSkills;
@@ -135,5 +134,10 @@ public class PlayerData : AEntity, ISetAble
         yield return new WaitForSeconds(1);
         // animator.SetBool("isPrick", false);
         // moving = true;
+    }
+
+    public void MoveTo(Vector2 newPosition)
+    {
+        entityTrans.position = newPosition;
     }
 }

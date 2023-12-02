@@ -11,6 +11,7 @@ public class BootstrapState : IState<Bootstrap>, IEnterable, IExitable
 
     public void OnEnter()
     {
+        Initializer.result = false;
         Initializer.StartNewServise();
         FaderOnTransit.instance.SetLogs("Выполнен вход в игру");
         FaderOnTransit.instance.SetLogs("Создание точки входа");
@@ -20,7 +21,6 @@ public class BootstrapState : IState<Bootstrap>, IEnterable, IExitable
     public void OnExit()
     {
         FaderOnTransit.instance.SetLogs("Точка входа создана");
-        if (!Initializer.isTest)
-            Initializer.AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
+        Initializer.AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
     }
 }

@@ -1,5 +1,5 @@
 using UnityEngine.SceneManagement;
-using UnityEngine.Rendering.Universal; 
+using UnityEngine.Rendering.Universal;
 using UnityEngine;
 using System.Collections;
 
@@ -33,7 +33,8 @@ public class SceneTransition : MonoBehaviour
         Destroy(this.gameObject);
     }
 
-    public void AddCameraToStack(Camera _cameraToAdd){
+    public void AddCameraToStack(Camera _cameraToAdd)
+    {
         var cameraData = _camera.GetUniversalAdditionalCameraData();
         cameraData.cameraStack.Add(_cameraToAdd);
     }

@@ -32,7 +32,7 @@ public class EndlessObjects : IEndless
                 foreach (var item in map)
                 {
                     ObjectInstInfo info = ObjectSystem.inst.GetGlobalObjectInfo(item);
-                    if (info.name == "therivinetop")
+                    if (info.prefabID == 0)
                         continue;
                     objectUpdate[info.prefabID]++;
                     PrefabData objectInfo = ObjectSystem.inst.GetPrefabInfo(info.prefabID);

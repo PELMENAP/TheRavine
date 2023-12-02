@@ -32,7 +32,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _FaceTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 49e5a0bcea3f0e74bbdfe92623a02d36, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
@@ -50,7 +50,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _Ambient: 0.5
-    - _Bevel: 0.575
+    - _Bevel: 0.522
     - _BevelClamp: 0.764
     - _BevelOffset: 0
     - _BevelRoundness: 0
@@ -65,10 +65,10 @@ Material:
     - _FaceShininess: 0
     - _FaceUVSpeedX: 0
     - _FaceUVSpeedY: 0
-    - _GlowInner: 0.917
-    - _GlowOffset: -1
+    - _GlowInner: 0.839
+    - _GlowOffset: 0.06
     - _GlowOuter: 0.185
-    - _GlowPower: 0.283
+    - _GlowPower: 0.727
     - _GradientScale: 6
     - _LightAngle: 3.1416
     - _MaskEdgeSoftness: 0.01
@@ -139,9 +139,9 @@ MonoBehaviour:
   material: {fileID: -6664626089522105130}
   materialHashCode: -1870953074
   m_Version: 1.1.0
-  m_SourceFontFileGUID: c0f42fea159b5aa1cb2ed46ec34439ee
-  m_SourceFontFile_EditorRef: {fileID: 12800000, guid: c0f42fea159b5aa1cb2ed46ec34439ee,
-    type: 3}
+  m_SourceFontFileGUID: 0000000000000000e000000000000000
+  m_SourceFontFile_EditorRef: {fileID: 10102, guid: 0000000000000000e000000000000000,
+    type: 0}
   m_SourceFontFile: {fileID: 0}
   m_AtlasPopulationMode: 0
   m_FaceInfo:

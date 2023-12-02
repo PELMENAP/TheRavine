@@ -12,14 +12,16 @@ public class GameState : IState<Bootstrap>, IEnterable, IExitable
 
     public void OnEnter()
     {
+        Initializer.result = false;
         Initializer.StartNewServise();
         FaderOnTransit.instance.SetLogs("Начало игры");
-        FaderOnTransit.instance.SetLogs("");
         FaderOnTransit.instance.FadeOut(() => aboba = true);
+        Initializer.Finally();
     }
 
     public void OnExit()
     {
+        DayCycle.closeThread = false;
         Debug.Log("Игра закончена");
     }
 

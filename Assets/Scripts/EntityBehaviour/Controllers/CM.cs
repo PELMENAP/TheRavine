@@ -9,11 +9,12 @@ public class CM : MonoBehaviour, ISetAble
     private Vector3 offset, playerOffset, targetPos;
     private bool changeCam = false;
 
-    public void SetUp()
+    public void SetUp(ref bool result)
     {
         cameraForMap = false;
         offset = cameratrans.position - PlayerData.instance.entityTrans.position;
         cameratrans.position = PlayerData.instance.entityTrans.position + new Vector3(0, 0, -1);
+        result = true;
     }
 
     public void CameraUpdate()

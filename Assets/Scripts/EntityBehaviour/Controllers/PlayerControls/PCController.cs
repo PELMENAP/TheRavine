@@ -4,12 +4,13 @@ using UnityEngine.InputSystem;
 
 public class PCController : IController
 {
-    public PCController()
+    private InputActionReference MovementRef;
+    public PCController(InputActionReference _MovementRef)
     {
-
+        MovementRef = _MovementRef;
     }
 
-    public Vector2 GetMove() => GData.GInput.Gameplay.Movement.ReadValue<Vector2>();
+    public Vector2 GetMove() => MovementRef.action.ReadValue<Vector2>();
 
 
     public void GetJump()
