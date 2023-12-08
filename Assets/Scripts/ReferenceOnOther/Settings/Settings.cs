@@ -28,10 +28,7 @@ public class Settings : MonoBehaviour
 
     public void SetJoistick()
     {
-        if (joisticToggle.isOn)
-            _controlType = ControlType.Mobile;
-        else
-            _controlType = ControlType.Personal;
+        _controlType = joisticToggle.isOn ? ControlType.Mobile : ControlType.Personal;
     }
 
     public void SetQuality()
@@ -42,6 +39,5 @@ public class Settings : MonoBehaviour
     public void SetShadows()
     {
         isShadow = shadowToggle.isOn;
-        print(isShadow);
     }
 }

@@ -11,8 +11,7 @@ public class BootstrapState : IState<Bootstrap>, IEnterable, IExitable
 
     public void OnEnter()
     {
-        Initializer.result = false;
-        Initializer.StartNewServise();
+        Initializer.StartNewServise(null);
         FaderOnTransit.instance.SetLogs("Выполнен вход в игру");
         FaderOnTransit.instance.SetLogs("Создание точки входа");
         Initializer.StateMachine.SwitchState<InitialState>();

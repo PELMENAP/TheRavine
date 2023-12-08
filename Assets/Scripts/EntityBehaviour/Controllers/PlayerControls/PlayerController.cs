@@ -6,7 +6,7 @@ using System;
 public class PlayerController : MonoBehaviour, IControllable
 {
     private const int PickDistance = 1;
-    [SerializeField] private float MOVEMENT_BASE_SPEED, movementSpeed, CROSSHAIR_DISTANSE, offset, timeLimit;
+    [SerializeField] private float movementSpeed, offset, timeLimit;
     [SerializeField] private Vector2 movementDirection, aim;
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Animator animator, shadowAnimator;
@@ -44,7 +44,7 @@ public class PlayerController : MonoBehaviour, IControllable
         movementDirection = currentController.GetMove();
         movementSpeed = Mathf.Clamp(movementDirection.magnitude, 0.0f, 1.0f);
         movementDirection.Normalize();
-        rb.velocity = movementDirection * movementSpeed * MOVEMENT_BASE_SPEED;
+        rb.velocity = movementDirection * movementSpeed * PlayerData.instance.MOVEMENT_BASE_SPEED;
         MoveMark();
     }
 
@@ -85,10 +85,11 @@ public class PlayerController : MonoBehaviour, IControllable
         if (Mouse.current.rightButton.isPressed)
         {
             aim = PlayerData.instance.cachedCamera.ScreenToWorldPoint(Mouse.current.position.ReadValue()) - entityTrans.position;
+            PlayerData.instance.SetMousePosition(new Vector3(aim.x, aim.y, 0));
             if (aim.magnitude > 2)
             {
                 aim.Normalize();
-                crosshair.localPosition = aim * CROSSHAIR_DISTANSE;
+                crosshair.localPosition = aim * PlayerData.instance.CROSSHAIR_DISTANSE;
             }
             else
                 crosshair.localPosition = aim;
@@ -139,7 +140,6 @@ public class PlayerController : MonoBehaviour, IControllable
         yield return new WaitForSeconds(timeLimit);
         act = true;
     }
-
     public void BreakUp()
     {
         currentController.MeetEnds();

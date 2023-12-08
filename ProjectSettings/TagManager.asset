@@ -9,6 +9,7 @@ TagManager:
   - Enviroment
   - Shadow
   - Sun
+  - Particle
   layers:
   - Default
   - TransparentFX

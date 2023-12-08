@@ -3,7 +3,6 @@ using System.Collections;
 
 public class AudioRadioController : MonoBehaviour
 {
-
     [SerializeField] private AudioSource audioSource;
     private AudioClip[] audioClipRadio;
     [SerializeField] private AudioClip[] audioClipRadioSad;
@@ -15,7 +14,7 @@ public class AudioRadioController : MonoBehaviour
     private int count;
     private int mood;
 
-    private void Start()
+    private void OnEnable()
     {
         DayCycle.newDay += ChangeMood;
         ChangeMood();

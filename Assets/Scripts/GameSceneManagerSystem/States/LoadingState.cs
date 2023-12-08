@@ -3,7 +3,6 @@ using UnityEngine;
 public class LoadingState : IState<Bootstrap>, IEnterable, IExitable, ITickable
 {
     public Bootstrap Initializer { get; }
-
     private float timer = 0;
     private int timerStep = 1;
     private bool isChangeState = false;
@@ -15,8 +14,7 @@ public class LoadingState : IState<Bootstrap>, IEnterable, IExitable, ITickable
 
     public void OnEnter()
     {
-        Initializer.result = false;
-        Initializer.StartNewServise();
+        Initializer.StartNewServise(() => isChangeState = true);
         FaderOnTransit.instance.SetLogs("Создание сцены");
     }
 
@@ -27,16 +25,14 @@ public class LoadingState : IState<Bootstrap>, IEnterable, IExitable, ITickable
 
     public void OnTick()
     {
-
-        timer += 1f;
-
-        if (timer > 100f && !isChangeState && Initializer.result)
+        timer += Initializer.tickPerUpdate;
+        if (timer > 100 && isChangeState)
         {
-            isChangeState = true;
+            isChangeState = false;
             Initializer.StateMachine.SwitchState<GameState>();
         }
 
-        if ((int)timer >= timerStep * 10 && !isChangeState)
+        if (timer >= timerStep * 10)
         {
             FaderOnTransit.instance.SetLogs($"Загрузка сцены {timer}%");
             timerStep += 1;

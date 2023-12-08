@@ -1,20 +1,23 @@
 ﻿using UnityEngine;
-
+using UnityEngine.InputSystem;
 public class CM : MonoBehaviour, ISetAble
 {
-    [SerializeField] private Transform cameratrans;
+    private ServiceLocator serviceLocator;
+    [SerializeField] private Transform cameratrans, playerTrans;
     [SerializeField] private float Velocity, MinDistance;
     public Camera mainCam;
     public static bool cameraForMap;
-    private Vector3 offset, playerOffset, targetPos;
+    private Vector3 offset, targetPos;
     private bool changeCam = false;
 
-    public void SetUp(ref bool result)
+    public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
+        serviceLocator = locator;
         cameraForMap = false;
-        offset = cameratrans.position - PlayerData.instance.entityTrans.position;
-        cameratrans.position = PlayerData.instance.entityTrans.position + new Vector3(0, 0, -1);
-        result = true;
+        playerTrans = PlayerData.instance.entityTrans;
+        offset = cameratrans.position - playerTrans.position;
+        cameratrans.position = playerTrans.position + new Vector3(0, 0, -1);
+        callback?.Invoke();
     }
 
     public void CameraUpdate()
@@ -23,7 +26,7 @@ public class CM : MonoBehaviour, ISetAble
         {
             if (cameraForMap)
             {
-                cameratrans.position = PlayerData.instance.entityTrans.position + new Vector3(0, 0, -1);
+                cameratrans.position = playerTrans.position + new Vector3(0, 0, -1);
                 mainCam.orthographicSize = 20;
             }
             else
@@ -51,15 +54,11 @@ public class CM : MonoBehaviour, ISetAble
 
     private void UpdateForGame()
     {
-        if (PlayerData.instance.entityTrans == null)
-        {
+        targetPos = playerTrans.position + offset;
+        if (Mouse.current.rightButton.isPressed)
+            targetPos += PlayerData.instance.factMousePosition;
+        if (Vector3.Distance(cameratrans.position, targetPos) < MinDistance)
             return;
-        }
-        targetPos = PlayerData.instance.entityTrans.position + offset;
-        if (PlayerData.instance.entityTrans == null || Vector3.Distance(cameratrans.position, targetPos) < MinDistance)
-        {
-            return;
-        }
         cameratrans.Translate(cameratrans.InverseTransformPoint(Vector3.Lerp(cameratrans.position, targetPos, Velocity * Time.fixedDeltaTime)));
     }
 

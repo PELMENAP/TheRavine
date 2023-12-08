@@ -4,30 +4,26 @@ using UnityEngine;
 public class EndlessLiquids : IEndless
 {
     private MapGenerator generator;
-    private const int chunkCount = MapGenerator.chunkCount, mapChunkSize = MapGenerator.mapChunkSize;
-    private int scale = MapGenerator.scale, generationSize = MapGenerator.generationSize;
+    private const byte chunkCount = MapGenerator.chunkCount, mapChunkSize = MapGenerator.mapChunkSize;
+    private byte scale = MapGenerator.scale, generationSize = MapGenerator.generationSize;
     private Vector2 vectorOffset = MapGenerator.vectorOffset;
-
     public EndlessLiquids(MapGenerator _generator)
     {
         generator = _generator;
     }
-
-    private int currentChunkCoordX, currentChunkCoordY, countOfQuads;
+    private int countOfQuads;
     private byte[,] map;
     private bool[,] meshMap = new bool[mapChunkSize * chunkCount, mapChunkSize * chunkCount];
-    public void UpdateChunk(Vector3 Vposition)
+    public void UpdateChunk(Vector2 Vposition)
     {
-        currentChunkCoordX = Mathf.RoundToInt(Vposition.x);
-        currentChunkCoordY = Mathf.RoundToInt(Vposition.y);
         countOfQuads = 0;
-        for (int xOffset = 0; xOffset < chunkCount; xOffset++)
+        for (byte xOffset = 0; xOffset < chunkCount; xOffset++)
         {
-            for (int yOffset = 0; yOffset < chunkCount; yOffset++)
+            for (byte yOffset = 0; yOffset < chunkCount; yOffset++)
             {
-                map = generator.GetMapData(new Vector2(currentChunkCoordX + xOffset, currentChunkCoordY + yOffset)).heightMap;
-                for (int x = 0; x < mapChunkSize; x++)
-                    for (int y = 0; y < mapChunkSize; y++)
+                map = generator.GetMapData(new Vector2(Vposition.x + xOffset, Vposition.y + yOffset)).heightMap;
+                for (byte x = 0; x < mapChunkSize; x++)
+                    for (byte y = 0; y < mapChunkSize; y++)
                     {
                         if (map[x, y] <= MapGenerator.waterLevel)
                         {
@@ -42,17 +38,17 @@ public class EndlessLiquids : IEndless
             }
         }
         generator.waterF.mesh = GetQuadWaterMeshMap(meshMap, countOfQuads, mapChunkSize * chunkCount);
-        generator.waterT.position = new Vector2(currentChunkCoordX, currentChunkCoordY) * generationSize - vectorOffset;
+        generator.waterT.position = new Vector2(Vposition.x, Vposition.y) * generationSize - vectorOffset;
     }
 
     Mesh mesh;
     Vector3[] vertices;
     Vector2[] uv;
     int[] triangles;
-    int dotCount, trianglCount, quadsCount;
+    ushort dotCount, trianglCount, quadsCount;
     float diff = 0.1f;
 
-    private Mesh GetQuadWaterMeshMap(bool[,] meshMap, int countOfQuads, int sizeMap)
+    private Mesh GetQuadWaterMeshMap(bool[,] meshMap, int countOfQuads, byte sizeMap)
     {
         mesh = new Mesh();
         vertices = new Vector3[4 * countOfQuads];
@@ -61,9 +57,9 @@ public class EndlessLiquids : IEndless
         dotCount = 0;
         trianglCount = 0;
         quadsCount = 0;
-        for (int x = 0; x < sizeMap; x++)
+        for (byte x = 0; x < sizeMap; x++)
         {
-            for (int y = 0; y < sizeMap; y++)
+            for (byte y = 0; y < sizeMap; y++)
             {
                 if (meshMap[x, y])
                 {

@@ -6,15 +6,16 @@ using TMPro;
 
 public class PlayerData : AEntity, ISetAble
 {
+    private ServiceLocator serviceLocator;
     public CM cameraMen;
     public Camera cachedCamera { get; private set; }
     public static PlayerData instance;
     public TextMeshProUGUI InputWindow;
-    public float reloadSpeed;
+    public float reloadSpeed, MOVEMENT_BASE_SPEED, maxMouseDis, CROSSHAIR_DISTANSE;
     public Action<Vector3> placeObject, aimRaise;
     public Joystick joystick;
     public Transform entityTrans, crosshair, playerMark;
-
+    public Vector3 factMousePosition;
     private IControllable controller;
 
     public PlayerUI ui;
@@ -24,18 +25,18 @@ public class PlayerData : AEntity, ISetAble
 
     #region [MONO]
 
-    public void SetUp(ref bool result)
+    public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
+        serviceLocator = locator;
         instance = this;
         entityTrans = this.transform;
-        cameraMen.SetUp(ref result);
+        cameraMen.SetUp(null, locator);
         cachedCamera = cameraMen.mainCam;
         controller = GetComponent<IControllable>();
         // ui.AddSkill(new SkillRush(10f, 0.05f, 20), PData.pdata.dushParent, PData.pdata.dushImage, "Rush");
         controller.SetInitialValues();
-        result = true;
+        callback?.Invoke();
     }
-
     public void init() => Init();
 
 
@@ -139,5 +140,20 @@ public class PlayerData : AEntity, ISetAble
     public void MoveTo(Vector2 newPosition)
     {
         entityTrans.position = newPosition;
+    }
+
+    public void SetMousePosition(Vector3 aim)
+    {
+        if (aim.x > maxMouseDis)
+            aim.x = maxMouseDis;
+        if (aim.y > maxMouseDis)
+            aim.y = maxMouseDis;
+        if (aim.x < -maxMouseDis)
+            aim.x = -maxMouseDis;
+        if (aim.y < -maxMouseDis)
+            aim.y = -maxMouseDis;
+        if (aim.magnitude < CROSSHAIR_DISTANSE + 1)
+            aim = Vector2.zero;
+        factMousePosition = aim;
     }
 }

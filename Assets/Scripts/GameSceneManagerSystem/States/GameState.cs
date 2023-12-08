@@ -12,26 +12,19 @@ public class GameState : IState<Bootstrap>, IEnterable, IExitable
 
     public void OnEnter()
     {
-        Initializer.result = false;
-        Initializer.StartNewServise();
+        Initializer.StartNewServise(null);
+        Initializer.StartNewServise(Initializer.Finally);
         FaderOnTransit.instance.SetLogs("Начало игры");
         FaderOnTransit.instance.FadeOut(() => aboba = true);
-        Initializer.Finally();
     }
 
     public void OnExit()
     {
         DayCycle.closeThread = false;
-        Debug.Log("Игра закончена");
     }
 
     public void OnTick()
     {
-        if (Input.GetKeyDown("space"))
-        {
-            Debug.Log("игровой тик");
-        }
-
         if (aboba)
         {
             // Initializer.DestroySceneTransitions();

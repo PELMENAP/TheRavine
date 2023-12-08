@@ -41,12 +41,12 @@ public class Test : MonoBehaviour
         if (Input.GetKeyDown("f"))
         {
             position = RoundVector(new Vector2(viewer.position.x, viewer.position.y));
-            if (ObjectSystem.inst.ContainsGlobal(position))
+            if (generator.objectSystem.ContainsGlobal(position))
                 return;
-            generator.GetMapData(RoundVector((position + new Vector2(80, 80) * 3 / 2) / (5 * 16))).objectsToInst.Add(position);
-            ushort id = (ushort)prefab.GetInstanceID();
-            PrefabData data = ObjectSystem.inst.GetPrefabInfo(id);
-            ObjectSystem.inst.AddToGlobal(position, id, data.name, data.amount, data.type);
+            generator.GetMapData(RoundVector((position + MapGenerator.vectorOffset) / MapGenerator.generationSize)).objectsToInst.Add(position);
+            int id = prefab.GetInstanceID();
+            PrefabData data = generator.objectSystem.GetPrefabInfo(id);
+            generator.objectSystem.AddToGlobal(position, id, data.name, data.amount, data.itype);
             generator.ExtraUpdate();
         }
 
@@ -58,12 +58,12 @@ public class Test : MonoBehaviour
                 for (int y = -size; y <= size; y++)
                 {
                     position = RoundVector(new Vector2(viewer.position.x, viewer.position.y)) + new Vector2(x, y);
-                    if (!ObjectSystem.inst.ContainsGlobal(position))
+                    if (!generator.objectSystem.ContainsGlobal(position))
                         continue;
-                    if (ObjectSystem.inst.GetGlobalObjectInfo(position).objectType == InstanceType.Inter)
+                    if (generator.objectSystem.GetGlobalObjectInfo(position).objectType == InstanceType.Inter)
                     {
-                        ObjectSystem.inst.RemoveFromGlobal(position);
-                        generator.GetMapData(RoundVector((position + new Vector2(80, 80) * 3 / 2) / (5 * 16))).objectsToInst.Remove(position);
+                        generator.objectSystem.RemoveFromGlobal(position);
+                        generator.GetMapData(RoundVector((position + MapGenerator.vectorOffset) / MapGenerator.generationSize)).objectsToInst.Remove(position);
                     }
                 }
             }
@@ -108,16 +108,10 @@ public class Test : MonoBehaviour
         print(XYpos);
     }
 
-    // [Button]
+    [Button]
 
-    // private void TestPlacedObject()
-    // {
-    //     Vector2 playerPos = RoundVector(new Vector2(viewer.position.x, viewer.position.y));
-    //     Vector2 realChunk = RoundVector(new Vector2(viewer.position.x, viewer.position.y) / (5 * 16));
-    //     ChunkData map = generator.GetMapData(new Vector2(-position.x - 1, position.y + 1));
-    //     // if (map.objectsToInst.ContainsKey(playerPos))
-    //     // {
-    //     //     print(map.objectsToInst[playerPos]);
-    //     // }
-    // }
+    private void Aboba()
+    {
+
+    }
 }

@@ -4,53 +4,47 @@ using UnityEngine;
 public class EndlessObjects : IEndless
 {
     private MapGenerator generator;
-    private const int chunkCount = MapGenerator.chunkCount;
-    private Vector2[] terrainChunksVisibleUpdate = new Vector2[chunkCount * chunkCount];
-    private PrefabInfo[] prefabInfo = ObjectSystem.inst._info;
-    private Dictionary<int, byte> objectUpdate;
+    private const byte chunkCount = MapGenerator.chunkCount;
+    private ObjectSystem objectSystem;
+    private Dictionary<int, byte> objectUpdate = new Dictionary<int, byte>(32);
     public EndlessObjects(MapGenerator _generator)
     {
         generator = _generator;
-        objectUpdate = new Dictionary<int, byte>();
+        objectSystem = generator.objectSystem;
+        ObjectInfo[] prefabInfo = objectSystem._info;
         for (int i = 0; i < prefabInfo.Length; i++)
             objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
     }
 
     private static EnumerableSnapshot<int> objectsSnapshot;
-    public void UpdateChunk(Vector3 Vposition)
+    public void UpdateChunk(Vector2 Vposition)
     {
-        int currentChunkCoordX = Mathf.RoundToInt(Vposition.x);
-        int currentChunkCoordY = Mathf.RoundToInt(Vposition.y);
-        int countOfIteration = 0;
-        for (int yOffset = 0; yOffset < chunkCount; yOffset++)
+        for (byte yOffset = 0; yOffset < chunkCount; yOffset++)
         {
-            for (int xOffset = 0; xOffset < chunkCount; xOffset++)
+            for (byte xOffset = 0; xOffset < chunkCount; xOffset++)
             {
-                Vector2 chunkCoord = new Vector2(currentChunkCoordX + xOffset, currentChunkCoordY + yOffset);
-                terrainChunksVisibleUpdate[countOfIteration] = chunkCoord;
-                List<Vector2> map = generator.GetMapData(chunkCoord).objectsToInst;
-                foreach (var item in map)
+                Vector2 chunkCoord = new Vector2(Vposition.x + xOffset, Vposition.y + yOffset);
+                foreach (var item in generator.GetMapData(chunkCoord).objectsToInst)
                 {
-                    ObjectInstInfo info = ObjectSystem.inst.GetGlobalObjectInfo(item);
+                    ObjectInstInfo info = objectSystem.GetGlobalObjectInfo(item);
                     if (info.prefabID == 0)
                         continue;
                     objectUpdate[info.prefabID]++;
-                    PrefabData objectInfo = ObjectSystem.inst.GetPrefabInfo(info.prefabID);
+                    PrefabData objectInfo = objectSystem.GetPrefabInfo(info.prefabID);
                     if (objectUpdate[info.prefabID] > objectInfo.poolSize)
                     {
                         objectInfo.poolSize++;
-                        ObjectSystem.inst.CreatePool(objectInfo.prefab, 1);
+                        objectSystem.CreatePool(objectInfo.prefab, 1);
                     }
-                    ObjectSystem.inst.Reuse(info.prefabID, item);
+                    objectSystem.Reuse(info.prefabID, item, generator.rotateValue);
                 }
-                countOfIteration++;
             }
         }
         objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
         foreach (var ID in objectsSnapshot)
         {
-            for (int j = 0; j < ObjectSystem.inst.GetPrefabInfo(ID).poolSize - objectUpdate[ID]; j++)
-                ObjectSystem.inst.Deactivate(ID);
+            for (byte j = 0; j < objectSystem.GetPrefabInfo(ID).poolSize - objectUpdate[ID]; j++)
+                objectSystem.Deactivate(ID);
             objectUpdate[ID] = 0;
         }
     }
