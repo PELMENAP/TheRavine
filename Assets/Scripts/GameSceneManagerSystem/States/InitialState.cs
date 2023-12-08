@@ -4,7 +4,7 @@ public class InitialState : IState<Bootstrap>, IEnterable, IExitable, ITickable
 {
     public Bootstrap Initializer { get; }
 
-    private float timer = 0;
+    private int timer = 0;
     private bool isChangeState = false, isLoad;
 
     public InitialState(Bootstrap initializer, bool _isLoad)
@@ -15,9 +15,8 @@ public class InitialState : IState<Bootstrap>, IEnterable, IExitable, ITickable
 
     public void OnEnter()
     {
-        Initializer.result = false;
-        Initializer.StartNewServise();
-        Initializer.StartNewServise();
+        Initializer.StartNewServise(null);
+        Initializer.StartNewServise(() => isChangeState = true);
         FaderOnTransit.instance.SetLogs("Загрузка ресурсов");
     }
 
@@ -28,11 +27,11 @@ public class InitialState : IState<Bootstrap>, IEnterable, IExitable, ITickable
 
     public void OnTick()
     {
-        timer += 1f;
-        if (timer > 100f && !isChangeState && Initializer.result)
+        timer += Initializer.tickPerUpdate;
+        if (timer > 100 && isChangeState)
         {
+            isChangeState = false;
             Initializer.StateMachine.SwitchState<LoadingState>();
-            isChangeState = true;
         }
     }
 }

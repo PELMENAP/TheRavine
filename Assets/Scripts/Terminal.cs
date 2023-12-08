@@ -4,27 +4,33 @@ using UnityEngine.InputSystem;
 using System;
 using TMPro;
 
-public class Terminal : MonoBehaviour
+public class Terminal : MonoBehaviour, ISetAble
 {
     [SerializeField] private TextMeshProUGUI InputWindow;
     [SerializeField] private TextMeshProUGUI OutputWindow;
-
     [SerializeField] private InputActionReference EnterRef;
     public string input;
+    private string[] words;
+    private PlayerData playerData;
+    private MapGenerator generator;
+    public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+    {
+        playerData = locator.GetService<PlayerData>();
+        generator = locator.GetService<MapGenerator>();
+        callback?.Invoke();
+    }
     private void OnEnter(InputAction.CallbackContext obj)
     {
         OutputWindow.text = "";
         input = InputWindow.text.Remove(InputWindow.text.Length - 1);
         ReadText(input);
-
         InputWindow.text = "";
     }
-
     private void ReadText(string input)
     {
         if (input[0] == '-')
         {
-            string[] words = input.Split(' ');
+            words = input.Split(' ');
             try
             {
                 switch (words[0])
@@ -33,15 +39,55 @@ public class Terminal : MonoBehaviour
                         switch (words[1])
                         {
                             case "i":
-                                TeleportCommandI(words);
+                                TeleportCommandI();
                                 break;
                             default:
-                                OutputReaction("неопределенный вид сущности");
+                                OutputReaction("Неопределенный вид сущности");
+                                break;
+                        }
+                        break;
+                    case "-set":
+                        switch (words[1])
+                        {
+                            case "i":
+                                switch (words[2])
+                                {
+                                    case "speed":
+                                        SetPlayerValueCommand("speed");
+                                        break;
+                                    case "view":
+                                        SetPlayerValueCommand("view");
+                                        break;
+                                    default:
+                                        OutputReaction("Неизвестный параметр");
+                                        break;
+                                }
+                                break;
+                            default:
+                                OutputReaction("Неопределенный вид сущности");
+                                break;
+                        }
+                        break;
+                    case "-когда":
+                        OutputReaction("Спросите что-нибудь более оригинальное");
+                        break;
+                    case "-rotate":
+                        switch (words[1])
+                        {
+                            case "90":
+                                RotateSpace(90);
+                                break;
+                            case "-90":
+                                Debug.Log("-90");
+                                RotateSpace(-90);
+                                break;
+                            default:
+                                OutputReaction("Неопределенная операция поворота");
                                 break;
                         }
                         break;
                     default:
-                        OutputReaction("неизвестная команда");
+                        OutputReaction("Неизвестная команда");
                         break;
                 }
                 // foreach (var item in words)
@@ -51,12 +97,12 @@ public class Terminal : MonoBehaviour
             }
             catch
             {
-                OutputReaction("недопустимый синтаксис");
+                OutputReaction("Недопустимый синтаксис");
             }
         }
     }
 
-    private void TeleportCommandI(string[] words)
+    private void TeleportCommandI()
     {
         int x, y;
         try
@@ -66,18 +112,66 @@ public class Terminal : MonoBehaviour
         }
         catch
         {
-            OutputReaction("неизвестный тип координат");
+            OutputReaction("Неизвестный тип координат");
             return;
         }
         if (Math.Abs(x) > 1000000 || Math.Abs(y) > 1000000)
         {
-            OutputReaction("превышен лимит мира");
+            OutputReaction("Превышен лимит мира");
             return;
         }
-        PlayerData.instance.MoveTo(new Vector2(x, y));
-        OutputReaction($"выполнен телепорт на координаты: {x}, {y}");
+        playerData.MoveTo(new Vector2(x, y));
+        OutputReaction($"Выполнен телепорт на координаты: {x}, {y}");
     }
 
+    private void SetPlayerValueCommand(string name)
+    {
+        int value;
+        try
+        {
+            value = Convert.ToInt32(words[3]);
+        }
+        catch
+        {
+            OutputReaction("Неизвестный тип числа");
+            return;
+        }
+        if (value < 0)
+        {
+            OutputReaction("Число не может быть отрицательным");
+            return;
+        }
+
+        switch (name)
+        {
+            case "speed":
+                if (value > 100)
+                {
+                    OutputReaction("Превышен лимит скорости");
+                    return;
+                }
+                playerData.MOVEMENT_BASE_SPEED = value;
+                OutputReaction($"Скорость игрока: {value}");
+                break;
+            case "view":
+                if (value > 30)
+                {
+                    OutputReaction("Превышен лимит обзора");
+                    return;
+                }
+                playerData.maxMouseDis = value;
+                OutputReaction($"Максимальный обзор игрока: {value}");
+                break;
+            default:
+                OutputReaction("Неизвестный параметр");
+                break;
+        }
+    }
+    private void RotateSpace(sbyte angle)
+    {
+        Debug.Log(angle);
+        generator.RotateBasis(angle);
+    }
     private void OutputReaction(string message)
     {
         OutputWindow.text = message;

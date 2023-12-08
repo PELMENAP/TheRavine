@@ -50,6 +50,7 @@ MonoBehaviour:
   waterF: {fileID: 0}
   seed: 16
   rotation: {x: 0, y: 0, z: 0}
+  objectSystem: {fileID: 0}
   noiseScale: 200
   octaves: 8
   persistance: 0.25
@@ -68,22 +69,19 @@ MonoBehaviour:
   - height: 0.45
     objects:
     - Chance: 60
-      Prefab: {fileID: 8079554152659468491, guid: eac9ac9f7b106c63593abaabcb67837c,
-        type: 3}
+      info: {fileID: 11400000, guid: f93e1ffefd235d615a1bd882c75bb125, type: 2}
     - Chance: 70
-      Prefab: {fileID: 6908429162828912622, guid: adae632f026b24118899a930b4e1619f,
-        type: 3}
+      info: {fileID: 11400000, guid: 7bbd0072588a487a28dc34b8065a12f4, type: 2}
     - Chance: 65
-      Prefab: {fileID: 7852824295285712418, guid: b3d15d59ad9aa87a38c26c1e97de6448,
-        type: 3}
+      info: {fileID: 11400000, guid: 3b41bc4f6c3c5b397bc6bb6f81d8fa8a, type: 2}
     - Chance: 50
-      Prefab: {fileID: 948248636415433774, guid: e487b2f5e2401d74a9e583e59e72f6ce,
-        type: 3}
+      info: {fileID: 11400000, guid: 80339deec3dfda594b587c1668a63245, type: 2}
   - height: 0.7
     objects: []
   - height: 0.9
     objects: []
   - height: 1.15
     objects: []
-  viewer: {fileID: 0}
   endlessFlag: 010101
+  rotateValue: 0
+  rotateTarget: 0

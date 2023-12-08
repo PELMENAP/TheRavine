@@ -3,10 +3,8 @@ using System.Collections;
 
 public class AudioNatureController : MonoBehaviour
 {
-
     [SerializeField] private AudioSource[] audioSource;
     [SerializeField] private AudioClip[] audioClipday, audioClipnight;
-
     [SerializeField] private AudioSource OSTSource;
     [SerializeField] private AudioClip[] OSTClip;
     private int currentOST;

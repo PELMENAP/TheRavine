@@ -9,6 +9,7 @@ using System;
 
 public class DayCycle : MonoBehaviour, ISetAble
 {
+    private ServiceLocator serviceLocator;
     public static bool isday, closeThread;
     public static Action newDay;
     [SerializeField] private float startDay, speed;
@@ -21,8 +22,9 @@ public class DayCycle : MonoBehaviour, ISetAble
     private Transform[] shadows, lightsTransform;
     DayJob dayJob;
     ShadowsJob shadowJob;
-    public void SetUp(ref bool result)
+    public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
+        serviceLocator = locator;
         TimeBridge = new NativeArray<float>(5, Allocator.Persistent);
         IsdayBridge = new NativeArray<bool>(1, Allocator.Persistent);
         TimeBridge[0] = startDay;
@@ -32,6 +34,7 @@ public class DayCycle : MonoBehaviour, ISetAble
         GetLightsAndShadows();
         closeThread = true;
         UpdateDay().Forget();
+        callback?.Invoke();
     }
 
     private void GetLightsAndShadows()
@@ -42,7 +45,7 @@ public class DayCycle : MonoBehaviour, ISetAble
         {
             Light2D[] lights = GameObject.FindObjectsByType<Light2D>(FindObjectsSortMode.None);
             shadows = new Transform[shadowsObjects.Length];
-            for (int i = 0; i < shadowsObjects.Length; i++)
+            for (ushort i = 0; i < shadowsObjects.Length; i++)
             {
                 shadowsObjects[i].SetActive(true);
                 shadows[i] = shadowsObjects[i].transform;
@@ -51,7 +54,7 @@ public class DayCycle : MonoBehaviour, ISetAble
             Light2DBridge = new NativeArray<Vector3>(lights.Length, Allocator.Persistent);
             Light2DIntensityBridge = new NativeArray<float>(lights.Length, Allocator.Persistent);
             lightsTransform = new Transform[lights.Length];
-            for (int i = 0; i < lights.Length; i++)
+            for (ushort i = 0; i < lights.Length; i++)
             {
                 lightsTransform[i] = lights[i].transform;
                 Light2DIntensityBridge[i] = lights[i].intensity;
@@ -64,7 +67,7 @@ public class DayCycle : MonoBehaviour, ISetAble
         }
         else
         {
-            for (int i = 0; i < shadowsObjects.Length; i++)
+            for (ushort i = 0; i < shadowsObjects.Length; i++)
                 shadowsObjects[i].SetActive(false);
         }
         dayJob = new DayJob()
@@ -81,7 +84,7 @@ public class DayCycle : MonoBehaviour, ISetAble
 
     private void UpdateProperties()
     {
-        for (int i = 0; i < lightsTransform.Length; i++)
+        for (ushort i = 0; i < lightsTransform.Length; i++)
         {
             Light2DBridge[i] = lightsTransform[i].position;
         }
@@ -158,14 +161,14 @@ public class DayCycle : MonoBehaviour, ISetAble
         public NativeArray<Vector3> lightsBridge;
         [ReadOnly]
         public NativeArray<float> ligthsIntensity;
-        private int lightIndex;
+        private ushort lightIndex;
         private float maxWeight, lightWeight;
         private Vector3 shadowPosition, direction;
         public void Execute(int index, TransformAccess shadowTransform)
         {
             shadowPosition = shadowTransform.position;
             maxWeight = 0;
-            for (int i = 0; i < lightsBridge.Length; i++)
+            for (ushort i = 0; i < lightsBridge.Length; i++)
             {
                 lightWeight = ligthsIntensity[i] / Vector3.Distance(shadowPosition, lightsBridge[i]);
                 if (lightWeight > maxWeight)

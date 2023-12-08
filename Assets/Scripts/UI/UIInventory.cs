@@ -6,6 +6,7 @@ using System;
 
 public class UIInventory : MonoBehaviour, ISetAble
 {
+    private ServiceLocator serviceLocator;
     [SerializeField] private GameObject grid;
     [SerializeField] private bool filling;
     [SerializeField] private UIInventorySlot[] activeCells, craftCells;
@@ -17,8 +18,9 @@ public class UIInventory : MonoBehaviour, ISetAble
 
     private UIInventoryTester tester;
 
-    public void SetUp(ref bool result)
+    public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
+        serviceLocator = locator;
         var uiSlot = GetComponentsInChildren<UIInventorySlot>();
         var slotList = new List<UIInventorySlot>();
         slotList.AddRange(uiSlot);
@@ -33,6 +35,7 @@ public class UIInventory : MonoBehaviour, ISetAble
         inventory.OnInventoryStateChangedEvent += OnInventoryStateChanged;
         PlayerData.instance.placeObject += PlaceObject;
         PlayerData.instance.aimRaise += AimRaise;
+        callback?.Invoke();
     }
 
     // private IEnumerator SetUpCanvas()
@@ -93,7 +96,7 @@ public class UIInventory : MonoBehaviour, ISetAble
 
     }
 
-    [SerializeField] private string[] names, sortedNames, sortedIngr;
+    [SerializeField] private string[] names = new string[8], sortedNames, sortedIngr;
     [SerializeField] private UIInventorySlot result;
     [SerializeField] private GameObject craftLine;
     private void OnInventoryStateChanged(object sender)
@@ -105,6 +108,8 @@ public class UIInventory : MonoBehaviour, ISetAble
             IInventorySlot slot = craftCells[i].slot;
             if (!slot.isEmpty)
                 names[i] = craftCells[i]._uiInventoryItem.item.info.id;
+            else
+                names[i] = "";
         }
         for (int i = 0; i < CraftInfo.Length; i++)
         {

@@ -24,38 +24,38 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: a09cfeed663983346898712e9765eb3e, type: 3}
+        m_Texture: {fileID: 2800000, guid: 1b2884f3b710b624e9efbbef58a358ff, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _PerlinNoise:
         m_Texture: {fileID: 2800000, guid: eaf60509975306a47b2a7f80a74df648, type: 3}
-        m_Scale: {x: 1, y: 1}
+        m_Scale: {x: 10, y: 10}
         m_Offset: {x: 0, y: 0}
     - _WorleyNoise:
         m_Texture: {fileID: 2800000, guid: 5c72108834d6ec64cb9fc79583c524ce, type: 3}
-        m_Scale: {x: 1, y: 1}
+        m_Scale: {x: 10, y: 10}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _Glossiness: 0.5
     - _Metallic: 0
     - _PixelResolution: 16
-    - _alpha: 0.26
-    - _cloudAlphaMax: 0.67
-    - _cloudMode: 2
+    - _alpha: 2.97
+    - _cloudAlphaMax: 3.58
+    - _cloudMode: 3.63
     - _fastMode: 1
-    - _scale: 1
-    - _speed1: 3
-    - _speed2: 3
+    - _scale: 0.12
+    - _speed1: 2
+    - _speed2: 1
     - _step: 1
     m_Colors:
     - _Color: {r: 1, g: 0.1273585, b: 0.1273585, a: 1}
     - _cloudColor: {r: 0, g: 0, b: 0, a: 0}
-    - _cloudsDir1: {r: 1, g: 0, b: 0, a: 0}
-    - _cloudsDir2: {r: 2, g: 0, b: 0, a: 0}
+    - _cloudsDir1: {r: 0.02, g: 0, b: 0, a: 0}
+    - _cloudsDir2: {r: 0.02, g: 0.08, b: 0, a: 0}
     - _color: {r: 1, g: 1, b: 1, a: 1}
-    - _ma1: {r: 1, g: -1.2, b: 0, a: 0}
-    - _ma2: {r: 1.2, g: 1.6, b: 0, a: 0}
-    - _sunDirection: {r: 1, g: -1, b: 1, a: 0}
-    - _tiling: {r: 1.04, g: 0.65, b: 0, a: 0}
+    - _ma1: {r: 0.49, g: -0.21, b: 0, a: 0}
+    - _ma2: {r: 0.61, g: 0.44, b: 0, a: 0}
+    - _sunDirection: {r: 2.44, g: 1.46, b: 1, a: 0}
+    - _tiling: {r: 0.5, g: 0.5, b: 0, a: 0}
   m_BuildTextureStacks: []

@@ -3,11 +3,10 @@ using System.Collections;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEditor;
-
+public delegate GameObject CreateInstance(Vector2 position, GameObject prefab);
 public class ObjectSystem : MonoBehaviour, ISetAble
 {
-    public static ObjectSystem inst;
-    public PrefabInfo[] _info;
+    public ObjectInfo[] _info;
     private Dictionary<int, PrefabData> info = new Dictionary<int, PrefabData>(32);
     public PrefabData GetPrefabInfo(int id) => info[id];
     //
@@ -18,25 +17,32 @@ public class ObjectSystem : MonoBehaviour, ISetAble
             return new ObjectInstInfo();
         return global[position];
     }
-    public bool AddToGlobal(Vector2 position, ushort _prefabID, string _name, ushort _amount, InstanceType _objectType) => global.TryAdd(position, new ObjectInstInfo(_prefabID, _name, _amount, _objectType));
+    public bool AddToGlobal(Vector2 position, int _prefabID, string _name, ushort _amount, InstanceType _objectType) => global.TryAdd(position, new ObjectInstInfo(_prefabID, _name, _amount, _objectType));
     public bool RemoveFromGlobal(Vector2 position) => global.Remove(position);
     public bool ContainsGlobal(Vector2 position) => global.ContainsKey(position);
     //
     private Dictionary<Vector2, ObjectInstInfo> changes = new Dictionary<Vector2, ObjectInstInfo>();
     public bool Changed(Vector2 position) => changes.ContainsKey(position);
-    // private List<Transform> trans = new List<Transform>();
     //
-    private IPoolManager<GameObject> PoolManagerBase = new PoolManager();
-    public void CreatePool(GameObject prefab, int poolSize) => PoolManagerBase.CreatePool(prefab, poolSize);
-    public void Reuse(int prefabID, Vector2 position) => PoolManagerBase.Reuse(prefabID, position);
-    public void Deactivate(int prefabID) => PoolManagerBase.Deactivate(prefabID);
-    public void SetUp(ref bool result)
+    private IPoolManager<GameObject> PoolManagerBase;
+    public void CreatePool(GameObject prefab, int poolSize)
     {
-        inst = this;
+        PoolManagerBase.CreatePool(prefab, InstantiatePoolObject, poolSize);
+    }
+    public void Reuse(int prefabID, Vector2 position, float rotateValue) => PoolManagerBase.Reuse(prefabID, position, rotateValue);
+    public void Deactivate(int prefabID) => PoolManagerBase.Deactivate(prefabID);
+    //
+    public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+    {
+        PoolManagerBase = new PoolManager(this.transform);
         for (int i = 0; i < _info.Length; i++)
-            info[_info[i].prefab.GetInstanceID()] = new PrefabData(_info[i].name, _info[i].amount, _info[i].poolSize, _info[i].type, _info[i].prefab);
+        {
+            info[_info[i].prefab.GetInstanceID()] = new PrefabData(_info[i].name, _info[i].amount, _info[i].poolSize, _info[i].iType, _info[i].bType, _info[i].prefab);
+            print(_info[i].prefab.GetInstanceID());
+        }
         // NAL().Forget();
         FirstInstance().Forget();
+        callback?.Invoke();
     }
 
     private async UniTaskVoid FirstInstance()
@@ -48,36 +54,9 @@ public class ObjectSystem : MonoBehaviour, ISetAble
             FaderOnTransit.instance.SetLogs("Созданы: " + _info[i].prefab.name);
         }
     }
-
-    // public GameObject InstantiatePool(GameObject prefab) => Instantiate(prefab);
-    // public Transform InstantiatePoolByPosition(Vector2 position, GameObject prefab)
-    // {
-    //     Transform gobject = Instantiate(prefab, position, Quaternion.identity, this.transform).transform;
-    //     return gobject;
-    // }
-
     public GameObject InstantiatePoolObject(Vector2 position, GameObject prefab) => Instantiate(prefab, position, Quaternion.identity);
 
-    public void RotateBasis()
-    {
-        // StartCoroutine(Rotation());
-    }
-
-    public Transform Player;
-    // private IEnumerator Rotation()
-    // {
-    // float ratateValue = 1f;
-    // while (this.transform.rotation.z > -0.7f)
-    // {
-    //     foreach (Transform item in trans)
-    //         item.Rotate(0, 0, ratateValue, Space.Self);
-    //     this.transform.Rotate(0, 0, -ratateValue, Space.Self);
-    //     Player.RotateAround(Vector3.zero, Vector3.forward, -ratateValue);
-    //     Player.Rotate(0, 0, ratateValue, Space.Self);
-    //     yield return new WaitForFixedUpdate();
-    // }
-    // yield return new WaitForFixedUpdate();
-    // }
+    private List<Vector2> NALObjects = new List<Vector2>();
 
     public Dictionary<Vector2Int, Transform> nettleEntity = new Dictionary<Vector2Int, Transform>();
     public List<Transform> nettle = new List<Transform>();
@@ -87,7 +66,7 @@ public class ObjectSystem : MonoBehaviour, ISetAble
     public List<Vector2Int> deadNettlePosition = new List<Vector2Int>();
     public int maxcount, around, distance;
     [SerializeField, Range(0, 1)] private float chance;
-    private async UniTaskVoid NAL()
+    private async UniTaskVoid NAL_old()
     {
         int countOfCycle = 0;
         foreach (Transform item in nettle)
@@ -147,13 +126,13 @@ public class ObjectSystem : MonoBehaviour, ISetAble
     }
 }
 
-public struct ObjectInstInfo
+public class ObjectInstInfo
 {
     public string name { get; private set; }
     public ushort amount;
-    public ushort prefabID { get; private set; }
+    public int prefabID { get; private set; }
     public InstanceType objectType { get; private set; }
-    public ObjectInstInfo(ushort _prefabID = 0, string _name = "therivinetop", ushort _amount = 1, InstanceType _objectType = InstanceType.Static)
+    public ObjectInstInfo(int _prefabID = 0, string _name = "therivinetop", ushort _amount = 1, InstanceType _objectType = InstanceType.Static)
     {
         name = _name;
         amount = _amount;
@@ -166,24 +145,29 @@ public class PrefabData
 {
     public string name;
     public ushort amount, poolSize;
-    public InstanceType type;
+    public InstanceType itype;
+    public BehaviourType btype;
     public GameObject prefab;
-
-    public PrefabData(string _name, ushort _amount, ushort _poolSize, InstanceType _type, GameObject _prefab)
+    public PrefabData(string _name, ushort _amount, ushort _poolSize, InstanceType _itype, BehaviourType _btype, GameObject _prefab)
     {
         name = _name;
         amount = _amount;
         poolSize = _poolSize;
-        type = _type;
+        itype = _itype;
+        btype = _btype;
         prefab = _prefab;
     }
 }
 
-[System.Serializable]
-public struct PrefabInfo
+public enum InstanceType
 {
-    public string name;
-    public ushort amount, poolSize;
-    public InstanceType type;
-    public GameObject prefab;
+    Static,
+    Inter,
+    Struct
+}
+
+public enum BehaviourType
+{
+    None,
+    NAL
 }
