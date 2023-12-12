@@ -14,8 +14,8 @@ public class DataStorage : MonoBehaviour
         if (loadkey)
         {
             SaveLoad.Load(ref data);
-            PlayerData.instance.entityTrans.position = PlayerData.instance.cachedCamera.transform.position = new Vector3(data.PlPos.x, data.PlPos.y, 0);
-            PlayerData.instance.cachedCamera.transform.position += new Vector3(0, 0, -1);
+            // PlayerData.data.entityTrans.position = PlayerData.data.cachedCamera.transform.position = new Vector3(data.PlPos.x, data.PlPos.y, 0);
+            // PlayerData.data.cachedCamera.transform.position += new Vector3(0, 0, -1);
             // MapGeneratorOld.seed = data.seed;
         }
         else
@@ -26,7 +26,7 @@ public class DataStorage : MonoBehaviour
 
     public void Save()
     {
-        data.PlPos = new Data.Vec3(PlayerData.instance.entityTrans.position);
+        // data.PlPos = new Data.Vec3(PlayerData.data.entityTrans.position);
         // data.seed = MapGeneratorOld.seed;
         SaveLoad.Save(data);
     }

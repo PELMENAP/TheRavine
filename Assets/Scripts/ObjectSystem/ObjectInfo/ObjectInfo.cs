@@ -1,5 +1,5 @@
 using UnityEngine;
-[CreateAssetMenu(fileName = "ObjectInfo", menuName = "Gameplay/Items/Create New ObjectInfo")]
+[CreateAssetMenu(fileName = "ObjectInfo", menuName = "Gameplay/Create New ObjectInfo")]
 public class ObjectInfo : ScriptableObject, IObjectInfo
 {
     [SerializeField] private string _name;

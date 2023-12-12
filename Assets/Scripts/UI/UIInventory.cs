@@ -6,7 +6,6 @@ using System;
 
 public class UIInventory : MonoBehaviour, ISetAble
 {
-    private ServiceLocator serviceLocator;
     [SerializeField] private GameObject grid;
     [SerializeField] private bool filling;
     [SerializeField] private UIInventorySlot[] activeCells, craftCells;
@@ -15,12 +14,11 @@ public class UIInventory : MonoBehaviour, ISetAble
     private bool isActive;
     private int activeCell = 1;
     public InventoryWithSlots inventory => tester.inventory;
-
     private UIInventoryTester tester;
-
+    private PlayerData PData;
     public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
-        serviceLocator = locator;
+        PData = locator.GetService<PlayerData>();
         var uiSlot = GetComponentsInChildren<UIInventorySlot>();
         var slotList = new List<UIInventorySlot>();
         slotList.AddRange(uiSlot);
@@ -33,8 +31,8 @@ public class UIInventory : MonoBehaviour, ISetAble
         isActive = false;
         grid.SetActive(isActive);
         inventory.OnInventoryStateChangedEvent += OnInventoryStateChanged;
-        PlayerData.instance.placeObject += PlaceObject;
-        PlayerData.instance.aimRaise += AimRaise;
+        PData.placeObject += PlaceObject;
+        PData.aimRaise += AimRaise;
         callback?.Invoke();
     }
 
@@ -50,9 +48,9 @@ public class UIInventory : MonoBehaviour, ISetAble
             isActive = !isActive;
             grid.SetActive(isActive);
             if (isActive)
-                PlayerData.instance.SetBehaviourSit();
+                PData.SetBehaviourSit();
             else
-                PlayerData.instance.SetBehaviourIdle();
+                PData.SetBehaviourIdle();
         }
         if (Input.GetKeyDown("1"))
             SetActiveCell(1);
@@ -172,7 +170,7 @@ public class UIInventory : MonoBehaviour, ISetAble
     private void OnDisable()
     {
         inventory.OnInventoryStateChangedEvent -= OnInventoryStateChanged;
-        PlayerData.instance.placeObject -= PlaceObject;
-        PlayerData.instance.aimRaise -= AimRaise;
+        PData.placeObject -= PlaceObject;
+        PData.aimRaise -= AimRaise;
     }
 }

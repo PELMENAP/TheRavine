@@ -38,7 +38,7 @@ public class ObjectSystem : MonoBehaviour, ISetAble
         for (int i = 0; i < _info.Length; i++)
         {
             info[_info[i].prefab.GetInstanceID()] = new PrefabData(_info[i].name, _info[i].amount, _info[i].poolSize, _info[i].iType, _info[i].bType, _info[i].prefab);
-            print(_info[i].prefab.GetInstanceID());
+            // print(_info[i].prefab.GetInstanceID());
         }
         // NAL().Forget();
         FirstInstance().Forget();

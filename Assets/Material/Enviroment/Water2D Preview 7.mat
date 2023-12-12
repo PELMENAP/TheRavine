@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Water2D Preview 4
+  m_Name: Water2D Preview 7
   m_Shader: {fileID: -6465566751694194690, guid: 3af335719fea60c47b8ef227075fdf2b,
     type: 3}
   m_Parent: {fileID: 0}
@@ -107,25 +107,25 @@ Material:
     m_Ints: []
     m_Floats:
     - _EnableExternalAlpha: 0
-    - _Pixels: 128
+    - _Pixels: 64
     - _WaterFlowTextureStrength: 0.4
     - _alpha: 1
-    - _foamOpacity: 0.75
-    - _foamSize: 1.9
+    - _foamOpacity: 1
+    - _foamSize: 13.7
     - _foamSpeed: 0
     - _reflectionsOpacity: 3.63
-    - _reflectionsSize: 0.675
-    - _reflectionsSpeed: 1
-    - _waterWavesSpeed: 1
+    - _reflectionsSize: 1
+    - _reflectionsSpeed: 3
+    - _waterWavesSpeed: 0.31
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _Flip: {r: 1, g: 1, b: 1, a: 1}
     - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
-    - _WaterColor: {r: 1, g: 0.5647059, b: 0.44705883, a: 1}
+    - _WaterColor: {r: 0.013430006, g: 0.9714249, b: 0.21379699, a: 1}
     - _flowSpeed: {r: 0, g: 0.2, b: 0, a: 0}
-    - _flowSpeed1: {r: 0, g: 0.03, b: 0, a: 0}
-    - _flowSpeed2: {r: 0, g: 0.05, b: 0, a: 0}
-    - _foamColor: {r: 1, g: 0, b: 0, a: 1}
+    - _flowSpeed1: {r: 0, g: 0, b: 0, a: 0}
+    - _flowSpeed2: {r: 0.01, g: 0, b: 0, a: 0}
+    - _foamColor: {r: 0.15294117, g: 1, b: 0.2377128, a: 1}
     - _offset: {r: 0, g: 0, b: 0, a: 0}
     - _tilling: {r: 1, g: 1, b: 0, a: 0}
   m_BuildTextureStacks: []

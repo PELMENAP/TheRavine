@@ -11,23 +11,22 @@ public class PlayerController : MonoBehaviour, IControllable
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Animator animator, shadowAnimator;
     [SerializeField] private InputActionReference MovementRef;
+    [SerializeField] private Joystick joystick;
+    [SerializeField] private Camera cachedCamera;
     private IController currentController;
     private bool act = true;
-    private Transform crosshair, entityTrans, playerMark;
+    [SerializeField] private Transform crosshair, entityTrans, playerMark;
 
     public void SetInitialValues()
     {
         rb = (Rigidbody2D)this.GetComponent("Rigidbody2D");
-        entityTrans = PlayerData.instance.entityTrans;
-        crosshair = PlayerData.instance.crosshair;
-        playerMark = PlayerData.instance.playerMark;
         switch (Settings._controlType)
         {
             case ControlType.Personal:
                 currentController = new PCController(MovementRef);
                 break;
             case ControlType.Mobile:
-                currentController = new JoistickController(PlayerData.instance.joystick);
+                currentController = new JoistickController(joystick);
                 break;
         }
     }
@@ -44,7 +43,7 @@ public class PlayerController : MonoBehaviour, IControllable
         movementDirection = currentController.GetMove();
         movementSpeed = Mathf.Clamp(movementDirection.magnitude, 0.0f, 1.0f);
         movementDirection.Normalize();
-        rb.velocity = movementDirection * movementSpeed * PlayerData.instance.MOVEMENT_BASE_SPEED;
+        rb.velocity = movementDirection * movementSpeed * PlayerData.data.MOVEMENT_BASE_SPEED;
         MoveMark();
     }
 
@@ -55,7 +54,7 @@ public class PlayerController : MonoBehaviour, IControllable
 
     private void MoveMark()
     {
-        playerMark.position = entityTrans.position;
+        playerMark.position = entityTrans.position - new Vector3(0, 0, -100);
         if (movementSpeed > 0.5f)
             playerMark.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(movementDirection.y, movementDirection.x) * Mathf.Rad2Deg - 90);
     }
@@ -84,12 +83,12 @@ public class PlayerController : MonoBehaviour, IControllable
     {
         if (Mouse.current.rightButton.isPressed)
         {
-            aim = PlayerData.instance.cachedCamera.ScreenToWorldPoint(Mouse.current.position.ReadValue()) - entityTrans.position;
-            PlayerData.instance.SetMousePosition(new Vector3(aim.x, aim.y, 0));
+            aim = cachedCamera.ScreenToWorldPoint(Mouse.current.position.ReadValue()) - entityTrans.position;
+            PlayerData.data.setMouse?.Invoke(new Vector3(aim.x, aim.y, 0));
             if (aim.magnitude > 2)
             {
                 aim.Normalize();
-                crosshair.localPosition = aim * PlayerData.instance.CROSSHAIR_DISTANSE;
+                crosshair.localPosition = aim * PlayerData.data.CROSSHAIR_DISTANSE;
             }
             else
                 crosshair.localPosition = aim;
@@ -115,11 +114,11 @@ public class PlayerController : MonoBehaviour, IControllable
                 int currentY = Mathf.RoundToInt(position.y);
                 for (int xOffset = -PickDistance; xOffset <= PickDistance; xOffset++)
                     for (int yOffset = -PickDistance; yOffset <= PickDistance; yOffset++)
-                        PlayerData.instance.aimRaise?.Invoke(new Vector3(currentX + xOffset, currentY + yOffset, 0));
+                        PlayerData.data.aimRaise?.Invoke(new Vector3(currentX + xOffset, currentY + yOffset, 0));
             }
             else
             {
-                PlayerData.instance.aimRaise?.Invoke(new Vector3(Mathf.RoundToInt(position.x), Mathf.RoundToInt(position.y), 0));
+                PlayerData.data.aimRaise?.Invoke(new Vector3(Mathf.RoundToInt(position.x), Mathf.RoundToInt(position.y), 0));
             }
         }
     }
@@ -136,7 +135,7 @@ public class PlayerController : MonoBehaviour, IControllable
     private IEnumerator In()
     {
         act = false;
-        PlayerData.instance.placeObject?.Invoke(new Vector3(Mathf.RoundToInt(crosshair.position.x), Mathf.RoundToInt(crosshair.position.y), 0));
+        PlayerData.data.placeObject?.Invoke(new Vector3(Mathf.RoundToInt(crosshair.position.x), Mathf.RoundToInt(crosshair.position.y), 0));
         yield return new WaitForSeconds(timeLimit);
         act = true;
     }

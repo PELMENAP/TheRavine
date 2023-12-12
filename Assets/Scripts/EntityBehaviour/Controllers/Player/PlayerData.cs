@@ -4,37 +4,30 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-public class PlayerData : AEntity, ISetAble
+public class PlayerData : AEntityData, ISetAble
 {
     private ServiceLocator serviceLocator;
     public CM cameraMen;
-    public Camera cachedCamera { get; private set; }
-    public static PlayerData instance;
+    public static PlayerData data;
     public TextMeshProUGUI InputWindow;
     public float reloadSpeed, MOVEMENT_BASE_SPEED, maxMouseDis, CROSSHAIR_DISTANSE;
-    public Action<Vector3> placeObject, aimRaise;
-    public Joystick joystick;
-    public Transform entityTrans, crosshair, playerMark;
+    public Action<Vector3> placeObject, aimRaise, setMouse;
     public Vector3 factMousePosition;
     private IControllable controller;
 
-    public PlayerUI ui;
     // public bool moving = true;
     // private bool act = true;
     //Debug.Log("activate");
 
-    #region [MONO]
-
     public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
         serviceLocator = locator;
-        instance = this;
-        entityTrans = this.transform;
+        data = this;
         cameraMen.SetUp(null, locator);
-        cachedCamera = cameraMen.mainCam;
         controller = GetComponent<IControllable>();
         // ui.AddSkill(new SkillRush(10f, 0.05f, 20), PData.pdata.dushParent, PData.pdata.dushImage, "Rush");
         controller.SetInitialValues();
+        setMouse += SetMousePosition;
         callback?.Invoke();
     }
     public void init() => Init();
@@ -66,7 +59,6 @@ public class PlayerData : AEntity, ISetAble
 
     private void InitUI()
     {
-        ui = new PlayerUI();
     }
 
     protected override void InitBehaviour()
@@ -106,8 +98,6 @@ public class PlayerData : AEntity, ISetAble
         SetBehaviour(GetBehaviour<PlayerBehaviourSit>());
     }
 
-    #endregion
-
     private void AimSkills()
     {
         // if (Input.GetKey("space") && Input.GetMouseButton(1))
@@ -120,7 +110,6 @@ public class PlayerData : AEntity, ISetAble
 
     private void ReloadSkills()
     {
-        ui.UpdateSkills(reloadSpeed);
     }
 
     public void Priking()
@@ -139,19 +128,13 @@ public class PlayerData : AEntity, ISetAble
 
     public void MoveTo(Vector2 newPosition)
     {
-        entityTrans.position = newPosition;
+        this.transform.position = newPosition;
     }
 
     public void SetMousePosition(Vector3 aim)
     {
-        if (aim.x > maxMouseDis)
-            aim.x = maxMouseDis;
-        if (aim.y > maxMouseDis)
-            aim.y = maxMouseDis;
-        if (aim.x < -maxMouseDis)
-            aim.x = -maxMouseDis;
-        if (aim.y < -maxMouseDis)
-            aim.y = -maxMouseDis;
+        if (aim.magnitude > maxMouseDis)
+            aim = aim.normalized * maxMouseDis;
         if (aim.magnitude < CROSSHAIR_DISTANSE + 1)
             aim = Vector2.zero;
         factMousePosition = aim;
