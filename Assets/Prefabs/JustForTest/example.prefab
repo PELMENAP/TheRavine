@@ -9,7 +9,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6133282833437916523}
-  - component: {fileID: 7065271003295174755}
   m_Layer: 0
   m_Name: example
   m_TagString: Untagged
@@ -32,29 +31,3 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7065271003295174755
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8892771477013590006}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d909a224316369e79e334e1b41102ea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  viewer: {fileID: 0}
-  generator: {fileID: 0}
-  test: "\u041F\u0440\u0438\u0432\u0435\u0442 \u043F\u0438\u0434\u0430\u0440\u0430\u0441
-    \u043D\u0430\u0445\u0443\u0439"
-  enter: 
-  watert: {fileID: 0}
-  water: {fileID: 0}
-  terraint: {fileID: 0}
-  terrain: {fileID: 0}
-  isEqual: 0
-  fisting: 0
-  isShadow: 1
-  control: 0
-  prefab: {fileID: 7852824295285712418, guid: b3d15d59ad9aa87a38c26c1e97de6448, type: 3}

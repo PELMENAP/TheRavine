@@ -2,19 +2,18 @@
 using UnityEngine.InputSystem;
 public class CM : MonoBehaviour, ISetAble
 {
-    private ServiceLocator serviceLocator;
     [SerializeField] private Transform cameratrans, playerTrans;
     [SerializeField] private float Velocity, MinDistance;
     public Camera mainCam;
     public static bool cameraForMap;
     private Vector3 offset, targetPos;
     private bool changeCam = false;
-
+    PlayerData PData;
     public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
-        serviceLocator = locator;
+        PData = locator.GetService<PlayerData>();
         cameraForMap = false;
-        playerTrans = PlayerData.instance.entityTrans;
+        playerTrans = PData.transform;
         offset = cameratrans.position - playerTrans.position;
         cameratrans.position = playerTrans.position + new Vector3(0, 0, -1);
         callback?.Invoke();
@@ -56,7 +55,7 @@ public class CM : MonoBehaviour, ISetAble
     {
         targetPos = playerTrans.position + offset;
         if (Mouse.current.rightButton.isPressed)
-            targetPos += PlayerData.instance.factMousePosition;
+            targetPos += PData.factMousePosition;
         if (Vector3.Distance(cameratrans.position, targetPos) < MinDistance)
             return;
         cameratrans.Translate(cameratrans.InverseTransformPoint(Vector3.Lerp(cameratrans.position, targetPos, Velocity * Time.fixedDeltaTime)));

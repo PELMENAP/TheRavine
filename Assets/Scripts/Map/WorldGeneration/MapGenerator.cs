@@ -87,7 +87,7 @@ public class MapGenerator : MonoBehaviour, ISetAble
                 for (byte i = 0; i < regions[heightMap[x, y]].objects.Length; i++)
                 {
                     ObjectInfoGeneration info = regions[heightMap[x, y]].objects[i];
-                    if ((x * y + (int)centre.x * centre.y + seed % 100) % info.Chance == 0)
+                    if ((x * y + (byte)centre.x * centre.y + seed % 100) % info.Chance == 0)
                     {
                         Vector2 posobj = new Vector2(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale) - vectorOffset;
                         if (!objectSystem.AddToGlobal(posobj, info.info.prefab.GetInstanceID(), info.info.title, info.info.amount, info.info.iType))
@@ -213,6 +213,7 @@ public class MapGenerator : MonoBehaviour, ISetAble
                     if (info.prefabID == 0)
                         continue;
                     objectUpdate[info.prefabID]++;
+                    print(item);
                     objectSystem.Reuse(info.prefabID, item, rotateValue);
                 }
             }
@@ -238,13 +239,21 @@ public struct TerrainType
 {
     public float height;
     public ObjectInfoGeneration[] objects;
+    public StructInfoGeneration[] structs;
 }
 
 [System.Serializable]
 public struct ObjectInfoGeneration
 {
-    public int Chance;
+    public byte Chance;
     public ObjectInfo info;
+}
+
+[System.Serializable]
+public struct StructInfoGeneration
+{
+    public byte Chance;
+    public StructInfo info;
 }
 public class ChunkData
 {
