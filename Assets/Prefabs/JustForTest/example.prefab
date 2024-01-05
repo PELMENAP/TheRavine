@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6133282833437916523}
+  - component: {fileID: 5585552486299961592}
   m_Layer: 0
   m_Name: example
   m_TagString: Untagged
@@ -31,3 +32,26 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5585552486299961592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8892771477013590006}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d909a224316369e79e334e1b41102ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  viewer: {fileID: 0}
+  generator: {fileID: 0}
+  test: 
+  enter: 
+  isEqual: 0
+  fisting: 0
+  isShadow: 1
+  control: 0
+  prefab1: {fileID: 7852824295285712418, guid: b3d15d59ad9aa87a38c26c1e97de6448, type: 3}
+  flyingSkill: {fileID: 11400000, guid: 168085cc364241fbe9303f51d514e739, type: 2}
+  swimmingSkill: {fileID: 11400000, guid: 303ec90e2281a769da69d8267c86d931, type: 2}

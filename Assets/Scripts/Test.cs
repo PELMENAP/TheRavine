@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 using UnityEngine;
 using TMPro;
 using UnityEditor;
@@ -54,7 +56,7 @@ public class Test : MonoBehaviour
     Vector2 position;
     ChunkData map;
 
-    private void Update()
+    private void PickUp()
     {
         if (Input.GetKeyDown("f"))
         {
@@ -63,8 +65,8 @@ public class Test : MonoBehaviour
                 return;
             generator.GetMapData(RoundVector((position + MapGenerator.vectorOffset) / MapGenerator.generationSize)).objectsToInst.Add(position);
             int id = prefab1.GetInstanceID();
-            PrefabData data = generator.objectSystem.GetPrefabInfo(id);
-            generator.objectSystem.AddToGlobal(position, id, data.name, data.amount, data.itype);
+            ObjectInfo data = generator.objectSystem.GetPrefabInfo(id);
+            generator.objectSystem.TryAddToGlobal(position, id, data.name, data.amount, data.iType);
             generator.ExtraUpdate();
         }
 
@@ -81,7 +83,7 @@ public class Test : MonoBehaviour
                     if (generator.objectSystem.GetGlobalObjectInfo(position).objectType == InstanceType.Inter)
                     {
                         generator.objectSystem.RemoveFromGlobal(position);
-                        generator.GetMapData(RoundVector((position + MapGenerator.vectorOffset) / MapGenerator.generationSize)).objectsToInst.Remove(position);
+                        // generator.GetMapData(RoundVector((position + MapGenerator.vectorOffset) / MapGenerator.generationSize)).objectsToInst.Remove(position);
                     }
                 }
             }
@@ -119,85 +121,6 @@ public class Test : MonoBehaviour
     private void TestPosition()
     {
         position = new Vector2(viewer.position.x, viewer.position.y);
-        Vector2 chunkPos = RoundVector((position + new Vector2(80, 80) * 3 / 2) / (5 * 16));
-        Vector2 playerPos = RoundVector(position);
-        Vector2 XYpos = (playerPos - chunkPos * (5 * 16)) / 5;
-        print(chunkPos);
-        print(XYpos);
+        print(generator.GetMapHeight(position));
     }
-    public int seedM = 4133;
-    public byte count = 0;
-    public byte[] Count = new byte[9];
-    public StructInfo structInfo;
-    Dictionary<Vector2, byte> objects = new Dictionary<Vector2, byte>(9);
-    private void ShowDictionary()
-    {
-        print(objects.Count);
-        foreach (var item in objects)
-        {
-            print(item);
-        }
-    }
-    [Button]
-    private void WFCA()
-    {
-        print("start wfc");
-        WFC(new Vector2(0, 0));
-    }
-
-    private void WFC(Vector2 startPosition)
-    {
-        int a = seedM + (int)startPosition.x + (int)startPosition.y;
-        int b = a % structInfo.tileInfo.Length;
-        BFS(startPosition, (byte)b);
-        ShowDictionary();
-    }
-
-    private void BFS(Vector2 current, byte type)
-    {
-        if (count > structInfo.iteration)
-            return;
-        if (structInfo.tileInfo[type].MCount > Count[type])
-        {
-            print("new");
-            objects[current] = type;
-            Count[type]++;
-        }
-        Queue<Pair<Vector2, byte>> queue = new Queue<Pair<Vector2, byte>>();
-        byte c = 0;
-        for (sbyte x = -1; x <= 1; x++)
-        {
-            for (sbyte y = -1; y <= 1; y++)
-            {
-                if (x == 0 && y == 0)
-                    continue;
-                Vector2 newPos = current + new Vector2(x, y);
-                byte field = structInfo.tileInfo[type].neight[c++];
-                if (field == 0)
-                    continue;
-                if (objects.ContainsKey(newPos))
-                    continue;
-                print(newPos);
-                queue.Enqueue(new Pair<Vector2, byte>(newPos, (byte)((int)field + 1)));
-            }
-        }
-        count++;
-        foreach (var item in queue)
-        {
-            BFS(item.First, item.Second);
-        }
-        return;
-    }
-
-    public class Pair<T, U>
-    {
-        public Pair(T first, U second)
-        {
-            this.First = first;
-            this.Second = second;
-        }
-        public T First { get; set; }
-        public U Second { get; set; }
-    };
-
 }

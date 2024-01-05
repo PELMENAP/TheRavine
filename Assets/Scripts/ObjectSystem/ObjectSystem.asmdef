@@ -1,0 +1,22 @@
+{
+    "name": "ObjectSystem",
+    "rootNamespace": "",
+    "references": [
+        "GUID:bb56edd6d4b8a2f2b98e39a884e3754c",
+        "GUID:f6d7a5161f9ebcba793828db1940b2e1",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:cd8d359085da0e838808e0dd55db653e",
+        "GUID:516a5277b8c3b4f4c8cc86b77b1591ff",
+        "GUID:58899719a88bd20efaac30046c178bba",
+        "GUID:20b215ea2c8c4fdf0ac01bc81823f116"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

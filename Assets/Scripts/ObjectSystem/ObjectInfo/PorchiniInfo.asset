@@ -17,5 +17,7 @@ MonoBehaviour:
   _poolSize: 10
   _iType: 1
   _bType: 1
-  _nalinfo: {fileID: 11400000, guid: 3836583b14ab7bc6fac7c136c9e6c75f, type: 2}
+  _nalinfo: {fileID: 11400000, guid: 5b1df9b1d0e866a77a3d6462c2f59359, type: 2}
+  _iteminfo: {fileID: 11400000, guid: 0907d82c06d113eae9d16554a5209c21, type: 2}
   _prefab: {fileID: 8079554152659468491, guid: eac9ac9f7b106c63593abaabcb67837c, type: 3}
+  _nextStep: {fileID: 11400000}

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
+  m_Name: MossInfo
+  m_EditorClassIdentifier: 
+  _name: moss
+  _amount: 1
+  _poolSize: 20
+  _iType: 0
+  _bType: 1
+  _nalinfo: {fileID: 11400000, guid: 3836583b14ab7bc6fac7c136c9e6c75f, type: 2}
+  _iteminfo: {fileID: 0}
+  _prefab: {fileID: 6908429162828912622, guid: adae632f026b24118899a930b4e1619f, type: 3}
+  _nextStep: {fileID: 11400000}

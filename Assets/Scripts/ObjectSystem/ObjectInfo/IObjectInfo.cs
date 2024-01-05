@@ -8,4 +8,8 @@ public interface IObjectInfo
     BehaviourType bType { get; }
     NAlInfo nalinfo { get; }
     GameObject prefab { get; }
+    ObjectInfo nextStep { get; }
+    Vector2[] addspace { get; }
+    SpreadPattern deadPattern { get; }
+    SpreadPattern pickUpPattern { get; }
 }

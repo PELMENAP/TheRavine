@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0151d114f56da95c8aec64e40960554c, type: 3}
+  m_Name: Rasp of Berries
+  m_EditorClassIdentifier: 
+  distortion: 4
+  tileInfo:
+  - neight: 0000000502030000
+    MCount: 5
+    objectInfo: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
+  - neight: 0301000000020003
+    MCount: 1
+    objectInfo: {fileID: 11400000, guid: f93e1ffefd235d615a1bd882c75bb125, type: 2}
+  - neight: 0002000000000400
+    MCount: 6
+    objectInfo: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
+  - neight: 0300050000030001
+    MCount: 6
+    objectInfo: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
+  - neight: 0402000301000000
+    MCount: 3
+    objectInfo: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}

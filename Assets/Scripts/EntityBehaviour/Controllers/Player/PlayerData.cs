@@ -11,7 +11,7 @@ public class PlayerData : AEntityData, ISetAble
     public static PlayerData data;
     public TextMeshProUGUI InputWindow;
     public float reloadSpeed, MOVEMENT_BASE_SPEED, maxMouseDis, CROSSHAIR_DISTANSE;
-    public Action<Vector3> placeObject, aimRaise, setMouse;
+    public Action<Vector2> placeObject, aimRaise, setMouse;
     public Vector3 factMousePosition;
     private IControllable controller;
 
@@ -28,9 +28,9 @@ public class PlayerData : AEntityData, ISetAble
         // ui.AddSkill(new SkillRush(10f, 0.05f, 20), PData.pdata.dushParent, PData.pdata.dushImage, "Rush");
         controller.SetInitialValues();
         setMouse += SetMousePosition;
+        Init();
         callback?.Invoke();
     }
-    public void init() => Init();
 
 
     // private void Update()
@@ -54,7 +54,6 @@ public class PlayerData : AEntityData, ISetAble
     {
         InitUI();
         InitBehaviour();
-        SetBehaviourIdle();
     }
 
     private void InitUI()
@@ -131,7 +130,7 @@ public class PlayerData : AEntityData, ISetAble
         this.transform.position = newPosition;
     }
 
-    public void SetMousePosition(Vector3 aim)
+    public void SetMousePosition(Vector2 aim)
     {
         if (aim.magnitude > maxMouseDis)
             aim = aim.normalized * maxMouseDis;

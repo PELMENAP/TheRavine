@@ -58,7 +58,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""name"": ""Mouse"",
                     ""type"": ""Value"",
                     ""id"": ""962b2fe0-6115-4030-b1ff-c69a1406cf22"",
-                    ""expectedControlType"": ""Vector2"",
+                    ""expectedControlType"": ""Delta"",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
@@ -67,6 +67,15 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""name"": ""Text"",
                     ""type"": ""Button"",
                     ""id"": ""bb4910dc-2ee2-4d58-83f4-a83779e5ffda"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Raise"",
+                    ""type"": ""Button"",
+                    ""id"": ""50b14e70-78cd-443d-a17a-387a918af929"",
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """",
@@ -154,7 +163,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""a925e729-13d0-438a-b248-e0a1a147606e"",
-                    ""path"": ""<Mouse>/position"",
+                    ""path"": ""<Mouse>/delta"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -170,6 +179,17 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Text"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""5a6e9daa-96ed-4914-941d-4927acddb2ab"",
+                    ""path"": ""<Keyboard>/f"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Raise"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -749,6 +769,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
         m_Gameplay_Enter = m_Gameplay.FindAction("Enter", throwIfNotFound: true);
         m_Gameplay_Mouse = m_Gameplay.FindAction("Mouse", throwIfNotFound: true);
         m_Gameplay_Text = m_Gameplay.FindAction("Text", throwIfNotFound: true);
+        m_Gameplay_Raise = m_Gameplay.FindAction("Raise", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -831,6 +852,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_Gameplay_Enter;
     private readonly InputAction m_Gameplay_Mouse;
     private readonly InputAction m_Gameplay_Text;
+    private readonly InputAction m_Gameplay_Raise;
     public struct GameplayActions
     {
         private @GameInput m_Wrapper;
@@ -840,6 +862,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
         public InputAction @Enter => m_Wrapper.m_Gameplay_Enter;
         public InputAction @Mouse => m_Wrapper.m_Gameplay_Mouse;
         public InputAction @Text => m_Wrapper.m_Gameplay_Text;
+        public InputAction @Raise => m_Wrapper.m_Gameplay_Raise;
         public InputActionMap Get() { return m_Wrapper.m_Gameplay; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -864,6 +887,9 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
             @Text.started += instance.OnText;
             @Text.performed += instance.OnText;
             @Text.canceled += instance.OnText;
+            @Raise.started += instance.OnRaise;
+            @Raise.performed += instance.OnRaise;
+            @Raise.canceled += instance.OnRaise;
         }
 
         private void UnregisterCallbacks(IGameplayActions instance)
@@ -883,6 +909,9 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
             @Text.started -= instance.OnText;
             @Text.performed -= instance.OnText;
             @Text.canceled -= instance.OnText;
+            @Raise.started -= instance.OnRaise;
+            @Raise.performed -= instance.OnRaise;
+            @Raise.canceled -= instance.OnRaise;
         }
 
         public void RemoveCallbacks(IGameplayActions instance)
@@ -1079,6 +1108,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
         void OnEnter(InputAction.CallbackContext context);
         void OnMouse(InputAction.CallbackContext context);
         void OnText(InputAction.CallbackContext context);
+        void OnRaise(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {

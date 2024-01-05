@@ -36,7 +36,7 @@
                     "name": "Mouse",
                     "type": "Value",
                     "id": "962b2fe0-6115-4030-b1ff-c69a1406cf22",
-                    "expectedControlType": "Vector2",
+                    "expectedControlType": "Delta",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
@@ -45,6 +45,15 @@
                     "name": "Text",
                     "type": "Button",
                     "id": "bb4910dc-2ee2-4d58-83f4-a83779e5ffda",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Raise",
+                    "type": "Button",
+                    "id": "50b14e70-78cd-443d-a17a-387a918af929",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -132,7 +141,7 @@
                 {
                     "name": "",
                     "id": "a925e729-13d0-438a-b248-e0a1a147606e",
-                    "path": "<Mouse>/position",
+                    "path": "<Mouse>/delta",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -148,6 +157,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Text",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "5a6e9daa-96ed-4914-941d-4927acddb2ab",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Raise",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

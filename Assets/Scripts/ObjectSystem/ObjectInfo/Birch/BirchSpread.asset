@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21d8c5da6b916a721a931e66b2660d71, type: 3}
+  m_Name: BirchSpread
+  m_EditorClassIdentifier: 
+  main: {fileID: 11400000, guid: d83b594b4e9ea91b285d8015e2bb6168, type: 2}
+  other:
+  - {fileID: 11400000, guid: c0942a1583c25de35b66548e12be1454, type: 2}
+  minDis: 5
+  maxDis: 15

@@ -49,7 +49,6 @@ MonoBehaviour:
   terrainF: {fileID: 0}
   waterF: {fileID: 0}
   seed: 16
-  rotation: {x: 0, y: 0, z: 0}
   objectSystem: {fileID: 0}
   noiseScale: 200
   octaves: 8
@@ -58,30 +57,48 @@ MonoBehaviour:
   regions:
   - height: 0
     objects: []
+    structs: []
   - height: 0.15
     objects: []
+    structs: []
   - height: 0.25
     objects: []
+    structs: []
   - height: 0.26
     objects: []
+    structs: []
   - height: 0.3
     objects: []
+    structs:
+    - Chance: 255
+      info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
   - height: 0.45
     objects:
     - Chance: 60
       info: {fileID: 11400000, guid: f93e1ffefd235d615a1bd882c75bb125, type: 2}
-    - Chance: 70
+    - Chance: 90
       info: {fileID: 11400000, guid: 7bbd0072588a487a28dc34b8065a12f4, type: 2}
     - Chance: 65
       info: {fileID: 11400000, guid: 3b41bc4f6c3c5b397bc6bb6f81d8fa8a, type: 2}
     - Chance: 50
       info: {fileID: 11400000, guid: 80339deec3dfda594b587c1668a63245, type: 2}
+    structs:
+    - Chance: 200
+      info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
   - height: 0.7
     objects: []
+    structs: []
   - height: 0.9
-    objects: []
+    objects:
+    - Chance: 50
+      info: {fileID: 11400000, guid: 3b41bc4f6c3c5b397bc6bb6f81d8fa8a, type: 2}
+    structs: []
   - height: 1.15
-    objects: []
+    objects:
+    - Chance: 90
+      info: {fileID: 11400000, guid: d83b594b4e9ea91b285d8015e2bb6168, type: 2}
+    structs: []
   endlessFlag: 010101
+  step: 3
   rotateValue: 0
   rotateTarget: 0

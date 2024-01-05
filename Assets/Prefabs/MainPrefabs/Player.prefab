@@ -308,6 +308,7 @@ MonoBehaviour:
   shadowAnimator: {fileID: 8713912288213283658}
   MovementRef: {fileID: -8258650051004762216, guid: 7a647ec6cc02b5604ac122cb0d98620e,
     type: 3}
+  Raise: {fileID: 0}
   joystick: {fileID: 0}
   cachedCamera: {fileID: 0}
   crosshair: {fileID: 1671218707826521824}
@@ -584,7 +585,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 402f7d54003ad29419cb0fb71f283033, type: 3}
-  m_Color: {r: 1, g: 0, b: 0, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

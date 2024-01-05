@@ -15,10 +15,12 @@ public class UIInventory : MonoBehaviour, ISetAble
     private int activeCell = 1;
     public InventoryWithSlots inventory => tester.inventory;
     private UIInventoryTester tester;
-    private PlayerData PData;
+    public PlayerData playerData;
+    private MapGenerator generator;
     public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
-        PData = locator.GetService<PlayerData>();
+        playerData = locator.GetService<PlayerData>();
+        generator = locator.GetService<MapGenerator>();
         var uiSlot = GetComponentsInChildren<UIInventorySlot>();
         var slotList = new List<UIInventorySlot>();
         slotList.AddRange(uiSlot);
@@ -31,8 +33,8 @@ public class UIInventory : MonoBehaviour, ISetAble
         isActive = false;
         grid.SetActive(isActive);
         inventory.OnInventoryStateChangedEvent += OnInventoryStateChanged;
-        PData.placeObject += PlaceObject;
-        PData.aimRaise += AimRaise;
+        playerData.placeObject += PlaceObject;
+        playerData.aimRaise += AimRaise;
         callback?.Invoke();
     }
 
@@ -48,9 +50,9 @@ public class UIInventory : MonoBehaviour, ISetAble
             isActive = !isActive;
             grid.SetActive(isActive);
             if (isActive)
-                PData.SetBehaviourSit();
+                playerData.SetBehaviourSit();
             else
-                PData.SetBehaviourIdle();
+                playerData.SetBehaviourIdle();
         }
         if (Input.GetKeyDown("1"))
             SetActiveCell(1);
@@ -77,13 +79,21 @@ public class UIInventory : MonoBehaviour, ISetAble
     }
 
 
-    private void PlaceObject(Vector3 position)
+    private void PlaceObject(Vector2 position)
     {
         IInventorySlot slot = activeCells[activeCell - 1].slot;
         if (slot.isEmpty)
             return;
         IInventoryItem item = activeCells[activeCell - 1]._uiInventoryItem.item;
-        // print(item.state.amount);
+        print(item.state.amount);
+        if (generator.objectSystem.TryAddToGlobal(position, item.info.prefab.GetInstanceID(), item.info.title, 1, InstanceType.Inter))
+        {
+            item.state.amount--;
+            if (slot.amount <= 0)
+                slot.Clear();
+            activeCells[activeCell - 1].Refresh();
+        }
+        generator.ExtraUpdate();
         // if (PoolManager.inst.SetObjectByPosition(new Vector2(position.x, position.y), item.info.id, 1, item.info.prefab.GetInstanceID()))
         // {
         //     item.state.amount--;
@@ -155,8 +165,31 @@ public class UIInventory : MonoBehaviour, ISetAble
         craftLine.SetActive(isActive);
     }
 
-    private void AimRaise(Vector3 position)
+    private void AimRaise(Vector2 position)
     {
+        ObjectInstInfo objectInstInfo = generator.objectSystem.GetGlobalObjectInfo(position);
+        if (objectInstInfo.prefabID == 0 || objectInstInfo.objectType != InstanceType.Inter)
+            return;
+        ObjectInfo data = generator.objectSystem.GetPrefabInfo(objectInstInfo.prefabID);
+        if (data.iteminfo == null)
+            return;
+        if (inventory.TryToAdd(this, InfoManager.GetInventoryItemByInfo(data.iteminfo.id, data.iteminfo, objectInstInfo.amount)))
+        {
+            generator.objectSystem.RemoveFromGlobal(position);
+            SpreadPattern pattern = data.pickUpPattern;
+            if (pattern == null)
+                return;
+            generator.objectSystem.TryAddToGlobal(position, pattern.main.prefab.GetInstanceID(), pattern.main.title, pattern.main.amount, pattern.main.iType, (position.x + position.y) % 2 == 0);
+            if (pattern.other.Length != 0)
+            {
+                for (byte i = 0; i < pattern.other.Length; i++)
+                {
+                    Vector2 newPos = Extentions.GenerateRandomPointAround(position, pattern.minDis, pattern.maxDis);
+                    generator.objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].title, pattern.other[i].amount, pattern.other[i].iType, Extentions.newx < position.x);
+                }
+            }
+        }
+        generator.ExtraUpdate();
         // Triple<string, int, ObjectInstance> triple = PoolManager.inst.GetObjectByPosition(new Vector2(position.x, position.y));
         // if (triple == null)
         //     return;
@@ -170,7 +203,7 @@ public class UIInventory : MonoBehaviour, ISetAble
     private void OnDisable()
     {
         inventory.OnInventoryStateChangedEvent -= OnInventoryStateChanged;
-        PData.placeObject -= PlaceObject;
-        PData.aimRaise -= AimRaise;
+        playerData.placeObject -= PlaceObject;
+        playerData.aimRaise -= AimRaise;
     }
 }

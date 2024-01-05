@@ -19,22 +19,16 @@ public class UIInventoryTester
     {
         if (filling)
         {
-            // var allSlots = inventory.GetAllSlots();
-            // var availableSlots = new List<IInventorySlot>(allSlots);
-            // var filledSlots = 10;
-            // for (int i = 0; i < filledSlots; i++)
-            // {
-            //     int index = 0;
-            //     do
-            //     {
-            //         var rSlot = availableSlots[Random.Range(0, availableSlots.Count)];
-            //         var item = PData.pdata.GetItem(index, Random.Range(1, 50));
-            //         inventory.TryToAddSlot(this, rSlot, item);
-            //         availableSlots.Remove(rSlot);
-            //         index++;
-            //     }
-            //     while (PData.pdata.GetItem(index, 0) != null);
-            // }
+            var allSlots = inventory.GetAllSlots();
+            var availableSlots = new List<IInventorySlot>(allSlots);
+            var filledSlots = 10;
+            for (int i = 0; i < filledSlots; i++)
+            {
+                var rSlot = availableSlots[Random.Range(0, availableSlots.Count)];
+                var item = InfoManager.GetInventoryItem("porchini", Random.Range(1, 10));
+                inventory.TryToAddSlot(this, rSlot, item);
+                availableSlots.Remove(rSlot);
+            }
         }
         SetupInventoryUI(inventory);
     }
