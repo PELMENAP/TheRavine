@@ -10,9 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3505637646176144656}
   - component: {fileID: 4580480509596914544}
-  - component: {fileID: 5656639705564208648}
-  - component: {fileID: 5656639705564208695}
-  - component: {fileID: 5656639705564208694}
   m_Layer: 0
   m_Name: BrownBoletus
   m_TagString: Untagged
@@ -87,66 +84,3 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 1
---- !u!58 &5656639705564208648
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4512673236963690204}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 1
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: 0, y: -0.4}
-  m_Radius: 1
---- !u!114 &5656639705564208695
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4512673236963690204}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc940621e0c1a5c7aa74348d853e19f4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  amount: 1
-  id: BrownBoletus
-  itemInfo: {fileID: 11400000, guid: 99b5777bbae1a7cd08ddae5ee72c730e, type: 2}
---- !u!114 &5656639705564208694
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4512673236963690204}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de51a12bfa0cf9bf08c8c1b05c5cd0c1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 

@@ -9,32 +9,33 @@ public class PoolManager : IPoolManager<GameObject>
         parent = _parent;
     }
     Dictionary<int, LinkedList<ObjectInstance>> poolDictionary = new Dictionary<int, LinkedList<ObjectInstance>>();
-    Dictionary<int, Transform> poolObjectDictionary = new Dictionary<int, Transform>();
-    public void CreatePool(GameObject prefab, CreateInstance createInstance, int poolSize = 1)
+    Dictionary<int, Pair<Transform, ushort>> poolObjectDictionary = new Dictionary<int, Pair<Transform, ushort>>();
+    public void CreatePool(GameObject prefab, CreateInstance createInstance, ushort poolSize = 1)
     {
         int poolKey = prefab.GetInstanceID();
-
         if (!poolDictionary.ContainsKey(poolKey))
         {
             poolDictionary.Add(poolKey, new LinkedList<ObjectInstance>());
             GameObject poolHolder = new GameObject(prefab.name + " pool");
             poolHolder.isStatic = true;
             poolHolder.transform.parent = parent;
-            poolObjectDictionary.Add(poolKey, poolHolder.transform);
+            poolObjectDictionary.Add(poolKey, new Pair<Transform, ushort>(poolHolder.transform, poolSize));
         }
         for (ushort i = 0; i < poolSize; i++)
         {
             ObjectInstance newObject = new ObjectInstance(createInstance?.Invoke(new Vector2(0, 0), prefab));
             poolDictionary[poolKey].AddFirst(newObject);
-            newObject.SetParent(poolObjectDictionary[poolKey]);
+            newObject.SetParent(poolObjectDictionary[poolKey].First);
         }
     }
-    public void Reuse(int prefabID, Vector2 position, float rotateValue = 0f)
+    public void Reuse(int prefabID, Vector2 position, bool flip, float rotateValue = 0f)
     {
         LinkedList<ObjectInstance> poDick = poolDictionary[prefabID];
         ObjectInstance objectToReuse = poDick.First.Value;
         poDick.RemoveFirst();
         objectToReuse.Reuse(position, rotateValue);
+        if (flip)
+            objectToReuse.Rotate(new Vector3(0, 180, 0));
         poDick.AddLast(objectToReuse);
     }
     public void Deactivate(int prefabID)
@@ -45,6 +46,8 @@ public class PoolManager : IPoolManager<GameObject>
         objectToReuse.ActiveSelf(false);
         poDick.AddLast(objectToReuse);
     }
+    public ushort GetPoolSize(int prefabID) => poolObjectDictionary[prefabID].Second;
+    public void IncreasePoolSize(int prefabID) => poolObjectDictionary[prefabID].Second++;
     public class ObjectInstance
     {
         private GameObject gameObject;
@@ -68,6 +71,10 @@ public class PoolManager : IPoolManager<GameObject>
                 transform.position = position;
             }
             ActiveSelf(true);
+        }
+        public void Rotate(Vector3 rotate)
+        {
+            transform.rotation = Quaternion.Euler(rotate);
         }
         public void SetParent(Transform _parent)
         {

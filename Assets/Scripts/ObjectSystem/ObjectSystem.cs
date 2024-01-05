@@ -6,122 +6,78 @@ using UnityEditor;
 public delegate GameObject CreateInstance(Vector2 position, GameObject prefab);
 public class ObjectSystem : MonoBehaviour, ISetAble
 {
+    public GameObject InstantiatePoolObject(Vector2 position, GameObject prefab) => Instantiate(prefab, position, Quaternion.identity);
     public ObjectInfo[] _info;
-    private Dictionary<int, PrefabData> info = new Dictionary<int, PrefabData>(32);
-    public PrefabData GetPrefabInfo(int id) => info[id];
+    private Dictionary<int, ObjectInfo> info = new Dictionary<int, ObjectInfo>(16);
+    public ObjectInfo GetPrefabInfo(int id) => info[id];
     //
-    private Dictionary<Vector2, ObjectInstInfo> global = new Dictionary<Vector2, ObjectInstInfo>(512);
+    private Dictionary<Vector2, ObjectInstInfo> global = new Dictionary<Vector2, ObjectInstInfo>(128);
     public ObjectInstInfo GetGlobalObjectInfo(Vector2 position)
     {
         if (!global.ContainsKey(position))
             return new ObjectInstInfo();
         return global[position];
     }
-    public bool AddToGlobal(Vector2 position, int _prefabID, string _name, ushort _amount, InstanceType _objectType) => global.TryAdd(position, new ObjectInstInfo(_prefabID, _name, _amount, _objectType));
-    public bool RemoveFromGlobal(Vector2 position) => global.Remove(position);
+    public bool TryAddToGlobal(Vector2 position, int _prefabID, string _name, ushort _amount, InstanceType _objectType, bool flip = false)
+    {
+        ObjectInfo curdata = GetPrefabInfo(_prefabID);
+        ObjectInstInfo objectInfo = new ObjectInstInfo(_prefabID, _name, _amount, _objectType, flip);
+        if (curdata.addspace.Length == 0)
+            return global.TryAdd(position, objectInfo);
+        global[position] = objectInfo;
+        for (int i = 0; i < curdata.addspace.Length; i++)
+            global[position + curdata.addspace[i]] = new ObjectInstInfo();
+        return true;
+    }
+    public void AddToGlobal(Vector2 position, int _prefabID, string _name, ushort _amount, InstanceType _objectType, bool flip = false)
+    {
+        global[position] = new ObjectInstInfo(_prefabID, _name, _amount, _objectType, flip);
+    }
+    public bool RemoveFromGlobal(Vector2 position)
+    {
+        ObjectInstInfo objectInfo = GetGlobalObjectInfo(position);
+        if (objectInfo.prefabID == 0)
+            return true;
+        ObjectInfo curdata = GetPrefabInfo(objectInfo.prefabID);
+        if (curdata.addspace.Length == 0)
+            return global.Remove(position);
+        for (int i = 0; i < curdata.addspace.Length; i++)
+            global.Remove(position + curdata.addspace[i]);
+        return true;
+    }
     public bool ContainsGlobal(Vector2 position) => global.ContainsKey(position);
     //
     private Dictionary<Vector2, ObjectInstInfo> changes = new Dictionary<Vector2, ObjectInstInfo>();
     public bool Changed(Vector2 position) => changes.ContainsKey(position);
     //
     private IPoolManager<GameObject> PoolManagerBase;
-    public void CreatePool(GameObject prefab, int poolSize)
+    public void CreatePool(GameObject prefab, ushort poolSize = 1)
     {
         PoolManagerBase.CreatePool(prefab, InstantiatePoolObject, poolSize);
     }
-    public void Reuse(int prefabID, Vector2 position, float rotateValue) => PoolManagerBase.Reuse(prefabID, position, rotateValue);
+    public void Reuse(int prefabID, Vector2 position, bool flip, float rotateValue) => PoolManagerBase.Reuse(prefabID, position, flip, rotateValue);
     public void Deactivate(int prefabID) => PoolManagerBase.Deactivate(prefabID);
+    public ushort GetPoolSize(int prefabID) => PoolManagerBase.GetPoolSize(prefabID);
+    public void IncreasePoolSize(int prefabID) => PoolManagerBase.IncreasePoolSize(prefabID);
     //
     public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
         PoolManagerBase = new PoolManager(this.transform);
         for (int i = 0; i < _info.Length; i++)
         {
-            info[_info[i].prefab.GetInstanceID()] = new PrefabData(_info[i].name, _info[i].amount, _info[i].poolSize, _info[i].iType, _info[i].bType, _info[i].prefab);
+            info[_info[i].prefab.GetInstanceID()] = _info[i];
             // print(_info[i].prefab.GetInstanceID());
         }
-        // NAL().Forget();
         FirstInstance().Forget();
         callback?.Invoke();
     }
-
     private async UniTaskVoid FirstInstance()
     {
         for (int i = 0; i < _info.Length; i++)
         {
             CreatePool(_info[i].prefab, _info[i].poolSize);
-            await UniTask.Delay(500);
-            FaderOnTransit.instance.SetLogs("Созданы: " + _info[i].prefab.name);
-        }
-    }
-    public GameObject InstantiatePoolObject(Vector2 position, GameObject prefab) => Instantiate(prefab, position, Quaternion.identity);
-
-    private List<Vector2> NALObjects = new List<Vector2>();
-
-    public Dictionary<Vector2Int, Transform> nettleEntity = new Dictionary<Vector2Int, Transform>();
-    public List<Transform> nettle = new List<Transform>();
-    public List<Transform> potentialNettle = new List<Transform>();
-    public List<Vector2Int> potentialNettlePosition = new List<Vector2Int>();
-    public List<Transform> deadNettle = new List<Transform>();
-    public List<Vector2Int> deadNettlePosition = new List<Vector2Int>();
-    public int maxcount, around, distance;
-    [SerializeField, Range(0, 1)] private float chance;
-    private async UniTaskVoid NAL_old()
-    {
-        int countOfCycle = 0;
-        foreach (Transform item in nettle)
-        {
-            nettleEntity[new Vector2Int((int)item.position.x, (int)item.position.y)] = item;
-        }
-        while (true)
-        {
-            foreach (Transform item in nettle)
-            {
-                countOfCycle++;
-                // if (countOfCycle % 3 == 0)
-                //     continue;
-                int xpos = (int)item.position.x, ypos = (int)item.position.y;
-                int count = 0;
-                for (int x = xpos - around; x <= xpos + around; x++)
-                    for (int y = ypos - around; y <= ypos + around; y++)
-                        if (nettleEntity.ContainsKey(new Vector2Int(x, y)))
-                            count++;
-                if (count > maxcount)
-                {
-                    deadNettle.Add(item);
-                    deadNettlePosition.Add(new Vector2Int(xpos, ypos));
-                }
-                else
-                {
-                    int newx, newy;
-                    newx = Random.Range(xpos - distance, xpos + distance);
-                    newy = Random.Range(ypos - distance, ypos + distance);
-                    if (!nettleEntity.ContainsKey(new Vector2Int(newx, newy)) && Random.value < chance)
-                    {
-                        potentialNettle.Add(item);
-                        potentialNettlePosition.Add(new Vector2Int(newx, newy));
-                    }
-                }
-            }
-            for (int i = 0; i < potentialNettle.Count; i++)
-            {
-                Transform gobject = InstantiatePoolObject(new Vector2(potentialNettlePosition[i].x, potentialNettlePosition[i].y), potentialNettle[i].gameObject).transform;
-                nettleEntity[potentialNettlePosition[i]] = gobject;
-                nettle.Add(gobject);
-                await UniTask.Delay(100);
-            }
-            for (int i = 0; i < deadNettle.Count; i++)
-            {
-                nettleEntity.Remove(deadNettlePosition[i]);
-                nettle.Remove(deadNettle[i]);
-                Destroy(deadNettle[i].gameObject);
-                await UniTask.Delay(100);
-            }
-            potentialNettlePosition.Clear();
-            potentialNettle.Clear();
-            deadNettlePosition.Clear();
-            deadNettle.Clear();
             await UniTask.Delay(100);
+            //FaderOnTransit.instance.SetLogs("Созданы: " + _info[i].prefab.name);
         }
     }
 }
@@ -132,30 +88,14 @@ public class ObjectInstInfo
     public ushort amount;
     public int prefabID { get; private set; }
     public InstanceType objectType { get; private set; }
-    public ObjectInstInfo(int _prefabID = 0, string _name = "therivinetop", ushort _amount = 1, InstanceType _objectType = InstanceType.Static)
+    public bool flip;
+    public ObjectInstInfo(int _prefabID = -1, string _name = "therivinetop", ushort _amount = 1, InstanceType _objectType = InstanceType.Static, bool _flip = false)
     {
         name = _name;
         amount = _amount;
         prefabID = _prefabID;
         objectType = _objectType;
-    }
-}
-
-public class PrefabData
-{
-    public string name;
-    public ushort amount, poolSize;
-    public InstanceType itype;
-    public BehaviourType btype;
-    public GameObject prefab;
-    public PrefabData(string _name, ushort _amount, ushort _poolSize, InstanceType _itype, BehaviourType _btype, GameObject _prefab)
-    {
-        name = _name;
-        amount = _amount;
-        poolSize = _poolSize;
-        itype = _itype;
-        btype = _btype;
-        prefab = _prefab;
+        flip = _flip;
     }
 }
 
@@ -169,5 +109,6 @@ public enum InstanceType
 public enum BehaviourType
 {
     None,
-    NAL
+    NAL,
+    GROW
 }

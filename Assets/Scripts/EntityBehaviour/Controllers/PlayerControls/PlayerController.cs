@@ -10,7 +10,7 @@ public class PlayerController : MonoBehaviour, IControllable
     [SerializeField] private Vector2 movementDirection, aim;
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Animator animator, shadowAnimator;
-    [SerializeField] private InputActionReference MovementRef;
+    [SerializeField] private InputActionReference MovementRef, Raise;
     [SerializeField] private Joystick joystick;
     [SerializeField] private Camera cachedCamera;
     private IController currentController;
@@ -29,6 +29,7 @@ public class PlayerController : MonoBehaviour, IControllable
                 currentController = new JoistickController(joystick);
                 break;
         }
+        Raise.action.performed += AimRaise;
     }
 
     public void SetZeroValues()
@@ -78,7 +79,7 @@ public class PlayerController : MonoBehaviour, IControllable
             shadowAnimator.SetFloat("Speed", movementSpeed);
         }
     }
-
+    private bool isAccurance;
     public void Aim()
     {
         if (Mouse.current.rightButton.isPressed)
@@ -95,37 +96,34 @@ public class PlayerController : MonoBehaviour, IControllable
             crosshair.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg + offset);
             crosshair.gameObject.SetActive(true);
             AimPlace();
-            AimRaise(crosshair.position, true);
+            isAccurance = true;
         }
         else
         {
             crosshair.gameObject.SetActive(false);
-            AimRaise(entityTrans.position, false);
+            isAccurance = false;
         }
     }
 
-    private void AimRaise(Vector3 position, bool isAccurance)
+    private void AimRaise(InputAction.CallbackContext obj)
     {
-        if (Mouse.current.leftButton.wasPressedThisFrame)
+        if (!isAccurance)
         {
-            if (!isAccurance)
-            {
-                int currentX = Mathf.RoundToInt(position.x);
-                int currentY = Mathf.RoundToInt(position.y);
-                for (int xOffset = -PickDistance; xOffset <= PickDistance; xOffset++)
-                    for (int yOffset = -PickDistance; yOffset <= PickDistance; yOffset++)
-                        PlayerData.data.aimRaise?.Invoke(new Vector3(currentX + xOffset, currentY + yOffset, 0));
-            }
-            else
-            {
-                PlayerData.data.aimRaise?.Invoke(new Vector3(Mathf.RoundToInt(position.x), Mathf.RoundToInt(position.y), 0));
-            }
+            int currentX = Mathf.RoundToInt(entityTrans.position.x);
+            int currentY = Mathf.RoundToInt(entityTrans.position.y);
+            for (int xOffset = -PickDistance; xOffset <= PickDistance; xOffset++)
+                for (int yOffset = -PickDistance; yOffset <= PickDistance; yOffset++)
+                    PlayerData.data.aimRaise?.Invoke(new Vector2(currentX + xOffset, currentY + yOffset));
+        }
+        else
+        {
+            PlayerData.data.aimRaise?.Invoke(new Vector2(Mathf.RoundToInt(crosshair.position.x), Mathf.RoundToInt(crosshair.position.y)));
         }
     }
 
     private void AimPlace()
     {
-        if (Input.GetMouseButton(0))
+        if (Mouse.current.leftButton.wasPressedThisFrame)
         {
             if (act)
                 StartCoroutine(In());
@@ -135,13 +133,14 @@ public class PlayerController : MonoBehaviour, IControllable
     private IEnumerator In()
     {
         act = false;
-        PlayerData.data.placeObject?.Invoke(new Vector3(Mathf.RoundToInt(crosshair.position.x), Mathf.RoundToInt(crosshair.position.y), 0));
+        PlayerData.data.placeObject?.Invoke(new Vector2(Mathf.RoundToInt(crosshair.position.x), Mathf.RoundToInt(crosshair.position.y)));
         yield return new WaitForSeconds(timeLimit);
         act = true;
     }
     public void BreakUp()
     {
         currentController.MeetEnds();
+        Raise.action.performed -= AimRaise;
     }
     private void OnDisable()
     {

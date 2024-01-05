@@ -12,8 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1110f6f7306fdff697c35625afdbd97, type: 3}
   m_Name: MiddleTree
   m_EditorClassIdentifier: 
-  _maxcount: 3
-  _around: 10
-  _distance: 20
-  _chance: 50
+  _distance: 50
+  _chance: 40
+  _attempt: 1
   _delay: 30

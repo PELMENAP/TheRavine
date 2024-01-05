@@ -28,6 +28,8 @@ public class Terminal : MonoBehaviour, ISetAble
     }
     private void ReadText(string input)
     {
+        if (input.Length == 0)
+            return;
         if (input[0] == '-')
         {
             words = input.Split(' ');

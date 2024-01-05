@@ -58,6 +58,6 @@ public class Bootstrap : MonoBehaviour
         StateMachine.SwitchState<BootstrapState>();
     }
     public void AddCameraToStack(Camera _cameraToAdd) => _camera.GetUniversalAdditionalCameraData().cameraStack.Add(_cameraToAdd);
-    public void Finally() => playerData.init();
+    public void Finally() => playerData.SetBehaviourIdle();
 
 }

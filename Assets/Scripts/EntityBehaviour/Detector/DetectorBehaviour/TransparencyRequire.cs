@@ -6,23 +6,28 @@ public class TransparencyRequire : MonoBehaviour
     private IDetectableObject _idetectableobject;
     private MaterialPropertyBlock mat;
     [SerializeField] private SpriteRenderer spriteRenderer;
+    [SerializeField] private float fade;
 
-    private void Awake() {
+    private void Awake()
+    {
         _idetectableobject = this.GetComponent<DetectableObject>();
         _idetectableobject.OnGameObjectDetectedEvent += OnDetectedEvent;
         _idetectableobject.OnGameObjectDetectionReleasedEvent += OnDetectionReleasedEvent;
-
         mat = new MaterialPropertyBlock();
     }
 
-    private void OnDetectedEvent(GameObject source, GameObject detectedObject){
-        if(source.CompareTag("Player")){
-            changeAlpha(0.1f);
+    private void OnDetectedEvent(GameObject source, GameObject detectedObject)
+    {
+        if (source.CompareTag("Player"))
+        {
+            changeAlpha(fade);
         }
     }
 
-    private void OnDetectionReleasedEvent(GameObject source, GameObject detectedObject){
-        if(source.CompareTag("Player")){
+    private void OnDetectionReleasedEvent(GameObject source, GameObject detectedObject)
+    {
+        if (source.CompareTag("Player"))
+        {
             changeAlpha(1f);
         }
     }
@@ -31,5 +36,11 @@ public class TransparencyRequire : MonoBehaviour
     {
         mat.SetFloat("alpha", a);
         spriteRenderer.SetPropertyBlock(mat);
+    }
+
+    private void OnDestroy()
+    {
+        _idetectableobject.OnGameObjectDetectedEvent -= OnDetectedEvent;
+        _idetectableobject.OnGameObjectDetectionReleasedEvent -= OnDetectionReleasedEvent;
     }
 }

@@ -61,15 +61,15 @@ Material:
     m_Floats:
     - _2DLightMLP: 3.11
     - _2DLightMinAlpha: 0
-    - _Bot: 0.362
-    - _Left: 0.638
+    - _Bot: 0.382
+    - _Left: 0.777
     - _Right: 0.6
     - _Shadow_Reflectiveness: 1
     - _Top: 0.611
     - _circleSmoothness: 0.512
-    - _fastAntyaliasing: 1
+    - _fastAntyaliasing: 0.511
     - _onlyRenderIn2DLight: 1
-    - _smoothness: 0.904
+    - _smoothness: 0.763
     m_Colors:
     - _Shadow_Color: {r: 0.0035232683, g: 0.0049437457, b: 0.01867503, a: 0}
   m_BuildTextureStacks: []
