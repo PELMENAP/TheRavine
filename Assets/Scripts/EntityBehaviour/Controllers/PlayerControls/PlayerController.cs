@@ -38,6 +38,14 @@ public class PlayerController : MonoBehaviour, IControllable
         movementDirection = new Vector2(0, 0);
         Animate();
     }
+    public void EnableComponents()
+    {
+        currentController.EnableView();
+    }
+    public void DisableComponents()
+    {
+        currentController.DisableView();
+    }
 
     public void Move()
     {

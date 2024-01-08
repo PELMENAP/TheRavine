@@ -1,56 +1,61 @@
 using System;
 using System.Collections.Generic;
 using Random = UnityEngine.Random;
-public class UIInventoryTester
+using TheRavine.InventoryElements;
+
+namespace TheRavine.Inventory
 {
-    private UIInventorySlot[] _uiSlots;
-
-    public InventoryWithSlots inventory { get; }
-
-    public UIInventoryTester(UIInventorySlot[] uislots)
+    public class UIInventoryTester
     {
-        _uiSlots = uislots;
+        private UIInventorySlot[] _uiSlots;
 
-        inventory = new InventoryWithSlots(uislots.Length);
-        inventory.OnInventoryStateChangedEvent += OnInventoryStateChanged;
-    }
+        public InventoryWithSlots inventory { get; }
 
-    public void FillSlots(bool filling)
-    {
-        if (filling)
+        public UIInventoryTester(UIInventorySlot[] uislots)
+        {
+            _uiSlots = uislots;
+
+            inventory = new InventoryWithSlots(uislots.Length);
+            inventory.OnInventoryStateChangedEvent += OnInventoryStateChanged;
+        }
+
+        public void FillSlots(bool filling)
+        {
+            if (filling)
+            {
+                var allSlots = inventory.GetAllSlots();
+                var availableSlots = new List<IInventorySlot>(allSlots);
+                var filledSlots = 10;
+                for (int i = 0; i < filledSlots; i++)
+                {
+                    var rSlot = availableSlots[Random.Range(0, availableSlots.Count)];
+                    var item = InfoManager.GetInventoryItem("porchini", Random.Range(1, 10));
+                    inventory.TryToAddSlot(this, rSlot, item);
+                    availableSlots.Remove(rSlot);
+                }
+            }
+            SetupInventoryUI(inventory);
+        }
+
+        private void SetupInventoryUI(InventoryWithSlots inventory)
         {
             var allSlots = inventory.GetAllSlots();
-            var availableSlots = new List<IInventorySlot>(allSlots);
-            var filledSlots = 10;
-            for (int i = 0; i < filledSlots; i++)
+            var allSlotsCount = allSlots.Length;
+            for (int i = 0; i < allSlotsCount; i++)
             {
-                var rSlot = availableSlots[Random.Range(0, availableSlots.Count)];
-                var item = InfoManager.GetInventoryItem("porchini", Random.Range(1, 10));
-                inventory.TryToAddSlot(this, rSlot, item);
-                availableSlots.Remove(rSlot);
+                var slot = allSlots[i];
+                var uiSlot = _uiSlots[i];
+                uiSlot.SetSlot(slot);
+                uiSlot.Refresh();
             }
         }
-        SetupInventoryUI(inventory);
-    }
 
-    private void SetupInventoryUI(InventoryWithSlots inventory)
-    {
-        var allSlots = inventory.GetAllSlots();
-        var allSlotsCount = allSlots.Length;
-        for (int i = 0; i < allSlotsCount; i++)
+        private void OnInventoryStateChanged(object sender)
         {
-            var slot = allSlots[i];
-            var uiSlot = _uiSlots[i];
-            uiSlot.SetSlot(slot);
-            uiSlot.Refresh();
-        }
-    }
-
-    private void OnInventoryStateChanged(object sender)
-    {
-        foreach (var uiSlot in _uiSlots)
-        {
-            uiSlot.Refresh();
+            foreach (var uiSlot in _uiSlots)
+            {
+                uiSlot.Refresh();
+            }
         }
     }
 }

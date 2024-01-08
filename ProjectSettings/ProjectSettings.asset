@@ -145,6 +145,7 @@ PlayerSettings:
   - {fileID: 6908429162828912622, guid: adae632f026b24118899a930b4e1619f, type: 3}
   - {fileID: 6242330467826230692, guid: e5e408fcf010d0b1d9b32e70b5fa23e9, type: 3}
   - {fileID: 8079554152659468491, guid: eac9ac9f7b106c63593abaabcb67837c, type: 3}
+  - {fileID: 11400000, guid: 1d16c970072ac4f95a46c81fbcc9fd19, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -843,4 +844,4 @@ PlayerSettings:
   legacyClampBlendShapeWeights: 0
   hmiLoadingImage: {fileID: 0}
   virtualTexturingSupportEnabled: 0
-  insecureHttpOption: 2
+  insecureHttpOption: 1

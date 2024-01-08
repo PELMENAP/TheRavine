@@ -9,6 +9,8 @@ using UnityEngine.UI;
 using NaughtyAttributes;
 using System.Linq;
 using System;
+using TheRavine.Generator;
+using TheRavine.Extentions;
 
 public class Test : MonoBehaviour
 {
@@ -28,6 +30,7 @@ public class Test : MonoBehaviour
 
     private SkillFacade SkillSystem = new SkillFacade();
     AEntity playerEntity;
+    [SerializeField] private PlayerInput input;
     private void Awake()
     {
         Settings.isShadow = isShadow;
@@ -92,7 +95,7 @@ public class Test : MonoBehaviour
     }
     private void TestSimilarity()
     {
-        double similarity = Extentions.JaroWinklerSimilarity(test, enter);
+        double similarity = Extention.JaroWinklerSimilarity(test, enter);
         print(similarity);
     }
 
@@ -122,5 +125,11 @@ public class Test : MonoBehaviour
     {
         position = new Vector2(viewer.position.x, viewer.position.y);
         print(generator.GetMapHeight(position));
+    }
+
+    [Button]
+    private void ShowCurrentInput()
+    {
+        Debug.Log(input.currentActionMap);
     }
 }

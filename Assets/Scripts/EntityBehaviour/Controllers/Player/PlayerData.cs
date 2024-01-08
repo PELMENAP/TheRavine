@@ -85,16 +85,19 @@ public class PlayerData : AEntityData, ISetAble
     public void SetBehaviourIdle()
     {
         SetBehaviour(GetBehaviour<PlayerBehaviourIdle>());
+        controller.EnableComponents();
     }
 
     public void SetBehaviourDialog()
     {
         SetBehaviour(GetBehaviour<PlayerBehaviourDialoge>());
+        controller.DisableComponents();
     }
 
     public void SetBehaviourSit()
     {
         SetBehaviour(GetBehaviour<PlayerBehaviourSit>());
+        controller.DisableComponents();
     }
 
     private void AimSkills()

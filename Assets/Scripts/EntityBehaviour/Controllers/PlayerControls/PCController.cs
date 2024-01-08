@@ -17,6 +17,14 @@ public class PCController : IController
     {
 
     }
+    public void EnableView()
+    {
+
+    }
+    public void DisableView()
+    {
+
+    }
 
     public void MeetEnds()
     {

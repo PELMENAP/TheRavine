@@ -1,9 +1,9 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using Cysharp.Threading.Tasks;
 
-public class Joystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
+public class Joystick : MonoBehaviour
 {
     public float Horizontal { get { return (snapX) ? SnapFloat(input.x, AxisOptions.Horizontal) : input.x; } }
     public float Vertical { get { return (snapY) ? SnapFloat(input.y, AxisOptions.Vertical) : input.y; } }
@@ -25,6 +25,7 @@ public class Joystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPoint
     public bool SnapX { get { return snapX; } set { snapX = value; } }
     public bool SnapY { get { return snapY; } set { snapY = value; } }
 
+    [SerializeField] private InputActionReference point;
     [SerializeField] private float handleRange = 1;
     [SerializeField] private float deadZone = 0;
     [SerializeField] private AxisOptions axisOptions = AxisOptions.Both;
@@ -37,10 +38,12 @@ public class Joystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPoint
 
     private Canvas canvas;
     private Camera cam;
+    private Mouse mouse;
+    private bool isDragging = false;
 
     private Vector2 input = Vector2.zero;
 
-    protected virtual void Start()
+    private void Start()
     {
         HandleRange = handleRange;
         DeadZone = deadZone;
@@ -55,30 +58,14 @@ public class Joystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPoint
         handle.anchorMax = center;
         handle.pivot = center;
         handle.anchoredPosition = Vector2.zero;
+
+        mouse = Mouse.current;
+        point.action.performed += OnDrag;
     }
 
-    public virtual void OnPointerDown(PointerEventData eventData)
+    private void HandleInput(float magnitude, Vector2 normalised, Vector2 radius)
     {
-        OnDrag(eventData);
-    }
-
-    public void OnDrag(PointerEventData eventData)
-    {
-        cam = null;
-        if (canvas.renderMode == RenderMode.ScreenSpaceCamera)
-            cam = canvas.worldCamera;
-
-        Vector2 position = RectTransformUtility.WorldToScreenPoint(cam, background.position);
-        Vector2 radius = background.sizeDelta / 2;
-        input = (eventData.position - position) / (radius * canvas.scaleFactor);
-        FormatInput();
-        HandleInput(input.magnitude, input.normalized, radius, cam);
-        handle.anchoredPosition = input * radius * handleRange;
-    }
-
-    protected virtual void HandleInput(float magnitude, Vector2 normalised, Vector2 radius, Camera cam)
-    {
-        if (magnitude > deadZone)
+        if (magnitude < deadZone)
         {
             if (magnitude > 1)
                 input = normalised;
@@ -128,14 +115,40 @@ public class Joystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPoint
         }
         return 0;
     }
-
-    public virtual void OnPointerUp(PointerEventData eventData)
+    private void OnDrag(InputAction.CallbackContext context)
     {
-        input = Vector2.zero;
-        handle.anchoredPosition = Vector2.zero;
+        if (mouse.leftButton.wasReleasedThisFrame)
+        {
+            isDragging = false;
+            input = Vector2.zero;
+            handle.anchoredPosition = Vector2.zero;
+        }
+        else
+        {
+            isDragging = true;
+            Dragging().Forget();
+        }
     }
 
-    protected Vector2 ScreenPointToAnchoredPosition(Vector2 screenPosition)
+    private async UniTaskVoid Dragging()
+    {
+        while (isDragging)
+        {
+            cam = null;
+            if (canvas.renderMode == RenderMode.ScreenSpaceCamera)
+                cam = canvas.worldCamera;
+            Vector2 position = RectTransformUtility.WorldToScreenPoint(cam, background.position);
+            Vector2 radius = background.sizeDelta / 2;
+            input = (mouse.position.ReadValue() - position) / (radius * canvas.scaleFactor);
+            FormatInput();
+            HandleInput(input.magnitude, input.normalized, radius);
+            handle.anchoredPosition = input * radius * handleRange;
+            await UniTask.WaitForFixedUpdate();
+        }
+        await UniTask.WaitForFixedUpdate();
+    }
+
+    private Vector2 ScreenPointToAnchoredPosition(Vector2 screenPosition)
     {
         Vector2 localPoint = Vector2.zero;
         if (RectTransformUtility.ScreenPointToLocalPointInRectangle(baseRect, screenPosition, cam, out localPoint))
