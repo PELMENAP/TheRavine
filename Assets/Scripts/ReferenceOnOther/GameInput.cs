@@ -28,7 +28,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
             ""id"": ""5940617f-5e8a-4617-ae2f-a224ce981c1e"",
             ""actions"": [
                 {
-                    ""name"": ""Movement"",
+                    ""name"": ""Movement (WASD)"",
                     ""type"": ""Value"",
                     ""id"": ""f299b26d-e077-4b89-b907-e661766abe40"",
                     ""expectedControlType"": ""Vector2"",
@@ -37,7 +37,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": true
                 },
                 {
-                    ""name"": ""Jump"",
+                    ""name"": ""Jump (Space)"",
                     ""type"": ""Button"",
                     ""id"": ""43beab44-0ad6-4685-bcad-4f12ed0762c7"",
                     ""expectedControlType"": ""Button"",
@@ -46,7 +46,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Enter"",
+                    ""name"": ""Enter (Enter)"",
                     ""type"": ""Button"",
                     ""id"": ""879d66d6-f980-4f32-a14f-bea8d0dcb20e"",
                     ""expectedControlType"": ""Button"",
@@ -55,16 +55,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Mouse"",
-                    ""type"": ""Value"",
-                    ""id"": ""962b2fe0-6115-4030-b1ff-c69a1406cf22"",
-                    ""expectedControlType"": ""Delta"",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": true
-                },
-                {
-                    ""name"": ""Text"",
+                    ""name"": ""Text (|)"",
                     ""type"": ""Button"",
                     ""id"": ""bb4910dc-2ee2-4d58-83f4-a83779e5ffda"",
                     ""expectedControlType"": ""Button"",
@@ -73,9 +64,18 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Raise"",
+                    ""name"": ""Raise (F)"",
                     ""type"": ""Button"",
                     ""id"": ""50b14e70-78cd-443d-a17a-387a918af929"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""InventoryEnter (E)"",
+                    ""type"": ""Button"",
+                    ""id"": ""7ccb0b85-e39a-49d1-92d4-fa3796131cea"",
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """",
@@ -90,7 +90,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Movement"",
+                    ""action"": ""Movement (WASD)"",
                     ""isComposite"": true,
                     ""isPartOfComposite"": false
                 },
@@ -101,7 +101,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Movement"",
+                    ""action"": ""Movement (WASD)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -112,7 +112,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Movement"",
+                    ""action"": ""Movement (WASD)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -123,7 +123,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Movement"",
+                    ""action"": ""Movement (WASD)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -134,7 +134,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Movement"",
+                    ""action"": ""Movement (WASD)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -145,7 +145,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Jump"",
+                    ""action"": ""Jump (Space)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -156,18 +156,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Enter"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
-                    ""id"": ""a925e729-13d0-438a-b248-e0a1a147606e"",
-                    ""path"": ""<Mouse>/delta"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Mouse"",
+                    ""action"": ""Enter (Enter)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -178,7 +167,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Text"",
+                    ""action"": ""Text (|)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -189,7 +178,18 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Raise"",
+                    ""action"": ""Raise (F)"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""830655fc-1001-422d-9259-45811112890e"",
+                    ""path"": ""<Keyboard>/e"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""InventoryEnter (E)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -236,7 +236,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": true
                 },
                 {
-                    ""name"": ""Click"",
+                    ""name"": ""LeftClick"",
                     ""type"": ""PassThrough"",
                     ""id"": ""3259929f-4dfd-42b5-813d-5448c8bd31bd"",
                     ""expectedControlType"": ""Button"",
@@ -617,7 +617,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";Keyboard&Mouse"",
-                    ""action"": ""Click"",
+                    ""action"": ""LeftClick"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -628,7 +628,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";Keyboard&Mouse"",
-                    ""action"": ""Click"",
+                    ""action"": ""LeftClick"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -639,7 +639,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Touch"",
-                    ""action"": ""Click"",
+                    ""action"": ""LeftClick"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -650,7 +650,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""XR"",
-                    ""action"": ""Click"",
+                    ""action"": ""LeftClick"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -758,25 +758,53 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": false
                 }
             ]
+        },
+        {
+            ""name"": ""Inventory"",
+            ""id"": ""4911e687-0767-49e4-aa52-d8fee12ceef8"",
+            ""actions"": [
+                {
+                    ""name"": ""InventoryQuit (E)"",
+                    ""type"": ""Button"",
+                    ""id"": ""f27fe89b-287f-4024-91cc-9dcfe3d359d2"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""936686f4-d736-41ff-869e-58ace7aa731d"",
+                    ""path"": ""<Keyboard>/e"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""InventoryQuit (E)"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
         }
     ],
     ""controlSchemes"": []
 }");
         // Gameplay
         m_Gameplay = asset.FindActionMap("Gameplay", throwIfNotFound: true);
-        m_Gameplay_Movement = m_Gameplay.FindAction("Movement", throwIfNotFound: true);
-        m_Gameplay_Jump = m_Gameplay.FindAction("Jump", throwIfNotFound: true);
-        m_Gameplay_Enter = m_Gameplay.FindAction("Enter", throwIfNotFound: true);
-        m_Gameplay_Mouse = m_Gameplay.FindAction("Mouse", throwIfNotFound: true);
-        m_Gameplay_Text = m_Gameplay.FindAction("Text", throwIfNotFound: true);
-        m_Gameplay_Raise = m_Gameplay.FindAction("Raise", throwIfNotFound: true);
+        m_Gameplay_MovementWASD = m_Gameplay.FindAction("Movement (WASD)", throwIfNotFound: true);
+        m_Gameplay_JumpSpace = m_Gameplay.FindAction("Jump (Space)", throwIfNotFound: true);
+        m_Gameplay_EnterEnter = m_Gameplay.FindAction("Enter (Enter)", throwIfNotFound: true);
+        m_Gameplay_Text = m_Gameplay.FindAction("Text (|)", throwIfNotFound: true);
+        m_Gameplay_RaiseF = m_Gameplay.FindAction("Raise (F)", throwIfNotFound: true);
+        m_Gameplay_InventoryEnterE = m_Gameplay.FindAction("InventoryEnter (E)", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
         m_UI_Submit = m_UI.FindAction("Submit", throwIfNotFound: true);
         m_UI_Cancel = m_UI.FindAction("Cancel", throwIfNotFound: true);
         m_UI_Point = m_UI.FindAction("Point", throwIfNotFound: true);
-        m_UI_Click = m_UI.FindAction("Click", throwIfNotFound: true);
+        m_UI_LeftClick = m_UI.FindAction("LeftClick", throwIfNotFound: true);
         m_UI_ScrollWheel = m_UI.FindAction("ScrollWheel", throwIfNotFound: true);
         m_UI_MiddleClick = m_UI.FindAction("MiddleClick", throwIfNotFound: true);
         m_UI_RightClick = m_UI.FindAction("RightClick", throwIfNotFound: true);
@@ -786,6 +814,9 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
         m_TextInput = asset.FindActionMap("TextInput", throwIfNotFound: true);
         m_TextInput_Enter = m_TextInput.FindAction("Enter", throwIfNotFound: true);
         m_TextInput_Text = m_TextInput.FindAction("Text", throwIfNotFound: true);
+        // Inventory
+        m_Inventory = asset.FindActionMap("Inventory", throwIfNotFound: true);
+        m_Inventory_InventoryQuitE = m_Inventory.FindAction("InventoryQuit (E)", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -847,22 +878,22 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
     // Gameplay
     private readonly InputActionMap m_Gameplay;
     private List<IGameplayActions> m_GameplayActionsCallbackInterfaces = new List<IGameplayActions>();
-    private readonly InputAction m_Gameplay_Movement;
-    private readonly InputAction m_Gameplay_Jump;
-    private readonly InputAction m_Gameplay_Enter;
-    private readonly InputAction m_Gameplay_Mouse;
+    private readonly InputAction m_Gameplay_MovementWASD;
+    private readonly InputAction m_Gameplay_JumpSpace;
+    private readonly InputAction m_Gameplay_EnterEnter;
     private readonly InputAction m_Gameplay_Text;
-    private readonly InputAction m_Gameplay_Raise;
+    private readonly InputAction m_Gameplay_RaiseF;
+    private readonly InputAction m_Gameplay_InventoryEnterE;
     public struct GameplayActions
     {
         private @GameInput m_Wrapper;
         public GameplayActions(@GameInput wrapper) { m_Wrapper = wrapper; }
-        public InputAction @Movement => m_Wrapper.m_Gameplay_Movement;
-        public InputAction @Jump => m_Wrapper.m_Gameplay_Jump;
-        public InputAction @Enter => m_Wrapper.m_Gameplay_Enter;
-        public InputAction @Mouse => m_Wrapper.m_Gameplay_Mouse;
+        public InputAction @MovementWASD => m_Wrapper.m_Gameplay_MovementWASD;
+        public InputAction @JumpSpace => m_Wrapper.m_Gameplay_JumpSpace;
+        public InputAction @EnterEnter => m_Wrapper.m_Gameplay_EnterEnter;
         public InputAction @Text => m_Wrapper.m_Gameplay_Text;
-        public InputAction @Raise => m_Wrapper.m_Gameplay_Raise;
+        public InputAction @RaiseF => m_Wrapper.m_Gameplay_RaiseF;
+        public InputAction @InventoryEnterE => m_Wrapper.m_Gameplay_InventoryEnterE;
         public InputActionMap Get() { return m_Wrapper.m_Gameplay; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -872,46 +903,46 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
         {
             if (instance == null || m_Wrapper.m_GameplayActionsCallbackInterfaces.Contains(instance)) return;
             m_Wrapper.m_GameplayActionsCallbackInterfaces.Add(instance);
-            @Movement.started += instance.OnMovement;
-            @Movement.performed += instance.OnMovement;
-            @Movement.canceled += instance.OnMovement;
-            @Jump.started += instance.OnJump;
-            @Jump.performed += instance.OnJump;
-            @Jump.canceled += instance.OnJump;
-            @Enter.started += instance.OnEnter;
-            @Enter.performed += instance.OnEnter;
-            @Enter.canceled += instance.OnEnter;
-            @Mouse.started += instance.OnMouse;
-            @Mouse.performed += instance.OnMouse;
-            @Mouse.canceled += instance.OnMouse;
+            @MovementWASD.started += instance.OnMovementWASD;
+            @MovementWASD.performed += instance.OnMovementWASD;
+            @MovementWASD.canceled += instance.OnMovementWASD;
+            @JumpSpace.started += instance.OnJumpSpace;
+            @JumpSpace.performed += instance.OnJumpSpace;
+            @JumpSpace.canceled += instance.OnJumpSpace;
+            @EnterEnter.started += instance.OnEnterEnter;
+            @EnterEnter.performed += instance.OnEnterEnter;
+            @EnterEnter.canceled += instance.OnEnterEnter;
             @Text.started += instance.OnText;
             @Text.performed += instance.OnText;
             @Text.canceled += instance.OnText;
-            @Raise.started += instance.OnRaise;
-            @Raise.performed += instance.OnRaise;
-            @Raise.canceled += instance.OnRaise;
+            @RaiseF.started += instance.OnRaiseF;
+            @RaiseF.performed += instance.OnRaiseF;
+            @RaiseF.canceled += instance.OnRaiseF;
+            @InventoryEnterE.started += instance.OnInventoryEnterE;
+            @InventoryEnterE.performed += instance.OnInventoryEnterE;
+            @InventoryEnterE.canceled += instance.OnInventoryEnterE;
         }
 
         private void UnregisterCallbacks(IGameplayActions instance)
         {
-            @Movement.started -= instance.OnMovement;
-            @Movement.performed -= instance.OnMovement;
-            @Movement.canceled -= instance.OnMovement;
-            @Jump.started -= instance.OnJump;
-            @Jump.performed -= instance.OnJump;
-            @Jump.canceled -= instance.OnJump;
-            @Enter.started -= instance.OnEnter;
-            @Enter.performed -= instance.OnEnter;
-            @Enter.canceled -= instance.OnEnter;
-            @Mouse.started -= instance.OnMouse;
-            @Mouse.performed -= instance.OnMouse;
-            @Mouse.canceled -= instance.OnMouse;
+            @MovementWASD.started -= instance.OnMovementWASD;
+            @MovementWASD.performed -= instance.OnMovementWASD;
+            @MovementWASD.canceled -= instance.OnMovementWASD;
+            @JumpSpace.started -= instance.OnJumpSpace;
+            @JumpSpace.performed -= instance.OnJumpSpace;
+            @JumpSpace.canceled -= instance.OnJumpSpace;
+            @EnterEnter.started -= instance.OnEnterEnter;
+            @EnterEnter.performed -= instance.OnEnterEnter;
+            @EnterEnter.canceled -= instance.OnEnterEnter;
             @Text.started -= instance.OnText;
             @Text.performed -= instance.OnText;
             @Text.canceled -= instance.OnText;
-            @Raise.started -= instance.OnRaise;
-            @Raise.performed -= instance.OnRaise;
-            @Raise.canceled -= instance.OnRaise;
+            @RaiseF.started -= instance.OnRaiseF;
+            @RaiseF.performed -= instance.OnRaiseF;
+            @RaiseF.canceled -= instance.OnRaiseF;
+            @InventoryEnterE.started -= instance.OnInventoryEnterE;
+            @InventoryEnterE.performed -= instance.OnInventoryEnterE;
+            @InventoryEnterE.canceled -= instance.OnInventoryEnterE;
         }
 
         public void RemoveCallbacks(IGameplayActions instance)
@@ -937,7 +968,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_UI_Submit;
     private readonly InputAction m_UI_Cancel;
     private readonly InputAction m_UI_Point;
-    private readonly InputAction m_UI_Click;
+    private readonly InputAction m_UI_LeftClick;
     private readonly InputAction m_UI_ScrollWheel;
     private readonly InputAction m_UI_MiddleClick;
     private readonly InputAction m_UI_RightClick;
@@ -951,7 +982,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
         public InputAction @Submit => m_Wrapper.m_UI_Submit;
         public InputAction @Cancel => m_Wrapper.m_UI_Cancel;
         public InputAction @Point => m_Wrapper.m_UI_Point;
-        public InputAction @Click => m_Wrapper.m_UI_Click;
+        public InputAction @LeftClick => m_Wrapper.m_UI_LeftClick;
         public InputAction @ScrollWheel => m_Wrapper.m_UI_ScrollWheel;
         public InputAction @MiddleClick => m_Wrapper.m_UI_MiddleClick;
         public InputAction @RightClick => m_Wrapper.m_UI_RightClick;
@@ -978,9 +1009,9 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
             @Point.started += instance.OnPoint;
             @Point.performed += instance.OnPoint;
             @Point.canceled += instance.OnPoint;
-            @Click.started += instance.OnClick;
-            @Click.performed += instance.OnClick;
-            @Click.canceled += instance.OnClick;
+            @LeftClick.started += instance.OnLeftClick;
+            @LeftClick.performed += instance.OnLeftClick;
+            @LeftClick.canceled += instance.OnLeftClick;
             @ScrollWheel.started += instance.OnScrollWheel;
             @ScrollWheel.performed += instance.OnScrollWheel;
             @ScrollWheel.canceled += instance.OnScrollWheel;
@@ -1012,9 +1043,9 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
             @Point.started -= instance.OnPoint;
             @Point.performed -= instance.OnPoint;
             @Point.canceled -= instance.OnPoint;
-            @Click.started -= instance.OnClick;
-            @Click.performed -= instance.OnClick;
-            @Click.canceled -= instance.OnClick;
+            @LeftClick.started -= instance.OnLeftClick;
+            @LeftClick.performed -= instance.OnLeftClick;
+            @LeftClick.canceled -= instance.OnLeftClick;
             @ScrollWheel.started -= instance.OnScrollWheel;
             @ScrollWheel.performed -= instance.OnScrollWheel;
             @ScrollWheel.canceled -= instance.OnScrollWheel;
@@ -1101,14 +1132,60 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
         }
     }
     public TextInputActions @TextInput => new TextInputActions(this);
+
+    // Inventory
+    private readonly InputActionMap m_Inventory;
+    private List<IInventoryActions> m_InventoryActionsCallbackInterfaces = new List<IInventoryActions>();
+    private readonly InputAction m_Inventory_InventoryQuitE;
+    public struct InventoryActions
+    {
+        private @GameInput m_Wrapper;
+        public InventoryActions(@GameInput wrapper) { m_Wrapper = wrapper; }
+        public InputAction @InventoryQuitE => m_Wrapper.m_Inventory_InventoryQuitE;
+        public InputActionMap Get() { return m_Wrapper.m_Inventory; }
+        public void Enable() { Get().Enable(); }
+        public void Disable() { Get().Disable(); }
+        public bool enabled => Get().enabled;
+        public static implicit operator InputActionMap(InventoryActions set) { return set.Get(); }
+        public void AddCallbacks(IInventoryActions instance)
+        {
+            if (instance == null || m_Wrapper.m_InventoryActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_InventoryActionsCallbackInterfaces.Add(instance);
+            @InventoryQuitE.started += instance.OnInventoryQuitE;
+            @InventoryQuitE.performed += instance.OnInventoryQuitE;
+            @InventoryQuitE.canceled += instance.OnInventoryQuitE;
+        }
+
+        private void UnregisterCallbacks(IInventoryActions instance)
+        {
+            @InventoryQuitE.started -= instance.OnInventoryQuitE;
+            @InventoryQuitE.performed -= instance.OnInventoryQuitE;
+            @InventoryQuitE.canceled -= instance.OnInventoryQuitE;
+        }
+
+        public void RemoveCallbacks(IInventoryActions instance)
+        {
+            if (m_Wrapper.m_InventoryActionsCallbackInterfaces.Remove(instance))
+                UnregisterCallbacks(instance);
+        }
+
+        public void SetCallbacks(IInventoryActions instance)
+        {
+            foreach (var item in m_Wrapper.m_InventoryActionsCallbackInterfaces)
+                UnregisterCallbacks(item);
+            m_Wrapper.m_InventoryActionsCallbackInterfaces.Clear();
+            AddCallbacks(instance);
+        }
+    }
+    public InventoryActions @Inventory => new InventoryActions(this);
     public interface IGameplayActions
     {
-        void OnMovement(InputAction.CallbackContext context);
-        void OnJump(InputAction.CallbackContext context);
-        void OnEnter(InputAction.CallbackContext context);
-        void OnMouse(InputAction.CallbackContext context);
+        void OnMovementWASD(InputAction.CallbackContext context);
+        void OnJumpSpace(InputAction.CallbackContext context);
+        void OnEnterEnter(InputAction.CallbackContext context);
         void OnText(InputAction.CallbackContext context);
-        void OnRaise(InputAction.CallbackContext context);
+        void OnRaiseF(InputAction.CallbackContext context);
+        void OnInventoryEnterE(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {
@@ -1116,7 +1193,7 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
         void OnSubmit(InputAction.CallbackContext context);
         void OnCancel(InputAction.CallbackContext context);
         void OnPoint(InputAction.CallbackContext context);
-        void OnClick(InputAction.CallbackContext context);
+        void OnLeftClick(InputAction.CallbackContext context);
         void OnScrollWheel(InputAction.CallbackContext context);
         void OnMiddleClick(InputAction.CallbackContext context);
         void OnRightClick(InputAction.CallbackContext context);
@@ -1127,5 +1204,9 @@ public partial class @GameInput: IInputActionCollection2, IDisposable
     {
         void OnEnter(InputAction.CallbackContext context);
         void OnText(InputAction.CallbackContext context);
+    }
+    public interface IInventoryActions
+    {
+        void OnInventoryQuitE(InputAction.CallbackContext context);
     }
 }

@@ -6,7 +6,7 @@
             "id": "5940617f-5e8a-4617-ae2f-a224ce981c1e",
             "actions": [
                 {
-                    "name": "Movement",
+                    "name": "Movement (WASD)",
                     "type": "Value",
                     "id": "f299b26d-e077-4b89-b907-e661766abe40",
                     "expectedControlType": "Vector2",
@@ -15,7 +15,7 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "Jump",
+                    "name": "Jump (Space)",
                     "type": "Button",
                     "id": "43beab44-0ad6-4685-bcad-4f12ed0762c7",
                     "expectedControlType": "Button",
@@ -24,7 +24,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Enter",
+                    "name": "Enter (Enter)",
                     "type": "Button",
                     "id": "879d66d6-f980-4f32-a14f-bea8d0dcb20e",
                     "expectedControlType": "Button",
@@ -33,16 +33,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Mouse",
-                    "type": "Value",
-                    "id": "962b2fe0-6115-4030-b1ff-c69a1406cf22",
-                    "expectedControlType": "Delta",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": true
-                },
-                {
-                    "name": "Text",
+                    "name": "Text (|)",
                     "type": "Button",
                     "id": "bb4910dc-2ee2-4d58-83f4-a83779e5ffda",
                     "expectedControlType": "Button",
@@ -51,9 +42,18 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Raise",
+                    "name": "Raise (F)",
                     "type": "Button",
                     "id": "50b14e70-78cd-443d-a17a-387a918af929",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "InventoryEnter (E)",
+                    "type": "Button",
+                    "id": "7ccb0b85-e39a-49d1-92d4-fa3796131cea",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -68,7 +68,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Movement",
+                    "action": "Movement (WASD)",
                     "isComposite": true,
                     "isPartOfComposite": false
                 },
@@ -79,7 +79,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Movement",
+                    "action": "Movement (WASD)",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -90,7 +90,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Movement",
+                    "action": "Movement (WASD)",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -101,7 +101,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Movement",
+                    "action": "Movement (WASD)",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -112,7 +112,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Movement",
+                    "action": "Movement (WASD)",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -123,7 +123,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Jump",
+                    "action": "Jump (Space)",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -134,18 +134,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Enter",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "a925e729-13d0-438a-b248-e0a1a147606e",
-                    "path": "<Mouse>/delta",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Mouse",
+                    "action": "Enter (Enter)",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -156,7 +145,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Text",
+                    "action": "Text (|)",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -167,7 +156,18 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Raise",
+                    "action": "Raise (F)",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "830655fc-1001-422d-9259-45811112890e",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "InventoryEnter (E)",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
@@ -214,7 +214,7 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "Click",
+                    "name": "LeftClick",
                     "type": "PassThrough",
                     "id": "3259929f-4dfd-42b5-813d-5448c8bd31bd",
                     "expectedControlType": "Button",
@@ -595,7 +595,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
-                    "action": "Click",
+                    "action": "LeftClick",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -606,7 +606,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
-                    "action": "Click",
+                    "action": "LeftClick",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -617,7 +617,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Touch",
-                    "action": "Click",
+                    "action": "LeftClick",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -628,7 +628,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "XR",
-                    "action": "Click",
+                    "action": "LeftClick",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -732,6 +732,34 @@
                     "processors": "",
                     "groups": "",
                     "action": "Text",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "Inventory",
+            "id": "4911e687-0767-49e4-aa52-d8fee12ceef8",
+            "actions": [
+                {
+                    "name": "InventoryQuit (E)",
+                    "type": "Button",
+                    "id": "f27fe89b-287f-4024-91cc-9dcfe3d359d2",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "936686f4-d736-41ff-869e-58ace7aa731d",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "InventoryQuit (E)",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

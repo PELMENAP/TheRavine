@@ -75,9 +75,9 @@ TextureImporter:
     maxTextureSize: 1024
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 3
     compressionQuality: 50
-    crunchedCompression: 0
+    crunchedCompression: 1
     allowsAlphaSplitting: 0
     overridden: 0
     androidETC2FallbackOverride: 0
@@ -103,7 +103,7 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 1345
+        width: 1024
         height: 256
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -121,7 +121,7 @@ TextureImporter:
     outline: []
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: ff1716a11380a1549ad3c432de6adc86
     internalID: 0
     vertices: []
     indices: 

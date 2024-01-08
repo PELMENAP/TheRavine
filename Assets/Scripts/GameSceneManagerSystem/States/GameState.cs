@@ -1,34 +1,35 @@
 using UnityEngine;
-
-public class GameState : IState<Bootstrap>, IEnterable, IExitable
+namespace TheRavine.Base
 {
-    public Bootstrap Initializer { get; }
-    bool aboba = false;
-
-    public GameState(Bootstrap initializer)
+    namespace BootstrapStates
     {
-        Initializer = initializer;
-    }
-
-    public void OnEnter()
-    {
-        Initializer.StartNewServise(null);
-        Initializer.StartNewServise(Initializer.Finally);
-        FaderOnTransit.instance.SetLogs("Начало игры");
-        FaderOnTransit.instance.FadeOut(() => aboba = true);
-    }
-
-    public void OnExit()
-    {
-        DayCycle.closeThread = false;
-    }
-
-    public void OnTick()
-    {
-        if (aboba)
+        public class GameState : IState<Bootstrap>, IEnterable, IExitable
         {
-            // Initializer.DestroySceneTransitions();
-            aboba = false;
+            public Bootstrap Initializer { get; }
+            bool aboba = false;
+            public GameState(Bootstrap initializer)
+            {
+                Initializer = initializer;
+            }
+            public void OnEnter()
+            {
+                Initializer.StartNewServise(null);
+                Initializer.StartNewServise(Initializer.Finally);
+                FaderOnTransit.instance.SetLogs("Начало игры");
+                FaderOnTransit.instance.FadeOut(() => aboba = true);
+            }
+            public void OnExit()
+            {
+                DayCycle.closeThread = false;
+            }
+            public void OnTick()
+            {
+                if (aboba)
+                {
+                    // Initializer.DestroySceneTransitions();
+                    aboba = false;
+                }
+            }
         }
     }
 }

@@ -9,8 +9,6 @@ public class JoistickController : IController
     public JoistickController(Joystick _joystick)
     {
         joystick = _joystick;
-
-        joystick.gameObject.SetActive(true);
     }
 
     public Vector2 GetMove()
@@ -24,6 +22,15 @@ public class JoistickController : IController
     public void GetJump()
     {
 
+    }
+
+    public void EnableView()
+    {
+        joystick.gameObject.SetActive(true);
+    }
+    public void DisableView()
+    {
+        joystick.gameObject.SetActive(false);
     }
 
     public void MeetEnds()

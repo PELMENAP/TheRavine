@@ -29,12 +29,18 @@ public class BotController : MonoBehaviour, IControllable
         //         break;
         // }
     }
+    public void EnableComponents()
+    {
+    }
 
     public void SetZeroValues()
     {
-        // movementSpeed = 0f;
-        // movementDirection = new Vector2(0, 0);
-        // Animate();
+        //movementSpeed = 0f;
+        movementDirection = new Vector2(0, 0);
+        Animate();
+    }
+    public void DisableComponents()
+    {
     }
 
     public void Move()

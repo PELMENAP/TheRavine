@@ -1,64 +1,72 @@
 using System.Collections.Generic;
 using UnityEngine;
+using TheRavine.Extentions;
+using TheRavine.ObjectControl;
 
-public class EndlessObjects : IEndless
+namespace TheRavine.Generator
 {
-    private MapGenerator generator;
-    private const byte chunkCount = MapGenerator.chunkCount;
-    private ObjectSystem objectSystem;
-    private Dictionary<int, ushort> objectUpdate = new Dictionary<int, ushort>(16);
-    public EndlessObjects(MapGenerator _generator)
+    namespace EndlessGenerators
     {
-        generator = _generator;
-        objectSystem = generator.objectSystem;
-        ObjectInfo[] prefabInfo = objectSystem._info;
-        for (int i = 0; i < prefabInfo.Length; i++)
-            objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
-    }
-
-    private static EnumerableSnapshot<int> objectsSnapshot;
-    public void UpdateChunk(Vector2 Vposition)
-    {
-        for (byte yOffset = 0; yOffset < chunkCount; yOffset++)
+        public class EndlessObjects : IEndless
         {
-            for (byte xOffset = 0; xOffset < chunkCount; xOffset++)
+            private MapGenerator generator;
+            private const byte chunkCount = MapGenerator.chunkCount;
+            private ObjectSystem objectSystem;
+            private Dictionary<int, ushort> objectUpdate = new Dictionary<int, ushort>(16);
+            public EndlessObjects(MapGenerator _generator)
             {
-                Vector2 chunkCoord = new Vector2(Vposition.x + xOffset, Vposition.y + yOffset);
-                foreach (var item in generator.GetMapData(chunkCoord).objectsToInst)
+                generator = _generator;
+                objectSystem = generator.objectSystem;
+                ObjectInfo[] prefabInfo = objectSystem._info;
+                for (int i = 0; i < prefabInfo.Length; i++)
+                    objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
+            }
+
+            private static EnumerableSnapshot<int> objectsSnapshot;
+            public void UpdateChunk(Vector2 Vposition)
+            {
+                for (byte yOffset = 0; yOffset < chunkCount; yOffset++)
                 {
-                    ObjectInstInfo info = objectSystem.GetGlobalObjectInfo(item);
-                    if (!objectSystem.ContainsGlobal(item) || info.prefabID == -1)
-                        continue;
-                    objectUpdate[info.prefabID]++;
-                    ObjectInfo objectInfo = objectSystem.GetPrefabInfo(info.prefabID);
-                    if (objectUpdate[info.prefabID] > objectSystem.GetPoolSize(info.prefabID))
+                    for (byte xOffset = 0; xOffset < chunkCount; xOffset++)
                     {
-                        objectSystem.IncreasePoolSize(info.prefabID);
-                        objectSystem.CreatePool(objectInfo.prefab);
+                        Vector2 chunkCoord = new Vector2(Vposition.x + xOffset, Vposition.y + yOffset);
+                        foreach (var item in generator.GetMapData(chunkCoord).objectsToInst)
+                        {
+                            ObjectInstInfo info = objectSystem.GetGlobalObjectInfo(item);
+                            if (!objectSystem.ContainsGlobal(item) || info.prefabID == -1)
+                                continue;
+                            objectUpdate[info.prefabID]++;
+                            ObjectInfo objectInfo = objectSystem.GetPrefabInfo(info.prefabID);
+                            if (objectUpdate[info.prefabID] > objectSystem.GetPoolSize(info.prefabID))
+                            {
+                                objectSystem.IncreasePoolSize(info.prefabID);
+                                objectSystem.CreatePool(objectInfo.prefab);
+                            }
+                            objectSystem.Reuse(info.prefabID, item, info.flip, generator.rotateValue);
+                            if (objectInfo.bType == BehaviourType.NAL || objectInfo.bType == BehaviourType.GROW)
+                                generator.AddNALObject(item);
+                        }
                     }
-                    objectSystem.Reuse(info.prefabID, item, info.flip, generator.rotateValue);
-                    if (objectInfo.bType == BehaviourType.NAL || objectInfo.bType == BehaviourType.GROW)
-                        generator.AddNALObject(item);
+                }
+                objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
+                foreach (var ID in objectsSnapshot)
+                {
+                    for (ushort j = 0; j < objectSystem.GetPoolSize(ID) - objectUpdate[ID]; j++)
+                        objectSystem.Deactivate(ID);
+                    objectUpdate[ID] = 0;
                 }
             }
-        }
-        objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
-        foreach (var ID in objectsSnapshot)
-        {
-            for (ushort j = 0; j < objectSystem.GetPoolSize(ID) - objectUpdate[ID]; j++)
-                objectSystem.Deactivate(ID);
-            objectUpdate[ID] = 0;
-        }
-    }
 
-    private Texture2D texture;
-    private Texture2D TextureFromColourMap(Color[] colourMap, int width, int height)
-    {
-        texture = new Texture2D(width, height);
-        texture.filterMode = FilterMode.Point;
-        texture.wrapMode = TextureWrapMode.Clamp;
-        texture.SetPixels(colourMap);
-        texture.Apply();
-        return texture;
+            private Texture2D texture;
+            private Texture2D TextureFromColourMap(Color[] colourMap, int width, int height)
+            {
+                texture = new Texture2D(width, height);
+                texture.filterMode = FilterMode.Point;
+                texture.wrapMode = TextureWrapMode.Clamp;
+                texture.SetPixels(colourMap);
+                texture.Apply();
+                return texture;
+            }
+        }
     }
 }
