@@ -1,0 +1,47 @@
+{
+  "buildFiles": [
+    "/home/alaypetro/TheRavine/TheRavine/Library/Bee/Android/Prj/Mono2x/Gradle/unityLibrary/src/main/cpp/CMakeLists.txt",
+    "/home/alaypetro/TheRavine/TheRavine/Library/Bee/Android/Prj/Mono2x/Gradle/unityLibrary/src/main/cpp/FramePacing/CMakeLists.txt",
+    "/home/alaypetro/TheRavine/TheRavine/Library/Bee/Android/Prj/Mono2x/Gradle/unityLibrary/src/main/cpp/GameActivity/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/alaypetro/Unity/Hub/Editor/2023.1.14f1/Editor/Data/PlaybackEngines/AndroidPlayer/SDK/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/alaypetro/TheRavine/TheRavine/.utmp/RelWithDebInfo/x2e2h6t2/x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/alaypetro/Unity/Hub/Editor/2023.1.14f1/Editor/Data/PlaybackEngines/AndroidPlayer/SDK/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/alaypetro/TheRavine/TheRavine/.utmp/RelWithDebInfo/x2e2h6t2/x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "game::@d02bb112ea9f9c2ed29f": {
+      "toolchain": "toolchain",
+      "abi": "x86",
+      "artifactName": "game",
+      "output": "/home/alaypetro/TheRavine/TheRavine/Library/Bee/Android/Prj/Mono2x/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/x2e2h6t2/obj/x86/libgame.so",
+      "runtimeFiles": []
+    },
+    "swappywrapper::@7e25bd1f32ce224db4e9": {
+      "toolchain": "toolchain",
+      "abi": "x86",
+      "artifactName": "swappywrapper",
+      "output": "/home/alaypetro/TheRavine/TheRavine/Library/Bee/Android/Prj/Mono2x/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/x2e2h6t2/obj/x86/libswappywrapper.so",
+      "runtimeFiles": []
+    }
+  },
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "/home/alaypetro/Unity/Hub/Editor/2023.1.14f1/Editor/Data/PlaybackEngines/AndroidPlayer/NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/clang.lld",
+      "cppCompilerExecutable": "/home/alaypetro/Unity/Hub/Editor/2023.1.14f1/Editor/Data/PlaybackEngines/AndroidPlayer/NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++.lld"
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": [
+    "cpp"
+  ]
+}

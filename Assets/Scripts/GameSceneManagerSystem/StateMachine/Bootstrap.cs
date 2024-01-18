@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.InputSystem.EnhancedTouch;
+
 using TheRavine.Inventory;
 using TheRavine.Generator;
 using TheRavine.ObjectControl;
@@ -21,8 +23,10 @@ namespace TheRavine.Base
         [SerializeField] private UIInventory inventory;
         [SerializeField] private PlayerData playerData;
         [SerializeField] private Terminal terminal;
-        private void Awake()
+        [SerializeField] private GameObject help, ui;
+        private void Start()
         {
+            EnhancedTouchSupport.Enable();
             serviceLocator.Register<PlayerData>(playerData);
             serviceLocator.Register<ObjectSystem>(objectSystem);
             serviceLocator.Register<UIInventory>(inventory);
@@ -56,6 +60,8 @@ namespace TheRavine.Base
 
             }
             StartGame();
+            help.SetActive(false);
+            ui.SetActive(false);
         }
         public void StartNewServise(ISetAble.Callback callback) => _setAble.Dequeue().SetUp(callback, serviceLocator);
         public void StartGame()
@@ -64,7 +70,18 @@ namespace TheRavine.Base
             StateMachine.SwitchState<BootstrapState>();
         }
         public void AddCameraToStack(Camera _cameraToAdd) => _camera.GetUniversalAdditionalCameraData().cameraStack.Add(_cameraToAdd);
-        public void Finally() => playerData.SetBehaviourIdle();
+        public void Finally()
+        {
+            ui.SetActive(true);
+            help.SetActive(true);
+            playerData.SetBehaviourIdle();
+        }
 
+        public void InTheEnd()
+        {
+            help.SetActive(false);
+            ui.SetActive(false);
+            EnhancedTouchSupport.Disable();
+        }
     }
 }

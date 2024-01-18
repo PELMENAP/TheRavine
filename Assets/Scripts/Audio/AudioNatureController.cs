@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+
 using TheRavine.Base;
 public class AudioNatureController : MonoBehaviour
 {
@@ -21,7 +22,7 @@ public class AudioNatureController : MonoBehaviour
         {
             audioSource[to].volume += speedFade;
             audioSource[from].volume -= speedFade;
-            if (audioSource[from].volume <= 0.2)
+            if (audioSource[from].volume <= 0.3)
             {
                 audioSource[from].Stop();
                 yield break;
@@ -55,7 +56,7 @@ public class AudioNatureController : MonoBehaviour
         while (true)
         {
             OSTSource.Stop();
-            yield return new WaitForSeconds(Random.Range(50, 200));
+            yield return new WaitForSeconds(Random.Range(30, 100));
             currentOST = Random.Range(0, OSTClip.Length);
             yield return StartCoroutine(PlayOST(currentOST));
         }

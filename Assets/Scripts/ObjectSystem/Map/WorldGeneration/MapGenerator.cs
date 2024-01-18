@@ -308,7 +308,7 @@ namespace TheRavine.Generator
         private Vector2 OldVposition, position;
         private async UniTaskVoid GenerationUpdate()
         {
-            while (true)
+            while (!DataStorage.sceneClose)
             {
                 position = GetPlayerPosition();
                 if (position != OldVposition && rotateTarget == 0f)
@@ -329,12 +329,11 @@ namespace TheRavine.Generator
             if (rotateTarget != 0f)
                 return;
             position = GetPlayerPosition();
+            print("extra update");
             endless[2].UpdateChunk(position);
         }
 
-        private Vector2 GetPlayerPosition() => RoundVector(new Vector2(viewer.position.x, viewer.position.y) / (scale * mapChunkSize));
-
-        private Vector2 RoundVector(Vector2 vec) => new Vector2(Mathf.RoundToInt(vec.x), Mathf.RoundToInt(vec.y));
+        private Vector2 GetPlayerPosition() => Extention.RoundVector2D(viewer.position / (scale * mapChunkSize));
         public void RotateBasis(sbyte angle)
         {
             if (rotateValue != 0f)
@@ -360,7 +359,7 @@ namespace TheRavine.Generator
         {
             rotateValue = 0.1f;
             rotateTarget = 270f;
-            Vector2 Vposition = RoundVector(new Vector2(viewer.position.x, viewer.position.y) / (scale * mapChunkSize));
+            Vector2 Vposition = GetPlayerPosition();
             ObjectInfo[] prefabInfo = objectSystem._info;
             for (int i = 0; i < prefabInfo.Length; i++)
                 objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
@@ -399,7 +398,7 @@ namespace TheRavine.Generator
         {
             rotateValue = -0.1f;
             rotateTarget = 360f;
-            Vector2 Vposition = RoundVector(new Vector2(viewer.position.x, viewer.position.y) / (scale * mapChunkSize));
+            Vector2 Vposition = GetPlayerPosition();
             ObjectInfo[] prefabInfo = objectSystem._info;
             for (int i = 0; i < prefabInfo.Length; i++)
                 objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;

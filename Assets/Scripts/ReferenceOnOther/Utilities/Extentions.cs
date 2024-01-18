@@ -61,6 +61,10 @@ namespace TheRavine.Extentions
             float newy = centerPoint.y + distance * Mathf.Sin(angle);
             return new Vector2((int)newx, (int)newy);
         }
+
+        private static Vector2 RoundVector2(Vector2 vec) => new Vector2(Mathf.RoundToInt(vec.x), Mathf.RoundToInt(vec.y));
+        public static Vector2 Vector2D(Vector3 vec) => new Vector2(vec.x, vec.y);
+        public static Vector2 RoundVector2D(Vector3 vec) => RoundVector2(new Vector2(vec.x, vec.y));
     }
 
 

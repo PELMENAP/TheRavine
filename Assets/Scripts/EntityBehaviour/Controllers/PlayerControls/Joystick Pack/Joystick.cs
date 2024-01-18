@@ -1,7 +1,11 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
-using Cysharp.Threading.Tasks;
+using UnityEngine.InputSystem.EnhancedTouch;
+using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
+using TouchPhase = UnityEngine.InputSystem.TouchPhase;
+
+using TheRavine.Base;
 
 public class Joystick : MonoBehaviour
 {
@@ -26,22 +30,19 @@ public class Joystick : MonoBehaviour
     public bool SnapY { get { return snapY; } set { snapY = value; } }
 
     [SerializeField] private InputActionReference point;
-    [SerializeField] private float handleRange = 1;
-    [SerializeField] private float deadZone = 0;
+    [SerializeField] private float handleRange, deadZone;
     [SerializeField] private AxisOptions axisOptions = AxisOptions.Both;
-    [SerializeField] private bool snapX = false;
-    [SerializeField] private bool snapY = false;
-
-    [SerializeField] protected RectTransform background = null;
-    [SerializeField] private RectTransform handle = null;
-    private RectTransform baseRect = null;
+    [SerializeField] private bool snapX = false, snapY = false;
+    [SerializeField] private RectTransform background, handle;
+    [SerializeField] private GameObject hoh;
+    private RectTransform baseRect;
 
     private Canvas canvas;
     private Camera cam;
-    private Mouse mouse;
-    private bool isDragging = false;
 
     private Vector2 input = Vector2.zero;
+    private Vector2 radius;
+    private Vector2 pivotOffset;
 
     private void Start()
     {
@@ -58,10 +59,14 @@ public class Joystick : MonoBehaviour
         handle.anchorMax = center;
         handle.pivot = center;
         handle.anchoredPosition = Vector2.zero;
-
-        mouse = Mouse.current;
+        radius = background.sizeDelta / 2;
+        pivotOffset = baseRect.pivot * baseRect.sizeDelta;
+        if (canvas.renderMode == RenderMode.ScreenSpaceCamera)
+            cam = canvas.worldCamera;
         point.action.performed += OnDrag;
     }
+
+    private bool isOver;
 
     private void HandleInput(float magnitude, Vector2 normalised, Vector2 radius)
     {
@@ -69,9 +74,18 @@ public class Joystick : MonoBehaviour
         {
             if (magnitude > 1)
                 input = normalised;
+            isOver = false;
+        }
+        else if (magnitude > deadZone + 1)
+        {
+            input = Vector2.zero;
+            isOver = false;
         }
         else
-            input = Vector2.zero;
+        {
+            input = normalised;
+            isOver = true;
+        }
     }
 
     private void FormatInput()
@@ -110,53 +124,58 @@ public class Joystick : MonoBehaviour
         {
             if (value > 0)
                 return 1;
-            if (value < 0)
+            else if (value < 0)
                 return -1;
         }
         return 0;
     }
+    Vector2 normal;
+
+    // private void OnDrag() { }
     private void OnDrag(InputAction.CallbackContext context)
     {
-        if (mouse.leftButton.wasReleasedThisFrame)
+        if (!DayCycle.closeThread)
+            return;
+        foreach (Touch touch in Touch.activeTouches)
         {
-            isDragging = false;
-            input = Vector2.zero;
-            handle.anchoredPosition = Vector2.zero;
-        }
-        else
-        {
-            isDragging = true;
-            Dragging().Forget();
+            switch (touch.phase)
+            {
+                case TouchPhase.Began:
+                    hoh.SetActive(false);
+                    break;
+                case TouchPhase.Moved:
+                    Vector2 position = RectTransformUtility.WorldToScreenPoint(cam, background.position);
+                    input = (touch.screenPosition - position) / (radius * canvas.scaleFactor);
+                    normal = input.normalized;
+                    FormatInput();
+                    HandleInput(input.magnitude, normal, radius);
+                    handle.anchoredPosition = input * radius * handleRange;
+                    break;
+                case TouchPhase.Ended:
+                    input = Vector2.zero;
+                    handle.anchoredPosition = Vector2.zero;
+                    if (isOver)
+                    {
+                        hoh.SetActive(true);
+                        input = normal;
+                        isOver = !isOver;
+                        handle.anchoredPosition = normal * radius * deadZone;
+                    }
+                    break;
+            }
         }
     }
-
-    private async UniTaskVoid Dragging()
-    {
-        while (isDragging)
-        {
-            cam = null;
-            if (canvas.renderMode == RenderMode.ScreenSpaceCamera)
-                cam = canvas.worldCamera;
-            Vector2 position = RectTransformUtility.WorldToScreenPoint(cam, background.position);
-            Vector2 radius = background.sizeDelta / 2;
-            input = (mouse.position.ReadValue() - position) / (radius * canvas.scaleFactor);
-            FormatInput();
-            HandleInput(input.magnitude, input.normalized, radius);
-            handle.anchoredPosition = input * radius * handleRange;
-            await UniTask.WaitForFixedUpdate();
-        }
-        await UniTask.WaitForFixedUpdate();
-    }
-
     private Vector2 ScreenPointToAnchoredPosition(Vector2 screenPosition)
     {
         Vector2 localPoint = Vector2.zero;
         if (RectTransformUtility.ScreenPointToLocalPointInRectangle(baseRect, screenPosition, cam, out localPoint))
-        {
-            Vector2 pivotOffset = baseRect.pivot * baseRect.sizeDelta;
             return localPoint - (background.anchorMax * baseRect.sizeDelta) + pivotOffset;
-        }
         return Vector2.zero;
+    }
+
+    public void OnDisabling()
+    {
+        point.action.performed -= OnDrag;
     }
 }
 

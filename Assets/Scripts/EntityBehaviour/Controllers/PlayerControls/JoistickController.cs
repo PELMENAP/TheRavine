@@ -11,17 +11,13 @@ public class JoistickController : IController
         joystick = _joystick;
     }
 
-    public Vector2 GetMove()
-    {
-        direction = new Vector2(joystick.Horizontal, joystick.Vertical);
-        if (direction.magnitude < 0.5f)
-            direction = Vector2.zero;
-        return direction;
-    }
+    public Vector2 GetMove() => joystick.Direction;
 
-    public void GetJump()
-    {
+    public Vector2 GetAim() => joystick.Direction;
 
+    public float GetJump()
+    {
+        return 0f;
     }
 
     public void EnableView()
@@ -35,6 +31,6 @@ public class JoistickController : IController
 
     public void MeetEnds()
     {
-
+        joystick.OnDisabling();
     }
 }

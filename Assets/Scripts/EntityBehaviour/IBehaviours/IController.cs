@@ -2,7 +2,8 @@ using UnityEngine;
 public interface IController
 {
     Vector2 GetMove();
-    void GetJump();
+    Vector2 GetAim();
+    float GetJump();
     void MeetEnds();
     void EnableView();
     void DisableView();

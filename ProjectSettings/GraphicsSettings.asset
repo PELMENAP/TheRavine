@@ -25,14 +25,16 @@ GraphicsSettings:
   m_LensFlare:
     m_Mode: 1
     m_Shader: {fileID: 102, guid: 0000000000000000f000000000000000, type: 0}
-  m_VideoShadersIncludeMode: 2
+  m_VideoShadersIncludeMode: 1
   m_AlwaysIncludedShaders:
-  - {fileID: -6465566751694194690, guid: b54f9dc98b4460fa794652286c4b085f, type: 3}
-  - {fileID: 10770, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 4800000, guid: c1246ab0c02b19631939f62dce16d99c, type: 3}
+  - {fileID: -6465566751694194690, guid: 7731510c8a95aa10aa868213633c9727, type: 3}
+  - {fileID: -6465566751694194690, guid: d42df0b73fab9824fa30064824c07339, type: 3}
   - {fileID: -6465566751694194690, guid: 81e1a6c24b432312593528cadb272c54, type: 3}
-  - {fileID: -6465566751694194690, guid: db016bae694d00900b5779b4198c9765, type: 3}
+  - {fileID: 10770, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 211, guid: 0000000000000000f000000000000000, type: 0}
   m_PreloadedShaders: []
-  m_PreloadShadersBatchTimeLimit: -1
+  m_PreloadShadersBatchTimeLimit: 0
   m_SpritesDefaultMaterial: {fileID: 10754, guid: 0000000000000000f000000000000000,
     type: 0}
   m_CustomRenderPipeline: {fileID: 11400000, guid: 87a3a1fc6bf64abf0b5f96489c30f62a,
@@ -42,16 +44,16 @@ GraphicsSettings:
   m_DefaultRenderingPath: 1
   m_DefaultMobileRenderingPath: 1
   m_TierSettings: []
-  m_LightmapStripping: 0
+  m_LightmapStripping: 1
   m_FogStripping: 0
   m_InstancingStripping: 0
   m_BrgStripping: 0
-  m_LightmapKeepPlain: 1
-  m_LightmapKeepDirCombined: 1
-  m_LightmapKeepDynamicPlain: 1
-  m_LightmapKeepDynamicDirCombined: 1
-  m_LightmapKeepShadowMask: 1
-  m_LightmapKeepSubtractive: 1
+  m_LightmapKeepPlain: 0
+  m_LightmapKeepDirCombined: 0
+  m_LightmapKeepDynamicPlain: 0
+  m_LightmapKeepDynamicDirCombined: 0
+  m_LightmapKeepShadowMask: 0
+  m_LightmapKeepSubtractive: 0
   m_FogKeepLinear: 1
   m_FogKeepExp: 1
   m_FogKeepExp2: 1
@@ -63,6 +65,6 @@ GraphicsSettings:
   m_SRPDefaultSettings:
     UnityEngine.Rendering.Universal.UniversalRenderPipeline: {fileID: 11400000, guid: c62a7c012b761b3dfa7ba07c4c2a109a,
       type: 2}
-  m_LightProbeOutsideHullStrategy: 0
-  m_CameraRelativeLightCulling: 0
+  m_LightProbeOutsideHullStrategy: 1
+  m_CameraRelativeLightCulling: 1
   m_CameraRelativeShadowCulling: 0

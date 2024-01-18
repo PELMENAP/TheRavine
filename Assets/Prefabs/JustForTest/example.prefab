@@ -51,7 +51,8 @@ MonoBehaviour:
   isEqual: 0
   fisting: 0
   isShadow: 1
-  control: 0
+  control: 1
   prefab1: {fileID: 7852824295285712418, guid: b3d15d59ad9aa87a38c26c1e97de6448, type: 3}
   flyingSkill: {fileID: 11400000, guid: 168085cc364241fbe9303f51d514e739, type: 2}
   swimmingSkill: {fileID: 11400000, guid: 303ec90e2281a769da69d8267c86d931, type: 2}
+  input: {fileID: 0}

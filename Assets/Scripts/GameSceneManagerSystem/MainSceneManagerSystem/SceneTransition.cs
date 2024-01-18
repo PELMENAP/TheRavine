@@ -3,6 +3,8 @@ using UnityEngine.Rendering.Universal;
 using UnityEngine;
 using System.Collections;
 
+using TheRavine.Base;
+
 public class SceneTransition : MonoBehaviour
 {
     private bool _isLoading = false;

@@ -1,4 +1,6 @@
 using UnityEngine;
+
+using TheRavine.Base;
 public class MenuMainScript : MonoBehaviour
 {
     [SerializeField] private GameObject menu;
@@ -6,6 +8,7 @@ public class MenuMainScript : MonoBehaviour
     [SerializeField] private SceneTransition trasitor;
     private void Awake()
     {
+        menu.SetActive(true);
         settings.SetActive(false);
         settings.GetComponent<Settings>().SetInitialValues();
     }
@@ -25,10 +28,16 @@ public class MenuMainScript : MonoBehaviour
     }
 
 
-    public void MoveMenu()
+    public void MoveToMenu()
     {
-        menu.SetActive(settings.activeInHierarchy);
-        settings.SetActive(!menu.activeInHierarchy);
+        menu.SetActive(true);
+        settings.SetActive(false);
+    }
+
+    public void MoveToSettings()
+    {
+        menu.SetActive(false);
+        settings.SetActive(true);
     }
 
     public void QuitGame()

@@ -103,6 +103,18 @@ TextureImporter:
     overridden: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Android
+    maxTextureSize: 1024
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 77
+    crunchedCompression: 1
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -115,7 +127,7 @@ TextureImporter:
         width: 229
         height: 280
       alignment: 9
-      pivot: {x: 0.5, y: 0.15}
+      pivot: {x: 0.5, y: -0.8}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -136,7 +148,7 @@ TextureImporter:
         width: 196
         height: 395
       alignment: 9
-      pivot: {x: 0.5, y: 0.08}
+      pivot: {x: 0.5, y: -0.2}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -682,7 +694,7 @@ TextureImporter:
         width: 84
         height: 162
       alignment: 9
-      pivot: {x: 0.5, y: 0.1}
+      pivot: {x: 0.5, y: -0.2}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -745,7 +757,7 @@ TextureImporter:
         width: 93
         height: 117
       alignment: 9
-      pivot: {x: 0.5, y: 0.2}
+      pivot: {x: 0.5, y: -0.8}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -825,7 +837,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 279
-        y: 81
+        y: 80
         width: 34
         height: 72
       alignment: 9
