@@ -22,6 +22,11 @@ namespace TheRavine.Base
             generator = locator.GetService<MapGenerator>();
             callback?.Invoke();
         }
+
+        public void ShowSomething(string text)
+        {
+            OutputReaction(text);
+        }
         private void OnEnter(InputAction.CallbackContext obj)
         {
             OutputWindow.text = "";
@@ -105,6 +110,10 @@ namespace TheRavine.Base
                     OutputReaction("Недопустимый синтаксис");
                 }
             }
+            else
+            {
+                OutputReaction(input);
+            }
         }
 
         private void TeleportCommandI()
@@ -182,7 +191,6 @@ namespace TheRavine.Base
             OutputWindow.text = message;
             TerminalOutputFade(OutputWindow).Forget();
         }
-
         private async UniTaskVoid TerminalOutputFade(TextMeshProUGUI window)
         {
             // Color colorM = new Color(window.color.r, window.color.g, window.color.b, window.color.a);

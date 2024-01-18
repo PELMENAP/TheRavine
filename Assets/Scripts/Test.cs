@@ -9,6 +9,8 @@ using UnityEngine.UI;
 using NaughtyAttributes;
 using System.Linq;
 using System;
+
+using TheRavine.Base;
 using TheRavine.Generator;
 using TheRavine.Extentions;
 
@@ -31,6 +33,7 @@ public class Test : MonoBehaviour
     private SkillFacade SkillSystem = new SkillFacade();
     AEntity playerEntity;
     [SerializeField] private PlayerInput input;
+    [SerializeField] private InputActionReference point;
     private void Awake()
     {
         Settings.isShadow = isShadow;
@@ -38,6 +41,7 @@ public class Test : MonoBehaviour
         playerEntity = new AEntity("player", 100);
         SkillSystem.AddEntity(playerEntity);
         SkillSystem.AddSkillToEntity(playerEntity, SkillBuilder.CreateSkill(flyingSkill));
+        point.action.performed += mobile;
     }
 
     [Button]
@@ -131,5 +135,15 @@ public class Test : MonoBehaviour
     private void ShowCurrentInput()
     {
         Debug.Log(input.currentActionMap);
+    }
+
+    private void mobile(InputAction.CallbackContext context)
+    {
+        Debug.Log(context.phase);
+    }
+
+    private void OnDisable()
+    {
+        point.action.performed -= mobile;
     }
 }

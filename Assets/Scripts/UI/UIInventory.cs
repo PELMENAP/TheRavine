@@ -18,7 +18,7 @@ namespace TheRavine.Inventory
         [SerializeField] private PlayerInput input;
         [SerializeField] private RectTransform cell;
         [SerializeField] private InventoryCraftInfo[] CraftInfo;
-        [SerializeField] private InputActionReference enter, quit;
+        [SerializeField] private InputActionReference enter, quit, digitAction;
         private int activeCell = 1;
         public InventoryWithSlots inventory => tester.inventory;
         private UIInventoryTester tester;
@@ -38,56 +38,21 @@ namespace TheRavine.Inventory
             grid.SetActive(false);
             OnInventoryStateChanged(this);
 
-            enter.action.performed += context => ChangeInventoryState();
-            quit.action.performed += context => ChangeInventoryState();
+            enter.action.performed += ChangeInventoryState;
+            quit.action.performed += ChangeInventoryState;
 
             inventory.OnInventoryStateChangedEvent += OnInventoryStateChanged;
             playerData.placeObject += PlaceObject;
             playerData.aimRaise += AimRaise;
 
+            digitAction.action.performed += SetActionCell;
+
             callback?.Invoke();
         }
 
-        private bool isactive = false;
-        public void ChangeInventoryState()
+        private void SetActionCell(InputAction.CallbackContext c)
         {
-            isactive = !isactive;
-            if (isactive)
-            {
-                if (input.currentActionMap.name != "Gameplay")
-                {
-                    isactive = !isactive;
-                    return;
-                }
-                playerData.SetBehaviourSit();
-                input.SwitchCurrentActionMap("Inventory");
-            }
-            else
-            {
-                playerData.SetBehaviourIdle();
-                input.SwitchCurrentActionMap("Gameplay");
-            }
-            grid.SetActive(isactive);
-        }
-
-        private void FixedUpdate()
-        {
-            if (Input.GetKeyDown("1"))
-                SetActiveCell(1);
-            else if (Input.GetKeyDown("2"))
-                SetActiveCell(2);
-            else if (Input.GetKeyDown("3"))
-                SetActiveCell(3);
-            else if (Input.GetKeyDown("4"))
-                SetActiveCell(4);
-            else if (Input.GetKeyDown("5"))
-                SetActiveCell(5);
-            else if (Input.GetKeyDown("6"))
-                SetActiveCell(6);
-            else if (Input.GetKeyDown("7"))
-                SetActiveCell(7);
-            else if (Input.GetKeyDown("8"))
-                SetActiveCell(8);
+            SetActiveCell((int)c.ReadValue<float>());
         }
 
         private void SetActiveCell(int index)
@@ -154,8 +119,8 @@ namespace TheRavine.Inventory
                             ispossible = false;
                         else
                         {
-                            print(sortedIngr[j] + " " + sortedNames[j]);
-                            print(j);
+                            // print(sortedIngr[j] + " " + sortedNames[j]);
+                            // print(j);
                         }
                 }
                 if (ispossible)
@@ -201,14 +166,59 @@ namespace TheRavine.Inventory
             generator.ExtraUpdate();
         }
 
+
+        private bool isactive = false;
+        public void ChangeInventoryState(InputAction.CallbackContext context)
+        {
+            isactive = !isactive;
+            if (isactive)
+            {
+                if (input.currentActionMap.name != "Gameplay")
+                {
+                    isactive = !isactive;
+                    return;
+                }
+                playerData.SetBehaviourSit();
+                input.SwitchCurrentActionMap("Inventory");
+            }
+            else
+            {
+                playerData.SetBehaviourIdle();
+                input.SwitchCurrentActionMap("Gameplay");
+            }
+            grid.SetActive(isactive);
+        }
+
+        public void ChangeInventoryState()
+        {
+            isactive = !isactive;
+            if (isactive)
+            {
+                if (input.currentActionMap.name != "Gameplay")
+                {
+                    isactive = !isactive;
+                    return;
+                }
+                playerData.SetBehaviourSit();
+                input.SwitchCurrentActionMap("Inventory");
+            }
+            else
+            {
+                playerData.SetBehaviourIdle();
+                input.SwitchCurrentActionMap("Gameplay");
+            }
+            grid.SetActive(isactive);
+        }
         private void OnDisable()
         {
             inventory.OnInventoryStateChangedEvent -= OnInventoryStateChanged;
             playerData.placeObject -= PlaceObject;
             playerData.aimRaise -= AimRaise;
 
-            enter.action.performed -= context => ChangeInventoryState();
-            quit.action.performed -= context => ChangeInventoryState();
+            enter.action.performed -= ChangeInventoryState;
+            quit.action.performed -= ChangeInventoryState;
+
+            digitAction.action.performed -= SetActionCell;
         }
     }
 }

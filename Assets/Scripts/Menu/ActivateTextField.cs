@@ -45,7 +45,6 @@ public class ActivateTextField : MonoBehaviour
 
     private void OnDisable()
     {
-        print("disable");
         EnterRef.action.performed -= context => ChangeTerminalState();
         OutRef.action.performed -= context => ChangeTerminalState();
     }

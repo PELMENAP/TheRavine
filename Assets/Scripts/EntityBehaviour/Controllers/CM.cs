@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
+
+using TheRavine.Base;
 public class CM : MonoBehaviour, ISetAble
 {
     [SerializeField] private Transform cameratrans, playerTrans;
@@ -7,12 +9,12 @@ public class CM : MonoBehaviour, ISetAble
     public Camera mainCam;
     public static bool cameraForMap;
     private Vector3 offset, targetPos;
-    private bool changeCam = false;
+    // private bool changeCam = false;
     PlayerData PData;
     public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
         PData = locator.GetService<PlayerData>();
-        cameraForMap = false;
+        // cameraForMap = false;
         playerTrans = PData.transform;
         offset = cameratrans.position - playerTrans.position;
         cameratrans.position = playerTrans.position + new Vector3(0, 0, -1);
@@ -21,41 +23,50 @@ public class CM : MonoBehaviour, ISetAble
 
     public void CameraUpdate()
     {
-        if ((changeCam || (Input.GetKeyUp("p")) && Input.GetKeyDown(KeyCode.LeftControl)))
-        {
-            if (cameraForMap)
-            {
-                cameratrans.position = playerTrans.position + new Vector3(0, 0, -1);
-                mainCam.orthographicSize = 20;
-            }
-            else
-            {
-                cameratrans.position += new Vector3(0, 0, 99);
-                mainCam.orthographicSize = 100;
-            }
-            cameraForMap = !cameraForMap;
-            changeCam = false;
-        }
-        if (cameraForMap)
-        {
-            UpdateForMap();
-        }
-        else
-        {
-            UpdateForGame();
-        }
+        // if ((changeCam || (Input.GetKeyUp("p")) && Input.GetKeyDown(KeyCode.LeftControl)))
+        // if (false)
+        // {
+        //     if (cameraForMap)
+        //     {
+        //         cameratrans.position = playerTrans.position + new Vector3(0, 0, -1);
+        //         mainCam.orthographicSize = 20;
+        //     }
+        //     else
+        //     {
+        //         cameratrans.position += new Vector3(0, 0, 99);
+        //         mainCam.orthographicSize = 100;
+        //     }
+        //     cameraForMap = !cameraForMap;
+        //     changeCam = false;
+        // }
+        // if (cameraForMap)
+        // {
+        //     UpdateForMap();
+        // }
+        // else
+        // {
+        UpdateForGame();
+        // }
     }
 
-    public void Changed()
-    {
-        changeCam = true;
-    }
+    // public void Changed()
+    // {
+    //     changeCam = true;
+    // }
 
     private void UpdateForGame()
     {
         targetPos = playerTrans.position + offset;
-        if (Mouse.current.rightButton.isPressed)
-            targetPos += PData.factMousePosition;
+        switch (Settings._controlType)
+        {
+            case ControlType.Personal:
+                if (Mouse.current.rightButton.isPressed)
+                    targetPos += PData.factMousePosition;
+                break;
+            case ControlType.Mobile:
+                targetPos += PData.factMousePosition;
+                break;
+        }
         if (Vector3.Distance(cameratrans.position, targetPos) < MinDistance)
             return;
         cameratrans.Translate(cameratrans.InverseTransformPoint(Vector3.Lerp(cameratrans.position, targetPos, Velocity * Time.fixedDeltaTime)));

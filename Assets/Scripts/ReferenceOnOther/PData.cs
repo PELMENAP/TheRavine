@@ -5,9 +5,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.U2D;
 
-public class PData : MonoBehaviour
+public class Aboba : MonoBehaviour
 {
-    public static PData pdata;
+    public static Aboba pdata;
     // public TaskManager taskManager;
     public Text description;
     public GameObject dushParent;
