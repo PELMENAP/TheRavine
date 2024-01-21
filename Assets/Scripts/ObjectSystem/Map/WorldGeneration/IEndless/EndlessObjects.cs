@@ -18,7 +18,7 @@ namespace TheRavine.Generator
                 generator = _generator;
                 objectSystem = generator.objectSystem;
                 ObjectInfo[] prefabInfo = objectSystem._info;
-                for (int i = 0; i < prefabInfo.Length; i++)
+                for (ushort i = 0; i < prefabInfo.Length; i++)
                     objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
             }
 
@@ -58,7 +58,7 @@ namespace TheRavine.Generator
             }
 
             private Texture2D texture;
-            private Texture2D TextureFromColourMap(Color[] colourMap, int width, int height)
+            private Texture2D TextureFromColourMap(Color[] colourMap, byte width, byte height)
             {
                 texture = new Texture2D(width, height);
                 texture.filterMode = FilterMode.Point;

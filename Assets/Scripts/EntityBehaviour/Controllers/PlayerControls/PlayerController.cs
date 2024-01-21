@@ -14,7 +14,7 @@ public class PlayerMovement : MonoBehaviour, IControllable
     [SerializeField] private Vector2 movementDirection, aim;
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Animator animator, shadowAnimator;
-    [SerializeField] private InputActionReference Movement, Raise, RightClick;
+    [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick;
     [SerializeField] private Joystick joystick;
     [SerializeField] private Camera cachedCamera;
     private IController currentController;
@@ -34,6 +34,7 @@ public class PlayerMovement : MonoBehaviour, IControllable
                 break;
         }
         Raise.action.performed += AimRaise;
+        LeftClick.action.performed += AimPlace;
     }
 
     public void SetZeroValues()
@@ -107,8 +108,12 @@ public class PlayerMovement : MonoBehaviour, IControllable
         crosshair.localPosition = aim * PlayerData.data.CROSSHAIR_DISTANSE; ;
         crosshair.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg + offset);
         crosshair.gameObject.SetActive(true);
-        AimPlace();
         isAccurance = true;
+    }
+
+    public void AimRaiseMobile()
+    {
+        AimRaise(new InputAction.CallbackContext());
     }
 
     private void AimRaise(InputAction.CallbackContext obj)
@@ -127,19 +132,18 @@ public class PlayerMovement : MonoBehaviour, IControllable
         }
     }
 
-    private void AimPlace()
+    public void AimPlaceMobile()
     {
-        if (Mouse.current.leftButton.wasPressedThisFrame)
+        AimPlace(new InputAction.CallbackContext());
+    }
+
+    private void AimPlace(InputAction.CallbackContext obj)
+    {
+        if (aim == Vector2.zero)
         {
             if (act)
                 StartCoroutine(In());
         }
-    }
-
-    public void AimPlaceMobile()
-    {
-        if (act)
-            StartCoroutine(In());
     }
 
     private IEnumerator In()
@@ -153,6 +157,7 @@ public class PlayerMovement : MonoBehaviour, IControllable
     {
         currentController.MeetEnds();
         Raise.action.performed -= AimRaise;
+        LeftClick.action.performed -= AimPlace;
     }
     private void OnDisable()
     {

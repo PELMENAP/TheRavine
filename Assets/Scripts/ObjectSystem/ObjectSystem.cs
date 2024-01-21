@@ -22,6 +22,12 @@ namespace TheRavine.ObjectControl
         }
         public bool TryAddToGlobal(Vector2 position, int _prefabID, string _name, ushort _amount, InstanceType _objectType, bool flip = false)
         {
+            if (global.ContainsKey(position))
+                if (global[position].name == _name)
+                {
+                    global[position].amount += _amount;
+                    return true;
+                }
             ObjectInfo curdata = GetPrefabInfo(_prefabID);
             ObjectInstInfo objectInfo = new ObjectInstInfo(_prefabID, _name, _amount, _objectType, flip);
             if (curdata.addspace.Length == 0)
