@@ -46,6 +46,18 @@ namespace TheRavine.Generator
                 chunkPos.y = -(-position.y / generationSize) - 1;
             return new Vector2((int)chunkPos.x, (int)chunkPos.y);
         }
+
+        public bool TryToAddPositionToChunk(Vector2 position)
+        {
+            SortedSet<Vector2> objectsToInst = GetMapData(GetChunkPosition(position)).objectsToInst;
+            if (objectsToInst.Contains(position))
+                return false;
+            else
+            {
+                objectsToInst.Add(position);
+                return true;
+            }
+        }
         public Transform terrainT, waterT;
         public MeshFilter terrainF, waterF;
         public int seed;
@@ -69,9 +81,9 @@ namespace TheRavine.Generator
                 endless.Add(new EndlessLiquids(this));
             if (endlessFlag[2])
                 endless.Add(new EndlessObjects(this));
-            for (int i = -10; i < 10; i++)
+            for (sbyte i = -5; i < 5; i++)
             {
-                for (int j = -10; j < 10; j++)
+                for (sbyte j = -5; j < 5; j++)
                 {
                     Vector2 centre = new Vector2(i, j);
                     mapData[centre] = GenerateMapData(centre);
@@ -88,11 +100,11 @@ namespace TheRavine.Generator
             callback?.Invoke();
         }
 
-        private Queue<Vector2> NALQueue = new Queue<Vector2>(128);
-        private Queue<Vector2> NALQueueUpdate = new Queue<Vector2>(64);
+        private Queue<Vector2> NALQueue = new Queue<Vector2>(64);
+        private Queue<Vector2> NALQueueUpdate = new Queue<Vector2>(32);
         public void ClearNALQueue() => NALQueue.Clear();
         public void AddNALObject(Vector2 current) => NALQueue.Enqueue(current);
-        public int step;
+        public byte step;
         private async UniTaskVoid NAL()
         {
             await UniTask.Delay(10000);
@@ -140,8 +152,8 @@ namespace TheRavine.Generator
                 }
                 // ObjectInfo childObjectInfo = objectSystem.GetPrefabInfo(currentObjectInfo.childPrefab.GetInstanceID());
                 bool closeto = false;
-                for (int x = -1; x <= 1; x++)
-                    for (int y = -1; y <= 1; y++)
+                for (sbyte x = -1; x <= 1; x++)
+                    for (sbyte y = -1; y <= 1; y++)
                         if (x != 0 && y != 0 && objectSystem.ContainsGlobal(current + new Vector2(x, y)))
                             closeto = true;
                 NAlInfo nalinfo = currentObjectPrefabData.nalinfo;
@@ -237,7 +249,8 @@ namespace TheRavine.Generator
                         if ((x * y + (byte)centre.x * centre.y + seed) % sinfo.Chance == 0)
                         {
                             Vector2 posstruct = new Vector2(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale) - vectorOffset;
-                            foreach (var item in WFCA(posstruct, (byte)((seed + (int)x + (int)y) % sinfo.info.tileInfo.Length), sinfo.info))
+                            WFCA(posstruct, (byte)((seed + (int)x + (int)y) % sinfo.info.tileInfo.Length), sinfo.info);
+                            foreach (var item in WFCAobjects)
                             {
                                 if (objectSystem.TryAddToGlobal(item.Key, item.Value.prefab.GetInstanceID(), item.Value.title, item.Value.amount, item.Value.iType, (x + y) % 2 == 0))
                                     objectsToInst.Add(item.Key);
@@ -265,24 +278,25 @@ namespace TheRavine.Generator
             }
             return new ChunkData(heightMap, isEqual, objectsToInst);
         }
-        private Dictionary<Vector2, ObjectInfo> WFCA(Vector2 curPos, byte type, StructInfo structInfo)
+
+        private Dictionary<Vector2, ObjectInfo> WFCAobjects = new Dictionary<Vector2, ObjectInfo>(8);
+        private Queue<Pair<Vector2, byte>> WFCAqueue = new Queue<Pair<Vector2, byte>>(16);
+        private void WFCA(Vector2 curPos, byte type, StructInfo structInfo)
         {
             byte maxIteration = 0, count = 0;
-            for (int i = 0; i < structInfo.tileInfo.Length; i++)
+            for (byte i = 0; i < structInfo.tileInfo.Length; i++)
                 maxIteration += structInfo.tileInfo[i].MCount;
             byte[] Count = new byte[9];
-            Dictionary<Vector2, ObjectInfo> objects = new Dictionary<Vector2, ObjectInfo>(16);
-            Queue<Pair<Vector2, byte>> queue = new Queue<Pair<Vector2, byte>>(32);
             count++;
-            queue.Enqueue(new Pair<Vector2, byte>(curPos, type));
-            while (queue.Count != 0)
+            WFCAqueue.Enqueue(new Pair<Vector2, byte>(curPos, type));
+            while (WFCAqueue.Count != 0)
             {
-                Pair<Vector2, byte> current = queue.Dequeue();
+                Pair<Vector2, byte> current = WFCAqueue.Dequeue();
                 if (count > maxIteration)
                     break;
-                if (structInfo.tileInfo[current.Second].MCount > Count[current.Second] && !objects.ContainsKey(current.First))
+                if (structInfo.tileInfo[current.Second].MCount > Count[current.Second] && !WFCAobjects.ContainsKey(current.First))
                 {
-                    objects[current.First] = structInfo.tileInfo[current.Second].objectInfo;
+                    WFCAobjects[current.First] = structInfo.tileInfo[current.Second].objectInfo;
                     Count[current.Second]++;
                     count++;
                 }
@@ -297,13 +311,12 @@ namespace TheRavine.Generator
                         byte field = structInfo.tileInfo[current.Second].neight[c++];
                         if (field == 0)
                             continue;
-                        if (objects.ContainsKey(newPos))
+                        if (WFCAobjects.ContainsKey(newPos))
                             continue;
-                        queue.Enqueue(new Pair<Vector2, byte>(newPos, --field));
+                        WFCAqueue.Enqueue(new Pair<Vector2, byte>(newPos, --field));
                     }
                 }
             }
-            return objects;
         }
         private Vector2 OldVposition, position;
         private async UniTaskVoid GenerationUpdate()
@@ -329,7 +342,6 @@ namespace TheRavine.Generator
             if (rotateTarget != 0f)
                 return;
             position = GetPlayerPosition();
-            print("extra update");
             endless[2].UpdateChunk(position);
         }
 

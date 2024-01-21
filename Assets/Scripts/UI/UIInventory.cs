@@ -68,15 +68,15 @@ namespace TheRavine.Inventory
             if (slot.isEmpty)
                 return;
             IInventoryItem item = activeCells[activeCell - 1]._uiInventoryItem.item;
-            print(item.state.amount);
             if (generator.objectSystem.TryAddToGlobal(position, item.info.prefab.GetInstanceID(), item.info.title, 1, InstanceType.Inter))
             {
                 item.state.amount--;
                 if (slot.amount <= 0)
                     slot.Clear();
                 activeCells[activeCell - 1].Refresh();
+                if (generator.TryToAddPositionToChunk(position))
+                    generator.ExtraUpdate();
             }
-            generator.ExtraUpdate();
         }
 
         [SerializeField] private string[] names = new string[8], sortedNames, sortedIngr;
@@ -86,13 +86,7 @@ namespace TheRavine.Inventory
         {
             names = new string[8];
             for (int i = 0; i < craftCells.Length; i++)
-            {
-                IInventorySlot slot = craftCells[i].slot;
-                if (!slot.isEmpty)
-                    names[i] = craftCells[i]._uiInventoryItem.item.info.id;
-                else
-                    names[i] = "";
-            }
+                names[i] = craftCells[i].slot.isEmpty ? "" : craftCells[i]._uiInventoryItem.item.info.id;
             for (int i = 0; i < CraftInfo.Length; i++)
             {
                 bool ispossible = true;
@@ -150,20 +144,23 @@ namespace TheRavine.Inventory
             if (inventory.TryToAdd(this, InfoManager.GetInventoryItemByInfo(data.iteminfo.id, data.iteminfo, objectInstInfo.amount)))
             {
                 generator.objectSystem.RemoveFromGlobal(position);
+                print("rised");
                 SpreadPattern pattern = data.pickUpPattern;
-                if (pattern == null)
-                    return;
-                generator.objectSystem.TryAddToGlobal(position, pattern.main.prefab.GetInstanceID(), pattern.main.title, pattern.main.amount, pattern.main.iType, (position.x + position.y) % 2 == 0);
-                if (pattern.other.Length != 0)
+                if (pattern != null)
                 {
-                    for (byte i = 0; i < pattern.other.Length; i++)
+                    generator.objectSystem.TryAddToGlobal(position, pattern.main.prefab.GetInstanceID(), pattern.main.title, pattern.main.amount, pattern.main.iType, (position.x + position.y) % 2 == 0);
+                    if (pattern.other.Length != 0)
                     {
-                        Vector2 newPos = Extention.GenerateRandomPointAround(position, pattern.minDis, pattern.maxDis);
-                        generator.objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].title, pattern.other[i].amount, pattern.other[i].iType, Extention.newx < position.x);
+                        for (byte i = 0; i < pattern.other.Length; i++)
+                        {
+                            Vector2 newPos = Extention.GenerateRandomPointAround(position, pattern.minDis, pattern.maxDis);
+                            generator.objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].title, pattern.other[i].amount, pattern.other[i].iType, Extention.newx < position.x);
+                        }
                     }
+                    print("leave pattern");
                 }
+                generator.ExtraUpdate();
             }
-            generator.ExtraUpdate();
         }
 
 
