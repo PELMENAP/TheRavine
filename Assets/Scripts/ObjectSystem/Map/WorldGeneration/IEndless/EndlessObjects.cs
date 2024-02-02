@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+
 using TheRavine.Extentions;
 using TheRavine.ObjectControl;
 
@@ -13,10 +14,10 @@ namespace TheRavine.Generator
             private const byte chunkCount = MapGenerator.chunkCount;
             private ObjectSystem objectSystem;
             private Dictionary<int, ushort> objectUpdate = new Dictionary<int, ushort>(16);
-            public EndlessObjects(MapGenerator _generator)
+            public EndlessObjects(MapGenerator _generator, ObjectSystem _objectSystem)
             {
                 generator = _generator;
-                objectSystem = generator.objectSystem;
+                objectSystem = _objectSystem;
                 ObjectInfo[] prefabInfo = objectSystem._info;
                 for (ushort i = 0; i < prefabInfo.Length; i++)
                     objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
@@ -33,7 +34,7 @@ namespace TheRavine.Generator
                         foreach (var item in generator.GetMapData(chunkCoord).objectsToInst)
                         {
                             ObjectInstInfo info = objectSystem.GetGlobalObjectInfo(item);
-                            if (!objectSystem.ContainsGlobal(item) || info.prefabID == -1)
+                            if (!objectSystem.ContainsGlobal(item) || info.name == null)
                                 continue;
                             objectUpdate[info.prefabID]++;
                             ObjectInfo objectInfo = objectSystem.GetPrefabInfo(info.prefabID);

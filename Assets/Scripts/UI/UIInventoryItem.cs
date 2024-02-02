@@ -6,10 +6,6 @@ namespace TheRavine.InventoryElements
 {
     public class UIInventoryItem : UIItem
     {
-        [SerializeField] private Color Icolor;
-        [SerializeField] private Color Tcolor;
-        private Color ImainColor;
-        private Color TmainColor;
         [SerializeField] private Image _imageIcon;
         [SerializeField] private TextMeshProUGUI _textAmount;
 

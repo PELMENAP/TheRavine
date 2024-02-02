@@ -141,4 +141,9 @@ public class PlayerData : AEntityData, ISetAble
             aim = Vector2.zero;
         factMousePosition = aim;
     }
+
+    public void BreakUp()
+    {
+        behavioursMap.Clear();
+    }
 }

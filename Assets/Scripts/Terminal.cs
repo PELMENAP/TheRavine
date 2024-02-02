@@ -20,6 +20,7 @@ namespace TheRavine.Base
         {
             playerData = locator.GetService<PlayerData>();
             generator = locator.GetService<MapGenerator>();
+            EnterRef.action.performed += OnEnter;
             callback?.Invoke();
         }
 
@@ -205,11 +206,7 @@ namespace TheRavine.Base
             InputWindow.text = "";
             // window.color = colorM;
         }
-        private void OnEnable()
-        {
-            EnterRef.action.performed += OnEnter;
-        }
-        private void OnDisable()
+        public void BreakUp()
         {
             EnterRef.action.performed -= OnEnter;
         }

@@ -159,8 +159,4 @@ public class PlayerMovement : MonoBehaviour, IControllable
         Raise.action.performed -= AimRaise;
         LeftClick.action.performed -= AimPlace;
     }
-    private void OnDisable()
-    {
-        BreakUp();
-    }
 }

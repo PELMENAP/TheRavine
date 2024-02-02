@@ -2,14 +2,14 @@ using System.Collections.Generic;
 
 public class SkillFacade
 {
-    private Dictionary<AEntity, Dictionary<string, ISkill>> entitySkills;
+    private Dictionary<EntityExistInfo, Dictionary<string, ISkill>> entitySkills;
 
     public SkillFacade()
     {
-        entitySkills = new Dictionary<AEntity, Dictionary<string, ISkill>>();
+        entitySkills = new Dictionary<EntityExistInfo, Dictionary<string, ISkill>>();
     }
 
-    public void AddEntity(AEntity entity)
+    public void AddEntity(EntityExistInfo entity)
     {
         if (!entitySkills.ContainsKey(entity))
         {
@@ -17,7 +17,7 @@ public class SkillFacade
         }
     }
 
-    public void RemoveEntity(AEntity entity)
+    public void RemoveEntity(EntityExistInfo entity)
     {
         if (entitySkills.ContainsKey(entity))
         {
@@ -25,7 +25,7 @@ public class SkillFacade
         }
     }
 
-    public void AddSkillToEntity(AEntity entity, ISkill skill)
+    public void AddSkillToEntity(EntityExistInfo entity, ISkill skill)
     {
         if (entitySkills.ContainsKey(entity))
         {
@@ -36,7 +36,7 @@ public class SkillFacade
         }
     }
 
-    public void RemoveSkillFromEntity(AEntity entity, string skillName)
+    public void RemoveSkillFromEntity(EntityExistInfo entity, string skillName)
     {
         if (entitySkills.ContainsKey(entity))
         {
@@ -47,12 +47,12 @@ public class SkillFacade
         }
     }
 
-    public bool EntityHasSkill(AEntity entity, string skillName)
+    public bool EntityHasSkill(EntityExistInfo entity, string skillName)
     {
         return entitySkills.ContainsKey(entity) && entitySkills[entity].ContainsKey(skillName);
     }
 
-    public Dictionary<string, ISkill> GetEntitySkills(AEntity entity)
+    public Dictionary<string, ISkill> GetEntitySkills(EntityExistInfo entity)
     {
         if (entitySkills.ContainsKey(entity))
         {
@@ -61,7 +61,7 @@ public class SkillFacade
         return null;
     }
 
-    public ISkill GetEntitySkill(AEntity entity, string skillName)
+    public ISkill GetEntitySkill(EntityExistInfo entity, string skillName)
     {
         if (EntityHasSkill(entity, skillName))
         {

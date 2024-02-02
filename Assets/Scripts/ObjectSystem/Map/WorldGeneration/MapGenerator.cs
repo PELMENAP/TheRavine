@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
+
 using TheRavine.Base;
 using TheRavine.Extentions;
 using TheRavine.ObjectControl;
@@ -49,7 +50,7 @@ namespace TheRavine.Generator
 
         public bool TryToAddPositionToChunk(Vector2 position)
         {
-            SortedSet<Vector2> objectsToInst = GetMapData(GetChunkPosition(position)).objectsToInst;
+            SortedSet<Vector2> objectsToInst = GetMapData(GetChunkPosition(position + vectorOffset)).objectsToInst;
             if (objectsToInst.Contains(position))
                 return false;
             else
@@ -61,7 +62,7 @@ namespace TheRavine.Generator
         public Transform terrainT, waterT;
         public MeshFilter terrainF, waterF;
         public int seed;
-        public ObjectSystem objectSystem;
+        private ObjectSystem objectSystem;
         [SerializeField] private float noiseScale;
         [SerializeField] private byte octaves;
         [SerializeField, Range(0, 1)] private float persistance;
@@ -80,7 +81,7 @@ namespace TheRavine.Generator
             if (endlessFlag[1])
                 endless.Add(new EndlessLiquids(this));
             if (endlessFlag[2])
-                endless.Add(new EndlessObjects(this));
+                endless.Add(new EndlessObjects(this, objectSystem));
             for (sbyte i = -5; i < 5; i++)
             {
                 for (sbyte j = -5; j < 5; j++)
@@ -104,7 +105,7 @@ namespace TheRavine.Generator
         private Queue<Vector2> NALQueueUpdate = new Queue<Vector2>(32);
         public void ClearNALQueue() => NALQueue.Clear();
         public void AddNALObject(Vector2 current) => NALQueue.Enqueue(current);
-        public byte step;
+        public byte step, deadChance = 0;
         private async UniTaskVoid NAL()
         {
             await UniTask.Delay(10000);
@@ -121,27 +122,32 @@ namespace TheRavine.Generator
                         continue;
                     }
                 }
-                if (countCycle % step != 0)
+                else if (countCycle % step != 0 || NALQueue.Count == 0)
                 {
                     await UniTask.Delay(10);
                     continue;
                 }
-                if (NALQueue.Count == 0)
-                {
-                    await UniTask.Delay(1000);
-                    continue;
-                }
+                deadChance = NALQueue.Count > 200 ? (byte)10 : (byte)0;
                 Vector2 current = NALQueue.Dequeue();
                 ObjectInstInfo instInfo = objectSystem.GetGlobalObjectInfo(current);
-                if (instInfo.prefabID == -1)
+                if (instInfo.name == null)
                     continue;
+                if (instInfo.prefabID == 0)
+                {
+                    print(instInfo.name);
+                    print(instInfo.name == null);
+                    print(instInfo.prefabID);
+                    print(instInfo.amount);
+                    print(instInfo.objectType);
+                    continue;
+                }
                 ObjectInfo currentObjectPrefabData = objectSystem.GetPrefabInfo(instInfo.prefabID);
                 ObjectInfo nextGenInfo = currentObjectPrefabData.nextStep;
                 if (currentObjectPrefabData.bType == BehaviourType.GROW)
                 {
                     if (nextGenInfo == null)
                     {
-                        if (Random.Range(0, 100) < 25)
+                        if (Random.Range(0, 4) < 1)
                             objectSystem.RemoveFromGlobal(current);
                         continue;
                     }
@@ -157,7 +163,7 @@ namespace TheRavine.Generator
                         if (x != 0 && y != 0 && objectSystem.ContainsGlobal(current + new Vector2(x, y)))
                             closeto = true;
                 NAlInfo nalinfo = currentObjectPrefabData.nalinfo;
-                if (Random.Range(0, 100) < nalinfo.chance / 2 || closeto)
+                if (Random.Range(0, 100) < (nalinfo.chance / 2 + deadChance) || closeto)
                 {
                     objectSystem.RemoveFromGlobal(current);
                     SpreadPattern pattern = currentObjectPrefabData.deadPattern;
@@ -201,16 +207,14 @@ namespace TheRavine.Generator
             if (rotateTarget != 0f)
                 return;
             ClearNALQueue();
-            foreach (Vector2 item in NALQueueUpdate)
+            while (NALQueueUpdate.Count > 0)
             {
+                Vector2 item = NALQueueUpdate.Dequeue();
                 byte height = GetMapHeight(item);
                 if (height < 3 || height > 7)
                     continue;
-                SortedSet<Vector2> objectToInst = GetMapData(GetChunkPosition(item + vectorOffset)).objectsToInst;
-                if (!objectToInst.Contains(item))
-                    objectToInst.Add(item);
+                GetMapData(GetChunkPosition(item + vectorOffset)).objectsToInst.Add(item);
             }
-            NALQueueUpdate.Clear();
             ExtraUpdate();
         }
         private float[,] noiseMap = new float[mapChunkSize, mapChunkSize];
@@ -283,6 +287,8 @@ namespace TheRavine.Generator
         private Queue<Pair<Vector2, byte>> WFCAqueue = new Queue<Pair<Vector2, byte>>(16);
         private void WFCA(Vector2 curPos, byte type, StructInfo structInfo)
         {
+            WFCAobjects.Clear();
+            WFCAqueue.Clear();
             byte maxIteration = 0, count = 0;
             for (byte i = 0; i < structInfo.tileInfo.Length; i++)
                 maxIteration += structInfo.tileInfo[i].MCount;
@@ -443,9 +449,29 @@ namespace TheRavine.Generator
             await UniTask.WaitForFixedUpdate();
         }
 
-        private void OnDisable()
+        public void BreakUp()
         {
+            endless.Clear();
+            NALQueue.Clear();
+            NALQueueUpdate.Clear();
+            WFCAobjects.Clear();
+            WFCAqueue.Clear();
+            mapData.Clear();
             DayCycle.newDay -= UpdateNAL;
+        }
+
+        public Transform viewerTest;
+        public void TestGeneration()
+        {
+            if (endlessFlag[0])
+                endless.Add(new EndlessTerrain(this));
+            if (endlessFlag[1])
+                endless.Add(new EndlessLiquids(this));
+            endlessFlag[2] = false;
+            foreach (var generator in endless)
+            {
+                generator.UpdateChunk(Extention.RoundVector2D(viewerTest.position / (scale * mapChunkSize)));
+            }
         }
     }
 
@@ -482,4 +508,5 @@ namespace TheRavine.Generator
             this.objectsToInst = objectsToInst;
         }
     }
+
 }

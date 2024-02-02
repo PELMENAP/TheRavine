@@ -1,0 +1,19 @@
+{
+    "name": "EntitySystem",
+    "rootNamespace": "",
+    "references": [
+        "GUID:bb56edd6d4b8a2f2b98e39a884e3754c",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:20b215ea2c8c4fdf0ac01bc81823f116",
+        "GUID:776d03a35f1b52c4a9aed9f56d7b4229"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -51,4 +51,9 @@ public class BotData : AEntityData, ISetAble
     public Animator animator;
     public Transform botTransform;
     public Rigidbody2D botRigidbody;
+
+    public void BreakUp()
+    {
+
+    }
 }
