@@ -13,11 +13,13 @@ using System;
 using TheRavine.Base;
 using TheRavine.Generator;
 using TheRavine.Extentions;
+using TheRavine.ObjectControl;
 
 public class Test : MonoBehaviour
 {
     public Transform viewer;
     public MapGenerator generator;
+    public ObjectSystem objectSystem;
     public string test;
     public string enter;
 
@@ -31,14 +33,14 @@ public class Test : MonoBehaviour
     private Vector2 RoundVector(Vector2 vec) => new Vector2((int)vec.x, (int)vec.y);
 
     private SkillFacade SkillSystem = new SkillFacade();
-    AEntity playerEntity;
+    EntityExistInfo playerEntity;
     [SerializeField] private PlayerInput input;
     [SerializeField] private InputActionReference point;
     private void Awake()
     {
         Settings.isShadow = isShadow;
         Settings._controlType = control;
-        playerEntity = new AEntity("player", 100);
+        playerEntity = new EntityExistInfo("player", 0, 100);
         SkillSystem.AddEntity(playerEntity);
         SkillSystem.AddSkillToEntity(playerEntity, SkillBuilder.CreateSkill(flyingSkill));
         point.action.performed += mobile;
@@ -47,7 +49,7 @@ public class Test : MonoBehaviour
     [Button]
     private void ShowPlayerEntityEnergy()
     {
-        print(playerEntity.Energy);
+        print(playerEntity.GetEnergy());
     }
     [Button]
     private void UseSkillByFacade()
@@ -68,12 +70,12 @@ public class Test : MonoBehaviour
         if (Input.GetKeyDown("f"))
         {
             position = RoundVector(new Vector2(viewer.position.x, viewer.position.y));
-            if (generator.objectSystem.ContainsGlobal(position))
+            if (objectSystem.ContainsGlobal(position))
                 return;
             generator.GetMapData(RoundVector((position + MapGenerator.vectorOffset) / MapGenerator.generationSize)).objectsToInst.Add(position);
             int id = prefab1.GetInstanceID();
-            ObjectInfo data = generator.objectSystem.GetPrefabInfo(id);
-            generator.objectSystem.TryAddToGlobal(position, id, data.name, data.amount, data.iType);
+            ObjectInfo data = objectSystem.GetPrefabInfo(id);
+            objectSystem.TryAddToGlobal(position, id, data.name, data.amount, data.iType);
             generator.ExtraUpdate();
         }
 
@@ -85,11 +87,11 @@ public class Test : MonoBehaviour
                 for (int y = -size; y <= size; y++)
                 {
                     position = RoundVector(new Vector2(viewer.position.x, viewer.position.y)) + new Vector2(x, y);
-                    if (!generator.objectSystem.ContainsGlobal(position))
+                    if (!objectSystem.ContainsGlobal(position))
                         continue;
-                    if (generator.objectSystem.GetGlobalObjectInfo(position).objectType == InstanceType.Inter)
+                    if (objectSystem.GetGlobalObjectInfo(position).objectType == InstanceType.Inter)
                     {
-                        generator.objectSystem.RemoveFromGlobal(position);
+                        objectSystem.RemoveFromGlobal(position);
                         // generator.GetMapData(RoundVector((position + MapGenerator.vectorOffset) / MapGenerator.generationSize)).objectsToInst.Remove(position);
                     }
                 }
@@ -145,5 +147,11 @@ public class Test : MonoBehaviour
     private void OnDisable()
     {
         point.action.performed -= mobile;
+    }
+
+    [Button]
+    private void GenerateMap()
+    {
+        generator.TestGeneration();
     }
 }

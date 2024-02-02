@@ -9,7 +9,6 @@ public abstract class AEntityData : MonoBehaviour
     protected Dictionary<Type, IPlayerBehaviour> behavioursMap;
     protected virtual void Init()
     {
-        InitBehaviour();
     }
     protected virtual void InitBehaviour()
     {

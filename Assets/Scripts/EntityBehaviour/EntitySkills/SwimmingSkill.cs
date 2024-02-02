@@ -14,12 +14,12 @@ public class SwimmingSkill : ISkill
         lastUsedTime = -RechargeTime;
     }
 
-    public void Use(AEntity entity)
+    public void Use(EntityExistInfo entity)
     {
         if (CanUse(entity))
         {
             Debug.Log($"{entity.Name} использует навык {SkillName}");
-            entity.Energy -= EnergyCost;
+            entity.DecreaseEnergy(EnergyCost);
             lastUsedTime = Time.time;
         }
         else
@@ -28,9 +28,9 @@ public class SwimmingSkill : ISkill
         }
     }
 
-    public bool CanUse(AEntity entity)
+    public bool CanUse(EntityExistInfo entity)
     {
-        return entity.Energy >= EnergyCost && Time.time - lastUsedTime >= RechargeTime;
+        return entity.GetEnergy() >= EnergyCost && Time.time - lastUsedTime >= RechargeTime;
     }
 
     public void Recharge()

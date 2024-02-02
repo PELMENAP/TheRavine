@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace TheRavine.InventoryElements
 {
-    public class UIInventorySlot : UISlot
+    public class UIInventorySlot : MonoBehaviour
     {
         public UIInventoryItem _uiInventoryItem;
         public IInventorySlot slot { get; private set; }

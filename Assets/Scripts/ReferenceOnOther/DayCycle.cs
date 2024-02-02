@@ -134,7 +134,7 @@ namespace TheRavine.Base
             Light2DIntensityBridge.Dispose();
         }
 
-        private void OnDisable()
+        public void BreakUp()
         {
             closeThread = false;
             // TimeBridge.Dispose();

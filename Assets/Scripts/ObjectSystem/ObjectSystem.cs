@@ -3,7 +3,7 @@ using System.Collections;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEditor;
-public delegate GameObject CreateInstance(Vector2 position, GameObject prefab);
+
 namespace TheRavine.ObjectControl
 {
     public class ObjectSystem : MonoBehaviour, ISetAble
@@ -20,36 +20,37 @@ namespace TheRavine.ObjectControl
                 return new ObjectInstInfo();
             return global[position];
         }
-        public bool TryAddToGlobal(Vector2 position, int _prefabID, string _name, ushort _amount, InstanceType _objectType, bool flip = false)
+        public bool TryAddToGlobal(Vector2 position, int _prefabID, string _name, int _amount, InstanceType _objectType, bool _flip = false)
         {
             if (global.ContainsKey(position))
-                if (global[position].name == _name)
+                if (global[position].name == _name && global[position].objectType == InstanceType.Inter)
                 {
-                    global[position].amount += _amount;
+                    global[position] = new ObjectInstInfo(global[position].prefabID, global[position].name, global[position].amount + _amount, global[position].objectType, global[position].flip); ;
                     return true;
                 }
             ObjectInfo curdata = GetPrefabInfo(_prefabID);
-            ObjectInstInfo objectInfo = new ObjectInstInfo(_prefabID, _name, _amount, _objectType, flip);
+            ObjectInstInfo objectInfo = new ObjectInstInfo(_prefabID, _name, _amount, _objectType, _flip);
             if (curdata.addspace.Length == 0)
                 return global.TryAdd(position, objectInfo);
             global[position] = objectInfo;
-            for (int i = 0; i < curdata.addspace.Length; i++)
+            for (byte i = 0; i < curdata.addspace.Length; i++)
                 global[position + curdata.addspace[i]] = new ObjectInstInfo();
             return true;
         }
-        public void AddToGlobal(Vector2 position, int _prefabID, string _name, ushort _amount, InstanceType _objectType, bool flip = false)
+        private void AddToGlobal(Vector2 position, int _prefabID, string _name, ushort _amount, InstanceType _objectType, bool flip = false)
         {
             global[position] = new ObjectInstInfo(_prefabID, _name, _amount, _objectType, flip);
         }
         public bool RemoveFromGlobal(Vector2 position)
         {
             ObjectInstInfo objectInfo = GetGlobalObjectInfo(position);
-            if (objectInfo.prefabID == 0)
+            if (objectInfo.name == "&")
                 return true;
             ObjectInfo curdata = GetPrefabInfo(objectInfo.prefabID);
             if (curdata.addspace.Length == 0)
                 return global.Remove(position);
-            for (int i = 0; i < curdata.addspace.Length; i++)
+            global.Remove(position);
+            for (byte i = 0; i < curdata.addspace.Length; i++)
                 global.Remove(position + curdata.addspace[i]);
             return true;
         }
@@ -88,16 +89,23 @@ namespace TheRavine.ObjectControl
                 //FaderOnTransit.instance.SetLogs("Созданы: " + _info[i].prefab.name);
             }
         }
+
+        public void BreakUp()
+        {
+            info.Clear();
+            global.Clear();
+            changes.Clear();
+        }
     }
 
-    public class ObjectInstInfo
+    public struct ObjectInstInfo
     {
-        public string name { get; private set; }
-        public ushort amount;
-        public int prefabID { get; private set; }
-        public InstanceType objectType { get; private set; }
+        public readonly string name;
+        public int amount;
+        public readonly int prefabID;
+        public readonly InstanceType objectType;
         public bool flip;
-        public ObjectInstInfo(int _prefabID = -1, string _name = "therivinetop", ushort _amount = 1, InstanceType _objectType = InstanceType.Static, bool _flip = false)
+        public ObjectInstInfo(int _prefabID = -1, string _name = "&", int _amount = 1, InstanceType _objectType = InstanceType.Static, bool _flip = false)
         {
             name = _name;
             amount = _amount;

@@ -96,4 +96,9 @@ public class CM : MonoBehaviour, ISetAble
             mainCam.orthographicSize = 10;
         }
     }
+
+    public void BreakUp()
+    {
+
+    }
 }

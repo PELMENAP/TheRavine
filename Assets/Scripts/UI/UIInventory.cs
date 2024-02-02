@@ -24,10 +24,12 @@ namespace TheRavine.Inventory
         private UIInventoryTester tester;
         [HideInInspector] public PlayerData playerData;
         private MapGenerator generator;
+        private ObjectSystem objectSystem;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
             playerData = locator.GetService<PlayerData>();
             generator = locator.GetService<MapGenerator>();
+            objectSystem = locator.GetService<ObjectSystem>();
             var uiSlot = GetComponentsInChildren<UIInventorySlot>();
             var slotList = new List<UIInventorySlot>();
             slotList.AddRange(uiSlot);
@@ -68,7 +70,7 @@ namespace TheRavine.Inventory
             if (slot.isEmpty)
                 return;
             IInventoryItem item = activeCells[activeCell - 1]._uiInventoryItem.item;
-            if (generator.objectSystem.TryAddToGlobal(position, item.info.prefab.GetInstanceID(), item.info.title, 1, InstanceType.Inter))
+            if (objectSystem.TryAddToGlobal(position, item.info.prefab.GetInstanceID(), item.info.title, 1, InstanceType.Inter))
             {
                 item.state.amount--;
                 if (slot.amount <= 0)
@@ -135,26 +137,26 @@ namespace TheRavine.Inventory
 
         private void AimRaise(Vector2 position)
         {
-            ObjectInstInfo objectInstInfo = generator.objectSystem.GetGlobalObjectInfo(position);
+            ObjectInstInfo objectInstInfo = objectSystem.GetGlobalObjectInfo(position);
             if (objectInstInfo.prefabID == 0 || objectInstInfo.objectType != InstanceType.Inter)
                 return;
-            ObjectInfo data = generator.objectSystem.GetPrefabInfo(objectInstInfo.prefabID);
+            ObjectInfo data = objectSystem.GetPrefabInfo(objectInstInfo.prefabID);
             if (data.iteminfo == null)
                 return;
             if (inventory.TryToAdd(this, InfoManager.GetInventoryItemByInfo(data.iteminfo.id, data.iteminfo, objectInstInfo.amount)))
             {
-                generator.objectSystem.RemoveFromGlobal(position);
+                objectSystem.RemoveFromGlobal(position);
                 print("rised");
                 SpreadPattern pattern = data.pickUpPattern;
                 if (pattern != null)
                 {
-                    generator.objectSystem.TryAddToGlobal(position, pattern.main.prefab.GetInstanceID(), pattern.main.title, pattern.main.amount, pattern.main.iType, (position.x + position.y) % 2 == 0);
+                    objectSystem.TryAddToGlobal(position, pattern.main.prefab.GetInstanceID(), pattern.main.title, pattern.main.amount, pattern.main.iType, (position.x + position.y) % 2 == 0);
                     if (pattern.other.Length != 0)
                     {
                         for (byte i = 0; i < pattern.other.Length; i++)
                         {
                             Vector2 newPos = Extention.GenerateRandomPointAround(position, pattern.minDis, pattern.maxDis);
-                            generator.objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].title, pattern.other[i].amount, pattern.other[i].iType, Extention.newx < position.x);
+                            objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].title, pattern.other[i].amount, pattern.other[i].iType, Extention.newx < position.x);
                         }
                     }
                     print("leave pattern");
@@ -206,7 +208,7 @@ namespace TheRavine.Inventory
             }
             grid.SetActive(isactive);
         }
-        private void OnDisable()
+        public void BreakUp()
         {
             inventory.OnInventoryStateChangedEvent -= OnInventoryStateChanged;
             playerData.placeObject -= PlaceObject;

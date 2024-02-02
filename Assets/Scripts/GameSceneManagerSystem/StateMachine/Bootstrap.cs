@@ -16,6 +16,7 @@ namespace TheRavine.Base
         public byte tickPerUpdate;
         public StateMachine<Bootstrap> StateMachine { get; private set; }
         private Queue<ISetAble> _setAble = new Queue<ISetAble>();
+        private Queue<ISetAble> _disAble = new Queue<ISetAble>();
         [SerializeField] private Camera _camera;
         [SerializeField] private DayCycle sun;
         [SerializeField] private MapGenerator generator;
@@ -63,7 +64,12 @@ namespace TheRavine.Base
             help.SetActive(false);
             ui.SetActive(false);
         }
-        public void StartNewServise(ISetAble.Callback callback) => _setAble.Dequeue().SetUp(callback, serviceLocator);
+        public void StartNewServise(ISetAble.Callback callback)
+        {
+            ISetAble setAble = _setAble.Dequeue();
+            _disAble.Enqueue(setAble);
+            setAble.SetUp(callback, serviceLocator);
+        }
         public void StartGame()
         {
             Settings.SceneNumber = 0;
@@ -79,9 +85,16 @@ namespace TheRavine.Base
 
         public void InTheEnd()
         {
+            while (_disAble.Count > 0)
+                _disAble.Dequeue().BreakUp();
             help.SetActive(false);
             ui.SetActive(false);
             EnhancedTouchSupport.Disable();
+        }
+
+        private void OnDisable()
+        {
+            InTheEnd();
         }
     }
 }

@@ -9,13 +9,14 @@ public class EventBusTester : MonoBehaviour
         EventBusByName eventBus = new EventBusByName();
 
         // Подписываемся на событие "DamageEvent"
-        eventBus.Subscribe<int>("DamageEvent", HandleDamageEvent);
+        eventBus.Subscribe<int>(nameof(RaiseEvent), HandleDamageEvent);
+        eventBus.Subscribe<int>(nameof(RaiseEvent), HandleDamageEvent2);
 
         // Вызываем событие "DamageEvent"
-        eventBus.Invoke<int>("DamageEvent", 10);
+        eventBus.Invoke<int>(nameof(RaiseEvent), 10);
 
         // Отписываемся от события "DamageEvent"
-        eventBus.Unsubscribe<int>("DamageEvent", HandleDamageEvent);
+        eventBus.Dispose();
     }
 
     private void HandleDamageEvent(int damage)
