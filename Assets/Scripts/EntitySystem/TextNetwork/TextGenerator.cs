@@ -8,21 +8,23 @@ using Random = UnityEngine.Random;
 public class TextGenerator
 {
     private Dictionary<string, List<KeyValuePair<string, int>>> bigrams;
-
+    private Dictionary<string, HashSet<string>> precedingWords;
+    private System.Random random = new System.Random();
     private int distortion;
 
     public TextGenerator(int _distortion)
     {
         bigrams = new Dictionary<string, List<KeyValuePair<string, int>>>();
+        precedingWords = new Dictionary<string, HashSet<string>>();
         distortion = _distortion;
     }
 
-    public void Train(string words)
+    public void Train(string[] words)
     {
         for (int i = 0; i < words.Length - 1; i++)
         {
-            string firstWord = Char.ToString(words[i]);
-            string secondWord = Char.ToString(words[i + 1]);
+            string firstWord = words[i];
+            string secondWord = words[i + 1];
             if (!bigrams.ContainsKey(firstWord))
                 bigrams[firstWord] = new List<KeyValuePair<string, int>>();
 
@@ -43,6 +45,10 @@ public class TextGenerator
                     bigramsList[j] = new KeyValuePair<string, int>(secondWord, bigramsList[j].Value + 1);
                     break;
                 }
+
+            if (!precedingWords.ContainsKey(secondWord))
+                precedingWords[secondWord] = new HashSet<string>();
+            precedingWords[secondWord].Add(firstWord);
         }
 
         foreach (var list in bigrams)
@@ -56,69 +62,73 @@ public class TextGenerator
         }
     }
 
-    public string GenerateSentence(string startingWord, int length)
+    public string GenerateSentenceWithWords(int length, List<string> requiredWords, int minDistanceBetweenRequiredWords)
     {
-        string currentWord = startingWord;
-        string sentence = currentWord;
+        List<string> sentenceParts = new List<string>();
+        HashSet<string> usedWords = new HashSet<string>();
 
-
-        for (int i = 1; i < length; i++)
-            if (bigrams.ContainsKey(currentWord))
-            {
-                currentWord = GetNextWord(currentWord);
-                if (currentWord == " ")
-                {
-                    if (sentence[sentence.Length - 2] != ' ')
-                        sentence += currentWord;
-                }
-                else
-                    sentence += " " + currentWord;
-                if (currentWord[currentWord.Length - 1] == '.')
-                    break;
-                Debug.Log(sentence);
-            }
-            else
-                break;
-        return sentence;
-    }
-
-    public string GenerateSentence(string[] words, int maxZV)
-    {
-        string sentence = "";
-        for (int i = 0; i < words.Length; i++)
+        // Распределение обязательных слов с учетом минимального расстояния
+        for (int i = 0; i < requiredWords.Count; i++)
         {
-            string currentWord = words[i];
-            sentence += currentWord;
-            int ZV = Random.Range(0, maxZV);
-            for (int j = 0; j < ZV; j++)
+            string word = requiredWords[i];
+            // Добавляем пустые строки как заполнители для минимального расстояния между обязательными словами, если это не первое слово
+            if (i > 0)
             {
-                currentWord = GetNextWord(Char.ToString(currentWord[currentWord.Length - 1]));
-                sentence += currentWord;
+                int placeholdersToAdd = Math.Min(minDistanceBetweenRequiredWords - 1, length - sentenceParts.Count - 1);
+                sentenceParts.AddRange(Enumerable.Repeat("", placeholdersToAdd));
             }
+            sentenceParts.Add(word);
+            usedWords.Add(word);
+            // Проверяем, достигнута ли желаемая длина предложения
+            if (sentenceParts.Count >= length) break;
         }
-        return sentence;
-    }
 
-    private string GetNextWord(string word)
-    {
-        List<KeyValuePair<string, int>> nextWords = bigrams[word];
-
-        string answer = "";
-        int weight = 0;
-        for (int i = 0; i < distortion; i++)
+        // Заполнение промежутков между обязательными словами, если осталось место
+        for (int i = 0; i < sentenceParts.Count && sentenceParts.Count < length; i++)
         {
-            KeyValuePair<string, int> current = nextWords[Random.Range(0, nextWords.Count)];
-            if (current.Value > weight)
+            if (string.IsNullOrEmpty(sentenceParts[i]))
             {
-                weight = current.Value;
-                answer = current.Key;
+                string prevWord = i > 0 ? sentenceParts[i - 1] : null;
+                string nextWord = GetNextWord(prevWord, usedWords);
+                sentenceParts[i] = nextWord ?? ""; // Если не найдено подходящее слово, оставляем пустым
+                usedWords.Add(nextWord);
             }
         }
 
-        return answer;
+        // Убираем пустые места, если они остались в конце предложения
+        sentenceParts = sentenceParts.Where(part => !string.IsNullOrEmpty(part)).ToList();
+
+        return string.Join(" ", sentenceParts);
     }
+
+
+    private string GetNextWord(string prevWord, HashSet<string> usedWords)
+    {
+        if (prevWord == null || !bigrams.ContainsKey(prevWord)) return null;
+
+        var possibleNextWords = bigrams[prevWord].Where(pair => !usedWords.Contains(pair.Key)).ToList();
+        if (possibleNextWords.Count == 0) return null;
+
+        int totalWeight = possibleNextWords.Sum(pair => pair.Value);
+        int randomNumber = random.Next(totalWeight);
+        int cumulative = 0;
+
+        foreach (var pair in possibleNextWords)
+        {
+            cumulative += pair.Value;
+            if (randomNumber < cumulative)
+            {
+                return pair.Key;
+            }
+        }
+
+        return null;
+    }
+
 
     public Dictionary<string, List<KeyValuePair<string, int>>> GetBigrams() => bigrams;
+    public Dictionary<string, HashSet<string>> GetPreceding() => precedingWords;
 
     public void SetBigrams(Dictionary<string, List<KeyValuePair<string, int>>> loadedBigrams) => bigrams = loadedBigrams;
+    public void SetPreceding(Dictionary<string, HashSet<string>> loadedPreceding) => precedingWords = loadedPreceding;
 }

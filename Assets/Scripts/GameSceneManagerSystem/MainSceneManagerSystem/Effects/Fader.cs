@@ -4,7 +4,7 @@ using TMPro;
 
 public class FaderOnTransit : MonoBehaviour
 {
-    private const string Fader_path = "Fader";
+    private const string Fader_path = "Objects/Fader";
 
     [SerializeField] private Animator animator;
     [SerializeField] private TextMeshProUGUI loadingText;
@@ -63,7 +63,8 @@ public class FaderOnTransit : MonoBehaviour
         Destroy(FaderOnTransit.instance.gameObject);
     }
 
-    public void SetLogs(string text){
+    public void SetLogs(string text)
+    {
         loadingText.text = text;
     }
 

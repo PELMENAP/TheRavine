@@ -28,6 +28,7 @@ namespace TheRavine.Base
         private void Start()
         {
             EnhancedTouchSupport.Enable();
+            serviceLocator.RegisterPlayer<PlayerData>();
             serviceLocator.Register<PlayerData>(playerData);
             serviceLocator.Register<ObjectSystem>(objectSystem);
             serviceLocator.Register<UIInventory>(inventory);

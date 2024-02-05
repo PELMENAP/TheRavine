@@ -5,6 +5,8 @@ using System.Collections.Generic;
 public class ServiceLocator
 {
     private Dictionary<Type, MonoBehaviour> services = new Dictionary<Type, MonoBehaviour>();
+
+    private Type playerType;
     public bool Register<T>(T service) where T : MonoBehaviour
     {
         Type type = typeof(T);
@@ -14,6 +16,7 @@ public class ServiceLocator
             return false;
         return true;
     }
+    public void RegisterPlayer<T>() where T : MonoBehaviour => playerType = typeof(T);
     public T GetService<T>() where T : MonoBehaviour
     {
         Type type = typeof(T);
@@ -22,4 +25,6 @@ public class ServiceLocator
         else
             return null;
     }
+
+    public Transform GetPlayerTransform() => services[playerType].transform;
 }

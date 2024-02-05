@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f262818b55b0f4418296bad0176bdab, type: 3}
+  m_Name: n
+  m_EditorClassIdentifier: 
+  <DialogueName>k__BackingField: n
+  <Text>k__BackingField: Dialogue text.
+  <Choices>k__BackingField:
+  - <Text>k__BackingField: New Choice
+    <NextDialogue>k__BackingField: {fileID: 11400000, guid: 9d87f21183d1453fa936c913372421af,
+      type: 2}
+  - <Text>k__BackingField: dfh
+    <NextDialogue>k__BackingField: {fileID: 11400000, guid: ef853625ea9127f9b8d5edf37a30ba81,
+      type: 2}
+  - <Text>k__BackingField: gh
+    <NextDialogue>k__BackingField: {fileID: 11400000, guid: 68ca1a38a47025e738a59b5c46b98f38,
+      type: 2}
+  - <Text>k__BackingField: New
+    <NextDialogue>k__BackingField: {fileID: 0}
+  - <Text>k__BackingField: dg
+    <NextDialogue>k__BackingField: {fileID: 0}
+  <DialogueType>k__BackingField: 1
+  <IsStartingDialogue>k__BackingField: 0

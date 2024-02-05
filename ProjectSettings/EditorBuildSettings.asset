@@ -12,7 +12,7 @@ EditorBuildSettings:
     path: Assets/Scenes/TestScene/Test.unity
     guid: 88f75c26ff1d8a6f1b59a53023da678d
   - enabled: 0
-    path: Assets/Scenes/Main_game/FirstAct.unity
+    path: Assets/Scenes/Main_game 1/FirstAct.unity
     guid: 2cda990e2423bbf4892e6590ba056729
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 1d16c970072ac4f95a46c81fbcc9fd19,
