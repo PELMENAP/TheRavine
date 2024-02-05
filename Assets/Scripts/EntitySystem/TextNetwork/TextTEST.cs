@@ -1,73 +1,39 @@
 using System.IO;
 using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using UnityEngine;
 using NaughtyAttributes;
 using Random = UnityEngine.Random;
-
-using Accord.Neuro;
-using Accord.Neuro.Learning;
-using Accord.Neuro.Networks;
-using Accord.Math.Random;
-
 public class TextTEST : MonoBehaviour
 {
     private TextGenerator textGenerator;
-    string sampleText;
-    public int textSize, distortion, maxZV;
-    public string startSlovo, filePath;
-    public string[] sentense;
-
-    ActivationNetwork network;
-    BackPropagationLearning teacher;
-
-    double[][] inputs = new double[][]
-        {
-            new double[] { 0, 0 },
-            new double[] { 1, 0 },
-            new double[] { 0, 1 },
-            new double[] { 1, 1 }
-        };
-
-    double[][] outputs = new double[][]
-    {
-            new double[] { 0 },
-            new double[] { 1 },
-            new double[] { 1 },
-            new double[] { 0 }
-    };
-
+    string[] sampleText;
+    public int textSize, distortion, maxZV, minDist;
+    public string startSlovo, filePathBigrams, filePathPreceding;
+    public List<string> sentense;
 
     void Start()
     {
-        Generator.Seed = 0;
-
-        network = new ActivationNetwork(new SigmoidFunction(), 2, 4, 1);
-
-        teacher = new BackPropagationLearning(network)
-        {
-            LearningRate = 0.2,
-            Momentum = 0.0
-        };
-
         textGenerator = new TextGenerator(distortion);
-        filePath = Path.Combine(Application.persistentDataPath, "bigrams.gz");
-        // filePath = Path.Combine(Application.persistentDataPath, "bigrams.json");
+        filePathBigrams = Path.Combine(Application.persistentDataPath, "bigrams.gz");
+        filePathPreceding = Path.Combine(Application.persistentDataPath, "perceding.gz");
     }
 
     [Button]
     private async void SaveBigrams()
     {
-        await BigramsStorage.SaveBigramsAsync(textGenerator.GetBigrams(), filePath);
-        // BigramsStorage.SaveBigrams(textGenerator.GetBigrams(), filePath);
+        await BigramsStorage.SaveBigramsAsync(textGenerator.GetBigrams(), filePathBigrams);
+        await BigramsStorage.SavePrecedingAsync(textGenerator.GetPreceding(), filePathPreceding);
     }
 
     [Button]
     private async void LoadBigrams()
     {
-        var loadedBigrams = await BigramsStorage.LoadBigramsAsync(filePath);
-        // var loadedBigrams = BigramsStorage.LoadBigrams(filePath);
+        var loadedBigrams = await BigramsStorage.LoadBigramsAsync(filePathBigrams);
+        var loadedPreceding = await BigramsStorage.LoadPrecedingAsync(filePathPreceding);
         textGenerator.SetBigrams(loadedBigrams);
+        textGenerator.SetPreceding(loadedPreceding);
     }
 
     [Button]
@@ -77,7 +43,7 @@ public class TextTEST : MonoBehaviour
 
         if (textAsset != null)
         {
-            sampleText = textAsset.text;
+            sampleText = textAsset.text.Split(new char[] { ' ', '.', ',', ';', '!', '?' }, System.StringSplitOptions.RemoveEmptyEntries);
         }
         else
         {
@@ -91,39 +57,21 @@ public class TextTEST : MonoBehaviour
         textGenerator.Train(sampleText);
     }
 
-    [Button]
-    private void Generate()
-    {
-        Debug.Log(textGenerator.GenerateSentence(startSlovo, textSize));
-    }
-
-    [Button]
-    private void GenerateRandom()
-    {
-        Debug.Log(textGenerator.GenerateSentence(Char.ToString(sampleText[Random.Range(0, sampleText.Length)]), textSize));
-    }
+    // [Button]
+    // private void GenerateRandom()
+    // {
+    //     Debug.Log(textGenerator.GenerateSentence(sampleText[Random.Range(0, sampleText.Length)], textSize));
+    // }
 
     [Button]
     private void GenerateSentence()
     {
-        Debug.Log(textGenerator.GenerateSentence(sentense, maxZV));
+        Debug.Log(textGenerator.GenerateSentenceWithWords(textSize, sentense, minDist));
     }
 
-    [Button]
-    private void Network()
-    {
-        // Обучение
-        for (int i = 0; i < 1000; i++)
-        {
-            double error = teacher.RunEpoch(inputs, outputs);
-            Debug.Log($"Эпоха {i}, Ошибка: {error}");
-        }
-
-        // Тестирование
-        foreach (var input in inputs)
-        {
-            double[] output = network.Compute(input);
-            Debug.Log($"Вход: {input[0]}, {input[1]} -> Выход: {output[0]}");
-        }
-    }
+    // [Button]
+    // private void GenerateBestSentence()
+    // {
+    //     Debug.Log(textGenerator.GenerateBestSentenceWithWords(textSize, sentense, minDist));
+    // }
 }

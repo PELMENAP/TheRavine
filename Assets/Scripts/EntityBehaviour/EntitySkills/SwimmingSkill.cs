@@ -2,11 +2,11 @@ using UnityEngine;
 public class SwimmingSkill : ISkill
 {
     public string SkillName { get; set; }
-    public float EnergyCost { get; set; }
-    public float RechargeTime { get; set; }
+    public int EnergyCost { get; set; }
+    public int RechargeTime { get; set; }
     private float lastUsedTime;
 
-    public SwimmingSkill(string name, float energyCost, float rechargeTime)
+    public SwimmingSkill(string name, int energyCost, int rechargeTime)
     {
         SkillName = name;
         EnergyCost = energyCost;
@@ -14,12 +14,12 @@ public class SwimmingSkill : ISkill
         lastUsedTime = -RechargeTime;
     }
 
-    public void Use(EntityExistInfo entity)
+    public void Use(IMainData entity)
     {
         if (CanUse(entity))
         {
-            Debug.Log($"{entity.Name} использует навык {SkillName}");
-            entity.DecreaseEnergy(EnergyCost);
+            Debug.Log($"{entity.name} использует навык {SkillName}");
+            entity.stats.DecreaseEnergy(EnergyCost);
             lastUsedTime = Time.time;
         }
         else
@@ -28,9 +28,9 @@ public class SwimmingSkill : ISkill
         }
     }
 
-    public bool CanUse(EntityExistInfo entity)
+    public bool CanUse(IMainData entity)
     {
-        return entity.GetEnergy() >= EnergyCost && Time.time - lastUsedTime >= RechargeTime;
+        return entity.stats.energy >= EnergyCost && Time.time - lastUsedTime >= RechargeTime;
     }
 
     public void Recharge()

@@ -4,6 +4,6 @@ using UnityEngine;
 public class SkillData : ScriptableObject
 {
     public string SkillName;
-    public float EnergyCost;
-    public float RechargeTime;
+    [Min(0)] public int EnergyCost;
+    [Min(0)] public int RechargeTime;
 }

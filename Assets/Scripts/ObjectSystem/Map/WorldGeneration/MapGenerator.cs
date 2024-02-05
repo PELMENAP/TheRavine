@@ -73,7 +73,7 @@ namespace TheRavine.Generator
         private List<IEndless> endless = new List<IEndless>(3);
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
-            viewer = locator.GetService<PlayerData>().transform;
+            viewer = locator.GetPlayerTransform();
             objectSystem = locator.GetService<ObjectSystem>();
             DayCycle.newDay += UpdateNAL;
             if (endlessFlag[0])
