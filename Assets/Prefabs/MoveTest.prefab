@@ -50,6 +50,8 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -107,6 +109,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4990245179154581794}
   - component: {fileID: 4990245179154581797}
+  - component: {fileID: 6635269952042195390}
   - component: {fileID: 4990245179154581796}
   - component: {fileID: 4990245179154581795}
   - component: {fileID: 6407153370186291068}
@@ -151,6 +154,8 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -186,6 +191,23 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &6635269952042195390
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4990245179154581798}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63b09e1ac1511d0fa98f1d5143676b11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  data: {fileID: 6635269952042195390}
+  moveController: {fileID: 4990245179154581796}
+  animator: {fileID: 0}
+  botTransform: {fileID: 4990245179154581794}
+  botRigidbody: {fileID: 4990245179154581795}
 --- !u!114 &4990245179154581796
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -330,6 +352,8 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:

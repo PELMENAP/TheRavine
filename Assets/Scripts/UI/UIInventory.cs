@@ -7,6 +7,7 @@ using TheRavine.InventoryElements;
 using TheRavine.Generator;
 using TheRavine.ObjectControl;
 using TheRavine.Extentions;
+using TheRavine.Services;
 
 namespace TheRavine.Inventory
 {
@@ -22,12 +23,12 @@ namespace TheRavine.Inventory
         private int activeCell = 1;
         public InventoryWithSlots inventory => tester.inventory;
         private UIInventoryTester tester;
-        [HideInInspector] public PlayerData playerData;
+        [HideInInspector] public PlayerEntity playerData;
         private MapGenerator generator;
         private ObjectSystem objectSystem;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
-            playerData = locator.GetService<PlayerData>();
+            playerData = locator.GetService<PlayerEntity>();
             generator = locator.GetService<MapGenerator>();
             objectSystem = locator.GetService<ObjectSystem>();
             var uiSlot = GetComponentsInChildren<UIInventorySlot>();
@@ -70,7 +71,7 @@ namespace TheRavine.Inventory
             if (slot.isEmpty)
                 return;
             IInventoryItem item = activeCells[activeCell - 1]._uiInventoryItem.item;
-            if (objectSystem.TryAddToGlobal(position, item.info.prefab.GetInstanceID(), item.info.title, 1, InstanceType.Inter))
+            if (objectSystem.TryAddToGlobal(position, item.info.prefab.GetInstanceID(), 1, InstanceType.Inter))
             {
                 item.state.amount--;
                 if (slot.amount <= 0)
@@ -150,13 +151,13 @@ namespace TheRavine.Inventory
                 SpreadPattern pattern = data.pickUpPattern;
                 if (pattern != null)
                 {
-                    objectSystem.TryAddToGlobal(position, pattern.main.prefab.GetInstanceID(), pattern.main.title, pattern.main.amount, pattern.main.iType, (position.x + position.y) % 2 == 0);
+                    objectSystem.TryAddToGlobal(position, pattern.main.prefab.GetInstanceID(), pattern.main.amount, pattern.main.iType, (position.x + position.y) % 2 == 0);
                     if (pattern.other.Length != 0)
                     {
                         for (byte i = 0; i < pattern.other.Length; i++)
                         {
                             Vector2 newPos = Extention.GenerateRandomPointAround(position, pattern.minDis, pattern.maxDis);
-                            objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].title, pattern.other[i].amount, pattern.other[i].iType, Extention.newx < position.x);
+                            objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].amount, pattern.other[i].iType, Extention.newx < position.x);
                         }
                     }
                     print("leave pattern");

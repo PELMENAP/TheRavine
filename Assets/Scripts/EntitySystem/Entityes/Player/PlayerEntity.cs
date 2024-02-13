@@ -1,18 +1,22 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using TMPro;
 
-public class PlayerData : AEntityData, ISetAble
+using TheRavine.EntityControl;
+using TheRavine.Services;
+
+public class PlayerEntity : AStatePatternData, ISetAble, IEntity
 {
-    private ServiceLocator serviceLocator;
+    [SerializeField] private EntityGameData _entityGameData;
+    public EntityGameData entityGameData { get { return _entityGameData; } set { } }
+
     public CM cameraMen;
     [SerializeField] private PlayerDialogOutput output;
-    public static PlayerData data;
-    public TextMeshProUGUI InputWindow;
+    public static PlayerEntity data; // не надо сингелтона
+    public TextMeshProUGUI InputWindow; // не далжен игрок этим заниматься
     public float reloadSpeed, MOVEMENT_BASE_SPEED, maxMouseDis, CROSSHAIR_DISTANSE;
-    public Action<Vector2> placeObject, aimRaise, setMouse;
+    public UnityAction<Vector2> placeObject, aimRaise, setMouse;
     public Vector3 factMousePosition;
     private IControllable controller;
 
@@ -22,7 +26,6 @@ public class PlayerData : AEntityData, ISetAble
 
     public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
-        serviceLocator = locator;
         data = this;
         cameraMen.SetUp(null, locator);
         output.SetUp(null, locator);
@@ -34,16 +37,13 @@ public class PlayerData : AEntityData, ISetAble
         callback?.Invoke();
     }
 
+    public void SetUpEntityData(EntityInfo _entityInfo)
+    {
+        _entityGameData = new EntityGameData(_entityInfo);
+    }
+    public Vector2 GetEntityPosition() => new Vector2(this.transform.position.x, this.transform.position.y);
 
-    // private void Update()
-    // {
-    //     if (Input.GetKeyUp("="))
-    //         ui.ActivateSkill("Rush");
-    //     else if (Input.GetKeyUp("-"))
-    //         ui.DeactivateSkill("Rush");
-    // }
-
-    private void FixedUpdate()
+    public void UpdateEntityCycle()
     {
         if (behaviourCurrent != null)
         {
@@ -54,18 +54,13 @@ public class PlayerData : AEntityData, ISetAble
 
     protected override void Init()
     {
-        InitUI();
         InitBehaviour();
     }
 
-    private void InitUI()
+    protected void InitBehaviour()
     {
-    }
-
-    protected override void InitBehaviour()
-    {
-        behavioursMap = new Dictionary<Type, IPlayerBehaviour>();
-        Action idleAction = controller.Move;
+        behavioursMap = new Dictionary<System.Type, IPlayerBehaviour>();
+        System.Action idleAction = controller.Move;
         idleAction += controller.Animate;
         idleAction += controller.Aim;
         idleAction += AimSkills;
@@ -118,17 +113,17 @@ public class PlayerData : AEntityData, ISetAble
 
     public void Priking()
     {
-        StartCoroutine(Prick());
+        // StartCoroutine(Prick());
     }
 
-    private IEnumerator Prick()
-    {
-        // moving = false;
-        // animator.SetBool("isPrick", true);
-        yield return new WaitForSeconds(1);
-        // animator.SetBool("isPrick", false);
-        // moving = true;
-    }
+    // private IEnumerator Prick()
+    // {
+    //     // moving = false;
+    //     // animator.SetBool("isPrick", true);
+    //     yield return new WaitForSeconds(1);
+    //     // animator.SetBool("isPrick", false);
+    //     // moving = true;
+    // }
 
     public void MoveTo(Vector2 newPosition)
     {
@@ -149,5 +144,14 @@ public class PlayerData : AEntityData, ISetAble
         behavioursMap.Clear();
         cameraMen.BreakUp();
         output.BreakUp();
+    }
+
+    public void EnableVeiw()
+    {
+
+    }
+    public void DisableView()
+    {
+
     }
 }

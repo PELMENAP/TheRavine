@@ -6,6 +6,8 @@ using UnityEngine.InputSystem.EnhancedTouch;
 using TheRavine.Inventory;
 using TheRavine.Generator;
 using TheRavine.ObjectControl;
+using TheRavine.EntityControl;
+using TheRavine.Services;
 
 namespace TheRavine.Base
 {
@@ -15,32 +17,38 @@ namespace TheRavine.Base
         private ServiceLocator serviceLocator = new ServiceLocator();
         public byte tickPerUpdate;
         public StateMachine<Bootstrap> StateMachine { get; private set; }
-        private Queue<ISetAble> _setAble = new Queue<ISetAble>();
+        public Queue<ISetAble> _setAble = new Queue<ISetAble>();
         private Queue<ISetAble> _disAble = new Queue<ISetAble>();
         [SerializeField] private Camera _camera;
         [SerializeField] private DayCycle sun;
         [SerializeField] private MapGenerator generator;
         [SerializeField] private ObjectSystem objectSystem;
         [SerializeField] private UIInventory inventory;
-        [SerializeField] private PlayerData playerData;
+        [SerializeField] private PlayerEntity playerData;
         [SerializeField] private Terminal terminal;
+        [SerializeField] private EntitySystem entitySystem;
+        [SerializeField] private MobGenerator mobGenerator;
         [SerializeField] private GameObject help, ui;
         private void Start()
         {
             EnhancedTouchSupport.Enable();
-            serviceLocator.RegisterPlayer<PlayerData>();
-            serviceLocator.Register<PlayerData>(playerData);
+            serviceLocator.RegisterPlayer<PlayerEntity>();
+            serviceLocator.Register<PlayerEntity>(playerData);
             serviceLocator.Register<ObjectSystem>(objectSystem);
             serviceLocator.Register<UIInventory>(inventory);
             serviceLocator.Register<MapGenerator>(generator);
             serviceLocator.Register<DayCycle>(sun);
             serviceLocator.Register<Terminal>(terminal);
+            serviceLocator.Register<EntitySystem>(entitySystem);
+            serviceLocator.Register<MobGenerator>(mobGenerator);
             _setAble.Enqueue((ISetAble)objectSystem);
             _setAble.Enqueue((ISetAble)playerData);
             _setAble.Enqueue((ISetAble)inventory);
             _setAble.Enqueue((ISetAble)generator);
             _setAble.Enqueue((ISetAble)sun);
             _setAble.Enqueue((ISetAble)terminal);
+            _setAble.Enqueue((ISetAble)entitySystem);
+            _setAble.Enqueue((ISetAble)mobGenerator);
             if (Settings.SceneNumber == 1 || Settings.SceneNumber == 0)
             {
                 StateMachine = new StateMachine<Bootstrap>(

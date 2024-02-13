@@ -59,7 +59,7 @@ public class PlayerMovement : MonoBehaviour, IControllable
             movementDirection = Vector2.zero;
         movementSpeed = Mathf.Clamp(movementDirection.magnitude, 0.0f, 1.0f);
         movementDirection.Normalize();
-        rb.velocity = movementDirection * movementSpeed * PlayerData.data.MOVEMENT_BASE_SPEED;
+        rb.velocity = movementDirection * movementSpeed * PlayerEntity.data.MOVEMENT_BASE_SPEED;
         MoveMark();
     }
 
@@ -104,8 +104,8 @@ public class PlayerMovement : MonoBehaviour, IControllable
             isAccurance = false;
             return;
         }
-        PlayerData.data.setMouse?.Invoke(aim);
-        crosshair.localPosition = aim * PlayerData.data.CROSSHAIR_DISTANSE; ;
+        PlayerEntity.data.setMouse?.Invoke(aim);
+        crosshair.localPosition = aim * PlayerEntity.data.CROSSHAIR_DISTANSE; ;
         crosshair.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg + offset);
         crosshair.gameObject.SetActive(true);
         isAccurance = true;
@@ -124,11 +124,11 @@ public class PlayerMovement : MonoBehaviour, IControllable
             int currentY = Mathf.RoundToInt(playerTrans.position.y);
             for (int xOffset = -PickDistance; xOffset <= PickDistance; xOffset++)
                 for (int yOffset = -PickDistance; yOffset <= PickDistance; yOffset++)
-                    PlayerData.data.aimRaise?.Invoke(new Vector2(currentX + xOffset, currentY + yOffset));
+                    PlayerEntity.data.aimRaise?.Invoke(new Vector2(currentX + xOffset, currentY + yOffset));
         }
         else
         {
-            PlayerData.data.aimRaise?.Invoke(Extention.RoundVector2D(crosshair.position));
+            PlayerEntity.data.aimRaise?.Invoke(Extention.RoundVector2D(crosshair.position));
         }
     }
 
@@ -149,7 +149,7 @@ public class PlayerMovement : MonoBehaviour, IControllable
     private IEnumerator In()
     {
         act = false;
-        PlayerData.data.placeObject?.Invoke(Extention.RoundVector2D(crosshair.position));
+        PlayerEntity.data.placeObject?.Invoke(Extention.RoundVector2D(crosshair.position));
         yield return new WaitForSeconds(timeLimit);
         act = true;
     }

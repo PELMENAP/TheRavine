@@ -1,7 +1,6 @@
 using UnityEngine;
 public interface IObjectInfo
 {
-    string name { get; }
     ushort amount { get; }
     ushort poolSize { get; }
     InstanceType iType { get; }

@@ -1,16 +1,12 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class AEntityData : MonoBehaviour
+public abstract class AStatePatternData : MonoBehaviour
 {
     protected IPlayerBehaviour behaviourCurrent;
     protected Dictionary<Type, IPlayerBehaviour> behavioursMap;
     protected virtual void Init()
-    {
-    }
-    protected virtual void InitBehaviour()
     {
     }
 

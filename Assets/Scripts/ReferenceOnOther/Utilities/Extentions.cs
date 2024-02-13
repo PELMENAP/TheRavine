@@ -64,7 +64,7 @@ namespace TheRavine.Extentions
 
         private static Vector2 RoundVector2(Vector2 vec) => new Vector2(Mathf.RoundToInt(vec.x), Mathf.RoundToInt(vec.y));
         public static Vector2 Vector2D(Vector3 vec) => new Vector2(vec.x, vec.y);
-        public static Vector2 RoundVector2D(Vector3 vec) => RoundVector2(new Vector2(vec.x, vec.y));
+        public static Vector2 RoundVector2D(Vector3 vec) => RoundVector2(Vector2D(vec));
     }
 
 
@@ -136,16 +136,13 @@ namespace TheRavine.Extentions
     {
         public int Compare(Vector2 v1, Vector2 v2)
         {
-            // Сравнение по координатам X, а затем Y
             if (v1.x.CompareTo(v2.x) != 0)
-            {
                 return v1.x.CompareTo(v2.x);
-            }
             return v1.y.CompareTo(v2.y);
         }
     }
 
-    public class Pair<T, U>
+    public struct Pair<T, U>
     {
         public Pair(T first, U second)
         {
