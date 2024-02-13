@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System;
 using TMPro;
+
+using TheRavine.Services;
 using TheRavine.Generator;
 
 namespace TheRavine.Base
@@ -14,11 +16,11 @@ namespace TheRavine.Base
         [SerializeField] private InputActionReference EnterRef;
         public string input;
         private string[] words;
-        private PlayerData playerData;
+        private PlayerEntity playerData;
         private MapGenerator generator;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
-            playerData = locator.GetService<PlayerData>();
+            playerData = locator.GetService<PlayerEntity>();
             generator = locator.GetService<MapGenerator>();
             EnterRef.action.performed += OnEnter;
             callback?.Invoke();

@@ -50,7 +50,7 @@ namespace TheRavine.ObjectControl
             poDick.AddLast(objectToReuse);
         }
         public ushort GetPoolSize(int prefabID) => poolObjectDictionary[prefabID].Second;
-        public void IncreasePoolSize(int prefabID) => poolObjectDictionary[prefabID].Second++;
+        public void IncreasePoolSize(int prefabID) => poolObjectDictionary[prefabID] = new Pair<Transform, ushort>(poolObjectDictionary[prefabID].First, (ushort)(poolObjectDictionary[prefabID].Second + 1));
         public class ObjectInstance
         {
             private GameObject gameObject;

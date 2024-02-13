@@ -1,11 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using Cysharp.Threading.Tasks;
 
 using TheRavine.Base;
 using TheRavine.Extentions;
 using TheRavine.ObjectControl;
+using TheRavine.Services;
 
 namespace TheRavine.Generator
 {
@@ -14,7 +16,7 @@ namespace TheRavine.Generator
     {
         public const byte mapChunkSize = 16, chunkCount = 3, scale = 5, generationSize = scale * mapChunkSize, waterLevel = 1;
         public static Vector2 vectorOffset = new Vector2(generationSize, generationSize) * chunkCount / 2;
-        private Dictionary<Vector2, ChunkData> mapData = new Dictionary<Vector2, ChunkData>(128);
+        private Dictionary<Vector2, ChunkData> mapData = new Dictionary<Vector2, ChunkData>(64);
         public ChunkData GetMapData(Vector2 position)
         {
             if (!mapData.ContainsKey(position))
@@ -82,9 +84,9 @@ namespace TheRavine.Generator
                 endless.Add(new EndlessLiquids(this));
             if (endlessFlag[2])
                 endless.Add(new EndlessObjects(this, objectSystem));
-            for (sbyte i = -5; i < 5; i++)
+            for (sbyte i = -3; i < 3; i++)
             {
-                for (sbyte j = -5; j < 5; j++)
+                for (sbyte j = -3; j < 3; j++)
                 {
                     Vector2 centre = new Vector2(i, j);
                     mapData[centre] = GenerateMapData(centre);
@@ -105,7 +107,7 @@ namespace TheRavine.Generator
         private Queue<Vector2> NALQueueUpdate = new Queue<Vector2>(32);
         public void ClearNALQueue() => NALQueue.Clear();
         public void AddNALObject(Vector2 current) => NALQueue.Enqueue(current);
-        public byte step, deadChance = 0;
+        [SerializeField] private byte step, deadChance = 0;
         private async UniTaskVoid NAL()
         {
             await UniTask.Delay(10000);
@@ -114,28 +116,33 @@ namespace TheRavine.Generator
             while (NALthread)
             {
                 countCycle++;
+                if (NALQueue.Count == 0)
+                {
+                    await UniTask.Delay(1000);
+                    continue;
+                }
                 if (NALQueue.Count > 100)
                 {
                     if (countCycle % (step * step) != 0)
                     {
-                        await UniTask.Delay(10);
+                        NALQueue.Dequeue();
+                        await UniTask.Delay(100);
                         continue;
                     }
                 }
-                else if (countCycle % step != 0 || NALQueue.Count == 0)
+                else if (countCycle % step != 0)
                 {
-                    await UniTask.Delay(10);
+                    NALQueue.Dequeue();
+                    await UniTask.Delay(100);
                     continue;
                 }
                 deadChance = NALQueue.Count > 200 ? (byte)10 : (byte)0;
                 Vector2 current = NALQueue.Dequeue();
                 ObjectInstInfo instInfo = objectSystem.GetGlobalObjectInfo(current);
-                if (instInfo.name == null)
+                if (instInfo.prefabID == -1)
                     continue;
                 if (instInfo.prefabID == 0)
                 {
-                    print(instInfo.name);
-                    print(instInfo.name == null);
                     print(instInfo.prefabID);
                     print(instInfo.amount);
                     print(instInfo.objectType);
@@ -152,14 +159,14 @@ namespace TheRavine.Generator
                         continue;
                     }
                     objectSystem.RemoveFromGlobal(current);
-                    if (objectSystem.TryAddToGlobal(current, nextGenInfo.prefab.GetInstanceID(), nextGenInfo.title, nextGenInfo.amount, nextGenInfo.iType, (current.x + current.y) % 2 == 0))
+                    if (objectSystem.TryAddToGlobal(current, nextGenInfo.prefab.GetInstanceID(), nextGenInfo.amount, nextGenInfo.iType, (current.x + current.y) % 2 == 0))
                         NALQueueUpdate.Enqueue(current);
                     continue;
                 }
                 // ObjectInfo childObjectInfo = objectSystem.GetPrefabInfo(currentObjectInfo.childPrefab.GetInstanceID());
                 bool closeto = false;
-                for (sbyte x = -1; x <= 1; x++)
-                    for (sbyte y = -1; y <= 1; y++)
+                for (sbyte x = -3; x <= 3; x++)
+                    for (sbyte y = -3; y <= 3; y++)
                         if (x != 0 && y != 0 && objectSystem.ContainsGlobal(current + new Vector2(x, y)))
                             closeto = true;
                 NAlInfo nalinfo = currentObjectPrefabData.nalinfo;
@@ -169,14 +176,14 @@ namespace TheRavine.Generator
                     SpreadPattern pattern = currentObjectPrefabData.deadPattern;
                     if (pattern == null)
                         continue;
-                    if (objectSystem.TryAddToGlobal(current, pattern.main.prefab.GetInstanceID(), pattern.main.title, pattern.main.amount, pattern.main.iType, (current.x + current.y) % 2 == 0))
+                    if (objectSystem.TryAddToGlobal(current, pattern.main.prefab.GetInstanceID(), pattern.main.amount, pattern.main.iType, (current.x + current.y) % 2 == 0))
                         NALQueueUpdate.Enqueue(current);
                     if (pattern.other.Length != 0)
                     {
                         for (byte i = 0; i < pattern.other.Length; i++)
                         {
                             Vector2 newPos = Extention.GenerateRandomPointAround(current, pattern.minDis, pattern.maxDis);
-                            if (objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].title, pattern.other[i].amount, pattern.other[i].iType, Extention.newx < current.x))
+                            if (objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].amount, pattern.other[i].iType, Extention.newx < current.x))
                                 NALQueueUpdate.Enqueue(newPos);
                         }
                     }
@@ -184,6 +191,9 @@ namespace TheRavine.Generator
                 }
                 else
                 {
+                    byte height = GetMapHeight(current);
+                    if (height < 3 || height > 7)
+                        continue;
                     byte attempts = nalinfo.attempt;
                     while (attempts > 0)
                     {
@@ -191,10 +201,10 @@ namespace TheRavine.Generator
                         {
                             int xpos = (int)current.x, ypos = (int)current.y;
                             Vector2 newPos = new Vector2(Random.Range(xpos - nalinfo.distance, xpos + nalinfo.distance), Random.Range(ypos - nalinfo.distance, ypos + nalinfo.distance));
-                            if (objectSystem.TryAddToGlobal(newPos, nextGenInfo.prefab.GetInstanceID(), nextGenInfo.title, nextGenInfo.amount, nextGenInfo.iType, (newPos.x + newPos.y) % 2 == 0))
+                            if (objectSystem.TryAddToGlobal(newPos, nextGenInfo.prefab.GetInstanceID(), nextGenInfo.amount, nextGenInfo.iType, (newPos.x + newPos.y) % 2 == 0))
                                 NALQueueUpdate.Enqueue(newPos);
                         }
-                        //await UniTask.Delay(100);
+                        await UniTask.Delay(10);
                         attempts--;
                     }
                 }
@@ -210,17 +220,13 @@ namespace TheRavine.Generator
             while (NALQueueUpdate.Count > 0)
             {
                 Vector2 item = NALQueueUpdate.Dequeue();
-                byte height = GetMapHeight(item);
-                if (height < 3 || height > 7)
-                    continue;
                 GetMapData(GetChunkPosition(item + vectorOffset)).objectsToInst.Add(item);
             }
             ExtraUpdate();
         }
         private float[,] noiseMap = new float[mapChunkSize, mapChunkSize];
+        public UnityAction<Vector2, byte, Vector2> onSpawnPoint;
         // private int[] countOfHeights = new int[9];
-        bool isEqual;
-        float currentHeight;
         public ChunkData GenerateMapData(Vector2 centre)
         {
             SortedSet<Vector2> objectsToInst = new SortedSet<Vector2>(new Vector2Comparer());
@@ -229,12 +235,12 @@ namespace TheRavine.Generator
                 Noise.GenerateNoiseMap(ref noiseMap, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, centre * mapChunkSize, Noise.NormalizeMode.Local);
             else
                 Noise.GenerateNoiseMap(ref noiseMap, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, centre * mapChunkSize, Noise.NormalizeMode.Global);
-            isEqual = true;
+            bool isEqual = true;
             for (byte x = 0; x < mapChunkSize; x++)
             {
                 for (byte y = 0; y < mapChunkSize; y++)
                 {
-                    currentHeight = noiseMap[x, y];
+                    float currentHeight = noiseMap[x, y];
                     for (byte i = 0; i < regions.Length; i++)
                     {
                         if (currentHeight >= regions[i].height)
@@ -256,10 +262,12 @@ namespace TheRavine.Generator
                             WFCA(posstruct, (byte)((seed + (int)x + (int)y) % sinfo.info.tileInfo.Length), sinfo.info);
                             foreach (var item in WFCAobjects)
                             {
-                                if (objectSystem.TryAddToGlobal(item.Key, item.Value.prefab.GetInstanceID(), item.Value.title, item.Value.amount, item.Value.iType, (x + y) % 2 == 0))
+                                if (objectSystem.TryAddToGlobal(item.Key, item.Value.prefab.GetInstanceID(), item.Value.amount, item.Value.iType, (x + y) % 2 == 0))
                                     objectsToInst.Add(item.Key);
                             }
                             structHere = true;
+                            if (sinfo.isSpawnPoint)
+                                onSpawnPoint?.Invoke(posstruct, heightMap[x, y], centre);
                             break;
                         }
                     }
@@ -271,7 +279,7 @@ namespace TheRavine.Generator
                         if ((x * y + (byte)centre.x * centre.y + seed % 100) % ginfo.Chance == 0)
                         {
                             Vector2 posobj = new Vector2(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale) - vectorOffset;
-                            if (objectSystem.TryAddToGlobal(posobj, ginfo.info.prefab.GetInstanceID(), ginfo.info.title, ginfo.info.amount, ginfo.info.iType, (x + y) % 2 == 0))
+                            if (objectSystem.TryAddToGlobal(posobj, ginfo.info.prefab.GetInstanceID(), ginfo.info.amount, ginfo.info.iType, (x + y) % 2 == 0))
                             {
                                 objectsToInst.Add(posobj);
                                 break;
@@ -325,6 +333,7 @@ namespace TheRavine.Generator
             }
         }
         private Vector2 OldVposition, position;
+        public UnityAction<Vector2> onUpdate;
         private async UniTaskVoid GenerationUpdate()
         {
             while (!DataStorage.sceneClose)
@@ -338,6 +347,7 @@ namespace TheRavine.Generator
                         await UniTask.WaitForFixedUpdate();
                         generator.UpdateChunk(position);
                     }
+                    onUpdate?.Invoke(position);
                 }
                 await UniTask.Delay(1000);
             }
@@ -354,100 +364,100 @@ namespace TheRavine.Generator
         private Vector2 GetPlayerPosition() => Extention.RoundVector2D(viewer.position / (scale * mapChunkSize));
         public void RotateBasis(sbyte angle)
         {
-            if (rotateValue != 0f)
-                return;
-            if (angle == 90)
-            {
-                if (rotateTarget != 0f)
-                    return;
-                RotationCome().Forget();
-            }
-            else if (angle == -90)
-            {
-                if (rotateTarget != 270f)
-                    return;
-                RotationBack().Forget();
-            }
+            // if (rotateValue != 0f)
+            //     return;
+            // if (angle == 90)
+            // {
+            //     if (rotateTarget != 0f)
+            //         return;
+            //     RotationCome().Forget();
+            // }
+            // else if (angle == -90)
+            // {
+            //     if (rotateTarget != 270f)
+            //         return;
+            //     RotationBack().Forget();
+            // }
         }
         public float rotateValue = 0f, rotateTarget = 0f;
-        private static EnumerableSnapshot<int> objectsSnapshot;
-        private Dictionary<int, ushort> objectUpdate = new Dictionary<int, ushort>(16);
-        List<Vector2> chunkCoord = new List<Vector2>();
-        private async UniTaskVoid RotationCome()
-        {
-            rotateValue = 0.1f;
-            rotateTarget = 270f;
-            Vector2 Vposition = GetPlayerPosition();
-            ObjectInfo[] prefabInfo = objectSystem._info;
-            for (int i = 0; i < prefabInfo.Length; i++)
-                objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
-            for (byte yOffset = 0; yOffset < chunkCount; yOffset++)
-                for (byte xOffset = 0; xOffset < chunkCount; xOffset++)
-                    chunkCoord.Add(new Vector2(Vposition.x + xOffset, Vposition.y + yOffset));
-            do
-            {
-                foreach (var vector in chunkCoord)
-                {
-                    foreach (var item in GetMapData(vector).objectsToInst)
-                    {
-                        ObjectInstInfo info = objectSystem.GetGlobalObjectInfo(item);
-                        if (info.prefabID == 0)
-                            continue;
-                        objectUpdate[info.prefabID]++;
-                        objectSystem.Reuse(info.prefabID, item, info.flip, rotateValue);
-                    }
-                }
-                objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
-                foreach (var ID in objectsSnapshot)
-                {
-                    for (byte j = 0; j < objectSystem.GetPrefabInfo(ID).poolSize - objectUpdate[ID]; j++)
-                        objectSystem.Deactivate(ID);
-                    objectUpdate[ID] = 0;
-                }
-                objectSystem.transform.Rotate(0, 0, -rotateValue, Space.World);
-                viewer.Rotate(0, 0, rotateValue, Space.Self);
-                await UniTask.WaitForFixedUpdate();
-            } while (objectSystem.transform.eulerAngles.z > rotateTarget);
-            rotateValue = 0f;
-            await UniTask.WaitForFixedUpdate();
-        }
+        // private static EnumerableSnapshot<int> objectsSnapshot;
+        // private Dictionary<int, ushort> objectUpdate = new Dictionary<int, ushort>(16);
+        // List<Vector2> chunkCoord = new List<Vector2>();
+        // private async UniTaskVoid RotationCome()
+        // {
+        //     rotateValue = 0.1f;
+        //     rotateTarget = 270f;
+        //     Vector2 Vposition = GetPlayerPosition();
+        //     ObjectInfo[] prefabInfo = objectSystem._info;
+        //     for (int i = 0; i < prefabInfo.Length; i++)
+        //         objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
+        //     for (byte yOffset = 0; yOffset < chunkCount; yOffset++)
+        //         for (byte xOffset = 0; xOffset < chunkCount; xOffset++)
+        //             chunkCoord.Add(new Vector2(Vposition.x + xOffset, Vposition.y + yOffset));
+        //     do
+        //     {
+        //         foreach (var vector in chunkCoord)
+        //         {
+        //             foreach (var item in GetMapData(vector).objectsToInst)
+        //             {
+        //                 ObjectInstInfo info = objectSystem.GetGlobalObjectInfo(item);
+        //                 if (info.prefabID == 0)
+        //                     continue;
+        //                 objectUpdate[info.prefabID]++;
+        //                 objectSystem.Reuse(info.prefabID, item, info.flip, rotateValue);
+        //             }
+        //         }
+        //         objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
+        //         foreach (var ID in objectsSnapshot)
+        //         {
+        //             for (byte j = 0; j < objectSystem.GetPrefabInfo(ID).poolSize - objectUpdate[ID]; j++)
+        //                 objectSystem.Deactivate(ID);
+        //             objectUpdate[ID] = 0;
+        //         }
+        //         objectSystem.transform.Rotate(0, 0, -rotateValue, Space.World);
+        //         viewer.Rotate(0, 0, rotateValue, Space.Self);
+        //         await UniTask.WaitForFixedUpdate();
+        //     } while (objectSystem.transform.eulerAngles.z > rotateTarget);
+        //     rotateValue = 0f;
+        //     await UniTask.WaitForFixedUpdate();
+        // }
 
-        private async UniTaskVoid RotationBack()
-        {
-            rotateValue = -0.1f;
-            rotateTarget = 360f;
-            Vector2 Vposition = GetPlayerPosition();
-            ObjectInfo[] prefabInfo = objectSystem._info;
-            for (int i = 0; i < prefabInfo.Length; i++)
-                objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
-            do
-            {
-                foreach (var vector in chunkCoord)
-                {
-                    foreach (var item in GetMapData(vector).objectsToInst)
-                    {
-                        ObjectInstInfo info = objectSystem.GetGlobalObjectInfo(item);
-                        if (info.prefabID == 0)
-                            continue;
-                        objectUpdate[info.prefabID]++;
-                        objectSystem.Reuse(info.prefabID, item, info.flip, rotateValue);
-                    }
-                }
-                objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
-                foreach (var ID in objectsSnapshot)
-                {
-                    for (byte j = 0; j < objectSystem.GetPrefabInfo(ID).poolSize - objectUpdate[ID]; j++)
-                        objectSystem.Deactivate(ID);
-                    objectUpdate[ID] = 0;
-                }
-                objectSystem.transform.Rotate(0, 0, -rotateValue, Space.World);
-                viewer.Rotate(0, 0, rotateValue, Space.Self);
-                await UniTask.WaitForFixedUpdate();
-            } while ((int)objectSystem.transform.eulerAngles.z != 0);
-            rotateValue = 0f;
-            rotateTarget = 0f;
-            await UniTask.WaitForFixedUpdate();
-        }
+        // private async UniTaskVoid RotationBack()
+        // {
+        //     rotateValue = -0.1f;
+        //     rotateTarget = 360f;
+        //     Vector2 Vposition = GetPlayerPosition();
+        //     ObjectInfo[] prefabInfo = objectSystem._info;
+        //     for (int i = 0; i < prefabInfo.Length; i++)
+        //         objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
+        //     do
+        //     {
+        //         foreach (var vector in chunkCoord)
+        //         {
+        //             foreach (var item in GetMapData(vector).objectsToInst)
+        //             {
+        //                 ObjectInstInfo info = objectSystem.GetGlobalObjectInfo(item);
+        //                 if (info.prefabID == 0)
+        //                     continue;
+        //                 objectUpdate[info.prefabID]++;
+        //                 objectSystem.Reuse(info.prefabID, item, info.flip, rotateValue);
+        //             }
+        //         }
+        //         objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
+        //         foreach (var ID in objectsSnapshot)
+        //         {
+        //             for (byte j = 0; j < objectSystem.GetPrefabInfo(ID).poolSize - objectUpdate[ID]; j++)
+        //                 objectSystem.Deactivate(ID);
+        //             objectUpdate[ID] = 0;
+        //         }
+        //         objectSystem.transform.Rotate(0, 0, -rotateValue, Space.World);
+        //         viewer.Rotate(0, 0, rotateValue, Space.Self);
+        //         await UniTask.WaitForFixedUpdate();
+        //     } while ((int)objectSystem.transform.eulerAngles.z != 0);
+        //     rotateValue = 0f;
+        //     rotateTarget = 0f;
+        //     await UniTask.WaitForFixedUpdate();
+        // }
 
         public void BreakUp()
         {
@@ -469,9 +479,7 @@ namespace TheRavine.Generator
                 endless.Add(new EndlessLiquids(this));
             endlessFlag[2] = false;
             foreach (var generator in endless)
-            {
                 generator.UpdateChunk(Extention.RoundVector2D(viewerTest.position / (scale * mapChunkSize)));
-            }
         }
     }
 
@@ -493,10 +501,11 @@ namespace TheRavine.Generator
     [System.Serializable]
     public struct StructInfoGeneration
     {
+        public bool isSpawnPoint;
         public byte Chance;
         public StructInfo info;
     }
-    public class ChunkData
+    public struct ChunkData
     {
         public readonly byte[,] heightMap;
         public readonly bool isEqual;

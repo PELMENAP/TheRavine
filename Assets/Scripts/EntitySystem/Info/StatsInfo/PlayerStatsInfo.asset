@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 22ee039b235467c1e9f11ff5b769486e, type: 3}
-  m_Name: Entity_1
+  m_Name: PlayerStatsInfo
   m_EditorClassIdentifier: 
-  Energy: 50
-  MaxEnergy: 30
+  Energy: 100
+  MaxEnergy: 100

@@ -1,19 +1,20 @@
+using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
-using UnityEngine;
 using TMPro;
 using UnityEditor;
-using UnityEngine.UI;
 using NaughtyAttributes;
-using System.Linq;
-using System;
 
 using TheRavine.Base;
 using TheRavine.Generator;
 using TheRavine.Extentions;
 using TheRavine.ObjectControl;
+using TheRavine.EntityControl;
 
 using DS.ScriptableObjects;
 
@@ -32,7 +33,7 @@ public class Test : MonoBehaviour
     public SkillData flyingSkill;
     public SkillData swimmingSkill;
 
-    public EntityStatsInfo statsInfo;
+    public EntityInfo entityInfo;
 
     private Vector2 RoundVector(Vector2 vec) => new Vector2((int)vec.x, (int)vec.y);
 
@@ -44,9 +45,9 @@ public class Test : MonoBehaviour
     {
         Settings.isShadow = isShadow;
         Settings._controlType = control;
-        playerEntity = new EntityGameData("player", 0, new EntityStats(statsInfo));
-        SkillSystem.AddEntity(playerEntity);
-        SkillSystem.AddSkillToEntity(playerEntity, SkillBuilder.CreateSkill(flyingSkill));
+        // playerEntity = new EntityGameData(entityInfo);
+        // SkillSystem.AddEntity(playerEntity);
+        // SkillSystem.AddSkillToEntity(playerEntity, SkillBuilder.CreateSkill(flyingSkill));
         point.action.performed += mobile;
     }
 
@@ -54,18 +55,18 @@ public class Test : MonoBehaviour
     private void ShowPlayerEntity()
     {
         print(playerEntity.stats.energy);
-        print(playerEntity.skills["FlyingSkill"].GetRechargeTime());
+        print(playerEntity.skills[flyingSkill.SkillName].GetRechargeTime());
     }
     [Button]
     private void UseSkillByFacade()
     {
-        SkillSystem.GetEntitySkill(playerEntity, "FlyingSkill").Use(playerEntity);
+        SkillSystem.GetEntitySkill(playerEntity, flyingSkill.SkillName).Use(playerEntity);
     }
 
     [Button]
     private void UseSkillBySelf()
     {
-        playerEntity.skills["FlyingSkill"].Use(playerEntity);
+        playerEntity.skills[flyingSkill.SkillName].Use(playerEntity);
     }
     Vector2 position;
     ChunkData map;

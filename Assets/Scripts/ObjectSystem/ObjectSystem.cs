@@ -4,6 +4,8 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEditor;
 
+using TheRavine.Services;
+
 namespace TheRavine.ObjectControl
 {
     public class ObjectSystem : MonoBehaviour, ISetAble
@@ -20,16 +22,16 @@ namespace TheRavine.ObjectControl
                 return new ObjectInstInfo();
             return global[position];
         }
-        public bool TryAddToGlobal(Vector2 position, int _prefabID, string _name, int _amount, InstanceType _objectType, bool _flip = false)
+        public bool TryAddToGlobal(Vector2 position, int _prefabID, ushort _amount, InstanceType _objectType, bool _flip = false)
         {
             if (global.ContainsKey(position))
-                if (global[position].name == _name && global[position].objectType == InstanceType.Inter)
+                if (global[position].prefabID == _prefabID && global[position].objectType == InstanceType.Inter)
                 {
-                    global[position] = new ObjectInstInfo(global[position].prefabID, global[position].name, global[position].amount + _amount, global[position].objectType, global[position].flip); ;
+                    global[position] = new ObjectInstInfo(global[position].prefabID, (ushort)(global[position].amount + _amount), global[position].objectType, global[position].flip); ;
                     return true;
                 }
             ObjectInfo curdata = GetPrefabInfo(_prefabID);
-            ObjectInstInfo objectInfo = new ObjectInstInfo(_prefabID, _name, _amount, _objectType, _flip);
+            ObjectInstInfo objectInfo = new ObjectInstInfo(_prefabID, _amount, _objectType, _flip);
             if (curdata.addspace.Length == 0)
                 return global.TryAdd(position, objectInfo);
             global[position] = objectInfo;
@@ -37,14 +39,14 @@ namespace TheRavine.ObjectControl
                 global[position + curdata.addspace[i]] = new ObjectInstInfo();
             return true;
         }
-        private void AddToGlobal(Vector2 position, int _prefabID, string _name, ushort _amount, InstanceType _objectType, bool flip = false)
+        private void AddToGlobal(Vector2 position, int _prefabID, ushort _amount, InstanceType _objectType, bool flip = false)
         {
-            global[position] = new ObjectInstInfo(_prefabID, _name, _amount, _objectType, flip);
+            global[position] = new ObjectInstInfo(_prefabID, _amount, _objectType, flip);
         }
         public bool RemoveFromGlobal(Vector2 position)
         {
             ObjectInstInfo objectInfo = GetGlobalObjectInfo(position);
-            if (objectInfo.name == "&")
+            if (objectInfo.prefabID == -1)
                 return true;
             ObjectInfo curdata = GetPrefabInfo(objectInfo.prefabID);
             if (curdata.addspace.Length == 0)
@@ -60,10 +62,7 @@ namespace TheRavine.ObjectControl
         public bool Changed(Vector2 position) => changes.ContainsKey(position);
         //
         private IPoolManager<GameObject> PoolManagerBase;
-        public void CreatePool(GameObject prefab, ushort poolSize = 1)
-        {
-            PoolManagerBase.CreatePool(prefab, InstantiatePoolObject, poolSize);
-        }
+        public void CreatePool(GameObject prefab, ushort poolSize = 1) => PoolManagerBase.CreatePool(prefab, InstantiatePoolObject, poolSize);
         public void Reuse(int prefabID, Vector2 position, bool flip, float rotateValue) => PoolManagerBase.Reuse(prefabID, position, flip, rotateValue);
         public void Deactivate(int prefabID) => PoolManagerBase.Deactivate(prefabID);
         public ushort GetPoolSize(int prefabID) => PoolManagerBase.GetPoolSize(prefabID);
@@ -72,7 +71,7 @@ namespace TheRavine.ObjectControl
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
             PoolManagerBase = new PoolManager(this.transform);
-            for (int i = 0; i < _info.Length; i++)
+            for (byte i = 0; i < _info.Length; i++)
             {
                 info[_info[i].prefab.GetInstanceID()] = _info[i];
                 // print(_info[i].prefab.GetInstanceID());
@@ -82,7 +81,7 @@ namespace TheRavine.ObjectControl
         }
         private async UniTaskVoid FirstInstance()
         {
-            for (int i = 0; i < _info.Length; i++)
+            for (byte i = 0; i < _info.Length; i++)
             {
                 CreatePool(_info[i].prefab, _info[i].poolSize);
                 await UniTask.Delay(100);
@@ -100,14 +99,12 @@ namespace TheRavine.ObjectControl
 
     public struct ObjectInstInfo
     {
-        public readonly string name;
-        public int amount;
+        public ushort amount;
         public readonly int prefabID;
         public readonly InstanceType objectType;
         public bool flip;
-        public ObjectInstInfo(int _prefabID = -1, string _name = "&", int _amount = 1, InstanceType _objectType = InstanceType.Static, bool _flip = false)
+        public ObjectInstInfo(int _prefabID = -1, ushort _amount = 1, InstanceType _objectType = InstanceType.Static, bool _flip = false)
         {
-            name = _name;
             amount = _amount;
             prefabID = _prefabID;
             objectType = _objectType;

@@ -15,6 +15,8 @@ namespace TheRavine.Base
             {
                 Initializer.StartNewServise(null);
                 Initializer.StartNewServise(Initializer.Finally);
+                while (Initializer._setAble.Count > 0)
+                    Initializer.StartNewServise(null);
                 FaderOnTransit.instance.SetLogs("Начало игры");
                 FaderOnTransit.instance.FadeOut(() => aboba = true);
             }

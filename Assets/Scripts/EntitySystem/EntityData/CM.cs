@@ -2,6 +2,7 @@
 using UnityEngine.InputSystem;
 
 using TheRavine.Base;
+using TheRavine.Services;
 public class CM : MonoBehaviour, ISetAble
 {
     [SerializeField] private Transform cameratrans, playerTrans;
@@ -10,10 +11,10 @@ public class CM : MonoBehaviour, ISetAble
     public static bool cameraForMap;
     private Vector3 offset, targetPos;
     // private bool changeCam = false;
-    PlayerData PData;
+    PlayerEntity PData;
     public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
-        PData = locator.GetService<PlayerData>();
+        PData = locator.GetService<PlayerEntity>();
         // cameraForMap = false;
         playerTrans = PData.transform;
         offset = cameratrans.position - playerTrans.position;

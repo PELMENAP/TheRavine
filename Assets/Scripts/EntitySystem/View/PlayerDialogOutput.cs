@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 
+using TheRavine.Services;
 public class PlayerDialogOutput : MonoBehaviour, ISetAble
 {
     [SerializeField] private TextMeshPro dialogText;

@@ -1,12 +1,15 @@
-using System;
-using System.Collections;
+
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-public class BotData : AEntityData, ISetAble
+using TheRavine.EntityControl;
+using TheRavine.Services;
+public class BotEntity : AStatePatternData, ISetAble, IEntity
 {
-    public BotData data;
+    [SerializeField] private EntityGameData _entityGameData;
+    public EntityGameData entityGameData { get { return _entityGameData; } set { } }
+    public BotEntity data;
 
     public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
@@ -15,15 +18,23 @@ public class BotData : AEntityData, ISetAble
         // crosshair.gameObject.SetActive(false);
         callback?.Invoke();
     }
-    private void FixedUpdate()
+    public void SetUpEntityData(EntityInfo _entityInfo)
+    {
+        _entityGameData = new EntityGameData(_entityInfo);
+    }
+    public Vector2 GetEntityPosition()
+    {
+        return new Vector2(this.transform.position.x, this.transform.position.y);
+    }
+    public void UpdateEntityCycle()
     {
         if (behaviourCurrent != null)
             behaviourCurrent.Update();
     }
 
-    protected override void InitBehaviour()
+    protected void InitBehaviour()
     {
-        behavioursMap = new Dictionary<Type, IPlayerBehaviour>();
+        behavioursMap = new Dictionary<System.Type, IPlayerBehaviour>();
         BotBehaviourIdle Idle = new BotBehaviourIdle();
         // Idle.ERef = this;
         behavioursMap[typeof(BotBehaviourIdle)] = Idle;
@@ -53,6 +64,15 @@ public class BotData : AEntityData, ISetAble
     public Rigidbody2D botRigidbody;
 
     public void BreakUp()
+    {
+
+    }
+
+    public void EnableVeiw()
+    {
+
+    }
+    public void DisableView()
     {
 
     }

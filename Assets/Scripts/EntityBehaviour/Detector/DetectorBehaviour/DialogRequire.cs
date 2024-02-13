@@ -80,8 +80,8 @@ public class DialogRequire : MonoBehaviour
         do
         {
             yield return new WaitForSeconds(1f);
-            if (TimeUpdate.globalTimeInt - startSilent > silentOnGUI && !Dialog)
-                StartCoroutine(TypeLineIdle());
+            // if (TimeUpdate.globalTimeInt - startSilent > silentOnGUI && !Dialog)
+            //     StartCoroutine(TypeLineIdle());
             if ((Input.GetKey("0") || Input.GetKey("q")) && mayStartDialog)
             {
                 if (!Dialog && dialogComplete)
@@ -98,7 +98,7 @@ public class DialogRequire : MonoBehaviour
 
     private IEnumerator TypeLineIdle()
     {
-        startSilent = TimeUpdate.globalTimeInt;
+        // startSilent = TimeUpdate.globalTimeInt;
         text.text = "";
         foreach (char i in lines[UnityEngine.Random.Range(0, lines.Length)].ToCharArray())
         {

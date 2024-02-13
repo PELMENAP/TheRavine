@@ -1,6 +1,8 @@
 using UnityEngine;
 using Unity.Jobs;
+using Unity.Burst;
 using UnityEngine.Jobs;
+using Unity.Mathematics;
 using Unity.Collections;
 using System.Collections;
 using UnityEngine.Rendering.Universal;
@@ -75,6 +77,7 @@ namespace TheRavine.Base
             }
             dayJob = new DayJob()
             {
+                deltaTime = Time.deltaTime,
                 timeBridge = TimeBridge,
                 isdayBridge = IsdayBridge
             };
@@ -114,7 +117,12 @@ namespace TheRavine.Base
                 {
                     isday = IsdayBridge[0];
                     if (!IsdayBridge[0])
+                    {
+                        Light2DBridge.Dispose();
+                        Light2DIntensityBridge.Dispose();
+                        shadowsTransform.Dispose();
                         newDay?.Invoke();
+                    }
                     else
                         GC.Collect(1, GCCollectionMode.Forced);
                     await UniTask.Delay(1000);
@@ -128,35 +136,33 @@ namespace TheRavine.Base
                 await UniTask.WaitForFixedUpdate();
             }
             await UniTask.Delay(1000);
-            TimeBridge.Dispose();
-            IsdayBridge.Dispose();
-            Light2DBridge.Dispose();
-            Light2DIntensityBridge.Dispose();
+            BreakUp();
         }
 
         public void BreakUp()
         {
             closeThread = false;
-            // TimeBridge.Dispose();
-            // IsdayBridge.Dispose();
-            // Light2DBridge.Dispose();
-            // Light2DIntensityBridge.Dispose();
-            // shadowsTransform.Dispose();
+            TimeBridge.Dispose();
+            IsdayBridge.Dispose();
+            Light2DBridge.Dispose();
+            Light2DIntensityBridge.Dispose();
+            shadowsTransform.Dispose();
         }
-
+        [BurstCompile]
         public struct DayJob : IJob
         {
+            public float deltaTime;
             public NativeArray<float> timeBridge;
             public NativeArray<bool> isdayBridge;
             public void Execute()
             {
-                timeBridge[0] += (TimeUpdate.globalDeltaTime / 600) * timeBridge[4];
+                timeBridge[0] += (deltaTime / 600) * timeBridge[4];
                 if (timeBridge[0] > 1f)
                     timeBridge[0] = 0f;
                 if (timeBridge[0] >= 0.2f && timeBridge[0] <= 0.8f)
                 {
-                    timeBridge[1] = -Mathf.Cos((timeBridge[0] - 0.2f) / 0.6f * 3) * 200;
-                    timeBridge[2] = -Mathf.Sin((timeBridge[0] - 0.2f) / 0.6f * 3) * 200;
+                    timeBridge[1] = -math.cos((timeBridge[0] - 0.2f) / 0.6f * 3) * 200;
+                    timeBridge[2] = -math.sin((timeBridge[0] - 0.2f) / 0.6f * 3) * 200;
                     timeBridge[3] = (-280 / 9 * timeBridge[0] * timeBridge[0] + 280 / 9 * timeBridge[0] - 43 / 9 - 0.8f) / 2;
                     isdayBridge[0] = true;
                 }
@@ -165,6 +171,7 @@ namespace TheRavine.Base
             }
         }
 
+        [BurstCompile]
         public struct ShadowsJob : IJobParallelForTransform
         {
             [ReadOnly]
@@ -188,7 +195,7 @@ namespace TheRavine.Base
                     }
                 }
                 direction = shadowPosition - lightsBridge[lightIndex];
-                shadowTransform.rotation = Quaternion.Euler(50, 0, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90);
+                shadowTransform.rotation = Quaternion.Euler(50, 0, math.degrees(math.atan2(direction.y, direction.x)) - 90);
             }
         }
     }

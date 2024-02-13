@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 public class ActivateTextField : MonoBehaviour
 {
-    [SerializeField] private PlayerData playerData;
+    [SerializeField] private PlayerEntity playerData;
     [SerializeField] private GameObject window, stats;
     [SerializeField] private PlayerInput input;
     [SerializeField] private InputActionReference EnterRef;

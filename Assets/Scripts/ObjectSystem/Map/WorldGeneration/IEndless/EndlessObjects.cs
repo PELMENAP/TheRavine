@@ -14,6 +14,7 @@ namespace TheRavine.Generator
             private const byte chunkCount = MapGenerator.chunkCount;
             private ObjectSystem objectSystem;
             private Dictionary<int, ushort> objectUpdate = new Dictionary<int, ushort>(16);
+            private static EnumerableSnapshot<int> objectsSnapshot;
             public EndlessObjects(MapGenerator _generator, ObjectSystem _objectSystem)
             {
                 generator = _generator;
@@ -21,9 +22,8 @@ namespace TheRavine.Generator
                 ObjectInfo[] prefabInfo = objectSystem._info;
                 for (ushort i = 0; i < prefabInfo.Length; i++)
                     objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
+                objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
             }
-
-            private static EnumerableSnapshot<int> objectsSnapshot;
             public void UpdateChunk(Vector2 Vposition)
             {
                 for (byte yOffset = 0; yOffset < chunkCount; yOffset++)
@@ -34,7 +34,7 @@ namespace TheRavine.Generator
                         foreach (var item in generator.GetMapData(chunkCoord).objectsToInst)
                         {
                             ObjectInstInfo info = objectSystem.GetGlobalObjectInfo(item);
-                            if (!objectSystem.ContainsGlobal(item) || info.name == null)
+                            if (!objectSystem.ContainsGlobal(item) || info.prefabID == -1)
                                 continue;
                             objectUpdate[info.prefabID]++;
                             ObjectInfo objectInfo = objectSystem.GetPrefabInfo(info.prefabID);
@@ -49,9 +49,10 @@ namespace TheRavine.Generator
                         }
                     }
                 }
-                objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
                 foreach (var ID in objectsSnapshot)
                 {
+                    if (objectUpdate[ID] == 0)
+                        continue;
                     for (ushort j = 0; j < objectSystem.GetPoolSize(ID) - objectUpdate[ID]; j++)
                         objectSystem.Deactivate(ID);
                     objectUpdate[ID] = 0;
