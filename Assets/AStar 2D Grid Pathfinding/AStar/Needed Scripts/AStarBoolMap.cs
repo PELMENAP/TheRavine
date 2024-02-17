@@ -38,7 +38,7 @@ namespace AStar.Algolgorithms
 		}
 
 		// Returns an array of neighbour nodes for a given node
-		private static (bool, (int, int))[] getNeighbours(int xCordinate, int yCordinate, bool[,] walkableMap, int range = 1)
+		private static (bool, (int, int))[] getNeighbours(int xCordinate, int yCordinate, bool[,] walkableMap, bool walkableDiagonals = false)
 		{
 
 			List<(bool, (int, int))> neighbourCells = new List<(bool, (int, int))>();
@@ -46,6 +46,7 @@ namespace AStar.Algolgorithms
 			int heigth = walkableMap.GetLength(0);
 			int width = walkableMap.GetLength(1);
 
+			int range = 1;
 			int yStart = (int)MathF.Max(0, yCordinate - range);
 			int yEnd = (int)MathF.Min(heigth - 1, yCordinate + range);
 
@@ -61,6 +62,18 @@ namespace AStar.Algolgorithms
 						continue;
 					}
 
+					if (!walkableMap[y, x])
+					{
+						continue;
+					}
+
+					if (!walkableDiagonals && // If we are not allowing diagonal movement
+					(x == xStart || x == xEnd) && (y == yStart || y == yEnd) && // If the node is a diagonal node
+					!walkableMap[y, xCordinate] && !walkableMap[yCordinate, x]) // If the node is not reachable from the current node
+					{
+						continue;
+					}
+
 					neighbourCells.Add((walkableMap[y, x], (x, y)));
 				}
 			}
@@ -71,7 +84,7 @@ namespace AStar.Algolgorithms
 		//This algorithm is based on the psudo code from https://en.wikipedia.org/wiki/A*_search_algorithm
 
 		// Generates a path between a start node and a goal node
-		public static (int, int)[] GeneratePath(int startX, int startY, int goalX, int goalY, bool[,] walkableMap, bool manhattanHeuristic = true)
+		public static (int, int)[] GeneratePath(int startX, int startY, int goalX, int goalY, bool[,] walkableMap, bool manhattanHeuristic = true, bool walkableDiagonals = false)
 		{
 			// Set the heuristic function to use based on the manhattanHeuristic parameter
 			Func<int, int, int, int, float> heuristic = manhattanHeuristic ? calcHeuristicManhattan : calcHeuristicEuclidean;
@@ -112,18 +125,12 @@ namespace AStar.Algolgorithms
 				openSet.Dequeue();
 
 				// Get the neighbours of the current node
-				(bool, (int, int))[] neighbours = getNeighbours(currentX, currentY, walkableMap, 1);
+				(bool, (int, int))[] neighbours = getNeighbours(currentX, currentY, walkableMap, walkableDiagonals);
 
 				// Process each neighbour
 				for (int i = 0; i < neighbours.Length; i++)
 				{
 					(bool, (int, int)) neighbour = neighbours[i];
-
-					// If the neighbour is not walkable, skip it
-					if (!neighbour.Item1)
-					{
-						continue;
-					}
 
 					// Get the x and y coordinates of the neighbour
 					int neighbourX = neighbour.Item2.Item1;
@@ -154,7 +161,7 @@ namespace AStar.Algolgorithms
 			return new (int, int)[0];
 		}
 
-		public static (int, int)[] GeneratePathDebug(int startX, int startY, int goalX, int goalY, bool[,] walkableMap, bool manhattanHeuristic = true)
+		public static (int, int)[] GeneratePathDebug(int startX, int startY, int goalX, int goalY, bool[,] walkableMap, bool manhattanHeuristic = true, bool walkableDiagonals = false)
 		{
 			Stopwatch stopwatchTotal = new Stopwatch();
 			Stopwatch stopwatchInit = new Stopwatch();
@@ -221,7 +228,7 @@ namespace AStar.Algolgorithms
 				openSet.Dequeue();
 				stopwatchPrioQueueDequeue.Stop();
 				stopwatchPrioQueue.Stop();
-				(bool, (int, int))[] neighbours = getNeighbours(currentX, currentY, walkableMap, 1);
+				(bool, (int, int))[] neighbours = getNeighbours(currentX, currentY, walkableMap, walkableDiagonals);
 
 				stopwatchNode.Stop();
 
