@@ -17,10 +17,10 @@ public struct BoundsJob : IJobParallelFor
     {
         var pos = Positions[index];
         var size = AreaSize * 0.5f;
-        Accelerations[index] += Compensate(-size.x - pos.x, Vector3.right) / 2
-                                + Compensate(size.x - pos.x, Vector3.left) / 2
-                                + Compensate(-size.y - pos.y, Vector3.up) / 2
-                                + Compensate(size.y - pos.y, Vector3.down) / 2
+        Accelerations[index] += Compensate(-size.x - pos.x, Vector3.right)
+                                + Compensate(size.x - pos.x, Vector3.left)
+                                + Compensate(-size.y - pos.y, Vector3.up)
+                                + Compensate(size.y - pos.y, Vector3.down)
                                 + Compensate(-size.z - pos.z, Vector3.forward)
                                 + Compensate(size.z - pos.z, Vector3.back);
     }

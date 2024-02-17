@@ -96,8 +96,15 @@ namespace TheRavine.Base
         {
             while (_disAble.Count > 0)
                 _disAble.Dequeue().BreakUp();
-            help.SetActive(false);
-            ui.SetActive(false);
+            try
+            {
+                help.SetActive(false);
+                ui.SetActive(false);
+            }
+            catch
+            {
+                throw;
+            }
             EnhancedTouchSupport.Disable();
         }
 

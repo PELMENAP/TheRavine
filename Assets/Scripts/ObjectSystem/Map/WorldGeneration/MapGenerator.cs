@@ -14,7 +14,7 @@ namespace TheRavine.Generator
     using EndlessGenerators;
     public class MapGenerator : MonoBehaviour, ISetAble
     {
-        public const byte mapChunkSize = 16, chunkCount = 3, scale = 5, generationSize = scale * mapChunkSize, waterLevel = 1;
+        public const byte mapChunkSize = 16, chunkCount = 5, scale = 5, generationSize = scale * mapChunkSize, waterLevel = 1;
         public static Vector2 vectorOffset = new Vector2(generationSize, generationSize) * chunkCount / 2;
         private Dictionary<Vector2, ChunkData> mapData = new Dictionary<Vector2, ChunkData>(64);
         public ChunkData GetMapData(Vector2 position)

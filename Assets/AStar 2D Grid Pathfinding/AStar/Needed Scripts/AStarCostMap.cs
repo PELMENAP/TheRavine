@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Priority_Queue;
 using System;
 using System.Collections.Generic;
@@ -37,13 +38,14 @@ namespace AStar.Algolgorithms
 		}
 
 		// Returns an array of neighbour nodes for a given node
-		private static (float, (int, int))[] getNeighbours(int xCordinate, int yCordinate, float[,] costMap, int range = 1)
+		private static (float, (int, int))[] getNeighbours(int xCordinate, int yCordinate, float[,] costMap, bool walkableDiagonals = false)
 		{
 			List<(float, (int, int))> neighbourCells = new List<(float, (int, int))>();
 
 			int heigth = costMap.GetLength(0);
 			int width = costMap.GetLength(1);
 
+			int range = 1;
 			int yStart = (int)MathF.Max(0, yCordinate - range);
 			int yEnd = (int)MathF.Min(heigth - 1, yCordinate + range);
 
@@ -59,6 +61,18 @@ namespace AStar.Algolgorithms
 						continue;
 					}
 
+					if (costMap[y, x] == -1f)
+					{
+						continue;
+					}
+
+					if (!walkableDiagonals && // If we are not allowing diagonal movement
+					(x == xStart || x == xEnd) && (y == yStart || y == yEnd) && // If the node is a diagonal node
+					costMap[y, xCordinate] == -1f && costMap[yCordinate, x] == -1f) // If the node is not reachable from the current node
+					{
+						continue;
+					}
+
 					neighbourCells.Add((costMap[y, x], (x, y)));
 				}
 			}
@@ -69,9 +83,13 @@ namespace AStar.Algolgorithms
 		//This algorithm is based on the psudo code from https://en.wikipedia.org/wiki/A*_search_algorithm
 
 		// This function generates a path from the starting point to the goal point on a cost map using A* search algorithm
-		// The function takes in the starting point (startX, startY), the goal point (goalX, goalY), a 2D cost map, and an optional flag to use either Manhattan or Euclidean heuristic
-		public static (int, int)[] GeneratePath(int startX, int startY, int goalX, int goalY, float[,] costMap, bool manhattanHeuristic = true)
+		// The function takes in the starting point (startX, startY), the goal point (goalX, goalY), a 2D cost map, 
+		// an optional flag to use either Manhattan or Euclidean heuristic, and an optional flag to allow diagonal movement even if it is not reachable via a horizontal and a vertical move
+		// The function returns an array of points that represent the path from the starting point to the goal point
+		public static (int, int)[] GeneratePath(int startX, int startY, int goalX, int goalY, float[,] costMap, bool manhattanHeuristic = true, bool walkableDiagonals = false)
 		{
+			UnityEngine.Debug.Log("AStarCostMap.GeneratePath");
+
 			// Set the heuristic function to use based on the manhattanHeuristic parameter
 			Func<int, int, int, int, float> heuristic = manhattanHeuristic ? calcHeuristicManhattan : calcHeuristicEuclidean;
 
@@ -106,18 +124,12 @@ namespace AStar.Algolgorithms
 				}
 
 				openSet.Dequeue();
-				(float, (int, int))[] neighbours = getNeighbours(currentX, currentY, costMap, 1);
+				(float, (int, int))[] neighbours = getNeighbours(currentX, currentY, costMap, walkableDiagonals);
 
 				// Loop through all the neighbours of the current node
 				for (int i = 0; i < neighbours.Length; i++)
 				{
 					(float, (int, int)) neighbour = neighbours[i];
-
-					// If the neighbour is not passable, continue to the next neighbour
-					if (neighbour.Item1 == -1f)
-					{
-						continue;
-					}
 
 					int neighbourX = neighbour.Item2.Item1;
 					int neighbourY = neighbour.Item2.Item2;

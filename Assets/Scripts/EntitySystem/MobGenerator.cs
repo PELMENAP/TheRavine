@@ -63,17 +63,19 @@ namespace TheRavine.EntityControl
                 SpawnPointData currentSpawnPointData = regions[current.Second];
                 for (byte i = 0; i < currentSpawnPointData.entities.Length; i++)
                 {
+                    print("iterate entities");
                     MobSpawnData curMobSpawnData = currentSpawnPointData.entities[i];
                     if (Random.Range(0, 100) < curMobSpawnData.Chance)
                     {
+                        print("summon somebody");
                         GameObject curMob = CreateMob(current.First, curMobSpawnData.info.prefab);
                         IEntity entity = curMob.GetComponent<IEntity>();
                         entity.SetUpEntityData(entitySystem.GetMobInfo(curMobSpawnData.info.prefab.GetInstanceID()));
                         mapData[generator.GetChunkPosition(current.First)].entitiesInChunk.Add(entity);
+                        await UniTask.Delay(curMobSpawnData.Chance * curMobSpawnData.Chance);
                         break;
                     }
                 }
-                print("end NAL");
                 NALQueue.Enqueue(current);
                 await UniTask.Delay(10);
             }
