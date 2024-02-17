@@ -3774,12 +3774,14 @@ MonoBehaviour:
   - entities: []
   - entities: []
   - entities:
-    - Chance: 80
+    - Chance: 50
       info: {fileID: 11400000, guid: f7bae22681188ae94a5a4f9974eb2023, type: 2}
   - entities:
-    - Chance: 80
+    - Chance: 70
       info: {fileID: 11400000, guid: f7bae22681188ae94a5a4f9974eb2023, type: 2}
-  - entities: []
+  - entities:
+    - Chance: 60
+      info: {fileID: 11400000, guid: f7bae22681188ae94a5a4f9974eb2023, type: 2}
   - entities: []
   - entities: []
   - entities: []
@@ -3811,7 +3813,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e801bfc25e24e7b94a3dfbd57c78c33a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _mobInfo: []
+  _mobInfo:
+  - {fileID: 11400000, guid: f7bae22681188ae94a5a4f9974eb2023, type: 2}
 --- !u!114 &2085464107 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5597226391838563630, guid: fd9d0d8a81fb48279ae58130853aba5b,
@@ -4908,7 +4911,7 @@ PrefabInstance:
     - target: {fileID: 5585552486299961592, guid: 145b124922b481b5f8275d68a087bb59,
         type: 3}
       propertyPath: control
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5585552486299961592, guid: 145b124922b481b5f8275d68a087bb59,
         type: 3}

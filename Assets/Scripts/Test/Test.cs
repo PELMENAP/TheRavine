@@ -38,35 +38,35 @@ public class Test : MonoBehaviour
     private Vector2 RoundVector(Vector2 vec) => new Vector2((int)vec.x, (int)vec.y);
 
     private SkillFacade SkillSystem = new SkillFacade();
-    EntityGameData playerEntity;
+    AEntity playerEntity;
     [SerializeField] private PlayerInput input;
     [SerializeField] private InputActionReference point;
     private void Awake()
     {
         Settings.isShadow = isShadow;
         Settings._controlType = control;
-        // playerEntity = new EntityGameData(entityInfo);
-        // SkillSystem.AddEntity(playerEntity);
-        // SkillSystem.AddSkillToEntity(playerEntity, SkillBuilder.CreateSkill(flyingSkill));
+        playerEntity.SetUpEntityData(entityInfo);
+        SkillSystem.AddEntity(playerEntity.GetEntityComponent<ISkillComponent>());
+        SkillSystem.AddSkillToEntity(playerEntity.GetEntityComponent<ISkillComponent>(), SkillBuilder.CreateSkill(flyingSkill));
         point.action.performed += mobile;
     }
 
     [Button]
     private void ShowPlayerEntity()
     {
-        print(playerEntity.stats.energy);
-        print(playerEntity.skills[flyingSkill.SkillName].GetRechargeTime());
+        print(playerEntity.GetEntityComponent<IMainComponent>().stats.energy);
+        print(playerEntity.GetEntityComponent<ISkillComponent>().Skills[flyingSkill.SkillName].GetRechargeTime());
     }
     [Button]
     private void UseSkillByFacade()
     {
-        SkillSystem.GetEntitySkill(playerEntity, flyingSkill.SkillName).Use(playerEntity);
+        SkillSystem.GetEntitySkill(playerEntity.GetEntityComponent<ISkillComponent>(), flyingSkill.SkillName).Use(playerEntity.GetEntityComponent<IMainComponent>());
     }
 
     [Button]
     private void UseSkillBySelf()
     {
-        playerEntity.skills[flyingSkill.SkillName].Use(playerEntity);
+        playerEntity.GetEntityComponent<ISkillComponent>().Skills[flyingSkill.SkillName].Use(playerEntity.GetEntityComponent<IMainComponent>());
     }
     Vector2 position;
     ChunkData map;

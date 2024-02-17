@@ -14,12 +14,12 @@ public class SwimmingSkill : ISkill
         lastUsedTime = -RechargeTime;
     }
 
-    public void Use(IMainData entity)
+    public void Use(IMainComponent mainComponent)
     {
-        if (CanUse(entity))
+        if (CanUse(mainComponent))
         {
-            Debug.Log($"{entity.name} использует навык {SkillName}");
-            entity.stats.DecreaseEnergy(EnergyCost);
+            Debug.Log($"{mainComponent.name} использует навык {SkillName}");
+            mainComponent.stats.DecreaseEnergy(EnergyCost);
             lastUsedTime = Time.time;
         }
         else
@@ -28,14 +28,18 @@ public class SwimmingSkill : ISkill
         }
     }
 
-    public bool CanUse(IMainData entity)
+    public bool CanUse(IMainComponent mainComponent)
     {
-        return entity.stats.energy >= EnergyCost && Time.time - lastUsedTime >= RechargeTime;
+        return mainComponent.stats.energy >= EnergyCost && Time.time - lastUsedTime >= RechargeTime;
     }
 
     public void Recharge()
     {
         lastUsedTime = -RechargeTime;
     }
-    public float GetRechargeTime() => (Time.time - lastUsedTime) / RechargeTime;
+    public float GetRechargeTime()
+    {
+        float del = (Time.time - lastUsedTime) / RechargeTime;
+        return del > 1f ? 1f : del;
+    }
 }

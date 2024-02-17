@@ -1,0 +1,43 @@
+public delegate void Behaviour();
+public abstract class AState
+{
+    protected System.Collections.Generic.List<ICommand> _commands = new System.Collections.Generic.List<ICommand>();
+    private ICommand _currentCommand;
+    private bool _isProcessing;
+
+    public void AddCommand(ICommand command)
+    {
+        _commands.Add(command);
+    }
+
+    public async Cysharp.Threading.Tasks.UniTask ProcessCommandsAsync()
+    {
+        _isProcessing = true;
+        while (_commands.Count > 0 && _isProcessing)
+        {
+            _currentCommand = _commands[0];
+            _commands.RemoveAt(0);
+            await _currentCommand.ExecuteAsync();
+            if (!_isProcessing) // Проверка, не была ли обработка прервана
+            {
+                _currentCommand.Cancel(); // Отмена текущей команды, если обработка прервана
+            }
+        }
+        _currentCommand = null;
+    }
+
+    public void CancelCurrentCommand()
+    {
+        _isProcessing = false;
+        _currentCommand?.Cancel();
+    }
+    public void ClearCommands()
+    {
+        if (_isProcessing && _currentCommand != null)
+            CancelCurrentCommand();
+        _commands.Clear();
+    }
+    public abstract void Enter();
+    public abstract void Exit();
+    public abstract void Update();
+}

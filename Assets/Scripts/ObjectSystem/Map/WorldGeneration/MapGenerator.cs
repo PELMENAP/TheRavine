@@ -50,6 +50,14 @@ namespace TheRavine.Generator
             return new Vector2((int)chunkPos.x, (int)chunkPos.y);
         }
 
+        public ChunkData GetMapDataByObjectPosition(Vector2 position)
+        {
+            Vector2 chunkPos = GetChunkPosition(position);
+            if (!mapData.ContainsKey(chunkPos))
+                mapData[chunkPos] = GenerateMapData(chunkPos);
+            return mapData[chunkPos];
+        }
+
         public bool TryToAddPositionToChunk(Vector2 position)
         {
             SortedSet<Vector2> objectsToInst = GetMapData(GetChunkPosition(position + vectorOffset)).objectsToInst;
