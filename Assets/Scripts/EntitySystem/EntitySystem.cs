@@ -10,8 +10,8 @@ namespace TheRavine.EntityControl
     public class EntitySystem : MonoBehaviour, ISetAble
     {
         // private SkillFacade skillFacade;
-        private List<IEntity> global = new List<IEntity>(2);
-        public void AddToGlobal(IEntity entity) => global.Add(entity);
+        private List<AEntity> global = new List<AEntity>(2);
+        public void AddToGlobal(AEntity entity) => global.Add(entity);
         [SerializeField] private EntityInfo[] _mobInfo;
         private Dictionary<int, EntityInfo> mobInfo = new Dictionary<int, EntityInfo>(4);
         public EntityInfo GetMobInfo(int id) => mobInfo[id];

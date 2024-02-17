@@ -6,10 +6,8 @@ using TMPro;
 using TheRavine.EntityControl;
 using TheRavine.Services;
 
-public class PlayerEntity : AStatePatternData, ISetAble, IEntity
+public class PlayerEntity : AEntity, ISetAble
 {
-    [SerializeField] private EntityGameData _entityGameData;
-    public EntityGameData entityGameData { get { return _entityGameData; } set { } }
 
     public CM cameraMen;
     [SerializeField] private PlayerDialogOutput output;
@@ -19,6 +17,7 @@ public class PlayerEntity : AStatePatternData, ISetAble, IEntity
     public UnityAction<Vector2> placeObject, aimRaise, setMouse;
     public Vector3 factMousePosition;
     private IControllable controller;
+    private StatePatternComponent statePatternComponent;
 
     // public bool moving = true;
     // private bool act = true;
@@ -30,6 +29,7 @@ public class PlayerEntity : AStatePatternData, ISetAble, IEntity
         cameraMen.SetUp(null, locator);
         output.SetUp(null, locator);
         controller = GetComponent<IControllable>();
+        statePatternComponent = new StatePatternComponent();
         // ui.AddSkill(new SkillRush(10f, 0.05f, 20), PData.pdata.dushParent, PData.pdata.dushImage, "Rush");
         controller.SetInitialValues();
         setMouse += SetMousePosition;
@@ -37,63 +37,62 @@ public class PlayerEntity : AStatePatternData, ISetAble, IEntity
         callback?.Invoke();
     }
 
-    public void SetUpEntityData(EntityInfo _entityInfo)
+    public override void SetUpEntityData(EntityInfo _entityInfo)
     {
-        _entityGameData = new EntityGameData(_entityInfo);
+        // _entityGameData = new EntityGameData(_entityInfo);
     }
-    public Vector2 GetEntityPosition() => new Vector2(this.transform.position.x, this.transform.position.y);
+    public override Vector2 GetEntityPosition() => new Vector2(this.transform.position.x, this.transform.position.y);
 
-    public void UpdateEntityCycle()
+    public override void UpdateEntityCycle()
     {
-        if (behaviourCurrent != null)
+        if (statePatternComponent.behaviourCurrent != null)
         {
-            behaviourCurrent.Update();
+            statePatternComponent.behaviourCurrent.Update();
             cameraMen.CameraUpdate();
         }
     }
 
-    protected override void Init()
+    public override void Init()
     {
         InitBehaviour();
     }
 
-    protected void InitBehaviour()
+    private void InitBehaviour()
     {
-        behavioursMap = new Dictionary<System.Type, IPlayerBehaviour>();
         System.Action idleAction = controller.Move;
         idleAction += controller.Animate;
         idleAction += controller.Aim;
         idleAction += AimSkills;
         idleAction += ReloadSkills;
         PlayerBehaviourIdle Idle = new PlayerBehaviourIdle(controller, idleAction);
-        behavioursMap[typeof(PlayerBehaviourIdle)] = Idle;
+        statePatternComponent.AddBehaviour(typeof(PlayerBehaviourIdle), Idle);
         idleAction = controller.Animate;
         idleAction += controller.Aim;
         idleAction += ReloadSkills;
         PlayerBehaviourDialoge Dialoge = new PlayerBehaviourDialoge();
-        behavioursMap[typeof(PlayerBehaviourDialoge)] = Dialoge;
+        statePatternComponent.AddBehaviour(typeof(PlayerBehaviourDialoge), Dialoge);
         idleAction = controller.Animate;
         idleAction += controller.Aim;
         idleAction += ReloadSkills;
         PlayerBehaviourSit Sit = new PlayerBehaviourSit(controller, idleAction);
-        behavioursMap[typeof(PlayerBehaviourSit)] = Sit;
+        statePatternComponent.AddBehaviour(typeof(PlayerBehaviourSit), Sit);
     }
 
     public void SetBehaviourIdle()
     {
-        SetBehaviour(GetBehaviour<PlayerBehaviourIdle>());
+        statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<PlayerBehaviourIdle>());
         controller.EnableComponents();
     }
 
     public void SetBehaviourDialog()
     {
-        SetBehaviour(GetBehaviour<PlayerBehaviourDialoge>());
+        statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<PlayerBehaviourDialoge>());
         controller.DisableComponents();
     }
 
     public void SetBehaviourSit()
     {
-        SetBehaviour(GetBehaviour<PlayerBehaviourSit>());
+        statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<PlayerBehaviourSit>());
         controller.DisableComponents();
     }
 
@@ -141,16 +140,16 @@ public class PlayerEntity : AStatePatternData, ISetAble, IEntity
 
     public void BreakUp()
     {
-        behavioursMap.Clear();
+        BreakUpEntity();
         cameraMen.BreakUp();
         output.BreakUp();
     }
 
-    public void EnableVeiw()
+    public override void EnableView()
     {
 
     }
-    public void DisableView()
+    public override void DisableView()
     {
 
     }

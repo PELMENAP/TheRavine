@@ -5,53 +5,55 @@ using TMPro;
 
 using TheRavine.EntityControl;
 using TheRavine.Services;
-public class BotEntity : AStatePatternData, ISetAble, IEntity
+public class BotEntity : AEntity
 {
-    [SerializeField] private EntityGameData _entityGameData;
-    public EntityGameData entityGameData { get { return _entityGameData; } set { } }
-    public BotEntity data;
+    [SerializeField] private GameObject view;
+    [SerializeField] private bool isActive;
+    private StatePatternComponent statePatternComponent;
 
-    public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+    public override void SetUpEntityData(EntityInfo _entityInfo)
     {
+        // _entityGameData = new EntityGameData(_entityInfo);
+        statePatternComponent = new StatePatternComponent();
+        AddComponentToEntity(statePatternComponent);
         Init();
         SetBehaviourIdle();
         // crosshair.gameObject.SetActive(false);
-        callback?.Invoke();
+        EnableView();
     }
-    public void SetUpEntityData(EntityInfo _entityInfo)
-    {
-        _entityGameData = new EntityGameData(_entityInfo);
-    }
-    public Vector2 GetEntityPosition()
+    public override Vector2 GetEntityPosition()
     {
         return new Vector2(this.transform.position.x, this.transform.position.y);
     }
-    public void UpdateEntityCycle()
+    public override void UpdateEntityCycle()
     {
-        if (behaviourCurrent != null)
-            behaviourCurrent.Update();
+        if (statePatternComponent.behaviourCurrent != null)
+            statePatternComponent.behaviourCurrent.Update();
+    }
+    public override void Init()
+    {
+        InitBehaviour();
     }
 
-    protected void InitBehaviour()
+    private void InitBehaviour()
     {
-        behavioursMap = new Dictionary<System.Type, IPlayerBehaviour>();
         BotBehaviourIdle Idle = new BotBehaviourIdle();
-        // Idle.ERef = this;
-        behavioursMap[typeof(BotBehaviourIdle)] = Idle;
+        Idle.AddCommand(new PrintMessageCommand("eboba"));
+        statePatternComponent.AddBehaviour(typeof(BotBehaviourIdle), Idle);
         BotBehaviourDialoge Dialoge = new BotBehaviourDialoge();
-        behavioursMap[typeof(BotBehaviourDialoge)] = Dialoge;
+        statePatternComponent.AddBehaviour(typeof(BotBehaviourDialoge), Dialoge);
         BotBehaviourSit Sit = new BotBehaviourSit();
-        behavioursMap[typeof(BotBehaviourSit)] = Sit;
+        statePatternComponent.AddBehaviour(typeof(BotBehaviourSit), Sit);
     }
 
     public void SetBehaviourIdle()
     {
-        SetBehaviour(GetBehaviour<BotBehaviourIdle>());
+        statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<BotBehaviourIdle>());
     }
 
     public void SetBehaviourDialog()
     {
-        SetBehaviour(GetBehaviour<BotBehaviourDialoge>());
+        statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<BotBehaviourDialoge>());
     }
 
     public void SetSpeed()
@@ -62,18 +64,14 @@ public class BotEntity : AStatePatternData, ISetAble, IEntity
     public Animator animator;
     public Transform botTransform;
     public Rigidbody2D botRigidbody;
-
-    public void BreakUp()
+    public override void EnableView()
     {
-
+        isActive = true;
+        view.SetActive(isActive);
     }
-
-    public void EnableVeiw()
+    public override void DisableView()
     {
-
-    }
-    public void DisableView()
-    {
-
+        isActive = false;
+        view.SetActive(isActive);
     }
 }

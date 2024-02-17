@@ -15,10 +15,16 @@ namespace TheRavine.EntityControl
         //[SerializeField] private int count;
         [SerializeField] private EntityInfo _playerInfo;
         [SerializeField] private SpawnPointData[] regions;
-        private IEntity player;
+        private AEntity player;
         private MapGenerator generator;
         private EntitySystem entitySystem;
         private Dictionary<Vector2, ChunkEntityData> mapData = new Dictionary<Vector2, ChunkEntityData>(4);
+        private ChunkEntityData GetMapData(Vector2 pos)
+        {
+            if (!mapData.ContainsKey(pos))
+                mapData[pos] = new ChunkEntityData();
+            return mapData[pos];
+        }
         private Vector2 currentChunkPosition, oldChunkPosition;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
@@ -40,7 +46,7 @@ namespace TheRavine.EntityControl
         [SerializeField] private byte step;
         private async UniTaskVoid NAL()
         {
-            await UniTask.Delay(10000);
+            await UniTask.Delay(5000);
             bool NALthread = true;
             int countCycle = 0;
             while (NALthread)
@@ -60,6 +66,7 @@ namespace TheRavine.EntityControl
                 }
                 Pair<Vector2, byte> current = NALQueue.Dequeue();
                 print(current.First);
+                print(current.Second);
                 SpawnPointData currentSpawnPointData = regions[current.Second];
                 for (byte i = 0; i < currentSpawnPointData.entities.Length; i++)
                 {
@@ -69,9 +76,9 @@ namespace TheRavine.EntityControl
                     {
                         print("summon somebody");
                         GameObject curMob = CreateMob(current.First, curMobSpawnData.info.prefab);
-                        IEntity entity = curMob.GetComponent<IEntity>();
+                        AEntity entity = curMob.GetComponent<AEntity>();
                         entity.SetUpEntityData(entitySystem.GetMobInfo(curMobSpawnData.info.prefab.GetInstanceID()));
-                        mapData[generator.GetChunkPosition(current.First)].entitiesInChunk.Add(entity);
+                        GetMapData(current.First).entitiesInChunk.Add(entity);
                         await UniTask.Delay(curMobSpawnData.Chance * curMobSpawnData.Chance);
                         break;
                     }
@@ -99,12 +106,13 @@ namespace TheRavine.EntityControl
                     Vector2 pos = currentChunkPosition + new Vector2(xOffset, yOffset);
                     if (mapData.ContainsKey(pos))
                     {
-                        foreach (IEntity item in mapData[pos].entitiesInChunk)
+                        List<AEntity> listEntity = mapData[pos].entitiesInChunk;
+                        for (ushort i = 0; i < listEntity.Count; i++)
                         {
                             // проверить позиции и передать их новым чанкам
-                            mapData[generator.GetChunkPosition(item.GetEntityPosition())].entitiesInChunk.Add(item);
-                            item.DisableView();
-                            mapData[pos].entitiesInChunk.Remove(item);
+                            mapData[generator.GetChunkPosition(listEntity[i].GetEntityPosition())].entitiesInChunk.Add(listEntity[i]);
+                            listEntity[i].DisableView();
+                            mapData[pos].entitiesInChunk.Remove(listEntity[i]);
                         }
                     }
                 }
@@ -119,8 +127,9 @@ namespace TheRavine.EntityControl
                     {
                         foreach (var item in mapData[pos].spawnPoints)
                             NALQueue.Enqueue(new Pair<Vector2, byte>(item.Key, item.Value));
-                        foreach (IEntity item in mapData[pos].entitiesInChunk)
-                            item.EnableVeiw();
+                        List<AEntity> listEntity = mapData[pos].entitiesInChunk;
+                        for (ushort i = 0; i < listEntity.Count; i++)
+                            listEntity[i].EnableView();
                     }
                 }
             }
@@ -135,8 +144,11 @@ namespace TheRavine.EntityControl
                 {
                     Vector2 pos = currentChunkPosition + new Vector2(xOffset, yOffset);
                     if (mapData.ContainsKey(pos))
-                        foreach (IEntity item in mapData[pos].entitiesInChunk)
-                            item.UpdateEntityCycle();
+                    {
+                        List<AEntity> listEntity = mapData[pos].entitiesInChunk;
+                        for (ushort i = 0; i < listEntity.Count; i++)
+                            listEntity[i].UpdateEntityCycle();
+                    }
                 }
             }
         }
@@ -151,11 +163,11 @@ namespace TheRavine.EntityControl
     public class ChunkEntityData
     {
         public Dictionary<Vector2, byte> spawnPoints;
-        public SortedSet<IEntity> entitiesInChunk;
+        public List<AEntity> entitiesInChunk;
         public ChunkEntityData()
         {
             spawnPoints = new Dictionary<Vector2, byte>();
-            entitiesInChunk = new SortedSet<IEntity>();
+            entitiesInChunk = new List<AEntity>();
         }
     }
 
