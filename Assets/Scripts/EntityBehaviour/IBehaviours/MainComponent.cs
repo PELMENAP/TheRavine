@@ -18,4 +18,9 @@ public class MainComponent : IMainComponent
         name = _name;
         prefabID = _prefabID;
     }
+
+    public void Dispose()
+    {
+
+    }
 }

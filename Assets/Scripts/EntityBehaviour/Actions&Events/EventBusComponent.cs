@@ -6,4 +6,8 @@ public interface IEventBusComponent : IComponent
 public class EventBusComponent : IEventBusComponent
 {
     public EventBusByName EventBus { get; set; } = new EventBusByName();
+    public void Dispose()
+    {
+        EventBus.Dispose();
+    }
 }

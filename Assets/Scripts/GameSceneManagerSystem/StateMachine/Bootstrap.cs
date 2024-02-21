@@ -28,6 +28,7 @@ namespace TheRavine.Base
         [SerializeField] private Terminal terminal;
         [SerializeField] private EntitySystem entitySystem;
         [SerializeField] private MobGenerator mobGenerator;
+        [SerializeField] private MobController mobController;
         [SerializeField] private GameObject help, ui;
         private void Start()
         {
@@ -41,6 +42,7 @@ namespace TheRavine.Base
             serviceLocator.Register<Terminal>(terminal);
             serviceLocator.Register<EntitySystem>(entitySystem);
             serviceLocator.Register<MobGenerator>(mobGenerator);
+            serviceLocator.Register<MobController>(mobController);
             _setAble.Enqueue((ISetAble)objectSystem);
             _setAble.Enqueue((ISetAble)playerData);
             _setAble.Enqueue((ISetAble)inventory);
@@ -49,25 +51,23 @@ namespace TheRavine.Base
             _setAble.Enqueue((ISetAble)terminal);
             _setAble.Enqueue((ISetAble)entitySystem);
             _setAble.Enqueue((ISetAble)mobGenerator);
-            if (Settings.SceneNumber == 1 || Settings.SceneNumber == 0)
+            _setAble.Enqueue((ISetAble)mobController);
+            switch (Settings.SceneNumber)
             {
-                StateMachine = new StateMachine<Bootstrap>(
-                new BootstrapState(this),
-                new InitialState(this, Settings.isLoad),
-                new LoadingState(this),
-                new GameState(this));
-            }
-            else if (Settings.SceneNumber == 2)
-            {
-                StateMachine = new StateMachine<Bootstrap>(
-            new BootstrapState(this),
-            new InitialState(this, Settings.isLoad),
-            new LoadingState(this),
-            new GameState(this));
-            }
-            else if (Settings.SceneNumber == 3)
-            {
-
+                case 1:
+                    StateMachine = new StateMachine<Bootstrap>(
+                        new BootstrapState(this),
+                        new InitialState(this, Settings.isLoad),
+                        new LoadingState(this),
+                        new GameState(this));
+                    break;
+                default:
+                    StateMachine = new StateMachine<Bootstrap>(
+                        new BootstrapState(this),
+                        new InitialState(this, Settings.isLoad),
+                        new LoadingState(this),
+                        new GameState(this));
+                    break;
             }
             StartGame();
             help.SetActive(false);
@@ -96,6 +96,10 @@ namespace TheRavine.Base
         {
             while (_disAble.Count > 0)
                 _disAble.Dequeue().BreakUp();
+            EnhancedTouchSupport.Disable();
+            serviceLocator.Dispose();
+            _setAble.Clear();
+            _disAble.Clear();
             try
             {
                 help.SetActive(false);
@@ -105,7 +109,6 @@ namespace TheRavine.Base
             {
                 throw;
             }
-            EnhancedTouchSupport.Disable();
         }
 
         private void OnDisable()

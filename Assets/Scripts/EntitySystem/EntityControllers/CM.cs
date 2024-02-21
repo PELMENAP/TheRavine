@@ -3,6 +3,8 @@ using UnityEngine.InputSystem;
 
 using TheRavine.Base;
 using TheRavine.Services;
+using TheRavine.EntityControl;
+using TheRavine.Events;
 public class CM : MonoBehaviour, ISetAble
 {
     [SerializeField] private Transform cameratrans, playerTrans;
@@ -11,12 +13,13 @@ public class CM : MonoBehaviour, ISetAble
     public static bool cameraForMap;
     private Vector3 offset, targetPos;
     // private bool changeCam = false;
-    PlayerEntity PData;
+    private EventBusByName playerEventBus;
     public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
-        PData = locator.GetService<PlayerEntity>();
+        PlayerEntity playerEntity = locator.GetService<PlayerEntity>();
         // cameraForMap = false;
-        playerTrans = PData.transform;
+        playerEventBus = playerEntity.GetEntityComponent<EventBusComponent>().EventBus;
+        playerTrans = locator.GetPlayerTransform();
         offset = cameratrans.position - playerTrans.position;
         cameratrans.position = playerTrans.position + new Vector3(0, 0, -1);
         callback?.Invoke();
@@ -58,16 +61,16 @@ public class CM : MonoBehaviour, ISetAble
     private void UpdateForGame()
     {
         targetPos = playerTrans.position + offset;
-        switch (Settings._controlType)
-        {
-            case ControlType.Personal:
-                if (Mouse.current.rightButton.isPressed)
-                    targetPos += PData.factMousePosition;
-                break;
-            case ControlType.Mobile:
-                targetPos += PData.factMousePosition;
-                break;
-        }
+        // switch (Settings._controlType)
+        // {
+        //     case ControlType.Personal:
+        //         if (Mouse.current.rightButton.isPressed)
+        //             targetPos += PData.factMousePosition;
+        //         break;
+        //     case ControlType.Mobile:
+        //         targetPos += PData.factMousePosition;
+        //         break;
+        // }
         if (Vector3.Distance(cameratrans.position, targetPos) < MinDistance)
             return;
         cameratrans.Translate(cameratrans.InverseTransformPoint(Vector3.Lerp(cameratrans.position, targetPos, Velocity * Time.fixedDeltaTime)));

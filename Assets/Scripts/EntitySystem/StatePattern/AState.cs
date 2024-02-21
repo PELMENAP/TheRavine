@@ -18,10 +18,8 @@ public abstract class AState
             _currentCommand = _commands[0];
             _commands.RemoveAt(0);
             await _currentCommand.ExecuteAsync();
-            if (!_isProcessing) // Проверка, не была ли обработка прервана
-            {
-                _currentCommand.Cancel(); // Отмена текущей команды, если обработка прервана
-            }
+            if (!_isProcessing)
+                _currentCommand.Cancel();
         }
         _currentCommand = null;
     }

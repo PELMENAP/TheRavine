@@ -9,6 +9,7 @@ using UnityEngine.EventSystems;
 using TMPro;
 using UnityEditor;
 using NaughtyAttributes;
+using Cysharp.Threading.Tasks;
 
 using TheRavine.Base;
 using TheRavine.Generator;
@@ -37,36 +38,44 @@ public class Test : MonoBehaviour
 
     private Vector2 RoundVector(Vector2 vec) => new Vector2((int)vec.x, (int)vec.y);
 
-    private SkillFacade SkillSystem = new SkillFacade();
+    private SkillFacade skillFacade = new SkillFacade();
+    public GameObject player;
     AEntity playerEntity;
     [SerializeField] private PlayerInput input;
     [SerializeField] private InputActionReference point;
-    private void Awake()
+    private void Start()
     {
+        rte().Forget();
+    }
+
+    private async UniTaskVoid rte()
+    {
+        await UniTask.Delay(5000);
         Settings.isShadow = isShadow;
         Settings._controlType = control;
+        playerEntity = player.GetComponent<AEntity>();
         playerEntity.SetUpEntityData(entityInfo);
-        SkillSystem.AddEntity(playerEntity.GetEntityComponent<ISkillComponent>());
-        SkillSystem.AddSkillToEntity(playerEntity.GetEntityComponent<ISkillComponent>(), SkillBuilder.CreateSkill(flyingSkill));
+        skillFacade.AddEntity(playerEntity.GetEntityComponent<SkillComponent>());
+        skillFacade.AddSkillToEntity(playerEntity.GetEntityComponent<SkillComponent>(), SkillBuilder.CreateSkill(flyingSkill));
         point.action.performed += mobile;
     }
 
     [Button]
     private void ShowPlayerEntity()
     {
-        print(playerEntity.GetEntityComponent<IMainComponent>().stats.energy);
-        print(playerEntity.GetEntityComponent<ISkillComponent>().Skills[flyingSkill.SkillName].GetRechargeTime());
+        print(playerEntity.GetEntityComponent<MainComponent>().stats.energy);
+        print(playerEntity.GetEntityComponent<SkillComponent>().Skills[flyingSkill.SkillName].GetRechargeTime());
     }
     [Button]
     private void UseSkillByFacade()
     {
-        SkillSystem.GetEntitySkill(playerEntity.GetEntityComponent<ISkillComponent>(), flyingSkill.SkillName).Use(playerEntity.GetEntityComponent<IMainComponent>());
+        skillFacade.GetEntitySkill(playerEntity.GetEntityComponent<SkillComponent>(), flyingSkill.SkillName).Use(playerEntity.GetEntityComponent<MainComponent>());
     }
 
     [Button]
     private void UseSkillBySelf()
     {
-        playerEntity.GetEntityComponent<ISkillComponent>().Skills[flyingSkill.SkillName].Use(playerEntity.GetEntityComponent<IMainComponent>());
+        playerEntity.GetEntityComponent<SkillComponent>().Skills[flyingSkill.SkillName].Use(playerEntity.GetEntityComponent<MainComponent>());
     }
     Vector2 position;
     ChunkData map;

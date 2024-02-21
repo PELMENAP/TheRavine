@@ -2,20 +2,17 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
-
-using TheRavine.Services;
-public class PlayerDialogOutput : MonoBehaviour, ISetAble
+public class PlayerDialogOutput : MonoBehaviour
 {
     [SerializeField] private TextMeshPro dialogText;
     [SerializeField] private float typingSpeed = 0.05f;
     [SerializeField] private float delayBetweenDialogs = 1.0f;
     private Queue<string> dialogQueue = new Queue<string>();
-    public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+    private void Awake()
     {
         OutputDialogs().Forget();
         dialogText.text = "";
     }
-
     public void AddAnswer(string dialog)
     {
         dialogQueue.Enqueue(dialog);
@@ -48,7 +45,7 @@ public class PlayerDialogOutput : MonoBehaviour, ISetAble
         }
     }
 
-    public void BreakUp()
+    private void OnDestroy()
     {
         dialogQueue.Clear();
     }

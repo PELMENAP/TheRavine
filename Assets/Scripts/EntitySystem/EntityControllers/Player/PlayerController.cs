@@ -5,6 +5,7 @@ using System;
 
 using TheRavine.Extentions;
 using TheRavine.Base;
+using TheRavine.EntityControl;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour, IControllable
@@ -59,7 +60,7 @@ public class PlayerMovement : MonoBehaviour, IControllable
             movementDirection = Vector2.zero;
         movementSpeed = Mathf.Clamp(movementDirection.magnitude, 0.0f, 1.0f);
         movementDirection.Normalize();
-        rb.velocity = movementDirection * movementSpeed * PlayerEntity.data.MOVEMENT_BASE_SPEED;
+        // rb.velocity = movementDirection * movementSpeed * PlayerEntity.data.MOVEMENT_BASE_SPEED;
         MoveMark();
     }
 
