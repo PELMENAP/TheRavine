@@ -28,4 +28,8 @@ public class StatePatternComponent : IStatePatternComponent
         behavioursMap[type] = behaviour;
     }
     public AState GetBehaviour<T>() where T : AState => behavioursMap[typeof(T)];
+    public void Dispose()
+    {
+        behavioursMap.Clear();
+    }
 }

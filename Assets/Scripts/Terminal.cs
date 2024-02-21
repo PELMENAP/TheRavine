@@ -6,7 +6,7 @@ using TMPro;
 
 using TheRavine.Services;
 using TheRavine.Generator;
-
+using TheRavine.EntityControl;
 namespace TheRavine.Base
 {
     public class Terminal : MonoBehaviour, ISetAble

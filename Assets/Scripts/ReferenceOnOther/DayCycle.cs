@@ -33,8 +33,6 @@ namespace TheRavine.Base
             serviceLocator = locator;
             TimeBridge = new NativeArray<float>(5, Allocator.Persistent);
             IsdayBridge = new NativeArray<bool>(1, Allocator.Persistent);
-            TimeBridge[0] = startDay;
-            TimeBridge[4] = speed;
             sun = this.GetComponent<Light2D>();
             newDay += GetLightsAndShadows;
             closeThread = true;
@@ -44,6 +42,8 @@ namespace TheRavine.Base
 
         private void GetLightsAndShadows()
         {
+            TimeBridge[0] = startDay;
+            TimeBridge[4] = speed;
             GameObject[] shadowsObjects = GameObject.FindGameObjectsWithTag("Shadow");
             // print(Settings.isShadow);
             if (Settings.isShadow)
@@ -105,9 +105,9 @@ namespace TheRavine.Base
 
         private async UniTaskVoid UpdateDay()
         {
-            await UniTask.Delay(1000);
-            GetLightsAndShadows();
             await UniTask.Delay(3000);
+            GetLightsAndShadows();
+            await UniTask.Delay(1000);
             while (closeThread)
             {
                 JobHandle dayHande = dayJob.Schedule();
@@ -124,7 +124,8 @@ namespace TheRavine.Base
                         newDay?.Invoke();
                     }
                     else
-                        GC.Collect(1, GCCollectionMode.Forced);
+                        GC.Collect();
+                    // GC.Collect(1, GCCollectionMode.Forced);
                     await UniTask.Delay(1000);
                 }
                 if (Settings.isShadow)
@@ -151,9 +152,9 @@ namespace TheRavine.Base
         [BurstCompile]
         public struct DayJob : IJob
         {
-            public float deltaTime;
+            [ReadOnly] public float deltaTime;
             public NativeArray<float> timeBridge;
-            public NativeArray<bool> isdayBridge;
+            [WriteOnly] public NativeArray<bool> isdayBridge;
             public void Execute()
             {
                 timeBridge[0] += (deltaTime / 600) * timeBridge[4];
@@ -174,10 +175,8 @@ namespace TheRavine.Base
         [BurstCompile]
         public struct ShadowsJob : IJobParallelForTransform
         {
-            [ReadOnly]
-            public NativeArray<Vector3> lightsBridge;
-            [ReadOnly]
-            public NativeArray<float> ligthsIntensity;
+            [ReadOnly] public NativeArray<Vector3> lightsBridge;
+            [ReadOnly] public NativeArray<float> ligthsIntensity;
             private ushort lightIndex;
             private float maxWeight, lightWeight;
             private Vector3 shadowPosition, direction;

@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+using TheRavine.EntityControl;
+
 public class ActivateTextField : MonoBehaviour
 {
     [SerializeField] private PlayerEntity playerData;

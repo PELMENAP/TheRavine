@@ -2,84 +2,58 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using UnityEngine;
 
-[BurstCompile]
-public struct AccelerationJob : IJobParallelFor
+namespace TheRavine.EntityControl
 {
-    [ReadOnly]
-    public NativeArray<Vector3> Positions;
-    [ReadOnly]
-    public NativeArray<Vector3> OtherTargets;
-    [ReadOnly]
-    public NativeArray<Vector3> Velocities;
-    [ReadOnly]
-    public NativeArray<bool> IsMoving;
-
-    public NativeArray<Vector3> Accelerations;
-
-    [ReadOnly]
-    public float DestinationThreshold, AvoidanceThreshold, RandomnessRadius;
-    [ReadOnly]
-    public int RandomSeed;
-    [ReadOnly]
-    public Vector3 Weights;
-    private int Count => Positions.Length;
-    public void Execute(int index)
+    [BurstCompile]
+    public struct AccelerationJob : IJobParallelFor
     {
-        if (!IsMoving[index])
-            return;
-
-        Accelerations[index] = Vector3.zero;
-        var random = new Unity.Mathematics.Random((uint)(RandomSeed + index));
-        Vector3 averageSpread = Vector3.zero,
-            averageVelocity = Vector3.zero,
-            averagePosition = Vector3.zero;
-
-        int otherTargetsCount = OtherTargets.Length;
-
-        // Обработка взаимодействия с остальными юнитами
-        for (int i = 0; i < Count; i++)
+        [ReadOnly] public NativeArray<float2> Positions;
+        [ReadOnly] public NativeArray<float2> OtherTargets;
+        [ReadOnly] public NativeArray<float2> Velocities;
+        [ReadOnly] public NativeArray<bool> IsMoving;
+        [WriteOnly] public NativeArray<float2> Accelerations;
+        [ReadOnly] public float DestinationThreshold, AvoidanceThreshold, RandomnessRadius;
+        [ReadOnly] public int RandomSeed;
+        [ReadOnly] public float3 Weights;
+        private int Count => Positions.Length;
+        public void Execute(int index)
         {
-            if (i == index)
-                continue;
+            if (!IsMoving[index])
+                return;
 
-            Vector3 posDifference = Positions[index] - Positions[i];
-            posDifference.z = 0;
-            if (posDifference.magnitude < DestinationThreshold && posDifference.magnitude > 0)
+            Accelerations[index] = new float2(0, 0);
+            var random = new Unity.Mathematics.Random((uint)(RandomSeed + index));
+            float2 averageSpread = new float2(0, 0), averageVelocity = new float2(0, 0), averagePosition = new float2(0, 0);
+
+            for (ushort i = 0; i < Count; i++)
             {
-                averageSpread += posDifference.normalized * (DestinationThreshold - posDifference.magnitude);
-                averageVelocity += Velocities[i];
-                averagePosition += Positions[i];
+                if (i == index)
+                    continue;
+                float2 posDifference = Positions[index] - Positions[i];
+                float distance = math.length(posDifference);
+                if (distance < DestinationThreshold && distance > 0)
+                {
+                    averageSpread += math.normalize(posDifference) * (DestinationThreshold - distance);
+                    averageVelocity += Velocities[i];
+                    averagePosition += Positions[i];
+                }
             }
-        }
-
-        // Пересчет с учетом OtherTargets
-        if (otherTargetsCount > 0)
-        {
-            Vector3 targetPos = OtherTargets[index % otherTargetsCount];
-            // Добавляем случайное смещение к цели
-            Vector3 randomOffset = random.NextFloat3Direction() * RandomnessRadius;
-            targetPos += randomOffset;
-            randomOffset.z = 0;
-            targetPos.z = 0;
-
-            Vector3 posDifference = targetPos - Positions[index];
-            posDifference.z = 0;
-
-            if (posDifference.magnitude > DestinationThreshold)
+            if (OtherTargets.Length > 0)
             {
-                averageSpread += posDifference.normalized * (DestinationThreshold - posDifference.magnitude);
-                averagePosition += targetPos;
+                float2 targetPos = OtherTargets[index % OtherTargets.Length] + random.NextFloat2Direction() * RandomnessRadius;
+                float2 posDifference = targetPos - Positions[index];
+                if (math.length(posDifference) > DestinationThreshold)
+                {
+                    averageSpread += math.normalize(posDifference) * (DestinationThreshold - math.length(posDifference));
+                    averagePosition += targetPos;
+                }
             }
+
+            float2 finalAverageSpread = averageSpread / Count * Weights.x;
+            float2 finalAverageVelocity = averageVelocity / Count * Weights.y;
+            float2 finalAveragePosition = ((averagePosition / Count) - Positions[index]) * Weights.z;
+            Accelerations[index] = finalAverageSpread + finalAverageVelocity + finalAveragePosition;
         }
-
-        Vector3 finalAverageSpread = averageSpread / Count;
-        Vector3 finalAverageVelocity = averageVelocity / Count;
-        Vector3 finalAveragePosition = (averagePosition / Count) - Positions[index];
-
-        Accelerations[index] = (finalAverageSpread * Weights.x) +
-                               (finalAverageVelocity * Weights.y) +
-                               (finalAveragePosition * Weights.z);
     }
 }

@@ -13,7 +13,7 @@ public class BotBehaviourIdle : AState
 
     public override async void Update()
     {
-        behaviourIdle();
+        behaviourIdle?.Invoke();
         await ProcessCommandsAsync();
     }
 }

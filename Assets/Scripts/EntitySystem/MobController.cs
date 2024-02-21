@@ -1,48 +1,63 @@
 using Unity.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Jobs;
 using Unity.Mathematics;
 using Unity.Jobs;
-public class MobsController : MonoBehaviour
+
+using TheRavine.Services;
+
+namespace TheRavine.EntityControl
 {
-    public Transform[] mobTransforms;
-    public float[] moveSpeed;
-    public Vector2[] moveDirection;
-    private TransformAccessArray transformAccessArray;
-    private NativeArray<float> moveSpeeds;
-    private NativeArray<float2> moveDirections;
-
-    private void Start()
+    public class MobController : MonoBehaviour, ISetAble
     {
-        transformAccessArray = new TransformAccessArray(mobTransforms.Length);
-        moveSpeeds = new NativeArray<float>(moveSpeed.Length, Allocator.Persistent);
-        moveDirections = new NativeArray<float2>(moveDirection.Length, Allocator.Persistent);
-
-        for (int i = 0; i < mobTransforms.Length; i++)
+        private List<AEntity> mobEntities;
+        private TransformAccessArray transformAccessArray;
+        private NativeArray<float2> velocities;
+        private int EntityCount = 0;
+        public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
-            transformAccessArray.Add(mobTransforms[i]);
-            moveSpeeds[i] = moveSpeed[i];
-            moveDirections[i] = moveDirection[i];
+            callback?.Invoke();
         }
-    }
-
-    private void FixedUpdate()
-    {
-        MoveMobsJob moveMobsJob = new MoveMobsJob
+        public void UpdateCurrentMobs(List<AEntity> _mobEntities)
         {
-            deltaTime = Time.deltaTime,
-            moveSpeeds = moveSpeeds,
-            moveDirections = moveDirections
-        };
+            mobEntities = _mobEntities;
+            EntityCount = mobEntities.Count;
+            transformAccessArray = new TransformAccessArray(EntityCount);
+            velocities = new NativeArray<float2>(EntityCount, Allocator.Persistent);
+            for (ushort i = 0; i < EntityCount; i++)
+            {
+                transformAccessArray.Add(mobEntities[i].transform);
+            }
+        }
+        private void Update()
+        {
+            if (EntityCount < 1)
+                return;
+            for (int i = 0; i < EntityCount; i++)
+            {
+                mobEntities[i].UpdateEntityCycle();
+                velocities[i] = mobEntities[i].GetEntityVelocity(); ;
+            }
 
-        JobHandle jobHandle = moveMobsJob.Schedule(transformAccessArray);
-        jobHandle.Complete();
-    }
+            MoveMobsJob moveMobsJob = new MoveMobsJob
+            {
+                Velocities = velocities,
+                DeltaTime = Time.deltaTime
+            };
 
-    private void OnDestroy()
-    {
-        transformAccessArray.Dispose();
-        moveSpeeds.Dispose();
-        moveDirections.Dispose();
+            JobHandle jobHandle = moveMobsJob.Schedule(transformAccessArray);
+            jobHandle.Complete();
+        }
+        public void BreakUp()
+        {
+            OnDestroy();
+        }
+        private void OnDestroy()
+        {
+            mobEntities.Clear();
+            transformAccessArray.Dispose();
+            velocities.Dispose();
+        }
     }
 }
