@@ -8,7 +8,7 @@ using TheRavine.Base;
 using TheRavine.EntityControl;
 
 [RequireComponent(typeof(Rigidbody2D))]
-public class PlayerMovement : MonoBehaviour, IControllable
+public class PlayerMovement : MonoBehaviour, IEntityControllable
 {
     private const int PickDistance = 1;
     [SerializeField] private float movementSpeed, offset, timeLimit;
@@ -21,8 +21,10 @@ public class PlayerMovement : MonoBehaviour, IControllable
     private IController currentController;
     private bool act = true;
     [SerializeField] private Transform crosshair, playerTrans, playerMark;
+    private EntityAimBaseStats aimBaseStats;
+    private EntityMovementBaseStats movementBaseStats;
 
-    public void SetInitialValues()
+    public void SetInitialValues(AEntity entity)
     {
         rb = (Rigidbody2D)this.GetComponent("Rigidbody2D");
         switch (Settings._controlType)
@@ -34,8 +36,28 @@ public class PlayerMovement : MonoBehaviour, IControllable
                 currentController = new JoistickController(joystick);
                 break;
         }
+        movementBaseStats = entity.GetEntityComponent<MovementComponent>().baseStats;
+        aimBaseStats = entity.GetEntityComponent<AimComponent>().baseStats;
+        InitStatePattern(entity.GetEntityComponent<StatePatternComponent>());
         Raise.action.performed += AimRaise;
         LeftClick.action.performed += AimPlace;
+    }
+
+    private void InitStatePattern(StatePatternComponent component)
+    {
+        System.Action actions = Move;
+        actions += Animate;
+        actions += Aim;
+        PlayerBehaviourIdle Idle = new PlayerBehaviourIdle(this, actions);
+        component.AddBehaviour(typeof(PlayerBehaviourIdle), Idle);
+        // actions = Animate;
+        // actions += Aim;
+        // PlayerBehaviourDialoge Dialoge = new PlayerBehaviourDialoge();
+        // component.AddBehaviour(typeof(PlayerBehaviourDialoge), Dialoge);
+        actions = Animate;
+        actions += Aim;
+        PlayerBehaviourSit Sit = new PlayerBehaviourSit(this, actions);
+        component.AddBehaviour(typeof(PlayerBehaviourSit), Sit);
     }
 
     public void SetZeroValues()
@@ -60,7 +82,7 @@ public class PlayerMovement : MonoBehaviour, IControllable
             movementDirection = Vector2.zero;
         movementSpeed = Mathf.Clamp(movementDirection.magnitude, 0.0f, 1.0f);
         movementDirection.Normalize();
-        // rb.velocity = movementDirection * movementSpeed * PlayerEntity.data.MOVEMENT_BASE_SPEED;
+        rb.velocity = movementDirection * movementSpeed * movementBaseStats.baseSpeed;
         MoveMark();
     }
 
@@ -69,9 +91,10 @@ public class PlayerMovement : MonoBehaviour, IControllable
 
     }
 
+    private static readonly Vector3 Offset = new Vector3(0, 0, 100);
     private void MoveMark()
     {
-        playerMark.position = playerTrans.position - new Vector3(0, 0, -100);
+        playerMark.position = playerTrans.position + Offset;
         if (movementSpeed > 0.5f)
             playerMark.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(movementDirection.y, movementDirection.x) * Mathf.Rad2Deg - 90);
     }
@@ -105,8 +128,29 @@ public class PlayerMovement : MonoBehaviour, IControllable
             isAccurance = false;
             return;
         }
-        PlayerEntity.data.setMouse?.Invoke(aim);
-        crosshair.localPosition = aim * PlayerEntity.data.CROSSHAIR_DISTANSE; ;
+
+
+        // PlayerEntity.data.setMouse?.Invoke(aim);
+
+        Vector2 factMousePosition = new Vector2(aim.x, aim.y);
+        if (factMousePosition.magnitude > aimBaseStats.maxCrosshairDistanse)
+            factMousePosition = factMousePosition.normalized * aimBaseStats.maxCrosshairDistanse;
+        if (factMousePosition.magnitude < aimBaseStats.crosshairDistanse + 1)
+            factMousePosition = Vector2.zero;
+        // factMousePosition = aim;  Invoke event
+
+        // switch (Settings._controlType)
+        // {
+        //     case ControlType.Personal:
+        //         if (Mouse.current.rightButton.isPressed)
+        //             targetPos += PData.factMousePosition;
+        //         break;
+        //     case ControlType.Mobile:
+        //         targetPos += PData.factMousePosition;
+        //         break;
+        // }
+
+        crosshair.localPosition = aim * aimBaseStats.crosshairDistanse;
         crosshair.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg + offset);
         crosshair.gameObject.SetActive(true);
         isAccurance = true;

@@ -13,12 +13,11 @@ public class CM : MonoBehaviour, ISetAble
     public static bool cameraForMap;
     private Vector3 offset, targetPos;
     // private bool changeCam = false;
-    private EventBusByName playerEventBus;
     public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
         PlayerEntity playerEntity = locator.GetService<PlayerEntity>();
         // cameraForMap = false;
-        playerEventBus = playerEntity.GetEntityComponent<EventBusComponent>().EventBus;
+        playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<Vector3>(nameof(AimAddition), AddAimAddition); ;
         playerTrans = locator.GetPlayerTransform();
         offset = cameratrans.position - playerTrans.position;
         cameratrans.position = playerTrans.position + new Vector3(0, 0, -1);
@@ -61,19 +60,14 @@ public class CM : MonoBehaviour, ISetAble
     private void UpdateForGame()
     {
         targetPos = playerTrans.position + offset;
-        // switch (Settings._controlType)
-        // {
-        //     case ControlType.Personal:
-        //         if (Mouse.current.rightButton.isPressed)
-        //             targetPos += PData.factMousePosition;
-        //         break;
-        //     case ControlType.Mobile:
-        //         targetPos += PData.factMousePosition;
-        //         break;
-        // }
         if (Vector3.Distance(cameratrans.position, targetPos) < MinDistance)
             return;
         cameratrans.Translate(cameratrans.InverseTransformPoint(Vector3.Lerp(cameratrans.position, targetPos, Velocity * Time.fixedDeltaTime)));
+    }
+
+    private void AddAimAddition(Vector3 position)
+    {
+
     }
 
     private void UpdateForMap()

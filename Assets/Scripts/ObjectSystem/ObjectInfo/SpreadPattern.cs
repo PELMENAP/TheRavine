@@ -4,5 +4,5 @@ public class SpreadPattern : ScriptableObject
 {
     public ObjectInfo main;
     public ObjectInfo[] other;
-    public byte minDis, maxDis;
+    public byte factor;
 }

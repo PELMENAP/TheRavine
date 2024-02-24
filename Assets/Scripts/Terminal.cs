@@ -167,7 +167,7 @@ namespace TheRavine.Base
                         OutputReaction("Превышен лимит скорости");
                         return;
                     }
-                    playerData.MOVEMENT_BASE_SPEED = value;
+                    playerData.GetEntityComponent<MovementComponent>().baseStats.baseSpeed = value;
                     OutputReaction($"Скорость игрока: {value}");
                     break;
                 case "view":
@@ -176,7 +176,7 @@ namespace TheRavine.Base
                         OutputReaction("Превышен лимит обзора");
                         return;
                     }
-                    playerData.maxMouseDis = value;
+                    playerData.GetEntityComponent<AimComponent>().baseStats.crosshairDistanse = value;
                     OutputReaction($"Максимальный обзор игрока: {value}");
                     break;
                 default:

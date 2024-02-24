@@ -13,8 +13,6 @@ namespace TheRavine.EntityControl
     {
         private const byte chunkCount = MapGenerator.chunkCount;
         private GameObject CreateMob(Vector2 position, GameObject prefab) => Instantiate(prefab, position, Quaternion.identity);
-        //[SerializeField] private int count;
-        [SerializeField] private EntityInfo _playerInfo;
         [SerializeField] private SpawnPointData[] regions;
         private AEntity player;
         private MapGenerator generator;
@@ -38,7 +36,6 @@ namespace TheRavine.EntityControl
 
             player = locator.GetService<PlayerEntity>();
             entitySystem = locator.GetService<EntitySystem>();
-            player.SetUpEntityData(_playerInfo);
             entitySystem.AddToGlobal(player);
 
             NAL().Forget();
@@ -60,8 +57,7 @@ namespace TheRavine.EntityControl
                 countCycle++;
                 if (NALQueue.Count == 0)
                 {
-                    await UniTask.Delay(1000);
-                    print("nobody here");
+                    await UniTask.Delay(5000);
                     continue;
                 }
                 else if (countCycle % step == 0)
@@ -93,9 +89,8 @@ namespace TheRavine.EntityControl
             while (NALQueueUpdate.Count > 0)
             {
                 Pair<Vector2, GameObject> item = NALQueueUpdate.Dequeue();
-                GameObject curMob = CreateMob(item.First, item.Second);
+                GameObject curMob = CreateMob(Extention.GetRandomPointAround(item.First, 2), item.Second);
                 AEntity entity = curMob.GetComponent<AEntity>();
-                entity.transform.position += new Vector3(Random.Range(-10, 10), Random.Range(-10, 10), 0);
                 entity.SetUpEntityData(entitySystem.GetMobInfo(item.Second.GetInstanceID()));
                 entity.Init();
                 GetMapData(generator.GetChunkPosition(item.First)).entitiesInChunk.Add(entity);
@@ -122,10 +117,11 @@ namespace TheRavine.EntityControl
                         List<AEntity> listEntity = mapData[pos].entitiesInChunk;
                         for (ushort i = 0; i < listEntity.Count; i++)
                         {
-                            GetMapData(generator.GetChunkPosition(listEntity[i].GetEntityPosition())).entitiesInChunk.Add(listEntity[i]);
-                            listEntity[i].transform.position += new Vector3(Random.Range(-20, 20), Random.Range(-20, 20), 0);
-                            listEntity[i].DisableView();
-                            mapData[pos].entitiesInChunk.Remove(listEntity[i]);
+                            AEntity entity = listEntity[i];
+                            GetMapData(generator.GetChunkPosition(entity.GetEntityPosition())).entitiesInChunk.Add(entity);
+                            entity.transform.position = Extention.GetRandomPointAround((Vector2)entity.transform.position, 2);
+                            entity.DisableView();
+                            mapData[pos].entitiesInChunk.Remove(entity);
                         }
                     }
                 }
@@ -159,11 +155,16 @@ namespace TheRavine.EntityControl
 
         public void BreakUp()
         {
-            mapData.Clear();
-            NALQueue.Clear();
+            OnDestroy();
             generator.onSpawnPoint -= AddSpawnPoint;
             generator.onUpdate -= UpdateNALQueue;
             DayCycle.newDay -= UpdateNAL;
+        }
+
+        private void OnDestroy()
+        {
+            mapData.Clear();
+            ClearNALQueue();
         }
     }
 

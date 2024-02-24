@@ -18,13 +18,13 @@ MonoBehaviour:
     MCount: 5
     objectInfo: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
   - neight: 0301000000020003
-    MCount: 1
+    MCount: 2
     objectInfo: {fileID: 11400000, guid: f93e1ffefd235d615a1bd882c75bb125, type: 2}
   - neight: 0002000000000400
     MCount: 6
     objectInfo: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
   - neight: 0300050000030001
-    MCount: 6
+    MCount: 4
     objectInfo: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
   - neight: 0402000301000000
     MCount: 3

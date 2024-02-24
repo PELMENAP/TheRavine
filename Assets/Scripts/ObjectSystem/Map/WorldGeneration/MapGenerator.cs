@@ -23,6 +23,7 @@ namespace TheRavine.Generator
                 mapData[position] = GenerateMapData(position);
             return mapData[position];
         }
+        public bool IsHeigthIsLiveAble(int height) => regions[height].liveAble;
 
         public byte GetMapHeight(Vector2 position)
         {
@@ -83,6 +84,7 @@ namespace TheRavine.Generator
         private List<IEndless> endless = new List<IEndless>(3);
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
+            Noise.SetInit(seed, noiseScale, octaves, persistance, lacunarity);
             viewer = locator.GetPlayerTransform();
             objectSystem = locator.GetService<ObjectSystem>();
             DayCycle.newDay += UpdateNAL;
@@ -190,8 +192,8 @@ namespace TheRavine.Generator
                     {
                         for (byte i = 0; i < pattern.other.Length; i++)
                         {
-                            Vector2 newPos = Extention.GenerateRandomPointAround(current, pattern.minDis, pattern.maxDis);
-                            if (objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].amount, pattern.other[i].iType, Extention.newx < current.x))
+                            Vector2 newPos = Extention.GetRandomPointAround(current, pattern.factor);
+                            if (objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].amount, pattern.other[i].iType, newPos.x < current.x))
                                 NALQueueUpdate.Enqueue(newPos);
                         }
                     }
@@ -199,16 +201,14 @@ namespace TheRavine.Generator
                 }
                 else
                 {
-                    byte height = GetMapHeight(current);
-                    if (height < 3 || height > 7)
+                    if (!IsHeigthIsLiveAble(GetMapHeight(current)))
                         continue;
                     byte attempts = nalinfo.attempt;
                     while (attempts > 0)
                     {
                         if (Random.Range(0, 100) < nalinfo.chance)
                         {
-                            int xpos = (int)current.x, ypos = (int)current.y;
-                            Vector2 newPos = new Vector2(Random.Range(xpos - nalinfo.distance, xpos + nalinfo.distance), Random.Range(ypos - nalinfo.distance, ypos + nalinfo.distance));
+                            Vector2 newPos = Extention.GetRandomPointAround(current, nalinfo.distance);
                             if (objectSystem.TryAddToGlobal(newPos, nextGenInfo.prefab.GetInstanceID(), nextGenInfo.amount, nextGenInfo.iType, (newPos.x + newPos.y) % 2 == 0))
                                 NALQueueUpdate.Enqueue(newPos);
                         }
@@ -240,9 +240,9 @@ namespace TheRavine.Generator
             SortedSet<Vector2> objectsToInst = new SortedSet<Vector2>(new Vector2Comparer());
             byte[,] heightMap = new byte[mapChunkSize, mapChunkSize];
             if (centre.x > 10000 || centre.y > 10000)
-                Noise.GenerateNoiseMap(ref noiseMap, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, centre * mapChunkSize, Noise.NormalizeMode.Local);
+                Noise.GenerateNoiseMap(ref noiseMap, seed, centre * mapChunkSize, Noise.NormalizeMode.Local);
             else
-                Noise.GenerateNoiseMap(ref noiseMap, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, centre * mapChunkSize, Noise.NormalizeMode.Global);
+                Noise.GenerateNoiseMap(ref noiseMap, seed, centre * mapChunkSize, Noise.NormalizeMode.Global);
             bool isEqual = true;
             for (byte x = 0; x < mapChunkSize; x++)
             {
@@ -495,6 +495,7 @@ namespace TheRavine.Generator
     public struct TerrainType
     {
         public float height;
+        public bool liveAble;
         public ObjectInfoGeneration[] objects;
         public StructInfoGeneration[] structs;
     }

@@ -1,12 +1,14 @@
 using UnityEngine;
-public interface IControllable
+using TheRavine.EntityControl;
+public interface IEntityControllable
 {
-    void SetInitialValues();
+    void SetInitialValues(AEntity entity);
     void SetZeroValues();
     void EnableComponents();
     void DisableComponents();
-    void Move();
-    void Jump();
-    void Animate();
-    void Aim();
+}
+
+public interface IMobControllable : IEntityControllable
+{
+    void UpdateMobControllerCycle();
 }

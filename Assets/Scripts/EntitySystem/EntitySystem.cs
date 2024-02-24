@@ -33,6 +33,13 @@ namespace TheRavine.EntityControl
 
         public void BreakUp()
         {
+            for (int i = 0; i < global.Count; i++)
+                global[i].BreakUpEntity();
+            OnDestroy();
+        }
+
+        private void OnDestroy()
+        {
             global.Clear();
         }
     }
