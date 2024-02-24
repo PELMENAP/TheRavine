@@ -157,8 +157,8 @@ namespace TheRavine.Inventory
                     {
                         for (byte i = 0; i < pattern.other.Length; i++)
                         {
-                            Vector2 newPos = Extention.GenerateRandomPointAround(position, pattern.minDis, pattern.maxDis);
-                            objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].amount, pattern.other[i].iType, Extention.newx < position.x);
+                            Vector2 newPos = Extention.GetRandomPointAround(position, pattern.factor);
+                            objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].amount, pattern.other[i].iType, newPos.x < position.x);
                         }
                     }
                     print("leave pattern");

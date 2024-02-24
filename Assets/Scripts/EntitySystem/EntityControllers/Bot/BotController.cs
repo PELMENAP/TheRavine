@@ -3,7 +3,9 @@ using UnityEngine.InputSystem;
 using System.Collections;
 using System;
 
-public class BotController : MonoBehaviour, IControllable
+using TheRavine.EntityControl;
+
+public class BotController : MonoBehaviour, IEntityControllable
 {
     private const int PickDistance = 1;
     [SerializeField] private float movementSpeed, offset, timeLimit;
@@ -13,7 +15,7 @@ public class BotController : MonoBehaviour, IControllable
     [SerializeField] private InputActionReference MovementRef;
     private IController currentController;
     private Transform crosshair, entityTrans, playerMark;
-    public void SetInitialValues()
+    public void SetInitialValues(AEntity entity)
     {
         // rb = (Rigidbody2D)this.GetComponent("Rigidbody2D");
         // entityTrans = PlayerData.instance.entityTrans;

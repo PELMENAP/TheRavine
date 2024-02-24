@@ -1,16 +1,16 @@
 
 namespace TheRavine.EntityControl
 {
-    public struct EntityMovementStats
+    public class EntityMovementBaseStats
     {
         public int baseSpeed;
 
-        public EntityMovementStats(int _baseSpeed)
+        public EntityMovementBaseStats(int _baseSpeed)
         {
             baseSpeed = _baseSpeed;
         }
 
-        public EntityMovementStats(EntityMovementStatsInfo info)
+        public EntityMovementBaseStats(EntityMovementStatsInfo info)
         {
             baseSpeed = info.BaseSpeed;
         }

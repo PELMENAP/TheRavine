@@ -45,7 +45,6 @@ namespace TheRavine.Base
             TimeBridge[0] = startDay;
             TimeBridge[4] = speed;
             GameObject[] shadowsObjects = GameObject.FindGameObjectsWithTag("Shadow");
-            // print(Settings.isShadow);
             if (Settings.isShadow)
             {
                 Light2D[] lights = GameObject.FindObjectsByType<Light2D>(FindObjectsSortMode.None);
@@ -118,14 +117,8 @@ namespace TheRavine.Base
                     isday = IsdayBridge[0];
                     if (!IsdayBridge[0])
                     {
-                        Light2DBridge.Dispose();
-                        Light2DIntensityBridge.Dispose();
-                        shadowsTransform.Dispose();
                         newDay?.Invoke();
                     }
-                    else
-                        GC.Collect();
-                    // GC.Collect(1, GCCollectionMode.Forced);
                     await UniTask.Delay(1000);
                 }
                 if (Settings.isShadow)

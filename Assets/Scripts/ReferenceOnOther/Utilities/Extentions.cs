@@ -1,8 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -52,87 +48,47 @@ namespace TheRavine.Extentions
             double winklerSimilarity = jaroSimilarity + ((transpositions * 0.1) * (1 - jaroSimilarity));
             return winklerSimilarity;
         }
-        static public float newx;
-        public static Vector2 GenerateRandomPointAround(Vector2 centerPoint, int minDistance, int maxDistance)
-        {
-            float distance = Random.Range(minDistance, maxDistance);
-            float angle = Random.Range(0f, Mathf.PI * 2f);
-            newx = centerPoint.x + distance * Mathf.Cos(angle);
-            float newy = centerPoint.y + distance * Mathf.Sin(angle);
-            return new Vector2((int)newx, (int)newy);
-        }
-
         private static Vector2 RoundVector2(Vector2 vec) => new Vector2(Mathf.RoundToInt(vec.x), Mathf.RoundToInt(vec.y));
-        public static Vector2 Vector2D(Vector3 vec) => new Vector2(vec.x, vec.y);
-        public static Vector2 RoundVector2D(Vector3 vec) => RoundVector2(Vector2D(vec));
-    }
+        public static Vector2 RoundVector2D(Vector3 vec) => RoundVector2((Vector2)vec);
 
-
-    public class EnumerableSnapshot<T> : IEnumerable<T>, IDisposable
-    {
-        private IEnumerable<T> _source;
-        private IEnumerator<T> _enumerator;
-        private ReadOnlyCollection<T> _cached;
-
-        public EnumerableSnapshot(IEnumerable<T> source)
+        public static Vector2 GetRandomPointAround(Vector2 centerPoint, float factor)
         {
-            _source = source ?? throw new ArgumentNullException(nameof(source));
+            var distribution = DistributionCache.GetCachedDistribution();
+            double[] randomPoint = distribution.Generate();
+            return centerPoint + new Vector2((float)randomPoint[0], (float)randomPoint[1]) * factor;
+        }
+        public static Vector2 CalculateQuadraticBezierPoint(float t, Vector2 p0, Vector2 p1, Vector2 p2)
+        {
+            float u = 1 - t;
+            float tt = t * t;
+            float uu = u * u;
+            return uu * p0 + 2 * u * t * p1 + tt * p2;
         }
 
-        public IEnumerator<T> GetEnumerator()
+        public static bool CheckDistance(Vector2 from, Vector2 to, float threshold) => Vector2.Distance(from, to) < threshold;
+
+        public static Vector2 RotateVector(Vector2 vector, float angle)
         {
-            if (_source == null) throw new ObjectDisposedException(this.GetType().Name);
-            if (_enumerator == null)
+            float sin = Mathf.Sin(angle);
+            float cos = Mathf.Cos(angle);
+            return new Vector2(vector.x * cos - vector.y * sin, vector.x * sin + vector.y * cos);
+        }
+
+        public static float GetRandomValue(float min, float max) => Random.Range(min, max);
+        public static Vector2 PerpendicularClockwise(Vector2 vector) => new Vector2(vector.y, -vector.x);
+        public static Vector2 PerpendicularCounterClockwise(Vector2 vector) => new Vector2(-vector.y, vector.x);
+
+        public static void GenerateBezierPoints(Vector2 start, Vector2 control, Vector2 end, byte bezierDetail, ref Vector2[] bezierPoints)
+        {
+            for (int i = 0; i <= bezierDetail; i++)
             {
-                _enumerator = _source.GetEnumerator();
-                _cached = new ReadOnlyCollection<T>(_source.ToArray());
+                float t = i / (float)bezierDetail;
+                bezierPoints[i] = CalculateQuadraticBezierPoint(t, start, control, end);
             }
-            else
-            {
-                var modified = false;
-                if (_source is ICollection collection)
-                {
-                    modified = _cached.Count != collection.Count;
-                }
-                if (!modified)
-                {
-                    try
-                    {
-                        _enumerator.MoveNext();
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        modified = true;
-                    }
-                }
-                if (modified)
-                {
-                    _enumerator.Dispose();
-                    _enumerator = _source.GetEnumerator();
-                    _cached = new ReadOnlyCollection<T>(_source.ToArray());
-                }
-            }
-            return _cached.GetEnumerator();
         }
-
-        public void Dispose()
-        {
-            _enumerator?.Dispose();
-            _enumerator = null;
-            _cached = null;
-            _source = null;
-        }
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
-    public static class EnumerableSnapshotExtensions
-    {
-        public static EnumerableSnapshot<T> ToEnumerableSnapshot<T>(
-            this IEnumerable<T> source) => new EnumerableSnapshot<T>(source);
-    }
-
-    public class Vector2Comparer : IComparer<Vector2>
+    public class Vector2Comparer : System.Collections.Generic.IComparer<Vector2>
     {
         public int Compare(Vector2 v1, Vector2 v2)
         {

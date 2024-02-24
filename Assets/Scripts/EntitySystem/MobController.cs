@@ -37,7 +37,7 @@ namespace TheRavine.EntityControl
             for (int i = 0; i < EntityCount; i++)
             {
                 mobEntities[i].UpdateEntityCycle();
-                velocities[i] = mobEntities[i].GetEntityVelocity(); ;
+                velocities[i] = mobEntities[i].GetEntityVelocity();
             }
 
             MoveMobsJob moveMobsJob = new MoveMobsJob
@@ -50,10 +50,6 @@ namespace TheRavine.EntityControl
             jobHandle.Complete();
         }
         public void BreakUp()
-        {
-            OnDestroy();
-        }
-        private void OnDestroy()
         {
             mobEntities.Clear();
             transformAccessArray.Dispose();

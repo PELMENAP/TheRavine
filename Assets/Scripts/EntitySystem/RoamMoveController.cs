@@ -1,77 +1,86 @@
 using UnityEngine;
-using System;
-using System.Collections;
-using System.Threading.Tasks;
-public class RoamMoveController : MonoBehaviour
+using Cysharp.Threading.Tasks;
+
+using TheRavine.Extentions;
+using TheRavine.EntityControl;
+
+[RequireComponent(typeof(Rigidbody2D))]
+public class RoamMoveController : MonoBehaviour, IEntityControllable
 {
-    public event Action<string, float> setValueToAnimator;
-    public event Action missionComplete, setRandomPointComplete, setRandomPointStart;
-    public Vector3 randomD;
-    private const float pi = 3.14f;
-    [SerializeField] private Rigidbody2D RB;
-    [SerializeField] private Animator animator;
-    [SerializeField] private Transform ET, pointT, pointR; // EntityTranform
-    [SerializeField] private Vector3 groupTarget, target, randomEP; // targetDirection, randomDirection, randomEndPosition
-    [SerializeField] private float movementSpeed, accuracy, lostPath, lostPathValue, maxTarget;
-    [SerializeField] private int stepValue, spreadOfStep, angleDivide, movementDelay;
-    [SerializeField] private bool isGroup;
-    private bool delay;
+    [SerializeField] private Transform entityTransform;
+    [SerializeField] private Transform pointTarget, pointRandom;
+    [SerializeField] private byte movementSpeed, accuracy, maxTargetDistance;
+    [SerializeField] private byte stepValue, stepSpread, angleDivide, movementDelay;
+    [SerializeField] private byte bezierDetail, bezierFactor;
+    private Vector2 target;
+    private bool isDelay, side = true;
+    private Vector2[] bezierPoints;
+    private byte currentPointIndex;
 
-    #region [MONO]
-    private float GRMV(float n) => UnityEngine.Random.Range(-n, n); // GetRandomModuleValue
-    private int GRVR(int n, int spread) => UnityEngine.Random.Range(n - spread, n + spread); // GetRandomValueOnRange
-    private Vector3 GRPA(Vector3 vector, float n) => new Vector3(vector.x + GRMV(n), vector.y + GRMV(n)); //GetRandomPointInArea
-    private Vector3 GRV(Vector3 vector, float angle) => new Vector3(vector.x * Mathf.Cos(angle) - vector.y * Mathf.Sin(angle), vector.x * Mathf.Sin(angle) + vector.y * Mathf.Cos(angle)); //GetRotateVector
-    private bool CheckMeet(Vector3 first, Vector3 second, float value) => Vector2.Distance(first, second) < value;
-
-    public void AssingMethod(Transform _ET, Rigidbody2D _RB)
+    public void SetInitialValues(AEntity entity)
     {
-        ET = _ET;
-        RB = _RB;
+        bezierPoints = new Vector2[bezierDetail + 1];
+        UpdateTargetWander();
+    }
+    public void SetZeroValues()
+    {
+    }
+    public void EnableComponents()
+    {
+        // currentController.EnableView();
+    }
+    public void DisableComponents()
+    {
+        // currentController.DisableView();
+    }
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        print("triggered");
+        UpdateRandomMove(true).Forget();
     }
 
-    #endregion
-    public void UpdateBehaviour()
+    public void UpdateMobControllerCycle()
     {
-        if (delay)
-            return;
-        if (CheckMeet(ET.position, randomEP, accuracy))
-            UpdateRandomMove();
-        else if (lostPath < 0)
-            UpdateRandomMove();
-        if (CheckMeet(ET.position, target, accuracy))
-            missionComplete?.Invoke();
-        RB.velocity = randomD * movementSpeed;
-        lostPath -= movementSpeed * lostPathValue;
+        if (isDelay) return;
+        if (Extention.CheckDistance(entityTransform.position, target, accuracy))
+            UpdateTargetWander();
+        if (currentPointIndex < bezierPoints.Length && bezierPoints[0] != Vector2.zero)
+        {
+            entityTransform.position = Vector2.MoveTowards(entityTransform.position, bezierPoints[currentPointIndex], movementSpeed * Time.deltaTime);
+            if (Extention.CheckDistance(entityTransform.position, bezierPoints[currentPointIndex], accuracy))
+            {
+                currentPointIndex++;
+                if (currentPointIndex >= bezierPoints.Length)
+                    UpdateRandomMove().Forget();
+            }
+        }
     }
 
     public void UpdateTargetWander()
     {
-        target = isGroup ? groupTarget : GRPA(ET.position, maxTarget);
-        pointT.position = target;
-        UpdateRandomMove();
+        target = Extention.GetRandomPointAround((Vector2)entityTransform.position, maxTargetDistance);
+        pointTarget.position = target;
+        UpdateRandomMove().Forget();
     }
 
-    public async void UpdateRandomMove(bool back = false)
+    public async UniTaskVoid UpdateRandomMove(bool isBackwards = false)
     {
-        delay = true;
-        setRandomPointStart?.Invoke();
-        setValueToAnimator?.Invoke("Speed", 0);
-        RB.velocity = Vector3.zero;
-        if (!back)
-            randomD = GRV(target - ET.position, GRMV(pi / angleDivide));
-        else
-            randomD = GRV(target - ET.position, 2 * GRMV(pi / angleDivide));
-        randomD.Normalize();
-        randomEP = randomD * GRVR(stepValue, spreadOfStep) + ET.position;
-        pointR.position = randomEP;
-        lostPath = Vector2.Distance(ET.position, randomEP);
-        await Task.Delay(100 * movementDelay);
-        setRandomPointComplete?.Invoke();
-        await Task.Delay(10 * movementDelay);
-        setValueToAnimator?.Invoke("Horizontal", randomD.x);
-        setValueToAnimator?.Invoke("Vertical", randomD.y);
-        setValueToAnimator?.Invoke("Speed", 1);
-        delay = false;
+        isDelay = true;
+        Vector2 start = entityTransform.position;
+        Vector2 directionToTarget = (Vector2)(target - start);
+        float angleOffset = Extention.GetRandomValue(-Mathf.PI / angleDivide, Mathf.PI / angleDivide);
+        Vector2 randomDirection = isBackwards ? Extention.RotateVector(directionToTarget, 2 * angleOffset) : Extention.RotateVector(directionToTarget, angleOffset);
+        randomDirection.Normalize();
+        Vector2 randomPoint = start + randomDirection * Random.Range(stepValue - stepSpread, stepValue + stepSpread);
+        Vector2 distribution = side ? Extention.PerpendicularCounterClockwise(randomPoint - start).normalized : Extention.PerpendicularClockwise(randomPoint - start).normalized;
+        Vector2 control = Extention.GetRandomPointAround((start + randomPoint) / 2 + distribution * bezierFactor, bezierFactor / 2);
+
+        Extention.GenerateBezierPoints(start, control, randomPoint, bezierDetail, ref bezierPoints);
+        currentPointIndex = 0;
+
+        pointRandom.position = randomPoint;
+        await UniTask.Delay(10 * movementDelay);
+        side = !side;
+        isDelay = false;
     }
 }

@@ -12,9 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1110f6f7306fdff697c35625afdbd97, type: 3}
   m_Name: Mycelium
   m_EditorClassIdentifier: 
-  _maxcount: 2
-  _around: 3
-  _distance: 5
+  _distance: 1
   _chance: 20
   _attempt: 1
   _delay: 15
