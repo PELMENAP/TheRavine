@@ -37,16 +37,22 @@ namespace TheRavine.Base
             newDay += GetLightsAndShadows;
             closeThread = true;
             UpdateDay().Forget();
+            if (!Settings.isShadow)
+            {
+                GameObject[] shadowsObjects = GameObject.FindGameObjectsWithTag("Shadow");
+                for (ushort i = 0; i < shadowsObjects.Length; i++)
+                    shadowsObjects[i].SetActive(false);
+            }
             callback?.Invoke();
         }
 
         private void GetLightsAndShadows()
         {
-            TimeBridge[0] = startDay;
+            // TimeBridge[0] = startDay;
             TimeBridge[4] = speed;
-            GameObject[] shadowsObjects = GameObject.FindGameObjectsWithTag("Shadow");
             if (Settings.isShadow)
             {
+                GameObject[] shadowsObjects = GameObject.FindGameObjectsWithTag("Shadow");
                 Light2D[] lights = GameObject.FindObjectsByType<Light2D>(FindObjectsSortMode.None);
                 shadows = new Transform[shadowsObjects.Length];
                 for (ushort i = 0; i < shadowsObjects.Length; i++)
@@ -68,22 +74,17 @@ namespace TheRavine.Base
                     }
                 }
                 UpdateProperties();
-            }
-            else
-            {
-                for (ushort i = 0; i < shadowsObjects.Length; i++)
-                    shadowsObjects[i].SetActive(false);
+                shadowJob = new ShadowsJob()
+                {
+                    lightsBridge = Light2DBridge,
+                    ligthsIntensity = Light2DIntensityBridge
+                };
             }
             dayJob = new DayJob()
             {
                 deltaTime = Time.deltaTime,
                 timeBridge = TimeBridge,
                 isdayBridge = IsdayBridge
-            };
-            shadowJob = new ShadowsJob()
-            {
-                lightsBridge = Light2DBridge,
-                ligthsIntensity = Light2DIntensityBridge
             };
         }
 
@@ -107,7 +108,7 @@ namespace TheRavine.Base
             await UniTask.Delay(3000);
             GetLightsAndShadows();
             await UniTask.Delay(1000);
-            while (closeThread)
+            while (!DataStorage.sceneClose)
             {
                 JobHandle dayHande = dayJob.Schedule();
                 dayHande.Complete();
@@ -135,12 +136,14 @@ namespace TheRavine.Base
 
         public void BreakUp()
         {
-            closeThread = false;
             TimeBridge.Dispose();
             IsdayBridge.Dispose();
-            Light2DBridge.Dispose();
-            Light2DIntensityBridge.Dispose();
-            shadowsTransform.Dispose();
+            if (Settings.isShadow)
+            {
+                Light2DBridge.Dispose();
+                Light2DIntensityBridge.Dispose();
+                shadowsTransform.Dispose();
+            }
         }
         [BurstCompile]
         public struct DayJob : IJob

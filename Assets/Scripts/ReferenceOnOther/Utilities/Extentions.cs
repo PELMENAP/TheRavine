@@ -1,12 +1,11 @@
 using System;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace TheRavine.Extentions
 {
     public static class Extention
     {
-        static public double JaroWinklerSimilarity(string str1, string str2)
+        public static double JaroWinklerSimilarity(string str1, string str2)
         {
             if ((str1 == null) || (str2 == null))
                 return 0;
@@ -53,9 +52,8 @@ namespace TheRavine.Extentions
 
         public static Vector2 GetRandomPointAround(Vector2 centerPoint, float factor)
         {
-            var distribution = DistributionCache.GetCachedDistribution();
-            double[] randomPoint = distribution.Generate();
-            return centerPoint + new Vector2((float)randomPoint[0], (float)randomPoint[1]) * factor;
+            double[] randomPoint = DistributionCache.GetCachedDistribution().Generate();
+            return new Vector2((float)(centerPoint.x + randomPoint[0] * factor), (float)(centerPoint.y + randomPoint[1] * factor));
         }
         public static Vector2 CalculateQuadraticBezierPoint(float t, Vector2 p0, Vector2 p1, Vector2 p2)
         {
@@ -64,28 +62,24 @@ namespace TheRavine.Extentions
             float uu = u * u;
             return uu * p0 + 2 * u * t * p1 + tt * p2;
         }
-
         public static bool CheckDistance(Vector2 from, Vector2 to, float threshold) => Vector2.Distance(from, to) < threshold;
-
         public static Vector2 RotateVector(Vector2 vector, float angle)
         {
             float sin = Mathf.Sin(angle);
             float cos = Mathf.Cos(angle);
             return new Vector2(vector.x * cos - vector.y * sin, vector.x * sin + vector.y * cos);
         }
-
-        public static float GetRandomValue(float min, float max) => Random.Range(min, max);
+        public static float GetRandomValue(float min, float max) => RavineRandom.RangeFloat(min, max);
         public static Vector2 PerpendicularClockwise(Vector2 vector) => new Vector2(vector.y, -vector.x);
         public static Vector2 PerpendicularCounterClockwise(Vector2 vector) => new Vector2(-vector.y, vector.x);
 
         public static void GenerateBezierPoints(Vector2 start, Vector2 control, Vector2 end, byte bezierDetail, ref Vector2[] bezierPoints)
         {
-            for (int i = 0; i <= bezierDetail; i++)
-            {
-                float t = i / (float)bezierDetail;
-                bezierPoints[i] = CalculateQuadraticBezierPoint(t, start, control, end);
-            }
+            for (byte i = 0; i <= bezierDetail; i++)
+                bezierPoints[i] = CalculateQuadraticBezierPoint(i / (float)bezierDetail, start, control, end);
         }
+
+        public static bool ComparePercent(int value) => RavineRandom.Hundred() <= value;
     }
 
     public class Vector2Comparer : System.Collections.Generic.IComparer<Vector2>

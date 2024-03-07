@@ -11,6 +11,7 @@ namespace TheRavine.EntityControl
 {
     public class MobGenerator : MonoBehaviour, ISetAble
     {
+        private System.Threading.CancellationTokenSource _cts = new System.Threading.CancellationTokenSource();
         private const byte chunkCount = MapGenerator.chunkCount;
         private GameObject CreateMob(Vector2 position, GameObject prefab) => Instantiate(prefab, position, Quaternion.identity);
         [SerializeField] private SpawnPointData[] regions;
@@ -57,13 +58,13 @@ namespace TheRavine.EntityControl
                 countCycle++;
                 if (NALQueue.Count == 0)
                 {
-                    await UniTask.Delay(5000);
+                    await UniTask.Delay(5000, cancellationToken: _cts.Token);
                     continue;
                 }
-                else if (countCycle % step == 0)
+                if (countCycle % step == 0)
                 {
-                    // NALQueue.Dequeue();
-                    await UniTask.Delay(100);
+                    NALQueue.Enqueue(NALQueue.Dequeue());
+                    await UniTask.Delay(100, cancellationToken: _cts.Token);
                     continue;
                 }
                 Pair<Vector2, byte> current = NALQueue.Dequeue();
@@ -71,16 +72,16 @@ namespace TheRavine.EntityControl
                 for (byte i = 0; i < currentSpawnPointData.entities.Length; i++)
                 {
                     MobSpawnData curMobSpawnData = currentSpawnPointData.entities[i];
-                    if (Random.Range(0, 100) < curMobSpawnData.Chance)
+                    if (RavineRandom.Hundred() < curMobSpawnData.Chance)
                     {
                         print("summon somebody");
                         NALQueueUpdate.Enqueue(new Pair<Vector2, GameObject>(current.First, curMobSpawnData.info.prefab));
-                        await UniTask.Delay(curMobSpawnData.Chance * curMobSpawnData.Chance);
+                        await UniTask.Delay(curMobSpawnData.Chance * curMobSpawnData.Chance, cancellationToken: _cts.Token);
                         break;
                     }
                 }
                 NALQueue.Enqueue(current);
-                await UniTask.Delay(10);
+                await UniTask.Delay(10, cancellationToken: _cts.Token);
             }
         }
         public void UpdateNAL()
@@ -100,9 +101,8 @@ namespace TheRavine.EntityControl
         private void AddSpawnPoint(Vector2 position, byte height, Vector2 chunkCenter)
         {
             GetMapData(chunkCenter).spawnPoints[position] = height;
+            print(position);
         }
-
-        private List<AEntity> mobEntities = new List<AEntity>();
         private void UpdateNALQueue(Vector2 position)
         {
             for (byte yOffset = 0; yOffset < chunkCount; yOffset++)
@@ -121,13 +121,13 @@ namespace TheRavine.EntityControl
                             GetMapData(generator.GetChunkPosition(entity.GetEntityPosition())).entitiesInChunk.Add(entity);
                             entity.transform.position = Extention.GetRandomPointAround((Vector2)entity.transform.position, 2);
                             entity.DisableView();
+                            mobsController.RemoveMobFromUpdate(entity);
                             mapData[pos].entitiesInChunk.Remove(entity);
                         }
                     }
                 }
             }
             currentChunkPosition = position;
-            mobEntities.Clear();
             for (byte yOffset = 0; yOffset < chunkCount; yOffset++)
             {
                 for (byte xOffset = 0; xOffset < chunkCount; xOffset++)
@@ -142,26 +142,24 @@ namespace TheRavine.EntityControl
                         List<AEntity> listEntity = mapData[pos].entitiesInChunk;
                         for (ushort i = 0; i < listEntity.Count; i++)
                         {
-                            mobEntities.Add(listEntity[i]);
-                            listEntity[i].EnableView();
+                            AEntity entity = listEntity[i];
+                            mobsController.AddMobToUpdate(entity);
+                            entity.EnableView();
                         }
                     }
                 }
             }
-            mobsController.UpdateCurrentMobs(mobEntities);
-
-            print("update NUL queue and mobcontroller");
         }
 
         public void BreakUp()
         {
-            OnDestroy();
+            OnDisable();
             generator.onSpawnPoint -= AddSpawnPoint;
             generator.onUpdate -= UpdateNALQueue;
             DayCycle.newDay -= UpdateNAL;
         }
 
-        private void OnDestroy()
+        private void OnDisable()
         {
             mapData.Clear();
             ClearNALQueue();

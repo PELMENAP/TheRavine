@@ -37,7 +37,7 @@ namespace TheRavine.Base
             serviceLocator.Register<PlayerEntity>(playerData);
             serviceLocator.Register<ObjectSystem>(objectSystem);
             serviceLocator.Register<UIInventory>(inventory);
-            serviceLocator.Register<MapGenerator>(generator);
+            // serviceLocator.Register<MapGenerator>(generator);
             serviceLocator.Register<DayCycle>(sun);
             serviceLocator.Register<Terminal>(terminal);
             serviceLocator.Register<EntitySystem>(entitySystem);
@@ -46,7 +46,7 @@ namespace TheRavine.Base
             _setAble.Enqueue((ISetAble)objectSystem);
             _setAble.Enqueue((ISetAble)playerData);
             _setAble.Enqueue((ISetAble)inventory);
-            _setAble.Enqueue((ISetAble)generator);
+            // _setAble.Enqueue((ISetAble)generator);
             _setAble.Enqueue((ISetAble)sun);
             _setAble.Enqueue((ISetAble)terminal);
             _setAble.Enqueue((ISetAble)entitySystem);
@@ -76,6 +76,7 @@ namespace TheRavine.Base
         public void StartNewServise(ISetAble.Callback callback)
         {
             ISetAble setAble = _setAble.Dequeue();
+            print(nameof(setAble));
             _disAble.Enqueue(setAble);
             setAble.SetUp(callback, serviceLocator);
         }
@@ -94,6 +95,7 @@ namespace TheRavine.Base
 
         public void InTheEnd()
         {
+            DataStorage.sceneClose = true;
             while (_disAble.Count > 0)
                 _disAble.Dequeue().BreakUp();
             EnhancedTouchSupport.Disable();

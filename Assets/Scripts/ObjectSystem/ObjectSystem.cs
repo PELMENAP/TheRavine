@@ -15,7 +15,7 @@ namespace TheRavine.ObjectControl
         private Dictionary<int, ObjectInfo> info = new Dictionary<int, ObjectInfo>(16);
         public ObjectInfo GetPrefabInfo(int id) => info[id];
         //
-        private Dictionary<Vector2, ObjectInstInfo> global = new Dictionary<Vector2, ObjectInstInfo>(128);
+        private Dictionary<Vector2, ObjectInstInfo> global = new Dictionary<Vector2, ObjectInstInfo>(512);
         public ObjectInstInfo GetGlobalObjectInfo(Vector2 position)
         {
             if (!global.ContainsKey(position))

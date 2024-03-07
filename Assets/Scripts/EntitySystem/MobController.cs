@@ -11,34 +11,56 @@ namespace TheRavine.EntityControl
 {
     public class MobController : MonoBehaviour, ISetAble
     {
-        private List<AEntity> mobEntities;
+        private AEntity[] mobEntities;
         private TransformAccessArray transformAccessArray;
         private NativeArray<float2> velocities;
-        private int EntityCount = 0;
+        public NativeArray<bool> isMoving;
+        private ushort EntityCount = 0, maxEntities = 1000;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
+            transformAccessArray = new TransformAccessArray(maxEntities);
+            velocities = new NativeArray<float2>(maxEntities, Allocator.Persistent);
+            isMoving = new NativeArray<bool>(maxEntities, Allocator.Persistent);
+            for (ushort i = 0; i < maxEntities; i++)
+                transformAccessArray.Add(this.transform);
+            print(transformAccessArray.capacity);
+            print(transformAccessArray.length);
             callback?.Invoke();
         }
-        public void UpdateCurrentMobs(List<AEntity> _mobEntities)
+
+        public void AddMobToUpdate(AEntity mobEntity)
         {
-            mobEntities = _mobEntities;
-            EntityCount = mobEntities.Count;
-            transformAccessArray = new TransformAccessArray(EntityCount);
-            velocities = new NativeArray<float2>(EntityCount, Allocator.Persistent);
-            for (ushort i = 0; i < EntityCount; i++)
+            for (ushort i = 0; i < maxEntities; i++)
             {
-                transformAccessArray.Add(mobEntities[i].transform);
+                if (mobEntities[i] == null)
+                {
+                    mobEntities[i] = mobEntity;
+                    transformAccessArray[i] = mobEntity.transform;
+                    return;
+                }
+            }
+        }
+
+        public void RemoveMobFromUpdate(AEntity mobEntity)
+        {
+            int index = System.Array.IndexOf(mobEntities, mobEntity);
+            if (index != -1)
+            {
+                mobEntities[index] = null;
             }
         }
         private void Update()
         {
             if (EntityCount < 1)
                 return;
-            for (int i = 0; i < EntityCount; i++)
-            {
-                mobEntities[i].UpdateEntityCycle();
-                velocities[i] = mobEntities[i].GetEntityVelocity();
-            }
+            for (ushort i = 0; i < maxEntities; i++)
+                if (mobEntities[i] != null)
+                {
+                    mobEntities[i].UpdateEntityCycle();
+                    velocities[i] = mobEntities[i].GetEntityVelocity();
+                }
+                else
+                    velocities[i] = float2.zero;
 
             MoveMobsJob moveMobsJob = new MoveMobsJob
             {
@@ -51,9 +73,10 @@ namespace TheRavine.EntityControl
         }
         public void BreakUp()
         {
-            mobEntities.Clear();
+            mobEntities = null;
             transformAccessArray.Dispose();
             velocities.Dispose();
+            isMoving.Dispose();
         }
     }
 }
