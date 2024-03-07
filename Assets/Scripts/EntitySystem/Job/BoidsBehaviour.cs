@@ -18,6 +18,7 @@ namespace TheRavine.EntityControl
         [SerializeField] private float _velocityLimit;
         [SerializeField] private float3 _accelerationWeights;
         [SerializeField] private float2[] targetArray;
+        [SerializeField] private Vector3 _flip;
 
         private NativeArray<float2> _positions;
         private NativeArray<float2> _velocities;
@@ -75,7 +76,8 @@ namespace TheRavine.EntityControl
                 IsMoving = _isMoving,
                 Accelerations = _accelerations,
                 DeltaTime = Time.deltaTime,
-                VelocityLimit = _velocityLimit
+                VelocityLimit = _velocityLimit,
+                Flip = _flip
             };
             var accelerationHandle = accelerationJob.Schedule(_numberOfEntities,
             0);

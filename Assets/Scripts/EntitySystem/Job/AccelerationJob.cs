@@ -16,17 +16,16 @@ namespace TheRavine.EntityControl
         [ReadOnly] public float DestinationThreshold, AvoidanceThreshold, RandomnessRadius;
         [ReadOnly] public int RandomSeed;
         [ReadOnly] public float3 Weights;
-        private int Count => Positions.Length;
         public void Execute(int index)
         {
             if (!IsMoving[index])
                 return;
 
-            Accelerations[index] = new float2(0, 0);
+            Accelerations[index] = float2.zero;
             var random = new Unity.Mathematics.Random((uint)(RandomSeed + index));
-            float2 averageSpread = new float2(0, 0), averageVelocity = new float2(0, 0), averagePosition = new float2(0, 0);
+            float2 averageSpread = float2.zero, averageVelocity = float2.zero, averagePosition = float2.zero;
 
-            for (ushort i = 0; i < Count; i++)
+            for (ushort i = 0; i < Positions.Length; i++)
             {
                 if (i == index)
                     continue;
@@ -41,7 +40,7 @@ namespace TheRavine.EntityControl
             }
             if (OtherTargets.Length > 0)
             {
-                float2 targetPos = OtherTargets[index % OtherTargets.Length] + random.NextFloat2Direction() * RandomnessRadius;
+                float2 targetPos = OtherTargets[index % OtherTargets.Length];
                 float2 posDifference = targetPos - Positions[index];
                 if (math.length(posDifference) > DestinationThreshold)
                 {
@@ -50,9 +49,9 @@ namespace TheRavine.EntityControl
                 }
             }
 
-            float2 finalAverageSpread = averageSpread / Count * Weights.x;
-            float2 finalAverageVelocity = averageVelocity / Count * Weights.y;
-            float2 finalAveragePosition = ((averagePosition / Count) - Positions[index]) * Weights.z;
+            float2 finalAverageSpread = averageSpread / Positions.Length * Weights.x;
+            float2 finalAverageVelocity = averageVelocity / Positions.Length * Weights.y;
+            float2 finalAveragePosition = ((averagePosition / Positions.Length) - Positions[index]) * Weights.z;
             Accelerations[index] = finalAverageSpread + finalAverageVelocity + finalAveragePosition;
         }
     }
