@@ -49,7 +49,6 @@ namespace TheRavine.Extentions
         }
         private static Vector2 RoundVector2(Vector2 vec) => new Vector2(Mathf.RoundToInt(vec.x), Mathf.RoundToInt(vec.y));
         public static Vector2 RoundVector2D(Vector3 vec) => RoundVector2((Vector2)vec);
-
         public static Vector2 GetRandomPointAround(Vector2 centerPoint, float factor)
         {
             double[] randomPoint = DistributionCache.GetCachedDistribution().Generate();
@@ -72,13 +71,11 @@ namespace TheRavine.Extentions
         public static float GetRandomValue(float min, float max) => RavineRandom.RangeFloat(min, max);
         public static Vector2 PerpendicularClockwise(Vector2 vector) => new Vector2(vector.y, -vector.x);
         public static Vector2 PerpendicularCounterClockwise(Vector2 vector) => new Vector2(-vector.y, vector.x);
-
         public static void GenerateBezierPoints(Vector2 start, Vector2 control, Vector2 end, byte bezierDetail, ref Vector2[] bezierPoints)
         {
             for (byte i = 0; i <= bezierDetail; i++)
                 bezierPoints[i] = CalculateQuadraticBezierPoint(i / (float)bezierDetail, start, control, end);
         }
-
         public static bool ComparePercent(int value) => RavineRandom.Hundred() <= value;
     }
 
