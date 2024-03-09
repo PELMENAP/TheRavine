@@ -85,24 +85,17 @@ namespace TheRavine.Generator
         private IEndless[] endless = new IEndless[3];
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
-            Noise.SetInit(noiseScale, octaves, persistance, lacunarity);
+            Noise.SetInit(noiseScale, octaves, persistance, lacunarity, seed);
             viewer = locator.GetPlayerTransform();
             objectSystem = locator.GetService<ObjectSystem>();
             DayCycle.newDay += UpdateNAL;
             if (endlessFlag[0])
                 endless[0] = new EndlessTerrain(this);
             if (endlessFlag[1])
-                endless[0] = new EndlessLiquids(this);
+                endless[1] = new EndlessLiquids(this);
             if (endlessFlag[2])
-                endless[0] = new EndlessObjects(this, objectSystem);
-            for (sbyte i = -3; i < 3; i++)
-            {
-                for (sbyte j = -3; j < 3; j++)
-                {
-                    Vector2 centre = new Vector2(i, j);
-                    mapData[centre] = GenerateMapData(centre);
-                }
-            }
+                endless[2] = new EndlessObjects(this, objectSystem);
+            FirstInstance().Forget();
             position = GetPlayerPosition();
             for (byte i = 0; i < 3; i++)
                 if (endless[i] != null)
@@ -111,6 +104,19 @@ namespace TheRavine.Generator
             if (endlessFlag[3])
                 NAL().Forget();
             callback?.Invoke();
+        }
+
+        private async UniTaskVoid FirstInstance()
+        {
+            for (sbyte i = -scale; i < scale; i++)
+            {
+                for (sbyte j = -scale; j < scale; j++)
+                {
+                    Vector2 centre = new Vector2(i, j);
+                    mapData[centre] = GenerateMapData(centre);
+                    await UniTask.Delay(100);
+                }
+            }
         }
 
         private Queue<Vector2> NALQueue = new Queue<Vector2>(64);
@@ -174,8 +180,8 @@ namespace TheRavine.Generator
                 }
                 // ObjectInfo childObjectInfo = objectSystem.GetPrefabInfo(currentObjectInfo.childPrefab.GetInstanceID());
                 bool closeto = false;
-                for (sbyte x = -3; x <= 3; x++)
-                    for (sbyte y = -3; y <= 3; y++)
+                for (sbyte x = -scale; x <= scale; x++)
+                    for (sbyte y = -scale; y <= scale; y++)
                         if (x != 0 && y != 0 && objectSystem.ContainsGlobal(current + new Vector2(x, y)))
                             closeto = true;
                 NAlInfo nalinfo = currentObjectPrefabData.nalinfo;
@@ -231,13 +237,12 @@ namespace TheRavine.Generator
             }
             ExtraUpdate();
         }
-        private float[,] noiseTemperatureMap = new float[mapChunkSize, mapChunkSize];
         private byte[,] GenerateTempMap(Vector2 centre)
         {
             if (mapData.ContainsKey(centre))
                 return mapData[centre].temperatureMap;
             byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
-            Noise.GenerateNoiseMap(ref noiseTemperatureMap, seed, centre * mapChunkSize, Noise.NormalizeMode.Temp);
+            Noise.GenerateNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize, Noise.NormalizeMode.Temp);
             for (byte x = 0; x < mapChunkSize; x++)
             {
                 for (byte y = 0; y < mapChunkSize; y++)
@@ -261,7 +266,7 @@ namespace TheRavine.Generator
             if (mapData.ContainsKey(centre))
                 return mapData[centre].temperatureMap[x, y];
             byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
-            Noise.GenerateNoiseMap(ref noiseTemperatureMap, seed, centre * mapChunkSize, Noise.NormalizeMode.Temp);
+            Noise.GenerateNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize, Noise.NormalizeMode.Temp);
             float currentHeight = noiseTemperatureMap[x, y];
             for (byte i = 0; i + 1 < biomRegions.Length; i++)
             {
@@ -274,6 +279,7 @@ namespace TheRavine.Generator
             return temperatureMap[x, y];
         }
         private float[,] noiseMap = new float[mapChunkSize, mapChunkSize];
+        private float[,] noiseTemperatureMap = new float[mapChunkSize, mapChunkSize];
         public UnityAction<Vector2, byte, Vector2> onSpawnPoint;
         private int[] countOfHeights = new int[9];
         private int count = 0, criticalHeight = 1;
@@ -281,11 +287,13 @@ namespace TheRavine.Generator
         {
             SortedSet<Vector2> objectsToInst = new SortedSet<Vector2>(new Vector2Comparer());
             byte[,] heightMap = new byte[mapChunkSize, mapChunkSize];
-            byte[,] temperatureMap = GenerateTempMap(centre);
+            byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
             if (centre.x > 10000 || centre.y > 10000)
-                Noise.GenerateNoiseMap(ref noiseMap, seed, centre * mapChunkSize, Noise.NormalizeMode.Local);
+                Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Local);
             else
-                Noise.GenerateNoiseMap(ref noiseMap, seed, centre * mapChunkSize, Noise.NormalizeMode.Global);
+                Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Global);
+
+            Noise.GenerateNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize, Noise.NormalizeMode.Temp);
 
             void SetSandPoint(int x, int y)
             {
@@ -309,6 +317,15 @@ namespace TheRavine.Generator
                         if (!(currentHeight >= regions[i + 1].height))
                         {
                             heightMap[x, y] = i;
+                            break;
+                        }
+                    }
+                    currentHeight = noiseTemperatureMap[x, y];
+                    for (byte i = 0; i + 1 < biomRegions.Length; i++)
+                    {
+                        if (!(currentHeight >= biomRegions[i + 1].height))
+                        {
+                            temperatureMap[x, y] = i;
                             break;
                         }
                     }
@@ -343,6 +360,17 @@ namespace TheRavine.Generator
                         SetSandPoint(x + 1, y - 1);
                         SetSandPoint(x + 1, y + 1);
                         SetNearWaterGrassPoint(x, y + 3);
+                        SetNearWaterGrassPoint(x + 1, y + 2);
+                        SetNearWaterGrassPoint(x + 2, y + 1);
+                        SetNearWaterGrassPoint(x + 3, y);
+                        SetNearWaterGrassPoint(x, y - 3);
+                        SetNearWaterGrassPoint(x + 1, y - 2);
+                        SetNearWaterGrassPoint(x + 2, y - 1);
+                        SetNearWaterGrassPoint(x - 3, y);
+                        SetNearWaterGrassPoint(x - 2, y + 1);
+                        SetNearWaterGrassPoint(x - 1, y + 2);
+                        SetNearWaterGrassPoint(x - 2, y - 1);
+                        SetNearWaterGrassPoint(x - 1, y - 2);
                     }
                 }
             }
@@ -624,8 +652,8 @@ namespace TheRavine.Generator
                     OldVposition = position;
                     for (byte i = 0; i < 3; i++)
                     {
-                        await UniTask.WaitForFixedUpdate();
                         endless[i].UpdateChunk(position);
+                        await UniTask.WaitForFixedUpdate();
                     }
                     onUpdate?.Invoke(position);
                 }
@@ -763,8 +791,8 @@ namespace TheRavine.Generator
             if (endlessFlag[1])
                 endless[0] = new EndlessLiquids(this);
             endlessFlag[2] = false;
-            foreach (var generator in endless)
-                generator.UpdateChunk(Extention.RoundVector2D(viewerTest.position / (scale * mapChunkSize)));
+            for (byte i = 0; i < 3; i++)
+                endless[i].UpdateChunk(Extention.RoundVector2D(viewerTest.position / (scale * mapChunkSize)));
         }
     }
 

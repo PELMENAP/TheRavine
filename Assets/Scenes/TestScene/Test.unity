@@ -1673,6 +1673,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 71332013536598331, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 71332013536598331, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 71332013536598331, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -1689,7 +1699,7 @@ PrefabInstance:
     - target: {fileID: 71332013536598331, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 71332013536598331, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -1781,6 +1791,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 184855770969044761, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 184855770969044761, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 184855770969044761, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -1797,7 +1817,7 @@ PrefabInstance:
     - target: {fileID: 184855770969044761, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 184855770969044761, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -1833,6 +1853,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 189192869644944944, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 189192869644944944, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 189192869644944944, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -1849,7 +1879,7 @@ PrefabInstance:
     - target: {fileID: 189192869644944944, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 189192869644944944, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -1885,6 +1915,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 205329060888734964, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 205329060888734964, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 205329060888734964, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -1901,7 +1941,7 @@ PrefabInstance:
     - target: {fileID: 205329060888734964, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 205329060888734964, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -1937,6 +1977,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 374558774651820888, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 374558774651820888, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 374558774651820888, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -1953,7 +2003,7 @@ PrefabInstance:
     - target: {fileID: 374558774651820888, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 374558774651820888, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -1989,6 +2039,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 401072846352409226, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 401072846352409226, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 401072846352409226, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2005,7 +2065,7 @@ PrefabInstance:
     - target: {fileID: 401072846352409226, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 401072846352409226, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2041,6 +2101,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 465728715470267549, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 465728715470267549, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 465728715470267549, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2057,7 +2127,7 @@ PrefabInstance:
     - target: {fileID: 465728715470267549, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 465728715470267549, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2093,6 +2163,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 599272198660542317, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 599272198660542317, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 599272198660542317, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2109,7 +2189,7 @@ PrefabInstance:
     - target: {fileID: 599272198660542317, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 599272198660542317, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2150,6 +2230,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 856803412658971691, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 856803412658971691, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 856803412658971691, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2166,7 +2256,7 @@ PrefabInstance:
     - target: {fileID: 856803412658971691, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 856803412658971691, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2202,6 +2292,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 1005944398281513781, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005944398281513781, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005944398281513781, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2218,7 +2318,7 @@ PrefabInstance:
     - target: {fileID: 1005944398281513781, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1005944398281513781, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2254,6 +2354,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 1047083499271218326, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1047083499271218326, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1047083499271218326, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2270,7 +2380,7 @@ PrefabInstance:
     - target: {fileID: 1047083499271218326, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1047083499271218326, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2306,6 +2416,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 1217035411211837903, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1217035411211837903, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1217035411211837903, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2322,7 +2442,7 @@ PrefabInstance:
     - target: {fileID: 1217035411211837903, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1217035411211837903, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2358,6 +2478,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 1245208274853924522, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1245208274853924522, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1245208274853924522, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2374,7 +2504,7 @@ PrefabInstance:
     - target: {fileID: 1245208274853924522, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1245208274853924522, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2410,6 +2540,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 1476699649609171675, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1476699649609171675, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1476699649609171675, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2426,7 +2566,7 @@ PrefabInstance:
     - target: {fileID: 1476699649609171675, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1476699649609171675, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2462,6 +2602,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 1482527569115445547, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1482527569115445547, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1482527569115445547, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2478,7 +2628,7 @@ PrefabInstance:
     - target: {fileID: 1482527569115445547, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1482527569115445547, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2514,6 +2664,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 1605708516547754954, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1605708516547754954, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1605708516547754954, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2530,7 +2690,7 @@ PrefabInstance:
     - target: {fileID: 1605708516547754954, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1605708516547754954, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2616,6 +2776,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 2028378943284287367, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2028378943284287367, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2028378943284287367, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2632,7 +2802,7 @@ PrefabInstance:
     - target: {fileID: 2028378943284287367, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2028378943284287367, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2668,6 +2838,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 2047482626362884327, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2047482626362884327, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2047482626362884327, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2684,7 +2864,7 @@ PrefabInstance:
     - target: {fileID: 2047482626362884327, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2047482626362884327, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2813,6 +2993,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 2217276148485643277, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2217276148485643277, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2217276148485643277, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2829,7 +3019,7 @@ PrefabInstance:
     - target: {fileID: 2217276148485643277, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2217276148485643277, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2865,6 +3055,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 2222731280022233290, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2222731280022233290, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2222731280022233290, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2881,7 +3081,7 @@ PrefabInstance:
     - target: {fileID: 2222731280022233290, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2222731280022233290, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2917,6 +3117,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 2234317226039620631, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2234317226039620631, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2234317226039620631, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2933,7 +3143,7 @@ PrefabInstance:
     - target: {fileID: 2234317226039620631, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2234317226039620631, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -2981,6 +3191,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 2420694439491870799, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2420694439491870799, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2420694439491870799, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -2997,7 +3217,7 @@ PrefabInstance:
     - target: {fileID: 2420694439491870799, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2420694439491870799, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3033,6 +3253,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 2459209712634572096, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2459209712634572096, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2459209712634572096, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3049,7 +3279,7 @@ PrefabInstance:
     - target: {fileID: 2459209712634572096, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2459209712634572096, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3085,6 +3315,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 2472284916304728682, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2472284916304728682, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2472284916304728682, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3101,7 +3341,7 @@ PrefabInstance:
     - target: {fileID: 2472284916304728682, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2472284916304728682, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3137,6 +3377,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 2707999686936427297, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2707999686936427297, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2707999686936427297, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3153,7 +3403,7 @@ PrefabInstance:
     - target: {fileID: 2707999686936427297, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2707999686936427297, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3189,6 +3439,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3026872418939681358, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3026872418939681358, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3026872418939681358, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3205,7 +3465,7 @@ PrefabInstance:
     - target: {fileID: 3026872418939681358, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3026872418939681358, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3241,6 +3501,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3092537626528969869, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3092537626528969869, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3092537626528969869, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3257,7 +3527,7 @@ PrefabInstance:
     - target: {fileID: 3092537626528969869, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3092537626528969869, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3293,6 +3563,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3216922547016806254, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3216922547016806254, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3216922547016806254, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3309,7 +3589,7 @@ PrefabInstance:
     - target: {fileID: 3216922547016806254, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3216922547016806254, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3345,6 +3625,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3317949348112371980, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3317949348112371980, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3317949348112371980, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3361,7 +3651,7 @@ PrefabInstance:
     - target: {fileID: 3317949348112371980, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3317949348112371980, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3397,6 +3687,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3353241763996074720, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3353241763996074720, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3353241763996074720, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3413,7 +3713,7 @@ PrefabInstance:
     - target: {fileID: 3353241763996074720, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3353241763996074720, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3454,6 +3754,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3443971357405113797, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443971357405113797, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3443971357405113797, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3470,7 +3780,7 @@ PrefabInstance:
     - target: {fileID: 3443971357405113797, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3443971357405113797, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3506,6 +3816,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3563524770536978415, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3563524770536978415, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3563524770536978415, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3522,7 +3842,7 @@ PrefabInstance:
     - target: {fileID: 3563524770536978415, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3563524770536978415, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3558,6 +3878,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3584846006494884672, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3584846006494884672, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3584846006494884672, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3574,7 +3904,7 @@ PrefabInstance:
     - target: {fileID: 3584846006494884672, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3584846006494884672, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3610,6 +3940,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3651563894809721234, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3651563894809721234, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3651563894809721234, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3626,7 +3966,7 @@ PrefabInstance:
     - target: {fileID: 3651563894809721234, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3651563894809721234, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3662,6 +4002,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3657513711722585810, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3657513711722585810, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3657513711722585810, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3678,7 +4028,7 @@ PrefabInstance:
     - target: {fileID: 3657513711722585810, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3657513711722585810, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3714,6 +4064,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3662801443735112975, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3662801443735112975, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3662801443735112975, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3730,7 +4090,7 @@ PrefabInstance:
     - target: {fileID: 3662801443735112975, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3662801443735112975, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3766,6 +4126,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3779467473142932354, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3779467473142932354, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3779467473142932354, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3782,7 +4152,7 @@ PrefabInstance:
     - target: {fileID: 3779467473142932354, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3779467473142932354, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3818,6 +4188,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3800878239074968274, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3800878239074968274, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3800878239074968274, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3834,7 +4214,7 @@ PrefabInstance:
     - target: {fileID: 3800878239074968274, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3800878239074968274, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3870,6 +4250,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3934361372298681326, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3934361372298681326, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3934361372298681326, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3886,7 +4276,7 @@ PrefabInstance:
     - target: {fileID: 3934361372298681326, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3934361372298681326, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3922,6 +4312,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3958534301554809554, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3958534301554809554, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3958534301554809554, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3938,7 +4338,7 @@ PrefabInstance:
     - target: {fileID: 3958534301554809554, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3958534301554809554, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -3974,6 +4374,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3997120325744951758, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3997120325744951758, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3997120325744951758, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -3990,7 +4400,7 @@ PrefabInstance:
     - target: {fileID: 3997120325744951758, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3997120325744951758, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4026,6 +4436,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 4057721771307327184, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4057721771307327184, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4057721771307327184, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4042,7 +4462,7 @@ PrefabInstance:
     - target: {fileID: 4057721771307327184, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4057721771307327184, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4078,6 +4498,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 4086146631855491247, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4086146631855491247, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4086146631855491247, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4094,7 +4524,7 @@ PrefabInstance:
     - target: {fileID: 4086146631855491247, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4086146631855491247, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4130,6 +4560,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 4101878860463746012, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4101878860463746012, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4101878860463746012, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4146,7 +4586,7 @@ PrefabInstance:
     - target: {fileID: 4101878860463746012, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4101878860463746012, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4182,6 +4622,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 4324659586056117374, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4324659586056117374, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4324659586056117374, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4198,7 +4648,7 @@ PrefabInstance:
     - target: {fileID: 4324659586056117374, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4324659586056117374, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4234,6 +4684,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 4409351942848771948, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4409351942848771948, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4409351942848771948, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4250,7 +4710,7 @@ PrefabInstance:
     - target: {fileID: 4409351942848771948, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4409351942848771948, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4286,6 +4746,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 4538765760353337955, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4538765760353337955, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4538765760353337955, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4302,7 +4772,7 @@ PrefabInstance:
     - target: {fileID: 4538765760353337955, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4538765760353337955, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4368,6 +4838,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 4562749589180964382, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4562749589180964382, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4562749589180964382, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4384,7 +4864,7 @@ PrefabInstance:
     - target: {fileID: 4562749589180964382, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4562749589180964382, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4420,6 +4900,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 4566313618154368938, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4566313618154368938, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4566313618154368938, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4436,7 +4926,7 @@ PrefabInstance:
     - target: {fileID: 4566313618154368938, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4566313618154368938, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4472,6 +4962,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 4595331341056455469, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4595331341056455469, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4595331341056455469, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4488,7 +4988,7 @@ PrefabInstance:
     - target: {fileID: 4595331341056455469, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4595331341056455469, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4524,6 +5024,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 4750181956032286421, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4750181956032286421, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4750181956032286421, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4540,7 +5050,7 @@ PrefabInstance:
     - target: {fileID: 4750181956032286421, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4750181956032286421, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4576,6 +5086,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 4819073592875659351, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4819073592875659351, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4819073592875659351, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4592,7 +5112,7 @@ PrefabInstance:
     - target: {fileID: 4819073592875659351, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4819073592875659351, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4628,6 +5148,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 4830938445798040416, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4830938445798040416, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4830938445798040416, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4644,7 +5174,7 @@ PrefabInstance:
     - target: {fileID: 4830938445798040416, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4830938445798040416, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4691,6 +5221,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 4886819729540996059, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4886819729540996059, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4886819729540996059, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4707,7 +5247,7 @@ PrefabInstance:
     - target: {fileID: 4886819729540996059, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4886819729540996059, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4743,6 +5283,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 5479766894594215019, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5479766894594215019, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5479766894594215019, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4759,7 +5309,7 @@ PrefabInstance:
     - target: {fileID: 5479766894594215019, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5479766894594215019, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4795,6 +5345,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 5664894696263891402, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5664894696263891402, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5664894696263891402, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4811,7 +5371,7 @@ PrefabInstance:
     - target: {fileID: 5664894696263891402, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5664894696263891402, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4847,6 +5407,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 5698744703090964079, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698744703090964079, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698744703090964079, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4863,7 +5433,7 @@ PrefabInstance:
     - target: {fileID: 5698744703090964079, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5698744703090964079, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4904,6 +5474,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 5900768007774187498, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5900768007774187498, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5900768007774187498, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4920,7 +5500,7 @@ PrefabInstance:
     - target: {fileID: 5900768007774187498, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5900768007774187498, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -4956,6 +5536,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 5929245472635697099, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5929245472635697099, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5929245472635697099, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -4972,7 +5562,7 @@ PrefabInstance:
     - target: {fileID: 5929245472635697099, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5929245472635697099, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5008,6 +5598,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 5973688176440733712, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5973688176440733712, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5973688176440733712, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5024,7 +5624,7 @@ PrefabInstance:
     - target: {fileID: 5973688176440733712, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5973688176440733712, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5060,6 +5660,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 6093674228501744502, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6093674228501744502, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6093674228501744502, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5076,7 +5686,7 @@ PrefabInstance:
     - target: {fileID: 6093674228501744502, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6093674228501744502, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5112,6 +5722,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 6253675264376786876, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6253675264376786876, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6253675264376786876, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5128,7 +5748,7 @@ PrefabInstance:
     - target: {fileID: 6253675264376786876, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6253675264376786876, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5164,6 +5784,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 6301498720504649403, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6301498720504649403, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6301498720504649403, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5180,7 +5810,7 @@ PrefabInstance:
     - target: {fileID: 6301498720504649403, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6301498720504649403, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5216,6 +5846,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 6404195581087227661, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6404195581087227661, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6404195581087227661, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5232,7 +5872,7 @@ PrefabInstance:
     - target: {fileID: 6404195581087227661, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6404195581087227661, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5268,6 +5908,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 6414958624757835434, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6414958624757835434, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6414958624757835434, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5284,7 +5934,7 @@ PrefabInstance:
     - target: {fileID: 6414958624757835434, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6414958624757835434, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5320,6 +5970,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 6578592038533026818, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6578592038533026818, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6578592038533026818, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5336,7 +5996,7 @@ PrefabInstance:
     - target: {fileID: 6578592038533026818, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6578592038533026818, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5377,6 +6037,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 6787771833945758394, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6787771833945758394, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6787771833945758394, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5393,7 +6063,7 @@ PrefabInstance:
     - target: {fileID: 6787771833945758394, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6787771833945758394, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5429,6 +6099,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 6988409497339135045, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6988409497339135045, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6988409497339135045, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5445,7 +6125,7 @@ PrefabInstance:
     - target: {fileID: 6988409497339135045, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6988409497339135045, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5601,6 +6281,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 7281883269850523350, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7281883269850523350, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7281883269850523350, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5617,7 +6307,7 @@ PrefabInstance:
     - target: {fileID: 7281883269850523350, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7281883269850523350, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5653,6 +6343,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 7542064888273411132, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7542064888273411132, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7542064888273411132, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5669,7 +6369,7 @@ PrefabInstance:
     - target: {fileID: 7542064888273411132, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7542064888273411132, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5705,6 +6405,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 7545262592607630072, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7545262592607630072, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7545262592607630072, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5721,7 +6431,7 @@ PrefabInstance:
     - target: {fileID: 7545262592607630072, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7545262592607630072, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5787,6 +6497,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 7729187371175323887, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7729187371175323887, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7729187371175323887, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5803,7 +6523,7 @@ PrefabInstance:
     - target: {fileID: 7729187371175323887, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7729187371175323887, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5839,6 +6559,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 7747337105052342146, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7747337105052342146, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7747337105052342146, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5855,7 +6585,7 @@ PrefabInstance:
     - target: {fileID: 7747337105052342146, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7747337105052342146, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5891,6 +6621,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 7985164863996703852, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7985164863996703852, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7985164863996703852, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5907,7 +6647,7 @@ PrefabInstance:
     - target: {fileID: 7985164863996703852, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7985164863996703852, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -5943,6 +6683,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 8074731390617947832, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8074731390617947832, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8074731390617947832, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -5959,7 +6709,7 @@ PrefabInstance:
     - target: {fileID: 8074731390617947832, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8074731390617947832, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -6005,6 +6755,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 8504958919343014441, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8504958919343014441, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8504958919343014441, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -6021,7 +6781,7 @@ PrefabInstance:
     - target: {fileID: 8504958919343014441, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8504958919343014441, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -6057,6 +6817,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 8507166752455813526, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8507166752455813526, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8507166752455813526, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -6073,7 +6843,7 @@ PrefabInstance:
     - target: {fileID: 8507166752455813526, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8507166752455813526, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -6109,6 +6879,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 8507401911428938321, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8507401911428938321, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8507401911428938321, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -6125,7 +6905,7 @@ PrefabInstance:
     - target: {fileID: 8507401911428938321, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8507401911428938321, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -6161,6 +6941,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 8581333414644518009, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8581333414644518009, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8581333414644518009, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -6177,7 +6967,7 @@ PrefabInstance:
     - target: {fileID: 8581333414644518009, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8581333414644518009, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -6213,6 +7003,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 8590622963252890488, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8590622963252890488, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8590622963252890488, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -6229,7 +7029,7 @@ PrefabInstance:
     - target: {fileID: 8590622963252890488, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8590622963252890488, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -6265,6 +7065,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 8893314262414004554, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8893314262414004554, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8893314262414004554, guid: 526970802490c8c8eba4d4c4426e688c,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -6281,7 +7091,7 @@ PrefabInstance:
     - target: {fileID: 8893314262414004554, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8893314262414004554, guid: 526970802490c8c8eba4d4c4426e688c,
         type: 3}
@@ -8449,6 +9259,11 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc,
         type: 2}
+    - target: {fileID: 5549634100703667303, guid: 4482eb5d7d3bb3039a5775e105c8c90f,
+        type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 126
+      objectReference: {fileID: 0}
     - target: {fileID: 5928299933709135442, guid: 4482eb5d7d3bb3039a5775e105c8c90f,
         type: 3}
       propertyPath: m_Mesh
@@ -8609,6 +9424,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 21388202014356649, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21388202014356649, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21388202014356649, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -8625,7 +9450,7 @@ PrefabInstance:
     - target: {fileID: 21388202014356649, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 264692688377043953, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -8661,6 +9486,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 914197887108242226, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 914197887108242226, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 914197887108242226, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -8677,7 +9512,7 @@ PrefabInstance:
     - target: {fileID: 914197887108242226, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1241951543836652632, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -8687,6 +9522,11 @@ PrefabInstance:
     - target: {fileID: 1342687152540480249, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1719163050547464629, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_margin.z
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1719163050547464629, guid: 8e4f41b4be8dd5892b4697482ed1937b,
@@ -8709,12 +9549,12 @@ PrefabInstance:
     - target: {fileID: 1719163050547464629, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: checkPaddingRequired
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1719163050547464629, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_enableExtraPadding
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1719163050547464629, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -8734,7 +9574,7 @@ PrefabInstance:
     - target: {fileID: 1719163050547464629, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2999799464962007044, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -8775,6 +9615,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3160470721541096327, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3160470721541096327, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3160470721541096327, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -8791,7 +9641,7 @@ PrefabInstance:
     - target: {fileID: 3160470721541096327, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3163170164238211684, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -8822,6 +9672,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3163170164238211684, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3163170164238211684, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3163170164238211684, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -8838,7 +9698,7 @@ PrefabInstance:
     - target: {fileID: 3163170164238211684, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3330314655343974785, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -8886,6 +9746,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 3741951788815798798, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3741951788815798798, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3741951788815798798, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -8902,7 +9772,7 @@ PrefabInstance:
     - target: {fileID: 3741951788815798798, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3877293217101024621, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -8954,6 +9824,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 4221393045760080271, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4221393045760080271, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4221393045760080271, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -8970,7 +9850,7 @@ PrefabInstance:
     - target: {fileID: 4221393045760080271, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4326458669464385219, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -8995,6 +9875,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4326458669464385219, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4326458669464385219, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4326458669464385219, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 1
       objectReference: {fileID: 0}
@@ -9011,7 +9901,7 @@ PrefabInstance:
     - target: {fileID: 4326458669464385219, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4353631340480190804, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -9042,6 +9932,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 4353631340480190804, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4353631340480190804, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4353631340480190804, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -9058,7 +9958,7 @@ PrefabInstance:
     - target: {fileID: 4353631340480190804, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4495487551958505181, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -9089,6 +9989,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4575804707870803475, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4575804707870803475, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4575804707870803475, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 1
       objectReference: {fileID: 0}
@@ -9105,7 +10015,7 @@ PrefabInstance:
     - target: {fileID: 4575804707870803475, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5083474483191218822, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -9230,6 +10140,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5190030865300451959, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5190030865300451959, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5190030865300451959, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 1
       objectReference: {fileID: 0}
@@ -9246,7 +10166,7 @@ PrefabInstance:
     - target: {fileID: 5190030865300451959, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5443191080310177439, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -9277,6 +10197,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 5443191080310177439, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5443191080310177439, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5443191080310177439, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -9293,7 +10223,7 @@ PrefabInstance:
     - target: {fileID: 5443191080310177439, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5577946321733191908, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -9339,6 +10269,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 5896136784581240840, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5896136784581240840, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5896136784581240840, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -9355,7 +10295,7 @@ PrefabInstance:
     - target: {fileID: 5896136784581240840, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5955971643829024963, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -9386,6 +10326,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 5955971643829024963, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5955971643829024963, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5955971643829024963, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -9402,7 +10352,7 @@ PrefabInstance:
     - target: {fileID: 5955971643829024963, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5968704531772591400, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -9471,6 +10421,16 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 7245943430479397842, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7245943430479397842, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7245943430479397842, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -9487,7 +10447,7 @@ PrefabInstance:
     - target: {fileID: 7245943430479397842, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7254313996395208768, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -9563,6 +10523,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7254313996395208768, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7254313996395208768, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7254313996395208768, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
@@ -9579,7 +10549,7 @@ PrefabInstance:
     - target: {fileID: 7254313996395208768, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_useMaxVisibleDescender
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8409502399449202222, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
@@ -9592,6 +10562,11 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    - target: {fileID: 8491761380914131067, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_margin.z
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8491761380914131067, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_fontAsset
@@ -9608,6 +10583,16 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    - target: {fileID: 8491761380914131067, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: checkPaddingRequired
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8491761380914131067, guid: 8e4f41b4be8dd5892b4697482ed1937b,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8912400471611132771, guid: 8e4f41b4be8dd5892b4697482ed1937b,
         type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
@@ -9806,22 +10791,22 @@ PrefabInstance:
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36,
         type: 3}
       propertyPath: 'endlessFlag.Array.data[0]'
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36,
         type: 3}
       propertyPath: 'endlessFlag.Array.data[1]'
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36,
         type: 3}
       propertyPath: 'endlessFlag.Array.data[2]'
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36,
         type: 3}
       propertyPath: 'endlessFlag.Array.data[3]'
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36,
         type: 3}
