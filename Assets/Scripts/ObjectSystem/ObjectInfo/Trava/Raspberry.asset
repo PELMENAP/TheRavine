@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Raspberry
   m_EditorClassIdentifier: 
-  _name: raspberry
+  _id: raspberry
   _amount: 1
   _poolSize: 20
   _iType: 0
@@ -22,4 +22,5 @@ MonoBehaviour:
   _prefab: {fileID: 7852824295285712418, guid: 534da7edf2843f4e589e6d876879396b, type: 3}
   _nextStep: {fileID: 11400000}
   _addspace: []
-  _spreadPattern: {fileID: 0}
+  _deadPattern: {fileID: 0}
+  _pickUpPattern: {fileID: 0}

@@ -11,9 +11,9 @@ namespace TheRavine.EntityControl
 {
     public class BoidsBehaviour : MonoBehaviour
     {
-        [SerializeField] private int _numberOfEntities, _randomSeed;
+        [SerializeField] private int _numberOfEntities;
         [SerializeField] private GameObject _entityPrefab;
-        [SerializeField] private float _destinationThreshold, _avoidanceThreshold, _randomnessRadius;
+        [SerializeField] private float _destinationThreshold, _avoidanceThreshold;
         [SerializeField] private float2 _areaSize;
         [SerializeField] private float _velocityLimit;
         [SerializeField] private float3 _accelerationWeights;
@@ -27,6 +27,17 @@ namespace TheRavine.EntityControl
         private NativeArray<bool> _isMoving;
         private TransformAccessArray _transformAccessArray;
 
+        private Transform[] transforms;
+
+        private AccelerationJob accelerationJob;
+        private MoveJob moveJob;
+
+        private byte iter;
+        public void AddTargetPosition(Vector2 newPosition)
+        {
+
+        }
+
         private void Start()
         {
             _positions = new NativeArray<float2>(_numberOfEntities, Allocator.Persistent);
@@ -35,7 +46,7 @@ namespace TheRavine.EntityControl
             _otherTargets = new NativeArray<float2>(targetArray.Length, Allocator.Persistent);
             _isMoving = new NativeArray<bool>(_numberOfEntities, Allocator.Persistent);
 
-            var transforms = new Transform[_numberOfEntities];
+            transforms = new Transform[_numberOfEntities];
             for (ushort i = 0; i < _numberOfEntities; i++)
             {
                 transforms[i] = Instantiate(_entityPrefab).transform;
@@ -48,15 +59,12 @@ namespace TheRavine.EntityControl
 
             for (byte i = 0; i < targetArray.Length; i++)
             {
-                Instantiate(_entityPrefab, new Vector3(targetArray[i].x, targetArray[i].y, 0), Quaternion.identity);
+                Instantiate(_entityPrefab, new Vector3(-targetArray[i].x, -targetArray[i].y, 0), Quaternion.identity);
                 _otherTargets[i] = targetArray[i];
             }
             _transformAccessArray = new TransformAccessArray(transforms);
-        }
 
-        private void FixedUpdate()
-        {
-            var accelerationJob = new AccelerationJob()
+            accelerationJob = new AccelerationJob()
             {
                 Positions = _positions,
                 OtherTargets = _otherTargets,
@@ -65,11 +73,9 @@ namespace TheRavine.EntityControl
                 Accelerations = _accelerations,
                 DestinationThreshold = _destinationThreshold,
                 AvoidanceThreshold = _avoidanceThreshold,
-                RandomnessRadius = _randomnessRadius,
-                RandomSeed = _randomSeed,
                 Weights = _accelerationWeights
             };
-            var moveJob = new MoveJob()
+            moveJob = new MoveJob()
             {
                 Positions = _positions,
                 Velocities = _velocities,
@@ -79,8 +85,11 @@ namespace TheRavine.EntityControl
                 VelocityLimit = _velocityLimit,
                 Flip = _flip
             };
-            var accelerationHandle = accelerationJob.Schedule(_numberOfEntities,
-            0);
+        }
+
+        private void FixedUpdate()
+        {
+            var accelerationHandle = accelerationJob.Schedule(_numberOfEntities, 0);
             var moveHandle = moveJob.Schedule(_transformAccessArray, accelerationHandle);
             moveHandle.Complete();
         }
@@ -96,19 +105,6 @@ namespace TheRavine.EntityControl
         }
 
         [Button]
-        private void ChangeTargets()
-        {
-            for (byte i = 0; i < Random.Range(1, _otherTargets.Length); i++)
-            {
-                int a = Random.Range(0, _otherTargets.Length);
-                int b = Random.Range(0, _otherTargets.Length);
-                float2 vec = _otherTargets[a];
-                _otherTargets[a] = _otherTargets[b];
-                _otherTargets[b] = vec;
-            }
-        }
-
-        [Button]
         private void ChangeMoving()
         {
             for (ushort i = 0; i < Random.Range(1, _numberOfEntities); i++)
@@ -116,6 +112,12 @@ namespace TheRavine.EntityControl
                 int a = Random.Range(0, _numberOfEntities);
                 _isMoving[a] = !_isMoving[a];
             }
+        }
+
+        [Button]
+        private void ChangeBoidsMoving()
+        {
+            transforms[0].position += new Vector3(10, 0, 0);
         }
     }
 }

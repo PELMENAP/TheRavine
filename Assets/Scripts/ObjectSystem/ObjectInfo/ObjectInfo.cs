@@ -2,6 +2,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "ObjectInfo", menuName = "Gameplay/Create New ObjectInfo")]
 public class ObjectInfo : ScriptableObject, IObjectInfo
 {
+    [SerializeField] private string _id;
     [SerializeField] private ushort _amount;
     [SerializeField] private ushort _poolSize;
     [SerializeField] private InstanceType _iType;
@@ -12,6 +13,7 @@ public class ObjectInfo : ScriptableObject, IObjectInfo
     [SerializeField] private ObjectInfo _nextStep;
     [SerializeField] private Vector2[] _addspace;
     [SerializeField] private SpreadPattern _deadPattern, _pickUpPattern;
+    public string id => _id;
     public ushort amount => _amount;
     public ushort poolSize => _poolSize;
     public InstanceType iType => _iType;

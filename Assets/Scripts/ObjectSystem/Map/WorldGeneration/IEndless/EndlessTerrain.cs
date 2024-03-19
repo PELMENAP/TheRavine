@@ -47,7 +47,7 @@ namespace TheRavine.Generator
                     for (byte xOffset = 0; xOffset < chunkCount; xOffset++)
                     {
                         CreateComplexMesh(new Vector2(Vposition.x + yOffset, Vposition.y + xOffset), combine[count].mesh);
-                        combine[count].transform = Matrix4x4.TRS(new Vector3(yOffset * generationSize, xOffset * generationSize, 0), Quaternion.Euler(Vector3.zero), Vector3.one);
+                        combine[count].transform = Matrix4x4.TRS(new Vector3(yOffset * generationSize, xOffset * generationSize, 0), Quaternion.identity, Vector3.one);
                         count++;
                     }
                 combineMesh.CombineMeshes(combine);

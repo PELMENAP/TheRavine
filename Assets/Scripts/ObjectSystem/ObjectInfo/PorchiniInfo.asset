@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: PorchiniInfo
   m_EditorClassIdentifier: 
-  _name: porchini
+  _id: porchini
   _amount: 1
   _poolSize: 10
   _iType: 1
@@ -21,3 +21,6 @@ MonoBehaviour:
   _iteminfo: {fileID: 11400000, guid: 0907d82c06d113eae9d16554a5209c21, type: 2}
   _prefab: {fileID: 8079554152659468491, guid: eac9ac9f7b106c63593abaabcb67837c, type: 3}
   _nextStep: {fileID: 11400000}
+  _addspace: []
+  _deadPattern: {fileID: 0}
+  _pickUpPattern: {fileID: 0}

@@ -4,15 +4,17 @@ using UnityEngine;
 using System;
 using Cysharp.Threading.Tasks;
 
-public class StateMachine<TInitializer>
+public class StateMachine<TInitializer> : IDisposable
 {
-    public StateMachine(params IState<TInitializer>[] states)
+    public StateMachine(int _standartStateMachineTickTime, params IState<TInitializer>[] states)
     {
+        standartStateMachineTickTime = _standartStateMachineTickTime;
         _states = new Dictionary<Type, IState<TInitializer>>(states.Length);
         foreach (var state in states)
             _states.Add(state.GetType(), state);
     }
 
+    private int standartStateMachineTickTime;
     private IState<TInitializer> _currentState;
     private readonly Dictionary<Type, IState<TInitializer>> _states;
     private bool _isTicking;
@@ -58,9 +60,14 @@ public class StateMachine<TInitializer>
         while (_isTicking)
         {
             tickable.OnTick();
-            await UniTask.Delay(100);
+            await UniTask.Delay(standartStateMachineTickTime);
         }
     }
 
     private TState GetState<TState>() where TState : IState<TInitializer> => (TState)_states[typeof(TState)];
+
+    public void Dispose()
+    {
+        _states.Clear();
+    }
 }

@@ -218,7 +218,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4990245179154581794}
-  - component: {fileID: 1553483289409041769}
   m_Layer: 0
   m_Name: MoveTest
   m_TagString: Untagged
@@ -244,23 +243,6 @@ Transform:
   - {fileID: 383263591}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1553483289409041769
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4990245179154581798}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ce082a142174ff7ff85a99feeefd685e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  view: {fileID: 8685916130487313545}
-  isActive: 0
-  direction: {x: 1, y: 0}
-  moveController: {fileID: 2964098784693935870}
-  animator: {fileID: 0}
 --- !u!1 &6334444498080069474
 GameObject:
   m_ObjectHideFlags: 0
@@ -356,9 +338,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2154996861979537285}
+  - component: {fileID: 7728748999613484161}
+  - component: {fileID: 2964098784693935870}
   - component: {fileID: 6585750003920059427}
   - component: {fileID: 5352795498335868172}
-  - component: {fileID: 2964098784693935870}
   m_Layer: 0
   m_Name: model
   m_TagString: Untagged
@@ -375,13 +358,54 @@ Transform:
   m_GameObject: {fileID: 8685916130487313545}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10, y: 10, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8429655968247033715}
   m_Father: {fileID: 4990245179154581794}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7728748999613484161
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8685916130487313545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce082a142174ff7ff85a99feeefd685e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isAlife: 0
+  direction: {x: 0, y: 0}
+  animator: {fileID: 0}
+--- !u!114 &2964098784693935870
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8685916130487313545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d214ed807cd4cf4db3e344a61c3ab90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pointTarget: {fileID: 383263591}
+  pointRandom: {fileID: 7035006477080710853}
+  view: {fileID: 4503546879817788969}
+  movementSpeed: 20
+  accuracy: 5
+  maxTargetDistance: 10
+  stepMaxDistance: 20
+  stepSpread: 5
+  angleDivide: 5
+  bezierDetail: 10
+  bezierFactor: 5
+  movementDelay: 1000
+  movementDelaySpread: 200
+  colliderDistance: 0
 --- !u!58 &6585750003920059427
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -389,7 +413,7 @@ CircleCollider2D:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8685916130487313545}
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
   m_Material: {fileID: 0}
@@ -416,7 +440,7 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 3, y: -3}
+  m_Offset: {x: 0, y: 0}
   m_Radius: 1
 --- !u!50 &5352795498335868172
 Rigidbody2D:
@@ -445,29 +469,3 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
---- !u!114 &2964098784693935870
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8685916130487313545}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3d214ed807cd4cf4db3e344a61c3ab90, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  entityTransform: {fileID: 2154996861979537285}
-  pointTarget: {fileID: 383263591}
-  pointRandom: {fileID: 7035006477080710853}
-  view: {fileID: 4503546879817788969}
-  movementSpeed: 5
-  accuracy: 5
-  maxTargetDistance: 5
-  stepMaxDistance: 0
-  stepSpread: 5
-  angleDivide: 5
-  bezierDetail: 10
-  bezierFactor: 10
-  movementDelay: 1
-  movementDelaySpread: 0

@@ -123,4 +123,6 @@ public class BotController : MonoBehaviour, IEntityControllable
     //     Instantiate(plob, crosshair.position, Quaternion.identity);
     //     crosshair.gameObject.SetActive(false);
     // }
+
+    public void Delete() { }
 }

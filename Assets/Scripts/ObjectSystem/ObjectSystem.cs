@@ -12,17 +12,17 @@ namespace TheRavine.ObjectControl
     {
         public GameObject InstantiatePoolObject(Vector2 position, GameObject prefab) => Instantiate(prefab, position, Quaternion.identity);
         public ObjectInfo[] _info;
-        private Dictionary<int, ObjectInfo> info = new Dictionary<int, ObjectInfo>(16);
-        public ObjectInfo GetPrefabInfo(int id) => info[id];
+        private Dictionary<string, ObjectInfo> info;
+        public ObjectInfo GetPrefabInfo(string id) => info[id];
         //
-        private Dictionary<Vector2, ObjectInstInfo> global = new Dictionary<Vector2, ObjectInstInfo>(512);
+        private Dictionary<Vector2, ObjectInstInfo> global;
         public ObjectInstInfo GetGlobalObjectInfo(Vector2 position)
         {
             if (!global.ContainsKey(position))
                 return new ObjectInstInfo();
             return global[position];
         }
-        public bool TryAddToGlobal(Vector2 position, int _prefabID, ushort _amount, InstanceType _objectType, bool _flip = false)
+        public bool TryAddToGlobal(Vector2 position, string _prefabID, ushort _amount, InstanceType _objectType, bool _flip = false)
         {
             if (global.ContainsKey(position))
                 if (global[position].prefabID == _prefabID && global[position].objectType == InstanceType.Inter)
@@ -39,14 +39,14 @@ namespace TheRavine.ObjectControl
                 global[position + curdata.addspace[i]] = new ObjectInstInfo();
             return true;
         }
-        private void AddToGlobal(Vector2 position, int _prefabID, ushort _amount, InstanceType _objectType, bool flip = false)
+        private void AddToGlobal(Vector2 position, string _prefabID, ushort _amount, InstanceType _objectType, bool flip = false)
         {
             global[position] = new ObjectInstInfo(_prefabID, _amount, _objectType, flip);
         }
         public bool RemoveFromGlobal(Vector2 position)
         {
             ObjectInstInfo objectInfo = GetGlobalObjectInfo(position);
-            if (objectInfo.prefabID == -1)
+            if (objectInfo.prefabID == "")
                 return true;
             ObjectInfo curdata = GetPrefabInfo(objectInfo.prefabID);
             if (curdata.addspace.Length == 0)
@@ -58,22 +58,24 @@ namespace TheRavine.ObjectControl
         }
         public bool ContainsGlobal(Vector2 position) => global.ContainsKey(position);
         //
-        private Dictionary<Vector2, ObjectInstInfo> changes = new Dictionary<Vector2, ObjectInstInfo>();
-        public bool Changed(Vector2 position) => changes.ContainsKey(position);
+        // private Dictionary<Vector2, ObjectInstInfo> changes = new Dictionary<Vector2, ObjectInstInfo>();
+        // public bool Changed(Vector2 position) => changes.ContainsKey(position);
         //
         private IPoolManager<GameObject> PoolManagerBase;
-        public void CreatePool(GameObject prefab, ushort poolSize = 1) => PoolManagerBase.CreatePool(prefab, InstantiatePoolObject, poolSize);
-        public void Reuse(int prefabID, Vector2 position, bool flip, float rotateValue) => PoolManagerBase.Reuse(prefabID, position, flip, rotateValue);
-        public void Deactivate(int prefabID) => PoolManagerBase.Deactivate(prefabID);
-        public ushort GetPoolSize(int prefabID) => PoolManagerBase.GetPoolSize(prefabID);
-        public void IncreasePoolSize(int prefabID) => PoolManagerBase.IncreasePoolSize(prefabID);
+        public void CreatePool(string prefabID, GameObject prefab, ushort poolSize = 1) => PoolManagerBase.CreatePool(prefabID, prefab, InstantiatePoolObject, poolSize);
+        public void Reuse(string prefabID, Vector2 position, bool flip, float rotateValue) => PoolManagerBase.Reuse(prefabID, position, flip, rotateValue);
+        public void Deactivate(string prefabID) => PoolManagerBase.Deactivate(prefabID);
+        public ushort GetPoolSize(string prefabID) => PoolManagerBase.GetPoolSize(prefabID);
+        public void IncreasePoolSize(string prefabID) => PoolManagerBase.IncreasePoolSize(prefabID);
         //
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
+            info = new Dictionary<string, ObjectInfo>(16);
+            global = new Dictionary<Vector2, ObjectInstInfo>(512);
             PoolManagerBase = new PoolManager(this.transform);
             for (byte i = 0; i < _info.Length; i++)
             {
-                info[_info[i].prefab.GetInstanceID()] = _info[i];
+                info[_info[i].id] = _info[i];
                 // print(_info[i].prefab.GetInstanceID());
             }
             FirstInstance().Forget();
@@ -83,9 +85,9 @@ namespace TheRavine.ObjectControl
         {
             for (byte i = 0; i < _info.Length; i++)
             {
-                CreatePool(_info[i].prefab, _info[i].poolSize);
+                CreatePool(_info[i].id, _info[i].prefab, _info[i].poolSize);
                 await UniTask.Delay(100);
-                //FaderOnTransit.instance.SetLogs("Созданы: " + _info[i].prefab.name);
+                //FaderOnTransit.instance.SetLogs("Созданы: " + _info[i].prefab.id);
             }
         }
 
@@ -93,17 +95,17 @@ namespace TheRavine.ObjectControl
         {
             info.Clear();
             global.Clear();
-            changes.Clear();
+            // changes.Clear();
         }
     }
 
     public struct ObjectInstInfo
     {
         public ushort amount;
-        public readonly int prefabID;
+        public readonly string prefabID;
         public readonly InstanceType objectType;
         public bool flip;
-        public ObjectInstInfo(int _prefabID = -1, ushort _amount = 1, InstanceType _objectType = InstanceType.Static, bool _flip = false)
+        public ObjectInstInfo(string _prefabID = "", ushort _amount = 1, InstanceType _objectType = InstanceType.Static, bool _flip = false)
         {
             amount = _amount;
             prefabID = _prefabID;

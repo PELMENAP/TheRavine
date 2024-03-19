@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: BirchInfo
   m_EditorClassIdentifier: 
-  _name: birch
+  _id: birchinfo
   _amount: 1
   _poolSize: 20
   _iType: 0

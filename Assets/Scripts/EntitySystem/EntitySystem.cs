@@ -34,7 +34,7 @@ namespace TheRavine.EntityControl
         public void BreakUp()
         {
             for (int i = 0; i < global.Count; i++)
-                global[i].BreakUpEntity();
+                global[i].Death();
             OnDestroy();
         }
 

@@ -47,6 +47,10 @@ namespace TheRavine.EntityControl
         {
             return new Vector2();
         }
+        public override Transform GetModelTransform()
+        {
+            return this.transform;
+        }
         public override void UpdateEntityCycle()
         {
             if (statePatternComponent.behaviourCurrent != null)
@@ -114,7 +118,8 @@ namespace TheRavine.EntityControl
 
         public void BreakUp()
         {
-            BreakUpEntity();
+            controller.Delete();
+            Death();
             cameraMen.BreakUp();
         }
 
