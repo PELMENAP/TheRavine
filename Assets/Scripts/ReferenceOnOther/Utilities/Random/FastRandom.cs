@@ -89,5 +89,6 @@ namespace TheRavine.Extentions
         public static float RangeFloat(float min, float max) => fastRandom.Range(min, max);
         public static int Hundred() => fastRandom.Range(0, 100);
         public static Vector2 GetInsideCircle(float radius) => fastRandom.GetInsideCircle(radius);
+        public static Vector2 GetInsideCircleSquare(float radius) => fastRandom.GetInsideCircle(radius);
     }
 }

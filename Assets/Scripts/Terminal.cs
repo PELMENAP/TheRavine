@@ -16,7 +16,7 @@ namespace TheRavine.Base
         [SerializeField] private InputActionReference EnterRef;
         public string input;
         private string[] words;
-        private PlayerEntity playerData;
+        public PlayerEntity playerData;
         private MapGenerator generator;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: LittleBirchInfo
   m_EditorClassIdentifier: 
-  _name: littlebirch
+  _id: littlebirchinfo
   _amount: 1
   _poolSize: 20
   _iType: 0
@@ -21,5 +21,6 @@ MonoBehaviour:
   _iteminfo: {fileID: 0}
   _prefab: {fileID: 948248636415433774, guid: 4c1bd2d40e1ccc4d89ea2421f3e9db6b, type: 3}
   _nextStep: {fileID: 11400000, guid: cac3f76b468575364a79212e2dc85ceb, type: 2}
-  _afterlife: {fileID: 0}
   _addspace: []
+  _deadPattern: {fileID: 0}
+  _pickUpPattern: {fileID: 0}

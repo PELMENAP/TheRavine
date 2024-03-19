@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.InputSystem.EnhancedTouch;
+using System.Reflection;
 
 using TheRavine.Inventory;
 using TheRavine.Generator;
@@ -14,55 +15,44 @@ namespace TheRavine.Base
     using BootstrapStates;
     public class Bootstrap : MonoBehaviour
     {
-        private ServiceLocator serviceLocator = new ServiceLocator();
+        private ServiceLocator serviceLocator;
         public byte tickPerUpdate;
         public StateMachine<Bootstrap> StateMachine { get; private set; }
-        public Queue<ISetAble> _setAble = new Queue<ISetAble>();
-        private Queue<ISetAble> _disAble = new Queue<ISetAble>();
-        [SerializeField] private Camera _camera;
-        [SerializeField] private DayCycle sun;
-        [SerializeField] private MapGenerator generator;
-        [SerializeField] private ObjectSystem objectSystem;
-        [SerializeField] private UIInventory inventory;
-        [SerializeField] private PlayerEntity playerData;
-        [SerializeField] private Terminal terminal;
-        [SerializeField] private EntitySystem entitySystem;
-        [SerializeField] private MobGenerator mobGenerator;
-        [SerializeField] private MobController mobController;
+        public Queue<ISetAble> _setAble;
+        private Queue<ISetAble> _disAble;
+        [SerializeField] private MonoBehaviour[] scripts;
+        [SerializeField] private UniversalAdditionalCameraData _cameraData;
         [SerializeField] private GameObject help, ui;
+
+        [SerializeField] private int standartStateMachineTickTime;
         private void Start()
         {
+            _setAble = new Queue<ISetAble>();
+            _disAble = new Queue<ISetAble>();
+            serviceLocator = new ServiceLocator();
             EnhancedTouchSupport.Enable();
+
+            for (byte i = 0; i < scripts.Length; i++)
+            {
+                System.Type serviceType = scripts[i].GetType();
+                MethodInfo registerMethod = typeof(ServiceLocator).GetMethod("Register").MakeGenericMethod(new System.Type[] { serviceType });
+                registerMethod.Invoke(serviceLocator, new object[] { scripts[i] });
+                _setAble.Enqueue((ISetAble)scripts[i]);
+            }
+
             serviceLocator.RegisterPlayer<PlayerEntity>();
-            serviceLocator.Register<PlayerEntity>(playerData);
-            serviceLocator.Register<ObjectSystem>(objectSystem);
-            serviceLocator.Register<UIInventory>(inventory);
-            serviceLocator.Register<MapGenerator>(generator);
-            serviceLocator.Register<DayCycle>(sun);
-            serviceLocator.Register<Terminal>(terminal);
-            serviceLocator.Register<EntitySystem>(entitySystem);
-            serviceLocator.Register<MobGenerator>(mobGenerator);
-            serviceLocator.Register<MobController>(mobController);
-            _setAble.Enqueue((ISetAble)objectSystem);
-            _setAble.Enqueue((ISetAble)playerData);
-            _setAble.Enqueue((ISetAble)inventory);
-            _setAble.Enqueue((ISetAble)generator);
-            _setAble.Enqueue((ISetAble)sun);
-            _setAble.Enqueue((ISetAble)terminal);
-            _setAble.Enqueue((ISetAble)entitySystem);
-            _setAble.Enqueue((ISetAble)mobGenerator);
-            _setAble.Enqueue((ISetAble)mobController);
+
             switch (Settings.SceneNumber)
             {
                 case 1:
-                    StateMachine = new StateMachine<Bootstrap>(
+                    StateMachine = new StateMachine<Bootstrap>(standartStateMachineTickTime,
                         new BootstrapState(this),
                         new InitialState(this, Settings.isLoad),
                         new LoadingState(this),
                         new GameState(this));
                     break;
                 default:
-                    StateMachine = new StateMachine<Bootstrap>(
+                    StateMachine = new StateMachine<Bootstrap>(standartStateMachineTickTime,
                         new BootstrapState(this),
                         new InitialState(this, Settings.isLoad),
                         new LoadingState(this),
@@ -70,27 +60,28 @@ namespace TheRavine.Base
                     break;
             }
             StartGame();
-            help.SetActive(false);
-            ui.SetActive(false);
         }
         public void StartNewServise(ISetAble.Callback callback)
         {
+            if (_setAble.Count == 0)
+                return;
             ISetAble setAble = _setAble.Dequeue();
-            print(nameof(setAble));
             _disAble.Enqueue(setAble);
             setAble.SetUp(callback, serviceLocator);
         }
         public void StartGame()
         {
+            help.SetActive(false);
+            ui.SetActive(false);
             Settings.SceneNumber = 0;
             StateMachine.SwitchState<BootstrapState>();
         }
-        public void AddCameraToStack(Camera _cameraToAdd) => _camera.GetUniversalAdditionalCameraData().cameraStack.Add(_cameraToAdd);
+        public void AddCameraToStack(Camera _cameraToAdd) => _cameraData.cameraStack.Add(_cameraToAdd);
         public void Finally()
         {
             ui.SetActive(true);
             help.SetActive(true);
-            playerData.SetBehaviourIdle();
+            serviceLocator.GetService<PlayerEntity>().SetBehaviourIdle();
         }
 
         public void InTheEnd()
@@ -109,7 +100,7 @@ namespace TheRavine.Base
             }
             catch
             {
-                throw;
+                // throw;
             }
         }
 

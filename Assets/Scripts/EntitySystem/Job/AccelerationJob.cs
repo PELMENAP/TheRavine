@@ -13,8 +13,7 @@ namespace TheRavine.EntityControl
         [ReadOnly] public NativeArray<float2> Velocities;
         [ReadOnly] public NativeArray<bool> IsMoving;
         [WriteOnly] public NativeArray<float2> Accelerations;
-        [ReadOnly] public float DestinationThreshold, AvoidanceThreshold, RandomnessRadius;
-        [ReadOnly] public int RandomSeed;
+        [ReadOnly] public float DestinationThreshold, AvoidanceThreshold;
         [ReadOnly] public float3 Weights;
         public void Execute(int index)
         {
@@ -22,10 +21,9 @@ namespace TheRavine.EntityControl
                 return;
 
             Accelerations[index] = float2.zero;
-            var random = new Unity.Mathematics.Random((uint)(RandomSeed + index));
             float2 averageSpread = float2.zero, averageVelocity = float2.zero, averagePosition = float2.zero;
 
-            for (ushort i = 0; i < Positions.Length; i++)
+            for (byte i = 0; i < Positions.Length; i++)
             {
                 if (i == index)
                     continue;
@@ -41,6 +39,8 @@ namespace TheRavine.EntityControl
             if (OtherTargets.Length > 0)
             {
                 float2 targetPos = OtherTargets[index % OtherTargets.Length];
+                if (math.distancesq(targetPos, float2.zero) < 0.01f)
+                    targetPos = new float2(-100, -100);
                 float2 posDifference = targetPos - Positions[index];
                 if (math.length(posDifference) > DestinationThreshold)
                 {

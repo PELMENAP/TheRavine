@@ -6,7 +6,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
-using TMPro;
 using UnityEditor;
 using NaughtyAttributes;
 using Cysharp.Threading.Tasks;

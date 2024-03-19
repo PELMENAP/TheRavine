@@ -5,7 +5,7 @@ namespace TheRavine.Services
     public class ServiceLocator
     {
         private System.Collections.Generic.Dictionary<System.Type, MonoBehaviour> services = new System.Collections.Generic.Dictionary<System.Type, MonoBehaviour>();
-        private System.Type playerType;
+        private Transform playerTransform;
         public bool Register<T>(T service) where T : MonoBehaviour
         {
             System.Type type = typeof(T);
@@ -15,7 +15,7 @@ namespace TheRavine.Services
                 return false;
             return true;
         }
-        public void RegisterPlayer<T>() where T : MonoBehaviour => playerType = typeof(T);
+        public void RegisterPlayer<T>() where T : MonoBehaviour => playerTransform = services[typeof(T)].transform;
         public T GetService<T>() where T : MonoBehaviour
         {
             System.Type type = typeof(T);
@@ -25,7 +25,7 @@ namespace TheRavine.Services
                 return null;
         }
 
-        public Transform GetPlayerTransform() => services[playerType].transform;
+        public Transform GetPlayerTransform() => playerTransform;
 
         public void Dispose()
         {

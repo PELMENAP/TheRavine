@@ -68,7 +68,6 @@ namespace TheRavine.Extentions
             float cos = Mathf.Cos(angle);
             return new Vector2(vector.x * cos - vector.y * sin, vector.x * sin + vector.y * cos);
         }
-        public static float GetRandomValue(float min, float max) => RavineRandom.RangeFloat(min, max);
         public static Vector2 PerpendicularClockwise(Vector2 vector) => new Vector2(vector.y, -vector.x);
         public static Vector2 PerpendicularCounterClockwise(Vector2 vector) => new Vector2(-vector.y, vector.x);
         public static void GenerateBezierPoints(Vector2 start, Vector2 control, Vector2 end, byte bezierDetail, ref Vector2[] bezierPoints)

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: MossInfo
   m_EditorClassIdentifier: 
-  _name: moss
+  _id: mossinfo
   _amount: 1
   _poolSize: 20
   _iType: 0
@@ -21,3 +21,6 @@ MonoBehaviour:
   _iteminfo: {fileID: 0}
   _prefab: {fileID: 6908429162828912622, guid: adae632f026b24118899a930b4e1619f, type: 3}
   _nextStep: {fileID: 11400000}
+  _addspace: []
+  _deadPattern: {fileID: 0}
+  _pickUpPattern: {fileID: 0}

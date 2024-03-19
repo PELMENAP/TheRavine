@@ -1,4 +1,5 @@
-public interface IComponent
+using System;
+
+public interface IComponent : IDisposable
 {
-    void Dispose();
 }
