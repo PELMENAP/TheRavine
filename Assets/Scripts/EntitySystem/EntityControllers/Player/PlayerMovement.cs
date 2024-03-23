@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
-using System;
 
 using TheRavine.Extentions;
 using TheRavine.Base;
@@ -11,9 +10,7 @@ using TheRavine.EntityControl;
 public class PlayerMovement : MonoBehaviour, IEntityControllable
 {
     private const int PickDistance = 1;
-    [SerializeField] private float movementSpeed, offset, timeLimit;
-    [SerializeField] private Vector2 movementDirection, aim;
-    [SerializeField] private Rigidbody2D rb;
+    [SerializeField] private float placeObjectDelay;
     [SerializeField] private Animator animator, shadowAnimator;
     [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick;
     [SerializeField] private Joystick joystick;
@@ -23,6 +20,9 @@ public class PlayerMovement : MonoBehaviour, IEntityControllable
     [SerializeField] private Transform crosshair, playerTrans, playerMark;
     private EntityAimBaseStats aimBaseStats;
     private EntityMovementBaseStats movementBaseStats;
+    private Rigidbody2D rb;
+    private float movementSpeed;
+    private Vector2 movementDirection, aim;
 
     public void SetInitialValues(AEntity entity)
     {
@@ -151,7 +151,7 @@ public class PlayerMovement : MonoBehaviour, IEntityControllable
         // }
 
         crosshair.localPosition = aim * aimBaseStats.crosshairDistanse;
-        crosshair.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg + offset);
+        crosshair.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg + aimBaseStats.crosshairOffset);
         crosshair.gameObject.SetActive(true);
         isAccurance = true;
     }
@@ -195,7 +195,7 @@ public class PlayerMovement : MonoBehaviour, IEntityControllable
     {
         act = false;
         PlayerEntity.data.placeObject?.Invoke(Extention.RoundVector2D(crosshair.position));
-        yield return new WaitForSeconds(timeLimit);
+        yield return new WaitForSeconds(placeObjectDelay);
         act = true;
     }
     public void Delete()

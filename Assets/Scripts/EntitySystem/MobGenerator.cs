@@ -14,7 +14,8 @@ namespace TheRavine.EntityControl
         private System.Threading.CancellationTokenSource _cts = new System.Threading.CancellationTokenSource();
         private const byte chunkCount = MapGenerator.chunkCount;
         private GameObject CreateMob(Vector2 position, GameObject prefab) => Instantiate(prefab, position, Quaternion.identity);
-        [SerializeField] private SpawnPointData[] regions;
+        [SerializeField] private SpawnPointDataHeight[] regions;
+        [SerializeField, Min(0)] private ushort MaxSpawnEntityCount;
         private AEntity player;
         private MapGenerator generator;
         private MobController mobsController;
@@ -44,12 +45,14 @@ namespace TheRavine.EntityControl
             callback?.Invoke();
         }
 
-        private Queue<Pair<Vector2, byte>> NALQueue = new Queue<Pair<Vector2, byte>>(8);
-        private Queue<Pair<Vector2, GameObject>> NALQueueUpdate = new Queue<Pair<Vector2, GameObject>>(8);
+        private Queue<Pair<Vector2, Pair<byte, byte>>> NALQueue;
+        private Queue<Pair<Vector2, GameObject>> NALQueueUpdate;
         public void ClearNALQueue() => NALQueue.Clear();
         [SerializeField] private byte step;
         private async UniTaskVoid NAL()
         {
+            NALQueue = new Queue<Pair<Vector2, Pair<byte, byte>>>(8);
+            NALQueueUpdate = new Queue<Pair<Vector2, GameObject>>(8);
             await UniTask.Delay(5000);
             bool NALthread = true;
             int countCycle = 0;
@@ -67,11 +70,13 @@ namespace TheRavine.EntityControl
                     await UniTask.Delay(1000, cancellationToken: _cts.Token);
                     continue;
                 }
-                Pair<Vector2, byte> current = NALQueue.Dequeue();
-                SpawnPointData currentSpawnPointData = regions[current.Second];
-                for (byte i = 0; i < currentSpawnPointData.entities.Length; i++)
+                Pair<Vector2,  Pair<byte, byte>> current = NALQueue.Dequeue();
+                MobSpawnData[] currentEnities = regions[current.Second.First].temperatureLevels[current.Second.Second].entities;
+                for (byte i = 0; i < currentEnities.Length; i++)
                 {
-                    MobSpawnData curMobSpawnData = currentSpawnPointData.entities[i];
+                    MobSpawnData curMobSpawnData = currentEnities[i];
+                    if(curMobSpawnData.Chance <= 0)
+                        continue;
                     if (RavineRandom.Hundred() < curMobSpawnData.Chance)
                     {
                         print("summon somebody");
@@ -87,7 +92,7 @@ namespace TheRavine.EntityControl
         public void UpdateNAL()
         {
             ClearNALQueue();
-            while (NALQueueUpdate.Count > 0 && mobsController.EntityCount < 100)
+            while (NALQueueUpdate.Count > 0 && mobsController.GetEntityCount() < MaxSpawnEntityCount)
             {
                 Pair<Vector2, GameObject> item = NALQueueUpdate.Dequeue();
                 GameObject curMob = CreateMob(Extention.GetRandomPointAround(item.First, 2), item.Second);
@@ -98,9 +103,9 @@ namespace TheRavine.EntityControl
             }
             UpdateNALQueue(currentChunkPosition);
         }
-        private void AddSpawnPoint(Vector2 position, byte height, Vector2 chunkCenter)
+        private void AddSpawnPoint(Vector2 position, byte height, byte temperature, Vector2 chunkCenter)
         {
-            GetMapData(chunkCenter).spawnPoints[position] = height;
+            GetMapData(chunkCenter).spawnPoints[position] = new Pair<byte, byte>(height, temperature);
         }
         private void UpdateNALQueue(Vector2 position)
         {
@@ -126,7 +131,7 @@ namespace TheRavine.EntityControl
                 {
                     ChunkEntityData data = GetMapData(currentChunkPosition + new Vector2(xOffset, yOffset));
                     foreach (var item in data.spawnPoints)
-                        NALQueue.Enqueue(new Pair<Vector2, byte>(item.Key, item.Value));
+                        NALQueue.Enqueue(new Pair<Vector2, Pair<byte, byte>>(item.Key, item.Value));
                     List<AEntity> listEntity = data.entitiesInChunk;
                     for (ushort i = 0; i < listEntity.Count; i++)
                     {
@@ -153,23 +158,29 @@ namespace TheRavine.EntityControl
             _cts.Cancel();
             mapData.Clear();
             ClearNALQueue();
+            NALQueueUpdate.Clear();
         }
     }
 
     public class ChunkEntityData
     {
-        public Dictionary<Vector2, byte> spawnPoints;
+        public Dictionary<Vector2, Pair<byte, byte>> spawnPoints;
         public List<AEntity> entitiesInChunk;
         public ChunkEntityData()
         {
-            spawnPoints = new Dictionary<Vector2, byte>();
+            spawnPoints = new Dictionary<Vector2, Pair<byte, byte>>();
             entitiesInChunk = new List<AEntity>();
         }
     }
 
     [System.Serializable]
-    public struct SpawnPointData
+    public struct SpawnPointDataHeight
     {
+        public SpawnPointDataTemperatureLevel[] temperatureLevels;
+    }
+
+    [System.Serializable]
+    public struct SpawnPointDataTemperatureLevel{
         public MobSpawnData[] entities;
     }
 

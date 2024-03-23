@@ -50,6 +50,8 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -116,13 +118,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1671218706617821319}
-  - component: {fileID: 1671218706617821312}
+  - component: {fileID: 9108774688089968488}
   - component: {fileID: 1671218706617821318}
   - component: {fileID: 1671218706617821317}
   - component: {fileID: 1671218706617821338}
   - component: {fileID: 1153914877}
-  - component: {fileID: 2434177361043438828}
-  - component: {fileID: 8568342461213118662}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -150,7 +150,7 @@ Transform:
   - {fileID: 409242886658467678}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1671218706617821312
+--- !u!114 &9108774688089968488
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -159,15 +159,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1671218706617821313}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f57fb6d8c769cc046a4b81bd66c53963, type: 3}
+  m_Script: {fileID: 11500000, guid: 8ef466d4b7be83e799f5f6c6b184e616, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerInfo: {fileID: 11400000, guid: 02864c9e0e65727ac845cf6cbdaad1f9, type: 2}
   cameraMen: {fileID: 0}
+  output: {fileID: 0}
   InputWindow: {fileID: 0}
-  reloadSpeed: 0
-  MOVEMENT_BASE_SPEED: 5
-  maxMouseDis: 5
-  CROSSHAIR_DISTANSE: 3
   factMousePosition: {x: 0, y: 0, z: 0}
 --- !u!50 &1671218706617821318
 Rigidbody2D:
@@ -286,46 +284,6 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 10
---- !u!114 &2434177361043438828
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1671218706617821313}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2e87bc03209eedefca2e309ccd98b197, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  movementSpeed: 0
-  offset: 0
-  timeLimit: 0.1
-  movementDirection: {x: 0, y: 0}
-  aim: {x: 0, y: 0}
-  rb: {fileID: 1671218706617821318}
-  animator: {fileID: 1671218708006909019}
-  shadowAnimator: {fileID: 8713912288213283658}
-  MovementRef: {fileID: -8258650051004762216, guid: 7a647ec6cc02b5604ac122cb0d98620e,
-    type: 3}
-  Raise: {fileID: 0}
-  joystick: {fileID: 0}
-  cachedCamera: {fileID: 0}
-  crosshair: {fileID: 1671218707826521824}
-  entityTrans: {fileID: 1671218706617821319}
-  playerMark: {fileID: 0}
---- !u!114 &8568342461213118662
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1671218706617821313}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 88a93369281c1604d8dede1c4f271290, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1671218707232650367
 GameObject:
   m_ObjectHideFlags: 0
@@ -337,7 +295,6 @@ GameObject:
   - component: {fileID: 1671218707232650366}
   - component: {fileID: 1671218707232650364}
   - component: {fileID: 1671218707232650365}
-  - component: {fileID: 1671218707232650355}
   m_Layer: 0
   m_Name: dialogWindow
   m_TagString: Untagged
@@ -381,6 +338,8 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -470,15 +429,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 00000000
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 0
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 0
   m_isCullingEnabled: 0
@@ -493,24 +454,12 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
-  m_renderer: {fileID: 1671218707232650364}
-  m_maskType: 0
   _SortingLayer: 0
   _SortingLayerID: 0
   _SortingOrder: 0
---- !u!114 &1671218707232650355
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1671218707232650367}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 77382245d6924778bb9ff926310564e3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_hasFontAssetChanged: 0
+  m_renderer: {fileID: 1671218707232650364}
+  m_maskType: 0
 --- !u!1 &1671218707826521825
 GameObject:
   m_ObjectHideFlags: 0
@@ -560,6 +509,8 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -646,6 +597,8 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -752,6 +705,8 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:

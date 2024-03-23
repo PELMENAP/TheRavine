@@ -338,8 +338,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2154996861979537285}
-  - component: {fileID: 7728748999613484161}
-  - component: {fileID: 2964098784693935870}
+  - component: {fileID: 2686519608414696735}
+  - component: {fileID: 526669314530712125}
   - component: {fileID: 6585750003920059427}
   - component: {fileID: 5352795498335868172}
   m_Layer: 0
@@ -365,7 +365,7 @@ Transform:
   - {fileID: 8429655968247033715}
   m_Father: {fileID: 4990245179154581794}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7728748999613484161
+--- !u!114 &2686519608414696735
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -374,13 +374,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 8685916130487313545}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ce082a142174ff7ff85a99feeefd685e, type: 3}
+  m_Script: {fileID: 11500000, guid: d2a5578636b7e60e5ac33e0cca06ae33, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isAlife: 0
   direction: {x: 0, y: 0}
   animator: {fileID: 0}
---- !u!114 &2964098784693935870
+--- !u!114 &526669314530712125
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -389,23 +388,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 8685916130487313545}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3d214ed807cd4cf4db3e344a61c3ab90, type: 3}
+  m_Script: {fileID: 11500000, guid: 2212254c82a0a317a9ac08b46ca05258, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pointTarget: {fileID: 383263591}
-  pointRandom: {fileID: 7035006477080710853}
+  pointTarget: {fileID: 7035006477080710853}
+  pointRandom: {fileID: 383263591}
   view: {fileID: 4503546879817788969}
-  movementSpeed: 20
-  accuracy: 5
-  maxTargetDistance: 10
-  stepMaxDistance: 20
+  movementSpeed: 5
+  accuracy: 3
+  maxTargetDistance: 50
+  stepMaxDistance: 5
   stepSpread: 5
-  angleDivide: 5
+  angleDivide: 4
   bezierDetail: 10
-  bezierFactor: 5
+  bezierFactor: 4
   movementDelay: 1000
-  movementDelaySpread: 200
-  colliderDistance: 0
+  movementDelaySpread: 500
+  defaultDelay: 1000
+  colliderDistance: 5
 --- !u!58 &6585750003920059427
 CircleCollider2D:
   m_ObjectHideFlags: 0

@@ -68,7 +68,7 @@ Camera:
   far clip plane: 50
   field of view: 29
   orthographic: 1
-  orthographic size: 275
+  orthographic size: 262.5
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -161,10 +161,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 6684426027276981201}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1200, y: 600}
+  m_SizeDelta: {x: 0, y: -4}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6684426025858851369
 CanvasRenderer:
@@ -269,8 +269,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 1544, y: 720}
-  m_SizeDelta: {x: 3087.9998, y: 1439.9999}
+  m_AnchoredPosition: {x: 535.03, y: 301.9031}
+  m_SizeDelta: {x: 1070.0598, y: 603.8062}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &6684426027276981200
 Canvas:
@@ -360,7 +360,7 @@ RectTransform:
   m_GameObject: {fileID: 7379431130771621378}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 60, y: 60, z: 1}
+  m_LocalScale: {x: 53.7, y: 50.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6684426027276981201}
@@ -5139,6 +5139,8 @@ ParticleSystemRenderer:
   m_ReflectionProbeUsage: 0
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -5177,13 +5179,15 @@ ParticleSystemRenderer:
   m_RenderAlignment: 0
   m_Pivot: {x: 0, y: 0, z: 0}
   m_Flip: {x: 0, y: 0, z: 0}
-  m_UseCustomVertexStreams: 0
   m_EnableGPUInstancing: 1
   m_ApplyActiveColorSpace: 1
   m_AllowRoll: 1
   m_FreeformStretching: 0
   m_RotateWithStretchDirection: 1
+  m_UseCustomVertexStreams: 0
   m_VertexStreams: 00010304
+  m_UseCustomTrailVertexStreams: 0
+  m_TrailVertexStreams: 00010304
   m_Mesh: {fileID: 0}
   m_Mesh1: {fileID: 0}
   m_Mesh2: {fileID: 0}
@@ -5250,7 +5254,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -384, y: -249}
+  m_AnchoredPosition: {x: -325.5, y: -235}
   m_SizeDelta: {x: 700, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8401669110093665310
@@ -5275,16 +5279,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
+  m_Maskable: 0
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 470d7879cd9ffbc6589798f830721a94, type: 2}
-  m_sharedMaterial: {fileID: -6664626089522105130, guid: 470d7879cd9ffbc6589798f830721a94,
+  m_fontAsset: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24, type: 2}
+  m_sharedMaterial: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -5303,7 +5307,7 @@ MonoBehaviour:
   m_fontColorGradientPreset: {fileID: 0}
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
-  m_StyleSheet: {fileID: 0}
+  m_StyleSheet: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e, type: 2}
   m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
@@ -5325,16 +5329,18 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
-  m_isRichText: 1
-  m_parseCtrlCharacters: 1
+  m_isRichText: 0
+  m_EmojiFallbackSupport: 0
+  m_parseCtrlCharacters: 0
   m_isOrthographic: 1
   m_isCullingEnabled: 0
   m_horizontalMapping: 0
@@ -5343,7 +5349,7 @@ MonoBehaviour:
   m_geometrySortingOrder: 0
   m_IsTextObjectScaleStatic: 0
   m_VertexBufferAutoSizeReduction: 0
-  m_useMaxVisibleDescender: 1
+  m_useMaxVisibleDescender: 0
   m_pageToDisplay: 1
   m_margin: {x: 0, y: 0, z: -218.43799, w: 0}
   m_isUsingLegacyAnimationComponent: 0
@@ -5525,11 +5531,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 22400004, guid: ec26760fa5c850a4f94ed5e82670714a, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -500
+      value: -452.1
       objectReference: {fileID: 0}
     - target: {fileID: 22400004, guid: ec26760fa5c850a4f94ed5e82670714a, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -164
+      value: -164.7
       objectReference: {fileID: 0}
     - target: {fileID: 22400004, guid: ec26760fa5c850a4f94ed5e82670714a, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -5824,11 +5830,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 22400004, guid: b0c658f63aa9ac744ae4ac9b127cc9e0, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -194.99998
+      value: -145.7
       objectReference: {fileID: 0}
     - target: {fileID: 22400004, guid: b0c658f63aa9ac744ae4ac9b127cc9e0, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -164.00002
+      value: -168.5
       objectReference: {fileID: 0}
     - target: {fileID: 22400004, guid: b0c658f63aa9ac744ae4ac9b127cc9e0, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -6063,11 +6069,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 22400002, guid: 92c3c7fb26a59f74c9d659ca4f9ce348, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -313
+      value: -269
       objectReference: {fileID: 0}
     - target: {fileID: 22400002, guid: 92c3c7fb26a59f74c9d659ca4f9ce348, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -164.00002
+      value: -168.5
       objectReference: {fileID: 0}
     - target: {fileID: 22400002, guid: 92c3c7fb26a59f74c9d659ca4f9ce348, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x

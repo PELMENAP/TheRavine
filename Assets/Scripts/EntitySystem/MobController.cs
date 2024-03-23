@@ -1,5 +1,4 @@
 using Unity.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Jobs;
 using Unity.Mathematics;
@@ -11,7 +10,8 @@ namespace TheRavine.EntityControl
 {
     public class MobController : MonoBehaviour, ISetAble
     {
-        public ushort EntityCount = 0;
+        public ushort GetEntityCount() => EntityCount;
+        private ushort EntityCount = 0;
         private AEntity[] mobEntities;
         private TransformAccessArray transformAccessArray;
         private NativeArray<float2> velocities;

@@ -34,9 +34,7 @@ public class Test : MonoBehaviour
     public SkillData swimmingSkill;
 
     public EntityInfo entityInfo;
-
     private Vector2 RoundVector(Vector2 vec) => new Vector2((int)vec.x, (int)vec.y);
-
     private SkillFacade skillFacade = new SkillFacade();
     public GameObject player;
     AEntity playerEntity;
@@ -56,7 +54,7 @@ public class Test : MonoBehaviour
         playerEntity.SetUpEntityData(entityInfo);
         skillFacade.AddEntity(playerEntity.GetEntityComponent<SkillComponent>());
         skillFacade.AddSkillToEntity(playerEntity.GetEntityComponent<SkillComponent>(), SkillBuilder.CreateSkill(flyingSkill));
-        point.action.performed += mobile;
+        // point.action.performed += mobile;
     }
 
     [Button]
@@ -127,7 +125,7 @@ public class Test : MonoBehaviour
 
     private void OnDisable()
     {
-        point.action.performed -= mobile;
+        // point.action.performed -= mobile;
     }
 
     [Button]

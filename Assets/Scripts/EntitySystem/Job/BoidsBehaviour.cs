@@ -1,5 +1,4 @@
-﻿using System;
-using Unity.Collections;
+﻿using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Jobs;
@@ -14,7 +13,6 @@ namespace TheRavine.EntityControl
         [SerializeField] private int _numberOfEntities;
         [SerializeField] private GameObject _entityPrefab;
         [SerializeField] private float _destinationThreshold, _avoidanceThreshold;
-        [SerializeField] private float2 _areaSize;
         [SerializeField] private float _velocityLimit;
         [SerializeField] private float3 _accelerationWeights;
         [SerializeField] private float2[] targetArray;
