@@ -92,6 +92,8 @@ namespace TheRavine.Generator
             viewer = locator.GetPlayerTransform();
             objectSystem = locator.GetService<ObjectSystem>();
             DayCycle.newDay += UpdateNAL;
+            if (endlessFlag[3])
+                NAL().Forget();
             if (endlessFlag[0])
                 endless[0] = new EndlessTerrain(this);
             if (endlessFlag[1])
@@ -104,8 +106,6 @@ namespace TheRavine.Generator
                 if (endless[i] != null)
                     endless[i].UpdateChunk(position);
             GenerationUpdate().Forget();
-            if (endlessFlag[3])
-                NAL().Forget();
             callback?.Invoke();
         }
 
@@ -278,7 +278,7 @@ namespace TheRavine.Generator
         }
         private float[,] noiseMap = new float[mapChunkSize, mapChunkSize];
         private float[,] noiseTemperatureMap = new float[mapChunkSize, mapChunkSize];
-        public UnityAction<Vector2, byte, Vector2> onSpawnPoint;
+        public UnityAction<Vector2, byte, byte, Vector2> onSpawnPoint;
         private int[] countOfHeights = new int[9];
         private int count = 0, criticalHeight = 1;
         public ChunkData GenerateMapData(Vector2 centre)
@@ -572,7 +572,7 @@ namespace TheRavine.Generator
                             }
                             structHere = true;
                             if (sinfo.isSpawnPoint)
-                                onSpawnPoint?.Invoke(posstruct, heightMap[x, y], centre);
+                                onSpawnPoint?.Invoke(posstruct, heightMap[x, y], temperatureMap[x, y], centre);
                             break;
                         }
                     }
@@ -584,23 +584,12 @@ namespace TheRavine.Generator
                         if ((x * y + centre.x * centre.y + seed + i * countOfHeights[heightMap[x, y]] + count) % ginfo.Chance == 0)
                         {
                             Vector2 posobj = new Vector2(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale) - vectorOffset;
-                            try
-                            {
+                           
                                 if (objectSystem.TryAddToGlobal(posobj, ginfo.info.id, ginfo.info.amount, ginfo.info.iType, (x + y) % 2 == 0))
                                 {
                                     objectsToInst.Add(posobj);
                                     break;
                                 }
-                            }
-                            catch
-                            {
-                                print(centre);
-                                print(x);
-                                print(y);
-                                print(heightMap[x, y]);
-                                print(ginfo.info.id);
-                                print(i);
-                            }
                         }
                     }
                     count += x + y;

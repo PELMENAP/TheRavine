@@ -193,7 +193,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 117.3}
+  m_AnchoredPosition: {x: 0, y: 142}
   m_SizeDelta: {x: 455, y: 360}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &217405951974367311
@@ -422,7 +422,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -181}
+  m_AnchoredPosition: {x: 0, y: -182}
   m_SizeDelta: {x: 455, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6507217834225979763
@@ -606,7 +606,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 254.99995}
+  m_AnchoredPosition: {x: 0, y: 260}
   m_SizeDelta: {x: 900, y: 125}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6660706500028593659
@@ -629,16 +629,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.28993142, g: 0.28993142, b: 0.28993142, a: 0.019607844}
+  m_Material: {fileID: 2100000, guid: 157db4c2591a4f5379ed11d7b15a15cb, type: 2}
+  m_Color: {r: 0.1682716, g: 0.8878265, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 0
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: 1007326098, guid: 7c2a870de4fe8c8a6824b4d14f9c7496, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -646,7 +646,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 0.5
 --- !u!114 &1661105246494304348
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -738,8 +738,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 470d7879cd9ffbc6589798f830721a94, type: 2}
-  m_sharedMaterial: {fileID: -6664626089522105130, guid: 470d7879cd9ffbc6589798f830721a94,
+  m_fontAsset: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24, type: 2}
+  m_sharedMaterial: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -758,7 +758,7 @@ MonoBehaviour:
   m_fontColorGradientPreset: {fileID: 0}
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
-  m_StyleSheet: {fileID: 0}
+  m_StyleSheet: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e, type: 2}
   m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
@@ -780,15 +780,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
+  m_ActiveFontFeatures: 
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 0
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 0
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -867,7 +869,7 @@ MonoBehaviour:
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
+  m_Maskable: 0
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -954,8 +956,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 670, y: 15}
-  m_SizeDelta: {x: 400, y: 600}
+  m_AnchoredPosition: {x: 670, y: 20}
+  m_SizeDelta: {x: 400, y: 605}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2115395255679316304
 CanvasRenderer:
@@ -978,7 +980,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 2100000, guid: 157db4c2591a4f5379ed11d7b15a15cb, type: 2}
-  m_Color: {r: 0, g: 0, b: 0, a: 1}
+  m_Color: {r: 0.7577891, g: 0.25212586, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 0
@@ -1507,7 +1509,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: 157db4c2591a4f5379ed11d7b15a15cb, type: 2}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -1619,8 +1621,13 @@ MonoBehaviour:
   - {fileID: 2563459501598153369}
   - {fileID: 7847487186460806793}
   - {fileID: 2465480842714707452}
+  input: {fileID: 0}
   cell: {fileID: 0}
   CraftInfo: []
+  enter: {fileID: -2791483501687952601, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
+  quit: {fileID: -2449674526212249182, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
+  digitAction: {fileID: -3834847775359027447, guid: 7a647ec6cc02b5604ac122cb0d98620e,
+    type: 3}
   playerData: {fileID: 0}
   names:
   - 
@@ -1647,8 +1654,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c85fc87b2031104fba9fa5c372f3035, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  count: 0
-  point: {fileID: -212504553695661567, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
+  point: {fileID: -6296245106230533791, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
+  leftclick: {fileID: -212504553695661567, guid: 7a647ec6cc02b5604ac122cb0d98620e,
+    type: 3}
   _uiInventory: {fileID: 2206661781156694036}
   _mainCanvas: {fileID: 7241328372736920722}
 --- !u!1001 &28870577767309783
@@ -1659,6 +1667,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3370855328649295172}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -1788,6 +1839,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -1934,11 +2028,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
-      propertyPath: m_RootOrder
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
-        type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
       objectReference: {fileID: 0}
@@ -2032,11 +2121,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: UISlot (45)
       objectReference: {fileID: 0}
-    - target: {fileID: 6941382510477914150, guid: 7877c4fd2e5258499993d51508583c75,
-        type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 0.114990234
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2056,6 +2140,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -2190,6 +2317,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -2324,6 +2494,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -2458,6 +2671,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -2592,6 +2848,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 642630691354089184}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -2721,6 +3020,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5767043790986284701}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509448226838, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Delegates.Array.size
@@ -2867,6 +3209,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5767043790986284701}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509448226838, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Delegates.Array.size
@@ -3013,6 +3398,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5767043790986284701}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509448226838, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Delegates.Array.size
@@ -3159,6 +3587,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4466017835693499350}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -3288,6 +3759,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4466017835693499350}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -3417,6 +3931,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5767043790986284701}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509448226838, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Delegates.Array.size
@@ -3563,6 +4120,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3370855328649295172}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -3692,6 +4292,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -3826,6 +4469,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 642630691354089184}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -3955,6 +4641,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3370855328649295172}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -4084,6 +4813,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4466017835693499350}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -4213,6 +4985,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -4347,6 +5162,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -4481,6 +5339,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -4615,6 +5516,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3370855328649295172}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -4744,6 +5688,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3370855328649295172}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -4873,6 +5860,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5293856954899271399}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509448226838, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Delegates.Array.size
@@ -5019,6 +6049,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -5153,6 +6226,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -5287,6 +6403,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -5421,6 +6580,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -5555,6 +6757,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -5689,6 +6934,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -5823,6 +7111,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5767043790986284701}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509448226838, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Delegates.Array.size
@@ -5969,6 +7300,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5767043790986284701}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509448226838, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Delegates.Array.size
@@ -6115,6 +7489,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -6249,6 +7666,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -6383,6 +7843,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3370855328649295172}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -6512,6 +8015,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -6646,6 +8192,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -6780,6 +8369,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -6914,6 +8546,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -7048,6 +8723,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4466017835693499350}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -7177,6 +8895,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -7311,6 +9072,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -7445,6 +9249,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -7579,6 +9426,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3370855328649295172}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -7708,6 +9598,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -7842,6 +9775,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -7976,6 +9952,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5767043790986284701}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509448226838, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Delegates.Array.size
@@ -8122,6 +10141,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -8256,6 +10318,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -8390,6 +10495,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -8524,6 +10672,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 642630691354089184}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -8653,6 +10844,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -8787,6 +11021,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -8921,6 +11198,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509448226838, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Delegates.Array.size
@@ -9055,6 +11375,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -9189,6 +11552,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -9323,6 +11729,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -9457,6 +11906,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -9591,6 +12083,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4466017835693499350}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -9720,6 +12255,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5767043790986284701}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509448226838, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Delegates.Array.size
@@ -9866,6 +12444,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -10000,6 +12621,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3370855328649295172}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -10129,6 +12793,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4466017835693499350}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -10258,6 +12965,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -10392,6 +13142,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -10526,6 +13319,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -10660,6 +13496,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -10794,6 +13673,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3370855328649295172}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -10923,6 +13845,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -11057,6 +14022,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -11191,6 +14199,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -11325,6 +14376,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -11459,6 +14553,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4466017835693499350}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -11588,6 +14725,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -11722,6 +14902,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -11835,7 +15058,7 @@ PrefabInstance:
     - target: {fileID: 6941382510477914150, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.114990234
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11856,6 +15079,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 642630691354089184}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -11985,6 +15251,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4466017835693499350}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -12114,6 +15423,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -12248,6 +15600,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3370855328649295172}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x
@@ -12377,6 +15772,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4702418132154120876}
     m_Modifications:
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_StyleSheet
+      value: 
+      objectReference: {fileID: 11400000, guid: f952c082cb03451daed3ee968ac6c63e,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+        type: 2}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_enableExtraPadding
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_EmojiFallbackSupport
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_useMaxVisibleDescender
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_IsTextObjectScaleStatic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5944852784262451655, guid: 7877c4fd2e5258499993d51508583c75,
+        type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6941382509571900912, guid: 7877c4fd2e5258499993d51508583c75,
         type: 3}
       propertyPath: m_Pivot.x

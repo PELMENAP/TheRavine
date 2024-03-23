@@ -5,9 +5,9 @@ public class InventoryCraftInfo : ScriptableObject, IInventoryCraftInfo
     [SerializeField] private bool _isorder;
     [SerializeField] private string _id;
     [SerializeField] private InventoryItemInfo[] _ingr;
+    [SerializeField, Min(0)] private int[] _amountIngr;
     [SerializeField] private InventoryItemInfo _res;
-    [SerializeField] private int[] _amountIngr;
-    [SerializeField] private int _amountRes;
+    [SerializeField, Min(0)] private int _amountRes;
     public bool isorder => _isorder;
     public string id => _id;
     public InventoryItemInfo[] ingr => _ingr;

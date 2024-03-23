@@ -1,14 +1,11 @@
-﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using TMPro;
 
 using TheRavine.Services;
-using TheRavine.Events;
 
 namespace TheRavine.EntityControl
 {
-    [RequireComponent(typeof(IEntityControllable))]
     public class PlayerEntity : AEntity, ISetAble
     {
         [SerializeField] private EntityInfo playerInfo;
