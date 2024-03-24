@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-using TheRavine.Extentions;
 using TheRavine.ObjectControl;
 
 namespace TheRavine.Generator
@@ -13,15 +12,15 @@ namespace TheRavine.Generator
             private MapGenerator generator;
             private const byte chunkCount = MapGenerator.chunkCount;
             private ObjectSystem objectSystem;
-            private Dictionary<string, ushort> objectUpdate = new Dictionary<string, ushort>(16);
-            private static EnumerableSnapshot<string> objectsSnapshot;
+            private Dictionary<int, ushort> objectUpdate = new Dictionary<int, ushort>(16);
+            private static EnumerableSnapshot<int> objectsSnapshot;
             public EndlessObjects(MapGenerator _generator, ObjectSystem _objectSystem)
             {
                 generator = _generator;
                 objectSystem = _objectSystem;
                 ObjectInfo[] prefabInfo = objectSystem._info;
                 for (ushort i = 0; i < prefabInfo.Length; i++)
-                    objectUpdate[prefabInfo[i].id] = 0;
+                    objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
                 objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
             }
             public void UpdateChunk(Vector2 Vposition)
@@ -33,15 +32,15 @@ namespace TheRavine.Generator
                         Vector2 chunkCoord = new Vector2(Vposition.x + xOffset, Vposition.y + yOffset);
                         foreach (var item in generator.GetMapData(chunkCoord).objectsToInst)
                         {
-                            ObjectInstInfo info = objectSystem.GetGlobalObjectInfo(item);
-                            if (!objectSystem.ContainsGlobal(item) || info.prefabID == "")
+                            ObjectInstInfo info = objectSystem.GetGlobalObjectInstInfo(item);
+                            if (!objectSystem.ContainsGlobal(item) || info.prefabID == -1)
                                 continue;
                             objectUpdate[info.prefabID]++;
                             ObjectInfo objectInfo = objectSystem.GetPrefabInfo(info.prefabID);
                             if (objectUpdate[info.prefabID] > objectSystem.GetPoolSize(info.prefabID))
                             {
                                 objectSystem.IncreasePoolSize(info.prefabID);
-                                objectSystem.CreatePool(objectInfo.id, objectInfo.prefab);
+                                objectSystem.CreatePool(objectInfo.prefab.GetInstanceID(), objectInfo.prefab);
                             }
                             objectSystem.Reuse(info.prefabID, item, info.flip, generator.rotateValue);
                             if (objectInfo.bType == BehaviourType.NAL || objectInfo.bType == BehaviourType.GROW)

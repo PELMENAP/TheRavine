@@ -1,6 +1,6 @@
-using System;
 using System.Collections.Generic;
-using Random = UnityEngine.Random;
+using Random = TheRavine.Extentions.RavineRandom;
+
 using TheRavine.InventoryElements;
 
 namespace TheRavine.Inventory
@@ -28,8 +28,8 @@ namespace TheRavine.Inventory
                 var filledSlots = 10;
                 for (int i = 0; i < filledSlots; i++)
                 {
-                    var rSlot = availableSlots[Random.Range(0, availableSlots.Count)];
-                    var item = InfoManager.GetInventoryItem("porchini", Random.Range(1, 10));
+                    var rSlot = availableSlots[Random.RangeInt(0, availableSlots.Count - 1)];
+                    var item = InfoManager.GetInventoryItem("porchini", Random.RangeInt(1, 10));
                     inventory.TryToAddSlot(this, rSlot, item);
                     availableSlots.Remove(rSlot);
                 }

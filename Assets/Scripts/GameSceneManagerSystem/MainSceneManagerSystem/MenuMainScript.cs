@@ -1,13 +1,18 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 using TheRavine.Base;
 public class MenuMainScript : MonoBehaviour
 {
     [SerializeField] private GameObject menu;
     [SerializeField] private GameObject settings;
-    [SerializeField] private SceneTransition trasitor;
+    [SerializeField] private UniversalAdditionalCameraData _cameraData;
+
+    private SceneTransitor trasitor;
+
     private void Awake()
     {
+        trasitor = new SceneTransitor();
         menu.SetActive(true);
         settings.SetActive(false);
         settings.GetComponent<Settings>().SetInitialValues();
@@ -15,16 +20,25 @@ public class MenuMainScript : MonoBehaviour
 
     public void StartGame()
     {
-        StartCoroutine(trasitor.LoadScene(2, false));
+        trasitor.LoadScene(2).Forget();
+        Settings.isLoad = false;
     }
     public void LoadGame()
     {
-        StartCoroutine(trasitor.LoadScene(2, true));
+        trasitor.LoadScene(2).Forget();
+        Settings.isLoad = true;
     }
 
     public void LoadTestScene()
     {
-        StartCoroutine(trasitor.LoadScene(1, false));
+        trasitor.LoadScene(1).Forget();
+        Settings.isLoad = false;
+        AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
+    }
+
+    public void AddCameraToStack(Camera _cameraToAdd)
+    {
+        _cameraData.cameraStack.Add(_cameraToAdd);
     }
 
 

@@ -1,5 +1,4 @@
 using TheRavine.EntityControl;
-using UnityEngine;
 public interface IAimComponent : IComponent
 {
     EntityAimBaseStats baseStats { get; set; }

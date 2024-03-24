@@ -4,9 +4,6 @@ using UnityEngine.Rendering.Universal;
 using UnityEngine.InputSystem.EnhancedTouch;
 using System.Reflection;
 
-using TheRavine.Inventory;
-using TheRavine.Generator;
-using TheRavine.ObjectControl;
 using TheRavine.EntityControl;
 using TheRavine.Services;
 
@@ -18,15 +15,16 @@ namespace TheRavine.Base
         private ServiceLocator serviceLocator;
         public byte tickPerUpdate;
         public StateMachine<Bootstrap> StateMachine { get; private set; }
-        public Queue<ISetAble> _setAble;
+        private Queue<ISetAble> _setAble;
         private Queue<ISetAble> _disAble;
         [SerializeField] private MonoBehaviour[] scripts;
         [SerializeField] private UniversalAdditionalCameraData _cameraData;
         [SerializeField] private GameObject help, ui;
-
         [SerializeField] private int standartStateMachineTickTime;
+        private SceneTransitor trasitor;
         private void Start()
         {
+            trasitor = new SceneTransitor();
             _setAble = new Queue<ISetAble>();
             _disAble = new Queue<ISetAble>();
             serviceLocator = new ServiceLocator();
@@ -73,19 +71,28 @@ namespace TheRavine.Base
         {
             help.SetActive(false);
             ui.SetActive(false);
-            Settings.SceneNumber = 0;
             StateMachine.SwitchState<BootstrapState>();
         }
         public void AddCameraToStack(Camera _cameraToAdd) => _cameraData.cameraStack.Add(_cameraToAdd);
         public void Finally()
         {
+            while (_setAble.Count > 0)
+                StartNewServise(null);
             ui.SetActive(true);
             help.SetActive(true);
             serviceLocator.GetService<PlayerEntity>().SetBehaviourIdle();
         }
 
-        public void InTheEnd()
+        public void SwitchToMainMenu(){
+            InTheEnd();
+            trasitor.LoadScene(0).Forget();
+            Settings.isLoad = false;
+        }
+
+        private void InTheEnd()
         {
+            if(DataStorage.sceneClose)
+                return;
             DataStorage.sceneClose = true;
             while (_disAble.Count > 0)
                 _disAble.Dequeue().BreakUp();

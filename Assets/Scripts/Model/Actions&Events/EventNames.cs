@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace TheRavine.Events
 {
     public interface RaiseEvent { }

@@ -11,9 +11,9 @@ namespace TheRavine.ObjectControl
         {
             parent = _parent;
         }
-        Dictionary<string, LinkedList<ObjectInstance>> poolDictionary = new Dictionary<string, LinkedList<ObjectInstance>>();
-        Dictionary<string, Pair<Transform, ushort>> poolObjectDictionary = new Dictionary<string, Pair<Transform, ushort>>();
-        public void CreatePool(string poolKey, GameObject prefab, CreateInstance createInstance, ushort poolSize = 1)
+        Dictionary<int, LinkedList<ObjectInstance>> poolDictionary = new Dictionary<int, LinkedList<ObjectInstance>>();
+        Dictionary<int, Pair<Transform, ushort>> poolObjectDictionary = new Dictionary<int, Pair<Transform, ushort>>();
+        public void CreatePool(int poolKey, GameObject prefab, CreateInstance createInstance, ushort poolSize = 1)
         {
             if (!poolDictionary.ContainsKey(poolKey))
             {
@@ -30,7 +30,7 @@ namespace TheRavine.ObjectControl
                 newObject.SetParent(poolObjectDictionary[poolKey].First);
             }
         }
-        public void Reuse(string prefabID, Vector2 position, bool flip, float rotateValue = 0f)
+        public void Reuse(int prefabID, Vector2 position, bool flip, float rotateValue = 0f)
         {
             LinkedList<ObjectInstance> poDick = poolDictionary[prefabID];
             ObjectInstance objectToReuse = poDick.First.Value;
@@ -40,7 +40,7 @@ namespace TheRavine.ObjectControl
                 objectToReuse.Rotate(new Vector3(0, 180, 0));
             poDick.AddLast(objectToReuse);
         }
-        public void Deactivate(string prefabID)
+        public void Deactivate(int prefabID)
         {
             LinkedList<ObjectInstance> poDick = poolDictionary[prefabID];
             ObjectInstance objectToReuse = poDick.First.Value;
@@ -48,8 +48,8 @@ namespace TheRavine.ObjectControl
             objectToReuse.ActiveSelf(false);
             poDick.AddLast(objectToReuse);
         }
-        public ushort GetPoolSize(string prefabID) => poolObjectDictionary[prefabID].Second;
-        public void IncreasePoolSize(string prefabID) => poolObjectDictionary[prefabID] = new Pair<Transform, ushort>(poolObjectDictionary[prefabID].First, (ushort)(poolObjectDictionary[prefabID].Second + 1));
+        public ushort GetPoolSize(int prefabID) => poolObjectDictionary[prefabID].Second;
+        public void IncreasePoolSize(int prefabID) => poolObjectDictionary[prefabID] = new Pair<Transform, ushort>(poolObjectDictionary[prefabID].First, (ushort)(poolObjectDictionary[prefabID].Second + 1));
         public class ObjectInstance
         {
             private GameObject gameObject;
