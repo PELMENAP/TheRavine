@@ -2,7 +2,7 @@
 using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Jobs;
-using Random = UnityEngine.Random;
+using Random = TheRavine.Extentions.RavineRandom;
 using Unity.Mathematics;
 using NaughtyAttributes;
 
@@ -48,10 +48,10 @@ namespace TheRavine.EntityControl
             for (ushort i = 0; i < _numberOfEntities; i++)
             {
                 transforms[i] = Instantiate(_entityPrefab).transform;
-                transforms[i].position = (Vector2)targetArray[i % targetArray.Length] + new Vector2(Random.Range(-20, 20), Random.Range(-20, 20));
+                transforms[i].position = (Vector2)targetArray[i % targetArray.Length] + new Vector2(Random.RangeInt(-20, 20), Random.RangeInt(-20, 20));
                 transforms[i].parent = this.transform;
-                _velocities[i] = Random.insideUnitCircle;
-                _accelerations[i] = Random.insideUnitCircle;
+                _velocities[i] = Random.GetInsideCircle();
+                _accelerations[i] = Random.GetInsideCircle();
                 _isMoving[i] = true;
             }
 
@@ -105,9 +105,9 @@ namespace TheRavine.EntityControl
         [Button]
         private void ChangeMoving()
         {
-            for (ushort i = 0; i < Random.Range(1, _numberOfEntities); i++)
+            for (ushort i = 0; i < Random.RangeInt(1, _numberOfEntities); i++)
             {
-                int a = Random.Range(0, _numberOfEntities);
+                int a = Random.RangeInt(0, _numberOfEntities);
                 _isMoving[a] = !_isMoving[a];
             }
         }

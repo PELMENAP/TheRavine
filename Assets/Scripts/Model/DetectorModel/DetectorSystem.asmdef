@@ -1,0 +1,19 @@
+{
+    "name": "DetectorSystem",
+    "rootNamespace": "",
+    "references": [
+        "GUID:bb56edd6d4b8a2f2b98e39a884e3754c",
+        "GUID:20b215ea2c8c4fdf0ac01bc81823f116",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f",
+        "GUID:cd8d359085da0e838808e0dd55db653e"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

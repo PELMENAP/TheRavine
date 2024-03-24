@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 public interface IState<out TInitializer> {
     TInitializer Initializer {get; }
 }

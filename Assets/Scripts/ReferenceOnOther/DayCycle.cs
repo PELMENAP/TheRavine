@@ -4,10 +4,8 @@ using Unity.Burst;
 using UnityEngine.Jobs;
 using Unity.Mathematics;
 using Unity.Collections;
-using System.Collections;
 using UnityEngine.Rendering.Universal;
 using Cysharp.Threading.Tasks;
-using System;
 
 using TheRavine.Services;
 
@@ -17,7 +15,7 @@ namespace TheRavine.Base
     public class DayCycle : MonoBehaviour, ISetAble
     {
         public static bool isday, closeThread;
-        public static Action newDay;
+        public static System.Action newDay;
         [SerializeField] private float startDay, speed;
         [SerializeField] private Gradient sunGradient;
         [SerializeField] private int awakeDelay, defaultDelay;
@@ -44,7 +42,7 @@ namespace TheRavine.Base
         private int sunIndex;
         private void GetLightsAndShadows()
         {
-            // TimeBridge[0] = startDay;
+            TimeBridge[0] = startDay;
             TimeBridge[4] = speed;
             GameObject[] shadowsObjects = GameObject.FindGameObjectsWithTag("Shadow");
             if (Settings.isShadow)
