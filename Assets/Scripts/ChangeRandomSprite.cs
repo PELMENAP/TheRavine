@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ChangeRandomSprite : MonoBehaviour
@@ -9,6 +7,6 @@ public class ChangeRandomSprite : MonoBehaviour
     [SerializeField] private Sprite[] randomSpriteList;
     private void OnEnable()
     {
-        render.sprite = randomSpriteList[UnityEngine.Random.Range(0, randomSpriteList.Length)];
+        render.sprite = randomSpriteList[Random.Range(0, randomSpriteList.Length)];
     }
 }

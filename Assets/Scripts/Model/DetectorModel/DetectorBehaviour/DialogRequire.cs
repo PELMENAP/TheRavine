@@ -1,11 +1,9 @@
 using System.Collections;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using System.Linq;
 using System;
 using TMPro;
-using TheRavine.Services;
 
 [RequireComponent(typeof(Detector))]
 public class DialogRequire : MonoBehaviour

@@ -162,7 +162,7 @@ namespace TheRavine.Base
                     timeBridge[1] = -math.cos(angle) * 200;
                     timeBridge[2] = -math.sin(angle) * 200;
                     float xFactor = timeBridge[0] * timeBridge[0] - timeBridge[0];
-                    timeBridge[3] = -(12.5f * xFactor + 2f); // sun intensity
+                    timeBridge[3] = -(12.5f * xFactor + 1.95f); // sun intensity
                     timeBridge[5] = 7f * xFactor + 2.5f; // shadow scale
                     isdayBridge[0] = true;
                 }

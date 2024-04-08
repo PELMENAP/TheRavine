@@ -1,8 +1,6 @@
 using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-using TheRavine.ObjectControl;
 using TheRavine.Services;
 
 namespace TheRavine.EntityControl
@@ -13,11 +11,13 @@ namespace TheRavine.EntityControl
         private List<AEntity> global = new List<AEntity>(2);
         public void AddToGlobal(AEntity entity) => global.Add(entity);
         [SerializeField] private EntityInfo[] _mobInfo;
+        [SerializeField] private BoidsBehaviour boidsBehaviour;
         private Dictionary<int, EntityInfo> mobInfo = new Dictionary<int, EntityInfo>(4);
         public EntityInfo GetMobInfo(int id) => mobInfo[id];
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
             // skillFacade = new SkillFacade();
+            boidsBehaviour.StartBoids().Forget();
 
             for (int i = 0; i < _mobInfo.Length; i++)
                 mobInfo[_mobInfo[i].prefab.GetInstanceID()] = _mobInfo[i];

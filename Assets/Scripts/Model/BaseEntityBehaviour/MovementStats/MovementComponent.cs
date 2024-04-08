@@ -1,5 +1,4 @@
 using TheRavine.EntityControl;
-using UnityEngine;
 public interface IMovementComponent : IComponent
 {
     EntityMovementBaseStats baseStats { get; set; }

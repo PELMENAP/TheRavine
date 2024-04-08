@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class Detector : MonoBehaviour, IDetector

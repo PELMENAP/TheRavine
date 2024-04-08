@@ -13,7 +13,7 @@ namespace TheRavine.EntityControl
         [ReadOnly] public NativeArray<float2> Velocities;
         [ReadOnly] public NativeArray<bool> IsMoving;
         [WriteOnly] public NativeArray<float2> Accelerations;
-        [ReadOnly] public float DestinationThreshold, AvoidanceThreshold;
+        [ReadOnly] public float DestinationThreshold, AvoidanceThreshold, TargetThreshold;
         [ReadOnly] public float3 Weights;
         public void Execute(int index)
         {
@@ -39,13 +39,11 @@ namespace TheRavine.EntityControl
             if (OtherTargets.Length > 0)
             {
                 float2 targetPos = OtherTargets[index % OtherTargets.Length];
-                if (math.distancesq(targetPos, float2.zero) < 0.01f)
-                    targetPos = new float2(-100, -100);
                 float2 posDifference = targetPos - Positions[index];
                 if (math.length(posDifference) > DestinationThreshold)
                 {
                     averageSpread += math.normalize(posDifference) * (DestinationThreshold - math.length(posDifference));
-                    averagePosition += targetPos;
+                    averagePosition += posDifference;
                 }
             }
 
