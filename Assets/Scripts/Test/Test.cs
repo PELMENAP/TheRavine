@@ -1,12 +1,6 @@
-using System;
-using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
-using UnityEngine.EventSystems;
-using UnityEditor;
 using NaughtyAttributes;
 using Cysharp.Threading.Tasks;
 

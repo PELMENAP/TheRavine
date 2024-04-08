@@ -10,8 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6566172010477876777}
   - component: {fileID: 8903309324399347244}
-  - component: {fileID: 23462266592981203}
-  - component: {fileID: 3287917927980952081}
   - component: {fileID: 8008862665755986701}
   m_Layer: 0
   m_Name: bottle
@@ -52,6 +50,8 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -76,7 +76,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -2031658443, guid: 8837d63393fff123ba02503d5ebdf73f, type: 3}
+  m_Sprite: {fileID: 1688474327, guid: 7565c2d8bf69c1da7ae0532571c39987, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -87,33 +87,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &23462266592981203
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7490283327438675432}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de51a12bfa0cf9bf08c8c1b05c5cd0c1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &3287917927980952081
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7490283327438675432}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc940621e0c1a5c7aa74348d853e19f4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  amount: 0
-  id: 
-  itemInfo: {fileID: 0}
 --- !u!58 &8008862665755986701
 CircleCollider2D:
   m_ObjectHideFlags: 0

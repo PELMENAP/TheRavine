@@ -394,7 +394,7 @@ MonoBehaviour:
   pointTarget: {fileID: 7035006477080710853}
   pointRandom: {fileID: 383263591}
   view: {fileID: 4503546879817788969}
-  movementSpeed: 5
+  movementSpeed: 50
   accuracy: 3
   maxTargetDistance: 50
   stepMaxDistance: 5
@@ -402,9 +402,9 @@ MonoBehaviour:
   angleDivide: 4
   bezierDetail: 10
   bezierFactor: 4
-  movementDelay: 1000
-  movementDelaySpread: 500
-  defaultDelay: 1000
+  movementDelay: 5000
+  movementDelaySpread: 3000
+  defaultDelay: 10
   colliderDistance: 5
 --- !u!58 &6585750003920059427
 CircleCollider2D:
