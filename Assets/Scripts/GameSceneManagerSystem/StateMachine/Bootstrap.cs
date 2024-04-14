@@ -84,18 +84,14 @@ namespace TheRavine.Base
         }
 
         public void SwitchToMainMenu(){
-            InTheEnd();
-            trasitor.LoadScene(0).Forget();
-            Settings.isLoad = false;
+            InTheEnd(() => TransitToOtherScene());
         }
 
-        private void InTheEnd()
+        private void InTheEnd(System.Action inTheEndCallback)
         {
-            if(DataStorage.sceneClose)
-                return;
+            if(DataStorage.sceneClose) return;
             DataStorage.sceneClose = true;
-            while (_disAble.Count > 0)
-                _disAble.Dequeue().BreakUp();
+            while (_disAble.Count > 0) _disAble.Dequeue().BreakUp();
             EnhancedTouchSupport.Disable();
             serviceLocator.Dispose();
             _setAble.Clear();
@@ -109,11 +105,23 @@ namespace TheRavine.Base
             {
                 // throw;
             }
+            inTheEndCallback?.Invoke();
+        }
+
+        private void TransitToOtherScene(){
+            trasitor.LoadScene(0).Forget();
+            Settings.isLoad = false;
+            AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
+            DataStorage.sceneClose = false;
         }
 
         private void OnDisable()
         {
-            InTheEnd();
+            InTheEnd(() => Aboba());
+        }
+
+        private void Aboba(){
+            print("test play");
         }
     }
 }

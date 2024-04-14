@@ -32,8 +32,7 @@ public class FaderOnTransit : MonoBehaviour
 
     public void FadeIn(Action fadedInCallBack)
     {
-        if (isFading)
-            return;
+        if (isFading) return;
         isFading = true;
         _fadedInCallBack = fadedInCallBack;
         animator.SetBool("Faded", true);
@@ -41,8 +40,7 @@ public class FaderOnTransit : MonoBehaviour
 
     public void FadeOut(Action fadedOutCallBack)
     {
-        if (isFading)
-            return;
+        if (isFading) return;
         isFading = true;
         _fadedOutCallBack = fadedOutCallBack;
         animator.SetBool("Faded", false);

@@ -3,6 +3,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 using TheRavine.Services;
+using System;
 
 namespace TheRavine.ObjectControl
 {
@@ -31,7 +32,7 @@ namespace TheRavine.ObjectControl
         }
         public bool TryAddToGlobal(Vector2 position, int _prefabID, ushort _amount, InstanceType _objectType, bool _flip = false)
         {
-            if(info.Count == 0)
+            if(info == null || info.Count == 0)
                 return false;
             if (global.ContainsKey(position))
                 if (global[position].prefabID == _prefabID && global[position].objectType == InstanceType.Inter)
@@ -75,7 +76,7 @@ namespace TheRavine.ObjectControl
         // public bool Changed(Vector2 position) => changes.ContainsKey(position);
         //
         private IPoolManager<GameObject> PoolManagerBase;
-        public void CreatePool(int prefabID, GameObject prefab, ushort poolSize = 1) => PoolManagerBase.CreatePool(prefabID, prefab, InstantiatePoolObject, poolSize);
+        public void CreatePool(int prefabID, GameObject prefab, int poolSize = 1) => PoolManagerBase.CreatePool(prefabID, prefab, InstantiatePoolObject, (ushort)poolSize);
         public void Reuse(int prefabID, Vector2 position, bool flip, float rotateValue) => PoolManagerBase.Reuse(prefabID, position, flip, rotateValue);
         public void Deactivate(int prefabID) => PoolManagerBase.Deactivate(prefabID);
         public ushort GetPoolSize(int prefabID) => PoolManagerBase.GetPoolSize(prefabID);
@@ -98,7 +99,7 @@ namespace TheRavine.ObjectControl
         {
             for (byte i = 0; i < _info.Length; i++)
             {
-                CreatePool(_info[i].prefab.GetInstanceID(), _info[i].prefab, _info[i].poolSize);
+                CreatePool(_info[i].prefab.GetInstanceID(), _info[i].prefab, _info[i].poolSize / 2);
                 await UniTask.Delay(100);
                 //FaderOnTransit.instance.SetLogs("Созданы: " + _info[i].prefab.id);
             }

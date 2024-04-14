@@ -45,21 +45,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _numberOfEntities: 60
-  _entityPrefab: {fileID: 0}
-  _destinationThreshold: 10
-  _avoidanceThreshold: 5
-  _velocityLimit: 20
+  _numberOfTargets: 5
+  delayFactor: 3
+  _entityPrefab: {fileID: 6104160033677303047, guid: 17a5cd599ef8a9144b6efa2fff9b054b,
+    type: 3}
+  _destinationThreshold: 25
+  _avoidanceThreshold: 15
+  _targetThreshold: 10
+  _velocityLimit: 10
   _accelerationWeights:
-    x: 20
-    y: 0.5
-    z: 0.5
-  targetArray:
-  - x: -100
-    y: 0
-  - x: 100
-    y: 0
-  - x: 100
-    y: 100
-  - x: 0
-    y: 100
-  _flip: {x: 0, y: 0, z: 0}
+    x: 25
+    y: 0.4
+    z: 0.85
+  _flip: {x: 0, y: 180, z: 0}
+  viewer: {fileID: 0}

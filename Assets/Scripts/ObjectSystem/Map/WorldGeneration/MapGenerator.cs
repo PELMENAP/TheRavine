@@ -14,7 +14,7 @@ namespace TheRavine.Generator
     public class MapGenerator : MonoBehaviour, ISetAble
     {
         private System.Threading.CancellationTokenSource _cts = new System.Threading.CancellationTokenSource();
-        public const byte mapChunkSize = 16, chunkCount = 5, scale = 5, generationSize = scale * mapChunkSize, waterLevel = 1;
+        public const byte mapChunkSize = 8, chunkCount = 3, scale = 5, generationSize = scale * mapChunkSize, waterLevel = 1;
         public static Vector2 vectorOffset = new Vector2(generationSize, generationSize) * chunkCount / 2;
         private Dictionary<Vector2, ChunkData> mapData;
         public ChunkData GetMapData(Vector2 position)

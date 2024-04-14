@@ -8,6 +8,8 @@ using TouchPhase = UnityEngine.InputSystem.TouchPhase;
 
 using TheRavine.Base;
 using TheRavine.InventoryElements;
+using TMPro;
+using UnityEngine.UI;
 
 namespace TheRavine.Inventory
 {
@@ -16,6 +18,8 @@ namespace TheRavine.Inventory
         [SerializeField] private InputActionReference point, leftclick;
         [SerializeField] private UIInventory _uiInventory;
         [SerializeField] private Canvas _mainCanvas;
+        [SerializeField] private TextMeshProUGUI text;
+        [SerializeField] private Image image;
         private EventSystem eventSystem;
         private Mouse mouse;
         private bool isDragging = false;
@@ -49,7 +53,7 @@ namespace TheRavine.Inventory
                 eventSystem.RaycastAll(eventData, results);
                 for (byte i = 0; i < results.Count; i++)
                 {
-                    var otherSlotUI = results[i].gameObject.GetComponent<UIInventorySlot>();
+                    var otherSlotUI = (UIInventorySlot)results[i].gameObject.GetComponent("UIInventorySlot");
                     if (otherSlotUI == null)
                         continue;
                     _uiInventory.inventory.TransitFromSlotToSlot(this, lastSlot.slot, otherSlotUI.slot);
@@ -68,13 +72,15 @@ namespace TheRavine.Inventory
                 for (byte i = 0; i < results.Count; i++)
                 {
                     // Debug.Log("Hit UI element: " + result.gameObject);
-                    lastSlot = results[i].gameObject.GetComponent<UIInventorySlot>();
+                    lastSlot = (UIInventorySlot)results[i].gameObject.GetComponent("UIInventorySlot");
                     if (lastSlot == null || lastSlot.slot.isEmpty)
                         continue;
                     var slotTranform = lastSlot._uiInventoryItem._rectTransform.parent;
                     slotTranform.SetAsLastSibling();
                     lastSlot._uiInventoryItem._canvasGroup.blocksRaycasts = false;
                     Dragging().Forget();
+                    text.text = lastSlot.slot.item.info.description;
+                    image.sprite = lastSlot.slot.item.info.infoSprite;
                     break;
                 }
             }
@@ -94,12 +100,14 @@ namespace TheRavine.Inventory
                         for (byte i = 0; i < results.Count; i++)
                         {
                             // Debug.Log("Hit UI element: " + result.gameObject);
-                            lastSlot = results[i].gameObject.GetComponent<UIInventorySlot>();
+                            lastSlot = (UIInventorySlot)results[i].gameObject.GetComponent("UIInventorySlot");
                             if (lastSlot == null || lastSlot.slot.isEmpty)
                                 continue;
                             var slotTranform = lastSlot._uiInventoryItem._rectTransform.parent;
                             slotTranform.SetAsLastSibling();
                             lastSlot._uiInventoryItem._canvasGroup.blocksRaycasts = false;
+                            text.text = lastSlot.slot.item.info.description;
+                            image.sprite = lastSlot.slot.item.info.infoSprite;
                             break;
                         }
                         break;
@@ -115,7 +123,7 @@ namespace TheRavine.Inventory
                         eventSystem.RaycastAll(eventData, results);
                         for (byte i = 0; i < results.Count; i++)
                         {
-                            var otherSlotUI = results[i].gameObject.GetComponent<UIInventorySlot>();
+                            var otherSlotUI = (UIInventorySlot)results[i].gameObject.GetComponent("UIInventorySlot");
                             if (otherSlotUI == null)
                                 continue;
                             _uiInventory.inventory.TransitFromSlotToSlot(this, lastSlot.slot, otherSlotUI.slot);

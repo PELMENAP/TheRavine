@@ -13,10 +13,17 @@ public class MenuMainScript : MonoBehaviour
     private void Awake()
     {
         trasitor = new SceneTransitor();
+        AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
+        FaderOnTransit.instance.FadeOut(() => Init());
+    }
+
+    private void Init()
+    {
         menu.SetActive(true);
         settings.SetActive(false);
         settings.GetComponent<Settings>().SetInitialValues();
     }
+
 
     public void StartGame()
     {

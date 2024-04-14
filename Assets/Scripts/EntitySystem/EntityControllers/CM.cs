@@ -9,63 +9,35 @@ public class CM : MonoBehaviour, ISetAble
     [SerializeField] private float Velocity, MinDistance;
     public Camera mainCam;
     public static bool cameraForMap;
-    private Vector3 offset, targetPos;
+    private Vector3 offset, targetPos, factMousePositionOffset;
     // private bool changeCam = false;
     public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
         PlayerEntity playerEntity = locator.GetService<PlayerEntity>();
         // cameraForMap = false;
-        playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<Vector3>(nameof(AimAddition), AddAimAddition); ;
+        playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<Vector3>(nameof(AimAddition), AimAdditionHandleEvent); ;
         playerTrans = locator.GetPlayerTransform();
         offset = cameratrans.position - playerTrans.position;
         cameratrans.position = playerTrans.position + new Vector3(0, 0, -1);
         callback?.Invoke();
     }
 
-    public void CameraUpdate()
+    private void AimAdditionHandleEvent(Vector3 factMousePosition)
     {
-        // if ((changeCam || (Input.GetKeyUp("p")) && Input.GetKeyDown(KeyCode.LeftControl)))
-        // if (false)
-        // {
-        //     if (cameraForMap)
-        //     {
-        //         cameratrans.position = playerTrans.position + new Vector3(0, 0, -1);
-        //         mainCam.orthographicSize = 20;
-        //     }
-        //     else
-        //     {
-        //         cameratrans.position += new Vector3(0, 0, 99);
-        //         mainCam.orthographicSize = 100;
-        //     }
-        //     cameraForMap = !cameraForMap;
-        //     changeCam = false;
-        // }
-        // if (cameraForMap)
-        // {
-        //     UpdateForMap();
-        // }
-        // else
-        // {
-        UpdateForGame();
-        // }
+        factMousePositionOffset = factMousePosition;
     }
 
-    // public void Changed()
-    // {
-    //     changeCam = true;
-    // }
+    public void CameraUpdate()
+    {
+        UpdateForGame();
+    }
 
     private void UpdateForGame()
     {
-        targetPos = playerTrans.position + offset;
+        targetPos = playerTrans.position + offset + factMousePositionOffset;
         if (Vector3.Distance(cameratrans.position, targetPos) < MinDistance)
             return;
         cameratrans.Translate(cameratrans.InverseTransformPoint(Vector3.Lerp(cameratrans.position, targetPos, Velocity * Time.fixedDeltaTime)));
-    }
-
-    private void AddAimAddition(Vector3 position)
-    {
-
     }
 
     private void UpdateForMap()

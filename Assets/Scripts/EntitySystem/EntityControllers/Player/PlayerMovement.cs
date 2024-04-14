@@ -4,204 +4,212 @@ using System.Collections;
 
 using TheRavine.Extentions;
 using TheRavine.Base;
-using TheRavine.EntityControl;
+using TheRavine.Events;
 
-[RequireComponent(typeof(Rigidbody2D))]
-public class PlayerMovement : MonoBehaviour, IEntityControllable
+namespace TheRavine.EntityControl
 {
-    private const int PickDistance = 1;
-    [SerializeField] private float placeObjectDelay;
-    [SerializeField] private Animator animator, shadowAnimator;
-    [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick;
-    [SerializeField] private Joystick joystick;
-    [SerializeField] private Camera cachedCamera;
-    private IController currentController;
-    private bool act = true;
-    [SerializeField] private Transform crosshair, playerTrans, playerMark;
-    private EntityAimBaseStats aimBaseStats;
-    private EntityMovementBaseStats movementBaseStats;
-    private Rigidbody2D rb;
-    private float movementSpeed;
-    private Vector2 movementDirection, aim;
-
-    public void SetInitialValues(AEntity entity)
+    [RequireComponent(typeof(Rigidbody2D))]
+    public class PlayerMovement : MonoBehaviour, IEntityControllable
     {
-        rb = (Rigidbody2D)this.GetComponent("Rigidbody2D");
-        switch (Settings._controlType)
+        private const int PickDistance = 1;
+        [SerializeField] private float placeObjectDelay, movementMinimum;
+        [SerializeField] private Animator animator, shadowAnimator;
+        [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick;
+        [SerializeField] private Joystick joystick;
+        [SerializeField] private Camera cachedCamera;
+        [SerializeField] private Transform crosshair, playerMark;
+        private EventBusByName entityEventBus;
+        private EntityAimBaseStats aimBaseStats;
+        private EntityMovementBaseStats movementBaseStats;
+        private IController currentController;
+        private bool act = true;
+        private Rigidbody2D rb;
+        private float movementSpeed;
+        private Vector2 movementDirection;
+
+        public void SetInitialValues(AEntity entity)
         {
-            case ControlType.Personal:
-                currentController = new PCController(Movement, RightClick, cachedCamera);
-                break;
-            case ControlType.Mobile:
-                currentController = new JoistickController(joystick);
-                break;
+            rb = (Rigidbody2D)this.GetComponent("Rigidbody2D");
+            switch (Settings._controlType)
+            {
+                case ControlType.Personal:
+                    currentController = new PCController(Movement, RightClick, cachedCamera, this.transform);
+                    break;
+                case ControlType.Mobile:
+                    currentController = new JoistickController(joystick);
+                    break;
+            }
+            entityEventBus = entity.GetEntityComponent<EventBusComponent>().EventBus;
+            movementBaseStats = entity.GetEntityComponent<MovementComponent>().baseStats;
+            aimBaseStats = entity.GetEntityComponent<AimComponent>().baseStats;
+            InitStatePattern(entity.GetEntityComponent<StatePatternComponent>());
+            Raise.action.performed += AimRaise;
+            LeftClick.action.performed += AimPlace;
         }
-        movementBaseStats = entity.GetEntityComponent<MovementComponent>().baseStats;
-        aimBaseStats = entity.GetEntityComponent<AimComponent>().baseStats;
-        InitStatePattern(entity.GetEntityComponent<StatePatternComponent>());
-        Raise.action.performed += AimRaise;
-        LeftClick.action.performed += AimPlace;
-    }
 
-    private void InitStatePattern(StatePatternComponent component)
-    {
-        System.Action actions = Move;
-        actions += Animate;
-        actions += Aim;
-        PlayerBehaviourIdle Idle = new PlayerBehaviourIdle(this, actions);
-        component.AddBehaviour(typeof(PlayerBehaviourIdle), Idle);
-        // actions = Animate;
-        // actions += Aim;
-        // PlayerBehaviourDialoge Dialoge = new PlayerBehaviourDialoge();
-        // component.AddBehaviour(typeof(PlayerBehaviourDialoge), Dialoge);
-        actions = Animate;
-        actions += Aim;
-        PlayerBehaviourSit Sit = new PlayerBehaviourSit(this, actions);
-        component.AddBehaviour(typeof(PlayerBehaviourSit), Sit);
-    }
-
-    public void SetZeroValues()
-    {
-        movementSpeed = 0f;
-        movementDirection = new Vector2(0, 0);
-        Animate();
-    }
-    public void EnableComponents()
-    {
-        currentController.EnableView();
-    }
-    public void DisableComponents()
-    {
-        currentController.DisableView();
-    }
-
-    public void Move()
-    {
-        movementDirection = currentController.GetMove();
-        if (movementDirection.magnitude < 0.6f)
-            movementDirection = Vector2.zero;
-        movementSpeed = Mathf.Clamp(movementDirection.magnitude, 0.0f, 1.0f);
-        movementDirection.Normalize();
-        rb.velocity = movementDirection * movementSpeed * movementBaseStats.baseSpeed;
-        MoveMark();
-    }
-
-    public void Jump()
-    {
-
-    }
-
-    private static readonly Vector3 Offset = new Vector3(0, 0, 100);
-    private void MoveMark()
-    {
-        playerMark.position = playerTrans.position + Offset;
-        if (movementSpeed > 0.5f)
-            playerMark.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(movementDirection.y, movementDirection.x) * Mathf.Rad2Deg - 90);
-    }
-
-    public void Animate()
-    {
-        if (movementDirection != Vector2.zero)
+        private void InitStatePattern(StatePatternComponent component)
         {
-            animator.SetFloat("Horizontal", movementDirection.x);
-            animator.SetFloat("Vertical", movementDirection.y);
+            System.Action actions = Move;
+            actions += Animate;
+            actions += Aim;
+            PlayerBehaviourIdle Idle = new PlayerBehaviourIdle(this, actions);
+            component.AddBehaviour(typeof(PlayerBehaviourIdle), Idle);
+            // actions = Animate;
+            // actions += Aim;
+            // PlayerBehaviourDialoge Dialoge = new PlayerBehaviourDialoge();
+            // component.AddBehaviour(typeof(PlayerBehaviourDialoge), Dialoge);
+            actions = Animate;
+            actions += Aim;
+            PlayerBehaviourSit Sit = new PlayerBehaviourSit(this, actions);
+            component.AddBehaviour(typeof(PlayerBehaviourSit), Sit);
         }
-        animator.SetFloat("Speed", movementSpeed);
 
-        if (Settings.isShadow)
+        public void SetZeroValues()
+        {
+            movementSpeed = 0f;
+            movementDirection = new Vector2(0, 0);
+            Animate();
+        }
+        public void EnableComponents()
+        {
+            currentController.EnableView();
+        }
+        public void DisableComponents()
+        {
+            currentController.DisableView();
+        }
+
+        public void Move()
+        {
+            if(isAimMode) return;
+            movementDirection = currentController.GetMove();
+            if (movementDirection.magnitude < movementMinimum) movementDirection = Vector2.zero;
+            movementSpeed = Mathf.Clamp(movementDirection.magnitude, 0.0f, 1.0f);
+            movementDirection.Normalize();
+            rb.velocity = movementDirection * movementSpeed * movementBaseStats.baseSpeed;
+            MoveMark();
+        }
+
+        public void Jump()
+        {
+
+        }
+
+        private static readonly Vector3 Offset = new Vector3(0, 0, 100);
+        private void MoveMark()
+        {
+            playerMark.position = this.transform.position + Offset;
+            if (movementSpeed > 0.5f) playerMark.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(movementDirection.y, movementDirection.x) * Mathf.Rad2Deg - 90);
+        }
+
+        public void Animate()
         {
             if (movementDirection != Vector2.zero)
             {
-                shadowAnimator.SetFloat("Horizontal", movementDirection.x);
-                shadowAnimator.SetFloat("Vertical", movementDirection.y);
+                animator.SetFloat("Horizontal", movementDirection.x);
+                animator.SetFloat("Vertical", movementDirection.y);
+                if (Settings.isShadow)
+                {
+                    shadowAnimator.SetFloat("Horizontal", movementDirection.x);
+                    shadowAnimator.SetFloat("Vertical", movementDirection.y);
+                }
             }
-            shadowAnimator.SetFloat("Speed", movementSpeed);
+            animator.SetFloat("Speed", movementSpeed);
+            if (Settings.isShadow) shadowAnimator.SetFloat("Speed", movementSpeed);
         }
-    }
-    private bool isAccurance;
-    public void Aim()
-    {
-        aim = currentController.GetAim();
-        if (aim == Vector2.zero)
+        private bool isAccurance;
+        [SerializeField] private Vector2 aim;
+        public void Aim()
         {
-            crosshair.gameObject.SetActive(false);
-            isAccurance = false;
-            return;
+            aim = currentController.GetAim();
+            if (aim == Vector2.zero)
+            {
+                crosshair.gameObject.SetActive(false);
+                isAccurance = false;
+                return;
+            }
+            SetAimAddition(aim);
+
+            if (aim.magnitude < aimBaseStats.crosshairDistanse) crosshair.localPosition = aim;
+            else crosshair.localPosition = aim.normalized * aimBaseStats.crosshairDistanse;
+            crosshair.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg);
+            crosshair.gameObject.SetActive(true);
+            isAccurance = true;
         }
 
+        private bool isAimMode = false;
 
-        // PlayerEntity.data.setMouse?.Invoke(aim);
+        private void SetAimAddition(Vector3 curAim){
+            
+            float factMouseFactor = 1f;
 
-        Vector2 factMousePosition = new Vector2(aim.x, aim.y);
-        if (factMousePosition.magnitude > aimBaseStats.maxCrosshairDistanse)
-            factMousePosition = factMousePosition.normalized * aimBaseStats.maxCrosshairDistanse;
-        if (factMousePosition.magnitude < aimBaseStats.crosshairDistanse + 1)
-            factMousePosition = Vector2.zero;
-        // factMousePosition = aim;  Invoke event
+            switch (Settings._controlType)
+            {
+                case ControlType.Personal:
+                    factMouseFactor = 1f;
+                    break;
+                case ControlType.Mobile:
+                    if(isAimMode) factMouseFactor = 0.2f;
+                    break;
+            }
 
-        // switch (Settings._controlType)
-        // {
-        //     case ControlType.Personal:
-        //         if (Mouse.current.rightButton.isPressed)
-        //             targetPos += PData.factMousePosition;
-        //         break;
-        //     case ControlType.Mobile:
-        //         targetPos += PData.factMousePosition;
-        //         break;
-        // }
+            float factMouseMagnitute = curAim.magnitude;
+            Vector3 factMousePosition = curAim.normalized;
+            if (factMouseMagnitute > aimBaseStats.maxCrosshairDistanse * factMouseFactor) factMousePosition *= aimBaseStats.maxCrosshairDistanse;
+            else if (factMouseMagnitute < aimBaseStats.crosshairDistanse * factMouseFactor + 1) factMousePosition = Vector2.zero;
 
-        crosshair.localPosition = aim * aimBaseStats.crosshairDistanse;
-        crosshair.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg + aimBaseStats.crosshairOffset);
-        crosshair.gameObject.SetActive(true);
-        isAccurance = true;
-    }
-
-    public void AimRaiseMobile()
-    {
-        AimRaise(new InputAction.CallbackContext());
-    }
-
-    private void AimRaise(InputAction.CallbackContext obj)
-    {
-        if (!isAccurance)
+            entityEventBus.Invoke(nameof(AimAddition), factMousePosition);
+        }
+        
+        public void ChangeAimMode()
         {
-            int currentX = Mathf.RoundToInt(playerTrans.position.x);
-            int currentY = Mathf.RoundToInt(playerTrans.position.y);
-            for (int xOffset = -PickDistance; xOffset <= PickDistance; xOffset++)
-                for (int yOffset = -PickDistance; yOffset <= PickDistance; yOffset++)
-                    PlayerEntity.data.aimRaise?.Invoke(new Vector2(currentX + xOffset, currentY + yOffset));
+            isAimMode = !isAimMode;
         }
-        else
+
+        public void AimRaiseMobile()
         {
-            PlayerEntity.data.aimRaise?.Invoke(Extention.RoundVector2D(crosshair.position));
+            AimRaise(new InputAction.CallbackContext());
         }
-    }
 
-    public void AimPlaceMobile()
-    {
-        AimPlace(new InputAction.CallbackContext());
-    }
-
-    private void AimPlace(InputAction.CallbackContext obj)
-    {
-        if (aim == Vector2.zero)
+        private void AimRaise(InputAction.CallbackContext obj)
         {
-            if (act)
-                StartCoroutine(In());
+            if (!isAccurance)
+            {
+                int currentX = Mathf.RoundToInt(this.transform.position.x);
+                int currentY = Mathf.RoundToInt(this.transform.position.y);
+                for (int xOffset = -PickDistance; xOffset <= PickDistance; xOffset++)
+                    for (int yOffset = -PickDistance; yOffset <= PickDistance; yOffset++)
+                        PlayerEntity.data.aimRaise?.Invoke(new Vector2(currentX + xOffset, currentY + yOffset));
+            }
+            else PlayerEntity.data.aimRaise?.Invoke(Extention.RoundVector2D(crosshair.position));
         }
-    }
 
-    private IEnumerator In()
-    {
-        act = false;
-        PlayerEntity.data.placeObject?.Invoke(Extention.RoundVector2D(crosshair.position));
-        yield return new WaitForSeconds(placeObjectDelay);
-        act = true;
-    }
-    public void Delete()
-    {
-        currentController.MeetEnds();
-        Raise.action.performed -= AimRaise;
-        LeftClick.action.performed -= AimPlace;
+        public void AimPlaceMobile()
+        {
+            AimPlace(new InputAction.CallbackContext());
+        }
+
+        private void AimPlace(InputAction.CallbackContext obj)
+        {
+            // if (aim == Vector2.zero)
+            // {
+                if (act)
+                    StartCoroutine(In());
+            // }
+        }
+
+        private IEnumerator In()
+        {
+            act = false;
+            PlayerEntity.data.placeObject?.Invoke(Extention.RoundVector2D(crosshair.position));
+            yield return new WaitForSeconds(placeObjectDelay);
+            act = true;
+        }
+        public void Delete()
+        {
+            currentController.MeetEnds();
+            Raise.action.performed -= AimRaise;
+            LeftClick.action.performed -= AimPlace;
+        }
     }
 }

@@ -7,7 +7,7 @@ public class InventoryWithSlots : IInventory
 {
     public event Action<object, IInventoryItem, int> OnInventoryItemAddedEvent;
     public event Action<object, Type, int> OnInventoryItemRemovedEvent;
-    public event Action<object> OnInventoryStateChangedEvent;
+    public event Action<object> OnInventoryStateChangedEvent, OnInventoryStateChangedEventOnce;
     public int capacity { get; set; }
     public bool isFull => _slots.All(slot => slot.isFull);
 
@@ -110,6 +110,7 @@ public class InventoryWithSlots : IInventory
         else
             fromSlot.item.state.amount = amountLeft;
         OnInventoryStateChangedEvent?.Invoke(sender);
+        OnInventoryStateChangedEventOnce?.Invoke(sender);
     }
     public bool Remove(object sender, Type itemType, int amount = 1)
     {

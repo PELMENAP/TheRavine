@@ -3,16 +3,16 @@ using UnityEngine;
 public class JoistickController : IController
 {
     private Joystick joystick;
-    private Vector2 direction;
 
     public JoistickController(Joystick _joystick)
     {
         joystick = _joystick;
+        joystick.Activate();
     }
 
-    public Vector2 GetMove() => joystick.Direction;
+    public Vector2 GetMove() => joystick.Movement;
 
-    public Vector2 GetAim() => joystick.Direction;
+    public Vector2 GetAim() => joystick.Aim;
 
     public float GetJump()
     {
