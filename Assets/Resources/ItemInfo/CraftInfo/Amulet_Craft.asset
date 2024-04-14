@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66da6e5eaed9adf8f9af08f447038ec4, type: 3}
   m_Name: Amulet_Craft
   m_EditorClassIdentifier: 
-  _isorder: 1
+  _isAvailable: 1
   _timeToComplete: 3
   _id: amulet_mushrooms
   _ingr:

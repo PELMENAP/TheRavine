@@ -4,8 +4,10 @@ using TMPro;
 
 namespace TheRavine.InventoryElements
 {
-    public class UIInventoryItem : UIItem
+    public class UIInventoryItem : MonoBehaviour
     {
+        public CanvasGroup _canvasGroup;
+        public RectTransform _rectTransform;
         [SerializeField] private Image _imageIcon;
         [SerializeField] private TextMeshProUGUI _textAmount;
 
@@ -23,8 +25,7 @@ namespace TheRavine.InventoryElements
             _imageIcon.gameObject.SetActive(true);
             var textAmountEnabled = slot.amount > 1;
             _textAmount.gameObject.SetActive(textAmountEnabled);
-            if (textAmountEnabled)
-                _textAmount.text = $"x{slot.amount.ToString()}";
+            if (textAmountEnabled) _textAmount.text = $"x{slot.amount}";
         }
 
         private void Cleanup()

@@ -17,7 +17,7 @@ namespace TheRavine.EntityControl
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
             // skillFacade = new SkillFacade();
-            boidsBehaviour.StartBoids().Forget();
+            if(boidsBehaviour != null) boidsBehaviour.StartBoids().Forget();
 
             for (int i = 0; i < _mobInfo.Length; i++)
                 mobInfo[_mobInfo[i].prefab.GetInstanceID()] = _mobInfo[i];

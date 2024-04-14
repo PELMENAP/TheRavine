@@ -98,9 +98,14 @@ namespace Tayx.Graphy.Utils.NumString
         /// </returns>
         public static string ToStringNonAlloc( this int value )
         {
+            try{
             if( value < 0 && -value <= m_negativeBuffer.Length )
             {
                 return m_negativeBuffer[ -value - 1 ];
+            }
+        }
+            catch{
+
             }
 
             if( value >= 0 && value < m_positiveBuffer.Length )

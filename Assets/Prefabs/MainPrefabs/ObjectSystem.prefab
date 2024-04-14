@@ -58,6 +58,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c0942a1583c25de35b66548e12be1454, type: 2}
   - {fileID: 11400000, guid: e23769a0b98747349af18b93b2db8788, type: 2}
   - {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
+  - {fileID: 11400000, guid: 65c7559b8f03def1c9bbf0d14b5dca7e, type: 2}
 --- !u!1 &2790986243146325049
 GameObject:
   m_ObjectHideFlags: 0
@@ -264,7 +265,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1153914877, guid: 1b0040924df5a54fca8e1f98646d3d7e, type: 3}
       propertyPath: m_Enabled
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1671218706617821313, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
@@ -335,7 +336,7 @@ PrefabInstance:
     - target: {fileID: 1671218707232650365, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
       propertyPath: m_text
-      value: f,jf,jf
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 1671218707232650365, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
@@ -438,6 +439,11 @@ PrefabInstance:
       objectReference: {fileID: 3279137599470118156}
     - target: {fileID: 4825713534721371010, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
+      propertyPath: m_Intensity
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371010, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
       propertyPath: m_LightType
       value: 4
       objectReference: {fileID: 0}
@@ -449,22 +455,77 @@ PrefabInstance:
     - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
       propertyPath: speed
-      value: 60
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: awakeDelay
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: defaultDelay
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.ctime0
+      value: 13107
       objectReference: {fileID: 0}
     - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
       propertyPath: sunGradient.ctime1
-      value: 15557
+      value: 16375
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.ctime2
+      value: 19661
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.ctime3
+      value: 45875
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.ctime4
+      value: 49151
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.ctime5
+      value: 52428
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.ctime6
+      value: 54511
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.key0.b
+      value: 0.18867922
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.key0.g
+      value: 0.095308095
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.key0.r
+      value: 0.07920967
       objectReference: {fileID: 0}
     - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
       propertyPath: sunGradient.key1.b
-      value: 0.27058828
+      value: 0.2364732
       objectReference: {fileID: 0}
     - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
       propertyPath: sunGradient.key1.g
-      value: 0.735923
+      value: 0.589713
       objectReference: {fileID: 0}
     - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
@@ -484,21 +545,66 @@ PrefabInstance:
     - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
       propertyPath: sunGradient.key3.b
-      value: 0.6764964
+      value: 0.36946422
       objectReference: {fileID: 0}
     - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
       propertyPath: sunGradient.key3.g
-      value: 1
+      value: 0.84083563
       objectReference: {fileID: 0}
     - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
       propertyPath: sunGradient.key3.r
-      value: 0.98674864
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.key4.b
+      value: 0.11871451
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.key4.g
+      value: 0.16319984
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.key5.b
+      value: 0.18867922
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.key5.g
+      value: 0.095308095
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.key5.r
+      value: 0.07920967
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.key6.b
+      value: 0.18867922
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.key6.g
+      value: 0.095308095
+      objectReference: {fileID: 0}
+    - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: sunGradient.key6.r
+      value: 0.07920967
       objectReference: {fileID: 0}
     - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
       propertyPath: sunGradient.m_ColorSpace
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8301711937425208852, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []

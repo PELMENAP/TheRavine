@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21925bc93a2cbd7c58c87cf89d661a28, type: 3}
+  m_Name: AndrewNovichenko
+  m_EditorClassIdentifier: 
+  _id: AndrewNovichenko
+  _title: AndrewNovichenko
+  _maxItemsInInventorySlot: 99
+  _spriteIcon: {fileID: 21300000, guid: fcfd21efbd1cdcae19f569755f6fc25c, type: 3}
+  _infoSprite: {fileID: -526923082, guid: 7c2a870de4fe8c8a6824b4d14f9c7496, type: 3}
+  _prefab: {fileID: 6242330467826230692, guid: a27eabf849e27c589b38e68d03b998eb, type: 3}

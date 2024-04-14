@@ -55,7 +55,7 @@ namespace TheRavine.Generator
                     }
                 }
                 GetQuadWaterMeshMap(mapChunkSize * chunkCount);
-                generator.waterT.position = Vposition * generationSize - vectorOffset - new Vector2(2, 2);
+                generator.waterT.position = Vposition * generationSize - vectorOffset - new Vector2(scale, scale);
             }
             private Vector2[] uv = new Vector2[4 * countOfQuads];
             private const float diff = 0.1f, mdiff = 1f - diff;
@@ -67,7 +67,6 @@ namespace TheRavine.Generator
                 {
                     for (byte y = 0; y < sizeMap; y++)
                     {
-                        Vector3 basePos = new Vector3(x * scale, y * scale);
                         if (meshMap[x, y])
                         {
                             uv[dotCount] = anarchist;

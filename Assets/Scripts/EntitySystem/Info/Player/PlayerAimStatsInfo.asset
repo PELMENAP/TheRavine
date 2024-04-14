@@ -13,4 +13,5 @@ MonoBehaviour:
   m_Name: PlayerAimStatsInfo
   m_EditorClassIdentifier: 
   CrosshairDistanse: 2
-  MaxCrosshairDistanse: 3
+  MaxCrosshairDistanse: 10
+  CrosshairOffset: 0

@@ -1,8 +1,0 @@
-/home/alaypetro/TheRavine/TheRavine/.utmp/RelWithDebInfo/x2e2h6t2/x86_64/CMakeFiles/edit_cache.dir
-/home/alaypetro/TheRavine/TheRavine/.utmp/RelWithDebInfo/x2e2h6t2/x86_64/CMakeFiles/rebuild_cache.dir
-/home/alaypetro/TheRavine/TheRavine/.utmp/RelWithDebInfo/x2e2h6t2/x86_64/GameActivity/CMakeFiles/game.dir
-/home/alaypetro/TheRavine/TheRavine/.utmp/RelWithDebInfo/x2e2h6t2/x86_64/GameActivity/CMakeFiles/edit_cache.dir
-/home/alaypetro/TheRavine/TheRavine/.utmp/RelWithDebInfo/x2e2h6t2/x86_64/GameActivity/CMakeFiles/rebuild_cache.dir
-/home/alaypetro/TheRavine/TheRavine/.utmp/RelWithDebInfo/x2e2h6t2/x86_64/FramePacing/CMakeFiles/swappywrapper.dir
-/home/alaypetro/TheRavine/TheRavine/.utmp/RelWithDebInfo/x2e2h6t2/x86_64/FramePacing/CMakeFiles/edit_cache.dir
-/home/alaypetro/TheRavine/TheRavine/.utmp/RelWithDebInfo/x2e2h6t2/x86_64/FramePacing/CMakeFiles/rebuild_cache.dir

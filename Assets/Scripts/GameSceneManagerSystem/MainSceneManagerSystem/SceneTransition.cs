@@ -8,10 +8,7 @@ public class SceneTransitor
 
     public async UniTaskVoid LoadScene(int numberSceneToTranslate)
     {
-        if (_isLoading)
-        {
-            return;
-        }
+        if (_isLoading) return;
         
         Settings.SceneNumber = numberSceneToTranslate;
         _isLoading = true;

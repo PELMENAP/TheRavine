@@ -1,8 +1,8 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
-using System;
 
+using TheRavine.Base;
 using TheRavine.InventoryElements;
 using TheRavine.Generator;
 using TheRavine.ObjectControl;
@@ -14,17 +14,17 @@ namespace TheRavine.Inventory
 {
     public class UIInventory : MonoBehaviour, ISetAble
     {
-        [SerializeField] private GameObject grid;
+        [SerializeField] private GameObject grid, mobileInput;
         [SerializeField] private bool filling;
-        [SerializeField] private UIInventorySlot[] activeCells, craftCells;
+        [SerializeField] private UIInventorySlot[] activeCells;
         [SerializeField] private PlayerInput input;
         [SerializeField] private RectTransform cell;
-        [SerializeField] private InventoryCraftInfo[] CraftInfo;
         [SerializeField] private InputActionReference enter, quit, digitAction;
-        private int activeCell = 1;
+        [SerializeField] private CraftService craftService;
+        private byte activeCell = 1;
         public InventoryWithSlots inventory => tester.inventory;
         private UIInventoryTester tester;
-        [HideInInspector] public PlayerEntity playerData;
+        private PlayerEntity playerData;
         private MapGenerator generator;
         private ObjectSystem objectSystem;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
@@ -38,14 +38,16 @@ namespace TheRavine.Inventory
             slotList.AddRange(activeCells);
             tester = new UIInventoryTester(slotList.ToArray());
             tester.FillSlots(filling);
-            CraftInfo = InfoManager.GetAllCraftRecepts();
+
+            craftService.SetUp(null, locator);
+
             grid.SetActive(false);
             OnInventoryStateChanged(this);
 
             enter.action.performed += ChangeInventoryState;
             quit.action.performed += ChangeInventoryState;
 
-            inventory.OnInventoryStateChangedEvent += OnInventoryStateChanged;
+            inventory.OnInventoryStateChangedEventOnce += OnInventoryStateChanged;
             playerData.placeObject += PlaceObject;
             playerData.aimRaise += AimRaise;
 
@@ -56,10 +58,10 @@ namespace TheRavine.Inventory
 
         private void SetActionCell(InputAction.CallbackContext c)
         {
-            SetActiveCell((int)c.ReadValue<float>());
+            SetActiveCell((byte)c.ReadValue<float>());
         }
 
-        private void SetActiveCell(int index)
+        private void SetActiveCell(byte index)
         {
             activeCell = index;
             cell.anchoredPosition = new Vector2(55 + 120 * (index - 1), -50);
@@ -82,59 +84,9 @@ namespace TheRavine.Inventory
                     generator.ExtraUpdate();
             }
         }
-
-        [SerializeField] private string[] names = new string[8], sortedNames, sortedIngr;
-        [SerializeField] private UIInventorySlot result;
-        [SerializeField] private GameObject craftLine;
         private void OnInventoryStateChanged(object sender)
         {
-            names = new string[8];
-            for (int i = 0; i < craftCells.Length; i++)
-                names[i] = craftCells[i].slot.isEmpty ? "" : craftCells[i]._uiInventoryItem.item.info.id;
-            for (int i = 0; i < CraftInfo.Length; i++)
-            {
-                bool ispossible = true;
-                if (CraftInfo[i].isorder)
-                {
-                    for (int j = 0; j < CraftInfo[i].ingr.Length; j++)
-                        if (CraftInfo[i].ingr[j] != null && String.Compare(CraftInfo[i].ingr[j].id, names[j], StringComparison.OrdinalIgnoreCase) != 0)
-                            ispossible = false;
-                }
-                else
-                {
-                    InventoryItemInfo[] itemInfoArray = (InventoryItemInfo[])CraftInfo[i].ingr.Clone();
-                    sortedIngr = new string[8];
-                    for (int j = 0; j < itemInfoArray.Length; j++)
-                        if (itemInfoArray[j] != null)
-                            sortedIngr[j] = itemInfoArray[j].id;
-                    sortedNames = (string[])names.Clone();
-                    Array.Sort(sortedIngr);
-                    Array.Reverse(sortedIngr);
-                    Array.Sort(sortedNames);
-                    Array.Reverse(sortedNames);
-                    for (int j = 0; j < CraftInfo[i].ingr.Length; j++)
-                        if (String.Compare(sortedIngr[j], sortedNames[j], StringComparison.OrdinalIgnoreCase) != 0)
-                            ispossible = false;
-                        else
-                        {
-                            // print(sortedIngr[j] + " " + sortedNames[j]);
-                            // print(j);
-                        }
-                }
-                if (ispossible)
-                {
-                    print("is posible");
-                    CraftPosible(true);
-                    break;
-                }
-                else
-                    CraftPosible(false);
-            }
-        }
-
-        private void CraftPosible(bool isActive)
-        {
-            craftLine.SetActive(isActive);
+            craftService.OnInventoryCraftCheck(sender);
         }
 
         private void AimRaise(Vector2 position)
@@ -148,7 +100,6 @@ namespace TheRavine.Inventory
             if (inventory.TryToAdd(this, InfoManager.GetInventoryItemByInfo(data.iteminfo.id, data.iteminfo, objectInstInfo.amount)))
             {
                 objectSystem.RemoveFromGlobal(position);
-                print("rised");
                 SpreadPattern pattern = data.pickUpPattern;
                 if (pattern != null)
                 {
@@ -161,12 +112,10 @@ namespace TheRavine.Inventory
                             objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].amount, pattern.other[i].iType, newPos.x < position.x);
                         }
                     }
-                    print("leave pattern");
                 }
                 generator.ExtraUpdate();
             }
         }
-
 
         private bool isactive = false;
         public void ChangeInventoryState(InputAction.CallbackContext context)
@@ -187,6 +136,7 @@ namespace TheRavine.Inventory
                 playerData.SetBehaviourIdle();
                 input.SwitchCurrentActionMap("Gameplay");
             }
+            if(Settings._controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
             grid.SetActive(isactive);
         }
 
@@ -208,6 +158,7 @@ namespace TheRavine.Inventory
                 playerData.SetBehaviourIdle();
                 input.SwitchCurrentActionMap("Gameplay");
             }
+            if(Settings._controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
             grid.SetActive(isactive);
         }
         public void BreakUp()

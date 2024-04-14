@@ -2,11 +2,12 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 using TheRavine.EntityControl;
+using TheRavine.Base;
 
 public class ActivateTextField : MonoBehaviour
 {
     [SerializeField] private PlayerEntity playerData;
-    [SerializeField] private GameObject window, stats;
+    [SerializeField] private GameObject window, stats, mobileInput;
     [SerializeField] private PlayerInput input;
     [SerializeField] private InputActionReference EnterRef;
     [SerializeField] private InputActionReference OutRef;
@@ -14,11 +15,34 @@ public class ActivateTextField : MonoBehaviour
 
     private void OnEnable()
     {
-        EnterRef.action.performed += context => ChangeTerminalState();
-        OutRef.action.performed += context => ChangeTerminalState();
+        EnterRef.action.performed += ChangeTerminalState;
+        OutRef.action.performed += ChangeTerminalState;
         window.SetActive(false);
+        mobileInput.SetActive(Settings._controlType == ControlType.Mobile ? true : false);
     }
     private bool isactive = false;
+
+    public void ChangeTerminalState(InputAction.CallbackContext context)
+    {
+        isactive = !isactive;
+        if (isactive)
+        {
+            if (input.currentActionMap.name != "Gameplay")
+            {
+                isactive = !isactive;
+                return;
+            }
+            playerData.SetBehaviourSit();
+            input.SwitchCurrentActionMap("TextInput");
+        }
+        else
+        {
+            playerData.SetBehaviourIdle();
+            input.SwitchCurrentActionMap("Gameplay");
+        }
+        if(Settings._controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
+        window.SetActive(isactive);
+    }
     public void ChangeTerminalState()
     {
         isactive = !isactive;
@@ -37,6 +61,7 @@ public class ActivateTextField : MonoBehaviour
             playerData.SetBehaviourIdle();
             input.SwitchCurrentActionMap("Gameplay");
         }
+        if(Settings._controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
         window.SetActive(isactive);
     }
 
@@ -47,7 +72,7 @@ public class ActivateTextField : MonoBehaviour
 
     private void OnDisable()
     {
-        EnterRef.action.performed -= context => ChangeTerminalState();
-        OutRef.action.performed -= context => ChangeTerminalState();
+        EnterRef.action.performed -= ChangeTerminalState;
+        OutRef.action.performed -= ChangeTerminalState;
     }
 }

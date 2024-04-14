@@ -147,18 +147,17 @@ namespace TheRavine.EntityControl
 
         public void BreakUp()
         {
-            OnDisable();
             generator.onSpawnPoint -= AddSpawnPoint;
             generator.onUpdate -= UpdateNALQueue;
             DayCycle.newDay -= UpdateNAL;
+            ClearNALQueue();
+            NALQueueUpdate.Clear();
         }
 
         private void OnDisable()
         {
             _cts.Cancel();
             mapData.Clear();
-            ClearNALQueue();
-            NALQueueUpdate.Clear();
         }
     }
 

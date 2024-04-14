@@ -51,7 +51,6 @@ namespace TheRavine.Generator
                     }
                 combineMesh.CombineMeshes(combine);
                 generator.terrainF.mesh = combineMesh;
-                // transform.gameObject.SetActive(true);
                 generator.terrainT.position = Vposition * generationSize - vectorOffset;
             }
             Vector3[] vertices = new Vector3[(mapChunkSize + 1) * (mapChunkSize + 1)];
