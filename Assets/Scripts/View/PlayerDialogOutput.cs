@@ -7,7 +7,7 @@ public class PlayerDialogOutput : MonoBehaviour
     [SerializeField] private TextMeshPro dialogText;
     [SerializeField] private float typingSpeed = 0.05f;
     [SerializeField] private float delayBetweenDialogs = 1.0f;
-    private Queue<string> dialogQueue = new Queue<string>();
+    private readonly Queue<string> dialogQueue = new Queue<string>();
     private void Awake()
     {
         OutputDialogs().Forget();

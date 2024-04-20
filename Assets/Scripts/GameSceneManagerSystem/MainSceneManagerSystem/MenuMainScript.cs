@@ -7,7 +7,6 @@ public class MenuMainScript : MonoBehaviour
     [SerializeField] private GameObject menu;
     [SerializeField] private GameObject settings;
     [SerializeField] private UniversalAdditionalCameraData _cameraData;
-
     private SceneTransitor trasitor;
 
     private void Awake()
@@ -38,7 +37,7 @@ public class MenuMainScript : MonoBehaviour
 
     public void LoadTestScene()
     {
-        trasitor.LoadScene(1).Forget();
+        trasitor.LoadScene(2).Forget();
         Settings.isLoad = false;
         AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
     }

@@ -30,6 +30,13 @@ namespace TheRavine.Base
         {
             OutputReaction(text);
         }
+        public void OnEnter()
+        {
+            OutputWindow.text = "";
+            input = InputWindow.text.Remove(InputWindow.text.Length - 1);
+            ReadText(input);
+            InputWindow.text = "";
+        }
         private void OnEnter(InputAction.CallbackContext obj)
         {
             OutputWindow.text = "";

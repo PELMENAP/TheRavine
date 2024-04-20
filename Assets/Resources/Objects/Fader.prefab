@@ -5725,6 +5725,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 11400002, guid: b0c658f63aa9ac744ae4ac9b127cc9e0, type: 3}
+      propertyPath: m_Type
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 11400002, guid: b0c658f63aa9ac744ae4ac9b127cc9e0, type: 3}
       propertyPath: m_Maskable
       value: 0
       objectReference: {fileID: 0}
@@ -5762,11 +5766,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 22400002, guid: b0c658f63aa9ac744ae4ac9b127cc9e0, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -299.6
+      value: -299.5
       objectReference: {fileID: 0}
     - target: {fileID: 22400002, guid: b0c658f63aa9ac744ae4ac9b127cc9e0, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 55.800003
+      value: 55.5
       objectReference: {fileID: 0}
     - target: {fileID: 22400004, guid: b0c658f63aa9ac744ae4ac9b127cc9e0, type: 3}
       propertyPath: m_Pivot.x

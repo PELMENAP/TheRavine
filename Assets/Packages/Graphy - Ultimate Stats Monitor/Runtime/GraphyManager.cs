@@ -1,17 +1,4 @@
-﻿/* ---------------------------------------
- * Author:          Martin Pane (martintayx@gmail.com) (@martinTayx)
- * Contributors:    https://github.com/Tayx94/graphy/graphs/contributors
- * Project:         Graphy - Ultimate Stats Monitor
- * Date:            15-Dec-17
- * Studio:          Tayx
- *
- * Git repo:        https://github.com/Tayx94/graphy
- *
- * This project is released under the MIT license.
- * Attribution is not required, but it is always welcomed!
- * -------------------------------------*/
-
-using System;
+﻿using System;
 using UnityEngine;
 using Tayx.Graphy.Audio;
 using Tayx.Graphy.Fps;
@@ -26,9 +13,6 @@ using UnityEngine.InputSystem;
 
 namespace Tayx.Graphy
 {
-    /// <summary>
-    /// Main class to access the Graphy API.
-    /// </summary>
     public class GraphyManager : G_Singleton<GraphyManager>
     {
         protected GraphyManager()

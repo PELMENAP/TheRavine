@@ -42,7 +42,7 @@ namespace TheRavine.Base
 
             switch (Settings.SceneNumber)
             {
-                case 1:
+                case 2:
                     StateMachine = new StateMachine<Bootstrap>(standartStateMachineTickTime,
                         new BootstrapState(this),
                         new InitialState(this, Settings.isLoad),
@@ -84,7 +84,10 @@ namespace TheRavine.Base
         }
 
         public void SwitchToMainMenu(){
-            InTheEnd(() => TransitToOtherScene());
+            InTheEnd(() => TransitToOtherScene(0));
+        }
+        public void SwitchToParallaxScene(){
+            InTheEnd(() => TransitToOtherScene(1));
         }
 
         private void InTheEnd(System.Action inTheEndCallback)
@@ -108,8 +111,9 @@ namespace TheRavine.Base
             inTheEndCallback?.Invoke();
         }
 
-        private void TransitToOtherScene(){
-            trasitor.LoadScene(0).Forget();
+        private void TransitToOtherScene(int sceneNumber){
+            Debug.Log("transition to new scene");
+            trasitor.LoadScene(sceneNumber).Forget();
             Settings.isLoad = false;
             AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
             DataStorage.sceneClose = false;
@@ -117,11 +121,11 @@ namespace TheRavine.Base
 
         private void OnDisable()
         {
-            InTheEnd(() => Aboba());
+            InTheEnd(() => DebugLoad());
         }
 
-        private void Aboba(){
-            print("test play");
+        private void DebugLoad(){
+            
         }
     }
 }

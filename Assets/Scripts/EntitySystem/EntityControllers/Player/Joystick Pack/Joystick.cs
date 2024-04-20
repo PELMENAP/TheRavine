@@ -80,7 +80,6 @@ public class Joystick : MonoBehaviour
 
     public void OnDisabling()
     {
-        print("disable joystick");
         point.action.performed -= OnDrag;
     }
 }

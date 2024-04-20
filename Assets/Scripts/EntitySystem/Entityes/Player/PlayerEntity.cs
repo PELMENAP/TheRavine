@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.Events;
-using TMPro;
 
 using TheRavine.Services;
 
@@ -10,11 +9,7 @@ namespace TheRavine.EntityControl
     {
         [SerializeField] private EntityInfo playerInfo;
         public CM cameraMen;
-        [SerializeField] private PlayerDialogOutput output;
         public static PlayerEntity data; // не надо сингелтона
-        public TextMeshProUGUI InputWindow; // не далжен игрок этим заниматься
-        public UnityAction<Vector2> placeObject, aimRaise;
-        public Vector3 factMousePosition;
         private IEntityControllable controller;
         private StatePatternComponent statePatternComponent;
 
@@ -79,7 +74,6 @@ namespace TheRavine.EntityControl
             statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<PlayerBehaviourSit>());
             controller.DisableComponents();
         }
-
         private void AimSkills()
         {
             // if (Input.GetKey("space") && Input.GetMouseButton(1))

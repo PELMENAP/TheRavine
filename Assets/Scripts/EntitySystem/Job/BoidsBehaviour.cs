@@ -95,14 +95,13 @@ namespace TheRavine.EntityControl
 
         private void FixedUpdate()
         {
-            if(!isUpdate)
-                return;
+            if(!isUpdate) return;
             var accelerationHandle = accelerationJob.Schedule(_numberOfEntities, 0);
             var moveHandle = moveJob.Schedule(_transformAccessArray, accelerationHandle);
             moveHandle.Complete();
         }
 
-        private void OnDisable()
+        public void DisableBoids()
         {
             _positions.Dispose();
             _velocities.Dispose();

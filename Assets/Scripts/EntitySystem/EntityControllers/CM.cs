@@ -8,14 +8,11 @@ public class CM : MonoBehaviour, ISetAble
     [SerializeField] private Transform cameratrans, playerTrans;
     [SerializeField] private float Velocity, MinDistance;
     public Camera mainCam;
-    public static bool cameraForMap;
     private Vector3 offset, targetPos, factMousePositionOffset;
-    // private bool changeCam = false;
     public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
         PlayerEntity playerEntity = locator.GetService<PlayerEntity>();
-        // cameraForMap = false;
-        playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<Vector3>(nameof(AimAddition), AimAdditionHandleEvent); ;
+        playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<Vector3>(nameof(AimAddition), AimAdditionHandleEvent);
         playerTrans = locator.GetPlayerTransform();
         offset = cameratrans.position - playerTrans.position;
         cameratrans.position = playerTrans.position + new Vector3(0, 0, -1);

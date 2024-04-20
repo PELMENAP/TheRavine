@@ -9,6 +9,7 @@ using TheRavine.ObjectControl;
 using TheRavine.Extentions;
 using TheRavine.Services;
 using TheRavine.EntityControl;
+using TheRavine.Events;
 
 namespace TheRavine.Inventory
 {
@@ -48,8 +49,10 @@ namespace TheRavine.Inventory
             quit.action.performed += ChangeInventoryState;
 
             inventory.OnInventoryStateChangedEventOnce += OnInventoryStateChanged;
-            playerData.placeObject += PlaceObject;
-            playerData.aimRaise += AimRaise;
+
+            EventBusByName playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
+            playerEventBus.Subscribe<Vector2>(nameof(PlaceEvent), PlaceObject);
+            playerEventBus.Subscribe<Vector2>(nameof(RaiseEvent), AimRaise);
 
             digitAction.action.performed += SetActionCell;
 
@@ -164,8 +167,6 @@ namespace TheRavine.Inventory
         public void BreakUp()
         {
             inventory.OnInventoryStateChangedEvent -= OnInventoryStateChanged;
-            playerData.placeObject -= PlaceObject;
-            playerData.aimRaise -= AimRaise;
 
             enter.action.performed -= ChangeInventoryState;
             quit.action.performed -= ChangeInventoryState;
