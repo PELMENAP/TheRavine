@@ -3,10 +3,10 @@ using UnityEngine.InputSystem;
 
 public class PCController : IController
 {
-    private InputActionReference MovementRef, RightClick;
-    private Mouse mouse;
-    private Camera cam;
-    private Transform playerTrans;
+    private readonly InputActionReference MovementRef, RightClick;
+    private readonly Mouse mouse;
+    private readonly Camera cam;
+    private readonly Transform playerTrans;
     private bool aim;
     public PCController(InputActionReference _MovementRef, InputActionReference _RightClick, Camera _cam, Transform _playerTrans)
     {
@@ -15,12 +15,20 @@ public class PCController : IController
         cam = _cam;
         playerTrans = _playerTrans;
         RightClick = _RightClick;
-        RightClick.action.performed += EnableAimDirection;
+        RightClick.action.started += EnableAimDirection;
         RightClick.action.canceled += DisableAimDirection;
     }
     
-    private void EnableAimDirection(InputAction.CallbackContext context) => aim = true;
-    private void DisableAimDirection(InputAction.CallbackContext context) => aim = false;
+    private void EnableAimDirection(InputAction.CallbackContext context) 
+    {
+        Debug.Log("disable aim");
+        aim = true;
+    }
+    private void DisableAimDirection(InputAction.CallbackContext context) 
+    {
+        Debug.Log("disable aim");
+        aim = false;
+    }
 
     public Vector2 GetMove() => MovementRef.action.ReadValue<Vector2>();
 

@@ -47,7 +47,7 @@ namespace TheRavine.Base
             GameObject[] shadowsObjects = GameObject.FindGameObjectsWithTag("Shadow");
             if (Settings.isShadow)
             {
-                Light2D[] lights = GameObject.FindObjectsByType<Light2D>(FindObjectsSortMode.None);
+                Light2D[] lights = FindObjectsByType<Light2D>(FindObjectsSortMode.None);
                 Transform[] shadows = new Transform[shadowsObjects.Length];
                 for (ushort i = 0; i < shadowsObjects.Length; i++)
                     shadows[i] = shadowsObjects[i].transform;
@@ -102,8 +102,8 @@ namespace TheRavine.Base
             // await UniTask.Delay(1000);
             while (!DataStorage.sceneClose)
             {
-                JobHandle dayHande = dayJob.Schedule();
-                dayHande.Complete();
+                if(!TimeBridge.IsCreated) break;
+                dayJob.Schedule().Complete();
                 UpdateSunValues();
                 if (isday != IsdayBridge[0])
                 {
@@ -123,8 +123,7 @@ namespace TheRavine.Base
                         lightsBridge = Light2DBridge,
                         ligthsIntensity = Light2DIntensityBridge
                     };
-                    JobHandle shadowHande = shadowJob.Schedule(shadowsTransform);
-                    shadowHande.Complete();
+                    shadowJob.Schedule(shadowsTransform).Complete();
                 }
                 await UniTask.WaitForFixedUpdate();
             }
@@ -153,7 +152,7 @@ namespace TheRavine.Base
             [WriteOnly] public NativeArray<bool> isdayBridge;
             public void Execute()
             {
-                timeBridge[0] += (deltaTime / 600) * timeBridge[4]; // speed
+                timeBridge[0] += deltaTime / 600 * timeBridge[4]; // speed
                 if (timeBridge[0] > 1f)
                     timeBridge[0] = 0f;
                 if (timeBridge[0] >= 0.2f && timeBridge[0] <= 0.8f)

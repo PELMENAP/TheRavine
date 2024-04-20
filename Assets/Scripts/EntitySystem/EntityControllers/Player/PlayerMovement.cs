@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System.Collections;
+using Cysharp.Threading.Tasks;
 
 using TheRavine.Extentions;
 using TheRavine.Base;
@@ -12,7 +12,8 @@ namespace TheRavine.EntityControl
     public class PlayerMovement : MonoBehaviour, IEntityControllable
     {
         private const int PickDistance = 1;
-        [SerializeField] private float placeObjectDelay, movementMinimum;
+        [SerializeField] private int placeObjectDelay;
+        [SerializeField] private float movementMinimum;
         [SerializeField] private Animator animator, shadowAnimator;
         [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick;
         [SerializeField] private Joystick joystick;
@@ -179,9 +180,9 @@ namespace TheRavine.EntityControl
                 int currentY = Mathf.RoundToInt(this.transform.position.y);
                 for (int xOffset = -PickDistance; xOffset <= PickDistance; xOffset++)
                     for (int yOffset = -PickDistance; yOffset <= PickDistance; yOffset++)
-                        PlayerEntity.data.aimRaise?.Invoke(new Vector2(currentX + xOffset, currentY + yOffset));
+                        entityEventBus.Invoke(nameof(RaiseEvent), new Vector2(currentX + xOffset, currentY + yOffset));
             }
-            else PlayerEntity.data.aimRaise?.Invoke(Extention.RoundVector2D(crosshair.position));
+            else entityEventBus.Invoke(nameof(RaiseEvent), Extention.RoundVector2D(crosshair.position));
         }
 
         public void AimPlaceMobile()
@@ -193,16 +194,16 @@ namespace TheRavine.EntityControl
         {
             // if (aim == Vector2.zero)
             // {
-                if (act)
-                    StartCoroutine(In());
+                if (act) In().Forget();
             // }
         }
 
-        private IEnumerator In()
+        private async UniTaskVoid In()
         {
             act = false;
-            PlayerEntity.data.placeObject?.Invoke(Extention.RoundVector2D(crosshair.position));
-            yield return new WaitForSeconds(placeObjectDelay);
+
+            entityEventBus.Invoke(nameof(PlaceEvent), Extention.RoundVector2D(crosshair.position));
+            await UniTask.Delay(placeObjectDelay);
             act = true;
         }
         public void Delete()

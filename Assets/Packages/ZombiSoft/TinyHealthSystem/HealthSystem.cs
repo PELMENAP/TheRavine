@@ -1,6 +1,4 @@
-﻿using UnityEngine.SceneManagement;
-using System.Collections;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 public class HealthSystem : MonoBehaviour
@@ -19,9 +17,6 @@ public class HealthSystem : MonoBehaviour
     public float manaPoint = 100f;
     public float maxManaPoint = 100f;
 
-    //==============================================================
-    // Regenerate Health & Mana
-    //==============================================================
     public bool Regenerate = true;
     public float regen = 0.1f;
     private float timeleft = 0.0f;  // Left time for current interval

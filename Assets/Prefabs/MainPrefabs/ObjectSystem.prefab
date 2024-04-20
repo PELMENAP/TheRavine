@@ -421,6 +421,21 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 127
       objectReference: {fileID: 0}
+    - target: {fileID: 1671218707826521824, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1671218707826521824, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1671218707826521824, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1671218707826521831, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -455,7 +470,7 @@ PrefabInstance:
     - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
       propertyPath: speed
-      value: 0
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 4825713534721371011, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
@@ -615,6 +630,10 @@ PrefabInstance:
         type: 3}
       insertIndex: 2
       addedObject: {fileID: 6509483719706600799}
+    - targetCorrespondingSourceObject: {fileID: 1671218706617821313, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6893428957486162155}
   m_SourcePrefab: {fileID: 100100000, guid: 1b0040924df5a54fca8e1f98646d3d7e, type: 3}
 --- !u!4 &3279137599470118156 stripped
 Transform:
@@ -653,6 +672,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   placeObjectDelay: 100
+  movementMinimum: 1
   animator: {fileID: 4547904406075749897}
   shadowAnimator: {fileID: 5819270257175703832}
   Movement: {fileID: -8258650051004762216, guid: 7a647ec6cc02b5604ac122cb0d98620e,
@@ -665,8 +685,22 @@ MonoBehaviour:
   joystick: {fileID: 0}
   cachedCamera: {fileID: 0}
   crosshair: {fileID: 4547904406298145970}
-  playerTrans: {fileID: 4547904407506283221}
   playerMark: {fileID: 3279137599470118156}
+  aim: {x: 0, y: 0}
+--- !u!114 &6893428957486162155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4547904407506283219}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae949e27224a31a9992f014c6c5fefe9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  InputWindow: {fileID: 0}
+  dialogDistance: 20
 --- !u!4 &4547904407506283221 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1671218706617821319, guid: 1b0040924df5a54fca8e1f98646d3d7e,

@@ -99,7 +99,7 @@ namespace TheRavine.ObjectControl
         {
             for (byte i = 0; i < _info.Length; i++)
             {
-                CreatePool(_info[i].prefab.GetInstanceID(), _info[i].prefab, _info[i].poolSize / 2);
+                CreatePool(_info[i].prefab.GetInstanceID(), _info[i].prefab, 1);
                 await UniTask.Delay(100);
                 //FaderOnTransit.instance.SetLogs("Созданы: " + _info[i].prefab.id);
             }

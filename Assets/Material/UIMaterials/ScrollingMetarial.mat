@@ -42,10 +42,11 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _Addition: 0
     - _Speed: 1
     m_Colors:
     - _Direction: {r: 0.01, g: 0, b: 0, a: 0}
-    - _Tiling: {r: -0.999, g: -0.999, b: 0, a: 0}
+    - _Tiling: {r: 1, g: 1, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &7342325201002860717

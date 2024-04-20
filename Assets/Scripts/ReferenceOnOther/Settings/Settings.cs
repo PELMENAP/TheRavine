@@ -3,21 +3,16 @@ using UnityEngine.UI;
 using System.Linq;
 using TMPro;
 
-public enum ControlType
-{
-    Personal,
-    Mobile
-}
-
 namespace TheRavine.Base
 {
     public class Settings : MonoBehaviour
     {
         [SerializeField] private TMP_Dropdown dropdown;
-        [SerializeField] private Toggle shadowToggle, joisticToggle, particlesToggle, postprocessingToggle;
-
+        [SerializeField] private Toggle shadowToggle, joisticToggle, particlesToggle, profileToggle;
+        [SerializeField] private GameObject profiler;
+        public static GameObject currentProfiler;
         public static int SceneNumber;
-        public static bool isLoad, isJoistick, isShadow, isParticles, isPostProcessing;
+        public static bool isLoad, isJoistick, isShadow, isParticles, isProfile;
         public static ControlType _controlType;
 
         public void SetInitialValues()
@@ -27,6 +22,8 @@ namespace TheRavine.Base
             dropdown.value = QualitySettings.GetQualityLevel();
             joisticToggle.isOn = isJoistick;
             shadowToggle.isOn = isShadow;
+            particlesToggle.isOn = isParticles;
+            profileToggle.isOn = isProfile;
         }
 
         public void SetJoistick()
@@ -50,9 +47,16 @@ namespace TheRavine.Base
             isParticles = particlesToggle.isOn;
         }
 
-        public void SetPostProcessing()
+        public void SetProfiling()
         {
-            isPostProcessing = postprocessingToggle.isOn;
+            isProfile = profileToggle.isOn;
+            profiler.SetActive(isProfile);
         }
     }
+}
+
+public enum ControlType
+{
+    Personal,
+    Mobile
 }

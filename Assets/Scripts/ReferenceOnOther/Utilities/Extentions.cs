@@ -51,8 +51,8 @@ namespace TheRavine.Extentions
         public static Vector2 RoundVector2D(Vector3 vec) => RoundVector2((Vector2)vec);
         public static Vector2 GetRandomPointAround(Vector2 centerPoint, float factor)
         {
-            double[] randomPoint = DistributionCache.GetCachedDistribution().Generate();
-            return new Vector2((float)(centerPoint.x + randomPoint[0] * factor), (float)(centerPoint.y + randomPoint[1] * factor));
+            Vector2 direction = RavineRandom.GetInsideCircle(factor);
+            return new Vector2((float)(centerPoint.x + direction.x), (float)(centerPoint.y + direction.y));
         }
         public static Vector2 CalculateQuadraticBezierPoint(float t, Vector2 p0, Vector2 p1, Vector2 p2)
         {
