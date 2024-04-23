@@ -19,8 +19,7 @@ namespace TheRavine.Generator
         private Dictionary<Vector2, ChunkData> mapData;
         public ChunkData GetMapData(Vector2 position)
         {
-            if (!mapData.ContainsKey(position))
-                mapData[position] = GenerateMapData(position);
+            if (!mapData.ContainsKey(position)) mapData[position] = GenerateMapData(position);
             return mapData[position];
         }
         public bool IsHeigthIsLiveAble(int height) => regions[height].liveAble;
@@ -773,17 +772,17 @@ namespace TheRavine.Generator
         public void BreakUp()
         {
             DayCycle.newDay -= UpdateNAL;
+            NALQueue.Clear();
+            NALQueueUpdate.Clear();
+            mapData.Clear();
             OnDisable();
         }
 
         private void OnDisable()
         {
             _cts.Cancel();
-            NALQueue.Clear();
-            NALQueueUpdate.Clear();
             WFCAobjects.Clear();
             WFCAqueue.Clear();
-            mapData.Clear();
         }
 
         public Transform viewerTest;

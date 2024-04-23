@@ -8,4 +8,6 @@ public class EntityAimStatsInfo : ScriptableObject
     public int MaxCrosshairDistanse;
     [Min(0)]
     public int CrosshairOffset;
+    [Min(0)]
+    public int PickDistance;
 }

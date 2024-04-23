@@ -183,7 +183,7 @@ namespace TheRavine.Base
                         OutputReaction("Превышен лимит обзора");
                         return;
                     }
-                    playerData.GetEntityComponent<AimComponent>().baseStats.crosshairDistanse = value;
+                    playerData.GetEntityComponent<AimComponent>().BaseStats.crosshairDistanse = value;
                     OutputReaction($"Максимальный обзор игрока: {value}");
                     break;
                 default:
