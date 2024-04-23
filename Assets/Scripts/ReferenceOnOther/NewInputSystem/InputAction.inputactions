@@ -7,11 +7,11 @@
             "actions": [
                 {
                     "name": "Movement (WASD)",
-                    "type": "Value",
+                    "type": "PassThrough",
                     "id": "f299b26d-e077-4b89-b907-e661766abe40",
                     "expectedControlType": "Vector2",
                     "processors": "",
-                    "interactions": "Press",
+                    "interactions": "",
                     "initialStateCheck": true
                 },
                 {
@@ -334,7 +334,7 @@
                     "id": "ed897785-ffdf-432c-b25d-179140cfd06d",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": "",
+                    "interactions": "Press(pressPoint=0.1)",
                     "initialStateCheck": false
                 },
                 {

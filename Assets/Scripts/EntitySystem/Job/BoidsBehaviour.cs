@@ -36,7 +36,7 @@ namespace TheRavine.EntityControl
 
         private bool isUpdate;
 
-        private float2 GetTargetPositionCloseToViewer() => new float2(-viewer.position.x + Random.RangeInt(-100, 100), -viewer.position.y + Random.RangeInt(-100, 100));
+        private float2 GetTargetPositionCloseToViewer() => new(-viewer.position.x + Random.RangeInt(-100, 100), -viewer.position.y + Random.RangeInt(-100, 100));
         public async UniTaskVoid StartBoids()
         {
             isUpdate = false;
@@ -57,11 +57,11 @@ namespace TheRavine.EntityControl
             {
                 transforms[i] = Instantiate(_entityPrefab).transform;
                 transforms[i].position = new Vector2(-_otherTargets[i % _numberOfTargets].x + Random.RangeInt(-20, 20), -_otherTargets[i % _numberOfTargets].y + Random.RangeInt(-20, 20));
-                transforms[i].parent = this.transform;
+                transforms[i].parent = transform;
                 _velocities[i] = Random.GetInsideCircle();
                 _accelerations[i] = Random.GetInsideCircle();
                 _isMoving[i] = true;
-                await UniTask.Delay(50);
+                await UniTask.Delay(10);
                 
             }
 
@@ -103,6 +103,7 @@ namespace TheRavine.EntityControl
 
         public void DisableBoids()
         {
+            isUpdate = false;
             _positions.Dispose();
             _velocities.Dispose();
             _accelerations.Dispose();

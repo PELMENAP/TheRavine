@@ -1,8 +1,7 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
-using UnityEngine.InputSystem.EnhancedTouch;
 using System.Reflection;
+using System.Collections.Generic;
 
 using TheRavine.EntityControl;
 using TheRavine.Services;
@@ -21,17 +20,19 @@ namespace TheRavine.Base
         [SerializeField] private UniversalAdditionalCameraData _cameraData;
         [SerializeField] private GameObject help, ui;
         [SerializeField] private int standartStateMachineTickTime;
+        [SerializeField] private TrollMovementTransition trollMovementTransition;
         private SceneTransitor trasitor;
-        private void Start()
+        private void Awake()
         {
+            trollMovementTransition.finishAction += SwitchToParallaxScene;
             trasitor = new SceneTransitor();
             _setAble = new Queue<ISetAble>();
             _disAble = new Queue<ISetAble>();
             serviceLocator = new ServiceLocator();
-            EnhancedTouchSupport.Enable();
 
             for (byte i = 0; i < scripts.Length; i++)
             {
+                if(scripts[i] == null) continue;
                 System.Type serviceType = scripts[i].GetType();
                 MethodInfo registerMethod = typeof(ServiceLocator).GetMethod("Register").MakeGenericMethod(new System.Type[] { serviceType });
                 registerMethod.Invoke(serviceLocator, new object[] { scripts[i] });
@@ -40,23 +41,19 @@ namespace TheRavine.Base
 
             serviceLocator.RegisterPlayer<PlayerEntity>();
 
-            switch (Settings.SceneNumber)
+            StateMachine = Settings.SceneNumber switch
             {
-                case 2:
-                    StateMachine = new StateMachine<Bootstrap>(standartStateMachineTickTime,
+                2 => new StateMachine<Bootstrap>(standartStateMachineTickTime,
                         new BootstrapState(this),
                         new InitialState(this, Settings.isLoad),
                         new LoadingState(this),
-                        new GameState(this));
-                    break;
-                default:
-                    StateMachine = new StateMachine<Bootstrap>(standartStateMachineTickTime,
+                        new GameState(this)),
+                _ => new StateMachine<Bootstrap>(standartStateMachineTickTime,
                         new BootstrapState(this),
                         new InitialState(this, Settings.isLoad),
                         new LoadingState(this),
-                        new GameState(this));
-                    break;
-            }
+                        new GameState(this)),
+            };
             StartGame();
         }
         public void StartNewServise(ISetAble.Callback callback)
@@ -84,10 +81,12 @@ namespace TheRavine.Base
         }
 
         public void SwitchToMainMenu(){
-            InTheEnd(() => TransitToOtherScene(0));
+            TransitToOtherScene(0);
+            // InTheEnd(() => TransitToOtherScene(0));
         }
         public void SwitchToParallaxScene(){
-            InTheEnd(() => TransitToOtherScene(1));
+            TransitToOtherScene(1);
+            // InTheEnd(() => TransitToOtherScene(1));
         }
 
         private void InTheEnd(System.Action inTheEndCallback)
@@ -95,7 +94,6 @@ namespace TheRavine.Base
             if(DataStorage.sceneClose) return;
             DataStorage.sceneClose = true;
             while (_disAble.Count > 0) _disAble.Dequeue().BreakUp();
-            EnhancedTouchSupport.Disable();
             serviceLocator.Dispose();
             _setAble.Clear();
             _disAble.Clear();
@@ -108,11 +106,13 @@ namespace TheRavine.Base
             {
                 // throw;
             }
-            inTheEndCallback?.Invoke();
+            finally
+            {
+                inTheEndCallback?.Invoke();
+            }
         }
 
         private void TransitToOtherScene(int sceneNumber){
-            Debug.Log("transition to new scene");
             trasitor.LoadScene(sceneNumber).Forget();
             Settings.isLoad = false;
             AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
@@ -121,6 +121,7 @@ namespace TheRavine.Base
 
         private void OnDisable()
         {
+            trollMovementTransition.finishAction -= SwitchToParallaxScene;
             InTheEnd(() => DebugLoad());
         }
 

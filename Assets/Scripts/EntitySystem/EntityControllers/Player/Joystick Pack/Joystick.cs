@@ -3,12 +3,10 @@ using UnityEngine.InputSystem;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 using TouchPhase = UnityEngine.InputSystem.TouchPhase;
 
-using TheRavine.Base;
-
 public class Joystick : MonoBehaviour
 {
-    public Vector2 Aim => new Vector2(input.x, input.y);
-    public Vector2 Movement => new Vector2(movement.x, movement.y);
+    public Vector2 Aim => new(input.x, input.y);
+    public Vector2 Movement => new(movement.x, movement.y);
     [SerializeField] private RectTransform background;
     [SerializeField] private RectTransform handle;
     [SerializeField] private float handleRange = 1f;

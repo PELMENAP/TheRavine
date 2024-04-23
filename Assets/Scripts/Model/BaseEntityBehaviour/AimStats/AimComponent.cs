@@ -1,19 +1,21 @@
-using TheRavine.EntityControl;
-public interface IAimComponent : IComponent
+namespace TheRavine.EntityControl
 {
-    EntityAimBaseStats baseStats { get; set; }
-}
-
-public class AimComponent : IAimComponent
-{
-    public EntityAimBaseStats baseStats { get; set; }
-    public AimComponent(EntityAimBaseStats _baseStats)
+    public interface IAimComponent : IComponent 
     {
-        baseStats = _baseStats;
+        EntityAimBaseStats BaseStats { get; set; }
     }
 
-    public void Dispose()
+    public class AimComponent : IAimComponent
     {
+        public EntityAimBaseStats BaseStats { get; set; }
+        public AimComponent(EntityAimBaseStats _baseStats)
+        {
+            BaseStats = _baseStats;
+        }
 
+        public void Dispose()
+        {
+
+        }
     }
 }

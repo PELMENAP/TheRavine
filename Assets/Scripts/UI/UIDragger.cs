@@ -1,15 +1,15 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 using TouchPhase = UnityEngine.InputSystem.TouchPhase;
+using TMPro;
 
 using TheRavine.Base;
 using TheRavine.InventoryElements;
-using TMPro;
-using UnityEngine.UI;
 
 namespace TheRavine.Inventory
 {
@@ -23,7 +23,7 @@ namespace TheRavine.Inventory
         private EventSystem eventSystem;
         private Mouse mouse;
         private bool isDragging = false;
-        private List<RaycastResult> results = new List<RaycastResult>();
+        private readonly List<RaycastResult> results = new();
         private PointerEventData eventData;
         private UIInventorySlot lastSlot;
 
@@ -140,7 +140,7 @@ namespace TheRavine.Inventory
 
         private async UniTaskVoid Dragging()
         {
-            while (isDragging)
+            while (isDragging && lastSlot != null)
             {
                 lastSlot._uiInventoryItem._rectTransform.position = mouse.position.ReadValue();
                 await UniTask.WaitForFixedUpdate();

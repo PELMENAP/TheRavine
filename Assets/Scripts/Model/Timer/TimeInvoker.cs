@@ -16,9 +16,11 @@ namespace TheRavine.Base
 			{
 				if (_instance == null)
 				{
-					var go = new GameObject("[TIME INVOKER]");
-					go.isStatic = true;
-					_instance = go.AddComponent<TimeInvoker>();
+                    var go = new GameObject("[TIME INVOKER]")
+                    {
+                        isStatic = true
+                    };
+                    _instance = go.AddComponent<TimeInvoker>();
 					DontDestroyOnLoad(go);
 				}
 

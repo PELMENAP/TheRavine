@@ -11,7 +11,6 @@ namespace TheRavine.EntityControl
     [RequireComponent(typeof(Rigidbody2D))]
     public class PlayerMovement : MonoBehaviour, IEntityControllable
     {
-        private const int PickDistance = 1;
         [SerializeField] private int placeObjectDelay;
         [SerializeField] private float movementMinimum;
         [SerializeField] private Animator animator, shadowAnimator;
@@ -22,30 +21,33 @@ namespace TheRavine.EntityControl
         private EventBusByName entityEventBus;
         private EntityAimBaseStats aimBaseStats;
         private EntityMovementBaseStats movementBaseStats;
-        private IController currentController;
         private bool act = true;
         private Rigidbody2D rb;
         private float movementSpeed;
         private Vector2 movementDirection;
 
+        private IController currentController;
+
         public void SetInitialValues(AEntity entity)
         {
-            rb = (Rigidbody2D)this.GetComponent("Rigidbody2D");
-            switch (Settings._controlType)
+            currentController = Settings._controlType switch
             {
-                case ControlType.Personal:
-                    currentController = new PCController(Movement, RightClick, cachedCamera, this.transform);
-                    break;
-                case ControlType.Mobile:
-                    currentController = new JoistickController(joystick);
-                    break;
-            }
-            entityEventBus = entity.GetEntityComponent<EventBusComponent>().EventBus;
-            movementBaseStats = entity.GetEntityComponent<MovementComponent>().baseStats;
-            aimBaseStats = entity.GetEntityComponent<AimComponent>().baseStats;
-            InitStatePattern(entity.GetEntityComponent<StatePatternComponent>());
+                ControlType.Personal => new PCController(Movement, RightClick, cachedCamera, transform),
+                ControlType.Mobile => new JoistickController(joystick),
+                _ => throw new System.NotImplementedException()
+            };
+            rb = (Rigidbody2D)GetComponent("Rigidbody2D");
+            GetPlayerComponents(entity);
             Raise.action.performed += AimRaise;
             LeftClick.action.performed += AimPlace;
+        }
+
+        private void GetPlayerComponents(AEntity entity)
+        {
+            entityEventBus = entity.GetEntityComponent<EventBusComponent>().EventBus;
+            movementBaseStats = entity.GetEntityComponent<MovementComponent>().baseStats;
+            aimBaseStats = entity.GetEntityComponent<AimComponent>().BaseStats;
+            InitStatePattern(entity.GetEntityComponent<StatePatternComponent>());
         }
 
         private void InitStatePattern(StatePatternComponent component)
@@ -53,16 +55,16 @@ namespace TheRavine.EntityControl
             System.Action actions = Move;
             actions += Animate;
             actions += Aim;
-            PlayerBehaviourIdle Idle = new PlayerBehaviourIdle(this, actions);
-            component.AddBehaviour(typeof(PlayerBehaviourIdle), Idle);
+            component.AddBehaviour(typeof(PlayerBehaviourIdle), new PlayerBehaviourIdle (this, actions));
+            
             // actions = Animate;
             // actions += Aim;
             // PlayerBehaviourDialoge Dialoge = new PlayerBehaviourDialoge();
             // component.AddBehaviour(typeof(PlayerBehaviourDialoge), Dialoge);
+
             actions = Animate;
             actions += Aim;
-            PlayerBehaviourSit Sit = new PlayerBehaviourSit(this, actions);
-            component.AddBehaviour(typeof(PlayerBehaviourSit), Sit);
+            component.AddBehaviour(typeof(PlayerBehaviourSit), new PlayerBehaviourSit(this, actions));
         }
 
         public void SetZeroValues()
@@ -87,19 +89,14 @@ namespace TheRavine.EntityControl
             if (movementDirection.magnitude < movementMinimum) movementDirection = Vector2.zero;
             movementSpeed = Mathf.Clamp(movementDirection.magnitude, 0.0f, 1.0f);
             movementDirection.Normalize();
-            rb.velocity = movementDirection * movementSpeed * movementBaseStats.baseSpeed;
+            rb.velocity = movementBaseStats.baseSpeed * movementSpeed * movementDirection;
             MoveMark();
         }
 
-        public void Jump()
-        {
-
-        }
-
-        private static readonly Vector3 Offset = new Vector3(0, 0, 100);
+        private readonly Vector3 Offset = new(0, 0, 100);
         private void MoveMark()
         {
-            playerMark.position = this.transform.position + Offset;
+            playerMark.position = transform.position + Offset;
             if (movementSpeed > 0.5f) playerMark.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(movementDirection.y, movementDirection.x) * Mathf.Rad2Deg - 90);
         }
 
@@ -119,10 +116,9 @@ namespace TheRavine.EntityControl
             if (Settings.isShadow) shadowAnimator.SetFloat("Speed", movementSpeed);
         }
         private bool isAccurance;
-        [SerializeField] private Vector2 aim;
         public void Aim()
         {
-            aim = currentController.GetAim();
+            Vector2 aim = currentController.GetAim();
             if (aim == Vector2.zero)
             {
                 crosshair.gameObject.SetActive(false);
@@ -176,10 +172,10 @@ namespace TheRavine.EntityControl
         {
             if (!isAccurance)
             {
-                int currentX = Mathf.RoundToInt(this.transform.position.x);
-                int currentY = Mathf.RoundToInt(this.transform.position.y);
-                for (int xOffset = -PickDistance; xOffset <= PickDistance; xOffset++)
-                    for (int yOffset = -PickDistance; yOffset <= PickDistance; yOffset++)
+                int currentX = Mathf.RoundToInt(transform.position.x);
+                int currentY = Mathf.RoundToInt(transform.position.y);
+                for (int xOffset = -aimBaseStats.pickDistance; xOffset <= aimBaseStats.pickDistance; xOffset++)
+                    for (int yOffset = -aimBaseStats.pickDistance; yOffset <= aimBaseStats.pickDistance; yOffset++)
                         entityEventBus.Invoke(nameof(RaiseEvent), new Vector2(currentX + xOffset, currentY + yOffset));
             }
             else entityEventBus.Invoke(nameof(RaiseEvent), Extention.RoundVector2D(crosshair.position));

@@ -32,7 +32,6 @@ namespace TheRavine.Base
             TimeBridge = new NativeArray<float>(6, Allocator.Persistent);
             IsdayBridge = new NativeArray<bool>(1, Allocator.Persistent);
             sun = this.GetComponent<Light2D>();
-            // newDay += GetLightsAndShadows;
             closeThread = true;
             UpdateDay().Forget();
             GetLightsAndShadows();
