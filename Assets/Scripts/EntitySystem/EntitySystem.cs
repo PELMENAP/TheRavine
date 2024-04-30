@@ -31,11 +31,12 @@ namespace TheRavine.EntityControl
             for (int i = 0; i < global.Count; i++) global[i].UpdateEntityCycle();
         }
 
-        public void BreakUp()
+        public void BreakUp(ISetAble.Callback callback)
         {
             for (int i = 0; i < global.Count; i++) global[i].Death();
             if(boidsBehaviour != null) boidsBehaviour.DisableBoids();
             OnDestroy();
+            callback?.Invoke();
         }
 
         private void OnDestroy()

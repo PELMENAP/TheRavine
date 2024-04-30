@@ -452,10 +452,15 @@ PrefabInstance:
       propertyPath: playerMark
       value: 
       objectReference: {fileID: 3279137599470118156}
+    - target: {fileID: 3800247471068709021, guid: 1b0040924df5a54fca8e1f98646d3d7e,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 157db4c2591a4f5379ed11d7b15a15cb, type: 2}
     - target: {fileID: 4825713534721371010, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
       propertyPath: m_Intensity
-      value: 0
+      value: 0.03
       objectReference: {fileID: 0}
     - target: {fileID: 4825713534721371010, guid: 1b0040924df5a54fca8e1f98646d3d7e,
         type: 3}
@@ -686,7 +691,6 @@ MonoBehaviour:
   cachedCamera: {fileID: 0}
   crosshair: {fileID: 4547904406298145970}
   playerMark: {fileID: 3279137599470118156}
-  aim: {x: 0, y: 0}
 --- !u!114 &6893428957486162155
 MonoBehaviour:
   m_ObjectHideFlags: 0

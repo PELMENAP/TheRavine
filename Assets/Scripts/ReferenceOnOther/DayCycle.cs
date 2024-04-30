@@ -25,8 +25,8 @@ namespace TheRavine.Base
         private NativeArray<float3> Light2DBridge;
         private TransformAccessArray shadowsTransform;
         private Transform[] lightsTransform;
-        DayJob dayJob;
-        ShadowsJob shadowJob;
+        private DayJob dayJob;
+        private ShadowsJob shadowJob;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
             TimeBridge = new NativeArray<float>(6, Allocator.Persistent);
@@ -130,9 +130,13 @@ namespace TheRavine.Base
             // BreakUp();
         }
 
-        public void BreakUp()
+        public void BreakUp(ISetAble.Callback callback)
         {
             // newDay -= GetLightsAndShadows;
+            callback?.Invoke();
+        }
+
+        private void OnDisable() {
             TimeBridge.Dispose();
             IsdayBridge.Dispose();
             if (Settings.isShadow)

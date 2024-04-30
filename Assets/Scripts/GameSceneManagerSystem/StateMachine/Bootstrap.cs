@@ -20,11 +20,11 @@ namespace TheRavine.Base
         [SerializeField] private UniversalAdditionalCameraData _cameraData;
         [SerializeField] private GameObject help, ui;
         [SerializeField] private int standartStateMachineTickTime;
-        [SerializeField] private TrollMovementTransition trollMovementTransition;
+        [SerializeField] private Canvas inventoryCanvas;
         private SceneTransitor trasitor;
         private void Awake()
         {
-            trollMovementTransition.finishAction += SwitchToParallaxScene;
+            inventoryCanvas.renderMode = RenderMode.WorldSpace;
             trasitor = new SceneTransitor();
             _setAble = new Queue<ISetAble>();
             _disAble = new Queue<ISetAble>();
@@ -58,8 +58,7 @@ namespace TheRavine.Base
         }
         public void StartNewServise(ISetAble.Callback callback)
         {
-            if (_setAble.Count == 0)
-                return;
+            if (_setAble.Count == 0) return;
             ISetAble setAble = _setAble.Dequeue();
             _disAble.Enqueue(setAble);
             setAble.SetUp(callback, serviceLocator);
@@ -73,27 +72,30 @@ namespace TheRavine.Base
         public void AddCameraToStack(Camera _cameraToAdd) => _cameraData.cameraStack.Add(_cameraToAdd);
         public void Finally()
         {
-            while (_setAble.Count > 0)
-                StartNewServise(null);
+            while (_setAble.Count > 0) StartNewServise(null);
             ui.SetActive(true);
             help.SetActive(true);
             serviceLocator.GetService<PlayerEntity>().SetBehaviourIdle();
+            inventoryCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
         }
 
         public void SwitchToMainMenu(){
-            TransitToOtherScene(0);
-            // InTheEnd(() => TransitToOtherScene(0));
+            InTheEnd(() => TransitToOtherScene(0));
         }
         public void SwitchToParallaxScene(){
-            TransitToOtherScene(1);
-            // InTheEnd(() => TransitToOtherScene(1));
+            InTheEnd(() => TransitToOtherScene(1));
+        }
+
+        private void BreakUpServises()
+        {
+            if(_disAble.Count > 0) _disAble.Dequeue().BreakUp(() => BreakUpServises());
         }
 
         private void InTheEnd(System.Action inTheEndCallback)
         {
             if(DataStorage.sceneClose) return;
             DataStorage.sceneClose = true;
-            while (_disAble.Count > 0) _disAble.Dequeue().BreakUp();
+            BreakUpServises();
             serviceLocator.Dispose();
             _setAble.Clear();
             _disAble.Clear();
@@ -108,6 +110,7 @@ namespace TheRavine.Base
             }
             finally
             {
+                DataStorage.sceneClose = false;
                 inTheEndCallback?.Invoke();
             }
         }
@@ -116,17 +119,16 @@ namespace TheRavine.Base
             trasitor.LoadScene(sceneNumber).Forget();
             Settings.isLoad = false;
             AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
-            DataStorage.sceneClose = false;
         }
 
         private void OnDisable()
         {
-            trollMovementTransition.finishAction -= SwitchToParallaxScene;
-            InTheEnd(() => DebugLoad());
+            InTheEnd(() => Syka());
         }
 
-        private void DebugLoad(){
-            
+        public void Syka()
+        {
+
         }
     }
 }

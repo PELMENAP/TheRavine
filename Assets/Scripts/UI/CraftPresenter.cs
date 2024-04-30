@@ -8,10 +8,12 @@ public class CraftPresenter : MonoBehaviour
 
     public void CraftPossible(bool isActive)
     {
+        if(craftButton == null) return;
         craftButton.SetActive(isActive);
     }
 
     public bool FillProgressBar(float amount){
+        if(progress == null) return false;
         if(progress.fillAmount >= 1)
         {
             progress.fillAmount = 0;    

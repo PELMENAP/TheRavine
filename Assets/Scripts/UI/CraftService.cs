@@ -19,9 +19,13 @@ namespace TheRavine.Inventory
         [SerializeField] private UIInventorySlot result;
         private InventoryItemInfo resultItemInfo;
         private int resultCount, craftDelay;
+        private bool cancel;
+        private System.Threading.CancellationTokenSource _cts;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
-            CraftInfo = InfoManager.GetAllCraftRecepts();
+            cancel = false;
+            _cts = new();
+            CraftInfo = UIInventory.infoManager.GetAllCraftRecepts();
             callback?.Invoke();
         }
         public bool OnInventoryCraftCheck(object sender)
@@ -81,6 +85,7 @@ namespace TheRavine.Inventory
             return isPossible;
         }
         public void OnCraftAction(){
+            if(cancel) return;
             if(OnInventoryCraftCheck(this)) CraftProcess().Forget();
             else craftPresenter.CraftPossible(false);
         }
@@ -92,25 +97,34 @@ namespace TheRavine.Inventory
                 craftCells[i]._uiInventoryItem.item.state.amount -= ingredientsCount[i];
                 if (craftCells[i].slot.amount <= 0)
                     craftCells[i].slot.Clear();
+                craftCells[i].Refresh();
             }
             craftPresenter.CraftPossible(false);
-            while(craftPresenter.FillProgressBar(Time.deltaTime / craftDelay)) await UniTask.NextFrame(PlayerLoopTiming.LastPostLateUpdate);
+
+            while(true)
+            { 
+                await UniTask.NextFrame(PlayerLoopTiming.LastPostLateUpdate, cancellationToken: _cts.Token, true);
+                if(!craftPresenter.FillProgressBar(Time.deltaTime / craftDelay)) break;
+            }
+
             CraftThing();
         }
 
         public void CraftThing()
         {
+            UIInventory.inventory.TryToAdd(this, UIInventory.infoManager.GetInventoryItemByInfo(resultItemInfo.id, resultItemInfo, resultCount));
             
-            for(byte i = 0; i < CellsCount; i++){
-                craftCells[i].Refresh();
-            }
-            UIInventory.inventory.TryToAdd(this, InfoManager.GetInventoryItemByInfo(resultItemInfo.id, resultItemInfo, resultCount));
+            if(cancel) return;
             OnInventoryCraftCheck(this);
         }
 
 
-        public void BreakUp()
+        public void BreakUp(ISetAble.Callback callback)
         {
+            cancel = true;
+            _cts.Cancel();
+            _cts.Dispose();
+            callback?.Invoke();
         }
     }
 }

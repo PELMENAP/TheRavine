@@ -62,8 +62,8 @@ public class CM : MonoBehaviour, ISetAble
         }
     }
 
-    public void BreakUp()
+    public void BreakUp(ISetAble.Callback callback)
     {
-
+        callback?.Invoke();
     }
 }

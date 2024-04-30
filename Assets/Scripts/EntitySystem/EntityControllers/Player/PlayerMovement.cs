@@ -188,10 +188,10 @@ namespace TheRavine.EntityControl
 
         private void AimPlace(InputAction.CallbackContext obj)
         {
-            // if (aim == Vector2.zero)
-            // {
+            if (crosshair.gameObject.activeSelf)
+            {
                 if (act) In().Forget();
-            // }
+            }
         }
 
         private async UniTaskVoid In()

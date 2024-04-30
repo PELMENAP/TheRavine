@@ -1,13 +1,12 @@
 using UnityEngine;
-using System.Collections;
-using UnityEngine.SceneManagement;
 
 using TheRavine.Security;
 
 namespace TheRavine.Base
 {
-    public class DataStorage : MonoBehaviour
+    public class DataStorage
     {
+        public static int cycleCount;
         public static bool loadkey = false;
         public static bool normkey = false;
         public static bool sceneClose;
@@ -35,21 +34,6 @@ namespace TheRavine.Base
             // data.PlPos = new Data.Vec3(PlayerData.data.entityTrans.position);
             // data.seed = MapGeneratorOld.seed;
             SaveLoad.SaveEncryptedData<Data>(nameof(Data), data);
-        }
-
-        public void QuittoMenu()
-        {
-            loadkey = false;
-            normkey = false;
-            sceneClose = true;
-            DayCycle.closeThread = false;
-            StartCoroutine(CloseScene());
-        }
-
-        private IEnumerator CloseScene()
-        {
-            yield return new WaitForSeconds(3f);
-            SceneManager.LoadScene(0);
         }
 
         [System.Serializable]

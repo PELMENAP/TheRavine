@@ -11,7 +11,7 @@ namespace TheRavine.EntityControl
 {
     public class MobGenerator : MonoBehaviour, ISetAble
     {
-        private System.Threading.CancellationTokenSource _cts = new System.Threading.CancellationTokenSource();
+        private System.Threading.CancellationTokenSource _cts = new();
         private const byte chunkCount = MapGenerator.chunkCount;
         private GameObject CreateMob(Vector2 position, GameObject prefab) => Instantiate(prefab, position, Quaternion.identity);
         [SerializeField] private SpawnPointDataHeight[] regions;
@@ -20,7 +20,7 @@ namespace TheRavine.EntityControl
         private MapGenerator generator;
         private MobController mobsController;
         private EntitySystem entitySystem;
-        private Dictionary<Vector2, ChunkEntityData> mapData = new Dictionary<Vector2, ChunkEntityData>(4);
+        private readonly Dictionary<Vector2, ChunkEntityData> mapData = new(4);
         private ChunkEntityData GetMapData(Vector2 pos)
         {
             if (!mapData.ContainsKey(pos))
@@ -145,13 +145,14 @@ namespace TheRavine.EntityControl
             }
         }
 
-        public void BreakUp()
+        public void BreakUp(ISetAble.Callback callback)
         {
             generator.onSpawnPoint -= AddSpawnPoint;
             generator.onUpdate -= UpdateNALQueue;
             DayCycle.newDay -= UpdateNAL;
             ClearNALQueue();
             NALQueueUpdate.Clear();
+            callback?.Invoke();
         }
 
         private void OnDisable()

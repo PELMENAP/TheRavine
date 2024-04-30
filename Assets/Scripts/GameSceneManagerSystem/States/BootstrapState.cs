@@ -14,7 +14,7 @@ namespace TheRavine.Base
                 Initializer.StartNewServise(null);
                 FaderOnTransit.instance.SetLogs("Выполнен вход в игру");
                 FaderOnTransit.instance.SetLogs("Создание точки входа");
-                Initializer.StateMachine.SwitchState<InitialState>();
+                Initializer.StartNewServise(() => Initializer.StateMachine.SwitchState<InitialState>());
             }
             public void OnExit()
             {

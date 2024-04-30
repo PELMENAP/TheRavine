@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 5793830466482380823}
   - component: {fileID: 8457428665013480640}
   - component: {fileID: 4623612910219319707}
-  - component: {fileID: 5176523328568560318}
   m_Layer: 0
   m_Name: thing_10
   m_TagString: Untagged
@@ -52,6 +51,8 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -76,7 +77,7 @@ SpriteRenderer:
   m_SortingLayerID: -285588851
   m_SortingLayer: -1
   m_SortingOrder: 0
-  m_Sprite: {fileID: -1061070943, guid: 8837d63393fff123ba02503d5ebdf73f, type: 3}
+  m_Sprite: {fileID: 65200556, guid: 7565c2d8bf69c1da7ae0532571c39987, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -137,22 +138,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   render: {fileID: 5793830466482380823}
   randomSpriteList:
-  - {fileID: -1831744820, guid: 8837d63393fff123ba02503d5ebdf73f, type: 3}
-  - {fileID: -1368981285, guid: 8837d63393fff123ba02503d5ebdf73f, type: 3}
-  - {fileID: 424206344, guid: 8837d63393fff123ba02503d5ebdf73f, type: 3}
-  - {fileID: -1061070943, guid: 8837d63393fff123ba02503d5ebdf73f, type: 3}
---- !u!114 &5176523328568560318
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3115794739573278839}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de51a12bfa0cf9bf08c8c1b05c5cd0c1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  - {fileID: 65200556, guid: 7565c2d8bf69c1da7ae0532571c39987, type: 3}
+  - {fileID: 860842514, guid: 7565c2d8bf69c1da7ae0532571c39987, type: 3}
+  - {fileID: 1246099236, guid: 7565c2d8bf69c1da7ae0532571c39987, type: 3}
+  - {fileID: 1935856854, guid: 7565c2d8bf69c1da7ae0532571c39987, type: 3}
 --- !u!1 &3573840205161904778
 GameObject:
   m_ObjectHideFlags: 0

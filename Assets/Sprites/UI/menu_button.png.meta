@@ -168,7 +168,7 @@ TextureImporter:
       name: menu_button_16
       rect:
         serializedVersion: 2
-        x: 105
+        x: 101
         y: 252
         width: 100
         height: 70
@@ -189,7 +189,7 @@ TextureImporter:
       name: menu_button_17
       rect:
         serializedVersion: 2
-        x: 207
+        x: 202
         y: 252
         width: 100
         height: 70
@@ -210,7 +210,7 @@ TextureImporter:
       name: menu_button_18
       rect:
         serializedVersion: 2
-        x: 310
+        x: 303
         y: 252
         width: 100
         height: 70
@@ -404,7 +404,7 @@ TextureImporter:
         width: 100
         height: 70
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -412,6 +412,48 @@ TextureImporter:
       bones: []
       spriteID: 240b099353efeb805921d5e01a1bfe41
       internalID: -526923082
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: menu_button_2
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 323
+        width: 100
+        height: 70
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 66b6fe9a5bea43379ab6cf040da9b8d5
+      internalID: 72802412
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: menu_button_3
+      rect:
+        serializedVersion: 2
+        x: 202
+        y: 323
+        width: 100
+        height: 70
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 52dbc2239c01b3b16b4bf27f0259a72b
+      internalID: 1350087269
       vertices: []
       indices: 
       edges: []
