@@ -11,13 +11,12 @@ public class InventoryWithSlots : IInventory
     public int capacity { get; set; }
     public bool isFull => _slots.All(slot => slot.isFull);
 
-    private List<IInventorySlot> _slots;
+    private readonly List<IInventorySlot> _slots;
     public InventoryWithSlots(int capacity)
     {
         this.capacity = capacity;
         _slots = new List<IInventorySlot>(capacity);
-        for (int i = 0; i < capacity; i++)
-            _slots.Add(new InventorySlot());
+        for (int i = 0; i < capacity; i++) _slots.Add(new InventorySlot());
     }
     public IInventoryItem GetItem(Type itemType)
     {
@@ -153,5 +152,18 @@ public class InventoryWithSlots : IInventory
     public IInventorySlot[] GetAllSlots()
     {
         return _slots.ToArray();
+    }
+
+    public SerializableList<SerializableInventorySlot> GetSerializableList()
+    {
+        SerializableList<SerializableInventorySlot> data = new();
+        for(int i = 0; i < capacity; i++)
+        {
+            if(_slots[i].isEmpty) data.list.Add(new SerializableInventorySlot("the ravine", 0));
+            var item = _slots[i].item;
+            if(item == null) continue;
+            data.list.Add(new SerializableInventorySlot(item.info.id, item.state.amount));
+        }
+        return data;
     }
 }

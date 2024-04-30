@@ -61,6 +61,7 @@ namespace LLMUnitySamples
 
         public void AIReplyComplete()
         {
+            SetAIText(AIText.text);
             playerText.interactable = true;
             playerText.Select();
             playerText.text = "";
@@ -70,12 +71,6 @@ namespace LLMUnitySamples
         {
             llm.CancelRequests();
             AIReplyComplete();
-        }
-
-        public void ExitGame()
-        {
-            Debug.Log("Exit button clicked");
-            Application.Quit();
         }
     }
 }

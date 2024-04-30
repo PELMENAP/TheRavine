@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66da6e5eaed9adf8f9af08f447038ec4, type: 3}
+  m_Name: PlayerCraft
+  m_EditorClassIdentifier: 
+  _isAvailable: 1
+  _timeToComplete: 5
+  _id: player_item
+  _ingr:
+  - {fileID: 11400000, guid: da8ae1bb58e48a871be038f481c8b87f, type: 2}
+  - {fileID: 11400000, guid: 45114dc64a68fbc2bb7503cc4b659a31, type: 2}
+  - {fileID: 11400000, guid: 914a1bd5819b8a4b08639bf914752f7f, type: 2}
+  - {fileID: 11400000, guid: 9e7ae9b92de171d7f978905cea99b482, type: 2}
+  _amountIngr: 01000000010000000100000001000000
+  _res: {fileID: 11400000, guid: 76de6d49010c43bfa821c9de39089c6b, type: 2}
+  _amountRes: 1

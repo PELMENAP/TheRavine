@@ -6,7 +6,7 @@ public class IsaNPCchatBot : MonoBehaviour, IDialogListener
     public void OnSpeechGet(string message)
     {
         asyncStartup.OnInputFieldSubmit(message);
-        Debug.Log("Isa received: " + message);
+        // Debug.Log("Isa received: " + message);
     }
 
     public Vector3 GetCurrentPosition()

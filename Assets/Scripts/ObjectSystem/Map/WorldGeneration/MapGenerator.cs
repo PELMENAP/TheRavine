@@ -13,8 +13,8 @@ namespace TheRavine.Generator
     using EndlessGenerators;
     public class MapGenerator : MonoBehaviour, ISetAble
     {
-        private System.Threading.CancellationTokenSource _cts = new System.Threading.CancellationTokenSource();
-        public const byte mapChunkSize = 8, chunkCount = 3, scale = 5, generationSize = scale * mapChunkSize, waterLevel = 1;
+        private System.Threading.CancellationTokenSource _cts = new();
+        public const byte mapChunkSize = 16, chunkCount = 3, scale = 5, generationSize = scale * mapChunkSize, waterLevel = 1;
         public static Vector2 vectorOffset = new Vector2(generationSize, generationSize) * chunkCount / 2;
         private Dictionary<Vector2, ChunkData> mapData;
         public ChunkData GetMapData(Vector2 position)
@@ -26,7 +26,7 @@ namespace TheRavine.Generator
 
         public byte GetMapHeight(Vector2 position)
         {
-            Vector2 playerPos = new Vector2((int)position.x, (int)position.y);
+            Vector2 playerPos = new((int)position.x, (int)position.y);
             Vector2 chunkPos = GetChunkPosition(playerPos + vectorOffset);
             Vector2 XYpos = (playerPos + vectorOffset - chunkPos * generationSize) / scale;
             if (XYpos.x > 15)
@@ -114,7 +114,7 @@ namespace TheRavine.Generator
             {
                 for (sbyte j = -scale; j < scale; j++)
                 {
-                    Vector2 centre = new Vector2(i, j);
+                    Vector2 centre = new(i, j);
                     mapData[centre] = GenerateMapData(centre);
                     await UniTask.Delay(100);
                 }
@@ -282,7 +282,7 @@ namespace TheRavine.Generator
         private int count = 0, criticalHeight = 1;
         public ChunkData GenerateMapData(Vector2 centre)
         {
-            SortedSet<Vector2> objectsToInst = new SortedSet<Vector2>(new Vector2Comparer());
+            SortedSet<Vector2> objectsToInst = new(new Vector2Comparer());
             byte[,] heightMap = new byte[mapChunkSize, mapChunkSize];
             byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
             if (centre.x > 10000 || centre.y > 10000)
@@ -601,8 +601,8 @@ namespace TheRavine.Generator
             return new ChunkData(heightMap, temperatureMap, isEqual, objectsToInst);
         }
 
-        private Dictionary<Vector2, ObjectInfo> WFCAobjects = new Dictionary<Vector2, ObjectInfo>(8);
-        private Queue<Pair<Vector2, byte>> WFCAqueue = new Queue<Pair<Vector2, byte>>(16);
+        private Dictionary<Vector2, ObjectInfo> WFCAobjects = new(8);
+        private Queue<Pair<Vector2, byte>> WFCAqueue = new(16);
         private void WFCA(Vector2 curPos, byte type, StructInfo structInfo)
         {
             WFCAobjects.Clear();
@@ -616,8 +616,7 @@ namespace TheRavine.Generator
             while (WFCAqueue.Count != 0)
             {
                 Pair<Vector2, byte> current = WFCAqueue.Dequeue();
-                if (count > maxIteration)
-                    break;
+                if (count > maxIteration) break;
                 if (structInfo.tileInfo[current.Second].MCount > Count[current.Second] && !WFCAobjects.ContainsKey(current.First))
                 {
                     WFCAobjects[current.First] = structInfo.tileInfo[current.Second].objectInfo;
@@ -629,14 +628,11 @@ namespace TheRavine.Generator
                 {
                     for (sbyte y = -1; y <= 1; y++)
                     {
-                        if (x == 0 && y == 0)
-                            continue;
+                        if (x == 0 && y == 0) continue;
                         Vector2 newPos = current.First + new Vector2(x, y) * structInfo.distortion;
                         byte field = structInfo.tileInfo[current.Second].neight[c++];
-                        if (field == 0)
-                            continue;
-                        if (WFCAobjects.ContainsKey(newPos))
-                            continue;
+                        if (field == 0) continue;
+                        if (WFCAobjects.ContainsKey(newPos)) continue;
                         WFCAqueue.Enqueue(new Pair<Vector2, byte>(newPos, --field));
                     }
                 }
@@ -769,13 +765,14 @@ namespace TheRavine.Generator
         //     await UniTask.WaitForFixedUpdate();
         // }
 
-        public void BreakUp()
+        public void BreakUp(ISetAble.Callback callback)
         {
             DayCycle.newDay -= UpdateNAL;
             NALQueue.Clear();
             NALQueueUpdate.Clear();
             mapData.Clear();
             OnDisable();
+            callback?.Invoke();
         }
 
         private void OnDisable()
@@ -797,7 +794,7 @@ namespace TheRavine.Generator
             {
                 for (sbyte j = -scale; j < scale; j++)
                 {
-                    Vector2 centre = new Vector2(i, j);
+                    Vector2 centre = new(i, j);
                     mapData[centre] = GenerateMapData(centre);
                 }
             }

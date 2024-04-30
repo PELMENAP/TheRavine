@@ -328,6 +328,27 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: enviroment_3
+      rect:
+        serializedVersion: 2
+        x: 12
+        y: 830
+        width: 38
+        height: 10
+      alignment: 9
+      pivot: {x: 0.510335, y: 0.3522339}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 20dd2393403897dd8b973893a39de900
+      internalID: -37384547
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     physicsShape: []
     bones: []

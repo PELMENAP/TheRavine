@@ -48,7 +48,7 @@ MonoBehaviour:
   waterT: {fileID: 0}
   terrainF: {fileID: 0}
   waterF: {fileID: 0}
-  seed: 16
+  seed: 4
   noiseScale: 200
   octaves: 8
   persistance: 0.25
@@ -80,7 +80,7 @@ MonoBehaviour:
       structs: []
     - objects: []
       structs: []
-  - height: 0.25
+  - height: 0.23
     liveAble: 1
     level:
     - objects: []
@@ -114,7 +114,10 @@ MonoBehaviour:
     - objects:
       - Chance: 70
         info: {fileID: 11400000, guid: e23769a0b98747349af18b93b2db8788, type: 2}
-      structs: []
+      structs:
+      - isSpawnPoint: 1
+        Chance: 234
+        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
     - objects:
       - Chance: 60
         info: {fileID: 11400000, guid: 80339deec3dfda594b587c1668a63245, type: 2}
@@ -147,6 +150,8 @@ MonoBehaviour:
         info: {fileID: 11400000, guid: f93e1ffefd235d615a1bd882c75bb125, type: 2}
       - Chance: 10
         info: {fileID: 11400000, guid: 80339deec3dfda594b587c1668a63245, type: 2}
+      - Chance: 15
+        info: {fileID: 11400000, guid: 65c7559b8f03def1c9bbf0d14b5dca7e, type: 2}
       structs: []
     - objects:
       - Chance: 70
@@ -168,7 +173,10 @@ MonoBehaviour:
     - objects: []
       structs: []
     - objects: []
-      structs: []
+      structs:
+      - isSpawnPoint: 1
+        Chance: 255
+        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
     - objects: []
       structs: []
     - objects: []

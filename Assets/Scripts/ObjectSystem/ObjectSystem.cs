@@ -3,7 +3,6 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 using TheRavine.Services;
-using System;
 
 namespace TheRavine.ObjectControl
 {
@@ -30,14 +29,13 @@ namespace TheRavine.ObjectControl
             else
                 return null;
         }
-        public bool TryAddToGlobal(Vector2 position, int _prefabID, ushort _amount, InstanceType _objectType, bool _flip = false)
+        public bool TryAddToGlobal(Vector2 position, int _prefabID, int _amount, InstanceType _objectType, bool _flip = false)
         {
-            if(info == null || info.Count == 0)
-                return false;
+            if(info == null || info.Count == 0) return false;
             if (global.ContainsKey(position))
                 if (global[position].prefabID == _prefabID && global[position].objectType == InstanceType.Inter)
                 {
-                    global[position] = new ObjectInstInfo(global[position].prefabID, (ushort)(global[position].amount + _amount), global[position].objectType, global[position].flip); ;
+                    global[position] = new ObjectInstInfo(_prefabID, global[position].amount + _amount, InstanceType.Inter, global[position].flip); ;
                     return true;
                 }
             ObjectInfo curdata = GetPrefabInfo(_prefabID);
@@ -101,25 +99,26 @@ namespace TheRavine.ObjectControl
             {
                 CreatePool(_info[i].prefab.GetInstanceID(), _info[i].prefab, 1);
                 await UniTask.Delay(100);
-                //FaderOnTransit.instance.SetLogs("Созданы: " + _info[i].prefab.id);
+                // FaderOnTransit.instance.SetLogs("Созданы: " + _info[i].prefab.id);
             }
         }
 
-        public void BreakUp()
+        public void BreakUp(ISetAble.Callback callback)
         {
             info.Clear();
             global.Clear();
             // changes.Clear();
+            callback?.Invoke();
         }
     }
 
     public struct ObjectInstInfo
     {
-        public ushort amount;
+        public int amount;
         public readonly int prefabID;
         public readonly InstanceType objectType;
         public bool flip, isExist;
-        public ObjectInstInfo(int _prefabID = -1, ushort _amount = 1, InstanceType _objectType = InstanceType.Static, bool _flip = false, bool _isExist = true)
+        public ObjectInstInfo(int _prefabID = -1, int _amount = 1, InstanceType _objectType = InstanceType.Static, bool _flip = false, bool _isExist = true)
         {
             amount = _amount;
             prefabID = _prefabID;

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
+  m_Name: BrownBoletus
+  m_EditorClassIdentifier: 
+  _id: brownboletus
+  _amount: 1
+  _poolSize: 10
+  _iType: 1
+  _bType: 1
+  _nalinfo: {fileID: 11400000, guid: 5b1df9b1d0e866a77a3d6462c2f59359, type: 2}
+  _iteminfo: {fileID: 11400000, guid: 914a1bd5819b8a4b08639bf914752f7f, type: 2}
+  _prefab: {fileID: 4512673236963690204, guid: bce32925144431cacacacba4a24b33d1, type: 3}
+  _nextStep: {fileID: 11400000}
+  _addspace: []
+  _deadPattern: {fileID: 0}
+  _pickUpPattern: {fileID: 0}

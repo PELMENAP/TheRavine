@@ -28,11 +28,15 @@ public class MenuMainScript : MonoBehaviour
     {
         trasitor.LoadScene(2).Forget();
         Settings.isLoad = false;
+        DataStorage.cycleCount = 0;
+        AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
     }
     public void LoadGame()
     {
         trasitor.LoadScene(2).Forget();
         Settings.isLoad = true;
+        DataStorage.cycleCount = 1;
+        AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
     }
 
     public void LoadTestScene()

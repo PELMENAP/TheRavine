@@ -181,8 +181,10 @@ namespace LLMUnity
         public override void SetTemplate(string templateName)
         {
             base.SetTemplate(templateName);
-            foreach (LLMClient client in GetListeningClients())
+            List<LLMClient> list = GetListeningClients();
+            for (int i = 0; i < list.Count; i++)
             {
+                LLMClient client = list[i];
                 client.SetTemplate(templateName);
             }
         }
@@ -207,8 +209,10 @@ namespace LLMUnity
         List<LLMClient> GetListeningClients()
         {
             List<LLMClient> clients = new List<LLMClient>();
-            foreach (LLMClient client in FindObjectsOfType<LLMClient>())
+            LLMClient[] array = FindObjectsOfType<LLMClient>();
+            for (int i = 0; i < array.Length; i++)
             {
+                LLMClient client = array[i];
                 if (client.GetType() == typeof(LLM)) continue;
                 if (client.host == host && client.port == port)
                 {
@@ -247,7 +251,7 @@ namespace LLMUnity
         {
             // select the corresponding APE binary for the system architecture
             string arch = LLMUnitySetup.RunProcess("uname", "-m");
-            Debug.Log($"architecture: {arch}");
+            // Debug.Log($"architecture: {arch}");
             string apeExe;
             if (arch.Contains("arm64") || arch.Contains("aarch64"))
             {
@@ -256,8 +260,8 @@ namespace LLMUnity
             else
             {
                 apeExe = apeX86_64;
-                if (!arch.Contains("x86_64"))
-                    Debug.Log($"Unknown architecture of processor {arch}! Falling back to x86_64");
+                // if (!arch.Contains("x86_64"))
+                //     Debug.Log($"Unknown architecture of processor {arch}! Falling back to x86_64");
             }
             return apeExe;
         }
@@ -290,7 +294,7 @@ namespace LLMUnity
                 ServerStatus status = JsonUtility.FromJson<ServerStatus>(message);
                 if (status.message == "model loaded")
                 {
-                    Debug.Log("LLM Server started!");
+                    // Debug.Log("LLM Server started!");
                     serverListening = true;
                     serverBlock.Set();
                 }
@@ -328,7 +332,7 @@ namespace LLMUnity
                 arguments = $"-c \"{EscapeSpaces(binary)} {arguments}\"";
                 binary = "sh";
             }
-            Debug.Log($"Server command: {binary} {arguments}");
+            // Debug.Log($"Server command: {binary} {arguments}");
             process = LLMUnitySetup.CreateProcess(binary, arguments, CheckIfListening, ProcessError, ProcessExited);
         }
 

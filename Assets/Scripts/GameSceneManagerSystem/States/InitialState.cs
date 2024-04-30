@@ -6,11 +6,10 @@ namespace TheRavine.Base
         {
             public Bootstrap Initializer { get; }
             private int timer = 0;
-            private bool isChangeState = false, isLoad;
+            private bool isChangeState = false;
             public InitialState(Bootstrap initializer, bool _isLoad)
             {
                 Initializer = initializer;
-                isLoad = _isLoad;
             }
             public void OnEnter()
             {

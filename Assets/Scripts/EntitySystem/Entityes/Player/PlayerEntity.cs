@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Events;
 
 using TheRavine.Services;
 
@@ -107,11 +106,11 @@ namespace TheRavine.EntityControl
             this.transform.position = newPosition;
         }
 
-        public void BreakUp()
+        public void BreakUp(ISetAble.Callback callback)
         {
             controller.Delete();
             Death();
-            cameraMen.BreakUp();
+            cameraMen.BreakUp(callback);
         }
 
         public override void EnableView()

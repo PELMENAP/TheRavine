@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21925bc93a2cbd7c58c87cf89d661a28, type: 3}
+  m_Name: Porchini
+  m_EditorClassIdentifier: 
+  _isPlaceable: 1
+  _id: porchini
+  _title: porchini
+  _maxItemsInInventorySlot: 99
+  _spriteIcon: {fileID: -1551819893, guid: 8837d63393fff123ba02503d5ebdf73f, type: 3}
+  _infoSprite: {fileID: -1516517819, guid: 7c2a870de4fe8c8a6824b4d14f9c7496, type: 3}
+  _prefab: {fileID: 8079554152659468491, guid: eac9ac9f7b106c63593abaabcb67837c, type: 3}

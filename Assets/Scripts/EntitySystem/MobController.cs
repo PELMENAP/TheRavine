@@ -16,8 +16,9 @@ namespace TheRavine.EntityControl
         private TransformAccessArray transformAccessArray;
         private NativeArray<float2> velocities;
         public NativeArray<bool> isMoving;
-        private ushort maxEntities = 1000;
+        private readonly ushort maxEntities = 1000;
         private MoveMobsJob moveMobsJob;
+
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
             mobEntities = new AEntity[maxEntities];
@@ -71,12 +72,15 @@ namespace TheRavine.EntityControl
                 }
                 else
                     velocities[i] = float2.zero;
-            JobHandle jobHandle = moveMobsJob.Schedule(transformAccessArray);
-            jobHandle.Complete();
+            moveMobsJob.Schedule(transformAccessArray).Complete();
         }
-        public void BreakUp()
+        public void BreakUp(ISetAble.Callback callback)
         {
             mobEntities = null;
+            callback?.Invoke();
+        }
+
+        private void OnDisable() {
             transformAccessArray.Dispose();
             velocities.Dispose();
             isMoving.Dispose();

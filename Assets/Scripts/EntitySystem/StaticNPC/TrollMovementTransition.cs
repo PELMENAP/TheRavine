@@ -1,9 +1,9 @@
 using UnityEngine;
 using TMPro;
-using System;
 
 
 using TheRavine.Base;
+using UnityEngine.Events;
 public class TrollMovementTransition : MonoBehaviour
 {
     [SerializeField] private int timeToDelay;
@@ -11,7 +11,7 @@ public class TrollMovementTransition : MonoBehaviour
     [SerializeField] private TimerType timerType;
     [SerializeField] private Transform player;
     [SerializeField] private float maxPossibleDistance;
-    public Action finishAction;
+    [SerializeField] private UnityEvent finishAction;
     private SyncedTimer _timer;
     private void Start() {
         _timer = new SyncedTimer(timerType, timeToDelay);
@@ -28,10 +28,11 @@ public class TrollMovementTransition : MonoBehaviour
 
     private void TimerFinished()
     {
+        DataStorage.cycleCount++;
         if(Vector3.Distance(player.position, transform.position) > maxPossibleDistance)
         {
             Destroy(gameObject);
-            // return;
+            return;
         }
         
         finishAction?.Invoke();

@@ -26,17 +26,12 @@ namespace TheRavine.EntityControl
         private NativeArray<float2> _otherTargets;
         private NativeArray<bool> _isMoving;
         private TransformAccessArray _transformAccessArray;
-
         private Transform[] transforms;
-
         private AccelerationJob accelerationJob;
         private MoveJob moveJob;
-
         [SerializeField] private Transform viewer;
-
         private bool isUpdate;
-
-        private float2 GetTargetPositionCloseToViewer() => new(-viewer.position.x + Random.RangeInt(-100, 100), -viewer.position.y + Random.RangeInt(-100, 100));
+        private float2 GetTargetPositionCloseToViewer() => new(-viewer.position.x + Random.RangeInt(-200, 200), -viewer.position.y + Random.RangeInt(-200, 200));
         public async UniTaskVoid StartBoids()
         {
             isUpdate = false;
@@ -104,6 +99,9 @@ namespace TheRavine.EntityControl
         public void DisableBoids()
         {
             isUpdate = false;
+        }
+
+        private void OnDisable() {
             _positions.Dispose();
             _velocities.Dispose();
             _accelerations.Dispose();
@@ -159,7 +157,7 @@ namespace TheRavine.EntityControl
         private async UniTaskVoid TargetsUpdate()
         {
             while(!DataStorage.sceneClose){
-                _otherTargets[Random.RangeInt(0, _otherTargets.Length)] = GetTargetPositionCloseToViewer();
+                if(viewer != null) _otherTargets[Random.RangeInt(0, _otherTargets.Length)] = GetTargetPositionCloseToViewer();
                 await UniTask.Delay(Random.RangeInt(1000 * delayFactor, 10000 * delayFactor));
             }
         }

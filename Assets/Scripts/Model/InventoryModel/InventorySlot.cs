@@ -10,15 +10,13 @@ public class InventorySlot : IInventorySlot
     public int capacity { get; private set; }
     public void SetItem(IInventoryItem item)
     {
-        if (!isEmpty)
-            return;
+        if (!isEmpty) return;
         this.item = item;
         this.capacity = item.info.maxItemsInInventorySlot;
     }
     public void Clear()
     {
-        if (isEmpty)
-            return;
+        if (isEmpty) return;
         item.state.amount = 0;
         item = null;
     }

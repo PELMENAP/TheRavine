@@ -215,9 +215,10 @@ namespace TheRavine.Base
             InputWindow.text = "";
             // window.color = colorM;
         }
-        public void BreakUp()
+        public void BreakUp(ISetAble.Callback callback)
         {
             EnterRef.action.performed -= OnEnter;
+            callback?.Invoke();
         }
     }
 }

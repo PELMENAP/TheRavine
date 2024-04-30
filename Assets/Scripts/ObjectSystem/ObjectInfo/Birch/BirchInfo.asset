@@ -22,5 +22,5 @@ MonoBehaviour:
   _prefab: {fileID: 948248636415433774, guid: e487b2f5e2401d74a9e583e59e72f6ce, type: 3}
   _nextStep: {fileID: 11400000, guid: b208f53ee19693c95b5612deabface28, type: 2}
   _addspace: []
-  _deadPattern: {fileID: 11400000, guid: 817d12512611c8bc5bd3b7579711b442, type: 2}
+  _deadPattern: {fileID: 11400000, guid: 2c5f330952253c0f590b988ee87196cf, type: 2}
   _pickUpPattern: {fileID: 0}
