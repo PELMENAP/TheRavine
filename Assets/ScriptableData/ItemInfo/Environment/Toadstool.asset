@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Toadstool
   m_EditorClassIdentifier: 
   _isPlaceable: 1
-  _id: toadstool
-  _title: toadstool
+  _id: Toadstool
+  _title: Toadstool
   _maxItemsInInventorySlot: 99
   _spriteIcon: {fileID: 605634512, guid: 8837d63393fff123ba02503d5ebdf73f, type: 3}
   _infoSprite: {fileID: -1857465614, guid: 7c2a870de4fe8c8a6824b4d14f9c7496, type: 3}

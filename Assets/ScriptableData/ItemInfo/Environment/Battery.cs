@@ -1,6 +1,6 @@
 public class Battery : ItemClass
 {
-    public string description = "Несколько соединенных \r\nмежду собой гальванических элементов";
+    public string description = "Несколько соединенных \r\nмежду собой гальванических элементов \r\n2000 mAh";
     
     public Battery(IInventoryItemInfo info) : base(info)
     {

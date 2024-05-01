@@ -24,16 +24,15 @@ public class InfoManager
                 item.state.amount = amount;
                 return item;
             }
-            else
-                throw new Exception("There's no info");
+            else    
+                Debug.Log("there's no " + title);
         }
-        else
-            throw new Exception("There's no exist class");
+        return null;
     }
 
     public IInventoryItem GetInventoryItemByInfo(string title, InventoryItemInfo itemInfo, int amount = 1)
     {
-        if (itemInfo == null) throw new Exception("There's no info");
+        if (itemInfo == null) return null;
         Type itemType = Type.GetType(title, false, true);
         if (itemType != null)
         {
@@ -41,9 +40,8 @@ public class InfoManager
             item.state.amount = amount;
             return item;
         }
-        else
-            throw new Exception("There's no exist class");
+        return null;
     }
-    public InventoryCraftInfo[] GetAllCraftRecepts() => Resources.LoadAll("ItemInfo/CraftInfo", typeof(InventoryCraftInfo)).Cast<InventoryCraftInfo>().ToArray();
+    public InventoryCraftInfo[] GetAllCraftRecepts() => Resources.LoadAll("CraftInfo", typeof(InventoryCraftInfo)).Cast<InventoryCraftInfo>().ToArray();
 
 }

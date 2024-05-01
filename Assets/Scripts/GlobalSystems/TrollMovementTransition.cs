@@ -3,6 +3,8 @@ using TMPro;
 
 
 using TheRavine.Base;
+using TheRavine.Inventory;
+
 using UnityEngine.Events;
 public class TrollMovementTransition : MonoBehaviour
 {
@@ -10,8 +12,10 @@ public class TrollMovementTransition : MonoBehaviour
     [SerializeField] private TextMeshPro textMeshPro;
     [SerializeField] private TimerType timerType;
     [SerializeField] private Transform player;
+    [SerializeField] private UIInventory uiInventory;
     [SerializeField] private float maxPossibleDistance;
     [SerializeField] private UnityEvent finishAction;
+    [SerializeField] private InventoryItemInfo ticketInfo;
     private SyncedTimer _timer;
     private void Start() {
         _timer = new SyncedTimer(timerType, timeToDelay);
@@ -34,6 +38,8 @@ public class TrollMovementTransition : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+
+        if(uiInventory.HasItem(ticketInfo.title)) DataStorage.winTheGame = true;
         
         finishAction?.Invoke();
     }

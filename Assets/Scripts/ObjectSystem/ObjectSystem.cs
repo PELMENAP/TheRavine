@@ -11,7 +11,11 @@ namespace TheRavine.ObjectControl
         public GameObject InstantiatePoolObject(Vector2 position, GameObject prefab) => Instantiate(prefab, position, Quaternion.identity);
         public ObjectInfo[] _info;
         private Dictionary<int, ObjectInfo> info;
-        public ObjectInfo GetPrefabInfo(int id) => info[id];
+        public ObjectInfo GetPrefabInfo(int id)
+        {
+            if(!info.ContainsKey(id)) return new ObjectInfo();
+            return info[id];
+        }
         //
         private Dictionary<Vector2, ObjectInstInfo> global;
         public ObjectInstInfo GetGlobalObjectInstInfo(Vector2 position)

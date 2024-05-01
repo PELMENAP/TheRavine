@@ -143,6 +143,11 @@ public class InventoryWithSlots : IInventory
         item = GetItem(itemType);
         return item != null;
     }
+    public bool HasItem(Type itemType)
+    {
+        for(int i = 0; i < _slots.Count; i++) if(_slots[i].itemType == itemType) return true;
+        return false;
+    }
 
     public IInventorySlot[] GetAllSlots(Type itemType)
     {

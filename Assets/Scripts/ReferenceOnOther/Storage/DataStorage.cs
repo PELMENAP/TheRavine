@@ -7,6 +7,8 @@ namespace TheRavine.Base
     public class DataStorage
     {
         public static int cycleCount;
+        public static float startTime;
+        public static bool winTheGame;
         public static bool loadkey = false;
         public static bool normkey = false;
         public static bool sceneClose;

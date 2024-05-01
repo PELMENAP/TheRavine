@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Playeritem
   m_EditorClassIdentifier: 
   _isPlaceable: 0
-  _id: playeritem
+  _id: PlayerItem
   _title: PlayerItem
   _maxItemsInInventorySlot: 99
   _spriteIcon: {fileID: 21300000, guid: 1a497920865d46843ad2cd0acd4468d4, type: 3}

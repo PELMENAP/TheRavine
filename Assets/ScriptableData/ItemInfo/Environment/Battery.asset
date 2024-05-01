@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Battery
   m_EditorClassIdentifier: 
   _isPlaceable: 1
-  _id: battery
-  _title: battery
+  _id: Battery
+  _title: Battery
   _maxItemsInInventorySlot: 99
   _spriteIcon: {fileID: -10094822, guid: 7565c2d8bf69c1da7ae0532571c39987, type: 3}
   _infoSprite: {fileID: -10094822, guid: 7565c2d8bf69c1da7ae0532571c39987, type: 3}

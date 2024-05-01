@@ -76,6 +76,14 @@ namespace TheRavine.Extentions
                 bezierPoints[i] = CalculateQuadraticBezierPoint(i / (float)bezierDetail, start, control, end);
         }
         public static bool ComparePercent(int value) => RavineRandom.Hundred() <= value;
+
+        public static string GetSklonenie(int number)
+        {
+            if(number >= 10 && number <= 20) return "ок";
+            if(number % 10 == 1) return "ку";
+            if(number % 2 == 0 || number % 10 == 3) return "ки";
+            return "ок";
+        }
     }
 
     public class Vector2Comparer : System.Collections.Generic.IComparer<Vector2>

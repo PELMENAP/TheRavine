@@ -8,13 +8,11 @@ namespace TheRavine.EntityControl
     {
         [SerializeField] private EntityInfo playerInfo;
         public CM cameraMen;
-        public static PlayerEntity data; // не надо сингелтона
         private IEntityControllable controller;
         private StatePatternComponent statePatternComponent;
 
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
-            data = this;
             controller = this.GetComponent<IEntityControllable>();
             statePatternComponent = new StatePatternComponent();
             base.AddComponentToEntity(statePatternComponent);
