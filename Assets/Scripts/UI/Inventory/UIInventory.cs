@@ -27,6 +27,7 @@ namespace TheRavine.Inventory
         private byte activeCell = 1;
         public InventoryWithSlots inventory => tester.inventory;
         public InfoManager infoManager => tester.infoManager;
+        public bool HasItem(string title) => tester.HasItem(title);
         private UIInventoryTester tester;
         private PlayerEntity playerData;
         private MapGenerator generator;
@@ -102,8 +103,7 @@ namespace TheRavine.Inventory
         private void AimRaise(Vector2 position)
         {
             ObjectInstInfo objectInstInfo = objectSystem.GetGlobalObjectInstInfo(position);
-            if (objectInstInfo.prefabID == -1 || objectInstInfo.objectType != InstanceType.Inter)
-                return;
+            if (objectInstInfo.prefabID == -1 || objectInstInfo.objectType != InstanceType.Inter) return;
             ObjectInfo data = objectSystem.GetPrefabInfo(objectInstInfo.prefabID);
             if (data.iteminfo == null) return;
             if (inventory.TryToAdd(this, infoManager.GetInventoryItemByInfo(data.iteminfo.id, data.iteminfo, objectInstInfo.amount)))

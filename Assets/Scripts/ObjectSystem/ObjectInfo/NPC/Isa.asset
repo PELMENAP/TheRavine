@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
+  m_Name: Isa
+  m_EditorClassIdentifier: 
+  _id: isa
+  _amount: 1
+  _poolSize: 10
+  _iType: 1
+  _bType: 0
+  _nalinfo: {fileID: 0}
+  _iteminfo: {fileID: 11400000, guid: 56c81c527f418edb7af83fff4553b49c, type: 2}
+  _prefab: {fileID: 6212210352425535576, guid: db4109f9d162c482ebf133f6b32aea85, type: 3}
+  _nextStep: {fileID: 0}
+  _addspace: []
+  _deadPattern: {fileID: 0}
+  _pickUpPattern: {fileID: 0}

@@ -19,7 +19,7 @@ namespace TheRavine.Inventory
         [SerializeField] private UIInventorySlot result;
         private InventoryItemInfo resultItemInfo;
         private int resultCount, craftDelay;
-        private bool cancel;
+        private bool cancel, inProcess;
         private System.Threading.CancellationTokenSource _cts;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
@@ -92,6 +92,8 @@ namespace TheRavine.Inventory
 
         public async UniTaskVoid CraftProcess()
         {
+            if(inProcess) return;
+            inProcess = true;
             for(byte i = 0; i < CellsCount; i++){
                 if(craftCells[i].slot.isEmpty) continue;
                 craftCells[i]._uiInventoryItem.item.state.amount -= ingredientsCount[i];
@@ -116,6 +118,7 @@ namespace TheRavine.Inventory
             
             if(cancel) return;
             OnInventoryCraftCheck(this);
+            inProcess = false;
         }
 
 

@@ -9,14 +9,17 @@ public class DialogSystem
         get
         {
             if (_instance == null) 
+            {
                 _instance = new DialogSystem();
+            }
             return _instance;
         }
     }
-    private readonly List<IDialogListener> listeners = new List<IDialogListener>();
+    private List<IDialogListener> listeners;
 
     public void AddDialogListener(IDialogListener listener)
     {
+        if(listeners == null) listeners = new List<IDialogListener>();
         if (!listeners.Contains(listener))
         {
             listeners.Add(listener);
@@ -39,7 +42,7 @@ public class DialogSystem
         {
             if (Vector3.Distance(senderPosition, listeners[i].GetCurrentPosition()) <= distance)
             {
-                listeners[i].OnSpeechGet(message);
+                listeners[i].OnSpeechGet(sender, message);
             }
         }
     }

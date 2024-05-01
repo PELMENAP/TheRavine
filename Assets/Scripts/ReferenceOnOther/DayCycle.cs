@@ -33,6 +33,7 @@ namespace TheRavine.Base
             IsdayBridge = new NativeArray<bool>(1, Allocator.Persistent);
             sun = this.GetComponent<Light2D>();
             closeThread = true;
+            // newDay += GetLightsAndShadows;
             UpdateDay().Forget();
             GetLightsAndShadows();
             callback?.Invoke();
@@ -83,8 +84,7 @@ namespace TheRavine.Base
         {
             for (ushort i = 0; i < lightsTransform.Length; i++)
             {
-                if (sunIndex == i)
-                    Light2DBridge[i] = (float3)lightsTransform[i].position;
+                Light2DBridge[i] = (float3)lightsTransform[i].position;
             }
         }
 

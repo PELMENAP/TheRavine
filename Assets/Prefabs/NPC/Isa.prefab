@@ -44,8 +44,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f1cb06ae7b7a5888b350708a55eb0cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  llm: {fileID: 4159094422570533255}
-  playerText: {fileID: 0}
   AIText: {fileID: 5040201698321712903}
   LoadingScreen: {fileID: 1520797389877300811}
   LoadingText: {fileID: 3784102654086683667}
@@ -67,7 +65,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &8105091357608022482
 RectTransform:
   m_ObjectHideFlags: 0
@@ -394,7 +392,7 @@ MonoBehaviour:
   m_BlendStyleIndex: 0
   m_FalloffIntensity: 0.588
   m_Color: {r: 0.39306754, g: 1, b: 0.97381854, a: 1}
-  m_Intensity: 10
+  m_Intensity: 5
   m_LightVolumeIntensity: 1
   m_LightVolumeEnabled: 0
   m_ApplyToSortingLayers: 8d42faee
@@ -719,7 +717,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24, type: 2}
+  - {fileID: -1379092795461030715, guid: 9c0cf6c4ac77b9139b70a0695ecc4bac, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -763,8 +761,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: ...
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24, type: 2}
-  m_sharedMaterial: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24,
+  m_fontAsset: {fileID: 11400000, guid: 9c0cf6c4ac77b9139b70a0695ecc4bac, type: 2}
+  m_sharedMaterial: {fileID: -1379092795461030715, guid: 9c0cf6c4ac77b9139b70a0695ecc4bac,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -867,7 +865,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4107570294337516817}
-  - {fileID: 6031294370105243821}
   - {fileID: 3294767722206125393}
   - {fileID: 8105091357608022482}
   - {fileID: 8749469400672220215}
@@ -1056,7 +1053,7 @@ SpriteRenderer:
   m_Size: {x: 1.5, y: 1.5}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!1 &7975929560074132235
@@ -1147,101 +1144,3 @@ MonoBehaviour:
   - {x: 0.5, y: -0.5, z: 0}
   - {x: 0.5, y: 0.5, z: 0}
   - {x: -0.5, y: 0.5, z: 0}
---- !u!1 &8232964720001595694
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6031294370105243821}
-  - component: {fileID: 4159094422570533255}
-  m_Layer: 0
-  m_Name: LLM
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
---- !u!4 &6031294370105243821
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8232964720001595694}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 6332117634195555153}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4159094422570533255
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8232964720001595694}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a50e3140c3ecaaf1c848dbf141cc2074, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  advancedOptions: 0
-  expertOptions: 0
-  host: localhost
-  port: 13333
-  stream: 1
-  grammar: 
-  seed: 0
-  numPredict: 128
-  cachePrompt: 1
-  temperature: 0.5
-  topK: 40
-  topP: 0.9
-  minP: 0.05
-  repeatPenalty: 1.1
-  presencePenalty: 0
-  frequencyPenalty: 0
-  tfsZ: 1
-  typicalP: 1
-  repeatLastN: 64
-  penalizeNl: 1
-  penaltyPrompt: 
-  mirostat: 0
-  mirostatTau: 5
-  mirostatEta: 0.1
-  nProbs: 0
-  ignoreEos: 0
-  nKeep: -1
-  stop: []
-  playerName: Traveler
-  AIName: Isa
-  prompt: A conversation between a curious man and a female assistant with artificial
-    intelligence, whose name is Isa, in an abandoned bus in the woods. The Isa is
-    friendly, flirtatious, likes to joke and always ready to help, but often talks
-    about his own. To all questions about Ravine updates, the assistant says that
-    he knows the answer, but does not want to voice it. The assistant always says
-    different things. If a traveler asks difficult questions, Isa laughs it off
-  setNKeepToPrompt: 1
-  chatTemplate: chatml
-  grammarString: 
-  numThreads: -1
-  numGPULayers: 3
-  parallelPrompts: -1
-  debug: 0
-  asynchronousStartup: 1
-  remote: 0
-  killExistingServersOnStart: 1
-  model: tinyllama-1.1b-chat-v0.4-eng.q3_k_m.gguf
-  lora: 
-  contextSize: 512
-  batchSize: 512
-  SelectedModel: 0
-  modelProgress: 1
-  modelCopyProgress: 1
-  modelHide: 1

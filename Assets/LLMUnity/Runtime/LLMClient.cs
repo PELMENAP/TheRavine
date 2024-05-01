@@ -297,33 +297,35 @@ namespace LLMUnity
         ChatRequest GenerateRequest(string prompt)
         {
             // setup the request struct
-            ChatRequest chatRequest = new ChatRequest();
-            chatRequest.prompt = prompt;
-            chatRequest.temperature = temperature;
-            chatRequest.top_k = topK;
-            chatRequest.top_p = topP;
-            chatRequest.min_p = minP;
-            chatRequest.n_predict = numPredict;
-            chatRequest.n_keep = nKeep;
-            chatRequest.stream = stream;
-            chatRequest.stop = GetStopwords();
-            chatRequest.tfs_z = tfsZ;
-            chatRequest.typical_p = typicalP;
-            chatRequest.repeat_penalty = repeatPenalty;
-            chatRequest.repeat_last_n = repeatLastN;
-            chatRequest.penalize_nl = penalizeNl;
-            chatRequest.presence_penalty = presencePenalty;
-            chatRequest.frequency_penalty = frequencyPenalty;
-            chatRequest.penalty_prompt = (penaltyPrompt != null && penaltyPrompt != "") ? penaltyPrompt : null;
-            chatRequest.mirostat = mirostat;
-            chatRequest.mirostat_tau = mirostatTau;
-            chatRequest.mirostat_eta = mirostatEta;
-            chatRequest.grammar = grammarString;
-            chatRequest.seed = seed;
-            chatRequest.ignore_eos = ignoreEos;
-            chatRequest.logit_bias = logitBias;
-            chatRequest.n_probs = nProbs;
-            chatRequest.cache_prompt = cachePrompt;
+            ChatRequest chatRequest = new()
+            {
+                prompt = prompt,
+                temperature = temperature,
+                top_k = topK,
+                top_p = topP,
+                min_p = minP,
+                n_predict = numPredict,
+                n_keep = nKeep,
+                stream = stream,
+                stop = GetStopwords(),
+                tfs_z = tfsZ,
+                typical_p = typicalP,
+                repeat_penalty = repeatPenalty,
+                repeat_last_n = repeatLastN,
+                penalize_nl = penalizeNl,
+                presence_penalty = presencePenalty,
+                frequency_penalty = frequencyPenalty,
+                penalty_prompt = (penaltyPrompt != null && penaltyPrompt != "") ? penaltyPrompt : null,
+                mirostat = mirostat,
+                mirostat_tau = mirostatTau,
+                mirostat_eta = mirostatEta,
+                grammar = grammarString,
+                seed = seed,
+                ignore_eos = ignoreEos,
+                logit_bias = logitBias,
+                n_probs = nProbs,
+                cache_prompt = cachePrompt
+            };
             return chatRequest;
         }
 

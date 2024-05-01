@@ -24,6 +24,8 @@ namespace TheRavine.Base
         private SceneTransitor trasitor;
         private void Awake()
         {
+            DataStorage.winTheGame = false;
+            if(DataStorage.cycleCount == 0) DataStorage.startTime = Time.time;
             inventoryCanvas.renderMode = RenderMode.WorldSpace;
             trasitor = new SceneTransitor();
             _setAble = new Queue<ISetAble>();

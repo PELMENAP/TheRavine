@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Politics
   m_EditorClassIdentifier: 
   _isPlaceable: 1
-  _id: politics
-  _title: politics
+  _id: Politics
+  _title: Politics
   _maxItemsInInventorySlot: 99
   _spriteIcon: {fileID: -1776602657, guid: 7565c2d8bf69c1da7ae0532571c39987, type: 3}
   _infoSprite: {fileID: -1776602657, guid: 7565c2d8bf69c1da7ae0532571c39987, type: 3}

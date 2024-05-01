@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Random = TheRavine.Extentions.RavineRandom;
 
 using TheRavine.InventoryElements;
-using Unity.Android.Gradle.Manifest;
 
 namespace TheRavine.Inventory
 {
@@ -11,6 +10,8 @@ namespace TheRavine.Inventory
         private UIInventorySlot[] _uiSlots;
 
         public InventoryWithSlots inventory { get; }
+        public bool HasItem(string title) => inventory.HasItem(GetInventoryItem(title).type);
+        public IInventoryItem GetInventoryItem(string title, int amount = 1) => infoManager.GetInventoryItem(title, amount);
         public InfoManager infoManager;
 
         public UIInventoryTester(UIInventorySlot[] uislots, DataItems dataItems)
@@ -33,7 +34,8 @@ namespace TheRavine.Inventory
                 for (int i = 0; i < filledSlots; i++)
                 {
                     var rSlot = availableSlots[Random.RangeInt(0, availableSlots.Count - 1)];
-                    var item = infoManager.GetInventoryItem("porchini", Random.RangeInt(1, 10));
+                    var item = infoManager.GetInventoryItem(nameof(Porchini), Random.RangeInt(1, 10));
+                    if(item == null) continue;
                     inventory.TryToAddSlot(this, rSlot, item);
                     availableSlots.Remove(rSlot);
                 }
@@ -41,16 +43,8 @@ namespace TheRavine.Inventory
                 for (int i = 0; i < filledSlots; i++)
                 {
                     var rSlot = availableSlots[Random.RangeInt(0, availableSlots.Count - 1)];
-                    var item = infoManager.GetInventoryItem("toadstool", Random.RangeInt(1, 10));
-                    inventory.TryToAddSlot(this, rSlot, item);
-                    availableSlots.Remove(rSlot);
-                }
-
-                for (int i = 0; i < filledSlots; i++)
-                {
-                    if(availableSlots.Count == 0) return;
-                    var rSlot = availableSlots[Random.RangeInt(0, availableSlots.Count - 1)];
-                    var item = infoManager.GetInventoryItem("brownboletus", Random.RangeInt(1, 10));
+                    var item = infoManager.GetInventoryItem(nameof(Toadstool), Random.RangeInt(1, 10));
+                    if(item == null) continue;
                     inventory.TryToAddSlot(this, rSlot, item);
                     availableSlots.Remove(rSlot);
                 }
@@ -59,7 +53,8 @@ namespace TheRavine.Inventory
                 {
                     if(availableSlots.Count == 0) return;
                     var rSlot = availableSlots[Random.RangeInt(0, availableSlots.Count - 1)];
-                    var item = infoManager.GetInventoryItem("boletus", Random.RangeInt(1, 10));
+                    var item = infoManager.GetInventoryItem(nameof(BrownBoletus), Random.RangeInt(1, 10));
+                    if(item == null) continue;
                     inventory.TryToAddSlot(this, rSlot, item);
                     availableSlots.Remove(rSlot);
                 }
@@ -68,7 +63,8 @@ namespace TheRavine.Inventory
                 {
                     if(availableSlots.Count == 0) return;
                     var rSlot = availableSlots[Random.RangeInt(0, availableSlots.Count - 1)];
-                    var item = infoManager.GetInventoryItem("battery", Random.RangeInt(1, 10));
+                    var item = infoManager.GetInventoryItem(nameof(Boletus), Random.RangeInt(1, 10));
+                    if(item == null) continue;
                     inventory.TryToAddSlot(this, rSlot, item);
                     availableSlots.Remove(rSlot);
                 }
@@ -77,7 +73,8 @@ namespace TheRavine.Inventory
                 {
                     if(availableSlots.Count == 0) return;
                     var rSlot = availableSlots[Random.RangeInt(0, availableSlots.Count - 1)];
-                    var item = infoManager.GetInventoryItem("politics", Random.RangeInt(1, 10));
+                    var item = infoManager.GetInventoryItem(nameof(Battery), Random.RangeInt(1, 10));
+                    if(item == null) continue;
                     inventory.TryToAddSlot(this, rSlot, item);
                     availableSlots.Remove(rSlot);
                 }
@@ -86,7 +83,46 @@ namespace TheRavine.Inventory
                 {
                     if(availableSlots.Count == 0) return;
                     var rSlot = availableSlots[Random.RangeInt(0, availableSlots.Count - 1)];
-                    var item = infoManager.GetInventoryItem("kirieshky", Random.RangeInt(1, 10));
+                    var item = infoManager.GetInventoryItem(nameof(Politics), Random.RangeInt(1, 10));
+                    if(item == null) continue;
+                    inventory.TryToAddSlot(this, rSlot, item);
+                    availableSlots.Remove(rSlot);
+                }
+
+                for (int i = 0; i < filledSlots; i++)
+                {
+                    if(availableSlots.Count == 0) return;
+                    var rSlot = availableSlots[Random.RangeInt(0, availableSlots.Count - 1)];
+                    var item = infoManager.GetInventoryItem(nameof(Kirieshky), Random.RangeInt(1, 10));
+                    if(item == null) continue;
+                    inventory.TryToAddSlot(this, rSlot, item);
+                    availableSlots.Remove(rSlot);
+                }
+
+                for (int i = 0; i < 2; i++)
+                {
+                    if(availableSlots.Count == 0) return;
+                    var rSlot = availableSlots[Random.RangeInt(0, availableSlots.Count - 1)];
+                    var item = infoManager.GetInventoryItem(nameof(Isa), Random.RangeInt(1, 10));
+                    if(item == null) continue;
+                    inventory.TryToAddSlot(this, rSlot, item);
+                    availableSlots.Remove(rSlot);
+                }
+                for (int i = 0; i < 2; i++)
+                {
+                    if(availableSlots.Count == 0) return;
+                    var rSlot = availableSlots[Random.RangeInt(0, availableSlots.Count - 1)];
+                    var item = infoManager.GetInventoryItem(nameof(AndrewNovichenko), Random.RangeInt(1, 10));
+                    if(item == null) continue;
+                    inventory.TryToAddSlot(this, rSlot, item);
+                    availableSlots.Remove(rSlot);
+                }
+                for (int i = 0; i < 2; i++)
+                {
+                    if(availableSlots.Count == 0) return;
+                    var rSlot = availableSlots[Random.RangeInt(0, availableSlots.Count - 1)];
+                    var item = infoManager.GetInventoryItem(nameof(Jirinovskiy), Random.RangeInt(1, 10));
+                    if(item == null) continue;
                     inventory.TryToAddSlot(this, rSlot, item);
                     availableSlots.Remove(rSlot);
                 }

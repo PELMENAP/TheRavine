@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using TheRavine.Base;
+using TheRavine.Extentions;
 
 public class AudioRadioController : MonoBehaviour
 {
@@ -12,19 +13,25 @@ public class AudioRadioController : MonoBehaviour
     [SerializeField] private AudioClip[] audioStray;
     private bool[] playingYet;
     private int number;
-    private int count;
+    // private int count;
     private int mood;
 
-    private void OnEnable()
+    public void StartDefaultRadio()
     {
         DayCycle.newDay += ChangeMood;
         ChangeMood();
         StartCoroutine(Audio());
     }
 
+    public void StartWinRadio(AudioClip audioClip)
+    {
+        audioSource.clip = audioClip;
+        audioSource.Play();
+    }
+
     private void ChangeMood()
     {
-        mood = UnityEngine.Random.Range(1, 3);
+        mood = RavineRandom.RangeInt(1, 3);
         switch (mood)
         {
             case 1:
@@ -50,7 +57,7 @@ public class AudioRadioController : MonoBehaviour
     {
         while (true)
         {
-            number = Random.Range(0, audioClipRadio.Length);
+            number = RavineRandom.RangeInt(0, audioClipRadio.Length);
             if (playingYet[number])
             {
                 int firstnumber = number;
@@ -59,7 +66,7 @@ public class AudioRadioController : MonoBehaviour
                     if (!playingYet[i])
                     {
                         number = i;
-                        count++;
+                        // count++;
                         break;
                     }
                 }
@@ -74,11 +81,11 @@ public class AudioRadioController : MonoBehaviour
             audioSource.clip = audioClipRadio[number];
 
             audioSource.Play();
-            yield return new WaitForSeconds(Random.Range(60, audioLength - 20));
+            yield return new WaitForSeconds(RavineRandom.RangeInt(60, audioLength - 20));
             audioSource.Stop();
-            audioSource.clip = audioStray[Random.Range(0, audioStray.Length)];
+            audioSource.clip = audioStray[RavineRandom.RangeInt(0, audioStray.Length)];
             audioSource.Play();
-            yield return new WaitForSeconds(Random.Range(3, 5));
+            yield return new WaitForSeconds(RavineRandom.RangeInt(3, 5));
             audioSource.Stop();
         }
     }

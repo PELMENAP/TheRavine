@@ -1,46 +1,36 @@
 using UnityEngine;
 using LLMUnity;
-using System.Collections;
+using Cysharp.Threading.Tasks;
 using TMPro;
 
 namespace LLMUnitySamples
 {
     public class AsyncStartup : MonoBehaviour
     {
-        public LLM llm;
-        public TMP_InputField playerText;
         public TextMeshPro AIText;
         public GameObject LoadingScreen;
         public TextMeshPro LoadingText;
-
-        void Start()
+        private System.Action callback;
+        private LLM llm;
+        private void Start()
         {
-            StartCoroutine(Loading());
+            llm = LLMGetter.llmGetter.GetLLM();
+            Loading().Forget();
         }
 
-        IEnumerator Loading()
+        private async UniTaskVoid Loading()
         {
             LoadingText.text = "Starting server...";
             LoadingScreen.gameObject.SetActive(true);
-            playerText.interactable = false;
-            while (!llm.serverStarted)
-            {
-                yield return null;
-            }
+            await UniTask.Delay(3000);
             LoadingText.text = "Warming-up the model...";
-            _ = llm.Warmup(LoadingComplete);
-        }
-
-        void LoadingComplete()
-        {
-            playerText.interactable = true;
+            await UniTask.Delay(2000);
             LoadingScreen.gameObject.SetActive(false);
-            playerText.Select();
         }
 
-        public void OnInputFieldSubmit(string message)
+        public void OnInputFieldSubmit(string message, System.Action _callback)
         {
-            playerText.interactable = false;
+            callback = _callback;
             AIText.text = "...";
             _ = llm.Chat(message, SetAIText, AIReplyComplete);
         }
@@ -61,10 +51,8 @@ namespace LLMUnitySamples
 
         public void AIReplyComplete()
         {
+            callback?.Invoke();
             SetAIText(AIText.text);
-            playerText.interactable = true;
-            playerText.Select();
-            playerText.text = "";
         }
 
         public void CancelRequests()
