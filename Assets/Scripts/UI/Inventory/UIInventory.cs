@@ -92,8 +92,8 @@ namespace TheRavine.Inventory
                 if (slot.amount <= 0) slot.Clear();
                 activeCells[activeCell - 1].Refresh();
                 generator.TryToAddPositionToChunk(position);
-                generator.ExtraUpdate();
             }
+            generator.ExtraUpdate();
         }
         private void OnInventoryStateChanged(object sender)
         {
@@ -122,8 +122,8 @@ namespace TheRavine.Inventory
                         }
                     }
                 }
-                generator.ExtraUpdate();
             }
+            generator.ExtraUpdate();
         }
 
         private bool isactive = false;

@@ -10,6 +10,7 @@ using TheRavine.Services;
 
 namespace TheRavine.Generator
 {
+    using System;
     using EndlessGenerators;
     public class MapGenerator : MonoBehaviour, ISetAble
     {
@@ -72,7 +73,8 @@ namespace TheRavine.Generator
         }
         public Transform terrainT, waterT;
         public MeshFilter terrainF, waterF;
-        public int seed;
+        private int seed;
+        public int Seed { get => seed; private set => seed = value; }
         private ObjectSystem objectSystem;
         [SerializeField] private float noiseScale;
         [SerializeField] private byte octaves;
@@ -85,9 +87,10 @@ namespace TheRavine.Generator
         private IEndless[] endless;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
+            seed = RavineRandom.RangeInt(0, 1000);
             endless = new IEndless[3];
             mapData = new Dictionary<Vector2, ChunkData>(64);
-            Noise.SetInit(noiseScale, octaves, persistance, lacunarity, seed);
+            Noise.SetInit(noiseScale, octaves, persistance, lacunarity, Seed);
             viewer = locator.GetPlayerTransform();
             objectSystem = locator.GetService<ObjectSystem>();
             DayCycle.newDay += UpdateNAL;
@@ -121,15 +124,16 @@ namespace TheRavine.Generator
             }
         }
 
-        private Queue<Vector2> NALQueue;
-        private Queue<Vector2> NALQueueUpdate;
+        private Queue<Vector2> NALQueue, NALQueueUpdateRemove;
+        private Queue<Pair<Vector2,  ObjectInfo>> NALQueueUpdateAdd;
         public void ClearNALQueue() => NALQueue.Clear();
         public void AddNALObject(Vector2 current) => NALQueue.Enqueue(current);
         [SerializeField] private byte step, deadChance = 0;
         private async UniTaskVoid NAL()
         {
             NALQueue = new Queue<Vector2>(64);
-            NALQueueUpdate = new Queue<Vector2>(32);
+            NALQueueUpdateRemove = new Queue<Vector2>(32);
+            NALQueueUpdateAdd = new Queue<Pair<Vector2,  ObjectInfo>>(32);
             await UniTask.Delay(10000);
             int countCycle = 0;
             while (!DataStorage.sceneClose)
@@ -167,12 +171,11 @@ namespace TheRavine.Generator
                     if (nextGenInfo == null)
                     {
                         if (Extention.ComparePercent(25))
-                            objectSystem.RemoveFromGlobal(current);
+                            NALQueueUpdateRemove.Enqueue(current);
                         continue;
                     }
-                    objectSystem.RemoveFromGlobal(current);
-                    if (objectSystem.TryAddToGlobal(current, nextGenInfo.prefab.GetInstanceID(), nextGenInfo.amount, nextGenInfo.iType, (current.x + current.y) % 2 == 0))
-                        NALQueueUpdate.Enqueue(current);
+                    NALQueueUpdateRemove.Enqueue(current);
+                    NALQueueUpdateAdd.Enqueue(new Pair<Vector2, ObjectInfo>(current, nextGenInfo));
                     continue;
                 }
                 // ObjectInfo childObjectInfo = objectSystem.GetPrefabInfo(currentObjectInfo.childPrefab.GetInstanceID());
@@ -184,19 +187,17 @@ namespace TheRavine.Generator
                 NAlInfo nalinfo = currentObjectPrefabData.nalinfo;
                 if (Extention.ComparePercent(nalinfo.chance / 2 + deadChance) || closeto)
                 {
-                    objectSystem.RemoveFromGlobal(current);
+                    NALQueueUpdateRemove.Enqueue(current);
                     SpreadPattern pattern = currentObjectPrefabData.deadPattern;
                     if (pattern == null)
                         continue;
-                    if (objectSystem.TryAddToGlobal(current, pattern.main.prefab.GetInstanceID(), pattern.main.amount, pattern.main.iType, (current.x + current.y) % 2 == 0))
-                        NALQueueUpdate.Enqueue(current);
+                    NALQueueUpdateAdd.Enqueue(new Pair<Vector2, ObjectInfo>(current, pattern.main));
                     if (pattern.other.Length != 0)
                     {
                         for (byte i = 0; i < pattern.other.Length; i++)
                         {
                             Vector2 newPos = Extention.GetRandomPointAround(current, pattern.factor);
-                            if (objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].amount, pattern.other[i].iType, newPos.x < current.x))
-                                NALQueueUpdate.Enqueue(newPos);
+                            NALQueueUpdateAdd.Enqueue(new Pair<Vector2, ObjectInfo>(newPos, pattern.other[i]));
                         }
                     }
                     continue;
@@ -211,8 +212,7 @@ namespace TheRavine.Generator
                         if (Extention.ComparePercent(nalinfo.chance))
                         {
                             Vector2 newPos = Extention.GetRandomPointAround(current, nalinfo.distance);
-                            if (objectSystem.TryAddToGlobal(newPos, nextGenInfo.prefab.GetInstanceID(), nextGenInfo.amount, nextGenInfo.iType, (newPos.x + newPos.y) % 2 == 0))
-                                NALQueueUpdate.Enqueue(newPos);
+                            NALQueueUpdateAdd.Enqueue(new Pair<Vector2, ObjectInfo>(newPos, nextGenInfo));
                         }
                         await UniTask.Delay(10, cancellationToken: _cts.Token);
                         attempts--;
@@ -227,10 +227,16 @@ namespace TheRavine.Generator
             if (rotateTarget != 0f)
                 return;
             ClearNALQueue();
-            while (NALQueueUpdate.Count > 0)
+            while (NALQueueUpdateRemove.Count > 0)
+            {   
+                Vector2 item = NALQueueUpdateRemove.Dequeue();
+                objectSystem.RemoveFromGlobal(item);
+            }
+            while (NALQueueUpdateAdd.Count > 0)
             {
-                Vector2 item = NALQueueUpdate.Dequeue();
-                GetMapData(GetChunkPosition(item + vectorOffset)).objectsToInst.Add(item);
+                Pair<Vector2, ObjectInfo> item = NALQueueUpdateAdd.Dequeue();
+                if(objectSystem.TryAddToGlobal(item.First, item.Second.prefab.GetInstanceID(), item.Second.amount, item.Second.iType, (item.First.x + item.First.y) % 2 == 0))
+                    GetMapData(GetChunkPosition(item.First + vectorOffset)).objectsToInst.Add(item.First);
             }
             ExtraUpdate();
         }
@@ -239,7 +245,7 @@ namespace TheRavine.Generator
             if (mapData.ContainsKey(centre))
                 return mapData[centre].temperatureMap;
             byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
-            Noise.GenerateNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize, Noise.NormalizeMode.Temp);
+            Noise.GenerateTempNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize);
             for (byte x = 0; x < mapChunkSize; x++)
             {
                 for (byte y = 0; y < mapChunkSize; y++)
@@ -263,7 +269,7 @@ namespace TheRavine.Generator
             if (mapData.ContainsKey(centre))
                 return mapData[centre].temperatureMap[x, y];
             byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
-            Noise.GenerateNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize, Noise.NormalizeMode.Temp);
+            Noise.GenerateTempNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize);
             float currentHeight = noiseTemperatureMap[x, y];
             for (byte i = 0; i + 1 < biomRegions.Length; i++)
             {
@@ -285,12 +291,12 @@ namespace TheRavine.Generator
             SortedSet<Vector2> objectsToInst = new(new Vector2Comparer());
             byte[,] heightMap = new byte[mapChunkSize, mapChunkSize];
             byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
-            if (centre.x > 10000 || centre.y > 10000)
+            if (Mathf.Abs(centre.x) > 10000 || Mathf.Abs(centre.y) > 10000)
                 Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Local);
             else
                 Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Global);
 
-            Noise.GenerateNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize, Noise.NormalizeMode.Temp);
+            Noise.GenerateTempNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize);
 
             void SetSandPoint(int x, int y)
             {
@@ -309,15 +315,21 @@ namespace TheRavine.Generator
                 for (byte y = 0; y < mapChunkSize; y++)
                 {
                     float currentHeight = noiseMap[x, y];
-                    for (byte i = 0; i + 1 < regions.Length; i++)
+                    for (byte i = 0; i < regions.Length; i++)
                     {
-                        if (!(currentHeight >= regions[i + 1].height))
+                        if (currentHeight >= regions[i].height)
                         {
                             heightMap[x, y] = i;
-                            break;
                         }
+                        else
+                            break;
                     }
                     currentHeight = noiseTemperatureMap[x, y];
+                    if(heightMap[x,y] == 8)
+                    {
+                        temperatureMap[x,y] = 0;
+                        continue;
+                    }
                     for (byte i = 0; i + 1 < biomRegions.Length; i++)
                     {
                         if (!(currentHeight >= biomRegions[i + 1].height))
@@ -562,10 +574,10 @@ namespace TheRavine.Generator
                         StructInfoGeneration sinfo = level.structs[i];
                         if(sinfo.Chance == 0)
                             continue;
-                        if ((x * y + centre.x * centre.y + seed + i * countOfHeights[heightMap[x, y]] + count) % sinfo.Chance == 0)
+                        if ((x * y + centre.x * centre.y + Seed + i * countOfHeights[heightMap[x, y]] + count) % sinfo.Chance == 0)
                         {
                             Vector2 posstruct = new Vector2(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale) - vectorOffset;
-                            WFCA(posstruct, (byte)((seed + (int)x + (int)y) % sinfo.info.tileInfo.Length), sinfo.info);
+                            WFCA(posstruct, (byte)((Seed + (int)x + (int)y) % sinfo.info.tileInfo.Length), sinfo.info);
                             foreach (var item in WFCAobjects)
                             {
                                 if (objectSystem.TryAddToGlobal(item.Key, item.Value.prefab.GetInstanceID(), item.Value.amount, item.Value.iType, (x + y) % 2 == 0))
@@ -582,9 +594,9 @@ namespace TheRavine.Generator
                     for (byte i = 0; i < level.objects.Length; i++)
                     {
                         ObjectInfoGeneration ginfo = level.objects[i];
-                        if(ginfo.Chance == 0)
+                        if(ginfo.Chance == 0 || ginfo.info == null)
                             continue;
-                        if ((x * y + centre.x * centre.y + seed + i * countOfHeights[heightMap[x, y]] + count) % ginfo.Chance == 0)
+                        if ((x * y + centre.x * centre.y + Seed + i * countOfHeights[heightMap[x, y]] + count) % ginfo.Chance == 0)
                         {
                             Vector2 posobj = new Vector2(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale) - vectorOffset;
                            
@@ -650,6 +662,7 @@ namespace TheRavine.Generator
                     OldVposition = position;
                     for (byte i = 0; i < 3; i++)
                     {
+                        if(!endlessFlag[i]) continue;
                         endless[i].UpdateChunk(position);
                         await UniTask.WaitForFixedUpdate();
                     }
@@ -664,6 +677,7 @@ namespace TheRavine.Generator
             if (rotateTarget != 0f)
                 return;
             position = GetPlayerPosition();
+            if(!endlessFlag[2]) return;
             endless[2].UpdateChunk(position);
         }
 
@@ -769,7 +783,8 @@ namespace TheRavine.Generator
         {
             DayCycle.newDay -= UpdateNAL;
             NALQueue.Clear();
-            NALQueueUpdate.Clear();
+            NALQueueUpdateAdd.Clear();
+            NALQueueUpdateRemove.Clear();
             mapData.Clear();
             OnDisable();
             callback?.Invoke();
@@ -783,6 +798,7 @@ namespace TheRavine.Generator
         }
 
         public Transform viewerTest;
+
         public void TestGeneration()
         {
             if (endlessFlag[0])

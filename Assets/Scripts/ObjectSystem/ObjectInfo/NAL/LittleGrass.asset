@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c1110f6f7306fdff697c35625afdbd97, type: 3}
-  m_Name: MiddleGrass
+  m_Name: LittleGrass
   m_EditorClassIdentifier: 
-  _distance: 4
-  _chance: 60
+  _distance: 3
+  _chance: 80
   _attempt: 1
-  _delay: 20
+  _delay: 10

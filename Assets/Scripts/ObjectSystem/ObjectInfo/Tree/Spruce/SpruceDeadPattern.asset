@@ -9,10 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c1110f6f7306fdff697c35625afdbd97, type: 3}
-  m_Name: MiddleGrass
+  m_Script: {fileID: 11500000, guid: 21d8c5da6b916a721a931e66b2660d71, type: 3}
+  m_Name: SpruceDeadPattern
   m_EditorClassIdentifier: 
-  _distance: 4
-  _chance: 60
-  _attempt: 1
-  _delay: 20
+  main: {fileID: 11400000, guid: 442b367888fac8d03a12ffa4b207be67, type: 2}
+  other:
+  - {fileID: 11400000, guid: 35a86ee8a8aacf6cbaf259f26251680e, type: 2}
+  factor: 15

@@ -79,7 +79,6 @@ namespace TheRavine.EntityControl
                         continue;
                     if (RavineRandom.Hundred() < curMobSpawnData.Chance)
                     {
-                        print("summon somebody");
                         NALQueueUpdate.Enqueue(new Pair<Vector2, GameObject>(current.First, curMobSpawnData.info.prefab));
                         await UniTask.Delay(curMobSpawnData.Chance * curMobSpawnData.Chance, cancellationToken: _cts.Token);
                         break;
