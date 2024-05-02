@@ -62,6 +62,7 @@ namespace TheRavine.EntityControl
         }
         private void Update()
         {
+            if(mobEntities == null) return;
             if (EntityCount < 1)
                 return;
             for (ushort i = 0; i < maxEntities; i++)

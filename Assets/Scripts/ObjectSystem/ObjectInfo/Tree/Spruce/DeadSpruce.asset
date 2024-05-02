@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
+  m_Name: DeadSpruce
+  m_EditorClassIdentifier: 
+  _id: deadspruce
+  _amount: 1
+  _poolSize: 20
+  _iType: 0
+  _bType: 2
+  _nalinfo: {fileID: 11400000, guid: e300f278e3f22cce2b173b38cdb47cf8, type: 2}
+  _iteminfo: {fileID: 0}
+  _prefab: {fileID: 948248636415433774, guid: dc50f9675c086ffb09375219cd554550, type: 3}
+  _nextStep: {fileID: 0}
+  _addspace:
+  - {x: -1, y: 0}
+  - {x: -2, y: 0}
+  - {x: -3, y: 0}
+  - {x: 1, y: 0}
+  - {x: 2, y: 0}
+  - {x: 3, y: 0}
+  _deadPattern: {fileID: 0}
+  _pickUpPattern: {fileID: 0}

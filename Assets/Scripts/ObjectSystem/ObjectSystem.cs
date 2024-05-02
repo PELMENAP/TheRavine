@@ -13,7 +13,7 @@ namespace TheRavine.ObjectControl
         private Dictionary<int, ObjectInfo> info;
         public ObjectInfo GetPrefabInfo(int id)
         {
-            if(!info.ContainsKey(id)) return new ObjectInfo();
+            if(!info.ContainsKey(id)) return null;
             return info[id];
         }
         //
@@ -65,6 +65,7 @@ namespace TheRavine.ObjectControl
             if (objectInfo.prefabID == -1 && !objectInfo.isExist)
                 return true;
             ObjectInfo curdata = GetPrefabInfo(objectInfo.prefabID);
+            if(curdata == null) return true;
             if (curdata.addspace.Length == 0)
                 return global.Remove(position);
             global.Remove(position);
@@ -102,7 +103,7 @@ namespace TheRavine.ObjectControl
             for (byte i = 0; i < _info.Length; i++)
             {
                 CreatePool(_info[i].prefab.GetInstanceID(), _info[i].prefab, 1);
-                await UniTask.Delay(100);
+                await UniTask.Delay(10);
                 // FaderOnTransit.instance.SetLogs("Созданы: " + _info[i].prefab.id);
             }
         }

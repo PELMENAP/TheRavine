@@ -52,6 +52,7 @@ namespace TheRavine.EntityControl
         {
             while (!DataStorage.sceneClose)
             {
+                if(entityTransform == null) return;
                 if (!isActive) await UniTask.Delay(defaultDelay);
                 if (Extention.CheckDistance(entityTransform.position, target, accuracy))
                     UpdateTargetWander();

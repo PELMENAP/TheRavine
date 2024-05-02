@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
+  m_Name: Kirieshky
+  m_EditorClassIdentifier: 
+  _id: kirieshky
+  _amount: 1
+  _poolSize: 5
+  _iType: 1
+  _bType: 0
+  _nalinfo: {fileID: 0}
+  _iteminfo: {fileID: 11400000, guid: f2bfaecbf7420f34a9d1db67ede0c0c4, type: 2}
+  _prefab: {fileID: 443920947200513725, guid: 4f59eba755cb9a4959b16369dc693a02, type: 3}
+  _nextStep: {fileID: 0}
+  _addspace: []
+  _deadPattern: {fileID: 0}
+  _pickUpPattern: {fileID: 0}

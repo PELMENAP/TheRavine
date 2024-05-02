@@ -37,10 +37,18 @@ namespace TheRavine.Generator
                                 continue;
                             objectUpdate[info.prefabID]++;
                             ObjectInfo objectInfo = objectSystem.GetPrefabInfo(info.prefabID);
-                            if (objectUpdate[info.prefabID] > objectSystem.GetPoolSize(info.prefabID))
+                            try{
+                                if (objectUpdate[info.prefabID] > objectSystem.GetPoolSize(info.prefabID))
+                                {
+                                    objectSystem.IncreasePoolSize(info.prefabID);
+                                    objectSystem.CreatePool(objectInfo.prefab.GetInstanceID(), objectInfo.prefab);
+                                }
+                            }
+                            catch
                             {
-                                objectSystem.IncreasePoolSize(info.prefabID);
-                                objectSystem.CreatePool(objectInfo.prefab.GetInstanceID(), objectInfo.prefab);
+                                Debug.Log(info.GetType());
+                                Debug.Log(info.objectType);
+                                Debug.Log(" ");
                             }
                             objectSystem.Reuse(info.prefabID, item, info.flip, generator.rotateValue);
                             if (objectInfo.bType == BehaviourType.NAL || objectInfo.bType == BehaviourType.GROW)

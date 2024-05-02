@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7126740580033029453}
   m_Layer: 0
-  m_Name: DEAD_BIRCH
+  m_Name: DEAD_SPRUCE
   m_TagString: Enviroment
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
