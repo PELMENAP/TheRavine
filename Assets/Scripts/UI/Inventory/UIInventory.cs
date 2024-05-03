@@ -127,7 +127,7 @@ namespace TheRavine.Inventory
         }
 
         private bool isactive = false;
-        public void ChangeInventoryState(InputAction.CallbackContext context)
+        private void ChangeInventoryState(InputAction.CallbackContext context)
         {
             OnInventoryStateChanged(this);
             isactive = !isactive;
