@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _id: porchini
   _amount: 1
-  _poolSize: 10
+  _poolSize: 1
   _iType: 1
   _bType: 1
   _nalinfo: {fileID: 11400000, guid: 5b1df9b1d0e866a77a3d6462c2f59359, type: 2}

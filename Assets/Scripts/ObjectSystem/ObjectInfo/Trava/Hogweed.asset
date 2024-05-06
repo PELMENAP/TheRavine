@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _id: hogweed
   _amount: 1
-  _poolSize: 10
+  _poolSize: 30
   _iType: 0
   _bType: 1
   _nalinfo: {fileID: 11400000, guid: 6b3caeab9260ae715a36a67f23e5cc8d, type: 2}

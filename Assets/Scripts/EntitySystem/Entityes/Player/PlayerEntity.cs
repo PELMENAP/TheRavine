@@ -7,7 +7,7 @@ namespace TheRavine.EntityControl
     public class PlayerEntity : AEntity, ISetAble
     {
         [SerializeField] private EntityInfo playerInfo;
-        public CM cameraMen;
+        [SerializeField] private CM cameraMen;
         private IEntityControllable controller;
         private StatePatternComponent statePatternComponent;
 
@@ -63,12 +63,14 @@ namespace TheRavine.EntityControl
         public void SetBehaviourDialog()
         {
             statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<PlayerBehaviourDialoge>());
+            controller.SetZeroValues();
             controller.DisableComponents();
         }
 
         public void SetBehaviourSit()
         {
             statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<PlayerBehaviourSit>());
+            controller.SetZeroValues();
             controller.DisableComponents();
         }
         private void AimSkills()

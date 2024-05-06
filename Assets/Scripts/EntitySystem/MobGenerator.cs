@@ -12,7 +12,7 @@ namespace TheRavine.EntityControl
     public class MobGenerator : MonoBehaviour, ISetAble
     {
         private System.Threading.CancellationTokenSource _cts = new();
-        private const byte chunkCount = MapGenerator.chunkCount;
+        private const byte chunkScale = MapGenerator.chunkScale;
         private GameObject CreateMob(Vector2 position, GameObject prefab) => Instantiate(prefab, position, Quaternion.identity);
         [SerializeField] private SpawnPointDataHeight[] regions;
         [SerializeField, Min(0)] private ushort MaxSpawnEntityCount;
@@ -108,9 +108,9 @@ namespace TheRavine.EntityControl
         }
         private void UpdateNALQueue(Vector2 position)
         {
-            for (byte yOffset = 0; yOffset < chunkCount; yOffset++)
+            for (sbyte yOffset = -chunkScale; yOffset < chunkScale; yOffset++)
             {
-                for (byte xOffset = 0; xOffset < chunkCount; xOffset++)
+                for (sbyte xOffset = -chunkScale; xOffset < chunkScale; xOffset++)
                 {
                     List<AEntity> listEntity = GetMapData(currentChunkPosition + new Vector2(xOffset, yOffset)).entitiesInChunk;
                     for (ushort i = 0; i < listEntity.Count; i++)
@@ -124,9 +124,9 @@ namespace TheRavine.EntityControl
                 }
             }
             currentChunkPosition = position;
-            for (byte yOffset = 0; yOffset < chunkCount; yOffset++)
+            for (sbyte yOffset = -chunkScale; yOffset < chunkScale; yOffset++)
             {
-                for (byte xOffset = 0; xOffset < chunkCount; xOffset++)
+                for (sbyte xOffset = -chunkScale; xOffset < chunkScale; xOffset++)
                 {
                     ChunkEntityData data = GetMapData(currentChunkPosition + new Vector2(xOffset, yOffset));
                     foreach (var item in data.spawnPoints)
@@ -135,7 +135,7 @@ namespace TheRavine.EntityControl
                     for (ushort i = 0; i < listEntity.Count; i++)
                     {
                         AEntity entity = listEntity[i];
-                        if (xOffset == 0 || yOffset == 0 || xOffset == chunkCount - 1 || yOffset == chunkCount - 1)
+                        if (xOffset == 0 || yOffset == 0 || xOffset == 2 * chunkScale || yOffset == 2 * chunkScale )
                             entity.transform.position = Extention.GetRandomPointAround((Vector2)entity.transform.position, 2);
                         mobsController.AddMobToUpdate(entity);
                         entity.EnableView();

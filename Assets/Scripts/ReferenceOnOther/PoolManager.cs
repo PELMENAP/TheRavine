@@ -11,21 +11,23 @@ namespace TheRavine.ObjectControl
         {
             parent = _parent;
         }
-        Dictionary<int, LinkedList<ObjectInstance>> poolDictionary = new Dictionary<int, LinkedList<ObjectInstance>>();
-        Dictionary<int, Pair<Transform, ushort>> poolObjectDictionary = new Dictionary<int, Pair<Transform, ushort>>();
+        private readonly Dictionary<int, LinkedList<ObjectInstance>> poolDictionary = new();
+        private readonly Dictionary<int, Pair<Transform, ushort>> poolObjectDictionary = new();
         public void CreatePool(int poolKey, GameObject prefab, CreateInstance createInstance, ushort poolSize = 1)
         {
             if (!poolDictionary.ContainsKey(poolKey))
             {
                 poolDictionary.Add(poolKey, new LinkedList<ObjectInstance>());
-                GameObject poolHolder = new GameObject(prefab.name + " pool");
-                poolHolder.isStatic = true;
+                GameObject poolHolder = new(prefab.name + " pool")
+                {
+                    isStatic = true
+                };
                 poolHolder.transform.parent = parent;
                 poolObjectDictionary.Add(poolKey, new Pair<Transform, ushort>(poolHolder.transform, poolSize));
             }
             for (ushort i = 0; i < poolSize; i++)
             {
-                ObjectInstance newObject = new ObjectInstance(createInstance?.Invoke(new Vector2(0, 0), prefab));
+                ObjectInstance newObject = new(createInstance?.Invoke(new Vector3(0, 0, 100), prefab));
                 poolDictionary[poolKey].AddFirst(newObject);
                 newObject.SetParent(poolObjectDictionary[poolKey].First);
             }
@@ -59,7 +61,7 @@ namespace TheRavine.ObjectControl
                 gameObject = objectInstance;
                 transform = gameObject.transform;
                 gameObject.isStatic = true;
-                ActiveSelf(false);
+                // ActiveSelf(false);
             }
             public void Reuse(Vector2 position, float rotateValue = 0f)
             {

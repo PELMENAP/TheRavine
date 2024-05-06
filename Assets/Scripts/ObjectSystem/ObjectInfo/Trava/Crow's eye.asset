@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _id: croweye
   _amount: 1
-  _poolSize: 5
+  _poolSize: 1
   _iType: 0
   _bType: 1
   _nalinfo: {fileID: 11400000, guid: 035feb6819559826fb707f722186ce0b, type: 2}

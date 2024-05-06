@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public delegate GameObject CreateInstance(Vector2 position, GameObject prefab);
+public delegate GameObject CreateInstance(Vector3 position, GameObject prefab);
 public interface IPoolManager<T>
 {
     void CreatePool(int poolKey, T prefab, CreateInstance createInstance, ushort poolSize);

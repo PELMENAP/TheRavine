@@ -6,10 +6,9 @@ namespace TheRavine.Generator
     {
         public class EndlessLiquids : IEndless
         {
-            private MapGenerator generator;
-            private const byte chunkCount = MapGenerator.chunkCount, mapChunkSize = MapGenerator.mapChunkSize;
-            private byte scale = MapGenerator.scale, generationSize = MapGenerator.generationSize;
-            private Vector2 vectorOffset = MapGenerator.vectorOffset;
+            private readonly MapGenerator generator;
+            private const byte chunkScale = MapGenerator.chunkScale, chunkCount = 2 * chunkScale + 1,  mapChunkSize = MapGenerator.mapChunkSize;
+            private readonly byte scale = MapGenerator.scale, generationSize = MapGenerator.generationSize;
             private const ushort countOfQuads = mapChunkSize * chunkCount * mapChunkSize * chunkCount;
             public EndlessLiquids(MapGenerator _generator)
             {
@@ -21,7 +20,7 @@ namespace TheRavine.Generator
                 {
                     for (byte y = 0; y < mapChunkSize * chunkCount; y++)
                     {
-                        Vector3 basePos = new Vector3(x * scale, y * scale);
+                        Vector3 basePos = new(x * scale, y * scale);
                         vertices[dotCount] = basePos;
                         vertices[dotCount + 1] = basePos + Vector3.up * scale;
                         vertices[dotCount + 2] = basePos + Vector3.up * scale + Vector3.right * scale;
@@ -44,22 +43,22 @@ namespace TheRavine.Generator
             private bool[,] meshMap = new bool[mapChunkSize * chunkCount, mapChunkSize * chunkCount];
             public void UpdateChunk(Vector2 Vposition)
             {
-                for (byte xOffset = 0; xOffset < chunkCount; xOffset++)
+                for (sbyte xOffset = -chunkScale; xOffset <= chunkScale; xOffset++)
                 {
-                    for (byte yOffset = 0; yOffset < chunkCount; yOffset++)
+                    for (sbyte yOffset = -chunkScale; yOffset <= chunkScale; yOffset++)
                     {
                         byte[,] map = generator.GetMapData(new Vector2(Vposition.x + xOffset, Vposition.y + yOffset)).heightMap;
                         for (byte x = 0; x < mapChunkSize; x++)
                             for (byte y = 0; y < mapChunkSize; y++)
-                                meshMap[xOffset * mapChunkSize + x, yOffset * mapChunkSize + y] = map[x, y] <= MapGenerator.waterLevel;
+                                meshMap[(xOffset + chunkScale) * mapChunkSize + x, (yOffset + chunkScale) * mapChunkSize + y] = map[x, y] <= MapGenerator.waterLevel;
                     }
                 }
                 GetQuadWaterMeshMap(mapChunkSize * chunkCount);
-                generator.waterT.position = Vposition * generationSize - vectorOffset - new Vector2(scale, scale);
+                generator.waterT.position = new((Vposition.x - 1) * generationSize - scale, (Vposition.y - 1) * generationSize - scale);
             }
-            private Vector2[] uv = new Vector2[4 * countOfQuads];
+            private readonly Vector2[] uv = new Vector2[4 * countOfQuads];
             private const float diff = 0.1f, mdiff = 1f - diff;
-            private Vector2 difZero = new Vector2(diff, 0), zeroDif = new Vector2(0, diff), anarchist = new Vector2(diff, diff), komunist = new Vector2(diff, mdiff), skinhed = new Vector2(mdiff, mdiff), kapitalist = new Vector2(mdiff, diff);
+            private Vector2 difZero = new(diff, 0), zeroDif = new(0, diff), anarchist = new(diff, diff), komunist = new(diff, mdiff), skinhed = new(mdiff, mdiff), kapitalist = new(mdiff, diff);
             private void GetQuadWaterMeshMap(byte sizeMap)
             {
                 ushort dotCount = 0;

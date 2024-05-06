@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _id: andrew
   _amount: 1
-  _poolSize: 10
+  _poolSize: 1
   _iType: 1
   _bType: 0
   _nalinfo: {fileID: 0}

@@ -8,7 +8,7 @@ namespace TheRavine.ObjectControl
 {
     public class ObjectSystem : MonoBehaviour, ISetAble
     {
-        public GameObject InstantiatePoolObject(Vector2 position, GameObject prefab) => Instantiate(prefab, position, Quaternion.identity);
+        public GameObject InstantiatePoolObject(Vector3 position, GameObject prefab) => Instantiate(prefab, position, Quaternion.identity);
         public ObjectInfo[] _info;
         private Dictionary<int, ObjectInfo> info;
         public ObjectInfo GetPrefabInfo(int id)
@@ -16,7 +16,6 @@ namespace TheRavine.ObjectControl
             if(!info.ContainsKey(id)) return null;
             return info[id];
         }
-        //
         private Dictionary<Vector2, ObjectInstInfo> global;
         public ObjectInstInfo GetGlobalObjectInstInfo(Vector2 position)
         {
@@ -28,7 +27,7 @@ namespace TheRavine.ObjectControl
         public ObjectInfo GetGlobalObjectInfo(Vector2 position)
         {
             ObjectInstInfo instInfo = GetGlobalObjectInstInfo(position);
-            if (instInfo.isExist)
+            if (instInfo.prefabID > 0)
                 return GetPrefabInfo(instInfo.prefabID);
             else
                 return null;
@@ -61,10 +60,7 @@ namespace TheRavine.ObjectControl
         }
         public bool RemoveFromGlobal(Vector2 position)
         {
-            ObjectInstInfo objectInfo = GetGlobalObjectInstInfo(position);
-            if (objectInfo.prefabID == -1 && !objectInfo.isExist)
-                return true;
-            ObjectInfo curdata = GetPrefabInfo(objectInfo.prefabID);
+            ObjectInfo curdata = GetGlobalObjectInfo(position);
             if(curdata == null) return true;
             if (curdata.addspace.Length == 0)
                 return global.Remove(position);
@@ -102,7 +98,7 @@ namespace TheRavine.ObjectControl
         {
             for (byte i = 0; i < _info.Length; i++)
             {
-                CreatePool(_info[i].prefab.GetInstanceID(), _info[i].prefab, 1);
+                CreatePool(_info[i].prefab.GetInstanceID(), _info[i].prefab, _info[i].poolSize);
                 await UniTask.Delay(10);
                 // FaderOnTransit.instance.SetLogs("Созданы: " + _info[i].prefab.id);
             }

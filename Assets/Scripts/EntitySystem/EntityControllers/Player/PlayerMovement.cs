@@ -36,14 +36,16 @@ namespace TheRavine.EntityControl
                 ControlType.Mobile => new JoistickController(joystick),
                 _ => throw new System.NotImplementedException()
             };
-            rb = (Rigidbody2D)GetComponent("Rigidbody2D");
+
             GetPlayerComponents(entity);
+
             Raise.action.performed += AimRaise;
             LeftClick.action.performed += AimPlace;
         }
 
         private void GetPlayerComponents(AEntity entity)
         {
+            rb = (Rigidbody2D)GetComponent("Rigidbody2D");
             entityEventBus = entity.GetEntityComponent<EventBusComponent>().EventBus;
             movementBaseStats = entity.GetEntityComponent<MovementComponent>().baseStats;
             aimBaseStats = entity.GetEntityComponent<AimComponent>().BaseStats;
@@ -70,7 +72,7 @@ namespace TheRavine.EntityControl
         public void SetZeroValues()
         {
             movementSpeed = 0f;
-            movementDirection = new Vector2(0, 0);
+            // movementDirection = new Vector2(0, 0);
             Animate();
         }
         public void EnableComponents()

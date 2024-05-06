@@ -108,11 +108,11 @@ public class Test : MonoBehaviour
         // point.action.performed -= mobile;
     }
 
-    [Button]
-    private void GenerateMap()
-    {
-        generator.TestGeneration();
-    }
+    // [Button]
+    // private void GenerateMap()
+    // {
+    //     generator.TestGeneration();
+    // }
 
     [SerializeField] private DSDialogueContainerSO dialogData;
     [SerializeField] private PlayerDialogOutput output;

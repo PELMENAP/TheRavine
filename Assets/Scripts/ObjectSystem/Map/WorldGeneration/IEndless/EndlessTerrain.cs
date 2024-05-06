@@ -6,11 +6,10 @@ namespace TheRavine.Generator
     {
         public class EndlessTerrain : IEndless
         {
-            private MapGenerator generator;
-            private const byte chunkCount = MapGenerator.chunkCount, mapChunkSize = MapGenerator.mapChunkSize;
-            private byte scale = MapGenerator.scale, generationSize = MapGenerator.generationSize;
-            private Vector2 vectorOffset = MapGenerator.vectorOffset;
-            private Mesh combineMesh;
+            private const byte chunkScale = MapGenerator.chunkScale, chunkCount = 2 * chunkScale + 1, mapChunkSize = MapGenerator.mapChunkSize;
+            private readonly MapGenerator generator;
+            private readonly byte scale = MapGenerator.scale, generationSize = MapGenerator.generationSize;
+            private readonly Mesh combineMesh;
             public EndlessTerrain(MapGenerator _generator)
             {
                 generator = _generator;
@@ -33,17 +32,19 @@ namespace TheRavine.Generator
                 }
                 for (byte i = 0; i < chunkCount * chunkCount; i++)
                 {
-                    combine[i].mesh = new Mesh();
-                    combine[i].mesh.vertices = vertices;
-                    combine[i].mesh.triangles = triangles;
+                    combine[i].mesh = new Mesh
+                    {
+                        vertices = vertices,
+                        triangles = triangles
+                    };
                 }
             }
-            private CombineInstance[] combine = new CombineInstance[chunkCount * chunkCount];
+            private readonly CombineInstance[] combine = new CombineInstance[chunkCount * chunkCount];
             public void UpdateChunk(Vector2 Vposition)
             {
                 byte count = 0;
-                for (byte yOffset = 0; yOffset < chunkCount; yOffset++)
-                    for (byte xOffset = 0; xOffset < chunkCount; xOffset++)
+                for (sbyte yOffset = -chunkScale; yOffset <= chunkScale; yOffset++)
+                    for (sbyte xOffset = -chunkScale; xOffset <= chunkScale; xOffset++)
                     {
                         CreateComplexMesh(new Vector2(Vposition.x + yOffset, Vposition.y + xOffset), combine[count].mesh);
                         combine[count].transform = Matrix4x4.TRS(new Vector3(yOffset * generationSize, xOffset * generationSize, 0), Quaternion.identity, Vector3.one);
@@ -51,9 +52,9 @@ namespace TheRavine.Generator
                     }
                 combineMesh.CombineMeshes(combine);
                 generator.terrainF.mesh = combineMesh;
-                generator.terrainT.position = Vposition * generationSize - vectorOffset;
+                generator.terrainT.position = Vposition * generationSize;
             }
-            Vector3[] vertices = new Vector3[(mapChunkSize + 1) * (mapChunkSize + 1)];
+            private readonly Vector3[] vertices = new Vector3[(mapChunkSize + 1) * (mapChunkSize + 1)];
             private void CreateComplexMesh(Vector2 centre, Mesh mesh)
             {
                 byte[,] heightMap = generator.GetMapData(centre).heightMap;
