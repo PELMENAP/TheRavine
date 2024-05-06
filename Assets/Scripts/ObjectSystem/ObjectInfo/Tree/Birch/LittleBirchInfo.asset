@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _id: littlebirchinfo
   _amount: 1
-  _poolSize: 20
+  _poolSize: 30
   _iType: 0
   _bType: 2
   _nalinfo: {fileID: 0}

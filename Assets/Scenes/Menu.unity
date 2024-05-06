@@ -1669,7 +1669,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 761279176}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 958071444}
+        m_TargetAssemblyTypeName: MenuMainScript, Assembly-CSharp
+        m_MethodName: LoadGame
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &761279176
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2332,7 +2344,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 983459465}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 958071444}
+        m_TargetAssemblyTypeName: MenuMainScript, Assembly-CSharp
+        m_MethodName: QuitGame
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &983459465
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3308,10 +3332,10 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 396a13a9b7499eb2bab2255c83d71eb8, type: 3}
-  m_Resource: {fileID: 8300000, guid: 396a13a9b7499eb2bab2255c83d71eb8, type: 3}
+  m_audioClip: {fileID: 8300000, guid: f2213f78fb339ed25b7daf4ffd8ea0ba, type: 3}
+  m_Resource: {fileID: 8300000, guid: f2213f78fb339ed25b7daf4ffd8ea0ba, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 1
+  m_Volume: 0.9
   m_Pitch: 1
   Loop: 1
   Mute: 0

@@ -10,7 +10,7 @@ namespace TheRavine.Generator
         public class EndlessObjects : IEndless
         {
             private MapGenerator generator;
-            private const byte chunkCount = MapGenerator.chunkCount;
+            private const byte chunkScale = MapGenerator.chunkScale;
             private ObjectSystem objectSystem;
             private Dictionary<int, ushort> objectUpdate = new Dictionary<int, ushort>(16);
             private static EnumerableSnapshot<int> objectsSnapshot;
@@ -25,35 +25,13 @@ namespace TheRavine.Generator
             }
             public void UpdateChunk(Vector2 Vposition)
             {
-                for (byte yOffset = 0; yOffset < chunkCount; yOffset++)
+                ProcessObjectInst(new Vector2(Vposition.x, Vposition.y));
+                for (sbyte yOffset = -chunkScale; yOffset <= chunkScale; yOffset++)
                 {
-                    for (byte xOffset = 0; xOffset < chunkCount; xOffset++)
+                    for (sbyte xOffset = -chunkScale; xOffset <= chunkScale; xOffset++)
                     {
-                        Vector2 chunkCoord = new Vector2(Vposition.x + xOffset, Vposition.y + yOffset);
-                        foreach (var item in generator.GetMapData(chunkCoord).objectsToInst)
-                        {
-                            ObjectInstInfo info = objectSystem.GetGlobalObjectInstInfo(item);
-                            if (!objectSystem.ContainsGlobal(item) || info.prefabID == -1)
-                                continue;
-                            objectUpdate[info.prefabID]++;
-                            ObjectInfo objectInfo = objectSystem.GetPrefabInfo(info.prefabID);
-                            try{
-                                if (objectUpdate[info.prefabID] > objectSystem.GetPoolSize(info.prefabID))
-                                {
-                                    objectSystem.IncreasePoolSize(info.prefabID);
-                                    objectSystem.CreatePool(objectInfo.prefab.GetInstanceID(), objectInfo.prefab);
-                                }
-                            }
-                            catch
-                            {
-                                Debug.Log(info.GetType());
-                                Debug.Log(info.objectType);
-                                Debug.Log(" ");
-                            }
-                            objectSystem.Reuse(info.prefabID, item, info.flip, generator.rotateValue);
-                            if (objectInfo.bType == BehaviourType.NAL || objectInfo.bType == BehaviourType.GROW)
-                                generator.AddNALObject(item);
-                        }
+                        if (xOffset == 0 && yOffset == 0) continue;
+                        ProcessObjectInst(new Vector2(Vposition.x + xOffset, Vposition.y + yOffset));
                     }
                 }
                 foreach (var ID in objectsSnapshot)
@@ -66,12 +44,42 @@ namespace TheRavine.Generator
                 }
             }
 
+            private void ProcessObjectInst(Vector2 chunkCoord)
+            {
+                foreach (var item in generator.GetMapData(chunkCoord).objectsToInst)
+                {
+                    ObjectInstInfo info = objectSystem.GetGlobalObjectInstInfo(item);
+                    ObjectInfo objectInfo = objectSystem.GetGlobalObjectInfo(item);
+                    if(objectInfo == null) continue;
+                    objectUpdate[info.prefabID]++;
+                    try
+                    {
+                        if (objectUpdate[info.prefabID] > objectSystem.GetPoolSize(info.prefabID))
+                        {
+                            objectSystem.IncreasePoolSize(info.prefabID);
+                            objectSystem.CreatePool(objectInfo.prefab.GetInstanceID(), objectInfo.prefab);
+                        }
+                    }
+                    catch
+                    {
+                        Debug.Log(info.GetType());
+                        Debug.Log(info.objectType);
+                        Debug.Log(" ");
+                    }
+                    objectSystem.Reuse(info.prefabID, item, info.flip, generator.rotateValue);
+                    if (objectInfo.bType == BehaviourType.NAL || objectInfo.bType == BehaviourType.GROW)
+                        generator.AddNALObject(item);
+                }
+            }
+
             private Texture2D texture;
             private Texture2D TextureFromColourMap(Color[] colourMap, byte width, byte height)
             {
-                texture = new Texture2D(width, height);
-                texture.filterMode = FilterMode.Point;
-                texture.wrapMode = TextureWrapMode.Clamp;
+                texture = new Texture2D(width, height)
+                {
+                    filterMode = FilterMode.Point,
+                    wrapMode = TextureWrapMode.Clamp
+                };
                 texture.SetPixels(colourMap);
                 texture.Apply();
                 return texture;

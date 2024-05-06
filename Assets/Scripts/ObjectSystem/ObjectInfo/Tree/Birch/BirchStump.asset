@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _id: birchstump
   _amount: 1
-  _poolSize: 20
+  _poolSize: 30
   _iType: 0
   _bType: 2
   _nalinfo: {fileID: 11400000, guid: 5c972e51e70e00df798517e403583ad1, type: 2}

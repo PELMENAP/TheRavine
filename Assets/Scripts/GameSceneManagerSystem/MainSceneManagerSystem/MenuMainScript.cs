@@ -8,11 +8,12 @@ public class MenuMainScript : MonoBehaviour
     [SerializeField] private GameObject settings;
     [SerializeField] private UniversalAdditionalCameraData _cameraData;
     private SceneTransitor trasitor;
-
+    private bool isInit;
     private void Awake()
     {
         trasitor = new SceneTransitor();
         AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
+        isInit = true;
         FaderOnTransit.instance.FadeOut(() => Init());
     }
 
@@ -21,11 +22,13 @@ public class MenuMainScript : MonoBehaviour
         menu.SetActive(true);
         settings.SetActive(false);
         settings.GetComponent<Settings>().SetInitialValues();
+        isInit = false;
     }
 
 
     public void StartGame()
     {
+        if(isInit) return;
         trasitor.LoadScene(2).Forget();
         Settings.isLoad = false;
         DataStorage.cycleCount = 0;
@@ -33,14 +36,16 @@ public class MenuMainScript : MonoBehaviour
     }
     public void LoadGame()
     {
+        if(isInit) return;
         trasitor.LoadScene(2).Forget();
         Settings.isLoad = true;
-        DataStorage.cycleCount = 1;
+        // DataStorage.cycleCount = 1;
         AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
     }
 
     public void LoadTestScene()
     {
+        if(isInit) return;
         trasitor.LoadScene(2).Forget();
         Settings.isLoad = false;
         AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
@@ -54,18 +59,21 @@ public class MenuMainScript : MonoBehaviour
 
     public void MoveToMenu()
     {
+        if(isInit) return;
         menu.SetActive(true);
         settings.SetActive(false);
     }
 
     public void MoveToSettings()
     {
+        if(isInit) return;
         menu.SetActive(false);
         settings.SetActive(true);
     }
 
     public void QuitGame()
     {
+        if(isInit) return;
         Application.Quit();
     }
 }

@@ -35,7 +35,6 @@ namespace TheRavine.Base
             closeThread = true;
             // newDay += GetLightsAndShadows;
             UpdateDay().Forget();
-            GetLightsAndShadows();
             callback?.Invoke();
         }
 
@@ -98,7 +97,7 @@ namespace TheRavine.Base
         private async UniTaskVoid UpdateDay()
         {
             await UniTask.Delay(awakeDelay);
-            // await UniTask.Delay(1000);
+            GetLightsAndShadows();
             while (!DataStorage.sceneClose)
             {
                 if(!TimeBridge.IsCreated) break;

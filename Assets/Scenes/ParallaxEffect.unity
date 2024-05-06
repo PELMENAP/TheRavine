@@ -170,6 +170,7 @@ SpriteRenderer:
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -256,6 +257,7 @@ SpriteRenderer:
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -342,6 +344,7 @@ SpriteRenderer:
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -428,6 +431,7 @@ SpriteRenderer:
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -648,6 +652,7 @@ MeshRenderer:
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -960,18 +965,78 @@ PrefabInstance:
     - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
         type: 3}
       propertyPath: audioClipRadioSad.Array.size
-      value: 13
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
         type: 3}
       propertyPath: audioClipRadioFunny.Array.size
-      value: 12
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
         type: 3}
       propertyPath: audioClipRadioNormal.Array.size
-      value: 12
+      value: 10
       objectReference: {fileID: 0}
+    - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
+        type: 3}
+      propertyPath: 'audioClipRadioSad.Array.data[0]'
+      value: 
+      objectReference: {fileID: 8300000, guid: 4ee1f734678595ccdb7edf9ab03fb9ac, type: 3}
+    - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
+        type: 3}
+      propertyPath: 'audioClipRadioSad.Array.data[1]'
+      value: 
+      objectReference: {fileID: 8300000, guid: 28c58a1792024377db3e0b13bad46a42, type: 3}
+    - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
+        type: 3}
+      propertyPath: 'audioClipRadioSad.Array.data[2]'
+      value: 
+      objectReference: {fileID: 8300000, guid: 1f949d71b461a31ca9ca527700c78f16, type: 3}
+    - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
+        type: 3}
+      propertyPath: 'audioClipRadioSad.Array.data[3]'
+      value: 
+      objectReference: {fileID: 8300000, guid: f0723bcbc96fa2daf98d737f582ad855, type: 3}
+    - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
+        type: 3}
+      propertyPath: 'audioClipRadioSad.Array.data[4]'
+      value: 
+      objectReference: {fileID: 8300000, guid: 46c73207aeaf74a8d9c39f3cde7385bf, type: 3}
+    - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
+        type: 3}
+      propertyPath: 'audioClipRadioSad.Array.data[5]'
+      value: 
+      objectReference: {fileID: 8300000, guid: eb4b3f090ec96d5239151cf295cec151, type: 3}
+    - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
+        type: 3}
+      propertyPath: 'audioClipRadioSad.Array.data[6]'
+      value: 
+      objectReference: {fileID: 8300000, guid: 24cd78974f5504acdb885283b77932a5, type: 3}
+    - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
+        type: 3}
+      propertyPath: 'audioClipRadioSad.Array.data[7]'
+      value: 
+      objectReference: {fileID: 8300000, guid: a4ef2339096009773b1a12717a39687c, type: 3}
+    - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
+        type: 3}
+      propertyPath: 'audioClipRadioSad.Array.data[8]'
+      value: 
+      objectReference: {fileID: 8300000, guid: 3b5e243cdcfd114358cc72e2d097fcdd, type: 3}
+    - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
+        type: 3}
+      propertyPath: 'audioClipRadioSad.Array.data[9]'
+      value: 
+      objectReference: {fileID: 8300000, guid: 72f9cd8428f48812c9a02e17fa555180, type: 3}
+    - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
+        type: 3}
+      propertyPath: 'audioClipRadioSad.Array.data[10]'
+      value: 
+      objectReference: {fileID: 8300000, guid: d26dc94a3696b07c4b928d6ad28a2c40, type: 3}
+    - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
+        type: 3}
+      propertyPath: 'audioClipRadioSad.Array.data[11]'
+      value: 
+      objectReference: {fileID: 8300000, guid: 62b3da641e2017ad293058dbf07571ca, type: 3}
     - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
         type: 3}
       propertyPath: 'audioClipRadioSad.Array.data[12]'
@@ -1002,6 +1067,16 @@ PrefabInstance:
       propertyPath: 'audioClipRadioFunny.Array.data[11]'
       value: 
       objectReference: {fileID: 8300000, guid: 62b3da641e2017ad293058dbf07571ca, type: 3}
+    - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
+        type: 3}
+      propertyPath: 'audioClipRadioNormal.Array.data[0]'
+      value: 
+      objectReference: {fileID: 8300000, guid: 6a94880b4cf7ae3a28090f571516cc97, type: 3}
+    - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
+        type: 3}
+      propertyPath: 'audioClipRadioNormal.Array.data[1]'
+      value: 
+      objectReference: {fileID: 8300000, guid: 7b2dbfb83588f1b72b57c9a891b40409, type: 3}
     - target: {fileID: 6248583084795211169, guid: 95dfc14756d3bbb19b5d7d21345e751c,
         type: 3}
       propertyPath: 'audioClipRadioNormal.Array.data[2]'
@@ -1241,6 +1316,7 @@ SpriteRenderer:
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -1327,6 +1403,7 @@ SpriteRenderer:
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:

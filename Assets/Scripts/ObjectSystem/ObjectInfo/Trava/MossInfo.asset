@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _id: mossinfo
   _amount: 1
-  _poolSize: 20
+  _poolSize: 1
   _iType: 0
   _bType: 1
   _nalinfo: {fileID: 11400000, guid: 3836583b14ab7bc6fac7c136c9e6c75f, type: 2}

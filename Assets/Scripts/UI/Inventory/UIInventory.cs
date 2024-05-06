@@ -103,9 +103,8 @@ namespace TheRavine.Inventory
         private void AimRaise(Vector2 position)
         {
             ObjectInstInfo objectInstInfo = objectSystem.GetGlobalObjectInstInfo(position);
-            if (objectInstInfo.prefabID == -1 || objectInstInfo.objectType != InstanceType.Inter) return;
-            ObjectInfo data = objectSystem.GetPrefabInfo(objectInstInfo.prefabID);
-            if (data.iteminfo == null) return;
+            ObjectInfo data = objectSystem.GetGlobalObjectInfo(position);
+            if (data == null) return;
             if (inventory.TryToAdd(this, infoManager.GetInventoryItemByInfo(data.iteminfo.id, data.iteminfo, objectInstInfo.amount)))
             {
                 objectSystem.RemoveFromGlobal(position);

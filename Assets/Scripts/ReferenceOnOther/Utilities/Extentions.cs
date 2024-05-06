@@ -77,12 +77,24 @@ namespace TheRavine.Extentions
         }
         public static bool ComparePercent(int value) => RavineRandom.Hundred() <= value;
 
-        public static string GetSklonenie(int number)
+        public static string GetSklonenie(int n)
         {
-            if(number >= 10 && number <= 20) return "ок";
-            if(number % 10 == 1) return "ку";
-            if(number % 2 == 0 || number % 10 == 3) return "ки";
-            return "ок";
+            n %= 100;
+            if (n >= 10 && n <= 19) {
+                return "ок";
+            }
+            else {
+                n %= 10;
+                if (n == 0 || n >= 5 && n <= 9) {
+                    return "ок";
+                }
+                else if (n == 1) {
+                    return "ку";
+                }
+                else {
+                    return "ки";
+                }
+            }
         }
     }
 
