@@ -1,9 +1,19 @@
+using System.Collections.Generic;
+using UnityEngine;
+using Unity.Netcode;
+
 namespace TheRavine.EntityControl
 {
-    public abstract class AEntity : UnityEngine.MonoBehaviour
+    public abstract class AEntity : NetworkBehaviour
     {
         private bool isAlife, isActive;
-        private System.Collections.Generic.Dictionary<System.Type, IComponent> _components = new System.Collections.Generic.Dictionary<System.Type, IComponent>();
+        private Dictionary<System.Type, IComponent> _components;
+        public void Birth() 
+        {
+            isAlife = true;
+            isActive = true;
+            _components = new Dictionary<System.Type, IComponent>();
+        }
         public void AddComponentToEntity(IComponent component)
         {
             _components[component.GetType()] = component;
@@ -26,17 +36,16 @@ namespace TheRavine.EntityControl
 
         private void BreakUpEntity()
         {
-            foreach (var item in _components)
-                item.Value.Dispose();
+            foreach (var item in _components) item.Value.Dispose();
             _components.Clear();
         }
 
         public abstract void SetUpEntityData(EntityInfo entityInfo);
         public abstract void Init();
         public abstract void UpdateEntityCycle();
-        public abstract UnityEngine.Vector2 GetEntityPosition();
-        public abstract UnityEngine.Vector2 GetEntityVelocity();
-        public abstract UnityEngine.Transform GetModelTransform();
+        public abstract Vector2 GetEntityPosition();
+        public abstract Vector2 GetEntityVelocity();
+        public abstract Transform GetModelTransform();
         public abstract void EnableView();
         public abstract void DisableView();
     }

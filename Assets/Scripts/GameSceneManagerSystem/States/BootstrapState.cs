@@ -11,10 +11,10 @@ namespace TheRavine.Base
             }
             public void OnEnter()
             {
-                Initializer.StartNewServise(null);
+                Initializer.StartNewService(null);
                 FaderOnTransit.instance.SetLogs("Выполнен вход в игру");
                 FaderOnTransit.instance.SetLogs("Создание точки входа");
-                Initializer.StartNewServise(() => Initializer.StateMachine.SwitchState<InitialState>());
+                Initializer.StartNewService(() => Initializer.StateMachine.SwitchState<InitialState>());
             }
             public void OnExit()
             {

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Random = TheRavine.Extentions.RavineRandom;
+using Random = TheRavine.Extensions.RavineRandom;
 
 using TheRavine.InventoryElements;
 

@@ -15,7 +15,7 @@ public class PrintMessageCommand : ICommand
     {
         Debug.Log($"Start executing: {_message}");
 
-        await UniTask.Delay(2000, cancellationToken: _cts.Token); // Ждем 2 секунды
+        await UniTask.Delay(2000, cancellationToken: _cts.Token);
         if (_cts.IsCancellationRequested) return;
         Debug.Log(_message);
     }

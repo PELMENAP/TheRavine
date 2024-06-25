@@ -1,24 +1,29 @@
 using UnityEngine;
+using UnityEngine.Jobs;
+using UnityEngine.Rendering.Universal;
 using Unity.Jobs;
 using Unity.Burst;
-using UnityEngine.Jobs;
+using Unity.Netcode;
 using Unity.Mathematics;
 using Unity.Collections;
-using UnityEngine.Rendering.Universal;
 using Cysharp.Threading.Tasks;
+
 
 using TheRavine.Services;
 
 namespace TheRavine.Base
 {
     [RequireComponent(typeof(Light2D))]
-    public class DayCycle : MonoBehaviour, ISetAble
+    public class DayCycle : NetworkBehaviour, ISetAble
     {
         public static bool isday, closeThread;
-        public static System.Action newDay;
+        private static System.Action newDay;
         [SerializeField] private float startDay, speed;
         [SerializeField] private Gradient sunGradient;
         [SerializeField] private int awakeDelay, defaultDelay;
+        private NetworkVariable<Color> sunColor = new NetworkVariable<Color>();
+        private NetworkVariable<Vector3> sunPosition = new NetworkVariable<Vector3>();
+        private NetworkVariable<float> sunIntensity = new NetworkVariable<float>();
         private Light2D sun;
         private NativeArray<float> TimeBridge, Light2DIntensityBridge;
         private NativeArray<bool> IsdayBridge;
@@ -27,20 +32,43 @@ namespace TheRavine.Base
         private Transform[] lightsTransform;
         private DayJob dayJob;
         private ShadowsJob shadowJob;
-        public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+
+        public override void OnNetworkSpawn() 
         {
+            if(IsServer) OnServerStarted();
+        }
+        private void OnServerStarted()
+        {
+            sun = this.GetComponent<Light2D>();
+            sunColor.Value = sun.color;
+            sunPosition.Value = sun.transform.localPosition;
+            sunIntensity.Value = sun.intensity;
             TimeBridge = new NativeArray<float>(6, Allocator.Persistent);
             IsdayBridge = new NativeArray<bool>(1, Allocator.Persistent);
-            sun = this.GetComponent<Light2D>();
             closeThread = true;
-            // newDay += GetLightsAndShadows;
+            newDay += GetLightsAndShadows;
+
             UpdateDay().Forget();
+
+            sunColor.OnValueChanged += OnSunColorChanged;
+            sunPosition.OnValueChanged += OnSunPositionChanged;
+            sunIntensity.OnValueChanged += OnSunIntensityChanged;
+
+        }
+        public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+        {  
+
             callback?.Invoke();
         }
-
-        private int sunIndex;
         private void GetLightsAndShadows()
         {
+            if (shadowsTransform.isCreated)
+            {
+                shadowsTransform.Dispose();
+                Light2DBridge.Dispose();
+                Light2DIntensityBridge.Dispose();
+            }
+
             TimeBridge[0] = startDay;
             TimeBridge[4] = speed;
             GameObject[] shadowsObjects = GameObject.FindGameObjectsWithTag("Shadow");
@@ -61,7 +89,6 @@ namespace TheRavine.Base
                     if (lights[i].transform.gameObject.CompareTag("Sun"))
                     {
                         Light2DIntensityBridge[i] = 100;
-                        sunIndex = i;
                     }
                 }
                 UpdateProperties();
@@ -87,11 +114,26 @@ namespace TheRavine.Base
             }
         }
 
-        private void UpdateSunValues()
+        private void OnSunColorChanged(Color oldColor, Color newColor)
         {
-            sun.color = sunGradient.Evaluate(TimeBridge[0]);
-            sun.transform.localPosition = new Vector3(TimeBridge[1], TimeBridge[2], 0);
-            sun.intensity = TimeBridge[3];
+            sun.color = newColor;
+        }
+
+        private void OnSunPositionChanged(Vector3 oldPosition, Vector3 newPosition)
+        {
+            this.transform.localPosition = newPosition;
+        }
+
+        private void OnSunIntensityChanged(float oldIntensity, float newIntensity)
+        {
+            sun.intensity = newIntensity;
+        }
+
+        public void UpdateSunValues()
+        {
+            sunColor.Value = sunGradient.Evaluate(TimeBridge[0]);
+            sunPosition.Value = new Vector3(TimeBridge[1], TimeBridge[2], 0);
+            sunIntensity.Value = TimeBridge[3];
         }
 
         private async UniTaskVoid UpdateDay()
@@ -112,14 +154,14 @@ namespace TheRavine.Base
                     }
                     await UniTask.Delay(defaultDelay);
                 }
-                if (Settings.isShadow)
+                if (Settings.isShadow && shadowsTransform.isCreated)
                 {
                     UpdateProperties();
                     shadowJob = new ShadowsJob()
                     {
                         localScale = TimeBridge[5],
                         lightsBridge = Light2DBridge,
-                        ligthsIntensity = Light2DIntensityBridge
+                        lightsIntensity = Light2DIntensityBridge
                     };
                     shadowJob.Schedule(shadowsTransform).Complete();
                 }
@@ -131,13 +173,17 @@ namespace TheRavine.Base
 
         public void BreakUp(ISetAble.Callback callback)
         {
-            // newDay -= GetLightsAndShadows;
+            TimeBridge.Dispose();
+            IsdayBridge.Dispose();
+            newDay -= GetLightsAndShadows;
+            sunColor.OnValueChanged -= OnSunColorChanged;
+            sunPosition.OnValueChanged -= OnSunPositionChanged;
+            sunIntensity.OnValueChanged -= OnSunIntensityChanged;
+
             callback?.Invoke();
         }
 
         private void OnDisable() {
-            TimeBridge.Dispose();
-            IsdayBridge.Dispose();
             if (Settings.isShadow)
             {
                 Light2DBridge.Dispose();
@@ -160,8 +206,8 @@ namespace TheRavine.Base
                 if (timeBridge[0] >= 0.2f && timeBridge[0] <= 0.8f)
                 {
                     float angle = (timeBridge[0] - 0.2f) * 5;
-                    timeBridge[1] = -math.cos(angle) * 200;
-                    timeBridge[2] = -math.sin(angle) * 200;
+                    timeBridge[1] = -math.cos(angle) * 300;
+                    timeBridge[2] = -math.sin(angle) * 300;
                     float xFactor = timeBridge[0] * timeBridge[0] - timeBridge[0];
                     timeBridge[3] = -(12.5f * xFactor + 1.95f); // sun intensity
                     timeBridge[5] = 7f * xFactor + 2.5f; // shadow scale
@@ -175,7 +221,7 @@ namespace TheRavine.Base
         public struct ShadowsJob : IJobParallelForTransform
         {
             [ReadOnly] public NativeArray<float3> lightsBridge;
-            [ReadOnly] public NativeArray<float> ligthsIntensity;
+            [ReadOnly] public NativeArray<float> lightsIntensity;
             [ReadOnly] public float localScale;
             public void Execute(int index, TransformAccess shadowTransform)
             {
@@ -183,7 +229,7 @@ namespace TheRavine.Base
                 byte lightIndex = 0;
                 for (byte i = 0; i < lightsBridge.Length; i++)
                 {
-                    lightWeight = ligthsIntensity[i] / math.distancesq((float3)shadowTransform.position, lightsBridge[i]);
+                    lightWeight = lightsIntensity[i] / math.distancesq((float3)shadowTransform.position, lightsBridge[i]);
                     if (lightWeight > maxWeight)
                     {
                         maxWeight = lightWeight;

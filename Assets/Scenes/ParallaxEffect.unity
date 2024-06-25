@@ -686,12 +686,47 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2954079851359814758, guid: c024d7fb17232a443be5e864e8f9c300,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.08715588
+      objectReference: {fileID: 0}
+    - target: {fileID: 2954079851359814758, guid: c024d7fb17232a443be5e864e8f9c300,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2954079851359814758, guid: c024d7fb17232a443be5e864e8f9c300,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2954079851359814758, guid: c024d7fb17232a443be5e864e8f9c300,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.9961947
+      objectReference: {fileID: 0}
+    - target: {fileID: 2954079851359814758, guid: c024d7fb17232a443be5e864e8f9c300,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 170
+      objectReference: {fileID: 0}
     - target: {fileID: 4594093457782982992, guid: c024d7fb17232a443be5e864e8f9c300,
         type: 3}
       propertyPath: m_Name
       value: Parallax
       objectReference: {fileID: 0}
+    - target: {fileID: 4594093457782982992, guid: c024d7fb17232a443be5e864e8f9c300,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6177308259399797492, guid: c024d7fb17232a443be5e864e8f9c300,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8237185292830628934, guid: c024d7fb17232a443be5e864e8f9c300,
         type: 3}
       propertyPath: m_IsActive
       value: 1

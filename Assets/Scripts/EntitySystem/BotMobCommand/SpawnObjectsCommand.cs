@@ -21,7 +21,7 @@ public class SpawnObjectsCommand : ICommand
             if (_cts.IsCancellationRequested) break;
 
             Object.Instantiate(_prefab, position, Quaternion.identity);
-            await UniTask.Delay(500, cancellationToken: _cts.Token); // Задержка между спавнами
+            await UniTask.Delay(500, cancellationToken: _cts.Token);
         }
     }
 

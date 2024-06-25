@@ -1,6 +1,6 @@
-public class PlayerBehaviourDialoge : AState
+public class PlayerBehaviourDialogue : AState
 {
-    public Behaviour behaviourDialoge;
+    public Behaviour behaviourDialogue;
     public override void Enter()
     {
 
@@ -13,6 +13,6 @@ public class PlayerBehaviourDialoge : AState
 
     public override void Update()
     {
-        behaviourDialoge();
+        behaviourDialogue();
     }
 }

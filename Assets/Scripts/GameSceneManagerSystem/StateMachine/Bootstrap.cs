@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using System.Reflection;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 
 using TheRavine.EntityControl;
 using TheRavine.Services;
@@ -19,15 +20,17 @@ namespace TheRavine.Base
         [SerializeField] private MonoBehaviour[] scripts;
         [SerializeField] private UniversalAdditionalCameraData _cameraData;
         [SerializeField] private GameObject help, ui;
-        [SerializeField] private int standartStateMachineTickTime;
+        [SerializeField] private int standardStateMachineTickTime;
         [SerializeField] private Canvas inventoryCanvas;
-        private SceneTransitor trasitor;
+        [SerializeField] private ServiceLocatorAccess serviceLocatorAccess;
+        private SceneTransistor trasitor;
         private void Awake()
         {
+            
             DataStorage.winTheGame = false;
             if(DataStorage.cycleCount == 0) DataStorage.startTime = Time.time;
-            inventoryCanvas.renderMode = RenderMode.WorldSpace;
-            trasitor = new SceneTransitor();
+            if(inventoryCanvas != null) inventoryCanvas.renderMode = RenderMode.WorldSpace;
+            trasitor = new SceneTransistor();
             _setAble = new Queue<ISetAble>();
             _disAble = new Queue<ISetAble>();
             serviceLocator = new ServiceLocator();
@@ -41,16 +44,16 @@ namespace TheRavine.Base
                 _setAble.Enqueue((ISetAble)scripts[i]);
             }
 
-            serviceLocator.RegisterPlayer<PlayerEntity>();
+            if(serviceLocatorAccess != null) serviceLocatorAccess.serviceLocator = serviceLocator;
 
             StateMachine = Settings.SceneNumber switch
             {
-                2 => new StateMachine<Bootstrap>(standartStateMachineTickTime,
+                2 => new StateMachine<Bootstrap>(standardStateMachineTickTime,
                         new BootstrapState(this),
                         new InitialState(this, Settings.isLoad),
                         new LoadingState(this),
                         new GameState(this)),
-                _ => new StateMachine<Bootstrap>(standartStateMachineTickTime,
+                _ => new StateMachine<Bootstrap>(standardStateMachineTickTime,
                         new BootstrapState(this),
                         new InitialState(this, Settings.isLoad),
                         new LoadingState(this),
@@ -58,7 +61,7 @@ namespace TheRavine.Base
             };
             StartGame();
         }
-        public void StartNewServise(ISetAble.Callback callback)
+        public void StartNewService(ISetAble.Callback callback)
         {
             if (_setAble.Count == 0) return;
             ISetAble setAble = _setAble.Dequeue();
@@ -67,18 +70,24 @@ namespace TheRavine.Base
         }
         public void StartGame()
         {
-            help.SetActive(false);
-            ui.SetActive(false);
+
+            if(help != null)
+            {
+                help.SetActive(false);
+                ui.SetActive(false);
+            }
             StateMachine.SwitchState<BootstrapState>();
         }
         public void AddCameraToStack(Camera _cameraToAdd) => _cameraData.cameraStack.Add(_cameraToAdd);
         public void Finally()
         {
-            while (_setAble.Count > 0) StartNewServise(null);
-            ui.SetActive(true);
-            help.SetActive(true);
-            serviceLocator.GetService<PlayerEntity>().SetBehaviourIdle();
-            inventoryCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            while (_setAble.Count > 0) StartNewService(null);
+            if(help != null)
+            {
+                ui.SetActive(true);
+                help.SetActive(true);
+            }
+            if(inventoryCanvas != null) inventoryCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
         }
 
         public void SwitchToMainMenu(){
@@ -88,16 +97,16 @@ namespace TheRavine.Base
             InTheEnd(() => TransitToOtherScene(1));
         }
 
-        private void BreakUpServises()
+        private void BreakUpServices()
         {
-            if(_disAble.Count > 0) _disAble.Dequeue().BreakUp(() => BreakUpServises());
+            if(_disAble.Count > 0) _disAble.Dequeue().BreakUp(() => BreakUpServices());
         }
 
         private void InTheEnd(System.Action inTheEndCallback)
         {
-            if(DataStorage.sceneClose) return;
-            DataStorage.sceneClose = true;
-            BreakUpServises();
+            // if(DataStorage.sceneClose) return;
+            // DataStorage.sceneClose = true;
+            BreakUpServices();
             serviceLocator.Dispose();
             _setAble.Clear();
             _disAble.Clear();

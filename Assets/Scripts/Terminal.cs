@@ -15,7 +15,7 @@ namespace TheRavine.Base
         [SerializeField] private TextMeshProUGUI OutputWindow;
         [SerializeField] private InputActionReference EnterRef;
         public string input;
-        private string[] words;
+        private string[] _words;
         public PlayerEntity playerData;
         private MapGenerator generator;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
@@ -25,6 +25,8 @@ namespace TheRavine.Base
             EnterRef.action.performed += OnEnter;
             callback?.Invoke();
         }
+
+        
 
         public void ShowSomething(string text)
         {
@@ -50,13 +52,13 @@ namespace TheRavine.Base
                 return;
             if (input[0] == '-')
             {
-                words = input.Split(' ');
+                _words = input.Split(' ');
                 try
                 {
-                    switch (words[0])
+                    switch (_words[0])
                     {
                         case "-tp":
-                            switch (words[1])
+                            switch (_words[1])
                             {
                                 case "i":
                                     TeleportCommandI();
@@ -67,10 +69,10 @@ namespace TheRavine.Base
                             }
                             break;
                         case "-set":
-                            switch (words[1])
+                            switch (_words[1])
                             {
                                 case "i":
-                                    switch (words[2])
+                                    switch (_words[2])
                                     {
                                         case "speed":
                                             SetPlayerValueCommand("speed");
@@ -92,7 +94,7 @@ namespace TheRavine.Base
                             OutputReaction("Спросите что-нибудь более оригинальное");
                             break;
                         case "-rotate":
-                            switch (words[1])
+                            switch (_words[1])
                             {
                                 case "90":
                                     RotateSpace(90);
@@ -131,8 +133,8 @@ namespace TheRavine.Base
             int x, y;
             try
             {
-                x = Convert.ToInt32(words[2]);
-                y = Convert.ToInt32(words[3]);
+                x = Convert.ToInt32(_words[2]);
+                y = Convert.ToInt32(_words[3]);
             }
             catch
             {
@@ -153,7 +155,7 @@ namespace TheRavine.Base
             int value;
             try
             {
-                value = Convert.ToInt32(words[3]);
+                value = Convert.ToInt32(_words[3]);
             }
             catch
             {
@@ -183,7 +185,7 @@ namespace TheRavine.Base
                         OutputReaction("Превышен лимит обзора");
                         return;
                     }
-                    playerData.GetEntityComponent<AimComponent>().BaseStats.crosshairDistanse = value;
+                    playerData.GetEntityComponent<AimComponent>().BaseStats.crosshairDistance = value;
                     OutputReaction($"Максимальный обзор игрока: {value}");
                     break;
                 default:

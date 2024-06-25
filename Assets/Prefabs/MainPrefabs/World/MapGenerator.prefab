@@ -48,10 +48,9 @@ MonoBehaviour:
   waterT: {fileID: 0}
   terrainF: {fileID: 0}
   waterF: {fileID: 0}
-  seed: 4
   noiseScale: 200
   octaves: 8
-  persistance: 0.25
+  persistence: 0
   lacunarity: 3
   regions:
   - height: 0
@@ -83,131 +82,447 @@ MonoBehaviour:
   - height: 0.23
     liveAble: 1
     level:
-    - objects: []
+    - objects:
+      - Chance: 30
+        info: {fileID: 11400000, guid: a22de2c47c01b2b38893a134be810ed8, type: 2}
       structs: []
     - objects: []
       structs: []
-    - objects: []
+    - objects:
+      - Chance: 30
+        info: {fileID: 11400000, guid: a22de2c47c01b2b38893a134be810ed8, type: 2}
       structs: []
     - objects: []
       structs: []
-    - objects: []
+    - objects:
+      - Chance: 30
+        info: {fileID: 11400000, guid: a22de2c47c01b2b38893a134be810ed8, type: 2}
       structs: []
   - height: 0.26
     liveAble: 1
     level:
-    - objects: []
+    - objects:
+      - Chance: 3
+        info: {fileID: 11400000, guid: 442dcb913e2c5725181655fa6b1775ea, type: 2}
+      - Chance: 4
+        info: {fileID: 11400000, guid: e0a889cafc4a1f2019435f6d304cd4be, type: 2}
+      - Chance: 30
+        info: {fileID: 11400000, guid: 862dc4caaae343dc38d50243c44cdf46, type: 2}
       structs: []
-    - objects: []
+    - objects:
+      - Chance: 3
+        info: {fileID: 11400000, guid: 442dcb913e2c5725181655fa6b1775ea, type: 2}
+      - Chance: 4
+        info: {fileID: 11400000, guid: e0a889cafc4a1f2019435f6d304cd4be, type: 2}
+      - Chance: 30
+        info: {fileID: 11400000, guid: 862dc4caaae343dc38d50243c44cdf46, type: 2}
       structs: []
-    - objects: []
+    - objects:
+      - Chance: 2
+        info: {fileID: 11400000, guid: 442dcb913e2c5725181655fa6b1775ea, type: 2}
+      - Chance: 4
+        info: {fileID: 11400000, guid: e0a889cafc4a1f2019435f6d304cd4be, type: 2}
+      - Chance: 30
+        info: {fileID: 11400000, guid: 862dc4caaae343dc38d50243c44cdf46, type: 2}
       structs: []
-    - objects: []
+    - objects:
+      - Chance: 3
+        info: {fileID: 11400000, guid: 442dcb913e2c5725181655fa6b1775ea, type: 2}
+      - Chance: 4
+        info: {fileID: 11400000, guid: e0a889cafc4a1f2019435f6d304cd4be, type: 2}
+      - Chance: 30
+        info: {fileID: 11400000, guid: 862dc4caaae343dc38d50243c44cdf46, type: 2}
       structs: []
-    - objects: []
+    - objects:
+      - Chance: 3
+        info: {fileID: 11400000, guid: 442dcb913e2c5725181655fa6b1775ea, type: 2}
+      - Chance: 2
+        info: {fileID: 11400000, guid: e0a889cafc4a1f2019435f6d304cd4be, type: 2}
+      - Chance: 30
+        info: {fileID: 11400000, guid: 862dc4caaae343dc38d50243c44cdf46, type: 2}
       structs: []
   - height: 0.3
     liveAble: 1
     level:
-    - objects: []
-      structs: []
     - objects:
-      - Chance: 70
+      - Chance: 67
         info: {fileID: 11400000, guid: e23769a0b98747349af18b93b2db8788, type: 2}
+      - Chance: 60
+        info: {fileID: 11400000, guid: 80339deec3dfda594b587c1668a63245, type: 2}
+      - Chance: 61
+        info: {fileID: 11400000, guid: fa46cef959ea6ab58aa1f30ca15a892e, type: 2}
+      - Chance: 63
+        info: {fileID: 11400000, guid: 65c7559b8f03def1c9bbf0d14b5dca7e, type: 2}
+      - Chance: 64
+        info: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
       structs:
       - isSpawnPoint: 1
         Chance: 234
         info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
+      - isSpawnPoint: 1
+        Chance: 167
+        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
     - objects:
+      - Chance: 67
+        info: {fileID: 11400000, guid: e23769a0b98747349af18b93b2db8788, type: 2}
       - Chance: 60
         info: {fileID: 11400000, guid: 80339deec3dfda594b587c1668a63245, type: 2}
-      structs: []
-    - objects: []
-      structs: []
-    - objects: []
-      structs: []
+      - Chance: 61
+        info: {fileID: 11400000, guid: fa46cef959ea6ab58aa1f30ca15a892e, type: 2}
+      - Chance: 63
+        info: {fileID: 11400000, guid: 65c7559b8f03def1c9bbf0d14b5dca7e, type: 2}
+      - Chance: 64
+        info: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
+      structs:
+      - isSpawnPoint: 1
+        Chance: 234
+        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
+      - isSpawnPoint: 1
+        Chance: 167
+        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
+    - objects:
+      - Chance: 67
+        info: {fileID: 11400000, guid: e23769a0b98747349af18b93b2db8788, type: 2}
+      - Chance: 60
+        info: {fileID: 11400000, guid: 80339deec3dfda594b587c1668a63245, type: 2}
+      - Chance: 61
+        info: {fileID: 11400000, guid: fa46cef959ea6ab58aa1f30ca15a892e, type: 2}
+      - Chance: 63
+        info: {fileID: 11400000, guid: 65c7559b8f03def1c9bbf0d14b5dca7e, type: 2}
+      - Chance: 64
+        info: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
+      structs:
+      - isSpawnPoint: 1
+        Chance: 234
+        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
+      - isSpawnPoint: 1
+        Chance: 167
+        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
+    - objects:
+      - Chance: 67
+        info: {fileID: 11400000, guid: e23769a0b98747349af18b93b2db8788, type: 2}
+      - Chance: 60
+        info: {fileID: 11400000, guid: 80339deec3dfda594b587c1668a63245, type: 2}
+      - Chance: 61
+        info: {fileID: 11400000, guid: fa46cef959ea6ab58aa1f30ca15a892e, type: 2}
+      - Chance: 63
+        info: {fileID: 11400000, guid: 65c7559b8f03def1c9bbf0d14b5dca7e, type: 2}
+      - Chance: 64
+        info: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
+      structs:
+      - isSpawnPoint: 1
+        Chance: 234
+        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
+      - isSpawnPoint: 1
+        Chance: 167
+        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
+    - objects:
+      - Chance: 67
+        info: {fileID: 11400000, guid: e23769a0b98747349af18b93b2db8788, type: 2}
+      - Chance: 60
+        info: {fileID: 11400000, guid: 80339deec3dfda594b587c1668a63245, type: 2}
+      - Chance: 61
+        info: {fileID: 11400000, guid: fa46cef959ea6ab58aa1f30ca15a892e, type: 2}
+      - Chance: 63
+        info: {fileID: 11400000, guid: 65c7559b8f03def1c9bbf0d14b5dca7e, type: 2}
+      - Chance: 64
+        info: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
+      structs:
+      - isSpawnPoint: 1
+        Chance: 234
+        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
+      - isSpawnPoint: 1
+        Chance: 167
+        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
   - height: 0.45
     liveAble: 1
     level:
     - objects:
-      - Chance: 70
+      - Chance: 67
         info: {fileID: 11400000, guid: 3b41bc4f6c3c5b397bc6bb6f81d8fa8a, type: 2}
-      - Chance: 65
+      - Chance: 31
         info: {fileID: 11400000, guid: f93e1ffefd235d615a1bd882c75bb125, type: 2}
+      - Chance: 130
+        info: {fileID: 11400000, guid: 96f33b9848660268f96576146d324d0d, type: 2}
+      - Chance: 53
+        info: {fileID: 11400000, guid: c0942a1583c25de35b66548e12be1454, type: 2}
+      - Chance: 65
+        info: {fileID: 11400000, guid: d83b594b4e9ea91b285d8015e2bb6168, type: 2}
       structs: []
     - objects:
-      - Chance: 70
+      - Chance: 43
         info: {fileID: 11400000, guid: 3b41bc4f6c3c5b397bc6bb6f81d8fa8a, type: 2}
-      - Chance: 65
+      - Chance: 61
         info: {fileID: 11400000, guid: f93e1ffefd235d615a1bd882c75bb125, type: 2}
-      - Chance: 20
+      - Chance: 23
         info: {fileID: 11400000, guid: e23769a0b98747349af18b93b2db8788, type: 2}
+      - Chance: 28
+        info: {fileID: 11400000, guid: e0a889cafc4a1f2019435f6d304cd4be, type: 2}
+      - Chance: 50
+        info: {fileID: 11400000, guid: d61c7046bb9c6ac2c8c2ba4c2c6cfc52, type: 2}
       structs: []
     - objects:
       - Chance: 70
         info: {fileID: 11400000, guid: 3b41bc4f6c3c5b397bc6bb6f81d8fa8a, type: 2}
       - Chance: 65
         info: {fileID: 11400000, guid: f93e1ffefd235d615a1bd882c75bb125, type: 2}
-      - Chance: 10
+      - Chance: 16
         info: {fileID: 11400000, guid: 80339deec3dfda594b587c1668a63245, type: 2}
       - Chance: 15
         info: {fileID: 11400000, guid: 65c7559b8f03def1c9bbf0d14b5dca7e, type: 2}
+      - Chance: 57
+        info: {fileID: 11400000, guid: e828bdd4414fd6592b45f8d69cc96244, type: 2}
       structs: []
     - objects:
-      - Chance: 70
-        info: {fileID: 11400000, guid: 3b41bc4f6c3c5b397bc6bb6f81d8fa8a, type: 2}
       - Chance: 65
+        info: {fileID: 11400000, guid: 3b41bc4f6c3c5b397bc6bb6f81d8fa8a, type: 2}
+      - Chance: 43
         info: {fileID: 11400000, guid: f93e1ffefd235d615a1bd882c75bb125, type: 2}
-      - Chance: 15
+      - Chance: 21
         info: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
+      - Chance: 55
+        info: {fileID: 11400000, guid: 862dc4caaae343dc38d50243c44cdf46, type: 2}
+      - Chance: 35
+        info: {fileID: 11400000, guid: cac3f76b468575364a79212e2dc85ceb, type: 2}
       structs: []
     - objects:
-      - Chance: 70
+      - Chance: 80
         info: {fileID: 11400000, guid: 3b41bc4f6c3c5b397bc6bb6f81d8fa8a, type: 2}
-      - Chance: 65
+      - Chance: 25
         info: {fileID: 11400000, guid: f93e1ffefd235d615a1bd882c75bb125, type: 2}
+      - Chance: 130
+        info: {fileID: 11400000, guid: 96f33b9848660268f96576146d324d0d, type: 2}
+      - Chance: 120
+        info: {fileID: 11400000, guid: 52b6faea7c6afbc07a303852604016cb, type: 2}
       structs: []
   - height: 0.7
     liveAble: 1
     level:
-    - objects: []
-      structs: []
-    - objects: []
+    - objects:
+      - Chance: 56
+        info: {fileID: 11400000, guid: b208f53ee19693c95b5612deabface28, type: 2}
+      - Chance: 65
+        info: {fileID: 11400000, guid: cac3f76b468575364a79212e2dc85ceb, type: 2}
+      - Chance: 98
+        info: {fileID: 11400000, guid: 32f8156adfce3fa3b9f5f29cb697afd8, type: 2}
+      - Chance: 70
+        info: {fileID: 11400000, guid: 52b6faea7c6afbc07a303852604016cb, type: 2}
+      - Chance: 70
+        info: {fileID: 11400000, guid: e828bdd4414fd6592b45f8d69cc96244, type: 2}
+      - Chance: 80
+        info: {fileID: 11400000, guid: 862dc4caaae343dc38d50243c44cdf46, type: 2}
       structs:
-      - isSpawnPoint: 1
-        Chance: 255
+      - isSpawnPoint: 0
+        Chance: 534
+        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
+      - isSpawnPoint: 0
+        Chance: 345
         info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
-    - objects: []
-      structs: []
-    - objects: []
-      structs: []
-    - objects: []
-      structs: []
+    - objects:
+      - Chance: 56
+        info: {fileID: 11400000, guid: b208f53ee19693c95b5612deabface28, type: 2}
+      - Chance: 35
+        info: {fileID: 11400000, guid: cac3f76b468575364a79212e2dc85ceb, type: 2}
+      - Chance: 132
+        info: {fileID: 11400000, guid: 32f8156adfce3fa3b9f5f29cb697afd8, type: 2}
+      - Chance: 90
+        info: {fileID: 11400000, guid: 52b6faea7c6afbc07a303852604016cb, type: 2}
+      - Chance: 87
+        info: {fileID: 11400000, guid: e828bdd4414fd6592b45f8d69cc96244, type: 2}
+      - Chance: 53
+        info: {fileID: 11400000, guid: 80339deec3dfda594b587c1668a63245, type: 2}
+      - Chance: 43
+        info: {fileID: 11400000, guid: f93e1ffefd235d615a1bd882c75bb125, type: 2}
+      structs:
+      - isSpawnPoint: 0
+        Chance: 534
+        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
+      - isSpawnPoint: 0
+        Chance: 345
+        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
+    - objects:
+      - Chance: 74
+        info: {fileID: 11400000, guid: b208f53ee19693c95b5612deabface28, type: 2}
+      - Chance: 87
+        info: {fileID: 11400000, guid: cac3f76b468575364a79212e2dc85ceb, type: 2}
+      - Chance: 56
+        info: {fileID: 11400000, guid: 32f8156adfce3fa3b9f5f29cb697afd8, type: 2}
+      - Chance: 87
+        info: {fileID: 11400000, guid: 52b6faea7c6afbc07a303852604016cb, type: 2}
+      - Chance: 70
+        info: {fileID: 11400000, guid: e828bdd4414fd6592b45f8d69cc96244, type: 2}
+      - Chance: 76
+        info: {fileID: 11400000, guid: 6a7dff91e754bfb9f840836e5e5ab22d, type: 2}
+      - Chance: 76
+        info: {fileID: 11400000, guid: e96f92ed0b90302dba29c38db65524b0, type: 2}
+      structs:
+      - isSpawnPoint: 0
+        Chance: 534
+        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
+      - isSpawnPoint: 0
+        Chance: 345
+        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
+    - objects:
+      - Chance: 43
+        info: {fileID: 11400000, guid: b208f53ee19693c95b5612deabface28, type: 2}
+      - Chance: 34
+        info: {fileID: 11400000, guid: cac3f76b468575364a79212e2dc85ceb, type: 2}
+      - Chance: 142
+        info: {fileID: 11400000, guid: 32f8156adfce3fa3b9f5f29cb697afd8, type: 2}
+      - Chance: 65
+        info: {fileID: 11400000, guid: 52b6faea7c6afbc07a303852604016cb, type: 2}
+      - Chance: 67
+        info: {fileID: 11400000, guid: fa46cef959ea6ab58aa1f30ca15a892e, type: 2}
+      structs:
+      - isSpawnPoint: 0
+        Chance: 534
+        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
+      - isSpawnPoint: 0
+        Chance: 345
+        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
+    - objects:
+      - Chance: 56
+        info: {fileID: 11400000, guid: b208f53ee19693c95b5612deabface28, type: 2}
+      - Chance: 42
+        info: {fileID: 11400000, guid: cac3f76b468575364a79212e2dc85ceb, type: 2}
+      - Chance: 98
+        info: {fileID: 11400000, guid: 32f8156adfce3fa3b9f5f29cb697afd8, type: 2}
+      - Chance: 70
+        info: {fileID: 11400000, guid: 52b6faea7c6afbc07a303852604016cb, type: 2}
+      - Chance: 142
+        info: {fileID: 11400000, guid: e828bdd4414fd6592b45f8d69cc96244, type: 2}
+      - Chance: 70
+        info: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
+      - Chance: 70
+        info: {fileID: 11400000, guid: 96f33b9848660268f96576146d324d0d, type: 2}
+      structs:
+      - isSpawnPoint: 0
+        Chance: 534
+        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
   - height: 0.9
     liveAble: 1
     level:
-    - objects: []
+    - objects:
+      - Chance: 56
+        info: {fileID: 11400000, guid: 1f5a9fa98ce0357a1a045ec4af226c89, type: 2}
+      - Chance: 78
+        info: {fileID: 11400000, guid: 194144ec13aa6c3d5a0862d979cf85bb, type: 2}
+      - Chance: 89
+        info: {fileID: 11400000, guid: 3b41bc4f6c3c5b397bc6bb6f81d8fa8a, type: 2}
+      - Chance: 103
+        info: {fileID: 11400000, guid: cac3f76b468575364a79212e2dc85ceb, type: 2}
+      - Chance: 92
+        info: {fileID: 11400000, guid: 6e2a7935e8c3b36ff9f921cc974ab698, type: 2}
+      - Chance: 47
+        info: {fileID: 11400000, guid: e96f92ed0b90302dba29c38db65524b0, type: 2}
       structs: []
-    - objects: []
+    - objects:
+      - Chance: 56
+        info: {fileID: 11400000, guid: 1f5a9fa98ce0357a1a045ec4af226c89, type: 2}
+      - Chance: 78
+        info: {fileID: 11400000, guid: 194144ec13aa6c3d5a0862d979cf85bb, type: 2}
+      - Chance: 63
+        info: {fileID: 11400000, guid: 3b41bc4f6c3c5b397bc6bb6f81d8fa8a, type: 2}
+      - Chance: 85
+        info: {fileID: 11400000, guid: cac3f76b468575364a79212e2dc85ceb, type: 2}
+      - Chance: 75
+        info: {fileID: 11400000, guid: 862dc4caaae343dc38d50243c44cdf46, type: 2}
+      - Chance: 44
+        info: {fileID: 11400000, guid: 65c7559b8f03def1c9bbf0d14b5dca7e, type: 2}
       structs: []
-    - objects: []
+    - objects:
+      - Chance: 78
+        info: {fileID: 11400000, guid: 1f5a9fa98ce0357a1a045ec4af226c89, type: 2}
+      - Chance: 87
+        info: {fileID: 11400000, guid: 194144ec13aa6c3d5a0862d979cf85bb, type: 2}
+      - Chance: 63
+        info: {fileID: 11400000, guid: 3b41bc4f6c3c5b397bc6bb6f81d8fa8a, type: 2}
+      - Chance: 95
+        info: {fileID: 11400000, guid: cac3f76b468575364a79212e2dc85ceb, type: 2}
+      - Chance: 34
+        info: {fileID: 11400000, guid: f93e1ffefd235d615a1bd882c75bb125, type: 2}
+      - Chance: 76
+        info: {fileID: 11400000, guid: 7bbd0072588a487a28dc34b8065a12f4, type: 2}
       structs: []
-    - objects: []
-      structs: []
-    - objects: []
+    - objects:
+      - Chance: 56
+        info: {fileID: 11400000, guid: 1f5a9fa98ce0357a1a045ec4af226c89, type: 2}
+      - Chance: 78
+        info: {fileID: 11400000, guid: 194144ec13aa6c3d5a0862d979cf85bb, type: 2}
+      - Chance: 63
+        info: {fileID: 11400000, guid: 3b41bc4f6c3c5b397bc6bb6f81d8fa8a, type: 2}
+      - Chance: 85
+        info: {fileID: 11400000, guid: cac3f76b468575364a79212e2dc85ceb, type: 2}
+      - Chance: 76
+        info: {fileID: 11400000, guid: 96f33b9848660268f96576146d324d0d, type: 2}
+      - Chance: 71
+        info: {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
+      structs:
+      - isSpawnPoint: 0
+        Chance: 243
+        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
+    - objects:
+      - Chance: 56
+        info: {fileID: 11400000, guid: 1f5a9fa98ce0357a1a045ec4af226c89, type: 2}
+      - Chance: 78
+        info: {fileID: 11400000, guid: 194144ec13aa6c3d5a0862d979cf85bb, type: 2}
+      - Chance: 56
+        info: {fileID: 11400000, guid: 3b41bc4f6c3c5b397bc6bb6f81d8fa8a, type: 2}
+      - Chance: 85
+        info: {fileID: 11400000, guid: cac3f76b468575364a79212e2dc85ceb, type: 2}
+      - Chance: 56
+        info: {fileID: 11400000, guid: b208f53ee19693c95b5612deabface28, type: 2}
+      - Chance: 65
+        info: {fileID: 11400000, guid: 32f8156adfce3fa3b9f5f29cb697afd8, type: 2}
       structs: []
   - height: 1.15
     liveAble: 0
     level:
-    - objects: []
+    - objects:
+      - Chance: 88
+        info: {fileID: 11400000, guid: 35620d5efb66ec8999023233c714062b, type: 2}
+      - Chance: 70
+        info: {fileID: 11400000, guid: fa46cef959ea6ab58aa1f30ca15a892e, type: 2}
+      - Chance: 54
+        info: {fileID: 11400000, guid: 442dcb913e2c5725181655fa6b1775ea, type: 2}
+      - Chance: 60
+        info: {fileID: 11400000, guid: f2627d2fd63be5505a20238a9bb37833, type: 2}
+      - Chance: 145
+        info: {fileID: 11400000, guid: a6e3ef04c70c055e2802da530c9984aa, type: 2}
       structs: []
-    - objects: []
+    - objects:
+      - Chance: 88
+        info: {fileID: 11400000, guid: 35620d5efb66ec8999023233c714062b, type: 2}
+      - Chance: 70
+        info: {fileID: 11400000, guid: fa46cef959ea6ab58aa1f30ca15a892e, type: 2}
+      - Chance: 167
+        info: {fileID: 11400000, guid: a6e3ef04c70c055e2802da530c9984aa, type: 2}
       structs: []
-    - objects: []
+    - objects:
+      - Chance: 88
+        info: {fileID: 11400000, guid: 35620d5efb66ec8999023233c714062b, type: 2}
+      - Chance: 70
+        info: {fileID: 11400000, guid: fa46cef959ea6ab58aa1f30ca15a892e, type: 2}
+      - Chance: 71
+        info: {fileID: 11400000, guid: f2627d2fd63be5505a20238a9bb37833, type: 2}
       structs: []
-    - objects: []
+    - objects:
+      - Chance: 88
+        info: {fileID: 11400000, guid: 35620d5efb66ec8999023233c714062b, type: 2}
+      - Chance: 70
+        info: {fileID: 11400000, guid: fa46cef959ea6ab58aa1f30ca15a892e, type: 2}
+      - Chance: 50
+        info: {fileID: 11400000, guid: f2627d2fd63be5505a20238a9bb37833, type: 2}
       structs: []
-    - objects: []
+    - objects:
+      - Chance: 88
+        info: {fileID: 11400000, guid: 35620d5efb66ec8999023233c714062b, type: 2}
+      - Chance: 70
+        info: {fileID: 11400000, guid: fa46cef959ea6ab58aa1f30ca15a892e, type: 2}
+      - Chance: 154
+        info: {fileID: 11400000, guid: a6e3ef04c70c055e2802da530c9984aa, type: 2}
+      - Chance: 150
+        info: {fileID: 11400000, guid: f2627d2fd63be5505a20238a9bb37833, type: 2}
       structs: []
   biomRegions:
   - height: 0

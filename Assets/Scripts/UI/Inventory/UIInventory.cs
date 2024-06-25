@@ -1,12 +1,13 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Unity.Netcode;
 using System.Collections.Generic;
 
 using TheRavine.Base;
 using TheRavine.InventoryElements;
 using TheRavine.Generator;
 using TheRavine.ObjectControl;
-using TheRavine.Extentions;
+using TheRavine.Extensions;
 using TheRavine.Services;
 using TheRavine.EntityControl;
 using TheRavine.Events;
@@ -116,7 +117,7 @@ namespace TheRavine.Inventory
                     {
                         for (byte i = 0; i < pattern.other.Length; i++)
                         {
-                            Vector2 newPos = Extention.GetRandomPointAround(position, pattern.factor);
+                            Vector2 newPos = Extension.GetRandomPointAround(position, pattern.factor);
                             objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].amount, pattern.other[i].iType, newPos.x < position.x);
                         }
                     }

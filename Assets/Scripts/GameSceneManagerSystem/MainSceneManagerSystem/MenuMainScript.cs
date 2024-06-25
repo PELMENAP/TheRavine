@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+using Cysharp.Threading.Tasks;
 
 using TheRavine.Base;
 public class MenuMainScript : MonoBehaviour
@@ -7,11 +8,11 @@ public class MenuMainScript : MonoBehaviour
     [SerializeField] private GameObject menu;
     [SerializeField] private GameObject settings;
     [SerializeField] private UniversalAdditionalCameraData _cameraData;
-    private SceneTransitor trasitor;
+    private SceneTransistor trasitor;
     private bool isInit;
     private void Awake()
     {
-        trasitor = new SceneTransitor();
+        trasitor = new SceneTransistor();
         AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
         isInit = true;
         FaderOnTransit.instance.FadeOut(() => Init());

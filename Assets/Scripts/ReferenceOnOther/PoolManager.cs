@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using TheRavine.Extentions;
+using TheRavine.Extensions;
 
 namespace TheRavine.ObjectControl
 {

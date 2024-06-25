@@ -4,7 +4,7 @@ using UnityEngine.Events;
 using Cysharp.Threading.Tasks;
 
 using TheRavine.Base;
-using TheRavine.Extentions;
+using TheRavine.Extensions;
 using TheRavine.ObjectControl;
 using TheRavine.Services;
 
@@ -19,10 +19,12 @@ namespace TheRavine.Generator
         private Dictionary<Vector2, ChunkData> mapData;
         public ChunkData GetMapData(Vector2 position)
         {
-            mapData.TryGetValue(position, out ChunkData data);
-            return data;
+            if(mapData.TryGetValue(position, out ChunkData data))
+                return data;
+            return null;
         }
-        public bool IsHeigthIsLiveAble(int height) => regions[height].liveAble;
+        
+        public bool IsHeightIsLiveAble(int height) => regions[height].liveAble;
 
         public byte GetMapHeight(Vector2 position)
         {
@@ -76,22 +78,22 @@ namespace TheRavine.Generator
         private ObjectSystem objectSystem;
         [SerializeField] private float noiseScale;
         [SerializeField] private byte octaves;
-        [SerializeField, Range(0, 1)] private float persistance;
+        [SerializeField, Range(0, 1)] private float persistence;
         [SerializeField] private float lacunarity;
         [SerializeField] private TerrainType[] regions;
         [SerializeField] private TemperatureType[] biomRegions;
-        private Transform viewer;
+        [SerializeField] private Transform viewer;
         [SerializeField] private bool[] endlessFlag;
         private IEndless[] endless;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
-            seed = RavineRandom.RangeInt(0, 1000);
+            // seed = RavineRandom.RangeInt(0, 1000);
+            seed = 16; 
             endless = new IEndless[3];
             mapData = new Dictionary<Vector2, ChunkData>(64);
-            Noise.SetInit(noiseScale, octaves, persistance, lacunarity, Seed);
-            viewer = locator.GetPlayerTransform();
+            Noise.SetInit(noiseScale, octaves, persistence, lacunarity, Seed);
+            // viewer = locator.GetPlayerTransform();
             objectSystem = locator.GetService<ObjectSystem>();
-            DayCycle.newDay += UpdateNAL;
             if (endlessFlag[3])
                 NAL().Forget();
             if (endlessFlag[0])
@@ -100,6 +102,7 @@ namespace TheRavine.Generator
                 endless[1] = new EndlessLiquids(this);
             if (endlessFlag[2])
                 endless[2] = new EndlessObjects(this, objectSystem);
+            UpdateNAL().Forget();
             FirstInstance().Forget();
             callback?.Invoke();
         }
@@ -163,7 +166,7 @@ namespace TheRavine.Generator
                 {
                     if (nextGenInfo == null)
                     {
-                        if (Extention.ComparePercent(25))
+                        if (Extension.ComparePercent(25))
                             NALQueueUpdateRemove.Enqueue(current);
                         continue;
                     }
@@ -178,7 +181,7 @@ namespace TheRavine.Generator
                         if (x != 0 && y != 0 && objectSystem.ContainsGlobal(current + new Vector2(x, y)))
                             closeto = true;
                 NAlInfo nalinfo = currentObjectPrefabData.nalinfo;
-                if (Extention.ComparePercent(nalinfo.chance / 2 + deadChance) || closeto)
+                if (Extension.ComparePercent(nalinfo.chance / 2 + deadChance) || closeto)
                 {
                     NALQueueUpdateRemove.Enqueue(current);
                     SpreadPattern pattern = currentObjectPrefabData.deadPattern;
@@ -189,7 +192,7 @@ namespace TheRavine.Generator
                     {
                         for (byte i = 0; i < pattern.other.Length; i++)
                         {
-                            Vector2 newPos = Extention.GetRandomPointAround(current, pattern.factor);
+                            Vector2 newPos = Extension.GetRandomPointAround(current, pattern.factor);
                             NALQueueUpdateAdd.Enqueue(new Pair<Vector2, ObjectInfo>(newPos, pattern.other[i]));
                         }
                     }
@@ -197,14 +200,14 @@ namespace TheRavine.Generator
                 }
                 else
                 {
-                    if (!IsHeigthIsLiveAble(GetMapHeight(current)))
+                    if (!IsHeightIsLiveAble(GetMapHeight(current)))
                         continue;
                     byte attempts = nalinfo.attempt;
                     while (attempts > 0)
                     {
-                        if (Extention.ComparePercent(nalinfo.chance))
+                        if (Extension.ComparePercent(nalinfo.chance))
                         {
-                            Vector2 newPos = Extention.GetRandomPointAround(current, nalinfo.distance);
+                            Vector2 newPos = Extension.GetRandomPointAround(current, nalinfo.distance);
                             NALQueueUpdateAdd.Enqueue(new Pair<Vector2, ObjectInfo>(newPos, nextGenInfo));
                         }
                         await UniTask.Delay(10, cancellationToken: _cts.Token);
@@ -215,23 +218,27 @@ namespace TheRavine.Generator
             }
         }
 
-        public void UpdateNAL()
+        public async UniTaskVoid UpdateNAL()
         {
-            if (rotateTarget != 0f)
-                return;
-            ClearNALQueue();
-            while (NALQueueUpdateRemove.Count > 0)
-            {   
-                Vector2 item = NALQueueUpdateRemove.Dequeue();
-                objectSystem.RemoveFromGlobal(item);
-            }
-            while (NALQueueUpdateAdd.Count > 0)
+            while (!DataStorage.sceneClose)
             {
-                Pair<Vector2, ObjectInfo> item = NALQueueUpdateAdd.Dequeue();
-                if(objectSystem.TryAddToGlobal(item.First, item.Second.prefab.GetInstanceID(), item.Second.amount, item.Second.iType, (item.First.x + item.First.y) % 2 == 0))
-                    GetMapData(GetChunkPosition(item.First)).objectsToInst.Add(item.First);
+                await UniTask.Delay(100000);
+                if (rotateTarget != 0f)
+                    return;
+                ClearNALQueue();
+                while (NALQueueUpdateRemove.Count > 0)
+                {   
+                    Vector2 item = NALQueueUpdateRemove.Dequeue();
+                    objectSystem.RemoveFromGlobal(item);
+                }
+                while (NALQueueUpdateAdd.Count > 0)
+                {
+                    Pair<Vector2, ObjectInfo> item = NALQueueUpdateAdd.Dequeue();
+                    if(objectSystem.TryAddToGlobal(item.First, item.Second.prefab.GetInstanceID(), item.Second.amount, item.Second.iType, (item.First.x + item.First.y) % 2 == 0))
+                        GetMapData(GetChunkPosition(item.First)).objectsToInst.Add(item.First);
+                }
+                ExtraUpdate();
             }
-            ExtraUpdate();
         }
         private byte[,] GenerateTempMap(Vector2 centre)
         {
@@ -281,6 +288,7 @@ namespace TheRavine.Generator
         private int count = 0, criticalHeight = 1;
         public ChunkData GenerateMapData(Vector2 centre)
         {
+            FastRandom chunkRandom = new FastRandom((seed + (int)(centre.x + centre.y * centre.y)));
             SortedSet<Vector2> objectsToInst = new(new Vector2Comparer());
             byte[,] heightMap = new byte[mapChunkSize, mapChunkSize];
             byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
@@ -585,14 +593,12 @@ namespace TheRavine.Generator
                         //     break;
                         // }
                     }
-                    if (structHere)
-                        continue;
+                    if (structHere) continue;
                     for (byte i = 0; i < level.objects.Length; i++)
                     {
                         ObjectInfoGeneration ginfo = level.objects[i];
-                        if(ginfo.Chance == 0 || ginfo.info == null)
-                            continue;
-                        if ((x * y + centre.x * centre.y + Seed + i * countOfHeights[heightMap[x, y]] + count) % ginfo.Chance == 0)
+                        if(ginfo.Chance == 0 || ginfo.info == null) continue;
+                        if (chunkRandom.Range(0, 1000) < ginfo.Chance)
                         {
                             Vector2 posobj = new(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale);
                            
@@ -638,7 +644,7 @@ namespace TheRavine.Generator
         //             {
         //                 if (x == 0 && y == 0) continue;
         //                 Vector2 newPos = current.First + new Vector2(x, y) * structInfo.distortion;
-        //                 byte field = structInfo.tileInfo[current.Second].neight[c++];
+        //                 byte field = structInfo.tileInfo[current.Second].height[c++];
         //                 if (field == 0) continue;
         //                 if (WFCAobjects.ContainsKey(newPos)) continue;
         //                 WFCAqueue.Enqueue(new Pair<Vector2, byte>(newPos, --field));
@@ -693,7 +699,7 @@ namespace TheRavine.Generator
             endless[2].UpdateChunk(position);
         }
 
-        private Vector2 GetPlayerPosition() => Extention.RoundVector2D((viewer.position - new Vector3(generationSize, generationSize) / 2) / (generationSize));
+        private Vector2 GetPlayerPosition() => Extension.RoundVector2D((viewer.position - new Vector3(generationSize, generationSize) / 2) / (generationSize));
         public void RotateBasis(sbyte angle)
         {
             // if (rotateValue != 0f)
@@ -793,7 +799,6 @@ namespace TheRavine.Generator
 
         public void BreakUp(ISetAble.Callback callback)
         {
-            DayCycle.newDay -= UpdateNAL;
             NALQueue.Clear();
             NALQueueUpdateAdd.Clear();
             NALQueueUpdateRemove.Clear();
@@ -826,7 +831,7 @@ namespace TheRavine.Generator
         //         }
         //     }
         //     for (byte i = 0; i < 2; i++)
-        //         endless[i].UpdateChunk(Extention.RoundVector2D(viewerTest.position / (scale * mapChunkSize)));
+        //         endless[i].UpdateChunk(Extension.RoundVector2D(viewerTest.position / (scale * mapChunkSize)));
         // }
     }
 

@@ -3,9 +3,9 @@ using UnityEngine;
 public class EntityAimStatsInfo : ScriptableObject
 {
     [Min(0)]
-    public int CrosshairDistanse;
+    public int CrosshairDistance;
     [Min(0)]
-    public int MaxCrosshairDistanse;
+    public int MaxCrosshairDistance;
     [Min(0)]
     public int CrosshairOffset;
     [Min(0)]

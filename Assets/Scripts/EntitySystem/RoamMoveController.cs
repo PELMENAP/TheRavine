@@ -1,7 +1,7 @@
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 
-using TheRavine.Extentions;
+using TheRavine.Extensions;
 using TheRavine.Base;
 
 namespace TheRavine.EntityControl
@@ -54,11 +54,11 @@ namespace TheRavine.EntityControl
             {
                 if(entityTransform == null) return;
                 if (!isActive) await UniTask.Delay(defaultDelay);
-                if (Extention.CheckDistance(entityTransform.position, target, accuracy))
+                if (Extension.CheckDistance(entityTransform.position, target, accuracy))
                     UpdateTargetWander();
                 if (currentPointIndex < bezierPoints.Length && bezierPoints[0] != Vector2.zero)
                 {
-                    if (Extention.CheckDistance(entityTransform.position, bezierPoints[currentPointIndex], accuracy))
+                    if (Extension.CheckDistance(entityTransform.position, bezierPoints[currentPointIndex], accuracy))
                     {
                         currentPointIndex++;
                         if (currentPointIndex >= bezierPoints.Length)
@@ -87,7 +87,7 @@ namespace TheRavine.EntityControl
         }
         private void UpdateTargetWander()
         {
-            target = Extention.GetRandomPointAround((Vector2)entityTransform.position, maxTargetDistance);
+            target = Extension.GetRandomPointAround((Vector2)entityTransform.position, maxTargetDistance);
             pointTarget.position = target;
             UpdateRandomMove();
         }
@@ -97,14 +97,14 @@ namespace TheRavine.EntityControl
             Vector2 start = entityTransform.position;
             Vector2 directionToTarget = new Vector2(target.x - start.x, target.y - start.y);
             float angleOffset = RavineRandom.RangeFloat(-Mathf.PI / angleDivide, Mathf.PI / angleDivide);
-            Vector2 randomDirection = isBackwards ? Extention.RotateVector(directionToTarget, 2 * angleOffset) : Extention.RotateVector(directionToTarget, angleOffset);
+            Vector2 randomDirection = isBackwards ? Extension.RotateVector(directionToTarget, 2 * angleOffset) : Extension.RotateVector(directionToTarget, angleOffset);
             randomDirection.Normalize();
             Ccollider.offset = new Vector2(randomDirection.x * colliderDistance, randomDirection.y * colliderDistance);
             int distanceStep = RavineRandom.RangeInt(stepMaxDistance - stepSpread, stepMaxDistance + stepSpread);
             Vector2 randomPoint = new Vector2(start.x + randomDirection.x * distanceStep, start.y + randomDirection.y * distanceStep);
-            Vector2 distribution = side ? Extention.PerpendicularCounterClockwise(randomPoint - start).normalized : Extention.PerpendicularClockwise(randomPoint - start).normalized;
-            Vector2 control = Extention.GetRandomPointAround((start + randomPoint) / 2 + distribution * bezierFactor, bezierFactor / 2);
-            Extention.GenerateBezierPoints(start, control, randomPoint, bezierDetail, ref bezierPoints);
+            Vector2 distribution = side ? Extension.PerpendicularCounterClockwise(randomPoint - start).normalized : Extension.PerpendicularClockwise(randomPoint - start).normalized;
+            Vector2 control = Extension.GetRandomPointAround((start + randomPoint) / 2 + distribution * bezierFactor, bezierFactor / 2);
+            Extension.GenerateBezierPoints(start, control, randomPoint, bezierDetail, ref bezierPoints);
             currentPointIndex = 0;
             pointRandom.position = randomPoint;
             side = !side;

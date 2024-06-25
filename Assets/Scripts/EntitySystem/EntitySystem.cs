@@ -17,7 +17,7 @@ namespace TheRavine.EntityControl
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
             // skillFacade = new SkillFacade();
-            global  = new List<AEntity>(2);
+            global  = new List<AEntity>();
             mobInfo = new Dictionary<int, EntityInfo>(4);
             if(boidsBehaviour != null) boidsBehaviour.StartBoids().Forget();
 
@@ -28,6 +28,7 @@ namespace TheRavine.EntityControl
 
         private void FixedUpdate()
         {
+            if(global == null) return;
             for (int i = 0; i < global.Count; i++) global[i].UpdateEntityCycle();
         }
 

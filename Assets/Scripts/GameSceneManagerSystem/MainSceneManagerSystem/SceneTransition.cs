@@ -1,16 +1,16 @@
 using Cysharp.Threading.Tasks;
+using UnityEngine.SceneManagement;
 
 using TheRavine.Base;
 
-public class SceneTransitor
+public class SceneTransistor
 {
     private bool _isLoading = false;
 
-    public async UniTaskVoid LoadScene(int numberSceneToTranslate)
+    public async UniTask LoadScene(int numberSceneToTranslate)
     {
         if (_isLoading) return;
         
-        Settings.SceneNumber = numberSceneToTranslate;
         _isLoading = true;
         bool waitFading = true;
 
@@ -18,7 +18,18 @@ public class SceneTransitor
 
         await UniTask.WaitUntil(() => waitFading == false);
 
-        UnityEngine.SceneManagement.SceneManager.LoadScene(numberSceneToTranslate);
+        var loadScene = SceneManager.LoadSceneAsync(numberSceneToTranslate);
+        loadScene.allowSceneActivation = false; 
+
+        while (!loadScene.isDone)
+        {
+            if (loadScene.progress >= 0.9f)
+            {
+                loadScene.allowSceneActivation = true;
+            }
+
+            await UniTask.Yield();
+        }
 
         _isLoading = false;
     }

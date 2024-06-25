@@ -14,7 +14,7 @@ namespace TheRavine.Base
             }
             public void OnEnter()
             {
-                Initializer.StartNewServise(() => isChangeState = true);
+                Initializer.StartNewService(() => isChangeState = true);
                 FaderOnTransit.instance.SetLogs("Создание сцены");
             }
             public void OnExit()
