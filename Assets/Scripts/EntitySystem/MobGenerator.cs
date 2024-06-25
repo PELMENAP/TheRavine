@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using TheRavine.Generator;
-using TheRavine.Extentions;
+using TheRavine.Extensions;
 using TheRavine.Services;
 using TheRavine.Base;
 
@@ -34,11 +34,9 @@ namespace TheRavine.EntityControl
             mobsController = locator.GetService<MobController>();
             generator.onSpawnPoint += AddSpawnPoint;
             generator.onUpdate += UpdateNALQueue;
-            DayCycle.newDay += UpdateNAL;
+            UpdateNAL().Forget();
 
-            player = locator.GetService<PlayerEntity>();
             entitySystem = locator.GetService<EntitySystem>();
-            entitySystem.AddToGlobal(player);
 
             NAL().Forget();
 
@@ -71,10 +69,10 @@ namespace TheRavine.EntityControl
                     continue;
                 }
                 Pair<Vector2,  Pair<byte, byte>> current = NALQueue.Dequeue();
-                MobSpawnData[] currentEnities = regions[current.Second.First].temperatureLevels[current.Second.Second].entities;
-                for (byte i = 0; i < currentEnities.Length; i++)
+                MobSpawnData[] currentEntities = regions[current.Second.First].temperatureLevels[current.Second.Second].entities;
+                for (byte i = 0; i < currentEntities.Length; i++)
                 {
-                    MobSpawnData curMobSpawnData = currentEnities[i];
+                    MobSpawnData curMobSpawnData = currentEntities[i];
                     if(curMobSpawnData.Chance <= 0)
                         continue;
                     if (RavineRandom.Hundred() < curMobSpawnData.Chance)
@@ -88,19 +86,23 @@ namespace TheRavine.EntityControl
                 await UniTask.Delay(1000, cancellationToken: _cts.Token);
             }
         }
-        public void UpdateNAL()
+        public async UniTaskVoid UpdateNAL()
         {
-            ClearNALQueue();
-            while (NALQueueUpdate.Count > 0 && mobsController.GetEntityCount() < MaxSpawnEntityCount)
+            while (!DataStorage.sceneClose)
             {
-                Pair<Vector2, GameObject> item = NALQueueUpdate.Dequeue();
-                GameObject curMob = CreateMob(Extention.GetRandomPointAround(item.First, 2), item.Second);
-                AEntity entity = curMob.GetComponentInChildren<AEntity>();
-                entity.SetUpEntityData(entitySystem.GetMobInfo(item.Second.GetInstanceID()));
-                entity.Init();
-                GetMapData(generator.GetChunkPosition(item.First)).entitiesInChunk.Add(entity);
+                await UniTask.Delay(100000);
+                ClearNALQueue();
+                while (NALQueueUpdate.Count > 0 && mobsController.GetEntityCount() < MaxSpawnEntityCount)
+                {
+                    Pair<Vector2, GameObject> item = NALQueueUpdate.Dequeue();
+                    GameObject curMob = CreateMob(Extension.GetRandomPointAround(item.First, 2), item.Second);
+                    AEntity entity = curMob.GetComponentInChildren<AEntity>();
+                    entity.SetUpEntityData(entitySystem.GetMobInfo(item.Second.GetInstanceID()));
+                    entity.Init();
+                    GetMapData(generator.GetChunkPosition(item.First)).entitiesInChunk.Add(entity);
+                }
+                UpdateNALQueue(currentChunkPosition);
             }
-            UpdateNALQueue(currentChunkPosition);
         }
         private void AddSpawnPoint(Vector2 position, byte height, byte temperature, Vector2 chunkCenter)
         {
@@ -136,7 +138,7 @@ namespace TheRavine.EntityControl
                     {
                         AEntity entity = listEntity[i];
                         if (xOffset == 0 || yOffset == 0 || xOffset == 2 * chunkScale || yOffset == 2 * chunkScale )
-                            entity.transform.position = Extention.GetRandomPointAround((Vector2)entity.transform.position, 2);
+                            entity.transform.position = Extension.GetRandomPointAround((Vector2)entity.transform.position, 2);
                         mobsController.AddMobToUpdate(entity);
                         entity.EnableView();
                     }
@@ -148,7 +150,6 @@ namespace TheRavine.EntityControl
         {
             generator.onSpawnPoint -= AddSpawnPoint;
             generator.onUpdate -= UpdateNALQueue;
-            DayCycle.newDay -= UpdateNAL;
             ClearNALQueue();
             NALQueueUpdate.Clear();
             callback?.Invoke();

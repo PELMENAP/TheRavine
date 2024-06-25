@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 
 using TheRavine.Base;
-using TheRavine.Extentions;
+using TheRavine.Extensions;
 public class AudioNatureController : MonoBehaviour
 {
     [SerializeField] private AudioSource[] audioSource;
@@ -10,7 +10,7 @@ public class AudioNatureController : MonoBehaviour
     [SerializeField] private AudioSource OSTSource;
     [SerializeField] private AudioClip[] OSTClip;
     [SerializeField] private float volumeOSTlimit, volumeNatureLimit;
-    private float speedFade = 0.002f, lenghtOST, lenghtBack;
+    private float speedFade = 0.002f, lengthOST, lengthBack;
 
     private void Start()
     {
@@ -22,7 +22,7 @@ public class AudioNatureController : MonoBehaviour
         while (true)
         {
             audioSource[to].volume += speedFade;
-            audioSource[from].volume -= speedFade;
+            audioSource[from].volume -= speedFade * 2;
             if (audioSource[to].volume >= volumeNatureLimit)
             {
                 audioSource[from].Stop();
@@ -40,17 +40,17 @@ public class AudioNatureController : MonoBehaviour
             {
                 audioSource[0].clip = DayCycle.isday ? audioClipday[RavineRandom.RangeInt(0, audioClipday.Length)] : audioClipnight[RavineRandom.RangeInt(0, audioClipnight.Length)];
                 audioSource[0].Play();
-                lenghtBack = audioSource[0].clip.length;
+                lengthBack = audioSource[0].clip.length;
                 yield return StartCoroutine(ChangeAudio(1, 0));
             }
             else
             {
                 audioSource[1].clip = DayCycle.isday ? audioClipday[RavineRandom.RangeInt(0, audioClipday.Length)] : audioClipnight[RavineRandom.RangeInt(0, audioClipnight.Length)];
                 audioSource[1].Play();
-                lenghtBack = audioSource[1].clip.length;
+                lengthBack = audioSource[1].clip.length;
                 yield return StartCoroutine(ChangeAudio(0, 1));
             }
-            yield return new WaitForSeconds(lenghtBack - RavineRandom.RangeInt((int)lenghtBack / 8, (int)lenghtBack / 2));
+            yield return new WaitForSeconds(lengthBack - RavineRandom.RangeInt((int)lengthBack / 8, (int)lengthBack / 2));
         }
     }
 
@@ -67,7 +67,7 @@ public class AudioNatureController : MonoBehaviour
     {
         bool change = true;
         OSTSource.clip = OSTClip[current];
-        lenghtOST = OSTSource.clip.length;
+        lengthOST = OSTSource.clip.length;
         OSTSource.Play();
         while (change)
         {
@@ -77,7 +77,7 @@ public class AudioNatureController : MonoBehaviour
             yield return new WaitForEndOfFrame();
         }
 
-        yield return new WaitForSeconds(lenghtOST - RavineRandom.RangeInt((int)lenghtOST / 8, (int)lenghtOST / 2));
+        yield return new WaitForSeconds(lengthOST - RavineRandom.RangeInt((int)lengthOST / 8, (int)lengthOST / 2));
 
         while (!change)
         {

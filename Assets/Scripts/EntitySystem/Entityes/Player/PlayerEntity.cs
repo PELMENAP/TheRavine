@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Netcode;
 
 using TheRavine.Services;
 
@@ -6,32 +7,88 @@ namespace TheRavine.EntityControl
 {
     public class PlayerEntity : AEntity, ISetAble
     {
+        [SerializeField] private NetworkObject cameraPrefab;
+        private Camera mainCamera;
+        private ServiceLocator locator;
+
+        public override void OnNetworkSpawn() 
+        {
+
+            locator = ServiceLocatorAccess.inst.serviceLocator;
+            SetUp(null, locator);
+            if (IsClient && IsOwner) 
+            {
+                RequestCameraServerRpc(NetworkManager.Singleton.LocalClientId);
+                locator.GetService<EntitySystem>().AddToGlobal(this);
+            }
+        }
+
+        [ServerRpc]
+        private void RequestCameraServerRpc(ulong clientId)
+        {
+            NetworkObject cameraObject = Instantiate(cameraPrefab);
+            cameraObject.SpawnWithOwnership(clientId);
+            NotifyCameraCreatedClientRpc(cameraObject.NetworkObjectId, clientId);
+        }
+
+        [ClientRpc]
+        private void NotifyCameraCreatedClientRpc(ulong cameraObjectId, ulong clientId)
+        {
+            var cameraObject = NetworkManager.Singleton.SpawnManager.SpawnedObjects[cameraObjectId];
+            cameraComponent = cameraObject.GetComponent<CM>();
+
+            if (NetworkManager.Singleton.LocalClientId == clientId)
+            {
+                cameraComponent.SetPlayerEntity(this);
+                cameraComponent.SetUp(null, locator);
+                mainCamera = cameraObject.GetComponent<Camera>();
+            }
+            DisableOtherCameras(clientId);
+        }
+
+        private void DisableOtherCameras(ulong ownerId)
+        {
+            Camera[] cameras = Camera.allCameras;
+            foreach (var cam in cameras)
+            {
+                if (cam != mainCamera && cam.GetComponent<NetworkObject>()?.OwnerClientId == ownerId)
+                {
+                    cam.gameObject.SetActive(false);
+                }
+    }
+}
         [SerializeField] private EntityInfo playerInfo;
-        [SerializeField] private CM cameraMen;
+        private CM cameraComponent;
         private IEntityControllable controller;
         private StatePatternComponent statePatternComponent;
-
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
+            base.Birth();
             controller = this.GetComponent<IEntityControllable>();
             statePatternComponent = new StatePatternComponent();
             base.AddComponentToEntity(statePatternComponent);
             base.AddComponentToEntity(new EventBusComponent());
             base.AddComponentToEntity(new SkillComponent());
             Init();
-            cameraMen.SetUp(null, locator);
             callback?.Invoke();
+            Debug.Log("player is set up");
         }
 
-        public override void SetUpEntityData(EntityInfo _entityInfo)
+        public override void Init()
+        {
+            SetUpEntityData(playerInfo);
+            controller.SetInitialValues(this);
+            SetBehaviourIdle();
+        }
+
+        public override void SetUpEntityData(EntityInfo entityInfo)
         {
             // _entityGameData = new EntityGameData(_entityInfo);
-            base.AddComponentToEntity(new MainComponent(_entityInfo.name, _entityInfo.prefab.GetInstanceID(), new EntityStats(_entityInfo.statsInfo)));
-            base.AddComponentToEntity(new MovementComponent(new EntityMovementBaseStats(_entityInfo.movementStatsInfo)));
-            base.AddComponentToEntity(new AimComponent(new EntityAimBaseStats(_entityInfo.aimStatsInfo)));
-            controller.SetInitialValues(this);
+            base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.prefab.GetInstanceID(), new EntityStats(entityInfo.statsInfo)));
+            base.AddComponentToEntity(new MovementComponent(new EntityMovementBaseStats(entityInfo.movementStatsInfo)));
+            base.AddComponentToEntity(new AimComponent(new EntityAimBaseStats(entityInfo.aimStatsInfo)));
         }
-        public override Vector2 GetEntityPosition() => new Vector2(this.transform.position.x, this.transform.position.y);
+        public override Vector2 GetEntityPosition() => new(this.transform.position.x, this.transform.position.y);
         public override Vector2 GetEntityVelocity()
         {
             return new Vector2();
@@ -42,16 +99,10 @@ namespace TheRavine.EntityControl
         }
         public override void UpdateEntityCycle()
         {
-            if (statePatternComponent.behaviourCurrent != null)
-            {
-                statePatternComponent.behaviourCurrent.Update();
-                cameraMen.CameraUpdate();
-            }
-        }
-
-        public override void Init()
-        {
-            SetUpEntityData(playerInfo);
+            if (!IsAlife()) return;
+            if (statePatternComponent.behaviourCurrent == null) return;
+            statePatternComponent.behaviourCurrent.Update();
+            cameraComponent?.CameraUpdate();
         }
 
         public void SetBehaviourIdle()
@@ -62,7 +113,7 @@ namespace TheRavine.EntityControl
 
         public void SetBehaviourDialog()
         {
-            statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<PlayerBehaviourDialoge>());
+            statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<PlayerBehaviourDialogue>());
             controller.SetZeroValues();
             controller.DisableComponents();
         }
@@ -108,9 +159,9 @@ namespace TheRavine.EntityControl
 
         public void BreakUp(ISetAble.Callback callback)
         {
-            controller.Delete();
             Death();
-            cameraMen.BreakUp(callback);
+            controller.Delete();
+            cameraComponent?.BreakUp(callback);
         }
 
         public override void EnableView()
@@ -120,6 +171,16 @@ namespace TheRavine.EntityControl
         public override void DisableView()
         {
 
+        }
+
+        private void OnDisable() {
+            BreakUp(null);
+        }
+
+        public override void OnDestroy()
+        {
+            statePatternComponent.Dispose();
+            BreakUp(null);
         }
     }
 }

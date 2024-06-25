@@ -13,7 +13,7 @@ namespace TheRavine.ObjectControl
         private Dictionary<int, ObjectInfo> info;
         public ObjectInfo GetPrefabInfo(int id)
         {
-            if(!info.ContainsKey(id)) return null;
+            if(!info.ContainsKey(id)) return info[0];
             return info[id];
         }
         private Dictionary<Vector2, ObjectInstInfo> global;

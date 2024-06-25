@@ -3,6 +3,8 @@ using UnityEngine.UI;
 using System.Linq;
 using TMPro;
 
+using Tayx.Graphy;
+
 namespace TheRavine.Base
 {
     public class Settings : MonoBehaviour
@@ -10,13 +12,14 @@ namespace TheRavine.Base
         [SerializeField] private TMP_Dropdown dropdown;
         [SerializeField] private Toggle shadowToggle, joisticToggle, particlesToggle, profileToggle;
         [SerializeField] private GameObject profiler;
-        public static GameObject currentProfiler;
+        public static GraphyDebugger currentProfiler;
         public static int SceneNumber;
         public static bool isLoad, isJoistick, isShadow, isParticles, isProfile;
         public static ControlType _controlType;
 
         public void SetInitialValues()
         {
+            if(currentProfiler == null) currentProfiler = profiler.GetComponent<GraphyDebugger>();
             dropdown.ClearOptions();
             dropdown.AddOptions(QualitySettings.names.ToList());
             dropdown.value = QualitySettings.GetQualityLevel();
@@ -50,7 +53,7 @@ namespace TheRavine.Base
         public void SetProfiling()
         {
             isProfile = profileToggle.isOn;
-            profiler.SetActive(isProfile);
+            currentProfiler?.gameObject.SetActive(isProfile);
         }
     }
 }

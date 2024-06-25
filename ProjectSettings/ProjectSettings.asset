@@ -44,8 +44,8 @@ PlayerSettings:
     duration: 3
   m_VirtualRealitySplashScreen: {fileID: 0}
   m_HolographicTrackingLossScreen: {fileID: 0}
-  defaultScreenWidth: 1024
-  defaultScreenHeight: 768
+  defaultScreenWidth: 900
+  defaultScreenHeight: 600
   defaultScreenWidthWeb: 960
   defaultScreenHeightWeb: 600
   m_StereoRenderingPath: 0
@@ -108,7 +108,7 @@ PlayerSettings:
   xboxEnableFitness: 0
   visibleInBackground: 1
   allowFullscreenSwitch: 1
-  fullscreenMode: 1
+  fullscreenMode: 2
   xboxSpeechDB: 0
   xboxEnableHeadOrientation: 0
   xboxEnableGuest: 0
@@ -148,8 +148,9 @@ PlayerSettings:
   - {fileID: 3577697167160119698, guid: 0b72511b56e1ab54ca9f90bba1505377, type: 3}
   - {fileID: 7852824295285712418, guid: b3d15d59ad9aa87a38c26c1e97de6448, type: 3}
   - {fileID: 6908429162828912622, guid: adae632f026b24118899a930b4e1619f, type: 3}
-  - {fileID: 0}
   - {fileID: 8079554152659468491, guid: eac9ac9f7b106c63593abaabcb67837c, type: 3}
+  - {fileID: 0}
+  - {fileID: 11400000, guid: 1d16c970072ac4f95a46c81fbcc9fd19, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -752,7 +753,7 @@ PlayerSettings:
   platformArchitecture: {}
   scriptingBackend:
     Android: 1
-    Standalone: 1
+    Standalone: 0
   il2cppCompilerConfiguration: {}
   il2cppCodeGeneration: {}
   il2cppStacktraceInformation: {}

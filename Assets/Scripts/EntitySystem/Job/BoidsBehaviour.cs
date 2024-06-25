@@ -2,7 +2,7 @@
 using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Jobs;
-using Random = TheRavine.Extentions.RavineRandom;
+using Random = TheRavine.Extensions.RavineRandom;
 using Unity.Mathematics;
 using NaughtyAttributes;
 using Cysharp.Threading.Tasks;

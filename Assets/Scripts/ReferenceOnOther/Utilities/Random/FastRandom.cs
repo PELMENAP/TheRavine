@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace TheRavine.Extentions
+namespace TheRavine.Extensions
 {
     public sealed class FastRandom : IRandom
     {

@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11004bd93d3afeeafa3cd1072ee1e49f, type: 3}
   m_Name: PlayerMovementStatsInfo
   m_EditorClassIdentifier: 
-  BaseSpeed: 5
+  BaseSpeed: 50

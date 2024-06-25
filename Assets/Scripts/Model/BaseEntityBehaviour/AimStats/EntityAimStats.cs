@@ -3,15 +3,15 @@ namespace TheRavine.EntityControl
 {
     public class EntityAimBaseStats
     {
-        public int crosshairDistanse;
-        public int maxCrosshairDistanse;
+        public int crosshairDistance;
+        public int maxCrosshairDistance;
         public int crosshairOffset;
         public int pickDistance;
 
-        public EntityAimBaseStats(int _crosshairDistanse, int _maxCrosshairDistanse, int _crosshairOffset, int _pickDistance)
+        public EntityAimBaseStats(int _crosshairDistance, int _maxCrosshairDistance, int _crosshairOffset, int _pickDistance)
         {
-            crosshairDistanse = _crosshairDistanse;
-            maxCrosshairDistanse = _maxCrosshairDistanse;
+            crosshairDistance = _crosshairDistance;
+            maxCrosshairDistance = _maxCrosshairDistance;
             crosshairOffset = _crosshairOffset;
             pickDistance = _pickDistance;
 
@@ -19,9 +19,9 @@ namespace TheRavine.EntityControl
 
         public EntityAimBaseStats(EntityAimStatsInfo info)
         {
-            crosshairDistanse = info.CrosshairDistanse;
-            maxCrosshairDistanse = info.MaxCrosshairDistanse;
-            crosshairOffset = info.CrosshairDistanse;
+            crosshairDistance = info.CrosshairDistance;
+            maxCrosshairDistance = info.MaxCrosshairDistance;
+            crosshairOffset = info.CrosshairDistance;
             pickDistance = info.PickDistance;
         }
     }

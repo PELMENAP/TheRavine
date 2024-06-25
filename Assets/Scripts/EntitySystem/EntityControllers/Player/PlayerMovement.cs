@@ -1,22 +1,22 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Unity.Netcode;
 using Cysharp.Threading.Tasks;
 
-using TheRavine.Extentions;
+using TheRavine.Extensions;
 using TheRavine.Base;
 using TheRavine.Events;
 
 namespace TheRavine.EntityControl
 {
     [RequireComponent(typeof(Rigidbody2D))]
-    public class PlayerMovement : MonoBehaviour, IEntityControllable
+    public class PlayerMovement : NetworkBehaviour, IEntityControllable
     {
         [SerializeField] private int placeObjectDelay;
         [SerializeField] private float movementMinimum;
         [SerializeField] private Animator animator, shadowAnimator;
         [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick;
         [SerializeField] private Joystick joystick;
-        [SerializeField] private Camera cachedCamera;
         [SerializeField] private Transform crosshair, playerMark;
         private EventBusByName entityEventBus;
         private EntityAimBaseStats aimBaseStats;
@@ -24,15 +24,15 @@ namespace TheRavine.EntityControl
         private bool act = true;
         private Rigidbody2D rb;
         private float movementSpeed;
-        private Vector2 movementDirection;
-
+        public Vector2 movementDirection;
         private IController currentController;
-
         public void SetInitialValues(AEntity entity)
         {
+            this.transform.position = Extension.GetRandomPointAround(this.transform.position, 10);
+
             currentController = Settings._controlType switch
             {
-                ControlType.Personal => new PCController(Movement, RightClick, cachedCamera, transform),
+                ControlType.Personal => new PCController(Movement, RightClick, transform),
                 ControlType.Mobile => new JoistickController(joystick),
                 _ => throw new System.NotImplementedException()
             };
@@ -46,6 +46,7 @@ namespace TheRavine.EntityControl
         private void GetPlayerComponents(AEntity entity)
         {
             rb = (Rigidbody2D)GetComponent("Rigidbody2D");
+            rb.bodyType = RigidbodyType2D.Dynamic;
             entityEventBus = entity.GetEntityComponent<EventBusComponent>().EventBus;
             movementBaseStats = entity.GetEntityComponent<MovementComponent>().baseStats;
             aimBaseStats = entity.GetEntityComponent<AimComponent>().BaseStats;
@@ -61,8 +62,8 @@ namespace TheRavine.EntityControl
             
             // actions = Animate;
             // actions += Aim;
-            // PlayerBehaviourDialoge Dialoge = new PlayerBehaviourDialoge();
-            // component.AddBehaviour(typeof(PlayerBehaviourDialoge), Dialoge);
+            // PlayerBehaviourDialogue Dialogue = new PlayerBehaviourDialogue();
+            // component.AddBehaviour(typeof(PlayerBehaviourDialogue), Dialogue);
 
             actions = Animate;
             actions += Aim;
@@ -86,23 +87,52 @@ namespace TheRavine.EntityControl
 
         public void Move()
         {
-            if(isAimMode) return;
+            if(isAimMode || !IsOwner) return;
             movementDirection = currentController.GetMove();
-            if (movementDirection.magnitude < movementMinimum) movementDirection = Vector2.zero;
             movementSpeed = Mathf.Clamp(movementDirection.magnitude, 0.0f, 1.0f);
-            movementDirection.Normalize();
-            rb.velocity = movementBaseStats.baseSpeed * movementSpeed * movementDirection;
+
+            if (movementDirection.magnitude < movementMinimum) movementDirection = Vector2.zero;
+            else MoveServerRpc(movementDirection, movementSpeed);
+
             MoveMark();
+        }
+
+        [ServerRpc]
+        private void MoveServerRpc(Vector2 direction, float speed)
+        {
+            rb.velocity = movementBaseStats.baseSpeed * speed * direction.normalized;
+            UpdateClientPositionClientRpc(rb.position, rb.velocity);
+        }
+
+        [ClientRpc]
+        private void UpdateClientPositionClientRpc(Vector2 position, Vector2 velocity)
+        {
+            if (IsOwner) return;
+
+            rb.position = position;
+            rb.velocity = velocity;
         }
 
         private readonly Vector3 Offset = new(0, 0, 100);
         private void MoveMark()
         {
             playerMark.position = transform.position + Offset;
-            if (movementSpeed > 0.5f) playerMark.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(movementDirection.y, movementDirection.x) * Mathf.Rad2Deg - 90);
+            if (movementSpeed > movementMinimum / 2) playerMark.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(movementDirection.y, movementDirection.x) * Mathf.Rad2Deg - 90);
         }
 
         public void Animate()
+        {
+            if (IsOwner) PlayAnimationServerRpc();
+        }
+
+        [ServerRpc]
+        void PlayAnimationServerRpc()
+        {
+            PlayAnimationClientRpc();
+        }
+
+        [ClientRpc]
+        void PlayAnimationClientRpc()
         {
             if (movementDirection != Vector2.zero)
             {
@@ -129,8 +159,8 @@ namespace TheRavine.EntityControl
             }
             SetAimAddition(aim);
 
-            if (aim.magnitude < aimBaseStats.crosshairDistanse) crosshair.localPosition = aim;
-            else crosshair.localPosition = aim.normalized * aimBaseStats.crosshairDistanse;
+            if (aim.magnitude < aimBaseStats.crosshairDistance) crosshair.localPosition = aim;
+            else crosshair.localPosition = aim.normalized * aimBaseStats.crosshairDistance;
             crosshair.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg);
             crosshair.gameObject.SetActive(true);
             isAccurance = true;
@@ -154,8 +184,8 @@ namespace TheRavine.EntityControl
 
             float factMouseMagnitute = curAim.magnitude;
             Vector3 factMousePosition = curAim.normalized;
-            if (factMouseMagnitute > aimBaseStats.maxCrosshairDistanse * factMouseFactor) factMousePosition *= aimBaseStats.maxCrosshairDistanse;
-            else if (factMouseMagnitute < aimBaseStats.crosshairDistanse * factMouseFactor + 1) factMousePosition = Vector2.zero;
+            if (factMouseMagnitute > aimBaseStats.maxCrosshairDistance * factMouseFactor) factMousePosition *= aimBaseStats.maxCrosshairDistance;
+            else if (factMouseMagnitute < aimBaseStats.crosshairDistance * factMouseFactor + 1) factMousePosition = Vector2.zero;
 
             entityEventBus.Invoke(nameof(AimAddition), factMousePosition);
         }
@@ -180,7 +210,7 @@ namespace TheRavine.EntityControl
                     for (int yOffset = -aimBaseStats.pickDistance; yOffset <= aimBaseStats.pickDistance; yOffset++)
                         entityEventBus.Invoke(nameof(RaiseEvent), new Vector2(currentX + xOffset, currentY + yOffset));
             }
-            else entityEventBus.Invoke(nameof(RaiseEvent), Extention.RoundVector2D(crosshair.position));
+            else entityEventBus.Invoke(nameof(RaiseEvent), Extension.RoundVector2D(crosshair.position));
         }
 
         public void AimPlaceMobile()
@@ -200,7 +230,7 @@ namespace TheRavine.EntityControl
         {
             act = false;
 
-            entityEventBus.Invoke(nameof(PlaceEvent), Extention.RoundVector2D(crosshair.position));
+            entityEventBus.Invoke(nameof(PlaceEvent), Extension.RoundVector2D(crosshair.position));
             await UniTask.Delay(placeObjectDelay);
             act = true;
         }

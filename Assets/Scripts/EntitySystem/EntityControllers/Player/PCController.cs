@@ -8,10 +8,10 @@ public class PCController : IController
     private readonly Camera cam;
     private readonly Transform playerTransform;
 
-    public PCController(InputActionReference _MovementRef, InputActionReference _RightClick, Camera _cam, Transform _playerTransform)
+    public PCController(InputActionReference _MovementRef, InputActionReference _RightClick, Transform _playerTransform)
     {
         mouse = Mouse.current;
-        cam = _cam;
+        cam = Camera.main;
         MovementRef = _MovementRef;
         RightClick = _RightClick;
         playerTransform = _playerTransform;

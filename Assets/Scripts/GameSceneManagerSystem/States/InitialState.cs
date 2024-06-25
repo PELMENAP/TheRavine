@@ -13,8 +13,8 @@ namespace TheRavine.Base
             }
             public void OnEnter()
             {
-                Initializer.StartNewServise(null);
-                Initializer.StartNewServise(() => isChangeState = true);
+                Initializer.StartNewService(null);
+                Initializer.StartNewService(() => isChangeState = true);
                 FaderOnTransit.instance.SetLogs("Загрузка ресурсов");
             }
             public void OnExit()

@@ -1,0 +1,402 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &437352592739290882
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 649427714960990061}
+  - component: {fileID: 7628109998501893574}
+  - component: {fileID: 4649103930164113518}
+  - component: {fileID: 8320034839365155223}
+  m_Layer: 0
+  m_Name: EntitySystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 2147483647
+  m_IsActive: 1
+--- !u!4 &649427714960990061
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 437352592739290882}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7628109998501893574
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 437352592739290882}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8feeaef7c9e149c4bd6290fcf637c73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _mobInfo:
+  - {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+  boidsBehaviour: {fileID: 0}
+--- !u!114 &4649103930164113518
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 437352592739290882}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbd1c530cfc18971e9325b970df2aa43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  regions:
+  - temperatureLevels:
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+  - temperatureLevels:
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+  - temperatureLevels:
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+  - temperatureLevels:
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+  - temperatureLevels:
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+  - temperatureLevels:
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+  - temperatureLevels:
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+  - temperatureLevels:
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+  - temperatureLevels:
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+    - entities:
+      - Chance: 50
+        info: {fileID: 11400000, guid: 0401fb3b6d408f794969acdc82c18415, type: 2}
+      - Chance: 0
+        info: {fileID: 0}
+      - Chance: 0
+        info: {fileID: 0}
+  MaxSpawnEntityCount: 100
+  step: 3
+--- !u!114 &8320034839365155223
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 437352592739290882}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 297eb5979f91f1cefa6027ef9e91d95a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

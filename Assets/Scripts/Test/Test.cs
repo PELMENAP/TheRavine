@@ -1,12 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
+using Unity.Netcode;
 using NaughtyAttributes;
 using Cysharp.Threading.Tasks;
 
 using TheRavine.Base;
 using TheRavine.Generator;
-using TheRavine.Extentions;
+using TheRavine.Extensions;
 using TheRavine.EntityControl;
 
 using DS.ScriptableObjects;
@@ -81,7 +82,7 @@ public class Test : MonoBehaviour
     [Button]
     private void TestSimilarity()
     {
-        double similarity = Extention.JaroWinklerSimilarity(test, enter);
+        double similarity = Extension.JaroWinklerSimilarity(test, enter);
         print(similarity);
     }
 

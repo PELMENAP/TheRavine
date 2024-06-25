@@ -1,17 +1,4 @@
-﻿/* ---------------------------------------
- * Author:          Martin Pane (martintayx@gmail.com) (@martinTayx)
- * Contributors:    https://github.com/Tayx94/graphy/graphs/contributors
- * Project:         Graphy - Ultimate Stats Monitor
- * Date:            23-Dec-17
- * Studio:          Tayx
- *
- * Git repo:        https://github.com/Tayx94/graphy
- *
- * This project is released under the MIT license.
- * Attribution is not required, but it is always welcomed!
- * -------------------------------------*/
-
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.Events;
 using Debug = UnityEngine.Debug;
@@ -26,9 +13,6 @@ using Tayx.Graphy.Utils;
 
 namespace Tayx.Graphy
 {
-    /// <summary>
-    /// Main class to access the Graphy Debugger API.
-    /// </summary>
     public class GraphyDebugger : G_Singleton<GraphyDebugger>
     {
         protected GraphyDebugger()
@@ -383,9 +367,6 @@ namespace Tayx.Graphy
 
         #region Methods -> Private
 
-        /// <summary>
-        /// Checks all the Debug Packets to see if they have to be executed.
-        /// </summary>
         private void CheckDebugPackets()
         {
             if( m_debugPackets == null )

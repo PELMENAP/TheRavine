@@ -1,7 +1,8 @@
 using UnityEngine;
-using System.Collections;
+using Cysharp.Threading.Tasks;
+
 using TheRavine.Base;
-using TheRavine.Extentions;
+using TheRavine.Extensions;
 
 public class AudioRadioController : MonoBehaviour
 {
@@ -18,9 +19,8 @@ public class AudioRadioController : MonoBehaviour
 
     public void StartDefaultRadio()
     {
-        DayCycle.newDay += ChangeMood;
-        ChangeMood();
-        StartCoroutine(Audio());
+        ChangeMood().Forget();
+        Audio().Forget();
     }
 
     public void StartWinRadio(AudioClip audioClip)
@@ -29,31 +29,35 @@ public class AudioRadioController : MonoBehaviour
         audioSource.Play();
     }
 
-    private void ChangeMood()
+    private async UniTaskVoid ChangeMood()
     {
-        mood = RavineRandom.RangeInt(1, 3);
-        switch (mood)
+        while (!DataStorage.sceneClose)
         {
-            case 1:
-                audioClipRadio = audioClipRadioSad;
-                break;
-            case 2:
-                audioClipRadio = audioClipRadioNormal;
-                break;
-            case 3:
-                audioClipRadio = audioClipRadioFunny;
-                break;
-        }
-        // print("Настроение: ");
-        // print(mood);
-        playingYet = new bool[audioClipRadio.Length];
-        for (int j = 0; j < audioClipRadio.Length; j++)
-        {
-            playingYet[j] = false;
+            mood = RavineRandom.RangeInt(1, 3);
+            switch (mood)
+            {
+                case 1:
+                    audioClipRadio = audioClipRadioSad;
+                    break;
+                case 2:
+                    audioClipRadio = audioClipRadioNormal;
+                    break;
+                case 3:
+                    audioClipRadio = audioClipRadioFunny;
+                    break;
+            }
+            // print("Настроение: ");
+            // print(mood);
+            playingYet = new bool[audioClipRadio.Length];
+            for (int j = 0; j < audioClipRadio.Length; j++)
+            {
+                playingYet[j] = false;
+            }
+            await UniTask.Delay(100000);
         }
     }
 
-    private IEnumerator Audio()
+    private async UniTaskVoid Audio()
     {
         while (true)
         {
@@ -72,7 +76,7 @@ public class AudioRadioController : MonoBehaviour
                 }
                 if (number == firstnumber)
                 {
-                    ChangeMood();
+                    ChangeMood().Forget();
                 }
             }
             // print(number);
@@ -81,11 +85,11 @@ public class AudioRadioController : MonoBehaviour
             audioSource.clip = audioClipRadio[number];
 
             audioSource.Play();
-            yield return new WaitForSeconds(RavineRandom.RangeInt(60, audioLength - 20));
+            await UniTask.Delay(1000 * RavineRandom.RangeInt(60, audioLength - 20));
             audioSource.Stop();
             audioSource.clip = audioStray[RavineRandom.RangeInt(0, audioStray.Length)];
             audioSource.Play();
-            yield return new WaitForSeconds(RavineRandom.RangeInt(3, 5));
+            await UniTask.Delay(1000 * RavineRandom.RangeInt(3, 5));
             audioSource.Stop();
         }
     }

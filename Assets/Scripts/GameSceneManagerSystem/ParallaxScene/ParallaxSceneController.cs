@@ -4,7 +4,7 @@ using UnityEngine.Rendering.Universal;
 using Cysharp.Threading.Tasks;
 
 using TheRavine.Base;
-using TheRavine.Extentions;
+using TheRavine.Extensions;
 
 using System;
 using TMPro;
@@ -20,7 +20,7 @@ public class ParallaxSceneController : MonoBehaviour
     [SerializeField] private TextMeshPro textMeshPro;
     // [SerializeField] private bool win;
     private SyncedTimer _timer;
-    private SceneTransitor transitor;
+    private SceneTransistor transistor;
 
     public void AddCameraToStack(Camera _cameraToAdd) => _cameraData.cameraStack.Add(_cameraToAdd);
 
@@ -28,7 +28,7 @@ public class ParallaxSceneController : MonoBehaviour
     {
         // DataStorage.winTheGame = win;
         AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
-        transitor = new SceneTransitor();
+        transistor = new SceneTransistor();
 
         _timer = new SyncedTimer(timerType, DataStorage.winTheGame ? timeToDelay * 6 : timeToDelay);
         _timer.TimerFinished += TimerFinished;
@@ -41,15 +41,15 @@ public class ParallaxSceneController : MonoBehaviour
         {
             winObject.SetActive(true);
             controller.StartWinRadio(audioClip);
-            PrintText($"Игра пройдена за {Convert.ToString(Time.time - DataStorage.startTime)} секунд \r\nЗа {DataStorage.cycleCount} останов{Extention.GetSklonenie(DataStorage.cycleCount)}").Forget();
+            PrintText($"Игра пройдена за {Convert.ToString(Time.time - DataStorage.startTime)} секунд \r\nЗа {DataStorage.cycleCount} останов{Extension.GetSklonenie(DataStorage.cycleCount)}").Forget();
         }
         else controller.StartDefaultRadio();
     }
 
     private void TimerFinished()
     {
-        if(DataStorage.winTheGame) transitor.LoadScene(0).Forget();
-        else transitor.LoadScene(2).Forget();
+        if(DataStorage.winTheGame) transistor.LoadScene(0).Forget();
+        else transistor.LoadScene(2).Forget();
         Settings.isLoad = false;
         AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
     }
