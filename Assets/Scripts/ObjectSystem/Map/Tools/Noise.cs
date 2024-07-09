@@ -1,24 +1,25 @@
 ﻿using UnityEngine;
+
 using TheRavine.Generator;
 using TheRavine.Extensions;
 public static class Noise
 {
     public enum NormalizeMode { Local, Global, Temp };
     private static Vector2[] octaveOffsets, tempOctaveOffsets;
-    private static int octaves;
+    private static byte octaves, halfWidth = MapGenerator.mapChunkSize / 2, halfHeight = MapGenerator.mapChunkSize / 2;
     private static float persistence, lacunarity, scaleInverse;
-    private static float halfWidth = MapGenerator.mapChunkSize / 2f;
-    private static float halfHeight = MapGenerator.mapChunkSize / 2f;
-    public static void SetInit(float scale, byte _octaves, float _persistence, float _lacunarity, int seed)
+    public static void SetInit(float scale, byte _octaves, float _persistence, float _lacunarity, int _seed)
     {
-        FastRandom prng = new FastRandom(seed);
-        FastRandom tprng = new FastRandom(seed * 2);
+        FastRandom prng = new FastRandom(_seed);
+        FastRandom tprng = new FastRandom(_seed * 2);
         octaveOffsets = new Vector2[_octaves];
         tempOctaveOffsets = new Vector2[_octaves];
+
         octaves = _octaves;
         persistence = _persistence;
         lacunarity = _lacunarity;
         scaleInverse = 1 / scale;
+
         for (byte i = 0; i < octaves; i++)
         {
             octaveOffsets[i] = new Vector2(prng.Range(-100000, 100000), prng.Range(-100000, 100000));
@@ -32,7 +33,6 @@ public static class Noise
 
         for (byte i = 0; i < octaves; i++)
         {
-            octaveOffsets[i] = new Vector2(offset.x + octaveOffsets[i].x, offset.y + octaveOffsets[i].y);
             maxPossibleHeight += amplitude;
             amplitude *= persistence;
         }
@@ -49,8 +49,8 @@ public static class Noise
                 float noiseHeight = 0;
                 for (byte i = 0; i < octaves; i++)
                 {
-                    float sampleX = (x + halfWidth + octaveOffsets[i].x) * scaleInverse * frequency;
-                    float sampleY = (y + halfHeight + octaveOffsets[i].y) * scaleInverse * frequency;
+                    float sampleX = (x + halfWidth + octaveOffsets[i].x + offset.x) * scaleInverse * frequency;
+                    float sampleY = (y + halfHeight + octaveOffsets[i].y + offset.y) * scaleInverse * frequency;
                     float perlinValue = Mathf.PerlinNoise(sampleX, sampleY) * 2 - 1;
                     noiseHeight += perlinValue * amplitude;
                     amplitude *= persistence;
@@ -71,8 +71,6 @@ public static class Noise
                     noiseMap[x, y] = Mathf.InverseLerp(minLocalNoiseHeight, maxLocalNoiseHeight, noiseMap[x, y]);
                 else
                     noiseMap[x, y] = Mathf.Clamp((noiseMap[x, y] + 1) * globalNormalizeFactor, 0, int.MaxValue);
-        for (byte i = 0; i < octaves; i++)
-            octaveOffsets[i] = new Vector2(octaveOffsets[i].x - offset.x, octaveOffsets[i].y - offset.y);
     }
 
     public static void GenerateTempNoiseMap(ref float[,] noiseMap, Vector2 offset)
@@ -82,7 +80,6 @@ public static class Noise
 
         for (byte i = 0; i < octaves; i++)
         {
-            tempOctaveOffsets[i] = new Vector2(offset.x + tempOctaveOffsets[i].x, offset.y + tempOctaveOffsets[i].y);
             maxPossibleHeight += amplitude;
             amplitude *= persistence;
         }
@@ -99,8 +96,8 @@ public static class Noise
                 float noiseHeight = 0;
                 for (byte i = 0; i < octaves; i++)
                 {
-                    float sampleX = (x + halfWidth + tempOctaveOffsets[i].x) * 0.5f * scaleInverse * frequency;
-                    float sampleY = (y + halfHeight + tempOctaveOffsets[i].y) * 0.5f * scaleInverse * frequency;
+                    float sampleX = (x + halfWidth + tempOctaveOffsets[i].x + offset.x) * 0.5f * scaleInverse * frequency;
+                    float sampleY = (y + halfHeight + tempOctaveOffsets[i].y + offset.y) * 0.5f * scaleInverse * frequency;
                     float perlinValue = Mathf.PerlinNoise(sampleX, sampleY) * 2 - 1;
                     noiseHeight += perlinValue * amplitude;
                     amplitude *= persistence;
@@ -118,7 +115,5 @@ public static class Noise
         for (byte y = 0; y < MapGenerator.mapChunkSize; y++)
             for (byte x = 0; x < MapGenerator.mapChunkSize; x++)
                     noiseMap[x, y] = Mathf.Clamp((noiseMap[x, y] + 1) * globalNormalizeFactor, 0, int.MaxValue);
-        for (byte i = 0; i < octaves; i++)
-            tempOctaveOffsets[i] = new Vector2(tempOctaveOffsets[i].x - offset.x, tempOctaveOffsets[i].y - offset.y);
     }
 }

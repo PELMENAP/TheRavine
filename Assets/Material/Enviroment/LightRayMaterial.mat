@@ -71,17 +71,16 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Bot: 0
+    - _Bot: 0.94
     - _Left: 0
     - _Right: 0.07
-    - _Smoothness: 0.156
-    - _Top: 0.18
-    - _opacity: 0.521
-    - _power: 20
-    - _reflectionsFrequency: 0.097
-    - _reflectionsSpeed: 3.52
-    - _reflectionsStrength: 4.14
-    - right: 0.9
+    - _Smoothness: 0.48
+    - _Top: 0
+    - _opacity: 0.126
+    - _reflectionsFrequency: 0.191
+    - _reflectionsSpeed: 2.69
+    - _reflectionsStrength: 0.4
+    - right: 1
     m_Colors: []
   m_BuildTextureStacks: []
   m_AllowLocking: 1

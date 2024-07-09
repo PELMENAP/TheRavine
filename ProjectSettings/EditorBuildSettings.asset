@@ -15,8 +15,11 @@ EditorBuildSettings:
     path: Assets/Scenes/ParallaxEffect.unity
     guid: e53eba69bc4cc0083b8122379e41eae7
   - enabled: 1
-    path: Assets/Scenes/TestScene/Test.unity
+    path: Assets/Scenes/TestScene/FreeScene.unity
     guid: 88f75c26ff1d8a6f1b59a53023da678d
+  - enabled: 1
+    path: Assets/Scenes/Main_game 1/FirstAct.unity
+    guid: 2d91dc41aeeb7c6f1857aa931f1e02f7
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 1d16c970072ac4f95a46c81fbcc9fd19,
       type: 2}

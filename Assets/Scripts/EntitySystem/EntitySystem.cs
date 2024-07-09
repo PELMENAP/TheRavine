@@ -17,6 +17,7 @@ namespace TheRavine.EntityControl
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
             // skillFacade = new SkillFacade();
+            Debug.Log("entsys is start");
             global  = new List<AEntity>();
             mobInfo = new Dictionary<int, EntityInfo>(4);
             if(boidsBehaviour != null) boidsBehaviour.StartBoids().Forget();
