@@ -1,11 +1,13 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace TheRavine.Services
 {
     public class ServiceLocator
     {
         private System.Collections.Generic.Dictionary<System.Type, MonoBehaviour> services = new System.Collections.Generic.Dictionary<System.Type, MonoBehaviour>();
-        private Transform playerTransform;
+        
+        private List<Transform> playersTransforms = new List<Transform>();
         public bool Register<T>(T service) where T : MonoBehaviour
         {
             System.Type type = typeof(T);
@@ -15,7 +17,10 @@ namespace TheRavine.Services
                 return false;
             return true;
         }
-        public void RegisterPlayer<T>() where T : MonoBehaviour => playerTransform = services[typeof(T)].transform;
+        public void RegisterPlayer<T>(T service) where T : MonoBehaviour
+        {
+            playersTransforms.Add(service.transform);
+        }
         public T GetService<T>() where T : MonoBehaviour
         {
             System.Type type = typeof(T);
@@ -25,7 +30,8 @@ namespace TheRavine.Services
                 return null;
         }
 
-        public Transform GetPlayerTransform() => playerTransform;
+        public Transform GetPlayerTransform() => playersTransforms[0];
+        public List<Transform> GetPlayersTransforms() => playersTransforms;
 
         public void Dispose()
         {

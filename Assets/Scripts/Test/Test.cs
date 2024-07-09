@@ -59,6 +59,20 @@ public class Test : MonoBehaviour
         // point.action.performed += mobile;
     }
 
+    public static void PrintMap(int[,] map)
+    {
+        int size = map.GetLength(0);
+        for (int x = 0; x < size; x++)
+        {
+            string mes = "";
+            for (int y = 0; y < size; y++)
+            {
+                mes += map[x, y] + " ";
+            }
+            Debug.Log(mes);
+        }
+    }
+
     [Button]
     private void ShowPlayerEntity()
     {

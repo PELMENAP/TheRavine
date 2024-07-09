@@ -81,7 +81,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ScreenTex:
-        m_Texture: {fileID: 2800000, guid: 49e5a0bcea3f0e74bbdfe92623a02d36, type: 3}
+        m_Texture: {fileID: 8400000, guid: 45c76afda2b0235458a586ed33eb1f3c, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Texture2DAsset_14e926ab2a2644d083cc341d07fe3eb5_Out_0:
@@ -89,7 +89,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _WaterFlowTexture:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 8bd315b4e91fa94408b67271e6a57649, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -110,23 +110,23 @@ Material:
     - _Pixels: 128
     - _WaterFlowTextureStrength: 0.4
     - _alpha: 1
-    - _foamOpacity: 0.75
+    - _foamOpacity: 0.07
     - _foamSize: 1.9
     - _foamSpeed: 0
     - _reflectionsOpacity: 3.63
     - _reflectionsSize: 0.675
     - _reflectionsSpeed: 1
-    - _waterWavesSpeed: 1
+    - _waterWavesSpeed: 2
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _Flip: {r: 1, g: 1, b: 1, a: 1}
     - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
-    - _WaterColor: {r: 1, g: 0.5647059, b: 0.44705883, a: 1}
+    - _WaterColor: {r: 0.9487807, g: 0.9716981, b: 0.96889794, a: 1}
     - _flowSpeed: {r: 0, g: 0.2, b: 0, a: 0}
-    - _flowSpeed1: {r: 0, g: 0.03, b: 0, a: 0}
-    - _flowSpeed2: {r: 0, g: 0.05, b: 0, a: 0}
-    - _foamColor: {r: 1, g: 0, b: 0, a: 1}
-    - _offset: {r: 0, g: 0, b: 0, a: 0}
+    - _flowSpeed1: {r: 0.03, g: 0, b: 0, a: 0}
+    - _flowSpeed2: {r: 0.05, g: 0, b: 0, a: 0}
+    - _foamColor: {r: 1, g: 1, b: 1, a: 1}
+    - _offset: {r: 0, g: 0.03, b: 0, a: 0}
     - _tilling: {r: 1, g: 1, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -15,6 +15,8 @@ namespace TheRavine.EntityControl
         {
 
             locator = ServiceLocatorAccess.inst.serviceLocator;
+            locator.RegisterPlayer<PlayerEntity>(this);
+
             SetUp(null, locator);
             if (IsClient && IsOwner) 
             {
@@ -55,8 +57,9 @@ namespace TheRavine.EntityControl
                 {
                     cam.gameObject.SetActive(false);
                 }
-    }
-}
+            }
+        }
+
         [SerializeField] private EntityInfo playerInfo;
         private CM cameraComponent;
         private IEntityControllable controller;
@@ -99,7 +102,7 @@ namespace TheRavine.EntityControl
         }
         public override void UpdateEntityCycle()
         {
-            if (!IsAlife()) return;
+            if (!base.IsAlife()) return;
             if (statePatternComponent.behaviourCurrent == null) return;
             statePatternComponent.behaviourCurrent.Update();
             cameraComponent?.CameraUpdate();

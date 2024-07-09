@@ -3,6 +3,7 @@ using UnityEngine.Rendering.Universal;
 using System.Reflection;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using Unity.Netcode;
 
 using TheRavine.EntityControl;
 using TheRavine.Services;
@@ -24,7 +25,7 @@ namespace TheRavine.Base
         [SerializeField] private Canvas inventoryCanvas;
         [SerializeField] private ServiceLocatorAccess serviceLocatorAccess;
         private SceneTransistor trasitor;
-        private void Awake()
+        private void Start()
         {
             
             DataStorage.winTheGame = false;
@@ -45,6 +46,7 @@ namespace TheRavine.Base
             }
 
             if(serviceLocatorAccess != null) serviceLocatorAccess.serviceLocator = serviceLocator;
+            else Debug.Log("There's not service locator accesses on the scene!");;
 
             StateMachine = Settings.SceneNumber switch
             {
@@ -63,14 +65,16 @@ namespace TheRavine.Base
         }
         public void StartNewService(ISetAble.Callback callback)
         {
-            if (_setAble.Count == 0) return;
-            ISetAble setAble = _setAble.Dequeue();
-            _disAble.Enqueue(setAble);
-            setAble.SetUp(callback, serviceLocator);
+            if (_setAble.Count == 0) callback?.Invoke();
+            else
+            {
+                ISetAble setAble = _setAble.Dequeue();
+                _disAble.Enqueue(setAble);
+                setAble.SetUp(callback, serviceLocator);
+            }
         }
         public void StartGame()
         {
-
             if(help != null)
             {
                 help.SetActive(false);
@@ -88,6 +92,8 @@ namespace TheRavine.Base
                 help.SetActive(true);
             }
             if(inventoryCanvas != null) inventoryCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+            NetworkManager.Singleton.StartHost();
         }
 
         public void SwitchToMainMenu(){

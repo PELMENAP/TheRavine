@@ -32,8 +32,11 @@ namespace TheRavine.EntityControl
         {
             generator = locator.GetService<MapGenerator>();
             mobsController = locator.GetService<MobController>();
-            generator.onSpawnPoint += AddSpawnPoint;
-            generator.onUpdate += UpdateNALQueue;
+            if(generator != null)
+            {
+                generator.onSpawnPoint += AddSpawnPoint;
+                generator.onUpdate += UpdateNALQueue;
+            }
             UpdateNAL().Forget();
 
             entitySystem = locator.GetService<EntitySystem>();
@@ -148,8 +151,11 @@ namespace TheRavine.EntityControl
 
         public void BreakUp(ISetAble.Callback callback)
         {
-            generator.onSpawnPoint -= AddSpawnPoint;
-            generator.onUpdate -= UpdateNALQueue;
+            if(generator != null)
+            {
+                generator.onSpawnPoint -= AddSpawnPoint;
+                generator.onUpdate -= UpdateNALQueue;
+            }
             ClearNALQueue();
             NALQueueUpdate.Clear();
             callback?.Invoke();

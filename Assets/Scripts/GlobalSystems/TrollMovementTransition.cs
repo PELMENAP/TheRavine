@@ -18,6 +18,10 @@ public class TrollMovementTransition : MonoBehaviour
     [SerializeField] private InventoryItemInfo ticketInfo;
     private SyncedTimer _timer;
     private void Start() {
+        if(textMeshPro == null){
+            Debug.Log("no display troll text");
+            return;
+        }
         int factTime = timeToDelay - 20 * DataStorage.cycleCount;
         if(factTime <= 0) factTime = 50;
         _timer = new SyncedTimer(timerType, factTime);
