@@ -81,7 +81,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ScreenTex:
-        m_Texture: {fileID: 8400000, guid: 45c76afda2b0235458a586ed33eb1f3c, type: 2}
+        m_Texture: {fileID: 2800000, guid: a05da77e1ee2683b0a8987f01446dfa5, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Texture2DAsset_14e926ab2a2644d083cc341d07fe3eb5_Out_0:

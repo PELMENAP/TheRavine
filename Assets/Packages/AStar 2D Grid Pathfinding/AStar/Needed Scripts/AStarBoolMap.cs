@@ -81,12 +81,8 @@ namespace AStar.Algolgorithms
 			return neighbourCells.ToArray();
 		}
 
-		//This algorithm is based on the psudo code from https://en.wikipedia.org/wiki/A*_search_algorithm
-
-		// Generates a path between a start node and a goal node
 		public static (int, int)[] GeneratePath(int startX, int startY, int goalX, int goalY, bool[,] walkableMap, bool manhattanHeuristic = true, bool walkableDiagonals = false)
 		{
-			// Set the heuristic function to use based on the manhattanHeuristic parameter
 			Func<int, int, int, int, float> heuristic = manhattanHeuristic ? calcHeuristicManhattan : calcHeuristicEuclidean;
 
 			// Get the dimensions of the map
@@ -140,8 +136,6 @@ namespace AStar.Algolgorithms
 					float dist = currentX - neighbourX == 0 || currentY - neighbourY == 0 ? 1 : sqrt2;
 					float tentativeGCost = gCostMap[currentY, currentX] + dist;
 
-					// If the neighbour has not been visited yet, or the tentative g cost is lower than its current g cost,
-					// update its g, f and parent values and add it to the open set
 					if (gCostMap[neighbourY, neighbourX] == 0 || tentativeGCost < gCostMap[neighbourY, neighbourX])
 					{
 						parentMap[neighbourY, neighbourX] = current;
@@ -156,8 +150,6 @@ namespace AStar.Algolgorithms
 					}
 				}
 			}
-
-			// Returns a empty path, if none could be found
 			return new (int, int)[0];
 		}
 

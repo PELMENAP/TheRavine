@@ -8,7 +8,6 @@ namespace AStar.Algolgorithms
 {
 	public class AStarCostMap
 	{
-		// Calculates the Manhattan heuristic distance between two nodes
 		private static float calcHeuristicManhattan(int nodeX, int nodeY, int goalX, int goalY)
 		{
 			return Mathf.Abs(nodeX - goalX) + Mathf.Abs(nodeY - goalY);
@@ -36,8 +35,6 @@ namespace AStar.Algolgorithms
 			path.Reverse();
 			return path.ToArray();
 		}
-
-		// Returns an array of neighbour nodes for a given node
 		private static (float, (int, int))[] getNeighbours(int xCordinate, int yCordinate, float[,] costMap, bool walkableDiagonals = false)
 		{
 			List<(float, (int, int))> neighbourCells = new List<(float, (int, int))>();
@@ -79,18 +76,8 @@ namespace AStar.Algolgorithms
 
 			return neighbourCells.ToArray();
 		}
-
-		//This algorithm is based on the psudo code from https://en.wikipedia.org/wiki/A*_search_algorithm
-
-		// This function generates a path from the starting point to the goal point on a cost map using A* search algorithm
-		// The function takes in the starting point (startX, startY), the goal point (goalX, goalY), a 2D cost map, 
-		// an optional flag to use either Manhattan or Euclidean heuristic, and an optional flag to allow diagonal movement even if it is not reachable via a horizontal and a vertical move
-		// The function returns an array of points that represent the path from the starting point to the goal point
 		public static (int, int)[] GeneratePath(int startX, int startY, int goalX, int goalY, float[,] costMap, bool manhattanHeuristic = true, bool walkableDiagonals = false)
 		{
-			UnityEngine.Debug.Log("AStarCostMap.GeneratePath");
-
-			// Set the heuristic function to use based on the manhattanHeuristic parameter
 			Func<int, int, int, int, float> heuristic = manhattanHeuristic ? calcHeuristicManhattan : calcHeuristicEuclidean;
 
 			// Get the dimensions of the map
@@ -138,15 +125,12 @@ namespace AStar.Algolgorithms
 					float dist = currentX - neighbourX == 0 || currentY - neighbourY == 0 ? 1 : sqrt2;
 					float tentativeGCost = gCostMap[currentY, currentX] + dist * neighbour.Item1;
 
-					// If the neighbour has not been visited yet, or the tentative g cost is lower than its current g cost,
-					// update its g, f and parent values and add it to the open set
 					if (gCostMap[neighbourY, neighbourX] == 0 || tentativeGCost < gCostMap[neighbourY, neighbourX])
 					{
 						parentMap[neighbourY, neighbourX] = current;
 						gCostMap[neighbourY, neighbourX] = tentativeGCost;
 						fCostMap[neighbourY, neighbourX] = tentativeGCost + heuristic(neighbourX, neighbourY, goalX, goalY);
 
-						// If the neighbor node is not in the open set, add it
 						if (!openSet.Contains(neighbour.Item2))
 						{
 							openSet.Enqueue(neighbour.Item2, fCostMap[neighbourY, neighbourX]);
@@ -155,7 +139,6 @@ namespace AStar.Algolgorithms
 				}
 			}
 
-			// Returns a empty path, if none could be found
 			return new (int, int)[0];
 		}
 	}
