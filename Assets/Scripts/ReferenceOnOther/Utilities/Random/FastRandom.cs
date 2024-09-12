@@ -73,6 +73,11 @@ namespace TheRavine.Extensions
             return new Quaternion(surface.x, surface.y, surface.z, GetFloat());
         }
 
+        public Color GetColor()
+        {
+            return new Color(Range(0f, 1f), Range(0f, 1f), Range(0f, 1f), Range(0.8f, 1f));
+        }
+
         private double InternalSample()
         {
             var ret = _next * ModulusReciprocal;
@@ -86,8 +91,9 @@ namespace TheRavine.Extensions
         private static FastRandom fastRandom = new FastRandom();
         public static int RangeInt(int min, int max) => fastRandom.Range(min, max);
         public static float RangeFloat(float min, float max) => fastRandom.Range(min, max);
-        public static int Hundred() => fastRandom.Range(0, 100);
+        public static int Hundred() => RangeInt(0, 100);
         public static Vector2 GetInsideCircle(float radius = 1) => fastRandom.GetInsideCircle(radius);
+        public static Color RangeColor() => fastRandom.GetColor();
         // public static Vector2 GetInsideCircleSquare(float radius) => fastRandom.GetInsideCircle(radius);
     }
 }

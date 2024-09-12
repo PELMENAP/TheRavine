@@ -100,8 +100,8 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void MoveServerRpc(Vector2 direction, float speed)
         {
-            rb.velocity = movementBaseStats.baseSpeed * speed * direction.normalized;
-            UpdateClientPositionClientRpc(rb.position, rb.velocity);
+            rb.linearVelocity = movementBaseStats.baseSpeed * speed * direction.normalized;
+            UpdateClientPositionClientRpc(rb.position, rb.linearVelocity);
         }
 
         [ClientRpc]
@@ -110,7 +110,7 @@ namespace TheRavine.EntityControl
             if (IsOwner) return;
 
             rb.position = position;
-            rb.velocity = velocity;
+            rb.linearVelocity = velocity;
         }
 
         private readonly Vector3 Offset = new(0, 0, 100);
