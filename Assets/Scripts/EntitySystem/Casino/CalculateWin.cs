@@ -238,7 +238,7 @@ public class CalculateWin
             
             byte countM = 1;
 
-            if(tergetM != 10)
+            if(tergetM != 10 && tergetM != 11 )
             {
                 Color color = RavineRandom.RangeColor();
 
@@ -285,7 +285,7 @@ public class CalculateWin
             
             countM = 1;
 
-            if(tergetM != 10)
+            if(tergetM != 10 && tergetM != 11)
             {
                 Color color = RavineRandom.RangeColor();
 
