@@ -33,7 +33,7 @@ namespace TheRavine.Generator
             int numHorizontalRoads = rand.Range(4, 10);
             int riverWidthMin = 3;
             int riverWidthMax = 4;
-            randomSeed = rand.Range(0, 100000);
+            // randomSeed = rand.Range(0, 100000);
 
             int[,] cityMap = new int[size, size];
             CityNoise.InitCityNoise(randomSeed, size, numVerticalRoads, numHorizontalRoads);
@@ -79,6 +79,15 @@ namespace TheRavine.Generator
             {
                 for (int y = 1; y < size - 1; y++)
                 {
+                    if(x + 1 >= size || y - 2 < 0)
+                    {
+                        continue;
+                    }
+                    if(x + 1 >= size || y - 2 < 0 || map[x + 1, y - 2] != 1)
+                    {
+                        print(map[x + 1, y - 2]);
+                        continue;
+                    }
                     if(map[x, y] == -1)
                     {
                         for(int i = 0; i < structTypes.Length; i++)
@@ -106,14 +115,22 @@ namespace TheRavine.Generator
 
                             if(isPlaseable)
                             {
-                                objectMap[x, y] = structTypes[i].prefab;
-
                                 for(int x_s = 0; x_s < structTypes[i].x; x_s++)
                                     for(int y_s = 0; y_s < structTypes[i].y; y_s++)
                                     {
                                         map[x + x_s, y + y_s] = 0;
                                         objectMap[x + x_s, y + y_s] = null;
                                     }
+
+                                Vector2Int[] vector2Int = structTypes[i].vector2s;
+                                
+                                for(int k = 0; k < vector2Int.Length; k++)
+                                {
+                                    map[x + vector2Int[k].x, y + vector2Int[k].y] = 0;
+                                    objectMap[x + vector2Int[k].x, y + vector2Int[k].y] = null;
+                                }
+                                
+                                objectMap[x, y] = structTypes[i].prefab;
                             }
                         }
                     }
@@ -209,5 +226,6 @@ namespace TheRavine.Generator
     {
         public int x, y;
         public GameObject prefab;
+        public Vector2Int[] vector2s;
     }
 }
