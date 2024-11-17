@@ -1,0 +1,1105 @@
+fileFormatVersion: 2
+guid: 6eec53f273580b255a87debbc06a6423
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1085636336713511168
+    second: smolder_0
+  - first:
+      213: -2922527131819317022
+    second: smolder_1
+  - first:
+      213: -2127425023301465418
+    second: smolder_2
+  - first:
+      213: -8899193869016759188
+    second: smolder_3
+  - first:
+      213: -2185099211219860862
+    second: smolder_4
+  - first:
+      213: -2512943678701250187
+    second: smolder_5
+  - first:
+      213: 2664041028423828299
+    second: smolder_6
+  - first:
+      213: 7625241461788408036
+    second: smolder_7
+  - first:
+      213: 252001849008068641
+    second: smolder_8
+  - first:
+      213: -1800705006555826121
+    second: smolder_9
+  - first:
+      213: 6702144537455598260
+    second: smolder_10
+  - first:
+      213: -7932296612079421684
+    second: smolder_11
+  - first:
+      213: -6248552650985568289
+    second: smolder_12
+  - first:
+      213: -2849026377999455223
+    second: smolder_13
+  - first:
+      213: -2110700132103893165
+    second: smolder_14
+  - first:
+      213: 3159242795456998352
+    second: smolder_15
+  - first:
+      213: 6024310004671297714
+    second: smolder_16
+  - first:
+      213: 5514645585670458948
+    second: smolder_17
+  - first:
+      213: 6510270551744382694
+    second: smolder_18
+  - first:
+      213: -7697467594070466782
+    second: smolder_19
+  - first:
+      213: -7604424516366091819
+    second: smolder_20
+  - first:
+      213: 2111800653816567150
+    second: smolder_21
+  - first:
+      213: -3775219018807280965
+    second: smolder_22
+  - first:
+      213: -6044391537383067535
+    second: smolder_23
+  - first:
+      213: 8472985453018257941
+    second: smolder_24
+  - first:
+      213: -5313629948481744329
+    second: smolder_25
+  - first:
+      213: 9136203675294064652
+    second: smolder_26
+  - first:
+      213: -5363562510304583074
+    second: smolder_27
+  - first:
+      213: -352874952193704901
+    second: smolder_28
+  - first:
+      213: -4610889940722935027
+    second: smolder_29
+  - first:
+      213: -8188497116335859778
+    second: smolder_30
+  - first:
+      213: -1263014227668051235
+    second: smolder_31
+  - first:
+      213: 503830923950316417
+    second: smolder_32
+  - first:
+      213: 4121541416610935822
+    second: smolder_33
+  - first:
+      213: 2355670721519326479
+    second: smolder_34
+  - first:
+      213: -4256498654246817318
+    second: smolder_35
+  - first:
+      213: -7987994705477161397
+    second: smolder_36
+  - first:
+      213: 8394513140393919147
+    second: smolder_37
+  - first:
+      213: -451143001238241155
+    second: smolder_38
+  - first:
+      213: 1905282780751341080
+    second: smolder_39
+  - first:
+      213: -411060092259323898
+    second: smolder_40
+  - first:
+      213: -4323443621149919921
+    second: smolder_41
+  - first:
+      213: 9056473198910846290
+    second: smolder_42
+  - first:
+      213: -3623953656511449512
+    second: smolder_43
+  - first:
+      213: 6864984108362216
+    second: smolder_44
+  - first:
+      213: 6608984714945497480
+    second: smolder_45
+  - first:
+      213: 55379354612560636
+    second: smolder_46
+  - first:
+      213: 7742740398178562511
+    second: smolder_47
+  - first:
+      213: 6249974876591948652
+    second: smolder_48
+  - first:
+      213: 7792080088599441854
+    second: smolder_49
+  - first:
+      213: -2615550966657743806
+    second: smolder_50
+  - first:
+      213: 4062757716958360437
+    second: smolder_51
+  - first:
+      213: -7203025176724906281
+    second: smolder_52
+  - first:
+      213: -4512694066368001844
+    second: smolder_53
+  - first:
+      213: 7348373570545898719
+    second: smolder_54
+  - first:
+      213: 3012171754286888366
+    second: smolder_55
+  - first:
+      213: 4549304351369711877
+    second: smolder_56
+  - first:
+      213: 4006958205847111390
+    second: smolder_57
+  - first:
+      213: -5342919595645607266
+    second: smolder_58
+  - first:
+      213: 4257089751177284701
+    second: smolder_59
+  - first:
+      213: -4230164210493785384
+    second: smolder_60
+  - first:
+      213: 9062947576851661939
+    second: smolder_61
+  - first:
+      213: -2155111809029529070
+    second: smolder_62
+  - first:
+      213: 840714197359456503
+    second: smolder_63
+  - first:
+      213: -7817297875046519085
+    second: smolder_64
+  - first:
+      213: -2473528412477243571
+    second: smolder_65
+  - first:
+      213: 5296947744158197724
+    second: smolder_66
+  - first:
+      213: 4674013845119423412
+    second: smolder_67
+  - first:
+      213: -6687875599823407013
+    second: smolder_68
+  - first:
+      213: -7739851531386890052
+    second: smolder_69
+  - first:
+      213: 2642127339194405983
+    second: smolder_70
+  - first:
+      213: -3348082085434857969
+    second: smolder_71
+  - first:
+      213: -7832717725427529978
+    second: smolder_72
+  - first:
+      213: -374176673816746954
+    second: smolder_73
+  - first:
+      213: 766788758725141360
+    second: smolder_74
+  - first:
+      213: -3490069062886659984
+    second: smolder_75
+  - first:
+      213: -6435936438009211843
+    second: smolder_76
+  - first:
+      213: 9109146716200429062
+    second: smolder_77
+  - first:
+      213: -3001913343583241274
+    second: smolder_78
+  - first:
+      213: 3163123936339113513
+    second: smolder_79
+  - first:
+      213: -1810126480692075007
+    second: smolder_80
+  - first:
+      213: 4687243171333893569
+    second: smolder_81
+  - first:
+      213: 5273814439198464239
+    second: smolder_82
+  - first:
+      213: 7954704920284607620
+    second: smolder_83
+  - first:
+      213: 4618010768740810025
+    second: smolder_84
+  - first:
+      213: 6559484844295217164
+    second: smolder_85
+  - first:
+      213: -7151796087857406832
+    second: smolder_86
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 8
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 0
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 3
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 1024
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 1
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: smolder_0
+      rect:
+        serializedVersion: 2
+        x: 410
+        y: 988
+        width: 22
+        height: 36
+      alignment: 9
+      pivot: {x: 0.593381, y: 0.16329956}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 001b01d0f74f01f00800000000000000
+      internalID: 1085636336713511168
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_1
+      rect:
+        serializedVersion: 2
+        x: 646
+        y: 987
+        width: 26
+        height: 37
+      alignment: 9
+      pivot: {x: 0.61444545, y: 0.22085819}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2e8e77dce091177d0800000000000000
+      internalID: -2922527131819317022
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_28
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 987
+        width: 23
+        height: 37
+      alignment: 9
+      pivot: {x: 0.5913102, y: 0.19091962}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b3c7c50c9165a1bf0800000000000000
+      internalID: -352874952193704901
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_32
+      rect:
+        serializedVersion: 2
+        x: 76
+        y: 987
+        width: 27
+        height: 37
+      alignment: 9
+      pivot: {x: 0.5193501, y: 0.2500495}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 18b5ae05e87fdf600800000000000000
+      internalID: 503830923950316417
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_33
+      rect:
+        serializedVersion: 2
+        x: 104
+        y: 987
+        width: 23
+        height: 37
+      alignment: 9
+      pivot: {x: 0.55890757, y: 0.19467905}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e04b720e418a23930800000000000000
+      internalID: 4121541416610935822
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_40
+      rect:
+        serializedVersion: 2
+        x: 297
+        y: 986
+        width: 18
+        height: 38
+      alignment: 9
+      pivot: {x: 0.6207597, y: 0.17497334}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6003b83260f9b4af0800000000000000
+      internalID: -411060092259323898
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_43
+      rect:
+        serializedVersion: 2
+        x: 388
+        y: 986
+        width: 20
+        height: 38
+      alignment: 9
+      pivot: {x: 0.576326, y: 0.20968147}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8563825995125bdc0800000000000000
+      internalID: -3623953656511449512
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_45
+      rect:
+        serializedVersion: 2
+        x: 434
+        y: 988
+        width: 20
+        height: 36
+      alignment: 9
+      pivot: {x: 0.62594604, y: 0.20848931}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 88900541594d7bb50800000000000000
+      internalID: 6608984714945497480
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_46
+      rect:
+        serializedVersion: 2
+        x: 482
+        y: 987
+        width: 24
+        height: 37
+      alignment: 9
+      pivot: {x: 0.58619183, y: 0.18747196}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cf27297ca3fb4c000800000000000000
+      internalID: 55379354612560636
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_47
+      rect:
+        serializedVersion: 2
+        x: 509
+        y: 987
+        width: 24
+        height: 37
+      alignment: 9
+      pivot: {x: 0.5956395, y: 0.18508004}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc1ff7d8e5db37b60800000000000000
+      internalID: 7742740398178562511
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_50
+      rect:
+        serializedVersion: 2
+        x: 589
+        y: 987
+        width: 26
+        height: 37
+      alignment: 9
+      pivot: {x: 0.6233661, y: 0.19786443}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2448f6ce042b3bbd0800000000000000
+      internalID: -2615550966657743806
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_53
+      rect:
+        serializedVersion: 2
+        x: 616
+        y: 987
+        width: 28
+        height: 37
+      alignment: 9
+      pivot: {x: 0.62429154, y: 0.20726879}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cc84f1ae7a0bf51c0800000000000000
+      internalID: -4512694066368001844
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_57
+      rect:
+        serializedVersion: 2
+        x: 675
+        y: 987
+        width: 29
+        height: 37
+      alignment: 9
+      pivot: {x: 0.6400441, y: 0.20696032}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ed68a5922439b9730800000000000000
+      internalID: 4006958205847111390
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_65
+      rect:
+        serializedVersion: 2
+        x: 23
+        y: 987
+        width: 24
+        height: 37
+      alignment: 9
+      pivot: {x: 0.5321625, y: 0.20237938}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d4f3570a3034cadd0800000000000000
+      internalID: -2473528412477243571
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_66
+      rect:
+        serializedVersion: 2
+        x: 49
+        y: 987
+        width: 25
+        height: 37
+      alignment: 9
+      pivot: {x: 0.5077864, y: 0.23572932}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cd72b5ca8e9828940800000000000000
+      internalID: 5296947744158197724
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_68
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 988
+        width: 24
+        height: 36
+      alignment: 9
+      pivot: {x: 0.5656643, y: 0.17577617}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b58f58a6394ef23a0800000000000000
+      internalID: -6687875599823407013
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_69
+      rect:
+        serializedVersion: 2
+        x: 153
+        y: 987
+        width: 23
+        height: 37
+      alignment: 9
+      pivot: {x: 0.5297235, y: 0.19055836}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cb8db692a06869490800000000000000
+      internalID: -7739851531386890052
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_70
+      rect:
+        serializedVersion: 2
+        x: 177
+        y: 985
+        width: 23
+        height: 39
+      alignment: 9
+      pivot: {x: 0.5619679, y: 0.22917606}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f54d70001d8baa420800000000000000
+      internalID: 2642127339194405983
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_71
+      rect:
+        serializedVersion: 2
+        x: 200
+        y: 985
+        width: 23
+        height: 39
+      alignment: 9
+      pivot: {x: 0.5675971, y: 0.2554196}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f066eca05193981d0800000000000000
+      internalID: -3348082085434857969
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_72
+      rect:
+        serializedVersion: 2
+        x: 224
+        y: 986
+        width: 25
+        height: 38
+      alignment: 9
+      pivot: {x: 0.54836076, y: 0.20952244}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6078cfd6ab89c4390800000000000000
+      internalID: -7832717725427529978
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_73
+      rect:
+        serializedVersion: 2
+        x: 250
+        y: 987
+        width: 24
+        height: 37
+      alignment: 9
+      pivot: {x: 0.57641095, y: 0.19537683}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6346ae13c48aecaf0800000000000000
+      internalID: -374176673816746954
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_74
+      rect:
+        serializedVersion: 2
+        x: 274
+        y: 986
+        width: 22
+        height: 38
+      alignment: 9
+      pivot: {x: 0.5720381, y: 0.18951738}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 073239d305e24aa00800000000000000
+      internalID: 766788758725141360
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_75
+      rect:
+        serializedVersion: 2
+        x: 342
+        y: 986
+        width: 23
+        height: 38
+      alignment: 9
+      pivot: {x: 0.64905584, y: 0.19964959}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0786f01bda8c09fc0800000000000000
+      internalID: -3490069062886659984
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_76
+      rect:
+        serializedVersion: 2
+        x: 366
+        y: 985
+        width: 20
+        height: 39
+      alignment: 9
+      pivot: {x: 0.5099106, y: 0.20980914}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d34d77f98e5fea6a0800000000000000
+      internalID: -6435936438009211843
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_78
+      rect:
+        serializedVersion: 2
+        x: 456
+        y: 988
+        width: 22
+        height: 36
+      alignment: 9
+      pivot: {x: 0.5839844, y: 0.15709624}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6cb373508bf0756d0800000000000000
+      internalID: -3001913343583241274
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_80
+      rect:
+        serializedVersion: 2
+        x: 536
+        y: 987
+        width: 25
+        height: 37
+      alignment: 9
+      pivot: {x: 0.5923706, y: 0.17796367}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 10622d76e8321e6e0800000000000000
+      internalID: -1810126480692075007
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_81
+      rect:
+        serializedVersion: 2
+        x: 561
+        y: 987
+        width: 26
+        height: 37
+      alignment: 9
+      pivot: {x: 0.5985483, y: 0.20960133}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1cd6b3b84de6c0140800000000000000
+      internalID: 4687243171333893569
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_84
+      rect:
+        serializedVersion: 2
+        x: 709
+        y: 987
+        width: 24
+        height: 37
+      alignment: 9
+      pivot: {x: 0.6362839, y: 0.18919249}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 92d79bfa358761040800000000000000
+      internalID: 4618010768740810025
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_85
+      rect:
+        serializedVersion: 2
+        x: 738
+        y: 987
+        width: 26
+        height: 37
+      alignment: 9
+      pivot: {x: 0.61556774, y: 0.20093599}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c0066c556b8f70b50800000000000000
+      internalID: 6559484844295217164
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: smolder_86
+      rect:
+        serializedVersion: 2
+        x: 317
+        y: 985
+        width: 23
+        height: 39
+      alignment: 9
+      pivot: {x: 0.6578117, y: 0.20074776}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 09c1b359957bfbc90800000000000000
+      internalID: -7151796087857406832
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    physicsShape: []
+    bones: []
+    spriteID: 84317d4ee89bef0dda837a41fd31d199
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    nameFileIdTable:
+      smolder_0: 1085636336713511168
+      smolder_1: -2922527131819317022
+      smolder_10: 6702144537455598260
+      smolder_11: -7932296612079421684
+      smolder_12: -6248552650985568289
+      smolder_13: -2849026377999455223
+      smolder_14: -2110700132103893165
+      smolder_15: 3159242795456998352
+      smolder_16: 6024310004671297714
+      smolder_17: 5514645585670458948
+      smolder_18: 6510270551744382694
+      smolder_19: -7697467594070466782
+      smolder_2: -2127425023301465418
+      smolder_20: -7604424516366091819
+      smolder_21: 2111800653816567150
+      smolder_22: -3775219018807280965
+      smolder_23: -6044391537383067535
+      smolder_24: 8472985453018257941
+      smolder_25: -5313629948481744329
+      smolder_26: 9136203675294064652
+      smolder_27: -5363562510304583074
+      smolder_28: -352874952193704901
+      smolder_29: -4610889940722935027
+      smolder_3: -8899193869016759188
+      smolder_30: -8188497116335859778
+      smolder_31: -1263014227668051235
+      smolder_32: 503830923950316417
+      smolder_33: 4121541416610935822
+      smolder_34: 2355670721519326479
+      smolder_35: -4256498654246817318
+      smolder_36: -7987994705477161397
+      smolder_37: 8394513140393919147
+      smolder_38: -451143001238241155
+      smolder_39: 1905282780751341080
+      smolder_4: -2185099211219860862
+      smolder_40: -411060092259323898
+      smolder_41: -4323443621149919921
+      smolder_42: 9056473198910846290
+      smolder_43: -3623953656511449512
+      smolder_44: 6864984108362216
+      smolder_45: 6608984714945497480
+      smolder_46: 55379354612560636
+      smolder_47: 7742740398178562511
+      smolder_48: 6249974876591948652
+      smolder_49: 7792080088599441854
+      smolder_5: -2512943678701250187
+      smolder_50: -2615550966657743806
+      smolder_51: 4062757716958360437
+      smolder_52: -7203025176724906281
+      smolder_53: -4512694066368001844
+      smolder_54: 7348373570545898719
+      smolder_55: 3012171754286888366
+      smolder_56: 4549304351369711877
+      smolder_57: 4006958205847111390
+      smolder_58: -5342919595645607266
+      smolder_59: 4257089751177284701
+      smolder_6: 2664041028423828299
+      smolder_60: -4230164210493785384
+      smolder_61: 9062947576851661939
+      smolder_62: -2155111809029529070
+      smolder_63: 840714197359456503
+      smolder_64: -7817297875046519085
+      smolder_65: -2473528412477243571
+      smolder_66: 5296947744158197724
+      smolder_67: 4674013845119423412
+      smolder_68: -6687875599823407013
+      smolder_69: -7739851531386890052
+      smolder_7: 7625241461788408036
+      smolder_70: 2642127339194405983
+      smolder_71: -3348082085434857969
+      smolder_72: -7832717725427529978
+      smolder_73: -374176673816746954
+      smolder_74: 766788758725141360
+      smolder_75: -3490069062886659984
+      smolder_76: -6435936438009211843
+      smolder_77: 9109146716200429062
+      smolder_78: -3001913343583241274
+      smolder_79: 3163123936339113513
+      smolder_8: 252001849008068641
+      smolder_80: -1810126480692075007
+      smolder_81: 4687243171333893569
+      smolder_82: 5273814439198464239
+      smolder_83: 7954704920284607620
+      smolder_84: 4618010768740810025
+      smolder_85: 6559484844295217164
+      smolder_86: -7151796087857406832
+      smolder_9: -1800705006555826121
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
