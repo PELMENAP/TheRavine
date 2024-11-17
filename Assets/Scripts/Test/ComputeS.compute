@@ -1,0 +1,9 @@
+#pragma kernel CSMain
+
+RWStructuredBuffer<int> resultBuffer;
+
+[numthreads(32, 1, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    resultBuffer[id.x] += id.x;
+}

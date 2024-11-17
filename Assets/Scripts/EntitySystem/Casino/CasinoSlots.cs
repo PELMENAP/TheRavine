@@ -313,7 +313,11 @@ public class CasinoSlots : MonoBehaviour
         if(numOfBonusGames < 1)
         {
             int curbet = betCount * levelCounting * levelCounting;
-            if(cost - curbet < 0) return;
+            if(cost - curbet < 0)
+            {
+                isSpin = false;
+                return;
+            }
             cost -= curbet;
         }
         costText.text = "Account: " + cost;
