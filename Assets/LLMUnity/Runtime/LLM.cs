@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -238,10 +239,13 @@ namespace LLMUnity
         /// - the LLM server is started (async if asynchronousStartup, synchronous otherwise)
         /// Additionally the Awake of the LLMClient is called to initialise the client part of the LLM object.
         /// </summary>
-        new public async void Awake()
+        new public IEnumerator Awake()
         {
             if (killExistingServersOnStart) KillServersAfterUnityCrash();
-            if (asynchronousStartup) await StartLLMServer();
+            if (asynchronousStartup)
+            {
+                yield return StartCoroutine(StartLLMServer());
+            }
             else _ = StartLLMServer();
             base.Awake();
             serverStarted = true;
@@ -336,26 +340,34 @@ namespace LLMUnity
             process = LLMUnitySetup.CreateProcess(binary, arguments, CheckIfListening, ProcessError, ProcessExited);
         }
 
-        private async Task StartLLMServer()
+        private IEnumerator StartLLMServer()
         {
-            bool portInUse = asynchronousStartup ? await IsServerReachableAsync() : IsServerReachable();
+            bool portInUse = true;
+            if (asynchronousStartup)
+            {
+                yield return StartCoroutine(IsServerReachableCoroutine(5, result => portInUse = result));
+            }
+            else
+            {
+                portInUse = IsServerReachable();
+            }
             if (portInUse)
             {
                 Debug.LogError($"Port {port} is already in use, please use another port or kill all llamafile processes using it!");
-                return;
+                yield break;
             }
 
             // Start the LLM server in a cross-platform way
             if (model == "")
             {
                 Debug.LogError("No model file provided!");
-                return;
+                yield break;
             }
             string modelPath = LLMUnitySetup.GetAssetPath(model);
             if (!File.Exists(modelPath))
             {
                 Debug.LogError($"File {modelPath} not found!");
-                return;
+                yield break;
             }
 
             string loraPath = "";
@@ -365,7 +377,7 @@ namespace LLMUnity
                 if (!File.Exists(loraPath))
                 {
                     Debug.LogError($"File {loraPath} not found!");
-                    return;
+                    yield break;
                 }
             }
 
@@ -380,8 +392,21 @@ namespace LLMUnity
             LLMUnitySetup.makeExecutable(server);
 
             RunServerCommand(server, arguments + GPUArgument);
-            if (asynchronousStartup) await WaitOneASync(serverBlock, TimeSpan.FromSeconds(60));
-            else serverBlock.WaitOne(60000);
+
+
+            if (asynchronousStartup)
+            {
+                yield return StartCoroutine(WaitOneCoroutine(
+                    serverBlock,
+                    TimeSpan.FromSeconds(60),
+                    onComplete: () => Debug.Log("Server started."),
+                    onTimeout: () => Debug.LogError("Server startup timed out!")
+                ));
+            }
+            else
+            {
+                serverBlock.WaitOne(60000); // Блокирующий вызов, если не используется асинхронный старт
+            }
 
             if (process.HasExited && mmapCrash)
             {
@@ -390,8 +415,19 @@ namespace LLMUnity
                 arguments += " --no-mmap";
 
                 RunServerCommand(server, arguments + GPUArgument);
-                if (asynchronousStartup) await WaitOneASync(serverBlock, TimeSpan.FromSeconds(60));
-                else serverBlock.WaitOne(60000);
+                if (asynchronousStartup)
+                {
+                    yield return StartCoroutine(WaitOneCoroutine(
+                        serverBlock,
+                        TimeSpan.FromSeconds(60),
+                        onComplete: () => Debug.Log("Server restarted with --no-mmap."),
+                        onTimeout: () => Debug.LogError("Restart timed out!")
+                    ));
+                }
+                else
+                {
+                    serverBlock.WaitOne(60000);
+                }
             }
 
             if (process.HasExited && numGPULayers > 0)
@@ -400,12 +436,29 @@ namespace LLMUnity
                 serverBlock.Reset();
 
                 RunServerCommand(server, arguments + noGPUArgument);
-                if (asynchronousStartup) await WaitOneASync(serverBlock, TimeSpan.FromSeconds(60));
-                else serverBlock.WaitOne(60000);
+                if (asynchronousStartup)
+                {
+                    yield return StartCoroutine(WaitOneCoroutine(
+                        serverBlock,
+                        TimeSpan.FromSeconds(60),
+                        onComplete: () => Debug.Log("Server restarted with CPU."),
+                        onTimeout: () => Debug.LogError("Restart with CPU timed out!")
+                    ));
+                }
+                else
+                {
+                    serverBlock.WaitOne(60000);
+                }
             }
 
-            if (process.HasExited) Debug.LogError("Server could not be started!");
-            else LLMUnitySetup.SaveServerPID(process.Id);
+            if (process.HasExited)
+            {
+                Debug.LogError("Server could not be started!");
+            }
+            else
+            {
+                LLMUnitySetup.SaveServerPID(process.Id);
+            }
         }
 
         public void StopProcess()
@@ -427,19 +480,32 @@ namespace LLMUnity
             StopProcess();
         }
 
-        private static Task WaitOneASync(WaitHandle handle, TimeSpan timeout)
+        public IEnumerator WaitOneCoroutine(WaitHandle handle, TimeSpan timeout, Action onComplete, Action onTimeout)
         {
-            var tcs = new TaskCompletionSource<object>();
-            var registration = ThreadPool.RegisterWaitForSingleObject(handle, (state, timedOut) =>
+            bool isSignaled = false;
+
+            RegisteredWaitHandle registration = ThreadPool.RegisterWaitForSingleObject(
+                handle, (state, timedOut) =>
+                {
+                    if (timedOut)
+                        onTimeout?.Invoke();
+                    else
+                    {
+                        isSignaled = true;
+                        onComplete?.Invoke();
+                    }
+                },
+                null,
+                timeout,
+                executeOnlyOnce: true
+            );
+
+            while (!isSignaled && handle.WaitOne(0) == false)
             {
-                var localTcs = (TaskCompletionSource<object>)state;
-                if (timedOut)
-                    localTcs.TrySetCanceled();
-                else
-                    localTcs.TrySetResult(null);
-            }, tcs, timeout, executeOnlyOnce: true);
-            tcs.Task.ContinueWith((_, state) => ((RegisteredWaitHandle)state).Unregister(null), registration, TaskScheduler.Default);
-            return tcs.Task;
+                yield return null;
+            }
+
+            registration.Unregister(null);
         }
     }
 }

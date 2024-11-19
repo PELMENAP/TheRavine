@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -562,17 +563,22 @@ namespace LLMUnity
         /// </summary>
         /// <param name="timeout">max time to wait for reply</param>
         /// <returns>if the server is reachable</returns>
-        public async Task<bool> IsServerReachableAsync(int timeout = 5)
+        public IEnumerator IsServerReachableCoroutine(int timeout = 5, System.Action<bool> callback = null)
         {
             using (UnityWebRequest webRequest = UnityWebRequest.Head($"{host}:{port}/tokenize"))
             {
                 webRequest.timeout = timeout;
-                await webRequest.SendWebRequest();
-                if (webRequest.result == UnityWebRequest.Result.ConnectionError)
+                yield return webRequest.SendWebRequest();
+
+                if (webRequest.result == UnityWebRequest.Result.ConnectionError || 
+                    webRequest.result == UnityWebRequest.Result.ProtocolError)
                 {
-                    return false;
+                    callback?.Invoke(false);
                 }
-                return true;
+                else
+                {
+                    callback?.Invoke(true);
+                }
             }
         }
 
