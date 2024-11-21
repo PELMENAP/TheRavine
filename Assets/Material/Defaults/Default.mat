@@ -21,8 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Default
-  m_Shader: {fileID: -6465566751694194690, guid: 59d162af4712b59b381272ebd088d07c,
-    type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: ab501fc0b2848bd4b99689d2ac3a1fc8, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -84,7 +83,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _EnableExternalAlpha: 0
-    - _LightTextureSampleYOffset: 1
+    - _LightTextureSampleYOffset: -0.1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _LightSampleLeftPoint: {r: 0, g: 0, b: 0, a: 0}

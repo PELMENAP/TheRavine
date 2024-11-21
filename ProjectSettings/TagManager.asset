@@ -2,14 +2,9 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!78 &1
 TagManager:
-  serializedVersion: 3
+  serializedVersion: 2
   tags:
-  - DetectionArea
-  - Dialoger
-  - Enviroment
   - Shadow
-  - Sun
-  - Particle
   layers:
   - Default
   - TransparentFX
@@ -17,11 +12,11 @@ TagManager:
   - 
   - Water
   - UI
-  - Shadows sorting layer
+  - LargeView
+  - RealGround
+  - FlatGround
+  - Light2D
   - 
-  - LightingSystem
-  - 2DWater
-  - ModernShadows
   - 
   - 
   - 
@@ -44,20 +39,15 @@ TagManager:
   - 
   - 
   m_SortingLayers:
-  - name: 3
-    uniqueID: 1014068995
-    locked: 0
-  - name: 2
-    uniqueID: 2513694689
-    locked: 0
-  - name: 1
-    uniqueID: 4009378445
+  - name: Background
+    uniqueID: 1326440079
     locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: -1
-    uniqueID: 4139541215
+  - name: Water
+    uniqueID: 2694790089
     locked: 0
-  m_RenderingLayers:
-  - Default
+  - name: 1
+    uniqueID: 1381739719
+    locked: 0
