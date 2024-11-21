@@ -239,7 +239,7 @@ namespace LLMUnity
         /// - the LLM server is started (async if asynchronousStartup, synchronous otherwise)
         /// Additionally the Awake of the LLMClient is called to initialise the client part of the LLM object.
         /// </summary>
-        new public IEnumerator Awake()
+        new public IEnumerator Start()
         {
             if (killExistingServersOnStart) KillServersAfterUnityCrash();
             if (asynchronousStartup)
