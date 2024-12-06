@@ -107,8 +107,8 @@ TextureImporter:
         y: 17
         width: 40
         height: 94
-      alignment: 9
-      pivot: {x: 0.5246054, y: 0.009387097}
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline:
       - - {x: 20, y: -42}

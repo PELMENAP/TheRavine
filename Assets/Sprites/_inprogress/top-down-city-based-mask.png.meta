@@ -1,0 +1,1660 @@
+fileFormatVersion: 2
+guid: 5fe3766c1698297728ffdd38c61b1948
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -1229430208013897873
+    second: top-down-city-based-_0
+  - first:
+      213: 5681710941166225089
+    second: top-down-city-based-_1
+  - first:
+      213: -3559668137932375646
+    second: top-down-city-based-_2
+  - first:
+      213: 5174747683868838428
+    second: top-down-city-based-_3
+  - first:
+      213: 7940324193673838162
+    second: top-down-city-based-_4
+  - first:
+      213: -4546813695651223155
+    second: top-down-city-based-_5
+  - first:
+      213: 3111695374343684734
+    second: top-down-city-based-_6
+  - first:
+      213: 6510328700180618161
+    second: top-down-city-based-_7
+  - first:
+      213: 3967625414135696237
+    second: top-down-city-based-_8
+  - first:
+      213: 2572050884934598171
+    second: top-down-city-based-_9
+  - first:
+      213: -2461630387348852904
+    second: top-down-city-based-_10
+  - first:
+      213: -6224381470618275922
+    second: top-down-city-based-_11
+  - first:
+      213: -8783854657770189688
+    second: top-down-city-based-_12
+  - first:
+      213: 7455698170919181839
+    second: top-down-city-based-_13
+  - first:
+      213: 2711271114300551225
+    second: top-down-city-based-_14
+  - first:
+      213: 8052631591135707524
+    second: top-down-city-based-_15
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 1
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 8
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 0
+  alphaIsTransparency: 0
+  spriteTessellationDetail: -1
+  textureType: 6
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 3
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 1
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: top-down-city-based-_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1787
+        width: 256
+        height: 176
+      alignment: 9
+      pivot: {x: 0.5, y: 0.27272728}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f6f62375dbf20fee0800000000000000
+      internalID: -1229430208013897873
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_1
+      rect:
+        serializedVersion: 2
+        x: 257
+        y: 1707
+        width: 256
+        height: 341
+      alignment: 9
+      pivot: {x: 0.5, y: 0.37536657}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1c6c9ac7ffd79de40800000000000000
+      internalID: 5681710941166225089
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_2
+      rect:
+        serializedVersion: 2
+        x: 771
+        y: 1707
+        width: 256
+        height: 341
+      alignment: 9
+      pivot: {x: 0.5, y: 0.37536657}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2a9b34040b4899ec0800000000000000
+      internalID: -3559668137932375646
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_3
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1450
+        width: 256
+        height: 338
+      alignment: 9
+      pivot: {x: 0.5, y: 0.37869823}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c1a074bf99560d740800000000000000
+      internalID: 5174747683868838428
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_4
+      rect:
+        serializedVersion: 2
+        x: 257
+        y: 1450
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 25e7e55d8c2b13e60800000000000000
+      internalID: 7940324193673838162
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_5
+      rect:
+        serializedVersion: 2
+        x: 514
+        y: 1450
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d89e3daa80976e0c0800000000000000
+      internalID: -4546813695651223155
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_6
+      rect:
+        serializedVersion: 2
+        x: 771
+        y: 1450
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e724bfcd476fe2b20800000000000000
+      internalID: 3111695374343684734
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_16
+      rect:
+        serializedVersion: 2
+        x: 514
+        y: 1193
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 242ff67f658d35587ab088d8e598ace1
+      internalID: 436826401
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_14
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1193
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 88a67dfdc1ce2dde2891eab22acc145a
+      internalID: 2711271114300551225
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_15
+      rect:
+        serializedVersion: 2
+        x: 257
+        y: 1193
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8a176a1cc87de6bbaada150eed94edb4
+      internalID: 8052631591135707524
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_17
+      rect:
+        serializedVersion: 2
+        x: 771
+        y: 1193
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e4249356e9737cc748d4ae0d03803594
+      internalID: -1673726100
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_18
+      rect:
+        serializedVersion: 2
+        x: 1028
+        y: 1193
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 66817d6e5e8b9e3a1b74de124f9de20f
+      internalID: 1194145682
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_7
+      rect:
+        serializedVersion: 2
+        x: 514
+        y: 1707
+        width: 256
+        height: 341
+      alignment: 9
+      pivot: {x: 0.5, y: 0.37536657}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 563e0851d68ec46a0b11fbf8d2baae5f
+      internalID: 6510328700180618161
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_8
+      rect:
+        serializedVersion: 2
+        x: 1028
+        y: 1450
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 074c0bf9589adcc19b83db32b9f8c5de
+      internalID: 3967625414135696237
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_9
+      rect:
+        serializedVersion: 2
+        x: 1285
+        y: 1193
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d3178d3a527228a498b270c586378a70
+      internalID: 2572050884934598171
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_10
+      rect:
+        serializedVersion: 2
+        x: 1285
+        y: 1450
+        width: 256
+        height: 46
+      alignment: 9
+      pivot: {x: 0.5, y: 2.7826087}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 417aa26d336e88221b7c6788159b5679
+      internalID: -2461630387348852904
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_11
+      rect:
+        serializedVersion: 2
+        x: 1285
+        y: 1450
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: eaeb4f41d7b782176a77b5f4de0ee45f
+      internalID: -6224381470618275922
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_12
+      rect:
+        serializedVersion: 2
+        x: 1028
+        y: 1707
+        width: 10
+        height: 98
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 95de18a1ffc852ab2a49dfc9991ffa2c
+      internalID: -8783854657770189688
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_13
+      rect:
+        serializedVersion: 2
+        x: 1039
+        y: 1707
+        width: 64
+        height: 34
+      alignment: 9
+      pivot: {x: 0.5, y: 0.11764706}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0b72157d1db0581478bd9a132d7c73c8
+      internalID: 7455698170919181839
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_19
+      rect:
+        serializedVersion: 2
+        x: 1039
+        y: 1742
+        width: 29
+        height: 51
+      alignment: 9
+      pivot: {x: 0.51759076, y: 0.13528502}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 74e2cb3d3ca721a8191325369a816d5f
+      internalID: -84526212
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_20
+      rect:
+        serializedVersion: 2
+        x: 1069
+        y: 1742
+        width: 29
+        height: 34
+      alignment: 9
+      pivot: {x: 0.4971629, y: 0.17898022}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 21b13e4fd223b2d888c0a1b517af6601
+      internalID: -2105616634
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_21
+      rect:
+        serializedVersion: 2
+        x: 1542
+        y: 1193
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6c24909330e037ef780413eb25b24b13
+      internalID: -488183932
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_22
+      rect:
+        serializedVersion: 2
+        x: 1542
+        y: 1450
+        width: 30
+        height: 23
+      alignment: 9
+      pivot: {x: 0.49776205, y: 0.09788447}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0d048d24e9d5db426b21ab018c544c08
+      internalID: -1282672696
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_23
+      rect:
+        serializedVersion: 2
+        x: 1639
+        y: 1449
+        width: 159
+        height: 440
+      alignment: 9
+      pivot: {x: 0.5691072, y: 0.17459522}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0cb4a9000e7b50ec4b72eee04a9c6aca
+      internalID: 724066208
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_24
+      rect:
+        serializedVersion: 2
+        x: 1104
+        y: 1708
+        width: 14
+        height: 31
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bb350be7a3159ed94b61542e1b804387
+      internalID: 185420416
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_25
+      rect:
+        serializedVersion: 2
+        x: 1118
+        y: 1707
+        width: 44
+        height: 42
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 781a5e480a05253588c186994def1c14
+      internalID: 1728530463
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_26
+      rect:
+        serializedVersion: 2
+        x: 1162
+        y: 1707
+        width: 11
+        height: 62
+      alignment: 9
+      pivot: {x: 0.503196, y: 0.0407577}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2f68188e21c179924bbc0c0f62cb9beb
+      internalID: -1915128198
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_27
+      rect:
+        serializedVersion: 2
+        x: 1173
+        y: 1707
+        width: 23
+        height: 82
+      alignment: 9
+      pivot: {x: 0.08754564, y: 0.010078244}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 51b0bea56dbfd0bc8a4166d3e67cd4e4
+      internalID: -1399995143
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_28
+      rect:
+        serializedVersion: 2
+        x: 1197
+        y: 1707
+        width: 59
+        height: 117
+      alignment: 9
+      pivot: {x: 0.02472441, y: 0.013258714}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 11edcfc431f4b88eeb3c345ef4e1515c
+      internalID: 748304871
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_29
+      rect:
+        serializedVersion: 2
+        x: 1256
+        y: 1707
+        width: 31
+        height: 81
+      alignment: 9
+      pivot: {x: 0.5006143, y: 0.015233169}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: aac53bf689572fddba7035628c289db4
+      internalID: 1982916813
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_30
+      rect:
+        serializedVersion: 2
+        x: 1100
+        y: 1742
+        width: 16
+        height: 54
+      alignment: 9
+      pivot: {x: 0.53643036, y: 0.021846065}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 511da7eb7fd2a60fe860ebe435206f9c
+      internalID: -2133376397
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_31
+      rect:
+        serializedVersion: 2
+        x: 1118
+        y: 1750
+        width: 38
+        height: 53
+      alignment: 9
+      pivot: {x: 0.5001863, y: 0.07986623}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1009c61ae4418c00fa8ecfeb9b18167c
+      internalID: -1045868399
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_32
+      rect:
+        serializedVersion: 2
+        x: 1157
+        y: 1790
+        width: 14
+        height: 28
+      alignment: 9
+      pivot: {x: 0.49839565, y: 0.093562536}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ccde8420fa3e2624c92c28b1c54e520d
+      internalID: -1814090733
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_33
+      rect:
+        serializedVersion: 2
+        x: 1172
+        y: 1790
+        width: 14
+        height: 31
+      alignment: 9
+      pivot: {x: 0.4955793, y: 0.09512034}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 91556459583ac60c6bd05fdc0971d023
+      internalID: -573437714
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_34
+      rect:
+        serializedVersion: 2
+        x: 1028
+        y: 1836
+        width: 95
+        height: 99
+      alignment: 9
+      pivot: {x: 0.4679983, y: 0.03993213}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 552644593fb81903aaeaa655082818f0
+      internalID: 529925712
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_35
+      rect:
+        serializedVersion: 2
+        x: 1124
+        y: 1824
+        width: 38
+        height: 92
+      alignment: 9
+      pivot: {x: 0.5031546, y: 0.1205922}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fef1169b325d3150590380506f72e960
+      internalID: -1112282777
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_36
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1034
+        width: 159
+        height: 158
+      alignment: 9
+      pivot: {x: 0.5, y: 0.1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: daed1b7b5bfb09c2aa8ae586083980f9
+      internalID: 1387793070
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_37
+      rect:
+        serializedVersion: 2
+        x: 160
+        y: 869
+        width: 500
+        height: 323
+      alignment: 9
+      pivot: {x: 0.5, y: 0.3}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a727576a61c11bf02bcf53297a9ea794
+      internalID: -1707742839
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_38
+      rect:
+        serializedVersion: 2
+        x: 2
+        y: 971
+        width: 64
+        height: 62
+      alignment: 9
+      pivot: {x: 0.5, y: 0.2}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 692d857da1d06a8f7871c234d462823c
+      internalID: -784412326
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_39
+      rect:
+        serializedVersion: 2
+        x: 74
+        y: 978
+        width: 80
+        height: 55
+      alignment: 9
+      pivot: {x: 0.5, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cd095f2d54993fa13b52049389678dbb
+      internalID: 605772726
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_40
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 900
+        width: 80
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.2}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f4265d5c102fa6342aa2f3b7b2ffb230
+      internalID: 1550225651
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_41
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 900
+        width: 76
+        height: 72
+      alignment: 9
+      pivot: {x: 0.5, y: 0.2}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b12228d605f2c6975a6728bf9dc1c07a
+      internalID: -1419756041
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_42
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 341
+        height: 860
+      alignment: 9
+      pivot: {x: 0.5, y: 0.06}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9d062ebda52cce3cc97b73b273c8a1ce
+      internalID: -663948620
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_43
+      rect:
+        serializedVersion: 2
+        x: 660
+        y: 1069
+        width: 112
+        height: 123
+      alignment: 9
+      pivot: {x: 0.5, y: 0.16}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5cdd6342b053d618daff67710c2b53f2
+      internalID: 1703927715
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_44
+      rect:
+        serializedVersion: 2
+        x: 661
+        y: 964
+        width: 112
+        height: 104
+      alignment: 9
+      pivot: {x: 0.5, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 61a9f7dbfd522555f873d75f2183c577
+      internalID: 2100242376
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_45
+      rect:
+        serializedVersion: 2
+        x: 661
+        y: 892
+        width: 64
+        height: 71
+      alignment: 9
+      pivot: {x: 0.5, y: 0.06}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5c3b2b631141a02f09685dee0bfafd87
+      internalID: 1660648816
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_46
+      rect:
+        serializedVersion: 2
+        x: 774
+        y: 971
+        width: 144
+        height: 221
+      alignment: 9
+      pivot: {x: 0.5, y: 0.15}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5f7105bd21a38597fa0d9fb3f0a5edeb
+      internalID: 1247160967
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_47
+      rect:
+        serializedVersion: 2
+        x: 919
+        y: 1106
+        width: 112
+        height: 86
+      alignment: 9
+      pivot: {x: 0.5, y: 0.17}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e9d1a65eb832a5d57aef1d8a057c394e
+      internalID: 632777190
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_48
+      rect:
+        serializedVersion: 2
+        x: 919
+        y: 942
+        width: 142
+        height: 163
+      alignment: 9
+      pivot: {x: 0.5, y: 0.17}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1b0b0a155778a6dd9b87f6af3298cb08
+      internalID: 2035612734
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_49
+      rect:
+        serializedVersion: 2
+        x: 1032
+        y: 1113
+        width: 112
+        height: 79
+      alignment: 9
+      pivot: {x: 0.5, y: 0.22}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: db48dc4de70e51d5597f83cd02889a8b
+      internalID: -99051914
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_50
+      rect:
+        serializedVersion: 2
+        x: 1062
+        y: 1034
+        width: 96
+        height: 78
+      alignment: 9
+      pivot: {x: 0.5, y: 0.2}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4eb19f0059d1d12fc9cd689e401aa9d1
+      internalID: 567109977
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_51
+      rect:
+        serializedVersion: 2
+        x: 1062
+        y: 955
+        width: 78
+        height: 78
+      alignment: 9
+      pivot: {x: 0.5, y: 0.13}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 86fb475d6e1ef9fc5b6a2201437b878d
+      internalID: -817043789
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_52
+      rect:
+        serializedVersion: 2
+        x: 1159
+        y: 953
+        width: 144
+        height: 239
+      alignment: 9
+      pivot: {x: 0.5, y: 0.11}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cacd788ab88872894b2853d91b749e08
+      internalID: -1131186238
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_53
+      rect:
+        serializedVersion: 2
+        x: 1304
+        y: 1129
+        width: 80
+        height: 63
+      alignment: 9
+      pivot: {x: 0.5, y: 0.2}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cb98d1614283ad2b9a82fc38e6321d94
+      internalID: -1588728765
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_54
+      rect:
+        serializedVersion: 2
+        x: 1304
+        y: 1056
+        width: 80
+        height: 72
+      alignment: 9
+      pivot: {x: 0.5, y: 0.2}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1831b73b2d60300db90f57a28ac6f7ae
+      internalID: -400291584
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_55
+      rect:
+        serializedVersion: 2
+        x: 1028
+        y: 1986
+        width: 39
+        height: 49
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e38e5cc237ba99904a1b823084eafe51
+      internalID: -150062535
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_56
+      rect:
+        serializedVersion: 2
+        x: 1027
+        y: 1936
+        width: 46
+        height: 49
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3d038661e53ce62d6afef84915e8a7cf
+      internalID: -465106682
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_57
+      rect:
+        serializedVersion: 2
+        x: 1162
+        y: 1825
+        width: 12
+        height: 22
+      alignment: 9
+      pivot: {x: 0.5, y: 0.04}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5a7d3cba0b5831f0bafac04ed3dbc2cc
+      internalID: -481580157
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_58
+      rect:
+        serializedVersion: 2
+        x: 1174
+        y: 1825
+        width: 7
+        height: 22
+      alignment: 9
+      pivot: {x: 0.5, y: 0.03}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2e527e97b611a4aeeb888bb612514d2c
+      internalID: 1275555110
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_59
+      rect:
+        serializedVersion: 2
+        x: 1181
+        y: 1825
+        width: 6
+        height: 25
+      alignment: 9
+      pivot: {x: 0.5, y: 0.03}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ca0fc5285c86728378ee177955c9e65f
+      internalID: -1024204817
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_60
+      rect:
+        serializedVersion: 2
+        x: 1187
+        y: 1825
+        width: 11
+        height: 12
+      alignment: 9
+      pivot: {x: 0.5, y: 0.05}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4cbc2d09b58f0b39cb93dab886090aa0
+      internalID: -1338311237
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_61
+      rect:
+        serializedVersion: 2
+        x: 1198
+        y: 1825
+        width: 14
+        height: 17
+      alignment: 9
+      pivot: {x: 0.5, y: 0.06}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 316fa2c0de5ac48118918caf0a5f5e4f
+      internalID: 734092311
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_62
+      rect:
+        serializedVersion: 2
+        x: 1212
+        y: 1825
+        width: 15
+        height: 21
+      alignment: 9
+      pivot: {x: 0.5, y: 0.05}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 14f142fa584aa32d29da28867dd1113b
+      internalID: -341478107
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_63
+      rect:
+        serializedVersion: 2
+        x: 1228
+        y: 1825
+        width: 2
+        height: 3
+      alignment: 9
+      pivot: {x: 0.5, y: 0.1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3e2c04c3267595b36a38ac64d01de0d7
+      internalID: -1485952554
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_64
+      rect:
+        serializedVersion: 2
+        x: 1231
+        y: 1825
+        width: 3
+        height: 9
+      alignment: 9
+      pivot: {x: 0.5, y: 0.12}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 59353674c5ef076b78c85b4a5a7a83fa
+      internalID: 146126771
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_65
+      rect:
+        serializedVersion: 2
+        x: 1287
+        y: 1707
+        width: 27
+        height: 82
+      alignment: 9
+      pivot: {x: 0.23, y: 0.008}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c26ba92fd343923cba940fbcf3adf91a
+      internalID: 674882257
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_66
+      rect:
+        serializedVersion: 2
+        x: 514
+        y: 1412
+        width: 64
+        height: 37
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a6eb0f6f5e4f7a080b9122fb0e01e3b8
+      internalID: -2044521841
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_67
+      rect:
+        serializedVersion: 2
+        x: 1067
+        y: 1806
+        width: 11
+        height: 30
+      alignment: 9
+      pivot: {x: 0.5, y: 0.1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dc6f2973c10300858ba34b9f4ee813a2
+      internalID: -1712689199
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    physicsShape: []
+    bones: []
+    spriteID: 046aba9ef26b9496d8b75a7b39618a0c
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures:
+    - texture: {fileID: 2800000, guid: 196ea41ca2287d1b39495877c5f9a789, type: 3}
+      name: _NormalMap
+    nameFileIdTable:
+      top-down-city-based-_0: -1229430208013897873
+      top-down-city-based-_1: 5681710941166225089
+      top-down-city-based-_10: -2461630387348852904
+      top-down-city-based-_11: -6224381470618275922
+      top-down-city-based-_12: -8783854657770189688
+      top-down-city-based-_13: 7455698170919181839
+      top-down-city-based-_14: 2711271114300551225
+      top-down-city-based-_15: 8052631591135707524
+      top-down-city-based-_16: 436826401
+      top-down-city-based-_17: -1673726100
+      top-down-city-based-_18: 1194145682
+      top-down-city-based-_19: -84526212
+      top-down-city-based-_2: -3559668137932375646
+      top-down-city-based-_20: -2105616634
+      top-down-city-based-_21: -488183932
+      top-down-city-based-_22: -1282672696
+      top-down-city-based-_23: 724066208
+      top-down-city-based-_24: 185420416
+      top-down-city-based-_25: 1728530463
+      top-down-city-based-_26: -1915128198
+      top-down-city-based-_27: -1399995143
+      top-down-city-based-_28: 748304871
+      top-down-city-based-_29: 1982916813
+      top-down-city-based-_3: 5174747683868838428
+      top-down-city-based-_30: -2133376397
+      top-down-city-based-_31: -1045868399
+      top-down-city-based-_32: -1814090733
+      top-down-city-based-_33: -573437714
+      top-down-city-based-_34: 529925712
+      top-down-city-based-_35: -1112282777
+      top-down-city-based-_36: 1387793070
+      top-down-city-based-_37: -1707742839
+      top-down-city-based-_38: -784412326
+      top-down-city-based-_39: 605772726
+      top-down-city-based-_4: 7940324193673838162
+      top-down-city-based-_40: 1550225651
+      top-down-city-based-_41: -1419756041
+      top-down-city-based-_42: -663948620
+      top-down-city-based-_43: 1703927715
+      top-down-city-based-_44: 2100242376
+      top-down-city-based-_45: 1660648816
+      top-down-city-based-_46: 1247160967
+      top-down-city-based-_47: 632777190
+      top-down-city-based-_48: 2035612734
+      top-down-city-based-_49: -99051914
+      top-down-city-based-_5: -4546813695651223155
+      top-down-city-based-_50: 567109977
+      top-down-city-based-_51: -817043789
+      top-down-city-based-_52: -1131186238
+      top-down-city-based-_53: -1588728765
+      top-down-city-based-_54: -400291584
+      top-down-city-based-_55: -150062535
+      top-down-city-based-_56: -465106682
+      top-down-city-based-_57: -481580157
+      top-down-city-based-_58: 1275555110
+      top-down-city-based-_59: -1024204817
+      top-down-city-based-_6: 3111695374343684734
+      top-down-city-based-_60: -1338311237
+      top-down-city-based-_61: 734092311
+      top-down-city-based-_62: -341478107
+      top-down-city-based-_63: -1485952554
+      top-down-city-based-_64: 146126771
+      top-down-city-based-_65: 674882257
+      top-down-city-based-_66: -2044521841
+      top-down-city-based-_67: -1712689199
+      top-down-city-based-_7: 6510328700180618161
+      top-down-city-based-_8: 3967625414135696237
+      top-down-city-based-_9: 2572050884934598171
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

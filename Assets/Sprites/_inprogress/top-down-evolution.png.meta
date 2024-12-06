@@ -58,7 +58,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -69,10 +69,10 @@ TextureImporter:
   compressionQuality: 50
   spriteMode: 2
   spriteExtrude: 1
-  spriteMeshType: 1
+  spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 8
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -97,8 +97,8 @@ TextureImporter:
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
+    compressionQuality: 46
+    crunchedCompression: 1
     allowsAlphaSplitting: 0
     overridden: 0
     ignorePlatformSupport: 0
@@ -125,11 +125,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 925
-        width: 938
-        height: 900
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        y: 926
+        width: 937
+        height: 899
+      alignment: 9
+      pivot: {x: 0.5, y: 0.1}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -147,10 +147,10 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 289
-        height: 926
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 288
+        height: 925
+      alignment: 9
+      pivot: {x: 0.5, y: 0.08}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -166,12 +166,12 @@ TextureImporter:
       name: top-down-evolution_2
       rect:
         serializedVersion: 2
-        x: 937
-        y: 826
-        width: 52
-        height: 178
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 938
+        y: 827
+        width: 50
+        height: 176
+      alignment: 9
+      pivot: {x: 0.5, y: 0.04}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -187,12 +187,12 @@ TextureImporter:
       name: top-down-evolution_3
       rect:
         serializedVersion: 2
-        x: 1068
-        y: 828
-        width: 98
-        height: 206
+        x: 1069
+        y: 829
+        width: 96
+        height: 204
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -208,12 +208,12 @@ TextureImporter:
       name: top-down-evolution_4
       rect:
         serializedVersion: 2
-        x: 1165
-        y: 827
-        width: 146
-        height: 223
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 1166
+        y: 828
+        width: 144
+        height: 221
+      alignment: 9
+      pivot: {x: 0.5, y: 0.1}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -229,12 +229,12 @@ TextureImporter:
       name: top-down-evolution_5
       rect:
         serializedVersion: 2
-        x: 988
-        y: 828
-        width: 80
-        height: 74
+        x: 989
+        y: 829
+        width: 78
+        height: 72
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -250,12 +250,12 @@ TextureImporter:
       name: top-down-evolution_6
       rect:
         serializedVersion: 2
-        x: 288
+        x: 289
         y: 0
-        width: 888
-        height: 821
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 886
+        height: 820
+      alignment: 9
+      pivot: {x: 0.5, y: 0.1}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -271,12 +271,12 @@ TextureImporter:
       name: top-down-evolution_7
       rect:
         serializedVersion: 2
-        x: 1175
+        x: 1176
         y: 0
-        width: 259
-        height: 775
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 257
+        height: 774
+      alignment: 9
+      pivot: {x: 0.5, y: 0.07}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -291,13 +291,17 @@ TextureImporter:
     outline: []
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: cf48b6f3a592f2df78a15f58b84be993
     internalID: 0
     vertices: []
     indices: 
     edges: []
     weights: []
-    secondaryTextures: []
+    secondaryTextures:
+    - texture: {fileID: 2800000, guid: cac929e0689895302b2a528559659e41, type: 3}
+      name: _NormalMap
+    - texture: {fileID: 2800000, guid: 4eff72355b3792e94918efe78a5a332c, type: 3}
+      name: _MaskTex
     nameFileIdTable:
       top-down-evolution_0: -4303408253387184960
       top-down-evolution_1: 7612182430247360129
