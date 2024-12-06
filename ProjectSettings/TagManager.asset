@@ -5,6 +5,9 @@ TagManager:
   serializedVersion: 2
   tags:
   - Shadow
+  - Sun
+  - Enviroment
+  - Particle
   layers:
   - Default
   - TransparentFX
@@ -39,15 +42,15 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Water
+    uniqueID: 3360605251
+    locked: 0
   - name: Background
     uniqueID: 1326440079
     locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: Water
-    uniqueID: 2694790089
-    locked: 0
-  - name: 1
-    uniqueID: 1381739719
+  - name: Leafs
+    uniqueID: 3909031665
     locked: 0

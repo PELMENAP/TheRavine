@@ -49,15 +49,19 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 574f0c6554c3908fd8f31360aa651713, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MaskTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 0c87487cbef06188f9ecd0d2f9beddac, type: 3}
         m_Scale: {x: 0, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _NormalMap:
+    - _MaskTexture:
         m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalMap:
+        m_Texture: {fileID: 2800000, guid: a09cfeed663983346898712e9765eb3e, type: 3}
         m_Scale: {x: 0, y: 0}
         m_Offset: {x: 0, y: 0}
     - _SampleTexture2D_8e52615b608e4ff2be599633ef8755f3_Texture_1_Texture2D:
@@ -86,6 +90,7 @@ Material:
     - _LightTextureSampleYOffset: -0.1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _GlowColor: {r: 8.690061, g: 11.984315, b: 11.54508, a: 0}
     - _LightSampleLeftPoint: {r: 0, g: 0, b: 0, a: 0}
     - _LightSampleRightPoint: {r: 0, g: 0, b: 0, a: 0}
     - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
