@@ -1,5 +1,6 @@
-
+using Unity.Netcode;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 using TMPro;
 
@@ -7,40 +8,28 @@ namespace TheRavine.EntityControl
 {
     public class BotEntity : AEntity
     {
-        [SerializeField] private GameObject view;
-        [SerializeField] private bool isActive;
         private StatePatternComponent statePatternComponent;
 
-        public override void SetUpEntityData(EntityInfo _entityInfo)
+        public override void SetUpEntityData(EntityInfo entityInfo, IEntityController controller)
         {
             // _entityGameData = new EntityGameData(_entityInfo);
             statePatternComponent = new StatePatternComponent();
             base.AddComponentToEntity(statePatternComponent);
-            Init();
+            Init(null);
             SetBehaviourIdle();
             // crosshair.gameObject.SetActive(false);
-            EnableView();
         }
-        public override Vector2 GetEntityPosition() => new Vector2(this.transform.position.x, this.transform.position.y);
         public override Vector2 GetEntityVelocity()
         {
             return new Vector2();
-        }
-        public override Transform GetModelTransform()
-        {
-            return this.transform;
         }
         public override void UpdateEntityCycle()
         {
             if (statePatternComponent.behaviourCurrent != null)
                 statePatternComponent.behaviourCurrent.Update();
         }
-        public override void Init()
-        {
-            InitBehaviour();
-        }
 
-        private void InitBehaviour()
+        public override void Init(Action onUpdateAction)
         {
             BotBehaviourIdle Idle = new BotBehaviourIdle();
             Idle.AddCommand(new PrintMessageCommand("eboba"));
@@ -59,25 +48,6 @@ namespace TheRavine.EntityControl
         public void SetBehaviourDialog()
         {
             statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<BotBehaviourDialoge>());
-        }
-
-        public void SetSpeed()
-        {
-            // animator.SetFloat("Speed", 0);
-        }
-        public RoamMoveController moveController;
-        public Animator animator;
-        public Transform botTransform;
-        public Rigidbody2D botRigidbody;
-        public override void EnableView()
-        {
-            isActive = true;
-            view.SetActive(isActive);
-        }
-        public override void DisableView()
-        {
-            isActive = false;
-            view.SetActive(isActive);
         }
     }
 }

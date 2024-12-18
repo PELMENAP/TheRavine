@@ -271,7 +271,7 @@ MonoBehaviour:
     m_Value: 0.7
   intensity:
     m_OverrideState: 1
-    m_Value: 0.5
+    m_Value: 0.7
   scatter:
     m_OverrideState: 1
     m_Value: 0.3
@@ -337,13 +337,13 @@ MonoBehaviour:
   active: 1
   lift:
     m_OverrideState: 1
-    m_Value: {x: 1, y: 1, z: 1, w: 0}
+    m_Value: {x: 0.992368, y: 1, z: 0.9767585, w: 0}
   gamma:
     m_OverrideState: 1
-    m_Value: {x: 1, y: 1, z: 1, w: 0}
+    m_Value: {x: 0.9839242, y: 0.99551356, z: 1, w: 0.008128907}
   gain:
     m_OverrideState: 1
-    m_Value: {x: 1, y: 1, z: 1, w: 0}
+    m_Value: {x: 0.983755, y: 0.99644774, z: 1, w: 0}
 --- !u!114 &-4194414157293962880
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -436,16 +436,16 @@ MonoBehaviour:
     m_Value: 0
   xMultiplier:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0.919
   yMultiplier:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0.799
   center:
     m_OverrideState: 1
     m_Value: {x: 0.5, y: 0.5}
   scale:
     m_OverrideState: 1
-    m_Value: 0.51
+    m_Value: 0.12
 --- !u!114 &-1320468968438670369
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -461,25 +461,25 @@ MonoBehaviour:
   active: 1
   shadows:
     m_OverrideState: 1
-    m_Value: {x: 1, y: 1, z: 1, w: 0}
+    m_Value: {x: 1, y: 0.99437594, z: 0.9993173, w: 0}
   midtones:
     m_OverrideState: 1
-    m_Value: {x: 1, y: 1, z: 1, w: 0}
+    m_Value: {x: 0.981669, y: 1, z: 0.98455185, w: -0.0013652344}
   highlights:
     m_OverrideState: 1
-    m_Value: {x: 1, y: 1, z: 1, w: 0}
+    m_Value: {x: 0.98977417, y: 1, z: 0.9938335, w: 0}
   shadowsStart:
     m_OverrideState: 1
     m_Value: 0
   shadowsEnd:
     m_OverrideState: 1
-    m_Value: 0.3
+    m_Value: 0
   highlightsStart:
     m_OverrideState: 1
-    m_Value: 0.55
+    m_Value: 0
   highlightsEnd:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0
 --- !u!114 &-1216054283681919245
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -552,13 +552,13 @@ MonoBehaviour:
     m_Value: 1
   firstFlareIntensity:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0
   secondaryFlareIntensity:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0
   warpedFlareIntensity:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0
   warpedFlareScale:
     m_OverrideState: 1
     m_Value: {x: 1, y: 1}
@@ -579,7 +579,7 @@ MonoBehaviour:
     m_Value: 3.45
   streaksIntensity:
     m_OverrideState: 1
-    m_Value: 11.96
+    m_Value: 0
   streaksLength:
     m_OverrideState: 1
     m_Value: 0.287
@@ -619,7 +619,7 @@ MonoBehaviour:
     m_Value: 0
   smoothness:
     m_OverrideState: 1
-    m_Value: 0.2
+    m_Value: 0.01
   rounded:
     m_OverrideState: 1
     m_Value: 0
@@ -647,7 +647,7 @@ MonoBehaviour:
     m_Value: 0
   greenOutRedIn:
     m_OverrideState: 1
-    m_Value: 20
+    m_Value: 0
   greenOutGreenIn:
     m_OverrideState: 1
     m_Value: 100
@@ -762,7 +762,7 @@ MonoBehaviour:
   active: 1
   normalBias:
     m_OverrideState: 1
-    m_Value: 0.68
+    m_Value: 0
   viewBias:
     m_OverrideState: 1
     m_Value: 0
@@ -771,13 +771,13 @@ MonoBehaviour:
     m_Value: 0
   samplingNoise:
     m_OverrideState: 1
-    m_Value: 0.1
+    m_Value: 0
   animateSamplingNoise:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0
   leakReductionMode:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0
   minValidDotProductValue:
     m_OverrideState: 1
     m_Value: 0.1

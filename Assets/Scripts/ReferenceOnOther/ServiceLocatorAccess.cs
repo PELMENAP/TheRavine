@@ -14,7 +14,8 @@ public class ServiceLocatorAccess : MonoBehaviour
     public void NetSpawnObject(string prefabName) => networkSpawner.SpawnObjectServerRpc(prefabName);
     public NetworkObject GetCurrentSpawnedObject() => networkSpawner.GetCurrentSpawnedObject();
 
-    private void Awake() {
+    private void Awake() 
+    {
         inst = this;
         // networkSpawner.Spawn();
     }

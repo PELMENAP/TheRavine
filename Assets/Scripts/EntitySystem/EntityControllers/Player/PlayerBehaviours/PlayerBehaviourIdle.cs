@@ -1,9 +1,9 @@
 using System;
 public class PlayerBehaviourIdle : AState
 {
-    private IEntityControllable controller;
+    private IEntityController controller;
     private Behaviour behaviourIdle;
-    public PlayerBehaviourIdle(IEntityControllable _controller, Action _delegateIdle)
+    public PlayerBehaviourIdle(IEntityController _controller, Action _delegateIdle)
     {
         controller = _controller;
         behaviourIdle = _delegateIdle.Invoke;

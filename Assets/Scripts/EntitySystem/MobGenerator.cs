@@ -98,11 +98,12 @@ namespace TheRavine.EntityControl
                 while (NALQueueUpdate.Count > 0 && mobsController.GetEntityCount() < MaxSpawnEntityCount)
                 {
                     Pair<Vector2, GameObject> item = NALQueueUpdate.Dequeue();
-                    GameObject curMob = CreateMob(Extension.GetRandomPointAround(item.First, 2), item.Second);
-                    AEntity entity = curMob.GetComponentInChildren<AEntity>();
-                    entity.SetUpEntityData(entitySystem.GetMobInfo(item.Second.GetInstanceID()));
-                    entity.Init();
-                    GetMapData(generator.GetChunkPosition(item.First)).entitiesInChunk.Add(entity);
+                    // GameObject curMob = CreateMob(Extension.GetRandomPointAround(item.First, 2), item.Second);
+                    // AEntity entity = curMob.GetComponentInChildren<AEntity>();
+                    // entity.SetUpEntityData(entitySystem.GetMobInfo(item.Second.GetInstanceID()));
+                    // entity.Init();
+                    // GetMapData(generator.GetChunkPosition(item.First)).entitiesInChunk.Add(entity);
+                    Debug.Log("forget to create a MobEntity");
                 }
                 UpdateNALQueue(currentChunkPosition);
             }
@@ -121,8 +122,8 @@ namespace TheRavine.EntityControl
                     for (ushort i = 0; i < listEntity.Count; i++)
                     {
                         AEntity entity = listEntity[i];
-                        GetMapData(generator.GetChunkPosition(entity.GetEntityPosition())).entitiesInChunk.Add(entity);
-                        entity.DisableView();
+                        GetMapData(generator.GetChunkPosition(entity.GetEntityComponent<TransformComponent>().GetEntityPosition())).entitiesInChunk.Add(entity);
+                        entity.Deactivate();
                         mobsController.RemoveMobFromUpdate(entity);
                         listEntity.Remove(entity);
                     }
@@ -140,10 +141,11 @@ namespace TheRavine.EntityControl
                     for (ushort i = 0; i < listEntity.Count; i++)
                     {
                         AEntity entity = listEntity[i];
+                        TransformComponent transformComponent = entity.GetEntityComponent<TransformComponent>();
                         if (xOffset == 0 || yOffset == 0 || xOffset == 2 * chunkScale || yOffset == 2 * chunkScale )
-                            entity.transform.position = Extension.GetRandomPointAround((Vector2)entity.transform.position, 2);
+                            transformComponent.GetEntityTransform().position = Extension.GetRandomPointAround(transformComponent.GetEntityPosition(), 2);
                         mobsController.AddMobToUpdate(entity);
-                        entity.EnableView();
+                        entity.Activate();
                     }
                 }
             }

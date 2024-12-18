@@ -5,7 +5,7 @@ using System;
 
 using TheRavine.EntityControl;
 
-public class BotController : MonoBehaviour, IEntityControllable
+public class BotController : MonoBehaviour, IEntityController
 {
     private const int PickDistance = 1;
     [SerializeField] private float movementSpeed, offset, timeLimit;

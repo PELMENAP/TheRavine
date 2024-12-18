@@ -97,7 +97,7 @@ TextureImporter:
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
-    compressionQuality: 46
+    compressionQuality: 50
     crunchedCompression: 1
     allowsAlphaSplitting: 0
     overridden: 0
@@ -288,6 +288,216 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: top-down-evolution_8
+      rect:
+        serializedVersion: 2
+        x: 989
+        y: 902
+        width: 20
+        height: 48
+      alignment: 9
+      pivot: {x: 0.4970642, y: 0.041689556}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fd76fd30bdfc34b8fbf6e0e990561325
+      internalID: -1129307038
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-evolution_9
+      rect:
+        serializedVersion: 2
+        x: 1012
+        y: 904
+        width: 9
+        height: 15
+      alignment: 9
+      pivot: {x: 0.5, y: -1.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f01182aa68e208f3e9bc812d9f5e8db0
+      internalID: -813007382
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-evolution_10
+      rect:
+        serializedVersion: 2
+        x: 1012
+        y: 925
+        width: 7
+        height: 9
+      alignment: 9
+      pivot: {x: 0.5, y: -2.8}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4ed2291ee4bd85fd08fb80bc5bc73370
+      internalID: -382292257
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-evolution_11
+      rect:
+        serializedVersion: 2
+        x: 1024
+        y: 926
+        width: 5
+        height: 11
+      alignment: 9
+      pivot: {x: 0.5, y: -2.2}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: abc8eb778aba52e6399eb50e9b7f11c7
+      internalID: 989903796
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-evolution_12
+      rect:
+        serializedVersion: 2
+        x: 1036
+        y: 926
+        width: 6
+        height: 10
+      alignment: 9
+      pivot: {x: 0.5, y: -2.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ddf794ff773f27cbb90885386b307007
+      internalID: -976982209
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-evolution_13
+      rect:
+        serializedVersion: 2
+        x: 1029
+        y: 903
+        width: 5
+        height: 16
+      alignment: 9
+      pivot: {x: 0.5, y: -1.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cfd2404c04796cfebb88bd8a5a43980e
+      internalID: -911527074
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-evolution_14
+      rect:
+        serializedVersion: 2
+        x: 1045
+        y: 903
+        width: 5
+        height: 18
+      alignment: 9
+      pivot: {x: 0.5, y: -1.35}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 58e870502f560aedd80ba4aad359fc30
+      internalID: -1405016209
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-evolution_15
+      rect:
+        serializedVersion: 2
+        x: 1010
+        y: 938
+        width: 56
+        height: 59
+      alignment: 9
+      pivot: {x: 0.5, y: -1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 760458a303d37d7ef9534e8138d2df76
+      internalID: 1513619795
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-evolution_16
+      rect:
+        serializedVersion: 2
+        x: 996
+        y: 998
+        width: 34
+        height: 81
+      alignment: 9
+      pivot: {x: 0.48006845, y: 0.11339955}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 36fdb6773025b0920b0d8701986776e9
+      internalID: 1617540797
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-evolution_17
+      rect:
+        serializedVersion: 2
+        x: 1031
+        y: 998
+        width: 37
+        height: 68
+      alignment: 9
+      pivot: {x: 0.48083496, y: 0.1641011}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1e23ed7b355f634c5b44912114baf67b
+      internalID: -1921906378
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     physicsShape: []
     bones: []
@@ -305,12 +515,22 @@ TextureImporter:
     nameFileIdTable:
       top-down-evolution_0: -4303408253387184960
       top-down-evolution_1: 7612182430247360129
+      top-down-evolution_10: -382292257
+      top-down-evolution_11: 989903796
+      top-down-evolution_12: -976982209
+      top-down-evolution_13: -911527074
+      top-down-evolution_14: -1405016209
+      top-down-evolution_15: 1513619795
+      top-down-evolution_16: 1617540797
+      top-down-evolution_17: -1921906378
       top-down-evolution_2: -3849700698440400374
       top-down-evolution_3: -598356486727870568
       top-down-evolution_4: -7400364745989095649
       top-down-evolution_5: -5402437804361720640
       top-down-evolution_6: 7709760555244886679
       top-down-evolution_7: -660674578134586039
+      top-down-evolution_8: -1129307038
+      top-down-evolution_9: -813007382
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

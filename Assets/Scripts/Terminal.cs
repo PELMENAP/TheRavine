@@ -20,7 +20,14 @@ namespace TheRavine.Base
         private MapGenerator generator;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
-            playerData = locator.GetService<PlayerEntity>();
+            try
+            {
+                playerData = locator.GetService<PlayerView>().playerEntity;
+            }
+            catch
+            {
+                Debug.LogWarning("player not found");
+            }
             generator = locator.GetService<MapGenerator>();
             EnterRef.action.performed += OnEnter;
             callback?.Invoke();
@@ -146,7 +153,7 @@ namespace TheRavine.Base
                 OutputReaction("Превышен лимит мира");
                 return;
             }
-            playerData.MoveTo(new Vector2(x, y));
+            playerData.GetEntityComponent<TransformComponent>().GetEntityTransform().position = new Vector2(x, y);
             OutputReaction($"Выполнен телепорт на координаты: {x}, {y}");
         }
 

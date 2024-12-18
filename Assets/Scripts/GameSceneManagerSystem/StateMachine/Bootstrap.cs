@@ -25,7 +25,7 @@ namespace TheRavine.Base
         [SerializeField] private Canvas inventoryCanvas;
         [SerializeField] private ServiceLocatorAccess serviceLocatorAccess;
         private SceneTransistor trasitor;
-        private void Start()
+        private void Awake()
         {
             
             DataStorage.winTheGame = false;
@@ -82,7 +82,18 @@ namespace TheRavine.Base
             }
             StateMachine.SwitchState<BootstrapState>();
         }
-        public void AddCameraToStack(Camera _cameraToAdd) => _cameraData.cameraStack.Add(_cameraToAdd);
+        public void AddCameraToStack(Camera _cameraToAdd)
+        {
+            try
+            {
+                _cameraData.cameraStack.Add(_cameraToAdd);
+            }
+            catch
+            {
+                Debug.LogWarning("There is no camera data to add camera");
+            }
+        }
+
         public void Finally()
         {
             while (_setAble.Count > 0) StartNewService(null);

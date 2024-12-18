@@ -75,21 +75,17 @@ namespace TheRavine.Generator
 
         private void AddStructs(ref GameObject[,] objectMap, ref int[,] map)
         {
+            bool alreadySpawned = false;
             for (int x = 1; x < size - 1; x++)
             {
                 for (int y = 1; y < size - 1; y++)
                 {
-                    if(x + 1 >= size || y - 2 < 0)
-                    {
-                        continue;
-                    }
-                    if(x + 1 >= size || y - 2 < 0 || map[x + 1, y - 2] != 1)
-                    {
-                        print(map[x + 1, y - 2]);
-                        continue;
-                    }
                     if(map[x, y] == -1)
                     {
+                        if(x + 1 >= size || y < 2 || map[x + 1, y - 2] != 1)
+                        {
+                            continue;
+                        }
                         for(int i = 0; i < structTypes.Length; i++)
                         {
                             bool isPlaseable = true;
@@ -131,6 +127,8 @@ namespace TheRavine.Generator
                                 }
                                 
                                 objectMap[x, y] = structTypes[i].prefab;
+
+                                alreadySpawned = true;
                             }
                         }
                     }

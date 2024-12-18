@@ -35,7 +35,7 @@ namespace TheRavine.Inventory
         private ObjectSystem objectSystem;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
-            playerData = locator.GetService<PlayerEntity>();
+            playerData = locator.GetService<PlayerView>().playerEntity;
             generator = locator.GetService<MapGenerator>();
             objectSystem = locator.GetService<ObjectSystem>();
             var uiSlot = GetComponentsInChildren<UIInventorySlot>();

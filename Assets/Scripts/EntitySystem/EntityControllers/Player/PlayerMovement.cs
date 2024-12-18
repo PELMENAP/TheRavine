@@ -10,7 +10,7 @@ using TheRavine.Events;
 namespace TheRavine.EntityControl
 {
     [RequireComponent(typeof(Rigidbody2D))]
-    public class PlayerMovement : NetworkBehaviour, IEntityControllable
+    public class PlayerMovement : NetworkBehaviour, IEntityController
     {
         [SerializeField] private int placeObjectDelay;
         [SerializeField] private float movementMinimum;
@@ -47,6 +47,7 @@ namespace TheRavine.EntityControl
         {
             rb = (Rigidbody2D)GetComponent("Rigidbody2D");
             rb.bodyType = RigidbodyType2D.Dynamic;
+            
             entityEventBus = entity.GetEntityComponent<EventBusComponent>().EventBus;
             movementBaseStats = entity.GetEntityComponent<MovementComponent>().baseStats;
             aimBaseStats = entity.GetEntityComponent<AimComponent>().BaseStats;

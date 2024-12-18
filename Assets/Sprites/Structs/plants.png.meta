@@ -824,7 +824,11 @@ TextureImporter:
     indices: 
     edges: []
     weights: []
-    secondaryTextures: []
+    secondaryTextures:
+    - texture: {fileID: 2800000, guid: a9d0d0e542359c6a8892637639b7d854, type: 3}
+      name: _NormalMap
+    - texture: {fileID: 2800000, guid: 774ca2a0acbcf014181b29e31b7594ee, type: 3}
+      name: _MaskTex
     nameFileIdTable:
       plants_0: 30969749
       plants_1: 530775090
