@@ -44,7 +44,7 @@ namespace TheRavine.EntityControl
                     if (mobEntities[i] == null)
                     {
                         mobEntities[i] = mobEntity;
-                        transformAccessArray[i] = mobEntity.transform;
+                        transformAccessArray[i] = mobEntity.GetEntityComponent<TransformComponent>().GetEntityTransform();
                         EntityCount++;
                         return;
                     }

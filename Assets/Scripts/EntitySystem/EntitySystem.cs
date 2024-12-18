@@ -35,7 +35,7 @@ namespace TheRavine.EntityControl
 
         public void BreakUp(ISetAble.Callback callback)
         {
-            for (int i = 0; i < global.Count; i++) global[i].Death();
+            for (int i = 0; i < global.Count; i++) global[i].Delete();
             if(boidsBehaviour != null) boidsBehaviour.DisableBoids();
             OnDestroy();
             callback?.Invoke();

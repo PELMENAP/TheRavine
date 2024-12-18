@@ -11,15 +11,16 @@ public class CM : NetworkBehaviour
     {
         playerEntity = player;
     }
-    private Transform cameratrans, playerTrans;
+    private Transform cameratrans;
     [SerializeField] private float Velocity, MinDistance;
+    private TransformComponent playerTransformComponent;
     private Vector3 targetPos, factMousePositionOffset;
     public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
         playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<Vector3>(nameof(AimAddition), AimAdditionHandleEvent);
+        playerTransformComponent = playerEntity.GetEntityComponent<TransformComponent>();
         cameratrans = this.transform;
-        playerTrans = playerEntity.GetModelTransform();
-        cameratrans.position = playerTrans.position + new Vector3(0, 0, -1);
+        cameratrans.position = (Vector3)playerTransformComponent.GetEntityPosition() + new Vector3(0, 0, -1);
         callback?.Invoke();
     }
 
@@ -34,7 +35,7 @@ public class CM : NetworkBehaviour
     }
     private void UpdateDefault()
     {
-        targetPos = playerTrans.position + factMousePositionOffset;
+        targetPos = (Vector3)playerTransformComponent.GetEntityPosition() + factMousePositionOffset;
         if (Vector3.Distance(cameratrans.localPosition, targetPos) < MinDistance) return;
         cameratrans.localPosition = Vector3.Lerp(cameratrans.localPosition, targetPos, Velocity * Time.deltaTime);
     }

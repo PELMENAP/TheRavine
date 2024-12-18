@@ -1,8 +1,8 @@
 public class PlayerBehaviourSit : AState
 {
-    private IEntityControllable controller;
+    private IEntityController controller;
     private Behaviour behaviourSit;
-    public PlayerBehaviourSit(IEntityControllable _controller, System.Action _delegateIdle)
+    public PlayerBehaviourSit(IEntityController _controller, System.Action _delegateIdle)
     {
         controller = _controller;
         behaviourSit = _delegateIdle.Invoke;

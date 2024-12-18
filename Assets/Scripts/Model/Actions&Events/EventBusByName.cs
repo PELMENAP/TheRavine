@@ -1,25 +1,28 @@
+using System.Collections.Generic;
+using System;
+
 namespace TheRavine.Events
 {
     public class EventBusByName
     {
-        private System.Collections.Generic.Dictionary<string, System.Delegate> eventDictionary = new System.Collections.Generic.Dictionary<string, System.Delegate>();
-        public void Subscribe(string eventName, System.Action callback)
+        private Dictionary<string, Delegate> eventDictionary = new Dictionary<string, Delegate>();
+        public void Subscribe(string eventName, Action callback)
         {
             if (!eventDictionary.ContainsKey(eventName))
                 eventDictionary[eventName] = null;
-            eventDictionary[eventName] = (System.Action)eventDictionary[eventName] + callback;
+            eventDictionary[eventName] = (Action)eventDictionary[eventName] + callback;
         }
-        public void Subscribe<T>(string eventName, System.Action<T> callback)
+        public void Subscribe<T>(string eventName, Action<T> callback)
         {
             if (!eventDictionary.ContainsKey(eventName))
                 eventDictionary[eventName] = null;
-            eventDictionary[eventName] = (System.Action<T>)eventDictionary[eventName] + callback;
+            eventDictionary[eventName] = (Action<T>)eventDictionary[eventName] + callback;
         }
-        public void Unsubscribe<T>(string eventName, System.Action<T> callback)
+        public void Unsubscribe<T>(string eventName, Action<T> callback)
         {
             if (eventDictionary.ContainsKey(eventName))
             {
-                eventDictionary[eventName] = (System.Action<T>)eventDictionary[eventName] - callback;
+                eventDictionary[eventName] = (Action<T>)eventDictionary[eventName] - callback;
                 if (eventDictionary[eventName] == null)
                     eventDictionary.Remove(eventName);
             }
@@ -27,13 +30,13 @@ namespace TheRavine.Events
         public void Invoke<T>(string eventName, T data)
         {
             if (eventDictionary.TryGetValue(eventName, out var action))
-                (action as System.Action<T>)?.Invoke(data);
+                (action as Action<T>)?.Invoke(data);
         }
 
         public void Invoke(string eventName)
         {
             if (eventDictionary.TryGetValue(eventName, out var action))
-                (action as System.Action)?.Invoke();
+                (action as Action)?.Invoke();
         }
 
         public void Dispose()

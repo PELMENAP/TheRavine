@@ -1,19 +1,28 @@
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 using Unity.Netcode;
 
 namespace TheRavine.EntityControl
 {
-    public abstract class AEntity : NetworkBehaviour
+    public abstract class AEntity
     {
-        private bool isAlife, isActive;
-        private Dictionary<System.Type, IComponent> _components;
-        public void Birth() 
+        public event Action OnActiveStateChanged;
+        public bool IsAlive { get; private set; } = true;
+        private bool _isActive = true;
+        public bool IsActive
         {
-            isAlife = true;
-            isActive = true;
-            _components = new Dictionary<System.Type, IComponent>();
+            get => _isActive;
+            private set
+            {
+                if (_isActive != value)
+                {
+                    _isActive = value;
+                    OnActiveStateChanged?.Invoke();
+                }
+            }
         }
+        private Dictionary<Type, IComponent> _components = new();
         public void AddComponentToEntity(IComponent component)
         {
             _components[component.GetType()] = component;
@@ -23,30 +32,19 @@ namespace TheRavine.EntityControl
             _components.TryGetValue(typeof(T), out IComponent component);
             return (T)component;
         }
-        public bool IsAlife() => isAlife;
-        public void Death()
+        public void Delete()
         {
-            isAlife = false;
-            BreakUpEntity();
-        }
-
-        public bool IsActive() => isActive;
-        public void Activate() => isActive = true;
-        public void Deactivate() => isActive = false;
-
-        private void BreakUpEntity()
-        {
-            foreach (var item in _components) item.Value.Dispose();
+            IsAlive = false;
+            foreach (var component in _components.Values)
+                component.Dispose();
             _components.Clear();
         }
+        public void Activate() => IsActive = true;
+        public void Deactivate() => IsActive = false;
 
-        public abstract void SetUpEntityData(EntityInfo entityInfo);
-        public abstract void Init();
+        public abstract void SetUpEntityData(EntityInfo entityInfo, IEntityController controller);
+        public abstract void Init(Action onUpdateAction);
         public abstract void UpdateEntityCycle();
-        public abstract Vector2 GetEntityPosition();
         public abstract Vector2 GetEntityVelocity();
-        public abstract Transform GetModelTransform();
-        public abstract void EnableView();
-        public abstract void DisableView();
     }
 }

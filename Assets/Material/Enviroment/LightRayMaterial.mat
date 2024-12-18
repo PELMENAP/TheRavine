@@ -21,8 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: LightRayMaterial
-  m_Shader: {fileID: -6465566751694194690, guid: e0fdbb018038e904cb246248c0624fdc,
-    type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: e0fdbb018038e904cb246248c0624fdc, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -75,12 +74,12 @@ Material:
     - _Left: 0
     - _Right: 0.07
     - _Smoothness: 0.48
-    - _Top: 0
-    - _opacity: 0.126
+    - _Top: 0.14
+    - _opacity: 0.508
     - _reflectionsFrequency: 0.191
     - _reflectionsSpeed: 2.69
     - _reflectionsStrength: 0.4
-    - right: 1
+    - right: 1.13
     m_Colors: []
   m_BuildTextureStacks: []
   m_AllowLocking: 1

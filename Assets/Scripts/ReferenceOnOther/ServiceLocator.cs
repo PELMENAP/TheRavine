@@ -5,7 +5,7 @@ namespace TheRavine.Services
 {
     public class ServiceLocator
     {
-        private System.Collections.Generic.Dictionary<System.Type, MonoBehaviour> services = new System.Collections.Generic.Dictionary<System.Type, MonoBehaviour>();
+        private Dictionary<System.Type, MonoBehaviour> services = new Dictionary<System.Type, MonoBehaviour>();
         
         private List<Transform> playersTransforms = new List<Transform>();
         public bool Register<T>(T service) where T : MonoBehaviour

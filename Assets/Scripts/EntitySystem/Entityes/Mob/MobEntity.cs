@@ -1,4 +1,6 @@
 using UnityEngine;
+using System;
+
 namespace TheRavine.EntityControl
 {
     public class MobEntity : AEntity
@@ -6,35 +8,33 @@ namespace TheRavine.EntityControl
         [SerializeField] private Vector2 direction;
         private IMobControllable moveController;
         [SerializeField] private Animator animator;
-        public override void SetUpEntityData(EntityInfo _entityInfo)
+        public override void SetUpEntityData(EntityInfo entityInfo, IEntityController controller)
         {
-            moveController = this.GetComponent<IMobControllable>();
-            base.AddComponentToEntity(new MainComponent(_entityInfo.name, _entityInfo.prefab.GetInstanceID(), new EntityStats(_entityInfo.statsInfo)));
+            moveController = controller as IMobControllable;
+            base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.prefab.GetInstanceID(), new EntityStats(entityInfo.statsInfo)));
             moveController.SetInitialValues(this);
             // _entityGameData = new EntityGameData(_entityInfo);
             // crosshair.gameObject.SetActive(false);
         }
-        public override Vector2 GetEntityPosition() => (Vector2)this.transform.position;
+        public override void Init(Action onUpdateAction)
+        {
+            base.Activate();
+        }
         public override Vector2 GetEntityVelocity() => moveController.GetEntityVelocity();
-        public override Transform GetModelTransform() => moveController.GetModelTransform();
         public override void UpdateEntityCycle()
         {
             // if (isAlife)
             //     moveController.UpdateMobControllerCycle();
         }
-        public override void Init()
-        {
-            EnableView();
-        }
-        public override void EnableView()
-        {
-            Activate();
-            moveController.EnableComponents();
-        }
-        public override void DisableView()
-        {
-            Deactivate();
-            moveController.DisableComponents();
-        }
+        // public override void EnableView()
+        // {
+        //     Activate();
+        //     moveController.EnableComponents();
+        // }
+        // public override void DisableView()
+        // {
+        //     Deactivate();
+        //     moveController.DisableComponents();
+        // }
     }
 }
