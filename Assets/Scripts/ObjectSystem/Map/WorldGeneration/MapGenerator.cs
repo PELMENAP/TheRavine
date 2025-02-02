@@ -95,14 +95,16 @@ namespace TheRavine.Generator
             // viewer = locator.GetPlayerTransform();
             objectSystem = locator.GetService<ObjectSystem>();
             if (endlessFlag[3])
+            {
                 NAL().Forget();
+                UpdateNAL().Forget();
+            }
             if (endlessFlag[0])
                 endless[0] = new EndlessTerrain(this);
             if (endlessFlag[1])
                 endless[1] = new EndlessLiquids(this);
             if (endlessFlag[2])
                 endless[2] = new EndlessObjects(this, objectSystem);
-            UpdateNAL().Forget();
             FirstInstance().Forget();
             callback?.Invoke();
         }
@@ -240,76 +242,71 @@ namespace TheRavine.Generator
                 ExtraUpdate();
             }
         }
-        private byte[,] GenerateTempMap(Vector2 centre)
-        {
-            if (mapData.ContainsKey(centre))
-                return mapData[centre].temperatureMap;
-            byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
-            Noise.GenerateTempNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize);
-            for (byte x = 0; x < mapChunkSize; x++)
-            {
-                for (byte y = 0; y < mapChunkSize; y++)
-                {
-                    float currentHeight = noiseTemperatureMap[x, y];
-                    for (byte i = 0; i + 1 < biomRegions.Length; i++)
-                    {
-                        if (!(currentHeight >= biomRegions[i + 1].height))
-                        {
-                            temperatureMap[x, y] = i;
-                            break;
-                        }
-                    }
-                }
-            }
-            return temperatureMap;
-        }
+        // private byte[,] GenerateTempMap(Vector2 centre)
+        // {
+        //     if (mapData.ContainsKey(centre))
+        //         return mapData[centre].temperatureMap;
+        //     byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
+        //     Noise.GenerateTempNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize);
+        //     for (byte x = 0; x < mapChunkSize; x++)
+        //     {
+        //         for (byte y = 0; y < mapChunkSize; y++)
+        //         {
+        //             float currentHeight = noiseTemperatureMap[x, y];
+        //             for (byte i = 0; i + 1 < biomRegions.Length; i++)
+        //             {
+        //                 if (!(currentHeight >= biomRegions[i + 1].height))
+        //                 {
+        //                     temperatureMap[x, y] = i;
+        //                     break;
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     return temperatureMap;
+        // }
 
-        private byte GetTempMapPoint(Vector2 centre, int x, int y)
-        {
-            if (mapData.ContainsKey(centre))
-                return mapData[centre].temperatureMap[x, y];
-            byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
-            Noise.GenerateTempNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize);
-            float currentHeight = noiseTemperatureMap[x, y];
-            for (byte i = 0; i + 1 < biomRegions.Length; i++)
-            {
-                if (!(currentHeight >= biomRegions[i + 1].height))
-                {
-                    temperatureMap[x, y] = i;
-                    break;
-                }
-            }
-            return temperatureMap[x, y];
-        }
+        // private byte GetTempMapPoint(Vector2 centre, int x, int y)
+        // {
+        //     if (mapData.ContainsKey(centre))
+        //         return mapData[centre].temperatureMap[x, y];
+        //     byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
+        //     Noise.GenerateTempNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize);
+        //     float currentHeight = noiseTemperatureMap[x, y];
+        //     for (byte i = 0; i + 1 < biomRegions.Length; i++)
+        //     {
+        //         if (!(currentHeight >= biomRegions[i + 1].height))
+        //         {
+        //             temperatureMap[x, y] = i;
+        //             break;
+        //         }
+        //     }
+        //     return temperatureMap[x, y];
+        // }
         private float[,] noiseMap = new float[mapChunkSize, mapChunkSize];
         private float[,] noiseTemperatureMap = new float[mapChunkSize, mapChunkSize];
         public UnityAction<Vector2, byte, byte, Vector2> onSpawnPoint;
         private int[] countOfHeights = new int[9];
-        private int count = 0, criticalHeight = 1;
+        private int count = 0;
+        public float riverMin = 0.4f,  riverMax = 0.6f, riverInfluence = 0.05f, maxRiverDepth = 0.3f;
         public ChunkData GenerateMapData(Vector2 centre)
         {
             FastRandom chunkRandom = new FastRandom((seed + (int)(centre.x + centre.y * centre.y)));
             SortedSet<Vector2> objectsToInst = new(new Vector2Comparer());
             byte[,] heightMap = new byte[mapChunkSize, mapChunkSize];
             byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
-            if (Mathf.Abs(centre.x) > 10000 || Mathf.Abs(centre.y) > 10000)
-                Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Local);
-            else
-                Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Global);
 
-            Noise.GenerateTempNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize);
 
-            void SetSandPoint(int x, int y)
-            {
-                if (x >= 0 && x < mapChunkSize && y >= 0 && y < mapChunkSize && heightMap[x, y] > 1)
-                    heightMap[x, y] = 2;
-            }
+            Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Global);
+            Noise.GenerateNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize, Noise.NormalizeMode.Global, true);
+            Noise.CombineMaps(ref noiseMap, noiseTemperatureMap, riverMin, riverMax, riverInfluence, maxRiverDepth);
 
-            void SetNearWaterGrassPoint(int x, int y)
-            {
-                if (x >= 0 && x < mapChunkSize && y >= 0 && y < mapChunkSize && heightMap[x, y] > 2)
-                    heightMap[x, y] = 3;
-            }
+            // if (Mathf.Abs(centre.x) > 10000 || Mathf.Abs(centre.y) > 10000)
+            //     Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Local);
+            // else
+            //     Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Global);
+
+            // Noise.GenerateTempNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize);
 
             for (byte x = 0; x < mapChunkSize; x++)
             {
@@ -340,222 +337,6 @@ namespace TheRavine.Generator
                         }
                     }
                 }
-            }
-
-            for (byte x = 1; x < mapChunkSize - 1; x++)
-            {
-                for (byte y = 1; y < mapChunkSize - 1; y++)
-                {
-                    if (temperatureMap[x, y] == criticalHeight && (
-                    temperatureMap[x, y - 1] != temperatureMap[x, y] ||
-                    temperatureMap[x - 1, y] != temperatureMap[x, y] ||
-                    temperatureMap[x, y + 1] != temperatureMap[x, y] ||
-                    temperatureMap[x + 1, y] != temperatureMap[x, y] ||
-                    temperatureMap[x + 1, y + 1] != temperatureMap[x, y] ||
-                    temperatureMap[x - 1, y + 1] != temperatureMap[x, y] ||
-                    temperatureMap[x - 1, y - 1] != temperatureMap[x, y] ||
-                    temperatureMap[x + 1, y - 1] != temperatureMap[x, y]))
-                    {
-                        heightMap[x, y] = 1;
-                        heightMap[x - 1, y] = 1;
-                        heightMap[x, y - 1] = 1;
-                        heightMap[x, y + 1] = 1;
-                        heightMap[x + 1, y] = 1;
-                        SetSandPoint(x - 2, y);
-                        SetSandPoint(x + 2, y);
-                        SetSandPoint(x, y + 2);
-                        SetSandPoint(x, y - 2);
-                        SetSandPoint(x - 1, y - 1);
-                        SetSandPoint(x - 1, y + 1);
-                        SetSandPoint(x + 1, y - 1);
-                        SetSandPoint(x + 1, y + 1);
-                        SetNearWaterGrassPoint(x, y + 3);
-                        SetNearWaterGrassPoint(x + 1, y + 2);
-                        SetNearWaterGrassPoint(x + 2, y + 1);
-                        SetNearWaterGrassPoint(x + 3, y);
-                        SetNearWaterGrassPoint(x, y - 3);
-                        SetNearWaterGrassPoint(x + 1, y - 2);
-                        SetNearWaterGrassPoint(x + 2, y - 1);
-                        SetNearWaterGrassPoint(x - 3, y);
-                        SetNearWaterGrassPoint(x - 2, y + 1);
-                        SetNearWaterGrassPoint(x - 1, y + 2);
-                        SetNearWaterGrassPoint(x - 2, y - 1);
-                        SetNearWaterGrassPoint(x - 1, y - 2);
-                    }
-                }
-            }
-
-            byte[,] tempTemperatureMap = GenerateTempMap(centre + new Vector2(0, 1));
-            for (byte x = 1; x < mapChunkSize - 1; x++)
-            {
-                if (temperatureMap[x, mapChunkSize - 1] == criticalHeight && (
-                    tempTemperatureMap[x, 0] != temperatureMap[x, mapChunkSize - 1] ||
-                    tempTemperatureMap[x + 1, 0] != temperatureMap[x, mapChunkSize - 1] ||
-                    tempTemperatureMap[x - 1, 0] != temperatureMap[x, mapChunkSize - 1] ||
-                    temperatureMap[x, mapChunkSize - 2] != temperatureMap[x, mapChunkSize - 1] ||
-                    temperatureMap[x - 1, mapChunkSize - 1] != temperatureMap[x, mapChunkSize - 1] ||
-                    temperatureMap[x + 1, mapChunkSize - 1] != temperatureMap[x, mapChunkSize - 1] ||
-                    temperatureMap[x - 1, mapChunkSize - 2] != temperatureMap[x, mapChunkSize - 1] ||
-                    temperatureMap[x + 1, mapChunkSize - 2] != temperatureMap[x, mapChunkSize - 1]))
-                {
-                    heightMap[x, mapChunkSize - 1] = 1;
-                    heightMap[x - 1, mapChunkSize - 1] = 1;
-                    heightMap[x + 1, mapChunkSize - 1] = 1;
-
-                    heightMap[x, mapChunkSize - 2] = 1;
-
-                    SetSandPoint(x - 2, mapChunkSize - 1);
-                    SetSandPoint(x + 2, mapChunkSize - 1);
-                    SetSandPoint(x - 1, mapChunkSize - 2);
-                    SetSandPoint(x + 1, mapChunkSize - 2);
-                    SetSandPoint(x, mapChunkSize - 3);
-                }
-            }
-
-            tempTemperatureMap = GenerateTempMap(centre - new Vector2(0, 1));
-            for (byte x = 1; x < mapChunkSize - 1; x++)
-            {
-                if (temperatureMap[x, 0] == criticalHeight && (
-                    tempTemperatureMap[x, mapChunkSize - 1] != temperatureMap[x, 0] ||
-                    tempTemperatureMap[x - 1, mapChunkSize - 1] != temperatureMap[x, 0] ||
-                    tempTemperatureMap[x + 1, mapChunkSize - 1] != temperatureMap[x, 0] ||
-                    temperatureMap[x - 1, 0] != temperatureMap[x, 0] ||
-                    temperatureMap[x, 1] != temperatureMap[x, 0] ||
-                    temperatureMap[x + 1, 0] != temperatureMap[x, 0] ||
-                    temperatureMap[x + 1, 1] != temperatureMap[x, 0] ||
-                    temperatureMap[x - 1, 1] != temperatureMap[x, 0]))
-                {
-                    heightMap[x, 0] = 1;
-                    heightMap[x - 1, 0] = 1;
-                    heightMap[x + 1, 0] = 1;
-
-                    heightMap[x, 1] = 1;
-
-                    SetSandPoint(x + 2, 0);
-                    SetSandPoint(x - 2, 0);
-                    SetSandPoint(x + 1, 1);
-                    SetSandPoint(x - 1, 1);
-                    SetSandPoint(x, 2);
-                }
-            }
-
-            tempTemperatureMap = GenerateTempMap(centre - new Vector2(1, 0));
-            for (byte y = 1; y < mapChunkSize - 1; y++)
-            {
-                if (temperatureMap[0, y] == criticalHeight && (
-                    tempTemperatureMap[mapChunkSize - 1, y] != temperatureMap[0, y] ||
-                    tempTemperatureMap[mapChunkSize - 1, y - 1] != temperatureMap[0, y] ||
-                    tempTemperatureMap[mapChunkSize - 1, y + 1] != temperatureMap[0, y] ||
-                    temperatureMap[0, y - 1] != temperatureMap[0, y] ||
-                    temperatureMap[0, y + 1] != temperatureMap[0, y] ||
-                    temperatureMap[1, y] != temperatureMap[0, y] ||
-                    temperatureMap[1, y + 1] != temperatureMap[0, y] ||
-                    temperatureMap[1, y - 1] != temperatureMap[0, y]))
-                {
-                    heightMap[0, y] = 1;
-                    heightMap[0, y - 1] = 1;
-                    heightMap[0, y + 1] = 1;
-
-                    heightMap[1, y] = 1;
-
-                    SetSandPoint(0, y + 2);
-                    SetSandPoint(0, y - 2);
-                    SetSandPoint(1, y + 1);
-                    SetSandPoint(1, y - 1);
-                    SetSandPoint(2, y);
-                }
-            }
-
-            tempTemperatureMap = GenerateTempMap(centre + new Vector2(1, 0));
-            for (byte y = 1; y < mapChunkSize - 1; y++)
-            {
-                if (temperatureMap[mapChunkSize - 1, y] == criticalHeight && (
-                    tempTemperatureMap[0, y] != temperatureMap[mapChunkSize - 1, y] ||
-                    tempTemperatureMap[0, y - 1] != temperatureMap[mapChunkSize - 1, y] ||
-                    tempTemperatureMap[0, y + 1] != temperatureMap[mapChunkSize - 1, y] ||
-                    temperatureMap[mapChunkSize - 1, y - 1] != temperatureMap[mapChunkSize - 1, y] ||
-                    temperatureMap[mapChunkSize - 2, y] != temperatureMap[mapChunkSize - 1, y] ||
-                    temperatureMap[mapChunkSize - 1, y + 1] != temperatureMap[mapChunkSize - 1, y] ||
-                    temperatureMap[mapChunkSize - 2, y + 1] != temperatureMap[mapChunkSize - 1, y] ||
-                    temperatureMap[mapChunkSize - 2, y - 1] != temperatureMap[mapChunkSize - 1, y]))
-                {
-                    heightMap[mapChunkSize - 1, y] = 1;
-                    heightMap[mapChunkSize - 1, y - 1] = 1;
-                    heightMap[mapChunkSize - 1, y + 1] = 1;
-
-                    heightMap[mapChunkSize - 2, y] = 1;
-
-                    SetSandPoint(mapChunkSize - 1, y + 2);
-                    SetSandPoint(mapChunkSize - 1, y - 2);
-                    SetSandPoint(mapChunkSize - 2, y + 1);
-                    SetSandPoint(mapChunkSize - 2, y - 1);
-                    SetSandPoint(mapChunkSize - 3, y);
-                }
-            }
-
-            if (temperatureMap[0, 0] == criticalHeight && (
-                    GetTempMapPoint(centre - new Vector2(1, 1), mapChunkSize - 1, mapChunkSize - 1) != temperatureMap[0, 0] ||
-                    GetTempMapPoint(centre - new Vector2(1, 0), mapChunkSize - 1, 0) != temperatureMap[0, 0] ||
-                    GetTempMapPoint(centre - new Vector2(1, 0), mapChunkSize - 1, 1) != temperatureMap[0, 0] ||
-                    GetTempMapPoint(centre - new Vector2(0, 1), 0, mapChunkSize - 1) != temperatureMap[0, 0] ||
-                    GetTempMapPoint(centre - new Vector2(0, 1), 1, mapChunkSize - 1) != temperatureMap[0, 0] ||
-                    temperatureMap[1, 1] != temperatureMap[0, 0] ||
-                    temperatureMap[0, 1] != temperatureMap[0, 0] ||
-                    temperatureMap[1, 0] != temperatureMap[0, 0]))
-            {
-                heightMap[0, 0] = 1;
-                SetSandPoint(1, 0);
-                SetSandPoint(0, 1);
-                SetSandPoint(1, 1);
-            }
-
-            if (temperatureMap[mapChunkSize - 1, 0] == criticalHeight && (
-                    GetTempMapPoint(centre + new Vector2(1, -1), 0, mapChunkSize - 1) != temperatureMap[mapChunkSize - 1, 0] ||
-                    GetTempMapPoint(centre + new Vector2(1, 0), 0, 0) != temperatureMap[mapChunkSize - 1, 0] ||
-                    GetTempMapPoint(centre + new Vector2(1, 0), 0, 1) != temperatureMap[mapChunkSize - 1, 0] ||
-                    GetTempMapPoint(centre - new Vector2(0, 1), mapChunkSize - 1, mapChunkSize - 1) != temperatureMap[mapChunkSize - 1, 0] ||
-                    GetTempMapPoint(centre - new Vector2(0, 1), mapChunkSize - 2, mapChunkSize - 1) != temperatureMap[mapChunkSize - 1, 0] ||
-                    temperatureMap[mapChunkSize - 1, 1] != temperatureMap[mapChunkSize - 1, 0] ||
-                    temperatureMap[mapChunkSize - 2, 1] != temperatureMap[mapChunkSize - 1, 0] ||
-                    temperatureMap[mapChunkSize - 2, 0] != temperatureMap[mapChunkSize - 1, 0]))
-            {
-                heightMap[mapChunkSize - 1, 0] = 1;
-                SetSandPoint(mapChunkSize - 1, 1);
-                SetSandPoint(mapChunkSize - 2, 0);
-                SetSandPoint(mapChunkSize - 2, 1);
-            }
-
-            if (temperatureMap[0, mapChunkSize - 1] == criticalHeight && (
-                    GetTempMapPoint(centre + new Vector2(-1, 1), mapChunkSize - 1, 0) != temperatureMap[0, mapChunkSize - 1] ||
-                    GetTempMapPoint(centre - new Vector2(1, 0), mapChunkSize - 1, mapChunkSize - 1) != temperatureMap[0, mapChunkSize - 1] ||
-                    GetTempMapPoint(centre - new Vector2(1, 0), mapChunkSize - 1, mapChunkSize - 2) != temperatureMap[0, mapChunkSize - 1] ||
-                    GetTempMapPoint(centre + new Vector2(0, 1), 0, 0) != temperatureMap[0, mapChunkSize - 1] ||
-                    GetTempMapPoint(centre + new Vector2(0, 1), 1, 0) != temperatureMap[0, mapChunkSize - 1] ||
-                    temperatureMap[0, mapChunkSize - 2] != temperatureMap[0, mapChunkSize - 1] ||
-                    temperatureMap[1, mapChunkSize - 1] != temperatureMap[0, mapChunkSize - 1] ||
-                    temperatureMap[1, mapChunkSize - 2] != temperatureMap[0, mapChunkSize - 1]))
-            {
-                heightMap[0, mapChunkSize - 1] = 1;
-                SetSandPoint(1, mapChunkSize - 1);
-                SetSandPoint(0, mapChunkSize - 2);
-                SetSandPoint(1, mapChunkSize - 2);
-            }
-
-
-            if (temperatureMap[mapChunkSize - 1, mapChunkSize - 1] == criticalHeight && (
-                    GetTempMapPoint(centre + new Vector2(1, 1), 0, 0) != temperatureMap[mapChunkSize - 1, mapChunkSize - 1] ||
-                    GetTempMapPoint(centre + new Vector2(1, 0), 0, mapChunkSize - 1) != temperatureMap[mapChunkSize - 1, mapChunkSize - 1] ||
-                    GetTempMapPoint(centre + new Vector2(1, 0), 0, mapChunkSize - 2) != temperatureMap[mapChunkSize - 1, mapChunkSize - 1] ||
-                    GetTempMapPoint(centre + new Vector2(0, 1), mapChunkSize - 1, 0) != temperatureMap[mapChunkSize - 1, mapChunkSize - 1] ||
-                    GetTempMapPoint(centre + new Vector2(0, 1), mapChunkSize - 2, 0) != temperatureMap[mapChunkSize - 1, mapChunkSize - 1] ||
-                    temperatureMap[mapChunkSize - 1, mapChunkSize - 2] != temperatureMap[mapChunkSize - 1, mapChunkSize - 1] ||
-                    temperatureMap[mapChunkSize - 2, mapChunkSize - 1] != temperatureMap[mapChunkSize - 1, mapChunkSize - 1] ||
-                    temperatureMap[mapChunkSize - 2, mapChunkSize - 2] != temperatureMap[mapChunkSize - 1, mapChunkSize - 1]))
-            {
-                heightMap[mapChunkSize - 1, mapChunkSize - 1] = 1;
-                SetSandPoint(mapChunkSize - 2, mapChunkSize - 1);
-                SetSandPoint(mapChunkSize - 1, mapChunkSize - 2);
-                SetSandPoint(mapChunkSize - 2, mapChunkSize - 2);
             }
 
             bool isEqual = true;
@@ -700,102 +481,7 @@ namespace TheRavine.Generator
         }
 
         private Vector2 GetPlayerPosition() => Extension.RoundVector2D((viewer.position - new Vector3(generationSize, generationSize) / 2) / (generationSize));
-        public void RotateBasis(sbyte angle)
-        {
-            // if (rotateValue != 0f)
-            //     return;
-            // if (angle == 90)
-            // {
-            //     if (rotateTarget != 0f)
-            //         return;
-            //     RotationCome().Forget();
-            // }
-            // else if (angle == -90)
-            // {
-            //     if (rotateTarget != 270f)
-            //         return;
-            //     RotationBack().Forget();
-            // }
-        }
         public float rotateValue = 0f, rotateTarget = 0f;
-        // private static EnumerableSnapshot<int> objectsSnapshot;
-        // private Dictionary<int, ushort> objectUpdate = new Dictionary<int, ushort>(16);
-        // List<Vector2> chunkCoord = new List<Vector2>();
-        // private async UniTaskVoid RotationCome()
-        // {
-        //     rotateValue = 0.1f;
-        //     rotateTarget = 270f;
-        //     Vector2 Vposition = GetPlayerPosition();
-        //     ObjectInfo[] prefabInfo = objectSystem._info;
-        //     for (int i = 0; i < prefabInfo.Length; i++)
-        //         objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
-        //     for (byte yOffset = 0; yOffset < chunkCount; yOffset++)
-        //         for (byte xOffset = 0; xOffset < chunkCount; xOffset++)
-        //             chunkCoord.Add(new Vector2(Vposition.x + xOffset, Vposition.y + yOffset));
-        //     do
-        //     {
-        //         foreach (var vector in chunkCoord)
-        //         {
-        //             foreach (var item in GetMapData(vector).objectsToInst)
-        //             {
-        //                 ObjectInstInfo info = objectSystem.GetGlobalObjectInfo(item);
-        //                 if (info.prefabID == 0)
-        //                     continue;
-        //                 objectUpdate[info.prefabID]++;
-        //                 objectSystem.Reuse(info.prefabID, item, info.flip, rotateValue);
-        //             }
-        //         }
-        //         objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
-        //         foreach (var ID in objectsSnapshot)
-        //         {
-        //             for (byte j = 0; j < objectSystem.GetPrefabInfo(ID).poolSize - objectUpdate[ID]; j++)
-        //                 objectSystem.Deactivate(ID);
-        //             objectUpdate[ID] = 0;
-        //         }
-        //         objectSystem.transform.Rotate(0, 0, -rotateValue, Space.World);
-        //         viewer.Rotate(0, 0, rotateValue, Space.Self);
-        //         await UniTask.WaitForFixedUpdate();
-        //     } while (objectSystem.transform.eulerAngles.z > rotateTarget);
-        //     rotateValue = 0f;
-        //     await UniTask.WaitForFixedUpdate();
-        // }
-
-        // private async UniTaskVoid RotationBack()
-        // {
-        //     rotateValue = -0.1f;
-        //     rotateTarget = 360f;
-        //     Vector2 Vposition = GetPlayerPosition();
-        //     ObjectInfo[] prefabInfo = objectSystem._info;
-        //     for (int i = 0; i < prefabInfo.Length; i++)
-        //         objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
-        //     do
-        //     {
-        //         foreach (var vector in chunkCoord)
-        //         {
-        //             foreach (var item in GetMapData(vector).objectsToInst)
-        //             {
-        //                 ObjectInstInfo info = objectSystem.GetGlobalObjectInfo(item);
-        //                 if (info.prefabID == 0)
-        //                     continue;
-        //                 objectUpdate[info.prefabID]++;
-        //                 objectSystem.Reuse(info.prefabID, item, info.flip, rotateValue);
-        //             }
-        //         }
-        //         objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
-        //         foreach (var ID in objectsSnapshot)
-        //         {
-        //             for (byte j = 0; j < objectSystem.GetPrefabInfo(ID).poolSize - objectUpdate[ID]; j++)
-        //                 objectSystem.Deactivate(ID);
-        //             objectUpdate[ID] = 0;
-        //         }
-        //         objectSystem.transform.Rotate(0, 0, -rotateValue, Space.World);
-        //         viewer.Rotate(0, 0, rotateValue, Space.Self);
-        //         await UniTask.WaitForFixedUpdate();
-        //     } while ((int)objectSystem.transform.eulerAngles.z != 0);
-        //     rotateValue = 0f;
-        //     rotateTarget = 0f;
-        //     await UniTask.WaitForFixedUpdate();
-        // }
 
         public void BreakUp(ISetAble.Callback callback)
         {
@@ -812,27 +498,6 @@ namespace TheRavine.Generator
             _cts.Cancel();
             WFCAqueue.Clear();
         }
-
-        public Transform viewerTest;
-
-        // public void TestGeneration()
-        // {
-        //     if (endlessFlag[0])
-        //         endless[0] = new EndlessTerrain(this);
-        //     if (endlessFlag[1])
-        //         endless[1] = new EndlessLiquids(this);
-        //     endlessFlag[2] = false;
-        //     for (sbyte i = -scale; i < scale; i++)
-        //     {
-        //         for (sbyte j = -scale; j < scale; j++)
-        //         {
-        //             Vector2 centre = new(i, j);
-        //             mapData[centre] = GenerateMapData(centre);
-        //         }
-        //     }
-        //     for (byte i = 0; i < 2; i++)
-        //         endless[i].UpdateChunk(Extension.RoundVector2D(viewerTest.position / (scale * mapChunkSize)));
-        // }
     }
 
     [System.Serializable]

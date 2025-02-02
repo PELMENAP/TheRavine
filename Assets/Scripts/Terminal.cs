@@ -8,6 +8,7 @@ using TheRavine.Services;
 using TheRavine.Generator;
 using TheRavine.EntityControl;
 namespace TheRavine.Base
+
 {
     public class Terminal : MonoBehaviour, ISetAble
     {
@@ -22,7 +23,7 @@ namespace TheRavine.Base
         {
             try
             {
-                playerData = locator.GetService<PlayerView>().playerEntity;
+                playerData = locator.GetService<PlayerModelView>().playerEntity;
             }
             catch
             {
@@ -32,9 +33,7 @@ namespace TheRavine.Base
             EnterRef.action.performed += OnEnter;
             callback?.Invoke();
         }
-
         
-
         public void ShowSomething(string text)
         {
             OutputReaction(text);
@@ -203,7 +202,7 @@ namespace TheRavine.Base
         private void RotateSpace(sbyte angle)
         {
             Debug.Log(angle);
-            generator.RotateBasis(angle);
+            // generator.RotateBasis(angle);
         }
         private void OutputReaction(string message)
         {

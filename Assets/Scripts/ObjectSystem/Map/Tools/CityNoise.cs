@@ -350,3 +350,121 @@ public static class CityNoise
         return (x, y);
     }
 }
+
+// public static class CityNoise
+// {
+//     private static int[,] map;
+//     private static FastRandom random;
+//     private static int size;
+
+//     public static void InitCityNoise(int _randomSeed, int _size, int numVerticalRoads, int numHorizontalRoads)
+//     {
+//         random = new FastRandom(_randomSeed);
+//         size = _size;
+//         map = new int[size, size];
+
+//         // Ensure input parameters are within reasonable bounds
+//         numVerticalRoads = Math.Max(1, Math.Min(numVerticalRoads, size / 2));
+//         numHorizontalRoads = Math.Max(1, Math.Min(numHorizontalRoads, size / 2));
+
+//         GenerateCityMap(numVerticalRoads, numHorizontalRoads);
+//     }
+
+//     public static int[,] GetCityMap() => map;
+
+//     private static void GenerateCityMap(int numVerticalRoads, int numHorizontalRoads)
+//     {
+//         GenerateMainSquare();
+//         GenerateRiver();
+//         GenerateRoads(numVerticalRoads, numHorizontalRoads);
+//     }
+
+//     private static void GenerateMainSquare()
+//     {
+//         int squareSize = Math.Max(3, size / 10); // Ensure the square has a minimum size
+//         int startX = size / 2 - squareSize / 2;
+//         int startY = size / 2 - squareSize / 2;
+
+//         for (int x = startX; x < startX + squareSize; x++)
+//         {
+//             for (int y = startY; y < startY + squareSize; y++)
+//             {
+//                 map[x, y] = 4; // Mark as main square
+//             }
+//         }
+
+//         // Surround the square with roads
+//         for (int x = startX - 1; x <= startX + squareSize; x++)
+//         {
+//             if (x >= 0 && x < size)
+//             {
+//                 if (startY - 1 >= 0) map[x, startY - 1] = 1; // Top road
+//                 if (startY + squareSize < size) map[x, startY + squareSize] = 1; // Bottom road
+//             }
+//         }
+
+//         for (int y = startY - 1; y <= startY + squareSize; y++)
+//         {
+//             if (y >= 0 && y < size)
+//             {
+//                 if (startX - 1 >= 0) map[startX - 1, y] = 1; // Left road
+//                 if (startX + squareSize < size) map[startX + squareSize, y] = 1; // Right road
+//             }
+//         }
+//     }
+
+//     private static void GenerateRiver()
+//     {
+//         int riverStart = random.Next(0, size / 2);
+//         int riverEnd = random.Next(size / 2, size);
+
+//         int riverY = random.Next(size); // Horizontal river
+
+//         for (int x = riverStart; x <= riverEnd; x++)
+//         {
+//             if (map[x, riverY] == 1) // If road exists, make it a bridge
+//             {
+//                 map[x, riverY] = 3;
+//             }
+//             else
+//             {
+//                 map[x, riverY] = 2;
+//             }
+//         }
+//     }
+
+//     private static void GenerateRoads(int numVerticalRoads, int numHorizontalRoads)
+//     {
+//         for (int i = 0; i < numVerticalRoads; i++)
+//         {
+//             int x = random.Next(size);
+//             for (int y = 0; y < size; y++)
+//             {
+//                 if (map[x, y] == 2) // If river exists, make it a bridge
+//                 {
+//                     map[x, y] = 3;
+//                 }
+//                 else if (map[x, y] == 0)
+//                 {
+//                     map[x, y] = 1; // Create vertical road
+//                 }
+//             }
+//         }
+
+//         for (int i = 0; i < numHorizontalRoads; i++)
+//         {
+//             int y = random.Next(size);
+//             for (int x = 0; x < size; x++)
+//             {
+//                 if (map[x, y] == 2) // If river exists, make it a bridge
+//                 {
+//                     map[x, y] = 3;
+//                 }
+//                 else if (map[x, y] == 0)
+//                 {
+//                     map[x, y] = 1; // Create horizontal road
+//                 }
+//             }
+//         }
+//     }
+// }

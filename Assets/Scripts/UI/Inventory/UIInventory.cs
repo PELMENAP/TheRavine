@@ -35,7 +35,7 @@ namespace TheRavine.Inventory
         private ObjectSystem objectSystem;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
-            playerData = locator.GetService<PlayerView>().playerEntity;
+            playerData = locator.GetService<PlayerModelView>().playerEntity;
             generator = locator.GetService<MapGenerator>();
             objectSystem = locator.GetService<ObjectSystem>();
             var uiSlot = GetComponentsInChildren<UIInventorySlot>();
@@ -61,8 +61,8 @@ namespace TheRavine.Inventory
             inventory.OnInventoryStateChangedEventOnce += OnInventoryStateChanged;
 
             EventBusByName playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
-            playerEventBus.Subscribe<Vector2>(nameof(PlaceEvent), PlaceObject);
-            playerEventBus.Subscribe<Vector2>(nameof(RaiseEvent), AimRaise);
+            playerEventBus.Subscribe<Vector2>(nameof(PlaceEvent), PlaceObjectEvent);
+            playerEventBus.Subscribe<Vector2>(nameof(PickUpEvent), PickUpEvent);
 
             digitAction.action.performed += SetActionCell;
 
@@ -81,7 +81,7 @@ namespace TheRavine.Inventory
         }
 
 
-        private void PlaceObject(Vector2 position)
+        private void PlaceObjectEvent(Vector2 position)
         {
             IInventorySlot slot = activeCells[activeCell - 1].slot;
             if (slot.isEmpty) return;
@@ -101,7 +101,7 @@ namespace TheRavine.Inventory
             craftService.OnInventoryCraftCheck(sender);
         }
 
-        private void AimRaise(Vector2 position)
+        private void PickUpEvent(Vector2 position)
         {
             ObjectInstInfo objectInstInfo = objectSystem.GetGlobalObjectInstInfo(position);
             ObjectInfo data = objectSystem.GetGlobalObjectInfo(position);

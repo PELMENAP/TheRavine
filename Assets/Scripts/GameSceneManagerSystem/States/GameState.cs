@@ -1,21 +1,23 @@
+using System.Collections.Generic;
+using Unity.Netcode;
+
+
 namespace TheRavine.Base
 {
-    namespace BootstrapStates
-    {
-        public class GameState : IState<Bootstrap>, IEnterable, IExitable
+        public class GameState : IState<GameStateMachine>, IEnterable, IExitable
         {
-            public Bootstrap Initializer { get; }
+            public GameStateMachine Initializer { get; }
             bool aboba = false;
-            public GameState(Bootstrap initializer)
+            public GameState(GameStateMachine initializer)
             {
                 Initializer = initializer;
             }
             public void OnEnter()
             {
-                Initializer.StartNewService(null);
-                Initializer.StartNewService(Initializer.Finally);
                 FaderOnTransit.instance.SetLogs("Начало игры");
                 FaderOnTransit.instance.FadeOut(() => aboba = true);
+                Initializer.OnGameAlreadyStarted();
+                NetworkManager.Singleton.StartHost();
             }
             public void OnExit()
             {
@@ -30,5 +32,5 @@ namespace TheRavine.Base
                 }
             }
         }
-    }
+
 }

@@ -49,7 +49,7 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""name"": ""Enter (Enter)"",
                     ""type"": ""Button"",
                     ""id"": ""879d66d6-f980-4f32-a14f-bea8d0dcb20e"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -58,16 +58,16 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""name"": ""Text (|)"",
                     ""type"": ""Button"",
                     ""id"": ""bb4910dc-2ee2-4d58-83f4-a83779e5ffda"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Raise (F)"",
+                    ""name"": ""Pick Up (F)"",
                     ""type"": ""Button"",
                     ""id"": ""50b14e70-78cd-443d-a17a-387a918af929"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -76,7 +76,7 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""name"": ""InventoryEnter (E)"",
                     ""type"": ""Button"",
                     ""id"": ""7ccb0b85-e39a-49d1-92d4-fa3796131cea"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -85,9 +85,27 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""name"": ""Digit (1-8)"",
                     ""type"": ""Button"",
                     ""id"": ""40f1ba7d-0620-4cf0-a790-40c605984586"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Fast Interact"",
+                    ""type"": ""Button"",
+                    ""id"": ""c0dada3c-e1df-496c-ad29-db0d65fefbac"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Delay Interact"",
+                    ""type"": ""Button"",
+                    ""id"": ""f4641fc1-0094-42c8-969d-95b6cf87a2f9"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": ""Hold"",
                     ""initialStateCheck"": false
                 }
             ],
@@ -187,7 +205,7 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Raise (F)"",
+                    ""action"": ""Pick Up (F)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -289,6 +307,28 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""action"": ""Digit (1-8)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""bf3837ae-9183-443e-82be-20dae3fa62fa"",
+                    ""path"": ""<Keyboard>/space"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Fast Interact"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""4daf689f-4715-4854-ab51-8dff4b029717"",
+                    ""path"": ""<Keyboard>/space"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Delay Interact"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -309,7 +349,7 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""name"": ""Submit"",
                     ""type"": ""Button"",
                     ""id"": ""773d5f05-6f06-4768-a8a8-0f87e9c79d28"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -318,7 +358,7 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""name"": ""Cancel"",
                     ""type"": ""Button"",
                     ""id"": ""fcbe635b-dffb-4c51-82d8-215013b5a8db"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -847,7 +887,7 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""name"": ""Enter"",
                     ""type"": ""Button"",
                     ""id"": ""94a96aa7-468a-49f0-8fed-980a05519148"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -895,7 +935,7 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""name"": ""InventoryQuit (E)"",
                     ""type"": ""Button"",
                     ""id"": ""f27fe89b-287f-4024-91cc-9dcfe3d359d2"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -1102,9 +1142,11 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         m_Gameplay_JumpSpace = m_Gameplay.FindAction("Jump (Space)", throwIfNotFound: true);
         m_Gameplay_EnterEnter = m_Gameplay.FindAction("Enter (Enter)", throwIfNotFound: true);
         m_Gameplay_Text = m_Gameplay.FindAction("Text (|)", throwIfNotFound: true);
-        m_Gameplay_RaiseF = m_Gameplay.FindAction("Raise (F)", throwIfNotFound: true);
+        m_Gameplay_PickUpF = m_Gameplay.FindAction("Pick Up (F)", throwIfNotFound: true);
         m_Gameplay_InventoryEnterE = m_Gameplay.FindAction("InventoryEnter (E)", throwIfNotFound: true);
         m_Gameplay_Digit18 = m_Gameplay.FindAction("Digit (1-8)", throwIfNotFound: true);
+        m_Gameplay_FastInteract = m_Gameplay.FindAction("Fast Interact", throwIfNotFound: true);
+        m_Gameplay_DelayInteract = m_Gameplay.FindAction("Delay Interact", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1204,9 +1246,11 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_Gameplay_JumpSpace;
     private readonly InputAction m_Gameplay_EnterEnter;
     private readonly InputAction m_Gameplay_Text;
-    private readonly InputAction m_Gameplay_RaiseF;
+    private readonly InputAction m_Gameplay_PickUpF;
     private readonly InputAction m_Gameplay_InventoryEnterE;
     private readonly InputAction m_Gameplay_Digit18;
+    private readonly InputAction m_Gameplay_FastInteract;
+    private readonly InputAction m_Gameplay_DelayInteract;
     public struct GameplayActions
     {
         private @RavineGameInput m_Wrapper;
@@ -1215,9 +1259,11 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         public InputAction @JumpSpace => m_Wrapper.m_Gameplay_JumpSpace;
         public InputAction @EnterEnter => m_Wrapper.m_Gameplay_EnterEnter;
         public InputAction @Text => m_Wrapper.m_Gameplay_Text;
-        public InputAction @RaiseF => m_Wrapper.m_Gameplay_RaiseF;
+        public InputAction @PickUpF => m_Wrapper.m_Gameplay_PickUpF;
         public InputAction @InventoryEnterE => m_Wrapper.m_Gameplay_InventoryEnterE;
         public InputAction @Digit18 => m_Wrapper.m_Gameplay_Digit18;
+        public InputAction @FastInteract => m_Wrapper.m_Gameplay_FastInteract;
+        public InputAction @DelayInteract => m_Wrapper.m_Gameplay_DelayInteract;
         public InputActionMap Get() { return m_Wrapper.m_Gameplay; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -1239,15 +1285,21 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @Text.started += instance.OnText;
             @Text.performed += instance.OnText;
             @Text.canceled += instance.OnText;
-            @RaiseF.started += instance.OnRaiseF;
-            @RaiseF.performed += instance.OnRaiseF;
-            @RaiseF.canceled += instance.OnRaiseF;
+            @PickUpF.started += instance.OnPickUpF;
+            @PickUpF.performed += instance.OnPickUpF;
+            @PickUpF.canceled += instance.OnPickUpF;
             @InventoryEnterE.started += instance.OnInventoryEnterE;
             @InventoryEnterE.performed += instance.OnInventoryEnterE;
             @InventoryEnterE.canceled += instance.OnInventoryEnterE;
             @Digit18.started += instance.OnDigit18;
             @Digit18.performed += instance.OnDigit18;
             @Digit18.canceled += instance.OnDigit18;
+            @FastInteract.started += instance.OnFastInteract;
+            @FastInteract.performed += instance.OnFastInteract;
+            @FastInteract.canceled += instance.OnFastInteract;
+            @DelayInteract.started += instance.OnDelayInteract;
+            @DelayInteract.performed += instance.OnDelayInteract;
+            @DelayInteract.canceled += instance.OnDelayInteract;
         }
 
         private void UnregisterCallbacks(IGameplayActions instance)
@@ -1264,15 +1316,21 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @Text.started -= instance.OnText;
             @Text.performed -= instance.OnText;
             @Text.canceled -= instance.OnText;
-            @RaiseF.started -= instance.OnRaiseF;
-            @RaiseF.performed -= instance.OnRaiseF;
-            @RaiseF.canceled -= instance.OnRaiseF;
+            @PickUpF.started -= instance.OnPickUpF;
+            @PickUpF.performed -= instance.OnPickUpF;
+            @PickUpF.canceled -= instance.OnPickUpF;
             @InventoryEnterE.started -= instance.OnInventoryEnterE;
             @InventoryEnterE.performed -= instance.OnInventoryEnterE;
             @InventoryEnterE.canceled -= instance.OnInventoryEnterE;
             @Digit18.started -= instance.OnDigit18;
             @Digit18.performed -= instance.OnDigit18;
             @Digit18.canceled -= instance.OnDigit18;
+            @FastInteract.started -= instance.OnFastInteract;
+            @FastInteract.performed -= instance.OnFastInteract;
+            @FastInteract.canceled -= instance.OnFastInteract;
+            @DelayInteract.started -= instance.OnDelayInteract;
+            @DelayInteract.performed -= instance.OnDelayInteract;
+            @DelayInteract.canceled -= instance.OnDelayInteract;
         }
 
         public void RemoveCallbacks(IGameplayActions instance)
@@ -1584,9 +1642,11 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         void OnJumpSpace(InputAction.CallbackContext context);
         void OnEnterEnter(InputAction.CallbackContext context);
         void OnText(InputAction.CallbackContext context);
-        void OnRaiseF(InputAction.CallbackContext context);
+        void OnPickUpF(InputAction.CallbackContext context);
         void OnInventoryEnterE(InputAction.CallbackContext context);
         void OnDigit18(InputAction.CallbackContext context);
+        void OnFastInteract(InputAction.CallbackContext context);
+        void OnDelayInteract(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {

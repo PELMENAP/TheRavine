@@ -16,7 +16,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &7026701418144059219
 Transform:
   m_ObjectHideFlags: 0
@@ -47,8 +47,7 @@ MonoBehaviour:
   _numberOfEntities: 60
   _numberOfTargets: 5
   delayFactor: 3
-  _entityPrefab: {fileID: 6104160033677303047, guid: 17a5cd599ef8a9144b6efa2fff9b054b,
-    type: 3}
+  _entityPrefab: {fileID: 6104160033677303047, guid: 17a5cd599ef8a9144b6efa2fff9b054b, type: 3}
   _destinationThreshold: 25
   _avoidanceThreshold: 15
   _targetThreshold: 10

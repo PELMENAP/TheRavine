@@ -480,27 +480,6 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: windows_17
-      rect:
-        serializedVersion: 2
-        x: 897
-        y: 99
-        width: 48
-        height: 48
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: a69756eb6dd525f288bceece760f4fce
-      internalID: 572025563
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
       name: windows_18
       rect:
         serializedVersion: 2
@@ -538,27 +517,6 @@ TextureImporter:
       bones: []
       spriteID: aa180471e0c1e92a8b05fbcd590afac0
       internalID: 2015387809
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: windows_20
-      rect:
-        serializedVersion: 2
-        x: 821
-        y: 87
-        width: 48
-        height: 48
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: b7d31ff17ec2ddd44bb85cb61152f1a1
-      internalID: -1645363891
       vertices: []
       indices: 
       edges: []
@@ -648,27 +606,6 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: windows_25
-      rect:
-        serializedVersion: 2
-        x: 818
-        y: 27
-        width: 48
-        height: 48
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 9de30c52dbab4f778b2268cd358bfd52
-      internalID: -986620749
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
       name: windows_26
       rect:
         serializedVersion: 2
@@ -731,6 +668,27 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: windows_29
+      rect:
+        serializedVersion: 2
+        x: 818
+        y: 27
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 15, y: 13, z: 14, w: 25}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d5b59c3cc14e3fa9c8f98387829632ac
+      internalID: -1392938079
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     physicsShape: []
     bones: []
@@ -764,6 +722,7 @@ TextureImporter:
       windows_26: 988833985
       windows_27: 817479068
       windows_28: -1156283241
+      windows_29: -1392938079
       windows_3: 1357947066
       windows_4: -1187237500
       windows_5: -1513716998
