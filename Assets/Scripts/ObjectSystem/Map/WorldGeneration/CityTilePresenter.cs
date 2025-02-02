@@ -65,3 +65,51 @@ public class CityTilePresenter : MonoBehaviour
         _cts.Cancel();
     }
 }
+
+// using UnityEngine;
+// using UnityEngine.Tilemaps;
+
+// public class CityPresenter : MonoBehaviour
+// {
+//     [SerializeField] private Tilemap tilemap;
+//     [SerializeField] private TileBase emptyTile;
+//     [SerializeField] private TileBase roadTile;
+//     [SerializeField] private TileBase riverTile;
+//     [SerializeField] private TileBase bridgeTile;
+//     [SerializeField] private TileBase squareTile;
+//     [SerializeField] private TileBase structureTile;
+
+//     private int[,] cityMap;
+
+//     public void InitializeCity(int[,] map)
+//     {
+//         cityMap = map;
+//         RenderCity();
+//     }
+
+//     private void RenderCity()
+//     {
+//         for (int x = 0; x < cityMap.GetLength(0); x++)
+//         {
+//             for (int y = 0; y < cityMap.GetLength(1); y++)
+//             {
+//                 TileBase tile = GetTileForValue(cityMap[x, y]);
+//                 tilemap.SetTile(new Vector3Int(x, y, 0), tile);
+//             }
+//         }
+//     }
+
+//     private TileBase GetTileForValue(int value)
+//     {
+//         return value switch
+//         {
+//             0 => emptyTile,
+//             1 => roadTile,
+//             2 => riverTile,
+//             3 => bridgeTile,
+//             4 => squareTile,
+//             5 => structureTile,
+//             _ => null,
+//         };
+//     }
+// }

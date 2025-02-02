@@ -7,18 +7,17 @@ namespace TheRavine.Generator
         public class EndlessLiquids : IEndless
         {
             private readonly MapGenerator generator;
-            private const byte chunkScale = MapGenerator.chunkScale, chunkCount = 2 * chunkScale + 1,  mapChunkSize = MapGenerator.mapChunkSize;
             private readonly byte scale = MapGenerator.scale, generationSize = MapGenerator.generationSize;
-            private const ushort countOfQuads = mapChunkSize * chunkCount * mapChunkSize * chunkCount;
+            private const byte chunkScale = MapGenerator.chunkScale, chunkCount = 2 * chunkScale + 1,  mapChunkSize = MapGenerator.mapChunkSize;
+            private const ushort countOfQuads = mapChunkSize * chunkCount;
             public EndlessLiquids(MapGenerator _generator)
             {
                 generator = _generator;
                 ushort dotCount = 0, trianglCount = 0;
-                Vector3[] vertices = new Vector3[4 * countOfQuads];
-                int[] triangles = new int[countOfQuads * 6];
-                for (byte x = 0; x < mapChunkSize * chunkCount; x++)
+                int[] triangles = new int[countOfQuads * countOfQuads * 6];
+                for (byte x = 0; x < countOfQuads; x++)
                 {
-                    for (byte y = 0; y < mapChunkSize * chunkCount; y++)
+                    for (byte y = 0; y < countOfQuads; y++)
                     {
                         Vector3 basePos = new(x * scale, y * scale);
                         vertices[dotCount] = basePos;
@@ -40,7 +39,7 @@ namespace TheRavine.Generator
                 generator.waterF.mesh.SetTriangles(triangles, 0);
                 generator.waterF.mesh.Optimize();
             }
-            private bool[,] meshMap = new bool[mapChunkSize * chunkCount, mapChunkSize * chunkCount];
+            private bool[,] meshMap = new bool[countOfQuads, countOfQuads];
             public void UpdateChunk(Vector2 Vposition)
             {
                 for (sbyte xOffset = -chunkScale; xOffset <= chunkScale; xOffset++)
@@ -53,47 +52,67 @@ namespace TheRavine.Generator
                                 meshMap[(xOffset + chunkScale) * mapChunkSize + x, (yOffset + chunkScale) * mapChunkSize + y] = map[x, y] <= MapGenerator.waterLevel;
                     }
                 }
-                GetQuadWaterMeshMap(mapChunkSize * chunkCount);
-                generator.waterT.position = new((Vposition.x - 1) * generationSize - scale, (Vposition.y - 1) * generationSize - scale);
+                GetQuadWaterMeshMap();
+                generator.waterT.position = new((Vposition.x - 1) * generationSize, (Vposition.y - 1) * generationSize);
             }
-            private readonly Vector2[] uv = new Vector2[4 * countOfQuads];
+            private readonly Vector2[] uv = new Vector2[4 * countOfQuads * countOfQuads];
+            private readonly Vector3[] vertices = new Vector3[4 * countOfQuads * countOfQuads];
             private const float diff = 0.1f, mdiff = 1f - diff;
             private Vector2 difZero = new(diff, 0), zeroDif = new(0, diff), anarchist = new(diff, diff), komunist = new(diff, mdiff), skinhed = new(mdiff, mdiff), kapitalist = new(mdiff, diff);
-            private void GetQuadWaterMeshMap(byte sizeMap)
+            private void GetQuadWaterMeshMap()
             {
                 ushort dotCount = 0;
-                for (byte x = 0; x < sizeMap; x++)
+                for (byte x = 0; x < countOfQuads; x++)
                 {
-                    for (byte y = 0; y < sizeMap; y++)
+                    for (byte y = 0; y < countOfQuads; y++)
                     {
+                        Vector3 basePos = new(x * scale, y * scale);
+                        vertices[dotCount] = basePos;
+                        vertices[dotCount + 1] = basePos + Vector3.up * scale;
+                        vertices[dotCount + 2] = basePos + Vector3.up * scale + Vector3.right * scale;
+                        vertices[dotCount + 3] = basePos + Vector3.right * scale;
+
                         if (meshMap[x, y])
                         {
                             uv[dotCount] = anarchist;
                             uv[dotCount + 1] = komunist;
                             uv[dotCount + 2] = skinhed;
                             uv[dotCount + 3] = kapitalist;
-                            if (x + 1 >= sizeMap || !meshMap[x + 1, y])
+                            bool[] sides = {
+                                x + 1 >= countOfQuads || !meshMap[x + 1, y],
+                                x - 1 < 0 || !meshMap[x - 1, y],
+                                y + 1 >= countOfQuads || !meshMap[x, y + 1],
+                                y - 1 < 0 || !meshMap[x, y - 1],
+                                x + 1 >= countOfQuads || y + 1 >= countOfQuads || !meshMap[x + 1, y + 1],
+                            };
+                            
+                            if (sides[0])
                             {
                                 uv[dotCount + 2] += difZero;
                                 uv[dotCount + 3] += difZero;
                             }
 
-                            if (x - 1 < 0 || !meshMap[x - 1, y])
+                            if (sides[1])
                             {
                                 uv[dotCount] -= difZero;
                                 uv[dotCount + 1] -= difZero;
                             }
 
-                            if (y + 1 >= sizeMap || !meshMap[x, y + 1])
+                            if (sides[2])
                             {
                                 uv[dotCount + 1] += zeroDif;
                                 uv[dotCount + 2] += zeroDif;
                             }
 
-                            if (y - 1 < 0 || !meshMap[x, y - 1])
+                            if (sides[3])
                             {
                                 uv[dotCount] -= zeroDif;
                                 uv[dotCount + 3] -= zeroDif;
+                            }
+
+                            if(sides[0] && sides[2] && sides[4])
+                            {
+                                vertices[dotCount + 2] -= Vector3.up * scale / 4 + Vector3.right * scale / 4;
                             }
                         }
                         else
@@ -107,6 +126,7 @@ namespace TheRavine.Generator
                     }
                 }
                 generator.waterF.mesh.SetUVs(0, uv);
+                generator.waterF.mesh.SetVertices(vertices);
             }
         }
     }

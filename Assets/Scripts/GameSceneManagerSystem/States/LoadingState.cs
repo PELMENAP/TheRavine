@@ -1,20 +1,22 @@
+using System.Collections.Generic;
 namespace TheRavine.Base
 {
-    namespace BootstrapStates
-    {
-        public class LoadingState : IState<Bootstrap>, IEnterable, IExitable, ITickable
+        public class LoadingState : IState<GameStateMachine>, IEnterable, IExitable, ITickable
         {
-            public Bootstrap Initializer { get; }
+            public GameStateMachine Initializer { get; }
             private float timer = 0;
             private int timerStep = 1;
             private bool isChangeState = false;
-            public LoadingState(Bootstrap initializer)
+            private Queue<ISetAble> currentSetAbleScripts;
+            public LoadingState(GameStateMachine initializer, Queue<ISetAble> currentSetAbleScripts)
             {
+                this.currentSetAbleScripts = currentSetAbleScripts;
                 Initializer = initializer;
             }
             public void OnEnter()
             {
-                Initializer.StartNewService(() => isChangeState = true);
+                UnityEngine.Debug.Log("load");
+                Initializer.StartNewServices(currentSetAbleScripts, () => isChangeState = true);
                 FaderOnTransit.instance.SetLogs("Создание сцены");
             }
             public void OnExit()
@@ -23,7 +25,7 @@ namespace TheRavine.Base
             }
             public void OnTick()
             {
-                timer += Initializer.tickPerUpdate;
+                timer += Initializer.GetTickPerUpdate();
                 if (timer > 100 && isChangeState)
                 {
                     isChangeState = false;
@@ -36,5 +38,4 @@ namespace TheRavine.Base
                 }
             }
         }
-    }
 }

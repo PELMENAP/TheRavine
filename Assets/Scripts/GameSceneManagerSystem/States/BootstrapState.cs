@@ -1,26 +1,25 @@
+using System.Collections.Generic;
 namespace TheRavine.Base
 {
-    namespace BootstrapStates
+    public class BootstrapState : IState<GameStateMachine>, IEnterable, IExitable
     {
-        public class BootstrapState : IState<Bootstrap>, IEnterable, IExitable
+        public GameStateMachine Initializer { get; }
+        private Queue<ISetAble> currentSetAbleScripts;
+        public BootstrapState(GameStateMachine Initializer, Queue<ISetAble> currentSetAbleScripts)
         {
-            public Bootstrap Initializer { get; }
-            public BootstrapState(Bootstrap initializer)
-            {
-                Initializer = initializer;
-            }
-            public void OnEnter()
-            {
-                Initializer.StartNewService(null);
-                FaderOnTransit.instance.SetLogs("Выполнен вход в игру");
-                FaderOnTransit.instance.SetLogs("Создание точки входа");
-                Initializer.StartNewService(() => Initializer.StateMachine.SwitchState<InitialState>());
-            }
-            public void OnExit()
-            {
-                FaderOnTransit.instance.SetLogs("Точка входа создана");
-                Initializer.AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
-            }
+            this.Initializer = Initializer;
+            this.currentSetAbleScripts = currentSetAbleScripts;
+        }
+        public void OnEnter()
+        {
+            UnityEngine.Debug.Log("boot");
+            FaderOnTransit.instance.SetLogs("Выполнен вход в игру");
+            FaderOnTransit.instance.SetLogs("Создание точки входа");
+            Initializer.StartNewServices(currentSetAbleScripts, () => Initializer.StateMachine.SwitchState<InitialState>());
+        }
+        public void OnExit()
+        {
+            FaderOnTransit.instance.SetLogs("Точка входа создана");
         }
     }
 }

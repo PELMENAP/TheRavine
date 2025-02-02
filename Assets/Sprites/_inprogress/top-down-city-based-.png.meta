@@ -169,7 +169,7 @@ TextureImporter:
       name: top-down-city-based-_1
       rect:
         serializedVersion: 2
-        x: 257
+        x: 256
         y: 1707
         width: 256
         height: 341
@@ -190,7 +190,7 @@ TextureImporter:
       name: top-down-city-based-_2
       rect:
         serializedVersion: 2
-        x: 771
+        x: 768
         y: 1707
         width: 256
         height: 341
@@ -232,7 +232,7 @@ TextureImporter:
       name: top-down-city-based-_4
       rect:
         serializedVersion: 2
-        x: 257
+        x: 256
         y: 1450
         width: 256
         height: 256
@@ -253,7 +253,7 @@ TextureImporter:
       name: top-down-city-based-_5
       rect:
         serializedVersion: 2
-        x: 514
+        x: 512
         y: 1450
         width: 256
         height: 256
@@ -274,7 +274,7 @@ TextureImporter:
       name: top-down-city-based-_6
       rect:
         serializedVersion: 2
-        x: 771
+        x: 768
         y: 1450
         width: 256
         height: 256
@@ -295,7 +295,7 @@ TextureImporter:
       name: top-down-city-based-_16
       rect:
         serializedVersion: 2
-        x: 514
+        x: 512
         y: 1193
         width: 256
         height: 256
@@ -337,7 +337,7 @@ TextureImporter:
       name: top-down-city-based-_15
       rect:
         serializedVersion: 2
-        x: 257
+        x: 256
         y: 1193
         width: 256
         height: 256
@@ -358,7 +358,7 @@ TextureImporter:
       name: top-down-city-based-_17
       rect:
         serializedVersion: 2
-        x: 771
+        x: 768
         y: 1193
         width: 256
         height: 256
@@ -379,7 +379,7 @@ TextureImporter:
       name: top-down-city-based-_18
       rect:
         serializedVersion: 2
-        x: 1028
+        x: 1024
         y: 1193
         width: 256
         height: 256
@@ -400,7 +400,7 @@ TextureImporter:
       name: top-down-city-based-_7
       rect:
         serializedVersion: 2
-        x: 514
+        x: 512
         y: 1707
         width: 256
         height: 341
@@ -421,7 +421,7 @@ TextureImporter:
       name: top-down-city-based-_8
       rect:
         serializedVersion: 2
-        x: 1028
+        x: 1024
         y: 1450
         width: 256
         height: 256
@@ -442,7 +442,7 @@ TextureImporter:
       name: top-down-city-based-_9
       rect:
         serializedVersion: 2
-        x: 1285
+        x: 1280
         y: 1193
         width: 256
         height: 256
@@ -463,7 +463,7 @@ TextureImporter:
       name: top-down-city-based-_10
       rect:
         serializedVersion: 2
-        x: 1285
+        x: 1280
         y: 1450
         width: 256
         height: 46
@@ -484,7 +484,7 @@ TextureImporter:
       name: top-down-city-based-_11
       rect:
         serializedVersion: 2
-        x: 1285
+        x: 1280
         y: 1450
         width: 256
         height: 256
@@ -505,7 +505,7 @@ TextureImporter:
       name: top-down-city-based-_12
       rect:
         serializedVersion: 2
-        x: 1028
+        x: 1024
         y: 1707
         width: 10
         height: 98
@@ -526,7 +526,7 @@ TextureImporter:
       name: top-down-city-based-_13
       rect:
         serializedVersion: 2
-        x: 1039
+        x: 1035
         y: 1707
         width: 64
         height: 34
@@ -547,7 +547,7 @@ TextureImporter:
       name: top-down-city-based-_19
       rect:
         serializedVersion: 2
-        x: 1039
+        x: 1035
         y: 1742
         width: 29
         height: 51
@@ -568,7 +568,7 @@ TextureImporter:
       name: top-down-city-based-_20
       rect:
         serializedVersion: 2
-        x: 1069
+        x: 1065
         y: 1742
         width: 29
         height: 34
@@ -589,7 +589,7 @@ TextureImporter:
       name: top-down-city-based-_21
       rect:
         serializedVersion: 2
-        x: 1542
+        x: 1536
         y: 1193
         width: 256
         height: 256
@@ -610,8 +610,8 @@ TextureImporter:
       name: top-down-city-based-_22
       rect:
         serializedVersion: 2
-        x: 1542
-        y: 1450
+        x: 1065
+        y: 1778
         width: 30
         height: 23
       alignment: 9
@@ -631,9 +631,9 @@ TextureImporter:
       name: top-down-city-based-_23
       rect:
         serializedVersion: 2
-        x: 1639
-        y: 1449
-        width: 159
+        x: 0
+        y: 0
+        width: 157
         height: 440
       alignment: 9
       pivot: {x: 0.5691072, y: 0.17459522}
@@ -652,7 +652,7 @@ TextureImporter:
       name: top-down-city-based-_24
       rect:
         serializedVersion: 2
-        x: 1104
+        x: 1100
         y: 1708
         width: 14
         height: 31
@@ -673,7 +673,7 @@ TextureImporter:
       name: top-down-city-based-_25
       rect:
         serializedVersion: 2
-        x: 1118
+        x: 1114
         y: 1707
         width: 44
         height: 42
@@ -694,7 +694,7 @@ TextureImporter:
       name: top-down-city-based-_26
       rect:
         serializedVersion: 2
-        x: 1162
+        x: 1158
         y: 1707
         width: 11
         height: 62
@@ -715,7 +715,7 @@ TextureImporter:
       name: top-down-city-based-_27
       rect:
         serializedVersion: 2
-        x: 1173
+        x: 1169
         y: 1707
         width: 23
         height: 82
@@ -736,7 +736,7 @@ TextureImporter:
       name: top-down-city-based-_28
       rect:
         serializedVersion: 2
-        x: 1197
+        x: 1193
         y: 1707
         width: 59
         height: 117
@@ -757,8 +757,8 @@ TextureImporter:
       name: top-down-city-based-_29
       rect:
         serializedVersion: 2
-        x: 1256
-        y: 1707
+        x: 1165
+        y: 1852
         width: 31
         height: 81
       alignment: 9
@@ -778,9 +778,9 @@ TextureImporter:
       name: top-down-city-based-_30
       rect:
         serializedVersion: 2
-        x: 1100
+        x: 1096
         y: 1742
-        width: 16
+        width: 17
         height: 54
       alignment: 9
       pivot: {x: 0.53643036, y: 0.021846065}
@@ -799,7 +799,7 @@ TextureImporter:
       name: top-down-city-based-_31
       rect:
         serializedVersion: 2
-        x: 1118
+        x: 1114
         y: 1750
         width: 38
         height: 53
@@ -820,7 +820,7 @@ TextureImporter:
       name: top-down-city-based-_32
       rect:
         serializedVersion: 2
-        x: 1157
+        x: 1153
         y: 1790
         width: 14
         height: 28
@@ -841,7 +841,7 @@ TextureImporter:
       name: top-down-city-based-_33
       rect:
         serializedVersion: 2
-        x: 1172
+        x: 1168
         y: 1790
         width: 14
         height: 31
@@ -862,7 +862,7 @@ TextureImporter:
       name: top-down-city-based-_34
       rect:
         serializedVersion: 2
-        x: 1028
+        x: 1024
         y: 1836
         width: 95
         height: 99
@@ -883,7 +883,7 @@ TextureImporter:
       name: top-down-city-based-_35
       rect:
         serializedVersion: 2
-        x: 1124
+        x: 1120
         y: 1824
         width: 38
         height: 92
@@ -1240,7 +1240,7 @@ TextureImporter:
       name: top-down-city-based-_55
       rect:
         serializedVersion: 2
-        x: 1028
+        x: 1024
         y: 1986
         width: 39
         height: 49
@@ -1261,7 +1261,7 @@ TextureImporter:
       name: top-down-city-based-_56
       rect:
         serializedVersion: 2
-        x: 1027
+        x: 1024
         y: 1936
         width: 46
         height: 49
@@ -1282,7 +1282,7 @@ TextureImporter:
       name: top-down-city-based-_57
       rect:
         serializedVersion: 2
-        x: 1162
+        x: 1158
         y: 1825
         width: 12
         height: 22
@@ -1303,7 +1303,7 @@ TextureImporter:
       name: top-down-city-based-_58
       rect:
         serializedVersion: 2
-        x: 1174
+        x: 1170
         y: 1825
         width: 7
         height: 22
@@ -1324,7 +1324,7 @@ TextureImporter:
       name: top-down-city-based-_59
       rect:
         serializedVersion: 2
-        x: 1181
+        x: 1177
         y: 1825
         width: 6
         height: 25
@@ -1345,7 +1345,7 @@ TextureImporter:
       name: top-down-city-based-_60
       rect:
         serializedVersion: 2
-        x: 1187
+        x: 1183
         y: 1825
         width: 11
         height: 12
@@ -1366,7 +1366,7 @@ TextureImporter:
       name: top-down-city-based-_61
       rect:
         serializedVersion: 2
-        x: 1198
+        x: 1194
         y: 1825
         width: 14
         height: 17
@@ -1387,7 +1387,7 @@ TextureImporter:
       name: top-down-city-based-_62
       rect:
         serializedVersion: 2
-        x: 1212
+        x: 1208
         y: 1825
         width: 15
         height: 21
@@ -1408,7 +1408,7 @@ TextureImporter:
       name: top-down-city-based-_63
       rect:
         serializedVersion: 2
-        x: 1228
+        x: 1224
         y: 1825
         width: 2
         height: 3
@@ -1429,7 +1429,7 @@ TextureImporter:
       name: top-down-city-based-_64
       rect:
         serializedVersion: 2
-        x: 1231
+        x: 1227
         y: 1825
         width: 3
         height: 9
@@ -1450,8 +1450,8 @@ TextureImporter:
       name: top-down-city-based-_65
       rect:
         serializedVersion: 2
-        x: 1287
-        y: 1707
+        x: 1166
+        y: 1934
         width: 27
         height: 82
       alignment: 9
@@ -1471,7 +1471,7 @@ TextureImporter:
       name: top-down-city-based-_66
       rect:
         serializedVersion: 2
-        x: 514
+        x: 512
         y: 1412
         width: 64
         height: 37
@@ -1492,7 +1492,7 @@ TextureImporter:
       name: top-down-city-based-_67
       rect:
         serializedVersion: 2
-        x: 1067
+        x: 1063
         y: 1806
         width: 11
         height: 30
@@ -1513,9 +1513,114 @@ TextureImporter:
       name: top-down-city-based-_68
       rect:
         serializedVersion: 2
-        x: 1799
+        x: 1792
         y: 1193
-        width: 248
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 52b7e30ca5f9cb8d2981be0b5c6af5fb
+      internalID: -357465268
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_42
+      rect:
+        serializedVersion: 2
+        x: 1280
+        y: 1707
+        width: 256
+        height: 338
+      alignment: 9
+      pivot: {x: 0.5, y: 0.37869823}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6212150162f41881db8b8e0a3b2acccd
+      internalID: -663948620
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_50
+      rect:
+        serializedVersion: 2
+        x: 1280
+        y: 1450
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 2, y: 2}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d9a2b86fa335f55aaa705e9431068620
+      internalID: 567109977
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_52
+      rect:
+        serializedVersion: 2
+        x: 1792
+        y: 1449
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c43ad8cb338af9748b364110c8f7faa4
+      internalID: -1131186238
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_69
+      rect:
+        serializedVersion: 2
+        x: 1792
+        y: 1705
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 54bb6d5cfafbf14d6b25ea57211c56b4
+      internalID: -1188630030
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_70
+      rect:
+        serializedVersion: 2
+        x: 1536
+        y: 1706
+        width: 256
         height: 256
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -1524,8 +1629,50 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 52b7e30ca5f9cb8d2981be0b5c6af5fb
-      internalID: -357465268
+      spriteID: 0dba7cdaca968e9649d7adf43d4ee4c7
+      internalID: -253601941
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_71
+      rect:
+        serializedVersion: 2
+        x: 1536
+        y: 1449
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1a9574cec88e8c6cc99106a5fb603015
+      internalID: 1992080578
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: top-down-city-based-_72
+      rect:
+        serializedVersion: 2
+        x: 1536
+        y: 937
+        width: 256
+        height: 256
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f67df578083c2560fa092ac5a335dd51
+      internalID: -724835726
       vertices: []
       indices: 
       edges: []
@@ -1611,7 +1758,11 @@ TextureImporter:
       top-down-city-based-_66: -2044521841
       top-down-city-based-_67: -1712689199
       top-down-city-based-_68: -357465268
+      top-down-city-based-_69: -1188630030
       top-down-city-based-_7: 6510328700180618161
+      top-down-city-based-_70: -253601941
+      top-down-city-based-_71: 1992080578
+      top-down-city-based-_72: -724835726
       top-down-city-based-_8: 3967625414135696237
       top-down-city-based-_9: 2572050884934598171
   mipmapLimitGroupName: 

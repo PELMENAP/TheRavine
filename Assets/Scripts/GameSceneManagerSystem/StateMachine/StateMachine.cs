@@ -6,15 +6,15 @@ using Cysharp.Threading.Tasks;
 
 public class StateMachine<TInitializer> : IDisposable
 {
-    public StateMachine(int _standartStateMachineTickTime, params IState<TInitializer>[] states)
+    public StateMachine(int _standardStateMachineTickTime, params IState<TInitializer>[] states)
     {
-        standartStateMachineTickTime = _standartStateMachineTickTime;
+        this._standardStateMachineTickTime = _standardStateMachineTickTime;
         _states = new Dictionary<Type, IState<TInitializer>>(states.Length);
         foreach (var state in states)
             _states.Add(state.GetType(), state);
     }
 
-    private int standartStateMachineTickTime;
+    private int _standardStateMachineTickTime;
     private IState<TInitializer> _currentState;
     private readonly Dictionary<Type, IState<TInitializer>> _states;
     private bool _isTicking;
@@ -60,11 +60,17 @@ public class StateMachine<TInitializer> : IDisposable
         while (_isTicking)
         {
             tickable.OnTick();
-            await UniTask.Delay(standartStateMachineTickTime);
+            await UniTask.Delay(_standardStateMachineTickTime);
         }
     }
 
-    private TState GetState<TState>() where TState : IState<TInitializer> => (TState)_states[typeof(TState)];
+    private TState GetState<TState>() where TState : IState<TInitializer>
+    {
+        if (_states.TryGetValue(typeof(TState), out var state))
+            return (TState)state;
+        throw new InvalidOperationException($"State {typeof(TState).Name} not found.");
+    }
+    public void StopTicking() => _isTicking = false;
 
     public void Dispose()
     {

@@ -93,15 +93,15 @@ namespace TheRavine.EntityControl
             movementSpeed = Mathf.Clamp(movementDirection.magnitude, 0.0f, 1.0f);
 
             if (movementDirection.magnitude < movementMinimum) movementDirection = Vector2.zero;
-            else MoveServerRpc(movementDirection, movementSpeed);
-
+            
+            MoveServerRpc(movementDirection, movementSpeed);
             MoveMark();
         }
 
         [ServerRpc]
         private void MoveServerRpc(Vector2 direction, float speed)
         {
-            rb.velocity = movementBaseStats.baseSpeed * speed * direction.normalized;
+            rb.velocity = movementBaseStats.baseSpeed * speed * direction;
             UpdateClientPositionClientRpc(rb.position, rb.velocity);
         }
 
@@ -209,9 +209,9 @@ namespace TheRavine.EntityControl
                 int currentY = Mathf.RoundToInt(transform.position.y);
                 for (int xOffset = -aimBaseStats.pickDistance; xOffset <= aimBaseStats.pickDistance; xOffset++)
                     for (int yOffset = -aimBaseStats.pickDistance; yOffset <= aimBaseStats.pickDistance; yOffset++)
-                        entityEventBus.Invoke(nameof(RaiseEvent), new Vector2(currentX + xOffset, currentY + yOffset));
+                        entityEventBus.Invoke(nameof(PickUpEvent), new Vector2(currentX + xOffset, currentY + yOffset));
             }
-            else entityEventBus.Invoke(nameof(RaiseEvent), Extension.RoundVector2D(crosshair.position));
+            else entityEventBus.Invoke(nameof(PickUpEvent), Extension.RoundVector2D(crosshair.position));
         }
 
         public void AimPlaceMobile()

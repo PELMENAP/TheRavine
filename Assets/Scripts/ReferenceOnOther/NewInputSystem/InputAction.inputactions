@@ -27,7 +27,7 @@
                     "name": "Enter (Enter)",
                     "type": "Button",
                     "id": "879d66d6-f980-4f32-a14f-bea8d0dcb20e",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -36,16 +36,16 @@
                     "name": "Text (|)",
                     "type": "Button",
                     "id": "bb4910dc-2ee2-4d58-83f4-a83779e5ffda",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Raise (F)",
+                    "name": "Pick Up (F)",
                     "type": "Button",
                     "id": "50b14e70-78cd-443d-a17a-387a918af929",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -54,7 +54,7 @@
                     "name": "InventoryEnter (E)",
                     "type": "Button",
                     "id": "7ccb0b85-e39a-49d1-92d4-fa3796131cea",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -63,9 +63,27 @@
                     "name": "Digit (1-8)",
                     "type": "Button",
                     "id": "40f1ba7d-0620-4cf0-a790-40c605984586",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Fast Interact",
+                    "type": "Button",
+                    "id": "c0dada3c-e1df-496c-ad29-db0d65fefbac",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Delay Interact",
+                    "type": "Button",
+                    "id": "f4641fc1-0094-42c8-969d-95b6cf87a2f9",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "Hold",
                     "initialStateCheck": false
                 }
             ],
@@ -165,7 +183,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Raise (F)",
+                    "action": "Pick Up (F)",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -267,6 +285,28 @@
                     "action": "Digit (1-8)",
                     "isComposite": false,
                     "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "bf3837ae-9183-443e-82be-20dae3fa62fa",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Fast Interact",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4daf689f-4715-4854-ab51-8dff4b029717",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Delay Interact",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         },
@@ -287,7 +327,7 @@
                     "name": "Submit",
                     "type": "Button",
                     "id": "773d5f05-6f06-4768-a8a8-0f87e9c79d28",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -296,7 +336,7 @@
                     "name": "Cancel",
                     "type": "Button",
                     "id": "fcbe635b-dffb-4c51-82d8-215013b5a8db",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -825,7 +865,7 @@
                     "name": "Enter",
                     "type": "Button",
                     "id": "94a96aa7-468a-49f0-8fed-980a05519148",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -873,7 +913,7 @@
                     "name": "InventoryQuit (E)",
                     "type": "Button",
                     "id": "f27fe89b-287f-4024-91cc-9dcfe3d359d2",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false

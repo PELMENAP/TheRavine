@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 818089fd16a72fd41957b8d456c454dd
+timeCreated: 1475144340
+licenseType: Store
+DefaultImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 72649
+  packageName: Compute shader example
+  packageVersion: 1.0
+  assetPath: Assets/Compute shader example/1.unity
+  uploadId: 139521

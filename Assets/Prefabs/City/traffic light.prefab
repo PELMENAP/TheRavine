@@ -98,7 +98,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8415318712257639696}
   - component: {fileID: 7183206513439962216}
-  - component: {fileID: 4147655559027945301}
   m_Layer: 0
   m_Name: light
   m_TagString: Untagged
@@ -173,43 +172,6 @@ MonoBehaviour:
   - {x: 0.5, y: -0.5, z: 0}
   - {x: 0.5, y: 0.5, z: 0}
   - {x: -0.5, y: 0.5, z: 0}
---- !u!114 &4147655559027945301
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8162810603115326932}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8b4d0d06098cc016ea1a708a7f0ebfe6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  tremorCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 2
-      outSlope: 2
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  duration: 3
 --- !u!1 &8399088064103111637
 GameObject:
   m_ObjectHideFlags: 0
@@ -220,7 +182,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1849001354672801639}
   - component: {fileID: 1011804679008820377}
-  - component: {fileID: 7879747218852440125}
   m_Layer: 0
   m_Name: light (1)
   m_TagString: Untagged
@@ -295,49 +256,3 @@ MonoBehaviour:
   - {x: 0.5, y: -0.5, z: 0}
   - {x: 0.5, y: 0.5, z: 0}
   - {x: -0.5, y: 0.5, z: 0}
---- !u!114 &7879747218852440125
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8399088064103111637}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8b4d0d06098cc016ea1a708a7f0ebfe6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  tremorCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: -1.4184808
-      outSlope: -1.4184808
-      tangentMode: 34
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 0.49184656
-      value: 0.30232513
-      inSlope: -0.022759855
-      outSlope: -0.022759855
-      tangentMode: 34
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1.372961
-      outSlope: 1.372961
-      tangentMode: 34
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  duration: 3

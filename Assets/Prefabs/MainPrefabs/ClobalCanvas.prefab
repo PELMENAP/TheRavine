@@ -3603,7 +3603,6 @@ MonoBehaviour:
   OutputWindow: {fileID: 4210441251238457233}
   EnterRef: {fileID: 1188807745089354719, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
   input: 
-  playerData: {fileID: 0}
 --- !u!114 &4210441251238457233
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3965,7 +3964,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 2100000, guid: eeed1fa7f9c37a0628ed8133e14e5ff4, type: 2}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.6145526, g: 0.93072027, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 0
@@ -7327,7 +7326,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 2100000, guid: eeed1fa7f9c37a0628ed8133e14e5ff4, type: 2}
-  m_Color: {r: 0, g: 0.9804158, b: 1, a: 1}
+  m_Color: {r: 0, g: 0.98039246, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 0
@@ -9754,7 +9753,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d86c8b178d6efd8d8945e2b2fee8919c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerData: {fileID: 0}
   window: {fileID: 5577946321733191908}
   stats: {fileID: 4448016780138021128}
   mobileInput: {fileID: 4849227379024384773}
@@ -12513,7 +12511,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 2100000, guid: eeed1fa7f9c37a0628ed8133e14e5ff4, type: 2}
-  m_Color: {r: 1, g: 0.94175553, b: 0.5518868, a: 1}
+  m_Color: {r: 1, g: 0.8220184, b: 0.5529412, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 0
@@ -17192,7 +17190,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &4265948594856138209
 RectTransform:
   m_ObjectHideFlags: 0
@@ -18561,6 +18559,18 @@ PrefabInstance:
     - target: {fileID: 3358281602004807030, guid: 7443db7d898c7abe983c5e8d35bae28f, type: 3}
       propertyPath: m_LocalScale.y
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3358281602004807030, guid: 7443db7d898c7abe983c5e8d35bae28f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3358281602004807030, guid: 7443db7d898c7abe983c5e8d35bae28f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3358281602004807030, guid: 7443db7d898c7abe983c5e8d35bae28f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3358281602004807030, guid: 7443db7d898c7abe983c5e8d35bae28f, type: 3}
       propertyPath: m_AnchoredPosition.x

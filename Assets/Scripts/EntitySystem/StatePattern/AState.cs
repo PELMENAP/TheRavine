@@ -1,7 +1,10 @@
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+
 public delegate void Behaviour();
 public abstract class AState
 {
-    protected System.Collections.Generic.List<ICommand> _commands = new System.Collections.Generic.List<ICommand>();
+    protected List<ICommand> _commands = new List<ICommand>();
     private ICommand _currentCommand;
     private bool _isProcessing;
 
@@ -10,7 +13,7 @@ public abstract class AState
         _commands.Add(command);
     }
 
-    public async Cysharp.Threading.Tasks.UniTask ProcessCommandsAsync()
+    public async UniTask ProcessCommandsAsync()
     {
         _isProcessing = true;
         while (_commands.Count > 0 && _isProcessing)

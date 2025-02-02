@@ -48,9 +48,9 @@ MonoBehaviour:
   waterT: {fileID: 0}
   terrainF: {fileID: 0}
   waterF: {fileID: 0}
-  noiseScale: 200
+  noiseScale: 25
   octaves: 8
-  persistence: 0
+  persistence: 0.15
   lacunarity: 3
   regions:
   - height: 0
@@ -399,7 +399,7 @@ MonoBehaviour:
       - isSpawnPoint: 0
         Chance: 534
         info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
-  - height: 0.9
+  - height: 0.8
     liveAble: 1
     level:
     - objects:
@@ -475,7 +475,7 @@ MonoBehaviour:
       - Chance: 65
         info: {fileID: 11400000, guid: 32f8156adfce3fa3b9f5f29cb697afd8, type: 2}
       structs: []
-  - height: 1.15
+  - height: 0.95
     liveAble: 0
     level:
     - objects:
@@ -530,9 +530,13 @@ MonoBehaviour:
   - height: 0.5
   - height: 0.75
   - height: 1
-  endlessFlag: 01010101
+  viewer: {fileID: 0}
+  endlessFlag: 01010000
   step: 3
   deadChance: 0
+  riverMin: 0.65
+  riverMax: 0.7
+  riverInfluence: 0.03
+  maxRiverDepth: 1
   rotateValue: 0
   rotateTarget: 0
-  viewerTest: {fileID: 0}
