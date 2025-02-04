@@ -11,8 +11,11 @@ public class ServiceLocatorAccess : MonoBehaviour
     [SerializeField] private NetworkSpawner networkSpawner;
     [SerializeField] private DayCycle dayCycle;
 
-    public void NetSpawnObject(string prefabName) => networkSpawner.SpawnObjectServerRpc(prefabName);
-    public NetworkObject GetCurrentSpawnedObject() => networkSpawner.GetCurrentSpawnedObject();
+    public NetworkObject NetSpawnObject(string prefabName) 
+    {
+        networkSpawner.SpawnObjectServerRpc(prefabName);
+        return networkSpawner.GetCurrentSpawnedObject();
+    }
 
     private void Awake() 
     {

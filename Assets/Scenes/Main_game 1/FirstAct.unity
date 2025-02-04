@@ -847,15 +847,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 245142068951782472, guid: 955ff4b201985ba6a9ee174de26bb9ba, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 245142068951782472, guid: 955ff4b201985ba6a9ee174de26bb9ba, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 245142068951782472, guid: 955ff4b201985ba6a9ee174de26bb9ba, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 245142068951782472, guid: 955ff4b201985ba6a9ee174de26bb9ba, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -1034,6 +1034,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2515856326577265011, guid: 1ce7dd7f5281e97e38b5d848d452e9ee, type: 3}
+      propertyPath: m_UseEncryption
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2515856326577265011, guid: 1ce7dd7f5281e97e38b5d848d452e9ee, type: 3}
+      propertyPath: m_MaxConnectAttempts
+      value: 30
+      objectReference: {fileID: 0}
     - target: {fileID: 2922651336098409820, guid: 1ce7dd7f5281e97e38b5d848d452e9ee, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1428,7 +1436,7 @@ PrefabInstance:
       objectReference: {fileID: 641283562}
     - target: {fileID: 2574755847066893471, guid: 635bfbcf66d798528848e15e580c146a, type: 3}
       propertyPath: standardStateMachineTickTime
-      value: 200
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 2574755847066893471, guid: 635bfbcf66d798528848e15e580c146a, type: 3}
       propertyPath: scriptsLoadedOnInitialState.Array.size
@@ -1489,10 +1497,10 @@ SceneRoots:
   - {fileID: 1071753208}
   - {fileID: 2621308815261861144}
   - {fileID: 1021793569}
-  - {fileID: 1747704304375829895}
   - {fileID: 641283563}
-  - {fileID: 1073557135}
   - {fileID: 95748464}
   - {fileID: 510732661}
   - {fileID: 85512679}
   - {fileID: 892620558}
+  - {fileID: 1073557135}
+  - {fileID: 1747704304375829895}

@@ -37,7 +37,7 @@ namespace TheRavine.Base
 
         public void StartNewServices(Queue<ISetAble> services, ISetAble.Callback callback)
         {
-            if (services.Count == 0) callback?.Invoke();
+            if (services.Count <= 0) callback?.Invoke();
             else
             {
                 ISetAble setAble = services.Dequeue();
@@ -49,7 +49,7 @@ namespace TheRavine.Base
         public void BreakUpServices()
         {
             if(disAble.Count > 0) disAble.Dequeue().BreakUp(() => BreakUpServices());
-            serviceLocator.Dispose();
+            else serviceLocator.Dispose();
         }
     }
 }

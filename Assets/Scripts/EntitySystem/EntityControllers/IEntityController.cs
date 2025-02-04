@@ -7,10 +7,10 @@ public interface IEntityController
     void EnableComponents();
     void DisableComponents();
     void Delete();
+    Transform GetModelTransform();
 }
 
 public interface IMobControllable : IEntityController
 {
     Vector2 GetEntityVelocity();
-    Transform GetModelTransform();
 }
