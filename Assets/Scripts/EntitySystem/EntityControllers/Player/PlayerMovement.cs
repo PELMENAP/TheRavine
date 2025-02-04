@@ -241,5 +241,7 @@ namespace TheRavine.EntityControl
             Raise.action.performed -= AimRaise;
             LeftClick.action.performed -= AimPlace;
         }
+
+        public Transform GetModelTransform() => this.transform;
     }
 }

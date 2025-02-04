@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using UnityEngine;
 public class PlayerBehaviourIdle : AState
 {
     private IEntityController controller;
@@ -7,10 +9,15 @@ public class PlayerBehaviourIdle : AState
     {
         controller = _controller;
         behaviourIdle = _delegateIdle.Invoke;
+
+        AddCommand(new MoveAlongPathCommand(
+            controller.GetModelTransform(),
+            new List<Vector3>() {new Vector3(0, 0, 0), new Vector3(0, 20, 0), new Vector3(20, 20, 0), new Vector3(20, 0, 0)}, 
+            1));
     }
     public override void Enter()
     {
-
+        ProcessCommandsAsync();
     }
 
     public override void Exit()

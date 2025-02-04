@@ -31,9 +31,8 @@ public class MoveAlongPathCommand : ICommand
         {
             if (_cts.IsCancellationRequested) break;
 
-            // Перемещение к точке с заданной скоростью
             _transform.position = Vector3.MoveTowards(_transform.position, target, _speed * Time.deltaTime);
-            await UniTask.Yield(PlayerLoopTiming.Update); // Ожидание следующего кадра
+            await UniTask.Yield(PlayerLoopTiming.Update);
         }
     }
 

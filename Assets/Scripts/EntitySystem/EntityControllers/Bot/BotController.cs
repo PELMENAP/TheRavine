@@ -95,7 +95,7 @@ public class BotController : MonoBehaviour, IEntityController
         //     if (aim.magnitude > 2)
         //     {
         //         aim.Normalize();
-        //         crosshair.localPosition = aim * PlayerData.instance.CROSSHAIR_DISTANSE;
+        //         crosshair.localPosition = aim * PlayerData.instance.CROSSHAIR_DISTANCE;
         //     }
         //     else
         //         crosshair.localPosition = aim;
@@ -117,7 +117,7 @@ public class BotController : MonoBehaviour, IEntityController
     //     aim = new Vector2(UnityEngine.Random.Range(-1f, 1f), UnityEngine.Random.Range(-1f, 1f));
     //     aim.Normalize();
     //     crosshair.gameObject.SetActive(true);
-    //     crosshair.localPosition = aim * CROSSHAIR_DISTANSE;
+    //     crosshair.localPosition = aim * CROSSHAIR_DISTANCE;
     //     crosshair.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg);
     //     yield return new WaitForSeconds(1);
     //     Instantiate(plob, crosshair.position, Quaternion.identity);
@@ -125,4 +125,5 @@ public class BotController : MonoBehaviour, IEntityController
     // }
 
     public void Delete() { }
+    public Transform GetModelTransform() => this.transform;
 }
