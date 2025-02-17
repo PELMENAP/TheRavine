@@ -20,18 +20,18 @@ namespace TheRavine.Generator
                 objectSystem = _objectSystem;
                 ObjectInfo[] prefabInfo = objectSystem._info;
                 for (ushort i = 0; i < prefabInfo.Length; i++)
-                    objectUpdate[prefabInfo[i].prefab.GetInstanceID()] = 0;
+                    objectUpdate[prefabInfo[i].prefabID] = 0;
                 objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
             }
-            public void UpdateChunk(Vector2 Vposition)
+            public void UpdateChunk(Vector2Int Vposition)
             {
-                ProcessObjectInst(new Vector2(Vposition.x, Vposition.y));
+                ProcessObjectInst(Vposition);
                 for (sbyte yOffset = -chunkScale; yOffset <= chunkScale; yOffset++)
                 {
                     for (sbyte xOffset = -chunkScale; xOffset <= chunkScale; xOffset++)
                     {
                         if (xOffset == 0 && yOffset == 0) continue;
-                        ProcessObjectInst(new Vector2(Vposition.x + xOffset, Vposition.y + yOffset));
+                        ProcessObjectInst(new Vector2Int(Vposition.x + xOffset, Vposition.y + yOffset));
                     }
                 }
                 foreach (var ID in objectsSnapshot)
@@ -44,7 +44,7 @@ namespace TheRavine.Generator
                 }
             }
 
-            private void ProcessObjectInst(Vector2 chunkCoord)
+            private void ProcessObjectInst(Vector2Int chunkCoord)
             {
                 foreach (var item in generator.GetMapData(chunkCoord).objectsToInst)
                 {
@@ -57,7 +57,7 @@ namespace TheRavine.Generator
                         if (objectUpdate[info.prefabID] > objectSystem.GetPoolSize(info.prefabID))
                         {
                             objectSystem.IncreasePoolSize(info.prefabID);
-                            objectSystem.CreatePool(objectInfo.prefab.GetInstanceID(), objectInfo.prefab);
+                            objectSystem.CreatePool(objectInfo.prefabID, objectInfo.prefab);
                         }
                     }
                     catch

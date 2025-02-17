@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Reflection;
+using System;
 
 using TheRavine.Services;
 
@@ -17,6 +18,10 @@ namespace TheRavine.Base
 
             if(serviceLocatorAccess != null) serviceLocatorAccess.serviceLocator = serviceLocator;
             else Debug.Log("There's not service locator accesses on the scene!");
+        }
+        public void RegisterLogger(Action<string> onMessageDisplayTerminal)
+        {
+            serviceLocator.RegisterLogger(new Logger(onMessageDisplayTerminal));
         }
 
         public Queue<ISetAble> RegisterSomeServices(MonoBehaviour[] scripts)

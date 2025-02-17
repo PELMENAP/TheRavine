@@ -1,16 +1,22 @@
 using System;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace TheRavine.Extensions
 {
     public static class Extension
     {
-        private static Vector2 RoundVector2(Vector2 vec) => new Vector2(Mathf.RoundToInt(vec.x), Mathf.RoundToInt(vec.y));
-        public static Vector2 RoundVector2D(Vector3 vec) => RoundVector2((Vector2)vec);
+        private static Vector2Int RoundVector2(Vector2 vec) => new Vector2Int(Mathf.RoundToInt(vec.x), Mathf.RoundToInt(vec.y));
+        public static Vector2Int RoundVector2D(Vector3 vec) => RoundVector2((Vector2)vec);
         public static Vector2 GetRandomPointAround(Vector2 centerPoint, float factor)
         {
             Vector2 direction = RavineRandom.GetInsideCircle(factor);
             return new Vector2((float)(centerPoint.x + direction.x), (float)(centerPoint.y + direction.y));
+        }
+        public static Vector2Int GetRandomPointAround(Vector2Int centerPoint, float factor)
+        {
+            Vector2 direction = RavineRandom.GetInsideCircle(factor);
+            return new Vector2Int(centerPoint.x + (int)direction.x, centerPoint.y + (int)direction.y);
         }
         public static Vector2 CalculateQuadraticBezierPoint(float t, Vector2 p0, Vector2 p1, Vector2 p2)
         {
@@ -99,9 +105,9 @@ namespace TheRavine.Extensions
         }
     }
 
-    public class Vector2Comparer : System.Collections.Generic.IComparer<Vector2>
+    public class Vector2IntComparer : IComparer<Vector2Int>
     {
-        public int Compare(Vector2 v1, Vector2 v2)
+        public int Compare(Vector2Int v1, Vector2Int v2)
         {
             if (v1.x.CompareTo(v2.x) != 0)
                 return v1.x.CompareTo(v2.x);

@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections.Generic;
 
 namespace TheRavine.Base
@@ -11,14 +12,17 @@ namespace TheRavine.Base
         [SerializeField] private int standardStateMachineTickTime, tickPerUpdate;
         [SerializeField] private ServiceLocatorAccess serviceLocatorAccess;
         [SerializeField] private MonoBehaviour[] scriptsLoadedOnBootstrapState, scriptsLoadedOnInitialState, scriptsLoadedOnLoadingState;
+        [SerializeField] private Action<string> onMessageDisplayTerminal;
+        [SerializeField] private Terminal terminal;
         public StateMachine<GameStateMachine> StateMachine { get; private set; }
         private ServiceRegisterMachine serviceRegisterMachine;
         public void Initialize()
         {
             if(inventoryCanvas != null) inventoryCanvas.renderMode = RenderMode.WorldSpace;
 
-
+            onMessageDisplayTerminal += terminal.Display;
             serviceRegisterMachine = new ServiceRegisterMachine(serviceLocatorAccess);
+            serviceRegisterMachine.RegisterLogger(onMessageDisplayTerminal);
             StateMachine =  new StateMachine<GameStateMachine>(standardStateMachineTickTime,
                         new BootstrapState(this, serviceRegisterMachine.RegisterSomeServices(scriptsLoadedOnBootstrapState)),
                         new InitialState(this, serviceRegisterMachine.RegisterSomeServices(scriptsLoadedOnInitialState)),
@@ -44,7 +48,11 @@ namespace TheRavine.Base
             if(inventoryCanvas != null) inventoryCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
         }
 
-        public void BreakUpServices() => serviceRegisterMachine.BreakUpServices();
+        public void BreakUpServices()
+        {
+            onMessageDisplayTerminal -= terminal.Display;
+            serviceRegisterMachine.BreakUpServices();
+        }
         public int GetTickPerUpdate() => tickPerUpdate;
         public void StartNewServices(Queue<ISetAble> services, ISetAble.Callback callback) => serviceRegisterMachine.StartNewServices(services, callback);
     }

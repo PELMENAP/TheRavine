@@ -20,14 +20,14 @@ namespace TheRavine.EntityControl
         private MapGenerator generator;
         private MobController mobsController;
         private EntitySystem entitySystem;
-        private readonly Dictionary<Vector2, ChunkEntityData> mapData = new(4);
-        private ChunkEntityData GetMapData(Vector2 pos)
+        private readonly Dictionary<Vector2Int, ChunkEntityData> mapData = new(4);
+        private ChunkEntityData GetMapData(Vector2Int pos)
         {
             if (!mapData.ContainsKey(pos))
                 mapData[pos] = new ChunkEntityData();
             return mapData[pos];
         }
-        private Vector2 currentChunkPosition, oldChunkPosition;
+        private Vector2Int currentChunkPosition, oldChunkPosition;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
             generator = locator.GetService<MapGenerator>();
@@ -46,14 +46,14 @@ namespace TheRavine.EntityControl
             callback?.Invoke();
         }
 
-        private Queue<Pair<Vector2, Pair<byte, byte>>> NALQueue;
-        private Queue<Pair<Vector2, GameObject>> NALQueueUpdate;
+        private Queue<Pair<Vector2Int, Pair<byte, byte>>> NALQueue;
+        private Queue<Pair<Vector2Int, GameObject>> NALQueueUpdate;
         public void ClearNALQueue() => NALQueue.Clear();
         [SerializeField] private byte step;
-        private async UniTaskVoid NAL()
+        private async UniTaskVoid NAL() // natural artificial life
         {
-            NALQueue = new Queue<Pair<Vector2, Pair<byte, byte>>>(8);
-            NALQueueUpdate = new Queue<Pair<Vector2, GameObject>>(8);
+            NALQueue = new Queue<Pair<Vector2Int, Pair<byte, byte>>>(8);
+            NALQueueUpdate = new Queue<Pair<Vector2Int, GameObject>>(8);
             await UniTask.Delay(5000);
             bool NALthread = true;
             int countCycle = 0;
@@ -71,7 +71,7 @@ namespace TheRavine.EntityControl
                     await UniTask.Delay(1000, cancellationToken: _cts.Token);
                     continue;
                 }
-                Pair<Vector2,  Pair<byte, byte>> current = NALQueue.Dequeue();
+                Pair<Vector2Int,  Pair<byte, byte>> current = NALQueue.Dequeue();
                 MobSpawnData[] currentEntities = regions[current.Second.First].temperatureLevels[current.Second.Second].entities;
                 for (byte i = 0; i < currentEntities.Length; i++)
                 {
@@ -80,7 +80,7 @@ namespace TheRavine.EntityControl
                         continue;
                     if (RavineRandom.Hundred() < curMobSpawnData.Chance)
                     {
-                        NALQueueUpdate.Enqueue(new Pair<Vector2, GameObject>(current.First, curMobSpawnData.info.prefab));
+                        NALQueueUpdate.Enqueue(new Pair<Vector2Int, GameObject>(current.First, curMobSpawnData.info.prefab));
                         await UniTask.Delay(curMobSpawnData.Chance * curMobSpawnData.Chance, cancellationToken: _cts.Token);
                         break;
                     }
@@ -97,7 +97,7 @@ namespace TheRavine.EntityControl
                 ClearNALQueue();
                 while (NALQueueUpdate.Count > 0 && mobsController.GetEntityCount() < MaxSpawnEntityCount)
                 {
-                    Pair<Vector2, GameObject> item = NALQueueUpdate.Dequeue();
+                    Pair<Vector2Int, GameObject> item = NALQueueUpdate.Dequeue();
                     // GameObject curMob = CreateMob(Extension.GetRandomPointAround(item.First, 2), item.Second);
                     // AEntity entity = curMob.GetComponentInChildren<AEntity>();
                     // entity.SetUpEntityData(entitySystem.GetMobInfo(item.Second.GetInstanceID()));
@@ -108,17 +108,17 @@ namespace TheRavine.EntityControl
                 UpdateNALQueue(currentChunkPosition);
             }
         }
-        private void AddSpawnPoint(Vector2 position, byte height, byte temperature, Vector2 chunkCenter)
+        private void AddSpawnPoint(Vector2Int position, byte height, byte temperature, Vector2Int chunkCenter)
         {
             GetMapData(chunkCenter).spawnPoints[position] = new Pair<byte, byte>(height, temperature);
         }
-        private void UpdateNALQueue(Vector2 position)
+        private void UpdateNALQueue(Vector2Int position)
         {
             for (sbyte yOffset = -chunkScale; yOffset < chunkScale; yOffset++)
             {
                 for (sbyte xOffset = -chunkScale; xOffset < chunkScale; xOffset++)
                 {
-                    List<AEntity> listEntity = GetMapData(currentChunkPosition + new Vector2(xOffset, yOffset)).entitiesInChunk;
+                    List<AEntity> listEntity = GetMapData(currentChunkPosition + new Vector2Int(xOffset, yOffset)).entitiesInChunk;
                     for (ushort i = 0; i < listEntity.Count; i++)
                     {
                         AEntity entity = listEntity[i];
@@ -134,9 +134,9 @@ namespace TheRavine.EntityControl
             {
                 for (sbyte xOffset = -chunkScale; xOffset < chunkScale; xOffset++)
                 {
-                    ChunkEntityData data = GetMapData(currentChunkPosition + new Vector2(xOffset, yOffset));
+                    ChunkEntityData data = GetMapData(currentChunkPosition + new Vector2Int(xOffset, yOffset));
                     foreach (var item in data.spawnPoints)
-                        NALQueue.Enqueue(new Pair<Vector2, Pair<byte, byte>>(item.Key, item.Value));
+                        NALQueue.Enqueue(new Pair<Vector2Int, Pair<byte, byte>>(item.Key, item.Value));
                     List<AEntity> listEntity = data.entitiesInChunk;
                     for (ushort i = 0; i < listEntity.Count; i++)
                     {
@@ -172,11 +172,11 @@ namespace TheRavine.EntityControl
 
     public class ChunkEntityData
     {
-        public Dictionary<Vector2, Pair<byte, byte>> spawnPoints;
+        public Dictionary<Vector2Int, Pair<byte, byte>> spawnPoints;
         public List<AEntity> entitiesInChunk;
         public ChunkEntityData()
         {
-            spawnPoints = new Dictionary<Vector2, Pair<byte, byte>>();
+            spawnPoints = new Dictionary<Vector2Int, Pair<byte, byte>>();
             entitiesInChunk = new List<AEntity>();
         }
     }

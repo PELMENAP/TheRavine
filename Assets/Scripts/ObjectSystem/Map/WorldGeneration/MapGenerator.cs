@@ -16,8 +16,8 @@ namespace TheRavine.Generator
     {
         private System.Threading.CancellationTokenSource _cts = new();
         public const byte mapChunkSize = 16, chunkScale = 1, scale = 5, generationSize = scale * mapChunkSize, waterLevel = 1;
-        private Dictionary<Vector2, ChunkData> mapData;
-        public ChunkData GetMapData(Vector2 position)
+        private Dictionary<Vector2Int, ChunkData> mapData;
+        public ChunkData GetMapData(Vector2Int position)
         {
             if(mapData.TryGetValue(position, out ChunkData data))
                 return data;
@@ -26,11 +26,11 @@ namespace TheRavine.Generator
         
         public bool IsHeightIsLiveAble(int height) => regions[height].liveAble;
 
-        public byte GetMapHeight(Vector2 position)
+        public byte GetMapHeight(Vector2Int position)
         {
-            Vector2 playerPos = new((int)position.x, (int)position.y);
-            Vector2 chunkPos = GetChunkPosition(playerPos);
-            Vector2 XYpos = (playerPos - chunkPos * generationSize) / scale;
+            Vector2Int playerPos = new((int)position.x, (int)position.y);
+            Vector2Int chunkPos = GetChunkPosition(playerPos);
+            Vector2Int XYpos = (playerPos - chunkPos * generationSize) / scale;
             if (XYpos.x > 15)
                 XYpos.x = 15;
             if (XYpos.y > 15)
@@ -42,27 +42,27 @@ namespace TheRavine.Generator
             return GetMapData(chunkPos).heightMap[(int)XYpos.x, (int)XYpos.y];
         }
 
-        public Vector2 GetChunkPosition(Vector2 position)
+        public Vector2Int GetChunkPosition(Vector2 position)
         {
-            position = new Vector2(position.x, position.y);
-            Vector2 chunkPos = position / generationSize;
-            if (position.x < 0)
-                chunkPos.x = -(-position.x / generationSize) - 1;
-            if (position.y < 0)
-                chunkPos.y = -(-position.y / generationSize) - 1;
-            return new Vector2((int)chunkPos.x, (int)chunkPos.y);
+            Vector2Int positionInt = new Vector2Int((int)position.x, (int)position.y);
+            Vector2Int chunkPos = positionInt / generationSize;
+            if (positionInt.x < 0)
+                chunkPos.x = -(-positionInt.x / generationSize) - 1;
+            if (positionInt.y < 0)
+                chunkPos.y = -(-positionInt.y / generationSize) - 1;
+            return new Vector2Int((int)chunkPos.x, (int)chunkPos.y);
         }
 
-        public ChunkData GetMapDataByObjectPosition(Vector2 position)
+        public ChunkData GetMapDataByObjectPosition(Vector2Int position)
         {
-            Vector2 chunkPos = GetChunkPosition(position);
+            Vector2Int chunkPos = GetChunkPosition(position);
             if (!mapData.ContainsKey(chunkPos)) return null;
             return mapData[chunkPos];
         }
 
-        public bool TryToAddPositionToChunk(Vector2 position)
+        public bool TryToAddPositionToChunk(Vector2Int position)
         {
-            SortedSet<Vector2> objectsToInst = GetMapData(GetChunkPosition(position)).objectsToInst;
+            SortedSet<Vector2Int> objectsToInst = GetMapData(GetChunkPosition(position)).objectsToInst;
             if (objectsToInst.Contains(position))
                 return false;
             else
@@ -84,13 +84,15 @@ namespace TheRavine.Generator
         [SerializeField] private TemperatureType[] biomRegions;
         [SerializeField] private Transform viewer;
         [SerializeField] private bool[] endlessFlag;
+        public float maxDepthFactor, smoothnessFactor;
+        public int w;
         private IEndless[] endless;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
             // seed = RavineRandom.RangeInt(0, 1000);
             seed = 16; 
             endless = new IEndless[3];
-            mapData = new Dictionary<Vector2, ChunkData>(64);
+            mapData = new Dictionary<Vector2Int, ChunkData>(64);
             Noise.SetInit(noiseScale, octaves, persistence, lacunarity, Seed);
             // viewer = locator.GetPlayerTransform();
             objectSystem = locator.GetService<ObjectSystem>();
@@ -115,7 +117,7 @@ namespace TheRavine.Generator
             {
                 for (sbyte j = -scale; j < scale; j++)
                 {
-                    Vector2 centre = new(i, j);
+                    Vector2Int centre = new(i, j);
                     // Debug.Log(centre);
                     mapData[centre] = GenerateMapData(centre);
                     await UniTask.Delay(10);
@@ -124,16 +126,16 @@ namespace TheRavine.Generator
             GenerationUpdate().Forget();
         }
 
-        private Queue<Vector2> NALQueue, NALQueueUpdateRemove;
-        private Queue<Pair<Vector2,  ObjectInfo>> NALQueueUpdateAdd;
+        private Queue<Vector2Int> NALQueue, NALQueueUpdateRemove;
+        private Queue<Pair<Vector2Int,  ObjectInfo>> NALQueueUpdateAdd;
         public void ClearNALQueue() => NALQueue.Clear();
-        public void AddNALObject(Vector2 current) => NALQueue.Enqueue(current);
+        public void AddNALObject(Vector2Int current) => NALQueue.Enqueue(current);
         [SerializeField] private byte step, deadChance = 0;
         private async UniTaskVoid NAL()
         {
-            NALQueue = new Queue<Vector2>(64);
-            NALQueueUpdateRemove = new Queue<Vector2>(32);
-            NALQueueUpdateAdd = new Queue<Pair<Vector2,  ObjectInfo>>(32);
+            NALQueue = new Queue<Vector2Int>(64);
+            NALQueueUpdateRemove = new Queue<Vector2Int>(32);
+            NALQueueUpdateAdd = new Queue<Pair<Vector2Int,  ObjectInfo>>(32);
             await UniTask.Delay(10000);
             int countCycle = 0;
             while (!DataStorage.sceneClose)
@@ -160,7 +162,7 @@ namespace TheRavine.Generator
                     continue;
                 }
                 deadChance = NALQueue.Count > 200 ? (byte)10 : (byte)0;
-                Vector2 current = NALQueue.Dequeue();
+                Vector2Int current = NALQueue.Dequeue();
                 ObjectInfo currentObjectPrefabData = objectSystem.GetGlobalObjectInfo(current);
                 if(currentObjectPrefabData == null) continue;
                 ObjectInfo nextGenInfo = currentObjectPrefabData.nextStep;
@@ -173,14 +175,14 @@ namespace TheRavine.Generator
                         continue;
                     }
                     NALQueueUpdateRemove.Enqueue(current);
-                    NALQueueUpdateAdd.Enqueue(new Pair<Vector2, ObjectInfo>(current, nextGenInfo));
+                    NALQueueUpdateAdd.Enqueue(new Pair<Vector2Int, ObjectInfo>(current, nextGenInfo));
                     continue;
                 }
                 // ObjectInfo childObjectInfo = objectSystem.GetPrefabInfo(currentObjectInfo.childPrefab.GetInstanceID());
                 bool closeto = false;
                 for (sbyte x = -scale; x <= scale; x++)
                     for (sbyte y = -scale; y <= scale; y++)
-                        if (x != 0 && y != 0 && objectSystem.ContainsGlobal(current + new Vector2(x, y)))
+                        if (x != 0 && y != 0 && objectSystem.ContainsGlobal(current + new Vector2Int(x, y)))
                             closeto = true;
                 NAlInfo nalinfo = currentObjectPrefabData.nalinfo;
                 if (Extension.ComparePercent(nalinfo.chance / 2 + deadChance) || closeto)
@@ -189,13 +191,13 @@ namespace TheRavine.Generator
                     SpreadPattern pattern = currentObjectPrefabData.deadPattern;
                     if (pattern == null)
                         continue;
-                    NALQueueUpdateAdd.Enqueue(new Pair<Vector2, ObjectInfo>(current, pattern.main));
+                    NALQueueUpdateAdd.Enqueue(new Pair<Vector2Int, ObjectInfo>(current, pattern.main));
                     if (pattern.other.Length != 0)
                     {
                         for (byte i = 0; i < pattern.other.Length; i++)
                         {
-                            Vector2 newPos = Extension.GetRandomPointAround(current, pattern.factor);
-                            NALQueueUpdateAdd.Enqueue(new Pair<Vector2, ObjectInfo>(newPos, pattern.other[i]));
+                            Vector2Int newPos = Extension.GetRandomPointAround(current, pattern.factor);
+                            NALQueueUpdateAdd.Enqueue(new Pair<Vector2Int, ObjectInfo>(newPos, pattern.other[i]));
                         }
                     }
                     continue;
@@ -209,8 +211,8 @@ namespace TheRavine.Generator
                     {
                         if (Extension.ComparePercent(nalinfo.chance))
                         {
-                            Vector2 newPos = Extension.GetRandomPointAround(current, nalinfo.distance);
-                            NALQueueUpdateAdd.Enqueue(new Pair<Vector2, ObjectInfo>(newPos, nextGenInfo));
+                            Vector2Int newPos = Extension.GetRandomPointAround(current, nalinfo.distance);
+                            NALQueueUpdateAdd.Enqueue(new Pair<Vector2Int, ObjectInfo>(newPos, nextGenInfo));
                         }
                         await UniTask.Delay(10, cancellationToken: _cts.Token);
                         attempts--;
@@ -230,69 +232,28 @@ namespace TheRavine.Generator
                 ClearNALQueue();
                 while (NALQueueUpdateRemove.Count > 0)
                 {   
-                    Vector2 item = NALQueueUpdateRemove.Dequeue();
+                    Vector2Int item = NALQueueUpdateRemove.Dequeue();
                     objectSystem.RemoveFromGlobal(item);
                 }
                 while (NALQueueUpdateAdd.Count > 0)
                 {
-                    Pair<Vector2, ObjectInfo> item = NALQueueUpdateAdd.Dequeue();
-                    if(objectSystem.TryAddToGlobal(item.First, item.Second.prefab.GetInstanceID(), item.Second.amount, item.Second.iType, (item.First.x + item.First.y) % 2 == 0))
+                    Pair<Vector2Int, ObjectInfo> item = NALQueueUpdateAdd.Dequeue();
+                    if(objectSystem.TryAddToGlobal(item.First, item.Second.prefabID, item.Second.amount, item.Second.iType, (item.First.x + item.First.y) % 2 == 0))
                         GetMapData(GetChunkPosition(item.First)).objectsToInst.Add(item.First);
                 }
                 ExtraUpdate();
             }
         }
-        // private byte[,] GenerateTempMap(Vector2 centre)
-        // {
-        //     if (mapData.ContainsKey(centre))
-        //         return mapData[centre].temperatureMap;
-        //     byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
-        //     Noise.GenerateTempNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize);
-        //     for (byte x = 0; x < mapChunkSize; x++)
-        //     {
-        //         for (byte y = 0; y < mapChunkSize; y++)
-        //         {
-        //             float currentHeight = noiseTemperatureMap[x, y];
-        //             for (byte i = 0; i + 1 < biomRegions.Length; i++)
-        //             {
-        //                 if (!(currentHeight >= biomRegions[i + 1].height))
-        //                 {
-        //                     temperatureMap[x, y] = i;
-        //                     break;
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     return temperatureMap;
-        // }
-
-        // private byte GetTempMapPoint(Vector2 centre, int x, int y)
-        // {
-        //     if (mapData.ContainsKey(centre))
-        //         return mapData[centre].temperatureMap[x, y];
-        //     byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
-        //     Noise.GenerateTempNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize);
-        //     float currentHeight = noiseTemperatureMap[x, y];
-        //     for (byte i = 0; i + 1 < biomRegions.Length; i++)
-        //     {
-        //         if (!(currentHeight >= biomRegions[i + 1].height))
-        //         {
-        //             temperatureMap[x, y] = i;
-        //             break;
-        //         }
-        //     }
-        //     return temperatureMap[x, y];
-        // }
         private float[,] noiseMap = new float[mapChunkSize, mapChunkSize];
         private float[,] noiseTemperatureMap = new float[mapChunkSize, mapChunkSize];
-        public UnityAction<Vector2, byte, byte, Vector2> onSpawnPoint;
+        public UnityAction<Vector2Int, byte, byte, Vector2Int> onSpawnPoint;
         private int[] countOfHeights = new int[9];
         private int count = 0;
-        public float riverMin = 0.4f,  riverMax = 0.6f, riverInfluence = 0.05f, maxRiverDepth = 0.3f;
-        public ChunkData GenerateMapData(Vector2 centre)
+        [SerializeField] private float riverMin = 0.4f,  riverMax = 0.6f, riverInfluence = 0.05f, maxRiverDepth = 0.3f;
+        public ChunkData GenerateMapData(Vector2Int centre)
         {
-            FastRandom chunkRandom = new FastRandom((seed + (int)(centre.x + centre.y * centre.y)));
-            SortedSet<Vector2> objectsToInst = new(new Vector2Comparer());
+            FastRandom chunkRandom = new FastRandom((seed + (int)(centre.x + centre.y)));
+            SortedSet<Vector2Int> objectsToInst = new(new Vector2IntComparer());
             byte[,] heightMap = new byte[mapChunkSize, mapChunkSize];
             byte[,] temperatureMap = new byte[mapChunkSize, mapChunkSize];
 
@@ -358,11 +319,11 @@ namespace TheRavine.Generator
                         //     continue;
                         // if ((x * y + centre.x * centre.y + Seed + i * countOfHeights[heightMap[x, y]] + count) % sinfo.Chance == 0)
                         // {
-                        //     Vector2 posstruct = new(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale);
+                        //     Vector2Int posstruct = new(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale);
                         //     var WFCAobjects = WFCA(posstruct, (byte)((Seed + (int)x + (int)y) % sinfo.info.tileInfo.Length), sinfo.info);
                         //     foreach (var item in WFCAobjects)
                         //     {
-                        //         if (objectSystem.TryAddToGlobal(item.Key, item.Value.prefab.GetInstanceID(), item.Value.amount, item.Value.iType, (x + y) % 2 == 0))
+                        //         if (objectSystem.TryAddToGlobal(item.Key, item.Value.prefabID, item.Value.amount, item.Value.iType, (x + y) % 2 == 0))
                         //             {
                         //                 var data = GetMapDataByObjectPosition(item.Key);
                         //                 // objectsToInst.Add(item.Key);
@@ -381,9 +342,9 @@ namespace TheRavine.Generator
                         if(ginfo.Chance == 0 || ginfo.info == null) continue;
                         if (chunkRandom.Range(0, 1000) < ginfo.Chance)
                         {
-                            Vector2 posobj = new(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale);
+                            Vector2Int posobj = new(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale);
                            
-                                if (objectSystem.TryAddToGlobal(posobj, ginfo.info.prefab.GetInstanceID(), ginfo.info.amount, ginfo.info.iType, (x + y) % 2 == 0))
+                                if (objectSystem.TryAddToGlobal(posobj, ginfo.info.prefabID, ginfo.info.amount, ginfo.info.iType, (x + y) % 2 == 0))
                                 {
                                     objectsToInst.Add(posobj);
                                     break;
@@ -395,10 +356,10 @@ namespace TheRavine.Generator
             }
             return new ChunkData(heightMap, temperatureMap, isEqual, objectsToInst);
         }
-        private Queue<Pair<Vector2, byte>> WFCAqueue = new(16);
-        // private Dictionary<Vector2, ObjectInfo> WFCA(Vector2 curPos, byte type, StructInfo structInfo)
+        private Queue<Pair<Vector2Int, byte>> WFCAqueue = new(16);
+        // private Dictionary<Vector2Int, ObjectInfo> WFCA(Vector2Int curPos, byte type, StructInfo structInfo)
         // {
-        //     Dictionary<Vector2, ObjectInfo> WFCAobjects = new(8);
+        //     Dictionary<Vector2Int, ObjectInfo> WFCAobjects = new(8);
 
         //     Debug.Log("wfca");
         //     WFCAqueue.Clear();
@@ -407,10 +368,10 @@ namespace TheRavine.Generator
         //         maxIteration += structInfo.tileInfo[i].MCount;
         //     byte[] Count = new byte[9];
         //     count++;
-        //     WFCAqueue.Enqueue(new Pair<Vector2, byte>(curPos, type));
+        //     WFCAqueue.Enqueue(new Pair<Vector2Int, byte>(curPos, type));
         //     while (WFCAqueue.Count != 0)
         //     {
-        //         Pair<Vector2, byte> current = WFCAqueue.Dequeue();
+        //         Pair<Vector2Int, byte> current = WFCAqueue.Dequeue();
         //         if (count > maxIteration) break;
         //         if (structInfo.tileInfo[current.Second].MCount > Count[current.Second] && !WFCAobjects.ContainsKey(current.First))
         //         {
@@ -424,18 +385,18 @@ namespace TheRavine.Generator
         //             for (sbyte y = -1; y <= 1; y++)
         //             {
         //                 if (x == 0 && y == 0) continue;
-        //                 Vector2 newPos = current.First + new Vector2(x, y) * structInfo.distortion;
+        //                 Vector2Int newPos = current.First + new Vector2Int(x, y) * structInfo.distortion;
         //                 byte field = structInfo.tileInfo[current.Second].height[c++];
         //                 if (field == 0) continue;
         //                 if (WFCAobjects.ContainsKey(newPos)) continue;
-        //                 WFCAqueue.Enqueue(new Pair<Vector2, byte>(newPos, --field));
+        //                 WFCAqueue.Enqueue(new Pair<Vector2Int, byte>(newPos, --field));
         //             }
         //         }
         //     }
         //     return WFCAobjects;
         // }
-        private Vector2 OldVposition, position;
-        public UnityAction<Vector2> onUpdate;
+        private Vector2Int OldVposition, position;
+        public UnityAction<Vector2Int> onUpdate;
         private async UniTaskVoid GenerationUpdate()
         {
             position = GetPlayerPosition();
@@ -456,7 +417,7 @@ namespace TheRavine.Generator
                     {
                         for (int xOffset = -extendedChunk; xOffset <= extendedChunk; xOffset++)
                         {
-                            Vector2 chunkPosition = new(position.x + xOffset, position.y + yOffset);
+                            Vector2Int chunkPosition = new(position.x + xOffset, position.y + yOffset);
                             if(!mapData.ContainsKey(chunkPosition)) mapData[chunkPosition] = GenerateMapData(chunkPosition);
                         }
                     }
@@ -480,7 +441,7 @@ namespace TheRavine.Generator
             endless[2].UpdateChunk(position);
         }
 
-        private Vector2 GetPlayerPosition() => Extension.RoundVector2D((viewer.position - new Vector3(generationSize, generationSize) / 2) / (generationSize));
+        private Vector2Int GetPlayerPosition() => Extension.RoundVector2D((viewer.position - new Vector3(generationSize, generationSize) / 2) / (generationSize));
         public float rotateValue = 0f, rotateTarget = 0f;
 
         public void BreakUp(ISetAble.Callback callback)
@@ -507,6 +468,12 @@ namespace TheRavine.Generator
         public bool liveAble;
         public TemperatureLevel[] level;
     }
+    [System.Serializable]
+    public struct TemperatureLevel
+    {
+        public ObjectInfoGeneration[] objects;
+        public StructInfoGeneration[] structs;
+    }
 
     [System.Serializable]
     public struct ObjectInfoGeneration
@@ -528,19 +495,12 @@ namespace TheRavine.Generator
     {
         public float height;
     }
-
-    [System.Serializable]
-    public struct TemperatureLevel
-    {
-        public ObjectInfoGeneration[] objects;
-        public StructInfoGeneration[] structs;
-    }
     public class ChunkData
     {
         public readonly byte[,] heightMap, temperatureMap;
         public readonly bool isEqual;
-        public SortedSet<Vector2> objectsToInst;
-        public ChunkData(byte[,] heightMap, byte[,] temperatureMap, bool isEqual, SortedSet<Vector2> objectsToInst)
+        public SortedSet<Vector2Int> objectsToInst;
+        public ChunkData(byte[,] heightMap, byte[,] temperatureMap, bool isEqual, SortedSet<Vector2Int> objectsToInst)
         {
             this.heightMap = heightMap;
             this.temperatureMap = temperatureMap;
