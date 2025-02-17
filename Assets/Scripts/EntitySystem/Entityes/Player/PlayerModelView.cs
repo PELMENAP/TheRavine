@@ -115,9 +115,16 @@ namespace TheRavine.EntityControl
 
         public void BreakUp(ISetAble.Callback callback)
         {
-            if(playerEntity != null)
+            try
+            {
                 playerEntity.OnActiveStateChanged -= HandleStateChanged;
-            playerEntity.Delete();
+                playerEntity.Delete();
+            }
+            catch
+            {
+                Debug.Log("Player entity hadn't created");
+            }
+            
             cameraComponent?.BreakUp(callback);
         }
 

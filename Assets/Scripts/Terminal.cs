@@ -36,7 +36,7 @@ namespace TheRavine.Base
         
         public void ShowSomething(string text)
         {
-            OutputReaction(text);
+            Display(text);
         }
         public void OnEnter()
         {
@@ -70,7 +70,7 @@ namespace TheRavine.Base
                                     TeleportCommandI();
                                     break;
                                 default:
-                                    OutputReaction("Неопределенный вид сущности");
+                                    Display("Неопределенный вид сущности");
                                     break;
                             }
                             break;
@@ -87,17 +87,17 @@ namespace TheRavine.Base
                                             SetPlayerValueCommand("view");
                                             break;
                                         default:
-                                            OutputReaction("Неизвестный параметр");
+                                            Display("Неизвестный параметр");
                                             break;
                                     }
                                     break;
                                 default:
-                                    OutputReaction("Неопределенный вид сущности");
+                                    Display("Неопределенный вид сущности");
                                     break;
                             }
                             break;
                         case "-когда":
-                            OutputReaction("Спросите что-нибудь более оригинальное");
+                            Display("Спросите что-нибудь более оригинальное");
                             break;
                         case "-rotate":
                             switch (_words[1])
@@ -110,12 +110,12 @@ namespace TheRavine.Base
                                     RotateSpace(-90);
                                     break;
                                 default:
-                                    OutputReaction("Неопределенная операция поворота");
+                                    Display("Неопределенная операция поворота");
                                     break;
                             }
                             break;
                         default:
-                            OutputReaction("Неизвестная команда");
+                            Display("Неизвестная команда");
                             break;
                     }
                     // foreach (var item in words)
@@ -125,12 +125,12 @@ namespace TheRavine.Base
                 }
                 catch
                 {
-                    OutputReaction("Недопустимый синтаксис");
+                    Display("Недопустимый синтаксис");
                 }
             }
             else
             {
-                OutputReaction(input);
+                Display(input);
             }
         }
 
@@ -144,16 +144,16 @@ namespace TheRavine.Base
             }
             catch
             {
-                OutputReaction("Неизвестный тип координат");
+                Display("Неизвестный тип координат");
                 return;
             }
             if (Math.Abs(x) > 1000000 || Math.Abs(y) > 1000000)
             {
-                OutputReaction("Превышен лимит мира");
+                Display("Превышен лимит мира");
                 return;
             }
             playerData.GetEntityComponent<TransformComponent>().GetEntityTransform().position = new Vector2(x, y);
-            OutputReaction($"Выполнен телепорт на координаты: {x}, {y}");
+            Display($"Выполнен телепорт на координаты: {x}, {y}");
         }
 
         private void SetPlayerValueCommand(string name)
@@ -165,12 +165,12 @@ namespace TheRavine.Base
             }
             catch
             {
-                OutputReaction("Неизвестный тип числа");
+                Display("Неизвестный тип числа");
                 return;
             }
             if (value < 0)
             {
-                OutputReaction("Число не может быть отрицательным");
+                Display("Число не может быть отрицательным");
                 return;
             }
 
@@ -179,23 +179,23 @@ namespace TheRavine.Base
                 case "speed":
                     if (value > 100)
                     {
-                        OutputReaction("Превышен лимит скорости");
+                        Display("Превышен лимит скорости");
                         return;
                     }
                     playerData.GetEntityComponent<MovementComponent>().baseStats.baseSpeed = value;
-                    OutputReaction($"Скорость игрока: {value}");
+                    Display($"Скорость игрока: {value}");
                     break;
                 case "view":
                     if (value > 30)
                     {
-                        OutputReaction("Превышен лимит обзора");
+                        Display("Превышен лимит обзора");
                         return;
                     }
                     playerData.GetEntityComponent<AimComponent>().BaseStats.crosshairDistance = value;
-                    OutputReaction($"Максимальный обзор игрока: {value}");
+                    Display($"Максимальный обзор игрока: {value}");
                     break;
                 default:
-                    OutputReaction("Неизвестный параметр");
+                    Display("Неизвестный параметр");
                     break;
             }
         }
@@ -204,7 +204,7 @@ namespace TheRavine.Base
             Debug.Log(angle);
             // generator.RotateBasis(angle);
         }
-        private void OutputReaction(string message)
+        public void Display(string message)
         {
             OutputWindow.text = message;
             TerminalOutputFade(OutputWindow).Forget();

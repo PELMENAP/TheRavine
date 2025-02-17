@@ -6,7 +6,7 @@ namespace TheRavine.Services
     public class ServiceLocator
     {
         private Dictionary<System.Type, MonoBehaviour> services = new Dictionary<System.Type, MonoBehaviour>();
-        
+        private ILogger logger;
         private List<Transform> playersTransforms = new List<Transform>();
         public bool Register<T>(T service) where T : MonoBehaviour
         {
@@ -16,6 +16,11 @@ namespace TheRavine.Services
             else
                 return false;
             return true;
+        }
+
+        public void RegisterLogger(ILogger logger)
+        {
+            this.logger = logger;
         }
         public void RegisterPlayer<T>(T service) where T : MonoBehaviour
         {
@@ -29,6 +34,8 @@ namespace TheRavine.Services
             else
                 return null;
         }
+
+        public ILogger GetLogger() => logger;
 
         public Transform GetPlayerTransform() => playersTransforms[0];
         public List<Transform> GetPlayersTransforms() => playersTransforms;

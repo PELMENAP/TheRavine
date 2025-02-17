@@ -9,6 +9,7 @@ namespace TheRavine.EntityControl
     [BurstCompile]
     public struct MoveJob : IJobParallelForTransform
     {
+        
         public NativeArray<float2> Velocities;
         [WriteOnly] public NativeArray<float2> Positions;
         [ReadOnly] public NativeArray<bool> IsMoving;

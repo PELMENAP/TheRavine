@@ -1,18 +1,19 @@
-﻿using UnityEngine;
-using TheRavine.Extensions;
-using NaughtyAttributes;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
-public class MainScript : MonoBehaviour
+namespace TheRavine.Base
 {
-    public int squareSize = 5, factor;
-    public GameObject prefab;
-
-    [Button]
-    void Generate()
+    public class MainScript : MonoBehaviour
     {
-        // Генерируем точку при нажатии пробела
-        Vector2 point = Extension.GetRandomPointAround(new Vector2(30, 30), 2);
-        Debug.Log($"Generated Point: {point}");
-        Instantiate(prefab, point, Quaternion.identity);
+        public List<Vector2Int> points, holes;
+        void Start()
+        {
+            GenerateMesh();
+        }
+
+        void GenerateMesh()
+        {
+            
+        }
     }
 }

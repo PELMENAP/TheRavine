@@ -61,8 +61,8 @@ namespace TheRavine.Inventory
             inventory.OnInventoryStateChangedEventOnce += OnInventoryStateChanged;
 
             EventBusByName playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
-            playerEventBus.Subscribe<Vector2>(nameof(PlaceEvent), PlaceObjectEvent);
-            playerEventBus.Subscribe<Vector2>(nameof(PickUpEvent), PickUpEvent);
+            playerEventBus.Subscribe<Vector2Int>(nameof(PlaceEvent), PlaceObjectEvent);
+            playerEventBus.Subscribe<Vector2Int>(nameof(PickUpEvent), PickUpEvent);
 
             digitAction.action.performed += SetActionCell;
 
@@ -81,7 +81,7 @@ namespace TheRavine.Inventory
         }
 
 
-        private void PlaceObjectEvent(Vector2 position)
+        private void PlaceObjectEvent(Vector2Int position)
         {
             IInventorySlot slot = activeCells[activeCell - 1].slot;
             if (slot.isEmpty) return;
@@ -101,7 +101,7 @@ namespace TheRavine.Inventory
             craftService.OnInventoryCraftCheck(sender);
         }
 
-        private void PickUpEvent(Vector2 position)
+        private void PickUpEvent(Vector2Int position)
         {
             ObjectInstInfo objectInstInfo = objectSystem.GetGlobalObjectInstInfo(position);
             ObjectInfo data = objectSystem.GetGlobalObjectInfo(position);
@@ -117,7 +117,7 @@ namespace TheRavine.Inventory
                     {
                         for (byte i = 0; i < pattern.other.Length; i++)
                         {
-                            Vector2 newPos = Extension.GetRandomPointAround(position, pattern.factor);
+                            Vector2Int newPos = Extension.GetRandomPointAround(position, pattern.factor);
                             objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].amount, pattern.other[i].iType, newPos.x < position.x);
                         }
                     }

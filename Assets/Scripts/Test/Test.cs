@@ -90,7 +90,7 @@ public class Test : MonoBehaviour
     {
         playerEntity.GetEntityComponent<SkillComponent>().Skills[flyingSkill.SkillName].Use(playerEntity.GetEntityComponent<MainComponent>());
     }
-    Vector2 position;
+    Vector2Int position;
     ChunkData map;
 
     [Button]
@@ -103,7 +103,7 @@ public class Test : MonoBehaviour
     [Button]
     private void TestPosition()
     {
-        position = new Vector2(viewer.position.x, viewer.position.y);
+        position = new Vector2Int((int)viewer.position.x, (int)viewer.position.y);
         print(generator.GetMapHeight(position));
     }
 
