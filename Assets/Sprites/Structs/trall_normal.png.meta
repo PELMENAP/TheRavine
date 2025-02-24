@@ -1,0 +1,987 @@
+fileFormatVersion: 2
+guid: 3a05227b10b01dd368d014dc543cb5de
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 1
+    sRGBTexture: 0
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 8
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 0
+  spriteTessellationDetail: -1
+  textureType: 1
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 3
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 1
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: trall_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 969
+        width: 389
+        height: 55
+      alignment: 9
+      pivot: {x: 0.5, y: -1}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d9d1d66413ca2ca93b9f8368c8446cfe
+      internalID: 1665057619
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 858
+        width: 392
+        height: 111
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c1d2961c422b54e4eb927ff08aee8c2d
+      internalID: -63436618
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_2
+      rect:
+        serializedVersion: 2
+        x: 513
+        y: 913
+        width: 391
+        height: 111
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 028314a5ed576f9378318ff8e3110da1
+      internalID: -504112685
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_3
+      rect:
+        serializedVersion: 2
+        x: 906
+        y: 942
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c7aa309470e71d3c19b28fc81d28b361
+      internalID: -1372936809
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_4
+      rect:
+        serializedVersion: 2
+        x: 957
+        y: 915
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 02a9f324625f65a0e93ffb7427cd85d8
+      internalID: -96928158
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_5
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 745
+        width: 390
+        height: 112
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 369b80331e58a4e85b2b7d63193472d7
+      internalID: -139112242
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_6
+      rect:
+        serializedVersion: 2
+        x: 513
+        y: 801
+        width: 391
+        height: 111
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7fe229b09e7cd21d3a382ea55a87e9d1
+      internalID: -1040685280
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_7
+      rect:
+        serializedVersion: 2
+        x: 906
+        y: 830
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 77801e78de58c483c96edf676f3e8489
+      internalID: 790477564
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_8
+      rect:
+        serializedVersion: 2
+        x: 957
+        y: 830
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 832e56714de6a5b45aaa802d184b08d0
+      internalID: 1155528420
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_9
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 632
+        width: 390
+        height: 113
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b23ecc53887087da08bc4ba3ba458923
+      internalID: -1450115436
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_10
+      rect:
+        serializedVersion: 2
+        x: 514
+        y: 689
+        width: 390
+        height: 111
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 86c3f1064a3363d0983104196803d816
+      internalID: 1510254071
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_11
+      rect:
+        serializedVersion: 2
+        x: 906
+        y: 718
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3acb8e8f90b1ff4448096b5d4f387bdd
+      internalID: 1532192446
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_12
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 521
+        width: 390
+        height: 112
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 54137006f194c9cd8b2ddcdb69e440cd
+      internalID: -1069311056
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_13
+      rect:
+        serializedVersion: 2
+        x: 392
+        y: 551
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a41c0d58e54ba3bb39be3b86da86d369
+      internalID: 353655646
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_14
+      rect:
+        serializedVersion: 2
+        x: 514
+        y: 577
+        width: 390
+        height: 111
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1b134e5971ff21bf59e780c09f70d017
+      internalID: 519907058
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_15
+      rect:
+        serializedVersion: 2
+        x: 906
+        y: 606
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0d9d0d5ca3c6659a39157e6e9f0bccff
+      internalID: 1256633860
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_16
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 409
+        width: 390
+        height: 111
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 988e19cbd947cb6a096cf0a705afed0e
+      internalID: 111683368
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_17
+      rect:
+        serializedVersion: 2
+        x: 514
+        y: 465
+        width: 390
+        height: 111
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2639833d40d05669e926a529f7601458
+      internalID: 1947492967
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_18
+      rect:
+        serializedVersion: 2
+        x: 906
+        y: 494
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 63635f29144064c2589dd4d6d6852b0e
+      internalID: -1672174061
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_19
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 298
+        width: 390
+        height: 111
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bc68dcbdff5f5b7cdbb9134c662c236b
+      internalID: -331819121
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_20
+      rect:
+        serializedVersion: 2
+        x: 514
+        y: 353
+        width: 390
+        height: 111
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5b1fe710866ec09678478a12623a9a10
+      internalID: -278079172
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_21
+      rect:
+        serializedVersion: 2
+        x: 906
+        y: 382
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ff90ca7f4ce8d99fcb1d3fb97f1ef07d
+      internalID: -195798660
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_22
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 185
+        width: 390
+        height: 111
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 819eb704d74a5855085eaf05176b258f
+      internalID: 1005632124
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_23
+      rect:
+        serializedVersion: 2
+        x: 514
+        y: 241
+        width: 390
+        height: 111
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a43bef76485502f15876378940baff5f
+      internalID: -602755317
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_24
+      rect:
+        serializedVersion: 2
+        x: 906
+        y: 270
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 21239076207c89a7b9ec2d97eeded717
+      internalID: 2110328409
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_25
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 73
+        width: 390
+        height: 111
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 178dacf5d54a6d3eaae099c0a8085129
+      internalID: 354558792
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_26
+      rect:
+        serializedVersion: 2
+        x: 514
+        y: 129
+        width: 390
+        height: 111
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9ebc51b9a9067bdc89dc999017d06b73
+      internalID: 802740526
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_27
+      rect:
+        serializedVersion: 2
+        x: 906
+        y: 158
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: de2c9c20e91cc047a833a33b99d70643
+      internalID: 341014196
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_28
+      rect:
+        serializedVersion: 2
+        x: 514
+        y: 17
+        width: 390
+        height: 111
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 25f02f873e130ea669df0280ef5cb9f3
+      internalID: 1106233529
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_29
+      rect:
+        serializedVersion: 2
+        x: 906
+        y: 46
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0c5dbf7d5f98ffcb1bd1e33bd5a8b625
+      internalID: 1467932893
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_30
+      rect:
+        serializedVersion: 2
+        x: 392
+        y: 663
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.50194293, y: -0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 79ff5f72b64db08a9840740a7bdcd998
+      internalID: 721071618
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_31
+      rect:
+        serializedVersion: 2
+        x: 392
+        y: 775
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4529c110096b247fdb58bbf68cd0c280
+      internalID: 447153005
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_32
+      rect:
+        serializedVersion: 2
+        x: 392
+        y: 438
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ba0b74de5ad635f0f95947cb4dd8e54d
+      internalID: 1574206381
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_33
+      rect:
+        serializedVersion: 2
+        x: 392
+        y: 327
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c1dbc440576c6e09b936428862f6438a
+      internalID: 1621702624
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_34
+      rect:
+        serializedVersion: 2
+        x: 392
+        y: 214
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 16381f9c441228f649da314cf27a55fc
+      internalID: 803170466
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_35
+      rect:
+        serializedVersion: 2
+        x: 392
+        y: 102
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f2fdafa85374c04fda9282da83f862fc
+      internalID: 2037741423
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_36
+      rect:
+        serializedVersion: 2
+        x: 929
+        y: 830
+        width: 23
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 452397391eafad506b8d559eb25d1f21
+      internalID: -1669352768
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_37
+      rect:
+        serializedVersion: 2
+        x: 980
+        y: 915
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3bea04848a85f9a95a5be4ddaeb7a814
+      internalID: -1488326412
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: trall_38
+      rect:
+        serializedVersion: 2
+        x: 980
+        y: 830
+        width: 24
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.02}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e5072fc007338cc61924184c0c426c6d
+      internalID: 2112117155
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    physicsShape: []
+    bones: []
+    spriteID: 2e959585ecb410fcb999b1fa8ab45572
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures:
+    - texture: {fileID: 2800000, guid: bfe7fc38453084b4da03ebfaae6ad4b2, type: 3}
+      name: _MaskTex
+    nameFileIdTable:
+      trall_0: 1665057619
+      trall_1: -63436618
+      trall_10: 1510254071
+      trall_11: 1532192446
+      trall_12: -1069311056
+      trall_13: 353655646
+      trall_14: 519907058
+      trall_15: 1256633860
+      trall_16: 111683368
+      trall_17: 1947492967
+      trall_18: -1672174061
+      trall_19: -331819121
+      trall_2: -504112685
+      trall_20: -278079172
+      trall_21: -195798660
+      trall_22: 1005632124
+      trall_23: -602755317
+      trall_24: 2110328409
+      trall_25: 354558792
+      trall_26: 802740526
+      trall_27: 341014196
+      trall_28: 1106233529
+      trall_29: 1467932893
+      trall_3: -1372936809
+      trall_30: 721071618
+      trall_31: 447153005
+      trall_32: 1574206381
+      trall_33: 1621702624
+      trall_34: 803170466
+      trall_35: 2037741423
+      trall_36: -1669352768
+      trall_37: -1488326412
+      trall_38: 2112117155
+      trall_4: -96928158
+      trall_5: -139112242
+      trall_6: -1040685280
+      trall_7: 790477564
+      trall_8: 1155528420
+      trall_9: -1450115436
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

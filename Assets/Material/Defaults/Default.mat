@@ -90,7 +90,7 @@ Material:
     - _LightTextureSampleYOffset: -0.1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _GlowColor: {r: 8.690061, g: 11.984315, b: 11.54508, a: 0}
+    - _GlowColor: {r: 0.5431288, g: 0.7490197, b: 0.7215675, a: 0}
     - _LightSampleLeftPoint: {r: 0, g: 0, b: 0, a: 0}
     - _LightSampleRightPoint: {r: 0, g: 0, b: 0, a: 0}
     - _RendererColor: {r: 1, g: 1, b: 1, a: 1}

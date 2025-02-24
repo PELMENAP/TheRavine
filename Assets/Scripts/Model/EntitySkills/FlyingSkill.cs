@@ -18,8 +18,8 @@ public class FlyingSkill : ISkill
     {
         if (CanUse(mainComponent))
         {
-            Debug.Log($"{mainComponent.name} использует навык {SkillName}");
-            mainComponent.stats.DecreaseEnergy(EnergyCost);
+            Debug.Log($"{mainComponent.GetEntityStats()} использует навык {SkillName}");
+            mainComponent.GetEntityStats().DecreaseEnergy(EnergyCost);
             lastUsedTime = Time.time;
         }
         else
@@ -30,7 +30,7 @@ public class FlyingSkill : ISkill
 
     public bool CanUse(IMainComponent mainComponent)
     {
-        return mainComponent.stats.energy >= EnergyCost && Time.time - lastUsedTime >= RechargeTime;
+        return mainComponent.GetEntityStats().energy >= EnergyCost && Time.time - lastUsedTime >= RechargeTime;
     }
 
     public void Recharge()

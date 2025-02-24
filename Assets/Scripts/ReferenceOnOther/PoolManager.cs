@@ -28,6 +28,7 @@ namespace TheRavine.ObjectControl
 
         public void CreatePool(int poolKey, GameObject prefab, CreateInstance createInstance, ushort poolSize = 1)
         {
+            if(prefab == null) return;
             if (!pools.ContainsKey(poolKey))
             {
                 GameObject poolHolder = new GameObject(prefab.name + " pool") { isStatic = true };

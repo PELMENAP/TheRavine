@@ -13,7 +13,7 @@ public class SlidingDoors : MonoBehaviour
     private Vector3 rightDoorClosedPos;
     private Vector3 leftDoorOpenPos;
     private Vector3 rightDoorOpenPos;
-    private bool isMoving = false;
+    private bool isMoving = false, quiteStop = false;
 
     private IDetectableObject _idetectableobject;
 
@@ -32,9 +32,9 @@ public class SlidingDoors : MonoBehaviour
         if (source.CompareTag("Player"))
         {
             if(!isMoving)
-            {
                 MoveDoors(leftDoorOpenPos, rightDoorOpenPos).Forget();
-            }
+            else
+                quiteStop = true;
         }
     }
     private async UniTaskVoid MoveDoors(Vector3 leftTargetPos, Vector3 rightTargetPos, bool isClosing = false)
@@ -42,6 +42,11 @@ public class SlidingDoors : MonoBehaviour
         isMoving = true;
         while (Vector3.Distance(leftDoor.localPosition, leftTargetPos) > 0.01f || Vector3.Distance(rightDoor.localPosition, rightTargetPos) > 0.01f)
         {
+            if(quiteStop)
+            {
+                await UniTask.Delay(500);
+                quiteStop = false;
+            }
             leftDoor.localPosition = Vector3.Lerp(leftDoor.localPosition, leftTargetPos, Time.deltaTime * speed);
             rightDoor.localPosition = Vector3.Lerp(rightDoor.localPosition, rightTargetPos, Time.deltaTime * speed);
             await UniTask.Yield();

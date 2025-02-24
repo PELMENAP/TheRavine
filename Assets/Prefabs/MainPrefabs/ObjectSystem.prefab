@@ -47,6 +47,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e8658956abfc328484be913cdb17b10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  initialInfoCapacity: 16
+  initialGlobalCapacity: 512
   _info:
   - {fileID: 11400000, guid: 7bbd0072588a487a28dc34b8065a12f4, type: 2}
   - {fileID: 11400000, guid: 96f33b9848660268f96576146d324d0d, type: 2}
@@ -108,7 +110,7 @@ Transform:
   m_GameObject: {fileID: 2790986243146325049}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -202, y: -202, z: 0}
+  m_LocalPosition: {x: 61, y: 112, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -332,9 +334,53 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8121373543420682486, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
+      propertyPath: sunGradient.ctime5
+      value: 53391
+      objectReference: {fileID: 0}
+    - target: {fileID: 8121373543420682486, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
+      propertyPath: sunGradient.ctime6
+      value: 53771
+      objectReference: {fileID: 0}
+    - target: {fileID: 8121373543420682486, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
+      propertyPath: sunGradient.key0.b
+      value: 0.2630546
+      objectReference: {fileID: 0}
+    - target: {fileID: 8121373543420682486, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
+      propertyPath: sunGradient.key0.g
+      value: 0.03958296
+      objectReference: {fileID: 0}
+    - target: {fileID: 8121373543420682486, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
+      propertyPath: sunGradient.key0.r
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8121373543420682486, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
+      propertyPath: sunGradient.key5.b
+      value: 0.2630546
+      objectReference: {fileID: 0}
+    - target: {fileID: 8121373543420682486, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
+      propertyPath: sunGradient.key5.g
+      value: 0.03958296
+      objectReference: {fileID: 0}
+    - target: {fileID: 8121373543420682486, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
+      propertyPath: sunGradient.key5.r
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8121373543420682486, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
+      propertyPath: sunGradient.key6.b
+      value: 0.2630546
+      objectReference: {fileID: 0}
+    - target: {fileID: 8121373543420682486, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
+      propertyPath: sunGradient.key6.g
+      value: 0.03958296
+      objectReference: {fileID: 0}
+    - target: {fileID: 8121373543420682486, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
+      propertyPath: sunGradient.key6.r
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8121373543420682487, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: m_Intensity
-      value: 0.3
+      value: 0.46
       objectReference: {fileID: 0}
     - target: {fileID: 8121373543420682487, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: m_ApplyToSortingLayers.Array.size

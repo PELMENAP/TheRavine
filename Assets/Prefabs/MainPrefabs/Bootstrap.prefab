@@ -48,7 +48,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _cameraData: {fileID: 0}
-  gameStateMachine: {fileID: 0}
+  gameStateMachine: {fileID: 2574755847066893471}
 --- !u!114 &7348027641276440265
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -94,12 +94,19 @@ MonoBehaviour:
   help: {fileID: 0}
   ui: {fileID: 0}
   inventoryCanvas: {fileID: 0}
-  standardStateMachineTickTime: 0
-  tickPerUpdate: 0
+  standardStateMachineTickTime: 20
+  tickPerUpdate: 1
   serviceLocatorAccess: {fileID: 0}
-  scriptsLoadedOnBootstrapState: []
-  scriptsLoadedOnInitialState: []
+  scriptsLoadedOnBootstrapState:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  scriptsLoadedOnInitialState:
+  - {fileID: 0}
   scriptsLoadedOnLoadingState: []
+  terminal: {fileID: 0}
 --- !u!1 &6407982339493700224
 GameObject:
   m_ObjectHideFlags: 0

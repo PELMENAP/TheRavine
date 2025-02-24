@@ -10,12 +10,12 @@ namespace TheRavine.EntityControl
     {
         private StatePatternComponent statePatternComponent;
 
-        public override void SetUpEntityData(EntityInfo entityInfo, IEntityController controller)
+        public BotEntity(EntityInfo entityInfo)
         {
             // _entityGameData = new EntityGameData(_entityInfo);
             statePatternComponent = new StatePatternComponent();
             base.AddComponentToEntity(statePatternComponent);
-            Init(null);
+            // Init(null);
             SetBehaviourIdle();
             // crosshair.gameObject.SetActive(false);
         }
@@ -29,7 +29,7 @@ namespace TheRavine.EntityControl
                 statePatternComponent.behaviourCurrent.Update();
         }
 
-        public override void Init(Action onUpdateAction)
+        public override void Init(Action onUpdateAction, IEntityController controller)
         {
             BotBehaviourIdle Idle = new BotBehaviourIdle();
             Idle.AddCommand(new PrintMessageCommand("eboba"));

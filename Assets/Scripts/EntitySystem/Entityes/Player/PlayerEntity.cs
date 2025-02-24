@@ -8,9 +8,8 @@ namespace TheRavine.EntityControl
         private IEntityController playerController;
         private StatePatternComponent statePatternComponent;
         private Action onUpdateAction;
-        public override void SetUpEntityData(EntityInfo entityInfo, IEntityController controller)
+        public PlayerEntity(EntityInfo entityInfo)
         {
-            playerController = controller;
             statePatternComponent = new StatePatternComponent();
             base.AddComponentToEntity(statePatternComponent);
             base.AddComponentToEntity(new EventBusComponent());
@@ -19,8 +18,9 @@ namespace TheRavine.EntityControl
             base.AddComponentToEntity(new MovementComponent(new EntityMovementBaseStats(entityInfo.movementStatsInfo)));
             base.AddComponentToEntity(new AimComponent(new EntityAimBaseStats(entityInfo.aimStatsInfo)));
         }
-        public override void Init(Action onUpdateAction)
+        public override void Init(Action onUpdateAction, IEntityController controller)
         {
+            playerController = controller;
             this.onUpdateAction = onUpdateAction;
             playerController.SetInitialValues(this);
             SetBehaviourIdle();

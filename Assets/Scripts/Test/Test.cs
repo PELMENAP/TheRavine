@@ -76,7 +76,7 @@ public class Test : MonoBehaviour
     [Button]
     private void ShowPlayerEntity()
     {
-        print(playerEntity.GetEntityComponent<MainComponent>().stats.energy);
+        print(playerEntity.GetEntityComponent<MainComponent>().GetEntityStats().energy);
         print(playerEntity.GetEntityComponent<SkillComponent>().Skills[flyingSkill.SkillName].GetRechargeTime());
     }
     [Button]

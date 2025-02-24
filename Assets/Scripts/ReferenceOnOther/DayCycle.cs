@@ -16,8 +16,14 @@ namespace TheRavine.Base
     [RequireComponent(typeof(Light2D))]
     public class DayCycle : NetworkBehaviour, ISetAble
     {
-        public static bool isday, closeThread;
+        public static bool closeThread;
         private static System.Action newDay;
+        private NetworkVariable<bool> isDay = new(writePerm: NetworkVariableWritePermission.Server);
+        public bool IsDay 
+        {
+            get {return isDay.Value;} 
+            private set {isDay.Value = value;}
+        } 
         [SerializeField] private float startDay, speed;
         [SerializeField] private Gradient sunGradient;
         [SerializeField] private int awakeDelay, defaultDelay;
@@ -32,13 +38,10 @@ namespace TheRavine.Base
         private Transform[] lightsTransform;
         private DayJob dayJob;
         private ShadowsJob shadowJob;
+        public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+        {  
+            if(!IsServer) return;
 
-        public override void OnNetworkSpawn() 
-        {
-            if(IsServer) OnServerStarted();
-        }
-        private void OnServerStarted()
-        {
             sun = this.GetComponent<Light2D>();
             sunColor.Value = sun.color;
             sunPosition.Value = sun.transform.localPosition;
@@ -53,11 +56,6 @@ namespace TheRavine.Base
             sunColor.OnValueChanged += OnSunColorChanged;
             sunPosition.OnValueChanged += OnSunPositionChanged;
             sunIntensity.OnValueChanged += OnSunIntensityChanged;
-
-        }
-        public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
-        {  
-
             callback?.Invoke();
         }
         private void GetLightsAndShadows()
@@ -145,9 +143,9 @@ namespace TheRavine.Base
                 if(!TimeBridge.IsCreated) break;
                 dayJob.Schedule().Complete();
                 UpdateSunValues();
-                if (isday != IsdayBridge[0])
+                if (isDay.Value != IsdayBridge[0])
                 {
-                    isday = IsdayBridge[0];
+                    isDay.Value = IsdayBridge[0];
                     if (!IsdayBridge[0])
                     {
                         newDay?.Invoke();
@@ -168,7 +166,6 @@ namespace TheRavine.Base
                 await UniTask.WaitForFixedUpdate();
             }
             await UniTask.Delay(defaultDelay);
-            // BreakUp();
         }
 
         public void BreakUp(ISetAble.Callback callback)
@@ -192,6 +189,8 @@ namespace TheRavine.Base
             }
         }
 
+        private const float _intensityFactor = 12.5f, _intensityOffset = 1.95f;
+
         [BurstCompile]
         public struct DayJob : IJob
         {
@@ -209,7 +208,7 @@ namespace TheRavine.Base
                     timeBridge[1] = -math.cos(angle) * 300;
                     timeBridge[2] = -math.sin(angle) * 300;
                     float xFactor = timeBridge[0] * timeBridge[0] - timeBridge[0];
-                    timeBridge[3] = -(12.5f * xFactor + 1.95f); // sun intensity
+                    timeBridge[3] = -(_intensityFactor * xFactor + _intensityOffset); // sun intensity
                     timeBridge[5] = 7f * xFactor + 2.5f; // shadow scale
                     isdayBridge[0] = true;
                 }
@@ -225,9 +224,9 @@ namespace TheRavine.Base
             [ReadOnly] public float localScale;
             public void Execute(int index, TransformAccess shadowTransform)
             {
-                float maxWeight = 0, lightWeight;
-                byte lightIndex = 0;
-                for (byte i = 0; i < lightsBridge.Length; i++)
+                float maxWeight = 0, lightWeight, forLength = lightsBridge.Length;
+                int lightIndex = 0;
+                for (int i = 0; i < forLength; i++)
                 {
                     lightWeight = lightsIntensity[i] / math.distancesq((float3)shadowTransform.position, lightsBridge[i]);
                     if (lightWeight > maxWeight)

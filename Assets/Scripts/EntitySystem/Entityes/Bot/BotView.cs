@@ -13,7 +13,7 @@ namespace TheRavine.EntityControl
 
         public override void OnNetworkSpawn() 
         {
-            botEntity = new BotEntity();
+            // botEntity = new BotEntity();
             botEntity.AddComponentToEntity(new TransformComponent(this.transform, this.transform));
         }
 

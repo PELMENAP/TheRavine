@@ -122,11 +122,7 @@ namespace TheRavine.EntityControl
 
         private void LateUpdate()
         {
-            if (moveJobHandle.Equals(default(JobHandle)))
-            {
-                logger.LogError("JobHandle is not initialized!");
-                return;
-            }
+            if (moveJobHandle.Equals(default(JobHandle))) return;
             moveJobHandle.Complete();
         }
 

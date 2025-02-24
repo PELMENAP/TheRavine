@@ -42,8 +42,7 @@ namespace TheRavine.EntityControl
         public void Activate() => IsActive = true;
         public void Deactivate() => IsActive = false;
 
-        public abstract void SetUpEntityData(EntityInfo entityInfo, IEntityController controller);
-        public abstract void Init(Action onUpdateAction);
+        public abstract void Init(Action onUpdateAction, IEntityController controller);
         public abstract void UpdateEntityCycle();
         public abstract Vector2 GetEntityVelocity();
     }

@@ -9,7 +9,7 @@ public class StructInfo : ScriptableObject
 [System.Serializable]
 public struct TileInfo
 {
-    public byte[] neight;
+    public byte[] height;
     public byte MCount;
     public ObjectInfo objectInfo;
 }
