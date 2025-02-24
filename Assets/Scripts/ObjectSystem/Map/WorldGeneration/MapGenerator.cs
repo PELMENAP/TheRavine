@@ -84,8 +84,6 @@ namespace TheRavine.Generator
         [SerializeField] private TemperatureType[] biomRegions;
         [SerializeField] private Transform viewer;
         [SerializeField] private bool[] endlessFlag;
-        public float maxDepthFactor, smoothnessFactor;
-        public int w;
         private IEndless[] endless;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
@@ -312,29 +310,29 @@ namespace TheRavine.Generator
                     countOfHeights[heightMap[x, y]]++;
                     bool structHere = false;
                     TemperatureLevel level = regions[heightMap[x, y]].level[temperatureMap[x, y]];
-                    for (byte i = 0; i < level.structs.Length; i++)
-                    {
-                        // StructInfoGeneration sinfo = level.structs[i];
-                        // if(sinfo.Chance == 0)
-                        //     continue;
-                        // if ((x * y + centre.x * centre.y + Seed + i * countOfHeights[heightMap[x, y]] + count) % sinfo.Chance == 0)
-                        // {
-                        //     Vector2Int posstruct = new(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale);
-                        //     var WFCAobjects = WFCA(posstruct, (byte)((Seed + (int)x + (int)y) % sinfo.info.tileInfo.Length), sinfo.info);
-                        //     foreach (var item in WFCAobjects)
-                        //     {
-                        //         if (objectSystem.TryAddToGlobal(item.Key, item.Value.prefabID, item.Value.amount, item.Value.iType, (x + y) % 2 == 0))
-                        //             {
-                        //                 var data = GetMapDataByObjectPosition(item.Key);
-                        //                 // objectsToInst.Add(item.Key);
-                        //             }
-                        //     }
-                        //     structHere = true;
-                        //     if (sinfo.isSpawnPoint)
-                        //         onSpawnPoint?.Invoke(posstruct, heightMap[x, y], temperatureMap[x, y], centre);
-                        //     break;
-                        // }
-                    }
+                    // for (byte i = 0; i < level.structs.Length; i++)
+                    // {
+                    //     StructInfoGeneration sinfo = level.structs[i];
+                    //     if(sinfo.Chance == 0)
+                    //         continue;
+                    //     if ((x * y + centre.x * centre.y + Seed + i * countOfHeights[heightMap[x, y]] + count) % sinfo.Chance == 0)
+                    //     {
+                    //         Vector2Int posstruct = new(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale);
+                    //         var WFCAobjects = WFCA(posstruct, (byte)((Seed + (int)x + (int)y) % sinfo.info.tileInfo.Length), sinfo.info);
+                    //         foreach (var item in WFCAobjects)
+                    //         {
+                    //             if (objectSystem.TryAddToGlobal(item.Key, item.Value.prefabID, item.Value.amount, item.Value.iType, (x + y) % 2 == 0))
+                    //                 {
+                    //                     var data = GetMapDataByObjectPosition(item.Key);
+                    //                     // objectsToInst.Add(item.Key);
+                    //                 }
+                    //         }
+                    //         structHere = true;
+                    //         if (sinfo.isSpawnPoint)
+                    //             onSpawnPoint?.Invoke(posstruct, heightMap[x, y], temperatureMap[x, y], centre);
+                    //         break;
+                    //     }
+                    // }
                     if (structHere) continue;
                     for (byte i = 0; i < level.objects.Length; i++)
                     {
@@ -356,45 +354,49 @@ namespace TheRavine.Generator
             }
             return new ChunkData(heightMap, temperatureMap, isEqual, objectsToInst);
         }
-        private Queue<Pair<Vector2Int, byte>> WFCAqueue = new(16);
-        // private Dictionary<Vector2Int, ObjectInfo> WFCA(Vector2Int curPos, byte type, StructInfo structInfo)
-        // {
-        //     Dictionary<Vector2Int, ObjectInfo> WFCAobjects = new(8);
 
-        //     Debug.Log("wfca");
-        //     WFCAqueue.Clear();
-        //     byte maxIteration = 0, count = 0;
-        //     for (byte i = 0; i < structInfo.tileInfo.Length; i++)
-        //         maxIteration += structInfo.tileInfo[i].MCount;
-        //     byte[] Count = new byte[9];
-        //     count++;
-        //     WFCAqueue.Enqueue(new Pair<Vector2Int, byte>(curPos, type));
-        //     while (WFCAqueue.Count != 0)
-        //     {
-        //         Pair<Vector2Int, byte> current = WFCAqueue.Dequeue();
-        //         if (count > maxIteration) break;
-        //         if (structInfo.tileInfo[current.Second].MCount > Count[current.Second] && !WFCAobjects.ContainsKey(current.First))
-        //         {
-        //             WFCAobjects[current.First] = structInfo.tileInfo[current.Second].objectInfo;
-        //             Count[current.Second]++;
-        //             count++;
-        //         }
-        //         byte c = 0;
-        //         for (sbyte x = -1; x <= 1; x++)
-        //         {
-        //             for (sbyte y = -1; y <= 1; y++)
-        //             {
-        //                 if (x == 0 && y == 0) continue;
-        //                 Vector2Int newPos = current.First + new Vector2Int(x, y) * structInfo.distortion;
-        //                 byte field = structInfo.tileInfo[current.Second].height[c++];
-        //                 if (field == 0) continue;
-        //                 if (WFCAobjects.ContainsKey(newPos)) continue;
-        //                 WFCAqueue.Enqueue(new Pair<Vector2Int, byte>(newPos, --field));
-        //             }
-        //         }
-        //     }
-        //     return WFCAobjects;
-        // }
+
+        private Queue<Pair<Vector2Int, byte>> WFCAqueue = new(16);
+        private Dictionary<Vector2Int, ObjectInfo> WFCA(Vector2Int curPos, byte type, StructInfo structInfo)
+        {
+            Dictionary<Vector2Int, ObjectInfo> WFCAobjects = new(8);
+
+            Debug.Log("wfca");
+            WFCAqueue.Clear();
+            byte maxIteration = 0, count = 0;
+            for (byte i = 0; i < structInfo.tileInfo.Length; i++)
+                maxIteration += structInfo.tileInfo[i].MCount;
+            byte[] Count = new byte[9];
+            count++;
+            WFCAqueue.Enqueue(new Pair<Vector2Int, byte>(curPos, type));
+            while (WFCAqueue.Count != 0)
+            {
+                Pair<Vector2Int, byte> current = WFCAqueue.Dequeue();
+                if (count > maxIteration) break;
+                if (structInfo.tileInfo[current.Second].MCount > Count[current.Second] && !WFCAobjects.ContainsKey(current.First))
+                {
+                    WFCAobjects[current.First] = structInfo.tileInfo[current.Second].objectInfo;
+                    Count[current.Second]++;
+                    count++;
+                }
+                byte c = 0;
+                for (sbyte x = -1; x <= 1; x++)
+                {
+                    for (sbyte y = -1; y <= 1; y++)
+                    {
+                        if (x == 0 && y == 0) continue;
+                        Vector2Int newPos = current.First + new Vector2Int(x, y) * structInfo.distortion;
+                        byte field = structInfo.tileInfo[current.Second].height[c++];
+                        if (field == 0) continue;
+                        if (WFCAobjects.ContainsKey(newPos)) continue;
+                        WFCAqueue.Enqueue(new Pair<Vector2Int, byte>(newPos, --field));
+                    }
+                }
+            }
+            return WFCAobjects;
+        }
+
+
         private Vector2Int OldVposition, position;
         public UnityAction<Vector2Int> onUpdate;
         private async UniTaskVoid GenerationUpdate()

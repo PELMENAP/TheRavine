@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6e449c3d226a3228b8fe9bf0d58d9bf, type: 3}
+  m_Name: PlayerBindInfo
+  m_EditorClassIdentifier: 
+  fastInteractAction: {fileID: -7384253346918473348, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
+  delayInteractAction: {fileID: -6813421369710606535, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}

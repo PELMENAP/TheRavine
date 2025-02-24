@@ -8,16 +8,16 @@ namespace TheRavine.EntityControl
         [SerializeField] private Vector2 direction;
         private IMobControllable moveController;
         [SerializeField] private Animator animator;
-        public override void SetUpEntityData(EntityInfo entityInfo, IEntityController controller)
+        public MobEntity(EntityInfo entityInfo)
         {
-            moveController = controller as IMobControllable;
             base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.prefab.GetInstanceID(), new EntityStats(entityInfo.statsInfo)));
             moveController.SetInitialValues(this);
             // _entityGameData = new EntityGameData(_entityInfo);
             // crosshair.gameObject.SetActive(false);
         }
-        public override void Init(Action onUpdateAction)
+        public override void Init(Action onUpdateAction, IEntityController controller)
         {
+            moveController = controller as IMobControllable;
             base.Activate();
         }
         public override Vector2 GetEntityVelocity() => moveController.GetEntityVelocity();

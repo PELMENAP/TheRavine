@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
+using System;
 
 using TheRavine.Services;
 
@@ -64,18 +65,37 @@ namespace TheRavine.EntityControl
 
         [SerializeField] private EntityInfo playerInfo;
         private CM cameraComponent;
+        private ILogger logger;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
-            playerEntity = new PlayerEntity(); // need factory 
-            playerEntity.OnActiveStateChanged += HandleStateChanged;
-            
-            AddComponentsToEntity();
-            
-            playerEntity.SetUpEntityData(playerInfo, this.GetComponent<IEntityController>());
-            playerEntity.Init(OnViewUpdate);
+            logger = locator.GetLogger();
+
+
+            try
+            {
+                playerEntity = new PlayerEntity(playerInfo);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Player entity {NetworkManager.Singleton.LocalClientId} cannot be created: {ex.Message}");
+            }
+
+            try
+            {
+                playerEntity.OnActiveStateChanged += HandleStateChanged;
+                AddComponentsToEntity();
+                playerEntity.Init(OnViewUpdate, this.GetComponent<IEntityController>());
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Player entity {NetworkManager.Singleton.LocalClientId} cannot be initialized: {ex.Message}");
+            }
+            finally
+            {
+                logger.LogInfo($"Player {NetworkManager.Singleton.LocalClientId} is set up");
+            }
 
             callback?.Invoke();
-            Debug.Log("player is set up");
         }
         private void AddComponentsToEntity()
         {
@@ -85,33 +105,6 @@ namespace TheRavine.EntityControl
         {
             cameraComponent?.CameraUpdate();
         }
-        private void AimSkills()
-        {
-            // if (Input.GetKey("space") && Input.GetMouseButton(1))
-            // {
-            //     Vector3 playerPos = entityTrans.position;
-            //     ui.UseSkill("Rush", aim, ref playerPos);
-            //     entityTrans.position = playerPos;
-            // }
-        }
-
-        private void ReloadSkills()
-        {
-        }
-
-        public void Priking()
-        {
-            // StartCoroutine(Prick());
-        }
-
-        // private IEnumerator Prick()
-        // {
-        //     // moving = false;
-        //     // animator.SetBool("isPrick", true);
-        //     yield return new WaitForSeconds(1);
-        //     // animator.SetBool("isPrick", false);
-        //     // moving = true;
-        // }
 
         public void BreakUp(ISetAble.Callback callback)
         {
@@ -122,7 +115,7 @@ namespace TheRavine.EntityControl
             }
             catch
             {
-                Debug.Log("Player entity hadn't created");
+                logger.LogWarning("Player entity hadn't created");
             }
             
             cameraComponent?.BreakUp(callback);

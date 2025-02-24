@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Netcode;
 
 using TheRavine.Services;
 
 namespace TheRavine.EntityControl
 {
-    public class EntitySystem : MonoBehaviour, ISetAble
+    public class EntitySystem : NetworkBehaviour, ISetAble
     {
         // private SkillFacade skillFacade;
         private List<AEntity> global;
@@ -14,9 +15,11 @@ namespace TheRavine.EntityControl
         [SerializeField] private BoidsBehaviour boidsBehaviour;
         private Dictionary<int, EntityInfo> mobInfo;
         public EntityInfo GetMobInfo(int id) => mobInfo[id];
+        private ILogger logger;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {
             // skillFacade = new SkillFacade();
+            logger = locator.GetLogger();
             Debug.Log("entsys is start");
             global  = new List<AEntity>();
             mobInfo = new Dictionary<int, EntityInfo>(4);
@@ -41,7 +44,7 @@ namespace TheRavine.EntityControl
             callback?.Invoke();
         }
 
-        private void OnDestroy()
+        public override void OnDestroy()
         {
             global.Clear();
         }

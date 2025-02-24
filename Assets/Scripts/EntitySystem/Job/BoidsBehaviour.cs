@@ -2,97 +2,97 @@
 using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Jobs;
-using Random = TheRavine.Extensions.RavineRandom;
 using Unity.Mathematics;
 using NaughtyAttributes;
 using Cysharp.Threading.Tasks;
 
 using TheRavine.Base;
+using Random = TheRavine.Extensions.RavineRandom;
 
 namespace TheRavine.EntityControl
 {
     public class BoidsBehaviour : MonoBehaviour
     {
-        [SerializeField] private int _numberOfEntities, _numberOfTargets, delayFactor;
-        [SerializeField] private GameObject _entityPrefab;
-        [SerializeField] private float _destinationThreshold, _avoidanceThreshold, _targetThreshold;
-        [SerializeField] private float _velocityLimit;
-        [SerializeField] private float3 _accelerationWeights;
-        [SerializeField] private Vector3 _flip;
-
-        private NativeArray<float2> _positions;
-        private NativeArray<float2> _velocities;
-        private NativeArray<float2> _accelerations;
-        private NativeArray<float2> _otherTargets;
+        [SerializeField] private BoidsInfo boidsInfo;
+        [SerializeField] private Transform viewer;
+        [SerializeField] private GameObject[] prefabs;
+        private NativeArray<float2> _positions, _velocities, _accelerations, _otherTargets;
+        private NativeArray<int> _flockIds;
         private NativeArray<bool> _isMoving;
         private TransformAccessArray _transformAccessArray;
         private Transform[] transforms;
         private AccelerationJob accelerationJob;
         private MoveJob moveJob;
-        [SerializeField] private Transform viewer;
         private bool isUpdate;
-        private float2 GetTargetPositionCloseToViewer() => new(-viewer.position.x + Random.RangeInt(-200, 200), -viewer.position.y + Random.RangeInt(-200, 200));
+        private float2 GetTargetPositionCloseToViewer() => new(-viewer.position.x + Random.RangeInt(-boidsInfo.distanceOfTargetFromPlayer, boidsInfo.distanceOfTargetFromPlayer), -viewer.position.y + Random.RangeInt(-boidsInfo.distanceOfTargetFromPlayer, boidsInfo.distanceOfTargetFromPlayer));
         public async UniTaskVoid StartBoids()
-        {
+        {       
             isUpdate = false;
-            _positions = new NativeArray<float2>(_numberOfEntities, Allocator.Persistent);
-            _velocities = new NativeArray<float2>(_numberOfEntities, Allocator.Persistent);
-            _accelerations = new NativeArray<float2>(_numberOfEntities, Allocator.Persistent);
-            _otherTargets = new NativeArray<float2>(_numberOfTargets, Allocator.Persistent);
-            _isMoving = new NativeArray<bool>(_numberOfEntities, Allocator.Persistent);
+            
+            _positions = new NativeArray<float2>(boidsInfo.numberOfEntities, Allocator.Persistent);
+            _velocities = new NativeArray<float2>(boidsInfo.numberOfEntities, Allocator.Persistent);
+            _accelerations = new NativeArray<float2>(boidsInfo.numberOfEntities, Allocator.Persistent);
+            _otherTargets = new NativeArray<float2>(prefabs.Length, Allocator.Persistent);
+            _isMoving = new NativeArray<bool>(boidsInfo.numberOfEntities, Allocator.Persistent);
+            _flockIds = new NativeArray<int>(boidsInfo.numberOfEntities, Allocator.Persistent);
 
-            transforms = new Transform[_numberOfEntities];
+            transforms = new Transform[boidsInfo.numberOfEntities];
 
-            for (byte i = 0; i < _numberOfTargets; i++)
+            for (int i = 0; i < prefabs.Length; i++)
             {
                 _otherTargets[i] = GetTargetPositionCloseToViewer();
             }
 
-            for (ushort i = 0; i < _numberOfEntities; i++)
+            int flockSize = boidsInfo.numberOfEntities / prefabs.Length;
+            int extraBoids = boidsInfo.numberOfEntities % prefabs.Length;
+            
+            int agentIndex = 0;
+
+            for (int flock = 0; flock < prefabs.Length; flock++)
             {
-                transforms[i] = Instantiate(_entityPrefab).transform;
-                transforms[i].position = new Vector2(-_otherTargets[i % _numberOfTargets].x + Random.RangeInt(-20, 20), -_otherTargets[i % _numberOfTargets].y + Random.RangeInt(-20, 20));
-                transforms[i].parent = transform;
-                _velocities[i] = Random.GetInsideCircle();
-                _accelerations[i] = Random.GetInsideCircle();
-                _isMoving[i] = true;
-                await UniTask.Delay(10);
-                
+                int currentFlockSize = flockSize + (flock < extraBoids ? 1 : 0);
+
+                for (int i = 0; i < currentFlockSize; i++)
+                {
+                    transforms[agentIndex] = Instantiate(prefabs[flock]).transform;
+                    transforms[agentIndex].position = new Vector2(
+                        _otherTargets[flock].x + Random.RangeInt(-boidsInfo.nearTheTarget, boidsInfo.nearTheTarget),
+                        _otherTargets[flock].y + Random.RangeInt(-boidsInfo.nearTheTarget, boidsInfo.nearTheTarget)
+                    );
+                    transforms[agentIndex].parent = transform;
+
+                    _positions[agentIndex] = new float2(transforms[agentIndex].position.x, transforms[agentIndex].position.y);
+                    _velocities[agentIndex] = Random.GetInsideCircle();
+                    _accelerations[agentIndex] = Random.GetInsideCircle();
+                    _isMoving[agentIndex] = true;
+                    _flockIds[agentIndex] = flock;
+
+                    agentIndex++;
+                }
             }
 
             _transformAccessArray = new TransformAccessArray(transforms);
 
-            accelerationJob = new AccelerationJob()
-            {
-                Positions = _positions,
-                OtherTargets = _otherTargets,
-                Velocities = _velocities,
-                IsMoving = _isMoving,
-                Accelerations = _accelerations,
-                DestinationThreshold = _destinationThreshold,
-                AvoidanceThreshold = _avoidanceThreshold,
-                Weights = _accelerationWeights
-            };
-            moveJob = new MoveJob()
-            {
-                Positions = _positions,
-                Velocities = _velocities,
-                IsMoving = _isMoving,
-                Accelerations = _accelerations,
-                DeltaTime = Time.deltaTime,
-                VelocityLimit = _velocityLimit,
-                Flip = _flip
-            };
+            SetUpNewValues();
 
             TargetsUpdate().Forget();
             isUpdate = true;
         }
 
-        private void FixedUpdate()
+
+
+        private JobHandle moveHandle;
+        private void Update()
         {
             if(!isUpdate) return;
-            var accelerationHandle = accelerationJob.Schedule(_numberOfEntities, 0);
-            var moveHandle = moveJob.Schedule(_transformAccessArray, accelerationHandle);
+            var accelerationHandle = accelerationJob.Schedule(boidsInfo.numberOfEntities, 0);
+            if(!isUpdate) return;
+            moveHandle = moveJob.Schedule(_transformAccessArray, accelerationHandle);
+        }
+
+        private void LateUpdate() 
+        {
+            if(!isUpdate) return;
             moveHandle.Complete();
         }
 
@@ -111,36 +111,22 @@ namespace TheRavine.EntityControl
         }
 
         [Button]
-        private void ChangeMoving()
-        {
-            for (ushort i = 0; i < Random.RangeInt(1, _numberOfEntities); i++)
-            {
-                int a = Random.RangeInt(0, _numberOfEntities);
-                _isMoving[a] = !_isMoving[a];
-            }
-        }
-
-        [Button]
-        private void ChangeOneBoidsMoving()
-        {
-            transforms[0].position += new Vector3(10, 0, 0);
-        }
-
-        [Button]
         private void SetUpNewValues()
         {
+            isUpdate = false;
             accelerationJob = new AccelerationJob()
             {
                 Positions = _positions,
+                FlockIds = _flockIds,
                 OtherTargets = _otherTargets,
                 Velocities = _velocities,
                 IsMoving = _isMoving,
                 Accelerations = _accelerations,
-                DestinationThreshold = _destinationThreshold,
-                AvoidanceThreshold = _avoidanceThreshold,
-                TargetThreshold = _targetThreshold,
-                Weights = _accelerationWeights
+                DestinationThreshold = boidsInfo.destinationThreshold,
+                AvoidanceThreshold = boidsInfo.avoidanceThreshold,
+                Weights = boidsInfo.accelerationWeights
             };
+
             moveJob = new MoveJob()
             {
                 Positions = _positions,
@@ -148,17 +134,29 @@ namespace TheRavine.EntityControl
                 IsMoving = _isMoving,
                 Accelerations = _accelerations,
                 DeltaTime = Time.deltaTime,
-                VelocityLimit = _velocityLimit,
-                Flip = _flip
+                VelocityLimit = boidsInfo.velocityLimit,
+                FlipRotation = boidsInfo.flip,
+                IdentityRotation = Quaternion.identity
             };
+            isUpdate = true;
         }
 
-
+        [Button]
+        private void ChangeMoving()
+        {
+            for (int i = 0; i < Random.RangeInt(1, boidsInfo.numberOfEntities); i++)
+            {
+                int a = Random.RangeInt(0, boidsInfo.numberOfEntities);
+                _isMoving[a] = !_isMoving[a];
+            }
+        }
         private async UniTaskVoid TargetsUpdate()
         {
-            while(!DataStorage.sceneClose){
+            while(!DataStorage.sceneClose)
+            {
                 if(viewer != null) _otherTargets[Random.RangeInt(0, _otherTargets.Length)] = GetTargetPositionCloseToViewer();
-                await UniTask.Delay(Random.RangeInt(1000 * delayFactor, 10000 * delayFactor));
+                ChangeMoving();
+                await UniTask.Delay(Random.RangeInt(1000 * boidsInfo.delayFactor, 10000 * boidsInfo.delayFactor));
             }
         }
     }

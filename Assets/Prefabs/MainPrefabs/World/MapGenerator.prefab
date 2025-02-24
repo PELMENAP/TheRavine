@@ -531,7 +531,7 @@ MonoBehaviour:
   - height: 0.75
   - height: 1
   viewer: {fileID: 0}
-  endlessFlag: 01010000
+  endlessFlag: 01010100
   step: 3
   deadChance: 0
   riverMin: 0.65

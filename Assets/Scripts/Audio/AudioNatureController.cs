@@ -1,90 +1,95 @@
+using Cysharp.Threading.Tasks;
 using UnityEngine;
-using System.Collections;
+using System.Threading;
 
 using TheRavine.Base;
-using TheRavine.Extensions;
-public class AudioNatureController : MonoBehaviour
+using TheRavine.Services;
+using Random = TheRavine.Extensions.RavineRandom;
+public class AudioNatureController : MonoBehaviour, ISetAble
 {
-    [SerializeField] private AudioSource[] audioSource;
-    [SerializeField] private AudioClip[] audioClipday, audioClipnight;
-    [SerializeField] private AudioSource OSTSource;
-    [SerializeField] private AudioClip[] OSTClip;
-    [SerializeField] private float volumeOSTlimit, volumeNatureLimit;
-    private float speedFade = 0.002f, lengthOST, lengthBack;
+    [SerializeField] private AudioSource[] audioSources;
+    [SerializeField] private AudioClip[] dayClips, nightClips;
+    [SerializeField] private AudioSource ostSource;
+    [SerializeField] private AudioClip[] ostClips;
+    [SerializeField] private float maxOstVolume = 0.5f, maxNatureVolume = 0.5f;
+    [SerializeField] private float fadeSpeed = 0.002f;
 
-    private void Start()
+    private CancellationTokenSource cancellationTokenSource;
+    private DayCycle dayCycle;
+    public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
-        StartCoroutine(Audio());
-        StartCoroutine(OSTController());
-    }
-    private IEnumerator ChangeAudio(int from, int to)
-    {
-        while (true)
-        {
-            audioSource[to].volume += speedFade;
-            audioSource[from].volume -= speedFade * 2;
-            if (audioSource[to].volume >= volumeNatureLimit)
-            {
-                audioSource[from].Stop();
-                yield break;
-            }
-            yield return new WaitForEndOfFrame();
-        }
+        dayCycle = locator.GetService<DayCycle>();
+
+        cancellationTokenSource = new CancellationTokenSource();
+        AudioLoop(cancellationTokenSource.Token).Forget();
+        OstLoop(cancellationTokenSource.Token).Forget();
+        callback?.Invoke();
     }
 
-    private IEnumerator Audio()
+    private async UniTaskVoid AudioLoop(CancellationToken token)
     {
-        while (true)
+        while (!token.IsCancellationRequested)
         {
-            if (!audioSource[0].isPlaying)
-            {
-                audioSource[0].clip = DayCycle.isday ? audioClipday[RavineRandom.RangeInt(0, audioClipday.Length)] : audioClipnight[RavineRandom.RangeInt(0, audioClipnight.Length)];
-                audioSource[0].Play();
-                lengthBack = audioSource[0].clip.length;
-                yield return StartCoroutine(ChangeAudio(1, 0));
-            }
-            else
-            {
-                audioSource[1].clip = DayCycle.isday ? audioClipday[RavineRandom.RangeInt(0, audioClipday.Length)] : audioClipnight[RavineRandom.RangeInt(0, audioClipnight.Length)];
-                audioSource[1].Play();
-                lengthBack = audioSource[1].clip.length;
-                yield return StartCoroutine(ChangeAudio(0, 1));
-            }
-            yield return new WaitForSeconds(lengthBack - RavineRandom.RangeInt((int)lengthBack / 8, (int)lengthBack / 2));
+            int currentSourceIndex = audioSources[0].isPlaying ? 1 : 0;
+            int nextSourceIndex = currentSourceIndex == 0 ? 1 : 0;
+
+            audioSources[nextSourceIndex].clip = dayCycle.IsDay 
+                ? dayClips[Random.RangeInt(0, dayClips.Length)] 
+                : nightClips[Random.RangeInt(0, nightClips.Length)];
+            audioSources[nextSourceIndex].Play();
+
+            await ChangeAudioAsync(currentSourceIndex, nextSourceIndex, token);
+
+            float clipLength = audioSources[nextSourceIndex].clip.length;
+            await UniTask.Delay((int)(clipLength - Random.RangeFloat(clipLength / 8, clipLength / 2)), cancellationToken: token);
         }
     }
 
-    private IEnumerator OSTController()
+    private async UniTask ChangeAudioAsync(int from, int to, CancellationToken token)
     {
-        while (true)
+        while (audioSources[to].volume < maxNatureVolume && !token.IsCancellationRequested)
         {
-            OSTSource.Stop();
-            yield return new WaitForSeconds(RavineRandom.RangeInt(30, 100));
-            yield return StartCoroutine(PlayOST(RavineRandom.RangeInt(0, OSTClip.Length)));
+            audioSources[to].volume += fadeSpeed;
+            audioSources[from].volume -= fadeSpeed * 2;
+            await UniTask.Yield();
+        }
+        audioSources[from].Stop();
+    }
+
+    private async UniTaskVoid OstLoop(CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            await UniTask.Delay(Random.RangeInt(30, 100) * 1000, cancellationToken: token);
+            await PlayOstAsync(Random.RangeInt(0, ostClips.Length), token);
         }
     }
-    private IEnumerator PlayOST(int current)
+
+    private async UniTask PlayOstAsync(int clipIndex, CancellationToken token)
     {
-        bool change = true;
-        OSTSource.clip = OSTClip[current];
-        lengthOST = OSTSource.clip.length;
-        OSTSource.Play();
-        while (change)
+        ostSource.clip = ostClips[clipIndex];
+        ostSource.Play();
+
+        while (ostSource.volume < maxOstVolume && !token.IsCancellationRequested)
         {
-            OSTSource.volume += speedFade;
-            if (OSTSource.volume >= volumeOSTlimit)
-                change = false;
-            yield return new WaitForEndOfFrame();
+            ostSource.volume += fadeSpeed;
+            await UniTask.Yield();
         }
 
-        yield return new WaitForSeconds(lengthOST - RavineRandom.RangeInt((int)lengthOST / 8, (int)lengthOST / 2));
+        float clipLength = ostSource.clip.length;
+        await UniTask.Delay((int)(clipLength - Random.RangeFloat(clipLength / 8, clipLength / 2)), cancellationToken: token);
 
-        while (!change)
+        while (ostSource.volume > 0 && !token.IsCancellationRequested)
         {
-            OSTSource.volume -= speedFade;
-            if (OSTSource.volume <= 0)
-                yield break;
-            yield return new WaitForEndOfFrame();
+            ostSource.volume -= fadeSpeed;
+            await UniTask.Yield();
         }
+    }
+
+    public void BreakUp(ISetAble.Callback callback)
+    {
+        cancellationTokenSource?.Cancel();
+        cancellationTokenSource?.Dispose();
+        callback?.Invoke();
     }
 }

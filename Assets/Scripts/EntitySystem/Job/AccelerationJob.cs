@@ -8,49 +8,60 @@ namespace TheRavine.EntityControl
     [BurstCompile]
     public struct AccelerationJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float2> Positions;
-        [ReadOnly] public NativeArray<float2> OtherTargets;
-        [ReadOnly] public NativeArray<float2> Velocities;
+        [ReadOnly] public NativeArray<float2> Positions, OtherTargets, Velocities;
+        [ReadOnly] public NativeArray<int> FlockIds;
         [ReadOnly] public NativeArray<bool> IsMoving;
         [WriteOnly] public NativeArray<float2> Accelerations;
-        [ReadOnly] public float DestinationThreshold, AvoidanceThreshold, TargetThreshold;
+        [ReadOnly] public float DestinationThreshold, AvoidanceThreshold, AlongThreshold;
         [ReadOnly] public float3 Weights;
+
         public void Execute(int index)
         {
-            if (!IsMoving[index])
-                return;
-
+            if (!IsMoving[index]) return;
             Accelerations[index] = float2.zero;
-            float2 averageSpread = float2.zero, averageVelocity = float2.zero, averagePosition = float2.zero;
 
-            for (byte i = 0; i < Positions.Length; i++)
+            float2 separation = float2.zero, alignment = float2.zero, cohesion = float2.zero;
+            int flockId = FlockIds[index];
+            int neighborCount = 0;
+
+            for (int i = 0; i < Positions.Length; i++)
             {
-                if (i == index)
-                    continue;
+                if (i == index || FlockIds[i] != flockId || !IsMoving[i]) continue;
+
                 float2 posDifference = Positions[index] - Positions[i];
-                float distance = math.length(posDifference);
-                if (distance < DestinationThreshold && distance > 0)
-                {
-                    averageSpread += math.normalize(posDifference) * (DestinationThreshold - distance);
-                    averageVelocity += Velocities[i];
-                    averagePosition += Positions[i];
+                float distanceSq = math.lengthsq(posDifference);
+
+                if (distanceSq < AvoidanceThreshold * AvoidanceThreshold && distanceSq > 0)
+                {   
+                    separation += math.select(
+                        posDifference * math.rsqrt(math.lengthsq(posDifference)) * (AvoidanceThreshold - math.sqrt(distanceSq)),
+                        float2.zero,
+                        distanceSq < 0.0001f
+                    );
                 }
-            }
-            if (OtherTargets.Length > 0)
-            {
-                float2 targetPos = OtherTargets[index % OtherTargets.Length];
-                float2 posDifference = targetPos - Positions[index];
-                if (math.length(posDifference) > DestinationThreshold)
+                if (distanceSq < AlongThreshold * AlongThreshold)
                 {
-                    averageSpread += math.normalize(posDifference) * (DestinationThreshold - math.length(posDifference));
-                    averagePosition += posDifference;
+                    alignment += Velocities[i];
+                    cohesion += Positions[i];
+                    neighborCount++;
                 }
             }
 
-            float2 finalAverageSpread = averageSpread / Positions.Length * Weights.x;
-            float2 finalAverageVelocity = averageVelocity / Positions.Length * Weights.y;
-            float2 finalAveragePosition = ((averagePosition / Positions.Length) - Positions[index]) * Weights.z;
-            Accelerations[index] = finalAverageSpread + finalAverageVelocity + finalAveragePosition;
+            if (neighborCount > 0)
+            {
+                cohesion = (cohesion / neighborCount - Positions[index]) * Weights.z;
+                alignment = (alignment / neighborCount) * Weights.y;
+            }
+
+            float2 targetDirection = OtherTargets[flockId] - Positions[index];
+            float distanceToTarget = math.length(targetDirection);
+            if (distanceToTarget > DestinationThreshold)
+            {
+                separation += targetDirection * math.rsqrt(math.lengthsq(targetDirection)) * (distanceToTarget - DestinationThreshold);
+            }
+
+            Accelerations[index] = separation * Weights.x + alignment + cohesion;
         }
     }
+
 }

@@ -82,13 +82,15 @@ namespace TheRavine.Generator
 
                     visited[point.x, point.y] = true;
 
+                    byte rightDistance = 2;
+
                     if (!isPolygon)
                         if ((point.x + 1 < countOfQuads && grid[point.x + 1, point.y]) ||
                             (point.x - 1 >= 0 && grid[point.x - 1, point.y]) ||
                             (point.y + 1 < countOfQuads && grid[point.x, point.y + 1]) ||
                             (point.y - 1 >= 0 && grid[point.x, point.y - 1]))
-                            continue;
-
+                                continue;
+                    
                     polygon.Add(point * scale);
 
                     stack.Push(new Vector2Int(point.x + 1, point.y));
@@ -154,7 +156,6 @@ namespace TheRavine.Generator
                     index = vertices.Count;
                     vertices.Add(new Vector3(point.x, point.y, 0));
 
-                    // UV-координаты нормализуем в диапазон [0,1]
                     float u = (point.x - minX) / (maxX - minX);
                     float v = (point.y - minY) / (maxY - minY);
                     uvs.Add(new Vector2(u, v));
