@@ -1,43 +1,53 @@
 using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
+using System;
 using UnityEngine;
 
 public class MoveAlongPathCommand : ICommand
 {
-    private Transform _transform;
-    private List<Vector3> _path;
-    private float _speed;
-    private System.Threading.CancellationTokenSource _cts = new System.Threading.CancellationTokenSource();
+    private Transform transform;
+    private List<Vector3> path;
+    private readonly float speed;
+    private ILogger logger;
+    private CancellationTokenSource cts = new CancellationTokenSource();
 
-    public MoveAlongPathCommand(Transform transform, List<Vector3> path, float speed)
+    public MoveAlongPathCommand(Transform transform, List<Vector3> path, float speed, ILogger logger)
     {
-        _transform = transform;
-        _path = path;
-        _speed = speed;
+        this.transform = transform;
+        this.path = path;
+        this.speed = speed;
     }
 
     public async UniTask ExecuteAsync()
     {
-        foreach (var target in _path)
+        foreach (var target in path)
         {
-            if (_cts.IsCancellationRequested) break;
+            if (cts.IsCancellationRequested) break;
             await MoveToTargetAsync(target);
         }
     }
 
     private async UniTask MoveToTargetAsync(Vector3 target)
     {
-        while (_transform.position != target)
+        try
         {
-            if (_cts.IsCancellationRequested) break;
+            while (transform.position != target)
+            {
+                if (cts.IsCancellationRequested) break;
 
-            _transform.position = Vector3.MoveTowards(_transform.position, target, _speed * Time.deltaTime);
-            await UniTask.Yield(PlayerLoopTiming.Update);
+                transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError($"Failed to process command MoveToTargetAsync: {ex.Message}");
         }
     }
 
     public void Cancel()
     {
-        _cts.Cancel();
+        cts.Cancel();
     }
 }

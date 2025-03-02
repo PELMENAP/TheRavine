@@ -6,9 +6,9 @@ namespace TheRavine.Generator
     {
         public class EndlessTerrain : IEndless
         {
-            private const byte chunkScale = MapGenerator.chunkScale, chunkCount = 2 * chunkScale + 1, mapChunkSize = MapGenerator.mapChunkSize;
+            private const int chunkScale = MapGenerator.chunkScale, chunkCount = 2 * chunkScale + 1, mapChunkSize = MapGenerator.mapChunkSize;
             private readonly MapGenerator generator;
-            private readonly byte scale = MapGenerator.scale, generationSize = MapGenerator.generationSize;
+            private readonly int scale = MapGenerator.scale, generationSize = MapGenerator.generationSize;
             private readonly Mesh combineMesh;
             public EndlessTerrain(MapGenerator _generator)
             {
@@ -17,9 +17,9 @@ namespace TheRavine.Generator
 
                 ushort trianglCount = 0;
                 int[] triangles = new int[6 * mapChunkSize * mapChunkSize];
-                for (byte x = 0; x < mapChunkSize; x++)
+                for (int x = 0; x < mapChunkSize; x++)
                 {
-                    for (byte y = 0; y < mapChunkSize; y++)
+                    for (int y = 0; y < mapChunkSize; y++)
                     {
                         triangles[trianglCount] = x * (mapChunkSize + 1) + y;
                         triangles[trianglCount + 1] = (x + 1) * (mapChunkSize + 1) + y;
@@ -30,7 +30,7 @@ namespace TheRavine.Generator
                         trianglCount += 6;
                     }
                 }
-                for (byte i = 0; i < chunkCount * chunkCount; i++)
+                for (int i = 0; i < chunkCount * chunkCount; i++)
                 {
                     combine[i].mesh = new Mesh
                     {
@@ -42,9 +42,9 @@ namespace TheRavine.Generator
             private readonly CombineInstance[] combine = new CombineInstance[chunkCount * chunkCount];
             public void UpdateChunk(Vector2Int Vposition)
             {
-                byte count = 0;
-                for (sbyte yOffset = -chunkScale; yOffset <= chunkScale; yOffset++)
-                    for (sbyte xOffset = -chunkScale; xOffset <= chunkScale; xOffset++)
+                int count = 0;
+                for (int yOffset = -chunkScale; yOffset <= chunkScale; yOffset++)
+                    for (int xOffset = -chunkScale; xOffset <= chunkScale; xOffset++)
                     {
                         CreateComplexMesh(new Vector2Int(Vposition.x + yOffset, Vposition.y + xOffset), combine[count].mesh);
                         combine[count].transform = Matrix4x4.TRS(new Vector3(yOffset * generationSize, xOffset * generationSize, 0), Quaternion.identity, Vector3.one);
@@ -58,16 +58,16 @@ namespace TheRavine.Generator
             private readonly Vector2Int up = new Vector2Int(0, 1), right = new Vector2Int(1, 0), diag = new Vector2Int(1, 1);
             private void CreateComplexMesh(Vector2Int centre, Mesh mesh)
             {
-                byte[,] heightMap = generator.GetMapData(centre).heightMap;
-                for (byte x = 0; x < mapChunkSize; x++)
-                    for (byte y = 0; y < mapChunkSize; y++)
+                int[,] heightMap = generator.GetMapData(centre).heightMap;
+                for (int x = 0; x < mapChunkSize; x++)
+                    for (int y = 0; y < mapChunkSize; y++)
                         vertices[x * (mapChunkSize + 1) + y] = new Vector3(x * scale, y * scale, heightMap[x, y]);
 
                 heightMap = generator.GetMapData(centre + up).heightMap;
-                for (byte x = 0; x < mapChunkSize; x++)
+                for (int x = 0; x < mapChunkSize; x++)
                     vertices[x * (mapChunkSize + 1) + mapChunkSize] = new Vector3(x * scale, generationSize, heightMap[x, 0]);
                 heightMap = generator.GetMapData(centre + right).heightMap;
-                for (byte y = 0; y < mapChunkSize; y++)
+                for (int y = 0; y < mapChunkSize; y++)
                     vertices[mapChunkSize * (mapChunkSize + 1) + y] = new Vector3(generationSize, y * scale, heightMap[0, y]);
                 vertices[mapChunkSize * (mapChunkSize + 1) + mapChunkSize] = new Vector3(generationSize, generationSize, generator.GetMapData(centre + diag).heightMap[0, 0]);
 

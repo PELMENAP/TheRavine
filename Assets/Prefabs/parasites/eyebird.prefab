@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7039892571199125937}
   - component: {fileID: 9026841062001910356}
-  - component: {fileID: 8735309560548794486}
+  - component: {fileID: 393668287957364781}
   m_Layer: 0
   m_Name: eyebird
   m_TagString: Untagged
@@ -52,7 +52,6 @@ SpriteRenderer:
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -77,8 +76,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -3356013334941854940, guid: 72b60bc4c1a2b9dc6b5d943fd9364313,
-    type: 3}
+  m_Sprite: {fileID: -3356013334941854940, guid: 72b60bc4c1a2b9dc6b5d943fd9364313, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -89,25 +87,39 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!95 &8735309560548794486
-Animator:
-  serializedVersion: 7
+--- !u!114 &393668287957364781
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6104160033677303047}
   m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 1d654de3b7e5e545692ad97c4f04cf51, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5c467a1d5ef4fb9cab9eb0057b38abc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playOnce: 0
+  frameDuration: 0.15
+  frames:
+  - {fileID: -3072175040479506072, guid: 5572e724f4a987543929e7ac51fb74ff, type: 3}
+  - {fileID: 5748346226709664095, guid: 5572e724f4a987543929e7ac51fb74ff, type: 3}
+  - {fileID: -3000605791446632368, guid: 5572e724f4a987543929e7ac51fb74ff, type: 3}
+  - {fileID: -2986614198710841082, guid: 5572e724f4a987543929e7ac51fb74ff, type: 3}
+  - {fileID: -8365499938652036241, guid: 5572e724f4a987543929e7ac51fb74ff, type: 3}
+  - {fileID: -7751891233270012050, guid: 5572e724f4a987543929e7ac51fb74ff, type: 3}
+  - {fileID: -6782704016753567589, guid: 5572e724f4a987543929e7ac51fb74ff, type: 3}
+  - {fileID: 571486767951801730, guid: 5572e724f4a987543929e7ac51fb74ff, type: 3}
+  - {fileID: 8673877302854478104, guid: 5572e724f4a987543929e7ac51fb74ff, type: 3}
+  - {fileID: 6595272154865730825, guid: 5572e724f4a987543929e7ac51fb74ff, type: 3}
+  - {fileID: -110388190941878192, guid: 5572e724f4a987543929e7ac51fb74ff, type: 3}
+  - {fileID: 8483035484419114569, guid: 5572e724f4a987543929e7ac51fb74ff, type: 3}
+  - {fileID: -3645135826060257931, guid: 5572e724f4a987543929e7ac51fb74ff, type: 3}
+  - {fileID: 2867295357947932601, guid: 5572e724f4a987543929e7ac51fb74ff, type: 3}
+  defaults:
+  - {fileID: -6818016923040350883, guid: 72b60bc4c1a2b9dc6b5d943fd9364313, type: 3}
+  - {fileID: -5065758089809630274, guid: 72b60bc4c1a2b9dc6b5d943fd9364313, type: 3}
+  - {fileID: -6346229388747914840, guid: 72b60bc4c1a2b9dc6b5d943fd9364313, type: 3}
+  - {fileID: -1360504725183792110, guid: 72b60bc4c1a2b9dc6b5d943fd9364313, type: 3}
+  - {fileID: -3356013334941854940, guid: 72b60bc4c1a2b9dc6b5d943fd9364313, type: 3}
+  - {fileID: 933131665324493588, guid: 72b60bc4c1a2b9dc6b5d943fd9364313, type: 3}

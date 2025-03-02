@@ -8,10 +8,10 @@ public static class Noise
 
     private static Vector2[] heightOctaveOffsets;
     private static Vector2[] riverOctaveOffsets;
-    private static byte octaves, halfWidth = MapGenerator.mapChunkSize / 2, halfHeight = MapGenerator.mapChunkSize / 2;
+    private static int octaves, halfWidth = MapGenerator.mapChunkSize / 2, halfHeight = MapGenerator.mapChunkSize / 2;
     private static float persistence, lacunarity, scaleInverse;
 
-    public static void SetInit(float scale, byte _octaves, float _persistence, float _lacunarity, int _seed)
+    public static void SetInit(float scale, int _octaves, float _persistence, float _lacunarity, int _seed)
     {
         FastRandom heightPrng = new FastRandom(_seed);
         FastRandom riverPrng = new FastRandom(_seed * 2);
@@ -23,7 +23,7 @@ public static class Noise
         lacunarity = _lacunarity;
         scaleInverse = 1 / scale;
 
-        for (byte i = 0; i < octaves; i++)
+        for (int i = 0; i < octaves; i++)
         {
             heightOctaveOffsets[i] = new Vector2(heightPrng.Range(-100000, 100000), heightPrng.Range(-100000, 100000));
             riverOctaveOffsets[i] = new Vector2(riverPrng.Range(-100000, 100000), riverPrng.Range(-100000, 100000));
@@ -37,7 +37,7 @@ public static class Noise
         float maxPossibleHeight = 0;
         float amplitude = 1;
 
-        for (byte i = 0; i < octaves; i++)
+        for (int i = 0; i < octaves; i++)
         {
             maxPossibleHeight += amplitude;
             amplitude *= persistence * (isRiver ? 2 : 1);
@@ -46,14 +46,14 @@ public static class Noise
         float maxLocalNoiseHeight = float.MinValue;
         float minLocalNoiseHeight = float.MaxValue;
 
-        for (byte y = 0; y < MapGenerator.mapChunkSize; y++)
+        for (int y = 0; y < MapGenerator.mapChunkSize; y++)
         {
-            for (byte x = 0; x < MapGenerator.mapChunkSize; x++)
+            for (int x = 0; x < MapGenerator.mapChunkSize; x++)
             {
                 amplitude = 1;
                 float frequency = 1;
                 float noiseHeight = 0;
-                for (byte i = 0; i < octaves; i++)
+                for (int i = 0; i < octaves; i++)
                 {
                     float sampleX = (x + halfWidth + octaveOffsets[i].x + offset.x) * scaleInverse * frequency * (isRiver ? 0.5f : 1);
                     float sampleY = (y + halfHeight + octaveOffsets[i].y + offset.y) * scaleInverse * frequency * (isRiver ? 0.5f : 1);
@@ -71,8 +71,8 @@ public static class Noise
         }
 
         float globalNormalizeFactor = 1 / (maxPossibleHeight / 0.9f);
-        for (byte y = 0; y < MapGenerator.mapChunkSize; y++)
-            for (byte x = 0; x < MapGenerator.mapChunkSize; x++)
+        for (int y = 0; y < MapGenerator.mapChunkSize; y++)
+            for (int x = 0; x < MapGenerator.mapChunkSize; x++)
                 if (normalizeMode == NormalizeMode.Local)
                     noiseMap[x, y] = Mathf.InverseLerp(minLocalNoiseHeight, maxLocalNoiseHeight, noiseMap[x, y]);
                 else
@@ -85,12 +85,6 @@ public static class Noise
         {
             for (int x = 0; x < MapGenerator.mapChunkSize; x++)
             {
-                // if (riverNoiseMap[x, y] > riverMin && riverNoiseMap[x, y] < riverMax)
-                // {
-                //     float riverDepth = Mathf.Lerp(0, maxRiverDepth, Mathf.InverseLerp(riverMin, riverMax, riverNoiseMap[x, y]));
-                //     heightMap[x, y] = Mathf.Lerp(heightMap[x, y], heightMap[x, y] - riverDepth, riverInfluence);
-                // }
-
                 if (riverNoiseMap[x, y] > riverMin && riverNoiseMap[x, y] < riverMax)
                 {
                     heightMap[x, y] = 0.05f;

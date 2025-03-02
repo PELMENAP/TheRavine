@@ -26,8 +26,10 @@ namespace TheRavine.EntityControl
         private float movementSpeed;
         public Vector2 movementDirection;
         private IController currentController;
-        public void SetInitialValues(AEntity entity)
+        private ILogger logger;
+        public void SetInitialValues(AEntity entity, ILogger logger)
         {
+            this.logger = logger;
             this.transform.position = Extension.GetRandomPointAround(this.transform.position, 10);
 
             currentController = Settings._controlType switch
@@ -59,7 +61,7 @@ namespace TheRavine.EntityControl
             System.Action actions = Move;
             actions += Animate;
             actions += Aim;
-            component.AddBehaviour(typeof(PlayerBehaviourIdle), new PlayerBehaviourIdle (this, actions));
+            component.AddBehaviour(typeof(PlayerBehaviourIdle), new PlayerBehaviourIdle (this, actions, logger));
             
             // actions = Animate;
             // actions += Aim;

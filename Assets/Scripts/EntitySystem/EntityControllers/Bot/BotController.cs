@@ -15,7 +15,7 @@ public class BotController : MonoBehaviour, IEntityController
     [SerializeField] private InputActionReference MovementRef;
     private IController currentController;
     private Transform crosshair, entityTrans, playerMark;
-    public void SetInitialValues(AEntity entity)
+    public void SetInitialValues(AEntity entity, ILogger logger)
     {
         // rb = (Rigidbody2D)this.GetComponent("Rigidbody2D");
         // entityTrans = PlayerData.instance.entityTrans;

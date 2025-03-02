@@ -40,7 +40,7 @@ public class SlidingDoors : MonoBehaviour
     private async UniTaskVoid MoveDoors(Vector3 leftTargetPos, Vector3 rightTargetPos, bool isClosing = false)
     {
         isMoving = true;
-        while (Vector3.Distance(leftDoor.localPosition, leftTargetPos) > 0.01f || Vector3.Distance(rightDoor.localPosition, rightTargetPos) > 0.01f)
+        while (Vector3.Distance(leftDoor.localPosition, leftTargetPos) > 0.1f || Vector3.Distance(rightDoor.localPosition, rightTargetPos) > 0.1f)
         {
             if(quiteStop)
             {

@@ -2,7 +2,7 @@ using UnityEngine;
 using TheRavine.EntityControl;
 public interface IEntityController
 {
-    void SetInitialValues(AEntity entity);
+    void SetInitialValues(AEntity entity, ILogger logger);
     void SetZeroValues();
     void EnableComponents();
     void DisableComponents();

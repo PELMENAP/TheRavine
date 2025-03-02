@@ -5,15 +5,18 @@ public class PlayerBehaviourIdle : AState
 {
     private IEntityController controller;
     private Behaviour behaviourIdle;
-    public PlayerBehaviourIdle(IEntityController _controller, Action _delegateIdle)
+    private ILogger logger;
+    public PlayerBehaviourIdle(IEntityController _controller, Action _delegateIdle, ILogger logger)
     {
         controller = _controller;
         behaviourIdle = _delegateIdle.Invoke;
+        this.logger = logger;
 
         AddCommand(new MoveAlongPathCommand(
             controller.GetModelTransform(),
             new List<Vector3>() {new Vector3(0, 0, 0), new Vector3(0, 20, 0), new Vector3(20, 20, 0), new Vector3(20, 0, 0)}, 
-            1));
+            1,
+            logger));
     }
     public override void Enter()
     {
