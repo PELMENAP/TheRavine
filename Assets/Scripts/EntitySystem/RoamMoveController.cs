@@ -13,16 +13,16 @@ namespace TheRavine.EntityControl
         private Transform entityTransform;
         [SerializeField] private Transform pointTarget, pointRandom;
         [SerializeField] private GameObject view;
-        [SerializeField] private byte movementSpeed, accuracy, maxTargetDistance;
-        [SerializeField] private byte stepMaxDistance, stepSpread, angleDivide;
-        [SerializeField] private byte bezierDetail, bezierFactor;
+        [SerializeField] private int movementSpeed, accuracy, maxTargetDistance;
+        [SerializeField] private int stepMaxDistance, stepSpread, angleDivide;
+        [SerializeField] private int bezierDetail, bezierFactor;
         [SerializeField] private int movementDelay, movementDelaySpread, defaultDelay, colliderDistance;
         private Vector2 target;
         private bool isDelay = false, side = true, isAlife = false, isActive = false;
         private Vector2[] bezierPoints;
-        private byte currentPointIndex;
+        private int currentPointIndex;
         private Collider2D Ccollider;
-        public void SetInitialValues(AEntity entity)
+        public void SetInitialValues(AEntity entity, ILogger logger)
         {
             entityTransform = this.transform;
             Ccollider = this.GetComponent<Collider2D>();

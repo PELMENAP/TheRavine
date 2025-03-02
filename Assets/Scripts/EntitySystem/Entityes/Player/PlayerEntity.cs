@@ -8,8 +8,10 @@ namespace TheRavine.EntityControl
         private IEntityController playerController;
         private StatePatternComponent statePatternComponent;
         private Action onUpdateAction;
-        public PlayerEntity(EntityInfo entityInfo)
+        private ILogger logger;
+        public PlayerEntity(EntityInfo entityInfo, ILogger logger)
         {
+            this.logger = logger;
             statePatternComponent = new StatePatternComponent();
             base.AddComponentToEntity(statePatternComponent);
             base.AddComponentToEntity(new EventBusComponent());
@@ -22,7 +24,7 @@ namespace TheRavine.EntityControl
         {
             playerController = controller;
             this.onUpdateAction = onUpdateAction;
-            playerController.SetInitialValues(this);
+            playerController.SetInitialValues(this, logger);
             SetBehaviourIdle();
         }
         public override Vector2 GetEntityVelocity()

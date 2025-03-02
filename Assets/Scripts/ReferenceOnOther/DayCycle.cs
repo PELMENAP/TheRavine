@@ -26,7 +26,7 @@ namespace TheRavine.Base
         } 
         [SerializeField] private float startDay, speed;
         [SerializeField] private Gradient sunGradient;
-        [SerializeField] private int awakeDelay, defaultDelay;
+        [SerializeField] private int awakeDelay, defaultDelay, _maxLightDistance;
         private NetworkVariable<Color> sunColor = new NetworkVariable<Color>();
         private NetworkVariable<Vector3> sunPosition = new NetworkVariable<Vector3>();
         private NetworkVariable<float> sunIntensity = new NetworkVariable<float>();
@@ -36,10 +36,11 @@ namespace TheRavine.Base
         private NativeArray<float3> Light2DBridge;
         private TransformAccessArray shadowsTransform;
         private Transform[] lightsTransform;
-        private DayJob dayJob;
-        private ShadowsJob shadowJob;
+        private Transform player;
         public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
         {  
+            player = locator.GetPlayerTransform();
+
             if(!IsServer) return;
 
             sun = this.GetComponent<Light2D>();
@@ -133,7 +134,9 @@ namespace TheRavine.Base
             sunPosition.Value = new Vector3(TimeBridge[1], TimeBridge[2], 0);
             sunIntensity.Value = TimeBridge[3];
         }
-
+        private DayJob dayJob;
+        private ShadowsJob shadowJob;
+        private JobHandle dayJobHandle, shadowJobHandle;
         private async UniTaskVoid UpdateDay()
         {
             await UniTask.Delay(awakeDelay);
@@ -141,7 +144,7 @@ namespace TheRavine.Base
             while (!DataStorage.sceneClose)
             {
                 if(!TimeBridge.IsCreated) break;
-                dayJob.Schedule().Complete();
+                dayJobHandle = dayJob.Schedule();
                 UpdateSunValues();
                 if (isDay.Value != IsdayBridge[0])
                 {
@@ -159,11 +162,15 @@ namespace TheRavine.Base
                     {
                         localScale = TimeBridge[5],
                         lightsBridge = Light2DBridge,
-                        lightsIntensity = Light2DIntensityBridge
+                        lightsIntensity = Light2DIntensityBridge,
+                        playerPosition = player.position,
+                        maxLightDistance = _maxLightDistance
                     };
-                    shadowJob.Schedule(shadowsTransform).Complete();
+                    shadowJobHandle = shadowJob.Schedule(shadowsTransform);
                 }
                 await UniTask.WaitForFixedUpdate();
+                dayJobHandle.Complete();
+                shadowJobHandle.Complete();
             }
             await UniTask.Delay(defaultDelay);
         }
@@ -221,12 +228,14 @@ namespace TheRavine.Base
         {
             [ReadOnly] public NativeArray<float3> lightsBridge;
             [ReadOnly] public NativeArray<float> lightsIntensity;
-            [ReadOnly] public float localScale;
+            [ReadOnly] public float localScale, maxLightDistance;
+            [ReadOnly] public float3 playerPosition;
             public void Execute(int index, TransformAccess shadowTransform)
             {
-                float maxWeight = 0, lightWeight, forLength = lightsBridge.Length;
+                if(math.distancesq(shadowTransform.position, playerPosition) > maxLightDistance) return;
+                float maxWeight = 0, lightWeight;
                 int lightIndex = 0;
-                for (int i = 0; i < forLength; i++)
+                for (int i = 0; i < lightsBridge.Length; i++)
                 {
                     lightWeight = lightsIntensity[i] / math.distancesq((float3)shadowTransform.position, lightsBridge[i]);
                     if (lightWeight > maxWeight)

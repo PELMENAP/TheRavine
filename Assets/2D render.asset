@@ -36,19 +36,19 @@ MonoBehaviour:
     blendMode: 1
   - name: Additive
     maskTextureChannel: 0
-    blendMode: 0
+    blendMode: 1
   - name: Multiply with Mask
-    maskTextureChannel: 1
+    maskTextureChannel: 0
     blendMode: 1
   - name: Additive with Mask
-    maskTextureChannel: 1
-    blendMode: 0
+    maskTextureChannel: 0
+    blendMode: 1
   m_UseDepthStencilBuffer: 0
   m_UseCameraSortingLayersTexture: 0
   m_CameraSortingLayersTextureBound: -1
   m_CameraSortingLayerDownsamplingMethod: 0
-  m_MaxLightRenderTextureCount: 16
-  m_MaxShadowRenderTextureCount: 17
+  m_MaxLightRenderTextureCount: 8
+  m_MaxShadowRenderTextureCount: 7
   m_LightShader: {fileID: 4800000, guid: 3f6c848ca3d7bca4bbe846546ac701a1, type: 3}
   m_CoreBlitShader: {fileID: 4800000, guid: 93446b5c5339d4f00b85c159e1159b7c, type: 3}
   m_CoreBlitColorAndDepthPS: {fileID: 4800000, guid: d104b2fc1ca6445babb8e90b0758136b, type: 3}

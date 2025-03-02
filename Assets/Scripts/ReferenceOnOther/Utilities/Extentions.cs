@@ -34,9 +34,9 @@ namespace TheRavine.Extensions
         }
         public static Vector2 PerpendicularClockwise(Vector2 vector) => new Vector2(vector.y, -vector.x);
         public static Vector2 PerpendicularCounterClockwise(Vector2 vector) => new Vector2(-vector.y, vector.x);
-        public static void GenerateBezierPoints(Vector2 start, Vector2 control, Vector2 end, byte bezierDetail, ref Vector2[] bezierPoints)
+        public static void GenerateBezierPoints(Vector2 start, Vector2 control, Vector2 end, int bezierDetail, ref Vector2[] bezierPoints)
         {
-            for (byte i = 0; i <= bezierDetail; i++)
+            for (int i = 0; i <= bezierDetail; i++)
                 bezierPoints[i] = CalculateQuadraticBezierPoint(i / (float)bezierDetail, start, control, end);
         }
         public static bool ComparePercent(int value) => RavineRandom.Hundred() <= value;

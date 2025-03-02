@@ -6,7 +6,7 @@ using TheRavine.Services;
 
 namespace TheRavine.EntityControl
 {
-    public class PlayerModelView : NetworkBehaviour, ISetAble
+    public class PlayerModelView : NetworkBehaviour, ISetAble // provide SetUp and BreakUp
     {
         public PlayerEntity playerEntity { get; private set; }
         [SerializeField] private NetworkObject cameraPrefab;
@@ -73,7 +73,7 @@ namespace TheRavine.EntityControl
 
             try
             {
-                playerEntity = new PlayerEntity(playerInfo);
+                playerEntity = new PlayerEntity(playerInfo, logger);
             }
             catch (Exception ex)
             {

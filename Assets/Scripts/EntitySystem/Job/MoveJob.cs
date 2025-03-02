@@ -9,6 +9,7 @@ namespace TheRavine.EntityControl
     [BurstCompile]
     public struct MoveJob : IJobParallelForTransform
     {
+        [NativeDisableParallelForRestriction]
         public NativeArray<float2> Velocities;
         [WriteOnly] public NativeArray<float2> Positions;
         [ReadOnly] public NativeArray<bool> IsMoving;
@@ -17,21 +18,23 @@ namespace TheRavine.EntityControl
         [ReadOnly] public Quaternion FlipRotation, IdentityRotation;
         public void Execute(int index, TransformAccess transform)
         {
-            float moveMultiplier = math.select(0f, 1f, IsMoving[index]);  
+            float4 velocityAcceleration = new float4(Velocities[index], Accelerations[index]);
+            float4 deltaTimeVec = new float4(DeltaTime, DeltaTime, DeltaTime, DeltaTime);
 
-            float2 velocity = Velocities[index] + Accelerations[index] * DeltaTime;
-            float velocityLength = math.length(velocity);
-            velocity = math.select(float2.zero, velocity / velocityLength * math.clamp(velocityLength, 1, VelocityLimit), velocityLength > 0);
+            float4 newVelocity = velocityAcceleration + new float4(Accelerations[index], 0, 0) * deltaTimeVec;
+
+            float velocityLength = math.length(newVelocity.xy);
+            newVelocity.xy = math.select(float2.zero, newVelocity.xy / velocityLength * math.clamp(velocityLength, 1, VelocityLimit), velocityLength > 0);
 
             float3 position = transform.position;
-            position.xy += velocity * DeltaTime * moveMultiplier;  
+            position.xy += newVelocity.xy * DeltaTime * math.select(0f, 1f, IsMoving[index]);
             transform.position = position;
 
-            float flipFactor = 0.5f * (1f - math.step(0f, velocity.x));  
-            transform.rotation = math.slerp(IdentityRotation, FlipRotation, flipFactor * moveMultiplier);
+            float flipFactor = 0.5f * (1f - math.step(0f, newVelocity.x));
+            transform.rotation = math.slerp(IdentityRotation, FlipRotation, flipFactor * math.select(0f, 1f, IsMoving[index]));
 
             Positions[index] = position.xy;
-            Velocities[index] = velocity * moveMultiplier;
+            Velocities[index] = newVelocity.xy * math.select(0f, 1f, IsMoving[index]);
         }
     }
 
@@ -42,7 +45,9 @@ namespace TheRavine.EntityControl
         [ReadOnly] public float DeltaTime;
         public void Execute(int index, TransformAccess transform)
         {
-            transform.position += new Vector3(Velocities[index].x * DeltaTime, Velocities[index].y * DeltaTime, 0);
+            float3 position = transform.position;
+            position.xy += Velocities[index].xy * DeltaTime;
+            transform.position = position;
         }
     }
 }

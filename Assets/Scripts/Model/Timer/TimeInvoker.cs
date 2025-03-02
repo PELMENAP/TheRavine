@@ -10,17 +10,17 @@ namespace TheRavine.Base
 		public event Action OnOneSyncedSecondTickedEvent;
 		public event Action OnOneSyncedSecondUnscaledTickedEvent;
 
-		public static TimeInvoker instance
+		public static TimeInvoker Instance
 		{
 			get
 			{
 				if (_instance == null)
 				{
-                    var go = new GameObject("[TIME INVOKER]")
-                    {
-                        isStatic = true
-                    };
-                    _instance = go.AddComponent<TimeInvoker>();
+					var go = new GameObject("[TIME INVOKER]")
+					{
+						isStatic = true
+					};
+					_instance = go.AddComponent<TimeInvoker>();
 					DontDestroyOnLoad(go);
 				}
 
@@ -30,36 +30,35 @@ namespace TheRavine.Base
 
 		private static TimeInvoker _instance;
 
-		private float _oneSecTimer;
-		private float _oneSecUnscaledTimer;
-
-		private void Update()
+		private void Start()
 		{
-			var deltaTimer = Time.deltaTime;
-			
-			OnUpdateTimeTickedEvent?.Invoke(deltaTimer);
+			InvokeRepeating(nameof(UpdateTimeTick), 0f, 1f / 60f);
+			InvokeRepeating(nameof(UpdateOneSecondTick), 1f, 1f);
+			InvokeRepeating(nameof(UpdateOneSecondUnscaledTick), 1f, 1f);
+		}
 
-			_oneSecTimer += deltaTimer;
-			
-			if (_oneSecTimer >= 1f)
-			{
-				_oneSecTimer -= 1f;
-				
-				OnOneSyncedSecondTickedEvent?.Invoke();
-			}
+		private void UpdateTimeTick()
+		{
+			float deltaTime = Time.deltaTime;
+			float unscaledDeltaTime = Time.unscaledDeltaTime;
 
-			var unscaledDeltaTimer = Time.unscaledDeltaTime;
-			
-			OnUpdateTimeUnscaledTickedEvent?.Invoke(Time.unscaledDeltaTime);
-			
-			_oneSecUnscaledTimer += unscaledDeltaTimer;
-			
-			if (_oneSecUnscaledTimer >= 1f)
-			{
-				_oneSecUnscaledTimer -= 1f;
-				
-				OnOneSyncedSecondUnscaledTickedEvent?.Invoke();
-			}
+			OnUpdateTimeTickedEvent?.Invoke(deltaTime);
+			OnUpdateTimeUnscaledTickedEvent?.Invoke(unscaledDeltaTime);
+		}
+
+		private void UpdateOneSecondTick()
+		{
+			OnOneSyncedSecondTickedEvent?.Invoke();
+		}
+
+		private void UpdateOneSecondUnscaledTick()
+		{
+			OnOneSyncedSecondUnscaledTickedEvent?.Invoke();
+		}
+
+		private void OnDestroy()
+		{
+			CancelInvoke();
 		}
 	}
 }
