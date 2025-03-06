@@ -14,19 +14,20 @@ namespace TheRavine.EntityControl
     public class BoidsBehaviour : MonoBehaviour
     {
         [SerializeField] private BoidsInfo boidsInfo;
-        [SerializeField] private Transform viewer;
         [SerializeField] private GameObject[] prefabs;
         private NativeArray<float2> _positions, _velocities, _accelerations, _otherTargets;
         private NativeArray<int> _flockIds;
         private NativeArray<bool> _isMoving;
         private TransformAccessArray _transformAccessArray;
         private Transform[] transforms;
+        private Transform viewer; 
         private AccelerationJob accelerationJob;
         private MoveJob moveJob;
         private bool isUpdate;
         private float2 GetTargetPositionCloseToViewer() => new(-viewer.position.x + Random.RangeInt(-boidsInfo.distanceOfTargetFromPlayer, boidsInfo.distanceOfTargetFromPlayer), -viewer.position.y + Random.RangeInt(-boidsInfo.distanceOfTargetFromPlayer, boidsInfo.distanceOfTargetFromPlayer));
-        public async UniTaskVoid StartBoids()
+        public void StartBoids(Transform viewer)
         {       
+            this.viewer = viewer; 
             isUpdate = false;
             
             _positions = new NativeArray<float2>(boidsInfo.numberOfEntities, Allocator.Persistent);

@@ -31,10 +31,10 @@ namespace TheRavine.Generator
             Vector2Int playerPos = new((int)position.x, (int)position.y);
             Vector2Int chunkPos = GetChunkPosition(playerPos);
             Vector2Int XYpos = (playerPos - chunkPos * generationSize) / scale;
-            if (XYpos.x > 15)
-                XYpos.x = 15;
-            if (XYpos.y > 15)
-                XYpos.y = 15;
+            if (XYpos.x > mapChunkSize - 1)
+                XYpos.x = mapChunkSize - 1;
+            if (XYpos.y > mapChunkSize - 1)
+                XYpos.y = mapChunkSize - 1;
             if (XYpos.x < 0)
                 XYpos.x = 0;
             if (XYpos.y < 0)
@@ -357,48 +357,6 @@ namespace TheRavine.Generator
             return new ChunkData(heightMap, temperatureMap, isEqual, objectsToInst);
         }
 
-
-        private Queue<Pair<Vector2Int, int>> WFCAqueue = new(16);
-        private Dictionary<Vector2Int, ObjectInfo> WFCA(Vector2Int curPos, int type, StructInfo structInfo)
-        {
-            Dictionary<Vector2Int, ObjectInfo> WFCAobjects = new(8);
-
-            Debug.Log("wfca");
-            WFCAqueue.Clear();
-            int maxIteration = 0, count = 0;
-            for (int i = 0; i < structInfo.tileInfo.Length; i++)
-                maxIteration += structInfo.tileInfo[i].MCount;
-            int[] Count = new int[9];
-            count++;
-            WFCAqueue.Enqueue(new Pair<Vector2Int, int>(curPos, type));
-            while (WFCAqueue.Count != 0)
-            {
-                Pair<Vector2Int, int> current = WFCAqueue.Dequeue();
-                if (count > maxIteration) break;
-                if (structInfo.tileInfo[current.Second].MCount > Count[current.Second] && !WFCAobjects.ContainsKey(current.First))
-                {
-                    WFCAobjects[current.First] = structInfo.tileInfo[current.Second].objectInfo;
-                    Count[current.Second]++;
-                    count++;
-                }
-                int c = 0;
-                for (int x = -1; x <= 1; x++)
-                {
-                    for (int y = -1; y <= 1; y++)
-                    {
-                        if (x == 0 && y == 0) continue;
-                        Vector2Int newPos = current.First + new Vector2Int(x, y) * structInfo.distortion;
-                        int field = structInfo.tileInfo[current.Second].height[c++];
-                        if (field == 0) continue;
-                        if (WFCAobjects.ContainsKey(newPos)) continue;
-                        WFCAqueue.Enqueue(new Pair<Vector2Int, int>(newPos, --field));
-                    }
-                }
-            }
-            return WFCAobjects;
-        }
-
-
         private Vector2Int OldVposition, position;
         public UnityAction<Vector2Int> onUpdate;
         private async UniTaskVoid GenerationUpdate()
@@ -461,7 +419,6 @@ namespace TheRavine.Generator
         private void OnDisable()
         {
             _cts.Cancel();
-            WFCAqueue.Clear();
         }
     }
 

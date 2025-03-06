@@ -20,10 +20,10 @@ namespace TheRavine.EntityControl
         {
             // skillFacade = new SkillFacade();
             logger = locator.GetLogger();
-            Debug.Log("entsys is start");
+            logger.LogInfo("EntitySystem service is available now");
             global  = new List<AEntity>();
             mobInfo = new Dictionary<int, EntityInfo>(4);
-            if(boidsBehaviour != null) boidsBehaviour.StartBoids().Forget();
+            if(boidsBehaviour != null) boidsBehaviour.StartBoids(locator.GetPlayerTransform());
 
             for (int i = 0; i < _mobInfo.Length; i++) mobInfo[_mobInfo[i].prefab.GetInstanceID()] = _mobInfo[i];
 
@@ -46,7 +46,7 @@ namespace TheRavine.EntityControl
 
         public override void OnDestroy()
         {
-            global.Clear();
+            global?.Clear();
         }
     }
 }

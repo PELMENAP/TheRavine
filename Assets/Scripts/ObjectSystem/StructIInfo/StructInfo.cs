@@ -3,13 +3,13 @@ using UnityEngine;
 public class StructInfo : ScriptableObject
 {
     public byte distortion;
-    public TileInfo[] tileInfo;
+    public TileInfo[] tileInfo; // tile in each 9 sides
 }
 
 [System.Serializable]
 public struct TileInfo
 {
-    public byte[] height;
-    public byte MCount;
-    public ObjectInfo objectInfo;
+    public byte[] countBySide; // count of tile in each 8 sides
+    public byte MCount; //max count
+    public ObjectInfo objectInfo; //prefab
 }

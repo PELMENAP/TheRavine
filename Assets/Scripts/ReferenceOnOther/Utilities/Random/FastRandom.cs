@@ -37,6 +37,7 @@ namespace TheRavine.Extensions
         {
             return (float)(InternalSample() * (max - min) + min);
         }
+        public int Next(int max) => Range(0, max);
         public int Range(int min, int max)
         {
             return (int)(InternalSample() * (max - min) + min);
