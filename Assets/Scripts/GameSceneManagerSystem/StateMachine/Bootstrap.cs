@@ -12,8 +12,10 @@ namespace TheRavine.Base
         [SerializeField] private UniversalAdditionalCameraData _cameraData;
         private SceneTransistor trasitor;
         [SerializeField] private GameStateMachine gameStateMachine;
-        private void Awake()
+        [SerializeField] private bool isTest;
+        private void Start()
         {
+            if(isTest) return;
             gameStateMachine.Initialize();
 
             AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());

@@ -1,16 +1,17 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 namespace TheRavine.Services
 {
     public class ServiceLocator
     {
-        private Dictionary<System.Type, MonoBehaviour> services = new Dictionary<System.Type, MonoBehaviour>();
+        private Dictionary<Type, MonoBehaviour> services = new Dictionary<Type, MonoBehaviour>();
         private ILogger logger;
         private List<Transform> playersTransforms = new List<Transform>();
         public bool Register<T>(T service) where T : MonoBehaviour
         {
-            System.Type type = typeof(T);
+            Type type = typeof(T);
             if (!services.ContainsKey(type))
                 services[type] = service;
             else
@@ -28,7 +29,7 @@ namespace TheRavine.Services
         }
         public T GetService<T>() where T : MonoBehaviour
         {
-            System.Type type = typeof(T);
+            Type type = typeof(T);
             if (services.ContainsKey(type))
                 return services[type] as T;
             else
@@ -37,7 +38,15 @@ namespace TheRavine.Services
 
         public ILogger GetLogger() => logger;
 
-        public Transform GetPlayerTransform() => playersTransforms[0];
+        public Transform GetPlayerTransform()
+        {
+            if(playersTransforms.Count == 0)
+            {
+                logger.LogError("There is no players in the game");
+                return null;
+            }
+            return playersTransforms[0];
+        }
         public List<Transform> GetPlayersTransforms() => playersTransforms;
 
         public void Dispose()

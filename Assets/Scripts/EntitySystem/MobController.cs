@@ -143,7 +143,7 @@ namespace TheRavine.EntityControl
             }
             catch (Exception ex)
             {
-                logger.LogError($"Error during break up: {ex.Message}");
+                logger?.LogError($"Error during break up: {ex.Message}");
             }
         }
 

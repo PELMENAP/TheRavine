@@ -46,9 +46,7 @@ namespace TheRavine.Generator
 
                 Debug.Log(polygon.Count + "  " + holes.Count);
 
-
-                BowyerWatsonTriangulation triangulation = new BowyerWatsonTriangulation();
-                Mesh mesh = triangulation.GenerateMesh(polygon, holes, maxTriangleEdgeSize);
+                Mesh mesh = BowyerWatsonTriangulation.GenerateMesh(polygon, holes, maxTriangleEdgeSize);
 
                 generator.waterF.mesh = mesh;
             }
@@ -84,12 +82,12 @@ namespace TheRavine.Generator
 
                     visited[point.x, point.y] = true;
 
-                    if (!isPolygon)
-                        if ((point.x + 1 < countOfQuads && grid[point.x + 1, point.y]) ||
-                            (point.x - 1 >= 0 && grid[point.x - 1, point.y]) ||
-                            (point.y + 1 < countOfQuads && grid[point.x, point.y + 1]) ||
-                            (point.y - 1 >= 0 && grid[point.x, point.y - 1]))
-                                continue;
+                    // if (!isPolygon)
+                    //     if ((point.x + 1 < countOfQuads && grid[point.x + 1, point.y]) ||
+                    //         (point.x - 1 >= 0 && grid[point.x - 1, point.y]) ||
+                    //         (point.y + 1 < countOfQuads && grid[point.x, point.y + 1]) ||
+                    //         (point.y - 1 >= 0 && grid[point.x, point.y - 1]))
+                    //             continue;
                     
                     if(isPolygon)
                     {
@@ -125,33 +123,32 @@ namespace TheRavine.Generator
             }
         }
 
-        public class BowyerWatsonTriangulation
+        public static class BowyerWatsonTriangulation
         {
-            private List<Triangle> triangles = new List<Triangle>();
-            
-            public Mesh GenerateMesh(List<Vector2Int> points, List<Vector2Int> holes, float maxTriangleEdgeSize)
+            public static Mesh GenerateMesh(List<Vector2Int> points, List<Vector2Int> holes, float maxTriangleEdgeSize)
             {
-                triangles.Clear();
-                triangles = Triangulate(points, holes, maxTriangleEdgeSize);
-
+                var triangles = Triangulate(points, holes, maxTriangleEdgeSize);
                 int pointCount = points.Count;
                 int triangleCount = triangles.Count;
-
+                
                 Vector3[] vertices = new Vector3[pointCount];
                 Vector2[] uvs = new Vector2[pointCount];
                 int[] indices = new int[triangleCount * 3];
-                Dictionary<Vector2Int, int> vertexIndexMap = new Dictionary<Vector2Int, int>(pointCount);
-
-                float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
-
-                foreach (var p in points)
+                
+                var vertexIndexMap = new Dictionary<Vector2Int, int>(pointCount);
+                
+                float minX = points[0].x, minY = points[0].y, 
+                    maxX = points[0].x, maxY = points[0].y;
+                
+                for (int i = 1; i < points.Count; i++)
                 {
-                    if (p.x < minX) minX = p.x;
-                    if (p.y < minY) minY = p.y;
-                    if (p.x > maxX) maxX = p.x;
-                    if (p.y > maxY) maxY = p.y;
+                    var p = points[i];
+                    minX = Mathf.Min(minX, p.x);
+                    minY = Mathf.Min(minY, p.y);
+                    maxX = Mathf.Max(maxX, p.x);
+                    maxY = Mathf.Max(maxY, p.y);
                 }
-
+                
                 int index = 0;
                 foreach (var tri in triangles)
                 {
@@ -159,46 +156,47 @@ namespace TheRavine.Generator
                     indices[index++] = GetVertexIndex(tri.B, vertices, uvs, vertexIndexMap, minX, minY, maxX, maxY);
                     indices[index++] = GetVertexIndex(tri.C, vertices, uvs, vertexIndexMap, minX, minY, maxX, maxY);
                 }
-
-                Mesh mesh = new Mesh
+                
+                var mesh = new Mesh
                 {
                     vertices = vertices,
                     triangles = indices,
                     uv = uvs
                 };
-                mesh.RecalculateNormals();
-                mesh.RecalculateBounds();
-
+                
                 return mesh;
             }
-
-            private int GetVertexIndex(Vector2Int point, Vector3[] vertices, Vector2[] uvs, Dictionary<Vector2Int, int> vertexIndexMap,
-                                    float minX, float minY, float maxX, float maxY)
+            
+            private static int GetVertexIndex(Vector2Int point, Vector3[] vertices, Vector2[] uvs, 
+                Dictionary<Vector2Int, int> vertexIndexMap, float minX, float minY, float maxX, float maxY)
             {
                 if (!vertexIndexMap.TryGetValue(point, out int index))
                 {
                     index = vertexIndexMap.Count;
                     vertices[index] = new Vector3(point.x, point.y, 0);
-                    uvs[index] = new Vector2((point.x - minX) / (maxX - minX), (point.y - minY) / (maxY - minY));
+                    uvs[index] = new Vector2(
+                        (point.x - minX) / (maxX - minX), 
+                        (point.y - minY) / (maxY - minY)
+                    );
                     vertexIndexMap[point] = index;
                 }
                 return index;
             }
-
-            private List<Triangle> Triangulate(List<Vector2Int> points, List<Vector2Int> holes, float maxTriangleEdgeSize)
+            
+            private static List<Triangle> Triangulate(List<Vector2Int> points, List<Vector2Int> holes, float maxTriangleEdgeSize)
             {
-                List<Triangle> resultTriangles = new List<Triangle>(points.Count * 2);
-                Triangle superTriangle = CreateSuperTriangle(points);
+                var resultTriangles = new List<Triangle>(points.Count * 2);
+                var superTriangle = CreateSuperTriangle(points);
                 resultTriangles.Add(superTriangle);
-
-                List<Triangle> badTriangles = new List<Triangle>();
-                List<Edge> polygon = new List<Edge>();
-
+                
+                var badTriangles = new List<Triangle>();
+                var polygon = new List<Edge>();
+                
                 foreach (var point in points)
                 {
                     badTriangles.Clear();
                     polygon.Clear();
-
+                    
                     for (int i = resultTriangles.Count - 1; i >= 0; i--)
                     {
                         if (resultTriangles[i].CircumcircleContains(point))
@@ -207,56 +205,65 @@ namespace TheRavine.Generator
                             resultTriangles.RemoveAt(i);
                         }
                     }
-
-                    foreach (var tri in badTriangles)
+                    
+                    for (int i = 0; i < badTriangles.Count; i++)
                     {
+                        var tri = badTriangles[i];
                         polygon.Add(new Edge(tri.A, tri.B));
                         polygon.Add(new Edge(tri.B, tri.C));
                         polygon.Add(new Edge(tri.C, tri.A));
                     }
-
+                    
                     RemoveDuplicateEdges(polygon);
-
+                    
                     foreach (var edge in polygon)
                         resultTriangles.Add(new Triangle(edge.P1, edge.P2, point));
                 }
-
-                resultTriangles.RemoveAll(t => t.HasVertex(superTriangle.A) ||
-                                            t.HasVertex(superTriangle.B) ||
-                                            t.HasVertex(superTriangle.C) ||
-                                            IsInsideHole(t, holes) ||
-                                            t.TooLargeEdge(maxTriangleEdgeSize));
-
+                
+                resultTriangles.RemoveAll(t => 
+                    t.HasVertex(superTriangle.A) || 
+                    t.HasVertex(superTriangle.B) || 
+                    t.HasVertex(superTriangle.C) || 
+                    IsInsideHole(t, holes) || 
+                    t.TooLargeEdge(maxTriangleEdgeSize)
+                );
+                
                 return resultTriangles;
             }
-
-            private Triangle CreateSuperTriangle(List<Vector2Int> points)
+            
+            private static Triangle CreateSuperTriangle(List<Vector2Int> points)
             {
-                int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
-                foreach (var p in points)
+                int minX = points[0].x, minY = points[0].y, 
+                    maxX = points[0].x, maxY = points[0].y;
+                
+                for (int i = 1; i < points.Count; i++)
                 {
-                    if (p.x < minX) minX = p.x;
-                    if (p.y < minY) minY = p.y;
-                    if (p.x > maxX) maxX = p.x;
-                    if (p.y > maxY) maxY = p.y;
+                    var p = points[i];
+                    minX = Mathf.Min(minX, p.x);
+                    minY = Mathf.Min(minY, p.y);
+                    maxX = Mathf.Max(maxX, p.x);
+                    maxY = Mathf.Max(maxY, p.y);
                 }
-
+                
                 int deltaMax = Mathf.Max(maxX - minX, maxY - minY) * 2;
-                return new Triangle(new Vector2Int(minX - deltaMax, minY - deltaMax),
-                                    new Vector2Int(maxX + deltaMax, minY - deltaMax),
-                                    new Vector2Int((minX + maxX) / 2, maxY + deltaMax));
+                
+                return new Triangle(
+                    new Vector2Int(minX - deltaMax, minY - deltaMax),
+                    new Vector2Int(maxX + deltaMax, minY - deltaMax),
+                    new Vector2Int((minX + maxX) / 2, maxY + deltaMax)
+                );
             }
-
-            private bool IsInsideHole(Triangle t, List<Vector2Int> holes)
+            
+            private static bool IsInsideHole(Triangle t, List<Vector2Int> holes)
             {
-                foreach (var hole in holes)
+                for (int i = 0; i < holes.Count; i++)
                 {
-                    if (t.ContainsPoint(hole)) return true;
+                    if (t.ContainsPoint(holes[i])) return true;
                 }
                 return false;
             }
-
-            private void RemoveDuplicateEdges(List<Edge> edges)
+            
+            private static void RemoveDuplicateEdges(List<Edge> edges)
             {
                 for (int i = edges.Count - 1; i >= 0; i--)
                 {
@@ -288,27 +295,37 @@ namespace TheRavine.Generator
                 A = a;
                 B = b;
                 C = c;
-                CalculateCircumcircle();
+                if (!CalculateCircumcircle())
+                {
+                    throw new ArgumentException("Degenerate triangle: points are collinear.");
+                }
             }
 
-            private void CalculateCircumcircle()
+            public Vector2 GetCentroid()
+            {
+                return new Vector2((A.x + B.x + C.x) / 3f, (A.y + B.y + C.y) / 3f);
+            }
+
+            private bool CalculateCircumcircle()
             {
                 float ax = A.x, ay = A.y;
                 float bx = B.x, by = B.y;
                 float cx = C.x, cy = C.y;
 
                 float d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
+                if (Mathf.Abs(d) < 1e-6) return false;
 
-                float ux = ((ax * ax + ay * ay) * (by - cy) + 
-                            (bx * bx + by * by) * (cy - ay) + 
+                float ux = ((ax * ax + ay * ay) * (by - cy) +
+                            (bx * bx + by * by) * (cy - ay) +
                             (cx * cx + cy * cy) * (ay - by)) / d;
 
-                float uy = ((ax * ax + ay * ay) * (cx - bx) + 
-                            (bx * bx + by * by) * (ax - cx) + 
+                float uy = ((ax * ax + ay * ay) * (cx - bx) +
+                            (bx * bx + by * by) * (ax - cx) +
                             (cx * cx + cy * cy) * (bx - ax)) / d;
 
                 center = new Vector2(ux, uy);
                 radiusSquared = (center - (Vector2)A).sqrMagnitude;
+                return true;
             }
 
             public bool CircumcircleContains(Vector2Int p)
@@ -324,18 +341,33 @@ namespace TheRavine.Generator
             public bool ContainsPoint(Vector2Int p)
             {
                 float factor = (B.y - C.y) * (A.x - C.x) + (C.x - B.x) * (A.y - C.y);
-                if(factor == 0) return true;
-                float w1 = ((B.y - C.y) * (p.x - C.x) + (C.x - B.x) * (p.y - C.y)) / factor;
-                float w2 = ((C.y - A.y) * (p.x - C.x) + (A.x - C.x) * (p.y - C.y)) / factor;
-                float w3 = 1 - w1 - w2;
-                return w1 >= 0 && w2 >= 0 && w3 >= 0;
+                if (Mathf.Abs(factor) < 1e-6) return false;
+
+                bool IsInside(Vector2 point)
+                {
+                    float w1 = ((B.y - C.y) * (point.x - C.x) + (C.x - B.x) * (point.y - C.y)) / factor;
+                    float w2 = ((C.y - A.y) * (point.x - C.x) + (A.x - C.x) * (point.y - C.y)) / factor;
+                    float w3 = 1 - w1 - w2;
+                    return w1 >= 0 && w2 >= 0 && w3 >= 0;
+                }
+
+                if (IsInside(p)) return true;
+                float offset = 0.25f;
+                return IsInside(new Vector2(p.x + offset, p.y)) ||
+                    IsInside(new Vector2(p.x - offset, p.y)) ||
+                    IsInside(new Vector2(p.x, p.y + offset)) ||
+                    IsInside(new Vector2(p.x, p.y - offset));
             }
 
             public bool TooLargeEdge(float maxTriangleEdgeSize)
             {
-                return (A - B).sqrMagnitude > maxTriangleEdgeSize || (C - B).sqrMagnitude > maxTriangleEdgeSize || (A - C).sqrMagnitude > maxTriangleEdgeSize;
+                float maxEdgeSizeSquared = maxTriangleEdgeSize * maxTriangleEdgeSize;
+                return (A - B).sqrMagnitude > maxEdgeSizeSquared ||
+                    (C - B).sqrMagnitude > maxEdgeSizeSquared ||
+                    (A - C).sqrMagnitude > maxEdgeSizeSquared;
             }
         }
+
 
         public class Edge
         {
@@ -361,5 +393,6 @@ namespace TheRavine.Generator
                 return P1.GetHashCode() ^ P2.GetHashCode();
             }
         }
+        
     }
 }

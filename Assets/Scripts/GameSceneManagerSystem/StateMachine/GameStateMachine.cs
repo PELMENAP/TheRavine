@@ -51,7 +51,7 @@ namespace TheRavine.Base
         public void BreakUpServices()
         {
             onMessageDisplayTerminal -= terminal.Display;
-            serviceRegisterMachine.BreakUpServices();
+            serviceRegisterMachine?.BreakUpServices();
         }
         public int GetTickPerUpdate() => tickPerUpdate;
         public void StartNewServices(Queue<ISetAble> services, ISetAble.Callback callback) => serviceRegisterMachine.StartNewServices(services, callback);

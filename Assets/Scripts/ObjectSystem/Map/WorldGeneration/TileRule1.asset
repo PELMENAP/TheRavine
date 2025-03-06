@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37e3814eda343189dad3910b22b4a009, type: 3}
+  m_Name: TileRule1
+  m_EditorClassIdentifier: 
+  prefab: {fileID: 8079554152659468491, guid: cf647ee06476156918555c7d1e90b593, type: 3}
+  rules:
+  - direction: 0
+    allowedNeighbors:
+    - {fileID: 11400000}
+    priorityWeight: 2
+  - direction: 1
+    allowedNeighbors:
+    - {fileID: 11400000}
+    priorityWeight: 3
+  - direction: 3
+    allowedNeighbors:
+    - {fileID: 11400000}
+    priorityWeight: 1
+  - direction: 2
+    allowedNeighbors:
+    - {fileID: 11400000}
+    priorityWeight: 4
+  connectionPoints: []
+  weight: 10
