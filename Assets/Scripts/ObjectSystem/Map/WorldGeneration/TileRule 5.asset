@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37e3814eda343189dad3910b22b4a009, type: 3}
+  m_Name: TileRule 5
+  m_EditorClassIdentifier: 
+  prefab: {fileID: 4252063074322008703, guid: c08d4dc7c0922d432a82a3e168ffd816, type: 3}
+  rules: []
+  connectionPoints: []
+  weight: 10

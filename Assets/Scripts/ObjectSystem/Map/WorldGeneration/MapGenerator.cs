@@ -448,7 +448,7 @@ namespace TheRavine.Generator
     {
         public bool isSpawnPoint;
         public int Chance;
-        public StructInfo info;
+        // public StructInfo info;
     }
 
     [System.Serializable]

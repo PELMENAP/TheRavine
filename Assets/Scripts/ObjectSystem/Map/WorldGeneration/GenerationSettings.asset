@@ -12,11 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 118de0fcb4e45065d872a19ff9baf6d5, type: 3}
   m_Name: GenerationSettings
   m_EditorClassIdentifier: 
-  maxGenerationAttempts: 5
-  maxGeneratedCells: 50
+  maxGenerationAttempts: 1
+  maxGeneratedCells: 10
   gridSize: {x: 10, y: 10}
   borderRule: 2
-  maxPropagationIterations: 100
-  generationDelay: 0.1
-  allowDiagonalExpansion: 0
-  useMinimumEntropy: 1
+  maxPropagationIterations: 10
+  generationDelay: 0.05
+  _availableTiles:
+  - {fileID: 11400000, guid: eaa3fb60b575354c081822fb3d025307, type: 2}
+  - {fileID: 11400000, guid: a2b618adf9dffd3ffba5555ef5d324e5, type: 2}
+  - {fileID: 11400000, guid: 90ce2250d193e1f39ad8f7660fcc35e2, type: 2}
+  - {fileID: 11400000, guid: 5deeffa39410f86438b55fdb94dacfa6, type: 2}
+  - {fileID: 11400000, guid: 303aea5801a7f1e5fa95c5228c0bc847, type: 2}

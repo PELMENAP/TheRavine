@@ -10,23 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 37e3814eda343189dad3910b22b4a009, type: 3}
-  m_Name: TileRule3
+  m_Name: TileRule 4
   m_EditorClassIdentifier: 
-  prefab: {fileID: 8438544788821673546, guid: fb0561befec814f9fa0473b621825565, type: 3}
+  prefab: {fileID: 8888063536135308216, guid: 082234cc2c559c1a5958820f7daf1c83, type: 3}
   rules:
   - direction: 0
     allowedNeighbors:
-    - {fileID: 11400000}
-    - {fileID: 11400000, guid: 303aea5801a7f1e5fa95c5228c0bc847, type: 2}
-    priorityWeight: 0
-  - direction: 2
+    - {fileID: 11400000, guid: a2b618adf9dffd3ffba5555ef5d324e5, type: 2}
+    - {fileID: 11400000, guid: 90ce2250d193e1f39ad8f7660fcc35e2, type: 2}
+  - direction: 3
     allowedNeighbors:
-    - {fileID: 11400000}
-    priorityWeight: 0
-  - direction: 1
-    allowedNeighbors:
-    - {fileID: 11400000, guid: 303aea5801a7f1e5fa95c5228c0bc847, type: 2}
-    - {fileID: 11400000}
-    priorityWeight: 0
+    - {fileID: 11400000, guid: eaa3fb60b575354c081822fb3d025307, type: 2}
+    - {fileID: 11400000, guid: 90ce2250d193e1f39ad8f7660fcc35e2, type: 2}
   connectionPoints: []
   weight: 10

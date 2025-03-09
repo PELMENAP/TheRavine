@@ -10,23 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 37e3814eda343189dad3910b22b4a009, type: 3}
-  m_Name: TileRule2
+  m_Name: TileRule 2
   m_EditorClassIdentifier: 
-  prefab: {fileID: 3654359588271752698, guid: 8e17b172ba676f8758dca7cd021b75bd, type: 3}
+  prefab: {fileID: 5346365460337182865, guid: f592aa47f25f4af0ab8d4616eb55faa3, type: 3}
   rules:
   - direction: 0
     allowedNeighbors:
     - {fileID: 11400000}
-    - {fileID: 11400000, guid: 303aea5801a7f1e5fa95c5228c0bc847, type: 2}
-    priorityWeight: 0
-  - direction: 1
-    allowedNeighbors:
-    - {fileID: 11400000, guid: 303aea5801a7f1e5fa95c5228c0bc847, type: 2}
-    - {fileID: 11400000}
-    priorityWeight: 0
+    - {fileID: 11400000, guid: 90ce2250d193e1f39ad8f7660fcc35e2, type: 2}
   - direction: 3
     allowedNeighbors:
+    - {fileID: 11400000, guid: eaa3fb60b575354c081822fb3d025307, type: 2}
+    - {fileID: 11400000, guid: 90ce2250d193e1f39ad8f7660fcc35e2, type: 2}
+  - direction: 2
+    allowedNeighbors:
     - {fileID: 11400000}
-    priorityWeight: 0
+    - {fileID: 11400000, guid: 90ce2250d193e1f39ad8f7660fcc35e2, type: 2}
+    - {fileID: 11400000, guid: 5deeffa39410f86438b55fdb94dacfa6, type: 2}
   connectionPoints: []
   weight: 10

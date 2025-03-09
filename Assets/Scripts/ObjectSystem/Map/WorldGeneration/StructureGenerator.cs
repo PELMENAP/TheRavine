@@ -5,6 +5,8 @@ using UnityEngine;
 using Cysharp.Threading.Tasks;
 using System.Threading;
 
+using NaughtyAttributes;
+
 using TheRavine.Extensions;
 
 namespace TheRavine.Generator
@@ -12,20 +14,19 @@ namespace TheRavine.Generator
     public class StructureGenerator : MonoBehaviour
     {
         [SerializeField] private GenerationSettingsSO _settings;
-        [SerializeField] private List<TileRuleSO> _availableTiles;
-        
         private WaveFunctionCollapseAlgorithm _algorithm;
         private Dictionary<Vector2Int, GameObject> _generatedObjects = new Dictionary<Vector2Int, GameObject>();
         private CancellationTokenSource _cancellationTokenSource;
 
         private void Awake()
         {
-            _algorithm = new WaveFunctionCollapseAlgorithm(_availableTiles, _settings);
+            _algorithm = new WaveFunctionCollapseAlgorithm(_settings);
         }
 
-        private async UniTask Start()
+        [Button]
+        private void StartGeneration()
         {
-            _generatedObjects = await Generate(new Vector2Int());
+            Generate(new Vector2Int(0, 0)).Forget();
         }
         
         private void OnDestroy()

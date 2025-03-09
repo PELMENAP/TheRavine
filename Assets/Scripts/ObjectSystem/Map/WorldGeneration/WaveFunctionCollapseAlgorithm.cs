@@ -32,7 +32,6 @@ namespace TheRavine.Generator
         
         public void Collapse(TileRuleSO tile)
         {
-            Debug.Log("cell at " + Position + " was collapsed");
             CollapsedTile = tile;
             PossibleTiles.Clear();
             PossibleTiles.Add(tile);
@@ -75,23 +74,6 @@ namespace TheRavine.Generator
             
             return PossibleTiles[0];
         }
-        
-        public float GetEntropy()
-        {
-            if (IsCollapsed) return float.MaxValue;
-            if (PossibleTiles.Count == 0) return float.MaxValue;
-            
-            float weightSum = PossibleTiles.Sum(t => t.weight);
-            float weightedEntropy = 0;
-            
-            foreach (var tile in PossibleTiles)
-            {
-                float probability = tile.weight / weightSum;
-                weightedEntropy -= probability * Mathf.Log(probability);
-            }
-            
-            return weightedEntropy;
-        }
     }
 
     public class WaveFunctionCollapseAlgorithm
@@ -102,20 +84,15 @@ namespace TheRavine.Generator
         private FastRandom _random;
         private Dictionary<TileRuleSO, Dictionary<Direction, HashSet<TileRuleSO>>> _neighborRulesCache;
         private Dictionary<Vector2Int, GameObject> _result;
-        private PriorityQueue<Cell, float> _entropyQueue;
-        private Stack<(Vector2Int, List<TileRuleSO>)> _backtrackStack;
 
-        public WaveFunctionCollapseAlgorithm(List<TileRuleSO> allTiles, GenerationSettingsSO settings, int seed = 0)
+        public WaveFunctionCollapseAlgorithm(GenerationSettingsSO settings, int seed = 0)
         {
-            _allTiles = allTiles;
             _settings = settings;
+            _allTiles = settings._availableTiles;
             _random = seed == 0 ? new FastRandom() : new FastRandom(seed);
             _result = new Dictionary<Vector2Int, GameObject>();
             _neighborRulesCache = new Dictionary<TileRuleSO, Dictionary<Direction, HashSet<TileRuleSO>>>();
             _cells = new Dictionary<Vector2Int, Cell>();
-            _entropyQueue = new PriorityQueue<Cell, float>();
-            _backtrackStack = new Stack<(Vector2Int, List<TileRuleSO>)>();
-            
             InitializeNeighborRulesCache();
         }
 
@@ -124,27 +101,13 @@ namespace TheRavine.Generator
             foreach (var tile in _allTiles)
             {
                 var directionRules = new Dictionary<Direction, HashSet<TileRuleSO>>();
-                
                 foreach (Direction direction in Enum.GetValues(typeof(Direction)))
                 {
                     var rule = tile.rules.FirstOrDefault(r => r.direction == direction);
-                    var allowedNeighbors = rule != null ? new HashSet<TileRuleSO>(rule.allowedNeighbors) : new HashSet<TileRuleSO>(_allTiles);
-                    directionRules[direction] = allowedNeighbors;
+                    directionRules[direction] = rule != null ? new HashSet<TileRuleSO>(rule.allowedNeighbors) : new HashSet<TileRuleSO>(_allTiles);
                 }
-                
                 _neighborRulesCache[tile] = directionRules;
             }
-        }
-
-        private Cell GetCellWithMinimumEntropy()
-        {
-            while (_entropyQueue.Count > 0)
-            {
-                var cell = _entropyQueue.Peek();
-                if (!cell.IsCollapsed) return _entropyQueue.Dequeue();
-                _entropyQueue.Dequeue();
-            }
-            return null;
         }
 
         private Vector2Int GetNeighborPosition(Vector2Int position, Direction direction)
@@ -176,11 +139,9 @@ namespace TheRavine.Generator
             
             return neighborPos;
         }
-
         private List<TileRuleSO> GetAllowedTilesForDirection(Cell cell, Direction direction)
         {
             HashSet<TileRuleSO> allowedTiles = new HashSet<TileRuleSO>();
-
             foreach (var possibleTile in cell.PossibleTiles)
             {
                 if (_neighborRulesCache.TryGetValue(possibleTile, out var directionRules) &&
@@ -192,114 +153,83 @@ namespace TheRavine.Generator
             return allowedTiles.ToList();
         }
 
-        
-        private bool Step()
+        private async UniTask<bool> Step()
         {
-            Cell cellToCollapse = _settings.useMinimumEntropy ? GetCellWithMinimumEntropy() : _cells.Values.FirstOrDefault(c => !c.IsCollapsed);
-            if (cellToCollapse == null) return false;
-            _backtrackStack.Push((cellToCollapse.Position, new List<TileRuleSO>(cellToCollapse.PossibleTiles)));
-            if (cellToCollapse.PossibleTiles.Count == 0) return false;
+            var uncollapsedCells = _cells.Values.Where(c => !c.IsCollapsed).ToList();
+            if (uncollapsedCells.Count == 0) return false;
             
-            var selectedTile = cellToCollapse.SelectRandomTileWithWeights(_random);
-            cellToCollapse.Collapse(selectedTile);
-            
-            return PropagateConstraints(cellToCollapse.Position);
+            Cell cellToCollapse = uncollapsedCells[_random.Next(uncollapsedCells.Count)];
+            cellToCollapse.Collapse(cellToCollapse.SelectRandomTileWithWeights(_random));
+            return await PropagateConstraints(cellToCollapse.Position);
         }
-        private bool PropagateConstraints(Vector2Int startPos)
+        private static readonly Direction[] directions = { Direction.Up, Direction.Right, Direction.Down, Direction.Left };
+        private async UniTask<bool> PropagateConstraints(Vector2Int startPos)
         {
             Queue<Vector2Int> propagationQueue = new Queue<Vector2Int>();
             propagationQueue.Enqueue(startPos);
-            
-            HashSet<Vector2Int> processedPositions = new HashSet<Vector2Int>(); // Отслеживаем обработанные позиции
+            HashSet<Vector2Int> processedPositions = new HashSet<Vector2Int>();
             
             int iterations = 0;
             while (propagationQueue.Count > 0 && iterations < _settings.maxPropagationIterations)
             {
                 iterations++;
                 Vector2Int currentPos = propagationQueue.Dequeue();
+
                 if (!_cells.TryGetValue(currentPos, out var currentCell)) continue;
-                
-                processedPositions.Add(currentPos); // Отмечаем позицию как обработанную
-                
-                foreach (Direction direction in Enum.GetValues(typeof(Direction)))
+                processedPositions.Add(currentPos);
+
+                Shuffle(directions);
+
+                for (int i = 0; i < directions.Length; i++)
                 {
-                    Vector2Int neighborPos = GetNeighborPosition(currentPos, direction);
-                    if (neighborPos == currentPos) continue; // Пропускаем, если это та же самая позиция
-                    
-                    if (!_cells.ContainsKey(neighborPos)) 
-                        _cells[neighborPos] = new Cell(neighborPos, _allTiles);
-                    
+                    Vector2Int neighborPos = GetNeighborPosition(currentPos, directions[i]);
+                    if (neighborPos == currentPos) continue;
+                    bool isNewCell = !_cells.ContainsKey(neighborPos);
+                    if (isNewCell) _cells[neighborPos] = new Cell(neighborPos, _allTiles);
                     var neighborCell = _cells[neighborPos];
-                    
-                    // Получаем допустимые плитки для соседа, исходя из текущей ячейки
-                    var allowedNeighborTiles = GetAllowedTilesForDirection(currentCell, direction);
-                    
-                    // Применяем ограничения
-                    bool changed = neighborCell.ConstrainPossibilities(allowedNeighborTiles);
-                    
-                    // Проверяем на противоречия
-                    if (neighborCell.PossibleTiles.Count == 0)
-                        return false; // Противоречие, требуется откат
-                    
-                    // Добавляем соседа в очередь, если его состояние изменилось и он еще не был обработан после последнего изменения
-                    if (changed && !processedPositions.Contains(neighborPos))
+                    bool changed = neighborCell.ConstrainPossibilities(GetAllowedTilesForDirection(currentCell, directions[i]));
+                    if (neighborCell.PossibleTiles.Count == 0) return false;
+                    if (isNewCell || (changed && !processedPositions.Contains(neighborPos)))
                     {
-                        _entropyQueue.Enqueue(neighborCell, neighborCell.GetEntropy());
                         propagationQueue.Enqueue(neighborPos);
-                        // Удаляем из обработанных, так как состояние изменилось и нужно обработать заново
-                        processedPositions.Remove(neighborPos);
                     }
+                    await UniTask.Delay(_settings.generationDelay);
                 }
             }
-            
-            // Проверка на достижение максимального числа итераций
-            return iterations < _settings.maxPropagationIterations;
+            return true;
         }
 
-
-        private async UniTask<bool> RunAlgorithmWithBacktracking(CancellationToken cancellationToken)
+        private void Shuffle(Direction[] span)
         {
-            int attempts = 0;
-            while (attempts < _settings.maxGenerationAttempts)
+            for (int i = span.Length - 1; i > 0; i--)
             {
-                attempts++;
-                _cells.Clear();
-                _backtrackStack.Clear();
-                _result.Clear();
-                _entropyQueue.Clear();
-                
+                int j = _random.Next(i + 1);
+                (span[i], span[j]) = (span[j], span[i]);
+            }
+        }
+
+        private async UniTask RunAlgorithm(CancellationToken cancellationToken)
+        {
+            _cells.Clear();
+            _result.Clear();
+            for (int attempts = 0; attempts < _settings.maxGenerationAttempts; attempts++)
+            {
                 Vector2Int startPos = new Vector2Int(_random.Next(_settings.gridSize.x), _random.Next(_settings.gridSize.y));
                 TileRuleSO initialTile = _allTiles[_random.Next(_allTiles.Count)];
-                
                 _cells[startPos] = new Cell(startPos, _allTiles);
                 _cells[startPos].Collapse(initialTile);
-                
-                bool success = PropagateConstraints(startPos);
+                bool success =  await PropagateConstraints(startPos);
                 int stepCount = 0;
-
-                Debug.Log("current attempt: " + attempts + "  " + success);
-                
                 while (success && stepCount < _settings.maxGeneratedCells)
                 {
                     stepCount++;
-
-                    Debug.Log("current step: " + stepCount);
-
-                    if (_settings.generationDelay > 0) await UniTask.Delay((int)(_settings.generationDelay * 1000), cancellationToken: cancellationToken);
-
-                    success = Step();
-                    
-                    if (!success && _backtrackStack.Count > 0) success = await Backtrack(cancellationToken);
-                    if (_cells.Values.All(c => c.IsCollapsed)) 
-                    {
-                        CreateResultObjects();
-                        return true;
-                    }
-                    if (cancellationToken.IsCancellationRequested) return false;
+                    await UniTask.Delay(_settings.generationDelay, cancellationToken: cancellationToken);
+                    success = await Step();
+                    if (cancellationToken.IsCancellationRequested) return;
                 }
             }
-            return false;
         }
+
         private void CreateResultObjects()
         {
             foreach (var cell in _cells.Values)
@@ -310,79 +240,11 @@ namespace TheRavine.Generator
                 }
             }
         }
-        private async UniTask<bool> Backtrack(CancellationToken cancellationToken)
-        {
-            int backtrackDepth = 0;
-            const int maxBacktrackDepth = 10;
-            
-            while (_backtrackStack.Count > 0 && backtrackDepth < maxBacktrackDepth)
-            {
-                backtrackDepth++;
-                var (position, previousPossibleTiles) = _backtrackStack.Pop();
-                if (previousPossibleTiles.Count == 0) continue;
-                
-                // Выбираем плитку и удаляем её из списка возможных
-                var selectedTile = previousPossibleTiles[_random.Next(previousPossibleTiles.Count)];
-                previousPossibleTiles.Remove(selectedTile);
-                
-                // Сохраняем оставшиеся возможности для будущих откатов
-                if (previousPossibleTiles.Count > 0) 
-                    _backtrackStack.Push((position, previousPossibleTiles));
-                
-                // Очищаем ячейки, которые могли быть затронуты после последнего выбора
-                ClearAffectedCells(position);
-                
-                // Создаем новую ячейку и схлопываем её
-                _cells[position] = new Cell(position, new List<TileRuleSO> { selectedTile });
-                _cells[position].Collapse(selectedTile);
-                
-                // Пробуем распространить ограничения
-                if (PropagateConstraints(position))
-                    return true;
-                
-                if (cancellationToken.IsCancellationRequested) return false;
-
-                await UniTask.Yield();
-            }
-            
-            return false;
-        }
-
-        // Добавление метода для очистки затронутых ячеек при откате
-        private void ClearAffectedCells(Vector2Int position)
-        {
-            var cellsToKeep = new Dictionary<Vector2Int, Cell>();
-            
-            foreach (var backtrackEntry in _backtrackStack)
-            {
-                if (_cells.TryGetValue(backtrackEntry.Item1, out var cell) && cell.IsCollapsed)
-                {
-                    cellsToKeep[backtrackEntry.Item1] = cell;
-                }
-            }
-            
-            _cells.Clear();
-            foreach (var entry in cellsToKeep)
-            {
-                _cells[entry.Key] = entry.Value;
-            }
-            
-            // Перестраиваем очередь энтропии
-            _entropyQueue.Clear();
-            
-            foreach (var cell in _cells.Values)
-            {
-                if (!cell.IsCollapsed)
-                {
-                    _entropyQueue.Enqueue(cell, cell.GetEntropy());
-                }
-            }
-        }
 
         public async UniTask<Dictionary<Vector2Int, GameObject>> Generate(CancellationToken cancellationToken)
         {
-            bool success = await RunAlgorithmWithBacktracking(cancellationToken);
-            if(!success) CreateResultObjects();
+            await RunAlgorithm(cancellationToken);
+            CreateResultObjects();
             return _result;
         }
     }
