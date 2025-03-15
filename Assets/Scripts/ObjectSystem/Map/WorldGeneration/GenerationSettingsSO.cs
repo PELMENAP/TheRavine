@@ -21,14 +21,19 @@ namespace TheRavine.Generator
             Block, // Крайние границы запрещают генерацию
             Open   // Нет границ, генерация идет бесконечно
         }
+
+        [Tooltip("Жадное добавление оставшихся тайлов.")]
+        public bool IsGreedyCollapse = true;
         
         [Tooltip("Как генерация обрабатывает края карты.")]
         public BorderRuleType borderRule = BorderRuleType.Block;
         
         [Range(1, 100), Tooltip("Максимальное количество итераций в процессе распространения (propagation).")]
         public int maxPropagationIterations = 20;
+        [Range(1, 100), Tooltip("Максимальное количество итераций в шагах генерации.")]
+        public int maxStepIterations = 20;
         
-        [Range(1, 500), Tooltip("Задержка между шагами генерации в секундах.")]
+        [Range(1, 500), Tooltip("Задержка между шагами генерации в доли секундах.")]
         public int generationDelay = 1;
         [Tooltip("Множество возможных тайлов.")]
         public List<TileRuleSO> _availableTiles;

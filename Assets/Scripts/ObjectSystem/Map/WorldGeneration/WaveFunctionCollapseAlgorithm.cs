@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using System.Threading;
@@ -15,6 +13,30 @@ namespace TheRavine.Generator
         Right,
         Down,
         Left
+    }
+
+    public enum Rotation
+    {
+        Rotation0,
+        Rotation90,
+        Rotation180,
+        Rotation270
+    }
+
+    [Serializable]
+    public class TileTransformation
+    {
+        public TileRuleSO Tile { get; }
+        public Rotation Rotation { get; }
+
+        public TileTransformation(TileRuleSO tile, Rotation rotation)
+        {
+            Tile = tile;
+            Rotation = rotation;
+        }
+
+        public override bool Equals(object obj) => obj is TileTransformation other && Tile == other.Tile && Rotation == other.Rotation;
+        public override int GetHashCode() => HashCode.Combine(Tile, Rotation);
     }
 
     public class Cell
@@ -36,78 +58,95 @@ namespace TheRavine.Generator
             PossibleTiles.Clear();
             PossibleTiles.Add(tile);
         }
-        public bool ConstrainPossibilities(List<TileRuleSO> allowedTiles)
+        public bool ConstrainPossibilities(HashSet<TileRuleSO> allowedTiles)
         {
             if (IsCollapsed) return false;
             
             int initialCount = PossibleTiles.Count;
+            PossibleTiles.RemoveAll(tile => !allowedTiles.Contains(tile));
             
-            var previousTiles = new HashSet<TileRuleSO>(PossibleTiles);
-            PossibleTiles = PossibleTiles.Intersect(allowedTiles).ToList();
-            
-            if (PossibleTiles.Count == initialCount)
-            {
-                var currentTiles = new HashSet<TileRuleSO>(PossibleTiles);
-                return !previousTiles.SetEquals(currentTiles);
-            }
-            
-            return true;
+            return PossibleTiles.Count != initialCount;
         }
         
         public TileRuleSO SelectRandomTileWithWeights(FastRandom random)
         {
             if (PossibleTiles.Count == 0) return null;
             if (PossibleTiles.Count == 1) return PossibleTiles[0];
+
+            int[] prefixSums = new int[PossibleTiles.Count];
+            prefixSums[0] = PossibleTiles[0].weight;
             
-            int totalWeight = PossibleTiles.Sum(t => t.weight);
+            for (int i = 1; i < PossibleTiles.Count; i++)
+            {
+                prefixSums[i] = prefixSums[i - 1] + PossibleTiles[i].weight;
+            }
+            
+            int totalWeight = prefixSums[PossibleTiles.Count - 1];
             if (totalWeight <= 0) return PossibleTiles[random.Next(PossibleTiles.Count)];
             
             int randomWeight = random.Next(totalWeight);
-            int accumulatedWeight = 0;
             
-            foreach (var tile in PossibleTiles)
+            int left = 0, right = PossibleTiles.Count - 1;
+            while (left < right)
             {
-                accumulatedWeight += tile.weight;
-                if (accumulatedWeight > randomWeight)
-                    return tile;
+                int mid = (left + right) / 2;
+                if (prefixSums[mid] <= randomWeight)
+                    left = mid + 1;
+                else
+                    right = mid;
             }
             
-            return PossibleTiles[0];
+            return PossibleTiles[left];
         }
     }
 
     public class WaveFunctionCollapseAlgorithm
     {
-        private Dictionary<Vector2Int, Cell> _cells;
-        private List<TileRuleSO> _allTiles;
-        private GenerationSettingsSO _settings;
-        private FastRandom _random;
-        private Dictionary<TileRuleSO, Dictionary<Direction, HashSet<TileRuleSO>>> _neighborRulesCache;
-        private Dictionary<Vector2Int, GameObject> _result;
+        private Dictionary<Vector2Int, Cell> cells;
+        private List<TileRuleSO> allTiles;
+        private GenerationSettingsSO settings;
+        private FastRandom random;
+        private Dictionary<(TileRuleSO, Direction), HashSet<TileRuleSO>> neighborRulesCache;
+        private Dictionary<Vector2Int, GameObject> result;
+        private static readonly Direction[] directions = { Direction.Up, Direction.Right, Direction.Down, Direction.Left };
 
         public WaveFunctionCollapseAlgorithm(GenerationSettingsSO settings, int seed = 0)
         {
-            _settings = settings;
-            _allTiles = settings._availableTiles;
-            _random = seed == 0 ? new FastRandom() : new FastRandom(seed);
-            _result = new Dictionary<Vector2Int, GameObject>();
-            _neighborRulesCache = new Dictionary<TileRuleSO, Dictionary<Direction, HashSet<TileRuleSO>>>();
-            _cells = new Dictionary<Vector2Int, Cell>();
+            this.settings = settings;
+            allTiles = settings._availableTiles;
+            random = seed == 0 ? new FastRandom() : new FastRandom(seed);
+            result = new Dictionary<Vector2Int, GameObject>();
+            neighborRulesCache = new Dictionary<(TileRuleSO, Direction), HashSet<TileRuleSO>>();
+            cells = new Dictionary<Vector2Int, Cell>();
             InitializeNeighborRulesCache();
         }
+        
+        private readonly HashSet<TileRuleSO> reusableAllowedTilesSet = new HashSet<TileRuleSO>();
 
         private void InitializeNeighborRulesCache()
         {
-            foreach (var tile in _allTiles)
+            neighborRulesCache = new Dictionary<(TileRuleSO, Direction), HashSet<TileRuleSO>>();
+
+            foreach (var tile in allTiles)
             {
-                var directionRules = new Dictionary<Direction, HashSet<TileRuleSO>>();
-                foreach (Direction direction in Enum.GetValues(typeof(Direction)))
+                foreach (var rule in tile.rules)
                 {
-                    var rule = tile.rules.FirstOrDefault(r => r.direction == direction);
-                    directionRules[direction] = rule != null ? new HashSet<TileRuleSO>(rule.allowedNeighbors) : new HashSet<TileRuleSO>(_allTiles);
+                    neighborRulesCache[(tile, rule.direction)] = new HashSet<TileRuleSO>(rule.allowedNeighbors);
                 }
-                _neighborRulesCache[tile] = directionRules;
             }
+        }
+
+        private HashSet<TileRuleSO> GetAllowedTilesForDirection(Cell cell, Direction direction)
+        {
+            reusableAllowedTilesSet.Clear();
+            foreach (var possibleTile in cell.PossibleTiles)
+            {
+                if (neighborRulesCache.TryGetValue((possibleTile, direction), out var allowedNeighbors))
+                {
+                    reusableAllowedTilesSet.UnionWith(allowedNeighbors);
+                }
+            }
+            return reusableAllowedTilesSet;
         }
 
         private Vector2Int GetNeighborPosition(Vector2Int position, Direction direction)
@@ -121,79 +160,91 @@ namespace TheRavine.Generator
                 _ => position
             };
             
-            if (_settings.borderRule == GenerationSettingsSO.BorderRuleType.Wrap)
+            if (settings.borderRule == GenerationSettingsSO.BorderRuleType.Wrap)
             {
-                neighborPos.x = (neighborPos.x + _settings.gridSize.x) % _settings.gridSize.x;
-                neighborPos.y = (neighborPos.y + _settings.gridSize.y) % _settings.gridSize.y;
+                neighborPos.x = (neighborPos.x + settings.gridSize.x) % settings.gridSize.x;
+                neighborPos.y = (neighborPos.y + settings.gridSize.y) % settings.gridSize.y;
             }
-            else if (_settings.borderRule == GenerationSettingsSO.BorderRuleType.Block)
+            else if (settings.borderRule == GenerationSettingsSO.BorderRuleType.Block)
             {
-                if (neighborPos.x < 0 || neighborPos.x >= _settings.gridSize.x ||
-                    neighborPos.y < 0 || neighborPos.y >= _settings.gridSize.y)
+                if (neighborPos.x < 0 || neighborPos.x >= settings.gridSize.x ||
+                    neighborPos.y < 0 || neighborPos.y >= settings.gridSize.y)
                 {
                     return position;
                 }
             }
-
-            // there are exist the 3 type - open, when no borders
             
             return neighborPos;
         }
-        private List<TileRuleSO> GetAllowedTilesForDirection(Cell cell, Direction direction)
-        {
-            HashSet<TileRuleSO> allowedTiles = new HashSet<TileRuleSO>();
-            foreach (var possibleTile in cell.PossibleTiles)
-            {
-                if (_neighborRulesCache.TryGetValue(possibleTile, out var directionRules) &&
-                    directionRules.TryGetValue(direction, out var allowedNeighbors))
-                {
-                    allowedTiles.UnionWith(allowedNeighbors);
-                }
-            }
-            return allowedTiles.ToList();
-        }
 
+        private IndexedSet<Cell> uncollapsedCells = new IndexedSet<Cell>();
         private async UniTask<bool> Step()
         {
-            var uncollapsedCells = _cells.Values.Where(c => !c.IsCollapsed).ToList();
             if (uncollapsedCells.Count == 0) return false;
             
-            Cell cellToCollapse = uncollapsedCells[_random.Next(uncollapsedCells.Count)];
-            cellToCollapse.Collapse(cellToCollapse.SelectRandomTileWithWeights(_random));
+            Cell cellToCollapse = uncollapsedCells.GetRandom(random);
+            cellToCollapse.Collapse(cellToCollapse.SelectRandomTileWithWeights(random));
+
+            uncollapsedCells.Remove(cellToCollapse);
             return await PropagateConstraints(cellToCollapse.Position);
         }
-        private static readonly Direction[] directions = { Direction.Up, Direction.Right, Direction.Down, Direction.Left };
+
+        private readonly HashSet<Vector2Int> processedPositions = new HashSet<Vector2Int>();
+        private readonly Queue<Vector2Int> propagationQueue = new Queue<Vector2Int>();
         private async UniTask<bool> PropagateConstraints(Vector2Int startPos)
         {
-            Queue<Vector2Int> propagationQueue = new Queue<Vector2Int>();
+            propagationQueue.Clear();
+            processedPositions.Clear();
             propagationQueue.Enqueue(startPos);
-            HashSet<Vector2Int> processedPositions = new HashSet<Vector2Int>();
+
+            Shuffle(directions);
             
             int iterations = 0;
-            while (propagationQueue.Count > 0 && iterations < _settings.maxPropagationIterations)
+            int batchSize = 5; 
+
+            while (propagationQueue.Count > 0 && iterations < settings.maxPropagationIterations)
             {
                 iterations++;
                 Vector2Int currentPos = propagationQueue.Dequeue();
 
-                if (!_cells.TryGetValue(currentPos, out var currentCell)) continue;
+                if (!cells.TryGetValue(currentPos, out var currentCell)) continue;
                 processedPositions.Add(currentPos);
-
-                Shuffle(directions);
 
                 for (int i = 0; i < directions.Length; i++)
                 {
                     Vector2Int neighborPos = GetNeighborPosition(currentPos, directions[i]);
                     if (neighborPos == currentPos) continue;
-                    bool isNewCell = !_cells.ContainsKey(neighborPos);
-                    if (isNewCell) _cells[neighborPos] = new Cell(neighborPos, _allTiles);
-                    var neighborCell = _cells[neighborPos];
+                    bool isNewCell = !cells.ContainsKey(neighborPos);
+                    if (isNewCell)
+                    {
+                        if(cells.Count <= settings.maxGeneratedCells)
+                        {
+                            Cell newCell = new Cell(neighborPos, allTiles);
+                            cells[neighborPos] = newCell;
+                            uncollapsedCells.Add(newCell);
+                        }
+                        else
+                            break;
+                    }   
+                    Cell neighborCell = cells[neighborPos];
                     bool changed = neighborCell.ConstrainPossibilities(GetAllowedTilesForDirection(currentCell, directions[i]));
+
+                    if (neighborCell.PossibleTiles.Count == 1 && !neighborCell.IsCollapsed)
+                    {
+                        neighborCell.Collapse(neighborCell.PossibleTiles[0]);
+                        uncollapsedCells.Remove(neighborCell);
+                    }
+
                     if (neighborCell.PossibleTiles.Count == 0) return false;
                     if (isNewCell || (changed && !processedPositions.Contains(neighborPos)))
                     {
                         propagationQueue.Enqueue(neighborPos);
                     }
-                    await UniTask.Delay(_settings.generationDelay);
+                }
+                
+                if (iterations % batchSize == 0)
+                {
+                    await UniTask.Yield(PlayerLoopTiming.Update);
                 }
             }
             return true;
@@ -203,27 +254,28 @@ namespace TheRavine.Generator
         {
             for (int i = span.Length - 1; i > 0; i--)
             {
-                int j = _random.Next(i + 1);
+                int j = random.Next(i + 1);
                 (span[i], span[j]) = (span[j], span[i]);
             }
         }
 
-        private async UniTask RunAlgorithm(CancellationToken cancellationToken)
+        private async UniTask RunAlgorithm(CancellationToken cancellationToken, Vector2Int triggerPosition, TileRuleSO _initialTile = null)
         {
-            _cells.Clear();
-            _result.Clear();
-            for (int attempts = 0; attempts < _settings.maxGenerationAttempts; attempts++)
+            cells.Clear();
+            result.Clear();
+            uncollapsedCells.Clear();
+            for (int attempts = 0; attempts < settings.maxGenerationAttempts; attempts++)
             {
-                Vector2Int startPos = new Vector2Int(_random.Next(_settings.gridSize.x), _random.Next(_settings.gridSize.y));
-                TileRuleSO initialTile = _allTiles[_random.Next(_allTiles.Count)];
-                _cells[startPos] = new Cell(startPos, _allTiles);
-                _cells[startPos].Collapse(initialTile);
+                Vector2Int startPos = triggerPosition != null ? triggerPosition : new Vector2Int(random.Next(settings.gridSize.x), random.Next(settings.gridSize.y));
+                TileRuleSO initialTile = _initialTile != null ? _initialTile : allTiles[random.Next(allTiles.Count)];
+                cells[startPos] = new Cell(startPos, allTiles);
+                cells[startPos].Collapse(initialTile);
                 bool success =  await PropagateConstraints(startPos);
                 int stepCount = 0;
-                while (success && stepCount < _settings.maxGeneratedCells)
+                while (success && stepCount < settings.maxStepIterations)
                 {
                     stepCount++;
-                    await UniTask.Delay(_settings.generationDelay, cancellationToken: cancellationToken);
+                    await UniTask.Delay(settings.generationDelay, cancellationToken: cancellationToken);
                     success = await Step();
                     if (cancellationToken.IsCancellationRequested) return;
                 }
@@ -232,20 +284,24 @@ namespace TheRavine.Generator
 
         private void CreateResultObjects()
         {
-            foreach (var cell in _cells.Values)
+            foreach (var cell in cells.Values)
             {
-                if (cell.IsCollapsed)
+                if (!cell.IsCollapsed && settings.IsGreedyCollapse)
                 {
-                    _result[cell.Position] = cell.CollapsedTile.prefab;
+                    cell.Collapse(cell.SelectRandomTileWithWeights(random));
+                    uncollapsedCells.Remove(cell);
                 }
+                
+                if(cell.IsCollapsed)
+                    result[cell.Position] = cell.CollapsedTile.prefab;
             }
         }
 
-        public async UniTask<Dictionary<Vector2Int, GameObject>> Generate(CancellationToken cancellationToken)
+        public async UniTask<Dictionary<Vector2Int, GameObject>> Generate(CancellationToken cancellationToken, Vector2Int triggerPosition, TileRuleSO initialTile = null)
         {
-            await RunAlgorithm(cancellationToken);
+            await RunAlgorithm(cancellationToken, triggerPosition, initialTile);
             CreateResultObjects();
-            return _result;
+            return result;
         }
     }
 }

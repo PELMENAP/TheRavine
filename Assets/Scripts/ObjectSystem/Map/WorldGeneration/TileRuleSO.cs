@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 
 namespace TheRavine.Generator
 {
@@ -9,7 +10,14 @@ namespace TheRavine.Generator
         public TileRule[] rules;
         public Vector2Int[] connectionPoints;
         
-        [Range(1, 100)]
+        [Range(1, 100), Tooltip("Чем больше вес, тем больше шанс генерации данного тайла.")]
         public int weight = 10;
+    }
+
+    [Serializable]
+    public class TileRule
+    {
+        public Direction direction;
+        public TileRuleSO[] allowedNeighbors;
     }
 }
