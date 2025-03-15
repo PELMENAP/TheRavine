@@ -14,19 +14,16 @@ namespace TheRavine.Generator
     public class StructureGenerator : MonoBehaviour
     {
         [SerializeField] private GenerationSettingsSO _settings;
+        [SerializeField] private Vector2Int startPoint;
         private WaveFunctionCollapseAlgorithm _algorithm;
         private Dictionary<Vector2Int, GameObject> _generatedObjects = new Dictionary<Vector2Int, GameObject>();
         private CancellationTokenSource _cancellationTokenSource;
 
-        private void Awake()
-        {
-            _algorithm = new WaveFunctionCollapseAlgorithm(_settings);
-        }
-
         [Button]
         private void StartGeneration()
         {
-            Generate(new Vector2Int(0, 0)).Forget();
+            if(_algorithm == null) _algorithm = new WaveFunctionCollapseAlgorithm(_settings);
+            Generate(startPoint).Forget();
         }
         
         private void OnDestroy()
@@ -42,13 +39,8 @@ namespace TheRavine.Generator
             _cancellationTokenSource = new CancellationTokenSource();
             
             ClearGeneration();
-            
-            print("start generation");
 
-            var result = await _algorithm.Generate(_cancellationTokenSource.Token);
-            
-            print("end generation");
-            print("количество объектов " + result.Count);
+            var result = await _algorithm.Generate(_cancellationTokenSource.Token, triggerPosition, initialTile);
 
             foreach (var item in result)
             {
@@ -71,7 +63,10 @@ namespace TheRavine.Generator
             {
                 if (obj != null)
                 {
-                    Destroy(obj);
+                    if (Application.isPlaying)
+                        Destroy(obj);
+                    else
+                        DestroyImmediate(obj);
                 }
             }
             

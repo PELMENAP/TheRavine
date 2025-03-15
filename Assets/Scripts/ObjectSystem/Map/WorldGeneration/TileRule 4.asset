@@ -18,9 +18,27 @@ MonoBehaviour:
     allowedNeighbors:
     - {fileID: 11400000, guid: a2b618adf9dffd3ffba5555ef5d324e5, type: 2}
     - {fileID: 11400000, guid: 90ce2250d193e1f39ad8f7660fcc35e2, type: 2}
+    - {fileID: 11400000, guid: f997c275cb1097c8e9a4d25a819116ec, type: 2}
+    - {fileID: 11400000, guid: 4aa4cf36b91e2d44fa67e9b123a66afb, type: 2}
+    - {fileID: 11400000, guid: 840ab4285d238eabc89567c2ae8b07c7, type: 2}
   - direction: 3
     allowedNeighbors:
     - {fileID: 11400000, guid: eaa3fb60b575354c081822fb3d025307, type: 2}
     - {fileID: 11400000, guid: 90ce2250d193e1f39ad8f7660fcc35e2, type: 2}
+    - {fileID: 11400000, guid: f997c275cb1097c8e9a4d25a819116ec, type: 2}
+    - {fileID: 11400000, guid: 90c6c9339a207248c84ff0aedf286700, type: 2}
+    - {fileID: 11400000, guid: 840ab4285d238eabc89567c2ae8b07c7, type: 2}
+  - direction: 1
+    allowedNeighbors:
+    - {fileID: 11400000, guid: 303aea5801a7f1e5fa95c5228c0bc847, type: 2}
+    - {fileID: 11400000, guid: f997c275cb1097c8e9a4d25a819116ec, type: 2}
+    - {fileID: 11400000, guid: 90c6c9339a207248c84ff0aedf286700, type: 2}
+    - {fileID: 11400000, guid: 840ab4285d238eabc89567c2ae8b07c7, type: 2}
+  - direction: 2
+    allowedNeighbors:
+    - {fileID: 11400000, guid: dbc2166e1a731508bb818ff9fb9be39e, type: 2}
+    - {fileID: 11400000, guid: eaa3fb60b575354c081822fb3d025307, type: 2}
+    - {fileID: 11400000, guid: 303aea5801a7f1e5fa95c5228c0bc847, type: 2}
+    - {fileID: 11400000, guid: 4aa4cf36b91e2d44fa67e9b123a66afb, type: 2}
   connectionPoints: []
   weight: 10
