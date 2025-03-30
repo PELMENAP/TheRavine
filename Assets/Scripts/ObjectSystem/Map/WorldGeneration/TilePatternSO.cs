@@ -16,6 +16,5 @@ namespace TheRavine.Generator
     {
         public Vector2Int startOffset;
         public TileRuleSO tile;
-        public Direction rotation;
     }
 }

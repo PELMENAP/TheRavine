@@ -3,14 +3,14 @@ using UnityEngine;
 
 namespace TheRavine.Base
 {
-	public class TimeInvoker : MonoBehaviour
+	public class GameTimeInvoker : MonoBehaviour
 	{
 		public event Action<float> OnUpdateTimeTickedEvent;
 		public event Action<float> OnUpdateTimeUnscaledTickedEvent;
 		public event Action OnOneSyncedSecondTickedEvent;
 		public event Action OnOneSyncedSecondUnscaledTickedEvent;
 
-		public static TimeInvoker Instance
+		public static GameTimeInvoker Instance
 		{
 			get
 			{
@@ -20,7 +20,7 @@ namespace TheRavine.Base
 					{
 						isStatic = true
 					};
-					_instance = go.AddComponent<TimeInvoker>();
+					_instance = go.AddComponent<GameTimeInvoker>();
 					DontDestroyOnLoad(go);
 				}
 
@@ -28,7 +28,7 @@ namespace TheRavine.Base
 			}
 		}
 
-		private static TimeInvoker _instance;
+		private static GameTimeInvoker _instance;
 
 		private void Start()
 		{

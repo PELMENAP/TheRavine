@@ -6,122 +6,136 @@ namespace TheRavine.Extensions
 {
     public class PriorityQueue<TElement, TPriority>
     {
-        private readonly struct Node
-        {
-            public readonly TElement Element;
-            public readonly TPriority Priority;
+        private readonly List<(TElement element, TPriority priority)> elements = new List<(TElement, TPriority)>();
+        private readonly IComparer<TPriority> comparer;
 
-            public Node(TElement element, TPriority priority)
-            {
-                Element = element;
-                Priority = priority;
-            }
+        public PriorityQueue() : this(Comparer<TPriority>.Default)
+        {
         }
 
-        private readonly List<Node> _heap = new List<Node>();
-        private readonly IComparer<TPriority> _comparer;
-
-        public int Count => _heap.Count;
-
-        public PriorityQueue(int capacity = 0) : this(capacity, Comparer<TPriority>.Default) { }
-
-        public PriorityQueue(int capacity, IComparer<TPriority> comparer)
+        public PriorityQueue(IComparer<TPriority> comparer)
         {
-            _heap = new List<Node>(capacity);
-            _comparer = comparer ?? Comparer<TPriority>.Default;
+            this.comparer = comparer ?? Comparer<TPriority>.Default;
         }
+
+        public int Count => elements.Count;
 
         public void Enqueue(TElement element, TPriority priority)
         {
-            _heap.Add(new Node(element, priority));
-            SiftUp(_heap.Count - 1);
+            elements.Add((element, priority));
+            int i = elements.Count - 1;
+
+            while (i > 0)
+            {
+                int parent = (i - 1) / 2;
+                if (comparer.Compare(elements[parent].priority, elements[i].priority) <= 0)
+                    break;
+
+                var temp = elements[i];
+                elements[i] = elements[parent];
+                elements[parent] = temp;
+                i = parent;
+            }
         }
 
         public TElement Dequeue()
         {
-            if (_heap.Count == 0)
+            if (elements.Count == 0)
                 throw new InvalidOperationException("Queue is empty");
 
-            var top = _heap[0];
-            _heap[0] = _heap[_heap.Count - 1];
-            _heap.RemoveAt(_heap.Count - 1);
-            SiftDown(0);
-            return top.Element;
-        }
+            var result = elements[0].element;
+            int lastIndex = elements.Count - 1;
+            elements[0] = elements[lastIndex];
+            elements.RemoveAt(lastIndex);
 
-        public TElement Peek()
-        {
-            if (_heap.Count == 0)
-                throw new InvalidOperationException("Queue is empty");
-            
-            return _heap[0].Element;
-        }
-
-        public void UpdatePriority(TElement element, TPriority newPriority)
-        {
-            for (int i = 0; i < _heap.Count; i++)
+            lastIndex--;
+            if (lastIndex > 0)
             {
-                if (EqualityComparer<TElement>.Default.Equals(_heap[i].Element, element))
+                int i = 0;
+                while (true)
                 {
-                    var oldPriority = _heap[i].Priority;
-                    _heap[i] = new Node(element, newPriority);
+                    int smallest = i;
+                    int left = 2 * i + 1;
+                    int right = 2 * i + 2;
 
-                    if (_comparer.Compare(newPriority, oldPriority) < 0)
-                        SiftUp(i);
-                    else
-                        SiftDown(i);
+                    if (left <= lastIndex && comparer.Compare(elements[left].priority, elements[smallest].priority) < 0)
+                        smallest = left;
 
-                    return;
+                    if (right <= lastIndex && comparer.Compare(elements[right].priority, elements[smallest].priority) < 0)
+                        smallest = right;
+
+                    if (smallest == i)
+                        break;
+
+                    var temp = elements[i];
+                    elements[i] = elements[smallest];
+                    elements[smallest] = temp;
+                    i = smallest;
                 }
             }
+
+            return result;
         }
 
-        public void Clear()
+        public bool TryPeek(out TElement element, out TPriority priority)
         {
-            _heap.Clear();
-        }
-
-        private void SiftUp(int index)
-        {
-            while (index > 0)
+            if (elements.Count > 0)
             {
-                int parentIndex = (index - 1) / 2;
-                if (Compare(index, parentIndex) >= 0) break;
+                element = elements[0].element;
+                priority = elements[0].priority;
+                return true;
+            }
 
-                Swap(index, parentIndex);
-                index = parentIndex;
+            element = default;
+            priority = default;
+            return false;
+        }
+    }
+
+
+    public class CircularBuffer<T> : IEnumerable<T>
+    {
+        private readonly T[] buffer;
+        private int start;
+        private int end;
+        private int count;
+
+        public int Count => count;
+        public int Capacity => buffer.Length;
+
+        public CircularBuffer(int capacity)
+        {
+            buffer = new T[capacity];
+            start = 0;
+            end = 0;
+            count = 0;
+        }
+
+        public void Add(T item)
+        {
+            buffer[end] = item;
+            end = (end + 1) % buffer.Length;
+
+            if (count == buffer.Length)
+            {
+                start = (start + 1) % buffer.Length;
+            }
+            else
+            {
+                count++;
             }
         }
 
-        private void SiftDown(int index)
+        public IEnumerator<T> GetEnumerator()
         {
-            while (true)
+            if (count == 0) yield break;
+
+            for (int i = 0; i < count; i++)
             {
-                int leftChild = 2 * index + 1;
-                int rightChild = 2 * index + 2;
-                int smallest = index;
-
-                if (leftChild < _heap.Count && Compare(leftChild, smallest) < 0)
-                    smallest = leftChild;
-
-                if (rightChild < _heap.Count && Compare(rightChild, smallest) < 0)
-                    smallest = rightChild;
-
-                if (smallest == index) break;
-
-                Swap(index, smallest);
-                index = smallest;
+                yield return buffer[(start + i) % buffer.Length];
             }
         }
 
-        private int Compare(int i, int j) => 
-            _comparer.Compare(_heap[i].Priority, _heap[j].Priority);
-
-        private void Swap(int i, int j)
-        {
-            var temp = _heap[i];
-            _heap[i] = _heap[j];
-            _heap[j] = temp;
-        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

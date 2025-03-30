@@ -8,7 +8,6 @@ namespace TheRavine.Generator
     {
         public GameObject prefab;
         public TileRule[] rules;
-        public Vector2Int[] connectionPoints;
         
         [Range(1, 100), Tooltip("Чем больше вес, тем больше шанс генерации данного тайла.")]
         public int weight = 10;

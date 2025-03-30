@@ -52,7 +52,7 @@ namespace TheRavine.Inventory
                 isDragging = false;
                 eventData.position = mouse.position.ReadValue();
                 eventSystem.RaycastAll(eventData, results);
-                for (byte i = 0; i < results.Count; i++)
+                for (int i = 0; i < results.Count; i++)
                 {
                     var otherSlotUI = (UIInventorySlot)results[i].gameObject.GetComponent("UIInventorySlot");
                     if (otherSlotUI == null) continue;
@@ -70,14 +70,14 @@ namespace TheRavine.Inventory
                 isDragging = true;
                 eventData.position = mouse.position.ReadValue();
                 eventSystem.RaycastAll(eventData, results);
-                for (byte i = 0; i < results.Count; i++)
+                for (int i = 0; i < results.Count; i++)
                 {
                     // Debug.Log("Hit UI element: " + result.gameObject);
                     lastSlot = (UIInventorySlot)results[i].gameObject.GetComponent("UIInventorySlot");
                     if (lastSlot == null || lastSlot.slot.isEmpty) continue;
                     if(_uiInventory == null) return;
-                    var slotTranform = lastSlot._uiInventoryItem._rectTransform.parent;
-                    slotTranform.SetAsLastSibling();
+                    var slotTransform = lastSlot._uiInventoryItem._rectTransform.parent;
+                    slotTransform.SetAsLastSibling();
                     lastSlot._uiInventoryItem._canvasGroup.blocksRaycasts = false;
                     Dragging().Forget();
                     text.text = lastSlot.slot.item.info.description;
@@ -98,14 +98,14 @@ namespace TheRavine.Inventory
                     case TouchPhase.Began:
                         eventData.position = touch.screenPosition;
                         eventSystem.RaycastAll(eventData, results);
-                        for (byte i = 0; i < results.Count; i++)
+                        for (int i = 0; i < results.Count; i++)
                         {
                             // Debug.Log("Hit UI element: " + result.gameObject);
                             lastSlot = (UIInventorySlot)results[i].gameObject.GetComponent("UIInventorySlot");
                             if (lastSlot == null || lastSlot.slot.isEmpty) continue;
                             if(_uiInventory == null) return;
-                            var slotTranform = lastSlot._uiInventoryItem._rectTransform.parent;
-                            slotTranform.SetAsLastSibling();
+                            var slotTransform = lastSlot._uiInventoryItem._rectTransform.parent;
+                            slotTransform.SetAsLastSibling();
                             lastSlot._uiInventoryItem._canvasGroup.blocksRaycasts = false;
                             text.text = lastSlot.slot.item.info.description;
                             image.sprite = lastSlot.slot.item.info.infoSprite;
@@ -122,7 +122,7 @@ namespace TheRavine.Inventory
                         if(_uiInventory == null) return;
                         eventData.position = touch.screenPosition;
                         eventSystem.RaycastAll(eventData, results);
-                        for (byte i = 0; i < results.Count; i++)
+                        for (int i = 0; i < results.Count; i++)
                         {
                             var otherSlotUI = (UIInventorySlot)results[i].gameObject.GetComponent("UIInventorySlot");
                             if (otherSlotUI == null)

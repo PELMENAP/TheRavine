@@ -1,0 +1,196 @@
+﻿using UnityEngine;
+using TMPro;
+using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
+using System.Threading;
+using System.Linq;
+
+public class PriceChart : MonoBehaviour
+{
+    [Header("Маркет")]
+    public Market market;
+    public string trackedItem = "Gold";
+    
+    [Header("Настройки графика")]
+    public LineRenderer lineRenderer;
+    public int maxPoints = 200;
+    public float updateInterval = 1f;
+    
+    [Header("Размеры области графика")]
+    public float graphWidth = 10f;   // Ширина графика в единицах Unity
+    public float graphHeight = 5f;   // Высота графика в единицах Unity
+    public Vector2 graphOffset = Vector2.zero; // Смещение графика относительно позиции объекта
+    
+    [Header("Отображение текста")]
+    public TextMeshProUGUI totalLotsText;
+    public TextMeshProUGUI buyLotsText;
+    public TextMeshProUGUI sellLotsText;
+    public string numberFormat = "N0"; // Формат отображения чисел
+    
+    private Queue<float> priceHistory = new Queue<float>();
+    private float minPrice = float.MaxValue;
+    private float maxPrice = float.MinValue;
+    private bool needsRescaling = true;
+    
+    private CancellationTokenSource cancellationToken;
+
+    private void Start()
+    {
+        cancellationToken = new CancellationTokenSource();
+        
+        ConfigureLineRenderer();
+
+        Tick().Forget();
+    }
+    
+    private void ConfigureLineRenderer()
+    {
+        if (lineRenderer != null)
+        {
+            lineRenderer.useWorldSpace = false;
+            lineRenderer.alignment = LineAlignment.TransformZ;
+            lineRenderer.positionCount = 0;
+            
+            // Установка ширины линии
+            lineRenderer.startWidth = 0.1f;
+            lineRenderer.endWidth = 0.1f;
+        }
+    }
+    
+    public void AddPrice(float price)
+    {
+        if (price <= 0)
+            return;
+            
+        if (priceHistory.Count >= maxPoints)
+        {
+            float oldestPrice = priceHistory.Dequeue();
+            
+            if (oldestPrice == minPrice || oldestPrice == maxPrice)
+            {
+                needsRescaling = true;
+            }
+        }
+
+        priceHistory.Enqueue(price);
+        
+        if (price < minPrice || minPrice == float.MaxValue)
+        {
+            minPrice = price;
+            needsRescaling = true;
+        }
+        
+        if (price > maxPrice || maxPrice == float.MinValue)
+        {
+            maxPrice = price;
+            needsRescaling = true;
+        }
+        
+        UpdateGraph();
+    }
+    private void UpdateGraph()
+    {
+        if (lineRenderer == null || priceHistory.Count == 0)
+            return;
+            
+        if (needsRescaling && priceHistory.Count > 1)
+        {
+            minPrice = priceHistory.Min();
+            maxPrice = priceHistory.Max();
+            needsRescaling = false;
+        }
+        
+        lineRenderer.positionCount = priceHistory.Count;
+        
+        float priceRange = maxPrice - minPrice;
+        if (priceRange <= 0.001f)
+        {
+            priceRange = maxPrice * 0.1f;
+            if (priceRange <= 0.001f) priceRange = 1f;
+        }
+        
+        float[] prices = priceHistory.ToArray();
+        
+        for (int i = 0; i < prices.Length; i++)
+        {
+            float normalizedX = (float)i / (maxPoints - 1);
+            
+            float normalizedY = (prices[i] - minPrice) / priceRange;
+            
+            float x = normalizedX * graphWidth + graphOffset.x;
+            float y = normalizedY * graphHeight + graphOffset.y;
+            
+            lineRenderer.SetPosition(i, new Vector3(x, y, 0));
+        }
+    }
+    private async UniTaskVoid Tick()
+    {
+        while(!cancellationToken.Token.IsCancellationRequested)
+        {
+            await UniTask.Delay(1000, cancellationToken: cancellationToken.Token);
+
+            float averagePrice = market.GetMarketCore().GetAveragePrice(trackedItem);
+            AddPrice(averagePrice);
+            
+            UpdateLotsInfo(market?.GetMarketCore());
+        }
+    }
+    private void UpdateLotsInfo(MarketCore marketCore)
+    {
+        if (marketCore == null) return;
+        
+        UpdateTotalLotsText(marketCore.GetTotalLots());
+        UpdateBuyLotsText(marketCore.GetBuyLotCount(trackedItem));
+        UpdateSellLotsText(marketCore.GetSellLotCount(trackedItem));
+    }
+    public void UpdateTotalLotsText(int count)
+    {
+        if (totalLotsText != null)
+        {
+            totalLotsText.text = $"Всего лотов: {count.ToString(numberFormat)}";
+        }
+    }
+    public void UpdateBuyLotsText(int count)
+    {
+        if (buyLotsText != null)
+        {
+            buyLotsText.text = $"Покупка: {count.ToString(numberFormat)}";
+        }
+    }
+    public void UpdateSellLotsText(int count)
+    {
+        if (sellLotsText != null)
+        {
+            sellLotsText.text = $"Продажа: {count.ToString(numberFormat)}";
+        }
+    }
+    public void ClearHistory()
+    {
+        priceHistory.Clear();
+        minPrice = float.MaxValue;
+        maxPrice = float.MinValue;
+        
+        if (lineRenderer != null)
+        {
+            lineRenderer.positionCount = 0;
+        }
+    }
+    public void SetTrackedItem(string itemId)
+    {
+        cancellationToken?.Cancel();
+        cancellationToken?.Dispose();
+        cancellationToken = new CancellationTokenSource();
+
+        if (string.IsNullOrEmpty(itemId))
+            return;
+            
+        trackedItem = itemId;
+        ClearHistory();
+        Tick().Forget();
+    }
+    private void OnDestroy()
+    {
+        cancellationToken?.Cancel();
+        cancellationToken?.Dispose();
+    }
+}

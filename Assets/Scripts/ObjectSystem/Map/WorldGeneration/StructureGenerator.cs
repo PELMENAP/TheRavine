@@ -15,15 +15,16 @@ namespace TheRavine.Generator
     {
         [SerializeField] private GenerationSettingsSO _settings;
         [SerializeField] private Vector2Int startPoint;
+        [SerializeField] private TilePatternSO initialPattern;
         private WaveFunctionCollapseAlgorithm _algorithm;
         private Dictionary<Vector2Int, GameObject> _generatedObjects = new Dictionary<Vector2Int, GameObject>();
         private CancellationTokenSource _cancellationTokenSource;
-
+        
         [Button]
         private void StartGeneration()
         {
             if(_algorithm == null) _algorithm = new WaveFunctionCollapseAlgorithm(_settings);
-            Generate(startPoint).Forget();
+            Generate(startPoint, initialPattern).Forget();
         }
         
         private void OnDestroy()
@@ -32,7 +33,7 @@ namespace TheRavine.Generator
             _cancellationTokenSource?.Dispose();
         }
         
-        public async UniTask<Dictionary<Vector2Int, GameObject>> Generate(Vector2Int triggerPosition, TileRuleSO initialTile = null)
+        public async UniTask<Dictionary<Vector2Int, GameObject>> Generate(Vector2Int triggerPosition, TilePatternSO initialPattern, TileRuleSO initialTile = null)
         {
             _cancellationTokenSource?.Cancel();
             _cancellationTokenSource?.Dispose();
@@ -40,7 +41,7 @@ namespace TheRavine.Generator
             
             ClearGeneration();
 
-            var result = await _algorithm.Generate(_cancellationTokenSource.Token, triggerPosition, initialTile);
+            var result = await _algorithm.Generate(_cancellationTokenSource.Token, triggerPosition, initialTile, initialPattern);
 
             foreach (var item in result)
             {

@@ -2,7 +2,6 @@ using System.IO;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-
 public class Logger : ILogger
 {
     private string logFilePath;
@@ -10,12 +9,18 @@ public class Logger : ILogger
     private HashSet<string> loggedErrors = new HashSet<string>();
     private byte criticalErrorNumber, maxCriticalNumber = 5;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private bool isDebugBuild = true;
+#else
+    private bool isDebugBuild = false;
+#endif
+
     public Logger(Action<string> onMessageDisplayTerminal, string logFileName = "game_log.txt")
     {
         criticalErrorNumber = 0;
         this.onMessageDisplayTerminal = onMessageDisplayTerminal;
         logFilePath = Path.Combine(Application.persistentDataPath, logFileName);
-        File.WriteAllText(logFilePath, "Game Log Started\n");
+        File.WriteAllText(logFilePath, $"Game Log Started: {DateTime.Now}\n");
     }
 
     public void LogError(string message)
@@ -23,11 +28,20 @@ public class Logger : ILogger
         if (loggedErrors.Contains(message))
         {
             criticalErrorNumber++;
+            
+            if(criticalErrorNumber > maxCriticalNumber)
+                StopApplication();
+                
             return;
         }
 
         string logMessage = $"[ERROR] {message}";
-        Debug.LogError(logMessage);
+        
+        if (isDebugBuild)
+        {
+            Debug.LogError(logMessage);
+        }
+        
         WriteToFile(logMessage);
         DisplayInGameConsole(logMessage);
 
@@ -40,7 +54,12 @@ public class Logger : ILogger
     public void LogWarning(string message)
     {
         string logMessage = $"[WARNING] {message}";
-        Debug.LogWarning(logMessage);
+        
+        if (isDebugBuild)
+        {
+            Debug.LogWarning(logMessage);
+        }
+        
         WriteToFile(logMessage);
         DisplayInGameConsole(logMessage);
     }
@@ -48,33 +67,51 @@ public class Logger : ILogger
     public void LogInfo(string message)
     {
         string logMessage = $"[INFO] {message}";
-        Debug.Log(logMessage);
+        
+        if (isDebugBuild)
+        {
+            Debug.Log(logMessage);
+        }
+        
         WriteToFile(logMessage);
         DisplayInGameConsole(logMessage);
     }
-
     private void WriteToFile(string message)
     {
         try
         {
-            File.AppendAllText(logFilePath, $"{System.DateTime.Now}: {message}\n");
+            File.AppendAllText(logFilePath, $"{DateTime.Now}: {message}\n");
         }
         catch (Exception ex)
         {
-            Debug.LogError($"Failed to write to log file: {ex.Message}");
+            if (isDebugBuild)
+            {
+                Debug.LogError($"Failed to write to log file: {ex.Message}");
+            }
+            
+            if (onMessageDisplayTerminal != null)
+            {
+                onMessageDisplayTerminal.Invoke($"[ERROR] Failed to write to log file: {ex.Message}");
+            }
         }
     }
 
     private void DisplayInGameConsole(string message)
     {
         if(onMessageDisplayTerminal == null)
+        {
             WriteToFile("[ERROR] onMessageDisplayTerminal action not exist");
+        }
         else
+        {
             onMessageDisplayTerminal.Invoke(message);
+        }
     }
 
     private void StopApplication()
     {
+        WriteToFile("[CRITICAL] Too many critical errors occurred. Application will now close.");
+        
         #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
         #else

@@ -16,13 +16,13 @@ MonoBehaviour:
   delayFactor: 3
   nearTheTarget: 30
   distanceOfTargetFromPlayer: 200
-  entityPrefab: {fileID: 0}
   destinationThreshold: 30
   avoidanceThreshold: 5
   alongThreshold: 10
+  cellSize: 10
   velocityLimit: 15
   accelerationWeights:
     x: 10
     y: 10
     z: 10
-  flip: {x: 0, y: 180, z: 0}
+  flip: {x: 0, y: 180, z: 0, w: 0}

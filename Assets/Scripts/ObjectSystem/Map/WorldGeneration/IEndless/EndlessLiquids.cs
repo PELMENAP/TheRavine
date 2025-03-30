@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 
+using TheRavine.Extensions;
+
 
 
 namespace TheRavine.Generator
@@ -20,14 +22,21 @@ namespace TheRavine.Generator
                 generator = _generator;
             }
             private bool[,] grid = new bool[countOfQuads, countOfQuads];
-            private int[,] curChunkHeightMap;
+            private bool[,] visited = new bool[countOfQuads, countOfQuads];
+            private List<Edge> verticalEdges = new List<Edge>(), horizontalEdges = new List<Edge>();
+            private List<Vector2Int> polygon = new List<Vector2Int>();
             public void UpdateChunk(Vector2Int Vposition)
             {
+                Array.Clear(visited, 0, visited.Length);
+                polygon.Clear();
+                verticalEdges.Clear();
+                horizontalEdges.Clear();
+                
                 for (int xOffset = -chunkScale; xOffset <= chunkScale; xOffset++)
                 {
                     for (int yOffset = -chunkScale; yOffset <= chunkScale; yOffset++)
                     {
-                        curChunkHeightMap = generator.GetMapData(new Vector2Int(Vposition.x + xOffset, Vposition.y + yOffset)).heightMap;
+                        int[,] curChunkHeightMap = generator.GetMapData(new Vector2Int(Vposition.x + xOffset, Vposition.y + yOffset)).heightMap;
                         for (int x = 0; x < mapChunkSize; x++)
                             for (int y = 0; y < mapChunkSize; y++)
                                 grid[(xOffset + chunkScale) * mapChunkSize + x, (yOffset + chunkScale) * mapChunkSize + y] = curChunkHeightMap[x, y] <= MapGenerator.waterLevel;
@@ -36,40 +45,82 @@ namespace TheRavine.Generator
                 GenerateMesh();
                 generator.waterT.position = new((Vposition.x - 1) * generationSize, (Vposition.y - 1) * generationSize);
             }
-            private bool[,] visited = new bool[countOfQuads, countOfQuads];
-            private float maxTriangleEdgeSize = 10000f;
             private void GenerateMesh()
             {
-                visited = new bool[countOfQuads, countOfQuads];
-                List<Vector2Int> polygon = ExtractPolygons(true);
-                List<Vector2Int> holes = ExtractPolygons(false);
+                ExtractPolygons();
+                ExtractHoleSegments();
 
-                Debug.Log(polygon.Count + "  " + holes.Count);
+                DebugHelper.DrawPoints(polygon, Color.green, 5f, 0.1f);
+                foreach (var hole in verticalEdges)
+                    DebugHelper.DrawSegment(hole.P1, hole.P2, Color.red);   
+                foreach (var hole in horizontalEdges)
+                    DebugHelper.DrawSegment(hole.P1, hole.P2, Color.blue);   
+                Debug.Log(polygon.Count + "  " + verticalEdges.Count + "  " + horizontalEdges.Count);
 
-                Mesh mesh = BowyerWatsonTriangulation.GenerateMesh(polygon, holes, maxTriangleEdgeSize);
+                BowyerWatsonTriangulation bowyerWatsonTriangulation = new();
+                Mesh mesh = bowyerWatsonTriangulation.GenerateMesh(polygon, verticalEdges, horizontalEdges);
 
                 generator.waterF.mesh = mesh;
             }
-            private List<Vector2Int> ExtractPolygons(bool isPolygon)
-            {
-                List<Vector2Int> polygon = new List<Vector2Int>();
 
-                for (int x = 1; x < countOfQuads; x+=2)
+            private void ExtractHoleSegments()
+            {   
+                Vector2Int[,] holeStarts = new Vector2Int[2, countOfQuads];
+                bool[] inProcess = new bool[countOfQuads];
+                
+                for (int i = 0; i < 2; i++) 
                 {
-                    for (int y = 1; y < countOfQuads; y+=2)
+                    for (int primary = 4; primary < countOfQuads - 4; primary += 4)
                     {
-                        if ((grid[x, y] == isPolygon) && !visited[x, y])
+                        inProcess[primary] = false;
+                        
+                        for (int secondary = 1; secondary + 1 < countOfQuads; secondary++)
                         {
-                            FloodFill(x, y, polygon, isPolygon);
+                            int x = i == 0 ? primary : secondary;
+                            int y = i == 0 ? secondary : primary;
+                            
+                            bool isHole = !grid[x, y] && !grid[x + (i == 0 ? 0 : 1), y + (i == 0 ? 1 : 0)] && !grid[x - (i == 0 ? 0 : 1), y - (i == 0 ? 1 : 0)];
+                            
+                            if (isHole && !inProcess[primary])
+                            {
+                                holeStarts[i, primary] = new Vector2Int(x, y);
+                                inProcess[primary] = true;
+                            }
+                            else if (inProcess[primary] && !isHole)
+                            {
+                                Vector2Int start = holeStarts[i, primary];
+                                Vector2Int end = new Vector2Int(i == 0 ? x : secondary - 1, i == 0 ? secondary - 1 : y);
+                                
+                                (i == 0 ? verticalEdges : horizontalEdges).Add(new Edge(start * scale, end * scale));
+                                inProcess[primary] = false;
+                            }
+                        }
+                        
+                        if (inProcess[primary])
+                        {
+                            Vector2Int start = holeStarts[i, primary];
+                            Vector2Int end = new Vector2Int(i == 0 ? primary : countOfQuads, i == 0 ? countOfQuads : primary);
+                            (i == 0 ? verticalEdges : horizontalEdges).Add(new Edge(start * scale, end * scale));
                         }
                     }
                 }
-                return polygon;
             }
 
-            private int farDistance = 2;
- 
-            private void FloodFill(int x, int y, List<Vector2Int> polygon, bool isPolygon)
+            private void ExtractPolygons() // search the true field
+            {
+                for (int x = 1; x < countOfQuads; x+=4)
+                {
+                    for (int y = 1; y < countOfQuads; y+=4)
+                    {
+                        if (grid[x, y] && !visited[x, y])
+                        {
+                            FloodFill(x, y);
+                        }
+                    }
+                }
+            }
+            private int tooFarToRender = 2;
+            private void FloodFill(int x, int y) // need cache the defaults Vectior2Int
             {
                 Stack<Vector2Int> stack = new Stack<Vector2Int>();
                 stack.Push(new Vector2Int(x, y));
@@ -77,26 +128,13 @@ namespace TheRavine.Generator
                 while (stack.Count > 0)
                 {
                     Vector2Int point = stack.Pop();
-                    if (point.x - farDistance < 0 || point.x + farDistance >= countOfQuads || point.y - farDistance < 0 || point.y + farDistance >= countOfQuads || visited[point.x, point.y] || grid[point.x, point.y] != isPolygon)
+                    if (point.x - tooFarToRender < 0 || point.x + tooFarToRender >= countOfQuads || point.y - tooFarToRender < 0 || point.y + tooFarToRender >= countOfQuads || visited[point.x, point.y] || !grid[point.x, point.y])
                         continue;
 
                     visited[point.x, point.y] = true;
-
-                    // if (!isPolygon)
-                    //     if ((point.x + 1 < countOfQuads && grid[point.x + 1, point.y]) ||
-                    //         (point.x - 1 >= 0 && grid[point.x - 1, point.y]) ||
-                    //         (point.y + 1 < countOfQuads && grid[point.x, point.y + 1]) ||
-                    //         (point.y - 1 >= 0 && grid[point.x, point.y - 1]))
-                    //             continue;
                     
-                    if(isPolygon)
-                    {
-                        if(IsBorder(point, !isPolygon))
-                            polygon.Add(point * scale);
-                    }
-                    else
-                        if(IsNotSoFar(point))
-                            polygon.Add(point * scale);
+                    if(IsBorderExtra(point.x, point.y))
+                        polygon.Add(point * scale);
 
                     stack.Push(new Vector2Int(point.x + 1, point.y));
                     stack.Push(new Vector2Int(point.x - 1, point.y));
@@ -106,49 +144,55 @@ namespace TheRavine.Generator
             }
 
 
-            private bool IsBorder(Vector2Int point, bool isPolygon)
+            private bool IsBorderExtra(int x, int y)
             {
-                return ((grid[point.x + 1, point.y] == isPolygon) ||
-                    (grid[point.x - 1, point.y] == isPolygon) ||
-                    (grid[point.x, point.y + 1] == isPolygon) ||
-                    (grid[point.x, point.y - 1] == isPolygon));
-            }
-
-            private bool IsNotSoFar(Vector2Int point)
-            {
-                return (grid[point.x + farDistance, point.y]) ||
-                        (grid[point.x - farDistance, point.y]) ||
-                        (grid[point.x, point.y + farDistance]) ||
-                        (grid[point.x, point.y - farDistance]);
+                int countOfNeighbours = 0;
+                countOfNeighbours += grid[x + 1, y] ? 0 : 1;
+                countOfNeighbours += grid[x - 1, y] ? 0 : 1;
+                countOfNeighbours += grid[x + 1, y + 1] ? 0 : 1;
+                countOfNeighbours += grid[x - 1, y - 1] ? 0 : 1;
+                countOfNeighbours += grid[x + 1, y - 1] ? 0 : 1;
+                countOfNeighbours += grid[x - 1, y + 1] ? 0 : 1;
+                countOfNeighbours += grid[x, y + 1] ? 0 : 1;
+                countOfNeighbours += grid[x, y - 1] ? 0 : 1;
+                // return countOfNeighbours == 1 || countOfNeighbours > 3;
+                return countOfNeighbours > 0;
             }
         }
 
-        public static class BowyerWatsonTriangulation
+
+
+
+
+
+
+
+
+
+        public class BowyerWatsonTriangulation
         {
-            public static Mesh GenerateMesh(List<Vector2Int> points, List<Vector2Int> holes, float maxTriangleEdgeSize)
+            public Mesh GenerateMesh(List<Vector2Int> points, List<Edge> verticalEdges, List<Edge> horizontalEdges)
             {
-                var triangles = Triangulate(points, holes, maxTriangleEdgeSize);
+                List<Triangle> triangles = Triangulate(points, verticalEdges, horizontalEdges);
+
                 int pointCount = points.Count;
                 int triangleCount = triangles.Count;
-                
+
                 Vector3[] vertices = new Vector3[pointCount];
                 Vector2[] uvs = new Vector2[pointCount];
                 int[] indices = new int[triangleCount * 3];
-                
-                var vertexIndexMap = new Dictionary<Vector2Int, int>(pointCount);
-                
-                float minX = points[0].x, minY = points[0].y, 
-                    maxX = points[0].x, maxY = points[0].y;
-                
-                for (int i = 1; i < points.Count; i++)
+                Dictionary<Vector2Int, int> vertexIndexMap = new Dictionary<Vector2Int, int>(pointCount);
+
+                float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+
+                foreach (var p in points)
                 {
-                    var p = points[i];
-                    minX = Mathf.Min(minX, p.x);
-                    minY = Mathf.Min(minY, p.y);
-                    maxX = Mathf.Max(maxX, p.x);
-                    maxY = Mathf.Max(maxY, p.y);
+                    if (p.x < minX) minX = p.x;
+                    if (p.y < minY) minY = p.y;
+                    if (p.x > maxX) maxX = p.x;
+                    if (p.y > maxY) maxY = p.y;
                 }
-                
+
                 int index = 0;
                 foreach (var tri in triangles)
                 {
@@ -156,47 +200,46 @@ namespace TheRavine.Generator
                     indices[index++] = GetVertexIndex(tri.B, vertices, uvs, vertexIndexMap, minX, minY, maxX, maxY);
                     indices[index++] = GetVertexIndex(tri.C, vertices, uvs, vertexIndexMap, minX, minY, maxX, maxY);
                 }
-                
-                var mesh = new Mesh
+
+                Mesh mesh = new Mesh
                 {
                     vertices = vertices,
                     triangles = indices,
                     uv = uvs
                 };
-                
+                mesh.RecalculateNormals();
+                mesh.RecalculateBounds();
+
                 return mesh;
             }
-            
-            private static int GetVertexIndex(Vector2Int point, Vector3[] vertices, Vector2[] uvs, 
-                Dictionary<Vector2Int, int> vertexIndexMap, float minX, float minY, float maxX, float maxY)
+
+            private int GetVertexIndex(Vector2Int point, Vector3[] vertices, Vector2[] uvs, Dictionary<Vector2Int, int> vertexIndexMap,
+                                    float minX, float minY, float maxX, float maxY)
             {
                 if (!vertexIndexMap.TryGetValue(point, out int index))
                 {
                     index = vertexIndexMap.Count;
                     vertices[index] = new Vector3(point.x, point.y, 0);
-                    uvs[index] = new Vector2(
-                        (point.x - minX) / (maxX - minX), 
-                        (point.y - minY) / (maxY - minY)
-                    );
+                    uvs[index] = new Vector2((point.x - minX) / (maxX - minX), (point.y - minY) / (maxY - minY));
                     vertexIndexMap[point] = index;
                 }
                 return index;
             }
-            
-            private static List<Triangle> Triangulate(List<Vector2Int> points, List<Vector2Int> holes, float maxTriangleEdgeSize)
+
+            private List<Triangle> Triangulate(List<Vector2Int> points, List<Edge> verticalEdges, List<Edge> horizontalEdges)
             {
-                var resultTriangles = new List<Triangle>(points.Count * 2);
-                var superTriangle = CreateSuperTriangle(points);
+                List<Triangle> resultTriangles = new List<Triangle>(points.Count * 2);
+                Triangle superTriangle = CreateSuperTriangle(points);
                 resultTriangles.Add(superTriangle);
-                
-                var badTriangles = new List<Triangle>();
-                var polygon = new List<Edge>();
-                
+
+                List<Triangle> badTriangles = new List<Triangle>();
+                List<Edge> polygon = new List<Edge>();
+
                 foreach (var point in points)
                 {
                     badTriangles.Clear();
                     polygon.Clear();
-                    
+
                     for (int i = resultTriangles.Count - 1; i >= 0; i--)
                     {
                         if (resultTriangles[i].CircumcircleContains(point))
@@ -205,79 +248,97 @@ namespace TheRavine.Generator
                             resultTriangles.RemoveAt(i);
                         }
                     }
-                    
-                    for (int i = 0; i < badTriangles.Count; i++)
+
+                    foreach (var tri in badTriangles)
                     {
-                        var tri = badTriangles[i];
                         polygon.Add(new Edge(tri.A, tri.B));
                         polygon.Add(new Edge(tri.B, tri.C));
                         polygon.Add(new Edge(tri.C, tri.A));
                     }
-                    
+
                     RemoveDuplicateEdges(polygon);
-                    
+
                     foreach (var edge in polygon)
                         resultTriangles.Add(new Triangle(edge.P1, edge.P2, point));
                 }
-                
-                resultTriangles.RemoveAll(t => 
-                    t.HasVertex(superTriangle.A) || 
-                    t.HasVertex(superTriangle.B) || 
-                    t.HasVertex(superTriangle.C) || 
-                    IsInsideHole(t, holes) || 
-                    t.TooLargeEdge(maxTriangleEdgeSize)
-                );
-                
+
+                resultTriangles.RemoveAll(t => t.HasVertex(superTriangle.A) ||
+                                            t.HasVertex(superTriangle.B) ||
+                                            t.HasVertex(superTriangle.C) ||
+                                            IsInsideHole(t, verticalEdges, horizontalEdges));
+
                 return resultTriangles;
             }
-            
-            private static Triangle CreateSuperTriangle(List<Vector2Int> points)
+
+            private Triangle CreateSuperTriangle(List<Vector2Int> points)
             {
-                int minX = points[0].x, minY = points[0].y, 
-                    maxX = points[0].x, maxY = points[0].y;
-                
-                for (int i = 1; i < points.Count; i++)
+                int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
+                foreach (var p in points)
                 {
-                    var p = points[i];
-                    minX = Mathf.Min(minX, p.x);
-                    minY = Mathf.Min(minY, p.y);
-                    maxX = Mathf.Max(maxX, p.x);
-                    maxY = Mathf.Max(maxY, p.y);
+                    if (p.x < minX) minX = p.x;
+                    if (p.y < minY) minY = p.y;
+                    if (p.x > maxX) maxX = p.x;
+                    if (p.y > maxY) maxY = p.y;
                 }
-                
+
                 int deltaMax = Mathf.Max(maxX - minX, maxY - minY) * 2;
-                
-                return new Triangle(
-                    new Vector2Int(minX - deltaMax, minY - deltaMax),
-                    new Vector2Int(maxX + deltaMax, minY - deltaMax),
-                    new Vector2Int((minX + maxX) / 2, maxY + deltaMax)
-                );
+                return new Triangle(new Vector2Int(minX - deltaMax, minY - deltaMax),
+                                    new Vector2Int(maxX + deltaMax, minY - deltaMax),
+                                    new Vector2Int((minX + maxX) / 2, maxY + deltaMax));
             }
-            
-            private static bool IsInsideHole(Triangle t, List<Vector2Int> holes)
+
+            private bool IsInsideHole(Triangle t, List<Edge> verticalEdges, List<Edge> horizontalEdges) // lists of edges already sorted (maybe using SortedList?)
             {
-                for (int i = 0; i < holes.Count; i++)
+                int minX = Mathf.Min(t.A.x, t.B.x, t.C.x);
+                int maxX = Mathf.Max(t.A.x, t.B.x, t.C.x);
+                int minY = Mathf.Min(t.A.y, t.B.y, t.C.y);
+                int maxY = Mathf.Max(t.A.y, t.B.y, t.C.y);
+
+                int vStart = verticalEdges.BinarySearch(new Edge(new Vector2Int(minX, 0), new Vector2Int(minX, 0)), EdgeXComparer.Instance);
+                int vEnd = verticalEdges.BinarySearch(new Edge(new Vector2Int(maxX, 0), new Vector2Int(maxX, 0)), EdgeXComparer.Instance);
+                
+                vStart = vStart < 0 ? ~vStart : vStart;
+                vEnd = vEnd < 0 ? ~vEnd : vEnd;
+
+                for (int i = vStart; i < vEnd && i < verticalEdges.Count; i++)
                 {
-                    if (t.ContainsPoint(holes[i])) return true;
+                    if (IntersectTE.IsIntersecting(t, verticalEdges[i]))
+                        return true;
                 }
+
+                int hStart = horizontalEdges.BinarySearch(new Edge(new Vector2Int(0, minY), new Vector2Int(0, minY)), EdgeYComparer.Instance);
+                int hEnd = horizontalEdges.BinarySearch(new Edge(new Vector2Int(0, maxY), new Vector2Int(0, maxY)), EdgeYComparer.Instance);
+                
+                hStart = hStart < 0 ? ~hStart : hStart;
+                hEnd = hEnd < 0 ? ~hEnd : hEnd;
+
+                for (int i = hStart; i < hEnd && i < horizontalEdges.Count; i++)
+                {
+                    if (IntersectTE.IsIntersecting(t, horizontalEdges[i]))
+                        return true;
+                }
+
                 return false;
             }
-            
+
             private static void RemoveDuplicateEdges(List<Edge> edges)
             {
-                for (int i = edges.Count - 1; i >= 0; i--)
+                var uniqueEdges = new HashSet<Edge>();
+                var duplicates = new List<Edge>();
+                
+                foreach (var edge in edges)
                 {
-                    for (int j = i - 1; j >= 0; j--)
-                    {
-                        if (edges[i].Equals(edges[j]))
-                        {
-                            edges.RemoveAt(i);
-                            edges.RemoveAt(j);
-                            i--;
-                            break;
-                        }
-                    }
+                    if (!uniqueEdges.Add(edge))
+                        duplicates.Add(edge);
                 }
+                
+                foreach (var duplicate in duplicates)
+                {
+                    uniqueEdges.Remove(duplicate);
+                }
+                
+                edges.Clear();
+                edges.AddRange(uniqueEdges);
             }
         }
 
@@ -337,62 +398,100 @@ namespace TheRavine.Generator
             {
                 return p == A || p == B || p == C;
             }
-
-            public bool ContainsPoint(Vector2Int p)
-            {
-                float factor = (B.y - C.y) * (A.x - C.x) + (C.x - B.x) * (A.y - C.y);
-                if (Mathf.Abs(factor) < 1e-6) return false;
-
-                bool IsInside(Vector2 point)
-                {
-                    float w1 = ((B.y - C.y) * (point.x - C.x) + (C.x - B.x) * (point.y - C.y)) / factor;
-                    float w2 = ((C.y - A.y) * (point.x - C.x) + (A.x - C.x) * (point.y - C.y)) / factor;
-                    float w3 = 1 - w1 - w2;
-                    return w1 >= 0 && w2 >= 0 && w3 >= 0;
-                }
-
-                if (IsInside(p)) return true;
-                float offset = 0.25f;
-                return IsInside(new Vector2(p.x + offset, p.y)) ||
-                    IsInside(new Vector2(p.x - offset, p.y)) ||
-                    IsInside(new Vector2(p.x, p.y + offset)) ||
-                    IsInside(new Vector2(p.x, p.y - offset));
-            }
-
-            public bool TooLargeEdge(float maxTriangleEdgeSize)
-            {
-                float maxEdgeSizeSquared = maxTriangleEdgeSize * maxTriangleEdgeSize;
-                return (A - B).sqrMagnitude > maxEdgeSizeSquared ||
-                    (C - B).sqrMagnitude > maxEdgeSizeSquared ||
-                    (A - C).sqrMagnitude > maxEdgeSizeSquared;
-            }
         }
 
 
         public class Edge
         {
             public Vector2Int P1, P2;
-
+            
+            private readonly int hashCode;
+            
             public Edge(Vector2Int p1, Vector2Int p2)
             {
-                P1 = p1;
-                P2 = p2;
+                if (Compare(p1, p2) < 0)
+                {
+                    P1 = p1;
+                    P2 = p2;
+                }
+                else
+                {
+                    P1 = p2;
+                    P2 = p1;
+                }
+                hashCode = P1.GetHashCode() ^ (P2.GetHashCode() * 397);
             }
-
+            private static int Compare(Vector2Int a, Vector2Int b)
+            {
+                if (a.x != b.x) return a.x.CompareTo(b.x);
+                return a.y.CompareTo(b.y);
+            }
+            
             public override bool Equals(object obj)
             {
-                if (obj is Edge other)
-                {
-                    return (P1 == other.P1 && P2 == other.P2) || (P1 == other.P2 && P2 == other.P1);
-                }
-                return false;
+                if (!(obj is Edge other)) return false;
+                return P1.Equals(other.P1) && P2.Equals(other.P2);
             }
-
+            
             public override int GetHashCode()
             {
-                return P1.GetHashCode() ^ P2.GetHashCode();
+                return hashCode;
             }
         }
-        
+
+        class EdgeXComparer : IComparer<Edge>
+        {
+            public static readonly EdgeXComparer Instance = new EdgeXComparer();
+            public int Compare(Edge a, Edge b) => a.P1.x.CompareTo(b.P1.x);
+        }
+
+        class EdgeYComparer : IComparer<Edge>
+        {
+            public static readonly EdgeYComparer Instance = new EdgeYComparer();
+            public int Compare(Edge a, Edge b) => a.P1.y.CompareTo(b.P1.y);
+        }
+
+
+        public static class IntersectTE
+        {
+            public static bool IsIntersecting(Triangle triangle, Edge edge)
+            {
+                if (DoEdgesIntersect(edge.P1, edge.P2, triangle.A, triangle.B) ||
+                    DoEdgesIntersect(edge.P1, edge.P2, triangle.B, triangle.C) ||
+                    DoEdgesIntersect(edge.P1, edge.P2, triangle.C, triangle.A))
+                {
+                    return true;
+                }
+
+                return false;
+            }
+            private static float Cross(Vector2Int a, Vector2Int b, Vector2Int c)
+            {
+                return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+            }
+
+            private static bool DoEdgesIntersect(Vector2Int p1, Vector2Int p2, Vector2Int p3, Vector2Int p4)
+            {
+                float d1 = Cross(p3, p4, p1);
+                float d2 = Cross(p3, p4, p2);
+                float d3 = Cross(p1, p2, p3);
+                float d4 = Cross(p1, p2, p4);
+
+                if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0)))
+                    return true;
+
+                if (Mathf.Abs(d1) < 1e-6f && OnSegment(p3, p4, p1)) return true;
+                if (Mathf.Abs(d2) < 1e-6f && OnSegment(p3, p4, p2)) return true;
+                if (Mathf.Abs(d3) < 1e-6f && OnSegment(p1, p2, p3)) return true;
+                if (Mathf.Abs(d4) < 1e-6f && OnSegment(p1, p2, p4)) return true;
+
+                return false;
+            }
+            private static bool OnSegment(Vector2Int p1, Vector2Int p2, Vector2Int p)
+            {
+                return p.x >= Mathf.Min(p1.x, p2.x) && p.x <= Mathf.Max(p1.x, p2.x) &&
+                    p.y >= Mathf.Min(p1.y, p2.y) && p.y <= Mathf.Max(p1.y, p2.y);
+            }
+        }
     }
 }

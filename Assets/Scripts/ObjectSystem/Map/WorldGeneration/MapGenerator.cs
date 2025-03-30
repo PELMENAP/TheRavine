@@ -117,7 +117,6 @@ namespace TheRavine.Generator
                 for (int j = -scale; j < scale; j++)
                 {
                     Vector2Int centre = new(i, j);
-                    // Debug.Log(centre);
                     mapData[centre] = GenerateMapData(centre);
                     await UniTask.Delay(50);
                 }
@@ -403,7 +402,11 @@ namespace TheRavine.Generator
             endless[2].UpdateChunk(position);
         }
 
-        private Vector2Int GetPlayerPosition() => Extension.RoundVector2D((viewer.position - new Vector3(generationSize, generationSize) / 2) / (generationSize));
+        private Vector2Int GetPlayerPosition()
+        {
+            if(viewer == null) return Vector2Int.zero;
+            else return Extension.RoundVector2D((viewer.position - new Vector3(generationSize, generationSize) / 2) / (generationSize));
+        }
         public float rotateValue = 0f, rotateTarget = 0f;
 
         public void BreakUp(ISetAble.Callback callback)

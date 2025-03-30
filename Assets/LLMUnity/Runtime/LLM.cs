@@ -1,167 +1,226 @@
+/// @file
+/// @brief File implementing the LLM.
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 
 namespace LLMUnity
 {
-    [DefaultExecutionOrder(-2)]
-    public class LLM : LLMClient
+    [DefaultExecutionOrder(-1)]
+    /// @ingroup llm
+    /// <summary>
+    /// Class implementing the LLM server.
+    /// </summary>
+    public class LLM : MonoBehaviour
     {
+        /// <summary> show/hide advanced options in the GameObject </summary>
+        [Tooltip("show/hide advanced options in the GameObject")]
+        [HideInInspector] public bool advancedOptions = false;
+        /// <summary> enable remote server functionality </summary>
+        [Tooltip("enable remote server functionality")]
+        [LocalRemote] public bool remote = false;
+        /// <summary> port to use for the remote LLM server </summary>
+        [Tooltip("port to use for the remote LLM server")]
+        [Remote] public int port = 13333;
         /// <summary> number of threads to use (-1 = all) </summary>
-        [Server] public int numThreads = -1;
+        [Tooltip("number of threads to use (-1 = all)")]
+        [LLM] public int numThreads = -1;
         /// <summary> number of model layers to offload to the GPU (0 = GPU not used).
-        /// Use a large number i.e. >30 to utilise the GPU as much as possible.
         /// If the user's GPU is not supported, the LLM will fall back to the CPU </summary>
-        [Server] public int numGPULayers = 0;
-        /// <summary> number of prompts that can happen in parallel (-1 = number of LLM/LLMClient objects) </summary>
-        [ServerAdvanced] public int parallelPrompts = -1;
-        /// <summary> select to log the output of the LLM in the Unity Editor. </summary>
-        [ServerAdvanced] public bool debug = false;
-        /// <summary> allows to start the server asynchronously.
-        /// This is useful to not block Unity while the server is initialised.
-        /// For example it can be used as follows:
-        /// \code
-        /// void Start(){
-        ///     StartCoroutine(Loading());
-        ///     ...
-        /// }
-        ///
-        /// IEnumerator<string> Loading()
-        /// {
-        ///     // show loading screen
-        ///     while (!llm.serverListening)
-        ///     {
-        ///         yield return null;
-        ///     }
-        ///     Debug.Log("Server is ready");
-        /// }
-        /// \endcode
-        /// </summary>
-        [ServerAdvanced] public bool asynchronousStartup = false;
-        /// <summary> select to allow remote access to the server. </summary>
-        [ServerAdvanced] public bool remote = false;
-        /// <summary> Select to kill existing servers created by the package at startup.
-        /// Useful in case of game crashes where the servers didn't have the chance to terminate</summary>
-        [ServerAdvanced] public bool killExistingServersOnStart = true;
-
-        /// <summary> the path of the model being used (relative to the Assets/StreamingAssets folder).
-        /// Models with .gguf format are allowed.</summary>
-        [Model] public string model = "";
-        /// <summary> the path of the LORA model being used (relative to the Assets/StreamingAssets folder).
-        /// Models with .bin format are allowed.</summary>
-        [ModelAddonAdvanced] public string lora = "";
+        [Tooltip("number of model layers to offload to the GPU (0 = GPU not used). If the user's GPU is not supported, the LLM will fall back to the CPU")]
+        [LLM] public int numGPULayers = 0;
+        /// <summary> log the output of the LLM in the Unity Editor. </summary>
+        [Tooltip("log the output of the LLM in the Unity Editor.")]
+        [LLM] public bool debug = false;
+        /// <summary> number of prompts that can happen in parallel (-1 = number of LLMCaller objects) </summary>
+        [Tooltip("number of prompts that can happen in parallel (-1 = number of LLMCaller objects)")]
+        [LLMAdvanced] public int parallelPrompts = -1;
+        /// <summary> do not destroy the LLM GameObject when loading a new Scene. </summary>
+        [Tooltip("do not destroy the LLM GameObject when loading a new Scene.")]
+        [LLMAdvanced] public bool dontDestroyOnLoad = true;
         /// <summary> Size of the prompt context (0 = context size of the model).
         /// This is the number of tokens the model can take as input when generating responses. </summary>
-        [ModelAdvanced] public int contextSize = 512;
+        [Tooltip("Size of the prompt context (0 = context size of the model). This is the number of tokens the model can take as input when generating responses.")]
+        [DynamicRange("minContextLength", "maxContextLength", false), Model] public int contextSize = 8192;
         /// <summary> Batch size for prompt processing. </summary>
+        [Tooltip("Batch size for prompt processing.")]
         [ModelAdvanced] public int batchSize = 512;
         /// <summary> Boolean set to true if the server has started and is ready to receive requests, false otherwise. </summary>
-        public bool serverListening { get; private set; } = false;
-        /// <summary> Boolean set to true if the server as well as the client functionality has fully started, false otherwise. </summary>
-        public bool serverStarted { get; private set; } = false;
+        public bool started { get; protected set; } = false;
+        /// <summary> Boolean set to true if the server has failed to start. </summary>
+        public bool failed { get; protected set; } = false;
+        /// <summary> Boolean set to true if the models were not downloaded successfully. </summary>
+        public static bool modelSetupFailed { get; protected set; } = false;
+        /// <summary> Boolean set to true if the server has started and is ready to receive requests, false otherwise. </summary>
+        public static bool modelSetupComplete { get; protected set; } = false;
+        /// <summary> LLM model to use (.gguf format) </summary>
+        [Tooltip("LLM model to use (.gguf format)")]
+        [ModelAdvanced] public string model = "";
+        /// <summary> Chat template for the model </summary>
+        [Tooltip("Chat template for the model")]
+        [ModelAdvanced] public string chatTemplate = ChatTemplate.DefaultTemplate;
+        /// <summary> LORA models to use (.gguf format) </summary>
+        [Tooltip("LORA models to use (.gguf format)")]
+        [ModelAdvanced] public string lora = "";
+        /// <summary> the weights of the LORA models being used.</summary>
+        [Tooltip("the weights of the LORA models being used.")]
+        [ModelAdvanced] public string loraWeights = "";
+        /// <summary> enable use of flash attention </summary>
+        [Tooltip("enable use of flash attention")]
+        [ModelExtras] public bool flashAttention = false;
+        /// <summary> API key to use for the server </summary>
+        [Tooltip("API key to use for the server")]
+        public string APIKey;
+
+        // SSL certificate
+        [SerializeField]
+        private string SSLCert = "";
+        public string SSLCertPath = "";
+        // SSL key
+        [SerializeField]
+        private string SSLKey = "";
+        public string SSLKeyPath = "";
 
         /// \cond HIDE
-        [HideInInspector] public readonly (string, string)[] modelOptions = new(string, string)[]
-        {
-            ("Download model", null),
-            ("Mistral 7B Instruct v0.2 (medium, best overall)", "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf?download=true"),
-            ("OpenHermes 2.5 7B (medium, best for conversation)", "https://huggingface.co/TheBloke/OpenHermes-2.5-Mistral-7B-GGUF/resolve/main/openhermes-2.5-mistral-7b.Q4_K_M.gguf?download=true"),
-            ("Phi 2 (small, decent)", "https://huggingface.co/TheBloke/phi-2-GGUF/resolve/main/phi-2.Q4_K_M.gguf?download=true"),
-        };
-        public int SelectedModel = 0;
-        private static readonly string serverZipUrl = "https://github.com/Mozilla-Ocho/llamafile/releases/download/0.6.2/llamafile-0.6.2.zip";
-        private static readonly string server = LLMUnitySetup.GetAssetPath("llamafile-0.6.2.exe");
-        private static readonly string apeARMUrl = "https://cosmo.zip/pub/cosmos/bin/ape-arm64.elf";
-        private static readonly string apeARM = LLMUnitySetup.GetAssetPath("ape-arm64.elf");
-        private static readonly string apeX86_64Url = "https://cosmo.zip/pub/cosmos/bin/ape-x86_64.elf";
-        private static readonly string apeX86_64 = LLMUnitySetup.GetAssetPath("ape-x86_64.elf");
+        public int minContextLength = 0;
+        public int maxContextLength = 0;
 
-        [HideInInspector] public static float binariesProgress = 1;
-        [HideInInspector] public float modelProgress = 1;
-        [HideInInspector] public float modelCopyProgress = 1;
-        [HideInInspector] public bool modelHide = true;
-        private static float binariesDone = 0;
-        private Process process;
-        private bool mmapCrash = false;
-        private ManualResetEvent serverBlock = new ManualResetEvent(false);
-        static object crashKillLock = new object();
-        static bool crashKill = false;
+        IntPtr LLMObject = IntPtr.Zero;
+        List<LLMCaller> clients = new List<LLMCaller>();
+        LLMLib llmlib;
+        StreamWrapper logStreamWrapper = null;
+        Thread llmThread = null;
+        List<StreamWrapper> streamWrappers = new List<StreamWrapper>();
+        public LLMManager llmManager = new LLMManager();
+        private readonly object startLock = new object();
+        static readonly object staticLock = new object();
+        public LoraManager loraManager = new LoraManager();
+        string loraPre = "";
+        string loraWeightsPre = "";
+        public bool embeddingsOnly = false;
+        public int embeddingLength = 0;
+
         /// \endcond
 
-#if UNITY_EDITOR
-        [InitializeOnLoadMethod]
-        private static async Task InitializeOnLoad()
+        public LLM()
         {
-            // Perform download when the build is finished
-            await SetupBinaries();
+            LLMManager.Register(this);
         }
 
-        private static async Task SetupBinaries()
+        void OnValidate()
         {
-            if (binariesProgress < 1) return;
-            binariesProgress = 0;
-            binariesDone = 0;
-            if (!File.Exists(apeARM)) await LLMUnitySetup.DownloadFile(apeARMUrl, apeARM, false, true, null, SetBinariesProgress);
-            binariesDone += 1;
-            if (!File.Exists(apeX86_64)) await LLMUnitySetup.DownloadFile(apeX86_64Url, apeX86_64, false, true, null, SetBinariesProgress);
-            binariesDone += 1;
-            if (!File.Exists(server))
+            if (lora != loraPre || loraWeights != loraWeightsPre)
             {
-                string serverZip = Path.Combine(Application.temporaryCachePath, "llamafile.zip");
-                await LLMUnitySetup.DownloadFile(serverZipUrl, serverZip, true, false, null, SetBinariesProgress);
-                binariesDone += 1;
-
-                using (ZipArchive archive = ZipFile.OpenRead(serverZip))
-                {
-                    foreach (ZipArchiveEntry entry in archive.Entries)
-                    {
-                        if (entry.Name == "llamafile")
-                        {
-                            AssetDatabase.StartAssetEditing();
-                            entry.ExtractToFile(server, true);
-                            AssetDatabase.StopAssetEditing();
-                            break;
-                        }
-                    }
-                }
-                File.Delete(serverZip);
-                binariesDone += 1;
+                loraManager.FromStrings(lora, loraWeights);
+                (loraPre, loraWeightsPre) = (lora, loraWeights);
             }
-            binariesProgress = 1;
         }
 
-        static void SetBinariesProgress(float progress)
+        /// <summary>
+        /// The Unity Awake function that starts the LLM server.
+        /// </summary>
+        public async void Awake()
         {
-            binariesProgress = binariesDone / 4f + 1f / 4f * progress;
+            if (!enabled) return;
+#if !UNITY_EDITOR
+            modelSetupFailed = !await LLMManager.Setup();
+#endif
+            modelSetupComplete = true;
+            if (modelSetupFailed)
+            {
+                failed = true;
+                return;
+            }
+            string arguments = GetLlamaccpArguments();
+            if (arguments == null)
+            {
+                failed = true;
+                return;
+            }
+            await Task.Run(() => StartLLMServer(arguments));
+            if (!started) return;
+            if (dontDestroyOnLoad) DontDestroyOnLoad(transform.root.gameObject);
+        }
+
+        /// <summary>
+        /// Allows to wait until the LLM is ready
+        /// </summary>
+        public async Task WaitUntilReady()
+        {
+            while (!started) await Task.Yield();
+        }
+
+        /// <summary>
+        /// Allows to wait until the LLM models are downloaded and ready
+        /// </summary>
+        /// <param name="downloadProgressCallback">function to call with the download progress (float)</param>
+        public static async Task<bool> WaitUntilModelSetup(Callback<float> downloadProgressCallback = null)
+        {
+            if (downloadProgressCallback != null) LLMManager.downloadProgressCallbacks.Add(downloadProgressCallback);
+            while (!modelSetupComplete) await Task.Yield();
+            return !modelSetupFailed;
         }
 
         /// \cond HIDE
-        public void DownloadModel(int optionIndex)
+        public static string GetLLMManagerAsset(string path)
         {
-            // download default model and disable model editor properties until the model is set
-            SelectedModel = optionIndex;
-            string modelUrl = modelOptions[optionIndex].Item2;
-            if (modelUrl == null) return;
-            modelProgress = 0;
-            string modelName = Path.GetFileName(modelUrl).Split("?")[0];
-            string modelPath = LLMUnitySetup.GetAssetPath(modelName);
-            Task downloadTask = LLMUnitySetup.DownloadFile(modelUrl, modelPath, false, false, SetModel, SetModelProgress);
+#if UNITY_EDITOR
+            if (!EditorApplication.isPlaying) return GetLLMManagerAssetEditor(path);
+#endif
+            return GetLLMManagerAssetRuntime(path);
+        }
+
+        public static string GetLLMManagerAssetEditor(string path)
+        {
+            // empty
+            if (string.IsNullOrEmpty(path)) return path;
+            // LLMManager - return location the file will be stored in StreamingAssets
+            ModelEntry modelEntry = LLMManager.Get(path);
+            if (modelEntry != null) return modelEntry.filename;
+            // StreamingAssets - return relative location within StreamingAssets
+            string assetPath = LLMUnitySetup.GetAssetPath(path); // Note: this will return the full path if a full path is passed
+            string basePath = LLMUnitySetup.GetAssetPath();
+            if (File.Exists(assetPath))
+            {
+                if (LLMUnitySetup.IsSubPath(assetPath, basePath)) return LLMUnitySetup.RelativePath(assetPath, basePath);
+            }
+            // full path
+            if (!File.Exists(assetPath))
+            {
+                LLMUnitySetup.LogError($"Model {path} was not found.");
+            }
+            else
+            {
+                string errorMessage = $"The model {path} was loaded locally. You can include it in the build in one of these ways:";
+                errorMessage += $"\n-Copy the model inside the StreamingAssets folder and use its StreamingAssets path";
+                errorMessage += $"\n-Load the model with the model manager inside the LLM GameObject and use its filename";
+                LLMUnitySetup.LogWarning(errorMessage);
+            }
+            return path;
+        }
+
+        public static string GetLLMManagerAssetRuntime(string path)
+        {
+            // empty
+            if (string.IsNullOrEmpty(path)) return path;
+            // LLMManager
+            string managerPath = LLMManager.GetAssetPath(path);
+            if (!string.IsNullOrEmpty(managerPath) && File.Exists(managerPath)) return managerPath;
+            // StreamingAssets
+            string assetPath = LLMUnitySetup.GetAssetPath(path);
+            if (File.Exists(assetPath)) return assetPath;
+            // download path
+            assetPath = LLMUnitySetup.GetDownloadAssetPath(path);
+            if (File.Exists(assetPath)) return assetPath;
+            // give up
+            return path;
         }
 
         /// \endcond
-
-        void SetModelProgress(float progress)
-        {
-            modelProgress = progress;
-        }
 
         /// <summary>
         /// Allows to set the model used by the LLM.
@@ -169,343 +228,621 @@ namespace LLMUnity
         /// Models supported are in .gguf format.
         /// </summary>
         /// <param name="path">path to model to use (.gguf format)</param>
-        public async Task SetModel(string path)
+        public void SetModel(string path)
         {
-            // set the model and enable the model editor properties
-            modelCopyProgress = 0;
-            model = await LLMUnitySetup.AddAsset(path, LLMUnitySetup.GetAssetPath());
-            SetTemplate(ChatTemplate.FromGGUF(path));
-            EditorUtility.SetDirty(this);
-            modelCopyProgress = 1;
-        }
-
-        public override void SetTemplate(string templateName)
-        {
-            base.SetTemplate(templateName);
-            List<LLMClient> list = GetListeningClients();
-            for (int i = 0; i < list.Count; i++)
+            model = GetLLMManagerAsset(path);
+            if (!string.IsNullOrEmpty(model))
             {
-                LLMClient client = list[i];
-                client.SetTemplate(templateName);
+                ModelEntry modelEntry = LLMManager.Get(model);
+                if (modelEntry == null) modelEntry = new ModelEntry(GetLLMManagerAssetRuntime(model));
+                SetTemplate(modelEntry.chatTemplate);
+
+                maxContextLength = modelEntry.contextLength;
+                if (contextSize > maxContextLength) contextSize = maxContextLength;
+                SetEmbeddings(modelEntry.embeddingLength, modelEntry.embeddingOnly);
+                if (contextSize == 0 && modelEntry.contextLength > 32768)
+                {
+                    LLMUnitySetup.LogWarning($"The model {path} has very large context size ({modelEntry.contextLength}), consider setting it to a smaller value (<=32768) to avoid filling up the RAM");
+                }
             }
+#if UNITY_EDITOR
+            if (!EditorApplication.isPlaying) EditorUtility.SetDirty(this);
+#endif
         }
 
         /// <summary>
         /// Allows to set a LORA model to use in the LLM.
         /// The model provided is copied to the Assets/StreamingAssets folder that allows it to also work in the build.
-        /// Models supported are in .bin format.
+        /// Models supported are in .gguf format.
         /// </summary>
-        /// <param name="path">path to LORA model to use (.bin format)</param>
-        public async Task SetLora(string path)
+        /// <param name="path">path to LORA model to use (.gguf format)</param>
+        public void SetLora(string path, float weight = 1)
         {
-            // set the lora and enable the model editor properties
-            modelCopyProgress = 0;
-            lora = await LLMUnitySetup.AddAsset(path, LLMUnitySetup.GetAssetPath());
-            EditorUtility.SetDirty(this);
-            modelCopyProgress = 1;
-        }
-
-#endif
-
-        List<LLMClient> GetListeningClients()
-        {
-            List<LLMClient> clients = new List<LLMClient>();
-            LLMClient[] array = FindObjectsOfType<LLMClient>();
-            for (int i = 0; i < array.Length; i++)
-            {
-                LLMClient client = array[i];
-                if (client.GetType() == typeof(LLM)) continue;
-                if (client.host == host && client.port == port)
-                {
-                    clients.Add(client);
-                }
-            }
-            return clients;
-        }
-
-        void KillServersAfterUnityCrash()
-        {
-            lock (crashKillLock) {
-                if (crashKill) return;
-                LLMUnitySetup.KillServerAfterUnityCrash(server);
-                crashKill = true;
-            }
+            AssertNotStarted();
+            loraManager.Clear();
+            AddLora(path, weight);
         }
 
         /// <summary>
-        /// The Unity Awake function that initializes the state before the application starts.
-        /// The following actions are executed:
-        /// - existing servers are killed (if killExistingServersOnStart=true)
-        /// - the LLM server is started (async if asynchronousStartup, synchronous otherwise)
-        /// Additionally the Awake of the LLMClient is called to initialise the client part of the LLM object.
+        /// Allows to add a LORA model to use in the LLM.
+        /// The model provided is copied to the Assets/StreamingAssets folder that allows it to also work in the build.
+        /// Models supported are in .gguf format.
         /// </summary>
-        new public IEnumerator Start()
+        /// <param name="path">path to LORA model to use (.gguf format)</param>
+        public void AddLora(string path, float weight = 1)
         {
-            if (killExistingServersOnStart) KillServersAfterUnityCrash();
-            if (asynchronousStartup)
-            {
-                yield return StartCoroutine(StartLLMServer());
-            }
-            else _ = StartLLMServer();
-            base.Awake();
-            serverStarted = true;
+            AssertNotStarted();
+            loraManager.Add(path, weight);
+            UpdateLoras();
         }
 
-        private string SelectApeBinary()
+        /// <summary>
+        /// Allows to remove a LORA model from the LLM.
+        /// Models supported are in .gguf format.
+        /// </summary>
+        /// <param name="path">path to LORA model to remove (.gguf format)</param>
+        public void RemoveLora(string path)
         {
-            // select the corresponding APE binary for the system architecture
-            string arch = LLMUnitySetup.RunProcess("uname", "-m");
-            // Debug.Log($"architecture: {arch}");
-            string apeExe;
-            if (arch.Contains("arm64") || arch.Contains("aarch64"))
-            {
-                apeExe = apeARM;
-            }
-            else
-            {
-                apeExe = apeX86_64;
-                // if (!arch.Contains("x86_64"))
-                //     Debug.Log($"Unknown architecture of processor {arch}! Falling back to x86_64");
-            }
-            return apeExe;
+            AssertNotStarted();
+            loraManager.Remove(path);
+            UpdateLoras();
         }
 
-        private void DebugLog(string message, bool logError = false)
+        /// <summary>
+        /// Allows to remove all LORA models from the LLM.
+        /// </summary>
+        public void RemoveLoras()
         {
-            // Debug log if debug is enabled
-            if (!debug || message == null) return;
-            if (logError) Debug.LogError(message);
-            else Debug.Log(message);
+            AssertNotStarted();
+            loraManager.Clear();
+            UpdateLoras();
         }
 
-        private void ProcessError(string message)
+        /// <summary>
+        /// Allows to change the weight (scale) of a LORA model in the LLM.
+        /// </summary>
+        /// <param name="path">path of LORA model to change (.gguf format)</param>
+        /// <param name="weight">weight of LORA</param>
+        public void SetLoraWeight(string path, float weight)
         {
-            // Debug log errors if debug is enabled
-            DebugLog(message, true);
-            if (message.Contains("assert(!isnan(x)) failed"))
-            {
-                mmapCrash = true;
-            }
+            loraManager.SetWeight(path, weight);
+            UpdateLoras();
+            if (started) ApplyLoras();
         }
 
-        private void CheckIfListening(string message)
+        /// <summary>
+        /// Allows to change the weights (scale) of the LORA models in the LLM.
+        /// </summary>
+        /// <param name="loraToWeight">Dictionary (string, float) mapping the path of LORA models with weights to change</param>
+        public void SetLoraWeights(Dictionary<string, float> loraToWeight)
         {
-            // Read the output of the llm binary and check if the server has been started and listening
-            DebugLog(message);
-            if (serverListening) return;
-            try
-            {
-                ServerStatus status = JsonUtility.FromJson<ServerStatus>(message);
-                if (status.message == "model loaded")
-                {
-                    // Debug.Log("LLM Server started!");
-                    serverListening = true;
-                    serverBlock.Set();
-                }
-            }
-            catch {}
+            foreach (KeyValuePair<string, float> entry in loraToWeight) loraManager.SetWeight(entry.Key, entry.Value);
+            UpdateLoras();
+            if (started) ApplyLoras();
         }
 
-        private void ProcessExited(object sender, EventArgs e)
+        public void UpdateLoras()
         {
-            serverListening = false;
-            serverBlock.Set();
+            (lora, loraWeights) = loraManager.ToStrings();
+            (loraPre, loraWeightsPre) = (lora, loraWeights);
+#if UNITY_EDITOR
+            if (!EditorApplication.isPlaying) EditorUtility.SetDirty(this);
+#endif
         }
 
-        private string EscapeSpaces(string input)
+        /// <summary>
+        /// Set the chat template for the LLM.
+        /// </summary>
+        /// <param name="templateName">the chat template to use. The available templates can be found in the ChatTemplate.templates.Keys array </param>
+        public void SetTemplate(string templateName, bool setDirty = true)
         {
-            if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
-                return input.Replace(" ", "\" \"");
-            if (input.Contains(" "))
-                return $"'{input}'";
-            return input;
+            chatTemplate = templateName;
+            if (started) llmlib?.LLM_SetTemplate(LLMObject, chatTemplate);
+#if UNITY_EDITOR
+            if (setDirty && !EditorApplication.isPlaying) EditorUtility.SetDirty(this);
+#endif
         }
 
-        private void RunServerCommand(string exe, string args)
+        /// <summary>
+        /// Set LLM Embedding parameters
+        /// </summary>
+        /// <param name="embeddingLength"> number of embedding dimensions </param>
+        /// <param name="embeddingsOnly"> if true, the LLM will be used only for embeddings </param>
+        public void SetEmbeddings(int embeddingLength, bool embeddingsOnly)
         {
-            string binary = exe;
-            string arguments = args;
-            if (Application.platform == RuntimePlatform.LinuxEditor || Application.platform == RuntimePlatform.LinuxPlayer)
-            {
-                arguments = $"{EscapeSpaces(binary)} {arguments}";
-                binary = SelectApeBinary();
-                LLMUnitySetup.makeExecutable(binary);
-            }
-            else if (Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.OSXPlayer)
-            {
-                arguments = $"-c \"{EscapeSpaces(binary)} {arguments}\"";
-                binary = "sh";
-            }
-            // Debug.Log($"Server command: {binary} {arguments}");
-            process = LLMUnitySetup.CreateProcess(binary, arguments, CheckIfListening, ProcessError, ProcessExited);
+            this.embeddingsOnly = embeddingsOnly;
+            this.embeddingLength = embeddingLength;
+#if UNITY_EDITOR
+            if (!EditorApplication.isPlaying) EditorUtility.SetDirty(this);
+#endif
         }
 
-        private IEnumerator StartLLMServer()
-        {
-            bool portInUse = true;
-            if (asynchronousStartup)
-            {
-                yield return StartCoroutine(IsServerReachableCoroutine(5, result => portInUse = result));
-            }
-            else
-            {
-                portInUse = IsServerReachable();
-            }
-            if (portInUse)
-            {
-                Debug.LogError($"Port {port} is already in use, please use another port or kill all llamafile processes using it!");
-                yield break;
-            }
+        /// \cond HIDE
 
+        string ReadFileContents(string path)
+        {
+            if (String.IsNullOrEmpty(path)) return "";
+            else if (!File.Exists(path))
+            {
+                LLMUnitySetup.LogError($"File {path} not found!");
+                return "";
+            }
+            return File.ReadAllText(path);
+        }
+
+        /// \endcond
+
+        /// <summary>
+        /// Use a SSL certificate for the LLM server.
+        /// </summary>
+        /// <param name="templateName">the SSL certificate path </param>
+        public void SetSSLCert(string path)
+        {
+            SSLCertPath = path;
+            SSLCert = ReadFileContents(path);
+        }
+
+        /// <summary>
+        /// Use a SSL key for the LLM server.
+        /// </summary>
+        /// <param name="templateName">the SSL key path </param>
+        public void SetSSLKey(string path)
+        {
+            SSLKeyPath = path;
+            SSLKey = ReadFileContents(path);
+        }
+
+        /// <summary>
+        /// Returns the chat template of the LLM.
+        /// </summary>
+        /// <returns>chat template of the LLM</returns>
+        public string GetTemplate()
+        {
+            return chatTemplate;
+        }
+
+        protected virtual string GetLlamaccpArguments()
+        {
             // Start the LLM server in a cross-platform way
+            if ((SSLCert != "" && SSLKey == "") || (SSLCert == "" && SSLKey != ""))
+            {
+                LLMUnitySetup.LogError($"Both SSL certificate and key need to be provided!");
+                return null;
+            }
+
             if (model == "")
             {
-                Debug.LogError("No model file provided!");
-                yield break;
+                LLMUnitySetup.LogError("No model file provided!");
+                return null;
             }
-            string modelPath = LLMUnitySetup.GetAssetPath(model);
+            string modelPath = GetLLMManagerAssetRuntime(model);
             if (!File.Exists(modelPath))
             {
-                Debug.LogError($"File {modelPath} not found!");
-                yield break;
+                LLMUnitySetup.LogError($"File {modelPath} not found!");
+                return null;
             }
 
-            string loraPath = "";
-            if (lora != "")
+            loraManager.FromStrings(lora, loraWeights);
+            string loraArgument = "";
+            foreach (string lora in loraManager.GetLoras())
             {
-                loraPath = LLMUnitySetup.GetAssetPath(lora);
+                string loraPath = GetLLMManagerAssetRuntime(lora);
                 if (!File.Exists(loraPath))
                 {
-                    Debug.LogError($"File {loraPath} not found!");
-                    yield break;
+                    LLMUnitySetup.LogError($"File {loraPath} not found!");
+                    return null;
                 }
+                loraArgument += $" --lora \"{loraPath}\"";
             }
 
-            int slots = parallelPrompts == -1 ? GetListeningClients().Count + 1 : parallelPrompts;
-            string arguments = $" --port {port} -m {EscapeSpaces(modelPath)} -c {contextSize} -b {batchSize} --log-disable --nobrowser -np {slots}";
-            if (remote) arguments += $" --host 0.0.0.0";
-            if (numThreads > 0) arguments += $" -t {numThreads}";
-            if (loraPath != "") arguments += $" --lora {EscapeSpaces(loraPath)}";
+            int numThreadsToUse = numThreads;
+            if (Application.platform == RuntimePlatform.Android && numThreads <= 0) numThreadsToUse = LLMUnitySetup.AndroidGetNumBigCores();
 
-            string noGPUArgument = " -ngl 0 --gpu no";
-            string GPUArgument = numGPULayers <= 0 ? noGPUArgument : $" -ngl {numGPULayers}";
-            LLMUnitySetup.makeExecutable(server);
-
-            RunServerCommand(server, arguments + GPUArgument);
-
-
-            if (asynchronousStartup)
+            int slots = GetNumClients();
+            string arguments = $"-m \"{modelPath}\" -c {contextSize} -b {batchSize} --log-disable -np {slots}";
+            if (embeddingsOnly) arguments += " --embedding";
+            if (numThreadsToUse > 0) arguments += $" -t {numThreadsToUse}";
+            arguments += loraArgument;
+            arguments += $" -ngl {numGPULayers}";
+            if (LLMUnitySetup.FullLlamaLib && flashAttention) arguments += $" --flash-attn";
+            if (remote)
             {
-                yield return StartCoroutine(WaitOneCoroutine(
-                    serverBlock,
-                    TimeSpan.FromSeconds(60),
-                    onComplete: () => Debug.Log("Server started."),
-                    onTimeout: () => Debug.LogError("Server startup timed out!")
-                ));
-            }
-            else
-            {
-                serverBlock.WaitOne(60000); // Блокирующий вызов, если не используется асинхронный старт
+                arguments += $" --port {port} --host 0.0.0.0";
+                if (!String.IsNullOrEmpty(APIKey)) arguments += $" --api-key {APIKey}";
             }
 
-            if (process.HasExited && mmapCrash)
-            {
-                Debug.Log("Mmap error, fallback to no mmap use");
-                serverBlock.Reset();
-                arguments += " --no-mmap";
-
-                RunServerCommand(server, arguments + GPUArgument);
-                if (asynchronousStartup)
-                {
-                    yield return StartCoroutine(WaitOneCoroutine(
-                        serverBlock,
-                        TimeSpan.FromSeconds(60),
-                        onComplete: () => Debug.Log("Server restarted with --no-mmap."),
-                        onTimeout: () => Debug.LogError("Restart timed out!")
-                    ));
-                }
-                else
-                {
-                    serverBlock.WaitOne(60000);
-                }
-            }
-
-            if (process.HasExited && numGPULayers > 0)
-            {
-                Debug.Log("GPU failed, fallback to CPU");
-                serverBlock.Reset();
-
-                RunServerCommand(server, arguments + noGPUArgument);
-                if (asynchronousStartup)
-                {
-                    yield return StartCoroutine(WaitOneCoroutine(
-                        serverBlock,
-                        TimeSpan.FromSeconds(60),
-                        onComplete: () => Debug.Log("Server restarted with CPU."),
-                        onTimeout: () => Debug.LogError("Restart with CPU timed out!")
-                    ));
-                }
-                else
-                {
-                    serverBlock.WaitOne(60000);
-                }
-            }
-
-            if (process.HasExited)
-            {
-                Debug.LogError("Server could not be started!");
-            }
-            else
-            {
-                LLMUnitySetup.SaveServerPID(process.Id);
-            }
+            // the following is the equivalent for running from command line
+            string serverCommand;
+            if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer) serverCommand = "undreamai_server.exe";
+            else serverCommand = "./undreamai_server";
+            serverCommand += " " + arguments;
+            serverCommand += $" --template \"{chatTemplate}\"";
+            if (remote && SSLCert != "" && SSLKey != "") serverCommand += $" --ssl-cert-file {SSLCertPath} --ssl-key-file {SSLKeyPath}";
+            LLMUnitySetup.Log($"Deploy server command: {serverCommand}");
+            return arguments;
         }
 
-        public void StopProcess()
+        private void SetupLogging()
         {
-            if (process != null)
+            logStreamWrapper = ConstructStreamWrapper(LLMUnitySetup.LogWarning, true);
+            llmlib?.Logging(logStreamWrapper.GetStringWrapper());
+        }
+
+        private void StopLogging()
+        {
+            if (logStreamWrapper == null) return;
+            llmlib?.StopLogging();
+            DestroyStreamWrapper(logStreamWrapper);
+        }
+
+        private void StartLLMServer(string arguments)
+        {
+            started = false;
+            failed = false;
+            bool useGPU = numGPULayers > 0;
+
+            foreach (string arch in LLMLib.PossibleArchitectures(useGPU))
             {
-                int pid = process.Id;
-                if (!process.HasExited)
+                string error;
+                try
                 {
-                    process.Kill();
-                    process.WaitForExit();
+                    InitLib(arch);
+                    InitService(arguments);
+                    LLMUnitySetup.Log($"Using architecture: {arch}");
+                    break;
                 }
-                LLMUnitySetup.DeleteServerPID(pid);
+                catch (LLMException e)
+                {
+                    error = e.Message;
+                    Destroy();
+                }
+                catch (DestroyException)
+                {
+                    break;
+                }
+                catch (Exception e)
+                {
+                    error = $"{e.GetType()}: {e.Message}";
+                }
+                LLMUnitySetup.Log($"Tried architecture: {arch}, error: " + error);
+            }
+            if (llmlib == null)
+            {
+                LLMUnitySetup.LogError("LLM service couldn't be created");
+                failed = true;
+                return;
+            }
+            CallWithLock(StartService);
+            LLMUnitySetup.Log("LLM service created");
+        }
+
+        private void InitLib(string arch)
+        {
+            llmlib = new LLMLib(arch);
+            CheckLLMStatus(false);
+        }
+
+        void CallWithLock(EmptyCallback fn)
+        {
+            lock (startLock)
+            {
+                if (llmlib == null) throw new DestroyException();
+                fn();
             }
         }
 
+        private void InitService(string arguments)
+        {
+            lock (staticLock)
+            {
+                if (debug) CallWithLock(SetupLogging);
+                CallWithLock(() => { LLMObject = llmlib.LLM_Construct(arguments); });
+                CallWithLock(() => llmlib.LLM_SetTemplate(LLMObject, chatTemplate));
+                if (remote)
+                {
+                    if (SSLCert != "" && SSLKey != "")
+                    {
+                        LLMUnitySetup.Log("Using SSL");
+                        CallWithLock(() => llmlib.LLM_SetSSL(LLMObject, SSLCert, SSLKey));
+                    }
+                    CallWithLock(() => llmlib.LLM_StartServer(LLMObject));
+                }
+                CallWithLock(() => CheckLLMStatus(false));
+            }
+        }
+
+        private void StartService()
+        {
+            llmThread = new Thread(() => llmlib.LLM_Start(LLMObject));
+            llmThread.Start();
+            while (!llmlib.LLM_Started(LLMObject)) {}
+            ApplyLoras();
+            started = true;
+        }
+
+        /// <summary>
+        /// Registers a local LLMCaller object.
+        /// This allows to bind the LLMCaller "client" to a specific slot of the LLM.
+        /// </summary>
+        /// <param name="llmCaller"></param>
+        /// <returns></returns>
+        public int Register(LLMCaller llmCaller)
+        {
+            clients.Add(llmCaller);
+            int index = clients.IndexOf(llmCaller);
+            if (parallelPrompts != -1) return index % parallelPrompts;
+            return index;
+        }
+
+        protected int GetNumClients()
+        {
+            return Math.Max(parallelPrompts == -1 ? clients.Count : parallelPrompts, 1);
+        }
+
+        /// \cond HIDE
+        public delegate void LLMStatusCallback(IntPtr LLMObject, IntPtr stringWrapper);
+        public delegate void LLMNoInputReplyCallback(IntPtr LLMObject, IntPtr stringWrapper);
+        public delegate void LLMReplyCallback(IntPtr LLMObject, string json_data, IntPtr stringWrapper);
+        /// \endcond
+
+        StreamWrapper ConstructStreamWrapper(Callback<string> streamCallback = null, bool clearOnUpdate = false)
+        {
+            StreamWrapper streamWrapper = new StreamWrapper(llmlib, streamCallback, clearOnUpdate);
+            streamWrappers.Add(streamWrapper);
+            return streamWrapper;
+        }
+
+        void DestroyStreamWrapper(StreamWrapper streamWrapper)
+        {
+            streamWrappers.Remove(streamWrapper);
+            streamWrapper.Destroy();
+        }
+
+        /// <summary>
+        /// The Unity Update function. It is used to retrieve the LLM replies.
+        public void Update()
+        {
+            foreach (StreamWrapper streamWrapper in streamWrappers) streamWrapper.Update();
+        }
+
+        void AssertStarted()
+        {
+            string error = null;
+            if (failed) error = "LLM service couldn't be created";
+            else if (!started) error = "LLM service not started";
+            if (error != null)
+            {
+                LLMUnitySetup.LogError(error);
+                throw new Exception(error);
+            }
+        }
+
+        void AssertNotStarted()
+        {
+            if (started)
+            {
+                string error = "This method can't be called when the LLM has started";
+                LLMUnitySetup.LogError(error);
+                throw new Exception(error);
+            }
+        }
+
+        void CheckLLMStatus(bool log = true)
+        {
+            if (llmlib == null) { return; }
+            IntPtr stringWrapper = llmlib.StringWrapper_Construct();
+            int status = llmlib.LLM_Status(LLMObject, stringWrapper);
+            string result = llmlib.GetStringWrapperResult(stringWrapper);
+            llmlib.StringWrapper_Delete(stringWrapper);
+            string message = $"LLM {status}: {result}";
+            if (status > 0)
+            {
+                if (log) LLMUnitySetup.LogError(message);
+                throw new LLMException(message, status);
+            }
+            else if (status < 0)
+            {
+                if (log) LLMUnitySetup.LogWarning(message);
+            }
+        }
+
+        async Task<string> LLMNoInputReply(LLMNoInputReplyCallback callback)
+        {
+            AssertStarted();
+            IntPtr stringWrapper = llmlib.StringWrapper_Construct();
+            await Task.Run(() => callback(LLMObject, stringWrapper));
+            string result = llmlib?.GetStringWrapperResult(stringWrapper);
+            llmlib?.StringWrapper_Delete(stringWrapper);
+            CheckLLMStatus();
+            return result;
+        }
+
+        async Task<string> LLMReply(LLMReplyCallback callback, string json)
+        {
+            AssertStarted();
+            IntPtr stringWrapper = llmlib.StringWrapper_Construct();
+            await Task.Run(() => callback(LLMObject, json, stringWrapper));
+            string result = llmlib?.GetStringWrapperResult(stringWrapper);
+            llmlib?.StringWrapper_Delete(stringWrapper);
+            CheckLLMStatus();
+            return result;
+        }
+
+        /// <summary>
+        /// Tokenises the provided query.
+        /// </summary>
+        /// <param name="json">json request containing the query</param>
+        /// <returns>tokenisation result</returns>
+        public async Task<string> Tokenize(string json)
+        {
+            AssertStarted();
+            LLMReplyCallback callback = (IntPtr LLMObject, string jsonData, IntPtr strWrapper) =>
+            {
+                llmlib.LLM_Tokenize(LLMObject, jsonData, strWrapper);
+            };
+            return await LLMReply(callback, json);
+        }
+
+        /// <summary>
+        /// Detokenises the provided query.
+        /// </summary>
+        /// <param name="json">json request containing the query</param>
+        /// <returns>detokenisation result</returns>
+        public async Task<string> Detokenize(string json)
+        {
+            AssertStarted();
+            LLMReplyCallback callback = (IntPtr LLMObject, string jsonData, IntPtr strWrapper) =>
+            {
+                llmlib.LLM_Detokenize(LLMObject, jsonData, strWrapper);
+            };
+            return await LLMReply(callback, json);
+        }
+
+        /// <summary>
+        /// Computes the embeddings of the provided query.
+        /// </summary>
+        /// <param name="json">json request containing the query</param>
+        /// <returns>embeddings result</returns>
+        public async Task<string> Embeddings(string json)
+        {
+            AssertStarted();
+            LLMReplyCallback callback = (IntPtr LLMObject, string jsonData, IntPtr strWrapper) =>
+            {
+                llmlib.LLM_Embeddings(LLMObject, jsonData, strWrapper);
+            };
+            return await LLMReply(callback, json);
+        }
+
+        /// <summary>
+        /// Sets the lora scale, only works after the LLM service has started
+        /// </summary>
+        /// <returns>switch result</returns>
+        public void ApplyLoras()
+        {
+            LoraWeightRequestList loraWeightRequest = new LoraWeightRequestList();
+            loraWeightRequest.loraWeights = new List<LoraWeightRequest>();
+            float[] weights = loraManager.GetWeights();
+            if (weights.Length == 0) return;
+            for (int i = 0; i < weights.Length; i++)
+            {
+                loraWeightRequest.loraWeights.Add(new LoraWeightRequest() { id = i, scale = weights[i] });
+            }
+
+            string json = JsonUtility.ToJson(loraWeightRequest);
+            int startIndex = json.IndexOf("[");
+            int endIndex = json.LastIndexOf("]") + 1;
+            json = json.Substring(startIndex, endIndex - startIndex);
+
+            IntPtr stringWrapper = llmlib.StringWrapper_Construct();
+            llmlib.LLM_LoraWeight(LLMObject, json, stringWrapper);
+            llmlib.StringWrapper_Delete(stringWrapper);
+        }
+
+        /// <summary>
+        /// Gets a list of the lora adapters
+        /// </summary>
+        /// <returns>list of lara adapters</returns>
+        public async Task<List<LoraWeightResult>> ListLoras()
+        {
+            AssertStarted();
+            LLMNoInputReplyCallback callback = (IntPtr LLMObject, IntPtr strWrapper) =>
+            {
+                llmlib.LLM_LoraList(LLMObject, strWrapper);
+            };
+            string json = await LLMNoInputReply(callback);
+            if (String.IsNullOrEmpty(json)) return null;
+            LoraWeightResultList loraRequest = JsonUtility.FromJson<LoraWeightResultList>("{\"loraWeights\": " + json + "}");
+            return loraRequest.loraWeights;
+        }
+
+        /// <summary>
+        /// Allows to save / restore the state of a slot
+        /// </summary>
+        /// <param name="json">json request containing the query</param>
+        /// <returns>slot result</returns>
+        public async Task<string> Slot(string json)
+        {
+            AssertStarted();
+            LLMReplyCallback callback = (IntPtr LLMObject, string jsonData, IntPtr strWrapper) =>
+            {
+                llmlib.LLM_Slot(LLMObject, jsonData, strWrapper);
+            };
+            return await LLMReply(callback, json);
+        }
+
+        /// <summary>
+        /// Allows to use the chat and completion functionality of the LLM.
+        /// </summary>
+        /// <param name="json">json request containing the query</param>
+        /// <param name="streamCallback">callback function to call with intermediate responses</param>
+        /// <returns>completion result</returns>
+        public async Task<string> Completion(string json, Callback<string> streamCallback = null)
+        {
+            AssertStarted();
+            if (streamCallback == null) streamCallback = (string s) => {};
+            StreamWrapper streamWrapper = ConstructStreamWrapper(streamCallback);
+            await Task.Run(() => llmlib.LLM_Completion(LLMObject, json, streamWrapper.GetStringWrapper()));
+            if (!started) return null;
+            streamWrapper.Update();
+            string result = streamWrapper.GetString();
+            DestroyStreamWrapper(streamWrapper);
+            CheckLLMStatus();
+            return result;
+        }
+
+        /// <summary>
+        /// Allows to cancel the requests in a specific slot of the LLM
+        /// </summary>
+        /// <param name="id_slot">slot of the LLM</param>
+        public void CancelRequest(int id_slot)
+        {
+            AssertStarted();
+            llmlib?.LLM_Cancel(LLMObject, id_slot);
+            CheckLLMStatus();
+        }
+
+        /// <summary>
+        /// Stops and destroys the LLM
+        /// </summary>
+        public void Destroy()
+        {
+            lock (staticLock)
+                lock (startLock)
+                {
+                    try
+                    {
+                        if (llmlib != null)
+                        {
+                            if (LLMObject != IntPtr.Zero)
+                            {
+                                llmlib.LLM_Stop(LLMObject);
+                                if (remote) llmlib.LLM_StopServer(LLMObject);
+                                StopLogging();
+                                llmThread?.Join();
+                                llmlib.LLM_Delete(LLMObject);
+                                LLMObject = IntPtr.Zero;
+                            }
+                            llmlib.Destroy();
+                            llmlib = null;
+                        }
+                        started = false;
+                        failed = false;
+                    }
+                    catch (Exception e)
+                    {
+                        LLMUnitySetup.LogError(e.Message);
+                    }
+                }
+        }
+
+        /// <summary>
+        /// The Unity OnDestroy function called when the onbject is destroyed.
+        /// The function StopProcess is called to stop the LLM server.
+        /// </summary>
         public void OnDestroy()
         {
-            StopProcess();
-        }
-
-        public IEnumerator WaitOneCoroutine(WaitHandle handle, TimeSpan timeout, Action onComplete, Action onTimeout)
-        {
-            bool isSignaled = false;
-
-            RegisteredWaitHandle registration = ThreadPool.RegisterWaitForSingleObject(
-                handle, (state, timedOut) =>
-                {
-                    if (timedOut)
-                        onTimeout?.Invoke();
-                    else
-                    {
-                        isSignaled = true;
-                        onComplete?.Invoke();
-                    }
-                },
-                null,
-                timeout,
-                executeOnlyOnce: true
-            );
-
-            while (!isSignaled && handle.WaitOne(0) == false)
-            {
-                yield return null;
-            }
-
-            registration.Unregister(null);
+            Destroy();
+            LLMManager.Unregister(this);
         }
     }
 }
