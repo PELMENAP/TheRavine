@@ -47,9 +47,5 @@ crashlytics-build.properties
 /[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
 
 # Temporary auto-generated Android Assets
-/[Aa]ssets/[Ss]treamingAssets/aa.meta
-/[Aa]ssets/[Ss]treamingAssets/aa/*
 *.gguf
-Assets/StreamingAssets/ape-arm64.elf
-Assets/StreamingAssets/ape-x86_64.elf
-Assets/StreamingAssets/llamafile-0.6.2.exe
+/[Aa]ssets/[Ss]treamingAssets/
