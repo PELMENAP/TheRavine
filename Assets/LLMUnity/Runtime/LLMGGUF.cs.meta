@@ -13,6 +13,6 @@ AssetOrigin:
   serializedVersion: 1
   productId: 273604
   packageName: LLM for Unity
-  packageVersion: 1.2.4
+  packageVersion: 2.4.2
   assetPath: Assets/LLMUnity/Runtime/LLMGGUF.cs
-  uploadId: 654364
+  uploadId: 733990

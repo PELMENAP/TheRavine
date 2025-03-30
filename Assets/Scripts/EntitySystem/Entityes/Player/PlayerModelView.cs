@@ -12,7 +12,6 @@ namespace TheRavine.EntityControl
         [SerializeField] private NetworkObject cameraPrefab;
         private Camera mainCamera;
         private ServiceLocator locator;
-
         public override void OnNetworkSpawn() 
         {
 
@@ -115,7 +114,7 @@ namespace TheRavine.EntityControl
             }
             catch
             {
-                logger.LogWarning("Player entity hadn't created");
+                logger?.LogWarning("Player entity hadn't created");
             }
             
             cameraComponent?.BreakUp(callback);

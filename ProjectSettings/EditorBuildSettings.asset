@@ -18,5 +18,6 @@ EditorBuildSettings:
     path: Assets/Scenes/TestScene/FreeScene.unity
     guid: 88f75c26ff1d8a6f1b59a53023da678d
   m_configObjects:
+    com.unity.addressableassets: {fileID: 11400000, guid: 6acdf285277a759da9be16a9f30f0339, type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: 1d16c970072ac4f95a46c81fbcc9fd19, type: 2}
   m_UseUCBPForAssetBundles: 0

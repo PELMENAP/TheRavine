@@ -2,7 +2,6 @@
 /// @brief File implementing the LLM server interfaces.
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 /// \cond HIDE
 namespace LLMUnity
@@ -11,6 +10,7 @@ namespace LLMUnity
     public struct ChatRequest
     {
         public string prompt;
+        public int id_slot;
         public float temperature;
         public int top_k;
         public float top_p;
@@ -40,11 +40,18 @@ namespace LLMUnity
     }
 
     [Serializable]
+    public struct SystemPromptRequest
+    {
+        public string prompt;
+        public string system_prompt;
+        public int n_predict;
+    }
+
+    [Serializable]
     public struct ChatResult
     {
+        public int id_slot;
         public string content;
-        public bool multimodal;
-        public int slot_id;
         public bool stop;
         public string generation_settings;
         public string model;
@@ -75,41 +82,6 @@ namespace LLMUnity
     }
 
     [Serializable]
-    public struct ChatOpenAIRequest
-    {
-        public List<ChatMessage> messages;
-    }
-
-    [Serializable]
-    public struct ChatOpenAIResultChoice
-    {
-        public string finish_reason;
-        public int index;
-        public ChatMessage message;
-        public ChatMessage delta;
-    }
-
-    [Serializable]
-    public struct ChatOpenAIResultNumTokens
-    {
-        public int completion_tokens;
-        public int prompt_tokens;
-        public int total_tokens;
-    }
-
-    [Serializable]
-    public struct ChatOpenAIResult
-    {
-        public string id;
-        public ChatOpenAIResultNumTokens usage;
-        // [JsonProperty("object")]
-        // public string MyObject { get; set; }
-        public string model;
-        public Time created;
-        public List<ChatOpenAIResultChoice> choices;
-    }
-
-    [Serializable]
     public struct TokenizeRequest
     {
         public string content;
@@ -122,15 +94,57 @@ namespace LLMUnity
     }
 
     [Serializable]
-    public struct ServerStatus
+    public struct EmbeddingsResult
     {
-        public DateTime timestamp;
-        public string level;
-        public string function;
-        public int line;
-        public string message;
-        public string hostname;
-        public int port;
+        public List<float> embedding;
+    }
+
+    [Serializable]
+    public struct LoraWeightRequest
+    {
+        public int id;
+        public float scale;
+    }
+
+    [Serializable]
+    public struct LoraWeightRequestList
+    {
+        public List<LoraWeightRequest> loraWeights;
+    }
+
+    [Serializable]
+    public struct LoraWeightResult
+    {
+        public int id;
+        public string path;
+        public float scale;
+    }
+
+    [Serializable]
+    public struct LoraWeightResultList
+    {
+        public List<LoraWeightResult> loraWeights;
+    }
+
+    [Serializable]
+    public struct TemplateResult
+    {
+        public string template;
+    }
+
+    [Serializable]
+    public struct SlotRequest
+    {
+        public int id_slot;
+        public string action;
+        public string filepath;
+    }
+
+    [Serializable]
+    public struct SlotResult
+    {
+        public int id_slot;
+        public string filename;
     }
 }
 /// \endcond

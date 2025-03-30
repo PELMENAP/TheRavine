@@ -6,35 +6,44 @@ using UnityEngine.Jobs;
 
 namespace TheRavine.EntityControl
 {
-    [BurstCompile]
+    [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
     public struct MoveJob : IJobParallelForTransform
     {
-        [NativeDisableParallelForRestriction]
-        public NativeArray<float2> Velocities;
-        [WriteOnly] public NativeArray<float2> Positions;
+        [NativeDisableParallelForRestriction] public NativeArray<float4> PositionsAndVelocities;
         [ReadOnly] public NativeArray<bool> IsMoving;
         [ReadOnly] public NativeArray<float2> Accelerations;
-        [ReadOnly] public float DeltaTime, VelocityLimit;
+        [ReadOnly] public float DeltaTime, VelocityLimitSq, VelocityLimit;
         [ReadOnly] public Quaternion FlipRotation, IdentityRotation;
+        
         public void Execute(int index, TransformAccess transform)
         {
-            float4 velocityAcceleration = new float4(Velocities[index], Accelerations[index]);
-            float4 deltaTimeVec = new float4(DeltaTime, DeltaTime, DeltaTime, DeltaTime);
-
-            float4 newVelocity = velocityAcceleration + new float4(Accelerations[index], 0, 0) * deltaTimeVec;
-
-            float velocityLength = math.length(newVelocity.xy);
-            newVelocity.xy = math.select(float2.zero, newVelocity.xy / velocityLength * math.clamp(velocityLength, 1, VelocityLimit), velocityLength > 0);
-
+            if (!IsMoving[index]) return;
+            
+            float4 posVel = PositionsAndVelocities[index];
+            float2 pos = posVel.xy;
+            float2 vel = posVel.zw;
+            
+            float2 acc = Accelerations[index];
+            float2 newVel = vel + acc * DeltaTime;
+            
+            float velLengthSq = math.lengthsq(newVel);
+            if (velLengthSq > VelocityLimitSq)
+            {
+                newVel = newVel * math.rsqrt(velLengthSq) * VelocityLimit;
+            }
+            else if (velLengthSq < 1)
+            {
+                newVel = math.normalizesafe(newVel);
+            }
+            
             float3 position = transform.position;
-            position.xy += newVelocity.xy * DeltaTime * math.select(0f, 1f, IsMoving[index]);
+            position.xy += newVel * DeltaTime;
             transform.position = position;
-
-            float flipFactor = 0.5f * (1f - math.step(0f, newVelocity.x));
-            transform.rotation = math.slerp(IdentityRotation, FlipRotation, flipFactor * math.select(0f, 1f, IsMoving[index]));
-
-            Positions[index] = position.xy;
-            Velocities[index] = newVelocity.xy * math.select(0f, 1f, IsMoving[index]);
+            
+            if (math.abs(newVel.x) > 0.1f) 
+                transform.rotation = newVel.x < 0 ? FlipRotation : IdentityRotation;
+            
+            PositionsAndVelocities[index] = new float4(position.xy, newVel);
         }
     }
 

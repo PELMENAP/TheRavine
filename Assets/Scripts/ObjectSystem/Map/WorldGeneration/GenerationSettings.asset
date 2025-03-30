@@ -15,7 +15,7 @@ MonoBehaviour:
   maxGenerationAttempts: 1
   maxGeneratedCells: 60
   gridSize: {x: 5, y: 5}
-  IsGreedyCollapse: 0
+  IsGreedyCollapse: 1
   borderRule: 2
   maxPropagationIterations: 40
   maxStepIterations: 30

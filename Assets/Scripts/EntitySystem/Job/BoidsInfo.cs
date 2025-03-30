@@ -5,8 +5,7 @@ using Unity.Mathematics;
 public class BoidsInfo : ScriptableObject
 {
     public int numberOfEntities, delayFactor, nearTheTarget, distanceOfTargetFromPlayer;
-    public float destinationThreshold, avoidanceThreshold, alongThreshold;
-    public float velocityLimit;
+    public float destinationThreshold, avoidanceThreshold, alongThreshold, cellSize, velocityLimit;
     public float3 accelerationWeights;
     public Quaternion flip;
 }

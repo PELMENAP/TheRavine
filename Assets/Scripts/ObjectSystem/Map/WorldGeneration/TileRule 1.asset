@@ -40,5 +40,4 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 303aea5801a7f1e5fa95c5228c0bc847, type: 2}
     - {fileID: 11400000, guid: 4aa4cf36b91e2d44fa67e9b123a66afb, type: 2}
     - {fileID: 11400000, guid: 840ab4285d238eabc89567c2ae8b07c7, type: 2}
-  connectionPoints: []
   weight: 20

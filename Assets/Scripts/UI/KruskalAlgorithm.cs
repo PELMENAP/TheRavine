@@ -78,19 +78,4 @@ public class KruskalAlgorithm
         foreach (Edge edge in result)
             Debug.Log($"Edge {edge.src} - {edge.dest} weight: {edge.weight}");
     }
-
-    // void Start()
-    // {
-    //     Vector2[] points = new Vector2[] {
-    //         new Vector2(1, 2),
-    //         new Vector2(4, 2),
-    //         new Vector2(4, -2),
-    //         new Vector2(1, -3),
-    //         new Vector2(-1, 3),
-    //         new Vector2(-1, -1),
-    //         new Vector2(4, 0)
-    //     };
-
-    //     KruskalMST(points);
-    // }
 }
