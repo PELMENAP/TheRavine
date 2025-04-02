@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 63465958d7bcc403e89a14826c19f7bc
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 21660
+  packageName: PDollar Point-Cloud Gesture Recognizer
+  packageVersion: 1.0.3
+  assetPath: Assets/PDollar/Scripts/Demo.cs
+  uploadId: 722838

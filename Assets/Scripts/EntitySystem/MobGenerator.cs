@@ -9,7 +9,7 @@ using TheRavine.Base;
 
 namespace TheRavine.EntityControl
 {
-    public class MobGenerator : MonoBehaviour, ISetAble
+    public class MobGenerator : MonoBehaviour, ISetAble // implement SetUp like Start and BreakDown like OnDestroy
     {
         private System.Threading.CancellationTokenSource _cts = new();
         private const int chunkScale = MapGenerator.chunkScale;

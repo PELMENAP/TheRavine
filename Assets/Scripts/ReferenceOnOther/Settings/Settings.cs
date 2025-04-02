@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
-using System.Linq;
+using ZLinq;
 using TMPro;
 
 using Tayx.Graphy;
@@ -21,7 +21,7 @@ namespace TheRavine.Base
         {
             if(currentProfiler == null) currentProfiler = profiler.GetComponent<GraphyDebugger>();
             dropdown.ClearOptions();
-            dropdown.AddOptions(QualitySettings.names.ToList());
+            dropdown.AddOptions(QualitySettings.names.AsValueEnumerable().ToList());
             dropdown.value = QualitySettings.GetQualityLevel();
             joisticToggle.isOn = isJoistick;
             shadowToggle.isOn = isShadow;

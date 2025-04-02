@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 83a2b3632e145394ba70bc4fb1a7fb47
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Editor/Extensions/DualGridRuleTileExtensions.cs
+  uploadId: 735057

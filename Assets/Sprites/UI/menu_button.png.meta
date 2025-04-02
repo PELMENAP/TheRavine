@@ -252,13 +252,13 @@ TextureImporter:
       name: menu_button_26
       rect:
         serializedVersion: 2
-        x: 412
-        y: 252
-        width: 16
-        height: 16
+        x: 307
+        y: 0
+        width: 32
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 1, y: 1, z: 1, w: 1}
+      border: {x: 8, y: 8, z: 8, w: 8}
       outline: []
       physicsShape: []
       tessellationDetail: 0

@@ -10,6 +10,6 @@ AssetOrigin:
   serializedVersion: 1
   productId: 68068
   packageName: In-game Debug Console
-  packageVersion: 1.6.7
+  packageVersion: 1.8.0
   assetPath: Assets/Plugins/IngameDebugConsole/Sprites/IngameDebugConsoleSpriteAtlas.spriteatlas
-  uploadId: 653080
+  uploadId: 744541

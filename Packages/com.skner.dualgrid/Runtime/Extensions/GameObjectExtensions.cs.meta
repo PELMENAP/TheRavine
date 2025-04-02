@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 0e54d770e95c66840a0799fdc26be7fd
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Runtime/Extensions/GameObjectExtensions.cs
+  uploadId: 735057

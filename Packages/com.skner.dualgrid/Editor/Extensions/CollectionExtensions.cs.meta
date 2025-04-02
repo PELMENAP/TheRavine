@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 35f75a66b68a98c41ba5e1d9b2488217
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Editor/Extensions/CollectionExtensions.cs
+  uploadId: 735057

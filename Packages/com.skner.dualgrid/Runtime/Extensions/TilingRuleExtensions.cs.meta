@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: f42728b38975e27478d2b6b9cb0471e2
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Runtime/Extensions/TilingRuleExtensions.cs
+  uploadId: 735057

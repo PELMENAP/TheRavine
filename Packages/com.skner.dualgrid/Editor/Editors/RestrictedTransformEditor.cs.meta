@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: ef13c7a863bbcd84e83580226b598aea
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Editor/Editors/RestrictedTransformEditor.cs
+  uploadId: 735057

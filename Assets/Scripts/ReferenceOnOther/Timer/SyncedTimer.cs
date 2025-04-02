@@ -29,24 +29,31 @@ namespace TheRavine.Base
 
 		public void SetTime(float seconds)
 		{
+			if (seconds < 0) throw new ArgumentException("Time cannot be negative");
+			
 			remainingSeconds = seconds;
 			TimerValueChanged?.Invoke(remainingSeconds, TimeChangingSource.TimeForceChanged);
+			
+			if (isActive && remainingSeconds <= 0)
+			{
+				Stop();
+			}
 		}
 
 		public void Start()
 		{
-			if (isActive)
-				return;
-
-			if (Math.Abs(remainingSeconds) < Mathf.Epsilon)
-			{
-				TimerFinished?.Invoke();
-			}
+			if (isActive) return;
 
 			isActive = true;
 			isPaused = false;
-			SubscribeOnTimeInvokerEvents();
+			
+			if (remainingSeconds <= 0)
+			{
+				Stop();
+				return;
+			}
 
+			SubscribeOnTimeInvokerEvents();
 			TimerValueChanged?.Invoke(remainingSeconds, TimeChangingSource.TimerStarted);
 		}
 

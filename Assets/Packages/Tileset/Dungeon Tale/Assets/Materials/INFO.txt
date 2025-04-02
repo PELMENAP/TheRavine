@@ -1,0 +1,8 @@
+this is a configured material for artistic lighting LutLight
+https://github.com/NullTale/LutLight2D
+
+it uses a lospec500 palette that's customised to create unusual materials
+https://lospec.com/palette-list/lospec500
+
+in order to use thouse color ramps you need to use unity urp with 2D lighting mo detailed instructions by the links
+configured urp asset can be found in materials folder

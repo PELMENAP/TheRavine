@@ -1,0 +1,11 @@
+fileFormatVersion: 2
+guid: 0bcff93ff7f3942cca925493d8a87c3e
+TextScriptImporter:
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 21660
+  packageName: PDollar Point-Cloud Gesture Recognizer
+  packageVersion: 1.0.3
+  assetPath: Assets/PDollar/Resources/GestureSet/10-stylus-MEDIUM/10-stylus-medium-N-01.xml
+  uploadId: 722838

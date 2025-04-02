@@ -19,7 +19,7 @@ public class CasinoSlots : MonoBehaviour
     [SerializeField] private CasinoSlotPref currentPref;
     [SerializeField] private TextMeshProUGUI winText, costText, betText, bonusText;
     [SerializeField] private int winCount, cost, betCount, numOfBonusGames, firstPlayBonus;
-    [SerializeField] private UICasino uICasino;
+    [SerializeField] private UICasinoSlots uICasino;
     [SerializeField] private GameObject gamble, doubleWin, bonusGames, cardGame, x2hint, x3hint;
     [SerializeField] private Image gambleImage, gambleGameImage, hiddenImage;
     [SerializeField] private Sprite variant1, variant2, defaultVariant;

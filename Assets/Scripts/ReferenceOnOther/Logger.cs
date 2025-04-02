@@ -2,6 +2,7 @@ using System.IO;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+
 public class Logger : ILogger
 {
     private string logFilePath;

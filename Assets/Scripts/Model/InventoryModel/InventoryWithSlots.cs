@@ -1,6 +1,6 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using ZLinq;
 using UnityEngine;
 
 public class InventoryWithSlots : IInventory
@@ -9,7 +9,7 @@ public class InventoryWithSlots : IInventory
     public event Action<object, Type, int> OnInventoryItemRemovedEvent;
     public event Action<object> OnInventoryStateChangedEvent, OnInventoryStateChangedEventOnce;
     public int capacity { get; set; }
-    public bool isFull => _slots.All(slot => slot.isFull);
+    public bool isFull => _slots.AsValueEnumerable().All(slot => slot.isFull);
 
     private readonly List<IInventorySlot> _slots;
     public InventoryWithSlots(int capacity)

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d9d4eac27091a294d981bb1b1c2e422e
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/package.json
+  uploadId: 735057

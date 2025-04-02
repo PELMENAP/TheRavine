@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: f3eabe3b6e6b95d408f9adcff883ae11
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Editor/AutoDualGridRuleTileProvider.cs
+  uploadId: 735057

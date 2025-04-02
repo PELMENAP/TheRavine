@@ -1,0 +1,18 @@
+{
+    "name": "com.annulusgames.lit-motion",
+    "version": "2.0.1",
+    "displayName": "LitMotion",
+    "description": "Lightning-fast and Zero Allocation Tween Library for Unity.",
+    "keywords": [
+        "dots",
+        "tween"
+    ],
+    "dependencies": {
+        "com.unity.burst": "1.6.0",
+        "com.unity.collections": "1.5.1",
+        "com.unity.mathematics": "1.0.1"
+    },
+    "author": {
+        "name": "yn01"
+    }
+}
