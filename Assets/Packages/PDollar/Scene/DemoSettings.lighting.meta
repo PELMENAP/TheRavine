@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d8ff8402556fbe24a9e23dbc439f3012
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 4890085278179872738
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 21660
+  packageName: PDollar Point-Cloud Gesture Recognizer
+  packageVersion: 1.0.3
+  assetPath: Assets/PDollar/Scene/DemoSettings.lighting
+  uploadId: 722838

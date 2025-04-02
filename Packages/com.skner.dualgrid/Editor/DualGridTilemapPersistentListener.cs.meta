@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 9bdf46ba7b0dcc948971ba7b15aa932f
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Editor/DualGridTilemapPersistentListener.cs
+  uploadId: 735057

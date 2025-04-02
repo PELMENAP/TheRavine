@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 9d51450ce1bb80f439b2865f9b1abe87
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Editor/Editors/DualGridBrushEditor.cs
+  uploadId: 735057

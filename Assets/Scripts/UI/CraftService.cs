@@ -9,7 +9,7 @@ namespace TheRavine.Inventory
 {
     public class CraftService : MonoBehaviour, ISetAble
     {
-        const byte CellsCount = 8;
+        const int CellsCount = 8;
         [SerializeField] private UIInventory UIInventory;
         [SerializeField] private CraftPresenter craftPresenter;
         [SerializeField] private InventoryCraftInfo[] CraftInfo;
@@ -31,7 +31,7 @@ namespace TheRavine.Inventory
         public bool OnInventoryCraftCheck(object sender)
         {
             if(!result.slot.isEmpty) return false;
-            for (byte i = 0; i < CellsCount; i++)
+            for (int i = 0; i < CellsCount; i++)
             {
                 names[i] = craftCells[i].slot.isEmpty ? "#" : craftCells[i]._uiInventoryItem.item.info.id;
                 currentCount[i] = craftCells[i].slot.isEmpty ? 0 : craftCells[i]._uiInventoryItem.item.state.amount;
@@ -44,7 +44,7 @@ namespace TheRavine.Inventory
                 var craftInfo = CraftInfo[i];
                 if(!craftInfo.isAvailable) continue;
                 
-                for (byte j = 0; j < CellsCount; j++)
+                for (int j = 0; j < CellsCount; j++)
                 {
                     if(j >= craftInfo.ingr.Length)
                     {
@@ -58,7 +58,7 @@ namespace TheRavine.Inventory
                     }
                 }
 
-                for (byte j = 0; j < CellsCount; j++)
+                for (int j = 0; j < CellsCount; j++)
                 {
                     if (craftIngredients[j].Equals(names[j], StringComparison.OrdinalIgnoreCase) && currentCount[j] >= ingredientsCount[j])
                     {
@@ -94,7 +94,7 @@ namespace TheRavine.Inventory
         {
             if(inProcess) return;
             inProcess = true;
-            for(byte i = 0; i < CellsCount; i++){
+            for(int i = 0; i < CellsCount; i++){
                 if(craftCells[i].slot.isEmpty) continue;
                 craftCells[i]._uiInventoryItem.item.state.amount -= ingredientsCount[i];
                 if (craftCells[i].slot.amount <= 0)

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: b1b89088c77188a40aa0c484f4e23c90
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Samples~/ExampleUsage/Scenes/ExampleScene.unity
+  uploadId: 735057

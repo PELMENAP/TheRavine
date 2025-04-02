@@ -1,5 +1,5 @@
 using System;
-using System.Linq;
+using ZLinq;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -20,7 +20,7 @@ public class EnumerableSnapshot<T> : IEnumerable<T>, IDisposable
         if (_enumerator == null)
         {
             _enumerator = _source.GetEnumerator();
-            _cached = new ReadOnlyCollection<T>(_source.ToArray());
+            _cached = new ReadOnlyCollection<T>(_source.AsValueEnumerable().ToArray());
         }
         else
         {
@@ -44,7 +44,7 @@ public class EnumerableSnapshot<T> : IEnumerable<T>, IDisposable
             {
                 _enumerator.Dispose();
                 _enumerator = _source.GetEnumerator();
-                _cached = new ReadOnlyCollection<T>(_source.ToArray());
+                _cached = new ReadOnlyCollection<T>(_source.AsValueEnumerable().ToArray());
             }
         }
         return _cached.GetEnumerator();

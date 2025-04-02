@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ee6cfdd17d5aac24e9b3f5bdee1c60ca
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Editor/skner.DualGrid.Editor.asmdef
+  uploadId: 735057

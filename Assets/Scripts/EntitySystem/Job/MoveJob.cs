@@ -19,9 +19,7 @@ namespace TheRavine.EntityControl
         {
             if (!IsMoving[index]) return;
             
-            float4 posVel = PositionsAndVelocities[index];
-            float2 pos = posVel.xy;
-            float2 vel = posVel.zw;
+            float2 vel = PositionsAndVelocities[index].zw;
             
             float2 acc = Accelerations[index];
             float2 newVel = vel + acc * DeltaTime;

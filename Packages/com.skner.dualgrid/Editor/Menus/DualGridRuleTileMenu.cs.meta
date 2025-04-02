@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 06eac2ce59a7a9d47add741148d00966
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Editor/Menus/DualGridRuleTileMenu.cs
+  uploadId: 735057

@@ -1,5 +1,14 @@
 {
   "dependencies": {
+    "com.skner.dualgrid": {
+      "version": "file:com.skner.dualgrid",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.2d.tilemap.extras": "3.1.2",
+        "com.unity.2d.tilemap": "1.0.0"
+      }
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,
@@ -78,7 +87,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.visualstudio": {
-      "version": "2.0.22",
+      "version": "2.0.23",
       "depth": 0,
       "source": "registry",
       "dependencies": {

@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
-using System.Linq;
+using ZLinq;
 using System;
 using TMPro;
 
@@ -135,7 +135,7 @@ public class DialogRequire : MonoBehaviour
         // PlayerController.instance.dialog.SetActive(false);
         // playerText = PlayerController.instance.InputWindow.text.Remove(PlayerController.instance.InputWindow.text.Length - 1);
         // StartCoroutine(PlayerDialogControoller.instance.TypeLine(playerText));
-        if (endDialog.Contains(playerText))
+        if (endDialog.AsValueEnumerable().Contains(playerText))
         {
             Dialog = false;
             if (bot)

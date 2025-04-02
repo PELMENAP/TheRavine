@@ -8,7 +8,7 @@ namespace TheRavine.EntityControl
     [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
     public struct AccelerationJob : IJobParallelFor
     {
-        [NativeDisableParallelForRestriction] public NativeArray<float4> PositionsAndVelocities;
+        [ReadOnly][NativeDisableParallelForRestriction] public NativeArray<float4> PositionsAndVelocities;
         [ReadOnly] public NativeArray<float2> OtherTargets;
         [ReadOnly] public NativeArray<int> FlockIds;
         [ReadOnly] public NativeArray<bool> IsMoving;

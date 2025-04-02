@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 1130a02d8a6d8ee4ebf256a9752db531
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Runtime/Tiles/DualGridDataTile.cs
+  uploadId: 735057

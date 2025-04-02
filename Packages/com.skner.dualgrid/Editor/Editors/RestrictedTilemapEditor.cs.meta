@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: dc3aec3ac2ea63944b108524fa9fcc92
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Editor/Editors/RestrictedTilemapEditor.cs
+  uploadId: 735057

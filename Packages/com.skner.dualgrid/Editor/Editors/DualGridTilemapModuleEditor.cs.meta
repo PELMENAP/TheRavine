@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: f22fe8f4df42b444a99676e969fb860a
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Editor/Editors/DualGridTilemapModuleEditor.cs
+  uploadId: 735057

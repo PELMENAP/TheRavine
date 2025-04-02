@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 288eac17330e9fb44b49aed421a48132
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Runtime/Extensions/ComponentExtensions.cs
+  uploadId: 735057

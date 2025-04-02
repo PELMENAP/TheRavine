@@ -17,14 +17,19 @@ public class PriceChart : MonoBehaviour
     public float updateInterval = 1f;
     
     [Header("Размеры области графика")]
-    public float graphWidth = 10f;   // Ширина графика в единицах Unity
-    public float graphHeight = 5f;   // Высота графика в единицах Unity
-    public Vector2 graphOffset = Vector2.zero; // Смещение графика относительно позиции объекта
+    public float graphWidth = 10f;
+    public float graphHeight = 5f;
+    public Vector2 graphOffset = Vector2.zero;
     
     [Header("Отображение текста")]
     public TextMeshProUGUI totalLotsText;
     public TextMeshProUGUI buyLotsText;
     public TextMeshProUGUI sellLotsText;
+
+    [Header("Дополнительная информация")]
+    public TextMeshProUGUI maxPriceText;
+    public TextMeshProUGUI minPriceText;
+
     public string numberFormat = "N0"; // Формат отображения чисел
     
     private Queue<float> priceHistory = new Queue<float>();
@@ -61,7 +66,7 @@ public class PriceChart : MonoBehaviour
     {
         if (price <= 0)
             return;
-            
+
         if (priceHistory.Count >= maxPoints)
         {
             float oldestPrice = priceHistory.Dequeue();
@@ -73,54 +78,68 @@ public class PriceChart : MonoBehaviour
         }
 
         priceHistory.Enqueue(price);
-        
-        if (price < minPrice || minPrice == float.MaxValue)
+
+        if (price < minPrice)
         {
             minPrice = price;
             needsRescaling = true;
         }
-        
-        if (price > maxPrice || maxPrice == float.MinValue)
+
+        if (price > maxPrice)
         {
             maxPrice = price;
             needsRescaling = true;
         }
-        
+
         UpdateGraph();
+        UpdatePriceLabels();
+    }
+
+    private void UpdatePriceLabels()
+    {
+        if (maxPriceText != null)
+        {
+            maxPriceText.text = $"Макс: {maxPrice.ToString("F2")}";
+        }
+
+        if (minPriceText != null)
+        {
+            minPriceText.text = $"Мин: {minPrice.ToString("F2")}";
+        }
     }
     private void UpdateGraph()
     {
         if (lineRenderer == null || priceHistory.Count == 0)
             return;
-            
+
         if (needsRescaling && priceHistory.Count > 1)
         {
             minPrice = priceHistory.Min();
             maxPrice = priceHistory.Max();
             needsRescaling = false;
+            UpdatePriceLabels(); // Обновляем значения min/max в UI
         }
-        
+
         lineRenderer.positionCount = priceHistory.Count;
-        
+
         float priceRange = maxPrice - minPrice;
         if (priceRange <= 0.001f)
         {
             priceRange = maxPrice * 0.1f;
             if (priceRange <= 0.001f) priceRange = 1f;
         }
-        
-        float[] prices = priceHistory.ToArray();
-        
-        for (int i = 0; i < prices.Length; i++)
+
+        int i = 0;
+        foreach (var price in priceHistory)
         {
             float normalizedX = (float)i / (maxPoints - 1);
-            
-            float normalizedY = (prices[i] - minPrice) / priceRange;
+            float normalizedY = (price - minPrice) / priceRange;
             
             float x = normalizedX * graphWidth + graphOffset.x;
             float y = normalizedY * graphHeight + graphOffset.y;
-            
+
             lineRenderer.SetPosition(i, new Vector3(x, y, 0));
+            i++;
         }
     }
     private async UniTaskVoid Tick()
@@ -169,11 +188,13 @@ public class PriceChart : MonoBehaviour
         priceHistory.Clear();
         minPrice = float.MaxValue;
         maxPrice = float.MinValue;
-        
+
         if (lineRenderer != null)
         {
             lineRenderer.positionCount = 0;
         }
+
+        UpdatePriceLabels();
     }
     public void SetTrackedItem(string itemId)
     {
@@ -187,6 +208,18 @@ public class PriceChart : MonoBehaviour
         trackedItem = itemId;
         ClearHistory();
         Tick().Forget();
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.green;
+        Vector3 bottomLeft = transform.position + new Vector3(graphOffset.x, graphOffset.y, 0);
+        Vector3 topRight = bottomLeft + new Vector3(graphWidth, graphHeight, 0);
+        
+        Gizmos.DrawLine(bottomLeft, new Vector3(topRight.x, bottomLeft.y, 0));
+        Gizmos.DrawLine(new Vector3(topRight.x, bottomLeft.y, 0), topRight);
+        Gizmos.DrawLine(topRight, new Vector3(bottomLeft.x, topRight.y, 0));
+        Gizmos.DrawLine(new Vector3(bottomLeft.x, topRight.y, 0), bottomLeft);
     }
     private void OnDestroy()
     {

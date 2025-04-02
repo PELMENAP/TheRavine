@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: d70df53105b5a1b4db4f86df125307e6
+AssetOrigin:
+  serializedVersion: 1
+  productId: 301999
+  packageName: skner's Dual Grid
+  packageVersion: 2.0.2
+  assetPath: Packages/com.skner.dualgrid/Runtime/Utils/DualGridUtils.cs
+  uploadId: 735057
