@@ -3,6 +3,8 @@ using UnityEngine.InputSystem;
 using Unity.Netcode;
 using Cysharp.Threading.Tasks;
 
+using System;
+
 using TheRavine.Extensions;
 using TheRavine.Base;
 using TheRavine.Events;
@@ -58,7 +60,7 @@ namespace TheRavine.EntityControl
 
         private void InitStatePattern(StatePatternComponent component)
         {
-            System.Action actions = Move;
+            Action actions = Move;
             actions += Animate;
             actions += Aim;
             component.AddBehaviour(typeof(PlayerBehaviourIdle), new PlayerBehaviourIdle (this, actions, logger));

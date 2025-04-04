@@ -29,7 +29,7 @@ namespace TheRavine.EntityControl
                 statePatternComponent.behaviourCurrent.Update();
         }
 
-        public override void Init(Action onUpdateAction, IEntityController controller)
+        public override void Init()
         {
             BotBehaviourIdle Idle = new BotBehaviourIdle();
             Idle.AddCommand(new PrintMessageCommand("eboba"));
