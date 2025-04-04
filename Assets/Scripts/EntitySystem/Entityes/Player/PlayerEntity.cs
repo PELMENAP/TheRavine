@@ -1,30 +1,35 @@
 using UnityEngine;
 using System;
 
+using R3;
+
 namespace TheRavine.EntityControl
 {
     public class PlayerEntity : AEntity
     {
         private IEntityController playerController;
         private StatePatternComponent statePatternComponent;
-        private Action onUpdateAction;
         private ILogger logger;
-        public PlayerEntity(EntityInfo entityInfo, ILogger logger)
+        public PlayerEntity(IEntityController controller, ILogger logger)
         {
             this.logger = logger;
-            statePatternComponent = new StatePatternComponent();
-            base.AddComponentToEntity(statePatternComponent);
+            playerController = controller;
+            playerController.SetInitialValues(this, logger);
+        }
+
+        public void AddComponentsToEntity(EntityInfo entityInfo, AEntityModelView aEntityModelView)
+        {
+            base.AddComponentToEntity(new StatePatternComponent());
             base.AddComponentToEntity(new EventBusComponent());
             base.AddComponentToEntity(new SkillComponent());
             base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.prefab.GetInstanceID(), new EntityStats(entityInfo.statsInfo)));
             base.AddComponentToEntity(new MovementComponent(new EntityMovementBaseStats(entityInfo.movementStatsInfo)));
             base.AddComponentToEntity(new AimComponent(new EntityAimBaseStats(entityInfo.aimStatsInfo)));
+            base.AddComponentToEntity(new TransformComponent(aEntityModelView.transform, aEntityModelView.transform));
         }
-        public override void Init(Action onUpdateAction, IEntityController controller)
+
+        public override void Init()
         {
-            playerController = controller;
-            this.onUpdateAction = onUpdateAction;
-            playerController.SetInitialValues(this, logger);
             SetBehaviourIdle();
         }
         public override Vector2 GetEntityVelocity()
@@ -33,10 +38,10 @@ namespace TheRavine.EntityControl
         }
         public override void UpdateEntityCycle()
         {
-            if (!base.IsAlive) return;
+            if (!base.IsActive.Value) return;
             if (statePatternComponent.behaviourCurrent == null) return;
                 statePatternComponent.behaviourCurrent.Update();
-            onUpdateAction?.Invoke();
+            base.OnUpdate.Execute(Unit.Default);
         }
 
         public void SetBehaviourIdle()

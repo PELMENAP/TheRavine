@@ -1,97 +1,45 @@
-/**
- * The $P Point-Cloud Recognizer (.NET Framework 4.0 C# version)
- *
- * 	    Radu-Daniel Vatavu, Ph.D.
- *	    University Stefan cel Mare of Suceava
- *	    Suceava 720229, Romania
- *	    vatavu@eed.usv.ro
- *
- *	    Lisa Anthony, Ph.D.
- *      UMBC
- *      Information Systems Department
- *      1000 Hilltop Circle
- *      Baltimore, MD 21250
- *      lanthony@umbc.edu
- *
- *	    Jacob O. Wobbrock, Ph.D.
- * 	    The Information School
- *	    University of Washington
- *	    Seattle, WA 98195-2840
- *	    wobbrock@uw.edu
- *
- * The academic publication for the $P recognizer, and what should be 
- * used to cite it, is:
- *
- *	Vatavu, R.-D., Anthony, L. and Wobbrock, J.O. (2012).  
- *	  Gestures as point clouds: A $P recognizer for user interface 
- *	  prototypes. Proceedings of the ACM Int'l Conference on  
- *	  Multimodal Interfaces (ICMI '12). Santa Monica, California  
- *	  (October 22-26, 2012). New York: ACM Press, pp. 273-280.
- *
- * This software is distributed under the "New BSD License" agreement:
- *
- * Copyright (c) 2012, Radu-Daniel Vatavu, Lisa Anthony, and 
- * Jacob O. Wobbrock. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *    * Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *    * Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in the
- *      documentation and/or other materials provided with the distribution.
- *    * Neither the names of the University Stefan cel Mare of Suceava, 
- *	    University of Washington, nor UMBC, nor the names of its contributors 
- *	    may be used to endorse or promote products derived from this software 
- *	    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
- * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL Radu-Daniel Vatavu OR Lisa Anthony
- * OR Jacob O. Wobbrock BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT 
- * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
- * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
-**/
 using System;
 
 namespace PDollarGestureRecognizer
 {
-    /// <summary>
-    /// Implements a gesture as a cloud of points (i.e., an unordered set of points).
-    /// Gestures are normalized with respect to scale, translated to origin, and resampled into a fixed number of 32 points.
-    /// </summary>
     public class Gesture
     {
-        public Point[] Points = null;            // gesture points (normalized)
+        public Point[] Points = null;
+        public float[] Theta { get; private set; }
         public string Name = "";                 // gesture class
         private const int SAMPLING_RESOLUTION = 32;
-
-        /// <summary>
-        /// Constructs a gesture from an array of points
-        /// </summary>
-        /// <param name="points"></param>
         public Gesture(Point[] points, string gestureName = "")
         {
-            this.Name = gestureName;
-            
-            // normalizes the array of points with respect to scale, origin, and number of points
-            this.Points = Scale(points);
-            this.Points = TranslateTo(Points, Centroid(Points));
-            this.Points = Resample(Points, SAMPLING_RESOLUTION);
+            Name = gestureName;
+            Points = Scale(points);
+            Points = TranslateTo(Points, Centroid(Points));
+            Points = Resample(Points, SAMPLING_RESOLUTION);
+            Theta = ComputeLocalShapeDescriptors(Points);
         }
+        public static float[] ComputeLocalShapeDescriptors(Point[] points)
+        {
+            int n = points.Length;
+            float[] theta = new float[n];
 
-        #region gesture pre-processing steps: scale normalization, translation to origin, and resampling
+            theta[0] = theta[n - 1] = 0;
+            for (int i = 1; i < n - 1; i++)
+                theta[i] = (float)(ShortAngle(points[i - 1], points[i], points[i + 1]) / Math.PI);
+            return theta;
+        }
+        public static float ShortAngle(Point a, Point b, Point c)
+        {
+            float length_ab = Geometry.EuclideanDistance(a, b);
+            float length_bc = Geometry.EuclideanDistance(b, c);
+            if (Math.Abs(length_ab * length_bc) <= float.Epsilon)
+                return 0;
+                
+            double cos_angle = ((b.X - a.X) * (c.X - b.X) + (b.Y - a.Y) * (c.Y - b.Y)) / (length_ab * length_bc);
+            if (cos_angle <= -1.0) return (float)Math.PI;
+            if (cos_angle >= 1.0) return 0.0f;
 
-        /// <summary>
-        /// Performs scale normalization with shape preservation into [0..1]x[0..1]
-        /// </summary>
-        /// <param name="points"></param>
-        /// <returns></returns>
+            // return the angle between vectors (a,b) and (b,c) in the interval [0,PI]
+            return (float)Math.Acos(cos_angle);
+        }
         private Point[] Scale(Point[] points)
         {
             float minx = float.MaxValue, miny = float.MaxValue, maxx = float.MinValue, maxy = float.MinValue;
@@ -109,13 +57,6 @@ namespace PDollarGestureRecognizer
                 newPoints[i] = new Point((points[i].X - minx) / scale, (points[i].Y - miny) / scale, points[i].StrokeID);
             return newPoints;
         }
-
-        /// <summary>
-        /// Translates the array of points by p
-        /// </summary>
-        /// <param name="points"></param>
-        /// <param name="p"></param>
-        /// <returns></returns>
         private Point[] TranslateTo(Point[] points, Point p)
         {
             Point[] newPoints = new Point[points.Length];
@@ -123,12 +64,6 @@ namespace PDollarGestureRecognizer
                 newPoints[i] = new Point(points[i].X - p.X, points[i].Y - p.Y, points[i].StrokeID);
             return newPoints;
         }
-
-        /// <summary>
-        /// Computes the centroid for an array of points
-        /// </summary>
-        /// <param name="points"></param>
-        /// <returns></returns>
         private Point Centroid(Point[] points)
         {
             float cx = 0, cy = 0;
@@ -140,12 +75,6 @@ namespace PDollarGestureRecognizer
             return new Point(cx / points.Length, cy / points.Length, 0);
         }
 
-        /// <summary>
-        /// Resamples the array of points into n equally-distanced points
-        /// </summary>
-        /// <param name="points"></param>
-        /// <param name="n"></param>
-        /// <returns></returns>
         public Point[] Resample(Point[] points, int n)
         {
             Point[] newPoints = new Point[n];
@@ -188,12 +117,6 @@ namespace PDollarGestureRecognizer
                 newPoints[numPoints++] = new Point(points[points.Length - 1].X, points[points.Length - 1].Y, points[points.Length - 1].StrokeID);
             return newPoints;
         }
-
-        /// <summary>
-        /// Computes the path length for an array of points
-        /// </summary>
-        /// <param name="points"></param>
-        /// <returns></returns>
         private float PathLength(Point[] points)
         {
             float length = 0;
@@ -202,7 +125,5 @@ namespace PDollarGestureRecognizer
                     length += Geometry.EuclideanDistance(points[i - 1], points[i]);
             return length;
         }
-
-        #endregion
     }
 }

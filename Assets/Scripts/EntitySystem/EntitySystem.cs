@@ -8,6 +8,19 @@ namespace TheRavine.EntityControl
 {
     public class EntitySystem : NetworkBehaviour, ISetAble
     {
+        public GameObject CreateMob(Vector2 position, GameObject prefab)
+        {
+            GameObject curMob = Instantiate(prefab, position, Quaternion.identity);
+
+            AEntity entity = curMob.GetComponentInChildren<AEntityModelView>().Entity;
+            
+            // if(entity != null)
+            // {
+            //     entity.Init();
+            // }
+
+            return curMob;
+        }
         // private SkillFacade skillFacade;
         private List<AEntity> global;
         public void AddToGlobal(AEntity entity) => global.Add(entity);
@@ -38,7 +51,7 @@ namespace TheRavine.EntityControl
 
         public void BreakUp(ISetAble.Callback callback)
         {
-            for (int i = 0; i < global.Count; i++) global[i].Delete();
+            for (int i = 0; i < global.Count; i++) global[i].Dispose();
             if(boidsBehaviour != null) boidsBehaviour.DisableBoids();
             OnDestroy();
             callback?.Invoke();

@@ -15,9 +15,8 @@ namespace TheRavine.EntityControl
             // _entityGameData = new EntityGameData(_entityInfo);
             // crosshair.gameObject.SetActive(false);
         }
-        public override void Init(Action onUpdateAction, IEntityController controller)
+        public override void Init()
         {
-            moveController = controller as IMobControllable;
             base.Activate();
         }
         public override Vector2 GetEntityVelocity() => moveController.GetEntityVelocity();

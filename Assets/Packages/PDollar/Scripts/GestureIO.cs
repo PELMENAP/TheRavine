@@ -5,15 +5,10 @@ using System.Xml;
 
 using UnityEngine;
 
-namespace PDollarGestureRecognizer
+namespace TheRavine.Extensions
 {
     public class GestureIO
     {
-        /// <summary>
-        /// Reads a multistroke gesture from an XML file
-        /// </summary>
-        /// <param name="xml"></param>
-        /// <returns></returns>
 		public static Gesture ReadGestureFromXML(string xml) {
 
 			XmlTextReader xmlReader = null;
@@ -32,12 +27,6 @@ namespace PDollarGestureRecognizer
 
 			return gesture;
 		}
-
-		/// <summary>
-		/// Reads a multistroke gesture from an XML file
-		/// </summary>
-		/// <param name="fileName"></param>
-		/// <returns></returns>
 		public static Gesture ReadGestureFromFile(string fileName) {
 
 			XmlTextReader xmlReader = null;
@@ -96,10 +85,6 @@ namespace PDollarGestureRecognizer
             }
             return new Gesture(points.ToArray(), gestureName);
         }
-
-        /// <summary>
-        /// Writes a multistroke gesture to an XML file
-        /// </summary>
         public static void WriteGesture(PDollarGestureRecognizer.Point[] points, string gestureName, string fileName)
         {
             using (StreamWriter sw = new StreamWriter(fileName))
