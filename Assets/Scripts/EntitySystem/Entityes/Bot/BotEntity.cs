@@ -42,12 +42,12 @@ namespace TheRavine.EntityControl
 
         public void SetBehaviourIdle()
         {
-            statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<BotBehaviourIdle>());
+            statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<BotBehaviourIdle>());
         }
 
         public void SetBehaviourDialog()
         {
-            statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<BotBehaviourDialoge>());
+            statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<BotBehaviourDialoge>());
         }
     }
 }

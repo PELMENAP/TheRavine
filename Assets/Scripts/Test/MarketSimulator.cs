@@ -36,6 +36,9 @@ public class MarketSimulator
         lastTrade = targetTrade; 
         targetTrade += Random.RangeFloat(-targetTradeSpread, targetTradeSpread);
 
+        if(targetTrade <= 0)
+            targetTrade = - targetTrade * 2;
+
         Debug.Log("Целевая цена изменилась на " + targetTrade);
     }
     public void Tick()

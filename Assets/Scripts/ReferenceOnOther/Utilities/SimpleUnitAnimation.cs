@@ -1,6 +1,6 @@
 using UnityEngine;
 
-using TheRavine.Extensions;
+using Random = TheRavine.Extensions.RavineRandom;
 
 public class SimpleUnitAnimator : MonoBehaviour
 {
@@ -16,21 +16,21 @@ public class SimpleUnitAnimator : MonoBehaviour
 
     private int currentFrame = 0, defaultPose;
     private bool isAnimation;
-    private Vector3 previousPosition;
+    private Vector3 previousPosition, currentPosition;
     private SpriteRenderer spriteRenderer;
 
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         previousPosition = this.transform.position;
-        defaultPose = RavineRandom.RangeInt(0, defaults.Length);
+        defaultPose = Random.RangeInt(0, defaults.Length);
     }
 
     private void OnEnable()
     {
         isAnimation = true;
         if (frames == null || frames.Length == 0) return;
-        InvokeRepeating(nameof(NextFrame), 0, frameDuration);
+        InvokeRepeating(nameof(NextFrame), Random.RangeFloat(0, frameDuration), frameDuration);
     }
 
     private void OnDisable()
@@ -41,33 +41,38 @@ public class SimpleUnitAnimator : MonoBehaviour
 
     private void NextFrame()
     {   
-        if(currentFrame == 0)
+        if (currentFrame == 0)
         {
-            if(Vector3.Distance(previousPosition, this.transform.position) < 0.1f)
+            currentPosition = this.transform.position;
+            if (Vector3.Distance(previousPosition, currentPosition) < 0.1f)
             {
                 isAnimation = false;
                 spriteRenderer.sprite = defaults[defaultPose];
-            } 
+            }
             else
             {
                 isAnimation = true;
             }
-            previousPosition = this.transform.position;
+            previousPosition = currentPosition;
         }
 
-        currentFrame++;
-
-        if (currentFrame >= frames.Length)
+        if (isAnimation)
         {
-            if (playOnce)
-            {
-                CancelInvoke(nameof(NextFrame));
-            }
-            defaultPose = RavineRandom.RangeInt(0, defaults.Length);
-            currentFrame = 0;
-        }
+            spriteRenderer.sprite = frames[currentFrame];
+            currentFrame++;
 
-        if (frames == null || frames.Length == 0 || !isAnimation) return;
+            if (currentFrame >= frames.Length)
+            {
+                if (playOnce)
+                {
+                    isAnimation = false;
+                    currentFrame = 0;
+                    CancelInvoke(nameof(NextFrame));
+                }
+                defaultPose = Random.RangeInt(0, defaults.Length);
+                currentFrame = 0;
+            }
+        }
 
         spriteRenderer.sprite = frames[currentFrame];
     }

@@ -29,6 +29,19 @@ namespace TheRavine.EntityControl
             }
             return (T)component;
         }
+        public bool HasComponent<T>() where T : IComponent
+        {
+            return _components.ContainsKey(typeof(T));
+        }
+        public bool RemoveComponent<T>() where T : IComponent
+        {
+            if (_components.TryGetValue(typeof(T), out var component))
+            {
+                component.Dispose();
+                return _components.Remove(typeof(T));
+            }
+            return false;
+        }
         public void Activate() => IsActive.Value = true;
         public void Deactivate() => IsActive.Value = false;
 

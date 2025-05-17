@@ -17,7 +17,7 @@ namespace TheRavine.EntityControl
             playerController.SetInitialValues(this, logger);
         }
 
-        public void AddComponentsToEntity(EntityInfo entityInfo, AEntityModelView aEntityModelView)
+        public void AddComponentsToEntity(EntityInfo entityInfo, AEntityViewModel aEntityModelView)
         {
             base.AddComponentToEntity(new StatePatternComponent());
             base.AddComponentToEntity(new EventBusComponent());
@@ -46,20 +46,20 @@ namespace TheRavine.EntityControl
 
         public void SetBehaviourIdle()
         {
-            statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<PlayerBehaviourIdle>());
+            statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<PlayerBehaviourIdle>());
             playerController.EnableComponents();
         }
 
         public void SetBehaviourDialog()
         {
-            statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<PlayerBehaviourDialogue>());
+            statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<PlayerBehaviourDialogue>());
             playerController.SetZeroValues();
             playerController.DisableComponents();
         }
 
         public void SetBehaviourSit()
         {
-            statePatternComponent.SetBehaviour(statePatternComponent.GetBehaviour<PlayerBehaviourSit>());
+            statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<PlayerBehaviourSit>());
             playerController.SetZeroValues();
             playerController.DisableComponents();
         }

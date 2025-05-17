@@ -1,12 +1,17 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+
 using Cysharp.Threading.Tasks;
+using ZLinq;
 
 using TheRavine.Extensions;
 public class MarketCore
 {
+    public event Action<TradeLot> OnLotAdded;
+    public event Action<TradeLot> OnLotExpired;
+    public event Action<TradeLot, TradeLot, int, float> OnTradeCompleted; // buyer, seller, quantity, price
+
     private readonly ILogger logger;
     private readonly float commissionRate;
     private readonly int defaultLotTTL;
@@ -87,6 +92,7 @@ public class MarketCore
         lots.Add(lot);
 
         modifiedItems.Add(lot.Item);
+        OnLotAdded?.Invoke(lot);
     }
 
     public void CancelLot(Guid id)
@@ -98,6 +104,8 @@ public class MarketCore
         lotById.Remove(id);
 
         modifiedItems.Add(lot.Item);
+
+        OnLotExpired?.Invoke(lot);
     }
 
     private void RemoveLotFromBook(TradeLot lot)
@@ -117,7 +125,7 @@ public class MarketCore
     {
         HashSet<string> processedItems = new();
 
-        foreach (var item in buyOrders.Keys.ToList())
+        foreach (var item in buyOrders.Keys.AsValueEnumerable().ToList())
         {
             if (processedItems.Contains(item) || !sellOrders.ContainsKey(item)) continue;
             processedItems.Add(item);
@@ -130,8 +138,8 @@ public class MarketCore
 
             while (buys.Count > 0 && sells.Count > 0)
             {
-                var buyPriceList = buys.First();
-                var sellPriceList = sells.First();
+                var buyPriceList = buys.AsValueEnumerable().First();
+                var sellPriceList = sells.AsValueEnumerable().First();
 
                 float buyPrice = buyPriceList.Key;
                 float sellPrice = sellPriceList.Key;
@@ -169,6 +177,7 @@ public class MarketCore
 
         if (buy.Quantity == 0) CancelLot(buy.Id);
         if (sell.Quantity == 0) CancelLot(sell.Id);
+        OnTradeCompleted?.Invoke(buy, sell, quantity, price);
     }
 
     private void RecordTrade(string item, float price, int quantity)
@@ -185,29 +194,65 @@ public class MarketCore
     private void UpdateBestPrice(string item)
     {
         bestBuyPrice[item] = buyOrders.TryGetValue(item, out var buyPrices) && buyPrices.Count > 0 
-            ? buyPrices.First().Key
+            ? buyPrices.AsValueEnumerable().First().Key
             : 0;
             
         bestSellPrice[item] = sellOrders.TryGetValue(item, out var sellPrices) && sellPrices.Count > 0 
-            ? sellPrices.First().Key 
+            ? sellPrices.AsValueEnumerable().First().Key 
             : float.MaxValue;
     }
 
     public List<TradeHistory> GetTradeHistory(int count) => 
-        history.TakeLast(Math.Min(count, history.Count)).ToList();
+        history.AsValueEnumerable().TakeLast(Math.Min(count, history.Count)).ToList();
 
     public float GetAveragePrice(string item) =>
         analytics.TryGetValue(item, out var data) && data.totalVolume > 0
             ? data.totalValue / data.totalVolume
             : 0;
+
+    public float GetVWAP(string item, int recentTrades = 50)
+    {
+        var trades = history.AsValueEnumerable()
+                            .Where(t => t.Item == item)
+                            .TakeLast(recentTrades)
+                            .ToList();
+
+        int totalVolume = trades.AsValueEnumerable().Sum(t => t.Quantity);
+        float totalValue = trades.AsValueEnumerable().Sum(t => t.Quantity * t.Price);
+
+        return totalVolume > 0 ? totalValue / totalVolume : 0;
+    }
+
+    public float GetPriceVolatility(string item, int recentTrades = 50)
+    {
+        var trades = history.AsValueEnumerable()
+                            .Where(t => t.Item == item)
+                            .TakeLast(recentTrades)
+                            .Select(t => t.Price)
+                            .ToList();
+
+        if (trades.Count == 0) return 0;
+
+        float average = trades.AsValueEnumerable().Average();
+        float variance = trades.AsValueEnumerable().Sum(p => (p - average) * (p - average)) / trades.Count;
+
+        return Mathf.Sqrt(variance);
+    }
+    public int GetOrderBookDepth(string item, bool isBuy)
+    {
+        var orders = isBuy ? buyOrders : sellOrders;
+
+        if (!orders.TryGetValue(item, out var priceMap)) return 0;
+        return priceMap.AsValueEnumerable().Sum(p => p.Value.AsValueEnumerable().Sum(l => l.Quantity));
+    }
             
     public int GetTotalLots() => lotById.Count;
     
     public int GetBuyLotCount(string trackedItem) => 
-        buyOrders.TryGetValue(trackedItem, out var data) ? data.Sum(x => x.Value.Count) : 0;
+        buyOrders.TryGetValue(trackedItem, out var data) ? data.AsValueEnumerable().Sum(x => x.Value.Count) : 0;
         
     public int GetSellLotCount(string trackedItem) => 
-        sellOrders.TryGetValue(trackedItem, out var data) ? data.Sum(x => x.Value.Count) : 0;
+        sellOrders.TryGetValue(trackedItem, out var data) ? data.AsValueEnumerable().Sum(x => x.Value.Count) : 0;
         
     public int GetTotalTrades(string item) => 
         analytics.TryGetValue(item, out var data) ? data.totalTrades : 0;

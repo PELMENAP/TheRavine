@@ -26,7 +26,6 @@ public class Test : MonoBehaviour
     public SkillData swimmingSkill;
 
     public EntityInfo entityInfo;
-    private SkillFacade skillFacade = new SkillFacade();
     public GameObject player;
     AEntity playerEntity;
     [SerializeField] private PlayerInput input;
@@ -52,37 +51,12 @@ public class Test : MonoBehaviour
         await UniTask.Delay(5000);
         Settings.isShadow = isShadow;
         Settings._controlType = control;
-        // playerEntity = player.GetComponent<AEntity>();
-        // playerEntity.SetUpEntityData(entityInfo);
-        // skillFacade.AddEntity(playerEntity.GetEntityComponent<SkillComponent>());
-        // skillFacade.AddSkillToEntity(playerEntity.GetEntityComponent<SkillComponent>(), SkillBuilder.CreateSkill(flyingSkill));
-        // point.action.performed += mobile;
     }
-
-    public static void PrintMap(int[,] map)
-    {
-        int size = map.GetLength(0);
-        for (int x = 0; x < size; x++)
-        {
-            string mes = "";
-            for (int y = 0; y < size; y++)
-            {
-                mes += map[x, y] + " ";
-            }
-            Debug.Log(mes);
-        }
-    }
-
     [Button]
     private void ShowPlayerEntity()
     {
         print(playerEntity.GetEntityComponent<MainComponent>().GetEntityStats().energy);
         print(playerEntity.GetEntityComponent<SkillComponent>().Skills[flyingSkill.SkillName].GetRechargeTime());
-    }
-    [Button]
-    private void UseSkillByFacade()
-    {
-        skillFacade.GetEntitySkill(playerEntity.GetEntityComponent<SkillComponent>(), flyingSkill.SkillName).Use(playerEntity.GetEntityComponent<MainComponent>());
     }
 
     [Button]
@@ -91,7 +65,6 @@ public class Test : MonoBehaviour
         playerEntity.GetEntityComponent<SkillComponent>().Skills[flyingSkill.SkillName].Use(playerEntity.GetEntityComponent<MainComponent>());
     }
     Vector2Int position;
-    ChunkData map;
 
     [Button]
     private void TestSimilarity()
