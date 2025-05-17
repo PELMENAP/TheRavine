@@ -42,15 +42,12 @@ namespace TheRavine.EntityControl
                 (int)math.floor(pos.y * InvCellSize)
             );
 
-            float2 forwardDir = math.normalizesafe(vel);
-            int2 dirCellOffset = new int2((int)math.sign(forwardDir.x), (int)math.sign(forwardDir.y));
-
             float AvoidanceThresholdSq = AvoidanceThreshold * AvoidanceThreshold, AlongThresholdSq = AlongThreshold * AlongThreshold;
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < s_CellOffsets.Length; i++)
             {
-                int2 neighborCell = cellPos + s_CellOffsets[i] + dirCellOffset;
-                
+                int2 neighborCell = cellPos + s_CellOffsets[i];
+                    
                 if (SpatialGrid.TryGetFirstValue(neighborCell, out int neighborIndex, out var iterator))
                 {
                     do
@@ -63,11 +60,13 @@ namespace TheRavine.EntityControl
                         
                         float2 posDifference = pos - neighborPos;
                         float distanceSq = math.lengthsq(posDifference);
+
+                        float invDistance = math.rsqrt(distanceSq);
                         
                         if (distanceSq < AvoidanceThresholdSq && distanceSq > 0)
                         {
-                            float distFactor = AvoidanceThreshold - distanceSq * math.rsqrt(distanceSq);
-                            separation += posDifference * math.rsqrt(distanceSq) * distFactor;
+                            float distFactor = AvoidanceThreshold - distanceSq * invDistance;
+                            separation += posDifference * invDistance * distFactor;
                         }
                         
                         if (distanceSq < AlongThresholdSq)

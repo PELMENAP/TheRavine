@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using ZLinq;
 using UnityEngine;
 
 public class PointPathVisualizer : MonoBehaviour
@@ -27,7 +27,7 @@ public class PointPathVisualizer : MonoBehaviour
             return points;
 
         List<Vector2> hull = ConvexHull(points);
-        List<Vector2> remaining = points.Except(hull).ToList();
+        List<Vector2> remaining = points.AsValueEnumerable().Except(hull).ToList();
 
         return InsertPointsGreedy(hull, remaining);
     }
@@ -60,9 +60,9 @@ public class PointPathVisualizer : MonoBehaviour
     public static List<Vector2> ConvexHull(List<Vector2> points)
     {
         if (points.Count <= 3)
-            return points.Distinct().ToList();
+            return points.AsValueEnumerable().Distinct().ToList();
 
-        points = points.OrderBy(p => p.x).ThenBy(p => p.y).ToList();
+        points = points.AsValueEnumerable().OrderBy(p => p.x).ThenBy(p => p.y).ToList();
         List<Vector2> hull = new List<Vector2>();
 
         foreach (var point in points)

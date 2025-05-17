@@ -7,7 +7,7 @@ using TheRavine.Services;
 
 namespace TheRavine.EntityControl
 {
-    public class PlayerModelView : AEntityModelView
+    public class PlayerModelView : AEntityViewModel
     {
         public PlayerEntity playerEntity => (PlayerEntity)Entity;
         [SerializeField] private NetworkObject cameraPrefab;

@@ -1,7 +1,7 @@
 using UnityEngine;
 using Unity.Netcode;
 using System.Collections.Generic;
-using System.Linq;
+using ZLinq;
 
 namespace TheRavine.Netcode
 {
@@ -15,7 +15,7 @@ namespace TheRavine.Netcode
         private void Awake()
         {
             prefabDictionary = NetworkManager.Singleton.NetworkConfig.Prefabs.Prefabs
-                .ToDictionary(prefab => prefab.Prefab.name, prefab => prefab.Prefab);
+                .AsValueEnumerable().ToDictionary(prefab => prefab.Prefab.name, prefab => prefab.Prefab);
         }
 
         [ServerRpc(RequireOwnership = false)]

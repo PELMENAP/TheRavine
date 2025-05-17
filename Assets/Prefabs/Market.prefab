@@ -86,8 +86,8 @@ LineRenderer:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
-        time: 0.0063598873
-        value: 0.17285307
+        time: 0
+        value: 1
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -150,10 +150,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbe21d7b95f994c1282ebcdd29a2c94c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  market: {fileID: 2429987126200894976}
+  trackedItem: Gold
   lineRenderer: {fileID: 8366438197829764504}
   maxPoints: 100
-  xScale: 10
-  yScale: 1
+  updateInterval: 1
+  graphWidth: 400
+  graphHeight: 200
+  graphOffset: {x: 0, y: 0}
+  totalLotsText: {fileID: 0}
+  buyLotsText: {fileID: 0}
+  sellLotsText: {fileID: 0}
+  maxPriceText: {fileID: 0}
+  minPriceText: {fileID: 0}
+  numberFormat: N0
 --- !u!114 &2429987126200894976
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -166,6 +176,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f8af7095976d833cadaa7e0504a0d85, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  commissionRate: 0.01
+  commissionRate: 0.1
   tickRate: 1
   lotTTL: 10

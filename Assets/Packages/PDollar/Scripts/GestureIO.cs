@@ -85,7 +85,7 @@ namespace TheRavine.Extensions
             }
             return new Gesture(points.ToArray(), gestureName);
         }
-        public static void WriteGesture(PDollarGestureRecognizer.Point[] points, string gestureName, string fileName)
+        public static void WriteGesture(Point[] points, string gestureName, string fileName)
         {
             using (StreamWriter sw = new StreamWriter(fileName))
             {

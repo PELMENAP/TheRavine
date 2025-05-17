@@ -18,7 +18,7 @@ MonoBehaviour:
   distanceOfTargetFromPlayer: 200
   destinationThreshold: 30
   avoidanceThreshold: 5
-  alongThreshold: 10
+  alongThreshold: 15
   cellSize: 10
   velocityLimit: 15
   accelerationWeights:

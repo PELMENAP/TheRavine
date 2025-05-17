@@ -26,7 +26,7 @@ namespace TheRavine.InventoryElements
             _imageIcon.gameObject.SetActive(true);
             var textAmountEnabled = slot.amount > 1;
             _textAmount.gameObject.SetActive(textAmountEnabled);
-            if (textAmountEnabled) _textAmount.text = $"x{slot.amount}";
+            if (textAmountEnabled) _textAmount.text = $"{slot.amount}";
         }
 
         private void Cleanup()

@@ -12,7 +12,7 @@ namespace TheRavine.EntityControl
         {
             GameObject curMob = Instantiate(prefab, position, Quaternion.identity);
 
-            AEntity entity = curMob.GetComponentInChildren<AEntityModelView>().Entity;
+            AEntity entity = curMob.GetComponentInChildren<AEntityViewModel>().Entity;
             
             // if(entity != null)
             // {

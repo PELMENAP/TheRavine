@@ -3,7 +3,7 @@ using TMPro;
 using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using System.Threading;
-using System.Linq;
+using ZLinq;
 
 public class PriceChart : MonoBehaviour
 {
@@ -114,8 +114,9 @@ public class PriceChart : MonoBehaviour
 
         if (needsRescaling && priceHistory.Count > 1)
         {
-            minPrice = priceHistory.Min();
-            maxPrice = priceHistory.Max();
+            var priceHistoryValueEnumerable = priceHistory.AsValueEnumerable();
+            minPrice = priceHistoryValueEnumerable.Min();
+            maxPrice = priceHistoryValueEnumerable.Max();
             needsRescaling = false;
             UpdatePriceLabels(); // Обновляем значения min/max в UI
         }

@@ -56,10 +56,10 @@ namespace TheRavine.Base
             currentProfiler?.gameObject.SetActive(isProfile);
         }
     }
-}
 
-public enum ControlType
-{
-    Personal,
-    Mobile
+    public enum ControlType
+    {
+        Personal,
+        Mobile
+    }
 }
