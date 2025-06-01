@@ -4,6 +4,13 @@ using TheRavine.Security;
 
 namespace TheRavine.Base
 {
+    // using System.Threading;
+    // private CancellationTokenSource _cts;
+    // _cts    = new CancellationTokenSource();
+    // !_cts.Token.IsCancellationRequested
+    // _cts?.Cancel();
+    // _cts?.Dispose();
+
     public class DataStorage
     {
         public static int cycleCount;
@@ -11,16 +18,14 @@ namespace TheRavine.Base
         public static bool winTheGame;
         public static bool loadkey = false;
         public static bool normkey = false;
-        public static bool sceneClose;
 
         [SerializeField] public Data data;
 
         private void Awake()
         {
-            sceneClose = false;
             if (loadkey)
             {
-                data = SaveLoad.LoadEncryptedData<Data>(nameof(Data));
+                data = SaveLoad.LoadEncryptedData<Data>("game");
                 // PlayerData.data.entityTrans.position = PlayerData.data.cachedCamera.transform.position = new Vector3(data.PlPos.x, data.PlPos.y, 0);
                 // PlayerData.data.cachedCamera.transform.position += new Vector3(0, 0, -1);
                 // MapGeneratorOld.seed = data.seed;
@@ -35,7 +40,7 @@ namespace TheRavine.Base
         {
             // data.PlPos = new Data.Vec3(PlayerData.data.entityTrans.position);
             // data.seed = MapGeneratorOld.seed;
-            SaveLoad.SaveEncryptedData<Data>(nameof(Data), data);
+            SaveLoad.SaveEncryptedData<Data>("game1", data);
         }
 
         [System.Serializable]

@@ -14,21 +14,21 @@ public class AudioNatureController : MonoBehaviour, ISetAble
     [SerializeField] private float maxOstVolume = 0.5f, maxNatureVolume = 0.5f;
     [SerializeField] private float fadeSpeed = 0.002f;
 
-    private CancellationTokenSource cancellationTokenSource;
+    private CancellationTokenSource _cts;
     private DayCycle dayCycle;
     public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
     {
         dayCycle = locator.GetService<DayCycle>();
 
-        cancellationTokenSource = new CancellationTokenSource();
-        AudioLoop(cancellationTokenSource.Token).Forget();
-        OstLoop(cancellationTokenSource.Token).Forget();
+        _cts = new CancellationTokenSource();
+        AudioLoop(_cts.Token).Forget();
+        OstLoop(_cts.Token).Forget();
         callback?.Invoke();
     }
 
     private async UniTaskVoid AudioLoop(CancellationToken token)
     {
-        while (!token.IsCancellationRequested)
+        while (!_cts.Token.IsCancellationRequested)
         {
             int currentSourceIndex = audioSources[0].isPlaying ? 1 : 0;
             int nextSourceIndex = currentSourceIndex == 0 ? 1 : 0;
@@ -88,8 +88,8 @@ public class AudioNatureController : MonoBehaviour, ISetAble
 
     public void BreakUp(ISetAble.Callback callback)
     {
-        cancellationTokenSource?.Cancel();
-        cancellationTokenSource?.Dispose();
+        _cts?.Cancel();
+        _cts?.Dispose();
         callback?.Invoke();
     }
 }

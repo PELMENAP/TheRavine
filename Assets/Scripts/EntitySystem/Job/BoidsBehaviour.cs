@@ -1,11 +1,13 @@
-﻿using Unity.Collections;
+﻿using System.Threading;
+
+using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Jobs;
 using Unity.Mathematics;
+
 using NaughtyAttributes;
 using Cysharp.Threading.Tasks;
-
 using TheRavine.Base;
 using Random = TheRavine.Extensions.RavineRandom;
 
@@ -15,6 +17,7 @@ namespace TheRavine.EntityControl
     {
         [SerializeField] private BoidsInfo boidsInfo;
         [SerializeField] private GameObject[] prefabs;
+        private CancellationTokenSource _cts;
         private NativeArray<float4> _positionsAndVelocities;
         private NativeArray<float2> _accelerations, _otherTargets;
         private NativeArray<int> _flockIds;
@@ -36,7 +39,8 @@ namespace TheRavine.EntityControl
         {       
             this.viewer = viewer; 
             isUpdate = false;
-            
+
+            _cts    = new CancellationTokenSource();
             _positionsAndVelocities = new NativeArray<float4>(boidsInfo.numberOfEntities, Allocator.Persistent);
 
             _accelerations = new NativeArray<float2>(boidsInfo.numberOfEntities, Allocator.Persistent);
@@ -121,6 +125,9 @@ namespace TheRavine.EntityControl
             _otherTargets.Dispose();
             _isMoving.Dispose();
             _transformAccessArray.Dispose();
+
+            _cts?.Cancel();
+            _cts?.Dispose();
         }
 
         [Button]
@@ -175,7 +182,7 @@ namespace TheRavine.EntityControl
         }
         private async UniTaskVoid TargetsUpdate()
         {
-            while(!DataStorage.sceneClose)
+            while(!_cts.Token.IsCancellationRequested)
             {
                 _otherTargets[Random.RangeInt(0, _otherTargets.Length)] = GetTargetPositionCloseToViewer();
                 ChangeMoving();

@@ -107,9 +107,9 @@ namespace TheRavine.Generator
 
             private void ExtractPolygons() // search the true field
             {
-                for (int x = 1; x < countOfQuads; x+=4)
+                for (int x = 3; x < countOfQuads; x+=4)
                 {
-                    for (int y = 1; y < countOfQuads; y+=4)
+                    for (int y = 3; y < countOfQuads; y+=4)
                     {
                         if (grid[x, y] && !visited[x, y])
                         {

@@ -89,8 +89,6 @@ namespace TheRavine.Inventory
 
         private void OnDragMobile(InputAction.CallbackContext context)
         {
-            if (!DayCycle.closeThread)
-                return;
             foreach (Touch touch in Touch.activeTouches)
             {
                 switch (touch.phase)

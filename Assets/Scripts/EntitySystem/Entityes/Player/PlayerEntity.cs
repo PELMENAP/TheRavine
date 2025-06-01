@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 
+using Cysharp.Threading.Tasks;
 using R3;
 
 namespace TheRavine.EntityControl
@@ -14,12 +15,12 @@ namespace TheRavine.EntityControl
         {
             this.logger = logger;
             playerController = controller;
-            playerController.SetInitialValues(this, logger);
         }
 
         public void AddComponentsToEntity(EntityInfo entityInfo, AEntityViewModel aEntityModelView)
         {
-            base.AddComponentToEntity(new StatePatternComponent());
+            statePatternComponent = new StatePatternComponent();
+            base.AddComponentToEntity(statePatternComponent);
             base.AddComponentToEntity(new EventBusComponent());
             base.AddComponentToEntity(new SkillComponent());
             base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.prefab.GetInstanceID(), new EntityStats(entityInfo.statsInfo)));
@@ -30,6 +31,7 @@ namespace TheRavine.EntityControl
 
         public override void Init()
         {
+            playerController.SetInitialValues(this, logger);
             SetBehaviourIdle();
         }
         public override Vector2 GetEntityVelocity()
@@ -46,20 +48,20 @@ namespace TheRavine.EntityControl
 
         public void SetBehaviourIdle()
         {
-            statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<PlayerBehaviourIdle>());
+            statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<PlayerBehaviourIdle>()).Forget();
             playerController.EnableComponents();
         }
 
         public void SetBehaviourDialog()
         {
-            statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<PlayerBehaviourDialogue>());
+            statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<PlayerBehaviourDialogue>()).Forget();
             playerController.SetZeroValues();
             playerController.DisableComponents();
         }
 
         public void SetBehaviourSit()
         {
-            statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<PlayerBehaviourSit>());
+            statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<PlayerBehaviourSit>()).Forget();
             playerController.SetZeroValues();
             playerController.DisableComponents();
         }

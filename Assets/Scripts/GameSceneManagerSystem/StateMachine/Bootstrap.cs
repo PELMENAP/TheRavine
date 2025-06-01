@@ -49,8 +49,6 @@ namespace TheRavine.Base
             // if(DataStorage.sceneClose) return;
             // DataStorage.sceneClose = true;
             gameStateMachine.BreakUpServices();
-            
-            DataStorage.sceneClose = false;
             inTheEndCallback?.Invoke();
         }
 

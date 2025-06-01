@@ -9,7 +9,6 @@ public class ServiceLocatorAccess : MonoBehaviour
     public static ServiceLocatorAccess inst;
     public ServiceLocator serviceLocator;
     [SerializeField] private NetworkSpawner networkSpawner;
-    [SerializeField] private DayCycle dayCycle;
 
     public NetworkObject NetSpawnObject(string prefabName) 
     {

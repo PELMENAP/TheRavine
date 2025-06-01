@@ -57,7 +57,7 @@ public class CasinoSlots : MonoBehaviour
     private bool isSpin = false;
     private async UniTaskVoid AwaitAutoSpin()
     {
-        while (!DataStorage.sceneClose)
+        while (!_cts.Token.IsCancellationRequested)
         {
             if(isSpin) await UniTask.Delay(1500, cancellationToken: _cts.Token);
             if(isAutoPlay && !isSpin)
