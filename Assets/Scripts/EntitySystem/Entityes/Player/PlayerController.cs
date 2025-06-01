@@ -16,12 +16,11 @@ namespace TheRavine.EntityControl
     {
         [SerializeField] private int placeObjectDelay;
         [SerializeField] private float movementMinimum, sendInterval = 0.1f;
-        [SerializeField] private Animator animator, shadowAnimator;
         [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick;
         [SerializeField] private Joystick joystick;
         [SerializeField] private Transform crosshair, playerMark;
+        [SerializeField] private PlayerAnimator playerAnimator;
         private Rigidbody2D rb;
-        private float movementSpeed;
         private Vector2 movementDirection;
         private Vector2 lastSentDirection;
         private float timeSinceLastSend;
@@ -38,6 +37,8 @@ namespace TheRavine.EntityControl
         {
             this.logger = logger;
             this.transform.position = Extension.GetRandomPointAround(this.transform.position, 10);
+
+            playerAnimator.SetUpAsync().Forget();
 
             currentController = Settings._controlType switch
             {
@@ -66,20 +67,17 @@ namespace TheRavine.EntityControl
         private void InitStatePattern(StatePatternComponent component)
         {
             Action actions = Move;
-            actions += Animate;
             actions += Aim;
             component.AddBehaviour(typeof(PlayerBehaviourIdle), new PlayerBehaviourIdle (this, actions, logger));
             
-            actions = Animate;
             actions += Aim;
             component.AddBehaviour(typeof(PlayerBehaviourSit), new PlayerBehaviourSit(this, actions));
         }
 
         public void SetZeroValues()
         {
-            movementSpeed = 0f;
             // movementDirection = new Vector2(0, 0);
-            Animate();
+            playerAnimator.Animate(movementDirection, 0);
         }
         public void EnableComponents()
         {
@@ -95,9 +93,10 @@ namespace TheRavine.EntityControl
             if (isAimMode || !IsOwner) return;
 
             movementDirection = currentController.GetMove();
-            movementSpeed = Mathf.Clamp(movementDirection.magnitude, 0f, 1f);
+            float movementSpeed = Mathf.Clamp(movementDirection.magnitude, 0f, 1f);
 
             if (movementSpeed < movementMinimum) movementDirection = Vector2.zero;
+            else MoveMark();
 
             timeSinceLastSend += Time.deltaTime;
             if (timeSinceLastSend >= sendInterval && movementDirection != lastSentDirection)
@@ -107,8 +106,7 @@ namespace TheRavine.EntityControl
                 timeSinceLastSend = 0f;
             }
 
-            MoveMark();
-            Animate();
+            playerAnimator.Animate(movementDirection, movementSpeed);
         }
 
         [ServerRpc]
@@ -136,29 +134,8 @@ namespace TheRavine.EntityControl
         private void MoveMark()
         {
             playerMark.position = transform.position + Offset;
-            if (movementSpeed > movementMinimum / 2)
-            {
-                float angle = Mathf.Atan2(movementDirection.y, movementDirection.x) * Mathf.Rad2Deg - 90;
-                playerMark.rotation = Quaternion.Euler(0, 0, angle);
-            }
-        }
-
-        private void Animate()
-        {
-            if (movementDirection != Vector2.zero)
-            {
-                animator.SetFloat("Horizontal", movementDirection.x);
-                animator.SetFloat("Vertical", movementDirection.y);
-                if (Settings.isShadow)
-                {
-                    shadowAnimator.SetFloat("Horizontal", movementDirection.x);
-                    shadowAnimator.SetFloat("Vertical", movementDirection.y);
-                }
-            }
-
-            animator.SetFloat("Speed", movementSpeed);
-            if (Settings.isShadow)
-                shadowAnimator.SetFloat("Speed", movementSpeed);
+            float angle = Mathf.Atan2(movementDirection.y, movementDirection.x) * Mathf.Rad2Deg - 90;
+            playerMark.rotation = Quaternion.Euler(0, 0, angle);
         }
         public void Aim()
         {

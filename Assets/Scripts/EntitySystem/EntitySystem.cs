@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
+using Cysharp.Threading.Tasks;
 
 using TheRavine.Services;
+
 
 namespace TheRavine.EntityControl
 {
@@ -11,7 +13,6 @@ namespace TheRavine.EntityControl
         public GameObject CreateMob(Vector2 position, GameObject prefab)
         {
             GameObject curMob = Instantiate(prefab, position, Quaternion.identity);
-
             AEntity entity = curMob.GetComponentInChildren<AEntityViewModel>().Entity;
             
             // if(entity != null)
@@ -36,13 +37,17 @@ namespace TheRavine.EntityControl
             logger.LogInfo("EntitySystem service is available now");
             global  = new List<AEntity>();
             mobInfo = new Dictionary<int, EntityInfo>(4);
-            if(boidsBehaviour != null) boidsBehaviour.StartBoids(locator.GetPlayerTransform());
 
             for (int i = 0; i < _mobInfo.Length; i++) mobInfo[_mobInfo[i].prefab.GetInstanceID()] = _mobInfo[i];
 
+            SetUpBoids(locator);
             callback?.Invoke();
         }
-
+        private async UniTaskVoid SetUpBoids(ServiceLocator locator)
+        {
+            await UniTask.Delay(1000);
+            if(boidsBehaviour != null) boidsBehaviour.StartBoids(locator.GetPlayerTransform());
+        }
         private void FixedUpdate()
         {
             if(global == null) return;

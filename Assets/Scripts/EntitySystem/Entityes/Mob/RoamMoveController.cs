@@ -18,16 +18,18 @@ namespace TheRavine.EntityControl
         [SerializeField] private int bezierDetail, bezierFactor;
         [SerializeField] private int movementDelay, movementDelaySpread, defaultDelay, colliderDistance;
         private Vector2 target;
-        private bool isDelay = false, side = true, isAlife = false, isActive = false;
+        private bool isDelay = false, side = true, isActive = false;
         private Vector2[] bezierPoints;
         private int currentPointIndex;
         private Collider2D Ccollider;
+        private AEntity entity;
         public void SetInitialValues(AEntity entity, ILogger logger)
         {
             entityTransform = this.transform;
             Ccollider = this.GetComponent<Collider2D>();
             bezierPoints = new Vector2[bezierDetail + 1];
-            isAlife = true;
+            this.entity = entity;
+
             UpdateTargetWander();
             UpdateMobControllerCycle().Forget();
         }
@@ -50,7 +52,7 @@ namespace TheRavine.EntityControl
         }
         public async UniTaskVoid UpdateMobControllerCycle()
         {
-            while (!DataStorage.sceneClose)
+            while (entity.IsActive.Value)
             {
                 if(entityTransform == null) return;
                 if (!isActive) await UniTask.Delay(defaultDelay);
@@ -74,7 +76,7 @@ namespace TheRavine.EntityControl
         }
         public Vector2 GetEntityVelocity()
         {
-            if (isDelay && !isAlife) return Vector2.zero;
+            if (isDelay && !entity.IsActive.Value) return Vector2.zero;
             if (currentPointIndex < bezierPoints.Length && bezierPoints[0] != Vector2.zero)
                 return new Vector2((bezierPoints[currentPointIndex].x - entityTransform.position.x) * movementSpeed * Time.deltaTime, (bezierPoints[currentPointIndex].y - entityTransform.position.y) * movementSpeed * Time.deltaTime);
             return Vector2.zero;
@@ -82,7 +84,7 @@ namespace TheRavine.EntityControl
         public Transform GetModelTransform() => entityTransform;
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (isAlife)
+            if (entity.IsActive.Value)
                 UpdateRandomMove(true);
         }
         private void UpdateTargetWander()

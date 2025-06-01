@@ -21,7 +21,6 @@ namespace TheRavine.Base
             }
             public void OnExit()
             {
-                DayCycle.closeThread = false;
             }
             public void OnTick()
             {

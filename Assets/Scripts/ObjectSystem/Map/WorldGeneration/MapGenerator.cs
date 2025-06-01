@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -14,7 +15,7 @@ namespace TheRavine.Generator
     using EndlessGenerators;
     public class MapGenerator : MonoBehaviour, ISetAble
     {
-        private System.Threading.CancellationTokenSource _cts = new();
+        private CancellationTokenSource _cts = new();
         public const int mapChunkSize = 16, chunkScale = 1, scale = 5, generationSize = scale * mapChunkSize, waterLevel = 1;
         private Dictionary<Vector2Int, ChunkData> mapData;
         public ChunkData GetMapData(Vector2Int position)
@@ -137,7 +138,7 @@ namespace TheRavine.Generator
             NALQueueUpdateAdd = new Queue<Pair<Vector2Int,  ObjectInfo>>(32);
             await UniTask.Delay(10000);
             int countCycle = 0;
-            while (!DataStorage.sceneClose)
+            while (!_cts.Token.IsCancellationRequested)
             {
                 countCycle++;
                 if (NALQueue.Count == 0)
@@ -223,7 +224,7 @@ namespace TheRavine.Generator
 
         public async UniTaskVoid UpdateNAL()
         {
-            while (!DataStorage.sceneClose)
+            while (!_cts.Token.IsCancellationRequested)
             {
                 await UniTask.Delay(100000);
                 if (rotateTarget != 0f)
@@ -367,7 +368,7 @@ namespace TheRavine.Generator
                 endless[i].UpdateChunk(position);
                 await UniTask.WaitForFixedUpdate();
             }
-            while (!DataStorage.sceneClose)
+            while (!_cts.Token.IsCancellationRequested)
             {
                 position = GetPlayerPosition();
                 if (position != OldVposition && rotateTarget == 0f)

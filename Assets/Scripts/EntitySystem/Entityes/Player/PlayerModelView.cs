@@ -27,12 +27,14 @@ namespace TheRavine.EntityControl
                 SetupLocator();
                 CreatePlayerEntity();
                 SetupNetworking();
-                logger.LogInfo($"Player {NetworkManager.Singleton.LocalClientId} is set up");
+                logger.LogInfo($"Player entity {NetworkManager.Singleton.LocalClientId} is set up");
             }
             catch (Exception ex)
             {
                 logger.LogError($"Player entity {NetworkManager.Singleton.LocalClientId} cannot be created: {ex.Message}");
             }
+
+            playerEntity.Init();
         }
 
         private void SetupLocator()
@@ -106,7 +108,7 @@ namespace TheRavine.EntityControl
         {
             
         }
-        private void OnDestroy() 
+        public override void OnDestroy() 
         {
             cameraComponent?.BreakUp(null);
         }

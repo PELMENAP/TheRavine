@@ -18,6 +18,22 @@
             List is cleared and then filled with the elements of the source. Destination size is list.Count.
             </summary>
         </member>
+        <member name="M:ZLinq.ValueEnumerableExtensions.ToArrayPool``2(ZLinq.ValueEnumerable{``0,``1})">
+            <summary>
+            Converts to an array borrowed from ArrayPool&lt;T&gt;.Shared.
+            For performance considerations, PooledArray is a struct, so
+            copying or boxing it risks returning to the ArrayPool multiple times.
+            Always use it simply with using and do not keep it for long periods.
+            </summary>
+        </member>
+        <member name="T:ZLinq.PooledArray`1">
+            <summary>
+            Holds an array borrowed from ArrayPool&lt;T&gt;.Shared.Rent.
+            When Disposed, it will Return the array to ArrayPool&lt;T&gt;.Shared.
+            If boxed or passed by copy, there's a risk of multiple Returns.
+            Please use it as is and avoid long-term retention.
+            </summary>
+        </member>
         <member name="M:ZLinq.IValueEnumerator`1.TryGetNext(`0@)">
             <summary>
             Equivalent of IEnumerator.MoveNext + Current.

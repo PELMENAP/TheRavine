@@ -1,10 +1,15 @@
 ZLinq
 ===
+[![CI](https://github.com/Cysharp/ZLinq/actions/workflows/build-debug.yaml/badge.svg)](https://github.com/Cysharp/ZLinq/actions/workflows/build-debug.yml)
+[![Benchmark](https://github.com/Cysharp/ZLinq/actions/workflows/benchmark.yaml/badge.svg)](https://github.com/Cysharp/ZLinq/actions/workflows/benchmark.yml)
+[![NuGet](https://img.shields.io/nuget/v/ZLinq)](https://www.nuget.org/packages/ZLinq)
+[![DeepWiki](https://img.shields.io/badge/Chat%20with-DeepWiki%20🤖-blue)](https://deepwiki.com/Cysharp/ZLinq)
+
 Zero allocation LINQ with LINQ to Span, LINQ to SIMD, and LINQ to Tree (FileSystem, JSON, GameObject, etc.) for all .NET platforms(netstandard2.0, 2.1, net8, net9) and Unity, Godot.
 
 ![](img/benchmarkhead.jpg)
 
-Unlike regular LINQ, ZLinq doesn't increase allocations when adding more method chains, and it also has higher basic performance. You can check various benchmark patterns at [GitHub Actions/Benchmark](https://github.com/Cysharp/ZLinq/actions/runs/14460640344). ZLinq shows high performance in almost all patterns, with some benchmarks showing overwhelming differences.
+Unlike regular LINQ, ZLinq doesn't increase allocations when adding more method chains, and it also has higher basic performance. You can check various benchmark patterns at [GitHub Actions/Benchmark](https://github.com/Cysharp/ZLinq/actions/runs/14569138271). ZLinq shows high performance in almost all patterns, with some benchmarks showing overwhelming differences.
 
 As a bonus, LINQ operators and optimizations equivalent to .NET 10 can be used in .NET Framework 4.8 (netstandard2.0) and Unity (netstandard2.1).
 
@@ -52,7 +57,7 @@ public interface IValueEnumerator<T> : IDisposable
     // Optimization helper
     bool TryGetNonEnumeratedCount(out int count);
     bool TryGetSpan(out ReadOnlySpan<T> span);
-    bool TryCopyTo(Span<T> destination, Index offset);
+    bool TryCopyTo(scoped Span<T> destination, Index offset);
 }
 ```
 
@@ -104,7 +109,7 @@ Converts existing collections to a type that can be chained with ZLinq. Any `IEn
 
 ### `ValueEnumerable.Range()`, `ValueEnumerable.Repeat()`, `ValueEnumerable.Empty()`
 
-`ValueEnumerable.Range` operates more efficiently when handling with `ZLinq` than `Enumerable.Range().AsValueEnumerable()`. The same applies to `Repeat` and `Empty`.
+`ValueEnumerable.Range` operates more efficiently when handling with `ZLinq` than `Enumerable.Range().AsValueEnumerable()`. The same applies to `Repeat` and `Empty`. The Range can also handle `System.Range`, step increments, `IAdditionOperators<T>`, `DateTime`, and more. Please refer to the [Range](#range) section for details.
 
 ### `Average() : where INumber<T>`, `Sum() : where INumber<T>`
 
@@ -122,19 +127,110 @@ System.Linq's `Average` and `Sum` are limited to certain primitive types, but ZL
 
 `CopyTo` can be used to avoid allocation of the return collection unlike `ToArray` or `ToList`. `int CopyTo(Span<T> destination)` allows the destination to be smaller than the source, returning the number of elements copied. `void CopyTo(List<T> list)` clears the list and then fills it with elements from the source, so the destination size is list.Count.
 
-### `(TSource[] Array, int Size) ToArrayPool()`
+### `PooledArray<TSource> ToArrayPool()`
 
-The returned array is rented from `ArrayPool<TSource>.Shared`. When using it, you need to create a slice of elements using `Array.AsSpan(0, Size)` or similar. Also, after use, you must return it with `ArrayPool<TSource>.Shared.Rent(Array)`. If `TSource` is a reference type, set `clearArray: true` to prevent memory leaks.
+The returned array is rented from `ArrayPool<TSource>.Shared`. `PooledArray<TSource>` defines `.Span`, `.Memory`, `.AsEnumerable()` and other methods. These allow you to pass a `ValueEnumerable` to another method while minimizing allocations. Additionally, through `.AsValueEnumerable()`, you can call `ZLinq` methods, which is useful for temporarily materializing computationally expensive operations. Being `IDisposable`, you can return the borrowed array to `ArrayPool<TSource>.Shared` using the `using` statement.
+
+```csharp
+using var array = ValueEnumerable.Range(1, 1000).ToArrayPool();
+
+var size = array.Size; // same as Length/Count in other types
+var span = array.Span;
+var memory = array.Memory;
+var arraySegment = array.ArraySegment;
+var enumerable = array.AsEnumerable();
+var valueEnumerable = array.AsValueEnumerable();
+```
+
+For performance reasons to reduce allocations, `PooledArray<TSource>` is a `struct`. This creates a risk of returning the same array multiple times due to boxing or copying. Also, ArrayPool is not suitable for long-term array storage. It is recommended to simply use `ToArrayPool()` with `using` and keep the lifetime short.
+
+If you absolutely need the raw internal array, you can `Deconstruct` it to `(T[] Array, int Size)`. After deconstructing, ownership is considered transferred, and all methods of `PooledArray<TSource>` become unavailable.
 
 ### `JoinToString(char|string seperator)`
 
 Since `ZLinq` is not `IEnumerable<T>`, it cannot be passed to `String.Join`. `JoinToString` provides the same functionality as `String.Join`, returning a string joined with the separator.
 
+Range
+---
+`Range` is not only compatible with System.Linq's `Range(int start, int count)` but also has many additional overloads such as `System.Range` and `DateTime`.
+
+```csharp
+// 95, 96, 97, 98, 99
+var range1 = ValueEnumerable.Range(95..100);
+
+// 95, 96, 97, 98, 99, 100
+var range2 = ValueEnumerable.Range(95..100, RightBound.Inclusive);
+
+// 10, 12, 14, 16, 18
+var step = ValueEnumerable.Range(start: 10, count: 5, step: 2);
+
+// 10, 9, 8, 7, 6
+var reverse = ValueEnumerable.Range(start: 10, count: 5, step: -1);
+
+// 10, 9, 8, 7, 6, 5
+var downTo = ValueEnumerable.Range(start: 10, end: 5, RightBound.Inclusive);
+
+// 0, 1,.........
+var infinite = ValueEnumerable.Range(..);
+
+// a, b, c,..., z
+var alphabets = ValueEnumerable.Range(start: 'a', end: 'z', RightBound.Inclusive);
+
+// 5/13, 5/14, 5/15, 5/16, 5/17, 5/18, 5/19
+var daysOfweek = ValueEnumerable.Range(DateTime.Now, 7, TimeSpan.FromDays(1)); ;
+
+// 5/1, 5/2,...,5/31
+var now = DateTime.Now;
+var calendarOfThisMonth = ValueEnumerable.Range(new DateTime(now.Year, now.Month, 1), DateTime.DaysInMonth(now.Year, now.Month), TimeSpan.FromDays(1));
+```
+
+Passing `..` as Range creates an infinite stream. Range is Exclusive by default, but you can also run it as Inclusive by specifying `RightBound.Inclusive/Exclusive`. Also, in .NET 8 or later, it supports `IAdditionOperators<T>`, allowing you to generate not only int but also `char`, `float`, etc. In addition, it supports more generic generation with not only count but also `T end` specification and `TStep step`.
+
+It supports `DateTime`, `DateTimeOffset` + `TimeSpan` for all platforms. [Unfortunately, `DateTime` and `DateTimeOffset` do not support Generic Math](https://github.com/dotnet/runtime/issues/76225), but we have prepared our own implementation that provides functionality equivalent to `IAdditionOperators<T>` support. This makes it easy to generate date sequences.
+
+The complete list of Range APIs is as follows.
+
+```csharp
+public enum RightBound
+{
+    Inclusive,
+    Exclusive
+}
+
+public static partial class ValueEnumerable
+{
+    public static ValueEnumerable<FromRange, int> Range(int start, int count)
+
+    public static ValueEnumerable<FromRange2, int> Range(Range range, RightBound rightBound = RightBound.Exclusive)
+
+#if NET8_0_OR_GREATER
+
+    public static ValueEnumerable<FromRange<T, T>, T> Range<T>(T start, int count)
+        where T : INumberBase<T>
+
+    public static ValueEnumerable<FromRange<T, TStep>, T> Range<T, TStep>(T start, int count, TStep step)
+        where T : IAdditionOperators<T, TStep, T>
+
+    public static ValueEnumerable<FromRangeTo<T, T>, T> Range<T>(T start, T end, RightBound rightBound)
+        where T : INumberBase<T>, IComparisonOperators<T, T, bool>
+
+    public static ValueEnumerable<FromRangeTo<T, TStep>, T> Range<T, TStep>(T start, T end, TStep step, RightBound rightBound)
+        where T : IAdditionOperators<T, TStep, T>, IComparisonOperators<T, T, bool>
+
+#endif
+
+    public static ValueEnumerable<FromRangeDateTime, DateTime> Range(DateTime start, int count, TimeSpan step)
+    public static ValueEnumerable<FromRangeDateTimeTo, DateTime> Range(DateTime start, DateTime end, TimeSpan step, RightBound rightBound)
+    public static ValueEnumerable<FromRangeDateTimeOffset, DateTimeOffset> Range(DateTimeOffset start, int count, TimeSpan step)
+    public static ValueEnumerable<FromRangeDateTimeOffsetTo, DateTimeOffset> Range(DateTimeOffset start, DateTimeOffset end, TimeSpan step, RightBound rightBound)
+}
+```
+
 Difference and Limitation
 ---
 For .NET 9 and above, `ValueEnumerable<T>` is a `ref struct` and cannot be converted to `IEnumerable<T>`. To ensure compatibility when upgrading, `AsEnumerable` is not provided by default even for versions prior to .NET 9.
 
-Since `ValueEnumerable<T>` is not an `IEnumerable<T>`, it cannot be passed to methods that require `IEnumerable<T>`. It's also difficult to pass it to other methods due to the complex type signatures required by generics (implementation is explained in the [Custom Extensions](#custom-extensions) section). Using `ToArray()` is one solution, but this can cause unnecessary allocations in some cases.
+Since `ValueEnumerable<T>` is not an `IEnumerable<T>`, it cannot be passed to methods that require `IEnumerable<T>`. It's also difficult to pass it to other methods due to the complex type signatures required by generics (implementation is explained in the [Custom Extensions](#custom-extensions) section). Using `ToArray()` is one solution, but this can cause unnecessary allocations in some cases. For temporary use, you can call `ToArrayPool` to pass to methods that require `IEnumerable<T>` without allocations. However, be careful that this `IEnumerable<T>` will be returned within the using scope, so you must ensure it doesn't leak outside the scope (storing it in a field is not allowed).
 
 `String.Join` has overloads for both `IEnumerable<string>` and `params object[]`. Passing `ValueEnumerable<T>` directly will select the `object[]` overload, which may not give the desired result. In this case, use the `JoinToString` operator instead.
 
@@ -154,19 +250,19 @@ dotnet add package ZLinq.DropInGenerator
 
 ![](img/dropin.jpg)
 
-It works by using a Source Generator to add extension methods for each type that take priority, making `ZLinq` methods be selected instead of System.Linq when the same name and arguments are used. 
+It works by using a Source Generator to add extension methods for each type that take priority, making `ZLinq` methods be selected instead of System.Linq when the same name and arguments are used.
 After installing the package, you need to configure it with an assembly attribute.
 
 ```csharp
 [assembly: ZLinq.ZLinqDropInAttribute("ZLinq", ZLinq.DropInGenerateTypes.Array)]
 ```
 
-`generateNamespace` is the namespace for the generated code, and `DropInGenerateTypes` selects the target types. 
-`DropInGenerateTypes` allows you to choose from `Array`, `Span` (Span/ReadOnlySpan), `Memory` (Memory/ReadOnlyMemory), `List`, and `Enumerable` (IEnumerable). 
-These are Flags, so you can combine them, such as `DropInGenerateTypes.Array | DropInGenerateTypes.Span`. 
+`generateNamespace` is the namespace for the generated code, and `DropInGenerateTypes` selects the target types.
+`DropInGenerateTypes` allows you to choose from `Array`, `Span` (Span/ReadOnlySpan), `Memory` (Memory/ReadOnlyMemory), `List`, and `Enumerable` (IEnumerable).
+These are Flags, so you can combine them, such as `DropInGenerateTypes.Array | DropInGenerateTypes.Span`.
 There are also predefined combinations: `Collection = Array | Span | Memory | List` and `Everything = Array | Span | Memory | List | Enumerable`.
 
-When using `DropInGenerateTypes.Enumerable`, which generates extension methods for `IEnumerable<T>`, you need to make `generateNamespace` global as a namespace priority. 
+When using `DropInGenerateTypes.Enumerable`, which generates extension methods for `IEnumerable<T>`, you need to make `generateNamespace` global as a namespace priority.
 For example:
 
 ```csharp
@@ -630,10 +726,10 @@ Unity
 ---
 There are two installation steps required to use it in Unity.
 
-1. Install `ZLinq` from NuGet using [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity)  
-Open Window from NuGet -> Manage NuGet Packages, Search "ZLinq" and Press Install. 
+1. Install `ZLinq` from NuGet using [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity)
+Open Window from NuGet -> Manage NuGet Packages, Search "ZLinq" and Press Install.
 
-2. Install the `ZLinq.Unity` package by referencing the git URL  
+2. Install the `ZLinq.Unity` package by referencing the git URL
 
 ```bash
 https://github.com/Cysharp/ZLinq.git?path=src/ZLinq.Unity/Assets/ZLinq.Unity
@@ -677,7 +773,7 @@ You can chain query(LINQ to Objects). Also, you can filter by component using th
 var foobars = root.Descendants().Where(x => x.tag == "foobar");
 
 // get FooScript under self childer objects and self
-var fooScripts = root.ChildrenAndSelf().OfComponent<FooScript>(); 
+var fooScripts = root.ChildrenAndSelf().OfComponent<FooScript>();
 ```
 
 NOTE: In Unity, since .NET Standard 2.1 is referenced, SIMD is not utilized.
@@ -734,7 +830,7 @@ void IterateNormal(IEnumerable<int> source)
     // Normally there's an allocation when getting IEnumerator<T>.
     foreach (var item in source)
     {
-        
+
     }
 }
 
@@ -744,7 +840,7 @@ void IterateZLinq(IEnumerable<int> source)
     // However, zero alloc only works when the actual implementation of IEnumerable<T> is an array [] or List<T>
     foreach (var item in source.AsValueEnumerable())
     {
-        
+
     }
 }
 ```
@@ -902,7 +998,7 @@ public static class MyExtensions
         where TEnumerator : struct, IValueEnumerator<TSource>
 #if NET9_0_OR_GREATER
         , allows ref struct
-#endif 
+#endif
     {
         // ValueEnumerable is only a wrapper so unwrapping to enumerator immediately is ok.
         // `new(new())` is `new ValueEnumerable(new SimpleSelect())`, wrap enumerator to ValueEnumerable.
@@ -919,7 +1015,7 @@ public struct
         where TEnumerator : struct, IValueEnumerator<TSource>
 #if NET9_0_OR_GREATER
         , allows ref struct
-#endif 
+#endif
 {
     TEnumerator source = source; // need to store source enumerator in field explicitly (ref struct limitation)
 

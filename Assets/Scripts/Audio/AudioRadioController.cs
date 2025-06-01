@@ -1,3 +1,5 @@
+using System.Threading;
+
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 
@@ -6,6 +8,7 @@ using TheRavine.Extensions;
 
 public class AudioRadioController : MonoBehaviour
 {
+    private CancellationTokenSource _cts;
     [SerializeField] private AudioSource audioSource;
     private AudioClip[] audioClipRadio;
     [SerializeField] private AudioClip[] audioClipRadioSad;
@@ -19,6 +22,7 @@ public class AudioRadioController : MonoBehaviour
 
     public void StartDefaultRadio()
     {
+        _cts    = new CancellationTokenSource();
         ChangeMood().Forget();
         Audio().Forget();
     }
@@ -31,7 +35,7 @@ public class AudioRadioController : MonoBehaviour
 
     private async UniTaskVoid ChangeMood()
     {
-        while (!DataStorage.sceneClose)
+        while (!_cts.Token.IsCancellationRequested)
         {
             mood = RavineRandom.RangeInt(1, 3);
             switch (mood)
@@ -92,5 +96,10 @@ public class AudioRadioController : MonoBehaviour
             await UniTask.Delay(1000 * RavineRandom.RangeInt(3, 5));
             audioSource.Stop();
         }
+    }
+
+    private void OnDisable() {
+        _cts?.Cancel();
+        _cts?.Dispose();
     }
 }
