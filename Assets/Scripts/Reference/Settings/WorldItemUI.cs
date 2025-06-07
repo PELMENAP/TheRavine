@@ -1,0 +1,107 @@
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using System;
+
+namespace TheRavine.Base
+{
+    public class WorldItemUI : MonoBehaviour
+    {
+        [Header("UI Components")]
+        [SerializeField] private TextMeshProUGUI worldNameText;
+        [SerializeField] private TextMeshProUGUI lastSaveTimeText;
+        [SerializeField] private Button enterWorldButton;
+        [SerializeField] private Button deleteWorldButton;
+        [SerializeField] private Button editSettingsButton;
+        [SerializeField] private Image worldIcon;
+        
+        [Header("Icons")]
+        [SerializeField] private Sprite defaultWorldIcon;
+        [SerializeField] private Sprite currentWorldIcon;
+        
+        private string _worldName;
+        private Action _onEnterWorld;
+        private Action _onDeleteWorld;
+        private Action _onEditSettings;
+
+        public void Initialize(string worldName, Action onEnterWorld, Action onDeleteWorld, Action onEditSettings)
+        {
+            _worldName = worldName;
+            _onEnterWorld = onEnterWorld;
+            _onDeleteWorld = onDeleteWorld;
+            _onEditSettings = onEditSettings;
+            
+            SetupUI();
+            BindButtons();
+            UpdateWorldInfo();
+        }
+
+        private void SetupUI()
+        {
+            if (worldNameText != null)
+                worldNameText.text = _worldName;
+            
+            var worldManager = ServiceLocator.GetWorldManager();
+            bool isCurrentWorld = worldManager?.CurrentWorldName == _worldName;
+            
+            if (worldIcon != null)
+            {
+                worldIcon.sprite = isCurrentWorld ? currentWorldIcon : defaultWorldIcon;
+                worldIcon.color = isCurrentWorld ? Color.green : Color.white;
+            }
+            
+            if (enterWorldButton != null)
+            {
+                enterWorldButton.interactable = !isCurrentWorld;
+                var buttonText = enterWorldButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (buttonText != null)
+                    buttonText.text = isCurrentWorld ? "Текущий" : "Войти";
+            }
+        }
+
+        private void BindButtons()
+        {
+            enterWorldButton?.onClick.AddListener(() => _onEnterWorld?.Invoke());
+            deleteWorldButton?.onClick.AddListener(() => _onDeleteWorld?.Invoke());
+            editSettingsButton?.onClick.AddListener(() => _onEditSettings?.Invoke());
+        }
+
+        private void UpdateWorldInfo()
+        {
+            if (lastSaveTimeText == null) return;
+
+            try
+            {
+                if (SaveLoad.FileExists(_worldName))
+                {
+                    var worldData = SaveLoad.LoadEncryptedData<WorldData>(_worldName);
+                    if (worldData.lastSaveTime > 0)
+                    {
+                        var saveTime = DateTimeOffset.FromUnixTimeSeconds(worldData.lastSaveTime);
+                        lastSaveTimeText.text = $"Сохранен: {saveTime:dd.MM.yy HH:mm}";
+                    }
+                    else
+                    {
+                        lastSaveTimeText.text = "Новый мир";
+                    }
+                }
+                else
+                {
+                    lastSaveTimeText.text = "Данные недоступны";
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"Не удалось загрузить информацию о мире {_worldName}: {ex.Message}");
+                lastSaveTimeText.text = "Ошибка загрузки";
+            }
+        }
+
+        private void OnDestroy()
+        {
+            enterWorldButton?.onClick.RemoveAllListeners();
+            deleteWorldButton?.onClick.RemoveAllListeners();
+            editSettingsButton?.onClick.RemoveAllListeners();
+        }
+    }
+}
