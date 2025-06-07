@@ -101,9 +101,9 @@ namespace LLMUnity
     {
         // DON'T CHANGE! the version is autocompleted with a GitHub action
         /// <summary> LLM for Unity version </summary>
-        public static string Version = "v2.4.2";
+        public static string Version = "v2.5.2";
         /// <summary> LlamaLib version </summary>
-        public static string LlamaLibVersion = "v1.2.3";
+        public static string LlamaLibVersion = "v1.2.6";
         /// <summary> LlamaLib release url </summary>
         public static string LlamaLibReleaseURL = $"https://github.com/undreamai/LlamaLib/releases/download/{LlamaLibVersion}";
         /// <summary> LlamaLib name </summary>
@@ -124,28 +124,37 @@ namespace LLMUnity
         /// <summary> Default models for download </summary>
         [HideInInspector] public static readonly Dictionary<string, (string, string, string)[]> modelOptions = new Dictionary<string, (string, string, string)[]>()
         {
-            {"Medium models", new(string, string, string)[]
+            {"Large models (more than 10B)", new(string, string, string)[]
              {
-                 ("Llama 3.1 8B", "https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf?download=true", "https://huggingface.co/meta-llama/Meta-Llama-3.1-8B/blob/main/LICENSE"),
-                 ("Qwen 2.5 7B", "https://huggingface.co/lmstudio-community/Qwen2.5-7B-Instruct-GGUF/resolve/main/Qwen2.5-7B-Instruct-Q4_K_M.gguf?download=true", null),
-                 ("DeepSeek R1 Distill Llama 8B", "https://huggingface.co/lmstudio-community/DeepSeek-R1-Distill-Llama-8B-GGUF/resolve/main/DeepSeek-R1-Distill-Llama-8B-Q4_K_M.gguf?download=true", null),
-                 ("DeepSeek R1 Distill Qwen 7B", "https://huggingface.co/lmstudio-community/DeepSeek-R1-Distill-Qwen-7B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf?download=true", null),
-                 ("Gemma 2 9B it", "https://huggingface.co/bartowski/gemma-2-9b-it-GGUF/resolve/main/gemma-2-9b-it-Q4_K_M.gguf?download=true", "https://ai.google.dev/gemma/terms"),
-                 ("Mistral 7B Instruct v0.2", "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf?download=true", null),
-                 ("OpenHermes 2.5 7B", "https://huggingface.co/TheBloke/OpenHermes-2.5-Mistral-7B-GGUF/resolve/main/openhermes-2.5-mistral-7b.Q4_K_M.gguf?download=true", null),
+                 ("Gemma 3 12B", "https://huggingface.co/lmstudio-community/gemma-3-12b-it-GGUF/resolve/main/gemma-3-12b-it-Q4_K_M.gguf", "https://ai.google.dev/gemma/terms"),
+                 ("Phi 4 14B", "https://huggingface.co/bartowski/phi-4-GGUF/resolve/main/phi-4-Q4_K_M.gguf", null),
+                 ("Qwen 3 14B", "https://huggingface.co/unsloth/Qwen3-14B-GGUF/resolve/main/Qwen3-14B-Q4_K_M.gguf", null),
+                 ("DeepSeek R1 Distill Qwen 14B", "https://huggingface.co/lmstudio-community/DeepSeek-R1-Distill-Qwen-14B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-14B-Q4_K_M.gguf", null),
              }},
-            {"Small models", new(string, string, string)[]
+            {"Medium models (up to 10B)", new(string, string, string)[]
              {
-                 ("Llama 3.2 3B", "https://huggingface.co/hugging-quants/Llama-3.2-3B-Instruct-Q4_K_M-GGUF/resolve/main/llama-3.2-3b-instruct-q4_k_m.gguf", null),
-                 ("Phi 3.5 4B", "https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/resolve/main/Phi-3.5-mini-instruct-Q4_K_M.gguf", null),
-                 ("Qwen 2.5 3B", "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf?download=true", null),
+                 ("Llama 3.1 8B", "https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf", "https://huggingface.co/meta-llama/Meta-Llama-3.1-8B/blob/main/LICENSE"),
+                 ("Qwen 3 8B", "https://huggingface.co/unsloth/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf", null),
+                 ("DeepSeek R1 Distill Llama 8B", "https://huggingface.co/lmstudio-community/DeepSeek-R1-Distill-Llama-8B-GGUF/resolve/main/DeepSeek-R1-Distill-Llama-8B-Q4_K_M.gguf", null),
+                 ("DeepSeek R1 Distill Qwen 7B", "https://huggingface.co/lmstudio-community/DeepSeek-R1-Distill-Qwen-7B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf", null),
+                 ("Gemma 2 9B it", "https://huggingface.co/bartowski/gemma-2-9b-it-GGUF/resolve/main/gemma-2-9b-it-Q4_K_M.gguf", "https://ai.google.dev/gemma/terms"),
+                 ("Mistral 7B Instruct v0.2", "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf", null),
+                 ("OpenHermes 2.5 7B", "https://huggingface.co/TheBloke/OpenHermes-2.5-Mistral-7B-GGUF/resolve/main/openhermes-2.5-mistral-7b.Q4_K_M.gguf", null),
              }},
-            {"Tiny models", new(string, string, string)[]
+            {"Small models (up to 5B)", new(string, string, string)[]
              {
-                 ("Llama 3.2 1B", "https://huggingface.co/hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF/resolve/main/llama-3.2-1b-instruct-q4_k_m.gguf", null),
-                 ("Qwen 2.5 1.5B", "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf?download=true", null),
-                 ("Qwen 2 0.5B", "https://huggingface.co/Qwen/Qwen2-0.5B-Instruct-GGUF/resolve/main/qwen2-0_5b-instruct-q4_k_m.gguf?download=true", null),
-                 ("DeepSeek R1 Distill Qwen 1.5B", "https://huggingface.co/lmstudio-community/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf?download=true", null),
+                 ("Llama 3.2 3B", "https://huggingface.co/hugging-quants/Llama-3.2-3B-Instruct-Q4_K_M-GGUF/resolve/main/llama-3.2-3b-instruct-q4_k_m.gguf", "https://huggingface.co/meta-llama/Llama-3.2-1B/blob/main/LICENSE.txt"),
+                 ("Gemma 3 4B", "https://huggingface.co/lmstudio-community/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf", "https://ai.google.dev/gemma/terms"),
+                 ("Phi 4 4B", "https://huggingface.co/bartowski/microsoft_Phi-4-mini-instruct-GGUF/resolve/main/microsoft_Phi-4-mini-instruct-Q4_K_M.gguf", null),
+                 ("Qwen 3 4B", "https://huggingface.co/unsloth/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf", null),
+             }},
+            {"Tiny models (up to 2B)", new(string, string, string)[]
+             {
+                 ("Llama 3.2 1B", "https://huggingface.co/hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF/resolve/main/llama-3.2-1b-instruct-q4_k_m.gguf", "https://huggingface.co/meta-llama/Llama-3.2-1B/blob/main/LICENSE.txt"),
+                 ("Gemma 3 1B", "https://huggingface.co/lmstudio-community/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf", "https://ai.google.dev/gemma/terms"),
+                 ("Qwen 3 1.7B", "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/main/Qwen3-1.7B-Q4_K_M.gguf", null),
+                 ("Qwen 3 0.6B", "https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_K_M.gguf", null),
+                 ("DeepSeek R1 Distill Qwen 1.5B", "https://huggingface.co/lmstudio-community/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf", null),
              }},
             {"RAG models", new(string, string, string)[]
              {
@@ -378,6 +387,19 @@ namespace LLMUnity
                 while (relativePath.StartsWith("/")) relativePath = relativePath.Substring(1);
             }
             return relativePath;
+        }
+
+        public static string SearchDirectory(string directory, string targetFileName)
+        {
+            string[] files = Directory.GetFiles(directory, targetFileName);
+            if (files.Length > 0) return files[0];
+            string[] subdirectories = Directory.GetDirectories(directory);
+            foreach (var subdirectory in subdirectories)
+            {
+                string result = SearchDirectory(subdirectory, targetFileName);
+                if (result != null) return result;
+            }
+            return null;
         }
 
 #if UNITY_EDITOR

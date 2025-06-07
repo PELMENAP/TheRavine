@@ -33,14 +33,17 @@ namespace TheRavine.EntityControl
         private EventBusByName entityEventBus;
         private EntityAimBaseStats aimBaseStats;
         private EntityMovementBaseStats movementBaseStats;
+        private GameSettings gameSettings;
         public void SetInitialValues(AEntity entity, ILogger logger)
         {
+            gameSettings = ServiceLocator.GetSettings().GameSettings.CurrentValue;
             this.logger = logger;
             this.transform.position = Extension.GetRandomPointAround(this.transform.position, 10);
+            
 
             playerAnimator.SetUpAsync().Forget();
 
-            currentController = Settings._controlType switch
+            currentController = gameSettings.controlType switch
             {
                 ControlType.Personal => new PCController(Movement, RightClick, transform),
                 ControlType.Mobile => new JoistickController(joystick),
@@ -159,7 +162,7 @@ namespace TheRavine.EntityControl
             
             float factMouseFactor = 1f;
 
-            switch (Settings._controlType)
+            switch (gameSettings.controlType)
             {
                 case ControlType.Personal:
                     factMouseFactor = 1f;

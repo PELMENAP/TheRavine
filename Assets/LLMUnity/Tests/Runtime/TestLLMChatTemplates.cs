@@ -31,7 +31,7 @@ namespace LLMUnityTests
         {
             Assert.AreEqual(
                 new GemmaTemplate().ComputePrompt(messages, "user", "assistant"),
-                "<start_of_turn>user\nyou are a bot\n\nHello, how are you?<end_of_turn>\n<start_of_turn>assistant\nI'm doing great. How can I help you today?<end_of_turn>\n<start_of_turn>user\nI'd like to show off how chat templating works!<end_of_turn>\n<start_of_turn>assistant\nchat template is awesome<end_of_turn>\n<start_of_turn>user\ndo you think so?<end_of_turn>\n<start_of_turn>assistant\n"
+                "<start_of_turn>user\nyou are a bot\n\nHello, how are you?<end_of_turn>\n<start_of_turn>model\nI'm doing great. How can I help you today?<end_of_turn>\n<start_of_turn>user\nI'd like to show off how chat templating works!<end_of_turn>\n<start_of_turn>model\nchat template is awesome<end_of_turn>\n<start_of_turn>user\ndo you think so?<end_of_turn>\n<start_of_turn>model\n"
             );
         }
 
@@ -126,6 +126,24 @@ namespace LLMUnityTests
         }
 
         [Test]
+        public void TestPhi4Mini()
+        {
+            Assert.AreEqual(
+                new Phi4MiniTemplate().ComputePrompt(messages, "user", "assistant"),
+                "<|system|>you are a bot<|end|><|user|>Hello, how are you?<|end|><|assistant|>I'm doing great. How can I help you today?<|end|><|user|>I'd like to show off how chat templating works!<|end|><|assistant|>chat template is awesome<|end|><|user|>do you think so?<|end|><|assistant|>"
+            );
+        }
+
+        [Test]
+        public void TestPhi4()
+        {
+            Assert.AreEqual(
+                new Phi4Template().ComputePrompt(messages, "user", "assistant"),
+                "<|im_start|>system<|im_sep|>you are a bot<|im_end|><|im_start|>user<|im_sep|>Hello, how are you?<|im_end|><|im_start|>assistant<|im_sep|>I'm doing great. How can I help you today?<|im_end|><|im_start|>user<|im_sep|>I'd like to show off how chat templating works!<|im_end|><|im_start|>assistant<|im_sep|>chat template is awesome<|im_end|><|im_start|>user<|im_sep|>do you think so?<|im_end|><|im_start|>assistant<|im_sep|>"
+            );
+        }
+
+        [Test]
         public void TestZephyr()
         {
             Assert.AreEqual(
@@ -158,6 +176,24 @@ namespace LLMUnityTests
             Assert.AreEqual(
                 new DeepSeekR1Template().ComputePrompt(messages, "user", "assistant"),
                 "<｜begin▁of▁sentence｜>you are a bot\n\n<｜User｜>Hello, how are you?<｜Assistant｜>I'm doing great. How can I help you today?<｜end▁of▁sentence｜><｜User｜>I'd like to show off how chat templating works!<｜Assistant｜>chat template is awesome<｜end▁of▁sentence｜><｜User｜>do you think so?<｜Assistant｜><think>\n\n</think>\n\n"
+            );
+        }
+
+        [Test]
+        public void TestQwen3()
+        {
+            Assert.AreEqual(
+                new Qwen3Template().ComputePrompt(messages, "user", "assistant"),
+                "<|im_start|>system\nyou are a bot<|im_end|>\n<|im_start|>user\nHello, how are you?<|im_end|>\n<|im_start|>assistant\nI'm doing great. How can I help you today?<|im_end|>\n<|im_start|>user\nI'd like to show off how chat templating works!<|im_end|>\n<|im_start|>assistant\nchat template is awesome<|im_end|>\n<|im_start|>user\ndo you think so?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+            );
+        }
+
+        [Test]
+        public void TestBitNet()
+        {
+            Assert.AreEqual(
+                new BitNetTemplate().ComputePrompt(messages, "user", "assistant"),
+                "System: you are a bot<|eot_id|>User: Hello, how are you?<|eot_id|>Assistant: I'm doing great. How can I help you today?<|eot_id|>User: I'd like to show off how chat templating works!<|eot_id|>Assistant: chat template is awesome<|eot_id|>User: do you think so?<|eot_id|>Assistant: "
             );
         }
     }

@@ -2,7 +2,6 @@ using UnityEngine;
 using Cysharp.Threading.Tasks;
 using System;
 
-using TheRavine.Services;
 using TheRavine.InventoryElements;
 
 namespace TheRavine.Inventory
@@ -21,7 +20,7 @@ namespace TheRavine.Inventory
         private int resultCount, craftDelay;
         private bool cancel, inProcess;
         private System.Threading.CancellationTokenSource _cts;
-        public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+        public void SetUp(ISetAble.Callback callback)
         {
             cancel = false;
             _cts = new();

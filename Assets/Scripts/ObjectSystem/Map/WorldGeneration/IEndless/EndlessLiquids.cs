@@ -20,8 +20,8 @@ namespace TheRavine.Generator
             {
                 generator = _generator;
             }
-            private bool[,] grid = new bool[countOfQuads, countOfQuads];
-            private bool[,] visited = new bool[countOfQuads, countOfQuads];
+            private readonly bool[,] grid = new bool[countOfQuads, countOfQuads];
+            private readonly bool[,] visited = new bool[countOfQuads, countOfQuads];
             private List<Edge> verticalEdges = new List<Edge>(), horizontalEdges = new List<Edge>();
             private List<Vector2Int> polygon = new List<Vector2Int>();
             public void UpdateChunk(Vector2Int Vposition)
@@ -49,12 +49,14 @@ namespace TheRavine.Generator
                 ExtractPolygons();
                 ExtractHoleSegments();
 
+#if UNITY_EDITOR
                 DebugHelper.DrawPoints(polygon, Color.green, 5f, 0.1f);
                 foreach (var hole in verticalEdges)
                     DebugHelper.DrawSegment(hole.P1, hole.P2, Color.red);   
                 foreach (var hole in horizontalEdges)
                     DebugHelper.DrawSegment(hole.P1, hole.P2, Color.blue);   
                 Debug.Log(polygon.Count + "  " + verticalEdges.Count + "  " + horizontalEdges.Count);
+#endif
 
                 BowyerWatsonTriangulation bowyerWatsonTriangulation = new();
                 Mesh mesh = bowyerWatsonTriangulation.GenerateMesh(polygon, verticalEdges, horizontalEdges);
@@ -62,14 +64,14 @@ namespace TheRavine.Generator
                 generator.waterF.mesh = mesh;
             }
 
-            private void ExtractHoleSegments()
+            private void ExtractHoleSegments() // get hole lines 
             {   
                 Vector2Int[,] holeStarts = new Vector2Int[2, countOfQuads];
                 bool[] inProcess = new bool[countOfQuads];
                 
                 for (int i = 0; i < 2; i++) 
                 {
-                    for (int primary = 4; primary < countOfQuads - 4; primary += 4)
+                    for (int primary = mapChunkSize / 4; primary < countOfQuads - mapChunkSize / 4; primary += mapChunkSize / 4)
                     {
                         inProcess[primary] = false;
                         
@@ -107,9 +109,9 @@ namespace TheRavine.Generator
 
             private void ExtractPolygons() // search the true field
             {
-                for (int x = 3; x < countOfQuads; x+=4)
+                for (int x = 3; x < countOfQuads; x+=mapChunkSize / 4)
                 {
-                    for (int y = 3; y < countOfQuads; y+=4)
+                    for (int y = 3; y < countOfQuads; y+=mapChunkSize / 4)
                     {
                         if (grid[x, y] && !visited[x, y])
                         {
@@ -118,16 +120,19 @@ namespace TheRavine.Generator
                     }
                 }
             }
-            private int tooFarToRender = 2;
-            private void FloodFill(int x, int y) // need cache the defaults Vectior2Int
+            private Queue<Vector2Int> queue = new Queue<Vector2Int>(countOfQuads * countOfQuads / 4);
+            private void FloodFill(int x, int y)
             {
-                Stack<Vector2Int> stack = new Stack<Vector2Int>();
-                stack.Push(new Vector2Int(x, y));
-                
-                while (stack.Count > 0)
+                queue.Clear();
+                queue.Enqueue(new Vector2Int(x, y));
+
+                while (queue.Count > 0)
                 {
-                    Vector2Int point = stack.Pop();
-                    if (point.x - tooFarToRender < 0 || point.x + tooFarToRender >= countOfQuads || point.y - tooFarToRender < 0 || point.y + tooFarToRender >= countOfQuads || visited[point.x, point.y] || !grid[point.x, point.y])
+                    var point = queue.Dequeue();
+                    if (point.x  - mapChunkSize / 4 < 0 || point.x + mapChunkSize / 4 >= countOfQuads || 
+                        point.y - mapChunkSize / 4 < 0 || point.y + mapChunkSize / 4>= countOfQuads || 
+                        visited[point.x, point.y] || 
+                        !grid[point.x, point.y])
                         continue;
 
                     visited[point.x, point.y] = true;
@@ -135,10 +140,11 @@ namespace TheRavine.Generator
                     if(IsBorderExtra(point.x, point.y))
                         polygon.Add(point * scale);
 
-                    stack.Push(new Vector2Int(point.x + 1, point.y));
-                    stack.Push(new Vector2Int(point.x - 1, point.y));
-                    stack.Push(new Vector2Int(point.x, point.y + 1));
-                    stack.Push(new Vector2Int(point.x, point.y - 1));
+                    // Добавляем только соседние клетки
+                    queue.Enqueue(new Vector2Int(point.x + 1, point.y));
+                    queue.Enqueue(new Vector2Int(point.x - 1, point.y));
+                    queue.Enqueue(new Vector2Int(point.x, point.y + 1));
+                    queue.Enqueue(new Vector2Int(point.x, point.y - 1));
                 }
             }
 

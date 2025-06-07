@@ -12,7 +12,7 @@ namespace TheRavine.Base
         }
         public void OnEnter()
         {
-            UnityEngine.Debug.Log("boot");
+            Initializer.LogBootstrapInfo("Entry point state reached");
             FaderOnTransit.instance.SetLogs("Выполнен вход в игру");
             FaderOnTransit.instance.SetLogs("Создание точки входа");
             Initializer.StartNewServices(currentSetAbleScripts, () => Initializer.StateMachine.SwitchState<InitialState>());

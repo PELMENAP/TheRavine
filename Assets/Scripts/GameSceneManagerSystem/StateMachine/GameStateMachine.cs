@@ -10,7 +10,6 @@ namespace TheRavine.Base
         [SerializeField] private Canvas inventoryCanvas;
 
         [SerializeField] private int standardStateMachineTickTime, tickPerUpdate;
-        [SerializeField] private ServiceLocatorAccess serviceLocatorAccess;
         [SerializeField] private MonoBehaviour[] scriptsLoadedOnBootstrapState, scriptsLoadedOnInitialState, scriptsLoadedOnLoadingState;
         [SerializeField] private Action<string> onMessageDisplayTerminal;
         [SerializeField] private Terminal terminal;
@@ -21,13 +20,21 @@ namespace TheRavine.Base
             if(inventoryCanvas != null) inventoryCanvas.renderMode = RenderMode.WorldSpace;
 
             onMessageDisplayTerminal += terminal.Display;
-            serviceRegisterMachine = new ServiceRegisterMachine(serviceLocatorAccess);
+            serviceRegisterMachine = new ServiceRegisterMachine();
             serviceRegisterMachine.RegisterLogger(onMessageDisplayTerminal);
             StateMachine =  new StateMachine<GameStateMachine>(standardStateMachineTickTime,
                         new BootstrapState(this, serviceRegisterMachine.RegisterSomeServices(scriptsLoadedOnBootstrapState)),
                         new InitialState(this, serviceRegisterMachine.RegisterSomeServices(scriptsLoadedOnInitialState)),
                         new LoadingState(this, serviceRegisterMachine.RegisterSomeServices(scriptsLoadedOnLoadingState)),
                         new GameState(this));
+        }
+        public bool HaveServiceLocatorPlayer()
+        {
+            return ServiceLocator.GetPlayersTransforms().Count > 0;
+        }
+        public void LogBootstrapInfo(string Message)
+        {
+            ServiceLocator.GetLogger().LogWarning(Message);
         }
         public void StartGame()
         {

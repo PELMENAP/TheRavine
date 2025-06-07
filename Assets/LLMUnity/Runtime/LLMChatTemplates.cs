@@ -1,9 +1,7 @@
 /// @file
 /// @brief File implementing the chat templates.
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Text;
 
 namespace LLMUnity
 {
@@ -43,6 +41,8 @@ namespace LLMUnity
                 new LLama3ChatTemplate(),
                 new LLama2ChatTemplate(),
                 new LLama2Template(),
+                new Phi4MiniTemplate(),
+                new Phi4Template(),
                 new Phi3_5Template(),
                 new Phi3Template(),
                 new Phi2Template(),
@@ -51,6 +51,8 @@ namespace LLMUnity
                 new DeepSeekV2Template(),
                 new VicunaTemplate(),
                 new ZephyrTemplate(),
+                new Qwen3Template(),
+                new BitNetTemplate(),
             };
 
             templates = new Dictionary<string, ChatTemplate>();
@@ -86,11 +88,17 @@ namespace LLMUnity
         {
             if (name == null) return null;
             string nameLower = name.ToLower();
+            int maxMatch = 0;
+            string match = null;
             foreach (var pair in modelTemplates)
             {
-                if (nameLower.Contains(pair.Key)) return pair.Value;
+                if (nameLower.Contains(pair.Key) && pair.Key.Length > maxMatch)
+                {
+                    maxMatch = pair.Key.Length;
+                    match = pair.Value;
+                }
             }
-            return null;
+            return match;
         }
 
         /// <summary>
@@ -170,6 +178,7 @@ namespace LLMUnity
         protected virtual string PairSuffix() { return ""; }
 
         protected virtual bool SystemPromptSupported() { return true; }
+        protected virtual bool HasThinkingMode() { return false; }
 
         /// <summary> Constructs the prompt using the template based on a list of ChatMessages </summary>
         /// <param name="messages"> list of ChatMessages e.g. the LLMCharacter chat </param>
@@ -212,7 +221,11 @@ namespace LLMUnity
                     chatPrompt += AIPrefix(messages[i + 1].role) + PrefixMessageSeparator() + messages[i + 1].content + PairSuffix();
                 }
             }
-            if (endWithPrefix) chatPrompt += AIPrefix(AIName);
+            if (endWithPrefix)
+            {
+                chatPrompt += AIPrefix(AIName);
+                if (HasThinkingMode()) chatPrompt += "<think>\n\n</think>\n\n";
+            }
             return chatPrompt;
         }
 
@@ -235,7 +248,7 @@ namespace LLMUnity
     public class ChatMLTemplate : ChatTemplate
     {
         public override string GetName() { return "chatml"; }
-        public override string GetDescription() { return "chatml (most widely used)"; }
+        public override string GetDescription() { return "chatml (generic template)"; }
         public override string[] GetNameMatches() { return new string[] {"chatml", "hermes", "qwen"}; }
         public override string[] GetChatTemplateMatches() { return new string[] {"{% for message in messages %}{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant\n' }}{% endif %}"}; }
 
@@ -370,12 +383,13 @@ namespace LLMUnity
         public override string GetName() { return "gemma"; }
         public override string GetDescription() { return "gemma"; }
         public override string[] GetNameMatches() { return new string[] {"gemma"}; }
+        public override string[] GetChatTemplateMatches() { return new string[] {"{{ bos_token }}{% if messages[0]['role'] == 'system' %}{{ raise_exception('System role not supported') }}{% endif %}{% for message in messages %}{% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}{{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}{% endif %}{% if (message['role'] == 'assistant') %}{% set role = 'model' %}{% else %}{% set role = message['role'] %}{% endif %}{{ '<start_of_turn>' + role + '\n' + message['content'] | trim + '<end_of_turn>\n' }}{% endfor %}{% if add_generation_prompt %}{{'<start_of_turn>model\n'}}{% endif %}"}; }
 
         protected override string RequestSuffix() { return "<end_of_turn>\n"; }
         protected override string PairSuffix() { return "<end_of_turn>\n"; }
 
-        protected override string PlayerPrefix(string playerName) { return "<start_of_turn>" + playerName + "\n"; }
-        protected override string AIPrefix(string AIName) { return "<start_of_turn>" + AIName + "\n"; }
+        protected override string PlayerPrefix(string playerName) { return "<start_of_turn>user\n"; }
+        protected override string AIPrefix(string AIName) { return "<start_of_turn>model\n"; }
 
         protected override bool SystemPromptSupported() { return false; }
 
@@ -479,7 +493,7 @@ namespace LLMUnity
 
     /// @ingroup template
     /// <summary>
-    /// Class implementing the Phi-3.5 template
+    /// Class implementing the Phi-4 mini template
     /// </summary>
     public class Phi3_5Template : ChatTemplate
     {
@@ -498,6 +512,54 @@ namespace LLMUnity
         public override string[] GetStop(string playerName, string AIName)
         {
             return AddStopNewlines(new string[] { "<|end|>", "<|user|>", "<|assistant|>" });
+        }
+    }
+
+    /// @ingroup template
+    /// <summary>
+    /// Class implementing the Phi-4 mini template
+    /// </summary>
+    public class Phi4MiniTemplate : ChatTemplate
+    {
+        public override string GetName() { return "phi-4-mini"; }
+        public override string GetDescription() { return "phi-4-mini"; }
+        public override string[] GetNameMatches() { return new string[] {"phi-4-mini"}; }
+        public override string[] GetChatTemplateMatches() { return new string[] {"{% for message in messages %}{% if message['role'] == 'system' and 'tools' in message and message['tools'] is not none %}{{ '<|' + message['role'] + '|>' + message['content'] + '<|tool|>' + message['tools'] + '<|/tool|>' + '<|end|>' }}{% else %}{{ '<|' + message['role'] + '|>' + message['content'] + '<|end|>' }}{% endif %}{% endfor %}{% if add_generation_prompt %}{{ '<|assistant|>' }}{% else %}{{ eos_token }}{% endif %}"};}
+
+        protected override string PlayerPrefix(string playerName) { return $"<|user|>"; }
+        protected override string AIPrefix(string AIName) { return $"<|assistant|>"; }
+        protected override string RequestSuffix() { return "<|end|>"; }
+        protected override string PairSuffix() { return "<|end|>"; }
+        protected override string SystemPrefix() { return "<|system|>"; }
+        protected override string SystemSuffix() { return "<|end|>"; }
+
+        public override string[] GetStop(string playerName, string AIName)
+        {
+            return AddStopNewlines(new string[] { "<|end|>", "<|user|>", "<|assistant|>" });
+        }
+    }
+
+    /// @ingroup template
+    /// <summary>
+    /// Class implementing the Phi-4 template
+    /// </summary>
+    public class Phi4Template : ChatTemplate
+    {
+        public override string GetName() { return "phi-4"; }
+        public override string GetDescription() { return "phi-4"; }
+        public override string[] GetNameMatches() { return new string[] {"phi-4"}; }
+        public override string[] GetChatTemplateMatches() { return new string[] {"{% for message in messages %}{% if (message['role'] == 'system') %}{{'<|im_start|>system<|im_sep|>' + message['content'] + '<|im_end|>'}}{% elif (message['role'] == 'user') %}{{'<|im_start|>user<|im_sep|>' + message['content'] + '<|im_end|>'}}{% elif (message['role'] == 'assistant') %}{{'<|im_start|>assistant<|im_sep|>' + message['content'] + '<|im_end|>'}}{% endif %}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant<|im_sep|>' }}{% endif %}"};}
+
+        protected override string PlayerPrefix(string playerName) { return $"<|im_start|>user<|im_sep|>"; }
+        protected override string AIPrefix(string AIName) { return $"<|im_start|>assistant<|im_sep|>"; }
+        protected override string RequestSuffix() { return "<|im_end|>"; }
+        protected override string PairSuffix() { return "<|im_end|>"; }
+        protected override string SystemPrefix() { return "<|im_start|>system<|im_sep|>"; }
+        protected override string SystemSuffix() { return "<|im_end|>"; }
+
+        public override string[] GetStop(string playerName, string AIName)
+        {
+            return AddStopNewlines(new string[] { "<|im_end|>", "<|im_start|>" });
         }
     }
 
@@ -599,16 +661,50 @@ namespace LLMUnity
             };
         }
 
-        public override string ComputePrompt(List<ChatMessage> chatMessages, string playerName, string AIName, bool endWithPrefix = true)
-        {
-            string prompt = base.ComputePrompt(chatMessages, playerName, AIName, endWithPrefix);
-            if (endWithPrefix) prompt += "<think>\n\n</think>\n\n";
-            return prompt;
-        }
+        protected override bool HasThinkingMode() { return true; }
 
         public override string[] GetStop(string playerName, string AIName)
         {
             return AddStopNewlines(new string[] { "<｜end▁of▁sentence｜>", "<｜User｜>", "<｜Assistant｜>", "</think>" });
+        }
+    }
+
+
+    /// @ingroup template
+    /// <summary>
+    /// Class implementing the Qwen3 template
+    /// </summary>
+    public class Qwen3Template : ChatMLTemplate
+    {
+        public override string GetName() { return "qwen3"; }
+        public override string GetDescription() { return "qwen3"; }
+        public override string[] GetNameMatches() { return new string[] { "qwen3" }; }
+        public override string[] GetChatTemplateMatches() { return new string[] { "{%- if tools %}\n    {{- '<|im_start|>system\\n' }}\n    {%- if messages[0].role == 'system' %}\n        {{- messages[0].content + '\\n\\n' }}\n    {%- endif %}\n    {{- \"# Tools\\n\\nYou may call one or more functions to assist with the user query.\\n\\nYou are provided with function signatures within <tools></tools> XML tags:\\n<tools>\" }}\n    {%- for tool in tools %}\n        {{- \"\\n\" }}\n        {{- tool | tojson }}\n    {%- endfor %}\n    {{- \"\\n</tools>\\n\\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\\n<tool_call>\\n{\\\"name\\\": <function-name>, \\\"arguments\\\": <args-json-object>}\\n</tool_call><|im_end|>\\n\" }}\n{%- else %}\n    {%- if messages[0].role == 'system' %}\n        {{- '<|im_start|>system\\n' + messages[0].content + '<|im_end|>\\n' }}\n    {%- endif %}\n{%- endif %}\n{%- set ns = namespace(multi_step_tool=true, last_query_index=messages|length - 1) %}\n{%- for forward_message in messages %}\n    {%- set index = (messages|length - 1) - loop.index0 %}\n    {%- set message = messages[index] %}\n    {%- set tool_start = '<tool_response>' %}\n    {%- set tool_start_length = tool_start|length %}\n    {%- set start_of_message = message.content[:tool_start_length] %}\n    {%- set tool_end = '</tool_response>' %}\n    {%- set tool_end_length = tool_end|length %}\n    {%- set start_pos = (message.content|length) - tool_end_length %}\n    {%- if start_pos < 0 %}\n        {%- set start_pos = 0 %}\n    {%- endif %}\n    {%- set end_of_message = message.content[start_pos:] %}\n    {%- if ns.multi_step_tool and message.role == \"user\" and not(start_of_message == tool_start and end_of_message == tool_end) %}\n        {%- set ns.multi_step_tool = false %}\n        {%- set ns.last_query_index = index %}\n    {%- endif %}\n{%- endfor %}\n{%- for message in messages %}\n    {%- if (message.role == \"user\") or (message.role == \"system\" and not loop.first) %}\n        {{- '<|im_start|>' + message.role + '\\n' + message.content + '<|im_end|>' + '\\n' }}\n    {%- elif message.role == \"assistant\" %}\n        {%- set content = message.content %}\n        {%- set reasoning_content = '' %}\n        {%- if message.reasoning_content is defined and message.reasoning_content is not none %}\n            {%- set reasoning_content = message.reasoning_content %}\n        {%- else %}\n            {%- if '</think>' in message.content %}\n                {%- set content = (message.content.split('</think>')|last).lstrip('\\n') %}\n                {%- set reasoning_content = (message.content.split('</think>')|first).rstrip('\\n') %}\n                {%- set reasoning_content = (reasoning_content.split('<think>')|last).lstrip('\\n') %}\n            {%- endif %}\n        {%- endif %}\n        {%- if loop.index0 > ns.last_query_index %}\n            {%- if loop.last or (not loop.last and reasoning_content) %}\n                {{- '<|im_start|>' + message.role + '\\n<think>\\n' + reasoning_content.strip('\\n') + '\\n</think>\\n\\n' + content.lstrip('\\n') }}\n            {%- else %}\n                {{- '<|im_start|>' + message.role + '\\n' + content }}\n            {%- endif %}\n        {%- else %}\n            {{- '<|im_start|>' + message.role + '\\n' + content }}\n        {%- endif %}\n        {%- if message.tool_calls %}\n            {%- for tool_call in message.tool_calls %}\n                {%- if (loop.first and content) or (not loop.first) %}\n                    {{- '\\n' }}\n                {%- endif %}\n                {%- if tool_call.function %}\n                    {%- set tool_call = tool_call.function %}\n                {%- endif %}\n                {{- '<tool_call>\\n{\"name\": \"' }}\n                {{- tool_call.name }}\n                {{- '\", \"arguments\": ' }}\n                {%- if tool_call.arguments is string %}\n                    {{- tool_call.arguments }}\n                {%- else %}\n                    {{- tool_call.arguments | tojson }}\n                {%- endif %}\n                {{- '}\\n</tool_call>' }}\n            {%- endfor %}\n        {%- endif %}\n        {{- '<|im_end|>\\n' }}\n    {%- elif message.role == \"tool\" %}\n        {%- if loop.first or (messages[loop.index0 - 1].role != \"tool\") %}\n            {{- '<|im_start|>user' }}\n        {%- endif %}\n        {{- '\\n<tool_response>\\n' }}\n        {{- message.content }}\n        {{- '\\n</tool_response>' }}\n        {%- if loop.last or (messages[loop.index0 + 1].role != \"tool\") %}\n            {{- '<|im_end|>\\n' }}\n        {%- endif %}\n    {%- endif %}\n{%- endfor %}\n{%- if add_generation_prompt %}\n    {{- '<|im_start|>assistant\\n' }}\n    {%- if enable_thinking is defined and enable_thinking is false %}\n        {{- '<think>\\n\\n</think>\\n\\n' }}\n    {%- endif %}\n{%- endif %}" }; }
+
+        protected override bool HasThinkingMode() { return true; }
+    }
+
+    /// @ingroup template
+    /// <summary>
+    /// Class implementing the BitNet template
+    /// </summary>
+    public class BitNetTemplate : ChatTemplate
+    {
+        public override string GetName() { return "bitnet"; }
+        public override string GetDescription() { return "bitnet"; }
+        public override string[] GetNameMatches() { return new string[] {"bitnet"}; }
+        public override string[] GetChatTemplateMatches() { return new string[] {"{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = message['role'] | capitalize + ': '+ message['content'] | trim + '<|eot_id|>' %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ 'Assistant: ' }}{% endif %}"};}
+
+        protected override string PlayerPrefix(string playerName) { return "User: "; }
+        protected override string AIPrefix(string AIName) { return "Assistant: "; }
+        protected override string RequestSuffix() { return "<|eot_id|>"; }
+        protected override string PairSuffix() { return "<|eot_id|>"; }
+        protected override string SystemPrefix() { return "System: "; }
+        protected override string SystemSuffix() { return "<|eot_id|>"; }
+
+        public override string[] GetStop(string playerName, string AIName)
+        {
+            return AddStopNewlines(new string[] { "<|eot_id|>", "User", "Assistant" });
         }
     }
 }

@@ -3,9 +3,6 @@ using UnityEngine;
 using Unity.Netcode;
 using Cysharp.Threading.Tasks;
 
-using TheRavine.Services;
-
-
 namespace TheRavine.EntityControl
 {
     public class EntitySystem : NetworkBehaviour, ISetAble
@@ -30,23 +27,23 @@ namespace TheRavine.EntityControl
         private Dictionary<int, EntityInfo> mobInfo;
         public EntityInfo GetMobInfo(int id) => mobInfo[id];
         private ILogger logger;
-        public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+        public void SetUp(ISetAble.Callback callback)
         {
             // skillFacade = new SkillFacade();
-            logger = locator.GetLogger();
+            logger = ServiceLocator.GetLogger();
             logger.LogInfo("EntitySystem service is available now");
             global  = new List<AEntity>();
             mobInfo = new Dictionary<int, EntityInfo>(4);
 
             for (int i = 0; i < _mobInfo.Length; i++) mobInfo[_mobInfo[i].prefab.GetInstanceID()] = _mobInfo[i];
 
-            SetUpBoids(locator);
+            SetUpBoids();
             callback?.Invoke();
         }
-        private async UniTaskVoid SetUpBoids(ServiceLocator locator)
+        private async UniTaskVoid SetUpBoids()
         {
             await UniTask.Delay(1000);
-            if(boidsBehaviour != null) boidsBehaviour.StartBoids(locator.GetPlayerTransform());
+            if(boidsBehaviour != null) boidsBehaviour.StartBoids(ServiceLocator.GetPlayerTransform());
         }
         private void FixedUpdate()
         {

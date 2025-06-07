@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 using LLMUnity;
 using UnityEngine.UI;
 
-using UnityEngine.InputSystem;
-
 namespace LLMUnitySamples
 {
     public class ChatBot : MonoBehaviour
@@ -76,7 +74,7 @@ namespace LLMUnitySamples
         void onInputFieldSubmit(string newText)
         {
             inputBubble.ActivateInputField();
-            if (blockInput || newText.Trim() == "" || Keyboard.current[Key.RightShift].wasPressedThisFrame)
+            if (blockInput || newText.Trim() == "" || Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
             {
                 StartCoroutine(BlockInteraction());
                 return;
@@ -123,7 +121,7 @@ namespace LLMUnitySamples
         void onValueChanged(string newText)
         {
             // Get rid of newline character added when we press enter
-            if (Keyboard.current[Key.Space].wasPressedThisFrame)
+            if (Input.GetKey(KeyCode.Return))
             {
                 if (inputBubble.GetText().Trim() == "")
                     inputBubble.SetText("");

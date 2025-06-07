@@ -7,7 +7,6 @@ using UnityEngine;
 
 using TheRavine.Generator;
 using TheRavine.Extensions;
-using TheRavine.Services;
 using TheRavine.Base;
 
 namespace TheRavine.EntityControl
@@ -31,10 +30,10 @@ namespace TheRavine.EntityControl
             return mapData[pos];
         }
         private Vector2Int currentChunkPosition, oldChunkPosition;
-        public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+        public void SetUp(ISetAble.Callback callback)
         {
-            mapGenerator = locator.GetService<MapGenerator>();
-            mobController = locator.GetService<MobController>();
+            mapGenerator = ServiceLocator.GetService<MapGenerator>();
+            mobController = ServiceLocator.GetService<MobController>();
             if(mapGenerator != null)
             {
                 mapGenerator.onSpawnPoint += AddSpawnPoint;
@@ -48,7 +47,7 @@ namespace TheRavine.EntityControl
                 MaxSpawnEntityCount
             );
             _nalSystem.StartNALProcess().Forget();
-            _nalSystem.RunLifecycle(locator.GetService<EntitySystem>()).Forget();
+            _nalSystem.RunLifecycle(ServiceLocator.GetService<EntitySystem>()).Forget();
 
             callback?.Invoke();
         }

@@ -15,7 +15,7 @@ namespace LLMUnitySamples
     {
         [Header("Models")]
         public LLMCharacter llmCharacter;
-        public RAG rag; // Retrieval Augmented Generation
+        public RAG rag;
         public int numRAGResults = 3;
 
         string ragPath = "KnowledgeBaseGame.zip";
@@ -76,17 +76,17 @@ namespace LLMUnitySamples
             {
     #if UNITY_EDITOR
                 Stopwatch stopwatch = new Stopwatch();
-
+                // build the embeddings
                 foreach ((string botName, Dictionary<string, string> botQuestionAnswers) in botQuestionAnswers)
                 {
                     PlayerText.text += $"Creating Embeddings for {botName} (only once)...\n";
                     List<string> questions = botQuestionAnswers.Keys.ToList();
                     stopwatch.Start();
-                    foreach (string question in questions)
-                        await rag.Add(question, botName);
+                    foreach (string question in questions) await rag.Add(question, botName);
                     stopwatch.Stop();
                     Debug.Log($"embedded {rag.Count()} phrases in {stopwatch.Elapsed.TotalMilliseconds / 1000f} secs");
                 }
+                // store the embeddings
                 rag.Save(ragPath);
     #else
                 // if in play mode throw an error
@@ -107,38 +107,14 @@ namespace LLMUnitySamples
 
         public async Task<string> ConstructPrompt(string question)
         {
+            // get similar answers from the RAG
             List<string> similarAnswers = await Retrieval(question);
-            
-            string characterPersonality = currentBotName switch
-            {
-                "Butler" => "formal and reserved, with keen observational skills",
-                "Maid" => "observant and slightly gossipy, aware of household secrets",
-                "Chef" => "passionate about details and precision in everything",
-                _ => "mysterious and intriguing"
-            };
-
-            string relatedContext = string.Join("\n", similarAnswers.Select(a => $"- {a}"));
-
-            string prompt = $@"You are {currentBotName}, a {characterPersonality} character in a mystery game.
-
-        Personality Traits:
-        - Speak in a way that reflects your unique background
-        - Provide subtle, intriguing responses
-        - Maintain an air of mystery
-
-        Question: {question}
-
-        Related Context:
-        {relatedContext}
-
-        Guidelines:
-        - Respond in 2-3 sentences
-        - Avoid direct answers
-        - Hint at deeper narrative elements
-        - Match your character's distinctive communication style
-
-        Your Response:";
-
+            // create the prompt using the user question and the similar answers
+            string answers = "";
+            foreach (string similarAnswer in similarAnswers) answers += $"\n- {similarAnswer}";
+            // string prompt = $"Robot: {currentBotName}\n\n";
+            string prompt = $"Question: {question}\n\n";
+            prompt += $"Possible Answers: {answers}";
             return prompt;
         }
 

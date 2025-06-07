@@ -12,13 +12,14 @@ public class ActivateTextField : MonoBehaviour
     [SerializeField] private InputActionReference EnterRef;
     [SerializeField] private InputActionReference OutRef;
 
-
+    private GameSettings gameSettings;
     private void OnEnable()
     {
+        gameSettings = ServiceLocator.GetSettings().GameSettings.CurrentValue;
         EnterRef.action.performed += ChangeTerminalState;
         OutRef.action.performed += ChangeTerminalState;
         window.SetActive(false);
-        mobileInput.SetActive(Settings._controlType == ControlType.Mobile ? true : false);
+        mobileInput.SetActive(gameSettings.controlType == ControlType.Mobile ? true : false);
     }
     private bool isactive = false;
 
@@ -40,7 +41,7 @@ public class ActivateTextField : MonoBehaviour
             playerData.SetBehaviourIdle();
             input.SwitchCurrentActionMap("Gameplay");
         }
-        if(Settings._controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
+        if(gameSettings.controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
         window.SetActive(isactive);
     }
     public void ChangeTerminalState()
@@ -61,7 +62,7 @@ public class ActivateTextField : MonoBehaviour
             playerData.SetBehaviourIdle();
             input.SwitchCurrentActionMap("Gameplay");
         }
-        if(Settings._controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
+        if(gameSettings.controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
         window.SetActive(isactive);
     }
 

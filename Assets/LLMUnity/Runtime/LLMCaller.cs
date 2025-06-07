@@ -133,7 +133,11 @@ namespace LLMUnity
             if (remote || llm != null) return;
 
             List<LLM> validLLMs = new List<LLM>();
+#if UNITY_6000_0_OR_NEWER
             foreach (LLM foundllm in FindObjectsByType(typeof(LLM), FindObjectsSortMode.None))
+#else
+            foreach (LLM foundllm in FindObjectsOfType<LLM>())
+#endif
             {
                 if (IsValidLLM(foundllm) && IsAutoAssignableLLM(foundllm)) validLLMs.Add(foundllm);
             }
@@ -277,7 +281,7 @@ namespace LLMUnity
 
             while (tryNr != 0)
             {
-                using (request = UnityWebRequest.Put($"{host}:{port}/{endpoint}", jsonToSend))
+                using (request = UnityWebRequest.Put($"{host}{(port != 0 ? $":{port}" : "")}/{endpoint}", jsonToSend))
                 {
                     WIPRequests.Add(request);
 

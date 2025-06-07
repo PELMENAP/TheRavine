@@ -42,7 +42,7 @@ public class MoveAlongPathCommand : ICommand
         }
         catch (Exception ex)
         {
-            logger.LogError($"Failed to process command MoveToTargetAsync: {ex.Message}");
+            logger?.LogError($"Failed to process command MoveToTargetAsync: {ex.Message}");
         }
     }
 

@@ -3,7 +3,9 @@ using UnityEngine;
 using R3;
 using System;
 
-using TheRavine.Services;
+using TheRavine.Base;
+
+using Cysharp.Threading.Tasks;
 
 namespace TheRavine.EntityControl
 {
@@ -13,20 +15,19 @@ namespace TheRavine.EntityControl
         [SerializeField] private NetworkObject cameraPrefab;
         [SerializeField] private EntityInfo playerInfo;
         private Camera mainCamera;
-        private ServiceLocator locator;
         private CM cameraComponent;
         private ILogger logger;
         protected override void OnInitialize()
         {
             // doing something specific on view
         }
-        public override void OnNetworkSpawn()
+        public override async void OnNetworkSpawn()
         {
             try
             {
-                SetupLocator();
-                CreatePlayerEntity();
-                SetupNetworking();
+                await SetupLocator();
+                await CreatePlayerEntity();
+                await SetupNetworking();
                 logger.LogInfo($"Player entity {NetworkManager.Singleton.LocalClientId} is set up");
             }
             catch (Exception ex)
@@ -37,26 +38,28 @@ namespace TheRavine.EntityControl
             playerEntity.Init();
         }
 
-        private void SetupLocator()
+        private async UniTask SetupLocator()
         {
-            locator = ServiceLocatorAccess.inst.serviceLocator;
-            locator.RegisterPlayer<PlayerModelView>(this);
-            locator.Register<PlayerModelView>(this);
-            logger = locator.GetLogger();
+            ServiceLocator.RegisterPlayer<PlayerModelView>(this);
+            ServiceLocator.Register<PlayerModelView>(this);
+
+            await UniTask.Delay(3000);
+
+            logger = ServiceLocator.GetLogger();
         }
 
-        private void CreatePlayerEntity()
+        private async UniTask CreatePlayerEntity()
         {
             Initialize(new PlayerEntity(GetComponent<IEntityController>(), logger));
             playerEntity.AddComponentsToEntity(playerInfo, this);
         }
 
-        private void SetupNetworking()
+        private async UniTask SetupNetworking()
         {
             if (IsClient && IsOwner)
             {
                 RequestCameraServerRpc(NetworkManager.Singleton.LocalClientId);
-                locator.GetService<EntitySystem>().AddToGlobal(playerEntity);
+                ServiceLocator.GetService<EntitySystem>().AddToGlobal(playerEntity);
             }
         }
         [ServerRpc]
@@ -76,7 +79,7 @@ namespace TheRavine.EntityControl
             if (NetworkManager.Singleton.LocalClientId == clientId)
             {
                 cameraComponent.SetPlayerEntity(playerEntity);
-                cameraComponent.SetUp(null, locator);
+                cameraComponent.SetUp(null);
                 mainCamera = cameraObject.GetComponent<Camera>();
             }
             DisableOtherCameras(clientId);

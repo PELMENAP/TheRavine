@@ -47,10 +47,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1788112043
+  GlobalObjectIdHash: 3539351285
   InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -58,8 +56,6 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
 --- !u!114 &8121373543420682486
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -72,26 +68,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74ec20f3c7d12b243a51d645d8a00ecf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
   startDay: 0.2
   speed: 2
   sunGradient:
     serializedVersion: 2
-    key0: {r: 0.07920967, g: 0.095308095, b: 0.18867922, a: 1}
+    key0: {r: 0, g: 0.03958296, b: 0.2630546, a: 1}
     key1: {r: 1, g: 0.589713, b: 0.2364732, a: 1}
     key2: {r: 1, g: 0.9761914, b: 0.44645143, a: 0}
     key3: {r: 1, g: 0.84083563, b: 0.36946422, a: 0}
     key4: {r: 1, g: 0.16319984, b: 0.11871451, a: 0}
-    key5: {r: 0.07920967, g: 0.095308095, b: 0.18867922, a: 0}
-    key6: {r: 0.07920967, g: 0.095308095, b: 0.18867922, a: 0}
+    key5: {r: 0, g: 0.03958296, b: 0.2630546, a: 0}
+    key6: {r: 0, g: 0.03958296, b: 0.2630546, a: 0}
     key7: {r: 0, g: 0, b: 0, a: 0}
     ctime0: 13107
     ctime1: 16375
     ctime2: 19661
     ctime3: 45875
     ctime4: 49151
-    ctime5: 52428
-    ctime6: 54511
+    ctime5: 53391
+    ctime6: 53771
     ctime7: 0
     atime0: 0
     atime1: 65535
@@ -107,6 +102,7 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   awakeDelay: 1500
   defaultDelay: 1000
+  maxLights: 100
 --- !u!114 &8121373543420682487
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -124,10 +120,10 @@ MonoBehaviour:
   m_BlendStyleIndex: 0
   m_FalloffIntensity: 0
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 0.05
+  m_Intensity: 0.46
   m_LightVolumeIntensity: 0
   m_LightVolumeEnabled: 0
-  m_ApplyToSortingLayers: 0377713ce1efd3958d42faee00000000df62bcf6
+  m_ApplyToSortingLayers: 43c44ec88fde0f4f00000000f116ffe8
   m_LightCookieSprite: {fileID: 0}
   m_DeprecatedPointLightCookieSprite: {fileID: 0}
   m_LightOrder: 0
@@ -178,7 +174,6 @@ SpriteRenderer:
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:

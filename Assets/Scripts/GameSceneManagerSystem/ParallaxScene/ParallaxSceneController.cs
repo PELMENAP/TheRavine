@@ -50,7 +50,6 @@ public class ParallaxSceneController : MonoBehaviour
     {
         if(DataStorage.winTheGame) transistor.LoadScene(0).Forget();
         else transistor.LoadScene(2).Forget();
-        Settings.isLoad = false;
         AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
     }
 

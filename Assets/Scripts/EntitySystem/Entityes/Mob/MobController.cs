@@ -7,7 +7,6 @@ using UnityEngine.Jobs;
 using Unity.Mathematics;
 using Unity.Jobs;
 
-using TheRavine.Services;
 
 namespace TheRavine.EntityControl
 {
@@ -23,9 +22,9 @@ namespace TheRavine.EntityControl
         private MoveMobsJob moveMobsJob;
         private JobHandle moveJobHandle;
 
-        public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+        public void SetUp(ISetAble.Callback callback)
         {
-            logger = locator.GetLogger();
+            logger = ServiceLocator.GetLogger();
             logger.LogInfo("MobController service is available now");
             
             mobEntities = new NativeList<IntPtr>(Allocator.Persistent);

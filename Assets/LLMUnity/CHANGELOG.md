@@ -1,3 +1,33 @@
+## v2.5.2
+#### 🚀 Features
+
+- Support Android x86-64 architecture (Magic Leap 2) (PR: #344)
+- Combine ARM and Intel architectures of macOS (PR: #345)
+
+
+## v2.5.1
+#### 🚀 Features
+
+- Allow JSON schema grammars (PR: #333)
+- Add support for Qwen3 models (PR: #335)
+- Add support for BitNet models (PR: #334)
+- Upgrade LlamaLib to v1.2.5 (llama.cpp b5261) (PR: #335)
+
+#### 🐛 Fixes
+
+- Fix Unity Editor hanging after stopping a completion and restarting scene (PR: #335)
+
+
+## v2.5.0
+#### 🚀 Features
+
+- VisionOS support (PR: #299)
+- Add support for Gemma 3 and Phi 4 models (PR: #327)
+- Fix Android support for older devices (use ARMv8-A instead of ARMv8.4-A) (PR: #325)
+- Upgrade LlamaLib to v1.2.4 (llama.cpp b4969) (PR: #325)
+- Default number of predicted tokens (num_predict) to infinity (-1) (PR: #328)
+
+
 ## v2.4.2
 #### 🚀 Features
 

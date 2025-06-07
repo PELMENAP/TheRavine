@@ -3,25 +3,18 @@ using System.Collections.Generic;
 using System.Reflection;
 using System;
 
-using TheRavine.Services;
-
 namespace TheRavine.Base
 {
     public class ServiceRegisterMachine
     {
-        private ServiceLocator serviceLocator;
         private Queue<ISetAble> disAble;
-        public ServiceRegisterMachine(ServiceLocatorAccess serviceLocatorAccess)
+        public ServiceRegisterMachine()
         {
             disAble = new Queue<ISetAble>();
-            serviceLocator = new ServiceLocator();
-
-            if(serviceLocatorAccess != null) serviceLocatorAccess.serviceLocator = serviceLocator;
-            else Debug.Log("There's not service locator accesses on the scene!");
         }
         public void RegisterLogger(Action<string> onMessageDisplayTerminal)
         {
-            serviceLocator.RegisterLogger(new Logger(onMessageDisplayTerminal));
+            ServiceLocator.RegisterLogger(new Logger(onMessageDisplayTerminal));
         }
 
         public Queue<ISetAble> RegisterSomeServices(MonoBehaviour[] scripts)
@@ -33,7 +26,7 @@ namespace TheRavine.Base
                 if(scripts[i] == null) continue;
                 System.Type serviceType = scripts[i].GetType();
                 MethodInfo registerMethod = typeof(ServiceLocator).GetMethod("Register").MakeGenericMethod(new System.Type[] { serviceType });
-                registerMethod.Invoke(serviceLocator, new object[] { scripts[i] });
+                registerMethod.Invoke(null, new object[] { scripts[i] });
                 someServices.Enqueue((ISetAble)scripts[i]);
             }
 
@@ -47,14 +40,14 @@ namespace TheRavine.Base
             {
                 ISetAble setAble = services.Dequeue();
                 disAble.Enqueue(setAble);
-                setAble.SetUp(() => StartNewServices(services, callback), serviceLocator);
+                setAble.SetUp(() => StartNewServices(services, callback));
             }
         }
         
         public void BreakUpServices()
         {
             if(disAble.Count > 0) disAble.Dequeue().BreakUp(() => BreakUpServices());
-            else serviceLocator.Dispose();
+            else ServiceLocator.Clear();
         }
     }
 }

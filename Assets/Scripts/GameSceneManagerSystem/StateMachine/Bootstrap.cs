@@ -1,9 +1,9 @@
+using System;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using Cysharp.Threading.Tasks;
 
 using TheRavine.EntityControl;
-using TheRavine.Services;
 
 namespace TheRavine.Base
 {
@@ -13,10 +13,16 @@ namespace TheRavine.Base
         private SceneTransistor trasitor;
         [SerializeField] private GameStateMachine gameStateMachine;
         [SerializeField] private bool isTest;
-        private void Start()
+        private async void Start()
         {
             if(isTest) return;
             gameStateMachine.Initialize();
+
+            while(!gameStateMachine.HaveServiceLocatorPlayer())
+            {
+                gameStateMachine.LogBootstrapInfo("There is no players in the scene");
+                await UniTask.Delay(1000);
+            }
 
             AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
             DataStorage.winTheGame = false;
@@ -25,6 +31,7 @@ namespace TheRavine.Base
 
             gameStateMachine.StartGame();
         }
+
         public void AddCameraToStack(Camera _cameraToAdd)
         {
             try
@@ -44,7 +51,7 @@ namespace TheRavine.Base
             InTheEnd(() => TransitToOtherScene(1));
         }
 
-        private void InTheEnd(System.Action inTheEndCallback)
+        private void InTheEnd(Action inTheEndCallback)
         {
             // if(DataStorage.sceneClose) return;
             // DataStorage.sceneClose = true;
@@ -54,7 +61,6 @@ namespace TheRavine.Base
 
         private void TransitToOtherScene(int sceneNumber){
             trasitor.LoadScene(sceneNumber).Forget();
-            Settings.isLoad = false;
             AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
         }
 
