@@ -9,10 +9,9 @@ namespace TheRavine.Base
     public interface IWorldManager
     {
         string CurrentWorldName { get; }
+        ObservableList<string> AvailableWorlds { get; }
         Observable<string> CurrentWorld { get; }
-        ISynchronizedViewList<string> AvailableWorlds { get; }
-        
-        UniTask<bool> CreateWorldAsync(string worldName);
+        UniTask<bool> CreateWorldAsync(string worldName, WorldSettings customSettings = null);
         UniTask<bool> LoadWorldAsync(string worldName);
         UniTask<bool> DeleteWorldAsync(string worldName);
         UniTask RefreshWorldListAsync();
