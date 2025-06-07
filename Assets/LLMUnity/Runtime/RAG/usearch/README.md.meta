@@ -9,6 +9,6 @@ AssetOrigin:
   serializedVersion: 1
   productId: 273604
   packageName: LLM for Unity
-  packageVersion: 2.4.2
+  packageVersion: 2.5.2
   assetPath: Assets/LLMUnity/Runtime/RAG/usearch/README.md
-  uploadId: 733990
+  uploadId: 760718

@@ -33,7 +33,7 @@ namespace TheRavine.Inventory
             eventData = new PointerEventData(eventSystem);
             mouse = Mouse.current;
 
-            switch (Settings._controlType)
+            switch (ServiceLocator.GetSettings().GameSettings.CurrentValue.controlType)
             {
                 case ControlType.Personal:
                     leftclick.action.performed += OnDragPC;
@@ -149,7 +149,7 @@ namespace TheRavine.Inventory
 
         private void OnDisable()
         {
-            switch (Settings._controlType)
+            switch (ServiceLocator.GetSettings().GameSettings.CurrentValue.controlType)
             {
                 case ControlType.Personal:
                     leftclick.action.performed -= OnDragPC;

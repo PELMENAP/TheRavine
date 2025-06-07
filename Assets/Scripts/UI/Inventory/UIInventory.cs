@@ -8,7 +8,6 @@ using TheRavine.InventoryElements;
 using TheRavine.Generator;
 using TheRavine.ObjectControl;
 using TheRavine.Extensions;
-using TheRavine.Services;
 using TheRavine.EntityControl;
 using TheRavine.Events;
 using TheRavine.Security;
@@ -33,11 +32,11 @@ namespace TheRavine.Inventory
         private PlayerEntity playerData;
         private MapGenerator generator;
         private ObjectSystem objectSystem;
-        public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+        public void SetUp(ISetAble.Callback callback)
         {
-            playerData = locator.GetService<PlayerModelView>().playerEntity;
-            generator = locator.GetService<MapGenerator>();
-            objectSystem = locator.GetService<ObjectSystem>();
+            playerData = ServiceLocator.GetService<PlayerModelView>().playerEntity;
+            generator = ServiceLocator.GetService<MapGenerator>();
+            objectSystem = ServiceLocator.GetService<ObjectSystem>();
             var uiSlot = GetComponentsInChildren<UIInventorySlot>();
             var slotList = new List<UIInventorySlot>();
             slotList.AddRange(uiSlot);
@@ -51,7 +50,7 @@ namespace TheRavine.Inventory
                 tester.SetDataFromSerializableList(loadedData);
             }
 
-            craftService.SetUp(null, locator);
+            craftService.SetUp(null);
 
             grid.SetActive(false);
 
@@ -146,7 +145,7 @@ namespace TheRavine.Inventory
                 playerData.SetBehaviourIdle();
                 input.SwitchCurrentActionMap("Gameplay");
             }
-            if(Settings._controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
+            if(ServiceLocator.GetSettings().GameSettings.CurrentValue.controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
             grid.SetActive(isactive);
         }
 
@@ -169,7 +168,7 @@ namespace TheRavine.Inventory
                 playerData.SetBehaviourIdle();
                 input.SwitchCurrentActionMap("Gameplay");
             }
-            if(Settings._controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
+            if(ServiceLocator.GetSettings().GameSettings.CurrentValue.controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
             grid.SetActive(isactive);
         }
         public void BreakUp(ISetAble.Callback callback)

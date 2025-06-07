@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using UnityEngine.TestTools;
 using UnityEditor;
 using UnityEditor.TestTools.TestRunner.Api;
@@ -115,7 +117,9 @@ namespace LLMUnityTests
         protected string reply2;
         protected int tokens1;
         protected int tokens2;
+        protected int port;
 
+        static readonly object _lock = new object();
 
         public TestLLM()
         {
@@ -125,6 +129,8 @@ namespace LLMUnityTests
 
         public virtual async Task Init()
         {
+            Monitor.Enter(_lock);
+            port = new System.Random().Next(10000, 20000);
             SetParameters();
             await DownloadModels();
             gameObject = new GameObject();
@@ -136,28 +142,17 @@ namespace LLMUnityTests
 
         public virtual void SetParameters()
         {
-            prompt = "Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.";
-            query = "How can I increase my meme production/output? Currently, I only create them in ancient babylonian which is time consuming.";
-            reply1 = "To increase your meme production output, you might consider using more modern tools and techniques to generate memes.";
-            if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
-            {
-                reply2 = "To increase your meme production output, you could consider using more advanced tools and techniques to generate memes faster";
-            }
-            else if (Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.OSXPlayer)
-            {
-                reply2 = "To increase your meme production/output, you can try using various tools and techniques. Here are some suggestions";
-            }
-            else
-            {
-                reply2 = "To increase your meme production output, you could consider using more advanced tools and techniques to generate memes faster";
-            }
-            tokens1 = 32;
+            prompt = "You are a scientific assistant and provide short and concise info on the user questions";
+            query = "Can you tell me some fun fact about ants in one sentence?";
+            reply1 = "Sure! Here's a fun fact: Ants work together to build complex structures like nests, even though they don't have human-like intelligence.";
+            reply2 = "Sure! Here's a fun fact: Ants work together to build complex structures like nests, which is a fascinating example of teamwork.";
+            tokens1 = 20;
             tokens2 = 9;
         }
 
         protected virtual string GetModelUrl()
         {
-            return "https://huggingface.co/Qwen/Qwen2-0.5B-Instruct-GGUF/resolve/main/qwen2-0_5b-instruct-q4_k_m.gguf?download=true";
+            return "https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_K_M.gguf";
         }
 
         public virtual async Task DownloadModels()
@@ -225,6 +220,7 @@ namespace LLMUnityTests
             LLM llm = gameObject.AddComponent<LLM>();
             llm.SetModel(modelNameLLManager);
             llm.parallelPrompts = 1;
+            llm.port = port;
             return llm;
         }
 
@@ -232,13 +228,14 @@ namespace LLMUnityTests
         {
             LLMCharacter llmCharacter = gameObject.AddComponent<LLMCharacter>();
             llmCharacter.llm = llm;
-            llmCharacter.playerName = "Instruction";
-            llmCharacter.AIName = "Response";
+            llmCharacter.playerName = "User";
+            llmCharacter.AIName = "Assistant";
             llmCharacter.prompt = prompt;
             llmCharacter.temperature = 0;
             llmCharacter.seed = 0;
             llmCharacter.stream = false;
-            llmCharacter.numPredict = 20;
+            llmCharacter.numPredict = 50;
+            llmCharacter.port = port;
             return llmCharacter;
         }
 
@@ -273,6 +270,7 @@ namespace LLMUnityTests
         {
             await llmCharacter.Tokenize("I", TestTokens);
             await llmCharacter.Warmup();
+            TestArchitecture();
             TestInitParameters(tokens1, 1);
             TestWarmup();
             await llmCharacter.Chat(query, (string reply) => TestChat(reply, reply1));
@@ -288,7 +286,12 @@ namespace LLMUnityTests
             await llmCharacter.Chat("hi");
             TestInitParameters(tokens2, 3);
             List<float> embeddings = await llmCharacter.Embeddings("hi how are you?");
-            // TestEmbeddings(embeddings);
+            TestEmbeddings(embeddings);
+        }
+
+        public virtual void TestArchitecture()
+        {
+            Assert.That(llm.architecture.Contains("avx"));
         }
 
         public void TestInitParameters(int nkeep, int chats)
@@ -311,7 +314,12 @@ namespace LLMUnityTests
         public void TestChat(string reply, string replyGT)
         {
             Debug.Log(reply.Trim());
-            Assert.That(reply.Trim() == replyGT);
+            var words1 = reply.Trim().Split(new[] { ' ', ',', '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
+            var words2 = replyGT.Trim().Split(new[] { ' ', ',', '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
+            var commonWords = words1.Intersect(words2).Count();
+            var totalWords = Math.Max(words1.Length, words2.Length);
+
+            Assert.That((double)commonWords / totalWords >= 0.7);
         }
 
         public void TestPostChat(int num)
@@ -321,10 +329,16 @@ namespace LLMUnityTests
 
         public void TestEmbeddings(List<float> embeddings)
         {
-            Assert.That(embeddings.Count == 896);
+            Assert.That(embeddings.Count == 1024);
         }
 
-        public virtual void OnDestroy() {}
+        public virtual void OnDestroy()
+        {
+            if (Monitor.IsEntered(_lock))
+            {
+                Monitor.Exit(_lock);
+            }
+        }
     }
 
     public class TestLLM_LLMManager_Load : TestLLM
@@ -359,6 +373,7 @@ namespace LLMUnityTests
 
         public override void OnDestroy()
         {
+            base.OnDestroy();
             if (!File.Exists(loadPath)) File.Delete(loadPath);
         }
     }
@@ -378,7 +393,7 @@ namespace LLMUnityTests
 
     public class TestLLM_Lora : TestLLM
     {
-        protected string loraUrl = "https://huggingface.co/undreamer/Qwen2-0.5B-Instruct-ru-lora/resolve/main/Qwen2-0.5B-Instruct-ru-lora.gguf?download=true";
+        protected string loraUrl = "https://huggingface.co/phh/Qwen3-0.6B-TLDR-Lora/resolve/main/Qwen3-0.6B-tldr-lora-f16.gguf";
         protected string loraNameLLManager;
         protected float loraWeight;
 
@@ -394,12 +409,19 @@ namespace LLMUnityTests
             llm.AddLora(loraNameLLManager, loraWeight);
             return llm;
         }
+
         public override void SetParameters()
         {
             prompt = "";
-            query = "кто ты?";
-            reply1 = "Я - искусственный интеллект, создан для общения с людьми и выполнять";
-            reply2 = "Идиот";
+            if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
+            {
+                reply1 = "I am sorry, but I cannot assist with this request. Please try again or ask a different question.";
+            }
+            else
+            {
+                reply1 = "I am sorry, but I cannot respond to your message as it is empty.Could you please provide a meaningful query or content ?";
+            }
+            reply2 = "False response.";
             tokens1 = 5;
             tokens2 = 9;
             loraWeight = 0.9f;
@@ -541,33 +563,24 @@ namespace LLMUnityTests
         public override void SetParameters()
         {
             base.SetParameters();
-            if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
+            reply1 = "Sure! Here's a fun fact: Ants work together to build complex structures like nests, even though they don't have a brain.";
+            if (Application.platform == RuntimePlatform.LinuxEditor || Application.platform == RuntimePlatform.LinuxPlayer)
             {
-                reply1 = "To increase your meme production output, you might consider using more modern tools and techniques to generate memes.";
-                reply2 = "To increase your meme production output, you can try using various tools and techniques to generate more content quickly";
+                reply2 = "Sure! Here's a fun fact: Ants work together to build complex structures like nests, which is a fascinating example of teamwork.";
             }
-            else
-            {
-                reply2 = "To increase your meme production output, you can try using various tools and techniques to generate more memes.";
-            }
+        }
+
+        public override void TestArchitecture()
+        {
+            Assert.That(llm.architecture.Contains("cuda"));
         }
     }
 
     public class TestLLM_CUDA_full : TestLLM_CUDA
     {
-        public override void SetParameters()
+        public override void TestArchitecture()
         {
-            base.SetParameters();
-            if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
-            {
-                reply1 = "To increase your meme production output, you might consider using more modern tools and techniques to generate memes.";
-                reply2 = "To increase your meme production output, you could consider using more advanced tools and techniques to generate memes faster";
-            }
-            else
-            {
-                reply1 = "To increase your meme production output, you might consider using more advanced tools and techniques to generate memes faster";
-                reply2 = "To increase your meme production output, you can consider using various tools and techniques to generate content more efficiently";
-            }
+            Assert.That(llm.architecture.Contains("cuda") && llm.architecture.Contains("full"));
         }
     }
 
@@ -585,8 +598,7 @@ namespace LLMUnityTests
             base.SetParameters();
             if (Application.platform == RuntimePlatform.LinuxEditor || Application.platform == RuntimePlatform.LinuxPlayer)
             {
-                reply1 = "To increase your meme production output, you might consider using more advanced tools and techniques to generate memes faster";
-                reply2 = "To increase your meme production output, you can try using various tools and techniques to generate more content quickly";
+                reply2 = "Sure! Here's a fun fact: Ants work together to build complex structures like nests, even though they don't have human-like intelligence.";
             }
         }
     }

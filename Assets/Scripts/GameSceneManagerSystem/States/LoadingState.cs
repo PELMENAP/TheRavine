@@ -15,7 +15,7 @@ namespace TheRavine.Base
             }
             public void OnEnter()
             {
-                UnityEngine.Debug.Log("load");
+                Initializer.LogBootstrapInfo("Loading state reached");
                 Initializer.StartNewServices(currentSetAbleScripts, () => isChangeState = true);
                 FaderOnTransit.instance.SetLogs("Создание сцены");
             }

@@ -57,7 +57,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1192482281
+  GlobalObjectIdHash: 3654907729
   InScenePlacedSourceGlobalObjectIdHash: 771659990
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -676,6 +676,7 @@ MonoBehaviour:
   shadowScale: {x: 1, y: 1.1, z: 1}
   shadowRotation: {x: 50, y: 0, z: 300}
   shadowPosition: {x: 0, y: 0.1, z: 0}
+  shadow: {fileID: 0}
   isAlreadyCreated: 0
 --- !u!1 &8301711937425208852
 GameObject:

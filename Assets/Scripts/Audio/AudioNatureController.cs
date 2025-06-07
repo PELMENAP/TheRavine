@@ -3,7 +3,6 @@ using UnityEngine;
 using System.Threading;
 
 using TheRavine.Base;
-using TheRavine.Services;
 using Random = TheRavine.Extensions.RavineRandom;
 public class AudioNatureController : MonoBehaviour, ISetAble
 {
@@ -16,9 +15,9 @@ public class AudioNatureController : MonoBehaviour, ISetAble
 
     private CancellationTokenSource _cts;
     private DayCycle dayCycle;
-    public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+    public void SetUp(ISetAble.Callback callback)
     {
-        dayCycle = locator.GetService<DayCycle>();
+        dayCycle = ServiceLocator.GetService<DayCycle>();
 
         _cts = new CancellationTokenSource();
         AudioLoop(_cts.Token).Forget();

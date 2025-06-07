@@ -1,7 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
 
-using TheRavine.Services;
 using TheRavine.EntityControl;
 using TheRavine.Events;
 public class CM : NetworkBehaviour
@@ -15,7 +14,7 @@ public class CM : NetworkBehaviour
     [SerializeField] private float Velocity, MinDistance;
     private TransformComponent playerTransformComponent;
     private Vector3 targetPos, factMousePositionOffset, zOffset = new Vector3(0, 0, -10);
-    public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+    public void SetUp(ISetAble.Callback callback)
     {
         playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<Vector3>(nameof(AimAddition), AimAdditionHandleEvent);
         playerTransformComponent = playerEntity.GetEntityComponent<TransformComponent>();

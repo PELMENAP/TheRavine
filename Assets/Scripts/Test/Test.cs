@@ -49,8 +49,8 @@ public class Test : MonoBehaviour
     private async UniTaskVoid rte()
     {
         await UniTask.Delay(5000);
-        Settings.isShadow = isShadow;
-        Settings._controlType = control;
+        ServiceLocator.GetSettings().GameSettings.CurrentValue.enableShadows = isShadow;
+        ServiceLocator.GetSettings().GameSettings.CurrentValue.controlType = control;
     }
     [Button]
     private void ShowPlayerEntity()

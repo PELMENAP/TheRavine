@@ -46,7 +46,7 @@ namespace TheRavine.EntityControl
             {
                 shadowAnimator = animator;
             }
-            shouldAnimateShadow = Settings.isShadow && shadowAnimator != null;
+            shouldAnimateShadow = ServiceLocator.GetSettings().GameSettings.CurrentValue.enableShadows && shadowAnimator != null;
         }
         
         public void Animate(Vector2 movementDirection, float movementSpeed)
@@ -72,7 +72,7 @@ namespace TheRavine.EntityControl
         }
         public void RefreshShadowAnimationState()
         {
-            shouldAnimateShadow = Settings.isShadow && shadowAnimator != null;
+            shouldAnimateShadow = ServiceLocator.GetSettings().GameSettings.CurrentValue.enableShadows && shadowAnimator != null;
         }
         private void OnDisable()
         {

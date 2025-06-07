@@ -7,7 +7,6 @@ using Cysharp.Threading.Tasks;
 using TheRavine.Base;
 using TheRavine.Extensions;
 using TheRavine.ObjectControl;
-using TheRavine.Services;
 
 namespace TheRavine.Generator
 {
@@ -86,16 +85,14 @@ namespace TheRavine.Generator
         [SerializeField] private Transform viewer;
         [SerializeField] private bool[] endlessFlag;
         private IEndless[] endless;
-        private ServiceLocator locator;
-        public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+        public void SetUp(ISetAble.Callback callback)
         {
             // seed = RavineRandom.RangeInt(0, 1000);
             seed = 16; 
-            this.locator = locator;
             endless = new IEndless[3];
             mapData = new Dictionary<Vector2Int, ChunkData>(64);
             Noise.SetInit(noiseScale, octaves, persistence, lacunarity, Seed);
-            objectSystem = locator.GetService<ObjectSystem>();
+            objectSystem = ServiceLocator.GetService<ObjectSystem>();
             if (endlessFlag[3])
             {
                 NAL().Forget();
@@ -122,7 +119,7 @@ namespace TheRavine.Generator
                     await UniTask.Delay(50);
                 }
             }
-            viewer = locator.GetPlayerTransform();
+            viewer = ServiceLocator.GetPlayerTransform();
             GenerationUpdate().Forget();
         }
 

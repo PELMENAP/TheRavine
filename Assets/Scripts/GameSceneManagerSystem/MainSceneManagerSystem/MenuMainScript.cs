@@ -22,7 +22,6 @@ public class MenuMainScript : MonoBehaviour
     {
         menu.SetActive(true);
         settings.SetActive(false);
-        settings.GetComponent<Settings>().SetInitialValues();
         isInit = false;
     }
 
@@ -31,7 +30,6 @@ public class MenuMainScript : MonoBehaviour
     {
         if(isInit) return;
         trasitor.LoadScene(2).Forget();
-        Settings.isLoad = false;
         DataStorage.cycleCount = 0;
         AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
     }
@@ -39,7 +37,6 @@ public class MenuMainScript : MonoBehaviour
     {
         if(isInit) return;
         trasitor.LoadScene(2).Forget();
-        Settings.isLoad = true;
         // DataStorage.cycleCount = 1;
         AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
     }
@@ -48,7 +45,6 @@ public class MenuMainScript : MonoBehaviour
     {
         if(isInit) return;
         trasitor.LoadScene(2).Forget();
-        Settings.isLoad = false;
         AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
     }
 

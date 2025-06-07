@@ -2,8 +2,6 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-using TheRavine.Services;
-
 namespace TheRavine.ObjectControl
 {
     public class ObjectSystem : MonoBehaviour, ISetAble
@@ -78,7 +76,7 @@ namespace TheRavine.ObjectControl
         public void Deactivate(int prefabID) => PoolManagerBase.Deactivate(prefabID);
         public ushort GetPoolSize(int prefabID) => PoolManagerBase.GetPoolSize(prefabID);
         public void IncreasePoolSize(int prefabID) => PoolManagerBase.IncreasePoolSize(prefabID);
-        public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+        public void SetUp(ISetAble.Callback callback)
         {
             info = new Dictionary<int, ObjectInfo>(initialInfoCapacity);
             global = new Dictionary<Vector2Int, ObjectInstInfo>(initialGlobalCapacity);

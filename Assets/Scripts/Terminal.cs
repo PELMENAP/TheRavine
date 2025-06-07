@@ -4,7 +4,6 @@ using UnityEngine.InputSystem;
 using System;
 using TMPro;
 
-using TheRavine.Services;
 using TheRavine.Generator;
 using TheRavine.EntityControl;
 namespace TheRavine.Base
@@ -19,17 +18,10 @@ namespace TheRavine.Base
         private string[] _words;
         public PlayerEntity playerData;
         private MapGenerator generator;
-        public void SetUp(ISetAble.Callback callback, ServiceLocator locator)
+        public void SetUp(ISetAble.Callback callback)
         {
-            try
-            {
-                playerData = locator.GetService<PlayerModelView>().playerEntity;
-            }
-            catch
-            {
-                Debug.LogWarning("player not found");
-            }
-            generator = locator.GetService<MapGenerator>();
+            playerData = ServiceLocator.GetService<PlayerModelView>().playerEntity;
+            generator = ServiceLocator.GetService<MapGenerator>();
             EnterRef.action.performed += OnEnter;
             callback?.Invoke();
         }

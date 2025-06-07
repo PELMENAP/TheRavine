@@ -3,8 +3,6 @@ using UnityEngine;
 using R3;
 using System;
 
-using TheRavine.Services;
-
 namespace TheRavine.EntityControl
 {
     public class PlayerView : AEntityView

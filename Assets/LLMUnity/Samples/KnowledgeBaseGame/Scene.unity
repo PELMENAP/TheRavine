@@ -13,7 +13,7 @@ OcclusionCullingSettings:
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 10
+  serializedVersion: 9
   m_Fog: 0
   m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_FogMode: 3
@@ -38,12 +38,13 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657832, g: 0.49641222, b: 0.57481664, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 12
+  m_GIWorkflowMode: 1
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -66,6 +67,9 @@ LightmapSettings:
     m_LightmapParameters: {fileID: 0}
     m_LightmapsBakeMode: 1
     m_TextureCompression: 1
+    m_FinalGather: 0
+    m_FinalGatherFiltering: 1
+    m_FinalGatherRayCount: 256
     m_ReflectionCompression: 2
     m_MixedBakeMode: 2
     m_BakeBackend: 1
@@ -2061,9 +2065,10 @@ MonoBehaviour:
   debug: 0
   parallelPrompts: -1
   dontDestroyOnLoad: 1
-  contextSize: 512
+  contextSize: 8192
   batchSize: 512
-  model: bge-small-en-v1.5-q4_k_m.gguf
+  basePrompt: 
+  model: 
   chatTemplate: chatml
   lora: 
   loraWeights: 
@@ -2074,9 +2079,9 @@ MonoBehaviour:
   SSLKey: 
   SSLKeyPath: 
   minContextLength: 0
-  maxContextLength: 512
-  embeddingsOnly: 1
-  embeddingLength: 384
+  maxContextLength: 0
+  embeddingsOnly: 0
+  embeddingLength: 0
 --- !u!4 &758599403
 Transform:
   m_ObjectHideFlags: 0
@@ -2466,7 +2471,7 @@ GameObject:
   m_Component:
   - component: {fileID: 862588794}
   - component: {fileID: 862588793}
-  - component: {fileID: 862588795}
+  - component: {fileID: 862588792}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -2474,6 +2479,26 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &862588792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 862588791}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SendPointerHoverToParent: 1
+  m_HorizontalAxis: Horizontal
+  m_VerticalAxis: Vertical
+  m_SubmitButton: Submit
+  m_CancelButton: Cancel
+  m_InputActionsPerSecond: 10
+  m_RepeatDelay: 0.5
+  m_ForceModuleActive: 0
 --- !u!114 &862588793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2504,26 +2529,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &862588795
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 862588791}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_SendPointerHoverToParent: 1
-  m_HorizontalAxis: Horizontal
-  m_VerticalAxis: Vertical
-  m_SubmitButton: Submit
-  m_CancelButton: Cancel
-  m_InputActionsPerSecond: 10
-  m_RepeatDelay: 0.5
-  m_ForceModuleActive: 0
 --- !u!1 &863285884
 GameObject:
   m_ObjectHideFlags: 0
@@ -4342,7 +4347,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f6c87a428fd5d0be9bbc686bdc8c3c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  advancedOptions: 1
+  advancedOptions: 0
   remote: 0
   _llm: {fileID: 2142407556}
   APIKey: 
@@ -4352,11 +4357,11 @@ MonoBehaviour:
   save: 
   saveCache: 0
   debugPrompt: 0
-  numPredict: 256
   slot: -1
   grammar: 
   cachePrompt: 1
   seed: 0
+  numPredict: -1
   temperature: 0.2
   topK: 40
   topP: 0.9
@@ -4364,6 +4369,7 @@ MonoBehaviour:
   repeatPenalty: 1.1
   presencePenalty: 0
   frequencyPenalty: 0
+  tfsZ: 1
   typicalP: 1
   repeatLastN: 64
   penalizeNl: 1
@@ -5226,10 +5232,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2496546d1575771597fc8cbdd0d852d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  searchType: 0
+  searchClass: 1
   search: {fileID: 1400265395}
-  chunkingType: 2
+  chunkingClass: 3
   chunking: {fileID: 1400265394}
+  preSearchClass: 0
+  preChunkingClass: 0
 --- !u!114 &1400265394
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5239,10 +5247,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 1400265384}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 848a185d03c8d0bd4a047284c9a13bc6, type: 3}
+  m_Script: {fileID: 11500000, guid: 354c2418b0d6913efbfb73dccd540d23, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numWords: 10
+  search: {fileID: 1400265395}
+  returnChunks: 0
+  delimiters: 2e0021003a003b003f000a000d00
 --- !u!114 &1400265395
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5256,7 +5266,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   llmEmbedder: {fileID: 1400265392}
-  advancedOptions: 1
+  advancedOptions: 0
   quantization: 3
   metricKind: 1
   connectivity: 32
@@ -5420,8 +5430,9 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1535596276}
   m_Enabled: 1
-  serializedVersion: 11
+  serializedVersion: 10
   m_Type: 1
+  m_Shape: 0
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
   m_Intensity: 1
   m_Range: 10
@@ -7577,8 +7588,9 @@ MonoBehaviour:
   dontDestroyOnLoad: 1
   contextSize: 8192
   batchSize: 512
-  model: meno-tiny-0.1.Q4_K_M.gguf
-  chatTemplate: mistral chat
+  basePrompt: 
+  model: 
+  chatTemplate: chatml
   lora: 
   loraWeights: 
   flashAttention: 0
@@ -7588,9 +7600,9 @@ MonoBehaviour:
   SSLKey: 
   SSLKeyPath: 
   minContextLength: 0
-  maxContextLength: 32768
+  maxContextLength: 0
   embeddingsOnly: 0
-  embeddingLength: 1536
+  embeddingLength: 0
 --- !u!4 &2142407557
 Transform:
   m_ObjectHideFlags: 0

@@ -14,7 +14,8 @@ namespace TheRavine.Base
             }
             public void OnEnter()
             {
-                FaderOnTransit.instance.SetLogs("Начало игры");
+                Initializer.LogBootstrapInfo("GAME IS STARTED");
+                
                 FaderOnTransit.instance.FadeOut(() => aboba = true);
                 Initializer.OnGameAlreadyStarted();
                 NetworkManager.Singleton.StartHost();
