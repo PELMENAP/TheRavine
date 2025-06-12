@@ -104,8 +104,8 @@ Material:
     - _CullMode: 0
     - _Diffuse: 0.5
     - _FaceDilate: 0
-    - _FaceUVSpeedX: 0
-    - _FaceUVSpeedY: 0
+    - _FaceUVSpeedX: 0.18
+    - _FaceUVSpeedY: -0.001
     - _GlowInner: 0.173
     - _GlowOffset: 0
     - _GlowOuter: 0.215

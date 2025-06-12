@@ -1,28 +1,40 @@
 using UnityEngine;
 using Cysharp.Threading.Tasks;
+using System;
 
 using TheRavine.Base;
 public class GameInitializer : MonoBehaviour
 {
     [SerializeField] private bool initializeOnAwake = true;
+    [SerializeField] private Action<string> onMessageDisplayTerminal;
+    [SerializeField] private Terminal terminal;
 
     private void Awake()
     {
+        ServiceLocator.Clear();
         if (initializeOnAwake)
             InitializeServices();
     }
 
     public void InitializeServices()
     {
-        var worldManager = new WorldManager();
-        var settingsModel = new SettingsModel();
-        var worldDataService = new WorldDataService(worldManager);
+        onMessageDisplayTerminal += terminal.Display;
 
+        ILogger logger = new Logger(onMessageDisplayTerminal);
+        
+        var worldManager = new WorldManager(logger);
+        var settingsModel = new SettingsModel();
+        var worldDataService = new WorldDataService(worldManager, logger);
+
+        ServiceLocator.RegisterLogger(logger);
         ServiceLocator.RegisterSettings(settingsModel);
+        ServiceLocator.RegisterWorldManager(worldManager);
+        ServiceLocator.RegisterWorldDataService(worldDataService);
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
+        onMessageDisplayTerminal -= terminal.Display;
         ServiceLocator.Clear();
     }
 

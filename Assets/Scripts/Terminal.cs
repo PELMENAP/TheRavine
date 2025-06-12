@@ -1,224 +1,168 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using System;
 using TMPro;
 
 using TheRavine.Generator;
 using TheRavine.EntityControl;
-namespace TheRavine.Base
 
+namespace TheRavine.Base
 {
-    public class Terminal : MonoBehaviour, ISetAble
+    public class Terminal : MonoBehaviour
     {
-        [SerializeField] private TextMeshProUGUI InputWindow;
-        [SerializeField] private TextMeshProUGUI OutputWindow;
-        [SerializeField] private InputActionReference EnterRef;
-        public string input;
-        private string[] _words;
-        public PlayerEntity playerData;
-        private MapGenerator generator;
-        public void SetUp(ISetAble.Callback callback)
-        {
-            playerData = ServiceLocator.GetService<PlayerModelView>().playerEntity;
-            generator = ServiceLocator.GetService<MapGenerator>();
-            EnterRef.action.performed += OnEnter;
-            callback?.Invoke();
-        }
+        [SerializeField] private TMP_InputField inputField;
+        [SerializeField] private TextMeshProUGUI outputWindow;
+        [SerializeField] private InputActionReference enterRef;
+        [SerializeField] private GameObject terminalObject;
+        [SerializeField] private Button confirmButton;
         
-        public void ShowSomething(string text)
+        public CommandManager CommandManager { get; private set; }
+        private CommandContext _context;
+        private PlayerEntity playerData;
+        private MapGenerator generator;
+        private InputBindingAdapter _confirmBinding;
+        private ILogger logger;
+        
+        public void SetActiveTerminal()
         {
-            Display(text);
-        }
-        public void OnEnter()
-        {
-            OutputWindow.text = "";
-            input = InputWindow.text.Remove(InputWindow.text.Length - 1);
-            ReadText(input);
-            InputWindow.text = "";
-        }
-        private void OnEnter(InputAction.CallbackContext obj)
-        {
-            OutputWindow.text = "";
-            input = InputWindow.text.Remove(InputWindow.text.Length - 1);
-            ReadText(input);
-            InputWindow.text = "";
-        }
-        private void ReadText(string input)
-        {
-            if (input.Length == 0)
-                return;
-            if (input[0] == '-')
+            bool newState = !terminalObject.activeSelf;
+            terminalObject.SetActive(newState);
+            
+            if (newState)
             {
-                _words = input.Split(' ');
+                inputField.Select();
+                inputField.ActivateInputField();
+            }
+        }
+
+        private void OnEnable()
+        {
+            _confirmBinding = InputBindingAdapter.Bind(confirmButton, enterRef, HandleEnter);
+            
+            inputField.onSubmit.AddListener(OnInputSubmit);
+            inputField.onEndEdit.AddListener(OnInputEndEdit);
+        }
+
+        public async void Start()
+        {
+            logger = ServiceLocator.GetLogger();
+            CommandManager = new CommandManager();
+            CommandManager.Register(
+                new HelpCommand(),
+                new ClearCommand(),
+                new TeleportCommand(),
+                new SetSpeedCommand(),
+                new SetViewCommand(),
+                new RotateCommand()
+            );
+            
+            _context = new CommandContext(outputWindow, null, null);
+
+            await UniTask.CompletedTask;
+
+            ProcessInput("-clear");
+            WaitForDependencies().Forget();
+        }
+
+        private async UniTaskVoid WaitForDependencies()
+        {   
+            while (playerData == null || generator == null)
+            {
                 try
                 {
-                    switch (_words[0])
-                    {
-                        case "-tp":
-                            switch (_words[1])
-                            {
-                                case "i":
-                                    TeleportCommandI();
-                                    break;
-                                default:
-                                    Display("Неопределенный вид сущности");
-                                    break;
-                            }
-                            break;
-                        case "-set":
-                            switch (_words[1])
-                            {
-                                case "i":
-                                    switch (_words[2])
-                                    {
-                                        case "speed":
-                                            SetPlayerValueCommand("speed");
-                                            break;
-                                        case "view":
-                                            SetPlayerValueCommand("view");
-                                            break;
-                                        default:
-                                            Display("Неизвестный параметр");
-                                            break;
-                                    }
-                                    break;
-                                default:
-                                    Display("Неопределенный вид сущности");
-                                    break;
-                            }
-                            break;
-                        case "-когда":
-                            Display("Спросите что-нибудь более оригинальное");
-                            break;
-                        case "-rotate":
-                            switch (_words[1])
-                            {
-                                case "90":
-                                    RotateSpace(90);
-                                    break;
-                                case "-90":
-                                    Debug.Log("-90");
-                                    RotateSpace(-90);
-                                    break;
-                                default:
-                                    Display("Неопределенная операция поворота");
-                                    break;
-                            }
-                            break;
-                        default:
-                            Display("Неизвестная команда");
-                            break;
-                    }
-                    // foreach (var item in words)
-                    // {
-                    //     print(item);
-                    // }
+                    logger.LogInfo($"Для удаления предупреждений ниже войдите в игру:");
+                    playerData ??= ServiceLocator.GetService<PlayerModelView>()?.playerEntity;
+                    generator ??= ServiceLocator.GetService<MapGenerator>();
+                    
+                    if (playerData != null && generator != null)
+                        break;
+                        
+                    await UniTask.Delay(5000);
                 }
-                catch
+                catch (System.Exception ex)
                 {
-                    Display("Недопустимый синтаксис");
+                    logger.LogError($"Error waiting for dependencies: {ex.Message}");
+                    await UniTask.Delay(1000);
                 }
             }
-            else
+            logger.LogInfo($"Все службы Terminal инициализированны");
+            
+            _context.SetPlayer(playerData);
+            _context.SetGenerator(generator);
+        }
+
+        private void HandleEnter()
+        {
+            ProcessCurrentInput();
+        }
+        
+        private void OnInputSubmit(string value)
+        {
+            ProcessCurrentInput();
+        }
+        
+        private void OnInputEndEdit(string value)
+        {
+            if (terminalObject.activeSelf && !string.IsNullOrEmpty(value))
             {
-                Display(input);
+                inputField.Select();
+                inputField.ActivateInputField();
             }
         }
 
-        private void TeleportCommandI()
+        private void ProcessCurrentInput()
         {
-            int x, y;
+            var raw = inputField.text;
+            if (string.IsNullOrWhiteSpace(raw)) return;
+
+            var input = raw.TrimEnd('\r', '\n');
+            inputField.text = string.Empty;
+            
+            inputField.Select();
+            inputField.ActivateInputField();
+
+            ProcessInput(input);
+        }
+
+        private async void ProcessInput(string input)
+        {
             try
             {
-                x = Convert.ToInt32(_words[2]);
-                y = Convert.ToInt32(_words[3]);
+                var parts = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 0 && parts[0].StartsWith("-") && CommandManager.TryGet(parts[0], out var cmd))
+                {
+                    if (cmd is IValidatedCommand vc && !vc.Validate(_context))
+                        return;
+                        
+                    await cmd.ExecuteAsync(parts, _context);
+                }
+                else
+                {
+                    _context.Display(input);
+                }
             }
-            catch
+            catch (System.Exception ex)
             {
-                Display("Неизвестный тип координат");
-                return;
+                logger.LogError($"Terminal command error: {ex}");
             }
-            if (Math.Abs(x) > 1000000 || Math.Abs(y) > 1000000)
-            {
-                Display("Превышен лимит мира");
-                return;
-            }
-            playerData.GetEntityComponent<TransformComponent>().GetEntityTransform().position = new Vector2(x, y);
-            Display($"Выполнен телепорт на координаты: {x}, {y}");
         }
 
-        private void SetPlayerValueCommand(string name)
-        {
-            int value;
-            try
-            {
-                value = Convert.ToInt32(_words[3]);
-            }
-            catch
-            {
-                Display("Неизвестный тип числа");
-                return;
-            }
-            if (value < 0)
-            {
-                Display("Число не может быть отрицательным");
-                return;
-            }
-
-            switch (name)
-            {
-                case "speed":
-                    if (value > 100)
-                    {
-                        Display("Превышен лимит скорости");
-                        return;
-                    }
-                    playerData.GetEntityComponent<MovementComponent>().baseStats.baseSpeed = value;
-                    Display($"Скорость игрока: {value}");
-                    break;
-                case "view":
-                    if (value > 30)
-                    {
-                        Display("Превышен лимит обзора");
-                        return;
-                    }
-                    playerData.GetEntityComponent<AimComponent>().BaseStats.crosshairDistance = value;
-                    Display($"Максимальный обзор игрока: {value}");
-                    break;
-                default:
-                    Display("Неизвестный параметр");
-                    break;
-            }
-        }
-        private void RotateSpace(sbyte angle)
-        {
-            Debug.Log(angle);
-            // generator.RotateBasis(angle);
-        }
         public void Display(string message)
         {
-            OutputWindow.text = message;
-            TerminalOutputFade(OutputWindow).Forget();
+            _context.Display(message);
         }
-        private async UniTaskVoid TerminalOutputFade(TextMeshProUGUI window)
+
+        private void OnDisable()
         {
-            // Color colorM = new Color(window.color.r, window.color.g, window.color.b, window.color.a);
-            // for (int i = 255; i > 0; i--)
-            // {
-            //     print("change");
-            //     window.color = new Color(i, i, i, i);
-            //     await UniTask.Delay(50);
-            // }
-            await UniTask.Delay(5000);
-            window.text = "";
-            InputWindow.text = "";
-            // window.color = colorM;
-        }
-        public void BreakUp(ISetAble.Callback callback)
-        {
-            EnterRef.action.performed -= OnEnter;
-            callback?.Invoke();
+            _confirmBinding?.Unbind();
+            
+            if (inputField != null)
+            {
+                inputField.onSubmit.RemoveListener(OnInputSubmit);
+                inputField.onEndEdit.RemoveListener(OnInputEndEdit);
+            }
         }
     }
 }

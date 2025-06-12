@@ -14,7 +14,6 @@ namespace TheRavine.Base
         
         [Header("Время и производительность")]
         [Range(0.1f, 5.0f)] public float timeScale = 1.0f;
-        public bool pauseOnFocusLoss = true;
         
         [Header("Лимиты производительности")]
         [Range(100, 5000)] public int maxEntityCount = 1000;
@@ -96,7 +95,6 @@ namespace TheRavine.Base
             return worldName == other.worldName &&
                    autosaveInterval == other.autosaveInterval &&
                    Mathf.Approximately(timeScale, other.timeScale) &&
-                   pauseOnFocusLoss == other.pauseOnFocusLoss &&
                    maxEntityCount == other.maxEntityCount &&
                    maxParticleCount == other.maxParticleCount &&
                    enableDebugMode == other.enableDebugMode &&
@@ -112,7 +110,7 @@ namespace TheRavine.Base
         public override int GetHashCode()
         {
             return HashCode.Combine(worldName, autosaveInterval, timeScale, 
-                                  pauseOnFocusLoss, maxEntityCount, difficulty);
+                                   maxEntityCount, difficulty);
         }
 
         public static bool operator ==(WorldSettings left, WorldSettings right)

@@ -19,9 +19,12 @@ namespace TheRavine.Base
         public string CurrentWorldName => _currentWorld.Value;
         public Observable<string> CurrentWorld { get; }
         public Observable<bool> IsLoading { get; }
-
-        public WorldManager()
+        
+        private ILogger logger;
+        public WorldManager(ILogger logger)
         {
+            _worldSettingsCache.Clear();
+            this.logger = logger;
             _currentWorld = new ReactiveProperty<string>();
             AvailableWorlds = new ObservableList<string>();
             _isLoading = new ReactiveProperty<bool>(false);
@@ -51,26 +54,18 @@ namespace TheRavine.Base
                 worldSettings.worldName = worldName;
                 worldSettings.Validate();
 
-                await UniTask.SwitchToThreadPool();
-                
-                // Сохраняем данные мира
                 SaveLoad.SaveEncryptedData(worldName, worldData);
-                
-                // Сохраняем настройки мира
-                var settingsFile = GetWorldSettingsFileName(worldName);
-                SaveLoad.SaveEncryptedData(settingsFile, worldSettings);
-                
-                await UniTask.SwitchToMainThread();
+                SaveLoad.SaveEncryptedData(worldName, worldSettings, true);
 
                 AvailableWorlds.Add(worldName);
                 _worldSettingsCache[worldName] = worldSettings;
                 
-                Debug.Log($"Мир '{worldName}' создан успешно");
+                logger.LogInfo($"Мир '{worldName}' создан успешно");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Ошибка создания мира '{worldName}': {ex.Message}");
+                logger.LogError($"Ошибка создания мира '{worldName}': {ex.Message}");
                 return false;
             }
             finally
@@ -93,12 +88,11 @@ namespace TheRavine.Base
                 {
                     _currentWorld.Value = worldName;
                     
-                    // Загружаем и применяем настройки мира
                     var worldSettings = await LoadWorldSettingsAsync(worldName);
                     var settingsModel = ServiceLocator.Get<ISettingsModel>();
                     settingsModel.UpdateWorldSettings(worldSettings);
                     
-                    Debug.Log($"Мир '{worldName}' загружен успешно");
+                    logger.LogInfo($"Мир '{worldName}' загружен успешно");
                     return true;
                 }
                 
@@ -106,7 +100,7 @@ namespace TheRavine.Base
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Ошибка загрузки мира '{worldName}': {ex.Message}");
+                logger.LogError($"Ошибка загрузки мира '{worldName}': {ex.Message}");
                 return false;
             }
             finally
@@ -124,26 +118,21 @@ namespace TheRavine.Base
             
             try
             {
-                await UniTask.SwitchToThreadPool();
-                
-                // Удаляем файлы мира
                 SaveLoad.DeleteFile(worldName);
-                SaveLoad.DeleteFile(GetWorldSettingsFileName(worldName));
+                SaveLoad.DeleteFile(worldName, true);
                 
-                await UniTask.SwitchToMainThread();
-
                 AvailableWorlds.Remove(worldName);
                 _worldSettingsCache.Remove(worldName);
                 
                 if (_currentWorld.Value == worldName)
                     _currentWorld.Value = null;
                 
-                Debug.Log($"Мир '{worldName}' удален успешно");
+                logger.LogInfo($"Мир '{worldName}' удален успешно");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Ошибка удаления мира '{worldName}': {ex.Message}");
+                logger.LogError($"Ошибка удаления мира '{worldName}': {ex.Message}");
                 return false;
             }
             finally
@@ -163,27 +152,20 @@ namespace TheRavine.Base
             
             try
             {
-                await UniTask.SwitchToThreadPool();
-                
-                // Загружаем данные старого мира
                 var worldData = SaveLoad.LoadEncryptedData<WorldData>(oldName);
-                var worldSettings = SaveLoad.LoadEncryptedData<WorldSettings>(GetWorldSettingsFileName(oldName));
+                var worldSettings = SaveLoad.LoadEncryptedData<WorldSettings>(oldName, true);
                 
-                // Обновляем имя в настройках
                 worldSettings.worldName = newName;
                 worldSettings.lastModifiedTime = DateTimeOffset.Now.ToUnixTimeSeconds();
                 
-                // Сохраняем под новым именем
                 SaveLoad.SaveEncryptedData(newName, worldData);
-                SaveLoad.SaveEncryptedData(GetWorldSettingsFileName(newName), worldSettings);
+                SaveLoad.SaveEncryptedData(newName, worldSettings, true);
                 
-                // Удаляем старые файлы
                 SaveLoad.DeleteFile(oldName);
-                SaveLoad.DeleteFile(GetWorldSettingsFileName(oldName));
+                SaveLoad.DeleteFile(oldName, true);
                 
                 await UniTask.SwitchToMainThread();
 
-                // Обновляем списки
                 var index = AvailableWorlds.IndexOf(oldName);
                 AvailableWorlds.RemoveAt(index);
                 AvailableWorlds.Insert(index, newName);
@@ -191,16 +173,15 @@ namespace TheRavine.Base
                 _worldSettingsCache.Remove(oldName);
                 _worldSettingsCache[newName] = worldSettings;
                 
-                // Обновляем текущий мир, если он переименовывается
                 if (_currentWorld.Value == oldName)
                     _currentWorld.Value = newName;
                 
-                Debug.Log($"Мир переименован с '{oldName}' на '{newName}'");
+                logger.LogInfo($"Мир переименован с '{oldName}' на '{newName}'");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Ошибка переименования мира '{oldName}' -> '{newName}': {ex.Message}");
+                logger.LogError($"Ошибка переименования мира '{oldName}' -> '{newName}': {ex.Message}");
                 return false;
             }
             finally
@@ -222,11 +203,9 @@ namespace TheRavine.Base
             {
                 await UniTask.SwitchToThreadPool();
                 
-                // Загружаем данные исходного мира
                 var worldData = SaveLoad.LoadEncryptedData<WorldData>(sourceName);
-                var worldSettings = SaveLoad.LoadEncryptedData<WorldSettings>(GetWorldSettingsFileName(sourceName));
+                var worldSettings = SaveLoad.LoadEncryptedData<WorldSettings>(sourceName, true);
                 
-                // Обновляем данные для нового мира
                 worldData.seed = UnityEngine.Random.Range(0, int.MaxValue); // Новый сид
                 worldData.lastSaveTime = DateTimeOffset.Now.ToUnixTimeSeconds();
                 
@@ -234,21 +213,20 @@ namespace TheRavine.Base
                 worldSettings.createdTime = DateTimeOffset.Now.ToUnixTimeSeconds();
                 worldSettings.lastModifiedTime = worldSettings.createdTime;
                 
-                // Сохраняем новый мир
                 SaveLoad.SaveEncryptedData(newName, worldData);
-                SaveLoad.SaveEncryptedData(GetWorldSettingsFileName(newName), worldSettings);
+                SaveLoad.SaveEncryptedData(newName, worldSettings, true);
                 
                 await UniTask.SwitchToMainThread();
 
                 AvailableWorlds.Add(newName);
                 _worldSettingsCache[newName] = worldSettings;
                 
-                Debug.Log($"Мир '{sourceName}' скопирован как '{newName}'");
+                logger.LogInfo($"Мир '{sourceName}' скопирован как '{newName}'");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Ошибка копирования мира '{sourceName}' -> '{newName}': {ex.Message}");
+                logger.LogError($"Ошибка копирования мира '{sourceName}' -> '{newName}': {ex.Message}");
                 return false;
             }
             finally
@@ -261,31 +239,24 @@ namespace TheRavine.Base
         {
             _isLoading.Value = true;
             
-            try
-            {
-                await UniTask.SwitchToThreadPool();
                 var worlds = SaveLoad.GetAllWorldNames();
                 var validWorlds = new List<string>();
                 
-                // Проверяем валидность каждого мира
                 foreach (var world in worlds)
                 {
                     try
                     {
                         if (SaveLoad.FileExists(world))
                         {
-                            // Пытаемся загрузить данные для проверки
                             SaveLoad.LoadEncryptedData<WorldData>(world);
                             validWorlds.Add(world);
                         }
                     }
                     catch (Exception ex)
                     {
-                        Debug.LogWarning($"Поврежденный мир '{world}' исключен из списка: {ex.Message}");
+                        logger.LogWarning($"Поврежденный мир '{world}' исключен из списка: {ex.Message}");
                     }
                 }
-                
-                await UniTask.SwitchToMainThread();
                 
                 AvailableWorlds.Clear();
                 _worldSettingsCache.Clear();
@@ -295,43 +266,29 @@ namespace TheRavine.Base
                     AvailableWorlds.Add(world);
                 }
                 
-                Debug.Log($"Обновлен список миров: найдено {validWorlds.Count} валидных миров");
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"Ошибка обновления списка миров: {ex.Message}");
-            }
-            finally
-            {
-                _isLoading.Value = false;
-            }
+                logger.LogInfo($"Обновлен список миров: найдено {validWorlds.Count} валидных миров");
         }
 
         public async UniTask<WorldSettings> LoadWorldSettingsAsync(string worldName)
         {
-            // Проверяем кэш
             if (_worldSettingsCache.TryGetValue(worldName, out var cachedSettings))
                 return cachedSettings;
 
             try
             {
-                await UniTask.SwitchToThreadPool();
                 
-                var settingsFile = GetWorldSettingsFileName(worldName);
+                var settingsFile = worldName;
                 WorldSettings settings;
                 
                 if (SaveLoad.FileExists(settingsFile))
                 {
-                    settings = SaveLoad.LoadEncryptedData<WorldSettings>(settingsFile);
+                    settings = SaveLoad.LoadEncryptedData<WorldSettings>(settingsFile, true);
                 }
                 else
                 {
-                    // Создаем настройки по умолчанию
                     settings = new WorldSettings { worldName = worldName };
-                    SaveLoad.SaveEncryptedData(settingsFile, settings);
+                    SaveLoad.SaveEncryptedData(settingsFile, settings, true);
                 }
-                
-                await UniTask.SwitchToMainThread();
                 
                 settings.Validate();
                 _worldSettingsCache[worldName] = settings;
@@ -340,7 +297,7 @@ namespace TheRavine.Base
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Ошибка загрузки настроек мира '{worldName}': {ex.Message}");
+                logger.LogError($"Ошибка загрузки настроек мира '{worldName}': {ex.Message}");
                 return new WorldSettings { worldName = worldName };
             }
         }
@@ -357,19 +314,18 @@ namespace TheRavine.Base
                 
                 await UniTask.SwitchToThreadPool();
                 
-                var settingsFile = GetWorldSettingsFileName(worldName);
-                SaveLoad.SaveEncryptedData(settingsFile, settings);
+                SaveLoad.SaveEncryptedData(worldName, settings, true);
                 
                 await UniTask.SwitchToMainThread();
                 
                 _worldSettingsCache[worldName] = settings;
                 
-                Debug.Log($"Настройки мира '{worldName}' сохранены");
+                logger.LogInfo($"Настройки мира '{worldName}' сохранены");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Ошибка сохранения настроек мира '{worldName}': {ex.Message}");
+                logger.LogError($"Ошибка сохранения настроек мира '{worldName}': {ex.Message}");
                 return false;
             }
         }
@@ -400,7 +356,7 @@ namespace TheRavine.Base
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Ошибка получения информации о мире '{worldName}': {ex.Message}");
+                logger.LogError($"Ошибка получения информации о мире '{worldName}': {ex.Message}");
                 return null;
             }
         }
@@ -418,12 +374,6 @@ namespace TheRavine.Base
             
             return worldsInfo.OrderByDescending(x => x.LastSaveTime).ToList();
         }
-
-        private string GetWorldSettingsFileName(string worldName)
-        {
-            return $"{worldName}_world_settings";
-        }
-
         public void Dispose()
         {
             _disposables?.Dispose();

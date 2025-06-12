@@ -1,11 +1,21 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 using TheRavine.Security;
 namespace TheRavine.Base
 {
     public static class SaveLoad
     {
-        private const string worldKeyPrefix = "world_", settingsKeyPrefix = "globalSettings_";
+        private const string worldKeyPrefix = "world_";
+        private const string settingsKeyPrefix = "settings_";
+        private const string worldIndexKey = "worldIndex";
+        
+        [System.Serializable]
+        private class WorldIndex
+        {
+            public List<string> worldNames = new List<string>();
+        }
+
         private static string EncryptData<T>(T data)
         {
             string jsonData = JsonUtility.ToJson(data);
@@ -17,76 +27,174 @@ namespace TheRavine.Base
             string jsonData = EncryptionUtility.DecryptString(cipherText);
             return JsonUtility.FromJson<T>(jsonData);
         }
+
+        private static string GetFullKey(string key, bool gameSettings = false)
+        {
+            return gameSettings ? settingsKeyPrefix + key : worldKeyPrefix + key;
+        }
+
         public static void SaveEncryptedData<T>(string key, T data, bool gameSettings = false)
         {
+            string fullKey = GetFullKey(key, gameSettings);
             string encryptedData = EncryptData(data);
-            PlayerPrefs.SetString(gameSettings ? settingsKeyPrefix : worldKeyPrefix + key, encryptedData);
+            
+            PlayerPrefs.SetString(fullKey, encryptedData);
+            
+            if (!gameSettings)
+            {
+                UpdateWorldIndex(key, add: true);
+            }
+            
             PlayerPrefs.Save();
         }
 
-        public static T LoadEncryptedData<T>(string key)
+        public static T LoadEncryptedData<T>(string key, bool gameSettings = false)
         {
-            string encryptedData = PlayerPrefs.GetString(key);
+            string fullKey = GetFullKey(key, gameSettings);
+            string encryptedData = PlayerPrefs.GetString(fullKey);
+            
             if (!string.IsNullOrEmpty(encryptedData))
             {
                 try
                 {
-                    T decryptedData = DecryptData<T>(encryptedData);
-                    return decryptedData;
+                    return DecryptData<T>(encryptedData);
                 }
-                catch
+                catch (System.Exception ex)
                 {
-                    // data is corrupted
+                    ServiceLocator.GetLogger().LogError($"Failed to decrypt data for key '{key}': {ex.Message}");
                     return default(T);
                 }
             }
             else
             {
-                Debug.LogWarning("No data found for key: " + key);
+                ServiceLocator.GetLogger().LogWarning($"No data found for key: {key}");
                 return default(T);
             }
         }
 
-        public static bool FileExists(string key)
+        public static bool FileExists(string key, bool gameSettings = false)
         {
-            return PlayerPrefs.HasKey(key);
+            string fullKey = GetFullKey(key, gameSettings);
+            return PlayerPrefs.HasKey(fullKey);
         }
 
-        public static void DeleteFile(string key)
+        public static void DeleteFile(string key, bool gameSettings = false)
         {
-            if (PlayerPrefs.HasKey(key))
+            string fullKey = GetFullKey(key, gameSettings);
+            
+            if (PlayerPrefs.HasKey(fullKey))
             {
-                PlayerPrefs.DeleteKey(key);
+                PlayerPrefs.DeleteKey(fullKey);
+                if (!gameSettings)
+                {
+                    UpdateWorldIndex(key, add: false);
+                }
+                
                 PlayerPrefs.Save();
             }
             else
             {
-                Debug.LogWarning($"Key '{key}' not found for deletion");
+                ServiceLocator.GetLogger().LogWarning($"Key '{key}' not found for deletion");
             }
         }
 
         public static string[] GetAllWorldNames()
         {
-            var worldNames = new System.Collections.Generic.List<string>();
+            var worldIndex = LoadWorldIndex();
             
-            var prefsKeys = GetAllPlayerPrefsKeys();
-            foreach (string key in prefsKeys)
+            var validWorldNames = new List<string>();
+            foreach (string worldName in worldIndex.worldNames)
+            {
+                if (FileExists(worldName, gameSettings: false))
+                {
+                    validWorldNames.Add(worldName);
+                }
+            }
+            
+            if (validWorldNames.Count != worldIndex.worldNames.Count)
+            {
+                worldIndex.worldNames = validWorldNames;
+                SaveWorldIndex(worldIndex);
+            }
+            
+            return validWorldNames.ToArray();
+        }
+
+        private static void UpdateWorldIndex(string worldName, bool add)
+        {
+            var worldIndex = LoadWorldIndex();
+            
+            if (add)
+            {
+                if (!worldIndex.worldNames.Contains(worldName))
+                {
+                    worldIndex.worldNames.Add(worldName);
+                    SaveWorldIndex(worldIndex);
+                }
+            }
+            else
+            {
+                if (worldIndex.worldNames.Remove(worldName))
+                {
+                    SaveWorldIndex(worldIndex);
+                }
+            }
+        }
+
+        private static WorldIndex LoadWorldIndex()
+        {
+            string indexData = PlayerPrefs.GetString(worldIndexKey, "");
+            
+            if (!string.IsNullOrEmpty(indexData))
+            {
+                try
+                {
+                    return JsonUtility.FromJson<WorldIndex>(indexData);
+                }
+                catch
+                {
+                    ServiceLocator.GetLogger().LogWarning("World index corrupted, creating new one");
+                }
+            }
+            
+            return new WorldIndex();
+        }
+
+        private static void SaveWorldIndex(WorldIndex worldIndex)
+        {
+            string indexData = JsonUtility.ToJson(worldIndex);
+            PlayerPrefs.SetString(worldIndexKey, indexData);
+        }
+
+        [System.Obsolete("Use only for migration from old system")]
+        public static void MigrateFromOldSystem()
+        {
+            #if UNITY_EDITOR
+            ServiceLocator.GetLogger().LogInfo("Starting migration from old PlayerPrefs system...");
+            
+            var worldIndex = new WorldIndex();
+            var allKeys = GetAllPlayerPrefsKeysLegacy();
+            
+            foreach (string key in allKeys)
             {
                 if (key.StartsWith(worldKeyPrefix))
                 {
                     string worldName = key.Substring(worldKeyPrefix.Length);
-                    worldNames.Add(worldName);
+                    worldIndex.worldNames.Add(worldName);
                 }
             }
             
-            return worldNames.ToArray();
+            SaveWorldIndex(worldIndex);
+            ServiceLocator.GetLogger().LogInfo($"Migration completed. Found {worldIndex.worldNames.Count} worlds.");
+            #endif
         }
 
-        private static string[] GetAllPlayerPrefsKeys()
+        #if UNITY_EDITOR
+        private static string[] GetAllPlayerPrefsKeysLegacy()
         {
-            var keys = new System.Collections.Generic.List<string>();
+            var keys = new List<string>();
             
-#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+            #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
             using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey($"SOFTWARE\\Unity\\UnityEditor\\{Application.companyName}\\{Application.productName}"))
             {
                 if (key != null)
@@ -94,39 +202,10 @@ namespace TheRavine.Base
                     keys.AddRange(key.GetValueNames().Where(name => !name.EndsWith("_h3320113202")));
                 }
             }
-#elif UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
-            string plistPath = $"~/Library/Preferences/unity.{Application.companyName}.{Application.productName}.plist";
-            if (System.IO.File.Exists(plistPath))
-            {
-                string[] lines = System.IO.File.ReadAllLines(plistPath);
-                for (int i = 0; i < lines.Length; i++)
-                {
-                    if (lines[i].Contains("<key>") && !lines[i].Contains("_h"))
-                    {
-                        string keyLine = lines[i];
-                        int startIndex = keyLine.IndexOf("<key>") + 5;
-                        int endIndex = keyLine.IndexOf("</key>");
-                        if (startIndex > 4 && endIndex > startIndex)
-                        {
-                            keys.Add(keyLine.Substring(startIndex, endIndex - startIndex));
-                        }
-                    }
-                }
-            }
-#else
-            var playerPrefsType = typeof(PlayerPrefs);
-            var method = playerPrefsType.GetMethod("GetAllKeys", 
-                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-            
-            if (method != null)
-            {
-                var result = method.Invoke(null, null) as string[];
-                if (result != null)
-                    keys.AddRange(result);
-            }
-#endif
+            #endif
             
             return keys.ToArray();
         }
+        #endif
     }
 }
