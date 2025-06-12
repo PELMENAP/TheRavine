@@ -9,17 +9,23 @@ public class Logger : ILogger
     private string logFilePath;
     private Action<string> onMessageDisplayTerminal;
     private HashSet<string> loggedErrors = new HashSet<string>();
-    private byte criticalErrorNumber, maxCriticalNumber = 5;
+    private byte criticalErrorNumber, maxCriticalNumber = 10;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     private bool isDebugBuild = true;
 #else
     private bool isDebugBuild = false;
 #endif
+    
     private const string ErrorPrefix = "[ERROR] ";
     private const string WarningPrefix = "[WARNING] ";
     private const string InfoPrefix = "[INFO] ";
     private const string CriticalPrefix = "[CRITICAL] ";
+    
+    private const string StyledErrorPrefix = "<color=red>[ERROR]</color> ";
+    private const string StyledWarningPrefix = "<color=orange>[WARNING]</color> ";
+    private const string StyledInfoPrefix = "<color=green>[INFO]</color> ";
+    private const string StyledCriticalPrefix = "<color=red><b>[CRITICAL]</b></color> ";
 
     public Logger(Action<string> onMessageDisplayTerminal, string logFileName = "game_log.txt")
     {
@@ -35,14 +41,10 @@ public class Logger : ILogger
         if (loggedErrors.Contains(message))
         {
             criticalErrorNumber++;
-            
-            if (criticalErrorNumber > maxCriticalNumber)
-                StopApplication();
-                
-            return;
         }
 
         string logMessage = ZString.Concat(ErrorPrefix, message);
+        string styledMessage = ZString.Concat(StyledErrorPrefix, message);
         
         if (isDebugBuild)
         {
@@ -50,7 +52,7 @@ public class Logger : ILogger
         }
         
         WriteToFile(logMessage);
-        DisplayInGameConsole(logMessage);
+        DisplayInGameConsole(styledMessage);
 
         loggedErrors.Add(message);
 
@@ -61,6 +63,7 @@ public class Logger : ILogger
     public void LogWarning(string message)
     {
         string logMessage = ZString.Concat(WarningPrefix, message);
+        string styledMessage = ZString.Concat(StyledWarningPrefix, message);
         
         if (isDebugBuild)
         {
@@ -68,12 +71,13 @@ public class Logger : ILogger
         }
         
         WriteToFile(logMessage);
-        DisplayInGameConsole(logMessage);
+        DisplayInGameConsole(styledMessage);
     }
 
     public void LogInfo(string message)
     {
         string logMessage = ZString.Concat(InfoPrefix, message);
+        string styledMessage = ZString.Concat(StyledInfoPrefix, message);
         
         if (isDebugBuild)
         {
@@ -81,7 +85,26 @@ public class Logger : ILogger
         }
         
         WriteToFile(logMessage);
-        DisplayInGameConsole(logMessage);
+        DisplayInGameConsole(styledMessage);
+    }
+
+    public void LogCritical(string message)
+    {
+        criticalErrorNumber++;
+        
+        string logMessage = ZString.Concat(CriticalPrefix, message);
+        string styledMessage = ZString.Concat(StyledCriticalPrefix, message);
+        
+        if (isDebugBuild)
+        {
+            Debug.LogError(logMessage);
+        }
+        
+        WriteToFile(logMessage);
+        DisplayInGameConsole(styledMessage);
+
+        if (criticalErrorNumber > maxCriticalNumber)
+            StopApplication();
     }
 
     private void WriteToFile(string message)
@@ -100,30 +123,40 @@ public class Logger : ILogger
         }
         catch (Exception ex)
         {
+            string errorMsg = ZString.Concat("Failed to write to log file: ", ex.Message);
+            
             if (isDebugBuild)
             {
-                Debug.LogError(ZString.Concat("Failed to write to log file: ", ex.Message));
+                Debug.LogError(ZString.Concat(ErrorPrefix, errorMsg));
             }
             
-            onMessageDisplayTerminal?.Invoke(ZString.Concat(ErrorPrefix, "Failed to write to log file: ", ex.Message));
+            // Отправляем стилизованное сообщение в терминал
+            onMessageDisplayTerminal?.Invoke(ZString.Concat(StyledErrorPrefix, errorMsg));
         }
     }
 
-    private void DisplayInGameConsole(string message)
+    private void DisplayInGameConsole(string styledMessage)
     {
         if (onMessageDisplayTerminal == null)
         {
-            WriteToFile(ZString.Concat(ErrorPrefix, "onMessageDisplayTerminal action not exist"));
+            string errorMsg = "onMessageDisplayTerminal action not exist";
+            WriteToFile(ZString.Concat(ErrorPrefix, errorMsg));
         }
         else
         {
-            onMessageDisplayTerminal.Invoke(message);
+            onMessageDisplayTerminal.Invoke(styledMessage);
         }
     }
 
     private void StopApplication()
     {
-        WriteToFile(ZString.Concat(CriticalPrefix, "Too many critical errors occurred. Application will now close."));
+        string criticalMsg = "Too many critical errors occurred. Application will now close.";
+        
+        Debug.LogError(criticalMsg);
+        WriteToFile(ZString.Concat(CriticalPrefix, criticalMsg));
+        
+        // Отправляем стилизованное критическое сообщение в терминал
+        onMessageDisplayTerminal?.Invoke(ZString.Concat(StyledCriticalPrefix, criticalMsg));
         
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;

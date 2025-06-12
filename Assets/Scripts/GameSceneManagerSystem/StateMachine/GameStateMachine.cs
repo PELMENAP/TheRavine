@@ -11,17 +11,12 @@ namespace TheRavine.Base
 
         [SerializeField] private int standardStateMachineTickTime, tickPerUpdate;
         [SerializeField] private MonoBehaviour[] scriptsLoadedOnBootstrapState, scriptsLoadedOnInitialState, scriptsLoadedOnLoadingState;
-        [SerializeField] private Action<string> onMessageDisplayTerminal;
-        [SerializeField] private Terminal terminal;
         public StateMachine<GameStateMachine> StateMachine { get; private set; }
         private ServiceRegisterMachine serviceRegisterMachine;
         public void Initialize()
         {
             if(inventoryCanvas != null) inventoryCanvas.renderMode = RenderMode.WorldSpace;
-
-            onMessageDisplayTerminal += terminal.Display;
             serviceRegisterMachine = new ServiceRegisterMachine();
-            serviceRegisterMachine.RegisterLogger(onMessageDisplayTerminal);
             StateMachine =  new StateMachine<GameStateMachine>(standardStateMachineTickTime,
                         new BootstrapState(this, serviceRegisterMachine.RegisterSomeServices(scriptsLoadedOnBootstrapState)),
                         new InitialState(this, serviceRegisterMachine.RegisterSomeServices(scriptsLoadedOnInitialState)),
@@ -57,7 +52,6 @@ namespace TheRavine.Base
 
         public void BreakUpServices()
         {
-            onMessageDisplayTerminal -= terminal.Display;
             serviceRegisterMachine?.BreakUpServices();
         }
         public int GetTickPerUpdate() => tickPerUpdate;

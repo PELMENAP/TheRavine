@@ -12,11 +12,6 @@ namespace TheRavine.Base
         {
             disAble = new Queue<ISetAble>();
         }
-        public void RegisterLogger(Action<string> onMessageDisplayTerminal)
-        {
-            ServiceLocator.RegisterLogger(new Logger(onMessageDisplayTerminal));
-        }
-
         public Queue<ISetAble> RegisterSomeServices(MonoBehaviour[] scripts)
         {
             Queue<ISetAble> someServices = new Queue<ISetAble>();
@@ -47,7 +42,6 @@ namespace TheRavine.Base
         public void BreakUpServices()
         {
             if(disAble.Count > 0) disAble.Dequeue().BreakUp(() => BreakUpServices());
-            else ServiceLocator.Clear();
         }
     }
 }

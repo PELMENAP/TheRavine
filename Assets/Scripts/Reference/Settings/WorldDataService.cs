@@ -15,23 +15,21 @@ namespace TheRavine.Base
         private IDisposable _autosaveSubscription;
 
         public Observable<WorldData> WorldData { get; }
-
-        public WorldDataService(IWorldManager worldManager)
+        private ILogger logger; 
+        public WorldDataService(IWorldManager worldManager, ILogger logger)
         {
+            this.logger = logger;
             _worldManager = worldManager;
             _worldData = new ReactiveProperty<WorldData>(new WorldData());
             WorldData = _worldData.AsObservable();
             
-            // Начинаем с интервала по умолчанию (30 секунд)
             StartAutosave(30);
         }
 
         public void UpdateAutosaveInterval(int intervalSeconds)
         {
-            // Останавливаем текущее автосохранение
             _autosaveSubscription?.Dispose();
             
-            // Запускаем новое, если интервал больше 0
             if (intervalSeconds > 0)
             {
                 StartAutosave(intervalSeconds);
@@ -52,19 +50,20 @@ namespace TheRavine.Base
 
             try
             {
+                await UniTask.SwitchToMainThread();
+
                 var data = _worldData.Value;
                 data.lastSaveTime = System.DateTimeOffset.Now.ToUnixTimeSeconds();
                 _worldData.Value = data;
+                SaveLoad.SaveEncryptedData(_worldManager.CurrentWorldName, data, true);
                 
                 await UniTask.SwitchToThreadPool();
-                SaveLoad.SaveEncryptedData(_worldManager.CurrentWorldName, data);
-                await UniTask.SwitchToMainThread();
                 
                 return true;
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"Ошибка сохранения мира: {ex.Message}");
+                logger.LogError($"Ошибка сохранения мира: {ex.Message}");
                 return false;
             }
         }
@@ -73,27 +72,21 @@ namespace TheRavine.Base
         {
             try
             {
-                await UniTask.SwitchToThreadPool();
-                
                 if (SaveLoad.FileExists(worldName))
                 {
-                    var data = SaveLoad.LoadEncryptedData<WorldData>(worldName);
-                    await UniTask.SwitchToMainThread();
+                    var data = SaveLoad.LoadEncryptedData<WorldData>(worldName, true);
                     _worldData.Value = data;
                     return true;
                 }
-                
-                await UniTask.SwitchToMainThread();
                 _worldData.Value = new WorldData { seed = UnityEngine.Random.Range(0, int.MaxValue) };
                 return true;
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"Ошибка загрузки мира: {ex.Message}");
+                logger.LogError($"Ошибка загрузки мира: {ex.Message}");
                 return false;
             }
         }
-
         public void UpdateWorldData(WorldData data)
         {
             _worldData.Value = data;

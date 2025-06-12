@@ -11,7 +11,7 @@ namespace TheRavine.Base
 
         public ReadOnlyReactiveProperty<GameSettings> GameSettings { get; }
         public ReadOnlyReactiveProperty<WorldSettings> WorldSettings { get; }
-
+        
         public SettingsModel()
         {
             _gameSettings = new ReactiveProperty<GameSettings>(LoadGameSettings());
@@ -43,15 +43,15 @@ namespace TheRavine.Base
         private GameSettings LoadGameSettings()
         {
             if (SaveLoad.FileExists("game_settings"))
-                return SaveLoad.LoadEncryptedData<GameSettings>("game_settings");
+                return SaveLoad.LoadEncryptedData<GameSettings>("game_settings", true);
             return new GameSettings();
         }
 
         private WorldSettings LoadWorldSettings()
         {
             var worldManager = ServiceLocator.Get<IWorldManager>();
-            if (worldManager?.CurrentWorldName != null && SaveLoad.FileExists($"{worldManager.CurrentWorldName}_world_settings"))
-                return SaveLoad.LoadEncryptedData<WorldSettings>($"{worldManager.CurrentWorldName}_world_settings");
+            if (worldManager?.CurrentWorldName != null && SaveLoad.FileExists(worldManager.CurrentWorldName, true))
+                return SaveLoad.LoadEncryptedData<WorldSettings>(worldManager.CurrentWorldName, true);
             return new WorldSettings();
         }
 
@@ -64,7 +64,7 @@ namespace TheRavine.Base
         {
             var worldManager = ServiceLocator.Get<IWorldManager>();
             if (worldManager?.CurrentWorldName != null)
-                SaveLoad.SaveEncryptedData($"{worldManager.CurrentWorldName}_world_settings", settings);
+                SaveLoad.SaveEncryptedData(worldManager.CurrentWorldName, settings, true);
         }
 
         public void Dispose()

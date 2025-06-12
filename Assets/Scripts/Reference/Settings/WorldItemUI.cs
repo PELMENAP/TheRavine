@@ -23,9 +23,10 @@ namespace TheRavine.Base
         private Action _onEnterWorld;
         private Action _onDeleteWorld;
         private Action _onEditSettings;
-
-        public void Initialize(string worldName, Action onEnterWorld, Action onDeleteWorld, Action onEditSettings)
+        private ILogger logger;
+        public void Initialize(string worldName, Action onEnterWorld, Action onDeleteWorld, Action onEditSettings, ILogger logger)
         {
+            this.logger = logger;
             _worldName = worldName;
             _onEnterWorld = onEnterWorld;
             _onDeleteWorld = onDeleteWorld;
@@ -92,7 +93,7 @@ namespace TheRavine.Base
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"Не удалось загрузить информацию о мире {_worldName}: {ex.Message}");
+                logger.LogWarning($"Не удалось загрузить информацию о мире {_worldName}: {ex.Message}");
                 lastSaveTimeText.text = "Ошибка загрузки";
             }
         }

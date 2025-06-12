@@ -54,7 +54,7 @@ public static class ServiceLocator
         if (_services.ContainsKey(type))
             return _services[type] as T;
         
-        _logger?.LogError($"Сервис {typeof(T).Name} не зарегистрирован");
+        _logger?.LogWarning($"Сервис {typeof(T).Name} не зарегистрирован");
         return null;
     }
 
@@ -75,7 +75,7 @@ public static class ServiceLocator
         if (_services.TryGetValue(typeof(T), out var service))
             return service as T;
 
-        _logger?.LogError($"Сервис {typeof(T).Name} не зарегистрирован");
+        _logger?.LogWarning($"Сервис {typeof(T).Name} не зарегистрирован");
         throw new InvalidOperationException($"Сервис {typeof(T).Name} не зарегистрирован");
     }
 
