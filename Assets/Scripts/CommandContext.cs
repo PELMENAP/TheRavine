@@ -3,6 +3,7 @@ using Cysharp.Text;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using TMPro;
+using UnityEngine;
 
 using TheRavine.Generator;
 using TheRavine.EntityControl;
@@ -19,12 +20,14 @@ namespace TheRavine.Base
         public TextMeshProUGUI OutputWindow { get; }
         public PlayerEntity PlayerData { get; private set; }
         public MapGenerator Generator { get; private set; }
+        public GameObject Graphy { get; private set; }
 
-        public CommandContext(TextMeshProUGUI output, PlayerEntity player, MapGenerator gen)
+        public CommandContext(TextMeshProUGUI output, PlayerEntity player, MapGenerator gen, GameObject graphy)
         {
             OutputWindow = output;
             PlayerData = player;
             Generator = gen;
+            Graphy = graphy;
 
             if (!string.IsNullOrEmpty(output.text))
             {

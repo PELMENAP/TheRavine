@@ -21,12 +21,14 @@ public class GameInitializer : MonoBehaviour
         onMessageDisplayTerminal += terminal.Display;
 
         ILogger logger = new Logger(onMessageDisplayTerminal);
+        ServiceLocator.RegisterLogger(logger);
+
+        terminal.Setup();
         
         var worldManager = new WorldManager(logger);
         var settingsModel = new SettingsModel();
         var worldDataService = new WorldDataService(worldManager, logger);
 
-        ServiceLocator.RegisterLogger(logger);
         ServiceLocator.RegisterSettings(settingsModel);
         ServiceLocator.RegisterWorldManager(worldManager);
         ServiceLocator.RegisterWorldDataService(worldDataService);

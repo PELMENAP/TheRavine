@@ -17,6 +17,7 @@ namespace TheRavine.Base
         [SerializeField] private InputActionReference enterRef;
         [SerializeField] private GameObject terminalObject;
         [SerializeField] private Button confirmButton;
+        [SerializeField] private GameObject graphyManager;
         
         public CommandManager CommandManager { get; private set; }
         private CommandContext _context;
@@ -45,7 +46,7 @@ namespace TheRavine.Base
             inputField.onEndEdit.AddListener(OnInputEndEdit);
         }
 
-        public async void Start()
+        public async void Setup()
         {
             logger = ServiceLocator.GetLogger();
             CommandManager = new CommandManager();
@@ -55,10 +56,12 @@ namespace TheRavine.Base
                 new TeleportCommand(),
                 new SetSpeedCommand(),
                 new SetViewCommand(),
-                new RotateCommand()
+                new RotateCommand(),
+                new DebugCommand()
             );
             
-            _context = new CommandContext(outputWindow, null, null);
+            graphyManager.SetActive(false);
+            _context = new CommandContext(outputWindow, null, null, graphyManager);
 
             await UniTask.CompletedTask;
 

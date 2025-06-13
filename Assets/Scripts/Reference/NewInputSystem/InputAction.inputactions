@@ -18,7 +18,7 @@
                     "name": "Jump (Space)",
                     "type": "Button",
                     "id": "43beab44-0ad6-4685-bcad-4f12ed0762c7",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -874,7 +874,7 @@
                     "name": "Text",
                     "type": "Button",
                     "id": "e78df573-b6bb-46b4-a38a-fa70176b3e27",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -934,7 +934,7 @@
             ]
         },
         {
-            "name": "Trash",
+            "name": "Trash (Dont use)",
             "id": "77ed9140-f4d6-44c2-96cc-18908ae307f2",
             "actions": [
                 {
