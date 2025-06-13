@@ -34,4 +34,33 @@ namespace TheRavine.Base
             return UniTask.CompletedTask;
         }
     }
+
+    public class DebugCommand : ICommand
+    {
+        public string Name => "-debug";
+        public string Description => "Показывает информацию о FPS, Памяти и системе";
+
+        public UniTask ExecuteAsync(string[] args, CommandContext context)
+        {
+            if(args.Length < 2)
+            {
+                context.Display($"Использование: {Name} i <on> / <off>");
+                return UniTask.CompletedTask;
+            }
+
+            if(args[1] == "on")
+            {
+                context.Graphy.SetActive(true);
+            }
+            else if(args[1] == "off")
+            {
+                context.Graphy.SetActive(false);
+            }
+            else
+            {
+                context.Display($"Добавьте <on> / <off>");
+            }
+            return UniTask.CompletedTask;
+        }
+    }
 }
