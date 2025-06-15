@@ -23,7 +23,7 @@ public class GameInitializer : MonoBehaviour
         ILogger logger = new Logger(onMessageDisplayTerminal);
         ServiceLocator.RegisterLogger(logger);
 
-        terminal.Setup();
+        terminal.Setup(logger);
         
         var worldManager = new WorldManager(logger);
         var settingsModel = new SettingsModel();
