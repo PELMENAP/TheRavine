@@ -44,16 +44,16 @@ namespace TheRavine.Base
                 }
             }
 
-            var result = scriptEditor.ExecuteScript(fileName, scriptArgs.ToArray());
+            // var result = await scriptEditor.ExecuteScriptAsync(fileName, scriptArgs.ToArray()); // not async
 
-            if (result.Success)
-            {
-                context.Display($"Скрипт {fileName} выполнен успешно. Результат: {result.ReturnValue}");
-            }
-            else
-            {
-                context.Display($"Ошибка выполнения скрипта {fileName}: {result.ErrorMessage}");
-            }
+            // if (result.Success)
+            // {
+            //     context.Display($"Скрипт {fileName} выполнен успешно. Результат: {result.ReturnValue}");
+            // }
+            // else
+            // {
+            //     context.Display($"Ошибка выполнения скрипта {fileName}: {result.ErrorMessage}");
+            // }
 
             return UniTask.CompletedTask;
         }
@@ -130,7 +130,7 @@ namespace TheRavine.Base
             }
 
             // Если файл существует, загружаем его
-            if (SaveLoad.FileExists(fileName))
+            if (ScriptFileManager.FileExists(fileName))
             {
                 scriptEditor.LoadFile(fileName);
                 context.Display($"Файл {fileName} загружен для редактирования");
@@ -163,7 +163,7 @@ namespace TheRavine.Base
             if (args.Length == 1)
             {
                 // Показываем краткую информацию
-                var files = SaveLoad.GetFilesList();
+                var files = ScriptFileManager.GetFilesList();
                 context.Display($"Доступно скриптов: {files.Count}");
                 context.Display("Используйте: -scripts list для списка файлов");
                 return UniTask.CompletedTask;
@@ -174,7 +174,7 @@ namespace TheRavine.Base
             switch (action)
             {
                 case "list":
-                    var files = SaveLoad.GetFilesList();
+                    var files = ScriptFileManager.GetFilesList();
                     if (files.Count == 0)
                     {
                         context.Display("Нет сохраненных скриптов");
@@ -197,13 +197,13 @@ namespace TheRavine.Base
                     }
 
                     var fileName = args[2];
-                    if (!SaveLoad.FileExists(fileName))
+                    if (!ScriptFileManager.FileExists(fileName))
                     {
                         context.Display($"Файл {fileName} не найден");
                         return UniTask.CompletedTask;
                     }
 
-                    var content = SaveLoad.SaveEncryptedData<string>(fileName);
+                    var content = ScriptFileManager.LoadFile(fileName);
                     var lines = content.Split('\n').Length;
                     context.Display($"Файл: {fileName}");
                     context.Display($"Строк: {lines}");
@@ -246,7 +246,7 @@ namespace TheRavine.Base
 
             var fileName = args[1];
             
-            if (!SaveLoad.FileExists(fileName))
+            if (!ScriptFileManager.FileExists(fileName))
             {
                 context.Display($"Файл {fileName} не найден");
                 return UniTask.CompletedTask;
