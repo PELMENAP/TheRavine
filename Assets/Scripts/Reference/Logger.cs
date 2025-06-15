@@ -25,7 +25,7 @@ public class Logger : ILogger
     private const string StyledErrorPrefix = "<color=red>[ERROR]</color> ";
     private const string StyledWarningPrefix = "<color=orange>[WARNING]</color> ";
     private const string StyledInfoPrefix = "<color=green>[INFO]</color> ";
-    private const string StyledCriticalPrefix = "<color=red><b>[CRITICAL]</b></color> ";
+    private const string StyledCriticalPrefix = "<color=purple><b>[CRITICAL]</b></color> ";
 
     public Logger(Action<string> onMessageDisplayTerminal, string logFileName = "game_log.txt")
     {
@@ -155,7 +155,6 @@ public class Logger : ILogger
         Debug.LogError(criticalMsg);
         WriteToFile(ZString.Concat(CriticalPrefix, criticalMsg));
         
-        // Отправляем стилизованное критическое сообщение в терминал
         onMessageDisplayTerminal?.Invoke(ZString.Concat(StyledCriticalPrefix, criticalMsg));
         
 #if UNITY_EDITOR

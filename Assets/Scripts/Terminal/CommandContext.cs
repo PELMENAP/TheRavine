@@ -20,14 +20,16 @@ namespace TheRavine.Base
         public TextMeshProUGUI OutputWindow { get; }
         public PlayerEntity PlayerData { get; private set; }
         public MapGenerator Generator { get; private set; }
-        public GameObject Graphy { get; private set; }
+        public readonly GameObject Graphy;
+        public readonly CommandManager CommandManager;
 
-        public CommandContext(TextMeshProUGUI output, PlayerEntity player, MapGenerator gen, GameObject graphy)
+        public CommandContext(TextMeshProUGUI output, CommandManager commandManager, PlayerEntity player, MapGenerator gen, GameObject graphy)
         {
             OutputWindow = output;
             PlayerData = player;
             Generator = gen;
             Graphy = graphy;
+            CommandManager = commandManager;
 
             if (!string.IsNullOrEmpty(output.text))
             {

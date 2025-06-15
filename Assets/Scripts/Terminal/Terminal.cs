@@ -46,9 +46,10 @@ namespace TheRavine.Base
             inputField.onEndEdit.AddListener(OnInputEndEdit);
         }
 
-        public async void Setup()
+        public async void Setup(ILogger logger)
         {
-            logger = ServiceLocator.GetLogger();
+            this.logger = logger;
+
             CommandManager = new CommandManager();
             CommandManager.Register(
                 new HelpCommand(),
@@ -61,7 +62,7 @@ namespace TheRavine.Base
             );
             
             graphyManager.SetActive(false);
-            _context = new CommandContext(outputWindow, null, null, graphyManager);
+            _context = new CommandContext(outputWindow, CommandManager, null, null, graphyManager);
 
             await UniTask.CompletedTask;
 

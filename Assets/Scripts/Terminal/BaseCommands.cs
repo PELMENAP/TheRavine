@@ -16,7 +16,7 @@ namespace TheRavine.Base
         public UniTask ExecuteAsync(string[] args, CommandContext context)
         {
             context.Display("Доступные команды:");
-            foreach (var cmd in context.OutputWindow.GetComponent<Terminal>().CommandManager.ListCommands())
+            foreach (var cmd in context.CommandManager.ListCommands())
             {
                 context.Display($"{cmd.Name}: {cmd.Description}");
             }
