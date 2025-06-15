@@ -1,6 +1,6 @@
 using TMPro;
 using UnityEngine;
-
+using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Base
 {
@@ -24,9 +24,10 @@ namespace TheRavine.Base
                 editorPanel.SetActive(false);
         }
 
-        public void Initialize(CommandContext context)
+        public void Initialize(CommandContext context, RiveInterpreter.TerminalCommandDelegate terminalCommandDelegate)
         {
             terminalContext = context;
+            interpreter.Initialize(terminalCommandDelegate);
         }
 
         public void CreateNewFile(string fileName)
@@ -37,7 +38,7 @@ namespace TheRavine.Base
                 return;
             }
 
-            if (ScriptFileManager.FileExists(fileName))
+            if (SaveLoad.FileExists(fileName))
             {
                 Debug.LogWarning($"Файл {fileName} уже существует");
                 return;
@@ -52,13 +53,13 @@ namespace TheRavine.Base
 
         public void LoadFile(string fileName)
         {
-            if (!ScriptFileManager.FileExists(fileName))
+            if (!SaveLoad.FileExists(fileName))
             {
                 Debug.LogWarning($"Файл {fileName} не найден");
                 return;
             }
 
-            var content = ScriptFileManager.LoadFile(fileName);
+            string content = SaveLoad.LoadEncryptedData<string>(fileName);
             currentFileName = fileName;
             editorInputField.text = content ?? "";
             
@@ -77,7 +78,7 @@ namespace TheRavine.Base
             }
 
             var content = editorInputField.text;
-            ScriptFileManager.SaveFile(currentFileName, content);
+            SaveLoad.SaveEncryptedData(currentFileName, content);
             
             // Перезагружаем файл в интерпретатор
             interpreter.LoadFile(currentFileName, content);
@@ -88,7 +89,7 @@ namespace TheRavine.Base
 
         public void DeleteFile(string fileName)
         {
-            ScriptFileManager.DeleteFile(fileName);
+            SaveLoad.DeleteFile(fileName);
             interpreter.UnloadFile(fileName);
             
             if (currentFileName == fileName)
@@ -112,8 +113,8 @@ namespace TheRavine.Base
             if (filesDropdown == null) return;
 
             filesDropdown.options.Clear();
-            var files = ScriptFileManager.GetFilesList();
-            
+
+            var files = SaveLoad.GetFilesList();
             files.ForEach(file => 
                 filesDropdown.options.Add(new TMP_Dropdown.OptionData(file))
             );
@@ -146,26 +147,35 @@ namespace TheRavine.Base
         {
             return editorPanel != null && editorPanel.activeSelf;
         }
-        public RiveInterpreter.ScriptResult ExecuteScript(string fileName, params int[] args)
+
+        public async UniTask<RiveInterpreter.ScriptResult> ExecuteScriptAsync(string fileName, params int[] args)
         {
             if (!interpreter.IsFileLoaded(fileName))
             {
-                var content = ScriptFileManager.LoadFile(fileName);
+                var content = SaveLoad.LoadEncryptedData<string>(fileName);
                 if (content != null)
                 {
                     interpreter.LoadFile(fileName, content);
                 }
+                else
+                {
+                    return new RiveInterpreter.ScriptResult
+                    {
+                        Success = false,
+                        ErrorMessage = $"Файл {fileName} не найден"
+                    };
+                }
             }
 
-            return interpreter.ExecuteScript(fileName, args);
+            return await interpreter.ExecuteScriptAsync(fileName, args);
         }
 
         public void LoadAllFilesToInterpreter()
         {
-            var files = ScriptFileManager.GetFilesList();
+            var files = SaveLoad.GetFilesList();
             foreach (var fileName in files)
             {
-                var content = ScriptFileManager.LoadFile(fileName);
+                var content = SaveLoad.LoadEncryptedData(fileName);
                 if (content != null)
                 {
                     interpreter.LoadFile(fileName, content);
