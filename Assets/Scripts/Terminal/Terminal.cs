@@ -131,9 +131,9 @@ namespace TheRavine.Base
             {
                 try
                 {
-                    logger.LogInfo($"Для удаления предупреждений ниже войдите в игру:");
-                    playerData ??= ServiceLocator.GetService<PlayerModelView>()?.playerEntity;
-                    generator ??= ServiceLocator.GetService<MapGenerator>();
+                    // logger.LogInfo($"Для удаления предупреждений ниже войдите в игру:");
+                    // playerData ??= ServiceLocator.GetService<PlayerModelView>()?.playerEntity;
+                    // generator ??= ServiceLocator.GetService<MapGenerator>();
                     
                     if (playerData != null && generator != null)
                         break;
@@ -192,9 +192,6 @@ namespace TheRavine.Base
                 var parts = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length > 0 && parts[0].StartsWith("-"))
                 {
-                    // Удалено прямое выполнение скриптов - теперь только через -execute
-                    
-                    // Обычные команды
                     if (CommandManager.TryGet(parts[0], out var cmd))
                     {
                         if (cmd is IValidatedCommand vc && !vc.Validate(_context))

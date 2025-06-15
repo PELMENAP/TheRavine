@@ -16,7 +16,6 @@ namespace TheRavine.Base
 
         private void Start()
         {
-            interpreter = new RiveInterpreter();
             RefreshFilesList();
             
             // Редактор изначально выключен
@@ -26,6 +25,8 @@ namespace TheRavine.Base
 
         public void Initialize(CommandContext context, RiveInterpreter.TerminalCommandDelegate terminalCommandDelegate)
         {
+            interpreter = new RiveInterpreter();
+            
             terminalContext = context;
             interpreter.Initialize(terminalCommandDelegate);
         }
@@ -38,7 +39,7 @@ namespace TheRavine.Base
                 return;
             }
 
-            if (SaveLoad.FileExists(fileName))
+            if (ScriptFileManager.FileExists(fileName))
             {
                 Debug.LogWarning($"Файл {fileName} уже существует");
                 return;
@@ -53,13 +54,13 @@ namespace TheRavine.Base
 
         public void LoadFile(string fileName)
         {
-            if (!SaveLoad.FileExists(fileName))
+            if (!ScriptFileManager.FileExists(fileName))
             {
                 Debug.LogWarning($"Файл {fileName} не найден");
                 return;
             }
 
-            string content = SaveLoad.LoadEncryptedData<string>(fileName);
+            var content = ScriptFileManager.LoadFile(fileName);
             currentFileName = fileName;
             editorInputField.text = content ?? "";
             
@@ -78,7 +79,7 @@ namespace TheRavine.Base
             }
 
             var content = editorInputField.text;
-            SaveLoad.SaveEncryptedData(currentFileName, content);
+            ScriptFileManager.SaveFile(currentFileName, content);
             
             // Перезагружаем файл в интерпретатор
             interpreter.LoadFile(currentFileName, content);
@@ -89,7 +90,7 @@ namespace TheRavine.Base
 
         public void DeleteFile(string fileName)
         {
-            SaveLoad.DeleteFile(fileName);
+            ScriptFileManager.DeleteFile(fileName);
             interpreter.UnloadFile(fileName);
             
             if (currentFileName == fileName)
@@ -113,8 +114,8 @@ namespace TheRavine.Base
             if (filesDropdown == null) return;
 
             filesDropdown.options.Clear();
-
-            var files = SaveLoad.GetFilesList();
+            var files = ScriptFileManager.GetFilesList();
+            
             files.ForEach(file => 
                 filesDropdown.options.Add(new TMP_Dropdown.OptionData(file))
             );
@@ -152,7 +153,7 @@ namespace TheRavine.Base
         {
             if (!interpreter.IsFileLoaded(fileName))
             {
-                var content = SaveLoad.LoadEncryptedData<string>(fileName);
+                var content = ScriptFileManager.LoadFile(fileName);
                 if (content != null)
                 {
                     interpreter.LoadFile(fileName, content);
@@ -172,10 +173,10 @@ namespace TheRavine.Base
 
         public void LoadAllFilesToInterpreter()
         {
-            var files = SaveLoad.GetFilesList();
+            var files = ScriptFileManager.GetFilesList();
             foreach (var fileName in files)
             {
-                var content = SaveLoad.LoadEncryptedData(fileName);
+                var content = ScriptFileManager.LoadFile(fileName);
                 if (content != null)
                 {
                     interpreter.LoadFile(fileName, content);
