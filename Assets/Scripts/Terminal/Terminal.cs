@@ -19,6 +19,9 @@ namespace TheRavine.Base
         [SerializeField] private Button confirmButton;
         [SerializeField] private GameObject graphyManager;
         
+        // Новое поле для редактора скриптов
+        [SerializeField] private ScriptEditorPresenter scriptEditor;
+        
         public CommandManager CommandManager { get; private set; }
         private CommandContext _context;
         private PlayerEntity playerData;
@@ -51,6 +54,8 @@ namespace TheRavine.Base
             this.logger = logger;
 
             CommandManager = new CommandManager();
+            
+            // Регистрация существующих команд
             CommandManager.Register(
                 new HelpCommand(),
                 new ClearCommand(),
@@ -61,13 +66,63 @@ namespace TheRavine.Base
                 new DebugCommand()
             );
             
+            // Регистрация новых команд для работы со скриптами
+            if (scriptEditor != null)
+            {
+                CommandManager.Register(
+                    new ExecuteScriptCommand(scriptEditor),
+                    new EditorCommand(scriptEditor),
+                    new EditFileCommand(scriptEditor),
+                    new ScriptInfoCommand(scriptEditor)
+                );
+            }
+            
             graphyManager.SetActive(false);
             _context = new CommandContext(outputWindow, CommandManager, null, null, graphyManager);
+
+            // Инициализация редактора скриптов с делегатом
+            if (scriptEditor != null)
+            {
+                scriptEditor.Initialize(_context, ExecuteTerminalCommandAsync);
+                scriptEditor.LoadAllFilesToInterpreter();
+            }
 
             await UniTask.CompletedTask;
 
             ProcessInput("-clear");
             WaitForDependencies().Forget();
+        }
+
+        // Делегат для выполнения терминальных команд из скриптов
+        private async UniTask<bool> ExecuteTerminalCommandAsync(string command)
+        {
+            try
+            {
+                var parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 0 && parts[0].StartsWith("-"))
+                {
+                    if (CommandManager.TryGet(parts[0], out var cmd))
+                    {
+                        if (cmd is IValidatedCommand vc && !vc.Validate(_context))
+                            return false;
+                            
+                        await cmd.ExecuteAsync(parts, _context);
+                        return true;
+                    }
+                    else
+                    {
+                        _context.Display($"Неизвестная команда в скрипте: {parts[0]}");
+                        return false;
+                    }
+                }
+                
+                return false;
+            }
+            catch (System.Exception ex)
+            {
+                logger.LogError($"Script terminal command error: {ex}");
+                return false;
+            }
         }
 
         private async UniTaskVoid WaitForDependencies()
@@ -135,12 +190,22 @@ namespace TheRavine.Base
             try
             {
                 var parts = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length > 0 && parts[0].StartsWith("-") && CommandManager.TryGet(parts[0], out var cmd))
+                if (parts.Length > 0 && parts[0].StartsWith("-"))
                 {
-                    if (cmd is IValidatedCommand vc && !vc.Validate(_context))
-                        return;
-                        
-                    await cmd.ExecuteAsync(parts, _context);
+                    // Удалено прямое выполнение скриптов - теперь только через -execute
+                    
+                    // Обычные команды
+                    if (CommandManager.TryGet(parts[0], out var cmd))
+                    {
+                        if (cmd is IValidatedCommand vc && !vc.Validate(_context))
+                            return;
+                            
+                        await cmd.ExecuteAsync(parts, _context);
+                    }
+                    else
+                    {
+                        _context.Display($"Неизвестная команда: {parts[0]}");
+                    }
                 }
                 else
                 {
