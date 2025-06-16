@@ -21,6 +21,7 @@ namespace TheRavine.Base
         
         // Новое поле для редактора скриптов
         [SerializeField] private ScriptEditorPresenter scriptEditor;
+        private RiveInterpreter interpreter;
         
         public CommandManager CommandManager { get; private set; }
         private CommandContext _context;
@@ -28,6 +29,7 @@ namespace TheRavine.Base
         private MapGenerator generator;
         private InputBindingAdapter _confirmBinding;
         private ILogger logger;
+        
         
         public void SetActiveTerminal()
         {
@@ -53,9 +55,11 @@ namespace TheRavine.Base
         {
             this.logger = logger;
 
+            interpreter = new RiveInterpreter();
+            interpreter.Initialize(ExecuteTerminalCommandAsync);
+
             CommandManager = new CommandManager();
             
-            // Регистрация существующих команд
             CommandManager.Register(
                 new HelpCommand(),
                 new ClearCommand(),
@@ -66,25 +70,24 @@ namespace TheRavine.Base
                 new DebugCommand()
             );
             
-            // Регистрация новых команд для работы со скриптами
-            if (scriptEditor != null)
-            {
-                CommandManager.Register(
-                    new ExecuteScriptCommand(scriptEditor),
-                    new EditorCommand(scriptEditor),
-                    new EditFileCommand(scriptEditor),
-                    new ScriptInfoCommand(scriptEditor)
-                );
-            }
-            
             graphyManager.SetActive(false);
-            _context = new CommandContext(outputWindow, CommandManager, null, null, graphyManager);
+            _context = new CommandContext(outputWindow, CommandManager, null, null, graphyManager, scriptEditor, interpreter);
 
-            // Инициализация редактора скриптов с делегатом
             if (scriptEditor != null)
-            {
-                scriptEditor.Initialize(_context, ExecuteTerminalCommandAsync);
+            {   
+                scriptEditor.Initialize(_context, interpreter);
                 scriptEditor.LoadAllFilesToInterpreter();
+                
+                CommandManager.Register(
+                    new ExecuteScriptCommand(),
+                    new EditorCommand(),
+                    new EditFileCommand(),
+                    new ScriptInfoCommand(),
+                    new DeleteScriptCommand(),
+                    new SaveScriptCommand(),
+                    new NewScriptCommand(),
+                    new CloseScriptCommand()
+                );
             }
 
             await UniTask.CompletedTask;
@@ -93,7 +96,6 @@ namespace TheRavine.Base
             WaitForDependencies().Forget();
         }
 
-        // Делегат для выполнения терминальных команд из скриптов
         private async UniTask<bool> ExecuteTerminalCommandAsync(string command)
         {
             try

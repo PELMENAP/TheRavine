@@ -47,12 +47,44 @@ namespace TheRavine.Base
             
             PlayerPrefs.Save();
         }
+        
+        public static void SaveEncryptedDataWithoutMarking<T>(string key, T data)
+        {
+            string encryptedData = EncryptData(data);
+            
+            PlayerPrefs.SetString(key, encryptedData);
+            
+            PlayerPrefs.Save();
+        }
 
         public static T LoadEncryptedData<T>(string key, bool gameSettings = false)
         {
             string fullKey = GetFullKey(key, gameSettings);
             string encryptedData = PlayerPrefs.GetString(fullKey);
-            
+
+            if (!string.IsNullOrEmpty(encryptedData))
+            {
+                try
+                {
+                    return DecryptData<T>(encryptedData);
+                }
+                catch (System.Exception ex)
+                {
+                    ServiceLocator.GetLogger().LogError($"Failed to decrypt data for key '{key}': {ex.Message}");
+                    return default(T);
+                }
+            }
+            else
+            {
+                ServiceLocator.GetLogger().LogWarning($"No data found for key: {key}");
+                return default(T);
+            }
+        }
+
+        public static T LoadEncryptedDataWithoutMarking<T>(string key)
+        {
+            string encryptedData = PlayerPrefs.GetString(key);
+
             if (!string.IsNullOrEmpty(encryptedData))
             {
                 try

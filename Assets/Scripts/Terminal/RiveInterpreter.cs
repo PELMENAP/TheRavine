@@ -11,9 +11,23 @@ namespace TheRavine.Base
         private Dictionary<string, int> variables = new Dictionary<string, int>();
         private Dictionary<string, GameScriptFile> loadedFiles = new Dictionary<string, GameScriptFile>();
         private int operationCount = 0;
-        private const int MAX_OPERATIONS = 100;
+        private const int MAX_OPERATIONS = 1000;
 
-        // Делегат для выполнения терминальных команд
+        public GameScriptFile GetFileInfo(string fileName)
+        {
+            if(loadedFiles.TryGetValue(fileName, out var file))
+            {
+                return file;
+            }
+            return new GameScriptFile
+            {
+                Name = "null", 
+                Content = "no content", 
+                Parameters = null,
+                Lines = null
+            };
+        }
+
         public delegate UniTask<bool> TerminalCommandDelegate(string command);
         private TerminalCommandDelegate executeTerminalCommand;
 
@@ -32,13 +46,11 @@ namespace TheRavine.Base
             public string ErrorMessage { get; set; }
         }
 
-        // Инициализация с делегатом для выполнения терминальных команд
         public void Initialize(TerminalCommandDelegate terminalCommandDelegate)
         {
             executeTerminalCommand = terminalCommandDelegate;
         }
 
-        // Парсинг файла скрипта
         public GameScriptFile ParseScript(string fileName, string content)
         {
             var file = new GameScriptFile
@@ -148,6 +160,8 @@ namespace TheRavine.Base
                 {
                     i = (int)result.ErrorMessage.GetHashCode(); // Hack для передачи нового индекса
                 }
+
+                await UniTask.WaitForEndOfFrame();
             }
 
             return new ScriptResult { Success = true, ReturnValue = 0 };

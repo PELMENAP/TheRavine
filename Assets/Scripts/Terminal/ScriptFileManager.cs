@@ -12,13 +12,13 @@ namespace TheRavine.Base
 
         public static void SaveFile(string fileName, string content)
         {
-            SaveLoad.SaveEncryptedData($"{FILE_CONTENT_PREFIX}{fileName}", content);
+            SaveLoad.SaveEncryptedDataWithoutMarking($"{FILE_CONTENT_PREFIX}{fileName}", content);
             
             var filesList = GetFilesList();
             if (!filesList.Contains(fileName))
             {
                 filesList.Add(fileName);
-                SaveLoad.SaveEncryptedData(FILES_LIST_KEY, filesList);
+                SaveLoad.SaveEncryptedDataWithoutMarking(FILES_LIST_KEY, filesList);
             }
         }
 
@@ -26,7 +26,7 @@ namespace TheRavine.Base
         {
             try
             {
-                return SaveLoad.LoadEncryptedData<string>($"{FILE_CONTENT_PREFIX}{fileName}");
+                return SaveLoad.LoadEncryptedDataWithoutMarking<string>($"{FILE_CONTENT_PREFIX}{fileName}");
             }
             catch
             {
@@ -38,7 +38,7 @@ namespace TheRavine.Base
         {
             try
             {
-                return SaveLoad.LoadEncryptedData<List<string>>(FILES_LIST_KEY) ?? new List<string>();
+                return SaveLoad.LoadEncryptedDataWithoutMarking<List<string>>(FILES_LIST_KEY) ?? new List<string>();
             }
             catch
             {
@@ -52,7 +52,7 @@ namespace TheRavine.Base
             
             var filesList = GetFilesList();
             filesList.Remove(fileName);
-            SaveLoad.SaveEncryptedData(FILES_LIST_KEY, filesList);
+            SaveLoad.SaveEncryptedDataWithoutMarking(FILES_LIST_KEY, filesList);
         }
 
         public static bool FileExists(string fileName)

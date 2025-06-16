@@ -9834,7 +9834,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8743915626847094179, guid: 8d52b4a715f4362c99911dccc189b914, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.000011444092
+      value: -0.000015258789
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10208,12 +10208,20 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5463039125427195431, guid: d18d9e92b9062b3aeb7ca4b44d1c1a5c, type: 3}
+      propertyPath: m_LineLimit
+      value: 39
+      objectReference: {fileID: 0}
+    - target: {fileID: 5463039125427195431, guid: d18d9e92b9062b3aeb7ca4b44d1c1a5c, type: 3}
       propertyPath: m_Transition
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5463039125427195431, guid: d18d9e92b9062b3aeb7ca4b44d1c1a5c, type: 3}
       propertyPath: m_ContentType
       value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 5463039125427195431, guid: d18d9e92b9062b3aeb7ca4b44d1c1a5c, type: 3}
+      propertyPath: m_KeyboardType
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5463039125427195431, guid: d18d9e92b9062b3aeb7ca4b44d1c1a5c, type: 3}
       propertyPath: m_OnFocusSelectAll
@@ -10224,8 +10232,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5463039125427195431, guid: d18d9e92b9062b3aeb7ca4b44d1c1a5c, type: 3}
+      propertyPath: m_ResetOnDeActivation
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5463039125427195431, guid: d18d9e92b9062b3aeb7ca4b44d1c1a5c, type: 3}
       propertyPath: m_ShouldActivateOnSelect
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5463039125427195431, guid: d18d9e92b9062b3aeb7ca4b44d1c1a5c, type: 3}
+      propertyPath: m_KeepTextSelectionVisible
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5463039125427195431, guid: d18d9e92b9062b3aeb7ca4b44d1c1a5c, type: 3}
       propertyPath: m_RestoreOriginalTextOnEscape

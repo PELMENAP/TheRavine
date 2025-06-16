@@ -24,7 +24,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 14252
+  controlID: 851
 --- !u!114 &2
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -67,7 +67,7 @@ MonoBehaviour:
   m_ShowGizmos: 0
   m_TargetDisplay: 0
   m_ClearColor: {r: 0, g: 0, b: 0, a: 0}
-  m_TargetSize: {x: 2560, y: 1440}
+  m_TargetSize: {x: 1920, y: 1080}
   m_TextureFilterMode: 0
   m_TextureHideFlags: 61
   m_RenderIMGUI: 1
@@ -76,16 +76,16 @@ MonoBehaviour:
   m_VSyncEnabled: 0
   m_Gizmos: 0
   m_Stats: 0
-  m_SelectedSizes: 05000000000000000000000000000000000000000000000000000000000000000000000000000000
+  m_SelectedSizes: 03000000000000000000000000000000000000000000000000000000000000000000000000000000
   m_ZoomArea:
     m_HRangeLocked: 0
     m_VRangeLocked: 0
     hZoomLockedByDefault: 0
     vZoomLockedByDefault: 0
-    m_HBaseRangeMin: -1280
-    m_HBaseRangeMax: 1280
-    m_VBaseRangeMin: -720
-    m_VBaseRangeMax: 720
+    m_HBaseRangeMin: -960
+    m_HBaseRangeMax: 960
+    m_VBaseRangeMin: -540
+    m_VBaseRangeMax: 540
     m_HAllowExceedBaseRangeMin: 1
     m_HAllowExceedBaseRangeMax: 1
     m_VAllowExceedBaseRangeMin: 1
@@ -105,7 +105,7 @@ MonoBehaviour:
       y: 21
       width: 1081
       height: 637
-    m_Scale: {x: 0.42226562, y: 0.42226562}
+    m_Scale: {x: 0.5630208, y: 0.5630208}
     m_Translation: {x: 540.5, y: 318.5}
     m_MarginLeft: 0
     m_MarginRight: 0
@@ -113,12 +113,12 @@ MonoBehaviour:
     m_MarginBottom: 0
     m_LastShownAreaInsideMargins:
       serializedVersion: 2
-      x: -1280
-      y: -754.2646
-      width: 2560
-      height: 1508.5292
+      x: -960
+      y: -565.6984
+      width: 1920
+      height: 1131.3969
     m_MinimalGUI: 1
-  m_defaultScale: 0.42226562
+  m_defaultScale: 0.5630208
   m_LastWindowPixelSize: {x: 1081, y: 658}
   m_ClearInEditMode: 1
   m_NoCameraWarning: 1
@@ -149,7 +149,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 100}
   m_MaxSize: {x: 16192, y: 16192}
   vertical: 1
-  controlID: 14253
+  controlID: 852
 --- !u!114 &4
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -174,7 +174,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 50}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 14254
+  controlID: 853
 --- !u!114 &5
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -240,9 +240,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: acd9ffff
-      m_LastClickedID: -9812
-      m_ExpandedIDs: 1ec9ffffcecdffff9ad9ffffa0d9ffffacd9ffffc0dbffff54ee0000
+      m_SelectedIDs: 1af8ffff
+      m_LastClickedID: -2022
+      m_ExpandedIDs: 1ec9ffffa0d9ffffacd9ffffc0dbffffa4f5ffffb0f5ffffacfaffffa6af000026b0000054ee0000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -2154,7 +2154,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Packages/TextMesh Pro 1/Pixel Times
+    - Assets/Scripts/Terminal
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -2164,16 +2164,16 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 85
   m_LastFolders:
-  - Assets/Packages/TextMesh Pro 1/Pixel Times
+  - Assets/Scripts/Terminal
   m_LastFoldersGridSize: 85
   m_LastProjectPath: /mnt/bimbim/TheRavine
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
-    scrollPos: {x: 0, y: 383}
-    m_SelectedIDs: 283f0100
-    m_LastClickedID: 81704
-    m_ExpandedIDs: 0000000090ac0000a4ac0000263f010000ca9a3bffffff7f
+    scrollPos: {x: 0, y: 527}
+    m_SelectedIDs: 18b90000
+    m_LastClickedID: 47384
+    m_ExpandedIDs: 0000000048b7000000ca9a3bffffff7f
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -2202,7 +2202,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 0000000090ac000000ca9a3bffffff7f
+    m_ExpandedIDs: 0000000048b7000000ca9a3bffffff7f
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -2228,10 +2228,10 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: acd9ffff
-    m_LastClickedInstanceID: -9812
-    m_HadKeyboardFocusLastEvent: 0
-    m_ExpandedInstanceIDs: c6230000f4a90000000000007aa80000
+    m_SelectedInstanceIDs: 26b00000
+    m_LastClickedInstanceID: 45094
+    m_HadKeyboardFocusLastEvent: 1
+    m_ExpandedInstanceIDs: c6230000f4a900007aa8000000000000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -2366,7 +2366,7 @@ MonoBehaviour:
     m_ControlHash: -371814159
     m_PrefName: Preview_InspectorPreview
   m_LastInspectedObjectInstanceID: -1
-  m_LastVerticalScrollValue: 0
+  m_LastVerticalScrollValue: 43
   m_GlobalObjectId: 
   m_InspectorMode: 0
   m_LockTracker:

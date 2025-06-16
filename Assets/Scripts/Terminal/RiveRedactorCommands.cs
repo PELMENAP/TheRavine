@@ -4,7 +4,6 @@ using TMPro;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-
 namespace TheRavine.Base
 {
     public class ExecuteScriptCommand : ICommand
@@ -12,19 +11,12 @@ namespace TheRavine.Base
         public string Name => "-execute";
         public string Description => "Выполняет скрипт: -execute <filename> [args...]";
 
-        private ScriptEditorPresenter scriptEditor;
-
-        public ExecuteScriptCommand(ScriptEditorPresenter editor)
-        {
-            scriptEditor = editor;
-        }
-
-        public UniTask ExecuteAsync(string[] args, CommandContext context)
+        public async UniTask ExecuteAsync(string[] args, CommandContext context)
         {
             if (args.Length < 2)
             {
                 context.Display("Использование: -execute <filename> [args...]");
-                return UniTask.CompletedTask;
+                return;
             }
 
             var fileName = args[1];
@@ -39,23 +31,34 @@ namespace TheRavine.Base
                 }
                 else
                 {
-                    context.Display($"Неверный аргument: {args[i]} (ожидается число)");
-                    return UniTask.CompletedTask;
+                    context.Display($"Неверный аргумент: {args[i]} (ожидается число)");
+                    return;
                 }
             }
 
-            // var result = await scriptEditor.ExecuteScriptAsync(fileName, scriptArgs.ToArray()); // not async
+            if (!ScriptFileManager.FileExists(fileName))
+            {
+                context.Display($"Файл {fileName} не найден");
+                return;
+            }
 
-            // if (result.Success)
-            // {
-            //     context.Display($"Скрипт {fileName} выполнен успешно. Результат: {result.ReturnValue}");
-            // }
-            // else
-            // {
-            //     context.Display($"Ошибка выполнения скрипта {fileName}: {result.ErrorMessage}");
-            // }
-
-            return UniTask.CompletedTask;
+            try
+            {
+                var result = await context.ScriptInterpreter.ExecuteScriptAsync(fileName, scriptArgs.ToArray());
+                
+                if (result.Success)
+                {
+                    context.Display($"Скрипт {fileName} выполнен успешно. Результат: {result.ReturnValue}");
+                }
+                else
+                {
+                    context.Display($"Ошибка выполнения скрипта {fileName}: {result.ErrorMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                context.Display($"Критическая ошибка при выполнении скрипта {fileName}: {ex.Message}");
+            }
         }
     }
 
@@ -64,18 +67,11 @@ namespace TheRavine.Base
         public string Name => "-editor";
         public string Description => "Управляет редактором скриптов: -editor <on/off>";
 
-        private ScriptEditorPresenter scriptEditor;
-
-        public EditorCommand(ScriptEditorPresenter editor)
-        {
-            scriptEditor = editor;
-        }
-
         public UniTask ExecuteAsync(string[] args, CommandContext context)
         {
             if (args.Length < 2)
             {
-                var status = scriptEditor.IsEditorActive() ? "включен" : "выключен";
+                var status = context.ScriptEditor.IsEditorActive() ? "включен" : "выключен";
                 context.Display($"Редактор скриптов {status}. Использование: -editor <on/off>");
                 return UniTask.CompletedTask;
             }
@@ -85,11 +81,11 @@ namespace TheRavine.Base
             switch (action)
             {
                 case "on":
-                    scriptEditor.SetEditorActive(true);
+                    context.ScriptEditor.SetEditorActive(true);
                     context.Display("Редактор скриптов включен");
                     break;
                 case "off":
-                    scriptEditor.SetEditorActive(false);
+                    context.ScriptEditor.SetEditorActive(false);
                     context.Display("Редактор скриптов выключен");
                     break;
                 default:
@@ -106,13 +102,6 @@ namespace TheRavine.Base
         public string Name => "-edit";
         public string Description => "Открывает файл для редактирования: -edit <filename>";
 
-        private ScriptEditorPresenter scriptEditor;
-
-        public EditFileCommand(ScriptEditorPresenter editor)
-        {
-            scriptEditor = editor;
-        }
-
         public UniTask ExecuteAsync(string[] args, CommandContext context)
         {
             if (args.Length < 2)
@@ -124,21 +113,21 @@ namespace TheRavine.Base
             var fileName = args[1];
 
             // Включаем редактор, если он выключен
-            if (!scriptEditor.IsEditorActive())
+            if (!context.ScriptEditor.IsEditorActive())
             {
-                scriptEditor.SetEditorActive(true);
+                context.ScriptEditor.SetEditorActive(true);
             }
 
             // Если файл существует, загружаем его
             if (ScriptFileManager.FileExists(fileName))
             {
-                scriptEditor.LoadFile(fileName);
+                context.ScriptEditor.LoadFile(fileName);
                 context.Display($"Файл {fileName} загружен для редактирования");
             }
             else
             {
                 // Создаем новый файл
-                scriptEditor.CreateNewFile(fileName);
+                context.ScriptEditor.CreateNewFile(fileName);
                 context.Display($"Создан новый файл {fileName} для редактирования");
             }
 
@@ -150,13 +139,6 @@ namespace TheRavine.Base
     {
         public string Name => "-scripts";
         public string Description => "Показывает информацию о скриптах: -scripts [list/info <filename>]";
-
-        private ScriptEditorPresenter scriptEditor;
-
-        public ScriptInfoCommand(ScriptEditorPresenter editor)
-        {
-            scriptEditor = editor;
-        }
 
         public UniTask ExecuteAsync(string[] args, CommandContext context)
         {
@@ -182,9 +164,9 @@ namespace TheRavine.Base
                     else
                     {
                         context.Display("Список скриптов:");
-                        foreach (var fle in files)
+                        foreach (var file in files)
                         {
-                            context.Display($"  - {fle}");
+                            context.Display($"  - {file}");
                         }
                     }
                     break;
@@ -204,14 +186,14 @@ namespace TheRavine.Base
                     }
 
                     var content = ScriptFileManager.LoadFile(fileName);
-                    var lines = content.Split('\n').Length;
+                    var lines = content?.Split('\n').Length ?? 0;
                     context.Display($"Файл: {fileName}");
                     context.Display($"Строк: {lines}");
 
-                    var file = new RiveInterpreter().ParseScript(fileName, content);
-                    if (file.Parameters.Count > 0)
+                    var fileInfo = context.ScriptInterpreter.GetFileInfo(fileName);
+                    if (fileInfo != null && fileInfo.Parameters.Count > 0)
                     {
-                        context.Display($"Параметры: ({string.Join(", ", file.Parameters)})");
+                        context.Display($"Параметры: ({string.Join(", ", fileInfo.Parameters)})");
                     }
                     break;
 
@@ -229,13 +211,6 @@ namespace TheRavine.Base
         public string Name => "-delete-script";
         public string Description => "Удаляет скрипт: -delete-script <filename>";
 
-        private ScriptEditorPresenter scriptEditor;
-
-        public DeleteScriptCommand(ScriptEditorPresenter editor)
-        {
-            scriptEditor = editor;
-        }
-
         public UniTask ExecuteAsync(string[] args, CommandContext context)
         {
             if (args.Length < 2)
@@ -251,45 +226,112 @@ namespace TheRavine.Base
                 context.Display($"Файл {fileName} не найден");
                 return UniTask.CompletedTask;
             }
-
-            scriptEditor.DeleteFile(fileName);
+            ScriptFileManager.DeleteFile(fileName);
+            context.ScriptInterpreter.UnloadFile(fileName);
+            
+            if (context.ScriptEditor.GetCurrentFileName() == fileName)
+            {
+                context.ScriptEditor.ClearEditor();
+            }
+            
             context.Display($"Файл {fileName} удален");
-
             return UniTask.CompletedTask;
         }
     }
 
-    // Команда для сохранения текущего файла в редакторе
     public class SaveScriptCommand : ICommand
     {
         public string Name => "-save";
         public string Description => "Сохраняет текущий файл в редакторе: -save";
 
-        private ScriptEditorPresenter scriptEditor;
-
-        public SaveScriptCommand(ScriptEditorPresenter editor)
-        {
-            scriptEditor = editor;
-        }
-
         public UniTask ExecuteAsync(string[] args, CommandContext context)
         {
-            if (!scriptEditor.IsEditorActive())
+            if (!context.ScriptEditor.IsEditorActive())
             {
                 context.Display("Редактор не активен. Используйте -editor on");
                 return UniTask.CompletedTask;
             }
 
+            if (string.IsNullOrEmpty(context.ScriptEditor.GetCurrentFileName()))
+            {
+                context.Display("Нет открытого файла для сохранения");
+                return UniTask.CompletedTask;
+            }
+
             try
             {
-                scriptEditor.SaveCurrentFile();
+                var content = context.ScriptEditor.GetCurrentContent();
+                ScriptFileManager.SaveFile(context.ScriptEditor.GetCurrentFileName(), content);
+                context.ScriptInterpreter.LoadFile(context.ScriptEditor.GetCurrentFileName(), content);
                 context.Display("Файл сохранен успешно");
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 context.Display($"Ошибка сохранения: {ex.Message}");
             }
 
+            return UniTask.CompletedTask;
+        }
+    }
+
+    // Дополнительные команды для удобства работы
+    public class NewScriptCommand : ICommand
+    {
+        public string Name => "-new-script";
+        public string Description => "Создает новый скрипт: -new-script <filename>";
+
+        public UniTask ExecuteAsync(string[] args, CommandContext context)
+        {
+            if (args.Length < 2)
+            {
+                context.Display("Использование: -new-script <filename>");
+                return UniTask.CompletedTask;
+            }
+
+            var fileName = args[1];
+            
+            if (ScriptFileManager.FileExists(fileName))
+            {
+                context.Display($"Файл {fileName} уже существует. Используйте -edit {fileName} для редактирования");
+                return UniTask.CompletedTask;
+            }
+
+            // Включаем редактор, если он выключен
+            if (!context.ScriptEditor.IsEditorActive())
+            {
+                context.ScriptEditor.SetEditorActive(true);
+            }
+
+            context.ScriptEditor.CreateNewFile(fileName);
+            context.Display($"Создан новый файл {fileName}");
+            
+            return UniTask.CompletedTask;
+        }
+    }
+
+    public class CloseScriptCommand : ICommand
+    {
+        public string Name => "-close";
+        public string Description => "Закрывает текущий файл в редакторе: -close";
+
+        public UniTask ExecuteAsync(string[] args, CommandContext context)
+        {
+            if (!context.ScriptEditor.IsEditorActive())
+            {
+                context.Display("Редактор не активен");
+                return UniTask.CompletedTask;
+            }
+
+            if (string.IsNullOrEmpty(context.ScriptEditor.GetCurrentFileName()))
+            {
+                context.Display("Нет открытого файла");
+                return UniTask.CompletedTask;
+            }
+
+            var fileName = context.ScriptEditor.GetCurrentFileName();
+            context.ScriptEditor.ClearEditor();
+            context.Display($"Файл {fileName} закрыт");
+            
             return UniTask.CompletedTask;
         }
     }
