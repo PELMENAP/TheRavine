@@ -15,20 +15,17 @@ namespace TheRavine.Base
         private CommandContext terminalContext;
 
         private void Start()
-        {
-            RefreshFilesList();
-            
-            // Редактор изначально выключен
+        {            
             if (editorPanel != null)
                 editorPanel.SetActive(false);
         }
 
-        public void Initialize(CommandContext context, RiveInterpreter.TerminalCommandDelegate terminalCommandDelegate)
+        public void Initialize(CommandContext context, RiveInterpreter interpreter)
         {
-            interpreter = new RiveInterpreter();
-            
+            this.interpreter = interpreter;
             terminalContext = context;
-            interpreter.Initialize(terminalCommandDelegate);
+
+            RefreshFilesList();
         }
 
         public void CreateNewFile(string fileName)
@@ -183,5 +180,11 @@ namespace TheRavine.Base
                 }
             }
         }
+
+        public string GetCurrentFileName() => currentFileName;
+        public string GetCurrentContent() => editorInputField.text;
+        public void LoadFileToInterpreter(string fileName, string content) => interpreter.LoadFile(fileName, content);
+        public void UnloadFileFromInterpreter(string fileName) => interpreter.UnloadFile(fileName);
+        public RiveInterpreter.GameScriptFile GetFileInfo(string fileName) => interpreter.GetFileInfo(fileName);
     }
 }

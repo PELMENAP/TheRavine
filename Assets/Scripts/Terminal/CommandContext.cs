@@ -23,13 +23,26 @@ namespace TheRavine.Base
         public readonly GameObject Graphy;
         public readonly CommandManager CommandManager;
 
-        public CommandContext(TextMeshProUGUI output, CommandManager commandManager, PlayerEntity player, MapGenerator gen, GameObject graphy)
+        public ScriptEditorPresenter ScriptEditor { get; private set; }
+        public RiveInterpreter ScriptInterpreter { get; private set; }
+
+        public CommandContext(
+            TextMeshProUGUI output, 
+            CommandManager commandManager, 
+            PlayerEntity player, 
+            MapGenerator gen, 
+            GameObject graphy,
+            ScriptEditorPresenter scriptEditor,
+            RiveInterpreter scriptInterpreter)
         {
             OutputWindow = output;
             PlayerData = player;
             Generator = gen;
             Graphy = graphy;
             CommandManager = commandManager;
+            
+            ScriptEditor = scriptEditor;
+            ScriptInterpreter = scriptInterpreter;
 
             if (!string.IsNullOrEmpty(output.text))
             {
@@ -66,7 +79,7 @@ namespace TheRavine.Base
         
         public void SetPlayer(PlayerEntity player) => PlayerData = player;
         public void SetGenerator(MapGenerator gen) => Generator = gen;
-        
+
         public void Dispose()
         {
             if (!_disposed)
