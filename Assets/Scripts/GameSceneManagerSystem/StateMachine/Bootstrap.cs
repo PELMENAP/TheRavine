@@ -13,20 +13,26 @@ namespace TheRavine.Base
         private SceneTransistor trasitor;
         [SerializeField] private GameStateMachine gameStateMachine;
         [SerializeField] private bool isTest;
+        private IWorldDataService worldDataService;
         private async void Start()
         {
-            if(isTest) return;
+            worldDataService =ServiceLocator.GetService<IWorldDataService>();
+            if (isTest) return;
             gameStateMachine.Initialize();
 
-            while(!gameStateMachine.HaveServiceLocatorPlayer())
+            while (!gameStateMachine.HaveServiceLocatorPlayer())
             {
                 gameStateMachine.LogBootstrapInfo("There is no players in the scene");
                 await UniTask.Delay(1000);
             }
 
             AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
-            DataStorage.winTheGame = false;
-            if(DataStorage.cycleCount == 0) DataStorage.startTime = Time.time;
+
+            worldDataService.SetGameWon(false);
+            if (worldDataService.WorldData.CurrentValue.cycleCount == 0)
+            {
+                worldDataService.SetTime(DateTimeOffset.Now.ToUnixTimeSeconds());
+            }
             trasitor = new SceneTransistor();
 
             gameStateMachine.StartGame();

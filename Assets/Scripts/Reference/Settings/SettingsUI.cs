@@ -8,7 +8,7 @@ using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Base
 {
-    public class SettingsView : MonoBehaviour
+    public class SettingsUI : MonoBehaviour
     {
         [Header("Настройки игры")]
         [SerializeField] private TMP_Dropdown qualityDropdown;
@@ -21,7 +21,7 @@ namespace TheRavine.Base
 
         private void Start()
         {
-            _settingsModel = ServiceLocator.GetSettings();
+            _settingsModel = ServiceLocator.GetService<ISettingsModel>();
             _profilerComponent = profiler?.GetComponent<GraphyDebugger>();
             
             InitializeUI();

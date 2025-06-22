@@ -30,14 +30,14 @@ namespace TheRavine.EntityControl
         public void SetUp(ISetAble.Callback callback)
         {
             // skillFacade = new SkillFacade();
-            logger = ServiceLocator.GetLogger();
+            logger = ServiceLocator.GetService<ILogger>();
             logger.LogInfo("EntitySystem service is available now");
             global  = new List<AEntity>();
             mobInfo = new Dictionary<int, EntityInfo>(4);
 
             for (int i = 0; i < _mobInfo.Length; i++) mobInfo[_mobInfo[i].prefab.GetInstanceID()] = _mobInfo[i];
 
-            SetUpBoids();
+            SetUpBoids().Forget();
             callback?.Invoke();
         }
         private async UniTaskVoid SetUpBoids()

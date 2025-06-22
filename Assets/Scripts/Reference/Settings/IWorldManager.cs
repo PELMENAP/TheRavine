@@ -20,6 +20,7 @@ namespace TheRavine.Base
         UniTask<bool> DeleteWorldAsync(string worldName);
         UniTask<bool> RenameWorldAsync(string oldName, string newName);
         UniTask<bool> DuplicateWorldAsync(string sourceName, string newName);
+        UniTask<bool> ExistsAsync(string worldId);
         UniTask RefreshWorldListAsync();
         UniTask<WorldInfo> GetWorldInfoAsync(string worldName, bool useCache = true);
         UniTask<List<WorldInfo>> GetAllWorldsInfoAsync(bool useCache = true);

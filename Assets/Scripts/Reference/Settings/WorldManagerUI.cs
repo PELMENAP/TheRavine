@@ -26,8 +26,8 @@ namespace TheRavine.Base
 
         private void Start()
         {
-            _worldManager = ServiceLocator.GetWorldManager();
-            logger = ServiceLocator.GetLogger();
+            _worldManager = ServiceLocator.GetService<IWorldManager>();
+            logger = ServiceLocator.GetService<ILogger>();
             
             InitializeUI();
             BindToModel();
@@ -76,7 +76,7 @@ namespace TheRavine.Base
                 worldItemComponent.Initialize(worldName, 
                     () => OnEnterWorld(worldName),
                     () => OnDeleteWorld(worldName),
-                    () => OnEditWorldSettings(worldName), logger);
+                    () =>  OnEditWorldSettings(worldName).Forget(), logger, ServiceLocator.GetService<IWorldService>());
             }
         }
         private async void OnEnterWorld(string worldName)
@@ -108,11 +108,11 @@ namespace TheRavine.Base
             }
         }
 
-        private void OnEditWorldSettings(string worldName)
+        private async UniTaskVoid OnEditWorldSettings(string worldName)
         {
             if (settingsView != null)
             {
-                settingsView.EditWorldSettings(worldName);
+                await settingsView.EditWorldSettings(worldName);
             }
             else
             {
@@ -146,7 +146,7 @@ namespace TheRavine.Base
             {
                 logger.LogInfo($"Мир создан: {worldName}");
                 ShowCreateWorldPanel(false);
-                OnEditWorldSettings(worldName);
+                OnEditWorldSettings(worldName).Forget();
             }
             else
             {

@@ -1,8 +1,8 @@
 using UnityEngine;
 using TMPro;
 using R3;
-using System;
 using ZLinq;
+using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Base
 {
@@ -17,6 +17,7 @@ namespace TheRavine.Base
         private ISettingsModel _settingsModel;
         private IWorldDataService _worldDataService;
         private IWorldManager _worldManager;
+        private IWorldService _worldService;
         private CompositeDisposable _disposables = new();
         
         private readonly int[] _autosaveIntervals = { 0, 15, 30, 60, 120, 300 };
@@ -26,9 +27,10 @@ namespace TheRavine.Base
 
         private void Start()
         {
-            _settingsModel = ServiceLocator.GetSettings();
-            _worldDataService = ServiceLocator.GetWorldDataService();
-            _worldManager = ServiceLocator.GetWorldManager();
+            _settingsModel = ServiceLocator.GetService<ISettingsModel>();
+            _worldDataService = ServiceLocator.GetService<IWorldDataService>();
+            _worldManager = ServiceLocator.GetService<IWorldManager>();
+            _worldService = ServiceLocator.GetService<IWorldService>();
             
             InitializeUI();
             BindToModel();
@@ -38,14 +40,28 @@ namespace TheRavine.Base
         {
             autosaveDropdown.ClearOptions();
             autosaveDropdown.AddOptions(_autosaveLabels.AsValueEnumerable().ToList());
-            autosaveDropdown.onValueChanged.AddListener(OnAutosaveIntervalChanged);
+            autosaveDropdown.onValueChanged.AddListener(OnAutosaveIntervalChangedWrapper);
             
-            timeScaleInput.onValueChanged.AddListener(OnTimeScaleChanged);
-            maxEntityCountInput.onValueChanged.AddListener(OnMaxEntityCountChanged);
+            timeScaleInput.onValueChanged.AddListener(OnTimeScaleChangedWrapper);
+            maxEntityCountInput.onValueChanged.AddListener(OnMaxEntityCountChangedWrapper);
             
             worldSettingsPanel?.SetActive(false);
         }
 
+        private void OnAutosaveIntervalChangedWrapper(int index)
+        {
+            OnAutosaveIntervalChanged(index).Forget();
+        }
+
+        private void OnTimeScaleChangedWrapper(string value)
+        {
+            OnTimeScaleChanged(value).Forget();
+        }
+
+        private void OnMaxEntityCountChangedWrapper(string value)
+        {
+            OnMaxEntityCountChanged(value).Forget();
+        }
         private void BindToModel()
         {
             _settingsModel.WorldSettings
@@ -53,7 +69,7 @@ namespace TheRavine.Base
                 .AddTo(_disposables);
 
             _worldManager.CurrentWorld
-                .Subscribe(worldName => 
+                .Subscribe(worldName =>
                 {
                     bool hasWorld = !string.IsNullOrEmpty(worldName);
                     if (!hasWorld && worldSettingsPanel != null)
@@ -88,31 +104,31 @@ namespace TheRavine.Base
             maxEntityCountInput.SetTextWithoutNotify(settings.maxEntityCount.ToString());
         }
 
-        public void EditWorldSettings(string worldName)
+        public async UniTask EditWorldSettings(string worldName)
         {
             _currentEditingWorld = worldName;
             
-            var worldSettings = LoadWorldSettingsForWorld(worldName);
+            var worldSettings = await LoadWorldSettingsForWorld(worldName);
             _settingsModel.UpdateWorldSettings(worldSettings);
             
             worldSettingsPanel?.SetActive(true);
         }
 
-        private WorldSettings LoadWorldSettingsForWorld(string worldName)
+        private async UniTask<WorldSettings> LoadWorldSettingsForWorld(string worldName)
         {
             var settingsFile = $"{worldName}_world_settings";
-            if (SaveLoad.FileExists(settingsFile))
-                return SaveLoad.LoadEncryptedData<WorldSettings>(settingsFile);
+            if (await _worldService.ExistsAsync(settingsFile))
+                return await _worldService.LoadSettingsAsync(settingsFile);
             return new WorldSettings { worldName = worldName };
         }
 
-        private void OnAutosaveIntervalChanged(int index)
+        private async UniTask OnAutosaveIntervalChanged(int index)
         {
             if (index < 0 || index >= _autosaveIntervals.Length) return;
 
             var settings = GetCurrentWorldSettings();
             settings.autosaveInterval = _autosaveIntervals[index];
-            SaveWorldSettings(settings);
+            await SaveWorldSettings(settings);
 
             if (_worldDataService is WorldDataService worldDataService)
             {
@@ -120,23 +136,23 @@ namespace TheRavine.Base
             }
         }
 
-        private void OnTimeScaleChanged(string value)
+        private async UniTask OnTimeScaleChanged(string value)
         {
             if (float.TryParse(value, out float timeScale))
             {
                 var settings = GetCurrentWorldSettings();
                 settings.timeScale = Mathf.Clamp(timeScale, 0.1f, 5.0f);
-                SaveWorldSettings(settings);
+                await SaveWorldSettings(settings);
             }
         }
 
-        private void OnMaxEntityCountChanged(string value)
+        private async UniTask OnMaxEntityCountChanged(string value)
         {
             if (int.TryParse(value, out int count))
             {
                 var settings = GetCurrentWorldSettings();
                 settings.maxEntityCount = Mathf.Max(100, count);
-                SaveWorldSettings(settings);
+                await SaveWorldSettings(settings);
             }
         }
 
@@ -151,14 +167,14 @@ namespace TheRavine.Base
             return new WorldSettings { worldName = _currentEditingWorld ?? "Unknown" };
         }
 
-        private void SaveWorldSettings(WorldSettings settings)
+        private async UniTask SaveWorldSettings(WorldSettings settings)
         {
             _settingsModel.UpdateWorldSettings(settings);
             
             if (!string.IsNullOrEmpty(_currentEditingWorld))
             {
                 var settingsFile = $"{_currentEditingWorld}_world_settings";
-                SaveLoad.SaveEncryptedData(settingsFile, settings);
+                await _worldService.SaveSettingsAsync(settingsFile, settings);
             }
         }
 

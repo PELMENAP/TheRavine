@@ -32,26 +32,26 @@ public class Test : MonoBehaviour
     [SerializeField] private InputActionReference point;
 
     public int cycleCount;
-    [Button]
-    private void SetCycleNumber(){
-        DataStorage.cycleCount = cycleCount;
-    }
+    // [Button]
+    // private void SetCycleNumber(){
+    //     DataStorage.cycleCount = cycleCount;
+    // }
 
-    [Button]
-    private void ShowCycleCount(){
-        Debug.Log(DataStorage.cycleCount);;
-    }
-    private void Start()
-    {
-        rte().Forget();
-    }
+    // [Button]
+    // private void ShowCycleCount(){
+    //     Debug.Log(DataStorage.cycleCount);;
+    // }
+    // private void Start()
+    // {
+    //     rte().Forget();
+    // }
 
-    private async UniTaskVoid rte()
-    {
-        await UniTask.Delay(5000);
-        ServiceLocator.GetSettings().GameSettings.CurrentValue.enableShadows = isShadow;
-        ServiceLocator.GetSettings().GameSettings.CurrentValue.controlType = control;
-    }
+    // private async UniTaskVoid rte()
+    // {
+    //     await UniTask.Delay(5000);
+    //     ServiceLocator.GetSettings().GameSettings.CurrentValue.enableShadows = isShadow;
+    //     ServiceLocator.GetSettings().GameSettings.CurrentValue.controlType = control;
+    // }
     [Button]
     private void ShowPlayerEntity()
     {

@@ -45,13 +45,15 @@ namespace TheRavine.EntityControl
 
             await UniTask.Delay(3000);
 
-            logger = ServiceLocator.GetLogger();
+            logger = ServiceLocator.GetService<ILogger>();
         }
 
         private async UniTask CreatePlayerEntity()
         {
             Initialize(new PlayerEntity(GetComponent<IEntityController>(), logger));
             playerEntity.AddComponentsToEntity(playerInfo, this);
+
+            await UniTask.CompletedTask;
         }
 
         private async UniTask SetupNetworking()
@@ -61,6 +63,7 @@ namespace TheRavine.EntityControl
                 RequestCameraServerRpc(NetworkManager.Singleton.LocalClientId);
                 ServiceLocator.GetService<EntitySystem>().AddToGlobal(playerEntity);
             }
+            await UniTask.CompletedTask;
         }
         [ServerRpc]
         private void RequestCameraServerRpc(ulong clientId)

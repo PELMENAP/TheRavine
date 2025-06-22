@@ -22,6 +22,7 @@ namespace TheRavine.Base
         public MapGenerator Generator { get; private set; }
         public readonly GameObject Graphy;
         public readonly CommandManager CommandManager;
+        public readonly ScriptFileManager scriptFileManager;
 
         public ScriptEditorPresenter ScriptEditor { get; private set; }
         public RiveInterpreter ScriptInterpreter { get; private set; }
@@ -40,6 +41,9 @@ namespace TheRavine.Base
             Generator = gen;
             Graphy = graphy;
             CommandManager = commandManager;
+
+            var encryptedPlayerPrefsStorage = new EncryptedPlayerPrefsStorage();
+            scriptFileManager = new ScriptFileManager(encryptedPlayerPrefsStorage);
             
             ScriptEditor = scriptEditor;
             ScriptInterpreter = scriptInterpreter;

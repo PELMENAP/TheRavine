@@ -17,13 +17,19 @@ public class TrollMovementTransition : MonoBehaviour
     [SerializeField] private UnityEvent finishAction;
     [SerializeField] private InventoryItemInfo ticketInfo;
     private SyncedTimer _timer;
-    private void Start() {
-        if(textMeshPro == null){
+    private IWorldDataService worldDataService;
+    private void Start()
+    {
+        worldDataService = ServiceLocator.GetService<IWorldDataService>();
+
+
+        if (textMeshPro == null)
+        {
             Debug.Log("no display troll text");
             return;
         }
-        int factTime = timeToDelay - 20 * DataStorage.cycleCount;
-        if(factTime <= 0) factTime = 50;
+        int factTime = timeToDelay - 50 * worldDataService.WorldData.CurrentValue.cycleCount;
+        if (factTime <= 0) factTime = 50;
         _timer = new SyncedTimer(timerType, factTime);
         _timer.TimerValueChanged += OnTimerValueChanged;
         _timer.TimerFinished += TimerFinished;
@@ -38,14 +44,14 @@ public class TrollMovementTransition : MonoBehaviour
 
     private void TimerFinished()
     {
-        DataStorage.cycleCount++;
+        worldDataService.IncrementCycle();
         if(Vector3.Distance(player.position, transform.position) > maxPossibleDistance)
         {
             Destroy(gameObject);
             return;
         }
 
-        if(uiInventory.HasItem(ticketInfo.title)) DataStorage.winTheGame = true;
+        if(uiInventory.HasItem(ticketInfo.title)) worldDataService.SetGameWon(true);
         
         finishAction?.Invoke();
     }

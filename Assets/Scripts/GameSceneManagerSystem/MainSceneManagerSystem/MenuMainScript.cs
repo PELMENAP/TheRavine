@@ -6,7 +6,6 @@ using UnityEngine.Rendering.Universal;
 using Cysharp.Threading.Tasks;
 using R3;
 
-using TheRavine.Base;
 public enum MenuSection
 {
     Menu,
@@ -100,7 +99,7 @@ public class MenuMainScript : MonoBehaviour
         }
     }
 
-    private async void StartInitialization()
+    private void StartInitialization()
     {
         AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
         
@@ -116,7 +115,6 @@ public class MenuMainScript : MonoBehaviour
     {
         if (isLoading.CurrentValue) return;
         
-        DataStorage.cycleCount = 0;
         await LoadGameScene();
     }
 
