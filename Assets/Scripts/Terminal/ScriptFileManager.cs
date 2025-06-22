@@ -1,63 +1,59 @@
-using TMPro;
-using UnityEngine;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Base
 {
-    public static class ScriptFileManager
+
+    public class ScriptFileManager : IFileManager<string, string>
     {
-        private const string FILES_LIST_KEY = "script_files_list";
-        private const string FILE_CONTENT_PREFIX = "script_file_";
+        private readonly IAsyncPersistentStorage _storage;
+        private const string FilesListKey = "script_files_list";
+        private const string FileKeyPrefix = "script_file_";
 
-        public static void SaveFile(string fileName, string content)
+        public ScriptFileManager(IAsyncPersistentStorage storage)
         {
-            SaveLoad.SaveEncryptedDataWithoutMarking($"{FILE_CONTENT_PREFIX}{fileName}", content);
-            
-            var filesList = GetFilesList();
-            if (!filesList.Contains(fileName))
+            _storage = storage;
+        }
+
+        public async UniTask SaveAsync(string fileName, string content)
+        {
+            string contentKey = FileKeyPrefix + fileName;
+            await _storage.SaveAsync(contentKey, content);
+
+            var list = await ListIdsAsync() as List<string>;
+            if (!list.Contains(fileName))
             {
-                filesList.Add(fileName);
-                SaveLoad.SaveEncryptedDataWithoutMarking(FILES_LIST_KEY, filesList);
+                list.Add(fileName);
+                await _storage.SaveAsync(FilesListKey, list);
             }
         }
 
-        public static string LoadFile(string fileName)
+        public async UniTask<string> LoadAsync(string fileName)
         {
-            try
-            {
-                return SaveLoad.LoadEncryptedDataWithoutMarking<string>($"{FILE_CONTENT_PREFIX}{fileName}");
-            }
-            catch
-            {
-                return null;
-            }
+            string contentKey = FileKeyPrefix + fileName;
+            return await _storage.LoadAsync<string>(contentKey);
         }
 
-        public static List<string> GetFilesList()
+        public async UniTask<bool> ExistsAsync(string fileName)
         {
-            try
-            {
-                return SaveLoad.LoadEncryptedDataWithoutMarking<List<string>>(FILES_LIST_KEY) ?? new List<string>();
-            }
-            catch
-            {
-                return new List<string>();
-            }
+            string contentKey = FileKeyPrefix + fileName;
+            return await _storage.ExistsAsync(contentKey);
         }
 
-        public static void DeleteFile(string fileName)
+        public async UniTask DeleteAsync(string fileName)
         {
-            SaveLoad.DeleteFile($"{FILE_CONTENT_PREFIX}{fileName}");
-            
-            var filesList = GetFilesList();
-            filesList.Remove(fileName);
-            SaveLoad.SaveEncryptedDataWithoutMarking(FILES_LIST_KEY, filesList);
+            string contentKey = FileKeyPrefix + fileName;
+            await _storage.DeleteAsync(contentKey);
+
+            var list = await ListIdsAsync() as List<string>;
+            if (list.Remove(fileName))
+                await _storage.SaveAsync(FilesListKey, list);
         }
 
-        public static bool FileExists(string fileName)
+        public async UniTask<IReadOnlyList<string>> ListIdsAsync()
         {
-            return SaveLoad.FileExists($"{FILE_CONTENT_PREFIX}{fileName}");
+            var list = await _storage.LoadAsync<List<string>>(FilesListKey);
+            return list ?? new List<string>();
         }
     }
 }

@@ -42,17 +42,17 @@ namespace TheRavine.Base
 
         public UniTask ExecuteAsync(string[] args, CommandContext context)
         {
-            if(args.Length < 2)
+            if (args.Length < 2)
             {
                 context.Display($"Использование: {Name} i <on> / <off>");
                 return UniTask.CompletedTask;
             }
 
-            if(args[1] == "on")
+            if (args[1] == "on")
             {
                 context.Graphy.SetActive(true);
             }
-            else if(args[1] == "off")
+            else if (args[1] == "off")
             {
                 context.Graphy.SetActive(false);
             }
@@ -60,6 +60,25 @@ namespace TheRavine.Base
             {
                 context.Display($"Добавьте <on> / <off>");
             }
+            return UniTask.CompletedTask;
+        }
+    }
+    
+
+    public class PrintCommand : ICommand
+    {
+        public string Name => "-print";
+        public string Description => "Печатает строку в терминале";
+
+        public UniTask ExecuteAsync(string[] args, CommandContext context)
+        {
+            if (args.Length < 2)
+            {
+                return UniTask.CompletedTask;
+            }
+            var message = string.Join(" ", args, 1, args.Length - 1);
+            context.Display(message);
+            
             return UniTask.CompletedTask;
         }
     }

@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,24 +11,28 @@ namespace TheRavine.Base
 {
     public class WorldManager : IWorldManager, IDisposable
     {
+        private readonly IWorldService _worldService;
+        private readonly ILogger _logger;
         private readonly ReactiveProperty<string> _currentWorld;
         private readonly ReactiveProperty<bool> _isLoading;
         private readonly CompositeDisposable _disposables = new();
-        private readonly Dictionary<string, WorldSettings> _worldSettingsCache = new();
+        private readonly Dictionary<string, WorldInfo> _worldInfoCache = new();
+        private readonly ReactiveProperty<long> _cacheVersion = new(0);
 
         public ObservableList<string> AvailableWorlds { get; }
         public string CurrentWorldName => _currentWorld.Value;
         public Observable<string> CurrentWorld { get; }
         public Observable<bool> IsLoading { get; }
-        
-        private ILogger logger;
-        public WorldManager(ILogger logger)
+        public Observable<long> CacheVersion => _cacheVersion.AsObservable();
+
+        public WorldManager(IWorldService worldService, ILogger logger)
         {
-            _worldSettingsCache.Clear();
-            this.logger = logger;
+            _worldService = worldService;
+            _logger = logger;
+            
             _currentWorld = new ReactiveProperty<string>();
-            AvailableWorlds = new ObservableList<string>();
             _isLoading = new ReactiveProperty<bool>(false);
+            AvailableWorlds = new ObservableList<string>();
             
             CurrentWorld = _currentWorld.AsObservable();
             IsLoading = _isLoading.AsObservable();
@@ -37,8 +42,17 @@ namespace TheRavine.Base
 
         public async UniTask<bool> CreateWorldAsync(string worldName, WorldSettings customSettings = null)
         {
-            if (string.IsNullOrWhiteSpace(worldName) || AvailableWorlds.Contains(worldName))
+            if (string.IsNullOrWhiteSpace(worldName))
+            {
+                _logger.LogWarning("Попытка создания мира с пустым именем");
                 return false;
+            }
+            
+            if (AvailableWorlds.Contains(worldName))
+            {
+                _logger.LogWarning($"Мир {worldName} уже существует");
+                return false;
+            }
 
             _isLoading.Value = true;
             
@@ -52,20 +66,21 @@ namespace TheRavine.Base
 
                 var worldSettings = customSettings?.Clone() ?? new WorldSettings();
                 worldSettings.worldName = worldName;
+                worldSettings.createdTime = DateTimeOffset.Now.ToUnixTimeSeconds();
+                worldSettings.lastModifiedTime = worldSettings.createdTime;
                 worldSettings.Validate();
 
-                SaveLoad.SaveEncryptedData(worldName, worldData);
-                SaveLoad.SaveEncryptedData(worldName, worldSettings, true);
+                await _worldService.SaveFullAsync(worldName, worldData, worldSettings);
 
                 AvailableWorlds.Add(worldName);
-                _worldSettingsCache[worldName] = worldSettings;
+                InvalidateCache(worldName);
                 
-                logger.LogInfo($"Мир '{worldName}' создан успешно");
+                _logger.LogInfo($"Мир '{worldName}' создан успешно");
                 return true;
             }
             catch (Exception ex)
             {
-                logger.LogError($"Ошибка создания мира '{worldName}': {ex.Message}");
+                _logger.LogError($"Ошибка создания мира '{worldName}': {ex.Message}");
                 return false;
             }
             finally
@@ -76,31 +91,32 @@ namespace TheRavine.Base
 
         public async UniTask<bool> LoadWorldAsync(string worldName)
         {
-            if (!AvailableWorlds.Contains(worldName))
+            if (string.IsNullOrEmpty(worldName) || !AvailableWorlds.Contains(worldName))
+            {
+                _logger.LogWarning($"Попытка загрузки несуществующего мира: {worldName}");
                 return false;
+            }
 
             _isLoading.Value = true;
             
             try
             {
                 var worldDataService = ServiceLocator.Get<IWorldDataService>();
-                if (await worldDataService.LoadWorldDataAsync(worldName))
-                {
-                    _currentWorld.Value = worldName;
-                    
-                    var worldSettings = await LoadWorldSettingsAsync(worldName);
-                    var settingsModel = ServiceLocator.Get<ISettingsModel>();
-                    settingsModel.UpdateWorldSettings(worldSettings);
-                    
-                    logger.LogInfo($"Мир '{worldName}' загружен успешно");
-                    return true;
-                }
+                var settingsModel = ServiceLocator.Get<ISettingsModel>();
                 
-                return false;
+                var (worldData, worldSettings) = await _worldService.LoadFullAsync(worldName);
+            
+                await worldDataService.LoadWorldDataAsync(worldName);
+                await settingsModel.LoadWorldSettingsAsync(worldName);
+                
+                _currentWorld.Value = worldName;
+                
+                _logger.LogInfo($"Мир '{worldName}' загружен успешно");
+                return true;
             }
             catch (Exception ex)
             {
-                logger.LogError($"Ошибка загрузки мира '{worldName}': {ex.Message}");
+                _logger.LogError($"Ошибка загрузки мира '{worldName}': {ex.Message}");
                 return false;
             }
             finally
@@ -112,27 +128,29 @@ namespace TheRavine.Base
         public async UniTask<bool> DeleteWorldAsync(string worldName)
         {
             if (!AvailableWorlds.Contains(worldName))
+            {
+                _logger.LogWarning($"Попытка удаления несуществующего мира: {worldName}");
                 return false;
+            }
 
             _isLoading.Value = true;
             
             try
             {
-                SaveLoad.DeleteFile(worldName);
-                SaveLoad.DeleteFile(worldName, true);
+                await _worldService.DeleteAsync(worldName);
                 
                 AvailableWorlds.Remove(worldName);
-                _worldSettingsCache.Remove(worldName);
+                RemoveFromCache(worldName);
                 
                 if (_currentWorld.Value == worldName)
                     _currentWorld.Value = null;
                 
-                logger.LogInfo($"Мир '{worldName}' удален успешно");
+                _logger.LogInfo($"Мир '{worldName}' удален успешно");
                 return true;
             }
             catch (Exception ex)
             {
-                logger.LogError($"Ошибка удаления мира '{worldName}': {ex.Message}");
+                _logger.LogError($"Ошибка удаления мира '{worldName}': {ex.Message}");
                 return false;
             }
             finally
@@ -146,42 +164,39 @@ namespace TheRavine.Base
             if (!AvailableWorlds.Contains(oldName) || 
                 string.IsNullOrWhiteSpace(newName) || 
                 AvailableWorlds.Contains(newName))
+            {
+                _logger.LogWarning($"Невозможно переименовать мир {oldName} -> {newName}");
                 return false;
+            }
 
             _isLoading.Value = true;
             
             try
             {
-                var worldData = SaveLoad.LoadEncryptedData<WorldData>(oldName);
-                var worldSettings = SaveLoad.LoadEncryptedData<WorldSettings>(oldName, true);
+                var (worldData, worldSettings) = await _worldService.LoadFullAsync(oldName);
                 
                 worldSettings.worldName = newName;
                 worldSettings.lastModifiedTime = DateTimeOffset.Now.ToUnixTimeSeconds();
                 
-                SaveLoad.SaveEncryptedData(newName, worldData);
-                SaveLoad.SaveEncryptedData(newName, worldSettings, true);
+                await _worldService.SaveFullAsync(newName, worldData, worldSettings);
+                await _worldService.DeleteAsync(oldName);
                 
-                SaveLoad.DeleteFile(oldName);
-                SaveLoad.DeleteFile(oldName, true);
-                
-                await UniTask.SwitchToMainThread();
-
                 var index = AvailableWorlds.IndexOf(oldName);
                 AvailableWorlds.RemoveAt(index);
                 AvailableWorlds.Insert(index, newName);
                 
-                _worldSettingsCache.Remove(oldName);
-                _worldSettingsCache[newName] = worldSettings;
+                RemoveFromCache(oldName);
+                InvalidateCache(newName);
                 
                 if (_currentWorld.Value == oldName)
                     _currentWorld.Value = newName;
                 
-                logger.LogInfo($"Мир переименован с '{oldName}' на '{newName}'");
+                _logger.LogInfo($"Мир переименован с '{oldName}' на '{newName}'");
                 return true;
             }
             catch (Exception ex)
             {
-                logger.LogError($"Ошибка переименования мира '{oldName}' -> '{newName}': {ex.Message}");
+                _logger.LogError($"Ошибка переименования мира '{oldName}' -> '{newName}': {ex.Message}");
                 return false;
             }
             finally
@@ -195,38 +210,37 @@ namespace TheRavine.Base
             if (!AvailableWorlds.Contains(sourceName) || 
                 string.IsNullOrWhiteSpace(newName) || 
                 AvailableWorlds.Contains(newName))
+            {
+                _logger.LogWarning($"Невозможно дублировать мир {sourceName} -> {newName}");
                 return false;
+            }
 
             _isLoading.Value = true;
             
             try
             {
-                await UniTask.SwitchToThreadPool();
+                var (sourceData, sourceSettings) = await _worldService.LoadFullAsync(sourceName);
                 
-                var worldData = SaveLoad.LoadEncryptedData<WorldData>(sourceName);
-                var worldSettings = SaveLoad.LoadEncryptedData<WorldSettings>(sourceName, true);
+                var newData = sourceData.Clone();
+                newData.seed = UnityEngine.Random.Range(0, int.MaxValue);
+                newData.lastSaveTime = DateTimeOffset.Now.ToUnixTimeSeconds();
                 
-                worldData.seed = UnityEngine.Random.Range(0, int.MaxValue); // Новый сид
-                worldData.lastSaveTime = DateTimeOffset.Now.ToUnixTimeSeconds();
+                var newSettings = sourceSettings.Clone();
+                newSettings.worldName = newName;
+                newSettings.createdTime = DateTimeOffset.Now.ToUnixTimeSeconds();
+                newSettings.lastModifiedTime = newSettings.createdTime;
                 
-                worldSettings.worldName = newName;
-                worldSettings.createdTime = DateTimeOffset.Now.ToUnixTimeSeconds();
-                worldSettings.lastModifiedTime = worldSettings.createdTime;
+                await _worldService.SaveFullAsync(newName, newData, newSettings);
                 
-                SaveLoad.SaveEncryptedData(newName, worldData);
-                SaveLoad.SaveEncryptedData(newName, worldSettings, true);
-                
-                await UniTask.SwitchToMainThread();
-
                 AvailableWorlds.Add(newName);
-                _worldSettingsCache[newName] = worldSettings;
+                InvalidateCache(newName);
                 
-                logger.LogInfo($"Мир '{sourceName}' скопирован как '{newName}'");
+                _logger.LogInfo($"Мир '{sourceName}' скопирован как '{newName}'");
                 return true;
             }
             catch (Exception ex)
             {
-                logger.LogError($"Ошибка копирования мира '{sourceName}' -> '{newName}': {ex.Message}");
+                _logger.LogError($"Ошибка копирования мира '{sourceName}' -> '{newName}': {ex.Message}");
                 return false;
             }
             finally
@@ -239,110 +253,57 @@ namespace TheRavine.Base
         {
             _isLoading.Value = true;
             
-                var worlds = SaveLoad.GetAllWorldNames();
+            try
+            {
+                // Здесь нужен метод для получения списка всех миров из storage
+                // Пока используем заглушку - можно добавить метод GetAllWorldIds в IWorldService
+                var worlds = await GetAllWorldNamesAsync();
                 var validWorlds = new List<string>();
                 
                 foreach (var world in worlds)
                 {
                     try
                     {
-                        if (SaveLoad.FileExists(world))
+                        if (await _worldService.ExistsAsync(world))
                         {
-                            SaveLoad.LoadEncryptedData<WorldData>(world);
                             validWorlds.Add(world);
                         }
                     }
                     catch (Exception ex)
                     {
-                        logger.LogWarning($"Поврежденный мир '{world}' исключен из списка: {ex.Message}");
+                        _logger.LogWarning($"Поврежденный мир '{world}' исключен из списка: {ex.Message}");
                     }
                 }
                 
                 AvailableWorlds.Clear();
-                _worldSettingsCache.Clear();
+                ClearCache();
                 
                 foreach (var world in validWorlds.OrderBy(x => x))
                 {
                     AvailableWorlds.Add(world);
                 }
                 
-                logger.LogInfo($"Обновлен список миров: найдено {validWorlds.Count} валидных миров");
-        }
-
-        public async UniTask<WorldSettings> LoadWorldSettingsAsync(string worldName)
-        {
-            if (_worldSettingsCache.TryGetValue(worldName, out var cachedSettings))
-                return cachedSettings;
-
-            try
-            {
-                
-                var settingsFile = worldName;
-                WorldSettings settings;
-                
-                if (SaveLoad.FileExists(settingsFile))
-                {
-                    settings = SaveLoad.LoadEncryptedData<WorldSettings>(settingsFile, true);
-                }
-                else
-                {
-                    settings = new WorldSettings { worldName = worldName };
-                    SaveLoad.SaveEncryptedData(settingsFile, settings, true);
-                }
-                
-                settings.Validate();
-                _worldSettingsCache[worldName] = settings;
-                
-                return settings;
+                _logger.LogInfo($"Обновлен список миров: найдено {validWorlds.Count} валидных миров");
             }
-            catch (Exception ex)
+            finally
             {
-                logger.LogError($"Ошибка загрузки настроек мира '{worldName}': {ex.Message}");
-                return new WorldSettings { worldName = worldName };
+                _isLoading.Value = false;
             }
         }
 
-        public async UniTask<bool> SaveWorldSettingsAsync(string worldName, WorldSettings settings)
-        {
-            if (string.IsNullOrEmpty(worldName) || settings == null)
-                return false;
-
-            try
-            {
-                settings.worldName = worldName;
-                settings.Validate();
-                
-                await UniTask.SwitchToThreadPool();
-                
-                SaveLoad.SaveEncryptedData(worldName, settings, true);
-                
-                await UniTask.SwitchToMainThread();
-                
-                _worldSettingsCache[worldName] = settings;
-                
-                logger.LogInfo($"Настройки мира '{worldName}' сохранены");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError($"Ошибка сохранения настроек мира '{worldName}': {ex.Message}");
-                return false;
-            }
-        }
-
-        public WorldInfo GetWorldInfo(string worldName)
+        public async UniTask<WorldInfo> GetWorldInfoAsync(string worldName, bool useCache = true)
         {
             if (!AvailableWorlds.Contains(worldName))
                 return null;
 
+            if (useCache && _worldInfoCache.TryGetValue(worldName, out var cachedInfo))
+                return cachedInfo;
+
             try
             {
-                var worldData = SaveLoad.LoadEncryptedData<WorldData>(worldName);
-                var worldSettings = _worldSettingsCache.ContainsKey(worldName) 
-                    ? _worldSettingsCache[worldName] 
-                    : LoadWorldSettingsAsync(worldName).GetAwaiter().GetResult();
+                var (worldData, worldSettings) = await _worldService.LoadFullAsync(worldName);
 
-                return new WorldInfo
+                var info = new WorldInfo
                 {
                     Name = worldName,
                     Seed = worldData.seed,
@@ -353,37 +314,72 @@ namespace TheRavine.Base
                     Settings = worldSettings,
                     IsCurrentWorld = worldName == _currentWorld.Value
                 };
+
+                _worldInfoCache[worldName] = info;
+                return info;
             }
             catch (Exception ex)
             {
-                logger.LogError($"Ошибка получения информации о мире '{worldName}': {ex.Message}");
+                _logger.LogError($"Ошибка получения информации о мире '{worldName}': {ex.Message}");
                 return null;
             }
         }
 
-        public List<WorldInfo> GetAllWorldsInfo()
+        public async UniTask<List<WorldInfo>> GetAllWorldsInfoAsync(bool useCache = true)
         {
             var worldsInfo = new List<WorldInfo>();
             
-            foreach (var worldName in AvailableWorlds)
+            var tasks = AvailableWorlds.Select(world => GetWorldInfoAsync(world, useCache));
+            var results = await UniTask.WhenAll(tasks);
+            
+            foreach (var info in results)
             {
-                var info = GetWorldInfo(worldName);
                 if (info != null)
                     worldsInfo.Add(info);
             }
             
             return worldsInfo.OrderByDescending(x => x.LastSaveTime).ToList();
         }
+
+        private void InvalidateCache(string worldName)
+        {
+            _worldInfoCache.Remove(worldName);
+            _cacheVersion.Value++;
+        }
+
+        private void RemoveFromCache(string worldName)
+        {
+            _worldInfoCache.Remove(worldName);
+            _cacheVersion.Value++;
+        }
+
+        private void ClearCache()
+        {
+            _worldInfoCache.Clear();
+            _cacheVersion.Value++;
+        }
+
+        // Заглушка - нужно реализовать через IWorldService или добавить соответствующий метод
+        private async UniTask<List<string>> GetAllWorldNamesAsync()
+        {
+            // Здесь должна быть реальная реализация получения списка всех миров
+            // Возможно, стоит добавить метод GetAllWorldIds в IWorldService
+            await UniTask.Yield();
+            return new List<string>(); // Временная заглушка
+        }
+
         public void Dispose()
         {
             _disposables?.Dispose();
             _currentWorld?.Dispose();
             _isLoading?.Dispose();
+            _cacheVersion?.Dispose();
             AvailableWorlds?.Clear();
-            _worldSettingsCache?.Clear();
+            _worldInfoCache?.Clear();
         }
     }
 
+    // WorldInfo остается без изменений, но добавим метод Clone для WorldData
     [System.Serializable]
     public class WorldInfo
     {

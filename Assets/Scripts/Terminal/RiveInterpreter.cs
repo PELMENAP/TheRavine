@@ -8,35 +8,60 @@ namespace TheRavine.Base
 {
     public class RiveInterpreter
     {
-        private Dictionary<string, int> variables = new Dictionary<string, int>();
-        private Dictionary<string, GameScriptFile> loadedFiles = new Dictionary<string, GameScriptFile>();
-        private int operationCount = 0;
+        private static readonly Regex VarDeclarationRegex = new(@"int\s+(\w+)\s*=\s*(.+)", RegexOptions.Compiled);
+        private static readonly Regex FunctionCallRegex = new(@"(\w+)\(([^)]*)\)", RegexOptions.Compiled);
+        private static readonly Regex ForLoopRegex = new(@"for\s+(\w+)\s*=\s*(\d+)\s+to\s+(\d+)", RegexOptions.Compiled);
+        private static readonly Regex ArithmeticRegex = new(@"(\+|\-|\*|/)", RegexOptions.Compiled);
+        private static readonly Regex ConditionRegex = new(@"(.+?)\s*(>|<|>=|<=|==|!=)\s*(.+)", RegexOptions.Compiled);
+        private static readonly Regex VariableInCommandRegex = new(@"\{(\w+)\}", RegexOptions.Compiled);
+        private readonly Stack<Dictionary<string, int>> _variableScopes = new();
+        private Dictionary<string, GameScriptFile> _loadedFiles = new();
+        private int _operationCount = 0;
         private const int MAX_OPERATIONS = 1000;
 
         public GameScriptFile GetFileInfo(string fileName)
         {
-            if(loadedFiles.TryGetValue(fileName, out var file))
-            {
-                return file;
-            }
-            return new GameScriptFile
-            {
-                Name = "null", 
-                Content = "no content", 
-                Parameters = null,
-                Lines = null
-            };
+            return _loadedFiles.TryGetValue(fileName, out var file) ? file : 
+                new GameScriptFile { Name = "null", Content = "no content", Parameters = null, Lines = null };
         }
 
         public delegate UniTask<bool> TerminalCommandDelegate(string command);
-        private TerminalCommandDelegate executeTerminalCommand;
+        private TerminalCommandDelegate _executeTerminalCommand;
+        public struct ExecutionResult
+        {
+            public bool Success;
+            public int ReturnValue;
+            public string ErrorMessage;
+            public ExecutionAction Action;
+            public int JumpIndex;
+
+            public static ExecutionResult CreateSuccess(int returnValue = 0) =>
+                new() { Success = true, ReturnValue = returnValue, Action = ExecutionAction.Continue };
+
+            public static ExecutionResult CreateReturn(int value) =>
+                new() { Success = true, ReturnValue = value, Action = ExecutionAction.Return };
+
+            public static ExecutionResult CreateJump(int index) =>
+                new() { Success = true, Action = ExecutionAction.Jump, JumpIndex = index };
+
+            public static ExecutionResult CreateError(string message) =>
+                new() { Success = false, ErrorMessage = message, Action = ExecutionAction.Stop };
+        }
+
+        public enum ExecutionAction
+        {
+            Continue,
+            Return,
+            Jump,
+            Stop
+        }
 
         public class GameScriptFile
         {
             public string Name { get; set; }
             public string Content { get; set; }
-            public List<string> Parameters { get; set; } = new List<string>();
-            public List<string> Lines { get; set; } = new List<string>();
+            public List<string> Parameters { get; set; } = new();
+            public List<string> Lines { get; set; } = new();
         }
 
         public class ScriptResult
@@ -48,7 +73,7 @@ namespace TheRavine.Base
 
         public void Initialize(TerminalCommandDelegate terminalCommandDelegate)
         {
-            executeTerminalCommand = terminalCommandDelegate;
+            _executeTerminalCommand = terminalCommandDelegate;
         }
 
         public GameScriptFile ParseScript(string fileName, string content)
@@ -61,12 +86,11 @@ namespace TheRavine.Base
 
             var lines = content.Split('\n').AsValueEnumerable()
                 .Select(l => l.Trim())
-                .Where(l => !string.IsNullOrEmpty(l))
+                .Where(l => !string.IsNullOrEmpty(l) && !l.StartsWith("&"))
                 .ToList();
             
             if (lines.Count > 0)
             {
-                // Парсинг параметров из первой строки
                 var firstLine = lines[0];
                 if (firstLine.StartsWith("(") && firstLine.EndsWith(")"))
                 {
@@ -75,6 +99,7 @@ namespace TheRavine.Base
                     {
                         file.Parameters = paramStr.Split(',').AsValueEnumerable()
                             .Select(p => p.Trim())
+                            .Where(p => !string.IsNullOrEmpty(p))
                             .ToList();
                     }
                     lines.RemoveAt(0);
@@ -85,10 +110,9 @@ namespace TheRavine.Base
             return file;
         }
 
-        // Выполнение скрипта
         public async UniTask<ScriptResult> ExecuteScriptAsync(string fileName, params int[] args)
         {
-            if (!loadedFiles.ContainsKey(fileName))
+            if (!_loadedFiles.ContainsKey(fileName))
             {
                 return new ScriptResult 
                 { 
@@ -97,9 +121,8 @@ namespace TheRavine.Base
                 };
             }
 
-            var file = loadedFiles[fileName];
+            var file = _loadedFiles[fileName];
             
-            // Проверка количества аргументов
             if (args.Length != file.Parameters.Count)
             {
                 return new ScriptResult 
@@ -109,19 +132,27 @@ namespace TheRavine.Base
                 };
             }
 
-            // Сброс счетчика операций и переменных
-            operationCount = 0;
-            variables.Clear();
-
-            // Инициализация параметров как переменных
-            for (int i = 0; i < file.Parameters.Count; i++)
-            {
-                variables[file.Parameters[i]] = args[i];
-            }
-
+            _operationCount = 0;
+            
+            // Создаем новую область видимости
+            PushScope();
+            
             try
             {
-                return await ExecuteLinesAsync(file.Lines, 0);
+                // Инициализация параметров как переменных в текущей области
+                for (int i = 0; i < file.Parameters.Count; i++)
+                {
+                    SetVariable(file.Parameters[i], args[i]);
+                }
+
+                var result = await ExecuteLinesAsync(file.Lines, 0, file.Lines.Count);
+                
+                return new ScriptResult
+                {
+                    Success = result.Success,
+                    ReturnValue = result.Action == ExecutionAction.Return ? result.ReturnValue : 0,
+                    ErrorMessage = result.ErrorMessage
+                };
             }
             catch (Exception ex)
             {
@@ -131,241 +162,289 @@ namespace TheRavine.Base
                     ErrorMessage = $"Ошибка выполнения: {ex.Message}" 
                 };
             }
+            finally
+            {
+                PopScope();
+            }
         }
 
-        private async UniTask<ScriptResult> ExecuteLinesAsync(List<string> lines, int startIndex)
+        // Избегание копирования списков - работаем с диапазонами
+        private async UniTask<ExecutionResult> ExecuteLinesAsync(List<string> lines, int startIndex, int endIndex)
         {
-            for (int i = startIndex; i < lines.Count; i++)
+            for (int i = startIndex; i < endIndex; i++)
             {
-                if (operationCount >= MAX_OPERATIONS)
+                if (_operationCount >= MAX_OPERATIONS)
                 {
-                    return new ScriptResult 
-                    { 
-                        Success = false, 
-                        ErrorMessage = "Превышен лимит операций (100)" 
-                    };
+                    return ExecutionResult.CreateError($"Превышен лимит операций ({MAX_OPERATIONS})");
                 }
 
                 var line = lines[i].Trim();
                 if (string.IsNullOrEmpty(line)) continue;
 
-                var result = await ExecuteLineAsync(line, lines, i);
-                if (!result.Success || result.ReturnValue != int.MinValue)
+                var result = await ExecuteLineAsync(line, lines, i, endIndex);
+                
+                switch (result.Action)
                 {
-                    return result;
-                }
-
-                // Обновляем индекс, если он был изменен (для циклов и условий)
-                if (result.ReturnValue == int.MaxValue) // Специальное значение для пропуска индексов
-                {
-                    i = (int)result.ErrorMessage.GetHashCode(); // Hack для передачи нового индекса
+                    case ExecutionAction.Return:
+                        return result;
+                    case ExecutionAction.Stop:
+                        return result;
+                    case ExecutionAction.Jump:
+                        i = result.JumpIndex;
+                        break;
+                    case ExecutionAction.Continue:
+                        break;
                 }
 
                 await UniTask.WaitForEndOfFrame();
             }
 
-            return new ScriptResult { Success = true, ReturnValue = 0 };
+            return ExecutionResult.CreateSuccess();
         }
 
-        private async UniTask<ScriptResult> ExecuteLineAsync(string line, List<string> allLines, int currentIndex)
+        private async UniTask<ExecutionResult> ExecuteLineAsync(string line, List<string> allLines, int currentIndex, int blockEndIndex)
         {
-            operationCount++;
+            _operationCount++;
 
-            // Return statement
-            if (line.StartsWith(">>"))
+            if (line.StartsWith(">>")) // Return statement
             {
                 var expression = line.Substring(2).Trim();
                 var value = await EvaluateExpressionAsync(expression);
-                return new ScriptResult { Success = true, ReturnValue = value };
+                return ExecutionResult.CreateReturn(value);
             }
-
-            // Variable declaration
-            if (line.StartsWith("int "))
+            if (line.StartsWith("int ")) // Variable declaration
             {
                 return await HandleVariableDeclarationAsync(line);
             }
-
-            // If statement
-            if (line.StartsWith("if "))
+            if (line.StartsWith("if ")) // If statement with else support
             {
-                return await HandleIfStatementAsync(line, allLines, currentIndex);
+                return await HandleIfStatementAsync(line, allLines, currentIndex, blockEndIndex);
             }
-
-            // For loop
-            if (line.StartsWith("for "))
+            if (line.StartsWith("for ")) // For loop
             {
-                return await HandleForLoopAsync(line, allLines, currentIndex);
+                return await HandleForLoopAsync(line, allLines, currentIndex, blockEndIndex);
             }
-
-            // Terminal command (строки, начинающиеся с "-")
-            if (line.StartsWith("-"))
+            if (line.StartsWith("-")) // Terminal command
             {
                 return await HandleTerminalCommandAsync(line);
             }
-
-            // Skip end statements
-            if (line == "end")
+            if (line.Contains('=') && !line.StartsWith("int ")) // a = a + n operator
             {
-                return new ScriptResult { Success = true, ReturnValue = int.MinValue };
+                return await HandleAssignmentAsync(line);
+            }
+            if (line.StartsWith("log ")) // logging the variable
+            {
+                return await HandleLogCommandAsync(line);
             }
 
-            return new ScriptResult 
-            { 
-                Success = false, 
-                ErrorMessage = $"Неизвестная команда: {line}" 
-            };
+            // Skip control flow keywords
+            if (line == "end" || line == "else")
+            {
+                return ExecutionResult.CreateSuccess();
+            }
+
+            return ExecutionResult.CreateError($"Неизвестная команда: {line}");
         }
 
-        private async UniTask<ScriptResult> HandleVariableDeclarationAsync(string line)
+        private async UniTask<ExecutionResult> HandleVariableDeclarationAsync(string line)
         {
-            // int x = expression
-            var match = Regex.Match(line, @"int\s+(\w+)\s*=\s*(.+)");
+            var match = VarDeclarationRegex.Match(line);
             if (match.Success)
             {
                 var varName = match.Groups[1].Value;
                 var expression = match.Groups[2].Value;
                 var value = await EvaluateExpressionAsync(expression);
-                variables[varName] = value;
-                return new ScriptResult { Success = true, ReturnValue = int.MinValue };
+                SetVariable(varName, value);
+                return ExecutionResult.CreateSuccess();
             }
 
-            return new ScriptResult 
-            { 
-                Success = false, 
-                ErrorMessage = $"Неверный синтаксис объявления переменной: {line}" 
-            };
+            return ExecutionResult.CreateError($"Неверный синтаксис объявления переменной: {line}");
         }
 
-        private async UniTask<ScriptResult> HandleIfStatementAsync(string line, List<string> allLines, int currentIndex)
+        private async UniTask<ExecutionResult> HandleIfStatementAsync(string line, List<string> allLines, int currentIndex, int blockEndIndex)
         {
-            // if condition
             var condition = line.Substring(3).Trim();
             var conditionResult = await EvaluateConditionAsync(condition);
 
-            var endIndex = FindEndStatement(allLines, currentIndex);
+            var (elseIndex, endIndex) = FindIfBlockBounds(allLines, currentIndex, blockEndIndex);
+            
             if (endIndex == -1)
             {
-                return new ScriptResult 
-                { 
-                    Success = false, 
-                    ErrorMessage = "Не найден end для if" 
-                };
+                return ExecutionResult.CreateError("Не найден end для if");
             }
 
             if (conditionResult)
             {
-                var ifLines = allLines.GetRange(currentIndex + 1, endIndex - currentIndex - 1);
-                var result = await ExecuteLinesAsync(ifLines, 0);
-                if (!result.Success || result.ReturnValue != int.MinValue)
+                // Выполняем блок if
+                var ifEndIndex = elseIndex != -1 ? elseIndex : endIndex;
+                var result = await ExecuteLinesAsync(allLines, currentIndex + 1, ifEndIndex);
+                if (result.Action != ExecutionAction.Continue)
+                {
+                    return result;
+                }
+            }
+            else if (elseIndex != -1)
+            {
+                // Выполняем блок else
+                var result = await ExecuteLinesAsync(allLines, elseIndex + 1, endIndex);
+                if (result.Action != ExecutionAction.Continue)
                 {
                     return result;
                 }
             }
 
-            // Возвращаем специальное значение для обновления индекса
-            return new ScriptResult 
-            { 
-                Success = true, 
-                ReturnValue = int.MaxValue,
-                ErrorMessage = endIndex.ToString() // Hack для передачи нового индекса
-            };
+            return ExecutionResult.CreateJump(endIndex);
         }
 
-        private async UniTask<ScriptResult> HandleForLoopAsync(string line, List<string> allLines, int currentIndex)
+        private async UniTask<ExecutionResult> HandleForLoopAsync(string line, List<string> allLines, int currentIndex, int blockEndIndex)
         {
-            // for i = 1 to 10
-            var match = Regex.Match(line, @"for\s+(\w+)\s*=\s*(\d+)\s+to\s+(\d+)");
+            var match = ForLoopRegex.Match(line);
             if (!match.Success)
             {
-                return new ScriptResult 
-                { 
-                    Success = false, 
-                    ErrorMessage = $"Неверный синтаксис цикла: {line}" 
-                };
+                return ExecutionResult.CreateError($"Неверный синтаксис цикла: {line}");
             }
 
             var varName = match.Groups[1].Value;
             var start = int.Parse(match.Groups[2].Value);
             var end = int.Parse(match.Groups[3].Value);
 
-            var endIndex = FindEndStatement(allLines, currentIndex);
+            var endIndex = FindEndStatement(allLines, currentIndex, blockEndIndex);
             if (endIndex == -1)
             {
-                return new ScriptResult 
+                return ExecutionResult.CreateError("Не найден end для for");
+            }
+            PushScope();
+            
+            try
+            {
+                for (int i = start; i <= end; i++)
+                {
+                    if (_operationCount >= MAX_OPERATIONS)
+                    {
+                        return ExecutionResult.CreateError("Превышен лимит операций в цикле");
+                    }
+
+                    SetVariable(varName, i);
+                    var result = await ExecuteLinesAsync(allLines, currentIndex + 1, endIndex);
+                    
+                    if (result.Action == ExecutionAction.Return || result.Action == ExecutionAction.Stop)
+                    {
+                        return result;
+                    }
+                }
+            }
+            finally
+            {
+                PopScope();
+            }
+
+            return ExecutionResult.CreateJump(endIndex);
+        }
+
+        private async UniTask<ExecutionResult> HandleTerminalCommandAsync(string line)
+        {
+            if (_executeTerminalCommand == null)
+            {
+                return ExecutionResult.CreateError("Терминальные команды не поддерживаются в данном контексте");
+            }
+
+            var processedCommand = ProcessVariablesInCommandSafe(line);
+            var success = await _executeTerminalCommand(processedCommand);
+            
+            return success ? ExecutionResult.CreateSuccess() : 
+                ExecutionResult.CreateError($"Ошибка выполнения команды: {processedCommand}");
+        }
+
+        private async UniTask<ExecutionResult> HandleAssignmentAsync(string line)
+        {
+            var parts = line.Split('=');
+            if (parts.Length != 2)
+                return ExecutionResult.CreateError($"Неверный синтаксис присваивания: {line}");
+
+            var varName = parts[0].Trim();
+            var expression = parts[1].Trim();
+
+            var value = await EvaluateExpressionAsync(expression);
+
+            if (GetVariable(varName) == null)
+                return ExecutionResult.CreateError($"Переменная {varName} не объявлена");
+
+            SetVariable(varName, value);
+            return ExecutionResult.CreateSuccess();
+        }
+        private async UniTask<ExecutionResult> HandleLogCommandAsync(string line)
+        {
+            var expression = line.Substring(4).Trim();
+            
+            if (string.IsNullOrEmpty(expression))
+            {
+                return new ExecutionResult 
                 { 
                     Success = false, 
-                    ErrorMessage = "Не найден end для for" 
+                    ErrorMessage = "Команда log требует аргумент" 
                 };
             }
 
-            var loopLines = allLines.GetRange(currentIndex + 1, endIndex - currentIndex - 1);
-            
-            for (int i = start; i <= end; i++)
+            try
             {
-                if (operationCount >= MAX_OPERATIONS)
+                var value = await EvaluateExpressionAsync(expression);
+                
+                if (_executeTerminalCommand != null)
                 {
-                    return new ScriptResult 
-                    { 
-                        Success = false, 
-                        ErrorMessage = "Превышен лимит операций в цикле" 
-                    };
+                    await _executeTerminalCommand($"-print {expression} = {value}");
                 }
-
-                variables[varName] = i;
-                var result = await ExecuteLinesAsync(loopLines, 0);
-                if (!result.Success || result.ReturnValue != int.MinValue)
-                {
-                    return result;
-                }
+                
+                return new ExecutionResult { Success = true, ReturnValue = int.MinValue };
             }
-
-            // Возвращаем специальное значение для обновления индекса
-            return new ScriptResult 
-            { 
-                Success = true, 
-                ReturnValue = int.MaxValue,
-                ErrorMessage = endIndex.ToString() // Hack для передачи нового индекса
-            };
-        }
-
-        private async UniTask<ScriptResult> HandleTerminalCommandAsync(string line)
-        {
-            if (executeTerminalCommand == null)
+            catch (Exception ex)
             {
-                return new ScriptResult 
+                return new ExecutionResult 
                 { 
                     Success = false, 
-                    ErrorMessage = "Терминальные команды не поддерживаются в данном контексте" 
+                    ErrorMessage = $"Ошибка при вычислении выражения '{expression}': {ex.Message}" 
                 };
             }
-
-            // Заменяем переменные в команде их значениями
-            var processedCommand = ProcessVariablesInCommand(line);
-            
-            var success = await executeTerminalCommand(processedCommand);
-            
-            return new ScriptResult 
-            { 
-                Success = success, 
-                ReturnValue = int.MinValue,
-                ErrorMessage = success ? null : $"Ошибка выполнения команды: {processedCommand}"
-            };
         }
-
-        private string ProcessVariablesInCommand(string command)
+        private string ProcessVariablesInCommandSafe(string command)
         {
-            // Заменяем переменные в команде на их значения
-            foreach (var variable in variables)
+            return VariableInCommandRegex.Replace(command, match =>
             {
-                command = command.Replace($"{{{variable.Key}}}", variable.Value.ToString());
-            }
-            return command;
+                var varName = match.Groups[1].Value;
+                return GetVariable(varName)?.ToString() ?? match.Value;
+            });
         }
-
-        private int FindEndStatement(List<string> lines, int startIndex)
+        private (int elseIndex, int endIndex) FindIfBlockBounds(List<string> lines, int startIndex, int blockEndIndex)
         {
             int depth = 1;
-            for (int i = startIndex + 1; i < lines.Count; i++)
+            int elseIndex = -1;
+            
+            for (int i = startIndex + 1; i < blockEndIndex && i < lines.Count; i++)
+            {
+                var line = lines[i].Trim();
+                if (line.StartsWith("if ") || line.StartsWith("for "))
+                {
+                    depth++;
+                }
+                else if (line == "else" && depth == 1 && elseIndex == -1)
+                {
+                    elseIndex = i;
+                }
+                else if (line == "end")
+                {
+                    depth--;
+                    if (depth == 0)
+                    {
+                        return (elseIndex, i);
+                    }
+                }
+            }
+            return (-1, -1);
+        }
+
+        private int FindEndStatement(List<string> lines, int startIndex, int blockEndIndex)
+        {
+            int depth = 1;
+            for (int i = startIndex + 1; i < blockEndIndex && i < lines.Count; i++)
             {
                 var line = lines[i].Trim();
                 if (line.StartsWith("if ") || line.StartsWith("for "))
@@ -379,13 +458,12 @@ namespace TheRavine.Base
             }
             return -1;
         }
-
         private async UniTask<int> EvaluateExpressionAsync(string expression)
         {
             expression = expression.Trim();
 
             // Function call
-            var funcMatch = Regex.Match(expression, @"(\w+)\(([^)]*)\)");
+            var funcMatch = FunctionCallRegex.Match(expression);
             if (funcMatch.Success)
             {
                 var funcName = funcMatch.Groups[1].Value;
@@ -403,29 +481,27 @@ namespace TheRavine.Base
                 var result = await ExecuteScriptAsync(funcName, args.ToArray());
                 return result.Success ? result.ReturnValue : 0;
             }
+            return EvaluateSimpleExpression(expression);
+        }
 
-            // Simple arithmetic
-            var parts = Regex.Split(expression, @"(\+|\-|\*|/)")
-                .AsValueEnumerable()
-                .Select(p => p.Trim())
-                .ToArray();
+        private int EvaluateSimpleExpression(string expression)
+        {
+            expression = expression.Replace(" ", "");
+
+            var parts = ArithmeticRegex.Split(expression);
             
             if (parts.Length == 1)
             {
-                // Single value
                 if (int.TryParse(parts[0], out int num))
                     return num;
-                if (variables.ContainsKey(parts[0]))
-                    return variables[parts[0]];
-                return 0;
+                return GetVariable(parts[0]) ?? 0;
             }
 
-            // Binary operation
             if (parts.Length == 3)
             {
-                var left = await EvaluateExpressionAsync(parts[0]);
+                var left = EvaluateSimpleExpression(parts[0]);
                 var op = parts[1];
-                var right = await EvaluateExpressionAsync(parts[2]);
+                var right = EvaluateSimpleExpression(parts[2]);
 
                 return op switch
                 {
@@ -442,7 +518,7 @@ namespace TheRavine.Base
 
         private async UniTask<bool> EvaluateConditionAsync(string condition)
         {
-            var match = Regex.Match(condition, @"(.+?)\s*(>|<|>=|<=|==|!=)\s*(.+)");
+            var match = ConditionRegex.Match(condition);
             if (match.Success)
             {
                 var left = await EvaluateExpressionAsync(match.Groups[1].Value);
@@ -464,25 +540,64 @@ namespace TheRavine.Base
             return false;
         }
 
+        private void PushScope()
+        {
+            _variableScopes.Push(new Dictionary<string, int>());
+        }
+
+        private void PopScope()
+        {
+            if (_variableScopes.Count > 0)
+                _variableScopes.Pop();
+        }
+
+        private void SetVariable(string name, int value)
+        {
+            foreach (var scope in _variableScopes)
+            {
+                if (scope.ContainsKey(name))
+                {
+                    scope[name] = value;
+                    return;
+                }
+            }
+
+            // Если переменная не найдена, создаём в текущей области
+            if (_variableScopes.Count > 0)
+            {
+                _variableScopes.Peek()[name] = value;
+            }
+        }
+
+        private int? GetVariable(string name)
+        {
+            foreach (var scope in _variableScopes)
+            {
+                if (scope.TryGetValue(name, out var value))
+                    return value;
+            }
+            return null;
+        }
+
         public void LoadFile(string fileName, string content)
         {
             var file = ParseScript(fileName, content);
-            loadedFiles[fileName] = file;
+            _loadedFiles[fileName] = file;
         }
 
         public void UnloadFile(string fileName)
         {
-            loadedFiles.Remove(fileName);
+            _loadedFiles.Remove(fileName);
         }
 
         public bool IsFileLoaded(string fileName)
         {
-            return loadedFiles.ContainsKey(fileName);
+            return _loadedFiles.ContainsKey(fileName);
         }
 
         public List<string> GetLoadedFileNames()
         {
-            return loadedFiles.Keys.AsValueEnumerable().ToList();
+            return _loadedFiles.Keys.AsValueEnumerable().ToList();
         }
     }
 }
