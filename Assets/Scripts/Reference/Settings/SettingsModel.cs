@@ -8,6 +8,7 @@ namespace TheRavine.Base
     {
         private readonly GameSettingsManager _gameSettingsManager;
         private readonly IWorldManager _worldManager;
+        private readonly IWorldService _worldService;
         private readonly ReactiveProperty<GameSettings> _gameSettings;
         private readonly ReactiveProperty<WorldSettings> _worldSettings;
         private readonly CompositeDisposable _disposables = new();
@@ -19,10 +20,12 @@ namespace TheRavine.Base
         public SettingsModel(
             GameSettingsManager gameSettingsManager,
             IWorldManager worldManager,
+            IWorldService worldService,
             ILogger logger)
         {
             _gameSettingsManager = gameSettingsManager;
             _worldManager = worldManager;
+            _worldService = worldService;
             _logger = logger;
             
             _gameSettings = new ReactiveProperty<GameSettings>(new GameSettings());

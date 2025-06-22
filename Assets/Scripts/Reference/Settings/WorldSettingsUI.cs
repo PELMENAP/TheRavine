@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
 using R3;
 using System;
@@ -7,7 +6,7 @@ using ZLinq;
 
 namespace TheRavine.Base
 {
-    public class WorldSettingsView : MonoBehaviour
+    public class WorldSettingsUI : MonoBehaviour
     {
         [Header("Настройки мира")]
         [SerializeField] private TMP_Dropdown autosaveDropdown;
@@ -24,8 +23,6 @@ namespace TheRavine.Base
         private readonly string[] _autosaveLabels = { "Отключено", "15 сек", "30 сек", "1 мин", "2 мин", "5 мин" };
         
         private string _currentEditingWorld = null;
-        
-        public event Action<bool> OnWorldSettingsToggled;
 
         private void Start()
         {
