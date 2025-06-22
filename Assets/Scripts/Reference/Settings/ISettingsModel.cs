@@ -1,4 +1,5 @@
 using R3;
+using Cysharp.Threading.Tasks; 
 
 namespace TheRavine.Base
 {
@@ -8,6 +9,7 @@ namespace TheRavine.Base
         ReadOnlyReactiveProperty<WorldSettings> WorldSettings { get; }
         void UpdateGameSettings(GameSettings settings);
         void UpdateWorldSettings(WorldSettings settings);
-        void ResetToDefaults();
+        UniTask ResetToDefaultsAsync();
+        UniTask LoadWorldSettingsAsync(string worldId);
     }
 }

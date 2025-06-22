@@ -11,7 +11,20 @@ namespace TheRavine.Base
         public float startTime;
         public bool gameWon;
         public long lastSaveTime;
-        
+
+        public WorldData Clone()
+        {
+            return new WorldData
+            {
+                seed = this.seed,
+                playerPosition = this.playerPosition,
+                cycleCount = this.cycleCount,
+                startTime = this.startTime,
+                gameWon = this.gameWon,
+                lastSaveTime = this.lastSaveTime
+            };
+        }
+
         [System.Serializable]
         public struct Vec3
         {

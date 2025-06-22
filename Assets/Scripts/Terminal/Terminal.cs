@@ -62,6 +62,7 @@ namespace TheRavine.Base
             
             CommandManager.Register(
                 new HelpCommand(),
+                new PrintCommand(),
                 new ClearCommand(),
                 new TeleportCommand(),
                 new SetSpeedCommand(),
