@@ -26,14 +26,16 @@ namespace TheRavine.Inventory
         private readonly List<RaycastResult> results = new();
         private PointerEventData eventData;
         private UIInventorySlot lastSlot;
+        private GameSettings gameSettings;
 
         private void Start()
         {
+            gameSettings = ServiceLocator.GetService<ISettingsModel>().GameSettings.CurrentValue;
             eventSystem = EventSystem.current;
             eventData = new PointerEventData(eventSystem);
             mouse = Mouse.current;
 
-            switch (ServiceLocator.GetSettings().GameSettings.CurrentValue.controlType)
+            switch (gameSettings.controlType)
             {
                 case ControlType.Personal:
                     leftclick.action.performed += OnDragPC;
@@ -149,7 +151,7 @@ namespace TheRavine.Inventory
 
         private void OnDisable()
         {
-            switch (ServiceLocator.GetSettings().GameSettings.CurrentValue.controlType)
+            switch (gameSettings.controlType)
             {
                 case ControlType.Personal:
                     leftclick.action.performed -= OnDragPC;

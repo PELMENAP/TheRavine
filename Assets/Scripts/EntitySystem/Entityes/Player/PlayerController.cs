@@ -36,7 +36,7 @@ namespace TheRavine.EntityControl
         private GameSettings gameSettings;
         public void SetInitialValues(AEntity entity, ILogger logger)
         {
-            gameSettings = ServiceLocator.GetSettings().GameSettings.CurrentValue;
+            gameSettings = ServiceLocator.GetService<ISettingsModel>().GameSettings.CurrentValue;
             this.logger = logger;
             this.transform.position = Extension.GetRandomPointAround(this.transform.position, 10);
             

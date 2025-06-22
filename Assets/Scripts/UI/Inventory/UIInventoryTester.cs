@@ -9,7 +9,7 @@ namespace TheRavine.Inventory
     {
         private UIInventorySlot[] _uiSlots;
 
-        public InventoryWithSlots inventory { get; }
+        public InventoryModel inventory { get; }
         public bool HasItem(string title) => inventory.HasItem(GetInventoryItem(title).type);
         public IInventoryItem GetInventoryItem(string title, int amount = 1) => infoManager.GetInventoryItem(title, amount);
         public InfoManager infoManager;
@@ -19,7 +19,7 @@ namespace TheRavine.Inventory
             _uiSlots = uislots;
 
             infoManager = new InfoManager(dataItems);
-            inventory = new InventoryWithSlots(uislots.Length);
+            inventory = new InventoryModel(uislots.Length);
             inventory.OnInventoryStateChangedEvent += OnInventoryStateChanged;
         }
 
@@ -144,7 +144,7 @@ namespace TheRavine.Inventory
             SetupInventoryUI(inventory);
         }
 
-        private void SetupInventoryUI(InventoryWithSlots inventory)
+        private void SetupInventoryUI(InventoryModel inventory)
         {
             var allSlots = inventory.GetAllSlots();
             var allSlotsCount = allSlots.Length;

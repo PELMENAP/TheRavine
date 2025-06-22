@@ -29,7 +29,7 @@ namespace TheRavine.Base
         }
         public void LogBootstrapInfo(string Message)
         {
-            ServiceLocator.GetLogger().LogWarning(Message);
+            ServiceLocator.GetService<ILogger>().LogWarning(Message);
         }
         public void StartGame()
         {

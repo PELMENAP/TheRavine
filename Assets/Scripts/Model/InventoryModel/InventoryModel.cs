@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using ZLinq;
 using UnityEngine;
 
-public class InventoryWithSlots : IInventory
+public class InventoryModel : IInventory
 {
     public event Action<object, IInventoryItem, int> OnInventoryItemAddedEvent;
     public event Action<object, Type, int> OnInventoryItemRemovedEvent;
@@ -12,7 +12,7 @@ public class InventoryWithSlots : IInventory
     public bool isFull => _slots.AsValueEnumerable().All(slot => slot.isFull);
 
     private readonly List<IInventorySlot> _slots;
-    public InventoryWithSlots(int capacity)
+    public InventoryModel(int capacity)
     {
         this.capacity = capacity;
         _slots = new List<IInventorySlot>(capacity);

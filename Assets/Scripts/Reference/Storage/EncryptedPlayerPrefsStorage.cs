@@ -40,7 +40,7 @@ namespace TheRavine.Base
             }
             catch (Exception ex)
             {
-                ServiceLocator.GetLogger().LogError($"Decrypt/Parse error for '{key}': {ex.Message}");
+                ServiceLocator.GetService<ILogger>().LogError($"Decrypt/Parse error for '{key}': {ex.Message}");
                 return default;
             }
         }

@@ -16,8 +16,10 @@ namespace TheRavine.Base
         private IDisposable _autosaveSubscription;
         private bool _isDirty = false;
 
-        public Observable<WorldData> WorldData { get; }
+        public Observable<WorldData> WorldDataObserver { get; }
         public Observable<bool> IsDirty { get; }
+
+        public ReadOnlyReactiveProperty<WorldData> WorldData => _worldData;
 
         public WorldDataService(
             IWorldManager worldManager,
@@ -27,24 +29,23 @@ namespace TheRavine.Base
             _worldManager = worldManager;
             _worldService = worldService;
             _logger = logger;
-            
+
             _worldData = new ReactiveProperty<WorldData>(new WorldData());
-            WorldData = _worldData.AsObservable();
-            
-            // Трекинг изменений данных
+            WorldDataObserver = _worldData.AsObservable();
+
             var isDirtyProperty = new ReactiveProperty<bool>(false);
             IsDirty = isDirtyProperty.AsObservable();
-            
+
             _worldData
                 .Skip(1)
-                .Subscribe(_ => 
+                .Subscribe(_ =>
                 {
                     _isDirty = true;
                     isDirtyProperty.Value = true;
                 })
                 .AddTo(_disposables);
-            
-            StartAutosave(30); // По умолчанию каждые 30 секунд
+
+            StartAutosave(30);
         }
 
         public void UpdateAutosaveInterval(int intervalSeconds)
@@ -164,6 +165,14 @@ namespace TheRavine.Base
             data.cycleCount++;
             _worldData.Value = data;
             _logger.LogInfo($"Цикл увеличен до {data.cycleCount}");
+        }
+        
+        public void SetTime(float time)
+        {
+            var data = _worldData.Value;
+            data.startTime = time; 
+            _worldData.Value = data;
+            _logger.LogInfo($"Цикл поставлен на значение: {data.startTime}");
         }
 
         public void SetGameWon(bool won)

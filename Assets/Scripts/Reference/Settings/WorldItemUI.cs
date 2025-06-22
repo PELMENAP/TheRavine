@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
+using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Base
 {
@@ -24,17 +25,19 @@ namespace TheRavine.Base
         private Action _onDeleteWorld;
         private Action _onEditSettings;
         private ILogger logger;
-        public void Initialize(string worldName, Action onEnterWorld, Action onDeleteWorld, Action onEditSettings, ILogger logger)
+        private IWorldService worldService;
+        public void Initialize(string worldName, Action onEnterWorld, Action onDeleteWorld, Action onEditSettings, ILogger logger, IWorldService worldService)
         {
             this.logger = logger;
+            this.worldService = worldService;
             _worldName = worldName;
             _onEnterWorld = onEnterWorld;
             _onDeleteWorld = onDeleteWorld;
             _onEditSettings = onEditSettings;
-            
+
             SetupUI();
             BindButtons();
-            UpdateWorldInfo();
+            UpdateWorldInfo().Forget();
         }
 
         private void SetupUI()
@@ -42,7 +45,7 @@ namespace TheRavine.Base
             if (worldNameText != null)
                 worldNameText.text = _worldName;
             
-            var worldManager = ServiceLocator.GetWorldManager();
+            var worldManager = ServiceLocator.GetService<IWorldManager>();
             bool isCurrentWorld = worldManager?.CurrentWorldName == _worldName;
             
             if (worldIcon != null)
@@ -67,15 +70,15 @@ namespace TheRavine.Base
             editSettingsButton?.onClick.AddListener(() => _onEditSettings?.Invoke());
         }
 
-        private void UpdateWorldInfo()
+        private async UniTask UpdateWorldInfo()
         {
             if (lastSaveTimeText == null) return;
 
             try
             {
-                if (SaveLoad.FileExists(_worldName))
+                if (await worldService.ExistsAsync(_worldName))
                 {
-                    var worldData = SaveLoad.LoadEncryptedData<WorldData>(_worldName);
+                    var worldData = await worldService.LoadDataAsync(_worldName);
                     if (worldData.lastSaveTime > 0)
                     {
                         var saveTime = DateTimeOffset.FromUnixTimeSeconds(worldData.lastSaveTime);

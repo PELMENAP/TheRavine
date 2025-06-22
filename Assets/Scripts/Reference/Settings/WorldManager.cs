@@ -100,8 +100,8 @@ namespace TheRavine.Base
             
             try
             {
-                var worldDataService = ServiceLocator.Get<IWorldDataService>();
-                var settingsModel = ServiceLocator.Get<ISettingsModel>();
+                var worldDataService = ServiceLocator.GetService<IWorldDataService>();
+                var settingsModel = ServiceLocator.GetService<ISettingsModel>();
                 
                 var (worldData, worldSettings) = await _worldService.LoadFullAsync(worldName);
             
@@ -365,8 +365,13 @@ namespace TheRavine.Base
             AvailableWorlds?.Clear();
             _worldInfoCache?.Clear();
         }
+
+        public async UniTask<bool> ExistsAsync(string worldId)
+        {
+            return await _worldService.ExistsAsync(worldId);
+        }
     }
-    [System.Serializable]
+    [Serializable]
     public class WorldInfo
     {
         public string Name { get; set; }

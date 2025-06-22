@@ -23,32 +23,35 @@ public class ParallaxSceneController : MonoBehaviour
     private SceneTransistor transistor;
 
     public void AddCameraToStack(Camera _cameraToAdd) => _cameraData.cameraStack.Add(_cameraToAdd);
-
-    private void Awake() 
+    private IWorldManager worldManager;
+    private WorldInfo worldinfo;
+    private async void Awake()
     {
+        worldManager = ServiceLocator.GetService<IWorldManager>();
+        worldinfo = await worldManager.GetWorldInfoAsync(worldManager.CurrentWorldName);
         // DataStorage.winTheGame = win;
         AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
         transistor = new SceneTransistor();
 
-        _timer = new SyncedTimer(timerType, DataStorage.winTheGame ? timeToDelay * 6 : timeToDelay);
+        _timer = new SyncedTimer(timerType, worldinfo.IsGameWon ? timeToDelay * 6 : timeToDelay);
         _timer.TimerFinished += TimerFinished;
 
         _timer.Start();
 
         FaderOnTransit.instance.FadeOut(null);
 
-        if(DataStorage.winTheGame) 
+        if (worldinfo.IsGameWon)
         {
             winObject.SetActive(true);
             controller.StartWinRadio(audioClip);
-            PrintText($"Игра пройдена за {Convert.ToString(Time.time - DataStorage.startTime)} секунд \r\nЗа {DataStorage.cycleCount} останов{Extension.GetSklonenie(DataStorage.cycleCount)}").Forget();
+            PrintText($"Игра пройдена за {Convert.ToString(DateTimeOffset.Now - worldinfo.CreatedTime)} секунд \r\nЗа {worldinfo.CycleCount} останов{Extension.GetSklonenie(worldinfo.CycleCount)}").Forget();
         }
         else controller.StartDefaultRadio();
     }
 
     private void TimerFinished()
     {
-        if(DataStorage.winTheGame) transistor.LoadScene(0).Forget();
+        if(worldinfo.IsGameWon) transistor.LoadScene(0).Forget();
         else transistor.LoadScene(2).Forget();
         AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
     }

@@ -24,7 +24,7 @@ namespace TheRavine.EntityControl
 
         public void SetUp(ISetAble.Callback callback)
         {
-            logger = ServiceLocator.GetLogger();
+            logger = ServiceLocator.GetService<ILogger>();
             logger.LogInfo("MobController service is available now");
             
             mobEntities = new NativeList<IntPtr>(Allocator.Persistent);

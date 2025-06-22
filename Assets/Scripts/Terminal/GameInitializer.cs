@@ -21,17 +21,26 @@ public class GameInitializer : MonoBehaviour
         onMessageDisplayTerminal += terminal.Display;
 
         ILogger logger = new Logger(onMessageDisplayTerminal);
-        ServiceLocator.RegisterLogger(logger);
+        ServiceLocator.RegisterService(logger);
 
         terminal.Setup(logger);
-        
-        var worldManager = new WorldManager(logger);
-        var settingsModel = new SettingsModel();
-        var worldDataService = new WorldDataService(worldManager, logger);
 
-        ServiceLocator.RegisterSettings(settingsModel);
-        ServiceLocator.RegisterWorldManager(worldManager);
-        ServiceLocator.RegisterWorldDataService(worldDataService);
+        var persistenceStorage = new EncryptedPlayerPrefsStorage();
+
+        var gameSettingsManager = new GameSettingsManager(persistenceStorage);
+        var worldFileManager = new WorldFileManager(persistenceStorage);
+        var worldSettingsManager = new WorldSettingsManager(persistenceStorage);
+        var worldService = new WorldService(worldFileManager, worldSettingsManager);
+
+        ServiceLocator.RegisterService(worldService);
+
+        var worldManager = new WorldManager(worldService, logger);
+        var settingsModel = new SettingsModel(gameSettingsManager, worldManager, worldService, logger);
+        var worldDataService = new WorldDataService(worldManager, worldService, logger);
+
+        ServiceLocator.RegisterService(settingsModel);
+        ServiceLocator.RegisterService(worldManager);
+        ServiceLocator.RegisterService(worldDataService);
     }
 
     private void OnDisable()
@@ -42,7 +51,7 @@ public class GameInitializer : MonoBehaviour
 
     private void OnApplicationPause(bool pauseStatus)
     {
-        if (pauseStatus && ServiceLocator.TryGet<IWorldDataService>(out var worldDataService))
+        if (pauseStatus && ServiceLocator.TryGetService<IWorldDataService>(out var worldDataService))
         {
             worldDataService.SaveWorldDataAsync().Forget();
         }

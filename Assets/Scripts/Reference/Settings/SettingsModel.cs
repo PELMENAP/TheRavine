@@ -81,8 +81,7 @@ namespace TheRavine.Base
             
             try
             {
-                var worldService = ServiceLocator.Get<IWorldService>();
-                var settings = await worldService.LoadSettingsAsync(worldId);
+                var settings = await _worldService.LoadSettingsAsync(worldId);
                 _worldSettings.Value = settings;
             }
             catch (Exception ex)
@@ -96,14 +95,12 @@ namespace TheRavine.Base
         {
             try
             {
-                // Загружаем глобальные настройки
                 if (await _gameSettingsManager.ExistsAsync())
                 {
                     var gameSettings = await _gameSettingsManager.LoadAsync();
                     _gameSettings.Value = gameSettings;
                 }
                 
-                // Загружаем настройки текущего мира, если он есть
                 if (!string.IsNullOrEmpty(_worldManager.CurrentWorldName))
                 {
                     await LoadWorldSettingsAsync(_worldManager.CurrentWorldName);
@@ -134,8 +131,7 @@ namespace TheRavine.Base
             
             try
             {
-                var worldService = ServiceLocator.Get<IWorldService>();
-                await worldService.SaveSettingsAsync(currentWorld, settings);
+                await _worldService.SaveSettingsAsync(currentWorld, settings);
             }
             catch (Exception ex)
             {

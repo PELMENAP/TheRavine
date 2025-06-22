@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using Unity.Netcode;
 using System.Collections.Generic;
 
 using TheRavine.Base;
@@ -10,7 +9,7 @@ using TheRavine.ObjectControl;
 using TheRavine.Extensions;
 using TheRavine.EntityControl;
 using TheRavine.Events;
-using TheRavine.Security;
+using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Inventory
 {
@@ -25,33 +24,35 @@ namespace TheRavine.Inventory
         [SerializeField] private CraftService craftService;
         [SerializeField] private DataItems dataItems;
         private byte activeCell = 1;
-        public InventoryWithSlots inventory => tester.inventory;
+        public InventoryModel inventory => tester.inventory;
         public InfoManager infoManager => tester.infoManager;
         public bool HasItem(string title) => tester.HasItem(title);
+
         private UIInventoryTester tester;
         private PlayerEntity playerData;
         private MapGenerator generator;
         private ObjectSystem objectSystem;
+        private EncryptedPlayerPrefsStorage encryptedPlayerPrefsStorage;
+        private GameSettings gameSettings;
+        private IWorldManager worldManager;
         public void SetUp(ISetAble.Callback callback)
         {
-            playerData = ServiceLocator.GetService<PlayerModelView>().playerEntity;
-            generator = ServiceLocator.GetService<MapGenerator>();
-            objectSystem = ServiceLocator.GetService<ObjectSystem>();
+            worldManager = ServiceLocator.GetService<IWorldManager>();
+            gameSettings = ServiceLocator.GetService<ISettingsModel>().GameSettings.CurrentValue;
+            playerData = ServiceLocator.GetMonoService<PlayerModelView>().playerEntity;
+            generator = ServiceLocator.GetMonoService<MapGenerator>();
+            objectSystem = ServiceLocator.GetMonoService<ObjectSystem>();
+            encryptedPlayerPrefsStorage = new EncryptedPlayerPrefsStorage();
+
             var uiSlot = GetComponentsInChildren<UIInventorySlot>();
             var slotList = new List<UIInventorySlot>();
             slotList.AddRange(uiSlot);
             slotList.AddRange(activeCells);
             tester = new UIInventoryTester(slotList.ToArray(), dataItems);
 
-            if(DataStorage.cycleCount == 0) tester.FillSlots(filling);
-            else 
-            {
-                var loadedData = SaveLoad.LoadEncryptedData<SerializableList<SerializableInventorySlot>>(nameof(SerializableList<SerializableInventorySlot>));
-                tester.SetDataFromSerializableList(loadedData);
-            }
+            OnInventoryDataLoaded().Forget();
 
             craftService.SetUp(null);
-
             grid.SetActive(false);
 
             enter.action.performed += ChangeInventoryState;
@@ -66,6 +67,17 @@ namespace TheRavine.Inventory
             digitAction.action.performed += SetActionCell;
 
             callback?.Invoke();
+        }
+
+        private async UniTaskVoid OnInventoryDataLoaded()
+        {
+            WorldInfo worldInfo = await worldManager.GetWorldInfoAsync(worldManager.CurrentWorldName);
+            if (worldInfo.CycleCount == 0) tester.FillSlots(filling);
+            else
+            {
+                var loadedData = await encryptedPlayerPrefsStorage.LoadAsync<SerializableList<SerializableInventorySlot>>(nameof(SerializableList<SerializableInventorySlot>));
+                tester.SetDataFromSerializableList(loadedData);
+            }
         }
 
         private void SetActionCell(InputAction.CallbackContext c)
@@ -145,36 +157,13 @@ namespace TheRavine.Inventory
                 playerData.SetBehaviourIdle();
                 input.SwitchCurrentActionMap("Gameplay");
             }
-            if(ServiceLocator.GetSettings().GameSettings.CurrentValue.controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
-            grid.SetActive(isactive);
-        }
-
-        public void ChangeInventoryState()
-        {
-            OnInventoryStateChanged(this);
-            isactive = !isactive;
-            if (isactive)
-            {
-                if (input.currentActionMap.name != "Gameplay")
-                {
-                    isactive = !isactive;
-                    return;
-                }
-                playerData.SetBehaviourSit();
-                input.SwitchCurrentActionMap("Inventory");
-            }
-            else
-            {
-                playerData.SetBehaviourIdle();
-                input.SwitchCurrentActionMap("Gameplay");
-            }
-            if(ServiceLocator.GetSettings().GameSettings.CurrentValue.controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
+            if(gameSettings.controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
             grid.SetActive(isactive);
         }
         public void BreakUp(ISetAble.Callback callback)
         {
             var dataToSave = inventory.GetSerializableList();
-            SaveLoad.SaveEncryptedData(nameof(SerializableList<SerializableInventorySlot>), dataToSave);
+            encryptedPlayerPrefsStorage.SaveAsync(nameof(SerializableList<SerializableInventorySlot>), dataToSave).Forget();
 
             inventory.OnInventoryStateChangedEvent -= OnInventoryStateChanged;
 

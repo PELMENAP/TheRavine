@@ -15,7 +15,7 @@ public class ActivateTextField : MonoBehaviour
     private GameSettings gameSettings;
     private void OnEnable()
     {
-        gameSettings = ServiceLocator.GetSettings().GameSettings.CurrentValue;
+        gameSettings = ServiceLocator.GetService<ISettingsModel>().GameSettings.CurrentValue;
         EnterRef.action.performed += ChangeTerminalState;
         OutRef.action.performed += ChangeTerminalState;
         window.SetActive(false);
@@ -24,27 +24,6 @@ public class ActivateTextField : MonoBehaviour
     private bool isactive = false;
 
     public void ChangeTerminalState(InputAction.CallbackContext context)
-    {
-        isactive = !isactive;
-        if (isactive)
-        {
-            if (input.currentActionMap.name != "Gameplay")
-            {
-                isactive = !isactive;
-                return;
-            }
-            playerData.SetBehaviourSit();
-            input.SwitchCurrentActionMap("TextInput");
-        }
-        else
-        {
-            playerData.SetBehaviourIdle();
-            input.SwitchCurrentActionMap("Gameplay");
-        }
-        if(gameSettings.controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
-        window.SetActive(isactive);
-    }
-    public void ChangeTerminalState()
     {
         isactive = !isactive;
         if (isactive)
