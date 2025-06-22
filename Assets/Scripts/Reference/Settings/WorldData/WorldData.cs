@@ -29,18 +29,28 @@ namespace TheRavine.Base
         public struct Vec3
         {
             public float x, y, z;
-            
+
             public Vec3(Vector3 position)
             {
                 x = position.x;
                 y = position.y;
                 z = position.z;
             }
-            
+
             public Vector3 ToVector3() => new Vector3(x, y, z);
-            
+
             public static implicit operator Vector3(Vec3 vec3) => vec3.ToVector3();
             public static implicit operator Vec3(Vector3 vector3) => new Vec3(vector3);
         }
+        
+        public readonly bool IsDefault() => 
+            seed == 0 && 
+            cycleCount == 0 && 
+            startTime == 0f && 
+            !gameWon && 
+            lastSaveTime == 0L &&
+            playerPosition.x == 0f && 
+            playerPosition.y == 0f && 
+            playerPosition.z == 0f;
     }
 }

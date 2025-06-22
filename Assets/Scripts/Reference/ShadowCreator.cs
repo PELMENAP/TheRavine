@@ -11,7 +11,7 @@ namespace TheRavine.EntityControl
         
         public bool isAlreadyCreated = false;
 
-        private async void Start()
+        private void Start()
         {
             SpawnShadow().Forget();
         }

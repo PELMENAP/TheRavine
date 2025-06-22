@@ -7,7 +7,7 @@ using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Base
 {
-    public class WorldManagerView : MonoBehaviour
+    public class WorldManagerUI : MonoBehaviour
     {
         [Header("Управление мирами")]
         [SerializeField] private ScrollRect worldsScrollView;
@@ -18,7 +18,7 @@ namespace TheRavine.Base
         [SerializeField] private GameObject createWorldPanel, chooseWorldPanel;
         
         [Header("Интеграции")]
-        [SerializeField] private WorldSettingsView settingsView;
+        [SerializeField] private WorldSettingsUI settingsView;
         
         private ILogger logger;
         private IWorldManager _worldManager;

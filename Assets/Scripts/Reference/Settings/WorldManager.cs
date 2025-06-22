@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -255,9 +254,7 @@ namespace TheRavine.Base
             
             try
             {
-                // Здесь нужен метод для получения списка всех миров из storage
-                // Пока используем заглушку - можно добавить метод GetAllWorldIds в IWorldService
-                var worlds = await GetAllWorldNamesAsync();
+                var worlds = await _worldService.GetAllWorldIdsAsync();
                 var validWorlds = new List<string>();
                 
                 foreach (var world in worlds)
@@ -359,15 +356,6 @@ namespace TheRavine.Base
             _cacheVersion.Value++;
         }
 
-        // Заглушка - нужно реализовать через IWorldService или добавить соответствующий метод
-        private async UniTask<List<string>> GetAllWorldNamesAsync()
-        {
-            // Здесь должна быть реальная реализация получения списка всех миров
-            // Возможно, стоит добавить метод GetAllWorldIds в IWorldService
-            await UniTask.Yield();
-            return new List<string>(); // Временная заглушка
-        }
-
         public void Dispose()
         {
             _disposables?.Dispose();
@@ -378,8 +366,6 @@ namespace TheRavine.Base
             _worldInfoCache?.Clear();
         }
     }
-
-    // WorldInfo остается без изменений, но добавим метод Clone для WorldData
     [System.Serializable]
     public class WorldInfo
     {

@@ -1,18 +1,19 @@
 using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace TheRavine.Base
 {
     public class WorldService : IWorldService
     {
-        private readonly WorldFileManager     _dataMgr;
+        private readonly WorldFileManager _dataMgr;
         private readonly WorldSettingsManager _settingsMgr;
 
         public WorldService(
-            WorldFileManager     dataManager,
+            WorldFileManager dataManager,
             WorldSettingsManager settingsManager)
         {
-            _dataMgr      = dataManager;
-            _settingsMgr  = settingsManager;
+            _dataMgr = dataManager;
+            _settingsMgr = settingsManager;
         }
 
         public async UniTask<WorldData> LoadDataAsync(string worldId)
@@ -51,6 +52,11 @@ namespace TheRavine.Base
         {
             await _dataMgr.DeleteAsync(worldId);
             await _settingsMgr.DeleteAsync(worldId);
+        }
+
+        public async UniTask<IReadOnlyList<string>> GetAllWorldIdsAsync()
+        {
+            return await _dataMgr.ListIdsAsync();
         }
     }
 }

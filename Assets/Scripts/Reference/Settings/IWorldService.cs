@@ -13,6 +13,6 @@ namespace TheRavine.Base
         UniTask SaveSettingsAsync(string worldId, WorldSettings settings);
         UniTask<bool> ExistsAsync(string worldId);
         UniTask DeleteAsync(string worldId);
-        UniTask<List<string>> GetAllWorldIdsAsync();
+        UniTask<IReadOnlyList<string>> GetAllWorldIdsAsync();
     }
 }

@@ -1,9 +1,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 using R3;
-using ObservableCollections;
 using UnityEngine;
-
 
 namespace TheRavine.Base
 {
@@ -11,19 +9,42 @@ namespace TheRavine.Base
     {
         private readonly ReactiveProperty<WorldData> _worldData;
         private readonly IWorldManager _worldManager;
+        private readonly IWorldService _worldService;
+        private readonly ILogger _logger;
         private readonly CompositeDisposable _disposables = new();
+        
         private IDisposable _autosaveSubscription;
+        private bool _isDirty = false;
 
         public Observable<WorldData> WorldData { get; }
-        private ILogger logger; 
-        public WorldDataService(IWorldManager worldManager, ILogger logger)
+        public Observable<bool> IsDirty { get; }
+
+        public WorldDataService(
+            IWorldManager worldManager,
+            IWorldService worldService,
+            ILogger logger)
         {
-            this.logger = logger;
             _worldManager = worldManager;
+            _worldService = worldService;
+            _logger = logger;
+            
             _worldData = new ReactiveProperty<WorldData>(new WorldData());
             WorldData = _worldData.AsObservable();
             
-            StartAutosave(30);
+            // Трекинг изменений данных
+            var isDirtyProperty = new ReactiveProperty<bool>(false);
+            IsDirty = isDirtyProperty.AsObservable();
+            
+            _worldData
+                .Skip(1)
+                .Subscribe(_ => 
+                {
+                    _isDirty = true;
+                    isDirtyProperty.Value = true;
+                })
+                .AddTo(_disposables);
+            
+            StartAutosave(30); // По умолчанию каждые 30 секунд
         }
 
         public void UpdateAutosaveInterval(int intervalSeconds)
@@ -39,64 +60,102 @@ namespace TheRavine.Base
         private void StartAutosave(int intervalSeconds)
         {
             _autosaveSubscription = Observable.Interval(TimeSpan.FromSeconds(intervalSeconds))
-                .Subscribe(_ => SaveWorldDataAsync().Forget())
+                .Where(_ => _isDirty)
+                .Subscribe(_ =>
+                {
+                    SaveWorldDataAsync()
+                        .ContinueWith(result =>
+                        {
+                            if (result) _logger.LogInfo("Автосохранение выполнено");
+                        }).Forget();
+                })
                 .AddTo(_disposables);
         }
 
         public async UniTask<bool> SaveWorldDataAsync()
         {
-            if (string.IsNullOrEmpty(_worldManager.CurrentWorldName))
+            var currentWorld = _worldManager.CurrentWorldName;
+            if (string.IsNullOrEmpty(currentWorld))
+            {
+                _logger.LogWarning("Попытка сохранения данных мира без активного мира");
                 return false;
+            }
 
             try
             {
-                await UniTask.SwitchToMainThread();
-
                 var data = _worldData.Value;
-                data.lastSaveTime = System.DateTimeOffset.Now.ToUnixTimeSeconds();
-                _worldData.Value = data;
-                SaveLoad.SaveEncryptedData(_worldManager.CurrentWorldName, data, true);
+                data.lastSaveTime = DateTimeOffset.Now.ToUnixTimeSeconds();
                 
-                await UniTask.SwitchToThreadPool();
+                await _worldService.SaveDataAsync(currentWorld, data);
                 
+                _isDirty = false;
+                _logger.LogInfo($"Данные мира {currentWorld} сохранены");
                 return true;
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                logger.LogError($"Ошибка сохранения мира: {ex.Message}");
+                _logger.LogError($"Ошибка сохранения данных мира {currentWorld}: {ex.Message}");
                 return false;
             }
         }
 
-        public async UniTask<bool> LoadWorldDataAsync(string worldName)
+        public async UniTask<bool> LoadWorldDataAsync(string worldId)
         {
+            if (string.IsNullOrEmpty(worldId))
+            {
+                _logger.LogWarning("Попытка загрузки данных мира с пустым ID");
+                return false;
+            }
+
             try
             {
-                if (SaveLoad.FileExists(worldName))
+                WorldData data;
+                
+                if (await _worldService.ExistsAsync(worldId))
                 {
-                    var data = SaveLoad.LoadEncryptedData<WorldData>(worldName, true);
-                    _worldData.Value = data;
-                    return true;
+                    data = await _worldService.LoadDataAsync(worldId);
+                    _logger.LogInfo($"Данные мира {worldId} загружены");
                 }
-                _worldData.Value = new WorldData { seed = UnityEngine.Random.Range(0, int.MaxValue) };
+                else
+                {
+                    data = new WorldData 
+                    { 
+                        seed = UnityEngine.Random.Range(0, int.MaxValue),
+                        lastSaveTime = DateTimeOffset.Now.ToUnixTimeSeconds()
+                    };
+                    _logger.LogInfo($"Созданы новые данные для мира {worldId}");
+                }
+                
+                _worldData.Value = data;
+                _isDirty = false;
                 return true;
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                logger.LogError($"Ошибка загрузки мира: {ex.Message}");
+                _logger.LogError($"Ошибка загрузки данных мира {worldId}: {ex.Message}");
                 return false;
             }
         }
+
         public void UpdateWorldData(WorldData data)
         {
+            if (data.IsDefault())
+            {
+                _logger.LogWarning("Попытка обновления данных мира с null значением");
+                return;
+            }
+            
             _worldData.Value = data;
         }
 
         public void UpdatePlayerPosition(Vector3 position)
         {
             var data = _worldData.Value;
-            data.playerPosition = position;
-            _worldData.Value = data;
+            if (data.playerPosition != position)
+            {
+                data.playerPosition = position;
+                _worldData.Value = data;
+            }
         }
 
         public void IncrementCycle()
@@ -104,17 +163,36 @@ namespace TheRavine.Base
             var data = _worldData.Value;
             data.cycleCount++;
             _worldData.Value = data;
+            _logger.LogInfo($"Цикл увеличен до {data.cycleCount}");
         }
 
         public void SetGameWon(bool won)
         {
             var data = _worldData.Value;
-            data.gameWon = won;
+            if (data.gameWon != won)
+            {
+                data.gameWon = won;
+                _worldData.Value = data;
+                _logger.LogInfo($"Статус победы изменен на {won}");
+            }
+        }
+
+        public async UniTask ForceUpdateSeed()
+        {
+            var data = _worldData.Value;
+            data.seed = UnityEngine.Random.Range(0, int.MaxValue);
             _worldData.Value = data;
+            
+            await SaveWorldDataAsync();
         }
 
         public void Dispose()
         {
+            if (_isDirty)
+            {
+                SaveWorldDataAsync().Forget();
+            }
+            
             _autosaveSubscription?.Dispose();
             _disposables?.Dispose();
             _worldData?.Dispose();
