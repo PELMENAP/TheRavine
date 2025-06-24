@@ -1,16 +1,19 @@
-public class Isa : ItemClass
+namespace TheRavine.Inventory
 {
-    public string description = "Добрый день! \r\nЧем могу помочь?";
-    
-    public Isa(IInventoryItemInfo info) : base(info)
+    public class Isa : ItemClass
     {
-        this.info.description = description;
-    }
+        public string description = "Добрый день! \r\nЧем могу помочь?";
 
-    public override IInventoryItem Clone()
-    {
-        var clonedItem = new Isa(this.info);
-        clonedItem.CopyFrom(this);
-        return clonedItem;
+        public Isa(IInventoryItemInfo info) : base(info)
+        {
+            this.info.description = description;
+        }
+
+        public override IInventoryItem Clone()
+        {
+            var clonedItem = new Isa(this.info);
+            clonedItem.CopyFrom(this);
+            return clonedItem;
+        }
     }
 }

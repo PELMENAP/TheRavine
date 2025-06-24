@@ -26,7 +26,7 @@ namespace TheRavine.Base
 
         private void Start()
         {
-            _worldManager = ServiceLocator.GetService<IWorldManager>();
+            _worldManager = ServiceLocator.GetService<WorldManager>();
             logger = ServiceLocator.GetService<ILogger>();
             
             InitializeUI();

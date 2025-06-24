@@ -1,16 +1,19 @@
-public class Kirieshky : ItemClass
+namespace TheRavine.Inventory
 {
-    public string description = "Ржано-пшеничные сухарики \r\nсо вкусом сыра \r\n60 грамм";
-    
-    public Kirieshky(IInventoryItemInfo info) : base(info)
+    public class Kirieshky : ItemClass
     {
-        this.info.description = description;
-    }
+        public string description = "Ржано-пшеничные сухарики \r\nсо вкусом сыра \r\n60 грамм";
 
-    public override IInventoryItem Clone()
-    {
-        var clonedItem = new Kirieshky(this.info);
-        clonedItem.CopyFrom(this);
-        return clonedItem;
+        public Kirieshky(IInventoryItemInfo info) : base(info)
+        {
+            this.info.description = description;
+        }
+
+        public override IInventoryItem Clone()
+        {
+            var clonedItem = new Kirieshky(this.info);
+            clonedItem.CopyFrom(this);
+            return clonedItem;
+        }
     }
 }

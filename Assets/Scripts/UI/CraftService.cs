@@ -6,7 +6,7 @@ using TheRavine.InventoryElements;
 
 namespace TheRavine.Inventory
 {
-    public class CraftService : MonoBehaviour, ISetAble
+    public class CraftService : MonoBehaviour
     {
         const int CellsCount = 8;
         [SerializeField] private UIInventory UIInventory;
@@ -20,12 +20,17 @@ namespace TheRavine.Inventory
         private int resultCount, craftDelay;
         private bool cancel, inProcess;
         private System.Threading.CancellationTokenSource _cts;
-        public void SetUp(ISetAble.Callback callback)
+        private InventoryModel inventory;
+        private InfoManager infoManager;
+        public void SetUp(InfoManager infoManager, InventoryModel inventoryModel)
         {
             cancel = false;
             _cts = new();
-            CraftInfo = UIInventory.infoManager.GetAllCraftRecepts();
-            callback?.Invoke();
+
+            this.infoManager = infoManager;
+            inventory = inventoryModel;
+
+            CraftInfo = infoManager.GetAllCraftRecepts();
         }
         public bool OnInventoryCraftCheck(object sender)
         {
@@ -113,7 +118,7 @@ namespace TheRavine.Inventory
 
         public void CraftThing()
         {
-            UIInventory.inventory.TryToAdd(this, UIInventory.infoManager.GetInventoryItemByInfo(resultItemInfo.id, resultItemInfo, resultCount));
+            inventory.TryToAdd(this, infoManager.GetInventoryItemByInfo(resultItemInfo.id, resultItemInfo, resultCount));
             
             if(cancel) return;
             OnInventoryCraftCheck(this);
@@ -121,12 +126,11 @@ namespace TheRavine.Inventory
         }
 
 
-        public void BreakUp(ISetAble.Callback callback)
+        public void BreakUp()
         {
             cancel = true;
             _cts.Cancel();
             _cts.Dispose();
-            callback?.Invoke();
         }
     }
 }

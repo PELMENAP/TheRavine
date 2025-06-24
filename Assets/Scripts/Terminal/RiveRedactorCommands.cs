@@ -119,12 +119,12 @@ namespace TheRavine.Base
             bool isExist = await context.scriptFileManager.ExistsAsync(fileName);
             if (isExist)
             {
-                context.ScriptEditor.LoadFile(fileName);
+                context.ScriptEditor.LoadFile(fileName).Forget();
                 context.Display($"Файл {fileName} загружен для редактирования");
             }
             else
             {
-                context.ScriptEditor.CreateNewFile(fileName);
+                context.ScriptEditor.CreateNewFile(fileName).Forget();
                 context.Display($"Создан новый файл {fileName} для редактирования");
             }
 
@@ -134,8 +134,8 @@ namespace TheRavine.Base
 
     public class ScriptInfoCommand : ICommand
     {
-        public string Name => "-scripts";
-        public string Description => "Показывает информацию о скриптах: -scripts [list/info <filename>]";
+        public string Name => "-file";
+        public string Description => "Показывает информацию о скриптах: -file [list/info <filename>]";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
         {
@@ -143,7 +143,7 @@ namespace TheRavine.Base
             {
                 var files = await context.scriptFileManager.ListIdsAsync();
                 context.Display($"Доступно скриптов: {files.Count}");
-                context.Display("Используйте: -scripts list для списка файлов");
+                context.Display("Используйте: -file list для списка файлов");
                 return;
             }
 
@@ -170,7 +170,7 @@ namespace TheRavine.Base
                 case "info":
                     if (args.Length < 3)
                     {
-                        context.Display("Использование: -scripts info <filename>");
+                        context.Display("Использование: -file info <filename>");
                         return;
                     }
 
@@ -195,7 +195,7 @@ namespace TheRavine.Base
                     break;
 
                 default:
-                    context.Display("Использование: -scripts [list/info <filename>]");
+                    context.Display("Использование: -file [list/info <filename>]");
                     break;
             }
 
@@ -205,34 +205,43 @@ namespace TheRavine.Base
     
     public class DeleteScriptCommand : ICommand
     {
-        public string Name => "-delete-script";
-        public string Description => "Удаляет скрипт: -delete-script <filename>";
+        public string Name => "-delete";
+        public string Description => "Удаляет что-то: -delete [file <filename> / ]";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
         {
-            if (args.Length < 2)
+            if (args.Length < 3)
             {
-                context.Display("Использование: -delete-script <filename>");
+                context.Display("Использование: -delete [file <filename> / ]");
                 return;
             }
 
-            var fileName = args[1];
+            var action = args[1].ToLower();
 
-            bool isExist = await context.scriptFileManager.ExistsAsync(fileName);
-            if (!isExist)
+            switch (action)
             {
-                context.Display($"Файл {fileName} не найден");
-                return;
+                case "file":
+                    var fileName = args[2];
+                    bool isExist = await context.scriptFileManager.ExistsAsync(fileName);
+                    if (!isExist)
+                    {
+                        context.Display($"Файл {fileName} не найден");
+                        return;
+                    }
+                    await context.scriptFileManager.DeleteAsync(fileName);
+                    context.ScriptInterpreter.UnloadFile(fileName);
+
+                    if (context.ScriptEditor.GetCurrentFileName() == fileName)
+                    {
+                        context.ScriptEditor.ClearEditor();
+                    }
+
+                    context.Display($"Файл {fileName} удален");
+                    break;
+                default:
+                    context.Display("Использование: -delete [file <filename> / ]");
+                    break;
             }
-            await context.scriptFileManager.DeleteAsync(fileName);
-            context.ScriptInterpreter.UnloadFile(fileName);
-            
-            if (context.ScriptEditor.GetCurrentFileName() == fileName)
-            {
-                context.ScriptEditor.ClearEditor();
-            }
-            
-            context.Display($"Файл {fileName} удален");
             return;
         }
     }
@@ -274,14 +283,14 @@ namespace TheRavine.Base
     }
     public class NewScriptCommand : ICommand
     {
-        public string Name => "-new-script";
-        public string Description => "Создает новый скрипт: -new-script <filename>";
+        public string Name => "-new";
+        public string Description => "Создает новый скрипт: -new <filename>";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
         {
             if (args.Length < 2)
             {
-                context.Display("Использование: -new-script <filename>");
+                context.Display("Использование: -new <filename>");
                 return;
             }
 
@@ -299,7 +308,7 @@ namespace TheRavine.Base
                 context.ScriptEditor.SetEditorActive(true);
             }
 
-            context.ScriptEditor.CreateNewFile(fileName);
+            context.ScriptEditor.CreateNewFile(fileName).Forget();
             context.Display($"Создан новый файл {fileName}");
             
             return;

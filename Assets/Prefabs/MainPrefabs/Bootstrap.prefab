@@ -65,7 +65,6 @@ MonoBehaviour:
   inventoryCanvas: {fileID: 0}
   standardStateMachineTickTime: 20
   tickPerUpdate: 1
-  serviceLocatorAccess: {fileID: 0}
   scriptsLoadedOnBootstrapState:
   - {fileID: 0}
   - {fileID: 0}
@@ -74,6 +73,5 @@ MonoBehaviour:
   - {fileID: 0}
   scriptsLoadedOnInitialState:
   - {fileID: 0}
-  scriptsLoadedOnLoadingState:
   - {fileID: 0}
-  terminal: {fileID: 0}
+  scriptsLoadedOnLoadingState: []

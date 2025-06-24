@@ -21,7 +21,7 @@ namespace TheRavine.Base
 
         private void Start()
         {
-            _settingsModel = ServiceLocator.GetService<ISettingsModel>();
+            _settingsModel = ServiceLocator.GetService<SettingsModel>();
             _profilerComponent = profiler?.GetComponent<GraphyDebugger>();
             
             InitializeUI();

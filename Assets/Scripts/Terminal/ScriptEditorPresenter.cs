@@ -16,20 +16,16 @@ namespace TheRavine.Base
         private CommandContext terminalContext;
         private ScriptFileManager scriptFileManager;
 
-        private void Start()
+        public void Initialize(CommandContext context, RiveInterpreter interpreter)
         {
+            this.interpreter = interpreter;
+            terminalContext = context;
+
             var encryptedPlayerPrefsStorage = new EncryptedPlayerPrefsStorage();
             scriptFileManager = new ScriptFileManager(encryptedPlayerPrefsStorage);
 
             if (editorPanel != null)
                 editorPanel.SetActive(false);
-
-        }
-
-        public void Initialize(CommandContext context, RiveInterpreter interpreter)
-        {
-            this.interpreter = interpreter;
-            terminalContext = context;
 
             RefreshFilesList().Forget();
         }

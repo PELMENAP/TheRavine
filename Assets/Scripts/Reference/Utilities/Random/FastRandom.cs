@@ -2,10 +2,10 @@ using UnityEngine;
 
 namespace TheRavine.Extensions
 {
-    public sealed class FastRandom : IRandom
+    public sealed class FastRandom
     {
         public int Seed { get; private set; }
-        private const ulong Modulus = 2147483647; //2^31
+        private const ulong Modulus = 2147483647;
         private const ulong Multiplier = 1132489760;
         private const double ModulusReciprocal = 1.0 / Modulus;
         private ulong _next;
@@ -89,7 +89,7 @@ namespace TheRavine.Extensions
 
     public static class RavineRandom
     {
-        private static FastRandom fastRandom = new FastRandom();
+        private readonly static FastRandom fastRandom = new FastRandom();
         public static int RangeInt(int min, int max) => fastRandom.Range(min, max);
         public static int RangeInt(int max) => fastRandom.Range(0, max);
         public static float RangeFloat(float min, float max) => fastRandom.Range(min, max);
@@ -97,6 +97,5 @@ namespace TheRavine.Extensions
         public static int Hundred() => RangeInt(0, 100);
         public static Vector2 GetInsideCircle(float radius = 1) => fastRandom.GetInsideCircle(radius);
         public static Color RangeColor() => fastRandom.GetColor();
-        // public static Vector2 GetInsideCircleSquare(float radius) => fastRandom.GetInsideCircle(radius);
     }
 }

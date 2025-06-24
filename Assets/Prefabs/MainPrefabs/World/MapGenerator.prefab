@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2172697054823260749}
   - component: {fileID: 2265691849651761453}
+  - component: {fileID: 6195408856844743971}
   m_Layer: 0
   m_Name: MapGenerator
   m_TagString: Untagged
@@ -158,10 +159,8 @@ MonoBehaviour:
       structs:
       - isSpawnPoint: 1
         Chance: 234
-        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
       - isSpawnPoint: 1
         Chance: 167
-        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
     - objects:
       - Chance: 67
         info: {fileID: 11400000, guid: e23769a0b98747349af18b93b2db8788, type: 2}
@@ -176,10 +175,8 @@ MonoBehaviour:
       structs:
       - isSpawnPoint: 1
         Chance: 234
-        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
       - isSpawnPoint: 1
         Chance: 167
-        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
     - objects:
       - Chance: 67
         info: {fileID: 11400000, guid: e23769a0b98747349af18b93b2db8788, type: 2}
@@ -194,10 +191,8 @@ MonoBehaviour:
       structs:
       - isSpawnPoint: 1
         Chance: 234
-        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
       - isSpawnPoint: 1
         Chance: 167
-        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
     - objects:
       - Chance: 67
         info: {fileID: 11400000, guid: e23769a0b98747349af18b93b2db8788, type: 2}
@@ -212,10 +207,8 @@ MonoBehaviour:
       structs:
       - isSpawnPoint: 1
         Chance: 234
-        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
       - isSpawnPoint: 1
         Chance: 167
-        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
     - objects:
       - Chance: 67
         info: {fileID: 11400000, guid: e23769a0b98747349af18b93b2db8788, type: 2}
@@ -230,10 +223,8 @@ MonoBehaviour:
       structs:
       - isSpawnPoint: 1
         Chance: 234
-        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
       - isSpawnPoint: 1
         Chance: 167
-        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
   - height: 0.45
     liveAble: 1
     level:
@@ -314,10 +305,8 @@ MonoBehaviour:
       structs:
       - isSpawnPoint: 0
         Chance: 534
-        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
       - isSpawnPoint: 0
         Chance: 345
-        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
     - objects:
       - Chance: 56
         info: {fileID: 11400000, guid: b208f53ee19693c95b5612deabface28, type: 2}
@@ -336,10 +325,8 @@ MonoBehaviour:
       structs:
       - isSpawnPoint: 0
         Chance: 534
-        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
       - isSpawnPoint: 0
         Chance: 345
-        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
     - objects:
       - Chance: 74
         info: {fileID: 11400000, guid: b208f53ee19693c95b5612deabface28, type: 2}
@@ -358,10 +345,8 @@ MonoBehaviour:
       structs:
       - isSpawnPoint: 0
         Chance: 534
-        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
       - isSpawnPoint: 0
         Chance: 345
-        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
     - objects:
       - Chance: 43
         info: {fileID: 11400000, guid: b208f53ee19693c95b5612deabface28, type: 2}
@@ -376,10 +361,8 @@ MonoBehaviour:
       structs:
       - isSpawnPoint: 0
         Chance: 534
-        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
       - isSpawnPoint: 0
         Chance: 345
-        info: {fileID: 11400000, guid: b7dab917297c9a9bfa8aff22b88d6622, type: 2}
     - objects:
       - Chance: 56
         info: {fileID: 11400000, guid: b208f53ee19693c95b5612deabface28, type: 2}
@@ -398,7 +381,6 @@ MonoBehaviour:
       structs:
       - isSpawnPoint: 0
         Chance: 534
-        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
   - height: 0.8
     liveAble: 1
     level:
@@ -460,7 +442,6 @@ MonoBehaviour:
       structs:
       - isSpawnPoint: 0
         Chance: 243
-        info: {fileID: 11400000, guid: 5098bc09f03afcd099e0a3dbe24ea1bc, type: 2}
     - objects:
       - Chance: 56
         info: {fileID: 11400000, guid: 1f5a9fa98ce0357a1a045ec4af226c89, type: 2}
@@ -531,7 +512,7 @@ MonoBehaviour:
   - height: 0.75
   - height: 1
   viewer: {fileID: 0}
-  endlessFlag: 01010100
+  endlessFlag: 01010000
   step: 3
   deadChance: 0
   riverMin: 0.65
@@ -540,3 +521,18 @@ MonoBehaviour:
   maxRiverDepth: 1
   rotateValue: 0
   rotateTarget: 0
+--- !u!114 &6195408856844743971
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7784986139299065775}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e856a4e05652596abab1247d4886edda, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _settings: {fileID: 11400000, guid: 137d75bc00f3cfc289ef92d14760d07a, type: 2}
+  startPoint: {x: 0, y: 0}
+  initialPattern: {fileID: 11400000, guid: 45f125b9e4fe9eb0ca24429fd6fed76d, type: 2}
