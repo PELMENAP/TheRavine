@@ -1,15 +1,18 @@
-public class Boletus : ItemClass
+namespace TheRavine.Inventory
 {
-    public string description = "Оранжевая шапочка\r\n- вполне сьедобен\r\n- предпочитает лиственные леса\r\n- цвет осенних листьев\r\n60 ккал";
-    public Boletus(IInventoryItemInfo info) : base(info)
+    public class Boletus : ItemClass
     {
-        this.info.description = description;
-    }
+        public string description = "Оранжевая шапочка\r\n- вполне сьедобен\r\n- предпочитает лиственные леса\r\n- цвет осенних листьев\r\n60 ккал";
+        public Boletus(IInventoryItemInfo info) : base(info)
+        {
+            this.info.description = description;
+        }
 
-    public override IInventoryItem Clone()
-    {
-        var clonedItem = new Boletus(this.info);
-        clonedItem.CopyFrom(this);
-        return clonedItem;
+        public override IInventoryItem Clone()
+        {
+            var clonedItem = new Boletus(this.info);
+            clonedItem.CopyFrom(this);
+            return clonedItem;
+        }
     }
 }

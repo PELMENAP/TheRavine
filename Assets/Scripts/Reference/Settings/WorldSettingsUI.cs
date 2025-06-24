@@ -27,10 +27,10 @@ namespace TheRavine.Base
 
         private void Start()
         {
-            _settingsModel = ServiceLocator.GetService<ISettingsModel>();
-            _worldDataService = ServiceLocator.GetService<IWorldDataService>();
-            _worldManager = ServiceLocator.GetService<IWorldManager>();
-            _worldService = ServiceLocator.GetService<IWorldService>();
+            _settingsModel = ServiceLocator.GetService<SettingsModel>();
+            _worldDataService = ServiceLocator.GetService<WorldDataService>();
+            _worldManager = ServiceLocator.GetService<WorldManager>();
+            _worldService = ServiceLocator.GetService<WorldService>();
             
             InitializeUI();
             BindToModel();

@@ -40,7 +40,6 @@ public static class DelayedPerceptronStorage
         Debug.Log($"Модель сохранена в: {path}");
     }
     
-    // Асинхронная загрузка модели
     public static async UniTask<DelayedPerceptron> LoadAsync(string fileName, CancellationToken cancellationToken = default)
     {
         string path = GetSavePath(fileName);

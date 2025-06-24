@@ -1,15 +1,18 @@
-public class BrownBoletus : ItemClass
+namespace TheRavine.Inventory
 {
-    public string description = "Невзрачная нога\r\n- хоть как можно есть\r\n- частый экземпляр\r\n- главный любитель берёз\r\n50 ккал";
-    public BrownBoletus(IInventoryItemInfo info) : base(info)
+    public class BrownBoletus : ItemClass
     {
-        this.info.description = description;
-    }
+        public string description = "Невзрачная нога\r\n- хоть как можно есть\r\n- частый экземпляр\r\n- главный любитель берёз\r\n50 ккал";
+        public BrownBoletus(IInventoryItemInfo info) : base(info)
+        {
+            this.info.description = description;
+        }
 
-    public override IInventoryItem Clone()
-    {
-        var clonedItem = new BrownBoletus(this.info);
-        clonedItem.CopyFrom(this);
-        return clonedItem;
+        public override IInventoryItem Clone()
+        {
+            var clonedItem = new BrownBoletus(this.info);
+            clonedItem.CopyFrom(this);
+            return clonedItem;
+        }
     }
 }

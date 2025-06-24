@@ -7,9 +7,11 @@ namespace TheRavine.InventoryElements
         public RectTransform rectTransform;
         public UIInventoryItem _uiInventoryItem;
         public IInventorySlot slot { get; private set; }
-        public void SetSlot(IInventorySlot newSlot)
+        public int index;
+        public void SetSlot(IInventorySlot newSlot, int index)
         {
             slot = newSlot;
+            this.index = index;
         }
         public void Refresh()
         {

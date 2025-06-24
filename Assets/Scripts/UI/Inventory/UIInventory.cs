@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using System.Collections.Generic;
 
 using TheRavine.Base;
@@ -15,56 +14,54 @@ namespace TheRavine.Inventory
 {
     public class UIInventory : MonoBehaviour, ISetAble
     {
-        [SerializeField] private GameObject grid, mobileInput;
         [SerializeField] private bool filling;
         [SerializeField] private UIInventorySlot[] activeCells;
-        [SerializeField] private PlayerInput input;
         [SerializeField] private RectTransform cell;
-        [SerializeField] private InputActionReference enter, quit, digitAction;
-        [SerializeField] private CraftService craftService;
         [SerializeField] private DataItems dataItems;
-        private byte activeCell = 1;
-        public InventoryModel inventory => tester.inventory;
-        public InfoManager infoManager => tester.infoManager;
-        public bool HasItem(string title) => tester.HasItem(title);
-
-        private UIInventoryTester tester;
-        private PlayerEntity playerData;
+        [SerializeField] private CraftService craftService;
+        [SerializeField] private UIDragger uIDragger;
+        [SerializeField] private InventoryInputHandler inventoryInputHandler;
+        private InventoryTester tester;
+        private EventDrivenInventoryProxy eventDrivenInventoryProxy;
         private MapGenerator generator;
         private ObjectSystem objectSystem;
+        private InfoManager infoManager;
         private EncryptedPlayerPrefsStorage encryptedPlayerPrefsStorage;
-        private GameSettings gameSettings;
         private IWorldManager worldManager;
+        public bool HasItem(InventoryItemInfo info) => eventDrivenInventoryProxy.HasItem(infoManager.GetItemType(info));
         public void SetUp(ISetAble.Callback callback)
         {
             worldManager = ServiceLocator.GetService<IWorldManager>();
-            gameSettings = ServiceLocator.GetService<ISettingsModel>().GameSettings.CurrentValue;
-            playerData = ServiceLocator.GetMonoService<PlayerModelView>().playerEntity;
             generator = ServiceLocator.GetMonoService<MapGenerator>();
             objectSystem = ServiceLocator.GetMonoService<ObjectSystem>();
             encryptedPlayerPrefsStorage = new EncryptedPlayerPrefsStorage();
+
+            var playerData = ServiceLocator.GetMonoService<PlayerModelView>().playerEntity;
+            var gameSettings = ServiceLocator.GetService<ISettingsModel>().GameSettings.CurrentValue;
+            inventoryInputHandler.RegisterInput(playerData, gameSettings);
 
             var uiSlot = GetComponentsInChildren<UIInventorySlot>();
             var slotList = new List<UIInventorySlot>();
             slotList.AddRange(uiSlot);
             slotList.AddRange(activeCells);
-            tester = new UIInventoryTester(slotList.ToArray(), dataItems);
+
+            var inventoryModel = new InventoryModel(slotList.Count);
+            eventDrivenInventoryProxy = new EventDrivenInventoryProxy(inventoryModel);
+
+            infoManager = new InfoManager(dataItems);
+
+            tester = new InventoryTester(slotList.ToArray(), infoManager, eventDrivenInventoryProxy);
 
             OnInventoryDataLoaded().Forget();
 
-            craftService.SetUp(null);
-            grid.SetActive(false);
+            uIDragger.SetUp(inventoryModel);
+            craftService.SetUp(infoManager, inventoryModel);
 
-            enter.action.performed += ChangeInventoryState;
-            quit.action.performed += ChangeInventoryState;
-
-            inventory.OnInventoryStateChangedEventOnce += OnInventoryStateChanged;
+            eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce += OnInventoryStateChanged;
 
             EventBusByName playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
             playerEventBus.Subscribe<Vector2Int>(nameof(PlaceEvent), PlaceObjectEvent);
             playerEventBus.Subscribe<Vector2Int>(nameof(PickUpEvent), PickUpEvent);
-
-            digitAction.action.performed += SetActionCell;
 
             callback?.Invoke();
         }
@@ -80,29 +77,17 @@ namespace TheRavine.Inventory
             }
         }
 
-        private void SetActionCell(InputAction.CallbackContext c)
-        {
-            SetActiveCell((byte)c.ReadValue<float>());
-        }
-
-        private void SetActiveCell(byte index)
-        {
-            activeCell = index;
-            cell.anchoredPosition = new Vector2(55 + 120 * (index - 1), -50);
-        }
-
-
         private void PlaceObjectEvent(Vector2Int position)
         {
-            IInventorySlot slot = activeCells[activeCell - 1].slot;
+            IInventorySlot slot = activeCells[inventoryInputHandler.ActiveCellIndex - 1].slot;
             if (slot.isEmpty) return;
-            IInventoryItem item = activeCells[activeCell - 1]._uiInventoryItem.item;
+            IInventoryItem item = activeCells[inventoryInputHandler.ActiveCellIndex - 1]._uiInventoryItem.item;
             if(!item.info.isPlaceable) return;
             if (objectSystem.TryAddToGlobal(position, item.info.prefab.GetInstanceID(), 1, InstanceType.Inter))
             {
                 item.state.amount--;
                 if (slot.amount <= 0) slot.Clear();
-                activeCells[activeCell - 1].Refresh();
+                activeCells[inventoryInputHandler.ActiveCellIndex - 1].Refresh();
                 generator.TryToAddPositionToChunk(position);
             }
             generator.ExtraUpdate();
@@ -117,7 +102,9 @@ namespace TheRavine.Inventory
             ObjectInstInfo objectInstInfo = objectSystem.GetGlobalObjectInstInfo(position);
             ObjectInfo data = objectSystem.GetGlobalObjectInfo(position);
             if (data == null) return;
-            if (inventory.TryToAdd(this, infoManager.GetInventoryItemByInfo(data.iteminfo.id, data.iteminfo, objectInstInfo.amount)))
+
+            IInventoryItem item = infoManager.GetInventoryItemByInfo(data.iteminfo.id, data.iteminfo, objectInstInfo.amount);
+            if (eventDrivenInventoryProxy.TryToAdd(this, item))
             {
                 objectSystem.RemoveFromGlobal(position);
                 SpreadPattern pattern = data.pickUpPattern;
@@ -136,41 +123,17 @@ namespace TheRavine.Inventory
             }
             generator.ExtraUpdate();
         }
-
-        private bool isactive = false;
-        private void ChangeInventoryState(InputAction.CallbackContext context)
-        {
-            OnInventoryStateChanged(this);
-            isactive = !isactive;
-            if (isactive)
-            {
-                if (input.currentActionMap.name != "Gameplay")
-                {
-                    isactive = !isactive;
-                    return;
-                }
-                playerData.SetBehaviourSit();
-                input.SwitchCurrentActionMap("Inventory");
-            }
-            else
-            {
-                playerData.SetBehaviourIdle();
-                input.SwitchCurrentActionMap("Gameplay");
-            }
-            if(gameSettings.controlType == ControlType.Mobile) mobileInput.SetActive(!isactive);
-            grid.SetActive(isactive);
-        }
         public void BreakUp(ISetAble.Callback callback)
         {
-            var dataToSave = inventory.GetSerializableList();
+            var dataToSave = tester.Serialize();
             encryptedPlayerPrefsStorage.SaveAsync(nameof(SerializableList<SerializableInventorySlot>), dataToSave).Forget();
 
-            inventory.OnInventoryStateChangedEvent -= OnInventoryStateChanged;
+            uIDragger.BreakUp();
+            craftService.BreakUp();
 
-            enter.action.performed -= ChangeInventoryState;
-            quit.action.performed -= ChangeInventoryState;
+            eventDrivenInventoryProxy.Dispose();
 
-            digitAction.action.performed -= SetActionCell;
+            inventoryInputHandler.UnregisterInput();
 
             callback?.Invoke();
         }

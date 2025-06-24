@@ -452,18 +452,14 @@ PrefabInstance:
       propertyPath: GlobalObjectIdHash
       value: 2207021331
       objectReference: {fileID: 0}
+    - target: {fileID: 3363438860016651941, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 3386079374
+      objectReference: {fileID: 0}
     - target: {fileID: 3774976463961129895, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
       propertyPath: boidsBehaviour
       value: 
       objectReference: {fileID: 1021793570}
-    - target: {fileID: 4989413111709226666, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
-      propertyPath: terminal
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 4989413111709226666, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
-      propertyPath: 'scriptsLoadedOnInitialState.Array.data[0]'
-      value: 
-      objectReference: {fileID: 0}
     - target: {fileID: 8139251900852255931, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 4215341905

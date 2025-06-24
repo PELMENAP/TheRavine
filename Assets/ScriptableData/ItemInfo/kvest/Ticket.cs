@@ -1,16 +1,19 @@
-public class Ticket : ItemClass
+namespace TheRavine.Inventory
 {
-    public string description = "Билет в один конец - домой \r\nномер 124115";
-    
-    public Ticket(IInventoryItemInfo info) : base(info)
+    public class Ticket : ItemClass
     {
-        this.info.description = description;
-    }
+        public string description = "Билет в один конец - домой \r\nномер 124115";
 
-    public override IInventoryItem Clone()
-    {
-        var clonedItem = new Ticket(this.info);
-        clonedItem.CopyFrom(this);
-        return clonedItem;
+        public Ticket(IInventoryItemInfo info) : base(info)
+        {
+            this.info.description = description;
+        }
+
+        public override IInventoryItem Clone()
+        {
+            var clonedItem = new Ticket(this.info);
+            clonedItem.CopyFrom(this);
+            return clonedItem;
+        }
     }
 }

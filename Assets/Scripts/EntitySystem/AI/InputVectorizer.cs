@@ -7,7 +7,7 @@ public class InputVectorizer
 {
     private float _maxHealth = 100f;
     private float _maxEnergy = 100f;
-    private const float MaxAction = 8f, MaxState = 5f, MaxTime = 24f, MaxCount = 10f;
+    private const float MaxState = 5f, MaxTime = 24f, MaxCount = 10f;
     private float[] vector = new float[32]; // 20
     private int[] predictedIndexes = new int[4];
 

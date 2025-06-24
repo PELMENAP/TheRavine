@@ -27,9 +27,10 @@ namespace TheRavine.Inventory
         private PointerEventData eventData;
         private UIInventorySlot lastSlot;
         private GameSettings gameSettings;
-
-        private void Start()
+        private InventoryModel inventoryModel;
+        public void SetUp(InventoryModel inventoryModel)
         {
+            this.inventoryModel = inventoryModel;
             gameSettings = ServiceLocator.GetService<ISettingsModel>().GameSettings.CurrentValue;
             eventSystem = EventSystem.current;
             eventData = new PointerEventData(eventSystem);
@@ -59,7 +60,7 @@ namespace TheRavine.Inventory
                     var otherSlotUI = (UIInventorySlot)results[i].gameObject.GetComponent("UIInventorySlot");
                     if (otherSlotUI == null) continue;
                     if(_uiInventory == null) return;
-                    _uiInventory.inventory.TransitFromSlotToSlot(this, lastSlot.slot, otherSlotUI.slot);
+                    inventoryModel.TransitFromSlotToSlot(this, lastSlot.index, otherSlotUI.index);
                     lastSlot.Refresh();
                     otherSlotUI.Refresh();
                     break;
@@ -127,7 +128,7 @@ namespace TheRavine.Inventory
                             var otherSlotUI = (UIInventorySlot)results[i].gameObject.GetComponent("UIInventorySlot");
                             if (otherSlotUI == null)
                                 continue;
-                            _uiInventory.inventory.TransitFromSlotToSlot(this, lastSlot.slot, otherSlotUI.slot);
+                            inventoryModel.TransitFromSlotToSlot(this, lastSlot.index, otherSlotUI.index);
                             lastSlot.Refresh();
                             otherSlotUI.Refresh();
                             break;
@@ -149,7 +150,7 @@ namespace TheRavine.Inventory
             await UniTask.WaitForFixedUpdate();
         }
 
-        private void OnDisable()
+        public void BreakUp()
         {
             switch (gameSettings.controlType)
             {

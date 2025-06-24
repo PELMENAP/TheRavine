@@ -12,16 +12,16 @@ public class TrollMovementTransition : MonoBehaviour
     [SerializeField] private TextMeshPro textMeshPro;
     [SerializeField] private TimerType timerType;
     [SerializeField] private Transform player;
-    [SerializeField] private UIInventory uiInventory;
     [SerializeField] private float maxPossibleDistance;
     [SerializeField] private UnityEvent finishAction;
     [SerializeField] private InventoryItemInfo ticketInfo;
     private SyncedTimer _timer;
-    private IWorldDataService worldDataService;
+    private WorldDataService worldDataService;
+    private UIInventory uIInventory;
     private void Start()
     {
-        worldDataService = ServiceLocator.GetService<IWorldDataService>();
-
+        worldDataService = ServiceLocator.GetService<WorldDataService>();
+        uIInventory = ServiceLocator.GetMonoService<UIInventory>();
 
         if (textMeshPro == null)
         {
@@ -51,7 +51,7 @@ public class TrollMovementTransition : MonoBehaviour
             return;
         }
 
-        if(uiInventory.HasItem(ticketInfo.title)) worldDataService.SetGameWon(true);
+        if(uIInventory.HasItem(ticketInfo)) worldDataService.SetGameWon(true);
         
         finishAction?.Invoke();
     }

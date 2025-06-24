@@ -73,7 +73,7 @@ Camera:
   m_Depth: -90
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 951
+    m_Bits: 919
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 8400000, guid: c362d60b4a2c3e74f9f7b60025735f7f, type: 2}
   m_TargetDisplay: 0
@@ -82,7 +82,7 @@ Camera:
   m_AllowMSAA: 0
   m_AllowDynamicResolution: 0
   m_ForceIntoRT: 0
-  m_OcclusionCulling: 0
+  m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
 --- !u!114 &7008431602349118788
@@ -102,7 +102,7 @@ MonoBehaviour:
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 0
   m_Cameras: []
-  m_RendererIndex: -1
+  m_RendererIndex: 0
   m_VolumeLayerMask:
     serializedVersion: 2
     m_Bits: 0
@@ -145,7 +145,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 126
+  m_StaticEditorFlags: 123
   m_IsActive: 1
 --- !u!4 &8901762517668838925
 Transform:
@@ -290,7 +290,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 96
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -366,7 +366,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2973967255
+  GlobalObjectIdHash: 2207021331
   InScenePlacedSourceGlobalObjectIdHash: 3572525886
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1

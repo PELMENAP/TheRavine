@@ -20,13 +20,13 @@ public class PerceptronTest : MonoBehaviour
     private void Start() 
     {
         inputVectorizer = new(maxHealth, maxEnergy);
-        delayedPerceptron = new(inputVectorizer.GetVectorSize(), 16, 16, 7);
+        delayedPerceptron = new(inputVectorizer.GetVectorSize(), 16, 16, 16, 7);
         For().Forget();
     }
 
     private async UniTaskVoid For()
-    {   
-        while(true)
+    {
+        while (true)
         {
             // timeOfDay++;
             // health -= 0.1f;

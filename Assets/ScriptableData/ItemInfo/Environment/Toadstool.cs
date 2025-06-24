@@ -1,16 +1,18 @@
-public class Toadstool : ItemClass
+namespace TheRavine.Inventory
 {
-    public string description = "Маленькая зловредная\r\n- неприятный сладковатый запах\r\n- предпочитает плодородные почвы\r\n- токсины не убрать\r\n30 ккал + смертельное отравление";
-    public Toadstool(IInventoryItemInfo info) : base(info)
+    public class Toadstool : ItemClass
     {
-        this.info.description = description;
-    }
+        public string description = "Маленькая зловредная\r\n- неприятный сладковатый запах\r\n- предпочитает плодородные почвы\r\n- токсины не убрать\r\n30 ккал + смертельное отравление";
+        public Toadstool(IInventoryItemInfo info) : base(info)
+        {
+            this.info.description = description;
+        }
 
-    public override IInventoryItem Clone()
-    {
-        var clonedItem = new Toadstool(this.info);
-        clonedItem.CopyFrom(this);
-        return clonedItem;
+        public override IInventoryItem Clone()
+        {
+            var clonedItem = new Toadstool(this.info);
+            clonedItem.CopyFrom(this);
+            return clonedItem;
+        }
     }
 }
-
