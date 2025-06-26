@@ -150,7 +150,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   health: 100
   energy: 100
-  reward: 0.5
+  reward: 0.74
   currentState: 1
   timeOfDay: 0
   lastSuccess: 0

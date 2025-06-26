@@ -161,7 +161,7 @@ public class Entity2D : MonoBehaviour
         await PerformAction(randomAction, cancellationToken);
 
         bool theSame = true;
-        for(int i = 0; i < delayedPerceptron.DelayedList.Count; i++)
+        for(int i = 0; i < delayedPerceptron.DelayedList.Count / 2; i++)
         {
             var firstComponent = delayedPerceptron.DelayedList[0];
             var currentComponent = delayedPerceptron.DelayedList[i];
@@ -171,14 +171,6 @@ public class Entity2D : MonoBehaviour
                 break;
             } 
         }
-        // string mes = "";
-        // for (int i = 0; i < delayedPerceptron.DelayedList.Count; i++)
-        // {
-        //     mes += delayedPerceptron.DelayedList[i].Evaluation + "   ";
-        // }
-        // Debug.Log(mes);  
-        
-        // if(theSame) delayedPerceptron.Train(input, predictedIndex, 0.6f, true);
 
         if(theSame && delayedPerceptron.DelayedList.Count > 0) delayedPerceptron.DelayedList[delayedPerceptron.DelayedList.Count - 1].Evaluation = 0.4f;
     }

@@ -200,6 +200,7 @@ public partial class DelayedPerceptron
             layerSizes[1], 
             layerSizes[2], 
             layerSizes[3], 
+            layerSizes[4], 
             delaySteps
         );
         
