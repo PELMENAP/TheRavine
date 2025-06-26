@@ -321,6 +321,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 142690056}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -478,6 +482,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1804249244}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -566,6 +574,10 @@ PrefabInstance:
       propertyPath: file
       value: default1
       objectReference: {fileID: 0}
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -650,6 +662,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1804249244}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -734,6 +750,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1804249244}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -807,6 +827,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1804249244}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -880,6 +904,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1804249244}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -953,6 +981,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 142690056}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -1037,6 +1069,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1804249244}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -1125,6 +1161,10 @@ PrefabInstance:
       propertyPath: file
       value: default1
       objectReference: {fileID: 0}
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -1212,6 +1252,10 @@ PrefabInstance:
     - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: file
       value: default1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
       objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -1362,57 +1406,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 258dde1053e0d2243bdd79a127534b53, type: 3}
---- !u!1 &790319002
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 790319004}
-  - component: {fileID: 790319003}
-  m_Layer: 0
-  m_Name: per test
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &790319003
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 790319002}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0fbb4b1dba34f62c8bdf9c7c295befce, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  health: 100
-  energy: 100
-  reward: 0.5
-  currentState: 1
-  timeOfDay: 0
-  lastSuccess: 0
-  isError: 0
---- !u!4 &790319004
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 790319002}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 283.78452, y: 268.43503, z: -6.7337694}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &811811785 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
@@ -1432,6 +1425,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 142690056}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -1520,6 +1517,10 @@ PrefabInstance:
       propertyPath: file
       value: default1
       objectReference: {fileID: 0}
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -1604,6 +1605,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1804249244}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -1677,6 +1682,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1804249244}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -1753,6 +1762,10 @@ PrefabInstance:
     - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: file
       value: default1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
       objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -1975,6 +1988,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 142690056}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -2062,6 +2079,10 @@ PrefabInstance:
     - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: file
       value: default1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
       objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -2172,6 +2193,10 @@ PrefabInstance:
     - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: file
       value: default1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
       objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -2394,6 +2419,10 @@ PrefabInstance:
       propertyPath: file
       value: default1
       objectReference: {fileID: 0}
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -2482,6 +2511,10 @@ PrefabInstance:
       propertyPath: file
       value: default1
       objectReference: {fileID: 0}
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -2566,6 +2599,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 142690056}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -2650,6 +2687,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1804249244}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -2723,6 +2764,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1804249244}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -3024,6 +3069,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1804249244}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -3119,6 +3168,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1804249244}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -3223,6 +3276,10 @@ PrefabInstance:
       propertyPath: file
       value: default1
       objectReference: {fileID: 0}
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -3307,6 +3364,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 142690056}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -3524,6 +3585,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 142690056}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -3744,6 +3809,10 @@ PrefabInstance:
     - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: file
       value: default1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
       objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
@@ -4072,6 +4141,10 @@ PrefabInstance:
       propertyPath: file
       value: default1
       objectReference: {fileID: 0}
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -4171,6 +4244,10 @@ PrefabInstance:
       propertyPath: file
       value: default1
       objectReference: {fileID: 0}
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -4255,6 +4332,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1804249244}
     m_Modifications:
+    - target: {fileID: 1495586722111773037, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
+      propertyPath: reproduceEnergyCost
+      value: 110
+      objectReference: {fileID: 0}
     - target: {fileID: 3048078154371981051, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
@@ -4321,7 +4402,6 @@ SceneRoots:
   m_Roots:
   - {fileID: 1988236555}
   - {fileID: 714995155}
-  - {fileID: 790319004}
   - {fileID: 1804249244}
   - {fileID: 214815801}
   - {fileID: 142690056}

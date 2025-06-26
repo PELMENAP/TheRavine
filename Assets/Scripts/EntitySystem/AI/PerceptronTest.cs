@@ -11,7 +11,7 @@ public class PerceptronTest : MonoBehaviour
     public float health, energy, reward;
     public int currentState, timeOfDay;
     private int predictedIndex;
-    public bool lastSuccess, isError;
+    public bool lastSuccess;
     public ReactiveProperty<float> maxHealth = new(100), maxEnergy = new(100);
 
     private InputVectorizer inputVectorizer;
@@ -28,10 +28,10 @@ public class PerceptronTest : MonoBehaviour
     {
         while (true)
         {
-            // timeOfDay++;
-            // health -= 0.1f;
-            // energy -= 0.1f;
-            // if(timeOfDay > 23) timeOfDay = 0;
+            timeOfDay++;
+            health -= 0.1f;
+            energy -= 0.1f;
+            if(timeOfDay > 23) timeOfDay = 0;
             await UniTask.Delay(1000);
         }
     }
@@ -47,7 +47,7 @@ public class PerceptronTest : MonoBehaviour
     [Button]
     private void Train()
     {
-        delayedPerceptron.Train(input, predictedIndex, reward, isError);
+        delayedPerceptron.Train(input, predictedIndex, reward);
     }
 
     [Button]

@@ -4,6 +4,7 @@ using UnityEngine;
 
 
 using Cysharp.Threading.Tasks;
+using TheRavine.Extensions;
 
 public class SimpleEntityController : MonoBehaviour
 {
@@ -14,7 +15,9 @@ public class SimpleEntityController : MonoBehaviour
     public bool newmode;
     private async void Start()
     {
-        if(newmode)
+        await UniTask.Delay(100 * RavineRandom.RangeInt(5, 20));
+        
+        if (newmode)
         {
             BehaviorLoopAsync().Forget();
             return;
@@ -29,7 +32,6 @@ public class SimpleEntityController : MonoBehaviour
 
     private async UniTaskVoid BehaviorLoopAsync()
     {
-        await UniTask.Delay(3000);
         
 
         foreach (var item in entities)
