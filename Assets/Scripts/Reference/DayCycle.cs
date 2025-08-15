@@ -25,11 +25,10 @@ namespace TheRavine.Base
         [SerializeField] private float startDay = 0f, speed = 1f;
         [SerializeField] private Gradient sunGradient;
         [SerializeField] private int awakeDelay = 1000, defaultDelay = 100;
-        [SerializeField] private int maxLights = 100;
+        [SerializeField] private int maxLights = 100, maxShadows = 1000;
         
         private NetworkVariable<bool> isDay = new(writePerm: NetworkVariableWritePermission.Server);
         private Light2D sun;
-        private Transform player;
 
         private NativeArray<float>    timeBridge;
         private NativeArray<bool>     isDayBridge;
@@ -48,8 +47,7 @@ namespace TheRavine.Base
 
         public void SetUp(ISetAble.Callback callback)
         {
-            gameSettings = ServiceLocator.GetService<ISettingsModel>().GameSettings.CurrentValue;
-            player = ServiceLocator.GetPlayerTransform();
+            gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
             sun    = GetComponent<Light2D>();
             cts    = new CancellationTokenSource();
 
@@ -135,8 +133,7 @@ namespace TheRavine.Base
                         {
                             lightsBridge     = lightPosBridge,
                             lightsIntensity  = lightIntBridge,
-                            localScale       = timeBridge[5],
-                            playerPosition   = player.position
+                            localScale       = timeBridge[5]
                         };
 
                         shadowHandle = shadowJob.Schedule(shadowBuffer.AccessArray);
@@ -158,14 +155,11 @@ namespace TheRavine.Base
 
             if (gameSettings.enableShadows)
             {
-                shadowBuffer = new CircularTransformBuffer(1000);
+                shadowBuffer = new CircularTransformBuffer(maxShadows);
                 lightBuffer = new CircularLightBuffer(maxLights);
-                
-                // Создаем NativeArray константного размера
                 lightPosBridge = new NativeArray<float3>(maxLights, Allocator.Persistent);
                 lightIntBridge = new NativeArray<float>(maxLights, Allocator.Persistent);
                 
-                // Добавляем солнце как основной источник света
                 lightBuffer.SubmitGroup(this.transform, 100f);
             }
         }
@@ -178,7 +172,6 @@ namespace TheRavine.Base
             var transforms = lightBuffer.LightTransforms;
             var intensities = lightBuffer.LightIntensities;
             
-            // Обновляем позиции и интенсивности для активных источников света
             for (int i = 0; i < lightCount; i++)
             {
                 if (transforms[i] != null)
@@ -188,7 +181,6 @@ namespace TheRavine.Base
                 }
             }
             
-            // Очищаем неиспользуемые слоты
             for (int i = lightCount; i < maxLights; i++)
             {
                 lightPosBridge[i] = float3.zero;

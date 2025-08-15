@@ -34,18 +34,14 @@ public partial class DelayedPerceptron
         InitializeNetworkStructure(layerSizes);
     }
 
-    // Конструктор генетического наследования
     public DelayedPerceptron(DelayedPerceptron parent)
     {
         DelaySteps = parent.DelaySteps;
         
-        // Наследование параметров с мутацией
         _params = MutateParameters(parent._params);
-        
         int[] layerSizes = parent._activations.AsValueEnumerable().Select(a => a.Length).ToArray();
         InitializeNetworkStructure(layerSizes);
         
-        // Наследование весов и смещений с мутацией
         InheritWeightsAndBiases(parent, layerSizes);
     }
 
