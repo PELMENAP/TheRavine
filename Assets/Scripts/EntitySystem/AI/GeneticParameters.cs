@@ -28,7 +28,7 @@ public struct GeneticParameters
         InitBiasesValues = 0.1f,
         GaussianNoise = 0.03f,
         ExplorationPrice = 0.15f,
-        MutationChance = 0.1f,
+        MutationChance = 0.3f,
         BaseDelta = 0.05f
     };
     public static readonly (float min, float max, float mutationScale)[] ParameterRanges = {
@@ -43,7 +43,7 @@ public struct GeneticParameters
         (0.01f, 0.3f, 0.05f),    // InitBiasesValues
         (0.01f, 0.1f, 0.01f),    // GaussianNoise
         (0.05f, 0.3f, 0.05f),    // ExplorationPrice
-        (0.05f, 0.3f, 0.05f),    // MutationChance
+        (0.05f, 0.5f, 0.05f),    // MutationChance
         (0.01f, 0.1f, 0.01f)     // BaseDelta
     };
 }

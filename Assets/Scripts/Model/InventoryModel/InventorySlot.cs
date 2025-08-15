@@ -1,4 +1,5 @@
 using System;
+
 public class InventorySlot : IInventorySlot
 {
     public bool isFull => !isEmpty && amount == capacity;

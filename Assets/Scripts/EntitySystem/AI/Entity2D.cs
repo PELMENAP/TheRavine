@@ -9,7 +9,7 @@ using NaughtyAttributes;
 using Random = TheRavine.Extensions.RavineRandom;
 using TMPro;
 using R3;
-public class Entity2D : MonoBehaviour
+public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
 {
     [Header("Визуал")]
     [SerializeField] private TextMeshPro text;
@@ -72,6 +72,7 @@ public class Entity2D : MonoBehaviour
         Flee,           // Убегать от сущности
         Eat,            // Есть еду
         Reproduce,      // Размножаться
+        Speech,
     }
     
     // Текущее действие
@@ -223,6 +224,10 @@ public class Entity2D : MonoBehaviour
             case EntityAction.Reproduce:
                 await ReproduceAsync(cancellationToken);
                 break;
+
+            case EntityAction.Speech:
+                await SpeechAsync(cancellationToken);
+                break;
         }
     }
 
@@ -242,6 +247,28 @@ public class Entity2D : MonoBehaviour
 
         await UniTask.Delay(TimeSpan.FromSeconds(idleTime), cancellationToken: cancellationToken);
     }
+
+    public float GetDialogDistance()
+    {
+        return dialogDistance;
+    }
+    public Vector3 GetCurrentPosition(){
+        return transform.position;
+    }
+    public void OnDialogGetRequire()
+    {
+        playerText.interactable = true;
+        playerText.Select();
+        playerText.text = "";
+    }
+
+    private async UniTask SpeechAsync(CancellationToken cancellationToken)
+    {
+
+        currentEnergy -= 5f;
+
+        await UniTask.Yield(cancellationToken);
+    }
     
     private bool CanPerformAction(EntityAction action)
     {
@@ -253,6 +280,8 @@ public class Entity2D : MonoBehaviour
             case EntityAction.Wander:
                 return currentEnergy > 0;
             case EntityAction.Flee:
+                return currentEnergy > 0;
+            case EntityAction.Speech:
                 return currentEnergy > 0;
                 
             case EntityAction.GoToPoint:
@@ -267,6 +296,8 @@ public class Entity2D : MonoBehaviour
                 return true;
             case EntityAction.Reproduce:
                 return currentEnergy >= reproduceEnergyCost && currentHealth >= reproduceHealthCost;
+
+            
                 
             default:
                 return true;

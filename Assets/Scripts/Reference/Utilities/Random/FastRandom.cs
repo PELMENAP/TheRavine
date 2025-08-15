@@ -97,5 +97,6 @@ namespace TheRavine.Extensions
         public static int Hundred() => RangeInt(0, 100);
         public static Vector2 GetInsideCircle(float radius = 1) => fastRandom.GetInsideCircle(radius);
         public static Color RangeColor() => fastRandom.GetColor();
+        public static bool RangeBool() => Hundred() % 2 == 0;
     }
 }

@@ -11,6 +11,7 @@ public class DialogSystem
             if (_instance == null) 
             {
                 _instance = new DialogSystem();
+                listeners = new List<IDialogListener>();
             }
             return _instance;
         }
@@ -19,7 +20,6 @@ public class DialogSystem
 
     public void AddDialogListener(IDialogListener listener)
     {
-        if(listeners == null) listeners = new List<IDialogListener>();
         if (!listeners.Contains(listener))
         {
             listeners.Add(listener);
