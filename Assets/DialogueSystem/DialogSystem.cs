@@ -16,7 +16,7 @@ public class DialogSystem
             return _instance;
         }
     }
-    private List<IDialogListener> listeners;
+    private static List<IDialogListener> listeners;
 
     public void AddDialogListener(IDialogListener listener)
     {
