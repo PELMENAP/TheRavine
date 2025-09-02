@@ -44,6 +44,6 @@ public struct GeneticParameters
         (0.01f, 0.1f, 0.01f),    // GaussianNoise
         (0.05f, 0.3f, 0.05f),    // ExplorationPrice
         (0.05f, 0.5f, 0.05f),    // MutationChance
-        (0.01f, 0.1f, 0.01f)     // BaseDelta
+        (0.01f, 0.1f, 0.01f)     // BaseDeltan    
     };
 }

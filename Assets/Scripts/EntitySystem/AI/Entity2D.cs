@@ -11,6 +11,10 @@ using TMPro;
 using R3;
 public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
 {
+    public void OnSpeechGet(IDialogSender sender, string message)
+    {
+        
+    }
     [Header("Визуал")]
     [SerializeField] private TextMeshPro text;
     [SerializeField] private GameObject prefab;
@@ -250,16 +254,13 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
 
     public float GetDialogDistance()
     {
-        return dialogDistance;
+        return 0f;
     }
     public Vector3 GetCurrentPosition(){
         return transform.position;
     }
     public void OnDialogGetRequire()
     {
-        playerText.interactable = true;
-        playerText.Select();
-        playerText.text = "";
     }
 
     private async UniTask SpeechAsync(CancellationToken cancellationToken)
