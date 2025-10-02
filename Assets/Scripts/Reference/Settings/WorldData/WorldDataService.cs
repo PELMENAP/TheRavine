@@ -5,12 +5,12 @@ using UnityEngine;
 
 namespace TheRavine.Base
 {
-    public class WorldDataService : IWorldDataService, IDisposable
+    public class WorldDataService : IDisposable
     {
         private readonly ReactiveProperty<WorldData> _worldData;
-        private readonly IWorldManager _worldManager;
-        private readonly IWorldService _worldService;
-        private readonly ILogger _logger;
+        private readonly WorldManager _worldManager;
+        private readonly WorldService _worldService;
+        private readonly IRavineLogger _logger;
         private readonly CompositeDisposable _disposables = new();
         
         private IDisposable _autosaveSubscription;
@@ -22,9 +22,9 @@ namespace TheRavine.Base
         public ReadOnlyReactiveProperty<WorldData> WorldData => _worldData;
 
         public WorldDataService(
-            IWorldManager worldManager,
-            IWorldService worldService,
-            ILogger logger)
+            WorldManager worldManager,
+            WorldService worldService,
+            IRavineLogger logger)
         {
             _worldManager = worldManager;
             _worldService = worldService;

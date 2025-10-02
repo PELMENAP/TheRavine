@@ -26,9 +26,9 @@ public class NetworkUIController : MonoBehaviour
 
     private INetworkConnectionManager connectionManager;
     private INetworkTransportConfig transportConfig;
-    private SceneTransistor sceneLoader;
+    private SceneLoader sceneLoader;
 
-    private readonly List<System.Action> eventUnsubscribers = new();
+    private readonly List<Action> eventUnsubscribers = new();
 
     private void Awake()
     {
@@ -45,7 +45,7 @@ public class NetworkUIController : MonoBehaviour
     private void InitializeDependencies()
     {
         transportConfig = new NetworkTransportConfig(transport);
-        sceneLoader = new SceneTransistor();
+        sceneLoader = new SceneLoader();
         connectionManager = new NetworkConnectionManager(sceneLoader, targetSceneIndex);
     }
 

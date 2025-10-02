@@ -92,7 +92,7 @@ namespace TheRavine.Base
                 context.Display("Превышен лимит скорости");
                 return;
             }
-            player.GetEntityComponent<MovementComponent>().baseStats.baseSpeed = value;
+            player.GetEntityComponent<MovementComponent>().BaseSpeed.Value = value;
             context.Display($"Скорость игрока установлена: {value}");
         }
     }

@@ -25,11 +25,11 @@ namespace TheRavine.Base
         }
         public bool HaveServiceLocatorPlayer()
         {
-            return ServiceLocator.GetPlayersTransforms().Count > 0;
+            return ServiceLocator.Players.GetAllPlayers().Count > 0;
         }
         public void LogBootstrapInfo(string Message)
         {
-            ServiceLocator.GetService<ILogger>().LogWarning(Message);
+            ServiceLocator.GetService<IRavineLogger>().LogWarning(Message);
         }
         public void StartGame()
         {

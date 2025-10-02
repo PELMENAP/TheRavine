@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace TheRavine.Base
 {
-    public class WorldService : IWorldService
+    public class WorldService
     {
         private readonly WorldFileManager _dataMgr;
         private readonly WorldSettingsManager _settingsMgr;

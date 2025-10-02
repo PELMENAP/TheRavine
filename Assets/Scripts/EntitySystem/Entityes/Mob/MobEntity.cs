@@ -6,11 +6,11 @@ namespace TheRavine.EntityControl
     public class MobEntity : AEntity
     {
         [SerializeField] private Vector2 direction;
-        private IMobControllable moveController;
+        private IEntityController moveController;
         [SerializeField] private Animator animator;
-        public MobEntity(EntityInfo entityInfo, ILogger logger)
+        public MobEntity(EntityInfo entityInfo, IRavineLogger logger)
         {
-            base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.prefab.GetInstanceID(), new EntityStats(entityInfo.statsInfo)));
+            base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.prefab.GetInstanceID()));
             moveController.SetInitialValues(this, logger);
             // _entityGameData = new EntityGameData(_entityInfo);
             // crosshair.gameObject.SetActive(false);
@@ -19,7 +19,6 @@ namespace TheRavine.EntityControl
         {
             base.Activate();
         }
-        public override Vector2 GetEntityVelocity() => moveController.GetEntityVelocity();
         public override void UpdateEntityCycle()
         {
             // if (isAlife)

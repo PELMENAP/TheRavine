@@ -1,45 +1,54 @@
 using UnityEngine;
+
 public class SwimmingSkill : ISkill
 {
-    public string SkillName { get; set; }
-    public int EnergyCost { get; set; }
-    public int RechargeTime { get; set; }
-    private float lastUsedTime;
+    public string SkillName { get; }
+    public float EnergyCost { get; }
+    public float Cooldown { get; }
 
-    public SwimmingSkill(string name, int energyCost, int rechargeTime)
+    private float lastUsedTime = -Mathf.Infinity;
+
+    public SwimmingSkill(string name, float energyCost, float cooldown)
     {
         SkillName = name;
         EnergyCost = energyCost;
-        RechargeTime = rechargeTime;
-        lastUsedTime = -RechargeTime;
+        Cooldown = cooldown;
     }
 
-    public void Use(IMainComponent mainComponent)
+    public bool CanUse(IEnergyComponent energy)
     {
-        if (CanUse(mainComponent))
+        bool hasEnergy = energy.Energy.CurrentValue >= EnergyCost;
+        bool offCooldown = Time.time - lastUsedTime >= Cooldown;
+        return hasEnergy && offCooldown;
+    }
+
+    public void Use(IEnergyComponent energy)
+    {
+        if (!CanUse(energy)) 
         {
-            Debug.Log($"{mainComponent.GetEntityName()} использует навык {SkillName}");
-            mainComponent.GetEntityStats().DecreaseEnergy(EnergyCost);
+            Debug.Log($"Навык {SkillName} недоступен");
+            return;
+        }
+
+        if (energy.TryConsume(EnergyCost))
+        {
             lastUsedTime = Time.time;
+            Debug.Log($"Навык {SkillName} использован");
         }
         else
         {
-            Debug.Log($"Нельзя использовать навык {SkillName} сейчас");
+            Debug.Log($"Недостаточно энергии для навыка {SkillName}");
         }
     }
 
-    public bool CanUse(IMainComponent mainComponent)
+    public float GetCooldownProgress()
     {
-        return mainComponent.GetEntityStats().energy >= EnergyCost && Time.time - lastUsedTime >= RechargeTime;
+        if (Cooldown <= 0f) return 1f;
+        return Mathf.Clamp01((Time.time - lastUsedTime) / Cooldown);
     }
 
-    public void Recharge()
+    public void ResetCooldown()
     {
-        lastUsedTime = -RechargeTime;
-    }
-    public float GetRechargeTime()
-    {
-        float del = (Time.time - lastUsedTime) / RechargeTime;
-        return del > 1f ? 1f : del;
+        throw new System.NotImplementedException();
     }
 }

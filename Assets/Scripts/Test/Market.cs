@@ -11,13 +11,13 @@ public class Market : MonoBehaviour
     public int lotTTL = 10;
     private MarketSimulator marketSimulator;
     private MarketCore marketCore;
-    private ILogger logger;
+    private IRavineLogger logger;
     private CancellationTokenSource cancellationToken;
 
     private void Start()
     {
         cancellationToken = new CancellationTokenSource();
-        logger = new Logger(null);
+        logger = new RavineLogger(null);
         marketCore = new MarketCore(commissionRate, lotTTL, logger);
         marketSimulator = new MarketSimulator(marketCore);
 

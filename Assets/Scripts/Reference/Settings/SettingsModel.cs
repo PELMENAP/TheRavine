@@ -4,24 +4,24 @@ using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Base
 {
-    public class SettingsModel : ISettingsModel, IDisposable
+    public class SettingsModel : IDisposable
     {
         private readonly GameSettingsManager _gameSettingsManager;
-        private readonly IWorldManager _worldManager;
-        private readonly IWorldService _worldService;
+        private readonly WorldManager _worldManager;
+        private readonly WorldService _worldService;
         private readonly ReactiveProperty<GameSettings> _gameSettings;
         private readonly ReactiveProperty<WorldSettings> _worldSettings;
         private readonly CompositeDisposable _disposables = new();
-        private readonly ILogger _logger;
+        private readonly IRavineLogger _logger;
 
         public ReadOnlyReactiveProperty<GameSettings> GameSettings { get; }
         public ReadOnlyReactiveProperty<WorldSettings> WorldSettings { get; }
         
         public SettingsModel(
             GameSettingsManager gameSettingsManager,
-            IWorldManager worldManager,
-            IWorldService worldService,
-            ILogger logger)
+            WorldManager worldManager,
+            WorldService worldService,
+            IRavineLogger logger)
         {
             _gameSettingsManager = gameSettingsManager;
             _worldManager = worldManager;

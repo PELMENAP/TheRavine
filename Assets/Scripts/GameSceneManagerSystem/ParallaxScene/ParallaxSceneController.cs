@@ -20,18 +20,18 @@ public class ParallaxSceneController : MonoBehaviour
     [SerializeField] private TextMeshPro textMeshPro;
     // [SerializeField] private bool win;
     private SyncedTimer _timer;
-    private SceneTransistor transistor;
+    private SceneLoader transistor;
 
     public void AddCameraToStack(Camera _cameraToAdd) => _cameraData.cameraStack.Add(_cameraToAdd);
-    private IWorldManager worldManager;
+    private WorldManager worldManager;
     private WorldInfo worldinfo;
     private async void Awake()
     {
-        worldManager = ServiceLocator.GetService<IWorldManager>();
+        worldManager = ServiceLocator.GetService<WorldManager>();
         worldinfo = await worldManager.GetWorldInfoAsync(worldManager.CurrentWorldName);
         // DataStorage.winTheGame = win;
         AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
-        transistor = new SceneTransistor();
+        transistor = new SceneLoader();
 
         _timer = new SyncedTimer(timerType, worldinfo.IsGameWon ? timeToDelay * 6 : timeToDelay);
         _timer.TimerFinished += TimerFinished;

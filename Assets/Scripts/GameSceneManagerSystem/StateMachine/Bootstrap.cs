@@ -10,13 +10,13 @@ namespace TheRavine.Base
     public class Bootstrap : MonoBehaviour
     {
         [SerializeField] private UniversalAdditionalCameraData _cameraData;
-        private SceneTransistor trasitor;
+        private SceneLoader trasitor;
         [SerializeField] private GameStateMachine gameStateMachine;
         [SerializeField] private bool isTest;
-        private IWorldDataService worldDataService;
+        private WorldDataService worldDataService;
         private async void Start()
         {
-            worldDataService =ServiceLocator.GetService<IWorldDataService>();
+            worldDataService =ServiceLocator.GetService<WorldDataService>();
             if (isTest) return;
             gameStateMachine.Initialize();
 
@@ -33,7 +33,7 @@ namespace TheRavine.Base
             {
                 worldDataService.SetTime(DateTimeOffset.Now.ToUnixTimeSeconds());
             }
-            trasitor = new SceneTransistor();
+            trasitor = new SceneLoader();
 
             gameStateMachine.StartGame();
         }

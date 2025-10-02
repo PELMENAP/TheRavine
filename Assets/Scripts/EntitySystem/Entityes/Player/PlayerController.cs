@@ -29,14 +29,14 @@ namespace TheRavine.EntityControl
         private bool isAccurance;
 
         private IController currentController;
-        private ILogger logger;
+        private IRavineLogger logger;
+        private MovementComponent movementComponent;
         private EventBusByName entityEventBus;
         private EntityAimBaseStats aimBaseStats;
-        private EntityMovementBaseStats movementBaseStats;
         private GameSettings gameSettings;
-        public void SetInitialValues(AEntity entity, ILogger logger)
+        public void SetInitialValues(AEntity entity, IRavineLogger logger)
         {
-            gameSettings = ServiceLocator.GetService<ISettingsModel>().GameSettings.CurrentValue;
+            gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
             this.logger = logger;
             this.transform.position = Extension.GetRandomPointAround(this.transform.position, 10);
             
@@ -62,7 +62,7 @@ namespace TheRavine.EntityControl
             rb.bodyType = RigidbodyType2D.Dynamic;
             
             entityEventBus = entity.GetEntityComponent<EventBusComponent>().EventBus;
-            movementBaseStats = entity.GetEntityComponent<MovementComponent>().baseStats;
+            movementComponent = entity.GetEntityComponent<MovementComponent>();
             aimBaseStats = entity.GetEntityComponent<AimComponent>().BaseStats;
             InitStatePattern(entity.GetEntityComponent<StatePatternComponent>());
         }
@@ -119,9 +119,9 @@ namespace TheRavine.EntityControl
 
             direction = direction.normalized;
             speed = Mathf.Clamp(speed, 0f, 1f);
-            rb.velocity = direction * speed * movementBaseStats.baseSpeed;
+            rb.linearVelocity = direction * speed * movementComponent.BaseSpeed.Value;
 
-            UpdateClientPositionClientRpc(rb.position, rb.velocity);
+            UpdateClientPositionClientRpc(rb.position, rb.linearVelocity);
         }
 
         [ClientRpc]
@@ -130,7 +130,7 @@ namespace TheRavine.EntityControl
             if (IsOwner) return;
 
             rb.position = position;
-            rb.velocity = velocity;
+            rb.linearVelocity = velocity;
         }
 
         private readonly Vector3 Offset = new(0, 0, 100);
@@ -238,5 +238,15 @@ namespace TheRavine.EntityControl
         }
 
         public Transform GetModelTransform() => this.transform;
+
+        public Vector2 GetEntityVelocity()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

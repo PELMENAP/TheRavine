@@ -10,17 +10,19 @@ public class PerceptronTest : MonoBehaviour
 {
     public float health, energy, reward;
     public int currentState, timeOfDay;
-    private int predictedIndex;
+    private float[] predictedIndex;
     public bool lastSuccess;
+    public string speech;
     public ReactiveProperty<float> maxHealth = new(100), maxEnergy = new(100);
 
     private InputVectorizer inputVectorizer;
-    private DelayedPerceptron delayedPerceptron;
+    private LSTMMemory delayedPerceptron;
     float[] input;
     private void Start() 
     {
         inputVectorizer = new(maxHealth, maxEnergy);
-        delayedPerceptron = new(inputVectorizer.GetVectorSize(), 16, 16, 16, 7);
+        // delayedPerceptron = new(inputVectorizer.GetVectorSize(), 16, 16, 16, 7);
+        delayedPerceptron = new(32, 16);
         For().Forget();
     }
 
@@ -39,8 +41,10 @@ public class PerceptronTest : MonoBehaviour
     [Button]
     private void MakePrediction()
     {
-        input = inputVectorizer.Vectorize(health, energy, predictedIndex, currentState - 1, timeOfDay, lastSuccess, 0.1f, 0.1f);
-        predictedIndex = delayedPerceptron.Predict(input) + 1;
+        input = inputVectorizer.Vectorize(health, energy, (int)predictedIndex[0], currentState - 1, timeOfDay, lastSuccess, 0.1f, 0.1f, speech);
+        
+        
+        predictedIndex = delayedPerceptron.Step(input);
         print(predictedIndex);
     }
 
@@ -53,12 +57,12 @@ public class PerceptronTest : MonoBehaviour
     [Button]
     private async void Save()
     {
-        await DelayedPerceptronStorage.SaveAsync(delayedPerceptron, "default");
+        await NeuralModelStorage.SaveAsync(delayedPerceptron, "default");
     }
 
     [Button]
     private async void Load()
     {
-        delayedPerceptron = await DelayedPerceptronStorage.LoadAsync("default");
+        delayedPerceptron = await NeuralModelStorage.LoadAsync<LSTMMemory>("default");
     }
 }

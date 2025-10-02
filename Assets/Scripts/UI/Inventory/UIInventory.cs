@@ -27,17 +27,17 @@ namespace TheRavine.Inventory
         private ObjectSystem objectSystem;
         private InfoManager infoManager;
         private EncryptedPlayerPrefsStorage encryptedPlayerPrefsStorage;
-        private IWorldManager worldManager;
+        private WorldManager worldManager;
         public bool HasItem(InventoryItemInfo info) => eventDrivenInventoryProxy.HasItem(infoManager.GetItemType(info));
         public void SetUp(ISetAble.Callback callback)
         {
-            worldManager = ServiceLocator.GetService<IWorldManager>();
-            generator = ServiceLocator.GetMonoService<MapGenerator>();
-            objectSystem = ServiceLocator.GetMonoService<ObjectSystem>();
+            worldManager = ServiceLocator.GetService<WorldManager>();
+            generator = ServiceLocator.GetService<MapGenerator>();
+            objectSystem = ServiceLocator.GetService<ObjectSystem>();
             encryptedPlayerPrefsStorage = new EncryptedPlayerPrefsStorage();
 
-            var playerData = ServiceLocator.GetMonoService<PlayerModelView>().playerEntity;
-            var gameSettings = ServiceLocator.GetService<ISettingsModel>().GameSettings.CurrentValue;
+            var playerData = ServiceLocator.GetService<PlayerModelView>().PlayerEntity;
+            var gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
             inventoryInputHandler.RegisterInput(playerData, gameSettings);
 
             var uiSlot = GetComponentsInChildren<UIInventorySlot>();

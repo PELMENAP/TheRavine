@@ -12,7 +12,7 @@ namespace TheRavine.EntityControl
 {
     public class MobController : MonoBehaviour, ISetAble
     {
-        private ILogger logger;
+        private IRavineLogger logger;
         public int GetEntityCount() => mobEntities.Length;
         private NativeList<IntPtr> mobEntities;
         private List<GCHandle> gcHandles;
@@ -24,7 +24,7 @@ namespace TheRavine.EntityControl
 
         public void SetUp(ISetAble.Callback callback)
         {
-            logger = ServiceLocator.GetService<ILogger>();
+            logger = ServiceLocator.GetService<IRavineLogger>();
             logger.LogInfo("MobController service is available now");
             
             mobEntities = new NativeList<IntPtr>(Allocator.Persistent);
@@ -107,7 +107,7 @@ namespace TheRavine.EntityControl
             {
                 GCHandle handle = GCHandle.FromIntPtr(mobEntities[i]);
                 AEntity mob = (AEntity)handle.Target;
-                velocities[i] = mob.GetEntityVelocity();
+                velocities[i] = mob.GetEntityComponent<MovementComponent>().EntityController.GetEntityVelocity();
             }
 
             moveMobsJob = new MoveMobsJob

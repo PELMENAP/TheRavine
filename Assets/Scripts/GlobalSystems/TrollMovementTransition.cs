@@ -21,7 +21,7 @@ public class TrollMovementTransition : MonoBehaviour
     private void Start()
     {
         worldDataService = ServiceLocator.GetService<WorldDataService>();
-        uIInventory = ServiceLocator.GetMonoService<UIInventory>();
+        uIInventory = ServiceLocator.GetService<UIInventory>();
 
         if (textMeshPro == null)
         {

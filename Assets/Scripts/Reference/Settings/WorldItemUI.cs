@@ -24,9 +24,9 @@ namespace TheRavine.Base
         private Action _onEnterWorld;
         private Action _onDeleteWorld;
         private Action _onEditSettings;
-        private ILogger logger;
-        private IWorldService worldService;
-        public void Initialize(string worldName, Action onEnterWorld, Action onDeleteWorld, Action onEditSettings, ILogger logger, IWorldService worldService)
+        private IRavineLogger logger;
+        private WorldService worldService;
+        public void Initialize(string worldName, Action onEnterWorld, Action onDeleteWorld, Action onEditSettings, IRavineLogger logger, WorldService worldService)
         {
             this.logger = logger;
             this.worldService = worldService;
@@ -45,7 +45,7 @@ namespace TheRavine.Base
             if (worldNameText != null)
                 worldNameText.text = _worldName;
             
-            var worldManager = ServiceLocator.GetService<IWorldManager>();
+            var worldManager = ServiceLocator.GetService<WorldManager>();
             bool isCurrentWorld = worldManager?.CurrentWorldName == _worldName;
             
             if (worldIcon != null)

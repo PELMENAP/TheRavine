@@ -6,6 +6,7 @@ using TheRavine.Base;
 namespace TheRavine.EntityControl
 {
     [RequireComponent(typeof(Animator))]
+    [RequireComponent(typeof(ShadowCreator))]
     public class PlayerAnimator : MonoBehaviour
     {
         [SerializeField] private Animator defaultAnimator, shadowAnimator;
@@ -22,7 +23,7 @@ namespace TheRavine.EntityControl
         {
             defaultAnimator ??= GetComponent<Animator>();
             cachedShadowCreator = GetComponent<ShadowCreator>();
-            gameSettings = ServiceLocator.GetService<ISettingsModel>().GameSettings.CurrentValue;
+            gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
         }
         
         public async UniTask SetUpAsync()

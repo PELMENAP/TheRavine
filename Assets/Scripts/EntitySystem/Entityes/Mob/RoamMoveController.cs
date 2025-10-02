@@ -8,7 +8,7 @@ namespace TheRavine.EntityControl
 {
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(CircleCollider2D))]
-    public class RoamMoveController : MonoBehaviour, IMobControllable
+    public class RoamMoveController : MonoBehaviour, IEntityController
     {
         private Transform entityTransform;
         [SerializeField] private Transform pointTarget, pointRandom;
@@ -23,7 +23,7 @@ namespace TheRavine.EntityControl
         private int currentPointIndex;
         private Collider2D Ccollider;
         private AEntity entity;
-        public void SetInitialValues(AEntity entity, ILogger logger)
+        public void SetInitialValues(AEntity entity, IRavineLogger logger)
         {
             entityTransform = this.transform;
             Ccollider = this.GetComponent<Collider2D>();
@@ -114,5 +114,10 @@ namespace TheRavine.EntityControl
         }
 
         public void Delete() { }
+
+        public void Dispose()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }
