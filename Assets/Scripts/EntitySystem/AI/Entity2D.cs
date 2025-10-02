@@ -1,20 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 
+using Cysharp.Threading.Tasks;
 using NaughtyAttributes;
-
-using Random = TheRavine.Extensions.RavineRandom;
+using Random = TheRavine.Extensions.RavineRandom; // fast random implementation 
 using TMPro;
 using R3;
+
 public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
 {
-    public void OnSpeechGet(IDialogSender sender, string message)
-    {
-        
-    }
     [Header("Визуал")]
     [SerializeField] private TextMeshPro text;
     [SerializeField] private GameObject prefab;
@@ -48,7 +44,12 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
     [SerializeField] private float minWanderTime = 1f;
     [SerializeField] private float maxWanderTime = 3f;
     [SerializeField] private float idleTime = 2f;
-    
+
+    [SerializeField] private string speech = "", otherSpeech = "";
+
+    [SerializeField] private GeneticParameters geneticParameters;
+    // [SerializeField] private StringToAudioGenerator stringToAudioGenerators;
+
     private bool isMoving = false;
     private bool isAttacking = false;
     private bool canAttack = true;
@@ -76,17 +77,13 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
         Flee,           // Убегать от сущности
         Eat,            // Есть еду
         Reproduce,      // Размножаться
-        Speech,
+        Speech,         // Говорить
     }
-    
-    // Текущее действие
-    private EntityAction currentAction = EntityAction.Idle;
-    
     public string file = "default";
     [Button]
     private async void Save()
     {
-        await DelayedPerceptronStorage.SaveAsync(delayedPerceptron, file);
+        await NeuralModelStorage.SaveAsync(delayedPerceptron, file);
     }
 
     private void Awake()
@@ -95,22 +92,25 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
         spriteRenderer = GetComponent<SpriteRenderer>();
         if (rb == null) rb = gameObject.AddComponent<Rigidbody2D>();
         if (spriteRenderer == null) spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
-        
+
         rb.gravityScale = 0;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         rb.freezeRotation = true;
-        
+
         actionCts = new CancellationTokenSource();
-        
+
         currentHealth = maxHealth.Value / 2;
         currentEnergy = maxEnergy.Value / 2;
 
         inputVectorizer = new(maxHealth, maxEnergy);
+
+        DialogSystem.Instance.AddDialogListener(this);
     }
 
     public void SetUp(DelayedPerceptron other)
     {
         delayedPerceptron = new DelayedPerceptron(other);
+        geneticParameters = delayedPerceptron.GetGeneticParameters();
 
         BehaviorLoopAsync(actionCts.Token).Forget();
         
@@ -120,22 +120,25 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
     public void SetUpAsNew()
     {
         delayedPerceptron = new(inputVectorizer.GetVectorSize(), 16, 16, 16, Enum.GetValues(typeof(EntityAction)).Length);
+        geneticParameters = delayedPerceptron.GetGeneticParameters();
 
         BehaviorLoopAsync(actionCts.Token).Forget();
         
         RegenerateEnergyAsync(actionCts.Token).Forget();
     }
-    
+
     private void OnDisable()
     {
         actionCts?.Cancel();
         actionCts?.Dispose();
         actionCts = new CancellationTokenSource();
+
+        Die();
     }
     
     private async UniTaskVoid BehaviorLoopAsync(CancellationToken cancellationToken)
     {
-        await UniTask.Delay(TimeSpan.FromSeconds(3f), cancellationToken: cancellationToken);
+        await UniTask.Delay(TimeSpan.FromSeconds(2f), cancellationToken: cancellationToken);
         while (!cancellationToken.IsCancellationRequested)
         {
             await PerformRandomAction(cancellationToken);
@@ -145,39 +148,44 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
     }
     
     private int predictedIndex;
+    private float[] input;
     private async UniTask PerformRandomAction(CancellationToken cancellationToken)
     {
         timeOfDay = (timeOfDay + 1) % 24;
 
+
         float indanger = 0f;
-        if(currentEnergy < 50 || currentHealth < 50) indanger += 0.25f;
-        if(currentEnergy < 25 || currentHealth < 25) indanger += 0.25f;
-        if(currentEnergy < 10 || currentHealth < 10) indanger += 0.5f;
+        if (currentEnergy < 50 || currentHealth < 50) indanger += 0.25f;
+        if (currentEnergy < 25 || currentHealth < 25) indanger += 0.25f;
+        if (currentEnergy < 10 || currentHealth < 10) indanger += 0.5f;
 
         float timetobreed = 0f;
-        if(currentEnergy > reproduceEnergyCost && currentHealth > reproduceHealthCost) timetobreed += 0.5f;
-        if(currentEnergy > reproduceEnergyCost + 50 && currentHealth > reproduceHealthCost + 50) timetobreed += 0.5f;
+        if (currentEnergy > reproduceEnergyCost && currentHealth > reproduceHealthCost) timetobreed += 0.5f;
+        if (currentEnergy > reproduceEnergyCost + 50 && currentHealth > reproduceHealthCost + 50) timetobreed += 0.5f;
 
-        float[] input = inputVectorizer.Vectorize(currentHealth, currentEnergy, predictedIndex, currentState, timeOfDay, true, indanger, timetobreed);
+        input = inputVectorizer.Vectorize(currentHealth, currentEnergy, predictedIndex, currentState, timeOfDay, true, indanger, timetobreed, otherSpeech);
+
         predictedIndex = delayedPerceptron.Predict(input);
 
         EntityAction randomAction = (EntityAction)predictedIndex;
-        text.text = randomAction.ToString() + " \n" + ((int)currentHealth).ToString() + "|" + ((int)currentEnergy).ToString();
+        text.text = randomAction.ToString() + " \n" + ((int)currentHealth).ToString() + "|" + ((int)currentEnergy).ToString() + " \n" + speech;
+        otherSpeech = "";
+
         await PerformAction(randomAction, cancellationToken);
 
-        bool theSame = true;
-        for(int i = 0; i < delayedPerceptron.DelayedList.Count / 2; i++)
-        {
-            var firstComponent = delayedPerceptron.DelayedList[0];
-            var currentComponent = delayedPerceptron.DelayedList[i];
-            if(currentComponent.Predicted != firstComponent.Predicted || currentComponent.Evaluation != firstComponent.Evaluation)
-            {
-                theSame = false;
-                break;
-            } 
-        }
+        // bool theSame = true;
+        // for (int i = 0; i < delayedPerceptron.DelayedList.Count / 2; i++)
+        // {
+        //     var firstComponent = delayedPerceptron.DelayedList[0];
+        //     var currentComponent = delayedPerceptron.DelayedList[i];
+        //     if (currentComponent.Predicted != firstComponent.Predicted || currentComponent.Evaluation != firstComponent.Evaluation)
+        //     {
+        //         theSame = false;
+        //         break;
+        //     }
+        // }
 
-        if(theSame && delayedPerceptron.DelayedList.Count > 0) delayedPerceptron.DelayedList[delayedPerceptron.DelayedList.Count - 1].Evaluation = 0.4f;
+        // if (theSame && delayedPerceptron.DelayedList.Count > 0) delayedPerceptron.DelayedList[delayedPerceptron.DelayedList.Count - 1].Evaluation = 0.4f;
     }
     
     public async UniTask PerformAction(EntityAction action, CancellationToken cancellationToken)
@@ -192,8 +200,6 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
             currentHealth -= 5;
             return;
         }
-        
-        currentAction = action;
         
         switch (action)
         {
@@ -254,10 +260,16 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
 
     public float GetDialogDistance()
     {
-        return 0f;
+        return 20f;
     }
-    public Vector3 GetCurrentPosition(){
+    public Vector3 GetCurrentPosition()
+    {
+        if (this.transform == null) return Vector3.zero;
         return transform.position;
+    }
+    public void OnSpeechGet(IDialogSender sender, string message)
+    {
+        otherSpeech = message;
     }
     public void OnDialogGetRequire()
     {
@@ -265,6 +277,10 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
 
     private async UniTask SpeechAsync(CancellationToken cancellationToken)
     {
+        speech = inputVectorizer.HashFloatArray(input);
+        DialogSystem.Instance.OnSpeechSend(this, speech);
+
+        // stringToAudioGenerators.PlayFromStringAsync(speech).Forget();
 
         currentEnergy -= 5f;
 
@@ -289,7 +305,7 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
                 return pointsOfInterest.Count > 0 && currentEnergy > 0;
                 
             case EntityAction.Eat:
-                return FindNearbyFood();
+                return true;
                 
             case EntityAction.Idle:
                 return true;
@@ -308,7 +324,7 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
     private async UniTask IdleAsync(CancellationToken cancellationToken)
     {
         isMoving = false;
-        rb.velocity = Vector2.zero;
+        rb.linearVelocity = Vector2.zero;
         
         Color originalColor = spriteRenderer.color;
         spriteRenderer.color = Color.white;
@@ -407,6 +423,8 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
     }
     private async UniTask FleeFromNearbyEntityAsync(CancellationToken cancellationToken)
     {
+        DialogSystem.Instance.UpdateListenerPosition(this);
+
         GameObject nearestEntity = FindNearbyEntity();
         
         if (nearestEntity == null)
@@ -448,12 +466,12 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
             if (currentEnergy <= 0)
             {
                 isMoving = false;
-                rb.velocity = Vector2.zero;
+                rb.linearVelocity = Vector2.zero;
                 return;
             }
             
             Vector2 direction = ((Vector2)position - (Vector2)transform.position).normalized;
-            rb.velocity = direction * speed;
+            rb.linearVelocity = direction * speed;
             
             currentEnergy -= energyCostPerSecond * Time.deltaTime;
             currentEnergy = Mathf.Max(0, currentEnergy);
@@ -464,7 +482,7 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
         }
         
         isMoving = false;
-        rb.velocity = Vector2.zero;
+        rb.linearVelocity = Vector2.zero;
     }
     
     private async UniTaskVoid RegenerateEnergyAsync(CancellationToken cancellationToken)
@@ -510,27 +528,6 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
         
         return nearestEntity;
     }
-    private bool FindNearbyFood()
-    {
-        // Поиск объектов еды в радиусе
-        // Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, detectionRadius, foodLayer);
-        
-        // GameObject nearestFood = null;
-        // float minDistance = float.MaxValue;
-        
-        // foreach (Collider2D col in colliders)
-        // {
-        //     float distance = Vector2.Distance(transform.position, col.transform.position);
-            
-        //     if (distance < minDistance)
-        //     {
-        //         minDistance = distance;
-        //         nearestFood = col.gameObject;
-        //     }
-        // }
-        
-        return true;
-    }
     
     public void TakeDamage(float damage)
     {
@@ -546,11 +543,13 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
     private void Die()
     {
         actionCts?.Cancel();
-        
+
         spriteRenderer.color = Color.gray;
-        
-        rb.velocity = Vector2.zero;
-        rb.isKinematic = true;
+
+        rb.linearVelocity = Vector2.zero;
+        rb.bodyType = RigidbodyType2D.Kinematic;
+
+        DialogSystem.Instance.RemoveDialogListener(this);
 
         Destroy(this.gameObject);
     }

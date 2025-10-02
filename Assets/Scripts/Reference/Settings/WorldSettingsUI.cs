@@ -14,10 +14,10 @@ namespace TheRavine.Base
         [SerializeField] private TMP_InputField maxEntityCountInput;
         [SerializeField] private GameObject worldSettingsPanel;
         [SerializeField] private TextMeshProUGUI currentWorldText;
-        private ISettingsModel _settingsModel;
-        private IWorldDataService _worldDataService;
-        private IWorldManager _worldManager;
-        private IWorldService _worldService;
+        private SettingsModel _settingsModel;
+        private WorldDataService _worldDataService;
+        private WorldManager _worldManager;
+        private WorldService _worldService;
         private CompositeDisposable _disposables = new();
         
         private readonly int[] _autosaveIntervals = { 0, 15, 30, 60, 120, 300 };

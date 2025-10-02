@@ -119,7 +119,7 @@ namespace TheRavine.Generator
                     await UniTask.Delay(50);
                 }
             }
-            viewer = ServiceLocator.GetPlayerTransform();
+            viewer = ServiceLocator.Players.GetFirstPlayer();
             GenerationUpdate().Forget();
         }
 

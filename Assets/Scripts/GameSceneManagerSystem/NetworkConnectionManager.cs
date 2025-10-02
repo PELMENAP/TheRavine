@@ -12,10 +12,10 @@ public interface INetworkConnectionManager
 }
 public class NetworkConnectionManager : INetworkConnectionManager
 {
-    private readonly SceneTransistor sceneLoader;
+    private readonly SceneLoader sceneLoader;
     private readonly int targetSceneIndex;
 
-    public NetworkConnectionManager(SceneTransistor sceneLoader, int targetSceneIndex)
+    public NetworkConnectionManager(SceneLoader sceneLoader, int targetSceneIndex)
     {
         this.sceneLoader = sceneLoader ?? throw new ArgumentNullException(nameof(sceneLoader));
         this.targetSceneIndex = targetSceneIndex;

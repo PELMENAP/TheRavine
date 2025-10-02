@@ -1,9 +1,7 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine.SceneManagement;
 
-using TheRavine.Base;
-
-public class SceneTransistor
+public class SceneLoader
 {
     private bool _isLoading = false;
 

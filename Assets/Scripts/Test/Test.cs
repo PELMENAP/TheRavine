@@ -55,14 +55,14 @@ public class Test : MonoBehaviour
     [Button]
     private void ShowPlayerEntity()
     {
-        print(playerEntity.GetEntityComponent<MainComponent>().GetEntityStats().energy);
-        print(playerEntity.GetEntityComponent<SkillComponent>().Skills[flyingSkill.SkillName].GetRechargeTime());
+        // print(playerEntity.GetEntityComponent<MainComponent>().GetEntityStats().energy);
+        // print(playerEntity.GetEntityComponent<SkillComponent>().Skills[flyingSkill.SkillName].GetRechargeTime());
     }
 
     [Button]
     private void UseSkillBySelf()
     {
-        playerEntity.GetEntityComponent<SkillComponent>().Skills[flyingSkill.SkillName].Use(playerEntity.GetEntityComponent<MainComponent>());
+        // playerEntity.GetEntityComponent<SkillComponent>().Skills[flyingSkill.SkillName].Use(playerEntity.GetEntityComponent<MainComponent>());
     }
     Vector2Int position;
 

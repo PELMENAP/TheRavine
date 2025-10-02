@@ -20,14 +20,14 @@ namespace TheRavine.Base
         [Header("Интеграции")]
         [SerializeField] private WorldSettingsUI settingsView;
         
-        private ILogger logger;
-        private IWorldManager _worldManager;
+        private IRavineLogger logger;
+        private WorldManager _worldManager;
         private CompositeDisposable _disposables = new();
 
         private void Start()
         {
             _worldManager = ServiceLocator.GetService<WorldManager>();
-            logger = ServiceLocator.GetService<ILogger>();
+            logger = ServiceLocator.GetService<IRavineLogger>();
             
             InitializeUI();
             BindToModel();
@@ -76,7 +76,7 @@ namespace TheRavine.Base
                 worldItemComponent.Initialize(worldName, 
                     () => OnEnterWorld(worldName),
                     () => OnDeleteWorld(worldName),
-                    () =>  OnEditWorldSettings(worldName).Forget(), logger, ServiceLocator.GetService<IWorldService>());
+                    () =>  OnEditWorldSettings(worldName).Forget(), logger, ServiceLocator.GetService<WorldService>());
             }
         }
         private async void OnEnterWorld(string worldName)

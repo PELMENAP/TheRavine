@@ -31,7 +31,7 @@ namespace TheRavine.Inventory
         public void SetUp(InventoryModel inventoryModel)
         {
             this.inventoryModel = inventoryModel;
-            gameSettings = ServiceLocator.GetService<ISettingsModel>().GameSettings.CurrentValue;
+            gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
             eventSystem = EventSystem.current;
             eventData = new PointerEventData(eventSystem);
             mouse = Mouse.current;

@@ -15,7 +15,7 @@ public class BotController : MonoBehaviour, IEntityController
     [SerializeField] private InputActionReference MovementRef;
     private IController currentController;
     private Transform crosshair, entityTrans, playerMark;
-    public void SetInitialValues(AEntity entity, ILogger logger)
+    public void SetInitialValues(AEntity entity, IRavineLogger logger)
     {
         // rb = (Rigidbody2D)this.GetComponent("Rigidbody2D");
         // entityTrans = PlayerData.instance.entityTrans;
@@ -126,4 +126,8 @@ public class BotController : MonoBehaviour, IEntityController
 
     public void Delete() { }
     public Transform GetModelTransform() => this.transform;
+    public Vector2 GetEntityVelocity()
+    {
+        throw new NotImplementedException();
+    }
 }

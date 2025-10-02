@@ -48,7 +48,7 @@ namespace TheRavine.Base
         private readonly ReactiveProperty<MenuSection> currentSection = new(MenuSection.Menu);
         private readonly ReactiveProperty<bool> isLoading = new(true);
         private readonly CompositeDisposable disposables = new();
-        private readonly SceneTransistor transistor = new();
+        private readonly SceneLoader sceneLoader = new();
         private readonly Dictionary<MenuSection, MenuSectionData> sectionLookup = new();
 
         private void Awake()
@@ -112,6 +112,8 @@ namespace TheRavine.Base
             AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
 
             FaderOnTransit.instance.FadeOut(() => { isLoading.Value = false; SwitchToSection(MenuSection.Menu); });
+            SwitchToSection(MenuSection.Menu);
+            StartGame();
         }
         private void SwitchToSection(MenuSection section)
         {
@@ -138,7 +140,7 @@ namespace TheRavine.Base
 
             try
             {
-                await transistor.LoadScene(SceneIndex);
+                await sceneLoader.LoadScene(SceneIndex);
             }
             catch (Exception ex)
             {

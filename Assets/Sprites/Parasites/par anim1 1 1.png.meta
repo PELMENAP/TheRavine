@@ -109,7 +109,7 @@ TextureImporter:
   swizzle: 50462976
   cookieLightType: 0
   platformSettings:
-  - serializedVersion: 3
+  - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
     maxTextureSize: 2048
     resizeAlgorithm: 0
@@ -122,7 +122,7 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 3
+  - serializedVersion: 4
     buildTarget: Standalone
     maxTextureSize: 2048
     resizeAlgorithm: 0
@@ -135,7 +135,7 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 3
+  - serializedVersion: 4
     buildTarget: Android
     maxTextureSize: 2048
     resizeAlgorithm: 0
@@ -156,12 +156,13 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 493
+        y: 490
         width: 23
-        height: 16
+        height: 22
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -176,13 +177,14 @@ TextureImporter:
       name: par anim1 1 1_1
       rect:
         serializedVersion: 2
-        x: 22
-        y: 492
-        width: 24
-        height: 16
+        x: 23
+        y: 490
+        width: 23
+        height: 22
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -197,13 +199,14 @@ TextureImporter:
       name: par anim1 1 1_2
       rect:
         serializedVersion: 2
-        x: 45
-        y: 491
+        x: 46
+        y: 490
         width: 23
-        height: 15
+        height: 22
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -218,13 +221,14 @@ TextureImporter:
       name: par anim1 1 1_3
       rect:
         serializedVersion: 2
-        x: 68
+        x: 69
         y: 490
         width: 23
-        height: 15
+        height: 22
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -239,13 +243,14 @@ TextureImporter:
       name: par anim1 1 1_4
       rect:
         serializedVersion: 2
-        x: 91
-        y: 489
+        x: 92
+        y: 490
         width: 23
-        height: 16
+        height: 22
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -260,13 +265,14 @@ TextureImporter:
       name: par anim1 1 1_5
       rect:
         serializedVersion: 2
-        x: 114
+        x: 115
         y: 490
         width: 23
-        height: 15
+        height: 22
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -281,13 +287,14 @@ TextureImporter:
       name: par anim1 1 1_6
       rect:
         serializedVersion: 2
-        x: 137
-        y: 491
-        width: 22
-        height: 15
+        x: 138
+        y: 490
+        width: 23
+        height: 22
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -302,13 +309,14 @@ TextureImporter:
       name: par anim1 1 1_7
       rect:
         serializedVersion: 2
-        x: 160
-        y: 492
-        width: 24
-        height: 16
+        x: 161
+        y: 490
+        width: 23
+        height: 22
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -323,13 +331,14 @@ TextureImporter:
       name: par anim1 1 1_8
       rect:
         serializedVersion: 2
-        x: 183
-        y: 493
-        width: 24
-        height: 16
+        x: 184
+        y: 490
+        width: 23
+        height: 22
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -344,13 +353,14 @@ TextureImporter:
       name: par anim1 1 1_9
       rect:
         serializedVersion: 2
-        x: 206
-        y: 495
+        x: 207
+        y: 490
         width: 23
-        height: 17
+        height: 22
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -365,13 +375,14 @@ TextureImporter:
       name: par anim1 1 1_10
       rect:
         serializedVersion: 2
-        x: 229
-        y: 498
+        x: 230
+        y: 490
         width: 23
-        height: 14
+        height: 22
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -386,13 +397,14 @@ TextureImporter:
       name: par anim1 1 1_11
       rect:
         serializedVersion: 2
-        x: 252
-        y: 498
+        x: 253
+        y: 490
         width: 23
-        height: 14
+        height: 22
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -407,13 +419,14 @@ TextureImporter:
       name: par anim1 1 1_12
       rect:
         serializedVersion: 2
-        x: 275
-        y: 498
+        x: 276
+        y: 490
         width: 23
-        height: 14
+        height: 22
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -428,13 +441,14 @@ TextureImporter:
       name: par anim1 1 1_13
       rect:
         serializedVersion: 2
-        x: 298
-        y: 495
+        x: 299
+        y: 490
         width: 23
-        height: 17
+        height: 22
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -446,15 +460,18 @@ TextureImporter:
       edges: []
       weights: []
     outline: []
+    customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 6b1e0f0d02dc38142a2838bbb09725a1
     internalID: 0
     vertices: []
     indices: 
     edges: []
     weights: []
     secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
     nameFileIdTable:
       par anim1 1 1_0: -3072175040479506072
       par anim1 1 1_1: 5748346226709664095
@@ -462,6 +479,7 @@ TextureImporter:
       par anim1 1 1_11: 8483035484419114569
       par anim1 1 1_12: -3645135826060257931
       par anim1 1 1_13: 2867295357947932601
+      par anim1 1 1_14: 1897117032
       par anim1 1 1_2: -3000605791446632368
       par anim1 1 1_3: -2986614198710841082
       par anim1 1 1_4: -8365499938652036241

@@ -8,10 +8,10 @@ using UnityEngine;
 
 namespace TheRavine.Base
 {
-    public class WorldManager : IWorldManager, IDisposable
+    public class WorldManager : IDisposable
     {
-        private readonly IWorldService _worldService;
-        private readonly ILogger _logger;
+        private readonly WorldService _worldService;
+        private readonly IRavineLogger _logger;
         private readonly ReactiveProperty<string> _currentWorld;
         private readonly ReactiveProperty<bool> _isLoading;
         private readonly CompositeDisposable _disposables = new();
@@ -24,7 +24,7 @@ namespace TheRavine.Base
         public Observable<bool> IsLoading { get; }
         public Observable<long> CacheVersion => _cacheVersion.AsObservable();
 
-        public WorldManager(IWorldService worldService, ILogger logger)
+        public WorldManager(WorldService worldService, IRavineLogger logger)
         {
             _worldService = worldService;
             _logger = logger;
@@ -100,8 +100,8 @@ namespace TheRavine.Base
             
             try
             {
-                var worldDataService = ServiceLocator.GetService<IWorldDataService>();
-                var settingsModel = ServiceLocator.GetService<ISettingsModel>();
+                var worldDataService = ServiceLocator.GetService<WorldDataService>();
+                var settingsModel = ServiceLocator.GetService<SettingsModel>();
                 
                 var (worldData, worldSettings) = await _worldService.LoadFullAsync(worldName);
             

@@ -11,7 +11,7 @@ public class GameInitializer : MonoBehaviour
 
     private void Awake()
     {
-        ServiceLocator.Clear();
+        ServiceLocator.ClearAll();
         if (initializeOnAwake)
             InitializeServices();
     }
@@ -20,38 +20,38 @@ public class GameInitializer : MonoBehaviour
     {
         onMessageDisplayTerminal += terminal.Display;
 
-        ILogger logger = new Logger(onMessageDisplayTerminal);
-        ServiceLocator.RegisterService(logger);
+        IRavineLogger logger = new RavineLogger(onMessageDisplayTerminal);
+        ServiceLocator.Services.Register(logger);
 
         terminal.Setup(logger);
 
-        var persistenceStorage = new EncryptedPlayerPrefsStorage();
+        IAsyncPersistentStorage persistenceStorage = new EncryptedPlayerPrefsStorage();
 
-        var gameSettingsManager = new GameSettingsManager(persistenceStorage);
-        var worldFileManager = new WorldFileManager(persistenceStorage);
-        var worldSettingsManager = new WorldSettingsManager(persistenceStorage);
-        var worldService = new WorldService(worldFileManager, worldSettingsManager);
+        GameSettingsManager gameSettingsManager = new(persistenceStorage);
+        WorldFileManager worldFileManager = new(persistenceStorage);
+        WorldSettingsManager worldSettingsManager = new(persistenceStorage);
+        WorldService worldService = new(worldFileManager, worldSettingsManager);
 
-        ServiceLocator.RegisterService(worldService);
+        ServiceLocator.Services.Register(worldService);
 
-        var worldManager = new WorldManager(worldService, logger);
-        var settingsModel = new SettingsModel(gameSettingsManager, worldManager, worldService, logger);
-        var worldDataService = new WorldDataService(worldManager, worldService, logger);
+        WorldManager worldManager = new(worldService, logger);
+        SettingsModel settingsModel = new(gameSettingsManager, worldManager, worldService, logger);
+        WorldDataService worldDataService = new(worldManager, worldService, logger);
 
-        ServiceLocator.RegisterService(settingsModel);
-        ServiceLocator.RegisterService(worldManager);
-        ServiceLocator.RegisterService(worldDataService);
+        ServiceLocator.Services.Register(settingsModel);
+        ServiceLocator.Services.Register(worldManager);
+        ServiceLocator.Services.Register(worldDataService);
     }
 
     private void OnDisable()
     {
         onMessageDisplayTerminal -= terminal.Display;
-        ServiceLocator.Clear();
+        // ServiceLocator.ClearAll();
     }
 
     private void OnApplicationPause(bool pauseStatus)
     {
-        if (pauseStatus && ServiceLocator.TryGetService<IWorldDataService>(out var worldDataService))
+        if (pauseStatus && ServiceLocator.Services.TryGet<WorldDataService>(out var worldDataService))
         {
             worldDataService.SaveWorldDataAsync().Forget();
         }

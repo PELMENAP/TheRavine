@@ -18,8 +18,6 @@ namespace TheRavine.Base
         [SerializeField] private GameObject terminalObject;
         [SerializeField] private Button confirmButton;
         [SerializeField] private GameObject graphyManager;
-        
-        // Новое поле для редактора скриптов
         [SerializeField] private ScriptEditorPresenter scriptEditor;
         private RiveInterpreter interpreter;
         
@@ -28,7 +26,7 @@ namespace TheRavine.Base
         private PlayerEntity playerData;
         private MapGenerator generator;
         private InputBindingAdapter _confirmBinding;
-        private ILogger logger;
+        private IRavineLogger logger;
         
         
         public void SetActiveTerminal()
@@ -51,7 +49,7 @@ namespace TheRavine.Base
             inputField.onEndEdit.AddListener(OnInputEndEdit);
         }
 
-        public async void Setup(ILogger logger)
+        public async void Setup(IRavineLogger logger)
         {
             this.logger = logger;
 
@@ -77,7 +75,7 @@ namespace TheRavine.Base
             if (scriptEditor != null)
             {   
                 scriptEditor.Initialize(_context, interpreter);
-                scriptEditor.LoadAllFilesToInterpreter();
+                scriptEditor.LoadAllFilesToInterpreter().Forget();
                 
                 CommandManager.Register(
                     new ExecuteScriptCommand(),

@@ -1,7 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
 
 using Cysharp.Threading.Tasks;
 using TheRavine.Extensions;
@@ -15,6 +13,7 @@ public class SimpleEntityController : MonoBehaviour
     public bool newmode;
     private async void Start()
     {
+        NeuralModelStorage.RegisterFactory<DelayedPerceptron>(new DelayedPerceptronFactory());
         await UniTask.Delay(100 * RavineRandom.RangeInt(5, 20));
         
         if (newmode)
@@ -22,7 +21,7 @@ public class SimpleEntityController : MonoBehaviour
             BehaviorLoopAsync().Forget();
             return;
         }
-        delayedPerceptron = await DelayedPerceptronStorage.LoadAsync(file);
+        delayedPerceptron = await NeuralModelStorage.LoadAsync<DelayedPerceptron>(file);
 
         foreach (var item in entities)
         {
@@ -32,11 +31,13 @@ public class SimpleEntityController : MonoBehaviour
 
     private async UniTaskVoid BehaviorLoopAsync()
     {
-        
+
 
         foreach (var item in entities)
         {
             item.SetUpAsNew();
         }
+
+        await UniTask.Yield();
     }
 }

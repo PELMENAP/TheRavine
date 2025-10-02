@@ -32,6 +32,8 @@ public class StatePatternComponent : IStatePatternComponent
         behaviourCurrent = newBehaviour;
         behaviourCurrent.Enter();
         behaviourCurrent.ResetCancellation();
+
+        await UniTask.Yield();
     }
 
     public void AddBehaviour(Type type, AState behaviour)

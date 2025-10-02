@@ -26,11 +26,11 @@ namespace TheRavine.EntityControl
         [SerializeField] private BoidsBehaviour boidsBehaviour;
         private Dictionary<int, EntityInfo> mobInfo;
         public EntityInfo GetMobInfo(int id) => mobInfo[id];
-        private ILogger logger;
+        private IRavineLogger logger;
         public void SetUp(ISetAble.Callback callback)
         {
             // skillFacade = new SkillFacade();
-            logger = ServiceLocator.GetService<ILogger>();
+            logger = ServiceLocator.GetService<IRavineLogger>();
             logger.LogInfo("EntitySystem service is available now");
             global  = new List<AEntity>();
             mobInfo = new Dictionary<int, EntityInfo>(4);
@@ -43,7 +43,7 @@ namespace TheRavine.EntityControl
         private async UniTaskVoid SetUpBoids()
         {
             await UniTask.Delay(1000);
-            if(boidsBehaviour != null) boidsBehaviour.StartBoids(ServiceLocator.GetPlayerTransform());
+            if(boidsBehaviour != null) boidsBehaviour.StartBoids(ServiceLocator.Players.GetFirstPlayer());
         }
         private void FixedUpdate()
         {

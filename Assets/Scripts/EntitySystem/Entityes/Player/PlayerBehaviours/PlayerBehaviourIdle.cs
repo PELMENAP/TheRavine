@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 public class PlayerBehaviourIdle : AState
 {
-    private IEntityController controller;
-    private Behaviour behaviourIdle;
-    private ILogger logger;
-    public PlayerBehaviourIdle(IEntityController _controller, Action _delegateIdle, ILogger logger)
+    private readonly IEntityController controller;
+    private readonly Behaviour behaviourIdle;
+    private readonly IRavineLogger logger;
+    public PlayerBehaviourIdle(IEntityController _controller, Action _delegateIdle, IRavineLogger logger)
     {
         controller = _controller;
         behaviourIdle = _delegateIdle.Invoke;
@@ -20,7 +21,7 @@ public class PlayerBehaviourIdle : AState
     }
     public override void Enter()
     {
-        ProcessCommandsAsync();
+        ProcessCommandsAsync().Forget();
     }
 
     public override void Exit()

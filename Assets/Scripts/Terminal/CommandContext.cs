@@ -1,7 +1,6 @@
 using System;
 using Cysharp.Text;
 using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 
@@ -13,7 +12,7 @@ namespace TheRavine.Base
     public class CommandContext : IDisposable
     {
         private const int MaxLines = 50;
-        private readonly Queue<string> _lines = new Queue<string>(MaxLines);
+        private readonly Queue<string> _lines = new(MaxLines);
         private Utf16ValueStringBuilder _sb = ZString.CreateStringBuilder();
         private bool _disposed = false;
 
@@ -42,8 +41,7 @@ namespace TheRavine.Base
             Graphy = graphy;
             CommandManager = commandManager;
 
-            var encryptedPlayerPrefsStorage = new EncryptedPlayerPrefsStorage();
-            scriptFileManager = new ScriptFileManager(encryptedPlayerPrefsStorage);
+            scriptFileManager = new ScriptFileManager(new EncryptedPlayerPrefsStorage());
             
             ScriptEditor = scriptEditor;
             ScriptInterpreter = scriptInterpreter;

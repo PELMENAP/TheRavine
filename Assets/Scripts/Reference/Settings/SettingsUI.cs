@@ -15,13 +15,13 @@ namespace TheRavine.Base
         [SerializeField] private Toggle shadowToggle, joystickToggle, particlesToggle, profileToggle;
         [SerializeField] private GameObject profiler;
         
-        private ISettingsModel _settingsModel;
+        private SettingsModel _settingsModel;
         private GraphyDebugger _profilerComponent;
         private CompositeDisposable _disposables = new();
 
         private void Start()
         {
-            _settingsModel = ServiceLocator.GetService<SettingsModel>();
+            _settingsModel = ServiceLocator.Services.Get<SettingsModel>();
             _profilerComponent = profiler?.GetComponent<GraphyDebugger>();
             
             InitializeUI();

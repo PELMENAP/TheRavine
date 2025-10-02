@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System;
 using UnityEngine;
 using TMPro;
+using Cysharp.Threading.Tasks;
 
 namespace TheRavine.EntityControl
 {
@@ -18,10 +19,6 @@ namespace TheRavine.EntityControl
             // Init(null);
             SetBehaviourIdle();
             // crosshair.gameObject.SetActive(false);
-        }
-        public override Vector2 GetEntityVelocity()
-        {
-            return new Vector2();
         }
         public override void UpdateEntityCycle()
         {
@@ -42,12 +39,12 @@ namespace TheRavine.EntityControl
 
         public void SetBehaviourIdle()
         {
-            statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<BotBehaviourIdle>());
+            statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<BotBehaviourIdle>()).Forget();
         }
 
         public void SetBehaviourDialog()
         {
-            statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<BotBehaviourDialoge>());
+            statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<BotBehaviourDialoge>()).Forget();
         }
     }
 }
