@@ -239,7 +239,7 @@ namespace TheRavine.EntityControl
                         
                     if (RavineRandom.Hundred() < curMobSpawnData.Chance)
                     {
-                        _nalSpawnQueue.Enqueue(new Pair<Vector2Int, GameObject>(current.First, curMobSpawnData.info.prefab));
+                        _nalSpawnQueue.Enqueue(new Pair<Vector2Int, GameObject>(current.First, curMobSpawnData.info.Prefab));
                         await UniTask.Delay(curMobSpawnData.Chance * curMobSpawnData.Chance, cancellationToken: _cts.Token);
                         break;
                     }

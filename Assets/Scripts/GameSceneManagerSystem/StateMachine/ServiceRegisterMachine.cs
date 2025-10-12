@@ -1,20 +1,15 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Reflection;
-using System;
 
 namespace TheRavine.Base
 {
     public class ServiceRegisterMachine
     {
-        private Queue<ISetAble> disAble;
-        public ServiceRegisterMachine()
-        {
-            disAble = new Queue<ISetAble>();
-        }
+        private readonly Queue<ISetAble> disAble = new();
         public Queue<ISetAble> RegisterSomeServices(MonoBehaviour[] scripts)
         {
-            Queue<ISetAble> someServices = new Queue<ISetAble>();
+            Queue<ISetAble> someServices = new();
             
             for (byte i = 0; i < scripts.Length; i++)
             {

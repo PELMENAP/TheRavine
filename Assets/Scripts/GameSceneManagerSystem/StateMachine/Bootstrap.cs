@@ -10,13 +10,13 @@ namespace TheRavine.Base
     public class Bootstrap : MonoBehaviour
     {
         [SerializeField] private UniversalAdditionalCameraData _cameraData;
-        private SceneLoader trasitor;
+        private SceneLoader sceneLoader;
         [SerializeField] private GameStateMachine gameStateMachine;
         [SerializeField] private bool isTest;
         private WorldDataService worldDataService;
         private async void Start()
         {
-            worldDataService =ServiceLocator.GetService<WorldDataService>();
+            worldDataService = ServiceLocator.GetService<WorldDataService>();
             if (isTest) return;
             gameStateMachine.Initialize();
 
@@ -33,7 +33,7 @@ namespace TheRavine.Base
             {
                 worldDataService.SetTime(DateTimeOffset.Now.ToUnixTimeSeconds());
             }
-            trasitor = new SceneLoader();
+            sceneLoader = new SceneLoader();
 
             gameStateMachine.StartGame();
         }
@@ -66,7 +66,7 @@ namespace TheRavine.Base
         }
 
         private void TransitToOtherScene(int sceneNumber){
-            trasitor.LoadScene(sceneNumber).Forget();
+            sceneLoader.LoadScene(sceneNumber).Forget();
             AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
         }
 

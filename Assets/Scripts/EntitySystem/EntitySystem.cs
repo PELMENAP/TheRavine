@@ -35,7 +35,7 @@ namespace TheRavine.EntityControl
             global  = new List<AEntity>();
             mobInfo = new Dictionary<int, EntityInfo>(4);
 
-            for (int i = 0; i < _mobInfo.Length; i++) mobInfo[_mobInfo[i].prefab.GetInstanceID()] = _mobInfo[i];
+            for (int i = 0; i < _mobInfo.Length; i++) mobInfo[_mobInfo[i].Prefab.GetInstanceID()] = _mobInfo[i];
 
             SetUpBoids().Forget();
             callback?.Invoke();

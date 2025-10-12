@@ -32,7 +32,7 @@ namespace TheRavine.EntityControl
         private IRavineLogger logger;
         private MovementComponent movementComponent;
         private EventBusByName entityEventBus;
-        private EntityAimBaseStats aimBaseStats;
+        private AimComponent aimComponent;
         private GameSettings gameSettings;
         public void SetInitialValues(AEntity entity, IRavineLogger logger)
         {
@@ -47,7 +47,7 @@ namespace TheRavine.EntityControl
             {
                 ControlType.Personal => new PCController(Movement, RightClick, transform),
                 ControlType.Mobile => new JoistickController(joystick),
-                _ => throw new System.NotImplementedException()
+                _ => throw new NotImplementedException()
             };
 
             GetPlayerComponents(entity);
@@ -63,7 +63,7 @@ namespace TheRavine.EntityControl
             
             entityEventBus = entity.GetEntityComponent<EventBusComponent>().EventBus;
             movementComponent = entity.GetEntityComponent<MovementComponent>();
-            aimBaseStats = entity.GetEntityComponent<AimComponent>().BaseStats;
+            aimComponent = entity.GetEntityComponent<AimComponent>();
             InitStatePattern(entity.GetEntityComponent<StatePatternComponent>());
         }
 
@@ -119,9 +119,9 @@ namespace TheRavine.EntityControl
 
             direction = direction.normalized;
             speed = Mathf.Clamp(speed, 0f, 1f);
-            rb.linearVelocity = direction * speed * movementComponent.BaseSpeed.Value;
+            rb.velocity = direction * speed * movementComponent.BaseSpeed;
 
-            UpdateClientPositionClientRpc(rb.position, rb.linearVelocity);
+            UpdateClientPositionClientRpc(rb.position, rb.velocity);
         }
 
         [ClientRpc]
@@ -130,7 +130,7 @@ namespace TheRavine.EntityControl
             if (IsOwner) return;
 
             rb.position = position;
-            rb.linearVelocity = velocity;
+            rb.velocity = velocity;
         }
 
         private readonly Vector3 Offset = new(0, 0, 100);
@@ -151,8 +151,8 @@ namespace TheRavine.EntityControl
             }
             SetAimAddition(aim);
 
-            if (aim.magnitude < aimBaseStats.crosshairDistance) crosshair.localPosition = aim;
-            else crosshair.localPosition = aim.normalized * aimBaseStats.crosshairDistance;
+            if (aim.magnitude < aimComponent.CrosshairDistance) crosshair.localPosition = aim;
+            else crosshair.localPosition = aim.normalized * aimComponent.CrosshairDistance;
             crosshair.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg);
             crosshair.gameObject.SetActive(true);
             isAccurance = true;
@@ -174,8 +174,8 @@ namespace TheRavine.EntityControl
 
             float factMouseMagnitute = curAim.magnitude;
             Vector3 factMousePosition = curAim.normalized;
-            if (factMouseMagnitute > aimBaseStats.maxCrosshairDistance * factMouseFactor) factMousePosition *= aimBaseStats.maxCrosshairDistance;
-            else if (factMouseMagnitute < aimBaseStats.crosshairDistance * factMouseFactor + 1) factMousePosition = Vector2.zero;
+            if (factMouseMagnitute > aimComponent.MaxCrosshairDistance * factMouseFactor) factMousePosition *= aimComponent.MaxCrosshairDistance;
+            else if (factMouseMagnitute < aimComponent.CrosshairDistance * factMouseFactor + 1) factMousePosition = Vector2.zero;
 
             entityEventBus.Invoke(nameof(AimAddition), factMousePosition);
         }
@@ -196,8 +196,8 @@ namespace TheRavine.EntityControl
             {
                 int currentX = Mathf.RoundToInt(transform.position.x);
                 int currentY = Mathf.RoundToInt(transform.position.y);
-                for (int xOffset = -aimBaseStats.pickDistance; xOffset <= aimBaseStats.pickDistance; xOffset++)
-                    for (int yOffset = -aimBaseStats.pickDistance; yOffset <= aimBaseStats.pickDistance; yOffset++)
+                for (int xOffset = -aimComponent.PickDistance; xOffset <= aimComponent.PickDistance; xOffset++)
+                    for (int yOffset = -aimComponent.PickDistance; yOffset <= aimComponent.PickDistance; yOffset++)
                         entityEventBus.Invoke(nameof(PickUpEvent), new Vector2(currentX + xOffset, currentY + yOffset));
             }
             else entityEventBus.Invoke(nameof(PickUpEvent), Extension.RoundVector2D(crosshair.position));

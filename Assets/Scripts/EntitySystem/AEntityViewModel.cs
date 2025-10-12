@@ -1,5 +1,4 @@
 using Unity.Netcode;
-using UnityEngine;
 using R3;
 
 namespace TheRavine.EntityControl
@@ -12,7 +11,6 @@ namespace TheRavine.EntityControl
         {
             Entity = entity;
             SetupSubscriptions();
-            OnInitialize();
         }
 
         protected virtual void SetupSubscriptions()
@@ -26,7 +24,6 @@ namespace TheRavine.EntityControl
             Entity.OnUpdate.Subscribe(_ => OnViewUpdate());
         }
         protected abstract void OnViewUpdate();
-        protected abstract void OnInitialize();
         protected abstract void OnViewDisable();
         protected abstract void OnViewEnable();
     }

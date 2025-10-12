@@ -5,7 +5,7 @@ labels:
 - RoslynAnalyzer
 PluginImporter:
   externalObjects: {}
-  serializedVersion: 3
+  serializedVersion: 2
   iconMap: {}
   executionOrder: {}
   defineConstraints: []
@@ -14,24 +14,24 @@ PluginImporter:
   isExplicitlyReferenced: 0
   validateReferences: 1
   platformData:
-    Any:
+  - first:
+      : Any
+    second:
       enabled: 0
       settings:
         'Exclude ': 0
         Exclude Android: 0
+        Exclude Bratwurst: 0
         Exclude CloudRendering: 0
         Exclude EmbeddedLinux: 0
         Exclude GameCoreScarlett: 0
         Exclude GameCoreXboxOne: 0
-        Exclude Kepler: 0
         Exclude Linux64: 0
         Exclude OSXUniversal: 0
         Exclude PS4: 0
         Exclude PS5: 0
         Exclude QNX: 0
-        Exclude ReservedCFE: 0
         Exclude Switch: 0
-        Exclude VisionOS: 0
         Exclude WebGL: 0
         Exclude Win: 0
         Exclude Win64: 0
@@ -39,11 +39,20 @@ PluginImporter:
         Exclude XboxOne: 0
         Exclude iOS: 0
         Exclude tvOS: 0
-    Editor:
+  - first:
+      Any: 
+    second:
+      enabled: 0
+      settings: {}
+  - first:
+      Editor: Editor
+    second:
       enabled: 0
       settings:
         DefaultValueInitialized: true
-    WindowsStoreApps:
+  - first:
+      Windows Store Apps: WindowsStoreApps
+    second:
       enabled: 0
       settings:
         CPU: AnyCPU
