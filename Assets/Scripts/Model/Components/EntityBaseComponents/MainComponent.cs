@@ -15,6 +15,7 @@ public class MainComponent : IMainComponent
     }
 
     public string GetEntityName() => Name;
+    public int GetPrefabID() => PrefabID;
     public void Dispose()
     {
 

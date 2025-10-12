@@ -92,7 +92,7 @@ namespace TheRavine.Base
                 context.Display("Превышен лимит скорости");
                 return;
             }
-            player.GetEntityComponent<MovementComponent>().BaseSpeed.Value = value;
+            player.GetEntityComponent<MovementComponent>().SetBaseSpeed(value);
             context.Display($"Скорость игрока установлена: {value}");
         }
     }
@@ -109,7 +109,7 @@ namespace TheRavine.Base
                 context.Display("Превышен лимит обзора");
                 return;
             }
-            player.GetEntityComponent<AimComponent>().BaseStats.crosshairDistance = value;
+            player.GetEntityComponent<AimComponent>().SetCrosshairDistance(value);
             context.Display($"Обзор игрока установлен: {value}");
         }
     }

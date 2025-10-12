@@ -1,0 +1,27 @@
+﻿<Solution>
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="EventSystem.csproj" />
+  <Project Path="LitMotion.Extensions.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="Inventory.csproj" />
+  <Project Path="Tayx.Graphy.Editor.csproj" />
+  <Project Path="Scripts.csproj" />
+  <Project Path="UniTask.csproj" />
+  <Project Path="LitMotion.csproj" />
+  <Project Path="Tayx.Graphy.csproj" />
+  <Project Path="DetectorSystem.csproj" />
+  <Project Path="UniTask.Linq.csproj" />
+  <Project Path="EntitySystem.csproj" />
+  <Project Path="NaughtyAttributes.Core.csproj" />
+  <Project Path="DialogGraph.csproj" />
+  <Project Path="ObjectSystem.csproj" />
+  <Project Path="B.csproj" />
+  <Project Path="Info.csproj" />
+  <Project Path="UniTask.Addressables.csproj" />
+  <Project Path="NaughtyAttributes.Editor.csproj" />
+  <Project Path="UIInventory.csproj" />
+  <Project Path="Netcode.csproj" />
+  <Project Path="SkillSystem.csproj" />
+  <Project Path="View.csproj" />
+  <Project Path="UniTask.TextMeshPro.csproj" />
+</Solution>

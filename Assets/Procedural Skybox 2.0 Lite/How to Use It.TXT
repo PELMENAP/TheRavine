@@ -1,0 +1,8 @@
+1. Create a Material via Create > Material > Skybox > Procedural Skybox 2.0 Lite.
+
+2. Assign the material by dragging it into the Scene view, or set it under Lighting > Skybox Material.
+
+3. That’s it!
+
+Get the full version of Procedural Skybox 2.0 here:
+https://assetstore.unity.com/packages/2d/textures-materials/sky/procedural-skybox-2-0-328930

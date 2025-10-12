@@ -19,7 +19,7 @@ namespace TheRavine.EntityControl
         private ShadowCreator cachedShadowCreator;
         private GameSettings gameSettings;
 
-        private void Awake()
+        private void Start()
         {
             defaultAnimator ??= GetComponent<Animator>();
             cachedShadowCreator = GetComponent<ShadowCreator>();

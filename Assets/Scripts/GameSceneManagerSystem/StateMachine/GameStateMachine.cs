@@ -1,6 +1,6 @@
 using UnityEngine;
-using System;
 using System.Collections.Generic;
+using Unity.Netcode;
 
 namespace TheRavine.Base
 {
@@ -12,11 +12,12 @@ namespace TheRavine.Base
         [SerializeField] private int standardStateMachineTickTime, tickPerUpdate;
         [SerializeField] private MonoBehaviour[] scriptsLoadedOnBootstrapState, scriptsLoadedOnInitialState, scriptsLoadedOnLoadingState;
         public StateMachine<GameStateMachine> StateMachine { get; private set; }
-        private ServiceRegisterMachine serviceRegisterMachine;
+        private ServiceRegisterMachine serviceRegisterMachine = new();
         public void Initialize()
         {
+            NetworkManager.Singleton.StartHost();
+
             if(inventoryCanvas != null) inventoryCanvas.renderMode = RenderMode.WorldSpace;
-            serviceRegisterMachine = new ServiceRegisterMachine();
             StateMachine =  new StateMachine<GameStateMachine>(standardStateMachineTickTime,
                         new BootstrapState(this, serviceRegisterMachine.RegisterSomeServices(scriptsLoadedOnBootstrapState)),
                         new InitialState(this, serviceRegisterMachine.RegisterSomeServices(scriptsLoadedOnInitialState)),

@@ -6,6 +6,7 @@ using Cysharp.Threading.Tasks;
 
 namespace TheRavine.EntityControl
 {
+    [RequireComponent(typeof(IEntityController))]
     public class PlayerModelView : AEntityViewModel
     {
         public PlayerEntity PlayerEntity => (PlayerEntity)Entity;
@@ -14,35 +15,31 @@ namespace TheRavine.EntityControl
         private Camera mainCamera;
         private CM cameraComponent;
         private IRavineLogger logger;
-        protected override void OnInitialize()
-        {
-            // doing something specific on view
-        }
         public override async void OnNetworkSpawn()
         {
-            try
-            {
-                await SetupLocator();
-                await CreatePlayerEntity();
-                await SetupNetworking();
-                logger.LogInfo($"Player entity {NetworkManager.Singleton.LocalClientId} is set up");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError($"Player entity {NetworkManager.Singleton.LocalClientId} cannot be created: {ex.Message}");
-            }
+            await SetupLocator();
+            await CreatePlayerEntity();
+            await SetupNetworking();
 
             PlayerEntity.Init();
+            logger.LogInfo($"Player entity {NetworkManager.Singleton.LocalClientId} is set up");
         }
 
         private async UniTask SetupLocator()
         {
-            ServiceLocator.Services.Register(this);
-            ServiceLocator.Players.RegisterPlayer(this.transform);
+            try
+            {
+                ServiceLocator.Services.Register(this);
+                ServiceLocator.Players.RegisterPlayer(this.transform);
 
-            await UniTask.Delay(3000);
+                await UniTask.Delay(3000);
 
-            logger = ServiceLocator.GetService<IRavineLogger>();
+                logger = ServiceLocator.GetService<IRavineLogger>();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Player entity {NetworkManager.Singleton.LocalClientId} cannot setup locator: {ex.Message}");
+            }
         }
 
         private async UniTask CreatePlayerEntity()
@@ -55,12 +52,19 @@ namespace TheRavine.EntityControl
 
         private async UniTask SetupNetworking()
         {
-            if (IsClient && IsOwner)
+            try
             {
-                RequestCameraServerRpc(NetworkManager.Singleton.LocalClientId);
-                ServiceLocator.GetService<EntitySystem>().AddToGlobal(PlayerEntity);
+                if (IsClient && IsOwner)
+                {
+                    RequestCameraServerRpc(NetworkManager.Singleton.LocalClientId);
+                    ServiceLocator.GetService<EntitySystem>().AddToGlobal(PlayerEntity);
+                }
+                await UniTask.CompletedTask;
             }
-            await UniTask.CompletedTask;
+            catch (Exception ex)
+            {
+                logger.LogError($"Player entity {NetworkManager.Singleton.LocalClientId} cannot setup networking: {ex.Message}");
+            }
         }
         [ServerRpc]
         private void RequestCameraServerRpc(ulong clientId)

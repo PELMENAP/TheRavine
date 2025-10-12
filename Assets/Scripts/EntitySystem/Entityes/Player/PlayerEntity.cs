@@ -20,10 +20,10 @@ namespace TheRavine.EntityControl
             base.AddComponentToEntity(statePatternComponent);
             base.AddComponentToEntity(new EventBusComponent());
             base.AddComponentToEntity(new SkillComponent());
-            base.AddComponentToEntity(new EnergyComponent(entityInfo.energyInfo));
-            base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.prefab.GetInstanceID()));
-            base.AddComponentToEntity(new MovementComponent(entityInfo.movementInfo, entityController));
-            base.AddComponentToEntity(new AimComponent(new EntityAimBaseStats(entityInfo.aimStatsInfo)));
+            base.AddComponentToEntity(new EnergyComponent(entityInfo.EnergyInfo));
+            base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.Prefab.GetInstanceID()));
+            base.AddComponentToEntity(new MovementComponent(entityInfo.MovementInfo, entityController));
+            base.AddComponentToEntity(new AimComponent(entityInfo.AimStatsInfo));
             base.AddComponentToEntity(new TransformComponent(aEntityModelView.transform, aEntityModelView.transform));
         }
 

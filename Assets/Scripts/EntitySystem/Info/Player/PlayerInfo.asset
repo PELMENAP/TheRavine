@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _Name: playerinfo
   _prefab: {fileID: 1671218706617821313, guid: 1b0040924df5a54fca8e1f98646d3d7e, type: 3}
-  _statsInfo: {fileID: 11400000, guid: 0ce14bf9baca08fd5a75921c8bc58304, type: 2}
-  _movementStatsInfo: {fileID: 11400000, guid: 226b6a45893b6c8eba55524bcc514159, type: 2}
+  _energyInfo: {fileID: 11400000, guid: 0ce14bf9baca08fd5a75921c8bc58304, type: 2}
+  _movementInfo: {fileID: 11400000, guid: 226b6a45893b6c8eba55524bcc514159, type: 2}
   _aimStatsInfo: {fileID: 11400000, guid: f5f6ef28da338cba385b9a6916fb4f47, type: 2}
+  _bindInfo: {fileID: 11400000, guid: 698f5bebaf7547315b596fcfc1b3e34d, type: 2}
