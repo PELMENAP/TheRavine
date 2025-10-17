@@ -337,7 +337,7 @@
     },
     "com.unity.modules.imgui": {
       "version": "1.0.0",
-      "depth": 0,
+      "depth": 1,
       "source": "builtin",
       "dependencies": {}
     },

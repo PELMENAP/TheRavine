@@ -16,16 +16,16 @@ public class CM : NetworkBehaviour
     private Vector3 targetPos, factMousePositionOffset, zOffset = new Vector3(0, 0, -10);
     public void SetUp(ISetAble.Callback callback)
     {
-        playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<Vector3>(nameof(AimAddition), AimAdditionHandleEvent);
+        playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<AimAddition>(AimAdditionHandleEvent);
         playerTransformComponent = playerEntity.GetEntityComponent<TransformComponent>();
         cameratrans = this.transform;
         cameratrans.position = (Vector3)playerTransformComponent.GetEntityPosition() + zOffset;
         callback?.Invoke();
     }
 
-    private void AimAdditionHandleEvent(Vector3 factMousePosition)
+    private void AimAdditionHandleEvent(AEntity entity, AimAddition e)
     {
-        factMousePositionOffset = factMousePosition;
+        factMousePositionOffset = e.Position;
     }
 
     public void CameraUpdate()

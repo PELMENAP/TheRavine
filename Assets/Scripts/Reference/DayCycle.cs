@@ -194,7 +194,7 @@ namespace TheRavine.Base
             {
                 Color color = sunGradient.Evaluate(t);
                 float intensity = timeBridge[3];
-                Vector3 position = new Vector3(timeBridge[1], timeBridge[2], 0);
+                Vector3 position = new(timeBridge[1], timeBridge[2], 0);
                 ApplySunPropertiesClientRpc(color, intensity, position);
             }
         }

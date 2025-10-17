@@ -119,7 +119,7 @@ namespace TheRavine.Base
                 
                 return false;
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 logger.LogError($"Script terminal command error: {ex}");
                 return false;
@@ -141,7 +141,7 @@ namespace TheRavine.Base
                         
                     await UniTask.Delay(5000);
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     logger.LogError($"Error waiting for dependencies: {ex.Message}");
                     await UniTask.Delay(1000);
@@ -210,7 +210,7 @@ namespace TheRavine.Base
                     _context.Display(input);
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 logger.LogError($"Terminal command error: {ex}");
             }

@@ -37,10 +37,10 @@ namespace TheRavine.Base
                 z = position.z;
             }
 
-            public Vector3 ToVector3() => new Vector3(x, y, z);
+            public Vector3 ToVector3() => new(x, y, z);
 
             public static implicit operator Vector3(Vec3 vec3) => vec3.ToVector3();
-            public static implicit operator Vec3(Vector3 vector3) => new Vec3(vector3);
+            public static implicit operator Vec3(Vector3 vector3) => new(vector3);
         }
         
         public readonly bool IsDefault() => 

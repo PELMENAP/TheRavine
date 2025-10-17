@@ -64,5 +64,5 @@ public class EnumerableSnapshot<T> : IEnumerable<T>, IDisposable
 public static class EnumerableSnapshotExtensions
 {
     public static EnumerableSnapshot<T> ToEnumerableSnapshot<T>(
-        this IEnumerable<T> source) => new EnumerableSnapshot<T>(source);
+        this IEnumerable<T> source) => new(source);
 }

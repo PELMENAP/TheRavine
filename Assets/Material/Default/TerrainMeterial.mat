@@ -1,0 +1,166 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-2036822380665785261
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 9
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: TerrainMeterial
+  m_Shader: {fileID: -6465566751694194690, guid: 01223d620e7c2b048a2e01ced9b71024, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 2
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _DarkForestGrass:
+        m_Texture: {fileID: 2800000, guid: fc62a62355378e988ba80a982c6cd627, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DeepForestGrass:
+        m_Texture: {fileID: 2800000, guid: e1ac2511ab16aebd5b7c09653b047da4, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LittleForestGrass:
+        m_Texture: {fileID: 2800000, guid: dc1725dcc6e3d354192f645921ae4656, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MeadowGrass:
+        m_Texture: {fileID: 2800000, guid: a6326eb3424b4879fbc06f539a440877, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NearWaterGrass:
+        m_Texture: {fileID: 2800000, guid: 044c77d7e5a70efc9a200fa42d2a02f3, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Sand:
+        m_Texture: {fileID: 2800000, guid: 2b436bcf0f398403a9e336af6352f60c, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Swamp:
+        m_Texture: {fileID: 2800000, guid: d2a813d886f5299fea936ea11d9e913a, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_318b6eca77de4486be12fcc0fef7efa3_TextureUnder_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_318b6eca77de4486be12fcc0fef7efa3_Texture_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_35e588b7614e4279bd6be9493561df52_TextureUnder_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_35e588b7614e4279bd6be9493561df52_Texture_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_3feaa13b39ed4107b46dddf4b980001b_TextureUnder_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_3feaa13b39ed4107b46dddf4b980001b_Texture_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_510cf888e82d4f1389b48c67037fcd02_TextureUnder_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_510cf888e82d4f1389b48c67037fcd02_Texture_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_7afed2f877f84b5fb29e43813df3f8b9_TextureUnder_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_7afed2f877f84b5fb29e43813df3f8b9_Texture_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_8eb0ee4492d54edaaac14c44ac811187_TextureUnder_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_8eb0ee4492d54edaaac14c44ac811187_Texture_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_c1ea2bce1b39412ba77cdf93676aa13d_TextureUnder_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_c1ea2bce1b39412ba77cdf93676aa13d_Texture_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_d96f985276714099ad1abc729bc9fa4e_TextureUnder_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainTransistionSubGraph_d96f985276714099ad1abc729bc9fa4e_Texture_3723184128_Texture2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Water:
+        m_Texture: {fileID: 2800000, guid: a9255d51995d201978ad572ea341813d, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_Lightmaps:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_LightmapsInd:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_ShadowMasks:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BlendPower: 0.3
+    - _DarkForestGrassHeight: 7
+    - _DeepForestGrassHeight: 6
+    - _LittleForestGrassHeight: 1.44
+    - _MeadowGrassHeight: -0.62
+    - _NearWaterGrassHeight: -1.24
+    - _Noise: 0.5
+    - _QueueControl: 0
+    - _QueueOffset: 0
+    - _SandHeight: -1.27
+    - _SwampHeight: 8
+    - _Tile: 0.5
+    - _Voronoi: 0.02
+    - _WaterHeight: -3.91
+    - _strength: 0
+    m_Colors: []
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

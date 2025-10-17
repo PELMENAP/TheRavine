@@ -1,13 +1,13 @@
 using TheRavine.Events;
 public interface IEventBusComponent : IComponent
 {
-    EventBusByName EventBus { get; set; }
+    EventBus EventBus { get; set; }
 }
 public class EventBusComponent : IEventBusComponent
 {
-    public EventBusByName EventBus { get; set; } = new EventBusByName();
+    public EventBus EventBus { get; set; } = new EventBus();
     public void Dispose()
     {
-        EventBus.Dispose();
+        EventBus.Clear();
     }
 }

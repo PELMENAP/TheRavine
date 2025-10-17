@@ -6,8 +6,8 @@ namespace TheRavine.ObjectControl
 {
     public class ObjectSystem : MonoBehaviour, ISetAble
     {
-        [SerializeField] private int initialInfoCapacity = 16;
-        [SerializeField] private int initialGlobalCapacity = 512;
+        private readonly int initialInfoCapacity = 16;
+        private readonly int initialGlobalCapacity = 512;
         public GameObject InstantiatePoolObject(Vector3 position, GameObject prefab) => Instantiate(prefab, position, Quaternion.identity);
         public ObjectInfo[] _info;
         private Dictionary<int, ObjectInfo> info;
@@ -42,7 +42,7 @@ namespace TheRavine.ObjectControl
                     return true;
                 }
             ObjectInfo curdata = GetPrefabInfo(_prefabID);
-            ObjectInstInfo objectInfo = new ObjectInstInfo(_prefabID, _amount, _objectType, _flip);
+            ObjectInstInfo objectInfo = new(_prefabID, _amount, _objectType, _flip);
             if (curdata.addspace.Length == 0)
                 return global.TryAdd(position, objectInfo);
             global[position] = objectInfo;
@@ -126,6 +126,5 @@ namespace TheRavine.ObjectControl
 public enum InstanceType
 {
     Static,
-    Inter,
-    Struct
+    Inter
 }

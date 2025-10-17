@@ -31,11 +31,13 @@ namespace TheRavine.EntityControl
         private IController currentController;
         private IRavineLogger logger;
         private MovementComponent movementComponent;
-        private EventBusByName entityEventBus;
+        private EventBus entityEventBus;
         private AimComponent aimComponent;
         private GameSettings gameSettings;
+        private AEntity playerEntity;
         public void SetInitialValues(AEntity entity, IRavineLogger logger)
         {
+            playerEntity = entity;
             gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
             this.logger = logger;
             this.transform.position = Extension.GetRandomPointAround(this.transform.position, 10);
@@ -50,21 +52,21 @@ namespace TheRavine.EntityControl
                 _ => throw new NotImplementedException()
             };
 
-            GetPlayerComponents(entity);
-
+            
+            GetPlayerComponents();
             Raise.action.performed += AimRaise;
             LeftClick.action.performed += AimPlace;
         }
 
-        private void GetPlayerComponents(AEntity entity)
+        private void GetPlayerComponents()
         {
             rb = GetComponent<Rigidbody2D>();
             rb.bodyType = RigidbodyType2D.Dynamic;
             
-            entityEventBus = entity.GetEntityComponent<EventBusComponent>().EventBus;
-            movementComponent = entity.GetEntityComponent<MovementComponent>();
-            aimComponent = entity.GetEntityComponent<AimComponent>();
-            InitStatePattern(entity.GetEntityComponent<StatePatternComponent>());
+            entityEventBus = playerEntity.GetEntityComponent<EventBusComponent>().EventBus;
+            movementComponent = playerEntity.GetEntityComponent<MovementComponent>();
+            aimComponent = playerEntity.GetEntityComponent<AimComponent>();
+            InitStatePattern(playerEntity.GetEntityComponent<StatePatternComponent>());
         }
 
         private void InitStatePattern(StatePatternComponent component)
@@ -177,7 +179,7 @@ namespace TheRavine.EntityControl
             if (factMouseMagnitute > aimComponent.MaxCrosshairDistance * factMouseFactor) factMousePosition *= aimComponent.MaxCrosshairDistance;
             else if (factMouseMagnitute < aimComponent.CrosshairDistance * factMouseFactor + 1) factMousePosition = Vector2.zero;
 
-            entityEventBus.Invoke(nameof(AimAddition), factMousePosition);
+            entityEventBus.Invoke(playerEntity, new AimAddition {Position = factMousePosition});
         }
         
         public void ChangeAimMode()
@@ -198,9 +200,9 @@ namespace TheRavine.EntityControl
                 int currentY = Mathf.RoundToInt(transform.position.y);
                 for (int xOffset = -aimComponent.PickDistance; xOffset <= aimComponent.PickDistance; xOffset++)
                     for (int yOffset = -aimComponent.PickDistance; yOffset <= aimComponent.PickDistance; yOffset++)
-                        entityEventBus.Invoke(nameof(PickUpEvent), new Vector2(currentX + xOffset, currentY + yOffset));
+                        entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = new Vector2Int(currentX + xOffset, currentY + yOffset) });
             }
-            else entityEventBus.Invoke(nameof(PickUpEvent), Extension.RoundVector2D(crosshair.position));
+            else entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = Extension.RoundVector2D(crosshair.position) });
         }
 
         public void AimPlaceMobile()
@@ -221,7 +223,7 @@ namespace TheRavine.EntityControl
             try
             {
                 act = false;
-                entityEventBus.Invoke(nameof(PlaceEvent), Extension.RoundVector2D(crosshair.position));
+                entityEventBus.Invoke(playerEntity, new PlaceEvent { Position = Extension.RoundVector2D(crosshair.position) } );
                 await UniTask.Delay(placeObjectDelay);
                 act = true;
             }

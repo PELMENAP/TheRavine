@@ -6,8 +6,8 @@ namespace TheRavine.Extensions
 {
     public class IndexedSet<T>
     {
-        private List<T> items = new List<T>();
-        private Dictionary<T, int> itemIndices = new Dictionary<T, int>();
+        private List<T> items = new();
+        private Dictionary<T, int> itemIndices = new();
 
         public int Count => items.Count;
         public T this[int index] => items[index];

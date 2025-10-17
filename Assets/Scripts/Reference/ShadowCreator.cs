@@ -6,7 +6,7 @@ namespace TheRavine.EntityControl
     public class ShadowCreator : MonoBehaviour
     {
         [SerializeField] private Color defColor;
-        [SerializeField] private Vector3 shadowScale = new Vector3(1f, 1.1f, 1f), shadowRotation = new Vector3(50, 0, 300), shadowPosition = new Vector3(0, 0.1f, 0); 
+        [SerializeField] private Vector3 shadowScale = new(1f, 1.1f, 1f), shadowRotation = new(50, 0, 300), shadowPosition = new(0, 0.1f, 0); 
         public GameObject shadow;
         
         public bool isAlreadyCreated = false;

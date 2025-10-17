@@ -89,7 +89,7 @@ namespace TheRavine.Extensions
 
     public static class RavineRandom
     {
-        private readonly static FastRandom fastRandom = new FastRandom();
+        private readonly static FastRandom fastRandom = new();
         public static int RangeInt(int min, int max) => fastRandom.Range(min, max);
         public static int RangeInt(int max) => fastRandom.Range(0, max);
         public static float RangeFloat(float min, float max) => fastRandom.Range(min, max);

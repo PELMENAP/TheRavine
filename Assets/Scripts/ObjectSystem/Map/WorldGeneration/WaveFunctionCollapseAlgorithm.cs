@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using System.Threading;
@@ -32,8 +31,10 @@ namespace TheRavine.Generator
         {
             Position = position;
             CollapsedTile = tileRuleSO;
-            PossibleTiles = new List<TileRuleSO>();
-            PossibleTiles.Add(tileRuleSO);
+            PossibleTiles = new List<TileRuleSO>
+            {
+                tileRuleSO
+            };
         }
 
         public void Collapse(TileRuleSO tile)
@@ -102,7 +103,7 @@ namespace TheRavine.Generator
             InitializeNeighborRulesCache();
         }
 
-        private readonly HashSet<TileRuleSO> reusableAllowedTilesSet = new HashSet<TileRuleSO>();
+        private readonly HashSet<TileRuleSO> reusableAllowedTilesSet = new();
         private void InitializeNeighborRulesCache()
         {
             foreach (var tile in allTiles)
@@ -152,7 +153,7 @@ namespace TheRavine.Generator
 
             return neighborPos;
         }
-        private readonly IndexedSet<Cell> uncollapsedCells = new IndexedSet<Cell>();
+        private readonly IndexedSet<Cell> uncollapsedCells = new();
         private async UniTask<bool> Step()
         {
             if (uncollapsedCells.Count == 0) return false;
@@ -162,8 +163,8 @@ namespace TheRavine.Generator
             uncollapsedCells.Remove(cellToCollapse);
             return await PropagateConstraints(cellToCollapse.Position);
         }
-        private readonly HashSet<Vector2Int> processedPositions = new HashSet<Vector2Int>();
-        private readonly Queue<Vector2Int> propagationQueue = new Queue<Vector2Int>();
+        private readonly HashSet<Vector2Int> processedPositions = new();
+        private readonly Queue<Vector2Int> propagationQueue = new();
         private async UniTask<bool> PropagateConstraints(Vector2Int startPos)
         {
             propagationQueue.Clear();
@@ -188,7 +189,7 @@ namespace TheRavine.Generator
                     {
                         if(cells.Count <= settings.maxGeneratedCells)
                         {
-                            Cell newCell = new Cell(neighborPos, allTiles);
+                            Cell newCell = new(neighborPos, allTiles);
                             cells[neighborPos] = newCell;
                             uncollapsedCells.Add(newCell);
                         }
@@ -272,11 +273,10 @@ namespace TheRavine.Generator
                 ApplyInitialPattern(startPos, initialPattern);
 
             bool success =  await PropagateConstraints(startPos);
-            int stepCount = 0;
 
             for (int attempts = 0; attempts < settings.maxGenerationAttempts; attempts++)
             {
-                stepCount = 0;
+                int stepCount = 0;
                 while (success && stepCount < settings.maxStepIterations)
                 {
                     if (cancellationToken.IsCancellationRequested) break;

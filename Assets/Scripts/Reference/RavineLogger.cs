@@ -6,13 +6,14 @@ using UnityEngine;
 
 public class RavineLogger : IRavineLogger
 {
-    private string logFilePath;
-    private Action<string> onMessageDisplayTerminal;
-    private HashSet<string> loggedErrors = new HashSet<string>();
-    private byte criticalErrorNumber, maxCriticalNumber = 10;
+    private readonly string logFilePath;
+    private readonly Action<string> onMessageDisplayTerminal;
+    private readonly HashSet<string> loggedErrors = new();
+    private byte criticalErrorNumber;
+    private readonly byte maxCriticalNumber = 10;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-    private bool isDebugBuild = true;
+    private readonly bool isDebugBuild = true;
 #else
     private bool isDebugBuild = false;
 #endif
@@ -111,15 +112,13 @@ public class RavineLogger : IRavineLogger
     {
         try
         {
-            using (var sb = ZString.CreateUtf8StringBuilder())
-            {
-                sb.Append(DateTime.Now);
-                sb.Append(": ");
-                sb.Append(message);
-                sb.Append("\n");
-                
-                File.AppendAllText(logFilePath, sb.ToString());
-            }
+            using var sb = ZString.CreateUtf8StringBuilder();
+            sb.Append(DateTime.Now);
+            sb.Append(": ");
+            sb.Append(message);
+            sb.Append("\n");
+
+            File.AppendAllText(logFilePath, sb.ToString());
         }
         catch (Exception ex)
         {

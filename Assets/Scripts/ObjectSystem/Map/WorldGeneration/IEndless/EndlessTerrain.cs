@@ -15,19 +15,19 @@ namespace TheRavine.Generator
                 generator = _generator;
                 combineMesh = new Mesh();
 
-                ushort trianglCount = 0;
+                ushort triangleCount = 0;
                 int[] triangles = new int[6 * mapChunkSize * mapChunkSize];
                 for (int x = 0; x < mapChunkSize; x++)
                 {
                     for (int y = 0; y < mapChunkSize; y++)
                     {
-                        triangles[trianglCount] = x * (mapChunkSize + 1) + y;
-                        triangles[trianglCount + 1] = (x + 1) * (mapChunkSize + 1) + y;
-                        triangles[trianglCount + 2] = (x + 1) * (mapChunkSize + 1) + y + 1;
-                        triangles[trianglCount + 3] = x * (mapChunkSize + 1) + y;
-                        triangles[trianglCount + 4] = (x + 1) * (mapChunkSize + 1) + y + 1;
-                        triangles[trianglCount + 5] = x * (mapChunkSize + 1) + y + 1;
-                        trianglCount += 6;
+                        triangles[triangleCount] = x * (mapChunkSize + 1) + y;
+                        triangles[triangleCount + 1] = (x + 1) * (mapChunkSize + 1) + y;
+                        triangles[triangleCount + 2] = (x + 1) * (mapChunkSize + 1) + y + 1;
+                        triangles[triangleCount + 3] = x * (mapChunkSize + 1) + y;
+                        triangles[triangleCount + 4] = (x + 1) * (mapChunkSize + 1) + y + 1;
+                        triangles[triangleCount + 5] = x * (mapChunkSize + 1) + y + 1;
+                        triangleCount += 6;
                     }
                 }
                 for (int i = 0; i < chunkCount * chunkCount; i++)
@@ -40,22 +40,23 @@ namespace TheRavine.Generator
                 }
             }
             private readonly CombineInstance[] combine = new CombineInstance[chunkCount * chunkCount];
-            public void UpdateChunk(Vector2Int Vposition)
+            private static Quaternion defRotation = Quaternion.Euler(-90, 0, 0);
+            public void UpdateChunk(Vector2Int Position)
             {
                 int count = 0;
                 for (int yOffset = -chunkScale; yOffset <= chunkScale; yOffset++)
                     for (int xOffset = -chunkScale; xOffset <= chunkScale; xOffset++)
                     {
-                        CreateComplexMesh(new Vector2Int(Vposition.x + yOffset, Vposition.y + xOffset), combine[count].mesh);
-                        combine[count].transform = Matrix4x4.TRS(new Vector3(yOffset * generationSize, xOffset * generationSize, 0), Quaternion.identity, Vector3.one);
+                        CreateComplexMesh(new Vector2Int(Position.x + yOffset, -Position.y + xOffset), combine[count].mesh);
+                        combine[count].transform = Matrix4x4.TRS(new Vector3(yOffset * generationSize, 0, -xOffset * generationSize), defRotation, Vector3.one);
                         count++;
                     }
                 combineMesh.CombineMeshes(combine);
                 generator.terrainF.mesh = combineMesh;
-                generator.terrainT.position = (Vector2)Vposition * generationSize;
+                generator.terrainT.position = new Vector3(Position.x * generationSize, 0 , Position.y * generationSize);
             }
             private readonly Vector3[] vertices = new Vector3[(mapChunkSize + 1) * (mapChunkSize + 1)];
-            private readonly Vector2Int up = new Vector2Int(0, 1), right = new Vector2Int(1, 0), diag = new Vector2Int(1, 1);
+            private readonly Vector2Int up = new(0, 1), right = new(1, 0), diag = new(1, 1);
             private void CreateComplexMesh(Vector2Int centre, Mesh mesh)
             {
                 int[,] heightMap = generator.GetMapData(centre).heightMap;

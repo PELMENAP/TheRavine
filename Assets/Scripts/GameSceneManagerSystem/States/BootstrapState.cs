@@ -1,11 +1,14 @@
 using System.Collections.Generic;
+using System.Linq;
+using TheRavine.Extensions;
+
 namespace TheRavine.Base
 {
     public class BootstrapState : IState<GameStateMachine>, IEnterable, IExitable
     {
         public GameStateMachine Initializer { get; }
-        private Queue<ISetAble> currentSetAbleScripts;
-        public BootstrapState(GameStateMachine Initializer, Queue<ISetAble> currentSetAbleScripts)
+        private readonly Queue<Pair<ISetAble, string>> currentSetAbleScripts;
+        public BootstrapState(GameStateMachine Initializer, Queue<Pair<ISetAble, string>> currentSetAbleScripts)
         {
             this.Initializer = Initializer;
             this.currentSetAbleScripts = currentSetAbleScripts;

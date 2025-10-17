@@ -8,13 +8,15 @@ public static class Noise
 
     private static Vector2[] heightOctaveOffsets;
     private static Vector2[] riverOctaveOffsets;
-    private static int octaves, halfWidth = MapGenerator.mapChunkSize / 2, halfHeight = MapGenerator.mapChunkSize / 2;
+    private static int octaves;
+    private static readonly int halfWidth = MapGenerator.mapChunkSize / 2;
+    private static readonly int halfHeight = MapGenerator.mapChunkSize / 2;
     private static float persistence, lacunarity, scaleInverse;
 
     public static void SetInit(float scale, int _octaves, float _persistence, float _lacunarity, int _seed)
     {
-        FastRandom heightPrng = new FastRandom(_seed);
-        FastRandom riverPrng = new FastRandom(_seed * 2);
+        FastRandom heightPrng = new(_seed);
+        FastRandom riverPrng = new(_seed * 2);
         heightOctaveOffsets = new Vector2[_octaves];
         riverOctaveOffsets = new Vector2[_octaves];
 

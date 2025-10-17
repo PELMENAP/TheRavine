@@ -22,8 +22,9 @@ namespace TheRavine.Generator
             }
             private readonly bool[,] grid = new bool[countOfQuads, countOfQuads];
             private readonly bool[,] visited = new bool[countOfQuads, countOfQuads];
-            private List<Edge> verticalEdges = new List<Edge>(), horizontalEdges = new List<Edge>();
-            private List<Vector2Int> polygon = new List<Vector2Int>();
+            private readonly List<Edge> verticalEdges = new();
+            private readonly List<Edge> horizontalEdges = new();
+            private readonly List<Vector2Int> polygon = new();
             public void UpdateChunk(Vector2Int Vposition)
             {
                 Array.Clear(visited, 0, visited.Length);
@@ -55,7 +56,6 @@ namespace TheRavine.Generator
                     DebugHelper.DrawSegment(hole.P1, hole.P2, Color.red);   
                 foreach (var hole in horizontalEdges)
                     DebugHelper.DrawSegment(hole.P1, hole.P2, Color.blue);   
-                Debug.Log(polygon.Count + "  " + verticalEdges.Count + "  " + horizontalEdges.Count);
 #endif
 
                 BowyerWatsonTriangulation bowyerWatsonTriangulation = new();
@@ -90,7 +90,7 @@ namespace TheRavine.Generator
                             else if (inProcess[primary] && !isHole)
                             {
                                 Vector2Int start = holeStarts[i, primary];
-                                Vector2Int end = new Vector2Int(i == 0 ? x : secondary - 1, i == 0 ? secondary - 1 : y);
+                                Vector2Int end = new(i == 0 ? x : secondary - 1, i == 0 ? secondary - 1 : y);
                                 
                                 (i == 0 ? verticalEdges : horizontalEdges).Add(new Edge(start * scale, end * scale));
                                 inProcess[primary] = false;
@@ -100,7 +100,7 @@ namespace TheRavine.Generator
                         if (inProcess[primary])
                         {
                             Vector2Int start = holeStarts[i, primary];
-                            Vector2Int end = new Vector2Int(i == 0 ? primary : countOfQuads, i == 0 ? countOfQuads : primary);
+                            Vector2Int end = new(i == 0 ? primary : countOfQuads, i == 0 ? countOfQuads : primary);
                             (i == 0 ? verticalEdges : horizontalEdges).Add(new Edge(start * scale, end * scale));
                         }
                     }
@@ -120,7 +120,7 @@ namespace TheRavine.Generator
                     }
                 }
             }
-            private Queue<Vector2Int> queue = new Queue<Vector2Int>(countOfQuads * countOfQuads / 4);
+            private readonly Queue<Vector2Int> queue = new(countOfQuads * countOfQuads / 4);
             private void FloodFill(int x, int y)
             {
                 queue.Clear();
@@ -186,7 +186,7 @@ namespace TheRavine.Generator
                 Vector3[] vertices = new Vector3[pointCount];
                 Vector2[] uvs = new Vector2[pointCount];
                 int[] indices = new int[triangleCount * 3];
-                Dictionary<Vector2Int, int> vertexIndexMap = new Dictionary<Vector2Int, int>(pointCount);
+                Dictionary<Vector2Int, int> vertexIndexMap = new(pointCount);
 
                 float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
 
@@ -206,7 +206,7 @@ namespace TheRavine.Generator
                     indices[index++] = GetVertexIndex(tri.C, vertices, uvs, vertexIndexMap, minX, minY, maxX, maxY);
                 }
 
-                Mesh mesh = new Mesh
+                Mesh mesh = new()
                 {
                     vertices = vertices,
                     triangles = indices,
@@ -233,12 +233,12 @@ namespace TheRavine.Generator
 
             private List<Triangle> Triangulate(List<Vector2Int> points, List<Edge> verticalEdges, List<Edge> horizontalEdges)
             {
-                List<Triangle> resultTriangles = new List<Triangle>(points.Count * 2);
+                List<Triangle> resultTriangles = new(points.Count * 2);
                 Triangle superTriangle = CreateSuperTriangle(points);
                 resultTriangles.Add(superTriangle);
 
-                List<Triangle> badTriangles = new List<Triangle>();
-                List<Edge> polygon = new List<Edge>();
+                List<Triangle> badTriangles = new();
+                List<Edge> polygon = new();
 
                 foreach (var point in points)
                 {
@@ -446,13 +446,13 @@ namespace TheRavine.Generator
 
         class EdgeXComparer : IComparer<Edge>
         {
-            public static readonly EdgeXComparer Instance = new EdgeXComparer();
+            public static readonly EdgeXComparer Instance = new();
             public int Compare(Edge a, Edge b) => a.P1.x.CompareTo(b.P1.x);
         }
 
         class EdgeYComparer : IComparer<Edge>
         {
-            public static readonly EdgeYComparer Instance = new EdgeYComparer();
+            public static readonly EdgeYComparer Instance = new();
             public int Compare(Edge a, Edge b) => a.P1.y.CompareTo(b.P1.y);
         }
 

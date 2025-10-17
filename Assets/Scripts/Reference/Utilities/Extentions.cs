@@ -6,8 +6,7 @@ namespace TheRavine.Extensions
 {
     public static class Extension
     {
-        private static Vector2Int RoundVector2(Vector2 vec) => new Vector2Int(Mathf.RoundToInt(vec.x), Mathf.RoundToInt(vec.y));
-        public static Vector2Int RoundVector2D(Vector3 vec) => RoundVector2((Vector2)vec);
+        public static Vector2Int RoundVector2D(Vector3 vec) => new(Mathf.RoundToInt(vec.x), Mathf.RoundToInt(vec.y));
         public static Vector2 GetRandomPointAround(Vector2 centerPoint, float factor)
         {
             Vector2 direction = RavineRandom.GetInsideCircle(factor);
@@ -32,8 +31,8 @@ namespace TheRavine.Extensions
             float cos = Mathf.Cos(angle);
             return new Vector2(vector.x * cos - vector.y * sin, vector.x * sin + vector.y * cos);
         }
-        public static Vector2 PerpendicularClockwise(Vector2 vector) => new Vector2(vector.y, -vector.x);
-        public static Vector2 PerpendicularCounterClockwise(Vector2 vector) => new Vector2(-vector.y, vector.x);
+        public static Vector2 PerpendicularClockwise(Vector2 vector) => new(vector.y, -vector.x);
+        public static Vector2 PerpendicularCounterClockwise(Vector2 vector) => new(-vector.y, vector.x);
         public static void GenerateBezierPoints(Vector2 start, Vector2 control, Vector2 end, int bezierDetail, ref Vector2[] bezierPoints)
         {
             for (int i = 0; i <= bezierDetail; i++)

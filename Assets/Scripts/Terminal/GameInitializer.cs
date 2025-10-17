@@ -6,8 +6,8 @@ using TheRavine.Base;
 public class GameInitializer : MonoBehaviour
 {
     [SerializeField] private bool initializeOnAwake = true;
-    [SerializeField] private Action<string> onMessageDisplayTerminal;
     [SerializeField] private Terminal terminal;
+    private Action<string> onMessageDisplayTerminal;
 
     private void Awake()
     {
@@ -46,7 +46,7 @@ public class GameInitializer : MonoBehaviour
     private void OnDisable()
     {
         onMessageDisplayTerminal -= terminal.Display;
-        // ServiceLocator.ClearAll();
+        ServiceLocator.ClearAll();
     }
 
     private void OnApplicationPause(bool pauseStatus)
