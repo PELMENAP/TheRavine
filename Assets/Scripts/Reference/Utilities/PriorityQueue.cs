@@ -6,7 +6,7 @@ namespace TheRavine.Extensions
 {
     public class PriorityQueue<TElement, TPriority>
     {
-        private readonly List<(TElement element, TPriority priority)> elements = new List<(TElement, TPriority)>();
+        private readonly List<(TElement element, TPriority priority)> elements = new();
         private readonly IComparer<TPriority> comparer;
 
         public PriorityQueue() : this(Comparer<TPriority>.Default)

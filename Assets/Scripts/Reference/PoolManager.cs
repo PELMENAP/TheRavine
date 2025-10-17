@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using TheRavine.Extensions;
 
 namespace TheRavine.ObjectControl
 {
@@ -8,7 +7,7 @@ namespace TheRavine.ObjectControl
 
     public class PoolManager
     {
-        private Transform parent;
+        private readonly Transform parent;
         public PoolManager(Transform _parent) => parent = _parent;
 
         private class PoolData
@@ -31,7 +30,7 @@ namespace TheRavine.ObjectControl
             if(prefab == null) return;
             if (!pools.ContainsKey(poolKey))
             {
-                GameObject poolHolder = new GameObject(prefab.name + " pool") { isStatic = true };
+                GameObject poolHolder = new(prefab.name + " pool") { isStatic = true };
                 poolHolder.transform.parent = parent;
                 pools[poolKey] = new PoolData(poolHolder.transform, poolSize);
             }
@@ -73,8 +72,8 @@ namespace TheRavine.ObjectControl
 
         private class ObjectInstance
         {
-            private GameObject gameObject;
-            private Transform transform;
+            private readonly GameObject gameObject;
+            private readonly Transform transform;
 
             public ObjectInstance(GameObject obj, Transform parent)
             {

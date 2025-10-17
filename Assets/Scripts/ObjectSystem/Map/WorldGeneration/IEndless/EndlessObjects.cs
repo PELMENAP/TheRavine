@@ -9,10 +9,10 @@ namespace TheRavine.Generator
     {
         public class EndlessObjects : IEndless
         {
-            private MapGenerator generator;
+            private readonly MapGenerator generator;
             private const byte chunkScale = MapGenerator.chunkScale;
-            private ObjectSystem objectSystem;
-            private Dictionary<int, ushort> objectUpdate = new Dictionary<int, ushort>(16);
+            private readonly ObjectSystem objectSystem;
+            private readonly Dictionary<int, ushort> objectUpdate = new(16);
             private static EnumerableSnapshot<int> objectsSnapshot;
             public EndlessObjects(MapGenerator _generator, ObjectSystem _objectSystem)
             {

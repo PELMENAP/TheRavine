@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.Events;
 using Cysharp.Threading.Tasks;
 
-using TheRavine.Base;
 using TheRavine.Extensions;
 using TheRavine.ObjectControl;
 
@@ -244,7 +243,7 @@ namespace TheRavine.Generator
         private float[,] noiseMap = new float[mapChunkSize, mapChunkSize];
         private float[,] noiseTemperatureMap = new float[mapChunkSize, mapChunkSize];
         public UnityAction<Vector2Int, int, int, Vector2Int> onSpawnPoint;
-        private int[] countOfHeights = new int[9];
+        private readonly int[] countOfHeights = new int[9];
         private int count = 0;
         [SerializeField] private float riverMin = 0.4f,  riverMax = 0.6f, riverInfluence = 0.05f, maxRiverDepth = 0.3f;
         public ChunkData GenerateMapData(Vector2Int centre)
@@ -323,7 +322,7 @@ namespace TheRavine.Generator
                     //             if (objectSystem.TryAddToGlobal(item.Key, item.Value.prefabID, item.Value.amount, item.Value.iType, (x + y) % 2 == 0))
                     //                 {
                     //                     var data = GetMapDataByObjectPosition(item.Key);
-                    //                     // objectsToInst.Add(item.Key);
+                    //                     objectsToInst.Add(item.Key);
                     //                 }
                     //         }
                     //         structHere = true;
@@ -402,8 +401,9 @@ namespace TheRavine.Generator
 
         private Vector2Int GetPlayerPosition()
         {
-            if(viewer == null) return Vector2Int.zero;
-            else return Extension.RoundVector2D((viewer.position - new Vector3(generationSize, generationSize) / 2) / (generationSize));
+            if (viewer == null) return Vector2Int.zero;
+            Vector3 playerPosition = new(viewer.position.x - generationSize / 2, viewer.position.z + generationSize / 2, 0);
+            return Extension.RoundVector2D(playerPosition / generationSize);
         }
         public float rotateValue = 0f, rotateTarget = 0f;
 
@@ -423,28 +423,28 @@ namespace TheRavine.Generator
         }
     }
 
-    [System.Serializable]
+    [Serializable]
     public struct TerrainType
     {
         public float height;
         public bool liveAble;
         public TemperatureLevel[] level;
     }
-    [System.Serializable]
+    [Serializable]
     public struct TemperatureLevel
     {
         public ObjectInfoGeneration[] objects;
         public StructInfoGeneration[] structs;
     }
 
-    [System.Serializable]
+    [Serializable]
     public struct ObjectInfoGeneration
     {
         public int Chance;
         public ObjectInfo info;
     }
 
-    [System.Serializable]
+    [Serializable]
     public struct StructInfoGeneration
     {
         public bool isSpawnPoint;
@@ -452,7 +452,7 @@ namespace TheRavine.Generator
         // public StructInfo info;
     }
 
-    [System.Serializable]
+    [Serializable]
     public struct TemperatureType
     {
         public float height;

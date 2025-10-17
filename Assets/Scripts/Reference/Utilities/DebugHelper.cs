@@ -17,8 +17,8 @@ namespace TheRavine.Extensions
 
             for (int i = 0; i < points.Count - 1; i++)
             {
-                Vector3 start = new Vector3(points[i].x, points[i].y, 0);
-                Vector3 end = new Vector3(points[i + 1].x, points[i + 1].y, 0);
+                Vector3 start = new(points[i].x, points[i].y, 0);
+                Vector3 end = new(points[i + 1].x, points[i + 1].y, 0);
                 Debug.DrawLine(start, end, color, duration);
             }
         }
@@ -52,7 +52,7 @@ namespace TheRavine.Extensions
 
             foreach (var point in points)
             {
-                Vector3 pos = new Vector3(point.x, point.y, 0);
+                Vector3 pos = new(point.x, point.y, 0);
                 Debug.DrawLine(pos + new Vector3(-size, -size, 0), pos + new Vector3(size, size, 0), color, duration);
                 Debug.DrawLine(pos + new Vector3(-size, size, 0), pos + new Vector3(size, -size, 0), color, duration);
             }

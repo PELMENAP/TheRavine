@@ -3,8 +3,6 @@ using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using Cysharp.Threading.Tasks;
 
-using TheRavine.EntityControl;
-
 namespace TheRavine.Base
 {
     public class Bootstrap : MonoBehaviour
@@ -16,10 +14,11 @@ namespace TheRavine.Base
         private WorldDataService worldDataService;
         private async void Start()
         {
+            gameStateMachine.Initialize(ServiceLocator.GetService<IRavineLogger>());
+
             worldDataService = ServiceLocator.GetService<WorldDataService>();
             if (isTest) return;
-            gameStateMachine.Initialize();
-
+            
             while (!gameStateMachine.HaveServiceLocatorPlayer())
             {
                 gameStateMachine.LogBootstrapInfo("There is no players in the scene");

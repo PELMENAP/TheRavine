@@ -1,6 +1,5 @@
 ﻿<Solution>
   <Project Path="Assembly-CSharp.csproj" />
-  <Project Path="EventSystem.csproj" />
   <Project Path="LitMotion.Extensions.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Inventory.csproj" />
@@ -24,4 +23,5 @@
   <Project Path="SkillSystem.csproj" />
   <Project Path="View.csproj" />
   <Project Path="UniTask.TextMeshPro.csproj" />
+  <Project Path="EventSystem.csproj" />
 </Solution>

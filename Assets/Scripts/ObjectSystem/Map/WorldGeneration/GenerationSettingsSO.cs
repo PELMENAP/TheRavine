@@ -13,7 +13,7 @@ namespace TheRavine.Generator
         public int maxGeneratedCells = 50;
         
         [Tooltip("Размер границы, если требуется фиксированный размер.")]
-        public Vector2Int gridSize = new Vector2Int(10, 10);
+        public Vector2Int gridSize = new(10, 10);
         
         public enum BorderRuleType
         {

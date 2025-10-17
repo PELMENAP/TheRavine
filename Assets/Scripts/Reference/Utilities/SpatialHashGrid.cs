@@ -5,7 +5,7 @@ namespace TheRavine.Extensions
 {
     public class SpatialHashGrid<T>
     {
-        private Dictionary<int, List<T>> _grid = new Dictionary<int, List<T>>();
+        private Dictionary<int, List<T>> _grid = new();
         private float _cellSize;
         
         public SpatialHashGrid(float cellSize)

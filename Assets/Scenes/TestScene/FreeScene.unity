@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_IndirectSpecularColor: {r: 0.76329786, g: 0.8795059, b: 0.99999946, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -93,7 +93,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 112000000, guid: 42dde58a6f90e1d39a3f1127af43e17a, type: 2}
+  m_LightingDataAsset: {fileID: 112000000, guid: 4fed01733b8f1ae4eac7b23cf18560c5, type: 2}
   m_LightingSettings: {fileID: 4890085278179872738, guid: ddab25bcd853ab687b8d777768fb00c9, type: 2}
 --- !u!196 &4
 NavMeshSettings:
@@ -137,7 +137,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &143708043
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1934,118 +1934,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 6600631134399683104, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_StaticEditorFlags
-      value: 2147483647
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631134399683107, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: far clip plane
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631134399683107, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: orthographic size
-      value: 80
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631135312548028, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_StaticEditorFlags
-      value: 2147483647
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631135312548029, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631135312548029, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631135312548029, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631135312548029, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631135312548030, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631135312548030, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_BoxSize.x
-      value: 80
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631135312548030, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_BoxSize.z
-      value: 80
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631135312548030, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_ClearFlags
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631135312548030, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_BackGroundColor.a
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631135312548030, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_BackGroundColor.b
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631135312548030, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_BackGroundColor.g
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631135312548030, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_BackGroundColor.r
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631136331952964, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_Size.x
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631136331952964, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_Size.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631136331952964, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_Size.z
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631136331952964, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_IsTrigger
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631136331952965, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_CastShadows
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631136331952965, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_RayTracingMode
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631136331952965, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_LightProbeUsage
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631136331952965, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_RayTraceProcedural
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631136331952965, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_StitchLightmapSeams
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631136331952967, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631136331952967, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631136331952967, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 4
-      objectReference: {fileID: 0}
     - target: {fileID: 6600631136331952967, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
       propertyPath: m_LocalPosition.x
       value: -5
@@ -2089,14 +1977,6 @@ PrefabInstance:
     - target: {fileID: 6600631136331953019, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
       propertyPath: m_Name
       value: Water
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631136331953019, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6600631136331953019, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
-      propertyPath: m_StaticEditorFlags
-      value: 2147483647
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2490,13 +2370,8 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4311771014568646334, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
-      propertyPath: m_AdditionalShaderChannelsFlag
-      value: 25
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects:
-    - {fileID: 2773733373659127900, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
+    m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
@@ -3321,6 +3196,10 @@ PrefabInstance:
     - target: {fileID: 8291761768583862468, guid: e6fc858b1c845550097ecb40c3760e4e, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 985045611
+      objectReference: {fileID: 0}
+    - target: {fileID: 8291761768583862468, guid: e6fc858b1c845550097ecb40c3760e4e, type: 3}
+      propertyPath: InScenePlacedSourceGlobalObjectIdHash
+      value: 3145298148
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

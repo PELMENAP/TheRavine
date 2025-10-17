@@ -12,11 +12,11 @@ namespace TheRavine.Generator
 {
     public class StructureGenerator : MonoBehaviour
     {
-        [SerializeField] private GenerationSettingsSO _settings;
+        [SerializeField] private readonly GenerationSettingsSO _settings;
         [SerializeField] private Vector2Int startPoint;
-        [SerializeField] private TilePatternSO initialPattern;
+        [SerializeField] private readonly TilePatternSO initialPattern;
         private WaveFunctionCollapseAlgorithm _algorithm;
-        private Dictionary<Vector2Int, GameObject> _generatedObjects = new Dictionary<Vector2Int, GameObject>();
+        private readonly Dictionary<Vector2Int, GameObject> _generatedObjects = new();
         private CancellationTokenSource _cancellationTokenSource;
         
         [Button]
