@@ -10,16 +10,17 @@ public class CM : NetworkBehaviour
     {
         playerEntity = player;
     }
-    private Transform cameratrans;
+    private Transform cameraTransform;
     [SerializeField] private float Velocity, MinDistance;
+    [SerializeField] private Vector3 zOffset = new(0, 0, -10);
     private TransformComponent playerTransformComponent;
-    private Vector3 targetPos, factMousePositionOffset, zOffset = new Vector3(0, 0, -10);
+    private Vector3 targetPos, factMousePositionOffset;
     public void SetUp(ISetAble.Callback callback)
     {
         playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<AimAddition>(AimAdditionHandleEvent);
         playerTransformComponent = playerEntity.GetEntityComponent<TransformComponent>();
-        cameratrans = this.transform;
-        cameratrans.position = (Vector3)playerTransformComponent.GetEntityPosition() + zOffset;
+        cameraTransform = this.transform;
+        cameraTransform.position = (Vector3)playerTransformComponent.GetEntityPosition() + zOffset;
         callback?.Invoke();
     }
 
@@ -35,34 +36,9 @@ public class CM : NetworkBehaviour
     private void UpdateDefault()
     {
         targetPos = (Vector3)playerTransformComponent.GetEntityPosition() + factMousePositionOffset + zOffset;
-        if (Vector3.Distance(cameratrans.localPosition, targetPos) < MinDistance) return;
-        cameratrans.localPosition = Vector3.Lerp(cameratrans.localPosition, targetPos, Velocity * Time.deltaTime);
+        if (Vector3.Distance(cameraTransform.localPosition, targetPos) < MinDistance) return;
+        cameraTransform.localPosition = Vector3.Lerp(cameraTransform.localPosition, targetPos, Velocity * Time.deltaTime);
     }
-
-    // private void UpdateForMap()
-    // {
-    //     if (Input.GetKey("["))
-    //     {
-    //         mainCam.orthographicSize -= 20;
-    //     }
-    //     else if (Input.GetKey("]"))
-    //     {
-    //         mainCam.orthographicSize += 20;
-    //     }
-    //     else if (Input.mouseScrollDelta.y != 0)
-    //     {
-    //         mainCam.orthographicSize += Input.mouseScrollDelta.y * 20 * mainCam.orthographicSize / 300;
-    //         this.transform.Translate(new Vector3((Input.mousePosition.x - Screen.width / 2) * 0.5f, (Input.mousePosition.y - Screen.height / 2) * 0.5f, 0) * (Input.mouseScrollDelta.y > 0 ? -1 : 1) * mainCam.orthographicSize / 200);
-    //     }
-    //     if (mainCam.orthographicSize > 1000)
-    //     {
-    //         mainCam.orthographicSize = 1000;
-    //     }
-    //     else if (mainCam.orthographicSize < 10)
-    //     {
-    //         mainCam.orthographicSize = 10;
-    //     }
-    // }
 
     public void BreakUp(ISetAble.Callback callback)
     {

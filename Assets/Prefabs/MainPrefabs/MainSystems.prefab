@@ -36,7 +36,6 @@ Transform:
   - {fileID: 4376851337786564782}
   - {fileID: 6105807592604928268}
   - {fileID: 3816347401610637032}
-  - {fileID: 4800752743618138796}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1730715985825227506
@@ -330,79 +329,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b20f09fc2614756c858e88092ac3d0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1001 &5984239572581150641
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 8476075289225520149}
-    m_Modifications:
-    - target: {fileID: 1266629699277143325, guid: 258dde1053e0d2243bdd79a127534b53, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1266629699277143325, guid: 258dde1053e0d2243bdd79a127534b53, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1266629699277143325, guid: 258dde1053e0d2243bdd79a127534b53, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -10
-      objectReference: {fileID: 0}
-    - target: {fileID: 1266629699277143325, guid: 258dde1053e0d2243bdd79a127534b53, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1266629699277143325, guid: 258dde1053e0d2243bdd79a127534b53, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1266629699277143325, guid: 258dde1053e0d2243bdd79a127534b53, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1266629699277143325, guid: 258dde1053e0d2243bdd79a127534b53, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1266629699277143325, guid: 258dde1053e0d2243bdd79a127534b53, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1266629699277143325, guid: 258dde1053e0d2243bdd79a127534b53, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1266629699277143325, guid: 258dde1053e0d2243bdd79a127534b53, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6772897172320939687, guid: 258dde1053e0d2243bdd79a127534b53, type: 3}
-      propertyPath: m_Name
-      value: Main Camera with broken light texture
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 258dde1053e0d2243bdd79a127534b53, type: 3}
---- !u!114 &3617231400909658463 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7007239161259439854, guid: 258dde1053e0d2243bdd79a127534b53, type: 3}
-  m_PrefabInstance: {fileID: 5984239572581150641}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!4 &4800752743618138796 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1266629699277143325, guid: 258dde1053e0d2243bdd79a127534b53, type: 3}
-  m_PrefabInstance: {fileID: 5984239572581150641}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6408472920452010041
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -779,10 +705,6 @@ PrefabInstance:
       propertyPath: 'scriptsLoadedOnBootstrapState.Array.data[4]'
       value: 
       objectReference: {fileID: 3371409611782975478}
-    - target: {fileID: 4781297958496412187, guid: 635bfbcf66d798528848e15e580c146a, type: 3}
-      propertyPath: _cameraData
-      value: 
-      objectReference: {fileID: 3617231400909658463}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

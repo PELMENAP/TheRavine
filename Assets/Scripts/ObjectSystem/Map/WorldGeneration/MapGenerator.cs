@@ -13,21 +13,23 @@ namespace TheRavine.Generator
     using EndlessGenerators;
     public class MapGenerator : MonoBehaviour, ISetAble
     {
-        private CancellationTokenSource _cts = new();
-        public const int mapChunkSize = 16, chunkScale = 1, scale = 5, generationSize = scale * mapChunkSize, waterLevel = 1;
+        private readonly CancellationTokenSource _cts = new();
+        public const int mapChunkSize = 16, chunkScale = 1, scale = 5, generationSize = scale * mapChunkSize;
         private Dictionary<Vector2Int, ChunkData> mapData;
         public ChunkData GetMapData(Vector2Int position)
         {
-            if(mapData.TryGetValue(position, out ChunkData data))
+            if (mapData.TryGetValue(position, out ChunkData data))
                 return data;
-            return null;
+            mapData[position] = GenerateMapData(position);
+            return mapData[position];
         }
-        
+
         public bool IsHeightIsLiveAble(int height) => regions[height].liveAble;
+        public bool IsWaterHeight(Vector2Int position) => GetMapHeight(position) < 1;
 
         public int GetMapHeight(Vector2Int position)
         {
-            Vector2Int playerPos = new((int)position.x, (int)position.y);
+            Vector2Int playerPos = new(position.x, position.y);
             Vector2Int chunkPos = GetChunkPosition(playerPos);
             Vector2Int XYpos = (playerPos - chunkPos * generationSize) / scale;
             if (XYpos.x > mapChunkSize - 1)
@@ -38,18 +40,18 @@ namespace TheRavine.Generator
                 XYpos.x = 0;
             if (XYpos.y < 0)
                 XYpos.y = 0;
-            return GetMapData(chunkPos).heightMap[(int)XYpos.x, (int)XYpos.y];
+            return GetMapData(chunkPos).heightMap[XYpos.x, XYpos.y];
         }
 
         public Vector2Int GetChunkPosition(Vector2 position)
         {
-            Vector2Int positionInt = new Vector2Int((int)position.x, (int)position.y);
+            Vector2Int positionInt = new((int)position.x, (int)position.y);
             Vector2Int chunkPos = positionInt / generationSize;
             if (positionInt.x < 0)
                 chunkPos.x = -(-positionInt.x / generationSize) - 1;
             if (positionInt.y < 0)
                 chunkPos.y = -(-positionInt.y / generationSize) - 1;
-            return new Vector2Int((int)chunkPos.x, (int)chunkPos.y);
+            return new Vector2Int(chunkPos.x, chunkPos.y);
         }
 
         public ChunkData GetMapDataByObjectPosition(Vector2Int position)
@@ -70,8 +72,9 @@ namespace TheRavine.Generator
                 return true;
             }
         }
-        public Transform terrainT, waterT;
-        public MeshFilter terrainF, waterF;
+        public Transform terrainTransform, waterTransform;
+        public MeshFilter terrainFilter;
+        public MeshCollider terrainCollider; 
         private int seed;
         public int Seed { get => seed; private set => seed = value; }
         private ObjectSystem objectSystem;
@@ -83,6 +86,7 @@ namespace TheRavine.Generator
         [SerializeField] private TemperatureType[] biomRegions;
         [SerializeField] private Transform viewer;
         [SerializeField] private bool[] endlessFlag;
+        [SerializeField] private bool isRiver;
         private IEndless[] endless;
         public void SetUp(ISetAble.Callback callback)
         {
@@ -126,7 +130,10 @@ namespace TheRavine.Generator
         private Queue<Pair<Vector2Int,  ObjectInfo>> NALQueueUpdateAdd;
         public void ClearNALQueue() => NALQueue.Clear();
         public void AddNALObject(Vector2Int current) => NALQueue.Enqueue(current);
-        [SerializeField] private int step, deadChance = 0;
+
+        private readonly int step;
+        private int deadChance = 0;
+
         private async UniTaskVoid NAL()
         {
             NALQueue = new Queue<Vector2Int>(64);
@@ -157,12 +164,12 @@ namespace TheRavine.Generator
                     await UniTask.Delay(100, cancellationToken: _cts.Token);
                     continue;
                 }
-                deadChance = NALQueue.Count > 200 ? (int)10 : (int)0;
+                deadChance = NALQueue.Count > 200 ? 10 : 0;
                 Vector2Int current = NALQueue.Dequeue();
                 ObjectInfo currentObjectPrefabData = objectSystem.GetGlobalObjectInfo(current);
                 if(currentObjectPrefabData == null) continue;
-                ObjectInfo nextGenInfo = currentObjectPrefabData.nextStep;
-                if (currentObjectPrefabData.bType == BehaviourType.GROW)
+                ObjectInfo nextGenInfo = currentObjectPrefabData.EvolutionStep;
+                if (currentObjectPrefabData.BehaviourType == BehaviourType.GROW)
                 {
                     if (nextGenInfo == null)
                     {
@@ -180,11 +187,11 @@ namespace TheRavine.Generator
                     for (int y = -scale; y <= scale; y++)
                         if (x != 0 && y != 0 && objectSystem.ContainsGlobal(current + new Vector2Int(x, y)))
                             closeto = true;
-                NAlInfo nalinfo = currentObjectPrefabData.nalinfo;
+                NAlInfo nalinfo = currentObjectPrefabData.NalInfo;
                 if (Extension.ComparePercent(nalinfo.chance / 2 + deadChance) || closeto)
                 {
                     NALQueueUpdateRemove.Enqueue(current);
-                    SpreadPattern pattern = currentObjectPrefabData.deadPattern;
+                    SpreadPattern pattern = currentObjectPrefabData.OnDeathPattern;
                     if (pattern == null)
                         continue;
                     NALQueueUpdateAdd.Enqueue(new Pair<Vector2Int, ObjectInfo>(current, pattern.main));
@@ -234,7 +241,7 @@ namespace TheRavine.Generator
                 while (NALQueueUpdateAdd.Count > 0)
                 {
                     Pair<Vector2Int, ObjectInfo> item = NALQueueUpdateAdd.Dequeue();
-                    if(objectSystem.TryAddToGlobal(item.First, item.Second.prefabID, item.Second.amount, item.Second.iType, (item.First.x + item.First.y) % 2 == 0))
+                    if(objectSystem.TryAddToGlobal(item.First, item.Second.PrefabID, item.Second.DefaultAmount, item.Second.InstanceType, (item.First.x + item.First.y) % 2 == 0))
                         GetMapData(GetChunkPosition(item.First)).objectsToInst.Add(item.First);
                 }
                 ExtraUpdate();
@@ -245,10 +252,10 @@ namespace TheRavine.Generator
         public UnityAction<Vector2Int, int, int, Vector2Int> onSpawnPoint;
         private readonly int[] countOfHeights = new int[9];
         private int count = 0;
-        [SerializeField] private float riverMin = 0.4f,  riverMax = 0.6f, riverInfluence = 0.05f, maxRiverDepth = 0.3f;
+        [SerializeField] private readonly float riverMin = 0.4f,  riverMax = 0.6f, riverInfluence = 0.05f, maxRiverDepth = 0.3f;
         public ChunkData GenerateMapData(Vector2Int centre)
         {
-            FastRandom chunkRandom = new FastRandom((seed + (int)(centre.x + centre.y)));
+            FastRandom chunkRandom = new((seed + centre.x + centre.y));
             SortedSet<Vector2Int> objectsToInst = new(new Vector2IntComparer());
             int[,] heightMap = new int[mapChunkSize, mapChunkSize];
             int[,] temperatureMap = new int[mapChunkSize, mapChunkSize];
@@ -256,7 +263,9 @@ namespace TheRavine.Generator
 
             Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Global);
             Noise.GenerateNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize, Noise.NormalizeMode.Global, true);
-            Noise.CombineMaps(ref noiseMap, noiseTemperatureMap, riverMin, riverMax, riverInfluence, maxRiverDepth);
+
+            if(isRiver)
+                Noise.CombineMaps(ref noiseMap, noiseTemperatureMap, riverMin, riverMax, riverInfluence, maxRiverDepth);
 
             // if (Mathf.Abs(centre.x) > 10000 || Mathf.Abs(centre.y) > 10000)
             //     Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Local);
@@ -295,14 +304,10 @@ namespace TheRavine.Generator
                     }
                 }
             }
-
-            bool isEqual = true;
             for (int x = 0; x < mapChunkSize; x++)
             {
                 for (int y = 0; y < mapChunkSize; y++)
                 {
-                    if (heightMap[x, y] != heightMap[0, 0])
-                        isEqual = false;
                     if (!endlessFlag[2])
                         continue;
                     countOfHeights[heightMap[x, y]]++;
@@ -340,7 +345,7 @@ namespace TheRavine.Generator
                         {
                             Vector2Int posobj = new(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale);
                            
-                                if (objectSystem.TryAddToGlobal(posobj, ginfo.info.prefabID, ginfo.info.amount, ginfo.info.iType, (x + y) % 2 == 0))
+                                if (objectSystem.TryAddToGlobal(posobj, ginfo.info.PrefabID, ginfo.info.DefaultAmount, ginfo.info.InstanceType, (x + y) % 2 == 0))
                                 {
                                     objectsToInst.Add(posobj);
                                     break;
@@ -350,7 +355,7 @@ namespace TheRavine.Generator
                     count += x + y;
                 }
             }
-            return new ChunkData(heightMap, temperatureMap, isEqual, objectsToInst);
+            return new ChunkData(heightMap, temperatureMap, objectsToInst);
         }
 
         private Vector2Int OldVposition, position;
@@ -367,6 +372,7 @@ namespace TheRavine.Generator
             while (!_cts.Token.IsCancellationRequested)
             {
                 position = GetPlayerPosition();
+                Debug.Log(GetMapHeight(position));
                 if (position != OldVposition && rotateTarget == 0f)
                 {
                     OldVposition = position;
@@ -460,13 +466,11 @@ namespace TheRavine.Generator
     public class ChunkData
     {
         public readonly int[,] heightMap, temperatureMap;
-        public readonly bool isEqual;
         public SortedSet<Vector2Int> objectsToInst;
-        public ChunkData(int[,] heightMap, int[,] temperatureMap, bool isEqual, SortedSet<Vector2Int> objectsToInst)
+        public ChunkData(int[,] heightMap, int[,] temperatureMap, SortedSet<Vector2Int> objectsToInst)
         {
             this.heightMap = heightMap;
             this.temperatureMap = temperatureMap;
-            this.isEqual = isEqual;
             this.objectsToInst = objectsToInst;
         }
     }

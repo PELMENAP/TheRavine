@@ -11,7 +11,7 @@ using TheRavine.Events;
 
 namespace TheRavine.EntityControl
 {
-    [RequireComponent(typeof(Rigidbody2D))]
+    [RequireComponent(typeof(Rigidbody))]
     public class PlayerController : NetworkBehaviour, IEntityController
     {
         [SerializeField] private int placeObjectDelay;
@@ -20,7 +20,7 @@ namespace TheRavine.EntityControl
         [SerializeField] private Joystick joystick;
         [SerializeField] private Transform crosshair, playerMark;
         [SerializeField] private PlayerAnimator playerAnimator;
-        private Rigidbody2D rb;
+        private Rigidbody playerRigidbody;
         private Vector2 movementDirection;
         private Vector2 lastSentDirection;
         private float timeSinceLastSend;
@@ -40,7 +40,8 @@ namespace TheRavine.EntityControl
             playerEntity = entity;
             gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
             this.logger = logger;
-            this.transform.position = Extension.GetRandomPointAround(this.transform.position, 10);
+            Vector2 spawnSpread = Extension.GetRandomPointAround(this.transform.position, 10);
+            this.transform.position = new Vector3(spawnSpread.x, 10, spawnSpread.y);
             
 
             playerAnimator.SetUpAsync().Forget();
@@ -52,16 +53,23 @@ namespace TheRavine.EntityControl
                 _ => throw new NotImplementedException()
             };
 
-            
+
             GetPlayerComponents();
+            DelayedInit().Forget();
+
             Raise.action.performed += AimRaise;
             LeftClick.action.performed += AimPlace;
         }
 
+        private async UniTaskVoid DelayedInit()
+        {
+            await UniTask.Delay(5000);
+            playerRigidbody.useGravity = true;
+        }
+
         private void GetPlayerComponents()
         {
-            rb = GetComponent<Rigidbody2D>();
-            rb.bodyType = RigidbodyType2D.Dynamic;
+            playerRigidbody = GetComponent<Rigidbody>();
             
             entityEventBus = playerEntity.GetEntityComponent<EventBusComponent>().EventBus;
             movementComponent = playerEntity.GetEntityComponent<MovementComponent>();
@@ -117,13 +125,10 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void MoveServerRpc(Vector2 direction, float speed)
         {
-            // validation
-
-            direction = direction.normalized;
             speed = Mathf.Clamp(speed, 0f, 1f);
-            rb.velocity = direction * speed * movementComponent.BaseSpeed;
+            playerRigidbody.linearVelocity = new Vector3(direction.x, 0, direction.y) * speed * movementComponent.BaseSpeed;
 
-            UpdateClientPositionClientRpc(rb.position, rb.velocity);
+            UpdateClientPositionClientRpc(playerRigidbody.position, playerRigidbody.linearVelocity);
         }
 
         [ClientRpc]
@@ -131,8 +136,8 @@ namespace TheRavine.EntityControl
         {
             if (IsOwner) return;
 
-            rb.position = position;
-            rb.velocity = velocity;
+            playerRigidbody.position = position;
+            playerRigidbody.linearVelocity = velocity;
         }
 
         private readonly Vector3 Offset = new(0, 0, 100);

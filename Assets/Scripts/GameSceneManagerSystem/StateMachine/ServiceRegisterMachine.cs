@@ -41,14 +41,15 @@ namespace TheRavine.Base
             {
                 Pair<ISetAble, string> setAble = services.Dequeue();
                 disAble.Enqueue(setAble);
-                try
-                {
+                // try
+                // {
                     setAble.First.SetUp(() => StartNewServices(services, callback));
-                }
-                catch (Exception ex)
-                {
-                    ravineLogger.LogError($"Service {setAble.Second} cannot be started: {ex.Message}");
-                }
+                // }
+                // catch (Exception ex)
+                // {
+                //     ravineLogger.LogError($"Service {setAble.Second} cannot be started: {ex.Message}");
+                //     StartNewServices(services, callback);
+                // }
             }
         }
         
@@ -64,6 +65,7 @@ namespace TheRavine.Base
                 catch (Exception ex)
                 {
                     ravineLogger.LogError($"Service {setAble.Second} cannot be broken up: {ex.Message}");
+                    BreakUpServices();
                 }
             }
         }

@@ -41,19 +41,20 @@ namespace TheRavine.Generator
             }
             private readonly CombineInstance[] combine = new CombineInstance[chunkCount * chunkCount];
             private static Quaternion defRotation = Quaternion.Euler(-90, 0, 0);
-            public void UpdateChunk(Vector2Int Position)
+            public void UpdateChunk(Vector2Int Position) 
             {
                 int count = 0;
                 for (int yOffset = -chunkScale; yOffset <= chunkScale; yOffset++)
                     for (int xOffset = -chunkScale; xOffset <= chunkScale; xOffset++)
                     {
                         CreateComplexMesh(new Vector2Int(Position.x + yOffset, -Position.y + xOffset), combine[count].mesh);
-                        combine[count].transform = Matrix4x4.TRS(new Vector3(yOffset * generationSize, 0, -xOffset * generationSize), defRotation, Vector3.one);
+                        combine[count].transform = Matrix4x4.TRS(new Vector3(yOffset * generationSize, -4, -xOffset * generationSize), defRotation, Vector3.one);
                         count++;
                     }
                 combineMesh.CombineMeshes(combine);
-                generator.terrainF.mesh = combineMesh;
-                generator.terrainT.position = new Vector3(Position.x * generationSize, 0 , Position.y * generationSize);
+                generator.terrainFilter.mesh = combineMesh;
+                generator.terrainCollider.sharedMesh = combineMesh;
+                generator.terrainTransform.position = new Vector3(Position.x * generationSize, 0 , Position.y * generationSize);
             }
             private readonly Vector3[] vertices = new Vector3[(mapChunkSize + 1) * (mapChunkSize + 1)];
             private readonly Vector2Int up = new(0, 1), right = new(1, 0), diag = new(1, 1);

@@ -83,7 +83,7 @@ namespace TheRavine.Inventory
             if (slot.isEmpty) return;
             IInventoryItem item = activeCells[inventoryInputHandler.ActiveCellIndex - 1]._uiInventoryItem.item;
             if(!item.info.isPlaceable) return;
-            if (objectSystem.TryAddToGlobal(e.Position, item.info.prefab.GetInstanceID(), 1, InstanceType.Inter))
+            if (objectSystem.TryAddToGlobal(e.Position, item.info.prefab.GetInstanceID(), 1, InstanceType.Interactable))
             {
                 item.state.amount--;
                 if (slot.amount <= 0) slot.Clear();
@@ -103,20 +103,20 @@ namespace TheRavine.Inventory
             ObjectInfo data = objectSystem.GetGlobalObjectInfo(e.Position);
             if (data == null) return;
 
-            IInventoryItem item = infoManager.GetInventoryItemByInfo(data.iteminfo.id, data.iteminfo, objectInstInfo.amount);
+            IInventoryItem item = infoManager.GetInventoryItemByInfo(data.InventoryItemInfo.id, data.InventoryItemInfo, objectInstInfo.amount);
             if (eventDrivenInventoryProxy.TryToAdd(this, item))
             {
                 objectSystem.RemoveFromGlobal(e.Position);
-                SpreadPattern pattern = data.pickUpPattern;
+                SpreadPattern pattern = data.OnPickUpPattern;
                 if (pattern != null)
                 {
-                    objectSystem.TryAddToGlobal(e.Position, pattern.main.prefab.GetInstanceID(), pattern.main.amount, pattern.main.iType, (e.Position.x + e.Position.y) % 2 == 0);
+                    objectSystem.TryAddToGlobal(e.Position, pattern.main.ObjectPrefab.GetInstanceID(), pattern.main.DefaultAmount, pattern.main.InstanceType, (e.Position.x + e.Position.y) % 2 == 0);
                     if (pattern.other.Length != 0)
                     {
                         for (byte i = 0; i < pattern.other.Length; i++)
                         {
                             Vector2Int newPos = Extension.GetRandomPointAround(e.Position, pattern.factor);
-                            objectSystem.TryAddToGlobal(newPos, pattern.other[i].prefab.GetInstanceID(), pattern.other[i].amount, pattern.other[i].iType, newPos.x < e.Position.x);
+                            objectSystem.TryAddToGlobal(newPos, pattern.other[i].ObjectPrefab.GetInstanceID(), pattern.other[i].DefaultAmount, pattern.other[i].InstanceType, newPos.x < e.Position.x);
                         }
                     }
                 }

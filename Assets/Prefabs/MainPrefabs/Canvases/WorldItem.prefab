@@ -61,8 +61,8 @@ MonoBehaviour:
   deleteWorldButton: {fileID: 2425038426188528775}
   editSettingsButton: {fileID: 5171654532403902851}
   worldIcon: {fileID: 5519726824717613499}
-  defaultWorldIcon: {fileID: 21300000, guid: a8fe78df500a9db4b8376682c1da56d3, type: 3}
-  currentWorldIcon: {fileID: 21300000, guid: cbf88d70550152d4a8c84f629fcefdb5, type: 3}
+  defaultWorldIcon: {fileID: 0}
+  currentWorldIcon: {fileID: 0}
 --- !u!1 &4065819925918151526
 GameObject:
   m_ObjectHideFlags: 0

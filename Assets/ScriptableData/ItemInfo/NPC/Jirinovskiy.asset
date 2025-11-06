@@ -17,6 +17,5 @@ MonoBehaviour:
   _title: Jirinovskiy
   _maxItemsInInventorySlot: 99
   _spriteIcon: {fileID: -2129501185, guid: 888268726c31f526a918eef301d66af2, type: 3}
-  _infoSprite: {fileID: -3669913759912456256, guid: 371df9d548312c2818da15c3a75f71a8,
-    type: 3}
+  _infoSprite: {fileID: -3669913759912456256, guid: 371df9d548312c2818da15c3a75f71a8, type: 3}
   _prefab: {fileID: 0}
