@@ -324,7 +324,7 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
     private async UniTask IdleAsync(CancellationToken cancellationToken)
     {
         isMoving = false;
-        rb.velocity = Vector2.zero;
+        rb.linearVelocity = Vector2.zero;
         
         Color originalColor = spriteRenderer.color;
         spriteRenderer.color = Color.white;
@@ -466,12 +466,12 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
             if (currentEnergy <= 0)
             {
                 isMoving = false;
-                rb.velocity = Vector2.zero;
+                rb.linearVelocity = Vector2.zero;
                 return;
             }
             
             Vector2 direction = ((Vector2)position - (Vector2)transform.position).normalized;
-            rb.velocity = direction * speed;
+            rb.linearVelocity = direction * speed;
             
             currentEnergy -= energyCostPerSecond * Time.deltaTime;
             currentEnergy = Mathf.Max(0, currentEnergy);
@@ -482,7 +482,7 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
         }
         
         isMoving = false;
-        rb.velocity = Vector2.zero;
+        rb.linearVelocity = Vector2.zero;
     }
     
     private async UniTaskVoid RegenerateEnergyAsync(CancellationToken cancellationToken)
@@ -546,7 +546,7 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
 
         spriteRenderer.color = Color.gray;
 
-        rb.velocity = Vector2.zero;
+        rb.linearVelocity = Vector2.zero;
         rb.bodyType = RigidbodyType2D.Kinematic;
 
         DialogSystem.Instance.RemoveDialogListener(this);

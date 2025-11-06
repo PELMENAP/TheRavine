@@ -9,11 +9,11 @@ public class InventoryCraftInfo : ScriptableObject
     [SerializeField, Min(0)] private int[] _amountIngr;
     [SerializeField] private InventoryItemInfo _res;
     [SerializeField, Min(0)] private int _amountRes;
-    public bool isAvailable => _isAvailable;
-    public int timeToComplete => _timeToComplete;
-    public string id => _id;
-    public InventoryItemInfo[] ingr => _ingr;
-    public InventoryItemInfo res => _res;
-    public int[] amountIngr => _amountIngr;
-    public int amountRes => _amountRes;
+    public bool IsAvailable => _isAvailable;
+    public int TimeToComplete => _timeToComplete;
+    public string Id => _id;
+    public InventoryItemInfo[] Ingr => _ingr;
+    public InventoryItemInfo Res => _res;
+    public int[] AmountIngr => _amountIngr;
+    public int AmountRes => _amountRes;
 }

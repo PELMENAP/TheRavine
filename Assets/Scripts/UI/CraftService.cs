@@ -46,19 +46,19 @@ namespace TheRavine.Inventory
             for (int i = 0; i < CraftInfo.Length; i++)
             {
                 var craftInfo = CraftInfo[i];
-                if(!craftInfo.isAvailable) continue;
+                if(!craftInfo.IsAvailable) continue;
                 
                 for (int j = 0; j < CellsCount; j++)
                 {
-                    if(j >= craftInfo.ingr.Length)
+                    if(j >= craftInfo.Ingr.Length)
                     {
                         craftIngredients[j] = "#";
                         ingredientsCount[j] = 0;
                     }
                     else
                     {
-                        craftIngredients[j] = craftInfo.ingr[j] != null ? craftInfo.ingr[j].id : "#";
-                        ingredientsCount[j] = craftInfo.ingr[j] != null ? craftInfo.amountIngr[j] : 0;
+                        craftIngredients[j] = craftInfo.Ingr[j] != null ? craftInfo.Ingr[j].id : "#";
+                        ingredientsCount[j] = craftInfo.Ingr[j] != null ? craftInfo.AmountIngr[j] : 0;
                     }
                 }
 
@@ -77,9 +77,9 @@ namespace TheRavine.Inventory
 
                 if(isPossible)
                 {
-                    resultItemInfo = craftInfo.res;
-                    resultCount = craftInfo.amountRes;
-                    craftDelay = craftInfo.timeToComplete;
+                    resultItemInfo = craftInfo.Res;
+                    resultCount = craftInfo.AmountRes;
+                    craftDelay = craftInfo.TimeToComplete;
                 }
 
                 craftPresenter.CraftPossible(isPossible);

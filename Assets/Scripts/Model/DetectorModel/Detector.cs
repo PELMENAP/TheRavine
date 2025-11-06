@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(Rigidbody))]
 public class Detector : MonoBehaviour, IDetector
 {   
     public event ObjectDetectedHandler OnGameObjectDetectedEvent;

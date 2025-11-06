@@ -13,11 +13,11 @@ public class PlayerBehaviourIdle : AState
         behaviourIdle = _delegateIdle.Invoke;
         this.logger = logger;
 
-        AddCommand(new MoveAlongPathCommand(
-            controller.GetModelTransform(),
-            new List<Vector3>() {new Vector3(0, 0, 0), new Vector3(0, 20, 0), new Vector3(20, 20, 0), new Vector3(20, 0, 0)}, 
-            1,
-            logger));
+        // AddCommand(new MoveAlongPathCommand(
+        //     controller.GetModelTransform(),
+        //     new List<Vector3>() {new Vector3(0, 0, 0), new Vector3(0, 20, 0), new Vector3(20, 20, 0), new Vector3(20, 0, 0)}, 
+        //     1,
+        //     logger));
     }
     public override void Enter()
     {
