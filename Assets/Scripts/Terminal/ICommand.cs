@@ -12,6 +12,7 @@ namespace TheRavine.Base
     public interface ICommand
     {
         string Name { get; }
+        string ShortName { get; }
         string Description { get; }
         UniTask ExecuteAsync(string[] args, CommandContext context);
     }

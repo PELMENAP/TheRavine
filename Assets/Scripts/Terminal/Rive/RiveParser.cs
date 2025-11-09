@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using Cysharp.Threading.Tasks;
 using ZLinq;
 
@@ -8,24 +7,36 @@ namespace TheRavine.Base
 {
     public class RiveParser
     {
-        private static readonly Regex VarDeclarationRegex = new(@"int\s+(\w+)\s*=\s*(.+)", RegexOptions.Compiled);
-        private static readonly Regex FunctionCallRegex = new(@"(\w+)\(([^)]*)\)", RegexOptions.Compiled);
-        private static readonly Regex ForLoopRegex = new(@"for\s+(\w+)\s*=\s*(\d+)\s+to\s+(\d+)", RegexOptions.Compiled);
-        private static readonly Regex ConditionRegex = new(@"(.+?)\s*(>|<|>=|<=|==|!=)\s*(.+)", RegexOptions.Compiled);
-        private static readonly Regex VariableInCommandRegex = new(@"\{(\w+)\}", RegexOptions.Compiled);
+        private List<Token> _tokens;
+        private int _position;
+        
+        private static readonly Dictionary<string, TokenType> Keywords = new()
+        {
+            ["int"] = TokenType.Int,
+            ["if"] = TokenType.If,
+            ["else"] = TokenType.Else,
+            ["for"] = TokenType.For,
+            ["to"] = TokenType.To,
+            ["end"] = TokenType.End,
+            ["log"] = TokenType.Log
+        };
         
         public ProgramNode Parse(string fileName, string content)
         {
+            var lines = PreprocessLines(content);
+            _tokens = Tokenize(lines);
+            _position = 0;
+            
             var program = new ProgramNode { Name = fileName };
             
-            var lines = PreprocessLines(content);
-            
-            if (lines.Count > 0 && lines[0].StartsWith("(") && lines[0].EndsWith(")"))
+            if (Match(TokenType.LeftParen))
             {
-                program.Parameters = ParseParameters(lines[0]);
-                lines.RemoveAt(0);
+                program.Parameters = ParseParameters();
+                Consume(TokenType.RightParen, "Expected ')' after parameters");
             }
-            program.Statements = ParseStatements(lines, 0, lines.Count, out _);
+            
+            program.Statements = ParseStatements(TokenType.EOF);
+            
             return program;
         }
         
@@ -37,310 +48,453 @@ namespace TheRavine.Base
                 .ToList();
         }
         
-        private List<string> ParseParameters(string line)
+        private List<Token> Tokenize(List<string> lines)
         {
-            var paramStr = line.Substring(1, line.Length - 2);
-            if (string.IsNullOrEmpty(paramStr))
-                return new List<string>();
+            var tokens = new List<Token>();
+            
+            for (int lineIndex = 0; lineIndex < lines.Count; lineIndex++)
+            {
+                var line = lines[lineIndex];
+                int pos = 0;
                 
-            return paramStr.Split(',').AsValueEnumerable()
-                .Select(p => p.Trim())
-                .Where(p => !string.IsNullOrEmpty(p))
-                .ToList();
+                while (pos < line.Length)
+                {
+                    if (char.IsWhiteSpace(line[pos]))
+                    {
+                        pos++;
+                        continue;
+                    }
+                    
+                    if (line.Substring(pos).StartsWith(">>"))
+                    {
+                        tokens.Add(new Token(TokenType.Return, ">>", lineIndex));
+                        pos += 2;
+                        continue;
+                    }
+                    
+                    if (line[pos] == '-')
+                    {
+                        var cmdEnd = line.Length;
+                        tokens.Add(new Token(TokenType.TerminalCommand, line.Substring(pos, cmdEnd - pos), lineIndex));
+                        pos = cmdEnd;
+                        continue;
+                    }
+                    
+                    if (pos + 1 < line.Length)
+                    {
+                        var twoChar = line.Substring(pos, 2);
+                        if (twoChar == ">=" || twoChar == "<=" || twoChar == "==" || twoChar == "!=")
+                        {
+                            tokens.Add(new Token(TokenType.Operator, twoChar, lineIndex));
+                            pos += 2;
+                            continue;
+                        }
+                    }
+                    
+                    if ("(){}=+-*/<>,".Contains(line[pos]))
+                    {
+                        var type = line[pos] switch
+                        {
+                            '(' => TokenType.LeftParen,
+                            ')' => TokenType.RightParen,
+                            '{' => TokenType.LeftBrace,
+                            '}' => TokenType.RightBrace,
+                            '=' => TokenType.Equal,
+                            ',' => TokenType.Comma,
+                            _ => TokenType.Operator
+                        };
+                        tokens.Add(new Token(type, line[pos].ToString(), lineIndex));
+                        pos++;
+                        continue;
+                    }
+                    
+                    if (char.IsDigit(line[pos]))
+                    {
+                        int start = pos;
+                        while (pos < line.Length && char.IsDigit(line[pos]))
+                            pos++;
+                        tokens.Add(new Token(TokenType.Number, line.Substring(start, pos - start), lineIndex));
+                        continue;
+                    }
+                    
+                    if (char.IsLetter(line[pos]) || line[pos] == '_')
+                    {
+                        int start = pos;
+                        while (pos < line.Length && (char.IsLetterOrDigit(line[pos]) || line[pos] == '_'))
+                            pos++;
+                        
+                        var word = line.Substring(start, pos - start);
+                        var type = Keywords.TryGetValue(word, out var kwType) ? kwType : TokenType.Identifier;
+                        tokens.Add(new Token(type, word, lineIndex));
+                        continue;
+                    }
+                    
+                    throw new RiveParseException($"Unexpected character: {line[pos]}", lineIndex);
+                }
+                
+                tokens.Add(new Token(TokenType.NewLine, "\n", lineIndex));
+            }
+            
+            tokens.Add(new Token(TokenType.EOF, "", lines.Count));
+            return tokens;
         }
         
-        private List<StatementNode> ParseStatements(List<string> lines, int start, int end, out int lastIndex)
+        private List<string> ParseParameters()
+        {
+            var parameters = new List<string>();
+            
+            if (Check(TokenType.RightParen))
+                return parameters;
+            
+            do
+            {
+                var token = Consume(TokenType.Identifier, "Expected parameter name");
+                parameters.Add(token.Value);
+            } while (Match(TokenType.Comma));
+            
+            return parameters;
+        }
+        
+        private List<StatementNode> ParseStatements(TokenType endToken)
         {
             var statements = new List<StatementNode>();
-            lastIndex = start;
+            SkipNewLines();
             
-            for (int i = start; i < end && i < lines.Count; i++)
+            while (!Check(endToken) && !Check(TokenType.Else))
             {
-                var line = lines[i].Trim();
-                if (string.IsNullOrEmpty(line) || line == "end" || line == "else")
-                {
-                    lastIndex = i;
-                    continue;
-                }
-                
-                var statement = ParseStatement(line, lines, i, end, out int nextIndex);
-                if (statement != null)
-                {
-                    statement.Line = i;
-                    statements.Add(statement);
-                    i = nextIndex - 1; // -1 because for loop will increment
-                    lastIndex = nextIndex;
-                }
+                statements.Add(ParseStatement());
+                SkipNewLines();
             }
             
             return statements;
         }
         
-        private StatementNode ParseStatement(string line, List<string> allLines, int currentIndex, int blockEnd, out int nextIndex)
+        private StatementNode ParseStatement()
         {
-            nextIndex = currentIndex + 1;
+            var lineNumber = Current().Line;
+            StatementNode statement;
             
-            if (line.StartsWith(">>"))
-                return ParseReturn(line);
-                
-            if (line.StartsWith("int "))
-                return ParseVariableDeclaration(line);
-                
-            if (line.StartsWith("if "))
-                return ParseIf(line, allLines, currentIndex, blockEnd, out nextIndex);
-                
-            if (line.StartsWith("for "))
-                return ParseFor(line, allLines, currentIndex, blockEnd, out nextIndex);
-                
-            if (line.StartsWith("-"))
-                return ParseTerminalCommand(line);
-                
-            if (line.StartsWith("log "))
-                return ParseLog(line);
-                
-            if (line.Contains('=') && !line.StartsWith("int "))
-                return ParseAssignment(line);
+            if (Match(TokenType.Return))
+                statement = new ReturnNode { Value = ParseExpression() };
+            else if (Match(TokenType.Int))
+                statement = ParseVariableDeclaration();
+            else if (Match(TokenType.If))
+                statement = ParseIf();
+            else if (Match(TokenType.For))
+                statement = ParseFor();
+            else if (Match(TokenType.Log))
+                statement = ParseLog();
+            else if (Match(TokenType.TerminalCommand))
+                statement = ParseTerminalCommand(Previous().Value);
+            else if (Check(TokenType.Identifier) && Peek(1)?.Type == TokenType.Equal)
+                statement = ParseAssignment();
+            else
+                throw new RiveParseException($"Unexpected token: {Current().Value}", lineNumber);
             
-            throw new RiveParseException($"Unknown statement: {line}", currentIndex);
+            statement.Line = lineNumber;
+            return statement;
         }
         
-        private ReturnNode ParseReturn(string line)
+        private VariableDeclarationNode ParseVariableDeclaration()
         {
-            var expression = line.Substring(2).Trim();
-            return new ReturnNode { Value = ParseExpression(expression) };
-        }
-        
-        private VariableDeclarationNode ParseVariableDeclaration(string line)
-        {
-            var match = VarDeclarationRegex.Match(line);
-            if (!match.Success)
-                throw new RiveParseException($"Invalid variable declaration: {line}", 0);
-                
+            var name = Consume(TokenType.Identifier, "Expected variable name");
+            Consume(TokenType.Equal, "Expected '=' in variable declaration");
+            var value = ParseExpression();
+            
             return new VariableDeclarationNode
             {
-                Name = match.Groups[1].Value,
-                InitialValue = ParseExpression(match.Groups[2].Value)
+                Name = name.Value,
+                InitialValue = value
             };
         }
         
-        private AssignmentNode ParseAssignment(string line)
+        private AssignmentNode ParseAssignment()
         {
-            var parts = line.Split('=');
-            if (parts.Length != 2)
-                throw new RiveParseException($"Invalid assignment: {line}", 0);
-                
+            var name = Consume(TokenType.Identifier, "Expected variable name");
+            Consume(TokenType.Equal, "Expected '='");
+            var value = ParseExpression();
+            
             return new AssignmentNode
             {
-                VariableName = parts[0].Trim(),
-                Value = ParseExpression(parts[1].Trim())
+                VariableName = name.Value,
+                Value = value
             };
         }
         
-        private IfNode ParseIf(string line, List<string> allLines, int currentIndex, int blockEnd, out int nextIndex)
+        private IfNode ParseIf()
         {
-            var condition = line.Substring(3).Trim();
-            var (elseIndex, endIndex) = FindIfBlockBounds(allLines, currentIndex, blockEnd);
+            var condition = ParseExpression();
+            SkipNewLines();
             
-            if (endIndex == -1)
-                throw new RiveParseException("Missing 'end' for if statement", currentIndex);
+            var thenBlock = ParseStatements(TokenType.End);
+            List<StatementNode> elseBlock = new();
             
-            var ifNode = new IfNode
+            if (Match(TokenType.Else))
             {
-                Condition = ParseCondition(condition)
+                SkipNewLines();
+                elseBlock = ParseStatements(TokenType.End);
+            }
+            
+            Consume(TokenType.End, "Expected 'end' after if block");
+            
+            return new IfNode
+            {
+                Condition = condition,
+                ThenBlock = thenBlock,
+                ElseBlock = elseBlock
             };
-            
-            var thenEnd = elseIndex != -1 ? elseIndex : endIndex;
-            ifNode.ThenBlock = ParseStatements(allLines, currentIndex + 1, thenEnd, out _);
-            
-            if (elseIndex != -1)
-                ifNode.ElseBlock = ParseStatements(allLines, elseIndex + 1, endIndex, out _);
-            
-            nextIndex = endIndex + 1;
-            return ifNode;
         }
         
-        private ForLoopNode ParseFor(string line, List<string> allLines, int currentIndex, int blockEnd, out int nextIndex)
+        private ForLoopNode ParseFor()
         {
-            var match = ForLoopRegex.Match(line);
-            if (!match.Success)
-                throw new RiveParseException($"Invalid for loop syntax: {line}", currentIndex);
+            var varName = Consume(TokenType.Identifier, "Expected loop variable");
+            Consume(TokenType.Equal, "Expected '=' in for loop");
+            var start = Consume(TokenType.Number, "Expected start value");
+            Consume(TokenType.To, "Expected 'to' in for loop");
+            var end = Consume(TokenType.Number, "Expected end value");
+            SkipNewLines();
             
-            var endIndex = FindEndStatement(allLines, currentIndex, blockEnd);
-            if (endIndex == -1)
-                throw new RiveParseException("Missing 'end' for for loop", currentIndex);
+            var body = ParseStatements(TokenType.End);
+            Consume(TokenType.End, "Expected 'end' after for loop");
             
-            var forNode = new ForLoopNode
+            return new ForLoopNode
             {
-                VariableName = match.Groups[1].Value,
-                StartValue = int.Parse(match.Groups[2].Value),
-                EndValue = int.Parse(match.Groups[3].Value)
+                VariableName = varName.Value,
+                StartValue = int.Parse(start.Value),
+                EndValue = int.Parse(end.Value),
+                Body = body
             };
-            
-            forNode.Body = ParseStatements(allLines, currentIndex + 1, endIndex, out _);
-            
-            nextIndex = endIndex + 1;
-            return forNode;
         }
         
-        private TerminalCommandNode ParseTerminalCommand(string line)
+        private LogNode ParseLog()
+        {
+            var exprStart = _position;
+            var expr = ParseExpression();
+            
+            var originalTokens = _tokens.AsValueEnumerable().Skip(exprStart).Take(_position - exprStart);
+            var originalExpr = string.Join("", originalTokens.Select(t => t.Value));
+            
+            return new LogNode
+            {
+                Expression = expr,
+                OriginalExpression = originalExpr
+            };
+        }
+        
+        private TerminalCommandNode ParseTerminalCommand(string command)
         {
             var variables = new List<string>();
-            var matches = VariableInCommandRegex.Matches(line);
-            foreach (Match match in matches)
-            {
+            var matches = System.Text.RegularExpressions.Regex.Matches(command, @"\{(\w+)\}");
+            
+            foreach (System.Text.RegularExpressions.Match match in matches)
                 variables.Add(match.Groups[1].Value);
-            }
             
             return new TerminalCommandNode
             {
-                Command = line,
+                Command = command,
                 VariableReferences = variables
             };
         }
         
-        private LogNode ParseLog(string line)
+        private ExpressionNode ParseExpression()
         {
-            var expression = line.Substring(4).Trim();
-            return new LogNode
-            {
-                Expression = ParseExpression(expression),
-                OriginalExpression = expression
-            };
+            return ParseComparison();
         }
         
-        private ExpressionNode ParseExpression(string expression)
+        private ExpressionNode ParseComparison()
         {
-            expression = expression.Trim();
+            var expr = ParseAdditive();
             
-            // Function call
-            var funcMatch = FunctionCallRegex.Match(expression);
-            if (funcMatch.Success)
+            if (Check(TokenType.Operator))
             {
-                var funcCall = new FunctionCallNode
+                var op = Current().Value;
+                if (op == ">" || op == "<" || op == ">=" || op == "<=" || op == "==" || op == "!=")
                 {
-                    FunctionName = funcMatch.Groups[1].Value
+                    Advance();
+                    var right = ParseAdditive();
+                    
+                    var binaryOp = op switch
+                    {
+                        ">" => BinaryOperator.Greater,
+                        "<" => BinaryOperator.Less,
+                        ">=" => BinaryOperator.GreaterOrEqual,
+                        "<=" => BinaryOperator.LessOrEqual,
+                        "==" => BinaryOperator.Equal,
+                        "!=" => BinaryOperator.NotEqual,
+                        _ => throw new RiveParseException($"Unknown operator: {op}", Current().Line)
+                    };
+                    
+                    return new BinaryOpNode
+                    {
+                        Left = expr,
+                        Right = right,
+                        Operator = binaryOp
+                    };
+                }
+            }
+            
+            return expr;
+        }
+        
+        private ExpressionNode ParseAdditive()
+        {
+            var expr = ParseMultiplicative();
+            
+            while (Check(TokenType.Operator) && (Current().Value == "+" || Current().Value == "-"))
+            {
+                var op = Current().Value;
+                Advance();
+                var right = ParseMultiplicative();
+                
+                expr = new BinaryOpNode
+                {
+                    Left = expr,
+                    Right = right,
+                    Operator = op == "+" ? BinaryOperator.Add : BinaryOperator.Subtract
                 };
+            }
+            
+            return expr;
+        }
+        
+        private ExpressionNode ParseMultiplicative()
+        {
+            var expr = ParsePrimary();
+            
+            while (Check(TokenType.Operator) && (Current().Value == "*" || Current().Value == "/"))
+            {
+                var op = Current().Value;
+                Advance();
+                var right = ParsePrimary();
                 
-                var argsStr = funcMatch.Groups[2].Value;
-                if (!string.IsNullOrEmpty(argsStr))
+                expr = new BinaryOpNode
                 {
-                    foreach (var arg in argsStr.Split(','))
+                    Left = expr,
+                    Right = right,
+                    Operator = op == "*" ? BinaryOperator.Multiply : BinaryOperator.Divide
+                };
+            }
+            
+            return expr;
+        }
+        
+        private ExpressionNode ParsePrimary()
+        {
+            if (Match(TokenType.Number))
+                return new LiteralNode { Value = int.Parse(Previous().Value) };
+            
+            if (Match(TokenType.LeftParen))
+            {
+                var expr = ParseExpression();
+                Consume(TokenType.RightParen, "Expected ')' after expression");
+                return expr;
+            }
+            
+            if (Check(TokenType.Identifier))
+            {
+                var name = Advance().Value;
+                
+                if (Match(TokenType.LeftParen))
+                {
+                    var args = new List<ExpressionNode>();
+                    
+                    if (!Check(TokenType.RightParen))
                     {
-                        funcCall.Arguments.Add(ParseExpression(arg.Trim()));
+                        do
+                        {
+                            args.Add(ParseExpression());
+                        } while (Match(TokenType.Comma));
                     }
-                }
-                
-                return funcCall;
-            }
-            
-            return ParseArithmeticExpression(expression);
-        }
-        
-        private ExpressionNode ParseCondition(string condition)
-        {
-            var match = ConditionRegex.Match(condition);
-            if (!match.Success)
-                throw new RiveParseException($"Invalid condition: {condition}", 0);
-            
-            var op = match.Groups[2].Value switch
-            {
-                ">" => BinaryOperator.Greater,
-                "<" => BinaryOperator.Less,
-                ">=" => BinaryOperator.GreaterOrEqual,
-                "<=" => BinaryOperator.LessOrEqual,
-                "==" => BinaryOperator.Equal,
-                "!=" => BinaryOperator.NotEqual,
-                _ => throw new RiveParseException($"Unknown operator: {match.Groups[2].Value}", 0)
-            };
-            
-            return new BinaryOpNode
-            {
-                Left = ParseExpression(match.Groups[1].Value),
-                Right = ParseExpression(match.Groups[3].Value),
-                Operator = op
-            };
-        }
-        
-        private ExpressionNode ParseArithmeticExpression(string expression)
-        {
-            expression = expression.Replace(" ", "");
-            
-            // Простой парсер с учетом приоритета: +/- затем */
-            // Для production лучше использовать Pratt parser или recursive descent
-            
-            // Ищем + или - (низкий приоритет)
-            for (int i = expression.Length - 1; i >= 0; i--)
-            {
-                if (expression[i] == '+' || expression[i] == '-')
-                {
-                    return new BinaryOpNode
+                    
+                    Consume(TokenType.RightParen, "Expected ')' after function arguments");
+                    
+                    return new FunctionCallNode
                     {
-                        Left = ParseArithmeticExpression(expression.Substring(0, i)),
-                        Right = ParseArithmeticExpression(expression.Substring(i + 1)),
-                        Operator = expression[i] == '+' ? BinaryOperator.Add : BinaryOperator.Subtract
+                        FunctionName = name,
+                        Arguments = args
                     };
                 }
-            }
-            
-            // Ищем * или / (высокий приоритет)
-            for (int i = expression.Length - 1; i >= 0; i--)
-            {
-                if (expression[i] == '*' || expression[i] == '/')
-                {
-                    return new BinaryOpNode
-                    {
-                        Left = ParseArithmeticExpression(expression.Substring(0, i)),
-                        Right = ParseArithmeticExpression(expression.Substring(i + 1)),
-                        Operator = expression[i] == '*' ? BinaryOperator.Multiply : BinaryOperator.Divide
-                    };
-                }
-            }
-            
-            // Literal or variable
-            if (int.TryParse(expression, out int value))
-                return new LiteralNode { Value = value };
                 
-            return new VariableNode { Name = expression };
-        }
-        
-        private (int elseIndex, int endIndex) FindIfBlockBounds(List<string> lines, int startIndex, int blockEnd)
-        {
-            int depth = 1;
-            int elseIndex = -1;
+                return new VariableNode { Name = name };
+            }
             
-            for (int i = startIndex + 1; i < blockEnd && i < lines.Count; i++)
-            {
-                var line = lines[i].Trim();
-                if (line.StartsWith("if ") || line.StartsWith("for "))
-                    depth++;
-                else if (line == "else" && depth == 1 && elseIndex == -1)
-                    elseIndex = i;
-                else if (line == "end")
-                {
-                    depth--;
-                    if (depth == 0)
-                        return (elseIndex, i);
-                }
-            }
-            return (-1, -1);
+            throw new RiveParseException($"Expected expression, got: {Current().Value}", Current().Line);
         }
         
-        private int FindEndStatement(List<string> lines, int startIndex, int blockEnd)
+        private bool Match(params TokenType[] types)
         {
-            int depth = 1;
-            for (int i = startIndex + 1; i < blockEnd && i < lines.Count; i++)
+            if (types.AsValueEnumerable().Any(Check))
             {
-                var line = lines[i].Trim();
-                if (line.StartsWith("if ") || line.StartsWith("for "))
-                    depth++;
-                else if (line == "end")
-                {
-                    depth--;
-                    if (depth == 0)
-                        return i;
-                }
+                Advance();
+                return true;
             }
-            return -1;
+            return false;
+        }
+        
+        private bool Check(TokenType type)
+        {
+            return Current().Type == type;
+        }
+        
+        private Token Current()
+        {
+            return _tokens[_position];
+        }
+        
+        private Token Previous()
+        {
+            return _tokens[_position - 1];
+        }
+        
+        private Token Advance()
+        {
+            if (!IsAtEnd()) _position++;
+            return Previous();
+        }
+        
+        private Token Peek(int offset)
+        {
+            var pos = _position + offset;
+            return pos < _tokens.Count ? _tokens[pos] : null;
+        }
+        
+        private bool IsAtEnd()
+        {
+            return Current().Type == TokenType.EOF;
+        }
+        
+        private Token Consume(TokenType type, string message)
+        {
+            if (Check(type)) return Advance();
+            throw new RiveParseException(message, Current().Line);
+        }
+        
+        private void SkipNewLines()
+        {
+            while (Match(TokenType.NewLine)) { }
+        }
+    }
+    
+    public enum TokenType
+    {
+        Number, Identifier, Operator,
+        LeftParen, RightParen, LeftBrace, RightBrace,
+        Equal, Comma, NewLine,
+        Int, If, Else, For, To, End, Log, Return, TerminalCommand,
+        EOF
+    }
+    
+    public class Token
+    {
+        public TokenType Type { get; }
+        public string Value { get; }
+        public int Line { get; }
+        
+        public Token(TokenType type, string value, int line)
+        {
+            Type = type;
+            Value = value;
+            Line = line;
         }
     }
     

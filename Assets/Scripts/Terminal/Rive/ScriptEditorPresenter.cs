@@ -14,10 +14,12 @@ namespace TheRavine.Base
         private string currentFileName = "";
         private CommandContext terminalContext;
         private ScriptFileManager scriptFileManager;
+        private IRavineLogger logger;
 
-        public void Initialize(CommandContext context, RiveRuntime interpreter)
+        public void Initialize(CommandContext context, RiveRuntime interpreter, IRavineLogger logger)
         {
             this.interpreter = interpreter;
+            this.logger = logger;
             terminalContext = context;
 
             scriptFileManager = new ScriptFileManager(new EncryptedPlayerPrefsStorage());
@@ -31,7 +33,7 @@ namespace TheRavine.Base
         {
             if (string.IsNullOrEmpty(fileName))
             {
-                Debug.LogWarning("Имя файла не может быть пустым");
+                logger.LogWarning("Имя файла не может быть пустым");
                 return;
             }
 
@@ -39,7 +41,7 @@ namespace TheRavine.Base
 
             if (isExist)
             {
-                Debug.LogWarning($"Файл {fileName} уже существует");
+                logger.LogWarning($"Файл {fileName} уже существует");
                 return;
             }
 
@@ -47,7 +49,7 @@ namespace TheRavine.Base
             editorInputField.text = "";
             RefreshFilesList().Forget();
             
-            Debug.Log($"Создан новый файл: {fileName}");
+            logger.LogInfo($"Создан новый файл: {fileName}");
         }
 
         public async UniTaskVoid LoadFile(string fileName)
@@ -55,7 +57,7 @@ namespace TheRavine.Base
             bool isExist = await scriptFileManager.ExistsAsync(fileName);
             if (!isExist)
             {
-                Debug.LogWarning($"Файл {fileName} не найден");
+                logger.LogWarning($"Файл {fileName} не найден");
                 currentFileName = fileName;
                 editorInputField.text = "";
                 return;
@@ -67,13 +69,13 @@ namespace TheRavine.Base
             interpreter.LoadFile(fileName, content);
             RefreshFilesList().Forget();
 
-            Debug.Log($"Загружен файл: {fileName}");
+            logger.LogInfo($"Загружен файл: {fileName}");
         }
         public void SaveCurrentFile()
         {
             if (string.IsNullOrEmpty(currentFileName))
             {
-                Debug.LogWarning("Нет открытого файла для сохранения");
+                logger.LogWarning("Нет открытого файла для сохранения");
                 return;
             }
 
@@ -82,7 +84,7 @@ namespace TheRavine.Base
             
             interpreter.LoadFile(currentFileName, content);
             RefreshFilesList().Forget();
-            Debug.Log($"Сохранен файл: {currentFileName}");
+            logger.LogInfo($"Сохранен файл: {currentFileName}");
         }
 
         public async UniTaskVoid DeleteFile(string fileName)
@@ -97,7 +99,7 @@ namespace TheRavine.Base
             }
             
             RefreshFilesList().Forget();
-            Debug.Log($"Удален файл: {fileName}");
+            logger.LogInfo($"Удален файл: {fileName}");
         }
 
         public void ClearEditor()
@@ -140,7 +142,7 @@ namespace TheRavine.Base
                 editorPanel.SetActive(active);
                 if (active && terminalContext != null)
                 {
-                    terminalContext.Display("Редактор скриптов активен");
+                    logger.LogInfo("Редактор скриптов активен");
                 }
             }
         }

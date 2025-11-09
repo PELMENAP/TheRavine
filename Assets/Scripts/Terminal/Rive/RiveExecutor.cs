@@ -29,7 +29,6 @@ namespace TheRavine.Base
             
             try
             {
-                // Initialize parameters
                 for (int i = 0; i < program.Parameters.Count; i++)
                 {
                     SetVariable(program.Parameters[i], args[i]);
@@ -59,7 +58,6 @@ namespace TheRavine.Base
                 if (result.Action != ExecutionAction.Continue)
                     return result;
                 
-                // Yield каждые N операций для плавности
                 if (_operationCount % 10 == 0)
                     await UniTask.Yield();
             }
@@ -147,7 +145,6 @@ namespace TheRavine.Base
         {
             var command = node.Command;
             
-            // Substitute variables
             foreach (var varName in node.VariableReferences)
             {
                 var value = GetVariable(varName);

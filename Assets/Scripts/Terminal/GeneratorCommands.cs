@@ -12,6 +12,7 @@ namespace TheRavine.Base
     public class RotateCommand : IValidatedCommand
     {
         public string Name => "-rotate";
+        public string ShortName => "-rot";
         public string Description => "Поворачивает пространство: -rotate <90|-90>";
 
         public bool Validate(CommandContext context)
