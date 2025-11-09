@@ -19,7 +19,7 @@ namespace TheRavine.Base
         [SerializeField] private Button confirmButton;
         [SerializeField] private GameObject graphyManager;
         [SerializeField] private ScriptEditorPresenter scriptEditor;
-        private RiveInterpreter interpreter;
+        private RiveRuntime interpreter;
         
         public CommandManager CommandManager { get; private set; }
         private CommandContext _context;
@@ -53,7 +53,7 @@ namespace TheRavine.Base
         {
             this.logger = logger;
 
-            interpreter = new RiveInterpreter();
+            interpreter = new RiveRuntime();
             interpreter.Initialize(ExecuteTerminalCommandAsync);
 
             CommandManager = new CommandManager();
@@ -219,6 +219,11 @@ namespace TheRavine.Base
         public void Display(string message)
         {
             _context.Display(message);
+        }
+
+        public void ExecuteComand(string message)
+        {
+            
         }
 
         private void OnDisable()

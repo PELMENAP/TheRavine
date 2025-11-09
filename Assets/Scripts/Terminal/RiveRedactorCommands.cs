@@ -188,7 +188,7 @@ namespace TheRavine.Base
                     context.Display($"Строк: {lines}");
 
                     var fileInfo = context.ScriptInterpreter.GetFileInfo(fileName);
-                    if (fileInfo != null && fileInfo.Parameters.Count > 0)
+                    if (!fileInfo.IsLoaded && fileInfo.Parameters.Count > 0)
                     {
                         context.Display($"Параметры: ({string.Join(", ", fileInfo.Parameters)})");
                     }
