@@ -24,7 +24,7 @@ namespace TheRavine.Base
         public readonly ScriptFileManager scriptFileManager;
 
         public ScriptEditorPresenter ScriptEditor { get; private set; }
-        public RiveInterpreter ScriptInterpreter { get; private set; }
+        public RiveRuntime ScriptInterpreter { get; private set; }
 
         public CommandContext(
             TextMeshProUGUI output, 
@@ -33,7 +33,7 @@ namespace TheRavine.Base
             MapGenerator gen, 
             GameObject graphy,
             ScriptEditorPresenter scriptEditor,
-            RiveInterpreter scriptInterpreter)
+            RiveRuntime scriptInterpreter)
         {
             OutputWindow = output;
             PlayerData = player;

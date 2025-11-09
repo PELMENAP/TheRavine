@@ -10,12 +10,12 @@ namespace TheRavine.Base
         [SerializeField] private TMP_Dropdown filesDropdown;
         [SerializeField] private GameObject editorPanel;
 
-        private RiveInterpreter interpreter;
+        private RiveRuntime interpreter;
         private string currentFileName = "";
         private CommandContext terminalContext;
         private ScriptFileManager scriptFileManager;
 
-        public void Initialize(CommandContext context, RiveInterpreter interpreter)
+        public void Initialize(CommandContext context, RiveRuntime interpreter)
         {
             this.interpreter = interpreter;
             terminalContext = context;
@@ -66,11 +66,10 @@ namespace TheRavine.Base
             editorInputField.text = content ?? "";
             interpreter.LoadFile(fileName, content);
             RefreshFilesList().Forget();
-            
+
             Debug.Log($"Загружен файл: {fileName}");
         }
-
-        public async UniTaskVoid SaveCurrentFile()
+        public void SaveCurrentFile()
         {
             if (string.IsNullOrEmpty(currentFileName))
             {
@@ -79,7 +78,7 @@ namespace TheRavine.Base
             }
 
             var content = editorInputField.text;
-            await scriptFileManager.SaveAsync(currentFileName, content);
+            scriptFileManager.SaveAsync(currentFileName, content).Forget();
             
             interpreter.LoadFile(currentFileName, content);
             RefreshFilesList().Forget();
@@ -151,7 +150,7 @@ namespace TheRavine.Base
             return editorPanel != null && editorPanel.activeSelf;
         }
 
-        public async UniTask<RiveInterpreter.ScriptResult> ExecuteScriptAsync(string fileName, params int[] args)
+        public async UniTask<RiveRuntime.ScriptResult> ExecuteScriptAsync(string fileName, params int[] args)
         {
             if (!interpreter.IsFileLoaded(fileName))
             {
@@ -162,7 +161,7 @@ namespace TheRavine.Base
                 }
                 else
                 {
-                    return new RiveInterpreter.ScriptResult
+                    return new RiveRuntime.ScriptResult
                     {
                         Success = false,
                         ErrorMessage = $"Файл {fileName} не найден"
@@ -190,6 +189,6 @@ namespace TheRavine.Base
         public string GetCurrentContent() => editorInputField.text;
         public void LoadFileToInterpreter(string fileName, string content) => interpreter.LoadFile(fileName, content);
         public void UnloadFileFromInterpreter(string fileName) => interpreter.UnloadFile(fileName);
-        public RiveInterpreter.GameScriptFile GetFileInfo(string fileName) => interpreter.GetFileInfo(fileName);
+        public RiveRuntime.ProgramInfo GetFileInfo(string fileName) => interpreter.GetFileInfo(fileName);
     }
 }
