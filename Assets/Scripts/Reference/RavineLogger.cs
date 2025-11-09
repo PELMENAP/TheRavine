@@ -129,7 +129,6 @@ public class RavineLogger : IRavineLogger
                 Debug.LogError(ZString.Concat(ErrorPrefix, errorMsg));
             }
             
-            // Отправляем стилизованное сообщение в терминал
             onMessageDisplayTerminal?.Invoke(ZString.Concat(StyledErrorPrefix, errorMsg));
         }
     }

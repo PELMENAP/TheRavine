@@ -74,7 +74,7 @@ namespace TheRavine.Base
 
             if (scriptEditor != null)
             {   
-                scriptEditor.Initialize(_context, interpreter);
+                scriptEditor.Initialize(_context, interpreter, logger);
                 scriptEditor.LoadAllFilesToInterpreter().Forget();
                 
                 CommandManager.Register(
@@ -220,12 +220,6 @@ namespace TheRavine.Base
         {
             _context.Display(message);
         }
-
-        public void ExecuteComand(string message)
-        {
-            
-        }
-
         private void OnDisable()
         {
             _confirmBinding?.Unbind();

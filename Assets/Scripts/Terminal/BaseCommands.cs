@@ -11,6 +11,7 @@ namespace TheRavine.Base
     public class HelpCommand : ICommand
     {
         public string Name => "-help";
+        public string ShortName => "-h";
         public string Description => "Показывает список команд";
 
         public UniTask ExecuteAsync(string[] args, CommandContext context)
@@ -26,6 +27,7 @@ namespace TheRavine.Base
     public class ClearCommand : ICommand
     {
         public string Name => "-clear";
+        public string ShortName => "-clr";
         public string Description => "Очищает окно терминала";
 
         public UniTask ExecuteAsync(string[] args, CommandContext context)
@@ -38,6 +40,7 @@ namespace TheRavine.Base
     public class DebugCommand : ICommand
     {
         public string Name => "-debug";
+        public string ShortName => "-dbg";
         public string Description => "Показывает информацию о FPS, Памяти и системе";
 
         public UniTask ExecuteAsync(string[] args, CommandContext context)
@@ -68,6 +71,7 @@ namespace TheRavine.Base
     public class PrintCommand : ICommand
     {
         public string Name => "-print";
+        public string ShortName => "-pr";
         public string Description => "Печатает строку в терминале";
 
         public UniTask ExecuteAsync(string[] args, CommandContext context)

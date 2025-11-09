@@ -6,8 +6,6 @@ namespace TheRavine.Base
     {
         public int Line { get; set; }
     }
-
-    // Выражения
     public abstract class ExpressionNode : AstNode { }
 
     public class LiteralNode : ExpressionNode
@@ -38,8 +36,6 @@ namespace TheRavine.Base
         public string FunctionName { get; set; }
         public List<ExpressionNode> Arguments { get; set; } = new();
     }
-
-    // Statements
     public abstract class StatementNode : AstNode { }
 
     public class VariableDeclarationNode : StatementNode
@@ -86,7 +82,6 @@ namespace TheRavine.Base
         public string OriginalExpression { get; set; }
     }
 
-    // Программа
     public class ProgramNode : AstNode
     {
         public string Name { get; set; }

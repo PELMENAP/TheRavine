@@ -13,6 +13,7 @@ namespace TheRavine.Base
     public class TeleportCommand : IValidatedCommand
     {
         public string Name => "-tp";
+        public string ShortName => "-tp";
         public string Description => "Телепортирует игрока: -tp i x y";
 
         public bool Validate(CommandContext context)
@@ -50,6 +51,7 @@ namespace TheRavine.Base
     public abstract class SetValueCommandBase : IValidatedCommand
     {
         public abstract string Name { get; }
+        public abstract string ShortName { get; }
         public abstract string Description { get; }
         protected abstract void Apply(PlayerEntity player, int value, CommandContext context);
 
@@ -83,6 +85,7 @@ namespace TheRavine.Base
     public class SetSpeedCommand : SetValueCommandBase
     {
         public override string Name => "-set-speed";
+        public override string ShortName => "-s-s";
         public override string Description => "Устанавливает скорость игрока: -set-speed i <0..100>";
 
         protected override void Apply(PlayerEntity player, int value, CommandContext context)
@@ -100,6 +103,7 @@ namespace TheRavine.Base
     public class SetViewCommand : SetValueCommandBase
     {
         public override string Name => "-set-view";
+        public override string ShortName => "-s-v";
         public override string Description => "Устанавливает обзор игрока: -set-view i <0..30>";
 
         protected override void Apply(PlayerEntity player, int value, CommandContext context)

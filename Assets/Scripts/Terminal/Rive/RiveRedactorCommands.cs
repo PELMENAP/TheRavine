@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using ZLinq;
 
 namespace TheRavine.Base
 {
     public class ExecuteScriptCommand : ICommand
     {
         public string Name => "-execute";
+        public string ShortName => "-ex";
         public string Description => "Выполняет скрипт: -execute <filename> [args...]";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
@@ -42,11 +44,12 @@ namespace TheRavine.Base
 
             try
             {
+                context.Display(String.Join(" ", scriptArgs));
                 var result = await context.ScriptInterpreter.ExecuteScriptAsync(fileName, scriptArgs.ToArray());
                 
                 if (result.Success)
                 {
-                    context.Display($"Скрипт {fileName} выполнен успешно. Результат: {result.ReturnValue}");
+                    context.Display($"{fileName}: {result.ReturnValue}");
                 }
                 else
                 {
@@ -63,6 +66,7 @@ namespace TheRavine.Base
     public class EditorCommand : ICommand
     {
         public string Name => "-editor";
+        public string ShortName => "-edr";
         public string Description => "Управляет редактором скриптов: -editor <on/off>";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
@@ -99,6 +103,7 @@ namespace TheRavine.Base
     public class EditFileCommand : ICommand
     {
         public string Name => "-edit";
+        public string ShortName => "-edt";
         public string Description => "Открывает файл для редактирования: -edit <filename>";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
@@ -135,6 +140,7 @@ namespace TheRavine.Base
     public class ScriptInfoCommand : ICommand
     {
         public string Name => "-file";
+        public string ShortName => "-f";
         public string Description => "Показывает информацию о скриптах: -file [list/info <filename>]";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
@@ -206,6 +212,7 @@ namespace TheRavine.Base
     public class DeleteScriptCommand : ICommand
     {
         public string Name => "-delete";
+        public string ShortName => "-del";
         public string Description => "Удаляет что-то: -delete [file <filename> / ]";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
@@ -249,6 +256,7 @@ namespace TheRavine.Base
     public class SaveScriptCommand : ICommand
     {
         public string Name => "-save";
+        public string ShortName => "-sv";
         public string Description => "Сохраняет текущий файл в редакторе: -save";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
@@ -284,6 +292,7 @@ namespace TheRavine.Base
     public class NewScriptCommand : ICommand
     {
         public string Name => "-new";
+        public string ShortName => "-n";
         public string Description => "Создает новый скрипт: -new <filename>";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
@@ -318,6 +327,7 @@ namespace TheRavine.Base
     public class CloseScriptCommand : ICommand
     {
         public string Name => "-close";
+        public string ShortName => "-cs";
         public string Description => "Закрывает текущий файл в редакторе: -close";
 
         public UniTask ExecuteAsync(string[] args, CommandContext context)
