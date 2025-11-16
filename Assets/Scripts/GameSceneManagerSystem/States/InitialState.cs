@@ -19,11 +19,11 @@ namespace TheRavine.Base
         {
             Initializer.LogBootstrapInfo("Initial state reached");
             Initializer.StartNewServices(currentSetAbleScripts, () => isChangeState = true);
-            FaderOnTransit.instance.SetLogs("Загрузка ресурсов");
+            FaderOnTransit.Instance.SetLogs("Загрузка ресурсов");
         }
         public void OnExit()
         {
-            FaderOnTransit.instance.SetLogs("Загрузка ресурсов завершена");
+            FaderOnTransit.Instance.SetLogs("Загрузка ресурсов завершена");
         }
         public void OnTick()
         {

@@ -43,7 +43,7 @@ namespace TheRavine.ObjectControl
             }
         }
 
-        public void Reuse(int prefabID, Vector2Int position, bool flip, float rotateValue = 0f)
+        public void Reuse(int prefabID, Vector2Int position, bool flip)
         {
             if (!pools.ContainsKey(prefabID)) return;
 
@@ -51,7 +51,7 @@ namespace TheRavine.ObjectControl
             if (pool.Objects.Count == 0) return;
 
             ObjectInstance instance = pool.Objects.Dequeue();
-            instance.Reuse(position, rotateValue, flip);
+            instance.Reuse(position, flip);
             pool.Objects.Enqueue(instance);
         }
 
@@ -83,10 +83,10 @@ namespace TheRavine.ObjectControl
                 obj.SetActive(false);
             }
 
-            public void Reuse(Vector2Int position, float rotateValue, bool flip)
+            public void Reuse(Vector2Int position, bool flip)
             {
                 transform.position = (Vector2)position;
-                transform.rotation = Quaternion.Euler(0, flip ? 180 : 0, rotateValue);
+                transform.rotation = Quaternion.Euler(0, flip ? 180 : 0, 0);
                 gameObject.SetActive(true);
             }
 

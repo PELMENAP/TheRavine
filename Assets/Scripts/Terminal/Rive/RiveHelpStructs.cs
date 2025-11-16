@@ -65,8 +65,8 @@ namespace TheRavine.Base
     public class ForLoopNode : StatementNode
     {
         public string VariableName { get; set; }
-        public int StartValue { get; set; }
-        public int EndValue { get; set; }
+        public ExpressionNode StartExpression { get; set; }
+        public ExpressionNode EndExpression { get; set; }
         public List<StatementNode> Body { get; set; } = new();
     }
 
@@ -80,6 +80,11 @@ namespace TheRavine.Base
     {
         public ExpressionNode Expression { get; set; }
         public string OriginalExpression { get; set; }
+    }
+
+    public class WaitNode : StatementNode
+    {
+        public ExpressionNode Milliseconds { get; set; }
     }
 
     public class ProgramNode : AstNode

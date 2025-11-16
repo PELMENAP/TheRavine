@@ -11,9 +11,9 @@ namespace TheRavine.Base
 {
     public class RotateCommand : IValidatedCommand
     {
-        public string Name => "-rotate";
-        public string ShortName => "-rot";
-        public string Description => "Поворачивает пространство: -rotate <90|-90>";
+        public string Name => "~rotate";
+        public string ShortName => "~rot";
+        public string Description => "Поворачивает пространство: ~rotate <90|-90>";
 
         public bool Validate(CommandContext context)
         {
@@ -29,7 +29,7 @@ namespace TheRavine.Base
         {
             if (args.Length < 2 || !(args[1] == "90" || args[1] == "-90"))
             {
-                ctx.Display("Использование: -rotate <90|-90>");
+                ctx.Display("Использование: ~rotate <90|-90>");
                 return UniTask.CompletedTask;
             }
             var angle = sbyte.Parse(args[1]);

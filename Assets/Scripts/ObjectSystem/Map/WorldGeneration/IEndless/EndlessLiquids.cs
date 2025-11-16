@@ -14,7 +14,7 @@ namespace TheRavine.Generator
             }
             public void UpdateChunk(Vector2Int Position)
             {
-                generator.waterTransform.position = new((Position.x + 0.5f) * generationSize, -4, (Position.y - 0.5f) * generationSize);
+                generator.waterTransform.position = new((Position.x + 0.5f) * generationSize, generator.waterOffset.y, (Position.y - 0.5f) * generationSize);
             }
         }
     }

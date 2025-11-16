@@ -55,8 +55,6 @@ namespace TheRavine.Base
 
             _isLoading.Value = true;
             
-            try
-            {
                 var worldData = new WorldData
                 {
                     seed = UnityEngine.Random.Range(0, int.MaxValue),
@@ -76,16 +74,6 @@ namespace TheRavine.Base
                 
                 _logger.LogInfo($"Мир '{worldName}' создан успешно");
                 return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Ошибка создания мира '{worldName}': {ex.Message}");
-                return false;
-            }
-            finally
-            {
-                _isLoading.Value = false;
-            }
         }
 
         public async UniTask<bool> LoadWorldAsync(string worldName)

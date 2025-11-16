@@ -20,11 +20,11 @@ namespace TheRavine.Base
         {
             Initializer.LogBootstrapInfo("Loading state reached");
             Initializer.StartNewServices(currentSetAbleScripts, () => isChangeState = true);
-            FaderOnTransit.instance.SetLogs("Создание сцены");
+            FaderOnTransit.Instance.SetLogs("Создание сцены");
         }
         public void OnExit()
         {
-            FaderOnTransit.instance.SetLogs("Сцена создана");
+            FaderOnTransit.Instance.SetLogs("Сцена создана");
         }
         public void OnTick()
         {
@@ -36,7 +36,7 @@ namespace TheRavine.Base
             }
             if (timer >= timerStep * 10)
             {
-                FaderOnTransit.instance.SetLogs($"Загрузка сцены {timer}%");
+                FaderOnTransit.Instance.SetLogs($"Загрузка сцены {timer}%");
                 timerStep += 1;
             }
         }

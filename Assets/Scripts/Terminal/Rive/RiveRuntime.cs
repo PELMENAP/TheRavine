@@ -7,16 +7,19 @@ namespace TheRavine.Base
 {
     public class RiveRuntime
     {
-        private readonly RiveParser _parser = new();
+        private readonly RiveParser _parser;
+        private readonly IRavineLogger _logger;
         private readonly Dictionary<string, ProgramNode> _compiledPrograms = new();
         private RiveExecutor _executor;
         
         public delegate UniTask<bool> TerminalCommandDelegate(string command);
         private TerminalCommandDelegate _terminalCommandHandler;
         
-        public void Initialize(TerminalCommandDelegate terminalCommandHandler)
+        public RiveRuntime(TerminalCommandDelegate terminalCommandHandler, IRavineLogger logger)
         {
             _terminalCommandHandler = terminalCommandHandler;
+            _logger = logger;
+            _parser = new(logger);
             _executor = new RiveExecutor(this);
         }
         
@@ -27,9 +30,9 @@ namespace TheRavine.Base
                 var program = _parser.Parse(fileName, content);
                 _compiledPrograms[fileName] = program;
             }
-            catch (RiveParseException ex)
+            catch (Exception ex)
             {
-                throw new RiveRuntimeException($"Failed to load {fileName}: {ex.Message}", ex);
+                _logger.LogError($"Failed to load {fileName}: {ex.Message}");
             }
         }
         

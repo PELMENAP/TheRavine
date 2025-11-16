@@ -76,6 +76,7 @@ namespace TheRavine.Base
                 ForLoopNode forLoop => await ExecuteForLoopAsync(forLoop),
                 TerminalCommandNode termCmd => await ExecuteTerminalCommandAsync(termCmd),
                 LogNode log => await ExecuteLogAsync(log),
+                WaitNode wait => await ExecuteWaitAsync(wait),
                 _ => ExecutionResult.CreateError($"Unknown statement type: {statement.GetType().Name}")
             };
         }
@@ -121,7 +122,10 @@ namespace TheRavine.Base
             
             try
             {
-                for (int i = node.StartValue; i <= node.EndValue; i++)
+                var startValue = await EvaluateExpressionAsync(node.StartExpression);
+                var endValue = await EvaluateExpressionAsync(node.EndExpression);
+                
+                for (int i = startValue; i <= endValue; i++)
                 {
                     if (_operationCount >= MAX_OPERATIONS)
                         return ExecutionResult.CreateError("Operation limit exceeded in loop");
@@ -149,18 +153,33 @@ namespace TheRavine.Base
             {
                 var value = GetVariable(varName);
                 if (value.HasValue)
-                    command = command.Replace($"{{{varName}}}", value.Value.ToString());
+                    command = command.Replace($"{varName}", value.Value.ToString());
             }
             
             var success = await _runtime.ExecuteTerminalCommandAsync(command);
             return success ? ExecutionResult.CreateSuccess() : 
                 ExecutionResult.CreateError($"Command failed: {command}");
         }
-        
+
         private async UniTask<ExecutionResult> ExecuteLogAsync(LogNode node)
         {
             var value = await EvaluateExpressionAsync(node.Expression);
-            await _runtime.ExecuteTerminalCommandAsync($"-print {node.OriginalExpression} = {value}");
+            await _runtime.ExecuteTerminalCommandAsync($"~print {node.OriginalExpression} = {value}");
+            return ExecutionResult.CreateSuccess();
+        }
+        
+        private async UniTask<ExecutionResult> ExecuteWaitAsync(WaitNode node)
+        {
+            var milliseconds = await EvaluateExpressionAsync(node.Milliseconds);
+            
+            if (milliseconds < 0)
+                return ExecutionResult.CreateError("Wait time cannot be negative");
+            
+            if (milliseconds > 60000)
+                return ExecutionResult.CreateError("Wait time cannot exceed 60000ms (60 seconds)");
+            
+            await UniTask.Delay(milliseconds);
+            
             return ExecutionResult.CreateSuccess();
         }
         

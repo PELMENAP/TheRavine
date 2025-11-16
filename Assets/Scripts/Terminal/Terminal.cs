@@ -52,10 +52,7 @@ namespace TheRavine.Base
         public async void Setup(IRavineLogger logger)
         {
             this.logger = logger;
-
-            interpreter = new RiveRuntime();
-            interpreter.Initialize(ExecuteTerminalCommandAsync);
-
+            interpreter = new RiveRuntime(ExecuteTerminalCommandAsync, logger);
             CommandManager = new CommandManager();
             
             CommandManager.Register(
@@ -91,7 +88,7 @@ namespace TheRavine.Base
 
             await UniTask.CompletedTask;
 
-            ProcessInput("-clear");
+            ProcessInput("~clear");
             WaitForDependencies().Forget();
         }
 
@@ -100,7 +97,7 @@ namespace TheRavine.Base
             try
             {
                 var parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length > 0 && parts[0].StartsWith("-"))
+                if (parts.Length > 0 && parts[0].StartsWith("~"))
                 {
                     if (CommandManager.TryGet(parts[0], out var cmd))
                     {
@@ -191,7 +188,7 @@ namespace TheRavine.Base
             try
             {
                 var parts = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length > 0 && parts[0].StartsWith("-"))
+                if (parts.Length > 0 && parts[0].StartsWith("~"))
                 {
                     if (CommandManager.TryGet(parts[0], out var cmd))
                     {

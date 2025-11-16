@@ -87,6 +87,7 @@ namespace TheRavine.Generator
         [SerializeField] private Transform viewer;
         [SerializeField] private bool[] endlessFlag;
         [SerializeField] private bool isRiver;
+        public Vector3 waterOffset;
         private IEndless[] endless;
         public void SetUp(ISetAble.Callback callback)
         {
@@ -230,8 +231,6 @@ namespace TheRavine.Generator
             while (!_cts.Token.IsCancellationRequested)
             {
                 await UniTask.Delay(100000);
-                if (rotateTarget != 0f)
-                    return;
                 ClearNALQueue();
                 while (NALQueueUpdateRemove.Count > 0)
                 {   
@@ -261,18 +260,15 @@ namespace TheRavine.Generator
             int[,] temperatureMap = new int[mapChunkSize, mapChunkSize];
 
 
-            Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Global);
+            if (Mathf.Abs(centre.x) > 10000 || Mathf.Abs(centre.y) > 10000)
+                Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Local);
+            else
+                Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Global);
+            
             Noise.GenerateNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize, Noise.NormalizeMode.Global, true);
 
             if(isRiver)
                 Noise.CombineMaps(ref noiseMap, noiseTemperatureMap, riverMin, riverMax, riverInfluence, maxRiverDepth);
-
-            // if (Mathf.Abs(centre.x) > 10000 || Mathf.Abs(centre.y) > 10000)
-            //     Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Local);
-            // else
-            //     Noise.GenerateNoiseMap(ref noiseMap, centre * mapChunkSize, Noise.NormalizeMode.Global);
-
-            // Noise.GenerateTempNoiseMap(ref noiseTemperatureMap, centre * mapChunkSize);
 
             for (int x = 0; x < mapChunkSize; x++)
             {
@@ -373,7 +369,7 @@ namespace TheRavine.Generator
             {
                 position = GetPlayerPosition();
                 Debug.Log(GetMapHeight(position));
-                if (position != OldVposition && rotateTarget == 0f)
+                if (position != OldVposition)
                 {
                     OldVposition = position;
                     int extendedChunk = chunkScale + 1;
@@ -398,8 +394,6 @@ namespace TheRavine.Generator
         }
         public void ExtraUpdate()
         {
-            if (rotateTarget != 0f)
-                return;
             position = GetPlayerPosition();
             if(!endlessFlag[2]) return;
             endless[2].UpdateChunk(position);
@@ -411,7 +405,6 @@ namespace TheRavine.Generator
             Vector3 playerPosition = new(viewer.position.x - generationSize / 2, viewer.position.z + generationSize / 2, 0);
             return Extension.RoundVector2D(playerPosition / generationSize);
         }
-        public float rotateValue = 0f, rotateTarget = 0f;
 
         public void BreakUp(ISetAble.Callback callback)
         {

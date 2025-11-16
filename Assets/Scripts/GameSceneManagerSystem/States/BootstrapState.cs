@@ -16,13 +16,13 @@ namespace TheRavine.Base
         public void OnEnter()
         {
             Initializer.LogBootstrapInfo("Entry point state reached");
-            FaderOnTransit.instance.SetLogs("Выполнен вход в игру");
-            FaderOnTransit.instance.SetLogs("Создание точки входа");
+            FaderOnTransit.Instance.SetLogs("Выполнен вход в игру");
+            FaderOnTransit.Instance.SetLogs("Создание точки входа");
             Initializer.StartNewServices(currentSetAbleScripts, () => Initializer.StateMachine.SwitchState<InitialState>());
         }
         public void OnExit()
         {
-            FaderOnTransit.instance.SetLogs("Точка входа создана");
+            FaderOnTransit.Instance.SetLogs("Точка входа создана");
         }
     }
 }
