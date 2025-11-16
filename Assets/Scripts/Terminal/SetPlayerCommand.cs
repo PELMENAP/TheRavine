@@ -12,9 +12,9 @@ namespace TheRavine.Base
 {
     public class TeleportCommand : IValidatedCommand
     {
-        public string Name => "-tp";
-        public string ShortName => "-tp";
-        public string Description => "Телепортирует игрока: -tp i x y";
+        public string Name => "~tp";
+        public string ShortName => "~tp";
+        public string Description => "Телепортирует игрока: ~tp i x y";
 
         public bool Validate(CommandContext context)
         {
@@ -30,7 +30,7 @@ namespace TheRavine.Base
         {
             if (args.Length < 4 || args[1] != "i")
             {
-                context.Display("Использование: -tp i x y");
+                context.Display("Использование: ~tp i x y");
                 return UniTask.CompletedTask;
             }
             if (!int.TryParse(args[2], out var x) || !int.TryParse(args[3], out var y))
@@ -84,9 +84,9 @@ namespace TheRavine.Base
 
     public class SetSpeedCommand : SetValueCommandBase
     {
-        public override string Name => "-set-speed";
-        public override string ShortName => "-s-s";
-        public override string Description => "Устанавливает скорость игрока: -set-speed i <0..100>";
+        public override string Name => "~set~speed";
+        public override string ShortName => "~s~s";
+        public override string Description => "Устанавливает скорость игрока: ~set~speed i <0..100>";
 
         protected override void Apply(PlayerEntity player, int value, CommandContext context)
         {
@@ -102,9 +102,9 @@ namespace TheRavine.Base
 
     public class SetViewCommand : SetValueCommandBase
     {
-        public override string Name => "-set-view";
-        public override string ShortName => "-s-v";
-        public override string Description => "Устанавливает обзор игрока: -set-view i <0..30>";
+        public override string Name => "~set~view";
+        public override string ShortName => "~s~v";
+        public override string Description => "Устанавливает обзор игрока: ~set~view i <0..30>";
 
         protected override void Apply(PlayerEntity player, int value, CommandContext context)
         {

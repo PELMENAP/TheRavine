@@ -12,7 +12,7 @@ public class SceneLoader
         _isLoading = true;
         bool waitFading = true;
 
-        FaderOnTransit.instance.FadeIn(() => waitFading = false);
+        FaderOnTransit.Instance.FadeIn(() => waitFading = false);
 
         await UniTask.WaitUntil(() => waitFading == false);
 

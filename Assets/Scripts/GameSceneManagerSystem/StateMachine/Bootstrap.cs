@@ -25,7 +25,7 @@ namespace TheRavine.Base
                 await UniTask.Delay(1000);
             }
 
-            AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
+            AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
 
             worldDataService.SetGameWon(false);
             if (worldDataService.WorldData.CurrentValue.cycleCount == 0)
@@ -66,7 +66,7 @@ namespace TheRavine.Base
 
         private void TransitToOtherScene(int sceneNumber){
             sceneLoader.LoadScene(sceneNumber).Forget();
-            AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
+            AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
         }
 
         private void OnDisable()

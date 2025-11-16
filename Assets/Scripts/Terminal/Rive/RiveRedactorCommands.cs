@@ -1,21 +1,20 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using ZLinq;
 
 namespace TheRavine.Base
 {
     public class ExecuteScriptCommand : ICommand
     {
-        public string Name => "-execute";
-        public string ShortName => "-ex";
-        public string Description => "Выполняет скрипт: -execute <filename> [args...]";
+        public string Name => "~execute";
+        public string ShortName => "~ex";
+        public string Description => "Выполняет скрипт: ~execute <filename> [args...]";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
         {
             if (args.Length < 2)
             {
-                context.Display("Использование: -execute <filename> [args...]");
+                context.Display("Использование: ~execute <filename> [args...]");
                 return;
             }
 
@@ -65,9 +64,9 @@ namespace TheRavine.Base
 
     public class EditorCommand : ICommand
     {
-        public string Name => "-editor";
-        public string ShortName => "-edr";
-        public string Description => "Управляет редактором скриптов: -editor <on/off>";
+        public string Name => "~editor";
+        public string ShortName => "~edr";
+        public string Description => "Управляет редактором скриптов: ~editor <on/off>";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
         {
@@ -75,7 +74,7 @@ namespace TheRavine.Base
             if (args.Length < 2)
             {
                 var status = context.ScriptEditor.IsEditorActive() ? "включен" : "выключен";
-                context.Display($"Редактор скриптов {status}. Использование: -editor <on/off>");
+                context.Display($"Редактор скриптов {status}. Использование: ~editor <on/off>");
                 return;
             }
 
@@ -92,7 +91,7 @@ namespace TheRavine.Base
                     context.Display("Редактор скриптов выключен");
                     break;
                 default:
-                    context.Display("Использование: -editor <on/off>");
+                    context.Display("Использование: ~editor <on/off>");
                     break;
             }
 
@@ -102,15 +101,15 @@ namespace TheRavine.Base
 
     public class EditFileCommand : ICommand
     {
-        public string Name => "-edit";
-        public string ShortName => "-edt";
-        public string Description => "Открывает файл для редактирования: -edit <filename>";
+        public string Name => "~edit";
+        public string ShortName => "~edt";
+        public string Description => "Открывает файл для редактирования: ~edit <filename>";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
         {
             if (args.Length < 2)
             {
-                context.Display("Использование: -edit <filename>");
+                context.Display("Использование: ~edit <filename>");
                 return;
             }
 
@@ -139,9 +138,9 @@ namespace TheRavine.Base
 
     public class ScriptInfoCommand : ICommand
     {
-        public string Name => "-file";
-        public string ShortName => "-f";
-        public string Description => "Показывает информацию о скриптах: -file [list/info <filename>]";
+        public string Name => "~file";
+        public string ShortName => "~f";
+        public string Description => "Показывает информацию о скриптах: ~file [list/info <filename>]";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
         {
@@ -149,7 +148,7 @@ namespace TheRavine.Base
             {
                 var files = await context.scriptFileManager.ListIdsAsync();
                 context.Display($"Доступно скриптов: {files.Count}");
-                context.Display("Используйте: -file list для списка файлов");
+                context.Display("Используйте: ~file list для списка файлов");
                 return;
             }
 
@@ -176,7 +175,7 @@ namespace TheRavine.Base
                 case "info":
                     if (args.Length < 3)
                     {
-                        context.Display("Использование: -file info <filename>");
+                        context.Display("Использование: ~file info <filename>");
                         return;
                     }
 
@@ -201,7 +200,7 @@ namespace TheRavine.Base
                     break;
 
                 default:
-                    context.Display("Использование: -file [list/info <filename>]");
+                    context.Display("Использование: ~file [list/info <filename>]");
                     break;
             }
 
@@ -211,15 +210,15 @@ namespace TheRavine.Base
     
     public class DeleteScriptCommand : ICommand
     {
-        public string Name => "-delete";
-        public string ShortName => "-del";
-        public string Description => "Удаляет что-то: -delete [file <filename> / ]";
+        public string Name => "~delete";
+        public string ShortName => "~del";
+        public string Description => "Удаляет что-то: ~delete [file <filename> / ]";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
         {
             if (args.Length < 3)
             {
-                context.Display("Использование: -delete [file <filename> / ]");
+                context.Display("Использование: ~delete [file <filename> / ]");
                 return;
             }
 
@@ -246,7 +245,7 @@ namespace TheRavine.Base
                     context.Display($"Файл {fileName} удален");
                     break;
                 default:
-                    context.Display("Использование: -delete [file <filename> / ]");
+                    context.Display("Использование: ~delete [file <filename> / ]");
                     break;
             }
             return;
@@ -255,15 +254,15 @@ namespace TheRavine.Base
 
     public class SaveScriptCommand : ICommand
     {
-        public string Name => "-save";
-        public string ShortName => "-sv";
-        public string Description => "Сохраняет текущий файл в редакторе: -save";
+        public string Name => "~save";
+        public string ShortName => "~sv";
+        public string Description => "Сохраняет текущий файл в редакторе: ~save";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
         {
             if (!context.ScriptEditor.IsEditorActive())
             {
-                context.Display("Редактор не активен. Используйте -editor on");
+                context.Display("Редактор не активен. Используйте ~editor on");
                 return;
             }
 
@@ -291,15 +290,15 @@ namespace TheRavine.Base
     }
     public class NewScriptCommand : ICommand
     {
-        public string Name => "-new";
-        public string ShortName => "-n";
-        public string Description => "Создает новый скрипт: -new <filename>";
+        public string Name => "~new";
+        public string ShortName => "~n";
+        public string Description => "Создает новый скрипт: ~new <filename>";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
         {
             if (args.Length < 2)
             {
-                context.Display("Использование: -new <filename>");
+                context.Display("Использование: ~new <filename>");
                 return;
             }
 
@@ -308,7 +307,7 @@ namespace TheRavine.Base
             bool isExist = await context.scriptFileManager.ExistsAsync(fileName);
             if (isExist)
             {
-                context.Display($"Файл {fileName} уже существует. Используйте -edit {fileName} для редактирования");
+                context.Display($"Файл {fileName} уже существует. Используйте ~edit {fileName} для редактирования");
                 return;
             }
 
@@ -326,9 +325,9 @@ namespace TheRavine.Base
 
     public class CloseScriptCommand : ICommand
     {
-        public string Name => "-close";
-        public string ShortName => "-cs";
-        public string Description => "Закрывает текущий файл в редакторе: -close";
+        public string Name => "~close";
+        public string ShortName => "~cs";
+        public string Description => "Закрывает текущий файл в редакторе: ~close";
 
         public UniTask ExecuteAsync(string[] args, CommandContext context)
         {

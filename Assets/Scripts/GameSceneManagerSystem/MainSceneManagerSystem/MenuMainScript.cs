@@ -66,7 +66,7 @@ namespace TheRavine.Base
             }
 
             fastStartGameButton.onClick.AddListener(StartGame);
-            fastStartGameButton.onClick.AddListener(QuitGame);
+            quitGameButton.onClick.AddListener(QuitGame);
             testStartGameButton.onClick.AddListener(LoadTestScene);
         }
 
@@ -109,9 +109,9 @@ namespace TheRavine.Base
 
         private void StartInitialization()
         {
-            AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
+            AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
 
-            FaderOnTransit.instance.FadeOut(() => { isLoading.Value = false; SwitchToSection(MenuSection.Menu); });
+            FaderOnTransit.Instance.FadeOut(() => { isLoading.Value = false; SwitchToSection(MenuSection.Menu); });
             SwitchToSection(MenuSection.Menu);
             StartGame();
         }
@@ -136,7 +136,7 @@ namespace TheRavine.Base
         private async UniTask LoadGameScene(int SceneIndex)
         {
             isLoading.Value = true;
-            AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
+            AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
 
             try
             {

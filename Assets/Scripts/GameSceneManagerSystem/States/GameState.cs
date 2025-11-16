@@ -15,7 +15,7 @@ namespace TheRavine.Base
             {
                 Initializer.LogBootstrapInfo("GAME IS STARTED");
                 
-                FaderOnTransit.instance.FadeOut(() => aboba = true);
+                FaderOnTransit.Instance.FadeOut(() => aboba = true);
                 Initializer.OnGameAlreadyStarted();
                 NetworkManager.Singleton.StartHost();
             }

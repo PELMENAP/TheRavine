@@ -30,7 +30,7 @@ public class ParallaxSceneController : MonoBehaviour
         worldManager = ServiceLocator.GetService<WorldManager>();
         worldinfo = await worldManager.GetWorldInfoAsync(worldManager.CurrentWorldName);
         // DataStorage.winTheGame = win;
-        AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
+        AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
         transistor = new SceneLoader();
 
         _timer = new SyncedTimer(timerType, worldinfo.IsGameWon ? timeToDelay * 6 : timeToDelay);
@@ -38,7 +38,7 @@ public class ParallaxSceneController : MonoBehaviour
 
         _timer.Start();
 
-        FaderOnTransit.instance.FadeOut(null);
+        FaderOnTransit.Instance.FadeOut(null);
 
         if (worldinfo.IsGameWon)
         {
@@ -53,7 +53,7 @@ public class ParallaxSceneController : MonoBehaviour
     {
         if(worldinfo.IsGameWon) transistor.LoadScene(0).Forget();
         else transistor.LoadScene(2).Forget();
-        AddCameraToStack(FaderOnTransit.instance.GetFaderCamera());
+        AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
     }
 
     private async UniTaskVoid PrintText(string text)

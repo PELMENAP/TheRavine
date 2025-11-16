@@ -1,10 +1,11 @@
 using UnityEngine;
 using System;
+using MemoryPack;
 
 namespace TheRavine.Base
 {
-    [System.Serializable]
-    public class WorldSettings : IEquatable<WorldSettings>
+    [MemoryPackable]
+    public partial class WorldSettings : IEquatable<WorldSettings>
     {
         [Header("Основные настройки")]
         public string worldName = "New World";

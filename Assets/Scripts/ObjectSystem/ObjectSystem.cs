@@ -72,7 +72,7 @@ namespace TheRavine.ObjectControl
         public bool ContainsGlobal(Vector2Int position) => global.ContainsKey(position);
         private PoolManager PoolManagerBase;
         public void CreatePool(int PrefabID, GameObject prefab, int poolSize = 1) => PoolManagerBase.CreatePool(PrefabID, prefab, InstantiatePoolObject, (ushort)poolSize);
-        public void Reuse(int PrefabID, Vector2Int position, bool flip, float rotateValue) => PoolManagerBase.Reuse(PrefabID, position, flip, rotateValue);
+        public void Reuse(int PrefabID, Vector2Int position, bool flip) => PoolManagerBase.Reuse(PrefabID, position, flip);
         public void Deactivate(int PrefabID) => PoolManagerBase.Deactivate(PrefabID);
         public ushort GetPoolSize(int PrefabID) => PoolManagerBase.GetPoolSize(PrefabID);
         public void IncreasePoolSize(int PrefabID) => PoolManagerBase.IncreasePoolSize(PrefabID);

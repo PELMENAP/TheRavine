@@ -7,8 +7,14 @@ namespace TheRavine.Base
 {
     public class RiveParser
     {
+        private readonly IRavineLogger _logger;
         private List<Token> _tokens;
         private int _position;
+
+        public RiveParser(IRavineLogger logger)
+        {
+            _logger = logger;
+        }
         
         private static readonly Dictionary<string, TokenType> Keywords = new()
         {
@@ -18,7 +24,8 @@ namespace TheRavine.Base
             ["for"] = TokenType.For,
             ["to"] = TokenType.To,
             ["end"] = TokenType.End,
-            ["log"] = TokenType.Log
+            ["log"] = TokenType.Log,
+            ["wait"] = TokenType.Wait 
         };
         
         public ProgramNode Parse(string fileName, string content)
@@ -72,7 +79,7 @@ namespace TheRavine.Base
                         continue;
                     }
                     
-                    if (line[pos] == '-')
+                    if (line[pos] == '~')
                     {
                         var cmdEnd = line.Length;
                         tokens.Add(new Token(TokenType.TerminalCommand, line.Substring(pos, cmdEnd - pos), lineIndex));
@@ -116,20 +123,20 @@ namespace TheRavine.Base
                         tokens.Add(new Token(TokenType.Number, line.Substring(start, pos - start), lineIndex));
                         continue;
                     }
-                    
+
                     if (char.IsLetter(line[pos]) || line[pos] == '_')
                     {
                         int start = pos;
                         while (pos < line.Length && (char.IsLetterOrDigit(line[pos]) || line[pos] == '_'))
                             pos++;
-                        
+
                         var word = line.Substring(start, pos - start);
                         var type = Keywords.TryGetValue(word, out var kwType) ? kwType : TokenType.Identifier;
                         tokens.Add(new Token(type, word, lineIndex));
                         continue;
                     }
                     
-                    throw new RiveParseException($"Unexpected character: {line[pos]}", lineIndex);
+                    throw LogAndThrow($"Unexpected character: {line[pos]}");
                 }
                 
                 tokens.Add(new Token(TokenType.NewLine, "\n", lineIndex));
@@ -173,7 +180,7 @@ namespace TheRavine.Base
         {
             var lineNumber = Current().Line;
             StatementNode statement;
-            
+
             if (Match(TokenType.Return))
                 statement = new ReturnNode { Value = ParseExpression() };
             else if (Match(TokenType.Int))
@@ -184,12 +191,14 @@ namespace TheRavine.Base
                 statement = ParseFor();
             else if (Match(TokenType.Log))
                 statement = ParseLog();
+            else if (Match(TokenType.Wait))
+                statement = ParseWait();
             else if (Match(TokenType.TerminalCommand))
                 statement = ParseTerminalCommand(Previous().Value);
             else if (Check(TokenType.Identifier) && Peek(1)?.Type == TokenType.Equal)
                 statement = ParseAssignment();
             else
-                throw new RiveParseException($"Unexpected token: {Current().Value}", lineNumber);
+                throw LogAndThrow($"Unexpected token: {Current().Value}");
             
             statement.Line = lineNumber;
             return statement;
@@ -249,9 +258,11 @@ namespace TheRavine.Base
         {
             var varName = Consume(TokenType.Identifier, "Expected loop variable");
             Consume(TokenType.Equal, "Expected '=' in for loop");
-            var start = Consume(TokenType.Number, "Expected start value");
+            
+            var startExpr = ParseExpression();
             Consume(TokenType.To, "Expected 'to' in for loop");
-            var end = Consume(TokenType.Number, "Expected end value");
+            
+            var endExpr = ParseExpression();
             SkipNewLines();
             
             var body = ParseStatements(TokenType.End);
@@ -260,24 +271,38 @@ namespace TheRavine.Base
             return new ForLoopNode
             {
                 VariableName = varName.Value,
-                StartValue = int.Parse(start.Value),
-                EndValue = int.Parse(end.Value),
+                StartExpression = startExpr,
+                EndExpression = endExpr,
                 Body = body
             };
         }
-        
+
         private LogNode ParseLog()
         {
             var exprStart = _position;
             var expr = ParseExpression();
-            
-            var originalTokens = _tokens.AsValueEnumerable().Skip(exprStart).Take(_position - exprStart);
-            var originalExpr = string.Join("", originalTokens.Select(t => t.Value));
-            
+
+            var originalTokens = _tokens.AsValueEnumerable()
+                .Skip(exprStart)
+                .Take(_position - exprStart)
+                .Select(t => t.Value)
+                .ToList();
+
+            var originalExpr = string.Join("", originalTokens);
+
             return new LogNode
             {
                 Expression = expr,
                 OriginalExpression = originalExpr
+            };
+        }
+        private WaitNode ParseWait()
+        {
+            var milliseconds = ParseExpression();
+            
+            return new WaitNode
+            {
+                Milliseconds = milliseconds
             };
         }
         
@@ -321,7 +346,7 @@ namespace TheRavine.Base
                         "<=" => BinaryOperator.LessOrEqual,
                         "==" => BinaryOperator.Equal,
                         "!=" => BinaryOperator.NotEqual,
-                        _ => throw new RiveParseException($"Unknown operator: {op}", Current().Line)
+                        _ => throw LogAndThrow($"Unknown operator: {op}")
                     };
                     
                     return new BinaryOpNode
@@ -377,27 +402,27 @@ namespace TheRavine.Base
             
             return expr;
         }
-        
+
         private ExpressionNode ParsePrimary()
         {
             if (Match(TokenType.Number))
                 return new LiteralNode { Value = int.Parse(Previous().Value) };
-            
+
             if (Match(TokenType.LeftParen))
             {
                 var expr = ParseExpression();
                 Consume(TokenType.RightParen, "Expected ')' after expression");
                 return expr;
             }
-            
+
             if (Check(TokenType.Identifier))
             {
                 var name = Advance().Value;
-                
+
                 if (Match(TokenType.LeftParen))
                 {
                     var args = new List<ExpressionNode>();
-                    
+
                     if (!Check(TokenType.RightParen))
                     {
                         do
@@ -405,22 +430,21 @@ namespace TheRavine.Base
                             args.Add(ParseExpression());
                         } while (Match(TokenType.Comma));
                     }
-                    
+
                     Consume(TokenType.RightParen, "Expected ')' after function arguments");
-                    
+
                     return new FunctionCallNode
                     {
                         FunctionName = name,
                         Arguments = args
                     };
                 }
-                
+
                 return new VariableNode { Name = name };
             }
-            
-            throw new RiveParseException($"Expected expression, got: {Current().Value}", Current().Line);
+
+            throw LogAndThrow($"Expected expression, got: {Current().Value}");
         }
-        
         private bool Match(params TokenType[] types)
         {
             if (types.AsValueEnumerable().Any(Check))
@@ -465,31 +489,40 @@ namespace TheRavine.Base
         
         private Token Consume(TokenType type, string message)
         {
-            if (Check(type)) return Advance();
-            throw new RiveParseException(message, Current().Line);
+            if (Check(type)) 
+                return Advance();
+            
+            throw LogAndThrow(message);
         }
-        
+
         private void SkipNewLines()
         {
             while (Match(TokenType.NewLine)) { }
         }
+        
+        private RiveParseException LogAndThrow(string message)
+        {
+            _logger.LogError($"Line {Current().Line}: {message}");
+            return new RiveParseException(message, Current().Line);
+        }
     }
-    
+
     public enum TokenType
     {
         Number, Identifier, Operator,
         LeftParen, RightParen, LeftBrace, RightBrace,
         Equal, Comma, NewLine,
         Int, If, Else, For, To, End, Log, Return, TerminalCommand,
+        Wait,
         EOF
     }
-    
+
     public class Token
     {
         public TokenType Type { get; }
         public string Value { get; }
         public int Line { get; }
-        
+
         public Token(TokenType type, string value, int line)
         {
             Type = type;

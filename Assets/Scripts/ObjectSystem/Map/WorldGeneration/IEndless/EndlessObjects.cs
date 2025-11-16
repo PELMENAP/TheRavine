@@ -66,7 +66,7 @@ namespace TheRavine.Generator
                         Debug.Log(info.objectType);
                         Debug.Log(" ");
                     }
-                    objectSystem.Reuse(info.PrefabID, item, info.flip, generator.rotateValue);
+                    objectSystem.Reuse(info.PrefabID, item, info.flip);
                     if (objectInfo.BehaviourType == BehaviourType.NAL || objectInfo.BehaviourType == BehaviourType.GROW)
                         generator.AddNALObject(item);
                 }

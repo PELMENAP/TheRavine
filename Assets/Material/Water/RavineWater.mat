@@ -17,7 +17,7 @@ Material:
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
+  m_CustomRenderQueue: 2992
   stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
@@ -86,15 +86,15 @@ Material:
     - PixelSnap: 0
     - Vector1_05f4a429a15c4b9b93d79d576a894c49: 0
     - Vector1_07b96787062f4f96b445b743aaa728de: 4
-    - Vector1_093ef56d25ee49c1b50e0a3920b868f6: 0.114
+    - Vector1_093ef56d25ee49c1b50e0a3920b868f6: 0
     - Vector1_101ccb04ee4a4d369ace1fd7d0c13af3: 0.2
-    - Vector1_1d85cf92e649419d9e2d1a0471f15134: 0.02
+    - Vector1_1d85cf92e649419d9e2d1a0471f15134: 0.12
     - Vector1_1f355b42fe984ee2be4b03d5a06243e6: 20
     - Vector1_20df93eada1f4070943c50f03f150e81: 60.41
     - Vector1_2543adb75ce74f11bccbd58ad34c0d34: 0.082
     - Vector1_295a3e34a97142ada7476ec161a94a17: 0.5
-    - Vector1_2ba5a5c1bbba4b5b9c9aff9f70921a70: 1000
-    - Vector1_2d7e3b4bd51c4910bf99fc7c167bc81b: 0.5
+    - Vector1_2ba5a5c1bbba4b5b9c9aff9f70921a70: 1
+    - Vector1_2d7e3b4bd51c4910bf99fc7c167bc81b: 0.26
     - Vector1_2f6a21b0461b40ca93f2cd575920ec1c: 0.2
     - Vector1_4404b753c5fd4ca894e8635bff65f1dc: 5
     - Vector1_454a59594bd442f780ed58e294dc8e15: 0.125
@@ -109,16 +109,17 @@ Material:
     - Vector1_a47f0c5c6ecf4348843d0e0c51ff2354: 1
     - Vector1_a4de65d012734c45939a173456282094: 0
     - Vector1_aeb86914fb3c41f7962abfd1784a54fa: 6
-    - Vector1_b4651e1c4a334bef8c36a54b0b6c423c: 1
+    - Vector1_b4651e1c4a334bef8c36a54b0b6c423c: 0.91
     - Vector1_ba17c1c736174044a699b5d77d6e278e: 0
     - Vector1_cb57562c85b847b0b3fc69d44ea9d8f7: 1000
     - Vector1_d43a535e351f4c47aeae14550d8f0c30: 1
     - Vector1_dcfd3a7a4c3b425aae452d557ed07b9c: 0.0025
-    - Vector1_e2719c30786a4d4b804af8152444e446: 0.4
+    - Vector1_e2719c30786a4d4b804af8152444e446: 0.39
     - Vector1_f43f3972eb7941169f3013ad2ece79a8: 150
     - Vector1_f8914effb3024a26994c7d3939d6cc23: 320.6
     - _BlendOp: 0
     - _BumpScale: 1
+    - _CameraAdd: 0
     - _CameraFadingEnabled: 0
     - _CameraFarFadeDistance: 2
     - _CameraNearFadeDistance: 1
@@ -126,7 +127,7 @@ Material:
     - _ColorMask: 15
     - _Cull: 2
     - _Cutoff: 0.5
-    - _Displacement: 0.1
+    - _Displacement: 1
     - _DistortionBlend: 0.5
     - _DistortionEnabled: 0
     - _DistortionStrength: 1
@@ -141,7 +142,8 @@ Material:
     - _Metallic: 0
     - _Mode: 0
     - _QueueControl: 0
-    - _QueueOffset: 0
+    - _QueueOffset: -8
+    - _Scale: 200
     - _Shininess: 0.2
     - _SoftParticlesEnabled: 0
     - _SoftParticlesFarFadeDistance: 1
