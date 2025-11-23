@@ -32,17 +32,17 @@ namespace TheRavine.ObjectControl
             else
                 return null;
         }
-        public bool TryAddToGlobal(Vector2Int position, int _PrefabID, int _amount, InstanceType _objectType, bool _flip = false)
+        public bool TryAddToGlobal(Vector2Int position, Vector3 realPosition, int _PrefabID, int _amount, InstanceType _objectType)
         {
             if(info == null || info.Count == 0) return false;
             if (global.ContainsKey(position))
                 if (global[position].PrefabID == _PrefabID && global[position].objectType == InstanceType.Interactable)
                 {
-                    global[position] = new ObjectInstInfo(_PrefabID, global[position].amount + _amount, InstanceType.Interactable, global[position].flip); ;
+                    global[position] = new ObjectInstInfo(realPosition, _PrefabID, global[position].amount + _amount, InstanceType.Interactable); ;
                     return true;
                 }
             ObjectInfo curdata = GetPrefabInfo(_PrefabID);
-            ObjectInstInfo objectInfo = new(_PrefabID, _amount, _objectType, _flip);
+            ObjectInstInfo objectInfo = new(realPosition, _PrefabID, _amount, _objectType);
             if (curdata.AdditionalOccupiedCells.Length == 0)
                 return global.TryAdd(position, objectInfo);
             global[position] = objectInfo;
@@ -50,13 +50,13 @@ namespace TheRavine.ObjectControl
             {
                 Vector2Int newPosition = position + curdata.AdditionalOccupiedCells[i];
                 if(!global.ContainsKey(newPosition))
-                    global[newPosition] = new ObjectInstInfo(-1, 0, InstanceType.Static, false, false);
+                    global[newPosition] = new ObjectInstInfo(Vector3.zero, -1, 0, InstanceType.Static, false);
             }
             return true;
         }
-        private void AddToGlobal(Vector2Int position, int _PrefabID, ushort _amount, InstanceType _objectType, bool flip = false)
+        private void AddToGlobal(Vector2Int position, Vector3 realPosition, int _PrefabID, ushort _amount, InstanceType _objectType)
         {
-            global[position] = new ObjectInstInfo(_PrefabID, _amount, _objectType, flip);
+            global[position] = new ObjectInstInfo(realPosition, _PrefabID, _amount, _objectType);
         }
         public bool RemoveFromGlobal(Vector2Int position)
         {
@@ -72,7 +72,7 @@ namespace TheRavine.ObjectControl
         public bool ContainsGlobal(Vector2Int position) => global.ContainsKey(position);
         private PoolManager PoolManagerBase;
         public void CreatePool(int PrefabID, GameObject prefab, int poolSize = 1) => PoolManagerBase.CreatePool(PrefabID, prefab, InstantiatePoolObject, (ushort)poolSize);
-        public void Reuse(int PrefabID, Vector2Int position, bool flip) => PoolManagerBase.Reuse(PrefabID, position, flip);
+        public void Reuse(int PrefabID, Vector3 position) => PoolManagerBase.Reuse(PrefabID, position);
         public void Deactivate(int PrefabID) => PoolManagerBase.Deactivate(PrefabID);
         public ushort GetPoolSize(int PrefabID) => PoolManagerBase.GetPoolSize(PrefabID);
         public void IncreasePoolSize(int PrefabID) => PoolManagerBase.IncreasePoolSize(PrefabID);
@@ -112,13 +112,14 @@ namespace TheRavine.ObjectControl
         public int amount;
         public readonly int PrefabID;
         public readonly InstanceType objectType;
-        public bool flip, isExist;
-        public ObjectInstInfo(int _PrefabID = -1, int _amount = 1, InstanceType _objectType = InstanceType.Static, bool _flip = false, bool _isExist = true)
+        public bool isExist;
+        public Vector3 realPosition;
+        public ObjectInstInfo(Vector3 _realPosition, int _PrefabID = -1, int _amount = 1, InstanceType _objectType = InstanceType.Static, bool _isExist = true)
         {
+            realPosition = _realPosition;
             amount = _amount;
             PrefabID = _PrefabID;
             objectType = _objectType;
-            flip = _flip;
             isExist = _isExist;
         }
     }

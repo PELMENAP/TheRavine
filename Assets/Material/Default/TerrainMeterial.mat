@@ -27,7 +27,7 @@ Material:
   m_ValidKeywords: []
   m_InvalidKeywords:
   - _EMISSION
-  m_LightmapFlags: 2
+  m_LightmapFlags: 0
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
@@ -152,26 +152,26 @@ Material:
     - _AlphaToMask: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
-    - _BlendPower: 0.3
+    - _BlendPower: 1.45
     - _CastShadows: 1
     - _Cull: 2
-    - _DarkForestGrassHeight: 7
-    - _DeepForestGrassHeight: 6
+    - _DarkForestGrassHeight: 9.5
+    - _DeepForestGrassHeight: 8.5
     - _DstBlend: 0
-    - _LittleForestGrassHeight: 1.44
-    - _MeadowGrassHeight: -0.62
-    - _NearWaterGrassHeight: -1.24
+    - _LittleForestGrassHeight: 7.5
+    - _MeadowGrassHeight: 6.5
+    - _NearWaterGrassHeight: 5.14
     - _Noise: 0.5
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _SandHeight: -1.27
+    - _SandHeight: 4.5
     - _SrcBlend: 1
     - _Surface: 0
-    - _SwampHeight: 8
+    - _SwampHeight: 11
     - _Tile: 0.5
     - _Voronoi: 0.02
-    - _WaterHeight: -3.91
+    - _WaterHeight: 3.5
     - _WorkflowMode: 1
     - _ZTest: 4
     - _ZWrite: 0

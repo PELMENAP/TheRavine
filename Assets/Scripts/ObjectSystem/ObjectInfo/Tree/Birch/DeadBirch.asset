@@ -12,21 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: DeadBirch
   m_EditorClassIdentifier: 
-  _id: deadbirch
-  _amount: 1
-  _poolSize: 1
-  _iType: 0
-  _bType: 2
-  _nalinfo: {fileID: 11400000, guid: 5c972e51e70e00df798517e403583ad1, type: 2}
-  _iteminfo: {fileID: 0}
-  _prefab: {fileID: 948248636415433774, guid: cba762d8aadc673c8a0416847a303f15, type: 3}
-  _nextStep: {fileID: 0}
-  _addspace:
-  - {x: -1, y: 0}
-  - {x: -2, y: 0}
-  - {x: -3, y: 0}
-  - {x: 1, y: 0}
-  - {x: 2, y: 0}
-  - {x: 3, y: 0}
-  _deadPattern: {fileID: 0}
-  _pickUpPattern: {fileID: 0}
+  objectName: deadbirch
+  defaultAmount: 0
+  initialPoolSize: 10
+  instanceType: 0
+  behaviourType: 1
+  nalInfo: {fileID: 0}
+  inventoryItemInfo: {fileID: 0}
+  objectPrefab: {fileID: 948248636415433774, guid: cba762d8aadc673c8a0416847a303f15, type: 3}
+  evolutionStep: {fileID: 0}
+  additionalOccupiedCells: []
+  onDeathPattern: {fileID: 0}
+  onPickUpPattern: {fileID: 0}

@@ -2,45 +2,33 @@ using System;
 using System.Threading;
 
 using Unity.Netcode;
-using Unity.Collections;
-using Unity.Mathematics;
-using Unity.Jobs;
 
 using UnityEngine;
-using UnityEngine.Jobs;
-using UnityEngine.U2D;
-using UnityEngine.Rendering.Universal;
 
 using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Base
 {
-    [RequireComponent(typeof(Light2D))]
+    [RequireComponent(typeof(Light))]
     public class DayCycle : NetworkBehaviour, ISetAble
     {
         public event Action OnNewDay;
         public bool IsDay => isDay.Value;
-        public void SubmitGroup(Transform[] transforms) => shadowBuffer.SubmitGroup(transforms);
-        public void SubmitLight(Transform transformLight, float lightIntensity) => lightBuffer?.SubmitGroup(transformLight, lightIntensity);
-        [SerializeField] private float startDay = 0f, speed = 1f;
+
+        [SerializeField] private float startDay = 0f;
+        [SerializeField] private float speed = 1f;
         [SerializeField] private Gradient sunGradient;
-        [SerializeField] private int awakeDelay = 1000, defaultDelay = 100;
-        [SerializeField] private int maxLights = 100, maxShadows = 1000;
-        
+        [SerializeField] private AnimationCurve xRotationCurve;
+        [SerializeField] private float xScale = 50f;
+        [SerializeField] private AnimationCurve yRotationCurve;
+        [SerializeField] private float yScale = 90f;
+        [SerializeField] private AnimationCurve intensityCurve;
+        [SerializeField] private AnimationCurve shadowStrengthCurve;
+        [SerializeField] private int awakeDelay = 1000;
+
         private NetworkVariable<bool> isDay = new(writePerm: NetworkVariableWritePermission.Server);
-        private Light2D sun;
-
-        private NativeArray<float>    timeBridge;
-        private NativeArray<bool>     isDayBridge;
-        private NativeArray<float3>   lightPosBridge;
-        private NativeArray<float>    lightIntBridge;
-        
-        private CircularTransformBuffer shadowBuffer;
-        private CircularLightBuffer lightBuffer;
-
-        private DayJob        dayJob;
-        private ShadowsJob    shadowJob;
-        private JobHandle     dayHandle, shadowHandle;
+        private Light sun;
+        private float t = 0f;
 
         private CancellationTokenSource cts;
         private GameSettings gameSettings;
@@ -48,19 +36,12 @@ namespace TheRavine.Base
         public void SetUp(ISetAble.Callback callback)
         {
             gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
-            sun    = GetComponent<Light2D>();
-            cts    = new CancellationTokenSource();
+            sun = GetComponent<Light>();
+            cts = new CancellationTokenSource();
 
             if (IsServer)
             {
-                timeBridge = new NativeArray<float>(6, Allocator.Persistent);
-                isDayBridge = new NativeArray<bool>(1, Allocator.Persistent);
                 UpdateDayLoop(cts.Token).Forget();
-                dayJob = new DayJob
-                {
-                    timeBridge  = timeBridge,
-                    isDayBridge = isDayBridge
-                };
             }
 
             callback?.Invoke();
@@ -69,15 +50,6 @@ namespace TheRavine.Base
         public void BreakUp(ISetAble.Callback callback)
         {
             cts?.Cancel();
-
-            if (timeBridge.IsCreated)     timeBridge.Dispose();
-            if (isDayBridge.IsCreated)    isDayBridge.Dispose();
-            if (lightPosBridge.IsCreated) lightPosBridge.Dispose();
-            if (lightIntBridge.IsCreated) lightIntBridge.Dispose();
-            
-            shadowBuffer?.Dispose();
-            lightBuffer?.Dispose();
-
             callback?.Invoke();
         }
 
@@ -86,125 +58,59 @@ namespace TheRavine.Base
             cts?.Cancel();
             cts?.Dispose();
         }
-
         private async UniTaskVoid UpdateDayLoop(CancellationToken token)
         {
             try
             {
                 await UniTask.Delay(awakeDelay, cancellationToken: token);
-                InitializeSceneBuffers();
-
                 while (!token.IsCancellationRequested)
                 {
-                    if (!timeBridge.IsCreated) break;
+                    t += DayConstants.DeltaTime / DayConstants.TimeScale * speed;
+                    if (t > 1f) t = 0f;
 
-                    dayHandle = dayJob.Schedule();
-                    dayHandle.Complete();
+                    UpdateSunOnServerRPC(t);
 
-                    var t = timeBridge[0];
-                    bool nowDay = isDayBridge[0];
-                    UpdateSunOnServerRPC(t, nowDay);
-
+                    bool nowDay = t >= DayConstants.DayStart && t <= DayConstants.DayEnd;
                     if (isDay.Value != nowDay)
                     {
                         isDay.Value = nowDay;
-                    }
-
-                    if (nowDay == false)
-                    {
-                        OnNewDay?.Invoke();
-                        await UniTask.Delay(defaultDelay, cancellationToken: token);
-                    }
-
-                    if (shadowBuffer != null && lightBuffer != null)
-                    {
-                        shadowHandle.Complete();
-
-                        shadowBuffer.Sync();
-                        lightBuffer.Sync();
-                        
-                        if (lightBuffer.HasChanges)
+                        if (!nowDay)
                         {
-                            UpdateLightBridges();
-                            lightBuffer.ClearChangesFlag();
+                            OnNewDay?.Invoke();
                         }
-
-                        shadowJob = new ShadowsJob
-                        {
-                            lightsBridge     = lightPosBridge,
-                            lightsIntensity  = lightIntBridge,
-                            localScale       = timeBridge[5]
-                        };
-
-                        shadowHandle = shadowJob.Schedule(shadowBuffer.AccessArray);
                     }
 
                     await UniTask.WaitForFixedUpdate(cancellationToken: token);
                 }
             }
-            catch (OperationCanceledException) {}
-            finally
-            {
-            }
+            catch (OperationCanceledException) { }
         }
 
-        private void InitializeSceneBuffers()
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void UpdateSunOnServerRPC(float t)
         {
-            timeBridge[0] = startDay;
-            timeBridge[4] = speed;
-
-            if (gameSettings.enableShadows)
-            {
-                shadowBuffer = new CircularTransformBuffer(maxShadows);
-                lightBuffer = new CircularLightBuffer(maxLights);
-                lightPosBridge = new NativeArray<float3>(maxLights, Allocator.Persistent);
-                lightIntBridge = new NativeArray<float>(maxLights, Allocator.Persistent);
-                
-                lightBuffer.SubmitGroup(this.transform, 100f);
-            }
-        }
-
-        private void UpdateLightBridges()
-        {
-            if (lightBuffer == null) return;
-
-            int lightCount = lightBuffer.Count;
-            var transforms = lightBuffer.LightTransforms;
-            var intensities = lightBuffer.LightIntensities;
-            
-            for (int i = 0; i < lightCount; i++)
-            {
-                if (transforms[i] != null)
-                {
-                    lightPosBridge[i] = transforms[i].position;
-                    lightIntBridge[i] = intensities[i];
-                }
-            }
-            
-            for (int i = lightCount; i < maxLights; i++)
-            {
-                lightPosBridge[i] = float3.zero;
-                lightIntBridge[i] = 0f;
-            }
-        }
-        [ServerRpc(RequireOwnership = false)]
-        private void UpdateSunOnServerRPC(float t, bool isDay)
-        {
-            if (isDay)
-            {
-                Color color = sunGradient.Evaluate(t);
-                float intensity = timeBridge[3];
-                Vector3 position = new(timeBridge[1], timeBridge[2], 0);
-                ApplySunPropertiesClientRpc(color, intensity, position);
-            }
+            Color color = sunGradient.Evaluate(t);
+            float intensity = intensityCurve.Evaluate(t);
+            float xAngle = xRotationCurve.Evaluate(t) * xScale;
+            float yAngle = yRotationCurve.Evaluate(t) * yScale;
+            float shadowStrength = shadowStrengthCurve.Evaluate(t);
+            ApplySunPropertiesClientRpc(color, intensity, xAngle, yAngle, shadowStrength);
         }
 
         [ClientRpc]
-        private void ApplySunPropertiesClientRpc(Color color, float intensity, Vector3 position)
+        private void ApplySunPropertiesClientRpc(Color color, float intensity, float xAngle, float yAngle, float shadowStrength)
         {
             sun.color = color;
             sun.intensity = intensity;
-            transform.localPosition = position;
+            sun.shadowStrength = shadowStrength;
+            transform.localRotation = Quaternion.Euler(xAngle, yAngle, 0f);
         }
+    }
+    public static class DayConstants
+    {
+        public const float TimeScale = 600f;
+        public const float DayStart = 0.2f;
+        public const float DayEnd = 0.8f;
+        public const float DeltaTime = 0.02f;
     }
 }

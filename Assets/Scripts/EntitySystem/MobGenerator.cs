@@ -7,7 +7,6 @@ using UnityEngine;
 
 using TheRavine.Generator;
 using TheRavine.Extensions;
-using TheRavine.Base;
 
 namespace TheRavine.EntityControl
 {
@@ -36,7 +35,7 @@ namespace TheRavine.EntityControl
             mobController = ServiceLocator.GetService<MobController>();
             if(mapGenerator != null)
             {
-                mapGenerator.onSpawnPoint += AddSpawnPoint;
+                mapGenerator.chunkGenerator.onSpawnPoint += AddSpawnPoint;
                 mapGenerator.onUpdate += UpdateChunks;
             }
 
@@ -133,7 +132,7 @@ namespace TheRavine.EntityControl
         {
             if(mapGenerator != null)
             {
-                mapGenerator.onSpawnPoint -= AddSpawnPoint;
+                mapGenerator.chunkGenerator.onSpawnPoint -= AddSpawnPoint;
                 mapGenerator.onUpdate -= UpdateChunks;
             }
             callback?.Invoke();
