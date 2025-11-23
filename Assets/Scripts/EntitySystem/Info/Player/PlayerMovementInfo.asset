@@ -13,3 +13,5 @@ MonoBehaviour:
   m_Name: PlayerMovementInfo
   m_EditorClassIdentifier: 
   BaseSpeed: 20
+  Acceleration: 50
+  Deceleration: 100

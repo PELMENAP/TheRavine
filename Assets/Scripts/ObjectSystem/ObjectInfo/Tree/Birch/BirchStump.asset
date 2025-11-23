@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: BirchStump
   m_EditorClassIdentifier: 
-  _id: birchstump
-  _amount: 1
-  _poolSize: 30
-  _iType: 0
-  _bType: 2
-  _nalinfo: {fileID: 11400000, guid: 5c972e51e70e00df798517e403583ad1, type: 2}
-  _iteminfo: {fileID: 0}
-  _prefab: {fileID: 3882641584267046540, guid: 4d6f584d0f98bef638b51fa8328a47e5, type: 3}
-  _nextStep: {fileID: 0}
-  _addspace: []
-  _deadPattern: {fileID: 0}
-  _pickUpPattern: {fileID: 0}
+  objectName: birchstump
+  defaultAmount: 0
+  initialPoolSize: 10
+  instanceType: 0
+  behaviourType: 1
+  nalInfo: {fileID: 0}
+  inventoryItemInfo: {fileID: 0}
+  objectPrefab: {fileID: 3882641584267046540, guid: 4d6f584d0f98bef638b51fa8328a47e5, type: 3}
+  evolutionStep: {fileID: 0}
+  additionalOccupiedCells: []
+  onDeathPattern: {fileID: 0}
+  onPickUpPattern: {fileID: 0}

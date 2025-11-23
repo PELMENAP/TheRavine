@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using UnityEngine;
 using Cysharp.Threading.Tasks;
 public class PlayerBehaviourIdle : AState
 {

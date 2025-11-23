@@ -8,6 +8,7 @@ using System;
 using TheRavine.Extensions;
 using TheRavine.Base;
 using TheRavine.Events;
+using UnityEngine.UIElements;
 
 namespace TheRavine.EntityControl
 {
@@ -22,8 +23,8 @@ namespace TheRavine.EntityControl
         [SerializeField] private PlayerAnimator playerAnimator;
         private Rigidbody playerRigidbody;
         private Vector2 movementDirection;
-        private Vector2 lastSentDirection;
         private float timeSinceLastSend;
+        public float currentSpeed = 0f;
         private bool isAimMode;
         private bool act = true;
         private bool isAccurance;
@@ -35,13 +36,12 @@ namespace TheRavine.EntityControl
         private AimComponent aimComponent;
         private GameSettings gameSettings;
         private AEntity playerEntity;
+        private readonly DoubleTapDetector forwardTap = new();
         public void SetInitialValues(AEntity entity, IRavineLogger logger)
         {
             playerEntity = entity;
             gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
             this.logger = logger;
-            Vector2 spawnSpread = Extension.GetRandomPointAround(this.transform.position, 10);
-            this.transform.position = new Vector3(spawnSpread.x, 10, spawnSpread.y);
             
 
             playerAnimator.SetUpAsync().Forget();
@@ -63,8 +63,15 @@ namespace TheRavine.EntityControl
 
         private async UniTaskVoid DelayedInit()
         {
+            Vector2 spawnSpread = Extension.GetRandomPointAround(this.transform.position, 10);
+            transform.position = new Vector3(spawnSpread.x, 200, spawnSpread.y);
+
+            playerRigidbody.useGravity = false;
             await UniTask.Delay(5000);
             playerRigidbody.useGravity = true;
+
+            spawnSpread = Extension.GetRandomPointAround(this.transform.position, 10);
+            transform.position = new Vector3(spawnSpread.x, 200, spawnSpread.y);
         }
 
         private void GetPlayerComponents()
@@ -100,33 +107,51 @@ namespace TheRavine.EntityControl
         {
             currentController.DisableView();
         }
-
         public void Move()
         {
             if (isAimMode || !IsOwner) return;
 
             movementDirection = currentController.GetMove();
-            float movementSpeed = Mathf.Clamp(movementDirection.magnitude, 0f, 1f);
+
+            float movementMagnitute = movementDirection.magnitude;
+
+            CheckBust(movementMagnitute);
+
+            float movementSpeed = Mathf.Clamp(movementMagnitute, 0f, 1f);
 
             if (movementSpeed < movementMinimum) movementDirection = Vector2.zero;
             else MoveMark();
 
             timeSinceLastSend += Time.deltaTime;
-            if (timeSinceLastSend >= sendInterval && movementDirection != lastSentDirection)
+            if (timeSinceLastSend >= sendInterval)
             {
                 MoveServerRpc(movementDirection.normalized, movementSpeed);
-                lastSentDirection = movementDirection;
                 timeSinceLastSend = 0f;
             }
 
             playerAnimator.Animate(movementDirection, movementSpeed);
         }
 
-        [ServerRpc]
-        private void MoveServerRpc(Vector2 direction, float speed)
+        private void CheckBust(float movementMagnitute)
         {
-            speed = Mathf.Clamp(speed, 0f, 1f);
-            playerRigidbody.linearVelocity = new Vector3(direction.x, 0, direction.y) * speed * movementComponent.BaseSpeed;
+            forwardTap.Update(movementMagnitute > 0.9f);
+            if (forwardTap.IsBoostActive && currentSpeed < 1f)
+            {
+                currentSpeed = movementComponent.BaseSpeed / 2;
+            }
+        }
+        [ServerRpc]
+        private void MoveServerRpc(Vector2 direction, float inputSpeed)
+        {
+            if (inputSpeed <= 0.01f)
+            {
+                currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, movementComponent.Deceleration * Time.deltaTime);
+            }
+
+            float targetSpeed = inputSpeed * movementComponent.BaseSpeed;
+            currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, movementComponent.Acceleration * Time.deltaTime);
+            playerRigidbody.linearVelocity = new(direction.x * currentSpeed, playerRigidbody.linearVelocity.y, direction.y * currentSpeed);
+
 
             UpdateClientPositionClientRpc(playerRigidbody.position, playerRigidbody.linearVelocity);
         }

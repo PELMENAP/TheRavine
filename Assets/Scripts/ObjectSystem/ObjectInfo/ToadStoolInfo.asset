@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: ToadStoolInfo
   m_EditorClassIdentifier: 
-  _id: toadstool
-  _amount: 1
-  _poolSize: 1
-  _iType: 1
-  _bType: 1
-  _nalinfo: {fileID: 11400000, guid: 5b1df9b1d0e866a77a3d6462c2f59359, type: 2}
-  _iteminfo: {fileID: 11400000, guid: 45114dc64a68fbc2bb7503cc4b659a31, type: 2}
-  _prefab: {fileID: 8079554152659468491, guid: b4ca380ab861563c1868b8b809fbf5e6, type: 3}
-  _nextStep: {fileID: 11400000}
-  _addspace: []
-  _deadPattern: {fileID: 0}
-  _pickUpPattern: {fileID: 0}
+  objectName: toadstool
+  defaultAmount: 1
+  initialPoolSize: 10
+  instanceType: 1
+  behaviourType: 1
+  nalInfo: {fileID: 11400000, guid: 5b1df9b1d0e866a77a3d6462c2f59359, type: 2}
+  inventoryItemInfo: {fileID: 11400000, guid: 45114dc64a68fbc2bb7503cc4b659a31, type: 2}
+  objectPrefab: {fileID: 8079554152659468491, guid: b4ca380ab861563c1868b8b809fbf5e6, type: 3}
+  evolutionStep: {fileID: 0}
+  additionalOccupiedCells: []
+  onDeathPattern: {fileID: 0}
+  onPickUpPattern: {fileID: 0}

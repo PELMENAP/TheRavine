@@ -7,74 +7,189 @@ namespace TheRavine.Generator
         public class EndlessTerrain : IEndless
         {
             private const int chunkScale = MapGenerator.chunkScale, chunkCount = 2 * chunkScale + 1, mapChunkSize = MapGenerator.mapChunkSize;
+            private const int scale = MapGenerator.scale, generationSize = scale * mapChunkSize;
+            
+            private readonly Mesh terrainMesh;
             private readonly MapGenerator generator;
-            private readonly int scale = MapGenerator.scale, generationSize = MapGenerator.generationSize;
-            private readonly Mesh combineMesh;
+            
+            private readonly int totalVerticesX;
+            private readonly int totalVerticesZ;
+            private readonly int totalVertices;
+            private readonly int totalTriangles;
+            
+            private readonly Vector3[] vertices;
+            private readonly int[] triangles;
+            private readonly Vector2Int up = new(0, 1), right = new(1, 0), diag = new(1, 1);
+
             public EndlessTerrain(MapGenerator _generator)
             {
                 generator = _generator;
-                combineMesh = new Mesh();
+                
+                totalVerticesX = chunkCount * mapChunkSize + 1;
+                totalVerticesZ = chunkCount * mapChunkSize + 1;
+                totalVertices = totalVerticesX * totalVerticesZ;
+                totalTriangles = 6 * chunkCount * chunkCount * mapChunkSize * mapChunkSize;
+                
+                vertices = new Vector3[totalVertices];
+                triangles = new int[totalTriangles];
+                
+                
+                GenerateTriangles();
+                System.Array.Reverse(triangles);
+                
+                terrainMesh = new Mesh
+                {
+                    vertices = vertices,
+                    triangles = triangles
+                };
+                
+                terrainMesh.RecalculateNormals();
+                terrainMesh.RecalculateTangents();
 
-                ushort triangleCount = 0;
-                int[] triangles = new int[6 * mapChunkSize * mapChunkSize];
+                terrainMesh.bounds = new Bounds(
+                    new Vector3(generationSize * chunkScale, 0, generationSize * chunkScale),
+                    new Vector3(generationSize * chunkCount, 1000f, generationSize * chunkCount)
+                );
+                
+                generator.terrainFilter.mesh = terrainMesh;
+            }
+
+            private void GenerateTriangles()
+            {
+                int triangleIndex = 0;
+                
+                for (int chunkX = 0; chunkX < chunkCount; chunkX++)
+                {
+                    for (int chunkY = 0; chunkY < chunkCount; chunkY++)
+                    {
+                        int vertexOffsetX = chunkX * mapChunkSize;
+                        int vertexOffsetZ = chunkY * mapChunkSize;
+                        
+                        for (int x = 0; x < mapChunkSize; x++)
+                        {
+                            for (int y = 0; y < mapChunkSize; y++)
+                            {
+                                int bottomLeft = (vertexOffsetX + x) * totalVerticesZ + (vertexOffsetZ + y);
+                                int bottomRight = (vertexOffsetX + x + 1) * totalVerticesZ + (vertexOffsetZ + y);
+                                int topRight = (vertexOffsetX + x + 1) * totalVerticesZ + (vertexOffsetZ + y + 1);
+                                int topLeft = (vertexOffsetX + x) * totalVerticesZ + (vertexOffsetZ + y + 1);
+                                
+                                triangles[triangleIndex] = bottomLeft;
+                                triangles[triangleIndex + 1] = bottomRight;
+                                triangles[triangleIndex + 2] = topRight;
+                                
+                                triangles[triangleIndex + 3] = bottomLeft;
+                                triangles[triangleIndex + 4] = topRight;
+                                triangles[triangleIndex + 5] = topLeft;
+                                
+                                triangleIndex += 6;
+                            }
+                        }
+                    }
+                }
+            }
+
+            public void UpdateChunk(Vector2Int position) 
+            {
+                UpdateAllVertices(position);
+                
+                terrainMesh.vertices = vertices;
+                terrainMesh.RecalculateNormals();
+                terrainMesh.RecalculateTangents();
+
+                generator.terrainCollider.sharedMesh = terrainMesh;
+                
+                generator.terrainTransform.position = new Vector3(
+                    (position.x - 1) * generationSize, 
+                    0, 
+                    (position.y - 2) * generationSize
+                );
+            }
+
+            private void UpdateAllVertices(Vector2Int centre)
+            {
+                for (int chunkX = 0; chunkX < chunkCount; chunkX++)
+                {
+                    for (int chunkY = 0; chunkY < chunkCount; chunkY++)
+                    {
+                        Vector2Int chunkWorldPos = new(
+                            centre.x - chunkScale + chunkX,
+                            centre.y - chunkScale + chunkY
+                        );
+                        
+                        UpdateChunkVertices(chunkWorldPos, chunkX, chunkY);
+                    }
+                }
+            }
+
+            private void UpdateChunkVertices(Vector2Int chunkPos, int gridX, int gridZ)
+            {
+                int vertexOffsetX = gridX * mapChunkSize;
+                int vertexOffsetZ = gridZ * mapChunkSize;
+                
+                ChunkData chunkData = generator.GetMapData(chunkPos);
+                int[,] heightMap = chunkData.heightMap;
+                float[,] noiseMap = chunkData.noiseMap;
+
                 for (int x = 0; x < mapChunkSize; x++)
                 {
                     for (int y = 0; y < mapChunkSize; y++)
                     {
-                        triangles[triangleCount] = x * (mapChunkSize + 1) + y;
-                        triangles[triangleCount + 1] = (x + 1) * (mapChunkSize + 1) + y;
-                        triangles[triangleCount + 2] = (x + 1) * (mapChunkSize + 1) + y + 1;
-                        triangles[triangleCount + 3] = x * (mapChunkSize + 1) + y;
-                        triangles[triangleCount + 4] = (x + 1) * (mapChunkSize + 1) + y + 1;
-                        triangles[triangleCount + 5] = x * (mapChunkSize + 1) + y + 1;
-                        triangleCount += 6;
+                        int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + (vertexOffsetZ + y);
+                        vertices[vertexIndex] = new Vector3(
+                            (vertexOffsetX + x) * scale, 
+                            heightMap[x, y] + noiseMap[x, y], 
+                            (vertexOffsetZ + y) * scale
+                        );
                     }
                 }
-                for (int i = 0; i < chunkCount * chunkCount; i++)
+                
+                if (gridX == chunkCount - 1)
                 {
-                    combine[i].mesh = new Mesh
-                    {
-                        vertices = vertices,
-                        triangles = triangles
-                    };
-                }
-            }
-            private readonly CombineInstance[] combine = new CombineInstance[chunkCount * chunkCount];
-            private static Quaternion defRotation = Quaternion.Euler(-90, 0, 0);
-            public void UpdateChunk(Vector2Int Position) 
-            {
-                int count = 0;
-                for (int yOffset = -chunkScale; yOffset <= chunkScale; yOffset++)
-                    for (int xOffset = -chunkScale; xOffset <= chunkScale; xOffset++)
-                    {
-                        CreateComplexMesh(new Vector2Int(-Position.x + yOffset, Position.y + xOffset), combine[count].mesh);
-                        combine[count].transform = Matrix4x4.TRS(new Vector3(yOffset * generationSize, -4, -xOffset * generationSize), defRotation, Vector3.one);
-                        count++;
-                    }
-                combineMesh.CombineMeshes(combine);
-                generator.terrainFilter.mesh = combineMesh;
-                generator.terrainCollider.sharedMesh = combineMesh;
-                generator.terrainTransform.position = new Vector3((Position.x + 1) * generationSize, 0 , (Position.y - 1) * generationSize);
-            }
-            private readonly Vector3[] vertices = new Vector3[(mapChunkSize + 1) * (mapChunkSize + 1)];
-            private readonly Vector2Int up = new(0, 1), right = new(1, 0), diag = new(1, 1);
-            private void CreateComplexMesh(Vector2Int centre, Mesh mesh)
-            {
-                int[,] heightMap = generator.GetMapData(centre).heightMap;
-                for (int x = 0; x < mapChunkSize; x++)
+                    chunkData = generator.GetMapData(chunkPos + right);
+                    heightMap = chunkData.heightMap;
+                    noiseMap = chunkData.noiseMap;
                     for (int y = 0; y < mapChunkSize; y++)
-                        vertices[x * (mapChunkSize + 1) + y] = new Vector3(x * scale, y * scale, heightMap[x, y]);
-
-                heightMap = generator.GetMapData(centre + up).heightMap;
-                for (int x = 0; x < mapChunkSize; x++)
-                    vertices[x * (mapChunkSize + 1) + mapChunkSize] = new Vector3(x * scale, generationSize, heightMap[x, 0]);
-                heightMap = generator.GetMapData(centre + right).heightMap;
-                for (int y = 0; y < mapChunkSize; y++)
-                    vertices[mapChunkSize * (mapChunkSize + 1) + y] = new Vector3(generationSize, y * scale, heightMap[0, y]);
-                vertices[mapChunkSize * (mapChunkSize + 1) + mapChunkSize] = new Vector3(generationSize, generationSize, generator.GetMapData(centre + diag).heightMap[0, 0]);
-
-                mesh.vertices = vertices;
+                    {
+                        int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + (vertexOffsetZ + y);
+                        vertices[vertexIndex] = new Vector3(
+                            (vertexOffsetX + mapChunkSize) * scale, 
+                            heightMap[0, y] + noiseMap[0, y], 
+                            (vertexOffsetZ + y) * scale
+                        );
+                    }
+                }
+            
+                if (gridZ == chunkCount - 1)
+                {
+                    chunkData = generator.GetMapData(chunkPos + up);
+                    heightMap = chunkData.heightMap;
+                    noiseMap = chunkData.noiseMap;
+                    for (int x = 0; x < mapChunkSize; x++)
+                    {
+                        int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + (vertexOffsetZ + mapChunkSize);
+                        vertices[vertexIndex] = new Vector3(
+                            (vertexOffsetX + x) * scale, 
+                            heightMap[x, 0] + noiseMap[x, 0], 
+                            (vertexOffsetZ + mapChunkSize) * scale
+                        );
+                    }
+                }
+                
+                if (gridX == chunkCount - 1 && gridZ == chunkCount - 1)
+                {
+                    chunkData = generator.GetMapData(chunkPos + diag);
+                    heightMap = chunkData.heightMap;
+                    noiseMap = chunkData.noiseMap;
+                    int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + (vertexOffsetZ + mapChunkSize);
+                    vertices[vertexIndex] = new Vector3(
+                        (vertexOffsetX + mapChunkSize) * scale, 
+                        heightMap[0, 0] + noiseMap[0, 0], 
+                        (vertexOffsetZ + mapChunkSize) * scale
+                    );
+                }
             }
         }
+
     }
 }

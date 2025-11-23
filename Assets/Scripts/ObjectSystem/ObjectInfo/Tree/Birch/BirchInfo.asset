@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: BirchInfo
   m_EditorClassIdentifier: 
-  _id: birchinfo
-  _amount: 1
-  _poolSize: 30
-  _iType: 0
-  _bType: 1
-  _nalinfo: {fileID: 11400000, guid: 5c972e51e70e00df798517e403583ad1, type: 2}
-  _iteminfo: {fileID: 0}
-  _prefab: {fileID: 948248636415433774, guid: e487b2f5e2401d74a9e583e59e72f6ce, type: 3}
-  _nextStep: {fileID: 11400000, guid: b208f53ee19693c95b5612deabface28, type: 2}
-  _addspace: []
-  _deadPattern: {fileID: 11400000, guid: 2c5f330952253c0f590b988ee87196cf, type: 2}
-  _pickUpPattern: {fileID: 0}
+  objectName: birch
+  defaultAmount: 0
+  initialPoolSize: 10
+  instanceType: 0
+  behaviourType: 1
+  nalInfo: {fileID: 11400000, guid: e300f278e3f22cce2b173b38cdb47cf8, type: 2}
+  inventoryItemInfo: {fileID: 0}
+  objectPrefab: {fileID: 948248636415433774, guid: e487b2f5e2401d74a9e583e59e72f6ce, type: 3}
+  evolutionStep: {fileID: 0}
+  additionalOccupiedCells: []
+  onDeathPattern: {fileID: 11400000, guid: 2c5f330952253c0f590b988ee87196cf, type: 2}
+  onPickUpPattern: {fileID: 0}
