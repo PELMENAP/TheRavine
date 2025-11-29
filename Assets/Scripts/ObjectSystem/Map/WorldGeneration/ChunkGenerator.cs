@@ -9,10 +9,10 @@ namespace TheRavine.Generator
 {
     public class ChunkGenerator
     {
-        private const int chunkScale = MapGenerator.chunkScale, chunkCount = 2 * chunkScale + 1, mapChunkSize = MapGenerator.mapChunkSize;
+        private const int mapChunkSize = MapGenerator.mapChunkSize;
         private const int scale = MapGenerator.scale, generationSize = scale * mapChunkSize;
         private readonly ObjectSystem objectSystem;
-        private ChunkGenerationSettings chunkGenerationSettings;
+        private readonly ChunkGenerationSettings chunkGenerationSettings;
         public ChunkGenerator(ObjectSystem objectSystem, ChunkGenerationSettings chunkGenerationSettings)
         {
             this.objectSystem = objectSystem;
@@ -107,13 +107,13 @@ namespace TheRavine.Generator
                         if (structHere) continue;
                         for (int i = 0; i < level.objects.Length; i++)
                         {
-                            ObjectInfoGeneration ginfo = level.objects[i];
-                            if(ginfo.Chance == 0 || ginfo.info == null) continue;
-                            if (chunkRandom.Range(0, chunkGenerationSettings.rareness) < ginfo.Chance)
+                            ObjectInfoGeneration objectInfoGeneration = level.objects[i];
+                            if(objectInfoGeneration.Chance == 0 || objectInfoGeneration.info == null) continue;
+                            if (chunkRandom.Range(0, chunkGenerationSettings.rareness) < objectInfoGeneration.Chance)
                             {
                                 Vector2Int posobj = new(centre.x * generationSize + x * scale, (centre.y - 1) * generationSize + y * scale);
                                 Vector3 realPosition = new(posobj.x, heightMap[x, y] + chunkNoiseMap[x, y], posobj.y);
-                                if (objectSystem.TryAddToGlobal(posobj, realPosition, ginfo.info.PrefabID, ginfo.info.DefaultAmount, ginfo.info.InstanceType))
+                                if (objectSystem.TryAddToGlobal(posobj, realPosition, objectInfoGeneration.info.PrefabID, objectInfoGeneration.info.DefaultAmount, objectInfoGeneration.info.InstanceType))
                                 {
                                     objectsToInst.Add(posobj);
                                     break;

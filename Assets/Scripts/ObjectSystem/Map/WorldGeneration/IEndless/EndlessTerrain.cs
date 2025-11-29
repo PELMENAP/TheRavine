@@ -154,7 +154,7 @@ namespace TheRavine.Generator
                         int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + (vertexOffsetZ + y);
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + mapChunkSize) * scale, 
-                            heightMap[0, y] + noiseMap[0, y], 
+                            heightMap[0, y] + noiseMap[0, y] * scale, 
                             (vertexOffsetZ + y) * scale
                         );
                     }
@@ -170,7 +170,7 @@ namespace TheRavine.Generator
                         int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + (vertexOffsetZ + mapChunkSize);
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + x) * scale, 
-                            heightMap[x, 0] + noiseMap[x, 0], 
+                            heightMap[x, 0] + noiseMap[x, 0] * scale, 
                             (vertexOffsetZ + mapChunkSize) * scale
                         );
                     }
@@ -184,7 +184,7 @@ namespace TheRavine.Generator
                     int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + (vertexOffsetZ + mapChunkSize);
                     vertices[vertexIndex] = new Vector3(
                         (vertexOffsetX + mapChunkSize) * scale, 
-                        heightMap[0, 0] + noiseMap[0, 0], 
+                        heightMap[0, 0] + noiseMap[0, 0] * scale, 
                         (vertexOffsetZ + mapChunkSize) * scale
                     );
                 }

@@ -2,11 +2,12 @@ using UnityEngine;
 
 using Random = TheRavine.Extensions.RavineRandom;
 
+[RequireComponent(typeof(SpriteRenderer))]
 public class SimpleUnitAnimator : MonoBehaviour
 {
     [Header("Animation Settings")]
-    // [Tooltip("Should animation run only once?")]
-    // [SerializeField] private bool playOnce = false;
+    [Tooltip("Should animation run only once?")]
+    [SerializeField] private bool playOnce = false, isBird = false;
 
     [Tooltip("Frame duration in seconds.")]
     [SerializeField] private float frameDuration = 0.1f, speedLimit = 0.1f;
@@ -15,7 +16,7 @@ public class SimpleUnitAnimator : MonoBehaviour
     [SerializeField] private Sprite[] frames, defaults;
 
     private int currentFrame = 0, defaultPose;
-    private bool isAnimation;
+    private bool isAnimation = true;
     private Vector3 previousPosition, currentPosition;
     private SpriteRenderer spriteRenderer;
 
@@ -23,7 +24,8 @@ public class SimpleUnitAnimator : MonoBehaviour
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         previousPosition = this.transform.position;
-        defaultPose = Random.RangeInt(0, defaults.Length);
+
+        if(isBird) defaultPose = Random.RangeInt(0, defaults.Length);
     }
 
     private void OnEnable()
@@ -40,19 +42,22 @@ public class SimpleUnitAnimator : MonoBehaviour
 
     private void NextFrame()
     {   
-        if (currentFrame == 0)
+        if(isBird)
         {
-            currentPosition = this.transform.position;
-            if (Vector3.Distance(previousPosition, currentPosition) < speedLimit)
+            if (currentFrame == 0)
             {
-                spriteRenderer.sprite = defaults[defaultPose];
-                isAnimation = false;
+                currentPosition = this.transform.position;
+                if (Vector3.Distance(previousPosition, currentPosition) < speedLimit)
+                {
+                    spriteRenderer.sprite = defaults[defaultPose];
+                    isAnimation = false;
+                }
+                else
+                {
+                    isAnimation = true;
+                }
+                previousPosition = currentPosition;
             }
-            else
-            {
-                isAnimation = true;
-            }
-            previousPosition = currentPosition;
         }
 
         if (isAnimation)
@@ -62,13 +67,16 @@ public class SimpleUnitAnimator : MonoBehaviour
 
             if (currentFrame >= frames.Length)
             {
-                // if (playOnce)
-                // {
-                //     isAnimation = false;
-                //     currentFrame = 0;
-                //     CancelInvoke(nameof(NextFrame));
-                // }
-                defaultPose = Random.RangeInt(defaults.Length);
+                if (playOnce)
+                {
+                    isAnimation = false;
+                    currentFrame = 0;
+                    CancelInvoke(nameof(NextFrame));
+                }
+
+                if(isBird) defaultPose = Random.RangeInt(defaults.Length);
+
+
                 currentFrame = 0;
             }
         }
