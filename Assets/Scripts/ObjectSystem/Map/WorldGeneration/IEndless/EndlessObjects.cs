@@ -12,25 +12,23 @@ namespace TheRavine.Generator
             private readonly MapGenerator generator;
             private const byte chunkScale = MapGenerator.chunkScale;
             private readonly ObjectSystem objectSystem;
-            private readonly Dictionary<int, ushort> objectUpdate = new(16);
+            private readonly Dictionary<int, int> objectUpdate = new(16);
             private static EnumerableSnapshot<int> objectsSnapshot;
             public EndlessObjects(MapGenerator _generator, ObjectSystem _objectSystem)
             {
                 generator = _generator;
                 objectSystem = _objectSystem;
                 ObjectInfo[] prefabInfo = objectSystem._info;
-                for (ushort i = 0; i < prefabInfo.Length; i++)
+                for (int i = 0; i < prefabInfo.Length; i++)
                     objectUpdate[prefabInfo[i].PrefabID] = 0;
                 objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
             }
             public void UpdateChunk(Vector2Int Position)
             {
-                ProcessObjectInst(Position);
                 for (sbyte yOffset = -chunkScale; yOffset <= chunkScale; yOffset++)
                 {
                     for (sbyte xOffset = -chunkScale; xOffset <= chunkScale; xOffset++)
                     {
-                        if (xOffset == 0 && yOffset == 0) continue;
                         ProcessObjectInst(new Vector2Int(Position.x + xOffset, Position.y + yOffset));
                     }
                 }
@@ -38,7 +36,7 @@ namespace TheRavine.Generator
                 {
                     if (objectUpdate[ID] == 0)
                         continue;
-                    for (ushort j = 0; j < objectSystem.GetPoolSize(ID) - objectUpdate[ID]; j++)
+                    for (int j = 0; j < objectSystem.GetPoolSize(ID) - objectUpdate[ID]; j++)
                         objectSystem.Deactivate(ID);
                     objectUpdate[ID] = 0;
                 }

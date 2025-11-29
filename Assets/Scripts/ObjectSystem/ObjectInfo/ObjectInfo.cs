@@ -3,7 +3,6 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "ObjectInfo", menuName = "Gameplay/Create New ObjectInfo")]
 public class ObjectInfo : ScriptableObject
 {
-    [SerializeField] private string objectName;
     [SerializeField] private ushort defaultAmount;
     [SerializeField] private ushort initialPoolSize;
     [SerializeField] private InstanceType instanceType;
@@ -18,8 +17,8 @@ public class ObjectInfo : ScriptableObject
 
     private int? cachedPrefabID;
 
-    public string ObjectName => objectName;
-    public int PrefabID => cachedPrefabID ??= Animator.StringToHash(objectName);
+    public string ObjectName;
+    public int PrefabID => cachedPrefabID ??= objectPrefab.GetHashCode();
     public ushort DefaultAmount => defaultAmount;
     public ushort InitialPoolSize => initialPoolSize;
     public InstanceType InstanceType => instanceType;
@@ -36,8 +35,8 @@ public class ObjectInfo : ScriptableObject
     {
         cachedPrefabID = null;
         
-        if (string.IsNullOrEmpty(objectName) && objectPrefab != null)
-            objectName = objectPrefab.name;
+        if (string.IsNullOrEmpty(ObjectName) && objectPrefab != null)
+            ObjectName = objectPrefab.name;
     }
 }
 

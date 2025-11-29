@@ -152,7 +152,7 @@ Material:
     - _AlphaToMask: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
-    - _BlendPower: 1.45
+    - _BlendPower: 1
     - _CastShadows: 1
     - _Cull: 2
     - _DarkForestGrassHeight: 9.5
@@ -176,7 +176,7 @@ Material:
     - _ZTest: 4
     - _ZWrite: 0
     - _ZWriteControl: 2
-    - _strength: 0
+    - _strength: 1
     m_Colors: []
   m_BuildTextureStacks: []
   m_AllowLocking: 1

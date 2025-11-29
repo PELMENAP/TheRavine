@@ -179,4 +179,4 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   Velocity: 2
   MinDistance: 2
-  zOffset: {x: 0, y: 20, z: -30}
+  zOffset: {x: 0, y: 30, z: -30}

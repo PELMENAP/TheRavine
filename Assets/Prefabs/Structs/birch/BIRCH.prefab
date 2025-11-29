@@ -247,7 +247,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4463544501540543439
 Transform:
   m_ObjectHideFlags: 0
@@ -382,6 +382,10 @@ PrefabInstance:
       value: Leafs Particles
       objectReference: {fileID: 0}
     - target: {fileID: 2717022306223089269, guid: 14140dbf52f5a654d8232b4c0d1344d4, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2717022306223089269, guid: 14140dbf52f5a654d8232b4c0d1344d4, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
@@ -463,7 +467,7 @@ PrefabInstance:
     - target: {fileID: 1052873364858818019, guid: 79417e786a4afc44d8e5685e6f62f7fd, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: e823cd5b5d27c0f4b8256e7c12ee3e6d, type: 2}
+      objectReference: {fileID: 2100000, guid: d3d9e3c1171195442ae8a9dd7b5baeea, type: 2}
     - target: {fileID: 1052873364858818028, guid: 79417e786a4afc44d8e5685e6f62f7fd, type: 3}
       propertyPath: lengthInSec
       value: 5
