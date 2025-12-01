@@ -13,7 +13,7 @@ namespace TheRavine.EntityControl
             this.logger = logger;
         }
 
-        public void AddComponentsToEntity(EntityInfo entityInfo, AEntityViewModel aEntityModelView, IEntityController entityController)
+        public void AddComponentsToEntity(EntityInfo entityInfo, AEntityViewModel aEntityModelView, IEntityController entityController, ulong clientId)
         {
             statePatternComponent = new StatePatternComponent();
             PlayerController = entityController;
@@ -21,7 +21,7 @@ namespace TheRavine.EntityControl
             base.AddComponentToEntity(new EventBusComponent());
             base.AddComponentToEntity(new SkillComponent());
             base.AddComponentToEntity(new EnergyComponent(entityInfo.EnergyInfo));
-            base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.Prefab.GetInstanceID()));
+            base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.Prefab.GetInstanceID(), clientId));
             base.AddComponentToEntity(new MovementComponent(entityInfo.MovementInfo, entityController));
             base.AddComponentToEntity(new AimComponent(entityInfo.AimStatsInfo));
             base.AddComponentToEntity(new TransformComponent(aEntityModelView.transform, aEntityModelView.transform));

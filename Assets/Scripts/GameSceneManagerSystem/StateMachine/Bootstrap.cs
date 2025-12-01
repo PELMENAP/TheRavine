@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using Cysharp.Threading.Tasks;
+using R3;
 
 namespace TheRavine.Base
 {
@@ -12,19 +13,22 @@ namespace TheRavine.Base
         [SerializeField] private GameStateMachine gameStateMachine;
         [SerializeField] private bool isTest;
         private WorldDataService worldDataService;
-        private async void Start()
+        private void Start()
         {
             gameStateMachine.Initialize(ServiceLocator.GetService<IRavineLogger>());
 
             worldDataService = ServiceLocator.GetService<WorldDataService>();
             if (isTest) return;
-            
-            while (!gameStateMachine.HaveServiceLocatorPlayer())
-            {
-                gameStateMachine.LogBootstrapInfo("There is no players in the scene");
-                await UniTask.Delay(1000);
-            }
 
+            ServiceLocator.WhenPlayersNonEmpty()
+                .Subscribe(_ =>
+                {
+                    ContinueStartFirstPlayer();
+                });
+        }
+
+        private void ContinueStartFirstPlayer()
+        {
             AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
 
             worldDataService.SetGameWon(false);

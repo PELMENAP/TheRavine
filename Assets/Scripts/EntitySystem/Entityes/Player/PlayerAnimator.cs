@@ -28,7 +28,7 @@ namespace TheRavine.EntityControl
                 Debug.LogError($"Default Animator is null on {gameObject.name}");
                 return;
             }
-            
+            await UniTask.CompletedTask;
         }
         public void Animate(Vector2 movementDirection, float movementSpeed)
         {

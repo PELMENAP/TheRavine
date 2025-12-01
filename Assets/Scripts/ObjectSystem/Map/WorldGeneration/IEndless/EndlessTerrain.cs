@@ -69,10 +69,10 @@ namespace TheRavine.Generator
                         {
                             for (int y = 0; y < mapChunkSize; y++)
                             {
-                                int bottomLeft = (vertexOffsetX + x) * totalVerticesZ + (vertexOffsetZ + y);
-                                int bottomRight = (vertexOffsetX + x + 1) * totalVerticesZ + (vertexOffsetZ + y);
-                                int topRight = (vertexOffsetX + x + 1) * totalVerticesZ + (vertexOffsetZ + y + 1);
-                                int topLeft = (vertexOffsetX + x) * totalVerticesZ + (vertexOffsetZ + y + 1);
+                                int bottomLeft = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + y;
+                                int bottomRight = (vertexOffsetX + x + 1) * totalVerticesZ + vertexOffsetZ + y;
+                                int topRight = (vertexOffsetX + x + 1) * totalVerticesZ + vertexOffsetZ + y + 1;
+                                int topLeft = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + y + 1;
                                 
                                 triangles[triangleIndex] = bottomLeft;
                                 triangles[triangleIndex + 1] = bottomRight;
@@ -135,7 +135,7 @@ namespace TheRavine.Generator
                 {
                     for (int y = 0; y < mapChunkSize; y++)
                     {
-                        int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + (vertexOffsetZ + y);
+                        int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + y;
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + x) * scale, 
                             heightMap[x, y] + noiseMap[x, y], 
@@ -151,7 +151,7 @@ namespace TheRavine.Generator
                     noiseMap = chunkData.noiseMap;
                     for (int y = 0; y < mapChunkSize; y++)
                     {
-                        int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + (vertexOffsetZ + y);
+                        int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + vertexOffsetZ + y;
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + mapChunkSize) * scale, 
                             heightMap[0, y] + noiseMap[0, y] * scale, 
@@ -167,7 +167,7 @@ namespace TheRavine.Generator
                     noiseMap = chunkData.noiseMap;
                     for (int x = 0; x < mapChunkSize; x++)
                     {
-                        int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + (vertexOffsetZ + mapChunkSize);
+                        int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + mapChunkSize;
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + x) * scale, 
                             heightMap[x, 0] + noiseMap[x, 0] * scale, 
@@ -181,7 +181,7 @@ namespace TheRavine.Generator
                     chunkData = generator.GetMapData(chunkPos + diag);
                     heightMap = chunkData.heightMap;
                     noiseMap = chunkData.noiseMap;
-                    int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + (vertexOffsetZ + mapChunkSize);
+                    int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + vertexOffsetZ + mapChunkSize;
                     vertices[vertexIndex] = new Vector3(
                         (vertexOffsetX + mapChunkSize) * scale, 
                         heightMap[0, 0] + noiseMap[0, 0] * scale, 

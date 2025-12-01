@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: MossInfo
   m_EditorClassIdentifier: 
-  _id: mossinfo
-  _amount: 1
-  _poolSize: 1
-  _iType: 0
-  _bType: 1
-  _nalinfo: {fileID: 11400000, guid: 3836583b14ab7bc6fac7c136c9e6c75f, type: 2}
-  _iteminfo: {fileID: 0}
-  _prefab: {fileID: 6908429162828912622, guid: adae632f026b24118899a930b4e1619f, type: 3}
-  _nextStep: {fileID: 11400000}
-  _addspace: []
-  _deadPattern: {fileID: 0}
-  _pickUpPattern: {fileID: 0}
+  objectPrefab: {fileID: 6908429162828912622, guid: adae632f026b24118899a930b4e1619f, type: 3}
+  defaultAmount: 0
+  initialPoolSize: 10
+  instanceType: 0
+  behaviourType: 1
+  nalInfo: {fileID: 11400000, guid: 3836583b14ab7bc6fac7c136c9e6c75f, type: 2}
+  inventoryItemInfo: {fileID: 0}
+  evolutionStep: {fileID: 0}
+  additionalOccupiedCells: []
+  onDeathPattern: {fileID: 0}
+  onPickUpPattern: {fileID: 0}
+  ObjectName: moss

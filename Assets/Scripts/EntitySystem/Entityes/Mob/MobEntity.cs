@@ -10,7 +10,7 @@ namespace TheRavine.EntityControl
         [SerializeField] private Animator animator;
         public MobEntity(EntityInfo entityInfo, IRavineLogger logger)
         {
-            base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.Prefab.GetInstanceID()));
+            base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.Prefab.GetInstanceID(), 0));
             moveController.SetInitialValues(this, logger);
             // _entityGameData = new EntityGameData(_entityInfo);
             // crosshair.gameObject.SetActive(false);

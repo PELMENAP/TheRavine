@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: TeenSpruceInfo
   m_EditorClassIdentifier: 
-  _id: teenspruceinfo
-  _amount: 1
-  _poolSize: 30
-  _iType: 0
-  _bType: 2
-  _nalinfo: {fileID: 0}
-  _iteminfo: {fileID: 0}
-  _prefab: {fileID: 3577697167160119698, guid: f505c8a1dd467c61db362f776adb1796, type: 3}
-  _nextStep: {fileID: 11400000, guid: 1f5a9fa98ce0357a1a045ec4af226c89, type: 2}
-  _addspace: []
-  _deadPattern: {fileID: 0}
-  _pickUpPattern: {fileID: 0}
+  defaultAmount: 0
+  initialPoolSize: 30
+  instanceType: 0
+  behaviourType: 2
+  nalInfo: {fileID: 0}
+  inventoryItemInfo: {fileID: 0}
+  objectPrefab: {fileID: 3577697167160119698, guid: f505c8a1dd467c61db362f776adb1796, type: 3}
+  evolutionStep: {fileID: 11400000, guid: 1f5a9fa98ce0357a1a045ec4af226c89, type: 2}
+  additionalOccupiedCells: []
+  onDeathPattern: {fileID: 0}
+  onPickUpPattern: {fileID: 0}
+  ObjectName: TEEN_SPRUCE

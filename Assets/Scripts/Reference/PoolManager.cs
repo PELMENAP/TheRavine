@@ -14,9 +14,9 @@ namespace TheRavine.ObjectControl
         {
             public Queue<ObjectInstance> Objects { get; } = new();
             public Transform Parent { get; }
-            public ushort Size { get; set; }
+            public int Size { get; set; }
 
-            public PoolData(Transform parent, ushort size)
+            public PoolData(Transform parent, int size)
             {
                 Parent = parent;
                 Size = size;
@@ -25,7 +25,7 @@ namespace TheRavine.ObjectControl
 
         private readonly Dictionary<int, PoolData> pools = new();
 
-        public void CreatePool(int poolKey, GameObject prefab, CreateInstance createInstance, ushort poolSize = 1)
+        public void CreatePool(int poolKey, GameObject prefab, CreateInstance createInstance, int poolSize = 1)
         {
             if(prefab == null) return;
             if (!pools.ContainsKey(poolKey))
@@ -36,7 +36,7 @@ namespace TheRavine.ObjectControl
             }
 
             var pool = pools[poolKey];
-            for (ushort i = 0; i < poolSize; i++)
+            for (int i = 0; i < poolSize; i++)
             {
                 GameObject obj = createInstance?.Invoke(Vector3.zero, prefab);
                 pool.Objects.Enqueue(new ObjectInstance(obj, pool.Parent));
@@ -67,7 +67,7 @@ namespace TheRavine.ObjectControl
             pool.Objects.Enqueue(instance);
         }
 
-        public ushort GetPoolSize(int prefabID) => pools.ContainsKey(prefabID) ? pools[prefabID].Size : (ushort)0;
+        public int GetPoolSize(int prefabID) => pools.ContainsKey(prefabID) ? pools[prefabID].Size : (int)0;
         public void IncreasePoolSize(int prefabID) { if (pools.ContainsKey(prefabID)) pools[prefabID].Size++; }
 
         private class ObjectInstance

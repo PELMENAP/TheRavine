@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
-using Cysharp.Threading.Tasks;
+using R3;
 
 namespace TheRavine.EntityControl
 {
@@ -35,15 +35,20 @@ namespace TheRavine.EntityControl
             global  = new List<AEntity>();
             mobInfo = new Dictionary<int, EntityInfo>(4);
 
+            ServiceLocator.WhenPlayersNonEmpty()
+                .Subscribe(_ =>
+                {
+                    SetUpBoids(ServiceLocator.Players.GetAllPlayersTransform());
+                });
+
             for (int i = 0; i < _mobInfo.Length; i++) mobInfo[_mobInfo[i].Prefab.GetInstanceID()] = _mobInfo[i];
 
-            SetUpBoids().Forget();
             callback?.Invoke();
         }
-        private async UniTaskVoid SetUpBoids()
+        private void SetUpBoids(IReadOnlyList<Transform> players)
         {
-            await UniTask.Delay(1000);
-            if(boidsBehaviour != null) boidsBehaviour.StartBoids(ServiceLocator.Players.GetFirstPlayer());
+            Transform playerTransform = players[0];
+            if(boidsBehaviour != null) boidsBehaviour.StartBoids(playerTransform);
         }
         private void FixedUpdate()
         {

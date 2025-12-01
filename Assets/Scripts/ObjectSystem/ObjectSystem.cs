@@ -1,22 +1,15 @@
 using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace TheRavine.ObjectControl
 {
     public class ObjectSystem : MonoBehaviour, ISetAble
     {
-        private const int InitialInfoCapacity = 16;
         private const int InitialGlobalCapacity = 512;
         public GameObject InstantiatePoolObject(Vector3 position, GameObject prefab) => Instantiate(prefab, position, Quaternion.identity);
         public ObjectInfo[] _info;
-        private readonly Dictionary<int, ObjectInfo> info = new(InitialInfoCapacity);
+        private ObjectInfoRegistry infoRegistry;
         private readonly Dictionary<Vector2Int, ObjectInstInfo> global = new (InitialGlobalCapacity);
-        public ObjectInfo GetPrefabInfo(int id)
-        {
-            if(!info.ContainsKey(id)) return info[0];
-            return info[id];
-        }
         public ObjectInstInfo GetGlobalObjectInstInfo(Vector2Int position)
         {
             if (!global.ContainsKey(position))
@@ -28,20 +21,19 @@ namespace TheRavine.ObjectControl
         {
             ObjectInstInfo instInfo = GetGlobalObjectInstInfo(position);
             if (instInfo.PrefabID > 0)
-                return GetPrefabInfo(instInfo.PrefabID);
+                return infoRegistry.Get(instInfo.PrefabID);
             else
                 return null;
         }
         public bool TryAddToGlobal(Vector2Int position, Vector3 realPosition, int _PrefabID, int _amount, InstanceType _objectType)
         {
-            if(info == null || info.Count == 0) return false;
             if (global.ContainsKey(position))
-                if (global[position].PrefabID == _PrefabID && global[position].objectType == InstanceType.Interactable)
+                if (global[position].PrefabID == _PrefabID && global[position].Type == InstanceType.Interactable)
                 {
-                    global[position] = new ObjectInstInfo(realPosition, _PrefabID, global[position].amount + _amount, InstanceType.Interactable); ;
+                    global[position] = new ObjectInstInfo(realPosition, _PrefabID, global[position].Amount + _amount, InstanceType.Interactable); ;
                     return true;
                 }
-            ObjectInfo currentData = GetPrefabInfo(_PrefabID);
+            ObjectInfo currentData = infoRegistry.Get(_PrefabID);
             ObjectInstInfo objectInfo = new(realPosition, _PrefabID, _amount, _objectType);
 
             // if(currentData.AdditionalOccupiedCells == null)
@@ -75,58 +67,50 @@ namespace TheRavine.ObjectControl
         }
         public bool ContainsGlobal(Vector2Int position) => global.ContainsKey(position);
         private PoolManager PoolManagerBase;
-        public void CreatePool(int PrefabID, GameObject prefab, int poolSize = 1) => PoolManagerBase.CreatePool(PrefabID, prefab, InstantiatePoolObject, (ushort)poolSize);
+        public void CreatePool(int PrefabID, GameObject prefab, int poolSize = 1) => PoolManagerBase.CreatePool(PrefabID, prefab, InstantiatePoolObject, poolSize);
         public void Reuse(int PrefabID, Vector3 position) => PoolManagerBase.Reuse(PrefabID, position);
         public void Deactivate(int PrefabID) => PoolManagerBase.Deactivate(PrefabID);
-        public ushort GetPoolSize(int PrefabID) => PoolManagerBase.GetPoolSize(PrefabID);
+        public int GetPoolSize(int PrefabID) => PoolManagerBase.GetPoolSize(PrefabID);
         public void IncreasePoolSize(int PrefabID) => PoolManagerBase.IncreasePoolSize(PrefabID);
         public void SetUp(ISetAble.Callback callback)
         {
-            PoolManagerBase = new PoolManager(this.transform);
+            infoRegistry = new ObjectInfoRegistry();
+            PoolManagerBase = new PoolManager(transform);
 
-            for (byte i = 0; i < _info.Length; i++)
+            foreach (var i in _info)
             {
-                info[_info[i].PrefabID] = _info[i];
-
-                Debug.Log(_info[i].PrefabID + "   " + _info[i].ObjectName);
+                infoRegistry.Register(i);
+                CreatePool(i.PrefabID, i.ObjectPrefab, i.InitialPoolSize);
             }
 
-            FirstInstance().Forget();
             callback?.Invoke();
         }
-        private async UniTaskVoid FirstInstance()
-        {
-            for (byte i = 0; i < _info.Length; i++)
-            {
-                CreatePool(_info[i].PrefabID, _info[i].ObjectPrefab, _info[i].InitialPoolSize);
-                await UniTask.Delay(10);
-            }
-        }
-
         public void BreakUp(ISetAble.Callback callback)
         {
-            info.Clear();
+            infoRegistry.Clear();
             global.Clear();
             callback?.Invoke();
         }
     }
 
 
-    public struct ObjectInstInfo
+    public readonly struct ObjectInstInfo
     {
-        
-        public int amount;
         public readonly int PrefabID;
-        public readonly InstanceType objectType;
-        public bool isExist;
-        public Vector3 realPosition;
-        public ObjectInstInfo(Vector3 _realPosition, int _PrefabID = -1, int _amount = 1, InstanceType _objectType = InstanceType.Static, bool _isExist = true)
+        public readonly InstanceType Type;
+        public readonly Vector3 Position;
+        public readonly int Amount;
+        public readonly bool Exists;
+
+        public ObjectInstInfo(
+            Vector3 pos, int prefab, int amount,
+            InstanceType type, bool exists = true)
         {
-            realPosition = _realPosition;
-            amount = _amount;
-            PrefabID = _PrefabID;
-            objectType = _objectType;
-            isExist = _isExist;
+            Position = pos;
+            PrefabID = prefab;
+            Amount = amount;
+            Type = type;
+            Exists = exists;
         }
     }
 }

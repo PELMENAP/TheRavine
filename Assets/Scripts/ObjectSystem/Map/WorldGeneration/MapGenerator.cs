@@ -6,6 +6,7 @@ using Cysharp.Threading.Tasks;
 
 using TheRavine.Extensions;
 using TheRavine.ObjectControl;
+using R3;
 
 namespace TheRavine.Generator
 {
@@ -103,6 +104,13 @@ namespace TheRavine.Generator
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
             chunkGenerator = new ChunkGenerator(objectSystem, chunkGenerationSettings);
 
+            ServiceLocator.WhenPlayersNonEmpty()
+                .Subscribe(_ =>
+                {
+                    GetViewers(ServiceLocator.Players.GetAllPlayersTransform());
+                });
+
+
             if (endlessFlag[3])
             {
                 nal = new NAL_PC(this, objectSystem, _cts.Token);
@@ -134,8 +142,12 @@ namespace TheRavine.Generator
                     await UniTask.Delay(50);
                 }
             }
-            viewer = ServiceLocator.Players.GetFirstPlayer();
             GenerationUpdate().Forget();
+        }
+
+        private void GetViewers(IReadOnlyList<Transform> players)
+        {
+            viewer = players[0];
         }
 
         public void ClearNALQueue() => nal?.Clear();
@@ -157,7 +169,7 @@ namespace TheRavine.Generator
             {
                 position = GetPlayerPosition();
 
-
+                // debug
                 // Vector2 playerXZ = new Vector2(viewer.position.x, viewer.position.z + generationSize);
                 // Vector2Int vec = GetLocalPosition(playerXZ);
                 // try

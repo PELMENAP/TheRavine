@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: SpruceInfo
   m_EditorClassIdentifier: 
-  _id: spruceinfo
-  _amount: 1
-  _poolSize: 30
-  _iType: 0
-  _bType: 1
-  _nalinfo: {fileID: 11400000, guid: e300f278e3f22cce2b173b38cdb47cf8, type: 2}
-  _iteminfo: {fileID: 0}
-  _prefab: {fileID: 3577697167160119698, guid: 0b72511b56e1ab54ca9f90bba1505377, type: 3}
-  _nextStep: {fileID: 11400000, guid: 32f8156adfce3fa3b9f5f29cb697afd8, type: 2}
-  _addspace: []
-  _deadPattern: {fileID: 11400000, guid: 542ebb51784c0fab7b7d5f0e5e3ffbfc, type: 2}
-  _pickUpPattern: {fileID: 0}
+  objectPrefab: {fileID: 3577697167160119698, guid: 0b72511b56e1ab54ca9f90bba1505377, type: 3}
+  defaultAmount: 0
+  initialPoolSize: 30
+  instanceType: 0
+  behaviourType: 1
+  nalInfo: {fileID: 11400000, guid: e300f278e3f22cce2b173b38cdb47cf8, type: 2}
+  inventoryItemInfo: {fileID: 0}
+  evolutionStep: {fileID: 0}
+  additionalOccupiedCells: []
+  onDeathPattern: {fileID: 11400000, guid: 542ebb51784c0fab7b7d5f0e5e3ffbfc, type: 2}
+  onPickUpPattern: {fileID: 0}
+  ObjectName: SPRUCE

@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Battery
   m_EditorClassIdentifier: 
-  _id: battery
-  _amount: 1
-  _poolSize: 5
-  _iType: 1
-  _bType: 0
-  _nalinfo: {fileID: 0}
-  _iteminfo: {fileID: 11400000, guid: e5cfe49da93835e5ca11e7078e3ccd82, type: 2}
-  _prefab: {fileID: 5420371829210926239, guid: 9912b47a10d32ca8389aeed9159b11c6, type: 3}
-  _nextStep: {fileID: 0}
-  _addspace: []
-  _deadPattern: {fileID: 0}
-  _pickUpPattern: {fileID: 0}
+  objectPrefab: {fileID: 5420371829210926239, guid: 9912b47a10d32ca8389aeed9159b11c6, type: 3}
+  defaultAmount: 0
+  initialPoolSize: 10
+  instanceType: 1
+  behaviourType: 0
+  nalInfo: {fileID: 0}
+  inventoryItemInfo: {fileID: 11400000, guid: e5cfe49da93835e5ca11e7078e3ccd82, type: 2}
+  evolutionStep: {fileID: 0}
+  additionalOccupiedCells: []
+  onDeathPattern: {fileID: 0}
+  onPickUpPattern: {fileID: 0}
+  ObjectName: battery

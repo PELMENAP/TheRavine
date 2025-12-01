@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Stone1
   m_EditorClassIdentifier: 
-  _id: stone1
-  _amount: 1
-  _poolSize: 5
-  _iType: 0
-  _bType: 0
-  _nalinfo: {fileID: 0}
-  _iteminfo: {fileID: 0}
-  _prefab: {fileID: 3904404198724286375, guid: 8de0a824e6d11588e85e4e500bd22f5d, type: 3}
-  _nextStep: {fileID: 0}
-  _addspace: []
-  _deadPattern: {fileID: 0}
-  _pickUpPattern: {fileID: 0}
+  objectPrefab: {fileID: 3904404198724286375, guid: 8de0a824e6d11588e85e4e500bd22f5d, type: 3}
+  defaultAmount: 0
+  initialPoolSize: 10
+  instanceType: 0
+  behaviourType: 0
+  nalInfo: {fileID: 0}
+  inventoryItemInfo: {fileID: 0}
+  evolutionStep: {fileID: 0}
+  additionalOccupiedCells: []
+  onDeathPattern: {fileID: 0}
+  onPickUpPattern: {fileID: 0}
+  ObjectName: Stone1

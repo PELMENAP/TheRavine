@@ -342,6 +342,7 @@ GameObject:
   - component: {fileID: 3238895968624528411}
   - component: {fileID: 5597226391838563630}
   - component: {fileID: 5751690078043235610}
+  - component: {fileID: 7030124804662025634}
   - component: {fileID: 6514444053740741104}
   m_Layer: 0
   m_Name: EventSystem
@@ -434,6 +435,18 @@ MonoBehaviour:
   maxOstVolume: 0.5
   maxNatureVolume: 0.5
   fadeSpeed: 0.002
+--- !u!114 &7030124804662025634
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3238895968624528409}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 561aa8dfb6384324ea6867832d2f041c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &6514444053740741104
 MonoBehaviour:
   m_ObjectHideFlags: 0

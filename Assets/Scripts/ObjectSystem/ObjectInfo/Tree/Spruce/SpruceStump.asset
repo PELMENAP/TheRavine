@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: SpruceStump
   m_EditorClassIdentifier: 
-  _id: sprucestump
-  _amount: 1
-  _poolSize: 30
-  _iType: 0
-  _bType: 2
-  _nalinfo: {fileID: 11400000, guid: e300f278e3f22cce2b173b38cdb47cf8, type: 2}
-  _iteminfo: {fileID: 0}
-  _prefab: {fileID: 3882641584267046540, guid: 53a74a45373baec4a811de8865651986, type: 3}
-  _nextStep: {fileID: 0}
-  _addspace: []
-  _deadPattern: {fileID: 0}
-  _pickUpPattern: {fileID: 0}
+  defaultAmount: 0
+  initialPoolSize: 10
+  instanceType: 0
+  behaviourType: 1
+  nalInfo: {fileID: 0}
+  inventoryItemInfo: {fileID: 0}
+  objectPrefab: {fileID: 3882641584267046540, guid: 53a74a45373baec4a811de8865651986, type: 3}
+  evolutionStep: {fileID: 0}
+  additionalOccupiedCells: []
+  onDeathPattern: {fileID: 0}
+  onPickUpPattern: {fileID: 0}
+  ObjectName: SPRUSE_STUMP
