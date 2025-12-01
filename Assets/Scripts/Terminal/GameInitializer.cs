@@ -12,6 +12,8 @@ public class GameInitializer : MonoBehaviour
     private void Awake()
     {
         ServiceLocator.ClearAll();
+        DontDestroyOnLoad(this);
+
         if (initializeOnAwake)
             InitializeServices();
     }

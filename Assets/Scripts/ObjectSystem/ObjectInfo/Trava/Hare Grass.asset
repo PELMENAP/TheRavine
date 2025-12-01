@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Hare Grass
   m_EditorClassIdentifier: 
-  _id: haregrass
-  _amount: 1
-  _poolSize: 1
-  _iType: 0
-  _bType: 1
-  _nalinfo: {fileID: 11400000, guid: 6b3caeab9260ae715a36a67f23e5cc8d, type: 2}
-  _iteminfo: {fileID: 0}
-  _prefab: {fileID: 6605657834375341550, guid: 89a896341b4a7b14485fc3f670ed5b1d, type: 3}
-  _nextStep: {fileID: 11400000}
-  _addspace: []
-  _deadPattern: {fileID: 0}
-  _pickUpPattern: {fileID: 0}
+  objectPrefab: {fileID: 6605657834375341550, guid: 89a896341b4a7b14485fc3f670ed5b1d, type: 3}
+  defaultAmount: 0
+  initialPoolSize: 10
+  instanceType: 0
+  behaviourType: 1
+  nalInfo: {fileID: 11400000, guid: 3836583b14ab7bc6fac7c136c9e6c75f, type: 2}
+  inventoryItemInfo: {fileID: 0}
+  evolutionStep: {fileID: 0}
+  additionalOccupiedCells: []
+  onDeathPattern: {fileID: 0}
+  onPickUpPattern: {fileID: 0}
+  ObjectName: Hare grass

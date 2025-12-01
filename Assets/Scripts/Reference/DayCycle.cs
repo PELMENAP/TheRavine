@@ -15,7 +15,6 @@ namespace TheRavine.Base
         public event Action OnNewDay;
         public bool IsDay => isDay.Value;
 
-        [SerializeField] private float startDay = 0f;
         [SerializeField] private float speed = 1f;
         [SerializeField] private Gradient sunGradient;
         [SerializeField] private AnimationCurve xRotationCurve;

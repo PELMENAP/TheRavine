@@ -10,8 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 7850189176189269725}
   - component: {fileID: 4562090834836402456}
-  - component: {fileID: 6279564219592781857}
   - component: {fileID: 6248583084795211169}
+  - component: {fileID: 1710844083776048564}
   m_Layer: 0
   m_Name: old_radio
   m_TagString: Untagged
@@ -27,7 +27,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1585699814152467410}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -43,10 +43,10 @@ SpriteRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1585699814152467410}
   m_Enabled: 1
-  m_CastShadows: 0
-  m_ReceiveShadows: 0
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
+  m_StaticShadowCaster: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -54,10 +54,11 @@ SpriteRenderer:
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 157db4c2591a4f5379ed11d7b15a15cb, type: 2}
+  - {fileID: 2100000, guid: d3d9e3c1171195442ae8a9dd7b5baeea, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -75,8 +76,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: -285588851
-  m_SortingLayer: -1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: -171691170, guid: 7565c2d8bf69c1da7ae0532571c39987, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -89,52 +90,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 1
---- !u!61 &6279564219592781857
-BoxCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1585699814152467410}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.48340878, y: 0.17260553}
-    oldSize: {x: 3.5, y: 2.875}
-    newSize: {x: 3.5, y: 2.875}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  m_Size: {x: 3, y: 1}
-  m_EdgeRadius: 0
 --- !u!114 &6248583084795211169
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -156,59 +111,58 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 11d3979904f48b56fbec05219f3bce9a, type: 3}
   - {fileID: 8300000, guid: 0628d29fa40184e5a8e0ffac71f10460, type: 3}
   - {fileID: 8300000, guid: d33abe39a4b3f3d89bdf48fb935fa39b, type: 3}
-  - {fileID: 8300000, guid: 86b560779abd7930791806b9ffc3d95f, type: 3}
   - {fileID: 8300000, guid: f34e500b50b22fd059f71029e63d76e8, type: 3}
   - {fileID: 8300000, guid: 18afcd11cb15aed838e6a841f9336c4a, type: 3}
   - {fileID: 8300000, guid: 47dd8325e31008d8bba9b3ac82214ff5, type: 3}
   - {fileID: 8300000, guid: fd7b3bbc666d7b649867b405abb41dfa, type: 3}
-  - {fileID: 8300000, guid: 0dc1a89f161e67108b2208a09c4392f2, type: 3}
   - {fileID: 8300000, guid: 72f9cd8428f48812c9a02e17fa555180, type: 3}
-  - {fileID: 8300000, guid: 061cce6853547203ba439bb39a0c05d5, type: 3}
-  - {fileID: 8300000, guid: 2ade75db0d91357bdb97bb54baca53e9, type: 3}
-  - {fileID: 8300000, guid: 2387d0c9aff6fb3b1aa935d24db303e1, type: 3}
   audioClipRadioNormal:
   - {fileID: 8300000, guid: 6a94880b4cf7ae3a28090f571516cc97, type: 3}
   - {fileID: 8300000, guid: 7b2dbfb83588f1b72b57c9a891b40409, type: 3}
-  - {fileID: 8300000, guid: ccd5b75c02801a243a6dbfb26884179b, type: 3}
   - {fileID: 8300000, guid: 957fbf6aeab015ce9809ce91a4edaea2, type: 3}
   - {fileID: 8300000, guid: 175a2d35ed8dab738be6faa49e1fbc63, type: 3}
   - {fileID: 8300000, guid: c6324f0f48969611fb914802f30e9a94, type: 3}
-  - {fileID: 8300000, guid: 52547181aea286249bc87224a5439844, type: 3}
   - {fileID: 8300000, guid: 7e8f31bdae2c02777adf365624c3bdc4, type: 3}
   - {fileID: 8300000, guid: ef12b480f858d097c87cff30d12d3569, type: 3}
   - {fileID: 8300000, guid: 8f55647c2619272d78be84f294713872, type: 3}
-  - {fileID: 8300000, guid: 957929ae24ced4e77820ec46e14bb827, type: 3}
-  - {fileID: 8300000, guid: 94dcddc0c6f13ed1daafb2902d49f262, type: 3}
-  - {fileID: 8300000, guid: bd2aa74c74dd761c499afc79b763c1dc, type: 3}
-  - {fileID: 8300000, guid: 979316cd75a431328a2cc79c2da9ff5e, type: 3}
-  - {fileID: 8300000, guid: 5edd0803058687985949836aa83a80fb, type: 3}
   - {fileID: 8300000, guid: b7e215989ede123c4a55fd1a666a13b5, type: 3}
   - {fileID: 8300000, guid: d89731b53a9919790888cbcc765086a1, type: 3}
   - {fileID: 8300000, guid: 12494fa826c925a79a3b1d9a4e7bca25, type: 3}
-  - {fileID: 8300000, guid: c0477dc787648829bb5e6e6b41772c18, type: 3}
-  - {fileID: 8300000, guid: 4340276440139169185d357186a7bb58, type: 3}
-  - {fileID: 8300000, guid: f4d9e335d3710fc0fb230858dd076bbd, type: 3}
-  - {fileID: 8300000, guid: 10a55cc7b53e000fea6259479708dcc1, type: 3}
   audioClipRadioFunny:
   - {fileID: 8300000, guid: 4ee1f734678595ccdb7edf9ab03fb9ac, type: 3}
   - {fileID: 8300000, guid: 28c58a1792024377db3e0b13bad46a42, type: 3}
   - {fileID: 8300000, guid: 1f949d71b461a31ca9ca527700c78f16, type: 3}
   - {fileID: 8300000, guid: f0723bcbc96fa2daf98d737f582ad855, type: 3}
-  - {fileID: 8300000, guid: 46c73207aeaf74a8d9c39f3cde7385bf, type: 3}
   - {fileID: 8300000, guid: eb4b3f090ec96d5239151cf295cec151, type: 3}
   - {fileID: 8300000, guid: 24cd78974f5504acdb885283b77932a5, type: 3}
-  - {fileID: 8300000, guid: 1b5310d101c2625d9a03451c7bffa878, type: 3}
-  - {fileID: 8300000, guid: a4ef2339096009773b1a12717a39687c, type: 3}
   - {fileID: 8300000, guid: 3b5e243cdcfd114358cc72e2d097fcdd, type: 3}
-  - {fileID: 8300000, guid: a7074790e292123bbaa9073a91891d50, type: 3}
-  - {fileID: 8300000, guid: 97fcc8faffbee551db88ad23fefc24bb, type: 3}
-  - {fileID: 8300000, guid: 9f82c727a543f90949bd4e6705f547bd, type: 3}
   - {fileID: 8300000, guid: 72f9cd8428f48812c9a02e17fa555180, type: 3}
   - {fileID: 8300000, guid: d26dc94a3696b07c4b928d6ad28a2c40, type: 3}
   - {fileID: 8300000, guid: 62b3da641e2017ad293058dbf07571ca, type: 3}
   audioStray:
   - {fileID: 8300000, guid: 14cf66b62885f7324bd039d47bfe6246, type: 3}
   - {fileID: 8300000, guid: 75c70c6547337868ebeca9b5e25657d2, type: 3}
+--- !u!65 &1710844083776048564
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1585699814152467410}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 3.5, y: 2.875, z: 2}
+  m_Center: {x: 0.05806923, y: 0.94125915, z: 0}
 --- !u!1 &6248583086223501496
 GameObject:
   m_ObjectHideFlags: 0

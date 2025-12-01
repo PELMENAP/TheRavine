@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Fern
   m_EditorClassIdentifier: 
-  _id: fern
-  _amount: 1
-  _poolSize: 1
-  _iType: 0
-  _bType: 1
-  _nalinfo: {fileID: 11400000, guid: 6b3caeab9260ae715a36a67f23e5cc8d, type: 2}
-  _iteminfo: {fileID: 0}
-  _prefab: {fileID: 8438544788821673546, guid: 5ff145796436f9fdcaeaaf0c3506828c, type: 3}
-  _nextStep: {fileID: 11400000}
-  _addspace: []
-  _deadPattern: {fileID: 0}
-  _pickUpPattern: {fileID: 0}
+  objectPrefab: {fileID: 8438544788821673546, guid: 5ff145796436f9fdcaeaaf0c3506828c, type: 3}
+  defaultAmount: 0
+  initialPoolSize: 10
+  instanceType: 0
+  behaviourType: 1
+  nalInfo: {fileID: 11400000, guid: 035feb6819559826fb707f722186ce0b, type: 2}
+  inventoryItemInfo: {fileID: 0}
+  evolutionStep: {fileID: 0}
+  additionalOccupiedCells: []
+  onDeathPattern: {fileID: 0}
+  onPickUpPattern: {fileID: 0}
+  ObjectName: Fern

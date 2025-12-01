@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: RottenTorch
   m_EditorClassIdentifier: 
-  _id: rottentorch
-  _amount: 1
-  _poolSize: 5
-  _iType: 0
-  _bType: 0
-  _nalinfo: {fileID: 0}
-  _iteminfo: {fileID: 0}
-  _prefab: {fileID: 4213350634147395220, guid: 85d083c10c66547089a16bc8bd32cea6, type: 3}
-  _nextStep: {fileID: 0}
-  _addspace: []
-  _deadPattern: {fileID: 0}
-  _pickUpPattern: {fileID: 0}
+  objectPrefab: {fileID: 4213350634147395220, guid: 85d083c10c66547089a16bc8bd32cea6, type: 3}
+  defaultAmount: 0
+  initialPoolSize: 10
+  instanceType: 0
+  behaviourType: 0
+  nalInfo: {fileID: 0}
+  inventoryItemInfo: {fileID: 0}
+  evolutionStep: {fileID: 0}
+  additionalOccupiedCells: []
+  onDeathPattern: {fileID: 0}
+  onPickUpPattern: {fileID: 0}
+  ObjectName: Rotten_Torch

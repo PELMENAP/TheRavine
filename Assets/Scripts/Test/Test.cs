@@ -67,13 +67,6 @@ public class Test : MonoBehaviour
     Vector2Int position;
 
     [Button]
-    private void TestSimilarity()
-    {
-        double similarity = Extension.JaroWinklerSimilarity(test, enter);
-        print(similarity);
-    }
-
-    [Button]
     private void TestPosition()
     {
         position = new Vector2Int((int)viewer.position.x, (int)viewer.position.y);

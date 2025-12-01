@@ -25,11 +25,19 @@ namespace TheRavine.Generator
             }
             public void UpdateChunk(Vector2Int Position)
             {
-                for (sbyte yOffset = -chunkScale; yOffset <= chunkScale; yOffset++)
+                for (int chunkX = 0; chunkX < 2 * chunkScale + 1; chunkX++)
                 {
-                    for (sbyte xOffset = -chunkScale; xOffset <= chunkScale; xOffset++)
+                    for (int chunkY = 0; chunkY < 2 * chunkScale + 1; chunkY++)
                     {
-                        ProcessObjectInst(new Vector2Int(Position.x + xOffset, Position.y + yOffset));
+                        generator.GetMapData(new Vector2Int(Position.x - 1 + chunkX, Position.y - 1 + chunkY));
+                    }
+                }
+
+                for (int chunkX = 0; chunkX < 2 * chunkScale + 1; chunkX++)
+                {
+                    for (int chunkY = 0; chunkY < 2 * chunkScale + 1; chunkY++)
+                    {
+                        ProcessObjectInst(new Vector2Int(Position.x - 1 + chunkX, Position.y - 1 + chunkY));
                     }
                 }
                 foreach (var ID in objectsSnapshot)
@@ -61,10 +69,9 @@ namespace TheRavine.Generator
                     catch
                     {
                         Debug.Log(info.GetType());
-                        Debug.Log(info.objectType);
-                        Debug.Log(" ");
+                        Debug.Log(info.Type);
                     }
-                    objectSystem.Reuse(info.PrefabID, info.realPosition);
+                    objectSystem.Reuse(info.PrefabID, info.Position);
                     if (objectInfo.BehaviourType == BehaviourType.NAL || objectInfo.BehaviourType == BehaviourType.GROW)
                         generator.AddNALObject(item);
                 }

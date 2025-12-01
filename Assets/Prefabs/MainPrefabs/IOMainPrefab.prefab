@@ -267,6 +267,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: TerminalCanvas
       objectReference: {fileID: 0}
+    - target: {fileID: 6353192072522166795, guid: 3ef27a4aa54d0d7649a69458e66009be, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

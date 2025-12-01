@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using System;
+using R3;
 
 using Cysharp.Threading.Tasks;
 
@@ -17,24 +18,27 @@ namespace TheRavine.EntityControl
         private IRavineLogger logger;
         public override async void OnNetworkSpawn()
         {
-            await SetupLocator();
+            logger = ServiceLocator.GetService<IRavineLogger>();
+
             await CreatePlayerEntity();
             await SetupNetworking();
 
             PlayerEntity.Init();
+            
+            SetupLocator();
             logger.LogInfo($"Player entity {NetworkManager.Singleton.LocalClientId} is set up");
         }
 
-        private async UniTask SetupLocator()
+        private void SetupLocator()
         {
             try
             {
                 ServiceLocator.Services.Register(this);
-                ServiceLocator.Players.RegisterPlayer(this.transform);
 
-                await UniTask.Delay(3000);
-
-                logger = ServiceLocator.GetService<IRavineLogger>();
+                if(ServiceLocator.Players.RegisterPlayer(PlayerEntity))
+                {
+                    logger.LogInfo($"Player entity {NetworkManager.Singleton.LocalClientId} is registered");
+                }
             }
             catch (Exception ex)
             {
@@ -45,7 +49,7 @@ namespace TheRavine.EntityControl
         private async UniTask CreatePlayerEntity()
         {
             base.Initialize(new PlayerEntity(logger));
-            PlayerEntity.AddComponentsToEntity(playerInfo, this, GetComponent<IEntityController>());
+            PlayerEntity.AddComponentsToEntity(playerInfo, this, GetComponent<IEntityController>(), NetworkManager.Singleton.LocalClientId);
 
             await UniTask.CompletedTask;
         }
@@ -57,7 +61,13 @@ namespace TheRavine.EntityControl
                 if (IsClient && IsOwner)
                 {
                     RequestCameraServerRpc(NetworkManager.Singleton.LocalClientId);
-                    ServiceLocator.GetService<EntitySystem>().AddToGlobal(PlayerEntity);
+                    
+                    ServiceLocator.OnServiceAvailable<EntitySystem>()
+                        .Subscribe(EntitySystem =>
+                        {
+                            logger.LogInfo($"Player entity {NetworkManager.Singleton.LocalClientId} added to EntitySystem");
+                            EntitySystem.AddToGlobal(PlayerEntity);
+                        });
                 }
                 await UniTask.CompletedTask;
             }

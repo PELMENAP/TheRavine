@@ -29,10 +29,6 @@ namespace TheRavine.Base
                         new LoadingState(this, serviceRegisterMachine.RegisterSomeServices(scriptsLoadedOnLoadingState)),
                         new GameState(this));
         }
-        public bool HaveServiceLocatorPlayer()
-        {
-            return ServiceLocator.Players.GetAllPlayers().Count > 0;
-        }
         public void LogBootstrapInfo(string Message)
         {
             ravineLogger.LogWarning(Message);

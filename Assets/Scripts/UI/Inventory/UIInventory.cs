@@ -1,6 +1,3 @@
-using UnityEngine;
-using System.Collections.Generic;
-
 using TheRavine.Base;
 using TheRavine.InventoryElements;
 using TheRavine.Generator;
@@ -8,7 +5,11 @@ using TheRavine.ObjectControl;
 using TheRavine.Extensions;
 using TheRavine.EntityControl;
 using TheRavine.Events;
+
+using UnityEngine;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using R3;
 
 namespace TheRavine.Inventory
 {
@@ -40,6 +41,12 @@ namespace TheRavine.Inventory
             var gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
             inventoryInputHandler.RegisterInput(playerData, gameSettings);
 
+            ServiceLocator.WhenPlayersNonEmpty()
+                .Subscribe(_ =>
+                {
+                    OnInventoryDataLoaded(playerData).Forget();
+                });
+
             var uiSlot = GetComponentsInChildren<UIInventorySlot>();
             var slotList = new List<UIInventorySlot>();
             slotList.AddRange(uiSlot);
@@ -49,24 +56,15 @@ namespace TheRavine.Inventory
             eventDrivenInventoryProxy = new EventDrivenInventoryProxy(inventoryModel);
 
             infoManager = new InfoManager(dataItems);
-
             tester = new InventoryTester(slotList.ToArray(), infoManager, eventDrivenInventoryProxy);
-
-            OnInventoryDataLoaded().Forget();
-
             uIDragger.SetUp(inventoryModel);
             craftService.SetUp(infoManager, inventoryModel);
-
             eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce += OnInventoryStateChanged;
-
-            EventBus playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
-            playerEventBus.Subscribe<PlaceEvent>(PlaceObjectEvent);
-            playerEventBus.Subscribe<PickUpEvent>(PickUpEvent);
 
             callback?.Invoke();
         }
 
-        private async UniTaskVoid OnInventoryDataLoaded()
+        private async UniTaskVoid OnInventoryDataLoaded(PlayerEntity playerData)
         {
             WorldInfo worldInfo = await worldManager.GetWorldInfoAsync(worldManager.CurrentWorldName);
             if (worldInfo.CycleCount == 0) tester.FillSlots(filling);
@@ -75,6 +73,10 @@ namespace TheRavine.Inventory
                 var loadedData = await encryptedPlayerPrefsStorage.LoadAsync<SerializableList<SerializableInventorySlot>>(nameof(SerializableList<SerializableInventorySlot>));
                 tester.SetDataFromSerializableList(loadedData);
             }
+
+            EventBus playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
+            playerEventBus.Subscribe<PlaceEvent>(PlaceObjectEvent);
+            playerEventBus.Subscribe<PickUpEvent>(PickUpEvent);
         }
 
         private void PlaceObjectEvent(AEntity entity, PlaceEvent e)
@@ -103,7 +105,7 @@ namespace TheRavine.Inventory
             ObjectInfo data = objectSystem.GetGlobalObjectInfo(e.Position);
             if (data == null) return;
 
-            IInventoryItem item = infoManager.GetInventoryItemByInfo(data.InventoryItemInfo.id, data.InventoryItemInfo, objectInstInfo.amount);
+            IInventoryItem item = infoManager.GetInventoryItemByInfo(data.InventoryItemInfo.id, data.InventoryItemInfo, objectInstInfo.Amount);
             if (eventDrivenInventoryProxy.TryToAdd(this, item))
             {
                 objectSystem.RemoveFromGlobal(e.Position);

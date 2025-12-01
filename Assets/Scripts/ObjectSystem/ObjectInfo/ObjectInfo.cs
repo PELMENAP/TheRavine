@@ -3,22 +3,34 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "ObjectInfo", menuName = "Gameplay/Create New ObjectInfo")]
 public class ObjectInfo : ScriptableObject
 {
+    [SerializeField] private GameObject objectPrefab;
     [SerializeField] private ushort defaultAmount;
-    [SerializeField] private ushort initialPoolSize;
+    [Min(1)]
+    [SerializeField] private ushort initialPoolSize = 10;
     [SerializeField] private InstanceType instanceType;
     [SerializeField] private BehaviourType behaviourType;
+    
+    [ConditionalField(nameof(behaviourType), BehaviourType.NAL)]
     [SerializeField] private NAlInfo nalInfo;
+    
+    [ConditionalField(nameof(instanceType), InstanceType.Static, inverse: true)]
     [SerializeField] private InventoryItemInfo inventoryItemInfo;
-    [SerializeField] private GameObject objectPrefab;
+    
+    
+    [ConditionalField(nameof(behaviourType), BehaviourType.GROW)]
     [SerializeField] private ObjectInfo evolutionStep;
+    
     [SerializeField] private Vector2Int[] additionalOccupiedCells;
+    [ConditionalField(nameof(behaviourType), BehaviourType.NAL)]
     [SerializeField] private SpreadPattern onDeathPattern;
+
+    [ConditionalField(nameof(instanceType), InstanceType.Interactable)]
     [SerializeField] private SpreadPattern onPickUpPattern;
 
     private int? cachedPrefabID;
 
     public string ObjectName;
-    public int PrefabID => cachedPrefabID ??= objectPrefab.GetHashCode();
+    public int PrefabID => cachedPrefabID ??= objectPrefab.GetInstanceID();
     public ushort DefaultAmount => defaultAmount;
     public ushort InitialPoolSize => initialPoolSize;
     public InstanceType InstanceType => instanceType;

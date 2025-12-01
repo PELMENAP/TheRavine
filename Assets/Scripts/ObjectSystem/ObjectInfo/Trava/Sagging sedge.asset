@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Sagging sedge
   m_EditorClassIdentifier: 
-  _id: saggingsedge
-  _amount: 1
-  _poolSize: 1
-  _iType: 0
-  _bType: 1
-  _nalinfo: {fileID: 11400000, guid: 035feb6819559826fb707f722186ce0b, type: 2}
-  _iteminfo: {fileID: 0}
-  _prefab: {fileID: 8438544788821673546, guid: b2e91fb5d600a9aad90fa8698f5291d6, type: 3}
-  _nextStep: {fileID: 11400000}
-  _addspace: []
-  _deadPattern: {fileID: 0}
-  _pickUpPattern: {fileID: 0}
+  objectPrefab: {fileID: 8438544788821673546, guid: b2e91fb5d600a9aad90fa8698f5291d6, type: 3}
+  defaultAmount: 0
+  initialPoolSize: 10
+  instanceType: 0
+  behaviourType: 1
+  nalInfo: {fileID: 11400000, guid: 5c972e51e70e00df798517e403583ad1, type: 2}
+  inventoryItemInfo: {fileID: 0}
+  evolutionStep: {fileID: 0}
+  additionalOccupiedCells: []
+  onDeathPattern: {fileID: 0}
+  onPickUpPattern: {fileID: 0}
+  ObjectName: Sagging sedge

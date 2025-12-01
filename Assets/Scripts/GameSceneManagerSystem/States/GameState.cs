@@ -17,7 +17,6 @@ namespace TheRavine.Base
                 
                 FaderOnTransit.Instance.FadeOut(() => aboba = true);
                 Initializer.OnGameAlreadyStarted();
-                NetworkManager.Singleton.StartHost();
             }
             public void OnExit()
             {
