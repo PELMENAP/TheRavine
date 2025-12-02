@@ -1,5 +1,6 @@
 using R3;
 using System;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Base
@@ -8,11 +9,14 @@ namespace TheRavine.Base
     {
         private readonly GameSettingsManager _gameSettingsManager;
         private readonly WorldManager _worldManager;
-        private readonly WorldService _worldService;
+        private readonly WorldFileService _worldService;
         private readonly ReactiveProperty<GameSettings> _gameSettings;
         private readonly ReactiveProperty<WorldSettings> _worldSettings;
         private readonly CompositeDisposable _disposables = new();
         private readonly IRavineLogger _logger;
+
+        private CancellationTokenSource _saveCts;
+        private const float SaveDebounceTime = 0.5f;
 
         public ReadOnlyReactiveProperty<GameSettings> GameSettings { get; }
         public ReadOnlyReactiveProperty<WorldSettings> WorldSettings { get; }
@@ -20,7 +24,7 @@ namespace TheRavine.Base
         public SettingsModel(
             GameSettingsManager gameSettingsManager,
             WorldManager worldManager,
-            WorldService worldService,
+            WorldFileService worldService,
             IRavineLogger logger)
         {
             _gameSettingsManager = gameSettingsManager;
@@ -36,27 +40,33 @@ namespace TheRavine.Base
             
             _gameSettings
                 .Skip(1)
-                .Subscribe(settings => SaveGameSettingsAsync(settings).Forget())
+                .Subscribe(_ => DebouncedSaveGameSettings())
                 .AddTo(_disposables);
             
             _worldSettings
                 .Skip(1)
-                .Subscribe(settings => SaveWorldSettingsAsync(settings).Forget())
+                .Subscribe(_ => DebouncedSaveWorldSettings())
                 .AddTo(_disposables);
             
             LoadInitialSettingsAsync().Forget();
         }
 
-        public void UpdateGameSettings(GameSettings settings)
+        public void ModifyGameSettings(Action<GameSettings> modifier)
         {
-            if (settings == null) return;
-            _gameSettings.Value = settings.Clone();
+            if (modifier == null) return;
+            
+            var settings = _gameSettings.Value;
+            modifier(settings);
+            _gameSettings.ForceNotify();
         }
 
-        public void UpdateWorldSettings(WorldSettings settings)
+        public void ModifyWorldSettings(Action<WorldSettings> modifier)
         {
-            if (settings == null) return;
-            _worldSettings.Value = settings.Clone();
+            if (modifier == null) return;
+            
+            var settings = _worldSettings.Value;
+            modifier(settings);
+            _worldSettings.ForceNotify();
         }
 
         public async UniTask ResetToDefaultsAsync()
@@ -112,11 +122,28 @@ namespace TheRavine.Base
             }
         }
 
-        private async UniTask SaveGameSettingsAsync(GameSettings settings)
+        private void DebouncedSaveGameSettings()
         {
+            _saveCts?.Cancel();
+            _saveCts = new CancellationTokenSource();
+            SaveGameSettingsDelayed(_saveCts.Token).Forget();
+        }
+
+        private void DebouncedSaveWorldSettings()
+        {
+            _saveCts?.Cancel();
+            _saveCts = new CancellationTokenSource();
+            SaveWorldSettingsDelayed(_saveCts.Token).Forget();
+        }
+
+        private async UniTask SaveGameSettingsDelayed(CancellationToken ct)
+        {
+            await UniTask.Delay(TimeSpan.FromSeconds(SaveDebounceTime), cancellationToken: ct);
+            if (ct.IsCancellationRequested) return;
+
             try
             {
-                await _gameSettingsManager.SaveAsync(settings);
+                await _gameSettingsManager.SaveAsync(_gameSettings.Value);
             }
             catch (Exception ex)
             {
@@ -124,14 +151,17 @@ namespace TheRavine.Base
             }
         }
 
-        private async UniTask SaveWorldSettingsAsync(WorldSettings settings)
+        private async UniTask SaveWorldSettingsDelayed(CancellationToken ct)
         {
+            await UniTask.Delay(TimeSpan.FromSeconds(SaveDebounceTime), cancellationToken: ct);
+            if (ct.IsCancellationRequested) return;
+
             var currentWorld = _worldManager.CurrentWorldName;
             if (string.IsNullOrEmpty(currentWorld)) return;
             
             try
             {
-                await _worldService.SaveSettingsAsync(currentWorld, settings);
+                await _worldService.SaveSettingsAsync(currentWorld, _worldSettings.Value);
             }
             catch (Exception ex)
             {
@@ -141,6 +171,8 @@ namespace TheRavine.Base
 
         public void Dispose()
         {
+            _saveCts?.Cancel();
+            _saveCts?.Dispose();
             _disposables?.Dispose();
             _gameSettings?.Dispose();
             _worldSettings?.Dispose();

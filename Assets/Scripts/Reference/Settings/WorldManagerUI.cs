@@ -13,7 +13,7 @@ namespace TheRavine.Base
         [SerializeField] private ScrollRect worldsScrollView;
         [SerializeField] private Transform worldsContainer;
         [SerializeField] private GameObject worldItemPrefab;
-        [SerializeField] private Button createWorldButton, confirmCreateWorldButton;
+        [SerializeField] private Button createWorldButton, confirmCreateWorldButton, cancelCreateWorldButton;
         [SerializeField] private TMP_InputField newWorldNameInput;
         [SerializeField] private GameObject createWorldPanel, chooseWorldPanel;
         
@@ -37,6 +37,7 @@ namespace TheRavine.Base
         {
             createWorldButton.onClick.AddListener(OnCreateWorldButtonClick);
             confirmCreateWorldButton.onClick.AddListener(OnConfirmCreateWorld);
+            cancelCreateWorldButton.onClick.AddListener(OnCancelCreateWorld);
             createWorldPanel?.SetActive(false);
             chooseWorldPanel?.SetActive(true);
         }
@@ -76,7 +77,7 @@ namespace TheRavine.Base
                 worldItemComponent.Initialize(worldName, 
                     () => OnEnterWorld(worldName),
                     () => OnDeleteWorld(worldName),
-                    () =>  OnEditWorldSettings(worldName).Forget(), logger, ServiceLocator.GetService<WorldService>());
+                    () =>  OnEditWorldSettings(worldName).Forget(), logger, ServiceLocator.GetService<WorldFileService>());
             }
         }
         private async void OnEnterWorld(string worldName)

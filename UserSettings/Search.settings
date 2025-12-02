@@ -14,7 +14,7 @@ scopes = {
 	"last_search.0B486DF2" = ""
 	"OpenInspectorPreview.0B486DF2" = "0"
 	"currentGroup.0B486DF2" = null
-	"picker_window_position_offset.075BCD15" = "-827;319;600;550"
+	"picker_window_position_offset.075BCD15" = "-526;529;600;550"
 	"picker_visibility_flags.075BCD15" = "264"
 	"picker_item_size.075BCD15" = "1"
 	"picker_inspector.075BCD15" = "0"
@@ -73,6 +73,16 @@ providers = {
 	presets_provider = {
 		active = false
 		priority = -10
+		defaultAction = null
+	}
+	at = {
+		active = true
+		priority = 100
+		defaultAction = null
+	}
+	st = {
+		active = true
+		priority = 100
 		defaultAction = null
 	}
 }

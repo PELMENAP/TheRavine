@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: Main Shared Data
+  m_EditorClassIdentifier: 
+  m_TableCollectionName: Main
+  m_TableCollectionNameGuidString: fd290dea8f68e4510a79d6546c2f2c06
+  m_Entries:
+  - m_Id: 33074163712
+    m_Key: StartButton
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55056510976
+    m_Key: MultiButton
+    m_Metadata:
+      m_Items: []
+  - m_Id: 84139814912
+    m_Key: SettingsButton
+    m_Metadata:
+      m_Items: []
+  - m_Id: 134404354048
+    m_Key: ExitButton
+    m_Metadata:
+      m_Items: []
+  - m_Id: 365720011517952
+    m_Key: CancelText
+    m_Metadata:
+      m_Items: []
+  - m_Id: 365843508604928
+    m_Key: ConfirmText
+    m_Metadata:
+      m_Items: []
+  - m_Id: 366071104122880
+    m_Key: CreateText
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 5087650343507460096
+  references:
+    version: 2
+    RefIds:
+    - rid: 5087650343507460096
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1764594570470

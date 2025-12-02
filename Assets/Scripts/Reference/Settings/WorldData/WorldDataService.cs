@@ -9,7 +9,7 @@ namespace TheRavine.Base
     {
         private readonly ReactiveProperty<WorldData> _worldData;
         private readonly WorldManager _worldManager;
-        private readonly WorldService _worldService;
+        private readonly WorldFileService _worldService;
         private readonly IRavineLogger _logger;
         private readonly CompositeDisposable _disposables = new();
         
@@ -23,7 +23,7 @@ namespace TheRavine.Base
 
         public WorldDataService(
             WorldManager worldManager,
-            WorldService worldService,
+            WorldFileService worldService,
             IRavineLogger logger)
         {
             _worldManager = worldManager;

@@ -10,11 +10,15 @@ namespace TheRavine.ObjectControl
 
         public void Register(ObjectInfo info)
         {
-            if(info.ObjectPrefab == null)
+            try
+            {
+                data[info.PrefabID] = info;
+            }
+            catch
             {
                 UnityEngine.Debug.Log(info.ObjectName);
+                
             }
-            data[info.PrefabID] = info;
         }
 
         public ObjectInfo Get(int prefabID)

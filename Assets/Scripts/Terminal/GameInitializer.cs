@@ -25,6 +25,7 @@ public class GameInitializer : MonoBehaviour
         IRavineLogger logger = new RavineLogger(onMessageDisplayTerminal);
         ServiceLocator.Services.Register(logger);
 
+        terminal.gameObject.SetActive(true);
         terminal.Setup(logger);
 
         IAsyncPersistentStorage persistenceStorage = new EncryptedPlayerPrefsStorage();

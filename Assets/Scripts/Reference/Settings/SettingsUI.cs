@@ -4,7 +4,6 @@ using ZLinq;
 using TMPro;
 using R3;
 using Tayx.Graphy;
-using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Base
 {
@@ -33,11 +32,20 @@ namespace TheRavine.Base
             qualityDropdown.ClearOptions();
             qualityDropdown.AddOptions(QualitySettings.names.AsValueEnumerable().ToList());
             
-            qualityDropdown.onValueChanged.AddListener(OnQualityChanged);
-            shadowToggle.onValueChanged.AddListener(OnShadowsChanged);
-            joystickToggle.onValueChanged.AddListener(OnJoystickChanged);
-            particlesToggle.onValueChanged.AddListener(OnParticlesChanged);
-            profileToggle.onValueChanged.AddListener(OnProfilingChanged);
+            qualityDropdown.onValueChanged.AddListener(value => 
+                _settingsModel.ModifyGameSettings(s => s.qualityLevel = value));
+            
+            shadowToggle.onValueChanged.AddListener(value => 
+                _settingsModel.ModifyGameSettings(s => s.enableShadows = value));
+            
+            joystickToggle.onValueChanged.AddListener(value => 
+                _settingsModel.ModifyGameSettings(s => s.controlType = value ? ControlType.Mobile : ControlType.Personal));
+            
+            particlesToggle.onValueChanged.AddListener(value => 
+                _settingsModel.ModifyGameSettings(s => s.enableParticles = value));
+            
+            profileToggle.onValueChanged.AddListener(value => 
+                _settingsModel.ModifyGameSettings(s => s.enableProfiling = value));
         }
 
         private void BindToModel()
@@ -57,41 +65,6 @@ namespace TheRavine.Base
             
             QualitySettings.SetQualityLevel(settings.qualityLevel);
             _profilerComponent?.gameObject.SetActive(settings.enableProfiling);
-        }
-
-        private void OnQualityChanged(int value)
-        {
-            var settings = _settingsModel.GameSettings.CurrentValue.Clone();
-            settings.qualityLevel = value;
-            _settingsModel.UpdateGameSettings(settings);
-        }
-
-        private void OnShadowsChanged(bool value)
-        {
-            var settings = _settingsModel.GameSettings.CurrentValue.Clone();
-            settings.enableShadows = value;
-            _settingsModel.UpdateGameSettings(settings);
-        }
-
-        private void OnJoystickChanged(bool value)
-        {
-            var settings = _settingsModel.GameSettings.CurrentValue.Clone();
-            settings.controlType = value ? ControlType.Mobile : ControlType.Personal;
-            _settingsModel.UpdateGameSettings(settings);
-        }
-
-        private void OnParticlesChanged(bool value)
-        {
-            var settings = _settingsModel.GameSettings.CurrentValue.Clone();
-            settings.enableParticles = value;
-            _settingsModel.UpdateGameSettings(settings);
-        }
-
-        private void OnProfilingChanged(bool value)
-        {
-            var settings = _settingsModel.GameSettings.CurrentValue.Clone();
-            settings.enableProfiling = value;
-            _settingsModel.UpdateGameSettings(settings);
         }
 
         private void OnDestroy()

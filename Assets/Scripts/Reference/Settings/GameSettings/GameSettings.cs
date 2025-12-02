@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace TheRavine.Base
 {
     [System.Serializable]
@@ -10,7 +8,22 @@ namespace TheRavine.Base
         public bool enableParticles = true;
         public bool enableProfiling = false;
         public ControlType controlType = ControlType.Personal;
-        public GameSettings Clone() => JsonUtility.FromJson<GameSettings>(JsonUtility.ToJson(this));
+
+        public void CopyFrom(GameSettings other)
+        {
+            qualityLevel = other.qualityLevel;
+            enableShadows = other.enableShadows;
+            enableParticles = other.enableParticles;
+            enableProfiling = other.enableProfiling;
+            controlType = other.controlType;
+        }
+
+        public GameSettings Clone()
+        {
+            var clone = new GameSettings();
+            clone.CopyFrom(this);
+            return clone;
+        }
     }
 
     public enum ControlType

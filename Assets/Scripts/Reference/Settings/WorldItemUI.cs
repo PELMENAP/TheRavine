@@ -25,8 +25,8 @@ namespace TheRavine.Base
         private Action _onDeleteWorld;
         private Action _onEditSettings;
         private IRavineLogger logger;
-        private WorldService worldService;
-        public void Initialize(string worldName, Action onEnterWorld, Action onDeleteWorld, Action onEditSettings, IRavineLogger logger, WorldService worldService)
+        private WorldFileService worldService;
+        public void Initialize(string worldName, Action onEnterWorld, Action onDeleteWorld, Action onEditSettings, IRavineLogger logger, WorldFileService worldService)
         {
             this.logger = logger;
             this.worldService = worldService;
