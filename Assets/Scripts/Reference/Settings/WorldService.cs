@@ -3,12 +3,12 @@ using System.Collections.Generic;
 
 namespace TheRavine.Base
 {
-    public class WorldService
+    public class WorldFileService
     {
         private readonly WorldFileManager _dataMgr;
         private readonly WorldSettingsManager _settingsMgr;
 
-        public WorldService(
+        public WorldFileService(
             WorldFileManager dataManager,
             WorldSettingsManager settingsManager)
         {

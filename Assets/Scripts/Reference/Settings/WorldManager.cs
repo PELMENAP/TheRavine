@@ -10,7 +10,7 @@ namespace TheRavine.Base
 {
     public class WorldManager : IDisposable
     {
-        private readonly WorldService _worldService;
+        private readonly WorldFileService _worldService;
         private readonly IRavineLogger _logger;
         private readonly ReactiveProperty<string> _currentWorld;
         private readonly ReactiveProperty<bool> _isLoading;
@@ -24,7 +24,7 @@ namespace TheRavine.Base
         public Observable<bool> IsLoading { get; }
         public Observable<long> CacheVersion => _cacheVersion.AsObservable();
 
-        public WorldManager(WorldService worldService, IRavineLogger logger)
+        public WorldManager(WorldFileService worldService, IRavineLogger logger)
         {
             _worldService = worldService;
             _logger = logger;
@@ -97,9 +97,16 @@ namespace TheRavine.Base
                 await settingsModel.LoadWorldSettingsAsync(worldName);
                 
                 _currentWorld.Value = worldName;
-                
-                _logger.LogInfo($"Мир '{worldName}' загружен успешно");
-                return true;
+
+                SceneLaunchService sceneLaunchService = ServiceLocator.GetService<SceneLaunchService>();
+
+                if(sceneLaunchService.CanLaunch)
+                {
+                    sceneLaunchService.LaunchGame().Forget();
+                    _logger.LogInfo($"Мир '{worldName}' загружен успешно");
+                    return true;
+                }
+                return false;
             }
             catch (Exception ex)
             {

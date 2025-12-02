@@ -17,8 +17,8 @@ namespace TheRavine.Base
         private SettingsModel _settingsModel;
         private WorldDataService _worldDataService;
         private WorldManager _worldManager;
-        private WorldService _worldService;
-        private CompositeDisposable _disposables = new();
+        private WorldFileService _worldService;
+        private readonly CompositeDisposable _disposables = new();
         
         private readonly int[] _autosaveIntervals = { 0, 15, 30, 60, 120, 300 };
         private readonly string[] _autosaveLabels = { "Отключено", "15 сек", "30 сек", "1 мин", "2 мин", "5 мин" };
@@ -30,7 +30,7 @@ namespace TheRavine.Base
             _settingsModel = ServiceLocator.GetService<SettingsModel>();
             _worldDataService = ServiceLocator.GetService<WorldDataService>();
             _worldManager = ServiceLocator.GetService<WorldManager>();
-            _worldService = ServiceLocator.GetService<WorldService>();
+            _worldService = ServiceLocator.GetService<WorldFileService>();
             
             InitializeUI();
             BindToModel();
@@ -108,8 +108,8 @@ namespace TheRavine.Base
         {
             _currentEditingWorld = worldName;
             
-            var worldSettings = await LoadWorldSettingsForWorld(worldName);
-            _settingsModel.UpdateWorldSettings(worldSettings);
+            WorldSettings worldSettings = await LoadWorldSettingsForWorld(worldName);
+            _settingsModel.ModifyWorldSettings(s => s = worldSettings);
             
             worldSettingsPanel?.SetActive(true);
         }
@@ -169,7 +169,7 @@ namespace TheRavine.Base
 
         private async UniTask SaveWorldSettings(WorldSettings settings)
         {
-            _settingsModel.UpdateWorldSettings(settings);
+            _settingsModel.ModifyWorldSettings(s => s = settings);
             
             if (!string.IsNullOrEmpty(_currentEditingWorld))
             {
