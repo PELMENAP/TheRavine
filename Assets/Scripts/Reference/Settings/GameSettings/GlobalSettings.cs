@@ -1,7 +1,7 @@
 namespace TheRavine.Base
 {
     [System.Serializable]
-    public class GameSettings
+    public class GlobalSettings
     {
         public int qualityLevel = 2;
         public bool enableShadows = true;
@@ -9,7 +9,7 @@ namespace TheRavine.Base
         public bool enableProfiling = false;
         public ControlType controlType = ControlType.Personal;
 
-        public void CopyFrom(GameSettings other)
+        public void CopyFrom(GlobalSettings other)
         {
             qualityLevel = other.qualityLevel;
             enableShadows = other.enableShadows;
@@ -18,9 +18,9 @@ namespace TheRavine.Base
             controlType = other.controlType;
         }
 
-        public GameSettings Clone()
+        public GlobalSettings Clone()
         {
-            var clone = new GameSettings();
+            var clone = new GlobalSettings();
             clone.CopyFrom(this);
             return clone;
         }

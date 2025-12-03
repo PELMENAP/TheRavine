@@ -14,12 +14,12 @@ namespace TheRavine.Inventory
         [SerializeField] private InputActionReference enterToggleAction, quitToggleAction, selectSlot;
         [SerializeField] private PlayerInput input;
         private PlayerEntity playerData;
-        private GameSettings gameSettings;
+        private GlobalSettings gameSettings;
         public int ActiveCellIndex {get; private set;}
         private bool isInventoryActive;
 
         public event Action<int> OnActiveCellChanged;
-        public void RegisterInput(PlayerEntity playerData, GameSettings gameSettings)
+        public void RegisterInput(PlayerEntity playerData, GlobalSettings gameSettings)
         {
             enterToggleAction.action.performed += ToggleInventory;
             quitToggleAction.action.performed += ToggleInventory;

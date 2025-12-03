@@ -30,20 +30,20 @@ public class GameInitializer : MonoBehaviour
 
         IAsyncPersistentStorage persistenceStorage = new EncryptedPlayerPrefsStorage();
 
-        GameSettingsManager gameSettingsManager = new(persistenceStorage);
-        WorldFileManager worldFileManager = new(persistenceStorage);
-        WorldSettingsManager worldSettingsManager = new(persistenceStorage);
-        WorldService worldService = new(worldFileManager, worldSettingsManager);
+        GlobalSettingsRepository globalSettingsRepository = new(persistenceStorage);
+        WorldStateRepository worldStateRepository = new(persistenceStorage);
+        WorldConfigRepository WorldConfigRepository = new(persistenceStorage);
+        WorldStorage worldStorage = new(worldStateRepository, WorldConfigRepository);
 
-        ServiceLocator.Services.Register(worldService);
+        ServiceLocator.Services.Register(worldStorage);
 
-        WorldManager worldManager = new(worldService, logger);
-        SettingsModel settingsModel = new(gameSettingsManager, worldManager, worldService, logger);
-        WorldDataService worldDataService = new(worldManager, worldService, logger);
+        WorldRegistry worldRegistry = new(worldStorage, logger);
+        SettingsMediator settingsMediator = new(globalSettingsRepository, WorldConfigRepository, worldRegistry, logger);
+        WorldStatePersistence worldStatePersistence = new(worldStateRepository, worldRegistry , logger);
 
-        ServiceLocator.Services.Register(settingsModel);
-        ServiceLocator.Services.Register(worldManager);
-        ServiceLocator.Services.Register(worldDataService);
+        ServiceLocator.Services.Register(settingsMediator);
+        ServiceLocator.Services.Register(worldRegistry);
+        ServiceLocator.Services.Register(worldStatePersistence);
     }
 
     private void OnDisable()
@@ -54,9 +54,9 @@ public class GameInitializer : MonoBehaviour
 
     private void OnApplicationPause(bool pauseStatus)
     {
-        if (pauseStatus && ServiceLocator.Services.TryGet<WorldDataService>(out var worldDataService))
+        if (pauseStatus && ServiceLocator.Services.TryGet<WorldStatePersistence>(out var worldStatePersistence))
         {
-            worldDataService.SaveWorldDataAsync().Forget();
+            worldStatePersistence.SaveAsync().Forget();
         }
     }
 }

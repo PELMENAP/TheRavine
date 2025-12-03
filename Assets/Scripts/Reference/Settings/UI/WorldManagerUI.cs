@@ -21,13 +21,15 @@ namespace TheRavine.Base
         [SerializeField] private WorldSettingsUI settingsView;
         
         private IRavineLogger logger;
-        private WorldManager _worldManager;
-        private CompositeDisposable _disposables = new();
+        private WorldRegistry worldRegistry;
+        private WorldStorage worldStorage;
+        private readonly CompositeDisposable disposables = new();
 
         private void Start()
         {
-            _worldManager = ServiceLocator.GetService<WorldManager>();
+            worldRegistry = ServiceLocator.GetService<WorldRegistry>();
             logger = ServiceLocator.GetService<IRavineLogger>();
+            worldStorage = ServiceLocator.GetService<WorldStorage>();
             
             InitializeUI();
             BindToModel();
@@ -44,7 +46,7 @@ namespace TheRavine.Base
 
         private void BindToModel()
         {
-            _worldManager.AvailableWorlds.CollectionChanged += UpdateWorldsList;
+            worldRegistry.AvailableWorlds.CollectionChanged += UpdateWorldsList;
             
             UpdateWorldsList(default);
         }
@@ -53,7 +55,7 @@ namespace TheRavine.Base
         {
             ClearWorldsList();
             
-            foreach (var worldName in _worldManager.AvailableWorlds)
+            foreach (var worldName in worldRegistry.AvailableWorlds)
             {
                 CreateWorldItem(worldName);
             }
@@ -77,12 +79,12 @@ namespace TheRavine.Base
                 worldItemComponent.Initialize(worldName, 
                     () => OnEnterWorld(worldName),
                     () => OnDeleteWorld(worldName),
-                    () =>  OnEditWorldSettings(worldName).Forget(), logger, ServiceLocator.GetService<WorldFileService>());
+                    () =>  OnEditWorldSettings(worldName), logger, worldStorage);
             }
         }
         private async void OnEnterWorld(string worldName)
         {
-            bool success = await _worldManager.LoadWorldAsync(worldName);
+            bool success = await worldRegistry.LoadWorldAsync(worldName);
             if (success)
             {
                 logger.LogInfo($"Вошли в мир: {worldName}");
@@ -97,7 +99,7 @@ namespace TheRavine.Base
         {
             if (await ShowConfirmationDialog($"Удалить мир '{worldName}'?"))
             {
-                bool success = await _worldManager.DeleteWorldAsync(worldName);
+                bool success = await worldRegistry.DeleteWorldAsync(worldName);
                 if (success)
                 {
                     logger.LogInfo($"Мир удален: {worldName}");
@@ -109,11 +111,11 @@ namespace TheRavine.Base
             }
         }
 
-        private async UniTaskVoid OnEditWorldSettings(string worldName)
+        private void OnEditWorldSettings(string worldName)
         {
             if (settingsView != null)
             {
-                await settingsView.EditWorldSettings(worldName);
+                settingsView.EditWorld(worldName);
             }
             else
             {
@@ -136,18 +138,18 @@ namespace TheRavine.Base
                 return;
             }
 
-            if (_worldManager.AvailableWorlds.Contains(worldName))
+            if (worldRegistry.AvailableWorlds.Contains(worldName))
             {
                 logger.LogWarning($"Мир с именем '{worldName}' уже существует");
                 return;
             }
 
-            bool success = await _worldManager.CreateWorldAsync(worldName);
+            bool success = await worldRegistry.CreateWorldAsync(worldName);
             if (success)
             {
                 logger.LogInfo($"Мир создан: {worldName}");
                 ShowCreateWorldPanel(false);
-                OnEditWorldSettings(worldName).Forget();
+                OnEditWorldSettings(worldName);
             }
             else
             {
@@ -178,11 +180,11 @@ namespace TheRavine.Base
 
         private void OnDestroy()
         {
-            _disposables?.Dispose();
+            disposables?.Dispose();
             
-            if (_worldManager != null)
+            if (worldRegistry != null)
             {
-                _worldManager.AvailableWorlds.CollectionChanged -= UpdateWorldsList;
+                worldRegistry.AvailableWorlds.CollectionChanged -= UpdateWorldsList;
             }
         }
     }

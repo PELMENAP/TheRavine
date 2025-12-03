@@ -3,7 +3,7 @@ using UnityEngine;
 namespace TheRavine.Base
 {
     [System.Serializable]
-    public struct WorldData
+    public struct WorldState
     {
         public int seed;
         public Vec3 playerPosition;
@@ -12,9 +12,9 @@ namespace TheRavine.Base
         public bool gameWon;
         public long lastSaveTime;
 
-        public WorldData Clone()
+        public WorldState Clone()
         {
-            return new WorldData
+            return new WorldState
             {
                 seed = this.seed,
                 playerPosition = this.playerPosition,

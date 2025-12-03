@@ -34,19 +34,19 @@ namespace TheRavine.EntityControl
         private MovementComponent movementComponent;
         private EventBus entityEventBus;
         private AimComponent aimComponent;
-        private GameSettings gameSettings;
+        private GlobalSettings globalSettings;
         private AEntity playerEntity;
         private readonly DoubleTapDetector forwardTap = new();
         public void SetInitialValues(AEntity entity, IRavineLogger logger)
         {
             playerEntity = entity;
-            gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
+            globalSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
             this.logger = logger;
             
 
             playerAnimator.SetUpAsync().Forget();
 
-            currentController = gameSettings.controlType switch
+            currentController = globalSettings.controlType switch
             {
                 ControlType.Personal => new PCController(Movement, RightClick, transform),
                 ControlType.Mobile => new JoistickController(joystick),
@@ -194,7 +194,7 @@ namespace TheRavine.EntityControl
             
             float factMouseFactor = 1f;
 
-            switch (gameSettings.controlType)
+            switch (globalSettings.controlType)
             {
                 case ControlType.Personal:
                     factMouseFactor = 1f;

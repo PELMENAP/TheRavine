@@ -12,10 +12,10 @@ public class ActivateTextField : MonoBehaviour
     [SerializeField] private InputActionReference EnterRef;
     [SerializeField] private InputActionReference OutRef;
 
-    private GameSettings gameSettings;
+    private GlobalSettings gameSettings;
     private void Start()
     {
-        gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
+        gameSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
         EnterRef.action.performed += ChangeTerminalState;
         OutRef.action.performed += ChangeTerminalState;
         window.SetActive(false);
