@@ -28,17 +28,17 @@ namespace TheRavine.Inventory
         private ObjectSystem objectSystem;
         private InfoManager infoManager;
         private EncryptedPlayerPrefsStorage encryptedPlayerPrefsStorage;
-        private WorldManager worldManager;
+        private WorldRegistry worldRegistry;
         public bool HasItem(InventoryItemInfo info) => eventDrivenInventoryProxy.HasItem(infoManager.GetItemType(info));
         public void SetUp(ISetAble.Callback callback)
         {
-            worldManager = ServiceLocator.GetService<WorldManager>();
+            worldRegistry = ServiceLocator.GetService<WorldRegistry>();
             generator = ServiceLocator.GetService<MapGenerator>();
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
             encryptedPlayerPrefsStorage = new EncryptedPlayerPrefsStorage();
 
             var playerData = ServiceLocator.GetService<PlayerModelView>().PlayerEntity;
-            var gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
+            var gameSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
             inventoryInputHandler.RegisterInput(playerData, gameSettings);
 
             ServiceLocator.WhenPlayersNonEmpty()
@@ -66,7 +66,7 @@ namespace TheRavine.Inventory
 
         private async UniTaskVoid OnInventoryDataLoaded(PlayerEntity playerData)
         {
-            WorldInfo worldInfo = await worldManager.GetWorldInfoAsync(worldManager.CurrentWorldName);
+            WorldInfo worldInfo = await worldRegistry.GetWorldInfoAsync(worldRegistry.CurrentWorldName);
             if (worldInfo.CycleCount == 0) tester.FillSlots(filling);
             else
             {

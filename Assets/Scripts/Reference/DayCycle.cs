@@ -30,11 +30,11 @@ namespace TheRavine.Base
         private float t = 0f;
 
         private CancellationTokenSource cts;
-        private GameSettings gameSettings;
+        private GlobalSettings gameSettings;
 
         public void SetUp(ISetAble.Callback callback)
         {
-            gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
+            gameSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
             sun = GetComponent<Light>();
             cts = new CancellationTokenSource();
 

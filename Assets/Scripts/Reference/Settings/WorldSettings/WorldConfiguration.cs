@@ -5,7 +5,7 @@ using MemoryPack;
 namespace TheRavine.Base
 {
     [MemoryPackable]
-    public partial class WorldSettings : IEquatable<WorldSettings>
+    public partial class WorldConfiguration : IEquatable<WorldConfiguration>
     {
         public string worldName = "New World";
         public int autosaveInterval = 120;
@@ -19,14 +19,14 @@ namespace TheRavine.Base
         public long lastModifiedTime;
         public string version = "1.0";
 
-        public WorldSettings()
+        public WorldConfiguration()
         {
             var now = DateTimeOffset.Now.ToUnixTimeSeconds();
             createdTime = now;
             lastModifiedTime = now;
         }
 
-        public void CopyFrom(WorldSettings other)
+        public void CopyFrom(WorldConfiguration other)
         {
             worldName = other.worldName;
             autosaveInterval = other.autosaveInterval;
@@ -41,9 +41,9 @@ namespace TheRavine.Base
             lastModifiedTime = DateTimeOffset.Now.ToUnixTimeSeconds();
         }
 
-        public WorldSettings Clone()
+        public WorldConfiguration Clone()
         {
-            var clone = new WorldSettings();
+            var clone = new WorldConfiguration();
             clone.CopyFrom(this);
             return clone;
         }
@@ -70,7 +70,7 @@ namespace TheRavine.Base
             lastModifiedTime = DateTimeOffset.Now.ToUnixTimeSeconds();
         }
 
-        public bool Equals(WorldSettings other)
+        public bool Equals(WorldConfiguration other)
         {
             if (other == null) return false;
             
@@ -86,7 +86,7 @@ namespace TheRavine.Base
 
         public override bool Equals(object obj)
         {
-            return Equals(obj as WorldSettings);
+            return Equals(obj as WorldConfiguration);
         }
 
         public override int GetHashCode()
@@ -95,18 +95,18 @@ namespace TheRavine.Base
                                    maxEntityCount, difficulty);
         }
 
-        public static bool operator ==(WorldSettings left, WorldSettings right)
+        public static bool operator ==(WorldConfiguration left, WorldConfiguration right)
         {
             return Equals(left, right);
         }
 
-        public static bool operator !=(WorldSettings left, WorldSettings right)
+        public static bool operator !=(WorldConfiguration left, WorldConfiguration right)
         {
             return !Equals(left, right);
         }
     }
 
-    [System.Serializable]
+    [Serializable]
     public enum DifficultyLevel
     {
         Easy = 0,

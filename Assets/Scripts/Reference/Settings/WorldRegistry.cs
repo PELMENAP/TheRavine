@@ -8,13 +8,13 @@ using UnityEngine;
 
 namespace TheRavine.Base
 {
-    public class WorldManager : IDisposable
+    public class WorldRegistry : IDisposable
     {
-        private readonly WorldFileService _worldService;
+        private readonly WorldStorage worldStorage;
         private readonly IRavineLogger _logger;
         private readonly ReactiveProperty<string> _currentWorld;
         private readonly ReactiveProperty<bool> _isLoading;
-        private readonly CompositeDisposable _disposables = new();
+        private readonly CompositeDisposable disposables = new();
         private readonly Dictionary<string, WorldInfo> _worldInfoCache = new();
         private readonly ReactiveProperty<long> _cacheVersion = new(0);
 
@@ -24,9 +24,9 @@ namespace TheRavine.Base
         public Observable<bool> IsLoading { get; }
         public Observable<long> CacheVersion => _cacheVersion.AsObservable();
 
-        public WorldManager(WorldFileService worldService, IRavineLogger logger)
+        public WorldRegistry(WorldStorage worldService, IRavineLogger logger)
         {
-            _worldService = worldService;
+            worldStorage = worldService;
             _logger = logger;
             
             _currentWorld = new ReactiveProperty<string>();
@@ -39,7 +39,7 @@ namespace TheRavine.Base
             RefreshWorldListAsync().Forget();
         }
 
-        public async UniTask<bool> CreateWorldAsync(string worldName, WorldSettings customSettings = null)
+        public async UniTask<bool> CreateWorldAsync(string worldName, WorldConfiguration customSettings = null)
         {
             if (string.IsNullOrWhiteSpace(worldName))
             {
@@ -55,19 +55,19 @@ namespace TheRavine.Base
 
             _isLoading.Value = true;
             
-                var worldData = new WorldData
+                var worldData = new WorldState
                 {
                     seed = UnityEngine.Random.Range(0, int.MaxValue),
                     lastSaveTime = DateTimeOffset.Now.ToUnixTimeSeconds()
                 };
 
-                var worldSettings = customSettings?.Clone() ?? new WorldSettings();
+                var worldSettings = customSettings?.Clone() ?? new WorldConfiguration();
                 worldSettings.worldName = worldName;
                 worldSettings.createdTime = DateTimeOffset.Now.ToUnixTimeSeconds();
                 worldSettings.lastModifiedTime = worldSettings.createdTime;
                 worldSettings.Validate();
 
-                await _worldService.SaveFullAsync(worldName, worldData, worldSettings);
+                await worldStorage.SaveFullAsync(worldName, worldData, worldSettings);
 
                 AvailableWorlds.Add(worldName);
                 InvalidateCache(worldName);
@@ -88,13 +88,13 @@ namespace TheRavine.Base
             
             try
             {
-                var worldDataService = ServiceLocator.GetService<WorldDataService>();
-                var settingsModel = ServiceLocator.GetService<SettingsModel>();
+                var worldDataService = ServiceLocator.GetService<WorldStatePersistence>();
+                var settingsModel = ServiceLocator.GetService<SettingsMediator>();
                 
-                var (worldData, worldSettings) = await _worldService.LoadFullAsync(worldName);
+                var (worldData, worldSettings) = await worldStorage.LoadFullAsync(worldName);
             
-                await worldDataService.LoadWorldDataAsync(worldName);
-                await settingsModel.LoadWorldSettingsAsync(worldName);
+                await worldDataService.LoadAsync(worldName);
+                await settingsModel.LoadWorldConfigAsync(worldName);
                 
                 _currentWorld.Value = worldName;
 
@@ -131,7 +131,7 @@ namespace TheRavine.Base
             
             try
             {
-                await _worldService.DeleteAsync(worldName);
+                await worldStorage.DeleteAsync(worldName);
                 
                 AvailableWorlds.Remove(worldName);
                 RemoveFromCache(worldName);
@@ -167,13 +167,13 @@ namespace TheRavine.Base
             
             try
             {
-                var (worldData, worldSettings) = await _worldService.LoadFullAsync(oldName);
+                var (worldData, worldSettings) = await worldStorage.LoadFullAsync(oldName);
                 
                 worldSettings.worldName = newName;
                 worldSettings.lastModifiedTime = DateTimeOffset.Now.ToUnixTimeSeconds();
                 
-                await _worldService.SaveFullAsync(newName, worldData, worldSettings);
-                await _worldService.DeleteAsync(oldName);
+                await worldStorage.SaveFullAsync(newName, worldData, worldSettings);
+                await worldStorage.DeleteAsync(oldName);
                 
                 var index = AvailableWorlds.IndexOf(oldName);
                 AvailableWorlds.RemoveAt(index);
@@ -213,7 +213,7 @@ namespace TheRavine.Base
             
             try
             {
-                var (sourceData, sourceSettings) = await _worldService.LoadFullAsync(sourceName);
+                var (sourceData, sourceSettings) = await worldStorage.LoadFullAsync(sourceName);
                 
                 var newData = sourceData.Clone();
                 newData.seed = UnityEngine.Random.Range(0, int.MaxValue);
@@ -224,7 +224,7 @@ namespace TheRavine.Base
                 newSettings.createdTime = DateTimeOffset.Now.ToUnixTimeSeconds();
                 newSettings.lastModifiedTime = newSettings.createdTime;
                 
-                await _worldService.SaveFullAsync(newName, newData, newSettings);
+                await worldStorage.SaveFullAsync(newName, newData, newSettings);
                 
                 AvailableWorlds.Add(newName);
                 InvalidateCache(newName);
@@ -249,14 +249,14 @@ namespace TheRavine.Base
             
             try
             {
-                var worlds = await _worldService.GetAllWorldIdsAsync();
+                var worlds = await worldStorage.GetAllWorldIdsAsync();
                 var validWorlds = new List<string>();
                 
                 foreach (var world in worlds)
                 {
                     try
                     {
-                        if (await _worldService.ExistsAsync(world))
+                        if (await worldStorage.ExistsAsync(world))
                         {
                             validWorlds.Add(world);
                         }
@@ -293,7 +293,7 @@ namespace TheRavine.Base
 
             try
             {
-                var (worldData, worldSettings) = await _worldService.LoadFullAsync(worldName);
+                var (worldData, worldSettings) = await worldStorage.LoadFullAsync(worldName);
 
                 var info = new WorldInfo
                 {
@@ -353,7 +353,7 @@ namespace TheRavine.Base
 
         public void Dispose()
         {
-            _disposables?.Dispose();
+            disposables?.Dispose();
             _currentWorld?.Dispose();
             _isLoading?.Dispose();
             _cacheVersion?.Dispose();
@@ -363,7 +363,7 @@ namespace TheRavine.Base
 
         public async UniTask<bool> ExistsAsync(string worldId)
         {
-            return await _worldService.ExistsAsync(worldId);
+            return await worldStorage.ExistsAsync(worldId);
         }
     }
     [Serializable]
@@ -375,7 +375,7 @@ namespace TheRavine.Base
         public DateTimeOffset CreatedTime { get; set; }
         public int CycleCount { get; set; }
         public bool IsGameWon { get; set; }
-        public WorldSettings Settings { get; set; }
+        public WorldConfiguration Settings { get; set; }
         public bool IsCurrentWorld { get; set; }
         
         public string GetDisplayName()

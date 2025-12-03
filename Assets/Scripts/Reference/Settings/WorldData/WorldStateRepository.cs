@@ -4,18 +4,18 @@ using System.Collections.Generic;
 
 namespace TheRavine.Base
 {
-    public class WorldFileManager : IFileManager<string, WorldData>
+    public class WorldStateRepository : IFileManager<string, WorldState>
     {
         private readonly IAsyncPersistentStorage _storage;
         private const string WorldsListKey = "worlds_list";
         private const string WorldKeyPrefix  = "world_data_";
 
-        public WorldFileManager(IAsyncPersistentStorage storage)
+        public WorldStateRepository(IAsyncPersistentStorage storage)
         {
             _storage = storage;
         }
 
-        public async UniTask SaveAsync(string worldId, WorldData data)
+        public async UniTask SaveAsync(string worldId, WorldState data)
         {
             string key = WorldKeyPrefix + worldId;
             await _storage.SaveAsync(key, data);
@@ -28,10 +28,10 @@ namespace TheRavine.Base
             }
         }
 
-        public async UniTask<WorldData> LoadAsync(string worldId)
+        public async UniTask<WorldState> LoadAsync(string worldId)
         {
             string key = WorldKeyPrefix + worldId;
-            return await _storage.LoadAsync<WorldData>(key);
+            return await _storage.LoadAsync<WorldState>(key);
         }
 
         public async UniTask<bool> ExistsAsync(string worldId)

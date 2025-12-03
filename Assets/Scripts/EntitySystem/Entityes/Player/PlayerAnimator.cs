@@ -13,12 +13,12 @@ namespace TheRavine.EntityControl
         private static readonly int HorizontalHash = Animator.StringToHash("Horizontal");
         private static readonly int VerticalHash = Animator.StringToHash("Vertical");
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
-        private GameSettings gameSettings;
+        private GlobalSettings globalSettings;
 
         private void Start()
         {
             defaultAnimator ??= GetComponent<Animator>();
-            gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
+            globalSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
         }
         
         public async UniTask SetUpAsync()

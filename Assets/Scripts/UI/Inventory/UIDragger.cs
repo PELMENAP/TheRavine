@@ -26,17 +26,17 @@ namespace TheRavine.Inventory
         private readonly List<RaycastResult> results = new();
         private PointerEventData eventData;
         private UIInventorySlot lastSlot;
-        private GameSettings gameSettings;
+        private GlobalSettings globalSettings;
         private InventoryModel inventoryModel;
         public void SetUp(InventoryModel inventoryModel)
         {
             this.inventoryModel = inventoryModel;
-            gameSettings = ServiceLocator.GetService<SettingsModel>().GameSettings.CurrentValue;
+            globalSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
             eventSystem = EventSystem.current;
             eventData = new PointerEventData(eventSystem);
             mouse = Mouse.current;
 
-            switch (gameSettings.controlType)
+            switch (globalSettings.controlType)
             {
                 case ControlType.Personal:
                     leftclick.action.performed += OnDragPC;
@@ -152,7 +152,7 @@ namespace TheRavine.Inventory
 
         public void BreakUp()
         {
-            switch (gameSettings.controlType)
+            switch (globalSettings.controlType)
             {
                 case ControlType.Personal:
                     leftclick.action.performed -= OnDragPC;
