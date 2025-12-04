@@ -5,7 +5,7 @@ using System;
 using TheRavine.Base;
 public class GameInitializer : MonoBehaviour
 {
-    [SerializeField] private bool initializeOnAwake = true;
+    [SerializeField] private bool initializeOnAwake = true, clearAllPlayerPrefs;
     [SerializeField] private Terminal terminal;
     private Action<string> onMessageDisplayTerminal;
 
@@ -13,6 +13,9 @@ public class GameInitializer : MonoBehaviour
     {
         ServiceLocator.ClearAll();
         DontDestroyOnLoad(this);
+        
+        if(clearAllPlayerPrefs)
+            PlayerPrefs.DeleteAll();
 
         if (initializeOnAwake)
             InitializeServices();

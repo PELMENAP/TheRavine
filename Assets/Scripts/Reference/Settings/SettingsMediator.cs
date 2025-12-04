@@ -1,6 +1,5 @@
 using R3;
 using System;
-using System.Threading;
 using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Base
@@ -16,11 +15,10 @@ namespace TheRavine.Base
         private readonly ReactiveProperty<WorldConfiguration> worldConfiguration;
         private readonly CompositeDisposable disposables = new();
 
-        private CancellationTokenSource globalSaveCts, worldSaveCts;
-        private const float SaveDebounceTime = 0.5f;
-
         public ReadOnlyReactiveProperty<GlobalSettings> Global { get; }
         public ReadOnlyReactiveProperty<WorldConfiguration> WorldConfig { get; }
+
+        private string _currentEditingWorldId;
 
         public SettingsMediator(
             GlobalSettingsRepository globalRepo,
@@ -42,44 +40,12 @@ namespace TheRavine.Base
             SubscribeToChanges();
             LoadInitialAsync().Forget();
         }
-
-        private void SubscribeToChanges()
-        {
-            globalSettings
-                .Skip(1)
-                .Subscribe(_ => DebouncedSaveGlobal())
-                .AddTo(disposables);
-
-            worldConfiguration
-                .Skip(1)
-                .Subscribe(_ => DebouncedSaveWorld())
-                .AddTo(disposables);
-        }
-
-        public void UpdateGlobal(Action<GlobalSettings> modifier)
-        {
-            if (modifier == null) return;
-
-            var settings = globalSettings.Value;
-            modifier(settings);
-            globalSettings.ForceNotify();
-        }
-
-        public void UpdateWorldConfig(Action<WorldConfiguration> modifier)
-        {
-            if (modifier == null) return;
-
-            var settings = worldConfiguration.Value;
-            modifier(settings);
-            worldConfiguration.ForceNotify();
-        }
-
         public async UniTask LoadWorldConfigAsync(string worldId)
         {
             if (string.IsNullOrEmpty(worldId)) return;
-
             try
             {
+                _currentEditingWorldId = worldId;
                 WorldConfiguration config = await worldConfigRepository.LoadAsync(worldId);
                 worldConfiguration.Value = config;
             }
@@ -88,6 +54,54 @@ namespace TheRavine.Base
                 _logger.LogError($"Ошибка загрузки конфигурации мира {worldId}: {ex.Message}");
                 worldConfiguration.Value = new WorldConfiguration { worldName = worldId };
             }
+        }
+
+        private async UniTask SaveWorldDelayedAsync()
+        {
+            var worldId = _currentEditingWorldId ?? worldRegistry.CurrentWorldName;
+            if (string.IsNullOrEmpty(worldId)) return;
+
+            try
+            {
+                await worldConfigRepository.SaveAsync(worldId, worldConfiguration.Value);
+                _logger.LogInfo($"Конфигурация мира {worldId} сохранена");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Ошибка сохранения конфигурации мира: {ex.Message}");
+            }
+        }
+
+        private void SubscribeToChanges()
+        {
+            globalSettings
+                .Skip(1)
+                .Subscribe(_ => SaveGlobalDelayedAsync().Forget())
+                .AddTo(disposables);
+
+            worldConfiguration
+                .Skip(1)
+                .Subscribe(_ => SaveWorldDelayedAsync().Forget())
+                .AddTo(disposables);
+        }
+
+        public void UpdateGlobal(Action<GlobalSettings> modifier)
+        {
+            if (modifier == null) return;
+
+            var settings = globalSettings.Value.Clone();
+            modifier(settings);
+            globalSettings.Value = settings;
+
+        }
+
+        public void UpdateWorldConfig(Action<WorldConfiguration> modifier)
+        {
+            if (modifier == null) return;
+
+            var settings = worldConfiguration.Value.Clone();
+            modifier(settings);
+            worldConfiguration.Value = settings;
         }
 
         public async UniTask ResetToDefaultsAsync()
@@ -126,26 +140,8 @@ namespace TheRavine.Base
                 _logger.LogError($"Ошибка начальной загрузки: {ex.Message}");
             }
         }
-
-        private void DebouncedSaveGlobal()
+        private async UniTask SaveGlobalDelayedAsync()
         {
-            globalSaveCts?.Cancel();
-            globalSaveCts = new CancellationTokenSource();
-            SaveGlobalDelayedAsync(globalSaveCts.Token).Forget();
-        }
-
-        private void DebouncedSaveWorld()
-        {
-            worldSaveCts?.Cancel();
-            worldSaveCts = new CancellationTokenSource();
-            SaveWorldDelayedAsync(worldSaveCts.Token).Forget();
-        }
-
-        private async UniTask SaveGlobalDelayedAsync(CancellationToken ct)
-        {
-            await UniTask.Delay(TimeSpan.FromSeconds(SaveDebounceTime), cancellationToken: ct);
-            if (ct.IsCancellationRequested) return;
-
             try
             {
                 await globalSettingsRepository.SaveAsync(globalSettings.Value);
@@ -156,30 +152,8 @@ namespace TheRavine.Base
             }
         }
 
-        private async UniTask SaveWorldDelayedAsync(CancellationToken ct)
-        {
-            await UniTask.Delay(TimeSpan.FromSeconds(SaveDebounceTime), cancellationToken: ct);
-            if (ct.IsCancellationRequested) return;
-
-            var worldId = worldRegistry.CurrentWorldName;
-            if (string.IsNullOrEmpty(worldId)) return;
-
-            try
-            {
-                await worldConfigRepository.SaveAsync(worldId, worldConfiguration.Value);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Ошибка сохранения конфигурации мира: {ex.Message}");
-            }
-        }
-
         public void Dispose()
         {
-            globalSaveCts?.Cancel();
-            globalSaveCts?.Dispose();
-            worldSaveCts?.Cancel();
-            worldSaveCts?.Dispose();
             disposables?.Dispose();
             globalSettings?.Dispose();
             worldConfiguration?.Dispose();

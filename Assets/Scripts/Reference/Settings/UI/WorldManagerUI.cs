@@ -14,6 +14,7 @@ namespace TheRavine.Base
         [SerializeField] private Transform worldsContainer;
         [SerializeField] private GameObject worldItemPrefab;
         [SerializeField] private Button createWorldButton, confirmCreateWorldButton, cancelCreateWorldButton;
+        [SerializeField] private Button backToWorldList;
         [SerializeField] private TMP_InputField newWorldNameInput;
         [SerializeField] private GameObject createWorldPanel, chooseWorldPanel;
         
@@ -40,6 +41,7 @@ namespace TheRavine.Base
             createWorldButton.onClick.AddListener(OnCreateWorldButtonClick);
             confirmCreateWorldButton.onClick.AddListener(OnConfirmCreateWorld);
             cancelCreateWorldButton.onClick.AddListener(OnCancelCreateWorld);
+            backToWorldList.onClick.AddListener(OnEndEditWorld);
             createWorldPanel?.SetActive(false);
             chooseWorldPanel?.SetActive(true);
         }
@@ -157,6 +159,11 @@ namespace TheRavine.Base
             }
         }
 
+        public void OnEndEditWorld()
+        {
+            ShowCreateWorldPanel(false);
+            RefreshWorldsList();
+        }
         public void OnCancelCreateWorld()
         {
             ShowCreateWorldPanel(false);

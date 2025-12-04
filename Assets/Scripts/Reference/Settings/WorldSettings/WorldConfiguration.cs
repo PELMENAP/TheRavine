@@ -12,8 +12,8 @@ namespace TheRavine.Base
         public float timeScale = 1.0f;
         public int maxEntityCount = 1000;
         public int maxParticleCount = 500;
-        public bool enableDebugMode = false;
-        public bool enableCheats = false;
+        public bool generateStructures = false;
+        public bool generateRivers = false;
         public DifficultyLevel difficulty = DifficultyLevel.Normal;
         public long createdTime;
         public long lastModifiedTime;
@@ -33,8 +33,8 @@ namespace TheRavine.Base
             timeScale = other.timeScale;
             maxEntityCount = other.maxEntityCount;
             maxParticleCount = other.maxParticleCount;
-            enableDebugMode = other.enableDebugMode;
-            enableCheats = other.enableCheats;
+            generateStructures = other.generateStructures;
+            generateRivers = other.generateRivers;
             difficulty = other.difficulty;
             version = other.version;
             createdTime = other.createdTime;
@@ -79,8 +79,8 @@ namespace TheRavine.Base
                    Mathf.Approximately(timeScale, other.timeScale) &&
                    maxEntityCount == other.maxEntityCount &&
                    maxParticleCount == other.maxParticleCount &&
-                   enableDebugMode == other.enableDebugMode &&
-                   enableCheats == other.enableCheats &&
+                   generateStructures == other.generateStructures &&
+                   generateRivers == other.generateRivers &&
                    difficulty == other.difficulty;
         }
 
