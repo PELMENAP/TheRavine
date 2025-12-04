@@ -14,15 +14,14 @@ namespace TheRavine.Base
         [SerializeField] private TMP_Dropdown autosaveDropdown;
         [SerializeField] private TMP_Dropdown difficultyDropdown;
         [SerializeField] private TMP_InputField timeScaleInput, maxEntityCountInput;
-        [SerializeField] private Toggle debugModeToggle, cheatsToggle;
-        [SerializeField] private TextMeshProUGUI worldNameText;
+        [SerializeField] private Toggle generateStructures, generateRivers;
+        [SerializeField] private TMP_InputField worldNameText;
         [SerializeField] private GameObject panel;
 
         private readonly int[] _autosaveIntervals = { 0, 15, 30, 60, 120, 300 };
         private readonly string[] _autosaveLabels = 
             { "Отключено", "15 сек", "30 сек", "1 мин", "2 мин", "5 мин" };
 
-        private string _editingWorldId;
         private WorldRegistry _registry;
         private WorldStatePersistence _persistence;
 
@@ -56,6 +55,12 @@ namespace TheRavine.Base
 
         private void SetupInputFields()
         {
+            worldNameText.onValueChanged.AddListener(value =>
+            {
+                Mediator.UpdateWorldConfig(c => 
+                    c.worldName = value);
+            });
+
             timeScaleInput.onValueChanged.AddListener(value =>
             {
                 if (float.TryParse(value, out float scale))
@@ -91,11 +96,11 @@ namespace TheRavine.Base
 
         private void SetupToggles()
         {
-            debugModeToggle.onValueChanged.AddListener(value =>
-                Mediator.UpdateWorldConfig(c => c.enableDebugMode = value));
+            generateStructures.onValueChanged.AddListener(value =>
+                Mediator.UpdateWorldConfig(c => c.generateStructures = value));
 
-            cheatsToggle.onValueChanged.AddListener(value =>
-                Mediator.UpdateWorldConfig(c => c.enableCheats = value));
+            generateRivers.onValueChanged.AddListener(value =>
+                Mediator.UpdateWorldConfig(c => c.generateRivers = value));
         }
 
         private void OnAutosaveChanged(int index)
@@ -118,11 +123,8 @@ namespace TheRavine.Base
         protected override void UpdateView(WorldConfiguration config)
         {
             if (config == null) return;
-
-            Debug.Log(config.worldName); // имя меняется
-            Debug.Log(config.autosaveInterval); // интервал и другие парамерты не меняются
-
             worldNameText.text = config.worldName;
+
 
             int autosaveIndex = Array.IndexOf(_autosaveIntervals, config.autosaveInterval);
             autosaveDropdown.SetValueWithoutNotify(Mathf.Max(0, autosaveIndex));
@@ -130,24 +132,30 @@ namespace TheRavine.Base
             timeScaleInput.SetTextWithoutNotify(config.timeScale.ToString("F2"));
             maxEntityCountInput.SetTextWithoutNotify(config.maxEntityCount.ToString());
             difficultyDropdown.SetValueWithoutNotify((int)config.difficulty);
-            debugModeToggle.SetIsOnWithoutNotify(config.enableDebugMode);
-            cheatsToggle.SetIsOnWithoutNotify(config.enableCheats);
+            generateStructures.SetIsOnWithoutNotify(config.generateStructures);
+            generateRivers.SetIsOnWithoutNotify(config.generateRivers);
         }
 
         private void OnActiveWorldChanged(string worldId)
         {
             var hasWorld = !string.IsNullOrEmpty(worldId);
             panel?.SetActive(hasWorld);
-
-            if (!hasWorld)
-                _editingWorldId = null;
         }
 
-        public void EditWorld(string worldId)
+        public async void EditWorld(string worldId)
         {
-            _editingWorldId = worldId;
-            Mediator.LoadWorldConfigAsync(worldId).Forget();
-            panel?.SetActive(true);
-        }
+            if (string.IsNullOrEmpty(worldId)) return;
+            
+            
+            try
+            {
+                await Mediator.LoadWorldConfigAsync(worldId);
+                panel?.SetActive(true);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Failed to edit world {worldId}: {ex.Message}");
+            }
+        }   
     }
 }

@@ -30,8 +30,6 @@ namespace TheRavine.Base
             _intervalSeconds
                 .Subscribe(interval => RestartTimer(interval))
                 .AddTo(disposables);
-
-            RestartTimer(initialInterval);
         }
 
         public void MarkDirty() => _isDirty.Value = true;

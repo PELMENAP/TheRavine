@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using ZLinq;
 using Cysharp.Threading.Tasks;
 using R3;
 using ObservableCollections;
@@ -270,7 +270,7 @@ namespace TheRavine.Base
                 AvailableWorlds.Clear();
                 ClearCache();
                 
-                foreach (var world in validWorlds.OrderBy(x => x))
+                foreach (var world in validWorlds.AsValueEnumerable().OrderBy(x => x))
                 {
                     AvailableWorlds.Add(world);
                 }
@@ -330,7 +330,7 @@ namespace TheRavine.Base
                     worldsInfo.Add(info);
             }
             
-            return worldsInfo.OrderByDescending(x => x.LastSaveTime).ToList();
+            return worldsInfo.AsValueEnumerable().OrderByDescending(x => x.LastSaveTime).ToList();
         }
 
         private void InvalidateCache(string worldName)
