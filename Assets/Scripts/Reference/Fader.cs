@@ -9,8 +9,8 @@ public class FaderOnTransit : MonoBehaviour
 {
     private const string Fader_path = "Objects/Fader";
 
-    [SerializeField] private RawImage fadeImage;
-    [SerializeField] private TextMeshProUGUI loadingText;
+    [SerializeField] private Image[] fadeImage;
+    [SerializeField] private TextMeshProUGUI loadingText, tipText;
     [SerializeField] private Camera _camera;
     
     private static FaderOnTransit _instance;
@@ -37,13 +37,14 @@ public class FaderOnTransit : MonoBehaviour
 
     private void Awake()
     {
-        if (fadeImage != null)
-        {
-            var color = fadeImage.color;
-            color.a = 0f;
-            fadeImage.color = color;
-            fadeImage.raycastTarget = false;
-        }
+        for(int i = 0; i < fadeImage.Length; i++)
+            if (fadeImage[i] != null)
+            {
+                var color = fadeImage[i].color;
+                color.a = 0f;
+                fadeImage[i].color = color;
+                fadeImage[i].raycastTarget = false;
+            }
     }
 
     private void OnDestroy()
@@ -66,18 +67,24 @@ public class FaderOnTransit : MonoBehaviour
             _currentMotionHandle.Cancel();
         }
 
-        _currentMotionHandle = LMotion.Create(fadeImage.color.a, 1f, 2f)
-            .WithOnComplete(() => Handle_FadeInComplete())
-            .BindToColorA(fadeImage);
+        for(int i = 0; i < fadeImage.Length; i++)
+        {
+            _currentMotionHandle = LMotion.Create(fadeImage[i].color.a, 1f, 2f)
+                .WithOnComplete(() => Handle_FadeInComplete())
+                .BindToColorA(fadeImage[i]);
+        }
     }
 
     public void FadeOut(Action fadedOutCallBack)
     {
         if (IsFading) return;
         
-        var color = fadeImage.color;
-        color.a = 1f;
-        fadeImage.color = color;
+        for(int i = 0; i < fadeImage.Length; i++)
+        {
+            var color = fadeImage[i].color;
+            color.a = 1f;
+            fadeImage[i].color = color;
+        }
 
 
         IsFading = true;
@@ -87,10 +94,13 @@ public class FaderOnTransit : MonoBehaviour
         {
             _currentMotionHandle.Cancel();
         }
-
-        _currentMotionHandle = LMotion.Create(fadeImage.color.a, 0f, 2f)
-            .WithOnComplete(() => Handle_FadeOutComplete())
-            .BindToColorA(fadeImage);
+        
+        for(int i = 0; i < fadeImage.Length; i++)
+        {
+            _currentMotionHandle = LMotion.Create(fadeImage[i].color.a, 0f, 2f)
+                .WithOnComplete(() => Handle_FadeOutComplete())
+                .BindToColorA(fadeImage[i]);
+        }
     }
 
     private void Handle_FadeInComplete()
@@ -112,6 +122,12 @@ public class FaderOnTransit : MonoBehaviour
     {
         if (loadingText != null)
             loadingText.text = text;
+    }
+
+    public void SetTip(string text)
+    {
+        if (tipText != null)
+            tipText.text = text;
     }
 
     public Camera GetFaderCamera() => _camera;

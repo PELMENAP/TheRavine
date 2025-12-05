@@ -74,9 +74,8 @@ namespace TheRavine.Base
         private void CreateWorldItem(string worldName)
         {
             var worldItem = Instantiate(worldItemPrefab, worldsContainer);
-            var worldItemComponent = worldItem.GetComponent<WorldItemUI>();
             
-            if (worldItemComponent != null)
+            if (worldItem.TryGetComponent<WorldItemUI>(out var worldItemComponent))
             {
                 worldItemComponent.Initialize(worldName, 
                     () => OnEnterWorld(worldName),
@@ -162,6 +161,7 @@ namespace TheRavine.Base
         public void OnEndEditWorld()
         {
             ShowCreateWorldPanel(false);
+            settingsView.EditWorld(null);
             RefreshWorldsList();
         }
         public void OnCancelCreateWorld()
