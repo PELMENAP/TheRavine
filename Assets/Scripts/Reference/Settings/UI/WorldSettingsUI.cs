@@ -13,9 +13,9 @@ namespace TheRavine.Base
         [Header("Конфигурация мира")]
         [SerializeField] private TMP_Dropdown autosaveDropdown;
         [SerializeField] private TMP_Dropdown difficultyDropdown;
-        [SerializeField] private TMP_InputField timeScaleInput, maxEntityCountInput;
+        [SerializeField] private TMP_InputField timeScaleInput, maxEntityCountInput, worldNameText;
         [SerializeField] private Toggle generateStructures, generateRivers;
-        [SerializeField] private TMP_InputField worldNameText;
+        [SerializeField] private Button worldNameButton;
         [SerializeField] private GameObject panel;
 
         private readonly int[] _autosaveIntervals = { 0, 15, 30, 60, 120, 300 };
@@ -55,10 +55,12 @@ namespace TheRavine.Base
 
         private void SetupInputFields()
         {
-            worldNameText.onValueChanged.AddListener(value =>
+            worldNameButton.onClick.AddListener(() =>
             {
+                Mediator.ChangeWorldName(worldNameText.text);
                 Mediator.UpdateWorldConfig(c => 
-                    c.worldName = value);
+                    c.worldName = worldNameText.text);
+                OnActiveWorldChanged(null);
             });
 
             timeScaleInput.onValueChanged.AddListener(value =>
@@ -144,7 +146,13 @@ namespace TheRavine.Base
 
         public async void EditWorld(string worldId)
         {
-            if (string.IsNullOrEmpty(worldId)) return;
+            if (string.IsNullOrEmpty(worldId))
+            {
+                panel?.SetActive(false);
+                return;  
+            } 
+
+            worldNameText.text = worldId;
             
             
             try

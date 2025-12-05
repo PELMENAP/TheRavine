@@ -1,0 +1,24 @@
+////////////////////////////////////////////////////////////////////////////////////////////
+                   VisualX_Sci-Fi Loading Screen Effects FREE
+////////////////////////////////////////////////////////////////////////////////////////////
+
+Thank you for downloading the Free Sci-Fi Loading Screen Effects FREE
+This project is a demo version of a similar paid package. 
+The effects themselves use only the standard shaders
+Mobile/Particles/Alpha Blended.
+Mobile/Particles/Additive 
+So there will be no problems with compatibility with built-in, URP and HDRP. 
+working with mobile devices 
+All effects are collected in the "Demo_scene" scene.
+
+Disclaimer: The effects were created with Particle System and need to use auxiliary scripts to work correctly in UI Canvas. There are no such scripts in this package. They are freely available on the Internet.
+
+
+There are 1 unique effects in 4 colors in this set. 
+
+
+Thanks again, and I hope our effects will be useful for your projects.
+
+
+
+vvvisualxxx@gmail.com

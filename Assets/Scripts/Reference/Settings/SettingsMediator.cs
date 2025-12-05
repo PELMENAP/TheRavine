@@ -119,6 +119,10 @@ namespace TheRavine.Base
                 _logger.LogError($"Ошибка сброса: {ex.Message}");
             }
         }
+        public void ChangeWorldName(string newWorldName)
+        {
+            worldRegistry.RenameWorldAsync(_currentEditingWorldId, newWorldName).Forget();
+        }
 
         private async UniTask LoadInitialAsync()
         {

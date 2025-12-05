@@ -44,23 +44,6 @@ namespace TheRavine.Base
         {
             if (worldNameText != null)
                 worldNameText.text = _worldName;
-            
-            var worldManager = ServiceLocator.GetService<WorldRegistry>();
-            bool isCurrentWorld = worldManager?.CurrentWorldName == _worldName;
-            
-            if (worldIcon != null)
-            {
-                worldIcon.sprite = isCurrentWorld ? currentWorldIcon : defaultWorldIcon;
-                worldIcon.color = isCurrentWorld ? Color.green : Color.white;
-            }
-            
-            if (enterWorldButton != null)
-            {
-                enterWorldButton.interactable = !isCurrentWorld;
-                var buttonText = enterWorldButton.GetComponentInChildren<TextMeshProUGUI>();
-                if (buttonText != null)
-                    buttonText.text = isCurrentWorld ? "Текущий" : "Войти";
-            }
         }
 
         private void BindButtons()
@@ -78,7 +61,7 @@ namespace TheRavine.Base
             {
                 if (await worldService.ExistsAsync(_worldName))
                 {
-                    var worldData = await worldService.LoadDataAsync(_worldName);
+                    WorldState worldData = await worldService.LoadDataAsync(_worldName);
                     if (worldData.lastSaveTime > 0)
                     {
                         var saveTime = DateTimeOffset.FromUnixTimeSeconds(worldData.lastSaveTime);
