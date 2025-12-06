@@ -18,6 +18,9 @@ EditorBuildSettings:
     path: Assets/Scenes/Main_game 1/FirstActMirageTown.unity
     guid: c4becb9aed4b7f36f949ae92d209aaec
   m_configObjects:
+    com.unity.adaptivePerformance.basic.provider_settings: {fileID: 11400000, guid: 20fc33f751fa6288baa7dfa020a2fdcf, type: 2}
+    com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: ce3fff5d8ee2b1b81a62a0efad0b6d23, type: 2}
+    com.unity.adaptiveperformance.simulator.provider_settings: {fileID: 11400000, guid: 5bfa7edd0575c99ae8180b2d82660abd, type: 2}
     com.unity.addressableassets: {fileID: 11400000, guid: 6acdf285277a759da9be16a9f30f0339, type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: 1d16c970072ac4f95a46c81fbcc9fd19, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}

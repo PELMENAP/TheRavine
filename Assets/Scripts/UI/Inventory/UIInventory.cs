@@ -66,8 +66,9 @@ namespace TheRavine.Inventory
 
         private async UniTaskVoid OnInventoryDataLoaded(PlayerEntity playerData)
         {
-            WorldInfo worldInfo = await worldRegistry.GetWorldInfoAsync(worldRegistry.CurrentWorldName);
-            if (worldInfo.CycleCount == 0) tester.FillSlots(filling);
+            (WorldState worldData, WorldConfiguration worldConfiguration) = await worldRegistry.LoadCurrentWorldData();
+            
+            if (worldData.cycleCount == 0) tester.FillSlots(filling);
             else
             {
                 var loadedData = await encryptedPlayerPrefsStorage.LoadAsync<SerializableList<SerializableInventorySlot>>(nameof(SerializableList<SerializableInventorySlot>));

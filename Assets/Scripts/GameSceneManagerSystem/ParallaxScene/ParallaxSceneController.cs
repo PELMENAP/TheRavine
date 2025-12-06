@@ -23,35 +23,37 @@ public class ParallaxSceneController : MonoBehaviour
     private SceneLoader transistor;
 
     public void AddCameraToStack(Camera _cameraToAdd) => _cameraData.cameraStack.Add(_cameraToAdd);
-    private WorldRegistry worldManager;
-    private WorldInfo worldinfo;
+    private WorldRegistry worldRegistry;
+    private WorldState _worldData;
     private async void Awake()
     {
-        worldManager = ServiceLocator.GetService<WorldRegistry>();
-        worldinfo = await worldManager.GetWorldInfoAsync(worldManager.CurrentWorldName);
+        worldRegistry = ServiceLocator.GetService<WorldRegistry>();
+        (WorldState worldData, WorldConfiguration worldConfiguration) = await worldRegistry.LoadCurrentWorldData();
+        _worldData = worldData;
         // DataStorage.winTheGame = win;
         AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
         transistor = new SceneLoader();
 
-        _timer = new SyncedTimer(timerType, worldinfo.IsGameWon ? timeToDelay * 6 : timeToDelay);
+        _timer = new SyncedTimer(timerType, worldData.gameWon ? timeToDelay * 6 : timeToDelay);
         _timer.TimerFinished += TimerFinished;
 
         _timer.Start();
 
         FaderOnTransit.Instance.FadeOut(null);
 
-        if (worldinfo.IsGameWon)
+        if (worldData.gameWon)
         {
             winObject.SetActive(true);
             controller.StartWinRadio(audioClip);
-            PrintText($"Игра пройдена за {Convert.ToString(DateTimeOffset.Now - worldinfo.CreatedTime)} секунд \r\nЗа {worldinfo.CycleCount} останов{Extension.GetSklonenie(worldinfo.CycleCount)}").Forget();
+            PrintText($"Игра пройдена за {Convert.ToString(DateTimeOffset.Now.ToUnixTimeSeconds() - worldData.startTime)} секунд \r\nЗа {worldData.cycleCount} останов{Extension.GetSklonenie(worldData.cycleCount)}").Forget();
         }
         else controller.StartDefaultRadio();
     }
 
     private void TimerFinished()
     {
-        if(worldinfo.IsGameWon) transistor.LoadScene(0).Forget();
+        if(_worldData.gameWon) transistor.LoadScene(0).Forget();
+        
         else transistor.LoadScene(2).Forget();
         AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
     }
