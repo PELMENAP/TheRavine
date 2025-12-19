@@ -274,7 +274,6 @@ MonoBehaviour:
   m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
   m_RequiresDepthTexture: 0
   m_RequiresColorTexture: 0
-  m_Version: 2
   m_TaaSettings:
     m_Quality: 3
     m_FrameInfluence: 0.1
@@ -282,6 +281,7 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!1 &7089558838443951302
 GameObject:
   m_ObjectHideFlags: 0
@@ -315,10 +315,10 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 284446938630588396}
-  - {fileID: 8156277309562801795}
   - {fileID: 1092655982669207744}
   - {fileID: 5281480438517279092}
   - {fileID: 6785897345570394989}
+  - {fileID: 8156277309562801795}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -798,11 +798,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2787175391027694695, guid: 1cca33a8ecef9e246b200a252292f96a, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -105
+      value: -956
       objectReference: {fileID: 0}
     - target: {fileID: 2787175391027694695, guid: 1cca33a8ecef9e246b200a252292f96a, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -34
+      value: -24
       objectReference: {fileID: 0}
     - target: {fileID: 2787175391027694695, guid: 1cca33a8ecef9e246b200a252292f96a, type: 3}
       propertyPath: m_LocalPosition.z
