@@ -125,7 +125,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.burst": {
-      "version": "1.8.25",
+      "version": "1.8.26",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -179,7 +179,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.inputsystem": {
-      "version": "1.16.0",
+      "version": "1.17.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -286,6 +286,15 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.unity.sdk.linux-x86_64": {
+      "version": "1.0.2",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.sysroot.base": "1.0.2"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.searcher": {
       "version": "4.9.4",
       "depth": 2,
@@ -302,20 +311,11 @@
         "com.unity.searcher": "4.9.3"
       }
     },
-    "com.unity.sysroot": {
-      "version": "2.0.11",
+    "com.unity.sysroot.base": {
+      "version": "1.0.2",
       "depth": 1,
       "source": "registry",
       "dependencies": {},
-      "url": "https://packages.unity.com"
-    },
-    "com.unity.sysroot.linux-x86_64": {
-      "version": "2.0.10",
-      "depth": 1,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.sysroot": "2.0.10"
-      },
       "url": "https://packages.unity.com"
     },
     "com.unity.test-framework": {
@@ -338,13 +338,12 @@
       },
       "url": "https://packages.unity.com"
     },
-    "com.unity.toolchain.linux-x86_64": {
-      "version": "2.0.11",
+    "com.unity.toolchain.linux-x86_64-linux": {
+      "version": "1.0.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.sysroot": "2.0.10",
-        "com.unity.sysroot.linux-x86_64": "2.0.9"
+        "com.unity.sysroot.base": "1.0.2"
       },
       "url": "https://packages.unity.com"
     },

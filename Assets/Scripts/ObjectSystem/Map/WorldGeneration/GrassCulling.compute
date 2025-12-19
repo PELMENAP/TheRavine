@@ -1,0 +1,44 @@
+#pragma kernel FrustumCull
+
+struct InstanceData
+{
+    float4x4 trs;
+    float4 color;
+};
+
+StructuredBuffer<InstanceData> instanceData;
+AppendStructuredBuffer<InstanceData> visibleInstances;
+
+float4x4 vpMatrix;
+float3 cameraPosition;
+float maxDistance;
+int instanceCount;
+
+bool IsInFrustum(float4 clipPos)
+{
+    return clipPos.x >= -clipPos.w && clipPos.x <= clipPos.w &&
+           clipPos.y >= -clipPos.w && clipPos.y <= clipPos.w &&
+           clipPos.z >= 0 && clipPos.z <= clipPos.w;
+}
+
+[numthreads(64, 1, 1)]
+void FrustumCull(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)instanceCount)
+        return;
+    
+    InstanceData instance = instanceData[id.x];
+    
+    float3 position = float3(instance.trs[0][3], instance.trs[1][3], instance.trs[2][3]);
+    
+    float distanceToCam = distance(position, cameraPosition);
+    if (distanceToCam > maxDistance)
+        return;
+    
+    float4 clipPos = mul(vpMatrix, float4(position, 1.0));
+    
+    if (IsInFrustum(clipPos))
+    {
+        visibleInstances.Append(instance);
+    }
+}

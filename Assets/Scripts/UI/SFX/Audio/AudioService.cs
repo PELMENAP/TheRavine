@@ -88,7 +88,6 @@ public class AudioService : MonoBehaviour
         }
         
         Instance = this;
-        DontDestroyOnLoad(gameObject);
         lifetimeCts = new CancellationTokenSource();
 
         InitializeChannelConfigs();
