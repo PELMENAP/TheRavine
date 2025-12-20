@@ -2,8 +2,12 @@
 
 struct TriangleData
 {
-    float3 v0, v1, v2;
-    float3 n0, n1, n2;
+    float3 v0; float _padding0;
+    float3 v1; float _padding1;
+    float3 v2; float _padding2;
+    float3 n0; float _padding3;
+    float3 n1; float _padding4;
+    float3 n2; float _padding5;
 };
 
 struct InstanceData
@@ -27,12 +31,11 @@ int randomSeed;
 
 uint Hash(uint s)
 {
-    s ^= 2747636419u;
-    s *= 2654435769u;
-    s ^= s >> 16;
-    s *= 2654435769u;
-    s ^= s >> 16;
-    s *= 2654435769u;
+    s = (s ^ 61u) ^ (s >> 16u);
+    s *= 9u;
+    s = s ^ (s >> 4u);
+    s *= 0x27d4eb2du;
+    s = s ^ (s >> 15u);
     return s;
 }
 
@@ -149,6 +152,20 @@ float4x4 TRS(float3 position, float4 rotation, float3 scale)
     return mat;
 }
 
+float3 GetGrassColor(uint seed, float3 position)
+{
+    float colorVar = Random(seed) * 0.4 + 0.8;
+    
+    float noise = sin(position.x * 0.5) * sin(position.z * 0.5);
+    colorVar += noise * 0.2;
+    
+    float dryness = saturate((position.y - 10.0) / 20.0);
+    float3 greenTint = float3(0.9, 1.0, 0.9);
+    float3 dryTint = float3(1.0, 0.95, 0.8);
+    
+    return lerp(greenTint, dryTint, dryness) * colorVar;
+}
+
 [numthreads(64, 1, 1)]
 void SampleMeshSurface(uint3 id : SV_DispatchThreadID)
 {
@@ -157,7 +174,7 @@ void SampleMeshSurface(uint3 id : SV_DispatchThreadID)
     
     uint seed = id.x * 73856093u + randomSeed;
     
-    uint triangleIndex = (Random(seed) * triangleCount) % triangleCount;
+    uint triangleIndex = uint(Random(seed) * float(triangleCount - 1));
     TriangleData tri = triangles[triangleIndex];
     
     float3 position = RandomPointInTriangle(tri.v0, tri.v1, tri.v2, seed + 1);
@@ -187,5 +204,6 @@ void SampleMeshSurface(uint3 id : SV_DispatchThreadID)
     instanceData[id.x].trs = TRS(position, rotation, scale);
     
     float colorVariation = Random(seed + 6) * 0.3 + 0.7;
-    instanceData[id.x].color = float4(colorVariation, colorVariation, colorVariation, 1);
+    // instanceData[id.x].color = float4(GetGrassColor(seed, position), 1);
+    instanceData[id.x].color = float4(1, 1, 1, 1);
 }

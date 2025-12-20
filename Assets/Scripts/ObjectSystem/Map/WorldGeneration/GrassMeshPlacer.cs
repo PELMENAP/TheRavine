@@ -115,7 +115,7 @@ public class GrassMeshPlacer : MonoBehaviour
             };
         }
         
-        triangleBuffer = new ComputeBuffer(triangleData.Length, sizeof(float) * 18);
+        triangleBuffer = triangleBuffer = new ComputeBuffer(triangleData.Length, sizeof(float) * 24);
         triangleBuffer.SetData(triangleData);
         
         renderBounds = new Bounds(targetTransform.position, Vector3.one * cullingDistance * 2f);
@@ -140,6 +140,8 @@ public class GrassMeshPlacer : MonoBehaviour
         
         int threadGroups = Mathf.CeilToInt(instanceCount / (float)THREAD_GROUP_SIZE);
         meshSamplerShader.Dispatch(kernelMeshSampling, threadGroups, 1, 1);
+
+        instanceDataBuffer.GetData(new InstanceData[1]); // форсируем синхронизацию
     }
     
     private void Update()
@@ -225,7 +227,11 @@ public class GrassMeshPlacer : MonoBehaviour
     
     private struct TriangleData
     {
-        public Vector3 v0, v1, v2;
-        public Vector3 n0, n1, n2;
+        public Vector3 v0; private float _padding0;
+        public Vector3 v1; private float _padding1;
+        public Vector3 v2; private float _padding2;
+        public Vector3 n0; private float _padding3;
+        public Vector3 n1; private float _padding4;
+        public Vector3 n2; private float _padding5;
     }
 }
