@@ -1,0 +1,9 @@
+#pragma kernel CSMain
+
+RWStructuredBuffer<float4> Result;
+
+[numthreads(8,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    Result[id.x] = float4(id.x, id.x * 2, id.x * 3, 1);
+}

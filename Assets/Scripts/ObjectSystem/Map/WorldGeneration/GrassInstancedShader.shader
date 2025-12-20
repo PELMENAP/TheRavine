@@ -8,11 +8,17 @@ Shader "Custom/GrassInstancedShader"
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
         _WindSpeed ("Wind Speed", Float) = 1.0
         _WindStrength ("Wind Strength", Float) = 0.1
+        
     }
     
     SubShader
     {
-        Tags { "RenderType"="Opaque" "Queue"="Geometry" }
+        Tags
+        {
+            "RenderPipeline"="UniversalPipeline"
+            "RenderType"="Opaque" 
+            "Queue"="Geometry"
+        }
         LOD 200
         Cull Off
         
@@ -71,14 +77,21 @@ Shader "Custom/GrassInstancedShader"
             
             float3 ApplyWind(float3 positionWS, float heightFactor)
             {
-                float windPhase = _Time.y * _WindSpeed + positionWS.x * 0.1 + positionWS.z * 0.1;
-                float windWave = sin(windPhase) * _WindStrength;
+                float time = _Time.y * _WindSpeed;
+                float mainWave = sin(time + positionWS.x * 0.1 + positionWS.z * 0.1);
+                float gustWave = sin(time * 2.3 + positionWS.x * 0.05) * 0.5;
+                float microWave = sin(time * 4.7 + positionWS.x * 0.3 + positionWS.z * 0.3) * 0.2;
                 
-                positionWS.x += windWave * heightFactor;
-                positionWS.z += cos(windPhase * 0.7) * _WindStrength * 0.5 * heightFactor;
+                float totalWind = (mainWave + gustWave + microWave) * _WindStrength;
+                
+                float windEffect = pow(heightFactor, 2.0);
+                
+                positionWS.x += totalWind * windEffect;
+                positionWS.z += totalWind * 0.7 * windEffect;
                 
                 return positionWS;
             }
+
             
             Varyings vert(Attributes input)
             {
@@ -86,7 +99,8 @@ Shader "Custom/GrassInstancedShader"
                 
                 InstanceData instance = instanceData[input.instanceID];
                 
-                float3 positionWS = mul(instance.trs, float4(input.positionOS.xyz, 1.0)).xyz;
+                float3 positionWS = mul(float4(input.positionOS.xyz, 1.0), instance.trs).xyz; // ORDER IS IMPORTANT!!!!
+
                 float3 normalWS = normalize(mul((float3x3)instance.trs, input.normalOS));
                 
                 float heightFactor = input.positionOS.y;
@@ -104,22 +118,14 @@ Shader "Custom/GrassInstancedShader"
             
             float4 frag(Varyings input) : SV_Target
             {
-                float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
+                // Тест 1: Выводим UV как цвет
+                // return float4(input.uv, 0, 1);
                 
-                clip(texColor.a - _Cutoff);
-                
-                float4 color = lerp(_BaseColor, _TipColor, input.heightFactor);
-                color *= input.color;
-                color *= texColor;
-                
-                Light mainLight = GetMainLight();
-                float3 lighting = mainLight.color * max(0.0, dot(input.normalWS, mainLight.direction));
-                lighting += SampleSH(input.normalWS);
-                
-                color.rgb *= lighting;
-                
-                return color;
+                // Тест 2: Выводим checkerboard паттерн
+                float checker = fmod(floor(input.uv.x * 10) + floor(input.uv.y * 10), 2.0);
+                return float4(checker, checker, checker, 1);
             }
+            
             ENDHLSL
         }
         
