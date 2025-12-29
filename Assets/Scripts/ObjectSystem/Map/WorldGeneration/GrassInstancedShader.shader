@@ -8,23 +8,76 @@ Shader "Custom/GrassInstancedShader"
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
         _WindSpeed ("Wind Speed", Float) = 1.0
         _WindStrength ("Wind Strength", Float) = 0.1
-        
     }
     
     SubShader
     {
         Tags
         {
-            "RenderPipeline"="UniversalPipeline"
-            "RenderType"="Opaque" 
-            "Queue"="Geometry"
+            "RenderType"="TransparentCutout"
+            "Queue"="AlphaTest"
         }
         LOD 200
         Cull Off
         
+        // Общий HLSL include для всех passes
+        HLSLINCLUDE
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        
+        struct InstanceData
+        {
+            float4x4 trs;
+            float4 color;
+        };
+        
+        StructuredBuffer<InstanceData> instanceData;
+        
+        CBUFFER_START(UnityPerMaterial)
+            float4 _BaseColor;
+            float4 _TipColor;
+            float4 _MainTex_ST;
+            float _Cutoff;
+            float _WindSpeed;
+            float _WindStrength;
+        CBUFFER_END
+        
+        TEXTURE2D(_MainTex);
+        SAMPLER(sampler_MainTex);
+        
+        // КРИТИЧЕСКИ ВАЖНО: одна и та же функция для всех passes
+        float3 ApplyWind(float3 positionWS, float heightFactor)
+        {
+            float time = _Time.y * _WindSpeed;
+            float mainWave = sin(time + positionWS.x * 0.1 + positionWS.z * 0.1);
+            float gustWave = sin(time * 2.3 + positionWS.x * 0.05) * 0.5;
+            float microWave = sin(time * 4.7 + positionWS.x * 0.3 + positionWS.z * 0.3) * 0.2;
+            
+            float totalWind = (mainWave + gustWave + microWave) * _WindStrength;
+            float windEffect = pow(heightFactor, 2.0);
+            
+            positionWS.x += totalWind * windEffect;
+            positionWS.z += totalWind * 0.7 * windEffect;
+            
+            return positionWS;
+        }
+        
+        // Общая функция трансформации для консистентности между passes
+        float3 TransformObjectToWorldWithWind(float4 positionOS, float4x4 instanceTRS, out float heightFactor)
+        {
+            float3 positionWS = mul(positionOS, instanceTRS).xyz;
+            heightFactor = positionOS.y;
+            return ApplyWind(positionWS, heightFactor);
+        }
+        
+        ENDHLSL
+        
         Pass
         {
             Tags { "LightMode"="UniversalForward" }
+            
+            // Важно: используем LEqual вместо Equal для работы с depth priming
+            ZTest LEqual
+            ZWrite Off  // Глубина уже записана в DepthOnly pass
             
             HLSLPROGRAM
             #pragma vertex vert
@@ -34,28 +87,7 @@ Shader "Custom/GrassInstancedShader"
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ _SHADOWS_SOFT
             
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-            
-            struct InstanceData
-            {
-                float4x4 trs;
-                float4 color;
-            };
-            
-            StructuredBuffer<InstanceData> instanceData;
-            
-            CBUFFER_START(UnityPerMaterial)
-                float4 _BaseColor;
-                float4 _TipColor;
-                float4 _MainTex_ST;
-                float _Cutoff;
-                float _WindSpeed;
-                float _WindStrength;
-            CBUFFER_END
-            
-            TEXTURE2D(_MainTex);
-            SAMPLER(sampler_MainTex);
             
             struct Attributes
             {
@@ -75,36 +107,17 @@ Shader "Custom/GrassInstancedShader"
                 float heightFactor : TEXCOORD3;
             };
             
-            float3 ApplyWind(float3 positionWS, float heightFactor)
-            {
-                float time = _Time.y * _WindSpeed;
-                float mainWave = sin(time + positionWS.x * 0.1 + positionWS.z * 0.1);
-                float gustWave = sin(time * 2.3 + positionWS.x * 0.05) * 0.5;
-                float microWave = sin(time * 4.7 + positionWS.x * 0.3 + positionWS.z * 0.3) * 0.2;
-                
-                float totalWind = (mainWave + gustWave + microWave) * _WindStrength;
-                
-                float windEffect = pow(heightFactor, 2.0);
-                
-                positionWS.x += totalWind * windEffect;
-                positionWS.z += totalWind * 0.7 * windEffect;
-                
-                return positionWS;
-            }
-
-            
             Varyings vert(Attributes input)
             {
                 Varyings output;
                 
                 InstanceData instance = instanceData[input.instanceID];
                 
-                float3 positionWS = mul(float4(input.positionOS.xyz, 1.0), instance.trs).xyz; // ORDER IS IMPORTANT!!!!
-
-                float3 normalWS = normalize(mul((float3x3)instance.trs, input.normalOS));
+                // Используем общую функцию трансформации
+                float heightFactor;
+                float3 positionWS = TransformObjectToWorldWithWind(input.positionOS, instance.trs, heightFactor);
                 
-                float heightFactor = input.positionOS.y;
-                positionWS = ApplyWind(positionWS, heightFactor);
+                float3 normalWS = normalize(mul((float3x3)instance.trs, input.normalOS));
                 
                 output.positionCS = TransformWorldToHClip(positionWS);
                 output.positionWS = positionWS;
@@ -118,12 +131,20 @@ Shader "Custom/GrassInstancedShader"
             
             float4 frag(Varyings input) : SV_Target
             {
-                // Тест 1: Выводим UV как цвет
-                // return float4(input.uv, 0, 1);
+                float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
+                clip(texColor.a - _Cutoff);
                 
-                // Тест 2: Выводим checkerboard паттерн
-                float checker = fmod(floor(input.uv.x * 10) + floor(input.uv.y * 10), 2.0);
-                return float4(checker, checker, checker, 1);
+                float4 color = lerp(_BaseColor, _TipColor, input.heightFactor);
+                color *= input.color;
+                color *= texColor;
+                
+                Light mainLight = GetMainLight();
+                float3 lighting = mainLight.color * max(0.0, dot(input.normalWS, mainLight.direction));
+                lighting += SampleSH(input.normalWS);
+                
+                color.rgb *= lighting;
+                
+                return color;
             }
             
             ENDHLSL
@@ -144,20 +165,9 @@ Shader "Custom/GrassInstancedShader"
             #pragma fragment ShadowFrag
             #pragma multi_compile_instancing
             
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            
-            struct InstanceData
-            {
-                float4x4 trs;
-                float4 color;
-            };
-            
-            StructuredBuffer<InstanceData> instanceData;
-            
             struct Attributes
             {
                 float4 positionOS : POSITION;
-                float3 normalOS : NORMAL;
                 float2 uv : TEXCOORD0;
                 uint instanceID : SV_InstanceID;
             };
@@ -169,15 +179,33 @@ Shader "Custom/GrassInstancedShader"
             };
             
             float3 _LightDirection;
+            float4 _ShadowBias;
+            
+            float4 GetShadowPositionHClip(float3 positionWS, float3 normalWS)
+            {
+                float3 lightDirection = _LightDirection;
+                float4 positionCS = TransformWorldToHClip(positionWS);
+                
+                #if UNITY_REVERSED_Z
+                    positionCS.z = min(positionCS.z, positionCS.w * UNITY_NEAR_CLIP_VALUE);
+                #else
+                    positionCS.z = max(positionCS.z, positionCS.w * UNITY_NEAR_CLIP_VALUE);
+                #endif
+                
+                return positionCS;
+            }
             
             Varyings ShadowVert(Attributes input)
             {
                 Varyings output;
                 
                 InstanceData instance = instanceData[input.instanceID];
-                float3 positionWS = mul(instance.trs, float4(input.positionOS.xyz, 1.0)).xyz;
                 
-                output.positionCS = TransformWorldToHClip(positionWS);
+                // Используем ту же функцию трансформации
+                float heightFactor;
+                float3 positionWS = TransformObjectToWorldWithWind(input.positionOS, instance.trs, heightFactor);
+                
+                output.positionCS = GetShadowPositionHClip(positionWS, float3(0,1,0));
                 output.uv = input.uv;
                 
                 return output;
@@ -185,6 +213,58 @@ Shader "Custom/GrassInstancedShader"
             
             float4 ShadowFrag(Varyings input) : SV_Target
             {
+                float alpha = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv).a;
+                clip(alpha - _Cutoff);
+                return 0;
+            }
+            ENDHLSL
+        }
+
+        Pass
+        {       
+            Name "DepthOnly"
+            Tags { "LightMode"="DepthOnly" }
+
+            ZWrite On
+            ColorMask 0
+            Cull Off
+
+            HLSLPROGRAM
+            #pragma vertex DepthVert
+            #pragma fragment DepthFrag
+            #pragma multi_compile_instancing
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+                uint instanceID : SV_InstanceID;
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            Varyings DepthVert(Attributes input)
+            {
+                Varyings o;
+                InstanceData instance = instanceData[input.instanceID];
+
+                // КРИТИЧЕСКИ ВАЖНО: используем ту же функцию трансформации
+                float heightFactor;
+                float3 positionWS = TransformObjectToWorldWithWind(input.positionOS, instance.trs, heightFactor);
+
+                o.positionCS = TransformWorldToHClip(positionWS);
+                o.uv = input.uv;
+                return o;
+            }
+
+            float4 DepthFrag(Varyings input) : SV_Target
+            {
+                float alpha = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv).a;
+                clip(alpha - _Cutoff);
                 return 0;
             }
             ENDHLSL

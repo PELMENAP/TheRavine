@@ -24,6 +24,9 @@ namespace TheRavine.Base
             {
                 if (scripts[i] == null) continue;
                 Type serviceType = scripts[i].GetType();
+
+                ravineLogger.LogInfo($"Регистрирую: {scripts[i].name} как тип {serviceType.Name}");
+
                 MethodInfo registerMethod = servicesType
                     .GetMethod("Register")
                     .MakeGenericMethod(serviceType);
@@ -41,15 +44,15 @@ namespace TheRavine.Base
             {
                 Pair<ISetAble, string> setAble = services.Dequeue();
                 disAble.Enqueue(setAble);
-                // try
-                // {
+                try
+                {
                     setAble.First.SetUp(() => StartNewServices(services, callback));
-                // }
-                // catch (Exception ex)
-                // {
-                //     ravineLogger.LogError($"Service {setAble.Second} cannot be started: {ex.Message}");
-                //     StartNewServices(services, callback);
-                // }
+                }
+                catch (Exception ex)
+                {
+                    ravineLogger.LogError($"Service {setAble.Second} cannot be started: {ex.Message}");
+                    StartNewServices(services, callback);
+                }
             }
         }
         

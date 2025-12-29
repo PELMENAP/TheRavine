@@ -26,7 +26,6 @@ namespace TheRavine.EntityControl
             PlayerEntity.Init();
             
             SetupLocator();
-            logger.LogInfo($"Player entity {NetworkManager.Singleton.LocalClientId} is set up");
         }
 
         private void SetupLocator()
@@ -61,12 +60,17 @@ namespace TheRavine.EntityControl
                 if (IsClient && IsOwner)
                 {
                     RequestCameraServerRpc(NetworkManager.Singleton.LocalClientId);
+
+                    if (ServiceLocator.Services.TryGet<EntitySystem>(out var test))
+                        Debug.Log("EntitySystem УЖЕ зарегистрирован!");
+                    else
+                        Debug.Log("EntitySystem еще НЕ зарегистрирован - жду события...");
                     
                     ServiceLocator.OnServiceAvailable<EntitySystem>()
-                        .Subscribe(EntitySystem =>
+                        .Subscribe(entitySystem =>
                         {
+                            entitySystem.AddToGlobal(PlayerEntity);
                             logger.LogInfo($"Player entity {NetworkManager.Singleton.LocalClientId} added to EntitySystem");
-                            EntitySystem.AddToGlobal(PlayerEntity);
                         });
                 }
                 await UniTask.CompletedTask;

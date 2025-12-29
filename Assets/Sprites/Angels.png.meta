@@ -920,6 +920,8 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
     nameFileIdTable:
       Angels_0: -8697826577048373500
       Angels_1: 7600665692882067216

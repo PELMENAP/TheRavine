@@ -16,7 +16,7 @@ namespace TheRavine.Base
         [SerializeField] private TMP_InputField timeScaleInput, maxEntityCountInput, worldNameText;
         [SerializeField] private Toggle generateStructures, generateRivers;
         [SerializeField] private Button worldNameButton;
-        [SerializeField] private GameObject panel;
+        [SerializeField] private GameObject panel, loadingPanel;
 
         private readonly int[] _autosaveIntervals = { 0, 15, 30, 60, 120, 300 };
         private readonly string[] _autosaveLabels = 
@@ -33,6 +33,10 @@ namespace TheRavine.Base
 
             _registry.CurrentWorld
                 .Subscribe(OnActiveWorldChanged)
+                .AddTo(Disposables);
+            
+            _registry.IsLoading
+                .Subscribe(OnLoadingChanged)
                 .AddTo(Disposables);
         }
 
@@ -142,6 +146,11 @@ namespace TheRavine.Base
         {
             var hasWorld = !string.IsNullOrEmpty(worldId);
             panel?.SetActive(hasWorld);
+        }
+
+        private void OnLoadingChanged(bool IsLoading)
+        {
+            loadingPanel?.SetActive(IsLoading);
         }
 
         public async void EditWorld(string worldId)
