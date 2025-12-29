@@ -1,7 +1,8 @@
 using System.Collections.Generic;
+using MemoryPack;
 
-[System.Serializable]
-public struct SerializableInventorySlot
+[MemoryPackable]
+public partial struct SerializableInventorySlot
 {
     public string title;
     public int amount;
@@ -13,8 +14,8 @@ public struct SerializableInventorySlot
     }
 }
 
-[System.Serializable]
-public class SerializableList<T> {
+[MemoryPackable]
+public partial class SerializableList<T>
+{
     public List<T> list = new();
-
 }

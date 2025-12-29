@@ -14,6 +14,7 @@ namespace TheRavine.Base
             public void OnEnter()
             {
                 Initializer.LogBootstrapInfo("GAME IS STARTED");
+                ServiceLocator.Services.LogRegisteredServices();
                 
                 FaderOnTransit.Instance.FadeOut(() => aboba = true);
                 Initializer.OnGameAlreadyStarted();

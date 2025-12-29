@@ -48,6 +48,9 @@ namespace TheRavine.Base
         {
             if (worldNameText != null)
                 worldNameText.text = _worldName;
+            
+            if (cycleCountText != null)
+                UpdateCycleCount(0);
         }
 
         private void BindButtons()

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1ef819d299bff80782599196536a927, type: 3}
+  m_Name: ObjectInfoRegistry
+  m_EditorClassIdentifier: ObjectSystem::TheRavine.ObjectControl.ObjectInfoRegistry
+  objectInfos:
+  - {fileID: 11400000, guid: e828bdd4414fd6592b45f8d69cc96244, type: 2}
+  - {fileID: 11400000, guid: 442dcb913e2c5725181655fa6b1775ea, type: 2}
+  - {fileID: 11400000, guid: 6e2a7935e8c3b36ff9f921cc974ab698, type: 2}
+  - {fileID: 11400000, guid: fa46cef959ea6ab58aa1f30ca15a892e, type: 2}
+  - {fileID: 11400000, guid: e96f92ed0b90302dba29c38db65524b0, type: 2}
+  - {fileID: 11400000, guid: e23769a0b98747349af18b93b2db8788, type: 2}
+  - {fileID: 11400000, guid: f93e1ffefd235d615a1bd882c75bb125, type: 2}
+  - {fileID: 11400000, guid: 80339deec3dfda594b587c1668a63245, type: 2}
+  - {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
+  - {fileID: 11400000, guid: e0a889cafc4a1f2019435f6d304cd4be, type: 2}
+  - {fileID: 11400000, guid: 65c7559b8f03def1c9bbf0d14b5dca7e, type: 2}

@@ -27,10 +27,7 @@ public class ObjectInfo : ScriptableObject
     [ConditionalField(nameof(instanceType), InstanceType.Interactable)]
     [SerializeField] private SpreadPattern onPickUpPattern;
 
-    private int? cachedPrefabID;
-
-    public string ObjectName;
-    public int PrefabID => cachedPrefabID ??= objectPrefab.GetInstanceID();
+    public int PrefabID => objectPrefab.name.GetHashCode();
     public ushort DefaultAmount => defaultAmount;
     public ushort InitialPoolSize => initialPoolSize;
     public InstanceType InstanceType => instanceType;
@@ -42,14 +39,6 @@ public class ObjectInfo : ScriptableObject
     public Vector2Int[] AdditionalOccupiedCells => additionalOccupiedCells;
     public SpreadPattern OnDeathPattern => onDeathPattern;
     public SpreadPattern OnPickUpPattern => onPickUpPattern;
-
-    private void OnValidate()
-    {
-        cachedPrefabID = null;
-        
-        if (string.IsNullOrEmpty(ObjectName) && objectPrefab != null)
-            ObjectName = objectPrefab.name;
-    }
 }
 
 public enum BehaviourType : byte

@@ -66,8 +66,10 @@ namespace TheRavine.Inventory
 
         private async UniTaskVoid OnInventoryDataLoaded(PlayerEntity playerData)
         {
+            Debug.Log(worldRegistry.CurrentWorldName);
             (WorldState worldData, WorldConfiguration worldConfiguration) = await worldRegistry.LoadCurrentWorldData();
             
+            if (worldData.IsDefault() || worldConfiguration == null) return;
             if (worldData.cycleCount == 0) tester.FillSlots(filling);
             else
             {

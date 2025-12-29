@@ -12,16 +12,19 @@ namespace TheRavine.EntityControl
             GameObject curMob = Instantiate(prefab, position, Quaternion.identity);
             AEntity entity = curMob.GetComponentInChildren<AEntityViewModel>().Entity;
             
-            // if(entity != null)
-            // {
-            //     entity.Init();
-            // }
+            if(entity != null)
+            {
+                entity.Init();
+            }
 
             return curMob;
         }
-        // private SkillFacade skillFacade;
         private List<AEntity> global;
-        public void AddToGlobal(AEntity entity) => global.Add(entity);
+        public void AddToGlobal(AEntity entity)
+        {
+            global.Add(entity);
+            logger.LogInfo(entity.GetEntityComponent<MainComponent>().GetEntityName() + " added to EntitySystem!");
+        }
         [SerializeField] private EntityInfo[] _mobInfo;
         [SerializeField] private BoidsBehaviour boidsBehaviour;
         private Dictionary<int, EntityInfo> mobInfo;
@@ -29,7 +32,6 @@ namespace TheRavine.EntityControl
         private IRavineLogger logger;
         public void SetUp(ISetAble.Callback callback)
         {
-            // skillFacade = new SkillFacade();
             logger = ServiceLocator.GetService<IRavineLogger>();
             logger.LogInfo("EntitySystem service is available now");
             global  = new List<AEntity>();
@@ -39,6 +41,7 @@ namespace TheRavine.EntityControl
                 .Subscribe(_ =>
                 {
                     SetUpBoids(ServiceLocator.Players.GetAllPlayersTransform());
+                    logger.LogInfo("EntitySystem get all players list");
                 });
 
             for (int i = 0; i < _mobInfo.Length; i++) mobInfo[_mobInfo[i].Prefab.GetInstanceID()] = _mobInfo[i];

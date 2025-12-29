@@ -5,7 +5,7 @@ using System;
 using TheRavine.Base;
 public class GameInitializer : MonoBehaviour
 {
-    [SerializeField] private bool initializeOnAwake = true, clearAllPlayerPrefs;
+    [SerializeField] private bool initializeOnAwake = true, clearAllPlayerPrefs, createTestWorld;
     [SerializeField] private Terminal terminal;
     private Action<string> onMessageDisplayTerminal;
 
@@ -47,8 +47,12 @@ public class GameInitializer : MonoBehaviour
         ServiceLocator.Services.Register(settingsMediator);
         ServiceLocator.Services.Register(worldRegistry);
         ServiceLocator.Services.Register(worldStatePersistence);
-    }
 
+        if(createTestWorld)
+        {
+            worldRegistry.CreateWorldAsync("test").Forget();
+        }
+    }
     private void OnDisable()
     {
         onMessageDisplayTerminal -= terminal.Display;

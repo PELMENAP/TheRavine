@@ -29,10 +29,10 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Cutoff: 0.241
+    - _Cutoff: 0.548
     - _DebugMode: 1.46
-    - _WindSpeed: 2.24
-    - _WindStrength: 0.38
+    - _WindSpeed: 1.68
+    - _WindStrength: 0.05
     m_Colors:
     - _BaseColor: {r: 0.29999998, g: 0.6, b: 0.19999996, a: 1}
     - _TipColor: {r: 0.5, g: 0.8, b: 0.29999998, a: 1}

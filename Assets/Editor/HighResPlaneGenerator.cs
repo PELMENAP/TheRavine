@@ -6,8 +6,8 @@ using System.IO;
 public class HighResPlaneGenerator : EditorWindow
 {
     private string meshName = "HighResPlane";
-    private int cols = 100; // вершин по X
-    private int rows = 100; // вершин по Z
+    private int cols = 100;
+    private int rows = 100;
     private float width = 1f;
     private float length = 1f;
     private bool generateNormals = true;
@@ -15,7 +15,7 @@ public class HighResPlaneGenerator : EditorWindow
     private bool use32bit = true;
     private string outputFolder = "Assets/GeneratedMeshes";
 
-    [MenuItem("Window/Mesh Tools/HighRes Plane Generator")]
+    [MenuItem("Window/Mesh Tools/HighRes Plane")]
     static void OpenWindow() => GetWindow<HighResPlaneGenerator>("HighRes Plane");
 
     void OnGUI()
@@ -56,7 +56,6 @@ public class HighResPlaneGenerator : EditorWindow
                                      bool genNormals = true, bool genTangents = false, bool force32bit = false)
     {
         int vertCount = cols * rows;
-        // create mesh
         Mesh mesh = new Mesh();
         mesh.name = "HighResPlane";
 
@@ -83,7 +82,6 @@ public class HighResPlaneGenerator : EditorWindow
             }
         }
 
-        // triangles: (cols-1)*(rows-1)*2 tris
         int quadCount = (cols - 1) * (rows - 1);
         int[] triangles = new int[quadCount * 6];
         int t = 0;
@@ -96,12 +94,10 @@ public class HighResPlaneGenerator : EditorWindow
                 int iTop = i + cols;
                 int iTopRight = iTop + 1;
 
-                // first tri
                 triangles[t++] = i;
                 triangles[t++] = iTop;
                 triangles[t++] = iTopRight;
 
-                // second tri
                 triangles[t++] = i;
                 triangles[t++] = iTopRight;
                 triangles[t++] = iRight;

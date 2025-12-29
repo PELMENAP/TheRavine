@@ -16,8 +16,8 @@ namespace TheRavine.Generator.EndlessGenerators
         {
             generator = _generator;
             objectSystem = _objectSystem;
-            ObjectInfo[] prefabInfo = objectSystem._info;
-            for (int i = 0; i < prefabInfo.Length; i++)
+            var prefabInfo = objectSystem.infoRegistry.objectInfos;
+            for (int i = 0; i < prefabInfo.Count; i++)
                 objectUpdate[prefabInfo[i].PrefabID] = 0;
             objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
         }

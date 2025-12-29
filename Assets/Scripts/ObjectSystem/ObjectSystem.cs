@@ -7,8 +7,7 @@ namespace TheRavine.ObjectControl
     {
         private const int InitialGlobalCapacity = 512;
         public GameObject InstantiatePoolObject(Vector3 position, GameObject prefab) => Instantiate(prefab, position, Quaternion.identity);
-        public ObjectInfo[] _info;
-        private ObjectInfoRegistry infoRegistry;
+        [SerializeField] public ObjectInfoRegistry infoRegistry;
         private readonly Dictionary<Vector2Int, ObjectInstInfo> global = new (InitialGlobalCapacity);
         public ObjectInstInfo GetGlobalObjectInstInfo(Vector2Int position)
         {
@@ -36,11 +35,10 @@ namespace TheRavine.ObjectControl
             ObjectInfo currentData = infoRegistry.Get(_PrefabID);
             ObjectInstInfo objectInfo = new(realPosition, _PrefabID, _amount, _objectType);
 
-            // if(currentData.AdditionalOccupiedCells == null)
-            // {
-            //     Debug.Log(currentData.ObjectName);
-            //     return false;
-            // }
+            if(currentData == null)
+            {
+                return false;
+            }
 
             if (currentData.AdditionalOccupiedCells.Length == 0)
                 return global.TryAdd(position, objectInfo);
@@ -74,13 +72,11 @@ namespace TheRavine.ObjectControl
         public void IncreasePoolSize(int PrefabID) => PoolManagerBase.IncreasePoolSize(PrefabID);
         public void SetUp(ISetAble.Callback callback)
         {
-            infoRegistry = new ObjectInfoRegistry();
             PoolManagerBase = new PoolManager(transform);
 
-            foreach (var i in _info)
+            for(int i = 0; i < infoRegistry.objectInfos.Count; i++)
             {
-                infoRegistry.Register(i);
-                CreatePool(i.PrefabID, i.ObjectPrefab, i.InitialPoolSize);
+                CreatePool(infoRegistry.objectInfos[i].PrefabID, infoRegistry.objectInfos[i].ObjectPrefab, infoRegistry.objectInfos[i].InitialPoolSize);
             }
 
             callback?.Invoke();
@@ -91,6 +87,7 @@ namespace TheRavine.ObjectControl
             global.Clear();
             callback?.Invoke();
         }
+
     }
 
 

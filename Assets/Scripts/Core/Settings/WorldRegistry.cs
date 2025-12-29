@@ -96,21 +96,20 @@ namespace TheRavine.Base
             
             try
             {
-                var worldDataService = ServiceLocator.GetService<WorldStatePersistence>();
-                var settingsModel = ServiceLocator.GetService<SettingsMediator>();
+                // var worldDataService = ServiceLocator.GetService<WorldStatePersistence>();
+                // var settingsModel = ServiceLocator.GetService<SettingsMediator>();
                 
-                var (worldData, worldSettings) = await worldStorage.LoadFullAsync(worldName);
+                // var (worldData, worldSettings) = await worldStorage.LoadFullAsync(worldName);
             
-                await worldDataService.LoadAsync(worldName);
-                await settingsModel.LoadWorldConfigAsync(worldName);
-                
-                _currentWorld.Value = worldName;
+                // await worldDataService.LoadAsync(worldName);
+                // await settingsModel.LoadWorldConfigAsync(worldName);
 
                 SceneLaunchService sceneLaunchService = ServiceLocator.GetService<SceneLaunchService>();
 
                 if(sceneLaunchService.CanLaunch)
                 {
-                    sceneLaunchService.LaunchGame().Forget();
+                    _currentWorld.Value = worldName;
+                    await sceneLaunchService.LaunchGame();
                     _logger.LogInfo($"Мир '{worldName}' загружен успешно");
                     return true;
                 }
