@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 287fd371874d8cb73ae7deb1760134e2, type: 3}
+  m_Name: UISoundLibrary
+  m_EditorClassIdentifier: UIInventory::UISoundLibrary
+  sounds:
+  - <Type>k__BackingField: 0
+    <Clips>k__BackingField:
+    - {fileID: 8300000, guid: 23c4173d0feb6a84bb2147471ef5a73f, type: 3}
+    - {fileID: 8300000, guid: ce0ab6ac1ef2a1142a5dbc5d112c02b5, type: 3}
+    - {fileID: 8300000, guid: 247b168bd124985428cd6f4dcb38e311, type: 3}
+    - {fileID: 8300000, guid: e99f66044514b3a459c7e0d8ca73cdd1, type: 3}
+    - {fileID: 8300000, guid: ca000da645d1c644da71c0d055f1e628, type: 3}
+    - {fileID: 8300000, guid: 41fcfc5f442ba644aa9c6501a5ae03c2, type: 3}
+    - {fileID: 8300000, guid: 24bf4ad3780c6c84f8a7e72c426e8b87, type: 3}
+    - {fileID: 8300000, guid: 4bcda8eaa373c3e4aabf6d9ecf574c1f, type: 3}
+    - {fileID: 8300000, guid: 938c9f6d75e03c14faad7aab8317d3a6, type: 3}
+    - {fileID: 8300000, guid: f8f999b21edca5d47b408443a8dd7e68, type: 3}
+    - {fileID: 8300000, guid: 0a61abcf7290c7145bcc43b0270bcf37, type: 3}
+    - {fileID: 8300000, guid: 5af941200dc71264d8b63a7c18c43bba, type: 3}
+    - {fileID: 8300000, guid: 1d15a5836b30c0848b8b9ce361312f47, type: 3}
+    - {fileID: 8300000, guid: 93873ba005ba08d458453d67ffaa878c, type: 3}
+    - {fileID: 8300000, guid: b09b67f5d0af34a4d857d71d0bae5f0c, type: 3}
+    - {fileID: 8300000, guid: 127c15361302498499bee2e22f44e8a2, type: 3}
+    - {fileID: 8300000, guid: e8d044c64c936054cbce840e453a51bb, type: 3}
+    <Volume>k__BackingField: 0.5
+    <PitchMin>k__BackingField: 0.8
+    <PitchMax>k__BackingField: 1.2
+    <Priority>k__BackingField: 0
+  - <Type>k__BackingField: 9
+    <Clips>k__BackingField:
+    - {fileID: 8300000, guid: 51031005fe86fe749bbacae65442f252, type: 3}
+    - {fileID: 8300000, guid: cfcb07e677303ed46a2f0089c944ba3f, type: 3}
+    - {fileID: 8300000, guid: 52395bc0f9f91b34c8a2a1c06a27c28d, type: 3}
+    - {fileID: 8300000, guid: 304e2ab422b5dab499d949c88452d16f, type: 3}
+    - {fileID: 8300000, guid: 98230377441bd4447bb237dc2951a948, type: 3}
+    - {fileID: 8300000, guid: fbef4e09e8b92094595a1589178077d9, type: 3}
+    - {fileID: 8300000, guid: 187d186ceedbab446a2aa3c06cae3f6e, type: 3}
+    - {fileID: 8300000, guid: ee04c994f68700e4f9a7fa5fcf494188, type: 3}
+    - {fileID: 8300000, guid: 11c0821a349d63048bdf0e5ac2b30cb8, type: 3}
+    - {fileID: 8300000, guid: 2dbdd3e70c66d1a4fb13f566ac1ec927, type: 3}
+    - {fileID: 8300000, guid: 199ad905d72cfd245ad96b88802ce35c, type: 3}
+    - {fileID: 8300000, guid: 27861dbf4d466d34883161e0f28d7960, type: 3}
+    - {fileID: 8300000, guid: 7abc870078d32c24f8883d4eb045baff, type: 3}
+    - {fileID: 8300000, guid: 68b8d2f6677d678429d2b69faeaef883, type: 3}
+    - {fileID: 8300000, guid: 914cbb0560820ed4cb86bd5dddd9ed5d, type: 3}
+    - {fileID: 8300000, guid: 4b87f0a5e0d04954ea022cf754898813, type: 3}
+    - {fileID: 8300000, guid: 087a7e69d83caba4f8f4584e8fa23222, type: 3}
+    - {fileID: 8300000, guid: 196f0e9d23c22d447b10faf8d957e049, type: 3}
+    - {fileID: 8300000, guid: 1df9e7009f445bc48933bed7ef95422c, type: 3}
+    - {fileID: 8300000, guid: 4a45d7a69e43199458cae490e185d288, type: 3}
+    - {fileID: 8300000, guid: fe9f9c327faf94c41beccd7c47d3ad68, type: 3}
+    - {fileID: 8300000, guid: 017dea07857b6074db230c56ea4fee56, type: 3}
+    - {fileID: 8300000, guid: 9467389acb77322438520f4d56e7f9e2, type: 3}
+    - {fileID: 8300000, guid: 59875fac199e7f847b3b2115b7810616, type: 3}
+    - {fileID: 8300000, guid: b1805c9ae59f32d4f8bb822d9bec4141, type: 3}
+    - {fileID: 8300000, guid: 1a215c221c79eff428ead63d95656c61, type: 3}
+    - {fileID: 8300000, guid: 44e0fb79c1162494e884fdc47ab9a83c, type: 3}
+    - {fileID: 8300000, guid: e710da79f22cf834fbfaf741ad610377, type: 3}
+    - {fileID: 8300000, guid: ca9e9f70f7d63d24ea3a15a04efdd34a, type: 3}
+    - {fileID: 8300000, guid: b67b87dcc888f4342acba6d42863e6bf, type: 3}
+    - {fileID: 8300000, guid: 2d033d054beecb44cb670de21849d36b, type: 3}
+    <Volume>k__BackingField: 0.5
+    <PitchMin>k__BackingField: 0.9
+    <PitchMax>k__BackingField: 1.1
+    <Priority>k__BackingField: 10

@@ -32,6 +32,8 @@ namespace TheRavine.Inventory
         public bool HasItem(InventoryItemInfo info) => eventDrivenInventoryProxy.HasItem(infoManager.GetItemType(info));
         public void SetUp(ISetAble.Callback callback)
         {
+            ServiceLocator.Services.Register(this);
+            
             worldRegistry = ServiceLocator.GetService<WorldRegistry>();
             generator = ServiceLocator.GetService<MapGenerator>();
             objectSystem = ServiceLocator.GetService<ObjectSystem>();

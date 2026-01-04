@@ -53,7 +53,7 @@ public class GameInitializer : MonoBehaviour
             worldRegistry.CreateWorldAsync("test").Forget();
         }
     }
-    private void OnDisable()
+    private void OnDestroy()
     {
         onMessageDisplayTerminal -= terminal.Display;
         ServiceLocator.ClearAll();

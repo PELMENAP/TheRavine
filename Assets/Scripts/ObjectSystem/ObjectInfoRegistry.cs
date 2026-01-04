@@ -11,18 +11,7 @@ namespace TheRavine.ObjectControl
         public List<ObjectInfo> objectInfos = new List<ObjectInfo>();
 
         private Dictionary<int, ObjectInfo> _data;
-        private Dictionary<int, ObjectInfo> Data
-        {
-            get
-            {
-                if (_data == null)
-                {
-                    RebuildDictionary();
-                }
-                return _data;
-            }
-        }
-
+        private Dictionary<int, ObjectInfo> Data => _data;
         public ObjectInfo Get(int prefabID)
         {
             Data.TryGetValue(prefabID, out var value);
@@ -34,12 +23,7 @@ namespace TheRavine.ObjectControl
             if (_data != null)
                 _data.Clear();
         }
-        void OnDisable()
-        {
-            Clear();
-        }
-
-        private void RebuildDictionary()
+        public void RebuildDictionary()
         {
             if (_data == null)
                 _data = new Dictionary<int, ObjectInfo>(objectInfos.Count);

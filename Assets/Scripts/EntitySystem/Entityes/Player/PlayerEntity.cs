@@ -34,7 +34,7 @@ namespace TheRavine.EntityControl
         }
         public override void UpdateEntityCycle()
         {
-            logger.LogInfo("udpate player");
+            // logger.LogInfo("udpate player");
             if (!base.IsActive.Value) return;
             if (statePatternComponent.behaviourCurrent == null) return;
                 statePatternComponent.behaviourCurrent.Update();

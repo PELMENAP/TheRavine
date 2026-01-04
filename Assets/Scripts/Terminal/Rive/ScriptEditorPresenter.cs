@@ -1,6 +1,8 @@
 using TMPro;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
+using UnityEngine.UI;
+using NaughtyAttributes;
 
 namespace TheRavine.Base
 {
@@ -25,6 +27,11 @@ namespace TheRavine.Base
             scriptFileManager = new ScriptFileManager(new EncryptedPlayerPrefsStorage());
 
             editorPanel?.SetActive(false);
+
+            filesDropdown.onValueChanged.AddListener
+            (
+                index => OnDropdownValueChanged()
+            );
 
             RefreshFilesList().Forget();
         }

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3847842080320733138}
   - component: {fileID: 7142455624237505669}
   - component: {fileID: 5004671864307397208}
+  - component: {fileID: 6917028754492381435}
   m_Layer: 5
   m_Name: None
   m_TagString: Untagged
@@ -162,6 +163,18 @@ MonoBehaviour:
   references:
     version: 2
     RefIds: []
+--- !u!114 &6917028754492381435
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6115759770480013891}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11ae6efe21a937df987afe10057b4caf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonAudioController
 --- !u!1 &7685276767761539493
 GameObject:
   m_ObjectHideFlags: 0
@@ -265,6 +278,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0

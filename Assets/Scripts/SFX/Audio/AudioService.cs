@@ -6,7 +6,7 @@ using Cysharp.Threading.Tasks;
 using System.Threading;
 using R3;
 
-public enum AudioChannel { Master, Music, SFX, UI }
+public enum AudioChannel { Master, Music, SFX, UI, OST }
 
 public struct AudioPlayConfig
 {

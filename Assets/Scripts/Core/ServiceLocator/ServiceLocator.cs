@@ -6,13 +6,6 @@ public static class ServiceLocator
     {
         return Services.Get<T>();
     }
-    public static Observable<T> OnServiceAvailable<T>() where T : class
-    {
-        if (Services.TryGet<T>(out var existing))
-            return Observable.Return(existing);
-
-        return Services.OnServiceRegisteredAs<T>();
-    }
     public static PlayerContainer Players { get; } = new PlayerContainer();
 
     public static Observable<Unit> WhenPlayersNonEmpty()
@@ -27,5 +20,6 @@ public static class ServiceLocator
     {
         Services.Clear();
         Players.Clear();
+        Services.LogRegisteredServices();
     }
 }
