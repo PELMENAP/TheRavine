@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9aea299a45590b68180c8758dcb507c9, type: 3}
+  m_Name: RadioLibrary
+  m_EditorClassIdentifier: UIInventory::RadioLibrary
+  moodClips:
+  - <Mood>k__BackingField: 2
+    <Songs>k__BackingField: []
+    <Volume>k__BackingField: 1
+  - <Mood>k__BackingField: 1
+    <Songs>k__BackingField: []
+    <Volume>k__BackingField: 1
+  - <Mood>k__BackingField: 0
+    <Songs>k__BackingField: []
+    <Volume>k__BackingField: 1
+  stationStatics:
+  - {fileID: 0}
+  - {fileID: 0}
+  victoryClip: {fileID: 0}
+  minStaticDuration: 3
+  maxStaticDuration: 5
+  moodChangeCooldown: 100
+  minDistance: 5
+  maxDistance: 30

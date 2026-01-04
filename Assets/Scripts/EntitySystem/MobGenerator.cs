@@ -31,6 +31,8 @@ namespace TheRavine.EntityControl
         private Vector2Int currentChunkPosition, oldChunkPosition;
         public void SetUp(ISetAble.Callback callback)
         {
+            ServiceLocator.Services.Register(this);
+            
             mapGenerator = ServiceLocator.GetService<MapGenerator>();
             mobController = ServiceLocator.GetService<MobController>();
             if(mapGenerator != null)

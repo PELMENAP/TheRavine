@@ -59,5 +59,6 @@ public enum UISoundType
     Close,
     Success,
     Error,
-    Notification
+    Notification,
+    Terminal
 }

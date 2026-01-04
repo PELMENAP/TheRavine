@@ -1,7 +1,9 @@
+using MemoryPack;
+using System;
 namespace TheRavine.Base
 {
-    [System.Serializable]
-    public class GlobalSettings
+    [MemoryPackable]
+    public partial class GlobalSettings : IEquatable<GlobalSettings>
     {
         public int qualityLevel = 2;
         public bool enableShadows = true;
@@ -23,6 +25,17 @@ namespace TheRavine.Base
             var clone = new GlobalSettings();
             clone.CopyFrom(this);
             return clone;
+        }
+
+        public bool Equals(GlobalSettings other)
+        {
+            if (other == null) return false;
+            
+            return qualityLevel == other.qualityLevel &&
+                   enableShadows == other.enableShadows &&
+                   enableParticles == other.enableParticles &&
+                   enableProfiling == other.enableProfiling &&
+                   controlType == other.controlType;
         }
     }
 

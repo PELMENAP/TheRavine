@@ -72,6 +72,9 @@ namespace TheRavine.ObjectControl
         public void IncreasePoolSize(int PrefabID) => PoolManagerBase.IncreasePoolSize(PrefabID);
         public void SetUp(ISetAble.Callback callback)
         {
+            ServiceLocator.Services.Register(this);
+            
+            infoRegistry.RebuildDictionary();
             PoolManagerBase = new PoolManager(transform);
 
             for(int i = 0; i < infoRegistry.objectInfos.Count; i++)

@@ -1,0 +1,90 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b200c51b3fe4245b3b5af6ea5877f4b6, type: 3}
+  m_Name: AmbientLibrary
+  m_EditorClassIdentifier: UIInventory::AmbientLibrary
+  configs:
+  - <Type>k__BackingField: 0
+    <Layers>k__BackingField:
+    - <Name>k__BackingField: ost
+      <AudioChannel>k__BackingField: 4
+      <Clips>k__BackingField:
+      - {fileID: 8300000, guid: 75a1bb3e6080f8539b688f6e4181b935, type: 3}
+      - {fileID: 8300000, guid: ff63d6f2a6ba634bea3b0416cf0a633d, type: 3}
+      <Volume>k__BackingField: 0.3
+      <MinDelay>k__BackingField: 5
+      <MaxDelay>k__BackingField: 10
+      <FadeSpeed>k__BackingField: 0.1
+      <Crossfade>k__BackingField: 1
+      <DelayIsFirst>k__BackingField: 1
+      <Priority>k__BackingField: -10
+    - <Name>k__BackingField: music
+      <AudioChannel>k__BackingField: 1
+      <Clips>k__BackingField:
+      - {fileID: 8300000, guid: ed23cfa81e372a51ab07c56debcd673e, type: 3}
+      - {fileID: 8300000, guid: cc86778885f3c4e8b8750abbd6ff66ee, type: 3}
+      - {fileID: 8300000, guid: 56bd46dde698d323dac989b84278cd25, type: 3}
+      - {fileID: 8300000, guid: 9e1c899ad4b503772bcd2083179915e8, type: 3}
+      - {fileID: 8300000, guid: bd699a1e09356b418b8fd7a379475e83, type: 3}
+      - {fileID: 8300000, guid: e12275597f9cbd33c8f46b6e18ed4e5f, type: 3}
+      - {fileID: 8300000, guid: 1f55f89d64ba6f43bbc4c6061a68fa3b, type: 3}
+      <Volume>k__BackingField: 0.3
+      <MinDelay>k__BackingField: 10
+      <MaxDelay>k__BackingField: 30
+      <FadeSpeed>k__BackingField: 1
+      <Crossfade>k__BackingField: 1
+      <DelayIsFirst>k__BackingField: 1
+      <Priority>k__BackingField: 0
+    - <Name>k__BackingField: braams
+      <AudioChannel>k__BackingField: 2
+      <Clips>k__BackingField:
+      - {fileID: 8300000, guid: eb21cb6d0cc699946aaff0e80d69738b, type: 3}
+      - {fileID: 8300000, guid: 5befe44408720dc4cacd89417f6ab90f, type: 3}
+      - {fileID: 8300000, guid: 89facdca2c7e5014d89442a176234591, type: 3}
+      - {fileID: 8300000, guid: 07e92c93f3f4acd49b3b063fb95ab2be, type: 3}
+      - {fileID: 8300000, guid: 7ee171e8656db7f4c9bf8c788ad3259e, type: 3}
+      - {fileID: 8300000, guid: a747fc193cdff2f47b8c482c323db9ff, type: 3}
+      - {fileID: 8300000, guid: 930a107d6566072428bcca493208e84d, type: 3}
+      - {fileID: 8300000, guid: f635d58ac36fba04a825cf48f1b6f499, type: 3}
+      - {fileID: 8300000, guid: a82917743ef5f0845a78d8848ff815a5, type: 3}
+      - {fileID: 8300000, guid: c285e9fe297c20841b92b38b2363c452, type: 3}
+      <Volume>k__BackingField: 1
+      <MinDelay>k__BackingField: 30
+      <MaxDelay>k__BackingField: 100
+      <FadeSpeed>k__BackingField: 0
+      <Crossfade>k__BackingField: 0
+      <DelayIsFirst>k__BackingField: 0
+      <Priority>k__BackingField: 0
+    <AutoTransition>k__BackingField: 1
+  - <Type>k__BackingField: 1
+    <Layers>k__BackingField:
+    - <Name>k__BackingField: 
+      <AudioChannel>k__BackingField: 0
+      <Clips>k__BackingField: []
+      <Volume>k__BackingField: 0
+      <MinDelay>k__BackingField: 0
+      <MaxDelay>k__BackingField: 0
+      <FadeSpeed>k__BackingField: 0
+      <Crossfade>k__BackingField: 0
+      <DelayIsFirst>k__BackingField: 1
+      <Priority>k__BackingField: 0
+    - <Name>k__BackingField: 
+      <AudioChannel>k__BackingField: 0
+      <Clips>k__BackingField: []
+      <Volume>k__BackingField: 0
+      <MinDelay>k__BackingField: 0
+      <MaxDelay>k__BackingField: 0
+      <FadeSpeed>k__BackingField: 0
+      <Crossfade>k__BackingField: 0
+      <DelayIsFirst>k__BackingField: 1
+      <Priority>k__BackingField: 0
+    <AutoTransition>k__BackingField: 1

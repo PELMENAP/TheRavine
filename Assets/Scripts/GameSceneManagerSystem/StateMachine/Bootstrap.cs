@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using Cysharp.Threading.Tasks;
 using R3;
+using Cysharp.Threading.Tasks.Triggers;
 
 namespace TheRavine.Base
 {
@@ -25,6 +26,8 @@ namespace TheRavine.Base
                 {
                     ContinueStartFirstPlayer();
                 });
+
+            AmbientSystem.Instance.PlayAmbient(AmbientType.Nature_Day).Forget();
         }
 
         private void ContinueStartFirstPlayer()

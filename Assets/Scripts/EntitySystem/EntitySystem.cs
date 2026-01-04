@@ -5,7 +5,7 @@ using R3;
 
 namespace TheRavine.EntityControl
 {
-    public class EntitySystem : NetworkBehaviour, ISetAble
+    public class EntitySystem : MonoBehaviour, ISetAble
     {
         public GameObject CreateMob(Vector2 position, GameObject prefab)
         {
@@ -32,6 +32,8 @@ namespace TheRavine.EntityControl
         private IRavineLogger logger;
         public void SetUp(ISetAble.Callback callback)
         {
+            ServiceLocator.Services.Register(this);
+            
             logger = ServiceLocator.GetService<IRavineLogger>();
             logger.LogInfo("EntitySystem service is available now");
             global  = new List<AEntity>();
@@ -67,7 +69,7 @@ namespace TheRavine.EntityControl
             callback?.Invoke();
         }
 
-        public override void OnDestroy()
+        public void OnDestroy()
         {
             global?.Clear();
         }

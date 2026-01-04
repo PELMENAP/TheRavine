@@ -21,11 +21,10 @@ namespace TheRavine.EntityControl
             logger = ServiceLocator.GetService<IRavineLogger>();
 
             await CreatePlayerEntity();
+            SetupLocator();
             await SetupNetworking();
 
             PlayerEntity.Init();
-            
-            SetupLocator();
         }
 
         private void SetupLocator()
@@ -36,7 +35,7 @@ namespace TheRavine.EntityControl
 
                 if(ServiceLocator.Players.RegisterPlayer(PlayerEntity))
                 {
-                    logger.LogInfo($"Player entity {NetworkManager.Singleton.LocalClientId} is registered");
+                    logger.LogInfo($"Player entity {NetworkManager.Singleton.LocalClientId} is registered in service locator");
                 }
             }
             catch (Exception ex)
@@ -60,18 +59,18 @@ namespace TheRavine.EntityControl
                 if (IsClient && IsOwner)
                 {
                     RequestCameraServerRpc(NetworkManager.Singleton.LocalClientId);
-
-                    if (ServiceLocator.Services.TryGet<EntitySystem>(out var test))
-                        Debug.Log("EntitySystem УЖЕ зарегистрирован!");
-                    else
-                        Debug.Log("EntitySystem еще НЕ зарегистрирован - жду события...");
                     
-                    ServiceLocator.OnServiceAvailable<EntitySystem>()
-                        .Subscribe(entitySystem =>
+                    while(true)
+                    {
+                        if(ServiceLocator.Services.TryGet(out EntitySystem entitySystem))
                         {
+                            Debug.Log(entitySystem);
+                            Debug.Log(PlayerEntity);
                             entitySystem.AddToGlobal(PlayerEntity);
-                            logger.LogInfo($"Player entity {NetworkManager.Singleton.LocalClientId} added to EntitySystem");
-                        });
+                            break;
+                        }
+                        await UniTask.Delay(1000);
+                    }
                 }
                 await UniTask.CompletedTask;
             }

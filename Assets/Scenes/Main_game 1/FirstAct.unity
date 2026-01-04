@@ -562,7 +562,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 303555932843236425, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3127367655060376858, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: m_LocalPosition.x
@@ -603,6 +603,10 @@ PrefabInstance:
     - target: {fileID: 3127367655060376858, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3614088267013699528, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
+      propertyPath: createTestWorld
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -707,9 +711,6 @@ MonoBehaviour:
   randomYRotation: 1
   maxYRotation: 180
   meshSamplerShader: {fileID: 7200000, guid: ba4ed7a8326ed6eb982299015e3eadd5, type: 3}
-  cullingShader: {fileID: 7200000, guid: 910bac91eec31eba0a24d369e357fb10, type: 3}
-  cullingCamera: {fileID: 0}
-  enableFrustumCulling: 0
   cullingDistance: 100
   castShadows: 1
   receiveShadows: 1
@@ -887,6 +888,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 3242171903604025012, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
+      propertyPath: awakeDelay
+      value: 3000
+      objectReference: {fileID: 0}
+    - target: {fileID: 3242171903604025012, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
       propertyPath: sunGradient.ctime6
       value: 0
       objectReference: {fileID: 0}
@@ -993,6 +998,10 @@ PrefabInstance:
     - target: {fileID: 4952426520814256061, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
       propertyPath: m_SizeDelta.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4989413111709226666, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
+      propertyPath: scriptsLoadedOnBootstrapState.Array.size
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 5160600230332014868, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
       propertyPath: grassMaterial

@@ -15,12 +15,12 @@
   <Project Path="Netcode.csproj" />
   <Project Path="NaughtyAttributes.Editor.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
-  <Project Path="UIInventory.csproj" />
   <Project Path="Inventory.csproj" />
   <Project Path="View.csproj" />
   <Project Path="Tayx.Graphy.csproj" />
   <Project Path="Info.csproj" />
   <Project Path="UniTask.TextMeshPro.csproj" />
+  <Project Path="UIInventory.csproj" />
   <Project Path="B.csproj" />
   <Project Path="EventSystem.csproj" />
   <Project Path="SkillSystem.csproj" />

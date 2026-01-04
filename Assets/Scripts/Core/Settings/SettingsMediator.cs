@@ -146,14 +146,8 @@ namespace TheRavine.Base
         }
         private async UniTask SaveGlobalDelayedAsync()
         {
-            try
-            {
                 await globalSettingsRepository.SaveAsync(globalSettings.Value);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Ошибка сохранения глобальных настроек: {ex.Message}");
-            }
+
         }
 
         public void Dispose()

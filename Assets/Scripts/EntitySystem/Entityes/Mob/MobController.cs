@@ -24,6 +24,8 @@ namespace TheRavine.EntityControl
 
         public void SetUp(ISetAble.Callback callback)
         {
+            ServiceLocator.Services.Register(this);
+            
             logger = ServiceLocator.GetService<IRavineLogger>();
             logger.LogInfo("MobController service is available now");
             
@@ -137,7 +139,7 @@ namespace TheRavine.EntityControl
                 mobEntities.Dispose();
                 transformAccessArray.Dispose();
                 velocities.Dispose();
-                logger.LogInfo("MobController service is disabled");
+                logger?.LogInfo("MobController service is disabled");
                 callback?.Invoke();
             }
             catch (Exception ex)

@@ -11,7 +11,6 @@ using TMPro;
 
 public class ParallaxSceneController : MonoBehaviour
 {
-    [SerializeField] private AudioRadioController controller;
     [SerializeField] private AudioClip audioClip;
     [SerializeField] private UniversalAdditionalCameraData _cameraData;
     [SerializeField] private GameObject winObject;
@@ -44,10 +43,8 @@ public class ParallaxSceneController : MonoBehaviour
         if (worldData.gameWon)
         {
             winObject.SetActive(true);
-            controller.StartWinRadio(audioClip);
             PrintText($"Игра пройдена за {Convert.ToString(DateTimeOffset.Now.ToUnixTimeSeconds() - worldData.startTime)} секунд \r\nЗа {worldData.cycleCount} останов{Extension.GetSklonenie(worldData.cycleCount)}").Forget();
         }
-        else controller.StartDefaultRadio();
     }
 
     private void TimerFinished()

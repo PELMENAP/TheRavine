@@ -97,6 +97,8 @@ namespace TheRavine.Generator
         private IEndless[] endless;
         public void SetUp(ISetAble.Callback callback)
         {
+            ServiceLocator.Services.Register(this);
+            
             // seed = RavineRandom.RangeInt(0, 1000);
             seed = 16;
             mapData = new Dictionary<Vector2Int, ChunkData>(64);
@@ -168,23 +170,6 @@ namespace TheRavine.Generator
             while (!_cts.Token.IsCancellationRequested)
             {
                 position = GetPlayerPosition();
-
-                // debug
-                // Vector2 playerXZ = new Vector2(viewer.position.x, viewer.position.z + generationSize);
-                // Vector2Int vec = GetLocalPosition(playerXZ);
-                // try
-                // {
-
-                //     // Debug.Log(GetMapData(GetChunkPosition(playerXZ)).heightMap[vec.x, vec.y]);
-                //     GetMapData(GetChunkPosition(playerXZ)).heightMap[vec.x, vec.y] += 1;
-
-                //     ExtraUpdate();
-                // }
-                // catch
-                // {
-                //     Debug.Log(vec);
-                // }
-
 
                 if (position != OldVposition)
                 {

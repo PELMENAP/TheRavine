@@ -1,4 +1,4 @@
-using Cysharp.Threading.Tasks;
+using TheRavine.Generator;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -15,8 +15,8 @@ public class GrassMeshPlacer : MonoBehaviour
     [SerializeField] private float density = 1f;
     
     [Header("Scale Variation")]
-    [SerializeField] private Vector3 scaleMin = new Vector3(0.8f, 0.8f, 0.8f);
-    [SerializeField] private Vector3 scaleMax = new Vector3(1.2f, 1.2f, 1.2f);
+    [SerializeField] private Vector3 scaleMin = new(0.8f, 0.8f, 0.8f);
+    [SerializeField] private Vector3 scaleMax = new(1.2f, 1.2f, 1.2f);
     
     [Header("Rotation")]
     [SerializeField] private bool alignToSurfaceNormal = true;
@@ -25,11 +25,6 @@ public class GrassMeshPlacer : MonoBehaviour
     
     [Header("Compute Shaders")]
     [SerializeField] private ComputeShader meshSamplerShader;
-    [SerializeField] private ComputeShader cullingShader;
-    
-    [Header("Culling")]
-    [SerializeField] private Camera cullingCamera;
-    [SerializeField] private bool enableFrustumCulling = true;
     [SerializeField] private float cullingDistance = 100f;
     
     [Header("Performance")]
@@ -44,7 +39,6 @@ public class GrassMeshPlacer : MonoBehaviour
     
     private uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
     private int kernelMeshSampling;
-    private int kernelCulling;
     private Bounds renderBounds;
     
     private const int THREAD_GROUP_SIZE = 64;
@@ -68,9 +62,6 @@ public class GrassMeshPlacer : MonoBehaviour
             targetMeshFilter = GetComponent<MeshFilter>();
             targetTransform = transform;
         }
-        
-        if (cullingCamera == null)
-            cullingCamera = Camera.main;
         
         Mesh mesh = targetMeshFilter.sharedMesh;
         
@@ -119,10 +110,10 @@ public class GrassMeshPlacer : MonoBehaviour
         triangleBuffer = triangleBuffer = new ComputeBuffer(triangleData.Length, sizeof(float) * 24);
         triangleBuffer.SetData(triangleData);
         
-        renderBounds = new Bounds(targetTransform.position, Vector3.one * cullingDistance * 2f);
+        renderBounds = new Bounds(new Vector2(targetTransform.position.x + MapGenerator.generationSize, 
+            targetTransform.position.y + MapGenerator.generationSize), 2f * cullingDistance * Vector3.one);
         
         kernelMeshSampling = meshSamplerShader.FindKernel("SampleMeshSurface");
-        kernelCulling = cullingShader.FindKernel("FrustumCull");
     }
     
     private void GenerateGrassInstances()
@@ -145,48 +136,18 @@ public class GrassMeshPlacer : MonoBehaviour
         instanceDataBuffer.GetData(new InstanceData[1]); // форсируем синхронизацию
     }
     
+    private Vector3 oldPosition;
     private void Update()
     {
-        if (enableFrustumCulling && cullingCamera != null)
+        if(oldPosition != targetTransform.position)
         {
-            PerformCulling();
+            OnDestroy();
+            InitializeBuffers();
+            GenerateGrassInstances();
+            oldPosition = targetTransform.position;
         }
-        else
-        {
-            RenderAllInstances();
-        }
-    }
-    
-    private void PerformCulling()
-    {
-        visibleInstanceBuffer.SetCounterValue(0);
-        
-        Matrix4x4 vp = GL.GetGPUProjectionMatrix(cullingCamera.projectionMatrix, false) * cullingCamera.worldToCameraMatrix;
-        
-        cullingShader.SetMatrix("vpMatrix", vp);
-        cullingShader.SetBuffer(kernelCulling, "instanceData", instanceDataBuffer);
-        cullingShader.SetBuffer(kernelCulling, "visibleInstances", visibleInstanceBuffer);
-        cullingShader.SetInt("instanceCount", instanceCount);
-        cullingShader.SetVector("cameraPosition", cullingCamera.transform.position);
-        cullingShader.SetFloat("maxDistance", cullingDistance);
-        
-        int threadGroups = Mathf.CeilToInt(instanceCount / (float)THREAD_GROUP_SIZE);
-        cullingShader.Dispatch(kernelCulling, threadGroups, 1, 1);
-        
-        ComputeBuffer.CopyCount(visibleInstanceBuffer, argsBuffer, sizeof(uint));
-        
-        grassMaterial.SetBuffer("instanceData", visibleInstanceBuffer);
-        Graphics.DrawMeshInstancedIndirect(
-            grassMesh,
-            0,
-            grassMaterial,
-            renderBounds,
-            argsBuffer,
-            0,
-            null,
-            castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off,
-            receiveShadows
-        );
+
+        RenderAllInstances();
     }
     
     private void RenderAllInstances()
@@ -212,17 +173,20 @@ public class GrassMeshPlacer : MonoBehaviour
         visibleInstanceBuffer?.Release();
         triangleBuffer?.Release();
         counterBuffer?.Release();
+
+        argsBuffer?.Dispose();
+        instanceDataBuffer?.Dispose();
+        visibleInstanceBuffer?.Dispose();
+        triangleBuffer?.Dispose();
+        counterBuffer?.Dispose();
     }
     
     private void OnDrawGizmosSelected()
     {
-        if (Application.isPlaying && cullingCamera != null)
+        if (Application.isPlaying)
         {
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireCube(renderBounds.center, renderBounds.size);
-            
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawWireSphere(cullingCamera.transform.position, cullingDistance);
         }
     }
     
