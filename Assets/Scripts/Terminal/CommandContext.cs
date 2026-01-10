@@ -17,7 +17,7 @@ namespace TheRavine.Base
         private bool _disposed = false;
 
         public TextMeshProUGUI OutputWindow { get; }
-        public PlayerEntity PlayerData { get; private set; }
+        public IReadOnlyList<AEntity> PlayersData { get; private set; }
         public MapGenerator Generator { get; private set; }
         public readonly GameObject Graphy;
         public readonly CommandManager CommandManager;
@@ -29,14 +29,12 @@ namespace TheRavine.Base
         public CommandContext(
             TextMeshProUGUI output, 
             CommandManager commandManager, 
-            PlayerEntity player, 
             MapGenerator gen, 
             GameObject graphy,
             ScriptEditorPresenter scriptEditor,
             RiveRuntime scriptInterpreter)
         {
             OutputWindow = output;
-            PlayerData = player;
             Generator = gen;
             Graphy = graphy;
             CommandManager = commandManager;
@@ -79,7 +77,7 @@ namespace TheRavine.Base
             OutputWindow.text = string.Empty;
         }
         
-        public void SetPlayer(PlayerEntity player) => PlayerData = player;
+        public void SetPlayers(IReadOnlyList<AEntity> players) => PlayersData = players;
         public void SetGenerator(MapGenerator gen) => Generator = gen;
 
         public void Dispose()

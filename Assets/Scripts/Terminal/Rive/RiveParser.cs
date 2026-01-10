@@ -25,7 +25,9 @@ namespace TheRavine.Base
             ["to"] = TokenType.To,
             ["end"] = TokenType.End,
             ["log"] = TokenType.Log,
-            ["wait"] = TokenType.Wait 
+            ["wait"] = TokenType.Wait,
+            ["get"] = TokenType.Get,
+            ["send"] = TokenType.Send
         };
         
         public ProgramNode Parse(string fileName, string content)
@@ -296,6 +298,7 @@ namespace TheRavine.Base
                 OriginalExpression = originalExpr
             };
         }
+
         private WaitNode ParseWait()
         {
             var milliseconds = ParseExpression();
@@ -408,6 +411,28 @@ namespace TheRavine.Base
             if (Match(TokenType.Number))
                 return new LiteralNode { Value = int.Parse(Previous().Value) };
 
+            if (Match(TokenType.Get))
+                return new GetInputNode();
+
+            if (Match(TokenType.Send))
+            {
+                Consume(TokenType.LeftParen, "Expected '(' after 'send'");
+                
+                var interactorName = Consume(TokenType.Identifier, "Expected interactor name").Value;
+                
+                Consume(TokenType.Comma, "Expected ',' after interactor name");
+                
+                var value = ParseExpression();
+                
+                Consume(TokenType.RightParen, "Expected ')' after send arguments");
+                
+                return new SendToInteractorNode
+                {
+                    InteractorName = interactorName,
+                    Value = value
+                };
+            }
+
             if (Match(TokenType.LeftParen))
             {
                 var expr = ParseExpression();
@@ -445,6 +470,7 @@ namespace TheRavine.Base
 
             throw LogAndThrow($"Expected expression, got: {Current().Value}");
         }
+
         private bool Match(params TokenType[] types)
         {
             if (types.AsValueEnumerable().Any(Check))
@@ -513,7 +539,7 @@ namespace TheRavine.Base
         LeftParen, RightParen, LeftBrace, RightBrace,
         Equal, Comma, NewLine,
         Int, If, Else, For, To, End, Log, Return, TerminalCommand,
-        Wait,
+        Wait, Get, Send,
         EOF
     }
 

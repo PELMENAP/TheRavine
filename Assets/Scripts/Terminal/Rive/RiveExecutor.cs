@@ -8,12 +8,16 @@ namespace TheRavine.Base
     {
         private readonly Stack<Dictionary<string, int>> _variableScopes = new();
         private readonly RiveRuntime _runtime;
+        private readonly InputStreamManager _inputStream;
+        private readonly InteractorRegistry _interactorRegistry;
         private int _operationCount;
         private const int MAX_OPERATIONS = 10000;
         
-        public RiveExecutor(RiveRuntime runtime)
+        public RiveExecutor(RiveRuntime runtime, InputStreamManager inputStream, InteractorRegistry interactorRegistry)
         {
             _runtime = runtime;
+            _inputStream = inputStream;
+            _interactorRegistry = interactorRegistry;
         }
         
         public async UniTask<ExecutionResult> ExecuteAsync(ProgramNode program, params int[] args)
@@ -70,7 +74,7 @@ namespace TheRavine.Base
             return statement switch
             {
                 ReturnNode ret => await ExecuteReturnAsync(ret),
-                VariableDeclarationNode varDecl => ExecuteVariableDeclaration(varDecl),
+                VariableDeclarationNode varDecl => await ExecuteVariableDeclarationAsync(varDecl),
                 AssignmentNode assign => await ExecuteAssignmentAsync(assign),
                 IfNode ifNode => await ExecuteIfAsync(ifNode),
                 ForLoopNode forLoop => await ExecuteForLoopAsync(forLoop),
@@ -87,9 +91,9 @@ namespace TheRavine.Base
             return ExecutionResult.CreateReturn(value);
         }
         
-        private ExecutionResult ExecuteVariableDeclaration(VariableDeclarationNode node)
+        private async UniTask<ExecutionResult> ExecuteVariableDeclarationAsync(VariableDeclarationNode node)
         {
-            var value = EvaluateExpression(node.InitialValue);
+            var value = await EvaluateExpressionAsync(node.InitialValue);
             SetVariable(node.Name, value);
             return ExecutionResult.CreateSuccess();
         }
@@ -185,36 +189,22 @@ namespace TheRavine.Base
         
         private async UniTask<int> EvaluateExpressionAsync(ExpressionNode expr)
         {
-            if (expr is FunctionCallNode funcCall)
-            {
-                var args = new List<int>();
-                foreach (var arg in funcCall.Arguments)
-                {
-                    args.Add(await EvaluateExpressionAsync(arg));
-                }
-                
-                var result = await _runtime.CallFunctionAsync(funcCall.FunctionName, args.ToArray());
-                return result.Success ? result.ReturnValue : 0;
-            }
-            
-            return EvaluateExpression(expr);
-        }
-        
-        private int EvaluateExpression(ExpressionNode expr)
-        {
             return expr switch
             {
                 LiteralNode lit => lit.Value,
                 VariableNode var => GetVariable(var.Name) ?? 0,
-                BinaryOpNode bin => EvaluateBinaryOp(bin),
+                BinaryOpNode bin => await EvaluateBinaryOpAsync(bin),
+                FunctionCallNode funcCall => await EvaluateFunctionCallAsync(funcCall),
+                GetInputNode => await _inputStream.GetAsync(),
+                SendToInteractorNode send => await EvaluateSendAsync(send),
                 _ => 0
             };
         }
         
-        private int EvaluateBinaryOp(BinaryOpNode node)
+        private async UniTask<int> EvaluateBinaryOpAsync(BinaryOpNode node)
         {
-            var left = EvaluateExpression(node.Left);
-            var right = EvaluateExpression(node.Right);
+            var left = await EvaluateExpressionAsync(node.Left);
+            var right = await EvaluateExpressionAsync(node.Right);
             
             return node.Operator switch
             {
@@ -224,6 +214,24 @@ namespace TheRavine.Base
                 BinaryOperator.Divide => right != 0 ? left / right : 0,
                 _ => 0
             };
+        }
+
+        private async UniTask<int> EvaluateFunctionCallAsync(FunctionCallNode funcCall)
+        {
+            var args = new List<int>();
+            foreach (var arg in funcCall.Arguments)
+            {
+                args.Add(await EvaluateExpressionAsync(arg));
+            }
+            
+            var result = await _runtime.CallFunctionAsync(funcCall.FunctionName, args.ToArray());
+            return result.Success ? result.ReturnValue : 0;
+        }
+
+        private async UniTask<int> EvaluateSendAsync(SendToInteractorNode node)
+        {
+            var value = await EvaluateExpressionAsync(node.Value);
+            return await _interactorRegistry.SendToInteractorAsync(node.InteractorName, value);
         }
         
         private async UniTask<bool> EvaluateConditionAsync(ExpressionNode expr)

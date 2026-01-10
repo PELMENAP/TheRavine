@@ -18,7 +18,7 @@ public class MainComponent : IMainComponent
     }
 
     public string GetEntityName() => Name;
-    public int GetPrefabID() => PrefabID;
+    // public int GetPrefabID() => PrefabID;
     public ulong GetClientID() => ClientID;
     public void Dispose()
     {

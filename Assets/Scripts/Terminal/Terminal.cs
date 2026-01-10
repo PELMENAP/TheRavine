@@ -19,12 +19,11 @@ namespace TheRavine.Base
         [SerializeField] private Button confirmButton;
         [SerializeField] private GameObject graphyManager;
         [SerializeField] private ScriptEditorPresenter scriptEditor;
+        [SerializeField] private RiveInputUI inputUI;
         private RiveRuntime interpreter;
         
         public CommandManager CommandManager { get; private set; }
         private CommandContext _context;
-        private PlayerEntity playerData;
-        private MapGenerator generator;
         private InputBindingAdapter _confirmBinding;
         private IRavineLogger logger;
         
@@ -60,18 +59,19 @@ namespace TheRavine.Base
                 new PrintCommand(),
                 new ClearCommand(),
                 new TeleportCommand(),
-                new SetSpeedCommand(),
-                new SetViewCommand(),
+                new SetValueCommand(),
                 new RotateCommand(),
                 new DebugCommand()
             );
             
             graphyManager.SetActive(false);
-            _context = new CommandContext(outputWindow, CommandManager, null, null, graphyManager, scriptEditor, interpreter);
+            _context = new CommandContext(outputWindow, CommandManager, null, graphyManager, scriptEditor, interpreter);
 
             if (scriptEditor != null)
             {   
                 scriptEditor.Initialize(_context, interpreter, logger);
+                inputUI.Initialize(interpreter, logger);
+
                 scriptEditor.LoadAllFilesToInterpreter().Forget();
                 
                 CommandManager.Register(
@@ -91,6 +91,18 @@ namespace TheRavine.Base
             ProcessInput("~clear");
             WaitForDependencies().Forget();
         }
+
+        private void RegisterInteractors()
+        {
+            interpreter.RegisterInteractor(new DigitalLockInteractor(347));
+            
+            interpreter.RegisterInteractor(new SequenceValidatorInteractor());
+            
+            interpreter.RegisterInteractor(new ChecksumInteractor());
+            
+            interpreter.RegisterInteractor(new CollatzInteractor());
+        }
+
 
         private async UniTask<bool> ExecuteTerminalCommandAsync(string command)
         {
@@ -125,16 +137,16 @@ namespace TheRavine.Base
 
         private async UniTaskVoid WaitForDependencies()
         {   
-            while (playerData == null || generator == null)
+            while (true)
             {
                 try
                 {
-                    // logger.LogInfo($"Для удаления предупреждений ниже войдите в игру:");
-                    // playerData ??= ServiceLocator.GetService<PlayerModelView>()?.playerEntity;
-                    // generator ??= ServiceLocator.GetService<MapGenerator>();
-                    
-                    if (playerData != null && generator != null)
+                    if(ServiceLocator.Services.TryGet(out MapGenerator generator))
+                    {
+                        _context.SetPlayers(ServiceLocator.Players.GetAllPlayers());
+                        _context.SetGenerator(generator);
                         break;
+                    }
                         
                     await UniTask.Delay(5000);
                 }
@@ -145,9 +157,6 @@ namespace TheRavine.Base
                 }
             }
             logger.LogInfo($"Все службы Terminal инициализированны");
-            
-            _context.SetPlayer(playerData);
-            _context.SetGenerator(generator);
         }
 
         private void HandleEnter()
