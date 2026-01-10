@@ -19,7 +19,7 @@ namespace TheRavine.Base
             context.Display("Доступные команды:");
             foreach (var cmd in context.CommandManager.ListCommands())
             {
-                context.Display($"{cmd.Name}: {cmd.Description}");
+                context.Display($"{cmd.Name}: {cmd.Description} ({cmd.ShortName})");
             }
             return UniTask.CompletedTask;
         }

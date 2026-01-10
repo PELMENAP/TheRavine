@@ -36,6 +36,15 @@ namespace TheRavine.Base
         public string FunctionName { get; set; }
         public List<ExpressionNode> Arguments { get; set; } = new();
     }
+
+    public class GetInputNode : ExpressionNode { }
+
+    public class SendToInteractorNode : ExpressionNode
+    {
+        public string InteractorName { get; set; }
+        public ExpressionNode Value { get; set; }
+    }
+
     public abstract class StatementNode : AstNode { }
 
     public class VariableDeclarationNode : StatementNode

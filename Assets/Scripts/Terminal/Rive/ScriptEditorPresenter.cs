@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine.UI;
 using NaughtyAttributes;
@@ -28,10 +29,7 @@ namespace TheRavine.Base
 
             editorPanel?.SetActive(false);
 
-            filesDropdown.onValueChanged.AddListener
-            (
-                index => OnDropdownValueChanged()
-            );
+            filesDropdown.onValueChanged.AddListener(index => OnDropdownValueChanged());
 
             RefreshFilesList().Forget();
         }
@@ -41,6 +39,12 @@ namespace TheRavine.Base
             if (string.IsNullOrEmpty(fileName))
             {
                 logger.LogWarning("Имя файла не может быть пустым");
+                return;
+            }
+
+            if (RiveBuiltInFunctions.IsReserved(fileName))
+            {
+                logger.LogWarning($"Имя '{fileName}' зарезервировано");
                 return;
             }
 
@@ -61,6 +65,12 @@ namespace TheRavine.Base
 
         public async UniTaskVoid LoadFile(string fileName)
         {
+            if (RiveBuiltInFunctions.IsReserved(fileName))
+            {
+                logger.LogWarning($"Нельзя редактировать зарезервированное имя '{fileName}'");
+                return;
+            }
+
             bool isExist = await scriptFileManager.ExistsAsync(fileName);
             if (!isExist)
             {
@@ -78,11 +88,18 @@ namespace TheRavine.Base
 
             logger.LogInfo($"Загружен файл: {fileName}");
         }
+
         public void SaveCurrentFile()
         {
             if (string.IsNullOrEmpty(currentFileName))
             {
                 logger.LogWarning("Нет открытого файла для сохранения");
+                return;
+            }
+
+            if (RiveBuiltInFunctions.IsReserved(currentFileName))
+            {
+                logger.LogWarning($"Нельзя сохранить файл с зарезервированным именем '{currentFileName}'");
                 return;
             }
 
@@ -96,6 +113,12 @@ namespace TheRavine.Base
 
         public async UniTaskVoid DeleteFile(string fileName)
         {
+            if (RiveBuiltInFunctions.IsReserved(fileName))
+            {
+                logger.LogWarning($"Нельзя удалить зарезервированное имя '{fileName}'");
+                return;
+            }
+
             await scriptFileManager.DeleteAsync(fileName);
             interpreter.UnloadFile(fileName);
             
@@ -161,7 +184,7 @@ namespace TheRavine.Base
 
         public async UniTask<RiveRuntime.ScriptResult> ExecuteScriptAsync(string fileName, params int[] args)
         {
-            if (!interpreter.IsFileLoaded(fileName))
+            if (!interpreter.IsFileLoaded(fileName) && !RiveBuiltInFunctions.IsBuiltIn(fileName))
             {
                 var content = await scriptFileManager.LoadAsync(fileName);
                 if (content != null)
@@ -199,5 +222,13 @@ namespace TheRavine.Base
         public void LoadFileToInterpreter(string fileName, string content) => interpreter.LoadFile(fileName, content);
         public void UnloadFileFromInterpreter(string fileName) => interpreter.UnloadFile(fileName);
         public RiveRuntime.ProgramInfo GetFileInfo(string fileName) => interpreter.GetFileInfo(fileName);
+        public IReadOnlyCollection<string> GetBuiltInFunctionNames() => interpreter.GetBuiltInFunctionNames();
+        
+        public void PushInput(int value) => interpreter.PushInput(value);
+        public int GetWaitingInputReaders() => interpreter.GetWaitingInputReaders();
+        public void RegisterInteractor(IInteractor interactor) => interpreter.RegisterInteractor(interactor);
+        public void UnregisterInteractor(string name) => interpreter.UnregisterInteractor(name);
+        public IReadOnlyCollection<string> GetRegisteredInteractors() => interpreter.GetRegisteredInteractors();
+        public IInteractor GetInteractor(string name) => interpreter.GetInteractor(name);
     }
 }

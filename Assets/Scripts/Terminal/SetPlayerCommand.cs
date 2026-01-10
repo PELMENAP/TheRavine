@@ -18,7 +18,7 @@ namespace TheRavine.Base
 
         public bool Validate(CommandContext context)
         {
-            if (context.PlayerData == null)
+            if (context.PlayersData == null || context.PlayersData.Count < 1)
             {
                 context.Display("Игрок ещё не инициализирован");
                 return false;
@@ -43,21 +43,19 @@ namespace TheRavine.Base
                 context.Display("Превышен лимит мира");
                 return UniTask.CompletedTask;
             }
-            context.PlayerData.GetEntityComponent<TransformComponent>().GetEntityTransform().position = new Vector2(x, y);
+            context.PlayersData[0].GetEntityComponent<TransformComponent>().GetEntityTransform().position = new Vector2(x, y);
             context.Display($"Выполнен телепорт на координаты: {x}, {y}");
             return UniTask.CompletedTask;
         }
     }
-    public abstract class SetValueCommandBase : IValidatedCommand
+    public class SetValueCommand : IValidatedCommand
     {
-        public abstract string Name { get; }
-        public abstract string ShortName { get; }
-        public abstract string Description { get; }
-        protected abstract void Apply(PlayerEntity player, int value, CommandContext context);
-
+        public string Name => "~set";
+        public string ShortName => "~s";
+        public string Description => "Устанавливает числовые параметры игрока: ~set i [parameter] <0..100>";
         public bool Validate(CommandContext context)
         {
-            if (context.PlayerData == null)
+            if (context.PlayersData == null || context.PlayersData.Count < 1)
             {
                 context.Display("Игрок ещё не инициализирован");
                 return false;
@@ -77,18 +75,21 @@ namespace TheRavine.Base
                 context.Display("Недопустимое значение");
                 return UniTask.CompletedTask;
             }
-            Apply(context.PlayerData, val, context);
+
+            switch (args[2])
+            {
+                case "speed":
+                    ApplySpeed(context.PlayersData[0], val, context);
+                    break;
+                default:
+                    context.Display("Неизвестный параметр");
+                    break;
+            }
+
             return UniTask.CompletedTask;
         }
-    }
 
-    public class SetSpeedCommand : SetValueCommandBase
-    {
-        public override string Name => "~set~speed";
-        public override string ShortName => "~s~s";
-        public override string Description => "Устанавливает скорость игрока: ~set~speed i <0..100>";
-
-        protected override void Apply(PlayerEntity player, int value, CommandContext context)
+        private void ApplySpeed(AEntity player, int value, CommandContext context)
         {
             if (value > 100)
             {
@@ -97,24 +98,6 @@ namespace TheRavine.Base
             }
             player.GetEntityComponent<MovementComponent>().SetBaseSpeed(value);
             context.Display($"Скорость игрока установлена: {value}");
-        }
-    }
-
-    public class SetViewCommand : SetValueCommandBase
-    {
-        public override string Name => "~set~view";
-        public override string ShortName => "~s~v";
-        public override string Description => "Устанавливает обзор игрока: ~set~view i <0..30>";
-
-        protected override void Apply(PlayerEntity player, int value, CommandContext context)
-        {
-            if (value > 30)
-            {
-                context.Display("Превышен лимит обзора");
-                return;
-            }
-            player.GetEntityComponent<AimComponent>().SetCrosshairDistance(value);
-            context.Display($"Обзор игрока установлен: {value}");
         }
     }
 }

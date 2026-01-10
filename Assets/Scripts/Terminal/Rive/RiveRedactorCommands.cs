@@ -34,8 +34,10 @@ namespace TheRavine.Base
                 }
             }
 
+            bool isBuiltIn = RiveBuiltInFunctions.IsBuiltIn(fileName);
             bool isExist = await context.scriptFileManager.ExistsAsync(fileName);
-            if (!isExist)
+
+            if (!isBuiltIn && !isExist)
             {
                 context.Display($"Файл {fileName} не найден");
                 return;
@@ -94,8 +96,6 @@ namespace TheRavine.Base
                     context.Display("Использование: ~editor <on/off>");
                     break;
             }
-
-            return;
         }
     }
 
@@ -115,6 +115,12 @@ namespace TheRavine.Base
 
             var fileName = args[1];
 
+            if (RiveBuiltInFunctions.IsReserved(fileName))
+            {
+                context.Display($"Нельзя редактировать зарезервированное имя '{fileName}'");
+                return;
+            }
+
             if (!context.ScriptEditor.IsEditorActive())
             {
                 context.ScriptEditor.SetEditorActive(true);
@@ -131,8 +137,6 @@ namespace TheRavine.Base
                 context.ScriptEditor.CreateNewFile(fileName).Forget();
                 context.Display($"Создан новый файл {fileName} для редактирования");
             }
-
-            return;
         }
     }
 
@@ -140,15 +144,17 @@ namespace TheRavine.Base
     {
         public string Name => "~file";
         public string ShortName => "~f";
-        public string Description => "Показывает информацию о скриптах: ~file [list/info <filename>]";
+        public string Description => "Показывает информацию о скриптах: ~file [list/info <filename>/builtin]";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
         {
             if (args.Length == 1)
             {
                 var files = await context.scriptFileManager.ListIdsAsync();
+                var builtInCount = context.ScriptInterpreter.GetBuiltInFunctionNames().Count;
                 context.Display($"Доступно скриптов: {files.Count}");
-                context.Display("Используйте: ~file list для списка файлов");
+                context.Display($"Встроенных функций: {builtInCount}");
+                context.Display("Используйте: ~file list | ~file builtin");
                 return;
             }
 
@@ -172,6 +178,15 @@ namespace TheRavine.Base
                     }
                     break;
 
+                case "builtin":
+                    var builtIns = context.ScriptInterpreter.GetBuiltInFunctionNames();
+                    context.Display("Встроенные функции:");
+                    foreach (var func in builtIns)
+                    {
+                        context.Display($"  - {func}");
+                    }
+                    break;
+
                 case "info":
                     if (args.Length < 3)
                     {
@@ -180,10 +195,18 @@ namespace TheRavine.Base
                     }
 
                     var fileName = args[2];
-                    bool isExist = await context.scriptFileManager.ExistsAsync(fileName);
-                    if (!isExist)
+                    var fileInfo = context.ScriptInterpreter.GetFileInfo(fileName);
+
+                    if (!fileInfo.IsLoaded && !fileInfo.IsBuiltIn)
                     {
                         context.Display($"Файл {fileName} не найден");
+                        return;
+                    }
+
+                    if (fileInfo.IsBuiltIn)
+                    {
+                        context.Display($"Встроенная функция: {fileName}");
+                        context.Display("Параметры: переменное количество");
                         return;
                     }
 
@@ -192,19 +215,16 @@ namespace TheRavine.Base
                     context.Display($"Файл: {fileName}");
                     context.Display($"Строк: {lines}");
 
-                    var fileInfo = context.ScriptInterpreter.GetFileInfo(fileName);
-                    if (!fileInfo.IsLoaded && fileInfo.Parameters.Count > 0)
+                    if (fileInfo.Parameters.Count > 0)
                     {
                         context.Display($"Параметры: ({string.Join(", ", fileInfo.Parameters)})");
                     }
                     break;
 
                 default:
-                    context.Display("Использование: ~file [list/info <filename>]");
+                    context.Display("Использование: ~file [list/info <filename>/builtin]");
                     break;
             }
-
-            return;
         }
     }
     
@@ -212,13 +232,13 @@ namespace TheRavine.Base
     {
         public string Name => "~delete";
         public string ShortName => "~del";
-        public string Description => "Удаляет что-то: ~delete [file <filename> / ]";
+        public string Description => "Удаляет что-то: ~delete [file <filename>]";
 
         public async UniTask ExecuteAsync(string[] args, CommandContext context)
         {
             if (args.Length < 3)
             {
-                context.Display("Использование: ~delete [file <filename> / ]");
+                context.Display("Использование: ~delete [file <filename>]");
                 return;
             }
 
@@ -228,12 +248,20 @@ namespace TheRavine.Base
             {
                 case "file":
                     var fileName = args[2];
+
+                    if (RiveBuiltInFunctions.IsReserved(fileName))
+                    {
+                        context.Display($"Нельзя удалить зарезервированное имя '{fileName}'");
+                        return;
+                    }
+
                     bool isExist = await context.scriptFileManager.ExistsAsync(fileName);
                     if (!isExist)
                     {
                         context.Display($"Файл {fileName} не найден");
                         return;
                     }
+
                     await context.scriptFileManager.DeleteAsync(fileName);
                     context.ScriptInterpreter.UnloadFile(fileName);
 
@@ -244,11 +272,11 @@ namespace TheRavine.Base
 
                     context.Display($"Файл {fileName} удален");
                     break;
+
                 default:
-                    context.Display("Использование: ~delete [file <filename> / ]");
+                    context.Display("Использование: ~delete [file <filename>]");
                     break;
             }
-            return;
         }
     }
 
@@ -272,22 +300,29 @@ namespace TheRavine.Base
                 return;
             }
 
+            var fileName = context.ScriptEditor.GetCurrentFileName();
+
+            if (RiveBuiltInFunctions.IsReserved(fileName))
+            {
+                context.Display($"Нельзя сохранить файл с зарезервированным именем '{fileName}'");
+                return;
+            }
+
             try
             {
                 var content = context.ScriptEditor.GetCurrentContent();
 
-                await context.scriptFileManager.SaveAsync(context.ScriptEditor.GetCurrentFileName(), content);
-                context.ScriptInterpreter.LoadFile(context.ScriptEditor.GetCurrentFileName(), content);
+                await context.scriptFileManager.SaveAsync(fileName, content);
+                context.ScriptInterpreter.LoadFile(fileName, content);
                 context.Display("Файл сохранен успешно");
             }
             catch (Exception ex)
             {
                 context.Display($"Ошибка сохранения: {ex.Message}");
             }
-
-            return;
         }
     }
+
     public class NewScriptCommand : ICommand
     {
         public string Name => "~new";
@@ -304,6 +339,12 @@ namespace TheRavine.Base
 
             var fileName = args[1];
 
+            if (RiveBuiltInFunctions.IsReserved(fileName))
+            {
+                context.Display($"Имя '{fileName}' зарезервировано");
+                return;
+            }
+
             bool isExist = await context.scriptFileManager.ExistsAsync(fileName);
             if (isExist)
             {
@@ -318,8 +359,6 @@ namespace TheRavine.Base
 
             context.ScriptEditor.CreateNewFile(fileName).Forget();
             context.Display($"Создан новый файл {fileName}");
-            
-            return;
         }
     }
 
