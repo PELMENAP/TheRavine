@@ -45,16 +45,15 @@ namespace TheRavine.EntityControl
 
             playerAnimator.SetUpAsync().Forget();
 
+            GetPlayerComponents();
+            DelayedInit().Forget();
+
             currentController = globalSettings.controlType switch
             {
-                ControlType.Personal => new PCController(Movement, RightClick, transform),
+                ControlType.Personal => new PCController(Movement, RightClick, transform, aimComponent.CrosshairDistance),
                 ControlType.Mobile => new JoistickController(joystick),
                 _ => throw new NotImplementedException()
             };
-
-
-            GetPlayerComponents();
-            DelayedInit().Forget();
 
             Raise.action.performed += AimRaise;
             LeftClick.action.performed += AimPlace;
@@ -184,7 +183,6 @@ namespace TheRavine.EntityControl
 
             if (aim.magnitude < aimComponent.CrosshairDistance) crosshair.localPosition = aim;
             else crosshair.localPosition = aim.normalized * aimComponent.CrosshairDistance;
-            crosshair.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg);
             crosshair.gameObject.SetActive(true);
             isAccurance = true;
         }
@@ -243,11 +241,11 @@ namespace TheRavine.EntityControl
         {
             if (crosshair.gameObject.activeSelf)
             {
-                if (act) In().Forget();
+                if (act) Placing().Forget();
             }
         }
 
-        private async UniTaskVoid In()
+        private async UniTaskVoid Placing()
         {
             try
             {

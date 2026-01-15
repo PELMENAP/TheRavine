@@ -20,12 +20,14 @@ namespace TheRavine.Base
         [SerializeField] private GameObject graphyManager;
         [SerializeField] private ScriptEditorPresenter scriptEditor;
         [SerializeField] private RiveInputUI inputUI;
+        [SerializeField] private PlayerInput playerInput;
         private RiveRuntime interpreter;
         
         public CommandManager CommandManager { get; private set; }
         private CommandContext _context;
         private InputBindingAdapter _confirmBinding;
         private IRavineLogger logger;
+
         
         
         public void SetActiveTerminal()
@@ -37,6 +39,12 @@ namespace TheRavine.Base
             {
                 inputField.Select();
                 inputField.ActivateInputField();
+
+                playerInput.SwitchCurrentActionMap("TextInput");
+            }
+            else
+            {
+                playerInput.SwitchCurrentActionMap("Gameplay");
             }
         }
 
@@ -46,6 +54,10 @@ namespace TheRavine.Base
             
             inputField.onSubmit.AddListener(OnInputSubmit);
             inputField.onEndEdit.AddListener(OnInputEndEdit);
+
+            playerInput.actions.Disable();
+            playerInput.actions.FindActionMap("Gameplay").Enable();
+            playerInput.actions.FindActionMap("TextInput").Enable();
         }
 
         public async void Setup(IRavineLogger logger)
@@ -69,6 +81,7 @@ namespace TheRavine.Base
 
             if (scriptEditor != null)
             {   
+                RegisterInteractors();
                 scriptEditor.Initialize(_context, interpreter, logger);
                 inputUI.Initialize(interpreter, logger);
 
@@ -95,12 +108,15 @@ namespace TheRavine.Base
         private void RegisterInteractors()
         {
             interpreter.RegisterInteractor(new DigitalLockInteractor(347));
-            
             interpreter.RegisterInteractor(new SequenceValidatorInteractor());
-            
             interpreter.RegisterInteractor(new ChecksumInteractor());
-            
             interpreter.RegisterInteractor(new CollatzInteractor());
+
+            CommandManager.Register(
+                new InteractorListCommand(),
+                new InteractorResetCommand(),
+                new InputCommand()
+            );
         }
 
 
