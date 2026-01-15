@@ -1,0 +1,186 @@
+#pragma kernel PlaceGrass
+
+struct InstanceData
+{
+    float4x4 trs;
+    float4 color;
+};
+
+struct VertexData
+{
+    float3 position;
+};
+
+RWStructuredBuffer<InstanceData> instanceData;
+StructuredBuffer<VertexData> vertices;
+StructuredBuffer<int> indices;
+
+int instanceCount;
+int triangleCount;
+float3 scaleMin;
+float3 scaleMax;
+bool randomYRotation;
+float maxYRotation;
+int randomSeed;
+float2 xzBoundsMin;
+float2 xzBoundsMax;
+
+uint PCGHash(uint input)
+{
+    uint state = input * 747796405u + 2891336453u;
+    uint word  = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}
+
+float Random(uint seed)
+{
+    return PCGHash(seed) * (1.0 / 4294967296.0);
+}
+
+bool RayTriangleIntersect(float3 rayOrigin, float3 rayDir, float3 v0, float3 v1, float3 v2, out float t)
+{
+    float3 edge1 = v1 - v0;
+    float3 edge2 = v2 - v0;
+    float3 h = cross(rayDir, edge2);
+    float a = dot(edge1, h);
+    
+    if (abs(a) < 0.0001)
+    {
+        t = 0;
+        return false;
+    }
+    
+    float f = 1.0 / a;
+    float3 s = rayOrigin - v0;
+    float u = f * dot(s, h);
+    
+    if (u < 0.0 || u > 1.0)
+    {
+        t = 0;
+        return false;
+    }
+    
+    float3 q = cross(s, edge1);
+    float v = f * dot(rayDir, q);
+    
+    if (v < 0.0 || u + v > 1.0)
+    {
+        t = 0;
+        return false;
+    }
+    
+    t = f * dot(edge2, q);
+    return t > 0.0001;
+}
+
+bool FindMeshIntersection(float2 xzPos, out float3 hitPoint)
+{
+    float3 rayOrigin = float3(xzPos.x, 10000.0, xzPos.y);
+    float3 rayDir = float3(0, -1, 0);
+    
+    float closestT = 1000000.0;
+    bool hit = false;
+    
+    for (int i = 0; i < triangleCount; i++)
+    {
+        int i0 = indices[i * 3];
+        int i1 = indices[i * 3 + 1];
+        int i2 = indices[i * 3 + 2];
+        
+        float3 v0 = vertices[i0].position;
+        float3 v1 = vertices[i1].position;
+        float3 v2 = vertices[i2].position;
+        
+        float t;
+        if (RayTriangleIntersect(rayOrigin, rayDir, v0, v1, v2, t))
+        {
+            if (t < closestT)
+            {
+                closestT = t;
+                hit = true;
+            }
+        }
+    }
+    
+    hitPoint = rayOrigin + rayDir * closestT;
+    return hit;
+}
+
+float4 QuaternionAxisAngle(float3 axis, float angle)
+{
+    float halfAngle = angle * 0.5;
+    float s = sin(halfAngle);
+    return float4(axis * s, cos(halfAngle));
+}
+
+float3x3 QuaternionToMatrix(float4 q)
+{
+    float x = q.x, y = q.y, z = q.z, w = q.w;
+    float x2 = x + x, y2 = y + y, z2 = z + z;
+    float xx = x * x2, xy = x * y2, xz = x * z2;
+    float yy = y * y2, yz = y * z2, zz = z * z2;
+    float wx = w * x2, wy = w * y2, wz = w * z2;
+    
+    float3x3 m;
+    m[0][0] = 1.0 - (yy + zz);
+    m[0][1] = xy + wz;
+    m[0][2] = xz - wy;
+    m[1][0] = xy - wz;
+    m[1][1] = 1.0 - (xx + zz);
+    m[1][2] = yz + wx;
+    m[2][0] = xz + wy;
+    m[2][1] = yz - wx;
+    m[2][2] = 1.0 - (xx + yy);
+    
+    return m;
+}
+
+float4x4 TRS(float3 position, float4 rotation, float3 scale)
+{
+    float3x3 rotMatrix = QuaternionToMatrix(rotation);
+    
+    float4x4 mat;
+    mat[0] = float4(rotMatrix[0] * scale.x, 0);
+    mat[1] = float4(rotMatrix[1] * scale.y, 0);
+    mat[2] = float4(rotMatrix[2] * scale.z, 0);
+    mat[3] = float4(position, 1);
+    
+    return mat;
+}
+
+[numthreads(64, 1, 1)]
+void PlaceGrass(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)instanceCount)
+        return;
+    
+    uint seed = id.x * 73856093u + randomSeed;
+    
+    float2 xzPos = lerp(xzBoundsMin, xzBoundsMax, float2(
+        Random(seed),
+        Random(seed + 1)
+    ));
+    
+    float3 position;
+    if (!FindMeshIntersection(xzPos, position))
+    {
+        position = float3(xzPos.x, 0, xzPos.y);
+    }
+    
+    float3 scale = lerp(scaleMin, scaleMax, float3(
+        Random(seed + 2),
+        Random(seed + 3),
+        Random(seed + 4)
+    ));
+    
+    float4 rotation = float4(0, 0, 0, 1);
+    
+    if (randomYRotation)
+    {
+        float yAngle = (Random(seed + 5) * 2.0 - 1.0) * maxYRotation * 0.0174533;
+        rotation = QuaternionAxisAngle(float3(0, 1, 0), yAngle);
+    }
+    
+    instanceData[id.x].trs = TRS(position, rotation, scale);
+    instanceData[id.x].color = float4(1, 1, 1, 1);
+}

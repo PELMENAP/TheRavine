@@ -8,8 +8,6 @@ namespace TheRavine.Base
     {
         [SerializeField] private TMP_InputField inputField;
         [SerializeField] private Button submitButton;
-        [SerializeField] private TMP_Text waitingReadersText;
-        [SerializeField] private GameObject inputPanel;
 
         private RiveRuntime _runtime;
         private IRavineLogger _logger;
@@ -20,15 +18,8 @@ namespace TheRavine.Base
             _logger = logger;
 
             submitButton.onClick.AddListener(OnSubmitInput);
-            
-            inputPanel?.SetActive(true);
-            UpdateWaitingReadersDisplay();
         }
 
-        private void Update()
-        {
-            UpdateWaitingReadersDisplay();
-        }
 
         private void OnSubmitInput()
         {
@@ -48,22 +39,6 @@ namespace TheRavine.Base
             
             inputField.text = "";
             inputField.ActivateInputField();
-        }
-
-        private void UpdateWaitingReadersDisplay()
-        {
-            if (waitingReadersText != null && _runtime != null)
-            {
-                int count = _runtime.GetWaitingInputReaders();
-                waitingReadersText.text = count > 0 
-                    ? $"Ожидают ввода: {count} программ(ы)" 
-                    : "Нет программ, ожидающих ввода";
-            }
-        }
-
-        public void SetPanelActive(bool active)
-        {
-            inputPanel?.SetActive(active);
         }
     }
 }

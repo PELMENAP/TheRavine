@@ -1,4 +1,3 @@
-using TheRavine.Generator;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -12,20 +11,17 @@ public class GrassMeshPlacer : MonoBehaviour
     [SerializeField] private Mesh grassMesh;
     [SerializeField] private Material grassMaterial;
     [SerializeField] private int instanceCount = 10000;
-    [SerializeField] private float density = 1f;
     
     [Header("Scale Variation")]
     [SerializeField] private Vector3 scaleMin = new(0.8f, 0.8f, 0.8f);
     [SerializeField] private Vector3 scaleMax = new(1.2f, 1.2f, 1.2f);
     
     [Header("Rotation")]
-    [SerializeField] private bool alignToSurfaceNormal = true;
     [SerializeField] private bool randomYRotation = true;
     [SerializeField] private float maxYRotation = 180f;
     
-    [Header("Compute Shaders")]
+    [Header("Compute Shader")]
     [SerializeField] private ComputeShader meshSamplerShader;
-    [SerializeField] private float cullingDistance = 100f;
     
     [Header("Performance")]
     [SerializeField] private bool castShadows = true;
@@ -33,13 +29,12 @@ public class GrassMeshPlacer : MonoBehaviour
     
     private ComputeBuffer argsBuffer;
     private ComputeBuffer instanceDataBuffer;
-    private ComputeBuffer visibleInstanceBuffer;
-    private ComputeBuffer triangleBuffer;
-    private ComputeBuffer counterBuffer;
-    
-    private uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
-    private int kernelMeshSampling;
+    private ComputeBuffer vertexBuffer;
+    private ComputeBuffer indexBuffer;
+    private uint[] args = new uint[5];
+    private int kernelPlaceGrass;
     private Bounds renderBounds;
+    private Vector3 cachedPosition;
     
     private const int THREAD_GROUP_SIZE = 64;
     
@@ -49,10 +44,16 @@ public class GrassMeshPlacer : MonoBehaviour
         public Vector4 color;
     }
     
+    private struct VertexData
+    {
+        public Vector3 position;
+    }
+    
     private void Start()
     {
         InitializeBuffers();
         GenerateGrassInstances();
+        cachedPosition = targetTransform.position;
     }
     
     private void InitializeBuffers()
@@ -64,6 +65,7 @@ public class GrassMeshPlacer : MonoBehaviour
         }
         
         Mesh mesh = targetMeshFilter.sharedMesh;
+        Bounds meshBounds = mesh.bounds;
         
         argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
         args[0] = grassMesh.GetIndexCount(0);
@@ -73,85 +75,63 @@ public class GrassMeshPlacer : MonoBehaviour
         argsBuffer.SetData(args);
         
         instanceDataBuffer = new ComputeBuffer(instanceCount, sizeof(float) * 16 + sizeof(float) * 4);
-        visibleInstanceBuffer = new ComputeBuffer(instanceCount, sizeof(float) * 16 + sizeof(float) * 4, ComputeBufferType.Append);
-        counterBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
         
         Vector3[] vertices = mesh.vertices;
-        int[] triangles = mesh.triangles;
-        Vector3[] normals = mesh.normals;
+        int[] indices = mesh.triangles;
         
-        TriangleData[] triangleData = new TriangleData[triangles.Length / 3];
-        for (int i = 0; i < triangles.Length; i += 3)
+        VertexData[] vertexData = new VertexData[vertices.Length];
+        for (int i = 0; i < vertices.Length; i++)
         {
-            int idx = i / 3;
-            int i0 = triangles[i];
-            int i1 = triangles[i + 1];
-            int i2 = triangles[i + 2];
-            
-            Vector3 worldV0 = targetTransform.TransformPoint(vertices[i0]);
-            Vector3 worldV1 = targetTransform.TransformPoint(vertices[i1]);
-            Vector3 worldV2 = targetTransform.TransformPoint(vertices[i2]);
-            
-            Vector3 worldN0 = targetTransform.TransformDirection(normals[i0]);
-            Vector3 worldN1 = targetTransform.TransformDirection(normals[i1]);
-            Vector3 worldN2 = targetTransform.TransformDirection(normals[i2]);
-            
-            triangleData[idx] = new TriangleData
-            {
-                v0 = worldV0,
-                v1 = worldV1,
-                v2 = worldV2,
-                n0 = worldN0,
-                n1 = worldN1,
-                n2 = worldN2
-            };
+            vertexData[i].position = targetTransform.TransformPoint(vertices[i]);
         }
         
-        triangleBuffer = triangleBuffer = new ComputeBuffer(triangleData.Length, sizeof(float) * 24);
-        triangleBuffer.SetData(triangleData);
+        vertexBuffer = new ComputeBuffer(vertices.Length, sizeof(float) * 3);
+        vertexBuffer.SetData(vertexData);
         
-        renderBounds = new Bounds(new Vector2(targetTransform.position.x + MapGenerator.generationSize, 
-            targetTransform.position.y + MapGenerator.generationSize), 2f * cullingDistance * Vector3.one);
+        indexBuffer = new ComputeBuffer(indices.Length, sizeof(int));
+        indexBuffer.SetData(indices);
         
-        kernelMeshSampling = meshSamplerShader.FindKernel("SampleMeshSurface");
+        Vector3 worldCenter = targetTransform.TransformPoint(meshBounds.center) + new Vector3(40, 0, 40);
+        Vector3 worldSize = Vector3.Scale(meshBounds.size, targetTransform.lossyScale);
+        
+        renderBounds = new Bounds(worldCenter, worldSize);
+        
+        kernelPlaceGrass = meshSamplerShader.FindKernel("PlaceGrass");
+        
+        meshSamplerShader.SetBuffer(kernelPlaceGrass, "instanceData", instanceDataBuffer);
+        meshSamplerShader.SetBuffer(kernelPlaceGrass, "vertices", vertexBuffer);
+        meshSamplerShader.SetBuffer(kernelPlaceGrass, "indices", indexBuffer);
+        meshSamplerShader.SetInt("instanceCount", instanceCount);
+        meshSamplerShader.SetInt("triangleCount", indices.Length / 3);
+        meshSamplerShader.SetVector("scaleMin", scaleMin);
+        meshSamplerShader.SetVector("scaleMax", scaleMax);
+        meshSamplerShader.SetBool("randomYRotation", randomYRotation);
+        meshSamplerShader.SetFloat("maxYRotation", maxYRotation);
+        
+        Vector2 xzMin = new Vector2(worldCenter.x - worldSize.x * 0.5f, worldCenter.z - worldSize.z * 0.5f);
+        Vector2 xzMax = new Vector2(worldCenter.x + worldSize.x * 0.5f, worldCenter.z + worldSize.z * 0.5f);
+        meshSamplerShader.SetVector("xzBoundsMin", xzMin);
+        meshSamplerShader.SetVector("xzBoundsMax", xzMax);
     }
     
     private void GenerateGrassInstances()
     {
-        meshSamplerShader.SetBuffer(kernelMeshSampling, "triangles", triangleBuffer);
-        meshSamplerShader.SetBuffer(kernelMeshSampling, "instanceData", instanceDataBuffer);
-        meshSamplerShader.SetInt("instanceCount", instanceCount);
-        meshSamplerShader.SetInt("triangleCount", triangleBuffer.count);
-        meshSamplerShader.SetVector("scaleMin", scaleMin);
-        meshSamplerShader.SetVector("scaleMax", scaleMax);
-        meshSamplerShader.SetFloat("density", density);
-        meshSamplerShader.SetBool("alignToNormal", alignToSurfaceNormal);
-        meshSamplerShader.SetBool("randomYRotation", randomYRotation);
-        meshSamplerShader.SetFloat("maxYRotation", maxYRotation);
         meshSamplerShader.SetInt("randomSeed", (int)(Time.realtimeSinceStartup * 1000));
         
         int threadGroups = Mathf.CeilToInt(instanceCount / (float)THREAD_GROUP_SIZE);
-        meshSamplerShader.Dispatch(kernelMeshSampling, threadGroups, 1, 1);
-
-        instanceDataBuffer.GetData(new InstanceData[1]); // форсируем синхронизацию
+        meshSamplerShader.Dispatch(kernelPlaceGrass, threadGroups, 1, 1);
     }
     
-    private Vector3 oldPosition;
     private void Update()
     {
-        if(oldPosition != targetTransform.position)
+        if (cachedPosition != targetTransform.position)
         {
             OnDestroy();
             InitializeBuffers();
             GenerateGrassInstances();
-            oldPosition = targetTransform.position;
+            cachedPosition = targetTransform.position;
         }
 
-        RenderAllInstances();
-    }
-    
-    private void RenderAllInstances()
-    {
         grassMaterial.SetBuffer("instanceData", instanceDataBuffer);
         Graphics.DrawMeshInstancedIndirect(
             grassMesh,
@@ -170,15 +150,12 @@ public class GrassMeshPlacer : MonoBehaviour
     {
         argsBuffer?.Release();
         instanceDataBuffer?.Release();
-        visibleInstanceBuffer?.Release();
-        triangleBuffer?.Release();
-        counterBuffer?.Release();
-
+        vertexBuffer?.Release();
+        indexBuffer?.Release();
         argsBuffer?.Dispose();
         instanceDataBuffer?.Dispose();
-        visibleInstanceBuffer?.Dispose();
-        triangleBuffer?.Dispose();
-        counterBuffer?.Dispose();
+        vertexBuffer?.Dispose();
+        indexBuffer?.Dispose();
     }
     
     private void OnDrawGizmosSelected()
@@ -188,15 +165,5 @@ public class GrassMeshPlacer : MonoBehaviour
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireCube(renderBounds.center, renderBounds.size);
         }
-    }
-    
-    private struct TriangleData
-    {
-        public Vector3 v0; private float _padding0;
-        public Vector3 v1; private float _padding1;
-        public Vector3 v2; private float _padding2;
-        public Vector3 n0; private float _padding3;
-        public Vector3 n1; private float _padding4;
-        public Vector3 n2; private float _padding5;
     }
 }
