@@ -701,8 +701,12 @@ MonoBehaviour:
   randomYRotation: 1
   maxYRotation: 180
   meshSamplerShader: {fileID: 7200000, guid: e3ba6791a67a001f9a194ee1c04a4dfd, type: 3}
+  cullingCamera: {fileID: 0}
+  enableFrustumCulling: 0
+  cullingMargin: 2
   castShadows: 1
   receiveShadows: 1
+  gridCellSize: 1
 --- !u!4 &1470670355
 Transform:
   m_ObjectHideFlags: 0

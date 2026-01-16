@@ -1,9 +1,11 @@
 #pragma kernel PlaceGrass
+#pragma kernel CullGrass
 
 struct InstanceData
 {
     float4x4 trs;
     float4 color;
+    float4 boundsInfo;
 };
 
 struct VertexData
@@ -11,7 +13,14 @@ struct VertexData
     float3 position;
 };
 
+struct CulledInstanceData
+{
+    float4x4 trs;
+    float4 color;
+};
+
 RWStructuredBuffer<InstanceData> instanceData;
+AppendStructuredBuffer<CulledInstanceData> culledInstanceData;
 StructuredBuffer<VertexData> vertices;
 StructuredBuffer<int> indices;
 
@@ -21,9 +30,17 @@ float3 scaleMin;
 float3 scaleMax;
 bool randomYRotation;
 float maxYRotation;
-int randomSeed;
 float2 xzBoundsMin;
 float2 xzBoundsMax;
+float gridCellSize;
+
+float4 plane0;
+float4 plane1;
+float4 plane2;
+float4 plane3;
+float4 plane4;
+float4 plane5;
+float cullingMargin;
 
 uint PCGHash(uint input)
 {
@@ -35,6 +52,12 @@ uint PCGHash(uint input)
 float Random(uint seed)
 {
     return PCGHash(seed) * (1.0 / 4294967296.0);
+}
+
+uint WorldPosToSeed(float2 worldPos, float cellSize)
+{
+    int2 gridCoord = int2(floor(worldPos / cellSize));
+    return (uint)gridCoord.x * 73856093u + (uint)gridCoord.y * 19349663u;
 }
 
 bool RayTriangleIntersect(float3 rayOrigin, float3 rayDir, float3 v0, float3 v1, float3 v2, out float t)
@@ -154,12 +177,24 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     if (id.x >= (uint)instanceCount)
         return;
     
-    uint seed = id.x * 73856093u + randomSeed;
+    float2 boundsSize = xzBoundsMax - xzBoundsMin;
+    float2 normalizedPos = float2(
+        (id.x % (uint)sqrt((float)instanceCount)) / sqrt((float)instanceCount),
+        (id.x / (uint)sqrt((float)instanceCount)) / sqrt((float)instanceCount)
+    );
     
-    float2 xzPos = lerp(xzBoundsMin, xzBoundsMax, float2(
-        Random(seed),
-        Random(seed + 1)
-    ));
+    float2 baseXZ = xzBoundsMin + boundsSize * normalizedPos;
+    uint baseSeed = WorldPosToSeed(baseXZ, gridCellSize);
+    
+    float2 offset = float2(
+        (Random(baseSeed) - 0.5) * gridCellSize,
+        (Random(baseSeed + 1) - 0.5) * gridCellSize
+    );
+    
+    float2 xzPos = baseXZ + offset;
+    xzPos = clamp(xzPos, xzBoundsMin, xzBoundsMax);
+    
+    uint worldSeed = WorldPosToSeed(xzPos, gridCellSize);
     
     float3 position;
     if (!FindMeshIntersection(xzPos, position))
@@ -168,19 +203,53 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     }
     
     float3 scale = lerp(scaleMin, scaleMax, float3(
-        Random(seed + 2),
-        Random(seed + 3),
-        Random(seed + 4)
+        Random(worldSeed + 2),
+        Random(worldSeed + 3),
+        Random(worldSeed + 4)
     ));
     
     float4 rotation = float4(0, 0, 0, 1);
     
     if (randomYRotation)
     {
-        float yAngle = (Random(seed + 5) * 2.0 - 1.0) * maxYRotation * 0.0174533;
+        float yAngle = (Random(worldSeed + 5) * 2.0 - 1.0) * maxYRotation * 0.0174533;
         rotation = QuaternionAxisAngle(float3(0, 1, 0), yAngle);
     }
     
     instanceData[id.x].trs = TRS(position, rotation, scale);
     instanceData[id.x].color = float4(1, 1, 1, 1);
+    
+    float radius = max(scale.x, max(scale.y, scale.z)) * 0.5;
+    instanceData[id.x].boundsInfo = float4(position.x, position.y + scale.y * 0.5, position.z, radius);
+}
+
+bool SphereInPlane(float4 plane, float3 center, float radius)
+{
+    return dot(plane.xyz, center) + plane.w + radius >= 0.0;
+}
+
+[numthreads(64, 1, 1)]
+void CullGrass(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)instanceCount)
+        return;
+    
+    InstanceData instance = instanceData[id.x];
+    float3 center = instance.boundsInfo.xyz;
+    float radius = instance.boundsInfo.w;
+    
+    bool visible = SphereInPlane(plane0, center, radius + cullingMargin) &&
+                   SphereInPlane(plane1, center, radius + cullingMargin) &&
+                   SphereInPlane(plane2, center, radius + cullingMargin) &&
+                   SphereInPlane(plane3, center, radius + cullingMargin) &&
+                   SphereInPlane(plane4, center, radius + cullingMargin) &&
+                   SphereInPlane(plane5, center, radius + cullingMargin);
+    
+    if (visible)
+    {
+        CulledInstanceData culledInstance;
+        culledInstance.trs = instance.trs;
+        culledInstance.color = instance.color;
+        culledInstanceData.Append(culledInstance);
+    }
 }
