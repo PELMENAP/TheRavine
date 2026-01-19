@@ -13,12 +13,28 @@ public class GrassMeshPlacer : MonoBehaviour
     [SerializeField] private int instanceCount = 10000;
     
     [Header("Scale Variation")]
-    [SerializeField] private Vector3 scaleMin = new(0.8f, 0.8f, 0.8f);
-    [SerializeField] private Vector3 scaleMax = new(1.2f, 1.2f, 1.2f);
+    [SerializeField] private Vector3 scaleMin = new(0.8f, 0.5f, 0.8f);
+    [SerializeField] private Vector3 scaleMax = new(1.2f, 2f, 1.2f);
     
     [Header("Rotation")]
     [SerializeField] private bool randomYRotation = true;
     [SerializeField] private float maxYRotation = 180f;
+    
+    [Header("Density Control")]
+    [SerializeField] private bool useDensityNoise = true;
+    [SerializeField] private float noiseScale = 0.1f;
+    [SerializeField] private float densityThreshold = 0.3f;
+    [SerializeField] private int noiseOctaves = 2;
+    [SerializeField] private float noiseLacunarity = 2.0f;
+    [SerializeField] private float noisePersistence = 0.5f;
+    
+    [Header("Color Variation")]
+    [SerializeField] private bool useHeightColorVariation = true;
+    [SerializeField] private float minHeight = 0f;
+    [SerializeField] private float maxHeight = 10f;
+    [SerializeField] private Gradient heightColorGradient;
+    [SerializeField] private bool useRandomColorTint = true;
+    [SerializeField] private float colorVariation = 0.1f;
     
     [Header("Compute Shader")]
     [SerializeField] private ComputeShader meshSamplerShader;
@@ -34,19 +50,29 @@ public class GrassMeshPlacer : MonoBehaviour
     
     [Header("World Grid")]
     [SerializeField] private float gridCellSize = 1f;
+
+    [Header("Height Constraints")]
+    [SerializeField] private bool useHeightConstraints = false;
+    [SerializeField] private float minGenerationHeight = 0f;
+    [SerializeField] private float maxGenerationHeight = 10f;
+    
+    [Header("Advanced")]
+    [SerializeField] private bool useDistanceBasedDensity = false;
+    [SerializeField] private Vector2 distanceCenter = Vector2.zero;
+    [SerializeField] private float maxDistanceForDensity = 50f;
+    [SerializeField] private AnimationCurve densityFalloff = AnimationCurve.Linear(0, 1, 1, 0);
     
     private ComputeBuffer argsBuffer;
     private ComputeBuffer instanceDataBuffer;
     private ComputeBuffer culledInstanceDataBuffer;
     private ComputeBuffer vertexBuffer;
     private ComputeBuffer indexBuffer;
-    private ComputeBuffer visibleCountBuffer;
     private uint[] args = new uint[5];
     private int kernelPlaceGrass;
     private int kernelCullGrass;
     private Bounds renderBounds;
     private Vector3 cachedPosition;
-    private Camera mainCamera;
+    private static readonly int InstanceDataID = Shader.PropertyToID("instanceData");
     
     private const int THREAD_GROUP_SIZE = 64;
     
@@ -54,7 +80,6 @@ public class GrassMeshPlacer : MonoBehaviour
     {
         public Matrix4x4 trs;
         public Vector4 color;
-        public Vector4 boundsInfo; // xyz = center, w = radius
     }
     
     private struct VertexData
@@ -64,13 +89,24 @@ public class GrassMeshPlacer : MonoBehaviour
     
     private void Start()
     {
-        if (cullingCamera == null)
-            cullingCamera = Camera.main;
-        
-        mainCamera = Camera.main;
+        InitializeGradient();
+        cullingCamera ??= Camera.main;
         InitializeBuffers();
         GenerateGrassInstances();
         cachedPosition = targetTransform.position;
+    }
+    
+    private void InitializeGradient()
+    {
+        if (heightColorGradient == null)
+        {
+            heightColorGradient = new Gradient();
+            heightColorGradient.SetKeys(
+                new[] { new GradientColorKey(new Color(0.3f, 0.5f, 0.2f), 0f), 
+                       new GradientColorKey(new Color(0.5f, 0.8f, 0.3f), 1f) },
+                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) }
+            );
+        }
     }
     
     private void InitializeBuffers()
@@ -87,9 +123,9 @@ public class GrassMeshPlacer : MonoBehaviour
         argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
         UpdateArgsBuffer(0);
         
-        instanceDataBuffer = new ComputeBuffer(instanceCount, sizeof(float) * 16 + sizeof(float) * 4 + sizeof(float) * 4);
-        culledInstanceDataBuffer = new ComputeBuffer(instanceCount, sizeof(float) * 16 + sizeof(float) * 4, ComputeBufferType.Append);
-        visibleCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
+        int stride = sizeof(float) * 16 + sizeof(float) * 4;
+        instanceDataBuffer = new ComputeBuffer(instanceCount, stride);
+        culledInstanceDataBuffer = new ComputeBuffer(instanceCount, stride, ComputeBufferType.Append);
         
         Vector3[] vertices = mesh.vertices;
         int[] indices = mesh.triangles;
@@ -114,6 +150,11 @@ public class GrassMeshPlacer : MonoBehaviour
         kernelPlaceGrass = meshSamplerShader.FindKernel("PlaceGrass");
         kernelCullGrass = meshSamplerShader.FindKernel("CullGrass");
         
+        SetupComputeShaderParameters(indices, worldCenter, worldSize);
+    }
+    
+    private void SetupComputeShaderParameters(int[] indices, Vector3 worldCenter, Vector3 worldSize)
+    {
         meshSamplerShader.SetBuffer(kernelPlaceGrass, "instanceData", instanceDataBuffer);
         meshSamplerShader.SetBuffer(kernelPlaceGrass, "vertices", vertexBuffer);
         meshSamplerShader.SetBuffer(kernelPlaceGrass, "indices", indexBuffer);
@@ -125,10 +166,65 @@ public class GrassMeshPlacer : MonoBehaviour
         meshSamplerShader.SetFloat("maxYRotation", maxYRotation);
         meshSamplerShader.SetFloat("gridCellSize", gridCellSize);
         
+        meshSamplerShader.SetBool("useDensityNoise", useDensityNoise);
+        meshSamplerShader.SetFloat("noiseScale", noiseScale);
+        meshSamplerShader.SetFloat("densityThreshold", densityThreshold);
+        meshSamplerShader.SetInt("noiseOctaves", noiseOctaves);
+        meshSamplerShader.SetFloat("noiseLacunarity", noiseLacunarity);
+        meshSamplerShader.SetFloat("noisePersistence", noisePersistence);
+        
+        meshSamplerShader.SetBool("useHeightColorVariation", useHeightColorVariation);
+        meshSamplerShader.SetFloat("minHeight", minHeight);
+        meshSamplerShader.SetFloat("maxHeight", maxHeight);
+        meshSamplerShader.SetBool("useRandomColorTint", useRandomColorTint);
+        meshSamplerShader.SetFloat("colorVariation", colorVariation);
+        
+        meshSamplerShader.SetBool("useDistanceBasedDensity", useDistanceBasedDensity);
+        meshSamplerShader.SetVector("distanceCenter", distanceCenter);
+        meshSamplerShader.SetFloat("maxDistanceForDensity", maxDistanceForDensity);
+
+        meshSamplerShader.SetBool("useHeightConstraints", useHeightConstraints);
+        meshSamplerShader.SetFloat("minGenerationHeight", minGenerationHeight);
+        meshSamplerShader.SetFloat("maxGenerationHeight", maxGenerationHeight);
+        
+        SetGradientToComputeShader();
+        SetDensityCurveToComputeShader();
+        
         Vector2 xzMin = new Vector2(worldCenter.x - worldSize.x * 0.5f, worldCenter.z - worldSize.z * 0.5f);
         Vector2 xzMax = new Vector2(worldCenter.x + worldSize.x * 0.5f, worldCenter.z + worldSize.z * 0.5f);
         meshSamplerShader.SetVector("xzBoundsMin", xzMin);
         meshSamplerShader.SetVector("xzBoundsMax", xzMax);
+    }
+    
+    private void SetGradientToComputeShader()
+    {
+        const int gradientResolution = 64;
+        Vector4[] gradientData = new Vector4[gradientResolution];
+        
+        for (int i = 0; i < gradientResolution; i++)
+        {
+            float t = i / (float)(gradientResolution - 1);
+            Color col = heightColorGradient.Evaluate(t);
+            gradientData[i] = new Vector4(col.r, col.g, col.b, col.a);
+        }
+        
+        meshSamplerShader.SetInt("gradientResolution", gradientResolution);
+        meshSamplerShader.SetVectorArray("heightGradient", gradientData);
+    }
+    
+    private void SetDensityCurveToComputeShader()
+    {
+        const int curveResolution = 64;
+        float[] curveData = new float[curveResolution];
+        
+        for (int i = 0; i < curveResolution; i++)
+        {
+            float t = i / (float)(curveResolution - 1);
+            curveData[i] = densityFalloff.Evaluate(t);
+        }
+        
+        meshSamplerShader.SetInt("densityCurveResolution", curveResolution);
+        meshSamplerShader.SetFloats("densityCurve", curveData);
     }
     
     private void GenerateGrassInstances()
@@ -151,13 +247,11 @@ public class GrassMeshPlacer : MonoBehaviour
     {
         if (!enableFrustumCulling || cullingCamera == null)
         {
-            // Если culling отключен, используем все экземпляры
-            grassMaterial.SetBuffer("instanceData", instanceDataBuffer);
+            grassMaterial.SetBuffer(InstanceDataID, instanceDataBuffer);
             UpdateArgsBuffer((uint)instanceCount);
             return;
         }
         
-        // Получаем плоскости frustum камеры
         Plane[] cameraPlanes = GeometryUtility.CalculateFrustumPlanes(cullingCamera);
         Vector4[] planes = new Vector4[6];
         
@@ -188,7 +282,7 @@ public class GrassMeshPlacer : MonoBehaviour
         
         ComputeBuffer.CopyCount(culledInstanceDataBuffer, argsBuffer, sizeof(uint));
         
-        grassMaterial.SetBuffer("instanceData", culledInstanceDataBuffer);
+        grassMaterial.SetBuffer(InstanceDataID, culledInstanceDataBuffer);
     }
     
     private void Update()
@@ -223,14 +317,6 @@ public class GrassMeshPlacer : MonoBehaviour
         culledInstanceDataBuffer?.Release();
         vertexBuffer?.Release();
         indexBuffer?.Release();
-        visibleCountBuffer?.Release();
-        
-        argsBuffer?.Dispose();
-        instanceDataBuffer?.Dispose();
-        culledInstanceDataBuffer?.Dispose();
-        vertexBuffer?.Dispose();
-        indexBuffer?.Dispose();
-        visibleCountBuffer?.Dispose();
     }
     
     private void OnDrawGizmosSelected()

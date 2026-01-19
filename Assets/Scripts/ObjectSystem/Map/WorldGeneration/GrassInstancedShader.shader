@@ -8,6 +8,16 @@ Shader "Custom/GrassInstancedShader"
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
         _WindSpeed ("Wind Speed", Float) = 1.0
         _WindStrength ("Wind Strength", Float) = 0.1
+        
+        [Header(Advanced Coloring)]
+        _HeightColorBlend ("Height Color Blend", Range(0, 1)) = 1.0
+        _InstanceColorBlend ("Instance Color Blend", Range(0, 1)) = 1.0
+        _AmbientOcclusion ("Ambient Occlusion", Range(0, 1)) = 0.2
+        
+        [Header(Wind Advanced)]
+        _WindDirection ("Wind Direction", Vector) = (1, 0, 1, 0)
+        _WindGustStrength ("Wind Gust Strength", Range(0, 1)) = 0.3
+        _WindGustFrequency ("Wind Gust Frequency", Float) = 2.3
     }
     
     SubShader
@@ -20,7 +30,6 @@ Shader "Custom/GrassInstancedShader"
         LOD 200
         Cull Off
         
-        // Общий HLSL include для всех passes
         HLSLINCLUDE
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         
@@ -39,29 +48,34 @@ Shader "Custom/GrassInstancedShader"
             float _Cutoff;
             float _WindSpeed;
             float _WindStrength;
+            float _HeightColorBlend;
+            float _InstanceColorBlend;
+            float _AmbientOcclusion;
+            float4 _WindDirection;
+            float _WindGustStrength;
+            float _WindGustFrequency;
         CBUFFER_END
         
         TEXTURE2D(_MainTex);
         SAMPLER(sampler_MainTex);
         
-        // КРИТИЧЕСКИ ВАЖНО: одна и та же функция для всех passes
         float3 ApplyWind(float3 positionWS, float heightFactor)
         {
             float time = _Time.y * _WindSpeed;
-            float mainWave = sin(time + positionWS.x * 0.1 + positionWS.z * 0.1);
-            float gustWave = sin(time * 2.3 + positionWS.x * 0.05) * 0.5;
+            float3 windDir = normalize(_WindDirection.xyz);
+            
+            float mainWave = sin(time + dot(positionWS.xz, windDir.xz) * 0.1);
+            float gustWave = sin(time * _WindGustFrequency + positionWS.x * 0.05) * _WindGustStrength;
             float microWave = sin(time * 4.7 + positionWS.x * 0.3 + positionWS.z * 0.3) * 0.2;
             
             float totalWind = (mainWave + gustWave + microWave) * _WindStrength;
             float windEffect = pow(heightFactor, 2.0);
             
-            positionWS.x += totalWind * windEffect;
-            positionWS.z += totalWind * 0.7 * windEffect;
+            positionWS += windDir * totalWind * windEffect;
             
             return positionWS;
         }
         
-        // Общая функция трансформации для консистентности между passes
         float3 TransformObjectToWorldWithWind(float4 positionOS, float4x4 instanceTRS, out float heightFactor)
         {
             float3 positionWS = mul(positionOS, instanceTRS).xyz;
@@ -75,9 +89,8 @@ Shader "Custom/GrassInstancedShader"
         {
             Tags { "LightMode"="UniversalForward" }
             
-            // Важно: используем LEqual вместо Equal для работы с depth priming
             ZTest LEqual
-            ZWrite Off  // Глубина уже записана в DepthOnly pass
+            ZWrite Off
             
             HLSLPROGRAM
             #pragma vertex vert
@@ -113,7 +126,6 @@ Shader "Custom/GrassInstancedShader"
                 
                 InstanceData instance = instanceData[input.instanceID];
                 
-                // Используем общую функцию трансформации
                 float heightFactor;
                 float3 positionWS = TransformObjectToWorldWithWind(input.positionOS, instance.trs, heightFactor);
                 
@@ -134,17 +146,20 @@ Shader "Custom/GrassInstancedShader"
                 float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
                 clip(texColor.a - _Cutoff);
                 
-                float4 color = lerp(_BaseColor, _TipColor, input.heightFactor);
-                color *= input.color;
-                color *= texColor;
+                float4 heightColor = lerp(_BaseColor, _TipColor, input.heightFactor);
+                float4 finalColor = lerp(float4(1, 1, 1, 1), heightColor, _HeightColorBlend);
+                finalColor = lerp(finalColor, finalColor * input.color, _InstanceColorBlend);
+                finalColor *= texColor;
+                
+                float ao = lerp(1.0, 1.0 - _AmbientOcclusion, 1.0 - input.heightFactor);
                 
                 Light mainLight = GetMainLight();
                 float3 lighting = mainLight.color * max(0.0, dot(input.normalWS, mainLight.direction));
                 lighting += SampleSH(input.normalWS);
                 
-                color.rgb *= lighting;
+                finalColor.rgb *= lighting * ao;
                 
-                return color;
+                return finalColor;
             }
             
             ENDHLSL
@@ -179,11 +194,9 @@ Shader "Custom/GrassInstancedShader"
             };
             
             float3 _LightDirection;
-            float4 _ShadowBias;
             
-            float4 GetShadowPositionHClip(float3 positionWS, float3 normalWS)
+            float4 GetShadowPositionHClip(float3 positionWS)
             {
-                float3 lightDirection = _LightDirection;
                 float4 positionCS = TransformWorldToHClip(positionWS);
                 
                 #if UNITY_REVERSED_Z
@@ -201,11 +214,10 @@ Shader "Custom/GrassInstancedShader"
                 
                 InstanceData instance = instanceData[input.instanceID];
                 
-                // Используем ту же функцию трансформации
                 float heightFactor;
                 float3 positionWS = TransformObjectToWorldWithWind(input.positionOS, instance.trs, heightFactor);
                 
-                output.positionCS = GetShadowPositionHClip(positionWS, float3(0,1,0));
+                output.positionCS = GetShadowPositionHClip(positionWS);
                 output.uv = input.uv;
                 
                 return output;
@@ -252,7 +264,6 @@ Shader "Custom/GrassInstancedShader"
                 Varyings o;
                 InstanceData instance = instanceData[input.instanceID];
 
-                // КРИТИЧЕСКИ ВАЖНО: используем ту же функцию трансформации
                 float heightFactor;
                 float3 positionWS = TransformObjectToWorldWithWind(input.positionOS, instance.trs, heightFactor);
 

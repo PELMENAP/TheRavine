@@ -97,7 +97,7 @@ namespace TheRavine.Base
             };
         }
 
-        public async UniTask<ScriptResult> ExecuteScriptAsync(string fileName, params int[] args)
+        public async UniTask<ScriptResult> ExecuteScriptAsync(string fileName, params object[] args)
         {
             if (RiveBuiltInFunctions.IsBuiltIn(fileName))
             {
@@ -131,7 +131,14 @@ namespace TheRavine.Base
                 };
             }
             
-            var execResult = await _executor.ExecuteAsync(program, args);
+            var intArgs = new int[args.Length];
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] is int iv)
+                    intArgs[i] = iv;
+            }
+            
+            var execResult = await _executor.ExecuteAsync(program, intArgs);
             
             return new ScriptResult
             {
@@ -149,7 +156,7 @@ namespace TheRavine.Base
             return await _terminalCommandHandler(command);
         }
 
-        internal async UniTask<ScriptResult> CallFunctionAsync(string functionName, params int[] args)
+        internal async UniTask<ScriptResult> CallFunctionAsync(string functionName, params object[] args)
         {
             return await ExecuteScriptAsync(functionName, args);
         }
@@ -201,7 +208,7 @@ namespace TheRavine.Base
         public struct ScriptResult
         {
             public bool Success;
-            public int ReturnValue;
+            public object ReturnValue;
             public string ErrorMessage;
         }
     }

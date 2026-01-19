@@ -6,7 +6,7 @@ namespace TheRavine.Base
 {
     public class RiveExecutor
     {
-        private readonly Stack<Dictionary<string, int>> _variableScopes = new();
+        private readonly Stack<Dictionary<string, object>> _variableScopes = new();
         private readonly RiveRuntime _runtime;
         private readonly InputStreamManager _inputStream;
         private readonly InteractorRegistry _interactorRegistry;
@@ -128,8 +128,11 @@ namespace TheRavine.Base
             {
                 var startValue = await EvaluateExpressionAsync(node.StartExpression);
                 var endValue = await EvaluateExpressionAsync(node.EndExpression);
+
+                if (startValue is not int s || endValue is not int e)
+                    return ExecutionResult.CreateError("You can loop only int values");
                 
-                for (int i = startValue; i <= endValue; i++)
+                for (int i = s; i <= e; i++)
                 {
                     if (_operationCount >= MAX_OPERATIONS)
                         return ExecutionResult.CreateError("Operation limit exceeded in loop");
@@ -156,8 +159,9 @@ namespace TheRavine.Base
             foreach (var varName in node.VariableReferences)
             {
                 var value = GetVariable(varName);
-                if (value.HasValue)
-                    command = command.Replace($"{varName}", value.Value.ToString());
+
+                if (value != null)
+                    command = command.Replace($"{varName}", value.ToRiveString());
             }
             
             var success = await _runtime.ExecuteTerminalCommandAsync(command);
@@ -175,23 +179,27 @@ namespace TheRavine.Base
         private async UniTask<ExecutionResult> ExecuteWaitAsync(WaitNode node)
         {
             var milliseconds = await EvaluateExpressionAsync(node.Milliseconds);
+
+            if(milliseconds is not int mil)
+                return ExecutionResult.CreateError("Wait time should be a int number");
             
-            if (milliseconds < 0)
+            if (mil < 0)
                 return ExecutionResult.CreateError("Wait time cannot be negative");
             
-            if (milliseconds > 60000)
-                return ExecutionResult.CreateError("Wait time cannot exceed 60000ms (60 seconds)");
+            if (mil > 60000)
+                return ExecutionResult.CreateError("Wait time cannot exceed more than 60000ms (60 seconds)");
             
-            await UniTask.Delay(milliseconds);
+            await UniTask.Delay(mil);
             
             return ExecutionResult.CreateSuccess();
         }
         
-        private async UniTask<int> EvaluateExpressionAsync(ExpressionNode expr)
+        private async UniTask<object> EvaluateExpressionAsync(ExpressionNode expr)
         {
             return expr switch
             {
                 LiteralNode lit => lit.Value,
+                QbitLiteralNode qlit => new Qbit(qlit.InitialState),
                 VariableNode var => GetVariable(var.Name) ?? 0,
                 BinaryOpNode bin => await EvaluateBinaryOpAsync(bin),
                 FunctionCallNode funcCall => await EvaluateFunctionCallAsync(funcCall),
@@ -201,24 +209,27 @@ namespace TheRavine.Base
             };
         }
         
-        private async UniTask<int> EvaluateBinaryOpAsync(BinaryOpNode node)
+        private async UniTask<object> EvaluateBinaryOpAsync(BinaryOpNode node)
         {
             var left = await EvaluateExpressionAsync(node.Left);
             var right = await EvaluateExpressionAsync(node.Right);
             
+            if (left is not int l || right is not int r)
+                return 0;
+            
             return node.Operator switch
             {
-                BinaryOperator.Add => left + right,
-                BinaryOperator.Subtract => left - right,
-                BinaryOperator.Multiply => left * right,
-                BinaryOperator.Divide => right != 0 ? left / right : 0,
+                BinaryOperator.Add => l + r,
+                BinaryOperator.Subtract => l - r,
+                BinaryOperator.Multiply => l * r,
+                BinaryOperator.Divide => r != 0 ? l / r : 0,
                 _ => 0
             };
         }
 
-        private async UniTask<int> EvaluateFunctionCallAsync(FunctionCallNode funcCall)
+        private async UniTask<object> EvaluateFunctionCallAsync(FunctionCallNode funcCall)
         {
-            var args = new List<int>();
+            var args = new List<object>();
             foreach (var arg in funcCall.Arguments)
             {
                 args.Add(await EvaluateExpressionAsync(arg));
@@ -231,7 +242,9 @@ namespace TheRavine.Base
         private async UniTask<int> EvaluateSendAsync(SendToInteractorNode node)
         {
             var value = await EvaluateExpressionAsync(node.Value);
-            return await _interactorRegistry.SendToInteractorAsync(node.InteractorName, value);
+            if (value is not int intValue)
+                return 0;
+            return await _interactorRegistry.SendToInteractorAsync(node.InteractorName, intValue);
         }
         
         private async UniTask<bool> EvaluateConditionAsync(ExpressionNode expr)
@@ -242,21 +255,24 @@ namespace TheRavine.Base
             var left = await EvaluateExpressionAsync(bin.Left);
             var right = await EvaluateExpressionAsync(bin.Right);
             
+            if (left is not int l || right is not int r)
+                return false;
+            
             return bin.Operator switch
             {
-                BinaryOperator.Greater => left > right,
-                BinaryOperator.Less => left < right,
-                BinaryOperator.GreaterOrEqual => left >= right,
-                BinaryOperator.LessOrEqual => left <= right,
-                BinaryOperator.Equal => left == right,
-                BinaryOperator.NotEqual => left != right,
+                BinaryOperator.Greater => l > r,
+                BinaryOperator.Less => l < r,
+                BinaryOperator.GreaterOrEqual => l >= r,
+                BinaryOperator.LessOrEqual => l <= r,
+                BinaryOperator.Equal => l == r,
+                BinaryOperator.NotEqual => l != r,
                 _ => false
             };
         }
         
         private void PushScope()
         {
-            _variableScopes.Push(new Dictionary<string, int>());
+            _variableScopes.Push(new Dictionary<string, object>());
         }
         
         private void PopScope()
@@ -265,7 +281,7 @@ namespace TheRavine.Base
                 _variableScopes.Pop();
         }
         
-        private void SetVariable(string name, int value)
+        private void SetVariable(string name, object value)
         {
             foreach (var scope in _variableScopes)
             {
@@ -280,7 +296,7 @@ namespace TheRavine.Base
                 _variableScopes.Peek()[name] = value;
         }
         
-        private int? GetVariable(string name)
+        private object GetVariable(string name)
         {
             foreach (var scope in _variableScopes)
             {
@@ -294,14 +310,14 @@ namespace TheRavine.Base
     public struct ExecutionResult
     {
         public bool Success;
-        public int ReturnValue;
+        public object ReturnValue;
         public string ErrorMessage;
         public ExecutionAction Action;
         
-        public static ExecutionResult CreateSuccess(int returnValue = 0) =>
-            new() { Success = true, ReturnValue = returnValue, Action = ExecutionAction.Continue };
+        public static ExecutionResult CreateSuccess(object returnValue = null) =>
+            new() { Success = true, ReturnValue = returnValue ?? 0, Action = ExecutionAction.Continue };
         
-        public static ExecutionResult CreateReturn(int value) =>
+        public static ExecutionResult CreateReturn(object value) =>
             new() { Success = true, ReturnValue = value, Action = ExecutionAction.Return };
         
         public static ExecutionResult CreateError(string message) =>
