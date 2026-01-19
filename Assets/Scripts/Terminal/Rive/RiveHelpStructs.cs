@@ -2,6 +2,16 @@ using System.Collections.Generic;
 
 namespace TheRavine.Base
 {
+    public class QbitLiteralNode : ExpressionNode
+    {
+        public int InitialState { get; set; }
+    }
+
+    public enum ValueType
+    {
+        Int,
+        Qbit
+    }
     public abstract class AstNode
     {
         public int Line { get; set; }

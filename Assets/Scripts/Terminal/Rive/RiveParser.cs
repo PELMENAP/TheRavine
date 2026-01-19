@@ -19,6 +19,7 @@ namespace TheRavine.Base
         private static readonly Dictionary<string, TokenType> Keywords = new()
         {
             ["int"] = TokenType.Int,
+            ["qbit"] = TokenType.Qbit,
             ["if"] = TokenType.If,
             ["else"] = TokenType.Else,
             ["for"] = TokenType.For,
@@ -411,19 +412,24 @@ namespace TheRavine.Base
             if (Match(TokenType.Number))
                 return new LiteralNode { Value = int.Parse(Previous().Value) };
 
+            if (Match(TokenType.Qbit))
+            {
+                var state = 0;
+                if (Match(TokenType.Number))
+                    state = int.Parse(Previous().Value);
+                
+                return new QbitLiteralNode { InitialState = state };
+            }
+
             if (Match(TokenType.Get))
                 return new GetInputNode();
 
             if (Match(TokenType.Send))
             {
                 Consume(TokenType.LeftParen, "Expected '(' after 'send'");
-                
                 var interactorName = Consume(TokenType.Identifier, "Expected interactor name").Value;
-                
                 Consume(TokenType.Comma, "Expected ',' after interactor name");
-                
                 var value = ParseExpression();
-                
                 Consume(TokenType.RightParen, "Expected ')' after send arguments");
                 
                 return new SendToInteractorNode
@@ -538,7 +544,7 @@ namespace TheRavine.Base
         Number, Identifier, Operator,
         LeftParen, RightParen, LeftBrace, RightBrace,
         Equal, Comma, NewLine,
-        Int, If, Else, For, To, End, Log, Return, TerminalCommand,
+        Int, Qbit, If, Else, For, To, End, Log, Return, TerminalCommand,
         Wait, Get, Send,
         EOF
     }
