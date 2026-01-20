@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 2048
     height: 1181
   m_ShowMode: 4
-  m_Title: Inspector
+  m_Title: Game
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 332}
   m_MaxSize: {x: 10000, y: 10000}
@@ -118,7 +118,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 112}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 1
-  controlID: 19
+  controlID: 52
   draggingID: 0
 --- !u!114 &6
 MonoBehaviour:
@@ -144,7 +144,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 112}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 20
+  controlID: 53
   draggingID: 0
 --- !u!114 &7
 MonoBehaviour:
@@ -170,7 +170,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 112}
   m_MaxSize: {x: 16192, y: 16192}
   vertical: 1
-  controlID: 21
+  controlID: 54
   draggingID: 0
 --- !u!114 &8
 MonoBehaviour:
@@ -196,7 +196,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 56}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 22
+  controlID: 55
   draggingID: 0
 --- !u!114 &9
 MonoBehaviour:
@@ -234,7 +234,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 1
   m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: SceneView
+  m_Name: GameView
   m_EditorClassIdentifier: 
   m_Children: []
   m_Position:
@@ -243,16 +243,16 @@ MonoBehaviour:
     y: 0
     width: 1227
     height: 797
-  m_MinSize: {x: 202, y: 226}
+  m_MinSize: {x: 52, y: 76}
   m_MaxSize: {x: 4002, y: 4026}
-  m_ActualView: {fileID: 16}
+  m_ActualView: {fileID: 14}
   m_Panes:
   - {fileID: 16}
   - {fileID: 14}
   - {fileID: 17}
   - {fileID: 18}
-  m_Selected: 0
-  m_LastSelected: 1
+  m_Selected: 1
+  m_LastSelected: 2
 --- !u!114 &11
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -579,8 +579,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Game\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 339
-    y: 91
+    x: 340
+    y: 24
     width: 1225
     height: 771
   m_SerializedDataModeController:
@@ -628,8 +628,8 @@ MonoBehaviour:
     m_VAllowExceedBaseRangeMin: 1
     m_VAllowExceedBaseRangeMax: 1
     m_ScaleWithWindow: 0
-    m_HSlider: 0
-    m_VSlider: 0
+    m_HSlider: 1
+    m_VSlider: 1
     m_IgnoreScrollWheelUntilClicked: 0
     m_EnableMouseInput: 1
     m_EnableSliderZoomHorizontal: 0
@@ -642,18 +642,18 @@ MonoBehaviour:
       y: 21
       width: 1225
       height: 750
-    m_Scale: {x: 0.6380208, y: 0.6380208}
-    m_Translation: {x: 612.5, y: 375}
+    m_Scale: {x: 0.8313714, y: 0.8313714}
+    m_Translation: {x: 612.5, y: 374.99997}
     m_MarginLeft: 0
     m_MarginRight: 0
     m_MarginTop: 0
     m_MarginBottom: 0
     m_LastShownAreaInsideMargins:
       serializedVersion: 2
-      x: -960
-      y: -587.7551
-      width: 1920
-      height: 1175.5103
+      x: -736.7345
+      y: -451.0619
+      width: 1473.469
+      height: 902.12384
     m_MinimalGUI: 1
   m_defaultScale: 0.6380208
   m_LastWindowPixelSize: {x: 1225, y: 771}
@@ -708,7 +708,8 @@ MonoBehaviour:
       m_LastClickedID:
         m_Data: 0
       m_ExpandedIDs:
-      - m_Data: -1372
+      - m_Data: -2274
+      - m_Data: -1364
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -755,8 +756,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Scene\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 340
-    y: 24
+    x: 339
+    y: 91
     width: 1225
     height: 771
   m_SerializedDataModeController:
@@ -1343,9 +1344,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: -34.97197, y: 16.976885, z: -17.997856}
+    m_Target: {x: 0, y: 0, z: 0}
     speed: 2
-    m_Value: {x: -34.97197, y: 16.976885, z: -17.997856}
+    m_Value: {x: 0, y: 0, z: 0}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1391,13 +1392,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: 0.35800543, y: 0.03005992, z: -0.011521669, w: 0.93321687}
+    m_Target: {x: 0.30441615, y: -0.0021914572, z: 0.000710398, w: 0.952588}
     speed: 2
-    m_Value: {x: -0.3580054, y: -0.03005992, z: 0.011521669, w: -0.9332168}
+    m_Value: {x: -0.30441615, y: 0.0021914572, z: -0.000710398, w: -0.952588}
   m_Size:
-    m_Target: 45.895092
+    m_Target: 55.658985
     speed: 2
-    m_Value: 45.895092
+    m_Value: 55.658985
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -1501,14 +1502,14 @@ MonoBehaviour:
         m_PaneScroll: {x: 0, y: 0}
         m_ViewType: 0
         updateViewLive: 0
-        m_CurrentFrameIndex: 245667
+        m_CurrentFrameIndex: 3824
         m_HierarchyOverruledThreadFromSelection: 0
         m_ProfilerViewFilteringOptions: 1
         m_FrameDataHierarchyView:
           m_Serialized: 1
           m_TreeViewState:
             scrollPos: {x: 0, y: 0}
-            m_SelectedIDs: 01000000
+            m_SelectedIDs: 03000000
             m_LastClickedID: 0
             m_ExpandedIDs: 
             m_RenameOverlay:
@@ -1978,8 +1979,8 @@ MonoBehaviour:
                 m_SortedColumns: 03000000
           m_FullThreadName: Job.Worker 0
           m_ThreadName: Worker 0
-          <threadId>k__BackingField: 140340203878080
-          <threadIndex>k__BackingField: 59
+          <threadId>k__BackingField: 140522685433536
+          <threadIndex>k__BackingField: 62
           m_GroupName: Job
     - rid: 378050712151261241
       type: {class: GPUProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
@@ -1989,7 +1990,7 @@ MonoBehaviour:
         m_PaneScroll: {x: 0, y: 0}
         m_ViewType: 0
         updateViewLive: 0
-        m_CurrentFrameIndex: 247035
+        m_CurrentFrameIndex: -1
         m_HierarchyOverruledThreadFromSelection: 0
         m_ProfilerViewFilteringOptions: 1
         m_FrameDataHierarchyView:
@@ -2544,10 +2545,10 @@ MonoBehaviour:
     m_TextWithWhitespace: "Audio Mixer\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 337
+    x: 339
     y: 91
-    width: 1227
-    height: 772
+    width: 1225
+    height: 771
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -2684,12 +2685,12 @@ MonoBehaviour:
       oldMaxSizes: 
       oldSplitSize: 0
     m_HorizontalSplitter:
-      ID: 240
+      ID: 259
       splitterInitialOffset: 0
       currentActiveSplitter: -1
       realSizes:
-      - 368
-      - 859
+      - 367
+      - 858
       relativeSizes:
       - 0.3
       - 0.7
@@ -2699,7 +2700,7 @@ MonoBehaviour:
       maxSizes:
       - 0
       - 0
-      lastTotalSize: 1227
+      lastTotalSize: 1225
       splitSize: 6
       xOffset: 0
       m_Version: 1
@@ -2762,7 +2763,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Scripts/Terminal/Rive
+    - Assets/Scripts/ObjectSystem/Map/WorldGeneration
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -2772,18 +2773,18 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 68
   m_LastFolders:
-  - Assets/Scripts/Terminal/Rive
+  - Assets/Scripts/ObjectSystem/Map/WorldGeneration
   m_LastFoldersGridSize: 68
   m_LastProjectPath: /home/alaypetro/PELMENAP/TheRavine
   m_LockTracker:
     m_IsLocked: 0
   m_LastLocalAssetsSearchArea: 1
   m_FolderTreeState:
-    scrollPos: {x: 0, y: 742}
+    scrollPos: {x: 0, y: 735}
     m_SelectedIDs:
-    - m_Data: 68880
+    - m_Data: 68990
     m_LastClickedID:
-      m_Data: 68880
+      m_Data: 68990
     m_ExpandedIDs:
     - m_Data: 0
     - m_Data: 68770
