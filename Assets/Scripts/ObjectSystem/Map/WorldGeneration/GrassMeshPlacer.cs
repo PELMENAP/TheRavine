@@ -15,6 +15,11 @@ public class GrassMeshPlacer : MonoBehaviour
     [Header("Scale Variation")]
     [SerializeField] private Vector3 scaleMin = new(0.8f, 0.5f, 0.8f);
     [SerializeField] private Vector3 scaleMax = new(1.2f, 2f, 1.2f);
+
+    [Header("Scale Noise")]
+    [SerializeField] private bool useScaleNoise = true;
+    [SerializeField] private float scaleNoiseScale = 0.05f;
+    [SerializeField] private float scaleNoiseInfluence = 0.5f;
     
     [Header("Rotation")]
     [SerializeField] private bool randomYRotation = true;
@@ -165,6 +170,10 @@ public class GrassMeshPlacer : MonoBehaviour
         meshSamplerShader.SetBool("randomYRotation", randomYRotation);
         meshSamplerShader.SetFloat("maxYRotation", maxYRotation);
         meshSamplerShader.SetFloat("gridCellSize", gridCellSize);
+
+        meshSamplerShader.SetBool("useScaleNoise", useScaleNoise);
+        meshSamplerShader.SetFloat("scaleNoiseScale", scaleNoiseScale);
+        meshSamplerShader.SetFloat("scaleNoiseInfluence", scaleNoiseInfluence);
         
         meshSamplerShader.SetBool("useDensityNoise", useDensityNoise);
         meshSamplerShader.SetFloat("noiseScale", noiseScale);

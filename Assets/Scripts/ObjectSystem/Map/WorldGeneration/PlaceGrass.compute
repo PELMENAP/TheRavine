@@ -27,6 +27,10 @@ float2 xzBoundsMin;
 float2 xzBoundsMax;
 float gridCellSize;
 
+bool useScaleNoise;
+float scaleNoiseScale;
+float scaleNoiseInfluence;
+
 bool useDensityNoise;
 float noiseScale;
 float densityThreshold;
@@ -318,11 +322,20 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
         }
     }
     
-    float3 scale = lerp(scaleMin, scaleMax, float3(
+    float3 randomScale = float3(
         Random(worldSeed + 2),
         Random(worldSeed + 3),
         Random(worldSeed + 4)
-    ));
+    );
+    
+    float scaleNoiseValue = 0.5;
+    if (useScaleNoise)
+    {
+        scaleNoiseValue = FractalNoise(xzPos * scaleNoiseScale, 2, 2.0, 0.5);
+    }
+    
+    float3 scaleBlend = lerp(randomScale, float3(scaleNoiseValue, scaleNoiseValue, scaleNoiseValue), scaleNoiseInfluence);
+    float3 scale = lerp(scaleMin, scaleMax, scaleBlend);
     
     float4 rotation = float4(0, 0, 0, 1);
     
