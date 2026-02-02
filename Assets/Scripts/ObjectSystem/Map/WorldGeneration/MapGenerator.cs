@@ -41,7 +41,7 @@ namespace TheRavine.Generator
         {
             Vector2Int chunk = GetChunkPosition(pos);
             Vector2Int local = GetLocalPosition(pos);
-            float height = GetMapData(chunk).heightMap[local.x, local.y] + GetMapData(chunk).noiseMap[local.x, local.y];
+            float height = GetMapData(chunk).heightMap[local.x, local.y];
             return new Vector3(pos.x, height, pos.y);
         }
 
@@ -278,11 +278,9 @@ namespace TheRavine.Generator
     public class ChunkData
     {
         public readonly int[,] heightMap, temperatureMap;
-        public readonly float[,] noiseMap;
         public SortedSet<Vector2Int> objectsToInst;
-        public ChunkData(float[,] noiseMap, int[,] heightMap, int[,] temperatureMap, SortedSet<Vector2Int> objectsToInst)
+        public ChunkData(int[,] heightMap, int[,] temperatureMap, SortedSet<Vector2Int> objectsToInst)
         {
-            this.noiseMap = noiseMap;
             this.heightMap = heightMap;
             this.temperatureMap = temperatureMap;
             this.objectsToInst = objectsToInst;

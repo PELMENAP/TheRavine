@@ -1,4 +1,4 @@
-Shader "Custom/GrassInstancedShader"
+Shader "Custom/ChunkGrassShader"
 {
     Properties
     {

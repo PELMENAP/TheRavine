@@ -1,5 +1,4 @@
 #pragma kernel PlaceGrass
-#pragma kernel CullGrass
 
 struct InstanceData
 {
@@ -13,7 +12,6 @@ struct VertexData
 };
 
 RWStructuredBuffer<InstanceData> instanceData;
-AppendStructuredBuffer<InstanceData> culledInstanceData;
 StructuredBuffer<VertexData> vertices;
 StructuredBuffer<int> indices;
 
@@ -23,9 +21,14 @@ float3 scaleMin;
 float3 scaleMax;
 bool randomYRotation;
 float maxYRotation;
-float2 xzBoundsMin;
-float2 xzBoundsMax;
-float gridCellSize;
+
+float2 chunkWorldMin;
+float2 chunkWorldMax;
+float chunkSize;
+
+float3 meshLocalToWorld_Position;
+float3 meshLocalToWorld_Scale;
+float4x4 meshWorldToLocal;
 
 bool useScaleNoise;
 float scaleNoiseScale;
@@ -47,40 +50,20 @@ float colorVariation;
 int gradientResolution;
 float4 heightGradient[64];
 
-bool useDistanceBasedDensity;
-float2 distanceCenter;
-float maxDistanceForDensity;
-int densityCurveResolution;
-float densityCurve[64];
-
 bool useHeightConstraints;
 float minGenerationHeight;
 float maxGenerationHeight;
 
-float4 plane0;
-float4 plane1;
-float4 plane2;
-float4 plane3;
-float4 plane4;
-float4 plane5;
-float cullingMargin;
-
 uint PCGHash(uint input)
 {
     uint state = input * 747796405u + 2891336453u;
-    uint word  = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
     return (word >> 22u) ^ word;
 }
 
 float Random(uint seed)
 {
     return PCGHash(seed) * (1.0 / 4294967296.0);
-}
-
-uint WorldPosToSeed(float2 worldPos, float cellSize)
-{
-    int2 gridCoord = int2(floor(worldPos / cellSize));
-    return (uint)gridCoord.x * 73856093u + (uint)gridCoord.y * 19349663u;
 }
 
 float Hash2D(float2 p)
@@ -94,7 +77,6 @@ float PerlinNoise(float2 p)
 {
     float2 i = floor(p);
     float2 f = frac(p);
-    
     float2 u = f * f * (3.0 - 2.0 * f);
     
     float a = Hash2D(i);
@@ -134,17 +116,6 @@ float4 SampleGradient(float t)
     return lerp(heightGradient[index0], heightGradient[index1], frac);
 }
 
-float SampleDensityCurve(float t)
-{
-    t = saturate(t);
-    float indexFloat = t * (densityCurveResolution - 1);
-    int index0 = floor(indexFloat);
-    int index1 = min(index0 + 1, densityCurveResolution - 1);
-    float frac = indexFloat - index0;
-    
-    return lerp(densityCurve[index0], densityCurve[index1], frac);
-}
-
 bool RayTriangleIntersect(float3 rayOrigin, float3 rayDir, float3 v0, float3 v1, float3 v2, out float t)
 {
     float3 edge1 = v1 - v0;
@@ -181,9 +152,10 @@ bool RayTriangleIntersect(float3 rayOrigin, float3 rayDir, float3 v0, float3 v1,
     return t > 0.0001;
 }
 
-bool FindMeshIntersection(float2 xzPos, out float3 hitPoint)
+bool FindMeshIntersection(float3 worldPos, out float3 hitPoint)
 {
-    float3 rayOrigin = float3(xzPos.x, 10000.0, xzPos.y);
+    float3 localPos = mul(meshWorldToLocal, float4(worldPos, 1.0)).xyz;
+    float3 rayOrigin = float3(localPos.x, 10000.0, localPos.z);
     float3 rayDir = float3(0, -1, 0);
     
     float closestT = 1000000.0;
@@ -210,7 +182,20 @@ bool FindMeshIntersection(float2 xzPos, out float3 hitPoint)
         }
     }
     
-    hitPoint = rayOrigin + rayDir * closestT;
+    if (hit)
+    {
+        float3 localHit = rayOrigin + rayDir * closestT;
+        float4 worldHit = float4(localHit.x * meshLocalToWorld_Scale.x + meshLocalToWorld_Position.x,
+                                 localHit.y * meshLocalToWorld_Scale.y + meshLocalToWorld_Position.y,
+                                 localHit.z * meshLocalToWorld_Scale.z + meshLocalToWorld_Position.z,
+                                 1.0);
+        hitPoint = worldHit.xyz;
+    }
+    else
+    {
+        hitPoint = worldPos;
+    }
+    
     return hit;
 }
 
@@ -259,102 +244,98 @@ float4x4 TRS(float3 position, float4 rotation, float3 scale)
 [numthreads(64, 1, 1)]
 void PlaceGrass(uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= (uint)instanceCount)
+    uint index = id.x;
+    if (index >= (uint)instanceCount)
         return;
-    
-    float2 boundsSize = xzBoundsMax - xzBoundsMin;
-    float2 normalizedPos = float2(
-        (id.x % (uint)sqrt((float)instanceCount)) / sqrt((float)instanceCount),
-        (id.x / (uint)sqrt((float)instanceCount)) / sqrt((float)instanceCount)
+
+    uint seed = PCGHash(index);
+
+    float rx = Random(seed);
+    float rz = Random(seed + 1);
+
+    float2 xzPos = float2(
+        lerp(chunkWorldMin.x, chunkWorldMax.x, rx),
+        lerp(chunkWorldMin.y, chunkWorldMax.y, rz)
     );
-    
-    float2 baseXZ = xzBoundsMin + boundsSize * normalizedPos;
-    uint baseSeed = WorldPosToSeed(baseXZ, gridCellSize);
-    
-    float2 offset = float2(
-        (Random(baseSeed) - 0.5) * gridCellSize,
-        (Random(baseSeed + 1) - 0.5) * gridCellSize
-    );
-    
-    float2 xzPos = baseXZ + offset;
-    xzPos = clamp(xzPos, xzBoundsMin, xzBoundsMax);
-    
-    bool shouldPlace = true;
-    
+
+    uint worldSeed = xzPos.x + xzPos.y;
+
     if (useDensityNoise)
     {
-        float noiseValue = FractalNoise(xzPos * noiseScale, noiseOctaves, noiseLacunarity, noisePersistence);
-        shouldPlace = noiseValue > densityThreshold;
-    }
-    
-    if (useDistanceBasedDensity && shouldPlace)
-    {
-        float dist = distance(xzPos, distanceCenter);
-        float normalizedDist = saturate(dist / maxDistanceForDensity);
-        float densityMultiplier = SampleDensityCurve(normalizedDist);
-        
-        uint distSeed = WorldPosToSeed(xzPos, gridCellSize) + 999;
-        shouldPlace = Random(distSeed) < densityMultiplier;
-    }
-    
-    if (!shouldPlace)
-    {
-        instanceData[id.x].trs = TRS(float3(0, -10000, 0), float4(0, 0, 0, 1), float3(0, 0, 0));
-        instanceData[id.x].color = float4(0, 0, 0, 0);
-        return;
-    }
-    
-    uint worldSeed = WorldPosToSeed(xzPos, gridCellSize);
-    
-    float3 position;
-    if (!FindMeshIntersection(xzPos, position))
-    {
-        position = float3(xzPos.x, 0, xzPos.y);
-    }
+        float noiseValue = FractalNoise(
+            xzPos * noiseScale,
+            noiseOctaves,
+            noiseLacunarity,
+            noisePersistence
+        );
 
+        if (noiseValue <= densityThreshold)
+        {
+            instanceData[index].trs   = TRS(float3(0, -10000, 0), float4(0, 0, 0, 1), float3(0, 0, 0));
+            instanceData[index].color = float4(0, 0, 0, 0);
+            return;
+        }
+    }
+    float3 worldPos = float3(xzPos.x, 0, xzPos.y);
+    float3 position;
+
+    if (!FindMeshIntersection(worldPos, position))
+    {
+        position = worldPos;
+    }
     if (useHeightConstraints)
     {
         if (position.y < minGenerationHeight || position.y > maxGenerationHeight)
         {
-            instanceData[id.x].trs = TRS(float3(0, -10000, 0), float4(0, 0, 0, 1), float3(0, 0, 0));
-            instanceData[id.x].color = float4(0, 0, 0, 0);
+            instanceData[index].trs   = TRS(float3(0, -10000, 0), float4(0, 0, 0, 1), float3(0, 0, 0));
+            instanceData[index].color = float4(0, 0, 0, 0);
             return;
         }
     }
-    
+
     float3 randomScale = float3(
         Random(worldSeed + 2),
         Random(worldSeed + 3),
         Random(worldSeed + 4)
     );
-    
+
     float scaleNoiseValue = 0.5;
     if (useScaleNoise)
     {
-        scaleNoiseValue = FractalNoise(xzPos * scaleNoiseScale, 2, 2.0, 0.5);
+        scaleNoiseValue = FractalNoise(
+            xzPos * scaleNoiseScale,
+            2,
+            2.0,
+            0.5
+        );
     }
-    
-    float3 scaleBlend = lerp(randomScale, float3(scaleNoiseValue, scaleNoiseValue, scaleNoiseValue), scaleNoiseInfluence);
+
+    float3 scaleBlend = lerp(
+        randomScale,
+        float3(scaleNoiseValue, scaleNoiseValue, scaleNoiseValue),
+        scaleNoiseInfluence
+    );
+
     float3 scale = lerp(scaleMin, scaleMax, scaleBlend);
-    
+
     float4 rotation = float4(0, 0, 0, 1);
-    
+
     if (randomYRotation)
     {
         float yAngle = (Random(worldSeed + 5) * 2.0 - 1.0) * maxYRotation * 0.0174533;
         rotation = QuaternionAxisAngle(float3(0, 1, 0), yAngle);
     }
-    
-    instanceData[id.x].trs = TRS(position, rotation, scale);
-    
+
+    instanceData[index].trs = TRS(position, rotation, scale);
+
     float4 color = float4(1, 1, 1, 1);
-    
+
     if (useHeightColorVariation)
     {
         float heightNormalized = saturate((position.y - minHeight) / (maxHeight - minHeight));
         color = SampleGradient(heightNormalized);
     }
-    
+
     if (useRandomColorTint)
     {
         float3 tint = float3(
@@ -364,51 +345,6 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
         );
         color.rgb *= tint;
     }
-    
-    instanceData[id.x].color = color;
-}
 
-bool SphereInPlane(float4 plane, float3 center, float radius)
-{
-    return dot(plane.xyz, center) + plane.w + radius >= 0.0;
-}
-
-float3 GetBoundsCenter(float4x4 trs)
-{
-    return float3(trs[3][0], trs[3][1], trs[3][2]);
-}
-
-float GetBoundsRadius(float4x4 trs)
-{
-    float scaleX = length(float3(trs[0][0], trs[0][1], trs[0][2]));
-    float scaleY = length(float3(trs[1][0], trs[1][1], trs[1][2]));
-    float scaleZ = length(float3(trs[2][0], trs[2][1], trs[2][2]));
-    return max(scaleX, max(scaleY, scaleZ)) * 0.5;
-}
-
-[numthreads(64, 1, 1)]
-void CullGrass(uint3 id : SV_DispatchThreadID)
-{
-    if (id.x >= (uint)instanceCount)
-        return;
-    
-    InstanceData instance = instanceData[id.x];
-    
-    if (instance.color.a < 0.01)
-        return;
-    
-    float3 center = GetBoundsCenter(instance.trs);
-    float radius = GetBoundsRadius(instance.trs);
-    
-    bool visible = SphereInPlane(plane0, center, radius + cullingMargin) &&
-                   SphereInPlane(plane1, center, radius + cullingMargin) &&
-                   SphereInPlane(plane2, center, radius + cullingMargin) &&
-                   SphereInPlane(plane3, center, radius + cullingMargin) &&
-                   SphereInPlane(plane4, center, radius + cullingMargin) &&
-                   SphereInPlane(plane5, center, radius + cullingMargin);
-    
-    if (visible)
-    {
-        culledInstanceData.Append(instance);
-    }
+    instanceData[index].color = color;
 }
