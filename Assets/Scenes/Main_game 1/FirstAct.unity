@@ -695,9 +695,13 @@ MonoBehaviour:
   targetTransform: {fileID: 1737678887}
   grassMesh: {fileID: 4300000, guid: 53a609b0811916efe86ba4ca4b01e48e, type: 2}
   grassMaterial: {fileID: 2100000, guid: 36571ee1032acddecaf946f49784b2d6, type: 2}
-  instanceCount: 100000
+  instancesPerChunk: 1024
+  chunkSize: 50
   scaleMin: {x: 0.8, y: 0.5, z: 0.8}
-  scaleMax: {x: 1.5, y: 2, z: 1.5}
+  scaleMax: {x: 1.2, y: 2, z: 1.2}
+  useScaleNoise: 1
+  scaleNoiseScale: 0.05
+  scaleNoiseInfluence: 0.5
   randomYRotation: 1
   maxYRotation: 180
   useDensityNoise: 1
@@ -711,8 +715,8 @@ MonoBehaviour:
   maxHeight: 10
   heightColorGradient:
     serializedVersion: 2
-    key0: {r: 1, g: 0, b: 0, a: 1}
-    key1: {r: 0, g: 0.3077016, b: 1, a: 1}
+    key0: {r: 0, g: 0.18553019, b: 1, a: 1}
+    key1: {r: 1, g: 0, b: 0, a: 1}
     key2: {r: 0, g: 0, b: 0, a: 0}
     key3: {r: 0, g: 0, b: 0, a: 0}
     key4: {r: 0, g: 0, b: 0, a: 0}
@@ -741,43 +745,13 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   useRandomColorTint: 1
   colorVariation: 0.1
-  meshSamplerShader: {fileID: 7200000, guid: e3ba6791a67a001f9a194ee1c04a4dfd, type: 3}
-  cullingCamera: {fileID: 0}
-  enableFrustumCulling: 1
-  cullingMargin: 2
-  castShadows: 0
-  receiveShadows: 0
-  gridCellSize: 1
   useHeightConstraints: 1
   minGenerationHeight: 5
   maxGenerationHeight: 10
-  useDistanceBasedDensity: 0
-  distanceCenter: {x: 0, y: 0}
-  maxDistanceForDensity: 50
-  densityFalloff:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: -1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: -1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
+  meshSamplerShader: {fileID: 7200000, guid: e3ba6791a67a001f9a194ee1c04a4dfd, type: 3}
+  castShadows: 1
+  receiveShadows: 1
+  cellSize: 1
 --- !u!4 &1470670355
 Transform:
   m_ObjectHideFlags: 0

@@ -27,7 +27,6 @@ namespace TheRavine.Generator
             SortedSet<Vector2Int> objectsToInst = new(new Vector2IntComparer());
             int[,] heightMap = new int[mapChunkSize, mapChunkSize];
             int[,] temperatureMap = new int[mapChunkSize, mapChunkSize];
-            float[,] chunkNoiseMap = new float[mapChunkSize, mapChunkSize];
 
 
             if (Mathf.Abs(centre.x) > chunkGenerationSettings.farlands || Mathf.Abs(centre.y) > chunkGenerationSettings.farlands)
@@ -50,9 +49,6 @@ namespace TheRavine.Generator
                         if (currentHeight >= chunkGenerationSettings.regions[i].height)
                         {
                             heightMap[x, y] = i;
-
-                            chunkNoiseMap[x, y] = currentHeight / 2f;
-                            chunkNoiseMap[x, y] *= i > 3 ? 1 : -1;
                         }
                         else
                             break;
@@ -112,7 +108,7 @@ namespace TheRavine.Generator
                             if (chunkRandom.Range(0, chunkGenerationSettings.rareness) < objectInfoGeneration.Chance)
                             {
                                 Vector2Int posobj = new(centre.x * generationSize + x * scale, (centre.y - 1) * generationSize + y * scale);
-                                Vector3 realPosition = new(posobj.x, heightMap[x, y] + chunkNoiseMap[x, y], posobj.y);
+                                Vector3 realPosition = new(posobj.x, heightMap[x, y], posobj.y);
                                 if (objectSystem.TryAddToGlobal(posobj, realPosition, objectInfoGeneration.info.PrefabID, objectInfoGeneration.info.DefaultAmount, objectInfoGeneration.info.InstanceType))
                                 {
                                     objectsToInst.Add(posobj);
@@ -122,7 +118,7 @@ namespace TheRavine.Generator
                         }
                     }
                 }
-            return new ChunkData(chunkNoiseMap, heightMap, temperatureMap, objectsToInst);
+            return new ChunkData(heightMap, temperatureMap, objectsToInst);
         }   
     }
 
