@@ -18,6 +18,11 @@ Shader "Custom/ChunkGrassShader"
         _WindDirection ("Wind Direction", Vector) = (1, 0, 1, 0)
         _WindGustStrength ("Wind Gust Strength", Range(0, 1)) = 0.3
         _WindGustFrequency ("Wind Gust Frequency", Float) = 2.3
+
+        [Header(Player Interaction)]
+        _PlayerCount("Player Count", Int) = 0
+        _PlayerRadius("Player Radius", Float) = 1.0
+        _PlayerStrength("Player Strength", Float) = 0.5
     }
     
     SubShader
@@ -32,6 +37,8 @@ Shader "Custom/ChunkGrassShader"
         
         HLSLINCLUDE
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+        #define MAX_PLAYERS 4
         
         struct InstanceData
         {
@@ -54,11 +61,43 @@ Shader "Custom/ChunkGrassShader"
             float4 _WindDirection;
             float _WindGustStrength;
             float _WindGustFrequency;
+
+            int _PlayerCount;
+            float4 _PlayerPositions[MAX_PLAYERS];
+            float _PlayerRadius;
+            float _PlayerStrength;
         CBUFFER_END
         
         TEXTURE2D(_MainTex);
         SAMPLER(sampler_MainTex);
         
+        float3 ApplyPlayerInteraction(float3 positionWS, float heightFactor)
+        {
+            float3 totalOffset = float3(0, 0, 0);
+            
+            for (int i = 0; i < _PlayerCount; i++)
+            {
+                float distanceToPlayer = distance(positionWS, _PlayerPositions[i].xyz);
+                
+                if (distanceToPlayer < _PlayerRadius)
+                {
+                    float falloff = 1.0 - (distanceToPlayer / _PlayerRadius);
+                    falloff = pow(falloff, 2.0);
+                    
+                    float3 dirFromPlayer = normalize(positionWS - _PlayerPositions[i].xyz);
+                    
+                    float3 offset = dirFromPlayer * falloff * _PlayerStrength * heightFactor;
+                    offset.y = 0;
+                    
+                    offset.y -= falloff * _PlayerStrength * 0.2;
+                    
+                    totalOffset += offset;
+                }
+            }
+            
+            return totalOffset;
+        }
+
         float3 ApplyWind(float3 positionWS, float heightFactor)
         {
             float time = _Time.y * _WindSpeed;
@@ -71,9 +110,10 @@ Shader "Custom/ChunkGrassShader"
             float totalWind = (mainWave + gustWave + microWave) * _WindStrength;
             float windEffect = pow(heightFactor, 2.0);
             
-            positionWS += windDir * totalWind * windEffect;
+            float3 windOffset = windDir * totalWind * windEffect;
+            float3 playerOffset = ApplyPlayerInteraction(positionWS, heightFactor);
             
-            return positionWS;
+            return positionWS + windOffset + playerOffset;
         }
         
         float3 TransformObjectToWorldWithWind(float4 positionOS, float4x4 instanceTRS, out float heightFactor)
@@ -129,7 +169,7 @@ Shader "Custom/ChunkGrassShader"
                 float heightFactor;
                 float3 positionWS = TransformObjectToWorldWithWind(input.positionOS, instance.trs, heightFactor);
                 
-                float3 normalWS = normalize(mul((float3x3)instance.trs, input.normalOS));
+                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
                 
                 output.positionCS = TransformWorldToHClip(positionWS);
                 output.positionWS = positionWS;
@@ -155,7 +195,7 @@ Shader "Custom/ChunkGrassShader"
                 
                 Light mainLight = GetMainLight();
                 float3 lighting = mainLight.color * max(0.0, dot(input.normalWS, mainLight.direction));
-                lighting += SampleSH(input.normalWS);
+                lighting += SampleSH(input.normalWS) + 0.1;
                 
                 finalColor.rgb *= lighting * ao;
                 

@@ -6,237 +6,116 @@ struct InstanceData
     float4 color;
 };
 
-struct VertexData
+struct Triangle
 {
-    float3 position;
+    float3 v0;
+    float3 v1;
+    float3 v2;
+    float3 normal;
+    float3 center;
 };
 
 RWStructuredBuffer<InstanceData> instanceData;
-StructuredBuffer<VertexData> vertices;
-StructuredBuffer<int> indices;
+StructuredBuffer<Triangle> triangles;
 
-int instanceCount;
 int triangleCount;
-float3 scaleMin;
-float3 scaleMax;
-bool randomYRotation;
-float maxYRotation;
+int instanceCount;
+int gridMinX;
+int gridMinZ;
+int gridWidth;
+int gridHeight;
+float density;
+float scaleMin;
+float scaleMax;
+float rotationVariation;
+float3 worldBoundsMin;
+float3 worldBoundsMax;
+float cullingDistance;
 
-float2 chunkWorldMin;
-float2 chunkWorldMax;
-float chunkSize;
-
-float3 meshLocalToWorld_Position;
-float3 meshLocalToWorld_Scale;
-float4x4 meshWorldToLocal;
-
-bool useScaleNoise;
-float scaleNoiseScale;
-float scaleNoiseInfluence;
-
-bool useDensityNoise;
-float noiseScale;
-float densityThreshold;
-int noiseOctaves;
-float noiseLacunarity;
-float noisePersistence;
-
-bool useHeightColorVariation;
-float minHeight;
-float maxHeight;
-bool useRandomColorTint;
-float colorVariation;
-
-int gradientResolution;
-float4 heightGradient[64];
-
-bool useHeightConstraints;
-float minGenerationHeight;
-float maxGenerationHeight;
-
-uint PCGHash(uint input)
+uint Hash(uint x)
 {
-    uint state = input * 747796405u + 2891336453u;
-    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
-    return (word >> 22u) ^ word;
+    x ^= x >> 16;
+    x *= 0x7feb352dU;
+    x ^= x >> 15;
+    x *= 0x846ca68bU;
+    x ^= x >> 16;
+    return x;
 }
 
-float Random(uint seed)
+float HashToFloat(uint hash)
 {
-    return PCGHash(seed) * (1.0 / 4294967296.0);
+    return (hash & 0xFFFFFF) / 16777216.0;
 }
 
-float Hash2D(float2 p)
+bool RayTriangleIntersect(float3 origin, float3 dir, Triangle tri, 
+                         out float t, out float3 hitPoint)
 {
-    float3 p3 = frac(float3(p.xyx) * 0.1031);
-    p3 += dot(p3, p3.yzx + 33.33);
-    return frac((p3.x + p3.y) * p3.z);
-}
-
-float PerlinNoise(float2 p)
-{
-    float2 i = floor(p);
-    float2 f = frac(p);
-    float2 u = f * f * (3.0 - 2.0 * f);
+    t = 0.0f;
+    hitPoint = float3(0.0f, 0.0f, 0.0f);
     
-    float a = Hash2D(i);
-    float b = Hash2D(i + float2(1.0, 0.0));
-    float c = Hash2D(i + float2(0.0, 1.0));
-    float d = Hash2D(i + float2(1.0, 1.0));
+    const float EPSILON = 1e-8f;
     
-    return lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y);
-}
-
-float FractalNoise(float2 p, int octaves, float lacunarity, float persistence)
-{
-    float value = 0.0;
-    float amplitude = 1.0;
-    float frequency = 1.0;
-    float maxValue = 0.0;
+    float3 edge1 = tri.v1 - tri.v0;
+    float3 edge2 = tri.v2 - tri.v0;
     
-    for (int i = 0; i < octaves; i++)
-    {
-        value += PerlinNoise(p * frequency) * amplitude;
-        maxValue += amplitude;
-        amplitude *= persistence;
-        frequency *= lacunarity;
-    }
-    
-    return value / maxValue;
-}
-
-float4 SampleGradient(float t)
-{
-    t = saturate(t);
-    float indexFloat = t * (gradientResolution - 1);
-    int index0 = floor(indexFloat);
-    int index1 = min(index0 + 1, gradientResolution - 1);
-    float frac = indexFloat - index0;
-    
-    return lerp(heightGradient[index0], heightGradient[index1], frac);
-}
-
-bool RayTriangleIntersect(float3 rayOrigin, float3 rayDir, float3 v0, float3 v1, float3 v2, out float t)
-{
-    float3 edge1 = v1 - v0;
-    float3 edge2 = v2 - v0;
-    float3 h = cross(rayDir, edge2);
+    float3 h = cross(dir, edge2);
     float a = dot(edge1, h);
     
-    if (abs(a) < 0.0001)
-    {
-        t = 0;
+    if (a > -EPSILON && a < EPSILON)
         return false;
-    }
     
-    float f = 1.0 / a;
-    float3 s = rayOrigin - v0;
+    float f = 1.0f / a;
+    float3 s = origin - tri.v0;
+    
     float u = f * dot(s, h);
-    
-    if (u < 0.0 || u > 1.0)
-    {
-        t = 0;
+    if (u < 0.0f || u > 1.0f)
         return false;
-    }
     
     float3 q = cross(s, edge1);
-    float v = f * dot(rayDir, q);
-    
-    if (v < 0.0 || u + v > 1.0)
-    {
-        t = 0;
+    float v = f * dot(dir, q);
+    if (v < 0.0f || u + v > 1.0f)
         return false;
-    }
     
     t = f * dot(edge2, q);
-    return t > 0.0001;
-}
-
-bool FindMeshIntersection(float3 worldPos, out float3 hitPoint)
-{
-    float3 localPos = mul(meshWorldToLocal, float4(worldPos, 1.0)).xyz;
-    float3 rayOrigin = float3(localPos.x, 10000.0, localPos.z);
-    float3 rayDir = float3(0, -1, 0);
     
-    float closestT = 1000000.0;
-    bool hit = false;
-    
-    for (int i = 0; i < triangleCount; i++)
+    if (t > EPSILON)
     {
-        int i0 = indices[i * 3];
-        int i1 = indices[i * 3 + 1];
-        int i2 = indices[i * 3 + 2];
-        
-        float3 v0 = vertices[i0].position;
-        float3 v1 = vertices[i1].position;
-        float3 v2 = vertices[i2].position;
-        
-        float t;
-        if (RayTriangleIntersect(rayOrigin, rayDir, v0, v1, v2, t))
-        {
-            if (t < closestT)
-            {
-                closestT = t;
-                hit = true;
-            }
-        }
+        hitPoint = origin + dir * t;
+        return true;
     }
     
-    if (hit)
-    {
-        float3 localHit = rayOrigin + rayDir * closestT;
-        float4 worldHit = float4(localHit.x * meshLocalToWorld_Scale.x + meshLocalToWorld_Position.x,
-                                 localHit.y * meshLocalToWorld_Scale.y + meshLocalToWorld_Position.y,
-                                 localHit.z * meshLocalToWorld_Scale.z + meshLocalToWorld_Position.z,
-                                 1.0);
-        hitPoint = worldHit.xyz;
-    }
-    else
-    {
-        hitPoint = worldPos;
-    }
-    
-    return hit;
+    return false;
 }
 
-float4 QuaternionAxisAngle(float3 axis, float angle)
+float4x4 CreateTRS(float3 position, float3 rotation, float3 scale)
 {
-    float halfAngle = angle * 0.5;
-    float s = sin(halfAngle);
-    return float4(axis * s, cos(halfAngle));
-}
-
-float3x3 QuaternionToMatrix(float4 q)
-{
-    float x = q.x, y = q.y, z = q.z, w = q.w;
-    float x2 = x + x, y2 = y + y, z2 = z + z;
-    float xx = x * x2, xy = x * y2, xz = x * z2;
-    float yy = y * y2, yz = y * z2, zz = z * z2;
-    float wx = w * x2, wy = w * y2, wz = w * z2;
-    
-    float3x3 m;
-    m[0][0] = 1.0 - (yy + zz);
-    m[0][1] = xy + wz;
-    m[0][2] = xz - wy;
-    m[1][0] = xy - wz;
-    m[1][1] = 1.0 - (xx + zz);
-    m[1][2] = yz + wx;
-    m[2][0] = xz + wy;
-    m[2][1] = yz - wx;
-    m[2][2] = 1.0 - (xx + yy);
-    
-    return m;
-}
-
-float4x4 TRS(float3 position, float4 rotation, float3 scale)
-{
-    float3x3 rotMatrix = QuaternionToMatrix(rotation);
+    float cx = cos(rotation.x);
+    float sx = sin(rotation.x);
+    float cy = cos(rotation.y);
+    float sy = sin(rotation.y);
+    float cz = cos(rotation.z);
+    float sz = sin(rotation.z);
     
     float4x4 mat;
-    mat[0] = float4(rotMatrix[0] * scale.x, 0);
-    mat[1] = float4(rotMatrix[1] * scale.y, 0);
-    mat[2] = float4(rotMatrix[2] * scale.z, 0);
-    mat[3] = float4(position, 1);
+    mat[0][0] = (cy * cz) * scale.x;
+    mat[0][1] = (cy * sz) * scale.x;
+    mat[0][2] = (-sy) * scale.x;
+    mat[0][3] = 0;
+    
+    mat[1][0] = (sx * sy * cz - cx * sz) * scale.y;
+    mat[1][1] = (sx * sy * sz + cx * cz) * scale.y;
+    mat[1][2] = (sx * cy) * scale.y;
+    mat[1][3] = 0;
+    
+    mat[2][0] = (cx * sy * cz + sx * sz) * scale.z;
+    mat[2][1] = (cx * sy * sz - sx * cz) * scale.z;
+    mat[2][2] = (cx * cy) * scale.z;
+    mat[2][3] = 0;
+    
+    mat[3][0] = position.x;
+    mat[3][1] = position.y;
+    mat[3][2] = position.z;
+    mat[3][3] = 1;
     
     return mat;
 }
@@ -244,107 +123,68 @@ float4x4 TRS(float3 position, float4 rotation, float3 scale)
 [numthreads(64, 1, 1)]
 void PlaceGrass(uint3 id : SV_DispatchThreadID)
 {
-    uint index = id.x;
-    if (index >= (uint)instanceCount)
+    if (id.x >= (uint)instanceCount) return;
+    
+    int gridX = (int)(id.x % gridWidth) + gridMinX;
+    int gridZ = (int)(id.x / gridWidth) + gridMinZ;
+    
+    uint seed = Hash((uint)gridX * 73856093U ^ (uint)gridZ * 19349663U);
+    float densityRoll = HashToFloat(Hash(seed));
+    
+    InstanceData instance;
+    instance.color = float4(1, 1, 1, 0);
+    
+    if (densityRoll > density)
+    {
+        instance.trs = CreateTRS(float3(0, -1000, 0), float3(0, 0, 0), float3(0.001, 0.001, 0.001));
+        instanceData[id.x] = instance;
         return;
-
-    uint seed = PCGHash(index);
-
-    float rx = Random(seed);
-    float rz = Random(seed + 1);
-
-    float2 xzPos = float2(
-        lerp(chunkWorldMin.x, chunkWorldMax.x, rx),
-        lerp(chunkWorldMin.y, chunkWorldMax.y, rz)
-    );
-
-    uint worldSeed = xzPos.x + xzPos.y;
-
-    if (useDensityNoise)
+    }
+    
+    float offsetX = HashToFloat(Hash(seed + 1)) - 0.5;
+    float offsetZ = HashToFloat(Hash(seed + 2)) - 0.5;
+    
+    float3 worldPos = float3(gridX + offsetX, worldBoundsMax.y + 10, gridZ + offsetZ);
+    float3 rayDir = float3(0, -1, 0);
+    
+    float closestT = 1e10;
+    float3 closestHit;
+    float3 closestNormal;
+    bool foundIntersection = false;
+    
+    for (int i = 0; i < triangleCount; i++)
     {
-        float noiseValue = FractalNoise(
-            xzPos * noiseScale,
-            noiseOctaves,
-            noiseLacunarity,
-            noisePersistence
-        );
-
-        if (noiseValue <= densityThreshold)
+        float t;
+        float3 hitPoint;
+        if (RayTriangleIntersect(worldPos, rayDir, triangles[i], t, hitPoint))
         {
-            instanceData[index].trs   = TRS(float3(0, -10000, 0), float4(0, 0, 0, 1), float3(0, 0, 0));
-            instanceData[index].color = float4(0, 0, 0, 0);
-            return;
+            if (t < closestT)
+            {
+                closestT = t;
+                closestHit = hitPoint;
+                closestNormal = triangles[i].normal;
+                foundIntersection = true;
+            }
         }
     }
-    float3 worldPos = float3(xzPos.x, 0, xzPos.y);
-    float3 position;
-
-    if (!FindMeshIntersection(worldPos, position))
+    
+    if (!foundIntersection)
     {
-        position = worldPos;
+        instance.trs = CreateTRS(float3(0, -1000, 0), float3(0, 0, 0), float3(0.001, 0.001, 0.001));
+        instanceData[id.x] = instance;
+        return;
     }
-    if (useHeightConstraints)
-    {
-        if (position.y < minGenerationHeight || position.y > maxGenerationHeight)
-        {
-            instanceData[index].trs   = TRS(float3(0, -10000, 0), float4(0, 0, 0, 1), float3(0, 0, 0));
-            instanceData[index].color = float4(0, 0, 0, 0);
-            return;
-        }
-    }
-
-    float3 randomScale = float3(
-        Random(worldSeed + 2),
-        Random(worldSeed + 3),
-        Random(worldSeed + 4)
-    );
-
-    float scaleNoiseValue = 0.5;
-    if (useScaleNoise)
-    {
-        scaleNoiseValue = FractalNoise(
-            xzPos * scaleNoiseScale,
-            2,
-            2.0,
-            0.5
-        );
-    }
-
-    float3 scaleBlend = lerp(
-        randomScale,
-        float3(scaleNoiseValue, scaleNoiseValue, scaleNoiseValue),
-        scaleNoiseInfluence
-    );
-
-    float3 scale = lerp(scaleMin, scaleMax, scaleBlend);
-
-    float4 rotation = float4(0, 0, 0, 1);
-
-    if (randomYRotation)
-    {
-        float yAngle = (Random(worldSeed + 5) * 2.0 - 1.0) * maxYRotation * 0.0174533;
-        rotation = QuaternionAxisAngle(float3(0, 1, 0), yAngle);
-    }
-
-    instanceData[index].trs = TRS(position, rotation, scale);
-
-    float4 color = float4(1, 1, 1, 1);
-
-    if (useHeightColorVariation)
-    {
-        float heightNormalized = saturate((position.y - minHeight) / (maxHeight - minHeight));
-        color = SampleGradient(heightNormalized);
-    }
-
-    if (useRandomColorTint)
-    {
-        float3 tint = float3(
-            1.0 + (Random(worldSeed + 6) * 2.0 - 1.0) * colorVariation,
-            1.0 + (Random(worldSeed + 7) * 2.0 - 1.0) * colorVariation,
-            1.0 + (Random(worldSeed + 8) * 2.0 - 1.0) * colorVariation
-        );
-        color.rgb *= tint;
-    }
-
-    instanceData[index].color = color;
+    
+    float scale = lerp(scaleMin, scaleMax, HashToFloat(Hash(seed + 3)));
+    float rotY = HashToFloat(Hash(seed + 4)) * rotationVariation * 0.01745329;
+    
+    float3 rotation = float3(0, rotY, 0);
+    float3 scaleVec = float3(scale, scale, scale);
+    
+    instance.trs = CreateTRS(closestHit, rotation, scaleVec);
+    
+    float colorVariation = HashToFloat(Hash(seed + 5)) * 0.2 + 0.9;
+    instance.color = float4(colorVariation, colorVariation, colorVariation, 1);
+    
+    instanceData[id.x] = instance;
 }
