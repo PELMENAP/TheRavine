@@ -15,10 +15,23 @@ public class ChunkGrassSystem : MonoBehaviour
     
     [Header("Placement Parameters")]
     [SerializeField] private float grassDensity = 0.3f;
+    [SerializeField] private int bladesPerCell = 4;
     [SerializeField] private int maxGrassInstances = 100000;
     [SerializeField] private float scaleMin = 0.8f;
     [SerializeField] private float scaleMax = 1.2f;
     [SerializeField] private float rotationVariation = 360f;
+    
+    [Header("Density Control")]
+    [SerializeField] private float noiseScale = 0.1f;
+    [SerializeField] private float densityMinThreshold = 0.2f;
+    [SerializeField] private float densityMaxThreshold = 1.0f;
+    [SerializeField] private int octaves = 3;
+    [SerializeField] private float persistence = 0.5f;
+    [SerializeField] private float lacunarity = 2.0f;
+    
+    [Header("Player Interaction")]
+    [SerializeField] private Transform[] players;
+    [SerializeField] private int maxPlayers = 4;
     
     [Header("Culling")]
     [SerializeField] private float cullingDistance = 100f;
@@ -26,29 +39,32 @@ public class ChunkGrassSystem : MonoBehaviour
     private ComputeBuffer instanceBuffer;
     private ComputeBuffer triangleBuffer;
     private ComputeBuffer argsBuffer;
-    private ComputeBuffer visibleCountBuffer;
     
     private int kernelPlaceGrass;
     private Bounds renderBounds;
     private uint[] args = new uint[5];
     
     private int lastInstanceCount;
+    private Vector3 lastPosition, specialOffset = new Vector3(40, 0, 40);
+    private Vector4[] playerPositions;
     
     void Start()
     {
         InitializeSystem();
+        playerPositions = new Vector4[maxPlayers];
     }
-    private Vector3 oldPosition, offset = new Vector3(40, 0, 40);
+    
     void Update()
     {
         if (targetMeshFilter == null || targetTransform == null) return;
 
-        if(targetTransform.position != oldPosition)
+        if(targetTransform.position != lastPosition)
         {
             UpdateGrassPlacement();
-            oldPosition = targetTransform.position;
+            lastPosition = targetTransform.position;
         }
         
+        UpdatePlayerPositions();
         RenderGrass();
     }
     
@@ -84,7 +100,6 @@ public class ChunkGrassSystem : MonoBehaviour
         var meshBounds = mesh.bounds;
         
         Matrix4x4 localToWorld = targetTransform.localToWorldMatrix;
-        
         Bounds worldBounds = TransformBounds(meshBounds, localToWorld);
         
         int minX = Mathf.FloorToInt(worldBounds.min.x);
@@ -94,7 +109,7 @@ public class ChunkGrassSystem : MonoBehaviour
         
         int gridWidth = maxX - minX;
         int gridHeight = maxZ - minZ;
-        int totalGridPoints = gridWidth * gridHeight;
+        int totalGridPoints = gridWidth * gridHeight * bladesPerCell;
         
         int instanceCount = Mathf.Min(totalGridPoints, maxGrassInstances);
         
@@ -136,6 +151,7 @@ public class ChunkGrassSystem : MonoBehaviour
         grassPlacementShader.SetInt("gridMinZ", minZ);
         grassPlacementShader.SetInt("gridWidth", gridWidth);
         grassPlacementShader.SetInt("gridHeight", gridHeight);
+        grassPlacementShader.SetInt("bladesPerCell", bladesPerCell);
         grassPlacementShader.SetFloat("density", grassDensity);
         grassPlacementShader.SetFloat("scaleMin", scaleMin);
         grassPlacementShader.SetFloat("scaleMax", scaleMax);
@@ -143,6 +159,12 @@ public class ChunkGrassSystem : MonoBehaviour
         grassPlacementShader.SetVector("worldBoundsMin", worldBounds.min);
         grassPlacementShader.SetVector("worldBoundsMax", worldBounds.max);
         grassPlacementShader.SetFloat("cullingDistance", cullingDistance);
+        grassPlacementShader.SetFloat("noiseScale", noiseScale);
+        grassPlacementShader.SetFloat("densityMinThreshold", densityMinThreshold);
+        grassPlacementShader.SetFloat("densityMaxThreshold", densityMaxThreshold);
+        grassPlacementShader.SetInt("octaves", octaves);
+        grassPlacementShader.SetFloat("persistence", persistence);
+        grassPlacementShader.SetFloat("lacunarity", lacunarity);
         
         int threadGroups = Mathf.CeilToInt(instanceCount / 64f);
         grassPlacementShader.Dispatch(kernelPlaceGrass, threadGroups, 1, 1);
@@ -151,6 +173,31 @@ public class ChunkGrassSystem : MonoBehaviour
         argsBuffer.SetData(args);
         
         lastInstanceCount = instanceCount;
+    }
+    
+    void UpdatePlayerPositions()
+    {
+        int count = Mathf.Min(players.Length, maxPlayers);
+        
+        for (int i = 0; i < count; i++)
+        {
+            if (players[i] != null)
+            {
+                playerPositions[i] = players[i].position;
+            }
+            else
+            {
+                playerPositions[i] = new Vector4(0, -10000, 0, 0);
+            }
+        }
+        
+        for (int i = count; i < maxPlayers; i++)
+        {
+            playerPositions[i] = new Vector4(0, -10000, 0, 0);
+        }
+        
+        grassMaterial.SetInt("_PlayerCount", count);
+        grassMaterial.SetVectorArray("_PlayerPositions", playerPositions);
     }
     
     void RenderGrass()
@@ -174,8 +221,8 @@ public class ChunkGrassSystem : MonoBehaviour
     
     Bounds TransformBounds(Bounds localBounds, Matrix4x4 matrix)
     {
-        Vector3 center = matrix.MultiplyPoint3x4(localBounds.center) + offset;
-        Vector3 extents = localBounds.extents - offset;
+        Vector3 center = matrix.MultiplyPoint3x4(localBounds.center) + specialOffset;
+        Vector3 extents = localBounds.extents - specialOffset / 2;
         
         Vector3 axisX = matrix.MultiplyVector(new Vector3(extents.x, 0, 0));
         Vector3 axisY = matrix.MultiplyVector(new Vector3(0, extents.y, 0));
@@ -193,18 +240,6 @@ public class ChunkGrassSystem : MonoBehaviour
         instanceBuffer?.Release();
         triangleBuffer?.Release();
         argsBuffer?.Release();
-        visibleCountBuffer?.Release();
-    }
-    
-    void OnDrawGizmosSelected()
-    {
-        if (targetTransform != null && targetMeshFilter != null)
-        {
-            Gizmos.color = Color.green;
-            Gizmos.matrix = targetTransform.localToWorldMatrix;
-            Gizmos.DrawWireCube(targetMeshFilter.sharedMesh.bounds.center + offset, 
-                targetMeshFilter.sharedMesh.bounds.size);
-        }
     }
     
     struct TriangleData

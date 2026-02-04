@@ -697,10 +697,20 @@ MonoBehaviour:
   grassMaterial: {fileID: 2100000, guid: 36571ee1032acddecaf946f49784b2d6, type: 2}
   grassPlacementShader: {fileID: 7200000, guid: e3ba6791a67a001f9a194ee1c04a4dfd, type: 3}
   grassDensity: 0.3
-  maxGrassInstances: 100000
+  bladesPerCell: 4
+  maxGrassInstances: 3000000
   scaleMin: 0.8
   scaleMax: 2
   rotationVariation: 360
+  noiseScale: 0.1
+  densityMinThreshold: 0.2
+  densityMaxThreshold: 1
+  octaves: 3
+  persistence: 0.5
+  lacunarity: 2
+  players:
+  - {fileID: 1470670355}
+  maxPlayers: 4
   cullingDistance: 100
 --- !u!4 &1470670355
 Transform:
