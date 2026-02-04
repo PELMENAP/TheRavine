@@ -34,7 +34,7 @@ Material:
     - _DebugMode: 1.46
     - _HeightColorBlend: 0
     - _InstanceColorBlend: 0
-    - _PlayerCount: 0
+    - _PlayerCount: 1
     - _PlayerRadius: 3.4
     - _PlayerSmoothness: 2
     - _PlayerStrength: 3.03
