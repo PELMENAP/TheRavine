@@ -24,6 +24,7 @@ int gridMinX;
 int gridMinZ;
 int gridWidth;
 int gridHeight;
+int bladesPerCell;
 float density;
 float scaleMin;
 float scaleMax;
@@ -31,20 +32,74 @@ float rotationVariation;
 float3 worldBoundsMin;
 float3 worldBoundsMax;
 float cullingDistance;
+float noiseScale;
+float densityMinThreshold;
+float densityMaxThreshold;
+int octaves;
+float persistence;
+float lacunarity;
 
-uint Hash(uint x)
+uint Hash(uint input)
 {
-    x ^= x >> 16;
-    x *= 0x7feb352dU;
-    x ^= x >> 15;
-    x *= 0x846ca68bU;
-    x ^= x >> 16;
-    return x;
+    uint state = input * 747796405u + 2891336453u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}
+
+uint Hash2D(uint x, uint y)
+{
+    return Hash(x ^ Hash(y));
+}
+
+uint Hash3D(uint x, uint y, uint z)
+{
+    return Hash(x ^ Hash(y ^ Hash(z)));
 }
 
 float HashToFloat(uint hash)
 {
     return (hash & 0xFFFFFF) / 16777216.0;
+}
+
+float PerlinNoise(float2 pos)
+{
+    int2 i = floor(pos);
+    float2 f = frac(pos);
+    
+    f = f * f * (3.0 - 2.0 * f);
+    
+    uint hash00 = Hash2D((uint)i.x, (uint)i.y);
+    uint hash10 = Hash2D((uint)i.x + 1, (uint)i.y);
+    uint hash01 = Hash2D((uint)i.x, (uint)i.y + 1);
+    uint hash11 = Hash2D((uint)i.x + 1, (uint)i.y + 1);
+    
+    float v00 = HashToFloat(hash00);
+    float v10 = HashToFloat(hash10);
+    float v01 = HashToFloat(hash01);
+    float v11 = HashToFloat(hash11);
+    
+    float x1 = lerp(v00, v10, f.x);
+    float x2 = lerp(v01, v11, f.x);
+    
+    return lerp(x1, x2, f.y);
+}
+
+float FractalNoise(float2 pos)
+{
+    float value = 0.0;
+    float amplitude = 1.0;
+    float frequency = 1.0;
+    float maxValue = 0.0;
+    
+    for (int i = 0; i < octaves; i++)
+    {
+        value += PerlinNoise(pos * frequency) * amplitude;
+        maxValue += amplitude;
+        amplitude *= persistence;
+        frequency *= lacunarity;
+    }
+    
+    return value / maxValue;
 }
 
 bool RayTriangleIntersect(float3 origin, float3 dir, Triangle tri, 
@@ -125,24 +180,36 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= (uint)instanceCount) return;
     
-    int gridX = (int)(id.x % gridWidth) + gridMinX;
-    int gridZ = (int)(id.x / gridWidth) + gridMinZ;
+    uint totalCells = gridWidth * gridHeight;
+    uint cellIndex = id.x / bladesPerCell;
+    uint bladeIndex = id.x % bladesPerCell;
     
-    uint seed = Hash((uint)gridX * 73856093U ^ (uint)gridZ * 19349663U);
-    float densityRoll = HashToFloat(Hash(seed));
+    int gridX = (int)(cellIndex % gridWidth) + gridMinX;
+    int gridZ = (int)(cellIndex / gridWidth) + gridMinZ;
+    
+    uint cellSeed = Hash2D((uint)gridX, (uint)gridZ);
+    uint bladeSeed = Hash3D((uint)gridX, (uint)gridZ, bladeIndex);
+    
+    float2 noisePos = float2(gridX, gridZ) * noiseScale;
+    float noiseValue = FractalNoise(noisePos);
+    
+    float densityMultiplier = smoothstep(densityMinThreshold, densityMaxThreshold, noiseValue);
+    float finalDensity = density * densityMultiplier;
+    
+    float densityRoll = HashToFloat(Hash(bladeSeed));
     
     InstanceData instance;
     instance.color = float4(1, 1, 1, 0);
     
-    if (densityRoll > density)
+    if (densityRoll > finalDensity)
     {
         instance.trs = CreateTRS(float3(0, -1000, 0), float3(0, 0, 0), float3(0.001, 0.001, 0.001));
         instanceData[id.x] = instance;
         return;
     }
     
-    float offsetX = HashToFloat(Hash(seed + 1)) - 0.5;
-    float offsetZ = HashToFloat(Hash(seed + 2)) - 0.5;
+    float offsetX = HashToFloat(Hash(bladeSeed + 1)) - 0.5;
+    float offsetZ = HashToFloat(Hash(bladeSeed + 2)) - 0.5;
     
     float3 worldPos = float3(gridX + offsetX, worldBoundsMax.y + 10, gridZ + offsetZ);
     float3 rayDir = float3(0, -1, 0);
@@ -175,15 +242,19 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
         return;
     }
     
-    float scale = lerp(scaleMin, scaleMax, HashToFloat(Hash(seed + 3)));
-    float rotY = HashToFloat(Hash(seed + 4)) * rotationVariation * 0.01745329;
+    float scale = lerp(scaleMin, scaleMax, HashToFloat(Hash(bladeSeed + 3)));
+    scale *= lerp(0.7, 1.0, densityMultiplier);
+    
+    float rotY = HashToFloat(Hash(bladeSeed + 4)) * rotationVariation * 0.01745329;
     
     float3 rotation = float3(0, rotY, 0);
     float3 scaleVec = float3(scale, scale, scale);
     
     instance.trs = CreateTRS(closestHit, rotation, scaleVec);
     
-    float colorVariation = HashToFloat(Hash(seed + 5)) * 0.2 + 0.9;
+    float colorVariation = HashToFloat(Hash(bladeSeed + 5)) * 0.2 + 0.9;
+    colorVariation *= lerp(0.85, 1.0, noiseValue);
+    
     instance.color = float4(colorVariation, colorVariation, colorVariation, 1);
     
     instanceData[id.x] = instance;
