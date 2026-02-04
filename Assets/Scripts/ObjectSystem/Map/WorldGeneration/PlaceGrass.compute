@@ -6,19 +6,10 @@ struct InstanceData
     float4 color;
 };
 
-struct Triangle
-{
-    float3 v0;
-    float3 v1;
-    float3 v2;
-    float3 normal;
-    float3 center;
-};
-
 RWStructuredBuffer<InstanceData> instanceData;
-StructuredBuffer<Triangle> triangles;
+StructuredBuffer<float> heightMap;
 
-int triangleCount;
+int terrainResolution;
 int instanceCount;
 int gridMinX;
 int gridMinZ;
@@ -31,7 +22,8 @@ float scaleMax;
 float rotationVariation;
 float3 worldBoundsMin;
 float3 worldBoundsMax;
-float cullingDistance;
+float terrainWidth;
+float terrainHeight;
 float noiseScale;
 float densityMinThreshold;
 float densityMaxThreshold;
@@ -102,44 +94,34 @@ float FractalNoise(float2 pos)
     return value / maxValue;
 }
 
-bool RayTriangleIntersect(float3 origin, float3 dir, Triangle tri, 
-                         out float t, out float3 hitPoint)
+float SampleHeightBilinear(float worldX, float worldZ)
 {
-    t = 0.0f;
-    hitPoint = float3(0.0f, 0.0f, 0.0f);
+    float localX = (worldX - worldBoundsMin.x) / terrainWidth;
+    float localZ = (worldZ - worldBoundsMin.z) / terrainHeight;
     
-    const float EPSILON = 1e-8f;
+    localX = clamp(localX, 0.0, 1.0);
+    localZ = clamp(localZ, 0.0, 1.0);
     
-    float3 edge1 = tri.v1 - tri.v0;
-    float3 edge2 = tri.v2 - tri.v0;
+    float gridX = localX * (terrainResolution - 1);
+    float gridZ = localZ * (terrainResolution - 1);
     
-    float3 h = cross(dir, edge2);
-    float a = dot(edge1, h);
+    int x0 = (int)floor(gridX);
+    int z0 = (int)floor(gridZ);
+    int x1 = min(x0 + 1, terrainResolution - 1);
+    int z1 = min(z0 + 1, terrainResolution - 1);
     
-    if (a > -EPSILON && a < EPSILON)
-        return false;
+    float fx = gridX - x0;
+    float fz = gridZ - z0;
     
-    float f = 1.0f / a;
-    float3 s = origin - tri.v0;
+    float h00 = heightMap[z0 * terrainResolution + x0];
+    float h10 = heightMap[z0 * terrainResolution + x1];
+    float h01 = heightMap[z1 * terrainResolution + x0];
+    float h11 = heightMap[z1 * terrainResolution + x1];
     
-    float u = f * dot(s, h);
-    if (u < 0.0f || u > 1.0f)
-        return false;
+    float h0 = lerp(h00, h10, fx);
+    float h1 = lerp(h01, h11, fx);
     
-    float3 q = cross(s, edge1);
-    float v = f * dot(dir, q);
-    if (v < 0.0f || u + v > 1.0f)
-        return false;
-    
-    t = f * dot(edge2, q);
-    
-    if (t > EPSILON)
-    {
-        hitPoint = origin + dir * t;
-        return true;
-    }
-    
-    return false;
+    return lerp(h0, h1, fz);
 }
 
 float4x4 CreateTRS(float3 position, float3 rotation, float3 scale)
@@ -180,14 +162,12 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= (uint)instanceCount) return;
     
-    uint totalCells = gridWidth * gridHeight;
     uint cellIndex = id.x / bladesPerCell;
     uint bladeIndex = id.x % bladesPerCell;
     
     int gridX = (int)(cellIndex % gridWidth) + gridMinX;
     int gridZ = (int)(cellIndex / gridWidth) + gridMinZ;
     
-    uint cellSeed = Hash2D((uint)gridX, (uint)gridZ);
     uint bladeSeed = Hash3D((uint)gridX, (uint)gridZ, bladeIndex);
     
     float2 noisePos = float2(gridX, gridZ) * noiseScale;
@@ -211,36 +191,11 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     float offsetX = HashToFloat(Hash(bladeSeed + 1)) - 0.5;
     float offsetZ = HashToFloat(Hash(bladeSeed + 2)) - 0.5;
     
-    float3 worldPos = float3(gridX + offsetX, worldBoundsMax.y + 10, gridZ + offsetZ);
-    float3 rayDir = float3(0, -1, 0);
+    float worldX = gridX + offsetX;
+    float worldZ = gridZ + offsetZ;
     
-    float closestT = 1e10;
-    float3 closestHit;
-    float3 closestNormal;
-    bool foundIntersection = false;
-    
-    for (int i = 0; i < triangleCount; i++)
-    {
-        float t;
-        float3 hitPoint;
-        if (RayTriangleIntersect(worldPos, rayDir, triangles[i], t, hitPoint))
-        {
-            if (t < closestT)
-            {
-                closestT = t;
-                closestHit = hitPoint;
-                closestNormal = triangles[i].normal;
-                foundIntersection = true;
-            }
-        }
-    }
-    
-    if (!foundIntersection)
-    {
-        instance.trs = CreateTRS(float3(0, -1000, 0), float3(0, 0, 0), float3(0.001, 0.001, 0.001));
-        instanceData[id.x] = instance;
-        return;
-    }
+    float height = SampleHeightBilinear(worldX, worldZ);
+    float3 worldPos = float3(worldX, height, worldZ);
     
     float scale = lerp(scaleMin, scaleMax, HashToFloat(Hash(bladeSeed + 3)));
     scale *= lerp(0.7, 1.0, densityMultiplier);
@@ -250,7 +205,7 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     float3 rotation = float3(0, rotY, 0);
     float3 scaleVec = float3(scale, scale, scale);
     
-    instance.trs = CreateTRS(closestHit, rotation, scaleVec);
+    instance.trs = CreateTRS(worldPos, rotation, scaleVec);
     
     float colorVariation = HashToFloat(Hash(bladeSeed + 5)) * 0.2 + 0.9;
     colorVariation *= lerp(0.85, 1.0, noiseValue);

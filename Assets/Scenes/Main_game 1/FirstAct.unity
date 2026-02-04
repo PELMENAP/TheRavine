@@ -672,12 +672,13 @@ GameObject:
   m_Component:
   - component: {fileID: 1470670355}
   - component: {fileID: 1470670354}
+  - component: {fileID: 1470670356}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 0
 --- !u!114 &1470670354
 MonoBehaviour:
@@ -698,7 +699,7 @@ MonoBehaviour:
   grassPlacementShader: {fileID: 7200000, guid: e3ba6791a67a001f9a194ee1c04a4dfd, type: 3}
   grassDensity: 0.3
   bladesPerCell: 4
-  maxGrassInstances: 3000000
+  maxGrassInstances: 300000
   scaleMin: 0.8
   scaleMax: 2
   rotationVariation: 360
@@ -708,10 +709,6 @@ MonoBehaviour:
   octaves: 3
   persistence: 0.5
   lacunarity: 2
-  players:
-  - {fileID: 1470670355}
-  maxPlayers: 4
-  cullingDistance: 100
 --- !u!4 &1470670355
 Transform:
   m_ObjectHideFlags: 0
@@ -727,6 +724,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1470670356
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1470670353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61e113457dceefbd3b30aed2f3261017, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  players:
+  - {fileID: 1470670355}
+  maxPlayers: 4
+  grassMaterial: {fileID: 2100000, guid: 36571ee1032acddecaf946f49784b2d6, type: 2}
 --- !u!4 &1737678887 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6722119735624511312, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}

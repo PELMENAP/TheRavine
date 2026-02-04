@@ -1,8 +1,9 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Collections;
+using TheRavine.Extensions;
 
-public class ChunkGrassSystem : MonoBehaviour
+public class GrassSystem : MonoBehaviour
 {
     [Header("Target Mesh")]
     [SerializeField] private MeshFilter targetMeshFilter;
@@ -29,29 +30,22 @@ public class ChunkGrassSystem : MonoBehaviour
     [SerializeField] private float persistence = 0.5f;
     [SerializeField] private float lacunarity = 2.0f;
     
-    [Header("Player Interaction")]
-    [SerializeField] private Transform[] players;
-    [SerializeField] private int maxPlayers = 4;
-    
-    [Header("Culling")]
-    [SerializeField] private float cullingDistance = 100f;
+    private readonly int terrainResolution = 121;
     
     private ComputeBuffer instanceBuffer;
-    private ComputeBuffer triangleBuffer;
+    private ComputeBuffer heightMapBuffer;
     private ComputeBuffer argsBuffer;
     
     private int kernelPlaceGrass;
     private Bounds renderBounds;
-    private uint[] args = new uint[5];
+    private readonly uint[] args = new uint[5];
     
     private int lastInstanceCount;
-    private Vector3 lastPosition, specialOffset = new Vector3(40, 0, 40);
-    private Vector4[] playerPositions;
+    private Vector3 lastPosition;
     
     void Start()
     {
         InitializeSystem();
-        playerPositions = new Vector4[maxPlayers];
     }
     
     void Update()
@@ -64,11 +58,10 @@ public class ChunkGrassSystem : MonoBehaviour
             lastPosition = targetTransform.position;
         }
         
-        UpdatePlayerPositions();
         RenderGrass();
     }
     
-    void InitializeSystem()
+    private void InitializeSystem()
     {
         if (grassPlacementShader == null)
         {
@@ -88,6 +81,19 @@ public class ChunkGrassSystem : MonoBehaviour
         args[4] = 0;
         
         renderBounds = new Bounds(Vector3.zero, Vector3.one * 10000f);
+        
+        grassPlacementShader.SetFloat("density", grassDensity);
+        grassPlacementShader.SetInt("bladesPerCell", bladesPerCell);
+        grassPlacementShader.SetFloat("scaleMin", scaleMin);
+        grassPlacementShader.SetFloat("scaleMax", scaleMax);
+        grassPlacementShader.SetFloat("rotationVariation", rotationVariation);
+        grassPlacementShader.SetFloat("noiseScale", noiseScale);
+        grassPlacementShader.SetFloat("densityMinThreshold", densityMinThreshold);
+        grassPlacementShader.SetFloat("densityMaxThreshold", densityMaxThreshold);
+        grassPlacementShader.SetInt("octaves", octaves);
+        grassPlacementShader.SetFloat("persistence", persistence);
+        grassPlacementShader.SetFloat("lacunarity", lacunarity);
+        grassPlacementShader.SetInt("terrainResolution", terrainResolution);
     }
     
     void UpdateGrassPlacement()
@@ -96,11 +102,32 @@ public class ChunkGrassSystem : MonoBehaviour
         if (mesh == null) return;
         
         var vertices = mesh.vertices;
-        var triangles = mesh.triangles;
         var meshBounds = mesh.bounds;
-        
         Matrix4x4 localToWorld = targetTransform.localToWorldMatrix;
-        Bounds worldBounds = TransformBounds(meshBounds, localToWorld);
+        
+        int vertexCount = vertices.Length;
+        
+        if (heightMapBuffer == null || heightMapBuffer.count != vertexCount)
+        {
+            heightMapBuffer?.Release();
+            heightMapBuffer = new ComputeBuffer(vertexCount, sizeof(float));
+        }
+        
+        NativeArray<float> heightMap = new NativeArray<float>(vertexCount, Allocator.Temp);
+        
+        for (int k = 0; k < vertexCount; k++)
+        {
+            int i = k / terrainResolution;
+            int j = k % terrainResolution;
+            int vertexIndex = (terrainResolution - j - 1) * terrainResolution + (terrainResolution - i - 1);
+            Vector3 worldPos = localToWorld.MultiplyPoint3x4(vertices[vertexIndex]);
+            heightMap[vertexCount - 1 - k] = worldPos.y;
+        }
+        
+        heightMapBuffer.SetData(heightMap);
+        heightMap.Dispose();
+        
+        Bounds worldBounds = GeneratorExtensions.TransformBounds(meshBounds, localToWorld);
         
         int minX = Mathf.FloorToInt(worldBounds.min.x);
         int maxX = Mathf.CeilToInt(worldBounds.max.x);
@@ -110,61 +137,22 @@ public class ChunkGrassSystem : MonoBehaviour
         int gridWidth = maxX - minX;
         int gridHeight = maxZ - minZ;
         int totalGridPoints = gridWidth * gridHeight * bladesPerCell;
-        
         int instanceCount = Mathf.Min(totalGridPoints, maxGrassInstances);
         
-        if (triangleBuffer == null || triangleBuffer.count != triangles.Length / 3)
-        {
-            triangleBuffer?.Release();
-            triangleBuffer = new ComputeBuffer(triangles.Length / 3, 60);
-        }
-        
-        NativeArray<TriangleData> triangleData = new NativeArray<TriangleData>(triangles.Length / 3, Allocator.Temp);
-        
-        for (int i = 0; i < triangles.Length; i += 3)
-        {
-            Vector3 v0 = localToWorld.MultiplyPoint3x4(vertices[triangles[i]]);
-            Vector3 v1 = localToWorld.MultiplyPoint3x4(vertices[triangles[i + 1]]);
-            Vector3 v2 = localToWorld.MultiplyPoint3x4(vertices[triangles[i + 2]]);
-            
-            Vector3 normal = Vector3.Cross(v1 - v0, v2 - v0).normalized;
-            Vector3 center = (v0 + v1 + v2) / 3f;
-            
-            triangleData[i / 3] = new TriangleData
-            {
-                v0 = v0,
-                v1 = v1,
-                v2 = v2,
-                normal = normal,
-                center = center
-            };
-        }
-        
-        triangleBuffer.SetData(triangleData);
-        triangleData.Dispose();
+        float terrainWidth = worldBounds.size.x;
+        float terrainHeight = worldBounds.size.z;
         
         grassPlacementShader.SetBuffer(kernelPlaceGrass, "instanceData", instanceBuffer);
-        grassPlacementShader.SetBuffer(kernelPlaceGrass, "triangles", triangleBuffer);
-        grassPlacementShader.SetInt("triangleCount", triangles.Length / 3);
+        grassPlacementShader.SetBuffer(kernelPlaceGrass, "heightMap", heightMapBuffer);
         grassPlacementShader.SetInt("instanceCount", instanceCount);
         grassPlacementShader.SetInt("gridMinX", minX);
         grassPlacementShader.SetInt("gridMinZ", minZ);
         grassPlacementShader.SetInt("gridWidth", gridWidth);
         grassPlacementShader.SetInt("gridHeight", gridHeight);
-        grassPlacementShader.SetInt("bladesPerCell", bladesPerCell);
-        grassPlacementShader.SetFloat("density", grassDensity);
-        grassPlacementShader.SetFloat("scaleMin", scaleMin);
-        grassPlacementShader.SetFloat("scaleMax", scaleMax);
-        grassPlacementShader.SetFloat("rotationVariation", rotationVariation);
         grassPlacementShader.SetVector("worldBoundsMin", worldBounds.min);
         grassPlacementShader.SetVector("worldBoundsMax", worldBounds.max);
-        grassPlacementShader.SetFloat("cullingDistance", cullingDistance);
-        grassPlacementShader.SetFloat("noiseScale", noiseScale);
-        grassPlacementShader.SetFloat("densityMinThreshold", densityMinThreshold);
-        grassPlacementShader.SetFloat("densityMaxThreshold", densityMaxThreshold);
-        grassPlacementShader.SetInt("octaves", octaves);
-        grassPlacementShader.SetFloat("persistence", persistence);
-        grassPlacementShader.SetFloat("lacunarity", lacunarity);
+        grassPlacementShader.SetFloat("terrainWidth", terrainWidth);
+        grassPlacementShader.SetFloat("terrainHeight", terrainHeight);
         
         int threadGroups = Mathf.CeilToInt(instanceCount / 64f);
         grassPlacementShader.Dispatch(kernelPlaceGrass, threadGroups, 1, 1);
@@ -173,31 +161,6 @@ public class ChunkGrassSystem : MonoBehaviour
         argsBuffer.SetData(args);
         
         lastInstanceCount = instanceCount;
-    }
-    
-    void UpdatePlayerPositions()
-    {
-        int count = Mathf.Min(players.Length, maxPlayers);
-        
-        for (int i = 0; i < count; i++)
-        {
-            if (players[i] != null)
-            {
-                playerPositions[i] = players[i].position;
-            }
-            else
-            {
-                playerPositions[i] = new Vector4(0, -10000, 0, 0);
-            }
-        }
-        
-        for (int i = count; i < maxPlayers; i++)
-        {
-            playerPositions[i] = new Vector4(0, -10000, 0, 0);
-        }
-        
-        grassMaterial.SetInt("_PlayerCount", count);
-        grassMaterial.SetVectorArray("_PlayerPositions", playerPositions);
     }
     
     void RenderGrass()
@@ -219,35 +182,10 @@ public class ChunkGrassSystem : MonoBehaviour
         );
     }
     
-    Bounds TransformBounds(Bounds localBounds, Matrix4x4 matrix)
-    {
-        Vector3 center = matrix.MultiplyPoint3x4(localBounds.center) + specialOffset;
-        Vector3 extents = localBounds.extents - specialOffset / 2;
-        
-        Vector3 axisX = matrix.MultiplyVector(new Vector3(extents.x, 0, 0));
-        Vector3 axisY = matrix.MultiplyVector(new Vector3(0, extents.y, 0));
-        Vector3 axisZ = matrix.MultiplyVector(new Vector3(0, 0, extents.z));
-        
-        extents.x = Mathf.Abs(axisX.x) + Mathf.Abs(axisY.x) + Mathf.Abs(axisZ.x);
-        extents.y = Mathf.Abs(axisX.y) + Mathf.Abs(axisY.y) + Mathf.Abs(axisZ.y);
-        extents.z = Mathf.Abs(axisX.z) + Mathf.Abs(axisY.z) + Mathf.Abs(axisZ.z);
-        
-        return new Bounds(center, extents * 2f);
-    }
-    
     void OnDestroy()
     {
         instanceBuffer?.Release();
-        triangleBuffer?.Release();
+        heightMapBuffer?.Release();
         argsBuffer?.Release();
-    }
-    
-    struct TriangleData
-    {
-        public Vector3 v0;
-        public Vector3 v1;
-        public Vector3 v2;
-        public Vector3 normal;
-        public Vector3 center;
     }
 }
