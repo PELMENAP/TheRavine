@@ -6,30 +6,30 @@ namespace TheRavine.EntityControl
     public class PlayerEntity : AEntity
     {
         private StatePatternComponent statePatternComponent;
-        private IEntityController PlayerController;
+        private PlayerController playerController;
         private readonly IRavineLogger logger;
         public PlayerEntity(IRavineLogger logger)
         {
             this.logger = logger;
         }
 
-        public void AddComponentsToEntity(EntityInfo entityInfo, AEntityViewModel aEntityModelView, IEntityController entityController, ulong clientId)
+        public void AddComponentsToEntity(EntityInfo entityInfo, AEntityViewModel aEntityModelView, ulong clientId)
         {
             statePatternComponent = new StatePatternComponent();
-            PlayerController = entityController;
+            playerController = aEntityModelView.gameObject.GetComponent<PlayerController>();;
             base.AddComponentToEntity(statePatternComponent);
             base.AddComponentToEntity(new EventBusComponent());
             base.AddComponentToEntity(new SkillComponent());
             base.AddComponentToEntity(new EnergyComponent(entityInfo.EnergyInfo));
             base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.Prefab.GetInstanceID(), clientId));
-            base.AddComponentToEntity(new MovementComponent(entityInfo.MovementInfo, entityController));
+            base.AddComponentToEntity(new MovementComponent(entityInfo.MovementInfo));
             base.AddComponentToEntity(new AimComponent(entityInfo.AimStatsInfo));
             base.AddComponentToEntity(new TransformComponent(aEntityModelView.transform, aEntityModelView.transform));
         }
 
         public override void Init()
         {
-            PlayerController.SetInitialValues(this, logger);
+            playerController.SetInitialValues(this, logger);
             SetBehaviourIdle();
         }
         public override void UpdateEntityCycle()
@@ -43,21 +43,26 @@ namespace TheRavine.EntityControl
         public void SetBehaviourIdle()
         {
             statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<PlayerBehaviourIdle>()).Forget();
-            PlayerController.EnableComponents();
+            playerController.EnableComponents();
         }
 
         public void SetBehaviourDialog()
         {
             statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<PlayerBehaviourDialogue>()).Forget();
-            PlayerController.SetZeroValues();
-            PlayerController.DisableComponents();
+            playerController.SetZeroValues();
+            playerController.DisableComponents();
         }
 
         public void SetBehaviourSit()
         {
             statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<PlayerBehaviourSit>()).Forget();
-            PlayerController.SetZeroValues();
-            PlayerController.DisableComponents();
+            playerController.SetZeroValues();
+            playerController.DisableComponents();
+        }
+
+        public override void DeepClean()
+        {
+            playerController.Delete();
         }
     }
 }

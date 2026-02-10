@@ -17,17 +17,24 @@ namespace TheRavine.Base
         [SerializeField] private Toggle profileToggle;
         [SerializeField] private GameObject profiler;
 
+
+        [SerializeField] private Toggle grassShadows;
+        [SerializeField] private Toggle grassEnable;
+        [SerializeField] private TMP_Dropdown grassDensityDropdown;
+
         private GraphyDebugger _profilerComponent;
+
+        private int[] grassDensityLevels = new int[] {1, 2, 3, 4, 5, 10, 20};
 
         protected override void InitializeControls()
         {
             _profilerComponent = profiler?.GetComponent<GraphyDebugger>();
 
-            SetupQualityDropdown();
+            SetupDropdowns();
             SetupToggles();
         }
 
-        private void SetupQualityDropdown()
+        private void SetupDropdowns()
         {
             qualityDropdown.ClearOptions();
             qualityDropdown.AddOptions(
@@ -35,9 +42,19 @@ namespace TheRavine.Base
                     .AsValueEnumerable()
                     .ToList()
             );
-
             qualityDropdown.onValueChanged.AddListener(value =>
                 Mediator.UpdateGlobal(s => s.qualityLevel = value));
+
+
+            grassDensityDropdown.ClearOptions();
+            grassDensityDropdown.AddOptions(
+                grassDensityLevels
+                    .AsValueEnumerable()
+                    .Select(i => i.ToString())
+                    .ToList()
+            );
+            grassDensityDropdown.onValueChanged.AddListener(value =>
+                Mediator.UpdateGlobal(s => s.grassDensityFactor = grassDensityLevels[value]));
         }
 
         private void SetupToggles()
@@ -54,6 +71,12 @@ namespace TheRavine.Base
 
             profileToggle.onValueChanged.AddListener(value =>
                 Mediator.UpdateGlobal(s => s.enableProfiling = value));
+
+            grassShadows.onValueChanged.AddListener(value =>
+                Mediator.UpdateGlobal(s => s.enableGrassShadows = value));
+
+            grassEnable.onValueChanged.AddListener(value =>
+                Mediator.UpdateGlobal(s => s.enableGrass = value));
         }
 
         protected override void BindToModel()
@@ -66,10 +89,15 @@ namespace TheRavine.Base
         protected override void UpdateView(GlobalSettings settings)
         {
             qualityDropdown.SetValueWithoutNotify(settings.qualityLevel);
+            grassDensityDropdown.SetValueWithoutNotify(grassDensityLevels.IndexOf(settings.grassDensityFactor));
+
+
             shadowToggle.SetIsOnWithoutNotify(settings.enableShadows);
             joystickToggle.SetIsOnWithoutNotify(settings.controlType == ControlType.Mobile);
             particlesToggle.SetIsOnWithoutNotify(settings.enableParticles);
             profileToggle.SetIsOnWithoutNotify(settings.enableProfiling);
+            grassShadows.SetIsOnWithoutNotify(settings.enableGrassShadows);
+            grassEnable.SetIsOnWithoutNotify(settings.enableGrass);
 
             ApplySettings(settings);
         }

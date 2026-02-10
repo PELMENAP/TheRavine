@@ -11,31 +11,38 @@ namespace TheRavine.Inventory
         public InfoManager(DataItems _dataItems)
         {
             data = new Dictionary<string, InventoryItemInfo>();
-            for (int i = 0; i < _dataItems.data.Count; i++) data[_dataItems.data[i].title] = _dataItems.data[i];
+            for (int i = 0; i < _dataItems.data.Count; i++) 
+            {
+                data[_dataItems.data[i].title] = _dataItems.data[i];
+            }
         }
         public IInventoryItem GetInventoryItem(string title, int amount = 1)
         {
-            Type itemType = Type.GetType(title, false, true);
-            if (itemType != null)
+            Debug.Log(title);
+            
+            Type itemType = InventoryTypeCache.GetType(title);
+            
+            if (itemType == null)
             {
-                InventoryItemInfo itemInfo;
-                data.TryGetValue(title, out itemInfo);
-                if (itemInfo != null)
-                {
-                    IInventoryItem item = (IInventoryItem)Activator.CreateInstance(itemType, new object[] { itemInfo });
-                    item.state.amount = amount;
-                    return item;
-                }
-                else
-                    Debug.Log("there's no " + title);
+                Debug.LogError($"Type {title} not found in cache");
+                return null;
             }
-            return null;
+            
+            if (!data.TryGetValue(title, out var itemInfo))
+            {
+                Debug.Log($"there's no {title}");
+                return null;
+            }
+            
+            IInventoryItem item = (IInventoryItem)System.Activator.CreateInstance(itemType, new object[] { itemInfo });
+            item.state.amount = amount;
+            return item;
         }
 
         public IInventoryItem GetInventoryItemByInfo(string title, InventoryItemInfo itemInfo, int amount = 1)
         {
             if (itemInfo == null) return null;
-            Type itemType = Type.GetType(title, false, true);
+            Type itemType = Type.GetType(title, true, false);
             if (itemType != null)
             {
                 IInventoryItem item = (IInventoryItem)Activator.CreateInstance(itemType, new object[] { itemInfo });

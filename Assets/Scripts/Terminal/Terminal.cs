@@ -6,7 +6,7 @@ using System;
 using TMPro;
 
 using TheRavine.Generator;
-using TheRavine.EntityControl;
+using UnityEngine.Rendering;
 
 namespace TheRavine.Base
 {
@@ -20,13 +20,13 @@ namespace TheRavine.Base
         [SerializeField] private GameObject graphyManager;
         [SerializeField] private ScriptEditorPresenter scriptEditor;
         [SerializeField] private RiveInputUI inputUI;
-        [SerializeField] private PlayerInput playerInput;
         private RiveRuntime interpreter;
         
         public CommandManager CommandManager { get; private set; }
         private CommandContext _context;
         private InputBindingAdapter _confirmBinding;
         private IRavineLogger logger;
+        private ActionMapController actionMapController;
 
         
         
@@ -40,11 +40,11 @@ namespace TheRavine.Base
                 inputField.Select();
                 inputField.ActivateInputField();
 
-                playerInput.SwitchCurrentActionMap("TextInput");
+                actionMapController.SwitchToTextInput();
             }
             else
             {
-                playerInput.SwitchCurrentActionMap("Gameplay");
+                actionMapController.SwitchToGameplay();
             }
         }
 
@@ -54,15 +54,17 @@ namespace TheRavine.Base
             
             inputField.onSubmit.AddListener(OnInputSubmit);
             inputField.onEndEdit.AddListener(OnInputEndEdit);
-
-            playerInput.actions.Disable();
-            playerInput.actions.FindActionMap("Gameplay").Enable();
-            playerInput.actions.FindActionMap("TextInput").Enable();
         }
 
-        public async void Setup(IRavineLogger logger)
+        public async void Setup(IRavineLogger logger, ActionMapController actionMapController)
         {
             this.logger = logger;
+            this.actionMapController = actionMapController;
+            actionMapController.DisableAll();
+            actionMapController.EnableUI();
+            actionMapController.SwitchToGameplay();
+
+
             interpreter = new RiveRuntime(ExecuteTerminalCommandAsync, logger);
             CommandManager = new CommandManager();
             

@@ -109,7 +109,7 @@ namespace TheRavine.EntityControl
             {
                 GCHandle handle = GCHandle.FromIntPtr(mobEntities[i]);
                 AEntity mob = (AEntity)handle.Target;
-                velocities[i] = mob.GetEntityComponent<MovementComponent>().EntityController.GetEntityVelocity();
+                velocities[i] = mob.GetEntityComponent<MovementComponent>().GetEntityVelocity();
             }
 
             moveMobsJob = new MoveMobsJob

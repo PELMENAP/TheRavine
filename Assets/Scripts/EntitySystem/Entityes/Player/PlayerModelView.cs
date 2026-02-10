@@ -1,20 +1,18 @@
 using Unity.Netcode;
 using UnityEngine;
 using System;
-using R3;
 
 using Cysharp.Threading.Tasks;
 
 namespace TheRavine.EntityControl
 {
-    [RequireComponent(typeof(IEntityController))]
+    [RequireComponent(typeof(PlayerController))]
     public class PlayerModelView : AEntityViewModel
     {
         public PlayerEntity PlayerEntity => (PlayerEntity)Entity;
         [SerializeField] private NetworkObject cameraPrefab;
         [SerializeField] private EntityInfo playerInfo;
-        private Camera mainCamera;
-        private CM cameraComponent;
+        private CameraComponent cameraComponent;
         private IRavineLogger logger;
         public override async void OnNetworkSpawn()
         {
@@ -47,7 +45,7 @@ namespace TheRavine.EntityControl
         private async UniTask CreatePlayerEntity()
         {
             base.Initialize(new PlayerEntity(logger));
-            PlayerEntity.AddComponentsToEntity(playerInfo, this, GetComponent<IEntityController>(), NetworkManager.Singleton.LocalClientId);
+            PlayerEntity.AddComponentsToEntity(playerInfo, this, NetworkManager.Singleton.LocalClientId);
 
             await UniTask.CompletedTask;
         }
@@ -64,8 +62,6 @@ namespace TheRavine.EntityControl
                     {
                         if(ServiceLocator.Services.TryGet(out EntitySystem entitySystem))
                         {
-                            Debug.Log(entitySystem);
-                            Debug.Log(PlayerEntity);
                             entitySystem.AddToGlobal(PlayerEntity);
                             break;
                         }
@@ -91,18 +87,18 @@ namespace TheRavine.EntityControl
         private void NotifyCameraCreatedClientRpc(ulong cameraObjectId, ulong clientId)
         {
             var cameraObject = NetworkManager.Singleton.SpawnManager.SpawnedObjects[cameraObjectId];
-            cameraComponent = cameraObject.GetComponent<CM>();
+            Camera camera = cameraObject.GetComponent<Camera>();
+            cameraComponent = new CameraComponent();
 
             if (NetworkManager.Singleton.LocalClientId == clientId)
             {
-                cameraComponent.SetPlayerEntity(PlayerEntity);
-                cameraComponent.SetUp(null);
-                mainCamera = cameraObject.GetComponent<Camera>();
+                cameraComponent.SetUp(PlayerEntity, camera, cameraObject.transform);
+                PlayerEntity.AddComponentToEntity(cameraComponent);
             }
-            DisableOtherCameras(clientId);
+            DisableOtherCameras(clientId, camera);
         }
 
-        private void DisableOtherCameras(ulong ownerId)
+        private void DisableOtherCameras(ulong ownerId, Camera mainCamera)
         {
             foreach (var cam in Camera.allCameras)
             {
@@ -130,7 +126,8 @@ namespace TheRavine.EntityControl
         }
         public override void OnDestroy() 
         {
-            cameraComponent?.BreakUp(null);
+            cameraComponent?.Dispose();
+            PlayerEntity.Dispose();
         }
     }
 }

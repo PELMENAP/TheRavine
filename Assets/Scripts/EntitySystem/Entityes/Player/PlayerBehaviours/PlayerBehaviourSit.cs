@@ -1,8 +1,9 @@
+using TheRavine.EntityControl;
 public class PlayerBehaviourSit : AState
 {
-    private IEntityController controller;
+    private PlayerController controller;
     private Behaviour behaviourSit;
-    public PlayerBehaviourSit(IEntityController _controller, System.Action _delegateIdle)
+    public PlayerBehaviourSit(PlayerController _controller, System.Action _delegateIdle)
     {
         controller = _controller;
         behaviourSit = _delegateIdle.Invoke;

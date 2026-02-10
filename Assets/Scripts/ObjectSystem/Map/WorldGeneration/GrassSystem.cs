@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Collections;
 using TheRavine.Extensions;
+using TheRavine.Base;
+using TheRavine.Generator;
 
 public class GrassSystem : MonoBehaviour
 {
@@ -13,14 +15,19 @@ public class GrassSystem : MonoBehaviour
     [SerializeField] private Mesh grassMesh;
     [SerializeField] private Material grassMaterial;
     [SerializeField] private ComputeShader grassPlacementShader;
-    
     [Header("Placement Parameters")]
     [SerializeField] private float grassDensity = 0.3f;
-    [SerializeField] private int bladesPerCell = 4;
-    [SerializeField] private int maxGrassInstances = 100000;
+    [SerializeField] private int bladesPerCell = 2;
     [SerializeField] private float scaleMin = 0.8f;
     [SerializeField] private float scaleMax = 1.2f;
     [SerializeField] private float rotationVariation = 360f;
+    
+    [Header("Scale Variation")]
+    [SerializeField] private float scaleNoiseScale = 0.05f;
+    [SerializeField] private float scaleNoiseInfluence = 0.5f;
+    [SerializeField] private int scaleOctaves = 2;
+    [SerializeField] private float scalePersistence = 0.5f;
+    [SerializeField] private float scaleLacunarity = 2.0f;
     
     [Header("Density Control")]
     [SerializeField] private float noiseScale = 0.1f;
@@ -30,7 +37,9 @@ public class GrassSystem : MonoBehaviour
     [SerializeField] private float persistence = 0.5f;
     [SerializeField] private float lacunarity = 2.0f;
     
-    private readonly int terrainResolution = 121;
+    private const int terrainResolution = 1 + 3 * MapGenerator.mapChunkSize;
+    private const int vertexCount = terrainResolution * terrainResolution;
+    private const int maxGrassInstances = 200000;
     
     private ComputeBuffer instanceBuffer;
     private ComputeBuffer heightMapBuffer;
@@ -42,15 +51,20 @@ public class GrassSystem : MonoBehaviour
     
     private int lastInstanceCount;
     private Vector3 lastPosition;
+
+    private GlobalSettings gameSettings;
     
     void Start()
     {
+        gameSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
+
+        if(gameSettings.enableGrass) return;
         InitializeSystem();
     }
     
     void Update()
     {
-        if (targetMeshFilter == null || targetTransform == null) return;
+        if (gameSettings.enableGrass) return;
 
         if(targetTransform.position != lastPosition)
         {
@@ -65,13 +79,13 @@ public class GrassSystem : MonoBehaviour
     {
         if (grassPlacementShader == null)
         {
-            Debug.LogError("Compute shader not assigned!");
+            Debug.LogError("Grass placement shader not assigned!");
             return;
         }
         
         kernelPlaceGrass = grassPlacementShader.FindKernel("PlaceGrass");
         
-        instanceBuffer = new ComputeBuffer(maxGrassInstances, 80);
+        instanceBuffer = new ComputeBuffer(maxGrassInstances * gameSettings.grassDensityFactor, 80);
         argsBuffer = new ComputeBuffer(5, sizeof(uint), ComputeBufferType.IndirectArguments);
         
         args[0] = grassMesh.GetIndexCount(0);
@@ -83,7 +97,7 @@ public class GrassSystem : MonoBehaviour
         renderBounds = new Bounds(Vector3.zero, Vector3.one * 10000f);
         
         grassPlacementShader.SetFloat("density", grassDensity);
-        grassPlacementShader.SetInt("bladesPerCell", bladesPerCell);
+        grassPlacementShader.SetInt("bladesPerCell", bladesPerCell * gameSettings.grassDensityFactor);
         grassPlacementShader.SetFloat("scaleMin", scaleMin);
         grassPlacementShader.SetFloat("scaleMax", scaleMax);
         grassPlacementShader.SetFloat("rotationVariation", rotationVariation);
@@ -94,6 +108,12 @@ public class GrassSystem : MonoBehaviour
         grassPlacementShader.SetFloat("persistence", persistence);
         grassPlacementShader.SetFloat("lacunarity", lacunarity);
         grassPlacementShader.SetInt("terrainResolution", terrainResolution);
+        
+        grassPlacementShader.SetFloat("scaleNoiseScale", scaleNoiseScale);
+        grassPlacementShader.SetFloat("scaleNoiseInfluence", scaleNoiseInfluence);
+        grassPlacementShader.SetInt("scaleOctaves", scaleOctaves);
+        grassPlacementShader.SetFloat("scalePersistence", scalePersistence);
+        grassPlacementShader.SetFloat("scaleLacunarity", scaleLacunarity);
     }
     
     void UpdateGrassPlacement()
@@ -104,8 +124,6 @@ public class GrassSystem : MonoBehaviour
         var vertices = mesh.vertices;
         var meshBounds = mesh.bounds;
         Matrix4x4 localToWorld = targetTransform.localToWorldMatrix;
-        
-        int vertexCount = vertices.Length;
         
         if (heightMapBuffer == null || heightMapBuffer.count != vertexCount)
         {
@@ -136,8 +154,8 @@ public class GrassSystem : MonoBehaviour
         
         int gridWidth = maxX - minX;
         int gridHeight = maxZ - minZ;
-        int totalGridPoints = gridWidth * gridHeight * bladesPerCell;
-        int instanceCount = Mathf.Min(totalGridPoints, maxGrassInstances);
+        int totalGridPoints = gridWidth * gridHeight * bladesPerCell * gameSettings.grassDensityFactor;
+        int instanceCount = Mathf.Min(totalGridPoints, maxGrassInstances * gameSettings.grassDensityFactor);
         
         float terrainWidth = worldBounds.size.x;
         float terrainHeight = worldBounds.size.z;
@@ -163,10 +181,11 @@ public class GrassSystem : MonoBehaviour
         lastInstanceCount = instanceCount;
     }
     
+    
     void RenderGrass()
     {
         if (instanceBuffer == null || lastInstanceCount == 0) return;
-        
+
         grassMaterial.SetBuffer("instanceData", instanceBuffer);
         Graphics.DrawMeshInstancedIndirect(
             grassMesh,
@@ -176,8 +195,8 @@ public class GrassSystem : MonoBehaviour
             argsBuffer,
             0,
             null,
-            ShadowCastingMode.On,
-            true,
+            gameSettings.enableGrassShadows ? ShadowCastingMode.On : ShadowCastingMode.Off,
+            false,
             gameObject.layer
         );
     }

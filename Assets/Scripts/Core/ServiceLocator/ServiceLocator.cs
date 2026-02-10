@@ -20,6 +20,5 @@ public static class ServiceLocator
     {
         Services.Clear();
         Players.Clear();
-        Services.LogRegisteredServices();
     }
 }

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1b25eaccd34726009800d84a3169045, type: 3}
   m_Name: PlayerAimStatsInfo
   m_EditorClassIdentifier: 
-  CrosshairDistance: 2
-  MaxCrosshairDistance: 3
+  CrosshairDistance: 5
+  MaxCrosshairDistance: 10
   CrosshairOffset: 0
   PickDistance: 1

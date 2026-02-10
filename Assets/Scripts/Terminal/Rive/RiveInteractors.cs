@@ -172,7 +172,6 @@ namespace TheRavine.Base
             }
 
             _interactors[interactor.Name] = interactor;
-            _logger.LogInfo($"Registered interactor: {interactor.Name}");
         }
 
         public void Unregister(string name)

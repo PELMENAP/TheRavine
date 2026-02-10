@@ -11,12 +11,22 @@ namespace TheRavine.Base
         public bool enableProfiling = false;
         public ControlType controlType = ControlType.Personal;
 
+
+        // GPU settings
+        public bool enableGrass = false;
+        public bool enableGrassShadows = false;
+        public int grassDensityFactor = 5;
+        
+
         public void CopyFrom(GlobalSettings other)
         {
             qualityLevel = other.qualityLevel;
             enableShadows = other.enableShadows;
             enableParticles = other.enableParticles;
             enableProfiling = other.enableProfiling;
+            enableGrass = other.enableGrass;
+            enableGrassShadows = other.enableGrassShadows;
+            grassDensityFactor = other.grassDensityFactor;
             controlType = other.controlType;
         }
 
@@ -35,6 +45,9 @@ namespace TheRavine.Base
                    enableShadows == other.enableShadows &&
                    enableParticles == other.enableParticles &&
                    enableProfiling == other.enableProfiling &&
+                   enableGrass == other.enableGrass &&
+                   enableGrassShadows == other.enableGrassShadows &&
+                   grassDensityFactor == other.grassDensityFactor &&
                    controlType == other.controlType;
         }
     }

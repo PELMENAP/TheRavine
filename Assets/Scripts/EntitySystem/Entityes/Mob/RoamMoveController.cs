@@ -3,12 +3,13 @@ using Cysharp.Threading.Tasks;
 
 using TheRavine.Extensions;
 using TheRavine.Base;
+using Unity.Mathematics;
 
 namespace TheRavine.EntityControl
 {
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(CircleCollider2D))]
-    public class RoamMoveController : MonoBehaviour, IEntityController
+    public class RoamMoveController : MonoBehaviour
     {
         private Transform entityTransform;
         [SerializeField] private Transform pointTarget, pointRandom;
@@ -23,12 +24,14 @@ namespace TheRavine.EntityControl
         private int currentPointIndex;
         private Collider2D Ccollider;
         private AEntity entity;
+        private MovementComponent movementComponent;
         public void SetInitialValues(AEntity entity, IRavineLogger logger)
         {
             entityTransform = this.transform;
             Ccollider = this.GetComponent<Collider2D>();
             bezierPoints = new Vector2[bezierDetail + 1];
             this.entity = entity;
+            movementComponent = entity.GetEntityComponent<MovementComponent>();
 
             UpdateTargetWander();
             UpdateMobControllerCycle().Forget();
@@ -71,15 +74,14 @@ namespace TheRavine.EntityControl
                         }
                     }
                 }
+
+                if (currentPointIndex < bezierPoints.Length && bezierPoints[0] != Vector2.zero)
+                    movementComponent.SetVelocity(new Vector2((bezierPoints[currentPointIndex].x - entityTransform.position.x) * movementSpeed * Time.deltaTime, (bezierPoints[currentPointIndex].y - entityTransform.position.y) * movementSpeed * Time.deltaTime));
+                else movementComponent.SetVelocity(Vector2.zero);
+
+
                 await UniTask.Delay(defaultDelay);
             }
-        }
-        public Vector2 GetEntityVelocity()
-        {
-            if (isDelay && !entity.IsActive.Value) return Vector2.zero;
-            if (currentPointIndex < bezierPoints.Length && bezierPoints[0] != Vector2.zero)
-                return new Vector2((bezierPoints[currentPointIndex].x - entityTransform.position.x) * movementSpeed * Time.deltaTime, (bezierPoints[currentPointIndex].y - entityTransform.position.y) * movementSpeed * Time.deltaTime);
-            return Vector2.zero;
         }
         public Transform GetModelTransform() => entityTransform;
         private void OnTriggerEnter2D(Collider2D other)
