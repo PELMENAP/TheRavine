@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Cysharp.Threading.Tasks;
 using System;
 
@@ -7,6 +8,9 @@ public class GameInitializer : MonoBehaviour
 {
     [SerializeField] private bool initializeOnAwake = true, clearAllPlayerPrefs, createTestWorld;
     [SerializeField] private Terminal terminal;
+    [SerializeField] private InputActionAsset inputAsset;
+
+    private ActionMapController actionMapController;
     private Action<string> onMessageDisplayTerminal;
 
     private void Awake()
@@ -28,8 +32,11 @@ public class GameInitializer : MonoBehaviour
         IRavineLogger logger = new RavineLogger(onMessageDisplayTerminal);
         ServiceLocator.Services.Register(logger);
 
+        actionMapController = new ActionMapController(inputAsset, logger);
+        ServiceLocator.Services.Register(actionMapController);
+
         terminal.gameObject.SetActive(true);
-        terminal.Setup(logger);
+        terminal.Setup(logger, actionMapController);
 
         IAsyncPersistentStorage persistenceStorage = new EncryptedPlayerPrefsStorage();
 

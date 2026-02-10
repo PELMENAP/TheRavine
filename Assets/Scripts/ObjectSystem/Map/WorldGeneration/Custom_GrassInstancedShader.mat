@@ -30,6 +30,8 @@ Material:
     m_Ints: []
     m_Floats:
     - _AmbientOcclusion: 1
+    - _CullingDistance: 25.56
+    - _CullingFadeDistance: 2.9
     - _Cutoff: 1
     - _DebugMode: 1.46
     - _HeightColorBlend: 0
@@ -44,7 +46,7 @@ Material:
     - _WindStrength: 0.03
     m_Colors:
     - _BaseColor: {r: 0, g: 0.3679245, b: 0.032080974, a: 1}
-    - _PlayerPosition: {r: -13.3, g: 8.89, b: 13.67, a: 0}
+    - _PlayerPosition: {r: 0, g: 0, b: 0, a: 0}
     - _TipColor: {r: 0.5, g: 0.8, b: 0.29999998, a: 1}
     - _WindDirection: {r: 1, g: 0, b: 1, a: 0}
   m_BuildTextureStacks: []

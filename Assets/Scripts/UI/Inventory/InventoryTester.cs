@@ -9,7 +9,7 @@ namespace TheRavine.Inventory
     public class InventoryTester
     {
         private readonly UIInventorySlot[] uiSlots;
-        private readonly IInventory inventory;
+        private readonly EventDrivenInventoryProxy inventory;
         private readonly InfoManager infoManager;
 
         public InventoryTester(UIInventorySlot[] uiSlots, InfoManager infoManager, EventDrivenInventoryProxy proxy)
@@ -17,8 +17,8 @@ namespace TheRavine.Inventory
             this.uiSlots = uiSlots;
             this.infoManager = infoManager;
 
-            inventory = proxy;
-            proxy.OnInventoryStateChangedEvent += OnInventoryStateChanged;
+            this.inventory = proxy;
+            inventory.OnInventoryStateChangedEvent += OnInventoryStateChanged;
         }
 
         private void FillRandomItems(List<string> titles, int itemsPerTitle)
@@ -38,6 +38,8 @@ namespace TheRavine.Inventory
                     freeSlots.RemoveAt(randIndex);
 
                     var item = infoManager.GetInventoryItem(title, Random.RangeInt(1, 10));
+
+                    UnityEngine.Debug.Log(item);
                     if (item != null)
                     {
                         inventory.TryToAdd(this, item);
@@ -83,6 +85,7 @@ namespace TheRavine.Inventory
 
         private void OnInventoryStateChanged(object sender)
         {
+            UnityEngine.Debug.Log("inventory state changed");
             RefreshAllSlots();
         }
         private void RefreshAllSlots()
@@ -93,6 +96,11 @@ namespace TheRavine.Inventory
                 uiSlots[i].SetSlot(slots[i], i);
                 uiSlots[i].Refresh();
             }
+        }
+
+        public void Dispose()
+        {
+            inventory.OnInventoryStateChangedEvent -= OnInventoryStateChanged;
         }
     }
 }

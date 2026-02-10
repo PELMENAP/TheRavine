@@ -12,7 +12,7 @@ using TheRavine.Events;
 namespace TheRavine.EntityControl
 {
     [RequireComponent(typeof(Rigidbody))]
-    public class PlayerController : NetworkBehaviour, IEntityController
+    public class PlayerController : NetworkBehaviour
     {
         [SerializeField] private int placeObjectDelay;
         [SerializeField] private float movementMinimum, sendInterval = 0.1f;
@@ -27,6 +27,7 @@ namespace TheRavine.EntityControl
         private bool isAimMode;
         private bool act = true;
         private bool isAccurance;
+        private bool isHolding = false;
 
         private IController currentController;
         private IRavineLogger logger;
@@ -48,15 +49,22 @@ namespace TheRavine.EntityControl
             GetPlayerComponents();
             DelayedInit().Forget();
 
+            Camera camera = playerEntity.GetEntityComponent<CameraComponent>().GetCamera();
+
             currentController = globalSettings.controlType switch
             {
-                ControlType.Personal => new PCController(Movement, RightClick, transform, aimComponent.CrosshairDistance),
+                ControlType.Personal => new PCController(Movement, camera, transform, aimComponent.CrosshairDistance),
                 ControlType.Mobile => new JoistickController(joystick),
-                _ => throw new NotImplementedException()
+                _ => null
             };
+
+            if(currentController is null) logger.LogError("Control type not defined");
 
             Raise.action.performed += AimRaise;
             LeftClick.action.performed += AimPlace;
+
+            RightClick.action.started += OnActionStarted;
+            RightClick.action.canceled += OnActionCanceled;
         }
 
         private async UniTaskVoid DelayedInit()
@@ -88,7 +96,7 @@ namespace TheRavine.EntityControl
             actions += Aim;
             component.AddBehaviour(typeof(PlayerBehaviourIdle), new PlayerBehaviourIdle (this, actions, logger));
             
-            actions += Aim;
+            actions = Aim;
             component.AddBehaviour(typeof(PlayerBehaviourSit), new PlayerBehaviourSit(this, actions));
         }
 
@@ -170,24 +178,42 @@ namespace TheRavine.EntityControl
             float angle = Mathf.Atan2(movementDirection.y, movementDirection.x) * Mathf.Rad2Deg - 90;
             playerMark.rotation = Quaternion.Euler(0, 0, angle);
         }
+
+        private void OnActionStarted(InputAction.CallbackContext context)
+        {
+            isHolding = true;
+        }
+
+        private void OnActionCanceled(InputAction.CallbackContext context)
+        {
+            isHolding = false;
+        }
         public void Aim()
         {
-            Vector2 aim = currentController.GetAim();
-            if (aim == Vector2.zero)
+            if (!isHolding)
             {
                 crosshair.gameObject.SetActive(false);
                 isAccurance = false;
                 return;
-            }
-            SetAimAddition(aim);
+            } 
 
-            if (aim.magnitude < aimComponent.CrosshairDistance) crosshair.localPosition = aim;
-            else crosshair.localPosition = aim.normalized * aimComponent.CrosshairDistance;
+            Vector2 aim = currentController.GetAim();
+
+            Vector2 aimNorm = aim.normalized;
+            float magnitude = aim.magnitude;
+            
+            SetAimAddition(magnitude, aimNorm);
+
+            if (magnitude < aimComponent.CrosshairDistance) crosshair.localPosition = new Vector3(aim.x, 0,  aim.y);
+            else 
+            {
+                crosshair.localPosition = new Vector3(aimNorm.x * aimComponent.CrosshairDistance, 0, aimNorm.y * aimComponent.CrosshairDistance);
+            }
             crosshair.gameObject.SetActive(true);
             isAccurance = true;
         }
 
-        private void SetAimAddition(Vector3 curAim){
+        private void SetAimAddition(float magnitude, Vector3 aimNorm){
             
             float factMouseFactor = 1f;
 
@@ -201,12 +227,10 @@ namespace TheRavine.EntityControl
                     break;
             }
 
-            float factMouseMagnitute = curAim.magnitude;
-            Vector3 factMousePosition = curAim.normalized;
-            if (factMouseMagnitute > aimComponent.MaxCrosshairDistance * factMouseFactor) factMousePosition *= aimComponent.MaxCrosshairDistance;
-            else if (factMouseMagnitute < aimComponent.CrosshairDistance * factMouseFactor + 1) factMousePosition = Vector2.zero;
+            if (magnitude > aimComponent.MaxCrosshairDistance * factMouseFactor) aimNorm *= aimComponent.MaxCrosshairDistance;
+            else if (magnitude < aimComponent.CrosshairDistance * factMouseFactor + 1) aimNorm = Vector2.zero;
 
-            entityEventBus.Invoke(playerEntity, new AimAddition {Position = factMousePosition});
+            entityEventBus.Invoke(playerEntity, new AimAddition {Position = aimNorm});
         }
         
         public void ChangeAimMode()
@@ -224,10 +248,10 @@ namespace TheRavine.EntityControl
             if (!isAccurance)
             {
                 int currentX = Mathf.RoundToInt(transform.position.x);
-                int currentY = Mathf.RoundToInt(transform.position.y);
+                int currentZ = Mathf.RoundToInt(transform.position.z);
                 for (int xOffset = -aimComponent.PickDistance; xOffset <= aimComponent.PickDistance; xOffset++)
-                    for (int yOffset = -aimComponent.PickDistance; yOffset <= aimComponent.PickDistance; yOffset++)
-                        entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = new Vector2Int(currentX + xOffset, currentY + yOffset) });
+                    for (int zOffset = -aimComponent.PickDistance; zOffset <= aimComponent.PickDistance; zOffset++)
+                        entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = new Vector2Int(currentX + xOffset, currentZ + zOffset) });
             }
             else entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = Extension.RoundVector2D(crosshair.position) });
         }
@@ -247,35 +271,26 @@ namespace TheRavine.EntityControl
 
         private async UniTaskVoid Placing()
         {
-            try
-            {
+            // try
+            // {
                 act = false;
                 entityEventBus.Invoke(playerEntity, new PlaceEvent { Position = Extension.RoundVector2D(crosshair.position) } );
                 await UniTask.Delay(placeObjectDelay);
                 act = true;
-            }
-            catch (Exception ex)
-            {
-                logger?.LogError($"Error in In(): {ex.Message}");
-            }
+            // }
+            // catch (Exception ex)
+            // {
+            //     logger?.LogError($"Error in In(): {ex.Message}");
+            // }
         }
         public void Delete()
         {
             currentController.MeetEnds();
             Raise.action.performed -= AimRaise;
             LeftClick.action.performed -= AimPlace;
-        }
 
-        public Transform GetModelTransform() => this.transform;
-
-        public Vector2 GetEntityVelocity()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Dispose()
-        {
-            throw new NotImplementedException();
+            RightClick.action.started -= OnActionStarted;
+            RightClick.action.canceled -= OnActionCanceled;
         }
     }
 }

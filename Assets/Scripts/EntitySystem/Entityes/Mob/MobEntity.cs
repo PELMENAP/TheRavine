@@ -6,7 +6,7 @@ namespace TheRavine.EntityControl
     public class MobEntity : AEntity
     {
         [SerializeField] private Vector2 direction;
-        private readonly IEntityController moveController;
+        private readonly RoamMoveController moveController;
         [SerializeField] private Animator animator;
         public MobEntity(EntityInfo entityInfo, IRavineLogger logger)
         {

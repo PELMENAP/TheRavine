@@ -7,7 +7,7 @@ namespace TheRavine.EntityControl
     {
         private AEntity mobEntity;
         [SerializeField] private Vector2 direction;
-        private IEntityController moveController;
+        private RoamMoveController moveController;
         [SerializeField] private Animator animator;
 
         private void Awake() {

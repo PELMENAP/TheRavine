@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df191f36c78c668c5afee92f3033179e, type: 3}
+  m_Name: GrassRegionConfig
+  m_EditorClassIdentifier: ObjectSystem::GrassRegionConfig
+  regions:
+  - minHeight: -10
+    maxHeight: 5
+    baseColor: {r: 0.2, g: 0.5, b: 0.1, a: 1}
+    tipColor: {r: 0.4, g: 0.7, b: 0.2, a: 1}
+    scaleMultiplier: 0.8
+    densityMultiplier: 1.2
+    enabled: 1
+  - minHeight: 5
+    maxHeight: 7
+    baseColor: {r: 0.3, g: 0.6, b: 0.2, a: 1}
+    tipColor: {r: 0.5, g: 0.8, b: 0.3, a: 1}
+    scaleMultiplier: 1
+    densityMultiplier: 1
+    enabled: 1
+  - minHeight: 7
+    maxHeight: 9
+    baseColor: {r: 0.4, g: 0.5, b: 0.3, a: 1}
+    tipColor: {r: 0.6, g: 0.7, b: 0.4, a: 1}
+    scaleMultiplier: 0.6
+    densityMultiplier: 0.5
+    enabled: 1
+  - minHeight: 9
+    maxHeight: 100
+    baseColor: {r: 1, g: 0, b: 0, a: 1}
+    tipColor: {r: 1, g: 0, b: 0, a: 1}
+    scaleMultiplier: 0
+    densityMultiplier: 0
+    enabled: 1
+  heightQuantization: 1

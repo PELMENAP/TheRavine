@@ -62,8 +62,7 @@ Shader "Custom/ChunkGrassShader"
             float _WindGustStrength;
             float _WindGustFrequency;
 
-            int _PlayerCount;
-            float4 _PlayerPositions[MAX_PLAYERS];
+            float4 _PlayerPosition;
             float _PlayerRadius;
             float _PlayerStrength;
         CBUFFER_END
@@ -75,24 +74,21 @@ Shader "Custom/ChunkGrassShader"
         {
             float3 totalOffset = float3(0, 0, 0);
             
-            for (int i = 0; i < _PlayerCount; i++)
+            float distanceToPlayer = distance(positionWS, _PlayerPosition.xyz);
+            
+            if (distanceToPlayer < _PlayerRadius)
             {
-                float distanceToPlayer = distance(positionWS, _PlayerPositions[i].xyz);
+                float falloff = 1.0 - (distanceToPlayer / _PlayerRadius);
+                falloff = pow(falloff, 2.0);
                 
-                if (distanceToPlayer < _PlayerRadius)
-                {
-                    float falloff = 1.0 - (distanceToPlayer / _PlayerRadius);
-                    falloff = pow(falloff, 2.0);
-                    
-                    float3 dirFromPlayer = normalize(positionWS - _PlayerPositions[i].xyz);
-                    
-                    float3 offset = dirFromPlayer * falloff * _PlayerStrength * heightFactor;
-                    offset.y = 0;
-                    
-                    offset.y -= falloff * _PlayerStrength * 0.2;
-                    
-                    totalOffset += offset;
-                }
+                float3 dirFromPlayer = normalize(positionWS - _PlayerPosition.xyz);
+                
+                float3 offset = dirFromPlayer * falloff * _PlayerStrength * heightFactor;
+                offset.y = 0;
+                
+                offset.y -= falloff * _PlayerStrength * 0.2;
+                
+                totalOffset += offset;
             }
             
             return totalOffset;
@@ -183,7 +179,11 @@ Shader "Custom/ChunkGrassShader"
             
             float4 frag(Varyings input) : SV_Target
             {
+                if (input.color.a < 0.2)
+                    discard;
+                    
                 float4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
+
                 clip(texColor.a - _Cutoff);
                 
                 float4 heightColor = lerp(_BaseColor, _TipColor, input.heightFactor);
@@ -266,6 +266,7 @@ Shader "Custom/ChunkGrassShader"
             float4 ShadowFrag(Varyings input) : SV_Target
             {
                 float alpha = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv).a;
+
                 clip(alpha - _Cutoff);
                 return 0;
             }

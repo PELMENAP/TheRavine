@@ -46,6 +46,8 @@ namespace TheRavine.EntityControl
 
         public void Dispose()
         {
+            DeepClean();
+
             foreach (var component in _components.Values)
                 component.Dispose();
             _components.Clear();
@@ -54,5 +56,10 @@ namespace TheRavine.EntityControl
 
         public abstract void Init();
         public abstract void UpdateEntityCycle();
+
+        public virtual void DeepClean()
+        {
+            
+        }
     }
 }

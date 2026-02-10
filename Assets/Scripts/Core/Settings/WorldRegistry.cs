@@ -54,19 +54,19 @@ namespace TheRavine.Base
             
             try
             {
-                var worldData = new WorldState
+                var worldState = new WorldState
                 {
                     seed = UnityEngine.Random.Range(0, int.MaxValue),
                     lastSaveTime = DateTimeOffset.Now.ToUnixTimeSeconds()
                 };
 
-                var worldSettings = customSettings?.Clone() ?? new WorldConfiguration();
-                worldSettings.worldName = worldName;
-                worldSettings.createdTime = DateTimeOffset.Now.ToUnixTimeSeconds();
-                worldSettings.lastModifiedTime = worldSettings.createdTime;
-                worldSettings.Validate();
+                var worldConfiguration = customSettings?.Clone() ?? new WorldConfiguration();
+                worldConfiguration.worldName = worldName;
+                worldConfiguration.createdTime = DateTimeOffset.Now.ToUnixTimeSeconds();
+                worldConfiguration.lastModifiedTime = worldConfiguration.createdTime;
+                worldConfiguration.Validate();
 
-                await worldStorage.SaveFullAsync(worldName, worldData, worldSettings);
+                await worldStorage.SaveFullAsync(worldName, worldState, worldConfiguration);
 
                 AvailableWorlds.Add(worldName);
                 

@@ -90,6 +90,7 @@ namespace TheRavine.Generator
         [SerializeField] private TerrainType[] regions;
         [SerializeField] private TemperatureType[] biomRegions;
         [SerializeField] private Transform viewer;
+        [SerializeField] private Vector3 viewerOffset;
         [SerializeField] private bool[] endlessFlag;
         [SerializeField] private bool isRiver;
         public ChunkGenerator chunkGenerator;
@@ -210,7 +211,7 @@ namespace TheRavine.Generator
         private Vector2Int GetPlayerPosition()
         {
             if (viewer == null) return Vector2Int.zero;
-            Vector3 playerPosition = new(viewer.position.x - generationSize / 2, viewer.position.z + generationSize / 2, 0);
+            Vector3 playerPosition = new(viewer.position.x - generationSize / 2 + viewerOffset.x, viewer.position.z + generationSize / 2 + viewerOffset.z, 0);
             return Extension.RoundVector2D(playerPosition / generationSize);
         }
 
