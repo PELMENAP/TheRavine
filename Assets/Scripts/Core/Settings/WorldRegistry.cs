@@ -96,13 +96,11 @@ namespace TheRavine.Base
             
             try
             {
-                // var worldDataService = ServiceLocator.GetService<WorldStatePersistence>();
-                // var settingsModel = ServiceLocator.GetService<SettingsMediator>();
-                
-                // var (worldData, worldSettings) = await worldStorage.LoadFullAsync(worldName);
+                var worldDataService = ServiceLocator.GetService<WorldStatePersistence>();
+                var settingsModel = ServiceLocator.GetService<SettingsMediator>();
             
-                // await worldDataService.LoadAsync(worldName);
-                // await settingsModel.LoadWorldConfigAsync(worldName);
+                await worldDataService.LoadAsync(worldName);
+                await settingsModel.LoadWorldConfigAsync(worldName);
 
                 SceneLaunchService sceneLaunchService = ServiceLocator.GetService<SceneLaunchService>();
 

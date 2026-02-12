@@ -47,6 +47,22 @@ namespace TheRavine.Inventory
             return success;
         }
 
+        public bool TryToAddSlot(object sender, IInventorySlot slot, IInventoryItem item)
+        {
+            var initialAmount = item.state.amount;
+            var success = _inventory.TryToAddSlot(sender, slot, item);
+
+            if (success)
+            {
+                var addedAmount = initialAmount - item.state.amount;
+                OnInventoryItemAddedEvent?.Invoke(sender, item, addedAmount);
+                OnInventoryStateChangedEvent?.Invoke(sender);
+                OnInventoryStateChangedEventOnce?.Invoke(sender);
+            }
+
+            return success;
+        }
+
         public bool Remove(object sender, Type itemType, int amount = 1)
         {
             var success = _inventory.Remove(sender, itemType, amount);

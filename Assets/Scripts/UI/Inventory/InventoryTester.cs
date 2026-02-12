@@ -23,7 +23,8 @@ namespace TheRavine.Inventory
 
         private void FillRandomItems(List<string> titles, int itemsPerTitle)
         {
-            var freeSlots = inventory.GetAllSlots()
+            IInventorySlot[] inventorySlots = inventory.GetAllSlots();
+            var freeSlots = inventorySlots
                 .AsValueEnumerable()
                 .Select((slot, idx) => slot.isEmpty ? idx : -1)
                 .Where(idx => idx >= 0)
@@ -39,10 +40,9 @@ namespace TheRavine.Inventory
 
                     var item = infoManager.GetInventoryItem(title, Random.RangeInt(1, 10));
 
-                    UnityEngine.Debug.Log(item);
                     if (item != null)
                     {
-                        inventory.TryToAdd(this, item);
+                        inventory.TryToAddSlot(this, inventorySlots[slotIdx], item);
                     }
                 }
             }
@@ -85,7 +85,6 @@ namespace TheRavine.Inventory
 
         private void OnInventoryStateChanged(object sender)
         {
-            UnityEngine.Debug.Log("inventory state changed");
             RefreshAllSlots();
         }
         private void RefreshAllSlots()
