@@ -1,268 +1,162 @@
 using System;
 using System.Collections.Generic;
+using ZLinq;
 
 namespace TheRavine.Inventory
 {
     public class InventoryModel : IInventory
     {
         public int capacity { get; set; }
-        public bool isFull => occupiedSlotsCount == capacity;
+        public bool isFull => _slots.AsValueEnumerable().All(slot => slot.isFull);
 
-        private readonly IInventorySlot[] slots;
-        private readonly Dictionary<Type, List<int>> typeToSlotIndices;
-        private readonly Queue<int> emptySlotIndices;
-        private int occupiedSlotsCount;
-
+        private readonly List<IInventorySlot> _slots;
         public InventoryModel(int capacity)
         {
             this.capacity = capacity;
-            slots = new IInventorySlot[capacity];
-            typeToSlotIndices = new Dictionary<Type, List<int>>();
-            emptySlotIndices = new Queue<int>(capacity);
-
-            for (int i = 0; i < capacity; i++)
-            {
-                slots[i] = new InventorySlot();
-                emptySlotIndices.Enqueue(i);
-            }
-
-            occupiedSlotsCount = 0;
+            _slots = new List<IInventorySlot>(capacity);
+            for (int i = 0; i < capacity; i++) _slots.Add(new InventorySlot());
         }
-
         public IInventoryItem GetItem(Type itemType)
         {
-            if (!typeToSlotIndices.TryGetValue(itemType, out var indices) || indices.Count == 0)
-                return null;
-
-            return slots[indices[0]].item;
+            return _slots.Find(slot => slot.itemType == itemType).item;
         }
-
         public IInventoryItem[] GetAllItems()
         {
-            var items = new IInventoryItem[occupiedSlotsCount];
-            int index = 0;
-
-            for (int i = 0; i < capacity; i++)
-            {
-                if (!slots[i].isEmpty)
-                    items[index++] = slots[i].item;
-            }
-
-            return items;
+            var allItems = new List<IInventoryItem>();
+            foreach (var slot in _slots)
+                if (!slot.isEmpty)
+                    allItems.Add(slot.item);
+            return allItems.ToArray();
         }
         public IInventoryItem[] GetAllItems(Type itemType)
         {
-            if (!typeToSlotIndices.TryGetValue(itemType, out var indices))
-                return new IInventoryItem[0];
-
-            var items = new IInventoryItem[indices.Count];
-            for (int i = 0; i < indices.Count; i++)
-            {
-                items[i] = slots[indices[i]].item;
-            }
-
-            return items;
+            var allItemsOfType = new List<IInventoryItem>();
+            var slotsOfType = _slots.FindAll(slot => !slot.isEmpty && slot.itemType == itemType);
+            foreach (var slot in slotsOfType)
+                allItemsOfType.Add(slot.item);
+            return allItemsOfType.ToArray();
         }
-
         public IInventoryItem[] GetEquippedItems()
         {
+            var requiredSlots = _slots.FindAll(slot => !slot.isEmpty && slot.item.state.isEquipped);
             var equippedItems = new List<IInventoryItem>();
-
-            for (int i = 0; i < capacity; i++)
-            {
-                if (!slots[i].isEmpty && slots[i].item.state.isEquipped)
-                    equippedItems.Add(slots[i].item);
-            }
-
+            foreach (var slot in requiredSlots)
+                equippedItems.Add(slot.item);
             return equippedItems.ToArray();
-        }
 
+        }
         public int GetItemAmount(Type itemType)
         {
-            if (!typeToSlotIndices.TryGetValue(itemType, out var indices))
-                return 0;
-
-            int totalAmount = 0;
-            for (int i = 0; i < indices.Count; i++)
-            {
-                totalAmount += slots[indices[i]].amount;
-            }
-
-            return totalAmount;
+            var amount = 0;
+            var allItemSlots = _slots.FindAll(slot => !slot.isEmpty && slot.itemType == itemType);
+            foreach (var itemSlot in allItemSlots)
+                amount += itemSlot.amount;
+            return amount;
         }
-
         public bool TryToAdd(object sender, IInventoryItem item)
         {
-            int remaining = item.state.amount;
-
-            if (typeToSlotIndices.TryGetValue(item.type, out var indices))
-            {
-                for (int i = 0; i < indices.Count && remaining > 0; i++)
-                {
-                    var slotIndex = indices[i];
-                    var slot = slots[slotIndex];
-                    if (slot.isFull) continue;
-
-                    int availableSpace = slot.item.info.maxItemsInInventorySlot - slot.amount;
-                    int amountToAdd = Math.Min(remaining, availableSpace);
-                    
-                    slot.item.state.amount += amountToAdd;
-                    remaining -= amountToAdd;
-                }
-            }
-
-            while (remaining > 0 && emptySlotIndices.Count > 0)
-            {
-                int slotIndex = emptySlotIndices.Dequeue();
-                var slot = slots[slotIndex];
-                int maxInSlot = item.info.maxItemsInInventorySlot;
-                int amountToAdd = Math.Min(remaining, maxInSlot);
-
-                var clone = item.Clone();
-                clone.state.amount = amountToAdd;
-                slot.SetItem(clone);
-                UpdateIndicesOnAdd(slotIndex, item.type);
-                remaining -= amountToAdd;
-            }
-
-            item.state.amount = remaining;
-            return remaining == 0;
+            var slotWithSameItemButNotEmpty = _slots.Find(slot => !slot.isEmpty && slot.itemType == item.type && !slot.isFull);
+            if (slotWithSameItemButNotEmpty != null)
+                return TryToAddSlot(sender, slotWithSameItemButNotEmpty, item);
+            var emptySlot = _slots.Find(slot => slot.isEmpty);
+            if (emptySlot != null)
+                return TryToAddSlot(sender, emptySlot, item);
+            return false;
         }
 
+        public bool TryToAddSlot(object sender, IInventorySlot slot, IInventoryItem item)
+        {
+            var fits = slot.amount + item.state.amount <= item.info.maxItemsInInventorySlot;
+            var amountToAdd = fits ? item.state.amount : item.info.maxItemsInInventorySlot - slot.amount;
+            var amountLeft = item.state.amount - amountToAdd;
+            if (slot.isEmpty)
+            {
+                var clonedItem = item.Clone();
+                clonedItem.state.amount = amountToAdd;
+                slot.SetItem(clonedItem);
+            }
+            else
+                slot.item.state.amount += amountToAdd;
+            if (amountLeft <= 0)
+                return true;
+            item.state.amount = amountLeft;
+            return TryToAdd(sender, item);
+        }
+
+        public void TransitFromSlotToSlot(object sender, IInventorySlot fromSlot, IInventorySlot toSlot)
+        {
+            if (fromSlot == toSlot || fromSlot.isEmpty || toSlot.isFull || (!toSlot.isEmpty && fromSlot.itemType != toSlot.itemType))
+                return;
+            var slotCapacity = fromSlot.capacity;
+            var fits = fromSlot.amount + toSlot.amount <= slotCapacity;
+            var amountToAdd = fits ? fromSlot.amount : slotCapacity - toSlot.amount;
+            var amountLeft = fromSlot.amount - amountToAdd;
+            if (toSlot.isEmpty)
+            {
+                toSlot.SetItem(fromSlot.item);
+                fromSlot.Clear();
+            }
+
+            toSlot.item.state.amount += amountToAdd;
+            if (fits)
+                fromSlot.Clear();
+            else
+                fromSlot.item.state.amount = amountLeft;
+        }
         public bool Remove(object sender, Type itemType, int amount = 1)
         {
-            if (!typeToSlotIndices.TryGetValue(itemType, out var indices) || indices.Count == 0)
+            var slotsWithItem = GetAllSlots(itemType);
+            if (slotsWithItem.Length == 0)
                 return false;
-
-            int amountToRemove = amount;
-            var slotsToRemove = new List<int>();
-
-            for (int i = indices.Count - 1; i >= 0 && amountToRemove > 0; i--)
+            var amountToRemove = amount;
+            var count = slotsWithItem.Length;
+            for (int i = count - 1; i >= 0; i--)
             {
-                var slotIndex = indices[i];
-                var slot = slots[slotIndex];
-                var availableAmount = slot.amount;
-                var removeFromSlot = Math.Min(amountToRemove, availableAmount);
-
-                slot.item.state.amount -= removeFromSlot;
-                amountToRemove -= removeFromSlot;
-
-                if (slot.amount <= 0)
+                var slot = slotsWithItem[i];
+                if (slot.amount >= amountToRemove)
                 {
-                    slotsToRemove.Add(slotIndex);
+                    slot.item.state.amount -= amountToRemove;
+                    if (slot.amount <= 0)
+                        slot.Clear();
+                    break;
                 }
+                amountToRemove -= slot.amount;
+                slot.Clear();
             }
-
-            foreach (var slotIndex in slotsToRemove)
-            {
-                slots[slotIndex].Clear();
-                UpdateIndicesOnRemove(slotIndex, itemType);
-            }
-
-            return amountToRemove == 0;
+            return true;
         }
-
         public bool HasItem(Type itemType, out IInventoryItem item)
         {
             item = GetItem(itemType);
             return item != null;
         }
-
         public bool HasItem(Type itemType)
         {
-            return typeToSlotIndices.ContainsKey(itemType) && typeToSlotIndices[itemType].Count > 0;
-        }
-
-        private void UpdateIndicesOnAdd(int slotIndex, Type itemType)
-        {
-            if (!typeToSlotIndices.ContainsKey(itemType))
-                typeToSlotIndices[itemType] = new List<int>();
-
-            typeToSlotIndices[itemType].Add(slotIndex);
-            occupiedSlotsCount++;
-        }
-
-        private void UpdateIndicesOnRemove(int slotIndex, Type itemType)
-        {
-            if (typeToSlotIndices.TryGetValue(itemType, out var indices))
-            {
-                indices.Remove(slotIndex);
-                if (indices.Count == 0)
-                    typeToSlotIndices.Remove(itemType);
-            }
-
-            emptySlotIndices.Enqueue(slotIndex);
-            occupiedSlotsCount--;
-        }
-        public IInventorySlot[] GetAllSlots()
-        {
-            return slots;
+            for(int i = 0; i < _slots.Count; i++) if(_slots[i].itemType == itemType) return true;
+            return false;
         }
 
         public IInventorySlot[] GetAllSlots(Type itemType)
         {
-            if (!typeToSlotIndices.TryGetValue(itemType, out var indices))
-                return new IInventorySlot[0];
-
-            var result = new IInventorySlot[indices.Count];
-            for (int i = 0; i < indices.Count; i++)
-            {
-                result[i] = this.slots[indices[i]];
-            }
-            return result;
+            return _slots.FindAll(slot => !slot.isEmpty && slot.itemType == itemType).ToArray();
         }
 
-        public void TransitFromSlotToSlot(object sender, int fromSlotIndex, int toSlotIndex)
+        public IInventorySlot[] GetAllSlots()
         {
-            if (fromSlotIndex == toSlotIndex || 
-                fromSlotIndex < 0 || fromSlotIndex >= capacity ||
-                toSlotIndex < 0 || toSlotIndex >= capacity)
+            return _slots.ToArray();
+        }
+
+        public SerializableList<SerializableInventorySlot> GetSerializableList()
+        {
+            SerializableList<SerializableInventorySlot> data = new();
+            for(int i = 0; i < capacity; i++)
             {
-                return;
+                if(_slots[i].isEmpty) data.list.Add(new SerializableInventorySlot("the ravine", 0));
+                var item = _slots[i].item;
+                if(item == null) continue;
+                data.list.Add(new SerializableInventorySlot(item.info.id, item.state.amount));
             }
-
-            var fromSlot = slots[fromSlotIndex];
-            var toSlot = slots[toSlotIndex];
-
-            if (fromSlot.isEmpty || 
-                toSlot.isFull || 
-                (!toSlot.isEmpty && fromSlot.itemType != toSlot.itemType))
-            {
-                return;
-            }
-
-            var itemInfo = fromSlot.item.info;
-            var maxCapacity = itemInfo.maxItemsInInventorySlot;
-            var availableSpace = toSlot.isEmpty 
-                ? maxCapacity 
-                : maxCapacity - toSlot.amount;
-            
-            var amountToMove = Math.Min(fromSlot.amount, availableSpace);
-
-            if (amountToMove <= 0)
-            {
-                return;
-            }
-
-            if (toSlot.isEmpty)
-            {
-                var clonedItem = fromSlot.item.Clone();
-                clonedItem.state.amount = amountToMove;
-                toSlot.SetItem(clonedItem);
-                UpdateIndicesOnAdd(toSlotIndex, fromSlot.itemType);
-            }
-            else
-            {
-                toSlot.item.state.amount += amountToMove;
-            }
-
-            fromSlot.item.state.amount -= amountToMove;
-
-            if (fromSlot.amount <= 0)
-            {
-                fromSlot.Clear();
-                UpdateIndicesOnRemove(fromSlotIndex, fromSlot.itemType);
-            }
+            return data;
         }
     }
 }
