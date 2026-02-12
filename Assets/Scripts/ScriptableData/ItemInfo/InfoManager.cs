@@ -17,9 +17,7 @@ namespace TheRavine.Inventory
             }
         }
         public IInventoryItem GetInventoryItem(string title, int amount = 1)
-        {
-            Debug.Log(title);
-            
+        {   
             Type itemType = InventoryTypeCache.GetType(title);
             
             if (itemType == null)
@@ -42,7 +40,9 @@ namespace TheRavine.Inventory
         public IInventoryItem GetInventoryItemByInfo(string title, InventoryItemInfo itemInfo, int amount = 1)
         {
             if (itemInfo == null) return null;
-            Type itemType = Type.GetType(title, true, false);
+
+            Type itemType = InventoryTypeCache.GetType(title);
+
             if (itemType != null)
             {
                 IInventoryItem item = (IInventoryItem)Activator.CreateInstance(itemType, new object[] { itemInfo });

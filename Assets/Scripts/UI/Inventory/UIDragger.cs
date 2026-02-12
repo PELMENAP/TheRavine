@@ -60,7 +60,7 @@ namespace TheRavine.Inventory
                     var otherSlotUI = (UIInventorySlot)results[i].gameObject.GetComponent("UIInventorySlot");
                     if (otherSlotUI == null) continue;
                     if(_uiInventory == null) return;
-                    inventoryModel.TransitFromSlotToSlot(this, lastSlot.index, otherSlotUI.index);
+                    inventoryModel.TransitFromSlotToSlot(this, lastSlot.slot, otherSlotUI.slot);
                     lastSlot.Refresh();
                     otherSlotUI.Refresh();
                     break;
@@ -128,7 +128,7 @@ namespace TheRavine.Inventory
                             var otherSlotUI = (UIInventorySlot)results[i].gameObject.GetComponent("UIInventorySlot");
                             if (otherSlotUI == null)
                                 continue;
-                            inventoryModel.TransitFromSlotToSlot(this, lastSlot.index, otherSlotUI.index);
+                            inventoryModel.TransitFromSlotToSlot(this, lastSlot.slot, otherSlotUI.slot);
                             lastSlot.Refresh();
                             otherSlotUI.Refresh();
                             break;
