@@ -19,17 +19,19 @@ namespace TheRavine.Base
         public WorldStatePersistence(
             WorldStateRepository repo,
             WorldRegistry registry,
+            AutosaveSystem _autosaveSystem,
             IRavineLogger logger)
         {
             worldStateRepository = repo;
             worldRegistry = registry;
+            autosaveSystem = _autosaveSystem;
             _logger = logger;
 
             worldState = new ReactiveProperty<WorldState>(new WorldState());
             State = worldState.ToReadOnlyReactiveProperty();
 
-            autosaveSystem = new AutosaveSystem(SaveAsync, logger, 30);
 
+            autosaveSystem.AddSaveAction(SaveAsync);
             worldState
                 .Skip(1)
                 .Subscribe(_ => autosaveSystem.MarkDirty())
@@ -43,6 +45,7 @@ namespace TheRavine.Base
             var state = worldState.Value;
             modifier(state);
             worldState.Value = state;
+            worldState.ForceNotify();
         }
 
         public void SetAutosaveInterval(int seconds) 
@@ -101,6 +104,7 @@ namespace TheRavine.Base
                 state.lastSaveTime = DateTimeOffset.Now.ToUnixTimeSeconds();
 
                 await worldStateRepository.SaveAsync(worldId, state);
+
                 _logger.LogInfo($"Состояние мира {worldId} сохранено");
                 return true;
             }
@@ -113,10 +117,6 @@ namespace TheRavine.Base
 
         public void Dispose()
         {
-            if (autosaveSystem._isDirty.CurrentValue)
-                SaveAsync().Forget();
-
-            autosaveSystem?.Dispose();
             disposables?.Dispose();
             worldState?.Dispose();
         }

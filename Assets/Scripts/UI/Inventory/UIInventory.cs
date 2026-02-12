@@ -40,6 +40,8 @@ namespace TheRavine.Inventory
             var playerData = ServiceLocator.GetService<PlayerModelView>().PlayerEntity;
             var gameSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
 
+            ServiceLocator.GetService<AutosaveSystem>().AddSaveAction(SaveInventoryData);
+
             var uiSlot = GetComponentsInChildren<UIInventorySlot>();
             var slotList = new List<UIInventorySlot>();
             slotList.AddRange(uiSlot);
@@ -125,6 +127,23 @@ namespace TheRavine.Inventory
                 }
             }
             generator.ExtraUpdate();
+        }
+
+        public async UniTask<bool> SaveInventoryData()
+        {
+            try
+            {
+                var dataToSave = tester.Serialize();
+                await encryptedPlayerPrefsStorage.SaveAsync(nameof(SerializableList<SerializableInventorySlot>), dataToSave);
+                
+                Debug.Log($"Состояние инвентаря сохранено");
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.Log($"Ошибка сохранения: {ex.Message}");
+                return false;
+            }
         }
         public void BreakUp(ISetAble.Callback callback)
         {

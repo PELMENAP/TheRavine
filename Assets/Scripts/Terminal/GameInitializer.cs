@@ -49,10 +49,13 @@ public class GameInitializer : MonoBehaviour
 
         WorldRegistry worldRegistry = new(worldStorage, logger);
         SettingsMediator settingsMediator = new(globalSettingsRepository, WorldConfigRepository, worldRegistry, logger);
-        WorldStatePersistence worldStatePersistence = new(worldStateRepository, worldRegistry , logger);
+
+        AutosaveSystem autosaveSystem = new AutosaveSystem(logger, 10);
+        WorldStatePersistence worldStatePersistence = new(worldStateRepository, worldRegistry, autosaveSystem , logger);
 
         ServiceLocator.Services.Register(settingsMediator);
         ServiceLocator.Services.Register(worldRegistry);
+        ServiceLocator.Services.Register(autosaveSystem);
         ServiceLocator.Services.Register(worldStatePersistence);
 
         if(createTestWorld)

@@ -11,6 +11,7 @@ public interface IInventory
     int GetItemAmount(Type itemType);
 
     bool TryToAdd(object sender, IInventoryItem item);
+    bool TryToAddSlot(object sender, IInventorySlot slot, IInventoryItem item);
 
     bool Remove(object sender, Type itemType, int amount = 1);
     bool HasItem(Type itemType);
