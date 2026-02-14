@@ -13,7 +13,7 @@ namespace TheRavine.InventoryElements
 
         public IInventoryItem item { get; private set; }
 
-        public void Refresh(IInventorySlot slot)
+        public void Refresh(InventorySlot slot)
         {
             if(_imageIcon == null) return;
             if (slot.isEmpty)

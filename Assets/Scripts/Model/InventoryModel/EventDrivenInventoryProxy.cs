@@ -2,16 +2,16 @@ using System;
 
 namespace TheRavine.Inventory
 {
-    public class EventDrivenInventoryProxy : IInventory, IDisposable
+    public class EventDrivenInventoryProxy : IDisposable
     {
         public event Action<object, IInventoryItem, int> OnInventoryItemAddedEvent;
         public event Action<object, Type, int> OnInventoryItemRemovedEvent;
         public event Action<object> OnInventoryStateChangedEvent;
         public event Action<object> OnInventoryStateChangedEventOnce;
 
-        private readonly IInventory _inventory;
+        private readonly InventoryModel _inventory;
 
-        public EventDrivenInventoryProxy(IInventory inventory)
+        public EventDrivenInventoryProxy(InventoryModel inventory)
         {
             _inventory = inventory;
         }
@@ -28,7 +28,7 @@ namespace TheRavine.Inventory
         public IInventoryItem[] GetAllItems() => _inventory.GetAllItems();
         public IInventoryItem[] GetAllItems(Type itemType) => _inventory.GetAllItems(itemType);
         public IInventoryItem[] GetEquippedItems() => _inventory.GetEquippedItems();
-        public IInventorySlot[] GetAllSlots() => _inventory.GetAllSlots();
+        public InventorySlot[] GetAllSlots() => _inventory.GetAllSlots();
         public int GetItemAmount(Type itemType) => _inventory.GetItemAmount(itemType);
 
         public bool TryToAdd(object sender, IInventoryItem item)
@@ -47,7 +47,7 @@ namespace TheRavine.Inventory
             return success;
         }
 
-        public bool TryToAddSlot(object sender, IInventorySlot slot, IInventoryItem item)
+        public bool TryToAddSlot(object sender, InventorySlot slot, IInventoryItem item)
         {
             var initialAmount = item.state.amount;
             var success = _inventory.TryToAddSlot(sender, slot, item);
