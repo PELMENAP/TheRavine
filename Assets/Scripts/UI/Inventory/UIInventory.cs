@@ -14,32 +14,35 @@ namespace TheRavine.Inventory
 {
     public class UIInventory : MonoBehaviour, ISetAble
     {
-        [SerializeField] private bool filling;
         [SerializeField] private UIInventorySlot[] activeCells;
         [SerializeField] private RectTransform cell;
         [SerializeField] private DataItems dataItems;
         [SerializeField] private CraftService craftService;
         [SerializeField] private UIDragger uIDragger;
         [SerializeField] private InventoryInputHandler inventoryInputHandler;
+
+
         private InventoryTester tester;
         private EventDrivenInventoryProxy eventDrivenInventoryProxy;
         private MapGenerator generator;
         private ObjectSystem objectSystem;
         private InfoManager infoManager;
         private WorldRegistry worldRegistry;
-        public bool HasItem(InventoryItemInfo info) => eventDrivenInventoryProxy.HasItem(infoManager.GetItemType(info));
+        private RavineLogger logger;
+        public bool HasItem(InventoryItemInfo info) => 
+            eventDrivenInventoryProxy.HasItem(infoManager.GetItemType(info));
+
         public void SetUp(ISetAble.Callback callback)
         {
             ServiceLocator.Services.Register(this);
             
+            logger = ServiceLocator.GetService<RavineLogger>();
             generator = ServiceLocator.GetService<MapGenerator>();
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
             worldRegistry = ServiceLocator.GetService<WorldRegistry>();
 
             var playerData = ServiceLocator.GetService<PlayerModelView>().PlayerEntity;
-            var gameSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
-
-            ServiceLocator.GetService<AutosaveSystem>().AddSaveAction(SaveInventoryData);
+            var gameSettings = ServiceLocator.GetService<GlobalSettingsController>().Settings.CurrentValue;
 
             var uiSlot = GetComponentsInChildren<UIInventorySlot>();
             var slotList = new List<UIInventorySlot>();
@@ -56,42 +59,69 @@ namespace TheRavine.Inventory
 
             inventoryInputHandler.RegisterInput(playerData, gameSettings);
             eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce += OnInventoryStateChanged;
-            OnInventoryDataLoaded(playerData).Forget();
+            
+            LoadInventoryData();
 
             callback?.Invoke();
         }
 
-        private async UniTaskVoid OnInventoryDataLoaded(PlayerEntity playerData)
+        private void LoadInventoryData()
         {
-            (WorldState worldData, WorldConfiguration worldConfiguration) = await worldRegistry.LoadCurrentWorldFullAsync();
-            
-            if (worldData.IsDefault() || worldConfiguration == null) return;
+            try
+            {
+                logger.LogInfo(worldRegistry.GetCurrentState().cycleCount.ToString());
+                if(worldRegistry.GetCurrentState().cycleCount < 1)
+                {
+                    tester.FillSlots(true);
 
-            tester.SetDataFromSerializableList(worldData.inventory);
+                    worldRegistry.UpdateState(s => s.cycleCount++);
+                    SaveInventory();
+                }
+                else
+                {
+                    var state = worldRegistry.GetCurrentState();
+                
+                    if (state.inventory != null && state.inventory.Length > 0)
+                    {
+                        tester.SetDataFromSerializableList(state.inventory);
+                    }   
+                }
 
-            EventBus playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
-            playerEventBus.Subscribe<PlaceEvent>(PlaceObjectEvent);
-            playerEventBus.Subscribe<PickUpEvent>(PickUpEvent);
+                var playerData = ServiceLocator.GetService<PlayerModelView>().PlayerEntity;
+                EventBus playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
+                playerEventBus.Subscribe<PlaceEvent>(PlaceObjectEvent);
+                playerEventBus.Subscribe<PickUpEvent>(PickUpEvent);
+            }
+            catch (System.Exception ex)
+            {
+                logger.LogError($"[UIInventory] Ошибка загрузки инвентаря: {ex.Message}");
+            }
         }
 
         private void PlaceObjectEvent(AEntity entity, PlaceEvent e)
         {
             IInventorySlot slot = activeCells[inventoryInputHandler.ActiveCellIndex - 1].slot;
             if (slot.isEmpty) return;
+
             IInventoryItem item = activeCells[inventoryInputHandler.ActiveCellIndex - 1]._uiInventoryItem.item;
-            if(!item.info.isPlaceable) return;
-            if (objectSystem.TryAddToGlobal(e.Position, generator.GetRealPosition(e.Position), item.info.prefab.GetInstanceID(), 1, InstanceType.Interactable))
+            if (!item.info.isPlaceable) return;
+
+            if (objectSystem.TryAddToGlobal(e.Position, generator.GetRealPosition(e.Position), 
+                item.info.prefab.GetInstanceID(), 1, InstanceType.Interactable))
             {
                 item.state.amount--;
                 if (slot.amount <= 0) slot.Clear();
                 activeCells[inventoryInputHandler.ActiveCellIndex - 1].Refresh();
                 generator.TryToAddPositionToChunk(e.Position);
             }
+
             generator.ExtraUpdate();
         }
+
         private void OnInventoryStateChanged(object sender)
         {
             craftService.OnInventoryCraftCheck(sender);
+            SaveInventory();
         }
 
         private void PickUpEvent(AEntity entity, PickUpEvent e)
@@ -100,53 +130,60 @@ namespace TheRavine.Inventory
             ObjectInfo data = objectSystem.GetGlobalObjectInfo(e.Position);
             if (data == null) return;
 
-            IInventoryItem item = infoManager.GetInventoryItemByInfo(data.InventoryItemInfo.id, data.InventoryItemInfo, objectInstInfo.Amount);
+            IInventoryItem item = infoManager.GetInventoryItemByInfo(
+                data.InventoryItemInfo.id, 
+                data.InventoryItemInfo, 
+                objectInstInfo.Amount);
+
             if (eventDrivenInventoryProxy.TryToAdd(this, item))
             {
                 objectSystem.RemoveFromGlobal(e.Position);
                 SpreadPattern pattern = data.OnPickUpPattern;
+                
                 if (pattern != null)
                 {
-                    objectSystem.TryAddToGlobal(e.Position, generator.GetRealPosition(e.Position), pattern.main.ObjectPrefab.GetInstanceID(), pattern.main.DefaultAmount, pattern.main.InstanceType);
+                    objectSystem.TryAddToGlobal(e.Position, generator.GetRealPosition(e.Position), 
+                        pattern.main.ObjectPrefab.GetInstanceID(), pattern.main.DefaultAmount, pattern.main.InstanceType);
+                    
                     if (pattern.other.Length != 0)
                     {
                         for (byte i = 0; i < pattern.other.Length; i++)
                         {
                             Vector2Int newPos = Extension.GetRandomPointAround(e.Position, pattern.factor);
-                            objectSystem.TryAddToGlobal(newPos, generator.GetRealPosition(newPos),  pattern.other[i].ObjectPrefab.GetInstanceID(), pattern.other[i].DefaultAmount, pattern.other[i].InstanceType);
+                            objectSystem.TryAddToGlobal(newPos, generator.GetRealPosition(newPos), 
+                                pattern.other[i].ObjectPrefab.GetInstanceID(), 
+                                pattern.other[i].DefaultAmount, 
+                                pattern.other[i].InstanceType);
                         }
                     }
                 }
             }
+
             generator.ExtraUpdate();
         }
 
-        public async UniTask<bool> SaveInventoryData()
+        private void SaveInventory()
         {
             try
             {
-                var dataToSave = tester.Serialize();
-
-                WorldState worldState = await worldRegistry.LoadDataAsync();
-                worldState.inventory = dataToSave;
-                await worldRegistry.SaveDataAsync(worldState);
+                var serializedInventory = tester.Serialize();
                 
-                Debug.Log($"Состояние инвентаря сохранено");
-                return true;
+                worldRegistry.UpdateState(state =>
+                {
+                    state.inventory = serializedInventory;
+                });
             }
             catch (System.Exception ex)
             {
-                Debug.Log($"Ошибка сохранения: {ex.Message}");
-                return false;
+                logger.LogError($"[UIInventory] Ошибка сохранения инвентаря: {ex.Message}");
             }
         }
+
         public void BreakUp(ISetAble.Callback callback)
         {
             uIDragger.BreakUp();
             craftService.BreakUp();
-
             eventDrivenInventoryProxy.Dispose();
-
             inventoryInputHandler.UnregisterInput();
 
             callback?.Invoke();

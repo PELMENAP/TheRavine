@@ -15,8 +15,8 @@ namespace TheRavine.Base
         [SerializeField] private MonoBehaviour[] scriptsLoadedOnBootstrapState, scriptsLoadedOnInitialState, scriptsLoadedOnLoadingState;
         public StateMachine<GameStateMachine> StateMachine;
         private ServiceRegisterMachine serviceRegisterMachine;
-        private IRavineLogger ravineLogger;
-        public void Initialize(IRavineLogger ravineLogger)
+        private RavineLogger ravineLogger;
+        public void Initialize(RavineLogger ravineLogger)
         {
             this.ravineLogger = ravineLogger;
             serviceRegisterMachine = new(ravineLogger);

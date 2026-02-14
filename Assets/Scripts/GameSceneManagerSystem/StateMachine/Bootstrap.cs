@@ -12,12 +12,10 @@ namespace TheRavine.Base
         private SceneLoader sceneLoader;
         [SerializeField] private GameStateMachine gameStateMachine;
         [SerializeField] private bool isTest;
-        private WorldStatePersistence worldStatePersistence;
         private void Start()
         {
-            gameStateMachine.Initialize(ServiceLocator.GetService<IRavineLogger>());
+            gameStateMachine.Initialize(ServiceLocator.GetService<RavineLogger>());
 
-            worldStatePersistence = ServiceLocator.GetService<WorldStatePersistence>();
             if (isTest) return;
 
             ServiceLocator.WhenPlayersNonEmpty()
@@ -33,11 +31,6 @@ namespace TheRavine.Base
         {
             AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
 
-            worldStatePersistence.UpdateState(s => s.gameWon = true);
-            if (worldStatePersistence.State.CurrentValue.cycleCount == 0)
-            {
-                worldStatePersistence.UpdateState(s => s.startTime = DateTimeOffset.Now.ToUnixTimeSeconds());
-            }
             sceneLoader = new SceneLoader();
 
             gameStateMachine.StartGame();

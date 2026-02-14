@@ -8,7 +8,7 @@ namespace TheRavine.Base
     public class RiveRuntime
     {
         private readonly RiveParser _parser;
-        private readonly IRavineLogger _logger;
+        private readonly RavineLogger _logger;
         private readonly Dictionary<string, ProgramNode> _compiledPrograms = new();
         private readonly InputStreamManager _inputStream;
         private readonly InteractorRegistry _interactorRegistry;
@@ -17,7 +17,7 @@ namespace TheRavine.Base
         public delegate UniTask<bool> TerminalCommandDelegate(string command);
         private TerminalCommandDelegate _terminalCommandHandler;
         
-        public RiveRuntime(TerminalCommandDelegate terminalCommandHandler, IRavineLogger logger)
+        public RiveRuntime(TerminalCommandDelegate terminalCommandHandler, RavineLogger logger)
         {
             _terminalCommandHandler = terminalCommandHandler;
             _logger = logger;

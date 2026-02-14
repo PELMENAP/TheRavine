@@ -28,7 +28,7 @@ namespace TheRavine.Base
             }
             catch (Exception ex)
             {
-                ServiceLocator.GetService<IRavineLogger>()
+                ServiceLocator.GetService<RavineLogger>()
                     .LogError($"JSON Deserialize error for '{key}': {ex.Message}");
                 return default;
             }

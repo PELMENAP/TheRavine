@@ -23,12 +23,11 @@ public class ParallaxSceneController : MonoBehaviour
 
     public void AddCameraToStack(Camera _cameraToAdd) => _cameraData.cameraStack.Add(_cameraToAdd);
     private WorldRegistry worldRegistry;
-    private WorldState _worldData;
-    private async void Awake()
+    private WorldState worldData;
+    private void Awake()
     {
         worldRegistry = ServiceLocator.GetService<WorldRegistry>();
-        (WorldState worldData, WorldConfiguration worldConfiguration) = await worldRegistry.LoadCurrentWorldFullAsync();
-        _worldData = worldData;
+        worldData = worldRegistry.GetCurrentState();
         // DataStorage.winTheGame = win;
         AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
         transistor = new SceneLoader();
@@ -49,7 +48,7 @@ public class ParallaxSceneController : MonoBehaviour
 
     private void TimerFinished()
     {
-        if(_worldData.gameWon) transistor.LoadScene(0).Forget();
+        if(worldData.gameWon) transistor.LoadScene(0).Forget();
         
         else transistor.LoadScene(2).Forget();
         AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());

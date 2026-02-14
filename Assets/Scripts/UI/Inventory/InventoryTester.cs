@@ -3,6 +3,7 @@ using Random = TheRavine.Extensions.RavineRandom;
 using ZLinq;
 
 using TheRavine.InventoryElements;
+using System.Linq;
 
 namespace TheRavine.Inventory
 {
@@ -72,14 +73,17 @@ namespace TheRavine.Inventory
         {
             List<IInventorySlot> inventorySlots = new();
 
-            // if (data == null) return;
-            // foreach (var slotInfo in data.list)
-            // {
-            //     if (slotInfo.title == "empty") continue;
-            //     var item = infoManager.GetInventoryItem(slotInfo.title, slotInfo.amount);
-            //     if (item != null)
-            //         inventory.TryToAdd(this, item);
-            // }
+            if (data == null) return;
+
+            for (int i = 0; i < data.Length; i++)
+            {
+                var slot = new InventorySlot();
+
+                if (data[i].title == "empty") continue;
+                var item = infoManager.GetInventoryItem(data[i].title, data[i].amount);
+                if (item != null)
+                    slot.SetItem(item);
+            }
 
             InventoryModel inventoryModel = new(inventorySlots);
             inventory = new(inventoryModel);

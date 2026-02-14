@@ -15,7 +15,7 @@ public class ActivateTextField : MonoBehaviour
     private GlobalSettings gameSettings;
     private void Start()
     {
-        gameSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
+        gameSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();;
         EnterRef.action.performed += ChangeTerminalState;
         OutRef.action.performed += ChangeTerminalState;
         window.SetActive(false);

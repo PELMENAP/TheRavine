@@ -9,10 +9,10 @@ public class MoveAlongPathCommand : ICommand
     private Transform transform;
     private List<Vector3> path;
     private readonly float speed;
-    private IRavineLogger logger;
+    private RavineLogger logger;
     private CancellationTokenSource cts = new CancellationTokenSource();
 
-    public MoveAlongPathCommand(Transform transform, List<Vector3> path, float speed, IRavineLogger logger)
+    public MoveAlongPathCommand(Transform transform, List<Vector3> path, float speed, RavineLogger logger)
     {
         this.transform = transform;
         this.path = path;

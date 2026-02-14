@@ -29,12 +29,12 @@ namespace TheRavine.EntityControl
         [SerializeField] private BoidsBehaviour boidsBehaviour;
         private Dictionary<int, EntityInfo> mobInfo;
         public EntityInfo GetMobInfo(int id) => mobInfo[id];
-        private IRavineLogger logger;
+        private RavineLogger logger;
         public void SetUp(ISetAble.Callback callback)
         {
             ServiceLocator.Services.Register(this);
             
-            logger = ServiceLocator.GetService<IRavineLogger>();
+            logger = ServiceLocator.GetService<RavineLogger>();
             logger.LogInfo("EntitySystem service is available now");
             global  = new List<AEntity>();
             mobInfo = new Dictionary<int, EntityInfo>(4);

@@ -7,11 +7,11 @@ namespace TheRavine.Base
 {
     public class RiveParser
     {
-        private readonly IRavineLogger _logger;
+        private readonly RavineLogger _logger;
         private List<Token> _tokens;
         private int _position;
 
-        public RiveParser(IRavineLogger logger)
+        public RiveParser(RavineLogger logger)
         {
             _logger = logger;
         }

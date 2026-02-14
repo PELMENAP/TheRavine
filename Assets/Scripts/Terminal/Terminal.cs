@@ -25,7 +25,7 @@ namespace TheRavine.Base
         public CommandManager CommandManager { get; private set; }
         private CommandContext _context;
         private InputBindingAdapter _confirmBinding;
-        private IRavineLogger logger;
+        private RavineLogger logger;
         private ActionMapController actionMapController;
 
         
@@ -56,7 +56,7 @@ namespace TheRavine.Base
             inputField.onEndEdit.AddListener(OnInputEndEdit);
         }
 
-        public async void Setup(IRavineLogger logger, ActionMapController actionMapController)
+        public async void Setup(RavineLogger logger, ActionMapController actionMapController)
         {
             this.logger = logger;
             this.actionMapController = actionMapController;

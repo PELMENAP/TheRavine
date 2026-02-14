@@ -16,11 +16,11 @@ public class TrollMovementTransition : MonoBehaviour
     [SerializeField] private UnityEvent finishAction;
     [SerializeField] private InventoryItemInfo ticketInfo;
     private SyncedTimer _timer;
-    private WorldStatePersistence worldStatePersistence;
+    private WorldRegistry worldRegistry;
     private UIInventory uIInventory;
     private void Start()
     {
-        worldStatePersistence = ServiceLocator.GetService<WorldStatePersistence>();
+        worldRegistry = ServiceLocator.GetService<WorldRegistry>();
         uIInventory = ServiceLocator.GetService<UIInventory>();
 
         if (textMeshPro == null)
@@ -28,7 +28,7 @@ public class TrollMovementTransition : MonoBehaviour
             Debug.Log("no display troll text");
             return;
         }
-        int factTime = timeToDelay - 50 * worldStatePersistence.State.CurrentValue.cycleCount;
+        int factTime = timeToDelay - 50 * worldRegistry.GetCurrentState().cycleCount;
         if (factTime <= 0) factTime = 50;
         _timer = new SyncedTimer(timerType, factTime);
         _timer.TimerValueChanged += OnTimerValueChanged;
@@ -44,14 +44,14 @@ public class TrollMovementTransition : MonoBehaviour
 
     private void TimerFinished()
     {
-        worldStatePersistence.UpdateState(s => s.cycleCount++);
+        worldRegistry.UpdateState(s => s.cycleCount++);
         if(Vector3.Distance(player.position, transform.position) > maxPossibleDistance)
         {
             Destroy(gameObject);
             return;
         }
 
-        if(uIInventory.HasItem(ticketInfo)) worldStatePersistence.UpdateState(s => s.gameWon = true);
+        if(uIInventory.HasItem(ticketInfo)) worldRegistry.UpdateState(s => s.gameWon = true);
         
         finishAction?.Invoke();
     }

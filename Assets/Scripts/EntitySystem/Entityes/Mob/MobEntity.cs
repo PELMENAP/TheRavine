@@ -8,7 +8,7 @@ namespace TheRavine.EntityControl
         [SerializeField] private Vector2 direction;
         private readonly RoamMoveController moveController;
         [SerializeField] private Animator animator;
-        public MobEntity(EntityInfo entityInfo, IRavineLogger logger)
+        public MobEntity(EntityInfo entityInfo, RavineLogger logger)
         {
             base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.Prefab.GetInstanceID(), 0));
             moveController.SetInitialValues(this, logger);
