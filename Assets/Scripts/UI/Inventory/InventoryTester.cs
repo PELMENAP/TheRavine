@@ -24,7 +24,7 @@ namespace TheRavine.Inventory
 
         private void FillRandomItems(List<string> titles, int itemsPerTitle)
         {
-            IInventorySlot[] inventorySlots = inventory.GetAllSlots();
+            InventorySlot[] inventorySlots = inventory.GetAllSlots();
             var freeSlots = inventorySlots
                 .AsValueEnumerable()
                 .Select((slot, idx) => slot.isEmpty ? idx : -1)
@@ -71,7 +71,7 @@ namespace TheRavine.Inventory
 
         public void SetDataFromSerializableList(SerializableInventorySlot[] data)
         {
-            List<IInventorySlot> inventorySlots = new();
+            List<InventorySlot> inventorySlots = new();
 
             if (data == null) return;
 
@@ -79,10 +79,14 @@ namespace TheRavine.Inventory
             {
                 var slot = new InventorySlot();
 
-                if (data[i].title == "empty") continue;
-                var item = infoManager.GetInventoryItem(data[i].title, data[i].amount);
-                if (item != null)
-                    slot.SetItem(item);
+                if (data[i].title != "empty")
+                {
+                    var item = infoManager.GetInventoryItem(data[i].title, data[i].amount);
+                    if (item != null)
+                        slot.SetItem(item);
+                }
+
+                inventorySlots.Add(slot);   
             }
 
             InventoryModel inventoryModel = new(inventorySlots);

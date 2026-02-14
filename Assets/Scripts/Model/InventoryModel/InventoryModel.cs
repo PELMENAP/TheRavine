@@ -4,20 +4,20 @@ using ZLinq;
 
 namespace TheRavine.Inventory
 {
-    public class InventoryModel : IInventory
+    public class InventoryModel
     {
         public int capacity { get; set; }
         public bool isFull => _slots.AsValueEnumerable().All(slot => slot.isFull);
 
-        private readonly List<IInventorySlot> _slots;
+        private readonly List<InventorySlot> _slots;
         public InventoryModel(int capacity)
         {
             this.capacity = capacity;
-            _slots = new List<IInventorySlot>(capacity);
+            _slots = new List<InventorySlot>(capacity);
             for (int i = 0; i < capacity; i++) _slots.Add(new InventorySlot());
         }
 
-        public InventoryModel(List<IInventorySlot> inventorySlots)
+        public InventoryModel(List<InventorySlot> inventorySlots)
         {
             this.capacity = inventorySlots.Count;
             _slots = inventorySlots;
@@ -70,7 +70,7 @@ namespace TheRavine.Inventory
             return false;
         }
 
-        public bool TryToAddSlot(object sender, IInventorySlot slot, IInventoryItem item)
+        public bool TryToAddSlot(object sender, InventorySlot slot, IInventoryItem item)
         {
             var fits = slot.amount + item.state.amount <= item.info.maxItemsInInventorySlot;
             var amountToAdd = fits ? item.state.amount : item.info.maxItemsInInventorySlot - slot.amount;
@@ -89,7 +89,7 @@ namespace TheRavine.Inventory
             return TryToAdd(sender, item);
         }
 
-        public void TransitFromSlotToSlot(object sender, IInventorySlot fromSlot, IInventorySlot toSlot)
+        public void TransitFromSlotToSlot(object sender, InventorySlot fromSlot, InventorySlot toSlot)
         {
             if (fromSlot == toSlot || fromSlot.isEmpty || toSlot.isFull || (!toSlot.isEmpty && fromSlot.itemType != toSlot.itemType))
                 return;
@@ -142,12 +142,12 @@ namespace TheRavine.Inventory
             return false;
         }
 
-        public IInventorySlot[] GetAllSlots(Type itemType)
+        public InventorySlot[] GetAllSlots(Type itemType)
         {
             return _slots.FindAll(slot => !slot.isEmpty && slot.itemType == itemType).ToArray();
         }
 
-        public IInventorySlot[] GetAllSlots()
+        public InventorySlot[] GetAllSlots()
         {
             return _slots.ToArray();
         }

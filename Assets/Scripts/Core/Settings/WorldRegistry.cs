@@ -10,23 +10,23 @@ namespace TheRavine.Base
 {
     public class WorldRegistry : IDisposable
     {
-        private readonly WorldStorage _storage;
-        private readonly RavineLogger _logger;
+        private readonly WorldStorage storage;
+        private readonly RavineLogger logger;
         
-        private readonly ReactiveProperty<string> _currentWorldId;
-        private readonly ReactiveProperty<bool> _isLoading;
-        private readonly CompositeDisposable _disposables = new();
+        private readonly ReactiveProperty<string> currentWorldId;
+        private readonly ReactiveProperty<bool> isLoading;
+        private readonly CompositeDisposable disposables = new();
 
-        private WorldState _currentState;
-        private WorldConfiguration _currentConfig;
-        private bool _hasUnsavedChanges;
+        private WorldState currentState;
+        private WorldConfiguration currentConfig;
+        private bool hasUnsavedChanges;
 
         public ObservableList<string> AvailableWorlds { get; }
         public ReadOnlyReactiveProperty<string> CurrentWorldId { get; }
         public ReadOnlyReactiveProperty<bool> IsLoading { get; }
 
-        public bool HasLoadedWorld => !string.IsNullOrEmpty(_currentWorldId.Value);
-        public string CurrentWorldName => _currentConfig?.worldName ?? _currentWorldId.Value;
+        public bool HasLoadedWorld => !string.IsNullOrEmpty(currentWorldId.Value);
+        public string CurrentWorldName => currentConfig?.worldName ?? currentWorldId.Value;
 
         public WorldRegistry(
             IAsyncPersistentStorage persistenceStorage,
@@ -34,15 +34,15 @@ namespace TheRavine.Base
         {
             WorldStateRepository worldStateRepo = new(persistenceStorage);
             WorldConfigRepository worldConfigRepo = new(persistenceStorage);
-            _storage = new WorldStorage(worldStateRepo, worldConfigRepo);
-            _logger = logger;
+            storage = new WorldStorage(worldStateRepo, worldConfigRepo);
+            this.logger = logger;
             
-            _currentWorldId = new ReactiveProperty<string>();
-            _isLoading = new ReactiveProperty<bool>(false);
+            currentWorldId = new ReactiveProperty<string>();
+            isLoading = new ReactiveProperty<bool>(false);
             AvailableWorlds = new ObservableList<string>();
 
-            CurrentWorldId = _currentWorldId.ToReadOnlyReactiveProperty();
-            IsLoading = _isLoading.ToReadOnlyReactiveProperty();
+            CurrentWorldId = currentWorldId.ToReadOnlyReactiveProperty();
+            IsLoading = isLoading.ToReadOnlyReactiveProperty();
 
             RefreshWorldListAsync().Forget();
         }
@@ -51,17 +51,17 @@ namespace TheRavine.Base
         {
             if (string.IsNullOrWhiteSpace(worldName))
             {
-                _logger.LogWarning("[WorldRegistry] Пустое имя мира");
+                logger.LogWarning("[WorldRegistry] Пустое имя мира");
                 return false;
             }
 
             if (AvailableWorlds.Contains(worldName))
             {
-                _logger.LogWarning($"[WorldRegistry] Мир '{worldName}' уже существует");
+                logger.LogWarning($"[WorldRegistry] Мир '{worldName}' уже существует");
                 return false;
             }
 
-            _isLoading.Value = true;
+            isLoading.Value = true;
 
             try
             {
@@ -77,20 +77,20 @@ namespace TheRavine.Base
                 config.lastModifiedTime = config.createdTime;
                 config.Validate();
 
-                await _storage.SaveFullAsync(worldName, state, config);
+                await storage.SaveFullAsync(worldName, state, config);
                 AvailableWorlds.Add(worldName);
 
-                _logger.LogInfo($"[WorldRegistry] Мир '{worldName}' создан");
+                logger.LogInfo($"[WorldRegistry] Мир '{worldName}' создан");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"[WorldRegistry] Ошибка создания мира '{worldName}': {ex.Message}");
+                logger.LogError($"[WorldRegistry] Ошибка создания мира '{worldName}': {ex.Message}");
                 return false;
             }
             finally
             {
-                _isLoading.Value = false;
+                isLoading.Value = false;
             }
         }
 
@@ -98,44 +98,44 @@ namespace TheRavine.Base
         {
             if (string.IsNullOrEmpty(worldId))
             {
-                _logger.LogWarning("[WorldRegistry] Попытка загрузки с пустым worldId");
+                logger.LogWarning("[WorldRegistry] Попытка загрузки с пустым worldId");
                 return false;
             }
 
             if (!AvailableWorlds.Contains(worldId))
             {
-                _logger.LogWarning($"[WorldRegistry] Мир '{worldId}' не найден");
+                logger.LogWarning($"[WorldRegistry] Мир '{worldId}' не найден");
                 return false;
             }
 
-            if (_hasUnsavedChanges)
+            if (hasUnsavedChanges)
             {
                 await SaveCurrentWorldAsync();
             }
 
-            _isLoading.Value = true;
+            isLoading.Value = true;
 
             try
             {
-                var (state, config) = await _storage.LoadFullAsync(worldId);
+                var (state, config) = await storage.LoadFullAsync(worldId);
                 
-                _currentState = state;
-                _currentConfig = config;
-                _hasUnsavedChanges = false;
+                currentState = state;
+                currentConfig = config;
+                hasUnsavedChanges = false;
 
-                _currentWorldId.Value = worldId;
+                currentWorldId.Value = worldId;
 
-                _logger.LogInfo($"[WorldRegistry] Мир '{worldId}' загружен");
+                logger.LogInfo($"[WorldRegistry] Мир '{worldId}' загружен");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"[WorldRegistry] Ошибка загрузки '{worldId}': {ex.Message}");
+                logger.LogError($"[WorldRegistry] Ошибка загрузки '{worldId}': {ex.Message}");
                 return false;
             }
             finally
             {
-                _isLoading.Value = false;
+                isLoading.Value = false;
             }
         }
 
@@ -143,17 +143,17 @@ namespace TheRavine.Base
         {
             if (!HasLoadedWorld) return true;
 
-            if (_hasUnsavedChanges)
+            if (hasUnsavedChanges)
             {
                 await SaveCurrentWorldAsync();
             }
 
-            _currentWorldId.Value = null;
-            _currentState = default;
-            _currentConfig = null;
-            _hasUnsavedChanges = false;
+            currentWorldId.Value = null;
+            currentState = default;
+            currentConfig = null;
+            hasUnsavedChanges = false;
 
-            _logger.LogInfo("[WorldRegistry] Мир выгружен");
+            logger.LogInfo("[WorldRegistry] Мир выгружен");
             return true;
         }
 
@@ -161,33 +161,33 @@ namespace TheRavine.Base
         {
             if (!AvailableWorlds.Contains(worldId))
             {
-                _logger.LogWarning($"[WorldRegistry] Мир '{worldId}' не существует");
+                logger.LogWarning($"[WorldRegistry] Мир '{worldId}' не существует");
                 return false;
             }
 
-            _isLoading.Value = true;
+            isLoading.Value = true;
 
             try
             {
-                if (_currentWorldId.Value == worldId)
+                if (currentWorldId.Value == worldId)
                 {
                     await UnloadWorldAsync();
                 }
 
-                await _storage.DeleteAsync(worldId);
+                await storage.DeleteAsync(worldId);
                 AvailableWorlds.Remove(worldId);
 
-                _logger.LogInfo($"[WorldRegistry] Мир '{worldId}' удалён");
+                logger.LogInfo($"[WorldRegistry] Мир '{worldId}' удалён");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"[WorldRegistry] Ошибка удаления '{worldId}': {ex.Message}");
+                logger.LogError($"[WorldRegistry] Ошибка удаления '{worldId}': {ex.Message}");
                 return false;
             }
             finally
             {
-                _isLoading.Value = false;
+                isLoading.Value = false;
             }
         }
 
@@ -195,55 +195,55 @@ namespace TheRavine.Base
         {
             if (!AvailableWorlds.Contains(oldName))
             {
-                _logger.LogWarning($"[WorldRegistry] Мир '{oldName}' не найден");
+                logger.LogWarning($"[WorldRegistry] Мир '{oldName}' не найден");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(newName))
             {
-                _logger.LogWarning("[WorldRegistry] Новое имя пустое");
+                logger.LogWarning("[WorldRegistry] Новое имя пустое");
                 return false;
             }
 
             if (AvailableWorlds.Contains(newName))
             {
-                _logger.LogWarning($"[WorldRegistry] Имя '{newName}' уже занято");
+                logger.LogWarning($"[WorldRegistry] Имя '{newName}' уже занято");
                 return false;
             }
 
-            _isLoading.Value = true;
+            isLoading.Value = true;
 
             try
             {
-                var (state, config) = await _storage.LoadFullAsync(oldName);
+                var (state, config) = await storage.LoadFullAsync(oldName);
                 
                 config.worldName = newName;
                 config.lastModifiedTime = DateTimeOffset.Now.ToUnixTimeSeconds();
 
-                await _storage.SaveFullAsync(newName, state, config);
-                await _storage.DeleteAsync(oldName);
+                await storage.SaveFullAsync(newName, state, config);
+                await storage.DeleteAsync(oldName);
 
                 var index = AvailableWorlds.IndexOf(oldName);
                 AvailableWorlds.RemoveAt(index);
                 AvailableWorlds.Insert(index, newName);
 
-                if (_currentWorldId.Value == oldName)
+                if (currentWorldId.Value == oldName)
                 {
-                    _currentWorldId.Value = newName;
-                    _currentConfig = config;
+                    currentWorldId.Value = newName;
+                    currentConfig = config;
                 }
 
-                _logger.LogInfo($"[WorldRegistry] Мир переименован: '{oldName}' → '{newName}'");
+                logger.LogInfo($"[WorldRegistry] Мир переименован: '{oldName}' → '{newName}'");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"[WorldRegistry] Ошибка переименования: {ex.Message}");
+                logger.LogError($"[WorldRegistry] Ошибка переименования: {ex.Message}");
                 return false;
             }
             finally
             {
-                _isLoading.Value = false;
+                isLoading.Value = false;
             }
         }
 
@@ -252,7 +252,7 @@ namespace TheRavine.Base
             if (!HasLoadedWorld)
                 throw new InvalidOperationException("Нет загруженного мира");
 
-            return _currentState.Clone();
+            return currentState.Clone();
         }
 
         public WorldConfiguration GetCurrentConfig()
@@ -260,82 +260,86 @@ namespace TheRavine.Base
             if (!HasLoadedWorld)
                 throw new InvalidOperationException("Нет загруженного мира");
 
-            return _currentConfig.Clone();
+            return currentConfig.Clone();
         }
 
         public void UpdateState(Action<WorldState> modifier)
         {
             if (!HasLoadedWorld)
             {
-                _logger.LogWarning("[WorldRegistry] Попытка обновления без загруженного мира");
+                logger.LogWarning("[WorldRegistry] Попытка обновления без загруженного мира");
                 return;
             }
 
-            modifier(_currentState);
-            _hasUnsavedChanges = true;
+            modifier(currentState);
+            hasUnsavedChanges = true;
         }
 
         public void UpdateConfig(Action<WorldConfiguration> modifier)
         {
             if (!HasLoadedWorld)
             {
-                _logger.LogWarning("[WorldRegistry] Попытка обновления без загруженного мира");
+                logger.LogWarning("[WorldRegistry] Попытка обновления без загруженного мира");
                 return;
             }
 
-            modifier(_currentConfig);
-            _currentConfig.lastModifiedTime = DateTimeOffset.Now.ToUnixTimeSeconds();
-            _currentConfig.Validate();
-            _hasUnsavedChanges = true;
+            modifier(currentConfig);
+            currentConfig.lastModifiedTime = DateTimeOffset.Now.ToUnixTimeSeconds();
+            currentConfig.Validate();
+            hasUnsavedChanges = true;
         }
 
         public async UniTask<bool> SaveCurrentWorldAsync()
         {
             if (!HasLoadedWorld)
             {
-                _logger.LogWarning("[WorldRegistry] Нет загруженного мира для сохранения");
+                logger.LogWarning("[WorldRegistry] Нет загруженного мира для сохранения");
                 return false;
             }
 
             try
             {
-                _currentState.lastSaveTime = DateTimeOffset.Now.ToUnixTimeSeconds();
+                currentState.lastSaveTime = DateTimeOffset.Now.ToUnixTimeSeconds();
 
-                await _storage.SaveFullAsync(_currentWorldId.Value, _currentState, _currentConfig);
-                _hasUnsavedChanges = false;
 
-                _logger.LogInfo($"[WorldRegistry] Мир '{_currentWorldId.Value}' сохранён");
+                currentState.cycleCount++; // это работает
+                logger.LogInfo(currentState.cycleCount.ToString());
+
+                await storage.SaveFullAsync(currentWorldId.Value, currentState, currentConfig);
+                hasUnsavedChanges = false;
+
+                logger.LogInfo($"[WorldRegistry] Мир '{currentWorldId.Value}' сохранён");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"[WorldRegistry] Ошибка сохранения: {ex.Message}");
+                logger.LogError($"[WorldRegistry] Ошибка сохранения: {ex.Message}");
                 return false;
             }
         }
 
         public async UniTask<(WorldState state, WorldConfiguration config)> LoadWorldDataAsync(string worldId)
         {
-            return await _storage.LoadFullAsync(worldId);
+            return await storage.LoadFullAsync(worldId);
         }
 
         public async UniTask<bool> ExistsAsync(string worldId)
         {
-            return await _storage.ExistsAsync(worldId);
+            return await storage.ExistsAsync(worldId);
         }
 
         public async UniTask RefreshWorldListAsync()
         {
-            _isLoading.Value = true;
+            isLoading.Value = true;
 
             try
             {
-                var worldIds = await _storage.GetAllWorldIdsAsync();
+                var worldIds = await storage.GetAllWorldIdsAsync();
                 var validWorlds = new List<string>();
 
                 foreach (var worldId in worldIds)
                 {
-                    if (await _storage.ExistsAsync(worldId))
+                    if (await storage.ExistsAsync(worldId))
                     {
                         validWorlds.Add(worldId);
                     }
@@ -347,19 +351,19 @@ namespace TheRavine.Base
                     AvailableWorlds.Add(worldId);
                 }
 
-                _logger.LogInfo($"[WorldRegistry] Найдено миров: {validWorlds.Count}");
+                logger.LogInfo($"[WorldRegistry] Найдено миров: {validWorlds.Count}");
             }
             finally
             {
-                _isLoading.Value = false;
+                isLoading.Value = false;
             }
         }
 
         public void Dispose()
         {
-            _disposables?.Dispose();
-            _currentWorldId?.Dispose();
-            _isLoading?.Dispose();
+            disposables?.Dispose();
+            currentWorldId?.Dispose();
+            isLoading?.Dispose();
             AvailableWorlds?.Clear();
         }
     }

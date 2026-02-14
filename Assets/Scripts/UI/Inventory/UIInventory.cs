@@ -7,6 +7,7 @@ using TheRavine.EntityControl;
 using TheRavine.Events;
 
 using UnityEngine;
+using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 
@@ -49,7 +50,7 @@ namespace TheRavine.Inventory
             slotList.AddRange(uiSlot);
             slotList.AddRange(activeCells);
 
-            var inventoryModel = new InventoryModel(slotList.Count);
+            InventoryModel inventoryModel = new InventoryModel(slotList.Count);
             eventDrivenInventoryProxy = new EventDrivenInventoryProxy(inventoryModel);
 
             infoManager = new InfoManager(dataItems);
@@ -60,31 +61,37 @@ namespace TheRavine.Inventory
             inventoryInputHandler.RegisterInput(playerData, gameSettings);
             eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce += OnInventoryStateChanged;
             
-            LoadInventoryData();
+            LoadInventoryDataAsync().Forget();
 
             callback?.Invoke();
         }
 
-        private void LoadInventoryData()
+        private async UniTaskVoid LoadInventoryDataAsync()
         {
             try
             {
-                logger.LogInfo(worldRegistry.GetCurrentState().cycleCount.ToString());
-                if(worldRegistry.GetCurrentState().cycleCount < 1)
+                var state = worldRegistry.GetCurrentState();
+                logger.LogInfo($"[UIInventory] Загрузка инвентаря, cycleCount: {state.cycleCount}");
+                
+                if (state.cycleCount < 1)
                 {
                     tester.FillSlots(true);
-
-                    worldRegistry.UpdateState(s => s.cycleCount++);
-                    SaveInventory();
+                    
+                    worldRegistry.UpdateState(s => 
+                    {
+                        s.cycleCount++;
+                        s.inventory = tester.Serialize();
+                    });
+                    
+                    await worldRegistry.SaveCurrentWorldAsync();
+                    logger.LogInfo("[UIInventory] Начальное состояние сохранено");
                 }
                 else
                 {
-                    var state = worldRegistry.GetCurrentState();
-                
                     if (state.inventory != null && state.inventory.Length > 0)
                     {
                         tester.SetDataFromSerializableList(state.inventory);
-                    }   
+                    }
                 }
 
                 var playerData = ServiceLocator.GetService<PlayerModelView>().PlayerEntity;
@@ -92,7 +99,7 @@ namespace TheRavine.Inventory
                 playerEventBus.Subscribe<PlaceEvent>(PlaceObjectEvent);
                 playerEventBus.Subscribe<PickUpEvent>(PickUpEvent);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 logger.LogError($"[UIInventory] Ошибка загрузки инвентаря: {ex.Message}");
             }
@@ -100,7 +107,7 @@ namespace TheRavine.Inventory
 
         private void PlaceObjectEvent(AEntity entity, PlaceEvent e)
         {
-            IInventorySlot slot = activeCells[inventoryInputHandler.ActiveCellIndex - 1].slot;
+            InventorySlot slot = activeCells[inventoryInputHandler.ActiveCellIndex - 1].slot;
             if (slot.isEmpty) return;
 
             IInventoryItem item = activeCells[inventoryInputHandler.ActiveCellIndex - 1]._uiInventoryItem.item;
@@ -173,7 +180,7 @@ namespace TheRavine.Inventory
                     state.inventory = serializedInventory;
                 });
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 logger.LogError($"[UIInventory] Ошибка сохранения инвентаря: {ex.Message}");
             }

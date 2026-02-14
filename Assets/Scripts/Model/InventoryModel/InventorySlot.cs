@@ -1,6 +1,6 @@
 using System;
 
-public class InventorySlot : IInventorySlot
+public class InventorySlot
 {
     public bool isFull => !isEmpty && amount == capacity;
     public bool isEmpty => item == null;
