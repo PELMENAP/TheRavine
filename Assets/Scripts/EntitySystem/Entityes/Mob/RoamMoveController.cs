@@ -25,7 +25,7 @@ namespace TheRavine.EntityControl
         private Collider2D Ccollider;
         private AEntity entity;
         private MovementComponent movementComponent;
-        public void SetInitialValues(AEntity entity, IRavineLogger logger)
+        public void SetInitialValues(AEntity entity, RavineLogger logger)
         {
             entityTransform = this.transform;
             Ccollider = this.GetComponent<Collider2D>();

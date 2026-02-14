@@ -31,7 +31,7 @@ namespace TheRavine.Inventory
         public void SetUp(InventoryModel inventoryModel)
         {
             this.inventoryModel = inventoryModel;
-            globalSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
+            globalSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
             eventSystem = EventSystem.current;
             eventData = new PointerEventData(eventSystem);
             mouse = Mouse.current;

@@ -30,17 +30,17 @@ namespace TheRavine.EntityControl
         private bool isHolding = false;
 
         private IController currentController;
-        private IRavineLogger logger;
+        private RavineLogger logger;
         private MovementComponent movementComponent;
         private EventBus entityEventBus;
         private AimComponent aimComponent;
         private GlobalSettings globalSettings;
         private AEntity playerEntity;
         private readonly DoubleTapDetector forwardTap = new();
-        public void SetInitialValues(AEntity entity, IRavineLogger logger)
+        public void SetInitialValues(AEntity entity, RavineLogger logger)
         {
             playerEntity = entity;
-            globalSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
+            globalSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
             this.logger = logger;
             
 

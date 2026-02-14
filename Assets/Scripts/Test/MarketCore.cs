@@ -12,7 +12,7 @@ public class MarketCore
     public event Action<TradeLot> OnLotExpired;
     public event Action<TradeLot, TradeLot, int, float> OnTradeCompleted; // buyer, seller, quantity, price
 
-    private readonly IRavineLogger logger;
+    private readonly RavineLogger logger;
     private readonly float commissionRate;
     private readonly int defaultLotTTL;
     private readonly int maxHistorySize;
@@ -31,7 +31,7 @@ public class MarketCore
     private readonly Dictionary<string, float> bestSellPrice = new();
     private readonly HashSet<string> modifiedItems = new();
 
-    public MarketCore(float commissionRate, int lotTTL, IRavineLogger logger, int historySize = 1000)
+    public MarketCore(float commissionRate, int lotTTL, RavineLogger logger, int historySize = 1000)
     {
         this.commissionRate = commissionRate;
         this.defaultLotTTL = lotTTL;
@@ -289,7 +289,7 @@ public class Trader
         market.AddLot(new TradeLot(item, quantity, price, false, this, ttl));
     }
 
-    public void ReturnItem(TradeLot lot, IRavineLogger logger)
+    public void ReturnItem(TradeLot lot, RavineLogger logger)
     {
         if(Name == "player")
             logger.LogInfo($"{Name} получил {lot.Quantity} {lot.Item} обратно (истек срок).");

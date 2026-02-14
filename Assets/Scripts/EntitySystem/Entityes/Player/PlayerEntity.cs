@@ -7,8 +7,8 @@ namespace TheRavine.EntityControl
     {
         private StatePatternComponent statePatternComponent;
         private PlayerController playerController;
-        private readonly IRavineLogger logger;
-        public PlayerEntity(IRavineLogger logger)
+        private readonly RavineLogger logger;
+        public PlayerEntity(RavineLogger logger)
         {
             this.logger = logger;
         }

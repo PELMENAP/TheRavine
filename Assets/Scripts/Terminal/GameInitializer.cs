@@ -2,23 +2,25 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Cysharp.Threading.Tasks;
 using System;
-
 using TheRavine.Base;
+
 public class GameInitializer : MonoBehaviour
 {
-    [SerializeField] private bool initializeOnAwake = true, clearAllPlayerPrefs, createTestWorld;
+    [SerializeField] private bool initializeOnAwake = true;
+    [SerializeField] private bool clearAllPlayerPrefs;
+    [SerializeField] private bool createTestWorld;
     [SerializeField] private Terminal terminal;
     [SerializeField] private InputActionAsset inputAsset;
 
-    private ActionMapController actionMapController;
-    private Action<string> onMessageDisplayTerminal;
+    private ActionMapController _actionMapController;
+    private Action<string> _onMessageDisplayTerminal;
 
     private void Awake()
     {
         ServiceLocator.ClearAll();
         DontDestroyOnLoad(this);
         
-        if(clearAllPlayerPrefs)
+        if (clearAllPlayerPrefs)
             PlayerPrefs.DeleteAll();
 
         if (initializeOnAwake)
@@ -27,52 +29,54 @@ public class GameInitializer : MonoBehaviour
 
     public void InitializeServices()
     {
-        onMessageDisplayTerminal += terminal.Display;
+        _onMessageDisplayTerminal += terminal.Display;
 
-        IRavineLogger logger = new RavineLogger(onMessageDisplayTerminal);
+        RavineLogger logger = new RavineLogger(_onMessageDisplayTerminal);
         ServiceLocator.Services.Register(logger);
 
-        actionMapController = new ActionMapController(inputAsset, logger);
-        ServiceLocator.Services.Register(actionMapController);
+        _actionMapController = new ActionMapController(inputAsset, logger);
+        ServiceLocator.Services.Register(_actionMapController);
 
         terminal.gameObject.SetActive(true);
-        terminal.Setup(logger, actionMapController);
+        terminal.Setup(logger, _actionMapController);
 
         IAsyncPersistentStorage persistenceStorage = new EncryptedPlayerPrefsStorage();
 
-        GlobalSettingsRepository globalSettingsRepository = new(persistenceStorage);
+        GlobalSettingsController globalSettings = new(persistenceStorage, logger);
+        ServiceLocator.Services.Register(globalSettings);
 
-        WorldStateRepository worldStateRepository = new(persistenceStorage);
-        WorldConfigRepository worldConfigRepository = new(persistenceStorage);
-
-
-        WorldRegistry worldRegistry = new(worldStateRepository, worldConfigRepository, logger);
-        SettingsMediator settingsMediator = new(globalSettingsRepository, worldConfigRepository, worldRegistry, logger);
-
-        AutosaveSystem autosaveSystem = new(logger, 10);
-        WorldStatePersistence worldStatePersistence = new(worldStateRepository, worldRegistry, autosaveSystem , logger);
-
-        ServiceLocator.Services.Register(settingsMediator);
+        WorldRegistry worldRegistry = new(persistenceStorage, logger);
         ServiceLocator.Services.Register(worldRegistry);
-        ServiceLocator.Services.Register(autosaveSystem);
-        ServiceLocator.Services.Register(worldStatePersistence);
 
-        if(createTestWorld)
+        AutosaveCoordinator autosave = new(worldRegistry, logger);
+        ServiceLocator.Services.Register(autosave);
+
+        WorldSettingsController worldSettings = new(worldRegistry, autosave, logger);
+        ServiceLocator.Services.Register(worldSettings);
+
+        if (createTestWorld)
         {
             worldRegistry.CreateWorldAsync("test").Forget();
         }
     }
+
     private void OnDestroy()
     {
-        onMessageDisplayTerminal -= terminal.Display;
+        _onMessageDisplayTerminal -= terminal.Display;
+        
+        if (ServiceLocator.Services.TryGet<AutosaveCoordinator>(out var autosave))
+        {
+            autosave.Stop();
+        }
+
         ServiceLocator.ClearAll();
     }
 
     private void OnApplicationPause(bool pauseStatus)
     {
-        if (pauseStatus && ServiceLocator.Services.TryGet<WorldStatePersistence>(out var worldStatePersistence))
+        if (pauseStatus && ServiceLocator.Services.TryGet<WorldRegistry>(out var worldRegistry))
         {
-            worldStatePersistence.SaveAsync().Forget();
+            worldRegistry.SaveCurrentWorldAsync().Forget();
         }
     }
 }

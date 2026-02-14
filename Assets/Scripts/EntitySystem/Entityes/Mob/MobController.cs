@@ -12,7 +12,7 @@ namespace TheRavine.EntityControl
 {
     public class MobController : MonoBehaviour, ISetAble
     {
-        private IRavineLogger logger;
+        private RavineLogger logger;
         public int GetEntityCount() => mobEntities.Length;
         private NativeList<IntPtr> mobEntities;
         private List<GCHandle> gcHandles;
@@ -26,7 +26,7 @@ namespace TheRavine.EntityControl
         {
             ServiceLocator.Services.Register(this);
             
-            logger = ServiceLocator.GetService<IRavineLogger>();
+            logger = ServiceLocator.GetService<RavineLogger>();
             logger.LogInfo("MobController service is available now");
             
             mobEntities = new NativeList<IntPtr>(Allocator.Persistent);

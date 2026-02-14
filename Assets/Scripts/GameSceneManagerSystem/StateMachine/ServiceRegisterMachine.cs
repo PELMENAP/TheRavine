@@ -9,9 +9,9 @@ namespace TheRavine.Base
 {
     public class ServiceRegisterMachine
     {
-        private readonly IRavineLogger ravineLogger;
+        private readonly RavineLogger ravineLogger;
         private readonly Queue<Pair<ISetAble, string>> disAble = new();
-        public ServiceRegisterMachine(IRavineLogger ravineLogger)
+        public ServiceRegisterMachine(RavineLogger ravineLogger)
         {
             this.ravineLogger = ravineLogger;
         }

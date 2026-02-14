@@ -17,9 +17,9 @@ namespace TheRavine.Base
         private string currentFileName = "";
         private CommandContext terminalContext;
         private ScriptFileManager scriptFileManager;
-        private IRavineLogger logger;
+        private RavineLogger logger;
 
-        public void Initialize(CommandContext context, RiveRuntime interpreter, IRavineLogger logger)
+        public void Initialize(CommandContext context, RiveRuntime interpreter, RavineLogger logger)
         {
             this.interpreter = interpreter;
             this.logger = logger;

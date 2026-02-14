@@ -56,7 +56,7 @@ public class GrassSystem : MonoBehaviour
     
     void Start()
     {
-        gameSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
+        gameSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
 
         if(gameSettings.enableGrass) return;
         InitializeSystem();

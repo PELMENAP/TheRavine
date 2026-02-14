@@ -8,7 +8,7 @@ namespace TheRavine.Base
     public partial class WorldConfiguration : IEquatable<WorldConfiguration>
     {
         public string worldName = "New World";
-        public int autosaveInterval = 120;
+        public int autosaveInterval = 20;
         public float timeScale = 1.0f;
         public int maxEntityCount = 1000;
         public int maxParticleCount = 500;

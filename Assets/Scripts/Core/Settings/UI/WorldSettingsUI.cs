@@ -1,51 +1,49 @@
 using UnityEngine;
 using UnityEngine.UI;
-using System;
 using TMPro;
 using R3;
 using ZLinq;
+using System;
 using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Base
 {
-    public class WorldSettingsUI : SettingsViewBase<WorldConfiguration>
+    public class WorldSettingsUI : MonoBehaviour
     {
         [Header("Конфигурация мира")]
         [SerializeField] private TMP_Dropdown autosaveDropdown;
         [SerializeField] private TMP_Dropdown difficultyDropdown;
-        [SerializeField] private TMP_InputField timeScaleInput, maxEntityCountInput, worldNameText;
-        [SerializeField] private Toggle generateStructures, generateRivers;
-        [SerializeField] private Button worldNameButton;
-        [SerializeField] private GameObject panel, loadingPanel;
+        [SerializeField] private TMP_InputField timeScaleInput;
+        [SerializeField] private TMP_InputField maxEntityCountInput;
+        [SerializeField] private TMP_InputField worldNameInput;
+        [SerializeField] private Toggle generateStructures;
+        [SerializeField] private Toggle generateRivers;
+        [SerializeField] private Button saveWorldNameButton;
+        [SerializeField] private GameObject panel;
+        [SerializeField] private GameObject loadingPanel;
+
+        private WorldSettingsController _controller;
+        private WorldRegistry _registry;
+        private CompositeDisposable _disposables = new();
 
         private readonly int[] _autosaveIntervals = { 0, 15, 30, 60, 120, 300 };
         private readonly string[] _autosaveLabels = 
             { "Отключено", "15 сек", "30 сек", "1 мин", "2 мин", "5 мин" };
 
-        private WorldRegistry _registry;
-        private WorldStatePersistence _persistence;
-
-        protected override void Start()
+        private void Start()
         {
-            base.Start();
+            _controller = ServiceLocator.GetService<WorldSettingsController>();
             _registry = ServiceLocator.GetService<WorldRegistry>();
-            _persistence = ServiceLocator.GetService<WorldStatePersistence>();
 
-            Mediator.EditingWorldId
-                .CombineLatest(_registry.CurrentWorld, (editing, current) => editing ?? current)
-                .Subscribe(worldId => OnActiveWorldChanged(worldId))
-                .AddTo(Disposables);
-            
-            _registry.IsLoading
-                .Subscribe(OnLoadingChanged)
-                .AddTo(Disposables);
+            InitializeControls();
+            BindToModel();
         }
 
-        protected override void InitializeControls()
+        private void InitializeControls()
         {
             SetupAutosaveDropdown();
-            SetupInputFields();
             SetupDifficultyDropdown();
+            SetupInputFields();
             SetupToggles();
 
             panel?.SetActive(false);
@@ -55,31 +53,11 @@ namespace TheRavine.Base
         {
             autosaveDropdown.ClearOptions();
             autosaveDropdown.AddOptions(_autosaveLabels.AsValueEnumerable().ToList());
-            autosaveDropdown.onValueChanged.AddListener(OnAutosaveChanged);
-        }
-
-        private void SetupInputFields()
-        {
-            worldNameButton.onClick.AddListener(() =>
+            autosaveDropdown.onValueChanged.AddListener(index =>
             {
-                Mediator.RenameCurrentWorldAsync(worldNameText.text).Forget();
-            });
-
-            timeScaleInput.onValueChanged.AddListener(value =>
-            {
-                if (float.TryParse(value, out float scale))
+                if (index >= 0 && index < _autosaveIntervals.Length)
                 {
-                    Mediator.UpdateWorldConfig(c => 
-                        c.timeScale = Mathf.Clamp(scale, 0.1f, 5.0f));
-                }
-            });
-
-            maxEntityCountInput.onValueChanged.AddListener(value =>
-            {
-                if (int.TryParse(value, out int count))
-                {
-                    Mediator.UpdateWorldConfig(c => 
-                        c.maxEntityCount = Mathf.Max(100, count));
+                    _controller.Update(c => c.autosaveInterval = _autosaveIntervals[index]);
                 }
             });
         }
@@ -87,48 +65,68 @@ namespace TheRavine.Base
         private void SetupDifficultyDropdown()
         {
             difficultyDropdown.ClearOptions();
-            difficultyDropdown.AddOptions(
-                Enum.GetNames(typeof(DifficultyLevel))
-                    .AsValueEnumerable()
-                    .ToList()
-            );
-
+            difficultyDropdown.AddOptions(Enum.GetNames(typeof(DifficultyLevel)).AsValueEnumerable().ToList());
             difficultyDropdown.onValueChanged.AddListener(value =>
-                Mediator.UpdateWorldConfig(c => 
-                    c.difficulty = (DifficultyLevel)value));
+                _controller.Update(c => c.difficulty = (DifficultyLevel)value));
+        }
+
+        private void SetupInputFields()
+        {
+            saveWorldNameButton.onClick.AddListener(() =>
+            {
+                var newName = worldNameInput.text.Trim();
+                if (!string.IsNullOrEmpty(newName))
+                {
+                    _controller.RenameWorldAsync(newName).Forget();
+                }
+            });
+
+            timeScaleInput.onEndEdit.AddListener(value =>
+            {
+                if (float.TryParse(value, out float scale))
+                {
+                    _controller.Update(c => c.timeScale = Mathf.Clamp(scale, 0.1f, 5.0f));
+                }
+            });
+
+            maxEntityCountInput.onEndEdit.AddListener(value =>
+            {
+                if (int.TryParse(value, out int count))
+                {
+                    _controller.Update(c => c.maxEntityCount = Mathf.Max(100, count));
+                }
+            });
         }
 
         private void SetupToggles()
         {
             generateStructures.onValueChanged.AddListener(value =>
-                Mediator.UpdateWorldConfig(c => c.generateStructures = value));
+                _controller.Update(c => c.generateStructures = value));
 
             generateRivers.onValueChanged.AddListener(value =>
-                Mediator.UpdateWorldConfig(c => c.generateRivers = value));
+                _controller.Update(c => c.generateRivers = value));
         }
 
-        private void OnAutosaveChanged(int index)
+        private void BindToModel()
         {
-            if (index < 0 || index >= _autosaveIntervals.Length) return;
-
-            var interval = _autosaveIntervals[index];
-
-            Mediator.UpdateWorldConfig(c => c.autosaveInterval = interval);
-            _persistence?.SetAutosaveInterval(interval);
-        }
-
-        protected override void BindToModel()
-        {
-            Mediator.WorldConfig
+            _controller.Config
                 .Subscribe(UpdateView)
-                .AddTo(Disposables);
+                .AddTo(_disposables);
+
+            _registry.CurrentWorldId
+                .Subscribe(worldId => panel?.SetActive(!string.IsNullOrEmpty(worldId)))
+                .AddTo(_disposables);
+
+            _registry.IsLoading
+                .Subscribe(isLoading => loadingPanel?.SetActive(isLoading))
+                .AddTo(_disposables);
         }
 
-        protected override void UpdateView(WorldConfiguration config)
+        private void UpdateView(WorldConfiguration config)
         {
             if (config == null) return;
-            
-            worldNameText.text = config.worldName;
+
+            worldNameInput.SetTextWithoutNotify(config.worldName);
 
             int autosaveIndex = Array.IndexOf(_autosaveIntervals, config.autosaveInterval);
             autosaveDropdown.SetValueWithoutNotify(Mathf.Max(0, autosaveIndex));
@@ -140,15 +138,6 @@ namespace TheRavine.Base
             generateRivers.SetIsOnWithoutNotify(config.generateRivers);
         }
 
-        private void OnActiveWorldChanged(string worldId)
-        {
-            var hasWorld = !string.IsNullOrEmpty(worldId);
-            panel?.SetActive(hasWorld);
-        }
-
-        private void OnLoadingChanged(bool isLoading)
-        {
-            loadingPanel?.SetActive(isLoading);
-        }
+        private void OnDestroy() => _disposables?.Dispose();
     }
 }

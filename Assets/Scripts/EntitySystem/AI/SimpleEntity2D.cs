@@ -7,8 +7,8 @@ using TheRavine.EntityControl;
 
 public class SimpleEntity2D : AEntity
 {
-    private readonly IRavineLogger logger;
-    public SimpleEntity2D(IRavineLogger logger)
+    private readonly RavineLogger logger;
+    public SimpleEntity2D(RavineLogger logger)
     {
         this.logger = logger;
     }

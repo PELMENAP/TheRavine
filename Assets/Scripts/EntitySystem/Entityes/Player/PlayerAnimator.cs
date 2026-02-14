@@ -18,7 +18,7 @@ namespace TheRavine.EntityControl
         private void Start()
         {
             defaultAnimator ??= GetComponent<Animator>();
-            globalSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
+            globalSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
         }
         
         public async UniTask SetUpAsync()

@@ -15,9 +15,9 @@ public class ActionMapController
 
     private const string gamePlay = "Gameplay", inventory = "Inventory", textInput = "TextInput";
     
-    private IRavineLogger logger;
+    private RavineLogger logger;
 
-    public ActionMapController(InputActionAsset actionAsset, IRavineLogger logger)
+    public ActionMapController(InputActionAsset actionAsset, RavineLogger logger)
     {
         this.logger = logger;
         _actionAsset = actionAsset;

@@ -13,10 +13,10 @@ namespace TheRavine.EntityControl
         [SerializeField] private NetworkObject cameraPrefab;
         [SerializeField] private EntityInfo playerInfo;
         private CameraComponent cameraComponent;
-        private IRavineLogger logger;
+        private RavineLogger logger;
         public override async void OnNetworkSpawn()
         {
-            logger = ServiceLocator.GetService<IRavineLogger>();
+            logger = ServiceLocator.GetService<RavineLogger>();
 
             await CreatePlayerEntity();
             SetupLocator();

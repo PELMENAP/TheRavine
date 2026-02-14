@@ -18,7 +18,7 @@ namespace TheRavine.Base
 
         private string worldName;
         private Action onEnterWorld, onDeleteWorld, onEditSettings;
-        private IRavineLogger logger;
+        private RavineLogger logger;
         private WorldRegistry worldRegistry;
 
         public async void Initialize(
@@ -26,7 +26,7 @@ namespace TheRavine.Base
             Action onEnterWorld, 
             Action onDeleteWorld, 
             Action onEditSettings, 
-            IRavineLogger logger, 
+            RavineLogger logger, 
             WorldRegistry worldRegistry)
         {
             this.logger = logger;
@@ -67,11 +67,12 @@ namespace TheRavine.Base
                     return;
                 }
 
-                var (worldData, worldSettings) = await worldRegistry.LoadFullAsync(worldName);
+                WorldState worldState = worldRegistry.GetCurrentState();
+                WorldConfiguration worldConfiguration = worldRegistry.GetCurrentConfig();
                 
-                UpdateWorldNameDisplay(worldSettings.worldName);
-                UpdateLastSaveTime(worldData.lastSaveTime);
-                UpdateCycleCount(worldData.cycleCount);
+                UpdateWorldNameDisplay(worldConfiguration.worldName);
+                UpdateLastSaveTime(worldState.lastSaveTime);
+                UpdateCycleCount(worldState.cycleCount);
                 UpdateWorldIcon();
             }
             catch (Exception ex)

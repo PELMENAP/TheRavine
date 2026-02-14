@@ -11,7 +11,7 @@ public class Market : MonoBehaviour
     public int lotTTL = 10;
     private MarketSimulator marketSimulator;
     private MarketCore marketCore;
-    private IRavineLogger logger;
+    private RavineLogger logger;
     private CancellationTokenSource cancellationToken;
 
     private void Start()

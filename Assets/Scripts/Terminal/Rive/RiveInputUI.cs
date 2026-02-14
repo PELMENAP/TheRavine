@@ -10,9 +10,9 @@ namespace TheRavine.Base
         [SerializeField] private Button submitButton;
 
         private RiveRuntime _runtime;
-        private IRavineLogger _logger;
+        private RavineLogger _logger;
 
-        public void Initialize(RiveRuntime runtime, IRavineLogger logger)
+        public void Initialize(RiveRuntime runtime, RavineLogger logger)
         {
             _runtime = runtime;
             _logger = logger;

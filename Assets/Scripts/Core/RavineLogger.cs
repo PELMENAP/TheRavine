@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-public class RavineLogger : IRavineLogger
+public class RavineLogger
 {
     private readonly string logFilePath;
     private readonly Action<string> onMessageDisplayTerminal;

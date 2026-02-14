@@ -156,9 +156,9 @@ namespace TheRavine.Base
     public class InteractorRegistry
     {
         private readonly Dictionary<string, IInteractor> _interactors = new();
-        private readonly IRavineLogger _logger;
+        private readonly RavineLogger _logger;
 
-        public InteractorRegistry(IRavineLogger logger)
+        public InteractorRegistry(RavineLogger logger)
         {
             _logger = logger;
         }

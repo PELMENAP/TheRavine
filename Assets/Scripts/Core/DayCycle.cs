@@ -36,7 +36,7 @@ namespace TheRavine.Base
         {
             ServiceLocator.Services.Register(this);
             
-            gameSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
+            gameSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
             sun = GetComponent<Light>();
             cts = new CancellationTokenSource();
 
