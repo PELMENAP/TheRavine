@@ -5978,6 +5978,7 @@ MonoBehaviour:
   newWorldNameInput: {fileID: 1491222388}
   createWorldPanel: {fileID: 39759155}
   chooseWorldPanel: {fileID: 1333314011}
+  editWorldPanel: {fileID: 642967223}
   settingsView: {fileID: 642967225}
 --- !u!1 &1333314011
 GameObject:

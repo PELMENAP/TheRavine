@@ -9,7 +9,6 @@ using TheRavine.Events;
 using UnityEngine;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using R3;
 
 namespace TheRavine.Inventory
 {
@@ -27,7 +26,7 @@ namespace TheRavine.Inventory
         private MapGenerator generator;
         private ObjectSystem objectSystem;
         private InfoManager infoManager;
-        private EncryptedPlayerPrefsStorage encryptedPlayerPrefsStorage;
+        private WorldRegistry worldRegistry;
         public bool HasItem(InventoryItemInfo info) => eventDrivenInventoryProxy.HasItem(infoManager.GetItemType(info));
         public void SetUp(ISetAble.Callback callback)
         {
@@ -35,7 +34,7 @@ namespace TheRavine.Inventory
             
             generator = ServiceLocator.GetService<MapGenerator>();
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
-            encryptedPlayerPrefsStorage = new EncryptedPlayerPrefsStorage();
+            worldRegistry = ServiceLocator.GetService<WorldRegistry>();
 
             var playerData = ServiceLocator.GetService<PlayerModelView>().PlayerEntity;
             var gameSettings = ServiceLocator.GetService<SettingsMediator>().Global.CurrentValue;
@@ -57,25 +56,18 @@ namespace TheRavine.Inventory
 
             inventoryInputHandler.RegisterInput(playerData, gameSettings);
             eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce += OnInventoryStateChanged;
-            OnInventoryDataLoaded(playerData, ServiceLocator.GetService<WorldRegistry>()).Forget();
+            OnInventoryDataLoaded(playerData).Forget();
 
             callback?.Invoke();
         }
 
-        private async UniTaskVoid OnInventoryDataLoaded(PlayerEntity playerData, WorldRegistry worldRegistry)
+        private async UniTaskVoid OnInventoryDataLoaded(PlayerEntity playerData)
         {
-            (WorldState worldData, WorldConfiguration worldConfiguration) = await worldRegistry.LoadCurrentWorldData();
+            (WorldState worldData, WorldConfiguration worldConfiguration) = await worldRegistry.LoadCurrentWorldFullAsync();
             
             if (worldData.IsDefault() || worldConfiguration == null) return;
-            if (worldData.cycleCount == 0)
-            {
-                tester.FillSlots(filling);
-            }
-            else
-            {
-                var loadedData = await encryptedPlayerPrefsStorage.LoadAsync<SerializableList<SerializableInventorySlot>>(nameof(SerializableList<SerializableInventorySlot>));
-                tester.SetDataFromSerializableList(loadedData);
-            }
+
+            tester.SetDataFromSerializableList(worldData.inventory);
 
             EventBus playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
             playerEventBus.Subscribe<PlaceEvent>(PlaceObjectEvent);
@@ -134,7 +126,10 @@ namespace TheRavine.Inventory
             try
             {
                 var dataToSave = tester.Serialize();
-                await encryptedPlayerPrefsStorage.SaveAsync(nameof(SerializableList<SerializableInventorySlot>), dataToSave);
+
+                WorldState worldState = await worldRegistry.LoadDataAsync();
+                worldState.inventory = dataToSave;
+                await worldRegistry.SaveDataAsync(worldState);
                 
                 Debug.Log($"Состояние инвентаря сохранено");
                 return true;
@@ -147,10 +142,6 @@ namespace TheRavine.Inventory
         }
         public void BreakUp(ISetAble.Callback callback)
         {
-            var dataToSave = tester.Serialize();
-            encryptedPlayerPrefsStorage.SaveAsync(nameof(SerializableList<SerializableInventorySlot>), dataToSave).Forget();
-            tester.Dispose();
-
             uIDragger.BreakUp();
             craftService.BreakUp();
 

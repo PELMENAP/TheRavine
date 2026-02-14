@@ -9,7 +9,7 @@ namespace TheRavine.Inventory
     public class InventoryTester
     {
         private readonly UIInventorySlot[] uiSlots;
-        private readonly EventDrivenInventoryProxy inventory;
+        private EventDrivenInventoryProxy inventory;
         private readonly InfoManager infoManager;
 
         public InventoryTester(UIInventorySlot[] uiSlots, InfoManager infoManager, EventDrivenInventoryProxy proxy)
@@ -68,20 +68,25 @@ namespace TheRavine.Inventory
             );
         }
 
-        public void SetDataFromSerializableList(SerializableList<SerializableInventorySlot> data)
+        public void SetDataFromSerializableList(SerializableInventorySlot[] data)
         {
-            if (data == null) return;
-            foreach (var slotInfo in data.list)
-            {
-                if (slotInfo.title == "empty") continue;
-                var item = infoManager.GetInventoryItem(slotInfo.title, slotInfo.amount);
-                if (item != null)
-                    inventory.TryToAdd(this, item);
-            }
+            List<IInventorySlot> inventorySlots = new();
+
+            // if (data == null) return;
+            // foreach (var slotInfo in data.list)
+            // {
+            //     if (slotInfo.title == "empty") continue;
+            //     var item = infoManager.GetInventoryItem(slotInfo.title, slotInfo.amount);
+            //     if (item != null)
+            //         inventory.TryToAdd(this, item);
+            // }
+
+            InventoryModel inventoryModel = new(inventorySlots);
+            inventory = new(inventoryModel);
             RefreshAllSlots();
         }
 
-        public SerializableList<SerializableInventorySlot> Serialize() => InventorySerializer.Serialize(inventory);
+        public SerializableInventorySlot[] Serialize() => inventory.GetSerializable();
 
         private void OnInventoryStateChanged(object sender)
         {

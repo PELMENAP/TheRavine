@@ -16,21 +16,21 @@ namespace TheRavine.Base
         [SerializeField] private Button createWorldButton, confirmCreateWorldButton, cancelCreateWorldButton;
         [SerializeField] private Button backToWorldList;
         [SerializeField] private TMP_InputField newWorldNameInput;
-        [SerializeField] private GameObject createWorldPanel, chooseWorldPanel;
+        [SerializeField] private GameObject createWorldPanel, chooseWorldPanel, editWorldPanel;
         
         [Header("Интеграции")]
         [SerializeField] private WorldSettingsUI settingsView;
         
         private IRavineLogger _logger;
         private WorldRegistry _worldRegistry;
-        private WorldStorage _worldStorage;
-        private readonly CompositeDisposable disposables = new();
+        private SettingsMediator _settingsMediator;
+        private readonly CompositeDisposable _disposables = new();
 
         private void Start()
         {
             _worldRegistry = ServiceLocator.GetService<WorldRegistry>();
             _logger = ServiceLocator.GetService<IRavineLogger>();
-            _worldStorage = ServiceLocator.GetService<WorldStorage>();
+            _settingsMediator = ServiceLocator.GetService<SettingsMediator>();
             
             InitializeUI();
             BindToModel();
@@ -41,9 +41,9 @@ namespace TheRavine.Base
             createWorldButton.onClick.AddListener(OnCreateWorldButtonClick);
             confirmCreateWorldButton.onClick.AddListener(OnConfirmCreateWorld);
             cancelCreateWorldButton.onClick.AddListener(OnCancelCreateWorld);
-            backToWorldList.onClick.AddListener(OnEndEditWorld);
-            createWorldPanel?.SetActive(false);
-            chooseWorldPanel?.SetActive(true);
+            backToWorldList.onClick.AddListener(OnBackToWorldList);
+            
+            ShowPanel(PanelType.WorldList);
         }
 
         private void BindToModel()
@@ -52,7 +52,7 @@ namespace TheRavine.Base
             
             _worldRegistry.CurrentWorld
                 .Subscribe(_ => RefreshWorldsListUI())
-                .AddTo(disposables);
+                .AddTo(_disposables);
             
             UpdateWorldsList(default);
         }
@@ -92,7 +92,6 @@ namespace TheRavine.Base
                     () => OnDeleteWorld(worldName),
                     () => OnEditWorldSettings(worldName), 
                     _logger, 
-                    _worldStorage,
                     _worldRegistry);
             }
         }
@@ -118,21 +117,15 @@ namespace TheRavine.Base
             }
         }
 
-        private void OnEditWorldSettings(string worldName)
+        private async void OnEditWorldSettings(string worldName)
         {
-            if (settingsView != null)
-            {
-                settingsView.EditWorld(worldName);
-            }
-            else
-            {
-                _logger.LogWarning("SettingsView не назначен в WorldManagerView");
-            }
+            await _settingsMediator.StartEditingWorldAsync(worldName);
+            ShowPanel(PanelType.EditWorld);
         }
 
         private void OnCreateWorldButtonClick()
         {
-            ShowCreateWorldPanel(true);
+            ShowPanel(PanelType.CreateWorld);
             newWorldNameInput.text = "";
         }
 
@@ -155,26 +148,27 @@ namespace TheRavine.Base
             bool success = await _worldRegistry.CreateWorldAsync(worldName);
             if (success)
             {
-                ShowCreateWorldPanel(false);
-                OnEditWorldSettings(worldName);
+                await _settingsMediator.StartEditingWorldAsync(worldName);
+                ShowPanel(PanelType.EditWorld);
             }
         }
 
-        public void OnEndEditWorld()
+        public void OnBackToWorldList()
         {
-            ShowCreateWorldPanel(false);
-            settingsView.EditWorld(null);
+            _settingsMediator.StopEditingWorld();
+            ShowPanel(PanelType.WorldList);
         }
 
         public void OnCancelCreateWorld()
         {
-            ShowCreateWorldPanel(false);
+            ShowPanel(PanelType.WorldList);
         }
 
-        private void ShowCreateWorldPanel(bool show)
+        private void ShowPanel(PanelType panelType)
         {
-            createWorldPanel?.SetActive(show);
-            chooseWorldPanel?.SetActive(!show);
+            createWorldPanel?.SetActive(panelType == PanelType.CreateWorld);
+            chooseWorldPanel?.SetActive(panelType == PanelType.WorldList);
+            editWorldPanel?.SetActive(panelType == PanelType.EditWorld);
         }
 
         private async UniTask<bool> ShowConfirmationDialog(string message)
@@ -186,12 +180,19 @@ namespace TheRavine.Base
 
         private void OnDestroy()
         {
-            disposables?.Dispose();
+            _disposables?.Dispose();
             
             if (_worldRegistry != null)
             {
                 _worldRegistry.AvailableWorlds.CollectionChanged -= UpdateWorldsList;
             }
+        }
+
+        private enum PanelType
+        {
+            WorldList,
+            CreateWorld,
+            EditWorld
         }
     }
 }

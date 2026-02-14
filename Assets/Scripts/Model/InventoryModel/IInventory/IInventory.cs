@@ -16,4 +16,6 @@ public interface IInventory
     bool Remove(object sender, Type itemType, int amount = 1);
     bool HasItem(Type itemType);
     bool HasItem(Type itemType, out IInventoryItem item);
+
+    SerializableInventorySlot[] GetSerializable();
 }   

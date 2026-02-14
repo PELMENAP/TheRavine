@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using MemoryPack;
 
 [MemoryPackable]
@@ -12,10 +11,4 @@ public partial struct SerializableInventorySlot
         this.title = title;
         this.amount = amount;
     }
-}
-
-[MemoryPackable]
-public partial class SerializableList<T>
-{
-    public List<T> list = new();
 }

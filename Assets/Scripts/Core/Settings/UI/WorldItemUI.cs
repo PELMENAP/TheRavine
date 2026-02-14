@@ -16,11 +16,10 @@ namespace TheRavine.Base
         [Header("Icons")]
         [SerializeField] private Sprite defaultWorldIcon, currentWorldIcon;
 
-        private string _worldName;
-        private Action _onEnterWorld, _onDeleteWorld, _onEditSettings;
-        private IRavineLogger _logger;
-        private WorldStorage _worldStorage;
-        private WorldRegistry _worldRegistry;
+        private string worldName;
+        private Action onEnterWorld, onDeleteWorld, onEditSettings;
+        private IRavineLogger logger;
+        private WorldRegistry worldRegistry;
 
         public async void Initialize(
             string worldName, 
@@ -28,16 +27,14 @@ namespace TheRavine.Base
             Action onDeleteWorld, 
             Action onEditSettings, 
             IRavineLogger logger, 
-            WorldStorage worldStorage,
             WorldRegistry worldRegistry)
         {
-            _logger = logger;
-            _worldStorage = worldStorage;
-            _worldRegistry = worldRegistry;
-            _worldName = worldName;
-            _onEnterWorld = onEnterWorld;
-            _onDeleteWorld = onDeleteWorld;
-            _onEditSettings = onEditSettings;
+            this.logger = logger;
+            this.worldRegistry = worldRegistry;
+            this.worldName = worldName;
+            this.onEnterWorld = onEnterWorld;
+            this.onDeleteWorld = onDeleteWorld;
+            this.onEditSettings = onEditSettings;
 
             SetupUI();
             BindButtons();
@@ -47,7 +44,7 @@ namespace TheRavine.Base
         private void SetupUI()
         {
             if (worldNameText != null)
-                worldNameText.text = _worldName;
+                worldNameText.text = worldName;
             
             if (cycleCountText != null)
                 UpdateCycleCount(0);
@@ -55,22 +52,22 @@ namespace TheRavine.Base
 
         private void BindButtons()
         {
-            enterWorldButton?.onClick.AddListener(() => _onEnterWorld?.Invoke());
-            deleteWorldButton?.onClick.AddListener(() => _onDeleteWorld?.Invoke());
-            editSettingsButton?.onClick.AddListener(() => _onEditSettings?.Invoke());
+            enterWorldButton?.onClick.AddListener(() => onEnterWorld?.Invoke());
+            deleteWorldButton?.onClick.AddListener(() => onDeleteWorld?.Invoke());
+            editSettingsButton?.onClick.AddListener(() => onEditSettings?.Invoke());
         }
 
         private async UniTask UpdateWorldInfoAsync()
         {
             try
             {
-                if (!await _worldStorage.ExistsAsync(_worldName))
+                if (!await worldRegistry.ExistsAsync(worldName))
                 {
                     SetErrorState("Данные недоступны");
                     return;
                 }
 
-                var (worldData, worldSettings) = await _worldStorage.LoadFullAsync(_worldName);
+                var (worldData, worldSettings) = await worldRegistry.LoadFullAsync(worldName);
                 
                 UpdateWorldNameDisplay(worldSettings.worldName);
                 UpdateLastSaveTime(worldData.lastSaveTime);
@@ -79,7 +76,7 @@ namespace TheRavine.Base
             }
             catch (Exception ex)
             {
-                _logger.LogWarning($"Не удалось загрузить информацию о мире {_worldName}: {ex.Message}");
+                logger.LogWarning($"Не удалось загрузить информацию о мире {worldName}: {ex.Message}");
                 SetErrorState("Ошибка загрузки");
             }
         }
@@ -88,7 +85,7 @@ namespace TheRavine.Base
         {
             if (worldNameText == null) return;
             
-            bool isCurrent = _worldRegistry.CurrentWorldName == _worldName;
+            bool isCurrent = worldRegistry.CurrentWorldName == worldName;
             worldNameText.text = isCurrent ? $"{displayName} (Текущий)" : displayName;
         }
 
@@ -119,7 +116,7 @@ namespace TheRavine.Base
         {
             if (worldIcon == null) return;
 
-            bool isCurrent = _worldRegistry.CurrentWorldName == _worldName;
+            bool isCurrent = worldRegistry.CurrentWorldName == worldName;
             worldIcon.sprite = isCurrent ? currentWorldIcon : defaultWorldIcon;
         }
 

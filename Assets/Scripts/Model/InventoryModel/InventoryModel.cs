@@ -16,6 +16,12 @@ namespace TheRavine.Inventory
             _slots = new List<IInventorySlot>(capacity);
             for (int i = 0; i < capacity; i++) _slots.Add(new InventorySlot());
         }
+
+        public InventoryModel(List<IInventorySlot> inventorySlots)
+        {
+            this.capacity = inventorySlots.Count;
+            _slots = inventorySlots;
+        }
         public IInventoryItem GetItem(Type itemType)
         {
             return _slots.Find(slot => slot.itemType == itemType).item;
@@ -146,15 +152,15 @@ namespace TheRavine.Inventory
             return _slots.ToArray();
         }
 
-        public SerializableList<SerializableInventorySlot> GetSerializableList()
+        public SerializableInventorySlot[] GetSerializable()
         {
-            SerializableList<SerializableInventorySlot> data = new();
+            SerializableInventorySlot[] data = new SerializableInventorySlot[capacity];
             for(int i = 0; i < capacity; i++)
             {
-                if(_slots[i].isEmpty) data.list.Add(new SerializableInventorySlot("the ravine", 0));
+                if(_slots[i].isEmpty) data[i] = new SerializableInventorySlot("empty", 0);
                 var item = _slots[i].item;
                 if(item == null) continue;
-                data.list.Add(new SerializableInventorySlot(item.info.id, item.state.amount));
+                data[i] = new SerializableInventorySlot(item.info.id, item.state.amount);
             }
             return data;
         }

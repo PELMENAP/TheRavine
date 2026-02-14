@@ -27,7 +27,7 @@ public class ParallaxSceneController : MonoBehaviour
     private async void Awake()
     {
         worldRegistry = ServiceLocator.GetService<WorldRegistry>();
-        (WorldState worldData, WorldConfiguration worldConfiguration) = await worldRegistry.LoadCurrentWorldData();
+        (WorldState worldData, WorldConfiguration worldConfiguration) = await worldRegistry.LoadCurrentWorldFullAsync();
         _worldData = worldData;
         // DataStorage.winTheGame = win;
         AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
