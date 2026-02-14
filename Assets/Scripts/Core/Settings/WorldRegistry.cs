@@ -21,9 +21,9 @@ namespace TheRavine.Base
         public Observable<string> CurrentWorld { get; }
         public Observable<bool> IsLoading { get; }
 
-        public WorldRegistry(WorldStorage worldService, IRavineLogger logger)
+        public WorldRegistry(WorldStateRepository worldStateRepository, WorldConfigRepository worldConfigRepository, IRavineLogger logger)
         {
-            worldStorage = worldService;
+            worldStorage = new(worldStateRepository, worldConfigRepository);
             _logger = logger;
             
             _currentWorld = new ReactiveProperty<string>();
@@ -83,7 +83,10 @@ namespace TheRavine.Base
                 _isLoading.Value = false;
             }
         }
-        public async UniTask<(WorldState, WorldConfiguration)> LoadCurrentWorldData() => await worldStorage.LoadFullAsync(CurrentWorldName);
+        public async UniTask<(WorldState, WorldConfiguration)> LoadCurrentWorldFullAsync() => await worldStorage.LoadFullAsync(CurrentWorldName);
+        public async UniTask<(WorldState, WorldConfiguration)> LoadFullAsync(string worldName) => await worldStorage.LoadFullAsync(worldName);
+        public async UniTask<WorldState> LoadDataAsync() => await worldStorage.LoadDataAsync(CurrentWorldName);
+        public async UniTask SaveDataAsync(WorldState data) => await worldStorage.SaveDataAsync(CurrentWorldName, data);
         public async UniTask<bool> LoadWorldAsync(string worldName)
         {
             if (string.IsNullOrEmpty(worldName) || !AvailableWorlds.Contains(worldName))
@@ -96,12 +99,6 @@ namespace TheRavine.Base
             
             try
             {
-                var worldDataService = ServiceLocator.GetService<WorldStatePersistence>();
-                var settingsModel = ServiceLocator.GetService<SettingsMediator>();
-            
-                await worldDataService.LoadAsync(worldName);
-                await settingsModel.LoadWorldConfigAsync(worldName);
-
                 SceneLaunchService sceneLaunchService = ServiceLocator.GetService<SceneLaunchService>();
 
                 if(sceneLaunchService.CanLaunch)
@@ -109,6 +106,7 @@ namespace TheRavine.Base
                     _currentWorld.Value = worldName;
                     await sceneLaunchService.LaunchGame();
                     _logger.LogInfo($"Мир '{worldName}' загружен успешно");
+                    ServiceLocator.GetService<AutosaveSystem>().Start();
                     return true;
                 }
                 return false;

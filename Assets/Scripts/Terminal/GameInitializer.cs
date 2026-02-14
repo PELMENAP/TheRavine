@@ -41,16 +41,15 @@ public class GameInitializer : MonoBehaviour
         IAsyncPersistentStorage persistenceStorage = new EncryptedPlayerPrefsStorage();
 
         GlobalSettingsRepository globalSettingsRepository = new(persistenceStorage);
+
         WorldStateRepository worldStateRepository = new(persistenceStorage);
-        WorldConfigRepository WorldConfigRepository = new(persistenceStorage);
-        WorldStorage worldStorage = new(worldStateRepository, WorldConfigRepository);
+        WorldConfigRepository worldConfigRepository = new(persistenceStorage);
 
-        ServiceLocator.Services.Register(worldStorage);
 
-        WorldRegistry worldRegistry = new(worldStorage, logger);
-        SettingsMediator settingsMediator = new(globalSettingsRepository, WorldConfigRepository, worldRegistry, logger);
+        WorldRegistry worldRegistry = new(worldStateRepository, worldConfigRepository, logger);
+        SettingsMediator settingsMediator = new(globalSettingsRepository, worldConfigRepository, worldRegistry, logger);
 
-        AutosaveSystem autosaveSystem = new AutosaveSystem(logger, 10);
+        AutosaveSystem autosaveSystem = new(logger, 10);
         WorldStatePersistence worldStatePersistence = new(worldStateRepository, worldRegistry, autosaveSystem , logger);
 
         ServiceLocator.Services.Register(settingsMediator);

@@ -91,5 +91,7 @@ namespace TheRavine.Inventory
         {
             ClearSubscriptions();
         }
+
+        public SerializableInventorySlot[] GetSerializable() => _inventory.GetSerializable();
     }
 }

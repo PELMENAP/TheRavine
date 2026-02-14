@@ -31,8 +31,9 @@ namespace TheRavine.Base
             _registry = ServiceLocator.GetService<WorldRegistry>();
             _persistence = ServiceLocator.GetService<WorldStatePersistence>();
 
-            _registry.CurrentWorld
-                .Subscribe(OnActiveWorldChanged)
+            Mediator.EditingWorldId
+                .CombineLatest(_registry.CurrentWorld, (editing, current) => editing ?? current)
+                .Subscribe(worldId => OnActiveWorldChanged(worldId))
                 .AddTo(Disposables);
             
             _registry.IsLoading
@@ -61,10 +62,7 @@ namespace TheRavine.Base
         {
             worldNameButton.onClick.AddListener(() =>
             {
-                Mediator.ChangeWorldName(worldNameText.text);
-                Mediator.UpdateWorldConfig(c => 
-                    c.worldName = worldNameText.text);
-                OnActiveWorldChanged(null);
+                Mediator.RenameCurrentWorldAsync(worldNameText.text).Forget();
             });
 
             timeScaleInput.onValueChanged.AddListener(value =>
@@ -129,8 +127,8 @@ namespace TheRavine.Base
         protected override void UpdateView(WorldConfiguration config)
         {
             if (config == null) return;
+            
             worldNameText.text = config.worldName;
-
 
             int autosaveIndex = Array.IndexOf(_autosaveIntervals, config.autosaveInterval);
             autosaveDropdown.SetValueWithoutNotify(Mathf.Max(0, autosaveIndex));
@@ -148,31 +146,9 @@ namespace TheRavine.Base
             panel?.SetActive(hasWorld);
         }
 
-        private void OnLoadingChanged(bool IsLoading)
+        private void OnLoadingChanged(bool isLoading)
         {
-            loadingPanel?.SetActive(IsLoading);
+            loadingPanel?.SetActive(isLoading);
         }
-
-        public async void EditWorld(string worldId)
-        {
-            if (string.IsNullOrEmpty(worldId))
-            {
-                panel?.SetActive(false);
-                return;  
-            } 
-
-            worldNameText.text = worldId;
-            
-            
-            try
-            {
-                await Mediator.LoadWorldConfigAsync(worldId);
-                panel?.SetActive(true);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"Failed to edit world {worldId}: {ex.Message}");
-            }
-        }   
     }
 }
