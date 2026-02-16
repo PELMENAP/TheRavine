@@ -1,25 +1,41 @@
 using System;
 using System.Collections.Generic;
-using ZLinq;
 
 namespace TheRavine.Inventory
 {
     public class InventoryModel
     {
-        public int capacity { get; set; }
-        public bool isFull => _slots.AsValueEnumerable().All(slot => slot.isFull);
+        public int Capacity { get; set; }
+        private int occupiedSlots;
+        public bool IsFull => occupiedSlots == Capacity;
+
+        private void SetItem(InventorySlot slot, IInventoryItem item)
+        {
+            if (slot.isEmpty) occupiedSlots++;
+            slot.SetItem(item);
+        }
+
+        private void ClearSlot(InventorySlot slot)
+        {
+            if (!slot.isEmpty)
+            {
+                slot.Clear();
+                occupiedSlots--;
+            }
+        }
+
 
         private readonly List<InventorySlot> _slots;
         public InventoryModel(int capacity)
         {
-            this.capacity = capacity;
+            this.Capacity = capacity;
             _slots = new List<InventorySlot>(capacity);
             for (int i = 0; i < capacity; i++) _slots.Add(new InventorySlot());
         }
 
         public InventoryModel(List<InventorySlot> inventorySlots)
         {
-            this.capacity = inventorySlots.Count;
+            this.Capacity = inventorySlots.Count;
             _slots = inventorySlots;
         }
         public IInventoryItem GetItem(Type itemType)
@@ -59,18 +75,18 @@ namespace TheRavine.Inventory
                 amount += itemSlot.amount;
             return amount;
         }
-        public bool TryToAdd(object sender, IInventoryItem item)
+        public bool TryToAdd(IInventoryItem item)
         {
             var slotWithSameItemButNotEmpty = _slots.Find(slot => !slot.isEmpty && slot.itemType == item.type && !slot.isFull);
             if (slotWithSameItemButNotEmpty != null)
-                return TryToAddSlot(sender, slotWithSameItemButNotEmpty, item);
+                return TryToAddSlot(slotWithSameItemButNotEmpty, item);
             var emptySlot = _slots.Find(slot => slot.isEmpty);
             if (emptySlot != null)
-                return TryToAddSlot(sender, emptySlot, item);
+                return TryToAddSlot(emptySlot, item);
             return false;
         }
 
-        public bool TryToAddSlot(object sender, InventorySlot slot, IInventoryItem item)
+        public bool TryToAddSlot(InventorySlot slot, IInventoryItem item)
         {
             var fits = slot.amount + item.state.amount <= item.info.maxItemsInInventorySlot;
             var amountToAdd = fits ? item.state.amount : item.info.maxItemsInInventorySlot - slot.amount;
@@ -79,17 +95,18 @@ namespace TheRavine.Inventory
             {
                 var clonedItem = item.Clone();
                 clonedItem.state.amount = amountToAdd;
-                slot.SetItem(clonedItem);
+                
+                SetItem(slot, clonedItem);
             }
             else
                 slot.item.state.amount += amountToAdd;
             if (amountLeft <= 0)
                 return true;
             item.state.amount = amountLeft;
-            return TryToAdd(sender, item);
+            return TryToAdd(item);
         }
 
-        public void TransitFromSlotToSlot(object sender, InventorySlot fromSlot, InventorySlot toSlot)
+        public void TransitFromSlotToSlot(InventorySlot fromSlot, InventorySlot toSlot)
         {
             if (fromSlot == toSlot || fromSlot.isEmpty || toSlot.isFull || (!toSlot.isEmpty && fromSlot.itemType != toSlot.itemType))
                 return;
@@ -99,17 +116,17 @@ namespace TheRavine.Inventory
             var amountLeft = fromSlot.amount - amountToAdd;
             if (toSlot.isEmpty)
             {
-                toSlot.SetItem(fromSlot.item);
-                fromSlot.Clear();
+                SetItem(toSlot, fromSlot.item);
+                ClearSlot(fromSlot);
             }
 
             toSlot.item.state.amount += amountToAdd;
             if (fits)
-                fromSlot.Clear();
+                ClearSlot(fromSlot);
             else
                 fromSlot.item.state.amount = amountLeft;
         }
-        public bool Remove(object sender, Type itemType, int amount = 1)
+        public bool Remove(Type itemType, int amount = 1)
         {
             var slotsWithItem = GetAllSlots(itemType);
             if (slotsWithItem.Length == 0)
@@ -123,13 +140,13 @@ namespace TheRavine.Inventory
                 {
                     slot.item.state.amount -= amountToRemove;
                     if (slot.amount <= 0)
-                        slot.Clear();
+                        ClearSlot(slot);
                     break;
                 }
                 amountToRemove -= slot.amount;
-                slot.Clear();
+                ClearSlot(slot);
             }
-            return true;
+            return amountToRemove <= 0;
         }
         public bool HasItem(Type itemType, out IInventoryItem item)
         {
@@ -152,17 +169,26 @@ namespace TheRavine.Inventory
             return _slots.ToArray();
         }
 
+        private SerializableInventorySlot[] _serializableCache;
         public SerializableInventorySlot[] GetSerializable()
         {
-            SerializableInventorySlot[] data = new SerializableInventorySlot[capacity];
-            for(int i = 0; i < capacity; i++)
+            if (_serializableCache == null || _serializableCache.Length != Capacity)
+                _serializableCache = new SerializableInventorySlot[Capacity];
+            
+            for (int i = 0; i < Capacity; i++)
             {
-                if(_slots[i].isEmpty) data[i] = new SerializableInventorySlot("empty", 0);
-                var item = _slots[i].item;
-                if(item == null) continue;
-                data[i] = new SerializableInventorySlot(item.info.id, item.state.amount);
+                if (_slots[i].isEmpty)
+                    _serializableCache[i] = new SerializableInventorySlot("empty", 0);
+                else
+                {
+                    var item = _slots[i].item;
+                    _serializableCache[i] = new SerializableInventorySlot(
+                        item.info.id, 
+                        item.state.amount
+                    );
+                }
             }
-            return data;
+            return _serializableCache;
         }
     }
 }

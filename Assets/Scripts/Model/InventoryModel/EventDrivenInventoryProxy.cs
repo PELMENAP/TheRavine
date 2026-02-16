@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace TheRavine.Inventory
 {
@@ -11,18 +12,23 @@ namespace TheRavine.Inventory
 
         private readonly InventoryModel _inventory;
 
-        public EventDrivenInventoryProxy(InventoryModel inventory)
+        public EventDrivenInventoryProxy(int slotCount)
         {
-            _inventory = inventory;
+            _inventory = new InventoryModel(slotCount);
+        }
+
+        public EventDrivenInventoryProxy(List<InventorySlot> inventorySlots)
+        {
+            _inventory = new InventoryModel(inventorySlots);
         }
 
         public int capacity
         {
-            get => _inventory.capacity;
-            set => _inventory.capacity = value;
+            get => _inventory.Capacity;
+            set => _inventory.Capacity = value;
         }
 
-        public bool isFull => _inventory.isFull;
+        public bool isFull => _inventory.IsFull;
 
         public IInventoryItem GetItem(Type itemType) => _inventory.GetItem(itemType);
         public IInventoryItem[] GetAllItems() => _inventory.GetAllItems();
@@ -34,7 +40,7 @@ namespace TheRavine.Inventory
         public bool TryToAdd(object sender, IInventoryItem item)
         {
             var initialAmount = item.state.amount;
-            var success = _inventory.TryToAdd(sender, item);
+            var success = _inventory.TryToAdd(item);
 
             if (success)
             {
@@ -50,7 +56,7 @@ namespace TheRavine.Inventory
         public bool TryToAddSlot(object sender, InventorySlot slot, IInventoryItem item)
         {
             var initialAmount = item.state.amount;
-            var success = _inventory.TryToAddSlot(sender, slot, item);
+            var success = _inventory.TryToAddSlot(slot, item);
 
             if (success)
             {
@@ -63,9 +69,17 @@ namespace TheRavine.Inventory
             return success;
         }
 
+        public void TransitFromSlotToSlot(object sender, InventorySlot fromSlot, InventorySlot toSlot)
+        {
+            _inventory.TransitFromSlotToSlot(fromSlot, toSlot);
+
+            OnInventoryStateChangedEvent?.Invoke(sender);
+            OnInventoryStateChangedEventOnce?.Invoke(sender);
+        }
+
         public bool Remove(object sender, Type itemType, int amount = 1)
         {
-            var success = _inventory.Remove(sender, itemType, amount);
+            var success = _inventory.Remove(itemType, amount);
 
             if (success)
             {

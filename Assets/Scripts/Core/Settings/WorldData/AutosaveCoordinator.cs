@@ -87,7 +87,7 @@ namespace TheRavine.Base
                         var success = await _worldRegistry.SaveCurrentWorldAsync();
                         if (success)
                         {
-                            _logger.LogInfo("[Autosave] Мир сохранён");
+                            _logger.LogInfo("[Autosave] Запущено автосохранение");
                         }
                     }
                 }

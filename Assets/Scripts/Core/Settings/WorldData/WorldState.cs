@@ -5,7 +5,7 @@ using MemoryPack;
 namespace TheRavine.Base
 {
     [MemoryPackable]
-    public partial struct WorldState : IEquatable<WorldState>
+    public partial class WorldState : IEquatable<WorldState>
     {
         public int seed;
         public Vec3 playerPosition;
@@ -46,7 +46,7 @@ namespace TheRavine.Base
             public static implicit operator Vec3(Vector3 vector3) => new(vector3);
         }
 
-        public readonly bool IsDefault() =>
+        public bool IsDefault() =>
             seed == 0 &&
             cycleCount == 0 &&
             startTime == 0f &&
@@ -57,7 +57,7 @@ namespace TheRavine.Base
             playerPosition.z == 0f &&
             (inventory == null || inventory.Length == 0);
 
-        public readonly bool Equals(WorldState other)
+        public bool Equals(WorldState other)
         {
             return seed == other.seed &&
                 cycleCount == other.cycleCount;

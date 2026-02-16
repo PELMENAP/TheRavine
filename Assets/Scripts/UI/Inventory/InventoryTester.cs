@@ -10,21 +10,21 @@ namespace TheRavine.Inventory
     public class InventoryTester
     {
         private readonly UIInventorySlot[] uiSlots;
-        private EventDrivenInventoryProxy inventory;
+        private EventDrivenInventoryProxy inventoryProxy;
         private readonly InfoManager infoManager;
 
-        public InventoryTester(UIInventorySlot[] uiSlots, InfoManager infoManager, EventDrivenInventoryProxy proxy)
+        public InventoryTester(UIInventorySlot[] uiSlots, InfoManager infoManager, EventDrivenInventoryProxy inventoryProxy)
         {
             this.uiSlots = uiSlots;
             this.infoManager = infoManager;
 
-            this.inventory = proxy;
-            inventory.OnInventoryStateChangedEvent += OnInventoryStateChanged;
+            this.inventoryProxy = inventoryProxy;
+            inventoryProxy.OnInventoryStateChangedEvent += OnInventoryStateChanged;
         }
 
         private void FillRandomItems(List<string> titles, int itemsPerTitle)
         {
-            InventorySlot[] inventorySlots = inventory.GetAllSlots();
+            InventorySlot[] inventorySlots = inventoryProxy.GetAllSlots();
             var freeSlots = inventorySlots
                 .AsValueEnumerable()
                 .Select((slot, idx) => slot.isEmpty ? idx : -1)
@@ -43,7 +43,7 @@ namespace TheRavine.Inventory
 
                     if (item != null)
                     {
-                        inventory.TryToAddSlot(this, inventorySlots[slotIdx], item);
+                        inventoryProxy.TryToAddSlot(this, inventorySlots[slotIdx], item);
                     }
                 }
             }
@@ -89,12 +89,11 @@ namespace TheRavine.Inventory
                 inventorySlots.Add(slot);   
             }
 
-            InventoryModel inventoryModel = new(inventorySlots);
-            inventory = new(inventoryModel);
+            inventoryProxy = new(inventorySlots);
             RefreshAllSlots();
         }
 
-        public SerializableInventorySlot[] Serialize() => inventory.GetSerializable();
+        public SerializableInventorySlot[] Serialize() => inventoryProxy.GetSerializable();
 
         private void OnInventoryStateChanged(object sender)
         {
@@ -102,7 +101,7 @@ namespace TheRavine.Inventory
         }
         private void RefreshAllSlots()
         {
-            var slots = inventory.GetAllSlots();
+            var slots = inventoryProxy.GetAllSlots();
             for (int i = 0; i < slots.Length; i++)
             {
                 uiSlots[i].SetSlot(slots[i], i);
@@ -112,7 +111,7 @@ namespace TheRavine.Inventory
 
         public void Dispose()
         {
-            inventory.OnInventoryStateChangedEvent -= OnInventoryStateChanged;
+            inventoryProxy.OnInventoryStateChangedEvent -= OnInventoryStateChanged;
         }
     }
 }
