@@ -71,22 +71,27 @@ namespace TheRavine.Inventory
 
         public void SetDataFromSerializableList(SerializableInventorySlot[] data)
         {
-            List<InventorySlot> inventorySlots = new();
+            if (data == null) 
+            {
+                return;
+            }
 
-            if (data == null) return;
+            var inventorySlots = new List<InventorySlot>(data.Length);
 
-            for (int i = 0; i < data.Length; i++)
+            foreach (var slotData in data)
             {
                 var slot = new InventorySlot();
 
-                if (data[i].title != "empty")
+                if (!slotData.isEmpty && !string.IsNullOrEmpty(slotData.title) && slotData.amount > 0)
                 {
-                    var item = infoManager.GetInventoryItem(data[i].title, data[i].amount);
+                    var item = infoManager.GetInventoryItem(slotData.title, slotData.amount);
                     if (item != null)
+                    {
                         slot.SetItem(item);
+                    }
                 }
 
-                inventorySlots.Add(slot);   
+                inventorySlots.Add(slot);
             }
 
             inventoryProxy = new(inventorySlots);
