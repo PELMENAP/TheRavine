@@ -34,31 +34,29 @@ namespace TheRavine.Inventory
             eventDrivenInventoryProxy.HasItem(infoManager.GetItemType(info));
 
         public void SetUp(ISetAble.Callback callback)
-        {
-            ServiceLocator.Services.Register(this);
-            
+        {            
             logger = ServiceLocator.GetService<RavineLogger>();
             generator = ServiceLocator.GetService<MapGenerator>();
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
             worldRegistry = ServiceLocator.GetService<WorldRegistry>();
-
-            var playerData = ServiceLocator.GetService<PlayerModelView>().PlayerEntity;
-            var gameSettings = ServiceLocator.GetService<GlobalSettingsController>().Settings.CurrentValue;
 
             var uiSlot = GetComponentsInChildren<UIInventorySlot>();
             var slotList = new List<UIInventorySlot>();
             slotList.AddRange(uiSlot);
             slotList.AddRange(activeCells);
 
-            InventoryModel inventoryModel = new InventoryModel(slotList.Count);
-            eventDrivenInventoryProxy = new EventDrivenInventoryProxy(inventoryModel);
+            eventDrivenInventoryProxy = new EventDrivenInventoryProxy(slotList.Count);
+            ServiceLocator.Services.Register(eventDrivenInventoryProxy);
 
             infoManager = new InfoManager(dataItems);
             tester = new InventoryTester(slotList.ToArray(), infoManager, eventDrivenInventoryProxy);
-            uIDragger.SetUp(inventoryModel);
-            craftService.SetUp(infoManager, inventoryModel);
+            uIDragger.SetUp(eventDrivenInventoryProxy);
+            craftService.SetUp(infoManager, eventDrivenInventoryProxy);
 
+            var playerData = ServiceLocator.GetService<PlayerModelView>().PlayerEntity;
+            var gameSettings = ServiceLocator.GetService<GlobalSettingsController>().Settings.CurrentValue;
             inventoryInputHandler.RegisterInput(playerData, gameSettings);
+
             eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce += OnInventoryStateChanged;
             
             LoadInventoryDataAsync().Forget();
@@ -172,12 +170,10 @@ namespace TheRavine.Inventory
         private void SaveInventory()
         {
             try
-            {
-                var serializedInventory = tester.Serialize();
-                
+            {   
                 worldRegistry.UpdateState(state =>
                 {
-                    state.inventory = serializedInventory;
+                    state.inventory = tester.Serialize();
                 });
             }
             catch (Exception ex)
@@ -190,6 +186,8 @@ namespace TheRavine.Inventory
         {
             uIDragger.BreakUp();
             craftService.BreakUp();
+
+            eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce -= OnInventoryStateChanged;
             eventDrivenInventoryProxy.Dispose();
             inventoryInputHandler.UnregisterInput();
 

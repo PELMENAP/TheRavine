@@ -301,14 +301,9 @@ namespace TheRavine.Base
             {
                 currentState.lastSaveTime = DateTimeOffset.Now.ToUnixTimeSeconds();
 
-
-                currentState.cycleCount++; // это работает
-                logger.LogInfo(currentState.cycleCount.ToString());
-
                 await storage.SaveFullAsync(currentWorldId.Value, currentState, currentConfig);
                 hasUnsavedChanges = false;
-
-                logger.LogInfo($"[WorldRegistry] Мир '{currentWorldId.Value}' сохранён");
+                
                 return true;
             }
             catch (Exception ex)

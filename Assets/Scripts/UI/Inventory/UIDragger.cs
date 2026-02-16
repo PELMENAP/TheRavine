@@ -23,12 +23,12 @@ namespace TheRavine.Inventory
         private EventSystem eventSystem;
         private Mouse mouse;
         private bool isDragging = false;
-        private readonly List<RaycastResult> results = new();
+        private readonly List<RaycastResult> results = new(10);
         private PointerEventData eventData;
         private UIInventorySlot lastSlot;
         private GlobalSettings globalSettings;
-        private InventoryModel inventoryModel;
-        public void SetUp(InventoryModel inventoryModel)
+        private EventDrivenInventoryProxy inventoryModel;
+        public void SetUp(EventDrivenInventoryProxy inventoryModel)
         {
             this.inventoryModel = inventoryModel;
             globalSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
@@ -53,6 +53,7 @@ namespace TheRavine.Inventory
             if (mouse.leftButton.wasReleasedThisFrame && lastSlot != null)
             {
                 isDragging = false;
+                results.Clear();
                 eventData.position = mouse.position.ReadValue();
                 eventSystem.RaycastAll(eventData, results);
                 for (int i = 0; i < results.Count; i++)
@@ -97,6 +98,7 @@ namespace TheRavine.Inventory
                 switch (touch.phase)
                 {
                     case TouchPhase.Began:
+                        results.Clear();
                         eventData.position = touch.screenPosition;
                         eventSystem.RaycastAll(eventData, results);
                         for (int i = 0; i < results.Count; i++)

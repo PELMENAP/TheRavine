@@ -1,6 +1,7 @@
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using System;
+using System.Threading;
 
 using TheRavine.InventoryElements;
 
@@ -15,14 +16,14 @@ namespace TheRavine.Inventory
         [SerializeField] private string[] names = new string[CellsCount], craftIngredients = new string[CellsCount];
         [SerializeField] private int[] currentCount = new int[CellsCount], ingredientsCount = new int[CellsCount];
         [SerializeField] private UIInventorySlot[] craftCells;
-        [SerializeField] private UIInventorySlot result;
+        [SerializeField] private UIInventorySlot resultCell;
         private InventoryItemInfo resultItemInfo;
         private int resultCount, craftDelay;
         private bool cancel, inProcess;
-        private System.Threading.CancellationTokenSource _cts;
-        private InventoryModel inventory;
+        private CancellationTokenSource _cts;
+        private EventDrivenInventoryProxy inventory;
         private InfoManager infoManager;
-        public void SetUp(InfoManager infoManager, InventoryModel inventoryModel)
+        public void SetUp(InfoManager infoManager, EventDrivenInventoryProxy inventoryModel)
         {
             cancel = false;
             _cts = new();
@@ -34,7 +35,8 @@ namespace TheRavine.Inventory
         }
         public bool OnInventoryCraftCheck(object sender)
         {
-            if(!result.slot.isEmpty) return false;
+            if(!resultCell.slot.isEmpty) return false;
+
             for (int i = 0; i < CellsCount; i++)
             {
                 names[i] = craftCells[i].slot.isEmpty ? "#" : craftCells[i]._uiInventoryItem.item.info.id;
@@ -88,7 +90,8 @@ namespace TheRavine.Inventory
 
             return isPossible;
         }
-        public void OnCraftAction(){
+        public void OnCraftAction()
+        {
             if(cancel) return;
             if(OnInventoryCraftCheck(this)) CraftProcess().Forget();
             else craftPresenter.CraftPossible(false);
@@ -118,7 +121,7 @@ namespace TheRavine.Inventory
 
         public void CraftThing()
         {
-            inventory.TryToAdd(this, infoManager.GetInventoryItemByInfo(resultItemInfo.id, resultItemInfo, resultCount));
+            inventory.TryToAddSlot(this, resultCell.slot, infoManager.GetInventoryItemByInfo(resultItemInfo.id, resultItemInfo, resultCount));
             
             if(cancel) return;
             OnInventoryCraftCheck(this);
