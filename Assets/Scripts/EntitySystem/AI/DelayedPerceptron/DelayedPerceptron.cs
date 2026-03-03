@@ -1,246 +1,176 @@
 using System;
-using System.Collections.Generic;
-
 using UnityEngine;
-
 using ZLinq;
-using R3;
 using TheRavine.Extensions;
 
 public partial class DelayedPerceptron
 {
     private float[][][] _weights;
     private float[][]   _biases;
-    private float[][]   _activations;
 
-    private readonly List<DelayedItem> _delayedList = new();
-    private readonly int DelaySteps;
-
-    private GeneticParameters _params;
-    
-    private int _trainingSteps = 0;
-    private float _averageEntropy = 0f;
-    
-    private const float w1 = 0.7f, w2 = 0.2f, w3 = 0.1f;
-    private static readonly float[] w = { w1, w2, w3 };
+    private static readonly float[] w             = { 0.7f, 0.2f, 0.1f };
     private static readonly float[] layerStrength = { 0f, 2f, 5f, 10f, 30f };
 
-    public DelayedPerceptron(int inputSize, int h1, int h2, int h3, int outputSize, int delaySteps = 5)
+    public int[] LayerSizes { get; private set; }
+
+    public DelayedPerceptron(int inputSize, int h1, int h2, int h3, int outputSize)
     {
-        DelaySteps = delaySteps;
-        _params = GeneticParameters.Default;
-        
-        var layerSizes = new[] { inputSize, h1, h2, h3, outputSize };
-        InitializeNetworkStructure(layerSizes);
+        LayerSizes = new[] { inputSize, h1, h2, h3, outputSize };
+        InitWeightsAndBiases(LayerSizes);
     }
 
     public DelayedPerceptron(DelayedPerceptron parent)
     {
-        DelaySteps = parent.DelaySteps;
-        
-        _params = parent._params.GetMutatedGeneticParameters();
-        int[] layerSizes = parent._activations.AsValueEnumerable().Select(a => a.Length).ToArray();
-        InitializeNetworkStructure(layerSizes);
-        
-        InheritWeightsAndBiases(parent, layerSizes);
+        LayerSizes = parent.LayerSizes;
+        CloneWeights(parent);
+        MutateWeights(parent._biases[0].Length > 0
+            ? parent.MakeTempContext().Params
+            : GeneticParameters.Default);
     }
 
-    private void InitializeNetworkStructure(int[] layerSizes)
+    public PerceptronContext CreateContext(GeneticParameters? p = null)
+        => new PerceptronContext(LayerSizes, p ?? GeneticParameters.Default);
+
+    // Temp context используется только внутри ctor мутации — не хранить
+    private PerceptronContext MakeTempContext() => CreateContext();
+
+
+    public int Predict(float[] input, PerceptronContext ctx, int delaySteps, float epsilon = 0.1f)
     {
-        _weights = new float[layerSizes.Length - 1][][];
-        _biases = new float[layerSizes.Length - 1][];
-        _activations = new float[layerSizes.Length][];
+        ForwardPass(input, ctx);
 
-        for (int i = 0; i < layerSizes.Length; i++)
-            _activations[i] = new float[layerSizes[i]];
-
-        for (int L = 0; L < _weights.Length; L++)
-        {
-            _weights[L] = InitWeights(layerSizes[L + 1], layerSizes[L]);
-            _biases[L] = InitBiases(layerSizes[L + 1]);
-        }
-    }
-
-    private void InheritWeightsAndBiases(DelayedPerceptron parent, int[] layerSizes)
-    {
-        for (int L = 0; L < _weights.Length; L++)
-        {
-            int neurons = layerSizes[L + 1];
-            int inputs = layerSizes[L];
-
-            _weights[L] = new float[neurons][];
-            _biases[L] = new float[neurons];
-
-            float strength = layerStrength[L + 1];
-            
-            for (int n = 0; n < neurons; n++)
-            {
-                _weights[L][n] = new float[inputs];
-                
-                if (L <= 1) // Первые слои наследуются без мутации
-                {
-                    Array.Copy(parent._weights[L][n], _weights[L][n], inputs);
-                    _biases[L][n] = parent._biases[L][n];
-                }
-                else // Глубокие слои мутируют
-                {
-                    for (int i = 0; i < inputs; i++)
-                    {
-                        _weights[L][n][i] = parent._weights[L][n][i];
-                        
-                        if (RavineRandom.RangeFloat() < _params.MutationChance)
-                            _weights[L][n][i] += RavineRandom.RangeFloat(-_params.MutationStrength, _params.MutationStrength) * _params.BaseDelta * strength;
-                    }
-                    
-                    _biases[L][n] = parent._biases[L][n];
-                    if (RavineRandom.RangeFloat() < _params.MutationChance)
-                        _biases[L][n] += RavineRandom.RangeFloat(-_params.MutationStrength, _params.MutationStrength) * _params.BaseDelta * strength;
-                }
-            }
-        }
-        if (RavineRandom.RangeFloat() < _params.MutationChance)
-        {
-            ApplyGlobalMutation();
-        }
-    }
-
-    private void ApplyGlobalMutation()
-    {
-        for (int L = 0; L < _weights.Length; L++)
-        {
-            float strength = layerStrength[L + 1];
-            for (int n = 0; n < _weights[L].Length; n++)
-            {
-                if (RavineRandom.RangeFloat() < _params.MutationChance)
-                {
-                    for (int i = 0; i < _weights[L][n].Length; i++)
-                        _weights[L][n][i] += RavineRandom.RangeFloat(-_params.MutationStrength, _params.MutationStrength) * _params.BaseDelta * strength;
-                }
-
-                if (RavineRandom.RangeFloat() < _params.MutationChance)
-                    _biases[L][n] += RavineRandom.RangeFloat(-_params.MutationStrength, _params.MutationStrength) * _params.BaseDelta * strength * 2f;
-            }
-        }
-    }
-
-    public int Predict(float[] input, float epsilon = 0.1f)
-    {
-        ForwardPass(input);
-
-        int last = _activations.Length - 1;
+        int last = ctx.Activations.Length - 1;
         int pred;
         bool isExploration = false;
-        float adaptiveEpsilon = epsilon * (1f + Math.Max(0f, 1.5f - _averageEntropy));
+
+        float adaptiveEpsilon = epsilon * (1f + Math.Max(0f, 1.5f - ctx.AverageEntropy));
 
         if (RavineRandom.RangeFloat() < adaptiveEpsilon)
         {
-            pred = RavineRandom.RangeInt(0, _activations[last].Length);
+            pred          = RavineRandom.RangeInt(0, ctx.Activations[last].Length);
             isExploration = true;
         }
         else
         {
-            pred = ArgMax(_activations[last]);
+            pred = ArgMax(ctx.Activations[last]);
         }
 
-        float currentEntropy = CalculateOutputEntropy(_activations[last]);
-        _averageEntropy = _averageEntropy * (1f - _params.EntropyAlpha) + currentEntropy * _params.EntropyAlpha;
+        float entropy = CalculateOutputEntropy(ctx.Activations[last]);
+        ctx.AverageEntropy = ctx.AverageEntropy * (1f - ctx.Params.EntropyAlpha)
+                           + entropy * ctx.Params.EntropyAlpha;
 
-        var delayedItem = new DelayedItem(input, pred);
-        if (isExploration)
-            delayedItem.Evaluation += _params.ExplorationPrice;
+        var item = new DelayedItem(CopyInput(input), pred);
+        if (isExploration) item.Evaluation += ctx.Params.ExplorationPrice;
+        ctx.DelayedList.Add(item);
 
-        _delayedList.Add(delayedItem);
-
-        if (_delayedList.Count > DelaySteps)
+        if (ctx.DelayedList.Count > delaySteps)
         {
-            var item = _delayedList[0];
-            _delayedList.RemoveAt(0);
+            var delayed = ctx.DelayedList[0];
+            ctx.DelayedList.RemoveAt(0);
 
-            const float threshold = 0.05f;
-            if (Math.Abs(item.Evaluation - _params.DefaultEvaluation) > threshold)
+            if (Math.Abs(delayed.Evaluation - ctx.Params.DefaultEvaluation) > 0.05f)
             {
-                if (item.Evaluation > _params.DefaultEvaluation)
-                    Train(item.Input, item.Predicted, item.Evaluation);
-                else
-                    Train(item.Input, item.Predicted, 1f - item.Evaluation);
+                float reward = delayed.Evaluation > ctx.Params.DefaultEvaluation
+                    ? delayed.Evaluation
+                    : 1f - delayed.Evaluation;
+                Train(delayed.Input, delayed.Predicted, reward, ctx);
             }
         }
 
         return pred;
     }
 
-    public void Train(float[] input, int predictedIndex, float reward)
+    // Hogwild: обновляет общие _weights/_biases через контекст конкретной сущности
+    public void Train(float[] input, int predictedIndex, float reward, PerceptronContext ctx)
     {
-        _trainingSteps++;
-        
-        float learningRateSchedule = GetLearningRateSchedule();
-        float entropyBoost = Math.Min(2f, 1f + (1.5f - _averageEntropy) * 0.3f);
-        float lr = _params.BaseLearningRate * Math.Min(reward, 1.2f) * learningRateSchedule * entropyBoost;
+        ctx.TrainingSteps++;
 
-        // Добавление шума к входным данным
+        float lrSchedule  = (float)Math.Exp(-ctx.TrainingSteps * 0.0002f);
+        float entropyBoost = Math.Min(2f, 1f + (1.5f - ctx.AverageEntropy) * 0.3f);
+        float lr           = ctx.Params.BaseLearningRate
+                           * Math.Min(reward, 1.2f)
+                           * lrSchedule * entropyBoost;
+
         float[] noisedInput = new float[input.Length];
         for (int i = 0; i < input.Length; i++)
-        {
-            noisedInput[i] = input[i] + RavineRandom.RangeFloat(-_params.GaussianNoise, _params.GaussianNoise);
-        }
+            noisedInput[i] = input[i] + RavineRandom.RangeFloat(
+                -ctx.Params.GaussianNoise, ctx.Params.GaussianNoise);
 
-        ForwardPass(noisedInput);
+        ForwardPass(noisedInput, ctx);
 
-        int last = _activations.Length - 1;
-        int outCount = _activations[last].Length;
-        var outputErrors = new float[outCount];
+        int     last     = ctx.Activations.Length - 1;
+        int     outCount = ctx.Activations[last].Length;
+        float[] outErr   = new float[outCount];
 
-        float positiveTarget = 1f - _params.LabelSmoothing;
-        float negativeTarget = _params.LabelSmoothing / (outCount - 1);
+        float pos = 1f - ctx.Params.LabelSmoothing;
+        float neg = ctx.Params.LabelSmoothing / (outCount - 1);
 
-        // Вычисление ошибок выходного слоя
         for (int i = 0; i < outCount; i++)
         {
-            float target = (i == predictedIndex) ? positiveTarget : negativeTarget;
-            float activation = _activations[last][i];
-            
-            float mainError = (target - activation) / (activation * (1f - activation) + 1e-8f);
-            float entropyPenalty = _params.EntropyRegularization * (0.5f - activation);
-            
-            outputErrors[i] = mainError + entropyPenalty;
+            float target = (i == predictedIndex) ? pos : neg;
+            float act    = ctx.Activations[last][i];
+            outErr[i] = (target - act) / (act * (1f - act) + 1e-8f)
+                      + ctx.Params.EntropyRegularization * (0.5f - act);
         }
 
-        // Обратное распространение
-        float[] currentErrors = outputErrors; // size = layerSizes[last] ✅
-
-        for (int layer = _weights.Length - 1; layer >= 1; layer--)
+        float[] currentErrors = outErr;
+        for (int layer = _weights.Length - 1; layer >= 0; layer--)
         {
-            float[] prevActs = _activations[layer]; // входы данного слоя весов
+            float[] prevActs = ctx.Activations[layer];
+            BackpropagateLayer(layer, currentErrors, prevActs, lr, ctx);
 
-            // 1. Обновляем веса — currentErrors подходит по размеру
-            BackpropagateLayer(layer, currentErrors, prevActs, lr);
-
-            // 2. Распространяем ошибку назад ПОСЛЕ обновления
-            // ComputeErrors вернёт массив size = _activations[layer].Length
-            //   = layerSizes[layer] = _weights[layer - 1].Length ✅
-            currentErrors = ComputeErrors(_weights[layer], currentErrors, _activations[layer]);
+            if (layer > 0)
+                currentErrors = ComputeErrors(_weights[layer], currentErrors, ctx.Activations[layer]);
         }
     }
 
-    private void BackpropagateLayer(int layerIdx, float[] errors, float[] prevActivations, float lr)
+    private void ForwardPass(float[] input, PerceptronContext ctx)
     {
+        Array.Copy(input, ctx.Activations[0], input.Length);
+        for (int l = 0; l < _weights.Length; l++)
+            ComputeLayer(l, ctx);
+    }
+
+    private void ComputeLayer(int layer, PerceptronContext ctx)
+    {
+        float[] inp    = ctx.Activations[layer];
+        float[] output = ctx.Activations[layer + 1];
+        bool    isLast = layer == _weights.Length - 1;
+
+        for (int n = 0; n < output.Length; n++)
+        {
+            float sum = _biases[layer][n];
+            for (int i = 0; i < inp.Length; i++)
+                sum += _weights[layer][n][i] * inp[i];
+            output[n] = isLast ? sum : LeakyReLU(sum);
+        }
+
+        if (isLast)
+        {
+            var soft = SoftmaxWithTemperature(output, ctx.Params.SoftmaxTemperature);
+            Array.Copy(soft, output, output.Length);
+        }
+    }
+
+    private void BackpropagateLayer(
+        int layerIdx, float[] errors, float[] prevActs, float lr, PerceptronContext ctx)
+    {
+        float adaptiveLambda = ctx.Params.Lambda * (2f - ctx.AverageEntropy);
+        float maxGrad        = ctx.Params.MaxGradientNorm;
+
         for (int i = 0; i < errors.Length; i++)
         {
-            for (int j = 0; j < prevActivations.Length; j++)
+            for (int j = 0; j < prevActs.Length; j++)
             {
-                float gradient = lr * errors[i] * prevActivations[j];
-                gradient = Mathf.Clamp(gradient, -_params.MaxGradientNorm, _params.MaxGradientNorm);
-                float adaptiveLambda = _params.Lambda * (2.0f - _averageEntropy);
-                
-                _weights[layerIdx][i][j] += gradient - adaptiveLambda * _weights[layerIdx][i][j];
+                float g = Mathf.Clamp(lr * errors[i] * prevActs[j], -maxGrad, maxGrad);
+                _weights[layerIdx][i][j] += g - adaptiveLambda * _weights[layerIdx][i][j];
             }
-            
-            float biasGradient = Mathf.Clamp(lr * errors[i], -_params.MaxGradientNorm, _params.MaxGradientNorm);
-            _biases[layerIdx][i] += biasGradient;
+            _biases[layerIdx][i] += Mathf.Clamp(lr * errors[i], -maxGrad, maxGrad);
         }
     }
 
-    private float[] ComputeErrors(float[][] nextWeights, float[] nextErrors, float[] activations)
+    private static float[] ComputeErrors(
+        float[][] nextWeights, float[] nextErrors, float[] activations)
     {
         var errors = new float[activations.Length];
         for (int i = 0; i < activations.Length; i++)
@@ -253,67 +183,83 @@ public partial class DelayedPerceptron
         return errors;
     }
 
-    private void ForwardPass(float[] input)
+    private void InitWeightsAndBiases(int[] layerSizes)
     {
-        Array.Copy(input, _activations[0], input.Length);
-        for (int l = 0; l < _weights.Length; l++)
-            ComputeLayer(l);
-    }
+        int L    = layerSizes.Length - 1;
+        _weights = new float[L][][];
+        _biases  = new float[L][];
 
-    private void ComputeLayer(int layer)
-    {
-        var input  = _activations[layer];
-        var output = _activations[layer + 1];
-
-        for (int n = 0; n < output.Length; n++)
+        for (int l = 0; l < L; l++)
         {
-            float sum = _biases[layer][n];
-            for (int i = 0; i < input.Length; i++)
-                sum += _weights[layer][n][i] * input[i];
-            output[n] = (layer == _weights.Length - 1) ? sum : LeakyReLU(sum);
-        }
-        
-        if (layer == _weights.Length - 1)
-        {
-            var soft = SoftmaxWithTemperature(output, _params.SoftmaxTemperature);
-            Array.Copy(soft, output, output.Length);
+            _weights[l] = InitWeights(layerSizes[l + 1], layerSizes[l]);
+            _biases[l]  = InitBiases(layerSizes[l + 1]);
         }
     }
 
-    private float GetLearningRateSchedule()
+    private void CloneWeights(DelayedPerceptron src)
     {
-        return (float)Math.Exp(-_trainingSteps * 0.0002f);
+        int L    = src._weights.Length;
+        _weights = new float[L][][];
+        _biases  = new float[L][];
+
+        for (int l = 0; l < L; l++)
+        {
+            _biases[l] = (float[])src._biases[l].Clone();
+            _weights[l] = new float[src._weights[l].Length][];
+            for (int n = 0; n < src._weights[l].Length; n++)
+                _weights[l][n] = (float[])src._weights[l][n].Clone();
+        }
     }
 
-    private float CalculateOutputEntropy(float[] outputs)
+    private void MutateWeights(GeneticParameters p)
     {
-        float entropy = 0f;
-        for (int i = 0; i < outputs.Length; i++)
+        for (int L = 0; L < _weights.Length; L++)
         {
-            if (outputs[i] > 1e-8f)
-                entropy -= outputs[i] * (float)Math.Log(outputs[i]);
+            float strength = L + 1 < layerStrength.Length ? layerStrength[L + 1] : 1f;
+            bool isEarlyLayer = L <= 1;
+
+            for (int n = 0; n < _weights[L].Length; n++)
+            {
+                for (int i = 0; i < _weights[L][n].Length; i++)
+                {
+                    if (!isEarlyLayer && RavineRandom.RangeFloat() < p.MutationChance)
+                        _weights[L][n][i] += RavineRandom.RangeFloat(-p.MutationStrength, p.MutationStrength)
+                                           * p.BaseDelta * strength;
+                }
+
+                if (!isEarlyLayer && RavineRandom.RangeFloat() < p.MutationChance)
+                    _biases[L][n] += RavineRandom.RangeFloat(-p.MutationStrength, p.MutationStrength)
+                                   * p.BaseDelta * strength;
+            }
         }
-        return entropy;
     }
 
-    private static float[] SoftmaxWithTemperature(float[] layerOutputs, float temperature)
+    private static float[][] InitWeights(int neurons, int inputs)
     {
-        float[] expValues = new float[layerOutputs.Length];
-        float sumExp = 0f;
+        var weights = new float[neurons][];
+        float scale = (float)Math.Sqrt(2.0 / (neurons + inputs));
 
-        float max = layerOutputs.AsValueEnumerable().Max();
-        for (int i = 0; i < layerOutputs.Length; i++)
+        for (int i = 0; i < neurons; i++)
         {
-            expValues[i] = (float)Math.Exp((layerOutputs[i] - max) / temperature);
-            sumExp += expValues[i];
+            weights[i] = new float[inputs];
+            for (int j = 0; j < inputs; j++)
+            {
+                float u1 = RavineRandom.RangeFloat(0.0001f, 0.9999f);
+                float u2 = RavineRandom.RangeFloat(0.0001f, 0.9999f);
+                float g  = (float)(Math.Sqrt(-2 * Math.Log(u1)) * Math.Cos(2 * Math.PI * u2));
+                weights[i][j] = g * scale;
+            }
         }
+        return weights;
+    }
 
-        for (int i = 0; i < expValues.Length; i++)
-        {
-            expValues[i] /= sumExp;
-        }
-
-        return expValues;
+    private static float[] InitBiases(int neurons)
+    {
+        var b = new float[neurons];
+        for (int i = 0; i < neurons; i++)
+            b[i] = RavineRandom.RangeFloat(-GeneticParameters.Default.InitBiasesValues,
+                                            GeneticParameters.Default.InitBiasesValues);
+        return b;
     }
 
     private int ArgMax(float[] arr)
@@ -325,63 +271,42 @@ public partial class DelayedPerceptron
             .Take(3)
             .ToArray();
 
-        float pick = RavineRandom.RangeFloat();
-        float cum = 0f;
+        float pick = RavineRandom.RangeFloat(), cum = 0f;
         for (int k = 0; k < 3; k++)
         {
             cum += w[k];
-            if (pick <= cum)
-                return pairs[k].idx;
+            if (pick <= cum) return pairs[k].idx;
         }
-
         return pairs[0].idx;
     }
 
-    private float[][] InitWeights(int neurons, int inputs)
+    private static float CalculateOutputEntropy(float[] outputs)
     {
-        var weights = new float[neurons][];
-        float scale = (float)Math.Sqrt(2.0 / (neurons + inputs));
-        
-        for (int i = 0; i < neurons; i++)
-        {
-            weights[i] = new float[inputs];
-            for (int j = 0; j < inputs; j++)
-            {
-                float u1 = RavineRandom.RangeFloat(0.0001f, 0.9999f);
-                float u2 = RavineRandom.RangeFloat(0.0001f, 0.9999f);
-                float gaussian = (float)(Math.Sqrt(-2 * Math.Log(u1)) * Math.Cos(2 * Math.PI * u2));
-                weights[i][j] = gaussian * scale;
-            }
-        }
-        return weights;
+        float e = 0f;
+        for (int i = 0; i < outputs.Length; i++)
+            if (outputs[i] > 1e-8f) e -= outputs[i] * (float)Math.Log(outputs[i]);
+        return e;
     }
 
-    private float[] InitBiases(int neurons)
+    private static float[] SoftmaxWithTemperature(float[] vals, float temp)
     {
-        var biases = new float[neurons];
-        for (int i = 0; i < neurons; i++)
-            biases[i] = RavineRandom.RangeFloat(-_params.InitBiasesValues, _params.InitBiasesValues);
-        return biases;
+        float max = vals.AsValueEnumerable().Max();
+        var   exp = new float[vals.Length];
+        float sum = 0f;
+        for (int i = 0; i < vals.Length; i++) { exp[i] = (float)Math.Exp((vals[i] - max) / temp); sum += exp[i]; }
+        for (int i = 0; i < exp.Length; i++)  exp[i] /= sum;
+        return exp;
     }
 
-    public static float LeakyReLU(float x, float alpha = 0.01f)
+    private static float[] CopyInput(float[] src)
     {
-        return x >= 0 ? x : (alpha * x);
+        var copy = new float[src.Length];
+        Array.Copy(src, copy, src.Length);
+        return copy;
     }
 
-    public static float LeakyReLUPrime(float x, float alpha = 0.01f)
-    {
-        return x >= 0 ? 1 : alpha;
-    }
-    public GeneticParameters GetGeneticParameters() => _params;
-    public float GetFitness() => _averageEntropy + (1f / Math.Max(_trainingSteps, 1));
-    public float AverageEntropy => _averageEntropy;
-    public int TrainingSteps => _trainingSteps;
-    public List<DelayedItem> DelayedList => _delayedList;
-    
-    public void ResetTrainingStats()
-    {
-        _trainingSteps = 0;
-        _averageEntropy = 0f;
-    }
+    public static float LeakyReLU(float x, float alpha = 0.01f)      => x >= 0 ? x : alpha * x;
+    public static float LeakyReLUPrime(float x, float alpha = 0.01f) => x >= 0 ? 1f : alpha;
+
+    public GeneticParameters GetGeneticParameters(PerceptronContext ctx) => ctx.Params;
 }

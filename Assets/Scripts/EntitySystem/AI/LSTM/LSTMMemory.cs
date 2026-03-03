@@ -2,31 +2,19 @@ using System;
 using UnityEngine;
 using TheRavine.Extensions;
 
-
 public partial class LSTMMemory
 {
     private readonly int inputSize;
     private readonly int hiddenSize;
 
-    private readonly float[] h;
-    private readonly float[] c;
+    // Weights only — state lives in LSTMContext
     private readonly float[,] Wf, Wi, Wo, Wc;
-    private readonly float[] bf, bi, bo, bc;
-
-    private readonly float[] xh; 
-    private readonly float[] f, i, o;
-    private readonly float[] cTilde;
-    private readonly float[] tmp;
-
-    private readonly float[] dh, dc;
+    private readonly float[]  bf, bi, bo, bc;
 
     public LSTMMemory(int inputSize, int hiddenSize)
     {
-        this.inputSize = inputSize;
+        this.inputSize  = inputSize;
         this.hiddenSize = hiddenSize;
-
-        h = new float[hiddenSize];
-        c = new float[hiddenSize];
 
         Wf = InitWeights(hiddenSize, inputSize + hiddenSize);
         Wi = InitWeights(hiddenSize, inputSize + hiddenSize);
@@ -37,18 +25,70 @@ public partial class LSTMMemory
         bi = new float[hiddenSize];
         bo = new float[hiddenSize];
         bc = new float[hiddenSize];
-
-        xh = new float[inputSize + hiddenSize];
-        f = new float[hiddenSize];
-        i = new float[hiddenSize];
-        o = new float[hiddenSize];
-        cTilde = new float[hiddenSize];
-        tmp = new float[hiddenSize];
     }
 
-    private float[,] InitWeights(int rows, int cols)
+    public LSTMMemory(LSTMMemory src) : this(src.inputSize, src.hiddenSize)
     {
-        var w = new float[rows, cols];
+        Array.Copy(src.bf, bf, hiddenSize); Array.Copy(src.bi, bi, hiddenSize);
+        Array.Copy(src.bo, bo, hiddenSize); Array.Copy(src.bc, bc, hiddenSize);
+        CopyMatrix(src.Wf, Wf); CopyMatrix(src.Wi, Wi);
+        CopyMatrix(src.Wo, Wo); CopyMatrix(src.Wc, Wc);
+    }
+
+    public float[] Step(float[] input, LSTMContext ctx)
+    {
+        Array.Copy(input,  0, ctx.Xh, 0,          inputSize);
+        Array.Copy(ctx.H,  0, ctx.Xh, inputSize,   hiddenSize);
+
+        MatVecAdd(Wf, ctx.Xh, bf, ctx.F);   FastSigmoidInPlace(ctx.F);
+        MatVecAdd(Wi, ctx.Xh, bi, ctx.I);   FastSigmoidInPlace(ctx.I);
+        MatVecAdd(Wo, ctx.Xh, bo, ctx.O);   FastSigmoidInPlace(ctx.O);
+        MatVecAdd(Wc, ctx.Xh, bc, ctx.CTilde); FastTanhInPlace(ctx.CTilde);
+
+        for (int j = 0; j < hiddenSize; j++)
+            ctx.C[j] = ctx.F[j] * ctx.C[j] + ctx.I[j] * ctx.CTilde[j];
+
+        for (int j = 0; j < hiddenSize; j++)
+            ctx.H[j] = ctx.O[j] * FastTanh(ctx.C[j]);
+
+        return ctx.H;
+    }
+
+    private static void MatVecAdd(float[,] W, float[] x, float[] bias, float[] result)
+    {
+        int rows = W.GetLength(0);
+        int cols = W.GetLength(1);
+        for (int i = 0; i < rows; i++)
+        {
+            float sum = bias[i];
+            for (int j = 0; j < cols; j += 4)
+            {
+                if (j + 3 < cols)
+                    sum += W[i,j]*x[j] + W[i,j+1]*x[j+1] + W[i,j+2]*x[j+2] + W[i,j+3]*x[j+3];
+                else
+                    for (int k = j; k < cols; k++) sum += W[i,k]*x[k];
+            }
+            result[i] = sum;
+        }
+    }
+
+    private static void FastSigmoidInPlace(float[] x)
+    {
+        for (int i = 0; i < x.Length; i++)
+            x[i] = 0.5f * (x[i] / (1f + Mathf.Abs(x[i]))) + 0.5f;
+    }
+
+    private static void FastTanhInPlace(float[] x)
+    {
+        for (int i = 0; i < x.Length; i++)
+            x[i] = x[i] / (1f + Mathf.Abs(x[i]));
+    }
+
+    private static float FastTanh(float x) => x / (1f + Mathf.Abs(x));
+
+    private static float[,] InitWeights(int rows, int cols)
+    {
+        var w     = new float[rows, cols];
         float scale = Mathf.Sqrt(2f / (rows + cols));
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < cols; j++)
@@ -56,128 +96,14 @@ public partial class LSTMMemory
         return w;
     }
 
-    private void MatVecMul(float[,] W, float[] x, float[] result)
+    private static void CopyMatrix(float[,] src, float[,] dst)
     {
-        int rows = W.GetLength(0);
-        int cols = W.GetLength(1);
-
+        int rows = src.GetLength(0), cols = src.GetLength(1);
         for (int i = 0; i < rows; i++)
-        {
-            float sum = 0f;
-            for (int j = 0; j < cols; j += 4)
-            {
-                if (j + 3 < cols)
-                {
-                    sum += W[i, j] * x[j] + 
-                        W[i, j+1] * x[j+1] + 
-                        W[i, j+2] * x[j+2] + 
-                        W[i, j+3] * x[j+3];
-                }
-                else
-                {
-                    for (int k = j; k < cols; k++)
-                        sum += W[i, k] * x[k];
-                }
-            }
-            result[i] = sum;
-        }
+            for (int j = 0; j < cols; j++)
+                dst[i, j] = src[i, j];
     }
 
-    private void Add(float[] x, float[] bias, float[] result)
-    {
-        for (int i = 0; i < x.Length; i++)
-            result[i] = x[i] + bias[i];
-    }
-
-    private void FastSigmoidInPlace(float[] x)
-    {
-        for (int i = 0; i < x.Length; i++)
-            x[i] = 0.5f * (x[i] / (1f + Mathf.Abs(x[i]))) + 0.5f;
-    }
-
-    private void FastTanhInPlace(float[] x)
-    {
-        for (int i = 0; i < x.Length; i++)
-            x[i] = x[i] / (1f + Mathf.Abs(x[i]));
-    }
-    private float FastTanh(float x) => x / (1f + Mathf.Abs(x));
-
-    public float[] Step(float[] input)
-    {
-        // сформировать xh = [input; h]
-        Array.Copy(input, 0, xh, 0, inputSize);
-        Array.Copy(h, 0, xh, inputSize, hiddenSize);
-
-        // forget gate
-        MatVecMul(Wf, xh, tmp);
-        Add(tmp, bf, f);
-        FastSigmoidInPlace(f);
-
-        // input gate
-        MatVecMul(Wi, xh, tmp);
-        Add(tmp, bi, i);
-        FastSigmoidInPlace(i);
-
-        // output gate
-        MatVecMul(Wo, xh, tmp);
-        Add(tmp, bo, o);
-        FastSigmoidInPlace(o);
-
-        // candidate
-        MatVecMul(Wc, xh, tmp);
-        Add(tmp, bc, cTilde);
-        FastTanhInPlace(cTilde);
-
-        for (int j = 0; j < hiddenSize; j++)
-            c[j] = f[j] * c[j] + i[j] * cTilde[j];
-
-        for (int j = 0; j < hiddenSize; j++)
-            h[j] = o[j] * (float)FastTanh(c[j]);
-
-        return h;
-    }
-
-    public void Train(float[] input, float[] target, float lr)
-    {
-        float[] y = Step(input);
-
-        for (int j = 0; j < hiddenSize; j++)
-            dh[j] = y[j] - target[j];
-
-        for (int j = 0; j < hiddenSize; j++)
-        {
-            float tanhC = (float)Math.Tanh(c[j]);
-            float doGate = dh[j] * tanhC * o[j] * (1 - o[j]);
-            float dcGate = dh[j] * o[j] * (1 - tanhC * tanhC);
-
-            float diGate = dcGate * cTilde[j] * i[j] * (1 - i[j]);
-            float dfGate = dcGate * c[j] * f[j] * (1 - f[j]);
-            float dcTilde = dcGate * i[j] * (1 - cTilde[j] * cTilde[j]);
-
-            for (int k = 0; k < xh.Length; k++)
-            {
-                Wf[j, k] -= lr * dfGate * xh[k];
-                Wi[j, k] -= lr * diGate * xh[k];
-                Wo[j, k] -= lr * doGate * xh[k];
-                Wc[j, k] -= lr * dcTilde * xh[k];
-            }
-
-            bf[j] -= lr * dfGate;
-            bi[j] -= lr * diGate;
-            bo[j] -= lr * doGate;
-            bc[j] -= lr * dcTilde;
-        }
-    }
-
-
-    public void ResetState()
-    {
-        Array.Clear(h, 0, h.Length);
-        Array.Clear(c, 0, c.Length);
-    }
-
-    public float[] HiddenState => h;
-    public float[] CellState => c;
-    public int InputSize => inputSize;
+    public int InputSize  => inputSize;
     public int HiddenSize => hiddenSize;
 }
