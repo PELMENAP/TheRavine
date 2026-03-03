@@ -36,6 +36,10 @@ namespace TheRavine.EntityControl
             BotBehaviourSit Sit = new BotBehaviourSit();
             statePatternComponent.AddBehaviour(typeof(BotBehaviourSit), Sit);
         }
+        public override void SetUp()
+        {
+            throw new NotImplementedException();
+        }
 
         public void SetBehaviourIdle()
         {

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using ZLinq;
 using UnityEngine.InputSystem;
 using R3;
+using NUnit.Framework.Internal;
 
 public class ActionMapController
 {
@@ -13,7 +14,7 @@ public class ActionMapController
     public InputActionMap CurrentMap => _actionMaps.GetValueOrDefault(_currentMapName.Value);
     public IReadOnlyDictionary<string, InputActionMap> AvailableMaps => _actionMaps;
 
-    private const string gamePlay = "Gameplay", inventory = "Inventory", textInput = "TextInput";
+    private const string gamePlay = "Gameplay", inventory = "Inventory", pause = "Pause";
     
     private RavineLogger logger;
 
@@ -28,7 +29,7 @@ public class ActionMapController
 
     public void SwitchToInventory() => SwitchTo(inventory);
     public void SwitchToGameplay() => SwitchTo(gamePlay);
-    public void SwitchToTextInput() => SwitchTo(textInput);
+    public void SwitchToPause() => SwitchTo(pause);
 
     public void EnableUI()
     {
@@ -63,7 +64,7 @@ public class ActionMapController
         CurrentMap?.Disable();
         targetMap.Enable();
         _currentMapName.Value = mapName;
-        
+
         return true;
     }
 

@@ -23,7 +23,7 @@ public static class AudioSynthesizer
         public float duration;
         public int harmonicsCount;
         public int sampleCount;
-        public int waveformType; // enum as int
+        public int waveformType;
         public StableHashService.EnvelopeParams envelope;
 
         public void Execute(int index)
@@ -40,16 +40,16 @@ public static class AudioSynthesizer
                 float osc = 0f;
                 switch (waveformType)
                 {
-                    case 0: // Sine
+                    case 0:
                         osc = math.sin(arg);
                         break;
-                    case 1: // Saw
+                    case 1:
                         osc = 2f * (arg / (2f * math.PI) - math.floor(arg / (2f * math.PI) + 0.5f));
                         break;
-                    case 2: // Square
+                    case 2:
                         osc = math.sign(math.sin(arg));
                         break;
-                    case 3: // Triangle
+                    case 3:
                         osc = 2f * math.abs(2f * (arg / (2f * math.PI) - math.floor(arg / (2f * math.PI) + 0.5f))) - 1f;
                         break;
                 }

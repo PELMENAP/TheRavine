@@ -30,6 +30,11 @@ namespace TheRavine.EntityControl
         public override void Init()
         {
             playerController.SetInitialValues(this, logger);
+        }
+
+        public override void SetUp()
+        {
+            playerController.SetUp();
             SetBehaviourIdle();
         }
         public override void UpdateEntityCycle()

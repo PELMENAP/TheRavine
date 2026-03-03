@@ -3,6 +3,7 @@ using UnityEngine;
 using System;
 
 using Cysharp.Threading.Tasks;
+using TheRavine.Base;
 
 namespace TheRavine.EntityControl
 {
@@ -22,15 +23,13 @@ namespace TheRavine.EntityControl
             SetupLocator();
             await SetupNetworking();
 
-            PlayerEntity.Init();
+            PlayerEntity.SetUp();
         }
 
         private void SetupLocator()
         {
             try
             {
-                ServiceLocator.Services.Register(this);
-
                 if(ServiceLocator.Players.RegisterPlayer(PlayerEntity))
                 {
                     logger.LogInfo($"Player entity {NetworkManager.Singleton.LocalClientId} is registered in service locator");
@@ -46,6 +45,8 @@ namespace TheRavine.EntityControl
         {
             base.Initialize(new PlayerEntity(logger));
             PlayerEntity.AddComponentsToEntity(playerInfo, this, NetworkManager.Singleton.LocalClientId);
+
+            PlayerEntity.Init();
 
             await UniTask.CompletedTask;
         }

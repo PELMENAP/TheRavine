@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ZLinq;
 
 namespace TheRavine.Inventory
 {
@@ -8,19 +9,16 @@ namespace TheRavine.Inventory
         public int Capacity { get; set; }
         private int occupiedSlots;
         public bool IsFull => occupiedSlots == Capacity;
-
-        private readonly HashSet<int> _dirtySlots = new HashSet<int>();
         private SerializableInventorySlot[] _serializableCache;
 
         private void SetItem(InventorySlot slot, IInventoryItem item)
         {
             if (slot.isEmpty) occupiedSlots++;
             slot.SetItem(item);
-            MarkSlotDirty(_slots.IndexOf(slot));
         }
 
         private void ClearSlot(InventorySlot slot)
-        {
+        {   
             if (!slot.isEmpty)
             {
                 slot.Clear();
@@ -34,13 +32,29 @@ namespace TheRavine.Inventory
         {
             this.Capacity = capacity;
             _slots = new List<InventorySlot>(capacity);
-            for (int i = 0; i < capacity; i++) _slots.Add(new InventorySlot());
+            _serializableCache = new SerializableInventorySlot[capacity];
+
+            for (int i = 0; i < capacity; i++)
+            {
+                _slots.Add(new InventorySlot());
+                _serializableCache[i] = new SerializableInventorySlot();
+            }
         }
 
-        public InventoryModel(List<InventorySlot> inventorySlots)
+        public void ReplaceSlots(List<InventorySlot> newSlots)
         {
-            this.Capacity = inventorySlots.Count;
-            _slots = inventorySlots;
+            _slots.Clear();
+            _slots.AddRange(newSlots);
+
+            if (_serializableCache.Length != newSlots.Count)
+            {
+                _serializableCache = new SerializableInventorySlot[newSlots.Count];
+                for (int i = 0; i < newSlots.Count; i++)
+                    _serializableCache[i] = new SerializableInventorySlot();
+            }
+
+            Capacity = newSlots.Count;
+            occupiedSlots = newSlots.AsValueEnumerable().Count(s => !s.isEmpty);
         }
         public IInventoryItem GetItem(Type itemType)
         {
@@ -103,7 +117,9 @@ namespace TheRavine.Inventory
                 SetItem(slot, clonedItem);
             }
             else
+            {
                 slot.item.state.amount += amountToAdd;
+            }
             if (amountLeft <= 0)
                 return true;
             item.state.amount = amountLeft;
@@ -133,7 +149,9 @@ namespace TheRavine.Inventory
             }
             
             if (fits)
+            {
                 ClearSlot(fromSlot);
+            }
             else
                 fromSlot.item.state.amount = amountLeft;
         }
@@ -180,40 +198,17 @@ namespace TheRavine.Inventory
         {
             return _slots.ToArray();
         }
-
-        private void MarkSlotDirty(int slotIndex)
-        {
-            _dirtySlots.Add(slotIndex);
-        }
-
         public SerializableInventorySlot[] GetSerializable()
         {
-            if (_serializableCache == null || _serializableCache.Length != Capacity)
+            for (int i = 0; i < _slots.Count; i++)
             {
-                _serializableCache = new SerializableInventorySlot[Capacity];
-                for (int i = 0; i < Capacity; i++)
-                    UpdateSerializableSlot(i);
-                _dirtySlots.Clear();
+                var slot = _slots[i];
+                if (slot.isEmpty)
+                    _serializableCache[i].SetEmpty();
+                else
+                    _serializableCache[i].Set(slot.item.info.id, slot.item.state.amount);
             }
-            else if (_dirtySlots.Count > 0)
-            {
-                foreach (var index in _dirtySlots)
-                    UpdateSerializableSlot(index);
-                _dirtySlots.Clear();
-            }
-            
             return _serializableCache;
-        }
-        private void UpdateSerializableSlot(int index)
-        {
-            _serializableCache[index] = _slots[index].isEmpty 
-                ? new SerializableInventorySlot { isEmpty = true, title = "", amount = 0 }
-                : new SerializableInventorySlot 
-                { 
-                    isEmpty = false,
-                    title = _slots[index].item.info.id, 
-                    amount = _slots[index].item.state.amount 
-                };
         }
     }
 }

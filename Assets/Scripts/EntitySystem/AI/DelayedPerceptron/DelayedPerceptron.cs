@@ -206,15 +206,19 @@ public partial class DelayedPerceptron
         }
 
         // Обратное распространение
+        float[] currentErrors = outputErrors; // size = layerSizes[last] ✅
+
         for (int layer = _weights.Length - 1; layer >= 1; layer--)
         {
-            float[] errors = (layer == _weights.Length - 1) ? 
-                outputErrors : 
-                ComputeErrors(_weights[layer], outputErrors, _activations[layer]);
+            float[] prevActs = _activations[layer]; // входы данного слоя весов
 
-            float[] prevActs = _activations[layer];
-            BackpropagateLayer(layer, errors, prevActs, lr);
-            outputErrors = errors;
+            // 1. Обновляем веса — currentErrors подходит по размеру
+            BackpropagateLayer(layer, currentErrors, prevActs, lr);
+
+            // 2. Распространяем ошибку назад ПОСЛЕ обновления
+            // ComputeErrors вернёт массив size = _activations[layer].Length
+            //   = layerSizes[layer] = _weights[layer - 1].Length ✅
+            currentErrors = ComputeErrors(_weights[layer], currentErrors, _activations[layer]);
         }
     }
 

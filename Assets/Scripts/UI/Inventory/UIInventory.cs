@@ -53,18 +53,18 @@ namespace TheRavine.Inventory
             uIDragger.SetUp(eventDrivenInventoryProxy);
             craftService.SetUp(infoManager, eventDrivenInventoryProxy);
 
-            var playerData = ServiceLocator.GetService<PlayerModelView>().PlayerEntity;
+            PlayerEntity playerData = (PlayerEntity) ServiceLocator.Players.GetAllPlayers()[0];
             var gameSettings = ServiceLocator.GetService<GlobalSettingsController>().Settings.CurrentValue;
             inventoryInputHandler.RegisterInput(playerData, gameSettings);
 
             eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce += OnInventoryStateChanged;
             
-            LoadInventoryDataAsync().Forget();
+            LoadInventoryDataAsync(playerData).Forget();
 
             callback?.Invoke();
         }
 
-        private async UniTaskVoid LoadInventoryDataAsync()
+        private async UniTaskVoid LoadInventoryDataAsync(PlayerEntity playerData)
         {
             try
             {
@@ -92,7 +92,6 @@ namespace TheRavine.Inventory
                     }
                 }
 
-                var playerData = ServiceLocator.GetService<PlayerModelView>().PlayerEntity;
                 EventBus playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
                 playerEventBus.Subscribe<PlaceEvent>(PlaceObjectEvent);
                 playerEventBus.Subscribe<PickUpEvent>(PickUpEvent);

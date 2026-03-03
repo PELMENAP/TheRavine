@@ -6,7 +6,6 @@ using System;
 using TMPro;
 
 using TheRavine.Generator;
-using UnityEngine.Rendering;
 
 namespace TheRavine.Base
 {
@@ -40,7 +39,7 @@ namespace TheRavine.Base
                 inputField.Select();
                 inputField.ActivateInputField();
 
-                actionMapController.SwitchToTextInput();
+                actionMapController.SwitchToPause();
             }
             else
             {

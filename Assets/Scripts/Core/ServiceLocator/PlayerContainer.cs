@@ -29,6 +29,7 @@ public class PlayerContainer
         var mainComponent = player.GetEntityComponent<MainComponent>();
         var clientId = mainComponent.GetClientID();
         var baseName = mainComponent.GetEntityName();
+        Debug.Log(clientId + " " + baseName);
 
         if (_playersByClientId.ContainsKey(clientId))
             return false;

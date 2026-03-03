@@ -1,578 +1,565 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
-using UnityEngine;
 
 using Cysharp.Threading.Tasks;
 using NaughtyAttributes;
-using Random = TheRavine.Extensions.RavineRandom; // fast random implementation 
-using TMPro;
 using R3;
+using TMPro;
+using UnityEngine;
 
+using Random = TheRavine.Extensions.RavineRandom;
+
+[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(SpriteRenderer))]
 public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
 {
     [Header("Визуал")]
-    [SerializeField] private TextMeshPro text;
-    [SerializeField] private GameObject prefab;
+    [SerializeField] private TextMeshPro label;
+    [SerializeField] private GameObject  prefab;
 
     [Header("Параметры")]
+    private ReactiveProperty<float> maxHealth = new(200f);
+    private ReactiveProperty<float> maxEnergy = new(200f);
 
-    private ReactiveProperty<float> maxHealth = new(200), maxEnergy = new(200);
     [SerializeField] private float currentHealth;
     [SerializeField] private float currentEnergy;
     [SerializeField] private float energyRegenRate = 5f;
-    
+
     [Header("Передвижение")]
-    [SerializeField] private float moveSpeed = 3f;
-    [SerializeField] private float runSpeed = 5f;
-    [SerializeField] private float energyCostPerSecondMoving = 5f;
+    [SerializeField] private float moveSpeed              = 3f;
+    [SerializeField] private float runSpeed               = 5f;
+    [SerializeField] private float energyCostPerSecondMoving  = 5f;
     [SerializeField] private float energyCostPerSecondRunning = 10f;
-    
+
     [Header("Обнаружение")]
-    [SerializeField] private float detectionRadius = 5f;
+    [SerializeField] private float     detectionRadius = 5f;
     [SerializeField] private LayerMask entityLayer;
     [SerializeField] private LayerMask foodLayer;
-    
+
     [Header("Атака")]
-    [SerializeField] private float attackRange = 1.5f;
-    [SerializeField] private float attackDamage = 10f;
-    [SerializeField] private float attackCooldown = 1f;
-    [SerializeField] private float attackEnergyCost = 15f, reproduceEnergyCost = 20f, reproduceHealthCost = 10f;
-    
-    [Header("Поведение")]
-    [SerializeField] private float wanderRadius = 5f;
+    [SerializeField] private float attackRange      = 1.5f;
+    [SerializeField] private float attackDamage     = 10f;
+    [SerializeField] private float attackCooldown   = 1f;
+    [SerializeField] private float attackEnergyCost = 15f;
+
+    [Header("Размножение")]
+    [SerializeField] private float reproduceEnergyCost = 20f;
+    [SerializeField] private float reproduceHealthCost = 10f;
+
+    [Header("Блуждание")]
+    [SerializeField] private float wanderRadius  = 5f;
     [SerializeField] private float minWanderTime = 1f;
     [SerializeField] private float maxWanderTime = 3f;
-    [SerializeField] private float idleTime = 2f;
+    [SerializeField] private float idleTime      = 2f;
 
-    [SerializeField] private string speech = "", otherSpeech = "";
-
-    [SerializeField] private GeneticParameters geneticParameters;
-    // [SerializeField] private StringToAudioGenerator stringToAudioGenerators;
-
-    private bool isMoving = false;
-    private bool isAttacking = false;
-    private bool canAttack = true;
-    private Vector2 targetPosition;
-    private CancellationTokenSource actionCts;
-    
-    private List<Vector2> pointsOfInterest = new List<Vector2>();
-    private int maxPointsOfInterest = 5;
-    
-    private Rigidbody2D rb;
-    private SpriteRenderer spriteRenderer;
-
-    private InputVectorizer inputVectorizer;
-    private DelayedPerceptron delayedPerceptron;
-    private int currentState, timeOfDay;
-    
-    // Перечисление для возможных действий
+    [Header("Диагностика")]
+    [SerializeField, ReadOnly] private float  coordinatorEntropy;
     public enum EntityAction
     {
-        Idle,           // Стоять
-        Wander,         // Бродить без цели
-        RememberPoint,  // Запомнить текущую позицию как точку интереса
-        GoToPoint,      // Идти в случайную точку интереса
-        Attack,         // Нападать на сущность
-        Flee,           // Убегать от сущности
-        Eat,            // Есть еду
-        Reproduce,      // Размножаться
-        Speech,         // Говорить
+        Idle          = 0,
+        Wander        = 1,
+        RememberPoint = 2,
+        GoToPoint     = 3,
+        Attack        = 4,
+        Flee          = 5,
+        Eat           = 6,
+        Reproduce     = 7,
+        Speech        = 8,
     }
-    public string file = "default";
-    [Button]
-    private async void Save()
-    {
-        await NeuralModelStorage.SaveAsync(delayedPerceptron, file);
-    }
+
+    public string saveFile = "default";
+    [Button] private async void Save() =>
+        await NeuralModelStorage.SaveAsync(_brain._GetCoordinatorForSave(), saveFile);
+
+    private Rigidbody2D    _rb;
+    private SpriteRenderer _sr;
+
+    private InputVectorizer  _vectorizer;
+    private HierarchicalBrain _brain;
+
+    private CancellationTokenSource _cts;
+
+    private bool    _isMoving;
+    private bool    _isAttacking;
+    private bool    _canAttack = true;
+
+    private string  _ownSpeech   = "";
+    private string  _otherSpeech = "";
+
+    private int     _lastActionIndex;
+    private int     _timeOfDay;
+    private float[] _lastInput;
+
+    private readonly List<Vector2> _pointsOfInterest = new();
+    private const int MaxPoints = 5;
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        if (rb == null) rb = gameObject.AddComponent<Rigidbody2D>();
-        if (spriteRenderer == null) spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
+        _rb = GetComponent<Rigidbody2D>();
+        _sr = GetComponent<SpriteRenderer>();
 
-        rb.gravityScale = 0;
-        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-        rb.freezeRotation = true;
+        _rb.gravityScale           = 0;
+        _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        _rb.freezeRotation         = true;
 
-        actionCts = new CancellationTokenSource();
+        currentHealth = maxHealth.Value / 2f;
+        currentEnergy = maxEnergy.Value / 2f;
 
-        currentHealth = maxHealth.Value / 2;
-        currentEnergy = maxEnergy.Value / 2;
-
-        inputVectorizer = new(maxHealth, maxEnergy);
+        _vectorizer = new InputVectorizer(maxHealth, maxEnergy);
+        _cts        = new CancellationTokenSource();
 
         DialogSystem.Instance.AddDialogListener(this);
     }
-
-    public void SetUp(DelayedPerceptron other)
-    {
-        delayedPerceptron = new DelayedPerceptron(other);
-        geneticParameters = delayedPerceptron.GetGeneticParameters();
-
-        BehaviorLoopAsync(actionCts.Token).Forget();
-        
-        RegenerateEnergyAsync(actionCts.Token).Forget();
-    }
-
     public void SetUpAsNew()
     {
-        delayedPerceptron = new(inputVectorizer.GetVectorSize(), 16, 16, 16, Enum.GetValues(typeof(EntityAction)).Length);
-        geneticParameters = delayedPerceptron.GetGeneticParameters();
-
-        BehaviorLoopAsync(actionCts.Token).Forget();
-        
-        RegenerateEnergyAsync(actionCts.Token).Forget();
+        _brain = new HierarchicalBrain(InputVectorizer.VectorSize);
+        StartLoops();
     }
+
+    public void SetUp(HierarchicalBrain parentBrain)
+    {
+        _brain = new HierarchicalBrain(parentBrain);
+        _brain.ResetMemory();
+        StartLoops();
+    }
+
+    public void SetUpFromCrossover(HierarchicalBrain brainA, HierarchicalBrain brainB)
+    {
+        _brain = new HierarchicalBrain(brainA, brainB);
+        _brain.ResetMemory();
+        StartLoops();
+    }
+    public HierarchicalBrain Brain => _brain;
 
     private void OnDisable()
     {
-        actionCts?.Cancel();
-        actionCts?.Dispose();
-        actionCts = new CancellationTokenSource();
-
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        _brain?.ResetMemory();
         Die();
     }
-    
-    private async UniTaskVoid BehaviorLoopAsync(CancellationToken cancellationToken)
+
+    private void OnDestroy()
     {
-        await UniTask.Delay(TimeSpan.FromSeconds(2f), cancellationToken: cancellationToken);
-        while (!cancellationToken.IsCancellationRequested)
+        DialogSystem.Instance.RemoveDialogListener(this);
+    }
+
+    private void StartLoops()
+    {
+        BehaviorLoopAsync(_cts.Token).Forget();
+        RegenerateEnergyAsync(_cts.Token).Forget();
+    }
+
+    private async UniTaskVoid BehaviorLoopAsync(CancellationToken ct)
+    {
+        await UniTask.Delay(TimeSpan.FromSeconds(2f), cancellationToken: ct);
+
+        while (!ct.IsCancellationRequested)
         {
-            await PerformRandomAction(cancellationToken);
-            
-            await UniTask.Delay(TimeSpan.FromSeconds(1f), cancellationToken: cancellationToken);
+            await PerformOneStepAsync(ct);
+            await UniTask.Delay(TimeSpan.FromSeconds(1f), cancellationToken: ct);
         }
     }
-    
-    private int predictedIndex;
-    private float[] input;
-    private async UniTask PerformRandomAction(CancellationToken cancellationToken)
+
+    private async UniTask PerformOneStepAsync(CancellationToken ct)
     {
-        timeOfDay = (timeOfDay + 1) % 24;
+        _timeOfDay = (_timeOfDay + 1) % 24;
 
+        float inDanger    = ComputeDangerLevel();
+        float timeToBreed = ComputeBreedReadiness();
 
-        float indanger = 0f;
-        if (currentEnergy < 50 || currentHealth < 50) indanger += 0.25f;
-        if (currentEnergy < 25 || currentHealth < 25) indanger += 0.25f;
-        if (currentEnergy < 10 || currentHealth < 10) indanger += 0.5f;
+        float enemyDist = FindNearestEntityDistance();
+        float foodDist  = FindNearestFoodDistance();
 
-        float timetobreed = 0f;
-        if (currentEnergy > reproduceEnergyCost && currentHealth > reproduceHealthCost) timetobreed += 0.5f;
-        if (currentEnergy > reproduceEnergyCost + 50 && currentHealth > reproduceHealthCost + 50) timetobreed += 0.5f;
+        _lastInput = _vectorizer.Vectorize(
+            currentHealth, currentEnergy,
+            _lastActionIndex,
+            _timeOfDay,
+            inDanger, timeToBreed,
+            _otherSpeech,
+            enemyDist, foodDist);
 
-        input = inputVectorizer.Vectorize(currentHealth, currentEnergy, predictedIndex, currentState, timeOfDay, true, indanger, timetobreed, otherSpeech);
+        _otherSpeech = "";
 
-        predictedIndex = delayedPerceptron.Predict(input);
+        int actionIndex = _brain.Predict(_lastInput);
+        _lastActionIndex = actionIndex;
 
-        EntityAction randomAction = (EntityAction)predictedIndex;
-        text.text = randomAction.ToString() + " \n" + ((int)currentHealth).ToString() + "|" + ((int)currentEnergy).ToString() + " \n" + speech;
-        otherSpeech = "";
+        var action = (EntityAction)actionIndex;
 
-        await PerformAction(randomAction, cancellationToken);
+        coordinatorEntropy  = _brain.GetCoordinatorEntropy();
 
-        // bool theSame = true;
-        // for (int i = 0; i < delayedPerceptron.DelayedList.Count / 2; i++)
-        // {
-        //     var firstComponent = delayedPerceptron.DelayedList[0];
-        //     var currentComponent = delayedPerceptron.DelayedList[i];
-        //     if (currentComponent.Predicted != firstComponent.Predicted || currentComponent.Evaluation != firstComponent.Evaluation)
-        //     {
-        //         theSame = false;
-        //         break;
-        //     }
-        // }
+        if (label != null)
+            label.text = $"{_brain.CurrentGoal} - {action}\n"
+                       + $"{(int)currentHealth} / {(int)currentEnergy}\n"
+                       + _ownSpeech;
 
-        // if (theSame && delayedPerceptron.DelayedList.Count > 0) delayedPerceptron.DelayedList[delayedPerceptron.DelayedList.Count - 1].Evaluation = 0.4f;
-    }
-    
-    public async UniTask PerformAction(EntityAction action, CancellationToken cancellationToken)
-    {
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
         if (!CanPerformAction(action))
         {
-            if(delayedPerceptron.DelayedList.Count > 0) delayedPerceptron.DelayedList[delayedPerceptron.DelayedList.Count - 1].Evaluation = 0.3f;
-            currentHealth -= 5;
+            _brain.GiveReward(0.25f);
+            currentHealth -= 3f;
             return;
         }
-        
+
+        await PerformAction(action, ct);
+    }
+
+    private async UniTask PerformAction(EntityAction action, CancellationToken ct)
+    {
+        if (currentHealth <= 0) { Die(); return; }
+
         switch (action)
         {
-            case EntityAction.Idle:
-                await IdleAsync(cancellationToken);
-                break;
-                
-            case EntityAction.Wander:
-                await WanderAsync(cancellationToken);
-                break;
-                
-            case EntityAction.RememberPoint:
-                RememberCurrentPosition();
-                break;
-                
-            case EntityAction.GoToPoint:
-                await GoToPointOfInterestAsync(cancellationToken);
-                break;
-                
-            case EntityAction.Attack:
-                await AttackNearbyEntityAsync(cancellationToken);
-                break;
-                
-            case EntityAction.Flee:
-                await FleeFromNearbyEntityAsync(cancellationToken);
-                break;
-                
-            case EntityAction.Eat:
-                await EatNearbyFoodAsync(cancellationToken);
-                break;
-
-            case EntityAction.Reproduce:
-                await ReproduceAsync(cancellationToken);
-                break;
-
-            case EntityAction.Speech:
-                await SpeechAsync(cancellationToken);
-                break;
+            case EntityAction.Idle:          await IdleAsync(ct);              break;
+            case EntityAction.Wander:        await WanderAsync(ct);            break;
+            case EntityAction.RememberPoint: RememberCurrentPosition();        break;
+            case EntityAction.GoToPoint:     await GoToPointAsync(ct);         break;
+            case EntityAction.Attack:        await AttackAsync(ct);            break;
+            case EntityAction.Flee:          await FleeAsync(ct);              break;
+            case EntityAction.Eat:           await EatAsync(ct);               break;
+            case EntityAction.Reproduce:     await ReproduceAsync(ct);         break;
+            case EntityAction.Speech:        await SpeechAsync(ct);            break;
         }
     }
-
-    private async UniTask ReproduceAsync(CancellationToken cancellationToken)
+    private async UniTask IdleAsync(CancellationToken ct)
     {
-        if(delayedPerceptron.DelayedList.Count > 0) delayedPerceptron.DelayedList[delayedPerceptron.DelayedList.Count - 1].Evaluation = 0.8f;
-        
-        Vector2 randomDirection = Random.GetInsideCircle().normalized;
-        Vector2 wanderTarget = (Vector2)transform.position + randomDirection * wanderRadius / 2;
+        _isMoving          = false;
+        _rb.linearVelocity = Vector2.zero;
 
-        GameObject nextGeneration = Instantiate(prefab, (Vector3)wanderTarget, Quaternion.identity, this.transform.parent);
-        Entity2D entity2D = nextGeneration.GetComponent<Entity2D>();
-        entity2D.SetUp(delayedPerceptron);
+        _brain.GiveReward(0.5f);
 
-        currentEnergy -= reproduceEnergyCost;
-        currentHealth -= reproduceHealthCost;
-
-        await UniTask.Delay(TimeSpan.FromSeconds(idleTime), cancellationToken: cancellationToken);
+        await UniTask.Delay(TimeSpan.FromSeconds(idleTime), cancellationToken: ct);
     }
 
-    public float GetDialogDistance()
+    private async UniTask WanderAsync(CancellationToken ct)
     {
-        return 20f;
-    }
-    public Vector3 GetCurrentPosition()
-    {
-        if (this.transform == null) return Vector3.zero;
-        return transform.position;
-    }
-    public void OnSpeechGet(IDialogSender sender, string message)
-    {
-        otherSpeech = message;
-    }
-    public void OnDialogGetRequire()
-    {
-    }
+        Vector2 dir    = Random.GetInsideCircle().normalized;
+        Vector2 target = (Vector2)transform.position + dir * wanderRadius;
 
-    private async UniTask SpeechAsync(CancellationToken cancellationToken)
-    {
-        speech = inputVectorizer.HashFloatArray(input);
-        DialogSystem.Instance.OnSpeechSend(this, speech);
+        WithColor(Color.yellow, async () =>
+            await MoveToAsync(target, moveSpeed,
+                Random.RangeFloat(minWanderTime, maxWanderTime),
+                energyCostPerSecondMoving, ct));
 
-        // stringToAudioGenerators.PlayFromStringAsync(speech).Forget();
-
-        currentEnergy -= 5f;
-
-        await UniTask.Yield(cancellationToken);
+        _brain.GiveReward(0.45f);
+        await MoveToAsync(target, moveSpeed,
+            Random.RangeFloat(minWanderTime, maxWanderTime),
+            energyCostPerSecondMoving, ct);
     }
-    
-    private bool CanPerformAction(EntityAction action)
-    {
-        switch (action)
-        {
-            case EntityAction.Attack:
-                return currentEnergy >= attackEnergyCost && canAttack;
-                
-            case EntityAction.Wander:
-                return currentEnergy > 0;
-            case EntityAction.Flee:
-                return currentEnergy > 0;
-            case EntityAction.Speech:
-                return currentEnergy > 0;
-                
-            case EntityAction.GoToPoint:
-                return pointsOfInterest.Count > 0 && currentEnergy > 0;
-                
-            case EntityAction.Eat:
-                return true;
-                
-            case EntityAction.Idle:
-                return true;
-            case EntityAction.RememberPoint:
-                return true;
-            case EntityAction.Reproduce:
-                return currentEnergy >= reproduceEnergyCost && currentHealth >= reproduceHealthCost;
-
-            
-                
-            default:
-                return true;
-        }
-    }
-    
-    private async UniTask IdleAsync(CancellationToken cancellationToken)
-    {
-        isMoving = false;
-        rb.linearVelocity = Vector2.zero;
-        
-        Color originalColor = spriteRenderer.color;
-        spriteRenderer.color = Color.white;
-        
-        await UniTask.Delay(TimeSpan.FromSeconds(idleTime), cancellationToken: cancellationToken);
-        
-        spriteRenderer.color = originalColor;
-    }
-    
-    private async UniTask WanderAsync(CancellationToken cancellationToken)
-    {
-        Vector2 randomDirection = Random.GetInsideCircle().normalized;
-        Vector2 wanderTarget = (Vector2)transform.position + randomDirection * wanderRadius;
-        
-        Color originalColor = spriteRenderer.color;
-        spriteRenderer.color = Color.yellow;
-        
-        float wanderTime = Random.RangeFloat(minWanderTime, maxWanderTime);
-        await MoveToPositionAsync(wanderTarget, moveSpeed, wanderTime, energyCostPerSecondMoving, cancellationToken);
-        
-        spriteRenderer.color = originalColor;
-    }
-    
     private void RememberCurrentPosition()
     {
-        Vector2 currentPos = transform.position;
-        
-        if (pointsOfInterest.Count >= maxPointsOfInterest)
+        Vector2 pos = transform.position;
+
+        if (_pointsOfInterest.Count >= MaxPoints)
+            _pointsOfInterest.RemoveAt(0);
+
+        if (_pointsOfInterest.Count > 0 &&
+            Vector2.Distance(_pointsOfInterest[0], pos) < 10f)
         {
-            pointsOfInterest.RemoveAt(0);
+            _brain.GiveReward(0.3f);
+            return;
         }
 
-        if(pointsOfInterest.Count > 0 && Vector2.Distance(pointsOfInterest[0], currentPos) < 10f)
-        {
-            return;
-        }
-        
-        pointsOfInterest.Add(currentPos);
+        _pointsOfInterest.Add(pos);
+        _brain.GiveReward(0.65f);
         StartCoroutine(FlashColor(Color.cyan, 0.3f));
     }
-    
-    private async UniTask GoToPointOfInterestAsync(CancellationToken cancellationToken)
+    private async UniTask GoToPointAsync(CancellationToken ct)
     {
-        if (pointsOfInterest.Count == 0)
-        {
-            return;
-        }
-        int randomIndex = Random.RangeInt(0, pointsOfInterest.Count);
-        Vector2 targetPoint = pointsOfInterest[randomIndex];
-        
-        Color originalColor = spriteRenderer.color;
-        spriteRenderer.color = Color.blue;
-        
-        await MoveToPositionAsync(targetPoint, moveSpeed, 5f, energyCostPerSecondMoving, cancellationToken);
-        
-        spriteRenderer.color = originalColor;
+        if (_pointsOfInterest.Count == 0) return;
+
+        int     idx    = Random.RangeInt(0, _pointsOfInterest.Count);
+        Vector2 target = _pointsOfInterest[idx];
+        Color   orig   = _sr.color;
+        _sr.color      = Color.blue;
+
+        await MoveToAsync(target, moveSpeed, 5f, energyCostPerSecondMoving, ct);
+
+        _sr.color = orig;
+        _brain.GiveReward(0.55f);
     }
-    private async UniTask AttackNearbyEntityAsync(CancellationToken cancellationToken)
+
+    private async UniTask AttackAsync(CancellationToken ct)
     {
-        GameObject nearestEntity = FindNearbyEntity();
-        
-        if (nearestEntity == null)
-        {
-            return;
-        }
-        
-        Color originalColor = spriteRenderer.color;
-        spriteRenderer.color = Color.red;
-        
-        Entity2D targetEntity = nearestEntity.GetComponent<Entity2D>();
-        Vector2 targetPosition = nearestEntity.transform.position;
-        
-        await MoveToPositionAsync(targetPosition, moveSpeed, 2f, energyCostPerSecondMoving, cancellationToken);
-        
-        if(transform == null || nearestEntity == null) return;
-        if (Vector2.Distance(transform.position, nearestEntity.transform.position) <= attackRange && canAttack)
+        GameObject target = FindNearbyEntity();
+        if (target == null) { _brain.GiveReward(0.2f); return; }
+
+        Color orig = _sr.color;
+        _sr.color  = Color.red;
+
+        await MoveToAsync(target.transform.position, moveSpeed, 2f,
+            energyCostPerSecondMoving, ct);
+
+        if (target != null &&
+            Vector2.Distance(transform.position, target.transform.position) <= attackRange &&
+            _canAttack)
         {
             currentEnergy -= attackEnergyCost;
-            
-            isAttacking = true;
-            canAttack = false;
-            
-            if (targetEntity != null)
+            _isAttacking   = true;
+            _canAttack     = false;
+
+            var victim = target.GetComponent<Entity2D>();
+            if (victim != null)
             {
-                targetEntity.TakeDamage(attackDamage);
-                currentHealth += attackEnergyCost * 2;
+                victim.TakeDamage(attackDamage);
+                currentHealth += attackEnergyCost * 1.5f;
+                _brain.GiveReward(0.9f);
             }
-            
-            await UniTask.Delay(TimeSpan.FromSeconds(attackCooldown), cancellationToken: cancellationToken);
-            
-            isAttacking = false;
-            canAttack = true;
+            else
+            {
+                _brain.GiveReward(0.4f);
+            }
+
+            await UniTask.Delay(TimeSpan.FromSeconds(attackCooldown), cancellationToken: ct);
+            _isAttacking = false;
+            _canAttack   = true;
         }
-        
-        spriteRenderer.color = originalColor;
+        else
+        {
+            _brain.GiveReward(0.3f);
+        }
+
+        _sr.color = orig;
     }
-    private async UniTask FleeFromNearbyEntityAsync(CancellationToken cancellationToken)
+
+    // ─── Flee ────────────────────────────────────────────────────────────────────
+    private async UniTask FleeAsync(CancellationToken ct)
     {
         DialogSystem.Instance.UpdateListenerPosition(this);
 
-        GameObject nearestEntity = FindNearbyEntity();
-        
-        if (nearestEntity == null)
-        {
-            return;
-        }
-        
-        Color originalColor = spriteRenderer.color;
-        spriteRenderer.color = Color.green;
-        Vector2 fleeDirection = ((Vector2)transform.position - (Vector2)nearestEntity.transform.position).normalized;
-        Vector2 fleeTarget = (Vector2)transform.position + fleeDirection * (detectionRadius * 1.5f);
-        
-        await MoveToPositionAsync(fleeTarget, runSpeed, 2f, energyCostPerSecondRunning, cancellationToken);
-        
-        spriteRenderer.color = originalColor;
+        GameObject nearest = FindNearbyEntity();
+        if (nearest == null) { _brain.GiveReward(0.3f); return; }
+
+        Color orig = _sr.color;
+        _sr.color  = Color.green;
+
+        Vector2 away   = ((Vector2)transform.position - (Vector2)nearest.transform.position).normalized;
+        Vector2 target = (Vector2)transform.position + away * detectionRadius * 1.5f;
+
+        await MoveToAsync(target, runSpeed, 2f, energyCostPerSecondRunning, ct);
+
+        float distNow = Vector2.Distance(transform.position, nearest.transform.position);
+        float reward  = Mathf.Clamp01(distNow / detectionRadius);
+        _brain.GiveReward(reward);
+
+        _sr.color = orig;
     }
 
-    private async UniTask EatNearbyFoodAsync(CancellationToken cancellationToken)
+    private async UniTask EatAsync(CancellationToken ct)
     {
-        Color originalColor = spriteRenderer.color;
-        spriteRenderer.color = Color.magenta;
+        Color orig = _sr.color;
+        _sr.color  = Color.magenta;
 
-        currentHealth = Mathf.Min(currentHealth + 20f, maxHealth.Value);
-        currentEnergy = Mathf.Min(currentEnergy - 10f, maxEnergy.Value);
-
-        spriteRenderer.color = originalColor;
-
-        await UniTask.Yield();
-    }
-    
-    private async UniTask MoveToPositionAsync(Vector2 position, float speed, float maxMoveDuration, float energyCostPerSecond, CancellationToken cancellationToken)
-    {
-        isMoving = true;
-        float startTime = Time.time;
-        float journeyDuration = 0f;
-        
-        while (Vector2.Distance(transform.position, position) > 0.1f && journeyDuration < maxMoveDuration)
+        Collider2D food = Physics2D.OverlapCircle(transform.position, detectionRadius, foodLayer);
+        if (food != null)
         {
-            if (currentEnergy <= 0)
-            {
-                isMoving = false;
-                rb.linearVelocity = Vector2.zero;
-                return;
-            }
-            
-            Vector2 direction = ((Vector2)position - (Vector2)transform.position).normalized;
-            rb.linearVelocity = direction * speed;
-            
-            currentEnergy -= energyCostPerSecond * Time.deltaTime;
-            currentEnergy = Mathf.Max(0, currentEnergy);
-            
-            journeyDuration = Time.time - startTime;
-            
-            await UniTask.Yield(cancellationToken);
+            currentHealth = Mathf.Min(currentHealth + 30f, maxHealth.Value);
+            currentEnergy = Mathf.Min(currentEnergy + 20f, maxEnergy.Value);
+            _brain.GiveReward(0.85f);
+            Destroy(food.gameObject);
         }
-        
-        isMoving = false;
-        rb.linearVelocity = Vector2.zero;
-    }
-    
-    private async UniTaskVoid RegenerateEnergyAsync(CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested)
+        else
         {
-            if (!isMoving && !isAttacking && currentEnergy < maxEnergy.Value)
-            {
-                currentEnergy += energyRegenRate * Time.deltaTime;
-                currentEnergy = Mathf.Min(currentEnergy, maxEnergy.Value);
-            }
+            currentHealth = Mathf.Min(currentHealth + 5f,  maxHealth.Value);
+            currentEnergy = Mathf.Min(currentEnergy + 5f,  maxEnergy.Value);
+            _brain.GiveReward(0.35f);
+        }
 
-            if(currentEnergy < 5f)
-            {
-                currentHealth -= 15f;
-                currentEnergy += 5f;
-            } 
-            
-            await UniTask.Yield(cancellationToken);
-        }
+        _sr.color = orig;
+        await UniTask.Yield(ct);
     }
-    private GameObject FindNearbyEntity()
+
+    private async UniTask ReproduceAsync(CancellationToken ct)
     {
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, detectionRadius, entityLayer);
-        
-        GameObject nearestEntity = null;
-        float minDistance = float.MaxValue;
-        
-        foreach (Collider2D col in colliders)
-        {
-            // Игнорируем себя
-            if (col.gameObject == gameObject)
-                continue;
-            
-            float distance = Vector2.Distance(transform.position, col.transform.position);
-            
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                nearestEntity = col.gameObject;
-            }
-        }
-        
-        return nearestEntity;
+        currentEnergy -= reproduceEnergyCost;
+        currentHealth -= reproduceHealthCost;
+
+        Vector2    pos    = (Vector2)transform.position + Random.GetInsideCircle().normalized * wanderRadius / 2f;
+        GameObject child  = Instantiate(prefab, (Vector3)pos, Quaternion.identity, transform.parent);
+        var        entity = child.GetComponent<Entity2D>();
+
+        if (entity != null)
+            entity.SetUp(_brain);
+
+        _brain.GiveReward(0.8f);
+        await UniTask.Delay(TimeSpan.FromSeconds(idleTime), cancellationToken: ct);
     }
-    
+
+    private async UniTask SpeechAsync(CancellationToken ct)
+    {
+        _ownSpeech = _vectorizer.HashFloatArray(_lastInput);
+        DialogSystem.Instance.OnSpeechSend(this, _ownSpeech);
+
+        currentEnergy -= 5f;
+        _brain.GiveReward(0.5f);
+
+        await UniTask.Yield(ct);
+    }
+
+    public float   GetDialogDistance()    => 20f;
+    public Vector3 GetCurrentPosition()   => transform ? transform.position : Vector3.zero;
+    public void    OnSpeechGet(IDialogSender sender, string message) => _otherSpeech = message;
+    public void    OnDialogGetRequire()   { }
+
     public void TakeDamage(float damage)
     {
         currentHealth -= damage;
         StartCoroutine(FlashColor(Color.red, 0.2f));
-        
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
+        if (currentHealth <= 0) Die();
     }
-    
+
     private void Die()
     {
-        actionCts?.Cancel();
-
-        spriteRenderer.color = Color.gray;
-
-        rb.linearVelocity = Vector2.zero;
-        rb.bodyType = RigidbodyType2D.Kinematic;
+        _cts?.Cancel();
+        if (_sr) _sr.color = Color.gray;
+        if (_rb) { _rb.linearVelocity = Vector2.zero; _rb.bodyType = RigidbodyType2D.Kinematic; }
 
         DialogSystem.Instance.RemoveDialogListener(this);
-
-        Destroy(this.gameObject);
+        Destroy(gameObject);
     }
-    private System.Collections.IEnumerator FlashColor(Color flashColor, float duration)
+    private bool CanPerformAction(EntityAction action) => action switch
     {
-        Color originalColor = spriteRenderer.color;
-        spriteRenderer.color = flashColor;
-        yield return new WaitForSeconds(duration);
-        spriteRenderer.color = originalColor;
+        EntityAction.Attack        => currentEnergy >= attackEnergyCost && _canAttack,
+        EntityAction.Wander        => currentEnergy > 0,
+        EntityAction.Flee          => currentEnergy > 0,
+        EntityAction.Speech        => currentEnergy > 0,
+        EntityAction.GoToPoint     => _pointsOfInterest.Count > 0 && currentEnergy > 0,
+        EntityAction.Reproduce     => currentEnergy >= reproduceEnergyCost && currentHealth >= reproduceHealthCost,
+        _                          => true,
+    };
+
+    private float ComputeDangerLevel()
+    {
+        float d = 0f;
+        if (currentEnergy < 50 || currentHealth < 50)  d += 0.25f;
+        if (currentEnergy < 25 || currentHealth < 25)  d += 0.25f;
+        if (currentEnergy < 10 || currentHealth < 10)  d += 0.5f;
+        return d;
     }
-    
+
+    private float ComputeBreedReadiness()
+    {
+        float b = 0f;
+        if (currentEnergy > reproduceEnergyCost && currentHealth > reproduceHealthCost)        b += 0.5f;
+        if (currentEnergy > reproduceEnergyCost + 50 && currentHealth > reproduceHealthCost + 50) b += 0.5f;
+        return b;
+    }
+
+    private async UniTask MoveToAsync(
+        Vector2 target, float speed, float maxDuration,
+        float energyCost, CancellationToken ct)
+    {
+        _isMoving = true;
+        float startTime = Time.time;
+
+        while (Vector2.Distance(transform.position, target) > 0.1f &&
+               Time.time - startTime < maxDuration)
+        {
+            if (currentEnergy <= 0) break;
+
+            Vector2 dir = ((Vector2)transform.position - target);
+            _rb.linearVelocity = -dir.normalized * speed;
+
+            currentEnergy -= energyCost * Time.deltaTime;
+            currentEnergy  = Mathf.Max(0, currentEnergy);
+
+            await UniTask.Yield(ct);
+        }
+
+        _isMoving          = false;
+        _rb.linearVelocity = Vector2.zero;
+    }
+
+    private async UniTaskVoid RegenerateEnergyAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            if (!_isMoving && !_isAttacking && currentEnergy < maxEnergy.Value)
+            {
+                currentEnergy += energyRegenRate * Time.deltaTime;
+                currentEnergy  = Mathf.Min(currentEnergy, maxEnergy.Value);
+            }
+
+            if (currentEnergy < 5f)
+            {
+                currentHealth -= 15f;
+                currentEnergy += 5f;
+            }
+
+            await UniTask.Yield(ct);
+        }
+    }
+
+    private GameObject FindNearbyEntity()
+    {
+        Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, detectionRadius, entityLayer);
+        GameObject   best = null;
+        float        minD = float.MaxValue;
+
+        foreach (var col in cols)
+        {
+            if (col.gameObject == gameObject) continue;
+            float d = Vector2.Distance(transform.position, col.transform.position);
+            if (d < minD) { minD = d; best = col.gameObject; }
+        }
+        return best;
+    }
+
+    private float FindNearestEntityDistance()
+    {
+        var go = FindNearbyEntity();
+        return go != null ? Vector2.Distance(transform.position, go.transform.position) : -1f;
+    }
+
+    private float FindNearestFoodDistance()
+    {
+        Collider2D food = Physics2D.OverlapCircle(transform.position, detectionRadius, foodLayer);
+        return food != null ? Vector2.Distance(transform.position, food.transform.position) : -1f;
+    }
+
+    // Заглушка-хелпер, чтобы не повторять логику цвета в каждом методе.
+    // В C# нельзя передать async-лямбду без UniTask — цвет меняем вручную выше.
+    private void WithColor(Color c, Func<UniTask> action) { } // placeholder
+
+    private IEnumerator FlashColor(Color flash, float duration)
+    {
+        Color orig = _sr.color;
+        _sr.color  = flash;
+        yield return new WaitForSeconds(duration);
+        _sr.color  = orig;
+    }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
-        
+
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
-        
+
         Gizmos.color = Color.cyan;
-        foreach (Vector2 point in pointsOfInterest)
-        {
-            Gizmos.DrawSphere(point, 0.3f);
-        }
+        foreach (var p in _pointsOfInterest)
+            Gizmos.DrawSphere(p, 0.3f);
+    }
+}
+
+
+// ─── Расширение для сохранения (временное решение) ───────────────────────────
+// Т.к. HierarchicalBrain содержит несколько моделей, для полноценного
+// сохранения нужен отдельный класс сериализации. Здесь — заглушка-указатель.
+public static class HierarchicalBrainExtensions
+{
+    /// <summary>
+    /// Временный метод доступа к координатору для сохранения.
+    /// Замените на полноценную сериализацию HierarchicalBrain.
+    /// </summary>
+    public static DelayedPerceptron _GetCoordinatorForSave(this HierarchicalBrain brain)
+    {
+        // TODO: Реализовать полную сериализацию HierarchicalBrain
+        // включая все 4 исполнителя и веса LSTM
+        throw new NotImplementedException(
+            "Реализуйте HierarchicalBrainStorage по аналогии с DelayedPerceptronStorage");
     }
 }

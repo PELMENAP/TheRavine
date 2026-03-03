@@ -929,6 +929,10 @@ PrefabInstance:
       propertyPath: activeCellIndicator
       value: 
       objectReference: {fileID: 5196980515497523625}
+    - target: {fileID: 5579856371099542038, guid: 526970802490c8c8eba4d4c4426e688c, type: 3}
+      propertyPath: resultCell
+      value: 
+      objectReference: {fileID: 4207712442866508748}
     - target: {fileID: 7241328372736920721, guid: 526970802490c8c8eba4d4c4426e688c, type: 3}
       propertyPath: m_Name
       value: InventoryCanvas
@@ -1028,6 +1032,17 @@ Canvas:
   m_CorrespondingSourceObject: {fileID: 7241328372736920722, guid: 526970802490c8c8eba4d4c4426e688c, type: 3}
   m_PrefabInstance: {fileID: 7515381623177687994}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &4207712442866508748 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5922009109813366902, guid: 526970802490c8c8eba4d4c4426e688c, type: 3}
+  m_PrefabInstance: {fileID: 7515381623177687994}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b20f09fc2614756c858e88092ac3d0d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &8562571005120723886 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2206661781156694036, guid: 526970802490c8c8eba4d4c4426e688c, type: 3}
