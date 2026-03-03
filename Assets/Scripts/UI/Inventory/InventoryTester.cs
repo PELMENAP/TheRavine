@@ -94,7 +94,7 @@ namespace TheRavine.Inventory
                 inventorySlots.Add(slot);
             }
 
-            inventoryProxy = new(inventorySlots);
+            inventoryProxy._inventory.ReplaceSlots(inventorySlots);
             RefreshAllSlots();
         }
 

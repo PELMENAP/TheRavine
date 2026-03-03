@@ -41,7 +41,7 @@ public class PerceptronTest : MonoBehaviour
     [Button]
     private void MakePrediction()
     {
-        input = inputVectorizer.Vectorize(health, energy, (int)predictedIndex[0], currentState - 1, timeOfDay, lastSuccess, 0.1f, 0.1f, speech);
+        // input = inputVectorizer.Vectorize(health, energy, (int)predictedIndex[0], currentState - 1, timeOfDay, lastSuccess, 0.1f, 0.1f, speech);
         
         
         predictedIndex = delayedPerceptron.Step(input);

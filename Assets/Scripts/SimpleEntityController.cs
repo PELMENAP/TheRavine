@@ -6,7 +6,7 @@ using TheRavine.Extensions;
 
 public class SimpleEntityController : MonoBehaviour
 {
-    private DelayedPerceptron delayedPerceptron;
+    // private DelayedPerceptron delayedPerceptron;
     public string file;
     public List<Entity2D> entities;
 
@@ -21,12 +21,12 @@ public class SimpleEntityController : MonoBehaviour
             BehaviorLoopAsync().Forget();
             return;
         }
-        delayedPerceptron = await NeuralModelStorage.LoadAsync<DelayedPerceptron>(file);
+        // delayedPerceptron = await NeuralModelStorage.LoadAsync<DelayedPerceptron>(file);
 
-        foreach (var item in entities)
-        {
-            item.SetUp(delayedPerceptron);
-        }
+        // foreach (var item in entities)
+        // {
+        //     item.SetUp(delayedPerceptron);
+        // }
     }
 
     private async UniTaskVoid BehaviorLoopAsync()

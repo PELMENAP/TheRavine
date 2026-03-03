@@ -120,15 +120,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Text (|)"",
-                    ""type"": ""Button"",
-                    ""id"": ""bb4910dc-2ee2-4d58-83f4-a83779e5ffda"",
-                    ""expectedControlType"": """",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": false
-                },
-                {
                     ""name"": ""Pick Up (F)"",
                     ""type"": ""Button"",
                     ""id"": ""50b14e70-78cd-443d-a17a-387a918af929"",
@@ -171,6 +162,15 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": ""Hold"",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Pause"",
+                    ""type"": ""Button"",
+                    ""id"": ""818ca37c-aa30-46c8-8e99-725bdf5b3d9c"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
                     ""initialStateCheck"": false
                 }
             ],
@@ -249,17 +249,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Enter (Enter)"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
-                    ""id"": ""fdd8e5f0-d7fb-4080-a9b1-b92e28470847"",
-                    ""path"": ""<Keyboard>/backslash"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Text (|)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -392,6 +381,17 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Delay Interact"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""136fd32a-cd34-4246-bdca-b8d380693d38"",
+                    ""path"": ""<Keyboard>/p"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Pause"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -945,7 +945,7 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             ]
         },
         {
-            ""name"": ""TextInput"",
+            ""name"": ""Pause"",
             ""id"": ""059f4a24-6092-477b-a1f5-c206aeb3d81e"",
             ""actions"": [
                 {
@@ -958,9 +958,9 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Text"",
+                    ""name"": ""PauseOff"",
                     ""type"": ""Button"",
-                    ""id"": ""e78df573-b6bb-46b4-a38a-fa70176b3e27"",
+                    ""id"": ""0c630a91-5593-44a5-afab-bffbdce9645b"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -981,12 +981,12 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
-                    ""id"": ""bc2c700b-4788-4ff3-b461-899d4be64505"",
-                    ""path"": ""<Keyboard>/backslash"",
+                    ""id"": ""4828e77e-7c38-4f6a-87c3-7cda0ad35ba1"",
+                    ""path"": ""<Keyboard>/p"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Text"",
+                    ""action"": ""PauseOff"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1028,12 +1028,12 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         m_Gameplay_MovementWASD = m_Gameplay.FindAction("Movement (WASD)", throwIfNotFound: true);
         m_Gameplay_JumpSpace = m_Gameplay.FindAction("Jump (Space)", throwIfNotFound: true);
         m_Gameplay_EnterEnter = m_Gameplay.FindAction("Enter (Enter)", throwIfNotFound: true);
-        m_Gameplay_Text = m_Gameplay.FindAction("Text (|)", throwIfNotFound: true);
         m_Gameplay_PickUpF = m_Gameplay.FindAction("Pick Up (F)", throwIfNotFound: true);
         m_Gameplay_InventoryEnterE = m_Gameplay.FindAction("InventoryEnter (E)", throwIfNotFound: true);
         m_Gameplay_Digit18 = m_Gameplay.FindAction("Digit (1-8)", throwIfNotFound: true);
         m_Gameplay_FastInteract = m_Gameplay.FindAction("Fast Interact", throwIfNotFound: true);
         m_Gameplay_DelayInteract = m_Gameplay.FindAction("Delay Interact", throwIfNotFound: true);
+        m_Gameplay_Pause = m_Gameplay.FindAction("Pause", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1047,10 +1047,10 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         m_UI_TrackedDeviceOrientation = m_UI.FindAction("TrackedDeviceOrientation", throwIfNotFound: true);
         m_UI_Point = m_UI.FindAction("Point", throwIfNotFound: true);
         m_UI_MobileTouch = m_UI.FindAction("MobileTouch", throwIfNotFound: true);
-        // TextInput
-        m_TextInput = asset.FindActionMap("TextInput", throwIfNotFound: true);
-        m_TextInput_Enter = m_TextInput.FindAction("Enter", throwIfNotFound: true);
-        m_TextInput_Text = m_TextInput.FindAction("Text", throwIfNotFound: true);
+        // Pause
+        m_Pause = asset.FindActionMap("Pause", throwIfNotFound: true);
+        m_Pause_Enter = m_Pause.FindAction("Enter", throwIfNotFound: true);
+        m_Pause_PauseOff = m_Pause.FindAction("PauseOff", throwIfNotFound: true);
         // Inventory
         m_Inventory = asset.FindActionMap("Inventory", throwIfNotFound: true);
         m_Inventory_InventoryQuitE = m_Inventory.FindAction("InventoryQuit (E)", throwIfNotFound: true);
@@ -1060,7 +1060,7 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
     {
         UnityEngine.Debug.Assert(!m_Gameplay.enabled, "This will cause a leak and performance issues, RavineGameInput.Gameplay.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_UI.enabled, "This will cause a leak and performance issues, RavineGameInput.UI.Disable() has not been called.");
-        UnityEngine.Debug.Assert(!m_TextInput.enabled, "This will cause a leak and performance issues, RavineGameInput.TextInput.Disable() has not been called.");
+        UnityEngine.Debug.Assert(!m_Pause.enabled, "This will cause a leak and performance issues, RavineGameInput.Pause.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_Inventory.enabled, "This will cause a leak and performance issues, RavineGameInput.Inventory.Disable() has not been called.");
     }
 
@@ -1140,12 +1140,12 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_Gameplay_MovementWASD;
     private readonly InputAction m_Gameplay_JumpSpace;
     private readonly InputAction m_Gameplay_EnterEnter;
-    private readonly InputAction m_Gameplay_Text;
     private readonly InputAction m_Gameplay_PickUpF;
     private readonly InputAction m_Gameplay_InventoryEnterE;
     private readonly InputAction m_Gameplay_Digit18;
     private readonly InputAction m_Gameplay_FastInteract;
     private readonly InputAction m_Gameplay_DelayInteract;
+    private readonly InputAction m_Gameplay_Pause;
     /// <summary>
     /// Provides access to input actions defined in input action map "Gameplay".
     /// </summary>
@@ -1170,10 +1170,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @EnterEnter => m_Wrapper.m_Gameplay_EnterEnter;
         /// <summary>
-        /// Provides access to the underlying input action "Gameplay/Text".
-        /// </summary>
-        public InputAction @Text => m_Wrapper.m_Gameplay_Text;
-        /// <summary>
         /// Provides access to the underlying input action "Gameplay/PickUpF".
         /// </summary>
         public InputAction @PickUpF => m_Wrapper.m_Gameplay_PickUpF;
@@ -1193,6 +1189,10 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Gameplay/DelayInteract".
         /// </summary>
         public InputAction @DelayInteract => m_Wrapper.m_Gameplay_DelayInteract;
+        /// <summary>
+        /// Provides access to the underlying input action "Gameplay/Pause".
+        /// </summary>
+        public InputAction @Pause => m_Wrapper.m_Gameplay_Pause;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1228,9 +1228,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @EnterEnter.started += instance.OnEnterEnter;
             @EnterEnter.performed += instance.OnEnterEnter;
             @EnterEnter.canceled += instance.OnEnterEnter;
-            @Text.started += instance.OnText;
-            @Text.performed += instance.OnText;
-            @Text.canceled += instance.OnText;
             @PickUpF.started += instance.OnPickUpF;
             @PickUpF.performed += instance.OnPickUpF;
             @PickUpF.canceled += instance.OnPickUpF;
@@ -1246,6 +1243,9 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @DelayInteract.started += instance.OnDelayInteract;
             @DelayInteract.performed += instance.OnDelayInteract;
             @DelayInteract.canceled += instance.OnDelayInteract;
+            @Pause.started += instance.OnPause;
+            @Pause.performed += instance.OnPause;
+            @Pause.canceled += instance.OnPause;
         }
 
         /// <summary>
@@ -1266,9 +1266,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @EnterEnter.started -= instance.OnEnterEnter;
             @EnterEnter.performed -= instance.OnEnterEnter;
             @EnterEnter.canceled -= instance.OnEnterEnter;
-            @Text.started -= instance.OnText;
-            @Text.performed -= instance.OnText;
-            @Text.canceled -= instance.OnText;
             @PickUpF.started -= instance.OnPickUpF;
             @PickUpF.performed -= instance.OnPickUpF;
             @PickUpF.canceled -= instance.OnPickUpF;
@@ -1284,6 +1281,9 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @DelayInteract.started -= instance.OnDelayInteract;
             @DelayInteract.performed -= instance.OnDelayInteract;
             @DelayInteract.canceled -= instance.OnDelayInteract;
+            @Pause.started -= instance.OnPause;
+            @Pause.performed -= instance.OnPause;
+            @Pause.canceled -= instance.OnPause;
         }
 
         /// <summary>
@@ -1524,34 +1524,34 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
     /// </summary>
     public UIActions @UI => new UIActions(this);
 
-    // TextInput
-    private readonly InputActionMap m_TextInput;
-    private List<ITextInputActions> m_TextInputActionsCallbackInterfaces = new List<ITextInputActions>();
-    private readonly InputAction m_TextInput_Enter;
-    private readonly InputAction m_TextInput_Text;
+    // Pause
+    private readonly InputActionMap m_Pause;
+    private List<IPauseActions> m_PauseActionsCallbackInterfaces = new List<IPauseActions>();
+    private readonly InputAction m_Pause_Enter;
+    private readonly InputAction m_Pause_PauseOff;
     /// <summary>
-    /// Provides access to input actions defined in input action map "TextInput".
+    /// Provides access to input actions defined in input action map "Pause".
     /// </summary>
-    public struct TextInputActions
+    public struct PauseActions
     {
         private @RavineGameInput m_Wrapper;
 
         /// <summary>
         /// Construct a new instance of the input action map wrapper class.
         /// </summary>
-        public TextInputActions(@RavineGameInput wrapper) { m_Wrapper = wrapper; }
+        public PauseActions(@RavineGameInput wrapper) { m_Wrapper = wrapper; }
         /// <summary>
-        /// Provides access to the underlying input action "TextInput/Enter".
+        /// Provides access to the underlying input action "Pause/Enter".
         /// </summary>
-        public InputAction @Enter => m_Wrapper.m_TextInput_Enter;
+        public InputAction @Enter => m_Wrapper.m_Pause_Enter;
         /// <summary>
-        /// Provides access to the underlying input action "TextInput/Text".
+        /// Provides access to the underlying input action "Pause/PauseOff".
         /// </summary>
-        public InputAction @Text => m_Wrapper.m_TextInput_Text;
+        public InputAction @PauseOff => m_Wrapper.m_Pause_PauseOff;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
-        public InputActionMap Get() { return m_Wrapper.m_TextInput; }
+        public InputActionMap Get() { return m_Wrapper.m_Pause; }
         /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
         public void Enable() { Get().Enable(); }
         /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
@@ -1559,9 +1559,9 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
         public bool enabled => Get().enabled;
         /// <summary>
-        /// Implicitly converts an <see ref="TextInputActions" /> to an <see ref="InputActionMap" /> instance.
+        /// Implicitly converts an <see ref="PauseActions" /> to an <see ref="InputActionMap" /> instance.
         /// </summary>
-        public static implicit operator InputActionMap(TextInputActions set) { return set.Get(); }
+        public static implicit operator InputActionMap(PauseActions set) { return set.Get(); }
         /// <summary>
         /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
         /// </summary>
@@ -1569,17 +1569,17 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// <remarks>
         /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
         /// </remarks>
-        /// <seealso cref="TextInputActions" />
-        public void AddCallbacks(ITextInputActions instance)
+        /// <seealso cref="PauseActions" />
+        public void AddCallbacks(IPauseActions instance)
         {
-            if (instance == null || m_Wrapper.m_TextInputActionsCallbackInterfaces.Contains(instance)) return;
-            m_Wrapper.m_TextInputActionsCallbackInterfaces.Add(instance);
+            if (instance == null || m_Wrapper.m_PauseActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_PauseActionsCallbackInterfaces.Add(instance);
             @Enter.started += instance.OnEnter;
             @Enter.performed += instance.OnEnter;
             @Enter.canceled += instance.OnEnter;
-            @Text.started += instance.OnText;
-            @Text.performed += instance.OnText;
-            @Text.canceled += instance.OnText;
+            @PauseOff.started += instance.OnPauseOff;
+            @PauseOff.performed += instance.OnPauseOff;
+            @PauseOff.canceled += instance.OnPauseOff;
         }
 
         /// <summary>
@@ -1588,24 +1588,24 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// <remarks>
         /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
         /// </remarks>
-        /// <seealso cref="TextInputActions" />
-        private void UnregisterCallbacks(ITextInputActions instance)
+        /// <seealso cref="PauseActions" />
+        private void UnregisterCallbacks(IPauseActions instance)
         {
             @Enter.started -= instance.OnEnter;
             @Enter.performed -= instance.OnEnter;
             @Enter.canceled -= instance.OnEnter;
-            @Text.started -= instance.OnText;
-            @Text.performed -= instance.OnText;
-            @Text.canceled -= instance.OnText;
+            @PauseOff.started -= instance.OnPauseOff;
+            @PauseOff.performed -= instance.OnPauseOff;
+            @PauseOff.canceled -= instance.OnPauseOff;
         }
 
         /// <summary>
-        /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="TextInputActions.UnregisterCallbacks(ITextInputActions)" />.
+        /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="PauseActions.UnregisterCallbacks(IPauseActions)" />.
         /// </summary>
-        /// <seealso cref="TextInputActions.UnregisterCallbacks(ITextInputActions)" />
-        public void RemoveCallbacks(ITextInputActions instance)
+        /// <seealso cref="PauseActions.UnregisterCallbacks(IPauseActions)" />
+        public void RemoveCallbacks(IPauseActions instance)
         {
-            if (m_Wrapper.m_TextInputActionsCallbackInterfaces.Remove(instance))
+            if (m_Wrapper.m_PauseActionsCallbackInterfaces.Remove(instance))
                 UnregisterCallbacks(instance);
         }
 
@@ -1615,21 +1615,21 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// <remarks>
         /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
         /// </remarks>
-        /// <seealso cref="TextInputActions.AddCallbacks(ITextInputActions)" />
-        /// <seealso cref="TextInputActions.RemoveCallbacks(ITextInputActions)" />
-        /// <seealso cref="TextInputActions.UnregisterCallbacks(ITextInputActions)" />
-        public void SetCallbacks(ITextInputActions instance)
+        /// <seealso cref="PauseActions.AddCallbacks(IPauseActions)" />
+        /// <seealso cref="PauseActions.RemoveCallbacks(IPauseActions)" />
+        /// <seealso cref="PauseActions.UnregisterCallbacks(IPauseActions)" />
+        public void SetCallbacks(IPauseActions instance)
         {
-            foreach (var item in m_Wrapper.m_TextInputActionsCallbackInterfaces)
+            foreach (var item in m_Wrapper.m_PauseActionsCallbackInterfaces)
                 UnregisterCallbacks(item);
-            m_Wrapper.m_TextInputActionsCallbackInterfaces.Clear();
+            m_Wrapper.m_PauseActionsCallbackInterfaces.Clear();
             AddCallbacks(instance);
         }
     }
     /// <summary>
-    /// Provides a new <see cref="TextInputActions" /> instance referencing this action map.
+    /// Provides a new <see cref="PauseActions" /> instance referencing this action map.
     /// </summary>
-    public TextInputActions @TextInput => new TextInputActions(this);
+    public PauseActions @Pause => new PauseActions(this);
 
     // Inventory
     private readonly InputActionMap m_Inventory;
@@ -1755,13 +1755,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnEnterEnter(InputAction.CallbackContext context);
         /// <summary>
-        /// Method invoked when associated input action "Text (|)" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
-        /// </summary>
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnText(InputAction.CallbackContext context);
-        /// <summary>
         /// Method invoked when associated input action "Pick Up (F)" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
@@ -1796,6 +1789,13 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnDelayInteract(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Pause" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnPause(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.
@@ -1883,11 +1883,11 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         void OnMobileTouch(InputAction.CallbackContext context);
     }
     /// <summary>
-    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "TextInput" which allows adding and removing callbacks.
+    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Pause" which allows adding and removing callbacks.
     /// </summary>
-    /// <seealso cref="TextInputActions.AddCallbacks(ITextInputActions)" />
-    /// <seealso cref="TextInputActions.RemoveCallbacks(ITextInputActions)" />
-    public interface ITextInputActions
+    /// <seealso cref="PauseActions.AddCallbacks(IPauseActions)" />
+    /// <seealso cref="PauseActions.RemoveCallbacks(IPauseActions)" />
+    public interface IPauseActions
     {
         /// <summary>
         /// Method invoked when associated input action "Enter" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
@@ -1897,12 +1897,12 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnEnter(InputAction.CallbackContext context);
         /// <summary>
-        /// Method invoked when associated input action "Text" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "PauseOff" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnText(InputAction.CallbackContext context);
+        void OnPauseOff(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Inventory" which allows adding and removing callbacks.

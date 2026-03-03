@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 namespace TheRavine.Inventory
 {
@@ -10,18 +9,12 @@ namespace TheRavine.Inventory
         public event Action<object> OnInventoryStateChangedEvent;
         public event Action<object> OnInventoryStateChangedEventOnce;
 
-        private readonly InventoryModel _inventory;
+        public readonly InventoryModel _inventory;
 
         public EventDrivenInventoryProxy(int slotCount)
         {
             _inventory = new InventoryModel(slotCount);
         }
-
-        public EventDrivenInventoryProxy(List<InventorySlot> inventorySlots)
-        {
-            _inventory = new InventoryModel(inventorySlots);
-        }
-
         public int capacity
         {
             get => _inventory.Capacity;

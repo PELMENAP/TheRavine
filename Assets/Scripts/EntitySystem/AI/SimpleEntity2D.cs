@@ -12,6 +12,11 @@ public class SimpleEntity2D : AEntity
     {
         this.logger = logger;
     }
+
+    public override void SetUp()
+    {
+        throw new NotImplementedException();
+    }
     
     public override void Init()
     {

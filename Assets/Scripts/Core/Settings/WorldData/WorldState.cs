@@ -42,6 +42,10 @@ namespace TheRavine.Base
             }
 
             public readonly Vector3 ToVector3() => new(x, y, z);
+            public readonly Vector3 ToSpawnPoint() => new(x, y + 1f, z);
+
+            public override readonly string ToString() => $"({x}, {y}, {z})";
+            public readonly bool IsNull() => x == 0f && y == 0f && z == 0f;
             public static implicit operator Vector3(Vec3 vec3) => vec3.ToVector3();
             public static implicit operator Vec3(Vector3 vector3) => new(vector3);
         }

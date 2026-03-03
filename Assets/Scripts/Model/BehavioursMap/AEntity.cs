@@ -56,6 +56,7 @@ namespace TheRavine.EntityControl
 
         public abstract void Init();
         public abstract void UpdateEntityCycle();
+        public abstract void SetUp();
 
         public virtual void DeepClean()
         {

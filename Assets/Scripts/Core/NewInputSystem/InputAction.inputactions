@@ -34,15 +34,6 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Text (|)",
-                    "type": "Button",
-                    "id": "bb4910dc-2ee2-4d58-83f4-a83779e5ffda",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
                     "name": "Pick Up (F)",
                     "type": "Button",
                     "id": "50b14e70-78cd-443d-a17a-387a918af929",
@@ -85,6 +76,15 @@
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "Hold",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Pause",
+                    "type": "Button",
+                    "id": "818ca37c-aa30-46c8-8e99-725bdf5b3d9c",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
                     "initialStateCheck": false
                 }
             ],
@@ -163,17 +163,6 @@
                     "processors": "",
                     "groups": "",
                     "action": "Enter (Enter)",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "fdd8e5f0-d7fb-4080-a9b1-b92e28470847",
-                    "path": "<Keyboard>/backslash",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Text (|)",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -306,6 +295,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Delay Interact",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "136fd32a-cd34-4246-bdca-b8d380693d38",
+                    "path": "<Keyboard>/p",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Pause",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
@@ -859,7 +859,7 @@
             ]
         },
         {
-            "name": "TextInput",
+            "name": "Pause",
             "id": "059f4a24-6092-477b-a1f5-c206aeb3d81e",
             "actions": [
                 {
@@ -872,9 +872,9 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Text",
+                    "name": "PauseOff",
                     "type": "Button",
-                    "id": "e78df573-b6bb-46b4-a38a-fa70176b3e27",
+                    "id": "0c630a91-5593-44a5-afab-bffbdce9645b",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -895,12 +895,12 @@
                 },
                 {
                     "name": "",
-                    "id": "bc2c700b-4788-4ff3-b461-899d4be64505",
-                    "path": "<Keyboard>/backslash",
+                    "id": "4828e77e-7c38-4f6a-87c3-7cda0ad35ba1",
+                    "path": "<Keyboard>/p",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Text",
+                    "action": "PauseOff",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

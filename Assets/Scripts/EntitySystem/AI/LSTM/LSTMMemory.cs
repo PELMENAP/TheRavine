@@ -8,8 +8,8 @@ public partial class LSTMMemory
     private readonly int inputSize;
     private readonly int hiddenSize;
 
-    private readonly float[] h; // скрытое состояние
-    private readonly float[] c; // ячейка памяти
+    private readonly float[] h;
+    private readonly float[] c;
     private readonly float[,] Wf, Wi, Wo, Wc;
     private readonly float[] bf, bi, bo, bc;
 

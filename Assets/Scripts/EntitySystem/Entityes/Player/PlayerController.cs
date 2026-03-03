@@ -37,28 +37,23 @@ namespace TheRavine.EntityControl
         private GlobalSettings globalSettings;
         private AEntity playerEntity;
         private readonly DoubleTapDetector forwardTap = new();
+        private IDisposable unsubscribe;
         public void SetInitialValues(AEntity entity, RavineLogger logger)
         {
             playerEntity = entity;
             globalSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
             this.logger = logger;
+
+            WorldRegistry worldRegistry = ServiceLocator.GetService<WorldRegistry>();
+            unsubscribe = ServiceLocator.GetService<AutosaveCoordinator>().SubscribeBeforeSave(() =>
+            {
+                SavePlayerPosition(worldRegistry);
+            });
             
 
             playerAnimator.SetUpAsync().Forget();
-
             GetPlayerComponents();
-            DelayedInit().Forget();
-
-            Camera camera = playerEntity.GetEntityComponent<CameraComponent>().GetCamera();
-
-            currentController = globalSettings.controlType switch
-            {
-                ControlType.Personal => new PCController(Movement, camera, transform, aimComponent.CrosshairDistance),
-                ControlType.Mobile => new JoistickController(joystick),
-                _ => null
-            };
-
-            if(currentController is null) logger.LogError("Control type not defined");
+            DelayedInit(worldRegistry).Forget();
 
             Raise.action.performed += AimRaise;
             LeftClick.action.performed += AimPlace;
@@ -67,17 +62,46 @@ namespace TheRavine.EntityControl
             RightClick.action.canceled += OnActionCanceled;
         }
 
-        private async UniTaskVoid DelayedInit()
+        public void SetUp()
         {
-            Vector2 spawnSpread = Extension.GetRandomPointAround(this.transform.position, 10);
-            transform.position = new Vector3(spawnSpread.x, 200, spawnSpread.y);
+            Camera camera = playerEntity.GetEntityComponent<CameraComponent>().GetCamera();
 
+            currentController = globalSettings.controlType switch
+            {
+                ControlType.Personal => new PCController(Movement, camera, transform, aimComponent.CrosshairDistance),
+                ControlType.Mobile => new JoistickController(joystick),
+                _ => null
+            };
+        }
+
+        private void SavePlayerPosition(WorldRegistry worldRegistry)
+        {
+            worldRegistry.UpdateState(s => 
+            {
+                s.playerPosition = transform.position;
+            });
+        }
+
+        private async UniTaskVoid DelayedInit(WorldRegistry worldRegistry)
+        {
             playerRigidbody.useGravity = false;
+
+            WorldState worldState = worldRegistry.GetCurrentState();
+
+            Debug.Log(worldState.playerPosition.ToString());
+            if(!worldState.playerPosition.IsNull())
+            {
+                Debug.Log("PLAYER POSITION GET FROM THE STORAGE");
+                transform.position = worldState.playerPosition.ToSpawnPoint();
+            }
+            else
+            {
+                Vector2 spawnPoint = Extension.GetRandomPointAround(this.transform.position, 10);
+                transform.position = new Vector3(spawnPoint.x, 200, spawnPoint.y);
+            }
+
             await UniTask.Delay(5000);
             playerRigidbody.useGravity = true;
-
-            spawnSpread = Extension.GetRandomPointAround(this.transform.position, 10);
-            transform.position = new Vector3(spawnSpread.x, 200, spawnSpread.y);
         }
 
         private void GetPlayerComponents()
@@ -285,6 +309,7 @@ namespace TheRavine.EntityControl
         }
         public void Delete()
         {
+            unsubscribe.Dispose();
             currentController.MeetEnds();
             Raise.action.performed -= AimRaise;
             LeftClick.action.performed -= AimPlace;

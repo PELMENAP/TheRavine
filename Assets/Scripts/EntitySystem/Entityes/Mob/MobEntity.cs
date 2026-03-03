@@ -15,6 +15,10 @@ namespace TheRavine.EntityControl
             // _entityGameData = new EntityGameData(_entityInfo);
             // crosshair.gameObject.SetActive(false);
         }
+        public override void SetUp()
+        {
+            throw new NotImplementedException();
+        }
         public override void Init()
         {
             base.Activate();
