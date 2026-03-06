@@ -18,8 +18,8 @@ public static class RandomSeed
 
     public static int Crypto()
     {
-        var bytes = new byte[4];
+        Span<byte> bytes = stackalloc byte[4];
         RandomNumberGenerator.GetBytes(bytes);
-        return BitConverter.ToInt32(bytes, 0);
+        return BitConverter.ToInt32(bytes);
     }
 }

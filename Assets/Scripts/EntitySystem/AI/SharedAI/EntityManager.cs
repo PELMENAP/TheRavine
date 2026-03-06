@@ -30,20 +30,14 @@ public class EntityManager : MonoBehaviour
     [SerializeField, ReadOnly] private float _avgEntropy;
 
     private SharedHierarchicalBrain _sharedBrain;
-    private InputVectorizer         _vectorizer;
-
-    private readonly ReactiveProperty<float> _globalMaxHealth = new(200f);
-    private readonly ReactiveProperty<float> _globalMaxEnergy = new(200f);
 
     private readonly List<Entity2D> _entities = new();
 
     public SharedHierarchicalBrain SharedBrain => _sharedBrain;
-    public InputVectorizer         Vectorizer  => _vectorizer;
     public IReadOnlyList<Entity2D> Entities    => _entities;
 
     private void Awake()
     {
-        _vectorizer  = new InputVectorizer(_globalMaxHealth, _globalMaxEnergy);
         _sharedBrain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden);
     }
 
@@ -66,7 +60,7 @@ public class EntityManager : MonoBehaviour
         var entity = go.GetComponent<Entity2D>();
 
         var ctx = inheritedCtx ?? _sharedBrain.CreateContext();
-        entity.Inject(_sharedBrain, _vectorizer, ctx, this);
+        entity.Inject(_sharedBrain, ctx, this);
 
         _entities.Add(entity);
         entity.OnDied             += HandleEntityDied;

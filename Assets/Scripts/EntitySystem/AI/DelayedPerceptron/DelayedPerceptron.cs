@@ -109,8 +109,7 @@ public partial class DelayedPerceptron
         {
             float target = (i == predictedIndex) ? pos : neg;
             float act    = ctx.Activations[last][i];
-            outErr[i] = (target - act) / (act * (1f - act) + 1e-8f)
-                      + ctx.Params.EntropyRegularization * (0.5f - act);
+            outErr[i] = (target - act) + ctx.Params.EntropyRegularization * (0.5f - act);
         }
 
         float[] currentErrors = outErr;
@@ -304,7 +303,6 @@ public partial class DelayedPerceptron
         Array.Copy(src, copy, src.Length);
         return copy;
     }
-
     public static float LeakyReLU(float x, float alpha = 0.01f)      => x >= 0 ? x : alpha * x;
     public static float LeakyReLUPrime(float x, float alpha = 0.01f) => x >= 0 ? 1f : alpha;
 
