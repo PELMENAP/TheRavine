@@ -105,12 +105,11 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
     }
     public void Inject(
         SharedHierarchicalBrain brain,
-        InputVectorizer vectorizer,
         EntityBrainContext ctx,
         EntityManager entityManager)
     {
         _sharedBrain   = brain;
-        _vectorizer    = vectorizer;
+        _vectorizer    = new InputVectorizer(maxHealth, maxEnergy);
         _ctx           = ctx;
         _entityManager = entityManager;
     }
