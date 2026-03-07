@@ -85,6 +85,7 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
     {
         Idle = 0, Wander = 1, RememberPoint = 2, GoToPoint = 3,
         Attack = 4, Flee = 5, Eat = 6, Reproduce = 7, Speech = 8,
+        Mimic = 9, Rest = 10, Threaten = 11, ShareFood = 12, 
     }
 
     public EntityBrainContext BrainContext => _ctx;
@@ -131,6 +132,7 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
     private void OnDestroy()
     {
         DialogSystem.Instance.RemoveDialogListener(this);
+        _vectorizer?.Dispose();
     }
 
     private void StartLoops()
@@ -176,7 +178,7 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
 
         if (label != null)
             label.text = $"{_ctx.CurrentGoal} - {action}\n"
-                       + $"{(int)currentHealth}/{(int)currentEnergy}\n"
+                       + $"{(int)currentHealth} HP / {(int)currentEnergy} ENERGY\n"
                        + _ownSpeech;
 
         if (!CanPerformAction(action))
@@ -204,6 +206,10 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
             case EntityAction.Eat:           await EatAsync(ct);           break;
             case EntityAction.Reproduce:     await ReproduceAsync(ct);     break;
             case EntityAction.Speech:        await SpeechAsync(ct);        break;
+            case EntityAction.Mimic:         await MimicAsync(ct);         break;
+            case EntityAction.Rest:          await RestAsync(ct);          break;
+            case EntityAction.Threaten:      await ThreatenAsync(ct);      break;
+            case EntityAction.ShareFood:     await ShareFoodAsync(ct);     break;
         }
     }
 
@@ -299,7 +305,11 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
         Vector2 target = (Vector2)transform.position + away * detectionRadius * 1.5f;
         await MoveToAsync(target, runSpeed, 2f, energyCostPerSecondRunning, ct);
 
-        float dist = Vector2.Distance(transform.position, nearest.transform.position);
+        float dist = 1f;
+        if(nearest != null)
+        {
+            dist = Vector2.Distance(transform.position, nearest.transform.position);
+        }
         _sharedBrain.GiveReward(Mathf.Clamp01(dist / detectionRadius), _ctx);
         _sr.color = orig;
     }
@@ -344,8 +354,118 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
         _ownSpeech = _vectorizer.HashFloatArray(_lastInput);
         DialogSystem.Instance.OnSpeechSend(this, _ownSpeech);
         currentEnergy -= 5f;
-        _sharedBrain.GiveReward(0.5f, _ctx);
+        _sharedBrain.GiveReward(0.55f, _ctx);
         await UniTask.Yield(ct);
+    }
+
+    private async UniTask MimicAsync(CancellationToken ct)
+    {
+        GameObject nearest = FindNearbyEntity();
+        if (nearest == null) { _sharedBrain.GiveReward(0.2f, _ctx); return; }
+
+        var other = nearest.GetComponent<Entity2D>();
+        if (other == null) { _sharedBrain.GiveReward(0.2f, _ctx); return; }
+
+        int mimicAction = other._lastActionIndex;
+
+        float reward = 0.3f + other._ctx.CoordMLP.AverageEntropy * 0.2f;
+        _sharedBrain.GiveReward(reward, _ctx);
+
+        Color orig = _sr.color;
+        _sr.color  = Color.Lerp(_sr.color, other._sr.color, 0.5f);
+
+        _lastActionIndex = mimicAction;
+        await UniTask.Delay(TimeSpan.FromSeconds(0.5f), cancellationToken: ct);
+        _sr.color = orig;
+    }
+
+    private async UniTask RestAsync(CancellationToken ct)
+    {
+        bool isNight = _timeOfDay >= 20 || _timeOfDay <= 5;
+
+        if (!isNight)
+        {
+            _sharedBrain.GiveReward(0.1f, _ctx); // штраф за сон днём
+            await UniTask.Yield(ct);
+            return;
+        }
+
+        _isMoving          = false;
+        _rb.linearVelocity = Vector2.zero;
+        Color orig = _sr.color;
+        _sr.color  = new Color(0.3f, 0.3f, 0.6f);
+
+        float elapsed = 0f;
+        float restDuration = 3f;
+        while (elapsed < restDuration && !ct.IsCancellationRequested)
+        {
+            currentHealth = Mathf.Min(currentHealth + 5f * Time.deltaTime, maxHealth.Value);
+            currentEnergy = Mathf.Min(currentEnergy + 8f * Time.deltaTime, maxEnergy.Value);
+            elapsed       += Time.deltaTime;
+            await UniTask.Yield(ct);
+        }
+
+        _sr.color = orig;
+        _sharedBrain.GiveReward(0.7f, _ctx);
+    }
+
+    private async UniTask ThreatenAsync(CancellationToken ct)
+    {
+        GameObject target = FindNearbyEntity();
+        if (target == null) { _sharedBrain.GiveReward(0.2f, _ctx); return; }
+
+        float dist = Vector2.Distance(transform.position, target.transform.position);
+        if (dist > attackRange * 2f) { _sharedBrain.GiveReward(0.15f, _ctx); return; }
+
+        Color orig = _sr.color;
+        _sr.color  = new Color(1f, 0.5f, 0f);
+
+        DialogSystem.Instance.OnSpeechSend(this, "THREAT:" + _vectorizer.HashFloatArray(_lastInput));
+        currentEnergy -= 3f;
+
+        float threatReward = dist < attackRange ? 0.6f : 0.4f;
+        _sharedBrain.GiveReward(threatReward, _ctx);
+
+        await UniTask.Delay(TimeSpan.FromSeconds(0.8f), cancellationToken: ct);
+        _sr.color = orig;
+    }
+
+    private async UniTask ShareFoodAsync(CancellationToken ct)
+    {
+        if (currentHealth < 80f) { _sharedBrain.GiveReward(0.1f, _ctx); return; }
+
+        Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, detectionRadius, entityLayer);
+        Entity2D     best = null;
+        float        minH = float.MaxValue;
+
+        foreach (var col in cols)
+        {
+            if (col.gameObject == gameObject) continue;
+            var other = col.GetComponent<Entity2D>();
+            if (other != null && other.currentHealth < minH)
+            {
+                minH = other.currentHealth;
+                best = other;
+            }
+        }
+
+        if (best == null || minH > currentHealth * 0.8f)
+        {
+            _sharedBrain.GiveReward(0.25f, _ctx);
+            return;
+        }
+
+        float transfer = Mathf.Min(20f, currentHealth - 60f);
+        currentHealth      -= transfer;
+        best.currentHealth  = Mathf.Min(best.currentHealth + transfer, best.maxHealth.Value);
+
+        StartCoroutine(FlashColor(Color.yellow, 0.3f));
+        best.StartCoroutine(best.FlashColor(Color.yellow, 0.3f));
+
+        float needFactor = 1f - Mathf.Clamp01(minH / best.maxHealth.Value);
+        _sharedBrain.GiveReward(0.5f + needFactor * 0.35f, _ctx);
+
+        await UniTask.Delay(TimeSpan.FromSeconds(0.5f), cancellationToken: ct);
     }
 
     public void TakeDamage(float damage)

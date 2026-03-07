@@ -3,23 +3,12 @@ using R3;
 using UnityEngine;
 
 /// <summary>
-/// Преобразует состояние сущности в нормализованный вектор для нейросети.
-/// Вектор: 64 float, из которых ~48 заполнены значимыми данными.
-///
-/// Раскладка:
-///   [0..5]   — витальные показатели + дельты
-///   [6..7]   — время (sin/cos для цикличности)
-///   [8..16]  — one-hot последнего действия  (9 слотов = кол-во EntityAction)
-///   [17..25] — частота действий с затуханием (история за 16 шагов)
-///   [26..27] — опасность и готовность к размножению
-///   [28..31] — кодировка речи (4 float через hash-проекцию)
-///   [32..33] — близость врагов / еды (нормализованная)
-///   [34..63] — резерв (zeros), готов для расширения
+///   [42..63] — резерв (zeros), готов для расширения
 /// </summary>
 public class InputVectorizer
 {
     public const int VectorSize    = 64;
-    public const int ActionCount   = 9;
+    public const int ActionCount   = 13;
     private const int HistoryLen   = 16;
     private const float HistoryDecay = 0.75f;
     private float _maxHealth;
@@ -36,13 +25,17 @@ public class InputVectorizer
 
     private readonly float[] _vector = new float[VectorSize];
 
+    private IDisposable _subHealth;
+    private IDisposable _subEnergy;
+
+
     public InputVectorizer(ReactiveProperty<float> maxHealth, ReactiveProperty<float> maxEnergy)
     {
         _maxHealth = maxHealth.Value;
         _maxEnergy = maxEnergy.Value;
 
-        maxHealth.Subscribe(v => _maxHealth = v);
-        maxEnergy.Subscribe(v => _maxEnergy = v);
+        _subHealth = maxHealth.Subscribe(v => _maxHealth = v);
+        _subEnergy = maxEnergy.Subscribe(v => _maxEnergy = v);
     }
 
     public int GetVectorSize() => VectorSize;
@@ -79,21 +72,21 @@ public class InputVectorizer
         _vector[idx++] = Mathf.Cos(angle);
 
         for (int i = 0; i < ActionCount; i++)
-            _vector[idx++] = (lastAction == i) ? 1f : 0f; // [8..16]
+            _vector[idx++] = (lastAction == i) ? 1f : 0f;
 
         UpdateActionHistory(lastAction);
         for (int i = 0; i < ActionCount; i++)
-            _vector[idx++] = _actionFrequency[i]; // [17..25]
+            _vector[idx++] = _actionFrequency[i];
 
-        _vector[idx++] = Mathf.Clamp01(inDanger);    // [26]
-        _vector[idx++] = Mathf.Clamp01(timeToBreed); // [27]
+        _vector[idx++] = Mathf.Clamp01(inDanger); 
+        _vector[idx++] = Mathf.Clamp01(timeToBreed);
 
-        EncodeSpeech(speech, idx); idx += 4; // [28..31]
+        EncodeSpeech(speech, idx); idx += 4;
 
-        _vector[idx++] = nearestEnemyDist >= 0f           // [32]
+        _vector[idx++] = nearestEnemyDist >= 0f     
             ? 1f - Mathf.Clamp01(nearestEnemyDist / MaxDetectionRadius)
             : 0f;
-        _vector[idx++] = nearestFoodDist >= 0f            // [33] еда
+        _vector[idx++] = nearestFoodDist >= 0f  
             ? 1f - Mathf.Clamp01(nearestFoodDist / MaxDetectionRadius)
             : 0f;
 
@@ -156,5 +149,11 @@ public class InputVectorizer
             hash = (hash ^ bits) * 16777619u;
         }
         return hash.ToString("X8");
+    }
+
+    public void Dispose()
+    {
+        _subHealth?.Dispose();
+        _subEnergy?.Dispose();
     }
 }
