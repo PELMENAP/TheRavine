@@ -417,6 +417,7 @@ GameObject:
   m_Component:
   - component: {fileID: 142690056}
   - component: {fileID: 142690057}
+  - component: {fileID: 142690058}
   m_Layer: 0
   m_Name: experiment
   m_TagString: Untagged
@@ -433,7 +434,7 @@ Transform:
   m_GameObject: {fileID: 142690054}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8.68, y: 37.1, z: 0}
+  m_LocalPosition: {x: 6.3, y: 16.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -453,15 +454,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: EntitySystem::EntityManager
   entityPrefab: {fileID: 7498966713481436335, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
   foodPrefab: {fileID: 8079554152659468491, guid: b4ca380ab861563c1868b8b809fbf5e6, type: 3}
-  initialCount: 10
-  maxPopulation: 20
-  spawnRadius: 15
-  initialFood: 10
-  maxFood: 20
+  initialCount: 30
+  maxPopulation: 50
+  spawnRadius: 30
+  initialFood: 100
+  maxFood: 100
   lstmHidden: 32
   _entityCount: 0
   _foodCount: 0
   _avgEntropy: 0
+--- !u!114 &142690058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 142690054}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92d90252e4ddc5ea1b1d6fb3a540f7a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EntitySystem::SimulationDebugDashboard
+  showDashboard: 1
+  windowId: 9999
+  historyLength: 120
+  sampleInterval: 1
 --- !u!1001 &307599329
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -470,6 +487,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 4598363686276832348, guid: 836879510508d084db2d3828d6a44892, type: 3}
+      propertyPath: m_CullingMask.m_Bits
+      value: 4294967295
+      objectReference: {fileID: 0}
     - target: {fileID: 6247430313963959964, guid: 836879510508d084db2d3828d6a44892, type: 3}
       propertyPath: m_LocalPosition.x
       value: 22.24
@@ -1383,11 +1404,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: EntitySystem::EntityManager
   entityPrefab: {fileID: 7498966713481436335, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
   foodPrefab: {fileID: 8079554152659468491, guid: b4ca380ab861563c1868b8b809fbf5e6, type: 3}
-  initialCount: 10
-  maxPopulation: 20
+  initialCount: 0
+  maxPopulation: 50
   spawnRadius: 15
-  initialFood: 10
-  maxFood: 20
+  initialFood: 100
+  maxFood: 100
   lstmHidden: 32
   _entityCount: 0
   _foodCount: 0
@@ -1401,7 +1422,7 @@ Transform:
   m_GameObject: {fileID: 2003422532}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 9.26, y: -1.61, z: 0}
+  m_LocalPosition: {x: 53.4, y: 17, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

@@ -29,12 +29,17 @@ public class EntityManager : MonoBehaviour
     [SerializeField, ReadOnly] private int  _foodCount;
     [SerializeField, ReadOnly] private float _avgEntropy;
 
+    public int MaxPopulation => maxPopulation;
+    public event Action<Entity2D> OnEntitySpawned;
+    public event Action<Entity2D> OnEntityDied;
+
+    public void OnFoodConsumed() => _foodCount--;
+
+
     private SharedHierarchicalBrain _sharedBrain;
-
-    private readonly List<Entity2D> _entities = new();
-
     public SharedHierarchicalBrain SharedBrain => _sharedBrain;
-    public IReadOnlyList<Entity2D> Entities    => _entities;
+    private readonly List<Entity2D> _entities = new();
+    public List<Entity2D> Entities => _entities;
 
     private void Awake()
     {
@@ -68,6 +73,7 @@ public class EntityManager : MonoBehaviour
 
         entity.SetUpAsNew();
 
+        OnEntitySpawned?.Invoke(entity);
         return entity;
     }
 
@@ -99,7 +105,10 @@ public class EntityManager : MonoBehaviour
     public void SpawnFood()
     {
         if (_foodCount >= maxFood || foodPrefab == null) return;
-        Instantiate(foodPrefab, RandomPosition(), Quaternion.identity, transform);
+        var go   = Instantiate(foodPrefab, RandomPosition(), Quaternion.identity, transform);
+        var food = go.GetComponent<FoodObject>();
+        if (food == null) food = go.AddComponent<FoodObject>();
+        food.Init(this);
         _foodCount++;
     }
 
@@ -111,6 +120,8 @@ public class EntityManager : MonoBehaviour
 
         if (_entities.Count < initialCount / 2)
             SpawnEntity(RandomPosition());
+
+        OnEntityDied?.Invoke(entity);
     }
 
     private void HandleReproduceRequest(Entity2D parent) => SpawnChild(parent);

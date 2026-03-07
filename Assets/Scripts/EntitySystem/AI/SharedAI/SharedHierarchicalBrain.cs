@@ -9,10 +9,14 @@ public class SharedHierarchicalBrain
 
     public static readonly int[][] ActionSubsets =
     {
-        new[] { 1, 5, 6, 0 },   // Survive: Wander, Flee, Eat, Idle
-        new[] { 4, 1, 0, 5 },   // Hunt:    Attack, Wander, Idle, Flee
-        new[] { 2, 3, 6, 1 },   // Forage:  RememberPoint, GoToPoint, Eat, Wander
-        new[] { 8, 7, 0, 1 },   // Social:  Speech, Reproduce, Idle, Wander
+        //  Survive: Idle, Wander, Flee, Eat, Rest
+        new[] { 0, 1, 5, 6, 10 },
+        //  Hunt: Idle, Wander, Attack, Flee, Threaten
+        new[] { 0, 1, 4, 5, 11 },
+        //  Forage: Wander, RememberPoint, GoToPoint, Eat
+        new[] { 1, 2, 3, 6 },
+        //  Social: Idle, Wander, Reproduce, Speech, Mimic, ShareFood
+        new[] { 0, 1, 7, 8, 9, 12 },
     };
 
     private const int CoordDelaySteps  = 10;

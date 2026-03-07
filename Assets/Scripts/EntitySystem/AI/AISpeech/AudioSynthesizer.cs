@@ -125,7 +125,7 @@ public static class AudioSynthesizer
         var handle = job.Schedule(sampleCount, math.min(1024, sampleCount));
         JobHandle.ScheduleBatchedJobs();
 
-        await UniTask.WaitUntil(() => handle.IsCompleted, cancellationToken: ct);
+        await UniTask.RunOnThreadPool(() => handle.Complete(), cancellationToken: ct);
         handle.Complete();
         samplesNative.CopyTo(target);
 

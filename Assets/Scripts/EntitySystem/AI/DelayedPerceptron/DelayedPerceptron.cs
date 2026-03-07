@@ -263,20 +263,21 @@ public partial class DelayedPerceptron
 
     private int ArgMax(float[] arr)
     {
-        var pairs = arr
-            .AsValueEnumerable()
-            .Select((v, i) => (value: v, idx: i))
-            .OrderByDescending(p => p.value)
-            .Take(3)
-            .ToArray();
+        int   i0 = 0, i1 = -1, i2 = -1;
+        float v0 = float.MinValue, v1 = float.MinValue, v2 = float.MinValue;
+
+        for (int i = 0; i < arr.Length; i++)
+        {
+            float v = arr[i];
+            if (v > v0)       { v2 = v1; i2 = i1; v1 = v0; i1 = i0; v0 = v; i0 = i; }
+            else if (v > v1)  { v2 = v1; i2 = i1; v1 = v;  i1 = i; }
+            else if (v > v2)  { v2 = v;  i2 = i; }
+        }
 
         float pick = RavineRandom.RangeFloat(), cum = 0f;
-        for (int k = 0; k < 3; k++)
-        {
-            cum += w[k];
-            if (pick <= cum) return pairs[k].idx;
-        }
-        return pairs[0].idx;
+        cum += w[0]; if (pick <= cum || i1 < 0) return i0;
+        cum += w[1]; if (pick <= cum || i2 < 0) return i1;
+        return i2;
     }
 
     private static float CalculateOutputEntropy(float[] outputs)
