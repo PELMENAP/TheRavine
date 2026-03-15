@@ -7,7 +7,6 @@
   <Project Path="LitMotion.Extensions.csproj" />
   <Project Path="NaughtyAttributes.Core.csproj" />
   <Project Path="ObjectSystem.csproj" />
-  <Project Path="DialogGraph.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="UniTask.Addressables.csproj" />
   <Project Path="DetectorSystem.csproj" />
@@ -15,13 +14,17 @@
   <Project Path="Netcode.csproj" />
   <Project Path="NaughtyAttributes.Editor.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="undream.llmunity.Runtime.csproj" />
   <Project Path="View.csproj" />
   <Project Path="Tayx.Graphy.csproj" />
   <Project Path="Info.csproj" />
   <Project Path="UniTask.TextMeshPro.csproj" />
   <Project Path="UIInventory.csproj" />
+  <Project Path="undream.llmunity.Editor.csproj" />
   <Project Path="B.csproj" />
+  <Project Path="Cloud.Unum.USearch.csproj" />
   <Project Path="Inventory.csproj" />
   <Project Path="EventSystem.csproj" />
   <Project Path="SkillSystem.csproj" />
+  <Project Path="DialogGraph.csproj" />
 </Solution>
