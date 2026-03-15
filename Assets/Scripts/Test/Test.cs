@@ -10,7 +10,6 @@ using TheRavine.Generator;
 using TheRavine.Extensions;
 using TheRavine.EntityControl;
 
-using DS.ScriptableObjects;
 
 public class Test : MonoBehaviour
 {
@@ -94,8 +93,6 @@ public class Test : MonoBehaviour
     // {
     //     generator.TestGeneration();
     // }
-
-    [SerializeField] private DSDialogueContainerSO dialogData;
     [SerializeField] private PlayerDialogOutput output;
     [SerializeField] private string answer;
 

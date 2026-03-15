@@ -535,6 +535,14 @@ PrefabInstance:
       propertyPath: GlobalObjectIdHash
       value: 227829740
       objectReference: {fileID: 0}
+    - target: {fileID: 6626940321005811355, guid: 836879510508d084db2d3828d6a44892, type: 3}
+      propertyPath: SceneMigrationSynchronization
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6626940321005811355, guid: 836879510508d084db2d3828d6a44892, type: 3}
+      propertyPath: InScenePlacedSourceGlobalObjectIdHash
+      value: 1859908491
+      objectReference: {fileID: 0}
     - target: {fileID: 8159419866425038147, guid: 836879510508d084db2d3828d6a44892, type: 3}
       propertyPath: m_Name
       value: MainCamera
