@@ -106,7 +106,7 @@ Material:
     - Vector1_902437fad1824e5baa9cb45881d150f7: 0.5
     - Vector1_9c8de42e8cd34d6fbed95ab7a08c324e: 7
     - Vector1_9f41615fbe6f47388e5b8b045a045e31: -2
-    - Vector1_a47f0c5c6ecf4348843d0e0c51ff2354: 1
+    - Vector1_a47f0c5c6ecf4348843d0e0c51ff2354: 0.4
     - Vector1_a4de65d012734c45939a173456282094: 0
     - Vector1_aeb86914fb3c41f7962abfd1784a54fa: 6
     - Vector1_b4651e1c4a334bef8c36a54b0b6c423c: 0.91
@@ -127,7 +127,7 @@ Material:
     - _ColorMask: 15
     - _Cull: 2
     - _Cutoff: 0.5
-    - _Displacement: 1
+    - _Displacement: 0.7
     - _DistortionBlend: 0.5
     - _DistortionEnabled: 0
     - _DistortionStrength: 1

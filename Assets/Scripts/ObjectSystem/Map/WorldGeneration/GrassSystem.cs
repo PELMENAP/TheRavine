@@ -21,6 +21,10 @@ public class GrassSystem : MonoBehaviour
     [SerializeField] private float scaleMin = 0.8f;
     [SerializeField] private float scaleMax = 1.2f;
     [SerializeField] private float rotationVariation = 360f;
+
+    [SerializeField] private float globalMinHeight = 5f;
+    [SerializeField] private float globalMaxHeight = 9f;
+    
     
     [Header("Scale Variation")]
     [SerializeField] private float scaleNoiseScale = 0.05f;
@@ -52,19 +56,23 @@ public class GrassSystem : MonoBehaviour
     private int lastInstanceCount;
     private Vector3 lastPosition;
 
-    private GlobalSettings gameSettings;
+    private int densityFactor;
+    private bool isGrass, isShadows;
     
     void Start()
     {
-        gameSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
+        var gameSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
+        densityFactor = gameSettings.grassDensityFactor;
+        isGrass = gameSettings.enableGrass;
+        isShadows = gameSettings.enableGrassShadows;
 
-        if(gameSettings.enableGrass) return;
+        if(!isGrass) return;
         InitializeSystem();
     }
     
     void Update()
     {
-        if (gameSettings.enableGrass) return;
+        if (!isGrass) return;
 
         if(targetTransform.position != lastPosition)
         {
@@ -85,7 +93,7 @@ public class GrassSystem : MonoBehaviour
         
         kernelPlaceGrass = grassPlacementShader.FindKernel("PlaceGrass");
         
-        instanceBuffer = new ComputeBuffer(maxGrassInstances * gameSettings.grassDensityFactor, 80);
+        instanceBuffer = new ComputeBuffer(maxGrassInstances * densityFactor, 80);
         argsBuffer = new ComputeBuffer(5, sizeof(uint), ComputeBufferType.IndirectArguments);
         
         args[0] = grassMesh.GetIndexCount(0);
@@ -97,7 +105,7 @@ public class GrassSystem : MonoBehaviour
         renderBounds = new Bounds(Vector3.zero, Vector3.one * 10000f);
         
         grassPlacementShader.SetFloat("density", grassDensity);
-        grassPlacementShader.SetInt("bladesPerCell", bladesPerCell * gameSettings.grassDensityFactor);
+        grassPlacementShader.SetInt("bladesPerCell", bladesPerCell * densityFactor);
         grassPlacementShader.SetFloat("scaleMin", scaleMin);
         grassPlacementShader.SetFloat("scaleMax", scaleMax);
         grassPlacementShader.SetFloat("rotationVariation", rotationVariation);
@@ -114,6 +122,10 @@ public class GrassSystem : MonoBehaviour
         grassPlacementShader.SetInt("scaleOctaves", scaleOctaves);
         grassPlacementShader.SetFloat("scalePersistence", scalePersistence);
         grassPlacementShader.SetFloat("scaleLacunarity", scaleLacunarity);
+
+        grassPlacementShader.SetFloat("globalMinHeight", globalMinHeight);
+        grassPlacementShader.SetFloat("globalMaxHeight", globalMaxHeight);
+
     }
     
     void UpdateGrassPlacement()
@@ -154,8 +166,8 @@ public class GrassSystem : MonoBehaviour
         
         int gridWidth = maxX - minX;
         int gridHeight = maxZ - minZ;
-        int totalGridPoints = gridWidth * gridHeight * bladesPerCell * gameSettings.grassDensityFactor;
-        int instanceCount = Mathf.Min(totalGridPoints, maxGrassInstances * gameSettings.grassDensityFactor);
+        int totalGridPoints = gridWidth * gridHeight * bladesPerCell * densityFactor;
+        int instanceCount = Mathf.Min(totalGridPoints, maxGrassInstances * densityFactor);
         
         float terrainWidth = worldBounds.size.x;
         float terrainHeight = worldBounds.size.z;
@@ -187,6 +199,7 @@ public class GrassSystem : MonoBehaviour
         if (instanceBuffer == null || lastInstanceCount == 0) return;
 
         grassMaterial.SetBuffer("instanceData", instanceBuffer);
+        
         Graphics.DrawMeshInstancedIndirect(
             grassMesh,
             0,
@@ -195,7 +208,7 @@ public class GrassSystem : MonoBehaviour
             argsBuffer,
             0,
             null,
-            gameSettings.enableGrassShadows ? ShadowCastingMode.On : ShadowCastingMode.Off,
+            isShadows ? ShadowCastingMode.On : ShadowCastingMode.Off,
             false,
             gameObject.layer
         );

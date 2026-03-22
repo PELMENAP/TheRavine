@@ -7,10 +7,10 @@ public class GrassBladeGenerator
     public static void CreateGrassBladeMesh()
     {
         Mesh mesh = GenerateGrassBlade(
-            width: 0.1f,
-            height: 2.0f,
-            segments: 4,
-            curvature: 0.1f
+            width: 3.0f,
+            height: 3.0f,
+            segments: 1,
+            curvature: 0f
         );
         
         SaveMeshAsAsset(mesh, "GrassBlade");
@@ -30,7 +30,7 @@ public class GrassBladeGenerator
         {
             float t = (float)i / segments;
             float currentHeight = height * t;
-            float currentWidth = width * (1f - t * 0.7f);
+            float currentWidth = width;
             
             float bend = curvature * t * t;
             

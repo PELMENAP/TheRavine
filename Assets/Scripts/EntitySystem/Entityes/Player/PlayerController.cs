@@ -45,15 +45,15 @@ namespace TheRavine.EntityControl
             this.logger = logger;
 
             WorldRegistry worldRegistry = ServiceLocator.GetService<WorldRegistry>();
+            
+            playerAnimator.SetUpAsync().Forget();
+            GetPlayerComponents();
+            DelayedInit(worldRegistry).Forget();
+
             unsubscribe = ServiceLocator.GetService<AutosaveCoordinator>().SubscribeBeforeSave(() =>
             {
                 SavePlayerPosition(worldRegistry);
             });
-            
-
-            playerAnimator.SetUpAsync().Forget();
-            GetPlayerComponents();
-            DelayedInit(worldRegistry).Forget();
 
             Raise.action.performed += AimRaise;
             LeftClick.action.performed += AimPlace;
@@ -307,7 +307,7 @@ namespace TheRavine.EntityControl
             //     logger?.LogError($"Error in In(): {ex.Message}");
             // }
         }
-        public void Delete()
+        public void OnDisable()
         {
             unsubscribe.Dispose();
             currentController.MeetEnds();

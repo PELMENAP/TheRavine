@@ -10,6 +10,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using LLMUnity;
 
 namespace TheRavine.Inventory
 {
@@ -22,6 +23,8 @@ namespace TheRavine.Inventory
         [SerializeField] private UIDragger uIDragger;
         [SerializeField] private InventoryInputHandler inventoryInputHandler;
 
+        [SerializeField] private LLMAgent _llmAgent;
+        [SerializeField] private ItemTagProvider _itemTagProvider;
 
         private InventoryTester tester;
         private EventDrivenInventoryProxy eventDrivenInventoryProxy;
@@ -50,12 +53,21 @@ namespace TheRavine.Inventory
 
             infoManager = new InfoManager(dataItems);
             tester = new InventoryTester(slotList.ToArray(), infoManager, eventDrivenInventoryProxy);
-            uIDragger.SetUp(eventDrivenInventoryProxy);
-            craftService.SetUp(infoManager, eventDrivenInventoryProxy);
+            
 
             PlayerEntity playerData = (PlayerEntity) ServiceLocator.Players.GetAllPlayers()[0];
             var gameSettings = ServiceLocator.GetService<GlobalSettingsController>().Settings.CurrentValue;
             inventoryInputHandler.RegisterInput(playerData, gameSettings);
+
+            _itemTagProvider.Initialize();
+            var descriptionRegistry = new ItemDescriptionRegistry();
+            var llmDescriptionService = new LLMItemDescriptionService(_llmAgent, _itemTagProvider, descriptionRegistry);
+            ServiceLocator.Services.Register(descriptionRegistry);
+
+            uIDragger.SetUp(eventDrivenInventoryProxy, descriptionRegistry, llmDescriptionService, playerData.GetEntityComponent<MainComponent>());
+
+
+            craftService.SetUp(infoManager, eventDrivenInventoryProxy);
 
             eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce += OnInventoryStateChanged;
             
@@ -183,6 +195,8 @@ namespace TheRavine.Inventory
 
         public void BreakUp(ISetAble.Callback callback)
         {
+            ServiceLocator.GetService<LLMItemDescriptionService>().Dispose();
+
             uIDragger.BreakUp();
             craftService.BreakUp();
 

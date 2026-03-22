@@ -37,6 +37,9 @@ int scaleOctaves;
 float scalePersistence;
 float scaleLacunarity;
 
+float globalMinHeight;
+float globalMaxHeight;
+
 uint Hash(uint input)
 {
     uint state = input * 747796405u + 2891336453u;
@@ -163,6 +166,14 @@ float4x4 CreateTRS(float3 position, float3 rotation, float3 scale)
     return mat;
 }
 
+static InstanceData MakeCulledInstance()
+{
+    InstanceData inst;
+    inst.color = float4(0, 0, 0, 0);
+    inst.trs = CreateTRS(float3(0, -1000, 0), float3(0, 0, 0), float3(0.001, 0.001, 0.001));
+    return inst;
+}
+
 [numthreads(64, 1, 1)]
 void PlaceGrass(uint3 id : SV_DispatchThreadID)
 {
@@ -171,20 +182,32 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     int localX = (int)(cellIndex % gridWidth);
     int localZ = (int)(cellIndex / gridWidth);
 
-    if(localZ < 40 || localX < 20 || localX > 222)
+    if(localZ < 40 || localX < 20 || localX > 222) // hardcode occlusion
     {
-        InstanceData instance;
-        instance.color = float4(0, 0, 0, 0);
-        instance.trs = CreateTRS(float3(0, -1000, 0), float3(0, 0, 0), float3(0.001, 0.001, 0.001));
-        instanceData[id.x] = instance;
+        instanceData[id.x] = MakeCulledInstance();
         return;
     }
     
     uint bladeIndex = id.x % bladesPerCell;
     int gridX = localX + gridMinX;
     int gridZ = localZ + gridMinZ;
-    
+
     uint bladeSeed = Hash3D((uint)gridX, (uint)gridZ, bladeIndex);
+
+    float offsetX = HashToFloat(Hash(bladeSeed + 1)) - 0.5;
+    float offsetZ = HashToFloat(Hash(bladeSeed + 2)) - 0.5;
+    
+    float worldX = gridX + offsetX;
+    float worldZ = gridZ + offsetZ;
+    
+    float height = SampleHeightBilinear(worldX, worldZ);
+
+    if (height < globalMinHeight || height > globalMaxHeight)
+    {
+        instanceData[id.x] = MakeCulledInstance();
+        return;
+    }
+
     float2 noisePos = float2(gridX, gridZ) * noiseScale;
     float noiseValue = FractalNoise(noisePos, octaves, persistence, lacunarity);
     
@@ -198,18 +221,10 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     
     if (densityRoll > finalDensity)
     {
-        instance.trs = CreateTRS(float3(0, -1000, 0), float3(0, 0, 0), float3(0.001, 0.001, 0.001));
-        instanceData[id.x] = instance;
+        instanceData[id.x] = MakeCulledInstance();
         return;
     }
-    
-    float offsetX = HashToFloat(Hash(bladeSeed + 1)) - 0.5;
-    float offsetZ = HashToFloat(Hash(bladeSeed + 2)) - 0.5;
-    
-    float worldX = gridX + offsetX;
-    float worldZ = gridZ + offsetZ;
-    
-    float height = SampleHeightBilinear(worldX, worldZ);
+
     float3 worldPos = float3(worldX, height, worldZ);
     
     float2 scaleNoisePos = float2(worldX, worldZ) * scaleNoiseScale;

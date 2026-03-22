@@ -2,15 +2,12 @@ Shader "Custom/ChunkGrassShader"
 {
     Properties
     {
-        _BaseColor ("Base Color", Color) = (0.3, 0.6, 0.2, 1)
-        _TipColor ("Tip Color", Color) = (0.5, 0.8, 0.3, 1)
         _MainTex ("Texture", 2D) = "white" {}
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
         _WindSpeed ("Wind Speed", Float) = 1.0
         _WindStrength ("Wind Strength", Float) = 0.1
         
         [Header(Advanced Coloring)]
-        _HeightColorBlend ("Height Color Blend", Range(0, 1)) = 1.0
         _InstanceColorBlend ("Instance Color Blend", Range(0, 1)) = 1.0
         _AmbientOcclusion ("Ambient Occlusion", Range(0, 1)) = 0.2
         
@@ -20,11 +17,10 @@ Shader "Custom/ChunkGrassShader"
         _WindGustFrequency ("Wind Gust Frequency", Float) = 2.3
 
         [Header(Player Interaction)]
-        _PlayerCount("Player Count", Int) = 0
         _PlayerRadius("Player Radius", Float) = 1.0
         _PlayerStrength("Player Strength", Float) = 0.5
     }
-    
+        
     SubShader
     {
         Tags
@@ -49,13 +45,10 @@ Shader "Custom/ChunkGrassShader"
         StructuredBuffer<InstanceData> instanceData;
         
         CBUFFER_START(UnityPerMaterial)
-            float4 _BaseColor;
-            float4 _TipColor;
             float4 _MainTex_ST;
             float _Cutoff;
             float _WindSpeed;
             float _WindStrength;
-            float _HeightColorBlend;
             float _InstanceColorBlend;
             float _AmbientOcclusion;
             float4 _WindDirection;
@@ -126,7 +119,7 @@ Shader "Custom/ChunkGrassShader"
             Tags { "LightMode"="UniversalForward" }
             
             ZTest LEqual
-            ZWrite Off
+            ZWrite On
             
             HLSLPROGRAM
             #pragma vertex vert
@@ -186,10 +179,7 @@ Shader "Custom/ChunkGrassShader"
 
                 clip(texColor.a - _Cutoff);
                 
-                float4 heightColor = lerp(_BaseColor, _TipColor, input.heightFactor);
-                float4 finalColor = lerp(float4(1, 1, 1, 1), heightColor, _HeightColorBlend);
-                finalColor = lerp(finalColor, finalColor * input.color, _InstanceColorBlend);
-                finalColor *= texColor;
+                float4 finalColor = lerp(texColor, texColor * input.color, _InstanceColorBlend);
                 
                 float ao = lerp(1.0, 1.0 - _AmbientOcclusion, 1.0 - input.heightFactor);
                 
@@ -201,7 +191,7 @@ Shader "Custom/ChunkGrassShader"
                 
                 return finalColor;
             }
-            
+
             ENDHLSL
         }
         
