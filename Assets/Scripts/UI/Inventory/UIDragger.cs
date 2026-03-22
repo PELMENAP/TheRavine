@@ -18,7 +18,7 @@ namespace TheRavine.Inventory
         [SerializeField] private InputActionReference point, leftclick;
         [SerializeField] private UIInventory _uiInventory;
         [SerializeField] private Canvas _mainCanvas;
-        [SerializeField] private TextMeshProUGUI text;
+        [SerializeField] private TextMeshProUGUI text, title;
         [SerializeField] private Image image;
         private EventSystem eventSystem;
         private Mouse mouse;
@@ -28,9 +28,24 @@ namespace TheRavine.Inventory
         private UIInventorySlot lastSlot;
         private GlobalSettings globalSettings;
         private EventDrivenInventoryProxy inventoryModel;
-        public void SetUp(EventDrivenInventoryProxy inventoryModel)
+        private LLMItemDescriptionService _llmDescriptionService;
+        private ItemDescriptionRegistry _descriptionRegistry;
+        private MainComponent playerMainComponent;
+
+        public void SetUp(
+            EventDrivenInventoryProxy inventoryModel,
+            ItemDescriptionRegistry descriptionRegistry,
+            LLMItemDescriptionService llmDescriptionService,
+            MainComponent playerMainComponent)
         {
             this.inventoryModel = inventoryModel;
+            _descriptionRegistry = descriptionRegistry;
+            _llmDescriptionService = llmDescriptionService;
+            this.playerMainComponent = playerMainComponent;
+
+            _llmDescriptionService.OnDescriptionStarted += OnLLMDescriptionStarted;
+            _llmDescriptionService.OnDescriptionToken   += OnLLMDescriptionToken;
+
             globalSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
             eventSystem = EventSystem.current;
             eventData = new PointerEventData(eventSystem);
@@ -46,6 +61,48 @@ namespace TheRavine.Inventory
                     break;
             }
         }
+        
+        private const float DescriptionStalenessSeconds = 300f;
+        private void ShowItemInfo(UIInventorySlot slot)
+        {
+            var item = slot.slot.item;
+
+            text.text = _descriptionRegistry.Get(item);
+            title.text = item.info.title;
+            image.sprite = item.info.infoSprite;
+
+            if (!_descriptionRegistry.IsStale(item, DescriptionStalenessSeconds))
+                return;
+
+            var playerCtx = ResolvePlayerContext();
+            _llmDescriptionService.RequestDescription(item, playerCtx);
+        }
+        
+        private void OnLLMDescriptionStarted()
+        {
+            if (lastSlot != null && !lastSlot.slot.isEmpty)
+                text.text = string.Empty;
+        }
+
+        private void OnLLMDescriptionToken(string token)
+        {
+            if (lastSlot != null && !lastSlot.slot.isEmpty)
+                text.text = token;
+        }
+        private PlayerContext ResolvePlayerContext()
+        {
+            string[] facts =  { "Хочет знать как устроен мир", "Слышал, что кириешки можно использовать для розжига", };
+
+            return new PlayerContext
+            {
+                Name = playerMainComponent.GetEntityName(),
+                ProfessionId = "слесарь 4 разряда",
+                Expertise = 0.7f,
+                Doubt = 0.3f,
+                KnownFacts = facts,
+            };
+        }
+
 
         private void OnDragPC(InputAction.CallbackContext context)
         {
@@ -84,7 +141,7 @@ namespace TheRavine.Inventory
                     slotTransform.SetAsLastSibling();
                     lastSlot._uiInventoryItem._canvasGroup.blocksRaycasts = false;
                     Dragging().Forget();
-                    text.text = lastSlot.slot.item.info.description;
+                    ShowItemInfo(lastSlot);
                     image.sprite = lastSlot.slot.item.info.infoSprite;
                     break;
                 }
@@ -110,7 +167,7 @@ namespace TheRavine.Inventory
                             var slotTransform = lastSlot._uiInventoryItem._rectTransform.parent;
                             slotTransform.SetAsLastSibling();
                             lastSlot._uiInventoryItem._canvasGroup.blocksRaycasts = false;
-                            text.text = lastSlot.slot.item.info.description;
+                            ShowItemInfo(lastSlot);
                             image.sprite = lastSlot.slot.item.info.infoSprite;
                             break;
                         }
@@ -154,6 +211,12 @@ namespace TheRavine.Inventory
 
         public void BreakUp()
         {
+            if (_llmDescriptionService != null)
+            {
+                _llmDescriptionService.OnDescriptionStarted -= OnLLMDescriptionStarted;
+                _llmDescriptionService.OnDescriptionToken   -= OnLLMDescriptionToken;
+            }
+
             switch (globalSettings.controlType)
             {
                 case ControlType.Personal:

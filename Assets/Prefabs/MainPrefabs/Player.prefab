@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 6598453415436316321}
   - component: {fileID: 5917629485289192058}
   - component: {fileID: 1870644968323714080}
+  - component: {fileID: -7201839089882630837}
   - component: {fileID: 848565228905251431}
   - component: {fileID: 6907569928054806820}
   m_Layer: 0
@@ -197,6 +198,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerModelView: {fileID: 9108774688089968488}
+--- !u!114 &-7201839089882630837
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1671218706617821313}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6c0be61502bb534f922ebb746851216, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkRigidbody
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkRigidbodyBaseExpanded: 0
+  UseRigidBodyForMotion: 0
+  AutoUpdateKinematicState: 1
+  AutoSetKinematicOnDespawn: 1
 --- !u!54 &848565228905251431
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -309,7 +327,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24, type: 2}
+  - {fileID: -4983857554401633739, guid: 267972af51edfec678e1fa685fead2e4, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -355,8 +373,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 590cce8795237fb8bb4493d1ab6a7f24, type: 2}
-  m_sharedMaterial: {fileID: -1379092795461030715, guid: 590cce8795237fb8bb4493d1ab6a7f24, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 267972af51edfec678e1fa685fead2e4, type: 2}
+  m_sharedMaterial: {fileID: -4983857554401633739, guid: 267972af51edfec678e1fa685fead2e4, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

@@ -1,16 +1,17 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+
+using System.Threading;
 using System;
 using Cysharp.Threading.Tasks;
 using TMPro;
 using LitMotion;
 
-using TheRavine.Base;
 using TheRavine.Extensions;
 public class CasinoSlots : MonoBehaviour
 {
-    private System.Threading.CancellationTokenSource _cts = new();
+    private CancellationTokenSource _cts = new();
     public const byte heightCasino = 4, lengthCasino = 5;
     private int[,] slots = new int[heightCasino, lengthCasino];
     [SerializeField] private byte distance = 150, animationSpeed = 1, countOfSpins = 10, levelCounting = 1;
@@ -35,8 +36,6 @@ public class CasinoSlots : MonoBehaviour
     }
     private void Awake() {
         calculateWin = new CalculateWin(currentPref, PaintSlot);
-
-        uICasino.StartUI(currentPref);
         
         for(byte i = 0; i < heightCasino; i++)
         {
@@ -349,7 +348,7 @@ public class CasinoSlots : MonoBehaviour
                 currentDistance += animationSpeed;
             }
 
-            slotsLinesTransforms[heightCasino - 1].anchoredPosition = new Vector2(0, 60);
+            slotsLinesTransforms[heightCasino - 1].anchoredPosition = new Vector2(0,300);
 
             (slotsLinesTransforms[0], slotsLinesTransforms[3]) = (slotsLinesTransforms[3], slotsLinesTransforms[0]);
             (slotsLinesTransforms[1], slotsLinesTransforms[3]) = (slotsLinesTransforms[3], slotsLinesTransforms[1]);
@@ -386,7 +385,7 @@ public class CasinoSlots : MonoBehaviour
     }
 }
 
-[System.Serializable]
+[Serializable]
 public struct SlotLine
 {
     public GameObject line;

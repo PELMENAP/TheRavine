@@ -67,7 +67,6 @@ namespace TheRavine.EntityControl
 
         public override void DeepClean()
         {
-            playerController.Delete();
         }
     }
 }
