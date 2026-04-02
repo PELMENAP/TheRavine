@@ -1,5 +1,7 @@
 using System;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
 using Cysharp.Threading.Tasks;
 using R3;
@@ -12,11 +14,24 @@ namespace TheRavine.Base
         private SceneLoader sceneLoader;
         [SerializeField] private GameStateMachine gameStateMachine;
         [SerializeField] private bool isTest;
+
+        [SerializeField] private Button toMenuPauseButton;
         private void Start()
         {
-            gameStateMachine.Initialize(ServiceLocator.GetService<RavineLogger>());
+            toMenuPauseButton.onClick.AddListener(SwitchToMainMenu);
 
-            if (isTest) return;
+
+            if (isTest)
+            {
+                gameStateMachine.Initialize(new RavineLogger(null));
+                gameStateMachine.StartGame();
+                return;
+            }
+            else
+            {
+                gameStateMachine.Initialize(ServiceLocator.GetService<RavineLogger>());
+            }
+
 
             ServiceLocator.WhenPlayersNonEmpty()
                 .Subscribe(_ =>
@@ -71,6 +86,7 @@ namespace TheRavine.Base
         private void OnDisable()
         {
             InTheEnd(null);
+            toMenuPauseButton.onClick.RemoveAllListeners();
         }
     }
 }

@@ -10,7 +10,6 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using LLMUnity;
 
 namespace TheRavine.Inventory
 {
@@ -22,9 +21,6 @@ namespace TheRavine.Inventory
         [SerializeField] private CraftService craftService;
         [SerializeField] private UIDragger uIDragger;
         [SerializeField] private InventoryInputHandler inventoryInputHandler;
-
-        [SerializeField] private LLMAgent _llmAgent;
-        [SerializeField] private ItemTagProvider _itemTagProvider;
 
         private InventoryTester tester;
         private EventDrivenInventoryProxy eventDrivenInventoryProxy;
@@ -59,12 +55,9 @@ namespace TheRavine.Inventory
             var gameSettings = ServiceLocator.GetService<GlobalSettingsController>().Settings.CurrentValue;
             inventoryInputHandler.RegisterInput(playerData, gameSettings);
 
-            _itemTagProvider.Initialize();
-            var descriptionRegistry = new ItemDescriptionRegistry();
-            var llmDescriptionService = new LLMItemDescriptionService(_llmAgent, _itemTagProvider, descriptionRegistry);
-            ServiceLocator.Services.Register(descriptionRegistry);
+    
 
-            uIDragger.SetUp(eventDrivenInventoryProxy, descriptionRegistry, llmDescriptionService, playerData.GetEntityComponent<MainComponent>());
+            uIDragger.SetUp(eventDrivenInventoryProxy, playerData.GetEntityComponent<MainComponent>());
 
 
             craftService.SetUp(infoManager, eventDrivenInventoryProxy);

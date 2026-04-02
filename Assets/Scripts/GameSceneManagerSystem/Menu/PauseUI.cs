@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.InputSystem;
 
 using TheRavine.EntityControl;
@@ -7,19 +8,24 @@ using TheRavine.Base;
 public class PauseUI : MonoBehaviour, ISetAble
 {
     [SerializeField] private GameObject window, stats, mobileInput;
+    [SerializeField] private Button enterPauseButton, quitPauseButton;
     [SerializeField] private InputActionReference EnterRef;
-    [SerializeField] private InputActionReference OutRef;
+    [SerializeField] private InputActionReference QuitRef;
     private ActionMapController actionMapController;
     private PlayerEntity playerData;
     private GlobalSettings gameSettings;
+    private InputBindingAdapter enterInputBindingAdapter, quitInputBindingAdapter;
     public void SetUp(ISetAble.Callback callback)
     {
         gameSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
         actionMapController = ServiceLocator.GetService<ActionMapController>();
         playerData = (PlayerEntity) ServiceLocator.Players.GetAllPlayers()[0];
 
-        EnterRef.action.performed += ChangeTerminalState;
-        OutRef.action.performed += ChangeTerminalState;
+        // EnterRef.action.performed += ChangeTerminalState;
+        // QuitRef.action.performed += ChangeTerminalState;
+
+        enterInputBindingAdapter = InputBindingAdapter.Bind(enterPauseButton, EnterRef, ChangeTerminalState);
+        quitInputBindingAdapter = InputBindingAdapter.Bind(quitPauseButton, QuitRef, ChangeTerminalState);
         
         window.SetActive(false);
         mobileInput.SetActive(gameSettings.controlType == ControlType.Mobile);
@@ -28,7 +34,7 @@ public class PauseUI : MonoBehaviour, ISetAble
     }
     private bool isActive = false;
 
-    public void ChangeTerminalState(InputAction.CallbackContext context)
+    public void ChangeTerminalState()
     {
         isActive = !isActive;
         if (isActive)
@@ -52,14 +58,17 @@ public class PauseUI : MonoBehaviour, ISetAble
 
     public void ChangeStatsState() => stats.SetActive(!stats.activeSelf);
 
-    private void OnDisable()
+    private void OnDestroy()
     {
-        EnterRef.action.performed -= ChangeTerminalState;
-        OutRef.action.performed -= ChangeTerminalState;
+        // EnterRef.action.performed -= ChangeTerminalState;
+        // QuitRef.action.performed -= ChangeTerminalState;
+
+        enterInputBindingAdapter.Unbind();
+        quitInputBindingAdapter.Unbind();
     }    
     public void BreakUp(ISetAble.Callback callback)
     {
-        OnDisable();
+        OnDestroy();
 
         callback?.Invoke();
     }

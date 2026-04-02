@@ -1,5 +1,5 @@
 using System;
-using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
@@ -12,7 +12,7 @@ namespace TheRavine.Base
         private readonly Action _callback;
 
         private readonly Action<InputAction.CallbackContext> _actionHandler;
-        private readonly UnityEngine.Events.UnityAction _buttonHandler;
+        private readonly UnityAction _buttonHandler;
 
         private InputBindingAdapter(Button button, InputAction inputAction, Action callback)
         {

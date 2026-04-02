@@ -8,6 +8,7 @@ namespace TheRavine.Base
     public partial class WorldState : IEquatable<WorldState>
     {
         public int seed;
+        public int currency;
         public Vec3 playerPosition;
         public int cycleCount;
         public float startTime;

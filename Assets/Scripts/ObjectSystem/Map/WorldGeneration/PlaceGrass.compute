@@ -40,6 +40,13 @@ float scaleLacunarity;
 float globalMinHeight;
 float globalMaxHeight;
 
+float terrainInvWidth;
+float terrainInvHeight;
+
+int occlusionMinZ;
+int occlusionMinX;
+int occlusionMaxX;
+
 uint Hash(uint input)
 {
     uint state = input * 747796405u + 2891336453u;
@@ -105,8 +112,8 @@ float FractalNoise(float2 pos, int numOctaves, float amp, float freq)
 
 float SampleHeightBilinear(float worldX, float worldZ)
 {
-    float localX = (worldX - worldBoundsMin.x) / terrainWidth;
-    float localZ = (worldZ - worldBoundsMin.z) / terrainHeight;
+    float localX = (worldX - worldBoundsMin.x) * terrainInvWidth;
+    float localZ = (worldZ - worldBoundsMin.z) * terrainInvHeight;
     
     localX = clamp(localX, 0.0, 1.0);
     localZ = clamp(localZ, 0.0, 1.0);
@@ -133,44 +140,31 @@ float SampleHeightBilinear(float worldX, float worldZ)
     return lerp(h0, h1, fz);
 }
 
-float4x4 CreateTRS(float3 position, float3 rotation, float3 scale)
+float4x4 CreateTRSYRotation(float3 pos, float rotY, float3 scl)
 {
-    float cx = cos(rotation.x);
-    float sx = sin(rotation.x);
-    float cy = cos(rotation.y);
-    float sy = sin(rotation.y);
-    float cz = cos(rotation.z);
-    float sz = sin(rotation.z);
+    float c = cos(rotY);
+    float s = sin(rotY);
     
-    float4x4 mat;
-    mat[0][0] = (cy * cz) * scale.x;
-    mat[0][1] = (cy * sz) * scale.x;
-    mat[0][2] = (-sy) * scale.x;
-    mat[0][3] = 0;
-    
-    mat[1][0] = (sx * sy * cz - cx * sz) * scale.y;
-    mat[1][1] = (sx * sy * sz + cx * cz) * scale.y;
-    mat[1][2] = (sx * cy) * scale.y;
-    mat[1][3] = 0;
-    
-    mat[2][0] = (cx * sy * cz + sx * sz) * scale.z;
-    mat[2][1] = (cx * sy * sz - sx * cz) * scale.z;
-    mat[2][2] = (cx * cy) * scale.z;
-    mat[2][3] = 0;
-    
-    mat[3][0] = position.x;
-    mat[3][1] = position.y;
-    mat[3][2] = position.z;
-    mat[3][3] = 1;
-    
-    return mat;
+    float4x4 m;
+    m[0] = float4(c * scl.x,  0.0,  -s * scl.x, 0.0);
+    m[1] = float4(0.0,       scl.y,  0.0,         0.0);
+    m[2] = float4(s * scl.z,  0.0,   c * scl.z,  0.0);
+    m[3] = float4(pos.x, pos.y, pos.z, 1.0);
+    return m;
 }
+
+static const float4x4 CulledTRS = float4x4(
+    0.001, 0,     0,     0,
+    0,     0.001, 0,     0,
+    0,     0,     0.001, 0,
+    0,    -10,    0,     1
+);
 
 static InstanceData MakeCulledInstance()
 {
     InstanceData inst;
     inst.color = float4(0, 0, 0, 0);
-    inst.trs = CreateTRS(float3(0, -1000, 0), float3(0, 0, 0), float3(0.001, 0.001, 0.001));
+    inst.trs   = CulledTRS;
     return inst;
 }
 
@@ -182,12 +176,12 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     int localX = (int)(cellIndex % gridWidth);
     int localZ = (int)(cellIndex / gridWidth);
 
-    if(localZ < 40 || localX < 20 || localX > 222) // hardcode occlusion
+     if ((int)localZ < occlusionMinZ || (int)localX < occlusionMinX || (int)localX > occlusionMaxX)
     {
         instanceData[id.x] = MakeCulledInstance();
         return;
     }
-    
+
     uint bladeIndex = id.x % bladesPerCell;
     int gridX = localX + gridMinX;
     int gridZ = localZ + gridMinZ;
@@ -244,7 +238,7 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     float3 rotation = float3(0, rotY, 0);
     float3 scaleVec = float3(scaleXZ, scaleY, scaleXZ);
     
-    instance.trs = CreateTRS(worldPos, rotation, scaleVec);
+    instance.trs = CreateTRSYRotation(worldPos, rotY, float3(scaleXZ, scaleY, scaleXZ));
     
     float colorVariation = HashToFloat(Hash(bladeSeed + 5)) * 0.2 + 0.9;
     colorVariation *= lerp(0.85, 1.0, noiseValue);

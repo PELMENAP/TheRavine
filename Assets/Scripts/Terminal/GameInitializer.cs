@@ -6,6 +6,7 @@ using TheRavine.Base;
 
 public class GameInitializer : MonoBehaviour
 {
+    private GameInitializer instance;
     [SerializeField] private bool initializeOnAwake = true;
     [SerializeField] private bool clearAllPlayerPrefs;
     [SerializeField] private bool createTestWorld;
@@ -17,9 +18,16 @@ public class GameInitializer : MonoBehaviour
 
     private void Awake()
     {
-        ServiceLocator.ClearAll();
-        
+        if (instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        instance = this;
         DontDestroyOnLoad(this);
+
+        ServiceLocator.ClearAll();
         
         if (clearAllPlayerPrefs)
             PlayerPrefs.DeleteAll();

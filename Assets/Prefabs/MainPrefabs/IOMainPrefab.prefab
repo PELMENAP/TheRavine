@@ -481,6 +481,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3127367655060376858}
     m_Modifications:
+    - target: {fileID: 244421095003398990, guid: 3ef27a4aa54d0d7649a69458e66009be, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 696945998962736142, guid: 3ef27a4aa54d0d7649a69458e66009be, type: 3}
       propertyPath: graphyManager
       value: 

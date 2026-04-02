@@ -31,6 +31,26 @@ Material:
         m_Texture: {fileID: 18700000, guid: 5c22d85cf5065fe2a8b1d395edc3f3ea, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _SecondTex:
+        m_Texture: {fileID: 2800000, guid: ca7152c96f78ded9189a7a004dfc1097, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex1:
+        m_Texture: {fileID: 2800000, guid: ca7152c96f78ded9189a7a004dfc1097, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex2:
+        m_Texture: {fileID: 2800000, guid: 8818222dc048cf895b4661d4122074fa, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex3:
+        m_Texture: {fileID: 2800000, guid: 088ffa96d5dcf05158634cbe617750c7, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex4:
+        m_Texture: {fileID: 2800000, guid: 46212d6e49aed9ee0aae48ab8b9721ae, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _AmbientOcclusion: 1
@@ -44,14 +64,14 @@ Material:
     - _PlayerRadius: 3
     - _PlayerSmoothness: 2
     - _PlayerStrength: 2.23
-    - _TextureCount: 5
+    - _TextureCount: 1
     - _WindGustFrequency: 1
     - _WindGustStrength: 1
     - _WindSpeed: 0.18
     - _WindStrength: 0.03
     m_Colors:
     - _BaseColor: {r: 1, g: 0, b: 0.30714318, a: 1}
-    - _PlayerPosition: {r: 0, g: 0, b: 0, a: 0}
+    - _PlayerPosition: {r: 4.65813, g: -9.95179, b: -56.20038, a: 0}
     - _TipColor: {r: 0.76907253, g: 0, b: 1, a: 1}
     - _WindDirection: {r: 1, g: 0, b: 1, a: 0}
   m_BuildTextureStacks: []

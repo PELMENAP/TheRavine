@@ -24,6 +24,7 @@ namespace TheRavine.EntityControl
             await SetupNetworking();
 
             PlayerEntity.SetUp();
+            PlayerEntity.AddWorldComponents(ServiceLocator.GetService<WorldRegistry>());
         }
 
         private void SetupLocator()

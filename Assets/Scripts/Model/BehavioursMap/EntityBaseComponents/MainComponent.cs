@@ -18,8 +18,21 @@ public class MainComponent : IMainComponent
     }
 
     public string GetEntityName() => Name;
-    // public int GetPrefabID() => PrefabID;
+    public int GetPrefabID() => PrefabID;
     public ulong GetClientID() => ClientID;
+
+    private string[] facts =  { "Хочет знать как устроен мир", "Слышал, что кириешки можно использовать для розжига", };
+
+    public PlayerContext GetPlayerContext() => new PlayerContext
+        {
+            Name = Name,
+            ProfessionId = "слесарь 4 разряда",
+            Expertise = 0.7f,
+            Doubt = 0.3f,
+            KnownFacts = facts,
+        };
+
+
     public void Dispose()
     {
 

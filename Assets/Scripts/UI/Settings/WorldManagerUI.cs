@@ -55,7 +55,7 @@ namespace TheRavine.Base
                 .Subscribe(_ => RefreshWorldsListUI())
                 .AddTo(_disposables);
             
-            RefreshWorldsListUI();
+            // RefreshWorldsListUI();
         }
 
         private void OnWorldsListChanged(in NotifyCollectionChangedEventArgs<string> e)

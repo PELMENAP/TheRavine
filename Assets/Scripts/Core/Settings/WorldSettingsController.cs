@@ -61,6 +61,8 @@ namespace TheRavine.Base
             {
                 _logger.LogError($"[WorldSettings] Ошибка загрузки: {ex.Message}");
             }
+
+            await UniTask.CompletedTask;
         }
 
         public void Update(Action<WorldConfiguration> modifier)
