@@ -53,7 +53,7 @@ public class GrassSystem : MonoBehaviour
     private Bounds renderBounds;
     private readonly uint[] args = new uint[5];
     
-    private int lastInstanceCount;
+    private int lastInstanceCount, instanceCount;
     private Vector3 lastPosition;
 
     private int densityFactor;
@@ -61,10 +61,19 @@ public class GrassSystem : MonoBehaviour
     
     void Start()
     {
-        var gameSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
-        densityFactor = gameSettings.grassDensityFactor;
-        isGrass = gameSettings.enableGrass;
-        isShadows = gameSettings.enableGrassShadows;
+        try
+        {
+            var gameSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
+            densityFactor = gameSettings.grassDensityFactor;
+            isGrass = gameSettings.enableGrass;
+            isShadows = gameSettings.enableGrassShadows;
+        }
+        catch (System.Exception)
+        {
+            densityFactor = 5;
+            isGrass = true;
+            isShadows = true;
+        }
 
         if(!isGrass) return;
         InitializeSystem();
@@ -74,7 +83,7 @@ public class GrassSystem : MonoBehaviour
     {
         if (!isGrass) return;
 
-        if(targetTransform.position != lastPosition)
+        if(targetTransform.position != lastPosition) // position changing rare
         {
             UpdateGrassPlacement();
             lastPosition = targetTransform.position;
@@ -125,6 +134,29 @@ public class GrassSystem : MonoBehaviour
 
         grassPlacementShader.SetFloat("globalMinHeight", globalMinHeight);
         grassPlacementShader.SetFloat("globalMaxHeight", globalMaxHeight);
+        
+        grassPlacementShader.SetInt("occlusionMinZ", 40);
+        grassPlacementShader.SetInt("occlusionMinX", 20);
+        grassPlacementShader.SetInt("occlusionMaxX", 222);
+
+        int gridWidth = 240;
+        int gridHeight = 240;
+        int totalGridPoints = gridWidth * gridHeight * bladesPerCell * densityFactor;
+        instanceCount = Mathf.Min(totalGridPoints, maxGrassInstances * densityFactor);
+        
+        float terrainWidth = 240;
+        float terrainHeight = 240;
+        
+        grassPlacementShader.SetInt("instanceCount", instanceCount);
+
+        grassPlacementShader.SetInt("gridWidth", gridWidth);
+        grassPlacementShader.SetInt("gridHeight", gridHeight);
+
+        grassPlacementShader.SetFloat("terrainWidth", terrainWidth);
+        grassPlacementShader.SetFloat("terrainHeight", terrainHeight);
+
+        grassPlacementShader.SetFloat("terrainInvWidth",  1f / terrainWidth);
+        grassPlacementShader.SetFloat("terrainInvHeight", 1f / terrainHeight);
 
     }
     
@@ -160,29 +192,17 @@ public class GrassSystem : MonoBehaviour
         Bounds worldBounds = GeneratorExtensions.TransformBounds(meshBounds, localToWorld);
         
         int minX = Mathf.FloorToInt(worldBounds.min.x);
-        int maxX = Mathf.CeilToInt(worldBounds.max.x);
         int minZ = Mathf.FloorToInt(worldBounds.min.z);
-        int maxZ = Mathf.CeilToInt(worldBounds.max.z);
         
-        int gridWidth = maxX - minX;
-        int gridHeight = maxZ - minZ;
-        int totalGridPoints = gridWidth * gridHeight * bladesPerCell * densityFactor;
-        int instanceCount = Mathf.Min(totalGridPoints, maxGrassInstances * densityFactor);
-        
-        float terrainWidth = worldBounds.size.x;
-        float terrainHeight = worldBounds.size.z;
         
         grassPlacementShader.SetBuffer(kernelPlaceGrass, "instanceData", instanceBuffer);
         grassPlacementShader.SetBuffer(kernelPlaceGrass, "heightMap", heightMapBuffer);
-        grassPlacementShader.SetInt("instanceCount", instanceCount);
+        
         grassPlacementShader.SetInt("gridMinX", minX);
         grassPlacementShader.SetInt("gridMinZ", minZ);
-        grassPlacementShader.SetInt("gridWidth", gridWidth);
-        grassPlacementShader.SetInt("gridHeight", gridHeight);
+
         grassPlacementShader.SetVector("worldBoundsMin", worldBounds.min);
         grassPlacementShader.SetVector("worldBoundsMax", worldBounds.max);
-        grassPlacementShader.SetFloat("terrainWidth", terrainWidth);
-        grassPlacementShader.SetFloat("terrainHeight", terrainHeight);
         
         int threadGroups = Mathf.CeilToInt(instanceCount / 64f);
         grassPlacementShader.Dispatch(kernelPlaceGrass, threadGroups, 1, 1);

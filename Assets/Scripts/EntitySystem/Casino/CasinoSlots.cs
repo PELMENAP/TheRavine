@@ -50,6 +50,8 @@ public class CasinoSlots : MonoBehaviour
 
         costText.text = "Account: " + cost;
 
+        ChangeBetMod("10");
+
         AwaitAutoSpin().Forget();
     }
 
@@ -89,6 +91,7 @@ public class CasinoSlots : MonoBehaviour
 
     public void ChangeLevelMod(string i)
     {
+        if(isSpin) return;
         levelCounting = Convert.ToByte(i);
         betText.text = "Bet: " + betCount * levelCounting * levelCounting;
 
@@ -111,6 +114,7 @@ public class CasinoSlots : MonoBehaviour
 
     public void ChangeBetMod(string i)
     {
+        if(isSpin) return;
         betCount = Convert.ToInt32(i);;
         betText.text = "Bet: " + betCount * levelCounting * levelCounting;
         uICasino.FillTheHelp(currentPref, betCount / 10);
@@ -164,8 +168,8 @@ public class CasinoSlots : MonoBehaviour
 
         bonusText.text = $"x{numOfBonusGames}";
         await UniTask.Delay(1000, cancellationToken: _cts.Token);
-        numOfBonusGames--;
         SpinSlots(CalculateBonusWin).Forget();
+        numOfBonusGames--;
     }
 
     private void AddToAccount()

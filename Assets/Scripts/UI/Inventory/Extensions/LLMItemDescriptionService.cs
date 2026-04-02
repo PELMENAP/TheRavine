@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using LLMUnity;
@@ -17,8 +16,7 @@ public sealed class LLMItemDescriptionService : IDisposable
 
     private const float DebounceSeconds = 0.4f;
 
-    public event Action<string> OnDescriptionToken;
-    public event Action OnDescriptionStarted;
+    public event Action OnDescriptionEnded;
 
     public LLMItemDescriptionService(
         LLMAgent agent,
@@ -70,22 +68,16 @@ public sealed class LLMItemDescriptionService : IDisposable
 
         try
         {
-            OnDescriptionStarted?.Invoke();
 
             var itemCtx = _tagProvider.GetContext(item);
             var prompt = ItemPromptBuilder.Build(itemCtx, player, player.Expertise, player.Doubt);
 
-            void OnToken(string token)
-            {
-                if (!genCt.IsCancellationRequested)
-                    OnDescriptionToken?.Invoke(token);
-            }
 
             string result;
             try
             {
                 result = await _agent
-                    .Chat(query: prompt, callback: OnToken, addToHistory: false)
+                    .Chat(query: prompt, addToHistory: false)
                     .AsUniTask()
                     .AttachExternalCancellation(genCt);
             }
@@ -97,8 +89,9 @@ public sealed class LLMItemDescriptionService : IDisposable
 
             if (string.IsNullOrWhiteSpace(result)) return;
 
-            // Пишем в registry — теперь он источник истины
             _registry.SetDynamic(item, result);
+
+            OnDescriptionEnded?.Invoke();
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)

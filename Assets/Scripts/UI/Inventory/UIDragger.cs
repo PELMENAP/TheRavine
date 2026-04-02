@@ -6,6 +6,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 using TouchPhase = UnityEngine.InputSystem.TouchPhase;
+using LLMUnity;
 using TMPro;
 
 using TheRavine.Base;
@@ -17,9 +18,11 @@ namespace TheRavine.Inventory
     {
         [SerializeField] private InputActionReference point, leftclick;
         [SerializeField] private UIInventory _uiInventory;
-        [SerializeField] private Canvas _mainCanvas;
         [SerializeField] private TextMeshProUGUI text, title;
         [SerializeField] private Image image;
+        [SerializeField] private ItemTagProvider _itemTagProvider;
+        [SerializeField] private LLMAgent _llmAgent;
+        [SerializeField] private GameObject generatingWindow;
         private EventSystem eventSystem;
         private Mouse mouse;
         private bool isDragging = false;
@@ -28,23 +31,23 @@ namespace TheRavine.Inventory
         private UIInventorySlot lastSlot;
         private GlobalSettings globalSettings;
         private EventDrivenInventoryProxy inventoryModel;
-        private LLMItemDescriptionService _llmDescriptionService;
-        private ItemDescriptionRegistry _descriptionRegistry;
+        private LLMItemDescriptionService llmDescriptionService;
+        private ItemDescriptionRegistry descriptionRegistry;
         private MainComponent playerMainComponent;
 
         public void SetUp(
             EventDrivenInventoryProxy inventoryModel,
-            ItemDescriptionRegistry descriptionRegistry,
-            LLMItemDescriptionService llmDescriptionService,
             MainComponent playerMainComponent)
         {
+
+            _itemTagProvider.Initialize();
+            descriptionRegistry = new ItemDescriptionRegistry();
+            llmDescriptionService = new LLMItemDescriptionService(_llmAgent, _itemTagProvider, descriptionRegistry);
+
             this.inventoryModel = inventoryModel;
-            _descriptionRegistry = descriptionRegistry;
-            _llmDescriptionService = llmDescriptionService;
             this.playerMainComponent = playerMainComponent;
 
-            _llmDescriptionService.OnDescriptionStarted += OnLLMDescriptionStarted;
-            _llmDescriptionService.OnDescriptionToken   += OnLLMDescriptionToken;
+            llmDescriptionService.OnDescriptionEnded   += OnLLMDescriptionEnded;
 
             globalSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
             eventSystem = EventSystem.current;
@@ -60,47 +63,38 @@ namespace TheRavine.Inventory
                     point.action.performed += OnDragMobile;
                     break;
             }
+
+            generatingWindow.SetActive(false);
         }
         
         private const float DescriptionStalenessSeconds = 300f;
+        private bool isGenerating = false;
+        private string currentTitle;
         private void ShowItemInfo(UIInventorySlot slot)
         {
             var item = slot.slot.item;
 
-            text.text = _descriptionRegistry.Get(item);
             title.text = item.info.title;
             image.sprite = item.info.infoSprite;
+            text.text = descriptionRegistry.Get(item);
 
-            if (!_descriptionRegistry.IsStale(item, DescriptionStalenessSeconds))
+            if(currentTitle == item.info.title)
+                generatingWindow.SetActive(true);
+            else   
+                generatingWindow.SetActive(false);
+
+            if (isGenerating || !descriptionRegistry.IsStale(item, DescriptionStalenessSeconds))
                 return;
 
-            var playerCtx = ResolvePlayerContext();
-            _llmDescriptionService.RequestDescription(item, playerCtx);
+            isGenerating = true;
+            currentTitle = item.info.title;
+            llmDescriptionService.RequestDescription(item, playerMainComponent.GetPlayerContext());
         }
         
-        private void OnLLMDescriptionStarted()
+        private void OnLLMDescriptionEnded()
         {
-            if (lastSlot != null && !lastSlot.slot.isEmpty)
-                text.text = string.Empty;
-        }
-
-        private void OnLLMDescriptionToken(string token)
-        {
-            if (lastSlot != null && !lastSlot.slot.isEmpty)
-                text.text = token;
-        }
-        private PlayerContext ResolvePlayerContext()
-        {
-            string[] facts =  { "Хочет знать как устроен мир", "Слышал, что кириешки можно использовать для розжига", };
-
-            return new PlayerContext
-            {
-                Name = playerMainComponent.GetEntityName(),
-                ProfessionId = "слесарь 4 разряда",
-                Expertise = 0.7f,
-                Doubt = 0.3f,
-                KnownFacts = facts,
-            };
+            currentTitle = null;
+            isGenerating = false;
         }
 
 
@@ -211,10 +205,9 @@ namespace TheRavine.Inventory
 
         public void BreakUp()
         {
-            if (_llmDescriptionService != null)
+            if (llmDescriptionService != null)
             {
-                _llmDescriptionService.OnDescriptionStarted -= OnLLMDescriptionStarted;
-                _llmDescriptionService.OnDescriptionToken   -= OnLLMDescriptionToken;
+                llmDescriptionService.OnDescriptionEnded   -= OnLLMDescriptionEnded;
             }
 
             switch (globalSettings.controlType)

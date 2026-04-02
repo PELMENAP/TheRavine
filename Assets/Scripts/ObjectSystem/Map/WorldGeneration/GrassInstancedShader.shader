@@ -72,7 +72,7 @@ Shader "Custom/ChunkGrassShader"
             if (distanceToPlayer < _PlayerRadius)
             {
                 float falloff = 1.0 - (distanceToPlayer / _PlayerRadius);
-                falloff = pow(falloff, 2.0);
+                falloff = falloff * falloff;
                 
                 float3 dirFromPlayer = normalize(positionWS - _PlayerPosition.xyz);
                 
@@ -97,7 +97,7 @@ Shader "Custom/ChunkGrassShader"
             float microWave = sin(time * 4.7 + positionWS.x * 0.3 + positionWS.z * 0.3) * 0.2;
             
             float totalWind = (mainWave + gustWave + microWave) * _WindStrength;
-            float windEffect = pow(heightFactor, 2.0);
+            float windEffect = heightFactor * heightFactor;
             
             float3 windOffset = windDir * totalWind * windEffect;
             float3 playerOffset = ApplyPlayerInteraction(positionWS, heightFactor);

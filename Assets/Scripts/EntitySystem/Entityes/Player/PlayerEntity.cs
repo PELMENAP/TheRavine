@@ -1,6 +1,8 @@
 using Cysharp.Threading.Tasks;
 using R3;
 
+using TheRavine.Base;
+
 namespace TheRavine.EntityControl
 {
     public class PlayerEntity : AEntity
@@ -25,6 +27,11 @@ namespace TheRavine.EntityControl
             base.AddComponentToEntity(new MovementComponent(entityInfo.MovementInfo));
             base.AddComponentToEntity(new AimComponent(entityInfo.AimStatsInfo));
             base.AddComponentToEntity(new TransformComponent(aEntityModelView.transform, aEntityModelView.transform));
+        }
+
+        public void AddWorldComponents(WorldRegistry worldRegistry)
+        {
+            base.AddComponentToEntity(new CurrencyComponent(worldRegistry.GetCurrentState().currency));
         }
 
         public override void Init()

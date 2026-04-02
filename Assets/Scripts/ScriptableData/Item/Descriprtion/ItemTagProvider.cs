@@ -9,6 +9,7 @@ public class ItemTagProvider : ScriptableObject
     public struct Entry
     {
         public InventoryItemInfo info;
+        public string fullName;
         public string[] tags;
         public string material;
     }
@@ -26,8 +27,8 @@ public class ItemTagProvider : ScriptableObject
     public ItemContext GetContext(IInventoryItem item)
     {
         if (_lookup != null && _lookup.TryGetValue(item.info.id, out var entry))
-            return new ItemContext { ItemName = item.info.title, ItemTags = entry.tags, Material = entry.material };
+            return new ItemContext { ItemName = entry.fullName, ItemTags = entry.tags, Material = entry.material };
         
-        return new ItemContext { ItemName = item.info.title, ItemTags = Array.Empty<string>(), Material = string.Empty };
+        return new ItemContext { ItemName = item.info.id, ItemTags = Array.Empty<string>(), Material = string.Empty };
     }
 }
