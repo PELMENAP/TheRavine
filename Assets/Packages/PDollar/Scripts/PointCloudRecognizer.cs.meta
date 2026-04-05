@@ -11,5 +11,5 @@ AssetOrigin:
   productId: 21660
   packageName: PDollar Point-Cloud Gesture Recognizer
   packageVersion: 1.0.3
-  assetPath: Assets/PDollar/Scripts/PointCloudRecognizer.cs
+  assetPath: Assets/Packages/PDollar/Scripts/PointCloudRecognizer.cs
   uploadId: 722838

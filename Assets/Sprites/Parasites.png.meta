@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: d1de0e4168f7870edb21a8fe348fad20
+guid: 8f363398b072ac94e9a520e6ccb1745c
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -110,12 +110,210 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Angels_0
+      name: Parasites_0
       rect:
         serializedVersion: 2
-        x: 3
-        y: 384
-        width: 15
+        x: 38
+        y: 906
+        width: 84
+        height: 102
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5c1fc26a5945ddf09b3bda3098f7899c
+      internalID: -1428971376
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_1
+      rect:
+        serializedVersion: 2
+        x: 154
+        y: 1000
+        width: 9
+        height: 13
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6ad1bf800d9976deebdcb33872e85598
+      internalID: -978679009
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_2
+      rect:
+        serializedVersion: 2
+        x: 189
+        y: 999
+        width: 97
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 684a3995d7f1be883a762e5de8fe3e0f
+      internalID: 1828598058
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_3
+      rect:
+        serializedVersion: 2
+        x: 295
+        y: 971
+        width: 111
+        height: 51
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 082d09438933054ee8f8942269b893dc
+      internalID: -1840854360
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_4
+      rect:
+        serializedVersion: 2
+        x: 412
+        y: 883
+        width: 33
+        height: 139
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3644f8f79f4762a1c8fbf747eafeb157
+      internalID: -378979764
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_5
+      rect:
+        serializedVersion: 2
+        x: 465
+        y: 869
+        width: 117
+        height: 148
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 23112b071622a1951957010d2269cda7
+      internalID: 449454276
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_6
+      rect:
+        serializedVersion: 2
+        x: 601
+        y: 969
+        width: 115
+        height: 51
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ac3270a91c316821db45d6144f7be9fd
+      internalID: 1328823078
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_7
+      rect:
+        serializedVersion: 2
+        x: 721
+        y: 979
+        width: 61
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: eb6c42c70eace1e52a3bbf57ebb80ff5
+      internalID: 316979842
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_8
+      rect:
+        serializedVersion: 2
+        x: 794
+        y: 957
+        width: 59
+        height: 67
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8c7abb505542a5dafb6f69508c020eed
+      internalID: 1561252582
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_9
+      rect:
+        serializedVersion: 2
+        x: 869
+        y: 988
+        width: 20
         height: 20
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
@@ -125,20 +323,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1c50d381813495f1ba16647b7f4b0b5a
-      internalID: -1894798139
+      spriteID: b395db6053da9ba739f8828ce7011171
+      internalID: -340766237
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Angels_1
+      name: Parasites_10
       rect:
         serializedVersion: 2
-        x: 20
-        y: 383
-        width: 17
-        height: 22
+        x: 960
+        y: 844
+        width: 21
+        height: 179
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -147,20 +345,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: d8eb3555cb677c086b418040c4f0f342
-      internalID: 1973891383
+      spriteID: 627e98bf76d2eec4eb56430c6af093f5
+      internalID: 22003817
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Angels_2
+      name: Parasites_11
       rect:
         serializedVersion: 2
-        x: 38
-        y: 351
-        width: 39
-        height: 48
+        x: 140
+        y: 976
+        width: 12
+        height: 10
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -169,20 +367,262 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 09a705ce0338997519484731c1cadefc
-      internalID: 189746465
+      spriteID: 0b36d3be5aee586de9c7bf5b8f118222
+      internalID: 522694523
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Angels_3
+      name: Parasites_12
       rect:
         serializedVersion: 2
-        x: 131
-        y: 379
+        x: 160
+        y: 981
+        width: 10
+        height: 13
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ee6d8022cc4e10bdebe6275b97e07b7d
+      internalID: 1521001413
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_13
+      rect:
+        serializedVersion: 2
+        x: 206
+        y: 973
+        width: 18
+        height: 13
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7cd0c63b2e8bf9761bf2cb149f5271e2
+      internalID: 340710397
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_14
+      rect:
+        serializedVersion: 2
+        x: 138
+        y: 948
+        width: 13
+        height: 11
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9c716cdfb38f4076d849367c5f95cc05
+      internalID: -568735222
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_15
+      rect:
+        serializedVersion: 2
+        x: 160
+        y: 953
+        width: 18
+        height: 14
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a74797d9ec28cfdd086a4e6085455d43
+      internalID: -911789948
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_16
+      rect:
+        serializedVersion: 2
+        x: 195
+        y: 921
+        width: 87
+        height: 38
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c1c29526b683a8b5cb549787ff9a096e
+      internalID: -1763934652
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_17
+      rect:
+        serializedVersion: 2
+        x: 296
+        y: 916
+        width: 114
+        height: 44
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: df0420d4650614747ad93a5fd3d0f169
+      internalID: 622294697
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_18
+      rect:
+        serializedVersion: 2
+        x: 879
+        y: 918
+        width: 67
+        height: 36
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ba2b549c5083a458ea7c9ec6b6951f20
+      internalID: 1136688503
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_19
+      rect:
+        serializedVersion: 2
+        x: 160
+        y: 935
+        width: 16
+        height: 7
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 47365c6e9b5eb9233b48960141dbbd89
+      internalID: 455453718
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_20
+      rect:
+        serializedVersion: 2
+        x: 591
+        y: 853
+        width: 113
+        height: 98
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8b3b8c555922398b8a36584e17153f1a
+      internalID: 1075572156
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_21
+      rect:
+        serializedVersion: 2
+        x: 717
+        y: 885
+        width: 45
+        height: 60
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 48366b1bda8701094a3d54f542976046
+      internalID: 1525325129
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_22
+      rect:
+        serializedVersion: 2
+        x: 776
+        y: 874
+        width: 41
+        height: 66
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 36c9ea66b05586571b677c404d0ef535
+      internalID: 1943732125
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_23
+      rect:
+        serializedVersion: 2
+        x: 823
+        y: 847
         width: 15
-        height: 63
+        height: 97
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -191,20 +631,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b8bc600a8bc5d1b36810cfc8941d3de2
-      internalID: -1933747552
+      spriteID: 85320014e76e7f67fa06eb94cc07b45e
+      internalID: 861811233
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Angels_5
+      name: Parasites_24
       rect:
         serializedVersion: 2
-        x: 11
-        y: 350
-        width: 15
-        height: 29
+        x: 850
+        y: 851
+        width: 20
+        height: 96
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -213,20 +653,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: e32c0f5f221996f28b5628f72b99d71d
-      internalID: -1088261970
+      spriteID: ed59115a4135c1c60abfb16dffc38686
+      internalID: 1847780605
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Angels_6
+      name: Parasites_25
       rect:
         serializedVersion: 2
-        x: 86
-        y: 351
-        width: 14
-        height: 24
+        x: 35
+        y: 845
+        width: 22
+        height: 53
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -235,40 +675,18 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1905fe2af652c61cf973fada15b92209
-      internalID: 1049332288
+      spriteID: 94beef1419494ffc4b2b936c881ef9fe
+      internalID: 1992526568
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Angels_7
+      name: Parasites_26
       rect:
         serializedVersion: 2
-        x: 141
-        y: 353
-        width: 6
-        height: 17
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: c1a31984c392678e2aee7bc36720bc8b
-      internalID: -1516337028
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_8
-      rect:
-        serializedVersion: 2
-        x: 154
-        y: 369
+        x: 61
+        y: 880
         width: 6
         height: 5
       alignment: 0
@@ -279,481 +697,19 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9ae8b4975777d202caf4c63a58134534
-      internalID: -700448679
+      spriteID: 19bfd895d2cb6b23d920719361734992
+      internalID: -955693473
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Angels_9
+      name: Parasites_27
       rect:
         serializedVersion: 2
-        x: 4
-        y: 227
-        width: 21
-        height: 113
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 081cf4663e4829d229bb64ce6476c7e0
-      internalID: -1422232361
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_10
-      rect:
-        serializedVersion: 2
-        x: 42
-        y: 209
-        width: 119
-        height: 119
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 8c4e726137fcb2fafad6e66733275cb9
-      internalID: 154805699
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_11
-      rect:
-        serializedVersion: 2
-        x: 204
-        y: 10
-        width: 98
-        height: 319
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 724cde2be55dc434d89c8464ddf7ca6f
-      internalID: 1996299041
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_12
-      rect:
-        serializedVersion: 2
-        x: 313
-        y: 107
-        width: 64
-        height: 173
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 3d15cba2ff79f7f0cb1397f09d5feba9
-      internalID: -1075608483
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_13
-      rect:
-        serializedVersion: 2
-        x: 915
-        y: 58
-        width: 107
-        height: 181
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 49d14425c48b771af8f834763ceae3a0
-      internalID: -726802632
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_14
-      rect:
-        serializedVersion: 2
-        x: 8
-        y: 160
-        width: 9
-        height: 45
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: daab4e87528dd44649e1b0f1003ecb0e
-      internalID: -128739896
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_15
-      rect:
-        serializedVersion: 2
-        x: 43
-        y: 61
-        width: 129
-        height: 129
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 86c10ddb7077657b7802ee0f9397d47f
-      internalID: 744184589
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_16
-      rect:
-        serializedVersion: 2
-        x: 386
-        y: 110
-        width: 61
-        height: 95
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 4e8034ac4e0b9aecea950cf4e9568d3d
-      internalID: 1436178456
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_17
-      rect:
-        serializedVersion: 2
-        x: 500
-        y: 104
-        width: 49
-        height: 77
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 9235e010c7de3a28fabd1efc813a50fd
-      internalID: 698079658
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_18
-      rect:
-        serializedVersion: 2
-        x: 553
-        y: 91
-        width: 57
-        height: 104
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: ac431eca724e4b13d9f7b40ff2f14a20
-      internalID: 1832377379
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_19
-      rect:
-        serializedVersion: 2
-        x: 622
-        y: 95
-        width: 32
-        height: 92
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 5dc3647a6c1654134a14f5a97286028b
-      internalID: -1887917596
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_20
-      rect:
-        serializedVersion: 2
-        x: 689
-        y: 119
-        width: 56
-        height: 70
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 26b461e273457443ab56174530e5bafe
-      internalID: -1790221132
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_21
-      rect:
-        serializedVersion: 2
-        x: 756
-        y: 109
-        width: 39
-        height: 81
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: fc55a737b71529d7685b312a18cbdf71
-      internalID: 432817543
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_22
-      rect:
-        serializedVersion: 2
-        x: 812
-        y: 94
-        width: 47
-        height: 92
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: c974886bfb1ce795390fef669715d1c9
-      internalID: -525652563
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_23
-      rect:
-        serializedVersion: 2
-        x: 871
-        y: 160
-        width: 23
-        height: 28
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 1c15d586c461187c78c1a665a691a802
-      internalID: -967624728
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_24
-      rect:
-        serializedVersion: 2
-        x: 454
-        y: 107
-        width: 30
-        height: 46
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 3e79bd2a286c72d658769ab6312689b1
-      internalID: -1570939417
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_25
-      rect:
-        serializedVersion: 2
-        x: 667
-        y: 119
-        width: 5
-        height: 27
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: c0a828568e342c63ab991761d19e12ec
-      internalID: -1270184485
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_26
-      rect:
-        serializedVersion: 2
-        x: 888
-        y: 129
-        width: 11
-        height: 25
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: f38c28fb4210b7b98b3e9510f0b81f0c
-      internalID: 848980984
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_27
-      rect:
-        serializedVersion: 2
-        x: 316
-        y: 2
-        width: 242
-        height: 99
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: e106b99682e3aaa26a85424ee1e11c8a
-      internalID: -945155922
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_28
-      rect:
-        serializedVersion: 2
-        x: 565
-        y: 4
-        width: 285
-        height: 79
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 88008ea138628c164b5a9e7a9be68770
-      internalID: -1374869594
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_29
-      rect:
-        serializedVersion: 2
-        x: 868
-        y: 63
-        width: 9
-        height: 54
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: e92cecd5a9b021d7985cc37917c75f35
-      internalID: 586825936
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_30
-      rect:
-        serializedVersion: 2
-        x: 894
-        y: 63
-        width: 7
+        x: 80
+        y: 852
+        width: 43
         height: 36
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
@@ -763,20 +719,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 3ae940872e407a5929b86c4ef45782c1
-      internalID: -1747951208
+      spriteID: 6c013ff11c0932892be65a91796c1019
+      internalID: 78231274
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Angels_31
+      name: Parasites_28
       rect:
         serializedVersion: 2
-        x: 851
-        y: 2
-        width: 173
-        height: 45
+        x: 139
+        y: 591
+        width: 133
+        height: 322
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -785,8 +741,118 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: fe10580490d98ade5b704ed3b0f89326
-      internalID: -1052967264
+      spriteID: 15183f616deb2d290868430afa9de9f3
+      internalID: -1431134548
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_29
+      rect:
+        serializedVersion: 2
+        x: 998
+        y: 879
+        width: 7
+        height: 4
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 40e2de5b1621ec2beb48cc6b920665f7
+      internalID: -638163702
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_30
+      rect:
+        serializedVersion: 2
+        x: 2
+        y: 847
+        width: 16
+        height: 31
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9ccf713a0dfa8816bac31b3bc155a2f7
+      internalID: 1789949598
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_31
+      rect:
+        serializedVersion: 2
+        x: 983
+        y: 868
+        width: 6
+        height: 4
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 48f17c3630ac5174ea4fd7d78ecc2d05
+      internalID: 2097797193
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_32
+      rect:
+        serializedVersion: 2
+        x: 982
+        y: 835
+        width: 29
+        height: 25
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 942c2bb0ee45e12e786165079a12526b
+      internalID: -824642415
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Parasites_33
+      rect:
+        serializedVersion: 2
+        x: 1012
+        y: 862
+        width: 7
+        height: 3
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ead181b270581bb389c419bfa2216246
+      internalID: -410166421
       vertices: []
       indices: 
       edges: []
@@ -801,44 +867,50 @@ TextureImporter:
     indices: 
     edges: []
     weights: []
-    secondaryTextures: []
+    secondaryTextures:
+    - texture: {fileID: 2800000, guid: 50ef6279d1040ff5b82fe73667256b06, type: 3}
+      name: _MaskTex
+    - texture: {fileID: 2800000, guid: 62e731782b0534aa9bae1ce89d287abd, type: 3}
+      name: _NormalMap
     spriteCustomMetadata:
       entries:
       - key: SpriteEditor.SliceSettings
         value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      Angels_0: -1894798139
-      Angels_1: 1973891383
-      Angels_10: 154805699
-      Angels_11: 1996299041
-      Angels_12: -1075608483
-      Angels_13: -726802632
-      Angels_14: -128739896
-      Angels_15: 744184589
-      Angels_16: 1436178456
-      Angels_17: 698079658
-      Angels_18: 1832377379
-      Angels_19: -1887917596
-      Angels_2: 189746465
-      Angels_20: -1790221132
-      Angels_21: 432817543
-      Angels_22: -525652563
-      Angels_23: -967624728
-      Angels_24: -1570939417
-      Angels_25: -1270184485
-      Angels_26: 848980984
-      Angels_27: -945155922
-      Angels_28: -1374869594
-      Angels_29: 586825936
-      Angels_3: -1933747552
-      Angels_30: -1747951208
-      Angels_31: -1052967264
-      Angels_4: 1236896746
-      Angels_5: -1088261970
-      Angels_6: 1049332288
-      Angels_7: -1516337028
-      Angels_8: -700448679
-      Angels_9: -1422232361
+      Parasites_0: -1428971376
+      Parasites_1: -978679009
+      Parasites_10: 22003817
+      Parasites_11: 522694523
+      Parasites_12: 1521001413
+      Parasites_13: 340710397
+      Parasites_14: -568735222
+      Parasites_15: -911789948
+      Parasites_16: -1763934652
+      Parasites_17: 622294697
+      Parasites_18: 1136688503
+      Parasites_19: 455453718
+      Parasites_2: 1828598058
+      Parasites_20: 1075572156
+      Parasites_21: 1525325129
+      Parasites_22: 1943732125
+      Parasites_23: 861811233
+      Parasites_24: 1847780605
+      Parasites_25: 1992526568
+      Parasites_26: -955693473
+      Parasites_27: 78231274
+      Parasites_28: -1431134548
+      Parasites_29: -638163702
+      Parasites_3: -1840854360
+      Parasites_30: 1789949598
+      Parasites_31: 2097797193
+      Parasites_32: -824642415
+      Parasites_33: -410166421
+      Parasites_4: -378979764
+      Parasites_5: 449454276
+      Parasites_6: 1328823078
+      Parasites_7: 316979842
+      Parasites_8: 1561252582
+      Parasites_9: -340766237
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

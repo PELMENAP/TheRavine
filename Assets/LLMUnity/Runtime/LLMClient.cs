@@ -316,7 +316,7 @@ namespace LLMUnity
         /// <summary>
         /// Gets the underlying LLMLocal instance for operations requiring local access.
         /// </summary>
-        protected virtual LLMLocal GetCaller()
+        public virtual LLMLocal GetCaller()
         {
             return llmClient;
         }

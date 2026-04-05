@@ -17,6 +17,7 @@ namespace TheRavine.EntityControl
     {
         [SerializeField] private BoidsInfo boidsInfo;
         [SerializeField] private GameObject[] prefabs;
+
         private CancellationTokenSource _cts;
         private NativeArray<float4> _positionsAndVelocities;
         private NativeArray<float2> _accelerations, _otherTargets;
@@ -24,41 +25,46 @@ namespace TheRavine.EntityControl
         private NativeArray<bool> _isMoving;
         private NativeParallelMultiHashMap<int2, int> _spatialGrid;
         private TransformAccessArray _transformAccessArray;
-        private Transform[] transforms;
-        private Transform viewer; 
-        private InitSpatialGridJob initSpatialGridJob;
-        private AccelerationJob accelerationJob;
-        private MoveJob moveJob;
-        private bool isUpdate;
-        private float2 GetTargetPositionCloseToViewer() 
+        private Transform[] _transforms;
+        private Transform _viewer;
+
+        private InitSpatialGridJob _initSpatialGridJob;
+        private AccelerationJob _accelerationJob;
+        private MoveJob _moveJob;
+        private JobHandle _moveHandle;
+        private bool _isUpdate;
+        private bool _moveScheduled;
+
+        private float2 GetTargetPositionCloseToViewer()
         {
-            if(viewer == null) return new(Random.RangeInt(-boidsInfo.distanceOfTargetFromPlayer, boidsInfo.distanceOfTargetFromPlayer), Random.RangeInt(-boidsInfo.distanceOfTargetFromPlayer, boidsInfo.distanceOfTargetFromPlayer));
-            else return new(-viewer.position.x + Random.RangeInt(-boidsInfo.distanceOfTargetFromPlayer, boidsInfo.distanceOfTargetFromPlayer), -viewer.position.y + Random.RangeInt(-boidsInfo.distanceOfTargetFromPlayer, boidsInfo.distanceOfTargetFromPlayer));
+            float2 offset = new(
+                Random.RangeInt(-boidsInfo.distanceOfTargetFromPlayer, boidsInfo.distanceOfTargetFromPlayer),
+                Random.RangeInt(-boidsInfo.distanceOfTargetFromPlayer, boidsInfo.distanceOfTargetFromPlayer)
+            );
+            if (_viewer == null) return offset;
+            return new float2(-_viewer.position.x, -_viewer.position.z) + offset;
         }
+
         public void StartBoids(Transform viewer)
-        {       
-            this.viewer = viewer; 
-            isUpdate = false;
+        {
+            _viewer = viewer;
+            _isUpdate = false;
 
-            _cts    = new CancellationTokenSource();
+            _cts = new CancellationTokenSource();
             _positionsAndVelocities = new NativeArray<float4>(boidsInfo.numberOfEntities, Allocator.Persistent);
-
             _accelerations = new NativeArray<float2>(boidsInfo.numberOfEntities, Allocator.Persistent);
             _otherTargets = new NativeArray<float2>(prefabs.Length, Allocator.Persistent);
             _isMoving = new NativeArray<bool>(boidsInfo.numberOfEntities, Allocator.Persistent);
             _flockIds = new NativeArray<int>(boidsInfo.numberOfEntities, Allocator.Persistent);
             _spatialGrid = new NativeParallelMultiHashMap<int2, int>(boidsInfo.numberOfEntities, Allocator.Persistent);
 
-            transforms = new Transform[boidsInfo.numberOfEntities];
+            _transforms = new Transform[boidsInfo.numberOfEntities];
 
             for (int i = 0; i < prefabs.Length; i++)
-            {
                 _otherTargets[i] = GetTargetPositionCloseToViewer();
-            }
 
             int flockSize = boidsInfo.numberOfEntities / prefabs.Length;
             int extraBoids = boidsInfo.numberOfEntities % prefabs.Length;
-            
             int agentIndex = 0;
 
             for (int flock = 0; flock < prefabs.Length; flock++)
@@ -67,16 +73,17 @@ namespace TheRavine.EntityControl
 
                 for (int i = 0; i < currentFlockSize; i++)
                 {
-                    transforms[agentIndex] = Instantiate(prefabs[flock]).transform;
-                    transforms[agentIndex].position = new Vector2(
-                        _otherTargets[flock].x + Random.RangeInt(-boidsInfo.nearTheTarget, boidsInfo.nearTheTarget),
-                        _otherTargets[flock].y + Random.RangeInt(-boidsInfo.nearTheTarget, boidsInfo.nearTheTarget)
-                    );
-                    transforms[agentIndex].parent = transform;
+                    float2 target = _otherTargets[flock];
+                    float spawnX = target.x + Random.RangeInt(-boidsInfo.nearTheTarget, boidsInfo.nearTheTarget);
+                    float spawnZ = target.y + Random.RangeInt(-boidsInfo.nearTheTarget, boidsInfo.nearTheTarget);
+                    float spawnY = boidsInfo.yTarget + Random.GetInsideCircle().x * boidsInfo.ySpawnSpread;
 
-                    float2 randomInCircle = Random.GetInsideCircle();
+                    _transforms[agentIndex] = Instantiate(prefabs[flock]).transform;
+                    _transforms[agentIndex].position = new Vector3(spawnX, spawnY, spawnZ);
+                    _transforms[agentIndex].parent = transform;
 
-                    _positionsAndVelocities[agentIndex] = new float4(transforms[agentIndex].position.x, transforms[agentIndex].position.y, randomInCircle.x, randomInCircle.y);
+                    float2 randomVel = Random.GetInsideCircle();
+                    _positionsAndVelocities[agentIndex] = new float4(spawnX, spawnZ, randomVel.x, randomVel.y);
                     _accelerations[agentIndex] = Random.GetInsideCircle();
                     _isMoving[agentIndex] = true;
                     _flockIds[agentIndex] = flock;
@@ -85,46 +92,60 @@ namespace TheRavine.EntityControl
                 }
             }
 
-            _transformAccessArray = new TransformAccessArray(transforms);
+            _transformAccessArray = new TransformAccessArray(_transforms);
 
             SetUpNewValues();
-
             TargetsUpdate().Forget();
-            isUpdate = true;
+            _isUpdate = true;
         }
 
-
-
-        private JobHandle moveHandle;
         private void Update()
         {
-            if(!isUpdate) return;
+            if (!_isUpdate) return;
+
+            _moveJob.DeltaTime = Time.deltaTime;
+
             _spatialGrid.Clear();
-            var initSpatialGridHandle = initSpatialGridJob.Schedule(boidsInfo.numberOfEntities, 64); 
-             if(!isUpdate) return;
-            var accelerationHandle = accelerationJob.Schedule(boidsInfo.numberOfEntities, 64, initSpatialGridHandle);
-            if(!isUpdate) return;
-            moveHandle = moveJob.Schedule(_transformAccessArray, accelerationHandle);
+            var gridHandle = _initSpatialGridJob.Schedule(boidsInfo.numberOfEntities, 64);
+            var accelHandle = _accelerationJob.Schedule(boidsInfo.numberOfEntities, 64, gridHandle);
+            _moveHandle = _moveJob.Schedule(_transformAccessArray, accelHandle);
+            _moveScheduled = true;
         }
 
-        private void LateUpdate() 
+        private void LateUpdate()
         {
-            if(!isUpdate) return;
-            moveHandle.Complete();
+            if (!_moveScheduled) return;
+            _moveHandle.Complete();
+            _moveScheduled = false;
         }
 
         public void DisableBoids()
         {
-            isUpdate = false;
+            if (_moveScheduled)
+            {
+                _moveHandle.Complete();
+                _moveScheduled = false;
+            }
+            _isUpdate = false;
         }
 
-        private void OnDisable() {
-            if (_positionsAndVelocities.IsCreated)
-                _positionsAndVelocities.Dispose();
-            _accelerations.Dispose();
-            _otherTargets.Dispose();
-            _isMoving.Dispose();
-            _transformAccessArray.Dispose();
+        private void OnDisable()
+        {
+            _isUpdate = false;
+
+            if (_moveScheduled)
+            {
+                _moveHandle.Complete();
+                _moveScheduled = false;
+            }
+
+            if (_positionsAndVelocities.IsCreated) _positionsAndVelocities.Dispose();
+            if (_accelerations.IsCreated) _accelerations.Dispose();
+            if (_otherTargets.IsCreated) _otherTargets.Dispose();
+            if (_isMoving.IsCreated) _isMoving.Dispose();
+            if (_flockIds.IsCreated) _flockIds.Dispose();
+            if (_spatialGrid.IsCreated) _spatialGrid.Dispose();
+            if (_transformAccessArray.isCreated) _transformAccessArray.Dispose();
 
             _cts?.Cancel();
             _cts?.Dispose();
@@ -133,17 +154,24 @@ namespace TheRavine.EntityControl
         [Button]
         private void SetUpNewValues()
         {
-            isUpdate = false;
+            if (_moveScheduled)
+            {
+                _moveHandle.Complete();
+                _moveScheduled = false;
+            }
+            _isUpdate = false;
 
-            initSpatialGridJob = new InitSpatialGridJob()
+            float invCell = 1f / boidsInfo.cellSize;
+
+            _initSpatialGridJob = new InitSpatialGridJob
             {
                 PositionsAndVelocities = _positionsAndVelocities,
                 IsMoving = _isMoving,
                 SpatialGrid = _spatialGrid.AsParallelWriter(),
-                InvCellSize = 1.0f / boidsInfo.cellSize
+                InvCellSize = invCell
             };
-            
-            accelerationJob = new AccelerationJob()
+
+            _accelerationJob = new AccelerationJob
             {
                 PositionsAndVelocities = _positionsAndVelocities,
                 FlockIds = _flockIds,
@@ -152,12 +180,13 @@ namespace TheRavine.EntityControl
                 Accelerations = _accelerations,
                 DestinationThreshold = boidsInfo.destinationThreshold,
                 AvoidanceThreshold = boidsInfo.avoidanceThreshold,
+                AlongThreshold = boidsInfo.alongThreshold,
                 Weights = boidsInfo.accelerationWeights,
                 SpatialGrid = _spatialGrid,
-                InvCellSize = 1.0f / boidsInfo.cellSize
+                InvCellSize = invCell
             };
 
-            moveJob = new MoveJob()
+            _moveJob = new MoveJob
             {
                 PositionsAndVelocities = _positionsAndVelocities,
                 IsMoving = _isMoving,
@@ -168,7 +197,8 @@ namespace TheRavine.EntityControl
                 FlipRotation = boidsInfo.flip,
                 IdentityRotation = Quaternion.identity
             };
-            isUpdate = true;
+
+            _isUpdate = true;
         }
 
         [Button]
@@ -180,13 +210,14 @@ namespace TheRavine.EntityControl
                 _isMoving[a] = !_isMoving[a];
             }
         }
+
         private async UniTaskVoid TargetsUpdate()
         {
-            while(!_cts.Token.IsCancellationRequested)
+            while (!_cts.Token.IsCancellationRequested)
             {
                 _otherTargets[Random.RangeInt(0, _otherTargets.Length)] = GetTargetPositionCloseToViewer();
                 ChangeMoving();
-                await UniTask.Delay(Random.RangeInt(1000 * boidsInfo.delayFactor, 10000 * boidsInfo.delayFactor));
+                await UniTask.Delay(Random.RangeInt(1000 * boidsInfo.delayFactor, 10000 * boidsInfo.delayFactor), cancellationToken: _cts.Token);
             }
         }
     }

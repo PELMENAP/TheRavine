@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-
 using UnityEngine;
 
 namespace TheRavine.Extensions
@@ -24,8 +22,11 @@ namespace TheRavine.Extensions
                 }
             }
 
-            return new Result(string.IsNullOrEmpty(gestureClass) ? "No match" : gestureClass, Mathf.Max((minDistance - 2.0f) / -2.0f, 0.0f));
+            return new Result(
+                string.IsNullOrEmpty(gestureClass) ? "No match" : gestureClass,
+                Mathf.Max((minDistance - 2.0f) / -2.0f, 0.0f));
         }
+
         private static float CloudDistance(Point[] points1, float[] theta1, Gesture gesture, int startIndex)
         {
             int n = points1.Length;
@@ -37,7 +38,6 @@ namespace TheRavine.Extensions
                 var nearest = gesture.Tree.FindNearest(points1[i], theta1[i]);
                 float weight = 1f - ((i - startIndex + n) % n) / (float)n;
                 sum += weight * nearest.Distance;
-
                 i = (i + 1) % n;
             } while (i != startIndex);
 
@@ -58,16 +58,17 @@ namespace TheRavine.Extensions
         }
     }
 
-    public readonly struct Result {
+    public readonly struct Result
+    {
+        public readonly string GestureClass;
+        public readonly float Score;
 
-		public readonly string GestureClass;
-		public readonly float Score;
         public Result(string gestureClass, float score)
         {
             GestureClass = gestureClass;
             Score = score;
         }
-	}
+    }
 
     public static class Geometry
     {
@@ -78,169 +79,136 @@ namespace TheRavine.Extensions
             return dx * dx + dy * dy;
         }
     }
-
     public class KDTree
     {
-        private KDTreeNode root;
-        private const int Dimensions = 3;
-        private readonly float spatialWeight = 0.7f;
-        private readonly float angleWeight = 0.3f;
-        private struct PointData
+        private const int Dims = 3;
+        private const float SpatialW = 0.7f;
+        private const float AngleW = 0.3f;
+
+        private struct Node
         {
-            public Point Point;
-            public float Theta;
-            public int Index;
+            public float X, Y, Theta;
+            public int Left, Right;
+            public byte Axis;
         }
 
-        private class KDTreeNode
+        private struct PointData
         {
-            public Point Point;
-            public float Theta;
-            public int Index;
-            public int Axis;
-            public KDTreeNode Left, Right;
+            public float X, Y, Theta;
+        }
+
+        private readonly Node[] _nodes;
+        private int _count;
+
+        public readonly struct NearestNeighbor
+        {
+            public readonly float Distance;
+            public NearestNeighbor(float distance) => Distance = distance;
         }
 
         public KDTree(Point[] points, float[] theta)
         {
-            var data = new PointData[points.Length];
-            for (int i = 0; i < points.Length; i++)
-                data[i] = new PointData { Point = points[i], Theta = theta[i], Index = i };
+            int n = points.Length;
+            _nodes = new Node[n];
 
-            root = BuildTree(data, 0, points.Length, 0);
+            var data = new PointData[n];
+            for (int i = 0; i < n; i++)
+                data[i] = new PointData { X = points[i].X, Y = points[i].Y, Theta = theta[i] };
+
+            if (n > 0) BuildTree(data, 0, n, 0);
         }
 
-        private KDTreeNode BuildTree(PointData[] data, int start, int end, int depth)
+        private int BuildTree(PointData[] data, int start, int end, int depth)
         {
-            if (start >= end) return null;
+            if (start >= end) return -1;
 
-            int axis = depth % Dimensions;
-            int mid = (start + end) / 2;
+            int axis = depth % Dims;
+            int mid = (start + end) >> 1;
             QuickSelect(data, start, end - 1, mid, axis);
 
-            var median = data[mid];
-            var node = new KDTreeNode
-            {
-                Point = median.Point,
-                Theta = median.Theta,
-                Index = median.Index,
-                Axis = axis,
-                Left = BuildTree(data, start, mid, depth + 1),
-                Right = BuildTree(data, mid + 1, end, depth + 1)
-            };
-            return node;
+            int idx = _count++;
+            ref Node node = ref _nodes[idx];
+            node.X = data[mid].X;
+            node.Y = data[mid].Y;
+            node.Theta = data[mid].Theta;
+            node.Axis = (byte)axis;
+            node.Left = BuildTree(data, start, mid, depth + 1);
+            node.Right = BuildTree(data, mid + 1, end, depth + 1);
+            return idx;
         }
 
-        private void QuickSelect(PointData[] data, int left, int right, int k, int axis)
+        private static void QuickSelect(PointData[] data, int left, int right, int k, int axis)
         {
-            while (true)
+            while (left < right)
             {
-                if (left == right) return;
-                int pivotIndex = Partition(data, left, right, axis, (left + right) / 2);
-                if (k == pivotIndex) return;
-                else if (k < pivotIndex) right = pivotIndex - 1;
-                else left = pivotIndex + 1;
+                int pivotIdx = Partition(data, left, right, axis, (left + right) >> 1);
+                if (k == pivotIdx) return;
+                if (k < pivotIdx) right = pivotIdx - 1;
+                else left = pivotIdx + 1;
             }
         }
 
-        private int Partition(PointData[] data, int left, int right, int axis, int pivotIndex)
+        private static int Partition(PointData[] data, int left, int right, int axis, int pivotIdx)
         {
-            var pivotValue = data[pivotIndex];
-            Swap(data, pivotIndex, right);
-            int storeIndex = left;
-
+            float pivot = GetAxis(data[pivotIdx], axis);
+            Swap(ref data[pivotIdx], ref data[right]);
+            int store = left;
             for (int i = left; i < right; i++)
             {
-                if (Compare(data[i], pivotValue, axis) < 0)
-                {
-                    Swap(data, storeIndex, i);
-                    storeIndex++;
-                }
+                if (GetAxis(data[i], axis) < pivot)
+                    Swap(ref data[store++], ref data[i]);
             }
-            Swap(data, right, storeIndex);
-            return storeIndex;
+            Swap(ref data[right], ref data[store]);
+            return store;
         }
 
-        private void Swap(PointData[] data, int a, int b)
+        private static void Swap(ref PointData a, ref PointData b)
         {
-            PointData tmp = data[a];
-            data[a] = data[b];
-            data[b] = tmp;
+            PointData tmp = a; a = b; b = tmp;
         }
 
-        private int Compare(PointData a, PointData b, int axis)
+        private static float GetAxis(in PointData p, int axis) => axis switch
         {
-            if (axis == 0) return a.Point.X.CompareTo(b.Point.X);
-            if (axis == 1) return a.Point.Y.CompareTo(b.Point.Y);
-            return a.Theta.CompareTo(b.Theta);
-        }
+            0 => p.X,
+            1 => p.Y,
+            _ => p.Theta
+        };
 
-        public NearestNeighbor FindNearest(Point queryPoint, float queryTheta)
+        public NearestNeighbor FindNearest(Point query, float queryTheta)
         {
-            KDTreeNode best = null;
+            if (_nodes.Length == 0) return new NearestNeighbor(float.MaxValue);
+
             float bestDist = float.MaxValue;
-            Search(root, queryPoint, queryTheta, ref best, ref bestDist);
-            return new NearestNeighbor(best.Point, best.Theta, best.Index, bestDist);
+            int bestIdx = 0;
+            Search(0, query.X, query.Y, queryTheta, ref bestDist, ref bestIdx);
+            return new NearestNeighbor(bestDist);
         }
 
-        private void Search(KDTreeNode node, Point q, float qTheta, ref KDTreeNode best, ref float bestDist)
+        private void Search(int nodeIdx, float qx, float qy, float qt, ref float bestDist, ref int bestIdx)
         {
-            if (node == null) return;
+            if (nodeIdx < 0) return;
 
-            float dist = Distance(q, qTheta, node.Point, node.Theta);
+            ref readonly Node node = ref _nodes[nodeIdx];
+
+            float dx = qx - node.X;
+            float dy = qy - node.Y;
+            float dt = qt - node.Theta;
+            float dist = SpatialW * (dx * dx + dy * dy) + AngleW * (dt * dt);
+
             if (dist < bestDist)
             {
                 bestDist = dist;
-                best = node;
+                bestIdx = nodeIdx;
             }
 
-            bool goLeft = node.Axis switch
-            {
-                0 => q.X < node.Point.X,
-                1 => q.Y < node.Point.Y,
-                _ => qTheta < node.Theta
-            };
+            float axisDiff = node.Axis switch { 0 => dx, 1 => dy, _ => dt };
+            float axisWeight = node.Axis == 2 ? AngleW : SpatialW;
+            bool goLeft = axisDiff < 0f;
 
-            var first = goLeft ? node.Left : node.Right;
-            var second = goLeft ? node.Right : node.Left;
+            Search(goLeft ? node.Left : node.Right, qx, qy, qt, ref bestDist, ref bestIdx);
 
-            Search(first, q, qTheta, ref best, ref bestDist);
-
-            float axisDiff = node.Axis switch
-            {
-                0 => (q.X - node.Point.X),
-                1 => (q.Y - node.Point.Y),
-                _ => (qTheta - node.Theta)
-            };
-            float axisDist = axisDiff * axisDiff;
-
-            if (axisDist * spatialWeight < bestDist)
-                Search(second, q, qTheta, ref best, ref bestDist);
-        }
-
-        private float Distance(Point a, float thetaA, Point b, float thetaB)
-        {
-            float dx = a.X - b.X;
-            float dy = a.Y - b.Y;
-            float spatial = dx * dx + dy * dy;
-            float angle = (thetaA - thetaB) * (thetaA - thetaB);
-            return spatialWeight * spatial + angleWeight * angle;
-        }
-
-        public class NearestNeighbor
-        {
-            public Point Point;
-            public float Theta;
-            public int Index;
-            public float Distance;
-
-            public NearestNeighbor(Point p, float t, int i, float d)
-            {
-                Point = p;
-                Theta = t;
-                Index = i;
-                Distance = d;
-            }
+            if (axisDiff * axisDiff * axisWeight < bestDist)
+                Search(goLeft ? node.Right : node.Left, qx, qy, qt, ref bestDist, ref bestIdx);
         }
     }
 }

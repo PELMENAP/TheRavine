@@ -16,13 +16,15 @@ MonoBehaviour:
   delayFactor: 3
   nearTheTarget: 30
   distanceOfTargetFromPlayer: 200
-  destinationThreshold: 30
-  avoidanceThreshold: 5
-  alongThreshold: 15
-  cellSize: 10
+  destinationThreshold: 40
+  avoidanceThreshold: 6
+  alongThreshold: 2
+  cellSize: 20
   velocityLimit: 15
   accelerationWeights:
     x: 10
     y: 10
     z: 10
   flip: {x: 0, y: 180, z: 0, w: 0}
+  yTarget: 20
+  ySpawnSpread: 10

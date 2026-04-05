@@ -30,6 +30,7 @@ public sealed class LLMItemDescriptionService : IDisposable
 
     public void RequestDescription(IInventoryItem item, PlayerContext player)
     {
+        if(_agent.GetCaller() == null) return;
         CancelDebounce();
         _debounceCts = new CancellationTokenSource();
         DebounceAsync(item, player, _debounceCts.Token).Forget();
@@ -73,7 +74,7 @@ public sealed class LLMItemDescriptionService : IDisposable
             var prompt = ItemPromptBuilder.Build(itemCtx, player, player.Expertise, player.Doubt);
 
 
-            string result;
+            string result = "";
             try
             {
                 result = await _agent
@@ -84,7 +85,6 @@ public sealed class LLMItemDescriptionService : IDisposable
             catch (OperationCanceledException)
             {
                 _agent.CancelRequests();
-                throw;
             }
 
             if (string.IsNullOrWhiteSpace(result)) return;

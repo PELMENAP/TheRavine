@@ -8,4 +8,8 @@ public class BoidsInfo : ScriptableObject
     public float destinationThreshold, avoidanceThreshold, alongThreshold, cellSize, velocityLimit;
     public float3 accelerationWeights;
     public Quaternion flip;
+
+    [Header("3D Y Movement")]
+    public float yTarget;
+    public float ySpawnSpread = 1f;
 }

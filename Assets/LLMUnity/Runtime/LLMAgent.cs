@@ -162,7 +162,7 @@ namespace LLMUnity
             }
         }
 
-        protected override LLMLocal GetCaller()
+        public override LLMLocal GetCaller()
         {
             return llmAgent;
         }

@@ -9,3 +9,4 @@ public interface IEntityEvent : IGameEvent
 public struct PickUpEvent : IGameEvent { public Vector2Int Position; } 
 public struct PlaceEvent : IGameEvent { public Vector2Int Position; }
 public struct AimAddition : IGameEvent { public Vector2 Position; }
+public struct CameraPlace : IGameEvent { public float scale; public bool flip; }
