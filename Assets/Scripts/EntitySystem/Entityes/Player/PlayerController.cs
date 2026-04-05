@@ -28,6 +28,7 @@ namespace TheRavine.EntityControl
         private bool act = true;
         private bool isAccurance;
         private bool isHolding = false;
+        private bool isFlip = false;
 
         private IController currentController;
         private RavineLogger logger;
@@ -112,6 +113,8 @@ namespace TheRavine.EntityControl
             movementComponent = playerEntity.GetEntityComponent<MovementComponent>();
             aimComponent = playerEntity.GetEntityComponent<AimComponent>();
             InitStatePattern(playerEntity.GetEntityComponent<StatePatternComponent>());
+
+            playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<CameraPlace>(CameraPlaceHandleEvent);
         }
 
         private void InitStatePattern(StatePatternComponent component)
@@ -122,6 +125,11 @@ namespace TheRavine.EntityControl
             
             actions = Aim;
             component.AddBehaviour(typeof(PlayerBehaviourSit), new PlayerBehaviourSit(this, actions));
+        }
+
+        private void CameraPlaceHandleEvent(AEntity entity, CameraPlace e)
+        {
+            isFlip = e.flip;
         }
 
         public void SetZeroValues()
@@ -141,7 +149,7 @@ namespace TheRavine.EntityControl
         {
             if (isAimMode || !IsOwner) return;
 
-            movementDirection = currentController.GetMove();
+            movementDirection = currentController.GetMove() * (isFlip ? -1 : 1);
 
             float movementMagnitute = movementDirection.magnitude;
 
@@ -158,6 +166,8 @@ namespace TheRavine.EntityControl
                 MoveServerRpc(movementDirection.normalized, movementSpeed);
                 timeSinceLastSend = 0f;
             }
+            
+            if(isFlip) movementDirection.y *= -1;
 
             playerAnimator.Animate(movementDirection, movementSpeed);
         }

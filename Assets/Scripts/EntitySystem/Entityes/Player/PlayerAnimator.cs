@@ -1,8 +1,6 @@
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 
-using TheRavine.Base;
-
 namespace TheRavine.EntityControl
 {
     [RequireComponent(typeof(Animator))]
@@ -13,12 +11,9 @@ namespace TheRavine.EntityControl
         private static readonly int HorizontalHash = Animator.StringToHash("Horizontal");
         private static readonly int VerticalHash = Animator.StringToHash("Vertical");
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
-        private GlobalSettings globalSettings;
-
         private void Start()
         {
             defaultAnimator ??= GetComponent<Animator>();
-            globalSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
         }
         
         public async UniTask SetUpAsync()

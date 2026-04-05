@@ -38,6 +38,7 @@ namespace TheRavine.Inventory
 
         public void UnregisterInput()
         {
+            playerData = null;
             enterToggleAction.action.performed -= ToggleInventory;
             quitToggleAction.action.performed -= ToggleInventory;
             selectSlot.action.performed -= HandleDigitInput;

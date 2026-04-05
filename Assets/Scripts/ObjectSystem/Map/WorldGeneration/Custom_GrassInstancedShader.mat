@@ -71,7 +71,7 @@ Material:
     - _WindStrength: 0.03
     m_Colors:
     - _BaseColor: {r: 1, g: 0, b: 0.30714318, a: 1}
-    - _PlayerPosition: {r: 4.65813, g: -9.95179, b: -56.20038, a: 0}
+    - _PlayerPosition: {r: 0, g: 0, b: 0, a: 0}
     - _TipColor: {r: 0.76907253, g: 0, b: 1, a: 1}
     - _WindDirection: {r: 1, g: 0, b: 1, a: 0}
   m_BuildTextureStacks: []

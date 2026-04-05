@@ -8,164 +8,163 @@ using TMPro;
 
 namespace TheRavine.Extensions
 {
-	public class GestureRecognizer : MonoBehaviour
-	{
-		[Header("References")]
-		public Transform gestureOnScreenPrefab;
-		public InputActionReference pointerPosition;
-		public InputActionReference pointerContact;
-		public RectTransform drawAreaRect;
-		public TextMeshProUGUI messageText;
-		public TMP_InputField newGestureNameInput;
-		public Button recognizeButton;
-		public Button addGestureButton;
+    public class GestureRecognizer : MonoBehaviour
+    {
+        [Header("References")]
+        public Transform gestureOnScreenPrefab;
+        public InputActionReference pointerPosition;
+        public InputActionReference pointerContact;
+        public RectTransform drawAreaRect;
+        public TextMeshProUGUI messageText;
+        public TMP_InputField newGestureNameInput;
+        public Button recognizeButton;
+        public Button addGestureButton;
 
-		private List<Gesture> trainingSet = new List<Gesture>();
-		private List<Point> points = new List<Point>();
-		private int strokeId = -1;
+        private List<Gesture> trainingSet = new List<Gesture>();
+        private List<Point> points = new List<Point>();
+        private int strokeId = -1;
 
-		private Vector2 virtualKeyPosition = Vector2.zero;
-		private Rect drawArea;
+        private Vector2 virtualKeyPosition = Vector2.zero;
 
-		private List<LineRenderer> gestureLinesRenderer = new List<LineRenderer>();
-		private LineRenderer currentGestureLineRenderer;
+        private List<LineRenderer> gestureLinesRenderer = new List<LineRenderer>();
+        private LineRenderer currentGestureLineRenderer;
 
-		private bool recognized;
+        private bool recognized;
+        private Camera _mainCamera;
 
-		private void Awake()
-		{
-			pointerPosition.action.Enable();
-			pointerContact.action.Enable();
-			
-			recognizeButton.onClick.AddListener(RecognizeGesture);
-			addGestureButton.onClick.AddListener(AddGesture);
-		}
+        private void Awake()
+        {
+            pointerPosition.action.Enable();
+            pointerContact.action.Enable();
 
-		private void OnDestroy()
-		{
-			pointerPosition.action.Disable();
-			pointerContact.action.Disable();
-			
-			recognizeButton.onClick.RemoveListener(RecognizeGesture);
-			addGestureButton.onClick.RemoveListener(AddGesture);
-		}
+            recognizeButton.onClick.AddListener(RecognizeGesture);
+            addGestureButton.onClick.AddListener(AddGesture);
 
-		private void Start()
-		{
-			drawArea = new Rect(0, 0, Screen.width - Screen.width / 3, Screen.height);
-			
-			messageText.text = "";
+            _mainCamera = Camera.main;
+        }
 
-			LoadGestures();
-		}
+        private void OnDestroy()
+        {
+            pointerPosition.action.Disable();
+            pointerContact.action.Disable();
 
-		private void LoadGestures()
-		{
-			TextAsset[] gesturesXml = Resources.LoadAll<TextAsset>("GestureSet/");
-			foreach (TextAsset gestureXml in gesturesXml)
-			{
-				trainingSet.Add(GestureIO.ReadGestureFromXML(gestureXml.text));
-			}
+            recognizeButton.onClick.RemoveListener(RecognizeGesture);
+            addGestureButton.onClick.RemoveListener(AddGesture);
+        }
 
-			string[] filePaths = Directory.GetFiles(Application.persistentDataPath, "*.xml");
-			foreach (string filePath in filePaths)
-			{
-				trainingSet.Add(GestureIO.ReadGestureFromFile(filePath));
-			}
-		}
+        private void Start()
+        {
+            messageText.text = "";
+            LoadGestures();
+        }
 
-		private void Update()
-		{
-			virtualKeyPosition = pointerPosition.action.ReadValue<Vector2>();
-			
-			if (drawAreaRect.rect.Contains(drawAreaRect.InverseTransformPoint(virtualKeyPosition)))
-			{
-				if (pointerContact.action.WasPressedThisFrame())
-				{
-					HandlePointerDown();
-				}
-				if (pointerContact.action.IsPressed())
-				{
-					HandlePointerDrag();
-				}
-			}
-		}
+        private void LoadGestures()
+        {
+            TextAsset[] gesturesXml = Resources.LoadAll<TextAsset>("GestureSet/");
+            foreach (TextAsset gestureXml in gesturesXml)
+                trainingSet.Add(GestureIO.ReadGestureFromXML(gestureXml.text));
 
-		private void HandlePointerDown()
-		{
-			if (recognized)
-			{
-				ClearCurrentGesture();
-			}
+            string[] filePaths = Directory.GetFiles(Application.persistentDataPath, "*.xml");
+            foreach (string filePath in filePaths)
+                trainingSet.Add(GestureIO.ReadGestureFromFile(filePath));
+        }
 
-			++strokeId;
+        private void Update()
+        {
+            virtualKeyPosition = pointerPosition.action.ReadValue<Vector2>();
 
-			Transform tmpGesture = Instantiate(gestureOnScreenPrefab, transform.position, transform.rotation);
-			currentGestureLineRenderer = tmpGesture.GetComponent<LineRenderer>();
-			gestureLinesRenderer.Add(currentGestureLineRenderer);
-		}
+            if (!drawAreaRect.rect.Contains(drawAreaRect.InverseTransformPoint(virtualKeyPosition)))
+                return;
 
-		private void HandlePointerDrag()
-		{
-			points.Add(new Point(virtualKeyPosition.x, -virtualKeyPosition.y, strokeId));
-			
-			int vertexCount = currentGestureLineRenderer.positionCount + 1;
-			currentGestureLineRenderer.positionCount = vertexCount;
-			currentGestureLineRenderer.SetPosition(
-				vertexCount - 1, 
-				Camera.main.ScreenToWorldPoint(new Vector3(virtualKeyPosition.x, virtualKeyPosition.y, 10))
-			);
-		}
+            if (pointerContact.action.WasPressedThisFrame())
+                HandlePointerDown();
 
-		private void ClearCurrentGesture()
-		{
-			recognized = false;
-			strokeId = -1;
-			points.Clear();
+            if (pointerContact.action.IsPressed())
+                HandlePointerDrag();
+        }
 
-			foreach (LineRenderer lineRenderer in gestureLinesRenderer)
-			{
-				lineRenderer.positionCount = 0;
-				Destroy(lineRenderer.gameObject);
-			}
+        private void HandlePointerDown()
+        {
+            if (recognized)
+                ClearCurrentGesture();
 
-			gestureLinesRenderer.Clear();
-		}
+            ++strokeId;
 
-		private void RecognizeGesture()
-		{
-			if (points.Count == 0)
-			{
-				messageText.text = "Нарисуйте жест перед распознаванием";
-				return;
-			}
-			
-			recognized = true;
+            Transform tmpGesture = Instantiate(gestureOnScreenPrefab, transform.position, transform.rotation);
+            currentGestureLineRenderer = tmpGesture.GetComponent<LineRenderer>();
+            gestureLinesRenderer.Add(currentGestureLineRenderer);
+        }
 
-			Gesture candidate = new Gesture(points.ToArray(), "", true);
-			Result gestureResult = PointCloudRecognizerPlus.Classify(candidate, trainingSet.ToArray());
+        private void HandlePointerDrag()
+        {
+            points.Add(new Point(virtualKeyPosition.x, -virtualKeyPosition.y, strokeId));
 
-			messageText.text = $"{gestureResult.GestureClass} {gestureResult.Score}";
-		}
+            int vertexCount = currentGestureLineRenderer.positionCount + 1;
+            currentGestureLineRenderer.positionCount = vertexCount;
+            currentGestureLineRenderer.SetPosition(
+                vertexCount - 1,
+                _mainCamera.ScreenToWorldPoint(new Vector3(virtualKeyPosition.x, virtualKeyPosition.y, 10))
+            );
+        }
 
-		private void AddGesture()
-		{
-			string newGestureName = newGestureNameInput.text;
-			
-			if (points.Count > 0 && !string.IsNullOrEmpty(newGestureName))
-			{
-				string fileName = $"{Application.persistentDataPath}/{newGestureName}-{DateTime.Now.ToFileTime()}.xml";
+        private void ClearCurrentGesture()
+        {
+            recognized = false;
+            strokeId = -1;
+            points.Clear();
 
-				GestureIO.WriteGesture(points.ToArray(), newGestureName, fileName);
-				trainingSet.Add(new Gesture(points.ToArray(), newGestureName));
+            foreach (LineRenderer lineRenderer in gestureLinesRenderer)
+            {
+                lineRenderer.positionCount = 0;
+                Destroy(lineRenderer.gameObject);
+            }
 
-				newGestureNameInput.text = "";
-				messageText.text = $"Жест '{newGestureName}' успешно добавлен";
-			}
-			else
-			{
-				messageText.text = "Нарисуйте жест и введите его название перед добавлением";
-			}
-		}
-	}
+            gestureLinesRenderer.Clear();
+        }
+
+        private void RecognizeGesture()
+        {
+            if (points.Count == 0)
+            {
+                messageText.text = "Нарисуйте жест перед распознаванием";
+                return;
+            }
+
+            recognized = true;
+
+            Gesture candidate = new Gesture(points.ToArray(), "", true);
+            Result gestureResult = PointCloudRecognizerPlus.Classify(candidate, trainingSet.ToArray());
+
+            string gestureName = gestureResult.GestureClass;
+
+            if (gestureName.StartsWith("~", StringComparison.Ordinal))
+            {
+                messageText.text = $"Команда: {gestureName} ({gestureResult.Score:F2})";
+                GestureCommandBus.Dispatch(gestureName);
+                return;
+            }
+
+            messageText.text = $"{gestureName} {gestureResult.Score}";
+        }
+
+        private void AddGesture()
+        {
+            string newGestureName = newGestureNameInput.text;
+
+            if (points.Count > 0 && !string.IsNullOrEmpty(newGestureName))
+            {
+                string fileName = $"{Application.persistentDataPath}/{newGestureName}-{DateTime.Now.ToFileTime()}.xml";
+
+                GestureIO.WriteGesture(points.ToArray(), newGestureName, fileName);
+                trainingSet.Add(new Gesture(points.ToArray(), newGestureName));
+
+                newGestureNameInput.text = "";
+                messageText.text = $"Жест '{newGestureName}' успешно добавлен";
+            }
+            else
+            {
+                messageText.text = "Нарисуйте жест и введите его название перед добавлением";
+            }
+        }
+    }
 }

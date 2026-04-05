@@ -6,7 +6,7 @@ using TheRavine.Base;
 
 public class GameInitializer : MonoBehaviour
 {
-    private GameInitializer instance;
+    private static GameInitializer instance;
     [SerializeField] private bool initializeOnAwake = true;
     [SerializeField] private bool clearAllPlayerPrefs;
     [SerializeField] private bool createTestWorld;

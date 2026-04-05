@@ -13,6 +13,8 @@ namespace TheRavine.EntityControl
         public PlayerEntity PlayerEntity => (PlayerEntity)Entity;
         [SerializeField] private NetworkObject cameraPrefab;
         [SerializeField] private EntityInfo playerInfo;
+
+        [SerializeField] private CameraMove cameraMove;
         private CameraComponent cameraComponent;
         private RavineLogger logger;
         public override async void OnNetworkSpawn()
@@ -94,7 +96,7 @@ namespace TheRavine.EntityControl
 
             if (NetworkManager.Singleton.LocalClientId == clientId)
             {
-                cameraComponent.SetUp(PlayerEntity, camera, cameraObject.transform);
+                cameraComponent.SetUp(PlayerEntity, camera, cameraObject.transform, cameraMove);
                 PlayerEntity.AddComponentToEntity(cameraComponent);
             }
             DisableOtherCameras(clientId, camera);

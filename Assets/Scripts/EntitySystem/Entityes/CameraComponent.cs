@@ -1,6 +1,7 @@
 using UnityEngine;
 
 using TheRavine.EntityControl;
+using Unity.Mathematics;
 
 public interface ICameraComponent : IComponent
 {
@@ -20,19 +21,31 @@ public class CameraComponent : ICameraComponent
     private Vector3 zOffset = new(0, 30, -35);
     private TransformComponent playerTransformComponent;
     private Vector3 targetPos, factMousePositionOffset;
+
+    private CameraMove cameraMove;
     
-    public void SetUp(PlayerEntity playerEntity, Camera camera, Transform cameraTransform)
+    public void SetUp(PlayerEntity playerEntity, Camera camera, Transform cameraTransform, CameraMove cameraMove)
     {
         playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<AimAddition>(AimAdditionHandleEvent);
+        playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<CameraPlace>(CameraPlaceHandleEvent);
+
         playerTransformComponent = playerEntity.GetEntityComponent<TransformComponent>();
         this.camera = camera;
         this.cameraTransform = cameraTransform;
+        this.cameraMove = cameraMove;
         cameraTransform.position = playerTransformComponent.GetEntityPosition() + zOffset;
     }
 
     private void AimAdditionHandleEvent(AEntity entity, AimAddition e)
     {
         factMousePositionOffset = new Vector3(e.Position.x, 0, e.Position.y);
+    }
+    private void CameraPlaceHandleEvent(AEntity entity, CameraPlace e)
+    {
+        zOffset.y = 30 - cameraMove.yCurve.Evaluate(e.scale) * 20;
+        zOffset.z = (-35 + cameraMove.zCurve.Evaluate(e.scale) * 15) * (e.flip ? -1 : 1);
+
+        cameraTransform.rotation = Quaternion.Euler(40 - cameraMove.xRotationCurve.Evaluate(e.scale) * 20, e.flip ? 180 : 0, 0);
     }
 
     public void CameraUpdate()
@@ -80,4 +93,19 @@ public class CameraComponent : ICameraComponent
     }
 
     public Camera GetCamera() => camera;
+}
+
+[System.Serializable]
+public struct CameraMove
+{
+    public AnimationCurve zCurve;
+    public AnimationCurve yCurve;
+    public AnimationCurve xRotationCurve;
+
+    public CameraMove(AnimationCurve zCurve, AnimationCurve yCurve, AnimationCurve xRotationCurve)
+    {
+        this.zCurve = zCurve;
+        this.yCurve = yCurve;
+        this.xRotationCurve = xRotationCurve;
+    }
 }

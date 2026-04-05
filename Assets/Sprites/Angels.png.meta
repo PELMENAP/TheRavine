@@ -1,103 +1,7 @@
 fileFormatVersion: 2
 guid: d1de0e4168f7870edb21a8fe348fad20
 TextureImporter:
-  internalIDToNameTable:
-  - first:
-      213: -8697826577048373500
-    second: Angels_0
-  - first:
-      213: 7600665692882067216
-    second: Angels_1
-  - first:
-      213: -7177088470627733268
-    second: Angels_2
-  - first:
-      213: -5419123987192925959
-    second: Angels_3
-  - first:
-      213: 1901205334958349952
-    second: Angels_4
-  - first:
-      213: -6979714267612768700
-    second: Angels_5
-  - first:
-      213: -3793730101042192155
-    second: Angels_6
-  - first:
-      213: -1680984752832169708
-    second: Angels_7
-  - first:
-      213: 9197699888078850896
-    second: Angels_8
-  - first:
-      213: 8591119754955757704
-    second: Angels_9
-  - first:
-      213: 984336028986864929
-    second: Angels_10
-  - first:
-      213: -4163970487289719295
-    second: Angels_11
-  - first:
-      213: -3741193632945209797
-    second: Angels_12
-  - first:
-      213: -4052950042760426719
-    second: Angels_13
-  - first:
-      213: -3803630521280985077
-    second: Angels_14
-  - first:
-      213: -5190280730727922592
-    second: Angels_15
-  - first:
-      213: -1081848569541557493
-    second: Angels_16
-  - first:
-      213: 2845267899871077564
-    second: Angels_17
-  - first:
-      213: -1616365532566783016
-    second: Angels_18
-  - first:
-      213: 3682266611248356710
-    second: Angels_19
-  - first:
-      213: 957850440259552808
-    second: Angels_20
-  - first:
-      213: -1175752403506681072
-    second: Angels_21
-  - first:
-      213: -422042450357612873
-    second: Angels_22
-  - first:
-      213: 494071641789529609
-    second: Angels_23
-  - first:
-      213: 4421954919361686982
-    second: Angels_24
-  - first:
-      213: -2841796618905595328
-    second: Angels_25
-  - first:
-      213: -4428599421316623930
-    second: Angels_26
-  - first:
-      213: -279607419902869128
-    second: Angels_27
-  - first:
-      213: 6725450220741991574
-    second: Angels_28
-  - first:
-      213: -6720575021475209289
-    second: Angels_29
-  - first:
-      213: -4415022504412504473
-    second: Angels_30
-  - first:
-      213: -6018060323997276102
-    second: Angels_31
+  internalIDToNameTable: []
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -135,18 +39,18 @@ TextureImporter:
     mipBias: 0
     wrapU: 1
     wrapV: 1
-    wrapW: 1
+    wrapW: 0
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
   spriteMode: 2
-  spriteExtrude: 1
+  spriteExtrude: 0
   spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 8
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
-  spriteGenerateFallbackPhysicsShape: 1
+  spriteGenerateFallbackPhysicsShape: 0
   alphaUsage: 1
   alphaIsTransparency: 1
   spriteTessellationDetail: -1
@@ -165,10 +69,10 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 1024
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 3
     compressionQuality: 50
     crunchedCompression: 1
     allowsAlphaSplitting: 0
@@ -191,12 +95,12 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: Android
-    maxTextureSize: 2048
+    maxTextureSize: 1024
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 3
     compressionQuality: 50
-    crunchedCompression: 0
+    crunchedCompression: 1
     allowsAlphaSplitting: 0
     overridden: 0
     ignorePlatformSupport: 0
@@ -209,20 +113,20 @@ TextureImporter:
       name: Angels_0
       rect:
         serializedVersion: 2
-        x: 2
-        y: 395
-        width: 17
-        height: 10
+        x: 3
+        y: 384
+        width: 15
+        height: 20
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 407741dafcc1b4780800000000000000
-      internalID: -8697826577048373500
+      spriteID: 1c50d381813495f1ba16647b7f4b0b5a
+      internalID: -1894798139
       vertices: []
       indices: 
       edges: []
@@ -231,20 +135,20 @@ TextureImporter:
       name: Angels_1
       rect:
         serializedVersion: 2
-        x: 4
+        x: 20
         y: 383
-        width: 8
-        height: 13
+        width: 17
+        height: 22
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 01fdbb87d2dfa7960800000000000000
-      internalID: 7600665692882067216
+      spriteID: d8eb3555cb677c086b418040c4f0f342
+      internalID: 1973891383
       vertices: []
       indices: 
       edges: []
@@ -253,20 +157,20 @@ TextureImporter:
       name: Angels_2
       rect:
         serializedVersion: 2
-        x: 19
-        y: 382
-        width: 19
-        height: 24
+        x: 38
+        y: 351
+        width: 39
+        height: 48
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: ce0bea2df0cd56c90800000000000000
-      internalID: -7177088470627733268
+      spriteID: 09a705ce0338997519484731c1cadefc
+      internalID: 189746465
       vertices: []
       indices: 
       edges: []
@@ -275,42 +179,20 @@ TextureImporter:
       name: Angels_3
       rect:
         serializedVersion: 2
-        x: 37
-        y: 350
-        width: 41
-        height: 50
+        x: 131
+        y: 379
+        width: 15
+        height: 63
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 9f0319502776bc4b0800000000000000
-      internalID: -5419123987192925959
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Angels_4
-      rect:
-        serializedVersion: 2
-        x: 130
-        y: 378
-        width: 17
-        height: 65
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 08e154bdd20726a10800000000000000
-      internalID: 1901205334958349952
+      spriteID: b8bc600a8bc5d1b36810cfc8941d3de2
+      internalID: -1933747552
       vertices: []
       indices: 
       edges: []
@@ -319,20 +201,20 @@ TextureImporter:
       name: Angels_5
       rect:
         serializedVersion: 2
-        x: 10
-        y: 349
-        width: 17
-        height: 31
+        x: 11
+        y: 350
+        width: 15
+        height: 29
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 446173d8ad2132f90800000000000000
-      internalID: -6979714267612768700
+      spriteID: e32c0f5f221996f28b5628f72b99d71d
+      internalID: -1088261970
       vertices: []
       indices: 
       edges: []
@@ -341,20 +223,20 @@ TextureImporter:
       name: Angels_6
       rect:
         serializedVersion: 2
-        x: 85
-        y: 350
-        width: 16
-        height: 26
+        x: 86
+        y: 351
+        width: 14
+        height: 24
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 5e06ca9b296f95bc0800000000000000
-      internalID: -3793730101042192155
+      spriteID: 1905fe2af652c61cf973fada15b92209
+      internalID: 1049332288
       vertices: []
       indices: 
       edges: []
@@ -363,20 +245,20 @@ TextureImporter:
       name: Angels_7
       rect:
         serializedVersion: 2
-        x: 140
-        y: 352
-        width: 8
-        height: 19
+        x: 141
+        y: 353
+        width: 6
+        height: 17
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 41937960641fba8e0800000000000000
-      internalID: -1680984752832169708
+      spriteID: c1a31984c392678e2aee7bc36720bc8b
+      internalID: -1516337028
       vertices: []
       indices: 
       edges: []
@@ -385,20 +267,20 @@ TextureImporter:
       name: Angels_8
       rect:
         serializedVersion: 2
-        x: 153
-        y: 368
-        width: 8
-        height: 7
+        x: 154
+        y: 369
+        width: 6
+        height: 5
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 05b0793115bc4af70800000000000000
-      internalID: 9197699888078850896
+      spriteID: 9ae8b4975777d202caf4c63a58134534
+      internalID: -700448679
       vertices: []
       indices: 
       edges: []
@@ -407,20 +289,20 @@ TextureImporter:
       name: Angels_9
       rect:
         serializedVersion: 2
-        x: 3
-        y: 226
-        width: 23
-        height: 115
+        x: 4
+        y: 227
+        width: 21
+        height: 113
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 8889af046e9c93770800000000000000
-      internalID: 8591119754955757704
+      spriteID: 081cf4663e4829d229bb64ce6476c7e0
+      internalID: -1422232361
       vertices: []
       indices: 
       edges: []
@@ -429,20 +311,20 @@ TextureImporter:
       name: Angels_10
       rect:
         serializedVersion: 2
-        x: 41
-        y: 208
-        width: 121
-        height: 121
+        x: 42
+        y: 209
+        width: 119
+        height: 119
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 1257163376019ad00800000000000000
-      internalID: 984336028986864929
+      spriteID: 8c4e726137fcb2fafad6e66733275cb9
+      internalID: 154805699
       vertices: []
       indices: 
       edges: []
@@ -451,20 +333,20 @@ TextureImporter:
       name: Angels_11
       rect:
         serializedVersion: 2
-        x: 203
-        y: 9
-        width: 100
-        height: 321
+        x: 204
+        y: 10
+        width: 98
+        height: 319
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 106d2e947ea9636c0800000000000000
-      internalID: -4163970487289719295
+      spriteID: 724cde2be55dc434d89c8464ddf7ca6f
+      internalID: 1996299041
       vertices: []
       indices: 
       edges: []
@@ -473,20 +355,20 @@ TextureImporter:
       name: Angels_12
       rect:
         serializedVersion: 2
-        x: 312
-        y: 106
-        width: 66
-        height: 175
+        x: 313
+        y: 107
+        width: 64
+        height: 173
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: b3ef858663c941cc0800000000000000
-      internalID: -3741193632945209797
+      spriteID: 3d15cba2ff79f7f0cb1397f09d5feba9
+      internalID: -1075608483
       vertices: []
       indices: 
       edges: []
@@ -495,20 +377,20 @@ TextureImporter:
       name: Angels_13
       rect:
         serializedVersion: 2
-        x: 914
-        y: 57
-        width: 109
-        height: 183
+        x: 915
+        y: 58
+        width: 107
+        height: 181
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 12b4cd8d86701c7c0800000000000000
-      internalID: -4052950042760426719
+      spriteID: 49d14425c48b771af8f834763ceae3a0
+      internalID: -726802632
       vertices: []
       indices: 
       edges: []
@@ -517,20 +399,20 @@ TextureImporter:
       name: Angels_14
       rect:
         serializedVersion: 2
-        x: 7
-        y: 159
-        width: 11
-        height: 47
+        x: 8
+        y: 160
+        width: 9
+        height: 45
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: b088632813ac63bc0800000000000000
-      internalID: -3803630521280985077
+      spriteID: daab4e87528dd44649e1b0f1003ecb0e
+      internalID: -128739896
       vertices: []
       indices: 
       edges: []
@@ -539,20 +421,20 @@ TextureImporter:
       name: Angels_15
       rect:
         serializedVersion: 2
-        x: 42
-        y: 60
-        width: 131
-        height: 131
+        x: 43
+        y: 61
+        width: 129
+        height: 129
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 0644868bc2b68f7b0800000000000000
-      internalID: -5190280730727922592
+      spriteID: 86c10ddb7077657b7802ee0f9397d47f
+      internalID: 744184589
       vertices: []
       indices: 
       edges: []
@@ -561,20 +443,20 @@ TextureImporter:
       name: Angels_16
       rect:
         serializedVersion: 2
-        x: 385
-        y: 109
-        width: 63
-        height: 97
+        x: 386
+        y: 110
+        width: 61
+        height: 95
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: b0306b735708cf0f0800000000000000
-      internalID: -1081848569541557493
+      spriteID: 4e8034ac4e0b9aecea950cf4e9568d3d
+      internalID: 1436178456
       vertices: []
       indices: 
       edges: []
@@ -583,20 +465,20 @@ TextureImporter:
       name: Angels_17
       rect:
         serializedVersion: 2
-        x: 499
-        y: 103
-        width: 51
-        height: 79
+        x: 500
+        y: 104
+        width: 49
+        height: 77
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: cb423ae741c6c7720800000000000000
-      internalID: 2845267899871077564
+      spriteID: 9235e010c7de3a28fabd1efc813a50fd
+      internalID: 698079658
       vertices: []
       indices: 
       edges: []
@@ -605,20 +487,20 @@ TextureImporter:
       name: Angels_18
       rect:
         serializedVersion: 2
-        x: 552
-        y: 90
-        width: 59
-        height: 106
+        x: 553
+        y: 91
+        width: 57
+        height: 104
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 8dbfb2cac148199e0800000000000000
-      internalID: -1616365532566783016
+      spriteID: ac431eca724e4b13d9f7b40ff2f14a20
+      internalID: 1832377379
       vertices: []
       indices: 
       edges: []
@@ -627,20 +509,20 @@ TextureImporter:
       name: Angels_19
       rect:
         serializedVersion: 2
-        x: 621
-        y: 94
-        width: 34
-        height: 94
+        x: 622
+        y: 95
+        width: 32
+        height: 92
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 66d5db339f90a1330800000000000000
-      internalID: 3682266611248356710
+      spriteID: 5dc3647a6c1654134a14f5a97286028b
+      internalID: -1887917596
       vertices: []
       indices: 
       edges: []
@@ -649,20 +531,20 @@ TextureImporter:
       name: Angels_20
       rect:
         serializedVersion: 2
-        x: 688
-        y: 118
-        width: 58
-        height: 72
+        x: 689
+        y: 119
+        width: 56
+        height: 70
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 8264f9786e7fa4d00800000000000000
-      internalID: 957850440259552808
+      spriteID: 26b461e273457443ab56174530e5bafe
+      internalID: -1790221132
       vertices: []
       indices: 
       edges: []
@@ -671,20 +553,20 @@ TextureImporter:
       name: Angels_21
       rect:
         serializedVersion: 2
-        x: 755
-        y: 108
-        width: 41
-        height: 83
+        x: 756
+        y: 109
+        width: 39
+        height: 81
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 01b2c2d1b63eeafe0800000000000000
-      internalID: -1175752403506681072
+      spriteID: fc55a737b71529d7685b312a18cbdf71
+      internalID: 432817543
       vertices: []
       indices: 
       edges: []
@@ -693,20 +575,20 @@ TextureImporter:
       name: Angels_22
       rect:
         serializedVersion: 2
-        x: 811
-        y: 93
-        width: 49
-        height: 94
+        x: 812
+        y: 94
+        width: 47
+        height: 92
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 7be8c42a0aa942af0800000000000000
-      internalID: -422042450357612873
+      spriteID: c974886bfb1ce795390fef669715d1c9
+      internalID: -525652563
       vertices: []
       indices: 
       edges: []
@@ -715,20 +597,20 @@ TextureImporter:
       name: Angels_23
       rect:
         serializedVersion: 2
-        x: 870
-        y: 159
-        width: 25
-        height: 30
+        x: 871
+        y: 160
+        width: 23
+        height: 28
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 90e757e5a8b4bd600800000000000000
-      internalID: 494071641789529609
+      spriteID: 1c15d586c461187c78c1a665a691a802
+      internalID: -967624728
       vertices: []
       indices: 
       edges: []
@@ -737,20 +619,20 @@ TextureImporter:
       name: Angels_24
       rect:
         serializedVersion: 2
-        x: 453
-        y: 106
-        width: 32
-        height: 48
+        x: 454
+        y: 107
+        width: 30
+        height: 46
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 6cd28551290fd5d30800000000000000
-      internalID: 4421954919361686982
+      spriteID: 3e79bd2a286c72d658769ab6312689b1
+      internalID: -1570939417
       vertices: []
       indices: 
       edges: []
@@ -759,20 +641,20 @@ TextureImporter:
       name: Angels_25
       rect:
         serializedVersion: 2
-        x: 666
-        y: 118
-        width: 7
-        height: 29
+        x: 667
+        y: 119
+        width: 5
+        height: 27
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 042d9361809ef88d0800000000000000
-      internalID: -2841796618905595328
+      spriteID: c0a828568e342c63ab991761d19e12ec
+      internalID: -1270184485
       vertices: []
       indices: 
       edges: []
@@ -781,20 +663,20 @@ TextureImporter:
       name: Angels_26
       rect:
         serializedVersion: 2
-        x: 887
-        y: 128
-        width: 13
-        height: 27
+        x: 888
+        y: 129
+        width: 11
+        height: 25
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 6c11cef3a447a82c0800000000000000
-      internalID: -4428599421316623930
+      spriteID: f38c28fb4210b7b98b3e9510f0b81f0c
+      internalID: 848980984
       vertices: []
       indices: 
       edges: []
@@ -803,20 +685,20 @@ TextureImporter:
       name: Angels_27
       rect:
         serializedVersion: 2
-        x: 315
-        y: 1
-        width: 244
-        height: 101
+        x: 316
+        y: 2
+        width: 242
+        height: 99
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 87140247882ae1cf0800000000000000
-      internalID: -279607419902869128
+      spriteID: e106b99682e3aaa26a85424ee1e11c8a
+      internalID: -945155922
       vertices: []
       indices: 
       edges: []
@@ -825,20 +707,20 @@ TextureImporter:
       name: Angels_28
       rect:
         serializedVersion: 2
-        x: 564
-        y: 3
-        width: 287
-        height: 81
+        x: 565
+        y: 4
+        width: 285
+        height: 79
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 69c16e1c759955d50800000000000000
-      internalID: 6725450220741991574
+      spriteID: 88008ea138628c164b5a9e7a9be68770
+      internalID: -1374869594
       vertices: []
       indices: 
       edges: []
@@ -847,20 +729,20 @@ TextureImporter:
       name: Angels_29
       rect:
         serializedVersion: 2
-        x: 867
-        y: 62
-        width: 11
-        height: 56
+        x: 868
+        y: 63
+        width: 9
+        height: 54
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 7bf5b9600a8bbb2a0800000000000000
-      internalID: -6720575021475209289
+      spriteID: e92cecd5a9b021d7985cc37917c75f35
+      internalID: 586825936
       vertices: []
       indices: 
       edges: []
@@ -869,20 +751,20 @@ TextureImporter:
       name: Angels_30
       rect:
         serializedVersion: 2
-        x: 893
-        y: 62
-        width: 9
-        height: 38
+        x: 894
+        y: 63
+        width: 7
+        height: 36
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 76e132d8c60bab2c0800000000000000
-      internalID: -4415022504412504473
+      spriteID: 3ae940872e407a5929b86c4ef45782c1
+      internalID: -1747951208
       vertices: []
       indices: 
       edges: []
@@ -891,20 +773,20 @@ TextureImporter:
       name: Angels_31
       rect:
         serializedVersion: 2
-        x: 850
-        y: 1
-        width: 174
-        height: 47
+        x: 851
+        y: 2
+        width: 173
+        height: 45
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: a382547350e8b7ca0800000000000000
-      internalID: -6018060323997276102
+      spriteID: fe10580490d98ade5b704ed3b0f89326
+      internalID: -1052967264
       vertices: []
       indices: 
       edges: []
@@ -913,7 +795,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: ff1716a11380a1549ad3c432de6adc86
     internalID: 0
     vertices: []
     indices: 
@@ -921,40 +803,42 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      Angels_0: -8697826577048373500
-      Angels_1: 7600665692882067216
-      Angels_10: 984336028986864929
-      Angels_11: -4163970487289719295
-      Angels_12: -3741193632945209797
-      Angels_13: -4052950042760426719
-      Angels_14: -3803630521280985077
-      Angels_15: -5190280730727922592
-      Angels_16: -1081848569541557493
-      Angels_17: 2845267899871077564
-      Angels_18: -1616365532566783016
-      Angels_19: 3682266611248356710
-      Angels_2: -7177088470627733268
-      Angels_20: 957850440259552808
-      Angels_21: -1175752403506681072
-      Angels_22: -422042450357612873
-      Angels_23: 494071641789529609
-      Angels_24: 4421954919361686982
-      Angels_25: -2841796618905595328
-      Angels_26: -4428599421316623930
-      Angels_27: -279607419902869128
-      Angels_28: 6725450220741991574
-      Angels_29: -6720575021475209289
-      Angels_3: -5419123987192925959
-      Angels_30: -4415022504412504473
-      Angels_31: -6018060323997276102
-      Angels_4: 1901205334958349952
-      Angels_5: -6979714267612768700
-      Angels_6: -3793730101042192155
-      Angels_7: -1680984752832169708
-      Angels_8: 9197699888078850896
-      Angels_9: 8591119754955757704
+      Angels_0: -1894798139
+      Angels_1: 1973891383
+      Angels_10: 154805699
+      Angels_11: 1996299041
+      Angels_12: -1075608483
+      Angels_13: -726802632
+      Angels_14: -128739896
+      Angels_15: 744184589
+      Angels_16: 1436178456
+      Angels_17: 698079658
+      Angels_18: 1832377379
+      Angels_19: -1887917596
+      Angels_2: 189746465
+      Angels_20: -1790221132
+      Angels_21: 432817543
+      Angels_22: -525652563
+      Angels_23: -967624728
+      Angels_24: -1570939417
+      Angels_25: -1270184485
+      Angels_26: 848980984
+      Angels_27: -945155922
+      Angels_28: -1374869594
+      Angels_29: 586825936
+      Angels_3: -1933747552
+      Angels_30: -1747951208
+      Angels_31: -1052967264
+      Angels_4: 1236896746
+      Angels_5: -1088261970
+      Angels_6: 1049332288
+      Angels_7: -1516337028
+      Angels_8: -700448679
+      Angels_9: -1422232361
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

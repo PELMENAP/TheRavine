@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 using System;
 using TMPro;
 
+using TheRavine.Extensions;
 using TheRavine.Generator;
 
 namespace TheRavine.Base
@@ -20,25 +21,22 @@ namespace TheRavine.Base
         [SerializeField] private ScriptEditorPresenter scriptEditor;
         [SerializeField] private RiveInputUI inputUI;
         private RiveRuntime interpreter;
-        
+
         public CommandManager CommandManager { get; private set; }
         private CommandContext _context;
         private InputBindingAdapter _confirmBinding;
         private RavineLogger logger;
         private ActionMapController actionMapController;
 
-        
-        
         public void SetActiveTerminal()
         {
             bool newState = !terminalObject.activeSelf;
             terminalObject.SetActive(newState);
-            
+
             if (newState)
             {
                 inputField.Select();
                 inputField.ActivateInputField();
-
                 actionMapController.SwitchToPause();
             }
             else
@@ -50,9 +48,11 @@ namespace TheRavine.Base
         private void OnEnable()
         {
             _confirmBinding = InputBindingAdapter.Bind(confirmButton, enterRef, HandleEnter);
-            
+
             inputField.onSubmit.AddListener(OnInputSubmit);
             inputField.onEndEdit.AddListener(OnInputEndEdit);
+
+            GestureCommandBus.OnGestureCommand += ProcessInput;
         }
 
         public async void Setup(RavineLogger logger, ActionMapController actionMapController)
@@ -63,10 +63,9 @@ namespace TheRavine.Base
             actionMapController.EnableUI();
             actionMapController.SwitchToGameplay();
 
-
             interpreter = new RiveRuntime(ExecuteTerminalCommandAsync, logger);
             CommandManager = new CommandManager();
-            
+
             CommandManager.Register(
                 new HelpCommand(),
                 new PrintCommand(),
@@ -76,18 +75,18 @@ namespace TheRavine.Base
                 new RotateCommand(),
                 new DebugCommand()
             );
-            
+
             graphyManager.SetActive(false);
             _context = new CommandContext(outputWindow, CommandManager, null, graphyManager, scriptEditor, interpreter);
 
             if (scriptEditor != null)
-            {   
+            {
                 RegisterInteractors();
                 scriptEditor.Initialize(_context, interpreter, logger);
                 inputUI.Initialize(interpreter, logger);
 
                 scriptEditor.LoadAllFilesToInterpreter().Forget();
-                
+
                 CommandManager.Register(
                     new ExecuteScriptCommand(),
                     new EditorCommand(),
@@ -120,7 +119,6 @@ namespace TheRavine.Base
             );
         }
 
-
         private async UniTask<bool> ExecuteTerminalCommandAsync(string command)
         {
             try
@@ -132,7 +130,7 @@ namespace TheRavine.Base
                     {
                         if (cmd is IValidatedCommand vc && !vc.Validate(_context))
                             return false;
-                            
+
                         await cmd.ExecuteAsync(parts, _context);
                         return true;
                     }
@@ -142,7 +140,7 @@ namespace TheRavine.Base
                         return false;
                     }
                 }
-                
+
                 return false;
             }
             catch (Exception ex)
@@ -153,18 +151,18 @@ namespace TheRavine.Base
         }
 
         private async UniTaskVoid WaitForDependencies()
-        {   
+        {
             while (true)
             {
                 try
                 {
-                    if(ServiceLocator.Services.TryGet(out MapGenerator generator))
+                    if (ServiceLocator.Services.TryGet(out MapGenerator generator))
                     {
                         _context.SetPlayers(ServiceLocator.Players.GetAllPlayers());
                         _context.SetGenerator(generator);
                         break;
                     }
-                        
+
                     await UniTask.Delay(5000);
                 }
                 catch (Exception ex)
@@ -176,16 +174,10 @@ namespace TheRavine.Base
             logger.LogInfo($"Все службы Terminal инициализированны");
         }
 
-        private void HandleEnter()
-        {
-            ProcessCurrentInput();
-        }
-        
-        private void OnInputSubmit(string value)
-        {
-            ProcessCurrentInput();
-        }
-        
+        private void HandleEnter() => ProcessCurrentInput();
+
+        private void OnInputSubmit(string value) => ProcessCurrentInput();
+
         private void OnInputEndEdit(string value)
         {
             if (terminalObject.activeSelf && !string.IsNullOrEmpty(value))
@@ -202,14 +194,14 @@ namespace TheRavine.Base
 
             var input = raw.TrimEnd('\r', '\n');
             inputField.text = string.Empty;
-            
+
             inputField.Select();
             inputField.ActivateInputField();
 
             ProcessInput(input);
         }
 
-        private async void ProcessInput(string input)
+        public async void ProcessInput(string input)
         {
             try
             {
@@ -220,7 +212,7 @@ namespace TheRavine.Base
                     {
                         if (cmd is IValidatedCommand vc && !vc.Validate(_context))
                             return;
-                            
+
                         await cmd.ExecuteAsync(parts, _context);
                     }
                     else
@@ -239,14 +231,13 @@ namespace TheRavine.Base
             }
         }
 
-        public void Display(string message)
-        {
-            _context.Display(message);
-        }
+        public void Display(string message) => _context.Display(message);
+
         private void OnDisable()
         {
             _confirmBinding?.Unbind();
-            
+            GestureCommandBus.OnGestureCommand -= ProcessInput;
+
             if (inputField != null)
             {
                 inputField.onSubmit.RemoveListener(OnInputSubmit);

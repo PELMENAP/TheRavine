@@ -7,5 +7,5 @@ AssetOrigin:
   productId: 21660
   packageName: PDollar Point-Cloud Gesture Recognizer
   packageVersion: 1.0.3
-  assetPath: Assets/PDollar/Prefabs/GestureOnScreen.prefab
+  assetPath: Assets/Packages/PDollar/Prefabs/GestureOnScreen.prefab
   uploadId: 722838
