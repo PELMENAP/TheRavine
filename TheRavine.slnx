@@ -6,8 +6,8 @@
   <Project Path="EntitySystem.csproj" />
   <Project Path="LitMotion.Extensions.csproj" />
   <Project Path="NaughtyAttributes.Core.csproj" />
-  <Project Path="ObjectSystem.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="ObjectSystem.csproj" />
   <Project Path="B.csproj" />
   <Project Path="Info.csproj" />
   <Project Path="UniTask.Addressables.csproj" />

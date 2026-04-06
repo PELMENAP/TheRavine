@@ -1268,7 +1268,7 @@ MonoBehaviour:
   m_ActiveFontFeatures: 
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
-  m_isRichText: 1
+  m_isRichText: 0
   m_EmojiFallbackSupport: 0
   m_parseCtrlCharacters: 0
   m_isOrthographic: 1
@@ -1279,7 +1279,7 @@ MonoBehaviour:
   m_geometrySortingOrder: 0
   m_IsTextObjectScaleStatic: 1
   m_VertexBufferAutoSizeReduction: 0
-  m_useMaxVisibleDescender: 1
+  m_useMaxVisibleDescender: 0
   m_pageToDisplay: 0
   m_margin: {x: 15, y: 15, z: 15, w: 15}
   m_isUsingLegacyAnimationComponent: 0
@@ -1464,7 +1464,7 @@ MonoBehaviour:
   m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
-  m_isRichText: 1
+  m_isRichText: 0
   m_EmojiFallbackSupport: 0
   m_parseCtrlCharacters: 0
   m_isOrthographic: 1
@@ -1475,7 +1475,7 @@ MonoBehaviour:
   m_geometrySortingOrder: 0
   m_IsTextObjectScaleStatic: 1
   m_VertexBufferAutoSizeReduction: 0
-  m_useMaxVisibleDescender: 1
+  m_useMaxVisibleDescender: 0
   m_pageToDisplay: 1
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
@@ -1691,7 +1691,7 @@ MonoBehaviour:
   m_ActiveFontFeatures: 
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
-  m_isRichText: 1
+  m_isRichText: 0
   m_EmojiFallbackSupport: 0
   m_parseCtrlCharacters: 0
   m_isOrthographic: 1
@@ -1702,7 +1702,7 @@ MonoBehaviour:
   m_geometrySortingOrder: 0
   m_IsTextObjectScaleStatic: 1
   m_VertexBufferAutoSizeReduction: 0
-  m_useMaxVisibleDescender: 1
+  m_useMaxVisibleDescender: 0
   m_pageToDisplay: 0
   m_margin: {x: 15, y: 15, z: 15, w: 15}
   m_isUsingLegacyAnimationComponent: 0
@@ -3391,8 +3391,6 @@ MonoBehaviour:
   craftService: {fileID: 5579856371099542038}
   uIDragger: {fileID: 2350626129997567976}
   inventoryInputHandler: {fileID: 3520574386870803166}
-  _llmAgent: {fileID: 0}
-  _itemTagProvider: {fileID: 0}
 --- !u!114 &3520574386870803166
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3426,10 +3424,12 @@ MonoBehaviour:
   point: {fileID: -6296245106230533791, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
   leftclick: {fileID: -212504553695661567, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
   _uiInventory: {fileID: 2206661781156694036}
-  _mainCanvas: {fileID: 7241328372736920722}
   text: {fileID: 4880168263981242163}
   title: {fileID: 6483849522992979090}
   image: {fileID: 2074648486}
+  _itemTagProvider: {fileID: 0}
+  _llmAgent: {fileID: 0}
+  generatingWindow: {fileID: 0}
 --- !u!1001 &28870577767309783
 PrefabInstance:
   m_ObjectHideFlags: 0
