@@ -3,15 +3,16 @@ using UnityEngine;
 
 public class KruskalAlgorithm
 {
-    private struct Edge
+    public struct Edge
     {
         public int src, dest;
-        public float weight;
-        public Edge(int src, int dest, float weight)
+        public float sqrWeight;
+
+        public Edge(int src, int dest, float sqrWeight)
         {
             this.src = src;
             this.dest = dest;
-            this.weight = weight;
+            this.sqrWeight = sqrWeight;
         }
     }
 
@@ -43,31 +44,39 @@ public class KruskalAlgorithm
         }
     }
 
-    public void KruskalMST(Vector2[] points)
+    public List<Edge> GetMST(Vector2[] points)
     {
-        List<Edge> edges = new List<Edge>();
-        Subset[] subsets = new Subset[points.Length];
+        int pointsCount = points.Length;
+        if (pointsCount == 0) return new List<Edge>();
 
-        for (int v = 0; v < points.Length; ++v)
+        int expectedEdgesCount = pointsCount * (pointsCount - 1) / 2;
+        List<Edge> edges = new List<Edge>(expectedEdgesCount);
+        Subset[] subsets = new Subset[pointsCount];
+
+        for (int v = 0; v < pointsCount; ++v)
             subsets[v] = new Subset { parent = v, rank = 0 };
 
-        for (int i = 0; i < points.Length - 1; ++i)
+        for (int i = 0; i < pointsCount - 1; ++i)
         {
-            for (int j = i + 1; j < points.Length; ++j)
+            for (int j = i + 1; j < pointsCount; ++j)
             {
-                float weight = Vector2.Distance(points[i], points[j]);
-                edges.Add(new Edge(i, j, weight));
+                float sqrWeight = (points[i] - points[j]).sqrMagnitude;
+                edges.Add(new Edge(i, j, sqrWeight));
             }
         }
-        edges.Sort((a, b) => a.weight.CompareTo(b.weight));
-        List<Edge> result = new List<Edge>();
+
+        edges.Sort((a, b) => a.sqrWeight.CompareTo(b.sqrWeight));
+        
+        List<Edge> result = new List<Edge>(pointsCount - 1);
         int e = 0;
         int k = 0;
-        while (e < points.Length - 1 && k < edges.Count)
+        
+        while (e < pointsCount - 1 && k < edges.Count)
         {
             Edge next_edge = edges[k++];
             int x = Find(subsets, next_edge.src);
             int y = Find(subsets, next_edge.dest);
+            
             if (x != y)
             {
                 result.Add(next_edge);
@@ -75,7 +84,7 @@ public class KruskalAlgorithm
                 e++;
             }
         }
-        foreach (Edge edge in result)
-            Debug.Log($"Edge {edge.src} - {edge.dest} weight: {edge.weight}");
+        
+        return result;
     }
 }

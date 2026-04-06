@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Xml;
 
-using UnityEngine;
-
 namespace TheRavine.Extensions
 {
     public class GestureIO
