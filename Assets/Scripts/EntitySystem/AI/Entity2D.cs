@@ -9,9 +9,8 @@ using TMPro;
 using UnityEngine;
 using Random = TheRavine.Extensions.RavineRandom;
 
-[RequireComponent(typeof(Rigidbody2D))]
-[RequireComponent(typeof(SpriteRenderer))]
-public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
+[RequireComponent(typeof(Rigidbody))]
+public class Entity : MonoBehaviour, IDialogListener, IDialogSender
 {
     [Header("Визуал")]
     [SerializeField] private TextMeshPro label;
@@ -52,16 +51,12 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
     [SerializeField] private float maxWanderTime = 3f;
     [SerializeField] private float idleTime      = 2f;
 
-    [Header("Диагностика")]
-    [SerializeField, ReadOnly] private float coordinatorEntropy;
-
     private SharedHierarchicalBrain _sharedBrain;
     private InputVectorizer         _vectorizer;
     private EntityBrainContext      _ctx;
-    private EntityManager           _entityManager;
 
-    private Rigidbody2D    _rb;
-    private SpriteRenderer _sr;
+    private Rigidbody _rb;
+    [SerializeField] private SpriteRenderer _sr;
     private CancellationTokenSource _cts;
 
     private bool    _isMoving;
@@ -78,8 +73,8 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
     private readonly List<Vector2> _pointsOfInterest = new();
     private const int MaxPoints = 5;
 
-    public event Action<Entity2D> OnDied;
-    public event Action<Entity2D> OnReproduceRequest;
+    public event Action<Entity> OnDied;
+    public event Action<Entity> OnReproduceRequest;
 
     public enum EntityAction
     {
@@ -92,11 +87,9 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
 
     private void Awake()
     {
-        _rb = GetComponent<Rigidbody2D>();
-        _sr = GetComponent<SpriteRenderer>();
+        _rb = GetComponent<Rigidbody>();
 
-        _rb.gravityScale           = 0;
-        _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        _rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         _rb.freezeRotation         = true;
 
         currentHealth = maxHealth.Value / 2f;
@@ -106,13 +99,11 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
     }
     public void Inject(
         SharedHierarchicalBrain brain,
-        EntityBrainContext ctx,
-        EntityManager entityManager)
+        EntityBrainContext ctx)
     {
         _sharedBrain   = brain;
         _vectorizer    = new InputVectorizer(maxHealth, maxEnergy);
         _ctx           = ctx;
-        _entityManager = entityManager;
     }
     public void SetUpAsNew()
     {
@@ -168,11 +159,9 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
 
         _otherSpeech = "";
 
-        // ─── ИЗМЕНЕНИЕ: статeless вызов с контекстом ─────────────────────────────
         int actionIndex  = _sharedBrain.Predict(_lastInput, _ctx);
         _lastActionIndex = actionIndex;
-        coordinatorEntropy = _sharedBrain.GetCoordinatorEntropy(_ctx);
-        // ─────────────────────────────────────────────────────────────────────────
+        // coordinatorEntropy = _sharedBrain.GetCoordinatorEntropy(_ctx);
 
         var action = (EntityAction)actionIndex;
 
@@ -223,9 +212,10 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
 
     private async UniTask WanderAsync(CancellationToken ct)
     {
-        Vector2 dir    = Random.GetInsideCircle().normalized;
-        Vector2 target = (Vector2)transform.position + dir * wanderRadius;
-        _sharedBrain.GiveReward(0.45f, _ctx);
+        Vector2 randomCircle = UnityEngine.Random.insideUnitCircle; 
+        Vector3 dir = new Vector3(randomCircle.x, 0, randomCircle.y).normalized;
+        
+        Vector3 target = transform.position + dir * wanderRadius;
         await MoveToAsync(target, moveSpeed, Random.RangeFloat(minWanderTime, maxWanderTime),
             energyCostPerSecondMoving, ct);
     }
@@ -275,7 +265,7 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
             _isAttacking   = true;
             _canAttack     = false;
 
-            var victim = target.GetComponent<Entity2D>();
+            var victim = target.GetComponent<Entity>();
             if (victim != null)
             {
                 victim.TakeDamage(attackDamage);
@@ -363,7 +353,7 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
         GameObject nearest = FindNearbyEntity();
         if (nearest == null) { _sharedBrain.GiveReward(0.2f, _ctx); return; }
 
-        var other = nearest.GetComponent<Entity2D>();
+        var other = nearest.GetComponent<Entity>();
         if (other == null) { _sharedBrain.GiveReward(0.2f, _ctx); return; }
 
         int mimicAction = other._lastActionIndex;
@@ -435,13 +425,13 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
         if (currentHealth < 80f) { _sharedBrain.GiveReward(0.1f, _ctx); return; }
 
         Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, detectionRadius, entityLayer);
-        Entity2D     best = null;
+        Entity     best = null;
         float        minH = float.MaxValue;
 
         foreach (var col in cols)
         {
             if (col.gameObject == gameObject) continue;
-            var other = col.GetComponent<Entity2D>();
+            var other = col.GetComponent<Entity>();
             if (other != null && other.currentHealth < minH)
             {
                 minH = other.currentHealth;
@@ -478,7 +468,7 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
     {
         _cts?.Cancel();
         if (_sr) _sr.color = Color.gray;
-        if (_rb) { _rb.linearVelocity = Vector2.zero; _rb.bodyType = RigidbodyType2D.Kinematic; }
+        if (_rb) { _rb.linearVelocity = Vector2.zero; }
 
         DialogSystem.Instance.RemoveDialogListener(this);
         OnDied?.Invoke(this);
@@ -518,25 +508,27 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
         return b;
     }
 
-    private async UniTask MoveToAsync(
-        Vector2 target, float speed, float maxDuration,
-        float energyCost, CancellationToken ct)
+    private async UniTask MoveToAsync(Vector3 target, float speed, float maxDuration, 
+    float energyCost, CancellationToken ct)
     {
         _isMoving = true;
         float startTime = Time.time;
 
-        while (Vector2.Distance(transform.position, target) > 0.1f &&
-               Time.time - startTime < maxDuration)
+        while (Vector3.Distance(transform.position, target) > 0.1f && 
+            Time.time - startTime < maxDuration)
         {
             if (currentEnergy <= 0) break;
-            Vector2 dir        = ((Vector2)transform.position - target);
-            _rb.linearVelocity = -dir.normalized * speed;
-            currentEnergy      = Mathf.Max(0, currentEnergy - energyCost * Time.deltaTime);
+
+            Vector3 direction = (target - transform.position).normalized;
+            direction.y = 0;
+
+            _rb.linearVelocity = direction * speed;
+            currentEnergy = Mathf.Max(0, currentEnergy - energyCost * Time.deltaTime);
             await UniTask.Yield(ct);
         }
 
-        _isMoving          = false;
-        _rb.linearVelocity = Vector2.zero;
+        _isMoving = false;
+        _rb.linearVelocity = Vector3.zero;
     }
 
     private async UniTaskVoid RegenerateEnergyAsync(CancellationToken ct)
@@ -554,14 +546,15 @@ public class Entity2D : MonoBehaviour, IDialogListener, IDialogSender
 
     private GameObject FindNearbyEntity()
     {
-        Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, detectionRadius, entityLayer);
-        GameObject   best = null;
-        float        minD = float.MaxValue;
+        Collider[] cols = Physics.OverlapSphere(transform.position, detectionRadius, entityLayer);
+        GameObject best = null;
+        float minD = float.MaxValue;
 
         foreach (var col in cols)
         {
             if (col.gameObject == gameObject) continue;
-            float d = Vector2.Distance(transform.position, col.transform.position);
+            // Расстояние в 3D считается так же, но Vector3.Distance
+            float d = Vector3.Distance(transform.position, col.transform.position);
             if (d < minD) { minD = d; best = col.gameObject; }
         }
         return best;

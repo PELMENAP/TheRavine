@@ -38,12 +38,13 @@ public class ServiceContainer
             if (s is IDisposable d) d.Dispose();
         _services.Clear();
     }
-    public void LogRegisteredServices()
+    public List<string> GetRegisteredServices()
     {
-        Debug.Log("=== Зарегистрированные сервисы ===");
+        List<string> services = new List<string>();
         foreach (var kvp in _services)
         {
-            Debug.Log($"  • {kvp.Key.Name} -> {kvp.Value?.GetType().Name ?? "null"}");
+            services.Add($"  • {kvp.Key.Name} -> {kvp.Value?.GetType().Name ?? "null"}");
         }
+        return services;
     }
 }

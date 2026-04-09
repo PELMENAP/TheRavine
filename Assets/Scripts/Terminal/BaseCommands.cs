@@ -86,4 +86,24 @@ namespace TheRavine.Base
             return UniTask.CompletedTask;
         }
     }
+
+    public class ShowServiceLocatorCommand : ICommand
+    {
+        public string Name => "~showSLRS";
+        public string ShortName => "~SSLRS";
+        public string Description => "Показывает список зарегистрированных игровых сервисов";
+
+        public UniTask ExecuteAsync(string[] args, CommandContext context)
+        {
+            context.Display("=== Зарегистрированные сервисы ===");
+
+            List<string> services = ServiceLocator.Services.GetRegisteredServices();        
+            foreach (var kvp in services)
+            {
+                context.Display(kvp);
+            }
+            
+            return UniTask.CompletedTask;
+        }
+    }
 }

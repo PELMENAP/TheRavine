@@ -596,6 +596,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: IOMainPrefab
       objectReference: {fileID: 0}
+    - target: {fileID: 1808343262851033831, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2842285578870471969, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: m_audioListener
       value: 
@@ -638,6 +642,38 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3127367655060376858, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3855922078601803985, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
+      propertyPath: m_Size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3855922078601803985, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
+      propertyPath: m_Value
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6525812998122429727, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6525812998122429727, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6525812998122429727, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7859450981325186452, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7859450981325186452, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7859450981325186452, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
+      propertyPath: m_SizeDelta.x
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []

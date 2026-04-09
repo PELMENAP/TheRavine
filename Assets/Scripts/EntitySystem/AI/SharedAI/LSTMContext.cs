@@ -4,19 +4,13 @@ public class LSTMContext
 {
     public readonly float[] H;
     public readonly float[] C;
-    public readonly float[] Xh;
-    public readonly float[] F, I, O, CTilde, Tmp;
+    public readonly float[] AllGates; // Объединенный массив для F, I, O, CTilde
 
     public LSTMContext(int inputSize, int hiddenSize)
     {
-        H      = new float[hiddenSize];
-        C      = new float[hiddenSize];
-        Xh     = new float[inputSize + hiddenSize];
-        F      = new float[hiddenSize];
-        I      = new float[hiddenSize];
-        O      = new float[hiddenSize];
-        CTilde = new float[hiddenSize];
-        Tmp    = new float[hiddenSize];
+        H = new float[hiddenSize];
+        C = new float[hiddenSize];
+        AllGates = new float[4 * hiddenSize];
     }
 
     public void Reset()

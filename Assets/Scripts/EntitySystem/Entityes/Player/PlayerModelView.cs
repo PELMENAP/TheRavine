@@ -14,7 +14,7 @@ namespace TheRavine.EntityControl
         [SerializeField] private NetworkObject cameraPrefab;
         [SerializeField] private EntityInfo playerInfo;
 
-        [SerializeField] private CameraMove cameraMove;
+        [SerializeField] private CameraMovingConfig cameraMove;
         private CameraComponent cameraComponent;
         private RavineLogger logger;
         public override async void OnNetworkSpawn()
@@ -58,26 +58,27 @@ namespace TheRavine.EntityControl
         {
             try
             {
-                if (IsClient && IsOwner)
-                {
-                    RequestCameraServerRpc(NetworkManager.Singleton.LocalClientId);
-                    
-                    while(true)
-                    {
-                        if(ServiceLocator.Services.TryGet(out EntitySystem entitySystem))
-                        {
-                            entitySystem.AddToGlobal(PlayerEntity);
-                            break;
-                        }
-                        await UniTask.Delay(1000);
-                    }
-                }
+                if (!IsClient || !IsOwner) return;
+                
+                RequestCameraServerRpc(NetworkManager.Singleton.LocalClientId);
+                EntitySystem entitySystem = await WaitUntilServiceReady<EntitySystem>();
+                entitySystem.AddToGlobal(PlayerEntity);
+
                 await UniTask.CompletedTask;
             }
             catch (Exception ex)
             {
                 logger.LogError($"Player entity {NetworkManager.Singleton.LocalClientId} cannot setup networking: {ex.Message}");
             }
+        }
+        private async UniTask<T> WaitUntilServiceReady<T>() where T : class
+        {
+            T service;
+            while (!ServiceLocator.Services.TryGet(out service))
+            {
+                await UniTask.Yield();
+            }
+            return service;
         }
         [ServerRpc]
         private void RequestCameraServerRpc(ulong clientId)

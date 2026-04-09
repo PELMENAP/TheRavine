@@ -147,7 +147,7 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Fast Interact"",
+                    ""name"": ""Fast Interact (Space)"",
                     ""type"": ""Button"",
                     ""id"": ""c0dada3c-e1df-496c-ad29-db0d65fefbac"",
                     ""expectedControlType"": """",
@@ -156,7 +156,7 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Delay Interact"",
+                    ""name"": ""Delay Interact (Long Space)"",
                     ""type"": ""Button"",
                     ""id"": ""f4641fc1-0094-42c8-969d-95b6cf87a2f9"",
                     ""expectedControlType"": """",
@@ -165,9 +165,18 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Pause"",
+                    ""name"": ""Pause (Escape)"",
                     ""type"": ""Button"",
                     ""id"": ""818ca37c-aa30-46c8-8e99-725bdf5b3d9c"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Gesture (Alt)"",
+                    ""type"": ""Button"",
+                    ""id"": ""483fb10f-2a93-4ace-a5ff-fd748586ad40"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -369,7 +378,7 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Fast Interact"",
+                    ""action"": ""Fast Interact (Space)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -380,18 +389,29 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Delay Interact"",
+                    ""action"": ""Delay Interact (Long Space)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
                 {
                     ""name"": """",
                     ""id"": ""136fd32a-cd34-4246-bdca-b8d380693d38"",
-                    ""path"": ""<Keyboard>/p"",
+                    ""path"": ""<Keyboard>/escape"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Pause"",
+                    ""action"": ""Pause (Escape)"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""aa36cae0-dcb2-407d-909c-ab1f064bf841"",
+                    ""path"": ""<Keyboard>/leftAlt"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Gesture (Alt)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -982,7 +1002,7 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""4828e77e-7c38-4f6a-87c3-7cda0ad35ba1"",
-                    ""path"": ""<Keyboard>/p"",
+                    ""path"": ""<Keyboard>/escape"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -1031,9 +1051,10 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         m_Gameplay_PickUpF = m_Gameplay.FindAction("Pick Up (F)", throwIfNotFound: true);
         m_Gameplay_InventoryEnterE = m_Gameplay.FindAction("InventoryEnter (E)", throwIfNotFound: true);
         m_Gameplay_Digit18 = m_Gameplay.FindAction("Digit (1-8)", throwIfNotFound: true);
-        m_Gameplay_FastInteract = m_Gameplay.FindAction("Fast Interact", throwIfNotFound: true);
-        m_Gameplay_DelayInteract = m_Gameplay.FindAction("Delay Interact", throwIfNotFound: true);
-        m_Gameplay_Pause = m_Gameplay.FindAction("Pause", throwIfNotFound: true);
+        m_Gameplay_FastInteractSpace = m_Gameplay.FindAction("Fast Interact (Space)", throwIfNotFound: true);
+        m_Gameplay_DelayInteractLongSpace = m_Gameplay.FindAction("Delay Interact (Long Space)", throwIfNotFound: true);
+        m_Gameplay_PauseEscape = m_Gameplay.FindAction("Pause (Escape)", throwIfNotFound: true);
+        m_Gameplay_GestureAlt = m_Gameplay.FindAction("Gesture (Alt)", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1143,9 +1164,10 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_Gameplay_PickUpF;
     private readonly InputAction m_Gameplay_InventoryEnterE;
     private readonly InputAction m_Gameplay_Digit18;
-    private readonly InputAction m_Gameplay_FastInteract;
-    private readonly InputAction m_Gameplay_DelayInteract;
-    private readonly InputAction m_Gameplay_Pause;
+    private readonly InputAction m_Gameplay_FastInteractSpace;
+    private readonly InputAction m_Gameplay_DelayInteractLongSpace;
+    private readonly InputAction m_Gameplay_PauseEscape;
+    private readonly InputAction m_Gameplay_GestureAlt;
     /// <summary>
     /// Provides access to input actions defined in input action map "Gameplay".
     /// </summary>
@@ -1182,17 +1204,21 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @Digit18 => m_Wrapper.m_Gameplay_Digit18;
         /// <summary>
-        /// Provides access to the underlying input action "Gameplay/FastInteract".
+        /// Provides access to the underlying input action "Gameplay/FastInteractSpace".
         /// </summary>
-        public InputAction @FastInteract => m_Wrapper.m_Gameplay_FastInteract;
+        public InputAction @FastInteractSpace => m_Wrapper.m_Gameplay_FastInteractSpace;
         /// <summary>
-        /// Provides access to the underlying input action "Gameplay/DelayInteract".
+        /// Provides access to the underlying input action "Gameplay/DelayInteractLongSpace".
         /// </summary>
-        public InputAction @DelayInteract => m_Wrapper.m_Gameplay_DelayInteract;
+        public InputAction @DelayInteractLongSpace => m_Wrapper.m_Gameplay_DelayInteractLongSpace;
         /// <summary>
-        /// Provides access to the underlying input action "Gameplay/Pause".
+        /// Provides access to the underlying input action "Gameplay/PauseEscape".
         /// </summary>
-        public InputAction @Pause => m_Wrapper.m_Gameplay_Pause;
+        public InputAction @PauseEscape => m_Wrapper.m_Gameplay_PauseEscape;
+        /// <summary>
+        /// Provides access to the underlying input action "Gameplay/GestureAlt".
+        /// </summary>
+        public InputAction @GestureAlt => m_Wrapper.m_Gameplay_GestureAlt;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1237,15 +1263,18 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @Digit18.started += instance.OnDigit18;
             @Digit18.performed += instance.OnDigit18;
             @Digit18.canceled += instance.OnDigit18;
-            @FastInteract.started += instance.OnFastInteract;
-            @FastInteract.performed += instance.OnFastInteract;
-            @FastInteract.canceled += instance.OnFastInteract;
-            @DelayInteract.started += instance.OnDelayInteract;
-            @DelayInteract.performed += instance.OnDelayInteract;
-            @DelayInteract.canceled += instance.OnDelayInteract;
-            @Pause.started += instance.OnPause;
-            @Pause.performed += instance.OnPause;
-            @Pause.canceled += instance.OnPause;
+            @FastInteractSpace.started += instance.OnFastInteractSpace;
+            @FastInteractSpace.performed += instance.OnFastInteractSpace;
+            @FastInteractSpace.canceled += instance.OnFastInteractSpace;
+            @DelayInteractLongSpace.started += instance.OnDelayInteractLongSpace;
+            @DelayInteractLongSpace.performed += instance.OnDelayInteractLongSpace;
+            @DelayInteractLongSpace.canceled += instance.OnDelayInteractLongSpace;
+            @PauseEscape.started += instance.OnPauseEscape;
+            @PauseEscape.performed += instance.OnPauseEscape;
+            @PauseEscape.canceled += instance.OnPauseEscape;
+            @GestureAlt.started += instance.OnGestureAlt;
+            @GestureAlt.performed += instance.OnGestureAlt;
+            @GestureAlt.canceled += instance.OnGestureAlt;
         }
 
         /// <summary>
@@ -1275,15 +1304,18 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @Digit18.started -= instance.OnDigit18;
             @Digit18.performed -= instance.OnDigit18;
             @Digit18.canceled -= instance.OnDigit18;
-            @FastInteract.started -= instance.OnFastInteract;
-            @FastInteract.performed -= instance.OnFastInteract;
-            @FastInteract.canceled -= instance.OnFastInteract;
-            @DelayInteract.started -= instance.OnDelayInteract;
-            @DelayInteract.performed -= instance.OnDelayInteract;
-            @DelayInteract.canceled -= instance.OnDelayInteract;
-            @Pause.started -= instance.OnPause;
-            @Pause.performed -= instance.OnPause;
-            @Pause.canceled -= instance.OnPause;
+            @FastInteractSpace.started -= instance.OnFastInteractSpace;
+            @FastInteractSpace.performed -= instance.OnFastInteractSpace;
+            @FastInteractSpace.canceled -= instance.OnFastInteractSpace;
+            @DelayInteractLongSpace.started -= instance.OnDelayInteractLongSpace;
+            @DelayInteractLongSpace.performed -= instance.OnDelayInteractLongSpace;
+            @DelayInteractLongSpace.canceled -= instance.OnDelayInteractLongSpace;
+            @PauseEscape.started -= instance.OnPauseEscape;
+            @PauseEscape.performed -= instance.OnPauseEscape;
+            @PauseEscape.canceled -= instance.OnPauseEscape;
+            @GestureAlt.started -= instance.OnGestureAlt;
+            @GestureAlt.performed -= instance.OnGestureAlt;
+            @GestureAlt.canceled -= instance.OnGestureAlt;
         }
 
         /// <summary>
@@ -1776,26 +1808,33 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnDigit18(InputAction.CallbackContext context);
         /// <summary>
-        /// Method invoked when associated input action "Fast Interact" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "Fast Interact (Space)" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnFastInteract(InputAction.CallbackContext context);
+        void OnFastInteractSpace(InputAction.CallbackContext context);
         /// <summary>
-        /// Method invoked when associated input action "Delay Interact" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "Delay Interact (Long Space)" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnDelayInteract(InputAction.CallbackContext context);
+        void OnDelayInteractLongSpace(InputAction.CallbackContext context);
         /// <summary>
-        /// Method invoked when associated input action "Pause" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "Pause (Escape)" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnPause(InputAction.CallbackContext context);
+        void OnPauseEscape(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Gesture (Alt)" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnGestureAlt(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.
