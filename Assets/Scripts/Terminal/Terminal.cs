@@ -73,7 +73,8 @@ namespace TheRavine.Base
                 new TeleportCommand(),
                 new SetValueCommand(),
                 new RotateCommand(),
-                new DebugCommand()
+                new DebugCommand(),
+                new ShowServiceLocatorCommand()
             );
 
             graphyManager.SetActive(false);

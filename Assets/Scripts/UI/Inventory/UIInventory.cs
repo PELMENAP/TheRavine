@@ -188,8 +188,6 @@ namespace TheRavine.Inventory
 
         public void BreakUp(ISetAble.Callback callback)
         {
-            ServiceLocator.GetService<LLMItemDescriptionService>().Dispose();
-
             uIDragger.BreakUp();
             craftService.BreakUp();
 

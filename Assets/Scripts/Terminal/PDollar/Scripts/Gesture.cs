@@ -8,7 +8,7 @@ namespace TheRavine.Extensions
         public float[] Theta;
         public string Name;
 
-        public const int SAMPLING_RESOLUTION = 32;
+        public const int SAMPLING_RESOLUTION = 64;
 
         public Gesture(Point[] points, string gestureName = "")
         {

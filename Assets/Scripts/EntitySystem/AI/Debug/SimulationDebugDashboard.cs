@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 [RequireComponent(typeof(EntityManager))]
@@ -303,7 +301,7 @@ public class SimulationDebugDashboard : MonoBehaviour
         if (entities.Count == 0) return;
 
         int shown = Mathf.Min(5, entities.Count);
-        var sorted = new List<Entity2D>(entities);
+        var sorted = new List<Entity>(entities);
         sorted.Sort((a, b) =>
             b.BrainContext.CoordMLP.AverageEntropy
              .CompareTo(a.BrainContext.CoordMLP.AverageEntropy));
@@ -430,7 +428,7 @@ public class GenerationTracker
 
     public Stats Current { get; private set; }
 
-    public void Record(IReadOnlyList<Entity2D> entities, SharedHierarchicalBrain brain)
+    public void Record(IReadOnlyList<Entity> entities, SharedHierarchicalBrain brain)
     {
         if (entities.Count == 0) return;
 

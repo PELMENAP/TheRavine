@@ -1,109 +1,88 @@
 using System;
 using UnityEngine;
-using TheRavine.Extensions;
 
 public partial class LSTMMemory
 {
     private readonly int inputSize;
     private readonly int hiddenSize;
 
-    // Weights only — state lives in LSTMContext
-    private readonly float[,] Wf, Wi, Wo, Wc;
-    private readonly float[]  bf, bi, bo, bc;
+    // Веса объединены в один массив. 
+    // Структура: [4 * hiddenSize, inputSize + hiddenSize]
+    private readonly float[] W; 
+    private readonly float[] b;
 
     public LSTMMemory(int inputSize, int hiddenSize)
     {
-        this.inputSize  = inputSize;
+        this.inputSize = inputSize;
         this.hiddenSize = hiddenSize;
 
-        Wf = InitWeights(hiddenSize, inputSize + hiddenSize);
-        Wi = InitWeights(hiddenSize, inputSize + hiddenSize);
-        Wo = InitWeights(hiddenSize, inputSize + hiddenSize);
-        Wc = InitWeights(hiddenSize, inputSize + hiddenSize);
+        int totalHidden = 4 * hiddenSize;
+        int totalCols = inputSize + hiddenSize;
 
-        bf = new float[hiddenSize];
-        bi = new float[hiddenSize];
-        bo = new float[hiddenSize];
-        bc = new float[hiddenSize];
+        W = new float[totalHidden * totalCols];
+        b = new float[totalHidden];
+
+        InitWeights(W, totalHidden, totalCols);
+
+        for (int i = 0; i < hiddenSize; i++)
+        {
+            b[i] = 1.0f;
+        }
     }
 
     public LSTMMemory(LSTMMemory src) : this(src.inputSize, src.hiddenSize)
     {
-        Array.Copy(src.bf, bf, hiddenSize); Array.Copy(src.bi, bi, hiddenSize);
-        Array.Copy(src.bo, bo, hiddenSize); Array.Copy(src.bc, bc, hiddenSize);
-        CopyMatrix(src.Wf, Wf); CopyMatrix(src.Wi, Wi);
-        CopyMatrix(src.Wo, Wo); CopyMatrix(src.Wc, Wc);
+        Array.Copy(src.W, this.W, src.W.Length);
+        Array.Copy(src.b, this.b, src.b.Length);
     }
 
     public float[] Step(float[] input, LSTMContext ctx)
     {
-        Array.Copy(input,  0, ctx.Xh, 0,          inputSize);
-        Array.Copy(ctx.H,  0, ctx.Xh, inputSize,   hiddenSize);
+        int h = hiddenSize;
+        int totalCols = inputSize + h;
 
-        MatVecAdd(Wf, ctx.Xh, bf, ctx.F);   FastSigmoidInPlace(ctx.F);
-        MatVecAdd(Wi, ctx.Xh, bi, ctx.I);   FastSigmoidInPlace(ctx.I);
-        MatVecAdd(Wo, ctx.Xh, bo, ctx.O);   FastSigmoidInPlace(ctx.O);
-        MatVecAdd(Wc, ctx.Xh, bc, ctx.CTilde); FastTanhInPlace(ctx.CTilde);
+        ComputeGates(W, input, ctx.H, b, ctx.AllGates, h, inputSize);
 
-        for (int j = 0; j < hiddenSize; j++)
-            ctx.C[j] = ctx.F[j] * ctx.C[j] + ctx.I[j] * ctx.CTilde[j];
+        for (int j = 0; j < h; j++)
+        {
+            float f = FastSigmoid(ctx.AllGates[j]);           // Forget
+            float i = FastSigmoid(ctx.AllGates[j + h]);       // Input
+            float o = FastSigmoid(ctx.AllGates[j + 2 * h]);   // Output
+            float cTilde = FastTanh(ctx.AllGates[j + 3 * h]); // New Cell
 
-        for (int j = 0; j < hiddenSize; j++)
-            ctx.H[j] = ctx.O[j] * FastTanh(ctx.C[j]);
+            ctx.C[j] = f * ctx.C[j] + i * cTilde;
+            ctx.H[j] = o * FastTanh(ctx.C[j]);
+        }
 
         return ctx.H;
     }
 
-    private static void MatVecAdd(float[,] W, float[] x, float[] bias, float[] result)
+    private static void ComputeGates(float[] w, float[] x, float[] h_prev, float[] bias, float[] res, int h, int xSize)
     {
-        int rows = W.GetLength(0);
-        int cols = W.GetLength(1);
-        for (int i = 0; i < rows; i++)
+        int totalCols = xSize + h;
+        for (int i = 0; i < 4 * h; i++)
         {
             float sum = bias[i];
-            for (int j = 0; j < cols; j += 4)
-            {
-                if (j + 3 < cols)
-                    sum += W[i,j]*x[j] + W[i,j+1]*x[j+1] + W[i,j+2]*x[j+2] + W[i,j+3]*x[j+3];
-                else
-                    for (int k = j; k < cols; k++) sum += W[i,k]*x[k];
-            }
-            result[i] = sum;
+            int rowOffset = i * totalCols;
+
+            for (int j = 0; j < xSize; j++)
+                sum += w[rowOffset + j] * x[j];
+
+            int hOffset = rowOffset + xSize;
+            for (int j = 0; j < h; j++)
+                sum += w[hOffset + j] * h_prev[j];
+
+            res[i] = sum;
         }
     }
 
-    private static void FastSigmoidInPlace(float[] x)
-    {
-        for (int i = 0; i < x.Length; i++)
-            x[i] = 0.5f * (x[i] / (1f + Mathf.Abs(x[i]))) + 0.5f;
-    }
+    private static float FastSigmoid(float x) => 0.5f * (x / (1f + Math.Abs(x))) + 0.5f;
+    private static float FastTanh(float x) => x / (1f + Math.Abs(x));
 
-    private static void FastTanhInPlace(float[] x)
+    private void InitWeights(float[] weights, int rows, int cols)
     {
-        for (int i = 0; i < x.Length; i++)
-            x[i] = x[i] / (1f + Mathf.Abs(x[i]));
-    }
-
-    private static float FastTanh(float x) => x / (1f + Mathf.Abs(x));
-
-    private static float[,] InitWeights(int rows, int cols)
-    {
-        var w     = new float[rows, cols];
         float scale = Mathf.Sqrt(2f / (rows + cols));
-        for (int i = 0; i < rows; i++)
-            for (int j = 0; j < cols; j++)
-                w[i, j] = RavineRandom.RangeFloat(-scale, scale);
-        return w;
+        for (int i = 0; i < weights.Length; i++)
+            weights[i] = UnityEngine.Random.Range(-scale, scale);
     }
-
-    private static void CopyMatrix(float[,] src, float[,] dst)
-    {
-        int rows = src.GetLength(0), cols = src.GetLength(1);
-        for (int i = 0; i < rows; i++)
-            for (int j = 0; j < cols; j++)
-                dst[i, j] = src[i, j];
-    }
-
-    public int InputSize  => inputSize;
-    public int HiddenSize => hiddenSize;
 }

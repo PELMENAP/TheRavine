@@ -22,9 +22,9 @@ public class CameraComponent : ICameraComponent
     private TransformComponent playerTransformComponent;
     private Vector3 targetPos, factMousePositionOffset;
 
-    private CameraMove cameraMove;
+    private CameraMovingConfig cameraMove;
     
-    public void SetUp(PlayerEntity playerEntity, Camera camera, Transform cameraTransform, CameraMove cameraMove)
+    public void SetUp(PlayerEntity playerEntity, Camera camera, Transform cameraTransform, CameraMovingConfig cameraMove)
     {
         playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<AimAddition>(AimAdditionHandleEvent);
         playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<CameraPlace>(CameraPlaceHandleEvent);
@@ -96,13 +96,13 @@ public class CameraComponent : ICameraComponent
 }
 
 [System.Serializable]
-public struct CameraMove
+public struct CameraMovingConfig
 {
     public AnimationCurve zCurve;
     public AnimationCurve yCurve;
     public AnimationCurve xRotationCurve;
 
-    public CameraMove(AnimationCurve zCurve, AnimationCurve yCurve, AnimationCurve xRotationCurve)
+    public CameraMovingConfig(AnimationCurve zCurve, AnimationCurve yCurve, AnimationCurve xRotationCurve)
     {
         this.zCurve = zCurve;
         this.yCurve = yCurve;

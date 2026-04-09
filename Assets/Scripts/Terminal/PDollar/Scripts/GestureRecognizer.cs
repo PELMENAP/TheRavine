@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using R3;
 using TMPro;
+using TheRavine.EntityControl;
+using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Extensions
 {
@@ -13,154 +16,207 @@ namespace TheRavine.Extensions
         public Transform gestureOnScreenPrefab;
         public InputActionReference pointerPosition;
         public InputActionReference pointerContact;
+        
+        public InputActionReference gestureRecognizeEnable; 
+        
         public RectTransform drawAreaRect;
+        public GameObject gestureSettings;
         public TextMeshProUGUI messageText;
         public TMP_InputField newGestureNameInput;
-        public Button recognizeButton;
+        public Button enableGestureSettings;
+        public Button recognizeButton; 
         public Button addGestureButton;
         public GestureLibraryView libraryView;
 
-        private readonly GestureRepository _repository = new();
-        private readonly List<Point> _points = new();
-        private readonly List<LineRenderer> _gestureLines = new();
+        private readonly GestureRepository repository = new();
+        private readonly List<Point> points = new();
+        private readonly List<LineRenderer> gestureLines = new();
 
-        private LineRenderer _currentLine;
-        private int _strokeId = -1;
-        private bool _recognized;
-        private bool _isPointerDown;
-        private Vector2 _pointerPos;
-        private Camera _mainCamera;
+        private LineRenderer currentLine;
+        private int strokeId = -1;
+        private bool recognized;
+        private bool isPointerDown;
+        private bool isInitialized = false;
+        private Vector2 pointerPos;
+        private Camera mainCamera;
 
-        private void OnEnable()
+        private void Awake()
         {
-            pointerPosition.action.Enable();
-            pointerContact.action.Enable();
-
-            recognizeButton.onClick.AddListener(RecognizeGesture);
             addGestureButton.onClick.AddListener(AddGesture);
+            enableGestureSettings.onClick.AddListener(ChangeSettings);
+            recognizeButton.onClick.AddListener(RecognizeGesture); 
 
-            _mainCamera = Camera.main;
+            gestureSettings.SetActive(false);
         }
 
         private void OnDestroy()
         {
-            pointerPosition.action.Disable();
-            pointerContact.action.Disable();
-
-            recognizeButton.onClick.RemoveListener(RecognizeGesture);
             addGestureButton.onClick.RemoveListener(AddGesture);
+            enableGestureSettings.onClick.RemoveListener(ChangeSettings);
+            recognizeButton.onClick.RemoveListener(RecognizeGesture); 
+        }
+        public void ChangeSettings()
+        {
+            gestureSettings.SetActive(!gestureSettings.activeSelf);
+            drawAreaRect.gameObject.SetActive(gestureSettings.activeSelf);
         }
 
         private void Start()
         {
             messageText.text = "";
-            _repository.Load();
-            libraryView.Initialize(_repository);
+            drawAreaRect.gameObject.SetActive(false);
+            repository.Load();
+            libraryView.Initialize(repository);
+
+            ServiceLocator.WhenPlayersNonEmpty()
+                .Subscribe(_ =>
+                {
+                    GetCameraToService(ServiceLocator.Players.GetAllPlayers()).Forget();
+                });
         }
+
+        private async UniTaskVoid GetCameraToService(IReadOnlyList<AEntity> list)
+        {
+            CameraComponent cameraComponent = await WaitUntilComponentReady<CameraComponent>(list[0]);
+            mainCamera = cameraComponent.GetCamera();
+            isInitialized = true;
+        }
+
+        private async UniTask<T> WaitUntilComponentReady<T>(AEntity aEntity) where T : IComponent
+        {
+            while (!aEntity.HasComponent<T>())
+            {
+                await UniTask.Yield();
+            }
+            return aEntity.GetEntityComponent<T>();
+        }
+
+
 
         private void Update()
         {
-            _pointerPos = pointerPosition.action.ReadValue<Vector2>();
-
-            bool isPressed = pointerContact.action.IsPressed();
-            bool insideArea = drawAreaRect.rect.Contains(drawAreaRect.InverseTransformPoint(_pointerPos));
-
-            if (!isPressed)
+            if(!isInitialized) return;
+            
+            if (gestureRecognizeEnable.action.WasPressedThisFrame())
             {
-                _isPointerDown = false;
-                return;
+                drawAreaRect.gameObject.SetActive(true);
             }
 
-            if (!insideArea)
+            if (gestureRecognizeEnable.action.IsPressed() || gestureSettings.activeSelf)
             {
-                _isPointerDown = true;
-                return;
+                pointerPos = pointerPosition.action.ReadValue<Vector2>();
+
+                bool isPressed = pointerContact.action.IsPressed();
+                bool insideArea = drawAreaRect.rect.Contains(drawAreaRect.InverseTransformPoint(pointerPos));
+
+                if (!isPressed)
+                {
+                    isPointerDown = false;
+                }
+                else if (!insideArea)
+                {
+                    isPointerDown = true;
+                }
+                else
+                {
+                    if (!isPointerDown)
+                    {
+                        isPointerDown = true;
+                        HandlePointerDown();
+                    }
+
+                    HandlePointerDrag();
+                }
             }
 
-            if (!_isPointerDown)
+            if (gestureRecognizeEnable.action.WasReleasedThisFrame())
             {
-                _isPointerDown = true;
-                HandlePointerDown();
+                RecognizeGesture();
+                drawAreaRect.gameObject.SetActive(false);
+                ClearCurrentGesture();
             }
-
-            HandlePointerDrag();
         }
 
         private void HandlePointerDown()
         {
-            if (_recognized)
+            if (recognized)
                 ClearCurrentGesture();
 
-            ++_strokeId;
+            ++strokeId;
 
-            Transform tmpGesture = Instantiate(gestureOnScreenPrefab, transform.position, transform.rotation);
-            _currentLine = tmpGesture.GetComponent<LineRenderer>();
-            _gestureLines.Add(_currentLine);
+            Transform tmpGesture = Instantiate(gestureOnScreenPrefab, transform.position, transform.rotation, this.transform);
+            currentLine = tmpGesture.GetComponent<LineRenderer>();
+            gestureLines.Add(currentLine);
         }
 
         private void HandlePointerDrag()
         {
-            _points.Add(new Point(_pointerPos.x, -_pointerPos.y, _strokeId));
+            points.Add(new Point(pointerPos.x, -pointerPos.y, strokeId));
 
-            int vertexCount = _currentLine.positionCount + 1;
-            _currentLine.positionCount = vertexCount;
-            _currentLine.SetPosition(
+            int vertexCount = currentLine.positionCount + 1;
+            currentLine.positionCount = vertexCount;
+            currentLine.SetPosition(
                 vertexCount - 1,
-                _mainCamera.ScreenToWorldPoint(new Vector3(_pointerPos.x, _pointerPos.y, 10))
+                mainCamera.ScreenToWorldPoint(new Vector3(pointerPos.x, pointerPos.y, 10))
             );
         }
 
         private void ClearCurrentGesture()
         {
-            _recognized = false;
-            _strokeId = -1;
-            _points.Clear();
+            recognized = false;
+            strokeId = -1;
+            points.Clear();
 
-            foreach (LineRenderer line in _gestureLines)
+            foreach (LineRenderer line in gestureLines)
             {
-                line.positionCount = 0;
-                Destroy(line.gameObject);
+                if (line != null)
+                {
+                    line.positionCount = 0;
+                    Destroy(line.gameObject);
+                }
             }
 
-            _gestureLines.Clear();
+            gestureLines.Clear();
         }
 
         private void RecognizeGesture()
         {
-            if (_points.Count == 0)
+            if (points.Count == 0)
             {
                 messageText.text = "Нарисуйте жест перед распознаванием";
                 return;
             }
 
-            _recognized = true;
+            recognized = true;
 
-            Gesture candidate = new Gesture(_points.ToArray(), "");
-            Result gestureResult = PointCloudRecognizerPlus.Classify(candidate, _repository.GetGesturesArray());
+            Gesture candidate = new Gesture(points.ToArray(), "");
+            Result gestureResult = PointCloudRecognizerPlus.Classify(candidate, repository.GetGesturesArray());
 
             string gestureName = gestureResult.GestureClass;
 
             if (gestureName.StartsWith("~", StringComparison.Ordinal))
             {
                 messageText.text = $"Команда: {gestureName} ({gestureResult.Score:F2})";
-                GestureCommandBus.Dispatch(gestureName);
-                return;
+            }
+            else
+            {
+                messageText.text = $"{gestureName} {gestureResult.Score:F2}";
             }
 
-            messageText.text = $"{gestureName} {gestureResult.Score:F2}";
+            GestureCommandBus.Dispatch(gestureName);
         }
 
         private void AddGesture()
         {
             string gestureName = newGestureNameInput.text;
 
-            if (_points.Count == 0 || string.IsNullOrEmpty(gestureName))
+            if (points.Count == 0 || string.IsNullOrEmpty(gestureName))
             {
                 messageText.text = "Нарисуйте жест и введите его название перед добавлением";
                 return;
             }
 
-            _repository.Add(_points.ToArray(), gestureName);
+            repository.Add(points.ToArray(), gestureName);
             newGestureNameInput.text = "";
             messageText.text = $"Жест '{gestureName}' успешно добавлен";
         }

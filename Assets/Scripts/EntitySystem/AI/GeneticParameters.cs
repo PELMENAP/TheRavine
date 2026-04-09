@@ -16,8 +16,6 @@ public struct GeneticParameters
     public float GaussianNoise;
     public float ExplorationPrice;
     public float MutationChance;
-    public float MutationStrength;
-    public float BaseDelta;
 
     public static GeneticParameters Default => new()
     {
@@ -32,9 +30,7 @@ public struct GeneticParameters
         InitBiasesValues = RavineRandom.RangeFloat(ParameterRanges[8].min, ParameterRanges[8].max),
         GaussianNoise = RavineRandom.RangeFloat(ParameterRanges[9].min, ParameterRanges[9].max),
         ExplorationPrice = RavineRandom.RangeFloat(ParameterRanges[10].min, ParameterRanges[10].max),
-        MutationChance = RavineRandom.RangeFloat(ParameterRanges[11].min, ParameterRanges[11].max),
-        MutationStrength = RavineRandom.RangeFloat(ParameterRanges[12].min, ParameterRanges[12].max),
-        BaseDelta = RavineRandom.RangeFloat(ParameterRanges[13].min, ParameterRanges[13].max),
+        MutationChance = RavineRandom.RangeFloat(ParameterRanges[11].min, ParameterRanges[11].max)
     };
     public static readonly (float min, float max, float mutationScale)[] ParameterRanges = {
         (0.1f, 0.9f, 0.1f),     // DefaultEvaluation
@@ -49,8 +45,6 @@ public struct GeneticParameters
         (0.01f, 0.1f, 0.05f),    // GaussianNoise
         (0.05f, 0.3f, 0.1f),    // ExplorationPrice
         (0.05f, 0.5f, 0.1f),    // MutationChance
-        (0.05f, 1f, 0.1f),    // MutationStrength
-        (0.01f, 0.1f, 0.05f)     // BaseDeltan    
     };
 
     public GeneticParameters GetMutatedGeneticParameters()
@@ -60,7 +54,7 @@ public struct GeneticParameters
             DefaultEvaluation, Lambda, BaseLearningRate,
             MaxGradientNorm, SoftmaxTemperature, EntropyRegularization,
             LabelSmoothing, EntropyAlpha, InitBiasesValues,
-            GaussianNoise, ExplorationPrice, MutationChance, MutationStrength, BaseDelta
+            GaussianNoise, ExplorationPrice, MutationChance
         };
         for (int i = 0; i < paramArray.Length; i++)
         {
@@ -85,8 +79,6 @@ public struct GeneticParameters
             GaussianNoise = paramArray[9],
             ExplorationPrice = paramArray[10],
             MutationChance = paramArray[11],
-            MutationStrength = paramArray[12],
-            BaseDelta = paramArray[13],
         };
     }
 }

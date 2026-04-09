@@ -61,7 +61,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Fast Interact",
+                    "name": "Fast Interact (Space)",
                     "type": "Button",
                     "id": "c0dada3c-e1df-496c-ad29-db0d65fefbac",
                     "expectedControlType": "",
@@ -70,7 +70,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Delay Interact",
+                    "name": "Delay Interact (Long Space)",
                     "type": "Button",
                     "id": "f4641fc1-0094-42c8-969d-95b6cf87a2f9",
                     "expectedControlType": "",
@@ -79,9 +79,18 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Pause",
+                    "name": "Pause (Escape)",
                     "type": "Button",
                     "id": "818ca37c-aa30-46c8-8e99-725bdf5b3d9c",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Gesture (Alt)",
+                    "type": "Button",
+                    "id": "483fb10f-2a93-4ace-a5ff-fd748586ad40",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -283,7 +292,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Fast Interact",
+                    "action": "Fast Interact (Space)",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -294,18 +303,29 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Delay Interact",
+                    "action": "Delay Interact (Long Space)",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "",
                     "id": "136fd32a-cd34-4246-bdca-b8d380693d38",
-                    "path": "<Keyboard>/p",
+                    "path": "<Keyboard>/escape",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Pause",
+                    "action": "Pause (Escape)",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "aa36cae0-dcb2-407d-909c-ab1f064bf841",
+                    "path": "<Keyboard>/leftAlt",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Gesture (Alt)",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
@@ -896,7 +916,7 @@
                 {
                     "name": "",
                     "id": "4828e77e-7c38-4f6a-87c3-7cda0ad35ba1",
-                    "path": "<Keyboard>/p",
+                    "path": "<Keyboard>/escape",
                     "interactions": "",
                     "processors": "",
                     "groups": "",

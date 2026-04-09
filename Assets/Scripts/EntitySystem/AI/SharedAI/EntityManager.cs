@@ -30,16 +30,16 @@ public class EntityManager : MonoBehaviour
     [SerializeField, ReadOnly] private float _avgEntropy;
 
     public int MaxPopulation => maxPopulation;
-    public event Action<Entity2D> OnEntitySpawned;
-    public event Action<Entity2D> OnEntityDied;
+    public event Action<Entity> OnEntitySpawned;
+    public event Action<Entity> OnEntityDied;
 
     public void OnFoodConsumed() => _foodCount--;
 
 
     private SharedHierarchicalBrain _sharedBrain;
     public SharedHierarchicalBrain SharedBrain => _sharedBrain;
-    private readonly List<Entity2D> _entities = new();
-    public List<Entity2D> Entities => _entities;
+    private readonly List<Entity> _entities = new();
+    public List<Entity> Entities => _entities;
 
     private void Awake()
     {
@@ -57,15 +57,15 @@ public class EntityManager : MonoBehaviour
         TrackDiagnosticsAsync(destroyCancellationToken).Forget();
     }
 
-    public Entity2D SpawnEntity(Vector3 position, EntityBrainContext inheritedCtx = null)
+    public Entity SpawnEntity(Vector3 position, EntityBrainContext inheritedCtx = null)
     {
         if (_entities.Count >= maxPopulation) return null;
 
-        var go     = Instantiate(entityPrefab, position, Quaternion.identity, transform);
-        var entity = go.GetComponent<Entity2D>();
+        var go     = Instantiate(entityPrefab, position + this.transform.position, Quaternion.identity, transform);
+        var entity = go.GetComponent<Entity>();
 
         var ctx = inheritedCtx ?? _sharedBrain.CreateContext();
-        entity.Inject(_sharedBrain, ctx, this);
+        entity.Inject(_sharedBrain, ctx);
 
         _entities.Add(entity);
         entity.OnDied             += HandleEntityDied;
@@ -77,19 +77,20 @@ public class EntityManager : MonoBehaviour
         return entity;
     }
 
-    public Entity2D SpawnChild(Entity2D parent)
+    public Entity SpawnChild(Entity parent)
     {
         if (_entities.Count >= maxPopulation) return null;
 
         var childParams = parent.BrainContext.CoordMLP.Params.GetMutatedGeneticParameters();
         var childCtx    = _sharedBrain.CreateContext(childParams);
-        var pos         = (Vector2)parent.transform.position
-                        + RavineRandom.GetInsideCircle().normalized * 2f;
+        var pos         = parent.transform.position
+                        + (Vector3) RavineRandom.GetInsideCircle().normalized * 2f
+                        + Vector3.up * 5f;
 
         return SpawnEntity(pos, childCtx);
     }
 
-    public Entity2D SpawnCrossoverChild(Entity2D parentA, Entity2D parentB)
+    public Entity SpawnCrossoverChild(Entity parentA, Entity parentB)
     {
         if (_entities.Count >= maxPopulation) return null;
 
@@ -112,7 +113,7 @@ public class EntityManager : MonoBehaviour
         _foodCount++;
     }
 
-    private void HandleEntityDied(Entity2D entity)
+    private void HandleEntityDied(Entity entity)
     {
         _entities.Remove(entity);
         entity.OnDied             -= HandleEntityDied;
@@ -124,7 +125,7 @@ public class EntityManager : MonoBehaviour
         OnEntityDied?.Invoke(entity);
     }
 
-    private void HandleReproduceRequest(Entity2D parent) => SpawnChild(parent);
+    private void HandleReproduceRequest(Entity parent) => SpawnChild(parent);
 
     [Button]
     public void EvolveSharedWeights()
@@ -149,7 +150,7 @@ public class EntityManager : MonoBehaviour
     private Vector3 RandomPosition()
     {
         var v = RavineRandom.GetInsideCircle() * spawnRadius;
-        return transform.position + new Vector3(v.x, v.y, 0f);
+        return transform.position + new Vector3(v.x, 0, v.y);
     }
 
     private static GeneticParameters CrossoverGeneticParams(GeneticParameters a, GeneticParameters b)
@@ -169,8 +170,6 @@ public class EntityManager : MonoBehaviour
             GaussianNoise         = RavineRandom.RangeBool() ? pA.GaussianNoise         : pB.GaussianNoise,
             ExplorationPrice      = RavineRandom.RangeBool() ? pA.ExplorationPrice      : pB.ExplorationPrice,
             MutationChance        = RavineRandom.RangeBool() ? pA.MutationChance        : pB.MutationChance,
-            MutationStrength      = RavineRandom.RangeBool() ? pA.MutationStrength      : pB.MutationStrength,
-            BaseDelta             = RavineRandom.RangeBool() ? pA.BaseDelta             : pB.BaseDelta,
         }.GetMutatedGeneticParameters();
     }
 
