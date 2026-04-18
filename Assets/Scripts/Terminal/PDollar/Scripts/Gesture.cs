@@ -31,22 +31,20 @@ namespace TheRavine.Extensions
 
             theta[0] = theta[n - 1] = 0;
             for (int i = 1; i < n - 1; i++)
-                theta[i] = ShortAngle(points[i - 1], points[i], points[i + 1]) / Mathf.PI;
+                theta[i] = CosAngle(points[i - 1], points[i], points[i + 1]) / Mathf.PI;
 
             return theta;
         }
 
-        public static float ShortAngle(Point a, Point b, Point c)
+        public static float CosAngle(Point a, Point b, Point c)
         {
-            float lengthAB = Geometry.SqrEuclideanDistance(a, b);
-            float lengthBC = Geometry.SqrEuclideanDistance(b, c);
-            if (lengthAB == 0 || lengthBC == 0)
-                return 0;
+            float sqrAB = Geometry.SqrEuclideanDistance(a, b);
+            float sqrBC = Geometry.SqrEuclideanDistance(b, c);
+            if (sqrAB < float.Epsilon || sqrBC < float.Epsilon)
+                return 0f;
 
             float dotProduct = (b.X - a.X) * (c.X - b.X) + (b.Y - a.Y) * (c.Y - b.Y);
-            float cosTheta = dotProduct / Mathf.Sqrt(lengthAB * lengthBC);
-
-            return Mathf.Clamp(cosTheta, -1f, 1f);
+            return Mathf.Clamp(dotProduct / Mathf.Sqrt(sqrAB * sqrBC), -1f, 1f);
         }
 
         private static void Scale(ref Point[] points)

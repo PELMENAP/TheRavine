@@ -2,10 +2,6 @@ using System.Collections.Generic;
 
 namespace TheRavine.Base
 {
-    public class QbitLiteralNode : ExpressionNode
-    {
-        public int InitialState { get; set; }
-    }
 
     public enum ValueType
     {

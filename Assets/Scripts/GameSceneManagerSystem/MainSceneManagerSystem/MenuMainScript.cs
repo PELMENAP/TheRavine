@@ -47,14 +47,13 @@ namespace TheRavine.Base
         [SerializeField] private Button testStartGameButton;
 
         private readonly ReactiveProperty<MenuSection> currentSection = new(MenuSection.Menu);
-        private readonly ReactiveProperty<bool> isLoading = new(true);
         private readonly CompositeDisposable disposables = new();
 
         private readonly Dictionary<MenuSection, MenuSectionData> sectionLookup = new();
 
         private SceneLaunchService sceneLaunch;
 
-        private void Awake()
+        private void Start()
         {
             InitializeSceneLauncher();
             InitializeComponents();
@@ -69,8 +68,7 @@ namespace TheRavine.Base
                 testSceneIndex,
                 new SceneLoader(),
                 cameraData,
-                FaderOnTransit.Instance.GetFaderCamera(),
-                isLoading
+                FaderOnTransit.Instance.GetFaderCamera()
             );
 
             ServiceLocator.Services.Register(sceneLaunch);
@@ -106,7 +104,7 @@ namespace TheRavine.Base
                 {   
                     section.activationButton[i].onClick.AddListener(() =>
                     {
-                        if (!isLoading.Value)
+                        if (sceneLaunch.CanLaunch)
                             SwitchToSection(type);
                     });
                 }
@@ -130,7 +128,6 @@ namespace TheRavine.Base
             AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
             FaderOnTransit.Instance.FadeOut(() =>
             {
-                isLoading.Value = false;
                 SwitchToSection(MenuSection.Menu);
             });
 
@@ -139,7 +136,7 @@ namespace TheRavine.Base
 
         private void SwitchToSection(MenuSection s)
         {
-            if (!isLoading.Value)
+            if (sceneLaunch.CanLaunch)
                 currentSection.Value = s;
         }
 
@@ -151,7 +148,7 @@ namespace TheRavine.Base
 
         private void QuitGame()
         {
-            if (isLoading.Value) return;
+            if (!sceneLaunch.CanLaunch) return;
 
     #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
@@ -164,7 +161,6 @@ namespace TheRavine.Base
         {
             disposables.Dispose();
             currentSection.Dispose();
-            isLoading.Dispose();
         }
     }
 

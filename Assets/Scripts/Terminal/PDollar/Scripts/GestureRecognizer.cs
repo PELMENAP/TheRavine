@@ -91,7 +91,8 @@ namespace TheRavine.Extensions
             return aEntity.GetEntityComponent<T>();
         }
 
-
+        private bool _isPhysicallyDown;
+        private bool _isStrokeActive;
 
         private void Update()
         {
@@ -111,21 +112,25 @@ namespace TheRavine.Extensions
 
                 if (!isPressed)
                 {
-                    isPointerDown = false;
+                    _isPhysicallyDown = false;
+                    _isStrokeActive = false;
                 }
-                else if (!insideArea)
+                else if (insideArea)
                 {
-                    isPointerDown = true;
-                }
-                else
-                {
-                    if (!isPointerDown)
+                    if (!_isPhysicallyDown)
                     {
-                        isPointerDown = true;
+                        _isPhysicallyDown = true;
+                        _isStrokeActive = true;
                         HandlePointerDown();
                     }
 
-                    HandlePointerDrag();
+                    if (_isStrokeActive)
+                        HandlePointerDrag();
+                }
+                else
+                {
+                    if (!_isPhysicallyDown)
+                        _isPhysicallyDown = true;
                 }
             }
 

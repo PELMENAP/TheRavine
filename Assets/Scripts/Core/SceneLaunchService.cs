@@ -1,8 +1,8 @@
+using System;
+using Cysharp.Threading.Tasks;
+using R3;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
-using Cysharp.Threading.Tasks;
-using System;
-using R3;
 public sealed class SceneLaunchService
 {
     private readonly SceneLoader loader;
@@ -20,15 +20,14 @@ public sealed class SceneLaunchService
         int testIndex,
         SceneLoader sceneLoader,
         UniversalAdditionalCameraData cameraData,
-        Camera faderCamera,
-        ReactiveProperty<bool> isBusyFlag)
+        Camera faderCamera)
     {
         this.loader = sceneLoader;
         this.cameraData = cameraData;
         this.gameSceneIndex = gameIndex;
         this.testSceneIndex = testIndex;
         this.faderCamera = faderCamera;
-        this.isBusy = isBusyFlag;
+        this.isBusy = new(false);
     }
 
     public UniTask LaunchGame() =>
@@ -46,6 +45,7 @@ public sealed class SceneLaunchService
 
         try
         {
+            isBusy.Value = false;
             await loader.LoadScene(index);
         }
         catch (Exception ex)

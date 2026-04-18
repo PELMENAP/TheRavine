@@ -1,17 +1,20 @@
 using System;
-using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 using LitMotion;
 using LitMotion.Extensions;
+using TMPro;
+using Unity.Burst.CompilerServices;
+using UnityEngine;
+using UnityEngine.UI;
 
 public class FaderOnTransit : MonoBehaviour
 {
     private const string Fader_path = "Objects/Fader";
 
     [SerializeField] private Image[] fadeImage;
+    [SerializeField] private Image tipImage;
     [SerializeField] private TextMeshProUGUI loadingText, tipText;
     [SerializeField] private Camera _camera;
+    [SerializeField] private HintList hintList;
     
     private static FaderOnTransit _instance;
     private MotionHandle _currentMotionHandle;
@@ -66,7 +69,7 @@ public class FaderOnTransit : MonoBehaviour
         {
             _currentMotionHandle.Cancel();
         }
-
+        SetRandomTip();
         for(int i = 0; i < fadeImage.Length; i++)
         {
             _currentMotionHandle = LMotion.Create(fadeImage[i].color.a, 1f, 2f)
@@ -94,7 +97,7 @@ public class FaderOnTransit : MonoBehaviour
         {
             _currentMotionHandle.Cancel();
         }
-        
+        SetRandomTip();
         for(int i = 0; i < fadeImage.Length; i++)
         {
             _currentMotionHandle = LMotion.Create(fadeImage[i].color.a, 0f, 2f)
@@ -124,10 +127,23 @@ public class FaderOnTransit : MonoBehaviour
             loadingText.text = text;
     }
 
+    private void SetRandomTip()
+    {
+        var par = hintList.GetRandom();
+        SetTip(par.Text);
+        SetTipImage(par.Icon);
+    }
+
     public void SetTip(string text)
     {
         if (tipText != null)
             tipText.text = text;
+    }
+
+    public void SetTipImage(Sprite sprite)
+    {
+        if (sprite != null)
+            tipImage.sprite = sprite;
     }
 
     public Camera GetFaderCamera() => _camera;

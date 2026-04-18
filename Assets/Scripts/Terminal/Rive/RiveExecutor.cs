@@ -199,7 +199,6 @@ namespace TheRavine.Base
             return expr switch
             {
                 LiteralNode lit => lit.Value,
-                QbitLiteralNode qlit => new Qbit(qlit.InitialState),
                 VariableNode var => GetVariable(var.Name) ?? 0,
                 BinaryOpNode bin => await EvaluateBinaryOpAsync(bin),
                 FunctionCallNode funcCall => await EvaluateFunctionCallAsync(funcCall),
