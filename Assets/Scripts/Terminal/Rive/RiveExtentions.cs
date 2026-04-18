@@ -5,7 +5,6 @@ public static class RiveExtensions
         return value switch
         {
             int i => i.ToString(),
-            Qbit q => $"qbit(α={q.Alpha:F3}, β={q.Beta:F3})",
             null => "null",
             _ => value.ToString()
         };

@@ -19,9 +19,6 @@ namespace TheRavine.Base
             ["rand"] = Rand,
             ["sum"] = Sum,
             ["avg"] = Avg,
-            ["hadamard"] = Hadamard,
-            ["measure"] = Measure,
-            ["phase"] = Phase,
         };
 
         private static readonly HashSet<string> ReservedKeywords = new()
@@ -161,35 +158,6 @@ namespace TheRavine.Base
             }
             
             return UniTask.FromResult<object>(sum / args.Length);
-        }
-
-        private static UniTask<object> Hadamard(params object[] args)
-        {
-            if (args.Length != 1 || args[0] is not Qbit qbit)
-                throw new RiveRuntimeException("hadamard: expected 1 qbit argument");
-            
-            var result = qbit;
-            result.Hadamard();
-            return UniTask.FromResult<object>(result);
-        }
-
-        private static UniTask<object> Measure(params object[] args)
-        {
-            if (args.Length != 1 || args[0] is not Qbit qbit)
-                throw new RiveRuntimeException("measure: expected 1 qbit argument");
-            
-            var mutableQbit = qbit;
-            return UniTask.FromResult<object>(mutableQbit.Measure());
-        }
-
-        private static UniTask<object> Phase(params object[] args)
-        {
-            if (args.Length != 2 || args[0] is not Qbit qbit || args[1] is not int angleDegrees)
-                throw new RiveRuntimeException("phase: expected qbit and int (angle in degrees)");
-            
-            var result = qbit;
-            result.Phase(angleDegrees);
-            return UniTask.FromResult<object>(result);
         }
     }
 }

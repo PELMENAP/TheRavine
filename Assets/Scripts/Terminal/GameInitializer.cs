@@ -69,17 +69,17 @@ public class GameInitializer : MonoBehaviour
         }
     }
 
-    private void OnDestroy()
-    {
-        _onMessageDisplayTerminal -= terminal.Display;
+    // private void OnDestroy()
+    // {
+    //     _onMessageDisplayTerminal -= terminal.Display;
         
-        if (ServiceLocator.Services.TryGet<AutosaveCoordinator>(out var autosave))
-        {
-            autosave.Stop();
-        }
+    //     if (ServiceLocator.Services.TryGet<AutosaveCoordinator>(out var autosave))
+    //     {
+    //         autosave.Stop();
+    //     }
 
-        ServiceLocator.ClearAll();
-    }
+    //     ServiceLocator.ClearAll();
+    // }
 
     private void OnApplicationPause(bool pauseStatus)
     {

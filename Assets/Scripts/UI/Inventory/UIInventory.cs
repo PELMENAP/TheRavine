@@ -1,3 +1,8 @@
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+
 using TheRavine.Base;
 using TheRavine.InventoryElements;
 using TheRavine.Generator;
@@ -5,11 +10,6 @@ using TheRavine.ObjectControl;
 using TheRavine.Extensions;
 using TheRavine.EntityControl;
 using TheRavine.Events;
-
-using UnityEngine;
-using System;
-using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Inventory
 {
@@ -71,8 +71,8 @@ namespace TheRavine.Inventory
 
         private async UniTaskVoid LoadInventoryDataAsync(PlayerEntity playerData)
         {
-            try
-            {
+            // try
+            // {
                 var state = worldRegistry.GetCurrentState();
                 logger.LogInfo($"[UIInventory] Загрузка инвентаря, cycleCount: {state.cycleCount}");
                 
@@ -100,11 +100,11 @@ namespace TheRavine.Inventory
                 EventBus playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
                 playerEventBus.Subscribe<PlaceEvent>(PlaceObjectEvent);
                 playerEventBus.Subscribe<PickUpEvent>(PickUpEvent);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError($"[UIInventory] Ошибка загрузки инвентаря: {ex.Message}");
-            }
+            // }
+            // catch (Exception ex)
+            // {
+            //     logger.LogError($"[UIInventory] Ошибка загрузки инвентаря: {ex.Message}");
+            // }
         }
 
         private void PlaceObjectEvent(AEntity entity, PlaceEvent e)
