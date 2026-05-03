@@ -308,6 +308,9 @@ namespace TheRavine.EntityControl
             // try
             // {
                 act = false;
+                
+                Debug.Log(crosshair.position);
+
                 entityEventBus.Invoke(playerEntity, new PlaceEvent { Position = Extension.RoundVector2D(crosshair.position) } );
                 await UniTask.Delay(placeObjectDelay);
                 act = true;

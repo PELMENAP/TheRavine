@@ -128,7 +128,7 @@ namespace TheRavine.EntityControl
         protected override void OnViewDisable()
         {
             
-        }
+        } 
         public override void OnDestroy() 
         {
             cameraComponent?.Dispose();

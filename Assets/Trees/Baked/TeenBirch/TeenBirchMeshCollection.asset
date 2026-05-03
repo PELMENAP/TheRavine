@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36232c7ac27f177e8810571cc4703052, type: 3}
+  m_Name: TeenBirchMeshCollection
+  m_EditorClassIdentifier: ObjectSystem::TreeMeshCollection
+  _entries:
+  - {fileID: 4300000, guid: 6acc7843b54d5cf169da36c4478f5bea, type: 2}
+  - {fileID: 4300000, guid: 7c77d107bb7494c518ba03bfa1530298, type: 2}
+  - {fileID: 4300000, guid: 08b8f68279453bea0ae77911fc93df5b, type: 2}
+  - {fileID: 4300000, guid: 3a5e05736b929f5849b4c566cf54e05a, type: 2}
+  - {fileID: 4300000, guid: da9d15b397c83866595c8f724335b033, type: 2}
+  - {fileID: 4300000, guid: 941843ae273d3a6edb7bd3c98c5e1ca6, type: 2}
+  - {fileID: 4300000, guid: 537077ae8f3c3c60890d55cca2644d67, type: 2}
+  - {fileID: 4300000, guid: f17616f321ddce17fb5ddb2d11fc772a, type: 2}

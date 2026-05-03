@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
 using Cysharp.Threading.Tasks;
 using R3;
+using Unity.Netcode;
 
 namespace TheRavine.Base
 {
@@ -66,15 +67,10 @@ namespace TheRavine.Base
         public void SwitchToMainMenu(){
             InTheEnd(() => TransitToOtherScene(0));
         }
-        public void SwitchToParallaxScene(){
-            InTheEnd(() => TransitToOtherScene(1));
-        }
-
         private void InTheEnd(Action inTheEndCallback)
         {
-            // if(DataStorage.sceneClose) return;
-            // DataStorage.sceneClose = true;
             gameStateMachine.BreakUpServices();
+            NetworkManager.Singleton.Shutdown();
             inTheEndCallback?.Invoke();
         }
 

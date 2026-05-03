@@ -71,8 +71,8 @@ namespace TheRavine.Inventory
 
         private async UniTaskVoid LoadInventoryDataAsync(PlayerEntity playerData)
         {
-            // try
-            // {
+            try
+            {
                 var state = worldRegistry.GetCurrentState();
                 logger.LogInfo($"[UIInventory] Загрузка инвентаря, cycleCount: {state.cycleCount}");
                 
@@ -100,11 +100,11 @@ namespace TheRavine.Inventory
                 EventBus playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
                 playerEventBus.Subscribe<PlaceEvent>(PlaceObjectEvent);
                 playerEventBus.Subscribe<PickUpEvent>(PickUpEvent);
-            // }
-            // catch (Exception ex)
-            // {
-            //     logger.LogError($"[UIInventory] Ошибка загрузки инвентаря: {ex.Message}");
-            // }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"[UIInventory] Ошибка загрузки инвентаря: {ex.Message}");
+            }
         }
 
         private void PlaceObjectEvent(AEntity entity, PlaceEvent e)

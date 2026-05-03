@@ -92,7 +92,8 @@ namespace TheRavine.Base
                     if (pos + 1 < line.Length)
                     {
                         var twoChar = line.Substring(pos, 2);
-                        if (twoChar == ">=" || twoChar == "<=" || twoChar == "==" || twoChar == "!=")
+                        if (twoChar == ">=" || twoChar == "<=" || twoChar == "==" || twoChar == "!=" ||
+                                twoChar == "&&" || twoChar == "||")
                         {
                             tokens.Add(new Token(TokenType.Operator, twoChar, lineIndex));
                             pos += 2;
@@ -100,7 +101,7 @@ namespace TheRavine.Base
                         }
                     }
                     
-                    if ("(){}=+-*/<>,".Contains(line[pos]))
+                    if ("(){}=+-*/<>,[]:!".Contains(line[pos]))
                     {
                         var type = line[pos] switch
                         {
@@ -108,6 +109,8 @@ namespace TheRavine.Base
                             ')' => TokenType.RightParen,
                             '{' => TokenType.LeftBrace,
                             '}' => TokenType.RightBrace,
+                            '[' => TokenType.LeftBracket,   
+                            ']' => TokenType.RightBracket,  
                             '=' => TokenType.Equal,
                             ',' => TokenType.Comma,
                             _ => TokenType.Operator
@@ -199,6 +202,12 @@ namespace TheRavine.Base
                 statement = ParseTerminalCommand(Previous().Value);
             else if (Check(TokenType.Identifier) && Peek(1)?.Type == TokenType.Equal)
                 statement = ParseAssignment();
+            else if (Check(TokenType.Identifier) && Peek(1)?.Type == TokenType.LeftBracket && Peek(2) != null)
+                statement = ParseIndexAssign();
+            else if (Check(TokenType.Identifier) && Peek(1)?.Type == TokenType.LeftParen)
+                statement = new ExpressionStatementNode { Expression = ParseExpression() };
+            else if (Check(TokenType.Identifier))
+                statement = ParseImplicitTerminalCommand();
             else
                 throw LogAndThrow($"Unexpected token: {Current().Value}");
             
@@ -231,7 +240,18 @@ namespace TheRavine.Base
                 Value = value
             };
         }
-        
+
+        private IndexAssignNode ParseIndexAssign()
+        {
+            var name = Consume(TokenType.Identifier, "Expected array name").Value;
+            Consume(TokenType.LeftBracket, "Expected '['");
+            var index = ParseExpression();
+            Consume(TokenType.RightBracket, "Expected ']'");
+            Consume(TokenType.Equal, "Expected '='");
+            var value = ParseExpression();
+            return new IndexAssignNode { ArrayName = name, Index = index, Value = value };
+        }
+                
         private IfNode ParseIf()
         {
             var condition = ParseExpression();
@@ -323,10 +343,57 @@ namespace TheRavine.Base
                 VariableReferences = variables
             };
         }
-        
-        private ExpressionNode ParseExpression()
+
+        private TerminalCommandNode ParseImplicitTerminalCommand()
         {
-            return ParseComparison();
+            var sb = new System.Text.StringBuilder("~");
+            bool needSpace = false;
+            
+            while (!Check(TokenType.NewLine) && !Check(TokenType.EOF)
+                && !Check(TokenType.End) && !Check(TokenType.Else))
+            {
+                if (needSpace) sb.Append(' ');
+                needSpace = true;
+                
+                if (Check(TokenType.LeftBrace))
+                {
+                    Advance();
+                    var varName = Consume(TokenType.Identifier, "Expected variable name after '{'").Value;
+                    Consume(TokenType.RightBrace, "Expected '}'");
+                    sb.Append('{').Append(varName).Append('}');
+                    needSpace = false;
+                }
+                else
+                {
+                    sb.Append(Current().Value);
+                    Advance();
+                }
+            }
+            return ParseTerminalCommand(sb.ToString());
+        }
+
+        private ExpressionNode ParseExpression() => ParseLogicalOr();
+
+        private ExpressionNode ParseLogicalOr()
+        {
+            var expr = ParseLogicalAnd();
+            while (Check(TokenType.Operator) && Current().Value == "||")
+            {
+                Advance();
+                expr = new BinaryOpNode { Left = expr, Right = ParseLogicalAnd(), Operator = BinaryOperator.Or };
+            }
+            return expr;
+        }
+
+        private ExpressionNode ParseLogicalAnd()
+        {
+            var expr = ParseComparison();
+            while (Check(TokenType.Operator) && Current().Value == "&&")
+            {
+                Advance();
+                expr = new BinaryOpNode { Left = expr, Right = ParseComparison(), Operator = BinaryOperator.And };
+            }
+            return expr;
         }
         
         private ExpressionNode ParseComparison()
@@ -408,6 +475,29 @@ namespace TheRavine.Base
 
         private ExpressionNode ParsePrimary()
         {
+            if (Check(TokenType.Operator) && Current().Value == "-")
+            {
+                Advance();
+                return new UnaryOpNode { Operand = ParsePrimary(), Operator = UnaryOperator.Negate };
+            }
+            
+            if (Check(TokenType.Operator) && Current().Value == "!")
+            {
+                Advance();
+                return new UnaryOpNode { Operand = ParsePrimary(), Operator = UnaryOperator.Not };
+            }
+            
+            if (Match(TokenType.LeftBracket))
+            {
+                var elements = new List<ExpressionNode>();
+                if (!Check(TokenType.RightBracket))
+                {
+                    do { elements.Add(ParseExpression()); } while (Match(TokenType.Comma));
+                }
+                Consume(TokenType.RightBracket, "Expected ']'");
+                return new ArrayLiteralNode { Elements = elements };
+            }
+            
             if (Match(TokenType.Number))
                 return new LiteralNode { Value = int.Parse(Previous().Value) };
 
@@ -439,6 +529,13 @@ namespace TheRavine.Base
             if (Check(TokenType.Identifier))
             {
                 var name = Advance().Value;
+
+                if (Match(TokenType.LeftBracket))
+                {
+                    var index = ParseExpression();
+                    Consume(TokenType.RightBracket, "Expected ']'");
+                    return new IndexAccessNode { ArrayName = name, Index = index };
+                }
 
                 if (Match(TokenType.LeftParen))
                 {
@@ -527,6 +624,8 @@ namespace TheRavine.Base
             _logger.LogError($"Line {Current().Line}: {message}");
             return new RiveParseException(message, Current().Line);
         }
+
+        
     }
 
     public enum TokenType
@@ -536,7 +635,8 @@ namespace TheRavine.Base
         Equal, Comma, NewLine,
         Int, If, Else, For, To, End, Log, Return, TerminalCommand,
         Wait, Get, Send,
-        EOF
+        EOF,
+        LeftBracket, RightBracket
     }
 
     public class Token

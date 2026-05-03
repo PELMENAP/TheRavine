@@ -160,7 +160,7 @@ Material:
     - _DstBlend: 0
     - _LittleForestGrassHeight: 7.5
     - _MeadowGrassHeight: 6.5
-    - _NearWaterGrassHeight: 5.14
+    - _NearWaterGrassHeight: 5
     - _Noise: 0.5
     - _QueueControl: 0
     - _QueueOffset: 0

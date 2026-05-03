@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36232c7ac27f177e8810571cc4703052, type: 3}
+  m_Name: TreeMeshCollection
+  m_EditorClassIdentifier: ObjectSystem::TreeMeshCollection
+  _entries:
+  - mesh: {fileID: 4300000, guid: 5bd19c8753ea674f7847ca73371ffdca, type: 2}
+  - mesh: {fileID: 4300000, guid: 7e677ca0def7083279f8ea9d670e525b, type: 2}
+  - mesh: {fileID: 4300000, guid: 898bd035f5d4ce540b13d11ce4908523, type: 2}
+  - mesh: {fileID: 4300000, guid: eedcc1d486ac1881e8bd790259ad3c12, type: 2}
+  - mesh: {fileID: 4300000, guid: 2c1500c62a7e55cf0921d66aa0e5ea76, type: 2}
+  - mesh: {fileID: 4300000, guid: 9aa1b395a9d01e2cc8ceee86b1f49a3c, type: 2}
+  - mesh: {fileID: 4300000, guid: 4287072a35eab617fa9954d75e0bcccd, type: 2}
+  - mesh: {fileID: 4300000, guid: 36b22e4714f5291c8a524e1f9444e3a7, type: 2}

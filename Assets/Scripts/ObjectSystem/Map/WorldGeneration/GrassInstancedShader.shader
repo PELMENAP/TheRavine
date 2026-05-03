@@ -185,7 +185,7 @@ Shader "Custom/ChunkGrassShader"
                 
                 Light mainLight = GetMainLight();
                 float3 lighting = mainLight.color * max(0.0, dot(input.normalWS, mainLight.direction));
-                lighting += SampleSH(input.normalWS) + 0.01;
+                lighting += SampleSH(input.normalWS) / 10;
                 
                 finalColor.rgb *= lighting * ao;
                 

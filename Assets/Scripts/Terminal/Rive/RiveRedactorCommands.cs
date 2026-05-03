@@ -46,7 +46,10 @@ namespace TheRavine.Base
             try
             {
                 context.Display(String.Join(" ", scriptArgs));
-                var result = await context.ScriptInterpreter.ExecuteScriptAsync(fileName, scriptArgs.ToArray());
+                
+                var objArgs = new object[scriptArgs.Count];
+                for (int i = 0; i < scriptArgs.Count; i++) objArgs[i] = scriptArgs[i];
+                var result = await context.ScriptInterpreter.ExecuteScriptAsync(fileName, objArgs);
                 
                 if (result.Success)
                 {
