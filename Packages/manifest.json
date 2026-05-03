@@ -7,10 +7,11 @@
     "com.unity.netcode.gameobjects": "2.11.0",
     "com.unity.postprocessing": "3.5.1",
     "com.unity.render-pipelines.universal": "17.3.0",
-    "com.unity.sdk.linux-x86_64": "1.0.2",
-    "com.unity.toolchain.linux-x86_64-linux": "1.0.2",
+    "com.unity.sdk.linux-x86_64": "1.1.0",
+    "com.unity.toolchain.linux-x86_64-linux": "1.1.0",
     "com.unity.transport": "2.7.2",
     "com.unity.ugui": "2.0.0",
+    "com.warwlock.mtree": "https://github.com/Warwlock/MTree.git",
     "com.unity.modules.animation": "1.0.0",
     "com.unity.modules.assetbundle": "1.0.0",
     "com.unity.modules.audio": "1.0.0",
@@ -25,6 +26,7 @@
     "com.unity.modules.unitywebrequestaudio": "1.0.0",
     "com.unity.modules.unitywebrequesttexture": "1.0.0",
     "com.unity.modules.unitywebrequestwww": "1.0.0",
-    "com.unity.modules.video": "1.0.0"
+    "com.unity.modules.video": "1.0.0",
+    "com.unity.modules.wind": "1.0.0"
   }
 }

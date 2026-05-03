@@ -81,6 +81,8 @@ namespace TheRavine.Base
                 TerminalCommandNode termCmd => await ExecuteTerminalCommandAsync(termCmd),
                 LogNode log => await ExecuteLogAsync(log),
                 WaitNode wait => await ExecuteWaitAsync(wait),
+                ExpressionStatementNode exprStmt => await ExecuteExpressionStatementAsync(exprStmt),
+                IndexAssignNode idxAssign        => await ExecuteIndexAssignAsync(idxAssign),
                 _ => ExecutionResult.CreateError($"Unknown statement type: {statement.GetType().Name}")
             };
         }
@@ -204,6 +206,9 @@ namespace TheRavine.Base
                 FunctionCallNode funcCall => await EvaluateFunctionCallAsync(funcCall),
                 GetInputNode => await _inputStream.GetAsync(),
                 SendToInteractorNode send => await EvaluateSendAsync(send),
+                UnaryOpNode unary       => await EvaluateUnaryOpAsync(unary),
+                ArrayLiteralNode arrLit => await EvaluateArrayLiteralAsync(arrLit),
+                IndexAccessNode idxAcc  => await EvaluateIndexAccessAsync(idxAcc),
                 _ => 0
             };
         }
@@ -222,6 +227,15 @@ namespace TheRavine.Base
                 BinaryOperator.Subtract => l - r,
                 BinaryOperator.Multiply => l * r,
                 BinaryOperator.Divide => r != 0 ? l / r : 0,
+                BinaryOperator.And => (l != 0 && r != 0) ? 1 : 0,
+                BinaryOperator.Or  => (l != 0 || r != 0) ? 1 : 0,
+
+                BinaryOperator.Greater => l > r ? 1 : 0,
+                BinaryOperator.Less => l < r ? 1 : 0,
+                BinaryOperator.GreaterOrEqual => l >= r ? 1 : 0,
+                BinaryOperator.LessOrEqual => l <= r ? 1 : 0,
+                BinaryOperator.Equal => l == r ? 1 : 0,
+                BinaryOperator.NotEqual => l != r ? 1 : 0,
                 _ => 0
             };
         }
@@ -245,30 +259,71 @@ namespace TheRavine.Base
                 return 0;
             return await _interactorRegistry.SendToInteractorAsync(node.InteractorName, intValue);
         }
-        
-        private async UniTask<bool> EvaluateConditionAsync(ExpressionNode expr)
+
+        private async UniTask<object> EvaluateUnaryOpAsync(UnaryOpNode node)
         {
-            if (expr is not BinaryOpNode bin)
-                return false;
-            
-            var left = await EvaluateExpressionAsync(bin.Left);
-            var right = await EvaluateExpressionAsync(bin.Right);
-            
-            if (left is not int l || right is not int r)
-                return false;
-            
-            return bin.Operator switch
+            var operand = await EvaluateExpressionAsync(node.Operand);
+            if (operand is not int v) return 0;
+            return node.Operator switch
             {
-                BinaryOperator.Greater => l > r,
-                BinaryOperator.Less => l < r,
-                BinaryOperator.GreaterOrEqual => l >= r,
-                BinaryOperator.LessOrEqual => l <= r,
-                BinaryOperator.Equal => l == r,
-                BinaryOperator.NotEqual => l != r,
-                _ => false
+                UnaryOperator.Negate => -v,
+                UnaryOperator.Not    => v == 0 ? 1 : 0,
+                _ => 0
             };
         }
-        
+
+        private async UniTask<object> EvaluateArrayLiteralAsync(ArrayLiteralNode node)
+        {
+            var list = new List<int>(node.Elements.Count);
+            foreach (var el in node.Elements)
+            {
+                var val = await EvaluateExpressionAsync(el);
+                list.Add(val is int i ? i : 0);
+            }
+            return list;
+        }
+
+        private async UniTask<object> EvaluateIndexAccessAsync(IndexAccessNode node)
+        {
+            var arr = GetVariable(node.ArrayName);
+            if (arr is not List<int> list) return 0;
+            
+            var idx = await EvaluateExpressionAsync(node.Index);
+            if (idx is not int i || i < 0 || i >= list.Count) return 0;
+            
+            return list[i];
+        }
+                
+        private async UniTask<bool> EvaluateConditionAsync(ExpressionNode expr)
+        {
+            var result = await EvaluateExpressionAsync(expr);
+            if (result is int iv) return iv != 0;
+            return false;
+        }
+        private async UniTask<ExecutionResult> ExecuteExpressionStatementAsync(ExpressionStatementNode node)
+        {
+            await EvaluateExpressionAsync(node.Expression);
+            return ExecutionResult.CreateSuccess();
+        }
+
+        private async UniTask<ExecutionResult> ExecuteIndexAssignAsync(IndexAssignNode node)
+        {
+            var arr = GetVariable(node.ArrayName);
+            if (arr is not List<int> list)
+                return ExecutionResult.CreateError($"'{node.ArrayName}' is not an array");
+            
+            var idx = await EvaluateExpressionAsync(node.Index);
+            var val = await EvaluateExpressionAsync(node.Value);
+            
+            if (idx is not int i || val is not int v)
+                return ExecutionResult.CreateError("Array index and value must be int");
+            
+            if (i < 0 || i >= list.Count)
+                return ExecutionResult.CreateError($"Index {i} out of range [0..{list.Count - 1}]");
+            
+            list[i] = v;
+            return ExecutionResult.CreateSuccess();
+        }
         private void PushScope()
         {
             _variableScopes.Push(new Dictionary<string, object>());

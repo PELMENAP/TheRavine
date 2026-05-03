@@ -34,7 +34,8 @@ namespace TheRavine.Base
     public enum BinaryOperator
     {
         Add, Subtract, Multiply, Divide,
-        Greater, Less, GreaterOrEqual, LessOrEqual, Equal, NotEqual
+        Greater, Less, GreaterOrEqual, LessOrEqual, Equal, NotEqual,
+        And, Or 
     }
 
     public class FunctionCallNode : ExpressionNode
@@ -107,5 +108,37 @@ namespace TheRavine.Base
         public string Name { get; set; }
         public List<string> Parameters { get; set; } = new();
         public List<StatementNode> Statements { get; set; } = new();
+    }
+
+    public enum UnaryOperator { Negate, Not }
+
+    public class UnaryOpNode : ExpressionNode
+    {
+        public ExpressionNode Operand { get; set; }
+        public UnaryOperator Operator { get; set; }
+    }
+
+    public class ExpressionStatementNode : StatementNode
+    {
+        public ExpressionNode Expression { get; set; }
+    }
+
+    // Основа для массивов:
+    public class ArrayLiteralNode : ExpressionNode
+    {
+        public List<ExpressionNode> Elements { get; set; } = new();
+    }
+
+    public class IndexAccessNode : ExpressionNode
+    {
+        public string ArrayName { get; set; }
+        public ExpressionNode Index { get; set; }
+    }
+
+    public class IndexAssignNode : StatementNode
+    {
+        public string ArrayName { get; set; }
+        public ExpressionNode Index { get; set; }
+        public ExpressionNode Value { get; set; }
     }
 }

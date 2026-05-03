@@ -47,7 +47,7 @@ namespace TheRavine.ObjectControl
             {
                 Vector2Int newPosition = position + currentData.AdditionalOccupiedCells[i];
                 if(!global.ContainsKey(newPosition))
-                    global[newPosition] = new ObjectInstInfo(Vector3.zero, -1, 0, InstanceType.Static, false);
+                    global[newPosition] = new ObjectInstInfo(Vector3.zero, -1, 0, InstanceType.Static);
             }
             return true;
         }
@@ -100,17 +100,15 @@ namespace TheRavine.ObjectControl
         public readonly InstanceType Type;
         public readonly Vector3 Position;
         public readonly int Amount;
-        public readonly bool Exists;
 
         public ObjectInstInfo(
             Vector3 pos, int prefab, int amount,
-            InstanceType type, bool exists = true)
+            InstanceType type)
         {
             Position = pos;
             PrefabID = prefab;
             Amount = amount;
             Type = type;
-            Exists = exists;
         }
     }
 }

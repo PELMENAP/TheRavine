@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36232c7ac27f177e8810571cc4703052, type: 3}
+  m_Name: BigBirchMeshCollection
+  m_EditorClassIdentifier: ObjectSystem::TreeMeshCollection
+  _entries:
+  - {fileID: 4300000, guid: 3601f34cc946850d4867a5f112778af1, type: 2}
+  - {fileID: 4300000, guid: a83f51cec544841c3b5eb5d75513a113, type: 2}
+  - {fileID: 4300000, guid: 75be62b166d896c6f8c89e98357331c0, type: 2}
+  - {fileID: 4300000, guid: e0885b47c8f41308b889e84a16bb3125, type: 2}
+  - {fileID: 4300000, guid: 5fc47efde0da03c65a71f5522cdb0e56, type: 2}
+  - {fileID: 4300000, guid: 678a35ee42a716b57979629efb34c18f, type: 2}

@@ -74,6 +74,7 @@ namespace TheRavine.ObjectControl
         {
             private readonly GameObject gameObject;
             private readonly Transform transform;
+            private readonly IPlaceable placeableScript;
 
             public ObjectInstance(GameObject obj, Transform parent)
             {
@@ -81,17 +82,25 @@ namespace TheRavine.ObjectControl
                 transform = obj.transform;
                 obj.transform.parent = parent;
                 obj.SetActive(false);
+
+                placeableScript = gameObject.GetComponent<IPlaceable>();
             }
 
             public void Reuse(Vector3 position)
             {
                 transform.position = position;
+                if(placeableScript != null)
+                    PlaceDetermine((int)(position.x + position.z));
                 gameObject.SetActive(true);
             }
 
             public void Deactivate()
             {
                 gameObject.SetActive(false);
+            }
+            public void PlaceDetermine(int seed)
+            {
+                placeableScript.Place(seed);
             }
         }
     }
