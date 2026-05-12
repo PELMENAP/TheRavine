@@ -44,7 +44,6 @@ public class TreeMeshBaker : EditorWindow
 
         for (int i = 0; i < _count; i++)
         {
-            // Выставляем seed всем функциям детерминированно
             var rng = new System.Random(i);
             foreach (var func in _source.treeFunctionsAssets)
                 func.seed = rng.Next(0, 10000);

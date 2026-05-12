@@ -984,10 +984,10 @@ TextureImporter:
       name: menu_button_39
       rect:
         serializedVersion: 2
-        x: 678
-        y: 169
-        width: 50
-        height: 55
+        x: 676
+        y: 167
+        width: 63
+        height: 62
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -1011,7 +1011,7 @@ TextureImporter:
         width: 302
         height: 143
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []

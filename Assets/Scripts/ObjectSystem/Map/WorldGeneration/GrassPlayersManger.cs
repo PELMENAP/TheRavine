@@ -6,14 +6,14 @@ public class GrassPlayersManger : MonoBehaviour
     [SerializeField] private Transform player;
     [SerializeField] private Material grassMaterial;
 
-    private Vector4 playerPosition;
+    private Vector3 playerPosition;
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
         UpdatePlayerPositions();
     }
 
-    void UpdatePlayerPositions()
+    private void UpdatePlayerPositions()
     {
         if (player != null)
         {
@@ -21,7 +21,7 @@ public class GrassPlayersManger : MonoBehaviour
         }
         else
         {
-            playerPosition = new Vector4(0, -10000, 0, 0);
+            playerPosition = new Vector3(0, -10000, 0);
         }
         
         grassMaterial.SetVector("_PlayerPosition", playerPosition);

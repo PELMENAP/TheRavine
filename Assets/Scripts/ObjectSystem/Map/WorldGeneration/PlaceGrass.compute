@@ -176,7 +176,7 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     int localX = (int)(cellIndex % gridWidth);
     int localZ = (int)(cellIndex / gridWidth);
 
-     if ((int)localZ < occlusionMinZ || (int)localX < occlusionMinX || (int)localX > occlusionMaxX)
+     if ((int)localX < occlusionMinX || (int)localX > occlusionMaxX)
     {
         instanceData[id.x] = MakeCulledInstance();
         return;

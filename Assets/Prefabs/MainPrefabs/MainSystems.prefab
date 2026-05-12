@@ -835,6 +835,126 @@ PrefabInstance:
       propertyPath: sunGradient.m_ColorSpace
       value: -1
       objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.size
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[1].time
+      value: 0.16089515
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[2].time
+      value: 0.20179439
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[3].time
+      value: 0.50539416
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[4].time
+      value: 0.78131986
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[5].time
+      value: 0.8038481
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[6].time
+      value: 0.99782044
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[1].value
+      value: 0.3349249
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[2].value
+      value: 0.6696458
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[3].value
+      value: 0.9452714
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[4].value
+      value: 0.6280492
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[5].value
+      value: 0.30951035
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[6].value
+      value: 0.51531345
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[1].inSlope
+      value: -0.016220124
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[2].inSlope
+      value: 2.6135383
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[3].inSlope
+      value: 0.003643509
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[4].inSlope
+      value: -3.0122285
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[5].inSlope
+      value: -0.045890257
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[1].outSlope
+      value: -0.016220124
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[2].outSlope
+      value: 2.6135383
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[3].outSlope
+      value: 0.003643509
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[4].inWeight
+      value: 0.33333334
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[4].outSlope
+      value: -3.0122285
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[5].inWeight
+      value: 0.33333334
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[5].outSlope
+      value: -0.045890257
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[1].outWeight
+      value: 0.29879934
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[2].outWeight
+      value: 0.33333334
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[3].outWeight
+      value: 0.33333334
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[4].outWeight
+      value: 0.33333334
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: shadowStrengthCurve.m_Curve.Array.data[5].outWeight
+      value: 0.5545423
+      objectReference: {fileID: 0}
     - target: {fileID: 6400751825280318941, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

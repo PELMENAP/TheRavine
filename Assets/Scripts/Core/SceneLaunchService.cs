@@ -45,12 +45,15 @@ public sealed class SceneLaunchService
 
         try
         {
-            isBusy.Value = false;
             await loader.LoadScene(index);
         }
         catch (Exception ex)
         {
             Debug.LogError($"Ошибка загрузки сцены {index}: {ex.Message}");
+            isBusy.Value = false;
+        }
+        finally
+        {
             isBusy.Value = false;
         }
     }

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36232c7ac27f177e8810571cc4703052, type: 3}
+  m_Name: TeenSpruceMeshCollection
+  m_EditorClassIdentifier: ObjectSystem::TreeMeshCollection
+  _entries:
+  - {fileID: 4300000, guid: 1878758eee22cd97994f8c19d4851574, type: 2}
+  - {fileID: 4300000, guid: 3abfdabe982704b168d6f38f9eec28bf, type: 2}
+  - {fileID: 4300000, guid: 253b4b3617a8cdc1493b8d358089818b, type: 2}
+  - {fileID: 4300000, guid: 6142d037964784fb9b110098af896c3a, type: 2}
+  - {fileID: 4300000, guid: 7e9b72b8e4e20f892be401704fc69753, type: 2}
+  - {fileID: 4300000, guid: e13755e383bda08a1be967bc33eae83b, type: 2}
+  - {fileID: 4300000, guid: d9e2ec4c42915cdebb3786c4c63f9aac, type: 2}
+  - {fileID: 4300000, guid: 38128112e32de80e1a2f47c1ad93ad27, type: 2}

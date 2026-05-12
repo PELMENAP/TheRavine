@@ -7,41 +7,119 @@ namespace TheRavine.Security
 {
     public static class EncryptionUtility
     {
-        private static readonly string encryptionKey = "00240ny87c2yn2t42ux7v12390uv5c02mx88924";
-        private static readonly byte[] salt = Encoding.UTF8.GetBytes("01jr8h232h9u3he27g3");
+        private const string EncryptionKey =
+            "00240ny87c2yn2t42ux7v12390uv5c02mx88924";
+
+        private static readonly byte[] CachedKey;
+        private static readonly byte[] CachedHmacKey;
+
+        static EncryptionUtility()
+        {
+            using var sha = SHA512.Create();
+            byte[] hash = sha.ComputeHash(
+                Encoding.UTF8.GetBytes(EncryptionKey));
+
+            CachedKey = new byte[32];
+            CachedHmacKey = new byte[32];
+
+            Buffer.BlockCopy(hash, 0, CachedKey, 0, 32);
+            Buffer.BlockCopy(hash, 32, CachedHmacKey, 0, 32);
+        }
 
         public static byte[] EncryptBytes(byte[] plainBytes)
         {
             using Aes aes = Aes.Create();
-            aes.Key = new Rfc2898DeriveBytes(encryptionKey, salt).GetBytes(aes.KeySize / 8);
+
+            aes.Key = CachedKey;
             aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
             aes.GenerateIV();
 
-            using var encryptStream = new MemoryStream();
-            encryptStream.Write(aes.IV, 0, aes.IV.Length);
-            using (var cryptoStream = new CryptoStream(encryptStream, aes.CreateEncryptor(), CryptoStreamMode.Write))
+            using var cipherStream = new MemoryStream();
+
+            cipherStream.Write(aes.IV);
+
+            using (var cryptoStream = new CryptoStream(
+                    cipherStream,
+                    aes.CreateEncryptor(),
+                    CryptoStreamMode.Write))
             {
-                cryptoStream.Write(plainBytes, 0, plainBytes.Length);
+                cryptoStream.Write(plainBytes);
                 cryptoStream.FlushFinalBlock();
             }
-            return encryptStream.ToArray();
+
+            byte[] encryptedData = cipherStream.ToArray();
+
+            using var hmac = new HMACSHA256(CachedHmacKey);
+            byte[] hash = hmac.ComputeHash(encryptedData);
+
+            byte[] result = new byte[
+                encryptedData.Length + hash.Length];
+
+            Buffer.BlockCopy(
+                encryptedData,
+                0,
+                result,
+                0,
+                encryptedData.Length);
+
+            Buffer.BlockCopy(
+                hash,
+                0,
+                result,
+                encryptedData.Length,
+                hash.Length);
+
+            return result;
         }
 
         public static byte[] DecryptBytes(byte[] cipherBytes)
         {
+            const int hmacSize = 32;
+            const int ivSize = 16;
+
+            if (cipherBytes.Length < ivSize + hmacSize)
+                throw new CryptographicException("Invalid data");
+
+            int encryptedLength = cipherBytes.Length - hmacSize;
+
+            using (var hmac = new HMACSHA256(CachedHmacKey))
+            {
+                byte[] computedHash = hmac.ComputeHash(
+                    cipherBytes,
+                    0,
+                    encryptedLength);
+
+                for (int i = 0; i < hmacSize; i++)
+                {
+                    if (computedHash[i] != cipherBytes[encryptedLength + i])
+                        throw new CryptographicException("Data corrupted");
+                }
+            }
+
             using Aes aes = Aes.Create();
-            aes.Key = new Rfc2898DeriveBytes(encryptionKey, salt).GetBytes(aes.KeySize / 8);
+
+            aes.Key = CachedKey;
             aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
 
-            byte[] iv = new byte[aes.BlockSize / 8];
-            Array.Copy(cipherBytes, 0, iv, 0, iv.Length);
-            aes.IV = iv;
+            aes.IV = cipherBytes.AsSpan(0, ivSize).ToArray();
 
-            using var decryptStream = new MemoryStream(cipherBytes, iv.Length, cipherBytes.Length - iv.Length);
-            using var cryptoStream = new CryptoStream(decryptStream, aes.CreateDecryptor(), CryptoStreamMode.Read);
-            using var ms = new MemoryStream();
-            cryptoStream.CopyTo(ms);
-            return ms.ToArray();
+            using var input = new MemoryStream(
+                cipherBytes,
+                ivSize,
+                encryptedLength - ivSize);
+
+            using var cryptoStream = new CryptoStream(
+                input,
+                aes.CreateDecryptor(),
+                CryptoStreamMode.Read);
+
+            using var output = new MemoryStream();
+
+            cryptoStream.CopyTo(output);
+
+            return output.ToArray();
         }
     }
 }

@@ -12,6 +12,8 @@ namespace TheRavine.Generator
 {
     using System;
     using EndlessGenerators;
+    using TheRavine.Base;
+
     public class MapGenerator : MonoBehaviour, ISetAble
     {
         [SerializeField] private ChunkGenerationSettings chunkGenerationSettings;
@@ -26,7 +28,7 @@ namespace TheRavine.Generator
             return mapData[position];
         }
 
-        public bool IsHeightIsLiveAble(int height) => regions[height].liveAble;
+        public bool IsHeightIsLiveAble(int height) => chunkGenerationSettings.regions[height].liveAble;
         public bool IsWaterHeight(Vector2Int position) => GetMapHeight(position) < 1;
 
         public int GetMapHeight(Vector2 pos)
@@ -87,12 +89,8 @@ namespace TheRavine.Generator
         [SerializeField] private int octaves;
         [SerializeField, Range(0, 1)] private float persistence;
         [SerializeField] private float lacunarity;
-        [SerializeField] private TerrainType[] regions;
-        [SerializeField] private TemperatureType[] biomRegions;
         [SerializeField] private Transform viewer;
         [SerializeField] private Vector3 viewerOffset;
-        [SerializeField] private bool[] endlessFlag;
-        [SerializeField] private bool isRiver;
         public ChunkGenerator chunkGenerator;
         public Vector3 waterOffset;
         private IEndless[] endless;
@@ -113,8 +111,13 @@ namespace TheRavine.Generator
                     GetViewers(ServiceLocator.Players.GetAllPlayersTransform());
                 });
 
+            if(ServiceLocator.Services.TryGet(out WorldRegistry worldRegistry))
+            {
+                var config = worldRegistry.GetCurrentConfig();
+                chunkGenerationSettings.isRiver = config.generateRivers;   
+            }
 
-            if (endlessFlag[3])
+            if (chunkGenerationSettings.endlessFlag[3])
             {
                 nal = new NAL_PC(this, objectSystem, _cts.Token);
                 nal.RunNAL().Forget();
@@ -129,9 +132,9 @@ namespace TheRavine.Generator
         private void SetupEndless()
         {
             endless = new IEndless[3];
-            if (endlessFlag[0]) endless[0] = new EndlessTerrain(this);
-            if (endlessFlag[1]) endless[1] = new EndlessLiquids(this);
-            if (endlessFlag[2]) endless[2] = new EndlessObjects(this, objectSystem);
+            if (chunkGenerationSettings.endlessFlag[0]) endless[0] = new EndlessTerrain(this);
+            if (chunkGenerationSettings.endlessFlag[1]) endless[1] = new EndlessLiquids(this);
+            if (chunkGenerationSettings.endlessFlag[2]) endless[2] = new EndlessObjects(this, objectSystem);
         }
 
         private async UniTaskVoid FirstInstance()
@@ -164,7 +167,7 @@ namespace TheRavine.Generator
             position = GetPlayerPosition();
             for (int i = 0; i < 3; i++)
             {
-                if(!endlessFlag[i]) continue;
+                if(!chunkGenerationSettings.endlessFlag[i]) continue;
                 endless[i].UpdateChunk(position);
                 await UniTask.WaitForFixedUpdate();
             }
@@ -186,7 +189,7 @@ namespace TheRavine.Generator
                     }
                     for (int i = 0; i < 3; i++)
                     {
-                        if(!endlessFlag[i]) continue;
+                        if(!chunkGenerationSettings.endlessFlag[i]) continue;
                         endless[i].UpdateChunk(position);
                         await UniTask.WaitForFixedUpdate();
                     }
@@ -203,7 +206,7 @@ namespace TheRavine.Generator
 
             for (int i = 0; i < 3; i++)
             {
-                if(!endlessFlag[i]) continue;
+                if(!chunkGenerationSettings.endlessFlag[i]) continue;
                 endless[i].UpdateChunk(position);
             }
         }

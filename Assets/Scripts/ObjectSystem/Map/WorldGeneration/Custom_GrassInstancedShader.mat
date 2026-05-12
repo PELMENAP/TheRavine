@@ -51,28 +51,37 @@ Material:
         m_Texture: {fileID: 2800000, guid: 46212d6e49aed9ee0aae48ab8b9721ae, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _WindMap:
+        m_Texture: {fileID: 2800000, guid: eaf60509975306a47b2a7f80a74df648, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AmbientOcclusion: 1
+    - _AmbientOcclusion: 0.7
+    - _AmbientStrength: 0.3
     - _CullingDistance: 25.56
     - _CullingFadeDistance: 2.9
     - _Cutoff: 1
     - _DebugMode: 1.46
     - _HeightColorBlend: 0
     - _InstanceColorBlend: 1
+    - _NormalWindInfluence: 1.002
     - _PlayerCount: 1
     - _PlayerRadius: 3
     - _PlayerSmoothness: 2
-    - _PlayerStrength: 2.23
+    - _PlayerStrength: 10
     - _TextureCount: 1
+    - _TranslucencyStrength: 0.416
     - _WindGustFrequency: 1
     - _WindGustStrength: 1
-    - _WindSpeed: 0.18
-    - _WindStrength: 0.03
+    - _WindMapScale: 0.01
+    - _WindSpeed: 0.8
+    - _WindStrength: 0.015
     m_Colors:
     - _BaseColor: {r: 1, g: 0, b: 0.30714318, a: 1}
     - _PlayerPosition: {r: 0, g: 0, b: 0, a: 0}
     - _TipColor: {r: 0.76907253, g: 0, b: 1, a: 1}
     - _WindDirection: {r: 1, g: 0, b: 1, a: 0}
+    - _WindVelocity: {r: 0.05, g: 0.01, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

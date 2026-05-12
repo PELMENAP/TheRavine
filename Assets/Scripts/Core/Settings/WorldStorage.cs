@@ -33,8 +33,10 @@ namespace TheRavine.Base
 
         public async UniTask SaveFullAsync(string worldId, WorldState data, WorldConfiguration settings)
         {
-            await worldStateRepository.SaveAsync(worldId, data);
-            await worldConfigRepository.SaveAsync(worldId, settings);
+            await UniTask.WhenAll(
+                worldStateRepository.SaveAsync(worldId, data),
+                worldConfigRepository.SaveAsync(worldId, settings)
+            );
         }
 
         public async UniTask SaveDataAsync(string worldId, WorldState data)

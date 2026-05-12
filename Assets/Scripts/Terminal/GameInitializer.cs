@@ -6,8 +6,6 @@ using TheRavine.Base;
 
 public class GameInitializer : MonoBehaviour
 {
-    private static GameInitializer instance;
-    [SerializeField] private bool initializeOnAwake = true;
     [SerializeField] private bool clearAllPlayerPrefs;
     [SerializeField] private bool createTestWorld;
     [SerializeField] private Terminal terminal;
@@ -16,24 +14,18 @@ public class GameInitializer : MonoBehaviour
     private ActionMapController _actionMapController;
     private Action<string> _onMessageDisplayTerminal;
 
+    public static GameInitializer Instance { get; private set; }
+
     private void Awake()
     {
-        if (instance != null && instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        instance = this;
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
         DontDestroyOnLoad(this);
-
         ServiceLocator.ClearAll();
-        
+
         if (clearAllPlayerPrefs)
             PlayerPrefs.DeleteAll();
-
-        if (initializeOnAwake)
-            InitializeServices();
+        InitializeServices();
     }
 
     public void InitializeServices()

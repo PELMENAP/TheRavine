@@ -155,11 +155,11 @@ Material:
     - _BlendPower: 1
     - _CastShadows: 1
     - _Cull: 2
-    - _DarkForestGrassHeight: 9.5
-    - _DeepForestGrassHeight: 8.5
+    - _DarkForestGrassHeight: 9
+    - _DeepForestGrassHeight: 8
     - _DstBlend: 0
-    - _LittleForestGrassHeight: 7.5
-    - _MeadowGrassHeight: 6.5
+    - _LittleForestGrassHeight: 7
+    - _MeadowGrassHeight: 6
     - _NearWaterGrassHeight: 5
     - _Noise: 0.5
     - _QueueControl: 0

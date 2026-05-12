@@ -147,15 +147,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Fast Interact (Space)"",
-                    ""type"": ""Button"",
-                    ""id"": ""c0dada3c-e1df-496c-ad29-db0d65fefbac"",
-                    ""expectedControlType"": """",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": false
-                },
-                {
                     ""name"": ""Delay Interact (Long Space)"",
                     ""type"": ""Button"",
                     ""id"": ""f4641fc1-0094-42c8-969d-95b6cf87a2f9"",
@@ -368,17 +359,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""processors"": ""Scale(factor=8)"",
                     ""groups"": """",
                     ""action"": ""Digit (1-8)"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
-                    ""id"": ""bf3837ae-9183-443e-82be-20dae3fa62fa"",
-                    ""path"": ""<Keyboard>/space"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Fast Interact (Space)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -1051,7 +1031,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         m_Gameplay_PickUpF = m_Gameplay.FindAction("Pick Up (F)", throwIfNotFound: true);
         m_Gameplay_InventoryEnterE = m_Gameplay.FindAction("InventoryEnter (E)", throwIfNotFound: true);
         m_Gameplay_Digit18 = m_Gameplay.FindAction("Digit (1-8)", throwIfNotFound: true);
-        m_Gameplay_FastInteractSpace = m_Gameplay.FindAction("Fast Interact (Space)", throwIfNotFound: true);
         m_Gameplay_DelayInteractLongSpace = m_Gameplay.FindAction("Delay Interact (Long Space)", throwIfNotFound: true);
         m_Gameplay_PauseEscape = m_Gameplay.FindAction("Pause (Escape)", throwIfNotFound: true);
         m_Gameplay_GestureAlt = m_Gameplay.FindAction("Gesture (Alt)", throwIfNotFound: true);
@@ -1164,7 +1143,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_Gameplay_PickUpF;
     private readonly InputAction m_Gameplay_InventoryEnterE;
     private readonly InputAction m_Gameplay_Digit18;
-    private readonly InputAction m_Gameplay_FastInteractSpace;
     private readonly InputAction m_Gameplay_DelayInteractLongSpace;
     private readonly InputAction m_Gameplay_PauseEscape;
     private readonly InputAction m_Gameplay_GestureAlt;
@@ -1203,10 +1181,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Gameplay/Digit18".
         /// </summary>
         public InputAction @Digit18 => m_Wrapper.m_Gameplay_Digit18;
-        /// <summary>
-        /// Provides access to the underlying input action "Gameplay/FastInteractSpace".
-        /// </summary>
-        public InputAction @FastInteractSpace => m_Wrapper.m_Gameplay_FastInteractSpace;
         /// <summary>
         /// Provides access to the underlying input action "Gameplay/DelayInteractLongSpace".
         /// </summary>
@@ -1263,9 +1237,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @Digit18.started += instance.OnDigit18;
             @Digit18.performed += instance.OnDigit18;
             @Digit18.canceled += instance.OnDigit18;
-            @FastInteractSpace.started += instance.OnFastInteractSpace;
-            @FastInteractSpace.performed += instance.OnFastInteractSpace;
-            @FastInteractSpace.canceled += instance.OnFastInteractSpace;
             @DelayInteractLongSpace.started += instance.OnDelayInteractLongSpace;
             @DelayInteractLongSpace.performed += instance.OnDelayInteractLongSpace;
             @DelayInteractLongSpace.canceled += instance.OnDelayInteractLongSpace;
@@ -1304,9 +1275,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @Digit18.started -= instance.OnDigit18;
             @Digit18.performed -= instance.OnDigit18;
             @Digit18.canceled -= instance.OnDigit18;
-            @FastInteractSpace.started -= instance.OnFastInteractSpace;
-            @FastInteractSpace.performed -= instance.OnFastInteractSpace;
-            @FastInteractSpace.canceled -= instance.OnFastInteractSpace;
             @DelayInteractLongSpace.started -= instance.OnDelayInteractLongSpace;
             @DelayInteractLongSpace.performed -= instance.OnDelayInteractLongSpace;
             @DelayInteractLongSpace.canceled -= instance.OnDelayInteractLongSpace;
@@ -1807,13 +1775,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnDigit18(InputAction.CallbackContext context);
-        /// <summary>
-        /// Method invoked when associated input action "Fast Interact (Space)" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
-        /// </summary>
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnFastInteractSpace(InputAction.CallbackContext context);
         /// <summary>
         /// Method invoked when associated input action "Delay Interact (Long Space)" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>

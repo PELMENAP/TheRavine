@@ -599,6 +599,18 @@ PrefabInstance:
         \u0441\u043F\u0430\u0442\u044C, \u043C\u043E\u0436\u043D\u043E \u0440\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u0430\u0442\u044C
         TheRavine"
       objectReference: {fileID: 0}
+    - target: {fileID: 6062264016293694982, guid: 6229d32afaa847d8e89daf40d832aab4, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 04a1dcb71ec06746a831c69d8f00cc74, type: 2}
+    - target: {fileID: 6062264016293694982, guid: 6229d32afaa847d8e89daf40d832aab4, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 602871794163303493, guid: 04a1dcb71ec06746a831c69d8f00cc74, type: 2}
+    - target: {fileID: 6062264016293694982, guid: 6229d32afaa847d8e89daf40d832aab4, type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6361192505176690643, guid: 6229d32afaa847d8e89daf40d832aab4, type: 3}
       propertyPath: m_Name
       value: CreateNew
