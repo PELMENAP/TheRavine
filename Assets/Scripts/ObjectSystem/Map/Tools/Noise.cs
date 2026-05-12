@@ -4,7 +4,7 @@ using TheRavine.Generator;
 using TheRavine.Extensions;
 public static class Noise
 {
-    public enum NormalizeMode { Local, Global, Temp };
+    public enum NormalizeMode { Local, Global };
 
     private static Vector2[] heightOctaveOffsets;
     private static Vector2[] riverOctaveOffsets;

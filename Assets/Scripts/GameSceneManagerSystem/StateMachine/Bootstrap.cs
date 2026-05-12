@@ -71,6 +71,8 @@ namespace TheRavine.Base
         {
             gameStateMachine.BreakUpServices();
             NetworkManager.Singleton.Shutdown();
+            ServiceLocator.ClearAll();
+            GameInitializer.Instance.InitializeServices();
             inTheEndCallback?.Invoke();
         }
 

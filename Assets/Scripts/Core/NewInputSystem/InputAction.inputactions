@@ -61,15 +61,6 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Fast Interact (Space)",
-                    "type": "Button",
-                    "id": "c0dada3c-e1df-496c-ad29-db0d65fefbac",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
                     "name": "Delay Interact (Long Space)",
                     "type": "Button",
                     "id": "f4641fc1-0094-42c8-969d-95b6cf87a2f9",
@@ -282,17 +273,6 @@
                     "processors": "Scale(factor=8)",
                     "groups": "",
                     "action": "Digit (1-8)",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "bf3837ae-9183-443e-82be-20dae3fa62fa",
-                    "path": "<Keyboard>/space",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Fast Interact (Space)",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

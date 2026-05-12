@@ -79,26 +79,13 @@ namespace TheRavine.Generator
                         TemperatureLevel level = chunkGenerationSettings.regions[heightMap[x, y]].level[temperatureMap[x, y]];
                         // for (int i = 0; i < level.structs.Length; i++)
                         // {
-                        //     StructInfoGeneration sinfo = level.structs[i];
-                        //     if(sinfo.Chance == 0)
+                        //     StructInfoGeneration structInfo = level.structs[i];
+                        //     if(structInfo.Chance <= 0)
                         //         continue;
-                        //     if ((x * y + centre.x * centre.y + Seed + i * countOfHeights[heightMap[x, y]] + count) % sinfo.Chance == 0)
-                        //     {
-                        //         Vector2Int posstruct = new(centre.x * generationSize + x * scale, centre.y * generationSize + y * scale);
-                        //         var WFCAobjects = WFCA(posstruct, (int)((Seed + (int)x + (int)y) % sinfo.info.tileInfo.Length), sinfo.info);
-                        //         foreach (var item in WFCAobjects)
-                        //         {
-                        //             if (objectSystem.TryAddToGlobal(item.Key, item.Value.prefabID, item.Value.amount, item.Value.iType, (x + y) % 2 == 0))
-                        //                 {
-                        //                     var data = GetMapDataByObjectPosition(item.Key);
-                        //                     objectsToInst.Add(item.Key);
-                        //                 }
-                        //         }
-                        //         structHere = true;
-                        //         if (sinfo.isSpawnPoint)
-                        //             onSpawnPoint?.Invoke(posstruct, heightMap[x, y], temperatureMap[x, y], centre);
-                        //         break;
-                        //     }
+                        // ....
+                        // ....
+                        // ....
+                        // ....
                         // }
                         if (structHere) continue;
                         for (int i = 0; i < level.objects.Length; i++)

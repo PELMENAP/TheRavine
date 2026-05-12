@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: -7201839089882630837}
   - component: {fileID: 848565228905251431}
   - component: {fileID: 6907569928054806820}
+  - component: {fileID: 5361914308642012920}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -59,7 +60,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 4011542423
+  GlobalObjectIdHash: 3031338226
   InScenePlacedSourceGlobalObjectIdHash: 4011542423
   DeferredDespawnTick: 0
   Ownership: 1
@@ -226,11 +227,73 @@ MonoBehaviour:
   Raise: {fileID: 2730610053698897496, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
   RightClick: {fileID: 650507527238210949, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
   LeftClick: {fileID: -212504553695661567, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
+  Jump: {fileID: -1685497067993046391, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
   joystick: {fileID: 0}
   crosshair: {fileID: 1671218707826521824}
   playerMark: {fileID: 409242886658467678}
   playerAnimator: {fileID: 3713808149104420264}
-  currentSpeed: 0
+  baseJumpForce: 10
+  jumpForceCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 3.1561148
+      outSlope: 3.1561148
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.16215289
+      value: 0.5117731
+      inSlope: -0.052184865
+      outSlope: -0.052184865
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.5326763
+      value: 0.7425764
+      inSlope: 5.8009505
+      outSlope: 5.8009505
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.063835844
+    - serializedVersion: 3
+      time: 0.7011185
+      value: 1.253884
+      inSlope: 0.24153616
+      outSlope: 0.24153616
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.8961221
+      value: 0.6806853
+      inSlope: -6.1968765
+      outSlope: -6.1968765
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.99892443
+      value: 0.4988396
+      inSlope: 1.0289806
+      outSlope: 1.0289806
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 1
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  groundChecker: {fileID: 5361914308642012920}
 --- !u!114 &6598453415436316321
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -338,6 +401,19 @@ CapsuleCollider:
   m_Height: 4.36
   m_Direction: 1
   m_Center: {x: 0, y: 2.15, z: 0}
+--- !u!114 &5361914308642012920
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1671218706617821313}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99fc3dd3e1e75d999bb44539210a9d6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EntitySystem::TheRavine.EntityControl.GroundChecker
+  minGroundNormalY: 0.7
 --- !u!1 &1671218707232650367
 GameObject:
   m_ObjectHideFlags: 0
@@ -601,7 +677,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: -128739896, guid: d1de0e4168f7870edb21a8fe348fad20, type: 3}
-  m_Color: {r: 1, g: 0, b: 0, a: 1}
+  m_Color: {r: 0.8627451, g: 0, b: 0, a: 0.78431374}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -791,7 +867,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &409242886658467678
 Transform:
   m_ObjectHideFlags: 0
@@ -914,6 +990,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6123350630029718356, guid: 020c784f6904ea04784b61dbb699e4d3, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: d3d9e3c1171195442ae8a9dd7b5baeea, type: 2}
     - target: {fileID: 8172286204516799152, guid: 020c784f6904ea04784b61dbb699e4d3, type: 3}
       propertyPath: m_Name
       value: Ripple Particle System

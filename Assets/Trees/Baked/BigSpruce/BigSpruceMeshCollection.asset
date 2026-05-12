@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36232c7ac27f177e8810571cc4703052, type: 3}
+  m_Name: BigSpruceMeshCollection
+  m_EditorClassIdentifier: ObjectSystem::TreeMeshCollection
+  _entries:
+  - {fileID: 4300000, guid: fa38981e97811d1888637656a5f4f39a, type: 2}
+  - {fileID: 4300000, guid: 4639da2867eca4119a7b02f2f831975a, type: 2}
+  - {fileID: 4300000, guid: 513223739bb22a9dbbe537252a1c59bc, type: 2}
+  - {fileID: 4300000, guid: 3a2a6a15f6630d1e4af2e0146ed790b6, type: 2}
+  - {fileID: 4300000, guid: d1a7addc5b9482d148853ea03ff6cb56, type: 2}
+  - {fileID: 4300000, guid: fc6ff4f0f7c4bd74195679e60f815fd8, type: 2}
+  - {fileID: 4300000, guid: 1b64e227ed9f8933989062e3cd84db76, type: 2}
+  - {fileID: 4300000, guid: 3a10f8515afcb96a78250e2e13faa839, type: 2}
