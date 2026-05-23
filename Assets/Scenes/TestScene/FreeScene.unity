@@ -249,13 +249,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 143708042}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.054950222, y: 0, z: 0, w: 0.99848914}
+  m_LocalRotation: {x: 0.15057068, y: 0, z: 0, w: 0.9885993}
   m_LocalPosition: {x: -21.9, y: 21, z: -14.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 6.3, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 17.32, y: 0, z: 0}
 --- !u!114 &181134950
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1277,95 +1277,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 585493228}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0.0033157323, y: -0.016056214, z: 0.000053245254, w: 0.99986565}
   m_LocalPosition: {x: 1369.0068, y: 308.7, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &586982770
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 586982771}
-  - component: {fileID: 586982773}
-  - component: {fileID: 586982772}
-  m_Layer: 0
-  m_Name: GrassSystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
---- !u!4 &586982771
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 586982770}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1814276383}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &586982772
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 586982770}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 61e113457dceefbd3b30aed2f3261017, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: '::'
-  player: {fileID: 586982771}
-  grassMaterial: {fileID: 2100000, guid: 36571ee1032acddecaf946f49784b2d6, type: 2}
---- !u!114 &586982773
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 586982770}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b872aee0f7bb99eea9f191223d57e77, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ObjectSystem::GrassMeshPlacer
-  targetMeshFilter: {fileID: 1500658428}
-  targetTransform: {fileID: 1500658424}
-  grassMesh: {fileID: 4300000, guid: 53a609b0811916efe86ba4ca4b01e48e, type: 2}
-  grassMaterial: {fileID: 2100000, guid: 36571ee1032acddecaf946f49784b2d6, type: 2}
-  grassPlacementShader: {fileID: 7200000, guid: e3ba6791a67a001f9a194ee1c04a4dfd, type: 3}
-  grassDensity: 0.2
-  bladesPerCell: 2
-  scaleMin: 0.8
-  scaleMax: 1.2
-  rotationVariation: 360
-  globalMinHeight: 5
-  globalMaxHeight: 9
-  scaleNoiseScale: 0.05
-  scaleNoiseInfluence: 0.5
-  scaleOctaves: 2
-  scalePersistence: 0.5
-  scaleLacunarity: 2
-  noiseScale: 0.1
-  densityMinThreshold: 0.2
-  densityMaxThreshold: 1
-  octaves: 3
-  persistence: 0.5
-  lacunarity: 2
+  m_LocalEulerAnglesHint: {x: 0.38, y: -1.84, z: 0}
 --- !u!1 &622052533
 GameObject:
   m_ObjectHideFlags: 0
@@ -2803,10 +2721,6 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1500658428}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: viewerOffset.z
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: waterTransform
       value: 
       objectReference: {fileID: 317428208}
@@ -2819,27 +2733,48 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1500658424}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: chunkGenerationSettings.isRiver
-      value: 1
+      propertyPath: chunkGenerationSettings.riverBlend.riverMin
+      value: 0.55
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: 'chunkGenerationSettings.endlessFlag.Array.data[1]'
+      propertyPath: chunkGenerationSettings.riverBlend.useDomainWarp
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: 'chunkGenerationSettings.endlessFlag.Array.data[2]'
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: chunkGenerationSettings.riverNoiseSettings.octaves
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: chunkGenerationSettings.heightNoiseSettings.octaves
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: chunkGenerationSettings.riverNoiseSettings.frequency
+      value: 0.005
+      objectReference: {fileID: 0}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: chunkGenerationSettings.riverNoiseSettings.weightedStrength
+      value: 0.23
+      objectReference: {fileID: 0}
+    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: targetTransform
+      value: 
+      objectReference: {fileID: 1500658424}
+    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: targetMeshFilter
+      value: 
+      objectReference: {fileID: 1500658428}
     - target: {fileID: 7784986139299065775, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: m_Name
       value: MapGenerator
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 2172697054823260749, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 586982771}
+    m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
 --- !u!4 &1500658424 stripped
@@ -3679,11 +3614,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67bf66de7fb1634b68c674b2859b2ae4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!4 &1814276383 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2172697054823260749, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-  m_PrefabInstance: {fileID: 1466746230}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &1848062124
 MonoBehaviour:
   m_ObjectHideFlags: 0

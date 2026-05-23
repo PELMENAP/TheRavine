@@ -1,112 +1,115 @@
 ﻿using UnityEngine;
-
 using TheRavine.Generator;
-using TheRavine.Extensions;
+
 public static class Noise
 {
-    public enum NormalizeMode { Local, Global };
+    private static FastNoiseLite _heightNoise;
+    private static FastNoiseLite _riverNoise;
+    private static FastNoiseLite _domainWarp;
 
-    private static Vector2[] heightOctaveOffsets;
-    private static Vector2[] riverOctaveOffsets;
-    private static int octaves;
-    private static readonly int halfWidth = MapGenerator.mapChunkSize / 2;
-    private static readonly int halfHeight = MapGenerator.mapChunkSize / 2;
-    private static float persistence, lacunarity, scaleInverse;
+    private static int _chunkSize;
 
-    public static void SetInit(float scale, int _octaves, float _persistence, float _lacunarity, int _seed)
+    public static void SetInit(
+        NoiseLayerSettings heightSettings,
+        NoiseLayerSettings riverSettings,
+        int seed,
+        int chunkSize)
     {
-        FastRandom heightPrng = new(_seed);
-        FastRandom riverPrng = new(_seed * 2);
-        heightOctaveOffsets = new Vector2[_octaves];
-        riverOctaveOffsets = new Vector2[_octaves];
+        _chunkSize = chunkSize;
+        _heightNoise = BuildNoise(heightSettings, seed);
+        _riverNoise = BuildNoise(riverSettings, seed * 2);
 
-        octaves = _octaves;
-        persistence = _persistence;
-        lacunarity = _lacunarity;
-        scaleInverse = 1 / scale;
-
-        for (int i = 0; i < octaves; i++)
-        {
-            heightOctaveOffsets[i] = new Vector2(heightPrng.Range(-100000, 100000), heightPrng.Range(-100000, 100000));
-            riverOctaveOffsets[i] = new Vector2(riverPrng.Range(-100000, 100000), riverPrng.Range(-100000, 100000));
-        }
+        _domainWarp = new FastNoiseLite(seed * 3);
+        _domainWarp.SetDomainWarpType(FastNoiseLite.DomainWarpType.OpenSimplex2);
+        _domainWarp.SetFractalType(FastNoiseLite.FractalType.DomainWarpProgressive);
+        _domainWarp.SetFractalOctaves(2);
     }
 
-    public static void GenerateNoiseMap(ref float[,] noiseMap, Vector2 offset, NormalizeMode normalizeMode, bool isRiver = false)
+    private static FastNoiseLite BuildNoise(in NoiseLayerSettings s, int seed)
     {
-        Vector2[] octaveOffsets = isRiver ? riverOctaveOffsets : heightOctaveOffsets;
+        var noise = new FastNoiseLite(seed);
+        noise.SetNoiseType(s.noiseType);
+        noise.SetFractalType(s.fractalType);
+        noise.SetFrequency(s.frequency);
+        noise.SetFractalOctaves(s.octaves);
+        noise.SetFractalLacunarity(s.lacunarity);
+        noise.SetFractalGain(s.gain);
+        noise.SetFractalWeightedStrength(s.weightedStrength);
+        return noise;
+    }
 
-        float maxPossibleHeight = 0;
-        float amplitude = 1;
+    public static void GenerateHeightMap(ref float[,] noiseMap, Vector2Int chunkOffset)
+    {
+        FillMap(ref noiseMap, _heightNoise, chunkOffset);
+    }
 
-        for (int i = 0; i < octaves; i++)
+    public static void GenerateRiverMap(ref float[,] noiseMap, Vector2Int chunkOffset)
+    {
+        FillMap(ref noiseMap, _riverNoise, chunkOffset);
+    }
+
+    // FastNoiseLite FBm output is bounded to -1..1 — remap once to 0..1.
+    // No need for two-pass local normalization or manual octave accumulation.
+    private static void FillMap(ref float[,] map, FastNoiseLite noise, Vector2Int chunkOffset)
+    {
+        int worldX = chunkOffset.x * _chunkSize;
+        int worldY = chunkOffset.y * _chunkSize;
+
+        for (int y = 0; y < _chunkSize; y++)
         {
-            maxPossibleHeight += amplitude;
-            amplitude *= persistence * (isRiver ? 2 : 1);
-        }
-
-        float maxLocalNoiseHeight = float.MinValue;
-        float minLocalNoiseHeight = float.MaxValue;
-
-        for (int y = 0; y < MapGenerator.mapChunkSize; y++)
-        {
-            for (int x = 0; x < MapGenerator.mapChunkSize; x++)
+            int wy = worldY + y;
+            for (int x = 0; x < _chunkSize; x++)
             {
-                amplitude = 1;
-                float frequency = 1;
-                float noiseHeight = 0;
-                for (int i = 0; i < octaves; i++)
-                {
-                    float sampleX = (x + halfWidth + octaveOffsets[i].x + offset.x) * scaleInverse * frequency * (isRiver ? 0.5f : 1);
-                    float sampleY = (y + halfHeight + octaveOffsets[i].y + offset.y) * scaleInverse * frequency * (isRiver ? 0.5f : 1);
-                    float perlinValue = Mathf.PerlinNoise(sampleX, sampleY) * 2 - 1;
-                    noiseHeight += perlinValue * amplitude;
-                    amplitude *= persistence;
-                    frequency *= lacunarity;
-                }
-                if (noiseHeight > maxLocalNoiseHeight)
-                    maxLocalNoiseHeight = noiseHeight;
-                else if (noiseHeight < minLocalNoiseHeight)
-                    minLocalNoiseHeight = noiseHeight;
-                noiseMap[x, y] = noiseHeight;
+                map[x, y] = noise.GetNoise(worldX + x, wy) * 0.5f + 0.5f;
             }
         }
-
-        float globalNormalizeFactor = 1 / (maxPossibleHeight / 0.9f);
-        for (int y = 0; y < MapGenerator.mapChunkSize; y++)
-            for (int x = 0; x < MapGenerator.mapChunkSize; x++)
-                if (normalizeMode == NormalizeMode.Local)
-                    noiseMap[x, y] = Mathf.InverseLerp(minLocalNoiseHeight, maxLocalNoiseHeight, noiseMap[x, y]);
-                else
-                    noiseMap[x, y] = Mathf.Clamp((noiseMap[x, y] + 1) * globalNormalizeFactor, 0, 1);
     }
 
-    public static void CombineMaps(ref float[,] heightMap, float[,] riverNoiseMap, float riverMin, float riverMax, float riverInfluence, float maxRiverDepth)
+    // Smooth river blend using SmoothStep distance falloff.
+    //
+    // Algorithm:
+    //   1. Compute signed distance from river centerline in noise-value space.
+    //   2. Normalize by total influence radius → t ∈ [0,1], where 1 = river center.
+    //   3. Apply smoothstep (Hermite) to get C1-continuous transition.
+    //   4. Lerp heightMap toward riverBedHeight by t.
+    //
+    // Compared to hardcoded stepped bands this gives:
+    //   - One set of intuitive parameters instead of 4 magic floats
+    //   - C1-continuous, no visible seam lines between bands
+    //   - Optional Domain Warp on river coordinates for organic meanders
+    //
+    public static void CombineMaps(
+        ref float[,] heightMap,
+        float[,] riverMap,
+        in RiverBlendSettings s)
     {
-        for (int y = 0; y < MapGenerator.mapChunkSize; y++)
+        float riverCenter = (s.riverMin + s.riverMax) * 0.5f;
+        float totalRadius = (s.riverMax - s.riverMin) * 0.5f + s.influenceWidth;
+        float rcpRadius = 1f / totalRadius;
+
+        for (int y = 0; y < _chunkSize; y++)
         {
-            for (int x = 0; x < MapGenerator.mapChunkSize; x++)
+            for (int x = 0; x < _chunkSize; x++)
             {
-                if (riverNoiseMap[x, y] > riverMin && riverNoiseMap[x, y] < riverMax)
+                float terrainH = heightMap[x, y];
+                if (terrainH < s.minTerrainHeight) continue;
+
+                float rv = riverMap[x, y];
+
+                if (s.useDomainWarp)
                 {
-                    heightMap[x, y] = 0.05f;
+                    float wx = x, wy = y;
+                    _domainWarp.SetDomainWarpAmp(s.domainWarpAmplitude);
+                    _domainWarp.DomainWarp(ref wx, ref wy);
+                    rv = _riverNoise.GetNoise(wx, wy) * 0.5f + 0.5f;
                 }
-                else if(heightMap[x, y] < 0.2f)
-                {
-                    continue;
-                }
-                else if(riverNoiseMap[x, y] > riverMin - riverInfluence && riverNoiseMap[x, y] < riverMax + riverInfluence)
-                {
-                    heightMap[x, y] = 0.16f;
-                }
-                else if(riverNoiseMap[x, y] > riverMin - 2 * riverInfluence && riverNoiseMap[x, y] < riverMax + 2 * riverInfluence)
-                {
-                    heightMap[x, y] = 0.25f;
-                }
-                else if(riverNoiseMap[x, y] > riverMin - 3 * riverInfluence && riverNoiseMap[x, y] < riverMax + 3 * riverInfluence)
-                {
-                    heightMap[x, y] = 0.3f;
-                }
+
+                float dist = Mathf.Abs(rv - riverCenter);
+                if (dist >= totalRadius) continue;
+
+                float t = 1f - dist * rcpRadius;
+                t = t * t * (3f - 2f * t);
+                heightMap[x, y] = Mathf.LerpUnclamped(terrainH, s.riverBedHeight, t);
             }
         }
     }

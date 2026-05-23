@@ -101,7 +101,13 @@ namespace TheRavine.Generator
             // seed = RavineRandom.RangeInt(0, 1000);
             seed = 16;
             mapData = new Dictionary<Vector2Int, ChunkData>(64);
-            Noise.SetInit(noiseScale, octaves, persistence, lacunarity, Seed);
+            
+            Noise.SetInit(
+                chunkGenerationSettings.heightNoiseSettings,
+                chunkGenerationSettings.riverNoiseSettings,
+                Seed,
+                mapChunkSize);
+
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
             chunkGenerator = new ChunkGenerator(objectSystem, chunkGenerationSettings);
 
@@ -257,7 +263,8 @@ namespace TheRavine.Generator
     {
         public bool isSpawnPoint;
         public int Chance;
-        // public StructInfo info;
+        public GenerationSettingsSO Settings;
+        public TilePatternSO Pattern;
     }
 
     [Serializable]
@@ -272,17 +279,27 @@ namespace TheRavine.Generator
         public int rareness, seed, farlands;
         public bool isRiver;
         public bool[] endlessFlag;
-        public float riverMin = 0.45f,  riverMax = 0.6f, riverInfluence = 0.05f, maxRiverDepth = 0.3f;
+
+        // Replaces the 4 separate river floats + manual noise params
+        public NoiseLayerSettings heightNoiseSettings = NoiseLayerSettings.DefaultHeight;
+        public NoiseLayerSettings riverNoiseSettings = NoiseLayerSettings.DefaultRiver;
+        public RiverBlendSettings riverBlend = RiverBlendSettings.Default;
+
+        // Index of the region treated as "mountain" (skips biome temp assignment).
+        // Previously hardcoded as == 8.
+        public int mountainRegionIndex = 8;
 
         public TerrainType[] regions;
         public TemperatureType[] biomRegions;
     }
 
 
+
     public class ChunkData
     {
         public readonly int[,] heightMap, temperatureMap;
         public SortedSet<Vector2Int> objectsToInst;
+        public List<StructureSpawnPoint> structureSpawnPoints;
         public ChunkData(int[,] heightMap, int[,] temperatureMap, SortedSet<Vector2Int> objectsToInst)
         {
             this.heightMap = heightMap;
@@ -291,4 +308,17 @@ namespace TheRavine.Generator
         }
     }
 
+    public readonly struct StructureSpawnPoint
+    {
+        public readonly Vector2Int WorldPosition;
+        public readonly GenerationSettingsSO WfcSettings;
+        public readonly TilePatternSO InitialPattern;
+        
+        public StructureSpawnPoint(Vector2Int pos, GenerationSettingsSO settings, TilePatternSO pattern)
+        {
+            WorldPosition = pos;
+            WfcSettings = settings;
+            InitialPattern = pattern;
+        }
+    }
 }

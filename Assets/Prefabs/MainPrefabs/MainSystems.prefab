@@ -669,7 +669,8 @@ PrefabInstance:
       value: MapGenerator
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 8499671717806100230, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 2172697054823260749, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       insertIndex: -1
