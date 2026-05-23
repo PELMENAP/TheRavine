@@ -1,0 +1,154 @@
+#pragma kernel CSMain
+
+#define MAX_LIFETIME 128
+
+int   sizeX;
+int   sizeY;
+int   lifetime;
+uint   dropletCount;
+
+float startSpeed;
+float inertia;
+float gravity;
+float evaporation;
+float sedimentCapacityFactor;
+float depositSpeed;
+float erodeSpeed;
+float minSlope;
+
+StructuredBuffer<float2> startPos;
+StructuredBuffer<float>  sourceMap;
+RWStructuredBuffer<float> erosionDelta;
+
+float Index(int x, int y)
+{
+    return y * sizeX + x;
+}
+
+float4 HeightGrad(float px, float py)
+{
+    int x = (int)px;
+    int y = (int)py;
+
+    float u = px - x;
+    float v = py - y;
+
+    int xn = min(x + 1, sizeX - 1);
+    int yn = min(y + 1, sizeY - 1);
+
+    float a = sourceMap[Index(x,  y )];
+    float b = sourceMap[Index(xn, y )];
+    float c = sourceMap[Index(x,  yn)];
+    float d = sourceMap[Index(xn, yn)];
+
+    float height =
+        lerp(
+            lerp(a, b, u),
+            lerp(c, d, u),
+            v);
+
+    float gradX = lerp(b - a, d - c, v);
+    float gradY = lerp(c - a, d - b, u);
+
+    float slope = max(minSlope, sqrt(gradX * gradX + gradY * gradY));
+
+    return float4(height, gradX, gradY, slope);
+}
+
+void AccumulateDelta(float px, float py, float amt)
+{
+    int x = (int)px;
+    int y = (int)py;
+
+    float u = px - x;
+    float v = py - y;
+
+    int xn = min(x + 1, sizeX - 1);
+    int yn = min(y + 1, sizeY - 1);
+
+    erosionDelta[Index(x,  y )], amt * (1 - u) * (1 - v);
+    erosionDelta[Index(xn, y )], amt *      u  * (1 - v);
+    erosionDelta[Index(x,  yn)], amt * (1 - u) *      v;
+    erosionDelta[Index(xn, yn)], amt *      u  *      v;
+}
+
+[numthreads(64, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= dropletCount)
+        return;
+
+    float2 pos = startPos[id.x];
+
+    float2 dir      = 0;
+    float  speed    = startSpeed;
+    float  water    = 1;
+    float  sediment = 0;
+
+    [loop]
+    for (int life = 0; life < min(lifetime, MAX_LIFETIME); life++)
+    {
+        float4 hg = HeightGrad(pos.x, pos.y);
+
+        float height = hg.x;
+        float gradX  = hg.y;
+        float gradY  = hg.z;
+        float slope  = hg.w;
+
+        dir = dir * inertia - float2(gradX, gradY) * (1 - inertia);
+
+        float dirLen = length(dir);
+
+        if (dirLen < 0.0001)
+            break;
+
+        dir /= dirLen;
+
+        float2 nextPos = pos + dir;
+
+        if (nextPos.x < 0 || nextPos.y < 0 || nextPos.x >= sizeX - 1 || nextPos.y >= sizeY - 1)
+            break;
+
+        float nextHeight = HeightGrad(nextPos.x, nextPos.y).x;
+
+        float deltaHeight = nextHeight - height;
+
+        float capacity =
+            max(-deltaHeight, minSlope)
+            * speed
+            * water
+            * slope
+            * sedimentCapacityFactor;
+
+        float deltaSediment = 0;
+
+        if (deltaHeight > 0)
+        {
+            deltaSediment = min(deltaHeight, sediment);
+            sediment -= deltaSediment;
+        }
+        else if (sediment > capacity)
+        {
+            deltaSediment = (sediment - capacity) * depositSpeed;
+            sediment -= deltaSediment;
+        }
+        else
+        {
+            float erosion = min((capacity - sediment) * erodeSpeed, -deltaHeight);
+            sediment += erosion;
+            deltaSediment = -erosion;
+        }
+
+        if (abs(deltaSediment) > 0.000001)
+            AccumulateDelta(pos.x, pos.y, deltaSediment);
+
+        pos = nextPos;
+
+        speed = sqrt(max(0.0001, speed * speed - deltaHeight * gravity));
+
+        water *= 1 - evaporation;
+
+        if (water < 0.0001)
+            break;
+    }
+}

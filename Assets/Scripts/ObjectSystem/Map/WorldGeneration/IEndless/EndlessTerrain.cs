@@ -11,6 +11,7 @@ namespace TheRavine.Generator
             
             private readonly Mesh terrainMesh;
             private readonly MapGenerator generator;
+            private readonly ChunkGenerationSettings settings;
             
             private readonly int totalVerticesX;
             private readonly int totalVerticesZ;
@@ -21,9 +22,10 @@ namespace TheRavine.Generator
             private readonly int[] triangles;
             private readonly Vector2Int up = new(0, 1), right = new(1, 0), diag = new(1, 1);
 
-            public EndlessTerrain(MapGenerator _generator)
+            public EndlessTerrain(MapGenerator _generator, ChunkGenerationSettings _settings)
             {
                 generator = _generator;
+                settings = _settings;
                 
                 totalVerticesX = chunkCount * mapChunkSize + 1;
                 totalVerticesZ = chunkCount * mapChunkSize + 1;
@@ -128,31 +130,34 @@ namespace TheRavine.Generator
                 int vertexOffsetZ = gridZ * mapChunkSize;
                 
                 ChunkData chunkData = generator.GetMapData(chunkPos);
-                int[,] heightMap = chunkData.heightMap;
+                float[,] heightMap = chunkData.heightRaw;
 
                 for (int x = 0; x < mapChunkSize; x++)
                 {
                     for (int y = 0; y < mapChunkSize; y++)
                     {
                         int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + y;
+
+                        float h = heightMap[x, y] * settings.maxTerrainHeight;
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + x) * scale, 
-                            heightMap[x, y], 
-                            (vertexOffsetZ + y) * scale
-                        );
+                            h, 
+                            (vertexOffsetZ + y) * scale);
                     }
                 }
                 
                 if (gridX == chunkCount - 1)
                 {
                     chunkData = generator.GetMapData(chunkPos + right);
-                    heightMap = chunkData.heightMap;
+                    heightMap = chunkData.heightRaw;
                     for (int y = 0; y < mapChunkSize; y++)
                     {
                         int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + vertexOffsetZ + y;
+
+                        float h = heightMap[0, y] * settings.maxTerrainHeight;
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + mapChunkSize) * scale, 
-                            heightMap[0, y], 
+                            h,
                             (vertexOffsetZ + y) * scale
                         );
                     }
@@ -161,13 +166,15 @@ namespace TheRavine.Generator
                 if (gridZ == chunkCount - 1)
                 {
                     chunkData = generator.GetMapData(chunkPos + up);
-                    heightMap = chunkData.heightMap;
+                    heightMap = chunkData.heightRaw;
                     for (int x = 0; x < mapChunkSize; x++)
                     {
                         int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + mapChunkSize;
+
+                        float h = heightMap[x, 0] * settings.maxTerrainHeight;
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + x) * scale, 
-                            heightMap[x, 0], 
+                            h, 
                             (vertexOffsetZ + mapChunkSize) * scale
                         );
                     }
@@ -176,11 +183,13 @@ namespace TheRavine.Generator
                 if (gridX == chunkCount - 1 && gridZ == chunkCount - 1)
                 {
                     chunkData = generator.GetMapData(chunkPos + diag);
-                    heightMap = chunkData.heightMap;
+                    heightMap = chunkData.heightRaw;
+
+                    float h = heightMap[0, 0] * settings.maxTerrainHeight;
                     int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + vertexOffsetZ + mapChunkSize;
                     vertices[vertexIndex] = new Vector3(
                         (vertexOffsetX + mapChunkSize) * scale, 
-                        heightMap[0, 0], 
+                        h, 
                         (vertexOffsetZ + mapChunkSize) * scale
                     );
                 }

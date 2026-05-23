@@ -105,6 +105,8 @@ namespace TheRavine.Generator
             Noise.SetInit(
                 chunkGenerationSettings.heightNoiseSettings,
                 chunkGenerationSettings.riverNoiseSettings,
+                chunkGenerationSettings.temperatureSettings,
+                chunkGenerationSettings.moistureSettings,
                 Seed,
                 mapChunkSize);
 
@@ -138,7 +140,7 @@ namespace TheRavine.Generator
         private void SetupEndless()
         {
             endless = new IEndless[3];
-            if (chunkGenerationSettings.endlessFlag[0]) endless[0] = new EndlessTerrain(this);
+            if (chunkGenerationSettings.endlessFlag[0]) endless[0] = new EndlessTerrain(this, chunkGenerationSettings);
             if (chunkGenerationSettings.endlessFlag[1]) endless[1] = new EndlessLiquids(this);
             if (chunkGenerationSettings.endlessFlag[2]) endless[2] = new EndlessObjects(this, objectSystem);
         }
@@ -276,6 +278,7 @@ namespace TheRavine.Generator
     [Serializable]
     public class ChunkGenerationSettings
     {
+        public float maxTerrainHeight = 50f;
         public int rareness, seed, farlands;
         public bool isRiver;
         public bool[] endlessFlag;
@@ -283,6 +286,8 @@ namespace TheRavine.Generator
         // Replaces the 4 separate river floats + manual noise params
         public NoiseLayerSettings heightNoiseSettings = NoiseLayerSettings.DefaultHeight;
         public NoiseLayerSettings riverNoiseSettings = NoiseLayerSettings.DefaultRiver;
+        public NoiseLayerSettings temperatureSettings = NoiseLayerSettings.DefaultTemperature;
+        public NoiseLayerSettings moistureSettings = NoiseLayerSettings.DefaultMoisture;
         public RiverBlendSettings riverBlend = RiverBlendSettings.Default;
 
         // Index of the region treated as "mountain" (skips biome temp assignment).
@@ -290,20 +295,28 @@ namespace TheRavine.Generator
         public int mountainRegionIndex = 8;
 
         public TerrainType[] regions;
-        public TemperatureType[] biomRegions;
+        public BiomeSettings[] biomesSettings = BiomePresets.All;
+
+        public ErosionSettings erosion;
+        public ComputeShader erosionShader;
     }
 
 
 
     public class ChunkData
     {
-        public readonly int[,] heightMap, temperatureMap;
+        public readonly float[,] heightRaw;      // 0..1 — для меша
+        public readonly int[,]   heightMap;      // region index — для lookup объектов
+        public readonly int[,]   biomeMap;       // biome index
         public SortedSet<Vector2Int> objectsToInst;
         public List<StructureSpawnPoint> structureSpawnPoints;
-        public ChunkData(int[,] heightMap, int[,] temperatureMap, SortedSet<Vector2Int> objectsToInst)
+
+        public ChunkData(float[,] heightRaw, int[,] heightMap, int[,] biomeMap,
+                        SortedSet<Vector2Int> objectsToInst)
         {
-            this.heightMap = heightMap;
-            this.temperatureMap = temperatureMap;
+            this.heightRaw  = heightRaw;
+            this.heightMap  = heightMap;
+            this.biomeMap   = biomeMap;
             this.objectsToInst = objectsToInst;
         }
     }

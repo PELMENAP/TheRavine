@@ -6,18 +6,24 @@ public static class Noise
     private static FastNoiseLite _heightNoise;
     private static FastNoiseLite _riverNoise;
     private static FastNoiseLite _domainWarp;
+    private static FastNoiseLite _temperatureNoise;
+    private static FastNoiseLite _moistureNoise;
 
     private static int _chunkSize;
 
     public static void SetInit(
         NoiseLayerSettings heightSettings,
         NoiseLayerSettings riverSettings,
+        NoiseLayerSettings temperatureSettings,
+        NoiseLayerSettings moistureSettings,
         int seed,
         int chunkSize)
     {
         _chunkSize = chunkSize;
         _heightNoise = BuildNoise(heightSettings, seed);
         _riverNoise = BuildNoise(riverSettings, seed * 2);
+        _temperatureNoise = BuildNoise(temperatureSettings, seed * 4);
+        _moistureNoise    = BuildNoise(moistureSettings,    seed * 5);
 
         _domainWarp = new FastNoiseLite(seed * 3);
         _domainWarp.SetDomainWarpType(FastNoiseLite.DomainWarpType.OpenSimplex2);
@@ -46,6 +52,25 @@ public static class Noise
     public static void GenerateRiverMap(ref float[,] noiseMap, Vector2Int chunkOffset)
     {
         FillMap(ref noiseMap, _riverNoise, chunkOffset);
+    }
+
+    public static void GenerateClimateMap(
+        ref float[,] temperatureMap,
+        ref float[,] moistureMap,
+        Vector2Int chunkOffset)
+    {
+        int worldX = chunkOffset.x * _chunkSize;
+        int worldY = chunkOffset.y * _chunkSize;
+        for (int y = 0; y < _chunkSize; y++)
+        {
+            int wy = worldY + y;
+            for (int x = 0; x < _chunkSize; x++)
+            {
+                int wx = worldX + x;
+                temperatureMap[x, y] = _temperatureNoise.GetNoise(wx, wy) * 0.5f + 0.5f;
+                moistureMap[x, y]    = _moistureNoise.GetNoise(wx, wy)    * 0.5f + 0.5f;
+            }
+        }
     }
 
     // FastNoiseLite FBm output is bounded to -1..1 — remap once to 0..1.
