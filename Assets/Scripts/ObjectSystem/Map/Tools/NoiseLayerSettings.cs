@@ -35,6 +35,28 @@ namespace TheRavine.Generator
             gain = 0.5f,
             weightedStrength = 0f
         };
+
+        public static NoiseLayerSettings DefaultTemperature => new()
+        {
+            noiseType        = FastNoiseLite.NoiseType.OpenSimplex2,
+            fractalType      = FastNoiseLite.FractalType.FBm,
+            frequency        = 0.002f,
+            octaves          = 2,
+            lacunarity       = 2f,
+            gain             = 0.30f,
+            weightedStrength = 0f
+        };
+
+        public static NoiseLayerSettings DefaultMoisture => new()
+        {
+            noiseType        = FastNoiseLite.NoiseType.OpenSimplex2,
+            fractalType      = FastNoiseLite.FractalType.FBm,
+            frequency        = 0.003f,
+            octaves          = 3,
+            lacunarity       = 2f,
+            gain             = 0.45f,
+            weightedStrength = 0.1f
+        };
     }
 
     [Serializable]
@@ -58,5 +80,27 @@ namespace TheRavine.Generator
             useDomainWarp = false,
             domainWarpAmplitude = 20f
         };
+    }
+
+
+    [Serializable]
+    public struct BiomeSettings
+    {
+        public string name;
+
+        [Range(0f, 1f)] public float minTemperature, maxTemperature;
+        [Range(0f, 1f)] public float minMoisture,    maxMoisture;
+
+        public float heightScale;
+        public float heightOffset;
+        
+        public bool            hasDetailLayer;
+        public NoiseLayerSettings detailNoise;
+        [Range(0f, 0.5f)] public float detailStrength;
+        public bool              hasRivers;
+        public RiverBlendSettings riverBlend;
+        public Vector2 Center => new(
+            (minTemperature + maxTemperature) * 0.5f,
+            (minMoisture    + maxMoisture)    * 0.5f);
     }
 }

@@ -155,7 +155,7 @@ Material:
     - _BlendPower: 1
     - _CastShadows: 1
     - _Cull: 2
-    - _DarkForestGrassHeight: 9
+    - _DarkForestGrassHeight: 35
     - _DeepForestGrassHeight: 8
     - _DstBlend: 0
     - _LittleForestGrassHeight: 7
@@ -168,7 +168,7 @@ Material:
     - _SandHeight: 4.5
     - _SrcBlend: 1
     - _Surface: 0
-    - _SwampHeight: 11
+    - _SwampHeight: 40
     - _Tile: 0.5
     - _Voronoi: 0.02
     - _WaterHeight: 3.5
