@@ -119,143 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &143708042
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 143708046}
-  - component: {fileID: 143708045}
-  - component: {fileID: 143708044}
-  - component: {fileID: 143708043}
-  m_Layer: 0
-  m_Name: Camera
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &143708043
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 143708042}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_RenderShadows: 1
-  m_RequiresDepthTextureOption: 2
-  m_RequiresOpaqueTextureOption: 2
-  m_CameraType: 0
-  m_Cameras: []
-  m_RendererIndex: -1
-  m_VolumeLayerMask:
-    serializedVersion: 2
-    m_Bits: 1
-  m_VolumeTrigger: {fileID: 0}
-  m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
-  m_Antialiasing: 0
-  m_AntialiasingQuality: 2
-  m_StopNaN: 0
-  m_Dithering: 0
-  m_ClearDepth: 1
-  m_AllowXRRendering: 1
-  m_AllowHDROutput: 1
-  m_UseScreenCoordOverride: 0
-  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
-  m_RequiresDepthTexture: 0
-  m_RequiresColorTexture: 0
-  m_TaaSettings:
-    m_Quality: 3
-    m_FrameInfluence: 0.1
-    m_JitterScale: 1
-    m_MipBias: 0
-    m_VarianceClampScale: 0.9
-    m_ContrastAdaptiveSharpening: 1
-  m_Version: 2
---- !u!81 &143708044
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 143708042}
-  m_Enabled: 1
---- !u!20 &143708045
-Camera:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 143708042}
-  m_Enabled: 1
-  serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 1}
-  m_projectionMatrixMode: 1
-  m_GateFitMode: 2
-  m_FOVAxisMode: 0
-  m_Iso: 197
-  m_ShutterSpeed: 0.005
-  m_Aperture: 16
-  m_FocusDistance: 10
-  m_FocalLength: 44.78461
-  m_BladeCount: 5
-  m_Curvature: {x: 0.7, y: 9.700003}
-  m_BarrelClipping: 0.25
-  m_Anamorphism: 0
-  m_SensorSize: {x: 38.04, y: 24}
-  m_LensShift: {x: 0, y: 0}
-  m_NormalizedViewPortRect:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 1
-    height: 1
-  near clip plane: 0.3
-  far clip plane: 300
-  field of view: 49
-  orthographic: 0
-  orthographic size: 20
-  m_Depth: 0
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingPath: -1
-  m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 0
-  m_TargetEye: 3
-  m_HDR: 1
-  m_AllowMSAA: 1
-  m_AllowDynamicResolution: 0
-  m_ForceIntoRT: 0
-  m_OcclusionCulling: 1
-  m_StereoConvergence: 10
-  m_StereoSeparation: 0.022
---- !u!4 &143708046
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 143708042}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.15057068, y: 0, z: 0, w: 0.9885993}
-  m_LocalPosition: {x: -21.9, y: 21, z: -14.3}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 17.32, y: 0, z: 0}
 --- !u!1001 &215073218
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2406,7 +2269,7 @@ PrefabInstance:
       objectReference: {fileID: 1500658424}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.erosion.drag
-      value: 0.434
+      value: 0.494
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.erosionShader
@@ -2418,15 +2281,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.erosion.gravity
-      value: 14.7
+      value: 15.4
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.erosion.lifetime
-      value: 147
+      value: 62
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.maxTerrainHeight
-      value: 1000
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.biomes.Array.size
@@ -2434,31 +2297,35 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.erosion.erodeSpeed
-      value: 0.474
+      value: 0.531
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.erosion.startSpeed
-      value: 2.32
+      value: 2.57
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.erosion.startWater
-      value: 0.98
+      value: 1.033
+      objectReference: {fileID: 0}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: chunkGenerationSettings.riverBlend.riverMax
+      value: 0.7
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.riverBlend.riverMin
-      value: 0.55
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.erosion.acceleration
-      value: 1.84
+      value: 2.11
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.erosion.depositSpeed
-      value: 0.509
+      value: 0.491
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.erosion.dropletCount
-      value: 50000
+      value: 21087
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.moistureSettings.gain
@@ -2466,7 +2333,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.erosion.evaporateSpeed
-      value: 0.245
+      value: 0.26
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.riverBlend.useDomainWarp
@@ -2487,6 +2354,10 @@ PrefabInstance:
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: 'chunkGenerationSettings.endlessFlag.Array.data[2]'
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: chunkGenerationSettings.riverBlend.influenceWidth
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.moistureSettings.frequency
@@ -2513,6 +2384,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: chunkGenerationSettings.heightNoiseSettings.frequency
+      value: 0.0035
+      objectReference: {fileID: 0}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.heightNoiseSettings.noiseType
       value: 0
       objectReference: {fileID: 0}
@@ -2522,7 +2397,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.erosion.sedimentCapacityFactor
-      value: 9.5
+      value: 9.87
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: chunkGenerationSettings.heightNoiseSettings.fractalType
@@ -3554,7 +3429,6 @@ SceneRoots:
   - {fileID: 1051385187}
   - {fileID: 1021793569}
   - {fileID: 622052537}
-  - {fileID: 143708046}
   - {fileID: 1898770870}
   - {fileID: 369610666}
   - {fileID: 1188201789}
