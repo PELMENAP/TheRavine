@@ -8,6 +8,7 @@ namespace TheRavine.Generator
     {
         public FastNoiseLite.NoiseType noiseType;
         public FastNoiseLite.FractalType fractalType;
+        
         [Range(0.0001f, 0.1f)] public float frequency;
         [Range(1, 8)] public int octaves;
         [Range(1f, 4f)] public float lacunarity;
@@ -102,5 +103,6 @@ namespace TheRavine.Generator
         public Vector2 Center => new(
             (minTemperature + maxTemperature) * 0.5f,
             (minMoisture    + maxMoisture)    * 0.5f);
+            
     }
 }

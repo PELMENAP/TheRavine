@@ -8,7 +8,6 @@ namespace TheRavine.Generator
         {
             private const int chunkScale = MapGenerator.chunkScale, chunkCount = 2 * chunkScale + 1, mapChunkSize = MapGenerator.mapChunkSize;
             private const int scale = MapGenerator.scale, generationSize = scale * mapChunkSize;
-            
             private readonly Mesh terrainMesh;
             private readonly MapGenerator generator;
             private readonly ChunkGenerationSettings settings;
@@ -138,11 +137,12 @@ namespace TheRavine.Generator
                     {
                         int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + y;
 
-                        float h = heightMap[x, y] * settings.maxTerrainHeight;
+                        float h = heightMap[x, y];
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + x) * scale, 
                             h, 
-                            (vertexOffsetZ + y) * scale);
+                            (vertexOffsetZ + y) * scale
+                        );
                     }
                 }
                 
@@ -154,7 +154,7 @@ namespace TheRavine.Generator
                     {
                         int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + vertexOffsetZ + y;
 
-                        float h = heightMap[0, y] * settings.maxTerrainHeight;
+                        float h = heightMap[0, y];
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + mapChunkSize) * scale, 
                             h,
@@ -171,7 +171,7 @@ namespace TheRavine.Generator
                     {
                         int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + mapChunkSize;
 
-                        float h = heightMap[x, 0] * settings.maxTerrainHeight;
+                        float h = heightMap[x, 0];
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + x) * scale, 
                             h, 
@@ -185,7 +185,7 @@ namespace TheRavine.Generator
                     chunkData = generator.GetMapData(chunkPos + diag);
                     heightMap = chunkData.heightRaw;
 
-                    float h = heightMap[0, 0] * settings.maxTerrainHeight;
+                    float h = heightMap[0, 0];
                     int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + vertexOffsetZ + mapChunkSize;
                     vertices[vertexIndex] = new Vector3(
                         (vertexOffsetX + mapChunkSize) * scale, 
