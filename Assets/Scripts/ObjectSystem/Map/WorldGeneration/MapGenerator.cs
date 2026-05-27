@@ -19,6 +19,7 @@ namespace TheRavine.Generator
         [SerializeField] private ChunkGenerationSettings chunkGenerationSettings;
         private readonly CancellationTokenSource _cts = new();
         public const int mapChunkSize = 40, chunkScale = 1, scale = 2, generationSize = scale * mapChunkSize;
+        public const float maxTerrainHeight = 50f;
         private Dictionary<Vector2Int, ChunkData> mapData;
         public ChunkData GetMapData(Vector2Int position)
         {
@@ -236,6 +237,7 @@ namespace TheRavine.Generator
         private void OnDisable()
         {
             _cts.Cancel();
+            chunkGenerator.Dispose();
         }
     }
 
@@ -278,7 +280,6 @@ namespace TheRavine.Generator
     [Serializable]
     public class ChunkGenerationSettings
     {
-        public float maxTerrainHeight = 50f;
         public int rareness, seed, farlands;
         public bool isRiver;
         public bool[] endlessFlag;
@@ -298,7 +299,6 @@ namespace TheRavine.Generator
         public BiomeSettings[] biomesSettings = BiomePresets.All;
 
         public ErosionSettings erosion;
-        public ComputeShader erosionShader;
     }
 
 

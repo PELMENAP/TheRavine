@@ -1,8 +1,11 @@
 ﻿using UnityEngine;
 using TheRavine.Generator;
+using Unity.Collections;
+using System.Runtime.CompilerServices;
 
 public static class Noise
 {
+    private const int mapChunkSize = MapGenerator.mapChunkSize;
     private static FastNoiseLite _heightNoise;
     private static FastNoiseLite _riverNoise;
     private static FastNoiseLite _domainWarp;
@@ -44,19 +47,19 @@ public static class Noise
         return noise;
     }
 
-    public static void GenerateHeightMap(ref float[,] noiseMap, Vector2Int chunkOffset)
+    public static void GenerateHeightMap(NativeArray<float> noiseMap, Vector2Int chunkOffset)
     {
-        FillMap(ref noiseMap, _heightNoise, chunkOffset);
+        FillMap(noiseMap, _heightNoise, chunkOffset);
     }
 
-    public static void GenerateRiverMap(ref float[,] noiseMap, Vector2Int chunkOffset)
+    public static void GenerateRiverMap(NativeArray<float> noiseMap, Vector2Int chunkOffset)
     {
-        FillMap(ref noiseMap, _riverNoise, chunkOffset);
+        FillMap(noiseMap, _riverNoise, chunkOffset);
     }
 
     public static void GenerateClimateMap(
-        ref float[,] temperatureMap,
-        ref float[,] moistureMap,
+        NativeArray<float> temperatureMap,
+        NativeArray<float> moistureMap,
         Vector2Int chunkOffset)
     {
         int worldX = chunkOffset.x * _chunkSize;
@@ -67,15 +70,12 @@ public static class Noise
             for (int x = 0; x < _chunkSize; x++)
             {
                 int wx = worldX + x;
-                temperatureMap[x, y] = _temperatureNoise.GetNoise(wx, wy) * 0.5f + 0.5f;
-                moistureMap[x, y]    = _moistureNoise.GetNoise(wx, wy)    * 0.5f + 0.5f;
+                temperatureMap[Idx(x, y)] = _temperatureNoise.GetNoise(wx, wy) * 0.5f + 0.5f;
+                moistureMap[Idx(x, y)]    = _moistureNoise.GetNoise(wx, wy)    * 0.5f + 0.5f;
             }
         }
     }
-
-    // FastNoiseLite FBm output is bounded to -1..1 — remap once to 0..1.
-    // No need for two-pass local normalization or manual octave accumulation.
-    private static void FillMap(ref float[,] map, FastNoiseLite noise, Vector2Int chunkOffset)
+    private static void FillMap(NativeArray<float> noiseMap, FastNoiseLite noise, Vector2Int chunkOffset)
     {
         int worldX = chunkOffset.x * _chunkSize;
         int worldY = chunkOffset.y * _chunkSize;
@@ -85,9 +85,15 @@ public static class Noise
             int wy = worldY + y;
             for (int x = 0; x < _chunkSize; x++)
             {
-                map[x, y] = noise.GetNoise(worldX + x, wy) * 0.5f + 0.5f;
+                noiseMap[Idx(x, y)] = noise.GetNoise(worldX + x, wy) * 0.5f + 0.5f;
             }
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int Idx(int x, int y)
+    {
+        return y * mapChunkSize + x;
     }
 
     // Smooth river blend using SmoothStep distance falloff.
@@ -112,6 +118,8 @@ public static class Noise
         float totalRadius = (s.riverMax - s.riverMin) * 0.5f + s.influenceWidth;
         float rcpRadius = 1f / totalRadius;
 
+        _domainWarp.SetDomainWarpAmp(s.domainWarpAmplitude);
+
         for (int y = 0; y < _chunkSize; y++)
         {
             for (int x = 0; x < _chunkSize; x++)
@@ -124,7 +132,6 @@ public static class Noise
                 if (s.useDomainWarp)
                 {
                     float wx = x, wy = y;
-                    _domainWarp.SetDomainWarpAmp(s.domainWarpAmplitude);
                     _domainWarp.DomainWarp(ref wx, ref wy);
                     rv = _riverNoise.GetNoise(wx, wy) * 0.5f + 0.5f;
                 }
