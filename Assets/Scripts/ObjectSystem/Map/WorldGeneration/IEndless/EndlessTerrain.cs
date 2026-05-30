@@ -36,7 +36,6 @@ namespace TheRavine.Generator
                 
                 
                 GenerateTriangles();
-                System.Array.Reverse(triangles);
                 
                 terrainMesh = new Mesh
                 {
@@ -57,7 +56,7 @@ namespace TheRavine.Generator
 
             private void GenerateTriangles()
             {
-                int triangleIndex = 0;
+                int triangleIndex = totalTriangles - 1;
                 
                 for (int chunkX = 0; chunkX < chunkCount; chunkX++)
                 {
@@ -76,14 +75,14 @@ namespace TheRavine.Generator
                                 int topLeft = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + y + 1;
                                 
                                 triangles[triangleIndex] = bottomLeft;
-                                triangles[triangleIndex + 1] = bottomRight;
-                                triangles[triangleIndex + 2] = topRight;
+                                triangles[triangleIndex - 1] = bottomRight;
+                                triangles[triangleIndex - 2] = topRight;
                                 
-                                triangles[triangleIndex + 3] = bottomLeft;
-                                triangles[triangleIndex + 4] = topRight;
-                                triangles[triangleIndex + 5] = topLeft;
+                                triangles[triangleIndex - 3] = bottomLeft;
+                                triangles[triangleIndex - 4] = topRight;
+                                triangles[triangleIndex - 5] = topLeft;
                                 
-                                triangleIndex += 6;
+                                triangleIndex -= 6;
                             }
                         }
                     }
@@ -96,7 +95,6 @@ namespace TheRavine.Generator
                 
                 terrainMesh.vertices = vertices;
                 terrainMesh.RecalculateNormals();
-                terrainMesh.RecalculateTangents();
 
                 generator.terrainCollider.sharedMesh = terrainMesh;
                 

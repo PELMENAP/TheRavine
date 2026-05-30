@@ -261,7 +261,7 @@ public static class BiomePresets
         riverBlend       = SwampRiver
     };
 
-    public static BiomeSettings[] All => new[]
+    public readonly static BiomeSettings[] All = new[]
     {
         Tundra,
         BorealForest,

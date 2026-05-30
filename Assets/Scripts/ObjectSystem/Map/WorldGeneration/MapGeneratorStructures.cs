@@ -56,6 +56,8 @@ namespace TheRavine.Generator
 
         public TerrainType[] regions;
         public BiomeSettings[] biomesSettings = BiomePresets.All;
+        public float biomeBlendRadius = 0.25f;
+        public float altitudeCooling = 0.35f;
 
         public ErosionSettings erosion;
     }
