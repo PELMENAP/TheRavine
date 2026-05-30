@@ -234,7 +234,7 @@ MonoBehaviour:
   currentHealth: 100
   currentEnergy: 100
   energyRegenRate: 1
-  moveSpeed: 3
+  moveSpeed: 5
   runSpeed: 5
   energyCostPerSecondMoving: 5
   energyCostPerSecondRunning: 10

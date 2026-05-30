@@ -5,73 +5,85 @@ using TheRavine.ObjectControl;
 
 namespace TheRavine.Generator.EndlessGenerators
 {
-    public class EndlessObjects : IEndless
+    public sealed class EndlessObjects : IEndless
     {
         private readonly MapGenerator generator;
+        private readonly ObjectSystem  objectSystem;
         private const byte chunkScale = MapGenerator.chunkScale;
-        private readonly ObjectSystem objectSystem;
         private readonly Dictionary<int, int> objectUpdate = new(16);
-        private static EnumerableSnapshot<int> objectsSnapshot;
-        public EndlessObjects(MapGenerator _generator, ObjectSystem _objectSystem)
+        private EnumerableSnapshot<int> objectsSnapshot;
+
+        public EndlessObjects(MapGenerator generator, ObjectSystem objectSystem)
         {
-            generator = _generator;
-            objectSystem = _objectSystem;
-            var prefabInfo = objectSystem.infoRegistry.objectInfos;
-            for (int i = 0; i < prefabInfo.Count; i++)
-                objectUpdate[prefabInfo[i].PrefabID] = 0;
+            this.generator    = generator;
+            this.objectSystem = objectSystem;
+
+            var infos = objectSystem.infoRegistry.objectInfos;
+            for (int i = 0; i < infos.Count; i++)
+                objectUpdate[infos[i].PrefabID] = 0;
+
             objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
         }
-        public void UpdateChunk(Vector2Int Position)
-        {
-            for (int chunkX = 0; chunkX < 2 * chunkScale + 1; chunkX++)
-            {
-                for (int chunkY = 0; chunkY < 2 * chunkScale + 1; chunkY++)
-                {
-                    generator.GetMapData(new Vector2Int(Position.x - 1 + chunkX, Position.y - 1 + chunkY));
-                }
-            }
 
-            for (int chunkX = 0; chunkX < 2 * chunkScale + 1; chunkX++)
+        public void UpdateChunk(Vector2Int position)
+        {
+            int side = 2 * chunkScale + 1;
+
+            for (int cx = 0; cx < side; cx++)
+            for (int cy = 0; cy < side; cy++)
+                generator.GetMapData(new Vector2Int(
+                    position.x - chunkScale + cx,
+                    position.y - chunkScale + cy));
+
+            for (int cx = 0; cx < side; cx++)
+            for (int cy = 0; cy < side; cy++)
+                ProcessChunk(new Vector2Int(
+                    position.x - chunkScale + cx,
+                    position.y - chunkScale + cy));
+
+            foreach (int id in objectsSnapshot)
             {
-                for (int chunkY = 0; chunkY < 2 * chunkScale + 1; chunkY++)
-                {
-                    ProcessObjectInst(new Vector2Int(Position.x - 1 + chunkX, Position.y - 1 + chunkY));
-                }
-            }
-            foreach (var ID in objectsSnapshot)
-            {
-                if (objectUpdate[ID] == 0)
-                    continue;
-                for (int j = 0; j < objectSystem.GetPoolSize(ID) - objectUpdate[ID]; j++)
-                    objectSystem.Deactivate(ID);
-                objectUpdate[ID] = 0;
+                if (objectUpdate[id] == 0) continue;
+
+                int excess = objectSystem.GetPoolSize(id) - objectUpdate[id];
+                for (int j = 0; j < excess; j++)
+                    objectSystem.Deactivate(id);
+
+                objectUpdate[id] = 0;
             }
         }
 
-        private void ProcessObjectInst(Vector2Int chunkCoord)
+        private void ProcessChunk(Vector2Int chunkCoord)
         {
-            foreach (var item in generator.GetMapData(chunkCoord).objectsToInst)
+            ChunkData cd = generator.GetMapData(chunkCoord);
+
+            for (int i = 0; i < cd.Objects.Length; i++)
             {
-                ObjectInstInfo info = objectSystem.GetGlobalObjectInstInfo(item);
-                ObjectInfo objectInfo = objectSystem.GetGlobalObjectInfo(item);
-                if(objectInfo == null) continue;
+                ObjectInstInfo info = cd.Objects[i];
+                if (info.PrefabID <= 0) continue;
+
+                ObjectInfo objectInfo = objectSystem.GetInfo(info.PrefabID);
+                if (objectInfo == null) continue;
+
                 objectUpdate[info.PrefabID]++;
-                try
+
+                if (objectUpdate[info.PrefabID] > objectSystem.GetPoolSize(info.PrefabID))
                 {
-                    if (objectUpdate[info.PrefabID] > objectSystem.GetPoolSize(info.PrefabID))
-                    {
-                        objectSystem.IncreasePoolSize(info.PrefabID);
-                        objectSystem.CreatePool(objectInfo.PrefabID, objectInfo.ObjectPrefab);
-                    }
+                    objectSystem.IncreasePoolSize(info.PrefabID);
+                    objectSystem.CreatePool(info.PrefabID, objectInfo.ObjectPrefab);
                 }
-                catch
-                {
-                    Debug.Log(info.GetType());
-                    Debug.Log(info.Type);
-                }
+
                 objectSystem.Reuse(info.PrefabID, info.Position);
-                if (objectInfo.BehaviourType == BehaviourType.NAL || objectInfo.BehaviourType == BehaviourType.GROW)
-                    generator.AddNALObject(item);
+
+                if (objectInfo.BehaviourType == BehaviourType.NAL ||
+                    objectInfo.BehaviourType == BehaviourType.GROW)
+                {
+                    var worldPos = new Vector2Int(
+                        Mathf.RoundToInt(info.Position.x),
+                        Mathf.RoundToInt(info.Position.z));
+
+                    generator.AddNALObject(worldPos);
+                }
             }
         }
     }

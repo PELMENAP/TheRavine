@@ -51,26 +51,42 @@ MonoBehaviour:
     seed: 16
     farlands: 10000
     isRiver: 1
-    endlessFlag: 01010100
+    endlessFlag: 01010000
     heightNoiseSettings:
       noiseType: 0
-      fractalType: 4
-      frequency: 0.0035
-      octaves: 2
+      fractalType: 1
+      frequency: 0.005
+      octaves: 3
       lacunarity: 2
       gain: 0.5
       weightedStrength: 0
     riverNoiseSettings:
       noiseType: 0
       fractalType: 1
-      frequency: 0.0132
-      octaves: 3
+      frequency: 0.005
+      octaves: 2
       lacunarity: 2.5
       gain: 0.4
+      weightedStrength: 0.23
+    temperatureSettings:
+      noiseType: 0
+      fractalType: 1
+      frequency: 0.002
+      octaves: 2
+      lacunarity: 2
+      gain: 0.3
       weightedStrength: 0
+    moistureSettings:
+      noiseType: 0
+      fractalType: 1
+      frequency: 0.003
+      octaves: 3
+      lacunarity: 2
+      gain: 0.45
+      weightedStrength: 0.1
     riverBlend:
-      riverMin: 0.45
-      riverMax: 0.6
+      riverMin: 0.3
+      riverMax: 0.7
       influenceWidth: 0.1
       riverBedHeight: 0.05
       minTerrainHeight: 0.2
@@ -595,20 +611,285 @@ MonoBehaviour:
         - Chance: 150
           info: {fileID: 11400000, guid: f2627d2fd63be5505a20238a9bb37833, type: 2}
         structs: []
-    biomRegions:
-    - height: 0
-    - height: 0.25
-    - height: 0.5
-    - height: 0.75
-    - height: 1
+    biomesSettings:
+    - name: Tundra
+      minTemperature: 0
+      maxTemperature: 0.25
+      minMoisture: 0
+      maxMoisture: 1
+      heightScale: 0.5
+      heightOffset: 0.18
+      hasDetailLayer: 1
+      detailNoise:
+        noiseType: 2
+        fractalType: 1
+        frequency: 0.06
+        octaves: 2
+        lacunarity: 2
+        gain: 0.4
+        weightedStrength: 0
+      detailStrength: 0.06
+      hasRivers: 0
+      riverBlend:
+        riverMin: 0
+        riverMax: 0
+        influenceWidth: 0
+        riverBedHeight: 0
+        minTerrainHeight: 0
+        useDomainWarp: 0
+        domainWarpAmplitude: 0
+    - name: Boreal Forest (Taiga)
+      minTemperature: 0.1
+      maxTemperature: 0.38
+      minMoisture: 0.35
+      maxMoisture: 0.75
+      heightScale: 0.75
+      heightOffset: 0.08
+      hasDetailLayer: 1
+      detailNoise:
+        noiseType: 0
+        fractalType: 1
+        frequency: 0.015
+        octaves: 3
+        lacunarity: 2
+        gain: 0.5
+        weightedStrength: 0.2
+      detailStrength: 0.1
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.47
+        riverMax: 0.53
+        influenceWidth: 0.08
+        riverBedHeight: 0.06
+        minTerrainHeight: 0.2
+        useDomainWarp: 0
+        domainWarpAmplitude: 0
+    - name: Temperate Grassland / Steppe
+      minTemperature: 0.28
+      maxTemperature: 0.6
+      minMoisture: 0
+      maxMoisture: 0.38
+      heightScale: 0.65
+      heightOffset: 0.1
+      hasDetailLayer: 0
+      detailNoise:
+        noiseType: 0
+        fractalType: 0
+        frequency: 0
+        octaves: 0
+        lacunarity: 0
+        gain: 0
+        weightedStrength: 0
+      detailStrength: 0
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.47
+        riverMax: 0.53
+        influenceWidth: 0.08
+        riverBedHeight: 0.06
+        minTerrainHeight: 0.2
+        useDomainWarp: 1
+        domainWarpAmplitude: 0
+    - name: Temperate Deciduous Forest
+      minTemperature: 0.3
+      maxTemperature: 0.62
+      minMoisture: 0.38
+      maxMoisture: 0.72
+      heightScale: 0.9
+      heightOffset: 0.06
+      hasDetailLayer: 1
+      detailNoise:
+        noiseType: 0
+        fractalType: 1
+        frequency: 0.015
+        octaves: 3
+        lacunarity: 2
+        gain: 0.5
+        weightedStrength: 0.2
+      detailStrength: 0.14
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.42
+        riverMax: 0.58
+        influenceWidth: 0.18
+        riverBedHeight: 0.04
+        minTerrainHeight: 0.15
+        useDomainWarp: 0
+        domainWarpAmplitude: 30
+    - name: Temperate Rainforest
+      minTemperature: 0.22
+      maxTemperature: 0.52
+      minMoisture: 0.7
+      maxMoisture: 1
+      heightScale: 1.1
+      heightOffset: 0.04
+      hasDetailLayer: 1
+      detailNoise:
+        noiseType: 0
+        fractalType: 1
+        frequency: 0.015
+        octaves: 3
+        lacunarity: 2
+        gain: 0.5
+        weightedStrength: 0.2
+      detailStrength: 0.2
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.42
+        riverMax: 0.58
+        influenceWidth: 0.18
+        riverBedHeight: 0.04
+        minTerrainHeight: 0.15
+        useDomainWarp: 0
+        domainWarpAmplitude: 30
+    - name: Hot Desert
+      minTemperature: 0.62
+      maxTemperature: 1
+      minMoisture: 0
+      maxMoisture: 0.28
+      heightScale: 0.55
+      heightOffset: 0.12
+      hasDetailLayer: 1
+      detailNoise:
+        noiseType: 0
+        fractalType: 1
+        frequency: 0.04
+        octaves: 2
+        lacunarity: 2.5
+        gain: 0.4
+        weightedStrength: 0
+      detailStrength: 0.18
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.48
+        riverMax: 0.52
+        influenceWidth: 0.05
+        riverBedHeight: 0.02
+        minTerrainHeight: 0.25
+        useDomainWarp: 1
+        domainWarpAmplitude: 0
+    - name: Savanna
+      minTemperature: 0.6
+      maxTemperature: 0.92
+      minMoisture: 0.22
+      maxMoisture: 0.52
+      heightScale: 0.62
+      heightOffset: 0.09
+      hasDetailLayer: 0
+      detailNoise:
+        noiseType: 0
+        fractalType: 0
+        frequency: 0
+        octaves: 0
+        lacunarity: 0
+        gain: 0
+        weightedStrength: 0
+      detailStrength: 0
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.47
+        riverMax: 0.53
+        influenceWidth: 0.08
+        riverBedHeight: 0.06
+        minTerrainHeight: 0.2
+        useDomainWarp: 1
+        domainWarpAmplitude: 0
+    - name: Tropical Forest
+      minTemperature: 0.72
+      maxTemperature: 1
+      minMoisture: 0.45
+      maxMoisture: 0.72
+      heightScale: 0.85
+      heightOffset: 0.07
+      hasDetailLayer: 1
+      detailNoise:
+        noiseType: 0
+        fractalType: 1
+        frequency: 0.015
+        octaves: 3
+        lacunarity: 2
+        gain: 0.5
+        weightedStrength: 0.2
+      detailStrength: 0.12
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.42
+        riverMax: 0.58
+        influenceWidth: 0.18
+        riverBedHeight: 0.04
+        minTerrainHeight: 0.15
+        useDomainWarp: 0
+        domainWarpAmplitude: 30
+    - name: Tropical Rainforest
+      minTemperature: 0.78
+      maxTemperature: 1
+      minMoisture: 0.7
+      maxMoisture: 1
+      heightScale: 1.15
+      heightOffset: 0.05
+      hasDetailLayer: 1
+      detailNoise:
+        noiseType: 0
+        fractalType: 1
+        frequency: 0.015
+        octaves: 3
+        lacunarity: 2
+        gain: 0.5
+        weightedStrength: 0.2
+      detailStrength: 0.22
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.42
+        riverMax: 0.58
+        influenceWidth: 0.18
+        riverBedHeight: 0.04
+        minTerrainHeight: 0.15
+        useDomainWarp: 1
+        domainWarpAmplitude: 30
+    - name: Wetlands / Swamp
+      minTemperature: 0.38
+      maxTemperature: 0.78
+      minMoisture: 0.78
+      maxMoisture: 1
+      heightScale: 0.45
+      heightOffset: 0.05
+      hasDetailLayer: 1
+      detailNoise:
+        noiseType: 0
+        fractalType: 1
+        frequency: 0.025
+        octaves: 2
+        lacunarity: 2
+        gain: 0.6
+        weightedStrength: 0.3
+      detailStrength: 0.08
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.38
+        riverMax: 0.62
+        influenceWidth: 0.22
+        riverBedHeight: 0.08
+        minTerrainHeight: 0.05
+        useDomainWarp: 1
+        domainWarpAmplitude: 45
+    erosion:
+      enabled: 1
+      allowInfiniteErosionDepth: 1
+      dropletCount: 2000
+      lifetime: 20
+      amplify: 1
+      inertia: 0.9
+      gravity: 16
+      evaporation: 0.99
+      sedimentCapacity: 25
+      depositSpeed: 0.5
+      erodeSpeed: 0.5
+      minSlope: 0.01
+      radius: 2
   terrainTransform: {fileID: 0}
   waterTransform: {fileID: 0}
   terrainFilter: {fileID: 0}
   terrainCollider: {fileID: 0}
-  noiseScale: 200
-  octaves: 8
-  persistence: 0.15
-  lacunarity: 3
   viewer: {fileID: 0}
   viewerOffset: {x: 0, y: 0, z: 10}
   waterOffset: {x: 0, y: 4, z: 0}
@@ -681,7 +962,7 @@ MonoBehaviour:
   scaleMax: 1.2
   rotationVariation: 360
   globalMinHeight: 5
-  globalMaxHeight: 9
+  globalMaxHeight: 10
   scaleNoiseScale: 0.05
   scaleNoiseInfluence: 0.5
   scaleOctaves: 2
