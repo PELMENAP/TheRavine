@@ -9,9 +9,9 @@ namespace TheRavine.Generator
     [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
     public struct HydraulicErosionJob : IJob
     {
-        public int mapSize;
-        public int seed;
-        public ErosionSettings settings;
+        [ReadOnly] public int mapSize;
+        [ReadOnly] public int seed;
+        [ReadOnly] public ErosionSettings settings;
         public NativeArray<float> heightMap;
 
         private const float MinDirection = 0.0001f;
@@ -102,6 +102,8 @@ namespace TheRavine.Generator
         private void ApplyErosion(ref NativeArray<float> deltaMap, float2 pos, float amount)
         {
             int r = settings.radius;
+            float invR2 = math.rsqrt(r);
+            
             int cx = (int)pos.x;
             int cy = (int)pos.y;
 
@@ -113,7 +115,7 @@ namespace TheRavine.Generator
             {
                 float d2 = x * x + y * y;
                 if (d2 > r2) continue;
-                total += 1f - math.sqrt(d2) / r;
+                total += 1f - d2 * invR2;
             }
 
             if (total <= 0f)
@@ -132,15 +134,14 @@ namespace TheRavine.Generator
                 if (d2 > r2)
                     continue;
 
-                float w = (1f - math.sqrt(d2) / r) / total;
+                float w = 1f - d2 * invR2;
 
                 int idx = Idx(px, py);
-
                 float currentHeight = heightMap[idx] + deltaMap[idx];
 
                 if (!settings.allowInfiniteErosionDepth)
                 {
-                    float maxRemove = math.max(0f, currentHeight - 100);
+                    float maxRemove = math.max(0.05f, currentHeight - 100);
                     float remove = math.min(amount * w, maxRemove);
                     deltaMap[idx] -= remove;
                 }
@@ -201,7 +202,7 @@ namespace TheRavine.Generator
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool IsInside(float2 p)
         {
-            return p.x >= 1 && p.y >= 1 && p.x < mapSize - 2 && p.y < mapSize - 2;
+            return p.x >= 0 && p.y >= 0 && p.x < mapSize - 1 && p.y < mapSize - 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

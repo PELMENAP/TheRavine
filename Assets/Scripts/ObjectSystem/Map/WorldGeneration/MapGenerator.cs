@@ -21,7 +21,7 @@ namespace TheRavine.Generator
         [SerializeField] private ChunkGenerationSettings chunkGenerationSettings;
         private readonly CancellationTokenSource _cts = new();
 
-        public const int mapChunkSize = 40, chunkScale = 1, scale = 2;
+        public const int mapChunkSize = 64, chunkScale = 1, scale = 2;
         public const int generationSize = scale * mapChunkSize;
         public const float maxTerrainHeight = 50f;
 
@@ -53,8 +53,9 @@ namespace TheRavine.Generator
         {
             Vector2Int chunk = GetChunkPosition(pos);
             Vector2Int local = GetLocalPosition(pos);
+            
             float height = GetMapData(chunk).HeightRaw[Idx(local.x, local.y)];
-            return new Vector3(pos.x, height * maxTerrainHeight, pos.y);
+            return new Vector3(pos.x, height, pos.y);
         }
         public Vector2Int GetChunkPosition(Vector2 pos) =>
             new(Mathf.FloorToInt(pos.x / generationSize),
@@ -208,7 +209,7 @@ namespace TheRavine.Generator
                 mapChunkSize);
 
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
-            chunkGenerator = new ChunkGenerator(objectSystem, chunkGenerationSettings, this);
+            chunkGenerator = new ChunkGenerator(chunkGenerationSettings);
 
             ServiceLocator.WhenPlayersNonEmpty()
                 .Subscribe(_ =>

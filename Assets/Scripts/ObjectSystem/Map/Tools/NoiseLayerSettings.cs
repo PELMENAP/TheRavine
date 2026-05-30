@@ -15,7 +15,7 @@ namespace TheRavine.Generator
         [Range(0f, 1f)] public float gain;
         [Range(0f, 1f)] public float weightedStrength;
 
-        public static NoiseLayerSettings DefaultHeight => new()
+        public readonly static NoiseLayerSettings DefaultHeight = new()
         {
             noiseType = FastNoiseLite.NoiseType.OpenSimplex2,
             fractalType = FastNoiseLite.FractalType.FBm,
@@ -26,7 +26,7 @@ namespace TheRavine.Generator
             weightedStrength = 0f
         };
 
-        public static NoiseLayerSettings DefaultRiver => new()
+        public readonly static NoiseLayerSettings DefaultRiver = new()
         {
             noiseType = FastNoiseLite.NoiseType.OpenSimplex2,
             fractalType = FastNoiseLite.FractalType.FBm,
@@ -37,7 +37,7 @@ namespace TheRavine.Generator
             weightedStrength = 0f
         };
 
-        public static NoiseLayerSettings DefaultTemperature => new()
+        public readonly static NoiseLayerSettings DefaultTemperature = new()
         {
             noiseType        = FastNoiseLite.NoiseType.OpenSimplex2,
             fractalType      = FastNoiseLite.FractalType.FBm,
@@ -48,7 +48,7 @@ namespace TheRavine.Generator
             weightedStrength = 0f
         };
 
-        public static NoiseLayerSettings DefaultMoisture => new()
+        public readonly static NoiseLayerSettings DefaultMoisture = new()
         {
             noiseType        = FastNoiseLite.NoiseType.OpenSimplex2,
             fractalType      = FastNoiseLite.FractalType.FBm,
@@ -71,7 +71,7 @@ namespace TheRavine.Generator
         public bool useDomainWarp;
         [Range(0f, 50f)] public float domainWarpAmplitude;
 
-        public static RiverBlendSettings Default => new()
+        public readonly static RiverBlendSettings Default = new()
         {
             riverMin = 0.45f,
             riverMax = 0.60f,
@@ -100,7 +100,7 @@ namespace TheRavine.Generator
         [Range(0f, 0.5f)] public float detailStrength;
         public bool              hasRivers;
         public RiverBlendSettings riverBlend;
-        public Vector2 Center => new(
+        public readonly Vector2 Center => new(
             (minTemperature + maxTemperature) * 0.5f,
             (minMoisture    + maxMoisture)    * 0.5f);
             

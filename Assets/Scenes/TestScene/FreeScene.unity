@@ -2267,6 +2267,14 @@ PrefabInstance:
       propertyPath: terrainTransform
       value: 
       objectReference: {fileID: 1500658424}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: chunkGenerationSettings.erosion.lifetime
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: chunkGenerationSettings.erosion.dropletCount
+      value: 2000
+      objectReference: {fileID: 0}
     - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: targetTransform
       value: 
@@ -2609,9 +2617,17 @@ PrefabInstance:
       propertyPath: GlobalObjectIdHash
       value: 1672802306
       objectReference: {fileID: 0}
+    - target: {fileID: 3495164147347128286, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3495164147535748133, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
       propertyPath: m_LocalPosition.y
       value: 3.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3495164148260058432, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: m_RendererIndex
+      value: -1
       objectReference: {fileID: 0}
     - target: {fileID: 4920471106087173981, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
       propertyPath: infoRegistry

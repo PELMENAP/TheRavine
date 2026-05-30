@@ -19,27 +19,29 @@ namespace TheRavine.Generator
         private const int totalCells     = mapChunkSize * mapChunkSize;
         private const float maxTerrainHeight = MapGenerator.maxTerrainHeight;
 
-        private readonly ObjectSystem objectSystem;
         private readonly ChunkGenerationSettings settings;
-        private readonly MapGenerator mapGenerator;
         private NativeArray<float> noiseMap;
         private readonly NativeArray<float> riverMap, temperatureMap, moistureMap;
-
+        private readonly NativeArray<float> biomeHeightMap;
         private readonly NativeArray<int>   heightResult, biomeResult;
         private readonly NativeArray<float> biomeCentersT, biomeCentersM, regionThresholds;
 
-        private readonly float[] chunkBiomeWeights;
+        private readonly NativeArray<float> biomeHeightScale;
+        private readonly NativeArray<float> biomeHeightOffset;
+
+        private readonly NativeArray<byte> biomeHasRiver;
+
+        private readonly NativeArray<float> riverCenter;
+        private readonly NativeArray<float> riverRadius;
+        private readonly NativeArray<float> riverRadiusRcp;
+        private readonly NativeArray<float> riverBedHeight;
 
         public UnityAction<Vector2Int, int, int, Vector2Int> onSpawnPoint;
 
         public ChunkGenerator(
-            ObjectSystem objectSystem,
-            ChunkGenerationSettings settings,
-            MapGenerator mapGenerator)
+            ChunkGenerationSettings settings)
         {
-            this.objectSystem = objectSystem;
             this.settings     = settings;
-            this.mapGenerator = mapGenerator;
 
             noiseMap       = new NativeArray<float>(totalCells, Allocator.Persistent);
             riverMap       = new NativeArray<float>(totalCells, Allocator.Persistent);
@@ -53,7 +55,6 @@ namespace TheRavine.Generator
 
             biomeCentersT     = new NativeArray<float>(biomeCount, Allocator.Persistent);
             biomeCentersM     = new NativeArray<float>(biomeCount, Allocator.Persistent);
-            chunkBiomeWeights = new float[biomeCount];
 
             for (int i = 0; i < biomeCount; i++)
             {
@@ -65,6 +66,51 @@ namespace TheRavine.Generator
             regionThresholds = new NativeArray<float>(settings.regions.Length, Allocator.Persistent);
             for (int i = 0; i < settings.regions.Length; i++)
                 regionThresholds[i] = settings.regions[i].height;
+
+            biomeHeightMap = new NativeArray<float>(totalCells, Allocator.Persistent);
+
+            biomeHeightScale = new NativeArray<float>(biomeCount, Allocator.Persistent);
+            biomeHeightOffset = new NativeArray<float>(biomeCount, Allocator.Persistent);
+
+            biomeHasRiver = new NativeArray<byte>(biomeCount, Allocator.Persistent);
+
+            riverCenter = new NativeArray<float>(biomeCount, Allocator.Persistent);
+            riverRadius = new NativeArray<float>(biomeCount, Allocator.Persistent);
+            riverRadiusRcp = new NativeArray<float>(biomeCount, Allocator.Persistent);
+
+            riverBedHeight = new NativeArray<float>(biomeCount, Allocator.Persistent);
+
+            for (int i = 0; i < biomeCount; i++)
+            {
+                var biome = settings.biomesSettings[i];
+
+                biomeHeightScale[i] = biome.heightScale;
+                biomeHeightOffset[i] = biome.heightOffset;
+
+                biomeHasRiver[i] =
+                    biome.hasRivers
+                        ? (byte)1
+                        : (byte)0;
+
+                RiverBlendSettings rs = biome.riverBlend;
+
+                float center =
+                    (rs.riverMin + rs.riverMax) * 0.5f;
+
+                float radius =
+                    (rs.riverMax - rs.riverMin) * 0.5f +
+                    rs.influenceWidth;
+
+                riverCenter[i] = center;
+                riverRadius[i] = radius;
+                riverRadiusRcp[i] =
+                    radius > 0f
+                        ? math.rcp(radius)
+                        : 0f;
+
+                riverBedHeight[i] =
+                    rs.riverBedHeight;
+            }
         }
         public ChunkData GenerateMapData(Vector2Int centre)
         {
@@ -75,30 +121,79 @@ namespace TheRavine.Generator
 
             FastRandom chunkRandom = new(hash);
 
-            // 1. Noise passes
             Noise.GenerateHeightMap(noiseMap, centre);
             Noise.GenerateRiverMap(riverMap, centre);
             Noise.GenerateClimateMap(temperatureMap, moistureMap, centre);
 
-            // 2. Biome modifiers + river blend
-            ApplyBiomeModifiers();
+            JobHandle biomeHandle =
+                new BiomeModifierJob
+                {
+                    heightIn = noiseMap,
+                    riverMap = riverMap,
 
-            // 3. Hydraulic erosion (optional)
-            ApplyErosion(centre);
+                    temperatureMap = temperatureMap,
+                    moistureMap = moistureMap,
 
-            // 4. Region & biome assignment (Burst job)
-            new RegionAssignJob
-            {
-                heightValues       = noiseMap,
-                temperatureValues  = temperatureMap,
-                moistureValues     = moistureMap,
-                regionThresholds   = regionThresholds,
-                biomeCentersT      = biomeCentersT,
-                biomeCentersM      = biomeCentersM,
-                mountainRegionIndex = settings.mountainRegionIndex,
-                heightMap          = heightResult,
-                biomeMap           = biomeResult
-            }.Schedule(totalCells, 64).Complete();
+                    biomeCentersT = biomeCentersT,
+                    biomeCentersM = biomeCentersM,
+
+                    biomeHeightScale = biomeHeightScale,
+                    biomeHeightOffset = biomeHeightOffset,
+
+                    biomeHasRiver = biomeHasRiver,
+
+                    riverCenter = riverCenter,
+                    riverRadius = riverRadius,
+                    riverRadiusRcp = riverRadiusRcp,
+                    riverBedHeight = riverBedHeight,
+
+                    blendRadiusRcp2 =
+                        math.rcp(settings.biomeBlendRadius *
+                                settings.biomeBlendRadius),
+
+                    altitudeCooling =
+                        settings.altitudeCooling,
+
+                    heightOut = biomeHeightMap
+                }
+                .Schedule(totalCells, 64);
+
+            JobHandle erosionHandle =
+                new HydraulicErosionJob
+                {
+                    mapSize = mapChunkSize,
+                    seed = hash,
+                    settings = settings.erosion,
+
+                    heightMap = biomeHeightMap
+                }
+                .Schedule(biomeHandle);
+
+            JobHandle regionHandle =
+                new RegionAssignJob
+                {
+                    heightValues = biomeHeightMap,
+
+                    temperatureValues = temperatureMap,
+                    moistureValues = moistureMap,
+
+                    regionThresholds = regionThresholds,
+
+                    biomeCentersT = biomeCentersT,
+                    biomeCentersM = biomeCentersM,
+
+                    mountainRegionIndex =
+                        settings.mountainRegionIndex,
+
+                    heightMap = heightResult,
+                    biomeMap = biomeResult
+                }
+                .Schedule(
+                    totalCells,
+                    64,
+                    erosionHandle);
+            
+            regionHandle.Complete();
 
             ChunkData chunkData = new();
             FillChunkArrays(chunkData);
@@ -111,7 +206,7 @@ namespace TheRavine.Generator
 
         private void FillChunkArrays(ChunkData cd)
         {
-            noiseMap.CopyTo(cd.HeightRaw);
+            biomeHeightMap.CopyTo(cd.HeightRaw);
             heightResult.CopyTo(cd.HeightMap);
             biomeResult.CopyTo(cd.BiomeMap);
 
@@ -197,117 +292,6 @@ namespace TheRavine.Generator
 
             return result;
         }
-        private void ApplyBiomeModifiers()
-        {
-            BiomeSettings[] biomes = settings.biomesSettings;
-            int biomeCount = biomes.Length;
-
-            const float blendRadius    = 0.25f;
-            const float rcpR2          = 1f / (blendRadius * blendRadius);
-            const float altitudeCooling = 0.35f;
-
-            Array.Clear(chunkBiomeWeights, 0, biomeCount);
-            float totalChunkWeight = 0f;
-
-            for (int y = 0; y < mapChunkSize; y++)
-            {
-                for (int x = 0; x < mapChunkSize; x++)
-                {
-                    int idx   = Idx(x, y);
-                    float baseH = noiseMap[idx];
-
-                    float temp = Mathf.Clamp01(
-                        temperatureMap[idx] - baseH * altitudeCooling);
-
-                    float moisture = moistureMap[idx];
-
-                    float totalW        = 0f;
-                    float blendedScale  = 0f;
-                    float blendedOffset = 0f;
-                    float blendedRiverT = 0f;
-                    float blendedBedH   = 0f;
-                    float rv = riverMap[idx];
-
-                    for (int b = 0; b < biomeCount; b++)
-                    {
-                        float dt = temp - biomeCentersT[b];
-                        float dm = moisture - biomeCentersM[b];
-                        float d2 = (dt * dt + dm * dm) * rcpR2;
-                        float w  = math.saturate(1f - d2);
-                        w = w * w * (3f - 2f * w);
-
-                        totalW          += w;
-                        blendedScale    += w * biomes[b].heightScale;
-                        blendedOffset   += w * biomes[b].heightOffset;
-
-                        if (biomes[b].hasRivers)
-                        {
-                            RiverBlendSettings rs = biomes[b].riverBlend;
-                            float riverCenter  = (rs.riverMin + rs.riverMax) * 0.5f;
-                            float totalRadius  = (rs.riverMax - rs.riverMin) * 0.5f + rs.influenceWidth;
-                            float dist = Mathf.Abs(rv - riverCenter);
-
-                            if (dist < totalRadius)
-                            {
-                                float t = 1f - dist / totalRadius;
-                                t = t * t * (3f - 2f * t);
-                                blendedRiverT += w * t;
-                                blendedBedH   += w * rs.riverBedHeight;
-                            }
-                        }
-
-                        chunkBiomeWeights[b] += w;
-                        totalChunkWeight     += w;
-                    }
-
-                    float rcpW;
-                    if (totalW > 0.0001f)
-                    {
-                        rcpW = 1f / totalW;
-                    }
-                    else
-                    {
-                        rcpW          = 1f;
-                        blendedScale  = biomes[0].heightScale;
-                        blendedOffset = biomes[0].heightOffset;
-                    }
-
-                    float h = Mathf.Clamp01(
-                        baseH * (blendedScale * rcpW) + blendedOffset * rcpW);
-
-                    float riverT = blendedRiverT * rcpW;
-                    if (riverT > 0f)
-                        h = Mathf.LerpUnclamped(h, blendedBedH * rcpW, riverT);
-
-                    noiseMap[idx] = h;
-                }
-            }
-
-            if (totalChunkWeight > 0f)
-            {
-                float rcp = 1f / totalChunkWeight;
-                for (int b = 0; b < biomeCount; b++)
-                    chunkBiomeWeights[b] *= rcp;
-            }
-        }
-
-        public void ApplyErosion(Vector2Int chunk)
-        {
-            if (!settings.erosion.enabled) return;
-
-            int seed =
-                settings.seed ^
-                (chunk.x * 73856093) ^
-                (chunk.y * 19349663);
-
-            new HydraulicErosionJob
-            {
-                mapSize   = MapGenerator.mapChunkSize,
-                seed      = seed,
-                settings  = settings.erosion,
-                heightMap = noiseMap
-            }.Schedule().Complete();
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int Idx(int x, int y) => y * mapChunkSize + x;
@@ -322,6 +306,16 @@ namespace TheRavine.Generator
             if (biomeCentersT.IsCreated)  biomeCentersT.Dispose();
             if (biomeCentersM.IsCreated)  biomeCentersM.Dispose();
             if (regionThresholds.IsCreated) regionThresholds.Dispose();
+
+
+            if (biomeHeightMap.IsCreated) biomeHeightMap.Dispose();
+            if (biomeHeightScale.IsCreated) biomeHeightScale.Dispose();
+            if (biomeHeightOffset.IsCreated) biomeHeightOffset.Dispose();
+            if (biomeHasRiver.IsCreated)  biomeHasRiver.Dispose();
+            if (riverCenter.IsCreated)    riverCenter.Dispose();
+            if (riverRadius.IsCreated)    riverRadius.Dispose();
+            if (riverRadiusRcp.IsCreated) riverRadiusRcp.Dispose();
+            if (riverBedHeight.IsCreated) riverBedHeight.Dispose();
         }
     }
 }
