@@ -115,7 +115,7 @@ namespace TheRavine.Inventory
             IInventoryItem item = activeCells[inventoryInputHandler.ActiveCellIndex - 1]._uiInventoryItem.item;
             if (!item.info.isPlaceable) return;
 
-            if (objectSystem.TryAddToGlobal(e.Position, generator.GetRealPosition(e.Position), 
+            if (generator.TryAddObject(e.Position, generator.GetRealPosition(e.Position), 
                 item.info.prefab.GetInstanceID(), 1, InstanceType.Interactable))
             {
                 item.state.amount--;
@@ -135,40 +135,41 @@ namespace TheRavine.Inventory
 
         private void PickUpEvent(AEntity entity, PickUpEvent e)
         {
-            ObjectInstInfo objectInstInfo = objectSystem.GetGlobalObjectInstInfo(e.Position);
-            ObjectInfo data = objectSystem.GetGlobalObjectInfo(e.Position);
-            if (data == null) return;
-
-            IInventoryItem item = infoManager.GetInventoryItemByInfo(
-                data.InventoryItemInfo.id, 
-                data.InventoryItemInfo, 
-                objectInstInfo.Amount);
-
-            if (eventDrivenInventoryProxy.TryToAdd(this, item))
+            if (generator.TryGetObject(e.Position, out ObjectInstInfo objectInstInfo))
             {
-                objectSystem.RemoveFromGlobal(e.Position);
-                SpreadPattern pattern = data.OnPickUpPattern;
-                
-                if (pattern != null)
+                ObjectInfo data = objectSystem.GetInfo(objectInstInfo.PrefabID);
+
+                IInventoryItem item = infoManager.GetInventoryItemByInfo(
+                    data.InventoryItemInfo.id, 
+                    data.InventoryItemInfo, 
+                    objectInstInfo.Amount);
+
+                if (eventDrivenInventoryProxy.TryToAdd(this, item))
                 {
-                    objectSystem.TryAddToGlobal(e.Position, generator.GetRealPosition(e.Position), 
-                        pattern.main.ObjectPrefab.GetInstanceID(), pattern.main.DefaultAmount, pattern.main.InstanceType);
+                    generator.RemoveObject(e.Position);
+                    SpreadPattern pattern = data.OnPickUpPattern;
                     
-                    if (pattern.other.Length != 0)
+                    if (pattern != null)
                     {
-                        for (byte i = 0; i < pattern.other.Length; i++)
+                        generator.TryAddObject(e.Position, generator.GetRealPosition(e.Position), 
+                            pattern.main.ObjectPrefab.GetInstanceID(), pattern.main.DefaultAmount, pattern.main.InstanceType);
+                        
+                        if (pattern.other.Length != 0)
                         {
-                            Vector2Int newPos = Extension.GetRandomPointAround(e.Position, pattern.factor);
-                            objectSystem.TryAddToGlobal(newPos, generator.GetRealPosition(newPos), 
-                                pattern.other[i].ObjectPrefab.GetInstanceID(), 
-                                pattern.other[i].DefaultAmount, 
-                                pattern.other[i].InstanceType);
+                            for (byte i = 0; i < pattern.other.Length; i++)
+                            {
+                                Vector2Int newPos = Extension.GetRandomPointAround(e.Position, pattern.factor);
+                                generator.TryAddObject(newPos, generator.GetRealPosition(newPos), 
+                                    pattern.other[i].ObjectPrefab.GetInstanceID(), 
+                                    pattern.other[i].DefaultAmount, 
+                                    pattern.other[i].InstanceType);
+                            }
                         }
                     }
                 }
-            }
 
-            generator.ExtraUpdate();
+                generator.ExtraUpdate();
+            }
         }
 
         private void SaveInventory()

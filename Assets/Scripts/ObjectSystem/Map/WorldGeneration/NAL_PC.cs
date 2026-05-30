@@ -68,66 +68,67 @@ namespace TheRavine.Generator
 
         private async UniTaskVoid ProcessNAL(Vector2Int current)
         {
-            ObjectInfo info = objectSystem.GetGlobalObjectInfo(current);
-            if (info == null) return;
-
-            ObjectInfo next = info.EvolutionStep;
-
-            // GROW logic
-            if (info.BehaviourType == BehaviourType.GROW)
+            if (generator.TryGetObject(current, out ObjectInstInfo instInfo))
             {
-                if (next == null)
+                ObjectInfo info = objectSystem.GetInfo(instInfo.PrefabID);
+                ObjectInfo next = info.EvolutionStep;
+
+                // GROW logic
+                if (info.BehaviourType == BehaviourType.GROW)
                 {
-                    if (Extension.ComparePercent(25))
-                        removeQueue.Enqueue(current);
+                    if (next == null)
+                    {
+                        if (Extension.ComparePercent(25))
+                            removeQueue.Enqueue(current);
+                        return;
+                    }
+
+                    removeQueue.Enqueue(current);
+                    addQueue.Enqueue(new Pair<Vector2Int, ObjectInfo>(current, next));
                     return;
                 }
 
-                removeQueue.Enqueue(current);
-                addQueue.Enqueue(new Pair<Vector2Int, ObjectInfo>(current, next));
-                return;
-            }
+                // Death / spread
+                bool close = false;
+                for (int x = -MapGenerator.scale; x <= MapGenerator.scale; x++)
+                    for (int y = -MapGenerator.scale; y <= MapGenerator.scale; y++)
+                        if ((x != 0 || y != 0) && generator.ContainsObject(current + new Vector2Int(x, y)))
+                            close = true;
 
-            // Death / spread
-            bool close = false;
-            for (int x = -MapGenerator.scale; x <= MapGenerator.scale; x++)
-                for (int y = -MapGenerator.scale; y <= MapGenerator.scale; y++)
-                    if ((x != 0 || y != 0) && objectSystem.ContainsGlobal(current + new Vector2Int(x, y)))
-                        close = true;
+                NAlInfo n = info.NalInfo;
 
-            NAlInfo n = info.NalInfo;
-
-            if (Extension.ComparePercent(n.chance / 2 + deadChance) || close)
-            {
-                removeQueue.Enqueue(current);
-                SpreadPattern pattern = info.OnDeathPattern;
-                if (pattern != null)
+                if (Extension.ComparePercent(n.chance / 2 + deadChance) || close)
                 {
-                    addQueue.Enqueue(new Pair<Vector2Int, ObjectInfo>(current, pattern.main));
-                    foreach (var other in pattern.other)
+                    removeQueue.Enqueue(current);
+                    SpreadPattern pattern = info.OnDeathPattern;
+                    if (pattern != null)
                     {
-                        Vector2Int p = Extension.GetRandomPointAround(current, pattern.factor);
-                        addQueue.Enqueue(new Pair<Vector2Int, ObjectInfo>(p, other));
+                        addQueue.Enqueue(new Pair<Vector2Int, ObjectInfo>(current, pattern.main));
+                        foreach (var other in pattern.other)
+                        {
+                            Vector2Int p = Extension.GetRandomPointAround(current, pattern.factor);
+                            addQueue.Enqueue(new Pair<Vector2Int, ObjectInfo>(p, other));
+                        }
                     }
+                    return;
                 }
-                return;
-            }
 
-            // Spread when alive
-            if (!generator.IsHeightIsLiveAble(generator.GetMapHeight(current))) return;
+                // Spread when alive
+                if (!generator.IsHeightIsLiveAble(generator.GetMapHeight(current))) return;
 
-            int attempts = n.attempt;
-            while (attempts-- > 0)
-            {
-                if (Extension.ComparePercent(n.chance))
+                int attempts = n.attempt;
+                while (attempts-- > 0)
                 {
-                    Vector2Int p = Extension.GetRandomPointAround(current, n.distance);
-                    addQueue.Enqueue(new Pair<Vector2Int, ObjectInfo>(p, next));
+                    if (Extension.ComparePercent(n.chance))
+                    {
+                        Vector2Int p = Extension.GetRandomPointAround(current, n.distance);
+                        addQueue.Enqueue(new Pair<Vector2Int, ObjectInfo>(p, next));
+                    }
+                    await UniTask.Delay(10, cancellationToken: token);
                 }
-                await UniTask.Delay(10, cancellationToken: token);
-            }
 
-            await UniTask.Delay(10 * n.delay, cancellationToken: token);
+                await UniTask.Delay(10 * n.delay, cancellationToken: token);
+            }
         }
 
         public async UniTaskVoid RunUpdate()
@@ -137,22 +138,20 @@ namespace TheRavine.Generator
                 await UniTask.Delay(100000, cancellationToken: token);
 
                 while (removeQueue.Count > 0)
-                    objectSystem.RemoveFromGlobal(removeQueue.Dequeue());
+                    generator.RemoveObject(removeQueue.Dequeue());
 
                 while (addQueue.Count > 0)
                 {
                     var item = addQueue.Dequeue();
 
-                    ChunkData chunkData = generator.GetMapData(item.First);
-
-                    if (objectSystem.TryAddToGlobal(
+                    if (generator.TryAddObject(
                             item.First,
                             generator.GetRealPosition(item.First),
                             item.Second.PrefabID,
                             item.Second.DefaultAmount,
                             item.Second.InstanceType))
                     {
-                        generator.GetMapData(generator.GetChunkPosition(item.First)).objectsToInst.Add(item.First);
+                        
                     }
                 }
 

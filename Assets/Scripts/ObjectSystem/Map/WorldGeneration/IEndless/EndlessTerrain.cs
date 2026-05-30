@@ -129,7 +129,6 @@ namespace TheRavine.Generator
                 int vertexOffsetZ = gridZ * mapChunkSize;
                 
                 ChunkData chunkData = generator.GetMapData(chunkPos);
-                float[,] heightMap = chunkData.heightRaw;
 
                 for (int x = 0; x < mapChunkSize; x++)
                 {
@@ -137,7 +136,7 @@ namespace TheRavine.Generator
                     {
                         int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + y;
 
-                        float h = heightMap[x, y];
+                        float h = chunkData.GetHeight(x, y);
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + x) * scale, 
                             h, 
@@ -149,12 +148,12 @@ namespace TheRavine.Generator
                 if (gridX == chunkCount - 1)
                 {
                     chunkData = generator.GetMapData(chunkPos + right);
-                    heightMap = chunkData.heightRaw;
+                    
                     for (int y = 0; y < mapChunkSize; y++)
                     {
                         int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + vertexOffsetZ + y;
 
-                        float h = heightMap[0, y];
+                        float h = chunkData.GetHeight(0, y);
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + mapChunkSize) * scale, 
                             h,
@@ -166,12 +165,12 @@ namespace TheRavine.Generator
                 if (gridZ == chunkCount - 1)
                 {
                     chunkData = generator.GetMapData(chunkPos + up);
-                    heightMap = chunkData.heightRaw;
+                    
                     for (int x = 0; x < mapChunkSize; x++)
                     {
                         int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + mapChunkSize;
 
-                        float h = heightMap[x, 0];
+                        float h = chunkData.GetHeight(x, 0);
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + x) * scale, 
                             h, 
@@ -183,9 +182,8 @@ namespace TheRavine.Generator
                 if (gridX == chunkCount - 1 && gridZ == chunkCount - 1)
                 {
                     chunkData = generator.GetMapData(chunkPos + diag);
-                    heightMap = chunkData.heightRaw;
 
-                    float h = heightMap[0, 0];
+                    float h = chunkData.GetHeight(0, 0);
                     int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + vertexOffsetZ + mapChunkSize;
                     vertices[vertexIndex] = new Vector3(
                         (vertexOffsetX + mapChunkSize) * scale, 
