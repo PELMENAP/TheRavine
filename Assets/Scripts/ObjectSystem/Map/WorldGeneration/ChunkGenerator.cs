@@ -121,9 +121,9 @@ namespace TheRavine.Generator
 
             FastRandom chunkRandom = new(hash);
 
-            Noise.GenerateHeightMap(noiseMap, centre);
-            Noise.GenerateRiverMap(riverMap, centre);
-            Noise.GenerateClimateMap(temperatureMap, moistureMap, centre);
+            Noise.GenerateAllMaps(
+                noiseMap, riverMap, temperatureMap, moistureMap,
+                centre);
 
             JobHandle biomeHandle =
                 new BiomeModifierJob
@@ -207,7 +207,6 @@ namespace TheRavine.Generator
         private void FillChunkArrays(ChunkData cd)
         {
             biomeHeightMap.CopyTo(cd.HeightRaw);
-            heightResult.CopyTo(cd.HeightMap);
             biomeResult.CopyTo(cd.BiomeMap);
 
             for (int i = 0; i < totalCells; i++)
@@ -227,7 +226,7 @@ namespace TheRavine.Generator
                 {
                     int idx       = Idx(x, y);
                     float rawH    = chunkData.HeightRaw[idx];
-                    int regionIdx = chunkData.HeightMap[idx];
+                    int regionIdx = heightResult[idx];
                     int biomeIdx  = chunkData.BiomeMap[idx];
 
                     if ((uint)regionIdx >= (uint)regionCount)

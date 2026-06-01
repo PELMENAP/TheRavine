@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -5,7 +6,7 @@ namespace TheRavine.ObjectControl
 {
     public delegate GameObject CreateInstance(Vector3 position, GameObject prefab);
 
-    public class PoolManager
+    public class PoolManager : IDisposable
     {
         private readonly Transform parent;
         public PoolManager(Transform _parent) => parent = _parent;
@@ -69,6 +70,11 @@ namespace TheRavine.ObjectControl
 
         public int GetPoolSize(int prefabID) => pools.ContainsKey(prefabID) ? pools[prefabID].Size : (int)0;
         public void IncreasePoolSize(int prefabID) { if (pools.ContainsKey(prefabID)) pools[prefabID].Size++; }
+
+        public void Dispose()
+        {
+            pools?.Clear();
+        }
 
         private class ObjectInstance
         {

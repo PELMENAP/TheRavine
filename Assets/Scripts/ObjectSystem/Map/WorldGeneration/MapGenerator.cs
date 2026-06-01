@@ -15,6 +15,7 @@ namespace TheRavine.Generator
 {
     using EndlessGenerators;
     using TheRavine.Base;
+    using Unity.Mathematics;
 
     public class MapGenerator : MonoBehaviour, ISetAble
     {
@@ -36,18 +37,11 @@ namespace TheRavine.Generator
             mapData[position] = data;
             return data;
         }
-        public bool IsHeightIsLiveAble(int height) =>
-            chunkGenerationSettings.regions[height].liveAble;
+        public bool IsHeightIsLiveAble(Vector2Int position) =>
+            GetRealPosition(position).y > 5;
 
         public bool IsWaterHeight(Vector2Int position) =>
-            GetMapHeight(position) < 1;
-
-        public int GetMapHeight(Vector2 pos)
-        {
-            Vector2Int chunk = GetChunkPosition(pos);
-            Vector2Int local = GetLocalPosition(pos);
-            return GetMapData(chunk).HeightMap[Idx(local.x, local.y)];
-        }
+            GetRealPosition(position).y < 5;
 
         public Vector3 GetRealPosition(Vector2Int pos)
         {
@@ -69,6 +63,38 @@ namespace TheRavine.Generator
             return new Vector2Int(
                 Mathf.FloorToInt(lx / scale),
                 Mathf.FloorToInt(ly / scale));
+        }
+        public float SampleHeightBilinear(float wx, float wz)
+        {
+            float gx = wx / scale;
+            float gz = wz / scale;
+
+            int chunkX = Mathf.FloorToInt(gx / mapChunkSize);
+            int chunkZ = Mathf.FloorToInt(gz / mapChunkSize);
+
+            float lxf = gx - chunkX * mapChunkSize;
+            float lzf = gz - chunkZ * mapChunkSize;
+
+            int x0 = Mathf.FloorToInt(lxf);
+            int z0 = Mathf.FloorToInt(lzf);
+
+            float tx = lxf - x0;
+            float tz = lzf - z0;
+
+            return math.lerp(
+                math.lerp(SampleCell(chunkX, chunkZ, x0,     z0),
+                        SampleCell(chunkX, chunkZ, x0 + 1, z0),     tx),
+                math.lerp(SampleCell(chunkX, chunkZ, x0,     z0 + 1),
+                        SampleCell(chunkX, chunkZ, x0 + 1, z0 + 1), tx),
+                tz);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float SampleCell(int cx, int cz, int lx, int lz)
+        {
+            if (lx >= mapChunkSize) { lx -= mapChunkSize; cx++; }
+            if (lz >= mapChunkSize) { lz -= mapChunkSize; cz++; }
+            return GetMapData(new Vector2Int(cx, cz)).HeightRaw[lz * mapChunkSize + lx];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -178,7 +204,6 @@ namespace TheRavine.Generator
         }
         public Transform terrainTransform, waterTransform;
         public MeshFilter terrainFilter;
-        public MeshCollider terrainCollider;
         private int seed;
         public int Seed { get => seed; private set => seed = value; }
 
@@ -187,6 +212,7 @@ namespace TheRavine.Generator
 
         [SerializeField] private Transform viewer;
         [SerializeField] private Vector3 viewerOffset;
+        [SerializeField] private GrassSystem grassSystem;
 
         public ChunkGenerator chunkGenerator;
         public Vector3 waterOffset;
@@ -331,14 +357,15 @@ namespace TheRavine.Generator
 
         public void BreakUp(ISetAble.Callback callback)
         {
-            foreach (var cd in mapData.Values) cd.Dispose();
-            mapData.Clear();
             OnDisable();
             callback?.Invoke();
         }
 
         private void OnDisable()
         {
+            foreach (var cd in mapData.Values) cd.Dispose();
+            mapData.Clear();
+            
             _cts.Cancel();
             chunkGenerator.Dispose();
         }
@@ -349,7 +376,6 @@ namespace TheRavine.Generator
         private const int Size = MapGenerator.mapChunkSize;
         public const int TotalCells = Size * Size;
         public NativeArray<float> HeightRaw;
-        public readonly NativeArray<int> HeightMap;
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float GetHeight(int x, int y) => HeightRaw[y * MapGenerator.mapChunkSize + x];
@@ -373,7 +399,6 @@ namespace TheRavine.Generator
         public ChunkData()
         {
             HeightRaw  = new NativeArray<float>(TotalCells, Allocator.Persistent);
-            HeightMap  = new NativeArray<int>(TotalCells,   Allocator.Persistent);
             BiomeMap   = new NativeArray<int>(TotalCells,   Allocator.Persistent);
             Occupancy  = new NativeArray<int>(TotalCells,   Allocator.Persistent);
             Objects    = new NativeList<ObjectInstInfo>(16, Allocator.Persistent);
@@ -464,7 +489,6 @@ namespace TheRavine.Generator
         public void Dispose()
         {
             if (HeightRaw.IsCreated) HeightRaw.Dispose();
-            if (HeightMap.IsCreated) HeightMap.Dispose();
             if (BiomeMap.IsCreated)  BiomeMap.Dispose();
             if (Occupancy.IsCreated) Occupancy.Dispose();
             if (Objects.IsCreated)   Objects.Dispose();

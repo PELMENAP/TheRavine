@@ -8,6 +8,7 @@ using System;
 using TheRavine.Extensions;
 using TheRavine.Base;
 using TheRavine.Events;
+using TheRavine.Generator;
 
 namespace TheRavine.EntityControl
 {
@@ -28,6 +29,10 @@ namespace TheRavine.EntityControl
         [SerializeField] private AnimationCurve jumpForceCurve;
         [SerializeField] private GroundChecker groundChecker;
 
+        [SerializeField] private float characterHalfHeight = 1f;
+        private TerrainPhysicsResolver terrainResolver;
+
+        private bool IsOnGround => (terrainResolver?.IsGrounded ?? false) || groundChecker.IsGrounded;
         private Rigidbody playerRigidbody;
         private Vector2 movementDirection;
         private float timeSinceLastSend;
@@ -56,16 +61,8 @@ namespace TheRavine.EntityControl
             globalSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
             this.logger = logger;
 
-            WorldRegistry worldRegistry = ServiceLocator.GetService<WorldRegistry>();
-
             playerAnimator.SetUpAsync().Forget();
             GetPlayerComponents();
-            DelayedInit(worldRegistry).Forget();
-
-            unsubscribe = ServiceLocator.GetService<AutosaveCoordinator>().SubscribeBeforeSave(() =>
-            {
-                SavePlayerPosition(worldRegistry);
-            });
 
             Raise.action.performed += AimRaise;
             LeftClick.action.performed += AimPlace;
@@ -75,6 +72,7 @@ namespace TheRavine.EntityControl
 
             Jump.action.started += OnJumpStarted;
             Jump.action.canceled += OnJumpCanceled;
+            
         }
 
         public void SetUp()
@@ -87,6 +85,16 @@ namespace TheRavine.EntityControl
                 ControlType.Mobile => new JoistickController(joystick),
                 _ => null
             };
+
+            var map = ServiceLocator.GetService<MapGenerator>();
+            terrainResolver = new TerrainPhysicsResolver(map, playerRigidbody, characterHalfHeight);
+
+            WorldRegistry worldRegistry = ServiceLocator.GetService<WorldRegistry>();
+            unsubscribe = ServiceLocator.GetService<AutosaveCoordinator>().SubscribeBeforeSave(() =>
+            {
+                SavePlayerPosition(worldRegistry);
+            });
+            DelayedInit(worldRegistry).Forget();
         }
 
         private void SavePlayerPosition(WorldRegistry worldRegistry)
@@ -100,6 +108,8 @@ namespace TheRavine.EntityControl
         private async UniTaskVoid DelayedInit(WorldRegistry worldRegistry)
         {
             playerRigidbody.useGravity = false;
+            terrainResolver.SetActive(false); 
+            groundChecker.Reset(); 
 
             WorldState worldState = worldRegistry.GetCurrentState();
 
@@ -115,6 +125,7 @@ namespace TheRavine.EntityControl
 
             await UniTask.Delay(5000);
             playerRigidbody.useGravity = true;
+            terrainResolver.SetActive(true);  
         }
 
         private void GetPlayerComponents()
@@ -153,6 +164,12 @@ namespace TheRavine.EntityControl
         public void EnableComponents() => currentController.EnableView();
         public void DisableComponents() => currentController.DisableView();
 
+
+        private void FixedUpdate()
+        {
+            if (!IsServer) return;
+            terrainResolver?.Resolve();
+        }
         public void Move()
         {
             if (isAimMode || !IsOwner) return;
@@ -223,7 +240,7 @@ namespace TheRavine.EntityControl
 
         private void OnJumpStarted(InputAction.CallbackContext ctx)
         {
-            if (!IsOwner || !groundChecker.IsGrounded) return;
+            if (!IsOwner || !IsOnGround) return; 
             jumpCharge.StartCharge();
         }
 
@@ -237,7 +254,7 @@ namespace TheRavine.EntityControl
         {
             if (!IsOwner || !jumpCharge.JumpRequested) return;
             jumpCharge.ConsumeJump();
-            if (!groundChecker.IsGrounded) return;
+            if (!IsOnGround) return;
             float forceMult = jumpForceCurve.Evaluate(jumpCharge.ChargeNormalized);
             JumpServerRpc(baseJumpForce * forceMult);
         }

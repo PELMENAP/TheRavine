@@ -1,4 +1,5 @@
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Generator
 {
@@ -89,34 +90,32 @@ namespace TheRavine.Generator
                 }
             }
 
-            public void UpdateChunk(Vector2Int position) 
+            public async UniTaskVoid UpdateChunk(Vector2Int position)
             {
                 UpdateAllVertices(position);
                 
                 terrainMesh.vertices = vertices;
                 terrainMesh.RecalculateNormals();
-
-                generator.terrainCollider.sharedMesh = terrainMesh;
                 
                 generator.terrainTransform.position = new Vector3(
-                    (position.x - 1) * generationSize, 
-                    0, 
-                    (position.y - 2) * generationSize
-                );
+                    (position.x - 1) * generationSize, 0,
+                    (position.y - 2) * generationSize);
+
+                await UniTask.CompletedTask;
             }
 
             private void UpdateAllVertices(Vector2Int centre)
             {
                 for (int chunkX = 0; chunkX < chunkCount; chunkX++)
                 {
-                    for (int chunkY = 0; chunkY < chunkCount; chunkY++)
+                    for (int chunkY = -1; chunkY < chunkCount - 1; chunkY++)
                     {
                         Vector2Int chunkWorldPos = new(
                             centre.x - chunkScale + chunkX,
                             centre.y - chunkScale + chunkY
                         );
                         
-                        UpdateChunkVertices(chunkWorldPos, chunkX, chunkY);
+                        UpdateChunkVertices(chunkWorldPos, chunkX, chunkY + 1);
                     }
                 }
             }

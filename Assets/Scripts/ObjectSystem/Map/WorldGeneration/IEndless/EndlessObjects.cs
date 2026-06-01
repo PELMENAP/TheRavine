@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 using TheRavine.ObjectControl;
 
@@ -25,7 +26,7 @@ namespace TheRavine.Generator.EndlessGenerators
             objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
         }
 
-        public void UpdateChunk(Vector2Int position)
+        public async UniTaskVoid UpdateChunk(Vector2Int position)
         {
             int side = 2 * chunkScale + 1;
 
@@ -51,6 +52,7 @@ namespace TheRavine.Generator.EndlessGenerators
 
                 objectUpdate[id] = 0;
             }
+            await UniTask.CompletedTask;
         }
 
         private void ProcessChunk(Vector2Int chunkCoord)
