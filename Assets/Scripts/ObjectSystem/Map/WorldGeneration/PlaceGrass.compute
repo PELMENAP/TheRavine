@@ -22,8 +22,6 @@ float scaleMax;
 float rotationVariation;
 float3 worldBoundsMin;
 float3 worldBoundsMax;
-float terrainWidth;
-float terrainHeight;
 float noiseScale;
 float densityMinThreshold;
 float densityMaxThreshold;
@@ -43,7 +41,6 @@ float globalMaxHeight;
 float terrainInvWidth;
 float terrainInvHeight;
 
-int occlusionMinZ;
 int occlusionMinX;
 int occlusionMaxX;
 

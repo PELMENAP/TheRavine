@@ -1,4 +1,5 @@
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Generator
 {
@@ -12,9 +13,10 @@ namespace TheRavine.Generator
             {
                 generator = _generator;
             }
-            public void UpdateChunk(Vector2Int Position)
+            public async UniTaskVoid UpdateChunk(Vector2Int Position)
             {
                 generator.waterTransform.position = new((Position.x + 0.5f) * generationSize, generator.waterOffset.y, (Position.y - 0.5f) * generationSize);
+                await UniTask.CompletedTask;
             }
         }
     }

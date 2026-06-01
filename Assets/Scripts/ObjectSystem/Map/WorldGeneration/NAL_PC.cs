@@ -114,7 +114,7 @@ namespace TheRavine.Generator
                 }
 
                 // Spread when alive
-                if (!generator.IsHeightIsLiveAble(generator.GetMapHeight(current))) return;
+                if (!generator.IsHeightIsLiveAble(current)) return;
 
                 int attempts = n.attempt;
                 while (attempts-- > 0)

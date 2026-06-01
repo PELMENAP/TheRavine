@@ -1,32 +1,50 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TheRavine.EntityControl
 {
-    public class GroundChecker : MonoBehaviour
+    public sealed class GroundChecker : MonoBehaviour
     {
         [SerializeField, Range(0f, 1f)] private float minGroundNormalY = 0.7f;
 
         public bool IsGrounded { get; private set; }
 
-        private int groundContactCount;
+        private readonly HashSet<int> _groundContacts = new();
 
-        private void OnCollisionEnter(Collision col) => EvaluateContacts(col, +1);
-        private void OnCollisionExit(Collision col)  => EvaluateContacts(col, -1);
-        private void OnCollisionStay(Collision col)  => EvaluateContacts(col,  0);
+        private void OnCollisionEnter(Collision col) => Evaluate(col);
+        private void OnCollisionStay(Collision col)  => Evaluate(col);
 
-        private void EvaluateContacts(Collision col, int delta)
+        private void OnCollisionExit(Collision col)
         {
+            _groundContacts.Remove(col.collider.GetInstanceID());
+            Refresh();
+        }
+
+        private void Evaluate(Collision col)
+        {
+            bool valid = false;
             for (int i = 0; i < col.contactCount; i++)
             {
                 if (col.GetContact(i).normal.y >= minGroundNormalY)
                 {
-                    groundContactCount = Mathf.Max(0, groundContactCount + delta);
-                    IsGrounded = groundContactCount > 0;
-                    return;
+                    valid = true;
+                    break;
                 }
             }
+
+            int id = col.collider.GetInstanceID();
+            if (valid) _groundContacts.Add(id);
+            else       _groundContacts.Remove(id);
+
+            Refresh();
         }
 
-        public void ExitGround() => groundContactCount--;
+        private void Refresh() => IsGrounded = _groundContacts.Count > 0;
+
+        public void Reset()
+        {
+            _groundContacts.Clear();
+            IsGrounded = false;
+        }
     }
 }

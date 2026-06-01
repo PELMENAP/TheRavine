@@ -43,6 +43,7 @@ namespace TheRavine.ObjectControl
         public void BreakUp(ISetAble.Callback callback)
         {
             infoRegistry.Clear();
+            poolManager.Dispose();
             callback?.Invoke();
         }
     }

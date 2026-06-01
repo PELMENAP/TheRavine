@@ -1,11 +1,12 @@
-﻿using UnityEngine;
+﻿using TheRavine.Generator;
+using UnityEngine;
 
 
 namespace TheRavine.Extensions
 {
     public static class GeneratorExtensions
     {
-        private static Vector3 specialOffset = new(40, 0, 40);
+        private static Vector3 specialOffset = new(MapGenerator.mapChunkSize, 0, MapGenerator.mapChunkSize);
         public static Bounds TransformBounds(Bounds localBounds, Matrix4x4 matrix)
         {
             Vector3 center = matrix.MultiplyPoint3x4(localBounds.center) + specialOffset;

@@ -51,7 +51,7 @@ MonoBehaviour:
     seed: 16
     farlands: 10000
     isRiver: 1
-    endlessFlag: 01010000
+    endlessFlag: 01010100
     heightNoiseSettings:
       noiseType: 0
       fractalType: 1
@@ -872,14 +872,16 @@ MonoBehaviour:
         minTerrainHeight: 0.05
         useDomainWarp: 1
         domainWarpAmplitude: 45
+    biomeBlendRadius: 0.25
+    altitudeCooling: 0.35
     erosion:
       enabled: 1
       allowInfiniteErosionDepth: 1
-      dropletCount: 2000
+      dropletCount: 3000
       lifetime: 20
       amplify: 1
       inertia: 0.9
-      gravity: 16
+      gravity: 20
       evaporation: 0.99
       sedimentCapacity: 25
       depositSpeed: 0.5
@@ -889,7 +891,6 @@ MonoBehaviour:
   terrainTransform: {fileID: 0}
   waterTransform: {fileID: 0}
   terrainFilter: {fileID: 0}
-  terrainCollider: {fileID: 0}
   viewer: {fileID: 0}
   viewerOffset: {x: 0, y: 0, z: 10}
   waterOffset: {x: 0, y: 4, z: 0}
@@ -962,7 +963,7 @@ MonoBehaviour:
   scaleMax: 1.2
   rotationVariation: 360
   globalMinHeight: 5
-  globalMaxHeight: 10
+  globalMaxHeight: 40
   scaleNoiseScale: 0.05
   scaleNoiseInfluence: 0.5
   scaleOctaves: 2

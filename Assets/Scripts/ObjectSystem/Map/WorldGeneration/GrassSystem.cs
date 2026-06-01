@@ -82,13 +82,6 @@ public class GrassSystem : MonoBehaviour
     void Update()
     {
         if (!isGrass) return;
-
-        if(targetTransform.position != lastPosition) // position changing rare
-        {
-            UpdateGrassPlacement();
-            lastPosition = targetTransform.position;
-        }
-        
         RenderGrass();
     }
     
@@ -135,33 +128,35 @@ public class GrassSystem : MonoBehaviour
         grassPlacementShader.SetFloat("globalMinHeight", globalMinHeight);
         grassPlacementShader.SetFloat("globalMaxHeight", globalMaxHeight);
         
-        grassPlacementShader.SetInt("occlusionMinZ", 40);
-        grassPlacementShader.SetInt("occlusionMinX", 20);
-        grassPlacementShader.SetInt("occlusionMaxX", 222);
+        grassPlacementShader.SetInt("occlusionMinX", MapGenerator.mapChunkSize);
+        grassPlacementShader.SetInt("occlusionMaxX", MapGenerator.mapChunkSize * 5);
 
-        int gridWidth = 240;
-        int gridHeight = 240;
+        int gridWidth = MapGenerator.mapChunkSize * 6;
+        int gridHeight = MapGenerator.mapChunkSize * 6;
         int totalGridPoints = gridWidth * gridHeight * bladesPerCell * densityFactor;
         instanceCount = Mathf.Min(totalGridPoints, maxGrassInstances * densityFactor);
+
+        args[1] = (uint)instanceCount;
+        argsBuffer.SetData(args);
         
-        float terrainWidth = 240;
-        float terrainHeight = 240;
+        float terrainWidth = MapGenerator.mapChunkSize * 6;
+        float terrainHeight = MapGenerator.mapChunkSize * 6;
         
         grassPlacementShader.SetInt("instanceCount", instanceCount);
 
         grassPlacementShader.SetInt("gridWidth", gridWidth);
         grassPlacementShader.SetInt("gridHeight", gridHeight);
 
-        grassPlacementShader.SetFloat("terrainWidth", terrainWidth);
-        grassPlacementShader.SetFloat("terrainHeight", terrainHeight);
-
         grassPlacementShader.SetFloat("terrainInvWidth",  1f / terrainWidth);
         grassPlacementShader.SetFloat("terrainInvHeight", 1f / terrainHeight);
 
     }
+    private NativeArray<float> heightMap = new(vertexCount, Allocator.Persistent);
     
-    void UpdateGrassPlacement()
+    public void UpdateGrassPlacement()
     {
+        isGrass = false;
+
         Mesh mesh = targetMeshFilter.sharedMesh;
         if (mesh == null) return;
         
@@ -175,8 +170,6 @@ public class GrassSystem : MonoBehaviour
             heightMapBuffer = new ComputeBuffer(vertexCount, sizeof(float));
         }
         
-        NativeArray<float> heightMap = new NativeArray<float>(vertexCount, Allocator.Temp);
-        
         for (int k = 0; k < vertexCount; k++)
         {
             int i = k / terrainResolution;
@@ -187,7 +180,6 @@ public class GrassSystem : MonoBehaviour
         }
         
         heightMapBuffer.SetData(heightMap);
-        heightMap.Dispose();
         
         Bounds worldBounds = GeneratorExtensions.TransformBounds(meshBounds, localToWorld);
         
@@ -206,17 +198,14 @@ public class GrassSystem : MonoBehaviour
         
         int threadGroups = Mathf.CeilToInt(instanceCount / 64f);
         grassPlacementShader.Dispatch(kernelPlaceGrass, threadGroups, 1, 1);
-        
-        args[1] = (uint)instanceCount;
-        argsBuffer.SetData(args);
-        
-        lastInstanceCount = instanceCount;
+
+        isGrass = true;
     }
     
     
     void RenderGrass()
     {
-        if (instanceBuffer == null || lastInstanceCount == 0) return;
+        if (instanceBuffer == null) return;
 
         grassMaterial.SetBuffer("instanceData", instanceBuffer);
         
@@ -239,5 +228,7 @@ public class GrassSystem : MonoBehaviour
         instanceBuffer?.Release();
         heightMapBuffer?.Release();
         argsBuffer?.Release();
+
+        heightMap.Dispose();
     }
 }

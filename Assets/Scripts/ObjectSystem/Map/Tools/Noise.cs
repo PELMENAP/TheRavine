@@ -1,18 +1,18 @@
 ﻿using UnityEngine;
 using TheRavine.Generator;
 using Unity.Collections;
-using System.Runtime.CompilerServices;
+using Unity.Jobs;
+using Unity.Burst;
+using Unity.Mathematics;
 
 public static class Noise
 {
-    private const int mapChunkSize = MapGenerator.mapChunkSize;
-    private static FastNoiseLite _heightNoise;
-    private static FastNoiseLite _riverNoise;
-    private static FastNoiseLite _domainWarp;
-    private static FastNoiseLite _temperatureNoise;
-    private static FastNoiseLite _moistureNoise;
+    private static FastNoiseLite heightNoise;
+    private static FastNoiseLite riverNoise;
+    private static FastNoiseLite temperatureNoise;
+    private static FastNoiseLite moistureNoise;
 
-    private static int _chunkSize;
+    private static int chunkSize;
 
     public static void SetInit(
         NoiseLayerSettings heightSettings,
@@ -20,18 +20,13 @@ public static class Noise
         NoiseLayerSettings temperatureSettings,
         NoiseLayerSettings moistureSettings,
         int seed,
-        int chunkSize)
+        int _chunkSize)
     {
-        _chunkSize = chunkSize;
-        _heightNoise = BuildNoise(heightSettings, seed);
-        _riverNoise = BuildNoise(riverSettings, seed * 2);
-        _temperatureNoise = BuildNoise(temperatureSettings, seed * 4);
-        _moistureNoise    = BuildNoise(moistureSettings,    seed * 5);
-
-        _domainWarp = new FastNoiseLite(seed * 3);
-        _domainWarp.SetDomainWarpType(FastNoiseLite.DomainWarpType.OpenSimplex2);
-        _domainWarp.SetFractalType(FastNoiseLite.FractalType.DomainWarpProgressive);
-        _domainWarp.SetFractalOctaves(2);
+        chunkSize = _chunkSize;
+        heightNoise = BuildNoise(heightSettings, seed);
+        riverNoise  = BuildNoise(riverSettings,  seed * 2);
+        temperatureNoise = BuildNoise(temperatureSettings, seed * 4);
+        moistureNoise    = BuildNoise(moistureSettings,    seed * 5);
     }
 
     private static FastNoiseLite BuildNoise(in NoiseLayerSettings s, int seed)
@@ -47,52 +42,227 @@ public static class Noise
         return noise;
     }
 
-    public static void GenerateHeightMap(NativeArray<float> noiseMap, Vector2Int chunkOffset)
-    {
-        FillMap(noiseMap, _heightNoise, chunkOffset);
-    }
-
-    public static void GenerateRiverMap(NativeArray<float> noiseMap, Vector2Int chunkOffset)
-    {
-        FillMap(noiseMap, _riverNoise, chunkOffset);
-    }
-
-    public static void GenerateClimateMap(
+    public static void GenerateAllMaps(
+        NativeArray<float> heightMap,
+        NativeArray<float> riverMap,
         NativeArray<float> temperatureMap,
         NativeArray<float> moistureMap,
         Vector2Int chunkOffset)
     {
-        int worldX = chunkOffset.x * _chunkSize;
-        int worldY = chunkOffset.y * _chunkSize;
-        for (int y = 0; y < _chunkSize; y++)
+        int halfSize    = chunkSize >> 1;
+        int halfPixels  = halfSize * halfSize;
+
+        int worldX = chunkOffset.x * chunkSize;
+        int worldY = chunkOffset.y * chunkSize;
+
+        NativeArray<float> tempHalf  = new NativeArray<float>(halfPixels, Allocator.TempJob);
+        NativeArray<float> moistHalf = new NativeArray<float>(halfPixels, Allocator.TempJob);
+
+        HeightMapJob hJob = new HeightMapJob
         {
-            int wy = worldY + y;
-            for (int x = 0; x < _chunkSize; x++)
+            ChunkSize = chunkSize,
+            WorldX = worldX,
+            WorldY = worldY,
+            Noise = heightNoise,
+            Output = heightMap
+        };
+
+        RiverMapJob rJob = new RiverMapJob
+        {
+            ChunkSize = chunkSize,
+            WorldX = worldX,
+            WorldY = worldY,
+            Noise = riverNoise,
+            Output = riverMap
+        };
+
+        ClimateHalfJob cJob = new ClimateHalfJob
+        {
+            HalfSize = halfSize,
+            WorldX = worldX,
+            WorldY = worldY,
+            TempNoise = temperatureNoise,
+            MoistNoise = moistureNoise,
+            TempHalf = tempHalf,
+            MoistHalf = moistHalf
+        };
+
+
+        JobHandle hHandle = hJob.ScheduleParallel(chunkSize, 8, default);
+
+        JobHandle rHandle = rJob.ScheduleParallel(chunkSize, 8, default);
+
+        JobHandle cHandle = cJob.ScheduleParallel(halfSize, 8, default);
+
+        JobHandle tHandle = new Upscale2xJob
+        {
+            SourceSize = halfSize,
+            DestSize = chunkSize,
+            Source = tempHalf,
+            Dest = temperatureMap
+        }.Schedule(cHandle);
+
+        JobHandle mHandle = new Upscale2xJob
+        {
+            SourceSize = halfSize,
+            DestSize = chunkSize,
+            Source = moistHalf,
+            Dest = moistureMap
+        }.Schedule(cHandle);
+
+        JobHandle climateDone = JobHandle.CombineDependencies(tHandle, mHandle);
+
+        JobHandle final = JobHandle.CombineDependencies(
+            hHandle,
+            rHandle,
+            climateDone);
+
+        tempHalf.Dispose(final);
+        moistHalf.Dispose(final);
+
+        final.Complete();
+    }
+
+    [BurstCompile]
+    public struct HeightMapJob : IJobFor
+    {
+        [ReadOnly] public int ChunkSize;
+        [ReadOnly] public int WorldX;
+        [ReadOnly] public int WorldY;
+        [ReadOnly] public FastNoiseLite Noise;
+
+        [WriteOnly]
+        [NativeDisableParallelForRestriction]
+        public NativeArray<float> Output;
+
+        public void Execute(int y)
+        {
+            int row = y * ChunkSize;
+            int wy = WorldY + y;
+
+            for (int x = 0; x < ChunkSize; x++)
             {
-                int wx = worldX + x;
-                temperatureMap[Idx(x, y)] = _temperatureNoise.GetNoise(wx, wy) * 0.5f + 0.5f;
-                moistureMap[Idx(x, y)]    = _moistureNoise.GetNoise(wx, wy)    * 0.5f + 0.5f;
+                Output[row + x] =
+                    Noise.GetNoise(WorldX + x, wy) * 0.5f + 0.5f;
             }
         }
     }
-    private static void FillMap(NativeArray<float> noiseMap, FastNoiseLite noise, Vector2Int chunkOffset)
-    {
-        int worldX = chunkOffset.x * _chunkSize;
-        int worldY = chunkOffset.y * _chunkSize;
 
-        for (int y = 0; y < _chunkSize; y++)
+    [BurstCompile]
+    public struct RiverMapJob : IJobFor
+    {
+        [ReadOnly] public int ChunkSize;
+        [ReadOnly] public int WorldX;
+        [ReadOnly] public int WorldY;
+        [ReadOnly] public FastNoiseLite Noise;
+
+        [WriteOnly]
+        [NativeDisableParallelForRestriction]
+        public NativeArray<float> Output;
+
+        public void Execute(int y)
         {
-            int wy = worldY + y;
-            for (int x = 0; x < _chunkSize; x++)
+            int row = y * ChunkSize;
+            int wy = WorldY + y;
+
+            for (int x = 0; x < ChunkSize; x++)
             {
-                noiseMap[Idx(x, y)] = noise.GetNoise(worldX + x, wy) * 0.5f + 0.5f;
+                Output[row + x] =
+                    Noise.GetNoise(WorldX + x, wy) * 0.5f + 0.5f;
             }
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int Idx(int x, int y)
+    [BurstCompile]
+    public struct ClimateHalfJob : IJobFor
     {
-        return y * mapChunkSize + x;
+        [ReadOnly] public int HalfSize;
+        [ReadOnly] public int WorldX;
+        [ReadOnly] public int WorldY;
+
+        [ReadOnly] public FastNoiseLite TempNoise;
+        [ReadOnly] public FastNoiseLite MoistNoise;
+
+        [WriteOnly]
+        [NativeDisableParallelForRestriction]
+        public NativeArray<float> TempHalf;
+
+        [WriteOnly]
+        [NativeDisableParallelForRestriction]
+        public NativeArray<float> MoistHalf;
+
+        public void Execute(int y)
+        {
+            int row = y * HalfSize;
+            int wy = WorldY + y * 2;
+
+            for (int x = 0; x < HalfSize; x++)
+            {
+                int wx = WorldX + x * 2;
+                int index = row + x;
+
+                TempHalf[index] =
+                    TempNoise.GetNoise(wx, wy) * 0.5f + 0.5f;
+
+                MoistHalf[index] =
+                    MoistNoise.GetNoise(wx, wy) * 0.5f + 0.5f;
+            }
+        }
+    }
+
+    [BurstCompile]
+    public struct Upscale2xJob : IJob
+    {
+        [ReadOnly]
+        public int SourceSize;
+
+        [ReadOnly]
+        public int DestSize;
+
+        [ReadOnly]
+        public NativeArray<float> Source;
+
+        [WriteOnly]
+        [NativeDisableParallelForRestriction]
+        public NativeArray<float> Dest;
+
+        public void Execute()
+        {
+            const float scale = 0.5f;
+
+            for (int dy = 0; dy < DestSize; dy++)
+            {
+                float gy = dy * scale;
+
+                int y0 = (int)gy;
+                int y1 = math.min(y0 + 1, SourceSize - 1);
+
+                float ty = gy - y0;
+
+                int row0 = y0 * SourceSize;
+                int row1 = y1 * SourceSize;
+                int dstRow = dy * DestSize;
+
+                for (int dx = 0; dx < DestSize; dx++)
+                {
+                    float gx = dx * scale;
+
+                    int x0 = (int)gx;
+                    int x1 = math.min(x0 + 1, SourceSize - 1);
+
+                    float tx = gx - x0;
+
+                    float c00 = Source[row0 + x0];
+                    float c10 = Source[row0 + x1];
+                    float c01 = Source[row1 + x0];
+                    float c11 = Source[row1 + x1];
+
+                    float a = math.lerp(c00, c10, tx);
+                    float b = math.lerp(c01, c11, tx);
+
+                    Dest[dstRow + dx] = math.lerp(a, b, ty);
+                }
+            }
+        }
     }
 }

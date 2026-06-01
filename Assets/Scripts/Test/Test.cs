@@ -69,7 +69,7 @@ public class Test : MonoBehaviour
     private void TestPosition()
     {
         position = new Vector2Int((int)viewer.position.x, (int)viewer.position.y);
-        print(generator.GetMapHeight(position));
+        // print(generator.GetMapHeight(position));
     }
 
     [Button]

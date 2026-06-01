@@ -1,5 +1,6 @@
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 public interface IEndless
 {
-    void UpdateChunk(Vector2Int position);
+    UniTaskVoid UpdateChunk(Vector2Int position);
 }
