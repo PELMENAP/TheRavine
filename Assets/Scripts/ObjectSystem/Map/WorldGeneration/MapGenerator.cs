@@ -26,44 +26,120 @@ namespace TheRavine.Generator
         public const int generationSize = scale * mapChunkSize;
         public const float maxTerrainHeight = 50f;
 
-        private Dictionary<Vector2Int, ChunkData> mapData;
+        private Dictionary<long, ChunkData> mapData = new();
 
-        public ChunkData GetMapData(Vector2Int position)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ChunkData GetMapData(long chunkKey)
         {
-            if (mapData.TryGetValue(position, out ChunkData data))
+            if (mapData.TryGetValue(chunkKey, out ChunkData data))
                 return data;
-
-            data = chunkGenerator.GenerateMapData(position);
-            mapData[position] = data;
+            data = chunkGenerator.GenerateMapData(chunkKey);
+            
+            mapData[chunkKey] = data;
             return data;
         }
-        public bool IsHeightIsLiveAble(Vector2Int position) =>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ChunkData GetMapData(int x, int y) => 
+            GetMapData(Position2Int.Pack(x, y));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool HasChunk(long chunkKey) => mapData.ContainsKey(chunkKey);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGetChunk(long chunkKey, out ChunkData data) => 
+            mapData.TryGetValue(chunkKey, out data);
+
+        public void RemoveChunk(long chunkKey) => mapData.Remove(chunkKey);
+        public bool IsHeightIsLiveAble(long position) =>
             GetRealPosition(position).y > 5;
 
-        public bool IsWaterHeight(Vector2Int position) =>
+        public bool IsWaterHeight(long position) =>
             GetRealPosition(position).y < 5;
 
-        public Vector3 GetRealPosition(Vector2Int pos)
+        public Vector3 GetRealPosition(long pos)
         {
-            Vector2Int chunk = GetChunkPosition(pos);
-            Vector2Int local = GetLocalPosition(pos);
+            long chunk = GetPosition2Int(pos);
+            long local = GetLocalPosition(pos);
             
-            float height = GetMapData(chunk).HeightRaw[Idx(local.x, local.y)];
-            return new Vector3(pos.x, height, pos.y);
+            float height = GetMapData(chunk).HeightRaw[Idx(Position2Int.GetX(local), Position2Int.GetY(local))];
+            return new Vector3(Position2Int.GetX(pos), height, Position2Int.GetY(pos));
         }
-        public Vector2Int GetChunkPosition(Vector2 pos) =>
-            new(Mathf.FloorToInt(pos.x / generationSize),
-                Mathf.FloorToInt(pos.y / generationSize));
-
-        public Vector2Int GetLocalPosition(Vector2 pos)
+        public long GetPosition2Int(long pos)
         {
-            Vector2Int chunk = GetChunkPosition(pos);
-            float lx = pos.x - chunk.x * generationSize;
-            float ly = pos.y - chunk.y * generationSize;
-            return new Vector2Int(
-                Mathf.FloorToInt(lx / scale),
-                Mathf.FloorToInt(ly / scale));
+            int x = Mathf.FloorToInt(Position2Int.GetX(pos) / generationSize);
+            int y = Mathf.FloorToInt(Position2Int.GetY(pos) / generationSize);
+            return Position2Int.Pack(x, y);
         }
+
+        public long GetLocalPosition(long pos)
+        {
+            long chunk = GetPosition2Int(pos);
+            float lx = Position2Int.GetX(pos) - Position2Int.GetX(chunk) * generationSize;
+            float ly = Position2Int.GetY(pos) - Position2Int.GetY(chunk) * generationSize;
+
+            return Position2Int.Pack(Mathf.FloorToInt(lx / scale), Mathf.FloorToInt(ly / scale));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void GetChunkAndIndex(
+            float wx,
+            float wz,
+            out ChunkData chunk,
+            out int index)
+        {
+            float gx = wx / scale;
+            float gz = wz / scale;
+
+            int chunkX = Mathf.FloorToInt(gx / mapChunkSize);
+            int chunkZ = Mathf.FloorToInt(gz / mapChunkSize);
+
+            int localX =
+                Mathf.FloorToInt(
+                    gx - chunkX * mapChunkSize);
+
+            int localZ =
+                Mathf.FloorToInt(
+                    gz - chunkZ * mapChunkSize);
+
+            chunk = GetMapData(chunkX, chunkZ);
+
+            index = localZ * mapChunkSize + localX;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float GetSpeedModifier(
+            float x,
+            float z,
+            float2 moveDirection)
+        {
+            if (math.lengthsq(moveDirection) < 0.0001f)
+                return 1f;
+
+            GetChunkAndIndex(
+                x,
+                z,
+                out ChunkData chunk,
+                out int index);
+
+            float uphillDot =
+                math.dot(
+                    math.normalize(moveDirection),
+                    (float2)chunk.SlopeDirection[index]);
+
+            float baseModifier =
+                chunk.MoveCost[index] *
+                (1f / 255f);
+
+            if (uphillDot > 0f)
+                return baseModifier;
+
+            return math.lerp(
+                baseModifier,
+                1f,
+                -uphillDot * 0.25f);
+        }
+
         public float SampleHeightBilinear(float wx, float wz)
         {
             float gx = wx / scale;
@@ -94,25 +170,25 @@ namespace TheRavine.Generator
         {
             if (lx >= mapChunkSize) { lx -= mapChunkSize; cx++; }
             if (lz >= mapChunkSize) { lz -= mapChunkSize; cz++; }
-            return GetMapData(new Vector2Int(cx, cz)).HeightRaw[lz * mapChunkSize + lx];
+            return GetMapData(cx, cz).HeightRaw[lz * mapChunkSize + lx];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int Idx(int x, int y) => y * mapChunkSize + x;
 
         public bool TryAddObject(
-            Vector2Int worldPos,
+            long worldPos,
             Vector3 realPos,
             int prefabID,
             int amount,
             InstanceType instanceType,
             Vector2Int[] additionalWorldCells = null)
         {
-            Vector2Int chunk = GetChunkPosition(worldPos);
-            Vector2Int local = GetLocalPosition(worldPos);
+            long chunk = GetPosition2Int(worldPos);
+            long local = GetLocalPosition(worldPos);
             ChunkData cd = GetMapData(chunk);
 
-            int primaryIdx = Idx(local.x, local.y);
+            int primaryIdx = Idx(Position2Int.GetX(local), Position2Int.GetY(local));
 
             // Для ячеек, занятых многоклеточным объектом
             int[] additionalLocalIdxs = null;
@@ -124,7 +200,7 @@ namespace TheRavine.Generator
                     Vector2Int aw = additionalWorldCells[i];
                     // Дополнительные ячейки могут попасть в другой чанк —
                     // в текущей реализации ограничиваемся одним чанком.
-                    Vector2Int ac = GetChunkPosition(aw);
+                    long ac = GetPosition2Int(Position2Int.Pack(aw));
                     if (ac != chunk)
                     {
                         Debug.LogWarning(
@@ -133,18 +209,18 @@ namespace TheRavine.Generator
                             "are not supported yet.");
                         return false;
                     }
-                    Vector2Int al = GetLocalPosition(aw);
-                    additionalLocalIdxs[i] = Idx(al.x, al.y);
+                    long al = GetLocalPosition(Position2Int.Pack(aw));
+                    additionalLocalIdxs[i] = Idx(Position2Int.GetX(al), Position2Int.GetY(al));
                 }
             }
 
             var info = new ObjectInstInfo(realPos, prefabID, amount, instanceType);
             return cd.TryAddObject(primaryIdx, in info, additionalLocalIdxs);
         }
-        public bool TryGetObject(Vector2Int worldPos, out ObjectInstInfo info)
+        public bool TryGetObject(long worldPos, out ObjectInstInfo info)
         {
-            Vector2Int chunk = GetChunkPosition(worldPos);
-            Vector2Int local = GetLocalPosition(worldPos);
+            long chunk = GetPosition2Int(worldPos);
+            long local = GetLocalPosition(worldPos);
 
             if (!mapData.TryGetValue(chunk, out ChunkData cd))
             {
@@ -152,49 +228,44 @@ namespace TheRavine.Generator
                 return false;
             }
 
-            return cd.TryGetObject(Idx(local.x, local.y), out info);
+            return cd.TryGetObject(Idx(Position2Int.GetX(local), Position2Int.GetY(local)), out info);
         }
-        public bool RemoveObject(Vector2Int worldPos)
+        public bool RemoveObject(long worldPos)
         {
-            Vector2Int chunk = GetChunkPosition(worldPos);
-            Vector2Int local = GetLocalPosition(worldPos);
+            long chunk = GetPosition2Int(worldPos);
+            long local = GetLocalPosition(worldPos);
 
             if (!mapData.TryGetValue(chunk, out ChunkData cd))
                 return false;
 
-            return cd.RemoveObject(Idx(local.x, local.y));
+            return cd.RemoveObject(Idx(Position2Int.GetX(local), Position2Int.GetY(local)));
         }
-        public bool ContainsObject(Vector2Int worldPos)
+        public bool ContainsObject(long worldPos)
         {
-            Vector2Int chunk = GetChunkPosition(worldPos);
-            Vector2Int local = GetLocalPosition(worldPos);
+            long chunk = GetPosition2Int(worldPos);
+            long local = GetLocalPosition(worldPos);
 
             if (!mapData.TryGetValue(chunk, out ChunkData cd))
                 return false;
 
-            return cd.Occupancy[Idx(local.x, local.y)] != 0;
+            return cd.Occupancy[Idx(Position2Int.GetX(local), Position2Int.GetY(local))] != 0;
         }
 
-        /// <summary>
-        /// Добавить позицию в список объектов чанка вручную (напр. после постройки игроком).
-        /// </summary>
-        public bool TryToAddPositionToChunk(Vector2Int worldPos)
+        public bool TryToAddPositionToChunk(long worldPos)
         {
             if (ContainsObject(worldPos))
                 return false;
 
-            // Создаём пустую запись-маркер, реальная ObjectInstInfo добавляется через TryAddObject.
-            // Этот метод оставлен для совместимости; предпочтительнее использовать TryAddObject.
-            Vector2Int chunk = GetChunkPosition(worldPos);
-            Vector2Int local = GetLocalPosition(worldPos);
+            long chunk = GetPosition2Int(worldPos);
+            long local = GetLocalPosition(worldPos);
             ChunkData cd = GetMapData(chunk);
 
             var placeholder = new ObjectInstInfo(
                 GetRealPosition(worldPos), -1, 0, InstanceType.Static);
 
-            return cd.TryAddObject(Idx(local.x, local.y), in placeholder);
+            return cd.TryAddObject(Idx(Position2Int.GetX(local), Position2Int.GetY(local)), in placeholder);
         }
-        public void UnloadChunk(Vector2Int position)
+        public void UnloadChunk(long position)
         {
             if (mapData.TryGetValue(position, out ChunkData cd))
             {
@@ -224,18 +295,10 @@ namespace TheRavine.Generator
             ServiceLocator.Services.Register(this);
 
             seed = 16;
-            mapData = new Dictionary<Vector2Int, ChunkData>(64);
-
-            Noise.SetInit(
-                chunkGenerationSettings.heightNoiseSettings,
-                chunkGenerationSettings.riverNoiseSettings,
-                chunkGenerationSettings.temperatureSettings,
-                chunkGenerationSettings.moistureSettings,
-                Seed,
-                mapChunkSize);
+            mapData = new Dictionary<long, ChunkData>(64);
 
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
-            chunkGenerator = new ChunkGenerator(chunkGenerationSettings);
+            chunkGenerator = new ChunkGenerator(chunkGenerationSettings, seed);
 
             ServiceLocator.WhenPlayersNonEmpty()
                 .Subscribe(_ =>
@@ -276,7 +339,7 @@ namespace TheRavine.Generator
             {
                 for (int j = -scale; j < scale; j++)
                 {
-                    Vector2Int centre = new(i, j);
+                    long centre = Position2Int.Pack(i, j);
                     mapData[centre] = chunkGenerator.GenerateMapData(centre);
                     await UniTask.Delay(50);
                 }
@@ -303,6 +366,8 @@ namespace TheRavine.Generator
                 endless[i].UpdateChunk(_position);
                 await UniTask.WaitForFixedUpdate();
             }
+            
+            grassSystem.UpdateGrassPlacement();
 
             while (!_cts.Token.IsCancellationRequested)
             {
@@ -316,7 +381,7 @@ namespace TheRavine.Generator
                     for (int yOff = -extendedChunk; yOff <= extendedChunk; yOff++)
                     for (int xOff = -extendedChunk; xOff <= extendedChunk; xOff++)
                     {
-                        Vector2Int cp = new(_position.x + xOff, _position.y + yOff);
+                        long cp = Position2Int.Pack(_position.x + xOff, _position.y + yOff);
                         if (!mapData.ContainsKey(cp))
                             mapData[cp] = chunkGenerator.GenerateMapData(cp);
                     }
@@ -329,6 +394,8 @@ namespace TheRavine.Generator
                     }
 
                     onUpdate?.Invoke(_position);
+
+                    grassSystem.UpdateGrassPlacement();
                 }
 
                 await UniTask.Delay(1000, cancellationToken: _cts.Token);
@@ -365,7 +432,7 @@ namespace TheRavine.Generator
         {
             foreach (var cd in mapData.Values) cd.Dispose();
             mapData.Clear();
-            
+
             _cts.Cancel();
             chunkGenerator.Dispose();
         }
@@ -376,11 +443,6 @@ namespace TheRavine.Generator
         private const int Size = MapGenerator.mapChunkSize;
         public const int TotalCells = Size * Size;
         public NativeArray<float> HeightRaw;
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float GetHeight(int x, int y) => HeightRaw[y * MapGenerator.mapChunkSize + x];
-
-
         public readonly NativeArray<int> BiomeMap;
 
         /// <summary>
@@ -392,6 +454,9 @@ namespace TheRavine.Generator
         public NativeArray<int> Occupancy;
         public NativeList<ObjectInstInfo> Objects;
 
+        public NativeArray<byte> MoveCost;
+        public NativeArray<float2> SlopeDirection;
+
         public List<StructureSpawnPoint> StructureSpawnPoints;
 
         public bool IsDirty { get; private set; }
@@ -401,6 +466,8 @@ namespace TheRavine.Generator
             HeightRaw  = new NativeArray<float>(TotalCells, Allocator.Persistent);
             BiomeMap   = new NativeArray<int>(TotalCells,   Allocator.Persistent);
             Occupancy  = new NativeArray<int>(TotalCells,   Allocator.Persistent);
+            MoveCost   = new NativeArray<byte>(TotalCells,   Allocator.Persistent);
+            SlopeDirection  = new NativeArray<float2>(TotalCells,   Allocator.Persistent);
             Objects    = new NativeList<ObjectInstInfo>(16, Allocator.Persistent);
         }
 
@@ -409,14 +476,14 @@ namespace TheRavine.Generator
             in ObjectInstInfo info,
             int[] additionalIdxs = null)
         {
-            if ((uint)primaryIdx >= (uint)TotalCells) return false;
+            if ((uint)primaryIdx >= TotalCells) return false;
             if (Occupancy[primaryIdx] != 0)           return false;
 
             if (additionalIdxs != null)
             {
                 foreach (int ac in additionalIdxs)
                 {
-                    if ((uint)ac >= (uint)TotalCells) return false;
+                    if ((uint)ac >= TotalCells) return false;
                     if (Occupancy[ac] != 0)           return false;
                 }
             }
@@ -436,7 +503,7 @@ namespace TheRavine.Generator
         public bool TryGetObject(int cellIdx, out ObjectInstInfo info)
         {
             info = default;
-            if ((uint)cellIdx >= (uint)TotalCells) return false;
+            if ((uint)cellIdx >= TotalCells) return false;
 
             int h = Occupancy[cellIdx];
             if (h == 0) return false;
@@ -449,7 +516,7 @@ namespace TheRavine.Generator
         }
         public bool RemoveObject(int cellIdx)
         {
-            if ((uint)cellIdx >= (uint)TotalCells) return false;
+            if ((uint)cellIdx >= TotalCells) return false;
 
             int h = Occupancy[cellIdx];
             if (h == 0) return false;
@@ -491,6 +558,8 @@ namespace TheRavine.Generator
             if (HeightRaw.IsCreated) HeightRaw.Dispose();
             if (BiomeMap.IsCreated)  BiomeMap.Dispose();
             if (Occupancy.IsCreated) Occupancy.Dispose();
+            if (MoveCost.IsCreated)  MoveCost.Dispose();
+            if (SlopeDirection.IsCreated) SlopeDirection.Dispose();
             if (Objects.IsCreated)   Objects.Dispose();
         }
     }

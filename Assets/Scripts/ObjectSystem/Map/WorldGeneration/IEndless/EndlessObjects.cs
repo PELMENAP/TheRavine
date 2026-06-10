@@ -3,6 +3,7 @@ using UnityEngine;
 using Cysharp.Threading.Tasks;
 
 using TheRavine.ObjectControl;
+using TheRavine.Extensions;
 
 namespace TheRavine.Generator.EndlessGenerators
 {
@@ -31,14 +32,8 @@ namespace TheRavine.Generator.EndlessGenerators
             int side = 2 * chunkScale + 1;
 
             for (int cx = 0; cx < side; cx++)
-            for (int cy = 0; cy < side; cy++)
-                generator.GetMapData(new Vector2Int(
-                    position.x - chunkScale + cx,
-                    position.y - chunkScale + cy));
-
-            for (int cx = 0; cx < side; cx++)
-            for (int cy = 0; cy < side; cy++)
-                ProcessChunk(new Vector2Int(
+            for (int cy = -1; cy < side - 1; cy++)
+                ProcessChunk(Position2Int.Pack(
                     position.x - chunkScale + cx,
                     position.y - chunkScale + cy));
 
@@ -55,7 +50,7 @@ namespace TheRavine.Generator.EndlessGenerators
             await UniTask.CompletedTask;
         }
 
-        private void ProcessChunk(Vector2Int chunkCoord)
+        private void ProcessChunk(long chunkCoord)
         {
             ChunkData cd = generator.GetMapData(chunkCoord);
 

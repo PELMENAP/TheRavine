@@ -24,7 +24,9 @@ namespace TheRavine.Base
 
             if (isTest)
             {
-                gameStateMachine.Initialize(new RavineLogger(null));
+                RavineLogger logger = new RavineLogger(null);
+                ServiceLocator.Services.Register(logger);
+                gameStateMachine.Initialize(logger);
                 gameStateMachine.StartGame();
                 return;
             }

@@ -68,7 +68,7 @@ namespace TheRavine.Generator
 
         private async UniTaskVoid ProcessNAL(Vector2Int current)
         {
-            if (generator.TryGetObject(current, out ObjectInstInfo instInfo))
+            if (generator.TryGetObject(Position2Int.Pack(current), out ObjectInstInfo instInfo))
             {
                 ObjectInfo info = objectSystem.GetInfo(instInfo.PrefabID);
                 ObjectInfo next = info.EvolutionStep;
@@ -92,7 +92,7 @@ namespace TheRavine.Generator
                 bool close = false;
                 for (int x = -MapGenerator.scale; x <= MapGenerator.scale; x++)
                     for (int y = -MapGenerator.scale; y <= MapGenerator.scale; y++)
-                        if ((x != 0 || y != 0) && generator.ContainsObject(current + new Vector2Int(x, y)))
+                        if ((x != 0 || y != 0) && generator.ContainsObject(Position2Int.Pack(current + new Vector2Int(x, y))))
                             close = true;
 
                 NAlInfo n = info.NalInfo;
@@ -114,7 +114,7 @@ namespace TheRavine.Generator
                 }
 
                 // Spread when alive
-                if (!generator.IsHeightIsLiveAble(current)) return;
+                if (!generator.IsHeightIsLiveAble(Position2Int.Pack(current))) return;
 
                 int attempts = n.attempt;
                 while (attempts-- > 0)
@@ -138,15 +138,15 @@ namespace TheRavine.Generator
                 await UniTask.Delay(100000, cancellationToken: token);
 
                 while (removeQueue.Count > 0)
-                    generator.RemoveObject(removeQueue.Dequeue());
+                    generator.RemoveObject(Position2Int.Pack(removeQueue.Dequeue()));
 
                 while (addQueue.Count > 0)
                 {
                     var item = addQueue.Dequeue();
 
                     if (generator.TryAddObject(
-                            item.First,
-                            generator.GetRealPosition(item.First),
+                            Position2Int.Pack(item.First),
+                            generator.GetRealPosition(Position2Int.Pack(item.First)),
                             item.Second.PrefabID,
                             item.Second.DefaultAmount,
                             item.Second.InstanceType))

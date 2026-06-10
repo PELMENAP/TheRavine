@@ -18,6 +18,7 @@ Shader "Custom/ChunkGrassShader"
         [Header(Player Interaction)]
         _PlayerRadius("Player Radius", Float) = 1.0
         _PlayerStrength("Player Strength", Float) = 0.5
+        _PlayerHeight("Player Height", Float) = 0.5
 
         [Header(Lighting)]
         _NormalWindInfluence("Normal Wind Influence", Range(0, 2)) = 0.5
@@ -45,8 +46,13 @@ Shader "Custom/ChunkGrassShader"
 
         struct InstanceData
         {
-            float4x4 trs;
-            float4 color;
+            float3 position;
+            float rotation;
+
+            float scaleXZ;
+            float scaleY;
+
+            uint packedColor;
         };
 
         StructuredBuffer<InstanceData> instanceData;
@@ -67,6 +73,7 @@ Shader "Custom/ChunkGrassShader"
             float3 _PlayerPosition;
             float _PlayerRadius;
             float _PlayerStrength;
+            float _PlayerHeight;
 
             float _NormalWindInfluence;
             float _TranslucencyStrength;
@@ -80,32 +87,35 @@ Shader "Custom/ChunkGrassShader"
         TEXTURE2D(_WindMap);
         SAMPLER(sampler_WindMap);   
 
-        float3 TransformNormal(float3 normalOS, float4x4 trs)
+        float3 RotateY(float3 v, float sinRot, float cosRot)
         {
-            return normalize(mul((float3x3)trs, normalOS));
+            return float3(
+                v.x * cosRot - v.z * sinRot,
+                v.y,
+                v.x * sinRot + v.z * cosRot
+            );
         }
 
         float3 ApplyPlayerInteraction(float3 positionWS, float heightFactor)
         {
-            float distanceToPlayer = distance(positionWS, _PlayerPosition);
-
-            if (distanceToPlayer >= _PlayerRadius)
-                return 0;
-
-            float falloff = 1.0 - (distanceToPlayer / _PlayerRadius);
-            falloff *= falloff;
-
-            float3 direction = normalize(positionWS - _PlayerPosition);
-
-            float3 offset =
-                direction *
-                falloff *
-                _PlayerStrength *
-                heightFactor;
-
+            float2 posXZ = positionWS.xz;
+            float2 playerXZ = _PlayerPosition.xz;
+            float distanceXZ = length(posXZ - playerXZ);
+            
+            float heightDiff = positionWS.y - _PlayerPosition.y;
+            float halfHeight = _PlayerHeight * 0.5;
+            
+            float radiusMask = saturate(1.0 - distanceXZ / _PlayerRadius);
+            float heightMask = saturate(1.0 - abs(heightDiff) / halfHeight);
+            float falloff = radiusMask * radiusMask * heightMask;
+            
+            float2 dirXZ = (distanceXZ > 0.0001) ? normalize(posXZ - playerXZ) : 0;
+            
+            float3 offset;
+            offset.xz = dirXZ * falloff * _PlayerStrength * heightFactor;
             offset.y = -falloff * _PlayerStrength * 0.2;
-
-            return offset;
+            
+            return offset * step(distanceXZ, _PlayerRadius) * step(abs(heightDiff), halfHeight);
         }
 
         float3 SampleWindOffset(float3 positionWS, float heightFactor)
@@ -132,18 +142,50 @@ Shader "Custom/ChunkGrassShader"
             return positionWS + windOffset + playerOffset;
         }
 
-        float3 TransformObjectToWorldWithWind(
-            float4 positionOS,
-            float4x4 instanceTRS,
-            out float heightFactor,
-            out float3 windOffset)
+        float3 TransformInstanceVertex(
+            float3 positionOS,
+            InstanceData instance,
+            out float sinRot,
+            out float cosRot)
         {
-            float3 positionWS =
-                mul(positionOS, instanceTRS);
+            sincos(instance.rotation, sinRot, cosRot);
 
-            heightFactor = positionOS.y;
+            float3 scaledPos;
 
-            return ApplyWind(positionWS, heightFactor, windOffset);
+            scaledPos.x = positionOS.x * instance.scaleXZ;
+            scaledPos.y = positionOS.y * instance.scaleY;
+            scaledPos.z = positionOS.z * instance.scaleXZ;
+
+            float3 rotatedPos =
+                RotateY(
+                    scaledPos,
+                    sinRot,
+                    cosRot);
+
+            return rotatedPos + instance.position;
+        }
+
+
+        float4 UnpackColor(uint packed)
+        {
+            float r = (packed        & 0xFF) / 255.0;
+            float g = ((packed >> 8)  & 0xFF) / 255.0;
+            float b = ((packed >> 16) & 0xFF) / 255.0;
+            float a = ((packed >> 24) & 0xFF) / 255.0;
+            return float4(r, g, b, a);
+        }
+
+        float4x4 BuildTRS(float3 pos, float rotY, float scaleXZ, float scaleY)
+        {
+            float c = cos(rotY);
+            float s = sin(rotY);
+            
+            float4x4 m;
+            m[0] = float4(c * scaleXZ,  0.0, s * scaleXZ, 0.0);
+            m[1] = float4(0.0,         scaleY, 0.0,        0.0);
+            m[2] = float4(-s * scaleXZ, 0.0, c * scaleXZ,  0.0);
+            m[3] = float4(pos.x, pos.y, pos.z, 1.0);
+            return m;
         }
 
         ENDHLSL
@@ -210,17 +252,29 @@ Shader "Custom/ChunkGrassShader"
                 float heightFactor;
                 float3 windOffset;
 
+                float sinRot;
+                float cosRot;
+
                 float3 positionWS =
-                    TransformObjectToWorldWithWind(
-                        input.positionOS,
-                        instance.trs,
+                    TransformInstanceVertex(
+                        input.positionOS.xyz,
+                        instance,
+                        sinRot,
+                        cosRot);
+
+                heightFactor = input.positionOS.y;
+
+                positionWS =
+                    ApplyWind(
+                        positionWS,
                         heightFactor,
                         windOffset);
 
                 float3 normalWS =
-                    TransformNormal(
+                    RotateY(
                         input.normalOS,
-                        instance.trs);
+                        sinRot,
+                        cosRot);
 
                 normalWS =
                     normalize(
@@ -235,7 +289,9 @@ Shader "Custom/ChunkGrassShader"
                 output.normalWS = normalWS;
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
 
-                output.color = instance.color;
+                output.color =
+                    UnpackColor(
+                        instance.packedColor);
 
                 output.heightFactor = heightFactor;
 
@@ -406,10 +462,21 @@ Shader "Custom/ChunkGrassShader"
                 float heightFactor;
                 float3 windOffset;
 
+                float sinRot;
+                float cosRot;
+
                 float3 positionWS =
-                    TransformObjectToWorldWithWind(
-                        input.positionOS,
-                        instance.trs,
+                    TransformInstanceVertex(
+                        input.positionOS.xyz,
+                        instance,
+                        sinRot,
+                        cosRot);
+
+                heightFactor = input.positionOS.y;
+
+                positionWS =
+                    ApplyWind(
+                        positionWS,
                         heightFactor,
                         windOffset);
 
@@ -480,10 +547,21 @@ Shader "Custom/ChunkGrassShader"
                 float heightFactor;
                 float3 windOffset;
 
+                float sinRot;
+                float cosRot;
+
                 float3 positionWS =
-                    TransformObjectToWorldWithWind(
-                        input.positionOS,
-                        instance.trs,
+                    TransformInstanceVertex(
+                        input.positionOS.xyz,
+                        instance,
+                        sinRot,
+                        cosRot);
+
+                heightFactor = input.positionOS.y;
+
+                positionWS =
+                    ApplyWind(
+                        positionWS,
                         heightFactor,
                         windOffset);
 

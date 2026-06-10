@@ -26,31 +26,27 @@ namespace TheRavine.EntityControl
 
         public void Resolve()
         {
-            if (!active) return;
+            if (!active)
+                return;
 
-            Vector3 pos      = rb.position;
-            float   terrainY = map.SampleHeightBilinear(pos.x, pos.z) - 1;
-            float   feetY    = pos.y - halfHeight;
-            float   delta    = terrainY - feetY;
+            Vector3 pos = rb.position;
+            float terrainY = map.SampleHeightBilinear(pos.x, pos.z) - 1;
+            float feetY = pos.y - halfHeight;
+            float penetration = terrainY - feetY;
 
-            if (delta > 0f)
+            if (penetration >= 0f)
             {
-                pos.y += delta;
-
+                pos.y += penetration;
                 rb.position = pos;
-
-                Vector3 vel = rb.linearVelocity;
-
-                if (vel.y < 0f)
-                    vel.y = 0f;
-
-                rb.linearVelocity = vel;
-
+                Vector3 velocity = rb.linearVelocity;
+                if (velocity.y < 0f)
+                    velocity.y = 0f;
+                rb.linearVelocity = velocity;
                 IsGrounded = true;
             }
             else
             {
-                IsGrounded = delta > -GroundedDistance;
+                IsGrounded = penetration > -GroundedDistance;
             }
         }
     }

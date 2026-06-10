@@ -893,6 +893,7 @@ MonoBehaviour:
   terrainFilter: {fileID: 0}
   viewer: {fileID: 0}
   viewerOffset: {x: 0, y: 0, z: 10}
+  grassSystem: {fileID: 3471819257872331844}
   waterOffset: {x: 0, y: 4, z: 0}
 --- !u!114 &6195408856844743971
 MonoBehaviour:
@@ -957,7 +958,7 @@ MonoBehaviour:
   grassMesh: {fileID: 4300000, guid: 53a609b0811916efe86ba4ca4b01e48e, type: 2}
   grassMaterial: {fileID: 2100000, guid: 36571ee1032acddecaf946f49784b2d6, type: 2}
   grassPlacementShader: {fileID: 7200000, guid: e3ba6791a67a001f9a194ee1c04a4dfd, type: 3}
-  grassDensity: 0.2
+  grassDensity: 0.5
   bladesPerCell: 2
   scaleMin: 0.8
   scaleMax: 1.2
