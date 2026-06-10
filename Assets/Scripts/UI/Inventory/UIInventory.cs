@@ -158,7 +158,7 @@ namespace TheRavine.Inventory
                         {
                             for (byte i = 0; i < pattern.other.Length; i++)
                             {
-                                Vector2Int newPos = Extension.GetRandomPointAround(e.Position, pattern.factor);
+                                long newPos = Position2Int.Pack(Extension.GetRandomPointAround(Position2Int.UnpackToVector(e.Position), pattern.factor));
                                 generator.TryAddObject(newPos, generator.GetRealPosition(newPos), 
                                     pattern.other[i].ObjectPrefab.GetInstanceID(), 
                                     pattern.other[i].DefaultAmount, 

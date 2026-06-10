@@ -20,7 +20,9 @@ namespace TheRavine.Generator
         private const float maxTerrainHeight = MapGenerator.maxTerrainHeight;
 
         private readonly ChunkGenerationSettings settings;
+        private readonly Noise noise;
         private NativeArray<float> noiseMap;
+        private NativeArray<float> deltaMap;
         private readonly NativeArray<float> riverMap, temperatureMap, moistureMap;
         private readonly NativeArray<float> biomeHeightMap;
         private readonly NativeArray<int>   heightResult, biomeResult;
@@ -36,14 +38,27 @@ namespace TheRavine.Generator
         private readonly NativeArray<float> riverRadiusRcp;
         private readonly NativeArray<float> riverBedHeight;
 
+        private readonly NativeArray<byte> moveCost;
+        private readonly NativeArray<float2> slopeDirection;
+
         public UnityAction<Vector2Int, int, int, Vector2Int> onSpawnPoint;
 
         public ChunkGenerator(
-            ChunkGenerationSettings settings)
+            ChunkGenerationSettings settings,
+            int seed)
         {
             this.settings     = settings;
+            noise = new(
+                settings.heightNoiseSettings,
+                settings.riverNoiseSettings,
+                settings.temperatureSettings,
+                settings.moistureSettings,
+                seed,
+                mapChunkSize);
 
             noiseMap       = new NativeArray<float>(totalCells, Allocator.Persistent);
+            deltaMap       = new NativeArray<float>(totalCells, Allocator.Persistent);
+
             riverMap       = new NativeArray<float>(totalCells, Allocator.Persistent);
             temperatureMap = new NativeArray<float>(totalCells, Allocator.Persistent);
             moistureMap    = new NativeArray<float>(totalCells, Allocator.Persistent);
@@ -111,19 +126,17 @@ namespace TheRavine.Generator
                 riverBedHeight[i] =
                     rs.riverBedHeight;
             }
-        }
-        public ChunkData GenerateMapData(Vector2Int centre)
-        {
-            int hash =
-                settings.seed ^
-                (centre.x * 73856093) ^
-                (centre.y * 19349663);
 
+            moveCost = new NativeArray<byte>(totalCells, Allocator.Persistent);
+            slopeDirection = new NativeArray<float2>(totalCells, Allocator.Persistent);
+        }
+        public ChunkData GenerateMapData(long centre)
+        {
+            int hash = (int)centre;
             FastRandom chunkRandom = new(hash);
 
-            Noise.GenerateAllMaps(
-                noiseMap, riverMap, temperatureMap, moistureMap,
-                centre);
+            noise.GenerateAllMaps(
+                noiseMap, riverMap, temperatureMap, moistureMap, Position2Int.UnpackToVector(centre));
 
             JobHandle biomeHandle =
                 new BiomeModifierJob
@@ -165,7 +178,8 @@ namespace TheRavine.Generator
                     seed = hash,
                     settings = settings.erosion,
 
-                    heightMap = biomeHeightMap
+                    heightMap = biomeHeightMap,
+                    deltaMap = deltaMap
                 }
                 .Schedule(biomeHandle);
 
@@ -192,14 +206,28 @@ namespace TheRavine.Generator
                     totalCells,
                     64,
                     erosionHandle);
+
+            JobHandle slopeHandle =
+                new SlopeMapJob
+                {
+                    heightMap = biomeHeightMap,
+                    mapSize = mapChunkSize,
+
+                    moveCost = moveCost,
+                    slopeDirection = slopeDirection
+                }
+                .Schedule(
+                    totalCells,
+                    64,
+                    regionHandle);
             
-            regionHandle.Complete();
+            slopeHandle.Complete();
 
             ChunkData chunkData = new();
             FillChunkArrays(chunkData);
 
             if (settings.endlessFlag[2])
-                SpawnObjects(centre, chunkData, chunkRandom);
+                SpawnObjects(Position2Int.UnpackToVector(centre), chunkData, chunkRandom);
 
             return chunkData;
         }
@@ -208,6 +236,9 @@ namespace TheRavine.Generator
         {
             biomeHeightMap.CopyTo(cd.HeightRaw);
             biomeResult.CopyTo(cd.BiomeMap);
+
+            moveCost.CopyTo(cd.MoveCost);
+            slopeDirection.CopyTo(cd.SlopeDirection);
 
             for (int i = 0; i < totalCells; i++)
                 cd.HeightRaw[i] *= maxTerrainHeight;
@@ -250,7 +281,7 @@ namespace TheRavine.Generator
 
                         Vector2Int worldPos = new(
                             centre.x * generationSize + x * scale,
-                            (centre.y - 1) * generationSize + y * scale);
+                            centre.y * generationSize + y * scale);
 
                         Vector3 realPos = new(worldPos.x, rawH, worldPos.y);
 
@@ -296,25 +327,32 @@ namespace TheRavine.Generator
         private static int Idx(int x, int y) => y * mapChunkSize + x;
         public void Dispose()
         {
-            if (noiseMap.IsCreated)       noiseMap.Dispose();
-            if (riverMap.IsCreated)       riverMap.Dispose();
-            if (temperatureMap.IsCreated) temperatureMap.Dispose();
-            if (moistureMap.IsCreated)    moistureMap.Dispose();
-            if (heightResult.IsCreated)   heightResult.Dispose();
-            if (biomeResult.IsCreated)    biomeResult.Dispose();
-            if (biomeCentersT.IsCreated)  biomeCentersT.Dispose();
-            if (biomeCentersM.IsCreated)  biomeCentersM.Dispose();
+            noise.Dispose();
+
+            if (noiseMap.IsCreated)         noiseMap.Dispose();
+            if (deltaMap.IsCreated)         deltaMap.Dispose();
+
+            if (riverMap.IsCreated)         riverMap.Dispose();
+            if (temperatureMap.IsCreated)   temperatureMap.Dispose();
+            if (moistureMap.IsCreated)      moistureMap.Dispose();
+            if (heightResult.IsCreated)     heightResult.Dispose();
+            if (biomeResult.IsCreated)      biomeResult.Dispose();
+            if (biomeCentersT.IsCreated)    biomeCentersT.Dispose();
+            if (biomeCentersM.IsCreated)    biomeCentersM.Dispose();
             if (regionThresholds.IsCreated) regionThresholds.Dispose();
 
 
-            if (biomeHeightMap.IsCreated) biomeHeightMap.Dispose();
+            if (biomeHeightMap.IsCreated)   biomeHeightMap.Dispose();
             if (biomeHeightScale.IsCreated) biomeHeightScale.Dispose();
-            if (biomeHeightOffset.IsCreated) biomeHeightOffset.Dispose();
-            if (biomeHasRiver.IsCreated)  biomeHasRiver.Dispose();
-            if (riverCenter.IsCreated)    riverCenter.Dispose();
-            if (riverRadius.IsCreated)    riverRadius.Dispose();
-            if (riverRadiusRcp.IsCreated) riverRadiusRcp.Dispose();
-            if (riverBedHeight.IsCreated) riverBedHeight.Dispose();
+            if (biomeHeightOffset.IsCreated)biomeHeightOffset.Dispose();
+            if (biomeHasRiver.IsCreated)    biomeHasRiver.Dispose();
+            if (riverCenter.IsCreated)      riverCenter.Dispose();
+            if (riverRadius.IsCreated)      riverRadius.Dispose();
+            if (riverRadiusRcp.IsCreated)   riverRadiusRcp.Dispose();
+            if (riverBedHeight.IsCreated)   riverBedHeight.Dispose();
+
+            if (moveCost.IsCreated)         moveCost.Dispose();
+            if (slopeDirection.IsCreated)   slopeDirection.Dispose();
         }
     }
 }

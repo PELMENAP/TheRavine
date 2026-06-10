@@ -1,53 +1,54 @@
 using System;
 using System.Threading;
-
-using Unity.Netcode;
-
-using UnityEngine;
-
 using Cysharp.Threading.Tasks;
+using R3;
+using Unity.Netcode;
+using UnityEngine;
 
 namespace TheRavine.Base
 {
     [RequireComponent(typeof(Light))]
     public class DayCycle : NetworkBehaviour, ISetAble
     {
-        public event Action OnNewDay;
-        public bool IsDay => isDay.Value;
+        public ReadOnlyReactiveProperty<bool> IsDay => isDay;
+        public ReadOnlyReactiveProperty<float> NormalizedTime => normalizedTime;
 
         [SerializeField] private float speed = 1f;
         [SerializeField] private Gradient sunGradient;
-        [SerializeField] private AnimationCurve xRotationCurve;
-        [SerializeField] private float xScale = 50f;
-        [SerializeField] private AnimationCurve yRotationCurve;
-        [SerializeField] private float yScale = 90f;
         [SerializeField] private AnimationCurve intensityCurve;
-        [SerializeField] private AnimationCurve shadowStrengthCurve;
+        [SerializeField] private AnimationCurve shadowsIntensityCurve;
+        [SerializeField] private AnimationCurve nightBlendCurve;
+        [SerializeField] private Material skyboxMaterial;
+        private readonly static int nightBlendId = Shader.PropertyToID("_NightBlend");
         [SerializeField] private int awakeDelay = 1000;
+        private readonly float rotationSpeedX = 360f; 
 
-        private NetworkVariable<bool> isDay = new(writePerm: NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<float> serverTime = new(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+        private readonly ReactiveProperty<bool> isDay = new(false);
+        private readonly ReactiveProperty<float> normalizedTime = new(0f);
+
         private Light sun;
-        private float t = 0f;
-
         private CancellationTokenSource cts;
+        private float localTime;
+        private bool wasDay;
         public void SetUp(ISetAble.Callback callback)
         {
             ServiceLocator.Services.Register(this);
-            
             sun = GetComponent<Light>();
             cts = new CancellationTokenSource();
 
             if (IsServer)
-            {
-                UpdateDayLoop(cts.Token).Forget();
-            }
+                ServerLoop(cts.Token).Forget();
 
+            ClientLoop(cts.Token).Forget();
             callback?.Invoke();
         }
 
         public void BreakUp(ISetAble.Callback callback)
         {
             cts?.Cancel();
+            isDay.Dispose();
+            normalizedTime.Dispose();
             callback?.Invoke();
         }
 
@@ -56,27 +57,20 @@ namespace TheRavine.Base
             cts?.Cancel();
             cts?.Dispose();
         }
-        private async UniTaskVoid UpdateDayLoop(CancellationToken token)
+
+        private async UniTaskVoid ServerLoop(CancellationToken token)
         {
             try
             {
                 await UniTask.Delay(awakeDelay, cancellationToken: token);
                 while (!token.IsCancellationRequested)
                 {
-                    t += DayConstants.DeltaTime / DayConstants.TimeScale * speed;
-                    if (t > 1f) t = 0f;
-
-                    UpdateSunOnServerRPC(t);
+                    float t = (serverTime.Value + DayConstants.DeltaTime / DayConstants.TimeScale * speed) % 1f;
+                    serverTime.Value = t;
 
                     bool nowDay = t >= DayConstants.DayStart && t <= DayConstants.DayEnd;
-                    if (isDay.Value != nowDay)
-                    {
-                        isDay.Value = nowDay;
-                        if (!nowDay)
-                        {
-                            OnNewDay?.Invoke();
-                        }
-                    }
+                    if (wasDay != nowDay)
+                        wasDay = nowDay;
 
                     await UniTask.WaitForFixedUpdate(cancellationToken: token);
                 }
@@ -84,31 +78,52 @@ namespace TheRavine.Base
             catch (OperationCanceledException) { }
         }
 
-        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-        private void UpdateSunOnServerRPC(float t)
+        private async UniTaskVoid ClientLoop(CancellationToken token)
         {
-            Color color = sunGradient.Evaluate(t);
-            float intensity = intensityCurve.Evaluate(t);
-            float xAngle = xRotationCurve.Evaluate(t) * xScale;
-            float yAngle = yRotationCurve.Evaluate(t) * yScale;
-            float shadowStrength = shadowStrengthCurve.Evaluate(t);
-            ApplySunPropertiesClientRpc(color, intensity, xAngle, yAngle, shadowStrength);
+            try
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    float dt = Time.deltaTime;
+                    float diff = serverTime.Value - localTime;
+
+                    if (diff > 0.5f) diff -= 1f;
+                    if (diff < -0.5f) diff += 1f;
+
+                    localTime = Mathf.Repeat(localTime + diff * Mathf.Min(dt * 5f, 1f), 1f);
+                    normalizedTime.Value = localTime;
+
+                    bool nowDay = localTime >= DayConstants.DayStart && localTime <= DayConstants.DayEnd;
+                    isDay.Value = nowDay;
+
+                    ApplyVisuals(localTime);
+
+                    await UniTask.Yield(PlayerLoopTiming.Update, token);
+                }
+            }
+            catch (OperationCanceledException) { }
         }
 
-        [ClientRpc]
-        private void ApplySunPropertiesClientRpc(Color color, float intensity, float xAngle, float yAngle, float shadowStrength)
+        private void ApplyVisuals(float t)
         {
-            sun.color = color;
-            sun.intensity = intensity;
-            sun.shadowStrength = shadowStrength;
-            transform.localRotation = Quaternion.Euler(xAngle, yAngle, 0f);
+            float xAngle = t * rotationSpeedX;
+            transform.localRotation = Quaternion.Euler(xAngle, 0, 0);
+
+            sun.color = sunGradient.Evaluate(t);
+            sun.intensity = intensityCurve.Evaluate(t);
+            sun.shadowStrength = 1f - shadowsIntensityCurve.Evaluate(t);
+
+            skyboxMaterial.SetFloat(
+                nightBlendId,
+                nightBlendCurve.Evaluate(t));
         }
     }
+
     public static class DayConstants
     {
         public const float TimeScale = 600f;
-        public const float DayStart = 0.2f;
-        public const float DayEnd = 0.8f;
+        public const float DayStart = 0.55f;
+        public const float DayEnd = 0.95f;
         public const float DeltaTime = 0.02f;
     }
 }

@@ -2,8 +2,11 @@
 
 struct InstanceData
 {
-    float4x4 trs;
-    float4 color;
+    float3 position;  
+    float  rotation;  
+    float  scaleXZ;   
+    float  scaleY;   
+    uint   packedColor;
 };
 
 RWStructuredBuffer<InstanceData> instanceData;
@@ -40,9 +43,6 @@ float globalMaxHeight;
 
 float terrainInvWidth;
 float terrainInvHeight;
-
-int occlusionMinX;
-int occlusionMaxX;
 
 uint Hash(uint input)
 {
@@ -137,33 +137,25 @@ float SampleHeightBilinear(float worldX, float worldZ)
     return lerp(h0, h1, fz);
 }
 
-float4x4 CreateTRSYRotation(float3 pos, float rotY, float3 scl)
+uint PackColor(float r, float g, float b)
 {
-    float c = cos(rotY);
-    float s = sin(rotY);
-    
-    float4x4 m;
-    m[0] = float4(c * scl.x,  0.0,  -s * scl.x, 0.0);
-    m[1] = float4(0.0,       scl.y,  0.0,         0.0);
-    m[2] = float4(s * scl.z,  0.0,   c * scl.z,  0.0);
-    m[3] = float4(pos.x, pos.y, pos.z, 1.0);
-    return m;
+    uint ri = (uint)(saturate(r) * 255.0 + 0.5);
+    uint gi = (uint)(saturate(g) * 255.0 + 0.5);
+    uint bi = (uint)(saturate(b) * 255.0 + 0.5);
+    return ri | (gi << 8) | (bi << 16) | (255u << 24);
 }
 
-static const float4x4 CulledTRS = float4x4(
-    0.001, 0,     0,     0,
-    0,     0.001, 0,     0,
-    0,     0,     0.001, 0,
-    0,    -10,    0,     1
-);
-
-static InstanceData MakeCulledInstance()
+InstanceData MakeCulledInstance()
 {
     InstanceData inst;
-    inst.color = float4(0, 0, 0, 0);
-    inst.trs   = CulledTRS;
+    inst.position    = float3(0, -1000, 0);
+    inst.rotation    = 0;
+    inst.scaleXZ     = 0;
+    inst.scaleY      = 0;
+    inst.packedColor = 0;
     return inst;
 }
+
 
 [numthreads(64, 1, 1)]
 void PlaceGrass(uint3 id : SV_DispatchThreadID)
@@ -172,12 +164,6 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
 
     int localX = (int)(cellIndex % gridWidth);
     int localZ = (int)(cellIndex / gridWidth);
-
-     if ((int)localX < occlusionMinX || (int)localX > occlusionMaxX)
-    {
-        instanceData[id.x] = MakeCulledInstance();
-        return;
-    }
 
     uint bladeIndex = id.x % bladesPerCell;
     int gridX = localX + gridMinX;
@@ -208,7 +194,6 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     float densityRoll = HashToFloat(Hash(bladeSeed));
     
     InstanceData instance;
-    instance.color = float4(1, 1, 1, 0);
     
     if (densityRoll > finalDensity)
     {
@@ -235,12 +220,13 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     float3 rotation = float3(0, rotY, 0);
     float3 scaleVec = float3(scaleXZ, scaleY, scaleXZ);
     
-    instance.trs = CreateTRSYRotation(worldPos, rotY, float3(scaleXZ, scaleY, scaleXZ));
-    
     float colorVariation = HashToFloat(Hash(bladeSeed + 5)) * 0.2 + 0.9;
     colorVariation *= lerp(0.85, 1.0, noiseValue);
-    
-    instance.color = float4(colorVariation, colorVariation, colorVariation, 1);
-    
-    instanceData[id.x] = instance;
+
+    instance.position    = worldPos;
+    instance.rotation    = rotY;
+    instance.scaleXZ     = scaleXZ;
+    instance.scaleY      = scaleY;
+    instance.packedColor = PackColor(colorVariation, colorVariation, colorVariation);
+    instanceData[id.x]   = instance;
 }

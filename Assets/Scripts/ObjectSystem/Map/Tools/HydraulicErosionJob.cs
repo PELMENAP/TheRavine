@@ -12,7 +12,7 @@ namespace TheRavine.Generator
         [ReadOnly] public int mapSize;
         [ReadOnly] public int seed;
         [ReadOnly] public ErosionSettings settings;
-        public NativeArray<float> heightMap;
+        public NativeArray<float> heightMap, deltaMap;
 
         private const float MinDirection = 0.0001f;
 
@@ -20,22 +20,23 @@ namespace TheRavine.Generator
         {
             Random rng = new Random((uint)math.max(seed, 1));
 
-            NativeArray<float> deltaMap = new NativeArray<float>(heightMap.Length, Allocator.Temp);
+            for (int i = 0; i < deltaMap.Length; i++)
+            {
+                deltaMap[i] = 0;
+            }
 
             for (int i = 0; i < settings.dropletCount; i++)
             {
-                SimulateDroplet(ref rng, ref deltaMap);
+                SimulateDroplet(ref rng);
             }
 
             for (int i = 0; i < heightMap.Length; i++)
             {
                 heightMap[i] += deltaMap[i] * settings.amplify;
             }
-
-            deltaMap.Dispose();
         }
 
-        private void SimulateDroplet(ref Random rng, ref NativeArray<float> deltaMap)
+        private void SimulateDroplet(ref Random rng)
         {
             float2 pos = new float2(
                 rng.NextFloat(1, mapSize - 1),
@@ -49,7 +50,7 @@ namespace TheRavine.Generator
 
             for (int i = 0; i < settings.lifetime; i++)
             {
-                HeightSample current = Sample(pos, ref deltaMap);
+                HeightSample current = Sample(pos);
 
                 float2 grad = current.gradient;
 
@@ -66,7 +67,7 @@ namespace TheRavine.Generator
                 if (!IsInside(nextPos))
                     break;
 
-                HeightSample next = Sample(nextPos, ref deltaMap);
+                HeightSample next = Sample(nextPos);
 
                 float deltaHeight = next.height - current.height;
 
@@ -76,7 +77,7 @@ namespace TheRavine.Generator
                 {
                     float amount = (sediment - capacity) * settings.depositSpeed;
                     sediment -= amount;
-                    Deposit(ref deltaMap, pos, amount);
+                    Deposit(pos, amount);
                 }
                 else
                 {
@@ -84,7 +85,7 @@ namespace TheRavine.Generator
 
                     if (erosion > 0f)
                     {
-                        ApplyErosion(ref deltaMap, pos, erosion);
+                        ApplyErosion(pos, erosion);
                         sediment += erosion;
                     }
                 }
@@ -99,10 +100,10 @@ namespace TheRavine.Generator
             }
         }
 
-        private void ApplyErosion(ref NativeArray<float> deltaMap, float2 pos, float amount)
+        private void ApplyErosion(float2 pos, float amount)
         {
             int r = settings.radius;
-            float invR2 = math.rsqrt(r);
+            float invR2 = math.rsqrt(r); //why does it work?
             
             int cx = (int)pos.x;
             int cy = (int)pos.y;
@@ -152,7 +153,7 @@ namespace TheRavine.Generator
             }
         }
 
-        private void Deposit(ref NativeArray<float> deltaMap, float2 pos, float amount)
+        private void Deposit(float2 pos, float amount)
         {
             int x = (int)pos.x;
             int y = (int)pos.y;
@@ -166,7 +167,7 @@ namespace TheRavine.Generator
             Add(deltaMap, x + 1, y + 1, amount * u * v);
         }
 
-        private HeightSample Sample(float2 pos, ref NativeArray<float> deltaMap)
+        private HeightSample Sample(float2 pos)
         {
             int x = (int)pos.x;
             int y = (int)pos.y;
@@ -174,10 +175,10 @@ namespace TheRavine.Generator
             float u = pos.x - x;
             float v = pos.y - y;
 
-            float h00 = GetHeight(x, y, ref deltaMap);
-            float h10 = GetHeight(x + 1, y, ref deltaMap);
-            float h01 = GetHeight(x, y + 1, ref deltaMap);
-            float h11 = GetHeight(x + 1, y + 1, ref deltaMap);
+            float h00 = GetHeight(x, y);
+            float h10 = GetHeight(x + 1, y);
+            float h01 = GetHeight(x, y + 1);
+            float h11 = GetHeight(x + 1, y + 1);
 
             float height = math.lerp(math.lerp(h00, h10, u), math.lerp(h01, h11, u), v);
 
@@ -187,7 +188,7 @@ namespace TheRavine.Generator
             return new HeightSample { height = height, gradient = new float2(gradX, gradY) };
         }
 
-        private float GetHeight(int x, int y, ref NativeArray<float> deltaMap)
+        private float GetHeight(int x, int y)
         {
             return heightMap[Idx(x, y)] + deltaMap[Idx(x, y)];
         }

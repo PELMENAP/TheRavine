@@ -260,88 +260,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!1 &7324414914430248187
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6911352467779933773}
-  - component: {fileID: 6774251455722162441}
-  - component: {fileID: 4208631735947203069}
-  m_Layer: 0
-  m_Name: GrassSystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
---- !u!4 &6911352467779933773
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7324414914430248187}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 5100749199910613620}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6774251455722162441
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7324414914430248187}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b872aee0f7bb99eea9f191223d57e77, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ObjectSystem::GrassMeshPlacer
-  targetMeshFilter: {fileID: 3903556155217441569}
-  targetTransform: {fileID: 6722119735624511312}
-  grassMesh: {fileID: 4300000, guid: 53a609b0811916efe86ba4ca4b01e48e, type: 2}
-  grassMaterial: {fileID: 2100000, guid: 36571ee1032acddecaf946f49784b2d6, type: 2}
-  grassPlacementShader: {fileID: 7200000, guid: e3ba6791a67a001f9a194ee1c04a4dfd, type: 3}
-  grassDensity: 0.3
-  bladesPerCell: 2
-  scaleMin: 0.8
-  scaleMax: 1.2
-  rotationVariation: 360
-  globalMinHeight: 5
-  globalMaxHeight: 40
-  scaleNoiseScale: 0.05
-  scaleNoiseInfluence: 0.5
-  scaleOctaves: 2
-  scalePersistence: 0.5
-  scaleLacunarity: 2
-  noiseScale: 0.1
-  densityMinThreshold: 0.2
-  densityMaxThreshold: 1
-  octaves: 3
-  persistence: 0.5
-  lacunarity: 2
---- !u!114 &4208631735947203069
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7324414914430248187}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 61e113457dceefbd3b30aed2f3261017, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: '::'
-  player: {fileID: 6911352467779933773}
-  grassMaterial: {fileID: 2100000, guid: 36571ee1032acddecaf946f49784b2d6, type: 2}
 --- !u!1001 &1026926498622835278
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -736,10 +654,6 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 3903556155217441569}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: viewerOffset.z
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: waterTransform
       value: 
       objectReference: {fileID: 6118399043195273558}
@@ -747,17 +661,21 @@ PrefabInstance:
       propertyPath: terrainTransform
       value: 
       objectReference: {fileID: 6722119735624511312}
+    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: targetTransform
+      value: 
+      objectReference: {fileID: 6722119735624511312}
+    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: targetMeshFilter
+      value: 
+      objectReference: {fileID: 3903556155217441569}
     - target: {fileID: 7784986139299065775, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: m_Name
       value: MapGenerator
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects:
-    - {fileID: 8499671717806100230, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 2172697054823260749, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 6911352467779933773}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
 --- !u!4 &5100749199910613620 stripped
@@ -890,18 +808,6 @@ PrefabInstance:
     - target: {fileID: 1485577371347755464, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 3468601885
-      objectReference: {fileID: 0}
-    - target: {fileID: 3495164147535748133, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3495164147535748133, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3495164147535748133, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6400751825280318941, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
       propertyPath: m_LocalPosition.x

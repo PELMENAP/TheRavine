@@ -4,17 +4,19 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
 using Unity.Mathematics;
+using System;
 
-public static class Noise
+public class Noise : IDisposable
 {
-    private static FastNoiseLite heightNoise;
-    private static FastNoiseLite riverNoise;
-    private static FastNoiseLite temperatureNoise;
-    private static FastNoiseLite moistureNoise;
+    private FastNoiseLite heightNoise;
+    private FastNoiseLite riverNoise;
+    private FastNoiseLite temperatureNoise;
+    private FastNoiseLite moistureNoise;
+    private NativeArray<float> tempHalf, moistHalf;
 
-    private static int chunkSize;
+    private int chunkSize, halfSize, halfPixels;
 
-    public static void SetInit(
+    public Noise(
         NoiseLayerSettings heightSettings,
         NoiseLayerSettings riverSettings,
         NoiseLayerSettings temperatureSettings,
@@ -23,13 +25,20 @@ public static class Noise
         int _chunkSize)
     {
         chunkSize = _chunkSize;
+
+        halfSize    = chunkSize >> 1;
+        halfPixels  = halfSize * halfSize;
+
+        tempHalf  = new NativeArray<float>(halfPixels, Allocator.Persistent);
+        moistHalf = new NativeArray<float>(halfPixels, Allocator.Persistent);
+
         heightNoise = BuildNoise(heightSettings, seed);
         riverNoise  = BuildNoise(riverSettings,  seed * 2);
         temperatureNoise = BuildNoise(temperatureSettings, seed * 4);
         moistureNoise    = BuildNoise(moistureSettings,    seed * 5);
     }
 
-    private static FastNoiseLite BuildNoise(in NoiseLayerSettings s, int seed)
+    private FastNoiseLite BuildNoise(in NoiseLayerSettings s, int seed)
     {
         var noise = new FastNoiseLite(seed);
         noise.SetNoiseType(s.noiseType);
@@ -42,21 +51,15 @@ public static class Noise
         return noise;
     }
 
-    public static void GenerateAllMaps(
+    public void GenerateAllMaps(
         NativeArray<float> heightMap,
         NativeArray<float> riverMap,
         NativeArray<float> temperatureMap,
         NativeArray<float> moistureMap,
         Vector2Int chunkOffset)
     {
-        int halfSize    = chunkSize >> 1;
-        int halfPixels  = halfSize * halfSize;
-
         int worldX = chunkOffset.x * chunkSize;
         int worldY = chunkOffset.y * chunkSize;
-
-        NativeArray<float> tempHalf  = new NativeArray<float>(halfPixels, Allocator.TempJob);
-        NativeArray<float> moistHalf = new NativeArray<float>(halfPixels, Allocator.TempJob);
 
         HeightMapJob hJob = new HeightMapJob
         {
@@ -117,10 +120,13 @@ public static class Noise
             rHandle,
             climateDone);
 
-        tempHalf.Dispose(final);
-        moistHalf.Dispose(final);
-
         final.Complete();
+    }
+
+    public void Dispose()
+    {
+        tempHalf.Dispose();
+        moistHalf.Dispose();
     }
 
     [BurstCompile]

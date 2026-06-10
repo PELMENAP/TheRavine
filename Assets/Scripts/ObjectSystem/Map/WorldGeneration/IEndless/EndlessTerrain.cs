@@ -1,5 +1,6 @@
 using UnityEngine;
 using Cysharp.Threading.Tasks;
+using TheRavine.Extensions;
 
 namespace TheRavine.Generator
 {
@@ -110,21 +111,18 @@ namespace TheRavine.Generator
                 {
                     for (int chunkY = -1; chunkY < chunkCount - 1; chunkY++)
                     {
-                        Vector2Int chunkWorldPos = new(
-                            centre.x - chunkScale + chunkX,
-                            centre.y - chunkScale + chunkY
-                        );
                         
-                        UpdateChunkVertices(chunkWorldPos, chunkX, chunkY + 1);
+                        UpdateChunkVertices(centre.x - chunkScale + chunkX, centre.y - chunkScale + chunkY, chunkX, chunkY + 1);
                     }
                 }
             }
 
-            private void UpdateChunkVertices(Vector2Int chunkPos, int gridX, int gridZ)
+            private void UpdateChunkVertices(int chunkPosX, int chunkPosY, int gridX, int gridY)
             {
                 int vertexOffsetX = gridX * mapChunkSize;
-                int vertexOffsetZ = gridZ * mapChunkSize;
-                
+                int vertexOffsetZ = gridY * mapChunkSize;
+
+                long chunkPos = Position2Int.Pack(chunkPosX, chunkPosY);
                 ChunkData chunkData = generator.GetMapData(chunkPos);
 
                 for (int x = 0; x < mapChunkSize; x++)
@@ -133,7 +131,7 @@ namespace TheRavine.Generator
                     {
                         int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + y;
 
-                        float h = chunkData.GetHeight(x, y);
+                        float h = chunkData.HeightRaw[y * mapChunkSize + x];
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + x) * scale, 
                             h, 
@@ -144,13 +142,14 @@ namespace TheRavine.Generator
                 
                 if (gridX == chunkCount - 1)
                 {
-                    chunkData = generator.GetMapData(chunkPos + right);
+                    long chunkNearPos = Position2Int.Pack(chunkPosX + 1, chunkPosY);
+                    chunkData = generator.GetMapData(chunkNearPos);
                     
                     for (int y = 0; y < mapChunkSize; y++)
                     {
                         int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + vertexOffsetZ + y;
 
-                        float h = chunkData.GetHeight(0, y);
+                        float h = chunkData.HeightRaw[y * mapChunkSize];
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + mapChunkSize) * scale, 
                             h,
@@ -159,15 +158,16 @@ namespace TheRavine.Generator
                     }
                 }
             
-                if (gridZ == chunkCount - 1)
+                if (gridY == chunkCount - 1)
                 {
-                    chunkData = generator.GetMapData(chunkPos + up);
+                    long chunkNearPos = Position2Int.Pack(chunkPosX, chunkPosY + 1);
+                    chunkData = generator.GetMapData(chunkNearPos);
                     
                     for (int x = 0; x < mapChunkSize; x++)
                     {
                         int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + mapChunkSize;
 
-                        float h = chunkData.GetHeight(x, 0);
+                        float h = chunkData.HeightRaw[x];
                         vertices[vertexIndex] = new Vector3(
                             (vertexOffsetX + x) * scale, 
                             h, 
@@ -176,11 +176,12 @@ namespace TheRavine.Generator
                     }
                 }
                 
-                if (gridX == chunkCount - 1 && gridZ == chunkCount - 1)
+                if (gridX == chunkCount - 1 && gridY == chunkCount - 1)
                 {
-                    chunkData = generator.GetMapData(chunkPos + diag);
+                    long chunkNearPos = Position2Int.Pack(chunkPosX + 1, chunkPosY + 1);
+                    chunkData = generator.GetMapData(chunkNearPos);
 
-                    float h = chunkData.GetHeight(0, 0);
+                    float h = chunkData.HeightRaw[0];
                     int vertexIndex = (vertexOffsetX + mapChunkSize) * totalVerticesZ + vertexOffsetZ + mapChunkSize;
                     vertices[vertexIndex] = new Vector3(
                         (vertexOffsetX + mapChunkSize) * scale, 

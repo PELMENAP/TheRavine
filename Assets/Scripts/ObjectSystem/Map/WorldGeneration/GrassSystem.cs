@@ -43,7 +43,7 @@ public class GrassSystem : MonoBehaviour
     
     private const int terrainResolution = 1 + 3 * MapGenerator.mapChunkSize;
     private const int vertexCount = terrainResolution * terrainResolution;
-    private const int maxGrassInstances = 200000;
+    private const int maxGrassInstances = 300000;
     
     private ComputeBuffer instanceBuffer;
     private ComputeBuffer heightMapBuffer;
@@ -53,14 +53,32 @@ public class GrassSystem : MonoBehaviour
     private Bounds renderBounds;
     private readonly uint[] args = new uint[5];
     
-    private int lastInstanceCount, instanceCount;
-    private Vector3 lastPosition;
+    private int instanceCount;
 
     private int densityFactor;
     private bool isGrass, isShadows;
-    
-    void Start()
+    private NativeArray<float> heightMap;
+
+    private Vector3 specialOffset = new(MapGenerator.mapChunkSize, 0, MapGenerator.mapChunkSize);
+    private Bounds TransformBounds(Bounds localBounds, Matrix4x4 matrix)
     {
+        Vector3 center = matrix.MultiplyPoint3x4(localBounds.center) + specialOffset;
+        Vector3 extents = localBounds.extents;
+        
+        Vector3 axisX = matrix.MultiplyVector(new Vector3(extents.x, 0, 0));
+        Vector3 axisY = matrix.MultiplyVector(new Vector3(0, extents.y, 0));
+        Vector3 axisZ = matrix.MultiplyVector(new Vector3(0, 0, extents.z));
+        
+        extents.x = Mathf.Abs(axisX.x) + Mathf.Abs(axisY.x) + Mathf.Abs(axisZ.x);
+        extents.y = Mathf.Abs(axisX.y) + Mathf.Abs(axisY.y) + Mathf.Abs(axisZ.y);
+        extents.z = Mathf.Abs(axisX.z) + Mathf.Abs(axisY.z) + Mathf.Abs(axisZ.z);
+        
+        return new Bounds(center, extents * 2f);
+    }
+    
+    private void Start()
+    {
+        heightMap = new(vertexCount, Allocator.Persistent);
         try
         {
             var gameSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
@@ -79,7 +97,7 @@ public class GrassSystem : MonoBehaviour
         InitializeSystem();
     }
     
-    void Update()
+    private void Update()
     {
         if (!isGrass) return;
         RenderGrass();
@@ -95,7 +113,7 @@ public class GrassSystem : MonoBehaviour
         
         kernelPlaceGrass = grassPlacementShader.FindKernel("PlaceGrass");
         
-        instanceBuffer = new ComputeBuffer(maxGrassInstances * densityFactor, 80);
+        instanceBuffer = new ComputeBuffer(maxGrassInstances * densityFactor, 28);
         argsBuffer = new ComputeBuffer(5, sizeof(uint), ComputeBufferType.IndirectArguments);
         
         args[0] = grassMesh.GetIndexCount(0);
@@ -128,8 +146,8 @@ public class GrassSystem : MonoBehaviour
         grassPlacementShader.SetFloat("globalMinHeight", globalMinHeight);
         grassPlacementShader.SetFloat("globalMaxHeight", globalMaxHeight);
         
-        grassPlacementShader.SetInt("occlusionMinX", MapGenerator.mapChunkSize);
-        grassPlacementShader.SetInt("occlusionMaxX", MapGenerator.mapChunkSize * 5);
+        // grassPlacementShader.SetInt("occlusionMinX", MapGenerator.mapChunkSize);
+        // grassPlacementShader.SetInt("occlusionMaxX", MapGenerator.mapChunkSize * 5);
 
         int gridWidth = MapGenerator.mapChunkSize * 6;
         int gridHeight = MapGenerator.mapChunkSize * 6;
@@ -150,8 +168,9 @@ public class GrassSystem : MonoBehaviour
         grassPlacementShader.SetFloat("terrainInvWidth",  1f / terrainWidth);
         grassPlacementShader.SetFloat("terrainInvHeight", 1f / terrainHeight);
 
+        heightMapBuffer?.Release();
+        heightMapBuffer = new ComputeBuffer(vertexCount, sizeof(float));
     }
-    private NativeArray<float> heightMap = new(vertexCount, Allocator.Persistent);
     
     public void UpdateGrassPlacement()
     {
@@ -160,28 +179,22 @@ public class GrassSystem : MonoBehaviour
         Mesh mesh = targetMeshFilter.sharedMesh;
         if (mesh == null) return;
         
-        var vertices = mesh.vertices;
-        var meshBounds = mesh.bounds;
+        Vector3[] vertices = mesh.vertices;
+        Bounds meshBounds = mesh.bounds;
         Matrix4x4 localToWorld = targetTransform.localToWorldMatrix;
         
-        if (heightMapBuffer == null || heightMapBuffer.count != vertexCount)
-        {
-            heightMapBuffer?.Release();
-            heightMapBuffer = new ComputeBuffer(vertexCount, sizeof(float));
-        }
         
         for (int k = 0; k < vertexCount; k++)
         {
             int i = k / terrainResolution;
             int j = k % terrainResolution;
-            int vertexIndex = (terrainResolution - j - 1) * terrainResolution + (terrainResolution - i - 1);
-            Vector3 worldPos = localToWorld.MultiplyPoint3x4(vertices[vertexIndex]);
-            heightMap[vertexCount - 1 - k] = worldPos.y;
+
+            heightMap[k] = vertices[j * terrainResolution + i].y;
         }
         
         heightMapBuffer.SetData(heightMap);
         
-        Bounds worldBounds = GeneratorExtensions.TransformBounds(meshBounds, localToWorld);
+        Bounds worldBounds = TransformBounds(meshBounds, localToWorld);
         
         int minX = Mathf.FloorToInt(worldBounds.min.x);
         int minZ = Mathf.FloorToInt(worldBounds.min.z);
@@ -203,7 +216,7 @@ public class GrassSystem : MonoBehaviour
     }
     
     
-    void RenderGrass()
+    private void RenderGrass()
     {
         if (instanceBuffer == null) return;
 
@@ -223,7 +236,7 @@ public class GrassSystem : MonoBehaviour
         );
     }
     
-    void OnDestroy()
+    private void OnDisable()
     {
         instanceBuffer?.Release();
         heightMapBuffer?.Release();

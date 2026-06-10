@@ -21,7 +21,7 @@ namespace TheRavine.EntityControl
         [SerializeField] private float movementMinimum, sendInterval = 0.1f;
         [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick, Jump;
         [SerializeField] private Joystick joystick;
-        [SerializeField] private Transform crosshair, playerMark;
+        [SerializeField] private Transform crosshair;
         [SerializeField] private PlayerAnimator playerAnimator;
 
         [Header("Jump")]
@@ -44,6 +44,7 @@ namespace TheRavine.EntityControl
         private bool isFlip;
 
         private IController currentController;
+        private MapGenerator map;
         private RavineLogger logger;
         private MovementComponent movementComponent;
         private EventBus entityEventBus;
@@ -86,7 +87,7 @@ namespace TheRavine.EntityControl
                 _ => null
             };
 
-            var map = ServiceLocator.GetService<MapGenerator>();
+            map = ServiceLocator.GetService<MapGenerator>();
             terrainResolver = new TerrainPhysicsResolver(map, playerRigidbody, characterHalfHeight);
 
             WorldRegistry worldRegistry = ServiceLocator.GetService<WorldRegistry>();
@@ -182,7 +183,6 @@ namespace TheRavine.EntityControl
             float movementSpeed = Mathf.Clamp(movementMagnitude, 0f, 1f);
 
             if (movementSpeed < movementMinimum) movementDirection = Vector2.zero;
-            else MoveMark();
 
             timeSinceLastSend += Time.deltaTime;
             if (timeSinceLastSend >= sendInterval)
@@ -209,7 +209,17 @@ namespace TheRavine.EntityControl
             if (inputSpeed <= 0.01f)
                 currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, movementComponent.Deceleration * Time.deltaTime);
 
-            float targetSpeed = inputSpeed * movementComponent.BaseSpeed;
+            float terrainModifier =
+                map.GetSpeedModifier(
+                    playerRigidbody.position.x,
+                    playerRigidbody.position.z,
+                    direction);
+
+            float targetSpeed =
+                inputSpeed *
+                movementComponent.BaseSpeed *
+                terrainModifier;
+
             currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, movementComponent.Acceleration * Time.deltaTime);
 
             playerRigidbody.linearVelocity = new Vector3(
@@ -229,15 +239,6 @@ namespace TheRavine.EntityControl
             playerRigidbody.position = position;
             playerRigidbody.linearVelocity = velocity;
         }
-
-        private readonly Vector3 MarkOffset = new(0, 0, 100);
-        private void MoveMark()
-        {
-            playerMark.position = transform.position + MarkOffset;
-            float angle = Mathf.Atan2(movementDirection.y, movementDirection.x) * Mathf.Rad2Deg - 90;
-            playerMark.rotation = Quaternion.Euler(0, 0, angle);
-        }
-
         private void OnJumpStarted(InputAction.CallbackContext ctx)
         {
             if (!IsOwner || !IsOnGround) return; 
@@ -321,11 +322,11 @@ namespace TheRavine.EntityControl
                 int currentZ = Mathf.RoundToInt(transform.position.z);
                 for (int xOffset = -aimComponent.PickDistance; xOffset <= aimComponent.PickDistance; xOffset++)
                     for (int zOffset = -aimComponent.PickDistance; zOffset <= aimComponent.PickDistance; zOffset++)
-                        entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = new Vector2Int(currentX + xOffset, currentZ + zOffset) });
+                        entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = Position2Int.Pack(currentX + xOffset, currentZ + zOffset) });
             }
             else
             {
-                entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = Extension.RoundVector2D(crosshair.position) });
+                entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = Position2Int.Pack(Extension.RoundVector2D(crosshair.position)) });
             }
         }
 
@@ -338,7 +339,7 @@ namespace TheRavine.EntityControl
         private async UniTaskVoid Placing()
         {
             canPlace = false;
-            entityEventBus.Invoke(playerEntity, new PlaceEvent { Position = Extension.RoundVector2D(crosshair.position) });
+            entityEventBus.Invoke(playerEntity, new PlaceEvent { Position = Position2Int.Pack(Extension.RoundVector2D(crosshair.position)) });
             await UniTask.Delay(placeObjectDelay);
             canPlace = true;
         }

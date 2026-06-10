@@ -1,0 +1,213 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: RavineSkybox
+  m_Shader: {fileID: 4800000, guid: e29e3819bf36aa443a48a3cc76c848ed, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords:
+  - SKYBOX_HAZE
+  - SKYBOX_LAYER_3
+  - SKYBOX_NIGHT
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: _PhaseLayer2
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailAlbedoMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailNormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 8900000, guid: 20b84ba2d218e48768c0101a97168745, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MoonTex:
+        m_Texture: {fileID: 2800000, guid: d39cb2cf9868345afb044eabbe057309, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NoiseTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 1, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ParallaxMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex:
+        m_Texture: {fileID: 8900000, guid: 292ecfc739056482488b9c10860d0401, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex1:
+        m_Texture: {fileID: 8900000, guid: 292ecfc739056482488b9c10860d0401, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex2:
+        m_Texture: {fileID: 8900000, guid: a3d94312da0cb4725801ba2735559dbe, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex3:
+        m_Texture: {fileID: 8900000, guid: 2d1b8edf1a4ae4a87ac4060de47a0643, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex4:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex5:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex6:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Tex7:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AlphaLayer1: 0
+    - _AlphaLayer2: 0
+    - _AlphaLayer3: 1
+    - _AlphaLayer4: 1
+    - _AlphaLayer5: 1
+    - _AlphaLayer6: 1
+    - _AlphaLayer7: 1
+    - _AtmosphereDensity: 9
+    - _BumpScale: 1
+    - _Cutoff: 0.5
+    - _DetailNormalMapScale: 1
+    - _DstBlend: 0
+    - _Exposure: 0.53
+    - _FogAlpha: 1
+    - _FogAmount: 1
+    - _FogBaseHeight: 0
+    - _FogDaylightInfluence: 1
+    - _FogHeight: 2.5
+    - _FogMinAmount: 0
+    - _FogPower: 61
+    - _GlossMapScale: 1
+    - _Glossiness: 0.5
+    - _GlossyReflections: 1
+    - _HShiftLayer1: 7
+    - _HShiftLayer2: 0
+    - _HShiftLayer3: 0.73
+    - _HShiftLayer4: -0.49
+    - _HShiftLayer5: 0
+    - _HShiftLayer6: 0
+    - _HShiftLayer7: 0
+    - _HazeIntensity: 1
+    - _HazeRotationSpeed: 0.2
+    - _HazeScale: 1
+    - _HazeThreshold: 0.161
+    - _Metallic: 0
+    - _MieAnisotropy: 0.99
+    - _MieStrength: 2
+    - _Mode: 0
+    - _MoonFlare: 0.05
+    - _MoonSize: -8
+    - _NightBlend: 0.9832889
+    - _OcclusionStrength: 1
+    - _Parallax: 0.02
+    - _PhaseLayer1: 0.018
+    - _PhaseLayer2: -0.02
+    - _PhaseLayer3: 0.01
+    - _PhaseLayer4: -0.01
+    - _PhaseLayer5: -0.025
+    - _PhaseLayer6: -0.025
+    - _PhaseLayer7: -0.025
+    - _RayleighStrength: 0.76
+    - _Rotation: 128
+    - _RotationSpeed: 10
+    - _RotationSpeed1: 0.5
+    - _RotationSpeed2: 0.14
+    - _RotationSpeed3: 0.19
+    - _RotationSpeed4: 0.25
+    - _RotationSpeed5: 0.14
+    - _RotationSpeed6: 0.14
+    - _RotationSpeed7: 0.14
+    - _SkyboxHaze: 1
+    - _SkyboxLayer1: 0
+    - _SkyboxLayer2: 0
+    - _SkyboxLayer3: 1
+    - _SkyboxLayer4: 0
+    - _SkyboxLayer5: 0
+    - _SkyboxLayer6: 0
+    - _SkyboxLayer7: 0
+    - _SkyboxNight: 1
+    - _SmoothnessTextureChannel: 0
+    - _SpecularHighlights: 1
+    - _SrcBlend: 1
+    - _StarAmount: 0.997
+    - _StarBlinking: 0.2
+    - _StarBlockSize: 200
+    - _StarBrightness: 0.5
+    - _StarDensity: 0.1
+    - _StarSize: 300
+    - _SunFlare: 0.2
+    - _SunSize: 0.2
+    - _UVSec: 0
+    - _UseUnityFogColor: 0
+    - _VShiftLayer1: 0.25
+    - _VShiftLayer2: 0.25
+    - _VShiftLayer3: 0.25
+    - _VShiftLayer4: 0
+    - _VShiftLayer5: 0
+    - _VShiftLayer6: 0
+    - _VShiftLayer7: 0
+    - _ZWrite: 1
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _FogColor: {r: 1, g: 1, b: 1, a: 1}
+    - _HazeColor: {r: 1, g: 1, b: 1, a: 1}
+    - _HazeRotationAxis: {r: 0, g: -1, b: 0, a: 1}
+    - _MoonDirection: {r: 0, g: 0, b: 0, a: 0}
+    - _NightTintColor: {r: 0, g: 0, b: 0, a: 1}
+    - _SkyNightColor: {r: 0, g: 0, b: 0, a: 1}
+    - _SkyTint: {r: 0, g: 0.50425243, b: 1, a: 1}
+    - _SkyTintUpward: {r: 0, g: 0.21176481, b: 1, a: 1}
+    - _StarBrightColor: {r: 0.19999996, g: 0.9, b: 1, a: 1}
+    - _StarDarkColor: {r: 1, g: 0.22173914, b: 0, a: 1}
+    - _SunColor: {r: 1, g: 0.91251034, b: 0.331133, a: 1}
+    - _Tint: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

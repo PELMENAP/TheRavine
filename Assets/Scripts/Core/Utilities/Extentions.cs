@@ -1,7 +1,5 @@
-using System;
 using System.Runtime.CompilerServices;
 using UnityEngine;
-using System.Collections.Generic;
 
 namespace TheRavine.Extensions
 {
@@ -78,16 +76,6 @@ namespace TheRavine.Extensions
         }
     }
     
-
-    public class Vector2IntComparer : IComparer<Vector2Int>
-    {
-        public int Compare(Vector2Int v1, Vector2Int v2)
-        {
-            if (v1.x.CompareTo(v2.x) != 0)
-                return v1.x.CompareTo(v2.x);
-            return v1.y.CompareTo(v2.y);
-        }
-    }
     public struct Pair<T, U>
     {
         public Pair(T first, U second)
