@@ -10,7 +10,7 @@ using TheRavine.Extensions;
 
 namespace TheRavine.EntityControl
 {
-    public class MobGenerator : MonoBehaviour, ISetAble // implement SetUp like Start and BreakDown like OnDestroy
+    public class MobGenerator : MonoBehaviour, ISetAble
     {
         private const int chunkScale = MapGenerator.chunkScale;
         [SerializeField] private SpawnPointDataHeight[] regions;
@@ -73,8 +73,9 @@ namespace TheRavine.EntityControl
             oldChunks.ExceptWith(newChunks);
             return oldChunks;
         }
-        private void UpdateChunks(Vector2Int position)
+        private void UpdateChunks(long _position)
         {
+            Vector2Int position = Position2Int.UnpackToVector(_position);
             HashSet<Vector2Int> chunksToDeactivate = GetChunksDifference(oldChunkPosition, position);
             
             foreach (var chunkPos in chunksToDeactivate)

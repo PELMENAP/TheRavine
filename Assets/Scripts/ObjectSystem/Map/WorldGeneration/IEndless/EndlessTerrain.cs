@@ -12,7 +12,6 @@ namespace TheRavine.Generator
             private const int scale = MapGenerator.scale, generationSize = scale * mapChunkSize;
             private readonly Mesh terrainMesh;
             private readonly MapGenerator generator;
-            private readonly ChunkGenerationSettings settings;
             
             private readonly int totalVerticesX;
             private readonly int totalVerticesZ;
@@ -21,12 +20,10 @@ namespace TheRavine.Generator
             
             private readonly Vector3[] vertices;
             private readonly int[] triangles;
-            private readonly Vector2Int up = new(0, 1), right = new(1, 0), diag = new(1, 1);
 
             public EndlessTerrain(MapGenerator _generator, ChunkGenerationSettings _settings)
             {
                 generator = _generator;
-                settings = _settings;
                 
                 totalVerticesX = chunkCount * mapChunkSize + 1;
                 totalVerticesZ = chunkCount * mapChunkSize + 1;
@@ -91,7 +88,7 @@ namespace TheRavine.Generator
                 }
             }
 
-            public async UniTaskVoid UpdateChunk(Vector2Int position)
+            public async UniTaskVoid UpdateChunk(long position)
             {
                 UpdateAllVertices(position);
                 
@@ -99,30 +96,29 @@ namespace TheRavine.Generator
                 terrainMesh.RecalculateNormals();
                 
                 generator.terrainTransform.position = new Vector3(
-                    (position.x - 1) * generationSize, 0,
-                    (position.y - 2) * generationSize);
+                    (Position2Int.GetX(position) - 1) * generationSize, 0,
+                    (Position2Int.GetY(position) - 2) * generationSize);
 
                 await UniTask.CompletedTask;
             }
 
-            private void UpdateAllVertices(Vector2Int centre)
+            private void UpdateAllVertices(long centre)
             {
                 for (int chunkX = 0; chunkX < chunkCount; chunkX++)
                 {
                     for (int chunkY = -1; chunkY < chunkCount - 1; chunkY++)
                     {
-                        
-                        UpdateChunkVertices(centre.x - chunkScale + chunkX, centre.y - chunkScale + chunkY, chunkX, chunkY + 1);
+
+                        UpdateChunkVertices(Position2Int.Offset(centre, chunkX - chunkScale, chunkY - chunkScale), chunkX, chunkY + 1);
                     }
                 }
             }
 
-            private void UpdateChunkVertices(int chunkPosX, int chunkPosY, int gridX, int gridY)
+            private void UpdateChunkVertices(long chunkPos, int gridX, int gridY)
             {
                 int vertexOffsetX = gridX * mapChunkSize;
                 int vertexOffsetZ = gridY * mapChunkSize;
 
-                long chunkPos = Position2Int.Pack(chunkPosX, chunkPosY);
                 ChunkData chunkData = generator.GetMapData(chunkPos);
 
                 for (int x = 0; x < mapChunkSize; x++)
@@ -142,7 +138,7 @@ namespace TheRavine.Generator
                 
                 if (gridX == chunkCount - 1)
                 {
-                    long chunkNearPos = Position2Int.Pack(chunkPosX + 1, chunkPosY);
+                    long chunkNearPos = Position2Int.Offset(chunkPos, 1, 0);
                     chunkData = generator.GetMapData(chunkNearPos);
                     
                     for (int y = 0; y < mapChunkSize; y++)
@@ -160,7 +156,7 @@ namespace TheRavine.Generator
             
                 if (gridY == chunkCount - 1)
                 {
-                    long chunkNearPos = Position2Int.Pack(chunkPosX, chunkPosY + 1);
+                    long chunkNearPos = Position2Int.Offset(chunkPos, 0, 1);
                     chunkData = generator.GetMapData(chunkNearPos);
                     
                     for (int x = 0; x < mapChunkSize; x++)
@@ -178,7 +174,7 @@ namespace TheRavine.Generator
                 
                 if (gridX == chunkCount - 1 && gridY == chunkCount - 1)
                 {
-                    long chunkNearPos = Position2Int.Pack(chunkPosX + 1, chunkPosY + 1);
+                    long chunkNearPos = Position2Int.Offset(chunkPos, 1, 1);
                     chunkData = generator.GetMapData(chunkNearPos);
 
                     float h = chunkData.HeightRaw[0];

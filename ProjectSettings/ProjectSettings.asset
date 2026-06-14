@@ -726,7 +726,7 @@ PlayerSettings:
     Android: 0
     Standalone: 1
   il2cppCompilerConfiguration:
-    Standalone: 0
+    Standalone: 1
   il2cppCodeGeneration:
     Standalone: 1
   il2cppStacktraceInformation:

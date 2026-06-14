@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92dc51c1426ad1c8c94acb16dec575b3, type: 3}
+  m_Name: SpruceSpawnProfile
+  m_EditorClassIdentifier: ObjectSystem::TheRavine.Generator.ObjectSpawnProfileSO
+  layer: 2
+  density: 30
+  minDistance: 5
+  mask:
+    heightMin: 0.12
+    heightMax: 0.5
+    tempMin: 0.1
+    tempMax: 0.6
+    moistMin: 0.35
+    moistMax: 1
+    noiseScale: 0.02
+    noiseThreshold: 0.5
+    noiseWeight: 0.6
+  clusters:
+    useClusters: 0
+    clusterCount: 6
+    clusterSize: 17
+    clusterRadius: 0.33
+  objectInfo: {fileID: 11400000, guid: 1f5a9fa98ce0357a1a045ec4af226c89, type: 2}

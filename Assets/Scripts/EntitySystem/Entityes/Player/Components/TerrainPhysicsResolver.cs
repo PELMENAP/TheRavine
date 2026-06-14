@@ -42,10 +42,12 @@ namespace TheRavine.EntityControl
                 if (velocity.y < 0f)
                     velocity.y = 0f;
                 rb.linearVelocity = velocity;
+                rb.useGravity = false;
                 IsGrounded = true;
             }
             else
             {
+                rb.useGravity = true;
                 IsGrounded = penetration > -GroundedDistance;
             }
         }

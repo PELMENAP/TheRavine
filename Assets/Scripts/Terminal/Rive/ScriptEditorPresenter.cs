@@ -2,8 +2,6 @@ using TMPro;
 using UnityEngine;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using UnityEngine.UI;
-using NaughtyAttributes;
 
 namespace TheRavine.Base
 {

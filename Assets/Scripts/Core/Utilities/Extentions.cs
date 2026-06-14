@@ -6,8 +6,6 @@ namespace TheRavine.Extensions
     public static class Extension
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Vector2Int RoundVector2D(Vector3 vec) => new(Mathf.RoundToInt(vec.x), Mathf.RoundToInt(vec.y));
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 GetRandomPointAround(Vector2 centerPoint, float factor)
         {
             Vector2 direction = RavineRandom.GetInsideCircle(factor);

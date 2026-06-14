@@ -4,17 +4,15 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
 using Unity.Mathematics;
-using System;
 
-public class Noise : IDisposable
+public class Noise
 {
     private FastNoiseLite heightNoise;
     private FastNoiseLite riverNoise;
     private FastNoiseLite temperatureNoise;
     private FastNoiseLite moistureNoise;
-    private NativeArray<float> tempHalf, moistHalf;
+    private int chunkSize, halfSize;
 
-    private int chunkSize, halfSize, halfPixels;
 
     public Noise(
         NoiseLayerSettings heightSettings,
@@ -26,11 +24,7 @@ public class Noise : IDisposable
     {
         chunkSize = _chunkSize;
 
-        halfSize    = chunkSize >> 1;
-        halfPixels  = halfSize * halfSize;
-
-        tempHalf  = new NativeArray<float>(halfPixels, Allocator.Persistent);
-        moistHalf = new NativeArray<float>(halfPixels, Allocator.Persistent);
+        halfSize = chunkSize >> 1;
 
         heightNoise = BuildNoise(heightSettings, seed);
         riverNoise  = BuildNoise(riverSettings,  seed * 2);
@@ -79,17 +73,17 @@ public class Noise : IDisposable
             Output = riverMap
         };
 
-        ClimateHalfJob cJob = new ClimateHalfJob
+        ClimateDirect2xJob cJob = new ClimateDirect2xJob
         {
             HalfSize = halfSize,
+            ChunkSize = chunkSize,
             WorldX = worldX,
             WorldY = worldY,
             TempNoise = temperatureNoise,
             MoistNoise = moistureNoise,
-            TempHalf = tempHalf,
-            MoistHalf = moistHalf
+            TemperatureMap = temperatureMap,
+            MoistureMap = moistureMap
         };
-
 
         JobHandle hHandle = hJob.ScheduleParallel(chunkSize, 8, default);
 
@@ -97,36 +91,13 @@ public class Noise : IDisposable
 
         JobHandle cHandle = cJob.ScheduleParallel(halfSize, 8, default);
 
-        JobHandle tHandle = new Upscale2xJob
-        {
-            SourceSize = halfSize,
-            DestSize = chunkSize,
-            Source = tempHalf,
-            Dest = temperatureMap
-        }.Schedule(cHandle);
-
-        JobHandle mHandle = new Upscale2xJob
-        {
-            SourceSize = halfSize,
-            DestSize = chunkSize,
-            Source = moistHalf,
-            Dest = moistureMap
-        }.Schedule(cHandle);
-
-        JobHandle climateDone = JobHandle.CombineDependencies(tHandle, mHandle);
-
         JobHandle final = JobHandle.CombineDependencies(
             hHandle,
             rHandle,
-            climateDone);
+            cHandle);
 
         final.Complete();
-    }
 
-    public void Dispose()
-    {
-        tempHalf.Dispose();
-        moistHalf.Dispose();
     }
 
     [BurstCompile]
@@ -180,9 +151,10 @@ public class Noise : IDisposable
     }
 
     [BurstCompile]
-    public struct ClimateHalfJob : IJobFor
+    public struct ClimateDirect2xJob : IJobFor
     {
         [ReadOnly] public int HalfSize;
+        [ReadOnly] public int ChunkSize;
         [ReadOnly] public int WorldX;
         [ReadOnly] public int WorldY;
 
@@ -191,83 +163,42 @@ public class Noise : IDisposable
 
         [WriteOnly]
         [NativeDisableParallelForRestriction]
-        public NativeArray<float> TempHalf;
+        public NativeArray<float> TemperatureMap;
 
         [WriteOnly]
         [NativeDisableParallelForRestriction]
-        public NativeArray<float> MoistHalf;
+        public NativeArray<float> MoistureMap;
 
-        public void Execute(int y)
+        public void Execute(int hy)
         {
-            int row = y * HalfSize;
-            int wy = WorldY + y * 2;
+            int y = hy * 2;
+            int wy = WorldY + y;
 
-            for (int x = 0; x < HalfSize; x++)
+            int row0 = y * ChunkSize;
+            int row1 = row0 + ChunkSize;
+
+            for (int hx = 0; hx < HalfSize; hx++)
             {
-                int wx = WorldX + x * 2;
-                int index = row + x;
+                int x = hx * 2;
+                int wx = WorldX + x;
 
-                TempHalf[index] =
-                    TempNoise.GetNoise(wx, wy) * 0.5f + 0.5f;
+                float temp = TempNoise.GetNoise(wx, wy) * 0.5f + 0.5f;
+                float moist = MoistNoise.GetNoise(wx, wy) * 0.5f + 0.5f;
 
-                MoistHalf[index] =
-                    MoistNoise.GetNoise(wx, wy) * 0.5f + 0.5f;
-            }
-        }
-    }
+                int i00 = row0 + x;
+                int i10 = i00 + 1;
+                int i01 = row1 + x;
+                int i11 = i01 + 1;
 
-    [BurstCompile]
-    public struct Upscale2xJob : IJob
-    {
-        [ReadOnly]
-        public int SourceSize;
+                TemperatureMap[i00] = temp;
+                TemperatureMap[i10] = temp;
+                TemperatureMap[i01] = temp;
+                TemperatureMap[i11] = temp;
 
-        [ReadOnly]
-        public int DestSize;
-
-        [ReadOnly]
-        public NativeArray<float> Source;
-
-        [WriteOnly]
-        [NativeDisableParallelForRestriction]
-        public NativeArray<float> Dest;
-
-        public void Execute()
-        {
-            const float scale = 0.5f;
-
-            for (int dy = 0; dy < DestSize; dy++)
-            {
-                float gy = dy * scale;
-
-                int y0 = (int)gy;
-                int y1 = math.min(y0 + 1, SourceSize - 1);
-
-                float ty = gy - y0;
-
-                int row0 = y0 * SourceSize;
-                int row1 = y1 * SourceSize;
-                int dstRow = dy * DestSize;
-
-                for (int dx = 0; dx < DestSize; dx++)
-                {
-                    float gx = dx * scale;
-
-                    int x0 = (int)gx;
-                    int x1 = math.min(x0 + 1, SourceSize - 1);
-
-                    float tx = gx - x0;
-
-                    float c00 = Source[row0 + x0];
-                    float c10 = Source[row0 + x1];
-                    float c01 = Source[row1 + x0];
-                    float c11 = Source[row1 + x1];
-
-                    float a = math.lerp(c00, c10, tx);
-                    float b = math.lerp(c01, c11, tx);
-
-                    Dest[dstRow + dx] = math.lerp(a, b, ty);
-                }
+                MoistureMap[i00] = moist;
+                MoistureMap[i10] = moist;
+                MoistureMap[i01] = moist;
+                MoistureMap[i11] = moist;
             }
         }
     }

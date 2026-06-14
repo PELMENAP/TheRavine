@@ -123,7 +123,7 @@ namespace TheRavine.EntityControl
 
         private void LateUpdate()
         {
-            if (moveJobHandle.Equals(default(JobHandle))) return;
+            if (moveJobHandle.Equals(default)) return;
             moveJobHandle.Complete();
         }
 

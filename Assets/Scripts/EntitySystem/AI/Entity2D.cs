@@ -3,11 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using NaughtyAttributes;
 using R3;
 using TMPro;
 using UnityEngine;
-using Random = TheRavine.Extensions.RavineRandom;
 
 [RequireComponent(typeof(Rigidbody))]
 public class Entity : MonoBehaviour, IDialogListener, IDialogSender
@@ -212,11 +210,11 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
 
     private async UniTask WanderAsync(CancellationToken ct)
     {
-        Vector2 randomCircle = UnityEngine.Random.insideUnitCircle; 
+        Vector2 randomCircle = RavineRandom.GetInsideCircle(); 
         Vector3 dir = new Vector3(randomCircle.x, 0, randomCircle.y).normalized;
         
         Vector3 target = transform.position + dir * wanderRadius;
-        await MoveToAsync(target, moveSpeed, Random.RangeFloat(minWanderTime, maxWanderTime),
+        await MoveToAsync(target, moveSpeed, RavineRandom.RangeFloat(minWanderTime, maxWanderTime),
             energyCostPerSecondMoving, ct);
     }
 
@@ -239,7 +237,7 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
     private async UniTask GoToPointAsync(CancellationToken ct)
     {
         if (_pointsOfInterest.Count == 0) return;
-        int     idx    = Random.RangeInt(0, _pointsOfInterest.Count);
+        int     idx    = RavineRandom.RangeInt(0, _pointsOfInterest.Count);
         Vector2 target = _pointsOfInterest[idx];
         Color   orig   = _sr.color;
         _sr.color      = Color.blue;

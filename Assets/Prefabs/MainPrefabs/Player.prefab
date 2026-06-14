@@ -59,7 +59,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3031338226
+  GlobalObjectIdHash: 4011542423
   InScenePlacedSourceGlobalObjectIdHash: 4011542423
   DeferredDespawnTick: 0
   Ownership: 1
@@ -901,7 +901,7 @@ PrefabInstance:
     - target: {fileID: 6123350630029718356, guid: 020c784f6904ea04784b61dbb699e4d3, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: d3d9e3c1171195442ae8a9dd7b5baeea, type: 2}
+      objectReference: {fileID: 2100000, guid: 0123ec61ed43ae243af1715e98535946, type: 2}
     - target: {fileID: 8172286204516799152, guid: 020c784f6904ea04784b61dbb699e4d3, type: 3}
       propertyPath: m_Name
       value: Ripple Particle System

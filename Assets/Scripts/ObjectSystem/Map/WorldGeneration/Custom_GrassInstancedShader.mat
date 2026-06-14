@@ -64,6 +64,8 @@ Material:
     - _Cutoff: 1
     - _DebugMode: 1.46
     - _HeightColorBlend: 0
+    - _HueVariation: 0.3
+    - _HueVariationScale: 0.1
     - _InstanceColorBlend: 1
     - _NormalWindInfluence: 1.055
     - _PlayerCount: 1
@@ -71,8 +73,10 @@ Material:
     - _PlayerRadius: 2
     - _PlayerSmoothness: 2
     - _PlayerStrength: 1
+    - _SaturationVariation: 0.1
     - _TextureCount: 1
     - _TranslucencyStrength: 0.416
+    - _ValueVariation: 0.1
     - _WindGustFrequency: 1
     - _WindGustStrength: 1
     - _WindMapScale: 0.01

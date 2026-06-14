@@ -4,7 +4,7 @@ namespace TheRavine.ObjectControl
 {
     public class ObjectSystem : MonoBehaviour, ISetAble
     {
-        [SerializeField] public ObjectInfoRegistry infoRegistry;
+        public ObjectInfoRegistry infoRegistry;
 
         private PoolManager poolManager;
         public GameObject InstantiatePoolObject(Vector3 position, GameObject prefab) =>
@@ -42,25 +42,14 @@ namespace TheRavine.ObjectControl
 
         public void BreakUp(ISetAble.Callback callback)
         {
-            infoRegistry.Clear();
-            poolManager.Dispose();
+            OnDisable();
             callback?.Invoke();
         }
-    }
-    public struct ObjectInstInfo
-    {
-        public int          PrefabID;
-        public InstanceType Type;
-        public Vector3      Position;
-        public int          Amount;
 
-        public ObjectInstInfo(
-            Vector3 pos, int prefab, int amount, InstanceType type)
+        private void OnDisable()
         {
-            Position = pos;
-            PrefabID = prefab;
-            Amount   = amount;
-            Type     = type;
+            infoRegistry?.Clear();
+            poolManager?.Dispose();
         }
     }
 }

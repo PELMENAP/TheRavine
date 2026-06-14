@@ -27,5 +27,14 @@ namespace TheRavine.Extensions
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetY(long key) => (int)key;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long Offset(long pos, int dx, int dy)
+        {
+            return Pack(
+                GetX(pos) + dx,
+                GetY(pos) + dy
+            );
+        }
     }
 }

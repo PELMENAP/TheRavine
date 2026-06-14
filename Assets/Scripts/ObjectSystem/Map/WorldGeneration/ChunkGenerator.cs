@@ -15,7 +15,6 @@ namespace TheRavine.Generator
     {
         private const int mapChunkSize   = MapGenerator.mapChunkSize;
         private const int scale          = MapGenerator.scale;
-        private const int generationSize = MapGenerator.generationSize;
         private const int totalCells     = mapChunkSize * mapChunkSize;
         private const float maxTerrainHeight = MapGenerator.maxTerrainHeight;
 
@@ -39,8 +38,11 @@ namespace TheRavine.Generator
         private readonly NativeArray<float> riverBedHeight;
 
         private readonly NativeArray<byte> moveCost;
-        private readonly NativeArray<float2> slopeDirection;
-
+        private NativeArray<ObjectSpawnConfig> spawnConfigs;
+        private NativeArray<ObjectInstInfo> spawnOutput;
+        private NativeReference<int> spawnCount;
+        private NativeArray<byte> spawnGridBuffer;
+                
         public UnityAction<Vector2Int, int, int, Vector2Int> onSpawnPoint;
 
         public ChunkGenerator(
@@ -128,11 +130,16 @@ namespace TheRavine.Generator
             }
 
             moveCost = new NativeArray<byte>(totalCells, Allocator.Persistent);
-            slopeDirection = new NativeArray<float2>(totalCells, Allocator.Persistent);
+
+            int gridRes = math.min(mapChunkSize * scale, 256);
+            spawnOutput     = new NativeArray<ObjectInstInfo>(settings.maxObjectsPerChunk, Allocator.Persistent);
+            spawnCount      = new NativeReference<int>(0, Allocator.Persistent);
+            spawnGridBuffer = new NativeArray<byte>(gridRes * gridRes, Allocator.Persistent);
+            spawnConfigs    = SpawnConfigBaker.BakeSpawnConfigs(settings.spawnProfiles, Allocator.Persistent);       
         }
         public ChunkData GenerateMapData(long centre)
         {
-            int hash = (int)centre;
+            uint hash = (uint)centre;
             FastRandom chunkRandom = new(hash);
 
             noise.GenerateAllMaps(
@@ -168,8 +175,7 @@ namespace TheRavine.Generator
                         settings.altitudeCooling,
 
                     heightOut = biomeHeightMap
-                }
-                .Schedule(totalCells, 64);
+                }.Schedule(totalCells, 64);
 
             JobHandle erosionHandle =
                 new HydraulicErosionJob
@@ -180,11 +186,9 @@ namespace TheRavine.Generator
 
                     heightMap = biomeHeightMap,
                     deltaMap = deltaMap
-                }
-                .Schedule(biomeHandle);
+                }.Schedule(biomeHandle);
 
-            JobHandle regionHandle =
-                new RegionAssignJob
+            JobHandle regionHandle = new RegionAssignJob
                 {
                     heightValues = biomeHeightMap,
 
@@ -201,33 +205,65 @@ namespace TheRavine.Generator
 
                     heightMap = heightResult,
                     biomeMap = biomeResult
-                }
-                .Schedule(
+                }.Schedule(
                     totalCells,
                     64,
                     erosionHandle);
 
-            JobHandle slopeHandle =
-                new SlopeMapJob
+            JobHandle slopeHandle = new SlopeMapJob
                 {
-                    heightMap = biomeHeightMap,
-                    mapSize = mapChunkSize,
-
-                    moveCost = moveCost,
-                    slopeDirection = slopeDirection
-                }
-                .Schedule(
-                    totalCells,
-                    64,
-                    regionHandle);
+                    heightMap     = biomeHeightMap,
+                    mapSize       = mapChunkSize,
+                    heightScale   = maxTerrainHeight,
+                    cellWorldDist = 2f * scale,
+                    moveCost      = moveCost,
+                }.Schedule(totalCells, 64, regionHandle);
             
-            slopeHandle.Complete();
 
             ChunkData chunkData = new();
-            FillChunkArrays(chunkData);
 
             if (settings.endlessFlag[2])
-                SpawnObjects(Position2Int.UnpackToVector(centre), chunkData, chunkRandom);
+            {
+                spawnCount.Value = 0;
+                int2 chunkOrigin = new(Position2Int.GetX(centre), Position2Int.GetY(centre));
+                float chunkWorldSize = mapChunkSize * scale;
+
+                JobHandle spawnHandle = new SpawnLayerJob
+                    {
+                        configs = spawnConfigs,
+                        heightMap = biomeHeightMap,
+                        temperatureMap = temperatureMap,
+                        moistureMap = moistureMap,
+                        chunkOrigin = chunkOrigin,
+                        seed = hash,
+                        chunkWorldSize = chunkWorldSize,
+                        mapChunkSize = mapChunkSize,
+                        scale = scale,
+                        output = spawnOutput,
+                        outputCount = spawnCount,
+                        gridBuffer = spawnGridBuffer
+                    }.Schedule(slopeHandle);
+
+                spawnHandle.Complete();
+
+                int finalCount = spawnCount.Value;
+                for (int i = 0; i < finalCount; i++)
+                {
+                    ObjectInstInfo inst = spawnOutput[i];
+                    float2 chunkWorldOrigin = new float2(chunkOrigin) * chunkWorldSize;
+                    int2 cell = (int2)math.floor(
+                        (new float2(inst.Position.x, inst.Position.z) - chunkWorldOrigin) / scale);
+
+                    int idx = math.clamp(cell.y * mapChunkSize + cell.x, 0, totalCells - 1);
+                    chunkData.TryAddObject(idx, in inst, null);
+                }   
+            }
+            else
+            {
+                slopeHandle.Complete();
+            }
+
+            FillChunkArrays(chunkData);
 
             return chunkData;
         }
@@ -238,97 +274,13 @@ namespace TheRavine.Generator
             biomeResult.CopyTo(cd.BiomeMap);
 
             moveCost.CopyTo(cd.MoveCost);
-            slopeDirection.CopyTo(cd.SlopeDirection);
 
             for (int i = 0; i < totalCells; i++)
                 cd.HeightRaw[i] *= maxTerrainHeight;
         }
-
-        private void SpawnObjects(
-            Vector2Int centre,
-            ChunkData chunkData,
-            FastRandom chunkRandom)
-        {
-            int regionCount = settings.regions.Length;
-
-            for (int y = 0; y < mapChunkSize; y++)
-            {
-                for (int x = 0; x < mapChunkSize; x++)
-                {
-                    int idx       = Idx(x, y);
-                    float rawH    = chunkData.HeightRaw[idx];
-                    int regionIdx = heightResult[idx];
-                    int biomeIdx  = chunkData.BiomeMap[idx];
-
-                    if ((uint)regionIdx >= (uint)regionCount)
-                        continue;
-
-                    TerrainType region = settings.regions[regionIdx];
-
-                    if ((uint)biomeIdx >= (uint)region.level.Length)
-                        continue;
-
-                    TemperatureLevel level = region.level[biomeIdx];
-
-                    for (int i = 0; i < level.objects.Length; i++)
-                    {
-                        ObjectInfoGeneration gen = level.objects[i];
-                        if (gen.Chance == 0 || gen.info == null)
-                            continue;
-
-                        if (chunkRandom.Range(0, settings.rareness) >= gen.Chance)
-                            continue;
-
-                        Vector2Int worldPos = new(
-                            centre.x * generationSize + x * scale,
-                            centre.y * generationSize + y * scale);
-
-                        Vector3 realPos = new(worldPos.x, rawH, worldPos.y);
-
-                        var info = new ObjectInstInfo(realPos, gen.info.PrefabID,
-                                      gen.info.DefaultAmount, gen.info.InstanceType);
-
-                        int[] additionalIdxs = BuildAdditionalLocalIdxs(
-                            x, y, gen.info.AdditionalOccupiedCells);
-
-                        if (gen.info.AdditionalOccupiedCells?.Length > 0 && additionalIdxs == null)
-                            continue;
-
-                        if (chunkData.TryAddObject(idx, in info, additionalIdxs))
-                            break;
-                    }
-                }
-            }
-        }
-
-        private static int[] BuildAdditionalLocalIdxs(int x, int y, Vector2Int[] worldOffsets)
-        {
-            if (worldOffsets == null || worldOffsets.Length == 0)
-                return null;
-
-            var result = new int[worldOffsets.Length];
-
-            for (int i = 0; i < worldOffsets.Length; i++)
-            {
-                int lx = x + worldOffsets[i].x / scale;
-                int ly = y + worldOffsets[i].y / scale;
-
-                // Смещение вышло за границы чанка — многоклеточный объект не влезает
-                if ((uint)lx >= (uint)mapChunkSize || (uint)ly >= (uint)mapChunkSize)
-                    return null;
-
-                result[i] = Idx(lx, ly);
-            }
-
-            return result;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int Idx(int x, int y) => y * mapChunkSize + x;
+        
         public void Dispose()
         {
-            noise.Dispose();
-
             if (noiseMap.IsCreated)         noiseMap.Dispose();
             if (deltaMap.IsCreated)         deltaMap.Dispose();
 
@@ -352,7 +304,12 @@ namespace TheRavine.Generator
             if (riverBedHeight.IsCreated)   riverBedHeight.Dispose();
 
             if (moveCost.IsCreated)         moveCost.Dispose();
-            if (slopeDirection.IsCreated)   slopeDirection.Dispose();
+
+            if (spawnConfigs.IsCreated)     spawnConfigs.Dispose();
+            if (spawnOutput.IsCreated)      spawnOutput.Dispose();
+            if (spawnCount.IsCreated)       spawnCount.Dispose();
+            if (spawnGridBuffer.IsCreated)  spawnGridBuffer.Dispose();
+
         }
     }
 }

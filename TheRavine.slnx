@@ -5,7 +5,6 @@
   <Project Path="LitMotion.csproj" />
   <Project Path="EntitySystem.csproj" />
   <Project Path="LitMotion.Extensions.csproj" />
-  <Project Path="NaughtyAttributes.Core.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="ObjectSystem.csproj" />
   <Project Path="B.csproj" />
@@ -15,7 +14,6 @@
   <Project Path="Scripts.csproj" />
   <Project Path="UIInventory.csproj" />
   <Project Path="Netcode.csproj" />
-  <Project Path="NaughtyAttributes.Editor.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="undream.llmunity.Runtime.csproj" />
   <Project Path="View.csproj" />

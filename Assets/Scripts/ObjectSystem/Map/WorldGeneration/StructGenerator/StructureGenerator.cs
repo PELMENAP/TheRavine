@@ -1,12 +1,7 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using System.Threading;
-
-using NaughtyAttributes;
-
-using TheRavine.Extensions;
 
 namespace TheRavine.Generator
 {
@@ -19,7 +14,6 @@ namespace TheRavine.Generator
         private readonly Dictionary<Vector2Int, GameObject> _generatedObjects = new();
         private CancellationTokenSource _cancellationTokenSource;
         
-        [Button]
         private void StartGeneration()
         {
             if(_algorithm == null) _algorithm = new WaveFunctionCollapseAlgorithm(_settings);

@@ -3,8 +3,6 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-using NaughtyAttributes;
-
 public class StringToAudioGenerator : MonoBehaviour
 {
     [Header("Audio Settings")]
@@ -29,7 +27,6 @@ public class StringToAudioGenerator : MonoBehaviour
 
     }
 
-    [Button]
     public void PlayString()
     {
         PlayFromStringAsync(input).Forget();

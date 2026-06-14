@@ -1,5 +1,3 @@
-using TheRavine.Extensions;
-
 public struct SafeInt
 {
     private int _encoded;

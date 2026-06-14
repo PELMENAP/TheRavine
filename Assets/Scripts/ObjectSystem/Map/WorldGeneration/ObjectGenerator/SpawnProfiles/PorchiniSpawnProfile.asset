@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92dc51c1426ad1c8c94acb16dec575b3, type: 3}
+  m_Name: PorchiniSpawnProfile
+  m_EditorClassIdentifier: ObjectSystem::TheRavine.Generator.ObjectSpawnProfileSO
+  layer: 2
+  density: 20
+  minDistance: 3
+  mask:
+    heightMin: 0.1
+    heightMax: 0.7
+    tempMin: 0
+    tempMax: 0.6
+    moistMin: 0.6
+    moistMax: 1
+    noiseScale: 0.035
+    noiseThreshold: 0.6
+    noiseWeight: 0.9
+  clusters:
+    useClusters: 1
+    clusterCount: 10
+    clusterSize: 10
+    clusterRadius: 10
+  objectInfo: {fileID: 11400000, guid: 7bbd0072588a487a28dc34b8065a12f4, type: 2}

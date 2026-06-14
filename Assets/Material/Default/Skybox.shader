@@ -216,13 +216,15 @@
                 return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
             }
 
-			float MiePhase(float mu, float g)
-			{
-				float gg = g * g;
+			float MiePhase(float mu, float g) 
+            {
+                float gg = g * g;
+                
+                float denom_base = 1.0 + gg - 2.0 * g * mu;
+                float rsub = rsqrt(denom_base);
+                return (0.07957747154 * (1.0 - gg)) * (rsub * rsub * rsub);
+            }
 
-				return (1.0 - gg) /
-					(4.0 * PI * pow(1.0 + gg - 2.0 * g * mu, 1.5));
-			}
 
             inline half3 BlendClouds(half3 color, TextureCube cube, SamplerState samplerState, float3 uv, half alpha, half3 skyColor) 
             {
