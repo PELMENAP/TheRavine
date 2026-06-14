@@ -312,6 +312,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8496710106785266827, guid: 1ee707bdfbce6454daa26675f69ff733, type: 3}
+      propertyPath: windStrength
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -748,7 +752,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8291761768583862468, guid: e6fc858b1c845550097ecb40c3760e4e, type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 3386079374
+      value: 2243241895
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

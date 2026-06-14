@@ -144,7 +144,7 @@ Material:
     - _Mode: 0
     - _MoonFlare: 0.05
     - _MoonSize: -8
-    - _NightBlend: 0.0050555547
+    - _NightBlend: 0.99314636
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _PhaseLayer1: 0.018

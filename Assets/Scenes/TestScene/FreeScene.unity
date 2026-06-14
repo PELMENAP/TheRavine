@@ -2474,22 +2474,6 @@ PrefabInstance:
       propertyPath: GlobalObjectIdHash
       value: 1672802306
       objectReference: {fileID: 0}
-    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
-      propertyPath: intensityCurve.m_Curve.Array.data[3].time
-      value: 0.51932776
-      objectReference: {fileID: 0}
-    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
-      propertyPath: intensityCurve.m_Curve.Array.data[4].time
-      value: 0.55228215
-      objectReference: {fileID: 0}
-    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
-      propertyPath: intensityCurve.m_Curve.Array.data[3].value
-      value: 0.66418034
-      objectReference: {fileID: 0}
-    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
-      propertyPath: intensityCurve.m_Curve.Array.data[4].value
-      value: 0.19518729
-      objectReference: {fileID: 0}
     - target: {fileID: 6400751825280318941, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.1

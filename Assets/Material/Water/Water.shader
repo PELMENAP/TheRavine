@@ -1,4 +1,4 @@
-Shader "Custom/WaterShader_Improved"
+Shader "The Ravine/WaterShader"
 {
     Properties
     {
@@ -7,7 +7,6 @@ Shader "Custom/WaterShader_Improved"
         [HDR] FoamColor("Foam Color", Color) = (1, 1, 1, 1)
         
         Smoothness("Smoothness", Range(0, 1)) = 0.9
-        Metallic("Metallic", Range(0, 1)) = 0.0
         
         [Normal][NoScaleOffset] NormalMap("Normal Map", 2D) = "bump" {}
         UV1("UV1 (TilingXY, OffsetZW)", Vector) = (1, 1, 0, 0)
@@ -28,7 +27,6 @@ Shader "Custom/WaterShader_Improved"
         FoamCrestStrength("Crest Foam", Range(0,10)) = 2
         FoamRippleStrength("Ripple Foam", Range(0,10)) = 1
         
-        RippleStrength("Ripple Strength", Float) = 0.5
         RippleRefraction("Ripple Refraction", Float) = 0.1
         [NoScaleOffset] _RippleTex("Ripple Height Map", 2D) = "white" {}
         
@@ -52,7 +50,7 @@ Shader "Custom/WaterShader_Improved"
             
             Blend One OneMinusSrcAlpha, One OneMinusSrcAlpha
             ZTest LEqual
-            ZWrite on
+            ZWrite off
             Cull Off
             
             HLSLPROGRAM
@@ -67,18 +65,12 @@ Shader "Custom/WaterShader_Improved"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
             
-            // ----------------------------------------------------------------
-            // Textures & Samplers
-            // ----------------------------------------------------------------
             TEXTURE2D(NormalMap);       SAMPLER(samplerNormalMap);
             TEXTURE2D(FoamTexture);     SAMPLER(samplerFoamTexture);
             TEXTURE2D(_RippleTex);      SAMPLER(sampler_RippleTex);
             TEXTURE2D(_CameraOpaqueTexture);    SAMPLER(sampler_CameraOpaqueTexture);
             TEXTURE2D(_CameraDepthTexture);     SAMPLER(sampler_CameraDepthTexture);
             
-            // ----------------------------------------------------------------
-            // CBUFFER
-            // ----------------------------------------------------------------
             CBUFFER_START(UnityPerMaterial)
                 float4 ShallowColor;
                 float4 DeepColor;
@@ -92,14 +84,12 @@ Shader "Custom/WaterShader_Improved"
                 float NormalStrength;
                 float Refraction;
                 float Depth;
-                float DepthFade;
                 float Foam;
                 float4 FoamTexture_TexelSize;
                 float FoamScale;
                 float FoamShoreStrength;
                 float FoamCrestStrength;
                 float FoamRippleStrength;
-                float RippleStrength;
                 float RippleRefraction;
                 float4 _RippleTex_TexelSize;
                 float _Displacement;
@@ -130,10 +120,7 @@ Shader "Custom/WaterShader_Improved"
                 float4 screenPos : TEXCOORD5;
                 float3 viewDirWS : TEXCOORD6;
                 float fogFactor : TEXCOORD7;
-                float3 waveNormal : TEXCOORD8;
-                #if defined(SHADER_STAGE_FRAGMENT) && defined(VARYINGS_NEED_CULLFACE)
-                    FRONT_FACE_TYPE cullFace : FRONT_FACE_SEMANTIC;
-                #endif
+                float4 shadowCoord : TEXCOORD8;
             };
             
             // ----------------------------------------------------------------
@@ -247,12 +234,6 @@ Shader "Custom/WaterShader_Improved"
             {
                 Varyings output;
                 
-                // === VERTEX DISPLACEMENT ===
-                // Split ObjectSpacePosition
-                float posX = input.positionOS.x;
-                float posY = input.positionOS.y;
-                float posZ = input.positionOS.z;
-                
                 // WorldSpacePosition XZ как UV для noise
                 float3 worldPos = TransformObjectToWorld(input.positionOS.xyz);
                 float2 noiseUV = worldPos.xz;
@@ -306,12 +287,6 @@ Shader "Custom/WaterShader_Improved"
 
                 displacedPos.y += displacement;
 
-                float3 waveNormal =
-                    normalize(float3(
-                        -(wave1.x + wave2.x + wave3.x),
-                        1,
-                        -(wave1.z + wave2.z + wave3.z)
-                    ));
                                 
                 // === TRANSFORM ===
                 VertexPositionInputs posInputs = GetVertexPositionInputs(displacedPos);
@@ -326,6 +301,7 @@ Shader "Custom/WaterShader_Improved"
                 output.screenPos = ComputeScreenPos(posInputs.positionCS);
                 output.viewDirWS = GetWorldSpaceNormalizeViewDir(posInputs.positionWS);
                 output.fogFactor = ComputeFogFactor(posInputs.positionCS.z);
+                output.shadowCoord = TransformWorldToShadowCoord(output.positionWS);
                 
                 return output;
             }
@@ -341,6 +317,7 @@ Shader "Custom/WaterShader_Improved"
                 // === SCREEN POSITION ===
                 float2 screenUV = input.positionNDC.xy / input.positionNDC.w;
                 float surfaceDepth = LinearEyeDepth(input.positionCS.z, _ZBufferParams);
+                
                 
                 // === NORMAL MAPS ===
                 // WorldPos XZ как базовые UV
@@ -371,16 +348,14 @@ Shader "Custom/WaterShader_Improved"
                 
                 // === RIPPLES ===
                 // LowResNormalFromHeight для _RippleTex
-                float3 rippleNormalForRefract  = LowResNormalFromHeight(_RippleTex, sampler_RippleTex, input.uv0, float2(512,512), RippleRefraction);
-                float3 rippleNormalForSurface  = LowResNormalFromHeight(_RippleTex, sampler_RippleTex, input.uv0, float2(512,512), RippleStrength);
-                 float rippleHeight = SAMPLE_TEXTURE2D(_RippleTex, sampler_RippleTex, input.uv0).r;
-                float3 finalNormalTS_refract  = lerp(normalTS, rippleNormalForRefract,  rippleHeight);
-                float3 finalNormalTS_surface  = lerp(normalTS, rippleNormalForSurface, rippleHeight);
+                float3 rippleNormalForRefract  = LowResNormalFromHeight(_RippleTex, sampler_RippleTex, input.uv0, float2(2048,2048), RippleRefraction);
+                float rippleHeight = abs(SAMPLE_TEXTURE2D(_RippleTex, sampler_RippleTex, input.uv0).r);
+                float3 finalNormalTS  = lerp(normalTS, rippleNormalForRefract,  rippleHeight);
 
                 
                 // === REFRACTION (двойное искажение с depth check) ===
                 // Нормали * Refraction
-                float3 refractOffset = Refraction * finalNormalTS_refract;
+                float3 refractOffset = Refraction * finalNormalTS;
                 
                 // Первое искажение для depth check
                 float2 refractedUV1 = screenUV + refractOffset.xy;
@@ -416,7 +391,7 @@ Shader "Custom/WaterShader_Improved"
                 // === NORMALS TO WORLD SPACE ===
                 float3x3 tangentToWorld = CreateTangentToWorld(
                     input.normalWS, input.tangentWS.xyz, input.tangentWS.w);
-                float3 normalWS = TransformTangentToWorld(finalNormalTS_surface, tangentToWorld);
+                float3 normalWS = TransformTangentToWorld(finalNormalTS, tangentToWorld);
                 normalWS = NormalizeNormalPerPixel(normalWS);
                 
                 // === FOAM ===
@@ -426,22 +401,9 @@ Shader "Custom/WaterShader_Improved"
                     FoamScale +
                     _Time.y * float2(0.03, 0.01);
                 float4 foamTex = SAMPLE_TEXTURE2D(FoamTexture, samplerFoamTexture, foamUV);
-                float4 foamTex2 =
-                    SAMPLE_TEXTURE2D(
-                        FoamTexture,
-                        samplerFoamTexture,
-                        foamUV * 2.7 +
-                        _Time.y * float2(-0.02, 0.04));
-                
-                foamTex =
-                    lerp(
-                        foamTex,
-                        foamTex2,
-                        0.5);
                 
                 // Depth-based foam mask
                 float foamDepth = SceneDepth_Eye(screenUV) - surfaceDepth;
-                float foamFade = saturate(foamDepth / Foam);
 
                 float shoreFoam =
                     smoothstep(
@@ -479,117 +441,81 @@ Shader "Custom/WaterShader_Improved"
                 // === REFLECTION ===
                 float3 viewDirWS = normalize(input.viewDirWS);
                 float3 reflectDir = reflect(-viewDirWS, normalWS);
-                half3 reflColor = GlossyEnvironmentReflection(reflectDir, input.positionWS,  1.0 - Smoothness, 1.0, screenUV);
-
-                // === PBR LIGHTING ===
-                // Для back face: Smoothness = 0
-                float smoothness = lerp(0, Smoothness, isFrontFace);
                 
-                // InputData для UniversalFragmentPBR
-                InputData inputData;
-                inputData.positionWS = input.positionWS;
-                inputData.normalWS = normalWS;
-                inputData.viewDirectionWS = viewDirWS;
-                inputData.shadowCoord = float4(0, 0, 0, 0);
-                inputData.fogCoord = input.fogFactor;
-                inputData.bakedGI = SampleSH(normalWS);
-                inputData.normalizedScreenSpaceUV = screenUV;
-                inputData.shadowMask = 1.0;
-                
-                SurfaceData surfaceData;
-                
-                surfaceData.albedo = baseColor;
-                surfaceData.specular = 0.0;
-                surfaceData.metallic = Metallic;
-                surfaceData.smoothness = smoothness;
-                surfaceData.normalTS = finalNormalTS_surface;
-                surfaceData.occlusion = 1.0;
-                surfaceData.emission = float3(0, 0, 0);
+                half3 reflColor = GlossyEnvironmentReflection(reflectDir, input.positionWS, 1.0 - Smoothness, 1.0);
 
-                float waterAlpha =
-                    lerp(
-                        0.2,
-                        0.9,
-                        depthFade);
+                // === РУЧНОЕ ОСВЕЩЕНИЕ (вместо UniversalFragmentPBR) ===
 
-                surfaceData.alpha = waterAlpha;
-                surfaceData.clearCoatMask = 0.0;
-                surfaceData.clearCoatSmoothness = 0.0;
+                // 1. GI (Light Probes / Sky)
+                float3 bakedGI = SampleSH(normalWS);
+                float3 ambient = bakedGI * lerp(baseColor, float3(0.1, 0.1, 0.1), 0.8);
 
-                float dist = length(input.positionWS - _WorldSpaceCameraPos);
-                float distFade = saturate((dist - 50.0) / 100.0);
-                surfaceData.albedo = lerp(surfaceData.albedo, DeepColor.rgb, distFade);
-                surfaceData.smoothness = lerp(Smoothness, Smoothness * 0.7, distFade); // меньше бликов вдали
+                // 2. Main Light
+                Light mainLight = GetMainLight(input.shadowCoord);
+                float NdotL = saturate(dot(normalWS, mainLight.direction));
 
-                float4 color = UniversalFragmentPBR(inputData, surfaceData);
-                
-                 // Alpha: back face = меньше
-                float alpha = lerp(0.5, 1.0, isFrontFace);
-                color.a = alpha;
+                // Diffuse
+                float3 mainDiffuse = baseColor * mainLight.color * (mainLight.shadowAttenuation * mainLight.distanceAttenuation * NdotL);
 
+                // Specular
+                float3 halfDir = normalize(mainLight.direction + viewDirWS);
+                float NdotH = saturate(dot(normalWS, halfDir));
+                float specPower = exp2(Smoothness * 10.0) + 1.0;
+                float3 mainSpecular = pow(NdotH, specPower) * mainLight.color * mainLight.shadowAttenuation * mainLight.distanceAttenuation * Smoothness;
+
+                // 3. Additional Lights
+                float3 addDiffuse = 0;
+                float3 addSpecular = 0;
                 float3 scatteredLight = 0;
 
-                float waterThickness =
-                    max(
-                        sceneDepth2 - surfaceDepth,
-                        0);
-                
-                float transmission =
-                    exp(
-                        -waterThickness * 0.15);
-                
-                float3 sceneLighting = 0;
-
-                Light mainLight =
-                    GetMainLight(inputData.shadowCoord);
-
-                sceneLighting +=
-                    mainLight.color *
-                    mainLight.shadowAttenuation;
-
-                // === ADDITIONAL LIGHTS ===
+                #if defined(_ADDITIONAL_LIGHTS)
                 uint additionalLightsCount = GetAdditionalLightsCount();
                 LIGHT_LOOP_BEGIN(additionalLightsCount)
                     Light addLight = GetAdditionalLight(lightIndex, input.positionWS, half4(1, 1, 1, 1));
-                    half3 halfDirAdd = normalize(addLight.direction + viewDirWS);
-                    half3 specAdd = pow(saturate(dot(normalWS, halfDirAdd)), Smoothness * 128.0) *
-                        addLight.color * addLight.distanceAttenuation * Smoothness;
-                    color.rgb += specAdd * isFrontFace;
-
-                    scatteredLight +=
-                        addLight.color *
-                        addLight.distanceAttenuation *
-                        transmission;
-
-                    sceneLighting +=
-                        addLight.color *
-                        addLight.distanceAttenuation;
-
+                    
+                    float NdotLAdd = saturate(dot(normalWS, addLight.direction));
+                    addDiffuse += baseColor * addLight.color * addLight.distanceAttenuation * NdotLAdd;
+                    
+                    float3 halfDirAdd = normalize(addLight.direction + viewDirWS);
+                    float NdotHAdd = saturate(dot(normalWS, halfDirAdd));
+                    addSpecular += pow(NdotHAdd, specPower) * addLight.color * addLight.distanceAttenuation * Smoothness;
+                    
+                    // Fake scattering
+                    scatteredLight += addLight.color * addLight.distanceAttenuation;
                 LIGHT_LOOP_END
-                
-                waterColor +=
-                    scatteredLight *
-                    0.05;
+                #endif
 
-                color.rgb = MixFog(color.rgb, input.fogFactor);
+                // 4. Fake water scattering / transmission
+                float waterThickness = max(sceneDepth2 - surfaceDepth, 0);
+                float transmission = exp(-waterThickness * 0.15);
+                float3 scattering = scatteredLight * transmission * 0.05;
 
-                float lighting =
-                    saturate(
-                        Luminance(sceneLighting));
+                // 5. Сборка финального цвета
+                float3 finalColor = ambient + mainDiffuse + mainSpecular + addDiffuse + addSpecular + scattering;
 
-                color.rgb +=
-                    waterColor *
-                    lighting;
-                
-                float F0 = 0.02;
+                float ao = SampleAmbientOcclusion(screenUV);
+                ambient *= ao;
+                finalColor *= ao;
 
-                float fresnel =
-                    F0 + (1.0 - F0) *
-                    pow(1.0 - saturate(dot(viewDirWS, normalWS)), 5.0);
+                // 6. Дистанс фейд
+                float dist = length(input.positionWS - _WorldSpaceCameraPos);
+                float distFade = saturate((dist - 50.0) / 100.0);
+                float lightIntensity = saturate(Luminance(bakedGI) + Luminance(mainLight.color));
+                float3 deepColorAdjusted = DeepColor.rgb * max(lightIntensity, 0.05); // минимум 5% яркости
+                finalColor = lerp(finalColor, deepColorAdjusted, distFade);
 
-                color.rgb += reflColor * fresnel;
+                // 8. Water color boost
+                float lighting = saturate(Luminance(mainLight.color * mainLight.shadowAttenuation + scatteredLight));
+                finalColor += waterColor * lighting * 0.5;
 
-                return color;
+                // 9. Fog
+                finalColor = MixFog(finalColor, input.fogFactor);
+
+                // 10. Alpha
+                float waterAlpha = lerp(0.2, 0.9, depthFade);
+                float alpha = lerp(0.5, waterAlpha, isFrontFace);
+
+                return float4(finalColor, alpha);
             }
             ENDHLSL
         }

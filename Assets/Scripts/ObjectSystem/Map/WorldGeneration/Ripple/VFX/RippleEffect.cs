@@ -20,28 +20,25 @@ public class RippleEffect : MonoBehaviour
 
         //Change the texture in the material of this object to the render texture calculated by the ripple shader.
         GetComponent<Renderer>().material.SetTexture("_RippleTex", CurrRT); //The result water material changed on this line
-
-        StartCoroutine(Ripples());
     }
 
-    private IEnumerator Ripples()
+    private int _frameSkip = 0;
+
+    private void LateUpdate()
     {
-        while (true)
-        {
-            AddMat.SetTexture("_ObjectsRT", ObjectsRT);
-            AddMat.SetTexture("_CurrentRT", CurrRT);
-            Graphics.Blit(null, TempRT, AddMat);
+        RippleStampSystem.Instance.FlushToRT(CurrRT);
+        if (++_frameSkip < 2) return;
+        _frameSkip = 0;
 
-            (TempRT, CurrRT) = (CurrRT, TempRT);
+        // Один бlit — симуляция волны
+        RippleMat.SetTexture("_PrevRT", PrevRT);
+        RippleMat.SetTexture("_CurrentRT", CurrRT);
+        Graphics.Blit(null, TempRT, RippleMat);
 
-            RippleMat.SetTexture("_PrevRT", PrevRT);
-            RippleMat.SetTexture("_CurrentRT", CurrRT);
-            Graphics.Blit(null, TempRT, RippleMat);
-            Graphics.Blit(TempRT, PrevRT);
+        // Правильный своп: CurrRT = новое состояние, PrevRT = старое CurrRT
+        (CurrRT, PrevRT) = (TempRT, CurrRT);
+        TempRT = PrevRT; // TempRT теперь = бывший PrevRT, используется на следующем шаге
 
-            (PrevRT, CurrRT) = (CurrRT, PrevRT);
-
-            yield return null;
-        }
+        GetComponent<Renderer>().material.SetTexture("_RippleTex", CurrRT);
     }
 }

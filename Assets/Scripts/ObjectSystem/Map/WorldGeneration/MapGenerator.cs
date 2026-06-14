@@ -19,6 +19,7 @@ namespace TheRavine.Generator
 
     public class MapGenerator : MonoBehaviour, ISetAble
     {
+        [SerializeField] private RippleEffect rippleEffect;
         [SerializeField] private ChunkGenerationSettings chunkGenerationSettings;
         private readonly CancellationTokenSource _cts = new();
 
