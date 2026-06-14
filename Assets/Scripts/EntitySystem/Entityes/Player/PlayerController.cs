@@ -289,9 +289,9 @@ namespace TheRavine.EntityControl
 
             SetAimAddition(magnitude, aimNorm);
 
-            crosshair.localPosition = magnitude < aimComponent.CrosshairDistance
-                ? new Vector3(aim.x, 0, aim.y)
-                : new Vector3(aimNorm.x * aimComponent.CrosshairDistance, 0, aimNorm.y * aimComponent.CrosshairDistance);
+            crosshair.position = magnitude < aimComponent.CrosshairDistance
+                ? new Vector3(aim.x + transform.position.x, transform.position.y, aim.y + transform.position.z)
+                : new Vector3(aimNorm.x * aimComponent.CrosshairDistance + transform.position.x, transform.position.y, aimNorm.y * aimComponent.CrosshairDistance + transform.position.z);
 
             crosshair.gameObject.SetActive(true);
             isAccurance = true;
@@ -326,7 +326,9 @@ namespace TheRavine.EntityControl
             }
             else
             {
-                entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = Position2Int.Pack(Extension.RoundVector2D(crosshair.position)) });
+                int currentX = Mathf.RoundToInt(crosshair.position.x);
+                int currentZ = Mathf.RoundToInt(crosshair.position.z);
+                entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = Position2Int.Pack(currentX, currentZ) });
             }
         }
 
@@ -339,16 +341,17 @@ namespace TheRavine.EntityControl
         private async UniTaskVoid Placing()
         {
             canPlace = false;
-            entityEventBus.Invoke(playerEntity, new PlaceEvent { Position = Position2Int.Pack(Extension.RoundVector2D(crosshair.position)) });
+            
+            int currentX = Mathf.RoundToInt(crosshair.position.x);
+            int currentZ = Mathf.RoundToInt(crosshair.position.z);
+            entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = Position2Int.Pack(currentX, currentZ) });
+
             await UniTask.Delay(placeObjectDelay);
             canPlace = true;
         }
 
         public void OnDisable()
         {
-            unsubscribe.Dispose();
-            currentController.MeetEnds();
-
             Raise.action.performed -= AimRaise;
             LeftClick.action.performed -= AimPlace;
 
@@ -357,6 +360,9 @@ namespace TheRavine.EntityControl
 
             Jump.action.started -= OnJumpStarted;
             Jump.action.canceled -= OnJumpCanceled;
+
+            currentController?.MeetEnds();
+            unsubscribe?.Dispose();
         }
     }
 }

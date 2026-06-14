@@ -10,7 +10,6 @@ public class SimulationDebugDashboard : MonoBehaviour
     [SerializeField] private int     windowId   = 9999;
 
     [Header("Sampling")]
-    [SerializeField] private int   historyLength  = 120;
     [SerializeField] private float sampleInterval = 1f;
 
     private EntityManager _manager;

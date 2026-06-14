@@ -116,7 +116,7 @@ namespace TheRavine.Inventory
             if (!item.info.isPlaceable) return;
 
             if (generator.TryAddObject(e.Position, generator.GetRealPosition(e.Position), 
-                item.info.prefab.GetInstanceID(), 1, InstanceType.Interactable))
+                item.info.prefab.GetInstanceID(), 1))
             {
                 item.state.amount--;
                 if (slot.amount <= 0) slot.Clear();
@@ -152,7 +152,7 @@ namespace TheRavine.Inventory
                     if (pattern != null)
                     {
                         generator.TryAddObject(e.Position, generator.GetRealPosition(e.Position), 
-                            pattern.main.ObjectPrefab.GetInstanceID(), pattern.main.DefaultAmount, pattern.main.InstanceType);
+                            pattern.main.ObjectPrefab.GetInstanceID(), pattern.main.DefaultAmount);
                         
                         if (pattern.other.Length != 0)
                         {
@@ -161,8 +161,7 @@ namespace TheRavine.Inventory
                                 long newPos = Position2Int.Pack(Extension.GetRandomPointAround(Position2Int.UnpackToVector(e.Position), pattern.factor));
                                 generator.TryAddObject(newPos, generator.GetRealPosition(newPos), 
                                     pattern.other[i].ObjectPrefab.GetInstanceID(), 
-                                    pattern.other[i].DefaultAmount, 
-                                    pattern.other[i].InstanceType);
+                                    pattern.other[i].DefaultAmount);
                             }
                         }
                     }

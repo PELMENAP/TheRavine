@@ -2,9 +2,6 @@
 using System;
 using System.Collections.Generic;
 
-using TheRavine.Extensions;
-using Random = TheRavine.Extensions.RavineRandom;
-
 public class MarketSimulator
 {
     private float currentGlobalTrade, globalTradeSpread = 10f; 
@@ -18,23 +15,23 @@ public class MarketSimulator
         trader1 = new Trader("Trader1", marketCore);
         trader2 = new Trader("Trader2", marketCore);
 
-        events.Add(new PeriodicEvent(10, () => currentTrade = Random.RangeFloat(lastTrade, targetTrade))); // random can work even if target less than last
+        events.Add(new PeriodicEvent(10, () => currentTrade = RavineRandom.RangeFloat(lastTrade, targetTrade))); // random can work even if target less than last
         events.Add(new PeriodicEvent(50, () => UpdateTargetTrade() ));
-        events.Add(new PeriodicEvent(100, () => currentGlobalTrade = Random.RangeFloat(-globalTradeSpread, globalTradeSpread)));
+        events.Add(new PeriodicEvent(100, () => currentGlobalTrade = RavineRandom.RangeFloat(-globalTradeSpread, globalTradeSpread)));
     }
 
     private void WarmUp()
     {
-        targetTrade = Random.RangeFloat(targetTradeSpread, targetTradeSpread * maxProductCount);
+        targetTrade = RavineRandom.RangeFloat(targetTradeSpread, targetTradeSpread * maxProductCount);
         UpdateTargetTrade();
 
-        currentGlobalTrade = Random.RangeFloat(-globalTradeSpread, globalTradeSpread);
+        currentGlobalTrade = RavineRandom.RangeFloat(-globalTradeSpread, globalTradeSpread);
     }
 
     private void UpdateTargetTrade() // create a box where chose a random point - currentTrade
     {
         lastTrade = targetTrade; 
-        targetTrade += Random.RangeFloat(-targetTradeSpread, targetTradeSpread);
+        targetTrade += RavineRandom.RangeFloat(-targetTradeSpread, targetTradeSpread);
 
         if(targetTrade <= 0)
             targetTrade = - targetTrade * 2;
@@ -49,8 +46,8 @@ public class MarketSimulator
         }
 
         float minTradePrice = currentTrade - currentTradeSpread, maxTradePrice = currentTrade + currentTradeSpread;
-        trader1.CreateBuyLot("Gold", Random.RangeInt(1, maxProductCount), Random.RangeFloat(minTradePrice, maxTradePrice));
-        trader2.CreateSellLot("Gold", Random.RangeInt(1, maxProductCount), Random.RangeFloat(minTradePrice, maxTradePrice));
+        trader1.CreateBuyLot("Gold", RavineRandom.RangeInt(1, maxProductCount), RavineRandom.RangeFloat(minTradePrice, maxTradePrice));
+        trader2.CreateSellLot("Gold", RavineRandom.RangeInt(1, maxProductCount), RavineRandom.RangeFloat(minTradePrice, maxTradePrice));
     }
 }
 

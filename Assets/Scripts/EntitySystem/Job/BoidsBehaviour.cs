@@ -6,10 +6,7 @@ using UnityEngine;
 using UnityEngine.Jobs;
 using Unity.Mathematics;
 
-using NaughtyAttributes;
 using Cysharp.Threading.Tasks;
-using TheRavine.Base;
-using Random = TheRavine.Extensions.RavineRandom;
 
 namespace TheRavine.EntityControl
 {
@@ -38,8 +35,8 @@ namespace TheRavine.EntityControl
         private float2 GetTargetPositionCloseToViewer()
         {
             float2 offset = new(
-                Random.RangeInt(-boidsInfo.distanceOfTargetFromPlayer, boidsInfo.distanceOfTargetFromPlayer),
-                Random.RangeInt(-boidsInfo.distanceOfTargetFromPlayer, boidsInfo.distanceOfTargetFromPlayer)
+                RavineRandom.RangeInt(-boidsInfo.distanceOfTargetFromPlayer, boidsInfo.distanceOfTargetFromPlayer),
+                RavineRandom.RangeInt(-boidsInfo.distanceOfTargetFromPlayer, boidsInfo.distanceOfTargetFromPlayer)
             );
             if (_viewer == null) return offset;
             return new float2(-_viewer.position.x, -_viewer.position.z) + offset;
@@ -74,17 +71,17 @@ namespace TheRavine.EntityControl
                 for (int i = 0; i < currentFlockSize; i++)
                 {
                     float2 target = _otherTargets[flock];
-                    float spawnX = target.x + Random.RangeInt(-boidsInfo.nearTheTarget, boidsInfo.nearTheTarget);
-                    float spawnZ = target.y + Random.RangeInt(-boidsInfo.nearTheTarget, boidsInfo.nearTheTarget);
-                    float spawnY = boidsInfo.yTarget + Random.GetInsideCircle().x * boidsInfo.ySpawnSpread;
+                    float spawnX = target.x + RavineRandom.RangeInt(-boidsInfo.nearTheTarget, boidsInfo.nearTheTarget);
+                    float spawnZ = target.y + RavineRandom.RangeInt(-boidsInfo.nearTheTarget, boidsInfo.nearTheTarget);
+                    float spawnY = boidsInfo.yTarget + RavineRandom.GetInsideCircle().x * boidsInfo.ySpawnSpread;
 
                     _transforms[agentIndex] = Instantiate(prefabs[flock]).transform;
                     _transforms[agentIndex].position = new Vector3(spawnX, spawnY, spawnZ);
                     _transforms[agentIndex].parent = transform;
 
-                    float2 randomVel = Random.GetInsideCircle();
+                    float2 randomVel = RavineRandom.GetInsideCircle();
                     _positionsAndVelocities[agentIndex] = new float4(spawnX, spawnZ, randomVel.x, randomVel.y);
-                    _accelerations[agentIndex] = Random.GetInsideCircle();
+                    _accelerations[agentIndex] = RavineRandom.GetInsideCircle();
                     _isMoving[agentIndex] = true;
                     _flockIds[agentIndex] = flock;
 
@@ -151,7 +148,6 @@ namespace TheRavine.EntityControl
             _cts?.Dispose();
         }
 
-        [Button]
         private void SetUpNewValues()
         {
             if (_moveScheduled)
@@ -201,12 +197,11 @@ namespace TheRavine.EntityControl
             _isUpdate = true;
         }
 
-        [Button]
         private void ChangeMoving()
         {
-            for (int i = 0; i < Random.RangeInt(1, boidsInfo.numberOfEntities); i++)
+            for (int i = 0; i < RavineRandom.RangeInt(1, boidsInfo.numberOfEntities); i++)
             {
-                int a = Random.RangeInt(0, boidsInfo.numberOfEntities);
+                int a = RavineRandom.RangeInt(0, boidsInfo.numberOfEntities);
                 _isMoving[a] = !_isMoving[a];
             }
         }
@@ -215,9 +210,9 @@ namespace TheRavine.EntityControl
         {
             while (!_cts.Token.IsCancellationRequested)
             {
-                _otherTargets[Random.RangeInt(0, _otherTargets.Length)] = GetTargetPositionCloseToViewer();
+                _otherTargets[RavineRandom.RangeInt(0, _otherTargets.Length)] = GetTargetPositionCloseToViewer();
                 ChangeMoving();
-                await UniTask.Delay(Random.RangeInt(1000 * boidsInfo.delayFactor, 10000 * boidsInfo.delayFactor), cancellationToken: _cts.Token);
+                await UniTask.Delay(RavineRandom.RangeInt(1000 * boidsInfo.delayFactor, 10000 * boidsInfo.delayFactor), cancellationToken: _cts.Token);
             }
         }
     }

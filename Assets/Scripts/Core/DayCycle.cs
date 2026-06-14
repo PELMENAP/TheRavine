@@ -16,7 +16,6 @@ namespace TheRavine.Base
         [SerializeField] private float speed = 1f;
         [SerializeField] private Gradient sunGradient;
         [SerializeField] private AnimationCurve intensityCurve;
-        [SerializeField] private AnimationCurve shadowsIntensityCurve;
         [SerializeField] private AnimationCurve nightBlendCurve;
         [SerializeField] private Material skyboxMaterial;
         private readonly static int nightBlendId = Shader.PropertyToID("_NightBlend");
@@ -46,14 +45,15 @@ namespace TheRavine.Base
 
         public void BreakUp(ISetAble.Callback callback)
         {
-            cts?.Cancel();
-            isDay.Dispose();
-            normalizedTime.Dispose();
+            OnDisable();
             callback?.Invoke();
         }
 
         private void OnDisable()
         {
+            serverTime?.Dispose();
+            isDay?.Dispose();
+            normalizedTime?.Dispose();
             cts?.Cancel();
             cts?.Dispose();
         }
@@ -111,7 +111,6 @@ namespace TheRavine.Base
 
             sun.color = sunGradient.Evaluate(t);
             sun.intensity = intensityCurve.Evaluate(t);
-            sun.shadowStrength = 1f - shadowsIntensityCurve.Evaluate(t);
 
             skyboxMaterial.SetFloat(
                 nightBlendId,

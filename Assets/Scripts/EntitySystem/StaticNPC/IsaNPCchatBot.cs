@@ -1,7 +1,6 @@
 using UnityEngine;
 // using LLMUnitySamples;
 
-using NaughtyAttributes;
 // public class IsaNPCchatBot : MonoBehaviour, IDialogListener
 // {
     // [SerializeField] private AsyncStartup asyncStartup;

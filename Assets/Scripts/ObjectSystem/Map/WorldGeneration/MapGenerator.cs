@@ -113,33 +113,82 @@ namespace TheRavine.Generator
             float z,
             float2 moveDirection)
         {
-            if (math.lengthsq(moveDirection) < 0.0001f)
-                return 1f;
+            float3 normal =
+                SampleNormal(
+                    x,
+                    z);
 
-            GetChunkAndIndex(
-                x,
-                z,
-                out ChunkData chunk,
-                out int index);
+            float slopeAngle =
+                math.degrees(
+                    math.acos(
+                        math.clamp(
+                            normal.y,
+                            -1f,
+                            1f)));
+
+            float2 uphill =
+                math.normalizesafe(
+                    new float2(
+                        -normal.x,
+                        -normal.z));
 
             float uphillDot =
                 math.dot(
                     math.normalize(moveDirection),
-                    (float2)chunk.SlopeDirection[index]);
+                    uphill);
 
-            float baseModifier =
-                chunk.MoveCost[index] *
-                (1f / 255f);
+            if (uphillDot > 0f &&
+                slopeAngle > 70f)
+            {
+                return 0f;
+            }
 
-            if (uphillDot > 0f)
-                return baseModifier;
+            float modifier =
+                1f -
+                slopeAngle / 70f;
 
-            return math.lerp(
-                baseModifier,
-                1f,
-                -uphillDot * 0.25f);
+            if (uphillDot < 0f)
+            {
+                modifier =
+                    math.lerp(
+                        modifier,
+                        1f,
+                        -uphillDot * 0.25f);
+            }
+
+            return math.saturate(modifier);
         }
 
+        public float3 SampleNormal(
+            float wx,
+            float wz)
+        {
+            float hL =
+                SampleHeightBilinear(
+                    wx - scale,
+                    wz);
+
+            float hR =
+                SampleHeightBilinear(
+                    wx + scale,
+                    wz);
+
+            float hD =
+                SampleHeightBilinear(
+                    wx,
+                    wz - scale);
+
+            float hU =
+                SampleHeightBilinear(
+                    wx,
+                    wz + scale);
+
+            return math.normalize(
+                new float3(
+                    hL - hR,
+                    scale * 2f,
+                    hD - hU));
+        }
         public float SampleHeightBilinear(float wx, float wz)
         {
             float gx = wx / scale;
@@ -181,41 +230,54 @@ namespace TheRavine.Generator
             Vector3 realPos,
             int prefabID,
             int amount,
-            InstanceType instanceType,
-            Vector2Int[] additionalWorldCells = null)
+            ReadOnlySpan<Vector2Int> additionalWorldCells = default)
         {
             long chunk = GetPosition2Int(worldPos);
-            long local = GetLocalPosition(worldPos);
             ChunkData cd = GetMapData(chunk);
 
-            int primaryIdx = Idx(Position2Int.GetX(local), Position2Int.GetY(local));
+            int primaryIdx = WorldPosToLocalIdx(worldPos, chunk);
 
-            // Для ячеек, занятых многоклеточным объектом
-            int[] additionalLocalIdxs = null;
-            if (additionalWorldCells != null && additionalWorldCells.Length > 0)
+            int secCount = additionalWorldCells.Length;
+            if (secCount > ObjectInstInfo.MaxSecondary)
             {
-                additionalLocalIdxs = new int[additionalWorldCells.Length];
-                for (int i = 0; i < additionalWorldCells.Length; i++)
-                {
-                    Vector2Int aw = additionalWorldCells[i];
-                    // Дополнительные ячейки могут попасть в другой чанк —
-                    // в текущей реализации ограничиваемся одним чанком.
-                    long ac = GetPosition2Int(Position2Int.Pack(aw));
-                    if (ac != chunk)
-                    {
-                        Debug.LogWarning(
-                            $"[MapGenerator] AdditionalCell {aw} falls outside " +
-                            $"primary chunk {chunk}. Cross-chunk multi-cell objects " +
-                            "are not supported yet.");
-                        return false;
-                    }
-                    long al = GetLocalPosition(Position2Int.Pack(aw));
-                    additionalLocalIdxs[i] = Idx(Position2Int.GetX(al), Position2Int.GetY(al));
-                }
+                Debug.LogWarning($"[MapGenerator] Too many secondary cells: {secCount} > {ObjectInstInfo.MaxSecondary}");
+                return false;
             }
 
-            var info = new ObjectInstInfo(realPos, prefabID, amount, instanceType);
-            return cd.TryAddObject(primaryIdx, in info, additionalLocalIdxs);
+            Span<int> additionalLocalIdxs = stackalloc int[ObjectInstInfo.MaxSecondary];
+
+            for (int i = 0; i < secCount; i++)
+            {
+                long worldCell = Position2Int.Pack(additionalWorldCells[i]);
+                long cellChunk = GetPosition2Int(worldCell);
+
+                if (cellChunk != chunk)
+                {
+                    Debug.LogWarning(
+                        $"[MapGenerator] AdditionalCell {additionalWorldCells[i]} falls outside " +
+                        $"primary chunk {chunk}. Cross-chunk multi-cell objects are not supported.");
+                    return false;
+                }
+
+                additionalLocalIdxs[i] = WorldPosToLocalIdx(worldCell, chunk);
+            }
+
+            var info = new ObjectInstInfo(realPos, prefabID, amount);
+            return cd.TryAddObject(primaryIdx, in info, additionalLocalIdxs[..secCount]);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int WorldPosToLocalIdx(long worldPos, long chunk)
+        {
+            int wx = Position2Int.GetX(worldPos);
+            int wz = Position2Int.GetY(worldPos);
+            int cx = Position2Int.GetX(chunk);
+            int cz = Position2Int.GetY(chunk);
+
+            int lx = Mathf.FloorToInt((wx - cx * generationSize) / (float)scale);
+            int lz = Mathf.FloorToInt((wz - cz * generationSize) / (float)scale);
+
+            return Idx(lx, lz);
         }
         public bool TryGetObject(long worldPos, out ObjectInstInfo info)
         {
@@ -261,7 +323,7 @@ namespace TheRavine.Generator
             ChunkData cd = GetMapData(chunk);
 
             var placeholder = new ObjectInstInfo(
-                GetRealPosition(worldPos), -1, 0, InstanceType.Static);
+                GetRealPosition(worldPos), -1, 0);
 
             return cd.TryAddObject(Idx(Position2Int.GetX(local), Position2Int.GetY(local)), in placeholder);
         }
@@ -353,17 +415,17 @@ namespace TheRavine.Generator
         public void ClearNALQueue() => nal?.Clear();
         public void AddNALObject(Vector2Int pos) => nal?.Enqueue(pos);
 
-        private Vector2Int _oldVposition, _position;
-        public UnityAction<Vector2Int> onUpdate;
+        private long oldPlayerPosition, playerPosition;
+        public UnityAction<long> onUpdate;
 
         private async UniTaskVoid GenerationUpdate()
         {
-            _position = GetPlayerPosition();
+            playerPosition = GetPlayerPosition();
 
             for (int i = 0; i < 3; i++)
             {
                 if (!chunkGenerationSettings.endlessFlag[i]) continue;
-                endless[i].UpdateChunk(_position);
+                endless[i].UpdateChunk(playerPosition);
                 await UniTask.WaitForFixedUpdate();
             }
             
@@ -371,17 +433,17 @@ namespace TheRavine.Generator
 
             while (!_cts.Token.IsCancellationRequested)
             {
-                _position = GetPlayerPosition();
+                playerPosition = GetPlayerPosition();
 
-                if (_position != _oldVposition)
+                if (playerPosition != oldPlayerPosition)
                 {
-                    _oldVposition = _position;
+                    oldPlayerPosition = playerPosition;
 
                     int extendedChunk = chunkScale + 1;
                     for (int yOff = -extendedChunk; yOff <= extendedChunk; yOff++)
                     for (int xOff = -extendedChunk; xOff <= extendedChunk; xOff++)
                     {
-                        long cp = Position2Int.Pack(_position.x + xOff, _position.y + yOff);
+                        long cp = Position2Int.Offset(playerPosition, xOff, yOff);
                         if (!mapData.ContainsKey(cp))
                             mapData[cp] = chunkGenerator.GenerateMapData(cp);
                     }
@@ -389,11 +451,11 @@ namespace TheRavine.Generator
                     for (int i = 0; i < 3; i++)
                     {
                         if (!chunkGenerationSettings.endlessFlag[i]) continue;
-                        endless[i].UpdateChunk(_position);
+                        endless[i].UpdateChunk(playerPosition);
                         await UniTask.WaitForFixedUpdate();
                     }
 
-                    onUpdate?.Invoke(_position);
+                    onUpdate?.Invoke(playerPosition);
 
                     grassSystem.UpdateGrassPlacement();
                 }
@@ -404,22 +466,22 @@ namespace TheRavine.Generator
 
         public void ExtraUpdate()
         {
-            _position = GetPlayerPosition();
+            playerPosition = GetPlayerPosition();
             for (int i = 0; i < 3; i++)
             {
                 if (!chunkGenerationSettings.endlessFlag[i]) continue;
-                endless[i].UpdateChunk(_position);
+                endless[i].UpdateChunk(playerPosition);
             }
         }
 
-        private Vector2Int GetPlayerPosition()
+        private long GetPlayerPosition()
         {
-            if (viewer == null) return Vector2Int.zero;
-            Vector3 p = new(
-                viewer.position.x - generationSize / 2f + viewerOffset.x,
-                viewer.position.z + generationSize / 2f + viewerOffset.z,
-                0);
-            return Extension.RoundVector2D(p / generationSize);
+            if (viewer == null) return 0;
+            
+            int currentX = Mathf.RoundToInt((viewer.position.x - generationSize / 2f + viewerOffset.x) / generationSize);
+            int currentZ = Mathf.RoundToInt((viewer.position.z + generationSize / 2f + viewerOffset.z) / generationSize);
+
+            return Position2Int.Pack(currentX, currentZ);
         }
 
         public void BreakUp(ISetAble.Callback callback)
@@ -440,66 +502,65 @@ namespace TheRavine.Generator
 
     public sealed class ChunkData : IDisposable
     {
-        private const int Size = MapGenerator.mapChunkSize;
-        public const int TotalCells = Size * Size;
-        public NativeArray<float> HeightRaw;
-        public readonly NativeArray<int> BiomeMap;
+        private const int Size       = MapGenerator.mapChunkSize;
+        public  const int TotalCells = Size * Size;
 
-        /// <summary>
-        /// Занятость ячейки объектами:
-        ///   0         — пусто
-        ///   positive N → Objects[N-1] (первичная ячейка объекта)
-        ///   negative N → Objects[(-N)-1] (вторичная ячейка многоклеточного объекта)
-        /// </summary>
-        public NativeArray<int> Occupancy;
-        public NativeList<ObjectInstInfo> Objects;
-
-        public NativeArray<byte> MoveCost;
-        public NativeArray<float2> SlopeDirection;
-
+        public NativeArray<float>          HeightRaw;
+        public readonly NativeArray<int>   BiomeMap;
+        public NativeArray<int>            Occupancy;
+        public NativeList<ObjectInstInfo>  Objects;
+        public NativeArray<byte>           MoveCost;
         public List<StructureSpawnPoint> StructureSpawnPoints;
 
         public bool IsDirty { get; private set; }
 
         public ChunkData()
         {
-            HeightRaw  = new NativeArray<float>(TotalCells, Allocator.Persistent);
-            BiomeMap   = new NativeArray<int>(TotalCells,   Allocator.Persistent);
-            Occupancy  = new NativeArray<int>(TotalCells,   Allocator.Persistent);
-            MoveCost   = new NativeArray<byte>(TotalCells,   Allocator.Persistent);
-            SlopeDirection  = new NativeArray<float2>(TotalCells,   Allocator.Persistent);
-            Objects    = new NativeList<ObjectInstInfo>(16, Allocator.Persistent);
+            HeightRaw      = new NativeArray<float> (TotalCells, Allocator.Persistent);
+            BiomeMap       = new NativeArray<int>   (TotalCells, Allocator.Persistent);
+            Occupancy      = new NativeArray<int>   (TotalCells, Allocator.Persistent);
+            MoveCost       = new NativeArray<byte>  (TotalCells, Allocator.Persistent);
+            Objects        = new NativeList<ObjectInstInfo>(16, Allocator.Persistent);
         }
 
-        public bool TryAddObject(
-            int primaryIdx,
-            in ObjectInstInfo info,
-            int[] additionalIdxs = null)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryAddObject(int primaryIdx, in ObjectInstInfo info, ReadOnlySpan<int> additionalIdxs = default)
         {
             if ((uint)primaryIdx >= TotalCells) return false;
-            if (Occupancy[primaryIdx] != 0)           return false;
+            if (Occupancy[primaryIdx] != 0)    return false;
 
-            if (additionalIdxs != null)
+            int secCount = additionalIdxs.Length;
+            if (secCount > ObjectInstInfo.MaxSecondary) return false;
+
+            for (int i = 0; i < secCount; i++)
             {
-                foreach (int ac in additionalIdxs)
-                {
-                    if ((uint)ac >= TotalCells) return false;
-                    if (Occupancy[ac] != 0)           return false;
-                }
+                int ac = additionalIdxs[i];
+                if ((uint)ac >= TotalCells) return false;
+                if (Occupancy[ac] != 0)    return false;
             }
 
-            int handle = Objects.Length + 1; // 1-based, 0 = empty
-            Objects.Add(info);
+            ObjectInstInfo stored = info;
+            stored.PrimaryIdx     = primaryIdx;
+            stored.SecondaryCount = secCount;
+
+            unsafe
+            {
+                for (int i = 0; i < secCount; i++)
+                    stored.SecondaryIdxs[i] = additionalIdxs[i];
+            }
+
+            int handle = Objects.Length + 1;
+            Objects.Add(stored);
             Occupancy[primaryIdx] = handle;
 
-            if (additionalIdxs != null)
-                foreach (int ac in additionalIdxs)
-                    Occupancy[ac] = -handle; // вторичная ячейка
+            for (int i = 0; i < secCount; i++)
+                Occupancy[additionalIdxs[i]] = -handle;
 
             IsDirty = true;
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetObject(int cellIdx, out ObjectInstInfo info)
         {
             info = default;
@@ -522,29 +583,32 @@ namespace TheRavine.Generator
             if (h == 0) return false;
 
             int primaryHandle = h > 0 ? h : -h;
+            int objIdx        = primaryHandle - 1;
+            if ((uint)objIdx >= (uint)Objects.Length) return false;
 
-            for (int i = 0; i < TotalCells; i++)
+            ObjectInstInfo obj = Objects[objIdx];
+
+            Occupancy[obj.PrimaryIdx] = 0;
+            unsafe
             {
-                int oh = Occupancy[i];
-                if (oh == primaryHandle || oh == -primaryHandle)
-                    Occupancy[i] = 0;
+                for (int i = 0; i < obj.SecondaryCount; i++)
+                    Occupancy[obj.SecondaryIdxs[i]] = 0;
             }
 
-            int objIdx = primaryHandle - 1;
-            int last   = Objects.Length - 1;
-
+            int last = Objects.Length - 1;
             if (objIdx != last)
             {
-                Objects[objIdx] = Objects[last];
-
-                int oldH = last + 1;
+                ObjectInstInfo tail = Objects[last];
                 int newH = objIdx + 1;
-                for (int i = 0; i < TotalCells; i++)
+
+                Occupancy[tail.PrimaryIdx] = newH;
+                unsafe
                 {
-                    int oh = Occupancy[i];
-                    if      (oh ==  oldH) Occupancy[i] =  newH;
-                    else if (oh == -oldH) Occupancy[i] = -newH;
+                    for (int i = 0; i < tail.SecondaryCount; i++)
+                        Occupancy[tail.SecondaryIdxs[i]] = -newH;
                 }
+
+                Objects[objIdx] = tail;
             }
 
             Objects.RemoveAt(last);
@@ -553,31 +617,52 @@ namespace TheRavine.Generator
         }
 
         public void ClearDirty() => IsDirty = false;
+
         public void Dispose()
         {
-            if (HeightRaw.IsCreated) HeightRaw.Dispose();
-            if (BiomeMap.IsCreated)  BiomeMap.Dispose();
-            if (Occupancy.IsCreated) Occupancy.Dispose();
-            if (MoveCost.IsCreated)  MoveCost.Dispose();
-            if (SlopeDirection.IsCreated) SlopeDirection.Dispose();
-            if (Objects.IsCreated)   Objects.Dispose();
+            if (HeightRaw.IsCreated)      HeightRaw.Dispose();
+            if (BiomeMap.IsCreated)       BiomeMap.Dispose();
+            if (Occupancy.IsCreated)      Occupancy.Dispose();
+            if (MoveCost.IsCreated)       MoveCost.Dispose();
+            if (Objects.IsCreated)        Objects.Dispose();
         }
     }
 
     public readonly struct StructureSpawnPoint
     {
-        public readonly Vector2Int WorldPosition;
+        public readonly long WorldPosition;
         public readonly GenerationSettingsSO WfcSettings;
         public readonly TilePatternSO InitialPattern;
 
         public StructureSpawnPoint(
-            Vector2Int pos,
+            long pos,
             GenerationSettingsSO settings,
             TilePatternSO pattern)
         {
             WorldPosition  = pos;
             WfcSettings    = settings;
             InitialPattern = pattern;
+        }
+    }
+
+    public unsafe struct ObjectInstInfo
+    {
+        public int     PrefabID;
+        public Vector3 Position;
+        public int     Amount;
+        public int     PrimaryIdx;
+        public int     SecondaryCount;
+        public fixed int SecondaryIdxs[8];
+
+        public const int MaxSecondary = 8;
+
+        public ObjectInstInfo(Vector3 pos, int prefab, int amount)
+        {
+            Position       = pos;
+            PrefabID       = prefab;
+            Amount         = amount;
+            PrimaryIdx     = -1;
+            SecondaryCount = 0;
         }
     }
 }

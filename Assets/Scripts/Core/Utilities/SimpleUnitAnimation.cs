@@ -1,7 +1,5 @@
 using UnityEngine;
 
-using Random = TheRavine.Extensions.RavineRandom;
-
 [RequireComponent(typeof(SpriteRenderer))]
 public class SimpleUnitAnimator : MonoBehaviour
 {
@@ -25,13 +23,13 @@ public class SimpleUnitAnimator : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         previousPosition = this.transform.position;
 
-        if(isBird) defaultPose = Random.RangeInt(0, defaults.Length);
+        if(isBird) defaultPose = RavineRandom.RangeInt(0, defaults.Length);
     }
 
     private void OnEnable()
     {
         if (frames == null || frames.Length == 0) return;
-        InvokeRepeating(nameof(NextFrame), Random.RangeFloat(0, frameDuration), frameDuration);
+        InvokeRepeating(nameof(NextFrame), RavineRandom.RangeFloat(0, frameDuration), frameDuration);
     }
 
     private void OnDisable()
@@ -74,7 +72,7 @@ public class SimpleUnitAnimator : MonoBehaviour
                     CancelInvoke(nameof(NextFrame));
                 }
 
-                if(isBird) defaultPose = Random.RangeInt(defaults.Length);
+                if(isBird) defaultPose = RavineRandom.RangeInt(defaults.Length);
 
 
                 currentFrame = 0;

@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using NaughtyAttributes;
-using R3;
 using UnityEngine;
-using TheRavine.Extensions;
 
 public class EntityManager : MonoBehaviour
 {
@@ -25,9 +22,9 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private int lstmHidden  = 32;
 
     [Header("Diagnostics")]
-    [SerializeField, ReadOnly] private int  _entityCount;
-    [SerializeField, ReadOnly] private int  _foodCount;
-    [SerializeField, ReadOnly] private float _avgEntropy;
+    [SerializeField] private int  _entityCount;
+    [SerializeField] private int  _foodCount;
+    [SerializeField] private float _avgEntropy;
 
     public int MaxPopulation => maxPopulation;
     public event Action<Entity> OnEntitySpawned;
@@ -126,8 +123,6 @@ public class EntityManager : MonoBehaviour
     }
 
     private void HandleReproduceRequest(Entity parent) => SpawnChild(parent);
-
-    [Button]
     public void EvolveSharedWeights()
     {
         if (_entities.Count < 2) return;

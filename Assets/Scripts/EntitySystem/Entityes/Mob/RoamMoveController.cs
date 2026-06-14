@@ -19,7 +19,7 @@ namespace TheRavine.EntityControl
         [SerializeField] private int bezierDetail, bezierFactor;
         [SerializeField] private int movementDelay, movementDelaySpread, defaultDelay, colliderDistance;
         private Vector2 target;
-        private bool isDelay = false, side = true, isActive = false;
+        private bool side = true, isActive = false;
         private Vector2[] bezierPoints;
         private int currentPointIndex;
         private Collider2D Ccollider;
@@ -68,9 +68,7 @@ namespace TheRavine.EntityControl
                         currentPointIndex++;
                         if (currentPointIndex >= bezierPoints.Length)
                         {
-                            isDelay = true;
                             await UniTask.Delay(UpdateRandomMove());
-                            isDelay = false;
                         }
                     }
                 }

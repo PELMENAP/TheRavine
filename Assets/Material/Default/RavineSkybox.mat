@@ -22,7 +22,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
-  m_LockedProperties: _PhaseLayer2
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -111,7 +111,7 @@ Material:
     - _AlphaLayer5: 1
     - _AlphaLayer6: 1
     - _AlphaLayer7: 1
-    - _AtmosphereDensity: 9
+    - _AtmosphereDensity: 8.8
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
@@ -140,11 +140,11 @@ Material:
     - _HazeThreshold: 0.161
     - _Metallic: 0
     - _MieAnisotropy: 0.99
-    - _MieStrength: 2
+    - _MieStrength: 2.9
     - _Mode: 0
     - _MoonFlare: 0.05
     - _MoonSize: -8
-    - _NightBlend: 0.9832889
+    - _NightBlend: 0.0050555547
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _PhaseLayer1: 0.018
@@ -182,7 +182,7 @@ Material:
     - _StarBrightness: 0.5
     - _StarDensity: 0.1
     - _StarSize: 300
-    - _SunFlare: 0.2
+    - _SunFlare: 0.08
     - _SunSize: 0.2
     - _UVSec: 0
     - _UseUnityFogColor: 0

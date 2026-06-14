@@ -148,8 +148,7 @@ namespace TheRavine.Generator
                             Position2Int.Pack(item.First),
                             generator.GetRealPosition(Position2Int.Pack(item.First)),
                             item.Second.PrefabID,
-                            item.Second.DefaultAmount,
-                            item.Second.InstanceType))
+                            item.Second.DefaultAmount))
                     {
                         
                     }

@@ -92,7 +92,7 @@ namespace TheRavine.Generator
         private readonly Dictionary<(TileRuleSO, Direction), HashSet<TileRuleSO>> neighborRulesCache;
         private readonly Dictionary<Vector2Int, GameObject> result;
         private static readonly Direction[] directions = { Direction.Up, Direction.Right, Direction.Down, Direction.Left };
-        public WaveFunctionCollapseAlgorithm(GenerationSettingsSO settings, int seed = 0)
+        public WaveFunctionCollapseAlgorithm(GenerationSettingsSO settings, uint seed = 0)
         {
             this.settings = settings;
             allTiles = settings._availableTiles;

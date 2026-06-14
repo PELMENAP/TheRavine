@@ -27,15 +27,13 @@ namespace TheRavine.Generator.EndlessGenerators
             objectsSnapshot = objectUpdate.Keys.ToEnumerableSnapshot();
         }
 
-        public async UniTaskVoid UpdateChunk(Vector2Int position)
+        public async UniTaskVoid UpdateChunk(long position)
         {
             int side = 2 * chunkScale + 1;
 
             for (int cx = 0; cx < side; cx++)
             for (int cy = -1; cy < side - 1; cy++)
-                ProcessChunk(Position2Int.Pack(
-                    position.x - chunkScale + cx,
-                    position.y - chunkScale + cy));
+                ProcessChunk(Position2Int.Offset(position, cx - chunkScale, cy - chunkScale));
 
             foreach (int id in objectsSnapshot)
             {

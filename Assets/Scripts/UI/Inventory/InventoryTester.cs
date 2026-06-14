@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Random = TheRavine.Extensions.RavineRandom;
 using ZLinq;
 
 using TheRavine.InventoryElements;
@@ -35,11 +34,11 @@ namespace TheRavine.Inventory
             {
                 for (int i = 0; i < itemsPerTitle && freeSlots.Count > 0; i++)
                 {
-                    int randIndex = Random.RangeInt(0, freeSlots.Count);
+                    int randIndex = RavineRandom.RangeInt(0, freeSlots.Count);
                     int slotIdx = freeSlots[randIndex];
                     freeSlots.RemoveAt(randIndex);
 
-                    var item = infoManager.GetInventoryItem(title, Random.RangeInt(1, 10));
+                    var item = infoManager.GetInventoryItem(title, RavineRandom.RangeInt(1, 10));
 
                     if (item != null)
                     {
