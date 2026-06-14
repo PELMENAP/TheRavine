@@ -1,54 +1,59 @@
 Shader "Unlit/Add"
 {
-    Properties
-    {
-        
-    }
     SubShader
     {
-        Tags { "RenderType"="Opaque" }
+        Tags 
+        { 
+            "RenderType" = "Opaque" 
+            "RenderPipeline" = "UniversalPipeline" 
+        }
         LOD 100
 
         Pass
         {
-            CGPROGRAM
+            Name "AddPass"
+
+            HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
 
-            #include "UnityCG.cginc"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            struct appdata
+            struct Attributes
             {
-                float4 vertex : POSITION;
-                float2 uv : TEXCOORD0;
+                float4 positionOS : POSITION;
+                float2 uv         : TEXCOORD0;
             };
 
-            struct v2f
+            struct Varyings
             {
-                float2 uv : TEXCOORD0;
-                float4 vertex : SV_POSITION;
+                float2 uv         : TEXCOORD0;
+                float4 positionCS : SV_POSITION;
             };
 
-            sampler2D _ObjectsRT;
-            sampler2D _CurrentRT;
+            TEXTURE2D(_ObjectsRT);
+            SAMPLER(sampler_ObjectsRT);
+
+            TEXTURE2D(_CurrentRT);
+            SAMPLER(sampler_CurrentRT);
+
             float4 _ObjectsRT_ST;
 
-            v2f vert (appdata v)
+            Varyings vert(Attributes input)
             {
-                v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = TRANSFORM_TEX(v.uv, _ObjectsRT);
-                return o;
+                Varyings output;
+                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+                output.uv = TRANSFORM_TEX(input.uv, _ObjectsRT);
+                return output;
             }
 
-            fixed4 frag (v2f i) : SV_Target
+            half4 frag(Varyings input) : SV_Target
             {
-                // sample the texture
-                fixed4 tex1 = tex2D(_ObjectsRT, i.uv);
-                fixed4 tex2 = tex2D(_CurrentRT, i.uv);
+                half4 tex1 = SAMPLE_TEXTURE2D(_ObjectsRT, sampler_ObjectsRT, input.uv);
+                half4 tex2 = SAMPLE_TEXTURE2D(_CurrentRT, sampler_CurrentRT, input.uv);
                 return tex1 + tex2;
             }
-            ENDCG
+            ENDHLSL
         }
     }
 }

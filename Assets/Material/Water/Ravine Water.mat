@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: URP_Water_OptimizedWater
+  m_Name: Ravine Water
   m_Shader: {fileID: 4800000, guid: a4bfa92868957817d88161fcffeb7b25, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -70,21 +70,21 @@ Material:
     m_Ints: []
     m_Floats:
     - CausticFade: 1.47
-    - Depth: 10
+    - Depth: 5
     - DepthFade: -0.24
     - Displacement: 0.3
     - Foam: 0.5
-    - FoamCrestStrength: 1.14
-    - FoamRippleStrength: 0.71
+    - FoamCrestStrength: 0.7
+    - FoamRippleStrength: 0.4
     - FoamScale: 0.5
     - FoamShoreStrength: 0.6
-    - Metallic: 0
-    - NormalStrength: 0.3
+    - Metallic: 0.084
+    - NormalStrength: 0.4
     - Refraction: 0.02
-    - RippleRefraction: 1
-    - RippleStrength: 1
+    - RippleRefraction: 2
+    - RippleStrength: 20
     - Scale: 10
-    - Smoothness: 0.986
+    - Smoothness: 0.871
     - WaterFresnel: 0.01
     - WaterLerp: 0.5
     - _CameraAdd: 1
@@ -106,9 +106,9 @@ Material:
     - _WaveSteepness: 0.5
     - _WaveTiling: 1
     m_Colors:
-    - DeepColor: {r: 0, g: 0.59380203, b: 8.101154, a: 1}
-    - FoamColor: {r: 3.5648696, g: 3.5648696, b: 3.5648696, a: 1}
-    - ShallowColor: {r: 3.016014, g: 3.016014, b: 3.016014, a: 1}
+    - DeepColor: {r: 0, g: 0.17962846, b: 2.2872663, a: 1}
+    - FoamColor: {r: 1.6905668, g: 1.6905668, b: 1.6905668, a: 1}
+    - ShallowColor: {r: 0, g: 0.2421875, b: 1, a: 1}
     - UV1: {r: 0.2, g: 0.2, b: 0, a: 0}
     - UV2: {r: 0.2, g: 0.2, b: 0, a: 0}
     - WaterSpeed1: {r: -0.3, g: 0.02, b: 0, a: 0}
