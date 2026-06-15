@@ -348,7 +348,7 @@ Shader "The Ravine/WaterShader"
                 
                 // === RIPPLES ===
                 // LowResNormalFromHeight для _RippleTex
-                float3 rippleNormalForRefract  = LowResNormalFromHeight(_RippleTex, sampler_RippleTex, input.uv0, float2(2048,2048), RippleRefraction);
+                float3 rippleNormalForRefract = LowResNormalFromHeight(_RippleTex, sampler_RippleTex, input.uv0, _RippleTex_TexelSize.zw, RippleRefraction);
                 float rippleHeight = abs(SAMPLE_TEXTURE2D(_RippleTex, sampler_RippleTex, input.uv0).r);
                 float3 finalNormalTS  = lerp(normalTS, rippleNormalForRefract,  rippleHeight);
 

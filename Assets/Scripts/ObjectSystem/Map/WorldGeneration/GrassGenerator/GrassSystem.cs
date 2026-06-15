@@ -145,16 +145,16 @@ public class GrassSystem : MonoBehaviour
         grassPlacementShader.SetFloat("globalMinHeight", globalMinHeight);
         grassPlacementShader.SetFloat("globalMaxHeight", globalMaxHeight);
 
-        int gridWidth = MapGenerator.mapChunkSize * 6;
-        int gridHeight = MapGenerator.mapChunkSize * 6;
+        int gridWidth = MapGenerator.generationSize;
+        int gridHeight = MapGenerator.generationSize;
         int totalGridPoints = gridWidth * gridHeight * bladesPerCell * densityFactor;
         instanceCount = Mathf.Min(totalGridPoints, maxGrassInstances * densityFactor);
 
         args[1] = (uint)instanceCount;
         argsBuffer.SetData(args);
         
-        float terrainWidth = MapGenerator.mapChunkSize * 6;
-        float terrainHeight = MapGenerator.mapChunkSize * 6;
+        float terrainWidth = MapGenerator.generationSize;
+        float terrainHeight = MapGenerator.generationSize;
         
         grassPlacementShader.SetInt("instanceCount", instanceCount);
 

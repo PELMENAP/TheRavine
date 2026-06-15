@@ -194,7 +194,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3224021413022219001, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 3468601885
+      value: 3981175977
       objectReference: {fileID: 0}
     - target: {fileID: 8121373543420682481, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: m_Name
@@ -258,6 +258,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6400751825280318941}
     m_Modifications:
+    - target: {fileID: 2502241244201317297, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
+      propertyPath: textureSize.x
+      value: 1024
+      objectReference: {fileID: 0}
+    - target: {fileID: 2502241244201317297, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
+      propertyPath: textureSize.y
+      value: 1024
+      objectReference: {fileID: 0}
     - target: {fileID: 6600631134399683104, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -306,8 +314,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: Water
       objectReference: {fileID: 0}
+    - target: {fileID: 6871818272072717940, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
+      propertyPath: textureSize
+      value: 1024
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 6600631134399683104, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}

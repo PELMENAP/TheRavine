@@ -6,6 +6,14 @@ public class RippleStampSystem : MonoBehaviour
     [SerializeField] private Shader _stampShader;
     [SerializeField] private Collider waterCollider;
     private Material _stampMat;
+    private float waterSize = 1f / 375f;
+
+    private float waterX, waterZ;
+    public void SetWaterPosition(float _waterX, float _waterZ)
+    {
+        waterX = _waterX - 375f / 2;
+        waterZ = _waterZ - 375f / 2;
+    }
 
     private readonly struct StampRequest
     {
@@ -24,12 +32,10 @@ public class RippleStampSystem : MonoBehaviour
     }
     public void Stamp(Vector3 worldPos, float radius, float strength)
     {
-        Bounds waterBounds = waterCollider.bounds;
-
         Vector2 uv = new(
-            (worldPos.x - waterBounds.min.x) / waterBounds.size.x,
-            (worldPos.z - waterBounds.min.z) / waterBounds.size.z);
-        float uvRadius = radius / waterBounds.size.x;
+            (worldPos.x - waterX) * waterSize,
+            (worldPos.z - waterZ) * waterSize);
+        float uvRadius = radius * waterSize;
 
         _pending.Add(new StampRequest(uv, uvRadius, strength));
     }
