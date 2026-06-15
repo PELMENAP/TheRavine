@@ -24,7 +24,8 @@ namespace TheRavine.Generator
         private readonly CancellationTokenSource _cts = new();
 
         public const int mapChunkSize = 64, chunkScale = 1, scale = 2;
-        public const int generationSize = scale * mapChunkSize;
+        public const int chunkSize = scale * mapChunkSize;
+        public const int generationSize = scale * mapChunkSize * (1 + 2 * chunkScale);
         public const float maxTerrainHeight = 50f;
 
         private Dictionary<long, ChunkData> mapData = new();
@@ -68,16 +69,16 @@ namespace TheRavine.Generator
         }
         public long GetPosition2Int(long pos)
         {
-            int x = Mathf.FloorToInt(Position2Int.GetX(pos) / generationSize);
-            int y = Mathf.FloorToInt(Position2Int.GetY(pos) / generationSize);
+            int x = Mathf.FloorToInt(Position2Int.GetX(pos) / chunkSize);
+            int y = Mathf.FloorToInt(Position2Int.GetY(pos) / chunkSize);
             return Position2Int.Pack(x, y);
         }
 
         public long GetLocalPosition(long pos)
         {
             long chunk = GetPosition2Int(pos);
-            float lx = Position2Int.GetX(pos) - Position2Int.GetX(chunk) * generationSize;
-            float ly = Position2Int.GetY(pos) - Position2Int.GetY(chunk) * generationSize;
+            float lx = Position2Int.GetX(pos) - Position2Int.GetX(chunk) * chunkSize;
+            float ly = Position2Int.GetY(pos) - Position2Int.GetY(chunk) * chunkSize;
 
             return Position2Int.Pack(Mathf.FloorToInt(lx / scale), Mathf.FloorToInt(ly / scale));
         }
@@ -275,8 +276,8 @@ namespace TheRavine.Generator
             int cx = Position2Int.GetX(chunk);
             int cz = Position2Int.GetY(chunk);
 
-            int lx = Mathf.FloorToInt((wx - cx * generationSize) / (float)scale);
-            int lz = Mathf.FloorToInt((wz - cz * generationSize) / (float)scale);
+            int lx = Mathf.FloorToInt((wx - cx * chunkSize) / (float)scale);
+            int lz = Mathf.FloorToInt((wz - cz * chunkSize) / (float)scale);
 
             return Idx(lx, lz);
         }
@@ -391,7 +392,7 @@ namespace TheRavine.Generator
             if (chunkGenerationSettings.endlessFlag[0])
                 endless[0] = new EndlessTerrain(this, chunkGenerationSettings);
             if (chunkGenerationSettings.endlessFlag[1])
-                endless[1] = new EndlessLiquids(this);
+                endless[1] = new EndlessLiquids(this, rippleEffect);
             if (chunkGenerationSettings.endlessFlag[2])
                 endless[2] = new EndlessObjects(this, objectSystem);
         }
@@ -479,8 +480,8 @@ namespace TheRavine.Generator
         {
             if (viewer == null) return 0;
             
-            int currentX = Mathf.RoundToInt((viewer.position.x - generationSize / 2f + viewerOffset.x) / generationSize);
-            int currentZ = Mathf.RoundToInt((viewer.position.z + generationSize / 2f + viewerOffset.z) / generationSize);
+            int currentX = Mathf.RoundToInt((viewer.position.x - chunkSize / 2f + viewerOffset.x) / chunkSize);
+            int currentZ = Mathf.RoundToInt((viewer.position.z + chunkSize / 2f + viewerOffset.z) / chunkSize);
 
             return Position2Int.Pack(currentX, currentZ);
         }
