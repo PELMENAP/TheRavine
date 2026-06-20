@@ -19,7 +19,6 @@ namespace TheRavine.Generator
         public NoiseLayerSettings riverNoiseSettings  = NoiseLayerSettings.DefaultRiver;
         public NoiseLayerSettings temperatureSettings = NoiseLayerSettings.DefaultTemperature;
         public NoiseLayerSettings moistureSettings    = NoiseLayerSettings.DefaultMoisture;
-        public RiverBlendSettings riverBlend          = RiverBlendSettings.Default;
 
         public int mountainRegionIndex = 8;
 

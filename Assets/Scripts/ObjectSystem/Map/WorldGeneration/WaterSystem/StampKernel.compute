@@ -1,0 +1,23 @@
+#pragma kernel StampKernel
+
+struct StampData { float2 center; float invRadius; float strength; };
+StructuredBuffer<StampData> Stamps;
+int StampCount;
+RWTexture2D<float> Target;
+uint2 TexSize;
+
+[numthreads(8,8,1)]
+void StampKernel(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= TexSize.x || id.y >= TexSize.y) return;
+    float2 uv = float2(id.xy) / float2(TexSize);
+    float val = 0;
+    for (int i = 0; i < StampCount; i++)
+    {
+        float2 delta = uv - Stamps[i].center;
+        delta -= round(delta);
+        float d2 = dot(delta, delta) * Stamps[i].invRadius * Stamps[i].invRadius;
+        val += Stamps[i].strength * saturate(1.0 - d2);
+    }
+    Target[id.xy] += val;
+}

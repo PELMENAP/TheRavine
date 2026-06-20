@@ -79,12 +79,21 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Gesture (Alt)",
+                    "name": "Gesture Area (Hold Alt)",
                     "type": "Button",
                     "id": "483fb10f-2a93-4ace-a5ff-fd748586ad40",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": "",
+                    "interactions": "Hold(duration=0.25)",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Gesture Recognize (Alt)",
+                    "type": "Button",
+                    "id": "f11dad30-a58f-44a2-9625-fa9c1dfd6408",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "Tap",
                     "initialStateCheck": false
                 }
             ],
@@ -305,7 +314,18 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Gesture (Alt)",
+                    "action": "Gesture Area (Hold Alt)",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "7ad2b049-3499-4677-afe7-d35462dcf64a",
+                    "path": "<Keyboard>/leftAlt",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Gesture Recognize (Alt)",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

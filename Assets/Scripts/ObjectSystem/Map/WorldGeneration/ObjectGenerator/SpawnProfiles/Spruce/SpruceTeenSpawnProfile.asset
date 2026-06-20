@@ -16,12 +16,12 @@ MonoBehaviour:
   density: 30
   minDistance: 3
   mask:
-    heightMin: 0.036
-    heightMax: 1
-    tempMin: 0.139
-    tempMax: 0.883
-    moistMin: 0.051
-    moistMax: 0.907
+    heightMin: 0.3
+    heightMax: 0.7
+    tempMin: 0
+    tempMax: 0.25
+    moistMin: 0
+    moistMax: 1
     noiseScale: 0.04
     noiseThreshold: 0.175
     noiseWeight: 0.507

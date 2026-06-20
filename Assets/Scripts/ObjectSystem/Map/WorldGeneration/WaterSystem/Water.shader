@@ -1,4 +1,4 @@
-Shader "The Ravine/WaterShader"
+Shader "The Ravine/Water/WaterShader"
 {
     Properties
     {
@@ -28,10 +28,10 @@ Shader "The Ravine/WaterShader"
         FoamRippleStrength("Ripple Foam", Range(0,10)) = 1
         
         RippleRefraction("Ripple Refraction", Float) = 0.1
-        [NoScaleOffset] _RippleTex("Ripple Height Map", 2D) = "white" {}
+        [NoScaleOffset] RippleTex("Ripple Height Map", 2D) = "white" {}
         
-        _Displacement("Displacement", Float) = 0.3
-        _Scale("Displacement Scale", Float) = 10.0
+        Displacement("Displacement", Float) = 0.3
+        Scale("Displacement Scale", Float) = 10.0
     }
     
     SubShader
@@ -67,10 +67,15 @@ Shader "The Ravine/WaterShader"
             
             TEXTURE2D(NormalMap);       SAMPLER(samplerNormalMap);
             TEXTURE2D(FoamTexture);     SAMPLER(samplerFoamTexture);
-            TEXTURE2D(_RippleTex);      SAMPLER(sampler_RippleTex);
+            TEXTURE2D(RippleTex);      SAMPLER(samplerRippleTex);
             TEXTURE2D(_CameraOpaqueTexture);    SAMPLER(sampler_CameraOpaqueTexture);
             TEXTURE2D(_CameraDepthTexture);     SAMPLER(sampler_CameraDepthTexture);
-            
+
+            CBUFFER_START(RippleBuffer)
+                float4 RippleOffset;
+            CBUFFER_END
+
+                        
             CBUFFER_START(UnityPerMaterial)
                 float4 ShallowColor;
                 float4 DeepColor;
@@ -91,9 +96,9 @@ Shader "The Ravine/WaterShader"
                 float FoamCrestStrength;
                 float FoamRippleStrength;
                 float RippleRefraction;
-                float4 _RippleTex_TexelSize;
-                float _Displacement;
-                float _Scale;
+                float4 RippleTex_TexelSize;
+                float Displacement;
+                float Scale;
                 float Smoothness;
                 float Metallic;
             CBUFFER_END
@@ -239,7 +244,7 @@ Shader "The Ravine/WaterShader"
                 float2 noiseUV = worldPos.xz;
                 
                 // Divide by Scale
-                noiseUV /= _Scale;
+                noiseUV /= Scale;
                 
                 // Time / 100
                 float time = _TimeParameters.x / 100.0;
@@ -276,7 +281,7 @@ Shader "The Ravine/WaterShader"
                     GradientNoise(
                         animatedUV,
                         float3(10,10,10))
-                    * _Displacement
+                    * Displacement
                     * 0.15;
 
                 float3 displacedPos =
@@ -347,9 +352,10 @@ Shader "The Ravine/WaterShader"
                 float3 normalTS = NormalStrengthFun(blendedNormal, NormalStrength);
                 
                 // === RIPPLES ===
-                // LowResNormalFromHeight для _RippleTex
-                float3 rippleNormalForRefract = LowResNormalFromHeight(_RippleTex, sampler_RippleTex, input.uv0, _RippleTex_TexelSize.zw, RippleRefraction);
-                float rippleHeight = abs(SAMPLE_TEXTURE2D(_RippleTex, sampler_RippleTex, input.uv0).r);
+                // LowResNormalFromHeight для RippleTex
+                float2 rippleUV = input.uv0 + RippleOffset.xy;
+                float3 rippleNormalForRefract = LowResNormalFromHeight(RippleTex, samplerRippleTex, rippleUV, RippleTex_TexelSize.zw, RippleRefraction);
+                float rippleHeight = abs(SAMPLE_TEXTURE2D(RippleTex, samplerRippleTex, rippleUV).r);
                 float3 finalNormalTS  = lerp(normalTS, rippleNormalForRefract,  rippleHeight);
 
                 

@@ -105,7 +105,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f954887f861e1e244989c84cbb1f4b9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: View::RippleEffectOld
-  TextureSize: 1024
   RippleShader: {fileID: 4800000, guid: 6dc20150902652d92aab2189b4a0a753, type: 3}
 --- !u!114 &1927289884321064616
 MonoBehaviour:
@@ -119,8 +118,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c558dcbdfe43d154b109fc7948deec9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ObjectSystem::RippleStampSystem
-  _stampShader: {fileID: 4800000, guid: 191a187a31ab2770891ae2cc47311dbd, type: 3}
-  waterCollider: {fileID: 3802184848743760996}
+  stampCompute: {fileID: 7200000, guid: 0f758434d938f6910be769bfd8014c81, type: 3}
 --- !u!65 &3802184848743760996
 BoxCollider:
   m_ObjectHideFlags: 0

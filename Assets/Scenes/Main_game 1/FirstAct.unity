@@ -794,6 +794,10 @@ PrefabInstance:
       propertyPath: GlobalObjectIdHash
       value: 3386079374
       objectReference: {fileID: 0}
+    - target: {fileID: 3644762060315146962, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3774976463961129895, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
       propertyPath: boidsBehaviour
       value: 
@@ -801,6 +805,10 @@ PrefabInstance:
     - target: {fileID: 7161299290317673880, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7944488623204431999, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8139251900852255931, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
       propertyPath: GlobalObjectIdHash

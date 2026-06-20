@@ -36,9 +36,9 @@ namespace TheRavine.Extensions
                 Destroy(item.gameObject);
             _items.Clear();
 
-            IReadOnlyList<GestureEntry> entries = _repository.Entries;
+            IReadOnlyList<Gesture> entries = _repository.Entries;
             for (int i = 0; i < entries.Count; i++)
-                SpawnItem(entries[i].Gesture.Name, i);
+                SpawnItem(entries[i].Name, i);
         }
 
         private void SpawnItem(string gestureName, int index)
@@ -50,7 +50,7 @@ namespace TheRavine.Extensions
 
         private void HandleEntryAdded(int index)
         {
-            SpawnItem(_repository.Entries[index].Gesture.Name, index);
+            SpawnItem(_repository.Entries[index].Name, index);
         }
 
         private void HandleEntryRemoved(int index)

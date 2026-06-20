@@ -3,38 +3,65 @@ using UnityEngine;
 [RequireComponent(typeof(Renderer))]
 public class RippleEffect : MonoBehaviour
 {
-    public int TextureSize = 1024;
+    public const int TextureSize = 512;
     private RenderTexture CurrRT, PrevRT, TempRT;
     public Shader RippleShader;
     private Material RippleMat;
-    private Material _waterMat;
-    void Start()
+    private Material waterMat;
+    private void Start()
     {
-        //Creating render textures and materials
-        CurrRT = new RenderTexture(TextureSize, TextureSize, 0, RenderTextureFormat.RFloat);
-        PrevRT = new RenderTexture(TextureSize, TextureSize, 0, RenderTextureFormat.RFloat);
-        TempRT = new RenderTexture(TextureSize, TextureSize, 0, RenderTextureFormat.RFloat);
+        CurrRT = new RenderTexture(TextureSize, TextureSize, 0, RenderTextureFormat.RHalf)
+        {
+            enableRandomWrite = true,
+            wrapMode = TextureWrapMode.Repeat
+        };
+        CurrRT.Create();
+
+        PrevRT = new RenderTexture(TextureSize, TextureSize, 0, RenderTextureFormat.RHalf)
+        {
+            enableRandomWrite = true,
+            wrapMode = TextureWrapMode.Repeat
+        };
+        PrevRT.Create();
+
+        TempRT = new RenderTexture(TextureSize, TextureSize, 0, RenderTextureFormat.RHalf)
+        {
+            enableRandomWrite = true,
+            wrapMode = TextureWrapMode.Repeat
+        };
+        TempRT.Create();
+
+
         RippleMat = new Material(RippleShader);
     
-        _waterMat = GetComponent<Renderer>().material;
-        _waterMat.SetTexture("_RippleTex", CurrRT); //The result water material changed on this line
+        waterMat = GetComponent<Renderer>().material;
+        waterMat.SetTexture("RippleTex", CurrRT);
     }
 
-    private int _frameSkip = 0;
+    private int frameSkip = 0;
 
     private void LateUpdate()
     {
         RippleStampSystem.Instance.FlushToRT(CurrRT);
-        if (++_frameSkip < 2) return;
-        _frameSkip = 0;
+        if (++frameSkip < 2) return;
+        frameSkip = 0;
 
-        RippleMat.SetTexture("_PrevRT", PrevRT);
-        RippleMat.SetTexture("_CurrentRT", CurrRT);
+        RippleMat.SetTexture("PrevRT", PrevRT);
+        RippleMat.SetTexture("CurrentRT", CurrRT);
         Graphics.Blit(null, TempRT, RippleMat);
 
-        (CurrRT, PrevRT) = (TempRT, CurrRT);
-        TempRT = PrevRT;
+        var next = PrevRT;
+        PrevRT = CurrRT;
+        CurrRT = TempRT;
+        TempRT = next;
 
-        _waterMat.SetTexture("_RippleTex", CurrRT);
+        waterMat.SetTexture("RippleTex", CurrRT);
+    }
+
+    private void OnDestroy()
+    {
+        CurrRT?.Release();
+        PrevRT?.Release();
+        TempRT?.Release();
     }
 }

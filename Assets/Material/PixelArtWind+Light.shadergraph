@@ -1806,10 +1806,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -975.9999389648438,
-            "y": 416.0000915527344,
+            "x": -1052.9998779296875,
+            "y": 343.0,
             "width": 104.99993896484375,
-            "height": 33.99981689453125
+            "height": 34.0
         }
     },
     "m_Slots": [
@@ -2507,7 +2507,7 @@
     "m_ZTestMode": 4,
     "m_ZWriteControl": 0,
     "m_AlphaMode": 0,
-    "m_RenderFace": 2,
+    "m_RenderFace": 0,
     "m_AlphaClip": true,
     "m_CastShadows": true,
     "m_ReceiveShadows": true,

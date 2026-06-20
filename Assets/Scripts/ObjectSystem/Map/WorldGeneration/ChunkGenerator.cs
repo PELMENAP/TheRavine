@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Jobs;
@@ -7,7 +6,6 @@ using UnityEngine;
 using UnityEngine.Events;
 
 using TheRavine.Extensions;
-using TheRavine.ObjectControl;
 
 namespace TheRavine.Generator
 {
@@ -140,7 +138,6 @@ namespace TheRavine.Generator
         public ChunkData GenerateMapData(long centre)
         {
             uint hash = (uint)centre;
-            FastRandom chunkRandom = new(hash);
 
             noise.GenerateAllMaps(
                 noiseMap, riverMap, temperatureMap, moistureMap, Position2Int.UnpackToVector(centre));

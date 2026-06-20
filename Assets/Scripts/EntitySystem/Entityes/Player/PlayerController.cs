@@ -27,12 +27,12 @@ namespace TheRavine.EntityControl
         [Header("Jump")]
         [SerializeField] private float baseJumpForce = 7f;
         [SerializeField] private AnimationCurve jumpForceCurve;
-        [SerializeField] private GroundChecker groundChecker;
 
         [SerializeField] private float characterHalfHeight = 1f;
         private TerrainPhysicsResolver terrainResolver;
 
-        private bool IsOnGround => (terrainResolver?.IsGrounded ?? false) || groundChecker.IsGrounded;
+        private bool IsOnGround => playerRigidbody.linearVelocity.y <= 0.1f;
+        private bool IsOnTerrain => terrainResolver.IsGrounded;
         private Rigidbody playerRigidbody;
         private Vector2 movementDirection;
         private float timeSinceLastSend;
@@ -110,7 +110,6 @@ namespace TheRavine.EntityControl
         {
             playerRigidbody.useGravity = false;
             terrainResolver.SetActive(false); 
-            groundChecker.Reset(); 
 
             WorldState worldState = worldRegistry.GetCurrentState();
 
@@ -202,6 +201,7 @@ namespace TheRavine.EntityControl
             if (forwardTap.IsBoostActive && currentSpeed < 1f)
                 currentSpeed = movementComponent.BaseSpeed / 2;
         }
+        
 
         [ServerRpc]
         private void MoveServerRpc(Vector2 direction, float inputSpeed)
@@ -209,16 +209,20 @@ namespace TheRavine.EntityControl
             if (inputSpeed <= 0.01f)
                 currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, movementComponent.Deceleration * Time.deltaTime);
 
-            float terrainModifier =
-                map.GetSpeedModifier(
-                    playerRigidbody.position.x,
-                    playerRigidbody.position.z,
-                    direction);
-
             float targetSpeed =
                 inputSpeed *
-                movementComponent.BaseSpeed *
-                terrainModifier;
+                movementComponent.BaseSpeed;
+
+            if (IsOnTerrain)
+            {
+                float terrainModifier =
+                    map.GetSpeedModifier(
+                        playerRigidbody.position.x,
+                        playerRigidbody.position.z,
+                        direction);
+
+                targetSpeed *= terrainModifier;
+            }
 
             currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, movementComponent.Acceleration * Time.deltaTime);
 
@@ -256,8 +260,8 @@ namespace TheRavine.EntityControl
             if (!IsOwner || !jumpCharge.JumpRequested) return;
             jumpCharge.ConsumeJump();
             if (!IsOnGround) return;
-            float forceMult = jumpForceCurve.Evaluate(jumpCharge.ChargeNormalized);
-            JumpServerRpc(baseJumpForce * forceMult);
+            float forceMultiplier = jumpForceCurve.Evaluate(jumpCharge.ChargeNormalized);
+            JumpServerRpc(baseJumpForce * forceMultiplier);
         }
 
 
