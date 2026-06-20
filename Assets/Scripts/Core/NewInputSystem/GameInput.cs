@@ -165,12 +165,21 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Gesture (Alt)"",
+                    ""name"": ""Gesture Area (Hold Alt)"",
                     ""type"": ""Button"",
                     ""id"": ""483fb10f-2a93-4ace-a5ff-fd748586ad40"",
                     ""expectedControlType"": """",
                     ""processors"": """",
-                    ""interactions"": """",
+                    ""interactions"": ""Hold(duration=0.25)"",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Gesture Recognize (Alt)"",
+                    ""type"": ""Button"",
+                    ""id"": ""f11dad30-a58f-44a2-9625-fa9c1dfd6408"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": ""Tap"",
                     ""initialStateCheck"": false
                 }
             ],
@@ -391,7 +400,18 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Gesture (Alt)"",
+                    ""action"": ""Gesture Area (Hold Alt)"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7ad2b049-3499-4677-afe7-d35462dcf64a"",
+                    ""path"": ""<Keyboard>/leftAlt"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Gesture Recognize (Alt)"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1033,7 +1053,8 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         m_Gameplay_Digit18 = m_Gameplay.FindAction("Digit (1-8)", throwIfNotFound: true);
         m_Gameplay_DelayInteractLongSpace = m_Gameplay.FindAction("Delay Interact (Long Space)", throwIfNotFound: true);
         m_Gameplay_PauseEscape = m_Gameplay.FindAction("Pause (Escape)", throwIfNotFound: true);
-        m_Gameplay_GestureAlt = m_Gameplay.FindAction("Gesture (Alt)", throwIfNotFound: true);
+        m_Gameplay_GestureAreaHoldAlt = m_Gameplay.FindAction("Gesture Area (Hold Alt)", throwIfNotFound: true);
+        m_Gameplay_GestureRecognizeAlt = m_Gameplay.FindAction("Gesture Recognize (Alt)", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1145,7 +1166,8 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_Gameplay_Digit18;
     private readonly InputAction m_Gameplay_DelayInteractLongSpace;
     private readonly InputAction m_Gameplay_PauseEscape;
-    private readonly InputAction m_Gameplay_GestureAlt;
+    private readonly InputAction m_Gameplay_GestureAreaHoldAlt;
+    private readonly InputAction m_Gameplay_GestureRecognizeAlt;
     /// <summary>
     /// Provides access to input actions defined in input action map "Gameplay".
     /// </summary>
@@ -1190,9 +1212,13 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @PauseEscape => m_Wrapper.m_Gameplay_PauseEscape;
         /// <summary>
-        /// Provides access to the underlying input action "Gameplay/GestureAlt".
+        /// Provides access to the underlying input action "Gameplay/GestureAreaHoldAlt".
         /// </summary>
-        public InputAction @GestureAlt => m_Wrapper.m_Gameplay_GestureAlt;
+        public InputAction @GestureAreaHoldAlt => m_Wrapper.m_Gameplay_GestureAreaHoldAlt;
+        /// <summary>
+        /// Provides access to the underlying input action "Gameplay/GestureRecognizeAlt".
+        /// </summary>
+        public InputAction @GestureRecognizeAlt => m_Wrapper.m_Gameplay_GestureRecognizeAlt;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1243,9 +1269,12 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @PauseEscape.started += instance.OnPauseEscape;
             @PauseEscape.performed += instance.OnPauseEscape;
             @PauseEscape.canceled += instance.OnPauseEscape;
-            @GestureAlt.started += instance.OnGestureAlt;
-            @GestureAlt.performed += instance.OnGestureAlt;
-            @GestureAlt.canceled += instance.OnGestureAlt;
+            @GestureAreaHoldAlt.started += instance.OnGestureAreaHoldAlt;
+            @GestureAreaHoldAlt.performed += instance.OnGestureAreaHoldAlt;
+            @GestureAreaHoldAlt.canceled += instance.OnGestureAreaHoldAlt;
+            @GestureRecognizeAlt.started += instance.OnGestureRecognizeAlt;
+            @GestureRecognizeAlt.performed += instance.OnGestureRecognizeAlt;
+            @GestureRecognizeAlt.canceled += instance.OnGestureRecognizeAlt;
         }
 
         /// <summary>
@@ -1281,9 +1310,12 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @PauseEscape.started -= instance.OnPauseEscape;
             @PauseEscape.performed -= instance.OnPauseEscape;
             @PauseEscape.canceled -= instance.OnPauseEscape;
-            @GestureAlt.started -= instance.OnGestureAlt;
-            @GestureAlt.performed -= instance.OnGestureAlt;
-            @GestureAlt.canceled -= instance.OnGestureAlt;
+            @GestureAreaHoldAlt.started -= instance.OnGestureAreaHoldAlt;
+            @GestureAreaHoldAlt.performed -= instance.OnGestureAreaHoldAlt;
+            @GestureAreaHoldAlt.canceled -= instance.OnGestureAreaHoldAlt;
+            @GestureRecognizeAlt.started -= instance.OnGestureRecognizeAlt;
+            @GestureRecognizeAlt.performed -= instance.OnGestureRecognizeAlt;
+            @GestureRecognizeAlt.canceled -= instance.OnGestureRecognizeAlt;
         }
 
         /// <summary>
@@ -1790,12 +1822,19 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnPauseEscape(InputAction.CallbackContext context);
         /// <summary>
-        /// Method invoked when associated input action "Gesture (Alt)" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "Gesture Area (Hold Alt)" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnGestureAlt(InputAction.CallbackContext context);
+        void OnGestureAreaHoldAlt(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Gesture Recognize (Alt)" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnGestureRecognizeAlt(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

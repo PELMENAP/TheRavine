@@ -1,4 +1,4 @@
-Shader "Unlit/RippleShader"
+Shader "The Ravine/Water/RippleShader"
 {
     SubShader
     {
@@ -31,13 +31,13 @@ Shader "Unlit/RippleShader"
                 float4 positionCS : SV_POSITION;
             };
 
-            TEXTURE2D(_PrevRT);
+            TEXTURE2D(PrevRT);
             SAMPLER(sampler_PrevRT);
 
-            TEXTURE2D(_CurrentRT);
+            TEXTURE2D(CurrentRT);
             SAMPLER(sampler_CurrentRT);
 
-            float4 _CurrentRT_TexelSize;
+            float4 CurrentRT_TexelSize;
 
             Varyings vert(Attributes input)
             {
@@ -49,19 +49,19 @@ Shader "Unlit/RippleShader"
 
             half4 frag(Varyings input) : SV_Target
             {
-                float3 e = float3(_CurrentRT_TexelSize.xy, 0.0);
+                float3 e = float3(CurrentRT_TexelSize.xy, 0.0);
                 float2 uv = input.uv;
                 float speed = 0.2;
 
-                float p10 = SAMPLE_TEXTURE2D(_CurrentRT, sampler_CurrentRT, uv - e.zy * speed).x;
-                float p01 = SAMPLE_TEXTURE2D(_CurrentRT, sampler_CurrentRT, uv - e.xz * speed).x;
-                float p21 = SAMPLE_TEXTURE2D(_CurrentRT, sampler_CurrentRT, uv + e.xz * speed).x;
-                float p12 = SAMPLE_TEXTURE2D(_CurrentRT, sampler_CurrentRT, uv + e.zy * speed).x;
+                float p10 = SAMPLE_TEXTURE2D(CurrentRT, sampler_CurrentRT, uv - e.zy * speed).x;
+                float p01 = SAMPLE_TEXTURE2D(CurrentRT, sampler_CurrentRT, uv - e.xz * speed).x;
+                float p21 = SAMPLE_TEXTURE2D(CurrentRT, sampler_CurrentRT, uv + e.xz * speed).x;
+                float p12 = SAMPLE_TEXTURE2D(CurrentRT, sampler_CurrentRT, uv + e.zy * speed).x;
 
-                float p11 = SAMPLE_TEXTURE2D(_PrevRT, sampler_PrevRT, uv).x;
+                float p11 = SAMPLE_TEXTURE2D(PrevRT, sampler_PrevRT, uv).x;
 
                 float d = (p10 + p01 + p21 + p12) * 0.5 - p11;
-                d *= 0.97;
+                d *= 0.99;
 
                 return half4(d, d, d, 1.0);
             }

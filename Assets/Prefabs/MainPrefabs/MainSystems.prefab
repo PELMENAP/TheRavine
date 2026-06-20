@@ -654,10 +654,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: rippleSpace
-      value: 
-      objectReference: {fileID: 3299858350979613088}
-    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: rippleEffect
       value: 
       objectReference: {fileID: 5777932263901799525}
@@ -830,6 +826,10 @@ PrefabInstance:
       value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 3766957633824667926, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: _offsetShader
+      value: 
+      objectReference: {fileID: 4800000, guid: 92ee134ce701e3d37a87453ee85be8c9, type: 3}
+    - target: {fileID: 3766957633824667926, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
       propertyPath: _scrollShader
       value: 
       objectReference: {fileID: 4800000, guid: 6b6dc0ff787395788b2f37cbab3aee28, type: 3}
@@ -873,6 +873,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8188790683630782922, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: _stampCompute
+      value: 
+      objectReference: {fileID: 7200000, guid: 0f758434d938f6910be769bfd8014c81, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 3495164148260058434, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
@@ -901,17 +905,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74ec20f3c7d12b243a51d645d8a00ecf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &3299858350979613088 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5306024771002899667, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
-  m_PrefabInstance: {fileID: 7235519633735949683}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 480824a73506d3a27a170d9f9b17929b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ObjectSystem::WaterRippleSpace
 --- !u!33 &3903556155217441569 stripped
 MeshFilter:
   m_CorrespondingSourceObject: {fileID: 5928299933709135442, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}

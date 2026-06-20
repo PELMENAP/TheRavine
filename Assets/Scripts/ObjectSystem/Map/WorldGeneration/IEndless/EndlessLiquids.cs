@@ -9,13 +9,10 @@ namespace TheRavine.Generator
         public class EndlessLiquids : IEndless
         {
             private readonly MapGenerator generator;
-            private readonly RippleEffect rippleEffect;
             private readonly int chunkSize = MapGenerator.chunkSize;
-            private readonly int generationSize = MapGenerator.generationSize;
-            public EndlessLiquids(MapGenerator _generator, RippleEffect _rippleEffect)
+            public EndlessLiquids(MapGenerator _generator)
             {
                 generator = _generator;
-                rippleEffect = _rippleEffect;
             }
             public async UniTaskVoid UpdateChunk(long position)
             {
@@ -27,7 +24,6 @@ namespace TheRavine.Generator
                     waterZPosition);
 
                 generator.waterTransform.position = newPos;
-
                 RippleStampSystem.Instance.SetWaterPosition(waterXPosition, waterZPosition);
 
                 await UniTask.CompletedTask;

@@ -27,7 +27,7 @@ MonoBehaviour:
     m_Value: 0
   clamp:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0.7
   tint:
     m_OverrideState: 1
     m_Value: {r: 0.99930906, g: 1, b: 0.7372549, a: 1}
@@ -49,7 +49,7 @@ MonoBehaviour:
     dimension: 1
   dirtIntensity:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0.5
 --- !u!114 &-7011558710299706105
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -71,10 +71,10 @@ MonoBehaviour:
     m_Value: {x: 0.5, y: 0.5}
   intensity:
     m_OverrideState: 1
-    m_Value: 0.411
+    m_Value: 0.3
   smoothness:
     m_OverrideState: 1
-    m_Value: 0.172
+    m_Value: 0.1
   rounded:
     m_OverrideState: 1
     m_Value: 0
@@ -125,10 +125,10 @@ MonoBehaviour:
     m_Value: 10
   gaussianEnd:
     m_OverrideState: 1
-    m_Value: 30
+    m_Value: 27.07
   gaussianMaxRadius:
     m_OverrideState: 1
-    m_Value: 1.008
+    m_Value: 0.5
   highQualitySampling:
     m_OverrideState: 1
     m_Value: 0
@@ -137,10 +137,10 @@ MonoBehaviour:
     m_Value: 10
   aperture:
     m_OverrideState: 1
-    m_Value: 31.8
+    m_Value: 5.8
   focalLength:
     m_OverrideState: 1
-    m_Value: 235
+    m_Value: 79
   bladeCount:
     m_OverrideState: 1
     m_Value: 3
@@ -190,13 +190,13 @@ MonoBehaviour:
   active: 1
   shadows:
     m_OverrideState: 1
-    m_Value: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    m_Value: {r: 0.4339623, g: 0.4339623, b: 0.4339623, a: 1}
   highlights:
     m_OverrideState: 1
-    m_Value: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    m_Value: {r: 0.40188682, g: 0.40188682, b: 0.40188682, a: 1}
   balance:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 11.1
 --- !u!114 &-2364825370683741612
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -283,10 +283,10 @@ MonoBehaviour:
   active: 1
   intensity:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: -1
   xMultiplier:
     m_OverrideState: 1
-    m_Value: 0.1
+    m_Value: 0
   yMultiplier:
     m_OverrideState: 1
     m_Value: 0
@@ -295,7 +295,7 @@ MonoBehaviour:
     m_Value: {x: 0.5, y: 0.5}
   scale:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0.01
 --- !u!114 &588367721725970278
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -558,7 +558,7 @@ MonoBehaviour:
     m_Value: 0
   cropToFit:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0
 --- !u!114 &6194761737938981722
 MonoBehaviour:
   m_ObjectHideFlags: 3

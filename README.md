@@ -1,7 +1,33 @@
+# TheRavine
+
+Open-world sandbox game developed in Unity.
+
+## Unique Systems
+- Natural Artificial Life
+- Procedural audio synthesis
+- Local LLM item descriptions
+- Rive scripting language
+- Wave Function Collapse
+- Infinite world streaming
+- SharedHierarchicalBrain
+- Gesture recognition
+- Dynamic ecosystem
+
+## Performance
+- Burst Jobs
+- Object Pooling
+- Zero-allocation collections
+- MemoryPack serialization
+- Chunk streaming
+- Spatial hashing
+- Native Collections
+- Reactive event system
+
+
 # TheRavine — Project Architecture Summary
 
 ## Stack
-- **Unity** (3D, URP), **C#**, **Netcode for GameObjects** (host/server/client)
+- **Unity 6000.3** (3D, URP), **C#**, **Netcode for GameObjects** (host/server/client)
 - **UniTask** — async/await everywhere instead of coroutines
 - **R3** — reactive properties, observables (аналог UniRx)
 - **LitMotion** — tweens/animations
@@ -47,7 +73,6 @@
 ServiceLocator.Services  — Dictionary<Type, object>  — игровые сервисы
 ServiceLocator.Players   — PlayerContainer            — зарегистрированные игроки
 ```
-**Проблема**: `Register<T>` молча возвращает `false` если тип уже есть → при повторном входе в мир сервисы не перерегистрируются. Нужно вызывать `ServiceLocator.ClearAll()` при выходе в меню.
 
 ---
 

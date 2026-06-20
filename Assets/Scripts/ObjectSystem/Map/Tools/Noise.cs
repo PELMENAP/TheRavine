@@ -3,7 +3,6 @@ using TheRavine.Generator;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
-using Unity.Mathematics;
 
 public class Noise
 {
@@ -55,7 +54,7 @@ public class Noise
         int worldX = chunkOffset.x * chunkSize;
         int worldY = chunkOffset.y * chunkSize;
 
-        HeightMapJob hJob = new HeightMapJob
+        HeightMapJob hJob = new()
         {
             ChunkSize = chunkSize,
             WorldX = worldX,
@@ -64,7 +63,7 @@ public class Noise
             Output = heightMap
         };
 
-        RiverMapJob rJob = new RiverMapJob
+        RiverMapJob rJob = new()
         {
             ChunkSize = chunkSize,
             WorldX = worldX,
@@ -73,7 +72,7 @@ public class Noise
             Output = riverMap
         };
 
-        ClimateDirect2xJob cJob = new ClimateDirect2xJob
+        ClimateDirect2xJob cJob = new()
         {
             HalfSize = halfSize,
             ChunkSize = chunkSize,

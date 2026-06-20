@@ -2,63 +2,59 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using MemoryPack;
 
 namespace TheRavine.Extensions
 {
-    public readonly struct GestureEntry
-    {
-        public readonly Gesture Gesture;
-        public readonly string FilePath;
-
-        public GestureEntry(Gesture gesture, string filePath)
-        {
-            Gesture = gesture;
-            FilePath = filePath;
-        }
-    }
-
     public class GestureRepository
     {
-        private readonly List<GestureEntry> _entries = new();
-
-        public IReadOnlyList<GestureEntry> Entries => _entries;
-
+        private const string FileName = "gestures.bin";
+        private readonly List<Gesture> gestures = new();
+        private static string RepositoryPath =>
+            Path.Combine(Application.persistentDataPath, FileName);
+        public IReadOnlyList<Gesture> Entries => gestures;
         public event Action<int> OnEntryAdded;
         public event Action<int> OnEntryRemoved;
-
         public void Load()
         {
-            string[] filePaths = Directory.GetFiles(Application.persistentDataPath, "*.xml");
-            foreach (string filePath in filePaths)
-            {
-                Gesture gesture = GestureIO.ReadGestureFromFile(filePath);
-                _entries.Add(new GestureEntry(gesture, filePath));
-            }
+            
+            gestures?.Clear();
+
+            if (!File.Exists(RepositoryPath))
+                return;
+
+            byte[] bytes = File.ReadAllBytes(RepositoryPath);
+
+            var loadedGestures = MemoryPackSerializer.Deserialize<List<Gesture>>(bytes);
+            if (loadedGestures is { Count: > 0 })
+                gestures.AddRange(loadedGestures);
+        }
+
+        public void Save()
+        {
+            byte[] bytes = MemoryPackSerializer.Serialize(gestures);
+            File.WriteAllBytes(RepositoryPath, bytes);
         }
 
         public void Add(Point[] points, string gestureName)
         {
-            string filePath = $"{Application.persistentDataPath}/{gestureName}-{DateTime.Now.ToFileTime()}.xml";
-            GestureIO.WriteGesture(points, gestureName, filePath);
-            _entries.Add(new GestureEntry(new Gesture(points, gestureName), filePath));
-            OnEntryAdded?.Invoke(_entries.Count - 1);
+            gestures.Add(new Gesture(points, gestureName));
+            Save();
+
+            OnEntryAdded?.Invoke(gestures.Count - 1);
         }
 
         public void RemoveAt(int index)
         {
-            string filePath = _entries[index].FilePath;
-            if (File.Exists(filePath))
-                File.Delete(filePath);
-            _entries.RemoveAt(index);
+            gestures.RemoveAt(index);
+            Save();
+
             OnEntryRemoved?.Invoke(index);
         }
 
         public Gesture[] GetGesturesArray()
         {
-            var result = new Gesture[_entries.Count];
-            for (int i = 0; i < _entries.Count; i++)
-                result[i] = _entries[i].Gesture;
-            return result;
+            return gestures.ToArray();
         }
     }
 }

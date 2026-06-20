@@ -17,7 +17,7 @@ namespace TheRavine.Extensions
 
             foreach (Gesture template in trainingSet)
             {
-                float dist = CloudDistance(candidate.Points, candidate.Theta, template.Points, template.Theta);
+                float dist = CloudDistance(candidate.Points, candidate.Theta, template.Points, template.Theta, minDistance);
                 if (dist < minDistance)
                 {
                     minDistance = dist;
@@ -31,29 +31,42 @@ namespace TheRavine.Extensions
             );
         }
 
-        private static float CloudDistance(Point[] points1, float[] theta1, Point[] points2, float[] theta2)
+        private static float CloudDistance(
+            Point[] points1, float[] theta1,
+            Point[] points2, float[] theta2,
+            float bestDistance)
         {
             int n = points1.Length;
+            float invN = 1f / n;
+            float weight = 1f;
             float sum = 0f;
 
-            for (int i = 0; i < n; i++)
+            for (int i = 0; i < n; i++, weight -= invN)
             {
-                float minDist = float.MaxValue;
                 float qx = points1[i].X;
                 float qy = points1[i].Y;
                 float qt = theta1[i];
+
+                float minDist = float.MaxValue;
 
                 for (int j = 0; j < n; j++)
                 {
                     float dx = qx - points2[j].X;
                     float dy = qy - points2[j].Y;
                     float dt = qt - theta2[j];
-                    float dist = SpatialWeight * (dx * dx + dy * dy) + AngleWeight * (dt * dt);
-                    if (dist < minDist) minDist = dist;
+
+                    float dist =
+                        SpatialWeight * (dx * dx + dy * dy) +
+                        AngleWeight   * (dt * dt);
+
+                    if (dist < minDist)
+                        minDist = dist;
                 }
 
-                float weight = 1f - (float)i / n;
                 sum += weight * minDist;
+
+                if (sum >= bestDistance)
+                    return sum;
             }
 
             return sum;

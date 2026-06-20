@@ -16,27 +16,28 @@ namespace TheRavine.Extensions
         public Transform gestureOnScreenPrefab;
         public InputActionReference pointerPosition;
         public InputActionReference pointerContact;
-        
-        public InputActionReference gestureRecognizeEnable; 
-        
+
+        public InputActionReference gestureAreaEnable;
+        public InputActionReference gestureRecognizeEnable;
+
         public RectTransform drawAreaRect;
         public GameObject gestureSettings;
         public TextMeshProUGUI messageText;
         public TMP_InputField newGestureNameInput;
         public Button enableGestureSettings;
-        public Button recognizeButton; 
         public Button addGestureButton;
         public GestureLibraryView libraryView;
 
         private readonly GestureRepository repository = new();
         private readonly List<Point> points = new();
-        private readonly List<LineRenderer> gestureLines = new();
+        private List<LineRenderer> currentGestureLines = new();
+        private readonly Stack<List<LineRenderer>> gestureHistory = new();
 
         private LineRenderer currentLine;
         private int strokeId = -1;
-        private bool recognized;
-        private bool isPointerDown;
-        private bool isInitialized = false;
+        private bool isInitialized;
+        private bool isPhysicallyDown;
+        private bool isStrokeActive;
         private Vector2 pointerPos;
         private Camera mainCamera;
 
@@ -44,7 +45,9 @@ namespace TheRavine.Extensions
         {
             addGestureButton.onClick.AddListener(AddGesture);
             enableGestureSettings.onClick.AddListener(ChangeSettings);
-            recognizeButton.onClick.AddListener(RecognizeGesture); 
+
+            gestureAreaEnable.action.performed += ToggleDrawArea;
+            gestureRecognizeEnable.action.performed += RecognizeGesture;
 
             gestureSettings.SetActive(false);
         }
@@ -53,12 +56,21 @@ namespace TheRavine.Extensions
         {
             addGestureButton.onClick.RemoveListener(AddGesture);
             enableGestureSettings.onClick.RemoveListener(ChangeSettings);
-            recognizeButton.onClick.RemoveListener(RecognizeGesture); 
+
+            gestureAreaEnable.action.performed -= ToggleDrawArea;
+            gestureRecognizeEnable.action.performed -= RecognizeGesture;
         }
+
         public void ChangeSettings()
         {
-            gestureSettings.SetActive(!gestureSettings.activeSelf);
-            drawAreaRect.gameObject.SetActive(gestureSettings.activeSelf);
+            if (!isInitialized) return;
+
+            bool turningOn = !gestureSettings.activeSelf;
+            gestureSettings.SetActive(turningOn);
+            drawAreaRect.gameObject.SetActive(turningOn);
+
+            if (!turningOn)
+                ArchiveCurrentGesture();
         }
 
         private void Start()
@@ -69,10 +81,7 @@ namespace TheRavine.Extensions
             libraryView.Initialize(repository);
 
             ServiceLocator.WhenPlayersNonEmpty()
-                .Subscribe(_ =>
-                {
-                    GetCameraToService(ServiceLocator.Players.GetAllPlayers()).Forget();
-                });
+                .Subscribe(_ => GetCameraToService(ServiceLocator.Players.GetAllPlayers()).Forget());
         }
 
         private async UniTaskVoid GetCameraToService(IReadOnlyList<AEntity> list)
@@ -85,73 +94,66 @@ namespace TheRavine.Extensions
         private async UniTask<T> WaitUntilComponentReady<T>(AEntity aEntity) where T : IComponent
         {
             while (!aEntity.HasComponent<T>())
-            {
                 await UniTask.Yield();
-            }
+
             return aEntity.GetEntityComponent<T>();
         }
 
-        private bool _isPhysicallyDown;
-        private bool _isStrokeActive;
-
         private void Update()
         {
-            if(!isInitialized) return;
-            
-            if (gestureRecognizeEnable.action.WasPressedThisFrame())
+            if (!isInitialized) return;
+
+            if (drawAreaRect.gameObject.activeSelf)
+                HandleDrawingInput();
+        }
+
+        private void ToggleDrawArea(InputAction.CallbackContext callbackContext)
+        {
+            bool turningOn = !drawAreaRect.gameObject.activeSelf;
+            drawAreaRect.gameObject.SetActive(turningOn);
+
+            if (!turningOn)
+                ArchiveCurrentGesture();
+        }
+
+        private void HandleDrawingInput()
+        {
+            pointerPos = pointerPosition.action.ReadValue<Vector2>();
+
+            bool isPressed = pointerContact.action.IsPressed();
+            bool insideArea = drawAreaRect.rect.Contains(drawAreaRect.InverseTransformPoint(pointerPos));
+
+            if (!isPressed)
             {
-                drawAreaRect.gameObject.SetActive(true);
+                isPhysicallyDown = false;
+                isStrokeActive = false;
+                return;
             }
 
-            if (gestureRecognizeEnable.action.IsPressed() || gestureSettings.activeSelf)
+            if (!insideArea)
             {
-                pointerPos = pointerPosition.action.ReadValue<Vector2>();
-
-                bool isPressed = pointerContact.action.IsPressed();
-                bool insideArea = drawAreaRect.rect.Contains(drawAreaRect.InverseTransformPoint(pointerPos));
-
-                if (!isPressed)
-                {
-                    _isPhysicallyDown = false;
-                    _isStrokeActive = false;
-                }
-                else if (insideArea)
-                {
-                    if (!_isPhysicallyDown)
-                    {
-                        _isPhysicallyDown = true;
-                        _isStrokeActive = true;
-                        HandlePointerDown();
-                    }
-
-                    if (_isStrokeActive)
-                        HandlePointerDrag();
-                }
-                else
-                {
-                    if (!_isPhysicallyDown)
-                        _isPhysicallyDown = true;
-                }
+                isPhysicallyDown = true;
+                return;
             }
 
-            if (gestureRecognizeEnable.action.WasReleasedThisFrame())
+            if (!isPhysicallyDown)
             {
-                RecognizeGesture();
-                drawAreaRect.gameObject.SetActive(false);
-                ClearCurrentGesture();
+                isPhysicallyDown = true;
+                isStrokeActive = true;
+                HandlePointerDown();
             }
+
+            if (isStrokeActive)
+                HandlePointerDrag();
         }
 
         private void HandlePointerDown()
         {
-            if (recognized)
-                ClearCurrentGesture();
-
             ++strokeId;
 
-            Transform tmpGesture = Instantiate(gestureOnScreenPrefab, transform.position, transform.rotation, this.transform);
+            Transform tmpGesture = Instantiate(gestureOnScreenPrefab, transform.position, transform.rotation, transform);
             currentLine = tmpGesture.GetComponent<LineRenderer>();
-            gestureLines.Add(currentLine);
+            currentGestureLines.Add(currentLine);
         }
 
         private void HandlePointerDrag()
@@ -166,49 +168,68 @@ namespace TheRavine.Extensions
             );
         }
 
-        private void ClearCurrentGesture()
+        private void ArchiveCurrentGesture()
         {
-            recognized = false;
-            strokeId = -1;
+            if (currentGestureLines.Count == 0) return;
+
+            gestureHistory.Push(new List<LineRenderer>(currentGestureLines));
+
+            currentGestureLines.Clear();
             points.Clear();
-
-            foreach (LineRenderer line in gestureLines)
-            {
-                if (line != null)
-                {
-                    line.positionCount = 0;
-                    Destroy(line.gameObject);
-                }
-            }
-
-            gestureLines.Clear();
+            strokeId = -1;
         }
 
-        private void RecognizeGesture()
+        private void DestroyCurrentGesture()
         {
+            foreach (LineRenderer line in currentGestureLines)
+            {
+                if (line != null)
+                    Destroy(line.gameObject);
+            }
+
+            currentGestureLines.Clear();
+            points.Clear();
+            strokeId = -1;
+        }
+
+        private void DestroyArchivedGesture()
+        {
+            currentGestureLines = gestureHistory.Pop();
+            foreach (LineRenderer line in currentGestureLines)
+            {
+                if (line != null)
+                    Destroy(line.gameObject);
+            }
+
+            currentGestureLines.Clear();
+        }
+
+        private void RecognizeGesture(InputAction.CallbackContext callbackContext)
+        {
+            if (!drawAreaRect.gameObject.activeSelf) return;
+
             if (points.Count == 0)
             {
+                if (gestureHistory.Count > 0)
+                {
+                    DestroyArchivedGesture();
+                }
                 messageText.text = "Нарисуйте жест перед распознаванием";
                 return;
             }
 
-            recognized = true;
-
-            Gesture candidate = new Gesture(points.ToArray(), "");
+            Gesture candidate = new(points.ToArray(), "");
             Result gestureResult = PointCloudRecognizerPlus.Classify(candidate, repository.GetGesturesArray());
 
             string gestureName = gestureResult.GestureClass;
 
-            if (gestureName.StartsWith("~", StringComparison.Ordinal))
-            {
-                messageText.text = $"Команда: {gestureName} ({gestureResult.Score:F2})";
-            }
-            else
-            {
-                messageText.text = $"{gestureName} {gestureResult.Score:F2}";
-            }
+            messageText.text = gestureName.StartsWith("~", StringComparison.Ordinal)
+                ? $"Команда: {gestureName} ({gestureResult.Score:F2})"
+                : $"{gestureName} {gestureResult.Score:F2}";
 
             GestureCommandBus.Dispatch(gestureName);
+
+            DestroyCurrentGesture();
         }
 
         private void AddGesture()

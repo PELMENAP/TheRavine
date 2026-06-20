@@ -19,7 +19,6 @@ namespace TheRavine.Generator
 
     public class MapGenerator : MonoBehaviour, ISetAble
     {
-        [SerializeField] private RippleEffect rippleEffect;
         [SerializeField] private ChunkGenerationSettings chunkGenerationSettings;
         private readonly CancellationTokenSource _cts = new();
 
@@ -392,7 +391,7 @@ namespace TheRavine.Generator
             if (chunkGenerationSettings.endlessFlag[0])
                 endless[0] = new EndlessTerrain(this, chunkGenerationSettings);
             if (chunkGenerationSettings.endlessFlag[1])
-                endless[1] = new EndlessLiquids(this, rippleEffect);
+                endless[1] = new EndlessLiquids(this);
             if (chunkGenerationSettings.endlessFlag[2])
                 endless[2] = new EndlessObjects(this, objectSystem);
         }

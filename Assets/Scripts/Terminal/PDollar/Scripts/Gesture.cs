@@ -2,17 +2,18 @@ using UnityEngine;
 
 namespace TheRavine.Extensions
 {
-    public class Gesture
+    using MemoryPack;
+
+    [MemoryPackable]
+    public partial class Gesture
     {
         public Point[] Points;
         public float[] Theta;
         public string Name;
-
         public const int SAMPLING_RESOLUTION = 64;
-
-        public Gesture(Point[] points, string gestureName = "")
+        public Gesture(Point[] points, string name = "")
         {
-            Name = gestureName;
+            Name = name;
             Points = ProcessPoints(points);
             Theta = ComputeLocalShapeDescriptors(Points);
         }
@@ -61,6 +62,8 @@ namespace TheRavine.Extensions
             }
 
             float scale = Mathf.Max(maxX - minX, maxY - minY);
+            if (scale < float.Epsilon) return;
+            
             for (int i = 0; i < points.Length; i++)
                 points[i] = new Point((points[i].X - minX) / scale, (points[i].Y - minY) / scale, points[i].StrokeID);
         }
