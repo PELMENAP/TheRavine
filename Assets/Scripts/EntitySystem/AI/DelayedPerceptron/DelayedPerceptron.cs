@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using TheRavine.Extensions;
 
 public partial class DelayedPerceptron
 {

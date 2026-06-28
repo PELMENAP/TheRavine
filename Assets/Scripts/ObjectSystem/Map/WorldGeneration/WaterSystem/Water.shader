@@ -59,7 +59,7 @@ Shader "The Ravine/Water/WaterShader"
             #pragma fragment frag
             
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
-            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX
             
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -474,7 +474,6 @@ Shader "The Ravine/Water/WaterShader"
                 float3 addSpecular = 0;
                 float3 scatteredLight = 0;
 
-                #if defined(_ADDITIONAL_LIGHTS)
                 uint additionalLightsCount = GetAdditionalLightsCount();
                 LIGHT_LOOP_BEGIN(additionalLightsCount)
                     Light addLight = GetAdditionalLight(lightIndex, input.positionWS, half4(1, 1, 1, 1));
@@ -489,7 +488,6 @@ Shader "The Ravine/Water/WaterShader"
                     // Fake scattering
                     scatteredLight += addLight.color * addLight.distanceAttenuation;
                 LIGHT_LOOP_END
-                #endif
 
                 // 4. Fake water scattering / transmission
                 float waterThickness = max(sceneDepth2 - surfaceDepth, 0);

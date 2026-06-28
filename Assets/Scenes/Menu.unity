@@ -366,7 +366,7 @@ Camera:
   m_GameObject: {fileID: 1403892134}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
+  m_ClearFlags: 4
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
@@ -417,7 +417,7 @@ Transform:
   m_GameObject: {fileID: 1403892134}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 0, y: 500, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -440,7 +440,7 @@ MonoBehaviour:
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 0
   m_Cameras: []
-  m_RendererIndex: -1
+  m_RendererIndex: 0
   m_VolumeLayerMask:
     serializedVersion: 2
     m_Bits: 1
@@ -810,6 +810,10 @@ PrefabInstance:
     - target: {fileID: 5547930866620107832, guid: f6e567151d2629c96a41a4363f4d0672, type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5739520231422091594, guid: f6e567151d2629c96a41a4363f4d0672, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -450.00006
       objectReference: {fileID: 0}
     - target: {fileID: 6487691570843926148, guid: f6e567151d2629c96a41a4363f4d0672, type: 3}
       propertyPath: m_hasFontAssetChanged

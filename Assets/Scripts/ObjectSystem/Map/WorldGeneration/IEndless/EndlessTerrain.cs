@@ -191,6 +191,8 @@ namespace TheRavine.Generator
                             new Vector3(dx * chunkCount * chunkSize, 0, dz * chunkCount * chunkSize);
                     }
                 }
+
+                await UniTask.CompletedTask;
             }
 
             private void FillLodVertices(long centre, Vector3[] targetVertices, int lodStep, int vertsPerAxis)

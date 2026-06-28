@@ -1,5 +1,3 @@
-using System;
-
 public class EntityBrainContext
 {
     public readonly LSTMContext        CoordLSTM;
