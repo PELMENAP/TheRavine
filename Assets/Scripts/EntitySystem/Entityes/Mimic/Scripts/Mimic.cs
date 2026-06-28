@@ -1,0 +1,77 @@
+using UnityEngine;
+using TheRavine.Generator;
+
+public class Mimic : MonoBehaviour
+{
+    public Material legMaterial;
+    public int numberOfLegs = 5;
+    public int partsPerLeg = 4;
+    public int minimumAnchoredLegs = 2;
+    public float minLegLifetime = 5f;
+    public float maxLegLifetime = 15f;
+    public float newLegRadius = 3f;
+    public float minLegDistance = 4.5f;
+    public float maxLegDistance = 6.3f;
+    public int legResolution = 40;
+    public int verticeCount = 6;
+    public float minGrowCoef = 4.5f;
+    public float maxGrowCoef = 6.5f;
+    public float newLegCooldown = 0.3f;
+
+    public float legMinHeight = 1f;
+    public float legMaxHeight = 3f;
+    public float handleOffsetMinRadius = 0.5f;
+    public float handleOffsetMaxRadius = 1.5f;
+    public float finalFootDistance = 1f;
+    public float minRotSpeed = 10f;
+    public float maxRotSpeed = 30f;
+    public float minOscillationSpeed = 1f;
+    public float maxOscillationSpeed = 3f;
+    public float legWidth = 0.2f;
+
+    public Vector3 velocity;
+    public Vector3 legPlacerOrigin;
+    public int legCount;
+    public int deployedLegs;
+    public int minimumAnchoredParts;
+    public int maxLegs;
+
+    public LegPool Pool { get; private set; }
+    public MapGenerator MapGenerator { get; private set; }
+
+    private LegPlanner planner;
+    private LegAnimator animator;
+    private LegRenderer legRenderer;
+
+    private void Awake()
+    {
+        maxLegs = numberOfLegs * partsPerLeg;
+        minimumAnchoredParts = minimumAnchoredLegs * partsPerLeg;
+        maxLegDistance = newLegRadius * 2.1f;
+
+        Pool = new LegPool(maxLegs, legResolution);
+        planner = new LegPlanner();
+        animator = new LegAnimator();
+        legRenderer = new LegRenderer();
+        
+        legRenderer.Initialize(this);
+    }
+
+    private async void Start()
+    {
+        MapGenerator = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
+        Vector2 r = Random.insideUnitCircle;
+        velocity = new Vector3(r.x, 0f, r.y);
+    }
+
+    private void Update()
+    {
+        if (MapGenerator == null) return;
+
+        legPlacerOrigin = transform.position + velocity.normalized * newLegRadius;
+
+        planner.Update(this, Time.deltaTime);
+        animator.Update(this, Time.deltaTime);
+        legRenderer.UpdateMesh(this);
+    }
+}

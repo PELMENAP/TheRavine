@@ -74,10 +74,10 @@ Material:
     - DepthFade: -0.24
     - Displacement: 0.3
     - Foam: 0.5
-    - FoamCrestStrength: 0.7
-    - FoamRippleStrength: 0.4
+    - FoamCrestStrength: 0.1
+    - FoamRippleStrength: 0.1
     - FoamScale: 0.5
-    - FoamShoreStrength: 0.6
+    - FoamShoreStrength: 0.3
     - Metallic: 0.084
     - NormalStrength: 0.4
     - Refraction: 0.02

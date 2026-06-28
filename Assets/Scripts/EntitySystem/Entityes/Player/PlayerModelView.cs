@@ -61,7 +61,7 @@ namespace TheRavine.EntityControl
                 if (!IsClient || !IsOwner) return;
                 
                 RequestCameraServerRpc(NetworkManager.Singleton.LocalClientId);
-                EntitySystem entitySystem = await WaitUntilServiceReady<EntitySystem>();
+                EntitySystem entitySystem = await ServiceLocator.WaitUntilServiceReady<EntitySystem>();
                 entitySystem.AddToGlobal(PlayerEntity);
 
                 await UniTask.CompletedTask;
@@ -70,15 +70,6 @@ namespace TheRavine.EntityControl
             {
                 logger.LogError($"Player entity {NetworkManager.Singleton.LocalClientId} cannot setup networking: {ex.Message}");
             }
-        }
-        private async UniTask<T> WaitUntilServiceReady<T>() where T : class
-        {
-            T service;
-            while (!ServiceLocator.Services.TryGet(out service))
-            {
-                await UniTask.Yield();
-            }
-            return service;
         }
         [ServerRpc]
         private void RequestCameraServerRpc(ulong clientId)

@@ -49,26 +49,26 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
     [SerializeField] private float maxWanderTime = 3f;
     [SerializeField] private float idleTime      = 2f;
 
-    private SharedHierarchicalBrain _sharedBrain;
-    private InputVectorizer         _vectorizer;
-    private EntityBrainContext      _ctx;
+    private SharedHierarchicalBrain sharedBrainReference;
+    private InputVectorizer         vectorizer;
+    private EntityBrainContext      entityBrainContext;
 
-    private Rigidbody _rb;
-    [SerializeField] private SpriteRenderer _sr;
-    private CancellationTokenSource _cts;
+    private Rigidbody rb;
+    [SerializeField] private SpriteRenderer sr;
+    private CancellationTokenSource cts;
 
-    private bool    _isMoving;
-    private bool    _isAttacking;
-    private bool    _canAttack = true;
+    private bool    isMoving;
+    private bool    isAttacking;
+    private bool    canAttack = true;
 
-    private string  _ownSpeech   = "";
-    private string  _otherSpeech = "";
+    private string  ownSpeech   = "";
+    private string  otherSpeech = "";
 
-    private int     _lastActionIndex;
-    private int     _timeOfDay;
-    private float[] _lastInput;
+    private int     lastActionIndex;
+    private int     timeOfDay;
+    private float[] lastInput;
 
-    private readonly List<Vector2> _pointsOfInterest = new();
+    private readonly List<Vector2> pointsOfInterest = new();
     private const int MaxPoints = 5;
 
     public event Action<Entity> OnDied;
@@ -81,14 +81,14 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
         Mimic = 9, Rest = 10, Threaten = 11, ShareFood = 12, 
     }
 
-    public EntityBrainContext BrainContext => _ctx;
+    public EntityBrainContext BrainContext => entityBrainContext;
 
     private void Awake()
     {
-        _rb = GetComponent<Rigidbody>();
+        rb = GetComponent<Rigidbody>();
 
-        _rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-        _rb.freezeRotation         = true;
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+        rb.freezeRotation         = true;
 
         currentHealth = maxHealth.Value / 2f;
         currentEnergy = maxEnergy.Value / 2f;
@@ -99,35 +99,35 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
         SharedHierarchicalBrain brain,
         EntityBrainContext ctx)
     {
-        _sharedBrain   = brain;
-        _vectorizer    = new InputVectorizer(maxHealth, maxEnergy);
-        _ctx           = ctx;
+        sharedBrainReference   = brain;
+        vectorizer    = new InputVectorizer(maxHealth, maxEnergy);
+        entityBrainContext           = ctx;
     }
     public void SetUpAsNew()
     {
-        _cts = new CancellationTokenSource();
+        cts = new CancellationTokenSource();
         StartLoops();
     }
 
     private void OnDisable()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
-        _cts = new CancellationTokenSource();
-        _ctx?.ResetMemory();
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+        entityBrainContext?.ResetMemory();
         Die();
     }
 
     private void OnDestroy()
     {
         DialogSystem.Instance.RemoveDialogListener(this);
-        _vectorizer?.Dispose();
+        vectorizer?.Dispose();
     }
 
     private void StartLoops()
     {
-        BehaviorLoopAsync(_cts.Token).Forget();
-        RegenerateEnergyAsync(_cts.Token).Forget();
+        BehaviorLoopAsync(cts.Token).Forget();
+        RegenerateEnergyAsync(cts.Token).Forget();
     }
 
     private async UniTaskVoid BehaviorLoopAsync(CancellationToken ct)
@@ -142,35 +142,35 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
 
     private async UniTask PerformOneStepAsync(CancellationToken ct)
     {
-        _timeOfDay = (_timeOfDay + 1) % 24;
+        timeOfDay = (timeOfDay + 1) % 24;
 
         float inDanger    = ComputeDangerLevel();
         float timeToBreed = ComputeBreedReadiness();
         float enemyDist   = FindNearestEntityDistance();
         float foodDist    = FindNearestFoodDistance();
 
-        _lastInput = _vectorizer.Vectorize(
+        lastInput = vectorizer.Vectorize(
             currentHealth, currentEnergy,
-            _lastActionIndex, _timeOfDay,
+            lastActionIndex, timeOfDay,
             inDanger, timeToBreed,
-            _otherSpeech, enemyDist, foodDist);
+            otherSpeech, enemyDist, foodDist);
 
-        _otherSpeech = "";
+        otherSpeech = "";
 
-        int actionIndex  = _sharedBrain.Predict(_lastInput, _ctx);
-        _lastActionIndex = actionIndex;
-        // coordinatorEntropy = _sharedBrain.GetCoordinatorEntropy(_ctx);
+        int actionIndex  = sharedBrainReference.Predict(lastInput, entityBrainContext);
+        lastActionIndex = actionIndex;
+        // coordinatorEntropy = sharedBrainReference.GetCoordinatorEntropy(entityBrainContext);
 
         var action = (EntityAction)actionIndex;
 
         if (label != null)
-            label.text = $"{_ctx.CurrentGoal} - {action}\n"
+            label.text = $"{entityBrainContext.CurrentGoal} - {action}\n"
                        + $"{(int)currentHealth} HP / {(int)currentEnergy} ENERGY\n"
-                       + _ownSpeech;
+                       + ownSpeech;
 
         if (!CanPerformAction(action))
         {
-            _sharedBrain.GiveReward(0.25f, _ctx);
+            sharedBrainReference.GiveReward(0.25f, entityBrainContext);
             currentHealth -= 3f;
             return;
         }
@@ -202,9 +202,9 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
 
     private async UniTask IdleAsync(CancellationToken ct)
     {
-        _isMoving          = false;
-        _rb.linearVelocity = Vector2.zero;
-        _sharedBrain.GiveReward(0.5f, _ctx);
+        isMoving          = false;
+        rb.linearVelocity = Vector2.zero;
+        sharedBrainReference.GiveReward(0.5f, entityBrainContext);
         await UniTask.Delay(TimeSpan.FromSeconds(idleTime), cancellationToken: ct);
     }
 
@@ -221,74 +221,74 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
     private void RememberCurrentPosition()
     {
         Vector2 pos = transform.position;
-        if (_pointsOfInterest.Count >= MaxPoints) _pointsOfInterest.RemoveAt(0);
+        if (pointsOfInterest.Count >= MaxPoints) pointsOfInterest.RemoveAt(0);
 
-        if (_pointsOfInterest.Count > 0 && Vector2.Distance(_pointsOfInterest[0], pos) < 10f)
+        if (pointsOfInterest.Count > 0 && Vector2.Distance(pointsOfInterest[0], pos) < 10f)
         {
-            _sharedBrain.GiveReward(0.3f, _ctx);
+            sharedBrainReference.GiveReward(0.3f, entityBrainContext);
             return;
         }
 
-        _pointsOfInterest.Add(pos);
-        _sharedBrain.GiveReward(0.65f, _ctx);
+        pointsOfInterest.Add(pos);
+        sharedBrainReference.GiveReward(0.65f, entityBrainContext);
         StartCoroutine(FlashColor(Color.cyan, 0.3f));
     }
 
     private async UniTask GoToPointAsync(CancellationToken ct)
     {
-        if (_pointsOfInterest.Count == 0) return;
-        int     idx    = RavineRandom.RangeInt(0, _pointsOfInterest.Count);
-        Vector2 target = _pointsOfInterest[idx];
-        Color   orig   = _sr.color;
-        _sr.color      = Color.blue;
+        if (pointsOfInterest.Count == 0) return;
+        int     idx    = RavineRandom.RangeInt(0, pointsOfInterest.Count);
+        Vector2 target = pointsOfInterest[idx];
+        Color   orig   = sr.color;
+        sr.color      = Color.blue;
         await MoveToAsync(target, moveSpeed, 5f, energyCostPerSecondMoving, ct);
-        _sr.color = orig;
-        _sharedBrain.GiveReward(0.55f, _ctx);
+        sr.color = orig;
+        sharedBrainReference.GiveReward(0.55f, entityBrainContext);
     }
 
     private async UniTask AttackAsync(CancellationToken ct)
     {
         GameObject target = FindNearbyEntity();
-        if (target == null) { _sharedBrain.GiveReward(0.2f, _ctx); return; }
+        if (target == null) { sharedBrainReference.GiveReward(0.2f, entityBrainContext); return; }
 
-        Color orig = _sr.color;
-        _sr.color  = Color.red;
+        Color orig = sr.color;
+        sr.color  = Color.red;
         await MoveToAsync(target.transform.position, moveSpeed, 2f, energyCostPerSecondMoving, ct);
 
         if (target != null &&
             Vector2.Distance(transform.position, target.transform.position) <= attackRange &&
-            _canAttack)
+            canAttack)
         {
             currentEnergy -= attackEnergyCost;
-            _isAttacking   = true;
-            _canAttack     = false;
+            isAttacking   = true;
+            canAttack     = false;
 
             var victim = target.GetComponent<Entity>();
             if (victim != null)
             {
                 victim.TakeDamage(attackDamage);
                 currentHealth += attackEnergyCost * 1.5f;
-                _sharedBrain.GiveReward(0.9f, _ctx);
+                sharedBrainReference.GiveReward(0.9f, entityBrainContext);
             }
-            else { _sharedBrain.GiveReward(0.4f, _ctx); }
+            else { sharedBrainReference.GiveReward(0.4f, entityBrainContext); }
 
             await UniTask.Delay(TimeSpan.FromSeconds(attackCooldown), cancellationToken: ct);
-            _isAttacking = false;
-            _canAttack   = true;
+            isAttacking = false;
+            canAttack   = true;
         }
-        else { _sharedBrain.GiveReward(0.3f, _ctx); }
+        else { sharedBrainReference.GiveReward(0.3f, entityBrainContext); }
 
-        _sr.color = orig;
+        sr.color = orig;
     }
 
     private async UniTask FleeAsync(CancellationToken ct)
     {
         DialogSystem.Instance.UpdateListenerPosition(this);
         GameObject nearest = FindNearbyEntity();
-        if (nearest == null) { _sharedBrain.GiveReward(0.3f, _ctx); return; }
+        if (nearest == null) { sharedBrainReference.GiveReward(0.3f, entityBrainContext); return; }
 
-        Color   orig   = _sr.color;
-        _sr.color      = Color.green;
+        Color   orig   = sr.color;
+        sr.color      = Color.green;
         Vector2 away   = ((Vector2)transform.position - (Vector2)nearest.transform.position).normalized;
         Vector2 target = (Vector2)transform.position + away * detectionRadius * 1.5f;
         await MoveToAsync(target, runSpeed, 2f, energyCostPerSecondRunning, ct);
@@ -298,31 +298,31 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
         {
             dist = Vector2.Distance(transform.position, nearest.transform.position);
         }
-        _sharedBrain.GiveReward(Mathf.Clamp01(dist / detectionRadius), _ctx);
-        _sr.color = orig;
+        sharedBrainReference.GiveReward(Mathf.Clamp01(dist / detectionRadius), entityBrainContext);
+        sr.color = orig;
     }
 
     private async UniTask EatAsync(CancellationToken ct)
     {
-        Color orig = _sr.color;
-        _sr.color  = Color.magenta;
+        Color orig = sr.color;
+        sr.color  = Color.magenta;
 
         Collider2D food = Physics2D.OverlapCircle(transform.position, detectionRadius, foodLayer);
         if (food != null)
         {
             currentHealth = Mathf.Min(currentHealth + 30f, maxHealth.Value);
             currentEnergy = Mathf.Min(currentEnergy + 20f, maxEnergy.Value);
-            _sharedBrain.GiveReward(0.85f, _ctx);
+            sharedBrainReference.GiveReward(0.85f, entityBrainContext);
             Destroy(food.gameObject);
         }
         else
         {
             currentHealth = Mathf.Min(currentHealth + 5f,  maxHealth.Value);
             currentEnergy = Mathf.Min(currentEnergy + 5f,  maxEnergy.Value);
-            _sharedBrain.GiveReward(0.35f, _ctx);
+            sharedBrainReference.GiveReward(0.35f, entityBrainContext);
         }
 
-        _sr.color = orig;
+        sr.color = orig;
         await UniTask.Yield(ct);
     }
 
@@ -333,55 +333,55 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
 
         OnReproduceRequest?.Invoke(this);
 
-        _sharedBrain.GiveReward(0.8f, _ctx);
+        sharedBrainReference.GiveReward(0.8f, entityBrainContext);
         await UniTask.Delay(TimeSpan.FromSeconds(idleTime), cancellationToken: ct);
     }
 
     private async UniTask SpeechAsync(CancellationToken ct)
     {
-        _ownSpeech = _vectorizer.HashFloatArray(_lastInput);
-        DialogSystem.Instance.OnSpeechSend(this, _ownSpeech);
+        ownSpeech = vectorizer.HashFloatArray(lastInput);
+        DialogSystem.Instance.OnSpeechSend(this, ownSpeech);
         currentEnergy -= 5f;
-        _sharedBrain.GiveReward(0.55f, _ctx);
+        sharedBrainReference.GiveReward(0.55f, entityBrainContext);
         await UniTask.Yield(ct);
     }
 
     private async UniTask MimicAsync(CancellationToken ct)
     {
         GameObject nearest = FindNearbyEntity();
-        if (nearest == null) { _sharedBrain.GiveReward(0.2f, _ctx); return; }
+        if (nearest == null) { sharedBrainReference.GiveReward(0.2f, entityBrainContext); return; }
 
         var other = nearest.GetComponent<Entity>();
-        if (other == null) { _sharedBrain.GiveReward(0.2f, _ctx); return; }
+        if (other == null) { sharedBrainReference.GiveReward(0.2f, entityBrainContext); return; }
 
-        int mimicAction = other._lastActionIndex;
+        int mimicAction = other.lastActionIndex;
 
-        float reward = 0.3f + other._ctx.CoordMLP.AverageEntropy * 0.2f;
-        _sharedBrain.GiveReward(reward, _ctx);
+        float reward = 0.3f + other.entityBrainContext.CoordMLP.AverageEntropy * 0.2f;
+        sharedBrainReference.GiveReward(reward, entityBrainContext);
 
-        Color orig = _sr.color;
-        _sr.color  = Color.Lerp(_sr.color, other._sr.color, 0.5f);
+        Color orig = sr.color;
+        sr.color  = Color.Lerp(sr.color, other.sr.color, 0.5f);
 
-        _lastActionIndex = mimicAction;
+        lastActionIndex = mimicAction;
         await UniTask.Delay(TimeSpan.FromSeconds(0.5f), cancellationToken: ct);
-        _sr.color = orig;
+        sr.color = orig;
     }
 
     private async UniTask RestAsync(CancellationToken ct)
     {
-        bool isNight = _timeOfDay >= 20 || _timeOfDay <= 5;
+        bool isNight = timeOfDay >= 20 || timeOfDay <= 5;
 
         if (!isNight)
         {
-            _sharedBrain.GiveReward(0.1f, _ctx); // штраф за сон днём
+            sharedBrainReference.GiveReward(0.1f, entityBrainContext); // штраф за сон днём
             await UniTask.Yield(ct);
             return;
         }
 
-        _isMoving          = false;
-        _rb.linearVelocity = Vector2.zero;
-        Color orig = _sr.color;
-        _sr.color  = new Color(0.3f, 0.3f, 0.6f);
+        isMoving          = false;
+        rb.linearVelocity = Vector2.zero;
+        Color orig = sr.color;
+        sr.color  = new Color(0.3f, 0.3f, 0.6f);
 
         float elapsed = 0f;
         float restDuration = 3f;
@@ -393,34 +393,34 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
             await UniTask.Yield(ct);
         }
 
-        _sr.color = orig;
-        _sharedBrain.GiveReward(0.7f, _ctx);
+        sr.color = orig;
+        sharedBrainReference.GiveReward(0.7f, entityBrainContext);
     }
 
     private async UniTask ThreatenAsync(CancellationToken ct)
     {
         GameObject target = FindNearbyEntity();
-        if (target == null) { _sharedBrain.GiveReward(0.2f, _ctx); return; }
+        if (target == null) { sharedBrainReference.GiveReward(0.2f, entityBrainContext); return; }
 
         float dist = Vector2.Distance(transform.position, target.transform.position);
-        if (dist > attackRange * 2f) { _sharedBrain.GiveReward(0.15f, _ctx); return; }
+        if (dist > attackRange * 2f) { sharedBrainReference.GiveReward(0.15f, entityBrainContext); return; }
 
-        Color orig = _sr.color;
-        _sr.color  = new Color(1f, 0.5f, 0f);
+        Color orig = sr.color;
+        sr.color  = new Color(1f, 0.5f, 0f);
 
-        DialogSystem.Instance.OnSpeechSend(this, "THREAT:" + _vectorizer.HashFloatArray(_lastInput));
+        DialogSystem.Instance.OnSpeechSend(this, "THREAT:" + vectorizer.HashFloatArray(lastInput));
         currentEnergy -= 3f;
 
         float threatReward = dist < attackRange ? 0.6f : 0.4f;
-        _sharedBrain.GiveReward(threatReward, _ctx);
+        sharedBrainReference.GiveReward(threatReward, entityBrainContext);
 
         await UniTask.Delay(TimeSpan.FromSeconds(0.8f), cancellationToken: ct);
-        _sr.color = orig;
+        sr.color = orig;
     }
 
     private async UniTask ShareFoodAsync(CancellationToken ct)
     {
-        if (currentHealth < 80f) { _sharedBrain.GiveReward(0.1f, _ctx); return; }
+        if (currentHealth < 80f) { sharedBrainReference.GiveReward(0.1f, entityBrainContext); return; }
 
         Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, detectionRadius, entityLayer);
         Entity     best = null;
@@ -439,7 +439,7 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
 
         if (best == null || minH > currentHealth * 0.8f)
         {
-            _sharedBrain.GiveReward(0.25f, _ctx);
+            sharedBrainReference.GiveReward(0.25f, entityBrainContext);
             return;
         }
 
@@ -451,7 +451,7 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
         best.StartCoroutine(best.FlashColor(Color.yellow, 0.3f));
 
         float needFactor = 1f - Mathf.Clamp01(minH / best.maxHealth.Value);
-        _sharedBrain.GiveReward(0.5f + needFactor * 0.35f, _ctx);
+        sharedBrainReference.GiveReward(0.5f + needFactor * 0.35f, entityBrainContext);
 
         await UniTask.Delay(TimeSpan.FromSeconds(0.5f), cancellationToken: ct);
     }
@@ -464,9 +464,9 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
     }
     private void Die()
     {
-        _cts?.Cancel();
-        if (_sr) _sr.color = Color.gray;
-        if (_rb) { _rb.linearVelocity = Vector2.zero; }
+        cts?.Cancel();
+        if (sr) sr.color = Color.gray;
+        if (rb) { rb.linearVelocity = Vector2.zero; }
 
         DialogSystem.Instance.RemoveDialogListener(this);
         OnDied?.Invoke(this);
@@ -475,16 +475,16 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
 
     public float   GetDialogDistance()  => 20f;
     public Vector3 GetCurrentPosition() => transform ? transform.position : Vector3.zero;
-    public void    OnSpeechGet(IDialogSender sender, string message) => _otherSpeech = message;
+    public void    OnSpeechGet(IDialogSender sender, string message) => otherSpeech = message;
     public void    OnDialogGetRequire() { }
 
     private bool CanPerformAction(EntityAction action) => action switch
     {
-        EntityAction.Attack    => currentEnergy >= attackEnergyCost && _canAttack,
+        EntityAction.Attack    => currentEnergy >= attackEnergyCost && canAttack,
         EntityAction.Wander    => currentEnergy > 0,
         EntityAction.Flee      => currentEnergy > 0,
         EntityAction.Speech    => currentEnergy > 0,
-        EntityAction.GoToPoint => _pointsOfInterest.Count > 0 && currentEnergy > 0,
+        EntityAction.GoToPoint => pointsOfInterest.Count > 0 && currentEnergy > 0,
         EntityAction.Reproduce => currentEnergy >= reproduceEnergyCost && currentHealth >= reproduceHealthCost,
         _                      => true,
     };
@@ -509,7 +509,7 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
     private async UniTask MoveToAsync(Vector3 target, float speed, float maxDuration, 
     float energyCost, CancellationToken ct)
     {
-        _isMoving = true;
+        isMoving = true;
         float startTime = Time.time;
 
         while (Vector3.Distance(transform.position, target) > 0.1f && 
@@ -520,20 +520,20 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
             Vector3 direction = (target - transform.position).normalized;
             direction.y = 0;
 
-            _rb.linearVelocity = direction * speed;
+            rb.linearVelocity = direction * speed;
             currentEnergy = Mathf.Max(0, currentEnergy - energyCost * Time.deltaTime);
             await UniTask.Yield(ct);
         }
 
-        _isMoving = false;
-        _rb.linearVelocity = Vector3.zero;
+        isMoving = false;
+        rb.linearVelocity = Vector3.zero;
     }
 
     private async UniTaskVoid RegenerateEnergyAsync(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
         {
-            if (!_isMoving && !_isAttacking && currentEnergy < maxEnergy.Value)
+            if (!isMoving && !isAttacking && currentEnergy < maxEnergy.Value)
                 currentEnergy = Mathf.Min(currentEnergy + energyRegenRate * Time.deltaTime, maxEnergy.Value);
 
             if (currentEnergy < 5f) { currentHealth -= 15f; currentEnergy += 5f; }
@@ -572,10 +572,10 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
 
     private IEnumerator FlashColor(Color flash, float duration)
     {
-        Color orig = _sr.color;
-        _sr.color  = flash;
+        Color orig = sr.color;
+        sr.color  = flash;
         yield return new WaitForSeconds(duration);
-        _sr.color  = orig;
+        sr.color  = orig;
     }
 
     private void OnDrawGizmosSelected()
@@ -585,6 +585,6 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
         Gizmos.color = Color.cyan;
-        foreach (var p in _pointsOfInterest) Gizmos.DrawSphere(p, 0.3f);
+        foreach (var p in pointsOfInterest) Gizmos.DrawSphere(p, 0.3f);
     }
 }

@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Volumetric Fog
+  m_Shader: {fileID: 4800000, guid: 7d14ecd263f1b351986ba68a52ea7219, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _ADDITIONAL_LIGHTS
+  m_InvalidKeywords:
+  - _AMBIENT_LIGHT
+  - _ENABLE_AMBIENT_LIGHT
+  - _INTERNAL_ADDITIONAL_LIGHT_SHADOWS
+  - _INTERNAL_MAIN_LIGHT_SHADOWS
+  - _MAIN_LIGHT
+  - _OUTPUT_COMPOSITE
+  - _SHADOWS
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _HeightMaskTexture:
+        m_Texture: {fileID: 2800000, guid: c6e2f801e750a4d4ea82816b303816ba, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints:
+    - _AdditionalLightSelfShadowSteps: 1
+    - _MainLightSelfShadowSteps: 1
+    - _Steps: 10
+    m_Floats:
+    - _AdditionalLightSelfShadowDistance: 8
+    - _Density: 0.309
+    - _HeightMaskBlend: 0.99
+    - _HeightMaskFalloff: 10
+    - _HeightMaskLength: 16
+    - _HeightMaskOffset: 0
+    - _HeightMaskRemapMax: 0.8
+    - _HeightMaskRemapMin: 0.1
+    - _HeightMaskTextureAmplitude: 2
+    - _HeightMaskTexturePower: 1
+    - _HeightMaskTextureScale: 0.01
+    - _MainLightSelfShadowDistance: 4
+    - _MaxDistance: 1000
+    - _PhaseG: 0.103
+    - _SelfShadowPower: 2
+    - _SelfShadowRemapMax: 0.8
+    - _SelfShadowRemapMin: 0.2
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 0.9411765}
+    - _HeightMaskTextureAnimation: {r: 0.01, g: 0.02, b: 0, a: 0}
+    - _SelfShadowColor: {r: 0, g: 0, b: 0, a: 0.78431374}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.78431374}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
