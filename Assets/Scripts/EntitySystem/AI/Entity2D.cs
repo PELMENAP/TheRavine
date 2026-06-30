@@ -14,6 +14,9 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
     [SerializeField] private TextMeshPro label;
     [SerializeField] private GameObject  prefab;
 
+    [Header("Звук")]
+    [SerializeField] private SynthConfig config;
+
     [Header("Параметры")]
     private ReactiveProperty<float> maxHealth = new(200f);
     private ReactiveProperty<float> maxEnergy = new(200f);
@@ -52,6 +55,7 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
     private SharedHierarchicalBrain sharedBrainReference;
     private InputVectorizer         vectorizer;
     private EntityBrainContext      entityBrainContext;
+    private StringToAudioGenerator  stringToAudioGenerator;
 
     private Rigidbody rb;
     [SerializeField] private SpriteRenderer sr;
@@ -67,6 +71,7 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
     private int     lastActionIndex;
     private int     timeOfDay;
     private float[] lastInput;
+    private float inDanger, timeToBreed, enemyDist, foodDist;
 
     private readonly List<Vector2> pointsOfInterest = new();
     private const int MaxPoints = 5;
@@ -144,10 +149,10 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
     {
         timeOfDay = (timeOfDay + 1) % 24;
 
-        float inDanger    = ComputeDangerLevel();
-        float timeToBreed = ComputeBreedReadiness();
-        float enemyDist   = FindNearestEntityDistance();
-        float foodDist    = FindNearestFoodDistance();
+        inDanger    = ComputeDangerLevel();
+        timeToBreed = ComputeBreedReadiness();
+        enemyDist   = FindNearestEntityDistance();
+        foodDist    = FindNearestFoodDistance();
 
         lastInput = vectorizer.Vectorize(
             currentHealth, currentEnergy,
@@ -341,6 +346,9 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
     {
         ownSpeech = vectorizer.HashFloatArray(lastInput);
         DialogSystem.Instance.OnSpeechSend(this, ownSpeech);
+
+        await stringToAudioGenerator.PlayFromStringAsync(ownSpeech);
+
         currentEnergy -= 5f;
         sharedBrainReference.GiveReward(0.55f, entityBrainContext);
         await UniTask.Yield(ct);

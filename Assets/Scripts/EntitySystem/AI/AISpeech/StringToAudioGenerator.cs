@@ -1,112 +1,102 @@
-using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Unity.Collections;
 using UnityEngine;
 
+[RequireComponent(typeof(AudioSource))]
 public class StringToAudioGenerator : MonoBehaviour
 {
-    [Header("Audio Settings")]
-    [SerializeField] private int sampleRate = 44100;
-    [SerializeField, Min(0.01f)] private float duration = 1f;
+    [SerializeField] private SynthConfig config;
     [SerializeField] private AudioSource audioSource;
-
-    [Header("Synthesis")]
-    [SerializeField, Range(0.01f, 1f)] private float baseVolume = 0.3f;
-    [SerializeField, Range(50f, 2000f)] private float baseFrequency = 220f;
-    [SerializeField, Range(1, 12)] private int harmonicsCount = 6;
-    [SerializeField] private WaveformType waveform = WaveformType.Sine;
     [SerializeField] private string input;
-    private AudioClip _clip;
-    private int _clipCapacity = 0;
-    private float[] _managedSamples;
 
-    private void Start()
+    private AudioClip clip;
+    private int clipCapacity;
+    private float[] managedSamples;
+    private NativeArray<float> samplesBuffer;
+
+    private void Awake()
     {
         if (!audioSource) audioSource = GetComponent<AudioSource>();
+        if (config) StableHashService.Configure(config.hashCacheCapacity);
 
-
+        int maxSampleCount = Mathf.CeilToInt(config.sampleRate * config.duration);
+        samplesBuffer = new NativeArray<float>(maxSampleCount, Allocator.Persistent);
     }
 
-    public void PlayString()
-    {
-        PlayFromStringAsync(input).Forget();
-    }
-
-    private void OnDisable()
-    {
-        StopAndReleaseClip();
-    }
+    private void OnDisable() => ReleaseClip();
 
     private void OnDestroy()
     {
-        StopAndReleaseClip();
+        ReleaseClip();
+        if (samplesBuffer.IsCreated) samplesBuffer.Dispose();
+        // GeneticAudioProfileCache не диспозится здесь — он разделяется между агентами
+        // и живёт по своему LRU, как StableHashService
     }
-    public async UniTask<AudioClip> PlayFromStringAsync(string input, CancellationToken ct = default)
+
+    [ContextMenu("Проиграть строку")]
+    public void PlayString() => PlayFromStringAsync(input).Forget();
+
+    public async UniTask<AudioClip> PlayFromStringAsync(
+        string speech,
+        float health = 100, float energy = 100, float danger = 0, float timeToBreed = 0,
+        float actionFrequency = 0, float nearestEnemyDist = 0,
+        float size = 1, float age = 1, CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(input) || ct.IsCancellationRequested) return null;
+        if (string.IsNullOrEmpty(speech) || ct.IsCancellationRequested) return null;
 
-        var hash = StableHashService.CreateHashData(input, harmonicsCount);
-
-        int sampleCount = Mathf.CeilToInt(sampleRate * duration);
-
-        EnsureClipCapacity(sampleCount);
-
+        int sampleCount = Mathf.CeilToInt(config.sampleRate * config.duration);
+        EnsureClip(sampleCount);
         EnsureManagedBuffer(sampleCount);
 
+        var profile = AgentAudioProfileBuilder.Build(
+            health, energy, danger, timeToBreed,
+            speech, actionFrequency, nearestEnemyDist, size, age);
+
+        var genetic = GeneticAudioProfileCache.Resolve(
+            profile.GeneticTimbreSeed, profile.HarmonicsCount, config.duration);
+
+        var state = AudioParameterMapper.BuildState(genetic, profile);
+        
         await AudioSynthesizer.GenerateSamplesToManagedAsync(
-            hash,
-            sampleRate,
-            duration,
-            baseFrequency,
-            baseVolume,
-            waveform,
-            _managedSamples,
-            ct
-        );
+            genetic, state, samplesBuffer,
+            config.sampleRate, config.duration,
+            managedSamples, ct);
 
-        if (ct.IsCancellationRequested) return null;
-        if (_clip == null) return null;
+        if (ct.IsCancellationRequested || clip == null) return null;
 
-
-        _clip.SetData(_managedSamples, 0);
-
-        audioSource.clip = _clip;
+        clip.SetData(managedSamples, 0);
+        audioSource.clip = clip;
         audioSource.Play();
-
-        return _clip;
+        return clip;
     }
 
-    private void EnsureClipCapacity(int requiredSamples)
+    private void EnsureClip(int requiredSamples)
     {
-        if (_clip != null && requiredSamples <= _clipCapacity) return;
-
-        if (_clip != null)
-        {
-            if (Application.isPlaying) Destroy(_clip);
-            else DestroyImmediate(_clip);
-        }
-
-        _clip = AudioClip.Create("StringAudio", requiredSamples, 1, sampleRate, false);
-        _clipCapacity = requiredSamples;
+        if (clip != null && requiredSamples <= clipCapacity) return;
+        DestroyClip();
+        clip = AudioClip.Create("StringAudio", requiredSamples, 1, config.sampleRate, false);
+        clipCapacity = requiredSamples;
     }
 
     private void EnsureManagedBuffer(int requiredSamples)
     {
-        if (_managedSamples == null || _managedSamples.Length < requiredSamples)
-        {
-            _managedSamples = new float[requiredSamples];
-        }
+        if (managedSamples == null || managedSamples.Length < requiredSamples)
+            managedSamples = new float[requiredSamples];
     }
 
-    private void StopAndReleaseClip()
+    private void ReleaseClip()
     {
-        if (audioSource && audioSource.clip == _clip) audioSource.Stop();
-        if (_clip != null)
-        {
-            if (Application.isPlaying) Destroy(_clip);
-            else DestroyImmediate(_clip);
-            _clip = null;
-            _clipCapacity = 0;
-        }
+        if (audioSource && audioSource.clip == clip) audioSource.Stop();
+        DestroyClip();
+    }
+
+    private void DestroyClip()
+    {
+        if (clip == null) return;
+        if (Application.isPlaying) Destroy(clip);
+        else DestroyImmediate(clip);
+        clip = null;
+        clipCapacity = 0;
     }
 }
