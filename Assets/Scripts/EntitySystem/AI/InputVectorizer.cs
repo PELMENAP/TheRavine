@@ -138,7 +138,7 @@ public class InputVectorizer
         _vector[startIdx + 2] = ((h2)        & 0xFFFF) / 65535f;
         _vector[startIdx + 3] = ((h2 >> 16)  & 0xFFFF) / 65535f;
     }
-    public string HashFloatArray(float[] array)
+    public string HashFloatArray(float[] array) // last _vector
     {
         if (array == null || array.Length == 0) return "00000000";
 
