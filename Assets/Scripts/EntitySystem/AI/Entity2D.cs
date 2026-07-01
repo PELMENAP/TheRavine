@@ -72,6 +72,7 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
     private int     timeOfDay;
     private float[] lastInput;
     private float inDanger, timeToBreed, enemyDist, foodDist;
+    private float nearestEnemyDist; 
 
     private readonly List<Vector2> pointsOfInterest = new();
     private const int MaxPoints = 5;
@@ -347,7 +348,8 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
         ownSpeech = vectorizer.HashFloatArray(lastInput);
         DialogSystem.Instance.OnSpeechSend(this, ownSpeech);
 
-        await stringToAudioGenerator.PlayFromStringAsync(ownSpeech);
+        await stringToAudioGenerator.PlayFromStringAsync(ownSpeech, currentHealth, currentEnergy, 
+        inDanger, timeToBreed, lastActionIndex, nearestEnemyDist, 1, 1);
 
         currentEnergy -= 5f;
         sharedBrainReference.GiveReward(0.55f, entityBrainContext);
@@ -563,6 +565,9 @@ public class Entity : MonoBehaviour, IDialogListener, IDialogSender
             float d = Vector3.Distance(transform.position, col.transform.position);
             if (d < minD) { minD = d; best = col.gameObject; }
         }
+        
+        nearestEnemyDist = minD;
+
         return best;
     }
 
