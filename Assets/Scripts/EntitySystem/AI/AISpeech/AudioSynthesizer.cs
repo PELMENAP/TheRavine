@@ -8,7 +8,7 @@ using UnityEngine;
 
 public static class AudioSynthesizer
 {
-    [BurstCompile]
+    [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
     private struct SynthJob : IJobParallelFor
     {
         public NativeArray<float> Samples;
@@ -28,13 +28,20 @@ public static class AudioSynthesizer
         public float VibratoFrequency;
         public float VibratoDepthCents;
         public float VibratoDelay;
+        public float VibratoRampTime;
         public float DriftAmplitude;
+        public float DriftFrequency;
         public float AmplitudeModDepth;
+        public float AmplitudeModFrequency;
         public float FmRatio;
         public float FmDepth;
         public float RingModFrequency;
-        public float Brightness;
+        public float InharmonicityB;
+        public float NoiseAmount;
+        public float SaturationAmount;
         public float Stress;
+        public float StressDecayMultiplier;
+        public float Brightness;
         public float AmplitudeNormDenom;
         public float HarmonicCountInv;
 
@@ -49,10 +56,9 @@ public static class AudioSynthesizer
             float pitchT = math.saturate(t / math.max(PitchDropTime, 0.001f));
             float currentPitchMul = math.lerp(PitchStartMul, 1f, pitchT);
 
-            float vibratoRamp = math.saturate((t - VibratoDelay) / 0.08f);
+            float vibratoRamp = math.saturate((t - VibratoDelay) / math.max(VibratoRampTime, 0.001f));
             float vibratoLfo = math.sin(TwoPi * VibratoFrequency * t) * vibratoRamp;
-            float vibratoCentsNow = VibratoDepthCents * vibratoLfo;
-            float vibratoMul = math.pow(2f, vibratoCentsNow / 1200f);
+            float vibratoMul = math.pow(2f, (VibratoDepthCents * vibratoLfo) / 1200f);
 
             float currentBaseFreq = BaseFrequency * currentPitchMul * vibratoMul;
             float fmOffset = FmDepth * math.sin(TwoPi * currentBaseFreq * FmRatio * t);
@@ -62,27 +68,36 @@ public static class AudioSynthesizer
             for (int h = 0; h < HarmonicsCount; h++)
             {
                 var preset = Harmonics[h];
-
                 float harmonicIndex = h * HarmonicCountInv;
-                float drift = DriftAmplitude * math.sin(TwoPi * 0.29f * t + preset.DriftPhase);
-                float freq = currentBaseFreq * preset.FreqMul + drift;
-                if (freq > nyquistLimit) continue;
+
+                float drift = DriftAmplitude * math.sin(TwoPi * DriftFrequency * t + preset.DriftPhase);
+                
+                float inharmonicFactor = math.sqrt(1f + InharmonicityB * preset.FreqMul * preset.FreqMul);
+                float freq = currentBaseFreq * preset.FreqMul * inharmonicFactor + drift;
+
+                float nyquistFade = math.saturate((nyquistLimit - freq) / (nyquistLimit * 0.1f));
+                if (nyquistFade <= 0f) continue;
 
                 float arg = TwoPi * freq * t + preset.Phase + fmOffset;
                 float osc = MorphOscillator(PrimaryWaveform, SecondaryWaveform, arg, WaveMorphAmount);
 
                 float amp = preset.Amplitude * math.lerp(1f, 1f + Brightness * 0.5f, harmonicIndex) / AmplitudeNormDenom;
-                float decayRate = preset.DecayRate * math.lerp(1f, 1f + Stress * 1.5f, harmonicIndex);
+                float decayRate = preset.DecayRate * math.lerp(1f, 1f + Stress * StressDecayMultiplier, harmonicIndex);
                 float harmonicDecay = math.exp(-t * decayRate);
 
-                float ampMod = 1f + AmplitudeModDepth * math.sin(TwoPi * 7.3f * t + preset.DriftPhase * 1.7f);
+                float ampMod = 1f + AmplitudeModDepth * math.sin(TwoPi * AmplitudeModFrequency * t + preset.DriftPhase * 1.7f);
 
-                s += osc * amp * harmonicDecay * ampMod;
+                s += osc * amp * harmonicDecay * ampMod * nyquistFade;
             }
 
             float ringMod = RingModFrequency > 0.5f ? math.sin(TwoPi * RingModFrequency * t) : 1f;
             float env = EvaluateEnvelope(t, Duration, Envelope);
-            float saturated = s / (1f + math.abs(s * 0.8f));
+            
+            float noiseFac = NoiseAmount * (noise.cnoise(new float2(t * 1000f, index * 0.1f)) * 2f - 1f);
+            
+            float mixedSignal = s + noiseFac;
+            
+            float saturated = math.tanh(mixedSignal * SaturationAmount) / math.max(1f, SaturationAmount * 0.7f);
 
             Samples[index] = saturated * ringMod * env * BaseVolume;
         }
@@ -155,13 +170,20 @@ public static class AudioSynthesizer
             VibratoFrequency = state.VibratoFrequency,
             VibratoDepthCents = state.VibratoDepthCents,
             VibratoDelay = state.VibratoDelay,
+            VibratoRampTime = state.VibratoRampTime,
             DriftAmplitude = state.DriftAmplitude,
+            DriftFrequency = state.DriftFrequency,
             AmplitudeModDepth = state.AmplitudeModDepth,
+            AmplitudeModFrequency = state.AmplitudeModFrequency,
             FmRatio = state.FmRatio,
             FmDepth = state.FmDepth,
             RingModFrequency = state.RingModFrequency,
+            InharmonicityB = state.InharmonicityB,
+            NoiseAmount = state.NoiseAmount,
+            SaturationAmount = state.SaturationAmount,
             Brightness = state.Brightness,
             Stress = state.Stress,
+            StressDecayMultiplier = state.StressDecayMultiplier,
             AmplitudeNormDenom = state.AmplitudeNormDenom,
             Envelope = genetic.BaseHash.Envelope
         };

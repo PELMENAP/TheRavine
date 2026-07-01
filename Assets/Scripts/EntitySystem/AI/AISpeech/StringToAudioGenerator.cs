@@ -14,6 +14,7 @@ public class StringToAudioGenerator : MonoBehaviour
     private int clipCapacity;
     private float[] managedSamples;
     private NativeArray<float> samplesBuffer;
+    private CancellationTokenSource activeCts;
 
     private void Awake()
     {
@@ -43,7 +44,12 @@ public class StringToAudioGenerator : MonoBehaviour
         float actionFrequency = 0, float nearestEnemyDist = 0,
         float size = 1, float age = 1, CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(speech) || ct.IsCancellationRequested) return null;
+        activeCts?.Cancel();
+        activeCts?.Dispose();
+        activeCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var token = activeCts.Token;
+    
+        if (string.IsNullOrEmpty(speech) || token.IsCancellationRequested) return null;
 
         int sampleCount = Mathf.CeilToInt(config.sampleRate * config.duration);
         EnsureClip(sampleCount);
@@ -58,12 +64,20 @@ public class StringToAudioGenerator : MonoBehaviour
 
         var state = AudioParameterMapper.BuildState(genetic, profile);
         
-        await AudioSynthesizer.GenerateSamplesToManagedAsync(
-            genetic, state, samplesBuffer,
-            config.sampleRate, config.duration,
-            managedSamples, ct);
+        genetic.Acquire();
+        try
+        {
+            await AudioSynthesizer.GenerateSamplesToManagedAsync(
+                genetic, state, samplesBuffer,
+                config.sampleRate, config.duration,
+                managedSamples, token);
+        }
+        finally
+        {
+            genetic.Release();
+        }
 
-        if (ct.IsCancellationRequested || clip == null) return null;
+        if (token.IsCancellationRequested || clip == null) return null;
 
         clip.SetData(managedSamples, 0);
         audioSource.clip = clip;
