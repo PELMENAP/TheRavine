@@ -79,7 +79,7 @@ public class SimulationDebugDashboard : MonoBehaviour
 
         foreach (var e in entities)
         {
-            var ctx = e.BrainContext;
+            var ctx = e.Brain.Context;
             sumEntropy += ctx.CoordMLP.AverageEntropy;
             sumReward  += ctx.GoalRewardCount > 0
                 ? ctx.GoalTotalReward / ctx.GoalRewardCount
@@ -300,15 +300,15 @@ public class SimulationDebugDashboard : MonoBehaviour
         if (entities.Count == 0) return;
 
         int shown = Mathf.Min(5, entities.Count);
-        var sorted = new List<Entity>(entities);
+        var sorted = new List<EntityModel>(entities);
         sorted.Sort((a, b) =>
-            b.BrainContext.CoordMLP.AverageEntropy
-             .CompareTo(a.BrainContext.CoordMLP.AverageEntropy));
+            b.Brain.Context.CoordMLP.AverageEntropy
+             .CompareTo(a.Brain.Context.CoordMLP.AverageEntropy));
 
         for (int i = 0; i < shown; i++)
         {
             var e   = sorted[i];
-            var ctx = e.BrainContext;
+            var ctx = e.Brain.Context;
             string line = $"#{i + 1} G:{ctx.CurrentGoal,-7} "
                         + $"E:{ctx.CoordMLP.AverageEntropy:F2} "
                         + $"T:{ctx.CoordMLP.TrainingSteps}";
@@ -427,7 +427,7 @@ public class GenerationTracker
 
     public Stats Current { get; private set; }
 
-    public void Record(IReadOnlyList<Entity> entities, SharedHierarchicalBrain brain)
+    public void Record(IReadOnlyList<EntityModel> entities, SharedHierarchicalBrain brain)
     {
         if (entities.Count == 0) return;
 
@@ -437,7 +437,7 @@ public class GenerationTracker
 
         foreach (var e in entities)
         {
-            var ctx = e.BrainContext;
+            var ctx = e.Brain.Context;
             float entropy = ctx.CoordMLP.AverageEntropy;
 
             if (entropy > best)

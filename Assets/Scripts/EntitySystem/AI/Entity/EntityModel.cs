@@ -1,29 +1,77 @@
 using Cysharp.Threading.Tasks;
-
+using UnityEngine;
 using TheRavine.EntityControl;
+
 public class EntityModel : AEntity
 {
     public StatsComponent Stats { get; private set; }
     public PerceptionComponent Perception { get; private set; }
     public BrainComponent Brain { get; private set; }
     public SpeechComponent Speech { get; private set; }
+    public PointsOfInterestComponent Points { get; private set; }
+
+    public IEntityMotor Motor { get; private set; }
+    public IEntityFeedback Feedback { get; private set; }
+    public EntityTuning Tuning { get; private set; }
+    public GameObject SelfObject { get; private set; }
+
     private StatePatternComponent states;
     private InputVectorizer vectorizer;
-    private IEntityMotor motor;
 
     private int lastActionIndex;
     private int timeOfDay;
+    private bool canAttack = true;
 
-    public void Configure(SharedHierarchicalBrain brain, EntityBrainContext ctx,
-        IEntityMotor _motor, EntityTuning tuning)
+    private static readonly System.Collections.Generic.Dictionary<SharedHierarchicalBrain.Goal, System.Type> GoalStateMap = new()
     {
+        [SharedHierarchicalBrain.Goal.Survive] = typeof(SurviveState),
+        [SharedHierarchicalBrain.Goal.Hunt]    = typeof(HuntState),
+        [SharedHierarchicalBrain.Goal.Forage]  = typeof(ForageState),
+        [SharedHierarchicalBrain.Goal.Social]  = typeof(SocialState),
+    };
+
+    public void Configure(
+    SharedHierarchicalBrain brain, EntityBrainContext ctx,
+    IEntityMotor motor, IEntityFeedback feedback,
+    GameObject selfObject, EntityTuning tuning)
+    {
+        Motor = motor;
+        Feedback = feedback;
+        SelfObject = selfObject;
+        Tuning = tuning;
+
         Stats = GetOrCreateEntityComponent<StatsComponent>();
-        Perception = GetOrCreateEntityComponent<PerceptionComponent>();
+        Stats.FillComponent(tuning.MaxHealth, tuning.MaxEnergy);
+
+        AddComponentToEntity(new PerceptionComponent(tuning.DetectionRadius, tuning.EntityLayer, tuning.FoodLayer));
+        Perception = GetEntityComponent<PerceptionComponent>();
+
+        Speech = GetOrCreateEntityComponent<SpeechComponent>();
+        Points = GetOrCreateEntityComponent<PointsOfInterestComponent>();
+
         AddComponentToEntity(new BrainComponent(brain, ctx));
         Brain = GetEntityComponent<BrainComponent>();
-        Speech = GetOrCreateEntityComponent<SpeechComponent>();
+
+        AddComponentToEntity(new MortalityComponent(Stats.Health));
         states = GetOrCreateEntityComponent<StatePatternComponent>();
-        motor = _motor;
+
+        vectorizer = new InputVectorizer(
+            new R3.ReactiveProperty<float>(tuning.MaxHealth),
+            new R3.ReactiveProperty<float>(tuning.MaxEnergy));
+    }
+
+    public bool TryStartAttackCooldown()
+    {
+        if (!canAttack) return false;
+        canAttack = false;
+        CooldownAsync().Forget();
+        return true;
+    }
+
+    private async UniTaskVoid CooldownAsync()
+    {
+        await UniTask.Delay((int)(Tuning.AttackCooldown * 1000));
+        canAttack = true;
     }
 
     public override void Init()
@@ -39,17 +87,57 @@ public class EntityModel : AEntity
 
     public override void UpdateEntityCycle()
     {
-        var input = BuildInput();
+        if (!IsActive.Value) return;
+        if (Stats.Health.Value <= 0) return;
+
+        timeOfDay = (timeOfDay + 1) % 24;
+
+        float inDanger = ComputeDangerLevel();
+        float timeToBreed = ComputeBreedReadiness();
+        var nearest = Perception.FindNearestEntity(Motor.Position, SelfObject, out float enemyDist);
+        var food = Perception.FindNearestFood(Motor.Position);
+        float foodDist = food != null ? Vector2.Distance(Motor.Position, food.transform.position) : -1f;
+
+        var input = vectorizer.Vectorize(
+            Stats.Health.Value, Stats.Energy.Value,
+            lastActionIndex, timeOfDay,
+            inDanger, timeToBreed,
+            Speech.OtherSpeech, enemyDist, foodDist);
+
+        Speech.ConsumeOtherSpeech();
+
         int actionIndex = Brain.Predict(input);
         lastActionIndex = actionIndex;
 
-        var targetStateType = GoalToStateType(Brain.CurrentGoal);
-        if (states.behaviourCurrent.GetType() != targetStateType)
-            states.SetBehaviourAsync((AState)states.GetType()
-                .GetMethod(nameof(StatePatternComponent.GetBehaviour))
-                .MakeGenericMethod(targetStateType).Invoke(states, null)).Forget();
+        var targetType = GoalStateMap[Brain.CurrentGoal];
+        if (states.behaviourCurrent.GetType() != targetType)
+            states.SetBehaviourAsync(states.GetBehaviourByType(targetType)).Forget();
 
         ((EntityActionState)states.behaviourCurrent).EnqueueAction((EntityAction)actionIndex);
-        OnUpdate.OnNext(Unit.Default);
+        OnUpdate.Execute(R3.Unit.Default);
+    }
+
+    private float ComputeDangerLevel()
+    {
+        float d = 0f;
+        float hp = Stats.Health.Value, en = Stats.Energy.Value;
+        if (en < 50 || hp < 50) d += 0.25f;
+        if (en < 25 || hp < 25) d += 0.25f;
+        if (en < 10 || hp < 10) d += 0.5f;
+        return d;
+    }
+
+    private float ComputeBreedReadiness()
+    {
+        float b = 0f;
+        float hp = Stats.Health.Value, en = Stats.Energy.Value;
+        if (en > Tuning.ReproduceEnergyCost && hp > Tuning.ReproduceHealthCost) b += 0.5f;
+        if (en > Tuning.ReproduceEnergyCost + 50 && hp > Tuning.ReproduceHealthCost + 50) b += 0.5f;
+        return b;
+    }
+
+    public override void DeepClean()
+    {
+        vectorizer?.Dispose();
     }
 }

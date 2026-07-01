@@ -3,15 +3,18 @@ using Unity.Mathematics;
 
 public class StatsComponent : IComponent
 {
-    public ReactiveProperty<float> Health { get; }
-    public ReactiveProperty<float> Energy { get; }
-    public float MaxHealth { get; }
-    public float MaxEnergy { get; }
+    public ReactiveProperty<float> Health { get; private set; }
+    public ReactiveProperty<float> Energy { get; private set; }
+    public float MaxHealth { get; private set; }
+    public float MaxEnergy { get; private set; }
 
     private float _starvationTimer;
+    private bool _filled;
 
     public void FillComponent(float maxHealth, float maxEnergy)
     {
+        if (_filled) return;
+        _filled = true;
         MaxHealth = maxHealth;
         MaxEnergy = maxEnergy;
         Health = new ReactiveProperty<float>(maxHealth * 0.5f);
@@ -36,5 +39,5 @@ public class StatsComponent : IComponent
         else _starvationTimer = 0f;
     }
 
-    public void Dispose() { Health.Dispose(); Energy.Dispose(); }
+    public void Dispose() { Health?.Dispose(); Energy?.Dispose(); }
 }
