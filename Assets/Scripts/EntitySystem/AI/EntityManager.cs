@@ -74,6 +74,21 @@ public class EntityManager : MonoBehaviour
         return entity;
     }
 
+    // public Entity SpawnEntity(Vector3 position, EntityBrainContext inheritedCtx = null)
+    // {
+    //     var go = Instantiate(entityPrefab, position, Quaternion.identity, transform);
+    //     var viewModel = go.GetComponent<EntityViewModel>();
+
+    //     var model = new EntityModel();
+    //     var ctx = inheritedCtx ?? _sharedBrain.CreateContext();
+    //     model.Configure(_sharedBrain, ctx, viewModel, tuning);
+    //     model.Init();
+    //     viewModel.Initialize(model);
+    //     model.SetUp();
+
+    //     return model;
+    // }
+
     public Entity SpawnChild(Entity parent)
     {
         if (_entities.Count >= maxPopulation) return null;
