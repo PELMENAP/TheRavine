@@ -8,6 +8,7 @@ public class EntityManager : MonoBehaviour
     [Header("Prefabs")]
     [SerializeField] private GameObject entityPrefab;
     [SerializeField] private GameObject foodPrefab;
+    [SerializeField] private EntityTuning tuning;
 
     [Header("Population")]
     [SerializeField] private int   initialCount  = 20;
@@ -27,16 +28,15 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private float _avgEntropy;
 
     public int MaxPopulation => maxPopulation;
-    public event Action<Entity> OnEntitySpawned;
-    public event Action<Entity> OnEntityDied;
+    public event Action<EntityModel> OnEntitySpawned;
+    public event Action<EntityModel> OnEntityDied;
 
     public void OnFoodConsumed() => _foodCount--;
 
-
     private SharedHierarchicalBrain _sharedBrain;
     public SharedHierarchicalBrain SharedBrain => _sharedBrain;
-    private readonly List<Entity> _entities = new();
-    public List<Entity> Entities => _entities;
+    private readonly List<EntityModel> _entities = new();
+    public List<EntityModel> Entities => _entities;
 
     private void Awake()
     {
@@ -54,64 +54,51 @@ public class EntityManager : MonoBehaviour
         TrackDiagnosticsAsync(destroyCancellationToken).Forget();
     }
 
-    public Entity SpawnEntity(Vector3 position, EntityBrainContext inheritedCtx = null)
+    public EntityModel SpawnEntity(Vector3 position, EntityBrainContext inheritedCtx = null)
     {
         if (_entities.Count >= maxPopulation) return null;
 
-        var go     = Instantiate(entityPrefab, position + this.transform.position, Quaternion.identity, transform);
-        var entity = go.GetComponent<Entity>();
+        var go = Instantiate(entityPrefab, position, Quaternion.identity, transform);
+        var viewModel = go.GetComponent<EntityViewModel>();
 
+        var model = new EntityModel();
         var ctx = inheritedCtx ?? _sharedBrain.CreateContext();
-        entity.Inject(_sharedBrain, ctx);
 
-        _entities.Add(entity);
-        entity.OnDied             += HandleEntityDied;
-        entity.OnReproduceRequest += HandleReproduceRequest;
+        model.Configure(_sharedBrain, ctx, viewModel, viewModel, go, tuning);
+        model.Init();
+        viewModel.Initialize(model);
+        model.SetUp();
 
-        entity.SetUpAsNew();
+        model.GetEntityComponent<MortalityComponent>().Died += () => HandleEntityDied(model);
 
-        OnEntitySpawned?.Invoke(entity);
-        return entity;
+        _entities.Add(model);
+        OnEntitySpawned?.Invoke(model);
+        return model;
     }
 
-    // public Entity SpawnEntity(Vector3 position, EntityBrainContext inheritedCtx = null)
-    // {
-    //     var go = Instantiate(entityPrefab, position, Quaternion.identity, transform);
-    //     var viewModel = go.GetComponent<EntityViewModel>();
-
-    //     var model = new EntityModel();
-    //     var ctx = inheritedCtx ?? _sharedBrain.CreateContext();
-    //     model.Configure(_sharedBrain, ctx, viewModel, tuning);
-    //     model.Init();
-    //     viewModel.Initialize(model);
-    //     model.SetUp();
-
-    //     return model;
-    // }
-
-    public Entity SpawnChild(Entity parent)
+    public EntityModel SpawnChild(EntityModel parent)
     {
         if (_entities.Count >= maxPopulation) return null;
 
-        var childParams = parent.BrainContext.CoordMLP.Params.GetMutatedGeneticParameters();
+        var childParams = parent.Brain.Context.CoordMLP.Params.GetMutatedGeneticParameters();
         var childCtx    = _sharedBrain.CreateContext(childParams);
-        var pos         = parent.transform.position
-                        + (Vector3) RavineRandom.GetInsideCircle().normalized * 2f
+        var pos         = parent.Motor.Position
+                        + (Vector3)RavineRandom.GetInsideCircle().normalized * 2f
                         + Vector3.up * 5f;
 
         return SpawnEntity(pos, childCtx);
     }
 
-    public Entity SpawnCrossoverChild(Entity parentA, Entity parentB)
+    public EntityModel SpawnCrossoverChild(EntityModel parentA, EntityModel parentB)
     {
         if (_entities.Count >= maxPopulation) return null;
 
-        var paramsA     = parentA.BrainContext.CoordMLP.Params;
-        var paramsB     = parentB.BrainContext.CoordMLP.Params;
+        var paramsA     = parentA.Brain.Context.CoordMLP.Params;
+        var paramsB     = parentB.Brain.Context.CoordMLP.Params;
         var childParams = CrossoverGeneticParams(paramsA, paramsB);
         var childCtx    = _sharedBrain.CreateContext(childParams);
 
-        var pos = ((Vector2)parentA.transform.position + (Vector2)parentB.transform.position) * 0.5f;
+        var pos = ((Vector2)parentA.Motor.Position + (Vector2)parentB.Motor.Position) * 0.5f;
         return SpawnEntity(pos, childCtx);
     }
 
@@ -125,35 +112,33 @@ public class EntityManager : MonoBehaviour
         _foodCount++;
     }
 
-    private void HandleEntityDied(Entity entity)
+    private void HandleEntityDied(EntityModel model)
     {
-        _entities.Remove(entity);
-        entity.OnDied             -= HandleEntityDied;
-        entity.OnReproduceRequest -= HandleReproduceRequest;
+        _entities.Remove(model);
+        model.Dispose();
 
         if (_entities.Count < initialCount / 2)
             SpawnEntity(RandomPosition());
 
-        OnEntityDied?.Invoke(entity);
+        OnEntityDied?.Invoke(model);
     }
 
-    private void HandleReproduceRequest(Entity parent) => SpawnChild(parent);
     public void EvolveSharedWeights()
     {
         if (_entities.Count < 2) return;
 
         _entities.Sort((a, b) =>
-            b.BrainContext.CoordMLP.AverageEntropy
-                .CompareTo(a.BrainContext.CoordMLP.AverageEntropy));
+            b.Brain.Context.CoordMLP.AverageEntropy
+                .CompareTo(a.Brain.Context.CoordMLP.AverageEntropy));
 
         int eliteCount = Math.Max(1, _entities.Count / 10);
         for (int i = eliteCount; i < _entities.Count; i++)
         {
             int parentIdx = RavineRandom.RangeInt(0, eliteCount);
-            var childParams = _entities[parentIdx].BrainContext.CoordMLP.Params
+            var childParams = _entities[parentIdx].Brain.Context.CoordMLP.Params
                                                    .GetMutatedGeneticParameters();
-            _entities[i].BrainContext.CoordMLP.Params = childParams;
-            _entities[i].BrainContext.ResetMemory();
+            _entities[i].Brain.Context.CoordMLP.Params = childParams;
+            _entities[i].Brain.Context.ResetMemory();
         }
     }
 
@@ -192,7 +177,7 @@ public class EntityManager : MonoBehaviour
             {
                 float sum = 0f;
                 foreach (var e in _entities)
-                    sum += _sharedBrain.GetCoordinatorEntropy(e.BrainContext);
+                    sum += _sharedBrain.GetCoordinatorEntropy(e.Brain.Context);
                 _avgEntropy = sum / _entities.Count;
             }
             await UniTask.Delay(1000, cancellationToken: ct);

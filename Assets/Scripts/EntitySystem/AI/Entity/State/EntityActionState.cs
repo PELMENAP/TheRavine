@@ -20,17 +20,3 @@ public abstract class EntityActionState : AState
     public override void Enter() { }
     public override void Exit() { }
 }
-
-public class SurviveState : EntityActionState
-{
-    public SurviveState(EntityModel model) : base(model, BuildCommands(model)) { }
-
-    private static Dictionary<EntityAction, ICommand> BuildCommands(EntityModel m) => new()
-    {
-        [EntityAction.Idle] = new IdleCommand(m),
-        [EntityAction.Wander] = new WanderCommand(m),
-        [EntityAction.Flee] = new FleeCommand(m),
-        [EntityAction.Eat] = new EatCommand(m),
-        [EntityAction.Rest] = new RestCommand(m),
-    };
-}

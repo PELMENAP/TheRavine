@@ -42,6 +42,7 @@ public class StatePatternComponent : IStatePatternComponent
     }
 
     public AState GetBehaviour<T>() where T : AState => behavioursMap[typeof(T)];
+    public AState GetBehaviourByType(Type t) => behavioursMap[t];
 
     public void Dispose()
     {
