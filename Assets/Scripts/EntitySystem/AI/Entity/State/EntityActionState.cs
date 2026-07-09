@@ -13,8 +13,15 @@ public abstract class EntityActionState : AState
 
     public void EnqueueAction(EntityAction action)
     {
-        if (commands.TryGetValue(action, out var cmd))
-            AddCommand(cmd);
+        if (!commands.TryGetValue(action, out var cmd)) return;
+
+        if (!cmd.CanExecute())
+        {
+            Model.Brain.GiveReward(0.25f);
+            Model.Stats.Health.Value -= 3f;
+            return;
+        }
+        AddCommand(cmd);
     }
 
     public override void Enter() { }

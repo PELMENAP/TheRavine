@@ -28,9 +28,6 @@ public class Mimic : MonoBehaviour
     public float minOscillationSpeed = 1f;
     public float maxOscillationSpeed = 3f;
     public float legWidth = 0.2f;
-
-    public Vector3 velocity;
-    public Vector3 legPlacerOrigin;
     public int legCount;
     public int deployedLegs;
     public int minimumAnchoredParts;
@@ -43,8 +40,18 @@ public class Mimic : MonoBehaviour
     private LegAnimator animator;
     private LegRenderer legRenderer;
 
+    [SerializeField] private MonoBehaviour velocitySourceBehaviour;
+    private IVelocitySource velocitySource;
+
+    public Vector3 velocity { get; private set; }
+    public Vector3 legPlacerOrigin;
+
+    private Vector3 lastForward = Vector3.forward;
+
     private void Awake()
     {
+        velocitySource = velocitySourceBehaviour as IVelocitySource ?? GetComponent<IVelocitySource>();
+
         maxLegs = numberOfLegs * partsPerLeg;
         minimumAnchoredParts = minimumAnchoredLegs * partsPerLeg;
         maxLegDistance = newLegRadius * 2.1f;
@@ -53,22 +60,24 @@ public class Mimic : MonoBehaviour
         planner = new LegPlanner();
         animator = new LegAnimator();
         legRenderer = new LegRenderer();
-        
         legRenderer.Initialize(this);
     }
+
 
     private async void Start()
     {
         MapGenerator = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
-        Vector2 r = Random.insideUnitCircle;
-        velocity = new Vector3(r.x, 0f, r.y);
     }
 
     private void Update()
     {
-        if (MapGenerator == null) return;
+        if (MapGenerator == null || velocitySource == null) return;
 
-        legPlacerOrigin = transform.position + velocity.normalized * newLegRadius;
+        velocity = velocitySource.Velocity;
+        if (velocity.sqrMagnitude > 0.01f)
+            lastForward = velocity.normalized;
+
+        legPlacerOrigin = transform.position + lastForward * newLegRadius;
 
         planner.Update(this, Time.deltaTime);
         animator.Update(this, Time.deltaTime);

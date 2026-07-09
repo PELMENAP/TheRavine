@@ -4,7 +4,7 @@ using Unity.Jobs;
 
 namespace TheRavine.Generator
 {
-    [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
+    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true)]
     public struct RegionAssignJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<float> heightValues;

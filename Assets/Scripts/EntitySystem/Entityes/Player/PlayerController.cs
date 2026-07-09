@@ -36,7 +36,7 @@ namespace TheRavine.EntityControl
         private Rigidbody playerRigidbody;
         private Vector2 movementDirection;
         private float timeSinceLastSend;
-        public float currentSpeed { get; private set; }
+        public float CurrentSpeed { get; private set; }
         private bool isAimMode;
         private bool canPlace = true;
         private bool isAccurance;
@@ -198,8 +198,8 @@ namespace TheRavine.EntityControl
         private void CheckBust(float movementMagnitude)
         {
             forwardTap.Update(movementMagnitude > 0.9f);
-            if (forwardTap.IsBoostActive && currentSpeed < 1f)
-                currentSpeed = movementComponent.BaseSpeed / 2;
+            if (forwardTap.IsBoostActive && CurrentSpeed < 1f)
+                CurrentSpeed = movementComponent.BaseSpeed / 2;
         }
         
 
@@ -207,7 +207,7 @@ namespace TheRavine.EntityControl
         private void MoveServerRpc(Vector2 direction, float inputSpeed)
         {
             if (inputSpeed <= 0.01f)
-                currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, movementComponent.Deceleration * Time.deltaTime);
+                CurrentSpeed = Mathf.MoveTowards(CurrentSpeed, 0f, movementComponent.Deceleration * Time.deltaTime);
 
             float targetSpeed =
                 inputSpeed *
@@ -224,12 +224,12 @@ namespace TheRavine.EntityControl
                 targetSpeed *= terrainModifier;
             }
 
-            currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, movementComponent.Acceleration * Time.deltaTime);
+            CurrentSpeed = Mathf.MoveTowards(CurrentSpeed, targetSpeed, movementComponent.Acceleration * Time.deltaTime);
 
             playerRigidbody.linearVelocity = new Vector3(
-                direction.x * currentSpeed,
+                direction.x * CurrentSpeed,
                 playerRigidbody.linearVelocity.y,
-                direction.y * currentSpeed
+                direction.y * CurrentSpeed
             );
 
             UpdateClientPositionClientRpc(playerRigidbody.position, playerRigidbody.linearVelocity);

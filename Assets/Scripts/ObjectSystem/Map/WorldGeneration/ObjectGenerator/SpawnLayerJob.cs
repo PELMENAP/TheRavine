@@ -8,7 +8,7 @@ using Unity.Collections.LowLevel.Unsafe;
 
 namespace TheRavine.Generator
 {
-    [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
+    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true)]
     public struct SpawnLayerJob : IJob
     {
         [ReadOnly] public NativeArray<ObjectSpawnConfig> configs;

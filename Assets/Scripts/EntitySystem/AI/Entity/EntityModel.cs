@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using TheRavine.EntityControl;
+using System;
 
 public class EntityModel : AEntity
 {
@@ -9,6 +10,7 @@ public class EntityModel : AEntity
     public BrainComponent Brain { get; private set; }
     public SpeechComponent Speech { get; private set; }
     public PointsOfInterestComponent Points { get; private set; }
+    public IEntityDialogHost DialogHost { get; private set; }
 
     public IEntityMotor Motor { get; private set; }
     public IEntityFeedback Feedback { get; private set; }
@@ -16,11 +18,16 @@ public class EntityModel : AEntity
     public GameObject SelfObject { get; private set; }
 
     private StatePatternComponent states;
-    private InputVectorizer vectorizer;
+    public InputVectorizer Vectorizer;
 
-    private int lastActionIndex;
+    public float[] LastInput;
+    public int LastActionIndex;
+    public void SetLastAction(int index) => LastActionIndex = index;
     private int timeOfDay;
     private bool canAttack = true;
+
+    public event Action<EntityModel> OnReproduceRequest;
+    public void RequestReproduce() => OnReproduceRequest?.Invoke(this);
 
     private static readonly System.Collections.Generic.Dictionary<SharedHierarchicalBrain.Goal, System.Type> GoalStateMap = new()
     {
@@ -39,6 +46,7 @@ public class EntityModel : AEntity
         Feedback = feedback;
         SelfObject = selfObject;
         Tuning = tuning;
+        DialogHost = (IEntityDialogHost)motor;
 
         Stats = GetOrCreateEntityComponent<StatsComponent>();
         Stats.FillComponent(tuning.MaxHealth, tuning.MaxEnergy);
@@ -53,9 +61,10 @@ public class EntityModel : AEntity
         Brain = GetEntityComponent<BrainComponent>();
 
         AddComponentToEntity(new MortalityComponent(Stats.Health));
+        GetEntityComponent<MortalityComponent>().Died += () => (Feedback as IEntityDeathHandler)?.OnDeath();
         states = GetOrCreateEntityComponent<StatePatternComponent>();
 
-        vectorizer = new InputVectorizer(
+        Vectorizer = new InputVectorizer(
             new R3.ReactiveProperty<float>(tuning.MaxHealth),
             new R3.ReactiveProperty<float>(tuning.MaxEnergy));
     }
@@ -98,16 +107,21 @@ public class EntityModel : AEntity
         var food = Perception.FindNearestFood(Motor.Position);
         float foodDist = food != null ? Vector2.Distance(Motor.Position, food.transform.position) : -1f;
 
-        var input = vectorizer.Vectorize(
+        LastInput = Vectorizer.Vectorize(
             Stats.Health.Value, Stats.Energy.Value,
-            lastActionIndex, timeOfDay,
+            LastActionIndex, timeOfDay,
             inDanger, timeToBreed,
             Speech.OtherSpeech, enemyDist, foodDist);
 
         Speech.ConsumeOtherSpeech();
 
-        int actionIndex = Brain.Predict(input);
-        lastActionIndex = actionIndex;
+        bool isIdle = states.behaviourCurrent.GetType() == typeof(SurviveState)
+              && LastActionIndex == (int)EntityAction.Idle;
+        Stats.Tick(Time.deltaTime, Tuning.EnergyRegenRate, isIdle);
+        if (Stats.Health.Value <= 0) return;
+
+        int actionIndex = Brain.Predict(LastInput);
+        LastActionIndex = actionIndex;
 
         var targetType = GoalStateMap[Brain.CurrentGoal];
         if (states.behaviourCurrent.GetType() != targetType)
@@ -138,6 +152,6 @@ public class EntityModel : AEntity
 
     public override void DeepClean()
     {
-        vectorizer?.Dispose();
+        Vectorizer?.Dispose();
     }
 }

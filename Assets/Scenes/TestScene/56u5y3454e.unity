@@ -447,6 +447,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: EntitySystem::EntityManager
   entityPrefab: {fileID: 7498966713481436335, guid: e18f0c8a71530c704901be5cc7c9e200, type: 3}
   foodPrefab: {fileID: 8079554152659468491, guid: b4ca380ab861563c1868b8b809fbf5e6, type: 3}
+  tuning:
+    MaxHealth: 0
+    MaxEnergy: 0
+    EnergyRegenRate: 0
+    MoveSpeed: 0
+    RunSpeed: 0
+    EnergyCostMoving: 0
+    EnergyCostRunning: 0
+    DetectionRadius: 0
+    AttackRange: 0
+    AttackDamage: 0
+    AttackCooldown: 0
+    AttackEnergyCost: 0
+    ReproduceEnergyCost: 0
+    ReproduceHealthCost: 0
+    WanderRadius: 0
+    MinWanderTime: 0
+    MaxWanderTime: 0
+    IdleTime: 0
+    EntityLayer:
+      serializedVersion: 2
+      m_Bits: 0
+    FoodLayer:
+      serializedVersion: 2
+      m_Bits: 0
   initialCount: 0
   maxPopulation: 50
   spawnRadius: 15

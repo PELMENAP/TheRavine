@@ -4,33 +4,45 @@ using System.Threading;
 using TMPro;
 
 using TheRavine.EntityControl;
+using TheRavine.Generator;
 
-public class EntityViewModel : AEntityViewModel, IEntityMotor, IEntityFeedback, IDialogListener, IDialogSender
+public class EntityViewModel : AEntityViewModel, IEntityMotor, IEntityFeedback,
+    IDialogListener, IDialogSender, IEntityDialogHost, IEntityDeathHandler
 {
-    [SerializeField] private Rigidbody rb;
+    [SerializeField] private SurfaceMotor motor;
+
+    private async void Awake()
+    {
+        var map = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
+        motor.Inject(map);
+    }
+
+    public void OnDeath()
+    {
+        sr.color = Color.gray;
+        DialogSystem.Instance.RemoveDialogListener(this);
+        
+        Destroy(gameObject, 0f);
+    }
     [SerializeField] private SpriteRenderer sr;
     [SerializeField] private TextMeshPro label;
 
-    public Vector3 Position => transform.position;
+    [SerializeField] private StringToAudioGenerator audioGenerator;
 
-    public async UniTask MoveToAsync(Vector3 target, float speed, float maxDuration,
-        float energyCostPerSec, CancellationToken ct)
+    public async UniTask PlaySpeechAsync(string speech, float health, float energy, float danger,
+        float timeToBreed, int lastAction, float nearestEnemyDist, CancellationToken ct)
     {
-        var model = (EntityModel)Entity;
-        float startTime = Time.time;
-        while (Vector3.Distance(transform.position, target) > 0.1f && Time.time - startTime < maxDuration)
-        {
-            if (model.Stats.Energy.Value <= 0) break;
-            var dir = (target - transform.position).normalized;
-            dir.y = 0;
-            rb.linearVelocity = dir * speed;
-            model.Stats.Energy.Value = Mathf.Max(0, model.Stats.Energy.Value - energyCostPerSec * Time.deltaTime);
-            await UniTask.Yield(ct);
-        }
-        rb.linearVelocity = Vector3.zero;
+        await audioGenerator.PlayFromStringAsync(speech, health, energy, danger, timeToBreed,
+            lastAction, nearestEnemyDist, 1, 1, ct);
     }
 
-    public void Stop() => rb.linearVelocity = Vector3.zero;
+    public Vector3 Position => transform.position;
+
+    public UniTask MoveToAsync(Vector3 target, float speed, float maxDuration,
+        float energyCostPerSec, CancellationToken ct)
+        => motor.MoveToAsync(target, speed, maxDuration, energyCostPerSec, ct);
+
+    public void Stop() => motor.Stop();
     public async UniTask FlashColor(Color c, int d)
     {
         Color orig = sr.color;
@@ -49,4 +61,13 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor, IEntityFeedback, 
     public void OnSpeechGet(IDialogSender sender, string message) =>
         ((EntityModel)Entity).Speech.ReceiveSpeech(message);
     public void OnDialogGetRequire() { }
+    public override void OnNetworkSpawn() { }
+
+    private void OnEnable()  => DialogSystem.Instance.AddDialogListener(this);
+    private void OnDisable() => DialogSystem.Instance.RemoveDialogListener(this);
+
+    public void RegisterDialog(IDialogListener l)   => DialogSystem.Instance.AddDialogListener(l);
+    public void UnregisterDialog(IDialogListener l)  => DialogSystem.Instance.RemoveDialogListener(l);
+    public void UpdateDialogPosition(IDialogListener l) => DialogSystem.Instance.UpdateListenerPosition(l);
+
 }

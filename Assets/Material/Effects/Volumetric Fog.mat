@@ -40,27 +40,27 @@ Material:
     - _MainLightSelfShadowSteps: 1
     - _Steps: 10
     m_Floats:
-    - _AdditionalLightSelfShadowDistance: 8
-    - _Density: 0.309
+    - _AdditionalLightSelfShadowDistance: 3
+    - _Density: 0.06840184
     - _HeightMaskBlend: 0.99
-    - _HeightMaskFalloff: 10
-    - _HeightMaskLength: 16
+    - _HeightMaskFalloff: 9.5
+    - _HeightMaskLength: 0.11935998
     - _HeightMaskOffset: 0
     - _HeightMaskRemapMax: 0.8
-    - _HeightMaskRemapMin: 0.1
+    - _HeightMaskRemapMin: 0.2
     - _HeightMaskTextureAmplitude: 2
     - _HeightMaskTexturePower: 1
     - _HeightMaskTextureScale: 0.01
-    - _MainLightSelfShadowDistance: 4
+    - _MainLightSelfShadowDistance: 8
     - _MaxDistance: 1000
     - _PhaseG: 0.103
-    - _SelfShadowPower: 2
+    - _SelfShadowPower: 1
     - _SelfShadowRemapMax: 0.8
     - _SelfShadowRemapMin: 0.2
     m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 0.9411765}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _HeightMaskTextureAnimation: {r: 0.01, g: 0.02, b: 0, a: 0}
-    - _SelfShadowColor: {r: 0, g: 0, b: 0, a: 0.78431374}
-    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.78431374}
+    - _SelfShadowColor: {r: 0.1811322, g: 0.1811322, b: 0.1811322, a: 0.5882353}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
