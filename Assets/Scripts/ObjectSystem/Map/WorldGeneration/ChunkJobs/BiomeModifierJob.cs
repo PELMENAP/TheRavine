@@ -5,7 +5,7 @@ using Unity.Mathematics;
 
 namespace TheRavine.Generator
 {
-    [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
+    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true)]
     public struct BiomeModifierJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<float> heightIn;

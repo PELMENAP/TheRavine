@@ -67,8 +67,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b00045f12942b46c698459096c89274e, type: 3}
   m_Name: FullScreenPassRendererFeature
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.FullScreenPassRendererFeature
-  m_Active: 0
-  injectionPoint: 600
+  m_Active: 1
+  injectionPoint: 550
   fetchColorBuffer: 1
   requirements: 0
   passMaterial: {fileID: 2100000, guid: 74fe1c83c420485ccb86ad4071a7abd0, type: 2}
@@ -96,7 +96,7 @@ MonoBehaviour:
     NormalSamples: 0
     Intensity: 1
     DirectLightingStrength: 0.25
-    Radius: 0.035
+    Radius: 0.3
     Samples: 2
     BlurQuality: 2
     Falloff: 100

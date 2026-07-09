@@ -5,7 +5,7 @@ Shader "The Ravine/VolumetricFog"
         _Color                           ("Fog Color",               Color)   = (1,1,1,1)
         _ShadowColor                     ("Shadow Color",            Color)   = (0.5,0.5,0.5,1)
         _SelfShadowColor                 ("Self Shadow Color",       Color)   = (0,0,0,1)
-        _Density                         ("Density",                 Range(0, 0.3))   = 1.0
+        _Density                         ("Density",                 Range(0, 0.5))   = 1.0
         _MaxDistance                     ("Max Distance",            Float)   = 100.0
         _HeightMaskBlend                 ("Height Mask Blend",       Range(0, 1))   = 1.0
         _HeightMaskLength                ("Height Mask Length",      Float)   = 0.0
@@ -118,6 +118,11 @@ Shader "The Ravine/VolumetricFog"
 
             half4 Frag(Varyings input) : SV_Target
             {
+                if (_Density < 0.01f) 
+                {
+                    return SAMPLE_TEXTURE2D(_BlitTexture, sampler_LinearClamp, input.texcoord);
+                }
+                
                 float2 uvSS = input.texcoord;
 
                 float rawDepth = SampleSceneDepth(uvSS);
@@ -131,8 +136,6 @@ Shader "The Ravine/VolumetricFog"
                 uint frame = (uint)(_Time.y * 60.0) % 60u;
                 half noise = (half)InterleavedGradientNoise(uvSS * _ScaledScreenParams.xy, (float)frame);
                 float maxDist  = min(distToSurface, _MaxDistance);
-                float rayStep = maxDist / 16;
-                half  densityPerStep = _Density * (half)rayStep;
 
                 FogParams fp;
                 fp.density                    = _Density;
@@ -145,15 +148,39 @@ Shader "The Ravine/VolumetricFog"
                 fp.heightMaskTextureScale     = _HeightMaskTextureScale;
                 fp.heightMaskTextureAnimation = _HeightMaskTextureAnimation;
 
-                Light mainLight  = GetMainLight();
-                bool  mainLightOn = max(mainLight.color.r, max(mainLight.color.g, mainLight.color.b)) > 0.001;
+                float3 samplePosForLights = rayOrigin + dirWS * (maxDist * 0.5);
+
+                Light mainLight = GetMainLight();
+                half3 mainLightColor = 0.0h;
+                bool mainLightOn = max(mainLight.color.r, max(mainLight.color.g, mainLight.color.b)) > 0.001h;
+
+                if (mainLightOn)
+                {
+                    float4 shadowCoord = TransformWorldToShadowCoord(samplePosForLights);
+                    half shadow = (half)MainLightShadow(shadowCoord, samplePosForLights, half4(1,1,1,1), _MainLightOcclusionProbes);
+                    shadow = lerp(1.0h, shadow, _ShadowColor.a);
+
+                    half selfShadow = 1.0h;
+                    if (shadow > 0.001h)
+                    {
+                        selfShadow = ComputeSelfShadow(samplePosForLights, mainLight.direction, _MainLightSelfShadowDistance, fp);
+                        selfShadow = lerp(1.0h, selfShadow, shadow * _SelfShadowColor.a);
+                        selfShadow = (half)smoothstep((float)_SelfShadowRemapMin, (float)_SelfShadowRemapMax, (float)selfShadow);
+                        selfShadow = pow(selfShadow, _SelfShadowPower);
+                    }
+
+                    half3 ml = (half3)mainLight.color;
+                    ml = lerp(ml, _ShadowColor.rgb, 1.0h - shadow);
+                    ml = lerp(ml, _SelfShadowColor.rgb, 1.0h - selfShadow);
+                    mainLightColor = ml;
+                }
 
                 half3 lighting      = 0.0h;
                 half  transmittance = 1.0h;
-                half shadow;
+                half shadow         = 1.0h;
                 
 
-                [unroll]
+                [loop]
                 for (int i = 0; i < 16; ++i)
                 {
                     float t      = GetRayDistance(i,     16, maxDist, noise);
@@ -165,32 +192,8 @@ Shader "The Ravine/VolumetricFog"
                     float3 pos     = rayOrigin + dirWS * t;
                     half   fogDens = EvaluateDensity(pos, fp) * _Density * (half)stepLength;
                     half   stepTrans = exp(-fogDens);
-                    half   scatter   = 1.0h - stepTrans;
-                    half3  stepLight = 0.0h;
-
-                    if (mainLightOn)
-                    {
-                        if (mainLightOn && (i % 4 == 0))
-                        {
-                            float4 shadowCoord = TransformWorldToShadowCoord(pos);
-                            shadow = (half)MainLightShadow(shadowCoord, pos, half4(1,1,1,1), _MainLightOcclusionProbes);
-                        }
-                        shadow = lerp(1.0h, shadow, _ShadowColor.a);
-
-                        half selfShadow = 1.0h;
-                        if (shadow > 0.001h)
-                        {
-                            selfShadow = ComputeSelfShadow(pos, mainLight.direction, _MainLightSelfShadowDistance, fp);
-                            selfShadow = lerp(1.0h, selfShadow, shadow * _SelfShadowColor.a);
-                            selfShadow = (half)smoothstep((float)_SelfShadowRemapMin, (float)_SelfShadowRemapMax, (float)selfShadow);
-                            selfShadow = pow(selfShadow, _SelfShadowPower);
-                        }
-
-                        half3 ml = (half3)mainLight.color;
-                        ml = lerp(ml, _ShadowColor.rgb,     1.0h - shadow);
-                        ml = lerp(ml, _SelfShadowColor.rgb, 1.0h - selfShadow);
-                        stepLight += ml;
-                    }
+                    half scatter = (1.0h - stepTrans) * (fogDens > 0.0001h); 
+                    half3 stepLight = mainLightColor * scatter;
 
                     uint lightCount = min(GetAdditionalLightsCount(), 8);
                     [loop]

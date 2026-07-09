@@ -99,7 +99,7 @@ public class Noise
 
     }
 
-    [BurstCompile]
+    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true)]
     public struct HeightMapJob : IJobFor
     {
         [ReadOnly] public int ChunkSize;
@@ -124,7 +124,7 @@ public class Noise
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true)]
     public struct RiverMapJob : IJobFor
     {
         [ReadOnly] public int ChunkSize;
@@ -149,7 +149,7 @@ public class Noise
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true)]
     public struct ClimateDirect2xJob : IJobFor
     {
         [ReadOnly] public int HalfSize;

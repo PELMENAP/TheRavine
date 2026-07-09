@@ -18,7 +18,12 @@ public class RippleStampSystem : MonoBehaviour
 
     private readonly List<StampRequest> pending = new(16);
 
-    struct StampData { public Vector2 center; public float invRadius; public float strength; }
+    struct StampData 
+    { 
+        public Vector2 center; 
+        public float invRadius; 
+        public float strength; 
+    }
     private int kernelId;
 
     private void Awake()

@@ -70,15 +70,16 @@ public class EntityManager : MonoBehaviour
         model.SetUp();
 
         model.GetEntityComponent<MortalityComponent>().Died += () => HandleEntityDied(model);
+        model.OnReproduceRequest += SpawnChild;
 
         _entities.Add(model);
         OnEntitySpawned?.Invoke(model);
         return model;
     }
 
-    public EntityModel SpawnChild(EntityModel parent)
+    public void SpawnChild(EntityModel parent)
     {
-        if (_entities.Count >= maxPopulation) return null;
+        if (_entities.Count >= maxPopulation) return;
 
         var childParams = parent.Brain.Context.CoordMLP.Params.GetMutatedGeneticParameters();
         var childCtx    = _sharedBrain.CreateContext(childParams);
@@ -86,7 +87,7 @@ public class EntityManager : MonoBehaviour
                         + (Vector3)RavineRandom.GetInsideCircle().normalized * 2f
                         + Vector3.up * 5f;
 
-        return SpawnEntity(pos, childCtx);
+        SpawnEntity(pos, childCtx);
     }
 
     public EntityModel SpawnCrossoverChild(EntityModel parentA, EntityModel parentB)
@@ -114,6 +115,7 @@ public class EntityManager : MonoBehaviour
 
     private void HandleEntityDied(EntityModel model)
     {
+        model.OnReproduceRequest -= SpawnChild;
         _entities.Remove(model);
         model.Dispose();
 
@@ -144,7 +146,7 @@ public class EntityManager : MonoBehaviour
 
     private Vector3 RandomPosition()
     {
-        var v = RavineRandom.GetInsideCircle() * spawnRadius;
+        var v = RavineRandom.GetInsideSphere(spawnRadius);
         return transform.position + new Vector3(v.x, 0, v.y);
     }
 

@@ -6,7 +6,7 @@ using Unity.Mathematics;
 
 namespace TheRavine.Generator
 {
-    [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
+    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true, OptimizeFor = OptimizeFor.Performance)]
     public struct HydraulicErosionJob : IJob
     {
         [ReadOnly] public int mapSize;

@@ -86,6 +86,8 @@ public class LegRenderer
         float sinTheta = Mathf.Sin(angleStep * Mathf.Deg2Rad);
         float oneMinusCos = 1f - cosTheta;
 
+        Vector3 mimicPosition = mimic.transform.position;
+
         foreach (var leg in mimic.Pool.GetAll())
         {
             if (leg.state == LegState.Disabled) 
@@ -109,7 +111,7 @@ public class LegRenderer
 
                 for (int j = 0; j < verticesCount; j++)
                 {
-                    vertices[vIdx++] = p1 + perp - mimic.transform.position;
+                    vertices[vIdx++] = p1 + perp - mimicPosition;
                     Vector3 cross = Vector3.Cross(dir, perp);
                     float dot = Vector3.Dot(dir, perp);
                     perp = perp * cosTheta + cross * sinTheta + dir * (dot * oneMinusCos);
@@ -117,7 +119,7 @@ public class LegRenderer
             }
             vertices[vIdx++] =
                 leg.sampleBuffer[resolution - 1]
-                - mimic.transform.position;
+                - mimicPosition;
         }
 
         mesh.SetVertices(vertices, 0, maxVertices);

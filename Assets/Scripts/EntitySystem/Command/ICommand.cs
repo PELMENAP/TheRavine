@@ -4,4 +4,5 @@ public interface ICommand
 {
     UniTask ExecuteAsync();
     void Cancel();
+    bool CanExecute() => true; 
 }

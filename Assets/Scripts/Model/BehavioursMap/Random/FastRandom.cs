@@ -81,6 +81,15 @@ public static class RavineRandom
             fastRandom.NextFloat(-1f, 1f) * radius
         );
     }
+
+    public static UnityEngine.Vector3 GetInsideSphere(float radius = 1)
+    {
+        return new(
+            fastRandom.NextFloat(-1f, 1f) * radius,
+            fastRandom.NextFloat(-1f, 1f) * radius,
+            fastRandom.NextFloat(-1f, 1f) * radius
+        );
+    }
     public static UnityEngine.Color RangeColor()
     {
         return new(

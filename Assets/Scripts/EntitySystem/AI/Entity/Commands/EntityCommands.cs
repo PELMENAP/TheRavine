@@ -25,6 +25,8 @@ public class FleeCommand : ICommand
 
     public async UniTask ExecuteAsync()
     {
+        model.DialogHost.UpdateDialogPosition((IDialogListener)model.Motor);
+
         var target = model.Perception.FindNearestEntity(model.Motor.Position, model.SelfObject, out _);
         if (target == null) { model.Brain.GiveReward(0.3f); return; }
 
@@ -54,6 +56,9 @@ public class EatCommand : ICommand
             model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + 30f, model.Stats.MaxHealth);
             model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + 20f, model.Stats.MaxEnergy);
             model.Brain.GiveReward(0.85f);
+
+            model.Feedback.FlashColor(Color.magenta, 0).Forget();
+
             Object.Destroy(food.gameObject);
         }
         else
@@ -62,6 +67,9 @@ public class EatCommand : ICommand
             model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + 5f, model.Stats.MaxEnergy);
             model.Brain.GiveReward(0.35f);
         }
+
+
+
         await UniTask.Yield();
     }
 
@@ -120,6 +128,8 @@ public class GoToPointCommand : ICommand
         Vector2 target = model.Points.GetRandom();
         await model.Motor.MoveToAsync(new Vector3(target.x, model.Motor.Position.y, target.y),
             model.Tuning.MoveSpeed, 5f, model.Tuning.EnergyCostMoving, cts.Token);
+
+        model.Feedback.FlashColor(Color.blue, 0).Forget();
         model.Brain.GiveReward(0.55f);
     }
 
@@ -131,10 +141,14 @@ public class ReproduceCommand : ICommand
     private readonly EntityModel model;
     public ReproduceCommand(EntityModel model) => this.model = model;
 
+    public bool CanExecute() =>
+        model.Stats.Energy.Value >= model.Tuning.ReproduceEnergyCost &&
+        model.Stats.Health.Value >= model.Tuning.ReproduceHealthCost;
     public async UniTask ExecuteAsync()
     {
         model.Stats.Energy.Value -= model.Tuning.ReproduceEnergyCost;
         model.Stats.Health.Value -= model.Tuning.ReproduceHealthCost;
+        model.RequestReproduce();
         model.Brain.GiveReward(0.8f);
         await UniTask.Delay((int)(model.Tuning.IdleTime * 1000));
     }
@@ -149,9 +163,17 @@ public class SpeechCommand : ICommand
 
     public async UniTask ExecuteAsync()
     {
+        string hash = model.Vectorizer.HashFloatArray(model.LastInput);
+        model.Speech.SetOwnSpeech(hash);
+        DialogSystem.Instance.OnSpeechSend((IDialogSender)model.Motor, hash);
+
+        var nearest = model.Perception.FindNearestEntity(model.Motor.Position, model.SelfObject, out float dist);
+        await ((IEntityAudio)model.Feedback).PlaySpeechAsync(
+            hash, model.Stats.Health.Value, model.Stats.Energy.Value,
+            0f, 0f, model.LastActionIndex, dist, default);
+
         model.Stats.Energy.Value -= 5f;
         model.Brain.GiveReward(0.55f);
-        await UniTask.Yield();
     }
 
     public void Cancel() { }
@@ -165,11 +187,17 @@ public class MimicCommand : ICommand
     public UniTask ExecuteAsync()
     {
         var target = model.Perception.FindNearestEntity(model.Motor.Position, model.SelfObject, out _);
-        if (target == null) { model.Brain.GiveReward(0.2f); return UniTask.CompletedTask; }
-        model.Brain.GiveReward(0.3f);
+        var otherModel = target?.GetComponent<EntityViewModel>()?.Entity as EntityModel;
+
+        if (otherModel == null) { model.Brain.GiveReward(0.2f); return UniTask.CompletedTask; }
+
+        model.SetLastAction(otherModel.LastActionIndex);
+        float reward = 0.3f + otherModel.Brain.Context.CoordMLP.AverageEntropy * 0.2f;
+        model.Brain.GiveReward(reward);
+        model.Feedback.FlashColor(Color.white, 0).Forget();
+
         return UniTask.CompletedTask;
     }
-
     public void Cancel() { }
 }
 
@@ -186,6 +214,8 @@ public class ThreatenCommand : ICommand
             model.Brain.GiveReward(target == null ? 0.2f : 0.15f);
             return;
         }
+
+        model.Feedback.FlashColor(Color.orange, 0).Forget();
 
         model.Stats.Energy.Value -= 3f;
         model.Brain.GiveReward(dist < model.Tuning.AttackRange ? 0.6f : 0.4f);
@@ -213,9 +243,13 @@ public class ShareFoodCommand : ICommand
             return;
         }
 
+        model.Feedback.FlashColor(Color.yellow, 0).Forget();
+
         float transfer = Mathf.Min(20f, model.Stats.Health.Value - 60f);
         model.Stats.Health.Value -= transfer;
         victim.Stats.Health.Value = Mathf.Min(victim.Stats.Health.Value + transfer, victim.Stats.MaxHealth);
+
+        victim.Feedback.FlashColor(Color.white, 0).Forget();
 
         float needFactor = 1f - Mathf.Clamp01(victim.Stats.Health.Value / victim.Stats.MaxHealth);
         model.Brain.GiveReward(0.5f + needFactor * 0.35f);
@@ -231,6 +265,8 @@ public class AttackCommand : ICommand
     private CancellationTokenSource cts = new();
 
     public AttackCommand(EntityModel model) => this.model = model;
+
+    public bool CanExecute() => model.Stats.Energy.Value >= model.Tuning.AttackEnergyCost;
 
     public async UniTask ExecuteAsync()
     {
@@ -274,3 +310,4 @@ public class WanderCommand : ICommand
 
     public void Cancel() => cts.Cancel();
 }
+

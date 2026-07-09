@@ -1,42 +1,56 @@
 using Cysharp.Threading.Tasks;
 using System.Threading;
+using System;
 using R3;
 using UnityEngine;
+using Unity.Mathematics;
 
 namespace TheRavine.Base
 {
     public class FogCycle : MonoBehaviour
     {
-
         [Header("References")]
         [SerializeField] private DayCycle dayCycle;
         [SerializeField] private Material fogMaterial;
 
         [Header("Color & Density")]
-        [SerializeField] private Gradient fogColor = new Gradient();
         [SerializeField] private AnimationCurve densityCurve = AnimationCurve.Constant(0, 1, 0.05f);
-        [SerializeField] private AnimationCurve colorIntensityCurve = AnimationCurve.Constant(0, 1, 1f);
 
         [Header("Height Mask")]
-        [SerializeField] private AnimationCurve heightMaskLengthCurve = AnimationCurve.Constant(0, 1, 100f);
-        [SerializeField] private AnimationCurve heightMaskFalloffCurve = AnimationCurve.Constant(0, 1, 1f);
+        [SerializeField] private AnimationCurve heightMaskLengthCurve = AnimationCurve.Constant(0, 1, 16f);
 
-        [Header("Night Behaviour")]
-        [SerializeField] private AnimationCurve nightVisibilityCurve = AnimationCurve.Constant(0, 1, 1f);
         [SerializeField] private bool disableAtNight = false;
         [SerializeField] private float fadeDuration = 2f;
 
         private CancellationTokenSource cts;
+        private CancellationTokenSource fadeCts;
         private readonly CompositeDisposable subscriptions = new();
+
         private float currentVisibility = 1f;
-        private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private bool wasDay;
+
+        private float activeDensityMultiplier = 1f;
+        private float pendingDensityMultiplier = 1f;
+
+        private float activeHeightMaskLengthMultiplier = 1f;
+        private float pendingHeightMaskLengthMultiplier = 1f;
+
         private static readonly int DensityId = Shader.PropertyToID("_Density");
         private static readonly int HeightMaskLengthId = Shader.PropertyToID("_HeightMaskLength");
-        private static readonly int HeightMaskFalloffId = Shader.PropertyToID("_HeightMaskFalloff");
+
 
         public void OnEnable()
         {
             cts = new CancellationTokenSource();
+            fadeCts = new CancellationTokenSource();
+
+            activeDensityMultiplier = GenerateDensityMultiplier();
+            pendingDensityMultiplier = GenerateDensityMultiplier();
+
+            activeHeightMaskLengthMultiplier = GenerateDensityMultiplier();
+            pendingHeightMaskLengthMultiplier = GenerateDensityMultiplier();
+
+            wasDay = dayCycle.IsDay.CurrentValue;
 
             dayCycle.NormalizedTime
                 .Subscribe(OnTimeChanged)
@@ -52,59 +66,83 @@ namespace TheRavine.Base
             subscriptions?.Clear();
             cts?.Cancel();
             cts?.Dispose();
+            fadeCts?.Cancel();
+            fadeCts?.Dispose();
         }
 
-        private void OnTimeChanged(float normalizedTime)
+        private void OnTimeChanged(float t)
         {
-            if (fogMaterial == null) return;
+            float density = densityCurve.Evaluate(t) * activeDensityMultiplier * currentVisibility;
 
-            float t = normalizedTime;
-
-            Color baseColor = fogColor.Evaluate(t);
-            float colorIntensity = colorIntensityCurve.Evaluate(t);
-            float visibilityMultiplier = nightVisibilityCurve.Evaluate(t);
-
-            float visibility = visibilityMultiplier * currentVisibility;
-
-            float density = densityCurve.Evaluate(t) * visibility;
-            Color finalColor = baseColor * colorIntensity * visibility;
-
-            float heightLength = heightMaskLengthCurve.Evaluate(t);
-            float heightFalloff = heightMaskFalloffCurve.Evaluate(t);
+            if(density < 0.01f)
+            {
+                return;
+            }
 
 
-            fogMaterial.SetColor(ColorId, finalColor);
+            float heightLength = heightMaskLengthCurve.Evaluate(t) * activeHeightMaskLengthMultiplier;
+
             fogMaterial.SetFloat(DensityId, density);
             fogMaterial.SetFloat(HeightMaskLengthId, heightLength);
-            fogMaterial.SetFloat(HeightMaskFalloffId, heightFalloff);
         }
 
         private void OnDayNightChanged(bool day)
         {
+            if (!day && wasDay)
+            {
+                activeDensityMultiplier = pendingDensityMultiplier;
+                pendingDensityMultiplier = GenerateDensityMultiplier();
+
+                activeHeightMaskLengthMultiplier = pendingHeightMaskLengthMultiplier;
+                pendingHeightMaskLengthMultiplier = GenerateDensityMultiplier();;
+            }
+
+            wasDay = day;
+
             if (disableAtNight)
             {
-                FadeVisibility(day ? 1f : 0f, cts.Token).Forget();
+                fadeCts?.Cancel();
+                fadeCts = new CancellationTokenSource();
+                FadeVisibility(day ? 1f : 0f, fadeCts.Token).Forget();
             }
+        }
+
+        private float GenerateDensityMultiplier()
+        {
+            float min = 0f;
+            float max = 1f;
+            
+            float u = UnityEngine.Random.value;
+            float centered = u - 0.5f;
+            float uShape = centered * centered * 4f;
+            
+            return math.lerp(min, max, uShape);
+        }
+        public void SetPendingDensityMultiplier(float multiplier)
+        {
+            pendingDensityMultiplier = Mathf.Clamp01(multiplier);
         }
 
         private async UniTaskVoid FadeVisibility(float target, CancellationToken token)
         {
-            float start = currentVisibility;
-            float elapsed = 0f;
-
-            while (elapsed < fadeDuration && !token.IsCancellationRequested)
+            try
             {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / fadeDuration);
-                float ease = 1f - Mathf.Pow(1f - t, 3f);
-                currentVisibility = Mathf.Lerp(start, target, ease);
-                await UniTask.Yield(PlayerLoopTiming.Update, token);
-            }
+                float start = currentVisibility;
+                float elapsed = 0f;
 
-            if (!token.IsCancellationRequested)
-            {
-                currentVisibility = target;
+                while (elapsed < fadeDuration && !token.IsCancellationRequested)
+                {
+                    elapsed += Time.deltaTime;
+                    float t = Mathf.Clamp01(elapsed / fadeDuration);
+                    float ease = 1f - Mathf.Pow(1f - t, 3f);
+                    currentVisibility = Mathf.Lerp(start, target, ease);
+                    await UniTask.Yield(PlayerLoopTiming.Update, token);
+                }
+
+                if (!token.IsCancellationRequested)
+                    currentVisibility = target;
             }
+            catch (OperationCanceledException) { }
         }
     }
 }

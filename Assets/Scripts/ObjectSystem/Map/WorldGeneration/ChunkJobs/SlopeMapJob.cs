@@ -5,7 +5,7 @@ using Unity.Jobs;
 
 namespace TheRavine.Generator
 {
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true)]
     public struct SlopeMapJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<float> heightMap;
