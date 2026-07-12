@@ -22,7 +22,7 @@ namespace TheRavine.EntityControl
         public void AddToGlobal(AEntity entity)
         {
             global.Add(entity);
-            logger.LogInfo(entity.GetEntityComponent<MainComponent>().GetEntityName() + " added to EntitySystem!");
+            // logger.LogInfo(entity.GetEntityComponent<MainComponent>().GetEntityName() + " added to EntitySystem!");
         }
         [SerializeField] private EntityInfo[] _mobInfo;
         [SerializeField] private BoidsBehaviour boidsBehaviour;

@@ -1,7 +1,9 @@
 using System;
+using System.Threading;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using Unity.Netcode;
 
 public class EntityManager : MonoBehaviour
 {
@@ -42,16 +44,38 @@ public class EntityManager : MonoBehaviour
     {
         _sharedBrain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden);
     }
-
-    private void Start()
+    private CancellationTokenSource _tickCts;
+    private async void Start()
     {
+        await UniTask.Delay(3000);
+
         for (int i = 0; i < initialCount; i++)
             SpawnEntity(RandomPosition());
 
         for (int i = 0; i < initialFood; i++)
             SpawnFood();
 
+        _tickCts = new CancellationTokenSource();
+        EntityTickLoopAsync(_tickCts.Token).Forget();
+
         TrackDiagnosticsAsync(destroyCancellationToken).Forget();
+    }
+
+    private async UniTaskVoid EntityTickLoopAsync(CancellationToken ct)
+    {
+        const float window = 1f;
+        while (!ct.IsCancellationRequested)
+        {
+            int count = _entities.Count;
+            if (count == 0) { await UniTask.Delay(TimeSpan.FromSeconds(window), cancellationToken: ct); continue; }
+
+            float stepDelay = window / count;
+            for (int i = 0; i < count; i++)
+            {
+                if (i < _entities.Count) _entities[i].UpdateEntityCycle();
+                await UniTask.Delay(TimeSpan.FromSeconds(stepDelay), cancellationToken: ct);
+            }
+        }
     }
 
     public EntityModel SpawnEntity(Vector3 position, EntityBrainContext inheritedCtx = null)
@@ -59,6 +83,10 @@ public class EntityManager : MonoBehaviour
         if (_entities.Count >= maxPopulation) return null;
 
         var go = Instantiate(entityPrefab, position, Quaternion.identity, transform);
+        
+        var netObj = go.GetComponent<NetworkObject>();
+        netObj?.Spawn();
+
         var viewModel = go.GetComponent<EntityViewModel>();
 
         var model = new EntityModel();
@@ -184,5 +212,11 @@ public class EntityManager : MonoBehaviour
             }
             await UniTask.Delay(1000, cancellationToken: ct);
         }
+    }
+
+    private void OnDestroy()
+    {
+        _tickCts?.Cancel();
+        _tickCts?.Dispose();
     }
 }

@@ -104,6 +104,7 @@ public class GrassSystem : MonoBehaviour
     
     private void InitializeSystem()
     {
+        
         if (grassPlacementShader == null)
         {
             Debug.LogError("Grass placement shader not assigned!");
