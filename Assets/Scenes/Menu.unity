@@ -190,7 +190,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3713197110366095426, guid: 1ce7dd7f5281e97e38b5d848d452e9ee, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5662360839836425318, guid: 1ce7dd7f5281e97e38b5d848d452e9ee, type: 3}
       propertyPath: LogLevel
@@ -921,7 +921,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1808343262851033831, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -0.0010432868
+      value: -0.000026396438
       objectReference: {fileID: 0}
     - target: {fileID: 1850869273875378153, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: gestureAreaEnable

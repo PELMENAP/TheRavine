@@ -1730,6 +1730,17 @@ MonoBehaviour:
   - {x: 0.5, y: -0.5, z: 0}
   - {x: 0.5, y: 0.5, z: 0}
   - {x: -0.5, y: 0.5, z: 0}
+--- !u!114 &991031193 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7628109998501893574, guid: e6fc858b1c845550097ecb40c3760e4e, type: 3}
+  m_PrefabInstance: {fileID: 2621308815261861144}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8feeaef7c9e149c4bd6290fcf637c73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1021793569
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2885,7 +2896,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2574755847066893471, guid: 635bfbcf66d798528848e15e580c146a, type: 3}
       propertyPath: scriptsLoadedOnBootstrapState.Array.size
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2574755847066893471, guid: 635bfbcf66d798528848e15e580c146a, type: 3}
       propertyPath: 'scriptsLoadedOnInitialState.Array.data[0]'
@@ -2914,7 +2925,7 @@ PrefabInstance:
     - target: {fileID: 2574755847066893471, guid: 635bfbcf66d798528848e15e580c146a, type: 3}
       propertyPath: 'scriptsLoadedOnBootstrapState.Array.data[3]'
       value: 
-      objectReference: {fileID: 2106554135605110287, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
+      objectReference: {fileID: 991031193}
     - target: {fileID: 2574755847066893471, guid: 635bfbcf66d798528848e15e580c146a, type: 3}
       propertyPath: 'scriptsLoadedOnBootstrapState.Array.data[4]'
       value: 

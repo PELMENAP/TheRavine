@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
 using Cysharp.Threading.Tasks;
 using R3;
