@@ -1,4 +1,4 @@
-
+using UnityEngine;  
 
 public class BrainComponent : IComponent
 {
@@ -12,7 +12,11 @@ public class BrainComponent : IComponent
     }
 
     public int Predict(float[] input) => _brain.Predict(input, Context);
-    public void GiveReward(float reward) => _brain.GiveReward(reward, Context);
+    public void GiveReward(float reward) 
+    {
+        Debug.Log($"[Reward] {reward}");
+        _brain.GiveReward(reward, Context);
+    }
     public SharedHierarchicalBrain.Goal CurrentGoal => Context.CurrentGoal;
 
     public void Dispose() { }

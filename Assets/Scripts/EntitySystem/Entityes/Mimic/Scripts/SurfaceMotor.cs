@@ -38,7 +38,7 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
             pos.x += velocity.x * Time.deltaTime;
             pos.z += velocity.z * Time.deltaTime;
 
-            pos.y = mapGenerator.SampleHeightBilinear(pos.x, pos.z) - heightOffset;
+            pos.y = mapGenerator.SampleHeightBilinear(pos.x, pos.z) + heightOffset;
 
             transform.position = pos;
             await UniTask.Yield(ct);

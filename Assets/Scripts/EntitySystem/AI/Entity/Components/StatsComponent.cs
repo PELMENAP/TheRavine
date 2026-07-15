@@ -1,5 +1,6 @@
 using R3;
 using Unity.Mathematics;
+using UnityEngine;
 
 public class StatsComponent : IComponent
 {
@@ -24,7 +25,10 @@ public class StatsComponent : IComponent
     public void Tick(float deltaTime, float regenRate, bool isIdle)
     {
         if (isIdle && Energy.Value < MaxEnergy)
+        {
             Energy.Value = math.min(Energy.Value + regenRate * deltaTime, MaxEnergy);
+            Debug.Log($"[Stats] regen tick, isIdle={isIdle}, energy={Energy.Value}");
+        }
 
         if (Energy.Value < 5f)
         {

@@ -22,7 +22,12 @@ public class EntityModel : AEntity
 
     public float[] LastInput;
     public int LastActionIndex;
-    public void SetLastAction(int index) => LastActionIndex = index;
+    public EntityAction LastAction { get; private set; }
+    public void SetLastAction(int index)
+    {
+        LastActionIndex = index;
+        LastAction = (EntityAction)index;
+    }
     private int timeOfDay;
     private bool canAttack = true;
 
@@ -122,12 +127,19 @@ public class EntityModel : AEntity
 
         int actionIndex = Brain.Predict(LastInput);
         LastActionIndex = actionIndex;
+    
+        Debug.Log($"[Brain] predicted {(EntityAction)actionIndex}, goal {Brain.CurrentGoal}");
 
         var targetType = GoalStateMap[Brain.CurrentGoal];
         if (states.behaviourCurrent.GetType() != targetType)
-            states.SetBehaviourAsync(states.GetBehaviourByType(targetType)).Forget();
+        {
+            Debug.Log($"[State] switching {states.behaviourCurrent.GetType().Name} -> {targetType.Name}");
 
+            states.SetBehaviourAsync(states.GetBehaviourByType(targetType)).Forget();
+        }
         ((EntityActionState)states.behaviourCurrent).EnqueueAction((EntityAction)actionIndex);
+        states.behaviourCurrent.Update();
+
         OnUpdate.Execute(R3.Unit.Default);
     }
 

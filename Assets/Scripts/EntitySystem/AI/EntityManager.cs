@@ -63,6 +63,7 @@ public class EntityManager : MonoBehaviour
 
     private async UniTaskVoid EntityTickLoopAsync(CancellationToken ct)
     {
+        await UniTask.Delay(5000, cancellationToken: ct);
         const float window = 1f;
         while (!ct.IsCancellationRequested)
         {
@@ -73,6 +74,7 @@ public class EntityManager : MonoBehaviour
             for (int i = 0; i < count; i++)
             {
                 if (i < _entities.Count) _entities[i].UpdateEntityCycle();
+                Debug.Log($"[Tick] entity {i} cycle called");
                 await UniTask.Delay(TimeSpan.FromSeconds(stepDelay), cancellationToken: ct);
             }
         }
@@ -88,6 +90,7 @@ public class EntityManager : MonoBehaviour
         netObj?.Spawn();
 
         var viewModel = go.GetComponent<EntityViewModel>();
+        var view = go.GetComponent<EntityView>();
 
         var model = new EntityModel();
         var ctx = inheritedCtx ?? _sharedBrain.CreateContext();
@@ -95,6 +98,7 @@ public class EntityManager : MonoBehaviour
         model.Configure(_sharedBrain, ctx, viewModel, viewModel, go, tuning);
         model.Init();
         viewModel.Initialize(model);
+        view.Initialize(viewModel);
         model.SetUp();
 
         model.GetEntityComponent<MortalityComponent>().Died += () => HandleEntityDied(model);

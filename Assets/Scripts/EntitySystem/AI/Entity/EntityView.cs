@@ -6,7 +6,6 @@ using R3;
 
 public class EntityView : AEntityView
 {
-    [SerializeField] private SpriteRenderer sr;
     [SerializeField] private TextMeshPro label;
 
     protected override void SetupBindings()
@@ -16,7 +15,9 @@ public class EntityView : AEntityView
 
         model.OnUpdate.Subscribe(_ =>
         {
-            label.text = $"{model.Brain.CurrentGoal}\n{(int)model.Stats.Health.Value} HP / {(int)model.Stats.Energy.Value} EN";
+            label.text = $"{model.Brain.CurrentGoal} - {model.LastAction}\n"
+                    + $"{(int)model.Stats.Health.Value} HP / {(int)model.Stats.Energy.Value} EN\n"
+                    + model.Speech.OwnSpeech;
         });
     }
 }
