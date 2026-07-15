@@ -2023,6 +2023,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: initialCount
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
       propertyPath: tuning.IdleTime
       value: 5
       objectReference: {fileID: 0}

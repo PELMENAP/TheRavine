@@ -1,7 +1,6 @@
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using System.Threading;
-using TMPro;
 
 using TheRavine.EntityControl;
 using TheRavine.Generator;
@@ -25,8 +24,6 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor, IEntityFeedback,
         Destroy(gameObject, 0f);
     }
     [SerializeField] private SpriteRenderer sr;
-    [SerializeField] private TextMeshPro label;
-
     [SerializeField] private StringToAudioGenerator audioGenerator;
 
     public async UniTask PlaySpeechAsync(string speech, float health, float energy, float danger,
@@ -50,7 +47,6 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor, IEntityFeedback,
         await UniTask.Delay(d * 1000);
         sr.color  = orig;
     }
-    public void SetLabel(string text) => label.text = text;
 
     protected override void OnViewUpdate() { }
     protected override void OnViewEnable() { }

@@ -12,7 +12,6 @@ public interface IEntityMotor
 public interface IEntityFeedback
 {
     UniTask FlashColor(Color color, int duration);
-    void SetLabel(string text);
 }
 
 public interface IEntityDialogHost
