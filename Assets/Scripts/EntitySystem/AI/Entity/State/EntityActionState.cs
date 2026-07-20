@@ -26,7 +26,7 @@ public abstract class EntityActionState : AState
             Model.Stats.Health.Value -= 3f;
             return;
         }
-        Debug.Log($"[EnqueueAction] {action} added to queue");
+        
         AddCommand(cmd);
     }
 

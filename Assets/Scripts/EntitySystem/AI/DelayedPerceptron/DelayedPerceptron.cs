@@ -50,19 +50,13 @@ public partial class DelayedPerceptron
             var delayed = ctx.DelayedList[0];
             ctx.DelayedList.RemoveAt(0);
 
-            if (MathF.Abs(delayed.Evaluation - ctx.Params.DefaultEvaluation) > 0.05f)
-            {
-                float r = delayed.Evaluation > ctx.Params.DefaultEvaluation
-                    ? delayed.Evaluation
-                    : 1f - delayed.Evaluation;
+            float r = Mathf.Clamp(delayed.Evaluation, -1f, 1f);
+            if (MathF.Abs(r) > 0.05f)
                 Train(delayed.Predicted, r, ctx);
-            }
         }
 
         return pred;
     }
-
-    // ForwardPass сохраняет историю в кольцевой буфер — без доп. аллокаций
     private void ForwardPass(float[] input, PerceptronContext ctx)
     {
         float dt   = ctx.DeltaTime;
@@ -126,27 +120,25 @@ public partial class DelayedPerceptron
         int   steps = Math.Min(ctx.BpttCount, ctx.TruncWindow);
         float dt    = ctx.DeltaTime;
 
-        float lrSchedule   = MathF.Exp(-ctx.TrainingSteps * 0.0002f);
-        float entropyBoost = MathF.Min(2f, 1f + (1.5f - ctx.AverageEntropy) * 0.3f);
-        float lr           = ctx.Params.BaseLearningRate
-                           * MathF.Min(reward, 1.2f) * lrSchedule * entropyBoost;
-        float lambda  = ctx.Params.Lambda * (2f - ctx.AverageEntropy);
+        float lrSchedule = MathF.Exp(-ctx.TrainingSteps * 0.0002f);
+        float lr = ctx.Params.BaseLearningRate * Mathf.Clamp(reward, -1f, 1.2f) * lrSchedule;
+        float lambda = ctx.Params.Lambda;
         float maxGrad = ctx.Params.MaxGradientNorm;
 
         // Вычисляем ошибку выхода по текущим активациям (шаг T)
         int   outCount = ctx.OutErrBuf.Length;
-        float pos      = 1f - ctx.Params.LabelSmoothing;
-        float neg      = ctx.Params.LabelSmoothing / (outCount - 1);
+        // float pos      = 1f - ctx.Params.LabelSmoothing;
+        // float neg      = ctx.Params.LabelSmoothing / (outCount - 1);
         int   lastAct  = ctx.Activations.Length - 1;
 
         for (int i = 0; i < outCount; i++)
         {
-            float target   = (i == predictedIndex) ? pos : neg;
-            float act      = ctx.Activations[lastAct][i];
-            ctx.OutErrBuf[i] = (target - act) + ctx.Params.EntropyRegularization * (0.5f - act);
+            float target = (i == predictedIndex) ? 1f : 0f;
+            float act    = ctx.Activations[lastAct][i];
+            float baseErr = target - act + ctx.Params.EntropyRegularization * (0.5f - act);
+            ctx.OutErrBuf[i] = baseErr * reward;
         }
 
-        // Сброс временного градиента
         for (int l = 0; l < L; l++)
             Array.Clear(ctx.TemporalDeltaH[l], 0, ctx.TemporalDeltaH[l].Length);
 
@@ -232,8 +224,6 @@ public partial class DelayedPerceptron
             }
         }
     }
-
-    // Пишем прямо в vals через промежуточный buf — ноль аллокаций
     private static void SoftmaxInPlace(float[] vals, float[] buf, float temp)
     {
         float max = vals[0];
@@ -360,6 +350,6 @@ public class DelayedItem
     public DelayedItem(int predicted)
     {
         Predicted  = predicted;
-        Evaluation = 0.5f;
+        Evaluation = 0f;
     }
 }

@@ -33,6 +33,8 @@ public class SharedHierarchicalBrain
     public readonly int[] CoordLayerSizes;
     public readonly int[][] ExecLayerSizes;
 
+    private const float Gamma = 0.95f;
+
     public SharedHierarchicalBrain(int inputSize, int lstmHidden = 32)
     {
         InputSize  = inputSize;
@@ -86,8 +88,9 @@ public class SharedHierarchicalBrain
 
             ctx.CurrentGoal     = (Goal)goalIdx;
             ctx.GoalStepsLeft   = RavineRandom.RangeInt(MinGoalDuration, MaxGoalDuration + 1);
-            ctx.GoalTotalReward = 0f;
-            ctx.GoalRewardCount = 0;
+            ctx.GoalDiscountedReturn = 0f;
+            ctx.GoalDiscountFactor   = 1f;
+            ctx.GoalRewardCount      = 0;
         }
 
         ctx.GoalStepsLeft--;
@@ -103,12 +106,13 @@ public class SharedHierarchicalBrain
 
     public void GiveReward(float reward, EntityBrainContext ctx)
     {
-        int g    = (int)ctx.CurrentGoal;
+        int g = (int)ctx.CurrentGoal;
         var list = ctx.ExecMLPs[g].DelayedList;
         if (list.Count > 0)
-            list[list.Count - 1].Evaluation = Mathf.Clamp01(reward);
+            list[list.Count - 1].Evaluation = Mathf.Clamp(reward, -1f, 1f);
 
-        ctx.GoalTotalReward += reward;
+        ctx.GoalDiscountedReturn += reward * ctx.GoalDiscountFactor;
+        ctx.GoalDiscountFactor *= Gamma;
         ctx.GoalRewardCount++;
     }
 
@@ -122,12 +126,10 @@ public class SharedHierarchicalBrain
     {
         if (ctx.GoalRewardCount == 0) return;
 
-        float avg  = ctx.GoalTotalReward / ctx.GoalRewardCount;
-        var   list = ctx.CoordMLP.DelayedList;
+        var list = ctx.CoordMLP.DelayedList;
         if (list.Count > 0)
-            list[list.Count - 1].Evaluation = Mathf.Clamp01(avg);
+            list[list.Count - 1].Evaluation = Mathf.Clamp(ctx.GoalDiscountedReturn, -1f, 1f);
     }
-
     private static void BuildCombined(float[] input, float[] lstmH, float[] combined)
     {
         Array.Copy(input, 0, combined, 0,            input.Length);

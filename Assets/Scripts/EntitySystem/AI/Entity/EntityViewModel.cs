@@ -6,7 +6,7 @@ using TheRavine.EntityControl;
 using TheRavine.Generator;
 
 public class EntityViewModel : AEntityViewModel, IEntityMotor, IEntityFeedback,
-    IDialogListener, IDialogSender, IEntityDialogHost, IEntityDeathHandler
+    IDialogListener, IDialogSender, IEntityDialogHost, IEntityDeathHandler, IEntityAudio
 {
     [SerializeField] private SurfaceMotor motor;
 

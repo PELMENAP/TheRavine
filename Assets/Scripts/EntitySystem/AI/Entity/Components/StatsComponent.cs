@@ -27,7 +27,6 @@ public class StatsComponent : IComponent
         if (isIdle && Energy.Value < MaxEnergy)
         {
             Energy.Value = math.min(Energy.Value + regenRate * deltaTime, MaxEnergy);
-            Debug.Log($"[Stats] regen tick, isIdle={isIdle}, energy={Energy.Value}");
         }
 
         if (Energy.Value < 5f)

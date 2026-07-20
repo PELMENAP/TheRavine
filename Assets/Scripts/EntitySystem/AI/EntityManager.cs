@@ -63,7 +63,7 @@ public class EntityManager : MonoBehaviour
 
     private async UniTaskVoid EntityTickLoopAsync(CancellationToken ct)
     {
-        await UniTask.Delay(5000, cancellationToken: ct);
+        await UniTask.Delay(3000, cancellationToken: ct);
         const float window = 1f;
         while (!ct.IsCancellationRequested)
         {
@@ -74,7 +74,6 @@ public class EntityManager : MonoBehaviour
             for (int i = 0; i < count; i++)
             {
                 if (i < _entities.Count) _entities[i].UpdateEntityCycle();
-                Debug.Log($"[Tick] entity {i} cycle called");
                 await UniTask.Delay(TimeSpan.FromSeconds(stepDelay), cancellationToken: ct);
             }
         }
@@ -179,6 +178,7 @@ public class EntityManager : MonoBehaviour
     private Vector3 RandomPosition()
     {
         var v = RavineRandom.GetInsideSphere(spawnRadius);
+        Debug.Log(transform.position + new Vector3(v.x, 0, v.y));
         return transform.position + new Vector3(v.x, 0, v.y);
     }
 

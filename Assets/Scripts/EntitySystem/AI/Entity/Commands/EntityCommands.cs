@@ -5,18 +5,32 @@ using UnityEngine;
 public class IdleCommand : ICommand
 {
     private readonly EntityModel model;
+    private const float LowEnergyThreshold = 0.35f;
+    private const float LongActivityPenaltyStart = 0.85f;
+
     public IdleCommand(EntityModel model) => this.model = model;
 
     public async UniTask ExecuteAsync()
     {
         model.Motor.Stop();
-        model.Brain.GiveReward(0.5f);
+
+        float energyRatio = model.Stats.Energy.Value / model.Stats.MaxEnergy;
+        float healthRatio = model.Stats.Health.Value / model.Stats.MaxHealth;
+
+        float reward;
+        if (energyRatio < LowEnergyThreshold || healthRatio < LowEnergyThreshold)
+            reward = 0.6f;
+        else if (energyRatio > LongActivityPenaltyStart && healthRatio > LongActivityPenaltyStart)
+            reward = -0.4f;
+        else
+            reward = 0f;
+
+        model.Brain.GiveReward(reward);
         await UniTask.Delay((int)(model.Tuning.IdleTime * 1000));
     }
 
     public void Cancel() { }
 }
-
 public class FleeCommand : ICommand
 {
     private readonly EntityModel model;
@@ -84,6 +98,9 @@ public class RestCommand : ICommand
     public async UniTask ExecuteAsync()
     {
         model.Motor.Stop();
+        float startEnergy = model.Stats.Energy.Value;
+        float startHealth = model.Stats.Health.Value;
+
         float elapsed = 0f;
         const float duration = 3f;
         while (elapsed < duration)
@@ -93,7 +110,10 @@ public class RestCommand : ICommand
             elapsed += Time.deltaTime;
             await UniTask.Yield();
         }
-        model.Brain.GiveReward(0.7f);
+
+        float deficitBefore = (1f - startEnergy / model.Stats.MaxEnergy) + (1f - startHealth / model.Stats.MaxHealth);
+        float reward = deficitBefore > 0.3f ? 0.7f : -0.2f;
+        model.Brain.GiveReward(reward);
     }
 
     public void Cancel() { }
@@ -168,7 +188,7 @@ public class SpeechCommand : ICommand
         DialogSystem.Instance.OnSpeechSend((IDialogSender)model.Motor, hash);
 
         var nearest = model.Perception.FindNearestEntity(model.Motor.Position, model.SelfObject, out float dist);
-        await ((IEntityAudio)model.Feedback).PlaySpeechAsync(
+        await model.Speech.PlayAsync(
             hash, model.Stats.Health.Value, model.Stats.Energy.Value,
             0f, 0f, model.LastActionIndex, dist, default);
 
@@ -178,7 +198,6 @@ public class SpeechCommand : ICommand
 
     public void Cancel() { }
 }
-
 public class MimicCommand : ICommand
 {
     private readonly EntityModel model;
