@@ -68,11 +68,13 @@ public struct FastRandom
 
 public static class RavineRandom
 {
-    private readonly static Random fastRandom = new(1u);
+    private static Random fastRandom = new((uint)System.DateTime.Now.Ticks); 
+
     public static int RangeInt(int min, int max) => fastRandom.NextInt(min, max);
     public static int RangeInt(int max) => fastRandom.NextInt(0, max);
     public static float RangeFloat(float min, float max) => fastRandom.NextFloat(min, max);
     public static float RangeFloat() => fastRandom.NextFloat(0f, 1f);
+    
     public static int Hundred() => RangeInt(0, 100);
     public static UnityEngine.Vector2 GetInsideCircle(float radius = 1)
     {

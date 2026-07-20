@@ -16,7 +16,7 @@ public class LegPlanner
 
     private void TrySpawnLegs(Mimic mimic)
     {
-        Vector3 forward = mimic.velocity.sqrMagnitude > 0.1f ? mimic.velocity.normalized : mimic.transform.forward;
+        Vector3 forward = mimic.Velocity.sqrMagnitude > 0.1f ? mimic.Velocity.normalized : mimic.transform.forward;
         float randomAngle = Random.Range(-45f, 45f);
         float randomDist = Random.Range(mimic.minLegDistance, mimic.maxLegDistance);
         

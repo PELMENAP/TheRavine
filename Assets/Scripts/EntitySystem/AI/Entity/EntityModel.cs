@@ -2,6 +2,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using TheRavine.EntityControl;
 using System;
+using System.Collections.Generic;
 
 public class EntityModel : AEntity
 {
@@ -34,7 +35,7 @@ public class EntityModel : AEntity
     public event Action<EntityModel> OnReproduceRequest;
     public void RequestReproduce() => OnReproduceRequest?.Invoke(this);
 
-    private static readonly System.Collections.Generic.Dictionary<SharedHierarchicalBrain.Goal, System.Type> GoalStateMap = new()
+    private static readonly Dictionary<SharedHierarchicalBrain.Goal, Type> GoalStateMap = new()
     {
         [SharedHierarchicalBrain.Goal.Survive] = typeof(SurviveState),
         [SharedHierarchicalBrain.Goal.Hunt]    = typeof(HuntState),
@@ -60,6 +61,7 @@ public class EntityModel : AEntity
         Perception = GetEntityComponent<PerceptionComponent>();
 
         Speech = GetOrCreateEntityComponent<SpeechComponent>();
+        Speech.Inject((IEntityAudio)motor);
         Points = GetOrCreateEntityComponent<PointsOfInterestComponent>();
 
         AddComponentToEntity(new BrainComponent(brain, ctx));
@@ -108,7 +110,7 @@ public class EntityModel : AEntity
 
         float inDanger = ComputeDangerLevel();
         float timeToBreed = ComputeBreedReadiness();
-        var nearest = Perception.FindNearestEntity(Motor.Position, SelfObject, out float enemyDist);
+        Perception.FindNearestEntity(Motor.Position, SelfObject, out float enemyDist);
         var food = Perception.FindNearestFood(Motor.Position);
         float foodDist = food != null ? Vector2.Distance(Motor.Position, food.transform.position) : -1f;
 
@@ -127,14 +129,10 @@ public class EntityModel : AEntity
 
         int actionIndex = Brain.Predict(LastInput);
         LastActionIndex = actionIndex;
-    
-        Debug.Log($"[Brain] predicted {(EntityAction)actionIndex}, goal {Brain.CurrentGoal}");
 
         var targetType = GoalStateMap[Brain.CurrentGoal];
         if (states.behaviourCurrent.GetType() != targetType)
         {
-            Debug.Log($"[State] switching {states.behaviourCurrent.GetType().Name} -> {targetType.Name}");
-
             states.SetBehaviourAsync(states.GetBehaviourByType(targetType)).Forget();
         }
         ((EntityActionState)states.behaviourCurrent).EnqueueAction((EntityAction)actionIndex);

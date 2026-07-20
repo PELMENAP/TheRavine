@@ -36,7 +36,6 @@ public abstract class AState : IDisposable
     public abstract void Exit();
     public virtual void Update()
     {
-        Debug.Log($"[AState.Update] isProcessing={_commandProcessor._isProcessing}");
         if (!_commandProcessor._isProcessing)
         {
             _commandProcessor.ProcessCommandsAsync().Forget();

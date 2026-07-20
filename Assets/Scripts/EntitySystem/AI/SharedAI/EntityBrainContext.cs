@@ -13,6 +13,9 @@ public class EntityBrainContext
     public float GoalTotalReward;
     public int   GoalRewardCount;
 
+    public float GoalDiscountedReturn;
+    public float GoalDiscountFactor;
+
     public EntityBrainContext(
         int inputSize,
         int lstmHidden,

@@ -236,7 +236,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1671578970
+  GlobalObjectIdHash: 2533897820
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -524,7 +524,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fda628a549bb4151aebbd358c3d2090, type: 3}
   m_Name: 
   m_EditorClassIdentifier: EntitySystem::SurfaceMotor
-  heightOffset: 8
+  heightOffset: 4
   velocityLerpCoef: 4
   arriveThreshold: 0.1
 --- !u!1 &8422486161861063262

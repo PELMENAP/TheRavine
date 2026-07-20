@@ -1,6 +1,7 @@
 using UnityEngine;
 using TheRavine.Generator;
 
+[RequireComponent(typeof(IVelocitySource))]
 public class Mimic : MonoBehaviour
 {
     public Material legMaterial;
@@ -43,7 +44,7 @@ public class Mimic : MonoBehaviour
     [SerializeField] private MonoBehaviour velocitySourceBehaviour;
     private IVelocitySource velocitySource;
 
-    public Vector3 velocity { get; private set; }
+    public Vector3 Velocity { get; private set; }
     public Vector3 legPlacerOrigin;
 
     private Vector3 lastForward = Vector3.forward;
@@ -73,9 +74,9 @@ public class Mimic : MonoBehaviour
     {
         if (MapGenerator == null || velocitySource == null) return;
 
-        velocity = velocitySource.Velocity;
-        if (velocity.sqrMagnitude > 0.01f)
-            lastForward = velocity.normalized;
+        Velocity = velocitySource.Velocity;
+        if (Velocity.sqrMagnitude > 0.01f)
+            lastForward = Velocity.normalized;
 
         legPlacerOrigin = transform.position + lastForward * newLegRadius;
 
