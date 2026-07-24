@@ -178,7 +178,6 @@ public class EntityManager : MonoBehaviour
     private Vector3 RandomPosition()
     {
         var v = RavineRandom.GetInsideSphere(spawnRadius);
-        Debug.Log(transform.position + new Vector3(v.x, 0, v.y));
         return transform.position + new Vector3(v.x, 0, v.y);
     }
 

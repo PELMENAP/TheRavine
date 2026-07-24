@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92dc51c1426ad1c8c94acb16dec575b3, type: 3}
+  m_Name: LittleSpruceSpawnProfile
+  m_EditorClassIdentifier: ObjectSystem::TheRavine.Generator.ObjectSpawnProfileSO
+  layer: 2
+  density: 50
+  minDistance: 1
+  mask:
+    heightMin: 0.394
+    heightMax: 0.705
+    tempMin: 0.216
+    tempMax: 0.883
+    moistMin: 0.394
+    moistMax: 0.907
+    noiseScale: 0.05
+    noiseThreshold: 0.175
+    noiseWeight: 0.507
+  clusters:
+    useClusters: 0
+    clusterCount: 4
+    clusterSize: 36
+    clusterRadius: 30
+  objectInfo: {fileID: 11400000, guid: 32f8156adfce3fa3b9f5f29cb697afd8, type: 2}

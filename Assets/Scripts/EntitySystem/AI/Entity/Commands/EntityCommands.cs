@@ -71,8 +71,6 @@ public class EatCommand : ICommand
             model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + 20f, model.Stats.MaxEnergy);
             model.Brain.GiveReward(0.85f);
 
-            model.Feedback.FlashColor(Color.magenta, 0).Forget();
-
             Object.Destroy(food.gameObject);
         }
         else
@@ -129,7 +127,6 @@ public class RememberPointCommand : ICommand
         Vector2 pos = model.Motor.Position;
         bool added = model.Points.TryRemember(pos, 10f);
         model.Brain.GiveReward(added ? 0.65f : 0.3f);
-        if (added) model.Feedback.FlashColor(Color.cyan, 0);
         return UniTask.CompletedTask;
     }
 
@@ -149,7 +146,6 @@ public class GoToPointCommand : ICommand
         await model.Motor.MoveToAsync(new Vector3(target.x, model.Motor.Position.y, target.y),
             model.Tuning.MoveSpeed, 5f, model.Tuning.EnergyCostMoving, cts.Token);
 
-        model.Feedback.FlashColor(Color.blue, 0).Forget();
         model.Brain.GiveReward(0.55f);
     }
 
@@ -213,7 +209,6 @@ public class MimicCommand : ICommand
         model.SetLastAction(otherModel.LastActionIndex);
         float reward = 0.3f + otherModel.Brain.Context.CoordMLP.AverageEntropy * 0.2f;
         model.Brain.GiveReward(reward);
-        model.Feedback.FlashColor(Color.white, 0).Forget();
 
         return UniTask.CompletedTask;
     }
@@ -233,8 +228,6 @@ public class ThreatenCommand : ICommand
             model.Brain.GiveReward(target == null ? 0.2f : 0.15f);
             return;
         }
-
-        model.Feedback.FlashColor(Color.orange, 0).Forget();
 
         model.Stats.Energy.Value -= 3f;
         model.Brain.GiveReward(dist < model.Tuning.AttackRange ? 0.6f : 0.4f);
@@ -262,13 +255,10 @@ public class ShareFoodCommand : ICommand
             return;
         }
 
-        model.Feedback.FlashColor(Color.yellow, 0).Forget();
 
         float transfer = Mathf.Min(20f, model.Stats.Health.Value - 60f);
         model.Stats.Health.Value -= transfer;
         victim.Stats.Health.Value = Mathf.Min(victim.Stats.Health.Value + transfer, victim.Stats.MaxHealth);
-
-        victim.Feedback.FlashColor(Color.white, 0).Forget();
 
         float needFactor = 1f - Mathf.Clamp01(victim.Stats.Health.Value / victim.Stats.MaxHealth);
         model.Brain.GiveReward(0.5f + needFactor * 0.35f);
@@ -292,7 +282,6 @@ public class AttackCommand : ICommand
         var target = model.Perception.FindNearestEntity(model.Motor.Position, model.SelfObject, out _);
         if (target == null) { model.Brain.GiveReward(0.2f); return; }
 
-        await model.Feedback.FlashColor(Color.red, 0);
         await model.Motor.MoveToAsync(target.transform.position, model.Tuning.MoveSpeed, 2f,
             model.Tuning.EnergyCostMoving, cts.Token);
 

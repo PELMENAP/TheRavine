@@ -68,7 +68,6 @@ namespace TheRavine.Generator
         [Range(0f, 0.3f)] public float influenceWidth;
         [Range(0f, 0.3f)] public float riverBedHeight;
         [Range(0f, 0.5f)] public float minTerrainHeight;
-        public bool useDomainWarp;
         [Range(0f, 50f)] public float domainWarpAmplitude;
 
         public readonly static RiverBlendSettings Default = new()
@@ -78,7 +77,6 @@ namespace TheRavine.Generator
             influenceWidth = 0.15f,
             riverBedHeight = 0.05f,
             minTerrainHeight = 0.20f,
-            useDomainWarp = false,
             domainWarpAmplitude = 20f
         };
     }

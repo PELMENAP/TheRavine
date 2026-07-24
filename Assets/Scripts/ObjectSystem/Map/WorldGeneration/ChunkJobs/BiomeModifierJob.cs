@@ -54,33 +54,23 @@ namespace TheRavine.Generator
             {
                 float dt = temp - biomeCentersT[b];
                 float dm = moisture - biomeCentersM[b];
+                float dist2 = (dt * dt + dm * dm) * blendRadiusRcp2;
 
-                float dist2 =
-                    (dt * dt + dm * dm) * blendRadiusRcp2;
-
-                float weight = math.max(0f, 1f - dist2);
+                float weight = math.saturate(1f - dist2);
                 weight = weight * weight * (3f - 2f * weight);
-
-                if (weight <= 0f)
-                    continue;
 
                 totalWeight += weight;
                 scaleSum += weight * biomeHeightScale[b];
                 offsetSum += weight * biomeHeightOffset[b];
 
-                if (biomeHasRiver[b] == 0)
-                    continue;
-
                 float dist = math.abs(riverValue - riverCenter[b]);
-
-                if (dist >= riverRadius[b])
-                    continue;
-
-                float riverT = 1f - dist * riverRadiusRcp[b];
+                float hasRiver = biomeHasRiver[b];
+                
+                float riverT = math.saturate(1f - dist * riverRadiusRcp[b]);
                 riverT = riverT * riverT * (3f - 2f * riverT);
 
-                riverWeightSum += weight * riverT;
-                riverBedSum += weight * riverBedHeight[b];
+                riverWeightSum += weight * riverT * hasRiver;
+                riverBedSum += weight * riverBedHeight[b] * hasRiver;
             }
 
             if (totalWeight < 0.0001f)
@@ -115,3 +105,5 @@ namespace TheRavine.Generator
         }
     }
 }
+
+

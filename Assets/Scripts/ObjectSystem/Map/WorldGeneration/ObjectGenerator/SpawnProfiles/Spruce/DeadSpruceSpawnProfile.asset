@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92dc51c1426ad1c8c94acb16dec575b3, type: 3}
+  m_Name: DeadSpruceSpawnProfile
+  m_EditorClassIdentifier: ObjectSystem::TheRavine.Generator.ObjectSpawnProfileSO
+  layer: 2
+  density: 20
+  minDistance: 10
+  mask:
+    heightMin: 0.52
+    heightMax: 0.83
+    tempMin: 0.497
+    tempMax: 0.858
+    moistMin: 0.559
+    moistMax: 1
+    noiseScale: 0.05
+    noiseThreshold: 0.362
+    noiseWeight: 0.385
+  clusters:
+    useClusters: 0
+    clusterCount: 4
+    clusterSize: 36
+    clusterRadius: 30
+  objectInfo: {fileID: 11400000, guid: 35a86ee8a8aacf6cbaf259f26251680e, type: 2}

@@ -52,7 +52,7 @@ MonoBehaviour:
     heightNoiseSettings:
       noiseType: 0
       fractalType: 1
-      frequency: 0.005
+      frequency: 0.002
       octaves: 3
       lacunarity: 2
       gain: 0.5
@@ -60,7 +60,7 @@ MonoBehaviour:
     riverNoiseSettings:
       noiseType: 0
       fractalType: 1
-      frequency: 0.005
+      frequency: 0.002
       octaves: 2
       lacunarity: 2.5
       gain: 0.4
@@ -68,7 +68,7 @@ MonoBehaviour:
     temperatureSettings:
       noiseType: 0
       fractalType: 1
-      frequency: 0.002
+      frequency: 0.001
       octaves: 2
       lacunarity: 2
       gain: 0.3
@@ -81,14 +81,6 @@ MonoBehaviour:
       lacunarity: 2
       gain: 0.45
       weightedStrength: 0.1
-    riverBlend:
-      riverMin: 0.3
-      riverMax: 0.7
-      influenceWidth: 0.1
-      riverBedHeight: 0.05
-      minTerrainHeight: 0.2
-      useDomainWarp: 0
-      domainWarpAmplitude: 20
     mountainRegionIndex: 8
     regions:
     - height: 0
@@ -127,7 +119,6 @@ MonoBehaviour:
         influenceWidth: 0
         riverBedHeight: 0
         minTerrainHeight: 0
-        useDomainWarp: 0
         domainWarpAmplitude: 0
     - name: Boreal Forest (Taiga)
       minTemperature: 0.1
@@ -153,7 +144,6 @@ MonoBehaviour:
         influenceWidth: 0.08
         riverBedHeight: 0.06
         minTerrainHeight: 0.2
-        useDomainWarp: 0
         domainWarpAmplitude: 0
     - name: Temperate Grassland / Steppe
       minTemperature: 0.28
@@ -179,7 +169,6 @@ MonoBehaviour:
         influenceWidth: 0.08
         riverBedHeight: 0.06
         minTerrainHeight: 0.2
-        useDomainWarp: 1
         domainWarpAmplitude: 0
     - name: Temperate Deciduous Forest
       minTemperature: 0.3
@@ -205,7 +194,6 @@ MonoBehaviour:
         influenceWidth: 0.18
         riverBedHeight: 0.04
         minTerrainHeight: 0.15
-        useDomainWarp: 0
         domainWarpAmplitude: 30
     - name: Temperate Rainforest
       minTemperature: 0.22
@@ -231,7 +219,6 @@ MonoBehaviour:
         influenceWidth: 0.18
         riverBedHeight: 0.04
         minTerrainHeight: 0.15
-        useDomainWarp: 0
         domainWarpAmplitude: 30
     - name: Hot Desert
       minTemperature: 0.62
@@ -257,7 +244,6 @@ MonoBehaviour:
         influenceWidth: 0.05
         riverBedHeight: 0.02
         minTerrainHeight: 0.25
-        useDomainWarp: 1
         domainWarpAmplitude: 0
     - name: Savanna
       minTemperature: 0.6
@@ -283,7 +269,6 @@ MonoBehaviour:
         influenceWidth: 0.08
         riverBedHeight: 0.06
         minTerrainHeight: 0.2
-        useDomainWarp: 1
         domainWarpAmplitude: 0
     - name: Tropical Forest
       minTemperature: 0.72
@@ -309,7 +294,6 @@ MonoBehaviour:
         influenceWidth: 0.18
         riverBedHeight: 0.04
         minTerrainHeight: 0.15
-        useDomainWarp: 0
         domainWarpAmplitude: 30
     - name: Tropical Rainforest
       minTemperature: 0.78
@@ -335,7 +319,6 @@ MonoBehaviour:
         influenceWidth: 0.18
         riverBedHeight: 0.04
         minTerrainHeight: 0.15
-        useDomainWarp: 1
         domainWarpAmplitude: 30
     - name: Wetlands / Swamp
       minTemperature: 0.38
@@ -361,34 +344,37 @@ MonoBehaviour:
         influenceWidth: 0.22
         riverBedHeight: 0.08
         minTerrainHeight: 0.05
-        useDomainWarp: 1
         domainWarpAmplitude: 45
-    biomeBlendRadius: 0.25
+    biomeBlendRadius: 0.23
     altitudeCooling: 0.35
     erosion:
-      allowInfiniteErosionDepth: 1
-      dropletCount: 3000
-      lifetime: 20
+      allowInfiniteErosionDepth: 0
+      dropletCount: 2000
+      lifetime: 53
       amplify: 1
-      inertia: 0.9
-      gravity: 20
-      evaporation: 0.99
-      sedimentCapacity: 25
-      depositSpeed: 0.5
-      erodeSpeed: 0.5
+      inertia: 0.2
+      gravity: 0.4
+      evaporation: 0.02
+      sedimentCapacity: 2
+      depositSpeed: 0.3
+      erodeSpeed: 0.3
       minSlope: 0.01
-      radius: 2
+      radius: 0.4
     spawnProfiles:
     - {fileID: 11400000, guid: 96f499582d3dbe697b687c3e809f554c, type: 2}
     - {fileID: 11400000, guid: d20218df78aa5ba1aaeb00ecd69e65ef, type: 2}
     - {fileID: 11400000, guid: 8e0686d9f3893db69bd046162d8a517b, type: 2}
+    - {fileID: 11400000, guid: 5045975e92f6347ae85eaa514b69df6e, type: 2}
+    - {fileID: 11400000, guid: c8a8ede7671ace638aef06d972eb3400, type: 2}
     - {fileID: 11400000, guid: 758ceeda71f0ff0f2a70072cbc4547db, type: 2}
     - {fileID: 11400000, guid: 5bf5dc94d107352459d91417b4205333, type: 2}
     - {fileID: 11400000, guid: 43781b3da7a8a518cbbb49258117df72, type: 2}
-    - {fileID: 11400000, guid: 7fc5d30b50c3ae1bf898b2fc24db6183, type: 2}
-    - {fileID: 11400000, guid: abc25fcce611099e994dc689110fdc05, type: 2}
-    - {fileID: 11400000, guid: 42c5f2ac4ddf8f5fa92f939f203a8a99, type: 2}
+    - {fileID: 11400000, guid: f303c8ad4d46eb206ae112c90234e9d9, type: 2}
+    - {fileID: 11400000, guid: 3c5694ec1108e541c8fb81b4ef544448, type: 2}
     - {fileID: 11400000, guid: dde9072d55570448694395cfce1b3e60, type: 2}
+    - {fileID: 11400000, guid: abc25fcce611099e994dc689110fdc05, type: 2}
+    - {fileID: 11400000, guid: 7fc5d30b50c3ae1bf898b2fc24db6183, type: 2}
+    - {fileID: 11400000, guid: 42c5f2ac4ddf8f5fa92f939f203a8a99, type: 2}
     maxObjectsPerChunk: 2048
   terrainTransform: {fileID: 0}
   waterTransform: {fileID: 0}
@@ -466,7 +452,7 @@ MonoBehaviour:
   scaleMax: 1.2
   rotationVariation: 360
   globalMinHeight: 5
-  globalMaxHeight: 40
+  globalMaxHeight: 70
   scaleNoiseScale: 0.05
   scaleNoiseInfluence: 0.5
   scaleOctaves: 2

@@ -25,7 +25,7 @@ namespace TheRavine.Generator
         public const int mapChunkSize = 64, chunkScale = 1, scale = 2;
         public const int chunkSize = scale * mapChunkSize;
         public const int generationSize = scale * mapChunkSize * (1 + 2 * chunkScale);
-        public const float maxTerrainHeight = 50f;
+        public const float maxTerrainHeight = 100f;
 
         private Dictionary<long, ChunkData> mapData = new();
 
@@ -192,6 +192,8 @@ namespace TheRavine.Generator
         }
         public float SampleHeightBilinear(float wx, float wz)
         {
+            if(mapData.Count < 1) return 0;
+            
             float gx = wx / scale;
             float gz = wz / scale;
 
