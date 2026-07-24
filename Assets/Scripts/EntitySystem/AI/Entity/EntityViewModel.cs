@@ -5,7 +5,7 @@ using System.Threading;
 using TheRavine.EntityControl;
 using TheRavine.Generator;
 
-public class EntityViewModel : AEntityViewModel, IEntityMotor, IEntityFeedback,
+public class EntityViewModel : AEntityViewModel, IEntityMotor,
     IDialogListener, IDialogSender, IEntityDialogHost, IEntityDeathHandler, IEntityAudio
 {
     [SerializeField] private SurfaceMotor motor;
@@ -18,12 +18,10 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor, IEntityFeedback,
 
     public void OnDeath()
     {
-        sr.color = Color.gray;
         DialogSystem.Instance.RemoveDialogListener(this);
         
         Destroy(gameObject, 0f);
     }
-    [SerializeField] private SpriteRenderer sr;
     [SerializeField] private StringToAudioGenerator audioGenerator;
 
     public async UniTask PlaySpeechAsync(string speech, float health, float energy, float danger,
@@ -40,13 +38,6 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor, IEntityFeedback,
         => motor.MoveToAsync(target, speed, maxDuration, energyCostPerSec, ct);
 
     public void Stop() => motor.Stop();
-    public async UniTask FlashColor(Color c, int d)
-    {
-        Color orig = sr.color;
-        sr.color  = c;
-        await UniTask.Delay(d * 1000);
-        sr.color  = orig;
-    }
 
     protected override void OnViewUpdate() { }
     protected override void OnViewEnable() { }

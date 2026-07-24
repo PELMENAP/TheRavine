@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: SpruceSaplingSpawnProfile
   m_EditorClassIdentifier: ObjectSystem::TheRavine.Generator.ObjectSpawnProfileSO
   layer: 2
-  density: 50
+  density: 35
   minDistance: 1
   mask:
     heightMin: 0.036
@@ -30,4 +30,4 @@ MonoBehaviour:
     clusterCount: 4
     clusterSize: 36
     clusterRadius: 30
-  objectInfo: {fileID: 11400000, guid: 32f8156adfce3fa3b9f5f29cb697afd8, type: 2}
+  objectInfo: {fileID: 11400000, guid: bf7b1438376b39a6c932fc86f9686c05, type: 2}

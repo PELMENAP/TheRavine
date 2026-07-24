@@ -9,10 +9,6 @@ public interface IEntityMotor
     void Stop();
 }
 
-public interface IEntityFeedback
-{
-    UniTask FlashColor(Color color, int duration);
-}
 
 public interface IEntityDialogHost
 {

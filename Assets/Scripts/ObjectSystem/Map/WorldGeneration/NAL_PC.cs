@@ -112,8 +112,7 @@ namespace TheRavine.Generator
                     }
                     return;
                 }
-
-                // Spread when alive
+                
                 if (!generator.IsHeightIsLiveAble(Position2Int.Pack(current))) return;
 
                 int attempts = n.attempt;

@@ -19,8 +19,8 @@ GameObject:
   - component: {fileID: -7201839089882630837}
   - component: {fileID: 848565228905251431}
   - component: {fileID: 6907569928054806820}
-  - component: {fileID: 5361914308642012920}
   - component: {fileID: 6500278181501295683}
+  - component: {fileID: 7792962233447484037}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -291,7 +291,6 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  groundChecker: {fileID: 5361914308642012920}
   characterHalfHeight: 1
 --- !u!114 &6598453415436316321
 MonoBehaviour:
@@ -400,19 +399,6 @@ CapsuleCollider:
   m_Height: 4.36
   m_Direction: 1
   m_Center: {x: 0, y: 2.15, z: 0}
---- !u!114 &5361914308642012920
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1671218706617821313}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 99fc3dd3e1e75d999bb44539210a9d6e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: EntitySystem::TheRavine.EntityControl.GroundChecker
-  minGroundNormalY: 0.7
 --- !u!114 &6500278181501295683
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -425,6 +411,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30ef29729fd56c64ea4221f148998096, type: 3}
   m_Name: 
   m_EditorClassIdentifier: View::RippleSystem
+--- !u!81 &7792962233447484037
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1671218706617821313}
+  m_Enabled: 1
 --- !u!1 &1671218707232650367
 GameObject:
   m_ObjectHideFlags: 0

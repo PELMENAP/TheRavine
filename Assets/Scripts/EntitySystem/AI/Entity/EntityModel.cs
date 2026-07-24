@@ -14,7 +14,6 @@ public class EntityModel : AEntity
     public IEntityDialogHost DialogHost { get; private set; }
 
     public IEntityMotor Motor { get; private set; }
-    public IEntityFeedback Feedback { get; private set; }
     public EntityTuning Tuning { get; private set; }
     public GameObject SelfObject { get; private set; }
 
@@ -45,11 +44,10 @@ public class EntityModel : AEntity
 
     public void Configure(
     SharedHierarchicalBrain brain, EntityBrainContext ctx,
-    IEntityMotor motor, IEntityFeedback feedback,
+    IEntityMotor motor, IEntityDeathHandler death,
     GameObject selfObject, EntityTuning tuning)
     {
         Motor = motor;
-        Feedback = feedback;
         SelfObject = selfObject;
         Tuning = tuning;
         DialogHost = (IEntityDialogHost)motor;
@@ -68,7 +66,7 @@ public class EntityModel : AEntity
         Brain = GetEntityComponent<BrainComponent>();
 
         AddComponentToEntity(new MortalityComponent(Stats.Health));
-        GetEntityComponent<MortalityComponent>().Died += () => (Feedback as IEntityDeathHandler)?.OnDeath();
+        GetEntityComponent<MortalityComponent>().Died += () => death?.OnDeath();
         states = GetOrCreateEntityComponent<StatePatternComponent>();
 
         Vectorizer = new InputVectorizer(

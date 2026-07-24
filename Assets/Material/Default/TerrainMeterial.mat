@@ -155,23 +155,23 @@ Material:
     - _BlendPower: 1
     - _CastShadows: 1
     - _Cull: 2
-    - _DarkForestGrassHeight: 35
-    - _DeepForestGrassHeight: 8
+    - _DarkForestGrassHeight: 70
+    - _DeepForestGrassHeight: 40
     - _DstBlend: 0
-    - _LittleForestGrassHeight: 7
-    - _MeadowGrassHeight: 6
-    - _NearWaterGrassHeight: 5
+    - _LittleForestGrassHeight: 30
+    - _MeadowGrassHeight: 20
+    - _NearWaterGrassHeight: 10
     - _Noise: 0.5
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _SandHeight: 4.5
+    - _SandHeight: 0
     - _SrcBlend: 1
     - _Surface: 0
-    - _SwampHeight: 40
+    - _SwampHeight: 100
     - _Tile: 0.5
     - _Voronoi: 0.02
-    - _WaterHeight: 3.5
+    - _WaterHeight: -10
     - _WorkflowMode: 1
     - _ZTest: 4
     - _ZWrite: 0

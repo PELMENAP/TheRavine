@@ -17,10 +17,6 @@ namespace TheRavine.Generator
         [ReadOnly] public NativeArray<float> moistureMap;
         [ReadOnly] public int2 chunkOrigin;
         public uint seed;
-        public float chunkWorldSize;
-        public int mapChunkSize;
-        public int scale;
-
         [WriteOnly] public NativeArray<ObjectInstInfo> output;
         public NativeReference<int> outputCount;
         public NativeArray<byte> gridBuffer;
@@ -31,8 +27,8 @@ namespace TheRavine.Generator
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float SampleDensityMask(float2 localPos, in ObjectSpawnConfig cfg, out int mapIdx)
         {
-            int2 cell = (int2)math.floor(localPos / scale);
-            mapIdx = math.clamp(cell.y * mapChunkSize + cell.x, 0, heightMap.Length - 1);
+            int2 cell = (int2)math.floor(localPos / MapGenerator.scale);
+            mapIdx = math.clamp(cell.y * MapGenerator.mapChunkSize + cell.x, 0, heightMap.Length - 1);
             int idx = mapIdx;
 
             float4 env = new(
@@ -50,7 +46,7 @@ namespace TheRavine.Generator
             if (baseProb < 0.001f)
                 return 0f;
 
-            float2 noisePos = ((float2)chunkOrigin * chunkWorldSize + localPos) * cfg.noiseScale;
+            float2 noisePos = ((float2)chunkOrigin * MapGenerator.chunkSize + localPos) * cfg.noiseScale;
             float n = noise.snoise(noisePos) * 0.5f + 0.5f;
             float nFactor = math.smoothstep(
                 cfg.noiseThreshold - 0.1f,
@@ -83,7 +79,7 @@ namespace TheRavine.Generator
 
             grid.Mark(localPos, cfg.minDistance);
 
-            float2 worldPos2D = new(chunkOrigin.x * chunkWorldSize + localPos.x, chunkOrigin.y * chunkWorldSize + localPos.y);
+            float2 worldPos2D = new(chunkOrigin.x * MapGenerator.chunkSize + localPos.x, chunkOrigin.y * MapGenerator.chunkSize + localPos.y);
             float h = heightMap[idx] * MapGenerator.maxTerrainHeight;
 
 
@@ -97,7 +93,7 @@ namespace TheRavine.Generator
 
         public void Execute()
         {
-            int gridRes = (int)math.min(chunkWorldSize / GRID_CELL_SIZE, MAX_GRID_RES);
+            int gridRes = (int)math.min(MapGenerator.chunkSize / GRID_CELL_SIZE, MAX_GRID_RES);
             SpatialGrid grid = new()
             {
                 cells = gridBuffer,
@@ -119,7 +115,7 @@ namespace TheRavine.Generator
 
                 FastRandom rng = new((uint)(seed ^ (c << 16) ^ ((int)SpawnLayer.Vegetation << 24)));
 
-                float area = chunkWorldSize * chunkWorldSize;
+                float area = MapGenerator.chunkSize * MapGenerator.chunkSize;
                 int targetCount = (int)(cfg.density * area / 10000f);
                 if (targetCount <= 0) continue;
 
@@ -127,7 +123,7 @@ namespace TheRavine.Generator
                 {
                     int centersPlaced = 0;
                     int gridDiv = (int)math.max(1, math.sqrt(cfg.clusterCount));
-                    float cellSize = chunkWorldSize / gridDiv;
+                    float cellSize = MapGenerator.chunkSize / gridDiv;
 
                     for (int gy = 0; gy < gridDiv && centersPlaced < cfg.clusterCount; gy++)
                     {
@@ -135,7 +131,7 @@ namespace TheRavine.Generator
                         {
                             float2 basePos = new float2(gx + 0.5f, gy + 0.5f) * cellSize;
                             float2 jitter = 0.8f * cellSize * new float2(rng.GetFloat() - 0.5f, rng.GetFloat() - 0.5f);
-                            float2 centerPos = math.clamp(basePos + jitter, 0f, chunkWorldSize - 0.1f);
+                            float2 centerPos = math.clamp(basePos + jitter, 0f, MapGenerator.chunkSize - 0.1f);
 
                             centersPlaced++;
 
@@ -144,7 +140,7 @@ namespace TheRavine.Generator
                                 float angle = rng.GetFloat() * math.PI * 2f;
                                 float dist = rng.GetFloat() * cfg.clusterRadius;
                                 float2 offset = new float2(math.cos(angle), math.sin(angle)) * dist;
-                                float2 memberPos = math.clamp(centerPos + offset, 0f, chunkWorldSize - 0.1f);
+                                float2 memberPos = math.clamp(centerPos + offset, 0f, MapGenerator.chunkSize - 0.1f);
 
                                 if (count < output.Length && TryPlace(memberPos, ref grid, ref rng, cfg, out ObjectInstInfo inst))
                                 {
@@ -158,7 +154,7 @@ namespace TheRavine.Generator
                 else
                 {
                     int gridDiv = (int)math.max(1, math.sqrt(targetCount));
-                    float cellSize = chunkWorldSize / gridDiv;
+                    float cellSize = MapGenerator.chunkSize / gridDiv;
 
                     for (int gy = 0; gy < gridDiv && count < output.Length; gy++)
                     {
@@ -166,7 +162,7 @@ namespace TheRavine.Generator
                         {
                             float2 basePos = new float2(gx + 0.5f, gy + 0.5f) * cellSize;
                             float2 jitter = 0.8f * cellSize * new float2(rng.GetFloat() - 0.5f, rng.GetFloat() - 0.5f);
-                            float2 pos = math.clamp(basePos + jitter, 0f, chunkWorldSize - 0.1f);
+                            float2 pos = math.clamp(basePos + jitter, 0f, MapGenerator.chunkSize - 0.1f);
 
                             if (TryPlace(pos, ref grid, ref rng, cfg, out ObjectInstInfo inst))
                             {

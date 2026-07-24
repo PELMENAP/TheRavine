@@ -64,7 +64,6 @@ public static class BiomePresets
         influenceWidth    = 0.18f,
         riverBedHeight    = 0.04f,
         minTerrainHeight  = 0.15f,
-        useDomainWarp     = true,
         domainWarpAmplitude = 30f
     };
 
@@ -75,7 +74,6 @@ public static class BiomePresets
         influenceWidth    = 0.08f,
         riverBedHeight    = 0.06f,
         minTerrainHeight  = 0.20f,
-        useDomainWarp     = false,
         domainWarpAmplitude = 0f
     };
 
@@ -86,7 +84,6 @@ public static class BiomePresets
         influenceWidth    = 0.05f,
         riverBedHeight    = 0.02f,
         minTerrainHeight  = 0.25f,
-        useDomainWarp     = false,
         domainWarpAmplitude = 0f
     };
 
@@ -97,7 +94,6 @@ public static class BiomePresets
         influenceWidth    = 0.22f,
         riverBedHeight    = 0.08f,
         minTerrainHeight  = 0.05f,
-        useDomainWarp     = true,
         domainWarpAmplitude = 45f
     };
 

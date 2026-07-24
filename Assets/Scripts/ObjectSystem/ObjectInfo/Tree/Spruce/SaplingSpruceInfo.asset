@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
+  m_Name: SaplingSpruceInfo
+  m_EditorClassIdentifier: 
+  objectPrefab: {fileID: 3577697167160119698, guid: 08b602a56b598d3b38540061e3014be8, type: 3}
+  defaultAmount: 0
+  initialPoolSize: 30
+  instanceType: 0
+  behaviourType: 2
+  nalInfo: {fileID: 0}
+  inventoryItemInfo: {fileID: 0}
+  evolutionStep: {fileID: 11400000, guid: 194144ec13aa6c3d5a0862d979cf85bb, type: 2}
+  additionalOccupiedCells: []
+  onDeathPattern: {fileID: 0}
+  onPickUpPattern: {fileID: 0}

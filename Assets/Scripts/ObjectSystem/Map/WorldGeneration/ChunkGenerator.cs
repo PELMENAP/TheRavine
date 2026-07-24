@@ -53,8 +53,7 @@ namespace TheRavine.Generator
                 settings.riverNoiseSettings,
                 settings.temperatureSettings,
                 settings.moistureSettings,
-                seed,
-                mapChunkSize);
+                seed);
 
             noiseMap       = new NativeArray<float>(totalCells, Allocator.Persistent);
             deltaMap       = new NativeArray<float>(totalCells, Allocator.Persistent);
@@ -139,8 +138,9 @@ namespace TheRavine.Generator
         {
             uint hash = (uint)centre;
 
-            noise.GenerateAllMaps(
-                noiseMap, riverMap, temperatureMap, moistureMap, Position2Int.UnpackToVector(centre));
+            JobHandle mapHandle = noise.GenerateAllMaps(
+                noiseMap, riverMap, temperatureMap, moistureMap,
+                Position2Int.UnpackToVector(centre));
 
             JobHandle biomeHandle =
                 new BiomeModifierJob
@@ -172,12 +172,11 @@ namespace TheRavine.Generator
                         settings.altitudeCooling,
 
                     heightOut = biomeHeightMap
-                }.Schedule(totalCells, 64);
+                }.Schedule(totalCells, 64, mapHandle);
 
             JobHandle erosionHandle =
                 new HydraulicErosionJob
                 {
-                    mapSize = mapChunkSize,
                     seed = hash,
                     settings = settings.erosion,
 
@@ -185,37 +184,24 @@ namespace TheRavine.Generator
                     deltaMap = deltaMap
                 }.Schedule(biomeHandle);
 
-            JobHandle regionHandle = new RegionAssignJob
-                {
-                    heightValues = biomeHeightMap,
+            JobHandle finalizeHandle = new TerrainFinalizeJob
+            {
+                heightValues = biomeHeightMap,
 
-                    temperatureValues = temperatureMap,
-                    moistureValues = moistureMap,
+                temperatureValues = temperatureMap,
+                moistureValues = moistureMap,
 
-                    regionThresholds = regionThresholds,
+                regionThresholds = regionThresholds,
 
-                    biomeCentersT = biomeCentersT,
-                    biomeCentersM = biomeCentersM,
+                biomeCentersT = biomeCentersT,
+                biomeCentersM = biomeCentersM,
 
-                    mountainRegionIndex =
-                        settings.mountainRegionIndex,
+                mountainRegionIndex = settings.mountainRegionIndex,
 
-                    heightMap = heightResult,
-                    biomeMap = biomeResult
-                }.Schedule(
-                    totalCells,
-                    64,
-                    erosionHandle);
-
-            JobHandle slopeHandle = new SlopeMapJob
-                {
-                    heightMap     = biomeHeightMap,
-                    mapSize       = mapChunkSize,
-                    heightScale   = maxTerrainHeight,
-                    cellWorldDist = 2f * scale,
-                    moveCost      = moveCost,
-                }.Schedule(totalCells, 64, regionHandle);
-            
+                regionMap = heightResult,
+                biomeMap = biomeResult,
+                moveCost = moveCost
+            }.Schedule(totalCells, 64, erosionHandle);
 
             ChunkData chunkData = new();
 
@@ -226,20 +212,17 @@ namespace TheRavine.Generator
                 float chunkWorldSize = mapChunkSize * scale;
 
                 JobHandle spawnHandle = new SpawnLayerJob
-                    {
-                        configs = spawnConfigs,
-                        heightMap = biomeHeightMap,
-                        temperatureMap = temperatureMap,
-                        moistureMap = moistureMap,
-                        chunkOrigin = chunkOrigin,
-                        seed = hash,
-                        chunkWorldSize = chunkWorldSize,
-                        mapChunkSize = mapChunkSize,
-                        scale = scale,
-                        output = spawnOutput,
-                        outputCount = spawnCount,
-                        gridBuffer = spawnGridBuffer
-                    }.Schedule(slopeHandle);
+                {
+                    configs = spawnConfigs,
+                    heightMap = biomeHeightMap,
+                    temperatureMap = temperatureMap,
+                    moistureMap = moistureMap,
+                    chunkOrigin = chunkOrigin,
+                    seed = hash,
+                    output = spawnOutput,
+                    outputCount = spawnCount,
+                    gridBuffer = spawnGridBuffer
+                }.Schedule(finalizeHandle);
 
                 spawnHandle.Complete();
 
@@ -253,11 +236,11 @@ namespace TheRavine.Generator
 
                     int idx = math.clamp(cell.y * mapChunkSize + cell.x, 0, totalCells - 1);
                     chunkData.TryAddObject(idx, in inst, null);
-                }   
+                }
             }
             else
             {
-                slopeHandle.Complete();
+                finalizeHandle.Complete();
             }
 
             FillChunkArrays(chunkData);
@@ -310,3 +293,5 @@ namespace TheRavine.Generator
         }
     }
 }
+
+

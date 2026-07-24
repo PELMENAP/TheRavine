@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36232c7ac27f177e8810571cc4703052, type: 3}
+  m_Name: LittleSpruceMeshCollection
+  m_EditorClassIdentifier: ObjectSystem::TreeMeshCollection
+  _entries:
+  - {fileID: 4300000, guid: 1f64e60b6f4bb52a0ae3836431c23c95, type: 2}
+  - {fileID: 4300000, guid: 4352cda19cdfab7758da82f274c1d8d6, type: 2}
+  - {fileID: 4300000, guid: 9af74dc53557754b6a81669a916dcf8f, type: 2}
+  - {fileID: 4300000, guid: b13a72341aadb21d49a01c561567c352, type: 2}
+  - {fileID: 4300000, guid: d12447de3e12e92b7a964a4f0090c2a4, type: 2}
+  - {fileID: 4300000, guid: a601dc56e6598b82593aa276850d3b15, type: 2}
+  - {fileID: 4300000, guid: e121da8cd131af58d8f7f5ff1cafc447, type: 2}
+  - {fileID: 4300000, guid: e047e5f850c3648ffa57b8eeeaf2ff88, type: 2}

@@ -7,26 +7,24 @@ using Unity.Burst;
 public class Noise
 {
     private FastNoiseLite heightNoise;
+    private FastNoiseLite heightNoiseDouble;
     private FastNoiseLite riverNoise;
     private FastNoiseLite temperatureNoise;
     private FastNoiseLite moistureNoise;
-    private int chunkSize, halfSize;
-
+    private const int chunkSize = MapGenerator.mapChunkSize;
+    private const int halfSize = MapGenerator.mapChunkSize >> 1;
 
     public Noise(
         NoiseLayerSettings heightSettings,
         NoiseLayerSettings riverSettings,
         NoiseLayerSettings temperatureSettings,
         NoiseLayerSettings moistureSettings,
-        int seed,
-        int _chunkSize)
+        int seed)
     {
-        chunkSize = _chunkSize;
-
-        halfSize = chunkSize >> 1;
-
         heightNoise = BuildNoise(heightSettings, seed);
-        riverNoise  = BuildNoise(riverSettings,  seed * 2);
+        heightNoiseDouble = BuildNoise(heightSettings, seed * 2);
+
+        riverNoise  = BuildNoise(riverSettings,  seed * 3);
         temperatureNoise = BuildNoise(temperatureSettings, seed * 4);
         moistureNoise    = BuildNoise(moistureSettings,    seed * 5);
     }
@@ -44,7 +42,7 @@ public class Noise
         return noise;
     }
 
-    public void GenerateAllMaps(
+    public JobHandle GenerateAllMaps(
         NativeArray<float> heightMap,
         NativeArray<float> riverMap,
         NativeArray<float> temperatureMap,
@@ -54,28 +52,19 @@ public class Noise
         int worldX = chunkOffset.x * chunkSize;
         int worldY = chunkOffset.y * chunkSize;
 
-        HeightMapJob hJob = new()
+        HeightRiverMapJob hrJob = new()
         {
-            ChunkSize = chunkSize,
             WorldX = worldX,
             WorldY = worldY,
-            Noise = heightNoise,
-            Output = heightMap
-        };
-
-        RiverMapJob rJob = new()
-        {
-            ChunkSize = chunkSize,
-            WorldX = worldX,
-            WorldY = worldY,
-            Noise = riverNoise,
-            Output = riverMap
+            HeightNoise = heightNoise,
+            HeightNoise2 = heightNoiseDouble,
+            RiverNoise = riverNoise,
+            HeightOutput = heightMap,
+            RiverOutput = riverMap
         };
 
         ClimateDirect2xJob cJob = new()
         {
-            HalfSize = halfSize,
-            ChunkSize = chunkSize,
             WorldX = worldX,
             WorldY = worldY,
             TempNoise = temperatureNoise,
@@ -84,67 +73,43 @@ public class Noise
             MoistureMap = moistureMap
         };
 
-        JobHandle hHandle = hJob.ScheduleParallel(chunkSize, 8, default);
-
-        JobHandle rHandle = rJob.ScheduleParallel(chunkSize, 8, default);
+        JobHandle hrHandle = hrJob.ScheduleParallel(chunkSize, 8, default);
 
         JobHandle cHandle = cJob.ScheduleParallel(halfSize, 8, default);
 
-        JobHandle final = JobHandle.CombineDependencies(
-            hHandle,
-            rHandle,
-            cHandle);
-
-        final.Complete();
+        return JobHandle.CombineDependencies(hrHandle, cHandle);
 
     }
 
     [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true)]
-    public struct HeightMapJob : IJobFor
+    public struct HeightRiverMapJob : IJobFor
     {
-        [ReadOnly] public int ChunkSize;
         [ReadOnly] public int WorldX;
         [ReadOnly] public int WorldY;
-        [ReadOnly] public FastNoiseLite Noise;
+        [ReadOnly] public FastNoiseLite HeightNoise;
+        [ReadOnly] public FastNoiseLite HeightNoise2;
+        [ReadOnly] public FastNoiseLite RiverNoise;
 
         [WriteOnly]
         [NativeDisableParallelForRestriction]
-        public NativeArray<float> Output;
-
-        public void Execute(int y)
-        {
-            int row = y * ChunkSize;
-            int wy = WorldY + y;
-
-            for (int x = 0; x < ChunkSize; x++)
-            {
-                Output[row + x] =
-                    Noise.GetNoise(WorldX + x, wy) * 0.5f + 0.5f;
-            }
-        }
-    }
-
-    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true)]
-    public struct RiverMapJob : IJobFor
-    {
-        [ReadOnly] public int ChunkSize;
-        [ReadOnly] public int WorldX;
-        [ReadOnly] public int WorldY;
-        [ReadOnly] public FastNoiseLite Noise;
+        public NativeArray<float> HeightOutput;
 
         [WriteOnly]
         [NativeDisableParallelForRestriction]
-        public NativeArray<float> Output;
+        public NativeArray<float> RiverOutput;
 
         public void Execute(int y)
         {
-            int row = y * ChunkSize;
+            int row = y * chunkSize;
             int wy = WorldY + y;
 
-            for (int x = 0; x < ChunkSize; x++)
+            for (int x = 0; x < chunkSize; x++)
             {
-                Output[row + x] =
-                    Noise.GetNoise(WorldX + x, wy) * 0.5f + 0.5f;
+                HeightOutput[row + x] =
+                    HeightNoise.GetNoise(WorldX + x, wy) * 0.5f + 0.5f + HeightNoise2.GetNoise(WorldX + x, wy) - 2f;
+
+                RiverOutput[row + x] =
+                    RiverNoise.GetNoise(WorldX + x, wy) * 0.5f + 0.5f;
             }
         }
     }
@@ -152,8 +117,6 @@ public class Noise
     [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true)]
     public struct ClimateDirect2xJob : IJobFor
     {
-        [ReadOnly] public int HalfSize;
-        [ReadOnly] public int ChunkSize;
         [ReadOnly] public int WorldX;
         [ReadOnly] public int WorldY;
 
@@ -173,10 +136,10 @@ public class Noise
             int y = hy * 2;
             int wy = WorldY + y;
 
-            int row0 = y * ChunkSize;
-            int row1 = row0 + ChunkSize;
+            int row0 = y * chunkSize;
+            int row1 = row0 + chunkSize;
 
-            for (int hx = 0; hx < HalfSize; hx++)
+            for (int hx = 0; hx < halfSize; hx++)
             {
                 int x = hx * 2;
                 int wx = WorldX + x;
@@ -202,3 +165,4 @@ public class Noise
         }
     }
 }
+

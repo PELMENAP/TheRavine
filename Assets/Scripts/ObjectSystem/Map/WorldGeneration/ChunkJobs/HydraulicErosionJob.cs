@@ -6,10 +6,9 @@ using Unity.Mathematics;
 
 namespace TheRavine.Generator
 {
-    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true, OptimizeFor = OptimizeFor.Performance)]
+    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true)]
     public struct HydraulicErosionJob : IJob
     {
-        [ReadOnly] public int mapSize;
         [ReadOnly] public uint seed;
         [ReadOnly] public ErosionSettings settings;
         public NativeArray<float> heightMap, deltaMap;
@@ -39,8 +38,8 @@ namespace TheRavine.Generator
         private void SimulateDroplet(ref Random rng)
         {
             float2 pos = new(
-                rng.NextFloat(1, mapSize - 1),
-                rng.NextFloat(1, mapSize - 1));
+                rng.NextFloat(1, MapGenerator.mapChunkSize - 1),
+                rng.NextFloat(1, MapGenerator.mapChunkSize - 1));
 
             float2 dir = 0;
 
@@ -102,53 +101,42 @@ namespace TheRavine.Generator
 
         private void ApplyErosion(float2 pos, float amount)
         {
-            int r = settings.radius;
-            float invR2 = math.rsqrt(r); //why does it work?
-            
+            float r = settings.radius;
             int cx = (int)pos.x;
             int cy = (int)pos.y;
 
+            int xStart = math.max(cx - (int)r, 0);
+            int xEnd = math.min(cx + (int)r, MapGenerator.mapChunkSize - 1);
+            int yStart = math.max(cy - (int)r, 0);
+            int yEnd = math.min(cy + (int)r, MapGenerator.mapChunkSize - 1);
+
             float r2 = r * r;
-            float total = 0f;
+            float invR2 = 1f / r2;
 
-            for (int y = -r; y <= r; y++)
-            for (int x = -r; x <= r; x++)
+            for (int y = yStart; y <= yEnd; y++)
             {
-                float d2 = x * x + y * y;
-                if (d2 > r2) continue;
-                total += 1f - d2 * invR2;
-            }
-
-            if (total <= 0f)
-                return;
-
-            for (int y = -r; y <= r; y++)
-            for (int x = -r; x <= r; x++)
-            {
-                int px = cx + x;
-                int py = cy + y;
-
-                if (!IsInside(px, py))
-                    continue;
-
-                float d2 = x * x + y * y;
-                if (d2 > r2)
-                    continue;
-
-                float w = 1f - d2 * invR2;
-
-                int idx = Idx(px, py);
-                float currentHeight = heightMap[idx] + deltaMap[idx];
-
-                if (!settings.allowInfiniteErosionDepth)
+                for (int x = xStart; x <= xEnd; x++)
                 {
-                    float maxRemove = math.max(0.05f, currentHeight - 100);
-                    float remove = math.min(amount * w, maxRemove);
-                    deltaMap[idx] -= remove;
-                }
-                else
-                {
-                    deltaMap[idx] -= amount * w;
+                    int dx = x - cx;
+                    int dy = y - cy;
+                    float d2 = dx * dx + dy * dy;
+                    
+                    if (d2 > r2) continue;
+
+                    float w = 1f - d2 * invR2;
+                    int idx = y * MapGenerator.mapChunkSize + x;
+                    float currentHeight = heightMap[idx] + deltaMap[idx];
+
+                    if (!settings.allowInfiniteErosionDepth)
+                    {
+                        float maxRemove = math.max(0.05f, currentHeight - 100);
+                        float remove = math.min(amount * w, maxRemove);
+                        deltaMap[idx] -= remove;
+                    }
+                    else
+                    {
+                        deltaMap[idx] -= amount * w;
+                    }
                 }
             }
         }
@@ -203,19 +191,19 @@ namespace TheRavine.Generator
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool IsInside(float2 p)
         {
-            return p.x >= 0 && p.y >= 0 && p.x < mapSize - 1 && p.y < mapSize - 1;
+            return p.x >= 0 && p.y >= 0 && p.x < MapGenerator.mapChunkSize - 1 && p.y < MapGenerator.mapChunkSize - 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool IsInside(int x, int y)
         {
-            return x >= 0 && y >= 0 && x < mapSize && y < mapSize;
+            return x >= 0 && y >= 0 && x < MapGenerator.mapChunkSize && y < MapGenerator.mapChunkSize;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int Idx(int x, int y)
         {
-            return y * mapSize + x;
+            return y * MapGenerator.mapChunkSize + x;
         }
 
         private struct HeightSample
@@ -225,3 +213,4 @@ namespace TheRavine.Generator
         }
     }
 }
+

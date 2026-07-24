@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36232c7ac27f177e8810571cc4703052, type: 3}
+  m_Name: LittleBirchMeshCollection
+  m_EditorClassIdentifier: ObjectSystem::TreeMeshCollection
+  _entries:
+  - {fileID: 4300000, guid: d57391fdbe57695b89a0f806de1e192a, type: 2}
+  - {fileID: 4300000, guid: 9e06ea485378daed3b7720472de72be0, type: 2}
+  - {fileID: 4300000, guid: 31d2b116e4c3bf1c68a03b913c17e537, type: 2}
+  - {fileID: 4300000, guid: 0837106f6a099bf79b903f81de05edd8, type: 2}
+  - {fileID: 4300000, guid: 4db46d5b8b96e5b08a703838f1b15f11, type: 2}
+  - {fileID: 4300000, guid: 7194e7bf9bb14a17c9688965747dfc1c, type: 2}
+  - {fileID: 4300000, guid: a8cbf0f2049474ba287f8fc2ed994177, type: 2}
+  - {fileID: 4300000, guid: 260b845c1c026c0ccbb8689b2abe9443, type: 2}

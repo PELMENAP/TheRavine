@@ -2,7 +2,7 @@ Shader "The Ravine/ChunkGrassShader"
 {
     Properties
     {
-        _MainTex ("Texture", 2D) = "white" {}
+        _MainTex ("Texture Array", 2DArray) = "" {}
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
 
         [Header(Wind)]
@@ -30,12 +30,10 @@ Shader "The Ravine/ChunkGrassShader"
         _SaturationVariation ("Saturation Variation", Range(0, 1)) = 0.1
         _ValueVariation ("Value Variation", Range(0, 1)) = 0.1
         _HueVariationScale ("Hue Variation Scale", Float) = 0.5
-
     }
 
     SubShader
     {
-        
         Tags
         {
             "RenderType"="TransparentCutout"
@@ -65,8 +63,6 @@ Shader "The Ravine/ChunkGrassShader"
         StructuredBuffer<InstanceData> instanceData;
 
         CBUFFER_START(UnityPerMaterial)
-            float4 _MainTex_ST;
-
             float _Cutoff;
             float _WindStrength;
             float _WindMapScale;
@@ -90,7 +86,7 @@ Shader "The Ravine/ChunkGrassShader"
             float _HueVariationScale;
         CBUFFER_END
 
-        TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);  
+        TEXTURE2D_ARRAY(_MainTex); SAMPLER(sampler_MainTex);  
         TEXTURE2D(_WindMap); SAMPLER(sampler_WindMap);   
 
         float3 RotateY(float3 v, float sinRot, float cosRot)
@@ -100,6 +96,25 @@ Shader "The Ravine/ChunkGrassShader"
                 v.y,
                 v.x * sinRot + v.z * cosRot
             );
+        }
+
+        float hash13(float2 p)
+        {
+            p = frac(p * 0.3183099 + 0.1);
+            p *= 17.0;
+            return frac(p.x * p.y * (p.x + p.y));
+        }
+
+        uint GetTextureIndex(float3 instancePos)
+        {
+            uint texWidth, texHeight, texCount;
+            _MainTex.GetDimensions(texWidth, texHeight, texCount);
+            
+            if (texCount <= 1)
+                return 0;
+
+            float rnd = hash13(instancePos.xz);
+            return (uint)(rnd * texCount) % texCount;
         }
 
         float3 ApplyPlayerInteraction(float3 positionWS, float heightFactor)
@@ -113,6 +128,7 @@ Shader "The Ravine/ChunkGrassShader"
             
             float radiusMask = saturate(1.0 - distanceXZ / _PlayerRadius);
             float heightMask = saturate(1.0 - abs(heightDiff) / halfHeight);
+            
             float falloff = radiusMask * radiusMask * heightMask;
             
             float2 dirXZ = (distanceXZ > 0.0001) ? normalize(posXZ - playerXZ) : 0;
@@ -121,12 +137,14 @@ Shader "The Ravine/ChunkGrassShader"
             offset.xz = dirXZ * falloff * _PlayerStrength * heightFactor;
             offset.y = -falloff * _PlayerStrength * 0.2;
             
-            return offset * step(distanceXZ, _PlayerRadius) * step(abs(heightDiff), halfHeight);
+            return offset * saturate(radiusMask) * saturate(heightMask);
         }
 
-        float3 SampleWindOffset(float3 positionWS, float heightFactor)
+        float3 SampleWindOffset(float3 positionWS, float heightFactor, float3 instancePos)
         {
-            float2 windUV = positionWS.xz * _WindMapScale + _WindVelocity.xy * _Time.y;
+            float2 phaseOffset = instancePos.xz * 0.1;
+            float2 windUV = positionWS.xz * _WindMapScale + _WindVelocity.xy * _Time.y + phaseOffset;
+            
             float2 windSample = SAMPLE_TEXTURE2D_LOD(_WindMap, sampler_WindMap, windUV, 0).rg;
             windSample = windSample * 2.0 - 1.0;
 
@@ -137,13 +155,11 @@ Shader "The Ravine/ChunkGrassShader"
         float3 ApplyWind(
             float3 positionWS,
             float heightFactor,
+            float3 instancePos,
             out float3 windOffset)
         {
-            windOffset =
-                SampleWindOffset(positionWS, heightFactor);
-
-            float3 playerOffset =
-                ApplyPlayerInteraction(positionWS, heightFactor);
+            windOffset = SampleWindOffset(positionWS, heightFactor, instancePos);
+            float3 playerOffset = ApplyPlayerInteraction(positionWS, heightFactor);
 
             return positionWS + windOffset + playerOffset;
         }
@@ -157,20 +173,14 @@ Shader "The Ravine/ChunkGrassShader"
             sincos(instance.rotation, sinRot, cosRot);
 
             float3 scaledPos;
-
             scaledPos.x = positionOS.x * instance.scaleXZ;
             scaledPos.y = positionOS.y * instance.scaleY;
             scaledPos.z = positionOS.z * instance.scaleXZ;
 
-            float3 rotatedPos =
-                RotateY(
-                    scaledPos,
-                    sinRot,
-                    cosRot);
+            float3 rotatedPos = RotateY(scaledPos, sinRot, cosRot);
 
             return rotatedPos + instance.position;
         }
-
 
         float4 UnpackColor(uint packed)
         {
@@ -181,12 +191,6 @@ Shader "The Ravine/ChunkGrassShader"
             return float4(r, g, b, a);
         }
 
-        float hash13(float2 p)
-        {
-            p = frac(p * 0.3183099 + 0.1);
-            p *= 17.0;
-            return frac(p.x * p.y * (p.x + p.y));
-        }
 
         float3 RGBtoHSV(float3 c)
         {
@@ -225,34 +229,25 @@ Shader "The Ravine/ChunkGrassShader"
             return HSVtoRGB(hsv);
         }
 
-
         ENDHLSL
 
         Pass
         {
             Name "ForwardLit"
-
-            Tags
-            {
-                "LightMode"="UniversalForward"
-            }
+            Tags { "LightMode"="UniversalForward" }
 
             ZWrite On
             ZTest LEqual
+            AlphaToMask On 
 
             HLSLPROGRAM
-
             #pragma vertex vert
             #pragma fragment frag
-
             #pragma multi_compile_instancing
-
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ _SHADOWS_SOFT
             #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
-
-
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
 
@@ -275,137 +270,65 @@ Shader "The Ravine/ChunkGrassShader"
                 float4 shadowCoord : TEXCOORD4;
                 float3 windOffset : TEXCOORD5;
                 float3 instancePos : TEXCOORD6;
+                uint texIndex : TEXCOORD7;
             };
 
             Varyings vert(Attributes input)
             {
                 Varyings output;
-
-                InstanceData instance =
-                    instanceData[input.instanceID];
+                InstanceData instance = instanceData[input.instanceID];
 
                 float heightFactor;
                 float3 windOffset;
+                float sinRot, cosRot;
 
-                float sinRot;
-                float cosRot;
-
-                float3 positionWS =
-                    TransformInstanceVertex(
-                        input.positionOS.xyz,
-                        instance,
-                        sinRot,
-                        cosRot);
-
+                float3 positionWS = TransformInstanceVertex(input.positionOS.xyz, instance, sinRot, cosRot);
                 heightFactor = input.positionOS.y;
 
-                positionWS =
-                    ApplyWind(
-                        positionWS,
-                        heightFactor,
-                        windOffset);
+                positionWS = ApplyWind(positionWS, heightFactor, instance.position, windOffset);
 
-                float3 normalWS =
-                    RotateY(
-                        input.normalOS,
-                        sinRot,
-                        cosRot);
+                float3 normalWS = RotateY(input.normalOS, sinRot, cosRot);
+                normalWS = normalize(normalWS + float3(windOffset.x, 0, windOffset.z) * _NormalWindInfluence);
 
-                normalWS =
-                    normalize(
-                        normalWS +
-                        float3(windOffset.x, 0, windOffset.z)
-                        * _NormalWindInfluence);
-
-                output.positionCS =
-                    TransformWorldToHClip(positionWS);
-
+                output.positionCS = TransformWorldToHClip(positionWS);
                 output.positionWS = positionWS;
                 output.normalWS = normalWS;
-                output.uv = TRANSFORM_TEX(input.uv, _MainTex);
-
-                output.color =
-                    UnpackColor(
-                        instance.packedColor);
-
+                output.uv = input.uv;
+                output.color = UnpackColor(instance.packedColor);
                 output.heightFactor = heightFactor;
-
-                output.shadowCoord =
-                    TransformWorldToShadowCoord(positionWS);
-
+                output.shadowCoord = TransformWorldToShadowCoord(positionWS);
                 output.windOffset = windOffset;
                 output.instancePos = instance.position;
+                
+                output.texIndex = GetTextureIndex(instance.position);
+
                 return output;
             }
 
-            float4 frag(
-                Varyings input,
-                half facing : VFACE) : SV_Target
+            float4 frag(Varyings input, half facing : VFACE) : SV_Target
             {
-                if (input.color.a < 0.2)
-                    discard;
+                if (input.color.a < 0.2) discard;
 
-                float4 texColor =
-                    SAMPLE_TEXTURE2D(
-                        _MainTex,
-                        sampler_MainTex,
-                        input.uv);
-
+                float4 texColor = SAMPLE_TEXTURE2D_ARRAY_LOD(_MainTex, sampler_MainTex, input.uv, input.texIndex, 0);
                 clip(texColor.a - _Cutoff);
 
-                float3 normalWS =
-                    normalize(input.normalWS);
-
+                float3 normalWS = normalize(input.normalWS);
                 normalWS *= facing > 0 ? 1 : -1;
 
-                float4 finalColor =
-                    lerp(
-                        texColor,
-                        texColor * input.color,
-                        _InstanceColorBlend);
+                float4 finalColor = lerp(texColor, texColor * input.color, _InstanceColorBlend);
+                finalColor.rgb = ApplyHueVariation(finalColor.rgb, input.instancePos);
 
-                finalColor.rgb =
-                    ApplyHueVariation(
-                        finalColor.rgb,
-                        input.instancePos);
+                float ao = lerp(1.0, 1.0 - _AmbientOcclusion, 1.0 - input.heightFactor);
 
+                Light mainLight = GetMainLight(input.shadowCoord);
+                float NdotL = saturate(dot(normalWS, mainLight.direction));
+                float3 directLighting = mainLight.color * NdotL * mainLight.shadowAttenuation;
 
-                float ao =
-                    lerp(
-                        1.0,
-                        1.0 - _AmbientOcclusion,
-                        1.0 - input.heightFactor);
+                float backLighting = saturate(dot(-mainLight.direction, normalWS));
+                float3 translucency = mainLight.color * backLighting * _TranslucencyStrength * input.heightFactor;
 
-                Light mainLight =
-                    GetMainLight(input.shadowCoord);
-
-                float NdotL =
-                    saturate(
-                        dot(normalWS, mainLight.direction));
-
-                float3 directLighting =
-                    mainLight.color *
-                    NdotL *
-                    mainLight.shadowAttenuation;
-
-                float backLighting =
-                    saturate(
-                        dot(-mainLight.direction, normalWS));
-
-                float3 translucency =
-                    mainLight.color *
-                    backLighting *
-                    _TranslucencyStrength *
-                    input.heightFactor;
-
-                float3 ambientLighting =
-                    SampleSH(normalWS) *
-                    _AmbientStrength;
-
-                float3 lighting =
-                    directLighting +
-                    translucency +
-                    ambientLighting;
+                float3 ambientLighting = SampleSH(normalWS) * _AmbientStrength;
+                float3 lighting = directLighting + translucency + ambientLighting;
 
                 InputData inputData = (InputData)0;
                 inputData.positionWS = input.positionWS;
@@ -413,54 +336,36 @@ Shader "The Ravine/ChunkGrassShader"
                 LIGHT_LOOP_BEGIN(lightIndex)
                 {
                     Light light = GetAdditionalLight(lightIndex, inputData.positionWS);
-
-                    float attenuation =
-                        light.distanceAttenuation *
-                        light.shadowAttenuation;
-
-                    float additionalNdotL =
-                        saturate(dot(normalWS, light.direction));
-
-                    lighting +=
-                        light.color *
-                        additionalNdotL *
-                        attenuation;
+                    float attenuation = light.distanceAttenuation * light.shadowAttenuation;
+                    float additionalNdotL = saturate(dot(normalWS, light.direction));
+                    lighting += light.color * additionalNdotL * attenuation;
                 }
                 LIGHT_LOOP_END
 
                 finalColor.rgb *= lighting * ao;
-
                 return finalColor;
             }
-
             ENDHLSL
         }
 
         Pass
         {
             Name "ShadowCaster"
-
-            Tags
-            {
-                "LightMode"="ShadowCaster"
-            }
+            Tags { "LightMode"="ShadowCaster" }
 
             ZWrite On
             ZTest LEqual
             ColorMask 0
 
             HLSLPROGRAM
-
             #pragma vertex ShadowVert
             #pragma fragment ShadowFrag
-
             #pragma multi_compile_instancing
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
-
                 uint instanceID : SV_InstanceID;
             };
 
@@ -468,104 +373,67 @@ Shader "The Ravine/ChunkGrassShader"
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                uint texIndex : TEXCOORD1;
             };
 
             float4 GetShadowPositionHClip(float3 positionWS)
             {
-                float4 positionCS =
-                    TransformWorldToHClip(positionWS);
-
+                float4 positionCS = TransformWorldToHClip(positionWS);
                 #if UNITY_REVERSED_Z
-                    positionCS.z =
-                        min(
-                            positionCS.z,
-                            positionCS.w * UNITY_NEAR_CLIP_VALUE);
+                    positionCS.z = min(positionCS.z, positionCS.w * UNITY_NEAR_CLIP_VALUE);
                 #else
-                    positionCS.z =
-                        max(
-                            positionCS.z,
-                            positionCS.w * UNITY_NEAR_CLIP_VALUE);
+                    positionCS.z = max(positionCS.z, positionCS.w * UNITY_NEAR_CLIP_VALUE);
                 #endif
-
                 return positionCS;
             }
 
             Varyings ShadowVert(Attributes input)
             {
                 Varyings output;
-
-                InstanceData instance =
-                    instanceData[input.instanceID];
+                InstanceData instance = instanceData[input.instanceID];
 
                 float heightFactor;
                 float3 windOffset;
+                float sinRot, cosRot;
 
-                float sinRot;
-                float cosRot;
-
-                float3 positionWS =
-                    TransformInstanceVertex(
-                        input.positionOS.xyz,
-                        instance,
-                        sinRot,
-                        cosRot);
-
+                float3 positionWS = TransformInstanceVertex(input.positionOS.xyz, instance, sinRot, cosRot);
                 heightFactor = input.positionOS.y;
+                positionWS = ApplyWind(positionWS, heightFactor, instance.position, windOffset);
 
-                positionWS =
-                    ApplyWind(
-                        positionWS,
-                        heightFactor,
-                        windOffset);
-
-                output.positionCS =
-                    GetShadowPositionHClip(positionWS);
-
+                output.positionCS = GetShadowPositionHClip(positionWS);
                 output.uv = input.uv;
+                
+                output.texIndex = GetTextureIndex(instance.position);
 
                 return output;
             }
 
             float4 ShadowFrag(Varyings input) : SV_Target
             {
-                float alpha =
-                    SAMPLE_TEXTURE2D(
-                        _MainTex,
-                        sampler_MainTex,
-                        input.uv).a;
-
+                float alpha = SAMPLE_TEXTURE2D_ARRAY_LOD(_MainTex, sampler_MainTex, input.uv, input.texIndex, 0).a;
                 clip(alpha - _Cutoff);
-
                 return 0;
             }
-
             ENDHLSL
         }
 
         Pass
         {
             Name "DepthOnly"
-
-            Tags
-            {
-                "LightMode"="DepthOnly"
-            }
+            Tags { "LightMode"="DepthOnly" }
 
             ZWrite On
             ColorMask 0
 
             HLSLPROGRAM
-
             #pragma vertex DepthVert
             #pragma fragment DepthFrag
-
             #pragma multi_compile_instancing
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
-
                 uint instanceID : SV_InstanceID;
             };
 
@@ -573,60 +441,38 @@ Shader "The Ravine/ChunkGrassShader"
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                uint texIndex : TEXCOORD1;
             };
 
             Varyings DepthVert(Attributes input)
             {
                 Varyings output;
-
-                InstanceData instance =
-                    instanceData[input.instanceID];
+                InstanceData instance = instanceData[input.instanceID];
 
                 float heightFactor;
                 float3 windOffset;
+                float sinRot, cosRot;
 
-                float sinRot;
-                float cosRot;
-
-                float3 positionWS =
-                    TransformInstanceVertex(
-                        input.positionOS.xyz,
-                        instance,
-                        sinRot,
-                        cosRot);
-
+                float3 positionWS = TransformInstanceVertex(input.positionOS.xyz, instance, sinRot, cosRot);
                 heightFactor = input.positionOS.y;
+                positionWS = ApplyWind(positionWS, heightFactor, instance.position, windOffset);
 
-                positionWS =
-                    ApplyWind(
-                        positionWS,
-                        heightFactor,
-                        windOffset);
-
-                output.positionCS =
-                    TransformWorldToHClip(positionWS);
-
+                output.positionCS = TransformWorldToHClip(positionWS);
                 output.uv = input.uv;
+                
+                output.texIndex = GetTextureIndex(instance.position);
 
                 return output;
             }
 
             float4 DepthFrag(Varyings input) : SV_Target
             {
-                float alpha =
-                    SAMPLE_TEXTURE2D(
-                        _MainTex,
-                        sampler_MainTex,
-                        input.uv).a;
-
+                float alpha = SAMPLE_TEXTURE2D_ARRAY_LOD(_MainTex, sampler_MainTex, input.uv, input.texIndex, 0).a;
                 clip(alpha - _Cutoff);
-
                 return 0;
             }
-
             ENDHLSL
         }
     }
-
     Fallback "Hidden/Universal Render Pipeline/FallbackError"
 }
