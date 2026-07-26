@@ -8,7 +8,7 @@ namespace TheRavine.ObjectControl
     public class ObjectInfoRegistry : ScriptableObject
     {
         [SerializeField]
-        public List<ObjectInfo> objectInfos = new List<ObjectInfo>();
+        public List<ObjectInfo> objectInfos = new();
 
         private Dictionary<int, ObjectInfo> _data;
         private Dictionary<int, ObjectInfo> Data => _data;
@@ -20,8 +20,7 @@ namespace TheRavine.ObjectControl
 
         public void Clear()
         {
-            if (_data != null)
-                _data.Clear();
+            _data?.Clear();
         }
         public void RebuildDictionary()
         {

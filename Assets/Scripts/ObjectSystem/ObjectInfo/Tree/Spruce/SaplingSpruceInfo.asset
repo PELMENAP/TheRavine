@@ -19,7 +19,7 @@ MonoBehaviour:
   behaviourType: 2
   nalInfo: {fileID: 0}
   inventoryItemInfo: {fileID: 0}
-  evolutionStep: {fileID: 11400000, guid: 194144ec13aa6c3d5a0862d979cf85bb, type: 2}
+  evolutionStep: {fileID: 11400000, guid: 32f8156adfce3fa3b9f5f29cb697afd8, type: 2}
   additionalOccupiedCells: []
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}

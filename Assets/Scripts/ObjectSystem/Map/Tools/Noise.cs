@@ -106,10 +106,10 @@ public class Noise
             for (int x = 0; x < chunkSize; x++)
             {
                 HeightOutput[row + x] =
-                    HeightNoise.GetNoise(WorldX + x, wy) * 0.5f + 0.5f + HeightNoise2.GetNoise(WorldX + x, wy) - 2f;
+                    HeightNoise.GetNoise(WorldX + x, wy) * 0.5f + 0.5f + HeightNoise2.GetNoise(WorldX + x, wy);
 
                 RiverOutput[row + x] =
-                    RiverNoise.GetNoise(WorldX + x, wy) * 0.5f + 0.5f;
+                    RiverNoise.GetNoise(WorldX + x, wy) * 0.5f + 1f;
             }
         }
     }

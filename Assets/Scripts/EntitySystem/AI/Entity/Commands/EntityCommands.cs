@@ -285,10 +285,13 @@ public class AttackCommand : ICommand
         await model.Motor.MoveToAsync(target.transform.position, model.Tuning.MoveSpeed, 2f,
             model.Tuning.EnergyCostMoving, cts.Token);
 
+        if (target == null) { model.Brain.GiveReward(0.2f); return; }
+
         if (Vector3.Distance(model.Motor.Position, target.transform.position) <= model.Tuning.AttackRange && model.TryStartAttackCooldown())
         {
             var victim = target.GetComponent<EntityViewModel>()?.Entity as EntityModel;
-            if(victim != null) victim.Stats.Health.Value -= model.Tuning.AttackDamage;
+            if (victim != null && !victim.IsDisposed)
+                victim.Stats.Health.Value -= model.Tuning.AttackDamage;
             model.Brain.GiveReward(victim != null ? 0.9f : 0.4f);
         }
         else model.Brain.GiveReward(0.3f);

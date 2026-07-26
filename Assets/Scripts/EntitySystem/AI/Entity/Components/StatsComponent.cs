@@ -1,6 +1,5 @@
 using R3;
 using Unity.Mathematics;
-using UnityEngine;
 
 public class StatsComponent : IComponent
 {

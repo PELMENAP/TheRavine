@@ -13,11 +13,9 @@ MonoBehaviour:
   m_Name: BigSpruceMeshCollection
   m_EditorClassIdentifier: ObjectSystem::TreeMeshCollection
   _entries:
-  - {fileID: 4300000, guid: fa38981e97811d1888637656a5f4f39a, type: 2}
   - {fileID: 4300000, guid: 4639da2867eca4119a7b02f2f831975a, type: 2}
   - {fileID: 4300000, guid: 513223739bb22a9dbbe537252a1c59bc, type: 2}
   - {fileID: 4300000, guid: 3a2a6a15f6630d1e4af2e0146ed790b6, type: 2}
   - {fileID: 4300000, guid: d1a7addc5b9482d148853ea03ff6cb56, type: 2}
   - {fileID: 4300000, guid: fc6ff4f0f7c4bd74195679e60f815fd8, type: 2}
   - {fileID: 4300000, guid: 1b64e227ed9f8933989062e3cd84db76, type: 2}
-  - {fileID: 4300000, guid: 3a10f8515afcb96a78250e2e13faa839, type: 2}

@@ -66,6 +66,7 @@ public class EntityModel : AEntity
         Brain = GetEntityComponent<BrainComponent>();
 
         AddComponentToEntity(new MortalityComponent(Stats.Health));
+        GetEntityComponent<MortalityComponent>().Died += CancelCurrentCommand;
         GetEntityComponent<MortalityComponent>().Died += () => death?.OnDeath();
         states = GetOrCreateEntityComponent<StatePatternComponent>();
 
@@ -157,6 +158,8 @@ public class EntityModel : AEntity
         if (en > Tuning.ReproduceEnergyCost + 50 && hp > Tuning.ReproduceHealthCost + 50) b += 0.5f;
         return b;
     }
+
+    private void CancelCurrentCommand() => states.behaviourCurrent?.CancelCurrentCommand();
 
     public override void DeepClean()
     {
