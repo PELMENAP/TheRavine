@@ -1,5 +1,3 @@
-using UnityEngine;  
-
 public class BrainComponent : IComponent
 {
     private readonly SharedHierarchicalBrain _brain;

@@ -129,7 +129,8 @@ namespace TheRavine.Generator
 
                     if (!settings.allowInfiniteErosionDepth)
                     {
-                        float maxRemove = math.max(0.05f, currentHeight - 100);
+                        float minAllowedHeight = -0.5f; 
+                        float maxRemove = math.max(0f, (currentHeight + deltaMap[idx]) - minAllowedHeight);
                         float remove = math.min(amount * w, maxRemove);
                         deltaMap[idx] -= remove;
                     }

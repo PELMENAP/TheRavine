@@ -21,9 +21,11 @@ public class PerceptionComponent : IComponent
         float minD = float.MaxValue;
         for (int i = 0; i < count; i++)
         {
-            if (_buffer[i].gameObject == self) continue;
-            float d = Vector3.Distance(origin, _buffer[i].transform.position);
-            if (d < minD) { minD = d; best = _buffer[i].gameObject; }
+            if (_buffer[i] == null) continue;
+            var go = _buffer[i].gameObject;
+            if (go == self) continue;
+            float d = Vector3.Distance(origin, go.transform.position);
+            if (d < minD) { minD = d; best = go; }
         }
         distance = best != null ? minD : -1f;
         return best;

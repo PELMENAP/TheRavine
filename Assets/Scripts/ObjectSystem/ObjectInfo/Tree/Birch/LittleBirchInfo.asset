@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: LittleBirchInfo
   m_EditorClassIdentifier: 
-  objectPrefab: {fileID: 948248636415433774, guid: 4c1bd2d40e1ccc4d89ea2421f3e9db6b, type: 3}
+  objectPrefab: {fileID: 948248636415433774, guid: 4b56ff6b474885a41a9b832839587067, type: 3}
   defaultAmount: 0
   initialPoolSize: 30
   instanceType: 0
@@ -23,4 +23,3 @@ MonoBehaviour:
   additionalOccupiedCells: []
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}
-  ObjectName: LITTLE_BIRCH

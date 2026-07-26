@@ -3,7 +3,7 @@ using System;
 
 public class MortalityComponent : IComponent
 {
-    public event System.Action Died;
+    public event Action Died;
     private IDisposable sub;
 
     public MortalityComponent(ReadOnlyReactiveProperty<float> health)

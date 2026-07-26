@@ -44,8 +44,13 @@ namespace TheRavine.EntityControl
         public void Activate() => IsActive.Value = true;
         public void Deactivate() => IsActive.Value = false;
 
+        public bool IsDisposed { get; private set; }
+
         public void Dispose()
         {
+            if (IsDisposed) return;
+            IsDisposed = true;
+
             DeepClean();
 
             foreach (var component in _components.Values)
