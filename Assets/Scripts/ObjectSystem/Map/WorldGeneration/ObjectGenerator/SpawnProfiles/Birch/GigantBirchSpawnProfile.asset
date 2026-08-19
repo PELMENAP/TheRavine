@@ -10,24 +10,24 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 92dc51c1426ad1c8c94acb16dec575b3, type: 3}
-  m_Name: StumpSpruceSpawnProfile
+  m_Name: GigantBirchSpawnProfile
   m_EditorClassIdentifier: ObjectSystem::TheRavine.Generator.ObjectSpawnProfileSO
   layer: 2
   density: 10
   minDistance: 5
   mask:
-    heightMin: 0.3
-    heightMax: 0.846
-    tempMin: 0.48
-    tempMax: 0.672
-    moistMin: 0.593
-    moistMax: 0.993
+    heightMin: 0.12
+    heightMax: 0.5
+    tempMin: 0.1
+    tempMax: 0.6
+    moistMin: 0.35
+    moistMax: 1
     noiseScale: 0.02
-    noiseThreshold: 0.638
-    noiseWeight: 0.387
+    noiseThreshold: 0.5
+    noiseWeight: 0.6
   clusters:
-    useClusters: 1
-    clusterCount: 3
-    clusterSize: 19
-    clusterRadius: 0.49
-  objectInfo: {fileID: 11400000, guid: 442b367888fac8d03a12ffa4b207be67, type: 2}
+    useClusters: 0
+    clusterCount: 6
+    clusterSize: 17
+    clusterRadius: 0.33
+  objectInfo: {fileID: 11400000, guid: 257a26db7986565cb8ea65438dd7b43b, type: 2}

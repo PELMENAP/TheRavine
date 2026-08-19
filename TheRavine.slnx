@@ -11,10 +11,11 @@
   <Project Path="Info.csproj" />
   <Project Path="UniTask.Addressables.csproj" />
   <Project Path="DetectorSystem.csproj" />
-  <Project Path="Scripts.csproj" />
+  <Project Path="Core.csproj" />
   <Project Path="UIInventory.csproj" />
   <Project Path="Netcode.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="Audio.csproj" />
   <Project Path="undream.llmunity.Runtime.csproj" />
   <Project Path="View.csproj" />
   <Project Path="Tayx.Graphy.csproj" />

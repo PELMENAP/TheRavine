@@ -49,7 +49,7 @@ public class StringToAudioGenerator : MonoBehaviour
         activeCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         var token = activeCts.Token;
     
-        if (string.IsNullOrEmpty(speech) || token.IsCancellationRequested) return null;
+        if (string.IsNullOrEmpty(speech) || token.IsCancellationRequested || AudioService.Instance == null) return null;
 
         int sampleCount = Mathf.CeilToInt(config.sampleRate * config.duration);
         EnsureClip(sampleCount);
@@ -80,6 +80,13 @@ public class StringToAudioGenerator : MonoBehaviour
         if (token.IsCancellationRequested || clip == null) return null;
 
         clip.SetData(managedSamples, 0);
+
+        var audioConfig = AudioPlayConfig.Default(clip);
+        audioConfig.Position = this.transform.position;
+        audioConfig.Is3D = true;
+
+        AudioService.Instance.Play(AudioChannel.SFX, audioConfig);
+
         audioSource.clip = clip;
         audioSource.Play();
         return clip;

@@ -109,7 +109,7 @@ public class Noise
                     HeightNoise.GetNoise(WorldX + x, wy) * 0.5f + 0.5f + HeightNoise2.GetNoise(WorldX + x, wy);
 
                 RiverOutput[row + x] =
-                    RiverNoise.GetNoise(WorldX + x, wy) * 0.5f + 1f;
+                    RiverNoise.GetNoise(WorldX + x, wy) * 0.5f + 0.5f;
             }
         }
     }

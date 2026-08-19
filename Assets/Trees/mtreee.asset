@@ -1,0 +1,319 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-8635709158396049940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 156ba2a5f4fc7bf47b493b7cbf9c7f19, type: 3}
+  m_Name: Trunk
+  m_EditorClassIdentifier: MTree.Runtime::Mtree.TrunkFunction
+  seed: 8220
+  id: -440640953
+  parent: {fileID: 0}
+  chiildren:
+  - {fileID: 3901585435988570497}
+  enabled: 1
+  showDeleteButton: 0
+  rect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 200
+    height: 37
+  deleteRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 0
+    height: 0
+  radiusMultiplier: 0.9
+  radius:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.6960939
+      value: 0.572057
+      inSlope: -1.2981375
+      outSlope: -1.2981375
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: -1
+      outSlope: -1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  length: 100
+  number: 1
+  randomness: 0
+  originAttraction: 0.457
+  resolution: 0.33
+  rootShape:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: -2
+      outSlope: -2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  rootRadius: 0.856
+  rootInnerRadius: 0.683
+  rootHeight: 5.63
+  rootResolution: 1.58
+  flareNumber: 5
+  spinAmount: 0
+  displacementStrength: 0.38
+  displacementSize: 0.61
+  heightOffset: -0.39
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58c179839cc7e1e4bb7fdb33c0866483, type: 3}
+  m_Name: mtreee
+  m_EditorClassIdentifier: MTree.Runtime::Mtree.TreeTemplate
+  treeFunctions:
+  - {fileID: -8635709158396049940}
+  - {fileID: 3901585435988570497}
+  - {fileID: 7664458463273611723}
+--- !u!114 &3901585435988570497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33897084c7891e54eb6df4c02cb4118d, type: 3}
+  m_Name: Branch
+  m_EditorClassIdentifier: MTree.Runtime::Mtree.BranchFunction
+  seed: 5909
+  id: -1987994872
+  parent: {fileID: -8635709158396049940}
+  chiildren:
+  - {fileID: 7664458463273611723}
+  enabled: 1
+  showDeleteButton: 1
+  rect:
+    serializedVersion: 2
+    x: 30
+    y: 34
+    width: 200
+    height: 37
+  deleteRect:
+    serializedVersion: 2
+    x: 200
+    y: 43
+    width: 18
+    height: 18
+  length: 12
+  lengthCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.8244964
+      value: 0.94698334
+      inSlope: -0.19999993
+      outSlope: -0.19999993
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0.8
+      inSlope: -0.19999999
+      outSlope: -0.19999999
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  resolution: 0.71
+  number: 30
+  splitProba: 0.1
+  angle: 0.839
+  shape:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.8952027
+      value: 0.7677551
+      inSlope: -0.90000004
+      outSlope: -0.90000004
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0.1
+      inSlope: -0.9
+      outSlope: -0.9
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  splitProbaCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.5
+      inSlope: 0
+      outSlope: 0.5
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0.5
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  radius: 0.4
+  randomness: 0
+  upAttraction: 0
+  start: 0.3
+  gravityStrength: 0.29
+  obstacleAvoidance: 0
+--- !u!114 &7664458463273611723
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85d8cd2303af54543a4524493d539ae8, type: 3}
+  m_Name: Leaves
+  m_EditorClassIdentifier: MTree.Runtime::Mtree.LeafFunction
+  seed: 8677
+  id: 2130494107
+  parent: {fileID: 3901585435988570497}
+  chiildren: []
+  enabled: 1
+  showDeleteButton: 1
+  rect:
+    serializedVersion: 2
+    x: 60
+    y: 68
+    width: 200
+    height: 37
+  deleteRect:
+    serializedVersion: 2
+    x: 230
+    y: 77
+    width: 18
+    height: 18
+  leafType: 1
+  number: 200
+  customLeafMesh: {fileID: 0}
+  maxRadius: 1
+  size: 5
+  overrideNormals: 1
+  minWeight: -1
+  maxWeight: 1
+  length: 2
+  lengthCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: -0.5
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0.5
+      inSlope: -0.5
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  uLoops: 2
+  resolution: 1
+  gravityStrength: 1
