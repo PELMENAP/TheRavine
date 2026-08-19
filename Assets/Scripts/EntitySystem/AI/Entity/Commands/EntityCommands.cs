@@ -44,12 +44,14 @@ public class FleeCommand : ICommand
         var target = model.Perception.FindNearestEntity(model.Motor.Position, model.SelfObject, out _);
         if (target == null) { model.Brain.GiveReward(0.3f); return; }
 
-        Vector2 away = ((Vector2)model.Motor.Position - (Vector2)target.transform.position).normalized;
+        Vector2 targetPos = target.transform.position;
+        Vector2 away = ((Vector2)model.Motor.Position - targetPos).normalized;
         Vector2 dest = (Vector2)model.Motor.Position + away * model.Tuning.DetectionRadius * 1.5f;
 
         await model.Motor.MoveToAsync(new Vector3(dest.x, model.Motor.Position.y, dest.y),
             model.Tuning.RunSpeed, 2f, model.Tuning.EnergyCostRunning, cts.Token);
 
+        if (target == null) { model.Brain.GiveReward(0.5f); return; }
         float dist = Vector2.Distance(model.Motor.Position, target.transform.position);
         model.Brain.GiveReward(Mathf.Clamp01(dist / model.Tuning.DetectionRadius));
     }
@@ -203,8 +205,7 @@ public class MimicCommand : ICommand
     {
         var target = model.Perception.FindNearestEntity(model.Motor.Position, model.SelfObject, out _);
         var otherModel = target?.GetComponent<EntityViewModel>()?.Entity as EntityModel;
-
-        if (otherModel == null) { model.Brain.GiveReward(0.2f); return UniTask.CompletedTask; }
+        if (otherModel == null || otherModel.IsDisposed) { model.Brain.GiveReward(0.2f); return UniTask.CompletedTask; }
 
         model.SetLastAction(otherModel.LastActionIndex);
         float reward = 0.3f + otherModel.Brain.Context.CoordMLP.AverageEntropy * 0.2f;
@@ -248,8 +249,7 @@ public class ShareFoodCommand : ICommand
 
         var target = model.Perception.FindNearestEntity(model.Motor.Position, model.SelfObject, out _);
         var victim = target != null ? target.GetComponent<EntityViewModel>()?.Entity as EntityModel : null;
-
-        if (victim == null || victim.Stats.Health.Value > model.Stats.Health.Value * 0.8f)
+        if (victim == null || victim.IsDisposed || victim.Stats.Health.Value > model.Stats.Health.Value * 0.8f)
         {
             model.Brain.GiveReward(0.25f);
             return;
@@ -282,12 +282,14 @@ public class AttackCommand : ICommand
         var target = model.Perception.FindNearestEntity(model.Motor.Position, model.SelfObject, out _);
         if (target == null) { model.Brain.GiveReward(0.2f); return; }
 
-        await model.Motor.MoveToAsync(target.transform.position, model.Tuning.MoveSpeed, 2f,
+        Vector3 targetPos = target.transform.position;
+        await model.Motor.MoveToAsync(targetPos, model.Tuning.MoveSpeed, 2f,
             model.Tuning.EnergyCostMoving, cts.Token);
 
-        if (target == null) { model.Brain.GiveReward(0.2f); return; }
+        if (target == null) { model.Brain.GiveReward(0.3f); return; }
 
-        if (Vector3.Distance(model.Motor.Position, target.transform.position) <= model.Tuning.AttackRange && model.TryStartAttackCooldown())
+        if (Vector3.Distance(model.Motor.Position, target.transform.position) <= model.Tuning.AttackRange
+            && model.TryStartAttackCooldown())
         {
             var victim = target.GetComponent<EntityViewModel>()?.Entity as EntityModel;
             if (victim != null && !victim.IsDisposed)
@@ -299,7 +301,6 @@ public class AttackCommand : ICommand
 
     public void Cancel() => cts.Cancel();
 }
-
 
 public class WanderCommand : ICommand
 {

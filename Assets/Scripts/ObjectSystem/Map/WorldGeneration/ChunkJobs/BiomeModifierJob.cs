@@ -73,7 +73,7 @@ namespace TheRavine.Generator
                 riverBedSum += weight * riverBedHeight[b] * hasRiver;
             }
 
-            if (totalWeight < 0.0001f)
+            if (totalWeight < 0.01f)
             {
                 heightOut[idx] = baseH;
                 return;
@@ -83,16 +83,15 @@ namespace TheRavine.Generator
                 math.rcp(totalWeight);
 
             float resultHeight =
-                math.saturate(
                     baseH *
                     (scaleSum * rcpWeight)
                     +
-                    offsetSum * rcpWeight);
+                    offsetSum * rcpWeight;
 
             float riverBlend =
                 riverWeightSum * rcpWeight;
 
-            if (riverBlend > 0f)
+            if (riverBlend > 0.01f)
             {
                 resultHeight =
                     math.lerp(

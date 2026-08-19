@@ -1,4 +1,5 @@
 using UnityEngine;
+
 [CreateAssetMenu(fileName = "SpreadPattern", menuName = "Gameplay/Create New SpreadPattern")]
 public class SpreadPattern : ScriptableObject
 {

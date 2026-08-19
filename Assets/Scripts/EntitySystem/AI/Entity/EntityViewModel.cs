@@ -19,9 +19,10 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
     public void OnDeath()
     {
         DialogSystem.Instance.RemoveDialogListener(this);
-        
-        Destroy(gameObject, 0f);
+        gameObject.SetActive(false);
+        Destroy(gameObject);
     }
+    
     [SerializeField] private StringToAudioGenerator audioGenerator;
 
     public async UniTask PlaySpeechAsync(string speech, float health, float energy, float danger,

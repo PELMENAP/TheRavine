@@ -71,9 +71,10 @@ public class EntityManager : MonoBehaviour
             if (count == 0) { await UniTask.Delay(TimeSpan.FromSeconds(window), cancellationToken: ct); continue; }
 
             float stepDelay = window / count;
-            for (int i = 0; i < count; i++)
+            var snapshot = _entities.ToArray();
+            for (int i = 0; i < snapshot.Length; i++)
             {
-                if (i < _entities.Count) _entities[i].UpdateEntityCycle();
+                if (!snapshot[i].IsDisposed) snapshot[i].UpdateEntityCycle();
                 await UniTask.Delay(TimeSpan.FromSeconds(stepDelay), cancellationToken: ct);
             }
         }
@@ -84,7 +85,11 @@ public class EntityManager : MonoBehaviour
         if (_entities.Count >= maxPopulation) return null;
 
         var go = Instantiate(entityPrefab, position, Quaternion.identity, transform);
-        
+        var ctx = inheritedCtx ?? _sharedBrain.CreateContext();
+
+        foreach (var expressible in go.GetComponents<IGeneticPhenotype>())
+            expressible.ApplyGeneticPhenotype(ctx.CoordMLP.Params);
+
         var netObj = go.GetComponent<NetworkObject>();
         netObj?.Spawn();
 
@@ -92,12 +97,12 @@ public class EntityManager : MonoBehaviour
         var view = go.GetComponent<EntityView>();
 
         var model = new EntityModel();
-        var ctx = inheritedCtx ?? _sharedBrain.CreateContext();
 
         model.Configure(_sharedBrain, ctx, viewModel, viewModel, go, tuning);
         model.Init();
         viewModel.Initialize(model);
         view.Initialize(viewModel);
+        model.AddComponentToEntity(new VisualCullingComponent(go, view.LabelObject));
         model.SetUp();
 
         model.GetEntityComponent<MortalityComponent>().Died += () => HandleEntityDied(model);
@@ -108,6 +113,17 @@ public class EntityManager : MonoBehaviour
         return model;
     }
 
+    public void SetEntityVisible(EntityModel model, bool visible)
+    {
+        if (model == null || model.IsDisposed) return;
+        model.GetEntityComponent<VisualCullingComponent>()?.SetVisible(visible);
+    }
+
+    public void SetEntitiesVisible(IReadOnlyList<EntityModel> targets, bool visible)
+    {
+        for (int i = 0; i < targets.Count; i++)
+            SetEntityVisible(targets[i], visible);
+}
     public void SpawnChild(EntityModel parent)
     {
         if (_entities.Count >= maxPopulation) return;

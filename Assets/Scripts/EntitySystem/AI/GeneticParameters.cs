@@ -1,6 +1,12 @@
 using UnityEngine;
+using System;
 
-[System.Serializable]
+public interface IGeneticPhenotype
+{
+    void ApplyGeneticPhenotype(GeneticParameters genetics);
+}
+
+[Serializable]
 public struct GeneticParameters
 {
     public float DefaultEvaluation;
@@ -80,4 +86,48 @@ public struct GeneticParameters
             MutationChance = paramArray[11],
         };
     }
+
+    public uint ComputeHash()
+    {
+        uint hash = 2166136261u;
+        Hash(ref hash, DefaultEvaluation);
+        Hash(ref hash, Lambda);
+        Hash(ref hash, BaseLearningRate);
+        Hash(ref hash, MaxGradientNorm);
+        Hash(ref hash, SoftmaxTemperature);
+        Hash(ref hash, EntropyRegularization);
+        Hash(ref hash, LabelSmoothing);
+        Hash(ref hash, EntropyAlpha);
+        Hash(ref hash, InitBiasesValues);
+        Hash(ref hash, GaussianNoise);
+        Hash(ref hash, ExplorationPrice);
+        Hash(ref hash, MutationChance);
+        return hash;
+    }
+
+    private static void Hash(ref uint hash, float value)
+    {
+        uint bits = BitConverter.ToUInt32(BitConverter.GetBytes(value), 0);
+        hash = (hash ^ bits) * 16777619u;
+    }
+
+}
+
+
+public struct XorShift32
+{
+    private uint state;
+
+    public XorShift32(uint seed) => state = seed == 0 ? 0xA5A5A5A5u : seed;
+
+    public uint NextUInt()
+    {
+        state ^= state << 13;
+        state ^= state >> 17;
+        state ^= state << 5;
+        return state;
+    }
+
+    public int Range(int minInclusive, int maxExclusive)
+        => minInclusive + (int)(NextUInt() % (uint)(maxExclusive - minInclusive));
 }

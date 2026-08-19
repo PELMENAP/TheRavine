@@ -7,6 +7,7 @@ using R3;
 public class EntityView : AEntityView
 {
     [SerializeField] private TextMeshPro label;
+    public GameObject LabelObject => label.gameObject;
 
     protected override void SetupBindings()
     {
