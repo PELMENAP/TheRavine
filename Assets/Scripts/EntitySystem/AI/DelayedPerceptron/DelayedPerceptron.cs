@@ -25,7 +25,8 @@ public partial class DelayedPerceptron
     public PerceptronContext CreateContext(GeneticParameters? p = null, int truncWindow = 8)
         => new PerceptronContext(LayerSizes, p ?? GeneticParameters.Default, truncWindow);
 
-    public int Predict(float[] input, PerceptronContext ctx, int delaySteps, float epsilon = 0.1f)
+    public int Predict(float[] input, PerceptronContext ctx, int delaySteps,
+    ValueCritic critic, float gamma, float epsilon = 0.1f)
     {
         ForwardPass(input, ctx);
 
@@ -39,9 +40,12 @@ public partial class DelayedPerceptron
 
         float entropy      = CalculateOutputEntropy(ctx.Activations[last]);
         ctx.AverageEntropy = ctx.AverageEntropy * (1f - ctx.Params.EntropyAlpha)
-                           + entropy * ctx.Params.EntropyAlpha;
+                        + entropy * ctx.Params.EntropyAlpha;
 
-        var item = new DelayedItem(pred);
+        var state = ctx.RentState();
+        Array.Copy(input, state, input.Length);
+
+        var item = new DelayedItem(pred, state);
         if (isExploration) item.Evaluation += ctx.Params.ExplorationPrice;
         ctx.DelayedList.Add(item);
 
@@ -50,9 +54,14 @@ public partial class DelayedPerceptron
             var delayed = ctx.DelayedList[0];
             ctx.DelayedList.RemoveAt(0);
 
-            float r = Mathf.Clamp(delayed.Evaluation, -1f, 1f);
-            if (MathF.Abs(r) > 0.05f)
-                Train(delayed.Predicted, r, ctx);
+            float vNext    = critic.Predict(input);
+            float tdTarget = delayed.Evaluation + gamma * vNext;
+            float advantage = critic.TrainTD(delayed.State, tdTarget);
+
+            if (MathF.Abs(advantage) > 0.05f)
+                Train(delayed.Predicted, advantage, ctx);
+
+            ctx.ReturnState(delayed.State);
         }
 
         return pred;
@@ -121,7 +130,7 @@ public partial class DelayedPerceptron
         float dt    = ctx.DeltaTime;
 
         float lrSchedule = MathF.Exp(-ctx.TrainingSteps * 0.0002f);
-        float lr = ctx.Params.BaseLearningRate * Mathf.Clamp(reward, -1f, 1.2f) * lrSchedule;
+        float lr = ctx.Params.BaseLearningRate * Mathf.Clamp(reward, -1.5f, 1.5f) * lrSchedule;
         float lambda = ctx.Params.Lambda;
         float maxGrad = ctx.Params.MaxGradientNorm;
 
@@ -344,12 +353,14 @@ public partial class DelayedPerceptron
 }
 public class DelayedItem
 {
-    public int   Predicted  { get; }
-    public float Evaluation { get; set; }
+    public int     Predicted  { get; }
+    public float   Evaluation { get; set; }
+    public float[] State      { get; }
 
-    public DelayedItem(int predicted)
+    public DelayedItem(int predicted, float[] state)
     {
         Predicted  = predicted;
         Evaluation = 0f;
+        State      = state;
     }
 }

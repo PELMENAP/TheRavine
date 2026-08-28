@@ -23,16 +23,21 @@ public class SharedHierarchicalBrain
     private const int MinGoalDuration  = 2;
     private const int MaxGoalDuration  = 10;
 
-    private readonly LSTMMemory         _coordLSTM;
-    private readonly DelayedPerceptron  _coordinator;
-    private readonly LSTMMemory[]       _execLSTMs;
-    private readonly DelayedPerceptron[] _executors;
+    private readonly LSTMMemory         coordLSTM;
+    private readonly DelayedPerceptron  coordinator;
+    private readonly LSTMMemory[]       execLSTMs;
+    private readonly DelayedPerceptron[] executors;
+
+    private readonly ValueCritic   coordCritic;
+    private readonly ValueCritic[] execCritics;
 
     public readonly int   InputSize;
     public readonly int   LstmHidden;
     public readonly int[] CoordLayerSizes;
     public readonly int[][] ExecLayerSizes;
 
+    private readonly RandomNetworkDistillation _rnd;
+    private const float CuriosityWeight = 0.15f;
     private const float Gamma = 0.95f;
 
     public SharedHierarchicalBrain(int inputSize, int lstmHidden = 32)
@@ -46,26 +51,33 @@ public class SharedHierarchicalBrain
         for (int i = 0; i < GoalCount; i++)
             ExecLayerSizes[i] = new[] { combined, 64, 32, 32, ActionSubsets[i].Length };
 
-        _coordLSTM   = new LSTMMemory(inputSize, lstmHidden);
-        _coordinator = new DelayedPerceptron(combined, 64, 32, 32, GoalCount);
+        coordLSTM   = new LSTMMemory(inputSize, lstmHidden);
+        coordinator = new DelayedPerceptron(combined, 64, 32, 32, GoalCount);
 
-        _execLSTMs = new LSTMMemory[GoalCount];
-        _executors = new DelayedPerceptron[GoalCount];
+        execLSTMs = new LSTMMemory[GoalCount];
+        executors = new DelayedPerceptron[GoalCount];
         for (int i = 0; i < GoalCount; i++)
         {
-            _execLSTMs[i] = new LSTMMemory(inputSize, lstmHidden);
-            _executors[i] = new DelayedPerceptron(combined, 64, 32, 32, ActionSubsets[i].Length);
+            execLSTMs[i] = new LSTMMemory(inputSize, lstmHidden);
+            executors[i] = new DelayedPerceptron(combined, 64, 32, 32, ActionSubsets[i].Length);
         }
+
+        coordCritic = new ValueCritic(combined);
+        execCritics = new ValueCritic[GoalCount];
+        for (int i = 0; i < GoalCount; i++)
+            execCritics[i] = new ValueCritic(combined);
+
+        _rnd = new RandomNetworkDistillation(inputSize);
     }
 
     public SharedHierarchicalBrain(SharedHierarchicalBrain src) : this(src.InputSize, src.LstmHidden)
     {
-        _coordLSTM   = new LSTMMemory(src._coordLSTM);
-        _coordinator = new DelayedPerceptron(src._coordinator);
+        coordLSTM   = new LSTMMemory(src.coordLSTM);
+        coordinator = new DelayedPerceptron(src.coordinator);
         for (int i = 0; i < GoalCount; i++)
         {
-            _execLSTMs[i] = new LSTMMemory(src._execLSTMs[i]);
-            _executors[i] = new DelayedPerceptron(src._executors[i]);
+            execLSTMs[i] = new LSTMMemory(src.execLSTMs[i]);
+            executors[i] = new DelayedPerceptron(src.executors[i]);
         }
     }
 
@@ -76,15 +88,16 @@ public class SharedHierarchicalBrain
     public int Predict(float[] input, EntityBrainContext ctx,
         float coordEps = 0.05f, float execEps = 0.15f)
     {
+        ctx.IntrinsicReward = _rnd.ComputeIntrinsicReward(input);
+        
         if (ctx.GoalStepsLeft <= 0)
         {
             FlushGoalRewardToCoordinator(ctx);
 
-            float[] coordH = _coordLSTM.Step(input, ctx.CoordLSTM);
+            float[] coordH = coordLSTM.Step(input, ctx.CoordLSTM);
             BuildCombined(input, coordH, ctx.CoordCombined);
 
-            int goalIdx = _coordinator.Predict(ctx.CoordCombined, ctx.CoordMLP,
-                                                CoordDelaySteps, coordEps);
+            int goalIdx = coordinator.Predict(ctx.CoordCombined, ctx.CoordMLP, CoordDelaySteps, coordCritic, Gamma, coordEps);
 
             ctx.CurrentGoal     = (Goal)goalIdx;
             ctx.GoalStepsLeft   = RavineRandom.RangeInt(MinGoalDuration, MaxGoalDuration + 1);
@@ -96,22 +109,23 @@ public class SharedHierarchicalBrain
         ctx.GoalStepsLeft--;
 
         int g       = (int)ctx.CurrentGoal;
-        float[] h   = _execLSTMs[g].Step(input, ctx.ExecLSTMs[g]);
+        float[] h   = execLSTMs[g].Step(input, ctx.ExecLSTMs[g]);
         BuildCombined(input, h, ctx.ExecCombined[g]);
 
-        int localAction  = _executors[g].Predict(ctx.ExecCombined[g], ctx.ExecMLPs[g],
-                                                   ExecDelaySteps, execEps);
+        int localAction = executors[g].Predict(ctx.ExecCombined[g], ctx.ExecMLPs[g], ExecDelaySteps, execCritics[g], Gamma, execEps);
         return ActionSubsets[g][localAction];
     }
 
     public void GiveReward(float reward, EntityBrainContext ctx)
     {
+        float shaped = Mathf.Clamp(reward + ctx.IntrinsicReward * CuriosityWeight, -1f, 1.2f);
+
         int g = (int)ctx.CurrentGoal;
         var list = ctx.ExecMLPs[g].DelayedList;
         if (list.Count > 0)
-            list[list.Count - 1].Evaluation = Mathf.Clamp(reward, -1f, 1f);
+            list[list.Count - 1].Evaluation = shaped;
 
-        ctx.GoalDiscountedReturn += reward * ctx.GoalDiscountFactor;
+        ctx.GoalDiscountedReturn += shaped * ctx.GoalDiscountFactor;
         ctx.GoalDiscountFactor *= Gamma;
         ctx.GoalRewardCount++;
     }

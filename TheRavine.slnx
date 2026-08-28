@@ -13,7 +13,6 @@
   <Project Path="DetectorSystem.csproj" />
   <Project Path="Core.csproj" />
   <Project Path="UIInventory.csproj" />
-  <Project Path="Netcode.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Audio.csproj" />
   <Project Path="undream.llmunity.Runtime.csproj" />
@@ -25,5 +24,6 @@
   <Project Path="Inventory.csproj" />
   <Project Path="EventSystem.csproj" />
   <Project Path="SkillSystem.csproj" />
+  <Project Path="Netcode.csproj" />
   <Project Path="DialogGraph.csproj" />
 </Solution>

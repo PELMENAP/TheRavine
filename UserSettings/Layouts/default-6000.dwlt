@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 2560
     height: 1501
   m_ShowMode: 4
-  m_Title: Inspector
+  m_Title: Project
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -119,7 +119,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 112}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 120
+  controlID: 81
   draggingID: 0
 --- !u!114 &6
 MonoBehaviour:
@@ -145,7 +145,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 112}
   m_MaxSize: {x: 16192, y: 16192}
   vertical: 1
-  controlID: 91
+  controlID: 82
   draggingID: 0
 --- !u!114 &7
 MonoBehaviour:
@@ -171,7 +171,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 56}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 20
+  controlID: 83
   draggingID: 0
 --- !u!114 &8
 MonoBehaviour:
@@ -238,7 +238,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 1
   m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: ConsoleWindow
+  m_Name: ProjectBrowser
   m_EditorClassIdentifier: 
   m_Children: []
   m_Position:
@@ -247,14 +247,14 @@ MonoBehaviour:
     y: 1016
     width: 2036
     height: 429
-  m_MinSize: {x: 101, y: 126}
-  m_MaxSize: {x: 4001, y: 4026}
-  m_ActualView: {fileID: 19}
+  m_MinSize: {x: 231, y: 276}
+  m_MaxSize: {x: 10001, y: 10026}
+  m_ActualView: {fileID: 13}
   m_Panes:
   - {fileID: 13}
   - {fileID: 19}
-  m_Selected: 1
-  m_LastSelected: 0
+  m_Selected: 0
+  m_LastSelected: 1
 --- !u!114 &11
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -569,7 +569,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 1107
+    y: 1040
     width: 2035
     height: 403
   m_SerializedDataModeController:
@@ -596,7 +596,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Scenes
+    - Assets/Scripts/EntitySystem/AI/DelayedPerceptron
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -606,7 +606,7 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 96
   m_LastFolders:
-  - Assets/Scenes
+  - Assets/Scripts/EntitySystem/AI/DelayedPerceptron
   m_LastFoldersGridSize: 96
   m_LastProjectPath: /home/alaypetro/PELMENAP/TheRavine
   m_LockTracker:
@@ -615,12 +615,12 @@ MonoBehaviour:
   m_FolderTreeState:
     scrollPos: {x: 0, y: 129}
     m_SelectedIDs:
-    - m_Data: 50886
+    - m_Data: 71256
     m_LastClickedID:
-      m_Data: 50886
+      m_Data: 71256
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 50486
+    - m_Data: 96584
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -653,7 +653,7 @@ MonoBehaviour:
       m_Data: 0
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 50486
+    - m_Data: 96584
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -680,10 +680,9 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs:
-    - m_Data: -106872
-    m_LastClickedInstanceID: -106872
-    m_HadKeyboardFocusLastEvent: 1
+    m_SelectedInstanceIDs: []
+    m_LastClickedInstanceID: 0
+    m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs:
     - m_Data: 47536
     - m_Data: 145034
@@ -761,6 +760,569 @@ MonoBehaviour:
       m_LastClickedID:
         m_Data: 0
       m_ExpandedIDs:
+      - m_Data: -89674
+      - m_Data: -89642
+      - m_Data: -87508
+      - m_Data: -61470
+      - m_Data: -61468
+      - m_Data: -56806
+      - m_Data: -54878
+      - m_Data: -54808
+      - m_Data: -54710
+      - m_Data: -54414
+      - m_Data: -53912
+      - m_Data: -53686
+      - m_Data: -52654
+      - m_Data: -51660
+      - m_Data: -51644
+      - m_Data: -51628
+      - m_Data: -51612
+      - m_Data: -51596
+      - m_Data: -51580
+      - m_Data: -51564
+      - m_Data: -51548
+      - m_Data: -51532
+      - m_Data: -51516
+      - m_Data: -51500
+      - m_Data: -51484
+      - m_Data: -51468
+      - m_Data: -51452
+      - m_Data: -51436
+      - m_Data: -51420
+      - m_Data: -51404
+      - m_Data: -51388
+      - m_Data: -51094
+      - m_Data: -51078
+      - m_Data: -51062
+      - m_Data: -51046
+      - m_Data: -51030
+      - m_Data: -51014
+      - m_Data: -50998
+      - m_Data: -50982
+      - m_Data: -50966
+      - m_Data: -50870
+      - m_Data: -50854
+      - m_Data: -50838
+      - m_Data: -50822
+      - m_Data: -50806
+      - m_Data: -50742
+      - m_Data: -50726
+      - m_Data: -50694
+      - m_Data: -50662
+      - m_Data: -50642
+      - m_Data: -50186
+      - m_Data: -50162
+      - m_Data: -50138
+      - m_Data: -50114
+      - m_Data: -50090
+      - m_Data: -50066
+      - m_Data: -50050
+      - m_Data: -50034
+      - m_Data: -50010
+      - m_Data: -49986
+      - m_Data: -49962
+      - m_Data: -49938
+      - m_Data: -49914
+      - m_Data: -49890
+      - m_Data: -49874
+      - m_Data: -49850
+      - m_Data: -49814
+      - m_Data: -49798
+      - m_Data: -49782
+      - m_Data: -49766
+      - m_Data: -49742
+      - m_Data: -49718
+      - m_Data: -49694
+      - m_Data: -49670
+      - m_Data: -49646
+      - m_Data: -49634
+      - m_Data: -49622
+      - m_Data: -49610
+      - m_Data: -49598
+      - m_Data: -49586
+      - m_Data: -49574
+      - m_Data: -49558
+      - m_Data: -49542
+      - m_Data: -49526
+      - m_Data: -49510
+      - m_Data: -49494
+      - m_Data: -49478
+      - m_Data: -49422
+      - m_Data: -49398
+      - m_Data: -49374
+      - m_Data: -49350
+      - m_Data: -49326
+      - m_Data: -49302
+      - m_Data: -49278
+      - m_Data: -49254
+      - m_Data: -49230
+      - m_Data: -49206
+      - m_Data: -49182
+      - m_Data: -49098
+      - m_Data: -49066
+      - m_Data: -49042
+      - m_Data: -49018
+      - m_Data: -48994
+      - m_Data: -48970
+      - m_Data: -48946
+      - m_Data: -48922
+      - m_Data: -48898
+      - m_Data: -48874
+      - m_Data: -48862
+      - m_Data: -48850
+      - m_Data: -48822
+      - m_Data: -48806
+      - m_Data: -48790
+      - m_Data: -48774
+      - m_Data: -48750
+      - m_Data: -48726
+      - m_Data: -48702
+      - m_Data: -48690
+      - m_Data: -48678
+      - m_Data: -48666
+      - m_Data: -48642
+      - m_Data: -48630
+      - m_Data: -48618
+      - m_Data: -48606
+      - m_Data: -48522
+      - m_Data: -48506
+      - m_Data: -48450
+      - m_Data: -48426
+      - m_Data: -48402
+      - m_Data: -48378
+      - m_Data: -48306
+      - m_Data: -48282
+      - m_Data: -48258
+      - m_Data: -48234
+      - m_Data: -48210
+      - m_Data: -48186
+      - m_Data: -48162
+      - m_Data: -48146
+      - m_Data: -48130
+      - m_Data: -48082
+      - m_Data: -48066
+      - m_Data: -48062
+      - m_Data: -47778
+      - m_Data: -47732
+      - m_Data: -47678
+      - m_Data: -47634
+      - m_Data: -47590
+      - m_Data: -47546
+      - m_Data: -47502
+      - m_Data: -43516
+      - m_Data: -43504
+      - m_Data: -43492
+      - m_Data: -43480
+      - m_Data: -43468
+      - m_Data: -43456
+      - m_Data: -43444
+      - m_Data: -43432
+      - m_Data: -43420
+      - m_Data: -43408
+      - m_Data: -43396
+      - m_Data: -43384
+      - m_Data: -43372
+      - m_Data: -43360
+      - m_Data: -43348
+      - m_Data: -43336
+      - m_Data: -43324
+      - m_Data: -43312
+      - m_Data: -43300
+      - m_Data: -43288
+      - m_Data: -42496
+      - m_Data: -42484
+      - m_Data: -42472
+      - m_Data: -42460
+      - m_Data: -42448
+      - m_Data: -42436
+      - m_Data: -42424
+      - m_Data: -42412
+      - m_Data: -42400
+      - m_Data: -42388
+      - m_Data: -42376
+      - m_Data: -42364
+      - m_Data: -42352
+      - m_Data: -42340
+      - m_Data: -42328
+      - m_Data: -42316
+      - m_Data: -42312
+      - m_Data: -42296
+      - m_Data: -42198
+      - m_Data: -42184
+      - m_Data: -42170
+      - m_Data: -41640
+      - m_Data: -41628
+      - m_Data: -41616
+      - m_Data: -41604
+      - m_Data: -41592
+      - m_Data: -41580
+      - m_Data: -41568
+      - m_Data: -41556
+      - m_Data: -41544
+      - m_Data: -41532
+      - m_Data: -41520
+      - m_Data: -41508
+      - m_Data: -41496
+      - m_Data: -41484
+      - m_Data: -41472
+      - m_Data: -41460
+      - m_Data: -41448
+      - m_Data: -41436
+      - m_Data: -41424
+      - m_Data: -41412
+      - m_Data: -41400
+      - m_Data: -41388
+      - m_Data: -41376
+      - m_Data: -41364
+      - m_Data: -41352
+      - m_Data: -41340
+      - m_Data: -41328
+      - m_Data: -41316
+      - m_Data: -41304
+      - m_Data: -41292
+      - m_Data: -41280
+      - m_Data: -41268
+      - m_Data: -41256
+      - m_Data: -41244
+      - m_Data: -41232
+      - m_Data: -41220
+      - m_Data: -41208
+      - m_Data: -41196
+      - m_Data: -41184
+      - m_Data: -41172
+      - m_Data: -41160
+      - m_Data: -41148
+      - m_Data: -41136
+      - m_Data: -41124
+      - m_Data: -41112
+      - m_Data: -41100
+      - m_Data: -41088
+      - m_Data: -41076
+      - m_Data: -41064
+      - m_Data: -41052
+      - m_Data: -41040
+      - m_Data: -41028
+      - m_Data: -41016
+      - m_Data: -41004
+      - m_Data: -40992
+      - m_Data: -40980
+      - m_Data: -40968
+      - m_Data: -40956
+      - m_Data: -40944
+      - m_Data: -40932
+      - m_Data: -40920
+      - m_Data: -40908
+      - m_Data: -40896
+      - m_Data: -40884
+      - m_Data: -40872
+      - m_Data: -40860
+      - m_Data: -40848
+      - m_Data: -40836
+      - m_Data: -40824
+      - m_Data: -40812
+      - m_Data: -40800
+      - m_Data: -40788
+      - m_Data: -40776
+      - m_Data: -40764
+      - m_Data: -40752
+      - m_Data: -40740
+      - m_Data: -40728
+      - m_Data: -40716
+      - m_Data: -40704
+      - m_Data: -40692
+      - m_Data: -40680
+      - m_Data: -40668
+      - m_Data: -40656
+      - m_Data: -40644
+      - m_Data: -40632
+      - m_Data: -40620
+      - m_Data: -40608
+      - m_Data: -40596
+      - m_Data: -40584
+      - m_Data: -40572
+      - m_Data: -40560
+      - m_Data: -40548
+      - m_Data: -40536
+      - m_Data: -40524
+      - m_Data: -40512
+      - m_Data: -40500
+      - m_Data: -40488
+      - m_Data: -40476
+      - m_Data: -40464
+      - m_Data: -40452
+      - m_Data: -40440
+      - m_Data: -40428
+      - m_Data: -40416
+      - m_Data: -40404
+      - m_Data: -40392
+      - m_Data: -40380
+      - m_Data: -40368
+      - m_Data: -40356
+      - m_Data: -40344
+      - m_Data: -40332
+      - m_Data: -40320
+      - m_Data: -40308
+      - m_Data: -40296
+      - m_Data: -40284
+      - m_Data: -40272
+      - m_Data: -40260
+      - m_Data: -40248
+      - m_Data: -40026
+      - m_Data: -40014
+      - m_Data: -40002
+      - m_Data: -39990
+      - m_Data: -39978
+      - m_Data: -39966
+      - m_Data: -39954
+      - m_Data: -39942
+      - m_Data: -39930
+      - m_Data: -39918
+      - m_Data: -39522
+      - m_Data: -39510
+      - m_Data: -39498
+      - m_Data: -39486
+      - m_Data: -39474
+      - m_Data: -39462
+      - m_Data: -39450
+      - m_Data: -39438
+      - m_Data: -39426
+      - m_Data: -39414
+      - m_Data: -39402
+      - m_Data: -39390
+      - m_Data: -39378
+      - m_Data: -39366
+      - m_Data: -39354
+      - m_Data: -39342
+      - m_Data: -39330
+      - m_Data: -39318
+      - m_Data: -39306
+      - m_Data: -39294
+      - m_Data: -39282
+      - m_Data: -39270
+      - m_Data: -39258
+      - m_Data: -39246
+      - m_Data: -39234
+      - m_Data: -39222
+      - m_Data: -39210
+      - m_Data: -39198
+      - m_Data: -39186
+      - m_Data: -39174
+      - m_Data: -38322
+      - m_Data: -38310
+      - m_Data: -38298
+      - m_Data: -38286
+      - m_Data: -38274
+      - m_Data: -38262
+      - m_Data: -38250
+      - m_Data: -38238
+      - m_Data: -38226
+      - m_Data: -37494
+      - m_Data: -37482
+      - m_Data: -37470
+      - m_Data: -37458
+      - m_Data: -37446
+      - m_Data: -37434
+      - m_Data: -37418
+      - m_Data: -37386
+      - m_Data: -37342
+      - m_Data: -37328
+      - m_Data: -36936
+      - m_Data: -36686
+      - m_Data: -36674
+      - m_Data: -36662
+      - m_Data: -36650
+      - m_Data: -36638
+      - m_Data: -36626
+      - m_Data: -36614
+      - m_Data: -36602
+      - m_Data: -36590
+      - m_Data: -36578
+      - m_Data: -36566
+      - m_Data: -36554
+      - m_Data: -36542
+      - m_Data: -36530
+      - m_Data: -36518
+      - m_Data: -36506
+      - m_Data: -36494
+      - m_Data: -36482
+      - m_Data: -36470
+      - m_Data: -36458
+      - m_Data: -36446
+      - m_Data: -36434
+      - m_Data: -36422
+      - m_Data: -36410
+      - m_Data: -36398
+      - m_Data: -36386
+      - m_Data: -36266
+      - m_Data: -36242
+      - m_Data: -36218
+      - m_Data: -36194
+      - m_Data: -36170
+      - m_Data: -36158
+      - m_Data: -36146
+      - m_Data: -36134
+      - m_Data: -36122
+      - m_Data: -36110
+      - m_Data: -36098
+      - m_Data: -36086
+      - m_Data: -36074
+      - m_Data: -36062
+      - m_Data: -36050
+      - m_Data: -36038
+      - m_Data: -36026
+      - m_Data: -36014
+      - m_Data: -36002
+      - m_Data: -35990
+      - m_Data: -35978
+      - m_Data: -35966
+      - m_Data: -35954
+      - m_Data: -35942
+      - m_Data: -35930
+      - m_Data: -35918
+      - m_Data: -35906
+      - m_Data: -35894
+      - m_Data: -35882
+      - m_Data: -35870
+      - m_Data: -35858
+      - m_Data: -35846
+      - m_Data: -35834
+      - m_Data: -35822
+      - m_Data: -35810
+      - m_Data: -35798
+      - m_Data: -35786
+      - m_Data: -35774
+      - m_Data: -35762
+      - m_Data: -35750
+      - m_Data: -35738
+      - m_Data: -35726
+      - m_Data: -35714
+      - m_Data: -35702
+      - m_Data: -35690
+      - m_Data: -35678
+      - m_Data: -35666
+      - m_Data: -35654
+      - m_Data: -35642
+      - m_Data: -35630
+      - m_Data: -35618
+      - m_Data: -35606
+      - m_Data: -35594
+      - m_Data: -35582
+      - m_Data: -35570
+      - m_Data: -35558
+      - m_Data: -35546
+      - m_Data: -35534
+      - m_Data: -35522
+      - m_Data: -35510
+      - m_Data: -35194
+      - m_Data: -35190
+      - m_Data: -35092
+      - m_Data: -35046
+      - m_Data: -34806
+      - m_Data: -34794
+      - m_Data: -34782
+      - m_Data: -34770
+      - m_Data: -34758
+      - m_Data: -34746
+      - m_Data: -34734
+      - m_Data: -34722
+      - m_Data: -34710
+      - m_Data: -34698
+      - m_Data: -34686
+      - m_Data: -34674
+      - m_Data: -34662
+      - m_Data: -34650
+      - m_Data: -34638
+      - m_Data: -34626
+      - m_Data: -34614
+      - m_Data: -34602
+      - m_Data: -34518
+      - m_Data: -34494
+      - m_Data: -34490
+      - m_Data: -34130
+      - m_Data: -34118
+      - m_Data: -34106
+      - m_Data: -34094
+      - m_Data: -34082
+      - m_Data: -34070
+      - m_Data: -34058
+      - m_Data: -34046
+      - m_Data: -34034
+      - m_Data: -34022
+      - m_Data: -34010
+      - m_Data: -33998
+      - m_Data: -33986
+      - m_Data: -33974
+      - m_Data: -33962
+      - m_Data: -33950
+      - m_Data: -33938
+      - m_Data: -33926
+      - m_Data: -33914
+      - m_Data: -33902
+      - m_Data: -33890
+      - m_Data: -33878
+      - m_Data: -33866
+      - m_Data: -33854
+      - m_Data: -33842
+      - m_Data: -33830
+      - m_Data: -33818
+      - m_Data: -33806
+      - m_Data: -33794
+      - m_Data: -33782
+      - m_Data: -33770
+      - m_Data: -33458
+      - m_Data: -33446
+      - m_Data: -33434
+      - m_Data: -33422
+      - m_Data: -33410
+      - m_Data: -33398
+      - m_Data: -33386
+      - m_Data: -33374
+      - m_Data: -33362
+      - m_Data: -33266
+      - m_Data: -33254
+      - m_Data: -33242
+      - m_Data: -33230
+      - m_Data: -33182
+      - m_Data: -33170
+      - m_Data: -33134
+      - m_Data: -33110
+      - m_Data: -33094
+      - m_Data: -32962
+      - m_Data: -32950
+      - m_Data: -32938
+      - m_Data: -32926
+      - m_Data: -32914
+      - m_Data: -32902
+      - m_Data: -32890
+      - m_Data: -32878
+      - m_Data: -32866
+      - m_Data: -32854
+      - m_Data: -32842
+      - m_Data: -32830
+      - m_Data: -32818
+      - m_Data: -32806
+      - m_Data: -32794
+      - m_Data: -32614
+      - m_Data: -32602
+      - m_Data: -32590
+      - m_Data: -32578
+      - m_Data: -32566
+      - m_Data: -32554
+      - m_Data: -32542
+      - m_Data: -32530
+      - m_Data: -32434
+      - m_Data: -32422
+      - m_Data: -32410
+      - m_Data: -32350
+      - m_Data: -32338
+      - m_Data: -32314
+      - m_Data: -32290
+      - m_Data: -32274
+      - m_Data: -3558
+      - m_Data: -3542
+      - m_Data: -3460
+      - m_Data: -3440
+      - m_Data: -3418
       - m_Data: -1386
       m_RenameOverlay:
         m_UserAcceptedRename: 0
@@ -1396,9 +1958,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: -3188.1987, y: -730.8491, z: 1078.7212}
+    m_Target: {x: -43.429214, y: -70.18599, z: 66.124245}
     speed: 2
-    m_Value: {x: -3188.1987, y: -730.8491, z: 1078.7212}
+    m_Value: {x: -43.429214, y: -70.18599, z: 66.124245}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1444,13 +2006,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: 0.2792018, y: -0.37111, z: 0.14037634, w: 0.875945}
+    m_Target: {x: 0.43909013, y: -0.012414294, z: 0.028026564, w: 0.8994349}
     speed: 2
-    m_Value: {x: -0.2792018, y: 0.37111, z: -0.14037634, w: -0.87594503}
+    m_Value: {x: -0.43909013, y: 0.012414294, z: -0.028026562, w: -0.89943486}
   m_Size:
-    m_Target: 2019.3011
+    m_Target: 156.63509
     speed: 2
-    m_Value: 2019.3011
+    m_Value: 156.63509
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -1552,10 +2114,10 @@ MonoBehaviour:
     m_VAllowExceedBaseRangeMin: 1
     m_VAllowExceedBaseRangeMax: 1
     m_ScaleWithWindow: 0
-    m_HSlider: 1
+    m_HSlider: 0
     m_VSlider: 0
     m_IgnoreScrollWheelUntilClicked: 0
-    m_EnableMouseInput: 1
+    m_EnableMouseInput: 0
     m_EnableSliderZoomHorizontal: 0
     m_EnableSliderZoomVertical: 0
     m_UniformScale: 1
@@ -2515,7 +3077,7 @@ MonoBehaviour:
     m_CachedPref: 299.79993
     m_ControlHash: 1412526313
     m_PrefName: Preview_InspectorPreview
-  m_LastInspectedObjectInstanceID: 40112
+  m_LastInspectedObjectInstanceID: -1
   m_LastVerticalScrollValue: 0
   m_GlobalObjectId: 
   m_InspectorMode: 0
@@ -2544,7 +3106,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 1040
+    y: 1107
     width: 2035
     height: 403
   m_SerializedDataModeController:
