@@ -2508,10 +2508,6 @@ PrefabInstance:
       propertyPath: terrainTransform
       value: 
       objectReference: {fileID: 1500658424}
-    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: chunkGenerationSettings.heightNoiseSettings.frequency
-      value: 0.001
-      objectReference: {fileID: 0}
     - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: targetTransform
       value: 

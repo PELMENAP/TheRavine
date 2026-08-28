@@ -31,6 +31,15 @@ public class PerceptronContext
     public float AverageEntropy;
     public int   TrainingSteps;
     public float DeltaTime = 0.05f;
+    private readonly Stack<float[]> statePool = new();
+
+    public float[] RentState()
+    {
+        if (statePool.Count > 0) return statePool.Pop();
+        return new float[Activations[0].Length];
+    }
+
+    public void ReturnState(float[] s) => statePool.Push(s);
 
     public PerceptronContext(int[] layerSizes, GeneticParameters p, int truncWindow = 8)
     {
