@@ -28,6 +28,11 @@ public class SharedHierarchicalBrain
     private readonly LSTMMemory[]       execLSTMs;
     private readonly DelayedPerceptron[] executors;
 
+    internal LSTMMemory          CoordLSTM   => coordLSTM;
+    internal DelayedPerceptron   Coordinator => coordinator;
+    internal LSTMMemory[]        ExecLSTMs   => execLSTMs;
+    internal DelayedPerceptron[] Executors   => executors;
+
     private readonly ValueCritic   coordCritic;
     private readonly ValueCritic[] execCritics;
 
@@ -46,20 +51,20 @@ public class SharedHierarchicalBrain
         LstmHidden = lstmHidden;
         int combined = inputSize + lstmHidden;
 
-        CoordLayerSizes = new[] { combined, 64, 32, 32, GoalCount };
+        CoordLayerSizes = BuildCoordSizes(combined);
         ExecLayerSizes  = new int[GoalCount][];
         for (int i = 0; i < GoalCount; i++)
-            ExecLayerSizes[i] = new[] { combined, 64, 32, 32, ActionSubsets[i].Length };
+            ExecLayerSizes[i] = BuildExecSizes(combined, i);
 
         coordLSTM   = new LSTMMemory(inputSize, lstmHidden);
-        coordinator = new DelayedPerceptron(combined, 64, 32, 32, GoalCount);
+        coordinator = new DelayedPerceptron(CoordLayerSizes);
 
         execLSTMs = new LSTMMemory[GoalCount];
         executors = new DelayedPerceptron[GoalCount];
         for (int i = 0; i < GoalCount; i++)
         {
             execLSTMs[i] = new LSTMMemory(inputSize, lstmHidden);
-            executors[i] = new DelayedPerceptron(combined, 64, 32, 32, ActionSubsets[i].Length);
+            executors[i] = new DelayedPerceptron(ExecLayerSizes[i]);
         }
 
         coordCritic = new ValueCritic(combined);
@@ -148,5 +153,101 @@ public class SharedHierarchicalBrain
     {
         Array.Copy(input, 0, combined, 0,            input.Length);
         Array.Copy(lstmH, 0, combined, input.Length, lstmH.Length);
+    }
+
+    private SharedHierarchicalBrain(
+        LSTMMemory coordLSTM, DelayedPerceptron coordinator,
+        LSTMMemory[] execLSTMs, DelayedPerceptron[] executors)
+    {
+        InputSize  = coordLSTM.InputSize;
+        LstmHidden = coordLSTM.HiddenSize;
+
+        this.coordLSTM   = coordLSTM;
+        this.coordinator = coordinator;
+        this.execLSTMs   = execLSTMs;
+        this.executors   = executors;
+
+        CoordLayerSizes = coordinator.LayerSizes;
+        ExecLayerSizes  = new int[GoalCount][];
+        for (int i = 0; i < GoalCount; i++)
+            ExecLayerSizes[i] = executors[i].LayerSizes;
+
+        int combined = InputSize + LstmHidden;
+        coordCritic = new ValueCritic(combined);
+        execCritics = new ValueCritic[GoalCount];
+        for (int i = 0; i < GoalCount; i++)
+            execCritics[i] = new ValueCritic(combined);
+
+        _rnd = new RandomNetworkDistillation(InputSize);
+    }
+
+    internal static SharedHierarchicalBrain FromModels(
+        LSTMMemory coordLSTM, DelayedPerceptron coordinator,
+        LSTMMemory[] execLSTMs, DelayedPerceptron[] executors)
+    {
+        if (coordLSTM == null || coordinator == null ||
+            execLSTMs == null || executors == null ||
+            execLSTMs.Length != GoalCount || executors.Length != GoalCount)
+        {
+            Debug.LogError("Снапшот мозга некорректен: состав моделей не совпадает");
+            return null;
+        }
+
+        for (int i = 0; i < GoalCount; i++)
+        {
+            if (execLSTMs[i] == null || executors[i] == null ||
+                execLSTMs[i].InputSize != coordLSTM.InputSize ||
+                execLSTMs[i].HiddenSize != coordLSTM.HiddenSize)
+            {
+                Debug.LogError($"Снапшот мозга некорректен: размеры exec-модели {i} не совпадают с координатором");
+                return null;
+            }
+        }
+
+        return new SharedHierarchicalBrain(coordLSTM, coordinator, execLSTMs, executors);
+    }
+
+    public SharedBrainSnapshot ToSnapshot() => new SharedBrainSnapshot(this);
+
+    public static SharedHierarchicalBrain FromSnapshot(byte[] data, int inputSize, int lstmHidden)
+        => FromSnapshot(SharedBrainSnapshot.Deserialize(data), inputSize, lstmHidden);
+
+    public static SharedHierarchicalBrain FromSnapshot(SharedBrainSnapshot snapshot, int inputSize, int lstmHidden)
+    {
+        if (snapshot == null || snapshot.Brain == null) return null;
+
+        if (!snapshot.Brain.MatchesArchitecture(inputSize, lstmHidden))
+        {
+            Debug.LogError($"Архитектура снапшота ({snapshot.Brain.InputSize}/{snapshot.Brain.LstmHidden}) " +
+                           $"не совпадает с текущей ({inputSize}/{lstmHidden})");
+            return null;
+        }
+
+        return snapshot.Brain;
+    }
+
+    public bool MatchesArchitecture(int inputSize, int lstmHidden)
+    {
+        if (InputSize != inputSize || LstmHidden != lstmHidden) return false;
+
+        int combined = inputSize + lstmHidden;
+        if (!SizesMatch(CoordLayerSizes, BuildCoordSizes(combined))) return false;
+
+        for (int i = 0; i < GoalCount; i++)
+            if (!SizesMatch(ExecLayerSizes[i], BuildExecSizes(combined, i))) return false;
+
+        return true;
+    }
+
+    private static int[] BuildCoordSizes(int combined) => new[] { combined, 64, 32, 32, GoalCount };
+
+    private static int[] BuildExecSizes(int combined, int goal) => new[] { combined, 64, 32, 32, ActionSubsets[goal].Length };
+
+    private static bool SizesMatch(int[] a, int[] b)
+    {
+        if (a.Length != b.Length) return false;
+        for (int i = 0; i < a.Length; i++)
+            if (a[i] != b[i]) return false;
+        return true;
     }
 }

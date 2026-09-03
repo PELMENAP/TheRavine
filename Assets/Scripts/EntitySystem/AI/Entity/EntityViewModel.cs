@@ -32,7 +32,11 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
             lastAction, nearestEnemyDist, 1, 1, ct);
     }
 
-    public Vector3 Position => transform.position;
+    public Vector3 Position()
+    {
+        if (transform == null) return Vector3.zero;
+        return transform.position;
+    }
 
     public UniTask MoveToAsync(Vector3 target, float speed, float maxDuration,
         float energyCostPerSec, CancellationToken ct)
@@ -45,7 +49,11 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
     protected override void OnViewDisable() { }
 
     public float GetDialogDistance() => 20f;
-    public Vector3 GetCurrentPosition() => transform.position;
+    public Vector3 GetCurrentPosition()
+    {
+        if (transform == null) return Vector3.zero;
+        return transform.position;
+    }
     public void OnSpeechGet(IDialogSender sender, string message) =>
         ((EntityModel)Entity).Speech.ReceiveSpeech(message);
     public void OnDialogGetRequire() { }

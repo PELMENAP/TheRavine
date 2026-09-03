@@ -15,7 +15,7 @@ public class EntityManager : MonoBehaviour
     [Header("Population")]
     [SerializeField] private int   initialCount  = 20;
     [SerializeField] private int   maxPopulation = 200;
-    [SerializeField] private float spawnRadius   = 20f;
+    [SerializeField] private float spawnRadius   = 100f;
 
     [Header("Food")]
     [SerializeField] private int initialFood = 50;
@@ -23,6 +23,7 @@ public class EntityManager : MonoBehaviour
 
     [Header("Brain")]
     [SerializeField] private int lstmHidden  = 32;
+    [SerializeField] private string savedModelName = "shared_brain";
 
     [Header("Diagnostics")]
     [SerializeField] private int  _entityCount;
@@ -42,7 +43,31 @@ public class EntityManager : MonoBehaviour
 
     private void Awake()
     {
-        _sharedBrain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden);
+        NeuralModelStorage.RegisterFactory(new SharedBrainSnapshotFactory());
+        LoadBrain();
+    }
+
+    [ContextMenu("Save Brain")]
+    private void SaveBrain() => SaveBestBrainAsync().Forget();
+
+    [ContextMenu("Load Brain")]
+    private void LoadBrain() => LoadBrainAsync().Forget();
+
+    private async UniTaskVoid SaveBestBrainAsync()
+    {
+        await NeuralModelStorage.SaveAsync(_sharedBrain.ToSnapshot(), savedModelName, destroyCancellationToken);
+    }
+
+    private async UniTaskVoid LoadBrainAsync()
+    {
+        var snapshot = await NeuralModelStorage.LoadAsync<SharedBrainSnapshot>(savedModelName, destroyCancellationToken);
+        var brain = SharedHierarchicalBrain.FromSnapshot(snapshot, InputVectorizer.VectorSize, lstmHidden);
+        if (brain == null) return;
+
+        _sharedBrain = brain;
+        for (int i = 0; i < _entities.Count; i++)
+            if (!_entities[i].IsDisposed)
+                _entities[i].Brain.ReplaceBrain(brain);
     }
     private CancellationTokenSource _tickCts;
     private async void Start()
@@ -130,7 +155,7 @@ public class EntityManager : MonoBehaviour
 
         var childParams = parent.Brain.Context.CoordMLP.Params.GetMutatedGeneticParameters();
         var childCtx    = _sharedBrain.CreateContext(childParams);
-        var pos         = parent.Motor.Position
+        var pos         = parent.Motor.Position()
                         + (Vector3)RavineRandom.GetInsideCircle().normalized * 2f
                         + Vector3.up * 5f;
 
@@ -146,7 +171,7 @@ public class EntityManager : MonoBehaviour
         var childParams = CrossoverGeneticParams(paramsA, paramsB);
         var childCtx    = _sharedBrain.CreateContext(childParams);
 
-        var pos = ((Vector2)parentA.Motor.Position + (Vector2)parentB.Motor.Position) * 0.5f;
+        var pos = ((Vector2)parentA.Motor.Position() + (Vector2)parentB.Motor.Position()) * 0.5f;
         return SpawnEntity(pos, childCtx);
     }
 
@@ -163,11 +188,12 @@ public class EntityManager : MonoBehaviour
     private void HandleEntityDied(EntityModel model)
     {
         model.OnReproduceRequest -= SpawnChild;
+        model.CaptureFinalFitness();
         _entities.Remove(model);
         model.Dispose();
 
-        if (_entities.Count < initialCount / 2)
-            SpawnEntity(RandomPosition());
+        // if (_entities.Count < initialCount / 2)
+        //     SpawnEntity(RandomPosition());
 
         OnEntityDied?.Invoke(model);
     }
@@ -176,16 +202,14 @@ public class EntityManager : MonoBehaviour
     {
         if (_entities.Count < 2) return;
 
-        _entities.Sort((a, b) =>
-            b.Brain.Context.CoordMLP.AverageEntropy
-                .CompareTo(a.Brain.Context.CoordMLP.AverageEntropy));
+        _entities.Sort((a, b) => b.GetFitness().CompareTo(a.GetFitness()));
 
         int eliteCount = Math.Max(1, _entities.Count / 10);
         for (int i = eliteCount; i < _entities.Count; i++)
         {
             int parentIdx = RavineRandom.RangeInt(0, eliteCount);
             var childParams = _entities[parentIdx].Brain.Context.CoordMLP.Params
-                                                   .GetMutatedGeneticParameters();
+                                                .GetMutatedGeneticParameters();
             _entities[i].Brain.Context.CoordMLP.Params = childParams;
             _entities[i].Brain.Context.ResetMemory();
         }

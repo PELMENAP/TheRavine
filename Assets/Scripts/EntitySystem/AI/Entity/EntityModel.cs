@@ -6,6 +6,13 @@ using System.Collections.Generic;
 
 public class EntityModel : AEntity
 {
+    private const float FitnessTimeAliveWeight = 1f;
+    private const float FitnessFoodEatenWeight = 15f;
+    private const float FitnessReproduceWeight = 40f;
+    private const float FitnessDamageDealtWeight = 2f;
+
+    public enum FitnessEvent { FoodEaten, Reproduced, DamageDealt }
+
     public StatsComponent Stats { get; private set; }
     public PerceptionComponent Perception { get; private set; }
     public BrainComponent Brain { get; private set; }
@@ -30,6 +37,30 @@ public class EntityModel : AEntity
     }
     private int timeOfDay;
     private bool canAttack = true;
+
+    public float TimeAlive { get; private set; }
+    public int FoodEaten { get; private set; }
+    public int ReproduceCount { get; private set; }
+    public float DamageDealt { get; private set; }
+    public float FinalFitness { get; private set; }
+
+    public void RegisterFitnessEvent(FitnessEvent evt, float amount = 0f)
+    {
+        switch (evt)
+        {
+            case FitnessEvent.FoodEaten: FoodEaten++; break;
+            case FitnessEvent.Reproduced: ReproduceCount++; break;
+            case FitnessEvent.DamageDealt: DamageDealt += amount; break;
+        }
+    }
+
+    public float GetFitness() =>
+        TimeAlive * FitnessTimeAliveWeight +
+        FoodEaten * FitnessFoodEatenWeight +
+        ReproduceCount * FitnessReproduceWeight +
+        DamageDealt * FitnessDamageDealtWeight;
+
+    public void CaptureFinalFitness() => FinalFitness = GetFitness();
 
     public event Action<EntityModel> OnReproduceRequest;
     public void RequestReproduce() => OnReproduceRequest?.Invoke(this);
@@ -105,13 +136,13 @@ public class EntityModel : AEntity
         if (!IsActive.Value) return;
         if (Stats.Health.Value <= 0) return;
 
+        TimeAlive += Time.deltaTime;
         timeOfDay = (timeOfDay + 1) % 24;
 
         float inDanger = ComputeDangerLevel();
         float timeToBreed = ComputeBreedReadiness();
-        Perception.FindNearestEntity(Motor.Position, SelfObject, out float enemyDist);
-        var food = Perception.FindNearestFood(Motor.Position);
-        float foodDist = food != null ? Vector2.Distance(Motor.Position, food.transform.position) : -1f;
+        Perception.FindNearestEntity(Motor.Position(), SelfObject, out float enemyDist);
+        Perception.FindNearestFood(Motor.Position(), out float foodDist);
 
         LastInput = Vectorizer.Vectorize(
             Stats.Health.Value, Stats.Energy.Value,
@@ -123,7 +154,10 @@ public class EntityModel : AEntity
 
         bool isIdle = states.behaviourCurrent.GetType() == typeof(SurviveState)
               && LastActionIndex == (int)EntityAction.Idle;
-        Stats.Tick(Time.deltaTime, Tuning.EnergyRegenRate, isIdle);
+
+        var p = Brain.Context.CoordMLP.Params;
+        Stats.Tick(Time.deltaTime, Tuning.EnergyRegenRate, isIdle,
+            p.StarvationThreshold, p.StarvationDamage, p.StarvationEnergyReturn);
         if (Stats.Health.Value <= 0) return;
 
         int actionIndex = Brain.Predict(LastInput);

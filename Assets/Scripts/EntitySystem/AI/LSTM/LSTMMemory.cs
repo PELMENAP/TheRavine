@@ -30,6 +30,9 @@ public partial class LSTMMemory
         }
     }
 
+    internal int InputSize  => inputSize;
+    internal int HiddenSize => hiddenSize;
+
     public LSTMMemory(LSTMMemory src) : this(src.inputSize, src.hiddenSize)
     {
         Array.Copy(src.W, this.W, src.W.Length);

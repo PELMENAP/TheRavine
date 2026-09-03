@@ -4,7 +4,7 @@ using System.Threading;
 
 public interface IEntityMotor
 {
-    Vector3 Position { get; }
+    Vector3 Position();
     UniTask MoveToAsync(Vector3 target, float speed, float maxDuration, float energyCostPerSec, CancellationToken ct);
     void Stop();
 }

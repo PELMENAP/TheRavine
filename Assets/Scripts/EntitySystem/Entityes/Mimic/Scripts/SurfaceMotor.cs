@@ -12,7 +12,11 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
     private MapGenerator mapGenerator;
     private Vector3 velocity;
 
-    public Vector3 Position => transform.position;
+    public Vector3 Position()
+    {
+        if (transform == null) return Vector3.zero;
+        return transform.position;
+    }
     public Vector3 Velocity => velocity;
 
     public void Inject(MapGenerator map) => mapGenerator = map;
