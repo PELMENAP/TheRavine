@@ -35,14 +35,14 @@ public partial class LSTMMemory : ISerializableNeuralModel
         }
     }
 
-    private static void WriteArray(BinaryWriter bw, float[] arr)
+    internal static void WriteArray(BinaryWriter bw, float[] arr)
     {
         bw.Write(arr.Length);
         for (int i = 0; i < arr.Length; i++)
             bw.Write(arr[i]);
     }
 
-    private static void ReadArray(BinaryReader br, float[] arr)
+    internal static void ReadArray(BinaryReader br, float[] arr)
     {
         int len = br.ReadInt32();
         if (len != arr.Length)

@@ -11,8 +11,11 @@ public partial class DelayedPerceptron
     public int[] LayerSizes { get; private set; }
 
     public DelayedPerceptron(int inputSize, int h1, int h2, int h3, int outputSize)
+        : this(new[] { inputSize, h1, h2, h3, outputSize }) { }
+
+    public DelayedPerceptron(int[] layerSizes)
     {
-        LayerSizes = new[] { inputSize, h1, h2, h3, outputSize };
+        LayerSizes = layerSizes;
         InitWeightsAndBiases(LayerSizes);
     }
 
