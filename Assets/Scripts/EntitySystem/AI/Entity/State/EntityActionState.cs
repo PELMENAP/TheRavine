@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEngine;
 public abstract class EntityActionState : AState
 {
     protected readonly EntityModel Model;
@@ -11,22 +10,23 @@ public abstract class EntityActionState : AState
         commands = _commands;
     }
 
-    public void EnqueueAction(EntityAction action)
+    public void EnqueueAction(EntityAction action, in BrainDecision decision)
     {
         if (!commands.TryGetValue(action, out var cmd))
         {
-            Debug.Log($"[EnqueueAction] no command mapped for {action} in {GetType().Name}");
+            Model.Brain.CompleteDecision(decision.ExecDecisionId, -0.2f,
+                SimulationClock.Time, EntityCommandStatus.Failed);
             return;
         }
 
         if (!cmd.CanExecute())
         {
-            Debug.Log($"[EnqueueAction] {action} CanExecute=false");
-            Model.Brain.GiveReward(0.25f);
             Model.Stats.Health.Value -= 3f;
+            Model.Brain.CompleteDecision(decision.ExecDecisionId, -0.15f,
+                SimulationClock.Time, EntityCommandStatus.Failed);
             return;
         }
-        
+
         AddCommand(cmd);
     }
 

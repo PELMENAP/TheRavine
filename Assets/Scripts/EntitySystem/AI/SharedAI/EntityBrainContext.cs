@@ -9,7 +9,9 @@ public class EntityBrainContext
     public readonly float[][]            ExecCombined;
 
     public SharedHierarchicalBrain.Goal CurrentGoal = SharedHierarchicalBrain.Goal.Survive;
-    public int   GoalStepsLeft;
+    public DecisionWindow ExecWindow;
+    public float GoalEndTime;
+    public int   CoordDecisionId;
     public float GoalTotalReward;
     public int   GoalRewardCount;
 

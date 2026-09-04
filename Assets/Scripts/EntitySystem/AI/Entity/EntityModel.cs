@@ -131,12 +131,18 @@ public class EntityModel : AEntity
     public override void SetUp() =>
         states.SetBehaviourAsync(states.GetBehaviour<SurviveState>()).Forget();
 
+    private float _lastCycleTime;
     public override void UpdateEntityCycle()
     {
         if (!IsActive.Value) return;
         if (Stats.Health.Value <= 0) return;
 
-        TimeAlive += Time.deltaTime;
+        float now = SimulationClock.Time;
+        float dt  = now - _lastCycleTime;
+        if (dt <= 0f) dt = 1f / 60f;
+        _lastCycleTime = now;
+
+        TimeAlive += dt;
         timeOfDay = (timeOfDay + 1) % 24;
 
         float inDanger = ComputeDangerLevel();
@@ -146,34 +152,34 @@ public class EntityModel : AEntity
 
         LastInput = Vectorizer.Vectorize(
             Stats.Health.Value, Stats.Energy.Value,
-            LastActionIndex, timeOfDay,
-            inDanger, timeToBreed,
+            LastActionIndex, timeOfDay, inDanger, timeToBreed,
             Speech.OtherSpeech, enemyDist, foodDist);
 
         Speech.ConsumeOtherSpeech();
 
         bool isIdle = states.behaviourCurrent.GetType() == typeof(SurviveState)
-              && LastActionIndex == (int)EntityAction.Idle;
+                   && LastActionIndex == (int)EntityAction.Idle;
 
         var p = Brain.Context.CoordMLP.Params;
-        Stats.Tick(Time.deltaTime, Tuning.EnergyRegenRate, isIdle,
+        Stats.Tick(dt, Tuning.EnergyRegenRate, isIdle,
             p.StarvationThreshold, p.StarvationDamage, p.StarvationEnergyReturn);
         if (Stats.Health.Value <= 0) return;
 
-        int actionIndex = Brain.Predict(LastInput);
-        LastActionIndex = actionIndex;
-
-        var targetType = GoalStateMap[Brain.CurrentGoal];
-        if (states.behaviourCurrent.GetType() != targetType)
+        if (Brain.TryDecide(LastInput, now, dt, out var decision))
         {
-            states.SetBehaviourAsync(states.GetBehaviourByType(targetType)).Forget();
+            SetLastAction(decision.Action);
+
+            var targetType = GoalStateMap[decision.Goal];
+            if (states.behaviourCurrent.GetType() != targetType)
+                states.SetBehaviourAsync(states.GetBehaviourByType(targetType)).Forget();
+
+            ((EntityActionState)states.behaviourCurrent).EnqueueAction((EntityAction)decision.Action, decision);
         }
-        ((EntityActionState)states.behaviourCurrent).EnqueueAction((EntityAction)actionIndex);
+
         states.behaviourCurrent.Update();
-
         OnUpdate.Execute(R3.Unit.Default);
+        
     }
-
     private float ComputeDangerLevel()
     {
         float d = 0f;

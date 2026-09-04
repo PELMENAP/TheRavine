@@ -44,7 +44,8 @@ public class EntityManager : MonoBehaviour
     private void Awake()
     {
         NeuralModelStorage.RegisterFactory(new SharedBrainSnapshotFactory());
-        LoadBrain();
+        _sharedBrain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden);
+        // LoadBrain();
     }
 
     [ContextMenu("Save Brain")]
@@ -84,6 +85,10 @@ public class EntityManager : MonoBehaviour
         EntityTickLoopAsync(_tickCts.Token).Forget();
 
         TrackDiagnosticsAsync(destroyCancellationToken).Forget();
+    }
+
+    private void Update() {
+        SimulationClock.SetTime(Time.time);
     }
 
     private async UniTaskVoid EntityTickLoopAsync(CancellationToken ct)
