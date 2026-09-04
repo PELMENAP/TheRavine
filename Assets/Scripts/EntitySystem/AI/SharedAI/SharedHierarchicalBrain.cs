@@ -49,6 +49,14 @@ public class SharedHierarchicalBrain
     private const float CuriosityWeight = 0.15f;
     private const float Gamma = 0.95f;
 
+    public readonly BrainDiagnostics GlobalDiagnostics = new();
+    public int GlobalTrainingSteps { get; private set; }
+
+    private const float OptimizerBaseLr      = 0.01f;
+    private const float OptimizerLrDecay     = 2e-5f;
+    private const float OptimizerWeightDecay = 1e-5f;
+    private const float OptimizerMaxGradNorm = 1f;
+
     public SharedHierarchicalBrain(int inputSize, int lstmHidden = 32)
     {
         InputSize  = inputSize;
@@ -77,6 +85,27 @@ public class SharedHierarchicalBrain
             execCritics[i] = new ValueCritic(combined);
 
         _rnd = new RandomNetworkDistillation(inputSize);
+
+        ConfigureOptimizer();
+        ApplyPendingGradients();
+    }
+
+    private void ConfigureOptimizer()
+    {
+        coordinator.OptimizerMaxGradNorm = OptimizerMaxGradNorm;
+        for (int i = 0; i < GoalCount; i++)
+            executors[i].OptimizerMaxGradNorm = OptimizerMaxGradNorm;
+    }
+
+    public void ApplyPendingGradients()
+    {
+        float lr = OptimizerBaseLr * MathF.Exp(-GlobalTrainingSteps * OptimizerLrDecay);
+
+        coordinator.ApplyAccumulatedGradients(lr, OptimizerWeightDecay, GlobalDiagnostics);
+        for (int i = 0; i < GoalCount; i++)
+            executors[i].ApplyAccumulatedGradients(lr, OptimizerWeightDecay, GlobalDiagnostics);
+
+        GlobalTrainingSteps++;
     }
 
     public SharedHierarchicalBrain(SharedHierarchicalBrain src) : this(src.InputSize, src.LstmHidden)
@@ -88,6 +117,9 @@ public class SharedHierarchicalBrain
             execLSTMs[i] = new LSTMMemory(src.execLSTMs[i]);
             executors[i] = new DelayedPerceptron(src.executors[i]);
         }
+
+        ConfigureOptimizer();
+        ApplyPendingGradients();
     }
 
     public EntityBrainContext CreateContext(GeneticParameters? p = null)
@@ -230,6 +262,9 @@ public class SharedHierarchicalBrain
             execCritics[i] = new ValueCritic(combined);
 
         _rnd = new RandomNetworkDistillation(InputSize);
+
+        ConfigureOptimizer();
+        ApplyPendingGradients();
     }
 
     internal static SharedHierarchicalBrain FromModels(

@@ -10,8 +10,14 @@ public partial class DelayedPerceptron
     private bool[]      _residual;
 
     public const float DurationNoiseSigma = 0.5f;
+    public const float TauEpsilon = 1e-4f;
 
     public int[] LayerSizes { get; private set; }
+
+    private SharedGradientAccumulator _gradScratch;
+    private SharedGradientAccumulator _gradAccum;
+
+    public float OptimizerMaxGradNorm = 1f;
 
     public DelayedPerceptron(int inputSize, int h1, int h2, int h3, int outputSize)
         : this(new[] { inputSize, h1, h2, h3, outputSize }) { }
@@ -21,6 +27,7 @@ public partial class DelayedPerceptron
         LayerSizes = layerSizes;
         InitWeightsAndBiases(LayerSizes);
         BuildResidualMask();
+        InitOptimizerBuffers();
     }
 
     public DelayedPerceptron(DelayedPerceptron parent)
@@ -28,6 +35,13 @@ public partial class DelayedPerceptron
         LayerSizes = parent.LayerSizes;
         CloneWeights(parent);
         BuildResidualMask();
+        InitOptimizerBuffers();
+    }
+
+    private void InitOptimizerBuffers()
+    {
+        _gradScratch = new SharedGradientAccumulator(LayerSizes);
+        _gradAccum   = new SharedGradientAccumulator(LayerSizes);
     }
 
     private void BuildResidualMask()
@@ -153,8 +167,9 @@ public partial class DelayedPerceptron
 
                 float preTau = _tauBiases[l][n];
                 for (int i = 0; i < inp.Length; i++) preTau += tRow[i] * inp[i];
-                float tau = Softplus(preTau);
-                float A   = 1f + dt / MathF.Max(tau, 1e-4f);
+
+                float tau = MathF.Max(Softplus(preTau), TauEpsilon);
+                float A   = 1f + dt / tau;
 
                 ctx.FVals[l][n]   = fSlot[n]   = f;
                 ctx.TauVals[l][n] = tauSlot[n] = tau;
@@ -167,7 +182,7 @@ public partial class DelayedPerceptron
 
         int outIdx = _weights.Length;
         SoftmaxInPlace(ctx.Activations[outIdx], ctx.SoftmaxBuf,
-                       ctx.ActionCount, ctx.Params.SoftmaxTemperature);
+                    ctx.ActionCount, ctx.Params.SoftmaxTemperature);
 
         ctx.BpttPtr = (slot + 1) % ctx.TruncWindow;
         if (ctx.BpttCount < ctx.TruncWindow) ctx.BpttCount++;
@@ -177,16 +192,17 @@ public partial class DelayedPerceptron
 
     public void Train(DelayedItem ticket, float advantage, PerceptronContext ctx)
     {
+        if (!float.IsFinite(advantage))
+        {
+            ctx.Diagnostics.RecordNonFiniteGradient(1);
+            return;
+        }
+
         ctx.TrainingSteps++;
 
         int   L     = _weights.Length;
         int   steps = Math.Min(ctx.BpttCount, ctx.TruncWindow);
         float dt    = ctx.DeltaTime;
-
-        float lrSchedule = MathF.Exp(-ctx.TrainingSteps * 0.0002f);
-        float lr         = ctx.Params.BaseLearningRate * lrSchedule;
-        float lambda     = ctx.Params.Lambda;
-        float maxGrad    = ctx.Params.MaxGradientNorm;
 
         int   actionCount = ctx.ActionCount;
         float invN        = 1f / actionCount;
@@ -203,10 +219,13 @@ public partial class DelayedPerceptron
         ctx.OutErrBuf[ctx.DurationIndex] =
             advantage * ticket.DurationNoise / (DurationNoiseSigma * DurationNoiseSigma);
 
+        var g = _gradScratch;
+        g.Clear();
+
         for (int l = 0; l < L; l++)
             Array.Clear(ctx.TemporalDeltaH[l], 0, ctx.TemporalDeltaH[l].Length);
 
-        float gradSq = 0f;
+        int nonFinite = 0;
 
         for (int step = 0; step < steps; step++)
         {
@@ -214,7 +233,7 @@ public partial class DelayedPerceptron
 
             for (int l = 0; l < L; l++)
                 Array.Copy(ctx.TemporalDeltaH[l], ctx.WorkingDeltaH[l],
-                           ctx.TemporalDeltaH[l].Length);
+                        ctx.TemporalDeltaH[l].Length);
 
             if (step == 0)
             {
@@ -244,9 +263,10 @@ public partial class DelayedPerceptron
                 {
                     float dH = wDH[n];
                     if (dH == 0f) continue;
+                    if (!float.IsFinite(dH)) { wDH[n] = 0f; nonFinite++; continue; }
 
                     float fn   = fArr[n];
-                    float taun = tauArr[n];
+                    float taun = MathF.Max(tauArr[n], TauEpsilon);
                     float An   = aArr[n];
 
                     float dPreF = dH * (dt / An) * (1f - fn * fn);
@@ -254,39 +274,103 @@ public partial class DelayedPerceptron
                     float dTau  = dH * hNew * dt / (An * taun * taun);
                     float dPreT = dTau * (1f - MathF.Exp(-taun));
 
+                    if (!float.IsFinite(dPreF) || !float.IsFinite(dPreT))
+                    {
+                        tempDH[n] = 0f;
+                        nonFinite++;
+                        continue;
+                    }
+
                     tempDH[n] = dH / An;
 
                     float[] wRow = _weights[l][n];
                     float[] tRow = _tauWeights[l][n];
 
+                    int wi = g.WeightIndex(l, n);
+                    g.MarkTouched(l, n);
+
                     for (int i = 0; i < prevActs.Length; i++)
                     {
-                        float oldW = wRow[i];
-                        float oldT = tRow[i];
+                        float a = prevActs[i];
 
                         if (prevWDH != null)
-                            prevWDH[i] += dPreF * oldW + dPreT * oldT;
+                        {
+                            float back = dPreF * wRow[i] + dPreT * tRow[i];
+                            if (float.IsFinite(back)) prevWDH[i] += back;
+                            else nonFinite++;
+                        }
 
-                        float gF   = Mathf.Clamp(lr * dPreF * prevActs[i], -maxGrad, maxGrad);
-                        float gTau = Mathf.Clamp(lr * dPreT * prevActs[i], -maxGrad, maxGrad);
-
-                        gradSq += gF * gF + gTau * gTau;
-
-                        wRow[i] = oldW + gF   - lambda * oldW;
-                        tRow[i] = oldT + gTau - lambda * oldT;
+                        g.W[wi + i]   += dPreF * a;
+                        g.Tau[wi + i] += dPreT * a;
                     }
 
-                    float bF = Mathf.Clamp(lr * dPreF, -maxGrad, maxGrad);
-                    float bT = Mathf.Clamp(lr * dPreT, -maxGrad, maxGrad);
-                    gradSq += bF * bF + bT * bT;
-
-                    _biases[l][n]    += bF;
-                    _tauBiases[l][n] += bT;
+                    int bi = g.BiasIndex(l, n);
+                    g.B[bi]    += dPreF;
+                    g.TauB[bi] += dPreT;
                 }
             }
         }
 
-        ctx.Diagnostics.RecordGradientNorm(MathF.Sqrt(gradSq));
+        float norm = (float)Math.Sqrt(g.SquaredNorm());
+
+        if (!float.IsFinite(norm))
+        {
+            ctx.Diagnostics.RecordNonFiniteGradient(nonFinite + 1);
+            return;
+        }
+
+        ctx.Diagnostics.RecordGradientNorm(norm);
+
+        float scale = MathF.Min(1f, OptimizerMaxGradNorm / (norm + 1e-8f));
+        _gradAccum.AddScaled(g, scale);
+
+        if (nonFinite > 0) ctx.Diagnostics.RecordNonFiniteGradient(nonFinite);
+    }
+
+    public void ApplyAccumulatedGradients(float lr, float weightDecay, BrainDiagnostics diag)
+    {
+        var acc = _gradAccum;
+        if (acc.Contributions == 0) return;
+
+        float inv = lr / acc.Contributions;
+        int   nonFinite = 0;
+
+        for (int l = 0; l < _weights.Length; l++)
+        {
+            int neurons = acc.Neurons(l);
+            int inputs  = acc.Inputs(l);
+
+            for (int n = 0; n < neurons; n++)
+            {
+                if (!acc.IsTouched(l, n)) continue;
+
+                float[] wRow = _weights[l][n];
+                float[] tRow = _tauWeights[l][n];
+                int wi = acc.WeightIndex(l, n);
+
+                for (int i = 0; i < inputs; i++)
+                {
+                    float oldW = wRow[i];
+                    float oldT = tRow[i];
+
+                    float newW = oldW + acc.W[wi + i]   * inv - weightDecay * oldW;
+                    float newT = oldT + acc.Tau[wi + i] * inv - weightDecay * oldT;
+
+                    if (float.IsFinite(newW)) wRow[i] = newW; else nonFinite++;
+                    if (float.IsFinite(newT)) tRow[i] = newT; else nonFinite++;
+                }
+
+                int bi = acc.BiasIndex(l, n);
+                float newBF = _biases[l][n]    + acc.B[bi]    * inv;
+                float newBT = _tauBiases[l][n] + acc.TauB[bi] * inv;
+
+                if (float.IsFinite(newBF)) _biases[l][n]    = newBF; else nonFinite++;
+                if (float.IsFinite(newBT)) _tauBiases[l][n] = newBT; else nonFinite++;
+            }
+        }
+
+        if (nonFinite > 0) diag?.RecordNonFiniteGradient(nonFinite);
+        acc.Clear();
     }
 
     private static void SoftmaxInPlace(float[] vals, float[] buf, int count, float temp)

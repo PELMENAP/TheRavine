@@ -5,7 +5,7 @@ using UnityEngine;
 /// <summary>
 ///   [42..63] — резерв (zeros), готов для расширения
 /// </summary>
-public class InputVectorizer
+public class InputVectorizer : IDisposable
 {
     public const int VectorSize    = 64;
     public const int ActionCount   = 13;
@@ -155,5 +155,7 @@ public class InputVectorizer
     {
         _subHealth?.Dispose();
         _subEnergy?.Dispose();
+        _subHealth = null;
+        _subEnergy = null;
     }
 }

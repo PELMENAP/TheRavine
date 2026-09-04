@@ -40,6 +40,7 @@ public class EntityManager : MonoBehaviour
     public SharedHierarchicalBrain SharedBrain => _sharedBrain;
     private readonly List<EntityModel> _entities = new();
     public List<EntityModel> Entities => _entities;
+    private readonly Queue<EntityModel> _pendingDeath = new();
 
     private void Awake()
     {
@@ -98,15 +99,24 @@ public class EntityManager : MonoBehaviour
         while (!ct.IsCancellationRequested)
         {
             int count = _entities.Count;
-            if (count == 0) { await UniTask.Delay(TimeSpan.FromSeconds(window), cancellationToken: ct); continue; }
+            if (count == 0)
+            {
+                ProcessPendingDeaths();
+                await UniTask.Delay(TimeSpan.FromSeconds(window), cancellationToken: ct);
+                continue;
+            }
 
             float stepDelay = window / count;
             var snapshot = _entities.ToArray();
             for (int i = 0; i < snapshot.Length; i++)
             {
-                if (!snapshot[i].IsDisposed) snapshot[i].UpdateEntityCycle();
+                var e = snapshot[i];
+                if (!e.IsDisposed && !e.IsDeathPending) e.UpdateEntityCycle();
                 await UniTask.Delay(TimeSpan.FromSeconds(stepDelay), cancellationToken: ct);
             }
+
+            _sharedBrain.ApplyPendingGradients();
+            ProcessPendingDeaths();
         }
     }
 
@@ -192,15 +202,24 @@ public class EntityManager : MonoBehaviour
 
     private void HandleEntityDied(EntityModel model)
     {
-        model.OnReproduceRequest -= SpawnChild;
-        model.CaptureFinalFitness();
-        _entities.Remove(model);
-        model.Dispose();
+        if (model == null || model.IsDisposed || model.IsDeathPending) return;
+        model.MarkDeathPending();
+        _pendingDeath.Enqueue(model);
+    }
 
-        // if (_entities.Count < initialCount / 2)
-        //     SpawnEntity(RandomPosition());
+    private void ProcessPendingDeaths()
+    {
+        while (_pendingDeath.Count > 0)
+        {
+            var model = _pendingDeath.Dequeue();
+            if (model == null || model.IsDisposed) continue;
 
-        OnEntityDied?.Invoke(model);
+            model.OnReproduceRequest -= SpawnChild;
+            model.CaptureFinalFitness();
+            _entities.Remove(model);
+            OnEntityDied?.Invoke(model);
+            model.Dispose();
+        }
     }
 
     public void EvolveSharedWeights()
@@ -266,5 +285,6 @@ public class EntityManager : MonoBehaviour
     {
         _tickCts?.Cancel();
         _tickCts?.Dispose();
+        ProcessPendingDeaths();
     }
 }

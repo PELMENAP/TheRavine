@@ -20,6 +20,10 @@ public sealed class BrainDiagnostics
     public int CompletionCount { get; private set; }
     public int InterruptionCount { get; private set; }
 
+    public int NonFiniteGradientDrops { get; private set; }
+
+    public void RecordNonFiniteGradient(int count = 1) => NonFiniteGradientDrops += count;
+
     public void RecordAdvantage(float advantage)
     {
         AdvantageSamples++;
@@ -66,5 +70,6 @@ public sealed class BrainDiagnostics
         PolicyEntropy = GradientNorm = CriticError = 0f;
         AdvantageSamples = PositiveAdvantageCount = NegativeAdvantageCount = 0;
         DecisionCount = CompletionCount = InterruptionCount = 0;
+        NonFiniteGradientDrops = 0;
     }
 }
