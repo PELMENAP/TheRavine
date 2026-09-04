@@ -1,18 +1,45 @@
-// Assets/Scripts/EntitySystem/AI/Entity/Commands/EntityCommands.cs
 using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
 
-public class IdleCommand : ICommand
+public class RestCommand : EntityCommand
 {
-    private readonly EntityModel model;
+    public RestCommand(EntityModel model) : base(model) { }
 
-    public IdleCommand(EntityModel model) => this.model = model;
-
-    public async UniTask ExecuteAsync()
+    protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
         model.Motor.Stop();
+        var p = model.Brain.Context.CoordMLP.Params;
+        float startEnergy = model.Stats.Energy.Value;
+        float startHealth = model.Stats.Health.Value;
+        float start = SimulationClock.Time;
+        float prev = start;
 
+        while (SimulationClock.Time - start < p.RestDuration)
+        {
+            ct.ThrowIfCancellationRequested();
+            float now = SimulationClock.Time;
+            float step = now - prev;
+            prev = now;
+
+            model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + p.RestHealRate * step, model.Stats.MaxHealth);
+            model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + p.RestEnergyRate * step, model.Stats.MaxEnergy);
+            await UniTask.Yield(PlayerLoopTiming.Update, ct);
+        }
+
+        float deficitBefore = (1f - startEnergy / model.Stats.MaxEnergy)
+                            + (1f - startHealth / model.Stats.MaxHealth);
+        return deficitBefore > p.RestDeficitThreshold ? 0.7f : -0.2f;
+    }
+}
+
+public class IdleCommand : EntityCommand
+{
+    public IdleCommand(EntityModel model) : base(model) { }
+
+    protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
+    {
+        model.Motor.Stop();
         var p = model.Brain.Context.CoordMLP.Params;
         float energyRatio = model.Stats.Energy.Value / model.Stats.MaxEnergy;
         float healthRatio = model.Stats.Health.Value / model.Stats.MaxHealth;
@@ -25,162 +52,122 @@ public class IdleCommand : ICommand
         else
             reward = 0f;
 
-        model.Brain.GiveReward(reward);
-        await UniTask.Delay((int)(model.Tuning.IdleTime * 1000));
+        float end = decision.EndTime;
+        while (SimulationClock.Time < end)
+            await UniTask.Yield(PlayerLoopTiming.Update, ct);
+
+        return reward;
     }
-
-    public void Cancel() { }
 }
-public class FleeCommand : ICommand
+public class FleeCommand : EntityCommand
 {
-    private readonly EntityModel model;
-    private CancellationTokenSource cts = new();
-    public FleeCommand(EntityModel model) => this.model = model;
+    public FleeCommand(EntityModel model) : base(model) { }
 
-    public async UniTask ExecuteAsync()
+    protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
         model.DialogHost.UpdateDialogPosition((IDialogListener)model.Motor);
 
         var target = model.Perception.FindNearestEntity(model.Motor.Position(), model.SelfObject, out _);
-        if (target == null) { model.Brain.GiveReward(0.3f); return; }
+        if (target == null) return 0.3f;
 
         Vector2 targetPos = target.transform.position;
         Vector2 away = ((Vector2)model.Motor.Position() - targetPos).normalized;
         Vector2 dest = (Vector2)model.Motor.Position() + away * model.Tuning.DetectionRadius * 1.5f;
 
         await model.Motor.MoveToAsync(new Vector3(dest.x, model.Motor.Position().y, dest.y),
-            model.Tuning.RunSpeed, 2f, model.Tuning.EnergyCostRunning, cts.Token);
+            model.Tuning.RunSpeed, 2f, model.Tuning.EnergyCostRunning, ct);
 
-        if (target == null) { model.Brain.GiveReward(0.5f); return; }
+        if (target == null) return 0.5f;
+
         float dist = Vector2.Distance(model.Motor.Position(), target.transform.position);
-        model.Brain.GiveReward(Mathf.Clamp01(dist / model.Tuning.DetectionRadius));
+        return Mathf.Clamp01(dist / model.Tuning.DetectionRadius);
     }
-
-    public void Cancel() => cts.Cancel();
 }
 
-public class EatCommand : ICommand
+public class EatCommand : EntityCommand
 {
-    private readonly EntityModel model;
-    public EatCommand(EntityModel model) => this.model = model;
+    public EatCommand(EntityModel model) : base(model) { }
 
-    public async UniTask ExecuteAsync()
+    protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
         var p = model.Brain.Context.CoordMLP.Params;
+        float reward;
+
         var food = model.Perception.FindNearestFood(model.Motor.Position(), out _);
         if (food != null)
         {
             model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + p.EatHealFood, model.Stats.MaxHealth);
             model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + p.EatEnergyFood, model.Stats.MaxEnergy);
-            model.Brain.GiveReward(p.EatRewardFood);
             model.RegisterFitnessEvent(EntityModel.FitnessEvent.FoodEaten);
 
             Object.Destroy(food);
+            reward = p.EatRewardFood;
         }
         else
         {
             model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + p.EatHealNoFood, model.Stats.MaxHealth);
             model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + p.EatEnergyNoFood, model.Stats.MaxEnergy);
-            model.Brain.GiveReward(p.EatRewardNoFood);
+            reward = p.EatRewardNoFood;
         }
 
-        await UniTask.Yield();
+        await UniTask.Yield(ct);
+        return reward;
     }
-
-    public void Cancel() { }
 }
 
-public class RestCommand : ICommand
+public class RememberPointCommand : EntityCommand
 {
-    private readonly EntityModel model;
-    public RestCommand(EntityModel model) => this.model = model;
+    public RememberPointCommand(EntityModel model) : base(model) { }
 
-    public async UniTask ExecuteAsync()
-    {
-        model.Motor.Stop();
-        var p = model.Brain.Context.CoordMLP.Params;
-        float startEnergy = model.Stats.Energy.Value;
-        float startHealth = model.Stats.Health.Value;
-
-        float elapsed = 0f;
-        while (elapsed < p.RestDuration)
-        {
-            model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + p.RestHealRate * Time.deltaTime, model.Stats.MaxHealth);
-            model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + p.RestEnergyRate * Time.deltaTime, model.Stats.MaxEnergy);
-            elapsed += Time.deltaTime;
-            await UniTask.Yield();
-        }
-
-        float deficitBefore = (1f - startEnergy / model.Stats.MaxEnergy) + (1f - startHealth / model.Stats.MaxHealth);
-        float reward = deficitBefore > p.RestDeficitThreshold ? 0.7f : -0.2f;
-        model.Brain.GiveReward(reward);
-    }
-
-    public void Cancel() { }
-}
-
-public class RememberPointCommand : ICommand
-{
-    private readonly EntityModel model;
-    public RememberPointCommand(EntityModel model) => this.model = model;
-
-    public UniTask ExecuteAsync()
+    protected override UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
         Vector2 pos = model.Motor.Position();
         bool added = model.Points.TryRemember(pos, 10f);
-        model.Brain.GiveReward(added ? 0.65f : 0.3f);
-        return UniTask.CompletedTask;
+        return UniTask.FromResult(added ? 0.65f : 0.3f);
     }
-
-    public void Cancel() { }
 }
 
-public class GoToPointCommand : ICommand
+public class GoToPointCommand : EntityCommand
 {
-    private readonly EntityModel model;
-    private CancellationTokenSource cts = new();
-    public GoToPointCommand(EntityModel model) => this.model = model;
+    public GoToPointCommand(EntityModel model) : base(model) { }
 
-    public async UniTask ExecuteAsync()
+    protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
-        if (model.Points.Count == 0) return;
+        if (model.Points.Count == 0) return 0f;
+
         Vector2 target = model.Points.GetRandom();
         await model.Motor.MoveToAsync(new Vector3(target.x, model.Motor.Position().y, target.y),
-            model.Tuning.MoveSpeed, 5f, model.Tuning.EnergyCostMoving, cts.Token);
+            model.Tuning.MoveSpeed, 5f, model.Tuning.EnergyCostMoving, ct);
 
-        model.Brain.GiveReward(0.55f);
+        return 0.55f;
     }
-
-    public void Cancel() => cts.Cancel();
 }
 
-public class ReproduceCommand : ICommand
+public class ReproduceCommand : EntityCommand
 {
-    private readonly EntityModel model;
-    public ReproduceCommand(EntityModel model) => this.model = model;
+    public ReproduceCommand(EntityModel model) : base(model) { }
 
-    public bool CanExecute() =>
+    public override bool CanExecute() =>
         model.Stats.Energy.Value >= model.Tuning.ReproduceEnergyCost &&
         model.Stats.Health.Value >= model.Tuning.ReproduceHealthCost;
-    public async UniTask ExecuteAsync()
+
+    protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
         model.Stats.Energy.Value -= model.Tuning.ReproduceEnergyCost;
         model.Stats.Health.Value -= model.Tuning.ReproduceHealthCost;
         model.RequestReproduce();
         model.RegisterFitnessEvent(EntityModel.FitnessEvent.Reproduced);
-        model.Brain.GiveReward(0.8f);
-        await UniTask.Delay((int)(model.Tuning.IdleTime * 1000));
-    }
 
-    public void Cancel() { }
+        await UniTask.Delay((int)(model.Tuning.IdleTime * 1000), cancellationToken: ct);
+        return 0.8f;
+    }
 }
 
-public class SpeechCommand : ICommand
+public class SpeechCommand : EntityCommand
 {
-    private readonly EntityModel model;
-    public SpeechCommand(EntityModel model) => this.model = model;
+    public SpeechCommand(EntityModel model) : base(model) { }
 
-    public async UniTask ExecuteAsync()
+    protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
         string hash = model.Vectorizer.HashFloatArray(model.LastInput);
         model.Speech.SetOwnSpeech(hash);
@@ -189,104 +176,85 @@ public class SpeechCommand : ICommand
         var nearest = model.Perception.FindNearestEntity(model.Motor.Position(), model.SelfObject, out float dist);
         await model.Speech.PlayAsync(
             hash, model.Stats.Health.Value, model.Stats.Energy.Value,
-            0f, 0f, model.LastActionIndex, dist, default);
+            0f, 0f, model.LastActionIndex, dist, ct);
 
         model.Stats.Energy.Value -= 5f;
-        model.Brain.GiveReward(0.55f);
+        return 0.55f;
     }
-
-    public void Cancel() { }
 }
-public class MimicCommand : ICommand
-{
-    private readonly EntityModel model;
-    public MimicCommand(EntityModel model) => this.model = model;
 
-    public UniTask ExecuteAsync()
+public class MimicCommand : EntityCommand
+{
+    public MimicCommand(EntityModel model) : base(model) { }
+
+    protected override UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
         var target = model.Perception.FindNearestEntity(model.Motor.Position(), model.SelfObject, out _);
         var otherModel = target?.GetComponent<EntityViewModel>()?.Entity as EntityModel;
-        if (otherModel == null || otherModel.IsDisposed) { model.Brain.GiveReward(0.2f); return UniTask.CompletedTask; }
+        if (otherModel == null || otherModel.IsDisposed)
+            return UniTask.FromResult(0.2f);
 
         model.SetLastAction(otherModel.LastActionIndex);
         float reward = 0.3f + otherModel.Brain.Context.CoordMLP.AverageEntropy * 0.2f;
-        model.Brain.GiveReward(reward);
-
-        return UniTask.CompletedTask;
+        return UniTask.FromResult(reward);
     }
-    public void Cancel() { }
 }
 
-public class ThreatenCommand : ICommand
+public class ThreatenCommand : EntityCommand
 {
-    private readonly EntityModel model;
-    public ThreatenCommand(EntityModel model) => this.model = model;
+    public ThreatenCommand(EntityModel model) : base(model) { }
 
-    public async UniTask ExecuteAsync()
+    protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
         var target = model.Perception.FindNearestEntity(model.Motor.Position(), model.SelfObject, out float dist);
         if (target == null || dist > model.Tuning.AttackRange * 2f)
-        {
-            model.Brain.GiveReward(target == null ? 0.2f : 0.15f);
-            return;
-        }
+            return target == null ? 0.2f : 0.15f;
 
         model.Stats.Energy.Value -= 3f;
-        model.Brain.GiveReward(dist < model.Tuning.AttackRange ? 0.6f : 0.4f);
-        await UniTask.Delay(800);
+        await UniTask.Delay(800, cancellationToken: ct);
+        return dist < model.Tuning.AttackRange ? 0.6f : 0.4f;
     }
-
-    public void Cancel() { }
 }
 
-public class ShareFoodCommand : ICommand
+public class ShareFoodCommand : EntityCommand
 {
-    private readonly EntityModel model;
-    public ShareFoodCommand(EntityModel model) => this.model = model;
+    public ShareFoodCommand(EntityModel model) : base(model) { }
 
-    public async UniTask ExecuteAsync()
+    protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
-        if (model.Stats.Health.Value < 80f) { model.Brain.GiveReward(0.1f); return; }
+        if (model.Stats.Health.Value < 80f) return 0.1f;
 
         var target = model.Perception.FindNearestEntity(model.Motor.Position(), model.SelfObject, out _);
         var victim = target != null ? target.GetComponent<EntityViewModel>()?.Entity as EntityModel : null;
         if (victim == null || victim.IsDisposed || victim.Stats.Health.Value > model.Stats.Health.Value * 0.8f)
-        {
-            model.Brain.GiveReward(0.25f);
-            return;
-        }
+            return 0.25f;
 
         float transfer = Mathf.Min(20f, model.Stats.Health.Value - 60f);
         model.Stats.Health.Value -= transfer;
         victim.Stats.Health.Value = Mathf.Min(victim.Stats.Health.Value + transfer, victim.Stats.MaxHealth);
 
         float needFactor = 1f - Mathf.Clamp01(victim.Stats.Health.Value / victim.Stats.MaxHealth);
-        model.Brain.GiveReward(0.5f + needFactor * 0.35f);
-        await UniTask.Delay(500);
+        await UniTask.Delay(500, cancellationToken: ct);
+        return 0.5f + needFactor * 0.35f;
     }
-
-    public void Cancel() { }
 }
 
-public class AttackCommand : ICommand
+public class AttackCommand : EntityCommand
 {
-    private readonly EntityModel model;
-    private CancellationTokenSource cts = new();
+    public AttackCommand(EntityModel model) : base(model) { }
 
-    public AttackCommand(EntityModel model) => this.model = model;
+    public override bool CanExecute() => model.Stats.Energy.Value >= model.Tuning.AttackEnergyCost;
 
-    public bool CanExecute() => model.Stats.Energy.Value >= model.Tuning.AttackEnergyCost;
-
-    public async UniTask ExecuteAsync()
+    protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
         var target = model.Perception.FindNearestEntity(model.Motor.Position(), model.SelfObject, out _);
-        if (target == null) { model.Brain.GiveReward(0.2f); return; }
+        if (target == null) return 0.2f;
 
         Vector3 targetPos = target.transform.position;
         await model.Motor.MoveToAsync(targetPos, model.Tuning.MoveSpeed, 2f,
-            model.Tuning.EnergyCostMoving, cts.Token);
+            model.Tuning.EnergyCostMoving, ct);
 
-        if (target == null) { model.Brain.GiveReward(0.3f); return; }
+        if (target == null) return 0.3f;
 
         if (Vector3.Distance(model.Motor.Position(), target.transform.position) <= model.Tuning.AttackRange
             && model.TryStartAttackCooldown())
@@ -297,22 +265,18 @@ public class AttackCommand : ICommand
                 victim.Stats.Health.Value -= model.Tuning.AttackDamage;
                 model.RegisterFitnessEvent(EntityModel.FitnessEvent.DamageDealt, model.Tuning.AttackDamage);
             }
-            model.Brain.GiveReward(victim != null ? 0.9f : 0.4f);
+            return victim != null ? 0.9f : 0.4f;
         }
-        else model.Brain.GiveReward(0.3f);
-    }
 
-    public void Cancel() => cts.Cancel();
+        return 0.3f;
+    }
 }
 
-public class WanderCommand : ICommand
+public class WanderCommand : EntityCommand
 {
-    private readonly EntityModel model;
-    private CancellationTokenSource cts = new();
+    public WanderCommand(EntityModel model) : base(model) { }
 
-    public WanderCommand(EntityModel _model) => model = _model;
-
-    public async UniTask ExecuteAsync()
+    protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
         var randomCircle = RavineRandom.GetInsideCircle();
         var dir = new Vector3(randomCircle.x, 0, randomCircle.y).normalized;
@@ -320,8 +284,8 @@ public class WanderCommand : ICommand
 
         await model.Motor.MoveToAsync(target, model.Tuning.MoveSpeed,
             RavineRandom.RangeFloat(model.Tuning.MinWanderTime, model.Tuning.MaxWanderTime),
-            model.Tuning.EnergyCostMoving, cts.Token);
-    }
+            model.Tuning.EnergyCostMoving, ct);
 
-    public void Cancel() => cts.Cancel();
+        return 0f;
+    }
 }

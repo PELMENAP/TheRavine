@@ -20,8 +20,12 @@ public class SharedHierarchicalBrain
 
     private const int CoordDelaySteps  = 10;
     private const int ExecDelaySteps   = 3;
-    private const int MinGoalDuration  = 2;
-    private const int MaxGoalDuration  = 10;
+
+    private static int[] BuildCoordSizes(int combined) => new[] { combined, 32, 16, 16, GoalCount + 1 };
+
+    private static int[] BuildExecSizes(int combined, int goal)
+        => new[] { combined, 64, 32, 32, ActionSubsets[goal].Length + 1 };
+
 
     private readonly LSTMMemory         coordLSTM;
     private readonly DelayedPerceptron  coordinator;
@@ -90,49 +94,104 @@ public class SharedHierarchicalBrain
         => new EntityBrainContext(InputSize, LstmHidden, CoordLayerSizes, ExecLayerSizes,
                                    p ?? GeneticParameters.Default);
 
-    public int Predict(float[] input, EntityBrainContext ctx,
-        float coordEps = 0.05f, float execEps = 0.15f)
+    public bool TryDecide(float[] input, EntityBrainContext ctx, float simTime, float dt,
+        out BrainDecision decision, float coordEps = 0.05f, float execEps = 0.15f)
     {
+        decision = default;
+        if (ctx.ExecWindow.IsRunning(simTime)) return false;
+
         ctx.IntrinsicReward = _rnd.ComputeIntrinsicReward(input);
-        
-        if (ctx.GoalStepsLeft <= 0)
+
+        if (simTime >= ctx.GoalEndTime)
         {
             FlushGoalRewardToCoordinator(ctx);
 
             float[] coordH = coordLSTM.Step(input, ctx.CoordLSTM);
             BuildCombined(input, coordH, ctx.CoordCombined);
 
-            int goalIdx = coordinator.Predict(ctx.CoordCombined, ctx.CoordMLP, CoordDelaySteps, coordCritic, Gamma, coordEps);
+            var goalTicket = coordinator.Decide(ctx.CoordCombined, ctx.CoordMLP, CoordDelaySteps,
+                coordCritic, Gamma, dt, simTime,
+                ActionDurationTable.MinGoalSeconds, ActionDurationTable.MaxGoalSeconds, coordEps);
 
-            ctx.CurrentGoal     = (Goal)goalIdx;
-            ctx.GoalStepsLeft   = RavineRandom.RangeInt(MinGoalDuration, MaxGoalDuration + 1);
+            ctx.CurrentGoal          = (Goal)goalTicket.Predicted;
+            ctx.CoordDecisionId      = goalTicket.DecisionId;
+            ctx.GoalEndTime          = simTime + goalTicket.Duration;
             ctx.GoalDiscountedReturn = 0f;
             ctx.GoalDiscountFactor   = 1f;
             ctx.GoalRewardCount      = 0;
         }
 
-        ctx.GoalStepsLeft--;
-
-        int g       = (int)ctx.CurrentGoal;
-        float[] h   = execLSTMs[g].Step(input, ctx.ExecLSTMs[g]);
+        int g     = (int)ctx.CurrentGoal;
+        float[] h = execLSTMs[g].Step(input, ctx.ExecLSTMs[g]);
         BuildCombined(input, h, ctx.ExecCombined[g]);
 
-        int localAction = executors[g].Predict(ctx.ExecCombined[g], ctx.ExecMLPs[g], ExecDelaySteps, execCritics[g], Gamma, execEps);
-        return ActionSubsets[g][localAction];
+        var subset = ActionSubsets[g];
+        float minD = float.MaxValue, maxD = 0f;
+        for (int i = 0; i < subset.Length; i++)
+        {
+            float lo = ActionDurationTable.Min(subset[i]);
+            float hi = ActionDurationTable.Max(subset[i]);
+            if (lo < minD) minD = lo;
+            if (hi > maxD) maxD = hi;
+        }
+
+        var ticket = executors[g].Decide(ctx.ExecCombined[g], ctx.ExecMLPs[g], ExecDelaySteps,
+            execCritics[g], Gamma, dt, simTime, minD, maxD, execEps);
+
+        int action = subset[ticket.Predicted];
+        float clamped = Mathf.Clamp(ticket.Duration,
+            ActionDurationTable.Min(action), ActionDurationTable.Max(action));
+        ticket.Duration = clamped;
+
+        ctx.ExecWindow.Begin(ticket.DecisionId, simTime, clamped);
+
+        decision = new BrainDecision(action, ticket.DecisionId, ctx.CoordDecisionId,
+            ctx.CurrentGoal, simTime, clamped);
+        return true;
     }
 
-    public void GiveReward(float reward, EntityBrainContext ctx)
+    public void GiveReward(float reward, int decisionId, EntityBrainContext ctx)
     {
         float shaped = Mathf.Clamp(reward + ctx.IntrinsicReward * CuriosityWeight, -1f, 1.2f);
 
         int g = (int)ctx.CurrentGoal;
-        var list = ctx.ExecMLPs[g].DelayedList;
-        if (list.Count > 0)
-            list[list.Count - 1].Evaluation = shaped;
+        var mlp = ctx.ExecMLPs[g];
+        var item = mlp.Decisions.Find(decisionId);
+        if (item == null) return;
+
+        item.Evaluation   = shaped;
+        item.RewardApplied = true;
+        mlp.Diagnostics.RecordRewardLatency(SimulationClock.Time - item.StartTime);
 
         ctx.GoalDiscountedReturn += shaped * ctx.GoalDiscountFactor;
-        ctx.GoalDiscountFactor *= Gamma;
+        ctx.GoalDiscountFactor   *= Gamma;
         ctx.GoalRewardCount++;
+    }
+
+    public void CompleteDecision(int decisionId, float reward, EntityBrainContext ctx,
+        float simTime, EntityCommandStatus status)
+    {
+        GiveReward(reward, decisionId, ctx);
+
+        int g = (int)ctx.CurrentGoal;
+        var item = ctx.ExecMLPs[g].Decisions.Find(decisionId);
+        float elapsed = item != null ? simTime - item.StartTime : 0f;
+        ctx.ExecMLPs[g].Diagnostics.RecordCompletion(
+            elapsed, status == EntityCommandStatus.Interrupted);
+
+        if (ctx.ExecWindow.DecisionId == decisionId) ctx.ExecWindow.End();
+    }
+
+    private void FlushGoalRewardToCoordinator(EntityBrainContext ctx)
+    {
+        if (ctx.GoalRewardCount == 0) return;
+
+        var item = ctx.CoordMLP.Decisions.Find(ctx.CoordDecisionId);
+        if (item != null)
+        {
+            item.Evaluation    = Mathf.Clamp(ctx.GoalDiscountedReturn, -1f, 1f);
+            item.RewardApplied = true;
+        }
     }
 
     public float GetCoordinatorEntropy(EntityBrainContext ctx) => ctx.CoordMLP.AverageEntropy;
@@ -141,14 +200,6 @@ public class SharedHierarchicalBrain
     public float GetExecutorEntropy(Goal goal, EntityBrainContext ctx)
         => ctx.ExecMLPs[(int)goal].AverageEntropy;
 
-    private void FlushGoalRewardToCoordinator(EntityBrainContext ctx)
-    {
-        if (ctx.GoalRewardCount == 0) return;
-
-        var list = ctx.CoordMLP.DelayedList;
-        if (list.Count > 0)
-            list[list.Count - 1].Evaluation = Mathf.Clamp(ctx.GoalDiscountedReturn, -1f, 1f);
-    }
     private static void BuildCombined(float[] input, float[] lstmH, float[] combined)
     {
         Array.Copy(input, 0, combined, 0,            input.Length);
@@ -238,11 +289,6 @@ public class SharedHierarchicalBrain
 
         return true;
     }
-
-    private static int[] BuildCoordSizes(int combined) => new[] { combined, 64, 32, 32, GoalCount };
-
-    private static int[] BuildExecSizes(int combined, int goal) => new[] { combined, 64, 32, 32, ActionSubsets[goal].Length };
-
     private static bool SizesMatch(int[] a, int[] b)
     {
         if (a.Length != b.Length) return false;

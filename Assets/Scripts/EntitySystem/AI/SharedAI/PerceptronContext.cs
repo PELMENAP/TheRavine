@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 public class PerceptronContext
 {
@@ -10,38 +9,44 @@ public class PerceptronContext
     public readonly float[][] AVals;
 
     public readonly int         TruncWindow;
-    public readonly float[][][] BpttPrevActs;   // [slot][layer] → float[layerSizes[l]]
-    public readonly float[][][] BpttHBefore;    // [slot][layer] → float[layerSizes[l+1]]
+    public readonly float[][][] BpttPrevActs;
+    public readonly float[][][] BpttHBefore;
     public readonly float[][][] BpttF;
     public readonly float[][][] BpttTau;
     public readonly float[][][] BpttA;
     public int BpttPtr;
     public int BpttCount;
 
-    public readonly float[][] TemporalDeltaH;   // δh переносимый назад по времени
-    public readonly float[][] WorkingDeltaH;    // temporal + spatial на текущем шаге
+    public readonly float[][] TemporalDeltaH;
+    public readonly float[][] WorkingDeltaH;
 
-    public readonly float[] SoftmaxBuf;         // без new[] в SoftmaxWithTemperature
-    public readonly float[] OutErrBuf;          // без new[] в Train
-    public readonly float[] NoisedInputBuf;     // резерв, если понадобится
+    public readonly float[] SoftmaxBuf;
+    public readonly float[] OutErrBuf;
+    public readonly float[] NoisedInputBuf;
 
-    public readonly List<DelayedItem> DelayedList = new();
+    public readonly int ActionCount;
+    public readonly int DurationIndex;
+    public readonly int OutputSize;
+
+    public readonly DecisionRing     Decisions;
+    public readonly BrainDiagnostics Diagnostics = new();
 
     public GeneticParameters Params;
     public float AverageEntropy;
     public int   TrainingSteps;
     public float DeltaTime = 0.05f;
-    private readonly Stack<float[]> statePool = new();
 
-    public float[] RentState()
+    private int _nextDecisionId;
+
+    public int NextDecisionId()
     {
-        if (statePool.Count > 0) return statePool.Pop();
-        return new float[Activations[0].Length];
+        _nextDecisionId++;
+        if (_nextDecisionId == 0) _nextDecisionId = 1;
+        return _nextDecisionId;
     }
 
-    public void ReturnState(float[] s) => statePool.Push(s);
-
-    public PerceptronContext(int[] layerSizes, GeneticParameters p, int truncWindow = 8)
+    public PerceptronContext(int[] layerSizes, GeneticParameters p,
+        int truncWindow = 8, int decisionCapacity = 16)
     {
         Params      = p;
         TruncWindow = truncWindow;
@@ -64,11 +69,11 @@ public class PerceptronContext
             AVals[l]        = new float[sz];
         }
 
-        BpttPrevActs = AllocHistorySlots(truncWindow, L, layerSizes, inputSide: true);
-        BpttHBefore  = AllocHistorySlots(truncWindow, L, layerSizes, inputSide: false);
-        BpttF        = AllocHistorySlots(truncWindow, L, layerSizes, inputSide: false);
-        BpttTau      = AllocHistorySlots(truncWindow, L, layerSizes, inputSide: false);
-        BpttA        = AllocHistorySlots(truncWindow, L, layerSizes, inputSide: false);
+        BpttPrevActs = AllocHistorySlots(truncWindow, L, layerSizes, true);
+        BpttHBefore  = AllocHistorySlots(truncWindow, L, layerSizes, false);
+        BpttF        = AllocHistorySlots(truncWindow, L, layerSizes, false);
+        BpttTau      = AllocHistorySlots(truncWindow, L, layerSizes, false);
+        BpttA        = AllocHistorySlots(truncWindow, L, layerSizes, false);
 
         TemporalDeltaH = new float[L][];
         WorkingDeltaH  = new float[L][];
@@ -78,10 +83,15 @@ public class PerceptronContext
             WorkingDeltaH[l]  = new float[layerSizes[l + 1]];
         }
 
-        int outSize    = layerSizes[layerSizes.Length - 1];
-        SoftmaxBuf     = new float[outSize];
-        OutErrBuf      = new float[outSize];
+        OutputSize    = layerSizes[layerSizes.Length - 1];
+        ActionCount   = OutputSize - 1;
+        DurationIndex = ActionCount;
+
+        SoftmaxBuf     = new float[ActionCount];
+        OutErrBuf      = new float[OutputSize];
         NoisedInputBuf = new float[layerSizes[0]];
+
+        Decisions = new DecisionRing(decisionCapacity, layerSizes[0], ActionCount);
     }
 
     private static float[][][] AllocHistorySlots(int w, int L, int[] sizes, bool inputSide)
@@ -102,5 +112,6 @@ public class PerceptronContext
             Array.Clear(h, 0, h.Length);
         BpttPtr   = 0;
         BpttCount = 0;
+        Decisions.Clear();
     }
 }
