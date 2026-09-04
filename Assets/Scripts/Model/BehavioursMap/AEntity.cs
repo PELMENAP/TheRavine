@@ -56,7 +56,9 @@ namespace TheRavine.EntityControl
             foreach (var component in _components.Values)
                 component.Dispose();
             _components.Clear();
+
             IsActive.Dispose();
+            OnUpdate.Dispose();
         }
 
         public abstract void Init();

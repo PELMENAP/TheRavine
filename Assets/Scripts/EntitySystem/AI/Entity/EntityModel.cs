@@ -44,6 +44,12 @@ public class EntityModel : AEntity
     public float DamageDealt { get; private set; }
     public float FinalFitness { get; private set; }
 
+    private R3.ReactiveProperty<float> _vecMaxHealth;
+    private R3.ReactiveProperty<float> _vecMaxEnergy;
+
+    public bool IsDeathPending { get; private set; }
+    public void MarkDeathPending() => IsDeathPending = true;
+
     public void RegisterFitnessEvent(FitnessEvent evt, float amount = 0f)
     {
         switch (evt)
@@ -101,9 +107,9 @@ public class EntityModel : AEntity
         GetEntityComponent<MortalityComponent>().Died += () => death?.OnDeath();
         states = GetOrCreateEntityComponent<StatePatternComponent>();
 
-        Vectorizer = new InputVectorizer(
-            new R3.ReactiveProperty<float>(tuning.MaxHealth),
-            new R3.ReactiveProperty<float>(tuning.MaxEnergy));
+        _vecMaxHealth = new R3.ReactiveProperty<float>(tuning.MaxHealth);
+        _vecMaxEnergy = new R3.ReactiveProperty<float>(tuning.MaxEnergy);
+        Vectorizer = new InputVectorizer(_vecMaxHealth, _vecMaxEnergy);
     }
 
     public bool TryStartAttackCooldown()
@@ -134,8 +140,9 @@ public class EntityModel : AEntity
     private float _lastCycleTime;
     public override void UpdateEntityCycle()
     {
+        if (IsDisposed || IsDeathPending) return;
         if (!IsActive.Value) return;
-        if (Stats.Health.Value <= 0) return;
+        if (Stats.IsDisposed || Stats.Health.Value <= 0f) return;
 
         float now = SimulationClock.Time;
         float dt  = now - _lastCycleTime;
@@ -158,12 +165,13 @@ public class EntityModel : AEntity
         Speech.ConsumeOtherSpeech();
 
         bool isIdle = states.behaviourCurrent.GetType() == typeof(SurviveState)
-                   && LastActionIndex == (int)EntityAction.Idle;
+                && LastActionIndex == (int)EntityAction.Idle;
 
         var p = Brain.Context.CoordMLP.Params;
         Stats.Tick(dt, Tuning.EnergyRegenRate, isIdle,
             p.StarvationThreshold, p.StarvationDamage, p.StarvationEnergyReturn);
-        if (Stats.Health.Value <= 0) return;
+
+        if (IsDeathPending || IsDisposed || Stats.IsDisposed || Stats.Health.Value <= 0f) return;
 
         if (Brain.TryDecide(LastInput, now, dt, out var decision))
         {
@@ -178,7 +186,6 @@ public class EntityModel : AEntity
 
         states.behaviourCurrent.Update();
         OnUpdate.Execute(R3.Unit.Default);
-        
     }
     private float ComputeDangerLevel()
     {
@@ -204,5 +211,10 @@ public class EntityModel : AEntity
     public override void DeepClean()
     {
         Vectorizer?.Dispose();
+        Vectorizer = null;
+        _vecMaxHealth?.Dispose();
+        _vecMaxEnergy?.Dispose();
+        _vecMaxHealth = null;
+        _vecMaxEnergy = null;
     }
 }

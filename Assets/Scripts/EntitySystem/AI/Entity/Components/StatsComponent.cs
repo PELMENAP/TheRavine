@@ -10,6 +10,8 @@ public class StatsComponent : IComponent
 
     private float _starvationTimer;
     private bool _filled;
+    public bool IsDisposed { get; private set; }
+
 
     public void FillComponent(float maxHealth, float maxEnergy)
     {
@@ -24,23 +26,38 @@ public class StatsComponent : IComponent
     public void Tick(float deltaTime, float regenRate, bool isIdle,
         float starvationThreshold, float starvationDamage, float starvationEnergyReturn)
     {
-        if (isIdle && Energy.Value < MaxEnergy)
-        {
-            Energy.Value = math.min(Energy.Value + regenRate * deltaTime, MaxEnergy);
-        }
+        if (IsDisposed || !_filled) return;
 
-        if (Energy.Value < starvationThreshold)
+        float health = Health.Value;
+        float energy = Energy.Value;
+
+        if (isIdle && energy < MaxEnergy)
+            energy = math.min(energy + regenRate * deltaTime, MaxEnergy);
+
+        if (energy < starvationThreshold)
         {
             _starvationTimer += deltaTime;
             if (_starvationTimer >= 1f)
             {
-                Health.Value -= starvationDamage;
-                Energy.Value += starvationEnergyReturn;
+                health -= starvationDamage;
+                energy += starvationEnergyReturn;
                 _starvationTimer = 0f;
             }
         }
         else _starvationTimer = 0f;
+
+        energy = math.clamp(energy, 0f, MaxEnergy);
+        health = math.min(health, MaxHealth);
+
+        Energy.Value = energy;
+        Health.Value = health;
     }
 
-    public void Dispose() { Health?.Dispose(); Energy?.Dispose(); }
+    public void Dispose()
+    {
+        if (IsDisposed) return;
+        IsDisposed = true;
+        Health?.Dispose();
+        Energy?.Dispose();
+    }
 }
