@@ -21,6 +21,9 @@ public sealed class BrainDiagnostics
     public int InterruptionCount { get; private set; }
 
     public int NonFiniteGradientDrops { get; private set; }
+    public int StaleSlotDrops { get; private set; }
+
+    public void RecordStaleSlotDrop(int count = 1) => StaleSlotDrops += count;
 
     public void RecordNonFiniteGradient(int count = 1) => NonFiniteGradientDrops += count;
 

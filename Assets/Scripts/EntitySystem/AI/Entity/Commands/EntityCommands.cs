@@ -91,10 +91,14 @@ public class EatCommand : EntityCommand
     protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
         var p = model.Brain.Context.CoordMLP.Params;
-        float reward;
 
         var food = model.Perception.FindNearestFood(model.Motor.Position(), out _);
-        if (food != null)
+        bool claimed = food != null
+                    && food.TryGetComponent(out FoodObject foodObject)
+                    && foodObject.TryClaim();
+
+        float reward;
+        if (claimed)
         {
             model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + p.EatHealFood, model.Stats.MaxHealth);
             model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + p.EatEnergyFood, model.Stats.MaxEnergy);

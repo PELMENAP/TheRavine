@@ -38,6 +38,16 @@ public class PerceptronContext
 
     private int _nextDecisionId;
 
+    public readonly int[] SlotStamp;
+    private int _forwardCounter;
+
+    public int NextForwardStamp()
+    {
+        _forwardCounter++;
+        if (_forwardCounter == 0) _forwardCounter = 1;
+        return _forwardCounter;
+    }
+
     public int NextDecisionId()
     {
         _nextDecisionId++;
@@ -51,6 +61,13 @@ public class PerceptronContext
         Params      = p;
         TruncWindow = truncWindow;
         int L       = layerSizes.Length - 1;
+
+        if (decisionCapacity > truncWindow)
+        {
+            UnityEngine.Debug.LogWarning(
+                $"decisionCapacity({decisionCapacity}) > TruncWindow({truncWindow}), clamped");
+            decisionCapacity = truncWindow;
+        }
 
         Activations  = new float[layerSizes.Length][];
         HiddenStates = new float[L][];
@@ -74,6 +91,8 @@ public class PerceptronContext
         BpttF        = AllocHistorySlots(truncWindow, L, layerSizes, false);
         BpttTau      = AllocHistorySlots(truncWindow, L, layerSizes, false);
         BpttA        = AllocHistorySlots(truncWindow, L, layerSizes, false);
+
+        SlotStamp = new int[truncWindow];
 
         TemporalDeltaH = new float[L][];
         WorkingDeltaH  = new float[L][];
@@ -110,6 +129,8 @@ public class PerceptronContext
     {
         foreach (var h in HiddenStates)
             Array.Clear(h, 0, h.Length);
+        Array.Clear(SlotStamp, 0, SlotStamp.Length);
+        _forwardCounter = 0;
         BpttPtr   = 0;
         BpttCount = 0;
         Decisions.Clear();

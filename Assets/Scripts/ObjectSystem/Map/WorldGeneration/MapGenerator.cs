@@ -27,7 +27,7 @@ namespace TheRavine.Generator
         public const int generationSize = scale * mapChunkSize * (1 + 2 * chunkScale);
         public const float maxTerrainHeight = 100f;
 
-        private Dictionary<long, ChunkData> mapData = new();
+        private LongDictionary<ChunkData> mapData = new();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ChunkData GetMapData(long chunkKey)
@@ -360,7 +360,7 @@ namespace TheRavine.Generator
             ServiceLocator.Services.Register(this);
 
             seed = 16;
-            mapData = new Dictionary<long, ChunkData>(64);
+            mapData = new LongDictionary<ChunkData>(128);
 
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
             chunkGenerator = new ChunkGenerator(chunkGenerationSettings, seed);
@@ -495,7 +495,7 @@ namespace TheRavine.Generator
 
         private void OnDisable()
         {
-            foreach (var cd in mapData.Values) cd.Dispose();
+            foreach (var cd in mapData) cd.Value.Dispose();
             mapData.Clear();
 
             _cts.Cancel();

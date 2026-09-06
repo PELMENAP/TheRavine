@@ -21,6 +21,7 @@ public sealed class DelayedItem
         State = new float[stateSize];
         Probs = new float[actionCount];
     }
+    public int BpttStamp;
 
     public void Reset()
     {
@@ -34,6 +35,7 @@ public sealed class DelayedItem
         Duration = 0f;
         StartTime = 0f;
         BpttSlot = 0;
+        BpttStamp = 0;
         RewardApplied = false;
         Trained = false;
     }
