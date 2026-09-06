@@ -70,7 +70,7 @@ public partial class DelayedPerceptron
     {
         ctx.DeltaTime = dt > 0f ? dt : ctx.DeltaTime;
 
-        int slot = ForwardPass(input, ctx);
+        int slot = ForwardPass(input, ctx, out int stamp);
 
         int   last            = ctx.Activations.Length - 1;
         float[] outAct        = ctx.Activations[last];
@@ -97,6 +97,8 @@ public partial class DelayedPerceptron
         item.StartTime      = simTime;
         item.ValueEstimate  = critic.Predict(input);
         item.LogProbability = MathF.Log(MathF.Max(outAct[pred], 1e-8f));
+        item.BpttSlot       = slot;
+        item.BpttStamp      = stamp;
         Array.Copy(input, item.State, input.Length);
         Array.Copy(outAct, item.Probs, actionCount);
 
@@ -135,7 +137,7 @@ public partial class DelayedPerceptron
             Train(delayed, advantage, ctx);
     }
 
-    private int ForwardPass(float[] input, PerceptronContext ctx)
+    private int ForwardPass(float[] input, PerceptronContext ctx, out int stamp)
     {
         float dt   = ctx.DeltaTime;
         int   slot = ctx.BpttPtr;
@@ -184,10 +186,13 @@ public partial class DelayedPerceptron
         SoftmaxInPlace(ctx.Activations[outIdx], ctx.SoftmaxBuf,
                     ctx.ActionCount, ctx.Params.SoftmaxTemperature);
 
+        stamp               = ctx.NextForwardStamp();
+        ctx.SlotStamp[slot] = stamp;
+
         ctx.BpttPtr = (slot + 1) % ctx.TruncWindow;
         if (ctx.BpttCount < ctx.TruncWindow) ctx.BpttCount++;
 
-        return outIdx == 0 ? 0 : (ctx.BpttPtr - 1 + ctx.TruncWindow) % ctx.TruncWindow;
+        return slot;
     }
 
     public void Train(DelayedItem ticket, float advantage, PerceptronContext ctx)
@@ -201,7 +206,7 @@ public partial class DelayedPerceptron
         ctx.TrainingSteps++;
 
         int   L     = _weights.Length;
-        int   steps = Math.Min(ctx.BpttCount, ctx.TruncWindow);
+        int   steps = ResolveBpttSteps(ticket, ctx);
         float dt    = ctx.DeltaTime;
 
         int   actionCount = ctx.ActionCount;
@@ -433,6 +438,33 @@ public partial class DelayedPerceptron
         }
     }
 
+    public void FlushTerminal(PerceptronContext ctx, ValueCritic critic, float gamma, float penalty)
+    {
+        var ring  = ctx.Decisions;
+        int count = ring.Count;
+
+        for (int i = 0; i < count; i++)
+        {
+            var item = ring[i];
+            if (item.Trained) continue;
+
+            bool  last     = i == count - 1;
+            float reward   = item.Evaluation + (last ? penalty : 0f);
+            float tdTarget = last ? reward : reward + gamma * critic.Predict(ring[i + 1].State);
+
+            float advantage = critic.TrainTD(item.State, tdTarget);
+
+            ctx.Diagnostics.RecordAdvantage(advantage);
+            ctx.Diagnostics.RecordCriticError(advantage);
+
+            item.Trained = true;
+            if (MathF.Abs(advantage) > 0.05f)
+                Train(item, advantage, ctx);
+        }
+
+        ring.Clear();
+    }
+
     private static float[][] InitWeights(int neurons, int inputs)
     {
         float scale   = MathF.Sqrt(2f / (neurons + inputs));
@@ -449,6 +481,25 @@ public partial class DelayedPerceptron
             }
         }
         return weights;
+    }
+
+    private static int ResolveBpttSteps(DelayedItem ticket, PerceptronContext ctx)
+    {
+        int w = ctx.TruncWindow;
+
+        if (ctx.SlotStamp[ticket.BpttSlot] != ticket.BpttStamp)
+        {
+            ctx.Diagnostics.RecordStaleSlotDrop();
+            return 1;
+        }
+
+        int max = Math.Min(ctx.BpttCount, w);
+        for (int step = 1; step < max; step++)
+        {
+            int t = (ticket.BpttSlot - step + w * 2) % w;
+            if (ctx.SlotStamp[t] != ticket.BpttStamp - step) return step;
+        }
+        return max;
     }
 
     private static float[][] InitTauWeights(int neurons, int inputs)

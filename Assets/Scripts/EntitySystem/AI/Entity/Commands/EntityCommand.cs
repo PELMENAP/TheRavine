@@ -16,16 +16,17 @@ public abstract class EntityCommand : ICommand
     public async UniTask ExecuteAsync()
     {
         var decision = model.Brain.ActiveDecision;
-        cts = new CancellationTokenSource();
+        var local    = new CancellationTokenSource();
+        cts    = local;
         Status = EntityCommandStatus.Started;
 
         float reward;
-        var watchdog = WatchdogAsync(decision, cts.Token);
+        var watchdog = WatchdogAsync(decision, local.Token);
 
         try
         {
             Status = EntityCommandStatus.Running;
-            reward = await RunAsync(decision, cts.Token);
+            reward = await RunAsync(decision, local.Token);
             Status = EntityCommandStatus.Completed;
         }
         catch (OperationCanceledException)
@@ -40,16 +41,16 @@ public abstract class EntityCommand : ICommand
         }
         finally
         {
-            cts.Cancel();
-            cts.Dispose();
+            local.Cancel();
+            await watchdog;
+            local.Dispose();
             cts = null;
         }
 
-        watchdog.Forget();
         model.Brain.CompleteDecision(decision.ExecDecisionId, reward, SimulationClock.Time, Status);
     }
 
-    private async UniTaskVoid WatchdogAsync(BrainDecision decision, CancellationToken token)
+    private async UniTask WatchdogAsync(BrainDecision decision, CancellationToken token)
     {
         float end = decision.EndTime;
         while (!token.IsCancellationRequested && SimulationClock.Time < end)
@@ -63,5 +64,9 @@ public abstract class EntityCommand : ICommand
     protected virtual float InterruptionReward => -0.1f;
     protected virtual float FailureReward => -0.2f;
 
-    public void Cancel() => cts?.Cancel();
+    public void Cancel()
+    {
+        var local = cts;
+        if (local != null && !local.IsCancellationRequested) local.Cancel();
+    }
 }

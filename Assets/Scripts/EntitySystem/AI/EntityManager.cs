@@ -30,6 +30,9 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private int  _foodCount;
     [SerializeField] private float _avgEntropy;
 
+    [Header("Rules")]
+    [SerializeField] private float terminalPenalty = -1f;
+
     public int MaxPopulation => maxPopulation;
     public event Action<EntityModel> OnEntitySpawned;
     public event Action<EntityModel> OnEntityDied;
@@ -216,6 +219,8 @@ public class EntityManager : MonoBehaviour
 
             model.OnReproduceRequest -= SpawnChild;
             model.CaptureFinalFitness();
+            model.Brain?.CompleteTerminal(terminalPenalty);
+
             _entities.Remove(model);
             OnEntityDied?.Invoke(model);
             model.Dispose();
@@ -247,22 +252,8 @@ public class EntityManager : MonoBehaviour
 
     private static GeneticParameters CrossoverGeneticParams(GeneticParameters a, GeneticParameters b)
     {
-        var pA = a; var pB = b;
-        return new GeneticParameters
-        {
-            DefaultEvaluation     = RavineRandom.RangeBool() ? pA.DefaultEvaluation     : pB.DefaultEvaluation,
-            Lambda                = RavineRandom.RangeBool() ? pA.Lambda                : pB.Lambda,
-            BaseLearningRate      = RavineRandom.RangeBool() ? pA.BaseLearningRate      : pB.BaseLearningRate,
-            MaxGradientNorm       = RavineRandom.RangeBool() ? pA.MaxGradientNorm       : pB.MaxGradientNorm,
-            SoftmaxTemperature    = RavineRandom.RangeBool() ? pA.SoftmaxTemperature    : pB.SoftmaxTemperature,
-            EntropyRegularization = RavineRandom.RangeBool() ? pA.EntropyRegularization : pB.EntropyRegularization,
-            LabelSmoothing        = RavineRandom.RangeBool() ? pA.LabelSmoothing        : pB.LabelSmoothing,
-            EntropyAlpha          = RavineRandom.RangeBool() ? pA.EntropyAlpha          : pB.EntropyAlpha,
-            InitBiasesValues      = RavineRandom.RangeBool() ? pA.InitBiasesValues      : pB.InitBiasesValues,
-            GaussianNoise         = RavineRandom.RangeBool() ? pA.GaussianNoise         : pB.GaussianNoise,
-            ExplorationPrice      = RavineRandom.RangeBool() ? pA.ExplorationPrice      : pB.ExplorationPrice,
-            MutationChance        = RavineRandom.RangeBool() ? pA.MutationChance        : pB.MutationChance,
-        }.GetMutatedGeneticParameters();
+        GeneticParameters.Crossover(in a, in b, out var child);
+        return child;
     }
 
     private async UniTaskVoid TrackDiagnosticsAsync(System.Threading.CancellationToken ct)

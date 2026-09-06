@@ -312,6 +312,38 @@ public class SharedHierarchicalBrain
         return snapshot.Brain;
     }
 
+    public void CompleteTerminal(EntityBrainContext ctx, float penalty)
+    {
+        if (ctx == null) return;
+
+        int g = (int)ctx.CurrentGoal;
+
+        var running = ctx.ExecWindow.DecisionId != 0
+            ? ctx.ExecMLPs[g].Decisions.Find(ctx.ExecWindow.DecisionId)
+            : null;
+
+        if (running != null && !running.RewardApplied)
+        {
+            running.Evaluation    = 0f;
+            running.RewardApplied = true;
+        }
+
+        ctx.ExecWindow.End();
+
+        for (int i = 0; i < GoalCount; i++)
+            executors[i].FlushTerminal(ctx.ExecMLPs[i], execCritics[i], Gamma,
+                                       i == g ? penalty : 0f);
+
+        FlushGoalRewardToCoordinator(ctx);
+        coordinator.FlushTerminal(ctx.CoordMLP, coordCritic, Gamma, penalty);
+
+        ctx.CoordDecisionId      = 0;
+        ctx.GoalEndTime          = 0f;
+        ctx.GoalDiscountedReturn = 0f;
+        ctx.GoalDiscountFactor   = 1f;
+        ctx.GoalRewardCount      = 0;
+    }
+
     public bool MatchesArchitecture(int inputSize, int lstmHidden)
     {
         if (InputSize != inputSize || LstmHidden != lstmHidden) return false;
