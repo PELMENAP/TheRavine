@@ -12,7 +12,6 @@ public interface IGeneticPhenotype
 [StructLayout(LayoutKind.Sequential)]
 public struct GeneticParameters
 {
-    public float DefaultEvaluation;
     public float Lambda;
     public float BaseLearningRate;
     public float MaxGradientNorm;
@@ -22,57 +21,33 @@ public struct GeneticParameters
     public float EntropyAlpha;
     public float InitBiasesValues;
     public float GaussianNoise;
-    public float ExplorationPrice;
     public float MutationChance;
+    public float DefaultEvaluation;
 
-    public float IdleLowEnergyThreshold;
-    public float IdleLongActivityPenaltyStart;
-    public float IdleRewardLowEnergy;
-    public float IdleRewardOveractive;
-    public float EatHealFood;
-    public float EatEnergyFood;
-    public float EatRewardFood;
-    public float EatHealNoFood;
-    public float EatEnergyNoFood;
-    public float EatRewardNoFood;
-    public float StarvationDamage;
-    public float StarvationEnergyReturn;
-    public float StarvationThreshold;
-    public float RestHealRate;
-    public float RestEnergyRate;
-    public float RestDuration;
-    public float RestDeficitThreshold;
+    public const int IdxLambda = 0;
+    public const int IdxBaseLearningRate = 1;
+    public const int IdxMaxGradientNorm = 2;
+    public const int IdxSoftmaxTemperature = 3;
+    public const int IdxEntropyRegularization = 4;
+    public const int IdxLabelSmoothing = 5;
+    public const int IdxEntropyAlpha = 6;
+    public const int IdxInitBiasesValues = 7;
+    public const int IdxGaussianNoise = 8;
+    public const int IdxMutationChance = 9;
+    public const int IdxDefaultEvaluation = 10;
 
     public static readonly (float min, float max, float mutationScale)[] ParameterRanges = {
-        (0.1f, 0.9f, 0.1f),      // DefaultEvaluation
-        (0.001f, 0.02f, 0.01f),  // Lambda
-        (0.005f, 0.1f, 0.1f),    // BaseLearningRate
-        (0.5f, 3.0f, 0.3f),      // MaxGradientNorm
-        (0.8f, 3.0f, 0.3f),      // SoftmaxTemperature
-        (0.01f, 0.2f, 0.1f),     // EntropyRegularization
-        (0.1f, 0.5f, 0.1f),      // LabelSmoothing
-        (0.05f, 0.3f, 0.1f),     // EntropyAlpha
-        (0.01f, 0.3f, 0.1f),     // InitBiasesValues
-        (0.01f, 0.1f, 0.05f),    // GaussianNoise
-        (0.05f, 0.3f, 0.1f),     // ExplorationPrice
-        (0.05f, 0.5f, 0.1f),     // MutationChance
-        (0.2f, 0.5f, 0.05f),     // IdleLowEnergyThreshold
-        (0.7f, 0.95f, 0.05f),    // IdleLongActivityPenaltyStart
-        (0.3f, 0.9f, 0.1f),      // IdleRewardLowEnergy
-        (-0.6f, -0.1f, 0.1f),    // IdleRewardOveractive
-        (15f, 45f, 5f),          // EatHealFood
-        (10f, 30f, 5f),          // EatEnergyFood
-        (0.5f, 1f, 0.1f),        // EatRewardFood
-        (1f, 10f, 2f),           // EatHealNoFood
-        (1f, 10f, 2f),           // EatEnergyNoFood
-        (0.1f, 0.6f, 0.1f),      // EatRewardNoFood
-        (5f, 25f, 3f),           // StarvationDamage
-        (1f, 10f, 2f),           // StarvationEnergyReturn
-        (2f, 10f, 2f),           // StarvationThreshold
-        (2f, 10f, 2f),           // RestHealRate
-        (4f, 15f, 2f),           // RestEnergyRate
-        (1f, 6f, 1f),            // RestDuration
-        (0.1f, 0.5f, 0.1f),      // RestDeficitThreshold
+        (0.001f, 0.02f, 0.01f),
+        (0.005f, 0.1f, 0.1f),
+        (0.5f, 3.0f, 0.3f),
+        (0.8f, 3.0f, 0.3f),
+        (0.01f, 0.2f, 0.1f),
+        (0.1f, 0.5f, 0.1f),
+        (0.05f, 0.3f, 0.1f),
+        (0.01f, 0.3f, 0.1f),
+        (0.01f, 0.1f, 0.05f),
+        (0.05f, 0.5f, 0.1f),
+        (0.1f, 0.9f, 0.1f),
     };
 
     public static readonly int GeneCount;

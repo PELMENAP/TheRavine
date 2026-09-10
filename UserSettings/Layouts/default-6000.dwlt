@@ -238,7 +238,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 1
   m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: ProjectBrowser
+  m_Name: ConsoleWindow
   m_EditorClassIdentifier: 
   m_Children: []
   m_Position:
@@ -247,14 +247,14 @@ MonoBehaviour:
     y: 1021
     width: 2036
     height: 424
-  m_MinSize: {x: 231, y: 276}
-  m_MaxSize: {x: 10001, y: 10026}
-  m_ActualView: {fileID: 13}
+  m_MinSize: {x: 101, y: 126}
+  m_MaxSize: {x: 4001, y: 4026}
+  m_ActualView: {fileID: 19}
   m_Panes:
   - {fileID: 13}
   - {fileID: 19}
-  m_Selected: 0
-  m_LastSelected: 1
+  m_Selected: 1
+  m_LastSelected: 0
 --- !u!114 &11
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -569,7 +569,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 1045
+    y: 1112
     width: 2035
     height: 398
   m_SerializedDataModeController:
@@ -596,7 +596,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Prefabs
+    - Assets/Scripts/EntitySystem/AI/Entity/Commands
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -606,7 +606,7 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 96
   m_LastFolders:
-  - Assets/Prefabs
+  - Assets/Scripts/EntitySystem/AI/Entity/Commands
   m_LastFoldersGridSize: 96
   m_LastProjectPath: /home/alaypetro/PELMENAP/TheRavine
   m_LockTracker:
@@ -615,12 +615,12 @@ MonoBehaviour:
   m_FolderTreeState:
     scrollPos: {x: 0, y: 150}
     m_SelectedIDs:
-    - m_Data: 51052
+    - m_Data: 77436
     m_LastClickedID:
-      m_Data: 51052
+      m_Data: 77436
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 50680
+    - m_Data: 50700
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -653,7 +653,7 @@ MonoBehaviour:
       m_Data: 0
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 50680
+    - m_Data: 50700
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -760,7 +760,7 @@ MonoBehaviour:
       m_LastClickedID:
         m_Data: 0
       m_ExpandedIDs:
-      - m_Data: -1386
+      - m_Data: -19442
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1395,9 +1395,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: -44.096, y: -84.26062, z: 181.78604}
+    m_Target: {x: -62.37702, y: -44.99888, z: 169.72849}
     speed: 2
-    m_Value: {x: -57.8636, y: 1162.6746, z: -1210.4543}
+    m_Value: {x: -62.37702, y: -44.99888, z: 169.72849}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1443,13 +1443,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: -0.3277448, y: -0.20735936, z: 0.05235248, w: -0.9218144}
+    m_Target: {x: -0.1568943, y: 0.083756305, z: -0.033670127, w: -0.9849532}
     speed: 2
-    m_Value: {x: 0.039430227, y: -0.10803001, z: -0.025073916, w: -0.9944714}
+    m_Value: {x: -0.1568943, y: 0.083756305, z: -0.033670127, w: -0.9849533}
   m_Size:
-    m_Target: 147.5601
+    m_Target: 116.134735
     speed: 2
-    m_Value: 454.76123
+    m_Value: 116.134735
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -2543,7 +2543,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 1112
+    y: 1045
     width: 2035
     height: 398
   m_SerializedDataModeController:

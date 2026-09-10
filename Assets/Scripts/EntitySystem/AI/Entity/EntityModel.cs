@@ -167,9 +167,9 @@ public class EntityModel : AEntity
         bool isIdle = states.behaviourCurrent.GetType() == typeof(SurviveState)
                 && LastActionIndex == (int)EntityAction.Idle;
 
-        var p = Brain.Context.CoordMLP.Params;
+        var rules = SimulationRules.Active;
         Stats.Tick(dt, Tuning.EnergyRegenRate, isIdle,
-            p.StarvationThreshold, p.StarvationDamage, p.StarvationEnergyReturn);
+            rules.StarvationThreshold, rules.StarvationDamage, rules.StarvationEnergyReturn);
 
         if (IsDeathPending || IsDisposed || Stats.IsDisposed || Stats.Health.Value <= 0f) return;
 

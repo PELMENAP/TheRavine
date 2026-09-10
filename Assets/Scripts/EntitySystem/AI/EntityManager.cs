@@ -31,7 +31,7 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private float _avgEntropy;
 
     [Header("Rules")]
-    [SerializeField] private float terminalPenalty = -1f;
+    [SerializeField] private SimulationRules rules;
 
     public int MaxPopulation => maxPopulation;
     public event Action<EntityModel> OnEntitySpawned;
@@ -47,6 +47,7 @@ public class EntityManager : MonoBehaviour
 
     private void Awake()
     {
+        SimulationRules.Bind(rules);
         NeuralModelStorage.RegisterFactory(new SharedBrainSnapshotFactory());
         _sharedBrain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden);
         // LoadBrain();
@@ -219,7 +220,7 @@ public class EntityManager : MonoBehaviour
 
             model.OnReproduceRequest -= SpawnChild;
             model.CaptureFinalFitness();
-            model.Brain?.CompleteTerminal(terminalPenalty);
+            model.Brain?.CompleteTerminal(SimulationRules.Active.TerminalPenalty);
 
             _entities.Remove(model);
             OnEntityDied?.Invoke(model);

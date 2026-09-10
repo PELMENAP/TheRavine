@@ -12,6 +12,8 @@ public abstract class EntityCommand : ICommand
     protected EntityCommand(EntityModel m) => model = m;
 
     public virtual bool CanExecute() => true;
+    protected virtual float InterruptionReward => SimulationRules.Active.InterruptionReward;
+    protected virtual float FailureReward => SimulationRules.Active.FailureReward;
 
     public async UniTask ExecuteAsync()
     {
@@ -60,9 +62,6 @@ public abstract class EntityCommand : ICommand
     }
 
     protected abstract UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct);
-
-    protected virtual float InterruptionReward => -0.1f;
-    protected virtual float FailureReward => -0.2f;
 
     public void Cancel()
     {

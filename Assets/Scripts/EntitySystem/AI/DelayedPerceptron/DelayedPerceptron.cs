@@ -70,13 +70,21 @@ public partial class DelayedPerceptron
     {
         ctx.DeltaTime = dt > 0f ? dt : ctx.DeltaTime;
 
+        var rules   = SimulationRules.Active;
+        int ordinal = ctx.NextDecisionOrdinal();
+
         int slot = ForwardPass(input, ctx, out int stamp);
 
-        int   last            = ctx.Activations.Length - 1;
-        float[] outAct        = ctx.Activations[last];
-        int   actionCount     = ctx.ActionCount;
-        float adaptiveEpsilon = epsilon * (1f + MathF.Max(0f, 1.5f - ctx.AverageEntropy));
-        bool  isExploration   = RavineRandom.RangeFloat() < adaptiveEpsilon;
+        int   last        = ctx.Activations.Length - 1;
+        float[] outAct    = ctx.Activations[last];
+        int   actionCount = ctx.ActionCount;
+
+        float entropyBoost = 1f + MathF.Max(0f, 1.5f - ctx.AverageEntropy);
+        float decay        = MathF.Exp(-ctx.TrainingSteps * rules.EpsilonDecayPerStep);
+        float adaptiveEpsilon = MathF.Max(rules.MinEpsilon,
+            epsilon * rules.ExplorationEpsilonScale * entropyBoost * decay);
+
+        bool isExploration = RavineRandom.RangeFloat() < adaptiveEpsilon;
 
         int pred = isExploration
             ? RavineRandom.RangeInt(0, actionCount)
@@ -92,8 +100,8 @@ public partial class DelayedPerceptron
 
         var item = ctx.Decisions.Push();
         item.DecisionId     = ctx.NextDecisionId();
+        item.CreatedOrdinal = ordinal;
         item.Predicted      = pred;
-        item.BpttSlot       = slot;
         item.StartTime      = simTime;
         item.ValueEstimate  = critic.Predict(input);
         item.LogProbability = MathF.Log(MathF.Max(outAct[pred], 1e-8f));
@@ -108,33 +116,12 @@ public partial class DelayedPerceptron
         item.DurationNoise = noise;
         item.Duration      = DurationFromLogit(baseLogit + noise, minDuration, maxDuration);
 
-        if (isExploration) item.Evaluation += ctx.Params.ExplorationPrice;
-
         ctx.Diagnostics.RecordDecision(item.Duration);
 
         while (ctx.Decisions.Count > delaySteps)
             FlushOldest(ctx, input, critic, gamma);
 
         return item;
-    }
-
-    private void FlushOldest(PerceptronContext ctx, float[] nextState, ValueCritic critic, float gamma)
-    {
-        var delayed = ctx.Decisions.Oldest;
-        if (delayed == null) return;
-        ctx.Decisions.PopOldest();
-        if (delayed.Trained) return;
-
-        float vNext     = critic.Predict(nextState);
-        float tdTarget  = delayed.Evaluation + gamma * vNext;
-        float advantage = critic.TrainTD(delayed.State, tdTarget);
-
-        ctx.Diagnostics.RecordAdvantage(advantage);
-        ctx.Diagnostics.RecordCriticError(advantage);
-
-        delayed.Trained = true;
-        if (MathF.Abs(advantage) > 0.05f)
-            Train(delayed, advantage, ctx);
     }
 
     private int ForwardPass(float[] input, PerceptronContext ctx, out int stamp)
@@ -212,20 +199,48 @@ public partial class DelayedPerceptron
         int   actionCount = ctx.ActionCount;
         float invN        = 1f / actionCount;
         float entReg      = ctx.Params.EntropyRegularization;
+        float invTemp     = 1f / MathF.Max(ctx.Params.SoftmaxTemperature, 1e-3f);
         int   pred        = ticket.Predicted;
+
+        float clipEps = SimulationRules.Active.PpoClipEpsilon;
+        bool  fresh   = ctx.SlotStamp[ticket.BpttSlot] == ticket.BpttStamp;
+
+        float[] probs;
+        float   ratio;
+
+        if (fresh)
+        {
+            float logpNew = EvaluatePolicy(ticket, ctx);
+            ratio = MathF.Exp(logpNew - ticket.LogProbability);
+            if (!float.IsFinite(ratio)) ratio = 1f;
+            probs = ctx.EvalProbs;
+        }
+        else
+        {
+            ratio = 1f;
+            probs = ticket.Probs;
+        }
+
+        bool clipped = (advantage > 0f && ratio > 1f + clipEps)
+                    || (advantage < 0f && ratio < 1f - clipEps);
+
+        float gate = clipped ? 0f : ratio * advantage;
+
+        if (clipped && entReg <= 0f) return;
 
         for (int i = 0; i < actionCount; i++)
         {
             float oneHot = i == pred ? 1f : 0f;
-            float p      = ticket.Probs[i];
-            ctx.OutErrBuf[i] = (oneHot - p) * advantage + entReg * (invN - p);
+            float p      = probs[i];
+            ctx.OutErrBuf[i] = gate * (oneHot - p) * invTemp + entReg * (invN - p);
         }
 
         ctx.OutErrBuf[ctx.DurationIndex] =
-            advantage * ticket.DurationNoise / (DurationNoiseSigma * DurationNoiseSigma);
+            gate * ticket.DurationNoise / (DurationNoiseSigma * DurationNoiseSigma);
 
         var g = _gradScratch;
         g.Clear();
+        // далее без изменений
 
         for (int l = 0; l < L; l++)
             Array.Clear(ctx.TemporalDeltaH[l], 0, ctx.TemporalDeltaH[l].Length);
@@ -418,6 +433,13 @@ public partial class DelayedPerceptron
         return MathF.Sqrt(-2f * MathF.Log(u1)) * MathF.Cos(2f * MathF.PI * u2);
     }
 
+    private static float DiscountPow(float gamma, int n)
+    {
+        float g = 1f;
+        for (int i = 0; i < n; i++) g *= gamma;
+        return g;
+    }
+
     public static float Softplus(float x)
         => x > 20f ? x : MathF.Log(1f + MathF.Exp(x));
 
@@ -448,9 +470,23 @@ public partial class DelayedPerceptron
             var item = ring[i];
             if (item.Trained) continue;
 
-            bool  last     = i == count - 1;
-            float reward   = item.Evaluation + (last ? penalty : 0f);
-            float tdTarget = last ? reward : reward + gamma * critic.Predict(ring[i + 1].State);
+            bool  last   = i == count - 1;
+            float reward = item.Evaluation + (last ? penalty : 0f);
+
+            float tdTarget;
+            if (last)
+            {
+                item.StepsElapsed = 0;
+                tdTarget = reward;
+            }
+            else
+            {
+                var next = ring[i + 1];
+                int n = next.CreatedOrdinal - item.CreatedOrdinal;
+                if (n < 1) n = 1;
+                item.StepsElapsed = n;
+                tdTarget = reward + DiscountPow(gamma, n) * critic.Predict(next.State);
+            }
 
             float advantage = critic.TrainTD(item.State, tdTarget);
 
@@ -463,6 +499,74 @@ public partial class DelayedPerceptron
         }
 
         ring.Clear();
+    }
+
+    private void FlushOldest(PerceptronContext ctx, float[] nextState, ValueCritic critic, float gamma)
+    {
+        var delayed = ctx.Decisions.Oldest;
+        if (delayed == null) return;
+        ctx.Decisions.PopOldest();
+        if (delayed.Trained) return;
+
+        int n = ctx.DecisionOrdinal - delayed.CreatedOrdinal;
+        if (n < 1) n = 1;
+        delayed.StepsElapsed = n;
+
+        float vNext     = critic.Predict(nextState);
+        float tdTarget  = delayed.Evaluation + DiscountPow(gamma, n) * vNext;
+        float advantage = critic.TrainTD(delayed.State, tdTarget);
+
+        ctx.Diagnostics.RecordAdvantage(advantage);
+        ctx.Diagnostics.RecordCriticError(advantage);
+
+        delayed.Trained = true;
+        if (MathF.Abs(advantage) > 0.05f)
+            Train(delayed, advantage, ctx);
+    }
+
+    private float EvaluatePolicy(DelayedItem ticket, PerceptronContext ctx)
+    {
+        int L    = _weights.Length;
+        int t    = ticket.BpttSlot;
+        float dt = ctx.DeltaTime;
+
+        Array.Copy(ticket.State, ctx.EvalActivations[0], ticket.State.Length);
+
+        for (int l = 0; l < L; l++)
+        {
+            float[] inp = ctx.EvalActivations[l];
+            float[] h   = ctx.EvalHidden[l];
+            float[] act = ctx.EvalActivations[l + 1];
+
+            Array.Copy(ctx.BpttHBefore[t][l], h, h.Length);
+            bool res = _residual[l];
+
+            for (int n = 0; n < h.Length; n++)
+            {
+                float[] wRow = _weights[l][n];
+                float[] tRow = _tauWeights[l][n];
+
+                float preF = _biases[l][n];
+                for (int i = 0; i < inp.Length; i++) preF += wRow[i] * inp[i];
+                float f = MathF.Tanh(preF);
+
+                float preTau = _tauBiases[l][n];
+                for (int i = 0; i < inp.Length; i++) preTau += tRow[i] * inp[i];
+
+                float tau = MathF.Max(Softplus(preTau), TauEpsilon);
+                float A   = 1f + dt / tau;
+
+                float hv = (h[n] + dt * f) / A;
+                h[n]   = hv;
+                act[n] = res ? hv + inp[n] : hv;
+            }
+        }
+
+        float[] outAct = ctx.EvalActivations[L];
+        SoftmaxInPlace(outAct, ctx.EvalSoftmaxBuf, ctx.ActionCount, ctx.Params.SoftmaxTemperature);
+        Array.Copy(outAct, ctx.EvalProbs, ctx.ActionCount);
+
+        return MathF.Log(MathF.Max(ctx.EvalProbs[ticket.Predicted], 1e-8f));
     }
 
     private static float[][] InitWeights(int neurons, int inputs)

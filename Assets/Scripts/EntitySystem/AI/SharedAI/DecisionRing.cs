@@ -12,6 +12,8 @@ public sealed class DelayedItem
     public int   BpttSlot;
     public bool  RewardApplied;
     public bool  Trained;
+    public int   CreatedOrdinal;
+    public int   StepsElapsed;
 
     public readonly float[] State;
     public readonly float[] Probs;
@@ -36,6 +38,8 @@ public sealed class DelayedItem
         StartTime = 0f;
         BpttSlot = 0;
         BpttStamp = 0;
+        CreatedOrdinal = 0;
+        StepsElapsed = 0;
         RewardApplied = false;
         Trained = false;
     }
