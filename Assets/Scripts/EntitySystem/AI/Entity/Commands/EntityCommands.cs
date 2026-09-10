@@ -9,27 +9,28 @@ public class RestCommand : EntityCommand
     protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
         model.Motor.Stop();
-        var p = model.Brain.Context.CoordMLP.Params;
+        var r = SimulationRules.Active;
+
         float startEnergy = model.Stats.Energy.Value;
         float startHealth = model.Stats.Health.Value;
         float start = SimulationClock.Time;
-        float prev = start;
+        float prev  = start;
 
-        while (SimulationClock.Time - start < p.RestDuration)
+        while (SimulationClock.Time - start < r.RestDuration)
         {
             ct.ThrowIfCancellationRequested();
-            float now = SimulationClock.Time;
+            float now  = SimulationClock.Time;
             float step = now - prev;
             prev = now;
 
-            model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + p.RestHealRate * step, model.Stats.MaxHealth);
-            model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + p.RestEnergyRate * step, model.Stats.MaxEnergy);
+            model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + r.RestHealRate * step, model.Stats.MaxHealth);
+            model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + r.RestEnergyRate * step, model.Stats.MaxEnergy);
             await UniTask.Yield(PlayerLoopTiming.Update, ct);
         }
 
         float deficitBefore = (1f - startEnergy / model.Stats.MaxEnergy)
                             + (1f - startHealth / model.Stats.MaxHealth);
-        return deficitBefore > p.RestDeficitThreshold ? 0.7f : -0.2f;
+        return deficitBefore > r.RestDeficitThreshold ? r.RestRewardNeeded : r.RestRewardWasted;
     }
 }
 
@@ -40,15 +41,16 @@ public class IdleCommand : EntityCommand
     protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
         model.Motor.Stop();
-        var p = model.Brain.Context.CoordMLP.Params;
+        var r = SimulationRules.Active;
+
         float energyRatio = model.Stats.Energy.Value / model.Stats.MaxEnergy;
         float healthRatio = model.Stats.Health.Value / model.Stats.MaxHealth;
 
         float reward;
-        if (energyRatio < p.IdleLowEnergyThreshold || healthRatio < p.IdleLowEnergyThreshold)
-            reward = p.IdleRewardLowEnergy;
-        else if (energyRatio > p.IdleLongActivityPenaltyStart && healthRatio > p.IdleLongActivityPenaltyStart)
-            reward = p.IdleRewardOveractive;
+        if (energyRatio < r.IdleLowEnergyThreshold || healthRatio < r.IdleLowEnergyThreshold)
+            reward = r.IdleRewardLowEnergy;
+        else if (energyRatio > r.IdleLongActivityPenaltyStart && healthRatio > r.IdleLongActivityPenaltyStart)
+            reward = r.IdleRewardOveractive;
         else
             reward = 0f;
 
@@ -90,7 +92,7 @@ public class EatCommand : EntityCommand
 
     protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
-        var p = model.Brain.Context.CoordMLP.Params;
+        var r = SimulationRules.Active;
 
         var food = model.Perception.FindNearestFood(model.Motor.Position(), out _);
         bool claimed = food != null
@@ -100,18 +102,18 @@ public class EatCommand : EntityCommand
         float reward;
         if (claimed)
         {
-            model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + p.EatHealFood, model.Stats.MaxHealth);
-            model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + p.EatEnergyFood, model.Stats.MaxEnergy);
+            model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + r.EatHealFood, model.Stats.MaxHealth);
+            model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + r.EatEnergyFood, model.Stats.MaxEnergy);
             model.RegisterFitnessEvent(EntityModel.FitnessEvent.FoodEaten);
 
             Object.Destroy(food);
-            reward = p.EatRewardFood;
+            reward = r.EatRewardFood;
         }
         else
         {
-            model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + p.EatHealNoFood, model.Stats.MaxHealth);
-            model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + p.EatEnergyNoFood, model.Stats.MaxEnergy);
-            reward = p.EatRewardNoFood;
+            model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + r.EatHealNoFood, model.Stats.MaxHealth);
+            model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + r.EatEnergyNoFood, model.Stats.MaxEnergy);
+            reward = r.EatRewardNoFood;
         }
 
         await UniTask.Yield(ct);

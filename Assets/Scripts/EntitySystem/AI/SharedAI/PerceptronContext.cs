@@ -41,6 +41,20 @@ public class PerceptronContext
     public readonly int[] SlotStamp;
     private int _forwardCounter;
 
+    public readonly float[][] EvalActivations;
+    public readonly float[][] EvalHidden;
+    public readonly float[]   EvalSoftmaxBuf;
+    public readonly float[]   EvalProbs;
+
+    private int _decisionOrdinal;
+    public int DecisionOrdinal => _decisionOrdinal;
+
+    public int NextDecisionOrdinal()
+    {
+        _decisionOrdinal++;
+        return _decisionOrdinal;
+    }
+
     public int NextForwardStamp()
     {
         _forwardCounter++;
@@ -111,6 +125,17 @@ public class PerceptronContext
         NoisedInputBuf = new float[layerSizes[0]];
 
         Decisions = new DecisionRing(decisionCapacity, layerSizes[0], ActionCount);
+
+        EvalActivations = new float[layerSizes.Length][];
+        for (int i = 0; i < layerSizes.Length; i++)
+            EvalActivations[i] = new float[layerSizes[i]];
+
+        EvalHidden = new float[L][];
+        for (int l = 0; l < L; l++)
+            EvalHidden[l] = new float[layerSizes[l + 1]];
+
+        EvalSoftmaxBuf = new float[ActionCount];
+        EvalProbs      = new float[ActionCount];
     }
 
     private static float[][][] AllocHistorySlots(int w, int L, int[] sizes, bool inputSide)

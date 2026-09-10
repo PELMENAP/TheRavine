@@ -14,16 +14,17 @@ public struct MimicPhenotype
     {
         var rng = new XorShift32(g.ComputeHash());
 
-        float exploration    = Normalize(g.ExplorationPrice, GeneticParameters.ParameterRanges[10]);
-        float mutability     = Normalize(g.MutationChance, GeneticParameters.ParameterRanges[11]);
-        float temperature    = Normalize(g.SoftmaxTemperature, GeneticParameters.ParameterRanges[4]);
-        float noise          = Normalize(g.GaussianNoise, GeneticParameters.ParameterRanges[9]);
-        float learningRate   = Normalize(g.BaseLearningRate, GeneticParameters.ParameterRanges[2]);
-        float lambda         = Normalize(g.Lambda, GeneticParameters.ParameterRanges[1]);
-        float gradientNorm   = Normalize(g.MaxGradientNorm, GeneticParameters.ParameterRanges[3]);
-        float labelSmoothing = Normalize(g.LabelSmoothing, GeneticParameters.ParameterRanges[6]);
-        float entropyAlpha   = Normalize(g.EntropyAlpha, GeneticParameters.ParameterRanges[7]);
-        float initBias       = Normalize(g.InitBiasesValues, GeneticParameters.ParameterRanges[8]);
+        float exploration    = Normalize(g.EntropyRegularization, GeneticParameters.ParameterRanges[GeneticParameters.IdxEntropyRegularization]);
+        float mutability     = Normalize(g.MutationChance,        GeneticParameters.ParameterRanges[GeneticParameters.IdxMutationChance]);
+        float temperature    = Normalize(g.SoftmaxTemperature,    GeneticParameters.ParameterRanges[GeneticParameters.IdxSoftmaxTemperature]);
+        float noise          = Normalize(g.GaussianNoise,         GeneticParameters.ParameterRanges[GeneticParameters.IdxGaussianNoise]);
+        float learningRate   = Normalize(g.BaseLearningRate,      GeneticParameters.ParameterRanges[GeneticParameters.IdxBaseLearningRate]);
+        float lambda         = Normalize(g.Lambda,                GeneticParameters.ParameterRanges[GeneticParameters.IdxLambda]);
+        float gradientNorm   = Normalize(g.MaxGradientNorm,       GeneticParameters.ParameterRanges[GeneticParameters.IdxMaxGradientNorm]);
+        float labelSmoothing = Normalize(g.LabelSmoothing,        GeneticParameters.ParameterRanges[GeneticParameters.IdxLabelSmoothing]);
+        float entropyAlpha   = Normalize(g.EntropyAlpha,          GeneticParameters.ParameterRanges[GeneticParameters.IdxEntropyAlpha]);
+        float initBias       = Normalize(g.InitBiasesValues,      GeneticParameters.ParameterRanges[GeneticParameters.IdxInitBiasesValues]);
+
 
         return new MimicPhenotype
         {

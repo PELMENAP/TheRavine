@@ -56,6 +56,7 @@ public class SharedHierarchicalBrain
     private const float OptimizerLrDecay     = 2e-5f;
     private const float OptimizerWeightDecay = 1e-5f;
     private const float OptimizerMaxGradNorm = 1f;
+    private RunningMeanStd _rewardNorm;
 
     public SharedHierarchicalBrain(int inputSize, int lstmHidden = 32)
     {
@@ -184,18 +185,19 @@ public class SharedHierarchicalBrain
 
     public void GiveReward(float reward, int decisionId, EntityBrainContext ctx)
     {
-        float shaped = Mathf.Clamp(reward + ctx.IntrinsicReward * CuriosityWeight, -1f, 1.2f);
-
-        int g = (int)ctx.CurrentGoal;
-        var mlp = ctx.ExecMLPs[g];
+        int g    = (int)ctx.CurrentGoal;
+        var mlp  = ctx.ExecMLPs[g];
         var item = mlp.Decisions.Find(decisionId);
         if (item == null) return;
 
-        item.Evaluation   = shaped;
+        float shaped     = reward + ctx.IntrinsicReward * CuriosityWeight;
+        float normalized = _rewardNorm.UpdateAndNormalize(shaped, SimulationRules.Active.RewardClipSigma);
+
+        item.Evaluation    = normalized;
         item.RewardApplied = true;
         mlp.Diagnostics.RecordRewardLatency(SimulationClock.Time - item.StartTime);
 
-        ctx.GoalDiscountedReturn += shaped * ctx.GoalDiscountFactor;
+        ctx.GoalDiscountedReturn += normalized * ctx.GoalDiscountFactor;
         ctx.GoalDiscountFactor   *= Gamma;
         ctx.GoalRewardCount++;
     }
@@ -221,7 +223,8 @@ public class SharedHierarchicalBrain
         var item = ctx.CoordMLP.Decisions.Find(ctx.CoordDecisionId);
         if (item != null)
         {
-            item.Evaluation    = Mathf.Clamp(ctx.GoalDiscountedReturn, -1f, 1f);
+            float clip = SimulationRules.Active.RewardClipSigma;
+            item.Evaluation    = Mathf.Clamp(ctx.GoalDiscountedReturn, -clip, clip);
             item.RewardApplied = true;
         }
     }
