@@ -5,6 +5,8 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Unity.Netcode;
 
+using TheRavine.Generator;
+
 public class EntityManager : MonoBehaviour
 {
     [Header("Prefabs")]
@@ -45,6 +47,22 @@ public class EntityManager : MonoBehaviour
     public List<EntityModel> Entities => _entities;
     private readonly Queue<EntityModel> _pendingDeath = new();
 
+    private const int FoodSpawnAttempts = 16;
+
+    private ChunkFoodIndex _foodIndex;
+    public ChunkFoodIndex FoodIndex => _foodIndex;
+
+    [SerializeField] private float simulationTimeScale = 1f;
+
+    private const float TickWindowSeconds = 1f;
+
+    private EntityModel[] _tickSnapshot = new EntityModel[64];
+    private int _tickCount;
+    private int _tickCursor;
+    private int _tickBatch = 1;
+
+    private void Update() => SimulationClock.Advance(Time.deltaTime * simulationTimeScale);
+
     private void Awake()
     {
         SimulationRules.Bind(rules);
@@ -80,6 +98,9 @@ public class EntityManager : MonoBehaviour
     {
         await UniTask.Delay(3000);
 
+        _foodIndex = new ChunkFoodIndex(await ServiceLocator.WaitUntilServiceReady<MapGenerator>());
+        ServiceLocator.Services.Register(_foodIndex);
+
         for (int i = 0; i < initialCount; i++)
             SpawnEntity(RandomPosition());
 
@@ -92,36 +113,72 @@ public class EntityManager : MonoBehaviour
         TrackDiagnosticsAsync(destroyCancellationToken).Forget();
     }
 
-    private void Update() {
-        SimulationClock.SetTime(Time.time);
-    }
 
     private async UniTaskVoid EntityTickLoopAsync(CancellationToken ct)
     {
         await UniTask.Delay(3000, cancellationToken: ct);
-        const float window = 1f;
+
         while (!ct.IsCancellationRequested)
         {
-            int count = _entities.Count;
-            if (count == 0)
+            if (_tickCursor == 0)
+            {
+                RebuildTickSnapshot();
+
+                int frames = Mathf.Clamp(
+                    Mathf.CeilToInt(TickWindowSeconds / Mathf.Max(Time.smoothDeltaTime, 0.001f)),
+                    1, 240);
+
+                _tickBatch = _tickCount > 0 ? (_tickCount + frames - 1) / frames : 1;
+            }
+
+            if (_tickCount == 0)
             {
                 ProcessPendingDeaths();
-                await UniTask.Delay(TimeSpan.FromSeconds(window), cancellationToken: ct);
+                await UniTask.Yield(PlayerLoopTiming.Update, ct);
                 continue;
             }
 
-            float stepDelay = window / count;
-            var snapshot = _entities.ToArray();
-            for (int i = 0; i < snapshot.Length; i++)
+            int end = _tickCursor + _tickBatch;
+            if (end > _tickCount) end = _tickCount;
+
+            for (int i = _tickCursor; i < end; i++)
             {
-                var e = snapshot[i];
-                if (!e.IsDisposed && !e.IsDeathPending) e.UpdateEntityCycle();
-                await UniTask.Delay(TimeSpan.FromSeconds(stepDelay), cancellationToken: ct);
+                var e = _tickSnapshot[i];
+                if (e == null || e.IsDisposed || e.IsDeathPending) continue;
+                e.UpdateEntityCycle();
             }
 
-            _sharedBrain.ApplyPendingGradients();
-            ProcessPendingDeaths();
+            _tickCursor = end;
+
+            if (_tickCursor >= _tickCount)
+            {
+                _tickCursor = 0;
+                _sharedBrain.ApplyPendingGradients();
+                ProcessPendingDeaths();
+            }
+
+            await UniTask.Yield(PlayerLoopTiming.Update, ct);
         }
+    }
+
+    private void RebuildTickSnapshot()
+    {
+        int count = _entities.Count;
+
+        if (count > _tickSnapshot.Length)
+        {
+            int cap = _tickSnapshot.Length;
+            while (cap < count) cap <<= 1;
+            _tickSnapshot = new EntityModel[cap];
+        }
+
+        for (int i = 0; i < count; i++)
+            _tickSnapshot[i] = _entities[i];
+
+        if (_tickCount > count)
+            Array.Clear(_tickSnapshot, count, _tickCount - count);
+
+        _tickCount = count;
     }
 
     public EntityModel SpawnEntity(Vector3 position, EntityBrainContext inheritedCtx = null)
@@ -194,14 +251,22 @@ public class EntityManager : MonoBehaviour
         return SpawnEntity(pos, childCtx);
     }
 
-    public void SpawnFood()
+    public bool SpawnFood()
     {
-        if (_foodCount >= maxFood || foodPrefab == null) return;
-        var go   = Instantiate(foodPrefab, RandomPosition(), Quaternion.identity, transform);
-        var food = go.GetComponent<FoodObject>();
-        if (food == null) food = go.AddComponent<FoodObject>();
-        food.Init(this);
-        _foodCount++;
+        if (_foodIndex == null || _foodIndex.FoodCount >= maxFood) return false;
+
+        Vector3 origin = transform.position;
+
+        for (int i = 0; i < FoodSpawnAttempts; i++)
+        {
+            var v = RavineRandom.GetInsideSphere(spawnRadius);
+
+            int cellX = Mathf.FloorToInt((origin.x + v.x) / MapGenerator.scale);
+            int cellZ = Mathf.FloorToInt((origin.z + v.y) / MapGenerator.scale);
+
+            if (_foodIndex.TryAddFood(cellX, cellZ, 1)) return true;
+        }
+        return false;
     }
 
     private void HandleEntityDied(EntityModel model)
@@ -262,6 +327,8 @@ public class EntityManager : MonoBehaviour
         while (!ct.IsCancellationRequested)
         {
             _entityCount = _entities.Count;
+            _foodCount   = _foodIndex != null ? _foodIndex.FoodCount : 0;
+
             if (_entities.Count > 0)
             {
                 float sum = 0f;

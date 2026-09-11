@@ -46,9 +46,10 @@ public class InputVectorizer : IDisposable
         int    timeOfDay,
         float  inDanger,
         float  timeToBreed,
-        string speech,
+        in SpeechHash speech,
         float  nearestEnemyDist = -1f,
-        float  nearestFoodDist  = -1f)
+        float  nearestFoodDist  = -1f,
+        in TerrainSample terrain = default)
     {
         int idx = 0;
         float hp  = Mathf.Clamp01(health / _maxHealth);
@@ -78,17 +79,39 @@ public class InputVectorizer : IDisposable
         for (int i = 0; i < ActionCount; i++)
             _vector[idx++] = _actionFrequency[i];
 
-        _vector[idx++] = Mathf.Clamp01(inDanger); 
+        _vector[idx++] = Mathf.Clamp01(inDanger);
         _vector[idx++] = Mathf.Clamp01(timeToBreed);
 
-        EncodeSpeech(speech, idx); idx += 4;
+        _vector[idx++] = speech.A;
+        _vector[idx++] = speech.B;
+        _vector[idx++] = speech.C;
+        _vector[idx++] = speech.D;
 
-        _vector[idx++] = nearestEnemyDist >= 0f     
+        _vector[idx++] = nearestEnemyDist >= 0f
             ? 1f - Mathf.Clamp01(nearestEnemyDist / MaxDetectionRadius)
             : 0f;
-        _vector[idx++] = nearestFoodDist >= 0f  
+        _vector[idx++] = nearestFoodDist >= 0f
             ? 1f - Mathf.Clamp01(nearestFoodDist / MaxDetectionRadius)
             : 0f;
+
+        _vector[idx++] = terrain.HeightNorm;
+        _vector[idx++] = terrain.Slope;
+        _vector[idx++] = terrain.GradX;
+        _vector[idx++] = terrain.GradZ;
+        _vector[idx++] = terrain.WaterProximity;
+        _vector[idx++] = terrain.MoveCost;
+        _vector[idx++] = terrain.MoveCostPX;
+        _vector[idx++] = terrain.MoveCostNX;
+        _vector[idx++] = terrain.MoveCostPZ;
+        _vector[idx++] = terrain.MoveCostNZ;
+        _vector[idx++] = terrain.Biome0;
+        _vector[idx++] = terrain.Biome1;
+        _vector[idx++] = terrain.Biome2;
+        _vector[idx++] = terrain.Biome3;
+        _vector[idx++] = terrain.Density2;
+        _vector[idx++] = terrain.Density4;
+        _vector[idx++] = terrain.Density8;
+        _vector[idx++] = terrain.RelativeHeight;
 
         while (idx < VectorSize)
             _vector[idx++] = 0f;
@@ -117,26 +140,6 @@ public class InputVectorizer : IDisposable
         if (total > 0f)
             for (int i = 0; i < ActionCount; i++)
                 _actionFrequency[i] /= total;
-    }
-
-    private void EncodeSpeech(string speech, int startIdx)
-    {
-        if (string.IsNullOrEmpty(speech))
-        {
-            for (int i = 0; i < 4; i++) _vector[startIdx + i] = 0f;
-            return;
-        }
-
-        ulong h1 = 5381UL, h2 = 2166136261UL;
-        foreach (char c in speech)
-        {
-            h1 = ((h1 << 5) + h1) ^ c;
-            h2 = (h2 ^ c) * 16777619UL;
-        }
-        _vector[startIdx + 0] = ((h1)        & 0xFFFF) / 65535f;
-        _vector[startIdx + 1] = ((h1 >> 16)  & 0xFFFF) / 65535f;
-        _vector[startIdx + 2] = ((h2)        & 0xFFFF) / 65535f;
-        _vector[startIdx + 3] = ((h2 >> 16)  & 0xFFFF) / 65535f;
     }
     public string HashFloatArray(float[] array) // last _vector
     {

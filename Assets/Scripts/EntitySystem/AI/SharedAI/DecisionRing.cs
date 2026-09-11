@@ -1,3 +1,5 @@
+using System;
+
 public sealed class DelayedItem
 {
     public int   DecisionId;
@@ -48,6 +50,10 @@ public sealed class DelayedItem
 public sealed class DecisionRing
 {
     private readonly DelayedItem[] _items;
+    private readonly int[] _slotById;
+    private readonly int  _mask;
+    private readonly bool _pow2;
+
     private int _head;
     private int _count;
 
@@ -57,39 +63,65 @@ public sealed class DecisionRing
     public DecisionRing(int capacity, int stateSize, int actionCount)
     {
         if (capacity < 2) capacity = 2;
+
         _items = new DelayedItem[capacity];
         for (int i = 0; i < capacity; i++)
             _items[i] = new DelayedItem(stateSize, actionCount);
+
+        _pow2 = (capacity & (capacity - 1)) == 0;
+        _mask = capacity - 1;
+        _slotById = new int[capacity];
     }
 
-    public DelayedItem this[int index] => _items[(_head + index) % _items.Length];
+    private int Wrap(int i) => _pow2 ? (i & _mask) : i % _items.Length;
+
+    public DelayedItem this[int index] => _items[Wrap(_head + index)];
 
     public DelayedItem Oldest => _count > 0 ? _items[_head] : null;
 
-    public DelayedItem Newest => _count > 0 ? _items[(_head + _count - 1) % _items.Length] : null;
+    public DelayedItem Newest => _count > 0 ? _items[Wrap(_head + _count - 1)] : null;
 
-    public DelayedItem Push()
+    public DelayedItem Push(int decisionId)
     {
         if (_count == _items.Length)
         {
-            _head = (_head + 1) % _items.Length;
+            _head = Wrap(_head + 1);
             _count--;
         }
-        var item = _items[(_head + _count) % _items.Length];
+
+        int slot = Wrap(_head + _count);
+        var item = _items[slot];
         _count++;
+
         item.Reset();
+        item.DecisionId = decisionId;
+
+        if (_pow2) _slotById[decisionId & _mask] = slot;
+
         return item;
     }
 
     public void PopOldest()
     {
         if (_count == 0) return;
-        _head = (_head + 1) % _items.Length;
+        _head = Wrap(_head + 1);
         _count--;
     }
 
     public DelayedItem Find(int decisionId)
     {
+        if (_pow2)
+        {
+            int slot = _slotById[decisionId & _mask];
+
+            int rel = slot - _head;
+            if (rel < 0) rel += _items.Length;
+            if (rel >= _count) return null;
+
+            var item = _items[slot];
+            return item.DecisionId == decisionId ? item : null;
+        }
+
         for (int i = 0; i < _count; i++)
         {
             var item = _items[(_head + i) % _items.Length];
@@ -102,5 +134,6 @@ public sealed class DecisionRing
     {
         _head = 0;
         _count = 0;
+        Array.Clear(_slotById, 0, _slotById.Length);
     }
 }

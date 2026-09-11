@@ -2,6 +2,10 @@ using UnityEngine;
 using Cysharp.Threading.Tasks;
 using System.Threading;
 
+public interface IEnergySink
+{
+    bool TryConsume(float amount);
+}
 public interface IEntityMotor
 {
     Vector3 Position();

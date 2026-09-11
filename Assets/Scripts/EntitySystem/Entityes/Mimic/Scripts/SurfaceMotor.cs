@@ -19,15 +19,25 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
     }
     public Vector3 Velocity => velocity;
 
+    private const float MinSpeedModifier = 0.05f;
+    private const int   SpeedResampleFrames = 4;
+
+    private IEnergySink energySink;
+
+    public void InjectEnergySink(IEnergySink sink) => energySink = sink;
+
     public void Inject(MapGenerator map) => mapGenerator = map;
 
     public async UniTask MoveToAsync(Vector3 target, float speed, float maxDuration,
-    float energyCostPerSec, CancellationToken ct)
+        float energyCostPerSec, CancellationToken ct)
     {
         if (mapGenerator == null) return;
 
         float startTime = Time.time;
         target.y = transform.position.y;
+
+        float speedModifier = 1f;
+        int   frame = 0;
 
         while (!ct.IsCancellationRequested)
         {
@@ -37,9 +47,22 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
 
             Vector3 dir = target - transform.position;
             dir.y = 0f;
+            if (dir.sqrMagnitude < 1e-6f) break;
             dir.Normalize();
 
-            velocity = Vector3.Lerp(velocity, dir * speed, velocityLerpCoef * Time.deltaTime);
+            if (frame == 0)
+                speedModifier = mapGenerator.GetSpeedModifier(
+                    transform.position.x,
+                    transform.position.z,
+                    new Unity.Mathematics.float2(dir.x, dir.z));
+
+            frame++;
+            if (frame >= SpeedResampleFrames) frame = 0;
+
+            float costModifier = speedModifier < MinSpeedModifier ? MinSpeedModifier : speedModifier;
+
+            velocity = Vector3.Lerp(velocity, dir * (speed * speedModifier),
+                velocityLerpCoef * Time.deltaTime);
 
             Vector3 pos = transform.position;
             pos.x += velocity.x * Time.deltaTime;
@@ -47,6 +70,10 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
             pos.y = mapGenerator.SampleHeightBilinear(pos.x, pos.z) + heightOffset;
 
             transform.position = pos;
+
+            if (energySink != null && energyCostPerSec > 0f)
+                energySink.TryConsume(energyCostPerSec / costModifier * Time.deltaTime);
+
             await UniTask.Yield(ct);
         }
 

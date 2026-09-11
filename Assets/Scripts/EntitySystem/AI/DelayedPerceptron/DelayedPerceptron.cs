@@ -98,8 +98,7 @@ public partial class DelayedPerceptron
         if (ctx.Decisions.Count >= ctx.Decisions.Capacity)
             FlushOldest(ctx, input, critic, gamma);
 
-        var item = ctx.Decisions.Push();
-        item.DecisionId     = ctx.NextDecisionId();
+        var item = ctx.Decisions.Push(ctx.NextDecisionId());
         item.CreatedOrdinal = ordinal;
         item.Predicted      = pred;
         item.StartTime      = simTime;

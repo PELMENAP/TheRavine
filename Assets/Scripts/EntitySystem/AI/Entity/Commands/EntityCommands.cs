@@ -94,10 +94,18 @@ public class EatCommand : EntityCommand
     {
         var r = SimulationRules.Active;
 
-        var food = model.Perception.FindNearestFood(model.Motor.Position(), out _);
-        bool claimed = food != null
-                    && food.TryGetComponent(out FoodObject foodObject)
-                    && foodObject.TryClaim();
+        bool claimed = false;
+        var index = model.FoodIndex;
+
+        if (index != null &&
+            index.TryFindNearestFood(
+                model.Motor.Position().x,
+                model.Motor.Position().z,
+                model.Tuning.DetectionRadius,
+                out long cell, out _))
+        {
+            claimed = index.TryConsumeFood(cell);
+        }
 
         float reward;
         if (claimed)
@@ -105,8 +113,6 @@ public class EatCommand : EntityCommand
             model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + r.EatHealFood, model.Stats.MaxHealth);
             model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + r.EatEnergyFood, model.Stats.MaxEnergy);
             model.RegisterFitnessEvent(EntityModel.FitnessEvent.FoodEaten);
-
-            Object.Destroy(food);
             reward = r.EatRewardFood;
         }
         else
