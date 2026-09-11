@@ -6,7 +6,7 @@ using TheRavine.EntityControl;
 using TheRavine.Generator;
 
 public class EntityViewModel : AEntityViewModel, IEntityMotor,
-    IDialogListener, IDialogSender, IEntityDialogHost, IEntityDeathHandler, IEntityAudio
+    IDialogListener, IDialogSender, IEntityDialogHost, IEntityDeathHandler, IEntityAudio, IEnergySink
 {
     [SerializeField] private SurfaceMotor motor;
 
@@ -14,6 +14,18 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
     {
         var map = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
         motor.Inject(map);
+        motor.InjectEnergySink(this);
+    }
+
+    public bool TryConsume(float amount)
+    {
+        var model = Entity as EntityModel;
+        if (model == null || model.IsDisposed || model.Stats == null || model.Stats.IsDisposed)
+            return false;
+
+        float left = model.Stats.Energy.Value - amount;
+        model.Stats.Energy.Value = left > 0f ? left : 0f;
+        return true;
     }
 
     public void OnDeath()

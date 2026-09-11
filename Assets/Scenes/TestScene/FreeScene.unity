@@ -2294,6 +2294,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: rules
+      value: 
+      objectReference: {fileID: 11400000, guid: cfa92a93c8192130ba2e500349f051a6, type: 2}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
       propertyPath: spawnRadius
       value: 100
       objectReference: {fileID: 0}

@@ -4,6 +4,8 @@ using TheRavine.EntityControl;
 using System;
 using System.Collections.Generic;
 
+using TheRavine.Generator;
+
 public class EntityModel : AEntity
 {
     private const float FitnessTimeAliveWeight = 1f;
@@ -37,6 +39,8 @@ public class EntityModel : AEntity
     }
     private int timeOfDay;
     private bool canAttack = true;
+    private TerrainSensor _terrain;
+    private ChunkFoodIndex _foodIndex;
 
     public float TimeAlive { get; private set; }
     public int FoodEaten { get; private set; }
@@ -78,11 +82,12 @@ public class EntityModel : AEntity
         [SharedHierarchicalBrain.Goal.Forage]  = typeof(ForageState),
         [SharedHierarchicalBrain.Goal.Social]  = typeof(SocialState),
     };
+    public ChunkFoodIndex FoodIndex => _foodIndex;
 
     public void Configure(
-    SharedHierarchicalBrain brain, EntityBrainContext ctx,
-    IEntityMotor motor, IEntityDeathHandler death,
-    GameObject selfObject, EntityTuning tuning)
+        SharedHierarchicalBrain brain, EntityBrainContext ctx,
+        IEntityMotor motor, IEntityDeathHandler death,
+        GameObject selfObject, EntityTuning tuning)
     {
         Motor = motor;
         SelfObject = selfObject;
@@ -92,8 +97,11 @@ public class EntityModel : AEntity
         Stats = GetOrCreateEntityComponent<StatsComponent>();
         Stats.FillComponent(tuning.MaxHealth, tuning.MaxEnergy);
 
-        AddComponentToEntity(new PerceptionComponent(tuning.DetectionRadius, tuning.EntityLayer, tuning.FoodLayer));
+        AddComponentToEntity(new PerceptionComponent(tuning.DetectionRadius, tuning.EntityLayer));
         Perception = GetEntityComponent<PerceptionComponent>();
+
+        _terrain = new TerrainSensor(ServiceLocator.GetService<MapGenerator>());
+        ServiceLocator.Services.TryGet(out _foodIndex);
 
         Speech = GetOrCreateEntityComponent<SpeechComponent>();
         Speech.Inject((IEntityAudio)motor);
@@ -154,13 +162,20 @@ public class EntityModel : AEntity
 
         float inDanger = ComputeDangerLevel();
         float timeToBreed = ComputeBreedReadiness();
-        Perception.FindNearestEntity(Motor.Position(), SelfObject, out float enemyDist);
-        Perception.FindNearestFood(Motor.Position(), out float foodDist);
+
+        Vector3 pos = Motor.Position();
+        Perception.FindNearestEntity(pos, SelfObject, out float enemyDist);
+        
+        float foodDist = -1f;
+        if (_foodIndex != null)
+            _foodIndex.TryFindNearestFood(pos.x, pos.z, Tuning.DetectionRadius, out _, out foodDist);
+        
+        _terrain.TrySample(pos.x, pos.z, out TerrainSample terrain);
 
         LastInput = Vectorizer.Vectorize(
             Stats.Health.Value, Stats.Energy.Value,
             LastActionIndex, timeOfDay, inDanger, timeToBreed,
-            Speech.OtherSpeech, enemyDist, foodDist);
+            Speech.OtherSpeechHash, enemyDist, foodDist, in terrain);
 
         Speech.ConsumeOtherSpeech();
 
