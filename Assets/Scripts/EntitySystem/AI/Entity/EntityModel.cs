@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 
 using TheRavine.Generator;
+using TheRavine.EntityControl.Virology;
 
 public class EntityModel : AEntity
 {
@@ -20,6 +21,8 @@ public class EntityModel : AEntity
     public BrainComponent Brain { get; private set; }
     public SpeechComponent Speech { get; private set; }
     public PointsOfInterestComponent Points { get; private set; }
+    public VirologyComponent Virology { get; private set; }
+
     public IEntityDialogHost DialogHost { get; private set; }
 
     public IEntityMotor Motor { get; private set; }
@@ -118,6 +121,9 @@ public class EntityModel : AEntity
         _vecMaxHealth = new R3.ReactiveProperty<float>(tuning.MaxHealth);
         _vecMaxEnergy = new R3.ReactiveProperty<float>(tuning.MaxEnergy);
         Vectorizer = new InputVectorizer(_vecMaxHealth, _vecMaxEnergy);
+
+        Virology = GetOrCreateEntityComponent<VirologyComponent>();
+        Virology.FillComponent(ctx.CoordMLP.Params, ctx.CoordMLP.Params.ComputeHash());
     }
 
     public bool TryStartAttackCooldown()
@@ -182,8 +188,10 @@ public class EntityModel : AEntity
         bool isIdle = states.behaviourCurrent.GetType() == typeof(SurviveState)
                 && LastActionIndex == (int)EntityAction.Idle;
 
+        Virology.Step(Stats);
+
         var rules = SimulationRules.Active;
-        Stats.Tick(dt, Tuning.EnergyRegenRate, isIdle,
+        Stats.Tick(dt, Tuning.EnergyRegenRate * Virology.Modifiers.RegenMultiplier, isIdle,
             rules.StarvationThreshold, rules.StarvationDamage, rules.StarvationEnergyReturn);
 
         if (IsDeathPending || IsDisposed || Stats.IsDisposed || Stats.Health.Value <= 0f) return;

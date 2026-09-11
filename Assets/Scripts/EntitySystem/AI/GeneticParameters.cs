@@ -23,6 +23,7 @@ public struct GeneticParameters
     public float GaussianNoise;
     public float MutationChance;
     public float DefaultEvaluation;
+    public float Sharpness;
 
     public const int IdxLambda = 0;
     public const int IdxBaseLearningRate = 1;
@@ -35,6 +36,7 @@ public struct GeneticParameters
     public const int IdxGaussianNoise = 8;
     public const int IdxMutationChance = 9;
     public const int IdxDefaultEvaluation = 10;
+    public const int IdxSharpness = 11;
 
     public static readonly (float min, float max, float mutationScale)[] ParameterRanges = {
         (0.001f, 0.02f, 0.01f),
@@ -48,6 +50,7 @@ public struct GeneticParameters
         (0.01f, 0.1f, 0.05f),
         (0.05f, 0.5f, 0.1f),
         (0.1f, 0.9f, 0.1f),
+        (0.15f, 1.5f, 0.15f),
     };
 
     public static readonly int GeneCount;
