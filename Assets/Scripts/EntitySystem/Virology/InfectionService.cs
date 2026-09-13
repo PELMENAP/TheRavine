@@ -179,7 +179,20 @@ namespace TheRavine.EntityControl.Virology
             ulong strainId = ViralMutator.ComputeStrainId(_mutated, length);
             return target.Virology.TryInsertSegment(_mutated, length, strainId, strainId, tick, rng.NextUInt());
         }
+        
+        public bool InjectRecipe(EntityModel target, ProteinAction[] recipe, uint tick, uint seed)
+        {
+            if (!_created || recipe == null || recipe.Length == 0) return false;
 
+            var virology = target?.Virology;
+            if (virology == null || !virology.IsCreated || virology.IsDisposed) return false;
+
+            int count = StrainComposer.Compose(recipe, _mutated, seed);
+            if (count <= 0) return false;
+
+            ulong strainId = ViralMutator.ComputeStrainId(_mutated, count);
+            return virology.TryInsertSegment(_mutated, count, strainId, strainId, tick, seed ^ 0xA5A5A5A5u);
+        }
         public void Dispose()
         {
             if (!_created) return;
