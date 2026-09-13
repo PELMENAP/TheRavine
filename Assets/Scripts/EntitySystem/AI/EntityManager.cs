@@ -6,6 +6,7 @@ using UnityEngine;
 using Unity.Netcode;
 
 using TheRavine.Generator;
+using TheRavine.EntityControl.Virology;
 
 public class EntityManager : MonoBehaviour
 {
@@ -34,6 +35,13 @@ public class EntityManager : MonoBehaviour
 
     [Header("Rules")]
     [SerializeField] private SimulationRules rules;
+
+    private InfectionService _infection;
+    private uint _virologyTick;
+
+    [SerializeField] private int _transmissions;
+    [SerializeField] private int _recombinations;
+    [SerializeField] private int _superinfectionBlocks;
 
     public int MaxPopulation => maxPopulation;
     public event Action<EntityModel> OnEntitySpawned;
@@ -67,6 +75,7 @@ public class EntityManager : MonoBehaviour
     {
         SimulationRules.Bind(rules);
         NeuralModelStorage.RegisterFactory(new SharedBrainSnapshotFactory());
+        _infection = new InfectionService((uint)UnityEngine.Random.Range(1, int.MaxValue));
         _sharedBrain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden);
         // LoadBrain();
     }
@@ -147,6 +156,13 @@ public class EntityManager : MonoBehaviour
                 if (e == null || e.IsDisposed || e.IsDeathPending) continue;
                 e.UpdateEntityCycle();
             }
+
+            _virologyTick++;
+            _infection.ProcessSpread(_entities, _virologyTick);
+
+            _transmissions = _infection.Transmissions;
+            _recombinations = _infection.Recombinations;
+            _superinfectionBlocks = _infection.SuperinfectionBlocks;
 
             _tickCursor = end;
 
@@ -340,8 +356,17 @@ public class EntityManager : MonoBehaviour
         }
     }
 
+    [ContextMenu("Seed Random Strain")]
+    private void SeedRandomStrain()
+    {
+        if (_entities.Count == 0 || _infection == null) return;
+        var victim = _entities[RavineRandom.RangeInt(0, _entities.Count)];
+        _infection.InjectStrain(victim, 12, (uint)RavineRandom.RangeInt(1, int.MaxValue), _virologyTick);
+    }
+
     private void OnDestroy()
     {
+        _infection?.Dispose();
         _tickCts?.Cancel();
         _tickCts?.Dispose();
         ProcessPendingDeaths();

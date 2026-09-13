@@ -290,6 +290,7 @@ GameObject:
   - component: {fileID: 7914963399030977405}
   - component: {fileID: 7939782235869431694}
   - component: {fileID: 4054312466666063946}
+  - component: {fileID: -3538584225387547140}
   m_Layer: 0
   m_Name: Mimic
   m_TagString: Untagged
@@ -327,6 +328,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: EntitySystem::EntityView
   label: {fileID: 3119773237031124055}
+  virologyProbe: {fileID: 0}
 --- !u!114 &4086780941046595820
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -617,3 +619,25 @@ MonoBehaviour:
   heightOffset: 4
   velocityLerpCoef: 4
   arriveThreshold: 0.1
+--- !u!114 &-3538584225387547140
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7498966713481436335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22af306494ffb9b0bb677681a3ec84ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EntitySystem::TheRavine.EntityControl.Virology.VirologyProbe
+  refreshInterval: 0.75
+  infections: []
+  lastAction: 0
+  lastAmp: 0
+  lastExecuted: 0
+  head: 0
+  tapeLength: 0
+  executedCodons: 0
+  failedCodons: 0
+  sharpness: 0
