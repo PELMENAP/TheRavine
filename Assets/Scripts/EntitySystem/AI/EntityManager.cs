@@ -69,6 +69,13 @@ public class EntityManager : MonoBehaviour
     private int _tickCursor;
     private int _tickBatch = 1;
 
+    public EntityModel GetRandomEntity()
+        => _entities.Count == 0 ? null : _entities[RavineRandom.RangeInt(0, _entities.Count)];
+
+    public bool SeedProbeStrain(EntityModel target, ProteinAction[] recipe)
+        => _infection != null
+        && _infection.InjectRecipe(target, recipe, _virologyTick, (uint)RavineRandom.RangeInt(1, int.MaxValue));
+
     private void Update() => SimulationClock.Advance(Time.deltaTime * simulationTimeScale);
 
     private void Awake()
