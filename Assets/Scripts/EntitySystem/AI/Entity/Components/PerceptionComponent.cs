@@ -16,6 +16,23 @@ public class PerceptionComponent : IComponent
         _entityLayer = entityLayer;
     }
 
+    private static readonly Collider[] _radiusBuffer = new Collider[32];
+
+    public int FindEntitiesInRadius(Vector3 origin, GameObject self, GameObject[] result)
+    {
+        int count = Physics.OverlapSphereNonAlloc(origin, _radius, _radiusBuffer, _entityLayer);
+        int written = 0;
+        for (int i = 0; i < count && written < result.Length; i++)
+        {
+            if (_radiusBuffer[i] == null) continue;
+            var go = _radiusBuffer[i].gameObject;
+            if (go == self) continue;
+            result[written++] = go;
+        }
+        for (int i = written; i < result.Length; i++) result[i] = null;
+        return written;
+    }
+
     public GameObject FindNearestEntity(Vector3 origin, GameObject self, out float distance)
     {
         int count = Physics.OverlapSphereNonAlloc(origin, _radius, _entityBuffer, _entityLayer);

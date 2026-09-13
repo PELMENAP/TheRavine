@@ -13,6 +13,7 @@ namespace TheRavine.EntityControl.Virology
         public float Integrity;
         public float NetFitnessDelta;
         public ProteinAction DominantAction;
+        public bool Tamed;
 
         public bool IsEndogenous => StrainId == 0UL;
     }
