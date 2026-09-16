@@ -48,6 +48,8 @@ public class EntityView : AEntityView
             if (list[i].StrainLabel != "ENDOGEN" && !list[i].Tamed) { allTamed = false; break; }
 
         if (allTamed) return Tamed;
-        return net >= 0f ? Symbiont : Neutral is var _ && net < 0f ? Parasite : Neutral;
+        if (net > 0f) return Symbiont;
+        if (net < 0f) return Parasite;
+        return Neutral;
     }
 }

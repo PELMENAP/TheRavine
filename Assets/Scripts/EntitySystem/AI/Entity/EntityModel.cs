@@ -32,6 +32,10 @@ public class EntityModel : AEntity
     private StatePatternComponent states;
     public InputVectorizer Vectorizer;
 
+    public int MimickedActionIndex { get; private set; } = -1;
+    public void SetMimickedAction(int index) => MimickedActionIndex = index;
+    public void ConsumeMimickedAction() => MimickedActionIndex = -1;
+
     public float[] LastInput;
     public int LastActionIndex;
     public EntityAction LastAction { get; private set; }
@@ -171,19 +175,21 @@ public class EntityModel : AEntity
 
         Vector3 pos = Motor.Position();
         Perception.FindNearestEntity(pos, SelfObject, out float enemyDist);
-        
+
         float foodDist = -1f;
         if (_foodIndex != null)
             _foodIndex.TryFindNearestFood(pos.x, pos.z, Tuning.DetectionRadius, out _, out foodDist);
-        
-        _terrain.TrySample(pos.x, pos.z, out TerrainSample terrain);
+
+        if (!_terrain.TrySample(pos.x, pos.z, out TerrainSample terrain))
+            terrain = TerrainSample.Invalid;
 
         LastInput = Vectorizer.Vectorize(
             Stats.Health.Value, Stats.Energy.Value,
             LastActionIndex, timeOfDay, inDanger, timeToBreed,
-            Speech.OtherSpeechHash, enemyDist, foodDist, in terrain);
+            Speech.OtherSpeechHash, enemyDist, foodDist, in terrain, MimickedActionIndex);
 
         Speech.ConsumeOtherSpeech();
+        ConsumeMimickedAction();
 
         bool isIdle = states.behaviourCurrent.GetType() == typeof(SurviveState)
                 && LastActionIndex == (int)EntityAction.Idle;

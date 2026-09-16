@@ -1,6 +1,9 @@
 using Cysharp.Threading.Tasks;
 using System.Threading;
+using Unity.Mathematics;
 using UnityEngine;
+
+using TheRavine.Extensions;
 
 public class RestCommand : EntityCommand
 {
@@ -72,17 +75,19 @@ public class FleeCommand : EntityCommand
         var target = model.Perception.FindNearestEntity(model.Motor.Position(), model.SelfObject, out _);
         if (target == null) return 0.3f;
 
-        Vector2 targetPos = target.transform.position;
-        Vector2 away = ((Vector2)model.Motor.Position() - targetPos).normalized;
-        Vector2 dest = (Vector2)model.Motor.Position() + away * model.Tuning.DetectionRadius * 1.5f;
+        Vector3 self = model.Motor.Position();
+        float2 selfFlat = Extension.Flat(self);
+        float2 delta = selfFlat - Extension.Flat(target.transform.position);
+        float2 away = math.normalizesafe(delta, new float2(1f, 0f));
+        float2 dest = selfFlat + away * (model.Tuning.DetectionRadius * 1.5f);
 
-        await model.Motor.MoveToAsync(new Vector3(dest.x, model.Motor.Position().y, dest.y),
+        await model.Motor.MoveToAsync(Extension.ToWorld(dest, self.y),
             model.Tuning.RunSpeed, 2f, model.Tuning.EnergyCostRunning, ct);
 
         if (target == null) return 0.5f;
 
-        float dist = Vector2.Distance(model.Motor.Position(), target.transform.position);
-        return Mathf.Clamp01(dist / model.Tuning.DetectionRadius);
+        float dist = Extension.FlatDistance(model.Motor.Position(), target.transform.position);
+        return math.saturate(dist / model.Tuning.DetectionRadius);
     }
 }
 
@@ -133,8 +138,8 @@ public class RememberPointCommand : EntityCommand
 
     protected override UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
-        Vector2 pos = model.Motor.Position();
-        bool added = model.Points.TryRemember(pos, 10f);
+        float2 pos = Extension.Flat(model.Motor.Position());
+        bool added = model.Points.TryRemember(in pos, 10f);
         return UniTask.FromResult(added ? 0.65f : 0.3f);
     }
 }
@@ -147,8 +152,8 @@ public class GoToPointCommand : EntityCommand
     {
         if (model.Points.Count == 0) return 0f;
 
-        Vector2 target = model.Points.GetRandom();
-        await model.Motor.MoveToAsync(new Vector3(target.x, model.Motor.Position().y, target.y),
+        float2 target = model.Points.GetRandom();
+        await model.Motor.MoveToAsync(Extension.ToWorld(in target, model.Motor.Position().y),
             model.Tuning.MoveSpeed, 5f, model.Tuning.EnergyCostMoving, ct);
 
         return 0.55f;
@@ -206,7 +211,7 @@ public class MimicCommand : EntityCommand
         if (otherModel == null || otherModel.IsDisposed)
             return UniTask.FromResult(0.2f);
 
-        model.SetLastAction(otherModel.LastActionIndex);
+        model.SetMimickedAction(otherModel.LastActionIndex);
         float reward = 0.3f + otherModel.Brain.Context.CoordMLP.AverageEntropy * 0.2f;
         return UniTask.FromResult(reward);
     }
@@ -290,14 +295,27 @@ public class WanderCommand : EntityCommand
 
     protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
-        var randomCircle = RavineRandom.GetInsideCircle();
-        var dir = new Vector3(randomCircle.x, 0, randomCircle.y).normalized;
-        var target = model.Motor.Position() + dir * model.Tuning.WanderRadius;
+        var r = SimulationRules.Active;
 
-        await model.Motor.MoveToAsync(target, model.Tuning.MoveSpeed,
+        var randomCircle = RavineRandom.GetInsideCircle();
+        float2 dir = math.normalizesafe(new float2(randomCircle.x, randomCircle.y), new float2(1f, 0f));
+
+        Vector3 startPos = model.Motor.Position();
+        float2 start = Extension.Flat(startPos);
+        float startEnergy = model.Stats.Energy.Value;
+
+        float radius = model.Tuning.WanderRadius;
+        float2 dest = start + dir * radius;
+
+        await model.Motor.MoveToAsync(Extension.ToWorld(in dest, startPos.y), model.Tuning.MoveSpeed,
             RavineRandom.RangeFloat(model.Tuning.MinWanderTime, model.Tuning.MaxWanderTime),
             model.Tuning.EnergyCostMoving, ct);
 
-        return 0f;
+        float travelled = math.distance(start, Extension.Flat(model.Motor.Position()));
+        float progress = math.saturate(travelled / math.max(radius, 1e-3f));
+        float spent = math.max(0f, startEnergy - model.Stats.Energy.Value);
+
+        return math.clamp(progress * r.WanderRewardScale - spent * r.WanderEnergyPenalty,
+            r.WanderRewardMin, r.WanderRewardMax);
     }
 }

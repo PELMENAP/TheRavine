@@ -1,10 +1,30 @@
 using System.Runtime.CompilerServices;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace TheRavine.Extensions
 {
     public static class Extension
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float2 Flat(in Vector3 v) => new float2(v.x, v.z);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3 ToWorld(in float2 v, float y) => new Vector3(v.x, y, v.y);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FlatDistance(in Vector3 a, in Vector3 b)
+        {
+            float dx = a.x - b.x, dz = a.z - b.z;
+            return math.sqrt(dx * dx + dz * dz);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FlatDistanceSq(in Vector3 a, in Vector3 b)
+        {
+            float dx = a.x - b.x, dz = a.z - b.z;
+            return dx * dx + dz * dz;
+        }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 GetRandomPointAround(Vector2 centerPoint, float factor)
         {

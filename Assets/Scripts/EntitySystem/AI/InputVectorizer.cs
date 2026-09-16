@@ -1,9 +1,10 @@
 using System;
+using System.Runtime.InteropServices;
 using R3;
 using UnityEngine;
 
 /// <summary>
-///   [42..63] — резерв (zeros), готов для расширения
+///   [60..63] — резерв (zeros), готов для расширения
 /// </summary>
 public class InputVectorizer : IDisposable
 {
@@ -39,7 +40,7 @@ public class InputVectorizer : IDisposable
     }
 
     public int GetVectorSize() => VectorSize;
-    public float[] Vectorize(
+        public float[] Vectorize(
         float  health,
         float  energy,
         int    lastAction,
@@ -49,7 +50,8 @@ public class InputVectorizer : IDisposable
         in SpeechHash speech,
         float  nearestEnemyDist = -1f,
         float  nearestFoodDist  = -1f,
-        in TerrainSample terrain = default)
+        in TerrainSample terrain = default,
+        int    mimickedAction = -1)
     {
         int idx = 0;
         float hp  = Mathf.Clamp01(health / _maxHealth);
@@ -94,29 +96,42 @@ public class InputVectorizer : IDisposable
             ? 1f - Mathf.Clamp01(nearestFoodDist / MaxDetectionRadius)
             : 0f;
 
-        _vector[idx++] = terrain.HeightNorm;
-        _vector[idx++] = terrain.Slope;
-        _vector[idx++] = terrain.GradX;
-        _vector[idx++] = terrain.GradZ;
-        _vector[idx++] = terrain.WaterProximity;
-        _vector[idx++] = terrain.MoveCost;
-        _vector[idx++] = terrain.MoveCostPX;
-        _vector[idx++] = terrain.MoveCostNX;
-        _vector[idx++] = terrain.MoveCostPZ;
-        _vector[idx++] = terrain.MoveCostNZ;
-        _vector[idx++] = terrain.Biome0;
-        _vector[idx++] = terrain.Biome1;
-        _vector[idx++] = terrain.Biome2;
-        _vector[idx++] = terrain.Biome3;
-        _vector[idx++] = terrain.Density2;
-        _vector[idx++] = terrain.Density4;
-        _vector[idx++] = terrain.Density8;
-        _vector[idx++] = terrain.RelativeHeight;
+        bool terrainValid = terrain.IsValid;
+        if (terrainValid) WriteTerrain(in terrain, ref idx);
+        else WriteTerrain(in TerrainSample.Invalid, ref idx);
+
+        _vector[idx++] = terrainValid ? 1f : 0f;
+
+        bool hasMimic = (uint)mimickedAction < (uint)ActionCount;
+        _vector[idx++] = hasMimic ? 1f : 0f;
+        _vector[idx++] = hasMimic ? (mimickedAction + 0.5f) / ActionCount : 0f;
 
         while (idx < VectorSize)
             _vector[idx++] = 0f;
 
         return _vector;
+    }
+
+    private void WriteTerrain(in TerrainSample t, ref int idx)
+    {
+        _vector[idx++] = t.HeightNorm;
+        _vector[idx++] = t.Slope;
+        _vector[idx++] = t.GradX;
+        _vector[idx++] = t.GradZ;
+        _vector[idx++] = t.WaterProximity;
+        _vector[idx++] = t.MoveCost;
+        _vector[idx++] = t.MoveCostPX;
+        _vector[idx++] = t.MoveCostNX;
+        _vector[idx++] = t.MoveCostPZ;
+        _vector[idx++] = t.MoveCostNZ;
+        _vector[idx++] = t.Biome0;
+        _vector[idx++] = t.Biome1;
+        _vector[idx++] = t.Biome2;
+        _vector[idx++] = t.Biome3;
+        _vector[idx++] = t.Density2;
+        _vector[idx++] = t.Density4;
+        _vector[idx++] = t.Density8;
+        _vector[idx++] = t.RelativeHeight;
     }
 
     private void UpdateActionHistory(int action)
@@ -141,16 +156,15 @@ public class InputVectorizer : IDisposable
             for (int i = 0; i < ActionCount; i++)
                 _actionFrequency[i] /= total;
     }
-    public string HashFloatArray(float[] array) // last _vector
+    public string HashFloatArray(float[] array)
     {
         if (array == null || array.Length == 0) return "00000000";
 
+        var bits = MemoryMarshal.Cast<float, uint>(array.AsSpan());
+
         uint hash = 2166136261u;
-        foreach (float value in array)
-        {
-            uint bits = BitConverter.ToUInt32(BitConverter.GetBytes(value), 0);
-            hash = (hash ^ bits) * 16777619u;
-        }
+        for (int i = 0; i < bits.Length; i++)
+            hash = (hash ^ bits[i]) * 16777619u;
         return hash.ToString("X8");
     }
 
