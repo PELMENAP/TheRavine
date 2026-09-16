@@ -65,6 +65,12 @@ public sealed class BrainDiagnostics
     public void RecordRewardLatency(float latency) =>
         RewardToDecisionLatency += (latency - RewardToDecisionLatency) * Alpha;
 
+    public int DroppedRewards { get; private set; }
+    public int AppliedRewards { get; private set; }
+
+    public void RecordDroppedReward() => DroppedRewards++;
+    public void RecordAppliedReward() => AppliedRewards++;
+
     public void Reset()
     {
         AverageAdvantage = PositiveAdvantageRatio = NegativeAdvantageRatio = 0f;
@@ -74,5 +80,8 @@ public sealed class BrainDiagnostics
         AdvantageSamples = PositiveAdvantageCount = NegativeAdvantageCount = 0;
         DecisionCount = CompletionCount = InterruptionCount = 0;
         NonFiniteGradientDrops = 0;
+        StaleSlotDrops = 0;
+        DroppedRewards = 0;
+        AppliedRewards = 0;
     }
 }

@@ -178,8 +178,10 @@ public partial class DelayedPerceptron
         stamp               = ctx.NextForwardStamp();
         ctx.SlotStamp[slot] = stamp;
 
-        ctx.BpttPtr = (slot + 1) % ctx.TruncWindow;
-        if (ctx.BpttCount < ctx.TruncWindow) ctx.BpttCount++;
+        int history = ctx.HistoryDepth;
+        int next    = slot + 1;
+        ctx.BpttPtr = next == history ? 0 : next;
+        if (ctx.BpttCount < history) ctx.BpttCount++;
 
         return slot;
     }
@@ -192,11 +194,14 @@ public partial class DelayedPerceptron
             return;
         }
 
+        int steps = ResolveBpttSteps(ticket, ctx);
+        if (steps == 0) return;
+
         ctx.TrainingSteps++;
 
-        int   L     = _weights.Length;
-        int   steps = ResolveBpttSteps(ticket, ctx);
-        float dt    = ctx.DeltaTime;
+        int   L       = _weights.Length;
+        int   history = ctx.HistoryDepth;
+        float dt      = ctx.DeltaTime;
 
         int   actionCount = ctx.ActionCount;
         float invN        = 1f / actionCount;
@@ -205,23 +210,11 @@ public partial class DelayedPerceptron
         int   pred        = ticket.Predicted;
 
         float clipEps = SimulationRules.Active.PpoClipEpsilon;
-        bool  fresh   = ctx.SlotStamp[ticket.BpttSlot] == ticket.BpttStamp;
 
-        float[] probs;
-        float   ratio;
-
-        if (fresh)
-        {
-            float logpNew = EvaluatePolicy(ticket, ctx);
-            ratio = MathF.Exp(logpNew - ticket.LogProbability);
-            if (!float.IsFinite(ratio)) ratio = 1f;
-            probs = ctx.EvalProbs;
-        }
-        else
-        {
-            ratio = 1f;
-            probs = ticket.Probs;
-        }
+        float logpNew = EvaluatePolicy(ticket, ctx);
+        float ratio   = MathF.Exp(logpNew - ticket.LogProbability);
+        if (!float.IsFinite(ratio)) ratio = 1f;
+        float[] probs = ctx.EvalProbs;
 
         bool clipped = (advantage > 0f && ratio > 1f + clipEps)
                     || (advantage < 0f && ratio < 1f - clipEps);
@@ -242,7 +235,6 @@ public partial class DelayedPerceptron
 
         var g = _gradScratch;
         g.Clear();
-        // далее без изменений
 
         for (int l = 0; l < L; l++)
             Array.Clear(ctx.TemporalDeltaH[l], 0, ctx.TemporalDeltaH[l].Length);
@@ -251,7 +243,8 @@ public partial class DelayedPerceptron
 
         for (int step = 0; step < steps; step++)
         {
-            int t = (ticket.BpttSlot - step + ctx.TruncWindow * 2) % ctx.TruncWindow;
+            int t = ticket.BpttSlot - step;
+            if (t < 0) t += history;
 
             for (int l = 0; l < L; l++)
                 Array.Copy(ctx.TemporalDeltaH[l], ctx.WorkingDeltaH[l],
@@ -347,6 +340,29 @@ public partial class DelayedPerceptron
         _gradAccum.AddScaled(g, scale);
 
         if (nonFinite > 0) ctx.Diagnostics.RecordNonFiniteGradient(nonFinite);
+    }
+
+    private static int ResolveBpttSteps(DelayedItem ticket, PerceptronContext ctx)
+    {
+        int   slot   = ticket.BpttSlot;
+        int   stamp  = ticket.BpttStamp;
+        int[] stamps = ctx.SlotStamp;
+
+        if (stamps[slot] != stamp)
+        {
+            ctx.Diagnostics.RecordStaleSlotDrop();
+            return 0;
+        }
+
+        int history = ctx.HistoryDepth;
+        int max     = Math.Min(ctx.BpttCount, ctx.TruncWindow);
+        for (int step = 1; step < max; step++)
+        {
+            int t = slot - step;
+            if (t < 0) t += history;
+            if (stamps[t] != stamp - step) return step;
+        }
+        return max;
     }
 
     public void ApplyAccumulatedGradients(float lr, float weightDecay, BrainDiagnostics diag)
@@ -587,25 +603,6 @@ public partial class DelayedPerceptron
             }
         }
         return weights;
-    }
-
-    private static int ResolveBpttSteps(DelayedItem ticket, PerceptronContext ctx)
-    {
-        int w = ctx.TruncWindow;
-
-        if (ctx.SlotStamp[ticket.BpttSlot] != ticket.BpttStamp)
-        {
-            ctx.Diagnostics.RecordStaleSlotDrop();
-            return 1;
-        }
-
-        int max = Math.Min(ctx.BpttCount, w);
-        for (int step = 1; step < max; step++)
-        {
-            int t = (ticket.BpttSlot - step + w * 2) % w;
-            if (ctx.SlotStamp[t] != ticket.BpttStamp - step) return step;
-        }
-        return max;
     }
 
     private static float[][] InitTauWeights(int neurons, int inputs)
