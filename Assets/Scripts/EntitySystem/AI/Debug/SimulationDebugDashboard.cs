@@ -13,7 +13,6 @@ public class SimulationDebugDashboard : MonoBehaviour
     [SerializeField] private float sampleInterval = 1f;
 
     private EntityManager _manager;
-    private Rect          _windowRect = new Rect(10, 10, 420, 620);
 
     private readonly RingBuffer<float> _populationHistory = new(120);
     private readonly RingBuffer<float> _avgEntropyHistory = new(120);
@@ -43,6 +42,119 @@ public class SimulationDebugDashboard : MonoBehaviour
     private GUIStyle _valueStyle;
     private bool     _stylesInitialized;
 
+    private Rect _windowRect = new Rect(10, 10, 420, 700);
+
+    private int _coordStaleDrops;
+    private int _execStaleDrops;
+    private int _coordTrainSteps;
+    private int _execTrainSteps;
+
+    private void SampleMetrics()
+    {
+        var entities = _manager.Entities;
+        int count    = entities.Count;
+
+        _populationHistory.Push(count);
+
+        int coordStale = 0, execStale = 0, coordSteps = 0, execSteps = 0;
+
+        if (count == 0)
+        {
+            _avgEntropyHistory.Push(0f);
+            _avgRewardHistory.Push(0f);
+            _coordStaleDrops = _execStaleDrops = _coordTrainSteps = _execTrainSteps = 0;
+            return;
+        }
+
+        float sumEntropy = 0f, sumReward = 0f;
+        Array.Clear(_goalCounts, 0, _goalCounts.Length);
+
+        foreach (var e in entities)
+        {
+            var ctx = e.Brain.Context;
+            var coord = ctx.CoordMLP;
+            sumEntropy += coord.AverageEntropy;
+            sumReward  += ctx.GoalRewardCount > 0
+                ? ctx.GoalTotalReward / ctx.GoalRewardCount
+                : 0f;
+            _goalCounts[(int)ctx.CurrentGoal]++;
+
+            coordStale += coord.Diagnostics.StaleSlotDrops;
+            coordSteps += coord.TrainingSteps;
+
+            var execs = ctx.ExecMLPs;
+            for (int g = 0; g < execs.Length; g++)
+            {
+                execStale += execs[g].Diagnostics.StaleSlotDrops;
+                execSteps += execs[g].TrainingSteps;
+            }
+        }
+
+        _coordStaleDrops = coordStale;
+        _execStaleDrops  = execStale;
+        _coordTrainSteps = coordSteps;
+        _execTrainSteps  = execSteps;
+
+        _avgEntropyHistory.Push(sumEntropy / count);
+        _avgRewardHistory.Push(sumReward  / count);
+
+        for (int i = 0; i < SharedHierarchicalBrain.GoalCount; i++)
+            _goalHistory[i].Push(_goalCounts[i] / count);
+
+        _generationTracker.Record(entities, _manager.SharedBrain);
+    }
+
+    private void DrawWindow(int id)
+    {
+        float y = 4f;
+
+        DrawSection(ref y, "POPULATION");
+        DrawKV(ref y, "Alive",        _manager.Entities.Count.ToString());
+        DrawKV(ref y, "Born total",   _totalBorn.ToString());
+        DrawKV(ref y, "Died total",   _totalDied.ToString());
+        DrawKV(ref y, "Uptime",       FormatTime(_simTime));
+        DrawMiniGraph(ref y, _populationHistory, Color.cyan, 0f, _manager.MaxPopulation);
+
+        DrawSection(ref y, "LEARNING");
+        float lastEntropy = _avgEntropyHistory.LastOrDefault();
+        float lastReward  = _avgRewardHistory.LastOrDefault();
+        DrawKV(ref y, "Avg entropy",  lastEntropy.ToString("F3"));
+        DrawKV(ref y, "Avg reward",   lastReward.ToString("F3"));
+
+        var brain = _manager.SharedBrain;
+        if (brain != null)
+        {
+            var gd = brain.GlobalDiagnostics;
+            DrawKV(ref y, "LR",              brain.CurrentLearningRate.ToString("0.000000"));
+            DrawKV(ref y, "LR min",          SimulationRules.Active.MinLearningRate.ToString("0.000000"));
+            DrawKV(ref y, "Stale coord",     FormatDropRatio(_coordStaleDrops, _coordTrainSteps));
+            DrawKV(ref y, "Stale exec",      FormatDropRatio(_execStaleDrops, _execTrainSteps));
+            DrawKV(ref y, "Dropped rewards", FormatDropRatio(gd.DroppedRewards, gd.AppliedRewards));
+        }
+
+        DrawDualGraph(ref y, _avgEntropyHistory, _avgRewardHistory,
+            new Color(0.9f, 0.5f, 0.1f), Color.green, 0f, 2f);
+
+        DrawSection(ref y, "GOAL DISTRIBUTION");
+        DrawGoalBars(ref y);
+        DrawGoalStackedGraph(ref y);
+
+        DrawSection(ref y, "GENERATION STATS");
+        DrawGenerationInfo(ref y);
+
+        DrawSection(ref y, "TOP ENTITIES");
+        DrawTopEntities(ref y);
+
+        GUI.DragWindow(new Rect(0, 0, _windowRect.width, 20));
+    }
+
+    private static string FormatDropRatio(int drops, int accepted)
+    {
+        int   total = drops + accepted;
+        float pct   = total > 0 ? drops * 100f / total : 0f;
+        return $"{drops} ({pct:0.00}%)";
+    }
+
     private void Awake()
     {
         _manager = GetComponent<EntityManager>();
@@ -65,75 +177,12 @@ public class SimulationDebugDashboard : MonoBehaviour
         }
     }
 
-    private void SampleMetrics()
-    {
-        var entities = _manager.Entities;
-        int count    = entities.Count;
-
-        _populationHistory.Push(count);
-
-        if (count == 0) { _avgEntropyHistory.Push(0f); _avgRewardHistory.Push(0f); return; }
-
-        float sumEntropy = 0f, sumReward = 0f;
-        Array.Clear(_goalCounts, 0, _goalCounts.Length);
-
-        foreach (var e in entities)
-        {
-            var ctx = e.Brain.Context;
-            sumEntropy += ctx.CoordMLP.AverageEntropy;
-            sumReward  += ctx.GoalRewardCount > 0
-                ? ctx.GoalTotalReward / ctx.GoalRewardCount
-                : 0f;
-            _goalCounts[(int)ctx.CurrentGoal]++;
-        }
-
-        _avgEntropyHistory.Push(sumEntropy / count);
-        _avgRewardHistory.Push(sumReward  / count);
-
-        for (int i = 0; i < SharedHierarchicalBrain.GoalCount; i++)
-            _goalHistory[i].Push(_goalCounts[i] / count);
-
-        _generationTracker.Record(entities, _manager.SharedBrain);
-    }
-
     private void OnGUI()
     {
         if (!showDashboard) return;
         InitStylesIfNeeded();
 
         _windowRect = GUI.Window(windowId, _windowRect, DrawWindow, "");
-    }
-
-    private void DrawWindow(int id)
-    {
-        float y = 4f;
-
-        DrawSection(ref y, "POPULATION");
-        DrawKV(ref y, "Alive",        _manager.Entities.Count.ToString());
-        DrawKV(ref y, "Born total",   _totalBorn.ToString());
-        DrawKV(ref y, "Died total",   _totalDied.ToString());
-        DrawKV(ref y, "Uptime",       FormatTime(_simTime));
-        DrawMiniGraph(ref y, _populationHistory, Color.cyan, 0f, _manager.MaxPopulation);
-
-        DrawSection(ref y, "LEARNING");
-        float lastEntropy = _avgEntropyHistory.LastOrDefault();
-        float lastReward  = _avgRewardHistory.LastOrDefault();
-        DrawKV(ref y, "Avg entropy",  lastEntropy.ToString("F3"));
-        DrawKV(ref y, "Avg reward",   lastReward.ToString("F3"));
-        DrawDualGraph(ref y, _avgEntropyHistory, _avgRewardHistory,
-            new Color(0.9f, 0.5f, 0.1f), Color.green, 0f, 2f);
-
-        DrawSection(ref y, "GOAL DISTRIBUTION");
-        DrawGoalBars(ref y);
-        DrawGoalStackedGraph(ref y);
-
-        DrawSection(ref y, "GENERATION STATS");
-        DrawGenerationInfo(ref y);
-
-        DrawSection(ref y, "TOP ENTITIES");
-        DrawTopEntities(ref y);
-
-        GUI.DragWindow(new Rect(0, 0, _windowRect.width, 20));
     }
 
     private void DrawHeader(ref float y, string text)

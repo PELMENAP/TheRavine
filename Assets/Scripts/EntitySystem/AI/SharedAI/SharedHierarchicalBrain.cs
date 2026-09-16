@@ -1,4 +1,5 @@
 using System;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class SharedHierarchicalBrain
@@ -98,15 +99,55 @@ public class SharedHierarchicalBrain
             executors[i].OptimizerMaxGradNorm = OptimizerMaxGradNorm;
     }
 
+    private const int TruncWindow       = 8;
+    private const int DecisionRingSlack = 2;
+    private const int CoordRingCapacity = CoordDelaySteps + DecisionRingSlack;
+    private const int ExecRingCapacity  = ExecDelaySteps  + DecisionRingSlack;
+
+    public float CurrentLearningRate { get; private set; } = OptimizerBaseLr;
+
     public void ApplyPendingGradients()
     {
-        float lr = OptimizerBaseLr * MathF.Exp(-GlobalTrainingSteps * OptimizerLrDecay);
+        var   rules   = SimulationRules.Active;
+        float decayed = OptimizerBaseLr * math.exp(-SimulationClock.Time * rules.LrDecayPerSecond);
+        float lr      = math.max(rules.MinLearningRate, decayed);
+        CurrentLearningRate = lr;
 
         coordinator.ApplyAccumulatedGradients(lr, OptimizerWeightDecay, GlobalDiagnostics);
         for (int i = 0; i < GoalCount; i++)
             executors[i].ApplyAccumulatedGradients(lr, OptimizerWeightDecay, GlobalDiagnostics);
 
         GlobalTrainingSteps++;
+    }
+
+    public EntityBrainContext CreateContext(GeneticParameters? p = null)
+        => new EntityBrainContext(InputSize, LstmHidden, CoordLayerSizes, ExecLayerSizes,
+                                p ?? GeneticParameters.Default,
+                                TruncWindow, CoordRingCapacity, ExecRingCapacity);
+
+    public void GiveReward(float reward, int decisionId, EntityBrainContext ctx)
+    {
+        int g    = (int)ctx.CurrentGoal;
+        var mlp  = ctx.ExecMLPs[g];
+        var item = mlp.Decisions.Find(decisionId);
+        if (item == null)
+        {
+            mlp.Diagnostics.RecordDroppedReward();
+            GlobalDiagnostics.RecordDroppedReward();
+            return;
+        }
+
+        float shaped     = reward + ctx.IntrinsicReward * CuriosityWeight;
+        float normalized = _rewardNorm.UpdateAndNormalize(shaped, SimulationRules.Active.RewardClipSigma);
+
+        item.Evaluation    = normalized;
+        item.RewardApplied = true;
+        mlp.Diagnostics.RecordRewardLatency(SimulationClock.Time - item.StartTime);
+        GlobalDiagnostics.RecordAppliedReward();
+
+        ctx.GoalDiscountedReturn += normalized * ctx.GoalDiscountFactor;
+        ctx.GoalDiscountFactor   *= Gamma;
+        ctx.GoalRewardCount++;
     }
 
     public SharedHierarchicalBrain(SharedHierarchicalBrain src) : this(src.InputSize, src.LstmHidden)
@@ -122,10 +163,6 @@ public class SharedHierarchicalBrain
         ConfigureOptimizer();
         ApplyPendingGradients();
     }
-
-    public EntityBrainContext CreateContext(GeneticParameters? p = null)
-        => new EntityBrainContext(InputSize, LstmHidden, CoordLayerSizes, ExecLayerSizes,
-                                   p ?? GeneticParameters.Default);
 
     public bool TryDecide(float[] input, EntityBrainContext ctx, float simTime, float dt,
         out BrainDecision decision, float coordEps = 0.05f, float execEps = 0.15f)
@@ -181,25 +218,6 @@ public class SharedHierarchicalBrain
         decision = new BrainDecision(action, ticket.DecisionId, ctx.CoordDecisionId,
             ctx.CurrentGoal, simTime, clamped);
         return true;
-    }
-
-    public void GiveReward(float reward, int decisionId, EntityBrainContext ctx)
-    {
-        int g    = (int)ctx.CurrentGoal;
-        var mlp  = ctx.ExecMLPs[g];
-        var item = mlp.Decisions.Find(decisionId);
-        if (item == null) return;
-
-        float shaped     = reward + ctx.IntrinsicReward * CuriosityWeight;
-        float normalized = _rewardNorm.UpdateAndNormalize(shaped, SimulationRules.Active.RewardClipSigma);
-
-        item.Evaluation    = normalized;
-        item.RewardApplied = true;
-        mlp.Diagnostics.RecordRewardLatency(SimulationClock.Time - item.StartTime);
-
-        ctx.GoalDiscountedReturn += normalized * ctx.GoalDiscountFactor;
-        ctx.GoalDiscountFactor   *= Gamma;
-        ctx.GoalRewardCount++;
     }
 
     public void CompleteDecision(int decisionId, float reward, EntityBrainContext ctx,

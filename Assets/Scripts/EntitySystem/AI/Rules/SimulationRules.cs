@@ -43,6 +43,11 @@ public sealed class SimulationRules : ScriptableObject
     [SerializeField] private float wanderRewardMin = -0.2f;
     [SerializeField] private float wanderRewardMax = 0.6f;
 
+    [SerializeField] private float minLearningRate  = 1e-3f;
+    [SerializeField] private float lrDecayPerSecond = 5e-4f;
+
+    public float MinLearningRate  => minLearningRate;
+    public float LrDecayPerSecond => lrDecayPerSecond;
     public float WanderRewardScale => wanderRewardScale;
     public float WanderEnergyPenalty => wanderEnergyPenalty;
     public float WanderRewardMin => wanderRewardMin;

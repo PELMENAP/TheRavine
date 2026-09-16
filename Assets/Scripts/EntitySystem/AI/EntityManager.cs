@@ -83,8 +83,8 @@ public class EntityManager : MonoBehaviour
         SimulationRules.Bind(rules);
         NeuralModelStorage.RegisterFactory(new SharedBrainSnapshotFactory());
         _infection = new InfectionService((uint)UnityEngine.Random.Range(1, int.MaxValue));
-        _sharedBrain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden);
-        // LoadBrain();
+        // _sharedBrain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden);
+        LoadBrain();
     }
 
     [ContextMenu("Save Brain")]

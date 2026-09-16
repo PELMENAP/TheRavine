@@ -7,8 +7,6 @@ public class PerceptronContext
     public readonly float[][] FVals;
     public readonly float[][] TauVals;
     public readonly float[][] AVals;
-
-    public readonly int         TruncWindow;
     public readonly float[][][] BpttPrevActs;
     public readonly float[][][] BpttHBefore;
     public readonly float[][][] BpttF;
@@ -69,19 +67,30 @@ public class PerceptronContext
         return _nextDecisionId;
     }
 
+    public readonly int         TruncWindow;
+    public readonly int         HistoryDepth;
+
+    private static bool _capacityInvariantReported;
+
     public PerceptronContext(int[] layerSizes, GeneticParameters p,
         int truncWindow = 8, int decisionCapacity = 16)
     {
-        Params      = p;
-        TruncWindow = truncWindow;
-        int L       = layerSizes.Length - 1;
-
-        if (decisionCapacity > truncWindow)
+        if (truncWindow < 1 || decisionCapacity < 2)
         {
-            UnityEngine.Debug.LogWarning(
-                $"decisionCapacity({decisionCapacity}) > TruncWindow({truncWindow}), clamped");
-            decisionCapacity = truncWindow;
+            if (!_capacityInvariantReported)
+            {
+                _capacityInvariantReported = true;
+                UnityEngine.Debug.LogWarning(
+                    $"PerceptronContext: truncWindow({truncWindow}) / decisionCapacity({decisionCapacity}) out of range, clamped");
+            }
+            if (truncWindow < 1)      truncWindow = 1;
+            if (decisionCapacity < 2) decisionCapacity = 2;
         }
+
+        Params       = p;
+        TruncWindow  = truncWindow;
+        HistoryDepth = decisionCapacity + truncWindow;
+        int L        = layerSizes.Length - 1;
 
         Activations  = new float[layerSizes.Length][];
         HiddenStates = new float[L][];
@@ -100,13 +109,13 @@ public class PerceptronContext
             AVals[l]        = new float[sz];
         }
 
-        BpttPrevActs = AllocHistorySlots(truncWindow, L, layerSizes, true);
-        BpttHBefore  = AllocHistorySlots(truncWindow, L, layerSizes, false);
-        BpttF        = AllocHistorySlots(truncWindow, L, layerSizes, false);
-        BpttTau      = AllocHistorySlots(truncWindow, L, layerSizes, false);
-        BpttA        = AllocHistorySlots(truncWindow, L, layerSizes, false);
+        BpttPrevActs = AllocHistorySlots(HistoryDepth, L, layerSizes, true);
+        BpttHBefore  = AllocHistorySlots(HistoryDepth, L, layerSizes, false);
+        BpttF        = AllocHistorySlots(HistoryDepth, L, layerSizes, false);
+        BpttTau      = AllocHistorySlots(HistoryDepth, L, layerSizes, false);
+        BpttA        = AllocHistorySlots(HistoryDepth, L, layerSizes, false);
 
-        SlotStamp = new int[truncWindow];
+        SlotStamp = new int[HistoryDepth];
 
         TemporalDeltaH = new float[L][];
         WorkingDeltaH  = new float[L][];
