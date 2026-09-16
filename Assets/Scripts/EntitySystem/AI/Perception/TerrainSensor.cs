@@ -1,3 +1,5 @@
+using System;
+using Unity.Mathematics;
 using UnityEngine;
 using TheRavine.Extensions;
 using TheRavine.Generator;
@@ -5,8 +7,8 @@ using TheRavine.Generator;
 public sealed class TerrainSensor
 {
     private const int   Size        = MapGenerator.mapChunkSize;
-    private const int   ChunkShift  = 6;
     private const int   ChunkMask   = Size - 1;
+    private static readonly int ChunkShift;
     private const int   MaxRing     = 16;
     private const float InvScale    = 1f / MapGenerator.scale;
     private const float InvMaxH     = 1f / MapGenerator.maxTerrainHeight;
@@ -15,6 +17,7 @@ public sealed class TerrainSensor
     private const float InvCost     = 1f / 255f;
     private const float InvRelSpan  = 1f / 10f;
     private const float WaterLevel  = 5f;
+    
 
     private static readonly int[] RingStart = new int[MaxRing + 2];
     private static readonly int[] RingDx;
@@ -23,6 +26,12 @@ public sealed class TerrainSensor
 
     static TerrainSensor()
     {
+        if (Size <= 0 || (Size & ChunkMask) != 0)
+            throw new InvalidOperationException(
+                $"TerrainSensor: mapChunkSize({Size}) must be a positive power of two");
+
+        ChunkShift = math.tzcnt((uint)Size);
+
         int total = 0;
         for (int r = 1; r <= MaxRing; r++) total += 8 * r;
 

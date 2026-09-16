@@ -23,9 +23,12 @@ public partial class DelayedPerceptron
         : this(new[] { inputSize, h1, h2, h3, outputSize }) { }
 
     public DelayedPerceptron(int[] layerSizes)
+        : this(layerSizes, GeneticParameters.Default) { }
+
+    public DelayedPerceptron(int[] layerSizes, in GeneticParameters genetics)
     {
         LayerSizes = layerSizes;
-        InitWeightsAndBiases(LayerSizes);
+        InitWeightsAndBiases(LayerSizes, in genetics);
         BuildResidualMask();
         InitOptimizerBuffers();
     }
@@ -442,7 +445,7 @@ public partial class DelayedPerceptron
     public static float Softplus(float x)
         => x > 20f ? x : MathF.Log(1f + MathF.Exp(x));
 
-    private void InitWeightsAndBiases(int[] layerSizes)
+    private void InitWeightsAndBiases(int[] layerSizes, in GeneticParameters genetics)
     {
         int L       = layerSizes.Length - 1;
         _weights    = new float[L][][];
@@ -454,7 +457,7 @@ public partial class DelayedPerceptron
         {
             _weights[l]    = InitWeights(layerSizes[l + 1], layerSizes[l]);
             _tauWeights[l] = InitTauWeights(layerSizes[l + 1], layerSizes[l]);
-            _biases[l]     = InitBiases(layerSizes[l + 1]);
+            _biases[l]     = InitBiases(layerSizes[l + 1], in genetics);
             _tauBiases[l]  = new float[layerSizes[l + 1]];
         }
     }
@@ -618,12 +621,12 @@ public partial class DelayedPerceptron
         return weights;
     }
 
-    private static float[] InitBiases(int neurons)
+    private static float[] InitBiases(int neurons, in GeneticParameters genetics)
     {
+        float range = genetics.InitBiasesValues;
         var b = new float[neurons];
         for (int i = 0; i < neurons; i++)
-            b[i] = RavineRandom.RangeFloat(-GeneticParameters.Default.InitBiasesValues,
-                                            GeneticParameters.Default.InitBiasesValues);
+            b[i] = RavineRandom.RangeFloat(-range, range);
         return b;
     }
 

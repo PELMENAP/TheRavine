@@ -1,17 +1,17 @@
 using System.Collections.Generic;
-using UnityEngine;
+using Unity.Mathematics;
 
 public class PointsOfInterestComponent : IComponent
 {
     private const int MaxPoints = 5;
-    private readonly List<Vector2> points = new(MaxPoints);
+    private readonly List<float2> points = new(MaxPoints);
 
     public int Count => points.Count;
-    public Vector2 Get(int idx) => points[idx];
+    public float2 Get(int idx) => points[idx];
 
-    public bool TryRemember(Vector2 pos, float minDistance)
+    public bool TryRemember(in float2 pos, float minDistance)
     {
-        if (points.Count > 0 && Vector2.Distance(points[0], pos) < minDistance)
+        if (points.Count > 0 && math.distancesq(points[0], pos) < minDistance * minDistance)
             return false;
 
         if (points.Count >= MaxPoints)
@@ -21,7 +21,7 @@ public class PointsOfInterestComponent : IComponent
         return true;
     }
 
-    public Vector2 GetRandom() => points[RavineRandom.RangeInt(0, points.Count)];
+    public float2 GetRandom() => points[RavineRandom.RangeInt(0, points.Count)];
 
     public void Dispose() { }
 }

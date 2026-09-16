@@ -38,6 +38,15 @@ public sealed class SimulationRules : ScriptableObject
     [SerializeField] private float explorationEpsilonScale = 1f;
     [SerializeField] private float epsilonDecayPerStep = 5e-5f;
     [SerializeField] private float minEpsilon = 0.01f;
+    [SerializeField] private float wanderRewardScale = 0.6f;
+    [SerializeField] private float wanderEnergyPenalty = 0.01f;
+    [SerializeField] private float wanderRewardMin = -0.2f;
+    [SerializeField] private float wanderRewardMax = 0.6f;
+
+    public float WanderRewardScale => wanderRewardScale;
+    public float WanderEnergyPenalty => wanderEnergyPenalty;
+    public float WanderRewardMin => wanderRewardMin;
+    public float WanderRewardMax => wanderRewardMax;
 
     public float IdleLowEnergyThreshold => idleLowEnergyThreshold;
     public float IdleLongActivityPenaltyStart => idleLongActivityPenaltyStart;
