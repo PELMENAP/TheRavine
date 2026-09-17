@@ -8,7 +8,6 @@ using R3;
 public class EntityView : AEntityView
 {
     [SerializeField] private TextMeshPro label;
-    [SerializeField] private VirologyProbe virologyProbe;
     public GameObject LabelObject => label.gameObject;
 
     private static readonly Color Neutral = Color.white;
@@ -21,19 +20,17 @@ public class EntityView : AEntityView
         var vm = (EntityViewModel)ViewModel;
         var model = (EntityModel)vm.Entity;
 
-        if (virologyProbe != null) virologyProbe.Bind(model);
-
         model.OnUpdate.Subscribe(_ =>
         {
             string text = $"{model.Brain.CurrentGoal} - {model.LastAction}\n"
                     + $"{(int)model.Stats.Health.Value} HP / {(int)model.Stats.Energy.Value} EN\n"
                     + model.Speech.OwnSpeech;
 
-            if (virologyProbe != null && virologyProbe.HasSegments)
+            var virology = model.Virology;
+            if (virology != null && virology.TryGetViralSummary(out float net, out int viralCount, out bool allTamed))
             {
-                var list = virologyProbe.Infections;
-                text += $"\nV:{list.Count} {virologyProbe.NetFitnessDelta:+0.0;-0.0;0}";
-                label.color = Resolve(list, virologyProbe.NetFitnessDelta);
+                text += $"\nV:{viralCount} {net:+0.0;-0.0;0}";
+                label.color = Resolve(net, allTamed);
             }
             else label.color = Neutral;
 
@@ -41,12 +38,8 @@ public class EntityView : AEntityView
         });
     }
 
-    private static Color Resolve(System.Collections.Generic.IReadOnlyList<InfectionView> list, float net)
+    private static Color Resolve(float net, bool allTamed)
     {
-        bool allTamed = true;
-        for (int i = 0; i < list.Count; i++)
-            if (list[i].StrainLabel != "ENDOGEN" && !list[i].Tamed) { allTamed = false; break; }
-
         if (allTamed) return Tamed;
         if (net > 0f) return Symbiont;
         if (net < 0f) return Parasite;
