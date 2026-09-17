@@ -10,6 +10,7 @@ using TheRavine.EntityControl.Virology;
 
 public class EntityManager : MonoBehaviour
 {
+    
     [Header("Prefabs")]
     [SerializeField] private GameObject entityPrefab;
     [SerializeField] private GameObject foodPrefab;
@@ -42,6 +43,25 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private int _transmissions;
     [SerializeField] private int _recombinations;
     [SerializeField] private int _superinfectionBlocks;
+    [SerializeField] private float _avgFitness;
+
+    private float[] _fitnessScratch = new float[64];
+    private float   _fitnessMedian;
+    private float   _fitnessSpread = 1f;
+    private bool    _fitnessStatsReady;
+
+    private int[]   _evolveIndices = new int[64];
+    private float[] _evolveKeys    = new float[64];
+    private float   _nextGenerationTime;
+
+    private XorShift32 _tournamentRng;
+
+    private sealed class FitnessOrder : IComparer<int>
+    {
+        public float[] Keys;
+        public int Compare(int a, int b) => Keys[b].CompareTo(Keys[a]);
+    }
+    private readonly FitnessOrder _fitnessOrder = new();
 
     public int MaxPopulation => maxPopulation;
     public event Action<EntityModel> OnEntitySpawned;
@@ -83,6 +103,8 @@ public class EntityManager : MonoBehaviour
         SimulationRules.Bind(rules);
         NeuralModelStorage.RegisterFactory(new SharedBrainSnapshotFactory());
         _infection = new InfectionService((uint)UnityEngine.Random.Range(1, int.MaxValue));
+        _tournamentRng = new XorShift32((uint)UnityEngine.Random.Range(1, int.MaxValue));
+
         // _sharedBrain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden);
         LoadBrain();
     }
@@ -110,6 +132,8 @@ public class EntityManager : MonoBehaviour
                 _entities[i].Brain.ReplaceBrain(brain);
     }
     private CancellationTokenSource _tickCts;
+
+    
     private async void Start()
     {
         await UniTask.Delay(3000);
@@ -122,6 +146,8 @@ public class EntityManager : MonoBehaviour
 
         for (int i = 0; i < initialFood; i++)
             SpawnFood();
+
+        _nextGenerationTime = SimulationClock.Time + SimulationRules.Active.GenerationInterval;
 
         _tickCts = new CancellationTokenSource();
         EntityTickLoopAsync(_tickCts.Token).Forget();
@@ -178,6 +204,20 @@ public class EntityManager : MonoBehaviour
                 _tickCursor = 0;
                 _sharedBrain.ApplyPendingGradients();
                 ProcessPendingDeaths();
+            }
+
+            if (_tickCursor >= _tickCount)
+            {
+                _tickCursor = 0;
+                _sharedBrain.ApplyPendingGradients();
+                ProcessPendingDeaths();
+
+                float now = SimulationClock.Time;
+                if (now >= _nextGenerationTime)
+                {
+                    EvolveGenotypes();
+                    _nextGenerationTime = now + SimulationRules.Active.GenerationInterval;
+                }
             }
 
             await UniTask.Yield(PlayerLoopTiming.Update, ct);
@@ -247,18 +287,53 @@ public class EntityManager : MonoBehaviour
     {
         for (int i = 0; i < targets.Count; i++)
             SetEntityVisible(targets[i], visible);
-}
+    }
     public void SpawnChild(EntityModel parent)
     {
         if (_entities.Count >= maxPopulation) return;
 
-        var childParams = parent.Brain.Context.CoordMLP.Params.GetMutatedGeneticParameters();
-        var childCtx    = _sharedBrain.CreateContext(childParams);
-        var pos         = parent.Motor.Position()
-                        + (Vector3)RavineRandom.GetInsideCircle().normalized * 2f
-                        + Vector3.up * 5f;
+        var parentParams = parent.Brain.Context.CoordMLP.Params;
+        var mate         = SelectMateByTournament(parent);
+
+        GeneticParameters childParams;
+        if (mate != null)
+        {
+            var mateParams = mate.Brain.Context.CoordMLP.Params;
+            GeneticParameters.Crossover(in parentParams, in mateParams, out childParams);
+        }
+        else
+        {
+            childParams = parentParams.GetMutatedGeneticParameters();
+        }
+
+        var childCtx = _sharedBrain.CreateContext(childParams);
+        var pos      = parent.Motor.Position()
+                     + (Vector3)RavineRandom.GetInsideCircle().normalized * 2f
+                     + Vector3.up * 5f;
 
         SpawnEntity(pos, childCtx);
+    }
+
+    private EntityModel SelectMateByTournament(EntityModel exclude)
+    {
+        int n = _entities.Count;
+        if (n < 2) return null;
+
+        int size = SimulationRules.Active.TournamentSize;
+        if (size < 2) size = 2;
+
+        EntityModel best = null;
+        float bestFit = float.NegativeInfinity;
+
+        for (int i = 0; i < size; i++)
+        {
+            var cand = _entities[_tournamentRng.Range(0, n)];
+            if (cand == null || cand == exclude || cand.IsDisposed || cand.IsDeathPending) continue;
+
+            float f = cand.GetFitness();
+            if (f > bestFit) { bestFit = f; best = cand; }
+        }
+        return best;
     }
 
     public EntityModel SpawnCrossoverChild(EntityModel parentA, EntityModel parentB)
@@ -308,12 +383,25 @@ public class EntityManager : MonoBehaviour
 
             model.OnReproduceRequest -= SpawnChild;
             model.CaptureFinalFitness();
-            model.Brain?.CompleteTerminal(SimulationRules.Active.TerminalPenalty);
+            model.Brain?.CompleteTerminal(TerminalPenaltyFor(model));
 
             _entities.Remove(model);
             OnEntityDied?.Invoke(model);
             model.Dispose();
         }
+    }
+
+    private float TerminalPenaltyFor(EntityModel model)
+    {
+        var rules = SimulationRules.Active;
+        float basePenalty = rules.TerminalPenalty;
+        if (!_fitnessStatsReady) return basePenalty;
+
+        float z     = (model.FinalFitness - _fitnessMedian) / _fitnessSpread;
+        float scale = Mathf.Clamp(1f - z * rules.TerminalFitnessSensitivity,
+                                  rules.TerminalPenaltyMinScale,
+                                  rules.TerminalPenaltyMaxScale);
+        return basePenalty * scale;
     }
 
     public void EvolveSharedWeights()
@@ -345,30 +433,110 @@ public class EntityManager : MonoBehaviour
         return child;
     }
 
-    private async UniTaskVoid TrackDiagnosticsAsync(System.Threading.CancellationToken ct)
-    {
-        while (!ct.IsCancellationRequested)
-        {
-            _entityCount = _entities.Count;
-            _foodCount   = _foodIndex != null ? _foodIndex.FoodCount : 0;
-
-            if (_entities.Count > 0)
-            {
-                float sum = 0f;
-                foreach (var e in _entities)
-                    sum += _sharedBrain.GetCoordinatorEntropy(e.Brain.Context);
-                _avgEntropy = sum / _entities.Count;
-            }
-            await UniTask.Delay(1000, cancellationToken: ct);
-        }
-    }
-
     [ContextMenu("Seed Random Strain")]
     private void SeedRandomStrain()
     {
         if (_entities.Count == 0 || _infection == null) return;
         var victim = _entities[RavineRandom.RangeInt(0, _entities.Count)];
         _infection.InjectStrain(victim, 12, (uint)RavineRandom.RangeInt(1, int.MaxValue), _virologyTick);
+    }
+
+    private async UniTaskVoid TrackDiagnosticsAsync(System.Threading.CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            int n = _entities.Count;
+            _entityCount = n;
+            _foodCount   = _foodIndex != null ? _foodIndex.FoodCount : 0;
+
+            if (n > 0)
+            {
+                if (n > _fitnessScratch.Length)
+                {
+                    int cap = _fitnessScratch.Length;
+                    while (cap < n) cap <<= 1;
+                    _fitnessScratch = new float[cap];
+                }
+
+                float entropySum = 0f;
+                float fitnessSum = 0f;
+
+                for (int i = 0; i < n; i++)
+                {
+                    var e = _entities[i];
+                    float f = e.GetFitness();
+                    _fitnessScratch[i] = f;
+                    fitnessSum += f;
+                    entropySum += _sharedBrain.GetCoordinatorEntropy(e.Brain.Context);
+                }
+
+                _avgEntropy = entropySum / n;
+                _avgFitness = fitnessSum / n;
+
+                Array.Sort(_fitnessScratch, 0, n);
+
+                _fitnessMedian = _fitnessScratch[n >> 1];
+                float iqr = _fitnessScratch[(3 * n) >> 2] - _fitnessScratch[n >> 2];
+                _fitnessSpread = iqr > 1e-3f
+                    ? iqr
+                    : Mathf.Max(1e-3f, Mathf.Abs(_fitnessMedian) * 0.25f);
+                _fitnessStatsReady = true;
+            }
+            else
+            {
+                _fitnessStatsReady = false;
+            }
+
+            await UniTask.Delay(1000, cancellationToken: ct);
+        }
+    }
+
+    public void EvolveGenotypes()
+    {
+        if (_tickCursor != 0) return;
+
+        int n = _entities.Count;
+        if (n < 2) return;
+
+        if (n > _evolveIndices.Length)
+        {
+            int cap = _evolveIndices.Length;
+            while (cap < n) cap <<= 1;
+            _evolveIndices = new int[cap];
+            _evolveKeys    = new float[cap];
+        }
+
+        for (int i = 0; i < n; i++)
+        {
+            _evolveIndices[i] = i;
+            _evolveKeys[i]    = _entities[i].GetFitness();
+        }
+
+        _fitnessOrder.Keys = _evolveKeys;
+        Array.Sort(_evolveIndices, 0, n, _fitnessOrder);
+
+        int eliteCount = Mathf.Max(1, (int)(n * SimulationRules.Active.EliteFraction));
+        if (eliteCount >= n) eliteCount = n - 1;
+
+        for (int r = eliteCount; r < n; r++)
+        {
+            var target = _entities[_evolveIndices[r]];
+            if (target.IsDisposed || target.IsDeathPending) continue;
+
+            var pa = _entities[_evolveIndices[_tournamentRng.Range(0, eliteCount)]]
+                     .Brain.Context.CoordMLP.Params;
+            var pb = _entities[_evolveIndices[_tournamentRng.Range(0, eliteCount)]]
+                     .Brain.Context.CoordMLP.Params;
+
+            GeneticParameters.Crossover(in pa, in pb, out var child);
+
+            var ctx = target.Brain.Context;
+            ctx.CoordMLP.Params = child;
+            for (int g = 0; g < ctx.ExecMLPs.Length; g++)
+                ctx.ExecMLPs[g].Params = child;
+
+            ctx.ResetMemory();
+        }
     }
 
     private void OnDestroy()

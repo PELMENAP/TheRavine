@@ -3,16 +3,13 @@ using UnityEngine;
 using TheRavine.EntityControl;
 using System;
 using System.Collections.Generic;
+using Unity.Mathematics;
 
 using TheRavine.Generator;
 using TheRavine.EntityControl.Virology;
 
 public class EntityModel : AEntity
 {
-    private const float FitnessTimeAliveWeight = 1f;
-    private const float FitnessFoodEatenWeight = 15f;
-    private const float FitnessReproduceWeight = 40f;
-    private const float FitnessDamageDealtWeight = 2f;
 
     public enum FitnessEvent { FoodEaten, Reproduced, DamageDealt }
 
@@ -71,11 +68,22 @@ public class EntityModel : AEntity
         }
     }
 
-    public float GetFitness() =>
-        TimeAlive * FitnessTimeAliveWeight +
-        FoodEaten * FitnessFoodEatenWeight +
-        ReproduceCount * FitnessReproduceWeight +
-        DamageDealt * FitnessDamageDealtWeight;
+    public float GetFitness()
+    {
+        var rules = SimulationRules.Active;
+
+        float life     = TimeAlive;
+        float survival = rules.FitnessSurvivalWeight
+                       * math.log(1f + life / math.max(rules.FitnessSurvivalTau, 1e-3f));
+
+        float invTime = rules.FitnessRateWindow / math.max(life, rules.FitnessMinLifetime);
+
+        float events = FoodEaten      * rules.FitnessFoodRateWeight
+                     + ReproduceCount * rules.FitnessReproduceRateWeight
+                     + DamageDealt    * rules.FitnessDamageRateWeight;
+
+        return survival + events * invTime;
+    }
 
     public void CaptureFinalFitness() => FinalFitness = GetFitness();
 
