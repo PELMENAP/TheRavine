@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class SharedHierarchicalBrain
 {
+    private const float OptimizerMaxGradNorm = 3f;
     public enum Goal { Survive = 0, Hunt = 1, Forage = 2, Social = 3 }
     public const int GoalCount = 4;
 
@@ -56,7 +57,6 @@ public class SharedHierarchicalBrain
     private const float OptimizerBaseLr      = 0.01f;
     private const float OptimizerLrDecay     = 2e-5f;
     private const float OptimizerWeightDecay = 1e-5f;
-    private const float OptimizerMaxGradNorm = 1f;
     private RunningMeanStd _rewardNorm;
 
     public SharedHierarchicalBrain(int inputSize, int lstmHidden = 32)

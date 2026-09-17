@@ -17,7 +17,11 @@ public partial class DelayedPerceptron
     private SharedGradientAccumulator _gradScratch;
     private SharedGradientAccumulator _gradAccum;
 
-    public float OptimizerMaxGradNorm = 1f;
+    public float OptimizerMaxGradNorm = 3f;
+
+    private const float BaseLearningRateReference    = 0.0525f;
+    private const float InvBaseLearningRateReference = 1f / BaseLearningRateReference;
+    private const float DefaultEvaluationNeutral     = 0.5f;
 
     public DelayedPerceptron(int inputSize, int h1, int h2, int h3, int outputSize)
         : this(new[] { inputSize, h1, h2, h3, outputSize }) { }
@@ -102,6 +106,7 @@ public partial class DelayedPerceptron
             FlushOldest(ctx, input, critic, gamma);
 
         var item = ctx.Decisions.Push(ctx.NextDecisionId());
+        item.Evaluation = ctx.Params.DefaultEvaluation - DefaultEvaluationNeutral;
         item.CreatedOrdinal = ordinal;
         item.Predicted      = pred;
         item.StartTime      = simTime;
@@ -114,6 +119,7 @@ public partial class DelayedPerceptron
 
         float baseLogit = ctx.Activations[last][ctx.DurationIndex];
         float noise     = SampleGaussian() * DurationNoiseSigma;
+        
         item.DurationLogit = baseLogit;
         item.DurationNoise = noise;
         item.Duration      = DurationFromLogit(baseLogit + noise, minDuration, maxDuration);
@@ -336,8 +342,11 @@ public partial class DelayedPerceptron
 
         ctx.Diagnostics.RecordGradientNorm(norm);
 
-        float scale = MathF.Min(1f, OptimizerMaxGradNorm / (norm + 1e-8f));
-        _gradAccum.AddScaled(g, scale);
+        float clipNorm = MathF.Min(MathF.Max(ctx.Params.MaxGradientNorm, 1e-3f), OptimizerMaxGradNorm);
+        float scale    = MathF.Min(1f, clipNorm / (norm + 1e-8f));
+        float lrMul    = ctx.Params.BaseLearningRate * InvBaseLearningRateReference;
+
+        _gradAccum.AddScaled(g, scale * lrMul);
 
         if (nonFinite > 0) ctx.Diagnostics.RecordNonFiniteGradient(nonFinite);
     }

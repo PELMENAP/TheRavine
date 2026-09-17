@@ -45,6 +45,37 @@ public sealed class SimulationRules : ScriptableObject
 
     [SerializeField] private float minLearningRate  = 1e-3f;
     [SerializeField] private float lrDecayPerSecond = 5e-4f;
+    [SerializeField] private float fitnessSurvivalWeight     = 10f;
+    [SerializeField] private float fitnessSurvivalTau        = 60f;
+    [SerializeField] private float fitnessRateWindow         = 60f;
+    [SerializeField] private float fitnessMinLifetime        = 10f;
+    [SerializeField] private float fitnessFoodRateWeight     = 6f;
+    [SerializeField] private float fitnessReproduceRateWeight = 12f;
+    [SerializeField] private float fitnessDamageRateWeight   = 0.05f;
+
+    [SerializeField] private float terminalFitnessSensitivity = 0.5f;
+    [SerializeField] private float terminalPenaltyMinScale    = 0.25f;
+    [SerializeField] private float terminalPenaltyMaxScale    = 2f;
+
+    [SerializeField] private int   tournamentSize      = 3;
+    [SerializeField] private float generationInterval  = 60f;
+    [SerializeField] private float eliteFraction       = 0.1f;
+
+    public float FitnessSurvivalWeight      => fitnessSurvivalWeight;
+    public float FitnessSurvivalTau         => fitnessSurvivalTau;
+    public float FitnessRateWindow          => fitnessRateWindow;
+    public float FitnessMinLifetime         => fitnessMinLifetime;
+    public float FitnessFoodRateWeight      => fitnessFoodRateWeight;
+    public float FitnessReproduceRateWeight => fitnessReproduceRateWeight;
+    public float FitnessDamageRateWeight    => fitnessDamageRateWeight;
+
+    public float TerminalFitnessSensitivity => terminalFitnessSensitivity;
+    public float TerminalPenaltyMinScale    => terminalPenaltyMinScale;
+    public float TerminalPenaltyMaxScale    => terminalPenaltyMaxScale;
+
+    public int   TournamentSize     => tournamentSize;
+    public float GenerationInterval => generationInterval;
+    public float EliteFraction      => eliteFraction;
 
     public float MinLearningRate  => minLearningRate;
     public float LrDecayPerSecond => lrDecayPerSecond;

@@ -2301,6 +2301,10 @@ PrefabInstance:
       propertyPath: spawnRadius
       value: 100
       objectReference: {fileID: 0}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: initialCount
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 4326377108197735784, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
       propertyPath: m_Name
       value: experiment
