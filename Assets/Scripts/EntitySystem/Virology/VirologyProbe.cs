@@ -1,14 +1,14 @@
 using System.Collections.Generic;
-using System.Threading;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace TheRavine.EntityControl.Virology
 {
     public class VirologyProbe : MonoBehaviour
     {
-        [SerializeField] private float refreshInterval = 0.75f;
+        [SerializeField] private string status;
         [SerializeField] private List<InfectionView> infections = new(4);
+        [SerializeField] private float viralNetFitnessDelta;
+        [SerializeField] private int viralCount;
         [SerializeField] private ProteinAction lastAction;
         [SerializeField] private float lastAmp;
         [SerializeField] private bool lastExecuted;
@@ -17,55 +17,57 @@ namespace TheRavine.EntityControl.Virology
         [SerializeField] private int executedCodons;
         [SerializeField] private int failedCodons;
         [SerializeField] private float sharpness;
-
-        private VirologyComponent _virology;
-        private float _netFitnessDelta;
-        private bool _hasSegments;
+        [SerializeField] private uint tick;
 
         public IReadOnlyList<InfectionView> Infections => infections;
-        public float NetFitnessDelta => _netFitnessDelta;
-        public bool HasSegments => _hasSegments;
+        public float NetFitnessDelta => viralNetFitnessDelta;
+        public bool HasSegments => viralCount > 0;
 
-        public void Bind(EntityModel model)
+        public void Capture(VirologyComponent virology, bool forceRebuild)
         {
-            _virology = model.Virology;
-            if (_virology == null) return;
-            PollAsync(this.GetCancellationTokenOnDestroy()).Forget();
+            if (virology == null) { Clear("no VirologyComponent"); return; }
+            if (virology.IsDisposed) { Clear("disposed"); return; }
+            if (!virology.IsCreated) { Clear("not created (VirologyRuntime not ready)"); return; }
+
+            status = "live";
+            lastAction = virology.LastAction;
+            lastAmp = virology.LastAmp;
+            lastExecuted = virology.LastExecuted;
+            head = virology.Head;
+            tapeLength = virology.TapeLength;
+            executedCodons = virology.ExecutedCodons;
+            failedCodons = virology.FailedCodons;
+            sharpness = virology.Sharpness;
+
+            bool rebuild = forceRebuild || virology.SegmentsDirty;
+            if (!rebuild && (virology.ValuesDirty || virology.TickCount != tick))
+                rebuild = !virology.RefreshInfectionValues(infections);
+            if (rebuild) virology.BuildInfectionViews(infections);
+
+            virology.ConsumeSegmentsDirty();
+            virology.ConsumeValuesDirty();
+            tick = virology.TickCount;
+
+            float sum = 0f;
+            int count = 0;
+            for (int i = 0; i < infections.Count; i++)
+            {
+                var v = infections[i];
+                if (v.IsEndogenous) continue;
+                sum += v.NetFitnessDelta;
+                count++;
+            }
+            viralNetFitnessDelta = sum;
+            viralCount = count;
         }
 
-        private async UniTaskVoid PollAsync(CancellationToken ct)
+        public void Clear(string reason = "unbound")
         {
-            int delay = Mathf.Max(100, (int)(refreshInterval * 1000f));
-
-            while (!ct.IsCancellationRequested)
-            {
-                await UniTask.Delay(delay, cancellationToken: ct);
-                if (_virology == null || _virology.IsDisposed) return;
-
-                lastAction = _virology.LastAction;
-                lastAmp = _virology.LastAmp;
-                lastExecuted = _virology.LastExecuted;
-                head = _virology.Head;
-                tapeLength = _virology.TapeLength;
-                executedCodons = _virology.ExecutedCodons;
-                failedCodons = _virology.FailedCodons;
-                sharpness = _virology.Sharpness;
-
-                if (!_virology.SegmentsDirty) continue;
-                _virology.ConsumeSegmentsDirty();
-
-                _virology.BuildInfectionViews(infections);
-
-                float sum = 0f;
-                bool viral = false;
-                for (int i = 0; i < infections.Count; i++)
-                {
-                    sum += infections[i].NetFitnessDelta;
-                    if (infections[i].StrainLabel != "ENDOGEN") viral = true;
-                }
-                _netFitnessDelta = sum;
-                _hasSegments = viral;
-            }
+            status = reason;
+            infections.Clear();
+            viralNetFitnessDelta = 0f;
+            viralCount = 0;
+            tick = 0u;
         }
     }
 }

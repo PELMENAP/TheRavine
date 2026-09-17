@@ -7,6 +7,7 @@ namespace TheRavine.EntityControl.Virology
     {
         public string StrainLabel;
         public string LineageLabel;
+        public bool IsEndogenous;
         public int CodonCount;
         public float Integrity;
         public int AgeTicks;

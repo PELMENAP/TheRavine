@@ -51,6 +51,11 @@ namespace TheRavine.EntityControl.Virology
         public int LastCodonIndex => _lastCodonIndex;
         public NativeArray<float> Centroids => _table.Centroids;
 
+        private bool _valuesDirty;
+
+        public bool ValuesDirty => _valuesDirty;
+        public void ConsumeValuesDirty() => _valuesDirty = false;
+
         public int SegmentIndexAt(int position)
         {
             for (int i = 0; i < _segments.Length; i++)
@@ -60,7 +65,13 @@ namespace TheRavine.EntityControl.Virology
             }
             return -1;
         }
-
+        public void ReinforceSegment(int index, float amount)
+        {
+            var s = _segments[index];
+            s.Integrity = math.min(s.Integrity + amount, 1f);
+            _segments[index] = s;
+            _valuesDirty = true;
+        }
         public bool HasStrain(ulong strainId, out int index)
         {
             for (int i = 0; i < _segments.Length; i++)
@@ -86,15 +97,6 @@ namespace TheRavine.EntityControl.Virology
             index = -1;
             return false;
         }
-
-        public void ReinforceSegment(int index, float amount)
-        {
-            var s = _segments[index];
-            s.Integrity = math.min(s.Integrity + amount, 1f);
-            _segments[index] = s;
-            _segmentsDirty = true;
-        }
-
         public int CopySegment(int index, NativeArray<ushort> destination)
         {
             var s = _segments[index];
@@ -132,7 +134,7 @@ namespace TheRavine.EntityControl.Virology
                 Length = count,
                 StrainId = strainId,
                 LineageId = lineageId,
-                InsertTick = tick,
+                InsertTick = _tick,
                 Integrity = 1f,
                 NetFitnessDelta = 0f,
                 Tamed = false,
@@ -167,7 +169,13 @@ namespace TheRavine.EntityControl.Virology
 
         public void FillComponent(in GeneticParameters genetics, uint entitySeed)
         {
-            if (_created || !VirologyRuntime.IsReady) return;
+            if (_created) return;
+            if (!VirologyRuntime.IsReady)
+            {
+                UnityEngine.Debug.LogError(
+                    $"[{nameof(VirologyComponent)}] VirologyRuntime not ready, component left uncreated (seed {entitySeed:X8})");
+                return;
+            }
             _created = true;
 
             _table = TranslationTable.CreateFrom(VirologyRuntime.Prototype,
@@ -232,7 +240,6 @@ namespace TheRavine.EntityControl.Virology
             counts.Dispose();
             return (ProteinAction)best;
         }
-
         public void Step(StatsComponent stats)
         {
             if (!_created || IsDisposed || stats == null || stats.IsDisposed) return;
@@ -263,15 +270,23 @@ namespace TheRavine.EntityControl.Virology
             _table.Sharpness = math.clamp(_table.Sharpness + _modifiers.SharpnessDelta * 0.01f, 0.05f, 3f);
             _modifiers.SharpnessDelta = 0f;
 
-            if (_segments.Length > 0)
-            {
-                var seg = _segments[0];
-                seg.NetFitnessDelta += _modifiers.HealthDelta + _modifiers.EnergyDelta;
-                _segments[0] = seg;
-            }
+            int owner = SegmentIndexAt(_lastCodonIndex);
+            if (owner < 0) return;
+
+            float delta = _modifiers.HealthDelta + _modifiers.EnergyDelta - result.SpentEnergy;
+            float reinforce = _modifiers.ReinforceAmount;
+            if (delta == 0f && reinforce <= 0f) return;
+
+            var seg = _segments[owner];
+            seg.NetFitnessDelta += delta;
+            if (reinforce > 0f) seg.Integrity = math.min(seg.Integrity + reinforce, 1f);
+            _segments[owner] = seg;
+
+            _modifiers.ReinforceAmount = 0f;
+            _valuesDirty = true;
         }
 
-        public void BuildInfectionViews(System.Collections.Generic.List<InfectionView> target)
+                public void BuildInfectionViews(System.Collections.Generic.List<InfectionView> target)
         {
             target.Clear();
             if (!_created || IsDisposed) return;
@@ -279,10 +294,12 @@ namespace TheRavine.EntityControl.Virology
             for (int i = 0; i < _segments.Length; i++)
             {
                 var s = _segments[i];
+                bool endogenous = s.IsEndogenous;
                 target.Add(new InfectionView
                 {
-                    StrainLabel = s.StrainId == 0UL ? "ENDOGEN" : ShortHex(s.StrainId),
+                    StrainLabel = endogenous ? "ENDOGEN" : ShortHex(s.StrainId),
                     LineageLabel = ShortHex(s.LineageId),
+                    IsEndogenous = endogenous,
                     CodonCount = s.Length,
                     Integrity = s.Integrity,
                     AgeTicks = (int)(_tick - s.InsertTick),
@@ -291,6 +308,41 @@ namespace TheRavine.EntityControl.Virology
                     NetFitnessDelta = s.NetFitnessDelta
                 });
             }
+        }
+
+        public bool RefreshInfectionValues(System.Collections.Generic.List<InfectionView> target)
+        {
+            if (!_created || IsDisposed || target.Count != _segments.Length) return false;
+
+            for (int i = 0; i < target.Count; i++)
+            {
+                var s = _segments[i];
+                var v = target[i];
+                v.Integrity = s.Integrity;
+                v.NetFitnessDelta = s.NetFitnessDelta;
+                v.AgeTicks = (int)(_tick - s.InsertTick);
+                v.Tamed = s.Tamed;
+                target[i] = v;
+            }
+            return true;
+        }
+
+        public bool TryGetViralSummary(out float netFitness, out int viralCount, out bool allTamed)
+        {
+            netFitness = 0f;
+            viralCount = 0;
+            allTamed = true;
+            if (!_created || IsDisposed) return false;
+
+            for (int i = 0; i < _segments.Length; i++)
+            {
+                var s = _segments[i];
+                if (s.IsEndogenous) continue;
+                viralCount++;
+                netFitness += s.NetFitnessDelta;
+                if (!s.Tamed) allTamed = false;
+            }
+            return viralCount > 0;
         }
 
         private static string ShortHex(ulong id)
