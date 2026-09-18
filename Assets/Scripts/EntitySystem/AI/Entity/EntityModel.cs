@@ -43,8 +43,6 @@ public class EntityModel : AEntity
     }
     private int timeOfDay;
     private bool canAttack = true;
-    private TerrainSensor _terrain;
-    private ChunkFoodIndex _foodIndex;
 
     public float TimeAlive { get; private set; }
     public int FoodEaten { get; private set; }
@@ -54,6 +52,12 @@ public class EntityModel : AEntity
 
     private R3.ReactiveProperty<float> _vecMaxHealth;
     private R3.ReactiveProperty<float> _vecMaxEnergy;
+
+    private TerrainSensor _terrain;
+    private ChunkFoodIndex _foodIndex;
+    private TerrainSample _lastTerrain = TerrainSample.Invalid;
+
+    public ref readonly TerrainSample LastTerrain => ref _lastTerrain;
 
     public bool IsDeathPending { get; private set; }
     public void MarkDeathPending() => IsDeathPending = true;
@@ -192,15 +196,15 @@ public class EntityModel : AEntity
         if (_foodIndex != null)
             _foodIndex.TryFindNearestFood(pos.x, pos.z, Tuning.DetectionRadius, out _, out foodDist);
 
-        if (!_terrain.TrySample(pos.x, pos.z, out TerrainSample terrain))
-            terrain = TerrainSample.Invalid;
+        if (!_terrain.TrySample(pos.x, pos.z, out _lastTerrain))
+            _lastTerrain = TerrainSample.Invalid;
 
         Virology.TryGetViralInputs(out float viralLoad, out float viralSegments, out float viralNet);
 
         LastInput = Vectorizer.Vectorize(
             Stats.Health.Value, Stats.Energy.Value,
             LastActionIndex, timeOfDay, inDanger, timeToBreed,
-            Speech.OtherSpeechHash, enemyDist, foodDist, in terrain, MimickedActionIndex,
+            Speech.OtherSpeechHash, enemyDist, foodDist, in _lastTerrain, MimickedActionIndex,
             viralLoad, viralSegments, viralNet);
 
         Speech.ConsumeOtherSpeech();
@@ -240,7 +244,7 @@ public class EntityModel : AEntity
         states.behaviourCurrent.Update();
         OnUpdate.Execute(R3.Unit.Default);
     }
-    
+
     private float ComputeDangerLevel()
     {
         float d = 0f;

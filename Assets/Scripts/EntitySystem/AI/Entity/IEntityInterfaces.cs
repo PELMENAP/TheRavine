@@ -9,7 +9,7 @@ public interface IEnergySink
 public interface IEntityMotor
 {
     Vector3 Position();
-    UniTask MoveToAsync(Vector3 target, float speed, float maxDuration, float energyCostPerSec, CancellationToken ct);
+    UniTask<MoveResult> MoveToAsync(Vector3 target, float speed, float maxDuration, float energyCostPerSec, CancellationToken ct);
     void Stop();
 }
 

@@ -81,13 +81,13 @@ public class FleeCommand : EntityCommand
         float2 away = math.normalizesafe(delta, new float2(1f, 0f));
         float2 dest = selfFlat + away * (model.Tuning.DetectionRadius * 1.5f);
 
-        await model.Motor.MoveToAsync(Extension.ToWorld(dest, self.y),
+        var move = await model.Motor.MoveToAsync(Extension.ToWorld(dest, self.y),
             model.Tuning.RunSpeed, 2f, model.Tuning.EnergyCostRunning, ct);
 
         if (target == null) return 0.5f;
 
         float dist = Extension.FlatDistance(model.Motor.Position(), target.transform.position);
-        return math.saturate(dist / model.Tuning.DetectionRadius);
+        return math.saturate(dist / model.Tuning.DetectionRadius) - PathCostPenalty(in move);
     }
 }
 
@@ -153,10 +153,10 @@ public class GoToPointCommand : EntityCommand
         if (model.Points.Count == 0) return 0f;
 
         float2 target = model.Points.GetRandom();
-        await model.Motor.MoveToAsync(Extension.ToWorld(in target, model.Motor.Position().y),
+        var move = await model.Motor.MoveToAsync(Extension.ToWorld(in target, model.Motor.Position().y),
             model.Tuning.MoveSpeed, 5f, model.Tuning.EnergyCostMoving, ct);
 
-        return 0.55f;
+        return 0.55f - PathCostPenalty(in move);
     }
 }
 
@@ -268,10 +268,12 @@ public class AttackCommand : EntityCommand
         if (target == null) return 0.2f;
 
         Vector3 targetPos = target.transform.position;
-        await model.Motor.MoveToAsync(targetPos, model.Tuning.MoveSpeed, 2f,
+        var move = await model.Motor.MoveToAsync(targetPos, model.Tuning.MoveSpeed, 2f,
             model.Tuning.EnergyCostMoving, ct);
 
-        if (target == null) return 0.3f;
+        float pathPenalty = PathCostPenalty(in move);
+
+        if (target == null) return 0.3f - pathPenalty;
 
         if (Vector3.Distance(model.Motor.Position(), target.transform.position) <= model.Tuning.AttackRange
             && model.TryStartAttackCooldown())
@@ -282,10 +284,10 @@ public class AttackCommand : EntityCommand
                 victim.Stats.Health.Value -= model.Tuning.AttackDamage;
                 model.RegisterFitnessEvent(EntityModel.FitnessEvent.DamageDealt, model.Tuning.AttackDamage);
             }
-            return victim != null ? 0.9f : 0.4f;
+            return (victim != null ? 0.9f : 0.4f) - pathPenalty;
         }
 
-        return 0.3f;
+        return 0.3f - pathPenalty;
     }
 }
 
@@ -297,8 +299,15 @@ public class WanderCommand : EntityCommand
     {
         var r = SimulationRules.Active;
 
-        var randomCircle = RavineRandom.GetInsideCircle();
-        float2 dir = math.normalizesafe(new float2(randomCircle.x, randomCircle.y), new float2(1f, 0f));
+        float2 desired;
+        if (decision.HasHeading) desired = decision.Heading;
+        else
+        {
+            var randomCircle = RavineRandom.GetInsideCircle();
+            desired = new float2(randomCircle.x, randomCircle.y);
+        }
+
+        float2 dir = TerrainSteering.Blend(in desired, in model.LastTerrain);
 
         Vector3 startPos = model.Motor.Position();
         float2 start = Extension.Flat(startPos);
@@ -307,7 +316,7 @@ public class WanderCommand : EntityCommand
         float radius = model.Tuning.WanderRadius;
         float2 dest = start + dir * radius;
 
-        await model.Motor.MoveToAsync(Extension.ToWorld(in dest, startPos.y), model.Tuning.MoveSpeed,
+        var move = await model.Motor.MoveToAsync(Extension.ToWorld(in dest, startPos.y), model.Tuning.MoveSpeed,
             RavineRandom.RangeFloat(model.Tuning.MinWanderTime, model.Tuning.MaxWanderTime),
             model.Tuning.EnergyCostMoving, ct);
 
@@ -315,7 +324,9 @@ public class WanderCommand : EntityCommand
         float progress = math.saturate(travelled / math.max(radius, 1e-3f));
         float spent = math.max(0f, startEnergy - model.Stats.Energy.Value);
 
-        return math.clamp(progress * r.WanderRewardScale - spent * r.WanderEnergyPenalty,
+        return math.clamp(progress * r.WanderRewardScale
+                        - spent * r.WanderEnergyPenalty
+                        - PathCostPenalty(in move),
             r.WanderRewardMin, r.WanderRewardMax);
     }
 }

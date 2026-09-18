@@ -62,6 +62,20 @@ public sealed class SimulationRules : ScriptableObject
     [SerializeField] private float eliteFraction       = 0.1f;
     [SerializeField] private float basalEnergyDrain = 0.5f;
 
+    [SerializeField] private float terrainBiasWeight  = 0.45f;
+    [SerializeField] private float terrainCostWeight  = 1f;
+    [SerializeField] private float terrainSlopeWeight = 0.8f;
+    [SerializeField] private float terrainWaterWeight = 0.6f;
+    [SerializeField] private float pathCostPenalty    = 0.15f;
+    [SerializeField] private float pathCostRatioMax   = 4f;
+
+    public float TerrainBiasWeight  => terrainBiasWeight;
+    public float TerrainCostWeight  => terrainCostWeight;
+    public float TerrainSlopeWeight => terrainSlopeWeight;
+    public float TerrainWaterWeight => terrainWaterWeight;
+    public float PathCostPenalty    => pathCostPenalty;
+    public float PathCostRatioMax   => pathCostRatioMax;
+
     public float BasalEnergyDrain => basalEnergyDrain;
 
     public float FitnessSurvivalWeight      => fitnessSurvivalWeight;

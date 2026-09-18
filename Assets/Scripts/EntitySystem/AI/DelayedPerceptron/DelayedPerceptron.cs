@@ -9,7 +9,9 @@ public partial class DelayedPerceptron
     private bool[]      _residual;
 
     public const float DurationNoiseSigma = 0.5f;
+    public const float HeadingNoiseSigma  = 0.6f;
     public const float TauEpsilon = 1e-4f;
+
 
     public int[] LayerSizes { get; private set; }
 
@@ -61,8 +63,8 @@ public partial class DelayedPerceptron
     public bool HasResidual(int layer) => _residual[layer];
 
     public PerceptronContext CreateContext(GeneticParameters? p = null,
-        int truncWindow = 8, int decisionCapacity = 16)
-        => new PerceptronContext(LayerSizes, p ?? GeneticParameters.Default, truncWindow, decisionCapacity);
+        int truncWindow = 8, int decisionCapacity = 16, int auxOutputs = 0)
+        => new PerceptronContext(LayerSizes, p ?? GeneticParameters.Default, truncWindow, decisionCapacity, auxOutputs);
 
     public static float DurationFromLogit(float logit, float minDuration, float maxDuration)
     {
@@ -123,6 +125,24 @@ public partial class DelayedPerceptron
         item.DurationLogit = baseLogit;
         item.DurationNoise = noise;
         item.Duration      = DurationFromLogit(baseLogit + noise, minDuration, maxDuration);
+
+        if (ctx.AuxOutputs >= 2)
+        {
+            float ns = SampleGaussian() * HeadingNoiseSigma;
+            float nc = SampleGaussian() * HeadingNoiseSigma;
+
+            float s = MathF.Tanh(outAct[ctx.HeadingIndex]     + ns);
+            float c = MathF.Tanh(outAct[ctx.HeadingIndex + 1] + nc);
+
+            float len = MathF.Sqrt(s * s + c * c);
+            if (len < 1e-4f) { s = 0f; c = 1f; len = 1f; }
+
+            float invLen = 1f / len;
+            item.HeadingNoiseS = ns;
+            item.HeadingNoiseC = nc;
+            item.HeadingSin    = s * invLen;
+            item.HeadingCos    = c * invLen;
+        }
 
         ctx.Diagnostics.RecordDecision(item.Duration);
 
@@ -249,6 +269,13 @@ public partial class DelayedPerceptron
 
         ctx.OutErrBuf[ctx.DurationIndex] =
             gate * ticket.DurationNoise / (DurationNoiseSigma * DurationNoiseSigma);
+
+        if (ctx.AuxOutputs >= 2)
+        {
+            float invHeadVar = 1f / (HeadingNoiseSigma * HeadingNoiseSigma);
+            ctx.OutErrBuf[ctx.HeadingIndex]     = gate * ticket.HeadingNoiseS * invHeadVar;
+            ctx.OutErrBuf[ctx.HeadingIndex + 1] = gate * ticket.HeadingNoiseC * invHeadVar;
+        }
 
         var g = _gradScratch;
         g.Clear();

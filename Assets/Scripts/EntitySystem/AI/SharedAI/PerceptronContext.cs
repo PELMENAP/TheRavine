@@ -26,6 +26,8 @@ public class PerceptronContext
 
     public readonly int ActionCount;
     public readonly int DurationIndex;
+    public readonly int HeadingIndex;
+    public readonly int AuxOutputs;
     public readonly int OutputSize;
 
     public readonly DecisionRing     Decisions;
@@ -48,6 +50,7 @@ public class PerceptronContext
 
     private int _decisionOrdinal;
     public int DecisionOrdinal => _decisionOrdinal;
+
 
     public int NextDecisionOrdinal()
     {
@@ -75,7 +78,7 @@ public class PerceptronContext
     private static bool _capacityInvariantReported;
 
     public PerceptronContext(int[] layerSizes, GeneticParameters p,
-        int truncWindow = 8, int decisionCapacity = 16)
+        int truncWindow = 8, int decisionCapacity = 16, int auxOutputs = 0)
     {
         if (truncWindow < 1 || decisionCapacity < 2)
         {
@@ -128,8 +131,14 @@ public class PerceptronContext
         }
 
         OutputSize    = layerSizes[layerSizes.Length - 1];
-        ActionCount   = OutputSize - 1;
+        AuxOutputs    = auxOutputs;
+        ActionCount   = OutputSize - 1 - auxOutputs;
         DurationIndex = ActionCount;
+        HeadingIndex  = ActionCount + 1;
+
+        if (ActionCount < 2)
+            throw new ArgumentException(
+                $"PerceptronContext: выходной слой {OutputSize} мал для {auxOutputs} доп. выходов");
 
         SoftmaxBuf     = new float[ActionCount];
         BiasedProbs    = new float[ActionCount];

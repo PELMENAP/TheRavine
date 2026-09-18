@@ -6,6 +6,9 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
 
     internal SharedBrainSnapshot(SharedHierarchicalBrain brain) => Brain = brain;
 
+    private const uint Magic   = 0x4E414C45;
+    private const int  Version = 2;
+
     public byte[] Serialize()
     {
         byte[] coordLstm = Brain.CoordLSTM.Serialize();
@@ -23,6 +26,9 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
         using (var ms = new MemoryStream())
         using (var bw = new BinaryWriter(ms))
         {
+            bw.Write(Magic);
+            bw.Write(Version);
+
             WriteBlock(bw, coordLstm);
             WriteBlock(bw, coordMlp);
             for (int i = 0; i < goalCount; i++)
@@ -37,9 +43,30 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
 
     public static SharedBrainSnapshot Deserialize(byte[] data)
     {
+        if (data == null || data.Length < 8)
+        {
+            UnityEngine.Debug.LogError("Снапшот мозга: файл пуст или обрезан");
+            return null;
+        }
+
         using (var ms = new MemoryStream(data))
         using (var br = new BinaryReader(ms))
         {
+            uint magic = br.ReadUInt32();
+            if (magic != Magic)
+            {
+                UnityEngine.Debug.LogError(
+                    "Снапшот мозга: формат версии 1 (без directional head) несовместим с текущей архитектурой, переобучение обязательно");
+                return null;
+            }
+
+            int version = br.ReadInt32();
+            if (version != Version)
+            {
+                UnityEngine.Debug.LogError($"Снапшот мозга: версия {version}, ожидалась {Version}");
+                return null;
+            }
+
             var coordLstm = LSTMMemory.Deserialize(ReadBlock(br));
             var coordMlp  = DelayedPerceptron.Deserialize(ReadBlock(br));
 

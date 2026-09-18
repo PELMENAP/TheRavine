@@ -36,7 +36,7 @@ public class EntityBrainContext
         int combined  = inputSize + lstmHidden;
 
         CoordLSTM     = new LSTMContext(inputSize, lstmHidden);
-        CoordMLP      = new PerceptronContext(coordLayerSizes, geneParams, truncWindow, coordDecisionCapacity);
+        CoordMLP      = new PerceptronContext(coordLayerSizes, geneParams, truncWindow, coordDecisionCapacity, 0);
         CoordCombined = new float[combined];
 
         ExecLSTMs    = new LSTMContext[goalCount];
@@ -46,7 +46,8 @@ public class EntityBrainContext
         for (int i = 0; i < goalCount; i++)
         {
             ExecLSTMs[i]    = new LSTMContext(inputSize, lstmHidden);
-            ExecMLPs[i]     = new PerceptronContext(execLayerSizes[i], geneParams, truncWindow, execDecisionCapacity);
+            ExecMLPs[i]     = new PerceptronContext(execLayerSizes[i], geneParams, truncWindow,
+                                  execDecisionCapacity, SharedHierarchicalBrain.HeadingOutputs);
             ExecCombined[i] = new float[combined];
         }
 
