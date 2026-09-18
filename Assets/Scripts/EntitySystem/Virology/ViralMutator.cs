@@ -11,21 +11,23 @@ namespace TheRavine.EntityControl.Virology
         public const float DeleteWeight = 0.15f;
         public const float DuplicateWeight = 0.15f;
 
-        public static float ResolveRate(ushort firstCodon, NativeArray<float> centroids,
-            NativeArray<float> cellBias, float sharpness)
+        public static float ResolveRate(ushort firstCodon, float[] centroids,
+            float[] cellBias, float sharpness, float mutationRateDelta)
         {
             int action = CodonEmbedding.Translate(firstCodon, centroids, cellBias, sharpness, out float amp);
 
-            return (ProteinAction)action switch
+            float rate = (ProteinAction)action switch
             {
                 ProteinAction.MutationRateUp => math.min(BaseMutationRate * (1f + amp * 3f), 0.5f),
                 ProteinAction.MutationRateDown => BaseMutationRate / (1f + amp * 3f),
                 _ => BaseMutationRate
             };
+
+            return math.clamp(rate * (1f + mutationRateDelta * 2f), 0.001f, 0.5f);
         }
 
-        public static int Transmit(NativeArray<ushort> source, int start, int count,
-            NativeArray<ushort> destination, float rate, ref XorShift32 rng)
+        public static int Transmit(ushort[] source, int start, int count,
+            ushort[] destination, float rate, ref XorShift32 rng)
         {
             int written = 0;
             int capacity = destination.Length;
@@ -68,7 +70,7 @@ namespace TheRavine.EntityControl.Virology
             return written;
         }
 
-        public static ulong ComputeStrainId(NativeArray<ushort> codons, int count)
+        public static ulong ComputeStrainId(ushort[] codons, int count)
         {
             ulong hash = 14695981039346656037UL;
             for (int i = 0; i < count; i++)

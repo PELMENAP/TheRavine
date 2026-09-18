@@ -3,9 +3,6 @@ using System.Runtime.InteropServices;
 using R3;
 using UnityEngine;
 
-/// <summary>
-///   [60..63] — резерв (zeros), готов для расширения
-/// </summary>
 public class InputVectorizer : IDisposable
 {
     public const int VectorSize    = 64;
@@ -40,7 +37,7 @@ public class InputVectorizer : IDisposable
     }
 
     public int GetVectorSize() => VectorSize;
-        public float[] Vectorize(
+    public float[] Vectorize(
         float  health,
         float  energy,
         int    lastAction,
@@ -51,16 +48,19 @@ public class InputVectorizer : IDisposable
         float  nearestEnemyDist = -1f,
         float  nearestFoodDist  = -1f,
         in TerrainSample terrain = default,
-        int    mimickedAction = -1)
+        int    mimickedAction = -1,
+        float  viralLoad = 0f,
+        float  viralSegments = 0f,
+        float  viralNet = 0f)
     {
         int idx = 0;
         float hp  = Mathf.Clamp01(health / _maxHealth);
         float en  = Mathf.Clamp01(energy / _maxEnergy);
 
         _vector[idx++] = hp;
-        _vector[idx++] = 1f - hp;
+        _vector[idx++] = viralLoad;
         _vector[idx++] = en;
-        _vector[idx++] = 1f - en;
+        _vector[idx++] = viralSegments;
         _vector[idx++] = Mathf.Clamp(
             _initialized ? (health - _prevHealth) / _maxHealth : 0f, -1f, 1f);
         _vector[idx++] = Mathf.Clamp(
@@ -106,8 +106,7 @@ public class InputVectorizer : IDisposable
         _vector[idx++] = hasMimic ? 1f : 0f;
         _vector[idx++] = hasMimic ? (mimickedAction + 0.5f) / ActionCount : 0f;
 
-        while (idx < VectorSize)
-            _vector[idx++] = 0f;
+        _vector[idx++] = viralNet;
 
         return _vector;
     }

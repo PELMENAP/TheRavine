@@ -1,5 +1,4 @@
 using System;
-using UnityEngine;
 
 public partial class DelayedPerceptron
 {
@@ -70,17 +69,16 @@ public partial class DelayedPerceptron
         float s = 1f / (1f + MathF.Exp(-logit));
         return minDuration + s * (maxDuration - minDuration);
     }
-
     public DelayedItem Decide(float[] input, PerceptronContext ctx, int delaySteps,
         ValueCritic critic, float gamma, float dt, float simTime,
-        float minDuration, float maxDuration, float epsilon)
+        float minDuration, float maxDuration, float epsilon, float[] logitBias)
     {
         ctx.DeltaTime = dt > 0f ? dt : ctx.DeltaTime;
 
         var rules   = SimulationRules.Active;
         int ordinal = ctx.NextDecisionOrdinal();
 
-        int slot = ForwardPass(input, ctx, out int stamp);
+        int slot = ForwardPass(input, ctx, logitBias, out int stamp);
 
         int   last        = ctx.Activations.Length - 1;
         float[] outAct    = ctx.Activations[last];
@@ -93,9 +91,11 @@ public partial class DelayedPerceptron
 
         bool isExploration = RavineRandom.RangeFloat() < adaptiveEpsilon;
 
+        float[] behaviour = logitBias != null ? ctx.BiasedProbs : outAct;
+
         int pred = isExploration
             ? RavineRandom.RangeInt(0, actionCount)
-            : RouletteWheelSelection(outAct, actionCount);
+            : RouletteWheelSelection(behaviour, actionCount);
 
         float entropy      = CalculateOutputEntropy(outAct, actionCount);
         ctx.AverageEntropy = ctx.AverageEntropy * (1f - ctx.Params.EntropyAlpha)
@@ -119,7 +119,7 @@ public partial class DelayedPerceptron
 
         float baseLogit = ctx.Activations[last][ctx.DurationIndex];
         float noise     = SampleGaussian() * DurationNoiseSigma;
-        
+
         item.DurationLogit = baseLogit;
         item.DurationNoise = noise;
         item.Duration      = DurationFromLogit(baseLogit + noise, minDuration, maxDuration);
@@ -132,7 +132,7 @@ public partial class DelayedPerceptron
         return item;
     }
 
-    private int ForwardPass(float[] input, PerceptronContext ctx, out int stamp)
+    private int ForwardPass(float[] input, PerceptronContext ctx, float[] logitBias, out int stamp)
     {
         float dt   = ctx.DeltaTime;
         int   slot = ctx.BpttPtr;
@@ -178,8 +178,19 @@ public partial class DelayedPerceptron
         }
 
         int outIdx = _weights.Length;
-        SoftmaxInPlace(ctx.Activations[outIdx], ctx.SoftmaxBuf,
-                    ctx.ActionCount, ctx.Params.SoftmaxTemperature);
+        float[] outAct = ctx.Activations[outIdx];
+        int actionCount = ctx.ActionCount;
+        float temp = ctx.Params.SoftmaxTemperature;
+
+        if (logitBias != null)
+        {
+            float[] biased = ctx.LogitScratch;
+            for (int i = 0; i < actionCount; i++) biased[i] = outAct[i] + logitBias[i];
+            SoftmaxInPlace(biased, ctx.SoftmaxBuf, actionCount, temp);
+            Array.Copy(biased, ctx.BiasedProbs, actionCount);
+        }
+
+        SoftmaxInPlace(outAct, ctx.SoftmaxBuf, actionCount, temp);
 
         stamp               = ctx.NextForwardStamp();
         ctx.SlotStamp[slot] = stamp;

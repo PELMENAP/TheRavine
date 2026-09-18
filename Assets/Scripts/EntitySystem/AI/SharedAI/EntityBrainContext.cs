@@ -18,6 +18,9 @@ public class EntityBrainContext
     public float GoalDiscountedReturn;
     public float GoalDiscountFactor;
     public float IntrinsicReward;
+    public readonly float[] CoordBias;
+    public readonly float[][] ExecBias;
+    public float FleeBias;
 
     public EntityBrainContext(
         int inputSize,
@@ -46,6 +49,11 @@ public class EntityBrainContext
             ExecMLPs[i]     = new PerceptronContext(execLayerSizes[i], geneParams, truncWindow, execDecisionCapacity);
             ExecCombined[i] = new float[combined];
         }
+
+        CoordBias = new float[goalCount];
+        ExecBias = new float[goalCount][];
+        for (int i = 0; i < goalCount; i++)
+            ExecBias[i] = new float[SharedHierarchicalBrain.ActionSubsets[i].Length];
     }
 
     public void ResetMemory()

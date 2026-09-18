@@ -19,6 +19,8 @@ public class PerceptronContext
     public readonly float[][] WorkingDeltaH;
 
     public readonly float[] SoftmaxBuf;
+    public readonly float[] BiasedProbs;
+    public readonly float[] LogitScratch;
     public readonly float[] OutErrBuf;
     public readonly float[] NoisedInputBuf;
 
@@ -130,6 +132,8 @@ public class PerceptronContext
         DurationIndex = ActionCount;
 
         SoftmaxBuf     = new float[ActionCount];
+        BiasedProbs    = new float[ActionCount];
+        LogitScratch   = new float[ActionCount];
         OutErrBuf      = new float[OutputSize];
         NoisedInputBuf = new float[layerSizes[0]];
 

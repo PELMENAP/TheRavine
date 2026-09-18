@@ -60,6 +60,9 @@ public sealed class SimulationRules : ScriptableObject
     [SerializeField] private int   tournamentSize      = 3;
     [SerializeField] private float generationInterval  = 60f;
     [SerializeField] private float eliteFraction       = 0.1f;
+    [SerializeField] private float basalEnergyDrain = 0.5f;
+
+    public float BasalEnergyDrain => basalEnergyDrain;
 
     public float FitnessSurvivalWeight      => fitnessSurvivalWeight;
     public float FitnessSurvivalTau         => fitnessSurvivalTau;

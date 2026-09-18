@@ -50,6 +50,7 @@ namespace TheRavine.EntityControl.Virology
 
             float sum = 0f;
             int count = 0;
+            
             for (int i = 0; i < infections.Count; i++)
             {
                 var v = infections[i];

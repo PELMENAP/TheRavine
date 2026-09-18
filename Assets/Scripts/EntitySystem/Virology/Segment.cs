@@ -12,6 +12,8 @@ namespace TheRavine.EntityControl.Virology
         public uint InsertTick;
         public float Integrity;
         public float NetFitnessDelta;
+        public float PrevFitnessDelta;
+        public int TamedTicks;
         public ProteinAction DominantAction;
         public bool Tamed;
 

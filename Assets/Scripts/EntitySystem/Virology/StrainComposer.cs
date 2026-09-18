@@ -72,7 +72,7 @@ namespace TheRavine.EntityControl.Virology
             return _bestAmp[(int)action];
         }
 
-        public static int Compose(ProteinAction[] recipe, NativeArray<ushort> destination, uint seed)
+        public static int Compose(ProteinAction[] recipe, ushort[] destination, uint seed)
         {
             Build();
             var rng = new XorShift32(seed == 0u ? 1u : seed);

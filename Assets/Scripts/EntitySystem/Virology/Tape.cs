@@ -6,21 +6,20 @@ namespace TheRavine.EntityControl.Virology
 {
     public struct Tape : IDisposable
     {
-        public NativeArray<ushort> Codons;
+        public ushort[] Codons;
         public int Length;
         public int Head;
 
         public int Capacity => Codons.Length;
-        public bool IsCreated => Codons.IsCreated;
 
         public static Tape Create(int capacity, Allocator allocator) => new()
         {
-            Codons = new NativeArray<ushort>(capacity, allocator, NativeArrayOptions.ClearMemory),
+            Codons = new ushort[capacity],
             Length = 0,
             Head = 0
         };
 
-        public bool TryInsert(int index, NativeArray<ushort> source, int sourceStart, int count)
+        public bool TryInsert(int index, ushort[] source, int sourceStart, int count)
         {
             if (count <= 0 || Length + count > Capacity) return false;
             index = math.clamp(index, 0, Length);
@@ -51,12 +50,19 @@ namespace TheRavine.EntityControl.Virology
             if (Head >= Length) Head = 0;
         }
 
-        public void Advance(int maxTapeLength)
+        public void Advance(int maxTapeLength, bool primed)
         {
             if (Length <= 0) { Head = 0; return; }
-            Head += Length > maxTapeLength ? 2 : 1;
-            if (Head >= Length) Head -= Length * (Head / Length);
-            if (Head >= Length) Head = 0;
+
+            int step = (primed || Length <= maxTapeLength) ? 1 : 2;
+            Head += step;
+
+            if (Head >= Length)
+            {
+                Head -= Length;
+                if (step == 2 && (Length & 1) == 0) Head++;
+                if (Head >= Length) Head -= Length;
+            }
         }
 
         public ulong ComputeHash(int start, int count)
@@ -73,7 +79,6 @@ namespace TheRavine.EntityControl.Virology
 
         public void Dispose()
         {
-            if (Codons.IsCreated) Codons.Dispose();
         }
     }
 }
