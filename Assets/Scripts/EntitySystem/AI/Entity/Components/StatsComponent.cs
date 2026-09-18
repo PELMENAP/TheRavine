@@ -23,13 +23,15 @@ public class StatsComponent : IComponent
         Energy = new ReactiveProperty<float>(maxEnergy * 0.5f);
     }
 
-    public void Tick(float deltaTime, float regenRate, bool isIdle,
-        float starvationThreshold, float starvationDamage, float starvationEnergyReturn)
+    public void Tick(float deltaTime, float regenRate, float metabolismMultiplier, float basalDrain,
+        bool isIdle, float starvationThreshold, float starvationDamage, float starvationEnergyReturn)
     {
         if (IsDisposed || !_filled) return;
 
         float health = Health.Value;
         float energy = Energy.Value;
+
+        energy -= basalDrain * metabolismMultiplier * deltaTime;
 
         if (isIdle && energy < MaxEnergy)
             energy = math.min(energy + regenRate * deltaTime, MaxEnergy);

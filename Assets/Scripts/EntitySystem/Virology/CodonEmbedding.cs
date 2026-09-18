@@ -25,11 +25,11 @@ namespace TheRavine.EntityControl.Virology
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int Translate(ushort codon, NativeArray<float> centroids,
-            NativeArray<float> cellBias, float sharpness, out float amp)
+        public static int Translate(ushort codon, float[] centroids,
+            float[] cellBias, float sharpness, out float amp)
         {
             Embed(codon, out float4 lo, out float4 hi);
-            var rows = centroids.Reinterpret<float4>(sizeof(float));
+            float4[] rows = new float4[centroids.Length / 4];
 
             int best = 0;
             float bestScore = float.MaxValue;

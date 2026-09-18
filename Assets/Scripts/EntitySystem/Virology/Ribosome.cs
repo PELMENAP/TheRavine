@@ -23,6 +23,7 @@ namespace TheRavine.EntityControl.Virology
         public bool ExciseRequested;
         public bool Dormant;
         public float SpreadAmp;
+        public int StateTicks;
 
         public static EffectModifiers Neutral => new()
         {
@@ -52,16 +53,16 @@ namespace TheRavine.EntityControl.Virology
 
     public static class Ribosome
     {
-        public const float DecayToNeutral = 0.02f;
+        public const int StateLifetimeTicks = 256;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static TranslationResult Step(
             ref Tape tape,
             ref EffectModifiers modifiers,
             ref bool primed,
-            NativeArray<float> centroids,
-            NativeArray<float> cellBias,
-            NativeArray<ProteinDescriptor> descriptors,
+            float[] centroids,
+            float[] cellBias,
+            ProteinDescriptor[] descriptors,
             float sharpness,
             float availableEnergy,
             int maxTapeLength)
@@ -89,7 +90,7 @@ namespace TheRavine.EntityControl.Virology
             }
             else primed = false;
 
-            tape.Advance(maxTapeLength);
+            tape.Advance(maxTapeLength, primed);
             return result;
         }
 
@@ -101,14 +102,30 @@ namespace TheRavine.EntityControl.Virology
                 case ProteinAction.DrainHealth: m.HealthDelta -= magnitude; break;
                 case ProteinAction.AddEnergy: m.EnergyDelta += magnitude; break;
                 case ProteinAction.DrainEnergy: m.EnergyDelta -= magnitude; break;
-                case ProteinAction.RegenBoost: m.RegenMultiplier = math.min(m.RegenMultiplier + magnitude, 4f); break;
-                case ProteinAction.MetabolismUp: m.MetabolismMultiplier = math.min(m.MetabolismMultiplier + magnitude, 4f); break;
-                case ProteinAction.MetabolismDown: m.MetabolismMultiplier = math.max(m.MetabolismMultiplier - magnitude, 0.1f); break;
-                case ProteinAction.ModifyWander: m.WanderBias = math.clamp(m.WanderBias + magnitude, -2f, 2f); break;
-                case ProteinAction.ModifyForage: m.ForageBias = math.clamp(m.ForageBias + magnitude, -2f, 2f); break;
-                case ProteinAction.ModifyHunt: m.HuntBias = math.clamp(m.HuntBias + magnitude, -2f, 2f); break;
-                case ProteinAction.ModifySocial: m.SocialBias = math.clamp(m.SocialBias + magnitude, -2f, 2f); break;
-                case ProteinAction.ModifyFlee: m.FleeBias = math.clamp(m.FleeBias + magnitude, -2f, 2f); break;
+                case ProteinAction.RegenBoost:
+                    m.RegenMultiplier = math.min(m.RegenMultiplier + magnitude, 4f);
+                    m.StateTicks = StateLifetimeTicks; break;
+                case ProteinAction.MetabolismUp:
+                    m.MetabolismMultiplier = math.min(m.MetabolismMultiplier + magnitude, 4f);
+                    m.StateTicks = StateLifetimeTicks; break;
+                case ProteinAction.MetabolismDown:
+                    m.MetabolismMultiplier = math.max(m.MetabolismMultiplier - magnitude, 0.1f);
+                    m.StateTicks = StateLifetimeTicks; break;
+                case ProteinAction.ModifyWander:
+                    m.WanderBias = math.clamp(m.WanderBias + magnitude, -2f, 2f);
+                    m.StateTicks = StateLifetimeTicks; break;
+                case ProteinAction.ModifyForage:
+                    m.ForageBias = math.clamp(m.ForageBias + magnitude, -2f, 2f);
+                    m.StateTicks = StateLifetimeTicks; break;
+                case ProteinAction.ModifyHunt:
+                    m.HuntBias = math.clamp(m.HuntBias + magnitude, -2f, 2f);
+                    m.StateTicks = StateLifetimeTicks; break;
+                case ProteinAction.ModifySocial:
+                    m.SocialBias = math.clamp(m.SocialBias + magnitude, -2f, 2f);
+                    m.StateTicks = StateLifetimeTicks; break;
+                case ProteinAction.ModifyFlee:
+                    m.FleeBias = math.clamp(m.FleeBias + magnitude, -2f, 2f);
+                    m.StateTicks = StateLifetimeTicks; break;
                 case ProteinAction.SharpnessUp: m.SharpnessDelta = math.clamp(m.SharpnessDelta + magnitude, -0.5f, 0.5f); break;
                 case ProteinAction.SharpnessDown: m.SharpnessDelta = math.clamp(m.SharpnessDelta - magnitude, -0.5f, 0.5f); break;
                 case ProteinAction.Replicate: m.ReplicateRequested = true; break;
@@ -116,20 +133,29 @@ namespace TheRavine.EntityControl.Virology
                 case ProteinAction.Reinforce: m.ReinforceAmount += magnitude; break;
                 case ProteinAction.Excise: m.ExciseRequested = true; break;
                 case ProteinAction.Dormant: m.Dormant = true; break;
-                case ProteinAction.MutationRateUp: m.MutationRateDelta = math.clamp(m.MutationRateDelta + magnitude, -0.5f, 0.5f); break;
-                case ProteinAction.MutationRateDown: m.MutationRateDelta = math.clamp(m.MutationRateDelta - magnitude, -0.5f, 0.5f); break;
+                case ProteinAction.MutationRateUp:
+                    m.MutationRateDelta = math.clamp(m.MutationRateDelta + magnitude, -0.5f, 0.5f);
+                    m.StateTicks = StateLifetimeTicks; break;
+                case ProteinAction.MutationRateDown:
+                    m.MutationRateDelta = math.clamp(m.MutationRateDelta - magnitude, -0.5f, 0.5f);
+                    m.StateTicks = StateLifetimeTicks; break;
             }
         }
 
         public static void Relax(ref EffectModifiers m)
         {
-            m.RegenMultiplier = math.lerp(m.RegenMultiplier, 1f, DecayToNeutral);
-            m.MetabolismMultiplier = math.lerp(m.MetabolismMultiplier, 1f, DecayToNeutral);
-            m.WanderBias = math.lerp(m.WanderBias, 0f, DecayToNeutral);
-            m.ForageBias = math.lerp(m.ForageBias, 0f, DecayToNeutral);
-            m.HuntBias = math.lerp(m.HuntBias, 0f, DecayToNeutral);
-            m.SocialBias = math.lerp(m.SocialBias, 0f, DecayToNeutral);
-            m.FleeBias = math.lerp(m.FleeBias, 0f, DecayToNeutral);
+            if (m.StateTicks > 0) m.StateTicks--;
+            else
+            {
+                m.RegenMultiplier = 1f;
+                m.MetabolismMultiplier = 1f;
+                m.WanderBias = 0f;
+                m.ForageBias = 0f;
+                m.HuntBias = 0f;
+                m.SocialBias = 0f;
+                m.FleeBias = 0f;
+                m.MutationRateDelta = 0f;
+            }
             m.Dormant = false;
         }
     }

@@ -7,14 +7,14 @@ namespace TheRavine.EntityControl.Virology
     {
         public const uint PrototypeSeed = 0x5EEDC0DEu;
 
-        private static NativeArray<ProteinDescriptor> _descriptors;
-        private static NativeArray<float> _cellBias;
-        private static NativeArray<float> _prototype;
+        private static ProteinDescriptor[] _descriptors;
+        private static float[] _cellBias;
+        private static float[] _prototype;
         private static bool _ready;
 
-        public static NativeArray<ProteinDescriptor> Descriptors => _descriptors;
-        public static NativeArray<float> CellBias => _cellBias;
-        public static NativeArray<float> Prototype => _prototype;
+        public static ProteinDescriptor[] Descriptors => _descriptors;
+        public static float[] CellBias => _cellBias;
+        public static float[] Prototype => _prototype;
         public static bool IsReady => _ready;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -22,10 +22,8 @@ namespace TheRavine.EntityControl.Virology
         {
             if (_ready) return;
 
-            _descriptors = new NativeArray<ProteinDescriptor>(ProteinTable.ActionCount,
-                Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            _cellBias = new NativeArray<float>(ProteinTable.ActionCount,
-                Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _descriptors = new ProteinDescriptor[ProteinTable.ActionCount];
+            _cellBias = new float[ProteinTable.ActionCount];
 
             for (int i = 0; i < ProteinTable.ActionCount; i++)
             {
@@ -43,9 +41,6 @@ namespace TheRavine.EntityControl.Virology
             Application.quitting -= Shutdown;
             if (!_ready) return;
             _ready = false;
-            if (_descriptors.IsCreated) _descriptors.Dispose();
-            if (_cellBias.IsCreated) _cellBias.Dispose();
-            if (_prototype.IsCreated) _prototype.Dispose();
         }
     }
 }

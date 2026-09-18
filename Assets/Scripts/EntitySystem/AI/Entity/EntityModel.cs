@@ -178,6 +178,10 @@ public class EntityModel : AEntity
         TimeAlive += dt;
         timeOfDay = (timeOfDay + 1) % 24;
 
+        Virology.Step(Stats);
+
+        if (IsDeathPending || IsDisposed || Stats.IsDisposed || Stats.Health.Value <= 0f) return;
+
         float inDanger = ComputeDangerLevel();
         float timeToBreed = ComputeBreedReadiness();
 
@@ -191,10 +195,13 @@ public class EntityModel : AEntity
         if (!_terrain.TrySample(pos.x, pos.z, out TerrainSample terrain))
             terrain = TerrainSample.Invalid;
 
+        Virology.TryGetViralInputs(out float viralLoad, out float viralSegments, out float viralNet);
+
         LastInput = Vectorizer.Vectorize(
             Stats.Health.Value, Stats.Energy.Value,
             LastActionIndex, timeOfDay, inDanger, timeToBreed,
-            Speech.OtherSpeechHash, enemyDist, foodDist, in terrain, MimickedActionIndex);
+            Speech.OtherSpeechHash, enemyDist, foodDist, in terrain, MimickedActionIndex,
+            viralLoad, viralSegments, viralNet);
 
         Speech.ConsumeOtherSpeech();
         ConsumeMimickedAction();
@@ -202,13 +209,22 @@ public class EntityModel : AEntity
         bool isIdle = states.behaviourCurrent.GetType() == typeof(SurviveState)
                 && LastActionIndex == (int)EntityAction.Idle;
 
-        Virology.Step(Stats);
-
         var rules = SimulationRules.Active;
-        Stats.Tick(dt, Tuning.EnergyRegenRate * Virology.Modifiers.RegenMultiplier, isIdle,
+        Stats.Tick(dt,
+            Tuning.EnergyRegenRate * Virology.Modifiers.RegenMultiplier,
+            Virology.Modifiers.MetabolismMultiplier,
+            rules.BasalEnergyDrain,
+            isIdle,
             rules.StarvationThreshold, rules.StarvationDamage, rules.StarvationEnergyReturn);
 
         if (IsDeathPending || IsDisposed || Stats.IsDisposed || Stats.Health.Value <= 0f) return;
+
+        var brainCtx = Brain.Context;
+        brainCtx.CoordBias[0] = Virology.Modifiers.WanderBias;
+        brainCtx.CoordBias[1] = Virology.Modifiers.HuntBias;
+        brainCtx.CoordBias[2] = Virology.Modifiers.ForageBias;
+        brainCtx.CoordBias[3] = Virology.Modifiers.SocialBias;
+        brainCtx.FleeBias     = Virology.Modifiers.FleeBias;
 
         if (Brain.TryDecide(LastInput, now, dt, out var decision))
         {
@@ -224,6 +240,7 @@ public class EntityModel : AEntity
         states.behaviourCurrent.Update();
         OnUpdate.Execute(R3.Unit.Default);
     }
+    
     private float ComputeDangerLevel()
     {
         float d = 0f;

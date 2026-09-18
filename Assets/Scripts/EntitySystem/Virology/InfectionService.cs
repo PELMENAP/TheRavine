@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -14,8 +12,8 @@ namespace TheRavine.EntityControl.Virology
         public const float RecombinationChance = 0.35f;
 
         private readonly GameObject[] _neighbors = new GameObject[MaxNeighbors];
-        private NativeArray<ushort> _payload;
-        private NativeArray<ushort> _mutated;
+        private ushort[] _payload;
+        private ushort[] _mutated;
         private XorShift32 _rng;
         private bool _created;
 
@@ -26,21 +24,24 @@ namespace TheRavine.EntityControl.Virology
 
         public InfectionService(uint seed)
         {
-            _payload = new NativeArray<ushort>(PayloadCapacity, Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            _mutated = new NativeArray<ushort>(PayloadCapacity, Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
+            _payload = new ushort[PayloadCapacity];
+            _mutated = new ushort[PayloadCapacity];
             _rng = new XorShift32(seed == 0u ? 0x1234567u : seed);
             _created = true;
         }
 
-        public void ProcessSpread(IReadOnlyList<EntityModel> entities, uint tick)
-        {
-            if (!_created) return;
+        public const float SelectionGain = 4f;
+        public const float SelectionFloor = 0.05f;
 
-            for (int i = 0; i < entities.Count; i++)
+        public void ProcessSpread(EntityModel[] batch, int start, int end, uint tick)
+        {
+            if (!_created || batch == null) return;
+            if (start < 0) start = 0;
+            if (end > batch.Length) end = batch.Length;
+
+            for (int i = start; i < end; i++)
             {
-                var donor = entities[i];
+                var donor = batch[i];
                 if (donor == null || donor.IsDisposed || donor.IsDeathPending) continue;
 
                 var virology = donor.Virology;
@@ -70,7 +71,16 @@ namespace TheRavine.EntityControl.Virology
             var target = SelectTarget(donor, found, amp);
             if (target == null) { FailedAttempts++; return; }
 
-            if (ViralMutator.NextUnit(ref _rng) > math.saturate(amp * AccuracyBias))
+            float hostViability = donor.Stats != null && !donor.Stats.IsDisposed && donor.Stats.MaxHealth > 0f
+                ? math.saturate(donor.Stats.Health.Value / donor.Stats.MaxHealth)
+                : 0f;
+
+            float selection = math.saturate(0.5f + virology.NetFitnessOf(donorIndex) * SelectionGain)
+                            * hostViability;
+
+            float chance = math.saturate(amp * AccuracyBias) * math.max(selection, SelectionFloor);
+
+            if (ViralMutator.NextUnit(ref _rng) > chance)
             {
                 FailedAttempts++;
                 return;
@@ -79,7 +89,8 @@ namespace TheRavine.EntityControl.Virology
             var receiver = target.Virology;
 
             float rate = ViralMutator.ResolveRate(virology.FirstCodonOf(donorIndex),
-                virology.Centroids, VirologyRuntime.CellBias, virology.Sharpness);
+                virology.Centroids, VirologyRuntime.CellBias, virology.Sharpness,
+                virology.Modifiers.MutationRateDelta);
 
             int mutatedCount = ViralMutator.Transmit(_payload, 0, count, _mutated, rate, ref _rng);
             if (mutatedCount <= 0) { FailedAttempts++; return; }
@@ -197,8 +208,7 @@ namespace TheRavine.EntityControl.Virology
         {
             if (!_created) return;
             _created = false;
-            if (_payload.IsCreated) _payload.Dispose();
-            if (_mutated.IsCreated) _mutated.Dispose();
+
         }
     }
 }

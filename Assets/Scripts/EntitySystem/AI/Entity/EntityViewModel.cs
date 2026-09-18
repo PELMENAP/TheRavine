@@ -23,6 +23,10 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
         if (model == null || model.IsDisposed || model.Stats == null || model.Stats.IsDisposed)
             return false;
 
+        var virology = model.Virology;
+        if (virology != null && virology.IsCreated && !virology.IsDisposed)
+            amount *= virology.Modifiers.MetabolismMultiplier;
+
         float left = model.Stats.Energy.Value - amount;
         model.Stats.Energy.Value = left > 0f ? left : 0f;
         return true;

@@ -164,6 +164,29 @@ public class SharedHierarchicalBrain
         ApplyPendingGradients();
     }
 
+    private const int FleeAction = 5;
+    private static readonly int[] FleeSlots = BuildFleeSlots();
+
+    private static int[] BuildFleeSlots()
+    {
+        var slots = new int[GoalCount];
+        for (int g = 0; g < GoalCount; g++)
+        {
+            slots[g] = -1;
+            var subset = ActionSubsets[g];
+            for (int i = 0; i < subset.Length; i++)
+                if (subset[i] == FleeAction) { slots[g] = i; break; }
+        }
+        return slots;
+    }
+
+    private static bool HasBias(float[] bias)
+    {
+        for (int i = 0; i < bias.Length; i++)
+            if (bias[i] != 0f) return true;
+        return false;
+    }
+
     public bool TryDecide(float[] input, EntityBrainContext ctx, float simTime, float dt,
         out BrainDecision decision, float coordEps = 0.05f, float execEps = 0.15f)
     {
@@ -179,9 +202,12 @@ public class SharedHierarchicalBrain
             float[] coordH = coordLSTM.Step(input, ctx.CoordLSTM);
             BuildCombined(input, coordH, ctx.CoordCombined);
 
+            float[] coordBias = HasBias(ctx.CoordBias) ? ctx.CoordBias : null;
+
             var goalTicket = coordinator.Decide(ctx.CoordCombined, ctx.CoordMLP, CoordDelaySteps,
                 coordCritic, Gamma, dt, simTime,
-                ActionDurationTable.MinGoalSeconds, ActionDurationTable.MaxGoalSeconds, coordEps);
+                ActionDurationTable.MinGoalSeconds, ActionDurationTable.MaxGoalSeconds, coordEps,
+                coordBias);
 
             ctx.CurrentGoal          = (Goal)goalTicket.Predicted;
             ctx.CoordDecisionId      = goalTicket.DecisionId;
@@ -205,8 +231,17 @@ public class SharedHierarchicalBrain
             if (hi > maxD) maxD = hi;
         }
 
+        float[] execBias = null;
+        int fleeSlot = FleeSlots[g];
+        if (fleeSlot >= 0 && ctx.FleeBias != 0f)
+        {
+            execBias = ctx.ExecBias[g];
+            Array.Clear(execBias, 0, execBias.Length);
+            execBias[fleeSlot] = ctx.FleeBias;
+        }
+
         var ticket = executors[g].Decide(ctx.ExecCombined[g], ctx.ExecMLPs[g], ExecDelaySteps,
-            execCritics[g], Gamma, dt, simTime, minD, maxD, execEps);
+            execCritics[g], Gamma, dt, simTime, minD, maxD, execEps, execBias);
 
         int action = subset[ticket.Predicted];
         float clamped = Mathf.Clamp(ticket.Duration,
@@ -219,7 +254,6 @@ public class SharedHierarchicalBrain
             ctx.CurrentGoal, simTime, clamped);
         return true;
     }
-
     public void CompleteDecision(int decisionId, float reward, EntityBrainContext ctx,
         float simTime, EntityCommandStatus status)
     {

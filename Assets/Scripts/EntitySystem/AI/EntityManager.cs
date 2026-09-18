@@ -191,7 +191,7 @@ public class EntityManager : MonoBehaviour
             }
 
             _virologyTick++;
-            _infection.ProcessSpread(_entities, _virologyTick);
+            _infection.ProcessSpread(_tickSnapshot, _tickCursor, end, _virologyTick);
 
             _transmissions = _infection.Transmissions;
             _recombinations = _infection.Recombinations;

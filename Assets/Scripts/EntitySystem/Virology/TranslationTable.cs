@@ -6,20 +6,16 @@ namespace TheRavine.EntityControl.Virology
 {
     public struct TranslationTable : IDisposable
     {
-        public NativeArray<float> Centroids;
+        public float[] Centroids;
         public float Sharpness;
 
         public const float CentroidSpread = 0.50f;
         public const float JitterScale = 0.18f;
         public const float MutationScale = 0.12f;
 
-        public bool IsCreated => Centroids.IsCreated;
-
-        public static NativeArray<float> CreatePrototype(uint seed, Allocator allocator)
+        public static float[] CreatePrototype(uint seed, Allocator allocator)
         {
-            var array = new NativeArray<float>(
-                ProteinTable.ActionCount * ProteinTable.EmbedDim, allocator,
-                NativeArrayOptions.UninitializedMemory);
+            var array = new float[ProteinTable.ActionCount * ProteinTable.EmbedDim];
 
             var rng = new XorShift32(seed);
             for (int i = 0; i < array.Length; i++)
@@ -28,14 +24,13 @@ namespace TheRavine.EntityControl.Virology
             return array;
         }
 
-        public static TranslationTable CreateFrom(NativeArray<float> prototype, float sharpness,
-            float jitter, uint seed, Allocator allocator)
+        public static TranslationTable CreateFrom(float[] prototype, float sharpness,
+            float jitter, uint seed)
         {
             var table = new TranslationTable
             {
                 Sharpness = sharpness,
-                Centroids = new NativeArray<float>(prototype.Length, allocator,
-                    NativeArrayOptions.UninitializedMemory)
+                Centroids = new float[prototype.Length]
             };
 
             var rng = new XorShift32(seed);
@@ -50,10 +45,9 @@ namespace TheRavine.EntityControl.Virology
             var copy = new TranslationTable
             {
                 Sharpness = Sharpness,
-                Centroids = new NativeArray<float>(Centroids.Length, allocator,
-                    NativeArrayOptions.UninitializedMemory)
+                Centroids = new float[Centroids.Length]
             };
-            copy.Centroids.CopyFrom(Centroids);
+            Array.Copy(Centroids, copy.Centroids, Centroids.Length);
             return copy;
         }
 
@@ -70,7 +64,6 @@ namespace TheRavine.EntityControl.Virology
 
         public void Dispose()
         {
-            if (Centroids.IsCreated) Centroids.Dispose();
         }
 
         private static float NextUnit(ref XorShift32 rng)
