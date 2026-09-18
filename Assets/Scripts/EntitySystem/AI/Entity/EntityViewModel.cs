@@ -54,7 +54,7 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
         return transform.position;
     }
 
-    public UniTask MoveToAsync(Vector3 target, float speed, float maxDuration,
+    public UniTask<MoveResult> MoveToAsync(Vector3 target, float speed, float maxDuration,
         float energyCostPerSec, CancellationToken ct)
         => motor.MoveToAsync(target, speed, maxDuration, energyCostPerSec, ct);
 

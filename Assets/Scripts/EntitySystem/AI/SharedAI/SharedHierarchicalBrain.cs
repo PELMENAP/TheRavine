@@ -25,8 +25,10 @@ public class SharedHierarchicalBrain
 
     private static int[] BuildCoordSizes(int combined) => new[] { combined, 32, 16, 16, GoalCount + 1 };
 
+    public const int HeadingOutputs = 2;
+
     private static int[] BuildExecSizes(int combined, int goal)
-        => new[] { combined, 64, 32, 32, ActionSubsets[goal].Length + 1 };
+        => new[] { combined, 64, 32, 32, ActionSubsets[goal].Length + 1 + HeadingOutputs };
 
 
     private readonly LSTMMemory         coordLSTM;
@@ -58,6 +60,7 @@ public class SharedHierarchicalBrain
     private const float OptimizerLrDecay     = 2e-5f;
     private const float OptimizerWeightDecay = 1e-5f;
     private RunningMeanStd _rewardNorm;
+    
 
     public SharedHierarchicalBrain(int inputSize, int lstmHidden = 32)
     {
@@ -251,9 +254,11 @@ public class SharedHierarchicalBrain
         ctx.ExecWindow.Begin(ticket.DecisionId, simTime, clamped);
 
         decision = new BrainDecision(action, ticket.DecisionId, ctx.CoordDecisionId,
-            ctx.CurrentGoal, simTime, clamped);
+            ctx.CurrentGoal, simTime, clamped,
+            new float2(ticket.HeadingSin, ticket.HeadingCos));
         return true;
     }
+
     public void CompleteDecision(int decisionId, float reward, EntityBrainContext ctx,
         float simTime, EntityCommandStatus status)
     {
@@ -341,6 +346,15 @@ public class SharedHierarchicalBrain
                 execLSTMs[i].HiddenSize != coordLSTM.HiddenSize)
             {
                 Debug.LogError($"Снапшот мозга некорректен: размеры exec-модели {i} не совпадают с координатором");
+                return null;
+            }
+
+            int[] sizes  = executors[i].LayerSizes;
+            int actual   = sizes[sizes.Length - 1];
+            int expected = ActionSubsets[i].Length + 1 + HeadingOutputs;
+            if (actual != expected)
+            {
+                Debug.LogError($"Снапшот мозга несовместим: exec {i} имеет {actual} выходов, ожидалось {expected} (directional head)");
                 return null;
             }
         }

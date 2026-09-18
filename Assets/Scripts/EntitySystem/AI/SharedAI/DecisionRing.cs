@@ -19,6 +19,10 @@ public sealed class DelayedItem
 
     public readonly float[] State;
     public readonly float[] Probs;
+    public float HeadingSin;
+    public float HeadingCos;
+    public float HeadingNoiseS;
+    public float HeadingNoiseC;
 
     public DelayedItem(int stateSize, int actionCount)
     {
@@ -44,6 +48,10 @@ public sealed class DelayedItem
         StepsElapsed = 0;
         RewardApplied = false;
         Trained = false;
+        HeadingSin = 0f;
+        HeadingCos = 0f;
+        HeadingNoiseS = 0f;
+        HeadingNoiseC = 0f;
     }
 }
 

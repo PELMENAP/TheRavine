@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Unity.Mathematics;
 using Cysharp.Threading.Tasks;
 
 public abstract class EntityCommand : ICommand
@@ -14,6 +15,14 @@ public abstract class EntityCommand : ICommand
     public virtual bool CanExecute() => true;
     protected virtual float InterruptionReward => SimulationRules.Active.InterruptionReward;
     protected virtual float FailureReward => SimulationRules.Active.FailureReward;
+    protected static float PathCostPenalty(in MoveResult move)
+    {
+        if (move.Distance <= 1e-3f) return 0f;
+
+        var r = SimulationRules.Active;
+        float ratio = math.min(move.CostPerUnit, r.PathCostRatioMax);
+        return (ratio - 1f) * r.PathCostPenalty;
+    }
 
     public async UniTask ExecuteAsync()
     {
