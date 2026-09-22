@@ -60,6 +60,9 @@ public class SharedHierarchicalBrain
     private const float OptimizerLrDecay     = 2e-5f;
     private const float OptimizerWeightDecay = 1e-5f;
     private RunningMeanStd _rewardNorm;
+
+    private PerceptronLayout   _coordCtxLayout;
+    private PerceptronLayout[] _execCtxLayouts;
     
 
     public SharedHierarchicalBrain(int inputSize, int lstmHidden = 32)
@@ -92,6 +95,7 @@ public class SharedHierarchicalBrain
         _rnd = new RandomNetworkDistillation(inputSize);
 
         ConfigureOptimizer();
+        BuildContextLayouts();
         ApplyPendingGradients();
     }
 
@@ -124,9 +128,18 @@ public class SharedHierarchicalBrain
     }
 
     public EntityBrainContext CreateContext(GeneticParameters? p = null)
-        => new EntityBrainContext(InputSize, LstmHidden, CoordLayerSizes, ExecLayerSizes,
-                                p ?? GeneticParameters.Default,
-                                TruncWindow, CoordRingCapacity, ExecRingCapacity);
+    {
+        if (_coordCtxLayout == null) BuildContextLayouts();
+        return new EntityBrainContext(InputSize, LstmHidden, _coordCtxLayout, _execCtxLayouts,
+                                      p ?? GeneticParameters.Default);
+    }
+    private void BuildContextLayouts()
+    {
+        _coordCtxLayout = coordinator.BuildContextLayout(TruncWindow, CoordRingCapacity, 0);
+        _execCtxLayouts = new PerceptronLayout[GoalCount];
+        for (int i = 0; i < GoalCount; i++)
+            _execCtxLayouts[i] = executors[i].BuildContextLayout(TruncWindow, ExecRingCapacity, HeadingOutputs);
+    }
 
     public void GiveReward(float reward, int decisionId, EntityBrainContext ctx)
     {
@@ -164,6 +177,7 @@ public class SharedHierarchicalBrain
         }
 
         ConfigureOptimizer();
+        BuildContextLayouts();
         ApplyPendingGradients();
     }
 
@@ -324,6 +338,7 @@ public class SharedHierarchicalBrain
         _rnd = new RandomNetworkDistillation(InputSize);
 
         ConfigureOptimizer();
+        BuildContextLayouts();
         ApplyPendingGradients();
     }
 

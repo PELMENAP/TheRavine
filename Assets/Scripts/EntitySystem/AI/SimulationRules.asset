@@ -16,21 +16,23 @@ MonoBehaviour:
   idleLongActivityPenaltyStart: 0.85
   idleRewardLowEnergy: 0.6
   idleRewardOveractive: -0.35
-  eatHealFood: 30
-  eatEnergyFood: 20
+  eatHealFood: 20
+  eatEnergyFood: 40
   eatRewardFood: 0.8
-  eatHealNoFood: 4
-  eatEnergyNoFood: 4
   eatRewardNoFood: 0.25
-  starvationDamage: 12
-  starvationEnergyReturn: 5
-  starvationThreshold: 5
   restHealRate: 5
-  restEnergyRate: 9
   restDuration: 3
   restDeficitThreshold: 0.3
   restRewardNeeded: 0.7
   restRewardWasted: -0.2
+  idleRegenBasalFraction: 0.5
+  foodRegenPerSecond: 10
+  foodRegenMaxStep: 0.25
+  foodRegenBurst: 8
+  starvationDamage: 12
+  starvationEnergyReturn: 5
+  starvationThreshold: 5
+  restEnergyRate: 9
   terminalPenalty: -1
   interruptionReward: -0.1
   failureReward: -0.2
@@ -41,3 +43,29 @@ MonoBehaviour:
   explorationEpsilonScale: 1
   epsilonDecayPerStep: 0.00005
   minEpsilon: 0.01
+  wanderRewardScale: 0.6
+  wanderEnergyPenalty: 0.01
+  wanderRewardMin: -0.2
+  wanderRewardMax: 0.6
+  minLearningRate: 0.001
+  lrDecayPerSecond: 0.0005
+  fitnessSurvivalWeight: 10
+  fitnessSurvivalTau: 60
+  fitnessRateWindow: 60
+  fitnessMinLifetime: 10
+  fitnessFoodRateWeight: 6
+  fitnessReproduceRateWeight: 12
+  fitnessDamageRateWeight: 0.05
+  terminalFitnessSensitivity: 0.5
+  terminalPenaltyMinScale: 0.25
+  terminalPenaltyMaxScale: 2
+  tournamentSize: 3
+  generationInterval: 60
+  eliteFraction: 0.1
+  basalEnergyDrain: 0.5
+  terrainBiasWeight: 0.45
+  terrainCostWeight: 1
+  terrainSlopeWeight: 0.8
+  terrainWaterWeight: 0.6
+  pathCostPenalty: 0.15
+  pathCostRatioMax: 4

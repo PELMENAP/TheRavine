@@ -14,20 +14,47 @@ namespace TheRavine.EntityControl.Virology
 
         public static bool IsBuilt => _built;
 
+        private static StrainCodonTable _asset;
+
+        public static void Bind(StrainCodonTable asset) => _asset = asset;
+
         public static void Build()
         {
             if (_built || !VirologyRuntime.IsReady) return;
 
             int n = ProteinTable.ActionCount;
-            _variants = new ushort[n * VariantsPerAction];
+            _variants     = new ushort[n * VariantsPerAction];
             _variantCount = new byte[n];
-            _bestAmp = new float[n];
+            _bestAmp      = new float[n];
+
+            if (_asset != null && _asset.Matches)
+            {
+                _asset.Load(_variants, _variantCount, _bestAmp);
+                _built = true;
+                return;
+            }
+
+            UnityEngine.Debug.LogWarning(
+                "[StrainComposer] Предвычисленная таблица кодонов не привязана или не совпадает с прототипом, " +
+                "запущена сборка 65536 кодонов в рантайме. Пересоберите ассет: Tools/Ravine/Rebuild Strain Codon Table");
+
+            BuildBruteForce(_variants, _variantCount, _bestAmp);
+            _built = true;
+        }
+
+        public static void BuildBruteForce(ushort[] variants, byte[] variantCount, float[] bestAmp)
+        {
+            int n = ProteinTable.ActionCount;
+
+            System.Array.Clear(variants, 0, variants.Length);
+            System.Array.Clear(variantCount, 0, variantCount.Length);
+            System.Array.Clear(bestAmp, 0, bestAmp.Length);
 
             var bestDist = new float[n * VariantsPerAction];
             for (int i = 0; i < bestDist.Length; i++) bestDist[i] = float.MaxValue;
 
             var centroids = VirologyRuntime.Prototype;
-            var bias = VirologyRuntime.CellBias;
+            var bias      = VirologyRuntime.CellBias;
 
             for (int c = 0; c <= 0xFFFF; c++)
             {
@@ -49,12 +76,10 @@ namespace TheRavine.EntityControl.Virology
                 if (slot < 0 || dist >= bestDist[baseIdx + slot]) continue;
 
                 bestDist[baseIdx + slot] = dist;
-                _variants[baseIdx + slot] = codon;
-                if (_variantCount[action] < VariantsPerAction) _variantCount[action]++;
-                if (amp > _bestAmp[action]) _bestAmp[action] = amp;
+                variants[baseIdx + slot] = codon;
+                if (variantCount[action] < VariantsPerAction) variantCount[action]++;
+                if (amp > bestAmp[action]) bestAmp[action] = amp;
             }
-
-            _built = true;
         }
 
         public static ushort GetCodon(ProteinAction action, uint variant)

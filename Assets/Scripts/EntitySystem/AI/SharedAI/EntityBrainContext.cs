@@ -25,18 +25,15 @@ public class EntityBrainContext
     public EntityBrainContext(
         int inputSize,
         int lstmHidden,
-        int[] coordLayerSizes,
-        int[][] execLayerSizes,
-        GeneticParameters geneParams,
-        int truncWindow,
-        int coordDecisionCapacity,
-        int execDecisionCapacity)
+        PerceptronLayout coordLayout,
+        PerceptronLayout[] execLayouts,
+        GeneticParameters geneParams)
     {
         int goalCount = SharedHierarchicalBrain.GoalCount;
         int combined  = inputSize + lstmHidden;
 
         CoordLSTM     = new LSTMContext(inputSize, lstmHidden);
-        CoordMLP      = new PerceptronContext(coordLayerSizes, geneParams, truncWindow, coordDecisionCapacity, 0);
+        CoordMLP      = new PerceptronContext(coordLayout, geneParams);
         CoordCombined = new float[combined];
 
         ExecLSTMs    = new LSTMContext[goalCount];
@@ -46,13 +43,12 @@ public class EntityBrainContext
         for (int i = 0; i < goalCount; i++)
         {
             ExecLSTMs[i]    = new LSTMContext(inputSize, lstmHidden);
-            ExecMLPs[i]     = new PerceptronContext(execLayerSizes[i], geneParams, truncWindow,
-                                  execDecisionCapacity, SharedHierarchicalBrain.HeadingOutputs);
+            ExecMLPs[i]     = new PerceptronContext(execLayouts[i], geneParams);
             ExecCombined[i] = new float[combined];
         }
 
         CoordBias = new float[goalCount];
-        ExecBias = new float[goalCount][];
+        ExecBias  = new float[goalCount][];
         for (int i = 0; i < goalCount; i++)
             ExecBias[i] = new float[SharedHierarchicalBrain.ActionSubsets[i].Length];
     }

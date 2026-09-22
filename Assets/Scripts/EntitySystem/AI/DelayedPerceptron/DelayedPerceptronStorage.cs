@@ -12,19 +12,37 @@ public partial class DelayedPerceptron : ISerializableNeuralModel
             for (int i = 0; i < LayerSizes.Length; i++)
                 bw.Write(LayerSizes[i]);
 
-            for (int l = 0; l < _weights.Length; l++)
-                for (int n = 0; n < _weights[l].Length; n++)
-                    LSTMMemory.WriteArray(bw, _weights[l][n]);
+            int L = _layout.L;
 
-            for (int l = 0; l < _tauWeights.Length; l++)
-                for (int n = 0; n < _tauWeights[l].Length; n++)
-                    LSTMMemory.WriteArray(bw, _tauWeights[l][n]);
+            for (int part = 0; part < 2; part++)
+            {
+                for (int l = 0; l < L; l++)
+                {
+                    int inputs  = _layout.LayerSizes[l];
+                    int neurons = _layout.LayerSizes[l + 1];
+                    var row = new float[inputs];
 
-            for (int l = 0; l < _biases.Length; l++)
-                LSTMMemory.WriteArray(bw, _biases[l]);
+                    for (int n = 0; n < neurons; n++)
+                    {
+                        int wi = _layout.RowIndex(l, n);
+                        for (int i = 0; i < inputs; i++)
+                            row[i] = _wt[wi + (i << 1) + part];
+                        LSTMMemory.WriteArray(bw, row);
+                    }
+                }
+            }
 
-            for (int l = 0; l < _tauBiases.Length; l++)
-                LSTMMemory.WriteArray(bw, _tauBiases[l]);
+            for (int part = 0; part < 2; part++)
+            {
+                for (int l = 0; l < L; l++)
+                {
+                    int neurons = _layout.LayerSizes[l + 1];
+                    var col = new float[neurons];
+                    for (int n = 0; n < neurons; n++)
+                        col[n] = _bt[_layout.BiasIndex(l, n) + part];
+                    LSTMMemory.WriteArray(bw, col);
+                }
+            }
 
             return ms.ToArray();
         }
@@ -44,20 +62,38 @@ public partial class DelayedPerceptron : ISerializableNeuralModel
                 layerSizes[i] = br.ReadInt32();
 
             var mlp = new DelayedPerceptron(layerSizes);
+            var lay = mlp._layout;
+            int L   = lay.L;
 
-            for (int l = 0; l < mlp._weights.Length; l++)
-                for (int n = 0; n < mlp._weights[l].Length; n++)
-                    LSTMMemory.ReadArray(br, mlp._weights[l][n]);
+            for (int part = 0; part < 2; part++)
+            {
+                for (int l = 0; l < L; l++)
+                {
+                    int inputs  = lay.LayerSizes[l];
+                    int neurons = lay.LayerSizes[l + 1];
+                    var row = new float[inputs];
 
-            for (int l = 0; l < mlp._tauWeights.Length; l++)
-                for (int n = 0; n < mlp._tauWeights[l].Length; n++)
-                    LSTMMemory.ReadArray(br, mlp._tauWeights[l][n]);
+                    for (int n = 0; n < neurons; n++)
+                    {
+                        LSTMMemory.ReadArray(br, row);
+                        int wi = lay.RowIndex(l, n);
+                        for (int i = 0; i < inputs; i++)
+                            mlp._wt[wi + (i << 1) + part] = row[i];
+                    }
+                }
+            }
 
-            for (int l = 0; l < mlp._biases.Length; l++)
-                LSTMMemory.ReadArray(br, mlp._biases[l]);
-
-            for (int l = 0; l < mlp._tauBiases.Length; l++)
-                LSTMMemory.ReadArray(br, mlp._tauBiases[l]);
+            for (int part = 0; part < 2; part++)
+            {
+                for (int l = 0; l < L; l++)
+                {
+                    int neurons = lay.LayerSizes[l + 1];
+                    var col = new float[neurons];
+                    LSTMMemory.ReadArray(br, col);
+                    for (int n = 0; n < neurons; n++)
+                        mlp._bt[lay.BiasIndex(l, n) + part] = col[n];
+                }
+            }
 
             return mlp;
         }

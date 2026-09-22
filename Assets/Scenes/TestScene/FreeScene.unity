@@ -2298,12 +2298,68 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 11400000, guid: cfa92a93c8192130ba2e500349f051a6, type: 2}
     - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: maxFood
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: foodPrefab
+      value: 
+      objectReference: {fileID: 443920947200513725, guid: 4f59eba755cb9a4959b16369dc693a02, type: 3}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
       propertyPath: spawnRadius
       value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
       propertyPath: initialCount
       value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: tuning.RunSpeed
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: tuning.MoveSpeed
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: tuning.AttackRange
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: tuning.AttackDamage
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: tuning.WanderRadius
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: tuning.MaxWanderTime
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: tuning.DetectionRadius
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: tuning.AttackEnergyCost
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: tuning.EnergyCostMoving
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: tuning.EnergyCostRunning
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: tuning.ReproduceEnergyCost
+      value: 80
+      objectReference: {fileID: 0}
+    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: tuning.ReproduceHealthCost
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 4326377108197735784, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
       propertyPath: m_Name
@@ -2356,6 +2412,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4326377108197735784, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1371223892}
+    - targetCorrespondingSourceObject: {fileID: 4326377108197735784, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1371223895}
   m_SourcePrefab: {fileID: 100100000, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
 --- !u!1 &1371223888 stripped
 GameObject:
@@ -2391,6 +2450,21 @@ MonoBehaviour:
   recipe: 0417151712170f1117021717
   validation: 
   lastResult: 
+--- !u!114 &1371223895
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1371223888}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4a5c350edaf766a09b6207881e493fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EntitySystem::FoodViewSystem
+  foodPrefab: {fileID: 8578141244289343015, guid: 8ffdd9668390c336abd40c6fc62e49f3, type: 3}
+  poolSize: 128
+  pollIntervalMs: 250
 --- !u!1 &1422389882
 GameObject:
   m_ObjectHideFlags: 0

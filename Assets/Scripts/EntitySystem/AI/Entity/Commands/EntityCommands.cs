@@ -14,7 +14,6 @@ public class RestCommand : EntityCommand
         model.Motor.Stop();
         var r = SimulationRules.Active;
 
-        float startEnergy = model.Stats.Energy.Value;
         float startHealth = model.Stats.Health.Value;
         float start = SimulationClock.Time;
         float prev  = start;
@@ -27,12 +26,10 @@ public class RestCommand : EntityCommand
             prev = now;
 
             model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + r.RestHealRate * step, model.Stats.MaxHealth);
-            model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + r.RestEnergyRate * step, model.Stats.MaxEnergy);
             await UniTask.Yield(PlayerLoopTiming.Update, ct);
         }
 
-        float deficitBefore = (1f - startEnergy / model.Stats.MaxEnergy)
-                            + (1f - startHealth / model.Stats.MaxHealth);
+        float deficitBefore = 1f - startHealth / model.Stats.MaxHealth;
         return deficitBefore > r.RestDeficitThreshold ? r.RestRewardNeeded : r.RestRewardWasted;
     }
 }
@@ -102,14 +99,10 @@ public class EatCommand : EntityCommand
         bool claimed = false;
         var index = model.FoodIndex;
 
-        if (index != null &&
-            index.TryFindNearestFood(
-                model.Motor.Position().x,
-                model.Motor.Position().z,
-                model.Tuning.DetectionRadius,
-                out long cell, out _))
+        if (index != null && model.CachedFoodValid)
         {
-            claimed = index.TryConsumeFood(cell);
+            claimed = index.TryConsumeFood(model.CachedFoodCell);
+            model.InvalidateCachedFood();
         }
 
         float reward;
@@ -120,12 +113,7 @@ public class EatCommand : EntityCommand
             model.RegisterFitnessEvent(EntityModel.FitnessEvent.FoodEaten);
             reward = r.EatRewardFood;
         }
-        else
-        {
-            model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + r.EatHealNoFood, model.Stats.MaxHealth);
-            model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + r.EatEnergyNoFood, model.Stats.MaxEnergy);
-            reward = r.EatRewardNoFood;
-        }
+        else reward = r.EatRewardNoFood;
 
         await UniTask.Yield(ct);
         return reward;
@@ -186,7 +174,7 @@ public class SpeechCommand : EntityCommand
 
     protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
-        string hash = model.Vectorizer.HashFloatArray(model.LastInput);
+        string hash = model.Vectorizer.HashFloatArray(model.DecisionInput);
         model.Speech.SetOwnSpeech(hash);
         DialogSystem.Instance.OnSpeechSend((IDialogSender)model.Motor, hash);
 

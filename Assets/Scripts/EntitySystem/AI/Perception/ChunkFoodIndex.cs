@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Mathematics;
 using TheRavine.Extensions;
 using TheRavine.Generator;
 
@@ -12,24 +13,56 @@ public sealed class ChunkFoodIndex
     private const float InvScale   = 1f / MapGenerator.scale;
     private const float HalfCell   = MapGenerator.scale * 0.5f;
     private const float WaterLevel = 5f;
-    private const int   MaxScanRadiusCells = 64;
+
+    private sealed class FoodChunk
+    {
+        public readonly ulong[] Rows = new ulong[Size];
+        public int Count;
+        public int BuiltVersion = -1;
+    }
 
     private readonly MapGenerator _map;
-
-    private int       _cacheChunkX;
-    private int       _cacheChunkZ;
-    private ChunkData _cacheChunk;
-    private bool      _cacheValid;
-
-    private float _originX;
-    private float _originZ;
-    private float _radiusSqr;
-    private float _bestSqr;
-    private long  _bestCell;
+    private readonly LongDictionary<FoodChunk> _chunks = new(64);
 
     public int FoodCount { get; private set; }
+    public int Revision  { get; private set; }
 
     public ChunkFoodIndex(MapGenerator map) => _map = map;
+
+    private FoodChunk Resolve(long chunkKey, out ChunkData cd)
+    {
+        if (!_map.TryGetChunk(chunkKey, out cd) || cd == null) return null;
+
+        if (!_chunks.TryGetValue(chunkKey, out FoodChunk fc))
+        {
+            fc = new FoodChunk();
+            _chunks[chunkKey] = fc;
+        }
+
+        if (fc.BuiltVersion != cd.Version)
+        {
+            System.Array.Clear(fc.Rows, 0, Size);
+            fc.Count = 0;
+
+            for (int i = 0; i < cd.Objects.Length; i++)
+            {
+                ObjectInstInfo info = cd.Objects[i];
+                if (info.PrefabID != FoodPrefabId) continue;
+
+                int idx = info.PrimaryIdx;
+                if ((uint)idx >= (uint)ChunkData.TotalCells) continue;
+
+                int lz = idx / Size;
+                int lx = idx - lz * Size;
+                fc.Rows[lz] |= 1UL << lx;
+                fc.Count++;
+            }
+
+            fc.BuiltVersion = cd.Version;
+        }
+
+        return fc;
+    }
 
     public bool TryFindNearestFood(float worldX, float worldZ, float radiusWorld,
         out long worldCell, out float distance)
@@ -39,48 +72,69 @@ public sealed class ChunkFoodIndex
 
         if (_map == null || radiusWorld <= 0f) return false;
 
-        _cacheValid = false;
-        _originX    = worldX;
-        _originZ    = worldZ;
-        _radiusSqr  = radiusWorld * radiusWorld;
-        _bestSqr    = float.MaxValue;
-        _bestCell   = 0L;
+        float r2 = radiusWorld * radiusWorld;
 
-        int maxR = (int)(radiusWorld * InvScale);
-        if (maxR > MaxScanRadiusCells) maxR = MaxScanRadiusCells;
+        int minCellX = Mathf.FloorToInt((worldX - radiusWorld) * InvScale);
+        int maxCellX = Mathf.FloorToInt((worldX + radiusWorld) * InvScale);
+        int minCellZ = Mathf.FloorToInt((worldZ - radiusWorld) * InvScale);
+        int maxCellZ = Mathf.FloorToInt((worldZ + radiusWorld) * InvScale);
 
-        int cellX = Mathf.FloorToInt(worldX * InvScale);
-        int cellZ = Mathf.FloorToInt(worldZ * InvScale);
+        int minChunkX = minCellX >> ChunkShift, maxChunkX = maxCellX >> ChunkShift;
+        int minChunkZ = minCellZ >> ChunkShift, maxChunkZ = maxCellZ >> ChunkShift;
 
-        bool found = TestCell(cellX, cellZ);
+        float bestSqr = float.MaxValue;
+        long  bestCell = 0L;
+        bool  found = false;
 
-        for (int r = 1; r <= maxR && !found; r++)
+        for (int chz = minChunkZ; chz <= maxChunkZ; chz++)
+        for (int chx = minChunkX; chx <= maxChunkX; chx++)
         {
-            int minZ = cellZ - r;
-            int maxZ = cellZ + r;
+            var fc = Resolve(Position2Int.Pack(chx, chz), out _);
+            if (fc == null || fc.Count == 0) continue;
 
-            for (int dx = -r; dx <= r; dx++)
+            int baseX = chx << ChunkShift;
+            int baseZ = chz << ChunkShift;
+
+            int lz0 = minCellZ - baseZ; if (lz0 < 0) lz0 = 0;
+            int lz1 = maxCellZ - baseZ; if (lz1 > Size - 1) lz1 = Size - 1;
+
+            int lx0 = minCellX - baseX; if (lx0 < 0) lx0 = 0;
+            int lx1 = maxCellX - baseX; if (lx1 > Size - 1) lx1 = Size - 1;
+            if (lx0 > lx1 || lz0 > lz1) continue;
+
+            ulong xMask = lx1 - lx0 == 63
+                ? ulong.MaxValue
+                : (((1UL << (lx1 - lx0 + 1)) - 1UL) << lx0);
+
+            for (int lz = lz0; lz <= lz1; lz++)
             {
-                int x = cellX + dx;
-                if (TestCell(x, minZ)) found = true;
-                if (TestCell(x, maxZ)) found = true;
-            }
+                ulong row = fc.Rows[lz] & xMask;
+                if (row == 0UL) continue;
 
-            int minX = cellX - r;
-            int maxX = cellX + r;
+                float wz = (baseZ + lz) * MapGenerator.scale + HalfCell - worldZ;
+                float dz2 = wz * wz;
+                if (dz2 > r2 || dz2 >= bestSqr) continue;
 
-            for (int dz = -r + 1; dz <= r - 1; dz++)
-            {
-                int z = cellZ + dz;
-                if (TestCell(minX, z)) found = true;
-                if (TestCell(maxX, z)) found = true;
+                while (row != 0UL)
+                {
+                    int lx = math.tzcnt(row);
+                    row &= row - 1UL;
+
+                    float wx = (baseX + lx) * MapGenerator.scale + HalfCell - worldX;
+                    float sqr = wx * wx + dz2;
+                    if (sqr > r2 || sqr >= bestSqr) continue;
+
+                    bestSqr  = sqr;
+                    bestCell = Position2Int.Pack(baseX + lx, baseZ + lz);
+                    found    = true;
+                }
             }
         }
 
         if (!found) return false;
 
-        worldCell = _bestCell;
-        distance  = Mathf.Sqrt(_bestSqr);
+        worldCell = bestCell;
+        distance  = Mathf.Sqrt(bestSqr);
         return true;
     }
 
@@ -88,19 +142,25 @@ public sealed class ChunkFoodIndex
     {
         int cellX = Position2Int.GetX(cell);
         int cellZ = Position2Int.GetY(cell);
+        long key  = Position2Int.Pack(cellX >> ChunkShift, cellZ >> ChunkShift);
 
-        if (!_map.TryGetChunk(
-                Position2Int.Pack(cellX >> ChunkShift, cellZ >> ChunkShift),
-                out ChunkData cd) || cd == null)
-            return false;
+        var fc = Resolve(key, out ChunkData cd);
+        if (fc == null) return false;
 
-        int idx = (cellZ & ChunkMask) * Size + (cellX & ChunkMask);
+        int lx  = cellX & ChunkMask;
+        int lz  = cellZ & ChunkMask;
+        int idx = lz * Size + lx;
 
         if (!cd.TryGetObject(idx, out ObjectInstInfo info)) return false;
         if (info.PrefabID != FoodPrefabId) return false;
         if (!cd.RemoveObject(idx)) return false;
 
+        fc.Rows[lz] &= ~(1UL << lx);
+        fc.Count--;
+        fc.BuiltVersion = cd.Version;
+
         FoodCount--;
+        Revision++;
         return true;
     }
 
@@ -108,12 +168,14 @@ public sealed class ChunkFoodIndex
     {
         if (_map == null) return false;
 
-        if (!_map.TryGetChunk(
-                Position2Int.Pack(cellX >> ChunkShift, cellZ >> ChunkShift),
-                out ChunkData cd) || cd == null)
-            return false;
+        long key = Position2Int.Pack(cellX >> ChunkShift, cellZ >> ChunkShift);
+        var fc = Resolve(key, out ChunkData cd);
+        if (fc == null) return false;
 
-        int idx = (cellZ & ChunkMask) * Size + (cellX & ChunkMask);
+        int lx  = cellX & ChunkMask;
+        int lz  = cellZ & ChunkMask;
+        int idx = lz * Size + lx;
+
         if (cd.Occupancy[idx] != 0) return false;
 
         float h = cd.HeightRaw[idx];
@@ -125,40 +187,12 @@ public sealed class ChunkFoodIndex
 
         if (!cd.TryAddObject(idx, in info)) return false;
 
+        fc.Rows[lz] |= 1UL << lx;
+        fc.Count++;
+        fc.BuiltVersion = cd.Version;
+
         FoodCount++;
-        return true;
-    }
-
-    private bool TestCell(int cellX, int cellZ)
-    {
-        int chunkX = cellX >> ChunkShift;
-        int chunkZ = cellZ >> ChunkShift;
-
-        if (!_cacheValid || chunkX != _cacheChunkX || chunkZ != _cacheChunkZ)
-        {
-            _cacheChunkX = chunkX;
-            _cacheChunkZ = chunkZ;
-            _cacheValid  = true;
-            _map.TryGetChunk(Position2Int.Pack(chunkX, chunkZ), out _cacheChunk);
-        }
-
-        ChunkData cd = _cacheChunk;
-        if (cd == null) return false;
-
-        int idx = (cellZ & ChunkMask) * Size + (cellX & ChunkMask);
-        if (cd.Occupancy[idx] == 0) return false;
-
-        if (!cd.TryGetObject(idx, out ObjectInstInfo info)) return false;
-        if (info.PrefabID != FoodPrefabId) return false;
-
-        float dx = cellX * MapGenerator.scale + HalfCell - _originX;
-        float dz = cellZ * MapGenerator.scale + HalfCell - _originZ;
-        float sqr = dx * dx + dz * dz;
-
-        if (sqr > _radiusSqr || sqr >= _bestSqr) return false;
-
-        _bestSqr  = sqr;
-        _bestCell = Position2Int.Pack(cellX, cellZ);
+        Revision++;
         return true;
     }
 }

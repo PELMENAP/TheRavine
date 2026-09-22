@@ -126,19 +126,15 @@ namespace TheRavine.EntityControl.Virology
             int cutIncoming = 1 + (int)(_rng.NextUInt() % (uint)math.max(1, incomingCount - 1));
             int cutResident = 1 + (int)(_rng.NextUInt() % (uint)math.max(1, residentCount - 1));
 
-            int total = 0;
-            for (int i = 0; i < cutIncoming && total < PayloadCapacity; i++)
-                _payload[PayloadCapacity - 1 - total] = _mutated[i];
-
             int tail = math.min(residentCount - cutResident, PayloadCapacity - cutIncoming);
             if (tail <= 0) return false;
 
             for (int i = 0; i < tail; i++)
                 _mutated[cutIncoming + i] = _payload[cutResident + i];
 
-            total = cutIncoming + tail;
+            int total = cutIncoming + tail;
 
-            ulong hybridStrain = ViralMutator.ComputeStrainId(_mutated, total);
+            ulong hybridStrain  = ViralMutator.ComputeStrainId(_mutated, total);
             ulong hybridLineage = receiver.LineageOf(partner);
 
             return receiver.TryInsertSegment(_mutated, total, hybridStrain, hybridLineage, tick, _rng.NextUInt());

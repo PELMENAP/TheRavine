@@ -8,21 +8,27 @@ public sealed class FoodViewSystem : MonoBehaviour
 {
     [SerializeField] private GameObject foodPrefab;
     [SerializeField] private int poolSize = 128;
-    [SerializeField] private int refreshIntervalMs = 500;
+    [SerializeField] private int pollIntervalMs = 250;
 
-    private MapGenerator _map;
-    private ObjectSystem _objects;
+    private MapGenerator   _map;
+    private ObjectSystem   _objects;
+    private ChunkFoodIndex _index;
+
     private long _lastChunk;
+    private int  _seenRevision = -1;
+    private long _seenChunk = long.MinValue;
+    private int  _seenVersionSum;
 
     private async void Start()
     {
         _map     = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
         _objects = await ServiceLocator.WaitUntilServiceReady<ObjectSystem>();
+        _index   = await ServiceLocator.WaitUntilServiceReady<ChunkFoodIndex>();
 
         _objects.CreatePool(ChunkFoodIndex.FoodPrefabId, foodPrefab, poolSize);
         _map.onUpdate += OnChunkUpdate;
 
-        RefreshLoopAsync().Forget();
+        PollLoopAsync().Forget();
     }
 
     private void OnDestroy()
@@ -33,22 +39,43 @@ public sealed class FoodViewSystem : MonoBehaviour
     private void OnChunkUpdate(long playerChunk)
     {
         _lastChunk = playerChunk;
-        Refresh();
+        TryRefresh();
     }
 
-    private async UniTaskVoid RefreshLoopAsync()
+    private async UniTaskVoid PollLoopAsync()
     {
         while (!destroyCancellationToken.IsCancellationRequested)
         {
-            await UniTask.Delay(refreshIntervalMs, cancellationToken: destroyCancellationToken);
-            Refresh();
+            await UniTask.Delay(pollIntervalMs, cancellationToken: destroyCancellationToken);
+            TryRefresh();
         }
+    }
+
+    private void TryRefresh()
+    {
+        if (_map == null || _objects == null) return;
+
+        int revision = _index != null ? _index.Revision : 0;
+        int versionSum = 0;
+        const int r = MapGenerator.chunkScale;
+
+        for (int cx = -r; cx <= r; cx++)
+        for (int cz = -r; cz <= r; cz++)
+            if (_map.TryGetChunk(Position2Int.Offset(_lastChunk, cx, cz), out ChunkData cd) && cd != null)
+                versionSum += cd.Version;
+
+        if (revision == _seenRevision && _lastChunk == _seenChunk && versionSum == _seenVersionSum)
+            return;
+
+        _seenRevision   = revision;
+        _seenChunk      = _lastChunk;
+        _seenVersionSum = versionSum;
+
+        Refresh();
     }
 
     private void Refresh()
     {
-        if (_map == null || _objects == null) return;
-
         int used = 0;
         const int r = MapGenerator.chunkScale;
 

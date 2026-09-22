@@ -62,6 +62,27 @@ public class EntityModel : AEntity
     public bool IsDeathPending { get; private set; }
     public void MarkDeathPending() => IsDeathPending = true;
 
+    public int ManagerIndex = -1;
+
+    private readonly float[] _decisionInput = new float[InputVectorizer.VectorSize];
+    public float[] DecisionInput => _decisionInput;
+
+    private EntitySpatialGrid _grid;
+
+    private long  _foodCell;
+    private float _foodDistance = -1f;
+    private bool  _foodValid;
+
+    public bool  CachedFoodValid    => _foodValid;
+    public long  CachedFoodCell     => _foodCell;
+    public float CachedFoodDistance => _foodDistance;
+    public void  InvalidateCachedFood() => _foodValid = false;
+
+    private float _fitnessCache;
+    private float _fitnessCacheTime = float.NaN;
+    private int   _fitnessEpoch;
+    private int   _fitnessCacheEpoch = -1;
+
     public void RegisterFitnessEvent(FitnessEvent evt, float amount = 0f)
     {
         switch (evt)
@@ -70,11 +91,15 @@ public class EntityModel : AEntity
             case FitnessEvent.Reproduced: ReproduceCount++; break;
             case FitnessEvent.DamageDealt: DamageDealt += amount; break;
         }
+        _fitnessEpoch++;
     }
 
     public float GetFitness()
     {
-        var rules = SimulationRules.Active;
+        if (_fitnessCacheEpoch == _fitnessEpoch && _fitnessCacheTime == TimeAlive)
+            return _fitnessCache;
+
+        ref readonly var rules = ref SimulationRules.Frame;
 
         float life     = TimeAlive;
         float survival = rules.FitnessSurvivalWeight
@@ -86,7 +111,10 @@ public class EntityModel : AEntity
                      + ReproduceCount * rules.FitnessReproduceRateWeight
                      + DamageDealt    * rules.FitnessDamageRateWeight;
 
-        return survival + events * invTime;
+        _fitnessCache      = survival + events * invTime;
+        _fitnessCacheTime  = TimeAlive;
+        _fitnessCacheEpoch = _fitnessEpoch;
+        return _fitnessCache;
     }
 
     public void CaptureFinalFitness() => FinalFitness = GetFitness();
@@ -116,7 +144,8 @@ public class EntityModel : AEntity
         Stats = GetOrCreateEntityComponent<StatsComponent>();
         Stats.FillComponent(tuning.MaxHealth, tuning.MaxEnergy);
 
-        AddComponentToEntity(new PerceptionComponent(tuning.DetectionRadius, tuning.EntityLayer));
+        ServiceLocator.Services.TryGet(out _grid);
+        AddComponentToEntity(new PerceptionComponent(tuning.DetectionRadius, _grid));
         Perception = GetEntityComponent<PerceptionComponent>();
 
         _terrain = new TerrainSensor(ServiceLocator.GetService<MapGenerator>());
@@ -192,9 +221,14 @@ public class EntityModel : AEntity
         Vector3 pos = Motor.Position();
         Perception.FindNearestEntity(pos, SelfObject, out float enemyDist);
 
-        float foodDist = -1f;
-        if (_foodIndex != null)
-            _foodIndex.TryFindNearestFood(pos.x, pos.z, Tuning.DetectionRadius, out _, out foodDist);
+        _foodValid    = false;
+        _foodDistance = -1f;
+        if (_foodIndex != null &&
+            _foodIndex.TryFindNearestFood(pos.x, pos.z, Tuning.DetectionRadius,
+                out _foodCell, out _foodDistance))
+            _foodValid = true;
+
+        float foodDist = _foodValid ? _foodDistance : -1f;
 
         if (!_terrain.TrySample(pos.x, pos.z, out _lastTerrain))
             _lastTerrain = TerrainSample.Invalid;
@@ -213,11 +247,12 @@ public class EntityModel : AEntity
         bool isIdle = states.behaviourCurrent.GetType() == typeof(SurviveState)
                 && LastActionIndex == (int)EntityAction.Idle;
 
-        var rules = SimulationRules.Active;
+        ref readonly var rules = ref SimulationRules.Frame;
         Stats.Tick(dt,
             Tuning.EnergyRegenRate * Virology.Modifiers.RegenMultiplier,
             Virology.Modifiers.MetabolismMultiplier,
             rules.BasalEnergyDrain,
+            rules.IdleRegenBasalFraction,
             isIdle,
             rules.StarvationThreshold, rules.StarvationDamage, rules.StarvationEnergyReturn);
 
@@ -232,6 +267,8 @@ public class EntityModel : AEntity
 
         if (Brain.TryDecide(LastInput, now, dt, out var decision))
         {
+            Array.Copy(LastInput, _decisionInput, _decisionInput.Length);
+
             SetLastAction(decision.Action);
 
             var targetType = GoalStateMap[decision.Goal];

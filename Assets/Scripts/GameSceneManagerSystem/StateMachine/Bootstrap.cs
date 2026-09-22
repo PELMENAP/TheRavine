@@ -5,6 +5,7 @@ using UnityEngine.Rendering.Universal;
 using Cysharp.Threading.Tasks;
 using R3;
 using Unity.Netcode;
+using TheRavine.Generator;
 
 namespace TheRavine.Base
 {
@@ -27,6 +28,7 @@ namespace TheRavine.Base
                 ServiceLocator.Services.Register(logger);
                 gameStateMachine.Initialize(logger);
                 gameStateMachine.StartGame();
+
                 return;
             }
             else

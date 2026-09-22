@@ -135,7 +135,7 @@ namespace TheRavine.EntityControl.Virology
                 Length = count,
                 StrainId = strainId,
                 LineageId = lineageId,
-                InsertTick = _tick,
+                InsertTick = tick,
                 Integrity = 1f,
                 NetFitnessDelta = 0f,
                 Tamed = false,
@@ -196,9 +196,8 @@ namespace TheRavine.EntityControl.Virology
         {
             if (!_created || length <= 0) return ProteinAction.Noop;
 
-            int best = 0;
-            int bestCount = -1;
-            var counts = new NativeArray<int>(ProteinTable.ActionCount, Allocator.Temp);
+            System.Span<int> counts = stackalloc int[ProteinTable.ActionCount];
+            counts.Clear();
 
             int end = math.min(start + length, _tape.Length);
             for (int i = start; i < end; i++)
@@ -208,6 +207,8 @@ namespace TheRavine.EntityControl.Virology
                 counts[a]++;
             }
 
+            int best = 0;
+            int bestCount = -1;
             for (int a = 0; a < ProteinTable.ActionCount; a++)
             {
                 if (a == (int)ProteinAction.Junk || counts[a] <= bestCount) continue;
@@ -215,9 +216,9 @@ namespace TheRavine.EntityControl.Virology
                 best = a;
             }
 
-            counts.Dispose();
             return (ProteinAction)best;
         }
+        
         public const int DormantTicks = 8;
         public const int TamedThreshold = 8;
 

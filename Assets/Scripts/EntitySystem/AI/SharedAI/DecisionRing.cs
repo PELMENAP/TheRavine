@@ -16,6 +16,7 @@ public sealed class DelayedItem
     public bool  Trained;
     public int   CreatedOrdinal;
     public int   StepsElapsed;
+    public int WeightVersion;
 
     public readonly float[] State;
     public readonly float[] Probs;
@@ -23,6 +24,8 @@ public sealed class DelayedItem
     public float HeadingCos;
     public float HeadingNoiseS;
     public float HeadingNoiseC;
+    public float ExplorationEpsilon;
+    
 
     public DelayedItem(int stateSize, int actionCount)
     {
@@ -38,6 +41,7 @@ public sealed class DelayedItem
         Evaluation = 0f;
         ValueEstimate = 0f;
         LogProbability = 0f;
+        ExplorationEpsilon = 0f;
         DurationLogit = 0f;
         DurationNoise = 0f;
         Duration = 0f;
@@ -46,6 +50,7 @@ public sealed class DelayedItem
         BpttStamp = 0;
         CreatedOrdinal = 0;
         StepsElapsed = 0;
+        WeightVersion = 0;
         RewardApplied = false;
         Trained = false;
         HeadingSin = 0f;

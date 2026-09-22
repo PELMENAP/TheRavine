@@ -7,8 +7,10 @@ public class InputVectorizer : IDisposable
 {
     public const int VectorSize    = 64;
     public const int ActionCount   = 13;
-    private const int HistoryLen   = 16;
     private const float HistoryDecay = 0.75f;
+    private const float HistoryAlpha = 1f - HistoryDecay;
+
+    private readonly float[] _actionFrequency = new float[ActionCount];
     private float _maxHealth;
     private float _maxEnergy;
     private const float MaxDetectionRadius = 20f;
@@ -16,9 +18,6 @@ public class InputVectorizer : IDisposable
     private float _prevHealth;
     private float _prevEnergy;
     private bool  _initialized;
-
-    private readonly int[]   _actionHistory    = new int[HistoryLen];
-    private readonly float[] _actionFrequency  = new float[ActionCount];
     private int _historyPtr;
 
     private readonly float[] _vector = new float[VectorSize];
@@ -135,25 +134,12 @@ public class InputVectorizer : IDisposable
 
     private void UpdateActionHistory(int action)
     {
-        _actionHistory[_historyPtr] = action;
-        _historyPtr = (_historyPtr + 1) % HistoryLen;
+        float keep = HistoryDecay;
+        for (int i = 0; i < ActionCount; i++)
+            _actionFrequency[i] *= keep;
 
-        Array.Clear(_actionFrequency, 0, ActionCount);
-
-        float weight = 1f;
-        float total  = 0f;
-
-        for (int t = 0; t < HistoryLen; t++)
-        {
-            int a = _actionHistory[(_historyPtr - 1 - t + HistoryLen) % HistoryLen];
-            _actionFrequency[a] += weight;
-            total  += weight;
-            weight *= HistoryDecay;
-        }
-
-        if (total > 0f)
-            for (int i = 0; i < ActionCount; i++)
-                _actionFrequency[i] /= total;
+        if ((uint)action < (uint)ActionCount)
+            _actionFrequency[action] += HistoryAlpha;
     }
     public string HashFloatArray(float[] array)
     {

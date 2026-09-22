@@ -328,7 +328,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: EntitySystem::EntityView
   label: {fileID: 3119773237031124055}
-  virologyProbe: {fileID: 0}
 --- !u!114 &4086780941046595820
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -341,7 +340,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1923562949
+  GlobalObjectIdHash: 3755540726
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -631,8 +630,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22af306494ffb9b0bb677681a3ec84ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: EntitySystem::TheRavine.EntityControl.Virology.VirologyProbe
-  refreshInterval: 0.75
+  status: 
   infections: []
+  viralNetFitnessDelta: 0
+  viralCount: 0
   lastAction: 0
   lastAmp: 0
   lastExecuted: 0
@@ -641,3 +642,4 @@ MonoBehaviour:
   executedCodons: 0
   failedCodons: 0
   sharpness: 0
+  tick: 0

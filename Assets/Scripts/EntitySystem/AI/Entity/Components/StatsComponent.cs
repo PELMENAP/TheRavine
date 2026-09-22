@@ -24,7 +24,8 @@ public class StatsComponent : IComponent
     }
 
     public void Tick(float deltaTime, float regenRate, float metabolismMultiplier, float basalDrain,
-        bool isIdle, float starvationThreshold, float starvationDamage, float starvationEnergyReturn)
+        float idleRegenBasalFraction, bool isIdle,
+        float starvationThreshold, float starvationDamage, float starvationEnergyReturn)
     {
         if (IsDisposed || !_filled) return;
 
@@ -34,7 +35,11 @@ public class StatsComponent : IComponent
         energy -= basalDrain * metabolismMultiplier * deltaTime;
 
         if (isIdle && energy < MaxEnergy)
-            energy = math.min(energy + regenRate * deltaTime, MaxEnergy);
+        {
+            float cap  = basalDrain * idleRegenBasalFraction;
+            float rate = math.min(regenRate, cap);
+            if (rate > 0f) energy = math.min(energy + rate * deltaTime, MaxEnergy);
+        }
 
         if (energy < starvationThreshold)
         {

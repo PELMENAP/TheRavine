@@ -516,6 +516,7 @@ namespace TheRavine.Generator
         public List<StructureSpawnPoint> StructureSpawnPoints;
 
         public bool IsDirty { get; private set; }
+        public int Version { get; private set; }
 
         public ChunkData()
         {
@@ -560,6 +561,7 @@ namespace TheRavine.Generator
                 Occupancy[additionalIdxs[i]] = -handle;
 
             IsDirty = true;
+            Version++;
             return true;
         }
 
@@ -616,6 +618,7 @@ namespace TheRavine.Generator
 
             Objects.RemoveAt(last);
             IsDirty = true;
+            Version++;
             return true;
         }
 
