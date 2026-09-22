@@ -19,7 +19,7 @@ public abstract class EntityCommand : ICommand
     {
         if (move.Distance <= 1e-3f) return 0f;
 
-        var r = SimulationRules.Active;
+        ref readonly var r = ref SimulationRules.Frame;
         float ratio = math.min(move.CostPerUnit, r.PathCostRatioMax);
         return (ratio - 1f) * r.PathCostPenalty;
     }

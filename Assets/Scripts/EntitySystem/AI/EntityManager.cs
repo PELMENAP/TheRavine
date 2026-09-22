@@ -13,7 +13,6 @@ public class EntityManager : MonoBehaviour
     
     [Header("Prefabs")]
     [SerializeField] private GameObject entityPrefab;
-    [SerializeField] private GameObject foodPrefab;
     [SerializeField] private EntityTuning tuning;
 
     [Header("Population")]
@@ -45,6 +44,9 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private int _superinfectionBlocks;
     [SerializeField] private float _avgFitness;
 
+    [Header("Virology")]
+    [SerializeField] private TheRavine.EntityControl.Virology.StrainCodonTable strainCodonTable;
+
     private float[] _fitnessScratch = new float[64];
     private float   _fitnessMedian;
     private float   _fitnessSpread = 1f;
@@ -56,18 +58,12 @@ public class EntityManager : MonoBehaviour
 
     private XorShift32 _tournamentRng;
 
-    private sealed class FitnessOrder : IComparer<int>
-    {
-        public float[] Keys;
-        public int Compare(int a, int b) => Keys[b].CompareTo(Keys[a]);
-    }
-    private readonly FitnessOrder _fitnessOrder = new();
+    private readonly EntitySpatialGrid _grid = new();
+    public EntitySpatialGrid Grid => _grid;
 
     public int MaxPopulation => maxPopulation;
     public event Action<EntityModel> OnEntitySpawned;
     public event Action<EntityModel> OnEntityDied;
-
-    public void OnFoodConsumed() => _foodCount--;
 
     private SharedHierarchicalBrain _sharedBrain;
     public SharedHierarchicalBrain SharedBrain => _sharedBrain;
@@ -79,6 +75,8 @@ public class EntityManager : MonoBehaviour
 
     private ChunkFoodIndex _foodIndex;
     public ChunkFoodIndex FoodIndex => _foodIndex;
+    private float _foodBudget;
+    private float _lastFoodTime;
 
     [SerializeField] private float simulationTimeScale = 1f;
 
@@ -100,13 +98,16 @@ public class EntityManager : MonoBehaviour
 
     private void Awake()
     {
+        ServiceLocator.Services.Register(new ChunkFoodIndex(ServiceLocator.Services.Get<MapGenerator>()));
+
         SimulationRules.Bind(rules);
+        ServiceLocator.Services.Register(_grid);
         NeuralModelStorage.RegisterFactory(new SharedBrainSnapshotFactory());
         _infection = new InfectionService((uint)UnityEngine.Random.Range(1, int.MaxValue));
         _tournamentRng = new XorShift32((uint)UnityEngine.Random.Range(1, int.MaxValue));
 
-        _sharedBrain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden);
-        // LoadBrain();
+        // _sharedBrain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden);
+        LoadBrain();
     }
 
     [ContextMenu("Save Brain")]
@@ -148,6 +149,7 @@ public class EntityManager : MonoBehaviour
             SpawnFood();
 
         _nextGenerationTime = SimulationClock.Time + SimulationRules.Active.GenerationInterval;
+        _lastFoodTime       = SimulationClock.Time;
 
         _tickCts = new CancellationTokenSource();
         EntityTickLoopAsync(_tickCts.Token).Forget();
@@ -176,6 +178,7 @@ public class EntityManager : MonoBehaviour
             if (_tickCount == 0)
             {
                 ProcessPendingDeaths();
+                TickFoodRespawn();
                 await UniTask.Yield(PlayerLoopTiming.Update, ct);
                 continue;
             }
@@ -193,18 +196,11 @@ public class EntityManager : MonoBehaviour
             _virologyTick++;
             _infection.ProcessSpread(_tickSnapshot, _tickCursor, end, _virologyTick);
 
-            _transmissions = _infection.Transmissions;
-            _recombinations = _infection.Recombinations;
+            _transmissions        = _infection.Transmissions;
+            _recombinations       = _infection.Recombinations;
             _superinfectionBlocks = _infection.SuperinfectionBlocks;
 
             _tickCursor = end;
-
-            if (_tickCursor >= _tickCount)
-            {
-                _tickCursor = 0;
-                _sharedBrain.ApplyPendingGradients();
-                ProcessPendingDeaths();
-            }
 
             if (_tickCursor >= _tickCount)
             {
@@ -220,35 +216,50 @@ public class EntityManager : MonoBehaviour
                 }
             }
 
+            TickFoodRespawn();
+
             await UniTask.Yield(PlayerLoopTiming.Update, ct);
         }
     }
 
-    private void RebuildTickSnapshot()
+    private void TickFoodRespawn()
     {
-        int count = _entities.Count;
+        if (_foodIndex == null || maxFood <= 0) return;
 
-        if (count > _tickSnapshot.Length)
+        ref readonly var rules = ref SimulationRules.Frame;
+
+        float now   = SimulationClock.Time;
+        float dt    = now - _lastFoodTime;
+        _lastFoodTime = now;
+
+        if (dt <= 0f) return;
+        if (dt > rules.FoodRegenMaxStep) dt = rules.FoodRegenMaxStep;
+
+        int count = _foodIndex.FoodCount;
+        if (count >= maxFood) { _foodBudget = 0f; return; }
+
+        float headroom = 1f - (float)count / maxFood;
+        _foodBudget += rules.FoodRegenPerSecond * dt * headroom;
+
+        int burst = rules.FoodRegenBurst;
+        int whole = (int)_foodBudget;
+        if (whole <= 0) return;
+        if (whole > burst) whole = burst;
+
+        for (int i = 0; i < whole; i++)
         {
-            int cap = _tickSnapshot.Length;
-            while (cap < count) cap <<= 1;
-            _tickSnapshot = new EntityModel[cap];
+            if (!SpawnFood()) break;
+            _foodBudget -= 1f;
         }
 
-        for (int i = 0; i < count; i++)
-            _tickSnapshot[i] = _entities[i];
-
-        if (_tickCount > count)
-            Array.Clear(_tickSnapshot, count, _tickCount - count);
-
-        _tickCount = count;
+        if (_foodBudget > burst) _foodBudget = burst;
     }
 
     public EntityModel SpawnEntity(Vector3 position, EntityBrainContext inheritedCtx = null)
     {
         if (_entities.Count >= maxPopulation) return null;
 
-        var go = Instantiate(entityPrefab, position, Quaternion.identity, transform);
+        var go  = Instantiate(entityPrefab, position, Quaternion.identity, transform);
         var ctx = inheritedCtx ?? _sharedBrain.CreateContext();
 
         foreach (var expressible in go.GetComponents<IGeneticPhenotype>())
@@ -258,7 +269,7 @@ public class EntityManager : MonoBehaviour
         netObj?.Spawn();
 
         var viewModel = go.GetComponent<EntityViewModel>();
-        var view = go.GetComponent<EntityView>();
+        var view      = go.GetComponent<EntityView>();
 
         var model = new EntityModel();
 
@@ -272,6 +283,7 @@ public class EntityManager : MonoBehaviour
         model.GetEntityComponent<MortalityComponent>().Died += () => HandleEntityDied(model);
         model.OnReproduceRequest += SpawnChild;
 
+        model.ManagerIndex = _entities.Count;
         _entities.Add(model);
         OnEntitySpawned?.Invoke(model);
         return model;
@@ -351,13 +363,15 @@ public class EntityManager : MonoBehaviour
 
     public bool SpawnFood()
     {
+        Debug.Log("food spawned");
+
         if (_foodIndex == null || _foodIndex.FoodCount >= maxFood) return false;
 
         Vector3 origin = transform.position;
 
         for (int i = 0; i < FoodSpawnAttempts; i++)
         {
-            var v = RavineRandom.GetInsideSphere(spawnRadius);
+            var v = RavineRandom.GetInsideCircle(spawnRadius);
 
             int cellX = Mathf.FloorToInt((origin.x + v.x) / MapGenerator.scale);
             int cellZ = Mathf.FloorToInt((origin.z + v.y) / MapGenerator.scale);
@@ -367,11 +381,40 @@ public class EntityManager : MonoBehaviour
         return false;
     }
 
+    private Vector3 RandomPosition()
+    {
+        var v = RavineRandom.GetInsideCircle(spawnRadius);
+        return transform.position + new Vector3(v.x, 0f, v.y);
+    }
+
     private void HandleEntityDied(EntityModel model)
     {
         if (model == null || model.IsDisposed || model.IsDeathPending) return;
         model.MarkDeathPending();
         _pendingDeath.Enqueue(model);
+    }
+
+    private void RebuildTickSnapshot()
+    {
+        int count = _entities.Count;
+
+        if (count > _tickSnapshot.Length)
+        {
+            int cap = _tickSnapshot.Length;
+            while (cap < count) cap <<= 1;
+            _tickSnapshot = new EntityModel[cap];
+        }
+
+        for (int i = 0; i < count; i++)
+            _tickSnapshot[i] = _entities[i];
+
+        if (_tickCount > count)
+            Array.Clear(_tickSnapshot, count, _tickCount - count);
+
+        _tickCount = count;
+
+        SimulationRules.CaptureFrame();
+        _grid.Rebuild(_tickSnapshot, _tickCount, tuning.DetectionRadius);
     }
 
     private void ProcessPendingDeaths()
@@ -385,10 +428,32 @@ public class EntityManager : MonoBehaviour
             model.CaptureFinalFitness();
             model.Brain?.CompleteTerminal(TerminalPenaltyFor(model));
 
-            _entities.Remove(model);
+            RemoveEntitySwapBack(model);
             OnEntityDied?.Invoke(model);
             model.Dispose();
         }
+    }
+
+    private void RemoveEntitySwapBack(EntityModel model)
+    {
+        int idx = model.ManagerIndex;
+
+        if ((uint)idx >= (uint)_entities.Count || !ReferenceEquals(_entities[idx], model))
+        {
+            idx = _entities.IndexOf(model);
+            if (idx < 0) { model.ManagerIndex = -1; return; }
+        }
+
+        int last = _entities.Count - 1;
+        if (idx != last)
+        {
+            var moved = _entities[last];
+            _entities[idx]    = moved;
+            moved.ManagerIndex = idx;
+        }
+
+        _entities.RemoveAt(last);
+        model.ManagerIndex = -1;
     }
 
     private float TerminalPenaltyFor(EntityModel model)
@@ -419,12 +484,6 @@ public class EntityManager : MonoBehaviour
             _entities[i].Brain.Context.CoordMLP.Params = childParams;
             _entities[i].Brain.Context.ResetMemory();
         }
-    }
-
-    private Vector3 RandomPosition()
-    {
-        var v = RavineRandom.GetInsideSphere(spawnRadius);
-        return transform.position + new Vector3(v.x, 0, v.y);
     }
 
     private static GeneticParameters CrossoverGeneticParams(GeneticParameters a, GeneticParameters b)
@@ -512,20 +571,21 @@ public class EntityManager : MonoBehaviour
             _evolveKeys[i]    = _entities[i].GetFitness();
         }
 
-        _fitnessOrder.Keys = _evolveKeys;
-        Array.Sort(_evolveIndices, 0, n, _fitnessOrder);
+        Array.Sort(_evolveKeys, _evolveIndices, 0, n);
 
         int eliteCount = Mathf.Max(1, (int)(n * SimulationRules.Active.EliteFraction));
         if (eliteCount >= n) eliteCount = n - 1;
 
-        for (int r = eliteCount; r < n; r++)
+        int eliteStart = n - eliteCount;
+
+        for (int r = 0; r < eliteStart; r++)
         {
             var target = _entities[_evolveIndices[r]];
             if (target.IsDisposed || target.IsDeathPending) continue;
 
-            var pa = _entities[_evolveIndices[_tournamentRng.Range(0, eliteCount)]]
+            var pa = _entities[_evolveIndices[eliteStart + _tournamentRng.Range(0, eliteCount)]]
                      .Brain.Context.CoordMLP.Params;
-            var pb = _entities[_evolveIndices[_tournamentRng.Range(0, eliteCount)]]
+            var pb = _entities[_evolveIndices[eliteStart + _tournamentRng.Range(0, eliteCount)]]
                      .Brain.Context.CoordMLP.Params;
 
             GeneticParameters.Crossover(in pa, in pb, out var child);

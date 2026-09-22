@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
-using Unity.Collections;
+using System.Runtime.InteropServices;
+using System;
 using Unity.Mathematics;
 
 namespace TheRavine.EntityControl.Virology
@@ -25,15 +26,13 @@ namespace TheRavine.EntityControl.Virology
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int Translate(ushort codon, float[] centroids,
-            float[] cellBias, float sharpness, out float amp)
+        public static int Translate(ushort codon, float[] centroids, float[] cellBias, float sharpness, out float amp)
         {
             Embed(codon, out float4 lo, out float4 hi);
-            float4[] rows = new float4[centroids.Length / 4];
+            var rows = MemoryMarshal.Cast<float, float4>(centroids.AsSpan());
 
             int best = 0;
-            float bestScore = float.MaxValue;
-            float bestDist = 0f;
+            float bestScore = float.MaxValue, bestDist = 0f;
 
             for (int n = 0; n < ProteinTable.ActionCount; n++)
             {
@@ -42,9 +41,7 @@ namespace TheRavine.EntityControl.Virology
                 float d2 = math.dot(a, a) + math.dot(b, b);
                 float score = d2 - cellBias[n];
                 if (score >= bestScore) continue;
-                bestScore = score;
-                bestDist = d2;
-                best = n;
+                bestScore = score; bestDist = d2; best = n;
             }
 
             amp = math.exp(-bestDist * sharpness);

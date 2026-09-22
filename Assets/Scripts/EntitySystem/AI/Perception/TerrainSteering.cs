@@ -7,13 +7,13 @@ public static class TerrainSteering
 
     public static float2 Bias(in TerrainSample t)
     {
-        var rules = SimulationRules.Active;
+        ref readonly var r = ref SimulationRules.Frame;
 
         float2 slope = new float2(t.GradX, t.GradZ);
 
-        float2 bias = CostGradient(in t) * rules.TerrainCostWeight
-                    - slope * (rules.TerrainSlopeWeight * t.Slope)
-                    + slope * (rules.TerrainWaterWeight * t.WaterProximity);
+        float2 bias = CostGradient(in t) * r.TerrainCostWeight
+                    - slope * (r.TerrainSlopeWeight * t.Slope)
+                    + slope * (r.TerrainWaterWeight * t.WaterProximity);
 
         return math.normalizesafe(bias, float2.zero);
     }
@@ -23,7 +23,7 @@ public static class TerrainSteering
         float2 d = math.normalizesafe(desired, new float2(1f, 0f));
         if (!t.IsValid) return d;
 
-        float w = SimulationRules.Active.TerrainBiasWeight;
+        float w = SimulationRules.Frame.TerrainBiasWeight;
         if (w <= 0f) return d;
 
         return math.normalizesafe(math.lerp(d, Bias(in t), math.saturate(w)), d);

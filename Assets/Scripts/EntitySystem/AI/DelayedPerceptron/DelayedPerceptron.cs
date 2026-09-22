@@ -1,19 +1,22 @@
 using System;
+using System.Runtime.InteropServices;
+using Unity.Mathematics;
 
 public partial class DelayedPerceptron
 {
-    private float[][][] _weights;
-    private float[][][] _tauWeights;
-    private float[][]   _biases;
-    private float[][]   _tauBiases;
-    private bool[]      _residual;
+    private float[] _wt;
+    private float[] _bt;
+    private bool[]  _residual;
+
+    private PerceptronLayout _layout;
 
     public const float DurationNoiseSigma = 0.5f;
     public const float HeadingNoiseSigma  = 0.6f;
     public const float TauEpsilon = 1e-4f;
 
-
     public int[] LayerSizes { get; private set; }
+    public PerceptronLayout Layout => _layout;
+    public int WeightVersion { get; private set; }
 
     private SharedGradientAccumulator _gradScratch;
     private SharedGradientAccumulator _gradAccum;
@@ -24,6 +27,9 @@ public partial class DelayedPerceptron
     private const float InvBaseLearningRateReference = 1f / BaseLearningRateReference;
     private const float DefaultEvaluationNeutral     = 0.5f;
 
+    private const int DefaultTruncWindow      = 8;
+    private const int DefaultDecisionCapacity = 16;
+
     public DelayedPerceptron(int inputSize, int h1, int h2, int h3, int outputSize)
         : this(new[] { inputSize, h1, h2, h3, outputSize }) { }
 
@@ -33,7 +39,8 @@ public partial class DelayedPerceptron
     public DelayedPerceptron(int[] layerSizes, in GeneticParameters genetics)
     {
         LayerSizes = layerSizes;
-        InitWeightsAndBiases(LayerSizes, in genetics);
+        _layout    = new PerceptronLayout(layerSizes, DefaultTruncWindow, DefaultDecisionCapacity, 0);
+        InitWeightsAndBiases(in genetics);
         BuildResidualMask();
         InitOptimizerBuffers();
     }
@@ -41,6 +48,7 @@ public partial class DelayedPerceptron
     public DelayedPerceptron(DelayedPerceptron parent)
     {
         LayerSizes = parent.LayerSizes;
+        _layout    = parent._layout;
         CloneWeights(parent);
         BuildResidualMask();
         InitOptimizerBuffers();
@@ -48,13 +56,13 @@ public partial class DelayedPerceptron
 
     private void InitOptimizerBuffers()
     {
-        _gradScratch = new SharedGradientAccumulator(LayerSizes);
-        _gradAccum   = new SharedGradientAccumulator(LayerSizes);
+        _gradScratch = new SharedGradientAccumulator(_layout);
+        _gradAccum   = new SharedGradientAccumulator(_layout);
     }
 
     private void BuildResidualMask()
     {
-        int L = LayerSizes.Length - 1;
+        int L = _layout.L;
         _residual = new bool[L];
         for (int l = 1; l < L - 1; l++)
             _residual[l] = LayerSizes[l] == LayerSizes[l + 1];
@@ -62,38 +70,44 @@ public partial class DelayedPerceptron
 
     public bool HasResidual(int layer) => _residual[layer];
 
+    public PerceptronLayout BuildContextLayout(int truncWindow, int decisionCapacity, int auxOutputs)
+        => new PerceptronLayout(LayerSizes, truncWindow, decisionCapacity, auxOutputs);
+
     public PerceptronContext CreateContext(GeneticParameters? p = null,
         int truncWindow = 8, int decisionCapacity = 16, int auxOutputs = 0)
-        => new PerceptronContext(LayerSizes, p ?? GeneticParameters.Default, truncWindow, decisionCapacity, auxOutputs);
+        => new PerceptronContext(BuildContextLayout(truncWindow, decisionCapacity, auxOutputs),
+                                 p ?? GeneticParameters.Default);
 
     public static float DurationFromLogit(float logit, float minDuration, float maxDuration)
     {
         float s = 1f / (1f + MathF.Exp(-logit));
         return minDuration + s * (maxDuration - minDuration);
     }
+
     public DelayedItem Decide(float[] input, PerceptronContext ctx, int delaySteps,
         ValueCritic critic, float gamma, float dt, float simTime,
         float minDuration, float maxDuration, float epsilon, float[] logitBias)
     {
         ctx.DeltaTime = dt > 0f ? dt : ctx.DeltaTime;
 
-        var rules   = SimulationRules.Active;
+        ref readonly var rules = ref SimulationRules.Frame;
         int ordinal = ctx.NextDecisionOrdinal();
 
         int slot = ForwardPass(input, ctx, logitBias, out int stamp);
 
-        int   last        = ctx.Activations.Length - 1;
-        float[] outAct    = ctx.Activations[last];
-        int   actionCount = ctx.ActionCount;
+        var lay         = ctx.Layout;
+        var outAct      = ctx.Activation(lay.L);
+        int actionCount = lay.ActionCount;
 
         float entropyBoost = 1f + MathF.Max(0f, 1.5f - ctx.AverageEntropy);
         float decay        = MathF.Exp(-ctx.TrainingSteps * rules.EpsilonDecayPerStep);
         float adaptiveEpsilon = MathF.Max(rules.MinEpsilon,
             epsilon * rules.ExplorationEpsilonScale * entropyBoost * decay);
+        if (adaptiveEpsilon > 1f) adaptiveEpsilon = 1f;
 
         bool isExploration = RavineRandom.RangeFloat() < adaptiveEpsilon;
 
-        float[] behaviour = logitBias != null ? ctx.BiasedProbs : outAct;
+        var behaviour = logitBias != null ? ctx.BiasedProbs : outAct;
 
         int pred = isExploration
             ? RavineRandom.RangeInt(0, actionCount)
@@ -107,32 +121,37 @@ public partial class DelayedPerceptron
         if (ctx.Decisions.Count >= ctx.Decisions.Capacity)
             FlushOldest(ctx, input, critic, gamma);
 
-        var item = ctx.Decisions.Push(ctx.NextDecisionId());
-        item.Evaluation = ctx.Params.DefaultEvaluation - DefaultEvaluationNeutral;
-        item.CreatedOrdinal = ordinal;
-        item.Predicted      = pred;
-        item.StartTime      = simTime;
-        item.ValueEstimate  = critic.Predict(input);
-        item.LogProbability = MathF.Log(MathF.Max(outAct[pred], 1e-8f));
-        item.BpttSlot       = slot;
-        item.BpttStamp      = stamp;
-        Array.Copy(input, item.State, input.Length);
-        Array.Copy(outAct, item.Probs, actionCount);
+        float pBehaviour = (1f - adaptiveEpsilon) * behaviour[pred]
+                         + adaptiveEpsilon / actionCount;
 
-        float baseLogit = ctx.Activations[last][ctx.DurationIndex];
+        var item = ctx.Decisions.Push(ctx.NextDecisionId());
+        item.Evaluation         = ctx.Params.DefaultEvaluation - DefaultEvaluationNeutral;
+        item.CreatedOrdinal     = ordinal;
+        item.Predicted          = pred;
+        item.StartTime          = simTime;
+        item.ValueEstimate      = critic.Predict(input);
+        item.ExplorationEpsilon = adaptiveEpsilon;
+        item.LogProbability     = MathF.Log(MathF.Max(pBehaviour, 1e-8f));
+        item.BpttSlot           = slot;
+        item.BpttStamp          = stamp;
+        item.WeightVersion      = WeightVersion;
+        Array.Copy(input, item.State, input.Length);
+        outAct.Slice(0, actionCount).CopyTo(item.Probs);
+
+        float baseLogit = outAct[lay.DurationIndex];
         float noise     = SampleGaussian() * DurationNoiseSigma;
 
         item.DurationLogit = baseLogit;
         item.DurationNoise = noise;
         item.Duration      = DurationFromLogit(baseLogit + noise, minDuration, maxDuration);
 
-        if (ctx.AuxOutputs >= 2)
+        if (lay.AuxOutputs >= 2)
         {
             float ns = SampleGaussian() * HeadingNoiseSigma;
             float nc = SampleGaussian() * HeadingNoiseSigma;
 
-            float s = MathF.Tanh(outAct[ctx.HeadingIndex]     + ns);
-            float c = MathF.Tanh(outAct[ctx.HeadingIndex + 1] + nc);
+            float s = MathF.Tanh(outAct[lay.HeadingIndex]     + ns);
+            float c = MathF.Tanh(outAct[lay.HeadingIndex + 1] + nc);
 
             float len = MathF.Sqrt(s * s + c * c);
             if (len < 1e-4f) { s = 0f; c = 1f; len = 1f; }
@@ -152,62 +171,103 @@ public partial class DelayedPerceptron
         return item;
     }
 
+    private static void RowDot(ReadOnlySpan<float> row, ReadOnlySpan<float> inp, int inputs,
+        float biasF, float biasTau, out float preF, out float preTau)
+    {
+        var w4 = MemoryMarshal.Cast<float, float4>(row);
+
+        float4 acc0 = float4.zero;
+        float4 acc1 = float4.zero;
+
+        int pairs = inputs >> 1;
+        int p = 0, i = 0;
+
+        for (; p + 1 < pairs; p += 2, i += 4)
+        {
+            float a0 = inp[i],     a1 = inp[i + 1];
+            float a2 = inp[i + 2], a3 = inp[i + 3];
+            acc0 += w4[p]     * new float4(a0, a0, a1, a1);
+            acc1 += w4[p + 1] * new float4(a2, a2, a3, a3);
+        }
+
+        for (; p < pairs; p++, i += 2)
+        {
+            float a0 = inp[i], a1 = inp[i + 1];
+            acc0 += w4[p] * new float4(a0, a0, a1, a1);
+        }
+
+        float4 acc = acc0 + acc1;
+        preF   = biasF   + acc.x + acc.z;
+        preTau = biasTau + acc.y + acc.w;
+
+        if ((inputs & 1) != 0)
+        {
+            int k = (inputs - 1) << 1;
+            float a = inp[inputs - 1];
+            preF   += row[k]     * a;
+            preTau += row[k | 1] * a;
+        }
+    }
+
     private int ForwardPass(float[] input, PerceptronContext ctx, float[] logitBias, out int stamp)
     {
+        var   lay  = ctx.Layout;
         float dt   = ctx.DeltaTime;
         int   slot = ctx.BpttPtr;
+        int   L    = lay.L;
 
-        Array.Copy(input, ctx.Activations[0], input.Length);
+        input.AsSpan(0, lay.InputSize).CopyTo(ctx.Activation(0));
 
-        for (int l = 0; l < _weights.Length; l++)
+        for (int l = 0; l < L; l++)
         {
-            float[] inp = ctx.Activations[l];
-            float[] h   = ctx.HiddenStates[l];
-            float[] act = ctx.Activations[l + 1];
+            var inp = ctx.Activation(l);
+            var h   = ctx.Hidden(l);
+            var act = ctx.Activation(l + 1);
 
-            Array.Copy(inp, ctx.BpttPrevActs[slot][l], inp.Length);
-            Array.Copy(h,   ctx.BpttHBefore[slot][l],  h.Length);
+            inp.CopyTo(ctx.SlotPrevActs(slot, l));
+            h.CopyTo(ctx.SlotHBefore(slot, l));
 
-            float[] fSlot   = ctx.BpttF[slot][l];
-            float[] tauSlot = ctx.BpttTau[slot][l];
-            float[] aSlot   = ctx.BpttA[slot][l];
-            bool    res     = _residual[l];
+            var fSlot   = ctx.SlotF(slot, l);
+            var tauSlot = ctx.SlotTau(slot, l);
+            var aSlot   = ctx.SlotA(slot, l);
 
-            for (int n = 0; n < h.Length; n++)
+            bool res    = _residual[l];
+            int  inputs = lay.LayerSizes[l];
+            int  rowLen = inputs << 1;
+            int  neurons = h.Length;
+
+            for (int n = 0; n < neurons; n++)
             {
-                float[] wRow = _weights[l][n];
-                float[] tRow = _tauWeights[l][n];
+                int wi = lay.RowIndex(l, n);
+                int bi = lay.BiasIndex(l, n);
 
-                float preF = _biases[l][n];
-                for (int i = 0; i < inp.Length; i++) preF += wRow[i] * inp[i];
-                float f = MathF.Tanh(preF);
+                RowDot(_wt.AsSpan(wi, rowLen), inp, inputs, _bt[bi], _bt[bi | 1],
+                       out float preF, out float preTau);
 
-                float preTau = _tauBiases[l][n];
-                for (int i = 0; i < inp.Length; i++) preTau += tRow[i] * inp[i];
-
+                float f   = MathF.Tanh(preF);
                 float tau = MathF.Max(Softplus(preTau), TauEpsilon);
                 float A   = 1f + dt / tau;
 
-                ctx.FVals[l][n]   = fSlot[n]   = f;
-                ctx.TauVals[l][n] = tauSlot[n] = tau;
-                ctx.AVals[l][n]   = aSlot[n]   = A;
+                fSlot[n]   = f;
+                tauSlot[n] = tau;
+                aSlot[n]   = A;
 
-                h[n]   = (h[n] + dt * f) / A;
-                act[n] = res ? h[n] + inp[n] : h[n];
+                float hv = (h[n] + dt * f) / A;
+                h[n]   = hv;
+                act[n] = res ? hv + inp[n] : hv;
             }
         }
 
-        int outIdx = _weights.Length;
-        float[] outAct = ctx.Activations[outIdx];
-        int actionCount = ctx.ActionCount;
-        float temp = ctx.Params.SoftmaxTemperature;
+        var   outAct      = ctx.Activation(L);
+        int   actionCount = lay.ActionCount;
+        float temp        = ctx.Params.SoftmaxTemperature;
 
         if (logitBias != null)
         {
-            float[] biased = ctx.LogitScratch;
+            var biased = ctx.LogitScratch;
             for (int i = 0; i < actionCount; i++) biased[i] = outAct[i] + logitBias[i];
             SoftmaxInPlace(biased, ctx.SoftmaxBuf, actionCount, temp);
-            Array.Copy(biased, ctx.BiasedProbs, actionCount);
+            biased.Slice(0, actionCount).CopyTo(ctx.BiasedProbs);
         }
 
         SoftmaxInPlace(outAct, ctx.SoftmaxBuf, actionCount, temp);
@@ -215,12 +275,57 @@ public partial class DelayedPerceptron
         stamp               = ctx.NextForwardStamp();
         ctx.SlotStamp[slot] = stamp;
 
-        int history = ctx.HistoryDepth;
+        int history = lay.HistoryDepth;
         int next    = slot + 1;
         ctx.BpttPtr = next == history ? 0 : next;
         if (ctx.BpttCount < history) ctx.BpttCount++;
 
         return slot;
+    }
+
+    private void EvaluatePolicy(DelayedItem ticket, PerceptronContext ctx)
+    {
+        var   lay = ctx.Layout;
+        int   L   = lay.L;
+        int   t   = ticket.BpttSlot;
+        float dt  = ctx.DeltaTime;
+
+        ticket.State.AsSpan(0, lay.InputSize).CopyTo(ctx.EvalActivation(0));
+
+        for (int l = 0; l < L; l++)
+        {
+            var inp = ctx.EvalActivation(l);
+            var h   = ctx.EvalHidden(l);
+            var act = ctx.EvalActivation(l + 1);
+
+            ctx.SlotHBefore(t, l).CopyTo(h);
+
+            bool res    = _residual[l];
+            int  inputs = lay.LayerSizes[l];
+            int  rowLen = inputs << 1;
+            int  neurons = h.Length;
+
+            for (int n = 0; n < neurons; n++)
+            {
+                int wi = lay.RowIndex(l, n);
+                int bi = lay.BiasIndex(l, n);
+
+                RowDot(_wt.AsSpan(wi, rowLen), inp, inputs, _bt[bi], _bt[bi | 1],
+                       out float preF, out float preTau);
+
+                float f   = MathF.Tanh(preF);
+                float tau = MathF.Max(Softplus(preTau), TauEpsilon);
+                float A   = 1f + dt / tau;
+
+                float hv = (h[n] + dt * f) / A;
+                h[n]   = hv;
+                act[n] = res ? hv + inp[n] : hv;
+            }
+        }
+
+        var outAct = ctx.EvalActivation(L);
+        SoftmaxInPlace(outAct, ctx.EvalSoftmax, lay.ActionCount, ctx.Params.SoftmaxTemperature);
+        outAct.Slice(0, lay.ActionCount).CopyTo(ctx.EvalProbs);
     }
 
     public void Train(DelayedItem ticket, float advantage, PerceptronContext ctx)
@@ -236,22 +341,46 @@ public partial class DelayedPerceptron
 
         ctx.TrainingSteps++;
 
-        int   L       = _weights.Length;
-        int   history = ctx.HistoryDepth;
+        var   lay     = ctx.Layout;
+        int   L       = lay.L;
+        int   history = lay.HistoryDepth;
         float dt      = ctx.DeltaTime;
 
-        int   actionCount = ctx.ActionCount;
+        int   actionCount = lay.ActionCount;
         float invN        = 1f / actionCount;
         float entReg      = ctx.Params.EntropyRegularization;
         float invTemp     = 1f / MathF.Max(ctx.Params.SoftmaxTemperature, 1e-3f);
         int   pred        = ticket.Predicted;
 
-        float clipEps = SimulationRules.Active.PpoClipEpsilon;
+        float clipEps = SimulationRules.Frame.PpoClipEpsilon;
 
-        float logpNew = EvaluatePolicy(ticket, ctx);
-        float ratio   = MathF.Exp(logpNew - ticket.LogProbability);
-        if (!float.IsFinite(ratio)) ratio = 1f;
-        float[] probs = ctx.EvalProbs;
+        ReadOnlySpan<float> probs;
+        float ratio;
+        float mixScale;
+
+        float eps = ticket.ExplorationEpsilon;
+
+        if (ticket.WeightVersion == WeightVersion)
+        {
+            probs    = ticket.Probs.AsSpan(0, actionCount);
+            ratio    = 1f;
+            float pPureF = probs[pred];
+            float pMixF  = (1f - eps) * pPureF + eps * invN;
+            mixScale = pMixF > 1e-8f ? (1f - eps) * pPureF / pMixF : 1f;
+        }
+        else
+        {
+            EvaluatePolicy(ticket, ctx);
+            probs = ctx.EvalProbs;
+
+            float pPure   = probs[pred];
+            float pMix    = (1f - eps) * pPure + eps * invN;
+            float logpNew = MathF.Log(MathF.Max(pMix, 1e-8f));
+
+            ratio    = MathF.Exp(logpNew - ticket.LogProbability);
+            if (!float.IsFinite(ratio)) ratio = 1f;
+            mixScale = pMix > 1e-8f ? (1f - eps) * pPure / pMix : 1f;
+        }
 
         bool clipped = (advantage > 0f && ratio > 1f + clipEps)
                     || (advantage < 0f && ratio < 1f - clipEps);
@@ -260,28 +389,30 @@ public partial class DelayedPerceptron
 
         if (clipped && entReg <= 0f) return;
 
+        float policyGate = gate * mixScale;
+        var   outErr     = ctx.OutErrBuf;
+
         for (int i = 0; i < actionCount; i++)
         {
             float oneHot = i == pred ? 1f : 0f;
             float p      = probs[i];
-            ctx.OutErrBuf[i] = gate * (oneHot - p) * invTemp + entReg * (invN - p);
+            outErr[i] = policyGate * (oneHot - p) * invTemp + entReg * (invN - p);
         }
 
-        ctx.OutErrBuf[ctx.DurationIndex] =
+        outErr[lay.DurationIndex] =
             gate * ticket.DurationNoise / (DurationNoiseSigma * DurationNoiseSigma);
 
-        if (ctx.AuxOutputs >= 2)
+        if (lay.AuxOutputs >= 2)
         {
             float invHeadVar = 1f / (HeadingNoiseSigma * HeadingNoiseSigma);
-            ctx.OutErrBuf[ctx.HeadingIndex]     = gate * ticket.HeadingNoiseS * invHeadVar;
-            ctx.OutErrBuf[ctx.HeadingIndex + 1] = gate * ticket.HeadingNoiseC * invHeadVar;
+            outErr[lay.HeadingIndex]     = gate * ticket.HeadingNoiseS * invHeadVar;
+            outErr[lay.HeadingIndex + 1] = gate * ticket.HeadingNoiseC * invHeadVar;
         }
 
         var g = _gradScratch;
         g.Clear();
 
-        for (int l = 0; l < L; l++)
-            Array.Clear(ctx.TemporalDeltaH[l], 0, ctx.TemporalDeltaH[l].Length);
+        ctx.ClearWorkingDeltas();
 
         int nonFinite = 0;
 
@@ -290,33 +421,34 @@ public partial class DelayedPerceptron
             int t = ticket.BpttSlot - step;
             if (t < 0) t += history;
 
-            for (int l = 0; l < L; l++)
-                Array.Copy(ctx.TemporalDeltaH[l], ctx.WorkingDeltaH[l],
-                        ctx.TemporalDeltaH[l].Length);
-
             if (step == 0)
             {
-                float[] wDHLast = ctx.WorkingDeltaH[L - 1];
-                for (int i = 0; i < ctx.OutputSize; i++)
-                    wDHLast[i] += ctx.OutErrBuf[i];
+                var wDHLast = ctx.Working(L - 1);
+                for (int i = 0; i < lay.OutputSize; i++)
+                    wDHLast[i] += outErr[i];
             }
 
             for (int l = L - 1; l >= 0; l--)
             {
-                float[] prevActs = ctx.BpttPrevActs[t][l];
-                float[] hBef     = ctx.BpttHBefore[t][l];
-                float[] fArr     = ctx.BpttF[t][l];
-                float[] tauArr   = ctx.BpttTau[t][l];
-                float[] aArr     = ctx.BpttA[t][l];
-                float[] wDH      = ctx.WorkingDeltaH[l];
-                float[] tempDH   = ctx.TemporalDeltaH[l];
-                float[] prevWDH  = l > 0 ? ctx.WorkingDeltaH[l - 1] : null;
+                var prevActs = ctx.SlotPrevActs(t, l);
+                var hBef     = ctx.SlotHBefore(t, l);
+                var fArr     = ctx.SlotF(t, l);
+                var tauArr   = ctx.SlotTau(t, l);
+                var aArr     = ctx.SlotA(t, l);
+                var wDH      = ctx.Working(l);
+                var tempDH   = ctx.Temporal(l);
 
-                Array.Clear(tempDH, 0, tempDH.Length);
+                bool hasPrev = l > 0;
+                var  prevWDH = hasPrev ? ctx.Working(l - 1) : default;
 
-                if (_residual[l] && prevWDH != null)
+                tempDH.Clear();
+
+                if (_residual[l] && hasPrev)
                     for (int i = 0; i < wDH.Length; i++)
                         prevWDH[i] += wDH[i];
+
+                int inputs = lay.LayerSizes[l];
+                int rowLen = inputs << 1;
 
                 for (int n = 0; n < wDH.Length; n++)
                 {
@@ -342,32 +474,44 @@ public partial class DelayedPerceptron
 
                     tempDH[n] = dH / An;
 
-                    float[] wRow = _weights[l][n];
-                    float[] tRow = _tauWeights[l][n];
-
-                    int wi = g.WeightIndex(l, n);
+                    int wi = lay.RowIndex(l, n);
+                    var wRow = _wt.AsSpan(wi, rowLen);
+                    var gRow = g.WT.AsSpan(wi, rowLen);
                     g.MarkTouched(l, n);
 
-                    for (int i = 0; i < prevActs.Length; i++)
+                    if (hasPrev)
                     {
-                        float a = prevActs[i];
-
-                        if (prevWDH != null)
+                        for (int i = 0; i < inputs; i++)
                         {
-                            float back = dPreF * wRow[i] + dPreT * tRow[i];
+                            int k = i << 1;
+                            float a = prevActs[i];
+
+                            float back = dPreF * wRow[k] + dPreT * wRow[k | 1];
                             if (float.IsFinite(back)) prevWDH[i] += back;
                             else nonFinite++;
-                        }
 
-                        g.W[wi + i]   += dPreF * a;
-                        g.Tau[wi + i] += dPreT * a;
+                            gRow[k]     += dPreF * a;
+                            gRow[k | 1] += dPreT * a;
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < inputs; i++)
+                        {
+                            int k = i << 1;
+                            float a = prevActs[i];
+                            gRow[k]     += dPreF * a;
+                            gRow[k | 1] += dPreT * a;
+                        }
                     }
 
-                    int bi = g.BiasIndex(l, n);
-                    g.B[bi]    += dPreF;
-                    g.TauB[bi] += dPreT;
+                    int bi = lay.BiasIndex(l, n);
+                    g.BT[bi]     += dPreF;
+                    g.BT[bi | 1] += dPreT;
                 }
             }
+
+            ctx.SwapDeltaBuffers();
         }
 
         float norm = (float)Math.Sqrt(g.SquaredNorm());
@@ -419,46 +563,42 @@ public partial class DelayedPerceptron
 
         float inv = lr / acc.Contributions;
         int   nonFinite = 0;
+        int   L = _layout.L;
 
-        for (int l = 0; l < _weights.Length; l++)
+        for (int l = 0; l < L; l++)
         {
-            int neurons = acc.Neurons(l);
-            int inputs  = acc.Inputs(l);
+            int neurons = _layout.LayerSizes[l + 1];
+            int rowLen  = _layout.LayerSizes[l] << 1;
 
             for (int n = 0; n < neurons; n++)
             {
                 if (!acc.IsTouched(l, n)) continue;
 
-                float[] wRow = _weights[l][n];
-                float[] tRow = _tauWeights[l][n];
-                int wi = acc.WeightIndex(l, n);
+                int wi = _layout.RowIndex(l, n);
 
-                for (int i = 0; i < inputs; i++)
+                for (int i = 0; i < rowLen; i++)
                 {
-                    float oldW = wRow[i];
-                    float oldT = tRow[i];
-
-                    float newW = oldW + acc.W[wi + i]   * inv - weightDecay * oldW;
-                    float newT = oldT + acc.Tau[wi + i] * inv - weightDecay * oldT;
-
-                    if (float.IsFinite(newW)) wRow[i] = newW; else nonFinite++;
-                    if (float.IsFinite(newT)) tRow[i] = newT; else nonFinite++;
+                    float old = _wt[wi + i];
+                    float val = old + acc.WT[wi + i] * inv - weightDecay * old;
+                    if (float.IsFinite(val)) _wt[wi + i] = val; else nonFinite++;
                 }
 
-                int bi = acc.BiasIndex(l, n);
-                float newBF = _biases[l][n]    + acc.B[bi]    * inv;
-                float newBT = _tauBiases[l][n] + acc.TauB[bi] * inv;
+                int bi = _layout.BiasIndex(l, n);
 
-                if (float.IsFinite(newBF)) _biases[l][n]    = newBF; else nonFinite++;
-                if (float.IsFinite(newBT)) _tauBiases[l][n] = newBT; else nonFinite++;
+                float newBF = _bt[bi]     + acc.BT[bi]     * inv;
+                float newBT = _bt[bi | 1] + acc.BT[bi | 1] * inv;
+
+                if (float.IsFinite(newBF)) _bt[bi]     = newBF; else nonFinite++;
+                if (float.IsFinite(newBT)) _bt[bi | 1] = newBT; else nonFinite++;
             }
         }
 
         if (nonFinite > 0) diag?.RecordNonFiniteGradient(nonFinite);
         acc.Clear();
+        WeightVersion++;
     }
 
-    private static void SoftmaxInPlace(float[] vals, float[] buf, int count, float temp)
+    private static void SoftmaxInPlace(Span<float> vals, Span<float> buf, int count, float temp)
     {
         float max = vals[0];
         for (int i = 1; i < count; i++)
@@ -472,7 +612,7 @@ public partial class DelayedPerceptron
         for (int i = 0; i < count; i++) vals[i] = buf[i] * inv;
     }
 
-    private int RouletteWheelSelection(float[] probs, int count)
+    private int RouletteWheelSelection(ReadOnlySpan<float> probs, int count)
     {
         float pick = RavineRandom.RangeFloat(), cum = 0f;
         for (int i = 0; i < count; i++)
@@ -483,7 +623,7 @@ public partial class DelayedPerceptron
         return count - 1;
     }
 
-    private static float CalculateOutputEntropy(float[] outputs, int count)
+    private static float CalculateOutputEntropy(ReadOnlySpan<float> outputs, int count)
     {
         float e = 0f;
         for (int i = 0; i < count; i++)
@@ -508,21 +648,46 @@ public partial class DelayedPerceptron
     public static float Softplus(float x)
         => x > 20f ? x : MathF.Log(1f + MathF.Exp(x));
 
-    private void InitWeightsAndBiases(int[] layerSizes, in GeneticParameters genetics)
+    private void InitWeightsAndBiases(in GeneticParameters genetics)
     {
-        int L       = layerSizes.Length - 1;
-        _weights    = new float[L][][];
-        _tauWeights = new float[L][][];
-        _biases     = new float[L][];
-        _tauBiases  = new float[L][];
+        _wt = new float[_layout.WeightTotal];
+        _bt = new float[_layout.BiasTotal];
 
+        int L = _layout.L;
         for (int l = 0; l < L; l++)
         {
-            _weights[l]    = InitWeights(layerSizes[l + 1], layerSizes[l]);
-            _tauWeights[l] = InitTauWeights(layerSizes[l + 1], layerSizes[l]);
-            _biases[l]     = InitBiases(layerSizes[l + 1], in genetics);
-            _tauBiases[l]  = new float[layerSizes[l + 1]];
+            int neurons = _layout.LayerSizes[l + 1];
+            int inputs  = _layout.LayerSizes[l];
+
+            float wScale   = MathF.Sqrt(2f / (neurons + inputs));
+            float tauScale = 0.1f / MathF.Sqrt(inputs);
+            float bRange   = genetics.InitBiasesValues;
+
+            for (int n = 0; n < neurons; n++)
+            {
+                int wi = _layout.RowIndex(l, n);
+                for (int i = 0; i < inputs; i++)
+                {
+                    float u1 = RavineRandom.RangeFloat(0.0001f, 0.9999f);
+                    float u2 = RavineRandom.RangeFloat(0.0001f, 0.9999f);
+                    _wt[wi + (i << 1)]       = MathF.Sqrt(-2f * MathF.Log(u1))
+                                             * MathF.Cos(2f * MathF.PI * u2) * wScale;
+                    _wt[wi + (i << 1) + 1]   = RavineRandom.RangeFloat(-tauScale, tauScale);
+                }
+
+                int bi = _layout.BiasIndex(l, n);
+                _bt[bi]     = RavineRandom.RangeFloat(-bRange, bRange);
+                _bt[bi | 1] = 0f;
+            }
         }
+    }
+
+    private void CloneWeights(DelayedPerceptron src)
+    {
+        _wt = new float[src._wt.Length];
+        _bt = new float[src._bt.Length];
+        Array.Copy(src._wt, _wt, _wt.Length);
+        Array.Copy(src._bt, _bt, _bt.Length);
     }
 
     public void FlushTerminal(PerceptronContext ctx, ValueCritic critic, float gamma, float penalty)
@@ -587,114 +752,6 @@ public partial class DelayedPerceptron
         delayed.Trained = true;
         if (MathF.Abs(advantage) > 0.05f)
             Train(delayed, advantage, ctx);
-    }
-
-    private float EvaluatePolicy(DelayedItem ticket, PerceptronContext ctx)
-    {
-        int L    = _weights.Length;
-        int t    = ticket.BpttSlot;
-        float dt = ctx.DeltaTime;
-
-        Array.Copy(ticket.State, ctx.EvalActivations[0], ticket.State.Length);
-
-        for (int l = 0; l < L; l++)
-        {
-            float[] inp = ctx.EvalActivations[l];
-            float[] h   = ctx.EvalHidden[l];
-            float[] act = ctx.EvalActivations[l + 1];
-
-            Array.Copy(ctx.BpttHBefore[t][l], h, h.Length);
-            bool res = _residual[l];
-
-            for (int n = 0; n < h.Length; n++)
-            {
-                float[] wRow = _weights[l][n];
-                float[] tRow = _tauWeights[l][n];
-
-                float preF = _biases[l][n];
-                for (int i = 0; i < inp.Length; i++) preF += wRow[i] * inp[i];
-                float f = MathF.Tanh(preF);
-
-                float preTau = _tauBiases[l][n];
-                for (int i = 0; i < inp.Length; i++) preTau += tRow[i] * inp[i];
-
-                float tau = MathF.Max(Softplus(preTau), TauEpsilon);
-                float A   = 1f + dt / tau;
-
-                float hv = (h[n] + dt * f) / A;
-                h[n]   = hv;
-                act[n] = res ? hv + inp[n] : hv;
-            }
-        }
-
-        float[] outAct = ctx.EvalActivations[L];
-        SoftmaxInPlace(outAct, ctx.EvalSoftmaxBuf, ctx.ActionCount, ctx.Params.SoftmaxTemperature);
-        Array.Copy(outAct, ctx.EvalProbs, ctx.ActionCount);
-
-        return MathF.Log(MathF.Max(ctx.EvalProbs[ticket.Predicted], 1e-8f));
-    }
-
-    private static float[][] InitWeights(int neurons, int inputs)
-    {
-        float scale   = MathF.Sqrt(2f / (neurons + inputs));
-        var   weights = new float[neurons][];
-        for (int i = 0; i < neurons; i++)
-        {
-            weights[i] = new float[inputs];
-            for (int j = 0; j < inputs; j++)
-            {
-                float u1 = RavineRandom.RangeFloat(0.0001f, 0.9999f);
-                float u2 = RavineRandom.RangeFloat(0.0001f, 0.9999f);
-                weights[i][j] = MathF.Sqrt(-2f * MathF.Log(u1))
-                              * MathF.Cos(2f * MathF.PI * u2) * scale;
-            }
-        }
-        return weights;
-    }
-
-    private static float[][] InitTauWeights(int neurons, int inputs)
-    {
-        float scale   = 0.1f / MathF.Sqrt(inputs);
-        var   weights = new float[neurons][];
-        for (int i = 0; i < neurons; i++)
-        {
-            weights[i] = new float[inputs];
-            for (int j = 0; j < inputs; j++)
-                weights[i][j] = RavineRandom.RangeFloat(-scale, scale);
-        }
-        return weights;
-    }
-
-    private static float[] InitBiases(int neurons, in GeneticParameters genetics)
-    {
-        float range = genetics.InitBiasesValues;
-        var b = new float[neurons];
-        for (int i = 0; i < neurons; i++)
-            b[i] = RavineRandom.RangeFloat(-range, range);
-        return b;
-    }
-
-    private void CloneWeights(DelayedPerceptron src)
-    {
-        int L       = src._weights.Length;
-        _weights    = new float[L][][];
-        _tauWeights = new float[L][][];
-        _biases     = new float[L][];
-        _tauBiases  = new float[L][];
-
-        for (int l = 0; l < L; l++)
-        {
-            _biases[l]    = (float[])src._biases[l].Clone();
-            _tauBiases[l] = (float[])src._tauBiases[l].Clone();
-
-            _weights[l]    = new float[src._weights[l].Length][];
-            _tauWeights[l] = new float[src._tauWeights[l].Length][];
-            for (int n = 0; n < src._weights[l].Length; n++)
-            {
-                _weights[l][n]    = (float[])src._weights[l][n].Clone();
-                _tauWeights[l][n] = (float[])src._tauWeights[l][n].Clone();
-            }
-        }
     }
 
     public GeneticParameters GetGeneticParameters(PerceptronContext ctx) => ctx.Params;
