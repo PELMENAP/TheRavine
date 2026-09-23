@@ -186,6 +186,10 @@ public sealed class ChunkFoodIndex
         return true;
     }
 
+    public static float2 CellCenter(long cell)
+        => new float2(Position2Int.GetX(cell) * MapGenerator.scale + HalfCell,
+                      Position2Int.GetY(cell) * MapGenerator.scale + HalfCell);
+
     public bool TryConsumeFood(long cell)
     {
         int cellX = Position2Int.GetX(cell);

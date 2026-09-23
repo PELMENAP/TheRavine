@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Mathematics;
 
 [System.Serializable]
 public struct EntityTuning
@@ -29,4 +30,36 @@ public struct EntityTuning
 
     public LayerMask EntityLayer;
     public LayerMask FoodLayer;
+
+    [System.NonSerialized] public float BasalDrainMul;
+
+    public static EntityTuning Express(in EntityTuning source, in GeneticParameters g)
+    {
+        var r = SimulationRules.Active;
+        var t = source;
+
+        float speed  = g.MoveSpeedMul;
+        float energy = g.MaxEnergyMul;
+        float metab  = g.MetabolismMul;
+        float detect = g.DetectionRadiusMul;
+
+        float speedCost = math.pow(speed, r.GeneSpeedCostExponent);
+        t.MoveSpeed         *= speed;
+        t.RunSpeed          *= speed;
+        t.EnergyCostMoving  *= speedCost;
+        t.EnergyCostRunning *= speedCost;
+
+        t.MaxEnergy *= energy;
+
+        t.EnergyRegenRate *= metab;
+        t.AttackCooldown  /= math.max(metab, 1e-3f);
+
+        t.DetectionRadius *= detect;
+
+        t.BasalDrainMul = math.max(r.GeneMinBasalMul,
+            metab
+            * (1f + r.GeneEnergyCapacityUpkeep * (energy - 1f))
+            * (1f + r.GeneDetectionUpkeep      * (detect - 1f)));
+        return t;
+    }
 }

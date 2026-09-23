@@ -12,8 +12,14 @@ using TheRavine.Generator;
 public struct MotionState
 {
     public float3 Position;
+    public float2 Start;
+    public float2 Control;
     public float2 Goal;
     public float2 Velocity;
+    public float  T;
+    public float  InvLength;
+    public float  CurrentSpeed;
+    public float  LowSpeedTime;
     public double Deadline;
     public float  Speed;
     public float  EnergyCost;
@@ -28,6 +34,7 @@ public struct MotionState
     public int    Frame;
     public byte   Done;
     public byte   Arrived;
+    public byte   Blocked;
 }
 
 public unsafe struct HeightChunk
@@ -94,6 +101,8 @@ public struct MotionJob : IJobParallelFor
     public float  Dt;
     public float  MinSpeedModifier;
     public int    SpeedResampleFrames;
+    public float  BlockedSpeedThreshold;
+    public float  BlockedSeconds;
 
     public void Execute(int index)
     {
@@ -101,40 +110,57 @@ public struct MotionJob : IJobParallelFor
         if (s.Done != 0) return;
 
         float3 pos = s.Position;
-        float2 to  = s.Goal - pos.xz;
-        float  d2  = math.lengthsq(to);
+        float2 toGoal = s.Goal - pos.xz;
 
-        if (d2 <= s.Arrive2 || d2 < 1e-6f)
+        if (s.T >= 1f || math.lengthsq(toGoal) <= s.Arrive2)
         {
-            s.Arrived  = 1;
-            s.Done     = 1;
-            s.Velocity = float2.zero;
+            Finish(ref s, 1, 0);
             States[index] = s;
             return;
         }
 
         if (Now >= s.Deadline)
         {
-            s.Done     = 1;
-            s.Velocity = float2.zero;
+            Finish(ref s, 0, 0);
             States[index] = s;
             return;
         }
 
-        float2 dir = to * math.rsqrt(d2);
+        float  t   = s.T;
+        float  u   = 1f - t;
+        float2 tan = 2f * (u * (s.Control - s.Start) + t * (s.Goal - s.Control));
+        float  tl2 = math.lengthsq(tan);
+        float2 dir = tl2 > 1e-8f ? tan * math.rsqrt(tl2) : math.normalizesafe(toGoal);
 
         if (s.Frame == 0) s.SpeedModifier = Atlas.SpeedModifier(pos.x, pos.z, dir);
         if (++s.Frame >= SpeedResampleFrames) s.Frame = 0;
 
+        if (s.SpeedModifier < BlockedSpeedThreshold) s.LowSpeedTime += Dt;
+        else s.LowSpeedTime = 0f;
+
+        if (s.LowSpeedTime >= BlockedSeconds)
+        {
+            Finish(ref s, 0, 1);
+            States[index] = s;
+            return;
+        }
+
         float costModifier = math.max(s.SpeedModifier, MinSpeedModifier);
+        s.CurrentSpeed = math.lerp(s.CurrentSpeed, s.Speed * s.SpeedModifier, math.saturate(s.VelocityLerp * Dt));
 
-        s.Velocity = math.lerp(s.Velocity, dir * (s.Speed * s.SpeedModifier),
-            math.saturate(s.VelocityLerp * Dt));
+        float advance = s.CurrentSpeed * Dt;
+        float dT = tl2 > 1e-8f ? advance * math.rsqrt(tl2) : advance * s.InvLength;
+        t = math.min(t + dT, 1f);
+        u = 1f - t;
+        s.T = t;
 
-        float2 step = s.Velocity * Dt;
-        pos.x += step.x;
-        pos.z += step.y;
-        pos.y  = Atlas.SampleHeight(pos.x, pos.z) + s.HeightOffset;
+        float2 next = u * u * s.Start + 2f * u * t * s.Control + t * t * s.Goal;
+        float2 step = next - pos.xz;
+
+        s.Velocity = step * (1f / math.max(Dt, 1e-5f));
+        pos.x = next.x;
+        pos.z = next.y;
+        pos.y = Atlas.SampleHeight(pos.x, pos.z) + s.HeightOffset;
         s.Position = pos;
 
         float len = math.length(step);
@@ -149,6 +175,14 @@ public struct MotionJob : IJobParallelFor
         }
 
         States[index] = s;
+    }
+
+    private static void Finish(ref MotionState s, byte arrived, byte blocked)
+    {
+        s.Arrived  = arrived;
+        s.Blocked  = blocked;
+        s.Done     = 1;
+        s.Velocity = float2.zero;
     }
 }
 
@@ -202,7 +236,9 @@ public sealed unsafe class MotionSystem : IDisposable
         if ((uint)idx < (uint)_count && ReferenceEquals(_motors[idx], motor))
         {
             var s = state;
-            s.Pending += _states[idx].Pending;
+            var prev = _states[idx];
+            s.Pending     += prev.Pending;
+            s.CurrentSpeed = prev.CurrentSpeed;
             _states[idx] = s;
             return true;
         }
@@ -263,8 +299,10 @@ public sealed unsafe class MotionSystem : IDisposable
             Atlas               = new HeightAtlas { Index = _atlasIndex, Chunks = _atlasChunks.AsArray() },
             Now                 = now,
             Dt                  = dt,
-            MinSpeedModifier    = MinSpeedModifier,
-            SpeedResampleFrames = SpeedResampleFrames,
+            MinSpeedModifier      = MinSpeedModifier,
+            SpeedResampleFrames   = SpeedResampleFrames,
+            BlockedSpeedThreshold = SimulationRules.Frame.BlockedSpeedThreshold,
+            BlockedSeconds        = SimulationRules.Frame.BlockedSeconds,
         }.Schedule(_count, JobBatch);
 
         new MotionApplyJob { States = states }.Schedule(_transforms, move).Complete();

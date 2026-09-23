@@ -19,11 +19,11 @@ public struct MimicPhenotype
         float temperature    = Normalize(g.SoftmaxTemperature,    GeneticParameters.ParameterRanges[GeneticParameters.IdxSoftmaxTemperature]);
         float noise          = Normalize(g.GaussianNoise,         GeneticParameters.ParameterRanges[GeneticParameters.IdxGaussianNoise]);
         float learningRate   = Normalize(g.BaseLearningRate,      GeneticParameters.ParameterRanges[GeneticParameters.IdxBaseLearningRate]);
-        float lambda         = Normalize(g.Lambda,                GeneticParameters.ParameterRanges[GeneticParameters.IdxLambda]);
+        float speed          = Normalize(g.MoveSpeedMul,          GeneticParameters.ParameterRanges[GeneticParameters.IdxMoveSpeedMul]);
         float gradientNorm   = Normalize(g.MaxGradientNorm,       GeneticParameters.ParameterRanges[GeneticParameters.IdxMaxGradientNorm]);
-        float labelSmoothing = Normalize(g.LabelSmoothing,        GeneticParameters.ParameterRanges[GeneticParameters.IdxLabelSmoothing]);
+        float capacity       = Normalize(g.MaxEnergyMul,          GeneticParameters.ParameterRanges[GeneticParameters.IdxMaxEnergyMul]);
         float entropyAlpha   = Normalize(g.EntropyAlpha,          GeneticParameters.ParameterRanges[GeneticParameters.IdxEntropyAlpha]);
-        float initBias       = Normalize(g.InitBiasesValues,      GeneticParameters.ParameterRanges[GeneticParameters.IdxInitBiasesValues]);
+        float detection      = Normalize(g.DetectionRadiusMul,    GeneticParameters.ParameterRanges[GeneticParameters.IdxDetectionRadiusMul]);
 
 
         return new MimicPhenotype
@@ -31,18 +31,18 @@ public struct MimicPhenotype
             NumberOfLegs          = rng.Range(3, 6) + Mathf.RoundToInt(exploration * 3f),
             PartsPerLeg           = rng.Range(2, 4) + Mathf.RoundToInt(gradientNorm * 2f),
             MinimumAnchoredLegs   = Mathf.Max(1, rng.Range(1, 3)),
-            LegResolution         = 20 + rng.Range(0, 20) + Mathf.RoundToInt(labelSmoothing * 20f),
+            LegResolution         = 20 + rng.Range(0, 20) + Mathf.RoundToInt(capacity * 20f),
             VerticeCount          = rng.Range(4, 9),
 
-            MinLegLifetime        = Mathf.Lerp(3f, 8f, 1f - lambda),
-            MaxLegLifetime        = Mathf.Lerp(8f, 20f, 1f - lambda),
+            MinLegLifetime        = Mathf.Lerp(3f, 8f, 1f - speed),
+            MaxLegLifetime        = Mathf.Lerp(8f, 20f, 1f - speed),
             NewLegRadius          = Mathf.Lerp(2f, 5f, gradientNorm),
             MinLegDistance        = Mathf.Lerp(3f, 6f, 1f - exploration),
             MinGrowCoef           = Mathf.Lerp(3f, 6f, learningRate),
             MaxGrowCoef           = Mathf.Lerp(6f, 10f, learningRate),
             NewLegCooldown        = Mathf.Lerp(0.1f, 0.6f, 1f - temperature),
-            LegMinHeight          = Mathf.Lerp(0.5f, 1.5f, initBias),
-            LegMaxHeight          = Mathf.Lerp(1.5f, 4f, initBias),
+            LegMinHeight          = Mathf.Lerp(0.5f, 1.5f, detection),
+            LegMaxHeight          = Mathf.Lerp(1.5f, 4f, detection),
             HandleOffsetMinRadius = Mathf.Lerp(0.2f, 0.8f, noise),
             HandleOffsetMaxRadius = Mathf.Lerp(0.8f, 2.2f, noise),
             MinRotSpeed           = Mathf.Lerp(5f, 20f, temperature),

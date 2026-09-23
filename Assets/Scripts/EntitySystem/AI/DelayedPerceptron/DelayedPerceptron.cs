@@ -20,6 +20,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
     public int[] LayerSizes { get; private set; }
     public PerceptronLayout Layout => _layout;
     public int WeightVersion { get; private set; }
+    public long TotalTrainingSteps { get; private set; }
 
     public float OptimizerMaxGradNorm = 3f;
 
@@ -53,13 +54,10 @@ public unsafe partial class DelayedPerceptron : IDisposable
         : this(new[] { inputSize, h1, h2, h3, outputSize }) { }
 
     public DelayedPerceptron(int[] layerSizes)
-        : this(layerSizes, GeneticParameters.Default) { }
-
-    public DelayedPerceptron(int[] layerSizes, in GeneticParameters genetics)
     {
         LayerSizes = layerSizes;
         _layout    = new PerceptronLayout(layerSizes, DefaultTruncWindow, DefaultDecisionCapacity, 0);
-        InitWeightsAndBiases(in genetics);
+        InitWeightsAndBiases(SimulationRules.Active.InitBiasRange);
         BuildResidualMask();
     }
 
@@ -147,7 +145,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
 
     public DelayedItem FinishDecide(float[] input, PerceptronContext ctx, int slot, bool biased,
         int delaySteps, ValueCritic critic, float gamma, float simTime,
-        float minDuration, float maxDuration, float epsilon)
+        float minDuration, float maxDuration, float epsilon, float decay)
     {
         ref readonly var rules = ref SimulationRules.Frame;
         int ordinal = ctx.NextDecisionOrdinal();
@@ -165,7 +163,6 @@ public unsafe partial class DelayedPerceptron : IDisposable
         int actionCount = lay.ActionCount;
 
         float entropyBoost = 1f + MathF.Max(0f, 1.5f - ctx.AverageEntropy);
-        float decay        = MathF.Exp(-ctx.TrainingSteps * rules.EpsilonDecayPerStep);
         float adaptiveEpsilon = MathF.Max(rules.MinEpsilon,
             epsilon * rules.ExplorationEpsilonScale * entropyBoost * decay);
         if (adaptiveEpsilon > 1f) adaptiveEpsilon = 1f;
@@ -313,6 +310,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
         if (steps == 0) return;
 
         ctx.TrainingSteps++;
+        TotalTrainingSteps++;
 
         if (!_tickets.IsCreated) _tickets = new NativeList<TrainTicket>(Allocator.Persistent);
 
@@ -506,17 +504,12 @@ public unsafe partial class DelayedPerceptron : IDisposable
         return MathF.Sqrt(-2f * MathF.Log(u1)) * MathF.Cos(2f * MathF.PI * u2);
     }
 
-    private static float DiscountPow(float gamma, int n)
-    {
-        float g = 1f;
-        for (int i = 0; i < n; i++) g *= gamma;
-        return g;
-    }
+    private static float DiscountPow(float gamma, int n) => Unity.Mathematics.math.pow(gamma, n);
 
     public static float Softplus(float x)
         => x > 20f ? x : MathF.Log(1f + MathF.Exp(x));
 
-    private void InitWeightsAndBiases(in GeneticParameters genetics)
+    private void InitWeightsAndBiases(float bRange)
     {
         _wt = new float[_layout.WeightTotal];
         _bt = new float[_layout.BiasTotal];
@@ -529,7 +522,6 @@ public unsafe partial class DelayedPerceptron : IDisposable
 
             float wScale   = MathF.Sqrt(2f / (neurons + inputs));
             float tauScale = 0.1f / MathF.Sqrt(inputs);
-            float bRange   = genetics.InitBiasesValues;
 
             for (int n = 0; n < neurons; n++)
             {
@@ -580,4 +572,4 @@ public unsafe partial class DelayedPerceptron : IDisposable
         if (_applyNonFinite.IsCreated) _applyNonFinite.Dispose();
         _nativeStale = true;
     }
-}
+}

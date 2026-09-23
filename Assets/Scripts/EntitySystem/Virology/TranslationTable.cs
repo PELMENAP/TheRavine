@@ -1,10 +1,9 @@
 using System;
-using Unity.Collections;
 using Unity.Mathematics;
 
 namespace TheRavine.EntityControl.Virology
 {
-    public struct TranslationTable : IDisposable
+    public struct TranslationTable
     {
         public float[] Centroids;
         public float Sharpness;
@@ -13,7 +12,7 @@ namespace TheRavine.EntityControl.Virology
         public const float JitterScale = 0.18f;
         public const float MutationScale = 0.12f;
 
-        public static float[] CreatePrototype(uint seed, Allocator allocator)
+        public static float[] CreatePrototype(uint seed)
         {
             var array = new float[ProteinTable.ActionCount * ProteinTable.EmbedDim];
 
@@ -40,7 +39,7 @@ namespace TheRavine.EntityControl.Virology
             return table;
         }
 
-        public TranslationTable Clone(Allocator allocator)
+        public TranslationTable Clone()
         {
             var copy = new TranslationTable
             {
@@ -60,10 +59,6 @@ namespace TheRavine.EntityControl.Virology
                 Centroids[i] = math.clamp(
                     Centroids[i] + NextSymmetric(ref rng) * MutationScale, -1.5f, 1.5f);
             }
-        }
-
-        public void Dispose()
-        {
         }
 
         private static float NextUnit(ref XorShift32 rng)

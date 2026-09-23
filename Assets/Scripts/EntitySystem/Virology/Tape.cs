@@ -1,10 +1,8 @@
-using System;
-using Unity.Collections;
 using Unity.Mathematics;
 
 namespace TheRavine.EntityControl.Virology
 {
-    public struct Tape : IDisposable
+    public struct Tape
     {
         public ushort[] Codons;
         public int Length;
@@ -12,7 +10,7 @@ namespace TheRavine.EntityControl.Virology
 
         public int Capacity => Codons.Length;
 
-        public static Tape Create(int capacity, Allocator allocator) => new()
+        public static Tape Create(int capacity) => new()
         {
             Codons = new ushort[capacity],
             Length = 0,
@@ -75,10 +73,6 @@ namespace TheRavine.EntityControl.Virology
                 hash *= 1099511628211UL;
             }
             return hash;
-        }
-
-        public void Dispose()
-        {
         }
     }
 }

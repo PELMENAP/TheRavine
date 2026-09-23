@@ -36,6 +36,28 @@ public sealed class SimulationRules : ScriptableObject
         public readonly float MaxCycleDt;
         public readonly float ModifierDecayTau;
 
+        public readonly float DangerLowFraction;
+        public readonly float DangerMidFraction;
+        public readonly float DangerCritFraction;
+        public readonly float BreedMarginFraction;
+
+        public readonly float CodonsPerSecond;
+        public readonly int   MaxCodonsPerCycle;
+        public readonly int   DormantCodons;
+        public readonly float ContactRadius;
+        public readonly float IntegrityDecayPerSecond;
+        public readonly float IntegrityMutationScale;
+        public readonly float IntegrityRemoveThreshold;
+
+        public readonly float RndNormAlpha;
+        public readonly int   EpsilonScheduleMode;
+
+        public readonly float ActionTraceHorizon;
+        public readonly float ActionTraceInvLogNorm;
+
+        public readonly float BlockedSpeedThreshold;
+        public readonly float BlockedSeconds;
+
         public RulesFrame(SimulationRules r)
         {
             EpsilonDecayPerStep     = r.EpsilonDecayPerStep;
@@ -68,6 +90,28 @@ public sealed class SimulationRules : ScriptableObject
 
             MaxCycleDt       = r.MaxCycleDt;
             ModifierDecayTau = r.ModifierDecayTau;
+
+            DangerLowFraction   = r.dangerLowFraction;
+            DangerMidFraction   = r.dangerMidFraction;
+            DangerCritFraction  = r.dangerCritFraction;
+            BreedMarginFraction = r.breedMarginFraction;
+
+            CodonsPerSecond          = r.codonsPerSecond;
+            MaxCodonsPerCycle        = r.maxCodonsPerCycle;
+            DormantCodons            = r.dormantCodons;
+            ContactRadius            = r.contactRadius;
+            IntegrityDecayPerSecond  = r.integrityDecayPerSecond;
+            IntegrityMutationScale   = r.integrityMutationScale;
+            IntegrityRemoveThreshold = r.integrityRemoveThreshold;
+
+            RndNormAlpha        = r.rndNormAlpha;
+            EpsilonScheduleMode = (int)r.epsilonScheduleMode;
+
+            ActionTraceHorizon    = r.actionTraceHorizon;
+            ActionTraceInvLogNorm = 1f / Mathf.Log(1f + Mathf.Max(r.actionTraceHorizon, 1e-3f));
+
+            BlockedSpeedThreshold = r.blockedSpeedThreshold;
+            BlockedSeconds        = r.blockedSeconds;
         }
     }
 
@@ -86,7 +130,7 @@ public sealed class SimulationRules : ScriptableObject
     [SerializeField] private float idleRewardLowEnergy = 0.6f;
     [SerializeField] private float idleRewardOveractive = -0.35f;
 
-    [SerializeField] private float eatHealFood = 30f;
+    [SerializeField] private float eatHealFraction = 0f;
     [SerializeField] private float eatEnergyFood = 20f;
     [SerializeField] private float eatRewardFood = 0.8f;
     [SerializeField] private float eatRewardNoFood = -0.25f;
@@ -207,7 +251,7 @@ public sealed class SimulationRules : ScriptableObject
     public float IdleRewardLowEnergy => idleRewardLowEnergy;
     public float IdleRewardOveractive => idleRewardOveractive;
 
-    public float EatHealFood => eatHealFood;
+    public float EatHealFraction => eatHealFraction;
     public float EatEnergyFood => eatEnergyFood;
     public float EatRewardFood => eatRewardFood;
     public float EatRewardNoFood => eatRewardNoFood;
@@ -242,6 +286,144 @@ public sealed class SimulationRules : ScriptableObject
     public float ExplorationEpsilonScale => explorationEpsilonScale;
     public float EpsilonDecayPerStep => epsilonDecayPerStep;
     public float MinEpsilon => minEpsilon;
+
+    public enum EpsilonSchedule { Exponential = 0, PlateauByFitness = 1 }
+
+    [SerializeField] private float idleRewardGainNorm = 0.02f;
+    [SerializeField] private float restHealEnergyCost = 0.5f;
+    [SerializeField] private float speechEnergyCost = 5f;
+    [SerializeField] private float threatenEnergyCost = 3f;
+
+    [SerializeField] private float dangerLowFraction   = 0.5f;
+    [SerializeField] private float dangerMidFraction   = 0.25f;
+    [SerializeField] private float dangerCritFraction  = 0.1f;
+    [SerializeField] private float breedMarginFraction = 0.5f;
+
+    [SerializeField] private float shareFoodMinHealthFraction  = 0.8f;
+    [SerializeField] private float shareFoodKeepHealthFraction = 0.6f;
+    [SerializeField] private float shareFoodTransferFraction   = 0.2f;
+    [SerializeField] private float shareFoodVictimRatio        = 0.8f;
+
+    [SerializeField] private float fleeRewardNoTarget   = 0.3f;
+    [SerializeField] private float fleeRewardTargetGone = 0.5f;
+    [SerializeField] private float fleeDistanceMul      = 1.5f;
+    [SerializeField] private float fleeMaxDuration      = 2f;
+
+    [SerializeField] private float rememberPointMinSpacing = 10f;
+    [SerializeField] private float rememberPointRewardNew  = 0.65f;
+    [SerializeField] private float rememberPointRewardDup  = 0.3f;
+
+    [SerializeField] private float goToPointRewardNoPoints = 0f;
+    [SerializeField] private float goToPointRewardArrived  = 0.55f;
+    [SerializeField] private float goToPointMaxDuration    = 5f;
+
+    [SerializeField] private float speechReward = 0.55f;
+
+    [SerializeField] private float mimicRewardNoTarget     = 0.2f;
+    [SerializeField] private float mimicRewardBase         = 0.3f;
+    [SerializeField] private float mimicRewardEntropyScale = 0.2f;
+
+    [SerializeField] private float threatenRewardNoTarget = 0.2f;
+    [SerializeField] private float threatenRewardTooFar   = 0.15f;
+    [SerializeField] private float threatenRewardClose    = 0.6f;
+    [SerializeField] private float threatenRewardFar      = 0.4f;
+    [SerializeField] private float threatenRangeMul       = 2f;
+
+    [SerializeField] private float geneSpeedCostExponent    = 2f;
+    [SerializeField] private float geneEnergyCapacityUpkeep = 0.5f;
+    [SerializeField] private float geneDetectionUpkeep      = 0.3f;
+    [SerializeField] private float geneMinBasalMul          = 0.3f;
+    [SerializeField] private float initBiasRange            = 0.1f;
+    [SerializeField] private bool  periodicGenotypeOverwrite = false;
+
+    [SerializeField] private float codonsPerSecond                = 1f;
+    [SerializeField] private int   maxCodonsPerCycle              = 4;
+    [SerializeField] private int   dormantCodons                  = 8;
+    [SerializeField] private float contactRadius                  = 3f;
+    [SerializeField] private float integrityDecayPerSecond        = 0.002f;
+    [SerializeField] private float integrityMutationScale         = 0.05f;
+    [SerializeField] private float integrityRemoveThreshold       = 0.1f;
+    [SerializeField] private float verticalTransmissionChance     = 0.5f;
+    [SerializeField] private float verticalEndogenousMutationRate = 0.02f;
+    [SerializeField] private float verticalTableMutationChance    = 0.05f;
+    [SerializeField] private int   virologyMaxSegments            = 32;
+
+    [SerializeField] private int   rndSamplesPerSweep = 128;
+    [SerializeField] private float rndLearningRate    = 0.01f;
+    [SerializeField] private float rndNormAlpha       = 0.01f;
+
+    [SerializeField] private EpsilonSchedule epsilonScheduleMode = EpsilonSchedule.Exponential;
+    [SerializeField] private float epsilonPlateauFitnessThreshold = 5f;
+    [SerializeField] private float epsilonPlateauDrop             = 0.7f;
+    [SerializeField] private float epsilonPlateauMinScale         = 0.1f;
+    [SerializeField] private float epsilonPlateauThresholdGrowth  = 1.2f;
+    [SerializeField] private float epsilonPlateauThresholdStep    = 0f;
+
+    [SerializeField] private float actionTraceHorizon = 120f;
+
+    [SerializeField] private float reservoirSpectralRadius = 0.9f;
+
+    [SerializeField] private float blockedSpeedThreshold = 0.15f;
+    [SerializeField] private float blockedSeconds        = 0.75f;
+
+    public float IdleRewardGainNorm => idleRewardGainNorm;
+    public float RestHealEnergyCost => restHealEnergyCost;
+    public float SpeechEnergyCost   => speechEnergyCost;
+    public float ThreatenEnergyCost => threatenEnergyCost;
+
+    public float ShareFoodMinHealthFraction  => shareFoodMinHealthFraction;
+    public float ShareFoodKeepHealthFraction => shareFoodKeepHealthFraction;
+    public float ShareFoodTransferFraction   => shareFoodTransferFraction;
+    public float ShareFoodVictimRatio        => shareFoodVictimRatio;
+
+    public float FleeRewardNoTarget   => fleeRewardNoTarget;
+    public float FleeRewardTargetGone => fleeRewardTargetGone;
+    public float FleeDistanceMul      => fleeDistanceMul;
+    public float FleeMaxDuration      => fleeMaxDuration;
+
+    public float RememberPointMinSpacing => rememberPointMinSpacing;
+    public float RememberPointRewardNew  => rememberPointRewardNew;
+    public float RememberPointRewardDup  => rememberPointRewardDup;
+
+    public float GoToPointRewardNoPoints => goToPointRewardNoPoints;
+    public float GoToPointRewardArrived  => goToPointRewardArrived;
+    public float GoToPointMaxDuration    => goToPointMaxDuration;
+
+    public float SpeechReward => speechReward;
+
+    public float MimicRewardNoTarget     => mimicRewardNoTarget;
+    public float MimicRewardBase         => mimicRewardBase;
+    public float MimicRewardEntropyScale => mimicRewardEntropyScale;
+
+    public float ThreatenRewardNoTarget => threatenRewardNoTarget;
+    public float ThreatenRewardTooFar   => threatenRewardTooFar;
+    public float ThreatenRewardClose    => threatenRewardClose;
+    public float ThreatenRewardFar      => threatenRewardFar;
+    public float ThreatenRangeMul       => threatenRangeMul;
+
+    public float GeneSpeedCostExponent     => geneSpeedCostExponent;
+    public float GeneEnergyCapacityUpkeep  => geneEnergyCapacityUpkeep;
+    public float GeneDetectionUpkeep       => geneDetectionUpkeep;
+    public float GeneMinBasalMul           => geneMinBasalMul;
+    public float InitBiasRange             => initBiasRange;
+    public bool  PeriodicGenotypeOverwrite => periodicGenotypeOverwrite;
+
+    public float VerticalTransmissionChance     => verticalTransmissionChance;
+    public float VerticalEndogenousMutationRate => verticalEndogenousMutationRate;
+    public float VerticalTableMutationChance    => verticalTableMutationChance;
+    public int   VirologyMaxSegments            => virologyMaxSegments;
+
+    public int   RndSamplesPerSweep => rndSamplesPerSweep;
+    public float RndLearningRate    => rndLearningRate;
+
+    public int   EpsilonScheduleMode            => (int)epsilonScheduleMode;
+    public float EpsilonPlateauFitnessThreshold => epsilonPlateauFitnessThreshold;
+    public float EpsilonPlateauDrop             => epsilonPlateauDrop;
+    public float EpsilonPlateauMinScale         => epsilonPlateauMinScale;
+    public float EpsilonPlateauThresholdGrowth  => epsilonPlateauThresholdGrowth;
+    public float EpsilonPlateauThresholdStep    => epsilonPlateauThresholdStep;
+
+    public float ReservoirSpectralRadius => reservoirSpectralRadius;
 
     private static SimulationRules _active;
 

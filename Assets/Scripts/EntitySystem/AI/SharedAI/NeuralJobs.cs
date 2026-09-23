@@ -22,8 +22,12 @@ public unsafe struct NetWeights
 {
     public float* W;
     public float* B;
-    public float* LstmW;
-    public float* LstmB;
+}
+
+public unsafe struct ReservoirItem
+{
+    public float* State;
+    public int    InputRow;
 }
 
 public unsafe struct TrainTicket
@@ -78,10 +82,29 @@ public unsafe struct BrainForwardJob : IJobParallelFor
             ? (float*)Biases.GetUnsafeReadOnlyPtr() + it.BiasRow * BiasStride
             : null;
 
-        NeuralKernels.LstmStep(net.LstmW, net.LstmB, input, it.Lstm, InputSize, LstmHidden,
-            it.Ctx + lay->ActOffset[0]);
+        NeuralKernels.Combine(input, it.Lstm, InputSize, LstmHidden, it.Ctx + lay->ActOffset[0]);
 
         NeuralKernels.Forward(lay, net.W, net.B, it.Ctx, it.Slot, it.Dt, it.Temperature, bias);
+    }
+}
+
+[BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
+public unsafe struct ReservoirJob : IJobParallelFor
+{
+    [ReadOnly] public NativeArray<ReservoirItem> Items;
+    [ReadOnly] public NativeArray<float>         Inputs;
+
+    [NativeDisableUnsafePtrRestriction] public float* W;
+    [NativeDisableUnsafePtrRestriction] public float* B;
+
+    public int InputSize;
+    public int Hidden;
+
+    public void Execute(int index)
+    {
+        var it = Items[index];
+        float* x = (float*)Inputs.GetUnsafeReadOnlyPtr() + it.InputRow * InputSize;
+        NeuralKernels.ReservoirStep(W, B, x, it.State, InputSize, Hidden);
     }
 }
 

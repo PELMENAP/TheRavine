@@ -1,140 +1,226 @@
-using UnityEngine;
 using System;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
+using Unity.Mathematics;
 
-public sealed class RandomNetworkDistillation
+public sealed unsafe class RandomNetworkDistillation : IDisposable
 {
-    private const int Hidden    = 32;
-    private const int Embedding = 16;
-    private const float NormAlpha = 0.01f;
+    public const int Hidden    = 32;
+    public const int Embedding = 16;
 
-    private readonly float[][] targetW1;
-    private readonly float[]   targetB1;
-    private readonly float[][] targetW2;
+    public readonly int InputSize;
 
-    private readonly float[][] predW1;
-    private readonly float[]   predB1;
-    private readonly float[][] predW2;
-    private readonly float[]   predB2;
+    private NativeArray<float> _tW1, _tB1, _tW2;
+    private NativeArray<float> _pW1, _pB1, _pW2, _pB2;
+    private NativeArray<float> _errors;
+    private NativeArray<float> _samples;
 
-    private readonly float[] targetHidden;
-    private readonly float[] targetOut;
-    private readonly float[] predHidden;
-    private readonly float[] predOut;
+    private int   _sampleCount;
+    private long  _seen;
+    private float _runningMeanErr = 1f;
 
-    private readonly float lr;
-    private float runningMeanErr = 1f;
-
-    public RandomNetworkDistillation(int inputSize, float _lr = 0.01f)
+    public RandomNetworkDistillation(int inputSize)
     {
-        lr = _lr;
-        targetW1 = Init(Hidden, inputSize);
-        targetB1 = new float[Hidden];
-        targetW2 = Init(Embedding, Hidden);
+        InputSize = inputSize;
 
-        predW1 = Init(Hidden, inputSize);
-        predB1 = new float[Hidden];
-        predW2 = Init(Embedding, Hidden);
-        predB2 = new float[Embedding];
+        _tW1 = Init(Hidden * inputSize, Hidden, inputSize);
+        _tB1 = new NativeArray<float>(Hidden, Allocator.Persistent);
+        _tW2 = Init(Embedding * Hidden, Embedding, Hidden);
 
-        targetHidden = new float[Hidden];
-        targetOut    = new float[Embedding];
-        predHidden   = new float[Hidden];
-        predOut      = new float[Embedding];
+        _pW1 = Init(Hidden * inputSize, Hidden, inputSize);
+        _pB1 = new NativeArray<float>(Hidden, Allocator.Persistent);
+        _pW2 = Init(Embedding * Hidden, Embedding, Hidden);
+        _pB2 = new NativeArray<float>(Embedding, Allocator.Persistent);
     }
 
-    public float ComputeIntrinsicReward(float[] x)
+    public void Collect(float[] input)
     {
-        ForwardTarget(x);
-        ForwardPredictor(x);
-
-        float sqErr = 0f;
-        for (int i = 0; i < Embedding; i++)
+        int cap = math.max(1, SimulationRules.Active.RndSamplesPerSweep);
+        if (!_samples.IsCreated || _samples.Length != cap * InputSize)
         {
-            float d = predOut[i] - targetOut[i];
-            sqErr += d * d;
+            if (_samples.IsCreated) _samples.Dispose();
+            _samples     = new NativeArray<float>(cap * InputSize, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _sampleCount = 0;
+            _seen        = 0;
         }
-        sqErr /= Embedding;
 
-        TrainPredictor(x);
-
-        runningMeanErr += NormAlpha * (sqErr - runningMeanErr);
-        return Mathf.Clamp01(sqErr / Mathf.Max(runningMeanErr, 1e-4f));
+        _seen++;
+        int slot = _sampleCount < cap ? _sampleCount++ : RavineRandom.RangeInt(0, (int)math.min(_seen, int.MaxValue));
+        if (slot >= cap) return;
+        NativeArray<float>.Copy(input, 0, _samples, slot * InputSize, InputSize);
     }
 
-    private void ForwardTarget(float[] x)
+    public JobHandle ScheduleInfer(NativeArray<float> inputs, NativeArray<int> rows, int count, JobHandle dependency = default)
     {
-        for (int i = 0; i < Hidden; i++)
+        if (!_errors.IsCreated || _errors.Length < count)
         {
-            float sum = targetB1[i];
-            var row = targetW1[i];
-            for (int j = 0; j < x.Length; j++) sum += row[j] * x[j];
-            targetHidden[i] = MathF.Tanh(sum);
+            if (_errors.IsCreated) _errors.Dispose();
+            _errors = new NativeArray<float>(math.max(count, 64), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         }
-        for (int i = 0; i < Embedding; i++)
+
+        return new RndInferJob
         {
-            float sum = 0f;
-            var row = targetW2[i];
-            for (int j = 0; j < Hidden; j++) sum += row[j] * targetHidden[j];
-            targetOut[i] = sum;
-        }
+            Inputs = inputs, Rows = rows, Errors = _errors, InputSize = InputSize,
+            TW1 = _tW1, TB1 = _tB1, TW2 = _tW2,
+            PW1 = _pW1, PB1 = _pB1, PW2 = _pW2, PB2 = _pB2,
+        }.Schedule(count, 8, dependency);
     }
 
-    private readonly float[] predHiddenPre = new float[Hidden];
-    private void ForwardPredictor(float[] x)
+    public float IntrinsicReward(int index)
     {
-        for (int i = 0; i < Hidden; i++)
-        {
-            float sum = predB1[i];
-            var row = predW1[i];
-            for (int j = 0; j < x.Length; j++) sum += row[j] * x[j];
-            predHiddenPre[i] = sum;
-            predHidden[i] = MathF.Tanh(sum);
-        }
-        for (int i = 0; i < Embedding; i++)
-        {
-            float sum = predB2[i];
-            var row = predW2[i];
-            for (int j = 0; j < Hidden; j++) sum += row[j] * predHidden[j];
-            predOut[i] = sum;
-        }
+        float err = _errors[index];
+        _runningMeanErr += SimulationRules.Frame.RndNormAlpha * (err - _runningMeanErr);
+        return math.saturate(err / math.max(_runningMeanErr, 1e-4f));
     }
 
-    private void TrainPredictor(float[] x)
+    public void TrainSweep()
     {
-        Span<float> deltaHidden = stackalloc float[Hidden];
+        if (_sampleCount == 0 || !_samples.IsCreated) return;
 
-        for (int i = 0; i < Embedding; i++)
+        new RndTrainJob
         {
-            float d = predOut[i] - targetOut[i];
-            var row = predW2[i];
-            for (int j = 0; j < Hidden; j++)
-                deltaHidden[j] += d * row[j];
+            Samples = _samples, Count = _sampleCount, InputSize = InputSize,
+            Lr = SimulationRules.Active.RndLearningRate,
+            TW1 = _tW1, TB1 = _tB1, TW2 = _tW2,
+            PW1 = _pW1, PB1 = _pB1, PW2 = _pW2, PB2 = _pB2,
+        }.Run();
 
-            predB2[i] -= lr * d;
-            for (int j = 0; j < Hidden; j++)
-                row[j] -= lr * d * predHidden[j];
-        }
-
-        for (int i = 0; i < Hidden; i++)
-        {
-            float dTanh = deltaHidden[i] * (1f - predHidden[i] * predHidden[i]);
-            predB1[i] -= lr * dTanh;
-            var row = predW1[i];
-            for (int j = 0; j < x.Length; j++)
-                row[j] -= lr * dTanh * x[j];
-        }
+        _sampleCount = 0;
+        _seen        = 0;
     }
 
-    private static float[][] Init(int rows, int cols)
+    private static NativeArray<float> Init(int length, int rows, int cols)
     {
-        var w = new float[rows][];
-        float scale = Mathf.Sqrt(2f / (rows + cols));
-        for (int i = 0; i < rows; i++)
-        {
-            w[i] = new float[cols];
-            for (int j = 0; j < cols; j++)
-                w[i][j] = UnityEngine.Random.Range(-scale, scale);
-        }
+        var w = new NativeArray<float>(length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        float scale = math.sqrt(2f / (rows + cols));
+        for (int i = 0; i < length; i++) w[i] = RavineRandom.RangeFloat(-scale, scale);
         return w;
+    }
+
+    public void Dispose()
+    {
+        if (_tW1.IsCreated) _tW1.Dispose();
+        if (_tB1.IsCreated) _tB1.Dispose();
+        if (_tW2.IsCreated) _tW2.Dispose();
+        if (_pW1.IsCreated) _pW1.Dispose();
+        if (_pB1.IsCreated) _pB1.Dispose();
+        if (_pW2.IsCreated) _pW2.Dispose();
+        if (_pB2.IsCreated) _pB2.Dispose();
+        if (_errors.IsCreated)  _errors.Dispose();
+        if (_samples.IsCreated) _samples.Dispose();
+    }
+
+    internal static void HiddenLayer(float* w, float* b, float* x, float* h, float* pre, int inputs)
+    {
+        for (int i = 0; i < Hidden; i++)
+        {
+            float* row = w + i * inputs;
+            float sum = b[i];
+            for (int j = 0; j < inputs; j++) sum += row[j] * x[j];
+            if (pre != null) pre[i] = sum;
+            h[i] = math.tanh(sum);
+        }
+    }
+
+    internal static float Embed(float* w, float* h, int e)
+    {
+        float* row = w + e * Hidden;
+        float sum = 0f;
+        for (int j = 0; j < Hidden; j++) sum += row[j] * h[j];
+        return sum;
+    }
+}
+
+[BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
+public unsafe struct RndInferJob : IJobParallelFor
+{
+    [ReadOnly] public NativeArray<float> Inputs;
+    [ReadOnly] public NativeArray<int>   Rows;
+    [ReadOnly] public NativeArray<float> TW1, TB1, TW2, PW1, PB1, PW2, PB2;
+    [WriteOnly] public NativeArray<float> Errors;
+    public int InputSize;
+
+    public void Execute(int index)
+    {
+        const int H = RandomNetworkDistillation.Hidden;
+        const int E = RandomNetworkDistillation.Embedding;
+
+        float* x  = (float*)Inputs.GetUnsafeReadOnlyPtr() + Rows[index] * InputSize;
+        float* th = stackalloc float[H];
+        float* ph = stackalloc float[H];
+
+        RandomNetworkDistillation.HiddenLayer((float*)TW1.GetUnsafeReadOnlyPtr(), (float*)TB1.GetUnsafeReadOnlyPtr(), x, th, null, InputSize);
+        RandomNetworkDistillation.HiddenLayer((float*)PW1.GetUnsafeReadOnlyPtr(), (float*)PB1.GetUnsafeReadOnlyPtr(), x, ph, null, InputSize);
+
+        float* tw2 = (float*)TW2.GetUnsafeReadOnlyPtr();
+        float* pw2 = (float*)PW2.GetUnsafeReadOnlyPtr();
+
+        float err = 0f;
+        for (int e = 0; e < E; e++)
+        {
+            float d = PB2[e] + RandomNetworkDistillation.Embed(pw2, ph, e) - RandomNetworkDistillation.Embed(tw2, th, e);
+            err += d * d;
+        }
+        Errors[index] = err * (1f / E);
+    }
+}
+
+[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+public unsafe struct RndTrainJob : IJob
+{
+    [ReadOnly] public NativeArray<float> Samples;
+    [ReadOnly] public NativeArray<float> TW1, TB1, TW2;
+    public NativeArray<float> PW1, PB1, PW2, PB2;
+    public int   Count;
+    public int   InputSize;
+    public float Lr;
+
+    public void Execute()
+    {
+        const int H = RandomNetworkDistillation.Hidden;
+        const int E = RandomNetworkDistillation.Embedding;
+
+        float* th = stackalloc float[H];
+        float* ph = stackalloc float[H];
+        float* dh = stackalloc float[H];
+
+        float* tw1 = (float*)TW1.GetUnsafeReadOnlyPtr();
+        float* tb1 = (float*)TB1.GetUnsafeReadOnlyPtr();
+        float* tw2 = (float*)TW2.GetUnsafeReadOnlyPtr();
+        float* pw1 = (float*)PW1.GetUnsafePtr();
+        float* pb1 = (float*)PB1.GetUnsafePtr();
+        float* pw2 = (float*)PW2.GetUnsafePtr();
+        float* pb2 = (float*)PB2.GetUnsafePtr();
+
+        for (int s = 0; s < Count; s++)
+        {
+            float* x = (float*)Samples.GetUnsafeReadOnlyPtr() + s * InputSize;
+
+            RandomNetworkDistillation.HiddenLayer(tw1, tb1, x, th, null, InputSize);
+            RandomNetworkDistillation.HiddenLayer(pw1, pb1, x, ph, null, InputSize);
+            UnsafeUtility.MemClear(dh, H * sizeof(float));
+
+            for (int e = 0; e < E; e++)
+            {
+                float d = pb2[e] + RandomNetworkDistillation.Embed(pw2, ph, e) - RandomNetworkDistillation.Embed(tw2, th, e);
+                float* row = pw2 + e * H;
+                for (int j = 0; j < H; j++)
+                {
+                    dh[j]  += d * row[j];
+                    row[j] -= Lr * d * ph[j];
+                }
+                pb2[e] -= Lr * d;
+            }
+
+            for (int i = 0; i < H; i++)
+            {
+                float g = dh[i] * (1f - ph[i] * ph[i]);
+                pb1[i] -= Lr * g;
+                float* row = pw1 + i * InputSize;
+                for (int j = 0; j < InputSize; j++) row[j] -= Lr * g * x[j];
+            }
+        }
     }
 }

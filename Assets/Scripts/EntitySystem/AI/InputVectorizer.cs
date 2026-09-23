@@ -1,16 +1,40 @@
 using System;
 using System.Runtime.InteropServices;
 using R3;
-using UnityEngine;
+using Unity.Mathematics;
+
+public struct VectorizerFrame
+{
+    public float  Health;
+    public float  Energy;
+    public float  DayPhase;
+    public float  InDanger;
+    public float  TimeToBreed;
+    public float  NearestEntityDist;
+    public float  NearestFoodDist;
+    public float  ViralLoad;
+    public float  ViralSegments;
+    public float  ViralNet;
+    public float2 FoodDir;
+    public float2 EntityDir;
+    public float2 NestDir;
+    public float2 PoiDir;
+    public int    MimickedAction;
+    public double Now;
+}
 
 public class InputVectorizer : IDisposable
 {
-    public const int VectorSize    = 64;
-    public const int ActionCount   = 13;
-    private const float HistoryDecay = 0.75f;
-    private const float HistoryAlpha = 1f - HistoryDecay;
+    public const int VectorSize  = 64;
+    public const int ActionCount = 13;
 
-    private readonly float[] _actionFrequency = new float[ActionCount];
+    public const int TraceOffset     = 8;
+    public const int DirectionOffset = TraceOffset + ActionCount;
+    public const int StomachSlot     = DirectionOffset + 8;
+    public const int WellFedSlot     = StomachSlot + 1;
+    public const int ReservedSlots   = 5;
+    public const int TailOffset      = StomachSlot + ReservedSlots;
+
     private float _maxHealth;
     private float _maxEnergy;
     private const float MaxDetectionRadius = 20f;
@@ -18,13 +42,11 @@ public class InputVectorizer : IDisposable
     private float _prevHealth;
     private float _prevEnergy;
     private bool  _initialized;
-    private int _historyPtr;
 
     private readonly float[] _vector = new float[VectorSize];
 
     private IDisposable _subHealth;
     private IDisposable _subEnergy;
-
 
     public InputVectorizer(ReactiveProperty<float> maxHealth, ReactiveProperty<float> maxEnergy)
     {
@@ -36,111 +58,95 @@ public class InputVectorizer : IDisposable
     }
 
     public int GetVectorSize() => VectorSize;
-    public float[] Vectorize(
-        float  health,
-        float  energy,
-        int    lastAction,
-        float  dayPhase,
-        float  inDanger,
-        float  timeToBreed,
-        in SpeechHash speech,
-        float  nearestEnemyDist = -1f,
-        float  nearestFoodDist  = -1f,
-        in TerrainSample terrain = default,
-        int    mimickedAction = -1,
-        float  viralLoad = 0f,
-        float  viralSegments = 0f,
-        float  viralNet = 0f)
-    {
-        int idx = 0;
-        float hp  = Mathf.Clamp01(health / _maxHealth);
-        float en  = Mathf.Clamp01(energy / _maxEnergy);
 
-        _vector[idx++] = hp;
-        _vector[idx++] = viralLoad;
-        _vector[idx++] = en;
-        _vector[idx++] = viralSegments;
-        _vector[idx++] = Mathf.Clamp(
-            _initialized ? (health - _prevHealth) / _maxHealth : 0f, -1f, 1f);
-        _vector[idx++] = Mathf.Clamp(
-            _initialized ? (energy - _prevEnergy) / _maxEnergy : 0f, -1f, 1f);
+    public float[] Vectorize(in VectorizerFrame f, double[] actionTimes, in SpeechHash speech, in TerrainSample terrain)
+    {
+        var v = _vector;
+        float health = f.Health, energy = f.Energy;
+
+        v[0] = math.saturate(health / _maxHealth);
+        v[1] = f.ViralLoad;
+        v[2] = math.saturate(energy / _maxEnergy);
+        v[3] = f.ViralSegments;
+        v[4] = _initialized ? math.clamp((health - _prevHealth) / _maxHealth, -1f, 1f) : 0f;
+        v[5] = _initialized ? math.clamp((energy - _prevEnergy) / _maxEnergy, -1f, 1f) : 0f;
 
         _prevHealth  = health;
         _prevEnergy  = energy;
         _initialized = true;
 
-        Unity.Mathematics.math.sincos(dayPhase * (2f * Unity.Mathematics.math.PI), out float daySin, out float dayCos);
-        _vector[idx++] = daySin;
-        _vector[idx++] = dayCos;
+        math.sincos(f.DayPhase * (2f * math.PI), out float daySin, out float dayCos);
+        v[6] = daySin;
+        v[7] = dayCos;
 
+        ref readonly var rules = ref SimulationRules.Frame;
+        float invNorm = rules.ActionTraceInvLogNorm;
         for (int i = 0; i < ActionCount; i++)
-            _vector[idx++] = (lastAction == i) ? 1f : 0f;
+        {
+            double since = f.Now - actionTimes[i];
+            v[TraceOffset + i] = since < rules.ActionTraceHorizon
+                ? math.min(math.log(1f + (float)math.max(since, 0d)) * invNorm, 1f)
+                : 1f;
+        }
 
-        UpdateActionHistory(lastAction);
-        for (int i = 0; i < ActionCount; i++)
-            _vector[idx++] = _actionFrequency[i];
+        int d = DirectionOffset;
+        v[d]     = f.FoodDir.x;   v[d + 1] = f.FoodDir.y;
+        v[d + 2] = f.EntityDir.x; v[d + 3] = f.EntityDir.y;
+        v[d + 4] = f.NestDir.x;   v[d + 5] = f.NestDir.y;
+        v[d + 6] = f.PoiDir.x;    v[d + 7] = f.PoiDir.y;
 
-        _vector[idx++] = Mathf.Clamp01(inDanger);
-        _vector[idx++] = Mathf.Clamp01(timeToBreed);
+        for (int i = 0; i < ReservedSlots; i++) v[StomachSlot + i] = 0f;
 
-        _vector[idx++] = speech.A;
-        _vector[idx++] = speech.B;
-        _vector[idx++] = speech.C;
-        _vector[idx++] = speech.D;
+        int idx = TailOffset;
+        v[idx++] = math.saturate(f.InDanger);
+        v[idx++] = math.saturate(f.TimeToBreed);
 
-        _vector[idx++] = nearestEnemyDist >= 0f
-            ? 1f - Mathf.Clamp01(nearestEnemyDist / MaxDetectionRadius)
-            : 0f;
-        _vector[idx++] = nearestFoodDist >= 0f
-            ? 1f - Mathf.Clamp01(nearestFoodDist / MaxDetectionRadius)
-            : 0f;
+        v[idx++] = speech.A;
+        v[idx++] = speech.B;
+        v[idx++] = speech.C;
+        v[idx++] = speech.D;
+
+        v[idx++] = f.NearestEntityDist >= 0f ? 1f - math.saturate(f.NearestEntityDist / MaxDetectionRadius) : 0f;
+        v[idx++] = f.NearestFoodDist   >= 0f ? 1f - math.saturate(f.NearestFoodDist   / MaxDetectionRadius) : 0f;
 
         bool terrainValid = terrain.IsValid;
         if (terrainValid) WriteTerrain(in terrain, ref idx);
         else WriteTerrain(in TerrainSample.Invalid, ref idx);
 
-        _vector[idx++] = terrainValid ? 1f : 0f;
+        v[idx++] = terrainValid ? 1f : 0f;
 
-        bool hasMimic = (uint)mimickedAction < (uint)ActionCount;
-        _vector[idx++] = hasMimic ? 1f : 0f;
-        _vector[idx++] = hasMimic ? (mimickedAction + 0.5f) / ActionCount : 0f;
+        bool hasMimic = (uint)f.MimickedAction < (uint)ActionCount;
+        v[idx++] = hasMimic ? 1f : 0f;
+        v[idx++] = hasMimic ? (f.MimickedAction + 0.5f) / ActionCount : 0f;
 
-        _vector[idx++] = viralNet;
+        v[idx] = f.ViralNet;
 
-        return _vector;
+        return v;
     }
 
     private void WriteTerrain(in TerrainSample t, ref int idx)
     {
-        _vector[idx++] = t.HeightNorm;
-        _vector[idx++] = t.Slope;
-        _vector[idx++] = t.GradX;
-        _vector[idx++] = t.GradZ;
-        _vector[idx++] = t.WaterProximity;
-        _vector[idx++] = t.MoveCost;
-        _vector[idx++] = t.MoveCostPX;
-        _vector[idx++] = t.MoveCostNX;
-        _vector[idx++] = t.MoveCostPZ;
-        _vector[idx++] = t.MoveCostNZ;
-        _vector[idx++] = t.Biome0;
-        _vector[idx++] = t.Biome1;
-        _vector[idx++] = t.Biome2;
-        _vector[idx++] = t.Biome3;
-        _vector[idx++] = t.Density2;
-        _vector[idx++] = t.Density4;
-        _vector[idx++] = t.Density8;
-        _vector[idx++] = t.RelativeHeight;
+        var v = _vector;
+        v[idx++] = t.HeightNorm;
+        v[idx++] = t.Slope;
+        v[idx++] = t.GradX;
+        v[idx++] = t.GradZ;
+        v[idx++] = t.WaterProximity;
+        v[idx++] = t.MoveCost;
+        v[idx++] = t.MoveCostPX;
+        v[idx++] = t.MoveCostNX;
+        v[idx++] = t.MoveCostPZ;
+        v[idx++] = t.MoveCostNZ;
+        v[idx++] = t.Biome0;
+        v[idx++] = t.Biome1;
+        v[idx++] = t.Biome2;
+        v[idx++] = t.Biome3;
+        v[idx++] = t.Density2;
+        v[idx++] = t.Density4;
+        v[idx++] = t.Density8;
+        v[idx++] = t.RelativeHeight;
     }
 
-    private void UpdateActionHistory(int action)
-    {
-        float keep = HistoryDecay;
-        for (int i = 0; i < ActionCount; i++)
-            _actionFrequency[i] *= keep;
-
-        if ((uint)action < (uint)ActionCount)
-            _actionFrequency[action] += HistoryAlpha;
-    }
     public string HashFloatArray(float[] array)
     {
         if (array == null || array.Length == 0) return "00000000";

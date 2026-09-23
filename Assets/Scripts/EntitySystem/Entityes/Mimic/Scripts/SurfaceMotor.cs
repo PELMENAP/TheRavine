@@ -15,11 +15,12 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
     private float _energy;
     private float _pendingEnergy;
     private bool  _arrived;
+    private bool  _blocked;
 
     internal int MotionIndex = -1;
 
     public bool       IsMoving => MotionIndex >= 0;
-    public MoveResult LastMove => new(_distance, _pathCost, _energy, _arrived);
+    public MoveResult LastMove => new(_distance, _pathCost, _energy, _arrived, _blocked);
 
     public Vector3 Velocity
     {
@@ -39,10 +40,17 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
 
     public void BeginMove(Vector3 target, float speed, float energyCostPerSec, double deadline)
     {
+        Vector3 from = _tr != null ? _tr.position : target;
+        BeginMove(target, (from + target) * 0.5f, speed, energyCostPerSec, deadline);
+    }
+
+    public void BeginMove(Vector3 target, Vector3 control, float speed, float energyCostPerSec, double deadline)
+    {
         _distance = 0f;
         _pathCost = 0f;
         _energy   = 0f;
         _arrived  = false;
+        _blocked  = false;
 
         if (motion == null)
         {
@@ -50,10 +58,20 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
             return;
         }
 
+        float3 pos   = _tr.position;
+        float2 start = pos.xz;
+        float2 ctrl  = new float2(control.x, control.z);
+        float2 goal  = new float2(target.x, target.z);
+        float  len   = 0.5f * (math.distance(start, goal) + math.distance(start, ctrl) + math.distance(ctrl, goal));
+
         var state = new MotionState
         {
-            Position      = _tr.position,
-            Goal          = new float2(target.x, target.z),
+            Position      = pos,
+            Start         = start,
+            Control       = ctrl,
+            Goal          = goal,
+            InvLength     = len > 1e-4f ? 1f / len : 0f,
+            T             = 0f,
             Velocity      = float2.zero,
             Deadline      = deadline,
             Speed         = speed,
@@ -86,6 +104,7 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
         _pathCost       = s.PathCost;
         _energy         = s.Energy;
         _arrived        = s.Arrived != 0;
+        _blocked        = s.Blocked != 0;
         _pendingEnergy += s.Pending;
     }
 }

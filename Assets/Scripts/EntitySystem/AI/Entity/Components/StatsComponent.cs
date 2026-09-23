@@ -10,8 +10,22 @@ public class StatsComponent : IComponent
 
     private float _starvationTimer;
     private bool _filled;
+    private bool _open;
+    private float _hp;
+    private float _en;
     public bool IsDisposed { get; private set; }
 
+    public float Hp
+    {
+        get => _open ? _hp : Health.Value;
+        set { if (_open) _hp = value; else Health.Value = value; }
+    }
+
+    public float En
+    {
+        get => _open ? _en : Energy.Value;
+        set { if (_open) _en = value; else Energy.Value = value; }
+    }
 
     public void FillComponent(float maxHealth, float maxEnergy)
     {
@@ -23,6 +37,23 @@ public class StatsComponent : IComponent
         Energy = new ReactiveProperty<float>(maxEnergy * 0.5f);
     }
 
+    public void Open()
+    {
+        if (_open || IsDisposed || !_filled) return;
+        _hp   = Health.Value;
+        _en   = Energy.Value;
+        _open = true;
+    }
+
+    public void Commit()
+    {
+        if (!_open) return;
+        _open = false;
+        if (IsDisposed) return;
+        if (_en != Energy.Value) Energy.Value = _en;
+        if (_hp != Health.Value) Health.Value = _hp;
+    }
+
     public void Tick(float deltaTime, float movementEnergy, float regenRate, float regenMultiplier,
         float metabolismMultiplier, float basalDrain, float idleRegenBasalFraction, bool isIdle,
         float starvationThreshold, float starvationDamage, float starvationEnergyReturn,
@@ -32,8 +63,8 @@ public class StatsComponent : IComponent
         metabolismCredit = 0f;
         if (IsDisposed || !_filled) return;
 
-        float health = Health.Value;
-        float energy = Energy.Value;
+        float health = Hp;
+        float energy = En;
 
         float basal = basalDrain * deltaTime;
         energy          -= (basal + movementEnergy) * metabolismMultiplier;
@@ -64,17 +95,15 @@ public class StatsComponent : IComponent
         }
         else _starvationTimer = 0f;
 
-        energy = math.clamp(energy, 0f, MaxEnergy);
-        health = math.min(health, MaxHealth);
-
-        Energy.Value = energy;
-        Health.Value = health;
+        En = math.clamp(energy, 0f, MaxEnergy);
+        Hp = math.min(health, MaxHealth);
     }
 
     public void Dispose()
     {
         if (IsDisposed) return;
         IsDisposed = true;
+        _open = false;
         Health?.Dispose();
         Energy?.Dispose();
     }
