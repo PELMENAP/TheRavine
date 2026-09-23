@@ -9,10 +9,12 @@ public interface IEnergySink
 public interface IEntityMotor
 {
     Vector3 Position();
-    UniTask<MoveResult> MoveToAsync(Vector3 target, float speed, float maxDuration, float energyCostPerSec, CancellationToken ct);
+    void BeginMove(Vector3 target, float speed, float energyCostPerSec, double deadline);
+    bool IsMoving { get; }
+    MoveResult LastMove { get; }
+    float DrainEnergy();
     void Stop();
 }
-
 
 public interface IEntityDialogHost
 {

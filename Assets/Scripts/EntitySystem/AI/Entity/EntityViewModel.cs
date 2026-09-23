@@ -3,34 +3,12 @@ using Cysharp.Threading.Tasks;
 using System.Threading;
 
 using TheRavine.EntityControl;
-using TheRavine.Generator;
 
 public class EntityViewModel : AEntityViewModel, IEntityMotor,
-    IDialogListener, IDialogSender, IEntityDialogHost, IEntityDeathHandler, IEntityAudio, IEnergySink
+    IDialogListener, IDialogSender, IEntityDialogHost, IEntityDeathHandler, IEntityAudio
 {
     [SerializeField] private SurfaceMotor motor;
-
-    private async void Awake()
-    {
-        var map = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
-        motor.Inject(map);
-        motor.InjectEnergySink(this);
-    }
-
-    public bool TryConsume(float amount)
-    {
-        var model = Entity as EntityModel;
-        if (model == null || model.IsDisposed || model.Stats == null || model.Stats.IsDisposed)
-            return false;
-
-        var virology = model.Virology;
-        if (virology != null && virology.IsCreated && !virology.IsDisposed)
-            amount *= virology.Modifiers.MetabolismMultiplier;
-
-        float left = model.Stats.Energy.Value - amount;
-        model.Stats.Energy.Value = left > 0f ? left : 0f;
-        return true;
-    }
+    public void BindMotion(MotionSystem system) => motor.BindMotion(system);
 
     public void OnDeath()
     {
@@ -38,7 +16,7 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
         gameObject.SetActive(false);
         Destroy(gameObject);
     }
-    
+
     [SerializeField] private StringToAudioGenerator audioGenerator;
 
     public async UniTask PlaySpeechAsync(string speech, float health, float energy, float danger,
@@ -54,10 +32,12 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
         return transform.position;
     }
 
-    public UniTask<MoveResult> MoveToAsync(Vector3 target, float speed, float maxDuration,
-        float energyCostPerSec, CancellationToken ct)
-        => motor.MoveToAsync(target, speed, maxDuration, energyCostPerSec, ct);
+    public void BeginMove(Vector3 target, float speed, float energyCostPerSec, double deadline)
+        => motor.BeginMove(target, speed, energyCostPerSec, deadline);
 
+    public bool       IsMoving => motor.IsMoving;
+    public MoveResult LastMove => motor.LastMove;
+    public float DrainEnergy() => motor.DrainEnergy();
     public void Stop() => motor.Stop();
 
     protected override void OnViewUpdate() { }
@@ -81,5 +61,4 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
     public void RegisterDialog(IDialogListener l)   => DialogSystem.Instance.AddDialogListener(l);
     public void UnregisterDialog(IDialogListener l)  => DialogSystem.Instance.RemoveDialogListener(l);
     public void UpdateDialogPosition(IDialogListener l) => DialogSystem.Instance.UpdateListenerPosition(l);
-
 }

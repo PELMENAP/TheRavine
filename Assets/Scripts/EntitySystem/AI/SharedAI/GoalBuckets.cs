@@ -10,7 +10,7 @@ public sealed class GoalBuckets
     {
         _start  = new int[SharedHierarchicalBrain.GoalCount + 1];
         _cursor = new int[SharedHierarchicalBrain.GoalCount];
-        _order  = new int[64];
+        _order  = Array.Empty<int>();
     }
 
     public int Count { get; private set; }
@@ -18,23 +18,15 @@ public sealed class GoalBuckets
     public int End(int goal)   => _start[goal + 1];
     public int At(int i)       => _order[i];
 
-    public void Build(EntityModel[] snapshot, int count)
+    public void Build(EntityBrainContext[] contexts, int count)
     {
         if (count > _order.Length)
-        {
-            int cap = _order.Length;
-            while (cap < count) cap <<= 1;
-            _order = new int[cap];
-        }
+            _order = new int[Math.Max(_order.Length << 1, count)];
 
         Array.Clear(_start, 0, _start.Length);
 
         for (int i = 0; i < count; i++)
-        {
-            var e = snapshot[i];
-            if (e == null || e.IsDisposed || e.IsDeathPending) continue;
-            _start[(int)e.Brain.Context.CurrentGoal + 1]++;
-        }
+            _start[(int)contexts[i].CurrentGoal + 1]++;
 
         for (int g = 0; g < SharedHierarchicalBrain.GoalCount; g++)
         {
@@ -42,15 +34,9 @@ public sealed class GoalBuckets
             _cursor[g] = _start[g];
         }
 
-        int written = 0;
         for (int i = 0; i < count; i++)
-        {
-            var e = snapshot[i];
-            if (e == null || e.IsDisposed || e.IsDeathPending) continue;
-            _order[_cursor[(int)e.Brain.Context.CurrentGoal]++] = i;
-            written++;
-        }
+            _order[_cursor[(int)contexts[i].CurrentGoal]++] = i;
 
-        Count = written;
+        Count = count;
     }
 }

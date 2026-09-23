@@ -1,8 +1,5 @@
-using System.Threading;
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Unity.Mathematics;
-using TheRavine.Generator;
 
 public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
 {
@@ -10,106 +7,85 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
     [SerializeField] private float velocityLerpCoef = 4f;
     [SerializeField] private float arriveThreshold = 0.1f;
 
-    private MapGenerator mapGenerator;
+    private MotionSystem motion;
+    private Transform    _tr;
 
-    public Vector3 Position()
+    private float _distance;
+    private float _pathCost;
+    private float _energy;
+    private float _pendingEnergy;
+    private bool  _arrived;
+
+    internal int MotionIndex = -1;
+
+    public bool       IsMoving => MotionIndex >= 0;
+    public MoveResult LastMove => new(_distance, _pathCost, _energy, _arrived);
+
+    public Vector3 Velocity
     {
-        if (transform == null) return Vector3.zero;
-        return transform.position;
-    }
-    private const float MinSpeedModifier = 0.05f;
-    private const int   SpeedResampleFrames = 4;
-
-    private IEnergySink energySink;
-
-    public void InjectEnergySink(IEnergySink sink) => energySink = sink;
-
-    public void Inject(MapGenerator map) => mapGenerator = map;
-
-    private float2 _velocity;
-
-    public Vector3 Velocity => new(_velocity.x, 0f, _velocity.y);
-
-    public async UniTask<MoveResult> MoveToAsync(Vector3 target, float speed, float maxDuration,
-        float energyCostPerSec, CancellationToken ct)
-    {
-        if (mapGenerator == null) return MoveResult.None;
-
-        var    tr      = transform;
-        float2 goal    = new(target.x, target.z);
-        float  arrive2 = arriveThreshold * arriveThreshold;
-
-        double start = SimulationClock.TimeD;
-        double prev  = start;
-
-        float speedModifier = 1f;
-        int   frame = 0;
-
-        float distance = 0f;
-        float pathCost = 0f;
-        float energy   = 0f;
-        bool  arrived  = false;
-
-        try
+        get
         {
-            while (!ct.IsCancellationRequested)
-            {
-                if (this == null) return new MoveResult(distance, pathCost, energy, false);
-
-                Vector3 pos = tr.position;
-                float2  to  = goal - new float2(pos.x, pos.z);
-                float   d2  = math.lengthsq(to);
-                if (d2 <= arrive2 || d2 < 1e-6f) { arrived = true; break; }
-
-                double now = SimulationClock.TimeD;
-                if (now - start >= maxDuration) break;
-
-                float dt = (float)(now - prev);
-                prev = now;
-
-                if (dt > 0f)
-                {
-                    float2 dir = to * math.rsqrt(d2);
-
-                    if (frame == 0)
-                        speedModifier = mapGenerator.GetSpeedModifier(pos.x, pos.z, dir);
-                    if (++frame >= SpeedResampleFrames) frame = 0;
-
-                    float costModifier = math.max(speedModifier, MinSpeedModifier);
-
-                    _velocity = math.lerp(_velocity, dir * (speed * speedModifier),
-                        math.saturate(velocityLerpCoef * dt));
-
-                    float2 step = _velocity * dt;
-                    pos.x += step.x;
-                    pos.z += step.y;
-                    pos.y = mapGenerator.SampleHeightBilinear(pos.x, pos.z) + heightOffset;
-                    tr.position = pos;
-
-                    float len = math.length(step);
-                    distance += len;
-                    pathCost += len / costModifier;
-
-                    if (energySink != null && energyCostPerSec > 0f)
-                    {
-                        float spent = energyCostPerSec / costModifier * dt;
-                        energySink.TryConsume(spent);
-                        energy += spent;
-                    }
-                }
-
-                await UniTask.Yield(ct);
-            }
+            float2 v = IsMoving ? motion.VelocityOf(MotionIndex) : float2.zero;
+            return new Vector3(v.x, 0f, v.y);
         }
-        finally
-        {
-            if (this != null) Stop();
-        }
-
-        return new MoveResult(distance, pathCost, energy, arrived);
     }
 
-    public void Stop() => _velocity = float2.zero;
+    private void Awake() => _tr = transform;
+    private void OnDisable() => Stop();
 
-    private static Vector2 Flat(Vector3 v) => new(v.x, v.z);
+    public void BindMotion(MotionSystem system) => motion = system;
+
+    public Vector3 Position() => _tr != null ? _tr.position : Vector3.zero;
+
+    public void BeginMove(Vector3 target, float speed, float energyCostPerSec, double deadline)
+    {
+        _distance = 0f;
+        _pathCost = 0f;
+        _energy   = 0f;
+        _arrived  = false;
+
+        if (motion == null)
+        {
+            Stop();
+            return;
+        }
+
+        var state = new MotionState
+        {
+            Position      = _tr.position,
+            Goal          = new float2(target.x, target.z),
+            Velocity      = float2.zero,
+            Deadline      = deadline,
+            Speed         = speed,
+            EnergyCost    = energyCostPerSec,
+            SpeedModifier = 1f,
+            Arrive2       = arriveThreshold * arriveThreshold,
+            HeightOffset  = heightOffset,
+            VelocityLerp  = velocityLerpCoef,
+        };
+
+        if (!motion.Start(this, _tr, in state)) Stop();
+    }
+
+    public float DrainEnergy()
+    {
+        float e = _pendingEnergy;
+        _pendingEnergy = 0f;
+        if (IsMoving) e += motion.TakePending(MotionIndex);
+        return e;
+    }
+
+    public void Stop()
+    {
+        if (IsMoving) motion.Stop(this);
+    }
+
+    internal void OnMotionFinished(in MotionState s)
+    {
+        _distance       = s.Distance;
+        _pathCost       = s.PathCost;
+        _energy         = s.Energy;
+        _arrived        = s.Arrived != 0;
+        _pendingEnergy += s.Pending;
+    }
 }

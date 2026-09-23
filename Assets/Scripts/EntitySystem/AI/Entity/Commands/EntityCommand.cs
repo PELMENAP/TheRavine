@@ -1,20 +1,32 @@
-using System;
-using System.Threading;
 using Unity.Mathematics;
-using Cysharp.Threading.Tasks;
+using UnityEngine;
 
-public abstract class EntityCommand : ICommand
+public interface IEntityCommand
+{
+    float Reward { get; }
+    bool CanExecute();
+    EntityCommandStatus Begin(in BrainDecision decision);
+    EntityCommandStatus Tick(float dt);
+    void Cancel();
+}
+
+public abstract class EntityCommand : IEntityCommand
 {
     protected readonly EntityModel model;
-    private CancellationTokenSource cts;
+    protected BrainDecision decision;
 
-    public EntityCommandStatus Status { get; private set; } = EntityCommandStatus.Completed;
+    private double _watchdog;
+    private bool   _moveCut;
+    private bool   _moveStarted;
+
+    public float Reward { get; private set; }
 
     protected EntityCommand(EntityModel m) => model = m;
 
     public virtual bool CanExecute() => true;
     protected virtual float InterruptionReward => SimulationRules.Active.InterruptionReward;
-    protected virtual float FailureReward => SimulationRules.Active.FailureReward;
+    protected virtual float FailureReward      => SimulationRules.Active.FailureReward;
+
     protected static float PathCostPenalty(in MoveResult move)
     {
         if (move.Distance <= 1e-3f) return 0f;
@@ -24,64 +36,84 @@ public abstract class EntityCommand : ICommand
         return (ratio - 1f) * r.PathCostPenalty;
     }
 
-    public async UniTask ExecuteAsync()
+    public EntityCommandStatus Begin(in BrainDecision d)
     {
-        var decision = model.Brain.ActiveDecision;
-        var local    = new CancellationTokenSource();
-        cts    = local;
-        Status = EntityCommandStatus.Started;
-
-        float reward;
-        var watchdog = WatchdogAsync(decision, local.Token);
-
-        try
-        {
-            Status = EntityCommandStatus.Running;
-            reward = await RunAsync(decision, local.Token);
-            Status = EntityCommandStatus.Completed;
-        }
-        catch (OperationCanceledException)
-        {
-            Status = EntityCommandStatus.Interrupted;
-            reward = InterruptionReward;
-        }
-        catch (Exception)
-        {
-            Status = EntityCommandStatus.Failed;
-            reward = FailureReward;
-        }
-        finally
-        {
-            local.Cancel();
-            await watchdog;
-            local.Dispose();
-            if (ReferenceEquals(cts, local)) cts = null;
-        }
-
-        model.Brain.CompleteDecision(in decision, reward, SimulationClock.Time, Status);
+        decision     = d;
+        _watchdog    = d.EndTime + SimulationRules.Active.CommandWatchdogGrace;
+        _moveStarted = false;
+        _moveCut     = false;
+        Reward       = 0f;
+        return OnBegin();
     }
 
-    private async UniTask WatchdogAsync(BrainDecision decision, CancellationToken token)
+    public EntityCommandStatus Tick(float dt)
     {
-        float end = decision.EndTime + SimulationRules.Active.CommandWatchdogGrace;
-        while (!token.IsCancellationRequested && SimulationClock.Time < end)
-            await UniTask.Yield(PlayerLoopTiming.Update);
-
-        if (!token.IsCancellationRequested) Cancel();
+        var status = OnTick(dt);
+        if (status != EntityCommandStatus.Running || SimulationClock.TimeD < _watchdog) return status;
+        Cancel();
+        return EntityCommandStatus.Interrupted;
     }
-
-    protected static async UniTask HoldAsync(float seconds, float decisionEnd, CancellationToken ct)
-    {
-        double end = math.min(SimulationClock.TimeD + seconds, decisionEnd);
-        while (SimulationClock.TimeD < end)
-            await UniTask.Yield(PlayerLoopTiming.Update, ct);
-    }
-    
-    protected abstract UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct);
 
     public void Cancel()
     {
-        var local = cts;
-        if (local != null && !local.IsCancellationRequested) local.Cancel();
+        if (_moveStarted)
+        {
+            _moveStarted = false;
+            model.Motor.Stop();
+        }
+        OnCancel();
+        Reward = InterruptionReward;
+    }
+
+    protected abstract EntityCommandStatus OnBegin();
+    protected virtual EntityCommandStatus OnTick(float dt) => EntityCommandStatus.Completed;
+    protected virtual void OnCancel() { }
+
+    protected EntityCommandStatus Complete(float reward)
+    {
+        Reward = reward;
+        return EntityCommandStatus.Completed;
+    }
+
+    protected EntityCommandStatus Fail()
+    {
+        Reward = FailureReward;
+        return EntityCommandStatus.Failed;
+    }
+
+    protected EntityCommandStatus Interrupted()
+    {
+        Cancel();
+        return EntityCommandStatus.Interrupted;
+    }
+
+    protected double HoldUntil(float seconds) => math.min(SimulationClock.TimeD + seconds, (double)decision.EndTime);
+
+    protected static bool Elapsed(double time) => SimulationClock.TimeD >= time;
+
+    protected static bool IsGone(EntityModel e) => e == null || e.IsDisposed || e.IsDeathPending;
+
+    protected void StartMove(Vector3 target, float speed, float maxDuration, float energyCostPerSec)
+    {
+        double limit = SimulationClock.TimeD + maxDuration;
+        _moveCut     = limit > _watchdog;
+        _moveStarted = true;
+        model.Motor.BeginMove(target, speed, energyCostPerSec, _moveCut ? _watchdog : limit);
+    }
+
+    protected bool TryFinishMove(out MoveResult move, out bool cut)
+    {
+        var motor = model.Motor;
+        if (motor.IsMoving)
+        {
+            move = default;
+            cut  = false;
+            return false;
+        }
+
+        _moveStarted = false;
+        move = motor.LastMove;
+        cut  = _moveCut && !move.Arrived;
+        return true;
     }
 }

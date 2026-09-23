@@ -1,9 +1,9 @@
 ﻿<Solution>
+  <Project Path="EntitySystem.csproj" />
   <Project Path="Tayx.Graphy.Editor.csproj" />
   <Project Path="UniTask.csproj" />
   <Project Path="UniTask.Linq.csproj" />
   <Project Path="LitMotion.csproj" />
-  <Project Path="EntitySystem.csproj" />
   <Project Path="LitMotion.Extensions.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="ObjectSystem.csproj" />

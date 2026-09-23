@@ -1,21 +1,35 @@
 using System;
+using Unity.Collections.LowLevel.Unsafe;
 
-public class LSTMContext
+public sealed unsafe class LSTMContext : IDisposable
 {
-    public readonly float[] H;
-    public readonly float[] C;
-    public readonly float[] AllGates; // Объединенный массив для F, I, O, CTilde
+    public readonly int HiddenSize;
+
+    private readonly FloatSlabPool _pool;
+    private int _base;
 
     public LSTMContext(int inputSize, int hiddenSize)
     {
-        H = new float[hiddenSize];
-        C = new float[hiddenSize];
-        AllGates = new float[4 * hiddenSize];
+        HiddenSize = hiddenSize;
+        _pool = ContextSlabs.Get(hiddenSize << 1);
+        _base = _pool.Rent();
     }
+
+    public float* Ptr => _pool.Ptr + _base;
+
+    public Span<float> H => new Span<float>(Ptr, HiddenSize);
+    public Span<float> C => new Span<float>(Ptr + HiddenSize, HiddenSize);
 
     public void Reset()
     {
-        Array.Clear(H, 0, H.Length);
-        Array.Clear(C, 0, C.Length);
+        if (_base < 0) return;
+        UnsafeUtility.MemClear(Ptr, (long)(HiddenSize << 1) * sizeof(float));
+    }
+
+    public void Dispose()
+    {
+        if (_base < 0) return;
+        _pool.Return(_base);
+        _base = -1;
     }
 }

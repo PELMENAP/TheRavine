@@ -10,8 +10,6 @@ namespace TheRavine.EntityControl.Virology
         public const int PayloadCapacity = 96;
         public const float AccuracyBias = 1.35f;
         public const float RecombinationChance = 0.35f;
-
-        private readonly GameObject[] _neighbors = new GameObject[MaxNeighbors];
         private ushort[] _payload;
         private ushort[] _mutated;
         private XorShift32 _rng;
@@ -55,6 +53,8 @@ namespace TheRavine.EntityControl.Virology
             }
         }
 
+        private readonly EntityModel[] _neighbors = new EntityModel[MaxNeighbors];
+
         private void TryTransmit(EntityModel donor, VirologyComponent virology, float amp)
         {
             int donorIndex = virology.SegmentIndexAt(virology.LastCodonIndex);
@@ -63,8 +63,7 @@ namespace TheRavine.EntityControl.Virology
             int count = virology.Restrict(donorIndex, _payload);
             if (count <= 0) { FailedAttempts++; return; }
 
-            int found = donor.Perception.FindEntitiesInRadius(
-                donor.Motor.Position(), donor.SelfObject, _neighbors);
+            int found = donor.Perception.FindEntitiesInRadius(donor.Motor.Position(), donor, _neighbors);
             if (found == 0) { FailedAttempts++; return; }
 
             var target = SelectTarget(donor, found, amp);
@@ -94,7 +93,7 @@ namespace TheRavine.EntityControl.Virology
             int mutatedCount = ViralMutator.Transmit(_payload, 0, count, _mutated, rate, ref _rng);
             if (mutatedCount <= 0) { FailedAttempts++; return; }
 
-            ulong strainId = ViralMutator.ComputeStrainId(_mutated, mutatedCount);
+            ulong strainId  = ViralMutator.ComputeStrainId(_mutated, mutatedCount);
             ulong lineageId = virology.LineageOf(donorIndex);
 
             if (receiver.HasStrain(strainId, out int existing))
@@ -117,6 +116,13 @@ namespace TheRavine.EntityControl.Virology
             if (receiver.TryInsertSegment(_mutated, mutatedCount, strainId, lineageId, _rng.NextUInt()))
                 Transmissions++;
             else FailedAttempts++;
+        }
+
+        private static EntityModel Resolve(EntityModel model)
+        {
+            if (model == null || model.IsDisposed || model.IsDeathPending) return null;
+            var v = model.Virology;
+            return v != null && v.IsCreated && !v.IsDisposed ? model : null;
         }
 
         private bool Recombine(VirologyComponent receiver, int partner, int incomingCount)
@@ -190,16 +196,6 @@ namespace TheRavine.EntityControl.Virology
 
             int pick = (int)(_rng.NextUInt() % (uint)found);
             return Resolve(_neighbors[pick]);
-        }
-
-        private static EntityModel Resolve(GameObject go)
-        {
-            if (go == null) return null;
-            var model = go.GetComponent<EntityViewModel>()?.Entity as EntityModel;
-            if (model == null || model.IsDisposed || model.IsDeathPending) return null;
-
-            var v = model.Virology;
-            return v != null && v.IsCreated && !v.IsDisposed ? model : null;
         }
         public void Dispose()
         {

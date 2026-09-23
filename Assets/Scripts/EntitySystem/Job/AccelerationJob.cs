@@ -5,7 +5,7 @@ using Unity.Mathematics;
 
 namespace TheRavine.EntityControl
 {
-    [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
+    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true)]
     public struct AccelerationJob : IJobParallelFor
     {
         [ReadOnly][NativeDisableParallelForRestriction] public NativeArray<float4> PositionsAndVelocities;
