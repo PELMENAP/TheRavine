@@ -40,7 +40,7 @@ public class InputVectorizer : IDisposable
         float  health,
         float  energy,
         int    lastAction,
-        int    timeOfDay,
+        float  dayPhase,
         float  inDanger,
         float  timeToBreed,
         in SpeechHash speech,
@@ -69,9 +69,9 @@ public class InputVectorizer : IDisposable
         _prevEnergy  = energy;
         _initialized = true;
 
-        float angle  = timeOfDay / 24f * 2f * Mathf.PI;
-        _vector[idx++] = Mathf.Sin(angle);
-        _vector[idx++] = Mathf.Cos(angle);
+        Unity.Mathematics.math.sincos(dayPhase * (2f * Unity.Mathematics.math.PI), out float daySin, out float dayCos);
+        _vector[idx++] = daySin;
+        _vector[idx++] = dayCos;
 
         for (int i = 0; i < ActionCount; i++)
             _vector[idx++] = (lastAction == i) ? 1f : 0f;

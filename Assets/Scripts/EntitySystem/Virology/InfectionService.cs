@@ -32,8 +32,7 @@ namespace TheRavine.EntityControl.Virology
 
         public const float SelectionGain = 4f;
         public const float SelectionFloor = 0.05f;
-
-        public void ProcessSpread(EntityModel[] batch, int start, int end, uint tick)
+        public void ProcessSpread(EntityModel[] batch, int start, int end)
         {
             if (!_created || batch == null) return;
             if (start < 0) start = 0;
@@ -52,11 +51,11 @@ namespace TheRavine.EntityControl.Virology
                 virology.Modifiers.SpreadRequested = false;
                 virology.Modifiers.SpreadAmp = 0f;
 
-                TryTransmit(donor, virology, amp, tick);
+                TryTransmit(donor, virology, amp);
             }
         }
 
-        private void TryTransmit(EntityModel donor, VirologyComponent virology, float amp, uint tick)
+        private void TryTransmit(EntityModel donor, VirologyComponent virology, float amp)
         {
             int donorIndex = virology.SegmentIndexAt(virology.LastCodonIndex);
             if (donorIndex < 0) { FailedAttempts++; return; }
@@ -105,20 +104,22 @@ namespace TheRavine.EntityControl.Virology
                 return;
             }
 
-            if (receiver.TryFindLineageMatch(lineageId, strainId, out int partner)
+            ulong signature = Segment.ComputeSignature(_mutated, 0, mutatedCount);
+
+            if (receiver.TryFindLineageMatch(signature, strainId, out int partner)
                 && ViralMutator.NextUnit(ref _rng) < RecombinationChance)
             {
-                if (Recombine(receiver, partner, mutatedCount, tick)) Recombinations++;
+                if (Recombine(receiver, partner, mutatedCount)) Recombinations++;
                 else FailedAttempts++;
                 return;
             }
 
-            if (receiver.TryInsertSegment(_mutated, mutatedCount, strainId, lineageId, tick, _rng.NextUInt()))
+            if (receiver.TryInsertSegment(_mutated, mutatedCount, strainId, lineageId, _rng.NextUInt()))
                 Transmissions++;
             else FailedAttempts++;
         }
 
-        private bool Recombine(VirologyComponent receiver, int partner, int incomingCount, uint tick)
+        private bool Recombine(VirologyComponent receiver, int partner, int incomingCount)
         {
             int residentCount = receiver.CopySegment(partner, _payload);
             if (residentCount <= 0) return false;
@@ -137,7 +138,34 @@ namespace TheRavine.EntityControl.Virology
             ulong hybridStrain  = ViralMutator.ComputeStrainId(_mutated, total);
             ulong hybridLineage = receiver.LineageOf(partner);
 
-            return receiver.TryInsertSegment(_mutated, total, hybridStrain, hybridLineage, tick, _rng.NextUInt());
+            return receiver.TryInsertSegment(_mutated, total, hybridStrain, hybridLineage, _rng.NextUInt());
+        }
+
+        public bool InjectStrain(EntityModel target, int length, uint seed)
+        {
+            if (!_created || target?.Virology == null || !target.Virology.IsCreated) return false;
+
+            length = math.clamp(length, 4, PayloadCapacity);
+            var rng = new XorShift32(seed == 0u ? 1u : seed);
+            for (int i = 0; i < length; i++)
+                _mutated[i] = (ushort)(rng.NextUInt() & 0xFFFFu);
+
+            ulong strainId = ViralMutator.ComputeStrainId(_mutated, length);
+            return target.Virology.TryInsertSegment(_mutated, length, strainId, strainId, rng.NextUInt());
+        }
+
+        public bool InjectRecipe(EntityModel target, ProteinAction[] recipe, uint seed)
+        {
+            if (!_created || recipe == null || recipe.Length == 0) return false;
+
+            var virology = target?.Virology;
+            if (virology == null || !virology.IsCreated || virology.IsDisposed) return false;
+
+            int count = StrainComposer.Compose(recipe, _mutated, seed);
+            if (count <= 0) return false;
+
+            ulong strainId = ViralMutator.ComputeStrainId(_mutated, count);
+            return virology.TryInsertSegment(_mutated, count, strainId, strainId, seed ^ 0xA5A5A5A5u);
         }
 
         private EntityModel SelectTarget(EntityModel donor, int found, float amp)
@@ -172,33 +200,6 @@ namespace TheRavine.EntityControl.Virology
 
             var v = model.Virology;
             return v != null && v.IsCreated && !v.IsDisposed ? model : null;
-        }
-
-        public bool InjectStrain(EntityModel target, int length, uint seed, uint tick)
-        {
-            if (!_created || target?.Virology == null || !target.Virology.IsCreated) return false;
-
-            length = math.clamp(length, 4, PayloadCapacity);
-            var rng = new XorShift32(seed == 0u ? 1u : seed);
-            for (int i = 0; i < length; i++)
-                _mutated[i] = (ushort)(rng.NextUInt() & 0xFFFFu);
-
-            ulong strainId = ViralMutator.ComputeStrainId(_mutated, length);
-            return target.Virology.TryInsertSegment(_mutated, length, strainId, strainId, tick, rng.NextUInt());
-        }
-        
-        public bool InjectRecipe(EntityModel target, ProteinAction[] recipe, uint tick, uint seed)
-        {
-            if (!_created || recipe == null || recipe.Length == 0) return false;
-
-            var virology = target?.Virology;
-            if (virology == null || !virology.IsCreated || virology.IsDisposed) return false;
-
-            int count = StrainComposer.Compose(recipe, _mutated, seed);
-            if (count <= 0) return false;
-
-            ulong strainId = ViralMutator.ComputeStrainId(_mutated, count);
-            return virology.TryInsertSegment(_mutated, count, strainId, strainId, tick, seed ^ 0xA5A5A5A5u);
         }
         public void Dispose()
         {

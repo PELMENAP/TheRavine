@@ -23,22 +23,33 @@ public class StatsComponent : IComponent
         Energy = new ReactiveProperty<float>(maxEnergy * 0.5f);
     }
 
-    public void Tick(float deltaTime, float regenRate, float metabolismMultiplier, float basalDrain,
-        float idleRegenBasalFraction, bool isIdle,
-        float starvationThreshold, float starvationDamage, float starvationEnergyReturn)
+    public void Tick(float deltaTime, float regenRate, float regenMultiplier, float metabolismMultiplier,
+        float basalDrain, float idleRegenBasalFraction, bool isIdle,
+        float starvationThreshold, float starvationDamage, float starvationEnergyReturn,
+        out float regenCredit, out float metabolismCredit)
     {
+        regenCredit      = 0f;
+        metabolismCredit = 0f;
         if (IsDisposed || !_filled) return;
 
         float health = Health.Value;
         float energy = Energy.Value;
 
-        energy -= basalDrain * metabolismMultiplier * deltaTime;
+        float basal = basalDrain * deltaTime;
+        energy          -= basal * metabolismMultiplier;
+        metabolismCredit = basal * (1f - metabolismMultiplier);
 
         if (isIdle && energy < MaxEnergy)
         {
-            float cap  = basalDrain * idleRegenBasalFraction;
-            float rate = math.min(regenRate, cap);
-            if (rate > 0f) energy = math.min(energy + rate * deltaTime, MaxEnergy);
+            float cap         = basalDrain * idleRegenBasalFraction;
+            float rate        = math.min(regenRate * regenMultiplier, cap);
+            float neutralRate = math.min(regenRate, cap);
+
+            float boosted = rate        > 0f ? math.min(energy + rate        * deltaTime, MaxEnergy) : energy;
+            float neutral = neutralRate > 0f ? math.min(energy + neutralRate * deltaTime, MaxEnergy) : energy;
+
+            regenCredit = boosted - neutral;
+            energy      = boosted;
         }
 
         if (energy < starvationThreshold)

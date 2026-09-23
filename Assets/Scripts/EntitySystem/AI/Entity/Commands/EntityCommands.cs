@@ -12,26 +12,31 @@ public class RestCommand : EntityCommand
     protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
         model.Motor.Stop();
-        var r = SimulationRules.Active;
+        var r     = SimulationRules.Active;
+        var stats = model.Stats;
 
-        float startHealth = model.Stats.Health.Value;
-        float start = SimulationClock.Time;
-        float prev  = start;
+        float maxHealth   = stats.MaxHealth;
+        float startHealth = stats.Health.Value;
+        float end         = decision.EndTime;
+        double prev       = SimulationClock.TimeD;
 
-        while (SimulationClock.Time - start < r.RestDuration)
+        while (SimulationClock.Time < end)
         {
-            ct.ThrowIfCancellationRequested();
-            float now  = SimulationClock.Time;
-            float step = now - prev;
-            prev = now;
-
-            model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + r.RestHealRate * step, model.Stats.MaxHealth);
             await UniTask.Yield(PlayerLoopTiming.Update, ct);
+            double now = SimulationClock.TimeD;
+            float step = (float)(now - prev);
+            prev = now;
+            stats.Health.Value = math.min(stats.Health.Value + r.RestHealRate * step, maxHealth);
         }
 
-        float deficitBefore = 1f - startHealth / model.Stats.MaxHealth;
-        return deficitBefore > r.RestDeficitThreshold ? r.RestRewardNeeded : r.RestRewardWasted;
+        float invMax        = maxHealth > 0f ? 1f / maxHealth : 0f;
+        float deficitBefore = 1f - startHealth * invMax;
+        if (deficitBefore <= r.RestDeficitThreshold) return r.RestRewardWasted;
+
+        float recovered = math.max(0f, stats.Health.Value - startHealth) * invMax;
+        return r.RestRewardNeeded * math.saturate(recovered / deficitBefore);
     }
+
 }
 
 public class IdleCommand : EntityCommand
@@ -94,26 +99,28 @@ public class EatCommand : EntityCommand
 
     protected override async UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct)
     {
-        var r = SimulationRules.Active;
-
-        bool claimed = false;
+        var r     = SimulationRules.Active;
         var index = model.FoodIndex;
 
-        if (index != null && model.CachedFoodValid)
-        {
-            claimed = index.TryConsumeFood(model.CachedFoodCell);
-            model.InvalidateCachedFood();
-        }
-
         float reward;
-        if (claimed)
+        if (index == null || !model.CachedFoodValid)
+            reward = r.EatRewardNoFood;
+        else if (model.CachedFoodDistance > r.EatRange)
+            reward = FailureReward;
+        else
         {
-            model.Stats.Health.Value = Mathf.Min(model.Stats.Health.Value + r.EatHealFood, model.Stats.MaxHealth);
-            model.Stats.Energy.Value = Mathf.Min(model.Stats.Energy.Value + r.EatEnergyFood, model.Stats.MaxEnergy);
-            model.RegisterFitnessEvent(EntityModel.FitnessEvent.FoodEaten);
-            reward = r.EatRewardFood;
+            bool claimed = index.TryConsumeFood(model.CachedFoodCell);
+            model.InvalidateCachedFood();
+
+            if (claimed)
+            {
+                model.Stats.Health.Value = math.min(model.Stats.Health.Value + r.EatHealFood, model.Stats.MaxHealth);
+                model.Stats.Energy.Value = math.min(model.Stats.Energy.Value + r.EatEnergyFood, model.Stats.MaxEnergy);
+                model.RegisterFitnessEvent(EntityModel.FitnessEvent.FoodEaten);
+                reward = r.EatRewardFood;
+            }
+            else reward = r.EatRewardNoFood;
         }
-        else reward = r.EatRewardNoFood;
 
         await UniTask.Yield(ct);
         return reward;
@@ -163,7 +170,7 @@ public class ReproduceCommand : EntityCommand
         model.RequestReproduce();
         model.RegisterFitnessEvent(EntityModel.FitnessEvent.Reproduced);
 
-        await UniTask.Delay((int)(model.Tuning.IdleTime * 1000), cancellationToken: ct);
+        await HoldAsync(model.Tuning.IdleTime, decision.EndTime, ct);
         return 0.8f;
     }
 }
@@ -216,7 +223,7 @@ public class ThreatenCommand : EntityCommand
             return target == null ? 0.2f : 0.15f;
 
         model.Stats.Energy.Value -= 3f;
-        await UniTask.Delay(800, cancellationToken: ct);
+        await HoldAsync(SimulationRules.Active.ThreatenDuration, decision.EndTime, ct);
         return dist < model.Tuning.AttackRange ? 0.6f : 0.4f;
     }
 }
@@ -239,7 +246,7 @@ public class ShareFoodCommand : EntityCommand
         victim.Stats.Health.Value = Mathf.Min(victim.Stats.Health.Value + transfer, victim.Stats.MaxHealth);
 
         float needFactor = 1f - Mathf.Clamp01(victim.Stats.Health.Value / victim.Stats.MaxHealth);
-        await UniTask.Delay(500, cancellationToken: ct);
+        await HoldAsync(SimulationRules.Active.ShareFoodDuration, decision.EndTime, ct);
         return 0.5f + needFactor * 0.35f;
     }
 }
@@ -303,10 +310,10 @@ public class WanderCommand : EntityCommand
 
         float radius = model.Tuning.WanderRadius;
         float2 dest = start + dir * radius;
+        float remaining = math.max(0f, decision.EndTime - SimulationClock.Time);
 
         var move = await model.Motor.MoveToAsync(Extension.ToWorld(in dest, startPos.y), model.Tuning.MoveSpeed,
-            RavineRandom.RangeFloat(model.Tuning.MinWanderTime, model.Tuning.MaxWanderTime),
-            model.Tuning.EnergyCostMoving, ct);
+            remaining, model.Tuning.EnergyCostMoving, ct);
 
         float travelled = math.distance(start, Extension.Flat(model.Motor.Position()));
         float progress = math.saturate(travelled / math.max(radius, 1e-3f));

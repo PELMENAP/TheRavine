@@ -9,6 +9,7 @@ public struct RunningMeanStd
 
     public float Mean => (float)_mean;
     public long Count => _count;
+    public float Std => _count < 2 ? 1f : (float)Math.Sqrt(_m2 / _count);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Update(float x)
@@ -20,23 +21,22 @@ public struct RunningMeanStd
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public float Normalize(float x, float clip)
+    public float Scale(float x, float clip, float stdFloor)
     {
-        if (_count < 2)
-            return x < -clip ? -clip : (x > clip ? clip : x);
-
-        float std = MathF.Sqrt((float)(_m2 / _count));
-        if (std < 1e-6f) std = 1e-6f;
-
-        float z = ((float)(x - _mean)) / std;
+        float z = x;
+        if (_count >= 2)
+        {
+            float std = (float)Math.Sqrt(_m2 / _count);
+            z = x / MathF.Max(std, MathF.Max(stdFloor, 1e-6f));
+        }
         return z < -clip ? -clip : (z > clip ? clip : z);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public float UpdateAndNormalize(float x, float clip)
+    public float UpdateAndScale(float x, float clip, float stdFloor)
     {
         Update(x);
-        return Normalize(x, clip);
+        return Scale(x, clip, stdFloor);
     }
 
     public void Reset()

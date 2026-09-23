@@ -55,21 +55,28 @@ public abstract class EntityCommand : ICommand
             local.Cancel();
             await watchdog;
             local.Dispose();
-            cts = null;
+            if (ReferenceEquals(cts, local)) cts = null;
         }
 
-        model.Brain.CompleteDecision(decision.ExecDecisionId, reward, SimulationClock.Time, Status);
+        model.Brain.CompleteDecision(in decision, reward, SimulationClock.Time, Status);
     }
 
     private async UniTask WatchdogAsync(BrainDecision decision, CancellationToken token)
     {
-        float end = decision.EndTime;
+        float end = decision.EndTime + SimulationRules.Active.CommandWatchdogGrace;
         while (!token.IsCancellationRequested && SimulationClock.Time < end)
             await UniTask.Yield(PlayerLoopTiming.Update);
 
         if (!token.IsCancellationRequested) Cancel();
     }
 
+    protected static async UniTask HoldAsync(float seconds, float decisionEnd, CancellationToken ct)
+    {
+        double end = math.min(SimulationClock.TimeD + seconds, decisionEnd);
+        while (SimulationClock.TimeD < end)
+            await UniTask.Yield(PlayerLoopTiming.Update, ct);
+    }
+    
     protected abstract UniTask<float> RunAsync(BrainDecision decision, CancellationToken ct);
 
     public void Cancel()

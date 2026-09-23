@@ -41,10 +41,10 @@ Material:
     - _Steps: 10
     m_Floats:
     - _AdditionalLightSelfShadowDistance: 3
-    - _Density: 0.010042911
+    - _Density: 0.010270983
     - _HeightMaskBlend: 0.99
     - _HeightMaskFalloff: 9.5
-    - _HeightMaskLength: 0.03124584
+    - _HeightMaskLength: 2.4481413
     - _HeightMaskOffset: 0
     - _HeightMaskRemapMax: 0.8
     - _HeightMaskRemapMin: 0.2

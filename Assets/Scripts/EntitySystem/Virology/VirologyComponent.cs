@@ -85,19 +85,6 @@ namespace TheRavine.EntityControl.Virology
             return false;
         }
 
-        public bool TryFindLineageMatch(ulong lineageId, ulong strainId, out int index)
-        {
-            for (int i = 0; i < _segments.Count; i++)
-            {
-                var s = _segments[i];
-                if (s.StrainId == 0UL || s.StrainId == strainId) continue;
-                if (math.countbits(s.LineageId ^ lineageId) > LineageProximityBits) continue;
-                index = i;
-                return true;
-            }
-            index = -1;
-            return false;
-        }
         public int CopySegment(int index, ushort[] destination)
         {
             var s = _segments[index];
@@ -109,8 +96,22 @@ namespace TheRavine.EntityControl.Virology
 
         public ushort FirstCodonOf(int index) => _tape.Codons[_segments[index].Start];
 
+        public bool TryFindLineageMatch(ulong signature, ulong strainId, out int index)
+        {
+            for (int i = 0; i < _segments.Count; i++)
+            {
+                var s = _segments[i];
+                if (s.StrainId == 0UL || s.StrainId == strainId) continue;
+                if (math.countbits(s.Signature ^ signature) > LineageProximityBits) continue;
+                index = i;
+                return true;
+            }
+            index = -1;
+            return false;
+        }
+
         public bool TryInsertSegment(ushort[] source, int count,
-            ulong strainId, ulong lineageId, uint tick, uint seed)
+            ulong strainId, ulong lineageId, uint seed)
         {
             if (!_created || IsDisposed || count <= 0) return false;
             if (_tape.Length + count > _tape.Capacity) return false;
@@ -135,7 +136,8 @@ namespace TheRavine.EntityControl.Virology
                 Length = count,
                 StrainId = strainId,
                 LineageId = lineageId,
-                InsertTick = tick,
+                Signature = Segment.ComputeSignature(_tape.Codons, index, count),
+                InsertTick = _tick,
                 Integrity = 1f,
                 NetFitnessDelta = 0f,
                 Tamed = false,
@@ -144,29 +146,6 @@ namespace TheRavine.EntityControl.Virology
 
             _segmentsDirty = true;
             return true;
-        }
-
-        public void FillComponent(in GeneticParameters genetics, uint entitySeed)
-        {
-            if (_created) return;
-            if (!VirologyRuntime.IsReady)
-            {
-                UnityEngine.Debug.LogError(
-                    $"[{nameof(VirologyComponent)}] VirologyRuntime not ready, component left uncreated (seed {entitySeed:X8})");
-                return;
-            }
-            _created = true;
-
-            _table = TranslationTable.CreateFrom(VirologyRuntime.Prototype,
-                math.max(genetics.Sharpness, 0.01f), genetics.GaussianNoise,
-                entitySeed ^ 0x9E3779B9u);
-
-            _tape = Tape.Create(TapeCapacity, Allocator.Persistent);
-            _segments = new List<Segment>(4);
-            _scratch = new ushort[TapeCapacity];
-            _modifiers = EffectModifiers.Neutral;
-
-            SeedEndogenous(entitySeed);
         }
 
         private void SeedEndogenous(uint entitySeed)
@@ -183,7 +162,8 @@ namespace TheRavine.EntityControl.Virology
                 Length = EndogenousLength,
                 StrainId = 0UL,
                 LineageId = _tape.ComputeHash(0, EndogenousLength),
-                InsertTick = 0u,
+                Signature = Segment.ComputeSignature(_tape.Codons, 0, EndogenousLength),
+                InsertTick = _tick,
                 Integrity = 1f,
                 NetFitnessDelta = 0f,
                 DominantAction = ResolveDominant(0, EndogenousLength)
@@ -192,70 +172,36 @@ namespace TheRavine.EntityControl.Virology
             _segmentsDirty = true;
         }
 
-        public ProteinAction ResolveDominant(int start, int length)
-        {
-            if (!_created || length <= 0) return ProteinAction.Noop;
-
-            System.Span<int> counts = stackalloc int[ProteinTable.ActionCount];
-            counts.Clear();
-
-            int end = math.min(start + length, _tape.Length);
-            for (int i = start; i < end; i++)
-            {
-                int a = CodonEmbedding.Translate(_tape.Codons[i], _table.Centroids,
-                    VirologyRuntime.CellBias, _table.Sharpness, out _);
-                counts[a]++;
-            }
-
-            int best = 0;
-            int bestCount = -1;
-            for (int a = 0; a < ProteinTable.ActionCount; a++)
-            {
-                if (a == (int)ProteinAction.Junk || counts[a] <= bestCount) continue;
-                bestCount = counts[a];
-                best = a;
-            }
-
-            return (ProteinAction)best;
-        }
-        
-        public const int DormantTicks = 8;
-        public const int TamedThreshold = 8;
-
-        private int _dormantLeft;
-
-        public float NetFitnessOf(int index) => _segments[index].NetFitnessDelta;
-
-        public void Step(StatsComponent stats)
+        public void Step(StatsComponent stats, float dt)
         {
             if (!_created || IsDisposed || stats == null || stats.IsDisposed) return;
 
             _tick++;
 
+            float k = math.exp(-dt / math.max(SimulationRules.Frame.ModifierDecayTau, 1e-3f));
+            Ribosome.Relax(ref _modifiers, k);
+            _modifiers.ResetTransient();
+
             if (_dormantLeft > 0)
             {
                 _dormantLeft--;
-                Ribosome.Relax(ref _modifiers);
-                _modifiers.ResetTransient();
                 _lastExecuted = false;
                 return;
             }
 
-            Ribosome.Relax(ref _modifiers);
-            _modifiers.ResetTransient();
             _lastCodonIndex = _tape.Head;
+            int owner = SegmentIndexAt(_lastCodonIndex);
 
             float healthBefore = stats.Health.Value;
             float energyBefore = stats.Energy.Value;
 
-            var result = Ribosome.Step(ref _tape, ref _modifiers, ref _primed,
+            var result = Ribosome.Step(ref _tape, ref _modifiers, ref _primed, owner,
                 _table.Centroids, VirologyRuntime.CellBias, VirologyRuntime.Descriptors,
                 _table.Sharpness, energyBefore, MaxTapeLength);
 
             _lastAction = result.Action;
             _lastAmp = result.Amp;
             _lastExecuted = result.Executed;
-
 
             if (!result.Executed) { _failedCodons++; return; }
             _executedCodons++;
@@ -269,7 +215,6 @@ namespace TheRavine.EntityControl.Virology
 
             if (_modifiers.Dormant) _dormantLeft = DormantTicks;
 
-            int owner = SegmentIndexAt(_lastCodonIndex);
             if (owner < 0) return;
 
             float invH = stats.MaxHealth > 0f ? 1f / stats.MaxHealth : 0f;
@@ -305,6 +250,31 @@ namespace TheRavine.EntityControl.Virology
             if (_modifiers.ReplicateRequested) TryReplicate(owner);
         }
 
+        public void CreditDurableEffects(float regenEnergy, float metabolismEnergy, float maxEnergy)
+        {
+            if (!_created || IsDisposed || maxEnergy <= 0f) return;
+
+            float inv = 1f / maxEnergy;
+            CreditSegment(_modifiers.RegenOwner, regenEnergy * inv);
+            CreditSegment(_modifiers.MetabolismOwner, metabolismEnergy * inv);
+        }
+
+        private void CreditSegment(int owner, float delta)
+        {
+            if (delta == 0f || (uint)owner >= (uint)_segments.Count) return;
+
+            var s = _segments[owner];
+            s.NetFitnessDelta += delta;
+            _segments[owner] = s;
+            _valuesDirty = true;
+        }
+
+        private static void RemapOwner(ref int owner, int removed, int last)
+        {
+            if (owner == removed) owner = -1;
+            else if (owner == last) owner = removed;
+        }
+
         private bool TryExcise(int index)
         {
             var seg = _segments[index];
@@ -325,7 +295,10 @@ namespace TheRavine.EntityControl.Virology
                 _segments[i] = s;
             }
 
+            int last = _segments.Count - 1;
             _segments.RemoveAtSwapBack(index);
+            RemapOwner(ref _modifiers.RegenOwner, index, last);
+            RemapOwner(ref _modifiers.MetabolismOwner, index, last);
 
             _lastCodonIndex = -1;
             _segmentsDirty = true;
@@ -358,6 +331,7 @@ namespace TheRavine.EntityControl.Virology
                 Length = len,
                 StrainId = seg.StrainId,
                 LineageId = seg.LineageId,
+                Signature = seg.Signature,
                 InsertTick = _tick,
                 Integrity = seg.Integrity * SplitIntegrityPenalty,
                 NetFitnessDelta = 0f,
@@ -381,6 +355,7 @@ namespace TheRavine.EntityControl.Virology
                 var tail = s;
                 tail.Start = index;
                 tail.Length = s.Start + s.Length - index;
+                tail.Signature = Segment.ComputeSignature(_tape.Codons, tail.Start, tail.Length);
                 tail.Integrity = s.Integrity * SplitIntegrityPenalty;
                 tail.NetFitnessDelta = 0f;
                 tail.PrevFitnessDelta = 0f;
@@ -388,6 +363,7 @@ namespace TheRavine.EntityControl.Virology
                 tail.Tamed = false;
 
                 s.Length = index - s.Start;
+                s.Signature = Segment.ComputeSignature(_tape.Codons, s.Start, s.Length);
                 s.Integrity *= SplitIntegrityPenalty;
                 s.PrevFitnessDelta = s.NetFitnessDelta;
                 s.TamedTicks = 0;
@@ -398,6 +374,63 @@ namespace TheRavine.EntityControl.Virology
                 return;
             }
         }
+
+        public void FillComponent(in GeneticParameters genetics, uint entitySeed)
+        {
+            if (_created) return;
+            if (!VirologyRuntime.IsReady)
+            {
+                UnityEngine.Debug.LogError(
+                    $"[{nameof(VirologyComponent)}] VirologyRuntime not ready, component left uncreated (seed {entitySeed:X8})");
+                return;
+            }
+            _created = true;
+
+            _table = TranslationTable.CreateFrom(VirologyRuntime.Prototype,
+                math.max(genetics.Sharpness, 0.01f), genetics.GaussianNoise,
+                entitySeed ^ 0x9E3779B9u);
+
+            _tape = Tape.Create(TapeCapacity, Allocator.Persistent);
+            _segments = new List<Segment>(4);
+            _scratch = new ushort[TapeCapacity];
+            _modifiers = EffectModifiers.Neutral;
+
+            SeedEndogenous(entitySeed);
+        }
+
+        public ProteinAction ResolveDominant(int start, int length)
+        {
+            if (!_created || length <= 0) return ProteinAction.Noop;
+
+            System.Span<int> counts = stackalloc int[ProteinTable.ActionCount];
+            counts.Clear();
+
+            int end = math.min(start + length, _tape.Length);
+            for (int i = start; i < end; i++)
+            {
+                int a = CodonEmbedding.Translate(_tape.Codons[i], _table.Centroids,
+                    VirologyRuntime.CellBias, _table.Sharpness, out _);
+                counts[a]++;
+            }
+
+            int best = 0;
+            int bestCount = -1;
+            for (int a = 0; a < ProteinTable.ActionCount; a++)
+            {
+                if (a == (int)ProteinAction.Junk || counts[a] <= bestCount) continue;
+                bestCount = counts[a];
+                best = a;
+            }
+
+            return (ProteinAction)best;
+        }
+        
+        public const int DormantTicks = 8;
+        public const int TamedThreshold = 8;
+
+        private int _dormantLeft;
+
+        public float NetFitnessOf(int index) => _segments[index].NetFitnessDelta;
 
         public bool TryGetViralInputs(out float load, out float count, out float net)
         {

@@ -13,14 +13,6 @@ public sealed class ChunkFoodIndex
     private const float InvScale   = 1f / MapGenerator.scale;
     private const float HalfCell   = MapGenerator.scale * 0.5f;
     private const float WaterLevel = 5f;
-
-    private sealed class FoodChunk
-    {
-        public readonly ulong[] Rows = new ulong[Size];
-        public int Count;
-        public int BuiltVersion = -1;
-    }
-
     private readonly MapGenerator _map;
     private readonly LongDictionary<FoodChunk> _chunks = new(64);
 
@@ -29,9 +21,28 @@ public sealed class ChunkFoodIndex
 
     public ChunkFoodIndex(MapGenerator map) => _map = map;
 
+    private sealed class FoodChunk
+    {
+        public readonly ulong[] Rows = new ulong[Size];
+        public int Count;
+        public int BuiltVersion = -1;
+        public ChunkData Source;
+    }
+
+    private long[] _pruneKeys = new long[16];
+
     private FoodChunk Resolve(long chunkKey, out ChunkData cd)
     {
-        if (!_map.TryGetChunk(chunkKey, out cd) || cd == null) return null;
+        if (!_map.TryGetChunk(chunkKey, out cd) || cd == null)
+        {
+            if (_chunks.TryRemove(chunkKey, out FoodChunk stale) && stale.Count != 0)
+            {
+                FoodCount -= stale.Count;
+                Revision++;
+            }
+            cd = null;
+            return null;
+        }
 
         if (!_chunks.TryGetValue(chunkKey, out FoodChunk fc))
         {
@@ -39,8 +50,10 @@ public sealed class ChunkFoodIndex
             _chunks[chunkKey] = fc;
         }
 
-        if (fc.BuiltVersion != cd.Version)
+        if (fc.BuiltVersion != cd.Version || !ReferenceEquals(fc.Source, cd))
         {
+            int oldCount = fc.Count;
+
             System.Array.Clear(fc.Rows, 0, Size);
             fc.Count = 0;
 
@@ -59,9 +72,44 @@ public sealed class ChunkFoodIndex
             }
 
             fc.BuiltVersion = cd.Version;
+            fc.Source       = cd;
+
+            if (fc.Count != oldCount)
+            {
+                FoodCount += fc.Count - oldCount;
+                Revision++;
+            }
         }
 
         return fc;
+    }
+
+    public void PruneUnloaded()
+    {
+        if (_map == null || _chunks.Count == 0) return;
+
+        if (_pruneKeys.Length < _chunks.Count)
+            _pruneKeys = new long[math.ceilpow2(_chunks.Count)];
+
+        int n = 0;
+        foreach (var kv in _chunks)
+        {
+            if (!_map.TryGetChunk(kv.Key, out ChunkData cd) || cd == null || !ReferenceEquals(kv.Value.Source, cd))
+                _pruneKeys[n++] = kv.Key;
+        }
+
+        int removed = 0;
+        for (int i = 0; i < n; i++)
+        {
+            if (!_chunks.TryRemove(_pruneKeys[i], out FoodChunk fc)) continue;
+            removed += fc.Count;
+        }
+
+        if (removed != 0)
+        {
+            FoodCount -= removed;
+            Revision++;
+        }
     }
 
     public bool TryFindNearestFood(float worldX, float worldZ, float radiusWorld,

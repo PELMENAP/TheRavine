@@ -45,7 +45,7 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private float _avgFitness;
 
     [Header("Virology")]
-    [SerializeField] private TheRavine.EntityControl.Virology.StrainCodonTable strainCodonTable;
+    [SerializeField] private StrainCodonTable strainCodonTable;
 
     private float[] _fitnessScratch = new float[64];
     private float   _fitnessMedian;
@@ -91,15 +91,14 @@ public class EntityManager : MonoBehaviour
         => _entities.Count == 0 ? null : _entities[RavineRandom.RangeInt(0, _entities.Count)];
 
     public bool SeedProbeStrain(EntityModel target, ProteinAction[] recipe)
-        => _infection != null
-        && _infection.InjectRecipe(target, recipe, _virologyTick, (uint)RavineRandom.RangeInt(1, int.MaxValue));
+            => _infection != null
+            && _infection.InjectRecipe(target, recipe, (uint)RavineRandom.RangeInt(1, int.MaxValue));
+
 
     private void Update() => SimulationClock.Advance(Time.deltaTime * simulationTimeScale);
 
     private void Awake()
     {
-        ServiceLocator.Services.Register(new ChunkFoodIndex(ServiceLocator.Services.Get<MapGenerator>()));
-
         SimulationRules.Bind(rules);
         ServiceLocator.Services.Register(_grid);
         NeuralModelStorage.RegisterFactory(new SharedBrainSnapshotFactory());
@@ -193,8 +192,7 @@ public class EntityManager : MonoBehaviour
                 e.UpdateEntityCycle();
             }
 
-            _virologyTick++;
-            _infection.ProcessSpread(_tickSnapshot, _tickCursor, end, _virologyTick);
+            _infection.ProcessSpread(_tickSnapshot, _tickCursor, end);
 
             _transmissions        = _infection.Transmissions;
             _recombinations       = _infection.Recombinations;
@@ -207,6 +205,7 @@ public class EntityManager : MonoBehaviour
                 _tickCursor = 0;
                 _sharedBrain.ApplyPendingGradients();
                 ProcessPendingDeaths();
+                _foodIndex?.PruneUnloaded();
 
                 float now = SimulationClock.Time;
                 if (now >= _nextGenerationTime)
@@ -363,8 +362,6 @@ public class EntityManager : MonoBehaviour
 
     public bool SpawnFood()
     {
-        Debug.Log("food spawned");
-
         if (_foodIndex == null || _foodIndex.FoodCount >= maxFood) return false;
 
         Vector3 origin = transform.position;
@@ -380,7 +377,6 @@ public class EntityManager : MonoBehaviour
         }
         return false;
     }
-
     private Vector3 RandomPosition()
     {
         var v = RavineRandom.GetInsideCircle(spawnRadius);
@@ -497,7 +493,7 @@ public class EntityManager : MonoBehaviour
     {
         if (_entities.Count == 0 || _infection == null) return;
         var victim = _entities[RavineRandom.RangeInt(0, _entities.Count)];
-        _infection.InjectStrain(victim, 12, (uint)RavineRandom.RangeInt(1, int.MaxValue), _virologyTick);
+        _infection.InjectStrain(victim, 12, (uint)RavineRandom.RangeInt(1, int.MaxValue));
     }
 
     private async UniTaskVoid TrackDiagnosticsAsync(System.Threading.CancellationToken ct)

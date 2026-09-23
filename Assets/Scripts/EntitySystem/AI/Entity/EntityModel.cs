@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Mathematics;
 
+using TheRavine.Base;
 using TheRavine.Generator;
 using TheRavine.EntityControl.Virology;
 
@@ -82,6 +83,25 @@ public class EntityModel : AEntity
     private float _fitnessCacheTime = float.NaN;
     private int   _fitnessEpoch;
     private int   _fitnessCacheEpoch = -1;
+
+    private double    _attackReadyTime;
+    private double    _lastCycleTime;
+    private DayCycle  _dayCycle;
+
+    public bool TryStartAttackCooldown()
+    {
+        double now = SimulationClock.TimeD;
+        if (now < _attackReadyTime) return false;
+        _attackReadyTime = now + Tuning.AttackCooldown;
+        return true;
+    }
+
+    public override void SetUp()
+    {
+        _lastCycleTime   = SimulationClock.TimeD;
+        _attackReadyTime = 0d;
+        states.SetBehaviourAsync(states.GetBehaviour<SurviveState>()).Forget();
+    }
 
     public void RegisterFitnessEvent(FitnessEvent evt, float amount = 0f)
     {
@@ -171,13 +191,6 @@ public class EntityModel : AEntity
         Virology.FillComponent(ctx.CoordMLP.Params, ctx.CoordMLP.Params.ComputeHash());
     }
 
-    public bool TryStartAttackCooldown()
-    {
-        if (!canAttack) return false;
-        canAttack = false;
-        CooldownAsync().Forget();
-        return true;
-    }
 
     private async UniTaskVoid CooldownAsync()
     {
@@ -192,26 +205,30 @@ public class EntityModel : AEntity
         states.AddBehaviour(typeof(ForageState), new ForageState(this));
         states.AddBehaviour(typeof(SocialState), new SocialState(this));
     }
+    private float ResolveDayPhase()
+    {
+        if (_dayCycle == null && !ServiceLocator.Services.TryGet(out _dayCycle)) return 0f;
+        return _dayCycle.NormalizedTime.CurrentValue;
+    }
 
-    public override void SetUp() =>
-        states.SetBehaviourAsync(states.GetBehaviour<SurviveState>()).Forget();
-
-    private float _lastCycleTime;
     public override void UpdateEntityCycle()
     {
         if (IsDisposed || IsDeathPending) return;
         if (!IsActive.Value) return;
         if (Stats.IsDisposed || Stats.Health.Value <= 0f) return;
 
-        float now = SimulationClock.Time;
-        float dt  = now - _lastCycleTime;
+        ref readonly var rules = ref SimulationRules.Frame;
+
+        double nowD = SimulationClock.TimeD;
+        float  dt   = (float)(nowD - _lastCycleTime);
+        _lastCycleTime = nowD;
         if (dt <= 0f) dt = 1f / 60f;
-        _lastCycleTime = now;
+        if (dt > rules.MaxCycleDt) dt = rules.MaxCycleDt;
+        float now = (float)nowD;
 
         TimeAlive += dt;
-        timeOfDay = (timeOfDay + 1) % 24;
 
-        Virology.Step(Stats);
+        Virology.Step(Stats, dt);
 
         if (IsDeathPending || IsDisposed || Stats.IsDisposed || Stats.Health.Value <= 0f) return;
 
@@ -237,7 +254,7 @@ public class EntityModel : AEntity
 
         LastInput = Vectorizer.Vectorize(
             Stats.Health.Value, Stats.Energy.Value,
-            LastActionIndex, timeOfDay, inDanger, timeToBreed,
+            LastActionIndex, ResolveDayPhase(), inDanger, timeToBreed,
             Speech.OtherSpeechHash, enemyDist, foodDist, in _lastTerrain, MimickedActionIndex,
             viralLoad, viralSegments, viralNet);
 
@@ -247,14 +264,17 @@ public class EntityModel : AEntity
         bool isIdle = states.behaviourCurrent.GetType() == typeof(SurviveState)
                 && LastActionIndex == (int)EntityAction.Idle;
 
-        ref readonly var rules = ref SimulationRules.Frame;
         Stats.Tick(dt,
-            Tuning.EnergyRegenRate * Virology.Modifiers.RegenMultiplier,
+            Tuning.EnergyRegenRate,
+            Virology.Modifiers.RegenMultiplier,
             Virology.Modifiers.MetabolismMultiplier,
             rules.BasalEnergyDrain,
             rules.IdleRegenBasalFraction,
             isIdle,
-            rules.StarvationThreshold, rules.StarvationDamage, rules.StarvationEnergyReturn);
+            rules.StarvationThreshold, rules.StarvationDamage, rules.StarvationEnergyReturn,
+            out float regenCredit, out float metabolismCredit);
+
+        Virology.CreditDurableEffects(regenCredit, metabolismCredit, Stats.MaxEnergy);
 
         if (IsDeathPending || IsDisposed || Stats.IsDisposed || Stats.Health.Value <= 0f) return;
 

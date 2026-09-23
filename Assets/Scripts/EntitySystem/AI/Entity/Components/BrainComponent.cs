@@ -22,12 +22,11 @@ public class BrainComponent : IComponent
 
     public bool IsBusy(float simTime) => Context.ExecWindow.IsRunning(simTime);
 
-    public void GiveReward(float reward, int decisionId) =>
-        _brain.GiveReward(reward, decisionId, Context);
+    public void GiveReward(float reward, in BrainDecision decision) =>
+        _brain.GiveReward(reward, in decision, Context);
 
-    public void CompleteDecision(int decisionId, float reward, float simTime, EntityCommandStatus status) =>
-        _brain.CompleteDecision(decisionId, reward, Context, simTime, status);
-
+    public void CompleteDecision(in BrainDecision decision, float reward, float simTime, EntityCommandStatus status) =>
+        _brain.CompleteDecision(in decision, reward, Context, simTime, status);
     public SharedHierarchicalBrain.Goal CurrentGoal => Context.CurrentGoal;
 
     public void Dispose() { }
