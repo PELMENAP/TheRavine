@@ -11,15 +11,12 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
     [SerializeField] private float arriveThreshold = 0.1f;
 
     private MapGenerator mapGenerator;
-    private Vector3 velocity;
 
     public Vector3 Position()
     {
         if (transform == null) return Vector3.zero;
         return transform.position;
     }
-    public Vector3 Velocity => velocity;
-
     private const float MinSpeedModifier = 0.05f;
     private const int   SpeedResampleFrames = 4;
 
@@ -29,13 +26,21 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
 
     public void Inject(MapGenerator map) => mapGenerator = map;
 
+    private float2 _velocity;
+
+    public Vector3 Velocity => new(_velocity.x, 0f, _velocity.y);
+
     public async UniTask<MoveResult> MoveToAsync(Vector3 target, float speed, float maxDuration,
         float energyCostPerSec, CancellationToken ct)
     {
         if (mapGenerator == null) return MoveResult.None;
 
-        float startTime = Time.time;
-        target.y = transform.position.y;
+        var    tr      = transform;
+        float2 goal    = new(target.x, target.z);
+        float  arrive2 = arriveThreshold * arriveThreshold;
+
+        double start = SimulationClock.TimeD;
+        double prev  = start;
 
         float speedModifier = 1f;
         int   frame = 0;
@@ -45,64 +50,66 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
         float energy   = 0f;
         bool  arrived  = false;
 
-        while (!ct.IsCancellationRequested)
+        try
         {
-            if (this == null) return new MoveResult(distance, pathCost, energy, false);
-
-            if (Vector2.Distance(Flat(transform.position), Flat(target)) <= arriveThreshold)
+            while (!ct.IsCancellationRequested)
             {
-                arrived = true;
-                break;
+                if (this == null) return new MoveResult(distance, pathCost, energy, false);
+
+                Vector3 pos = tr.position;
+                float2  to  = goal - new float2(pos.x, pos.z);
+                float   d2  = math.lengthsq(to);
+                if (d2 <= arrive2 || d2 < 1e-6f) { arrived = true; break; }
+
+                double now = SimulationClock.TimeD;
+                if (now - start >= maxDuration) break;
+
+                float dt = (float)(now - prev);
+                prev = now;
+
+                if (dt > 0f)
+                {
+                    float2 dir = to * math.rsqrt(d2);
+
+                    if (frame == 0)
+                        speedModifier = mapGenerator.GetSpeedModifier(pos.x, pos.z, dir);
+                    if (++frame >= SpeedResampleFrames) frame = 0;
+
+                    float costModifier = math.max(speedModifier, MinSpeedModifier);
+
+                    _velocity = math.lerp(_velocity, dir * (speed * speedModifier),
+                        math.saturate(velocityLerpCoef * dt));
+
+                    float2 step = _velocity * dt;
+                    pos.x += step.x;
+                    pos.z += step.y;
+                    pos.y = mapGenerator.SampleHeightBilinear(pos.x, pos.z) + heightOffset;
+                    tr.position = pos;
+
+                    float len = math.length(step);
+                    distance += len;
+                    pathCost += len / costModifier;
+
+                    if (energySink != null && energyCostPerSec > 0f)
+                    {
+                        float spent = energyCostPerSec / costModifier * dt;
+                        energySink.TryConsume(spent);
+                        energy += spent;
+                    }
+                }
+
+                await UniTask.Yield(ct);
             }
-            if (Time.time - startTime >= maxDuration) break;
-
-            Vector3 dir = target - transform.position;
-            dir.y = 0f;
-            if (dir.sqrMagnitude < 1e-6f) { arrived = true; break; }
-            dir.Normalize();
-
-            if (frame == 0)
-                speedModifier = mapGenerator.GetSpeedModifier(
-                    transform.position.x,
-                    transform.position.z,
-                    new float2(dir.x, dir.z));
-
-            frame++;
-            if (frame >= SpeedResampleFrames) frame = 0;
-
-            float costModifier = speedModifier < MinSpeedModifier ? MinSpeedModifier : speedModifier;
-
-            velocity = Vector3.Lerp(velocity, dir * (speed * speedModifier),
-                velocityLerpCoef * Time.deltaTime);
-
-            Vector3 pos = transform.position;
-            float dx = velocity.x * Time.deltaTime;
-            float dz = velocity.z * Time.deltaTime;
-            pos.x += dx;
-            pos.z += dz;
-            pos.y = mapGenerator.SampleHeightBilinear(pos.x, pos.z) + heightOffset;
-
-            transform.position = pos;
-
-            float step = math.sqrt(dx * dx + dz * dz);
-            distance += step;
-            pathCost += step / costModifier;
-
-            if (energySink != null && energyCostPerSec > 0f)
-            {
-                float spent = energyCostPerSec / costModifier * Time.deltaTime;
-                energySink.TryConsume(spent);
-                energy += spent;
-            }
-
-            await UniTask.Yield(ct);
+        }
+        finally
+        {
+            if (this != null) Stop();
         }
 
-        if (this != null) Stop();
         return new MoveResult(distance, pathCost, energy, arrived);
     }
 
-    public void Stop() => velocity = Vector3.zero;
+    public void Stop() => _velocity = float2.zero;
 
     private static Vector2 Flat(Vector3 v) => new(v.x, v.z);
 }

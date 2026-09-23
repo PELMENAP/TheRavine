@@ -4,46 +4,49 @@ using System.Threading;
 
 public class CommandScheduler
 {
-    private Queue<ICommand> _commands = new Queue<ICommand>();
+    private readonly Queue<ICommand> _commands = new();
     private ICommand _currentCommand;
     public bool _isProcessing { get; private set; }
-    private CancellationTokenSource _cts = new CancellationTokenSource();
+    private CancellationTokenSource _cts = new();
     private ICommand _defaultCommand;
-    public void AddCommand(ICommand command)
-    {
-        _commands.Enqueue(command);
-    }
-    public void SetDefaultCommand(ICommand defaultCommand)
-    {
-        _defaultCommand = defaultCommand;
-    }
+
+    public void AddCommand(ICommand command) => _commands.Enqueue(command);
+
+    public void SetDefaultCommand(ICommand defaultCommand) => _defaultCommand = defaultCommand;
 
     public async UniTask ProcessCommandsAsync()
     {
         _isProcessing = true;
-        while (_isProcessing && !_cts.IsCancellationRequested)
+        var token = _cts.Token;
+
+        while (_isProcessing && !token.IsCancellationRequested)
         {
-            if (_commands.Count > 0)
-            {
-                _currentCommand = _commands.Dequeue();
-                await _currentCommand.ExecuteAsync().AttachExternalCancellation(_cts.Token);
-            }
-            else if (_defaultCommand != null)
-            {
-                await _defaultCommand.ExecuteAsync().AttachExternalCancellation(_cts.Token);
-            }
-            else
+            var next = _commands.Count > 0 ? _commands.Dequeue() : _defaultCommand;
+            if (next == null)
             {
                 await UniTask.Yield();
+                continue;
+            }
+
+            _currentCommand = next;
+            try
+            {
+                await next.ExecuteAsync().AttachExternalCancellation(token);
+            }
+            finally
+            {
+                if (ReferenceEquals(_currentCommand, next)) _currentCommand = null;
             }
         }
-        _currentCommand = null;
     }
 
     public void CancelCurrentCommand()
     {
-        _cts.Cancel();
+        var current = _currentCommand;
+        _currentCommand = null;
         _isProcessing = false;
+        _cts.Cancel();
+        current?.Cancel();
     }
 
     public void ClearCommands()

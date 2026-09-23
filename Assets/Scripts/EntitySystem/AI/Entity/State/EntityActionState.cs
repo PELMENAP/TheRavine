@@ -14,15 +14,16 @@ public abstract class EntityActionState : AState
     {
         if (!commands.TryGetValue(action, out var cmd))
         {
-            Model.Brain.CompleteDecision(decision.ExecDecisionId, -0.2f,
+            Model.Brain.CompleteDecision(in decision, -0.2f,
                 SimulationClock.Time, EntityCommandStatus.Failed);
             return;
         }
 
         if (!cmd.CanExecute())
         {
-            Model.Stats.Health.Value -= 3f;
-            Model.Brain.CompleteDecision(decision.ExecDecisionId, -0.15f,
+            float penalty = SimulationRules.Active.InfeasibleActionHealthPenalty;
+            if (penalty > 0f) Model.Stats.Health.Value -= penalty;
+            Model.Brain.CompleteDecision(in decision, -0.15f,
                 SimulationClock.Time, EntityCommandStatus.Failed);
             return;
         }

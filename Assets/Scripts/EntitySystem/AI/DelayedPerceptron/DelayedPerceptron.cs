@@ -25,7 +25,6 @@ public partial class DelayedPerceptron
 
     private const float BaseLearningRateReference    = 0.0525f;
     private const float InvBaseLearningRateReference = 1f / BaseLearningRateReference;
-    private const float DefaultEvaluationNeutral     = 0.5f;
 
     private const int DefaultTruncWindow      = 8;
     private const int DefaultDecisionCapacity = 16;
@@ -83,7 +82,6 @@ public partial class DelayedPerceptron
         float s = 1f / (1f + MathF.Exp(-logit));
         return minDuration + s * (maxDuration - minDuration);
     }
-
     public DelayedItem Decide(float[] input, PerceptronContext ctx, int delaySteps,
         ValueCritic critic, float gamma, float dt, float simTime,
         float minDuration, float maxDuration, float epsilon, float[] logitBias)
@@ -125,7 +123,7 @@ public partial class DelayedPerceptron
                          + adaptiveEpsilon / actionCount;
 
         var item = ctx.Decisions.Push(ctx.NextDecisionId());
-        item.Evaluation         = ctx.Params.DefaultEvaluation - DefaultEvaluationNeutral;
+        item.Evaluation         = 0f;
         item.CreatedOrdinal     = ordinal;
         item.Predicted          = pred;
         item.StartTime          = simTime;
@@ -169,6 +167,200 @@ public partial class DelayedPerceptron
             FlushOldest(ctx, input, critic, gamma);
 
         return item;
+    }
+
+    public void Train(DelayedItem ticket, float advantage, PerceptronContext ctx)
+    {
+        if (!float.IsFinite(advantage))
+        {
+            ctx.Diagnostics.RecordNonFiniteGradient(1);
+            return;
+        }
+
+        int steps = ResolveBpttSteps(ticket, ctx);
+        if (steps == 0) return;
+
+        ctx.TrainingSteps++;
+
+        var   lay     = ctx.Layout;
+        int   L       = lay.L;
+        int   history = lay.HistoryDepth;
+        float dt      = ctx.DeltaTime;
+
+        int   actionCount = lay.ActionCount;
+        float invN        = 1f / actionCount;
+        float entReg      = ctx.Params.EntropyRegularization;
+        float invTemp     = 1f / MathF.Max(ctx.Params.SoftmaxTemperature, 1e-3f);
+        int   pred        = ticket.Predicted;
+
+        float clipEps = SimulationRules.Frame.PpoClipEpsilon;
+
+        ReadOnlySpan<float> probs;
+        if (ticket.WeightVersion == WeightVersion)
+            probs = ticket.Probs.AsSpan(0, actionCount);
+        else
+        {
+            EvaluatePolicy(ticket, ctx);
+            probs = ctx.EvalProbs;
+        }
+
+        float eps   = ticket.ExplorationEpsilon;
+        float pPure = probs[pred];
+        float pMix  = (1f - eps) * pPure + eps * invN;
+
+        float ratio = MathF.Exp(MathF.Log(MathF.Max(pMix, 1e-8f)) - ticket.LogProbability);
+        if (!float.IsFinite(ratio)) ratio = 1f;
+        float mixScale = pMix > 1e-8f ? (1f - eps) * pPure / pMix : 1f;
+
+        bool clipped = (advantage > 0f && ratio > 1f + clipEps)
+                    || (advantage < 0f && ratio < 1f - clipEps);
+
+        float gate = clipped ? 0f : ratio * advantage;
+
+        if (clipped && entReg <= 0f) return;
+
+        float policyGate = gate * mixScale;
+        var   outErr     = ctx.OutErrBuf;
+
+        for (int i = 0; i < actionCount; i++)
+        {
+            float oneHot = i == pred ? 1f : 0f;
+            float p      = probs[i];
+            outErr[i] = policyGate * (oneHot - p) * invTemp + entReg * (invN - p);
+        }
+
+        outErr[lay.DurationIndex] =
+            gate * ticket.DurationNoise / (DurationNoiseSigma * DurationNoiseSigma);
+
+        if (lay.AuxOutputs >= 2)
+        {
+            float invHeadVar = 1f / (HeadingNoiseSigma * HeadingNoiseSigma);
+            outErr[lay.HeadingIndex]     = gate * ticket.HeadingNoiseS * invHeadVar;
+            outErr[lay.HeadingIndex + 1] = gate * ticket.HeadingNoiseC * invHeadVar;
+        }
+
+        var g = _gradScratch;
+        g.Clear();
+
+        ctx.ClearWorkingDeltas();
+
+        int nonFinite = 0;
+
+        for (int step = 0; step < steps; step++)
+        {
+            int t = ticket.BpttSlot - step;
+            if (t < 0) t += history;
+
+            if (step == 0)
+            {
+                var wDHLast = ctx.Working(L - 1);
+                for (int i = 0; i < lay.OutputSize; i++)
+                    wDHLast[i] += outErr[i];
+            }
+
+            for (int l = L - 1; l >= 0; l--)
+            {
+                var prevActs = ctx.SlotPrevActs(t, l);
+                var hBef     = ctx.SlotHBefore(t, l);
+                var fArr     = ctx.SlotF(t, l);
+                var tauArr   = ctx.SlotTau(t, l);
+                var aArr     = ctx.SlotA(t, l);
+                var wDH      = ctx.Working(l);
+                var tempDH   = ctx.Temporal(l);
+
+                bool hasPrev = l > 0;
+                var  prevWDH = hasPrev ? ctx.Working(l - 1) : default;
+
+                tempDH.Clear();
+
+                if (_residual[l] && hasPrev)
+                    for (int i = 0; i < wDH.Length; i++)
+                        prevWDH[i] += wDH[i];
+
+                int inputs = lay.LayerSizes[l];
+                int rowLen = inputs << 1;
+
+                for (int n = 0; n < wDH.Length; n++)
+                {
+                    float dH = wDH[n];
+                    if (dH == 0f) continue;
+                    if (!float.IsFinite(dH)) { wDH[n] = 0f; nonFinite++; continue; }
+
+                    float fn   = fArr[n];
+                    float taun = MathF.Max(tauArr[n], TauEpsilon);
+                    float An   = aArr[n];
+
+                    float dPreF = dH * (dt / An) * (1f - fn * fn);
+                    float hNew  = (hBef[n] + dt * fn) / An;
+                    float dTau  = dH * hNew * dt / (An * taun * taun);
+                    float dPreT = dTau * (1f - MathF.Exp(-taun));
+
+                    if (!float.IsFinite(dPreF) || !float.IsFinite(dPreT))
+                    {
+                        tempDH[n] = 0f;
+                        nonFinite++;
+                        continue;
+                    }
+
+                    tempDH[n] = dH / An;
+
+                    int wi = lay.RowIndex(l, n);
+                    var wRow = _wt.AsSpan(wi, rowLen);
+                    var gRow = g.WT.AsSpan(wi, rowLen);
+                    g.MarkTouched(l, n);
+
+                    if (hasPrev)
+                    {
+                        for (int i = 0; i < inputs; i++)
+                        {
+                            int k = i << 1;
+                            float a = prevActs[i];
+
+                            float back = dPreF * wRow[k] + dPreT * wRow[k | 1];
+                            if (float.IsFinite(back)) prevWDH[i] += back;
+                            else nonFinite++;
+
+                            gRow[k]     += dPreF * a;
+                            gRow[k | 1] += dPreT * a;
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < inputs; i++)
+                        {
+                            int k = i << 1;
+                            float a = prevActs[i];
+                            gRow[k]     += dPreF * a;
+                            gRow[k | 1] += dPreT * a;
+                        }
+                    }
+
+                    int bi = lay.BiasIndex(l, n);
+                    g.BT[bi]     += dPreF;
+                    g.BT[bi | 1] += dPreT;
+                }
+            }
+
+            ctx.SwapDeltaBuffers();
+        }
+
+        float norm = (float)Math.Sqrt(g.SquaredNorm());
+
+        if (!float.IsFinite(norm))
+        {
+            ctx.Diagnostics.RecordNonFiniteGradient(nonFinite + 1);
+            return;
+        }
+
+        ctx.Diagnostics.RecordGradientNorm(norm);
+
+        float clipNorm = MathF.Min(MathF.Max(ctx.Params.MaxGradientNorm, 1e-3f), OptimizerMaxGradNorm);
+        float scale    = MathF.Min(1f, clipNorm / (norm + 1e-8f));
+        float lrMul    = ctx.Params.BaseLearningRate * InvBaseLearningRateReference;
+
+        _gradAccum.AddScaled(g, scale * lrMul);
+
+        if (nonFinite > 0) ctx.Diagnostics.RecordNonFiniteGradient(nonFinite);
     }
 
     private static void RowDot(ReadOnlySpan<float> row, ReadOnlySpan<float> inp, int inputs,
@@ -326,211 +518,6 @@ public partial class DelayedPerceptron
         var outAct = ctx.EvalActivation(L);
         SoftmaxInPlace(outAct, ctx.EvalSoftmax, lay.ActionCount, ctx.Params.SoftmaxTemperature);
         outAct.Slice(0, lay.ActionCount).CopyTo(ctx.EvalProbs);
-    }
-
-    public void Train(DelayedItem ticket, float advantage, PerceptronContext ctx)
-    {
-        if (!float.IsFinite(advantage))
-        {
-            ctx.Diagnostics.RecordNonFiniteGradient(1);
-            return;
-        }
-
-        int steps = ResolveBpttSteps(ticket, ctx);
-        if (steps == 0) return;
-
-        ctx.TrainingSteps++;
-
-        var   lay     = ctx.Layout;
-        int   L       = lay.L;
-        int   history = lay.HistoryDepth;
-        float dt      = ctx.DeltaTime;
-
-        int   actionCount = lay.ActionCount;
-        float invN        = 1f / actionCount;
-        float entReg      = ctx.Params.EntropyRegularization;
-        float invTemp     = 1f / MathF.Max(ctx.Params.SoftmaxTemperature, 1e-3f);
-        int   pred        = ticket.Predicted;
-
-        float clipEps = SimulationRules.Frame.PpoClipEpsilon;
-
-        ReadOnlySpan<float> probs;
-        float ratio;
-        float mixScale;
-
-        float eps = ticket.ExplorationEpsilon;
-
-        if (ticket.WeightVersion == WeightVersion)
-        {
-            probs    = ticket.Probs.AsSpan(0, actionCount);
-            ratio    = 1f;
-            float pPureF = probs[pred];
-            float pMixF  = (1f - eps) * pPureF + eps * invN;
-            mixScale = pMixF > 1e-8f ? (1f - eps) * pPureF / pMixF : 1f;
-        }
-        else
-        {
-            EvaluatePolicy(ticket, ctx);
-            probs = ctx.EvalProbs;
-
-            float pPure   = probs[pred];
-            float pMix    = (1f - eps) * pPure + eps * invN;
-            float logpNew = MathF.Log(MathF.Max(pMix, 1e-8f));
-
-            ratio    = MathF.Exp(logpNew - ticket.LogProbability);
-            if (!float.IsFinite(ratio)) ratio = 1f;
-            mixScale = pMix > 1e-8f ? (1f - eps) * pPure / pMix : 1f;
-        }
-
-        bool clipped = (advantage > 0f && ratio > 1f + clipEps)
-                    || (advantage < 0f && ratio < 1f - clipEps);
-
-        float gate = clipped ? 0f : ratio * advantage;
-
-        if (clipped && entReg <= 0f) return;
-
-        float policyGate = gate * mixScale;
-        var   outErr     = ctx.OutErrBuf;
-
-        for (int i = 0; i < actionCount; i++)
-        {
-            float oneHot = i == pred ? 1f : 0f;
-            float p      = probs[i];
-            outErr[i] = policyGate * (oneHot - p) * invTemp + entReg * (invN - p);
-        }
-
-        outErr[lay.DurationIndex] =
-            gate * ticket.DurationNoise / (DurationNoiseSigma * DurationNoiseSigma);
-
-        if (lay.AuxOutputs >= 2)
-        {
-            float invHeadVar = 1f / (HeadingNoiseSigma * HeadingNoiseSigma);
-            outErr[lay.HeadingIndex]     = gate * ticket.HeadingNoiseS * invHeadVar;
-            outErr[lay.HeadingIndex + 1] = gate * ticket.HeadingNoiseC * invHeadVar;
-        }
-
-        var g = _gradScratch;
-        g.Clear();
-
-        ctx.ClearWorkingDeltas();
-
-        int nonFinite = 0;
-
-        for (int step = 0; step < steps; step++)
-        {
-            int t = ticket.BpttSlot - step;
-            if (t < 0) t += history;
-
-            if (step == 0)
-            {
-                var wDHLast = ctx.Working(L - 1);
-                for (int i = 0; i < lay.OutputSize; i++)
-                    wDHLast[i] += outErr[i];
-            }
-
-            for (int l = L - 1; l >= 0; l--)
-            {
-                var prevActs = ctx.SlotPrevActs(t, l);
-                var hBef     = ctx.SlotHBefore(t, l);
-                var fArr     = ctx.SlotF(t, l);
-                var tauArr   = ctx.SlotTau(t, l);
-                var aArr     = ctx.SlotA(t, l);
-                var wDH      = ctx.Working(l);
-                var tempDH   = ctx.Temporal(l);
-
-                bool hasPrev = l > 0;
-                var  prevWDH = hasPrev ? ctx.Working(l - 1) : default;
-
-                tempDH.Clear();
-
-                if (_residual[l] && hasPrev)
-                    for (int i = 0; i < wDH.Length; i++)
-                        prevWDH[i] += wDH[i];
-
-                int inputs = lay.LayerSizes[l];
-                int rowLen = inputs << 1;
-
-                for (int n = 0; n < wDH.Length; n++)
-                {
-                    float dH = wDH[n];
-                    if (dH == 0f) continue;
-                    if (!float.IsFinite(dH)) { wDH[n] = 0f; nonFinite++; continue; }
-
-                    float fn   = fArr[n];
-                    float taun = MathF.Max(tauArr[n], TauEpsilon);
-                    float An   = aArr[n];
-
-                    float dPreF = dH * (dt / An) * (1f - fn * fn);
-                    float hNew  = (hBef[n] + dt * fn) / An;
-                    float dTau  = dH * hNew * dt / (An * taun * taun);
-                    float dPreT = dTau * (1f - MathF.Exp(-taun));
-
-                    if (!float.IsFinite(dPreF) || !float.IsFinite(dPreT))
-                    {
-                        tempDH[n] = 0f;
-                        nonFinite++;
-                        continue;
-                    }
-
-                    tempDH[n] = dH / An;
-
-                    int wi = lay.RowIndex(l, n);
-                    var wRow = _wt.AsSpan(wi, rowLen);
-                    var gRow = g.WT.AsSpan(wi, rowLen);
-                    g.MarkTouched(l, n);
-
-                    if (hasPrev)
-                    {
-                        for (int i = 0; i < inputs; i++)
-                        {
-                            int k = i << 1;
-                            float a = prevActs[i];
-
-                            float back = dPreF * wRow[k] + dPreT * wRow[k | 1];
-                            if (float.IsFinite(back)) prevWDH[i] += back;
-                            else nonFinite++;
-
-                            gRow[k]     += dPreF * a;
-                            gRow[k | 1] += dPreT * a;
-                        }
-                    }
-                    else
-                    {
-                        for (int i = 0; i < inputs; i++)
-                        {
-                            int k = i << 1;
-                            float a = prevActs[i];
-                            gRow[k]     += dPreF * a;
-                            gRow[k | 1] += dPreT * a;
-                        }
-                    }
-
-                    int bi = lay.BiasIndex(l, n);
-                    g.BT[bi]     += dPreF;
-                    g.BT[bi | 1] += dPreT;
-                }
-            }
-
-            ctx.SwapDeltaBuffers();
-        }
-
-        float norm = (float)Math.Sqrt(g.SquaredNorm());
-
-        if (!float.IsFinite(norm))
-        {
-            ctx.Diagnostics.RecordNonFiniteGradient(nonFinite + 1);
-            return;
-        }
-
-        ctx.Diagnostics.RecordGradientNorm(norm);
-
-        float clipNorm = MathF.Min(MathF.Max(ctx.Params.MaxGradientNorm, 1e-3f), OptimizerMaxGradNorm);
-        float scale    = MathF.Min(1f, clipNorm / (norm + 1e-8f));
-        float lrMul    = ctx.Params.BaseLearningRate * InvBaseLearningRateReference;
-
-        _gradAccum.AddScaled(g, scale * lrMul);
-
-        if (nonFinite > 0) ctx.Diagnostics.RecordNonFiniteGradient(nonFinite);
     }
 
     private static int ResolveBpttSteps(DelayedItem ticket, PerceptronContext ctx)

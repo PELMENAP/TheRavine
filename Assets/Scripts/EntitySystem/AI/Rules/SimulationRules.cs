@@ -33,6 +33,9 @@ public sealed class SimulationRules : ScriptableObject
         public readonly float FitnessReproduceRateWeight;
         public readonly float FitnessDamageRateWeight;
 
+        public readonly float MaxCycleDt;
+        public readonly float ModifierDecayTau;
+
         public RulesFrame(SimulationRules r)
         {
             EpsilonDecayPerStep     = r.EpsilonDecayPerStep;
@@ -62,6 +65,9 @@ public sealed class SimulationRules : ScriptableObject
             FitnessFoodRateWeight   = r.FitnessFoodRateWeight;
             FitnessReproduceRateWeight   = r.FitnessReproduceRateWeight;
             FitnessDamageRateWeight = r.FitnessDamageRateWeight;
+
+            MaxCycleDt       = r.MaxCycleDt;
+            ModifierDecayTau = r.ModifierDecayTau;
         }
     }
 
@@ -145,6 +151,24 @@ public sealed class SimulationRules : ScriptableObject
     [SerializeField] private float terrainWaterWeight = 0.6f;
     [SerializeField] private float pathCostPenalty    = 0.15f;
     [SerializeField] private float pathCostRatioMax   = 4f;
+
+    [SerializeField] private float maxCycleDt = 3f;
+    [SerializeField] private float modifierDecayTau = 85f;
+    [SerializeField] private float eatRange = 2f;
+    [SerializeField] private float infeasibleActionHealthPenalty = 0f;
+    [SerializeField] private float threatenDuration = 0.8f;
+    [SerializeField] private float shareFoodDuration = 0.5f;
+    [SerializeField] private float commandWatchdogGrace = 0.1f;
+    [SerializeField] private float rewardStdFloor = 0.05f;
+
+    public float MaxCycleDt                    => maxCycleDt;
+    public float ModifierDecayTau              => modifierDecayTau;
+    public float EatRange                      => eatRange;
+    public float InfeasibleActionHealthPenalty => infeasibleActionHealthPenalty;
+    public float ThreatenDuration              => threatenDuration;
+    public float ShareFoodDuration             => shareFoodDuration;
+    public float CommandWatchdogGrace          => commandWatchdogGrace;
+    public float RewardStdFloor                => rewardStdFloor;
 
     public float TerrainBiasWeight  => terrainBiasWeight;
     public float TerrainCostWeight  => terrainCostWeight;

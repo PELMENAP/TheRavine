@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using R3;
 
+using TheRavine.Generator;
+
 namespace TheRavine.EntityControl
 {
     public class EntitySystem : MonoBehaviour, ISetAble
@@ -32,6 +34,7 @@ namespace TheRavine.EntityControl
         public void SetUp(ISetAble.Callback callback)
         {
             ServiceLocator.Services.Register(this);
+            ServiceLocator.Services.Register(new ChunkFoodIndex(ServiceLocator.Services.Get<MapGenerator>()));
             
             logger = ServiceLocator.GetService<RavineLogger>();
             logger.LogInfo("EntitySystem service is available now");

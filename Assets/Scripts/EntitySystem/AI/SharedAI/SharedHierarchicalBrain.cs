@@ -141,11 +141,10 @@ public class SharedHierarchicalBrain
             _execCtxLayouts[i] = executors[i].BuildContextLayout(TruncWindow, ExecRingCapacity, HeadingOutputs);
     }
 
-    public void GiveReward(float reward, int decisionId, EntityBrainContext ctx)
+    public void GiveReward(float reward, in BrainDecision decision, EntityBrainContext ctx)
     {
-        int g    = (int)ctx.CurrentGoal;
-        var mlp  = ctx.ExecMLPs[g];
-        var item = mlp.Decisions.Find(decisionId);
+        var mlp  = ctx.ExecMLPs[(int)decision.Goal];
+        var item = mlp.Decisions.Find(decision.ExecDecisionId);
         if (item == null)
         {
             mlp.Diagnostics.RecordDroppedReward();
@@ -153,15 +152,18 @@ public class SharedHierarchicalBrain
             return;
         }
 
-        float shaped     = reward + ctx.IntrinsicReward * CuriosityWeight;
-        float normalized = _rewardNorm.UpdateAndNormalize(shaped, SimulationRules.Active.RewardClipSigma);
+        var   rules  = SimulationRules.Active;
+        float shaped = reward + ctx.IntrinsicReward * CuriosityWeight;
+        float scaled = _rewardNorm.UpdateAndScale(shaped, rules.RewardClipSigma, rules.RewardStdFloor);
 
-        item.Evaluation    = normalized;
+        item.Evaluation    = scaled;
         item.RewardApplied = true;
         mlp.Diagnostics.RecordRewardLatency(SimulationClock.Time - item.StartTime);
         GlobalDiagnostics.RecordAppliedReward();
 
-        ctx.GoalDiscountedReturn += normalized * ctx.GoalDiscountFactor;
+        if (decision.CoordDecisionId != ctx.CoordDecisionId) return;
+
+        ctx.GoalDiscountedReturn += scaled * ctx.GoalDiscountFactor;
         ctx.GoalDiscountFactor   *= Gamma;
         ctx.GoalRewardCount++;
     }
@@ -273,18 +275,50 @@ public class SharedHierarchicalBrain
         return true;
     }
 
-    public void CompleteDecision(int decisionId, float reward, EntityBrainContext ctx,
+    public void CompleteDecision(in BrainDecision decision, float reward, EntityBrainContext ctx,
         float simTime, EntityCommandStatus status)
     {
-        GiveReward(reward, decisionId, ctx);
+        GiveReward(reward, in decision, ctx);
+
+        ctx.ExecMLPs[(int)decision.Goal].Diagnostics.RecordCompletion(
+            simTime - decision.StartTime, status == EntityCommandStatus.Interrupted);
+
+        if (ctx.ExecWindow.DecisionId == decision.ExecDecisionId) ctx.ExecWindow.End();
+    }
+
+    public void CompleteTerminal(EntityBrainContext ctx, float penalty)
+    {
+        if (ctx == null) return;
+
+        var   rules  = SimulationRules.Active;
+        float scaled = _rewardNorm.Scale(penalty, rules.RewardClipSigma, rules.RewardStdFloor);
 
         int g = (int)ctx.CurrentGoal;
-        var item = ctx.ExecMLPs[g].Decisions.Find(decisionId);
-        float elapsed = item != null ? simTime - item.StartTime : 0f;
-        ctx.ExecMLPs[g].Diagnostics.RecordCompletion(
-            elapsed, status == EntityCommandStatus.Interrupted);
 
-        if (ctx.ExecWindow.DecisionId == decisionId) ctx.ExecWindow.End();
+        var running = ctx.ExecWindow.DecisionId != 0
+            ? ctx.ExecMLPs[g].Decisions.Find(ctx.ExecWindow.DecisionId)
+            : null;
+
+        if (running != null && !running.RewardApplied)
+        {
+            running.Evaluation    = 0f;
+            running.RewardApplied = true;
+        }
+
+        ctx.ExecWindow.End();
+
+        for (int i = 0; i < GoalCount; i++)
+            executors[i].FlushTerminal(ctx.ExecMLPs[i], execCritics[i], Gamma,
+                                       i == g ? scaled : 0f);
+
+        FlushGoalRewardToCoordinator(ctx);
+        coordinator.FlushTerminal(ctx.CoordMLP, coordCritic, Gamma, scaled);
+
+        ctx.CoordDecisionId      = 0;
+        ctx.GoalEndTime          = 0f;
+        ctx.GoalDiscountedReturn = 0f;
+        ctx.GoalDiscountFactor   = 1f;
+        ctx.GoalRewardCount      = 0;
     }
 
     private void FlushGoalRewardToCoordinator(EntityBrainContext ctx)
@@ -394,38 +428,6 @@ public class SharedHierarchicalBrain
         }
 
         return snapshot.Brain;
-    }
-
-    public void CompleteTerminal(EntityBrainContext ctx, float penalty)
-    {
-        if (ctx == null) return;
-
-        int g = (int)ctx.CurrentGoal;
-
-        var running = ctx.ExecWindow.DecisionId != 0
-            ? ctx.ExecMLPs[g].Decisions.Find(ctx.ExecWindow.DecisionId)
-            : null;
-
-        if (running != null && !running.RewardApplied)
-        {
-            running.Evaluation    = 0f;
-            running.RewardApplied = true;
-        }
-
-        ctx.ExecWindow.End();
-
-        for (int i = 0; i < GoalCount; i++)
-            executors[i].FlushTerminal(ctx.ExecMLPs[i], execCritics[i], Gamma,
-                                       i == g ? penalty : 0f);
-
-        FlushGoalRewardToCoordinator(ctx);
-        coordinator.FlushTerminal(ctx.CoordMLP, coordCritic, Gamma, penalty);
-
-        ctx.CoordDecisionId      = 0;
-        ctx.GoalEndTime          = 0f;
-        ctx.GoalDiscountedReturn = 0f;
-        ctx.GoalDiscountFactor   = 1f;
-        ctx.GoalRewardCount      = 0;
     }
 
     public bool MatchesArchitecture(int inputSize, int lstmHidden)

@@ -11,8 +11,9 @@ public class PointsOfInterestComponent : IComponent
 
     public bool TryRemember(in float2 pos, float minDistance)
     {
-        if (points.Count > 0 && math.distancesq(points[0], pos) < minDistance * minDistance)
-            return false;
+        float min2 = minDistance * minDistance;
+        for (int i = 0; i < points.Count; i++)
+            if (math.distancesq(points[i], pos) < min2) return false;
 
         if (points.Count >= MaxPoints)
             points.RemoveAt(0);

@@ -1,10 +1,11 @@
 public static class SimulationClock
 {
-    private static float _time;
+    private static double _time;
 
-    public static float Time => _time;
+    public static float  Time  => (float)_time;
+    public static double TimeD => _time;
 
-    public static void SetTime(float time)
+    public static void SetTime(double time)
     {
         if (time > _time) _time = time;
     }
@@ -14,5 +15,5 @@ public static class SimulationClock
         if (dt > 0f) _time += dt;
     }
 
-    public static void Reset() => _time = 0f;
+    public static void Reset() => _time = 0d;
 }

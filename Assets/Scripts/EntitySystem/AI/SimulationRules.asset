@@ -69,3 +69,11 @@ MonoBehaviour:
   terrainWaterWeight: 0.6
   pathCostPenalty: 0.15
   pathCostRatioMax: 4
+  maxCycleDt: 3
+  modifierDecayTau: 85
+  eatRange: 10
+  infeasibleActionHealthPenalty: 0
+  threatenDuration: 0.8
+  shareFoodDuration: 0.5
+  commandWatchdogGrace: 0.1
+  rewardStdFloor: 0.05
