@@ -1,91 +1,78 @@
 using System;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 
-public sealed class PerceptronBatch : IDisposable
+public sealed unsafe class PerceptronBatch : IDisposable
 {
-    public readonly PerceptronLayout Layout;
+    public readonly int InputSize;
+    public readonly int BiasStride;
 
-    private NativeArray<float> _contexts;
-    private NativeArray<float> _weights;
-    private NativeArray<float> _biases;
-    private NativeArray<int>   _agents;
-    private NativeArray<int>   _slots;
-    private NativeArray<int>   _stamps;
+    private NativeArray<float>      _inputs;
+    private NativeArray<float>      _biases;
+    private NativeList<ForwardItem> _items;
+    private int _rows;
 
-    private PerceptronContext[] _bound;
-    private int _count;
-    private int _capacity;
+    public int Count => _items.Length;
 
-    public int Count => _count;
-    public NativeArray<float> Contexts => _contexts;
-    public NativeArray<float> Weights  => _weights;
-    public NativeArray<float> Biases   => _biases;
-    public NativeArray<int>   Slots    => _slots;
-    public NativeArray<int>   Stamps   => _stamps;
-
-    public PerceptronBatch(PerceptronLayout layout, int capacity)
+    public PerceptronBatch(int inputSize, int biasStride)
     {
-        Layout    = layout;
-        _capacity = capacity;
-        _bound    = new PerceptronContext[capacity];
-
-        _contexts = new NativeArray<float>(capacity * layout.Stride, Allocator.Persistent,
-                                           NativeArrayOptions.ClearMemory);
-        _weights  = new NativeArray<float>(layout.WeightTotal, Allocator.Persistent,
-                                           NativeArrayOptions.UninitializedMemory);
-        _biases   = new NativeArray<float>(layout.BiasTotal, Allocator.Persistent,
-                                           NativeArrayOptions.UninitializedMemory);
-        _agents   = new NativeArray<int>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-        _slots    = new NativeArray<int>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-        _stamps   = new NativeArray<int>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        InputSize  = inputSize;
+        BiasStride = biasStride;
+        _items     = new NativeList<ForwardItem>(Allocator.Persistent);
     }
 
-    public void BeginBatch() => _count = 0;
-
-    public bool Add(PerceptronContext ctx, int agentIndex)
+    public void SetInput(int row, float[] input)
     {
-        if (_count >= _capacity) return false;
-        if (!ReferenceEquals(ctx.Layout, Layout)) return false;
-
-        _bound[_count]  = ctx;
-        _agents[_count] = agentIndex;
-        _slots[_count]  = ctx.BpttPtr;
-        _stamps[_count] = ctx.NextForwardStamp();
-        _count++;
-        return true;
+        EnsureRows(row + 1);
+        NativeArray<float>.Copy(input, 0, _inputs, row * InputSize, InputSize);
     }
 
-    public void UploadWeights(float[] wt, float[] bt)
-    {
-        NativeArray<float>.Copy(wt, _weights, wt.Length);
-        NativeArray<float>.Copy(bt, _biases, bt.Length);
-    }
+    public Span<float> BiasRow(int row)
+        => new Span<float>((float*)_biases.GetUnsafePtr() + row * BiasStride, BiasStride);
 
-    public void UploadContexts()
-    {
-        int stride = Layout.Stride;
-        for (int i = 0; i < _count; i++)
-            NativeArray<float>.Copy(_bound[i].RawBuffer, 0, _contexts, i * stride, stride);
-    }
+    public void ClearItems() => _items.Clear();
+    public void Add(in ForwardItem item) => _items.Add(item);
+    public ForwardItem ItemAt(int i) => _items[i];
 
-    public void DownloadContexts()
-    {
-        int stride = Layout.Stride;
-        for (int i = 0; i < _count; i++)
-            NativeArray<float>.Copy(_contexts, i * stride, _bound[i].RawBuffer, 0, stride);
-    }
+    public JobHandle Schedule(NativeArray<KernelLayout> kernels, NativeArray<NetWeights> nets, int lstmHidden)
+        => new BrainForwardJob
+        {
+            Items      = _items.AsArray(),
+            Inputs     = _inputs,
+            Biases     = _biases,
+            Layouts    = kernels,
+            Nets       = nets,
+            InputSize  = InputSize,
+            LstmHidden = lstmHidden,
+            BiasStride = BiasStride,
+        }.Schedule(_items.Length, 1);
 
-    public PerceptronContext ContextAt(int i) => _bound[i];
-    public int AgentAt(int i) => _agents[i];
+    private void EnsureRows(int rows)
+    {
+        if (rows <= _rows) return;
+        int cap = Math.Max(_rows << 1, rows);
+
+        var inputs = new NativeArray<float>(cap * InputSize, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        var biases = new NativeArray<float>(cap * BiasStride, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+
+        if (_inputs.IsCreated)
+        {
+            NativeArray<float>.Copy(_inputs, inputs, _rows * InputSize);
+            _inputs.Dispose();
+        }
+        if (_biases.IsCreated) _biases.Dispose();
+
+        _inputs = inputs;
+        _biases = biases;
+        _rows   = cap;
+    }
 
     public void Dispose()
     {
-        if (_contexts.IsCreated) _contexts.Dispose();
-        if (_weights.IsCreated)  _weights.Dispose();
-        if (_biases.IsCreated)   _biases.Dispose();
-        if (_agents.IsCreated)   _agents.Dispose();
-        if (_slots.IsCreated)    _slots.Dispose();
-        if (_stamps.IsCreated)   _stamps.Dispose();
-        _bound = null;
+        if (_inputs.IsCreated) _inputs.Dispose();
+        if (_biases.IsCreated) _biases.Dispose();
+        if (_items.IsCreated)  _items.Dispose();
+        _rows = 0;
     }
 }

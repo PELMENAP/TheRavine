@@ -23,8 +23,8 @@ public class StatsComponent : IComponent
         Energy = new ReactiveProperty<float>(maxEnergy * 0.5f);
     }
 
-    public void Tick(float deltaTime, float regenRate, float regenMultiplier, float metabolismMultiplier,
-        float basalDrain, float idleRegenBasalFraction, bool isIdle,
+    public void Tick(float deltaTime, float movementEnergy, float regenRate, float regenMultiplier,
+        float metabolismMultiplier, float basalDrain, float idleRegenBasalFraction, bool isIdle,
         float starvationThreshold, float starvationDamage, float starvationEnergyReturn,
         out float regenCredit, out float metabolismCredit)
     {
@@ -36,7 +36,7 @@ public class StatsComponent : IComponent
         float energy = Energy.Value;
 
         float basal = basalDrain * deltaTime;
-        energy          -= basal * metabolismMultiplier;
+        energy          -= (basal + movementEnergy) * metabolismMultiplier;
         metabolismCredit = basal * (1f - metabolismMultiplier);
 
         if (isIdle && energy < MaxEnergy)

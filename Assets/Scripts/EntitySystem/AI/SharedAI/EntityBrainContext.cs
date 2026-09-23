@@ -1,4 +1,4 @@
-public class EntityBrainContext
+public class EntityBrainContext : System.IDisposable
 {
     public readonly LSTMContext        CoordLSTM;
     public readonly PerceptronContext  CoordMLP;
@@ -57,5 +57,15 @@ public class EntityBrainContext
     {
         CoordLSTM.Reset();
         foreach (var l in ExecLSTMs) l.Reset();
+    }
+    public void Dispose()
+    {
+        CoordLSTM.Dispose();
+        CoordMLP.Dispose();
+        for (int i = 0; i < ExecMLPs.Length; i++)
+        {
+            ExecLSTMs[i].Dispose();
+            ExecMLPs[i].Dispose();
+        }
     }
 }

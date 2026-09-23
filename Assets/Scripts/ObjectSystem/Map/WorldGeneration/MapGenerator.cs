@@ -107,89 +107,36 @@ namespace TheRavine.Generator
 
             index = localZ * mapChunkSize + localX;
         }
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float GetSpeedModifier(
-            float x,
-            float z,
-            float2 moveDirection)
+        public float GetSpeedModifier(float x, float z, float2 moveDirection)
+            => SpeedFromNormal(SampleNormal(x, z), moveDirection);
+
+        public static float SpeedFromNormal(float3 normal, float2 moveDirection)
         {
-            float3 normal =
-                SampleNormal(
-                    x,
-                    z);
+            float slopeAngle = math.degrees(math.acos(math.clamp(normal.y, -1f, 1f)));
+            float2 uphill    = math.normalizesafe(new float2(-normal.x, -normal.z));
+            float uphillDot  = math.dot(math.normalize(moveDirection), uphill);
 
-            float slopeAngle =
-                math.degrees(
-                    math.acos(
-                        math.clamp(
-                            normal.y,
-                            -1f,
-                            1f)));
+            if (uphillDot > 0f && slopeAngle > 70f) return 0f;
 
-            float2 uphill =
-                math.normalizesafe(
-                    new float2(
-                        -normal.x,
-                        -normal.z));
-
-            float uphillDot =
-                math.dot(
-                    math.normalize(moveDirection),
-                    uphill);
-
-            if (uphillDot > 0f &&
-                slopeAngle > 70f)
-            {
-                return 0f;
-            }
-
-            float modifier =
-                1f -
-                slopeAngle / 70f;
-
+            float modifier = 1f - slopeAngle / 70f;
             if (uphillDot < 0f)
-            {
-                modifier =
-                    math.lerp(
-                        modifier,
-                        1f,
-                        -uphillDot * 0.25f);
-            }
+                modifier = math.lerp(modifier, 1f, -uphillDot * 0.25f);
 
             return math.saturate(modifier);
         }
 
-        public float3 SampleNormal(
-            float wx,
-            float wz)
-        {
-            float hL =
-                SampleHeightBilinear(
-                    wx - scale,
-                    wz);
+        public float3 SampleNormal(float wx, float wz)
+            => NormalFromHeights(
+                SampleHeightBilinear(wx - scale, wz),
+                SampleHeightBilinear(wx + scale, wz),
+                SampleHeightBilinear(wx, wz - scale),
+                SampleHeightBilinear(wx, wz + scale));
 
-            float hR =
-                SampleHeightBilinear(
-                    wx + scale,
-                    wz);
-
-            float hD =
-                SampleHeightBilinear(
-                    wx,
-                    wz - scale);
-
-            float hU =
-                SampleHeightBilinear(
-                    wx,
-                    wz + scale);
-
-            return math.normalize(
-                new float3(
-                    hL - hR,
-                    scale * 2f,
-                    hD - hU));
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 NormalFromHeights(float hL, float hR, float hD, float hU)
+            => math.normalize(new float3(hL - hR, scale * 2f, hD - hU));
         public float SampleHeightBilinear(float wx, float wz)
         {
             if(mapData.Count < 1) return 0;

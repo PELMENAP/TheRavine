@@ -6,7 +6,7 @@ using UnityEngine.Jobs;
 
 namespace TheRavine.EntityControl
 {
-    [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
+    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true)]
     public struct MoveJob : IJobParallelForTransform
     {
         [NativeDisableParallelForRestriction] public NativeArray<float4> PositionsAndVelocities;

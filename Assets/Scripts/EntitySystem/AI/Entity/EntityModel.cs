@@ -1,8 +1,6 @@
-using Cysharp.Threading.Tasks;
 using UnityEngine;
 using TheRavine.EntityControl;
 using System;
-using System.Collections.Generic;
 using Unity.Mathematics;
 
 using TheRavine.Base;
@@ -11,8 +9,9 @@ using TheRavine.EntityControl.Virology;
 
 public class EntityModel : AEntity
 {
-
     public enum FitnessEvent { FoodEaten, Reproduced, DamageDealt }
+
+    private const int ActionCount = (int)EntityAction.ShareFood + 1;
 
     public StatsComponent Stats { get; private set; }
     public PerceptionComponent Perception { get; private set; }
@@ -27,7 +26,6 @@ public class EntityModel : AEntity
     public EntityTuning Tuning { get; private set; }
     public GameObject SelfObject { get; private set; }
 
-    private StatePatternComponent states;
     public InputVectorizer Vectorizer;
 
     public int MimickedActionIndex { get; private set; } = -1;
@@ -42,8 +40,6 @@ public class EntityModel : AEntity
         LastActionIndex = index;
         LastAction = (EntityAction)index;
     }
-    private int timeOfDay;
-    private bool canAttack = true;
 
     public float TimeAlive { get; private set; }
     public int FoodEaten { get; private set; }
@@ -79,6 +75,16 @@ public class EntityModel : AEntity
     public float CachedFoodDistance => _foodDistance;
     public void  InvalidateCachedFood() => _foodValid = false;
 
+    private EntityModel _nearest;
+    private float       _nearestDistance = -1f;
+
+    public EntityModel CachedNearest =>
+        _nearest != null && !_nearest.IsDisposed && !_nearest.IsDeathPending ? _nearest : null;
+    public float CachedNearestDistance => _nearestDistance;
+
+    private readonly IEntityCommand[] _commands = new IEntityCommand[ActionCount];
+    private EntityCommandRunner _runner;
+
     private float _fitnessCache;
     private float _fitnessCacheTime = float.NaN;
     private int   _fitnessEpoch;
@@ -100,7 +106,6 @@ public class EntityModel : AEntity
     {
         _lastCycleTime   = SimulationClock.TimeD;
         _attackReadyTime = 0d;
-        states.SetBehaviourAsync(states.GetBehaviour<SurviveState>()).Forget();
     }
 
     public void RegisterFitnessEvent(FitnessEvent evt, float amount = 0f)
@@ -142,13 +147,6 @@ public class EntityModel : AEntity
     public event Action<EntityModel> OnReproduceRequest;
     public void RequestReproduce() => OnReproduceRequest?.Invoke(this);
 
-    private static readonly Dictionary<SharedHierarchicalBrain.Goal, Type> GoalStateMap = new()
-    {
-        [SharedHierarchicalBrain.Goal.Survive] = typeof(SurviveState),
-        [SharedHierarchicalBrain.Goal.Hunt]    = typeof(HuntState),
-        [SharedHierarchicalBrain.Goal.Forage]  = typeof(ForageState),
-        [SharedHierarchicalBrain.Goal.Social]  = typeof(SocialState),
-    };
     public ChunkFoodIndex FoodIndex => _foodIndex;
 
     public void Configure(
@@ -178,10 +176,11 @@ public class EntityModel : AEntity
         AddComponentToEntity(new BrainComponent(brain, ctx));
         Brain = GetEntityComponent<BrainComponent>();
 
+        _runner = new EntityCommandRunner(this);
+
         AddComponentToEntity(new MortalityComponent(Stats.Health));
-        GetEntityComponent<MortalityComponent>().Died += CancelCurrentCommand;
+        GetEntityComponent<MortalityComponent>().Died += InterruptCommand;
         GetEntityComponent<MortalityComponent>().Died += () => death?.OnDeath();
-        states = GetOrCreateEntityComponent<StatePatternComponent>();
 
         _vecMaxHealth = new R3.ReactiveProperty<float>(tuning.MaxHealth);
         _vecMaxEnergy = new R3.ReactiveProperty<float>(tuning.MaxEnergy);
@@ -191,31 +190,49 @@ public class EntityModel : AEntity
         Virology.FillComponent(ctx.CoordMLP.Params, ctx.CoordMLP.Params.ComputeHash());
     }
 
-
-    private async UniTaskVoid CooldownAsync()
-    {
-        await UniTask.Delay((int)(Tuning.AttackCooldown * 1000));
-        canAttack = true;
-    }
-
     public override void Init()
     {
-        states.AddBehaviour(typeof(SurviveState), new SurviveState(this));
-        states.AddBehaviour(typeof(HuntState), new HuntState(this));
-        states.AddBehaviour(typeof(ForageState), new ForageState(this));
-        states.AddBehaviour(typeof(SocialState), new SocialState(this));
+        _commands[(int)EntityAction.Idle]          = new IdleCommand(this);
+        _commands[(int)EntityAction.Wander]        = new WanderCommand(this);
+        _commands[(int)EntityAction.RememberPoint] = new RememberPointCommand(this);
+        _commands[(int)EntityAction.GoToPoint]     = new GoToPointCommand(this);
+        _commands[(int)EntityAction.Attack]        = new AttackCommand(this);
+        _commands[(int)EntityAction.Flee]          = new FleeCommand(this);
+        _commands[(int)EntityAction.Eat]           = new EatCommand(this);
+        _commands[(int)EntityAction.Reproduce]     = new ReproduceCommand(this);
+        _commands[(int)EntityAction.Speech]        = new SpeechCommand(this);
+        _commands[(int)EntityAction.Mimic]         = new MimicCommand(this);
+        _commands[(int)EntityAction.Rest]          = new RestCommand(this);
+        _commands[(int)EntityAction.Threaten]      = new ThreatenCommand(this);
+        _commands[(int)EntityAction.ShareFood]     = new ShareFoodCommand(this);
     }
+
     private float ResolveDayPhase()
     {
         if (_dayCycle == null && !ServiceLocator.Services.TryGet(out _dayCycle)) return 0f;
         return _dayCycle.NormalizedTime.CurrentValue;
     }
 
+    private bool IsAliveForTick()
+        => !IsDeathPending && !IsDisposed && !Stats.IsDisposed && Stats.Health.Value > 0f;
+
+    private bool _cycleActive;
+
     public override void UpdateEntityCycle()
     {
-        if (IsDisposed || IsDeathPending) return;
-        if (!IsActive.Value) return;
-        if (Stats.IsDisposed || Stats.Health.Value <= 0f) return;
+        Brain.BeginBatch();
+        if (!BeginCycle()) return;
+        Brain.RunBatch();
+        EndCycle();
+    }
+
+    public bool BeginCycle()
+    {
+        _cycleActive = false;
+
+        if (IsDisposed || IsDeathPending) return false;
+        if (!IsActive.Value) return false;
+        if (Stats.IsDisposed || Stats.Health.Value <= 0f) return false;
 
         ref readonly var rules = ref SimulationRules.Frame;
 
@@ -229,14 +246,13 @@ public class EntityModel : AEntity
         TimeAlive += dt;
 
         Virology.Step(Stats, dt);
+        if (!IsAliveForTick()) return false;
 
-        if (IsDeathPending || IsDisposed || Stats.IsDisposed || Stats.Health.Value <= 0f) return;
-
-        float inDanger = ComputeDangerLevel();
+        float inDanger    = ComputeDangerLevel();
         float timeToBreed = ComputeBreedReadiness();
 
         Vector3 pos = Motor.Position();
-        Perception.FindNearestEntity(pos, SelfObject, out float enemyDist);
+        _nearest = Perception.FindNearestEntity(pos, this, out _nearestDistance);
 
         _foodValid    = false;
         _foodDistance = -1f;
@@ -255,16 +271,17 @@ public class EntityModel : AEntity
         LastInput = Vectorizer.Vectorize(
             Stats.Health.Value, Stats.Energy.Value,
             LastActionIndex, ResolveDayPhase(), inDanger, timeToBreed,
-            Speech.OtherSpeechHash, enemyDist, foodDist, in _lastTerrain, MimickedActionIndex,
+            Speech.OtherSpeechHash, _nearestDistance, foodDist, in _lastTerrain, MimickedActionIndex,
             viralLoad, viralSegments, viralNet);
 
         Speech.ConsumeOtherSpeech();
         ConsumeMimickedAction();
 
-        bool isIdle = states.behaviourCurrent.GetType() == typeof(SurviveState)
-                && LastActionIndex == (int)EntityAction.Idle;
+        bool isIdle = Brain.ActiveDecision.Goal == SharedHierarchicalBrain.Goal.Survive
+                   && LastActionIndex == (int)EntityAction.Idle;
 
         Stats.Tick(dt,
+            Motor.DrainEnergy(),
             Tuning.EnergyRegenRate,
             Virology.Modifiers.RegenMultiplier,
             Virology.Modifiers.MetabolismMultiplier,
@@ -275,8 +292,10 @@ public class EntityModel : AEntity
             out float regenCredit, out float metabolismCredit);
 
         Virology.CreditDurableEffects(regenCredit, metabolismCredit, Stats.MaxEnergy);
+        if (!IsAliveForTick()) return false;
 
-        if (IsDeathPending || IsDisposed || Stats.IsDisposed || Stats.Health.Value <= 0f) return;
+        _runner.Tick();
+        if (!IsAliveForTick()) return false;
 
         var brainCtx = Brain.Context;
         brainCtx.CoordBias[0] = Virology.Modifiers.WanderBias;
@@ -285,21 +304,54 @@ public class EntityModel : AEntity
         brainCtx.CoordBias[3] = Virology.Modifiers.SocialBias;
         brainCtx.FleeBias     = Virology.Modifiers.FleeBias;
 
-        if (Brain.TryDecide(LastInput, now, dt, out var decision))
+        _cycleActive = true;
+        Brain.EnqueueDecision(LastInput, now, dt);
+        return true;
+    }
+
+    public void EndCycle()
+    {
+        if (!_cycleActive) return;
+        _cycleActive = false;
+
+        if (IsDisposed || !IsAliveForTick())
         {
-            Array.Copy(LastInput, _decisionInput, _decisionInput.Length);
-
-            SetLastAction(decision.Action);
-
-            var targetType = GoalStateMap[decision.Goal];
-            if (states.behaviourCurrent.GetType() != targetType)
-                states.SetBehaviourAsync(states.GetBehaviourByType(targetType)).Forget();
-
-            ((EntityActionState)states.behaviourCurrent).EnqueueAction((EntityAction)decision.Action, decision);
+            Brain.DiscardDecision();
+            return;
         }
 
-        states.behaviourCurrent.Update();
+        if (Brain.TryTakeDecision(out var decision))
+        {
+            Array.Copy(LastInput, _decisionInput, _decisionInput.Length);
+            SetLastAction(decision.Action);
+            StartDecision(in decision);
+        }
+
         OnUpdate.Execute(R3.Unit.Default);
+    }
+
+    private void StartDecision(in BrainDecision decision)
+    {
+        _runner.Interrupt();
+
+        int a   = decision.Action;
+        var cmd = (uint)a < (uint)_commands.Length ? _commands[a] : null;
+
+        if (cmd == null)
+        {
+            Brain.CompleteDecision(in decision, -0.2f, SimulationClock.Time, EntityCommandStatus.Failed);
+            return;
+        }
+
+        if (!cmd.CanExecute())
+        {
+            float penalty = SimulationRules.Active.InfeasibleActionHealthPenalty;
+            if (penalty > 0f) Stats.Health.Value -= penalty;
+            Brain.CompleteDecision(in decision, -0.15f, SimulationClock.Time, EntityCommandStatus.Failed);
+            return;
+        }
+
+        _runner.Start(cmd, in decision);
     }
 
     private float ComputeDangerLevel()
@@ -321,10 +373,12 @@ public class EntityModel : AEntity
         return b;
     }
 
-    private void CancelCurrentCommand() => states.behaviourCurrent?.CancelCurrentCommand();
+    private void InterruptCommand() => _runner?.Interrupt();
 
     public override void DeepClean()
     {
+        _runner?.Abandon();
+        _nearest = null;
         Vectorizer?.Dispose();
         Vectorizer = null;
         _vecMaxHealth?.Dispose();

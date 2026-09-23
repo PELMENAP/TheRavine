@@ -1,8 +1,10 @@
 using System;
+using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
-public class SharedHierarchicalBrain
+public class SharedHierarchicalBrain : IDisposable
 {
     private const float OptimizerMaxGradNorm = 3f;
     public enum Goal { Survive = 0, Hunt = 1, Forage = 2, Social = 3 }
@@ -199,80 +201,297 @@ public class SharedHierarchicalBrain
         return slots;
     }
 
+    private static readonly float[] GoalMinDuration = BuildGoalDurations(false);
+    private static readonly float[] GoalMaxDuration = BuildGoalDurations(true);
+    private static readonly int     BiasStride      = BuildBiasStride();
+
+    private static float[] BuildGoalDurations(bool max)
+    {
+        var r = new float[GoalCount];
+        for (int g = 0; g < GoalCount; g++)
+        {
+            var subset = ActionSubsets[g];
+            float v = max ? 0f : float.MaxValue;
+            for (int i = 0; i < subset.Length; i++)
+                v = max ? math.max(v, ActionDurationTable.Max(subset[i]))
+                        : math.min(v, ActionDurationTable.Min(subset[i]));
+            r[g] = v;
+        }
+        return r;
+    }
+
+    private static int BuildBiasStride()
+    {
+        int s = GoalCount;
+        for (int g = 0; g < GoalCount; g++) s = math.max(s, ActionSubsets[g].Length);
+        return s;
+    }
+
+    private PerceptronBatch _batch;
+    private readonly GoalBuckets _buckets = new();
+    private NativeArray<KernelLayout> _kernels;
+    private NativeArray<NetWeights>   _nets;
+
+    private EntityBrainContext[] _dCtx      = Array.Empty<EntityBrainContext>();
+    private float[]              _dTime     = Array.Empty<float>();
+    private float[]              _dDt       = Array.Empty<float>();
+    private BrainDecision[]      _dDecision = Array.Empty<BrainDecision>();
+    private bool[]               _dMade     = Array.Empty<bool>();
+    private int _dCount;
+
+    public void BeginDecisionBatch()
+    {
+        for (int i = 0; i < _dCount; i++) _dCtx[i] = null;
+        _dCount = 0;
+    }
+
+    public int EnqueueDecision(EntityBrainContext ctx, float[] input, float simTime, float dt)
+    {
+        if (ctx.ExecWindow.IsRunning(simTime)) return -1;
+
+        int d = _dCount;
+        EnsureDeciderCapacity(d + 1);
+        _batch ??= new PerceptronBatch(InputSize, BiasStride);
+
+        ctx.IntrinsicReward = _rnd.ComputeIntrinsicReward(input);
+
+        _dCtx[d]  = ctx;
+        _dTime[d] = simTime;
+        _dDt[d]   = dt;
+        _dMade[d] = false;
+        _batch.SetInput(d, input);
+
+        _dCount = d + 1;
+        return d;
+    }
+
+    public bool TryGetDecision(int slot, out BrainDecision decision)
+    {
+        if ((uint)slot < (uint)_dCount && _dMade[slot])
+        {
+            decision = _dDecision[slot];
+            return true;
+        }
+        decision = default;
+        return false;
+    }
+
+    public unsafe void RunDecisions(float coordEps = 0.05f, float execEps = 0.15f)
+    {
+        int n = _dCount;
+        if (n == 0) return;
+
+        EnsureNativeTables();
+        var batch = _batch;
+
+        batch.ClearItems();
+        for (int d = 0; d < n; d++)
+        {
+            var ctx = _dCtx[d];
+            if (_dTime[d] < ctx.GoalEndTime) continue;
+
+            FlushGoalRewardToCoordinator(ctx);
+
+            int biasRow = -1;
+            if (HasBias(ctx.CoordBias))
+            {
+                var row = batch.BiasRow(d);
+                row.Clear();
+                ctx.CoordBias.AsSpan().CopyTo(row);
+                biasRow = d;
+            }
+
+            var mlp  = ctx.CoordMLP;
+            int slot = coordinator.BeginForward(mlp, _dDt[d]);
+
+            batch.Add(new ForwardItem
+            {
+                Ctx         = mlp.Ptr,
+                Lstm        = ctx.CoordLSTM.Ptr,
+                Net         = 0,
+                Slot        = slot,
+                InputRow    = d,
+                BiasRow     = biasRow,
+                Owner       = d,
+                Dt          = mlp.DeltaTime,
+                Temperature = mlp.Params.SoftmaxTemperature,
+            });
+        }
+
+        int coordCount = batch.Count;
+        if (coordCount > 0)
+        {
+            batch.Schedule(_kernels, _nets, LstmHidden).Complete();
+
+            for (int k = 0; k < coordCount; k++)
+            {
+                var item = batch.ItemAt(k);
+                int d    = item.Owner;
+                var ctx  = _dCtx[d];
+                float simTime = _dTime[d];
+
+                ctx.CoordMLP.Activation(0).CopyTo(ctx.CoordCombined);
+
+                var goalTicket = coordinator.FinishDecide(ctx.CoordCombined, ctx.CoordMLP, item.Slot,
+                    item.BiasRow >= 0, CoordDelaySteps, coordCritic, Gamma, simTime,
+                    ActionDurationTable.MinGoalSeconds, ActionDurationTable.MaxGoalSeconds, coordEps);
+
+                ctx.CurrentGoal          = (Goal)goalTicket.Predicted;
+                ctx.CoordDecisionId      = goalTicket.DecisionId;
+                ctx.GoalEndTime          = simTime + goalTicket.Duration;
+                ctx.GoalDiscountedReturn = 0f;
+                ctx.GoalDiscountFactor   = 1f;
+                ctx.GoalRewardCount      = 0;
+            }
+        }
+
+        batch.ClearItems();
+        _buckets.Build(_dCtx, n);
+
+        for (int k = 0; k < _buckets.Count; k++)
+        {
+            int d   = _buckets.At(k);
+            var ctx = _dCtx[d];
+            int g   = (int)ctx.CurrentGoal;
+
+            int biasRow  = -1;
+            int fleeSlot = FleeSlots[g];
+            if (fleeSlot >= 0 && ctx.FleeBias != 0f)
+            {
+                var row = batch.BiasRow(d);
+                row.Clear();
+                row[fleeSlot] = ctx.FleeBias;
+                biasRow = d;
+            }
+
+            var mlp  = ctx.ExecMLPs[g];
+            int slot = executors[g].BeginForward(mlp, _dDt[d]);
+
+            batch.Add(new ForwardItem
+            {
+                Ctx         = mlp.Ptr,
+                Lstm        = ctx.ExecLSTMs[g].Ptr,
+                Net         = 1 + g,
+                Slot        = slot,
+                InputRow    = d,
+                BiasRow     = biasRow,
+                Owner       = d,
+                Dt          = mlp.DeltaTime,
+                Temperature = mlp.Params.SoftmaxTemperature,
+            });
+        }
+
+        int execCount = batch.Count;
+        batch.Schedule(_kernels, _nets, LstmHidden).Complete();
+
+        for (int k = 0; k < execCount; k++)
+        {
+            var item = batch.ItemAt(k);
+            int d    = item.Owner;
+            int g    = item.Net - 1;
+            var ctx  = _dCtx[d];
+            float simTime = _dTime[d];
+
+            var combined = ctx.ExecCombined[g];
+            ctx.ExecMLPs[g].Activation(0).CopyTo(combined);
+
+            var ticket = executors[g].FinishDecide(combined, ctx.ExecMLPs[g], item.Slot,
+                item.BiasRow >= 0, ExecDelaySteps, execCritics[g], Gamma, simTime,
+                GoalMinDuration[g], GoalMaxDuration[g], execEps);
+
+            int action    = ActionSubsets[g][ticket.Predicted];
+            float clamped = math.clamp(ticket.Duration,
+                ActionDurationTable.Min(action), ActionDurationTable.Max(action));
+            ticket.Duration = clamped;
+
+            ctx.ExecWindow.Begin(ticket.DecisionId, simTime, clamped);
+
+            _dDecision[d] = new BrainDecision(action, ticket.DecisionId, ctx.CoordDecisionId,
+                ctx.CurrentGoal, simTime, clamped, new float2(ticket.HeadingSin, ticket.HeadingCos));
+            _dMade[d] = true;
+        }
+
+        RunTraining();
+    }
+
+    public void RunTraining()
+    {
+        float clip = SimulationRules.Frame.PpoClipEpsilon;
+
+        var handle = coordinator.ScheduleTraining(clip);
+        for (int g = 0; g < GoalCount; g++)
+            handle = JobHandle.CombineDependencies(handle, executors[g].ScheduleTraining(clip));
+        handle.Complete();
+
+        coordinator.CompleteTraining();
+        for (int g = 0; g < GoalCount; g++)
+            executors[g].CompleteTraining();
+    }
+
+    private unsafe void EnsureNativeTables()
+    {
+        coordinator.EnsureNative();
+        coordLSTM.EnsureNative();
+        for (int g = 0; g < GoalCount; g++)
+        {
+            executors[g].EnsureNative();
+            execLSTMs[g].EnsureNative();
+        }
+
+        if (!_kernels.IsCreated)
+        {
+            _kernels = new NativeArray<KernelLayout>(GoalCount + 1, Allocator.Persistent);
+            _nets    = new NativeArray<NetWeights>(GoalCount + 1, Allocator.Persistent);
+
+            _kernels[0] = *coordinator.KernelPtr;
+            for (int g = 0; g < GoalCount; g++)
+                _kernels[1 + g] = *executors[g].KernelPtr;
+        }
+
+        _nets[0] = new NetWeights
+        {
+            W = coordinator.WeightsPtr, B = coordinator.BiasesPtr,
+            LstmW = coordLSTM.WeightsPtr, LstmB = coordLSTM.BiasesPtr,
+        };
+        for (int g = 0; g < GoalCount; g++)
+            _nets[1 + g] = new NetWeights
+            {
+                W = executors[g].WeightsPtr, B = executors[g].BiasesPtr,
+                LstmW = execLSTMs[g].WeightsPtr, LstmB = execLSTMs[g].BiasesPtr,
+            };
+    }
+
+    private void EnsureDeciderCapacity(int needed)
+    {
+        if (needed <= _dCtx.Length) return;
+        int cap = Math.Max(_dCtx.Length << 1, needed);
+        Array.Resize(ref _dCtx, cap);
+        Array.Resize(ref _dTime, cap);
+        Array.Resize(ref _dDt, cap);
+        Array.Resize(ref _dDecision, cap);
+        Array.Resize(ref _dMade, cap);
+    }
+
+    public void Dispose()
+    {
+        coordinator.Dispose();
+        coordLSTM.Dispose();
+        for (int g = 0; g < GoalCount; g++)
+        {
+            executors[g].Dispose();
+            execLSTMs[g].Dispose();
+        }
+        _batch?.Dispose();
+        _batch = null;
+        if (_kernels.IsCreated) _kernels.Dispose();
+        if (_nets.IsCreated)    _nets.Dispose();
+    }
+
     private static bool HasBias(float[] bias)
     {
         for (int i = 0; i < bias.Length; i++)
             if (bias[i] != 0f) return true;
         return false;
-    }
-
-    public bool TryDecide(float[] input, EntityBrainContext ctx, float simTime, float dt,
-        out BrainDecision decision, float coordEps = 0.05f, float execEps = 0.15f)
-    {
-        decision = default;
-        if (ctx.ExecWindow.IsRunning(simTime)) return false;
-
-        ctx.IntrinsicReward = _rnd.ComputeIntrinsicReward(input);
-
-        if (simTime >= ctx.GoalEndTime)
-        {
-            FlushGoalRewardToCoordinator(ctx);
-
-            float[] coordH = coordLSTM.Step(input, ctx.CoordLSTM);
-            BuildCombined(input, coordH, ctx.CoordCombined);
-
-            float[] coordBias = HasBias(ctx.CoordBias) ? ctx.CoordBias : null;
-
-            var goalTicket = coordinator.Decide(ctx.CoordCombined, ctx.CoordMLP, CoordDelaySteps,
-                coordCritic, Gamma, dt, simTime,
-                ActionDurationTable.MinGoalSeconds, ActionDurationTable.MaxGoalSeconds, coordEps,
-                coordBias);
-
-            ctx.CurrentGoal          = (Goal)goalTicket.Predicted;
-            ctx.CoordDecisionId      = goalTicket.DecisionId;
-            ctx.GoalEndTime          = simTime + goalTicket.Duration;
-            ctx.GoalDiscountedReturn = 0f;
-            ctx.GoalDiscountFactor   = 1f;
-            ctx.GoalRewardCount      = 0;
-        }
-
-        int g     = (int)ctx.CurrentGoal;
-        float[] h = execLSTMs[g].Step(input, ctx.ExecLSTMs[g]);
-        BuildCombined(input, h, ctx.ExecCombined[g]);
-
-        var subset = ActionSubsets[g];
-        float minD = float.MaxValue, maxD = 0f;
-        for (int i = 0; i < subset.Length; i++)
-        {
-            float lo = ActionDurationTable.Min(subset[i]);
-            float hi = ActionDurationTable.Max(subset[i]);
-            if (lo < minD) minD = lo;
-            if (hi > maxD) maxD = hi;
-        }
-
-        float[] execBias = null;
-        int fleeSlot = FleeSlots[g];
-        if (fleeSlot >= 0 && ctx.FleeBias != 0f)
-        {
-            execBias = ctx.ExecBias[g];
-            Array.Clear(execBias, 0, execBias.Length);
-            execBias[fleeSlot] = ctx.FleeBias;
-        }
-
-        var ticket = executors[g].Decide(ctx.ExecCombined[g], ctx.ExecMLPs[g], ExecDelaySteps,
-            execCritics[g], Gamma, dt, simTime, minD, maxD, execEps, execBias);
-
-        int action = subset[ticket.Predicted];
-        float clamped = Mathf.Clamp(ticket.Duration,
-            ActionDurationTable.Min(action), ActionDurationTable.Max(action));
-        ticket.Duration = clamped;
-
-        ctx.ExecWindow.Begin(ticket.DecisionId, simTime, clamped);
-
-        decision = new BrainDecision(action, ticket.DecisionId, ctx.CoordDecisionId,
-            ctx.CurrentGoal, simTime, clamped,
-            new float2(ticket.HeadingSin, ticket.HeadingCos));
-        return true;
     }
 
     public void CompleteDecision(in BrainDecision decision, float reward, EntityBrainContext ctx,
@@ -340,11 +559,6 @@ public class SharedHierarchicalBrain
     public float GetExecutorEntropy(Goal goal, EntityBrainContext ctx)
         => ctx.ExecMLPs[(int)goal].AverageEntropy;
 
-    private static void BuildCombined(float[] input, float[] lstmH, float[] combined)
-    {
-        Array.Copy(input, 0, combined, 0,            input.Length);
-        Array.Copy(lstmH, 0, combined, input.Length, lstmH.Length);
-    }
 
     private SharedHierarchicalBrain(
         LSTMMemory coordLSTM, DelayedPerceptron coordinator,
