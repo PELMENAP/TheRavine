@@ -7,21 +7,17 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
     internal SharedBrainSnapshot(SharedHierarchicalBrain brain) => Brain = brain;
 
     private const uint Magic   = 0x4E414C45;
-    private const int  Version = 2;
+    private const int  Version = 3;
 
     public byte[] Serialize()
     {
-        byte[] coordLstm = Brain.CoordLSTM.Serialize();
+        byte[] reservoir = Brain.Reservoir.Serialize();
         byte[] coordMlp  = Brain.Coordinator.Serialize();
 
         int goalCount = SharedHierarchicalBrain.GoalCount;
-        var execLstm = new byte[goalCount][];
-        var execMlp  = new byte[goalCount][];
+        var execMlp = new byte[goalCount][];
         for (int i = 0; i < goalCount; i++)
-        {
-            execLstm[i] = Brain.ExecLSTMs[i].Serialize();
-            execMlp[i]  = Brain.Executors[i].Serialize();
-        }
+            execMlp[i] = Brain.Executors[i].Serialize();
 
         using (var ms = new MemoryStream())
         using (var bw = new BinaryWriter(ms))
@@ -29,13 +25,10 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
             bw.Write(Magic);
             bw.Write(Version);
 
-            WriteBlock(bw, coordLstm);
+            WriteBlock(bw, reservoir);
             WriteBlock(bw, coordMlp);
             for (int i = 0; i < goalCount; i++)
-            {
-                WriteBlock(bw, execLstm[i]);
                 WriteBlock(bw, execMlp[i]);
-            }
 
             return ms.ToArray();
         }
@@ -55,31 +48,26 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
             uint magic = br.ReadUInt32();
             if (magic != Magic)
             {
-                UnityEngine.Debug.LogError(
-                    "Снапшот мозга: формат версии 1 (без directional head) несовместим с текущей архитектурой, переобучение обязательно");
+                UnityEngine.Debug.LogError("Снапшот мозга: неизвестный формат, переобучение обязательно");
                 return null;
             }
 
             int version = br.ReadInt32();
             if (version != Version)
             {
-                UnityEngine.Debug.LogError($"Снапшот мозга: версия {version}, ожидалась {Version}");
+                UnityEngine.Debug.LogError($"Снапшот мозга: версия {version}, ожидалась {Version} (резервуар + новый входной вектор), переобучение обязательно");
                 return null;
             }
 
-            var coordLstm = LSTMMemory.Deserialize(ReadBlock(br));
+            var reservoir = LSTMMemory.Deserialize(ReadBlock(br));
             var coordMlp  = DelayedPerceptron.Deserialize(ReadBlock(br));
 
             int goalCount = SharedHierarchicalBrain.GoalCount;
-            var execLstms = new LSTMMemory[goalCount];
             var executors = new DelayedPerceptron[goalCount];
             for (int i = 0; i < goalCount; i++)
-            {
-                execLstms[i] = LSTMMemory.Deserialize(ReadBlock(br));
                 executors[i] = DelayedPerceptron.Deserialize(ReadBlock(br));
-            }
 
-            var brain = SharedHierarchicalBrain.FromModels(coordLstm, coordMlp, execLstms, executors);
+            var brain = SharedHierarchicalBrain.FromModels(reservoir, coordMlp, executors);
             return brain != null ? new SharedBrainSnapshot(brain) : null;
         }
     }

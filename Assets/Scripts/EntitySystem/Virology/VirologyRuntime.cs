@@ -1,4 +1,3 @@
-using Unity.Collections;
 using UnityEngine;
 
 namespace TheRavine.EntityControl.Virology
@@ -31,7 +30,7 @@ namespace TheRavine.EntityControl.Virology
                 _cellBias[i] = ProteinTable.CellBias[i];
             }
 
-            _prototype = TranslationTable.CreatePrototype(PrototypeSeed, Allocator.Persistent);
+            _prototype = TranslationTable.CreatePrototype(PrototypeSeed);
             _ready = true;
             Application.quitting += Shutdown;
         }

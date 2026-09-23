@@ -35,6 +35,9 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
     public void BeginMove(Vector3 target, float speed, float energyCostPerSec, double deadline)
         => motor.BeginMove(target, speed, energyCostPerSec, deadline);
 
+    public void BeginMove(Vector3 target, Vector3 control, float speed, float energyCostPerSec, double deadline)
+        => motor.BeginMove(target, control, speed, energyCostPerSec, deadline);
+
     public bool       IsMoving => motor.IsMoving;
     public MoveResult LastMove => motor.LastMove;
     public float DrainEnergy() => motor.DrainEnergy();

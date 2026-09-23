@@ -61,8 +61,8 @@ namespace TheRavine.EntityControl.Virology
             ref EffectModifiers modifiers,
             ref bool primed,
             int ownerSegment,
-            float[] centroids,
-            float[] cellBias,
+            int action,
+            float d2,
             ProteinDescriptor[] descriptors,
             float sharpness,
             float availableEnergy,
@@ -71,8 +71,7 @@ namespace TheRavine.EntityControl.Virology
             var result = default(TranslationResult);
             if (tape.Length <= 0) return result;
 
-            ushort codon = tape.Codons[tape.Head];
-            int action = CodonEmbedding.Translate(codon, centroids, cellBias, sharpness, out float amp);
+            float amp = math.exp(-d2 * sharpness);
             var descriptor = descriptors[action];
 
             result.Action = action;

@@ -28,7 +28,6 @@ namespace TheRavine.EntityControl.Virology
             _created = true;
         }
 
-        public const float SelectionGain = 4f;
         public const float SelectionFloor = 0.05f;
         public void ProcessSpread(EntityModel[] batch, int start, int end)
         {
@@ -63,7 +62,8 @@ namespace TheRavine.EntityControl.Virology
             int count = virology.Restrict(donorIndex, _payload);
             if (count <= 0) { FailedAttempts++; return; }
 
-            int found = donor.Perception.FindEntitiesInRadius(donor.Motor.Position(), donor, _neighbors);
+            int found = donor.Perception.FindEntitiesInRadius(donor.Motor.Position(), donor,
+                SimulationRules.Frame.ContactRadius, _neighbors);
             if (found == 0) { FailedAttempts++; return; }
 
             var target = SelectTarget(donor, found, amp);
@@ -73,10 +73,7 @@ namespace TheRavine.EntityControl.Virology
                 ? math.saturate(donor.Stats.Health.Value / donor.Stats.MaxHealth)
                 : 0f;
 
-            float selection = math.saturate(0.5f + virology.NetFitnessOf(donorIndex) * SelectionGain)
-                            * hostViability;
-
-            float chance = math.saturate(amp * AccuracyBias) * math.max(selection, SelectionFloor);
+            float chance = math.saturate(amp * AccuracyBias) * math.max(hostViability, SelectionFloor);
 
             if (ViralMutator.NextUnit(ref _rng) > chance)
             {

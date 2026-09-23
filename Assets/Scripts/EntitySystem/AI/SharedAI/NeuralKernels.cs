@@ -27,7 +27,7 @@ public static unsafe class NeuralKernels
         for (int i = 0; i < count; i++) vals[i] = buf[i] * inv;
     }
 
-    public static void LstmStep(float* w, float* b, float* x, float* state, int inSize, int hidden, float* combined)
+    public static void ReservoirStep(float* w, float* b, float* x, float* state, int inSize, int hidden)
     {
         float* H = state;
         float* C = state + hidden;
@@ -56,9 +56,12 @@ public static unsafe class NeuralKernels
             C[j] = f * C[j] + i * ct;
             H[j] = o * FastTanh(C[j]);
         }
+    }
 
+    public static void Combine(float* x, float* h, int inSize, int hidden, float* combined)
+    {
         UnsafeUtility.MemCpy(combined, x, (long)inSize * sizeof(float));
-        UnsafeUtility.MemCpy(combined + inSize, H, (long)hidden * sizeof(float));
+        UnsafeUtility.MemCpy(combined + inSize, h, (long)hidden * sizeof(float));
     }
 
     private static void Layer(float* inp, float* h, float* act, float* w, float* b,

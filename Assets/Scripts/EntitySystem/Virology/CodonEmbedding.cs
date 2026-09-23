@@ -28,11 +28,20 @@ namespace TheRavine.EntityControl.Virology
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Translate(ushort codon, float[] centroids, float[] cellBias, float sharpness, out float amp)
         {
+            int best = Nearest(codon, centroids, cellBias, out float d2);
+            amp = math.exp(-d2 * sharpness);
+            return best;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int Nearest(ushort codon, float[] centroids, float[] cellBias, out float bestDist)
+        {
             Embed(codon, out float4 lo, out float4 hi);
             var rows = MemoryMarshal.Cast<float, float4>(centroids.AsSpan());
 
             int best = 0;
-            float bestScore = float.MaxValue, bestDist = 0f;
+            float bestScore = float.MaxValue;
+            bestDist = 0f;
 
             for (int n = 0; n < ProteinTable.ActionCount; n++)
             {
@@ -44,7 +53,6 @@ namespace TheRavine.EntityControl.Virology
                 bestScore = score; bestDist = d2; best = n;
             }
 
-            amp = math.exp(-bestDist * sharpness);
             return best;
         }
     }

@@ -12,46 +12,58 @@ public interface IGeneticPhenotype
 [StructLayout(LayoutKind.Sequential)]
 public struct GeneticParameters
 {
-    public float Lambda;
+    public float MoveSpeedMul;
     public float BaseLearningRate;
     public float MaxGradientNorm;
     public float SoftmaxTemperature;
     public float EntropyRegularization;
-    public float LabelSmoothing;
+    public float MaxEnergyMul;
     public float EntropyAlpha;
-    public float InitBiasesValues;
+    public float MetabolismMul;
     public float GaussianNoise;
     public float MutationChance;
-    public float DefaultEvaluation;
+    public float DetectionRadiusMul;
     public float Sharpness;
 
-    public const int IdxLambda = 0;
+    public const int IdxMoveSpeedMul = 0;
     public const int IdxBaseLearningRate = 1;
     public const int IdxMaxGradientNorm = 2;
     public const int IdxSoftmaxTemperature = 3;
     public const int IdxEntropyRegularization = 4;
-    public const int IdxLabelSmoothing = 5;
+    public const int IdxMaxEnergyMul = 5;
     public const int IdxEntropyAlpha = 6;
-    public const int IdxInitBiasesValues = 7;
+    public const int IdxMetabolismMul = 7;
     public const int IdxGaussianNoise = 8;
     public const int IdxMutationChance = 9;
-    public const int IdxDefaultEvaluation = 10;
+    public const int IdxDetectionRadiusMul = 10;
     public const int IdxSharpness = 11;
 
     public static readonly (float min, float max, float mutationScale)[] ParameterRanges = {
-        (0.001f, 0.02f, 0.01f),
+        (0.7f, 1.4f, 0.08f),
         (0.005f, 0.1f, 0.1f),
         (0.5f, 3.0f, 0.3f),
         (0.8f, 3.0f, 0.3f),
         (0.01f, 0.2f, 0.1f),
-        (0.1f, 0.5f, 0.1f),
+        (0.7f, 1.5f, 0.08f),
         (0.05f, 0.3f, 0.1f),
-        (0.01f, 0.3f, 0.1f),
+        (0.7f, 1.4f, 0.08f),
         (0.01f, 0.1f, 0.05f),
         (0.05f, 0.5f, 0.1f),
-        (0.1f, 0.9f, 0.1f),
+        (0.7f, 1.5f, 0.08f),
         (0.15f, 1.5f, 0.15f),
     };
+
+    public static bool IsPhenotypic(int index)
+        => index == IdxMoveSpeedMul || index == IdxMaxEnergyMul
+        || index == IdxMetabolismMul || index == IdxDetectionRadiusMul;
+
+    public static void CopyLearningGenes(in GeneticParameters source, ref GeneticParameters target)
+    {
+        var src = AsReadOnlySpan(in source);
+        var dst = AsSpan(ref target);
+        for (int i = 0; i < dst.Length; i++)
+            if (!IsPhenotypic(i)) dst[i] = src[i];
+    }
 
     public static readonly int GeneCount;
 
@@ -151,4 +163,4 @@ public struct XorShift32
 
     public int Range(int minInclusive, int maxExclusive)
         => minInclusive + (int)(NextUInt() % (uint)(maxExclusive - minInclusive));
-}
+}

@@ -4,6 +4,7 @@ using System;
 using Unity.Mathematics;
 
 using TheRavine.Base;
+using TheRavine.Extensions;
 using TheRavine.Generator;
 using TheRavine.EntityControl.Virology;
 
@@ -39,7 +40,21 @@ public class EntityModel : AEntity
     {
         LastActionIndex = index;
         LastAction = (EntityAction)index;
+        if ((uint)index < (uint)ActionCount) _actionTimes[index] = SimulationClock.TimeD;
     }
+
+    private readonly double[] _actionTimes = CreateActionTimes();
+    public double[] ActionTimes => _actionTimes;
+
+    private static double[] CreateActionTimes()
+    {
+        var t = new double[ActionCount];
+        for (int i = 0; i < t.Length; i++) t[i] = double.NegativeInfinity;
+        return t;
+    }
+
+    public float2 Nest;
+    public bool   HasNest;
 
     public float TimeAlive { get; private set; }
     public int FoodEaten { get; private set; }
@@ -128,7 +143,7 @@ public class EntityModel : AEntity
 
         float life     = TimeAlive;
         float survival = rules.FitnessSurvivalWeight
-                       * math.log(1f + life / math.max(rules.FitnessSurvivalTau, 1e-3f));
+                       * (1f - math.exp(-life / math.max(rules.FitnessSurvivalTau, 1e-3f)));
 
         float invTime = rules.FitnessRateWindow / math.max(life, rules.FitnessMinLifetime);
 
@@ -152,8 +167,9 @@ public class EntityModel : AEntity
     public void Configure(
         SharedHierarchicalBrain brain, EntityBrainContext ctx,
         IEntityMotor motor, IEntityDeathHandler death,
-        GameObject selfObject, EntityTuning tuning)
+        GameObject selfObject, EntityTuning baseTuning, EntityModel parent = null)
     {
+        var tuning = EntityTuning.Express(in baseTuning, in ctx.CoordMLP.Params);
         Motor = motor;
         SelfObject = selfObject;
         Tuning = tuning;
@@ -187,7 +203,12 @@ public class EntityModel : AEntity
         Vectorizer = new InputVectorizer(_vecMaxHealth, _vecMaxEnergy);
 
         Virology = GetOrCreateEntityComponent<VirologyComponent>();
-        Virology.FillComponent(ctx.CoordMLP.Params, ctx.CoordMLP.Params.ComputeHash());
+        uint seed = (uint)RavineRandom.RangeInt(1, int.MaxValue);
+        var parentVirology = parent?.Virology;
+        if (parentVirology != null && parentVirology.IsCreated && !parentVirology.IsDisposed)
+            Virology.FillFromParent(parentVirology, in ctx.CoordMLP.Params, seed);
+        else
+            Virology.FillComponent(in ctx.CoordMLP.Params, seed);
     }
 
     public override void Init()
@@ -214,7 +235,7 @@ public class EntityModel : AEntity
     }
 
     private bool IsAliveForTick()
-        => !IsDeathPending && !IsDisposed && !Stats.IsDisposed && Stats.Health.Value > 0f;
+        => !IsDeathPending && !IsDisposed && !Stats.IsDisposed && Stats.Hp > 0f;
 
     private bool _cycleActive;
 
@@ -234,6 +255,14 @@ public class EntityModel : AEntity
         if (!IsActive.Value) return false;
         if (Stats.IsDisposed || Stats.Health.Value <= 0f) return false;
 
+        Stats.Open();
+        bool ok = RunCycle();
+        Stats.Commit();
+        return ok;
+    }
+
+    private bool RunCycle()
+    {
         ref readonly var rules = ref SimulationRules.Frame;
 
         double nowD = SimulationClock.TimeD;
@@ -248,10 +277,8 @@ public class EntityModel : AEntity
         Virology.Step(Stats, dt);
         if (!IsAliveForTick()) return false;
 
-        float inDanger    = ComputeDangerLevel();
-        float timeToBreed = ComputeBreedReadiness();
-
-        Vector3 pos = Motor.Position();
+        Vector3 pos  = Motor.Position();
+        float2  self = new float2(pos.x, pos.z);
         _nearest = Perception.FindNearestEntity(pos, this, out _nearestDistance);
 
         _foodValid    = false;
@@ -261,18 +288,28 @@ public class EntityModel : AEntity
                 out _foodCell, out _foodDistance))
             _foodValid = true;
 
-        float foodDist = _foodValid ? _foodDistance : -1f;
-
         if (!_terrain.TrySample(pos.x, pos.z, out _lastTerrain))
             _lastTerrain = TerrainSample.Invalid;
 
-        Virology.TryGetViralInputs(out float viralLoad, out float viralSegments, out float viralNet);
+        var frame = new VectorizerFrame
+        {
+            Health            = Stats.Hp,
+            Energy            = Stats.En,
+            DayPhase          = ResolveDayPhase(),
+            InDanger          = ComputeDangerLevel(),
+            TimeToBreed       = ComputeBreedReadiness(),
+            NearestEntityDist = _nearestDistance,
+            NearestFoodDist   = _foodValid ? _foodDistance : -1f,
+            FoodDir           = _foodValid ? DirectionTo(in self, ChunkFoodIndex.CellCenter(_foodCell)) : float2.zero,
+            EntityDir         = _nearest != null ? DirectionTo(in self, Extension.Flat(_nearest.Motor.Position())) : float2.zero,
+            NestDir           = HasNest ? DirectionTo(in self, in Nest) : float2.zero,
+            PoiDir            = Points.TryGetNearest(in self, out float2 poi) ? DirectionTo(in self, in poi) : float2.zero,
+            MimickedAction    = MimickedActionIndex,
+            Now               = nowD,
+        };
+        Virology.TryGetViralInputs(out frame.ViralLoad, out frame.ViralSegments, out frame.ViralNet);
 
-        LastInput = Vectorizer.Vectorize(
-            Stats.Health.Value, Stats.Energy.Value,
-            LastActionIndex, ResolveDayPhase(), inDanger, timeToBreed,
-            Speech.OtherSpeechHash, _nearestDistance, foodDist, in _lastTerrain, MimickedActionIndex,
-            viralLoad, viralSegments, viralNet);
+        LastInput = Vectorizer.Vectorize(in frame, _actionTimes, Speech.OtherSpeechHash, in _lastTerrain);
 
         Speech.ConsumeOtherSpeech();
         ConsumeMimickedAction();
@@ -285,7 +322,7 @@ public class EntityModel : AEntity
             Tuning.EnergyRegenRate,
             Virology.Modifiers.RegenMultiplier,
             Virology.Modifiers.MetabolismMultiplier,
-            rules.BasalEnergyDrain,
+            rules.BasalEnergyDrain * Tuning.BasalDrainMul,
             rules.IdleRegenBasalFraction,
             isIdle,
             rules.StarvationThreshold, rules.StarvationDamage, rules.StarvationEnergyReturn,
@@ -307,6 +344,13 @@ public class EntityModel : AEntity
         _cycleActive = true;
         Brain.EnqueueDecision(LastInput, now, dt);
         return true;
+    }
+
+    private static float2 DirectionTo(in float2 from, in float2 to)
+    {
+        float2 d  = to - from;
+        float  l2 = math.lengthsq(d);
+        return l2 > 1e-6f ? d * math.rsqrt(l2) : float2.zero;
     }
 
     public void EndCycle()
@@ -346,7 +390,7 @@ public class EntityModel : AEntity
         if (!cmd.CanExecute())
         {
             float penalty = SimulationRules.Active.InfeasibleActionHealthPenalty;
-            if (penalty > 0f) Stats.Health.Value -= penalty;
+            if (penalty > 0f) Stats.Hp -= penalty;
             Brain.CompleteDecision(in decision, -0.15f, SimulationClock.Time, EntityCommandStatus.Failed);
             return;
         }
@@ -356,20 +400,26 @@ public class EntityModel : AEntity
 
     private float ComputeDangerLevel()
     {
-        float d = 0f;
-        float hp = Stats.Health.Value, en = Stats.Energy.Value;
-        if (en < 50 || hp < 50) d += 0.25f;
-        if (en < 25 || hp < 25) d += 0.25f;
-        if (en < 10 || hp < 10) d += 0.5f;
+        ref readonly var r = ref SimulationRules.Frame;
+        float hp = Stats.Hp / Stats.MaxHealth;
+        float en = Stats.En / Stats.MaxEnergy;
+        float m  = math.min(hp, en);
+        float d  = 0f;
+        if (m < r.DangerLowFraction)  d += 0.25f;
+        if (m < r.DangerMidFraction)  d += 0.25f;
+        if (m < r.DangerCritFraction) d += 0.5f;
         return d;
     }
 
     private float ComputeBreedReadiness()
     {
+        ref readonly var r = ref SimulationRules.Frame;
+        float hp = Stats.Hp, en = Stats.En;
+        float ec = Tuning.ReproduceEnergyCost, hc = Tuning.ReproduceHealthCost;
         float b = 0f;
-        float hp = Stats.Health.Value, en = Stats.Energy.Value;
-        if (en > Tuning.ReproduceEnergyCost && hp > Tuning.ReproduceHealthCost) b += 0.5f;
-        if (en > Tuning.ReproduceEnergyCost + 50 && hp > Tuning.ReproduceHealthCost + 50) b += 0.5f;
+        if (en > ec && hp > hc) b += 0.5f;
+        if (en > ec + Stats.MaxEnergy * r.BreedMarginFraction &&
+            hp > hc + Stats.MaxHealth * r.BreedMarginFraction) b += 0.5f;
         return b;
     }
 

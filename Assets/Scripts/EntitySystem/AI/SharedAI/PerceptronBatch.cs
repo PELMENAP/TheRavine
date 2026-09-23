@@ -10,17 +10,35 @@ public sealed unsafe class PerceptronBatch : IDisposable
 
     private NativeArray<float>      _inputs;
     private NativeArray<float>      _biases;
-    private NativeList<ForwardItem> _items;
+    private NativeList<ForwardItem>   _items;
+    private NativeList<ReservoirItem> _reservoir;
     private int _rows;
 
     public int Count => _items.Length;
+    public int ReservoirCount => _reservoir.Length;
+    public NativeArray<float> Inputs => _inputs;
 
     public PerceptronBatch(int inputSize, int biasStride)
     {
         InputSize  = inputSize;
         BiasStride = biasStride;
         _items     = new NativeList<ForwardItem>(Allocator.Persistent);
+        _reservoir = new NativeList<ReservoirItem>(Allocator.Persistent);
     }
+
+    public void ClearReservoir() => _reservoir.Clear();
+    public void AddReservoir(float* state, int row) => _reservoir.Add(new ReservoirItem { State = state, InputRow = row });
+
+    public JobHandle ScheduleReservoir(float* w, float* b, int hidden)
+        => _reservoir.Length == 0 ? default : new ReservoirJob
+        {
+            Items     = _reservoir.AsArray(),
+            Inputs    = _inputs,
+            W         = w,
+            B         = b,
+            InputSize = InputSize,
+            Hidden    = hidden,
+        }.Schedule(_reservoir.Length, 8);
 
     public void SetInput(int row, float[] input)
     {
@@ -73,6 +91,7 @@ public sealed unsafe class PerceptronBatch : IDisposable
         if (_inputs.IsCreated) _inputs.Dispose();
         if (_biases.IsCreated) _biases.Dispose();
         if (_items.IsCreated)  _items.Dispose();
+        if (_reservoir.IsCreated) _reservoir.Dispose();
         _rows = 0;
     }
 }

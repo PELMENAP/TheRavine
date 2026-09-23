@@ -22,6 +22,20 @@ public class PointsOfInterestComponent : IComponent
         return true;
     }
 
+    public bool TryGetNearest(in float2 pos, out float2 nearest)
+    {
+        nearest = default;
+        float best = float.MaxValue;
+        for (int i = 0; i < points.Count; i++)
+        {
+            float d = math.distancesq(points[i], pos);
+            if (d >= best) continue;
+            best    = d;
+            nearest = points[i];
+        }
+        return best < float.MaxValue;
+    }
+
     public float2 GetRandom() => points[RavineRandom.RangeInt(0, points.Count)];
 
     public void Dispose() { }
