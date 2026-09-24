@@ -11,6 +11,8 @@ public sealed class PlanRunner
     private float  _return;
     private bool   _active;
     private bool   _ending;
+    private double _instantTick = double.NaN;
+    private int    _instantSteps;
 
     public PlanRunner(EntityModel model) => _model = model;
 
@@ -25,6 +27,8 @@ public sealed class PlanRunner
         _return   = 0f;
         _active   = true;
         _ending   = false;
+        _instantSteps = 0;
+        _instantTick  = SimulationClock.TimeD;
 
         _model.BeginHomeostasis();
         Launch(decision.Action, CommandSource.Brain);
@@ -55,6 +59,10 @@ public sealed class PlanRunner
     private void Advance(EntityCommandStatus status, int action)
     {
         if (!_model.IsAliveForPlan) { Stop(EntityCommandStatus.Interrupted); return; }
+
+        double now = SimulationClock.TimeD;
+        if (now != _instantTick) { _instantTick = now; _instantSteps = 0; }
+        if (++_instantSteps > SimulationRules.Active.PlanMaxInstantSteps) { End(EntityCommandStatus.Failed); return; }
         if (SimulationClock.Time >= _decision.PlanEnd) { End(EntityCommandStatus.Completed); return; }
 
         for (int attempt = 0; attempt < MaxStartAttempts; attempt++)
