@@ -12,14 +12,10 @@ public class SharedHierarchicalBrain : IDisposable
 
     public static readonly int[][] ActionSubsets =
     {
-        //  Survive: Idle, Wander, Flee, Eat, Rest
-        new[] { 0, 1, 5, 6, 10 },
-        //  Hunt: Idle, Wander, Attack, Flee, Threaten
-        new[] { 0, 1, 4, 5, 11 },
-        //  Forage: Wander, RememberPoint, GoToPoint, Eat
-        new[] { 1, 2, 3, 6 },
-        //  Social: Idle, Wander, Reproduce, Speech, Mimic, ShareFood
-        new[] { 0, 1, 7, 8, 9, 12 },
+        new[] { 0, 1, 5, 6, 10, 13, 14 },
+        new[] { 0, 1, 4, 5, 11, 13 },
+        new[] { 1, 2, 3, 6, 13, 14, 15, 16 },
+        new[] { 0, 1, 7, 8, 9, 12, 14 },
     };
 
     private const int CoordDelaySteps  = 10;
@@ -27,10 +23,17 @@ public class SharedHierarchicalBrain : IDisposable
 
     private static int[] BuildCoordSizes(int combined) => new[] { combined, 32, 16, 16, GoalCount + 1 };
 
-    public const int HeadingOutputs = 2;
+    public const int HeadingOutputs   = 2;
+    public const int CurvatureOutputs = 1;
+    public const int SpeechOutputs    = 4;
+    public const int CurvatureAux     = HeadingOutputs;
+    public const int SpeechAux        = HeadingOutputs + CurvatureOutputs;
+
+    public static int ExecAux(int goal)
+        => HeadingOutputs + CurvatureOutputs + (goal == (int)Goal.Social ? SpeechOutputs : 0);
 
     private static int[] BuildExecSizes(int combined, int goal)
-        => new[] { combined, 64, 32, 32, ActionSubsets[goal].Length + 1 + HeadingOutputs };
+        => new[] { combined, 64, 32, 32, ActionSubsets[goal].Length + 1 + ExecAux(goal) };
 
 
     private readonly LSTMMemory          reservoir;
@@ -50,8 +53,6 @@ public class SharedHierarchicalBrain : IDisposable
     public readonly int[][] ExecLayerSizes;
 
     private readonly RandomNetworkDistillation _rnd;
-    private const float CuriosityWeight = 0.15f;
-    private const float Gamma = 0.95f;
 
     public readonly BrainDiagnostics GlobalDiagnostics = new();
     public int GlobalTrainingSteps { get; private set; }
@@ -161,7 +162,7 @@ public class SharedHierarchicalBrain : IDisposable
         _coordCtxLayout = coordinator.BuildContextLayout(TruncWindow, CoordRingCapacity, 0);
         _execCtxLayouts = new PerceptronLayout[GoalCount];
         for (int i = 0; i < GoalCount; i++)
-            _execCtxLayouts[i] = executors[i].BuildContextLayout(TruncWindow, ExecRingCapacity, HeadingOutputs);
+            _execCtxLayouts[i] = executors[i].BuildContextLayout(TruncWindow, ExecRingCapacity, ExecAux(i));
     }
 
     public void GiveReward(float reward, in BrainDecision decision, EntityBrainContext ctx)
@@ -176,8 +177,7 @@ public class SharedHierarchicalBrain : IDisposable
         }
 
         var   rules  = SimulationRules.Active;
-        float shaped = reward + ctx.IntrinsicReward * CuriosityWeight;
-        float scaled = _rewardNorm.UpdateAndScale(shaped, rules.RewardClipSigma, rules.RewardStdFloor);
+        float scaled = _rewardNorm.UpdateAndScale(reward, rules.RewardClipSigma, rules.RewardStdFloor);
 
         item.Evaluation    = scaled;
         item.RewardApplied = true;
@@ -187,8 +187,8 @@ public class SharedHierarchicalBrain : IDisposable
         if (decision.CoordDecisionId != ctx.CoordDecisionId) return;
 
         ctx.GoalTotalReward      += scaled;
-        ctx.GoalDiscountedReturn += scaled * ctx.GoalDiscountFactor;
-        ctx.GoalDiscountFactor   *= Gamma;
+        ctx.GoalDiscountedReturn += scaled * DelayedPerceptron.DiscountTime(
+            SimulationRules.Frame.CoordGammaPerSecond, SimulationClock.Time - ctx.GoalStartTime);
         ctx.GoalRewardCount++;
     }
 
@@ -335,6 +335,9 @@ public class SharedHierarchicalBrain : IDisposable
         }
 
         float decay = ExplorationDecay();
+        ref readonly var frame = ref SimulationRules.Frame;
+        float coordGamma = frame.CoordGammaPerSecond;
+        float execGamma  = frame.ExecGammaPerSecond;
         for (int d = 0; d < n; d++) _dCtx[d].IntrinsicReward = _rnd.IntrinsicReward(d);
 
         batch.ClearItems();
@@ -386,16 +389,13 @@ public class SharedHierarchicalBrain : IDisposable
                 ctx.CoordMLP.Activation(0).CopyTo(ctx.CoordCombined);
 
                 var goalTicket = coordinator.FinishDecide(ctx.CoordCombined, ctx.CoordMLP, item.Slot,
-                    item.BiasRow >= 0, CoordDelaySteps, coordCritic, Gamma, simTime,
+                    item.BiasRow >= 0, CoordDelaySteps, coordCritic, coordGamma, simTime,
                     ActionDurationTable.MinGoalSeconds, ActionDurationTable.MaxGoalSeconds, coordEps, decay);
 
-                ctx.CurrentGoal          = (Goal)goalTicket.Predicted;
-                ctx.CoordDecisionId      = goalTicket.DecisionId;
-                ctx.GoalEndTime          = simTime + goalTicket.Duration;
-                ctx.GoalTotalReward      = 0f;
-                ctx.GoalDiscountedReturn = 0f;
-                ctx.GoalDiscountFactor   = 1f;
-                ctx.GoalRewardCount      = 0;
+                ctx.CurrentGoal     = (Goal)goalTicket.Predicted;
+                ctx.CoordDecisionId = goalTicket.DecisionId;
+                ctx.GoalEndTime     = simTime + goalTicket.Duration;
+                ctx.BeginGoal(simTime);
             }
         }
 
@@ -450,7 +450,7 @@ public class SharedHierarchicalBrain : IDisposable
             ctx.ExecMLPs[g].Activation(0).CopyTo(combined);
 
             var ticket = executors[g].FinishDecide(combined, ctx.ExecMLPs[g], item.Slot,
-                item.BiasRow >= 0, ExecDelaySteps, execCritics[g], Gamma, simTime,
+                item.BiasRow >= 0, ExecDelaySteps, execCritics[g], execGamma, simTime,
                 GoalMinDuration[g], GoalMaxDuration[g], execEps, decay);
 
             int action    = ActionSubsets[g][ticket.Predicted];
@@ -460,8 +460,14 @@ public class SharedHierarchicalBrain : IDisposable
 
             ctx.ExecWindow.Begin(ticket.DecisionId, simTime, clamped);
 
+            var aux = ticket.AuxValue;
+            float4 speech = g == (int)Goal.Social
+                ? new float4(aux[SpeechAux], aux[SpeechAux + 1], aux[SpeechAux + 2], aux[SpeechAux + 3])
+                : float4.zero;
+
             _dDecision[d] = new BrainDecision(action, ticket.DecisionId, ctx.CoordDecisionId,
-                ctx.CurrentGoal, simTime, clamped, new float2(ticket.HeadingSin, ticket.HeadingCos));
+                ctx.CurrentGoal, simTime, clamped, new float2(ticket.HeadingSin, ticket.HeadingCos),
+                aux[CurvatureAux], speech);
             _dMade[d] = true;
         }
 
@@ -569,32 +575,36 @@ public class SharedHierarchicalBrain : IDisposable
 
         ctx.ExecWindow.End();
 
+        ref readonly var frame = ref SimulationRules.Frame;
         for (int i = 0; i < GoalCount; i++)
-            executors[i].FlushTerminal(ctx.ExecMLPs[i], execCritics[i], Gamma,
+            executors[i].FlushTerminal(ctx.ExecMLPs[i], execCritics[i], frame.ExecGammaPerSecond,
                                        i == g ? scaled : 0f);
 
         FlushGoalRewardToCoordinator(ctx);
-        coordinator.FlushTerminal(ctx.CoordMLP, coordCritic, Gamma, scaled);
+        coordinator.FlushTerminal(ctx.CoordMLP, coordCritic, frame.CoordGammaPerSecond, scaled);
 
-        ctx.CoordDecisionId      = 0;
-        ctx.GoalEndTime          = 0f;
-        ctx.GoalTotalReward      = 0f;
-        ctx.GoalDiscountedReturn = 0f;
-        ctx.GoalDiscountFactor   = 1f;
-        ctx.GoalRewardCount      = 0;
+        ctx.CoordDecisionId = 0;
+        ctx.GoalEndTime     = 0f;
+        ctx.BeginGoal(0f);
     }
 
     private void FlushGoalRewardToCoordinator(EntityBrainContext ctx)
     {
-        if (ctx.GoalRewardCount == 0) return;
+        if (ctx.CoordDecisionId == 0) return;
 
         var item = ctx.CoordMLP.Decisions.Find(ctx.CoordDecisionId);
-        if (item != null)
-        {
-            float clip = SimulationRules.Active.RewardClipSigma;
-            item.Evaluation    = Mathf.Clamp(ctx.GoalDiscountedReturn, -clip, clip);
-            item.RewardApplied = true;
-        }
+        if (item == null) return;
+
+        var r = SimulationRules.Active;
+        float goal = ctx.GoalDiscountedReturn
+                   + r.GoalFoodWeight   * ctx.GoalFoodEaten
+                   + r.GoalEnergyWeight * (ctx.EnergyNorm - ctx.GoalStartEnergy)
+                   + r.GoalRestWeight   * ctx.GoalRestCount
+                   + r.CoordCuriosityWeight * ctx.GoalNovelty;
+
+        float clip = r.RewardClipSigma;
+        item.Evaluation    = Mathf.Clamp(goal, -clip, clip);
+        item.RewardApplied = true;
     }
 
     public float GetCoordinatorEntropy(EntityBrainContext ctx) => ctx.CoordMLP.AverageEntropy;
@@ -650,7 +660,7 @@ public class SharedHierarchicalBrain : IDisposable
 
             int[] sizes  = executors[i].LayerSizes;
             int actual   = sizes[sizes.Length - 1];
-            int expected = ActionSubsets[i].Length + 1 + HeadingOutputs;
+            int expected = ActionSubsets[i].Length + 1 + ExecAux(i);
             if (actual != expected)
             {
                 Debug.LogError($"Снапшот мозга несовместим: exec {i} имеет {actual} выходов, ожидалось {expected} (directional head)");

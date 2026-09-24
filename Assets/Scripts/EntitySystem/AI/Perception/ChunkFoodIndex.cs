@@ -3,6 +3,29 @@ using Unity.Mathematics;
 using TheRavine.Extensions;
 using TheRavine.Generator;
 
+public enum FoodKind : byte { Plant = 0, Toxic = 1, Large = 2, Meat = 3 }
+
+public interface IFoodReceiver
+{
+    void ReceiveFood(float energy);
+}
+
+public struct ViralPayload
+{
+    public ushort[] Codons;
+    public int      Count;
+    public ulong    StrainId;
+    public ulong    LineageId;
+}
+
+public struct FoodClaim
+{
+    public float    Energy;
+    public FoodKind Kind;
+    public bool     Pending;
+    public bool     Infected;
+}
+
 public sealed class ChunkFoodIndex
 {
     public const int FoodPrefabId = 0x0F00D;
@@ -15,6 +38,8 @@ public sealed class ChunkFoodIndex
     private const float WaterLevel = 5f;
     private readonly MapGenerator _map;
     private readonly LongDictionary<FoodChunk> _chunks = new(64);
+    private readonly LongDictionary<float> _meat = new(32);
+    private readonly LongDictionary<ViralPayload> _payloads = new(16);
 
     public int FoodCount { get; private set; }
     public int Revision  { get; private set; }
@@ -23,13 +48,35 @@ public sealed class ChunkFoodIndex
 
     private sealed class FoodChunk
     {
-        public readonly ulong[] Rows = new ulong[Size];
-        public int Count;
-        public int BuiltVersion = -1;
+        public readonly ulong[] Rows     = new ulong[Size];
+        public readonly ulong[] Infected = new ulong[Size];
+        public readonly byte[]  Maturity = new byte[Size * Size];
+        public int   Count;
+        public int   BuiltVersion = -1;
         public ChunkData Source;
+        public float Fertility = -1f;
+        public float GrowthBudget;
+        public float MaturityBudget;
     }
 
+    private struct LargeClaim
+    {
+        public long          Cell;
+        public double        Time;
+        public IFoodReceiver Eater;
+    }
+
+    private LargeClaim[] _claims = new LargeClaim[8];
+    private int _claimCount;
+
     private long[] _pruneKeys = new long[16];
+
+    public static float2 CellCenter(long cell)
+        => new float2(Position2Int.GetX(cell) * MapGenerator.scale + HalfCell,
+                      Position2Int.GetY(cell) * MapGenerator.scale + HalfCell);
+
+    public static long CellOf(float wx, float wz)
+        => Position2Int.Pack(Mathf.FloorToInt(wx * InvScale), Mathf.FloorToInt(wz * InvScale));
 
     private FoodChunk Resolve(long chunkKey, out ChunkData cd)
     {
@@ -71,6 +118,9 @@ public sealed class ChunkFoodIndex
                 fc.Count++;
             }
 
+            for (int z = 0; z < Size; z++) fc.Infected[z] &= fc.Rows[z];
+
+            if (!ReferenceEquals(fc.Source, cd)) fc.Fertility = -1f;
             fc.BuiltVersion = cd.Version;
             fc.Source       = cd;
 
@@ -88,8 +138,7 @@ public sealed class ChunkFoodIndex
     {
         if (_map == null || _chunks.Count == 0) return;
 
-        if (_pruneKeys.Length < _chunks.Count)
-            _pruneKeys = new long[math.ceilpow2(_chunks.Count)];
+        EnsureKeyBuffer(_chunks.Count);
 
         int n = 0;
         foreach (var kv in _chunks)
@@ -110,6 +159,11 @@ public sealed class ChunkFoodIndex
             FoodCount -= removed;
             Revision++;
         }
+    }
+
+    private void EnsureKeyBuffer(int count)
+    {
+        if (_pruneKeys.Length < count) _pruneKeys = new long[math.ceilpow2(count)];
     }
 
     public bool TryFindNearestFood(float worldX, float worldZ, float radiusWorld,
@@ -186,44 +240,118 @@ public sealed class ChunkFoodIndex
         return true;
     }
 
-    public static float2 CellCenter(long cell)
-        => new float2(Position2Int.GetX(cell) * MapGenerator.scale + HalfCell,
-                      Position2Int.GetY(cell) * MapGenerator.scale + HalfCell);
-
-    public bool TryConsumeFood(long cell)
+    private bool TryLocate(long cell, out FoodChunk fc, out ChunkData cd, out int idx, out FoodKind kind)
     {
         int cellX = Position2Int.GetX(cell);
         int cellZ = Position2Int.GetY(cell);
-        long key  = Position2Int.Pack(cellX >> ChunkShift, cellZ >> ChunkShift);
+        kind = FoodKind.Plant;
+        idx  = (cellZ & ChunkMask) * Size + (cellX & ChunkMask);
 
-        var fc = Resolve(key, out ChunkData cd);
+        fc = Resolve(Position2Int.Pack(cellX >> ChunkShift, cellZ >> ChunkShift), out cd);
         if (fc == null) return false;
+        if (!cd.TryGetObject(idx, out ObjectInstInfo info) || info.PrefabID != FoodPrefabId) return false;
 
-        int lx  = cellX & ChunkMask;
-        int lz  = cellZ & ChunkMask;
-        int idx = lz * Size + lx;
+        kind = (FoodKind)math.clamp(info.Amount, 0, (int)FoodKind.Meat);
+        return true;
+    }
 
-        if (!cd.TryGetObject(idx, out ObjectInstInfo info)) return false;
-        if (info.PrefabID != FoodPrefabId) return false;
+    public bool TryGetKind(long cell, out FoodKind kind, out bool infected)
+    {
+        infected = false;
+        if (!TryLocate(cell, out var fc, out _, out int idx, out kind)) return false;
+        infected = (fc.Infected[idx / Size] & (1UL << (idx & ChunkMask))) != 0UL;
+        return true;
+    }
+
+    private float NutritionOf(FoodChunk fc, int idx, FoodKind kind, long cell)
+    {
+        var r = SimulationRules.Active;
+        switch (kind)
+        {
+            case FoodKind.Large: return r.LargeFoodEnergy;
+            case FoodKind.Meat:  return _meat.TryGetValue(cell, out float e) ? e : 0f;
+        }
+
+        float maturity = fc.Maturity[idx] * (1f / 255f);
+        float energy   = r.EatEnergyFood * math.lerp(r.FoodMinNutritionFraction, 1f, maturity);
+        return kind == FoodKind.Toxic ? energy * r.ToxicNutritionMul : energy;
+    }
+
+    public bool TryClaim(long cell, IFoodReceiver eater, double now, out FoodClaim claim)
+    {
+        claim = default;
+        if (!TryLocate(cell, out var fc, out var cd, out int idx, out FoodKind kind)) return false;
+
+        claim.Kind = kind;
+
+        if (kind == FoodKind.Large)
+        {
+            double window = SimulationRules.Active.LargeFoodWindow;
+            int slot = FindClaim(cell);
+            if (slot < 0 || ReferenceEquals(_claims[slot].Eater, eater) || now - _claims[slot].Time > window)
+            {
+                if (slot < 0) slot = AddClaim();
+                _claims[slot] = new LargeClaim { Cell = cell, Time = now, Eater = eater };
+                claim.Pending = true;
+                return true;
+            }
+
+            var partner = _claims[slot].Eater;
+            RemoveClaimAt(slot);
+
+            float share = NutritionOf(fc, idx, kind, cell) * 0.5f;
+            if (!RemoveAt(fc, cd, idx, cell, out claim.Infected)) return false;
+            partner?.ReceiveFood(share);
+            claim.Energy = share;
+            return true;
+        }
+
+        claim.Energy = NutritionOf(fc, idx, kind, cell);
+        return RemoveAt(fc, cd, idx, cell, out claim.Infected);
+    }
+
+    public bool TryTakePayload(long cell, out ViralPayload payload) => _payloads.TryRemove(cell, out payload);
+
+    private bool RemoveAt(FoodChunk fc, ChunkData cd, int idx, long cell, out bool infected)
+    {
+        int lz = idx / Size;
+        int lx = idx & ChunkMask;
+        infected = (fc.Infected[lz] & (1UL << lx)) != 0UL;
+
         if (!cd.RemoveObject(idx)) return false;
 
-        fc.Rows[lz] &= ~(1UL << lx);
+        fc.Rows[lz]     &= ~(1UL << lx);
+        fc.Infected[lz] &= ~(1UL << lx);
+        fc.Maturity[idx] = 0;
         fc.Count--;
         fc.BuiltVersion = cd.Version;
+
+        _meat.Remove(cell);
+        if (!infected) _payloads.Remove(cell);
 
         FoodCount--;
         Revision++;
         return true;
     }
 
-    public bool TryAddFood(int cellX, int cellZ, int amount)
+    public bool TryConsumeFood(long cell)
+    {
+        if (!TryLocate(cell, out var fc, out var cd, out int idx, out _)) return false;
+        return RemoveAt(fc, cd, idx, cell, out _);
+    }
+
+    public bool TryAddFood(int cellX, int cellZ, FoodKind kind)
     {
         if (_map == null) return false;
 
         long key = Position2Int.Pack(cellX >> ChunkShift, cellZ >> ChunkShift);
         var fc = Resolve(key, out ChunkData cd);
         if (fc == null) return false;
+        return AddAt(fc, cd, cellX, cellZ, kind);
+    }
 
+    private bool AddAt(FoodChunk fc, ChunkData cd, int cellX, int cellZ, FoodKind kind)
+    {
         int lx  = cellX & ChunkMask;
         int lz  = cellZ & ChunkMask;
         int idx = lz * Size + lx;
@@ -235,16 +363,184 @@ public sealed class ChunkFoodIndex
 
         var info = new ObjectInstInfo(
             new Vector3(cellX * MapGenerator.scale + HalfCell, h, cellZ * MapGenerator.scale + HalfCell),
-            FoodPrefabId, amount);
+            FoodPrefabId, (int)kind);
 
         if (!cd.TryAddObject(idx, in info)) return false;
 
         fc.Rows[lz] |= 1UL << lx;
+        fc.Maturity[idx] = 0;
         fc.Count++;
         fc.BuiltVersion = cd.Version;
 
         FoodCount++;
         Revision++;
         return true;
+    }
+
+    public bool TryAddCorpse(float2 position, float energy, in ViralPayload payload, bool hasPayload)
+    {
+        if (_map == null || energy <= SimulationRules.Active.CorpseMinEnergy) return false;
+
+        int cx = Mathf.FloorToInt(position.x * InvScale);
+        int cz = Mathf.FloorToInt(position.y * InvScale);
+        int search = math.max(0, SimulationRules.Active.CorpseSearchCells);
+
+        for (int ring = 0; ring <= search; ring++)
+        for (int dz = -ring; dz <= ring; dz++)
+        for (int dx = -ring; dx <= ring; dx++)
+        {
+            if (math.max(math.abs(dx), math.abs(dz)) != ring) continue;
+
+            int x = cx + dx, z = cz + dz;
+            var fc = Resolve(Position2Int.Pack(x >> ChunkShift, z >> ChunkShift), out ChunkData cd);
+            if (fc == null || !AddAt(fc, cd, x, z, FoodKind.Meat)) continue;
+
+            long cell = Position2Int.Pack(x, z);
+            _meat[cell] = energy;
+            if (hasPayload && payload.Codons != null && payload.Count > 0)
+            {
+                int idx = (z & ChunkMask) * Size + (x & ChunkMask);
+                fc.Infected[idx / Size] |= 1UL << (idx & ChunkMask);
+                _payloads[cell] = payload;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public void TickEcology(float dt, double now, float season, int maxFood)
+    {
+        if (_map == null || dt <= 0f) return;
+        var r = SimulationRules.Active;
+
+        EnsureKeyBuffer(_chunks.Count);
+        int n = 0;
+        foreach (var kv in _chunks) _pruneKeys[n++] = kv.Key;
+
+        float growth   = r.FoodGrowthRate;
+        float seed     = r.FoodSeedFraction;
+        float matSteps = r.FoodMaturityPerSecond * 255f * dt;
+        int   burst    = math.max(1, r.FoodRegenBurst);
+
+        for (int k = 0; k < n; k++)
+        {
+            long key = _pruneKeys[k];
+            var fc = Resolve(key, out ChunkData cd);
+            if (fc == null) continue;
+
+            if (fc.Fertility < 0f) fc.Fertility = ComputeFertility(cd, r);
+
+            fc.MaturityBudget += matSteps;
+            int steps = (int)fc.MaturityBudget;
+            if (steps > 0)
+            {
+                fc.MaturityBudget -= steps;
+                AgeFood(fc, steps);
+            }
+
+            float K = r.FoodChunkCapacity * fc.Fertility * season;
+            int   N = fc.Count;
+            if (K <= 0f || N >= K || FoodCount >= maxFood) { fc.GrowthBudget = 0f; continue; }
+
+            fc.GrowthBudget += (growth * N * (1f - N / K) + growth * K * seed) * dt;
+            int spawn = math.min((int)fc.GrowthBudget, burst);
+            if (spawn <= 0) continue;
+            fc.GrowthBudget -= spawn;
+
+            int baseX = Position2Int.GetX(key) << ChunkShift;
+            int baseZ = Position2Int.GetY(key) << ChunkShift;
+            for (int s = 0; s < spawn && FoodCount < maxFood; s++)
+            {
+                int lx = RavineRandom.RangeInt(0, Size);
+                int lz = RavineRandom.RangeInt(0, Size);
+                AddAt(fc, cd, baseX + lx, baseZ + lz, RollKind(cd.BiomeMap[lz * Size + lx], r));
+            }
+            if (fc.GrowthBudget > burst) fc.GrowthBudget = burst;
+        }
+
+        TickMeat(dt, r);
+        ExpireClaims(now, r.LargeFoodWindow);
+    }
+
+    public FoodKind RollKind(int biome, SimulationRules r)
+    {
+        float roll = RavineRandom.RangeFloat();
+        float toxic = r.BiomeToxicity(biome);
+        if (roll < toxic) return FoodKind.Toxic;
+        if (roll < toxic + r.LargeFoodChance) return FoodKind.Large;
+        return FoodKind.Plant;
+    }
+
+    private static float ComputeFertility(ChunkData cd, SimulationRules r)
+    {
+        float sum = 0f;
+        int total = ChunkData.TotalCells;
+        for (int i = 0; i < total; i++) sum += r.BiomeFertility(cd.BiomeMap[i]);
+        return sum / total;
+    }
+
+    private static void AgeFood(FoodChunk fc, int steps)
+    {
+        for (int lz = 0; lz < Size; lz++)
+        {
+            ulong row = fc.Rows[lz];
+            while (row != 0UL)
+            {
+                int lx = math.tzcnt(row);
+                row &= row - 1UL;
+                int idx = lz * Size + lx;
+                fc.Maturity[idx] = (byte)math.min(255, fc.Maturity[idx] + steps);
+            }
+        }
+    }
+
+    private void TickMeat(float dt, SimulationRules r)
+    {
+        if (_meat.Count == 0) return;
+
+        float keep = math.exp(-dt / math.max(r.CorpseSpoilTau, 1e-3f));
+        float min  = r.CorpseMinEnergy;
+
+        EnsureKeyBuffer(_meat.Count);
+        int n = 0;
+        foreach (var kv in _meat) _pruneKeys[n++] = kv.Key;
+
+        for (int i = 0; i < n; i++)
+        {
+            long cell = _pruneKeys[i];
+            if (!_meat.TryGetValue(cell, out float e)) continue;
+            e *= keep;
+            if (e >= min) { _meat[cell] = e; continue; }
+
+            _meat.Remove(cell);
+            _payloads.Remove(cell);
+            TryConsumeFood(cell);
+        }
+    }
+
+    private int FindClaim(long cell)
+    {
+        for (int i = 0; i < _claimCount; i++)
+            if (_claims[i].Cell == cell) return i;
+        return -1;
+    }
+
+    private int AddClaim()
+    {
+        if (_claimCount == _claims.Length) System.Array.Resize(ref _claims, _claims.Length << 1);
+        return _claimCount++;
+    }
+
+    private void RemoveClaimAt(int i)
+    {
+        int last = --_claimCount;
+        _claims[i]    = _claims[last];
+        _claims[last] = default;
+    }
+
+    private void ExpireClaims(double now, double window)
+    {
+        for (int i = _claimCount - 1; i >= 0; i--)
+            if (now - _claims[i].Time > window) RemoveClaimAt(i);
     }
 }

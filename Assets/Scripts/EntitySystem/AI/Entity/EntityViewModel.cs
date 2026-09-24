@@ -53,8 +53,11 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
         if (transform == null) return Vector3.zero;
         return transform.position;
     }
-    public void OnSpeechGet(IDialogSender sender, string message) =>
+    public void OnSpeechGet(IDialogSender sender, string message)
+    {
+        if (sender is EntityViewModel) return;
         ((EntityModel)Entity).Speech.ReceiveSpeech(message);
+    }
     public void OnDialogGetRequire() { }
     public override void OnNetworkSpawn() { }
 

@@ -1,5 +1,6 @@
 using Cysharp.Threading.Tasks;
 using System.Threading;
+using Unity.Mathematics;
 
 public readonly struct SpeechHash
 {
@@ -9,6 +10,8 @@ public readonly struct SpeechHash
     {
         A = a; B = b; C = c; D = d;
     }
+
+    public float4 ToFloat4() => new float4(A, B, C, D) * 2f - 1f;
 
     public static SpeechHash Compute(string speech)
     {
@@ -32,35 +35,40 @@ public readonly struct SpeechHash
 
 public class SpeechComponent : IComponent
 {
-    public string OwnSpeech { get; private set; } = "";
-    public string OtherSpeech { get; private set; } = "";
-
-    public SpeechHash OwnSpeechHash { get; private set; }
-    public SpeechHash OtherSpeechHash { get; private set; }
+    public float4 Own   { get; private set; }
+    public float4 Heard { get; private set; }
+    public bool   HasHeard { get; private set; }
 
     private IEntityAudio _audio;
 
     public void Inject(IEntityAudio audio) => _audio = audio;
 
-    public void SetOwnSpeech(string speech)
+    public void SetOwn(float4 speech) => Own = speech;
+
+    public void ReceiveVector(float4 speech)
     {
-        if (string.Equals(OwnSpeech, speech)) return;
-        OwnSpeech = speech ?? "";
-        OwnSpeechHash = SpeechHash.Compute(OwnSpeech);
+        Heard    = speech;
+        HasHeard = true;
     }
 
     public void ReceiveSpeech(string message)
     {
-        if (string.Equals(OtherSpeech, message)) return;
-        OtherSpeech = message ?? "";
-        OtherSpeechHash = SpeechHash.Compute(OtherSpeech);
+        if (string.IsNullOrEmpty(message)) return;
+        ReceiveVector(SpeechHash.Compute(message).ToFloat4());
     }
 
     public void ConsumeOtherSpeech()
     {
-        if (OtherSpeech.Length == 0) return;
-        OtherSpeech = "";
-        OtherSpeechHash = default;
+        if (!HasHeard) return;
+        Heard    = float4.zero;
+        HasHeard = false;
+    }
+
+    public static string Encode(float4 speech)
+    {
+        uint4 q = (uint4)math.round(math.saturate(speech * 0.5f + 0.5f) * 255f);
+        uint packed = q.x | (q.y << 8) | (q.z << 16) | (q.w << 24);
+        return packed.ToString("X8");
     }
 
     public UniTask PlayAsync(string speech, float health, float energy, float danger,

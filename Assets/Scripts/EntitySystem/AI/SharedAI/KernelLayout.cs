@@ -4,6 +4,7 @@ public unsafe struct KernelLayout
 {
     public const int MaxLayers  = 8;
     public const int MaxActions = 16;
+    public const int MaxAux     = 8;
 
     public int L;
     public int InputSize;
@@ -43,6 +44,8 @@ public unsafe struct KernelLayout
             throw new ArgumentException($"KernelLayout: {lay.L} слоёв > {MaxLayers}");
         if (lay.ActionCount > MaxActions)
             throw new ArgumentException($"KernelLayout: {lay.ActionCount} действий > {MaxActions}");
+        if (lay.AuxOutputs > MaxAux)
+            throw new ArgumentException($"KernelLayout: {lay.AuxOutputs} aux-выходов > {MaxAux}");
 
         var k = new KernelLayout
         {

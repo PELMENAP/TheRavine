@@ -14,7 +14,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
     private PerceptronLayout _ctxLayout;
 
     public const float DurationNoiseSigma = 0.5f;
-    public const float HeadingNoiseSigma  = 0.6f;
+    public const float AuxNoiseSigma      = 0.6f;
     public const float TauEpsilon = 1e-4f;
 
     public int[] LayerSizes { get; private set; }
@@ -183,7 +183,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
         float vNow = critic.Predict(input);
 
         if (ctx.Decisions.Count >= ctx.Decisions.Capacity)
-            FlushOldest(ctx, vNow, critic, gamma);
+            FlushOldest(ctx, vNow, critic, gamma, simTime);
 
         float pBehaviour = (1f - adaptiveEpsilon) * behaviour[pred]
                          + adaptiveEpsilon / actionCount;
@@ -209,28 +209,31 @@ public unsafe partial class DelayedPerceptron : IDisposable
         item.DurationNoise = noise;
         item.Duration      = DurationFromLogit(baseLogit + noise, minDuration, maxDuration);
 
-        if (lay.AuxOutputs >= 2)
+        int aux = lay.AuxOutputs;
+        for (int i = 0; i < aux; i++)
         {
-            float ns = SampleGaussian() * HeadingNoiseSigma;
-            float nc = SampleGaussian() * HeadingNoiseSigma;
+            float n = SampleGaussian() * AuxNoiseSigma;
+            item.AuxNoise[i] = n;
+            item.AuxValue[i] = MathF.Tanh(outAct[lay.HeadingIndex + i] + n);
+        }
 
-            float s = MathF.Tanh(outAct[lay.HeadingIndex]     + ns);
-            float c = MathF.Tanh(outAct[lay.HeadingIndex + 1] + nc);
+        if (aux >= 2)
+        {
+            float s = item.AuxValue[0];
+            float c = item.AuxValue[1];
 
             float len = MathF.Sqrt(s * s + c * c);
             if (len < 1e-4f) { s = 0f; c = 1f; len = 1f; }
 
             float invLen = 1f / len;
-            item.HeadingNoiseS = ns;
-            item.HeadingNoiseC = nc;
-            item.HeadingSin    = s * invLen;
-            item.HeadingCos    = c * invLen;
+            item.HeadingSin = s * invLen;
+            item.HeadingCos = c * invLen;
         }
 
         ctx.Diagnostics.RecordDecision(item.Duration);
 
         while (ctx.Decisions.Count > delaySteps)
-            FlushOldest(ctx, vNow, critic, gamma);
+            FlushOldest(ctx, vNow, critic, gamma, simTime);
 
         return item;
     }
@@ -260,7 +263,8 @@ public unsafe partial class DelayedPerceptron : IDisposable
                 int n = next.CreatedOrdinal - item.CreatedOrdinal;
                 if (n < 1) n = 1;
                 item.StepsElapsed = n;
-                tdTarget = reward + DiscountPow(gamma, n) * critic.Predict(next.State, next.DecisionId);
+                tdTarget = reward + DiscountTime(gamma, next.StartTime - item.StartTime)
+                                  * critic.Predict(next.State, next.DecisionId);
             }
 
             float advantage = critic.TrainTD(item.State, tdTarget, item.DecisionId);
@@ -276,7 +280,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
         ring.Clear();
     }
 
-    private void FlushOldest(PerceptronContext ctx, float vNext, ValueCritic critic, float gamma)
+    private void FlushOldest(PerceptronContext ctx, float vNext, ValueCritic critic, float gamma, float simTime)
     {
         var delayed = ctx.Decisions.Oldest;
         if (delayed == null) return;
@@ -287,7 +291,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
         if (n < 1) n = 1;
         delayed.StepsElapsed = n;
 
-        float tdTarget  = delayed.Evaluation + DiscountPow(gamma, n) * vNext;
+        float tdTarget  = delayed.Evaluation + DiscountTime(gamma, simTime - delayed.StartTime) * vNext;
         float advantage = critic.TrainTD(delayed.State, tdTarget, delayed.DecisionId);
 
         ctx.Diagnostics.RecordAdvantage(advantage);
@@ -325,8 +329,6 @@ public unsafe partial class DelayedPerceptron : IDisposable
             Epsilon               = item.ExplorationEpsilon,
             LogProbability        = item.LogProbability,
             DurationNoise         = item.DurationNoise,
-            HeadingNoiseS         = item.HeadingNoiseS,
-            HeadingNoiseC         = item.HeadingNoiseC,
             Dt                    = ctx.DeltaTime,
             Temperature           = p.SoftmaxTemperature,
             EntropyRegularization = p.EntropyRegularization,
@@ -336,6 +338,8 @@ public unsafe partial class DelayedPerceptron : IDisposable
 
         int ac = ctx.Layout.ActionCount;
         for (int i = 0; i < ac; i++) t.Probs[i] = item.Probs[i];
+        int aux = ctx.Layout.AuxOutputs;
+        for (int i = 0; i < aux; i++) t.AuxNoise[i] = item.AuxNoise[i];
 
         int idx = _tickets.Length;
         _tickets.Add(t);
@@ -504,7 +508,8 @@ public unsafe partial class DelayedPerceptron : IDisposable
         return MathF.Sqrt(-2f * MathF.Log(u1)) * MathF.Cos(2f * MathF.PI * u2);
     }
 
-    private static float DiscountPow(float gamma, int n) => Unity.Mathematics.math.pow(gamma, n);
+    public static float DiscountTime(float gammaPerSecond, float seconds)
+        => seconds <= 0f ? 1f : Unity.Mathematics.math.exp(Unity.Mathematics.math.log(gammaPerSecond) * seconds);
 
     public static float Softplus(float x)
         => x > 20f ? x : MathF.Log(1f + MathF.Exp(x));

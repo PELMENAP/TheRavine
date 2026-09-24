@@ -229,15 +229,13 @@ public static unsafe class NeuralKernels
             outErr[i] = policyGate * (oneHot - p) * invTemp + entReg * (invN - p);
         }
 
-        const float durVar  = DelayedPerceptron.DurationNoiseSigma * DelayedPerceptron.DurationNoiseSigma;
-        const float headVar = DelayedPerceptron.HeadingNoiseSigma  * DelayedPerceptron.HeadingNoiseSigma;
+        const float durVar = DelayedPerceptron.DurationNoiseSigma * DelayedPerceptron.DurationNoiseSigma;
+        const float auxVar = DelayedPerceptron.AuxNoiseSigma      * DelayedPerceptron.AuxNoiseSigma;
 
         outErr[lay->DurationIndex] = gate * tk->DurationNoise / durVar;
-        if (lay->AuxOutputs >= 2)
-        {
-            outErr[lay->HeadingIndex]     = gate * tk->HeadingNoiseS / headVar;
-            outErr[lay->HeadingIndex + 1] = gate * tk->HeadingNoiseC / headVar;
-        }
+        int aux = lay->AuxOutputs;
+        for (int i = 0; i < aux; i++)
+            outErr[lay->HeadingIndex + i] = gate * tk->AuxNoise[i] / auxVar;
 
         UnsafeUtility.MemClear(deltaA, (long)hs * sizeof(float));
         UnsafeUtility.MemClear(deltaB, (long)hs * sizeof(float));

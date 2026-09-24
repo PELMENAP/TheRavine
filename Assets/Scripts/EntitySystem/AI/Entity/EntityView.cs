@@ -24,7 +24,7 @@ public class EntityView : AEntityView
         {
             string text = $"{model.Brain.CurrentGoal} - {model.LastAction}\n"
                     + $"{(int)model.Stats.Health.Value} HP / {(int)model.Stats.Energy.Value} EN\n"
-                    + model.Speech.OwnSpeech;
+                    + SpeechComponent.Encode(model.Speech.Own);
 
             var virology = model.Virology;
             if (virology != null && virology.TryGetViralSummary(out float net, out int viralCount, out bool allTamed))

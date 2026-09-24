@@ -22,8 +22,8 @@ public sealed class DelayedItem
     public readonly float[] Probs;
     public float HeadingSin;
     public float HeadingCos;
-    public float HeadingNoiseS;
-    public float HeadingNoiseC;
+    public readonly float[] AuxNoise = new float[KernelLayout.MaxAux];
+    public readonly float[] AuxValue = new float[KernelLayout.MaxAux];
     public float ExplorationEpsilon;
     
 
@@ -55,8 +55,8 @@ public sealed class DelayedItem
         Trained = false;
         HeadingSin = 0f;
         HeadingCos = 0f;
-        HeadingNoiseS = 0f;
-        HeadingNoiseC = 0f;
+        System.Array.Clear(AuxNoise, 0, AuxNoise.Length);
+        System.Array.Clear(AuxValue, 0, AuxValue.Length);
     }
 }
 

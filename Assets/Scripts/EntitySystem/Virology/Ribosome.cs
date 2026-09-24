@@ -24,6 +24,15 @@ namespace TheRavine.EntityControl.Virology
         public float SpreadAmp;
         public int RegenOwner;
         public int MetabolismOwner;
+        public float Fever;
+        public float Blind;
+        public float Frenzy;
+        public float Lethargy;
+        public float CarryPoi;
+        public float ImmunizeAmount;
+        public bool ForceSpeechRequested;
+        public bool SpreadViaSpeech;
+        public bool CaptureRequested;
 
         public static EffectModifiers Neutral => new()
         {
@@ -42,7 +51,20 @@ namespace TheRavine.EntityControl.Virology
             ReplicateRequested = false;
             ExciseRequested = false;
             SpreadAmp = 0f;
+            SpreadViaSpeech = false;
+            ForceSpeechRequested = false;
+            CaptureRequested = false;
+            ImmunizeAmount = 0f;
         }
+    }
+
+    public struct HostState
+    {
+        public float HpFraction;
+        public bool  Night;
+        public int   Crowd;
+        public float WeakThreshold;
+        public int   CrowdThreshold;
     }
 
     public struct TranslationResult
@@ -66,7 +88,8 @@ namespace TheRavine.EntityControl.Virology
             ProteinDescriptor[] descriptors,
             float sharpness,
             float availableEnergy,
-            int maxTapeLength)
+            int maxTapeLength,
+            in HostState host)
         {
             var result = default(TranslationResult);
             if (tape.Length <= 0) return result;
@@ -91,8 +114,19 @@ namespace TheRavine.EntityControl.Virology
             else primed = false;
 
             tape.Advance(maxTapeLength, primed);
+            if (result.Executed && ShouldSkip(action, in host)) tape.Advance(maxTapeLength, false);
             return result;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ShouldSkip(int action, in HostState host)
+            => (ProteinAction)action switch
+            {
+                ProteinAction.SkipIfHostWeak => host.HpFraction < host.WeakThreshold,
+                ProteinAction.SkipIfNight    => host.Night,
+                ProteinAction.SkipIfCrowded  => host.Crowd >= host.CrowdThreshold,
+                _ => false
+            };
 
         private static void Apply(ref EffectModifiers m, int action, float magnitude, float amp, int owner)
         {
@@ -100,7 +134,9 @@ namespace TheRavine.EntityControl.Virology
             {
                 case ProteinAction.AddHealth: m.HealthDelta += magnitude; break;
                 case ProteinAction.DrainHealth: m.HealthDelta -= magnitude; break;
-                case ProteinAction.AddEnergy: m.EnergyDelta += magnitude; break;
+                case ProteinAction.AddEnergy:
+                    m.RegenMultiplier = math.min(m.RegenMultiplier + magnitude, 4f);
+                    m.RegenOwner = owner; break;
                 case ProteinAction.DrainEnergy: m.EnergyDelta -= magnitude; break;
                 case ProteinAction.RegenBoost:
                     m.RegenMultiplier = math.min(m.RegenMultiplier + magnitude, 4f);
@@ -127,6 +163,18 @@ namespace TheRavine.EntityControl.Virology
                     m.MutationRateDelta = math.clamp(m.MutationRateDelta + magnitude, -0.5f, 0.5f); break;
                 case ProteinAction.MutationRateDown:
                     m.MutationRateDelta = math.clamp(m.MutationRateDelta - magnitude, -0.5f, 0.5f); break;
+                case ProteinAction.ForceSpeech:
+                    m.ForceSpeechRequested = true;
+                    m.SpreadRequested = true;
+                    m.SpreadViaSpeech = true;
+                    m.SpreadAmp = amp; break;
+                case ProteinAction.Immunize: m.ImmunizeAmount += magnitude; break;
+                case ProteinAction.Fever:    m.Fever    = math.min(m.Fever + magnitude, 1f); break;
+                case ProteinAction.Capture:  m.CaptureRequested = true; break;
+                case ProteinAction.CarryPoi: m.CarryPoi = math.min(m.CarryPoi + magnitude, 1f); break;
+                case ProteinAction.Blind:    m.Blind    = math.min(m.Blind + magnitude, 1f); break;
+                case ProteinAction.Frenzy:   m.Frenzy   = math.min(m.Frenzy + magnitude, 1f); break;
+                case ProteinAction.Lethargy: m.Lethargy = math.min(m.Lethargy + magnitude, 1f); break;
             }
         }
 
@@ -140,6 +188,11 @@ namespace TheRavine.EntityControl.Virology
             m.SocialBias        *= k;
             m.FleeBias          *= k;
             m.MutationRateDelta *= k;
+            m.Fever    *= k;
+            m.Blind    *= k;
+            m.Frenzy   *= k;
+            m.Lethargy *= k;
+            m.CarryPoi *= k;
             m.Dormant = false;
         }
     }

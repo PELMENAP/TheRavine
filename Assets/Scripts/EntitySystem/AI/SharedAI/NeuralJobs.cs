@@ -41,14 +41,13 @@ public unsafe struct TrainTicket
     public float  Epsilon;
     public float  LogProbability;
     public float  DurationNoise;
-    public float  HeadingNoiseS;
-    public float  HeadingNoiseC;
     public float  Dt;
     public float  Temperature;
     public float  EntropyRegularization;
     public float  MaxGradNorm;
     public float  LrMul;
     public fixed float Probs[KernelLayout.MaxActions];
+    public fixed float AuxNoise[KernelLayout.MaxAux];
 }
 
 public struct TrainResult

@@ -7,7 +7,7 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
     internal SharedBrainSnapshot(SharedHierarchicalBrain brain) => Brain = brain;
 
     private const uint Magic   = 0x4E414C45;
-    private const int  Version = 3;
+    private const int  Version = 4;
 
     public byte[] Serialize()
     {

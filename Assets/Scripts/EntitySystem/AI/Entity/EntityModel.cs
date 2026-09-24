@@ -8,11 +8,11 @@ using TheRavine.Extensions;
 using TheRavine.Generator;
 using TheRavine.EntityControl.Virology;
 
-public class EntityModel : AEntity
+public class EntityModel : AEntity, IFoodReceiver
 {
     public enum FitnessEvent { FoodEaten, Reproduced, DamageDealt }
 
-    private const int ActionCount = (int)EntityAction.ShareFood + 1;
+    private const int ActionCount = (int)EntityAction.StoreFood + 1;
 
     public StatsComponent Stats { get; private set; }
     public PerceptionComponent Perception { get; private set; }
@@ -20,12 +20,17 @@ public class EntityModel : AEntity
     public SpeechComponent Speech { get; private set; }
     public PointsOfInterestComponent Points { get; private set; }
     public VirologyComponent Virology { get; private set; }
+    public DigestionComponent Digestion { get; private set; }
 
     public IEntityDialogHost DialogHost { get; private set; }
 
     public IEntityMotor Motor { get; private set; }
     public EntityTuning Tuning { get; private set; }
     public GameObject SelfObject { get; private set; }
+
+    public NestState Nest { get; private set; }
+    public MovePlanner Planner { get; private set; }
+    public InfectionService Infection { get; private set; }
 
     public InputVectorizer Vectorizer;
 
@@ -53,14 +58,72 @@ public class EntityModel : AEntity
         return t;
     }
 
-    public float2 Nest;
-    public bool   HasNest;
+    public float SinceAction(EntityAction action)
+    {
+        double t = _actionTimes[(int)action];
+        return double.IsNegativeInfinity(t) ? float.MaxValue : (float)(SimulationClock.TimeD - t);
+    }
 
     public float TimeAlive { get; private set; }
     public int FoodEaten { get; private set; }
     public int ReproduceCount { get; private set; }
     public float DamageDealt { get; private set; }
     public float FinalFitness { get; private set; }
+
+    public int PlanSlot = -1;
+    private float _planSide = 1f;
+    public float NextPlanSide() => _planSide = -_planSide;
+
+    public float Carrying { get; private set; }
+    public void Carry(float energy) => Carrying += math.max(0f, energy);
+    public float TakeCarried()
+    {
+        float c = Carrying;
+        Carrying = 0f;
+        return c;
+    }
+
+    private bool _receivedFood;
+    public void ReceiveFood(float energy)
+    {
+        Digestion?.Ingest(energy);
+        _receivedFood = true;
+    }
+
+    public bool ConsumeReceivedFood()
+    {
+        bool r = _receivedFood;
+        _receivedFood = false;
+        return r;
+    }
+
+    private double _warnedUntil = double.NegativeInfinity;
+    private double _lastDamageTime = double.NegativeInfinity;
+    public bool IsWarned => SimulationClock.TimeD < _warnedUntil;
+    public void Warn(double until) { if (until > _warnedUntil) _warnedUntil = until; }
+
+    public bool IsAtNest { get; private set; }
+    public bool IsInDanger =>
+        SimulationClock.TimeD - _lastDamageTime < SimulationRules.Frame.WarnWindow
+        || _lastDanger >= SimulationRules.Frame.WarnDangerThreshold;
+
+    public float2 Position2D => Extension.Flat(Motor.Position());
+
+    public float SpeedMul
+    {
+        get
+        {
+            ref readonly var r = ref SimulationRules.Frame;
+            float lethargy = Virology != null ? Virology.Modifiers.Lethargy : 0f;
+            float mul = (1f - lethargy * r.LethargySlow) * (Carrying > 0f ? r.CarrySpeedMul : 1f);
+            return math.max(mul, 0.1f);
+        }
+    }
+
+    public float AttackDamageMul
+        => 1f + (Virology != null ? Virology.Modifiers.Frenzy : 0f) * SimulationRules.Frame.FrenzyDamageMul;
+
+    public float BodyEnergy => Stats.En + (Digestion != null ? Digestion.Stomach : 0f) + Carrying;
 
     private R3.ReactiveProperty<float> _vecMaxHealth;
     private R3.ReactiveProperty<float> _vecMaxEnergy;
@@ -71,6 +134,7 @@ public class EntityModel : AEntity
 
     public ref readonly TerrainSample LastTerrain => ref _lastTerrain;
 
+    public float2 DeathPosition;
     public bool IsDeathPending { get; private set; }
     public void MarkDeathPending() => IsDeathPending = true;
 
@@ -80,6 +144,7 @@ public class EntityModel : AEntity
     public float[] DecisionInput => _decisionInput;
 
     private EntitySpatialGrid _grid;
+    private static readonly EntityModel[] Neighbors = new EntityModel[16];
 
     private long  _foodCell;
     private float _foodDistance = -1f;
@@ -108,6 +173,13 @@ public class EntityModel : AEntity
     private double    _attackReadyTime;
     private double    _lastCycleTime;
     private DayCycle  _dayCycle;
+    private int       _crowd;
+    private float     _lastDanger;
+
+    private double _driveIntegral;
+    private double _decisionIntegral;
+    private double _decisionStart;
+    private float  _decisionDrive;
 
     public bool TryStartAttackCooldown()
     {
@@ -121,6 +193,7 @@ public class EntityModel : AEntity
     {
         _lastCycleTime   = SimulationClock.TimeD;
         _attackReadyTime = 0d;
+        BeginHomeostasis();
     }
 
     public void RegisterFitnessEvent(FitnessEvent evt, float amount = 0f)
@@ -178,12 +251,22 @@ public class EntityModel : AEntity
         Stats = GetOrCreateEntityComponent<StatsComponent>();
         Stats.FillComponent(tuning.MaxHealth, tuning.MaxEnergy);
 
+        Digestion = GetOrCreateEntityComponent<DigestionComponent>();
+        Digestion.Configure(tuning.MaxEnergy * SimulationRules.Active.StomachCapacityFraction);
+
         ServiceLocator.Services.TryGet(out _grid);
         AddComponentToEntity(new PerceptionComponent(tuning.DetectionRadius, _grid));
         Perception = GetEntityComponent<PerceptionComponent>();
 
         _terrain = new TerrainSensor(ServiceLocator.GetService<MapGenerator>());
         ServiceLocator.Services.TryGet(out _foodIndex);
+
+        ServiceLocator.Services.TryGet(out NestState nest);
+        ServiceLocator.Services.TryGet(out MovePlanner planner);
+        ServiceLocator.Services.TryGet(out InfectionService infection);
+        Nest      = nest;
+        Planner   = planner;
+        Infection = infection;
 
         Speech = GetOrCreateEntityComponent<SpeechComponent>();
         Speech.Inject((IEntityAudio)motor);
@@ -226,12 +309,24 @@ public class EntityModel : AEntity
         _commands[(int)EntityAction.Rest]          = new RestCommand(this);
         _commands[(int)EntityAction.Threaten]      = new ThreatenCommand(this);
         _commands[(int)EntityAction.ShareFood]     = new ShareFoodCommand(this);
+        _commands[(int)EntityAction.ApproachFood]  = new ApproachFoodCommand(this);
+        _commands[(int)EntityAction.ReturnNest]    = new ReturnNestCommand(this);
+        _commands[(int)EntityAction.PickUp]        = new PickUpCommand(this);
+        _commands[(int)EntityAction.StoreFood]     = new StoreFoodCommand(this);
     }
 
     private float ResolveDayPhase()
     {
         if (_dayCycle == null && !ServiceLocator.Services.TryGet(out _dayCycle)) return 0f;
         return _dayCycle.NormalizedTime.CurrentValue;
+    }
+
+    private static bool IsNightPhase(float phase)
+    {
+        ref readonly var r = ref SimulationRules.Frame;
+        return r.NightStart > r.NightEnd
+            ? phase >= r.NightStart || phase < r.NightEnd
+            : phase >= r.NightStart && phase < r.NightEnd;
     }
 
     private bool IsAliveForTick()
@@ -274,76 +369,214 @@ public class EntityModel : AEntity
 
         TimeAlive += dt;
 
-        Virology.Step(Stats, dt);
+        float dayPhase = ResolveDayPhase();
+        bool  night    = IsNightPhase(dayPhase);
+
+        var host = new HostState
+        {
+            HpFraction     = Stats.Hp / Stats.MaxHealth,
+            Night          = night,
+            Crowd          = _crowd,
+            WeakThreshold  = rules.SkipWeakHpFraction,
+            CrowdThreshold = rules.SkipCrowdCount,
+        };
+        Virology.Step(Stats, dt, in host);
+        ref var mods = ref Virology.Modifiers;
+        if (mods.ForceSpeechRequested) Broadcast(Speech.Own);
         if (!IsAliveForTick()) return false;
 
         Vector3 pos  = Motor.Position();
         float2  self = new float2(pos.x, pos.z);
-        _nearest = Perception.FindNearestEntity(pos, this, out _nearestDistance);
+        float detect = Tuning.DetectionRadius * math.max(0.1f, 1f - mods.Blind * rules.BlindStrength);
+
+        _nearest = Perception.FindNearestEntity(pos, this, detect, out _nearestDistance);
+        _crowd   = CountAndRelease(Perception.FindEntitiesInRadius(pos, this, rules.CrowdRadius, Neighbors));
 
         _foodValid    = false;
         _foodDistance = -1f;
         if (_foodIndex != null &&
-            _foodIndex.TryFindNearestFood(pos.x, pos.z, Tuning.DetectionRadius,
-                out _foodCell, out _foodDistance))
+            _foodIndex.TryFindNearestFood(pos.x, pos.z, detect, out _foodCell, out _foodDistance))
             _foodValid = true;
+
+        FoodKind foodKind = FoodKind.Plant;
+        bool foodInfected = false;
+        float2 foodPos = float2.zero;
+        if (_foodValid)
+        {
+            foodPos = ChunkFoodIndex.CellCenter(_foodCell);
+            _foodIndex.TryGetKind(_foodCell, out foodKind, out foodInfected);
+        }
+
+        var nest = Nest;
+        IsAtNest = nest != null && nest.Contains(self);
+        if (nest != null && _foodValid) nest.MarkFood(foodPos, rules.NestFoodMark * dt);
 
         if (!_terrain.TrySample(pos.x, pos.z, out _lastTerrain))
             _lastTerrain = TerrainSample.Invalid;
+
+        _lastDanger = ComputeDangerLevel();
+
+        float neighborLoad = 0f;
+        var nearest = CachedNearest;
+        if (nearest != null) nearest.Virology.TryGetViralInputs(out neighborLoad, out _, out _);
 
         var frame = new VectorizerFrame
         {
             Health            = Stats.Hp,
             Energy            = Stats.En,
-            DayPhase          = ResolveDayPhase(),
-            InDanger          = ComputeDangerLevel(),
+            DayPhase          = dayPhase,
+            InDanger          = _lastDanger,
             TimeToBreed       = ComputeBreedReadiness(),
             NearestEntityDist = _nearestDistance,
             NearestFoodDist   = _foodValid ? _foodDistance : -1f,
-            FoodDir           = _foodValid ? DirectionTo(in self, ChunkFoodIndex.CellCenter(_foodCell)) : float2.zero,
-            EntityDir         = _nearest != null ? DirectionTo(in self, Extension.Flat(_nearest.Motor.Position())) : float2.zero,
-            NestDir           = HasNest ? DirectionTo(in self, in Nest) : float2.zero,
+            FoodDir           = _foodValid ? DirectionTo(in self, in foodPos) : float2.zero,
+            EntityDir         = nearest != null ? DirectionTo(in self, Extension.Flat(nearest.Motor.Position())) : float2.zero,
+            NestDir           = nest != null ? DirectionTo(in self, nest.Position) : float2.zero,
             PoiDir            = Points.TryGetNearest(in self, out float2 poi) ? DirectionTo(in self, in poi) : float2.zero,
+            NestFoodDir       = nest != null && nest.HasFoodPeak ? DirectionTo(in self, nest.FoodPeak) : float2.zero,
+            Stomach           = Digestion.Fill,
+            WellFed           = Digestion.WellFed,
+            FoodToxic         = _foodValid && foodKind == FoodKind.Toxic ? 1f : 0f,
+            FoodLarge         = _foodValid && foodKind == FoodKind.Large ? 1f : 0f,
+            FoodMeat          = _foodValid && foodKind == FoodKind.Meat ? 1f : 0f,
+            FoodInfected      = foodInfected ? 1f : 0f,
+            Carrying          = Carrying > 0f ? math.saturate(Carrying / math.max(Stats.MaxEnergy * rules.StomachCapacityFraction, 1e-3f)) : 0f,
+            NestStorage       = nest != null ? math.saturate(nest.Storage / math.max(rules.NestStorageNorm, 1e-3f)) : 0f,
+            LocalDanger       = nest != null ? math.saturate(nest.DangerAt(self)) : 0f,
+            Alarm             = nest != null ? nest.Alarm : 0f,
+            AtNest            = IsAtNest ? 1f : 0f,
+            NeighborViralLoad = neighborLoad,
+            Speech            = Speech.Heard,
             MimickedAction    = MimickedActionIndex,
             Now               = nowD,
         };
         Virology.TryGetViralInputs(out frame.ViralLoad, out frame.ViralSegments, out frame.ViralNet);
 
-        LastInput = Vectorizer.Vectorize(in frame, _actionTimes, Speech.OtherSpeechHash, in _lastTerrain);
+        LastInput = Vectorizer.Vectorize(in frame, _actionTimes, in _lastTerrain);
 
         Speech.ConsumeOtherSpeech();
         ConsumeMimickedAction();
 
-        bool isIdle = Brain.ActiveDecision.Goal == SharedHierarchicalBrain.Goal.Survive
-                   && LastActionIndex == (int)EntityAction.Idle;
+        bool resting = LastAction == EntityAction.Idle || LastAction == EntityAction.Rest;
+        float digestMul = Tuning.DigestionMul;
+        if (LastAction == EntityAction.Rest && SinceAction(EntityAction.Eat) < rules.SynergyWindow)
+            digestMul *= rules.RestAfterEatDigestMul;
+
+        Digestion.Tick(Stats, dt, resting, digestMul, mods.RegenMultiplier, in rules, out float regenCredit);
+
+        float basal = rules.BasalEnergyDrain * Tuning.BasalDrainMul
+                    * (1f - rules.WellFedBasalReduction * Digestion.WellFed)
+                    * (night && !IsAtNest ? rules.NightOutsideDrainMul : 1f)
+                    * (1f + mods.Fever * rules.FeverDrainMul);
 
         Stats.Tick(dt,
             Motor.DrainEnergy(),
-            Tuning.EnergyRegenRate,
-            Virology.Modifiers.RegenMultiplier,
-            Virology.Modifiers.MetabolismMultiplier,
-            rules.BasalEnergyDrain * Tuning.BasalDrainMul,
-            rules.IdleRegenBasalFraction,
-            isIdle,
+            mods.MetabolismMultiplier,
+            basal,
             rules.StarvationThreshold, rules.StarvationDamage, rules.StarvationEnergyReturn,
-            out float regenCredit, out float metabolismCredit);
+            out float metabolismCredit);
 
         Virology.CreditDurableEffects(regenCredit, metabolismCredit, Stats.MaxEnergy);
         if (!IsAliveForTick()) return false;
+
+        _driveIntegral += Drive() * dt;
 
         _runner.Tick();
         if (!IsAliveForTick()) return false;
 
         var brainCtx = Brain.Context;
-        brainCtx.CoordBias[0] = Virology.Modifiers.WanderBias;
-        brainCtx.CoordBias[1] = Virology.Modifiers.HuntBias;
-        brainCtx.CoordBias[2] = Virology.Modifiers.ForageBias;
-        brainCtx.CoordBias[3] = Virology.Modifiers.SocialBias;
-        brainCtx.FleeBias     = Virology.Modifiers.FleeBias;
+        brainCtx.CoordBias[0] = mods.WanderBias;
+        brainCtx.CoordBias[1] = mods.HuntBias + mods.Frenzy * rules.FrenzyHuntBias;
+        brainCtx.CoordBias[2] = mods.ForageBias;
+        brainCtx.CoordBias[3] = mods.SocialBias;
+        brainCtx.FleeBias     = mods.FleeBias - mods.Frenzy * rules.FrenzyFleeSuppress;
+
+        if (nest != null && nest.Alarm > 0f)
+        {
+            float alarm = nest.Alarm;
+            if (nest.AlarmHunt) brainCtx.CoordBias[1] += alarm * rules.AlarmHuntBias;
+            else
+            {
+                brainCtx.CoordBias[0] += alarm * rules.AlarmSurviveBias;
+                brainCtx.FleeBias     += alarm * rules.AlarmFleeBias;
+            }
+        }
+
+        brainCtx.EnergyNorm = Stats.En / Stats.MaxEnergy;
 
         _cycleActive = true;
         Brain.EnqueueDecision(LastInput, now, dt);
         return true;
+    }
+
+    private static int CountAndRelease(int found)
+    {
+        for (int i = 0; i < found; i++) Neighbors[i] = null;
+        return found;
+    }
+
+    public float Drive()
+    {
+        ref readonly var r = ref SimulationRules.Frame;
+        float stored = (Digestion != null ? Digestion.Stomach : 0f) + Carrying;
+        float en = math.saturate((Stats.En + stored * r.DigestEffActive) / Stats.MaxEnergy);
+        float hp = math.saturate(Stats.Hp / Stats.MaxHealth);
+        float de = 1f - en, dh = 1f - hp;
+        return math.sqrt(r.DriveEnergyWeight * de * de + r.DriveHealthWeight * dh * dh);
+    }
+
+    private void BeginHomeostasis()
+    {
+        _decisionStart    = SimulationClock.TimeD;
+        _decisionIntegral = _driveIntegral;
+        _decisionDrive    = Stats != null && !Stats.IsDisposed ? Drive() : 0f;
+    }
+
+    public float HomeostaticReturn()
+    {
+        if (Stats == null || Stats.IsDisposed) return 0f;
+        ref readonly var r = ref SimulationRules.Frame;
+
+        float elapsed  = (float)(SimulationClock.TimeD - _decisionStart);
+        float integral = (float)(_driveIntegral - _decisionIntegral);
+        float shaping  = _decisionDrive - DelayedPerceptron.DiscountTime(r.ExecGammaPerSecond, elapsed) * Drive();
+        return -r.DriveRewardWeight * integral + r.DriveShapingWeight * shaping;
+    }
+
+    public void TakeDamage(float amount, EntityModel source)
+    {
+        if (amount <= 0f || Stats == null || Stats.IsDisposed) return;
+        ref readonly var r = ref SimulationRules.Frame;
+
+        if (IsAtNest && LastAction == EntityAction.Rest) amount *= r.NestRestDamageMul;
+        Stats.Hp -= amount;
+        _lastDamageTime = SimulationClock.TimeD;
+
+        var nest = Nest;
+        if (nest == null) return;
+        float norm = amount / Stats.MaxHealth;
+        nest.MarkDanger(Position2D, norm * r.NestDangerMark);
+        if (IsAtNest) nest.RaiseAlarm(norm * r.AlarmFromDamage);
+    }
+
+    public void Broadcast(float4 speech)
+    {
+        Speech.SetOwn(speech);
+        if (Perception == null) return;
+
+        ref readonly var r = ref SimulationRules.Frame;
+        bool warn = IsInDanger;
+        double until = SimulationClock.TimeD + r.WarnWindow;
+
+        int found = Perception.FindEntitiesInRadius(Motor.Position(), this, r.SpeechRadius, Neighbors);
+        for (int i = 0; i < found; i++)
+        {
+            var e = Neighbors[i];
+            Neighbors[i] = null;
+            if (e == null || e.IsDisposed || e.IsDeathPending) continue;
+            e.Speech.ReceiveVector(speech);
+            if (warn) e.Warn(until);
+        }
     }
 
     private static float2 DirectionTo(in float2 from, in float2 to)
@@ -377,21 +610,23 @@ public class EntityModel : AEntity
     private void StartDecision(in BrainDecision decision)
     {
         _runner.Interrupt();
+        BeginHomeostasis();
 
         int a   = decision.Action;
         var cmd = (uint)a < (uint)_commands.Length ? _commands[a] : null;
 
+        var r = SimulationRules.Active;
         if (cmd == null)
         {
-            Brain.CompleteDecision(in decision, -0.2f, SimulationClock.Time, EntityCommandStatus.Failed);
+            Brain.CompleteDecision(in decision, r.FailureReward, SimulationClock.Time, EntityCommandStatus.Failed);
             return;
         }
 
         if (!cmd.CanExecute())
         {
-            float penalty = SimulationRules.Active.InfeasibleActionHealthPenalty;
+            float penalty = r.InfeasibleActionHealthPenalty;
             if (penalty > 0f) Stats.Hp -= penalty;
-            Brain.CompleteDecision(in decision, -0.15f, SimulationClock.Time, EntityCommandStatus.Failed);
+            Brain.CompleteDecision(in decision, r.InfeasibleActionReward, SimulationClock.Time, EntityCommandStatus.Failed);
             return;
         }
 
@@ -428,6 +663,7 @@ public class EntityModel : AEntity
     public override void DeepClean()
     {
         _runner?.Abandon();
+        Planner?.Cancel(this);
         _nearest = null;
         Vectorizer?.Dispose();
         Vectorizer = null;
