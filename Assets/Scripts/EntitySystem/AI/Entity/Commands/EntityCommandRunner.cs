@@ -57,6 +57,6 @@ public sealed class EntityCommandRunner
     {
         var command = _current;
         _current = null;
-        _model.Brain.CompleteDecision(in _decision, command.Reward, SimulationClock.Time, status);
+        _model.Brain.CompleteDecision(in _decision, command.Reward + _model.HomeostaticReturn(), SimulationClock.Time, status);
     }
 }

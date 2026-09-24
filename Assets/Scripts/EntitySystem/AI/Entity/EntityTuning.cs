@@ -32,6 +32,7 @@ public struct EntityTuning
     public LayerMask FoodLayer;
 
     [System.NonSerialized] public float BasalDrainMul;
+    [System.NonSerialized] public float DigestionMul;
 
     public static EntityTuning Express(in EntityTuning source, in GeneticParameters g)
     {
@@ -51,7 +52,7 @@ public struct EntityTuning
 
         t.MaxEnergy *= energy;
 
-        t.EnergyRegenRate *= metab;
+        t.DigestionMul     = metab;
         t.AttackCooldown  /= math.max(metab, 1e-3f);
 
         t.DetectionRadius *= detect;

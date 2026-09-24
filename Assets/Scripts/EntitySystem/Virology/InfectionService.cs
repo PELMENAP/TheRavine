@@ -44,60 +44,90 @@ namespace TheRavine.EntityControl.Virology
                 if (virology == null || !virology.IsCreated || virology.IsDisposed) continue;
                 if (!virology.Modifiers.SpreadRequested) continue;
 
-                float amp = virology.Modifiers.SpreadAmp;
-                virology.Modifiers.SpreadRequested = false;
-                virology.Modifiers.SpreadAmp = 0f;
+                ref var m = ref virology.Modifiers;
+                float amp    = m.SpreadAmp;
+                float radius = m.SpreadViaSpeech ? SimulationRules.Frame.SpeechSpreadRadius : SimulationRules.Frame.ContactRadius;
+                m.SpreadRequested = false;
+                m.SpreadViaSpeech = false;
+                m.SpreadAmp = 0f;
 
-                TryTransmit(donor, virology, amp);
+                TryTransmit(donor, virology, amp, radius);
             }
         }
 
         private readonly EntityModel[] _neighbors = new EntityModel[MaxNeighbors];
 
-        private void TryTransmit(EntityModel donor, VirologyComponent virology, float amp)
+        private void TryTransmit(EntityModel donor, VirologyComponent virology, float amp, float radius)
         {
             int donorIndex = virology.SegmentIndexAt(virology.LastCodonIndex);
             if (donorIndex < 0) { FailedAttempts++; return; }
 
-            int count = virology.Restrict(donorIndex, _payload);
-            if (count <= 0) { FailedAttempts++; return; }
-
-            int found = donor.Perception.FindEntitiesInRadius(donor.Motor.Position(), donor,
-                SimulationRules.Frame.ContactRadius, _neighbors);
+            int found = donor.Perception.FindEntitiesInRadius(donor.Motor.Position(), donor, radius, _neighbors);
             if (found == 0) { FailedAttempts++; return; }
 
             var target = SelectTarget(donor, found, amp);
+            Array.Clear(_neighbors, 0, found);
             if (target == null) { FailedAttempts++; return; }
 
             float hostViability = donor.Stats != null && !donor.Stats.IsDisposed && donor.Stats.MaxHealth > 0f
-                ? math.saturate(donor.Stats.Health.Value / donor.Stats.MaxHealth)
+                ? math.saturate(donor.Stats.Hp / donor.Stats.MaxHealth)
                 : 0f;
 
             float chance = math.saturate(amp * AccuracyBias) * math.max(hostViability, SelectionFloor);
+            if (ViralMutator.NextUnit(ref _rng) > chance) { FailedAttempts++; return; }
 
-            if (ViralMutator.NextUnit(ref _rng) > chance)
-            {
-                FailedAttempts++;
-                return;
-            }
+            if (Deliver(donor, virology, donorIndex, target)) CarryPoi(donor, virology, target);
+        }
 
-            var receiver = target.Virology;
+        public bool TryTransmitBite(EntityModel attacker, EntityModel target)
+        {
+            if (!_created || Resolve(target) == null) return false;
+            var virology = attacker?.Virology;
+            if (virology == null || !virology.IsCreated || virology.IsDisposed) return false;
+            if (ViralMutator.NextUnit(ref _rng) >= SimulationRules.Frame.BiteTransmissionChance) return false;
+
+            int index = virology.RandomViralSegment();
+            if (index < 0) return false;
+            return Deliver(attacker, virology, index, target);
+        }
+
+        public bool InfectFromPayload(EntityModel receiver, in ViralPayload payload)
+        {
+            if (!_created || Resolve(receiver) == null || payload.Codons == null || payload.Count <= 0) return false;
+
+            int count = math.min(payload.Count, PayloadCapacity);
+            Array.Copy(payload.Codons, _payload, count);
+
+            int mutated = ViralMutator.Transmit(_payload, 0, count, _mutated, ViralMutator.BaseMutationRate, ref _rng);
+            if (mutated <= 0) return false;
+
+            return Insert(receiver.Virology, mutated, payload.LineageId);
+        }
+
+        private bool Deliver(EntityModel donor, VirologyComponent virology, int donorIndex, EntityModel target)
+        {
+            int count = virology.Restrict(donorIndex, _payload);
+            if (count <= 0) { FailedAttempts++; return false; }
 
             float rate = ViralMutator.ResolveRate(virology.FirstCodonOf(donorIndex),
                 virology.Centroids, VirologyRuntime.CellBias, virology.Sharpness,
                 virology.Modifiers.MutationRateDelta);
 
             int mutatedCount = ViralMutator.Transmit(_payload, 0, count, _mutated, rate, ref _rng);
-            if (mutatedCount <= 0) { FailedAttempts++; return; }
+            if (mutatedCount <= 0) { FailedAttempts++; return false; }
 
-            ulong strainId  = ViralMutator.ComputeStrainId(_mutated, mutatedCount);
-            ulong lineageId = virology.LineageOf(donorIndex);
+            return Insert(target.Virology, mutatedCount, virology.LineageOf(donorIndex));
+        }
+
+        private bool Insert(VirologyComponent receiver, int mutatedCount, ulong lineageId)
+        {
+            ulong strainId = ViralMutator.ComputeStrainId(_mutated, mutatedCount);
 
             if (receiver.HasStrain(strainId, out int existing))
             {
                 receiver.ReinforceSegment(existing, VirologyComponent.SuperinfectionBoost);
                 SuperinfectionBlocks++;
-                return;
+                return false;
             }
 
             ulong signature = Segment.ComputeSignature(_mutated, 0, mutatedCount);
@@ -105,14 +135,28 @@ namespace TheRavine.EntityControl.Virology
             if (receiver.TryFindLineageMatch(signature, strainId, out int partner)
                 && ViralMutator.NextUnit(ref _rng) < RecombinationChance)
             {
-                if (Recombine(receiver, partner, mutatedCount)) Recombinations++;
+                bool ok = Recombine(receiver, partner, mutatedCount);
+                if (ok) Recombinations++;
                 else FailedAttempts++;
-                return;
+                return ok;
             }
 
             if (receiver.TryInsertSegment(_mutated, mutatedCount, strainId, lineageId, _rng.NextUInt()))
+            {
                 Transmissions++;
-            else FailedAttempts++;
+                return true;
+            }
+            FailedAttempts++;
+            return false;
+        }
+
+        private static void CarryPoi(EntityModel donor, VirologyComponent virology, EntityModel target)
+        {
+            if (virology.Modifiers.CarryPoi < SimulationRules.Frame.CarryPoiThreshold) return;
+
+            float2 here = donor.Position2D;
+            if (!donor.Points.TryGetNearest(in here, out float2 poi)) return;
+            target.Points.TryRemember(in poi, SimulationRules.Active.RememberPointMinSpacing);
         }
 
         private static EntityModel Resolve(EntityModel model)
@@ -194,11 +238,11 @@ namespace TheRavine.EntityControl.Virology
             int pick = (int)(_rng.NextUInt() % (uint)found);
             return Resolve(_neighbors[pick]);
         }
+
         public void Dispose()
         {
             if (!_created) return;
             _created = false;
-
         }
     }
 }

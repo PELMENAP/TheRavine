@@ -19,21 +19,36 @@ public struct VectorizerFrame
     public float2 EntityDir;
     public float2 NestDir;
     public float2 PoiDir;
+    public float2 NestFoodDir;
+    public float  Stomach;
+    public float  WellFed;
+    public float  FoodToxic;
+    public float  FoodLarge;
+    public float  FoodMeat;
+    public float  FoodInfected;
+    public float  Carrying;
+    public float  NestStorage;
+    public float  LocalDanger;
+    public float  Alarm;
+    public float  AtNest;
+    public float  NeighborViralLoad;
+    public float4 Speech;
     public int    MimickedAction;
     public double Now;
 }
 
 public class InputVectorizer : IDisposable
 {
-    public const int VectorSize  = 64;
-    public const int ActionCount = 13;
+    public const int VectorSize  = 80;
+    public const int ActionCount = (int)EntityAction.StoreFood + 1;
 
     public const int TraceOffset     = 8;
     public const int DirectionOffset = TraceOffset + ActionCount;
-    public const int StomachSlot     = DirectionOffset + 8;
-    public const int WellFedSlot     = StomachSlot + 1;
-    public const int ReservedSlots   = 5;
-    public const int TailOffset      = StomachSlot + ReservedSlots;
+    public const int StateOffset     = DirectionOffset + 10;
+    public const int StateSlots      = 13;
+    public const int TailOffset      = StateOffset + StateSlots;
+    public const int TailSlots       = 30;
+    public const int ReservedOffset  = TailOffset + TailSlots;
 
     private float _maxHealth;
     private float _maxEnergy;
@@ -59,7 +74,7 @@ public class InputVectorizer : IDisposable
 
     public int GetVectorSize() => VectorSize;
 
-    public float[] Vectorize(in VectorizerFrame f, double[] actionTimes, in SpeechHash speech, in TerrainSample terrain)
+    public float[] Vectorize(in VectorizerFrame f, double[] actionTimes, in TerrainSample terrain)
     {
         var v = _vector;
         float health = f.Health, energy = f.Energy;
@@ -90,21 +105,35 @@ public class InputVectorizer : IDisposable
         }
 
         int d = DirectionOffset;
-        v[d]     = f.FoodDir.x;   v[d + 1] = f.FoodDir.y;
-        v[d + 2] = f.EntityDir.x; v[d + 3] = f.EntityDir.y;
-        v[d + 4] = f.NestDir.x;   v[d + 5] = f.NestDir.y;
-        v[d + 6] = f.PoiDir.x;    v[d + 7] = f.PoiDir.y;
+        v[d]     = f.FoodDir.x;     v[d + 1] = f.FoodDir.y;
+        v[d + 2] = f.EntityDir.x;   v[d + 3] = f.EntityDir.y;
+        v[d + 4] = f.NestDir.x;     v[d + 5] = f.NestDir.y;
+        v[d + 6] = f.PoiDir.x;      v[d + 7] = f.PoiDir.y;
+        v[d + 8] = f.NestFoodDir.x; v[d + 9] = f.NestFoodDir.y;
 
-        for (int i = 0; i < ReservedSlots; i++) v[StomachSlot + i] = 0f;
+        int s = StateOffset;
+        v[s]      = f.Stomach;
+        v[s + 1]  = f.WellFed;
+        v[s + 2]  = f.FoodToxic;
+        v[s + 3]  = f.FoodLarge;
+        v[s + 4]  = f.FoodMeat;
+        v[s + 5]  = f.FoodInfected;
+        v[s + 6]  = f.Carrying;
+        v[s + 7]  = f.NestStorage;
+        v[s + 8]  = f.LocalDanger;
+        v[s + 9]  = f.Alarm;
+        v[s + 10] = f.AtNest;
+        v[s + 11] = f.NeighborViralLoad;
+        v[s + 12] = 0f;
 
         int idx = TailOffset;
         v[idx++] = math.saturate(f.InDanger);
         v[idx++] = math.saturate(f.TimeToBreed);
 
-        v[idx++] = speech.A;
-        v[idx++] = speech.B;
-        v[idx++] = speech.C;
-        v[idx++] = speech.D;
+        v[idx++] = f.Speech.x;
+        v[idx++] = f.Speech.y;
+        v[idx++] = f.Speech.z;
+        v[idx++] = f.Speech.w;
 
         v[idx++] = f.NearestEntityDist >= 0f ? 1f - math.saturate(f.NearestEntityDist / MaxDetectionRadius) : 0f;
         v[idx++] = f.NearestFoodDist   >= 0f ? 1f - math.saturate(f.NearestFoodDist   / MaxDetectionRadius) : 0f;
@@ -119,8 +148,9 @@ public class InputVectorizer : IDisposable
         v[idx++] = hasMimic ? 1f : 0f;
         v[idx++] = hasMimic ? (f.MimickedAction + 0.5f) / ActionCount : 0f;
 
-        v[idx] = f.ViralNet;
+        v[idx++] = f.ViralNet;
 
+        for (int i = idx; i < VectorSize; i++) v[i] = 0f;
         return v;
     }
 

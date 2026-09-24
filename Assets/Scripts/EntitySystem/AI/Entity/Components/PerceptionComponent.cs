@@ -17,6 +17,12 @@ public class PerceptionComponent : IComponent
     public int FindEntitiesInRadius(Vector3 origin, EntityModel self, float radius, EntityModel[] result)
         => _grid != null ? _grid.FindInRadius(origin, self, radius, result) : 0;
 
+    public EntityModel FindNearestEntity(Vector3 origin, EntityModel self, float radius, out float distance)
+    {
+        if (_grid == null) { distance = -1f; return null; }
+        return _grid.FindNearest(origin, self, radius, out distance);
+    }
+
     public EntityModel FindNearestEntity(Vector3 origin, EntityModel self, out float distance)
     {
         if (_grid == null) { distance = -1f; return null; }

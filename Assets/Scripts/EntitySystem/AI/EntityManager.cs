@@ -47,6 +47,8 @@ public class EntityManager : MonoBehaviour
     [Header("Virology")]
     [SerializeField] private StrainCodonTable strainCodonTable;
 
+    [SerializeField] private bool useSavedBrain;
+
     private float[] _fitnessScratch = new float[64];
     private float   _fitnessMedian;
     private float   _fitnessSpread = 1f;
@@ -75,8 +77,6 @@ public class EntityManager : MonoBehaviour
 
     private ChunkFoodIndex _foodIndex;
     public ChunkFoodIndex FoodIndex => _foodIndex;
-    private float _foodBudget;
-    private float _lastFoodTime;
 
     [SerializeField] private float simulationTimeScale = 1f;
 
@@ -97,7 +97,22 @@ public class EntityManager : MonoBehaviour
     private void Update()
     {
         SimulationClock.Advance(Time.deltaTime * simulationTimeScale);
+        _planner.Flush();
         _motion.Step();
+    }
+
+    private NestState _nest;
+    public NestState Nest => _nest;
+    private MovePlanner _planner;
+    private float _lastEcologyTime;
+    private float _lastNestTime;
+
+    public void ReportThreat(Vector3 position, float magnitude)
+    {
+        if (_nest == null) return;
+        var p = new Unity.Mathematics.float2(position.x, position.z);
+        _nest.MarkDanger(p, magnitude);
+        _nest.RaiseAlarm(magnitude);
     }
     private MotionSystem _motion;
     public MotionSystem Motion => _motion;
@@ -108,13 +123,21 @@ public class EntityManager : MonoBehaviour
         ContextSlabs.Reserve(maxPopulation);
         _motion = new MotionSystem(maxPopulation);
         ServiceLocator.Services.Register(_grid);
+        Vector3 home = transform.position;
+        _nest = new NestState(new Unity.Mathematics.float2(home.x, home.z));
+        ServiceLocator.Services.Register(_nest);
+        _planner = new MovePlanner(_motion);
+        _planner.BindNest(_nest);
+        ServiceLocator.Services.Register(_planner);
         NeuralModelStorage.RegisterFactory(new SharedBrainSnapshotFactory());
         _infection = new InfectionService((uint)UnityEngine.Random.Range(1, int.MaxValue));
+        ServiceLocator.Services.Register(_infection);
         _tournamentRng = new XorShift32((uint)UnityEngine.Random.Range(1, int.MaxValue));
-
-        _sharedBrain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden);
-
-        // LoadBrain();
+        
+        if(useSavedBrain)
+            LoadBrain();
+        else
+            _sharedBrain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden);
     }
 
 
@@ -166,7 +189,8 @@ public class EntityManager : MonoBehaviour
             SpawnFood();
 
         _nextGenerationTime = SimulationClock.Time + SimulationRules.Active.GenerationInterval;
-        _lastFoodTime       = SimulationClock.Time;
+        _lastEcologyTime    = SimulationClock.Time;
+        _lastNestTime       = SimulationClock.Time;
 
         _tickCts = new CancellationTokenSource();
         EntityTickLoopAsync(_tickCts.Token).Forget();
@@ -226,6 +250,7 @@ public class EntityManager : MonoBehaviour
                 e.EndCycle();
             }
 
+            _planner.Flush();
             _infection.ProcessSpread(_tickSnapshot, _tickCursor, end);
 
             _transmissions        = _infection.Transmissions;
@@ -240,6 +265,7 @@ public class EntityManager : MonoBehaviour
                 ProcessPendingDeaths();
                 _sharedBrain.ApplyPendingGradients();
                 _foodIndex?.PruneUnloaded();
+                TickNest();
 
                 float now = SimulationClock.Time;
                 if (now >= _nextGenerationTime)
@@ -258,33 +284,29 @@ public class EntityManager : MonoBehaviour
     {
         if (_foodIndex == null || maxFood <= 0) return;
 
-        ref readonly var rules = ref SimulationRules.Frame;
+        var rules = SimulationRules.Active;
+        float now = SimulationClock.Time;
+        float dt  = now - _lastEcologyTime;
+        if (dt < rules.EcologyTickInterval) return;
+        _lastEcologyTime = now;
+        if (dt > rules.EcologyMaxStep) dt = rules.EcologyMaxStep;
 
-        float now   = SimulationClock.Time;
-        float dt    = now - _lastFoodTime;
-        _lastFoodTime = now;
+        float season = 1f + rules.SeasonAmplitude * Mathf.Sin(2f * Mathf.PI * now / Mathf.Max(rules.SeasonPeriod, 1f));
+        _foodIndex.TickEcology(dt, SimulationClock.TimeD, season, maxFood);
+    }
 
-        if (dt <= 0f) return;
-        if (dt > rules.FoodRegenMaxStep) dt = rules.FoodRegenMaxStep;
+    private void TickNest()
+    {
+        if (_nest == null) return;
+        float now = SimulationClock.Time;
+        float dt  = now - _lastNestTime;
+        _lastNestTime = now;
 
-        int count = _foodIndex.FoodCount;
-        if (count >= maxFood) { _foodBudget = 0f; return; }
+        int members = 0;
+        for (int i = 0; i < _entities.Count; i++)
+            if (_entities[i].IsAtNest) members++;
 
-        float headroom = 1f - (float)count / maxFood;
-        _foodBudget += rules.FoodRegenPerSecond * dt * headroom;
-
-        int burst = rules.FoodRegenBurst;
-        int whole = (int)_foodBudget;
-        if (whole <= 0) return;
-        if (whole > burst) whole = burst;
-
-        for (int i = 0; i < whole; i++)
-        {
-            if (!SpawnFood()) break;
-            _foodBudget -= 1f;
-        }
-
-        if (_foodBudget > burst) _foodBudget = burst;
+        _nest.Tick(dt, members);
     }
 
     public EntityModel SpawnEntity(Vector3 position, EntityBrainContext inheritedCtx = null, EntityModel parent = null)
@@ -312,9 +334,6 @@ public class EntityManager : MonoBehaviour
         var model = new EntityModel();
 
         model.Configure(_sharedBrain, ctx, viewModel, viewModel, go, tuning, parent);
-        Vector3 nest  = transform.position;
-        model.Nest    = new Unity.Mathematics.float2(nest.x, nest.z);
-        model.HasNest = true;
         model.Init();
         viewModel.Initialize(model);
         view.Initialize(viewModel);
@@ -406,7 +425,7 @@ public class EntityManager : MonoBehaviour
             int cellX = Mathf.FloorToInt((origin.x + v.x) / MapGenerator.scale);
             int cellZ = Mathf.FloorToInt((origin.z + v.y) / MapGenerator.scale);
 
-            if (_foodIndex.TryAddFood(cellX, cellZ, 1)) return true;
+            if (_foodIndex.TryAddFood(cellX, cellZ, _foodIndex.RollKind(0, SimulationRules.Active))) return true;
         }
         return false;
     }
@@ -419,6 +438,7 @@ public class EntityManager : MonoBehaviour
     private void HandleEntityDied(EntityModel model)
     {
         if (model == null || model.IsDisposed || model.IsDeathPending) return;
+        model.DeathPosition = model.Position2D;
         model.MarkDeathPending();
         _pendingDeath.Enqueue(model);
     }
@@ -458,6 +478,7 @@ public class EntityManager : MonoBehaviour
 
             model.OnReproduceRequest -= SpawnChild;
             model.CaptureFinalFitness();
+            DropCorpse(model);
             model.Brain?.CompleteTerminal(TerminalPenaltyFor(model));
             RemoveEntitySwapBack(model);
             OnEntityDied?.Invoke(model);
@@ -466,6 +487,17 @@ public class EntityManager : MonoBehaviour
                 Array.Resize(ref _deferredDispose, Math.Max(_deferredDispose.Length << 1, 8));
             _deferredDispose[_deferredCount++] = model;
         }
+    }
+
+    private void DropCorpse(EntityModel model)
+    {
+        if (_foodIndex == null || model.Stats == null || model.Stats.IsDisposed) return;
+
+        var virology = model.Virology;
+        ViralPayload payload = default;
+        bool infected = virology != null && virology.TryExtractPayload(out payload);
+
+        _foodIndex.TryAddCorpse(model.DeathPosition, model.BodyEnergy, in payload, infected);
     }
 
     private void FlushDeferredDisposals()
@@ -629,6 +661,8 @@ public class EntityManager : MonoBehaviour
         _tickCts?.Dispose();
         ProcessPendingDeaths();
         FlushDeferredDisposals();
+        _planner?.Dispose();
+        _nest?.Dispose();
         _motion?.Dispose();
         _sharedBrain?.Dispose();
         ContextSlabs.DisposeAll();

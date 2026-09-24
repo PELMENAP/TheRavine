@@ -311,33 +311,51 @@ public sealed unsafe class MotionSystem : IDisposable
             if (_states[i].Done != 0) Finish(i);
     }
 
+    public HeightAtlas PrepareAtlas(float2[] points, int count, float margin)
+    {
+        if (!_disposed && _map != null)
+        {
+            BuildAtlas();
+            for (int i = 0; i < count; i++) AppendAtlas(points[i].x, points[i].y, margin, false);
+        }
+        return new HeightAtlas { Index = _atlasIndex, Chunks = _atlasChunks.AsArray() };
+    }
+
+    private unsafe void AppendAtlas(float x, float z, float margin, bool generate)
+    {
+        const float invChunk = 1f / MapGenerator.chunkSize;
+
+        int x0 = (int)math.floor((x - margin) * invChunk);
+        int x1 = (int)math.floor((x + margin) * invChunk);
+        int z0 = (int)math.floor((z - margin) * invChunk);
+        int z1 = (int)math.floor((z + margin) * invChunk);
+
+        for (int cz = z0; cz <= z1; cz++)
+        for (int cx = x0; cx <= x1; cx++)
+        {
+            long key = Position2Int.Pack(cx, cz);
+            if (_atlasIndex.ContainsKey(key)) continue;
+
+            ChunkData chunk;
+            if (generate) chunk = _map.GetMapData(cx, cz);
+            else if (!_map.TryGetChunk(key, out chunk) || chunk == null) continue;
+
+            _atlasIndex.Add(key, _atlasChunks.Length);
+            _atlasChunks.Add(new HeightChunk { Heights = (float*)chunk.HeightRaw.GetUnsafeReadOnlyPtr() });
+        }
+    }
+
     private void BuildAtlas()
     {
         _atlasIndex.Clear();
         _atlasChunks.Clear();
 
-        const float margin   = AtlasMarginCells * MapGenerator.scale;
-        const float invChunk = 1f / MapGenerator.chunkSize;
+        const float margin = AtlasMarginCells * MapGenerator.scale;
 
         for (int i = 0; i < _count; i++)
         {
             float3 p = _states[i].Position;
-
-            int x0 = (int)math.floor((p.x - margin) * invChunk);
-            int x1 = (int)math.floor((p.x + margin) * invChunk);
-            int z0 = (int)math.floor((p.z - margin) * invChunk);
-            int z1 = (int)math.floor((p.z + margin) * invChunk);
-
-            for (int cz = z0; cz <= z1; cz++)
-            for (int cx = x0; cx <= x1; cx++)
-            {
-                long key = Position2Int.Pack(cx, cz);
-                if (_atlasIndex.ContainsKey(key)) continue;
-
-                var chunk = _map.GetMapData(cx, cz);
-                _atlasIndex.Add(key, _atlasChunks.Length);
-                _atlasChunks.Add(new HeightChunk { Heights = (float*)chunk.HeightRaw.GetUnsafeReadOnlyPtr() });
-            }
+            AppendAtlas(p.x, p.z, margin, true);
         }
     }
 

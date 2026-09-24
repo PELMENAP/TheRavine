@@ -119,6 +119,11 @@ namespace TheRavine.EntityControl.Virology
             if (!_created || IsDisposed || count <= 0) return false;
             if (_tape.Length + count > _tape.Capacity) return false;
             if (_segmentCount + 2 > _segments.Length) return false;
+            if (_immuneCount > 0 && IsImmune(Segment.ComputeSignature(source, 0, count)))
+            {
+                ImmuneBlocks++;
+                return false;
+            }
 
             var rng = new XorShift32(seed == 0u ? 1u : seed);
             int index = _tape.Length > 0 ? (int)(rng.NextUInt() % (uint)(_tape.Length + 1)) : 0;
@@ -176,7 +181,7 @@ namespace TheRavine.EntityControl.Virology
             AppendEndogenous(EndogenousLength, _tape.ComputeHash(0, EndogenousLength));
         }
 
-        public void Step(StatsComponent stats, float dt)
+        public void Step(StatsComponent stats, float dt, in HostState host)
         {
             if (!_created || IsDisposed || stats == null || stats.IsDisposed) return;
 
@@ -196,11 +201,11 @@ namespace TheRavine.EntityControl.Virology
             for (int i = 0; i < n; i++)
             {
                 if (_tape.Length <= 0 || stats.Hp <= 0f) break;
-                StepCodon(stats, in rules);
+                StepCodon(stats, in rules, in host);
             }
         }
 
-        private void StepCodon(StatsComponent stats, in SimulationRules.RulesFrame rules)
+        private void StepCodon(StatsComponent stats, in SimulationRules.RulesFrame rules, in HostState host)
         {
             if (_dormantLeft > 0)
             {
@@ -226,7 +231,7 @@ namespace TheRavine.EntityControl.Virology
 
             var result = Ribosome.Step(ref _tape, ref _modifiers, ref _primed, owner,
                 _posAction[pos], _posD2[pos], VirologyRuntime.Descriptors,
-                _table.Sharpness, energyBefore, MaxTapeLength);
+                _table.Sharpness, energyBefore, MaxTapeLength, in host);
 
             _lastAction = result.Action;
             _lastAmp = result.Amp;
@@ -273,8 +278,116 @@ namespace TheRavine.EntityControl.Virology
 
             _valuesDirty = true;
 
+            if (_modifiers.ImmunizeAmount > 0f && seg.IsEndogenous) Immunize(_modifiers.ImmunizeAmount);
+            if (_modifiers.CaptureRequested && !seg.IsEndogenous) { TryCapture(owner, in rules); return; }
             if (_modifiers.ExciseRequested) { TryExcise(owner); return; }
             if (_modifiers.ReplicateRequested) TryReplicate(owner);
+        }
+
+        private ulong[] _immune;
+        private int _immuneHead;
+        private int _immuneCount;
+        public int ImmuneBlocks { get; private set; }
+
+        private void Remember(ulong signature)
+        {
+            if (_immune == null || _immune.Length == 0) return;
+            for (int i = 0; i < _immuneCount; i++)
+                if (_immune[i] == signature) return;
+
+            _immune[_immuneHead] = signature;
+            _immuneHead = (_immuneHead + 1) % _immune.Length;
+            if (_immuneCount < _immune.Length) _immuneCount++;
+        }
+
+        public bool IsImmune(ulong signature)
+        {
+            int threshold = SimulationRules.Frame.ImmuneHammingThreshold;
+            for (int i = 0; i < _immuneCount; i++)
+                if (math.countbits(_immune[i] ^ signature) <= threshold) return true;
+            return false;
+        }
+
+        private void Immunize(float amount)
+        {
+            for (int i = 0; i < _segmentCount; i++)
+            {
+                ref var s = ref _segments[i];
+                if (s.IsEndogenous) continue;
+                Remember(s.Signature);
+                s.Integrity -= amount;
+            }
+            _valuesDirty = true;
+        }
+
+        private bool TryCapture(int owner, in SimulationRules.RulesFrame rules)
+        {
+            int endo = -1;
+            for (int i = 0; i < _segmentCount; i++)
+                if (_segments[i].IsEndogenous) { endo = i; break; }
+            if (endo < 0) return false;
+
+            var src = _segments[endo];
+            int n = math.min(math.min(rules.CaptureLength, src.Length), _tape.Capacity - _tape.Length);
+            if (n <= 0) return false;
+
+            int from = src.Start + (int)(_rng.NextUInt() % (uint)(src.Length - n + 1));
+            Array.Copy(_tape.Codons, from, _scratch, 0, n);
+
+            ref var seg = ref _segments[owner];
+            int insertAt = seg.Start + seg.Length;
+            if (!_tape.TryInsert(insertAt, _scratch, 0, n)) return false;
+
+            for (int i = 0; i < _segmentCount; i++)
+                if (i != owner && _segments[i].Start >= insertAt) _segments[i].Start += n;
+
+            seg.Length   += n;
+            seg.Signature = Segment.ComputeSignature(_tape.Codons, seg.Start, seg.Length);
+
+            RebuildCaches();
+            _segmentsDirty = true;
+            return true;
+        }
+
+        public bool TryExtractPayload(out ViralPayload payload)
+        {
+            payload = default;
+            if (!_created || IsDisposed) return false;
+
+            int best = -1;
+            float bestMass = 0f;
+            for (int i = 0; i < _segmentCount; i++)
+            {
+                var s = _segments[i];
+                if (s.IsEndogenous) continue;
+                float mass = s.Length * s.Integrity;
+                if (mass <= bestMass) continue;
+                bestMass = mass;
+                best = i;
+            }
+            if (best < 0) return false;
+
+            var seg = _segments[best];
+            var codons = new ushort[seg.Length];
+            Array.Copy(_tape.Codons, seg.Start, codons, 0, seg.Length);
+            payload = new ViralPayload { Codons = codons, Count = seg.Length, StrainId = seg.StrainId, LineageId = seg.LineageId };
+            return true;
+        }
+
+        public int RandomViralSegment()
+        {
+            int viral = 0;
+            for (int i = 0; i < _segmentCount; i++)
+                if (!_segments[i].IsEndogenous) viral++;
+            if (viral == 0) return -1;
+
+            int pick = (int)(_rng.NextUInt() % (uint)viral);
+            for (int i = 0; i < _segmentCount; i++)
+            {
+                if (_segments[i].IsEndogenous) continue;
+                if (pick-- == 0) return i;
+            }
+            return -1;
         }
 
         private void DegradeCodon(int pos, int owner, in SimulationRules.RulesFrame rules)
@@ -292,7 +405,7 @@ namespace TheRavine.EntityControl.Virology
 
         private void DecayIntegrity(float dt, in SimulationRules.RulesFrame rules)
         {
-            float decay = rules.IntegrityDecayPerSecond * dt;
+            float decay = rules.IntegrityDecayPerSecond * dt * (1f + _modifiers.Fever * rules.FeverIntegrityMul);
             if (decay <= 0f) return;
 
             for (int i = _segmentCount - 1; i >= 0; i--)
@@ -339,6 +452,7 @@ namespace TheRavine.EntityControl.Virology
         {
             var seg = _segments[index];
             if (seg.IsEndogenous) return false;
+            Remember(seg.Signature);
 
             int start = seg.Start;
             int len = seg.Length;
@@ -462,6 +576,9 @@ namespace TheRavine.EntityControl.Virology
             _posD2 = new float[TapeCapacity];
             _posSeg = new byte[TapeCapacity];
             _modifiers = EffectModifiers.Neutral;
+            _immune = new ulong[math.max(0, SimulationRules.Active.ImmuneMemorySize)];
+            _immuneHead = 0;
+            _immuneCount = 0;
             return true;
         }
 

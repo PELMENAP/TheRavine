@@ -12,10 +12,15 @@ public readonly struct BrainDecision
     public readonly float StartTime;
     public readonly float Duration;
     public readonly float2 Heading;
+    public readonly float  Curvature;
+    public readonly float4 Speech;
 
     public BrainDecision(int action, int execDecisionId, int coordDecisionId,
-        SharedHierarchicalBrain.Goal goal, float startTime, float duration, in float2 heading)
+        SharedHierarchicalBrain.Goal goal, float startTime, float duration, in float2 heading,
+        float curvature = 0f, float4 speech = default)
     {
+        Curvature = curvature;
+        Speech = speech;
         Action = action;
         ExecDecisionId = execDecisionId;
         CoordDecisionId = coordDecisionId;

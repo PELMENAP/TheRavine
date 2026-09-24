@@ -28,7 +28,18 @@ namespace TheRavine.EntityControl.Virology
         Dormant,
         MutationRateUp,
         MutationRateDown,
-        Junk
+        Junk,
+        SkipIfHostWeak,
+        SkipIfNight,
+        SkipIfCrowded,
+        ForceSpeech,
+        Immunize,
+        Fever,
+        Capture,
+        CarryPoi,
+        Blind,
+        Frenzy,
+        Lethargy
     }
 
     public readonly struct ProteinDescriptor
@@ -52,7 +63,7 @@ namespace TheRavine.EntityControl.Virology
 
     public static class ProteinTable
     {
-        public const int ActionCount = 24;
+        public const int ActionCount = 35;
         public const int EmbedDim = 8;
 
         public const float SpreadCostFloor = 0.2f;
@@ -84,6 +95,17 @@ namespace TheRavine.EntityControl.Virology
             new(ProteinAction.MutationRateUp,  0.15f, 0.10f, false, true),
             new(ProteinAction.MutationRateDown,0.15f, 0.10f, false, true),
             new(ProteinAction.Junk,            0f,    0f,    false, false),
+            new(ProteinAction.SkipIfHostWeak,  0f,    0.05f, false, true),
+            new(ProteinAction.SkipIfNight,     0f,    0.05f, false, true),
+            new(ProteinAction.SkipIfCrowded,   0f,    0.05f, false, true),
+            new(ProteinAction.ForceSpeech,     1f,    0.80f, true,  true),
+            new(ProteinAction.Immunize,        0.30f, 1.50f, false, false),
+            new(ProteinAction.Fever,           0.40f, 0.60f, false, false),
+            new(ProteinAction.Capture,         1f,    1.00f, true,  true),
+            new(ProteinAction.CarryPoi,        0.50f, 0.30f, false, true),
+            new(ProteinAction.Blind,           0.40f, 0.10f, false, true),
+            new(ProteinAction.Frenzy,          0.40f, 0.15f, false, true),
+            new(ProteinAction.Lethargy,        0.40f, 0.10f, false, true),
         };
 
         public static readonly float[] CellBias =
@@ -93,7 +115,9 @@ namespace TheRavine.EntityControl.Virology
             -0.05f, -0.05f,
             -0.10f, -0.20f, -0.20f, -0.05f, -0.15f,
             0.05f, -0.05f, -0.05f,
-            0.55f
+            0.55f,
+            -0.10f, -0.10f, -0.10f, -0.20f, -0.10f, -0.05f, -0.20f, -0.10f,
+            -0.05f, -0.05f, -0.05f
         };
 
         static ProteinTable()

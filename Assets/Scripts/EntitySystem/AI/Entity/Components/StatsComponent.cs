@@ -54,12 +54,10 @@ public class StatsComponent : IComponent
         if (_hp != Health.Value) Health.Value = _hp;
     }
 
-    public void Tick(float deltaTime, float movementEnergy, float regenRate, float regenMultiplier,
-        float metabolismMultiplier, float basalDrain, float idleRegenBasalFraction, bool isIdle,
+    public void Tick(float deltaTime, float movementEnergy, float metabolismMultiplier, float basalDrain,
         float starvationThreshold, float starvationDamage, float starvationEnergyReturn,
-        out float regenCredit, out float metabolismCredit)
+        out float metabolismCredit)
     {
-        regenCredit      = 0f;
         metabolismCredit = 0f;
         if (IsDisposed || !_filled) return;
 
@@ -69,19 +67,6 @@ public class StatsComponent : IComponent
         float basal = basalDrain * deltaTime;
         energy          -= (basal + movementEnergy) * metabolismMultiplier;
         metabolismCredit = basal * (1f - metabolismMultiplier);
-
-        if (isIdle && energy < MaxEnergy)
-        {
-            float cap         = basalDrain * idleRegenBasalFraction;
-            float rate        = math.min(regenRate * regenMultiplier, cap);
-            float neutralRate = math.min(regenRate, cap);
-
-            float boosted = rate        > 0f ? math.min(energy + rate        * deltaTime, MaxEnergy) : energy;
-            float neutral = neutralRate > 0f ? math.min(energy + neutralRate * deltaTime, MaxEnergy) : energy;
-
-            regenCredit = boosted - neutral;
-            energy      = boosted;
-        }
 
         if (energy < starvationThreshold)
         {

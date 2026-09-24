@@ -15,7 +15,12 @@ public class EntityBrainContext : System.IDisposable
     public int   GoalRewardCount;
 
     public float GoalDiscountedReturn;
-    public float GoalDiscountFactor;
+    public float GoalStartTime;
+    public float GoalStartEnergy;
+    public int   GoalFoodEaten;
+    public int   GoalRestCount;
+    public float GoalNovelty;
+    public float EnergyNorm;
     public float IntrinsicReward;
     public readonly float[] CoordBias;
     public float FleeBias;
@@ -47,6 +52,18 @@ public class EntityBrainContext : System.IDisposable
     }
 
     public void ResetMemory() => Reservoir.Reset();
+
+    public void BeginGoal(float time)
+    {
+        GoalStartTime        = time;
+        GoalStartEnergy      = EnergyNorm;
+        GoalNovelty          = IntrinsicReward;
+        GoalFoodEaten        = 0;
+        GoalRestCount        = 0;
+        GoalTotalReward      = 0f;
+        GoalDiscountedReturn = 0f;
+        GoalRewardCount      = 0;
+    }
 
     public void Dispose()
     {

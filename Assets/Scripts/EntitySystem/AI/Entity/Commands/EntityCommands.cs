@@ -8,7 +8,6 @@ using TheRavine.Extensions;
 
 public class RestCommand : EntityCommand
 {
-    private float  _startHealth;
     private double _prev;
 
     public RestCommand(EntityModel model) : base(model) { }
@@ -16,8 +15,7 @@ public class RestCommand : EntityCommand
     protected override EntityCommandStatus OnBegin()
     {
         model.Motor.Stop();
-        _startHealth = model.Stats.Hp;
-        _prev        = SimulationClock.TimeD;
+        _prev = SimulationClock.TimeD;
         return EntityCommandStatus.Running;
     }
 
@@ -35,8 +33,9 @@ public class RestCommand : EntityCommand
             float hp     = stats.Hp;
             float en     = stats.En;
             float cost   = r.RestHealEnergyCost;
+            float rate   = r.RestHealRate * (model.IsAtNest ? r.NestRestHealMul : 1f);
             float budget = cost > 0f ? en / cost : float.MaxValue;
-            float heal   = math.min(math.min(r.RestHealRate * step, stats.MaxHealth - hp), budget);
+            float heal   = math.min(math.min(rate * step, stats.MaxHealth - hp), budget);
             if (heal > 0f)
             {
                 stats.Hp = hp + heal;
@@ -46,113 +45,304 @@ public class RestCommand : EntityCommand
 
         if (t < end) return EntityCommandStatus.Running;
 
-        float maxHealth     = stats.MaxHealth;
-        float invMax        = maxHealth > 0f ? 1f / maxHealth : 0f;
-        float deficitBefore = 1f - _startHealth * invMax;
-        if (deficitBefore <= r.RestDeficitThreshold) return Complete(r.RestRewardWasted);
-
-        float recovered = math.max(0f, stats.Hp - _startHealth) * invMax;
-        return Complete(r.RestRewardNeeded * math.saturate(recovered / deficitBefore));
+        model.Brain.Context.GoalRestCount++;
+        return Complete();
     }
 }
 
 public class IdleCommand : EntityCommand
 {
-    private float _startEnergy;
-    private bool  _needy;
-    private bool  _overactive;
-
     public IdleCommand(EntityModel model) : base(model) { }
 
     protected override EntityCommandStatus OnBegin()
     {
         model.Motor.Stop();
-        var r     = SimulationRules.Active;
-        var stats = model.Stats;
+        return EntityCommandStatus.Running;
+    }
 
-        float energyRatio = stats.En / stats.MaxEnergy;
-        float healthRatio = stats.Hp / stats.MaxHealth;
+    protected override EntityCommandStatus OnTick(float dt)
+        => Elapsed(decision.EndTime) ? Complete() : EntityCommandStatus.Running;
+}
 
-        _startEnergy = stats.En;
-        _needy       = energyRatio < r.IdleLowEnergyThreshold || healthRatio < r.IdleLowEnergyThreshold;
-        _overactive  = !_needy && energyRatio > r.IdleLongActivityPenaltyStart && healthRatio > r.IdleLongActivityPenaltyStart;
+public abstract class PlannedMoveCommand : EntityCommand
+{
+    private double _pauseEnd;
+    private bool   _pausing;
+
+    protected PlannedMoveCommand(EntityModel model) : base(model) { }
+
+    protected virtual bool PauseAfterArrival => true;
+
+    protected EntityCommandStatus BeginPlanned(MoveIntent intent, float2 direction, float2 target, bool hasTarget,
+        float radius, float speed, float energyCost, float2 threat = default, bool hasThreat = false)
+    {
+        _pausing = false;
+        float remaining = math.max(0f, decision.EndTime - SimulationClock.Time);
+        StartPlannedMove(intent, direction, target, hasTarget, radius, speed, remaining, energyCost, threat, hasThreat);
         return EntityCommandStatus.Running;
     }
 
     protected override EntityCommandStatus OnTick(float dt)
     {
-        if (!Elapsed(decision.EndTime)) return EntityCommandStatus.Running;
+        if (_pausing) return Elapsed(_pauseEnd) ? Complete() : EntityCommandStatus.Running;
 
-        var r = SimulationRules.Active;
-        if (_overactive) return Complete(r.IdleRewardOveractive);
-        if (!_needy)     return Complete(0f);
+        if (!TryFinishMove(out var move, out bool cut)) return EntityCommandStatus.Running;
+        if (cut) return Interrupted();
+        if (TryReplanBlocked(in move)) return EntityCommandStatus.Running;
 
-        float gain = (model.Stats.En - _startEnergy) / math.max(model.Stats.MaxEnergy, 1e-3f);
-        return Complete(r.IdleRewardLowEnergy * math.saturate(gain / math.max(r.IdleRewardGainNorm, 1e-4f)));
+        var status = OnArrived(in move);
+        if (status != EntityCommandStatus.Completed || !PauseAfterArrival) return status;
+
+        _pauseEnd = PauseUntil();
+        _pausing  = true;
+        return Elapsed(_pauseEnd) ? Complete() : EntityCommandStatus.Running;
+    }
+
+    protected virtual EntityCommandStatus OnArrived(in MoveResult move) => Complete();
+
+    protected override void OnCancel() => _pausing = false;
+}
+
+public class WanderCommand : PlannedMoveCommand
+{
+    public WanderCommand(EntityModel model) : base(model) { }
+
+    protected override EntityCommandStatus OnBegin()
+    {
+        float2 desired;
+        if (decision.HasHeading) desired = decision.Heading;
+        else
+        {
+            var c = RavineRandom.GetInsideCircle();
+            desired = new float2(c.x, c.y);
+        }
+
+        float2 dir = TerrainSteering.Blend(in desired, in model.LastTerrain);
+        return BeginPlanned(MoveIntent.Wander, dir, default, false,
+            model.Tuning.WanderRadius, model.Tuning.MoveSpeed, model.Tuning.EnergyCostMoving);
     }
 }
 
-public class FleeCommand : EntityCommand
+public class ApproachFoodCommand : PlannedMoveCommand
 {
-    private EntityModel _target;
+    public ApproachFoodCommand(EntityModel model) : base(model) { }
 
+    protected override bool PauseAfterArrival => false;
+
+    public override bool CanExecute() => model.CachedFoodValid;
+
+    protected override EntityCommandStatus OnBegin()
+    {
+        if (!model.CachedFoodValid) return Fail();
+        if (model.CachedFoodDistance <= SimulationRules.Active.EatRange) return Complete();
+
+        float2 food = ChunkFoodIndex.CellCenter(model.CachedFoodCell);
+        return BeginPlanned(MoveIntent.ApproachFood, food - model.Position2D, food, true,
+            model.Tuning.DetectionRadius, model.Tuning.MoveSpeed, model.Tuning.EnergyCostMoving);
+    }
+}
+
+public class ReturnNestCommand : PlannedMoveCommand
+{
+    public ReturnNestCommand(EntityModel model) : base(model) { }
+
+    protected override bool PauseAfterArrival => false;
+
+    public override bool CanExecute() => model.Nest != null;
+
+    protected override EntityCommandStatus OnBegin()
+    {
+        var nest = model.Nest;
+        if (nest == null) return Fail();
+        if (model.IsAtNest) return Complete();
+
+        float2 home = nest.Position;
+        return BeginPlanned(MoveIntent.ReturnNest, home - model.Position2D, home, true,
+            SimulationRules.Active.PlannerRadiusMax, model.Tuning.MoveSpeed, model.Tuning.EnergyCostMoving);
+    }
+}
+
+public class GoToPointCommand : PlannedMoveCommand
+{
+    public GoToPointCommand(EntityModel model) : base(model) { }
+
+    public override bool CanExecute() => model.Points.Count > 0;
+
+    protected override EntityCommandStatus OnBegin()
+    {
+        if (model.Points.Count == 0) return Fail();
+
+        float2 target = model.Points.GetRandom();
+        return BeginPlanned(MoveIntent.GoToPOI, target - model.Position2D, target, true,
+            SimulationRules.Active.PlannerRadiusMax, model.Tuning.MoveSpeed, model.Tuning.EnergyCostMoving);
+    }
+}
+
+public class FleeCommand : PlannedMoveCommand
+{
     public FleeCommand(EntityModel model) : base(model) { }
+
+    protected override bool PauseAfterArrival => false;
 
     protected override EntityCommandStatus OnBegin()
     {
         model.DialogHost.UpdateDialogPosition((IDialogListener)model.Motor);
 
         var r = SimulationRules.Active;
-        _target = model.CachedNearest;
-        if (_target == null) return Complete(r.FleeRewardNoTarget);
+        var threat = model.CachedNearest;
+        if (threat == null) return Complete();
 
-        Vector3 self     = model.Motor.Position();
-        float2  selfFlat = Extension.Flat(self);
-        float2  away     = math.normalizesafe(selfFlat - Extension.Flat(_target.Motor.Position()), new float2(1f, 0f));
-        float2  dest     = selfFlat + away * (model.Tuning.DetectionRadius * r.FleeDistanceMul);
+        float2 self  = model.Position2D;
+        float2 enemy = Extension.Flat(threat.Motor.Position());
+        float  speed = model.Tuning.RunSpeed * (model.IsWarned ? r.WarnedFleeSpeedMul : 1f);
 
-        StartMove(Extension.ToWorld(dest, self.y), model.Tuning.RunSpeed, r.FleeMaxDuration, model.Tuning.EnergyCostRunning);
+        return BeginPlanned(MoveIntent.Flee, self - enemy, default, false,
+            model.Tuning.DetectionRadius * r.FleeDistanceMul, speed, model.Tuning.EnergyCostRunning, enemy, true);
+    }
+}
+
+public class EatCommand : EntityCommand
+{
+    private enum Phase { Waiting, Eating }
+
+    private Phase  _phase;
+    private float  _portion;
+    private float  _eaten;
+    private double _start;
+    private double _end;
+    private bool   _toxic;
+
+    public EatCommand(EntityModel model) : base(model) { }
+
+    protected override EntityCommandStatus OnBegin()
+    {
+        var r = SimulationRules.Active;
+        model.Motor.Stop();
+
+        if (model.Carrying > 0f)
+            return StartEating(model.TakeCarried(), false);
+
+        var nest  = model.Nest;
+        var index = model.FoodIndex;
+        bool foodNear = index != null && model.CachedFoodValid && model.CachedFoodDistance <= r.EatRange;
+
+        if (!foodNear && nest != null && model.IsAtNest && nest.Storage > 0f)
+        {
+            float take = math.min(nest.Storage, r.NestEatPortion);
+            nest.Storage -= take;
+            return StartEating(take, false);
+        }
+
+        if (!foodNear) return Fail();
+
+        long cell = model.CachedFoodCell;
+        model.InvalidateCachedFood();
+        if (!index.TryClaim(cell, model, SimulationClock.TimeD, out var claim)) return Fail();
+
+        if (claim.Infected && index.TryTakePayload(cell, out var payload))
+            model.Infection?.InfectFromPayload(model, in payload);
+
+        if (claim.Pending)
+        {
+            _phase = Phase.Waiting;
+            _end   = HoldUntil(r.LargeFoodWindow);
+            model.ConsumeReceivedFood();
+            return EntityCommandStatus.Running;
+        }
+
+        return StartEating(claim.Energy, claim.Kind == FoodKind.Toxic);
+    }
+
+    private EntityCommandStatus StartEating(float portion, bool toxic)
+    {
+        if (portion <= 0f) return Fail();
+
+        var r = SimulationRules.Active;
+        _phase   = Phase.Eating;
+        _portion = portion;
+        _eaten   = 0f;
+        _toxic   = toxic;
+        _start   = SimulationClock.TimeD;
+        _end     = _start + math.max(r.EatSecondsPerEnergy * portion, 1e-3f);
+
+        model.RegisterFitnessEvent(EntityModel.FitnessEvent.FoodEaten);
+        model.Brain.Context.GoalFoodEaten++;
         return EntityCommandStatus.Running;
     }
 
     protected override EntityCommandStatus OnTick(float dt)
     {
-        if (!TryFinishMove(out var move, out bool cut)) return EntityCommandStatus.Running;
-        if (cut) return Interrupted();
+        if (_phase == Phase.Waiting)
+        {
+            if (model.ConsumeReceivedFood())
+            {
+                model.RegisterFitnessEvent(EntityModel.FitnessEvent.FoodEaten);
+                model.Brain.Context.GoalFoodEaten++;
+                return Complete();
+            }
+            return Elapsed(_end) ? Fail() : EntityCommandStatus.Running;
+        }
 
-        var target = _target;
-        _target = null;
-        if (IsGone(target)) return Complete(SimulationRules.Active.FleeRewardTargetGone);
+        Deliver();
+        if (!Elapsed(_end)) return EntityCommandStatus.Running;
 
-        float dist = Extension.FlatDistance(model.Motor.Position(), target.Motor.Position());
-        return Complete(math.saturate(dist / model.Tuning.DetectionRadius) - PathCostPenalty(in move));
+        if (_toxic) model.TakeDamage(SimulationRules.Active.ToxicDamage, null);
+        return Complete();
     }
 
-    protected override void OnCancel() => _target = null;
+    private void Deliver()
+    {
+        double span = _end - _start;
+        float frac  = span > 0d ? (float)math.saturate((SimulationClock.TimeD - _start) / span) : 1f;
+        float due   = _portion * frac - _eaten;
+        if (due <= 0f) return;
+        model.Digestion.Ingest(due);
+        _eaten += due;
+    }
+
+    protected override void OnCancel()
+    {
+        if (_phase == Phase.Eating) Deliver();
+        _portion = 0f;
+    }
 }
 
-public class EatCommand : EntityCommand
+public class PickUpCommand : EntityCommand
 {
-    public EatCommand(EntityModel model) : base(model) { }
+    public PickUpCommand(EntityModel model) : base(model) { }
+
+    public override bool CanExecute() => model.Carrying <= 0f;
 
     protected override EntityCommandStatus OnBegin()
     {
-        var r     = SimulationRules.Active;
+        var r = SimulationRules.Active;
         var index = model.FoodIndex;
+        if (index == null || !model.CachedFoodValid || model.CachedFoodDistance > r.EatRange) return Fail();
 
-        if (index == null || !model.CachedFoodValid) return Complete(r.EatRewardNoFood);
-        if (model.CachedFoodDistance > r.EatRange)   return Complete(FailureReward);
+        long cell = model.CachedFoodCell;
+        if (!index.TryGetKind(cell, out FoodKind kind, out _) || kind == FoodKind.Large) return Fail();
 
-        bool claimed = index.TryConsumeFood(model.CachedFoodCell);
         model.InvalidateCachedFood();
-        if (!claimed) return Complete(r.EatRewardNoFood);
+        if (!index.TryClaim(cell, model, SimulationClock.TimeD, out var claim) || claim.Energy <= 0f) return Fail();
+        if (claim.Infected) index.TryTakePayload(cell, out _);
 
-        var stats = model.Stats;
-        float heal = r.EatHealFraction * stats.MaxHealth;
-        if (heal > 0f) stats.Hp = math.min(stats.Hp + heal, stats.MaxHealth);
-        stats.En = math.min(stats.En + r.EatEnergyFood, stats.MaxEnergy);
-        model.RegisterFitnessEvent(EntityModel.FitnessEvent.FoodEaten);
-        return Complete(r.EatRewardFood);
+        model.Carry(claim.Energy);
+        return Complete();
+    }
+}
+
+public class StoreFoodCommand : EntityCommand
+{
+    public StoreFoodCommand(EntityModel model) : base(model) { }
+
+    public override bool CanExecute() => model.Carrying > 0f && model.IsAtNest;
+
+    protected override EntityCommandStatus OnBegin()
+    {
+        var nest = model.Nest;
+        if (nest == null || !model.IsAtNest || model.Carrying <= 0f) return Fail();
+        nest.Storage += model.TakeCarried();
+        return Complete();
     }
 }
 
@@ -162,33 +352,9 @@ public class RememberPointCommand : EntityCommand
 
     protected override EntityCommandStatus OnBegin()
     {
-        var r = SimulationRules.Active;
-        float2 pos = Extension.Flat(model.Motor.Position());
-        return Complete(model.Points.TryRemember(in pos, r.RememberPointMinSpacing)
-            ? r.RememberPointRewardNew : r.RememberPointRewardDup);
-    }
-}
-
-public class GoToPointCommand : EntityCommand
-{
-    public GoToPointCommand(EntityModel model) : base(model) { }
-
-    protected override EntityCommandStatus OnBegin()
-    {
-        var r = SimulationRules.Active;
-        if (model.Points.Count == 0) return Complete(r.GoToPointRewardNoPoints);
-
-        float2 target = model.Points.GetRandom();
-        StartMove(Extension.ToWorld(in target, model.Motor.Position().y),
-            model.Tuning.MoveSpeed, r.GoToPointMaxDuration, model.Tuning.EnergyCostMoving);
-        return EntityCommandStatus.Running;
-    }
-
-    protected override EntityCommandStatus OnTick(float dt)
-    {
-        if (!TryFinishMove(out var move, out bool cut)) return EntityCommandStatus.Running;
-        if (cut) return Interrupted();
-        return Complete(SimulationRules.Active.GoToPointRewardArrived - PathCostPenalty(in move));
+        float2 pos = model.Position2D;
+        model.Points.TryRemember(in pos, SimulationRules.Active.RememberPointMinSpacing);
+        return Complete();
     }
 }
 
@@ -214,7 +380,7 @@ public class ReproduceCommand : EntityCommand
     }
 
     protected override EntityCommandStatus OnTick(float dt)
-        => Elapsed(_holdEnd) ? Complete(0.8f) : EntityCommandStatus.Running;
+        => Elapsed(_holdEnd) ? Complete(SimulationRules.Active.EventReproduceReward) : EntityCommandStatus.Running;
 }
 
 public class SpeechCommand : EntityCommand
@@ -228,8 +394,13 @@ public class SpeechCommand : EntityCommand
 
     protected override EntityCommandStatus OnBegin()
     {
-        string hash = model.Vectorizer.HashFloatArray(model.DecisionInput);
-        model.Speech.SetOwnSpeech(hash);
+        var r = SimulationRules.Active;
+        var stats = model.Stats;
+        stats.En = math.max(0f, stats.En - r.SpeechEnergyCost);
+
+        model.Broadcast(decision.Speech);
+
+        string hash = SpeechComponent.Encode(decision.Speech);
         DialogSystem.Instance.OnSpeechSend((IDialogSender)model.Motor, hash);
 
         if (_cts == null || _cts.IsCancellationRequested)
@@ -246,12 +417,7 @@ public class SpeechCommand : EntityCommand
     protected override EntityCommandStatus OnTick(float dt)
     {
         if (_playing) return EntityCommandStatus.Running;
-        if (_failed)  return Fail();
-
-        var r     = SimulationRules.Active;
-        var stats = model.Stats;
-        stats.En = math.max(0f, stats.En - r.SpeechEnergyCost);
-        return Complete(r.SpeechReward);
+        return _failed ? Fail() : Complete();
     }
 
     protected override void OnCancel()
@@ -287,19 +453,17 @@ public class MimicCommand : EntityCommand
 
     protected override EntityCommandStatus OnBegin()
     {
-        var r = SimulationRules.Active;
         var other = model.CachedNearest;
-        if (other == null) return Complete(r.MimicRewardNoTarget);
+        if (other == null) return Fail();
 
         model.SetMimickedAction(other.LastActionIndex);
-        return Complete(r.MimicRewardBase + other.Brain.Context.CoordMLP.AverageEntropy * r.MimicRewardEntropyScale);
+        return Complete();
     }
 }
 
 public class ThreatenCommand : EntityCommand
 {
     private double _holdEnd;
-    private float  _reward;
 
     public ThreatenCommand(EntityModel model) : base(model) { }
 
@@ -308,59 +472,53 @@ public class ThreatenCommand : EntityCommand
         var r = SimulationRules.Active;
         var   target = model.CachedNearest;
         float dist   = model.CachedNearestDistance;
-        float range  = model.Tuning.AttackRange;
-        if (target == null) return Complete(r.ThreatenRewardNoTarget);
-        if (dist > range * r.ThreatenRangeMul) return Complete(r.ThreatenRewardTooFar);
+        if (target == null || dist > model.Tuning.AttackRange * r.ThreatenRangeMul) return Fail();
 
         var stats = model.Stats;
         stats.En = math.max(0f, stats.En - r.ThreatenEnergyCost);
-        _reward  = dist < range ? r.ThreatenRewardClose : r.ThreatenRewardFar;
         _holdEnd = HoldUntil(r.ThreatenDuration);
         return EntityCommandStatus.Running;
     }
 
     protected override EntityCommandStatus OnTick(float dt)
-        => Elapsed(_holdEnd) ? Complete(_reward) : EntityCommandStatus.Running;
+        => Elapsed(_holdEnd) ? Complete() : EntityCommandStatus.Running;
 }
 
 public class ShareFoodCommand : EntityCommand
 {
     private double _holdEnd;
-    private float  _reward;
 
     public ShareFoodCommand(EntityModel model) : base(model) { }
 
     protected override EntityCommandStatus OnBegin()
     {
-        var r     = SimulationRules.Active;
-        var stats = model.Stats;
-        float hp    = stats.Hp;
-        float maxHp = stats.MaxHealth;
-        if (hp < maxHp * r.ShareFoodMinHealthFraction) return Complete(0.1f);
-
+        var r = SimulationRules.Active;
         var victim = model.CachedNearest;
-        if (victim == null || victim.Stats.Hp > hp * r.ShareFoodVictimRatio)
-            return Complete(0.25f);
+        if (victim == null || model.CachedNearestDistance > r.EatRange * 2f) return Fail();
 
-        float transfer = math.min(maxHp * r.ShareFoodTransferFraction, hp - maxHp * r.ShareFoodKeepHealthFraction);
-        if (transfer <= 0f) return Complete(0.1f);
-        stats.Hp = hp - transfer;
+        float own   = model.Stats.En / model.Stats.MaxEnergy;
+        float their = victim.Stats.En / victim.Stats.MaxEnergy;
+        if (their >= own * r.ShareFoodVictimRatio) return Fail();
 
-        var vs = victim.Stats;
-        vs.Hp = math.min(vs.Hp + transfer, vs.MaxHealth);
+        float portion;
+        if (model.Carrying > 0f) portion = model.TakeCarried();
+        else portion = model.Digestion.Withdraw(model.Digestion.Capacity * r.ShareFoodTransferFraction);
+        if (portion <= 0f) return Fail();
 
-        float needFactor = 1f - math.saturate(vs.Hp / vs.MaxHealth);
-        _reward  = 0.5f + needFactor * 0.35f;
+        float rest = portion - victim.Digestion.Ingest(portion);
+        if (rest > 0f) model.Digestion.Ingest(rest);
+
         _holdEnd = HoldUntil(r.ShareFoodDuration);
         return EntityCommandStatus.Running;
     }
 
     protected override EntityCommandStatus OnTick(float dt)
-        => Elapsed(_holdEnd) ? Complete(_reward) : EntityCommandStatus.Running;
+        => Elapsed(_holdEnd) ? Complete() : EntityCommandStatus.Running;
 }
 
 public class AttackCommand : EntityCommand
 {
+    private static readonly EntityModel[] Allies = new EntityModel[16];
     private EntityModel _target;
 
     public AttackCommand(EntityModel model) : base(model) { }
@@ -370,91 +528,57 @@ public class AttackCommand : EntityCommand
     protected override EntityCommandStatus OnBegin()
     {
         _target = model.CachedNearest;
-        if (_target == null) return Complete(0.2f);
+        if (_target == null) return Fail();
 
-        StartMove(_target.Motor.Position(), model.Tuning.MoveSpeed, 2f, model.Tuning.EnergyCostMoving);
+        StartMove(_target.Motor.Position(), model.Tuning.MoveSpeed, SimulationRules.Active.AttackMoveMaxDuration,
+            model.Tuning.EnergyCostMoving);
         return EntityCommandStatus.Running;
     }
 
     protected override EntityCommandStatus OnTick(float dt)
     {
-        if (!TryFinishMove(out var move, out bool cut)) return EntityCommandStatus.Running;
+        if (!TryFinishMove(out _, out bool cut)) return EntityCommandStatus.Running;
         if (cut) return Interrupted();
-
-        float pathPenalty = PathCostPenalty(in move);
 
         var target = _target;
         _target = null;
-        if (IsGone(target)) return Complete(0.3f - pathPenalty);
+        if (IsGone(target)) return Fail();
 
+        var r = SimulationRules.Active;
         float range = model.Tuning.AttackRange;
         float3 a = model.Motor.Position();
         float3 b = target.Motor.Position();
 
         var stats = model.Stats;
         float cost = model.Tuning.AttackEnergyCost;
-        if (stats.En < cost) return Complete(FailureReward - pathPenalty);
+        if (stats.En < cost) return Fail();
+        if (math.distancesq(a, b) > range * range || !model.TryStartAttackCooldown()) return Fail();
 
-        if (math.distancesq(a, b) <= range * range && model.TryStartAttackCooldown())
+        stats.En -= cost;
+
+        float damage = model.Tuning.AttackDamage * model.AttackDamageMul;
+        if (model.SinceAction(EntityAction.Threaten) < r.SynergyWindow) damage *= r.ThreatenAttackMul;
+        damage *= 1f + r.GroupAttackBonus * CountAllies(target, r);
+
+        target.TakeDamage(damage, model);
+        model.RegisterFitnessEvent(EntityModel.FitnessEvent.DamageDealt, damage);
+        model.Infection?.TryTransmitBite(model, target);
+        return Complete();
+    }
+
+    private int CountAllies(EntityModel target, SimulationRules r)
+    {
+        int found = target.Perception.FindEntitiesInRadius(target.Motor.Position(), target, r.GroupAttackRadius, Allies);
+        int n = 0;
+        for (int i = 0; i < found; i++)
         {
-            stats.En -= cost;
-            float damage = model.Tuning.AttackDamage;
-            target.Stats.Hp -= damage;
-            model.RegisterFitnessEvent(EntityModel.FitnessEvent.DamageDealt, damage);
-            return Complete(0.9f - pathPenalty);
+            var e = Allies[i];
+            Allies[i] = null;
+            if (ReferenceEquals(e, model) || e.SinceAction(EntityAction.Attack) > r.GroupAttackWindow) continue;
+            n++;
         }
-
-        return Complete(0.3f - pathPenalty);
+        return math.min(n, r.GroupAttackMaxCount);
     }
 
     protected override void OnCancel() => _target = null;
-}
-
-public class WanderCommand : EntityCommand
-{
-    private float2 _start;
-    private float  _startEnergy;
-
-    public WanderCommand(EntityModel model) : base(model) { }
-
-    protected override EntityCommandStatus OnBegin()
-    {
-        float2 desired;
-        if (decision.HasHeading) desired = decision.Heading;
-        else
-        {
-            var c = RavineRandom.GetInsideCircle();
-            desired = new float2(c.x, c.y);
-        }
-
-        float2 dir = TerrainSteering.Blend(in desired, in model.LastTerrain);
-
-        Vector3 startPos = model.Motor.Position();
-        _start       = Extension.Flat(startPos);
-        _startEnergy = model.Stats.En;
-
-        float2 dest      = _start + dir * model.Tuning.WanderRadius;
-        float  remaining = math.max(0f, decision.EndTime - SimulationClock.Time);
-
-        StartMove(Extension.ToWorld(in dest, startPos.y), model.Tuning.MoveSpeed,
-            remaining, model.Tuning.EnergyCostMoving);
-        return EntityCommandStatus.Running;
-    }
-
-    protected override EntityCommandStatus OnTick(float dt)
-    {
-        if (!TryFinishMove(out var move, out bool cut)) return EntityCommandStatus.Running;
-        if (cut) return Interrupted();
-
-        var r = SimulationRules.Active;
-        float radius    = model.Tuning.WanderRadius;
-        float travelled = math.distance(_start, Extension.Flat(model.Motor.Position()));
-        float progress  = math.saturate(travelled / math.max(radius, 1e-3f));
-        float spent     = math.max(0f, _startEnergy - model.Stats.En);
-
-        return Complete(math.clamp(progress * r.WanderRewardScale
-                                 - spent * r.WanderEnergyPenalty
-                                 - PathCostPenalty(in move),
-            r.WanderRewardMin, r.WanderRewardMax));
-    }
 }
