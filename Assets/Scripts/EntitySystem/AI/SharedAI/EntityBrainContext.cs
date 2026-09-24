@@ -8,6 +8,13 @@ public class EntityBrainContext : System.IDisposable
     public readonly float[][]            ExecCombined;
 
     public SharedHierarchicalBrain.Goal CurrentGoal = SharedHierarchicalBrain.Goal.Survive;
+    public PlanKind CurrentPlan = PlanKind.Count;
+    public PlanHint PlanHints;
+    public int   ExecMask;
+    public bool  ExecForced;
+    public bool  SkipExec;
+    public float GoalBonus;
+    public float ColonyStorage;
     public DecisionWindow ExecWindow;
     public float GoalEndTime;
     public int   CoordDecisionId;
@@ -23,7 +30,6 @@ public class EntityBrainContext : System.IDisposable
     public float EnergyNorm;
     public float IntrinsicReward;
     public readonly float[] CoordBias;
-    public float FleeBias;
 
     public EntityBrainContext(
         int inputSize,
@@ -48,7 +54,7 @@ public class EntityBrainContext : System.IDisposable
             ExecCombined[i] = new float[combined];
         }
 
-        CoordBias = new float[goalCount];
+        CoordBias = new float[SharedHierarchicalBrain.PlanCount];
     }
 
     public void ResetMemory() => Reservoir.Reset();
@@ -60,6 +66,7 @@ public class EntityBrainContext : System.IDisposable
         GoalNovelty          = IntrinsicReward;
         GoalFoodEaten        = 0;
         GoalRestCount        = 0;
+        GoalBonus            = 0f;
         GoalTotalReward      = 0f;
         GoalDiscountedReturn = 0f;
         GoalRewardCount      = 0;

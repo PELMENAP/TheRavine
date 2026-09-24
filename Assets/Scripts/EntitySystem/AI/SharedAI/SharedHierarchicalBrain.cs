@@ -15,7 +15,9 @@ public class SharedHierarchicalBrain : IDisposable
     private const int CoordDelaySteps  = 10;
     private const int ExecDelaySteps   = 3;
 
-    private static int[] BuildCoordSizes(int combined) => new[] { combined, 32, 16, 16, GoalCount + 1 };
+    public const int PlanCount = PlanCatalog.Count;
+
+    private static int[] BuildCoordSizes(int combined) => new[] { combined, 32, 16, 16, PlanCount + 1 };
 
     public const int HeadingOutputs   = 2;
     public const int CurvatureOutputs = 1;
@@ -221,22 +223,6 @@ public class SharedHierarchicalBrain : IDisposable
         ApplyPendingGradients();
     }
 
-    private const int FleeAction = (int)EntityAction.Flee;
-    private static readonly int[] FleeSlots = BuildFleeSlots();
-
-    private static int[] BuildFleeSlots()
-    {
-        var slots = new int[GoalCount];
-        for (int g = 0; g < GoalCount; g++)
-        {
-            slots[g] = -1;
-            var subset = ActionSubsets[g];
-            for (int i = 0; i < subset.Length; i++)
-                if (subset[i] == FleeAction) { slots[g] = i; break; }
-        }
-        return slots;
-    }
-
     private static readonly float[] GoalMinDuration = BuildGoalDurations(false);
     private static readonly float[] GoalMaxDuration = BuildGoalDurations(true);
     private static readonly int     BiasStride      = BuildBiasStride();
@@ -258,7 +244,7 @@ public class SharedHierarchicalBrain : IDisposable
 
     private static int BuildBiasStride()
     {
-        int s = GoalCount;
+        int s = PlanCount;
         for (int g = 0; g < GoalCount; g++) s = math.max(s, ActionSubsets[g].Length);
         return s;
     }
@@ -381,22 +367,22 @@ public class SharedHierarchicalBrain : IDisposable
         float coordGamma = frame.CoordGammaPerSecond;
         float execGamma  = frame.ExecGammaPerSecond;
 
+        float maskBias = frame.PlanMaskBias;
+
         batch.ClearItems();
         for (int d = 0; d < n; d++)
         {
             var ctx = _dCtx[d];
+            ctx.SkipExec = false;
             if (_dTime[d] < ctx.GoalEndTime) continue;
 
             FlushGoalRewardToCoordinator(ctx);
 
-            int biasRow = -1;
-            if (HasBias(ctx.CoordBias))
-            {
-                var row = batch.BiasRow(d);
-                row.Clear();
-                ctx.CoordBias.AsSpan().CopyTo(row);
-                biasRow = d;
-            }
+            var row = batch.BiasRow(d);
+            row.Clear();
+            for (int p = 0; p < PlanCount; p++)
+                row[p] = ctx.CoordBias[p]
+                       + (PlanCatalog.IsFeasible((PlanKind)p, ctx.PlanHints) ? 0f : -maskBias);
 
             var mlp  = ctx.CoordMLP;
             int slot = coordinator.BeginForward(mlp, _dDt[d]);
@@ -408,7 +394,7 @@ public class SharedHierarchicalBrain : IDisposable
                 Net         = 0,
                 Slot        = slot,
                 InputRow    = _dRow[d],
-                BiasRow     = biasRow,
+                BiasRow     = d,
                 Owner       = d,
                 Dt          = mlp.DeltaTime,
                 Temperature = mlp.Params.SoftmaxTemperature,
@@ -433,14 +419,27 @@ public class SharedHierarchicalBrain : IDisposable
 
             ctx.CoordMLP.Activation(0).CopyTo(ctx.CoordCombined);
 
-            var goalTicket = coordinator.FinishDecide(ctx.CoordCombined, ctx.CoordMLP, item.Slot,
-                item.BiasRow >= 0, CoordDelaySteps, coordCritic, coordGamma, simTime,
-                ActionDurationTable.MinGoalSeconds, ActionDurationTable.MaxGoalSeconds, coordEps, decay);
+            var planTicket = coordinator.FinishDecide(ctx.CoordCombined, ctx.CoordMLP, item.Slot,
+                batch.BiasRow(d).Slice(0, PlanCount), CoordDelaySteps, coordCritic, coordGamma, simTime,
+                frame.PlanMinSeconds, frame.PlanMaxSeconds, coordEps, decay, false);
 
-            ctx.CurrentGoal     = (Goal)goalTicket.Predicted;
-            ctx.CoordDecisionId = goalTicket.DecisionId;
-            ctx.GoalEndTime     = simTime + goalTicket.Duration;
+            var plan = (PlanKind)planTicket.Predicted;
+            ctx.CurrentPlan     = plan;
+            ctx.CurrentGoal     = PlanCatalog.GoalOf(plan);
+            ctx.CoordDecisionId = planTicket.DecisionId;
+            ctx.GoalEndTime     = simTime + planTicket.Duration;
             ctx.BeginGoal(simTime);
+        }
+
+        for (int d = 0; d < n; d++)
+        {
+            var ctx = _dCtx[d];
+            ctx.ExecMask = PlanCatalog.EntryMask(ctx.CurrentPlan, ctx.PlanHints);
+            if (ctx.ExecMask != 0 && ctx.CurrentPlan < PlanKind.Count) continue;
+
+            ctx.SkipExec    = true;
+            ctx.GoalBonus  += frame.PlanInfeasibleReward;
+            ctx.GoalEndTime = 0f;
         }
 
         batch.ClearItems();
@@ -452,15 +451,24 @@ public class SharedHierarchicalBrain : IDisposable
             var ctx = _dCtx[d];
             int g   = (int)ctx.CurrentGoal;
 
-            int biasRow  = -1;
-            int fleeSlot = FleeSlots[g];
-            if (fleeSlot >= 0 && ctx.FleeBias != 0f)
+            var subset  = ActionSubsets[g];
+            var row     = batch.BiasRow(d);
+            int allowed = 0;
+            row.Clear();
+            for (int j = 0; j < subset.Length; j++)
             {
-                var row = batch.BiasRow(d);
-                row.Clear();
-                row[fleeSlot] = ctx.FleeBias;
-                biasRow = d;
+                if ((ctx.ExecMask & (1 << subset[j])) != 0) allowed++;
+                else row[j] = -maskBias;
             }
+
+            if (allowed == 0)
+            {
+                ctx.SkipExec    = true;
+                ctx.GoalBonus  += frame.PlanInfeasibleReward;
+                ctx.GoalEndTime = 0f;
+                continue;
+            }
+            ctx.ExecForced = allowed == 1;
 
             var mlp  = ctx.ExecMLPs[g];
             int slot = executors[g].BeginForward(mlp, _dDt[d]);
@@ -472,7 +480,7 @@ public class SharedHierarchicalBrain : IDisposable
                 Net         = 1 + g,
                 Slot        = slot,
                 InputRow    = _dRow[d],
-                BiasRow     = biasRow,
+                BiasRow     = d,
                 Owner       = d,
                 Dt          = mlp.DeltaTime,
                 Temperature = mlp.Params.SoftmaxTemperature,
@@ -480,7 +488,7 @@ public class SharedHierarchicalBrain : IDisposable
         }
 
         int execCount = batch.Count;
-        batch.Schedule(_kernels, _nets, LstmHidden).Complete();
+        if (execCount > 0) batch.Schedule(_kernels, _nets, LstmHidden).Complete();
 
         for (int k = 0; k < execCount; k++)
         {
@@ -494,15 +502,15 @@ public class SharedHierarchicalBrain : IDisposable
             ctx.ExecMLPs[g].Activation(0).CopyTo(combined);
 
             var ticket = executors[g].FinishDecide(combined, ctx.ExecMLPs[g], item.Slot,
-                item.BiasRow >= 0, ExecDelaySteps, execCritics[g], execGamma, simTime,
-                GoalMinDuration[g], GoalMaxDuration[g], execEps, decay);
+                batch.BiasRow(d).Slice(0, ActionSubsets[g].Length), ExecDelaySteps, execCritics[g], execGamma,
+                simTime, GoalMinDuration[g], GoalMaxDuration[g], execEps, decay, ctx.ExecForced);
 
             int action    = ActionSubsets[g][ticket.Predicted];
             float clamped = math.clamp(ticket.Duration,
                 ActionDurationTable.Min(action), ActionDurationTable.Max(action));
             ticket.Duration = clamped;
 
-            ctx.ExecWindow.Begin(ticket.DecisionId, simTime, clamped);
+            ctx.ExecWindow.Begin(ticket.DecisionId, simTime, math.max(clamped, ctx.GoalEndTime - simTime));
 
             var aux = ticket.AuxValue;
             float4 speech = g == (int)Goal.Social
@@ -511,7 +519,7 @@ public class SharedHierarchicalBrain : IDisposable
 
             _dDecision[d] = new BrainDecision(action, ticket.DecisionId, ctx.CoordDecisionId,
                 ctx.CurrentGoal, simTime, clamped, new float2(ticket.HeadingSin, ticket.HeadingCos),
-                aux[CurvatureAux], speech);
+                aux[CurvatureAux], speech, ctx.CurrentPlan, ctx.GoalEndTime);
             _dMade[d] = true;
         }
 
@@ -580,13 +588,6 @@ public class SharedHierarchicalBrain : IDisposable
         if (_nets.IsCreated)    _nets.Dispose();
     }
 
-    private static bool HasBias(float[] bias)
-    {
-        for (int i = 0; i < bias.Length; i++)
-            if (bias[i] != 0f) return true;
-        return false;
-    }
-
     public void CompleteDecision(in BrainDecision decision, float reward, EntityBrainContext ctx,
         float simTime, EntityCommandStatus status)
     {
@@ -621,12 +622,16 @@ public class SharedHierarchicalBrain : IDisposable
         ctx.ExecWindow.End();
 
         ref readonly var frame = ref SimulationRules.Frame;
+        int   replay  = frame.DeathReplayCount;
+        int   passes  = frame.DeathReplayPasses;
+        float weight  = frame.DeathReplayWeight;
         for (int i = 0; i < GoalCount; i++)
             executors[i].FlushTerminal(ctx.ExecMLPs[i], execCritics[i], frame.ExecGammaPerSecond,
-                                       i == g ? scaled : 0f);
+                                       i == g ? scaled : 0f, replay, passes, weight);
 
         FlushGoalRewardToCoordinator(ctx);
-        coordinator.FlushTerminal(ctx.CoordMLP, coordCritic, frame.CoordGammaPerSecond, scaled);
+        coordinator.FlushTerminal(ctx.CoordMLP, coordCritic, frame.CoordGammaPerSecond, scaled,
+                                  replay, passes, weight);
 
         ctx.CoordDecisionId = 0;
         ctx.GoalEndTime     = 0f;
@@ -641,11 +646,14 @@ public class SharedHierarchicalBrain : IDisposable
         if (item == null) return;
 
         var r = SimulationRules.Active;
+        float curiosity = r.CoordCuriosityWeight * ExplorationDecay()
+                        * (1f - r.CuriosityStorageDamp * math.saturate(ctx.ColonyStorage));
         float goal = ctx.GoalDiscountedReturn
+                   + ctx.GoalBonus
                    + r.GoalFoodWeight   * ctx.GoalFoodEaten
                    + r.GoalEnergyWeight * (ctx.EnergyNorm - ctx.GoalStartEnergy)
                    + r.GoalRestWeight   * ctx.GoalRestCount
-                   + r.CoordCuriosityWeight * ctx.GoalNovelty;
+                   + curiosity * ctx.GoalNovelty;
 
         float clip = r.RewardClipSigma;
         item.Evaluation    = Mathf.Clamp(goal, -clip, clip);

@@ -95,7 +95,10 @@ public abstract class EntityCommand : IEntityCommand
     protected double PauseUntil()
     {
         var r = SimulationRules.Active;
-        return HoldUntil(RavineRandom.RangeFloat(r.MovePauseMin, r.MovePauseMax));
+        float mul = model.IsHungry
+            ? r.HungryPauseMul
+            : math.lerp(1f, r.SatedPauseMul, model.Digestion != null ? model.Digestion.Fill : 0f);
+        return HoldUntil(RavineRandom.RangeFloat(r.MovePauseMin, r.MovePauseMax) * mul);
     }
 
     protected static bool Elapsed(double time) => SimulationClock.TimeD >= time;
@@ -112,7 +115,7 @@ public abstract class EntityCommand : IEntityCommand
 
     protected void StartPlannedMove(MoveIntent intent, float2 direction, float2 target, bool hasTarget,
         float radius, float speed, float maxDuration, float energyCostPerSec,
-        float2 threat = default, bool hasThreat = false)
+        float2 threat = default, bool hasThreat = false, float side = 0f, float curvature = float.NaN)
     {
         var planner = model.Planner;
         if (planner == null)
@@ -133,8 +136,8 @@ public abstract class EntityCommand : IEntityCommand
             Target    = target,
             Threat    = threat,
             Radius    = radius,
-            Curvature = decision.Curvature,
-            Side      = model.NextPlanSide(),
+            Curvature = float.IsNaN(curvature) ? decision.Curvature : curvature,
+            Side      = side != 0f ? side : model.NextPlanSide(),
             Seed      = (uint)RavineRandom.RangeInt(1, int.MaxValue),
             Intent    = (byte)intent,
             HasTarget = hasTarget ? (byte)1 : (byte)0,

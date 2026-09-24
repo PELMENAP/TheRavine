@@ -793,6 +793,17 @@ namespace TheRavine.EntityControl.Virology
         public int Restrict(int index, ushort[] destination) => CopySegment(index, destination);
         public ulong LineageOf(int index) => _segments[index].LineageId;
 
+        public ulong EndogenousLineage
+        {
+            get
+            {
+                if (!_created) return 0UL;
+                for (int i = 0; i < _segmentCount; i++)
+                    if (_segments[i].IsEndogenous) return _segments[i].LineageId;
+                return 0UL;
+            }
+        }
+
         public void Dispose()
         {
             if (IsDisposed) return;

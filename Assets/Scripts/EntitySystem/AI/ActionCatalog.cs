@@ -28,7 +28,7 @@ public readonly struct ActionInfo
 
 public static class ActionCatalog
 {
-    public const int Count = (int)EntityAction.StoreFood + 1;
+    public const int Count = (int)EntityAction.Follow + 1;
 
     private const byte Survive = 1 << (int)SharedHierarchicalBrain.Goal.Survive;
     private const byte Hunt    = 1 << (int)SharedHierarchicalBrain.Goal.Hunt;
@@ -43,9 +43,9 @@ public static class ActionCatalog
     {
         var t = new ActionInfo[Count];
         Set(t, EntityAction.Idle,          ActionFlags.None,                              Survive | Hunt | Social);
-        Set(t, EntityAction.Wander,        ActionFlags.IsMove,                            Survive | Hunt | Forage | Social);
+        Set(t, EntityAction.Wander,        ActionFlags.IsMove,                            Survive);
         Set(t, EntityAction.RememberPoint, ActionFlags.None,                              Forage);
-        Set(t, EntityAction.GoToPoint,     ActionFlags.IsMove | ActionFlags.NeedsTarget,  Forage);
+        Set(t, EntityAction.GoToPoint,     ActionFlags.IsMove | ActionFlags.NeedsTarget,  Survive | Forage);
         Set(t, EntityAction.Attack,        ActionFlags.IsMove | ActionFlags.NeedsTarget | ActionFlags.EnergyGated, Hunt);
         Set(t, EntityAction.Flee,          ActionFlags.IsMove,                            Survive | Hunt);
         Set(t, EntityAction.Eat,           ActionFlags.None,                              Survive | Forage);
@@ -59,6 +59,7 @@ public static class ActionCatalog
         Set(t, EntityAction.ReturnNest,    ActionFlags.IsMove,                            Survive | Forage | Social);
         Set(t, EntityAction.PickUp,        ActionFlags.NeedsTarget,                       Forage);
         Set(t, EntityAction.StoreFood,     ActionFlags.None,                              Forage);
+        Set(t, EntityAction.Follow,        ActionFlags.IsMove | ActionFlags.NeedsTarget | ActionFlags.InstinctOnly, 0);
         return t;
     }
 

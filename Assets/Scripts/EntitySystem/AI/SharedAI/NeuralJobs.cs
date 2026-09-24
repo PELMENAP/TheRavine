@@ -50,7 +50,11 @@ public unsafe struct TrainTicket
     public float  EntropyRegularization;
     public float  MaxGradNorm;
     public float  LrMul;
+    public float  ExploreProb;
+    public int    Forced;
+    public int    HasBias;
     public fixed float Probs[KernelLayout.MaxActions];
+    public fixed float Bias[KernelLayout.MaxActions];
     public fixed float AuxNoise[KernelLayout.MaxAux];
 }
 

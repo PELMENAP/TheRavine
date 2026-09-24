@@ -143,10 +143,11 @@ public unsafe partial class DelayedPerceptron : IDisposable
         return ctx.BpttPtr;
     }
 
-    public DelayedItem FinishDecide(float[] input, PerceptronContext ctx, int slot, bool biased,
+    public DelayedItem FinishDecide(float[] input, PerceptronContext ctx, int slot, ReadOnlySpan<float> bias,
         int delaySteps, ValueCritic critic, float gamma, float simTime,
-        float minDuration, float maxDuration, float epsilon, float decay)
+        float minDuration, float maxDuration, float epsilon, float decay, bool forced)
     {
+        bool biased = !bias.IsEmpty;
         ref readonly var rules = ref SimulationRules.Frame;
         int ordinal = ctx.NextDecisionOrdinal();
 
@@ -166,13 +167,33 @@ public unsafe partial class DelayedPerceptron : IDisposable
         float adaptiveEpsilon = MathF.Max(rules.MinEpsilon,
             epsilon * rules.ExplorationEpsilonScale * entropyBoost * decay);
         if (adaptiveEpsilon > 1f) adaptiveEpsilon = 1f;
+        if (forced) adaptiveEpsilon = 0f;
 
         bool isExploration = RavineRandom.RangeFloat() < adaptiveEpsilon;
 
         var behaviour = biased ? ctx.BiasedProbs : outAct;
 
+        Span<float> explore = stackalloc float[actionCount];
+        float invExploreT = 1f / MathF.Max(rules.ExploreTemperature, 1e-3f);
+        float exploreSum  = 0f;
+        for (int i = 0; i < actionCount; i++)
+        {
+            float q = MathF.Pow(MathF.Max(behaviour[i], 0f), invExploreT);
+            explore[i] = q;
+            exploreSum += q;
+        }
+        if (exploreSum > 1e-12f)
+        {
+            float inv = 1f / exploreSum;
+            for (int i = 0; i < actionCount; i++) explore[i] *= inv;
+        }
+        else
+        {
+            for (int i = 0; i < actionCount; i++) explore[i] = 1f / actionCount;
+        }
+
         int pred = isExploration
-            ? RavineRandom.RangeInt(0, actionCount)
+            ? RouletteWheelSelection(explore, actionCount)
             : RouletteWheelSelection(behaviour, actionCount);
 
         float entropy      = CalculateOutputEntropy(outAct, actionCount);
@@ -185,8 +206,9 @@ public unsafe partial class DelayedPerceptron : IDisposable
         if (ctx.Decisions.Count >= ctx.Decisions.Capacity)
             FlushOldest(ctx, vNow, critic, gamma, simTime);
 
-        float pBehaviour = (1f - adaptiveEpsilon) * behaviour[pred]
-                         + adaptiveEpsilon / actionCount;
+        float pBehaviour = forced
+            ? 1f
+            : (1f - adaptiveEpsilon) * behaviour[pred] + adaptiveEpsilon * explore[pred];
 
         var item = ctx.Decisions.Push(ctx.NextDecisionId());
         item.Evaluation         = 0f;
@@ -195,6 +217,10 @@ public unsafe partial class DelayedPerceptron : IDisposable
         item.StartTime          = simTime;
         item.ValueEstimate      = vNow;
         item.ExplorationEpsilon = adaptiveEpsilon;
+        item.ExploreProb        = explore[pred];
+        item.ActionForced       = forced;
+        item.HasBias            = biased;
+        if (biased) bias.Slice(0, actionCount).CopyTo(item.Bias);
         item.LogProbability     = MathF.Log(MathF.Max(pBehaviour, 1e-8f));
         item.BpttSlot           = slot;
         item.BpttStamp          = stamp;
@@ -238,10 +264,12 @@ public unsafe partial class DelayedPerceptron : IDisposable
         return item;
     }
 
-    public void FlushTerminal(PerceptronContext ctx, ValueCritic critic, float gamma, float penalty)
+    public void FlushTerminal(PerceptronContext ctx, ValueCritic critic, float gamma, float penalty,
+        int replayCount = 0, int replayPasses = 1, float replayWeight = 1f)
     {
         var ring  = ctx.Decisions;
         int count = ring.Count;
+        int replayFrom = count - replayCount;
 
         for (int i = 0; i < count; i++)
         {
@@ -273,8 +301,17 @@ public unsafe partial class DelayedPerceptron : IDisposable
             ctx.Diagnostics.RecordCriticError(advantage);
 
             item.Trained = true;
-            if (MathF.Abs(advantage) > 0.05f)
+            if (MathF.Abs(advantage) <= 0.05f) continue;
+
+            if (i < replayFrom)
+            {
                 EnqueueTraining(item, advantage, ctx);
+                continue;
+            }
+
+            int passes = Math.Max(replayPasses, 1);
+            for (int pass = 0; pass < passes; pass++)
+                EnqueueTraining(item, advantage * replayWeight, ctx);
         }
 
         ring.Clear();
@@ -340,6 +377,12 @@ public unsafe partial class DelayedPerceptron : IDisposable
         for (int i = 0; i < ac; i++) t.Probs[i] = item.Probs[i];
         int aux = ctx.Layout.AuxOutputs;
         for (int i = 0; i < aux; i++) t.AuxNoise[i] = item.AuxNoise[i];
+
+        t.ExploreProb = item.ExploreProb;
+        t.Forced      = item.ActionForced ? 1 : 0;
+        t.HasBias     = item.HasBias ? 1 : 0;
+        if (item.HasBias)
+            for (int i = 0; i < ac; i++) t.Bias[i] = item.Bias[i];
 
         int idx = _tickets.Length;
         _tickets.Add(t);
@@ -577,4 +620,4 @@ public unsafe partial class DelayedPerceptron : IDisposable
         if (_applyNonFinite.IsCreated) _applyNonFinite.Dispose();
         _nativeStale = true;
     }
-}
+}
