@@ -1,6 +1,35 @@
 using UnityEngine;
 using Unity.Mathematics;
 
+public enum Caste : byte
+{
+    Worker = 0,
+}
+
+public readonly struct CasteModifiers
+{
+    public readonly float Attack;
+    public readonly float Health;
+    public readonly float EnergyUpkeep;
+    public readonly float Speed;
+    public readonly float EnergyCapacity;
+    public readonly float Detection;
+
+    public CasteModifiers(float attack, float health, float energyUpkeep, float speed, float energyCapacity, float detection)
+    {
+        Attack         = attack;
+        Health         = health;
+        EnergyUpkeep   = energyUpkeep;
+        Speed          = speed;
+        EnergyCapacity = energyCapacity;
+        Detection      = detection;
+    }
+
+    public static readonly CasteModifiers Neutral = new(1f, 1f, 1f, 1f, 1f, 1f);
+
+    public static CasteModifiers For(Caste caste) => Neutral;
+}
+
 [System.Serializable]
 public struct EntityTuning
 {
@@ -35,14 +64,20 @@ public struct EntityTuning
     [System.NonSerialized] public float DigestionMul;
 
     public static EntityTuning Express(in EntityTuning source, in GeneticParameters g)
+        => Express(in source, in g, in CasteModifiers.Neutral);
+
+    public static EntityTuning Express(in EntityTuning source, in GeneticParameters g, in CasteModifiers caste)
     {
         var r = SimulationRules.Active;
         var t = source;
 
-        float speed  = g.MoveSpeedMul;
-        float energy = g.MaxEnergyMul;
+        float speed  = g.MoveSpeedMul * caste.Speed;
+        float energy = g.MaxEnergyMul * caste.EnergyCapacity;
         float metab  = g.MetabolismMul;
-        float detect = g.DetectionRadiusMul;
+        float detect = g.DetectionRadiusMul * caste.Detection;
+
+        t.MaxHealth    *= caste.Health;
+        t.AttackDamage *= caste.Attack;
 
         float speedCost = math.pow(speed, r.GeneSpeedCostExponent);
         t.MoveSpeed         *= speed;
@@ -60,7 +95,8 @@ public struct EntityTuning
         t.BasalDrainMul = math.max(r.GeneMinBasalMul,
             metab
             * (1f + r.GeneEnergyCapacityUpkeep * (energy - 1f))
-            * (1f + r.GeneDetectionUpkeep      * (detect - 1f)));
+            * (1f + r.GeneDetectionUpkeep      * (detect - 1f)))
+            * caste.EnergyUpkeep;
         return t;
     }
 }

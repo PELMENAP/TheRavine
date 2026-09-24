@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Mathematics;
 using TheRavine.Extensions;
 using TheRavine.Generator;
+using TheRavine.EntityControl.Virology;
 
 public enum FoodKind : byte { Plant = 0, Toxic = 1, Large = 2, Meat = 3 }
 
@@ -312,6 +313,11 @@ public sealed class ChunkFoodIndex
 
     public bool TryTakePayload(long cell, out ViralPayload payload) => _payloads.TryRemove(cell, out payload);
 
+    private void DropPayload(long cell)
+    {
+        if (_payloads.TryRemove(cell, out var payload)) ViralPayloadPool.Release(ref payload);
+    }
+
     private bool RemoveAt(FoodChunk fc, ChunkData cd, int idx, long cell, out bool infected)
     {
         int lz = idx / Size;
@@ -327,7 +333,7 @@ public sealed class ChunkFoodIndex
         fc.BuiltVersion = cd.Version;
 
         _meat.Remove(cell);
-        if (!infected) _payloads.Remove(cell);
+        if (!infected) DropPayload(cell);
 
         FoodCount--;
         Revision++;
@@ -377,9 +383,13 @@ public sealed class ChunkFoodIndex
         return true;
     }
 
-    public bool TryAddCorpse(float2 position, float energy, in ViralPayload payload, bool hasPayload)
+    public bool TryAddCorpse(float2 position, float energy, ref ViralPayload payload, bool hasPayload)
     {
-        if (_map == null || energy <= SimulationRules.Active.CorpseMinEnergy) return false;
+        if (_map == null || energy <= SimulationRules.Active.CorpseMinEnergy)
+        {
+            ViralPayloadPool.Release(ref payload);
+            return false;
+        }
 
         int cx = Mathf.FloorToInt(position.x * InvScale);
         int cz = Mathf.FloorToInt(position.y * InvScale);
@@ -401,10 +411,14 @@ public sealed class ChunkFoodIndex
             {
                 int idx = (z & ChunkMask) * Size + (x & ChunkMask);
                 fc.Infected[idx / Size] |= 1UL << (idx & ChunkMask);
+                DropPayload(cell);
                 _payloads[cell] = payload;
+                payload = default;
             }
+            else ViralPayloadPool.Release(ref payload);
             return true;
         }
+        ViralPayloadPool.Release(ref payload);
         return false;
     }
 
@@ -513,7 +527,7 @@ public sealed class ChunkFoodIndex
             if (e >= min) { _meat[cell] = e; continue; }
 
             _meat.Remove(cell);
-            _payloads.Remove(cell);
+            DropPayload(cell);
             TryConsumeFood(cell);
         }
     }

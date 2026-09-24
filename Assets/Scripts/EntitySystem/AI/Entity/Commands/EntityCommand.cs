@@ -6,7 +6,8 @@ public interface IEntityCommand
 {
     float Reward { get; }
     bool CanExecute();
-    EntityCommandStatus Begin(in BrainDecision decision);
+    CommandSource Source { get; }
+    EntityCommandStatus Begin(in BrainDecision decision, CommandSource source);
     EntityCommandStatus Tick(float dt);
     void Cancel();
 }
@@ -27,6 +28,7 @@ public abstract class EntityCommand : IEntityCommand
     private int    _replans;
 
     public float Reward { get; private set; }
+    public CommandSource Source { get; private set; }
 
     protected EntityCommand(EntityModel m) => model = m;
 
@@ -34,9 +36,10 @@ public abstract class EntityCommand : IEntityCommand
     protected virtual float InterruptionReward => SimulationRules.Active.InterruptionReward;
     protected virtual float FailureReward      => SimulationRules.Active.FailureReward;
 
-    public EntityCommandStatus Begin(in BrainDecision d)
+    public EntityCommandStatus Begin(in BrainDecision d, CommandSource source)
     {
         decision     = d;
+        Source       = source;
         _watchdog    = d.EndTime + SimulationRules.Active.CommandWatchdogGrace;
         _moveStarted = false;
         _moveCut     = false;
@@ -136,6 +139,7 @@ public abstract class EntityCommand : IEntityCommand
             Intent    = (byte)intent,
             HasTarget = hasTarget ? (byte)1 : (byte)0,
             HasThreat = hasThreat ? (byte)1 : (byte)0,
+            ColonyIndex = (byte)model.ColonyIndex,
         };
         _planSpeed    = speed * model.SpeedMul;
         _planCost     = energyCostPerSec;

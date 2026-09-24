@@ -169,8 +169,6 @@ public sealed class SimulationRules : ScriptableObject
         public readonly int NestMapSize;
         public readonly float NestMapCellSize;
         public readonly float NestMapMaxValue;
-        public readonly float NestFoodTau;
-        public readonly float NestDangerTau;
         public readonly float NestFoodPeakMin;
         public readonly float NestFoodMark;
         public readonly float NestDangerMark;
@@ -198,6 +196,7 @@ public sealed class SimulationRules : ScriptableObject
         public readonly float LethargySlow;
         public readonly int   EpsilonScheduleMode;
         public readonly float ActionTraceInvLogNorm;
+        public readonly float ReservoirHz;
 
         public RulesFrame(SimulationRules r)
         {
@@ -363,8 +362,6 @@ public sealed class SimulationRules : ScriptableObject
             NestMapSize = r.nestMapSize;
             NestMapCellSize = r.nestMapCellSize;
             NestMapMaxValue = r.nestMapMaxValue;
-            NestFoodTau = r.nestFoodTau;
-            NestDangerTau = r.nestDangerTau;
             NestFoodPeakMin = r.nestFoodPeakMin;
             NestFoodMark = r.nestFoodMark;
             NestDangerMark = r.nestDangerMark;
@@ -392,6 +389,7 @@ public sealed class SimulationRules : ScriptableObject
             LethargySlow = r.lethargySlow;
             EpsilonScheduleMode   = (int)r.epsilonScheduleMode;
             ActionTraceInvLogNorm = 1f / Mathf.Log(1f + Mathf.Max(r.actionTraceHorizon, 1e-3f));
+            ReservoirHz           = r.reservoirHz;
         }
     }
 
@@ -489,6 +487,8 @@ public sealed class SimulationRules : ScriptableObject
     [SerializeField] private float epsilonPlateauThresholdStep = 0f;
     [SerializeField] private float actionTraceHorizon = 120f;
     [SerializeField] private float reservoirSpectralRadius = 0.9f;
+    [SerializeField] private float reservoirHz = 0f;
+    [SerializeField] private float translationLutMaxDistanceSq = 64f;
     [SerializeField] private float blockedSpeedThreshold = 0.15f;
     [SerializeField] private float blockedSeconds = 0.75f;
     [SerializeField] private float digestRateRest = 4f;
@@ -568,8 +568,8 @@ public sealed class SimulationRules : ScriptableObject
     [SerializeField] private int nestMapSize = 64;
     [SerializeField] private float nestMapCellSize = 4f;
     [SerializeField] private float nestMapMaxValue = 10f;
-    [SerializeField] private float nestFoodTau = 120f;
-    [SerializeField] private float nestDangerTau = 60f;
+    [SerializeField] private float[] colonyChannelTau = { 120f, 60f };
+    [SerializeField] private float colonyChannelDefaultTau = 60f;
     [SerializeField] private float nestFoodPeakMin = 0.2f;
     [SerializeField] private float nestFoodMark = 0.5f;
     [SerializeField] private float nestDangerMark = 5f;
@@ -682,6 +682,8 @@ public sealed class SimulationRules : ScriptableObject
     public float EpsilonPlateauThresholdStep => epsilonPlateauThresholdStep;
     public float ActionTraceHorizon => actionTraceHorizon;
     public float ReservoirSpectralRadius => reservoirSpectralRadius;
+    public float ReservoirHz => reservoirHz;
+    public float TranslationLutMaxDistanceSq => translationLutMaxDistanceSq;
     public float BlockedSpeedThreshold => blockedSpeedThreshold;
     public float BlockedSeconds => blockedSeconds;
     public float DigestRateRest => digestRateRest;
@@ -761,8 +763,10 @@ public sealed class SimulationRules : ScriptableObject
     public int NestMapSize => nestMapSize;
     public float NestMapCellSize => nestMapCellSize;
     public float NestMapMaxValue => nestMapMaxValue;
-    public float NestFoodTau => nestFoodTau;
-    public float NestDangerTau => nestDangerTau;
+    public float ColonyChannelTau(int channel)
+        => colonyChannelTau != null && (uint)channel < (uint)colonyChannelTau.Length
+            ? colonyChannelTau[channel]
+            : colonyChannelDefaultTau;
     public float NestFoodPeakMin => nestFoodPeakMin;
     public float NestFoodMark => nestFoodMark;
     public float NestDangerMark => nestDangerMark;

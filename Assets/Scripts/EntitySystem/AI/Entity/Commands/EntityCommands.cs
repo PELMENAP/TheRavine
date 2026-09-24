@@ -5,6 +5,7 @@ using Unity.Mathematics;
 using UnityEngine;
 
 using TheRavine.Extensions;
+using TheRavine.EntityControl.Virology;
 
 public class RestCommand : EntityCommand
 {
@@ -240,7 +241,10 @@ public class EatCommand : EntityCommand
         if (!index.TryClaim(cell, model, SimulationClock.TimeD, out var claim)) return Fail();
 
         if (claim.Infected && index.TryTakePayload(cell, out var payload))
+        {
             model.Infection?.InfectFromPayload(model, in payload);
+            ViralPayloadPool.Release(ref payload);
+        }
 
         if (claim.Pending)
         {
@@ -286,7 +290,7 @@ public class EatCommand : EntityCommand
         Deliver();
         if (!Elapsed(_end)) return EntityCommandStatus.Running;
 
-        if (_toxic) model.TakeDamage(SimulationRules.Active.ToxicDamage, null);
+        if (_toxic) model.TakeDamage(SimulationRules.Active.ToxicDamage, null, DeathCause.Toxic);
         return Complete();
     }
 
@@ -324,7 +328,7 @@ public class PickUpCommand : EntityCommand
 
         model.InvalidateCachedFood();
         if (!index.TryClaim(cell, model, SimulationClock.TimeD, out var claim) || claim.Energy <= 0f) return Fail();
-        if (claim.Infected) index.TryTakePayload(cell, out _);
+        if (claim.Infected && index.TryTakePayload(cell, out var payload)) ViralPayloadPool.Release(ref payload);
 
         model.Carry(claim.Energy);
         return Complete();

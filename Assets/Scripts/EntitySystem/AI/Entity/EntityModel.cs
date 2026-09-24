@@ -12,7 +12,7 @@ public class EntityModel : AEntity, IFoodReceiver
 {
     public enum FitnessEvent { FoodEaten, Reproduced, DamageDealt }
 
-    private const int ActionCount = (int)EntityAction.StoreFood + 1;
+    private const int ActionCount = ActionCatalog.Count;
 
     public StatsComponent Stats { get; private set; }
     public PerceptionComponent Perception { get; private set; }
@@ -28,8 +28,20 @@ public class EntityModel : AEntity, IFoodReceiver
     public EntityTuning Tuning { get; private set; }
     public GameObject SelfObject { get; private set; }
 
+    public ColonyState Colony { get; private set; }
+    public int ColonyIndex => Colony != null ? Colony.Index : 0;
+    public int ColonySlot = -1;
     public NestState Nest { get; private set; }
     public MovePlanner Planner { get; private set; }
+    public MortalityComponent Mortality { get; private set; }
+
+    public int EntityId { get; private set; }
+    public void AssignId(int id) => EntityId = id;
+    public ParentRef Parent { get; private set; }
+    public Caste Caste { get; private set; } = Caste.Worker;
+
+    private InstinctInput _instinctInput;
+    public ref readonly InstinctInput InstinctInput => ref _instinctInput;
     public InfectionService Infection { get; private set; }
 
     public InputVectorizer Vectorizer;
@@ -238,11 +250,14 @@ public class EntityModel : AEntity, IFoodReceiver
     public ChunkFoodIndex FoodIndex => _foodIndex;
 
     public void Configure(
-        SharedHierarchicalBrain brain, EntityBrainContext ctx,
+        ColonyState colony, EntityBrainContext ctx,
         IEntityMotor motor, IEntityDeathHandler death,
         GameObject selfObject, EntityTuning baseTuning, EntityModel parent = null)
     {
-        var tuning = EntityTuning.Express(in baseTuning, in ctx.CoordMLP.Params);
+        Colony = colony;
+        Parent = new ParentRef(parent);
+        var brain  = colony.Brain;
+        var tuning = EntityTuning.Express(in baseTuning, in ctx.CoordMLP.Params, CasteModifiers.For(Caste));
         Motor = motor;
         SelfObject = selfObject;
         Tuning = tuning;
@@ -261,10 +276,9 @@ public class EntityModel : AEntity, IFoodReceiver
         _terrain = new TerrainSensor(ServiceLocator.GetService<MapGenerator>());
         ServiceLocator.Services.TryGet(out _foodIndex);
 
-        ServiceLocator.Services.TryGet(out NestState nest);
         ServiceLocator.Services.TryGet(out MovePlanner planner);
         ServiceLocator.Services.TryGet(out InfectionService infection);
-        Nest      = nest;
+        Nest      = colony.Nest;
         Planner   = planner;
         Infection = infection;
 
@@ -278,8 +292,9 @@ public class EntityModel : AEntity, IFoodReceiver
         _runner = new EntityCommandRunner(this);
 
         AddComponentToEntity(new MortalityComponent(Stats.Health));
-        GetEntityComponent<MortalityComponent>().Died += InterruptCommand;
-        GetEntityComponent<MortalityComponent>().Died += () => death?.OnDeath();
+        Mortality = GetEntityComponent<MortalityComponent>();
+        Mortality.Died += InterruptCommand;
+        Mortality.Died += () => death?.OnDeath();
 
         _vecMaxHealth = new R3.ReactiveProperty<float>(tuning.MaxHealth);
         _vecMaxEnergy = new R3.ReactiveProperty<float>(tuning.MaxEnergy);
@@ -332,14 +347,25 @@ public class EntityModel : AEntity, IFoodReceiver
     private bool IsAliveForTick()
         => !IsDeathPending && !IsDisposed && !Stats.IsDisposed && Stats.Hp > 0f;
 
-    private bool _cycleActive;
+    private bool  _cycleActive;
+    private float _cycleNow;
+    private float _cycleDt;
+
+    public bool CycleActive => _cycleActive;
 
     public override void UpdateEntityCycle()
     {
         Brain.BeginBatch();
         if (!BeginCycle()) return;
+        SubmitDecision(true);
         Brain.RunBatch();
         EndCycle();
+    }
+
+    public void SubmitDecision(bool allowDecision)
+    {
+        if (!_cycleActive) return;
+        Brain.EnqueueDecision(LastInput, _cycleNow, _cycleDt, allowDecision);
     }
 
     public bool BeginCycle()
@@ -380,7 +406,9 @@ public class EntityModel : AEntity, IFoodReceiver
             WeakThreshold  = rules.SkipWeakHpFraction,
             CrowdThreshold = rules.SkipCrowdCount,
         };
+        float hpBeforeVirus = Stats.Hp;
         Virology.Step(Stats, dt, in host);
+        if (Stats.Hp < hpBeforeVirus) Mortality.NoteHarm(DeathCause.Virus, Stats.Hp);
         ref var mods = ref Virology.Modifiers;
         if (mods.ForceSpeechRequested) Broadcast(Speech.Own);
         if (!IsAliveForTick()) return false;
@@ -409,7 +437,7 @@ public class EntityModel : AEntity, IFoodReceiver
 
         var nest = Nest;
         IsAtNest = nest != null && nest.Contains(self);
-        if (nest != null && _foodValid) nest.MarkFood(foodPos, rules.NestFoodMark * dt);
+        if (nest != null && _foodValid) nest.Mark(ColonyChannel.Food, foodPos, rules.NestFoodMark * dt);
 
         if (!_terrain.TrySample(pos.x, pos.z, out _lastTerrain))
             _lastTerrain = TerrainSample.Invalid;
@@ -442,7 +470,7 @@ public class EntityModel : AEntity, IFoodReceiver
             FoodInfected      = foodInfected ? 1f : 0f,
             Carrying          = Carrying > 0f ? math.saturate(Carrying / math.max(Stats.MaxEnergy * rules.StomachCapacityFraction, 1e-3f)) : 0f,
             NestStorage       = nest != null ? math.saturate(nest.Storage / math.max(rules.NestStorageNorm, 1e-3f)) : 0f,
-            LocalDanger       = nest != null ? math.saturate(nest.DangerAt(self)) : 0f,
+            LocalDanger       = nest != null ? math.saturate(nest.FieldAt(ColonyChannel.Danger, self)) : 0f,
             Alarm             = nest != null ? nest.Alarm : 0f,
             AtNest            = IsAtNest ? 1f : 0f,
             NeighborViralLoad = neighborLoad,
@@ -469,12 +497,14 @@ public class EntityModel : AEntity, IFoodReceiver
                     * (night && !IsAtNest ? rules.NightOutsideDrainMul : 1f)
                     * (1f + mods.Fever * rules.FeverDrainMul);
 
+        float hpBeforeStarve = Stats.Hp;
         Stats.Tick(dt,
             Motor.DrainEnergy(),
             mods.MetabolismMultiplier,
             basal,
             rules.StarvationThreshold, rules.StarvationDamage, rules.StarvationEnergyReturn,
             out float metabolismCredit);
+        if (Stats.Hp < hpBeforeStarve) Mortality.NoteHarm(DeathCause.Starved, Stats.Hp);
 
         Virology.CreditDurableEffects(regenCredit, metabolismCredit, Stats.MaxEnergy);
         if (!IsAliveForTick()) return false;
@@ -504,8 +534,24 @@ public class EntityModel : AEntity, IFoodReceiver
 
         brainCtx.EnergyNorm = Stats.En / Stats.MaxEnergy;
 
+        _instinctInput = new InstinctInput
+        {
+            HpFraction     = Stats.Hp / Stats.MaxHealth,
+            EnergyFraction = Stats.En / Stats.MaxEnergy,
+            Stomach        = frame.Stomach,
+            Carrying       = frame.Carrying,
+            LocalDanger    = frame.LocalDanger,
+            Alarm          = frame.Alarm,
+            EntityDistance = _nearestDistance,
+            FoodDistance   = _foodValid ? _foodDistance : -1f,
+            AtNest         = IsAtNest ? (byte)1 : (byte)0,
+            Night          = night ? (byte)1 : (byte)0,
+            Warned         = IsWarned ? (byte)1 : (byte)0,
+        };
+
+        _cycleNow    = now;
+        _cycleDt     = dt;
         _cycleActive = true;
-        Brain.EnqueueDecision(LastInput, now, dt);
         return true;
     }
 
@@ -543,19 +589,20 @@ public class EntityModel : AEntity, IFoodReceiver
         return -r.DriveRewardWeight * integral + r.DriveShapingWeight * shaping;
     }
 
-    public void TakeDamage(float amount, EntityModel source)
+    public void TakeDamage(float amount, EntityModel source, DeathCause cause = DeathCause.Killed)
     {
         if (amount <= 0f || Stats == null || Stats.IsDisposed) return;
         ref readonly var r = ref SimulationRules.Frame;
 
         if (IsAtNest && LastAction == EntityAction.Rest) amount *= r.NestRestDamageMul;
+        Mortality?.NoteHarm(cause, Stats.Hp - amount);
         Stats.Hp -= amount;
         _lastDamageTime = SimulationClock.TimeD;
 
         var nest = Nest;
         if (nest == null) return;
         float norm = amount / Stats.MaxHealth;
-        nest.MarkDanger(Position2D, norm * r.NestDangerMark);
+        nest.Mark(ColonyChannel.Danger, Position2D, norm * r.NestDangerMark);
         if (IsAtNest) nest.RaiseAlarm(norm * r.AlarmFromDamage);
     }
 
@@ -630,7 +677,7 @@ public class EntityModel : AEntity, IFoodReceiver
             return;
         }
 
-        _runner.Start(cmd, in decision);
+        _runner.Start(cmd, in decision, CommandSource.Brain);
     }
 
     private float ComputeDangerLevel()

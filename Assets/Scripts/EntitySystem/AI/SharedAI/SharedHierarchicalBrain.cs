@@ -10,13 +10,7 @@ public class SharedHierarchicalBrain : IDisposable
     public enum Goal { Survive = 0, Hunt = 1, Forage = 2, Social = 3 }
     public const int GoalCount = 4;
 
-    public static readonly int[][] ActionSubsets =
-    {
-        new[] { 0, 1, 5, 6, 10, 13, 14 },
-        new[] { 0, 1, 4, 5, 11, 13 },
-        new[] { 1, 2, 3, 6, 13, 14, 15, 16 },
-        new[] { 0, 1, 7, 8, 9, 12, 14 },
-    };
+    public static readonly int[][] ActionSubsets = ActionCatalog.BuildSubsets(GoalCount);
 
     private const int CoordDelaySteps  = 10;
     private const int ExecDelaySteps   = 3;
@@ -110,8 +104,24 @@ public class SharedHierarchicalBrain : IDisposable
 
     public float CurrentLearningRate { get; private set; } = OptimizerBaseLr;
 
+    private JobHandle _pending;
+    private bool      _trainingScheduled;
+
+    public void CompletePending()
+    {
+        _pending.Complete();
+        _pending = default;
+        if (!_trainingScheduled) return;
+        _trainingScheduled = false;
+
+        coordinator.CompleteTraining();
+        for (int g = 0; g < GoalCount; g++)
+            executors[g].CompleteTraining();
+    }
+
     public void ApplyPendingGradients()
     {
+        CompletePending();
         var   rules   = SimulationRules.Active;
         float decayed = OptimizerBaseLr * math.exp(-SimulationClock.Time * rules.LrDecayPerSecond);
         float lr      = math.max(rules.MinLearningRate, decayed);
@@ -153,6 +163,7 @@ public class SharedHierarchicalBrain : IDisposable
 
     public EntityBrainContext CreateContext(GeneticParameters? p = null)
     {
+        CompletePending();
         if (_coordCtxLayout == null) BuildContextLayouts();
         return new EntityBrainContext(InputSize, LstmHidden, _coordCtxLayout, _execCtxLayouts,
                                       p ?? GeneticParameters.Default);
@@ -194,6 +205,7 @@ public class SharedHierarchicalBrain : IDisposable
 
     public SharedHierarchicalBrain(SharedHierarchicalBrain src) : this(src.InputSize, src.LstmHidden)
     {
+        src.CompletePending();
         reservoir.Dispose();
         coordinator.Dispose();
         reservoir   = new LSTMMemory(src.reservoir);
@@ -209,7 +221,7 @@ public class SharedHierarchicalBrain : IDisposable
         ApplyPendingGradients();
     }
 
-    private const int FleeAction = 5;
+    private const int FleeAction = (int)EntityAction.Flee;
     private static readonly int[] FleeSlots = BuildFleeSlots();
 
     private static int[] BuildFleeSlots()
@@ -268,6 +280,7 @@ public class SharedHierarchicalBrain : IDisposable
 
     public void BeginDecisionBatch()
     {
+        CompletePending();
         for (int i = 0; i < _dCount; i++) _dCtx[i] = null;
         _dCount = 0;
         _rCount = 0;
@@ -275,15 +288,15 @@ public class SharedHierarchicalBrain : IDisposable
         if (_rndRows.IsCreated) _rndRows.Clear();
     }
 
-    public unsafe int EnqueueDecision(EntityBrainContext ctx, float[] input, float simTime, float dt)
+    public unsafe int EnqueueDecision(EntityBrainContext ctx, float[] input, float simTime, float dt, bool allowDecision = true)
     {
         _batch ??= new PerceptronBatch(InputSize, BiasStride);
 
         int row = _rCount++;
         _batch.SetInput(row, input);
-        _batch.AddReservoir(ctx.Reservoir.Ptr, row);
+        _batch.AddReservoir(BuildReservoirItem(ctx.Reservoir, row, simTime, dt));
 
-        if (ctx.ExecWindow.IsRunning(simTime)) return -1;
+        if (!allowDecision || ctx.ExecWindow.IsRunning(simTime)) return -1;
 
         int d = _dCount;
         EnsureDeciderCapacity(d + 1);
@@ -301,6 +314,32 @@ public class SharedHierarchicalBrain : IDisposable
         return d;
     }
 
+    private static unsafe ReservoirItem BuildReservoirItem(LSTMContext res, int row, float simTime, float dt)
+    {
+        var item = new ReservoirItem { State = res.Ptr, Ema = res.Ema, InputRow = row, Alpha = 1f, Step = 1 };
+
+        float hz = SimulationRules.Frame.ReservoirHz;
+        if (hz <= 0f)
+        {
+            res.EmaPrimed = false;
+            return item;
+        }
+
+        item.UseEma = 1;
+        item.Alpha  = res.EmaPrimed ? 1f - math.exp(-math.max(dt, 0f) * hz) : 1f;
+        res.EmaPrimed = true;
+
+        if (simTime < res.NextStepTime)
+        {
+            item.Step = 0;
+            return item;
+        }
+
+        float next = res.NextStepTime + 1f / hz;
+        res.NextStepTime = next > simTime ? next : simTime + 1f / hz;
+        return item;
+    }
+
     public bool TryGetDecision(int slot, out BrainDecision decision)
     {
         if ((uint)slot < (uint)_dCount && _dMade[slot])
@@ -314,9 +353,11 @@ public class SharedHierarchicalBrain : IDisposable
 
     public unsafe void RunDecisions(float coordEps = 0.05f, float execEps = 0.15f)
     {
+        CompletePending();
+
         if (_rCount == 0)
         {
-            RunTraining();
+            ScheduleTraining();
             return;
         }
 
@@ -324,21 +365,21 @@ public class SharedHierarchicalBrain : IDisposable
         var batch = _batch;
         int n = _dCount;
 
-        var pre = batch.ScheduleReservoir(reservoir.WeightsPtr, reservoir.BiasesPtr, LstmHidden);
-        if (n > 0) pre = JobHandle.CombineDependencies(pre, _rnd.ScheduleInfer(batch.Inputs, _rndRows.AsArray(), n));
-        pre.Complete();
+        var reservoirHandle = batch.ScheduleReservoir(reservoir.WeightsPtr, reservoir.BiasesPtr, LstmHidden);
 
         if (n == 0)
         {
-            RunTraining();
+            _pending = reservoirHandle;
+            ScheduleTraining();
             return;
         }
+
+        var rndHandle = _rnd.ScheduleInfer(batch.Inputs, _rndRows.AsArray(), n);
 
         float decay = ExplorationDecay();
         ref readonly var frame = ref SimulationRules.Frame;
         float coordGamma = frame.CoordGammaPerSecond;
         float execGamma  = frame.ExecGammaPerSecond;
-        for (int d = 0; d < n; d++) _dCtx[d].IntrinsicReward = _rnd.IntrinsicReward(d);
 
         batch.ClearItems();
         for (int d = 0; d < n; d++)
@@ -375,28 +416,31 @@ public class SharedHierarchicalBrain : IDisposable
         }
 
         int coordCount = batch.Count;
-        if (coordCount > 0)
+        var coordHandle = coordCount > 0
+            ? batch.Schedule(_kernels, _nets, LstmHidden, reservoirHandle)
+            : reservoirHandle;
+
+        JobHandle.CombineDependencies(coordHandle, rndHandle).Complete();
+
+        for (int d = 0; d < n; d++) _dCtx[d].IntrinsicReward = _rnd.IntrinsicReward(d);
+
+        for (int k = 0; k < coordCount; k++)
         {
-            batch.Schedule(_kernels, _nets, LstmHidden).Complete();
+            var item = batch.ItemAt(k);
+            int d    = item.Owner;
+            var ctx  = _dCtx[d];
+            float simTime = _dTime[d];
 
-            for (int k = 0; k < coordCount; k++)
-            {
-                var item = batch.ItemAt(k);
-                int d    = item.Owner;
-                var ctx  = _dCtx[d];
-                float simTime = _dTime[d];
+            ctx.CoordMLP.Activation(0).CopyTo(ctx.CoordCombined);
 
-                ctx.CoordMLP.Activation(0).CopyTo(ctx.CoordCombined);
+            var goalTicket = coordinator.FinishDecide(ctx.CoordCombined, ctx.CoordMLP, item.Slot,
+                item.BiasRow >= 0, CoordDelaySteps, coordCritic, coordGamma, simTime,
+                ActionDurationTable.MinGoalSeconds, ActionDurationTable.MaxGoalSeconds, coordEps, decay);
 
-                var goalTicket = coordinator.FinishDecide(ctx.CoordCombined, ctx.CoordMLP, item.Slot,
-                    item.BiasRow >= 0, CoordDelaySteps, coordCritic, coordGamma, simTime,
-                    ActionDurationTable.MinGoalSeconds, ActionDurationTable.MaxGoalSeconds, coordEps, decay);
-
-                ctx.CurrentGoal     = (Goal)goalTicket.Predicted;
-                ctx.CoordDecisionId = goalTicket.DecisionId;
-                ctx.GoalEndTime     = simTime + goalTicket.Duration;
-                ctx.BeginGoal(simTime);
-            }
+            ctx.CurrentGoal     = (Goal)goalTicket.Predicted;
+            ctx.CoordDecisionId = goalTicket.DecisionId;
+            ctx.GoalEndTime     = simTime + goalTicket.Duration;
+            ctx.BeginGoal(simTime);
         }
 
         batch.ClearItems();
@@ -471,21 +515,20 @@ public class SharedHierarchicalBrain : IDisposable
             _dMade[d] = true;
         }
 
-        RunTraining();
+        ScheduleTraining();
     }
 
-    public void RunTraining()
+    private void ScheduleTraining()
     {
         float clip = SimulationRules.Frame.PpoClipEpsilon;
 
         var handle = coordinator.ScheduleTraining(clip);
         for (int g = 0; g < GoalCount; g++)
             handle = JobHandle.CombineDependencies(handle, executors[g].ScheduleTraining(clip));
-        handle.Complete();
 
-        coordinator.CompleteTraining();
-        for (int g = 0; g < GoalCount; g++)
-            executors[g].CompleteTraining();
+        _pending = JobHandle.CombineDependencies(_pending, handle);
+        _trainingScheduled = true;
+        JobHandle.ScheduleBatchedJobs();
     }
 
     private unsafe void EnsureNativeTables()
@@ -524,6 +567,7 @@ public class SharedHierarchicalBrain : IDisposable
 
     public void Dispose()
     {
+        CompletePending();
         coordinator.Dispose();
         reservoir.Dispose();
         for (int g = 0; g < GoalCount; g++)
@@ -557,6 +601,7 @@ public class SharedHierarchicalBrain : IDisposable
     public void CompleteTerminal(EntityBrainContext ctx, float penalty)
     {
         if (ctx == null) return;
+        CompletePending();
 
         var   rules  = SimulationRules.Active;
         float scaled = _rewardNorm.Scale(penalty, rules.RewardClipSigma, rules.RewardStdFloor);
@@ -671,7 +716,11 @@ public class SharedHierarchicalBrain : IDisposable
         return new SharedHierarchicalBrain(reservoir, coordinator, executors);
     }
 
-    public SharedBrainSnapshot ToSnapshot() => new SharedBrainSnapshot(this);
+    public SharedBrainSnapshot ToSnapshot()
+    {
+        CompletePending();
+        return new SharedBrainSnapshot(this);
+    }
 
     public static SharedHierarchicalBrain FromSnapshot(byte[] data, int inputSize, int lstmHidden)
         => FromSnapshot(SharedBrainSnapshot.Deserialize(data), inputSize, lstmHidden);

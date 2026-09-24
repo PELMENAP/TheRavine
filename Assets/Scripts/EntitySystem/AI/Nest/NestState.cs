@@ -1,18 +1,26 @@
 using System;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
-public struct NestMapView
+public enum ColonyChannel : byte
 {
-    [ReadOnly] public NativeArray<float> Food;
-    [ReadOnly] public NativeArray<float> Danger;
+    Food   = 0,
+    Danger = 1,
+    Count,
+}
+
+public unsafe struct ColonyFieldView
+{
+    [NativeDisableUnsafePtrRestriction] public float* Data;
     public float2 Origin;
     public float  InvCell;
     public int    Size;
+    public int    Cells;
 
-    public bool TryIndex(float2 p, out int index)
+    public readonly bool TryIndex(float2 p, out int index)
     {
         int2 c = (int2)math.floor((p - Origin) * InvCell);
         if (math.any(c < 0) || math.any(c >= Size)) { index = -1; return false; }
@@ -20,28 +28,36 @@ public struct NestMapView
         return true;
     }
 
-    public float FoodAt(float2 p)   => TryIndex(p, out int i) ? Food[i] : 0f;
-    public float DangerAt(float2 p) => TryIndex(p, out int i) ? Danger[i] : 0f;
+    public readonly float At(ColonyChannel channel, int index) => Data[(int)channel * Cells + index];
+
+    public readonly float FieldAt(ColonyChannel channel, float2 p) => TryIndex(p, out int i) ? At(channel, i) : 0f;
 }
 
 [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
-public struct NestDecayJob : IJob
+public struct ColonyFieldDecayJob : IJob
 {
-    public NativeArray<float> Food;
-    public NativeArray<float> Danger;
-    public NativeArray<float> Peak;
-    public float FoodKeep;
-    public float DangerKeep;
+    public NativeArray<float> Field;
+    [ReadOnly] public NativeArray<float> Keep;
+    [WriteOnly] public NativeArray<float> Peak;
+    public int Cells;
+    public int PeakChannel;
 
     public void Execute()
     {
-        int best = -1;
-        float bestVal = 0f;
-        for (int i = 0; i < Food.Length; i++)
+        int channels = Keep.Length;
+        for (int c = 0; c < channels; c++)
         {
-            float f = Food[i] * FoodKeep;
-            Food[i]   = f;
-            Danger[i] = Danger[i] * DangerKeep;
+            float k   = Keep[c];
+            int   off = c * Cells;
+            for (int i = 0; i < Cells; i++) Field[off + i] *= k;
+        }
+
+        int   best    = -1;
+        float bestVal = 0f;
+        int   po      = PeakChannel * Cells;
+        for (int i = 0; i < Cells; i++)
+        {
+            float f = Field[po + i];
             if (f > bestVal) { bestVal = f; best = i; }
         }
         Peak[0] = best;
@@ -49,8 +65,10 @@ public struct NestDecayJob : IJob
     }
 }
 
-public sealed class NestState : IDisposable
+public sealed unsafe class NestState : IDisposable
 {
+    public const int ChannelCount = (int)ColonyChannel.Count;
+
     public float2 Position { get; private set; }
     public float  Radius   { get; private set; }
 
@@ -61,10 +79,12 @@ public sealed class NestState : IDisposable
     public float2 FoodPeak { get; private set; }
     public bool   HasFoodPeak { get; private set; }
 
-    private NativeArray<float> _food;
-    private NativeArray<float> _danger;
+    private NativeArray<float> _field;
+    private NativeArray<float> _keep;
     private NativeArray<float> _peak;
+    private readonly ColonyFieldView _view;
     private readonly int   _size;
+    private readonly int   _cells;
     private readonly float _cell;
     private readonly float2 _origin;
 
@@ -74,32 +94,36 @@ public sealed class NestState : IDisposable
         Position = position;
         Radius   = r.NestRadius;
         _size    = math.max(4, r.NestMapSize);
+        _cells   = _size * _size;
         _cell    = math.max(0.5f, r.NestMapCellSize);
         _origin  = position - 0.5f * _size * _cell;
 
-        _food   = new NativeArray<float>(_size * _size, Allocator.Persistent);
-        _danger = new NativeArray<float>(_size * _size, Allocator.Persistent);
-        _peak   = new NativeArray<float>(2, Allocator.Persistent);
+        _field = new NativeArray<float>(_cells * ChannelCount, Allocator.Persistent);
+        _keep  = new NativeArray<float>(ChannelCount, Allocator.Persistent);
+        _peak  = new NativeArray<float>(2, Allocator.Persistent);
+
+        _view = new ColonyFieldView
+        {
+            Data    = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(_field),
+            Origin  = _origin,
+            InvCell = 1f / _cell,
+            Size    = _size,
+            Cells   = _cells,
+        };
     }
 
-    public NestMapView View => new NestMapView
-    {
-        Food = _food, Danger = _danger, Origin = _origin, InvCell = 1f / _cell, Size = _size,
-    };
+    public ColonyFieldView View => _view;
 
     public bool Contains(float2 p) => math.distancesq(p, Position) <= Radius * Radius;
 
-    public void MarkFood(float2 p, float amount)
+    public void Mark(ColonyChannel channel, float2 p, float amount)
     {
-        if (View.TryIndex(p, out int i)) _food[i] = math.min(_food[i] + amount, SimulationRules.Frame.NestMapMaxValue);
+        if (!_view.TryIndex(p, out int i)) return;
+        float* cell = _view.Data + (int)channel * _cells + i;
+        *cell = math.min(*cell + amount, SimulationRules.Frame.NestMapMaxValue);
     }
 
-    public void MarkDanger(float2 p, float amount)
-    {
-        if (View.TryIndex(p, out int i)) _danger[i] = math.min(_danger[i] + amount, SimulationRules.Frame.NestMapMaxValue);
-    }
-
-    public float DangerAt(float2 p) => View.DangerAt(p);
+    public float FieldAt(ColonyChannel channel, float2 p) => _view.FieldAt(channel, p);
 
     public void RaiseAlarm(float amount) => Alarm = math.min(1f, Alarm + math.max(0f, amount));
 
@@ -108,13 +132,16 @@ public sealed class NestState : IDisposable
         if (dt <= 0f) return;
         var r = SimulationRules.Active;
 
-        new NestDecayJob
+        for (int c = 0; c < ChannelCount; c++)
+            _keep[c] = math.exp(-dt / math.max(r.ColonyChannelTau(c), 1e-3f));
+
+        new ColonyFieldDecayJob
         {
-            Food       = _food,
-            Danger     = _danger,
-            Peak       = _peak,
-            FoodKeep   = math.exp(-dt / math.max(r.NestFoodTau, 1e-3f)),
-            DangerKeep = math.exp(-dt / math.max(r.NestDangerTau, 1e-3f)),
+            Field       = _field,
+            Keep        = _keep,
+            Peak        = _peak,
+            Cells       = _cells,
+            PeakChannel = (int)ColonyChannel.Food,
         }.Run();
 
         int peak = (int)_peak[0];
@@ -128,8 +155,8 @@ public sealed class NestState : IDisposable
 
     public void Dispose()
     {
-        if (_food.IsCreated)   _food.Dispose();
-        if (_danger.IsCreated) _danger.Dispose();
-        if (_peak.IsCreated)   _peak.Dispose();
+        if (_field.IsCreated) _field.Dispose();
+        if (_keep.IsCreated)  _keep.Dispose();
+        if (_peak.IsCreated)  _peak.Dispose();
     }
 }
