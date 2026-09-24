@@ -20,6 +20,7 @@ public sealed class EntityCommandRunner
 
     public bool IsRunning => _current != null;
     public CommandSource CurrentSource => _source;
+    public int CurrentAction => _current != null ? _decision.Action : -1;
     public int StartedBy(CommandSource source) => _startedBySource[(int)source];
 
     public void Start(IEntityCommand command, in BrainDecision decision, CommandSource source)
@@ -31,6 +32,7 @@ public sealed class EntityCommandRunner
         _source   = source;
         _lastTick = SimulationClock.TimeD;
         _startedBySource[(int)source]++;
+        _model.Colony?.Stats.RecordCommand(source);
 
         var status = command.Begin(in decision, source);
         if (status != EntityCommandStatus.Running && ReferenceEquals(_current, command))
@@ -72,7 +74,6 @@ public sealed class EntityCommandRunner
     {
         var command = _current;
         _current = null;
-        if (_source != CommandSource.Brain) return;
-        _model.Brain.CompleteDecision(in _decision, command.Reward + _model.HomeostaticReturn(), SimulationClock.Time, status);
+        _model.OnCommandFinished(_source, status, command.Reward, _decision.Action);
     }
 }

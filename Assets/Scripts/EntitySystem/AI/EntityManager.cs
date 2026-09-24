@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Unity.Netcode;
 
+using Unity.Mathematics;
 using TheRavine.Generator;
 using TheRavine.EntityControl.Virology;
 
@@ -328,7 +329,9 @@ public class EntityManager : MonoBehaviour
         {
             var e = _tickSnapshot[i];
             if (e == null || e.IsDisposed || !e.CycleActive) continue;
-            e.SubmitDecision(_instincts.NeedsDecision(e.ManagerIndex));
+            var output = _instincts.Output(e.ManagerIndex);
+            e.ApplyInstinct(in output);
+            e.SubmitDecision(output.NeedsDecision != 0 && !e.IsCommandRunning && !e.Plan.IsActive);
         }
 
         RunColonyDecisions();
@@ -423,7 +426,8 @@ public class EntityManager : MonoBehaviour
         model.ManagerIndex = _entities.Count;
         _entities.Add(model);
         colony.AddMember(model);
-        _instincts.Reset(model.ManagerIndex);
+        colony.Stats.RecordBirth();
+        _instincts.Reset(model.ManagerIndex, InstinctGenes.From(in ctx.CoordMLP.Params));
         OnEntitySpawned?.Invoke(model);
         return model;
     }
@@ -565,7 +569,10 @@ public class EntityManager : MonoBehaviour
 
             model.OnReproduceRequest -= SpawnChild;
             model.CaptureFinalFitness();
-            DropCorpse(model);
+            var cause = model.Mortality != null ? model.Mortality.Cause : DeathCause.Age;
+            model.Colony?.Stats.RecordDeath(model.TimeAlive, cause);
+            BroadcastDeath(model, cause);
+            DropCorpse(model, cause);
             model.Brain?.CompleteTerminal(TerminalPenaltyFor(model));
             RemoveEntitySwapBack(model);
             OnEntityDied?.Invoke(model);
@@ -576,7 +583,7 @@ public class EntityManager : MonoBehaviour
         }
     }
 
-    private void DropCorpse(EntityModel model)
+    private void DropCorpse(EntityModel model, DeathCause cause)
     {
         if (_foodIndex == null || model.Stats == null || model.Stats.IsDisposed) return;
 
@@ -584,7 +591,47 @@ public class EntityManager : MonoBehaviour
         ViralPayload payload = default;
         bool infected = virology != null && virology.TryExtractPayload(out payload);
 
-        _foodIndex.TryAddCorpse(model.DeathPosition, model.BodyEnergy, ref payload, infected);
+        bool tainted = cause == DeathCause.Virus || cause == DeathCause.Toxic;
+        int  taboo   = tainted && model.Colony != null ? model.Colony.ColonyId : 0;
+        _foodIndex.TryAddCorpse(model.DeathPosition, model.BodyEnergy, ref payload, infected, taboo);
+    }
+
+    private readonly EntityModel[] _witnesses = new EntityModel[InfectionService.MaxNeighbors];
+
+    private void BroadcastDeath(EntityModel model, DeathCause cause)
+    {
+        var colony = model.Colony;
+        if (colony == null) return;
+
+        var r    = SimulationRules.Active;
+        var nest = colony.Nest;
+        float2 at = model.DeathPosition;
+
+        if (cause == DeathCause.Killed || cause == DeathCause.Virus)
+        {
+            nest.Mark(ColonyChannel.Danger, at, r.KinDeathDangerMark);
+            nest.RaiseAlarm(r.KinDeathAlarm);
+        }
+        if (cause == DeathCause.Starved) nest.RaiseHunger(r.StarvedHungerRise);
+        if (cause == DeathCause.Virus || cause == DeathCause.Toxic) nest.Mark(ColonyChannel.Danger, at, r.CorpseDangerMark);
+
+        ulong lineage = model.LineageId;
+        int found = _grid.FindInRadius(new Vector3(at.x, 0f, at.y), model, r.KinDeathRadius, _witnesses);
+        for (int i = 0; i < found; i++)
+        {
+            var w = _witnesses[i];
+            _witnesses[i] = null;
+            if (w == null || w.IsDisposed || w.IsDeathPending) continue;
+
+            float kin = 0f;
+            if (w.Colony == colony) kin += r.KinColonyWeight;
+            if (lineage != 0UL && w.LineageId == lineage) kin += r.KinLineageWeight;
+            kin = math.saturate(kin);
+            if (kin <= 0f) continue;
+
+            w.AddStress(r.KinDeathStress * kin);
+            w.AddExtrinsicReward(r.WitnessPenalty * kin);
+        }
     }
 
     private void FlushDeferredDisposals()
@@ -631,8 +678,8 @@ public class EntityManager : MonoBehaviour
 
         float z     = (model.FinalFitness - _fitnessMedian) / _fitnessSpread;
         float scale = Mathf.Clamp(1f - z * rules.TerminalFitnessSensitivity,
-                                  rules.TerminalPenaltyMinScale,
-                                  rules.TerminalPenaltyMaxScale);
+                                  Mathf.Max(1f, rules.TerminalPenaltyMinScale),
+                                  Mathf.Max(1f, rules.TerminalPenaltyMaxScale));
         return basePenalty * scale;
     }
 

@@ -74,6 +74,7 @@ public sealed unsafe class NestState : IDisposable
 
     public float Storage;
     public float Alarm { get; private set; }
+    public float Hunger { get; private set; }
     public bool  AlarmHunt { get; private set; }
 
     public float2 FoodPeak { get; private set; }
@@ -125,7 +126,33 @@ public sealed unsafe class NestState : IDisposable
 
     public float FieldAt(ColonyChannel channel, float2 p) => _view.FieldAt(channel, p);
 
+    public float SampleDirection(float2 origin, float radius, int samples, float phase,
+        float foodWeight, float dangerWeight, out float2 bestDir)
+    {
+        samples = math.max(samples, 1);
+        float best = float.MinValue, worst = float.MaxValue;
+        bestDir = float2.zero;
+        float step = 2f * math.PI / samples;
+
+        for (int k = 0; k < samples; k++)
+        {
+            math.sincos(phase + k * step, out float sa, out float ca);
+            float2 d = new float2(ca, sa);
+            float2 p = origin + d * radius;
+
+            float v = 0f;
+            if (_view.TryIndex(p, out int i))
+                v = foodWeight * _view.At(ColonyChannel.Food, i) - dangerWeight * _view.At(ColonyChannel.Danger, i);
+
+            if (v > best) { best = v; bestDir = d; }
+            if (v < worst) worst = v;
+        }
+        return best - worst;
+    }
+
     public void RaiseAlarm(float amount) => Alarm = math.min(1f, Alarm + math.max(0f, amount));
+
+    public void RaiseHunger(float amount) => Hunger = math.min(1f, Hunger + math.max(0f, amount));
 
     public void Tick(float dt, int membersNearNest)
     {
@@ -150,6 +177,7 @@ public sealed unsafe class NestState : IDisposable
             FoodPeak = _origin + (new float2(peak % _size, peak / _size) + 0.5f) * _cell;
 
         Alarm     = Alarm * math.exp(-dt / math.max(r.AlarmTau, 1e-3f));
+        Hunger    = Hunger * math.exp(-dt / math.max(r.ColonyHungerTau, 1e-3f));
         AlarmHunt = membersNearNest >= r.AlarmHuntMinMembers;
     }
 

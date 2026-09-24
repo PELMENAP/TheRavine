@@ -41,6 +41,7 @@ public sealed class ChunkFoodIndex
     private readonly LongDictionary<FoodChunk> _chunks = new(64);
     private readonly LongDictionary<float> _meat = new(32);
     private readonly LongDictionary<ViralPayload> _payloads = new(16);
+    private readonly LongDictionary<int> _taboo = new(16);
 
     public int FoodCount { get; private set; }
     public int Revision  { get; private set; }
@@ -168,8 +169,9 @@ public sealed class ChunkFoodIndex
     }
 
     public bool TryFindNearestFood(float worldX, float worldZ, float radiusWorld,
-        out long worldCell, out float distance)
+        out long worldCell, out float distance, int excludeColony = 0)
     {
+        bool filter = excludeColony != 0 && _taboo.Count > 0;
         worldCell = 0L;
         distance  = -1f;
 
@@ -226,6 +228,8 @@ public sealed class ChunkFoodIndex
                     float wx = (baseX + lx) * MapGenerator.scale + HalfCell - worldX;
                     float sqr = wx * wx + dz2;
                     if (sqr > r2 || sqr >= bestSqr) continue;
+                    if (filter && _taboo.TryGetValue(Position2Int.Pack(baseX + lx, baseZ + lz), out int owner)
+                        && owner == excludeColony) continue;
 
                     bestSqr  = sqr;
                     bestCell = Position2Int.Pack(baseX + lx, baseZ + lz);
@@ -333,6 +337,7 @@ public sealed class ChunkFoodIndex
         fc.BuiltVersion = cd.Version;
 
         _meat.Remove(cell);
+        _taboo.Remove(cell);
         if (!infected) DropPayload(cell);
 
         FoodCount--;
@@ -383,7 +388,7 @@ public sealed class ChunkFoodIndex
         return true;
     }
 
-    public bool TryAddCorpse(float2 position, float energy, ref ViralPayload payload, bool hasPayload)
+    public bool TryAddCorpse(float2 position, float energy, ref ViralPayload payload, bool hasPayload, int tabooColony = 0)
     {
         if (_map == null || energy <= SimulationRules.Active.CorpseMinEnergy)
         {
@@ -407,6 +412,7 @@ public sealed class ChunkFoodIndex
 
             long cell = Position2Int.Pack(x, z);
             _meat[cell] = energy;
+            if (tabooColony != 0) _taboo[cell] = tabooColony;
             if (hasPayload && payload.Codons != null && payload.Count > 0)
             {
                 int idx = (z & ChunkMask) * Size + (x & ChunkMask);

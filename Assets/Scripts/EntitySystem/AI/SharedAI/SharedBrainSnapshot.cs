@@ -7,7 +7,7 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
     internal SharedBrainSnapshot(SharedHierarchicalBrain brain) => Brain = brain;
 
     private const uint Magic   = 0x4E414C45;
-    private const int  Version = 4;
+    private const int  Version = 5;
 
     public byte[] Serialize()
     {
@@ -55,7 +55,7 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
             int version = br.ReadInt32();
             if (version != Version)
             {
-                UnityEngine.Debug.LogError($"Снапшот мозга: версия {version}, ожидалась {Version} (резервуар + новый входной вектор), переобучение обязательно");
+                UnityEngine.Debug.LogError($"Снапшот мозга: версия {version}, ожидалась {Version} (координатор выбирает {PlanCatalog.Count} планов, новые ActionSubsets без Wander вне Survive, вход +Stress/ColonyHunger, 18 действий), сохранённый мозг несовместим, переобучение обязательно");
                 return null;
             }
 

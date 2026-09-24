@@ -25,12 +25,17 @@ public sealed class DelayedItem
     public readonly float[] AuxNoise = new float[KernelLayout.MaxAux];
     public readonly float[] AuxValue = new float[KernelLayout.MaxAux];
     public float ExplorationEpsilon;
-    
+    public float ExploreProb;
+    public bool  ActionForced;
+    public bool  HasBias;
+    public readonly float[] Bias;
+
 
     public DelayedItem(int stateSize, int actionCount)
     {
         State = new float[stateSize];
         Probs = new float[actionCount];
+        Bias  = new float[actionCount];
     }
     public int BpttStamp;
 
@@ -42,6 +47,9 @@ public sealed class DelayedItem
         ValueEstimate = 0f;
         LogProbability = 0f;
         ExplorationEpsilon = 0f;
+        ExploreProb = 0f;
+        ActionForced = false;
+        HasBias = false;
         DurationLogit = 0f;
         DurationNoise = 0f;
         Duration = 0f;

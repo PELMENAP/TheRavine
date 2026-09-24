@@ -42,6 +42,32 @@ public class EntityModel : AEntity, IFoodReceiver
 
     private InstinctInput _instinctInput;
     public ref readonly InstinctInput InstinctInput => ref _instinctInput;
+    public uint InstinctLatches { get; private set; }
+    public bool IsHungry => (InstinctLatches & InstinctBits.Hungry) != 0;
+    public bool IsSated  => Digestion != null && Digestion.Fill >= Brain.Context.CoordMLP.Params.SatedFill;
+
+    private PlanRunner _plan;
+    public PlanRunner Plan => _plan;
+    public PlanHint PlanHints { get; private set; }
+
+    public float Stress { get; private set; }
+    public void AddStress(float amount) => Stress = math.saturate(Stress + math.max(0f, amount));
+
+    private float _extrinsicReward;
+    public void AddExtrinsicReward(float reward) => _extrinsicReward += reward;
+    public float ConsumeExtrinsicReward()
+    {
+        float r = _extrinsicReward;
+        _extrinsicReward = 0f;
+        return r;
+    }
+
+    public bool IsCommandRunning => _runner != null && _runner.IsRunning;
+    public bool IsAliveForPlan => IsAliveForTick();
+    public ulong LineageId => Virology != null ? Virology.EndogenousLineage : 0UL;
+    public float CarryCapacity => Stats.MaxEnergy * SimulationRules.Frame.StomachCapacityFraction;
+
+    private double _lastAlarmCry = double.NegativeInfinity;
     public InfectionService Infection { get; private set; }
 
     public InputVectorizer Vectorizer;
@@ -290,10 +316,15 @@ public class EntityModel : AEntity, IFoodReceiver
         Brain = GetEntityComponent<BrainComponent>();
 
         _runner = new EntityCommandRunner(this);
+        _plan   = new PlanRunner(this);
 
         AddComponentToEntity(new MortalityComponent(Stats.Health));
         Mortality = GetEntityComponent<MortalityComponent>();
-        Mortality.Died += InterruptCommand;
+        Mortality.Died += () =>
+        {
+            _plan.Interrupt();
+            InterruptCommand();
+        };
         Mortality.Died += () => death?.OnDeath();
 
         _vecMaxHealth = new R3.ReactiveProperty<float>(tuning.MaxHealth);
@@ -328,6 +359,7 @@ public class EntityModel : AEntity, IFoodReceiver
         _commands[(int)EntityAction.ReturnNest]    = new ReturnNestCommand(this);
         _commands[(int)EntityAction.PickUp]        = new PickUpCommand(this);
         _commands[(int)EntityAction.StoreFood]     = new StoreFoodCommand(this);
+        _commands[(int)EntityAction.Follow]        = new FollowCommand(this);
     }
 
     private float ResolveDayPhase()
@@ -394,6 +426,7 @@ public class EntityModel : AEntity, IFoodReceiver
         float now = (float)nowD;
 
         TimeAlive += dt;
+        Stress    *= math.exp(-dt / math.max(rules.StressTau, 1e-3f));
 
         float dayPhase = ResolveDayPhase();
         bool  night    = IsNightPhase(dayPhase);
@@ -423,7 +456,7 @@ public class EntityModel : AEntity, IFoodReceiver
         _foodValid    = false;
         _foodDistance = -1f;
         if (_foodIndex != null &&
-            _foodIndex.TryFindNearestFood(pos.x, pos.z, detect, out _foodCell, out _foodDistance))
+            _foodIndex.TryFindNearestFood(pos.x, pos.z, detect, out _foodCell, out _foodDistance, Colony.ColonyId))
             _foodValid = true;
 
         FoodKind foodKind = FoodKind.Plant;
@@ -474,6 +507,8 @@ public class EntityModel : AEntity, IFoodReceiver
             Alarm             = nest != null ? nest.Alarm : 0f,
             AtNest            = IsAtNest ? 1f : 0f,
             NeighborViralLoad = neighborLoad,
+            Stress            = Stress,
+            ColonyHunger      = nest != null ? nest.Hunger : 0f,
             Speech            = Speech.Heard,
             MimickedAction    = MimickedActionIndex,
             Now               = nowD,
@@ -513,46 +548,128 @@ public class EntityModel : AEntity, IFoodReceiver
 
         _runner.Tick();
         if (!IsAliveForTick()) return false;
+        _plan.Tick();
+        if (!IsAliveForTick()) return false;
 
-        var brainCtx = Brain.Context;
-        brainCtx.CoordBias[0] = mods.WanderBias;
-        brainCtx.CoordBias[1] = mods.HuntBias + mods.Frenzy * rules.FrenzyHuntBias;
-        brainCtx.CoordBias[2] = mods.ForageBias;
-        brainCtx.CoordBias[3] = mods.SocialBias;
-        brainCtx.FleeBias     = mods.FleeBias - mods.Frenzy * rules.FrenzyFleeSuppress;
+        var goalBias = new float4(
+            mods.WanderBias,
+            mods.HuntBias + mods.Frenzy * rules.FrenzyHuntBias,
+            mods.ForageBias,
+            mods.SocialBias);
+        float fleeBias = mods.FleeBias - mods.Frenzy * rules.FrenzyFleeSuppress;
 
         if (nest != null && nest.Alarm > 0f)
         {
             float alarm = nest.Alarm;
-            if (nest.AlarmHunt) brainCtx.CoordBias[1] += alarm * rules.AlarmHuntBias;
+            if (nest.AlarmHunt) goalBias.y += alarm * rules.AlarmHuntBias;
             else
             {
-                brainCtx.CoordBias[0] += alarm * rules.AlarmSurviveBias;
-                brainCtx.FleeBias     += alarm * rules.AlarmFleeBias;
+                goalBias.x += alarm * rules.AlarmSurviveBias;
+                fleeBias   += alarm * rules.AlarmFleeBias;
             }
         }
 
-        brainCtx.EnergyNorm = Stats.En / Stats.MaxEnergy;
+        var brainCtx = Brain.Context;
+        for (int p = 0; p < PlanCatalog.Count; p++)
+            brainCtx.CoordBias[p] = goalBias[(int)PlanCatalog.GoalOf((PlanKind)p)];
+        brainCtx.CoordBias[(int)PlanKind.Flee] += fleeBias;
 
+        bool hasThreat = (nearest != null && (IsInDanger || IsWarned)) || frame.LocalDanger > rules.ThreatMinDanger;
+        PlanHints = ComputePlanHints(hasThreat);
+
+        brainCtx.EnergyNorm    = Stats.En / Stats.MaxEnergy;
+        brainCtx.PlanHints     = PlanHints;
+        brainCtx.ColonyStorage = frame.NestStorage;
+
+        float parentDistance = -1f;
+        if (Parent.TryGet(out var parent)) parentDistance = math.distance(self, parent.Position2D);
+
+        int running = _runner.CurrentAction;
         _instinctInput = new InstinctInput
         {
-            HpFraction     = Stats.Hp / Stats.MaxHealth,
-            EnergyFraction = Stats.En / Stats.MaxEnergy,
-            Stomach        = frame.Stomach,
-            Carrying       = frame.Carrying,
-            LocalDanger    = frame.LocalDanger,
-            Alarm          = frame.Alarm,
-            EntityDistance = _nearestDistance,
-            FoodDistance   = _foodValid ? _foodDistance : -1f,
-            AtNest         = IsAtNest ? (byte)1 : (byte)0,
-            Night          = night ? (byte)1 : (byte)0,
-            Warned         = IsWarned ? (byte)1 : (byte)0,
+            HpFraction      = Stats.Hp / Stats.MaxHealth,
+            EnergyFraction  = Stats.En / Stats.MaxEnergy,
+            Stomach         = frame.Stomach,
+            Carrying        = Carrying / math.max(CarryCapacity, 1e-3f),
+            LocalDanger     = frame.LocalDanger,
+            Stress          = Stress,
+            Alarm           = frame.Alarm,
+            EntityDistance  = _nearestDistance,
+            FoodDistance    = _foodValid ? _foodDistance : -1f,
+            ParentDistance  = parentDistance,
+            Age             = TimeAlive,
+            AtNest          = IsAtNest ? (byte)1 : (byte)0,
+            Night           = night ? (byte)1 : (byte)0,
+            Warned          = IsWarned ? (byte)1 : (byte)0,
+            HasThreat       = hasThreat ? (byte)1 : (byte)0,
+            Busy            = _runner.IsRunning ? (byte)1 : (byte)0,
+            RunningAction   = running >= 0 ? (byte)running : InstinctBits.NoReflex,
+            RunningInstinct = _runner.IsRunning && _runner.CurrentSource == CommandSource.Instinct ? (byte)1 : (byte)0,
+            PlanActive      = _plan.IsActive ? (byte)1 : (byte)0,
+            PlanKind        = (byte)_plan.Kind,
         };
 
         _cycleNow    = now;
         _cycleDt     = dt;
         _cycleActive = true;
         return true;
+    }
+
+    private PlanHint ComputePlanHints(bool hasThreat)
+    {
+        ref readonly var r = ref SimulationRules.Frame;
+        PlanHint h = PlanHint.None;
+        if (_foodValid) h |= PlanHint.FoodVisible;
+        if (_foodValid && _foodDistance <= r.EatRange) h |= PlanHint.FoodInRange;
+        if (Carrying > 0f) h |= PlanHint.Carrying;
+        if (Carrying >= CarryCapacity * r.CarryFullFraction) h |= PlanHint.CarryFull;
+        if (IsAtNest) h |= PlanHint.AtNest;
+        if (CachedNearest != null) h |= PlanHint.EntityNear;
+        if (Stats.En >= math.max(r.AttackEnergyMin, Tuning.AttackEnergyCost)) h |= PlanHint.CanAttack;
+        if (Stats.En >= Tuning.ReproduceEnergyCost && Stats.Hp >= Tuning.ReproduceHealthCost) h |= PlanHint.CanReproduce;
+        if (IsSated) h |= PlanHint.Sated;
+        if (Stats.Hp >= Stats.MaxHealth) h |= PlanHint.HpFull;
+        if (Points.Count > 0) h |= PlanHint.HasPoi;
+        if (hasThreat) h |= PlanHint.Threat;
+        if (IsHungry) h |= PlanHint.Hungry;
+        return h;
+    }
+
+    public void ApplyInstinct(in InstinctOutput output)
+    {
+        InstinctLatches = output.Latches;
+        if (!_cycleActive) return;
+
+        if (output.Interrupt != 0 || output.Reflex != InstinctBits.NoReflex) _plan.Interrupt();
+        if (output.Reflex == InstinctBits.NoReflex) return;
+
+        int action = output.Reflex;
+        var reflex = new BrainDecision(action, 0, 0, Brain.CurrentGoal, _cycleNow,
+            ActionDurationTable.Max(action), float2.zero);
+        TryStartCommand(action, in reflex, CommandSource.Instinct);
+    }
+
+    public bool TryStartCommand(int action, in BrainDecision decision, CommandSource source)
+    {
+        var cmd = (uint)action < (uint)_commands.Length ? _commands[action] : null;
+        if (cmd == null) return false;
+
+        if (!cmd.CanExecute())
+        {
+            float penalty = SimulationRules.Active.InfeasibleActionHealthPenalty;
+            if (source == CommandSource.Brain && penalty > 0f) Stats.Hp -= penalty;
+            return false;
+        }
+
+        SetLastAction(action);
+        _runner.Start(cmd, in decision, source);
+        return true;
+    }
+
+    public void OnCommandFinished(CommandSource source, EntityCommandStatus status, float reward, int action)
+    {
+        if (source == CommandSource.Instinct) return;
+        _plan.OnStepFinished(status, reward, action);
     }
 
     private static int CountAndRelease(int found)
@@ -571,7 +688,7 @@ public class EntityModel : AEntity, IFoodReceiver
         return math.sqrt(r.DriveEnergyWeight * de * de + r.DriveHealthWeight * dh * dh);
     }
 
-    private void BeginHomeostasis()
+    public void BeginHomeostasis()
     {
         _decisionStart    = SimulationClock.TimeD;
         _decisionIntegral = _driveIntegral;
@@ -604,6 +721,12 @@ public class EntityModel : AEntity, IFoodReceiver
         float norm = amount / Stats.MaxHealth;
         nest.Mark(ColonyChannel.Danger, Position2D, norm * r.NestDangerMark);
         if (IsAtNest) nest.RaiseAlarm(norm * r.AlarmFromDamage);
+
+        double now = SimulationClock.TimeD;
+        if (now - _lastAlarmCry < r.AlarmCryCooldown || IsDisposed || Stats.Hp <= 0f) return;
+        _lastAlarmCry = now;
+        Broadcast(r.AlarmCrySpeech);
+        nest.RaiseAlarm(r.AlarmCryAmount);
     }
 
     public void Broadcast(float4 speech)
@@ -647,7 +770,6 @@ public class EntityModel : AEntity, IFoodReceiver
         if (Brain.TryTakeDecision(out var decision))
         {
             Array.Copy(LastInput, _decisionInput, _decisionInput.Length);
-            SetLastAction(decision.Action);
             StartDecision(in decision);
         }
 
@@ -656,28 +778,19 @@ public class EntityModel : AEntity, IFoodReceiver
 
     private void StartDecision(in BrainDecision decision)
     {
+        _plan.Interrupt();
         _runner.Interrupt();
+
+        if (decision.HasPlan)
+        {
+            _plan.Begin(in decision);
+            return;
+        }
+
         BeginHomeostasis();
-
-        int a   = decision.Action;
-        var cmd = (uint)a < (uint)_commands.Length ? _commands[a] : null;
-
-        var r = SimulationRules.Active;
-        if (cmd == null)
-        {
-            Brain.CompleteDecision(in decision, r.FailureReward, SimulationClock.Time, EntityCommandStatus.Failed);
-            return;
-        }
-
-        if (!cmd.CanExecute())
-        {
-            float penalty = r.InfeasibleActionHealthPenalty;
-            if (penalty > 0f) Stats.Hp -= penalty;
-            Brain.CompleteDecision(in decision, r.InfeasibleActionReward, SimulationClock.Time, EntityCommandStatus.Failed);
-            return;
-        }
-
-        _runner.Start(cmd, in decision, CommandSource.Brain);
+        if (TryStartCommand(decision.Action, in decision, CommandSource.Brain)) return;
+        Brain.CompleteDecision(in decision, SimulationRules.Active.InfeasibleActionReward,
+            SimulationClock.Time, EntityCommandStatus.Failed);
     }
 
     private float ComputeDangerLevel()
@@ -705,7 +818,7 @@ public class EntityModel : AEntity, IFoodReceiver
         return b;
     }
 
-    private void InterruptCommand() => _runner?.Interrupt();
+    public void InterruptCommand() => _runner?.Interrupt();
 
     public override void DeepClean()
     {

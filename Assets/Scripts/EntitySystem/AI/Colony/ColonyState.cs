@@ -8,6 +8,7 @@ public sealed class ColonyState : IDisposable
     public readonly int ColonyId;
     public readonly NestState Nest;
     public SharedHierarchicalBrain Brain { get; private set; }
+    public readonly ColonyStats Stats = new();
 
     private int[] _members;
     private int   _memberCount;

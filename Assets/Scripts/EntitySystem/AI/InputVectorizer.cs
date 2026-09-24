@@ -32,6 +32,8 @@ public struct VectorizerFrame
     public float  Alarm;
     public float  AtNest;
     public float  NeighborViralLoad;
+    public float  Stress;
+    public float  ColonyHunger;
     public float4 Speech;
     public int    MimickedAction;
     public double Now;
@@ -40,7 +42,7 @@ public struct VectorizerFrame
 public class InputVectorizer : IDisposable
 {
     public const int VectorSize  = 80;
-    public const int ActionCount = (int)EntityAction.StoreFood + 1;
+    public const int ActionCount = ActionCatalog.Count;
 
     public const int TraceOffset     = 8;
     public const int DirectionOffset = TraceOffset + ActionCount;
@@ -124,7 +126,7 @@ public class InputVectorizer : IDisposable
         v[s + 9]  = f.Alarm;
         v[s + 10] = f.AtNest;
         v[s + 11] = f.NeighborViralLoad;
-        v[s + 12] = 0f;
+        v[s + 12] = f.Stress;
 
         int idx = TailOffset;
         v[idx++] = math.saturate(f.InDanger);
@@ -149,6 +151,7 @@ public class InputVectorizer : IDisposable
         v[idx++] = hasMimic ? (f.MimickedAction + 0.5f) / ActionCount : 0f;
 
         v[idx++] = f.ViralNet;
+        v[idx++] = f.ColonyHunger;
 
         for (int i = idx; i < VectorSize; i++) v[i] = 0f;
         return v;

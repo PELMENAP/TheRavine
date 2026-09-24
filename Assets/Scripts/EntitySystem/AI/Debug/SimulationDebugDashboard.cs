@@ -42,7 +42,8 @@ public class SimulationDebugDashboard : MonoBehaviour
     private GUIStyle _valueStyle;
     private bool     _stylesInitialized;
 
-    private Rect _windowRect = new Rect(10, 10, 420, 700);
+    private Rect _windowRect = new Rect(10, 10, 420, 980);
+    private GUIStyle _warnStyle;
 
     private int _coordStaleDrops;
     private int _execStaleDrops;
@@ -135,6 +136,9 @@ public class SimulationDebugDashboard : MonoBehaviour
         DrawDualGraph(ref y, _avgEntropyHistory, _avgRewardHistory,
             new Color(0.9f, 0.5f, 0.1f), Color.green, 0f, 2f);
 
+        DrawSection(ref y, "COLONIES");
+        DrawColonies(ref y);
+
         DrawSection(ref y, "GOAL DISTRIBUTION");
         DrawGoalBars(ref y);
         DrawGoalStackedGraph(ref y);
@@ -146,6 +150,42 @@ public class SimulationDebugDashboard : MonoBehaviour
         DrawTopEntities(ref y);
 
         GUI.DragWindow(new Rect(0, 0, _windowRect.width, 20));
+    }
+
+    private void DrawColonies(ref float y)
+    {
+        var colonies = _manager.Colonies;
+        if (colonies == null) return;
+
+        float interval = SimulationRules.Active.GenerationInterval;
+        for (int c = 0; c < colonies.Count; c++)
+        {
+            var colony = colonies[c];
+            var st     = colony.Stats;
+
+            DrawKV(ref y, $"#{colony.ColonyId} alive / born / died",
+                $"{colony.MemberCount} / {st.Born} / {st.Died}");
+            DrawKV(ref y, "  death rate /min", st.DeathRatePerMinute.ToString("F2"));
+            DrawKV(ref y, "  lifespan mean / ema", $"{st.MeanLifespan:F0}s / {st.LifespanEma:F0}s");
+            DrawKV(ref y, "  src brain/inst/plan",
+                $"{st.SourceFraction(CommandSource.Brain) * 100f:0}/{st.SourceFraction(CommandSource.Instinct) * 100f:0}/{st.SourceFraction(CommandSource.Plan) * 100f:0}%");
+            DrawKV(ref y, "  hunger / alarm", $"{colony.Nest.Hunger:F2} / {colony.Nest.Alarm:F2}");
+
+            int started = 0, completed = 0;
+            for (int p = 0; p < st.PlansStarted.Length; p++)
+            {
+                started   += st.PlansStarted[p];
+                completed += st.PlansCompleted[p];
+            }
+            DrawKV(ref y, "  plans done", started > 0 ? $"{completed * 100f / started:0}% of {started}" : "-");
+
+            if (st.Died > 0 && interval <= st.MeanLifespan)
+            {
+                GUI.Label(new Rect(8, y, _windowRect.width - 16, 14),
+                    $"  ! GenerationInterval {interval:F0}s <= lifespan {st.MeanLifespan:F0}s", _warnStyle);
+                y += 15f;
+            }
+        }
     }
 
     private static string FormatDropRatio(int drops, int accepted)
@@ -417,6 +457,12 @@ public class SimulationDebugDashboard : MonoBehaviour
         {
             fontSize = 10,
             normal   = { textColor = new Color(0.75f, 0.75f, 0.75f) }
+        };
+        _warnStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize  = 10,
+            fontStyle = FontStyle.Bold,
+            normal    = { textColor = new Color(1f, 0.35f, 0.25f) }
         };
         _valueStyle = new GUIStyle(GUI.skin.label)
         {

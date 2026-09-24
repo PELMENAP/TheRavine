@@ -205,21 +205,47 @@ public static unsafe class NeuralKernels
             probs = evalProbs;
         }
 
-        float eps   = tk->Epsilon;
-        float pPure = probs[pred];
-        float pMix  = (1f - eps) * pPure + eps * invN;
-
-        float ratio = math.exp(math.log(math.max(pMix, 1e-8f)) - tk->LogProbability);
-        if (!math.isfinite(ratio)) ratio = 1f;
-        float mixScale = pMix > 1e-8f ? (1f - eps) * pPure / pMix : 1f;
+        float* biasedProbs = stackalloc float[KernelLayout.MaxActions];
+        if (tk->HasBias != 0)
+        {
+            float sum = 0f;
+            for (int i = 0; i < ac; i++)
+            {
+                float q = probs[i] * math.exp(tk->Bias[i] * invTemp);
+                biasedProbs[i] = q;
+                sum += q;
+            }
+            float inv = sum > 1e-12f ? 1f / sum : 0f;
+            for (int i = 0; i < ac; i++) biasedProbs[i] *= inv;
+            probs = biasedProbs;
+        }
 
         float adv = tk->Advantage;
-        bool clipped = (adv > 0f && ratio > 1f + clipEps) || (adv < 0f && ratio < 1f - clipEps);
-        float gate = clipped ? 0f : ratio * adv;
+        float gate;
+        float policyGate;
 
-        if (clipped && entReg <= 0f) return 0;
+        if (tk->Forced != 0)
+        {
+            gate       = adv;
+            policyGate = 0f;
+            entReg     = 0f;
+        }
+        else
+        {
+            float eps   = tk->Epsilon;
+            float pPure = probs[pred];
+            float pMix  = (1f - eps) * pPure + eps * tk->ExploreProb;
 
-        float policyGate = gate * mixScale;
+            float ratio = math.exp(math.log(math.max(pMix, 1e-8f)) - tk->LogProbability);
+            if (!math.isfinite(ratio)) ratio = 1f;
+            float mixScale = pMix > 1e-8f ? (1f - eps) * pPure / pMix : 1f;
+
+            bool clipped = (adv > 0f && ratio > 1f + clipEps) || (adv < 0f && ratio < 1f - clipEps);
+            gate = clipped ? 0f : ratio * adv;
+
+            if (clipped && entReg <= 0f) return 0;
+            policyGate = gate * mixScale;
+        }
 
         UnsafeUtility.MemClear(outErr, (long)outSize * sizeof(float));
         for (int i = 0; i < ac; i++)
