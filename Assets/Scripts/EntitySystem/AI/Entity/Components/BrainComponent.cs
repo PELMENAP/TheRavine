@@ -22,9 +22,9 @@ public class BrainComponent : IComponent
     public void BeginBatch() => _brain.BeginDecisionBatch();
     public void RunBatch()   => _brain.RunDecisions();
 
-    public bool EnqueueDecision(float[] input, float simTime, float dt)
+    public bool EnqueueDecision(float[] input, float simTime, float dt, bool allowDecision = true)
     {
-        _batchSlot = _brain.EnqueueDecision(Context, input, simTime, dt);
+        _batchSlot = _brain.EnqueueDecision(Context, input, simTime, dt, allowDecision);
         return _batchSlot >= 0;
     }
 
