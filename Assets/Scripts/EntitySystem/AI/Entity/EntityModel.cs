@@ -48,7 +48,8 @@ public class EntityModel : AEntity, IFoodReceiver
 
     private PlanRunner _plan;
     public PlanRunner Plan => _plan;
-    public PlanHint PlanHints { get; private set; }
+    private bool _hasThreat;
+    public PlanHint PlanHints => ComputePlanHints(_hasThreat);
 
     public float Stress { get; private set; }
     public void AddStress(float amount) => Stress = math.saturate(Stress + math.max(0f, amount));
@@ -575,7 +576,7 @@ public class EntityModel : AEntity, IFoodReceiver
         brainCtx.CoordBias[(int)PlanKind.Flee] += fleeBias;
 
         bool hasThreat = (nearest != null && (IsInDanger || IsWarned)) || frame.LocalDanger > rules.ThreatMinDanger;
-        PlanHints = ComputePlanHints(hasThreat);
+        _hasThreat = hasThreat;
 
         brainCtx.EnergyNorm    = Stats.En / Stats.MaxEnergy;
         brainCtx.PlanHints     = PlanHints;

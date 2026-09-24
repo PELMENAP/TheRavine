@@ -255,6 +255,7 @@ public sealed class SimulationRules : ScriptableObject
         public readonly float HungryPauseMul;
         public readonly float SatedPauseMul;
         public readonly float StatsEmaAlpha;
+        public readonly int PlanMaxInstantSteps;
 
         public RulesFrame(SimulationRules r)
         {
@@ -506,6 +507,7 @@ public sealed class SimulationRules : ScriptableObject
             HungryPauseMul = r.hungryPauseMul;
             SatedPauseMul = r.satedPauseMul;
             StatsEmaAlpha = r.statsEmaAlpha;
+            PlanMaxInstantSteps = r.planMaxInstantSteps;
         }
     }
 
@@ -663,6 +665,7 @@ public sealed class SimulationRules : ScriptableObject
     [SerializeField] private float hungryPauseMul = 0.4f;
     [SerializeField] private float satedPauseMul = 1.8f;
     [SerializeField] private float statsEmaAlpha = 0.1f;
+    [SerializeField] private int planMaxInstantSteps = 6;
     [SerializeField] private float blockedSpeedThreshold = 0.15f;
     [SerializeField] private float blockedSeconds = 0.75f;
     [SerializeField] private float digestRateRest = 4f;
@@ -916,6 +919,7 @@ public sealed class SimulationRules : ScriptableObject
     public float HungryPauseMul => hungryPauseMul;
     public float SatedPauseMul => satedPauseMul;
     public float StatsEmaAlpha => statsEmaAlpha;
+    public int PlanMaxInstantSteps => planMaxInstantSteps;
     public float BlockedSpeedThreshold => blockedSpeedThreshold;
     public float BlockedSeconds => blockedSeconds;
     public float DigestRateRest => digestRateRest;
