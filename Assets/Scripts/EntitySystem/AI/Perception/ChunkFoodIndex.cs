@@ -388,6 +388,43 @@ public sealed class ChunkFoodIndex
         return true;
     }
 
+    public int InfectNearby(float2 position, int radiusCells, int maxCells, in ViralPayload source)
+    {
+        if (_map == null || source.Codons == null || source.Count <= 0 || maxCells <= 0) return 0;
+
+        int cx = Mathf.FloorToInt(position.x * InvScale);
+        int cz = Mathf.FloorToInt(position.y * InvScale);
+        int infected = 0;
+
+        for (int dz = -radiusCells; dz <= radiusCells; dz++)
+        for (int dx = -radiusCells; dx <= radiusCells; dx++)
+        {
+            int x = cx + dx, z = cz + dz;
+            var fc = Resolve(Position2Int.Pack(x >> ChunkShift, z >> ChunkShift), out _);
+            if (fc == null) continue;
+
+            int   lz  = z & ChunkMask;
+            ulong bit = 1UL << (x & ChunkMask);
+            if ((fc.Rows[lz] & bit) == 0UL || (fc.Infected[lz] & bit) != 0UL) continue;
+
+            long cell = Position2Int.Pack(x, z);
+            var copy = new ViralPayload
+            {
+                Codons    = ViralPayloadPool.Rent(),
+                Count     = math.min(source.Count, InfectionService.PayloadCapacity),
+                StrainId  = source.StrainId,
+                LineageId = source.LineageId,
+            };
+            System.Array.Copy(source.Codons, copy.Codons, copy.Count);
+
+            fc.Infected[lz] |= bit;
+            DropPayload(cell);
+            _payloads[cell] = copy;
+            if (++infected >= maxCells) return infected;
+        }
+        return infected;
+    }
+
     public bool TryAddCorpse(float2 position, float energy, ref ViralPayload payload, bool hasPayload, int tabooColony = 0)
     {
         if (_map == null || energy <= SimulationRules.Active.CorpseMinEnergy)

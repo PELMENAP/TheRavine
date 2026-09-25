@@ -20,6 +20,7 @@ public sealed unsafe class PerceptronContext : IDisposable
     public float AverageEntropy;
     public int   TrainingSteps;
     public float DeltaTime = 0.05f;
+    public float PositiveAdvantageScale = 1f;
 
     private int _nextDecisionId;
     private int _forwardCounter;

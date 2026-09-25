@@ -8,6 +8,7 @@ public enum ActionFlags : byte
     NeedsTarget = 1 << 1,
     EnergyGated = 1 << 2,
     InstinctOnly = 1 << 3,
+    PlanOnly     = 1 << 4,
 }
 
 public readonly struct ActionInfo
@@ -28,7 +29,7 @@ public readonly struct ActionInfo
 
 public static class ActionCatalog
 {
-    public const int Count = (int)EntityAction.Follow + 1;
+    public const int Count = (int)EntityAction.MoveNest + 1;
 
     private const byte Survive = 1 << (int)SharedHierarchicalBrain.Goal.Survive;
     private const byte Hunt    = 1 << (int)SharedHierarchicalBrain.Goal.Hunt;
@@ -36,6 +37,7 @@ public static class ActionCatalog
     private const byte Social  = 1 << (int)SharedHierarchicalBrain.Goal.Social;
 
     private const byte AllCastes = byte.MaxValue;
+    private const byte NoSoldier = AllCastes & ~(1 << (int)Caste.Soldier);
 
     private static readonly ActionInfo[] Table = BuildTable();
 
@@ -57,14 +59,28 @@ public static class ActionCatalog
         Set(t, EntityAction.ShareFood,     ActionFlags.NeedsTarget,                       Social);
         Set(t, EntityAction.ApproachFood,  ActionFlags.IsMove | ActionFlags.NeedsTarget,  Survive | Hunt | Forage);
         Set(t, EntityAction.ReturnNest,    ActionFlags.IsMove,                            Survive | Forage | Social);
-        Set(t, EntityAction.PickUp,        ActionFlags.NeedsTarget,                       Forage);
-        Set(t, EntityAction.StoreFood,     ActionFlags.None,                              Forage);
+        Set(t, EntityAction.PickUp,        ActionFlags.NeedsTarget,                       Forage, NoSoldier);
+        Set(t, EntityAction.StoreFood,     ActionFlags.None,                              Forage, NoSoldier);
         Set(t, EntityAction.Follow,        ActionFlags.IsMove | ActionFlags.NeedsTarget | ActionFlags.InstinctOnly, 0);
+        Set(t, EntityAction.MoveNest,      ActionFlags.PlanOnly,                          0);
         return t;
     }
 
-    private static void Set(ActionInfo[] t, EntityAction a, ActionFlags flags, int goalMask)
-        => t[(int)a] = new ActionInfo(flags, (byte)goalMask, AllCastes);
+    private static void Set(ActionInfo[] t, EntityAction a, ActionFlags flags, int goalMask, byte casteMask = AllCastes)
+        => t[(int)a] = new ActionInfo(flags, (byte)goalMask, casteMask);
+
+    private static readonly int[] CasteActionMasks = BuildCasteMasks();
+
+    private static int[] BuildCasteMasks()
+    {
+        var masks = new int[(int)Caste.Count];
+        for (int c = 0; c < masks.Length; c++)
+            for (int a = 0; a < Count; a++)
+                if ((Table[a].CasteMask & (1 << c)) != 0) masks[c] |= 1 << a;
+        return masks;
+    }
+
+    public static int CasteActionMask(Caste caste) => CasteActionMasks[(int)caste];
 
     public static ref readonly ActionInfo Get(int action) => ref Table[action];
     public static ref readonly ActionInfo Get(EntityAction action) => ref Table[(int)action];
@@ -95,6 +111,6 @@ public static class ActionCatalog
     private static bool InSubset(int action, int goal)
     {
         ref readonly var info = ref Table[action];
-        return (info.GoalMask & (1 << goal)) != 0 && !info.Has(ActionFlags.InstinctOnly);
+        return (info.GoalMask & (1 << goal)) != 0 && !info.Has(ActionFlags.InstinctOnly | ActionFlags.PlanOnly);
     }
 }

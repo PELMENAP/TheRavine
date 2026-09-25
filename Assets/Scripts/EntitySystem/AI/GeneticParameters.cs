@@ -29,6 +29,9 @@ public struct GeneticParameters
     public float SatedFill;
     public float PanicHp;
     public float PanicDanger;
+    public float BoidSeparation;
+    public float BoidAlignment;
+    public float BoidCohesion;
 
     public const int IdxMoveSpeedMul = 0;
     public const int IdxBaseLearningRate = 1;
@@ -47,6 +50,9 @@ public struct GeneticParameters
     public const int IdxSatedFill = 14;
     public const int IdxPanicHp = 15;
     public const int IdxPanicDanger = 16;
+    public const int IdxBoidSeparation = 17;
+    public const int IdxBoidAlignment = 18;
+    public const int IdxBoidCohesion = 19;
 
     public static readonly (float min, float max, float mutationScale)[] ParameterRanges = {
         (0.7f, 1.4f, 0.08f),
@@ -66,6 +72,9 @@ public struct GeneticParameters
         (0.5f, 1f, 0.05f),
         (0.1f, 0.4f, 0.04f),
         (0.3f, 1.5f, 0.1f),
+        (0f, 2f, 0.15f),
+        (0f, 1.5f, 0.15f),
+        (0f, 1.5f, 0.15f),
     };
 
     public static bool IsPhenotypic(int index)
@@ -73,7 +82,7 @@ public struct GeneticParameters
         || index == IdxMetabolismMul || index == IdxDetectionRadiusMul
         || IsInstinct(index);
 
-    public static bool IsInstinct(int index) => index >= IdxHungerOn && index <= IdxPanicDanger;
+    public static bool IsInstinct(int index) => index >= IdxHungerOn && index <= IdxBoidCohesion;
 
     public static void CopyLearningGenes(in GeneticParameters source, ref GeneticParameters target)
     {

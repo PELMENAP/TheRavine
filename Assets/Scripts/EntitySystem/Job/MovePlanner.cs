@@ -13,6 +13,7 @@ public struct PlanRequest
     public float2 Direction;
     public float2 Target;
     public float2 Threat;
+    public float2 Boid;
     public float  Radius;
     public float  Curvature;
     public float  Side;
@@ -41,6 +42,10 @@ public struct PlanWeights
     public float Align;
     public float CurvatureMin;
     public float CurvatureScale;
+    public float Trail;
+    public float Explored;
+    public float KinDeath;
+    public float Boid;
 }
 
 [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
@@ -61,6 +66,7 @@ public struct PlanJob : IJobParallelFor
         float  radius = math.max(q.Radius, 0.5f);
         bool   target = q.HasTarget != 0;
         bool   flee   = q.Intent == (byte)MoveIntent.Flee;
+        bool   wander = q.Intent == (byte)MoveIntent.Wander;
 
         if (target)
         {
@@ -94,10 +100,15 @@ public struct PlanJob : IJobParallelFor
             float cost  = len / math.max(sm, 0.05f) * invR;
             float food  = 0f;
             float dang  = 0f;
+            float field = 0f;
             if (nest.TryIndex(end, out int cell))
             {
                 food = nest.At(ColonyChannel.Food, cell);
                 dang = nest.At(ColonyChannel.Danger, cell);
+                if (!flee)
+                    field = W.Trail * nest.At(ColonyChannel.Trail, cell)
+                          - W.KinDeath * nest.At(ColonyChannel.KinDeath, cell)
+                          - (wander ? W.Explored * nest.At(ColonyChannel.Explored, cell) : 0f);
             }
             float goal  = 0f;
 
@@ -105,7 +116,8 @@ public struct PlanJob : IJobParallelFor
             if (flee && q.HasThreat != 0) goal = math.distance(end, q.Threat) * invR;
 
             float score = -W.MoveCost * cost + W.Food * food - W.Danger * dang
-                        + W.Target * goal + W.Align * math.dot(d, dir0);
+                        + W.Target * goal + W.Align * math.dot(d, dir0)
+                        + field + W.Boid * math.dot(d, q.Boid);
 
             if (score <= best) continue;
             best    = score;
@@ -219,6 +231,10 @@ public sealed class MovePlanner : IDisposable
                 Align             = f.PlannerAlignWeight,
                 CurvatureMin      = f.PlannerCurvatureMin,
                 CurvatureScale    = f.PlannerCurvatureScale,
+                Trail             = f.PlannerTrailWeight,
+                Explored          = f.PlannerExploredWeight,
+                KinDeath          = f.PlannerKinDeathWeight,
+                Boid              = f.PlannerBoidWeight,
             },
         }.Schedule(n, 8).Complete();
 

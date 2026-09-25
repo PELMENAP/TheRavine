@@ -76,7 +76,9 @@ namespace TheRavine.EntityControl.Virology
             float chance = math.saturate(amp * AccuracyBias) * math.max(hostViability, SelectionFloor);
             if (ViralMutator.NextUnit(ref _rng) > chance) { FailedAttempts++; return; }
 
-            if (Deliver(donor, virology, donorIndex, target)) CarryPoi(donor, virology, target);
+            if (!Deliver(donor, virology, donorIndex, target)) return;
+            CarryPoi(donor, virology, target);
+            ShareMaps(donor, virology, target);
         }
 
         public bool TryTransmitBite(EntityModel attacker, EntityModel target)
@@ -84,11 +86,29 @@ namespace TheRavine.EntityControl.Virology
             if (!_created || Resolve(target) == null) return false;
             var virology = attacker?.Virology;
             if (virology == null || !virology.IsCreated || virology.IsDisposed) return false;
-            if (ViralMutator.NextUnit(ref _rng) >= SimulationRules.Frame.BiteTransmissionChance) return false;
+            ref readonly var r = ref SimulationRules.Frame;
+            float chance = r.BiteTransmissionChance * (1f + virology.Modifiers.BiteSeek * r.BiteSeekTransmitMul);
+            if (ViralMutator.NextUnit(ref _rng) >= chance) return false;
 
             int index = virology.RandomViralSegment();
             if (index < 0) return false;
             return Deliver(attacker, virology, index, target);
+        }
+
+        public bool TryTransmitGift(EntityModel donor, EntityModel receiver)
+        {
+            if (!_created || Resolve(receiver) == null) return false;
+            var virology = donor?.Virology;
+            if (virology == null || !virology.IsCreated || virology.IsDisposed) return false;
+
+            float gift = virology.Modifiers.GiftSpread;
+            if (gift < SimulationRules.Frame.GiftSpreadThreshold || ViralMutator.NextUnit(ref _rng) >= gift) return false;
+
+            int index = virology.RandomViralSegment();
+            if (index < 0) return false;
+            if (!Deliver(donor, virology, index, receiver)) return false;
+            ShareMaps(donor, virology, receiver);
+            return true;
         }
 
         public bool InfectFromPayload(EntityModel receiver, in ViralPayload payload)
@@ -157,6 +177,20 @@ namespace TheRavine.EntityControl.Virology
             float2 here = donor.Position2D;
             if (!donor.Points.TryGetNearest(in here, out float2 poi)) return;
             target.Points.TryRemember(in poi, SimulationRules.Active.RememberPointMinSpacing);
+            target.Colony?.Pois.Offer(poi, 0f, 0f);
+        }
+
+        private static void ShareMaps(EntityModel donor, VirologyComponent virology, EntityModel target)
+        {
+            if (virology.Modifiers.MapShare < SimulationRules.Frame.MapShareThreshold) return;
+
+            var from = donor.Colony;
+            var to   = target.Colony;
+            if (from == null || to == null || ReferenceEquals(from, to)) return;
+
+            from.Pois.CopyTo(to.Pois);
+            if (from.Nest.HasFoodPeak)
+                to.Nest.Mark(ColonyChannel.Food, from.Nest.FoodPeak, SimulationRules.Frame.NestFoodMark);
         }
 
         private static EntityModel Resolve(EntityModel model)

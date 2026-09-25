@@ -171,6 +171,19 @@ public class SimulationDebugDashboard : MonoBehaviour
                 $"{st.SourceFraction(CommandSource.Brain) * 100f:0}/{st.SourceFraction(CommandSource.Instinct) * 100f:0}/{st.SourceFraction(CommandSource.Plan) * 100f:0}%");
             DrawKV(ref y, "  hunger / alarm", $"{colony.Nest.Hunger:F2} / {colony.Nest.Alarm:F2}");
 
+            int migrating = 0;
+            var members = colony.Members;
+            for (int i = 0; i < members.Length; i++)
+                if (_manager.Entities[members[i]].Plan.Kind == PlanKind.Migrate) migrating++;
+            DrawKV(ref y, "  migration p / share / moves",
+                $"{colony.Nest.MigrationPressure:F2} / {(members.Length > 0 ? migrating * 100f / members.Length : 0f):0}% / {colony.Nest.Relocations}");
+
+            var cc = colony.CasteCounts;
+            DrawKV(ref y, "  W/So/Sc/N/juv",
+                $"{cc[(int)Caste.Worker]}/{cc[(int)Caste.Soldier]}/{cc[(int)Caste.Scout]}/{cc[(int)Caste.Nurse]}/{colony.JuvenileCount}");
+            DrawKV(ref y, "  leader / colony POI",
+                $"{(colony.Leader != null ? colony.Leader.EntityId.ToString() : "-")} / {colony.Pois.Count}");
+
             int started = 0, completed = 0;
             for (int p = 0; p < st.PlansStarted.Length; p++)
             {

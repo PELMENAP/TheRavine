@@ -9,6 +9,7 @@ public enum PlanKind : byte
     Rest    = 4,
     Flee    = 5,
     Court   = 6,
+    Migrate = 7,
     Count,
 }
 
@@ -29,6 +30,9 @@ public enum PlanHint : ushort
     HasPoi       = 1 << 10,
     Threat       = 1 << 11,
     Hungry       = 1 << 12,
+    MigrationUrge = 1 << 13,
+    IsLeader     = 1 << 14,
+    ForeignNear  = 1 << 15,
 }
 
 public struct PlanProgress
@@ -56,16 +60,17 @@ public static class PlanCatalog
         SharedHierarchicalBrain.Goal.Survive,
         SharedHierarchicalBrain.Goal.Survive,
         SharedHierarchicalBrain.Goal.Social,
+        SharedHierarchicalBrain.Goal.Survive,
     };
 
-    public static readonly string[] Names = { "Graze", "Harvest", "Patrol", "Hunt", "Rest", "Flee", "Court" };
+    public static readonly string[] Names = { "Graze", "Harvest", "Patrol", "Hunt", "Rest", "Flee", "Court", "Migrate" };
 
     public static SharedHierarchicalBrain.Goal GoalOf(PlanKind plan) => Goals[(int)plan];
 
     private static bool Has(PlanHint h, PlanHint flag) => (h & flag) != 0;
     private static int Bit(EntityAction a) => 1 << (int)a;
 
-    public static bool IsFeasible(PlanKind plan, PlanHint h) => EntryMask(plan, h) != 0;
+    public static bool IsFeasible(PlanKind plan, PlanHint h, int casteMask) => (EntryMask(plan, h) & casteMask) != 0;
 
     public static int EntryMask(PlanKind plan, PlanHint h)
     {
@@ -95,6 +100,9 @@ public static class PlanCatalog
 
             case PlanKind.Flee:
                 return Has(h, PlanHint.Threat) ? Bit(EntityAction.Flee) : 0;
+
+            case PlanKind.Migrate:
+                return Has(h, PlanHint.MigrationUrge) ? Bit(EntityAction.Wander) : 0;
 
             case PlanKind.Court:
                 return Bit(EntityAction.Speech)
@@ -164,6 +172,12 @@ public static class PlanCatalog
                 p.Steps++;
                 if (!Has(h, PlanHint.Threat) || p.Steps >= r.FleeMaxLegs) return Complete;
                 return (int)EntityAction.Flee;
+
+            case PlanKind.Migrate:
+                if (lastAction == (int)EntityAction.MoveNest) return ok ? Complete : Fail;
+                if (ok && lastAction == (int)EntityAction.Wander) p.Steps++;
+                if (p.Steps < r.MigrateLegs) return (int)EntityAction.Wander;
+                return Has(h, PlanHint.IsLeader) ? (int)EntityAction.MoveNest : Complete;
 
             case PlanKind.Court:
                 if (p.Phase == 0 && lastAction != (int)EntityAction.Reproduce && Has(h, PlanHint.CanReproduce))

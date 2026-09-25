@@ -349,6 +349,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
 
         int steps = ResolveBpttSteps(item, ctx);
         if (steps == 0) return;
+        if (advantage > 0f) advantage *= ctx.PositiveAdvantageScale;
 
         ctx.TrainingSteps++;
         TotalTrainingSteps++;

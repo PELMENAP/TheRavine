@@ -9,6 +9,29 @@ public sealed class ColonyState : IDisposable
     public readonly NestState Nest;
     public SharedHierarchicalBrain Brain { get; private set; }
     public readonly ColonyStats Stats = new();
+    public readonly ColonyPoiBoard Pois;
+    public readonly float[] LeaderPlanProbs = new float[PlanCatalog.Count];
+    public EntityModel Leader { get; private set; }
+    public bool HasLeaderPrior { get; private set; }
+    public double NextElection;
+    public readonly int[] CasteCounts = new int[(int)Caste.Count];
+    public int JuvenileCount;
+
+    public void SetLeader(EntityModel leader)
+    {
+        if (ReferenceEquals(Leader, leader)) return;
+        Leader?.SetLeader(false);
+        Leader = leader;
+        HasLeaderPrior = false;
+        leader?.SetLeader(true);
+    }
+
+    public void PublishLeaderPrior(System.ReadOnlySpan<float> probs)
+    {
+        int n = System.Math.Min(probs.Length, LeaderPlanProbs.Length);
+        for (int i = 0; i < n; i++) LeaderPlanProbs[i] = probs[i];
+        HasLeaderPrior = true;
+    }
 
     private int[] _members;
     private int   _memberCount;
@@ -16,16 +39,44 @@ public sealed class ColonyState : IDisposable
     public int MemberCount => _memberCount;
     public ReadOnlySpan<int> Members => new(_members, 0, _memberCount);
 
-    public ColonyState(int index, int colonyId, float2 position, SharedHierarchicalBrain brain, int capacity)
+    private readonly ColonyRegistry _registry;
+
+    public ColonyState(ColonyRegistry registry, int index, int colonyId, float2 position, SharedHierarchicalBrain brain, int capacity)
     {
+        _registry = registry;
         Index    = index;
         ColonyId = colonyId;
         Nest     = new NestState(position);
+        Pois     = new ColonyPoiBoard(SimulationRules.Active.ColonyPoiCount);
         Brain    = brain;
         _members = new int[math.max(capacity, 4)];
     }
 
     public void ReplaceBrain(SharedHierarchicalBrain brain) => Brain = brain;
+
+    public void Relocate(float2 position, ChunkFoodIndex food)
+    {
+        var r = SimulationRules.Active;
+        float2 old     = Nest.Position;
+        float  storage = Nest.Storage;
+        Nest.Storage = 0f;
+        Nest.Relocate(position);
+
+        if (storage > 0f && food != null)
+        {
+            float chunk = math.max(r.CacheChunkEnergy, r.CorpseMinEnergy + 1e-3f);
+            while (storage > r.CorpseMinEnergy)
+            {
+                float e = math.min(storage, chunk);
+                ViralPayload none = default;
+                if (!food.TryAddCorpse(old, e, ref none, false)) break;
+                storage -= e;
+            }
+            Pois.Offer(old, chunk, 0f);
+        }
+
+        _registry?.RefreshViews();
+    }
 
     public void AddMember(EntityModel model)
     {
