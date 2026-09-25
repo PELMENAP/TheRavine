@@ -3,7 +3,11 @@ using Unity.Mathematics;
 
 public enum Caste : byte
 {
-    Worker = 0,
+    Worker  = 0,
+    Soldier = 1,
+    Scout   = 2,
+    Nurse   = 3,
+    Count,
 }
 
 public readonly struct CasteModifiers
@@ -14,9 +18,12 @@ public readonly struct CasteModifiers
     public readonly float Speed;
     public readonly float EnergyCapacity;
     public readonly float Detection;
+    public readonly float RestHeal;
 
-    public CasteModifiers(float attack, float health, float energyUpkeep, float speed, float energyCapacity, float detection)
+    public CasteModifiers(float attack, float health, float energyUpkeep, float speed, float energyCapacity, float detection,
+        float restHeal = 1f)
     {
+        RestHeal       = restHeal;
         Attack         = attack;
         Health         = health;
         EnergyUpkeep   = energyUpkeep;
@@ -27,7 +34,17 @@ public readonly struct CasteModifiers
 
     public static readonly CasteModifiers Neutral = new(1f, 1f, 1f, 1f, 1f, 1f);
 
-    public static CasteModifiers For(Caste caste) => Neutral;
+    public static CasteModifiers For(Caste caste)
+    {
+        var r = SimulationRules.Active;
+        return caste switch
+        {
+            Caste.Soldier => new CasteModifiers(r.SoldierAttackMul, r.SoldierHealthMul, r.SoldierUpkeepMul, 1f, 1f, 1f),
+            Caste.Scout   => new CasteModifiers(1f, r.ScoutHealthMul, r.ScoutUpkeepMul, r.ScoutSpeedMul, r.ScoutEnergyCapMul, r.ScoutDetectMul),
+            Caste.Nurse   => new CasteModifiers(1f, 1f, r.NurseUpkeepMul, 1f, 1f, 1f, r.NurseRestHealMul),
+            _             => Neutral,
+        };
+    }
 }
 
 [System.Serializable]

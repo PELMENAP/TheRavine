@@ -12,6 +12,7 @@ public static class InstinctBits
     public const uint Carry  = 1u << 3;
     public const uint Tether = 1u << 4;
     public const uint Eat    = 1u << 5;
+    public const uint Leash  = 1u << 6;
 
     public const byte NoReflex = byte.MaxValue;
 }
@@ -29,6 +30,8 @@ public struct InstinctInput
     public float FoodDistance;
     public float ParentDistance;
     public float Age;
+    public float NestDistance;
+    public byte  Caste;
     public byte  AtNest;
     public byte  Night;
     public byte  Warned;
@@ -80,6 +83,7 @@ public struct InstinctRules
     public float TetherRadius;
     public float PanicHpRelease;
     public float PanicDangerRelease;
+    public float NurseLeash;
 
     public static InstinctRules Capture()
     {
@@ -92,6 +96,7 @@ public struct InstinctRules
             TetherRadius       = r.TetherRadius,
             PanicHpRelease     = r.PanicHpRelease,
             PanicDangerRelease = r.PanicDangerRelease,
+            NurseLeash         = r.NurseLeash,
         };
     }
 }
@@ -143,6 +148,8 @@ public struct InstinctJob : IJobFor
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.StoreFood, 4, InstinctBits.Carry);
         else if (x.Night != 0 && !atNest)
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ReturnNest, 3, InstinctBits.Night);
+        else if (x.Caste == (byte)global::Caste.Nurse && !juvenile && x.NestDistance > R.NurseLeash)
+            Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ReturnNest, 3, InstinctBits.Leash);
         else if (juvenile && x.ParentDistance > R.TetherRadius)
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.Follow, 2, InstinctBits.Tether);
         else if (hungry && foodNear && !sated)

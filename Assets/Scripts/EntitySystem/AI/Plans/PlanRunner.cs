@@ -81,7 +81,11 @@ public sealed class PlanRunner
 
     private bool Launch(int action, CommandSource source)
     {
-        float duration = math.clamp(_decision.Duration, ActionDurationTable.Min(action), ActionDurationTable.Max(action));
+        ref readonly var r = ref SimulationRules.Frame;
+        float tempo = _model.Virology != null ? _model.Virology.Modifiers.StepTempo : 0f;
+        float scale = 1f + math.max(tempo, 0f) * r.PersistStepMul - math.max(-tempo, 0f) * r.ImpulseStepMul;
+        float duration = math.clamp(_decision.Duration * math.max(scale, 0.05f),
+            ActionDurationTable.Min(action), ActionDurationTable.Max(action));
         var step = _decision.WithStep(action, SimulationClock.Time, duration, source == CommandSource.Brain);
         if (_model.TryStartCommand(action, in step, source)) return true;
         if (_active && !_ending && source == CommandSource.Brain) Advance(EntityCommandStatus.Failed, action);

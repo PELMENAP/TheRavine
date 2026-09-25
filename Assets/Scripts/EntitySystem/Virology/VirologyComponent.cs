@@ -663,7 +663,8 @@ namespace TheRavine.EntityControl.Virology
             {
                 var s = parent._segments[i];
                 if (s.IsEndogenous) continue;
-                if (ViralMutator.NextUnit(ref _rng) >= rules.VerticalTransmissionChance) continue;
+                float chance = s.Tamed ? rules.VerticalTamedChance : rules.VerticalTransmissionChance;
+                if (ViralMutator.NextUnit(ref _rng) >= chance) continue;
 
                 float rate = ViralMutator.ResolveRate(parent._tape.Codons[s.Start], parent._table.Centroids,
                     VirologyRuntime.CellBias, parent._table.Sharpness, parent._modifiers.MutationRateDelta);

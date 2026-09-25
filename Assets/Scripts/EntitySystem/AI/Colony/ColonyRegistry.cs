@@ -22,7 +22,7 @@ public sealed class ColonyRegistry : IDisposable
 
         if (_count == _colonies.Length) Array.Resize(ref _colonies, math.max(4, _colonies.Length << 1));
 
-        var colony = new ColonyState(_count, ++_nextId, position, brain, memberCapacity);
+        var colony = new ColonyState(this, _count, ++_nextId, position, brain, memberCapacity);
         _colonies[_count++] = colony;
         RebuildViews();
         return colony;
@@ -41,6 +41,8 @@ public sealed class ColonyRegistry : IDisposable
         }
         return best;
     }
+
+    public void RefreshViews() => RebuildViews();
 
     private void RebuildViews()
     {

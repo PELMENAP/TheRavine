@@ -34,7 +34,7 @@ public class RestCommand : EntityCommand
             float hp     = stats.Hp;
             float en     = stats.En;
             float cost   = r.RestHealEnergyCost;
-            float rate   = r.RestHealRate * (model.IsAtNest ? r.NestRestHealMul : 1f);
+            float rate   = r.RestHealRate * (model.IsAtNest ? r.NestRestHealMul : 1f) * model.RestHealMul;
             float budget = cost > 0f ? en / cost : float.MaxValue;
             float heal   = math.min(math.min(rate * step, stats.MaxHealth - hp), budget);
             if (heal > 0f)
@@ -116,7 +116,13 @@ public class WanderCommand : PlannedMoveCommand
         float2 desired;
         float  radius = model.Tuning.WanderRadius;
 
-        if (decision.HasHeading) desired = decision.Heading;
+        var nest = model.Nest;
+        if (decision.Plan == PlanKind.Migrate && nest != null && nest.MigrationPressure > 1e-4f)
+        {
+            desired = math.normalizesafe(nest.Migration);
+            radius  = math.min(r.MigrateLegRadius, r.PlannerRadiusMax);
+        }
+        else if (decision.HasHeading) desired = decision.Heading;
         else if (!TryFieldGradient(r, radius, out desired))
         {
             float a = RavineRandom.RangeFloat(0f, 2f * math.PI);
@@ -191,12 +197,20 @@ public class GoToPointCommand : PlannedMoveCommand
 {
     public GoToPointCommand(EntityModel model) : base(model) { }
 
-    public override bool CanExecute() => model.Points.Count > 0;
+    public override bool CanExecute() => model.Points.Count > 0 || (model.Colony != null && model.Colony.Pois.Count > 0);
 
     protected override EntityCommandStatus OnBegin()
     {
         float2 self = model.Position2D;
-        if (!model.Points.TryPickBest(in self, out float2 target)) return Fail();
+        bool own = model.Points.TryPickBest(in self, out float2 target);
+        var colony = model.Colony;
+        if (colony != null && colony.Pois.TryPickBest(self, out float2 shared, out _)
+            && (!own || math.distancesq(shared, self) < math.distancesq(target, self)))
+        {
+            target = shared;
+            own = true;
+        }
+        if (!own) return Fail();
 
         return BeginPlanned(MoveIntent.GoToPOI, target - self, target, true,
             SimulationRules.Active.PlannerRadiusMax, model.Tuning.MoveSpeed, model.Tuning.EnergyCostMoving);
@@ -415,6 +429,8 @@ public class StoreFoodCommand : EntityCommand
         var nest = model.Nest;
         if (nest == null || !model.IsAtNest || model.Carrying <= 0f) return Fail();
         nest.Storage += model.TakeCarried();
+        model.DepositTrail();
+        model.ShareMemoryWithColony();
         return Complete();
     }
 }
@@ -427,6 +443,7 @@ public class RememberPointCommand : EntityCommand
     {
         float2 pos = model.Position2D;
         model.Points.TryRemember(in pos, SimulationRules.Active.RememberPointMinSpacing);
+        if (model.Caste == Caste.Scout) model.Colony?.Pois.Offer(pos, model.CachedFoodValid ? SimulationRules.Active.EatEnergyFood : 0f, 0f);
         return Complete();
     }
 }
@@ -545,9 +562,10 @@ public class ThreatenCommand : EntityCommand
     protected override EntityCommandStatus OnBegin()
     {
         var r = SimulationRules.Active;
-        var   target = model.CachedNearest;
-        float dist   = model.CachedNearestDistance;
-        if (target == null || dist > model.Tuning.AttackRange * r.ThreatenRangeMul) return Fail();
+        var target = model.CachedHuntTarget;
+        if (target == null) return Fail();
+        float dist = math.distance(model.Position2D, target.Position2D);
+        if (dist > model.Tuning.AttackRange * r.ThreatenRangeMul) return Fail();
 
         var stats = model.Stats;
         stats.En = math.max(0f, stats.En - r.ThreatenEnergyCost);
@@ -592,8 +610,8 @@ public class ShareFoodCommand : EntityCommand
     protected override EntityCommandStatus OnBegin()
     {
         var r = SimulationRules.Active;
-        var victim = model.CachedNearest;
-        if (victim == null || model.CachedNearestDistance > r.EatRange * 2f) return Fail();
+        var victim = model.Caste == Caste.Nurse ? model.FindNearbyJuvenile(r.EatRange * 2f) ?? model.CachedNearest : model.CachedNearest;
+        if (victim == null || math.distance(model.Position2D, victim.Position2D) > r.EatRange * 2f) return Fail();
 
         float own   = model.Stats.En / model.Stats.MaxEnergy;
         float their = victim.Stats.En / victim.Stats.MaxEnergy;
@@ -606,6 +624,7 @@ public class ShareFoodCommand : EntityCommand
 
         float rest = portion - victim.Digestion.Ingest(portion);
         if (rest > 0f) model.Digestion.Ingest(rest);
+        model.Infection?.TryTransmitGift(model, victim);
 
         _holdEnd = HoldUntil(r.ShareFoodDuration);
         return EntityCommandStatus.Running;
@@ -631,7 +650,7 @@ public class AttackCommand : EntityCommand
 
     protected override EntityCommandStatus OnBegin()
     {
-        _target = model.CachedNearest;
+        _target = model.CachedHuntTarget;
         if (_target == null || !CanExecute()) return Fail();
 
         var r = SimulationRules.Active;
@@ -749,5 +768,20 @@ public class FollowCommand : PlannedMoveCommand
 
         return BeginPlanned(MoveIntent.GoToPOI, target - self, target, true,
             SimulationRules.Active.PlannerRadiusMax, model.Tuning.RunSpeed, model.Tuning.EnergyCostRunning);
+    }
+}
+
+public class MoveNestCommand : EntityCommand
+{
+    public MoveNestCommand(EntityModel model) : base(model) { }
+
+    public override bool CanExecute()
+        => model.IsLeader && model.Colony != null && !model.Colony.Nest.Contains(model.Position2D);
+
+    protected override EntityCommandStatus OnBegin()
+    {
+        if (!CanExecute()) return Fail();
+        model.Colony.Relocate(model.Position2D, model.FoodIndex);
+        return Complete();
     }
 }

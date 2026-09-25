@@ -37,6 +37,17 @@ public class StatsComponent : IComponent
         Energy = new ReactiveProperty<float>(maxEnergy * 0.5f);
     }
 
+    public void Rescale(float maxHealth, float maxEnergy)
+    {
+        if (!_filled || IsDisposed || maxHealth <= 0f || maxEnergy <= 0f) return;
+        float hpFrac = Hp / MaxHealth;
+        float enFrac = En / MaxEnergy;
+        MaxHealth = maxHealth;
+        MaxEnergy = maxEnergy;
+        Hp = hpFrac * maxHealth;
+        En = enFrac * maxEnergy;
+    }
+
     public void Open()
     {
         if (_open || IsDisposed || !_filled) return;

@@ -17,7 +17,9 @@ public class SharedHierarchicalBrain : IDisposable
 
     public const int PlanCount = PlanCatalog.Count;
 
-    private static int[] BuildCoordSizes(int combined) => new[] { combined, 32, 16, 16, PlanCount + 1 };
+    public const int CoordAux = 2;
+
+    private static int[] BuildCoordSizes(int combined) => new[] { combined, 32, 16, 16, PlanCount + 1 + CoordAux };
 
     public const int HeadingOutputs   = 2;
     public const int CurvatureOutputs = 1;
@@ -172,7 +174,7 @@ public class SharedHierarchicalBrain : IDisposable
     }
     private void BuildContextLayouts()
     {
-        _coordCtxLayout = coordinator.BuildContextLayout(TruncWindow, CoordRingCapacity, 0);
+        _coordCtxLayout = coordinator.BuildContextLayout(TruncWindow, CoordRingCapacity, CoordAux);
         _execCtxLayouts = new PerceptronLayout[GoalCount];
         for (int i = 0; i < GoalCount; i++)
             _execCtxLayouts[i] = executors[i].BuildContextLayout(TruncWindow, ExecRingCapacity, ExecAux(i));
@@ -382,7 +384,7 @@ public class SharedHierarchicalBrain : IDisposable
             row.Clear();
             for (int p = 0; p < PlanCount; p++)
                 row[p] = ctx.CoordBias[p]
-                       + (PlanCatalog.IsFeasible((PlanKind)p, ctx.PlanHints) ? 0f : -maskBias);
+                       + (PlanCatalog.IsFeasible((PlanKind)p, ctx.PlanHints, ctx.CasteMask) ? 0f : -maskBias);
 
             var mlp  = ctx.CoordMLP;
             int slot = coordinator.BeginForward(mlp, _dDt[d]);
@@ -424,6 +426,8 @@ public class SharedHierarchicalBrain : IDisposable
                 frame.PlanMinSeconds, frame.PlanMaxSeconds, coordEps, decay, false);
 
             var plan = (PlanKind)planTicket.Predicted;
+            ctx.CoordAux = new float2(planTicket.AuxValue[0], planTicket.AuxValue[1]);
+            for (int p = 0; p < PlanCount; p++) ctx.PlanProbs[p] = planTicket.Probs[p];
             ctx.CurrentPlan     = plan;
             ctx.CurrentGoal     = PlanCatalog.GoalOf(plan);
             ctx.CoordDecisionId = planTicket.DecisionId;
@@ -434,7 +438,7 @@ public class SharedHierarchicalBrain : IDisposable
         for (int d = 0; d < n; d++)
         {
             var ctx = _dCtx[d];
-            ctx.ExecMask = PlanCatalog.EntryMask(ctx.CurrentPlan, ctx.PlanHints);
+            ctx.ExecMask = PlanCatalog.EntryMask(ctx.CurrentPlan, ctx.PlanHints) & ctx.CasteMask;
             if (ctx.ExecMask != 0 && ctx.CurrentPlan < PlanKind.Count) continue;
 
             ctx.SkipExec    = true;

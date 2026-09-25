@@ -34,6 +34,12 @@ public struct VectorizerFrame
     public float  NeighborViralLoad;
     public float  Stress;
     public float  ColonyHunger;
+    public float2 FlockHeading;
+    public float2 FlockCentroidDir;
+    public float2 MigrationDir;
+    public float  NearestForeign;
+    public float  IsLeader;
+    public int    Caste;
     public float4 Speech;
     public int    MimickedAction;
     public double Now;
@@ -41,7 +47,7 @@ public struct VectorizerFrame
 
 public class InputVectorizer : IDisposable
 {
-    public const int VectorSize  = 80;
+    public const int VectorSize  = 93;
     public const int ActionCount = ActionCatalog.Count;
 
     public const int TraceOffset     = 8;
@@ -152,6 +158,16 @@ public class InputVectorizer : IDisposable
 
         v[idx++] = f.ViralNet;
         v[idx++] = f.ColonyHunger;
+
+        v[idx++] = f.FlockHeading.x;
+        v[idx++] = f.FlockHeading.y;
+        v[idx++] = f.FlockCentroidDir.x;
+        v[idx++] = f.FlockCentroidDir.y;
+        v[idx++] = f.MigrationDir.x;
+        v[idx++] = f.MigrationDir.y;
+        v[idx++] = f.NearestForeign;
+        v[idx++] = f.IsLeader;
+        for (int c = 0; c < (int)global::Caste.Count; c++) v[idx++] = f.Caste == c ? 1f : 0f;
 
         for (int i = idx; i < VectorSize; i++) v[i] = 0f;
         return v;

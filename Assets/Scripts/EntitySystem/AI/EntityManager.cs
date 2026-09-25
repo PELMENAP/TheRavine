@@ -76,6 +76,7 @@ public class EntityManager : MonoBehaviour
     public SharedHierarchicalBrain SharedBrain => _colonies != null && _colonies.Count > 0 ? _colonies[0].Brain : null;
 
     private InstinctSystem _instincts;
+    private BoidSystem _boids;
     public InstinctSystem Instincts => _instincts;
     private int _nextEntityId;
     private float[] _colonyFitness = Array.Empty<float>();
@@ -134,6 +135,7 @@ public class EntityManager : MonoBehaviour
         ContextSlabs.Reserve(maxPopulation);
         _motion = new MotionSystem(maxPopulation);
         _instincts = new InstinctSystem(maxPopulation);
+        _boids     = new BoidSystem(maxPopulation);
         ServiceLocator.Services.Register(_grid);
         _colonies = new ColonyRegistry();
         CreateColonies();
@@ -173,42 +175,61 @@ public class EntityManager : MonoBehaviour
     [ContextMenu("Load Brain")]
     private void LoadBrain() => LoadBrainAsync().Forget();
 
+    private string ColonyModelName(ColonyState colony) => $"{savedModelName}_c{colony.ColonyId}";
+
     private async UniTaskVoid SaveBestBrainAsync()
-    {
-        var brain = SharedBrain;
-        if (brain == null) return;
-        await NeuralModelStorage.SaveAsync(brain.ToSnapshot(), savedModelName, destroyCancellationToken);
-    }
-
-    private async UniTaskVoid LoadBrainAsync()
-    {
-        var snapshot = await NeuralModelStorage.LoadAsync<SharedBrainSnapshot>(savedModelName, destroyCancellationToken);
-        if (snapshot == null) return;
-
-        var brain = SharedHierarchicalBrain.FromSnapshot(snapshot, InputVectorizer.VectorSize, lstmHidden);
-        if (brain == null || ReferenceEquals(brain, SharedBrain)) return;
-
-        ApplyLoadedBrain(brain);
-    }
-
-    private void ApplyLoadedBrain(SharedHierarchicalBrain brain)
     {
         for (int c = 0; c < _colonies.Count; c++)
         {
             var colony = _colonies[c];
-            var target = c == 0 ? brain : new SharedHierarchicalBrain(brain);
-            var old    = colony.Brain;
-            colony.ReplaceBrain(target);
+            if (colony.Brain == null) continue;
+            await NeuralModelStorage.SaveAsync(colony.Brain.ToSnapshot(), ColonyModelName(colony), destroyCancellationToken);
+        }
+    }
 
-            var members = colony.Members;
-            for (int i = 0; i < members.Length; i++)
+    private async UniTaskVoid LoadBrainAsync()
+    {
+        SharedHierarchicalBrain fallback = null;
+
+        for (int c = 0; c < _colonies.Count; c++)
+        {
+            var colony   = _colonies[c];
+            var snapshot = await NeuralModelStorage.LoadAsync<SharedBrainSnapshot>(ColonyModelName(colony), destroyCancellationToken);
+            var brain    = snapshot != null
+                ? SharedHierarchicalBrain.FromSnapshot(snapshot, InputVectorizer.VectorSize, lstmHidden)
+                : null;
+
+            if (brain == null)
             {
-                var e = _entities[members[i]];
-                if (!e.IsDisposed) e.Brain.ReplaceBrain(target);
+                if (fallback == null)
+                {
+                    var shared = await NeuralModelStorage.LoadAsync<SharedBrainSnapshot>(savedModelName, destroyCancellationToken);
+                    fallback = shared != null
+                        ? SharedHierarchicalBrain.FromSnapshot(shared, InputVectorizer.VectorSize, lstmHidden)
+                        : null;
+                    if (fallback == null) continue;
+                    brain = fallback;
+                }
+                else brain = new SharedHierarchicalBrain(fallback);
             }
 
-            old?.Dispose();
+            if (!ReferenceEquals(brain, colony.Brain)) ApplyLoadedBrain(colony, brain);
         }
+    }
+
+    private void ApplyLoadedBrain(ColonyState colony, SharedHierarchicalBrain brain)
+    {
+        var old = colony.Brain;
+        colony.ReplaceBrain(brain);
+
+        var members = colony.Members;
+        for (int i = 0; i < members.Length; i++)
+        {
+            var e = _entities[members[i]];
+            if (!e.IsDisposed) e.Brain.ReplaceBrain(brain);
+        }
+
+        old?.Dispose();
     }
     private CancellationTokenSource _tickCts;
 
@@ -292,6 +313,7 @@ public class EntityManager : MonoBehaviour
                 for (int c = 0; c < _colonies.Count; c++) _colonies[c].Brain.ApplyPendingGradients();
                 _foodIndex?.PruneUnloaded();
                 TickNests();
+                TickColonies();
 
                 float now = SimulationClock.Time;
                 if (now >= _nextGenerationTime)
@@ -368,6 +390,146 @@ public class EntityManager : MonoBehaviour
     private void RunColonyDecisions()
     {
         for (int c = 0; c < _colonies.Count; c++) _colonies[c].Brain.RunDecisions();
+    }
+
+    private void RunFlocking()
+    {
+        int n = _entities.Count;
+        for (int i = 0; i < n; i++)
+        {
+            var agent = _entities[i].BuildBoidAgent();
+            _boids.Write(i, in agent);
+        }
+
+        _boids.Run(n);
+
+        for (int i = 0; i < n; i++)
+        {
+            var output = _boids.Output(i);
+            _entities[i].SetFlock(in output);
+        }
+    }
+
+    private void TickColonies()
+    {
+        var r = SimulationRules.Active;
+        double now = SimulationClock.TimeD;
+
+        for (int c = 0; c < _colonies.Count; c++)
+        {
+            var colony  = _colonies[c];
+            var members = colony.Members;
+
+            Array.Clear(colony.CasteCounts, 0, colony.CasteCounts.Length);
+            colony.JuvenileCount = 0;
+            for (int i = 0; i < members.Length; i++)
+            {
+                var e = _entities[members[i]];
+                if (e.IsJuvenile) colony.JuvenileCount++;
+                else if (e.CasteFixed) colony.CasteCounts[(int)e.Caste]++;
+            }
+
+            for (int i = 0; i < members.Length; i++)
+            {
+                var e = _entities[members[i]];
+                if (e.IsDisposed || e.IsDeathPending || e.IsJuvenile) continue;
+
+                if (!e.CasteFixed)
+                {
+                    var caste = ChooseCaste(colony, members.Length);
+                    e.AssignCaste(caste);
+                    colony.CasteCounts[(int)caste]++;
+                    continue;
+                }
+
+                var virology = e.Virology;
+                if (virology == null || virology.Modifiers.CasteShift < r.CasteShiftThreshold) continue;
+                if (now - e.LastCasteShift < r.CasteShiftCooldown) continue;
+
+                e.LastCasteShift = now;
+                colony.CasteCounts[(int)e.Caste]--;
+                var shifted = (Caste)(((int)e.Caste + 1) % (int)Caste.Count);
+                e.AssignCaste(shifted);
+                colony.CasteCounts[(int)shifted]++;
+            }
+
+            var leader = colony.Leader;
+            bool vacant = leader == null || leader.IsDisposed || leader.IsDeathPending;
+            if (!vacant && now < colony.NextElection) continue;
+
+            colony.NextElection = now + r.LeaderElectionInterval;
+            colony.SetLeader(ElectLeader(colony));
+        }
+    }
+
+    private EntityModel ElectLeader(ColonyState colony)
+    {
+        var members = colony.Members;
+        EntityModel best = null;
+        float bestRating = float.MinValue;
+        for (int i = 0; i < members.Length; i++)
+        {
+            var e = _entities[members[i]];
+            if (e.IsDisposed || e.IsDeathPending || e.IsJuvenile) continue;
+            float rating = e.GetFitness() * e.TimeAlive;
+            if (rating <= bestRating) continue;
+            bestRating = rating;
+            best = e;
+        }
+        return best;
+    }
+
+    private void HandleLeaderDeath(EntityModel model)
+    {
+        var colony = model.Colony;
+        if (colony == null || !ReferenceEquals(colony.Leader, model)) return;
+
+        colony.SetLeader(null);
+        colony.NextElection = 0d;
+
+        float stress = SimulationRules.Active.LeaderSuccessionStress;
+        var members = colony.Members;
+        for (int i = 0; i < members.Length; i++)
+        {
+            var e = _entities[members[i]];
+            if (!ReferenceEquals(e, model) && !e.IsDisposed) e.AddStress(stress);
+        }
+
+        colony.SetLeader(ElectLeader(colony));
+    }
+
+    private readonly float[] _casteWeights = new float[(int)Caste.Count];
+
+    private Caste ChooseCaste(ColonyState colony, int members)
+    {
+        var r    = SimulationRules.Active;
+        var nest = colony.Nest;
+        float inv = 1f / math.max(members - colony.JuvenileCount, 1);
+
+        float storage = math.saturate(nest.Storage / math.max(r.NestStorageNorm, 1e-3f));
+        Stimulus(Caste.Soldier, math.saturate(nest.Alarm + nest.DangerAtNest), r.CasteSoldierThreshold, colony, inv);
+        Stimulus(Caste.Worker,  1f - storage,                                   r.CasteWorkerThreshold,  colony, inv);
+        Stimulus(Caste.Scout,   math.saturate(nest.Hunger + (nest.HasFoodPeak ? 0f : r.CasteScoutNoFoodStimulus)), r.CasteScoutThreshold, colony, inv);
+        Stimulus(Caste.Nurse,   math.saturate(colony.JuvenileCount * r.CasteNurseGain / math.max(members, 1)), r.CasteNurseThreshold, colony, inv);
+
+        float total = 0f;
+        for (int c = 0; c < _casteWeights.Length; c++) total += _casteWeights[c];
+        if (total <= 1e-6f) return Caste.Worker;
+
+        float pick = RavineRandom.RangeFloat(0f, total);
+        for (int c = 0; c < _casteWeights.Length; c++)
+        {
+            pick -= _casteWeights[c];
+            if (pick <= 0f) return (Caste)c;
+        }
+        return Caste.Worker;
+    }
+
+    private void Stimulus(Caste caste, float need, float threshold, ColonyState colony, float invAdults)
+    {
+        float s  = math.max(0f, need - colony.CasteCounts[(int)caste] * invAdults);
+        float s2 = s * s;
+        _casteWeights[(int)caste] = s2 / (s2 + threshold * threshold + 1e-6f);
     }
 
     private void TickNests()
@@ -449,6 +611,12 @@ public class EntityManager : MonoBehaviour
 
         var parentParams = parent.Brain.Context.CoordMLP.Params;
         var mate         = SelectMateByTournament(parent);
+
+        var parentVirology = parent.Virology;
+        if (mate != null && parentVirology != null
+            && parentVirology.Modifiers.CytoIncompat >= SimulationRules.Active.CytoIncompatThreshold
+            && mate.LineageId != parent.LineageId)
+            return;
 
         GeneticParameters childParams;
         if (mate != null)
@@ -555,6 +723,7 @@ public class EntityManager : MonoBehaviour
 
         SimulationRules.CaptureFrame();
         _grid.Rebuild(_tickSnapshot, _tickCount, tuning.DetectionRadius);
+        RunFlocking();
     }
 
     private EntityModel[] _deferredDispose = Array.Empty<EntityModel>();
@@ -571,6 +740,7 @@ public class EntityManager : MonoBehaviour
             model.CaptureFinalFitness();
             var cause = model.Mortality != null ? model.Mortality.Cause : DeathCause.Age;
             model.Colony?.Stats.RecordDeath(model.TimeAlive, cause);
+            HandleLeaderDeath(model);
             BroadcastDeath(model, cause);
             DropCorpse(model, cause);
             model.Brain?.CompleteTerminal(TerminalPenaltyFor(model));
@@ -591,6 +761,10 @@ public class EntityManager : MonoBehaviour
         ViralPayload payload = default;
         bool infected = virology != null && virology.TryExtractPayload(out payload);
 
+        var r = SimulationRules.Active;
+        if (infected && virology.Modifiers.Liquefy >= r.LiquefyThreshold)
+            _foodIndex.InfectNearby(model.DeathPosition, r.LiquefyRadiusCells, r.LiquefyMaxCells, in payload);
+
         bool tainted = cause == DeathCause.Virus || cause == DeathCause.Toxic;
         int  taboo   = tainted && model.Colony != null ? model.Colony.ColonyId : 0;
         _foodIndex.TryAddCorpse(model.DeathPosition, model.BodyEnergy, ref payload, infected, taboo);
@@ -606,6 +780,11 @@ public class EntityManager : MonoBehaviour
         var r    = SimulationRules.Active;
         var nest = colony.Nest;
         float2 at = model.DeathPosition;
+
+        nest.Mark(ColonyChannel.KinDeath, at, r.KinDeathMark);
+        float poiDanger = cause == DeathCause.Killed || cause == DeathCause.Virus || cause == DeathCause.Toxic
+            ? r.ColonyPoiDeathDanger : 0f;
+        if (poiDanger > 0f) colony.Pois.Offer(at, 0f, poiDanger);
 
         if (cause == DeathCause.Killed || cause == DeathCause.Virus)
         {
@@ -666,6 +845,7 @@ public class EntityManager : MonoBehaviour
         }
 
         _instincts.RemoveSwapBack(idx, last);
+        _boids.RemoveSwapBack(idx, last);
         _entities.RemoveAt(last);
         model.ManagerIndex = -1;
     }
@@ -816,6 +996,7 @@ public class EntityManager : MonoBehaviour
         _planner?.Dispose();
         _motion?.Dispose();
         _instincts?.Dispose();
+        _boids?.Dispose();
         _colonies?.Dispose();
         ContextSlabs.DisposeAll();
     }

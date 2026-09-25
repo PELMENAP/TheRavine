@@ -15,6 +15,15 @@ public class EntityBrainContext : System.IDisposable
     public bool  SkipExec;
     public float GoalBonus;
     public float ColonyStorage;
+    public int   CasteMask = -1;
+    public Unity.Mathematics.float2 CoordAux;
+    public readonly float[] PlanProbs = new float[SharedHierarchicalBrain.PlanCount];
+
+    public void SetPositiveAdvantageScale(float scale)
+    {
+        CoordMLP.PositiveAdvantageScale = scale;
+        for (int i = 0; i < ExecMLPs.Length; i++) ExecMLPs[i].PositiveAdvantageScale = scale;
+    }
     public DecisionWindow ExecWindow;
     public float GoalEndTime;
     public int   CoordDecisionId;

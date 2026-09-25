@@ -39,7 +39,19 @@ namespace TheRavine.EntityControl.Virology
         CarryPoi,
         Blind,
         Frenzy,
-        Lethargy
+        Lethargy,
+        FearInvert,
+        BiteSeek,
+        Summit,
+        Liquefy,
+        HomeCompulsion,
+        Isolate,
+        GiftSpread,
+        CytoIncompat,
+        Persist,
+        Impulse,
+        MapShare,
+        CasteShift
     }
 
     public readonly struct ProteinDescriptor
@@ -63,7 +75,7 @@ namespace TheRavine.EntityControl.Virology
 
     public static class ProteinTable
     {
-        public const int ActionCount = 35;
+        public const int ActionCount = 47;
         public const int EmbedDim = 8;
 
         public const float SpreadCostFloor = 0.2f;
@@ -106,6 +118,18 @@ namespace TheRavine.EntityControl.Virology
             new(ProteinAction.Blind,           0.40f, 0.10f, false, true),
             new(ProteinAction.Frenzy,          0.40f, 0.15f, false, true),
             new(ProteinAction.Lethargy,        0.40f, 0.10f, false, true),
+            new(ProteinAction.FearInvert,      0.40f, 0.15f, false, true),
+            new(ProteinAction.BiteSeek,        0.40f, 0.20f, false, true),
+            new(ProteinAction.Summit,          0.40f, 0.20f, false, true),
+            new(ProteinAction.Liquefy,         0.40f, 0.30f, false, true),
+            new(ProteinAction.HomeCompulsion,  0.40f, 0.15f, false, true),
+            new(ProteinAction.Isolate,         0.40f, 0.15f, false, false),
+            new(ProteinAction.GiftSpread,      0.40f, 0.20f, false, true),
+            new(ProteinAction.CytoIncompat,    0.40f, 0.10f, false, true),
+            new(ProteinAction.Persist,         0.30f, 0.10f, false, false),
+            new(ProteinAction.Impulse,         0.30f, 0.10f, false, false),
+            new(ProteinAction.MapShare,        0.40f, 0.20f, false, true),
+            new(ProteinAction.CasteShift,      0.20f, 0.30f, false, true),
         };
 
         public static readonly float[] CellBias =
@@ -117,7 +141,9 @@ namespace TheRavine.EntityControl.Virology
             0.05f, -0.05f, -0.05f,
             0.55f,
             -0.10f, -0.10f, -0.10f, -0.20f, -0.10f, -0.05f, -0.20f, -0.10f,
-            -0.05f, -0.05f, -0.05f
+            -0.05f, -0.05f, -0.05f,
+            -0.05f, -0.05f, -0.10f, -0.10f, -0.05f, -0.05f,
+            -0.05f, -0.10f, -0.05f, -0.05f, -0.05f, -0.15f
         };
 
         static ProteinTable()

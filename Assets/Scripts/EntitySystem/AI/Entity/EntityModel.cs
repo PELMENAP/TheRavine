@@ -69,6 +69,99 @@ public class EntityModel : AEntity, IFoodReceiver
     public float CarryCapacity => Stats.MaxEnergy * SimulationRules.Frame.StomachCapacityFraction;
 
     private double _lastAlarmCry = double.NegativeInfinity;
+
+    private EntityTuning _baseTuning;
+    public bool   CasteFixed { get; private set; }
+    public double LastCasteShift = double.NegativeInfinity;
+    public bool   IsJuvenile => TimeAlive < SimulationRules.Frame.JuvenileTime;
+    public float  RestHealMul { get; private set; } = 1f;
+
+    public bool IsLeader { get; private set; }
+    public void SetLeader(bool leader)
+    {
+        IsLeader = leader;
+        Brain?.Context.SetPositiveAdvantageScale(leader ? SimulationRules.Active.LeaderPositiveAdvMul : 1f);
+    }
+
+    public float2 Heading { get; private set; }
+    private float2 _lastPos;
+    private bool   _hasLastPos;
+
+    private BoidOutput _flock;
+    public float2 FlockSteer => _flock.Steer;
+    public void SetFlock(in BoidOutput flock) => _flock = flock;
+
+    public BoidAgent BuildBoidAgent()
+    {
+        var g = Brain.Context.CoordMLP.Params;
+        var aux = Brain.Context.CoordAux;
+        float isolate = Virology != null ? Virology.Modifiers.Isolate * SimulationRules.Frame.IsolateStrength : 0f;
+        float social  = math.max(0f, (1f + aux.x) * (1f - isolate));
+        float spacing = (1f + aux.y) * (1f + isolate);
+        return new BoidAgent
+        {
+            Position = Position2D,
+            Heading  = Heading,
+            Weights  = new float3(g.BoidSeparation * spacing, g.BoidAlignment * social, g.BoidCohesion * social),
+            Colony   = ColonyIndex,
+            Active   = (byte)(IsDisposed || IsDeathPending ? 0 : 1),
+        };
+    }
+
+    private EntityModel _nearestForeign;
+    public EntityModel CachedHuntTarget
+    {
+        get
+        {
+            bool frenzied = Virology != null && Virology.Modifiers.BiteSeek >= SimulationRules.Frame.BiteSeekOwnThreshold;
+            var foreign = _nearestForeign;
+            if (!frenzied && foreign != null && !foreign.IsDisposed && !foreign.IsDeathPending) return foreign;
+            return CachedNearest;
+        }
+    }
+
+    private float2[] _trail;
+    private int      _trailHead;
+    private int      _trailCount;
+    private double   _nextTrailSample;
+
+    public void DepositTrail()
+    {
+        var nest = Nest;
+        if (nest == null || _trail == null) return;
+        float amount = SimulationRules.Frame.TrailDeposit;
+        int cap = _trail.Length;
+        for (int i = 0; i < _trailCount; i++)
+            nest.Mark(ColonyChannel.Trail, _trail[(_trailHead - 1 - i + cap) % cap], amount);
+        _trailCount = 0;
+    }
+
+    public void ShareMemoryWithColony()
+    {
+        var colony = Colony;
+        if (colony == null) return;
+        for (int i = 0; i < Points.Count; i++)
+        {
+            ref readonly var p = ref Points.At(i);
+            colony.Pois.Offer(p.Position, p.EnergyEma, 0f);
+        }
+    }
+
+    public void AssignCaste(Caste caste)
+    {
+        Caste      = caste;
+        CasteFixed = true;
+        var mods   = CasteModifiers.For(caste);
+        RestHealMul = mods.RestHeal;
+
+        var tuning = EntityTuning.Express(in _baseTuning, in Brain.Context.CoordMLP.Params, in mods);
+        Tuning = tuning;
+        Stats.Rescale(tuning.MaxHealth, tuning.MaxEnergy);
+        Digestion.Resize(tuning.MaxEnergy * SimulationRules.Active.StomachCapacityFraction);
+        if (_vecMaxHealth != null) _vecMaxHealth.Value = tuning.MaxHealth;
+        if (_vecMaxEnergy != null) _vecMaxEnergy.Value = tuning.MaxEnergy;
+        Brain.Context.CasteMask = ActionCatalog.CasteActionMask(caste);
+    }
     public InfectionService Infection { get; private set; }
 
     public InputVectorizer Vectorizer;
@@ -284,6 +377,9 @@ public class EntityModel : AEntity, IFoodReceiver
         Colony = colony;
         Parent = new ParentRef(parent);
         var brain  = colony.Brain;
+        _baseTuning = baseTuning;
+        _trail = new float2[math.max(1, SimulationRules.Active.TrailCapacity)];
+        ctx.CasteMask = ActionCatalog.CasteActionMask(Caste);
         var tuning = EntityTuning.Express(in baseTuning, in ctx.CoordMLP.Params, CasteModifiers.For(Caste));
         Motor = motor;
         SelfObject = selfObject;
@@ -361,6 +457,7 @@ public class EntityModel : AEntity, IFoodReceiver
         _commands[(int)EntityAction.PickUp]        = new PickUpCommand(this);
         _commands[(int)EntityAction.StoreFood]     = new StoreFoodCommand(this);
         _commands[(int)EntityAction.Follow]        = new FollowCommand(this);
+        _commands[(int)EntityAction.MoveNest]      = new MoveNestCommand(this);
     }
 
     private float ResolveDayPhase()
@@ -427,6 +524,7 @@ public class EntityModel : AEntity, IFoodReceiver
         float now = (float)nowD;
 
         TimeAlive += dt;
+        UpdateHeading();
         Stress    *= math.exp(-dt / math.max(rules.StressTau, 1e-3f));
 
         float dayPhase = ResolveDayPhase();
@@ -439,6 +537,8 @@ public class EntityModel : AEntity, IFoodReceiver
             Crowd          = _crowd,
             WeakThreshold  = rules.SkipWeakHpFraction,
             CrowdThreshold = rules.SkipCrowdCount,
+            AtNest         = IsAtNest,
+            HomeCrowd      = rules.HomeCompulsionCrowd,
         };
         float hpBeforeVirus = Stats.Hp;
         Virology.Step(Stats, dt, in host);
@@ -472,6 +572,10 @@ public class EntityModel : AEntity, IFoodReceiver
         var nest = Nest;
         IsAtNest = nest != null && nest.Contains(self);
         if (nest != null && _foodValid) nest.Mark(ColonyChannel.Food, foodPos, rules.NestFoodMark * dt);
+        if (nest != null)
+            nest.Mark(ColonyChannel.Explored, self, rules.ExploredMark * dt * (Caste == Caste.Scout ? rules.ScoutExploredMul : 1f));
+        SampleTrail(in self, nowD, in rules);
+        _nearestForeign = FindNearestForeign(pos, detect);
 
         if (!_terrain.TrySample(pos.x, pos.z, out _lastTerrain))
             _lastTerrain = TerrainSample.Invalid;
@@ -510,6 +614,12 @@ public class EntityModel : AEntity, IFoodReceiver
             NeighborViralLoad = neighborLoad,
             Stress            = Stress,
             ColonyHunger      = nest != null ? nest.Hunger : 0f,
+            FlockHeading      = _flock.MeanHeading,
+            FlockCentroidDir  = _flock.CentroidDir,
+            MigrationDir      = nest != null ? math.normalizesafe(nest.Migration) * math.saturate(nest.MigrationPressure) : float2.zero,
+            NearestForeign    = _nearestForeign != null ? 1f : 0f,
+            IsLeader          = IsLeader ? 1f : 0f,
+            Caste             = (int)Caste,
             Speech            = Speech.Heard,
             MimickedAction    = MimickedActionIndex,
             Now               = nowD,
@@ -573,7 +683,19 @@ public class EntityModel : AEntity, IFoodReceiver
         var brainCtx = Brain.Context;
         for (int p = 0; p < PlanCatalog.Count; p++)
             brainCtx.CoordBias[p] = goalBias[(int)PlanCatalog.GoalOf((PlanKind)p)];
-        brainCtx.CoordBias[(int)PlanKind.Flee] += fleeBias;
+        brainCtx.CoordBias[(int)PlanKind.Flee] += fleeBias - mods.FearInvert * rules.FearInvertStrength;
+        brainCtx.CoordBias[(int)PlanKind.Hunt] += mods.BiteSeek * rules.BiteSeekHuntBias;
+        brainCtx.CoordBias[(int)PlanKind.Rest] += mods.HomeCompulsion * rules.HomeCompulsionRestBias;
+        brainCtx.CoordBias[(int)PlanKind.Patrol] += mods.Isolate * rules.IsolateStrength;
+
+        var colonyRef = Colony;
+        if (IsLeader) colonyRef.PublishLeaderPrior(brainCtx.PlanProbs);
+        else if (colonyRef != null && colonyRef.HasLeaderPrior)
+        {
+            float w = rules.LeaderPriorWeight, floor = rules.LeaderPriorFloor;
+            for (int p = 0; p < PlanCatalog.Count; p++)
+                brainCtx.CoordBias[p] += w * math.log(math.max(colonyRef.LeaderPlanProbs[p], floor));
+        }
 
         bool hasThreat = (nearest != null && (IsInDanger || IsWarned)) || frame.LocalDanger > rules.ThreatMinDanger;
         _hasThreat = hasThreat;
@@ -592,8 +714,8 @@ public class EntityModel : AEntity, IFoodReceiver
             EnergyFraction  = Stats.En / Stats.MaxEnergy,
             Stomach         = frame.Stomach,
             Carrying        = Carrying / math.max(CarryCapacity, 1e-3f),
-            LocalDanger     = frame.LocalDanger,
-            Stress          = Stress,
+            LocalDanger     = frame.LocalDanger * (1f - mods.FearInvert),
+            Stress          = Stress * (1f - mods.FearInvert),
             Alarm           = frame.Alarm,
             EntityDistance  = _nearestDistance,
             FoodDistance    = _foodValid ? _foodDistance : -1f,
@@ -608,6 +730,8 @@ public class EntityModel : AEntity, IFoodReceiver
             RunningInstinct = _runner.IsRunning && _runner.CurrentSource == CommandSource.Instinct ? (byte)1 : (byte)0,
             PlanActive      = _plan.IsActive ? (byte)1 : (byte)0,
             PlanKind        = (byte)_plan.Kind,
+            Caste           = (byte)Caste,
+            NestDistance    = nest != null ? math.distance(self, nest.Position) : -1f,
         };
 
         _cycleNow    = now;
@@ -633,7 +757,75 @@ public class EntityModel : AEntity, IFoodReceiver
         if (Points.Count > 0) h |= PlanHint.HasPoi;
         if (hasThreat) h |= PlanHint.Threat;
         if (IsHungry) h |= PlanHint.Hungry;
+        if (IsLeader) h |= PlanHint.IsLeader;
+        if (_nearestForeign != null) h |= PlanHint.ForeignNear;
+        var nest = Nest;
+        if (nest != null && nest.MigrationPressure > r.MigrationMinPressure) h |= PlanHint.MigrationUrge;
         return h;
+    }
+
+    private void UpdateHeading()
+    {
+        float2 p = Position2D;
+        if (_hasLastPos)
+        {
+            float2 d = p - _lastPos;
+            if (math.lengthsq(d) > 1e-6f)
+                Heading = math.normalizesafe(math.lerp(Heading, math.normalize(d), SimulationRules.Frame.HeadingEmaAlpha));
+        }
+        _lastPos    = p;
+        _hasLastPos = true;
+    }
+
+    private void SampleTrail(in float2 self, double now, in SimulationRules.RulesFrame r)
+    {
+        if (_trail == null || now < _nextTrailSample) return;
+        _nextTrailSample = now + r.TrailSampleInterval;
+        _trail[_trailHead] = self;
+        _trailHead = (_trailHead + 1) % _trail.Length;
+        if (_trailCount < _trail.Length) _trailCount++;
+    }
+
+    public EntityModel FindNearbyJuvenile(float radius)
+    {
+        int found = Perception.FindEntitiesInRadius(Motor.Position(), this, radius, ForeignScratch);
+        EntityModel best = null;
+        float bestFill = float.MaxValue;
+        for (int i = 0; i < found; i++)
+        {
+            var e = ForeignScratch[i];
+            ForeignScratch[i] = null;
+            if (e == null || e.Colony != Colony || !e.IsJuvenile) continue;
+            float fill = e.Digestion.Fill;
+            if (fill >= bestFill) continue;
+            bestFill = fill;
+            best     = e;
+        }
+        return best;
+    }
+
+    private static readonly EntityModel[] ForeignScratch = new EntityModel[16];
+    private static int _colonyCount = -1;
+
+    private EntityModel FindNearestForeign(Vector3 pos, float radius)
+    {
+        if (_colonyCount < 0 && ServiceLocator.Services.TryGet(out ColonyRegistry registry)) _colonyCount = registry.Count;
+        if (_colonyCount <= 1) return null;
+
+        int found = Perception.FindEntitiesInRadius(pos, this, radius, ForeignScratch);
+        EntityModel best = null;
+        float bestD = float.MaxValue;
+        for (int i = 0; i < found; i++)
+        {
+            var e = ForeignScratch[i];
+            ForeignScratch[i] = null;
+            if (e == null || e.Colony == Colony) continue;
+            float d = math.distancesq((float3)e.Motor.Position(), (float3)pos);
+            if (d >= bestD) continue;
+            bestD = d;
+            best  = e;
+        }
+        return best;
     }
 
     public void ApplyInstinct(in InstinctOutput output)
@@ -642,12 +834,33 @@ public class EntityModel : AEntity, IFoodReceiver
         if (!_cycleActive) return;
 
         if (output.Interrupt != 0 || output.Reflex != InstinctBits.NoReflex) _plan.Interrupt();
-        if (output.Reflex == InstinctBits.NoReflex) return;
+        if (output.Reflex == InstinctBits.NoReflex)
+        {
+            TrySummit();
+            return;
+        }
 
         int action = output.Reflex;
         var reflex = new BrainDecision(action, 0, 0, Brain.CurrentGoal, _cycleNow,
             ActionDurationTable.Max(action), float2.zero);
         TryStartCommand(action, in reflex, CommandSource.Instinct);
+    }
+
+    private void TrySummit()
+    {
+        ref readonly var r = ref SimulationRules.Frame;
+        if (Virology == null || Virology.Modifiers.Summit < r.SummitThreshold) return;
+        if (Stats.Hp / Stats.MaxHealth >= r.SummitHpFraction || !_lastTerrain.IsValid) return;
+        if (_runner.IsRunning && _runner.CurrentSource == CommandSource.Instinct) return;
+
+        float2 uphill = math.normalizesafe(new float2(_lastTerrain.GradX, _lastTerrain.GradZ));
+        if (math.lengthsq(uphill) < 1e-6f) return;
+
+        _plan.Interrupt();
+        int action = (int)EntityAction.Wander;
+        var climb = new BrainDecision(action, 0, 0, Brain.CurrentGoal, _cycleNow,
+            ActionDurationTable.Max(action), in uphill);
+        TryStartCommand(action, in climb, CommandSource.Instinct);
     }
 
     public bool TryStartCommand(int action, in BrainDecision decision, CommandSource source)

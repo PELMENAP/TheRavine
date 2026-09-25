@@ -15,6 +15,12 @@ public class DigestionComponent : IComponent
         WellFed  = 0f;
     }
 
+    public void Resize(float capacity)
+    {
+        Capacity = math.max(capacity, 1e-3f);
+        Stomach  = math.min(Stomach, Capacity);
+    }
+
     public float Ingest(float energy)
     {
         if (energy <= 0f) return 0f;
