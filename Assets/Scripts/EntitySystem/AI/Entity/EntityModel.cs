@@ -64,6 +64,7 @@ public class EntityModel : AEntity, IFoodReceiver
     }
 
     public bool IsCommandRunning => _runner != null && _runner.IsRunning;
+    public CommandSource CurrentSource => _runner != null ? _runner.CurrentSource : CommandSource.Brain;
     public bool IsAliveForPlan => IsAliveForTick();
     public ulong LineageId => Virology != null ? Virology.EndogenousLineage : 0UL;
     public float CarryCapacity => Stats.MaxEnergy * SimulationRules.Frame.StomachCapacityFraction;
