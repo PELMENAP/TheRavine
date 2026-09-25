@@ -152,6 +152,63 @@ public class SimulationDebugDashboard : MonoBehaviour
         GUI.DragWindow(new Rect(0, 0, _windowRect.width, 20));
     }
 
+    private static readonly Color[] ColonyColors =
+    {
+        new(0.30f, 0.65f, 1f), new(1f, 0.42f, 0.42f), new(0.42f, 1f, 0.54f), new(1f, 0.82f, 0.30f),
+        new(0.78f, 0.49f, 1f), new(0.30f, 1f, 0.94f), new(1f, 0.62f, 0.30f), new(1f, 0.42f, 0.84f),
+    };
+
+    private static readonly Color[] PlanColors =
+    {
+        new(0.56f, 0.89f, 0.42f), new(0.89f, 0.77f, 0.42f), new(0.42f, 0.71f, 0.89f), new(0.89f, 0.42f, 0.42f),
+        new(0.60f, 0.60f, 0.89f), new(1f, 0.55f, 0.26f), new(0.89f, 0.42f, 0.78f), new(0.42f, 0.89f, 0.82f),
+    };
+
+    private readonly int[] _planCounts = new int[PlanCatalog.Count];
+    private GUIStyle _colonyStyle;
+
+    private void DrawPlanBar(ref float y, System.ReadOnlySpan<int> members)
+    {
+        System.Array.Clear(_planCounts, 0, _planCounts.Length);
+        int total = 0;
+        for (int i = 0; i < members.Length; i++)
+        {
+            var kind = _manager.Entities[members[i]].Plan.Kind;
+            if (kind >= PlanKind.Count) continue;
+            _planCounts[(int)kind]++;
+            total++;
+        }
+
+        Rect bg = new Rect(8, y, _windowRect.width - 16, 8);
+        DrawGraphBackground(bg);
+        if (total > 0)
+        {
+            var prev = GUI.color;
+            float x = bg.x;
+            for (int p = 0; p < _planCounts.Length; p++)
+            {
+                if (_planCounts[p] == 0) continue;
+                float w = bg.width * _planCounts[p] / total;
+                GUI.color = PlanColors[p];
+                GUI.DrawTexture(new Rect(x, bg.y, w, bg.height), Texture2D.whiteTexture);
+                x += w;
+            }
+            GUI.color = prev;
+        }
+        y += 10f;
+
+        float lx = 8f;
+        for (int p = 0; p < _planCounts.Length; p++)
+        {
+            if (_planCounts[p] == 0) continue;
+            _colonyStyle.normal.textColor = PlanColors[p];
+            GUI.Label(new Rect(lx, y, 60, 12), $"{PlanCatalog.Names[p]} {_planCounts[p]}", _colonyStyle);
+            lx += 58f;
+            if (lx > _windowRect.width - 60f) { lx = 8f; y += 12f; }
+        }
+        y += 14f;
+    }
+
     private void DrawColonies(ref float y)
     {
         var colonies = _manager.Colonies;
@@ -163,8 +220,11 @@ public class SimulationDebugDashboard : MonoBehaviour
             var colony = colonies[c];
             var st     = colony.Stats;
 
-            DrawKV(ref y, $"#{colony.ColonyId} alive / born / died",
-                $"{colony.MemberCount} / {st.Born} / {st.Died}");
+            _colonyStyle.normal.textColor = ColonyColors[(colony.ColonyId - 1 & 0x7FFFFFFF) % ColonyColors.Length];
+            GUI.Label(new Rect(8, y, 160, 14), $"C{colony.ColonyId} alive/born/died", _colonyStyle);
+            GUI.Label(new Rect(170, y, 120, 14), $"{colony.MemberCount} / {st.Born} / {st.Died}", _valueStyle);
+            y += 15f;
+            DrawPlanBar(ref y, colony.Members);
             DrawKV(ref y, "  death rate /min", st.DeathRatePerMinute.ToString("F2"));
             DrawKV(ref y, "  lifespan mean / ema", $"{st.MeanLifespan:F0}s / {st.LifespanEma:F0}s");
             DrawKV(ref y, "  src brain/inst/plan",
@@ -470,6 +530,11 @@ public class SimulationDebugDashboard : MonoBehaviour
         {
             fontSize = 10,
             normal   = { textColor = new Color(0.75f, 0.75f, 0.75f) }
+        };
+        _colonyStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize  = 10,
+            fontStyle = FontStyle.Bold,
         };
         _warnStyle = new GUIStyle(GUI.skin.label)
         {
