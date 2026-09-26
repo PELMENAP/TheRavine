@@ -4,7 +4,7 @@ public unsafe struct KernelLayout
 {
     public const int MaxLayers  = 8;
     public const int MaxActions = 16;
-    public const int MaxAux     = 8;
+    public const int MaxAux     = 12;
 
     public int L;
     public int InputSize;

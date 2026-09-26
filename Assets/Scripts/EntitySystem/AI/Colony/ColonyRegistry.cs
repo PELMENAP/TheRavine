@@ -15,17 +15,27 @@ public sealed class ColonyRegistry : IDisposable
     public ColonyState this[int index] => _colonies[index];
     public NativeArray<ColonyFieldView> Views => _views;
 
-    public ColonyState Add(float2 position, SharedHierarchicalBrain brain, int memberCapacity)
+    public ColonyState Add(float2 position, SharedHierarchicalBrain brain, int memberCapacity, bool wild = false)
     {
         if (_count >= MaxColonies)
             throw new InvalidOperationException($"ColonyRegistry: превышен лимит {MaxColonies} колоний");
 
         if (_count == _colonies.Length) Array.Resize(ref _colonies, math.max(4, _colonies.Length << 1));
 
-        var colony = new ColonyState(this, _count, ++_nextId, position, brain, memberCapacity);
+        var colony = new ColonyState(this, _count, ++_nextId, position, brain, memberCapacity, wild);
         _colonies[_count++] = colony;
         RebuildViews();
         return colony;
+    }
+
+    public int CivilCount
+    {
+        get
+        {
+            int n = 0;
+            for (int i = 0; i < _count; i++) if (!_colonies[i].IsWild) n++;
+            return n;
+        }
     }
 
     public ColonyState Nearest(float2 p)
@@ -34,6 +44,7 @@ public sealed class ColonyRegistry : IDisposable
         float bestD = float.MaxValue;
         for (int i = 0; i < _count; i++)
         {
+            if (_colonies[i].IsWild) continue;
             float d = math.distancesq(_colonies[i].Nest.Position, p);
             if (d >= bestD) continue;
             bestD = d;

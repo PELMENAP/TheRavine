@@ -334,6 +334,114 @@ public sealed class SimulationRules : ScriptableObject
         public readonly int   EndogenousRerollAttempts;
         public readonly FixedList128Bytes<float3> BoidPlanMul;
         public readonly float3 BoidNightMul;
+        public readonly float DirMaxOffset;
+        public readonly float FrontierRadius;
+        public readonly int SeekMinLegs;
+        public readonly int SeekMaxLegs;
+        public readonly float SeekStorageLow;
+        public readonly float ColonyEmaTau;
+        public readonly float ColonyRewardWeight;
+        public readonly float ColonyPopulationWeight;
+        public readonly float ColonyHungerWeight;
+        public readonly float ColonyPopulationNorm;
+        public readonly float StoreFoodReward;
+        public readonly float FitnessPersonalWeight;
+        public readonly float FitnessColonyWeight;
+        public readonly int ColonyRespawnCount;
+        public readonly float SoldierCooldownMul;
+        public readonly float SoldierGroupBonusMul;
+        public readonly float SoldierNestFoodCostMul;
+        public readonly float WorkerEatSpeedMul;
+        public readonly float WorkerCarryMul;
+        public readonly float WorkerDamageTakenMul;
+        public readonly float NonWorkerStoreEfficiency;
+        public readonly float ScoutLevyAlphaMul;
+        public readonly float ScoutPoiWeightMul;
+        public readonly float ScoutCarryMul;
+        public readonly float NurseSpeedMul;
+        public readonly float NurseFeedMul;
+        public readonly float NurseHealAura;
+        public readonly int NurseHealAuraMax;
+        public readonly float PlanRewardEmaAlpha;
+        public readonly float CasteThresholdLearn;
+        public readonly float CasteThresholdForget;
+        public readonly float CasteThresholdMin;
+        public readonly float CasteThresholdMax;
+        public readonly float CasteReviewInterval;
+        public readonly float UtilityPriorWeight;
+        public readonly int PredatorCount;
+        public readonly float PredatorHealthMul;
+        public readonly float PredatorDamageMul;
+        public readonly float PredatorSpeedMul;
+        public readonly float PredatorDetectMul;
+        public readonly float PredatorUpkeepMul;
+        public readonly float PredatorSpawnDistance;
+        public readonly float PredatorRespawnInterval;
+        public readonly float PredatorHungerOn;
+        public readonly float PredatorFleeHp;
+        public readonly float TrophallaxisMinFill;
+        public readonly float TrophallaxisHungerRelief;
+        public readonly int RecruitCount;
+        public readonly float RecruitWindow;
+        public readonly int QuorumSize;
+        public readonly int QuorumSites;
+        public readonly float QuorumMergeRadius;
+        public readonly float QuorumWindow;
+        public readonly float QuorumMaxDanger;
+        public readonly float BaseMaxAge;
+        public readonly float SenescenceOnset;
+        public readonly float SenescenceUpkeep;
+        public readonly float NurseAgeEnd;
+        public readonly float WorkerAgeEnd;
+        public readonly float PolyethismStimulus;
+        public readonly float JuvenileHealthMul;
+        public readonly float GroomAmount;
+        public readonly float GroomInfectChance;
+        public readonly float GroomMinLoad;
+        public readonly float SickFeverThreshold;
+        public readonly float SickLoadThreshold;
+        public readonly float SickMark;
+        public readonly float PlannerSicknessWeight;
+        public readonly float ImmuneUpkeep;
+        public readonly float ImmuneThresholdMin;
+        public readonly float ImmuneThresholdMax;
+        public readonly float TerritoryMark;
+        public readonly float TerritoryThreshold;
+        public readonly float TerritoryAlarm;
+        public readonly float ForeignTerritoryHuntDrop;
+        public readonly float WinterThreshold;
+        public readonly float PreWinterFraction;
+        public readonly float PreWinterHarvestBias;
+        public readonly float PreWinterWorkerStimulus;
+        public readonly float WinterGrowthMul;
+        public readonly float WinterDrainMul;
+        public readonly float HormoneTau;
+        public readonly float TempDopamine;
+        public readonly float TempCortisol;
+        public readonly float TempSurprise;
+        public readonly float TempMin;
+        public readonly float TempMax;
+        public readonly float GhrelinHungerShift;
+        public readonly float CortisolPanicShift;
+        public readonly float OxytocinPanicShift;
+        public readonly float OxytocinNorm;
+        public readonly float SurpriseAlpha;
+        public readonly float OuTau;
+        public readonly float OuSigma;
+        public readonly float NegativePoiTau;
+        public readonly float NegativePoiHit;
+        public readonly float NegativePoiEmpty;
+        public readonly float NegativePoiWeight;
+        public readonly float NegativePoiRadius;
+        public readonly float CasteSwitchMargin;
+        public readonly float ColonyRespawnDelay;
+        public readonly int NegativePoiCount;
+        public readonly float[] PlanMinSecondsByPlan;
+        public readonly float[] PlanMaxSecondsByPlan;
+        public readonly float[] CasteAffinityLog;
+        public readonly float[] UtilityWeights;
+        public readonly int[]   PlanCasteDomain;
+        public readonly float4[] SpeechSignals;
 
         public RulesFrame(SimulationRules r)
         {
@@ -661,6 +769,114 @@ public sealed class SimulationRules : ScriptableObject
             EndogenousRerollAttempts = r.endogenousRerollAttempts;
             BoidPlanMul = r.BuildBoidPlanMul();
             BoidNightMul = r.boidNightMul;
+            DirMaxOffset = r.dirMaxOffset;
+            FrontierRadius = r.frontierRadius;
+            SeekMinLegs = r.seekMinLegs;
+            SeekMaxLegs = r.seekMaxLegs;
+            SeekStorageLow = r.seekStorageLow;
+            ColonyEmaTau = r.colonyEmaTau;
+            ColonyRewardWeight = r.colonyRewardWeight;
+            ColonyPopulationWeight = r.colonyPopulationWeight;
+            ColonyHungerWeight = r.colonyHungerWeight;
+            ColonyPopulationNorm = r.colonyPopulationNorm;
+            StoreFoodReward = r.storeFoodReward;
+            FitnessPersonalWeight = r.fitnessPersonalWeight;
+            FitnessColonyWeight = r.fitnessColonyWeight;
+            ColonyRespawnCount = r.colonyRespawnCount;
+            SoldierCooldownMul = r.soldierCooldownMul;
+            SoldierGroupBonusMul = r.soldierGroupBonusMul;
+            SoldierNestFoodCostMul = r.soldierNestFoodCostMul;
+            WorkerEatSpeedMul = r.workerEatSpeedMul;
+            WorkerCarryMul = r.workerCarryMul;
+            WorkerDamageTakenMul = r.workerDamageTakenMul;
+            NonWorkerStoreEfficiency = r.nonWorkerStoreEfficiency;
+            ScoutLevyAlphaMul = r.scoutLevyAlphaMul;
+            ScoutPoiWeightMul = r.scoutPoiWeightMul;
+            ScoutCarryMul = r.scoutCarryMul;
+            NurseSpeedMul = r.nurseSpeedMul;
+            NurseFeedMul = r.nurseFeedMul;
+            NurseHealAura = r.nurseHealAura;
+            NurseHealAuraMax = r.nurseHealAuraMax;
+            PlanRewardEmaAlpha = r.planRewardEmaAlpha;
+            CasteThresholdLearn = r.casteThresholdLearn;
+            CasteThresholdForget = r.casteThresholdForget;
+            CasteThresholdMin = r.casteThresholdMin;
+            CasteThresholdMax = r.casteThresholdMax;
+            CasteReviewInterval = r.casteReviewInterval;
+            UtilityPriorWeight = r.utilityPriorWeight;
+            PredatorCount = r.predatorCount;
+            PredatorHealthMul = r.predatorHealthMul;
+            PredatorDamageMul = r.predatorDamageMul;
+            PredatorSpeedMul = r.predatorSpeedMul;
+            PredatorDetectMul = r.predatorDetectMul;
+            PredatorUpkeepMul = r.predatorUpkeepMul;
+            PredatorSpawnDistance = r.predatorSpawnDistance;
+            PredatorRespawnInterval = r.predatorRespawnInterval;
+            PredatorHungerOn = r.predatorHungerOn;
+            PredatorFleeHp = r.predatorFleeHp;
+            TrophallaxisMinFill = r.trophallaxisMinFill;
+            TrophallaxisHungerRelief = r.trophallaxisHungerRelief;
+            RecruitCount = r.recruitCount;
+            RecruitWindow = r.recruitWindow;
+            QuorumSize = r.quorumSize;
+            QuorumSites = r.quorumSites;
+            QuorumMergeRadius = r.quorumMergeRadius;
+            QuorumWindow = r.quorumWindow;
+            QuorumMaxDanger = r.quorumMaxDanger;
+            BaseMaxAge = r.baseMaxAge;
+            SenescenceOnset = r.senescenceOnset;
+            SenescenceUpkeep = r.senescenceUpkeep;
+            NurseAgeEnd = r.nurseAgeEnd;
+            WorkerAgeEnd = r.workerAgeEnd;
+            PolyethismStimulus = r.polyethismStimulus;
+            JuvenileHealthMul = r.juvenileHealthMul;
+            GroomAmount = r.groomAmount;
+            GroomInfectChance = r.groomInfectChance;
+            GroomMinLoad = r.groomMinLoad;
+            SickFeverThreshold = r.sickFeverThreshold;
+            SickLoadThreshold = r.sickLoadThreshold;
+            SickMark = r.sickMark;
+            PlannerSicknessWeight = r.plannerSicknessWeight;
+            ImmuneUpkeep = r.immuneUpkeep;
+            ImmuneThresholdMin = r.immuneThresholdMin;
+            ImmuneThresholdMax = r.immuneThresholdMax;
+            TerritoryMark = r.territoryMark;
+            TerritoryThreshold = r.territoryThreshold;
+            TerritoryAlarm = r.territoryAlarm;
+            ForeignTerritoryHuntDrop = r.foreignTerritoryHuntDrop;
+            WinterThreshold = r.winterThreshold;
+            PreWinterFraction = r.preWinterFraction;
+            PreWinterHarvestBias = r.preWinterHarvestBias;
+            PreWinterWorkerStimulus = r.preWinterWorkerStimulus;
+            WinterGrowthMul = r.winterGrowthMul;
+            WinterDrainMul = r.winterDrainMul;
+            HormoneTau = r.hormoneTau;
+            TempDopamine = r.tempDopamine;
+            TempCortisol = r.tempCortisol;
+            TempSurprise = r.tempSurprise;
+            TempMin = r.tempMin;
+            TempMax = r.tempMax;
+            GhrelinHungerShift = r.ghrelinHungerShift;
+            CortisolPanicShift = r.cortisolPanicShift;
+            OxytocinPanicShift = r.oxytocinPanicShift;
+            OxytocinNorm = r.oxytocinNorm;
+            SurpriseAlpha = r.surpriseAlpha;
+            OuTau = r.ouTau;
+            OuSigma = r.ouSigma;
+            NegativePoiTau = r.negativePoiTau;
+            NegativePoiHit = r.negativePoiHit;
+            NegativePoiEmpty = r.negativePoiEmpty;
+            NegativePoiWeight = r.negativePoiWeight;
+            NegativePoiRadius = r.negativePoiRadius;
+            CasteSwitchMargin = r.casteSwitchMargin;
+            ColonyRespawnDelay = r.colonyRespawnDelay;
+            NegativePoiCount = r.negativePoiCount;
+            PlanMinSecondsByPlan = r.FillPlanSeconds(r.planMinSecondsByPlan, r.planMinSeconds, PlanMinBuf);
+            PlanMaxSecondsByPlan = r.FillPlanSeconds(r.planMaxSecondsByPlan, r.planMaxSeconds, PlanMaxBuf);
+            CasteAffinityLog     = r.FillCasteAffinityLog();
+            UtilityWeights       = r.FillUtilityWeights();
+            PlanCasteDomain      = r.FillPlanCasteDomain();
+            SpeechSignals        = r.FillSpeechSignals();
         }
     }
 
@@ -910,6 +1126,137 @@ public sealed class SimulationRules : ScriptableObject
         new(1f, 1f, 1f),
     };
     [SerializeField] private Vector3 boidNightMul = new(0.8f, 1.2f, 1.5f);
+    [SerializeField] private float dirMaxOffset = 0.6f;
+    [SerializeField] private float frontierRadius = 20f;
+    [SerializeField] private int seekMinLegs = 4;
+    [SerializeField] private int seekMaxLegs = 6;
+    [SerializeField] private float seekStorageLow = 0.25f;
+    [SerializeField] private float colonyEmaTau = 30f;
+    [SerializeField] private float colonyRewardWeight = 1f;
+    [SerializeField] private float colonyPopulationWeight = 0.5f;
+    [SerializeField] private float colonyHungerWeight = 1f;
+    [SerializeField] private float colonyPopulationNorm = 50f;
+    [SerializeField] private float storeFoodReward = 0.5f;
+    [SerializeField] private float fitnessPersonalWeight = 1f;
+    [SerializeField] private float fitnessColonyWeight = 5f;
+    [SerializeField] private int colonyRespawnCount = 8;
+    [SerializeField] private float soldierCooldownMul = 0.8f;
+    [SerializeField] private float soldierGroupBonusMul = 1.5f;
+    [SerializeField] private float soldierNestFoodCostMul = 1.5f;
+    [SerializeField] private float workerEatSpeedMul = 1.5f;
+    [SerializeField] private float workerCarryMul = 1.5f;
+    [SerializeField] private float workerDamageTakenMul = 1.3f;
+    [SerializeField] private float nonWorkerStoreEfficiency = 0.8f;
+    [SerializeField] private float scoutLevyAlphaMul = 0.7f;
+    [SerializeField] private float scoutPoiWeightMul = 2f;
+    [SerializeField] private float scoutCarryMul = 0.6f;
+    [SerializeField] private float nurseSpeedMul = 0.85f;
+    [SerializeField] private float nurseFeedMul = 1.5f;
+    [SerializeField] private float nurseHealAura = 0.5f;
+    [SerializeField] private int nurseHealAuraMax = 3;
+    [SerializeField] private float planRewardEmaAlpha = 0.1f;
+    [SerializeField] private float casteThresholdLearn = 0.02f;
+    [SerializeField] private float casteThresholdForget = 0.01f;
+    [SerializeField] private float casteThresholdMin = 0.05f;
+    [SerializeField] private float casteThresholdMax = 1f;
+    [SerializeField] private float casteReviewInterval = 30f;
+    [SerializeField] private float utilityPriorWeight = 1f;
+    [SerializeField] private int predatorCount = 3;
+    [SerializeField] private float predatorHealthMul = 2.5f;
+    [SerializeField] private float predatorDamageMul = 2f;
+    [SerializeField] private float predatorSpeedMul = 1.2f;
+    [SerializeField] private float predatorDetectMul = 1.3f;
+    [SerializeField] private float predatorUpkeepMul = 0.6f;
+    [SerializeField] private float predatorSpawnDistance = 60f;
+    [SerializeField] private float predatorRespawnInterval = 30f;
+    [SerializeField] private float predatorHungerOn = 0.5f;
+    [SerializeField] private float predatorFleeHp = 0.25f;
+    [SerializeField] private float trophallaxisMinFill = 0.6f;
+    [SerializeField] private float trophallaxisHungerRelief = 0.3f;
+    [SerializeField] private int recruitCount = 2;
+    [SerializeField] private float recruitWindow = 30f;
+    [SerializeField] private int quorumSize = 3;
+    [SerializeField] private int quorumSites = 4;
+    [SerializeField] private float quorumMergeRadius = 10f;
+    [SerializeField] private float quorumWindow = 120f;
+    [SerializeField] private float quorumMaxDanger = 0.3f;
+    [SerializeField] private float baseMaxAge = 1200f;
+    [SerializeField] private float senescenceOnset = 0.7f;
+    [SerializeField] private float senescenceUpkeep = 1.5f;
+    [SerializeField] private float nurseAgeEnd = 0.2f;
+    [SerializeField] private float workerAgeEnd = 0.5f;
+    [SerializeField] private float polyethismStimulus = 0.4f;
+    [SerializeField] private float juvenileHealthMul = 0.5f;
+    [SerializeField] private float groomAmount = 0.2f;
+    [SerializeField] private float groomInfectChance = 0.05f;
+    [SerializeField] private float groomMinLoad = 0.2f;
+    [SerializeField] private float sickFeverThreshold = 0.3f;
+    [SerializeField] private float sickLoadThreshold = 0.5f;
+    [SerializeField] private float sickMark = 0.5f;
+    [SerializeField] private float plannerSicknessWeight = 0.6f;
+    [SerializeField] private float immuneUpkeep = 0.3f;
+    [SerializeField] private float immuneThresholdMin = 0.5f;
+    [SerializeField] private float immuneThresholdMax = 1.5f;
+    [SerializeField] private float territoryMark = 0.2f;
+    [SerializeField] private float territoryThreshold = 0.5f;
+    [SerializeField] private float territoryAlarm = 0.3f;
+    [SerializeField] private float foreignTerritoryHuntDrop = 1f;
+    [SerializeField] private float winterThreshold = 0.5f;
+    [SerializeField] private float preWinterFraction = 0.15f;
+    [SerializeField] private float preWinterHarvestBias = 1.5f;
+    [SerializeField] private float preWinterWorkerStimulus = 0.4f;
+    [SerializeField] private float winterGrowthMul = 0.3f;
+    [SerializeField] private float winterDrainMul = 1.3f;
+    [SerializeField] private float hormoneTau = 30f;
+    [SerializeField] private float tempDopamine = 0.5f;
+    [SerializeField] private float tempCortisol = 0.5f;
+    [SerializeField] private float tempSurprise = 0.5f;
+    [SerializeField] private float tempMin = 0.5f;
+    [SerializeField] private float tempMax = 2f;
+    [SerializeField] private float ghrelinHungerShift = 0.1f;
+    [SerializeField] private float cortisolPanicShift = 0.3f;
+    [SerializeField] private float oxytocinPanicShift = 0.3f;
+    [SerializeField] private float oxytocinNorm = 5f;
+    [SerializeField] private float surpriseAlpha = 0.1f;
+    [SerializeField] private float ouTau = 3f;
+    [SerializeField] private float ouSigma = 0.5f;
+    [SerializeField] private float negativePoiTau = 120f;
+    [SerializeField] private float negativePoiHit = 1f;
+    [SerializeField] private float negativePoiEmpty = 0.5f;
+    [SerializeField] private float negativePoiWeight = 1f;
+    [SerializeField] private float negativePoiRadius = 6f;
+    [SerializeField] private float casteSwitchMargin = 0.5f;
+    [SerializeField] private float colonyRespawnDelay = 10f;
+    [SerializeField] private int negativePoiCount = 6;
+    [SerializeField] private float[] planMinSecondsByPlan = { 4f, 4f, 6f, 3f, 4f, 3f, 4f, 10f, 12f };
+    [SerializeField] private float[] planMaxSecondsByPlan = { 30f, 60f, 45f, 20f, 30f, 15f, 20f, 60f, 90f };
+    [SerializeField] private float[] casteAffinity =
+    {
+        1.0f, 1.8f, 0.8f, 0.6f, 1.0f, 1.0f, 0.8f, 0.8f, 1.2f,
+        0.8f, 0.5f, 1.4f, 2.0f, 1.0f, 0.8f, 0.8f, 0.8f, 0.8f,
+        1.0f, 0.6f, 1.6f, 0.8f, 0.8f, 1.0f, 0.8f, 1.4f, 1.8f,
+        1.2f, 0.8f, 0.6f, 0.5f, 1.3f, 1.0f, 1.6f, 0.6f, 0.6f,
+    };
+    [SerializeField] private float[] utilityWeights =
+    {
+        2.0f, -1.5f, 0.0f, -1.0f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+        0.3f, 0.5f, -1.0f, -1.0f, -0.5f, 0.3f, 1.0f, -0.5f, 0.0f, -0.3f, -0.3f, 1.2f,
+        0.3f, 0.0f, -0.3f, -0.5f, -0.5f, 0.0f, 0.0f, 0.3f, 0.8f, -0.5f, -0.3f, 0.0f,
+        -0.5f, 0.0f, 0.0f, 0.8f, -0.5f, 0.0f, -0.3f, 1.0f, -0.3f, -0.5f, -0.5f, 0.0f,
+        -1.5f, 0.5f, 0.2f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, -0.3f, 0.3f, 1.5f, 0.0f,
+        0.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.0f, -0.3f, -0.5f, 0.3f, 0.0f, 0.5f, 0.0f,
+        -1.5f, 0.5f, 0.3f, -1.0f, -0.3f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, -0.5f, -0.5f,
+        0.0f, 0.0f, -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.5f, 0.0f, -0.5f, 0.0f,
+        1.5f, -1.0f, -1.0f, -1.0f, -0.5f, 0.0f, 0.3f, -0.3f, 1.0f, -0.5f, 0.0f, 0.5f,
+    };
+    [SerializeField] private int[] planCasteDomain = { -1, 0, 2, 1, -1, -1, 3, 2, 2 };
+    [SerializeField] private Vector4[] speechSignals =
+    {
+        new(1f, -1f, 1f, -1f),
+        new(1f, 1f, -1f, -1f),
+        new(-1f, 1f, 1f, -1f),
+        new(-1f, -1f, -1f, 1f),
+    };
     [SerializeField] private float blockedSpeedThreshold = 0.15f;
     [SerializeField] private float blockedSeconds = 0.75f;
     [SerializeField] private float digestRateRest = 4f;
@@ -989,7 +1336,7 @@ public sealed class SimulationRules : ScriptableObject
     [SerializeField] private int nestMapSize = 64;
     [SerializeField] private float nestMapCellSize = 4f;
     [SerializeField] private float nestMapMaxValue = 10f;
-    [SerializeField] private float[] colonyChannelTau = { 120f, 60f, 90f, 180f, 300f };
+    [SerializeField] private float[] colonyChannelTau = { 120f, 60f, 90f, 180f, 300f, 60f, 240f };
     [SerializeField] private float colonyChannelDefaultTau = 60f;
     [SerializeField] private float nestFoodPeakMin = 0.2f;
     [SerializeField] private float nestFoodMark = 0.5f;
@@ -1238,6 +1585,154 @@ public sealed class SimulationRules : ScriptableObject
     public int EndogenousRerollAttempts => endogenousRerollAttempts;
     public float DeathPenaltyMul(DeathCause cause)
         => deathPenaltyByCause != null && (uint)cause < (uint)deathPenaltyByCause.Length ? deathPenaltyByCause[(int)cause] : 1f;
+
+    public float DirMaxOffset => dirMaxOffset;
+    public float FrontierRadius => frontierRadius;
+    public int SeekMinLegs => seekMinLegs;
+    public int SeekMaxLegs => seekMaxLegs;
+    public float SeekStorageLow => seekStorageLow;
+    public float ColonyEmaTau => colonyEmaTau;
+    public float ColonyRewardWeight => colonyRewardWeight;
+    public float ColonyPopulationWeight => colonyPopulationWeight;
+    public float ColonyHungerWeight => colonyHungerWeight;
+    public float ColonyPopulationNorm => colonyPopulationNorm;
+    public float StoreFoodReward => storeFoodReward;
+    public float FitnessPersonalWeight => fitnessPersonalWeight;
+    public float FitnessColonyWeight => fitnessColonyWeight;
+    public int ColonyRespawnCount => colonyRespawnCount;
+    public float SoldierCooldownMul => soldierCooldownMul;
+    public float SoldierGroupBonusMul => soldierGroupBonusMul;
+    public float SoldierNestFoodCostMul => soldierNestFoodCostMul;
+    public float WorkerEatSpeedMul => workerEatSpeedMul;
+    public float WorkerCarryMul => workerCarryMul;
+    public float WorkerDamageTakenMul => workerDamageTakenMul;
+    public float NonWorkerStoreEfficiency => nonWorkerStoreEfficiency;
+    public float ScoutLevyAlphaMul => scoutLevyAlphaMul;
+    public float ScoutPoiWeightMul => scoutPoiWeightMul;
+    public float ScoutCarryMul => scoutCarryMul;
+    public float NurseSpeedMul => nurseSpeedMul;
+    public float NurseFeedMul => nurseFeedMul;
+    public float NurseHealAura => nurseHealAura;
+    public int NurseHealAuraMax => nurseHealAuraMax;
+    public float PlanRewardEmaAlpha => planRewardEmaAlpha;
+    public float CasteThresholdLearn => casteThresholdLearn;
+    public float CasteThresholdForget => casteThresholdForget;
+    public float CasteThresholdMin => casteThresholdMin;
+    public float CasteThresholdMax => casteThresholdMax;
+    public float CasteReviewInterval => casteReviewInterval;
+    public float UtilityPriorWeight => utilityPriorWeight;
+    public int PredatorCount => predatorCount;
+    public float PredatorHealthMul => predatorHealthMul;
+    public float PredatorDamageMul => predatorDamageMul;
+    public float PredatorSpeedMul => predatorSpeedMul;
+    public float PredatorDetectMul => predatorDetectMul;
+    public float PredatorUpkeepMul => predatorUpkeepMul;
+    public float PredatorSpawnDistance => predatorSpawnDistance;
+    public float PredatorRespawnInterval => predatorRespawnInterval;
+    public float PredatorHungerOn => predatorHungerOn;
+    public float PredatorFleeHp => predatorFleeHp;
+    public float TrophallaxisMinFill => trophallaxisMinFill;
+    public float TrophallaxisHungerRelief => trophallaxisHungerRelief;
+    public int RecruitCount => recruitCount;
+    public float RecruitWindow => recruitWindow;
+    public int QuorumSize => quorumSize;
+    public int QuorumSites => quorumSites;
+    public float QuorumMergeRadius => quorumMergeRadius;
+    public float QuorumWindow => quorumWindow;
+    public float QuorumMaxDanger => quorumMaxDanger;
+    public float BaseMaxAge => baseMaxAge;
+    public float SenescenceOnset => senescenceOnset;
+    public float SenescenceUpkeep => senescenceUpkeep;
+    public float NurseAgeEnd => nurseAgeEnd;
+    public float WorkerAgeEnd => workerAgeEnd;
+    public float PolyethismStimulus => polyethismStimulus;
+    public float JuvenileHealthMul => juvenileHealthMul;
+    public float GroomAmount => groomAmount;
+    public float GroomInfectChance => groomInfectChance;
+    public float GroomMinLoad => groomMinLoad;
+    public float SickFeverThreshold => sickFeverThreshold;
+    public float SickLoadThreshold => sickLoadThreshold;
+    public float SickMark => sickMark;
+    public float PlannerSicknessWeight => plannerSicknessWeight;
+    public float ImmuneUpkeep => immuneUpkeep;
+    public float ImmuneThresholdMin => immuneThresholdMin;
+    public float ImmuneThresholdMax => immuneThresholdMax;
+    public float TerritoryMark => territoryMark;
+    public float TerritoryThreshold => territoryThreshold;
+    public float TerritoryAlarm => territoryAlarm;
+    public float ForeignTerritoryHuntDrop => foreignTerritoryHuntDrop;
+    public float WinterThreshold => winterThreshold;
+    public float PreWinterFraction => preWinterFraction;
+    public float PreWinterHarvestBias => preWinterHarvestBias;
+    public float PreWinterWorkerStimulus => preWinterWorkerStimulus;
+    public float WinterGrowthMul => winterGrowthMul;
+    public float WinterDrainMul => winterDrainMul;
+    public float HormoneTau => hormoneTau;
+    public float TempDopamine => tempDopamine;
+    public float TempCortisol => tempCortisol;
+    public float TempSurprise => tempSurprise;
+    public float TempMin => tempMin;
+    public float TempMax => tempMax;
+    public float GhrelinHungerShift => ghrelinHungerShift;
+    public float CortisolPanicShift => cortisolPanicShift;
+    public float OxytocinPanicShift => oxytocinPanicShift;
+    public float OxytocinNorm => oxytocinNorm;
+    public float SurpriseAlpha => surpriseAlpha;
+    public float OuTau => ouTau;
+    public float OuSigma => ouSigma;
+    public float NegativePoiTau => negativePoiTau;
+    public float NegativePoiHit => negativePoiHit;
+    public float NegativePoiEmpty => negativePoiEmpty;
+    public float NegativePoiWeight => negativePoiWeight;
+    public float NegativePoiRadius => negativePoiRadius;
+    public float CasteSwitchMargin => casteSwitchMargin;
+    public float ColonyRespawnDelay => colonyRespawnDelay;
+    public int NegativePoiCount => negativePoiCount;
+    private static readonly float[] PlanMinBuf = new float[PlanCatalog.Count];
+    private static readonly float[] PlanMaxBuf = new float[PlanCatalog.Count];
+    private static readonly float[] CasteAffinityLogBuf = new float[(int)Caste.Count * PlanCatalog.Count];
+    private static readonly float[] UtilityWeightsBuf = new float[PlanCatalog.Count * UtilityFeatures.Count];
+    private static readonly int[]   PlanCasteDomainBuf = new int[PlanCatalog.Count];
+    private static readonly float4[] SpeechSignalsBuf = new float4[SpeechSignal.Count];
+
+    private float[] FillPlanSeconds(float[] source, float fallback, float[] target)
+    {
+        for (int p = 0; p < target.Length; p++)
+            target[p] = source != null && p < source.Length ? source[p] : fallback;
+        return target;
+    }
+
+    private float[] FillCasteAffinityLog()
+    {
+        var t = CasteAffinityLogBuf;
+        for (int i = 0; i < t.Length; i++)
+            t[i] = math.log(math.max(casteAffinity != null && i < casteAffinity.Length ? casteAffinity[i] : 1f, 1e-3f));
+        return t;
+    }
+
+    private float[] FillUtilityWeights()
+    {
+        var t = UtilityWeightsBuf;
+        for (int i = 0; i < t.Length; i++)
+            t[i] = utilityWeights != null && i < utilityWeights.Length ? utilityWeights[i] : 0f;
+        return t;
+    }
+
+    private int[] FillPlanCasteDomain()
+    {
+        var t = PlanCasteDomainBuf;
+        for (int i = 0; i < t.Length; i++)
+            t[i] = planCasteDomain != null && i < planCasteDomain.Length ? planCasteDomain[i] : -1;
+        return t;
+    }
+
+    private float4[] FillSpeechSignals()
+    {
+        var t = SpeechSignalsBuf;
+        for (int i = 0; i < t.Length; i++)
+            t[i] = speechSignals != null && i < speechSignals.Length ? (float4)speechSignals[i] : float4.zero;
+        return t;
+    }
 
     private ulong BuildEndogenousForbiddenMask()
     {

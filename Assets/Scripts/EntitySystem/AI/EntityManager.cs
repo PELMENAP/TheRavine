@@ -79,6 +79,11 @@ public class EntityManager : MonoBehaviour
     private BoidSystem _boids;
     private readonly PlayerPresence _players = new();
     public PlayerPresence Players => _players;
+    private UtilityPriorSystem   _utility;
+    private CasteThresholdSystem _thresholds;
+    private ColonyState _wild;
+    private double _nextPredatorTime;
+    private float  _lastColonyTime;
     public InstinctSystem Instincts => _instincts;
     private int _nextEntityId;
     private float[] _colonyFitness = Array.Empty<float>();
@@ -138,6 +143,9 @@ public class EntityManager : MonoBehaviour
         _motion = new MotionSystem(maxPopulation);
         _instincts = new InstinctSystem(maxPopulation);
         _boids     = new BoidSystem(maxPopulation);
+        _utility    = new UtilityPriorSystem(maxPopulation);
+        _thresholds = new CasteThresholdSystem(maxPopulation);
+        ServiceLocator.Services.Register(_thresholds);
         ServiceLocator.Services.Register(_grid);
         ServiceLocator.Services.Register(_players);
         _colonies = new ColonyRegistry();
@@ -162,14 +170,17 @@ public class EntityManager : MonoBehaviour
             if (colonyOrigins[i] != null) AddColony(colonyOrigins[i].position);
 
         if (_colonies.Count == 0) AddColony(transform.position);
+        if (SimulationRules.Active.PredatorCount > 0) _wild = AddColony(transform.position, true);
 
         _colonyFitness = new float[_colonies.Count];
         _colonyAlive   = new int[_colonies.Count];
     }
 
-    private void AddColony(Vector3 position)
+    private ColonyState AddColony(Vector3 position, bool wild = false)
         => _colonies.Add(new Unity.Mathematics.float2(position.x, position.z),
-            new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden), maxPopulation);
+            new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden), maxPopulation, wild);
+
+    private int CivilCount => _colonies.Count - (_wild != null ? 1 : 0);
 
 
     [ContextMenu("Save Brain")]
@@ -249,9 +260,11 @@ public class EntityManager : MonoBehaviour
 
         for (int i = 0; i < initialCount; i++)
         {
-            var colony = _colonies[i % _colonies.Count];
+            var colony = _colonies[i % CivilCount];
             SpawnEntity(RandomPosition(colony), colony);
         }
+        _nextPredatorTime = SimulationClock.TimeD;
+        _lastColonyTime   = SimulationClock.Time;
 
         for (int i = 0; i < initialFood; i++)
             SpawnFood();
@@ -313,6 +326,8 @@ public class EntityManager : MonoBehaviour
             {
                 _tickCursor = 0;
                 ProcessPendingDeaths();
+                CheckExtinctions();
+                TickPredators();
                 for (int c = 0; c < _colonies.Count; c++) _colonies[c].Brain.ApplyPendingGradients();
                 _foodIndex?.PruneUnloaded();
                 TickNests();
@@ -345,16 +360,27 @@ public class EntityManager : MonoBehaviour
 
             int idx = e.ManagerIndex;
             _instincts.Write(idx, in e.InstinctInput);
+            _utility.Write(idx, in e.UtilityInput);
             if (idx < lo) lo = idx;
             if (idx > hi) hi = idx;
         }
 
-        if (hi >= lo) _instincts.Evaluate(lo, hi + 1);
+        if (hi >= lo)
+        {
+            _instincts.Evaluate(lo, hi + 1);
+            _utility.Evaluate(lo, hi + 1);
+        }
 
         for (int i = start; i < end; i++)
         {
             var e = _tickSnapshot[i];
             if (e == null || e.IsDisposed || !e.CycleActive) continue;
+            if (e.IsWild)
+            {
+                e.TickWild();
+                continue;
+            }
+            e.ApplyUtilityPrior(_utility.Output(e.ManagerIndex));
             var output = _instincts.Output(e.ManagerIndex);
             e.ApplyInstinct(in output);
             e.SubmitDecision(output.NeedsDecision != 0 && !e.IsCommandRunning && !e.Plan.IsActive);
@@ -382,7 +408,8 @@ public class EntityManager : MonoBehaviour
         _lastEcologyTime = now;
         if (dt > rules.EcologyMaxStep) dt = rules.EcologyMaxStep;
 
-        float season = 1f + rules.SeasonAmplitude * Mathf.Sin(2f * Mathf.PI * now / Mathf.Max(rules.SeasonPeriod, 1f));
+        float season = (1f + rules.SeasonAmplitude * SeasonClock.Value(now))
+                     * (SeasonClock.IsWinter(now) ? rules.WinterGrowthMul : 1f);
         _foodIndex.TickEcology(dt, SimulationClock.TimeD, season, maxFood);
     }
 
@@ -418,11 +445,15 @@ public class EntityManager : MonoBehaviour
     {
         var r = SimulationRules.Active;
         double now = SimulationClock.TimeD;
+        float  dt  = SimulationClock.Time - _lastColonyTime;
+        _lastColonyTime = SimulationClock.Time;
 
         for (int c = 0; c < _colonies.Count; c++)
         {
             var colony  = _colonies[c];
             var members = colony.Members;
+            colony.TickEma(dt);
+            if (colony.IsWild) continue;
 
             Array.Clear(colony.CasteCounts, 0, colony.CasteCounts.Length);
             colony.JuvenileCount = 0;
@@ -440,10 +471,20 @@ public class EntityManager : MonoBehaviour
 
                 if (!e.CasteFixed)
                 {
-                    var caste = ChooseCaste(colony, members.Length);
+                    var caste = ChooseCaste(colony, members.Length, e, false);
                     e.AssignCaste(caste);
+                    e.NextCasteReview = now + r.CasteReviewInterval;
                     colony.CasteCounts[(int)caste]++;
                     continue;
+                }
+
+                if (now >= e.NextCasteReview)
+                {
+                    e.NextCasteReview = now + r.CasteReviewInterval;
+                    colony.CasteCounts[(int)e.Caste]--;
+                    var review = ChooseCaste(colony, members.Length, e, true);
+                    if (review != e.Caste) e.AssignCaste(review);
+                    colony.CasteCounts[(int)review]++;
                 }
 
                 var virology = e.Virology;
@@ -504,21 +545,34 @@ public class EntityManager : MonoBehaviour
 
     private readonly float[] _casteWeights = new float[(int)Caste.Count];
 
-    private Caste ChooseCaste(ColonyState colony, int members)
+    private Caste ChooseCaste(ColonyState colony, int members, EntityModel e, bool review)
     {
         var r    = SimulationRules.Active;
         var nest = colony.Nest;
         float inv = 1f / math.max(members - colony.JuvenileCount, 1);
+        float4 th = _thresholds.Get(e.ManagerIndex);
+
+        float age   = e.AgeFraction;
+        float poly  = r.PolyethismStimulus;
+        float young = age < r.NurseAgeEnd ? poly : 0f;
+        float mid   = age >= r.NurseAgeEnd && age < r.WorkerAgeEnd ? poly : 0f;
+        float old   = age >= r.WorkerAgeEnd ? poly : 0f;
+        float winter = SeasonClock.WinterApproach(SimulationClock.Time) * r.PreWinterWorkerStimulus;
 
         float storage = math.saturate(nest.Storage / math.max(r.NestStorageNorm, 1e-3f));
-        Stimulus(Caste.Soldier, math.saturate(nest.Alarm + nest.DangerAtNest), r.CasteSoldierThreshold, colony, inv);
-        Stimulus(Caste.Worker,  1f - storage,                                   r.CasteWorkerThreshold,  colony, inv);
-        Stimulus(Caste.Scout,   math.saturate(nest.Hunger + (nest.HasFoodPeak ? 0f : r.CasteScoutNoFoodStimulus)), r.CasteScoutThreshold, colony, inv);
-        Stimulus(Caste.Nurse,   math.saturate(colony.JuvenileCount * r.CasteNurseGain / math.max(members, 1)), r.CasteNurseThreshold, colony, inv);
+        Stimulus(Caste.Soldier, math.saturate(nest.Alarm + nest.DangerAtNest) + old, th[(int)Caste.Soldier], colony, inv);
+        Stimulus(Caste.Worker,  1f - storage + mid + winter,                   th[(int)Caste.Worker],  colony, inv);
+        Stimulus(Caste.Scout,   math.saturate(nest.Hunger + (nest.HasFoodPeak ? 0f : r.CasteScoutNoFoodStimulus)) + old, th[(int)Caste.Scout], colony, inv);
+        Stimulus(Caste.Nurse,   math.saturate(colony.JuvenileCount * r.CasteNurseGain / math.max(members, 1)) + young, th[(int)Caste.Nurse], colony, inv);
 
-        float total = 0f;
-        for (int c = 0; c < _casteWeights.Length; c++) total += _casteWeights[c];
-        if (total <= 1e-6f) return Caste.Worker;
+        float total = 0f, top = 0f;
+        for (int c = 0; c < _casteWeights.Length; c++)
+        {
+            total += _casteWeights[c];
+            top = math.max(top, _casteWeights[c]);
+        }
+        if (total <= 1e-6f) return review ? e.Caste : Caste.Worker;
+        if (review && _casteWeights[(int)e.Caste] >= top * r.CasteSwitchMargin) return e.Caste;
 
         float pick = RavineRandom.RangeFloat(0f, total);
         for (int c = 0; c < _casteWeights.Length; c++)
@@ -547,23 +601,32 @@ public class EntityManager : MonoBehaviour
         {
             var colony  = _colonies[c];
             var members = colony.Members;
-            int atNest  = 0, restingAtNest = 0;
+            int atNest  = 0, restingAtNest = 0, hungryAtNest = 0, nursesAtNest = 0, far = 0;
             float fill  = 0f;
+            float far2  = r.NestRadius * 3f;
+            far2 *= far2;
+            float2 nestPos = colony.Nest.Position;
             for (int i = 0; i < members.Length; i++)
             {
                 var e = _entities[members[i]];
                 if (e.IsDisposed) continue;
                 fill += e.Digestion.Fill;
+                if (math.distancesq(e.Position2D, nestPos) > far2) far++;
                 if (!e.IsAtNest) continue;
                 atNest++;
+                if (e.IsHungry) hungryAtNest++;
+                if (e.Caste == Caste.Nurse && e.CasteFixed && !e.IsJuvenile) nursesAtNest++;
                 if (e.Plan.Kind == PlanKind.Rest || (e.IsCommandRunning && e.LastAction == EntityAction.Rest)) restingAtNest++;
             }
+            colony.Nest.HungryAtNest = hungryAtNest;
+            colony.Nest.NursesAtNest = nursesAtNest;
 
             colony.Nest.Tick(dt, atNest);
 
             float inv = members.Length > 0 ? 1f / members.Length : 0f;
             colony.Stats.SampleMembers(fill * inv, restingAtNest * inv,
                 math.saturate(colony.Nest.Storage / math.max(r.NestStorageNorm, 1e-3f)));
+            colony.Stats.FarShare = far * inv;
         }
     }
 
@@ -607,6 +670,8 @@ public class EntityManager : MonoBehaviour
         colony.AddMember(model);
         colony.Stats.RecordBirth();
         _instincts.Reset(model.ManagerIndex, InstinctGenes.From(in ctx.CoordMLP.Params));
+        _utility.Write(model.ManagerIndex, default);
+        _thresholds.Reset(model.ManagerIndex, CasteThresholdSystem.Initial());
         OnEntitySpawned?.Invoke(model);
         return model;
     }
@@ -624,7 +689,7 @@ public class EntityManager : MonoBehaviour
     }
     public void SpawnChild(EntityModel parent)
     {
-        if (_entities.Count >= maxPopulation) return;
+        if (_entities.Count >= maxPopulation || parent.IsWild) return;
 
         var parentParams = parent.Brain.Context.CoordMLP.Params;
         var mate         = SelectMateByTournament(parent);
@@ -674,7 +739,7 @@ public class EntityManager : MonoBehaviour
             var cand = _mateCandidates[_tournamentRng.Range(0, found)];
             if (cand == null || cand.IsDisposed || cand.IsDeathPending || cand.Colony != self.Colony) continue;
 
-            float f = cand.GetFitness();
+            float f = cand.SelectionFitness;
             if (f > bestFit) { bestFit = f; best = cand; }
         }
 
@@ -687,9 +752,9 @@ public class EntityManager : MonoBehaviour
         if (_foodIndex == null || _foodIndex.FoodCount >= maxFood) return false;
 
         Vector3 origin = transform.position;
-        if (_colonies.Count > 1)
+        if (CivilCount > 1)
         {
-            var home = _colonies[RavineRandom.RangeInt(0, _colonies.Count)].Nest.Position;
+            var home = _colonies[RavineRandom.RangeInt(0, CivilCount)].Nest.Position;
             origin = new Vector3(home.x, origin.y, home.y);
         }
 
@@ -863,6 +928,8 @@ public class EntityManager : MonoBehaviour
 
         _instincts.RemoveSwapBack(idx, last);
         _boids.RemoveSwapBack(idx, last);
+        _utility.RemoveSwapBack(idx, last);
+        _thresholds.RemoveSwapBack(idx, last);
         _entities.RemoveAt(last);
         model.ManagerIndex = -1;
     }
@@ -909,11 +976,13 @@ public class EntityManager : MonoBehaviour
                 Array.Clear(_colonyFitness, 0, _colonyFitness.Length);
                 Array.Clear(_colonyAlive, 0, _colonyAlive.Length);
 
+                int counted = 0;
                 for (int i = 0; i < n; i++)
                 {
                     var e = _entities[i];
+                    if (e.IsWild) continue;
                     float f = e.GetFitness();
-                    _fitnessScratch[i] = f;
+                    _fitnessScratch[counted++] = f;
                     fitnessSum += f;
                     entropySum += e.Colony.Brain.GetCoordinatorEntropy(e.Brain.Context);
 
@@ -922,13 +991,15 @@ public class EntityManager : MonoBehaviour
                     _colonyAlive[c]++;
                 }
 
-                _avgEntropy = entropySum / n;
-                _avgFitness = fitnessSum / n;
+                _avgEntropy = entropySum / math.max(counted, 1);
+                _avgFitness = fitnessSum / math.max(counted, 1);
 
-                Array.Sort(_fitnessScratch, 0, n);
+                int m = math.max(counted, 1);
+                if (counted == 0) _fitnessScratch[0] = 0f;
+                Array.Sort(_fitnessScratch, 0, m);
 
-                _fitnessMedian = _fitnessScratch[n >> 1];
-                float iqr = _fitnessScratch[(3 * n) >> 2] - _fitnessScratch[n >> 2];
+                _fitnessMedian = _fitnessScratch[m >> 1];
+                float iqr = _fitnessScratch[(3 * m) >> 2] - _fitnessScratch[m >> 2];
                 _fitnessSpread = iqr > 1e-3f
                     ? iqr
                     : Mathf.Max(1e-3f, Mathf.Abs(_fitnessMedian) * 0.25f);
@@ -949,7 +1020,84 @@ public class EntityManager : MonoBehaviour
     public void EvolveGenotypes()
     {
         if (_tickCursor != 0) return;
-        for (int c = 0; c < _colonies.Count; c++) EvolveColony(_colonies[c]);
+        for (int c = 0; c < _colonies.Count; c++)
+            if (!_colonies[c].IsWild) EvolveColony(_colonies[c]);
+    }
+
+    private void CheckExtinctions()
+    {
+        var r = SimulationRules.Active;
+        double now = SimulationClock.TimeD;
+        for (int c = 0; c < _colonies.Count; c++)
+        {
+            var colony = _colonies[c];
+            if (colony.IsWild) continue;
+            if (colony.MemberCount > 0)
+            {
+                colony.ExtinctSince = double.NaN;
+                continue;
+            }
+            if (double.IsNaN(colony.ExtinctSince)) { colony.ExtinctSince = now; continue; }
+            if (now - colony.ExtinctSince < r.ColonyRespawnDelay) continue;
+            ReseedColony(colony, BestDonor(colony));
+        }
+    }
+
+    private ColonyState BestDonor(ColonyState exclude)
+    {
+        ColonyState best = null;
+        float bestScore = float.MinValue;
+        for (int c = 0; c < _colonies.Count; c++)
+        {
+            var colony = _colonies[c];
+            if (colony == exclude || colony.IsWild || colony.MemberCount == 0) continue;
+            float score = colony.Score;
+            if (score <= bestScore) continue;
+            bestScore = score;
+            best = colony;
+        }
+        return best;
+    }
+
+    private void ReseedColony(ColonyState colony, ColonyState donor)
+    {
+        colony.ExtinctSince = double.NaN;
+        colony.EmaPrimed    = false;
+        colony.Stats.Reseeds++;
+
+        if (donor != null)
+        {
+            var old = colony.Brain;
+            colony.ReplaceBrain(new SharedHierarchicalBrain(donor.Brain));
+            old?.Dispose();
+        }
+
+        int count = SimulationRules.Active.ColonyRespawnCount;
+        var donorMembers = donor != null ? donor.Members : default;
+        for (int i = 0; i < count && _entities.Count < maxPopulation; i++)
+        {
+            GeneticParameters genes = donorMembers.Length > 0
+                ? _entities[donorMembers[RavineRandom.RangeInt(0, donorMembers.Length)]].Brain.Context.CoordMLP.Params.GetMutatedGeneticParameters()
+                : GeneticParameters.Default;
+            SpawnEntity(RandomPosition(colony), colony, colony.Brain.CreateContext(genes));
+            if (donor != null) donorMembers = donor.Members;
+        }
+    }
+
+    private void TickPredators()
+    {
+        var wild = _wild;
+        if (wild == null) return;
+        var r = SimulationRules.Active;
+        double now = SimulationClock.TimeD;
+        if (now < _nextPredatorTime || wild.MemberCount >= r.PredatorCount || CivilCount == 0) return;
+        _nextPredatorTime = now + r.PredatorRespawnInterval;
+
+        var home = _colonies[RavineRandom.RangeInt(0, CivilCount)].Nest.Position;
+        float a = RavineRandom.RangeFloat(0f, 2f * math.PI);
+        math.sincos(a, out float sa, out float ca);
+        var p = home + new float2(ca, sa) * r.PredatorSpawnDistance;
+        SpawnEntity(new Vector3(p.x, transform.position.y, p.y), wild);
     }
 
     private void EvolveColony(ColonyState colony)
@@ -970,7 +1118,7 @@ public class EntityManager : MonoBehaviour
         {
             int idx = members[i];
             _evolveIndices[i] = idx;
-            _evolveKeys[i]    = _entities[idx].GetFitness();
+            _evolveKeys[i]    = _entities[idx].SelectionFitness;
         }
 
         Array.Sort(_evolveKeys, _evolveIndices, 0, n);
@@ -1013,6 +1161,8 @@ public class EntityManager : MonoBehaviour
         _motion?.Dispose();
         _instincts?.Dispose();
         _boids?.Dispose();
+        _utility?.Dispose();
+        _thresholds?.Dispose();
         _colonies?.Dispose();
         ContextSlabs.DisposeAll();
     }

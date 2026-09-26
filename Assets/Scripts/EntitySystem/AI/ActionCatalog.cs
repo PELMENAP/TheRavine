@@ -29,7 +29,7 @@ public readonly struct ActionInfo
 
 public static class ActionCatalog
 {
-    public const int Count = (int)EntityAction.MoveNest + 1;
+    public const int Count = (int)EntityAction.Groom + 1;
 
     private const byte Survive = 1 << (int)SharedHierarchicalBrain.Goal.Survive;
     private const byte Hunt    = 1 << (int)SharedHierarchicalBrain.Goal.Hunt;
@@ -45,7 +45,7 @@ public static class ActionCatalog
     {
         var t = new ActionInfo[Count];
         Set(t, EntityAction.Idle,          ActionFlags.None,                              Survive | Hunt | Social);
-        Set(t, EntityAction.Wander,        ActionFlags.IsMove,                            Survive);
+        Set(t, EntityAction.Wander,        ActionFlags.IsMove,                            Survive | Forage);
         Set(t, EntityAction.RememberPoint, ActionFlags.None,                              Forage);
         Set(t, EntityAction.GoToPoint,     ActionFlags.IsMove | ActionFlags.NeedsTarget,  Survive | Forage);
         Set(t, EntityAction.Attack,        ActionFlags.IsMove | ActionFlags.NeedsTarget | ActionFlags.EnergyGated, Hunt);
@@ -63,6 +63,7 @@ public static class ActionCatalog
         Set(t, EntityAction.StoreFood,     ActionFlags.None,                              Forage, NoSoldier);
         Set(t, EntityAction.Follow,        ActionFlags.IsMove | ActionFlags.NeedsTarget | ActionFlags.InstinctOnly, 0);
         Set(t, EntityAction.MoveNest,      ActionFlags.PlanOnly,                          0);
+        Set(t, EntityAction.Groom,         ActionFlags.NeedsTarget,                       Social);
         return t;
     }
 

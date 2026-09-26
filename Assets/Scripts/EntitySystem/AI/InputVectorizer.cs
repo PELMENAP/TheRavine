@@ -43,11 +43,13 @@ public struct VectorizerFrame
     public float4 Speech;
     public int    MimickedAction;
     public double Now;
+    public float[] PlanRewardEma;
+    public float  Season;
+    public float  WinterApproach;
 }
 
 public class InputVectorizer : IDisposable
 {
-    public const int VectorSize  = 93;
     public const int ActionCount = ActionCatalog.Count;
 
     public const int TraceOffset     = 8;
@@ -55,8 +57,10 @@ public class InputVectorizer : IDisposable
     public const int StateOffset     = DirectionOffset + 10;
     public const int StateSlots      = 13;
     public const int TailOffset      = StateOffset + StateSlots;
-    public const int TailSlots       = 30;
-    public const int ReservedOffset  = TailOffset + TailSlots;
+    public const int TailSlots       = 43;
+    public const int PlanEmaOffset   = TailOffset + TailSlots;
+    public const int SeasonOffset    = PlanEmaOffset + PlanCatalog.Count;
+    public const int VectorSize      = SeasonOffset + 2;
 
     private float _maxHealth;
     private float _maxEnergy;
@@ -169,7 +173,14 @@ public class InputVectorizer : IDisposable
         v[idx++] = f.IsLeader;
         for (int c = 0; c < (int)global::Caste.Count; c++) v[idx++] = f.Caste == c ? 1f : 0f;
 
-        for (int i = idx; i < VectorSize; i++) v[i] = 0f;
+        for (int i = idx; i < PlanEmaOffset; i++) v[i] = 0f;
+
+        var ema = f.PlanRewardEma;
+        for (int p = 0; p < PlanCatalog.Count; p++)
+            v[PlanEmaOffset + p] = ema != null ? math.tanh(ema[p]) : 0f;
+
+        v[SeasonOffset]     = f.Season;
+        v[SeasonOffset + 1] = f.WinterApproach;
         return v;
     }
 

@@ -34,7 +34,8 @@ public class EntityView : AEntityView
     private static readonly string[] CasteName = { "Worker", "Soldier", "Scout", "Nurse" };
 
     private static readonly string[] PlanHex =
-        { "#8FE36B", "#E3C46B", "#6BB5E3", "#E36B6B", "#9A9AE3", "#FF8C42", "#E36BC8", "#6BE3D2", "#8C8C8C" };
+        { "#8FE36B", "#E3C46B", "#6BB5E3", "#E36B6B", "#9A9AE3", "#FF8C42", "#E36BC8", "#6BE3D2", "#B5E36B" };
+    private const string WildHex = "#C08040";
 
     private static readonly string[] SourceHex = { "#FFFFFF", "#FFE04D", "#66E0FF" };
     private static readonly string[] SourceTag = { "NN", "IN", "PL" };
@@ -72,7 +73,8 @@ public class EntityView : AEntityView
         if (colony != null)
             Open(sb, ColonyHex[(colony.ColonyId - 1 & 0x7FFFFFFF) % ColonyHex.Length]).Append('C').Append(colony.ColonyId).Close();
 
-        if (model.IsJuvenile) Open(sb.Append(' '), JuvenileHex).Append("juv").Close();
+        if (model.IsWild) Open(sb.Append(' '), WildHex).Append("wild").Close();
+        else if (model.IsJuvenile) Open(sb.Append(' '), JuvenileHex).Append("juv").Close();
         else
         {
             int caste = (int)model.Caste;

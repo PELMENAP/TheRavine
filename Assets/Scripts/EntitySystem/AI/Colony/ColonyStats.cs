@@ -15,6 +15,10 @@ public sealed class ColonyStats
     public readonly int[] PlansStarted    = new int[PlanCatalog.Count];
     public readonly int[] PlansCompleted  = new int[PlanCatalog.Count];
     public readonly int[] Attacks         = new int[(int)AttackTarget.Count];
+    public readonly int[] ActionsStarted  = new int[ActionCatalog.Count];
+    public readonly int[] PlansByCaste    = new int[(int)Caste.Count * PlanCatalog.Count];
+    public float FarShare;
+    public int   Reseeds;
 
     public float StorageEaten;
     public float StorageStored;
@@ -51,6 +55,21 @@ public sealed class ColonyStats
     }
 
     public void RecordAttack(AttackTarget target) => Attacks[(int)target]++;
+    public void RecordAction(int action) { if ((uint)action < (uint)ActionsStarted.Length) ActionsStarted[action]++; }
+
+    public void RecordCastePlan(Caste caste, PlanKind plan)
+    {
+        if (caste >= Caste.Count || plan >= PlanKind.Count) return;
+        PlansByCaste[(int)caste * PlanCatalog.Count + (int)plan]++;
+    }
+
+    public PlanKind TopPlan(Caste caste)
+    {
+        int row = (int)caste * PlanCatalog.Count, best = -1, bestCount = 0;
+        for (int p = 0; p < PlanCatalog.Count; p++)
+            if (PlansByCaste[row + p] > bestCount) { bestCount = PlansByCaste[row + p]; best = p; }
+        return best < 0 ? PlanKind.Count : (PlanKind)best;
+    }
     public void RecordStorageEaten(float amount)  => StorageEaten  += amount;
     public void RecordStorageStored(float amount) => StorageStored += amount;
 

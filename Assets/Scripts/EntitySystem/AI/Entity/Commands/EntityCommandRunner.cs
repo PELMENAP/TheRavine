@@ -32,7 +32,9 @@ public sealed class EntityCommandRunner
         _source   = source;
         _lastTick = SimulationClock.TimeD;
         _startedBySource[(int)source]++;
-        _model.Colony?.Stats.RecordCommand(source);
+        var stats = _model.Colony?.Stats;
+        stats?.RecordCommand(source);
+        stats?.RecordAction(decision.Action);
 
         var status = command.Begin(in decision, source);
         if (status != EntityCommandStatus.Running && ReferenceEquals(_current, command))

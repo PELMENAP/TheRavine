@@ -310,9 +310,30 @@ namespace TheRavine.EntityControl.Virology
             if (_immuneCount < _immune.Length) _immuneCount++;
         }
 
+        private float _immuneStrength = 1f;
+        public void SetImmuneStrength(float strength) => _immuneStrength = math.max(strength, 0f);
+
+        public float Groom(float amount)
+        {
+            if (!_created || IsDisposed || amount <= 0f) return 0f;
+            ref readonly var rules = ref SimulationRules.Frame;
+            float removed = 0f;
+            for (int i = _segmentCount - 1; i >= 0; i--)
+            {
+                ref var s = ref _segments[i];
+                if (s.IsEndogenous) continue;
+                float before = s.Integrity;
+                s.Integrity = math.max(0f, s.Integrity - amount);
+                removed += before - s.Integrity;
+                _valuesDirty = true;
+                if (s.Integrity < rules.IntegrityRemoveThreshold) TryExcise(i);
+            }
+            return removed;
+        }
+
         public bool IsImmune(ulong signature)
         {
-            int threshold = SimulationRules.Frame.ImmuneHammingThreshold;
+            int threshold = (int)math.round(SimulationRules.Frame.ImmuneHammingThreshold * _immuneStrength);
             for (int i = 0; i < _immuneCount; i++)
                 if (math.countbits(_immune[i] ^ signature) <= threshold) return true;
             return false;

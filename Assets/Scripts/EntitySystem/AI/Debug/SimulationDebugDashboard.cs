@@ -42,14 +42,15 @@ public class SimulationDebugDashboard : MonoBehaviour
     private GUIStyle _valueStyle;
     private bool     _stylesInitialized;
 
-    private Rect _windowRect = new Rect(10, 10, 420, 1060);
+    private Rect _windowRect = new Rect(10, 10, 420, 1200);
     private GUIStyle _warnStyle;
 
-    private const int ColonyDiagLines = 5;
+    private const int ColonyDiagLines = 9;
     private static readonly string[] ColonyDiagKeys =
     {
         "  deaths K/S/V/T/A", "  storage % (abs) / fill", "  storage eaten / stored",
         "  rest@nest / rest plans", "  attacks own/foreign/player",
+        "  top plan W/So/Sc/N", "  far >3R / reseeds", "  mimic / groom / speech", "  quorum votes max",
     };
     private string[] _colonyDiag = Array.Empty<string>();
 
@@ -134,8 +135,15 @@ public class SimulationDebugDashboard : MonoBehaviour
             _colonyDiag[o + 2] = $"{st.StorageEaten:F0} / {st.StorageStored:F0}";
             _colonyDiag[o + 3] = $"{st.RestAtNestShare * 100f:0}% / {st.PlanShare(PlanKind.Rest) * 100f:0}%";
             _colonyDiag[o + 4] = $"{a[(int)ColonyStats.AttackTarget.Own]}/{a[(int)ColonyStats.AttackTarget.Foreign]}/{a[(int)ColonyStats.AttackTarget.Player]}";
+            _colonyDiag[o + 5] = $"{PlanName(st.TopPlan(Caste.Worker))}/{PlanName(st.TopPlan(Caste.Soldier))}/{PlanName(st.TopPlan(Caste.Scout))}/{PlanName(st.TopPlan(Caste.Nurse))}";
+            _colonyDiag[o + 6] = $"{st.FarShare * 100f:0}% / {st.Reseeds}";
+            var act = st.ActionsStarted;
+            _colonyDiag[o + 7] = $"{act[(int)EntityAction.Mimic]} / {act[(int)EntityAction.Groom]} / {act[(int)EntityAction.Speech]}";
+            _colonyDiag[o + 8] = colony.IsWild ? "wild" : colony.SiteVotesMax.ToString();
         }
     }
+
+    private static string PlanName(PlanKind plan) => plan < PlanKind.Count ? PlanCatalog.Names[(int)plan] : "-";
 
     private void DrawWindow(int id)
     {
@@ -194,6 +202,7 @@ public class SimulationDebugDashboard : MonoBehaviour
     {
         new(0.56f, 0.89f, 0.42f), new(0.89f, 0.77f, 0.42f), new(0.42f, 0.71f, 0.89f), new(0.89f, 0.42f, 0.42f),
         new(0.60f, 0.60f, 0.89f), new(1f, 0.55f, 0.26f), new(0.89f, 0.42f, 0.78f), new(0.42f, 0.89f, 0.82f),
+        new(0.71f, 0.89f, 0.42f),
     };
 
     private readonly int[] _planCounts = new int[PlanCatalog.Count];

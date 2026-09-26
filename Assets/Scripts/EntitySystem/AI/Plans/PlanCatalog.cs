@@ -10,7 +10,22 @@ public enum PlanKind : byte
     Flee    = 5,
     Court   = 6,
     Migrate = 7,
+    Seek    = 8,
     Count,
+}
+
+public enum DirectionKind : byte
+{
+    Food      = 0,
+    NestFood  = 1,
+    OwnPoi    = 2,
+    ColonyPoi = 3,
+    Frontier  = 4,
+    Migration = 5,
+    Flock     = 6,
+    Levy      = 7,
+    Count,
+    None      = byte.MaxValue,
 }
 
 [Flags]
@@ -36,6 +51,12 @@ public enum PlanHint : uint
     PreyNear     = 1 << 16,
     PlayerNear   = 1 << 17,
     NestHasFood  = 1 << 18,
+    StorageLow   = 1 << 19,
+    ColonyPoi    = 1 << 20,
+    FoodPeak     = 1 << 21,
+    PreferPickUp = 1 << 22,
+    QuorumReady  = 1 << 23,
+    KinSick      = 1 << 24,
 }
 
 public struct PlanProgress
@@ -47,6 +68,9 @@ public struct PlanProgress
     public int  Failures;
     public bool Ate;
     public bool Achieved;
+    public int  Legs;
+    public int  Used;
+    public byte Direction;
 }
 
 public static class PlanCatalog
@@ -65,9 +89,28 @@ public static class PlanCatalog
         SharedHierarchicalBrain.Goal.Survive,
         SharedHierarchicalBrain.Goal.Social,
         SharedHierarchicalBrain.Goal.Survive,
+        SharedHierarchicalBrain.Goal.Forage,
     };
 
-    public static readonly string[] Names = { "Graze", "Harvest", "Patrol", "Hunt", "Rest", "Flee", "Court", "Migrate" };
+    public static readonly string[] Names = { "Graze", "Harvest", "Patrol", "Hunt", "Rest", "Flee", "Court", "Migrate", "Seek" };
+
+    public static void Init(ref PlanProgress p)
+    {
+        p.Direction = (byte)DirectionKind.None;
+        if (p.Kind != PlanKind.Seek) return;
+        ref readonly var r = ref SimulationRules.Frame;
+        int lo = Math.Max(1, r.SeekMinLegs);
+        p.Legs = RavineRandom.RangeInt(lo, Math.Max(lo, r.SeekMaxLegs) + 1);
+    }
+
+    private static byte NextSeekDirection(ref PlanProgress p, PlanHint h)
+    {
+        if ((p.Used & 1) == 0 && Has(h, PlanHint.ColonyPoi)) { p.Used |= 1; return (byte)DirectionKind.ColonyPoi; }
+        if ((p.Used & 2) == 0 && Has(h, PlanHint.HasPoi))    { p.Used |= 2; return (byte)DirectionKind.OwnPoi; }
+        if ((p.Used & 4) == 0 && Has(h, PlanHint.FoodPeak))  { p.Used |= 4; return (byte)DirectionKind.NestFood; }
+        p.Used |= 7;
+        return (p.Steps & 1) == 0 ? (byte)DirectionKind.Frontier : (byte)DirectionKind.Levy;
+    }
 
     public static SharedHierarchicalBrain.Goal GoalOf(PlanKind plan) => Goals[(int)plan];
 
@@ -109,8 +152,16 @@ public static class PlanCatalog
             case PlanKind.Migrate:
                 return Has(h, PlanHint.MigrationUrge) ? Bit(EntityAction.Wander) : 0;
 
+            case PlanKind.Seek:
+                if (!Has(h, PlanHint.Hungry) && !Has(h, PlanHint.StorageLow)) return 0;
+                if (Has(h, PlanHint.FoodInRange))
+                    return Has(h, PlanHint.PreferPickUp) && !Has(h, PlanHint.CarryFull) ? Bit(EntityAction.PickUp)
+                         : Has(h, PlanHint.Sated) ? Bit(EntityAction.Wander) : Bit(EntityAction.Eat);
+                return Has(h, PlanHint.FoodVisible) ? Bit(EntityAction.ApproachFood) : Bit(EntityAction.Wander);
+
             case PlanKind.Court:
                 return Bit(EntityAction.Speech)
+                     | (Has(h, PlanHint.KinSick) ? Bit(EntityAction.Groom) : 0)
                      | (Has(h, PlanHint.EntityNear) ? Bit(EntityAction.ShareFood) | Bit(EntityAction.Mimic) : 0)
                      | (Has(h, PlanHint.CanReproduce) ? Bit(EntityAction.Reproduce) : 0);
         }
@@ -197,7 +248,23 @@ public static class PlanCatalog
                 }
                 if (ok && lastAction == (int)EntityAction.Wander) p.Steps++;
                 if (p.Steps < r.MigrateLegs) return (int)EntityAction.Wander;
-                return Has(h, PlanHint.IsLeader) ? (int)EntityAction.MoveNest : Complete;
+                return Has(h, PlanHint.IsLeader) && Has(h, PlanHint.QuorumReady) ? (int)EntityAction.MoveNest : Complete;
+
+            case PlanKind.Seek:
+                if (ok && lastAction == (int)EntityAction.PickUp) p.Achieved = true;
+                if (p.Ate) p.Achieved = true;
+                if (Has(h, PlanHint.FoodInRange))
+                {
+                    if (Has(h, PlanHint.PreferPickUp) && !Has(h, PlanHint.CarryFull)) return (int)EntityAction.PickUp;
+                    if (!Has(h, PlanHint.Sated)) return (int)EntityAction.Eat;
+                }
+                bool wantsFood = !Has(h, PlanHint.Sated) || (Has(h, PlanHint.PreferPickUp) && !Has(h, PlanHint.CarryFull));
+                if (Has(h, PlanHint.FoodVisible) && wantsFood) return (int)EntityAction.ApproachFood;
+                if (p.Achieved) return Complete;
+                if (ok && lastAction == (int)EntityAction.Wander) p.Steps++;
+                if (p.Steps >= p.Legs) return Fail;
+                p.Direction = NextSeekDirection(ref p, h);
+                return (int)EntityAction.Wander;
 
             case PlanKind.Court:
                 if (ok && lastAction == (int)EntityAction.Reproduce) p.Achieved = true;
