@@ -106,18 +106,45 @@ public class EntityModel : AEntity, IFoodReceiver
             Weights  = new float3(g.BoidSeparation * spacing, g.BoidAlignment * social, g.BoidCohesion * social),
             Colony   = ColonyIndex,
             Active   = (byte)(IsDisposed || IsDeathPending ? 0 : 1),
+            Plan     = (byte)(_plan != null ? _plan.Kind : PlanKind.Count),
+            Night    = (byte)(_night ? 1 : 0),
         };
     }
 
     private EntityModel _nearestForeign;
-    public EntityModel CachedHuntTarget
+    private float       _nearestForeignDistance = -1f;
+    private PlayerPresence _players;
+    private bool      _playerValid;
+    private float2    _playerPos;
+    private float     _playerDistance = -1f;
+    private Transform _playerTransform;
+    private bool      _night;
+
+    public bool  PlayerNear     => _playerValid;
+    public float PlayerDistance => _playerDistance;
+    public PlayerPresence Players => _players;
+
+    public bool IsFrenzied => Virology != null && Virology.Modifiers.BiteSeek >= SimulationRules.Frame.BiteSeekOwnThreshold;
+
+    private EntityModel ValidForeign
     {
         get
         {
-            bool frenzied = Virology != null && Virology.Modifiers.BiteSeek >= SimulationRules.Frame.BiteSeekOwnThreshold;
-            var foreign = _nearestForeign;
-            if (!frenzied && foreign != null && !foreign.IsDisposed && !foreign.IsDeathPending) return foreign;
-            return CachedNearest;
+            var f = _nearestForeign;
+            return f != null && !f.IsDisposed && !f.IsDeathPending ? f : null;
+        }
+    }
+
+    public HuntTarget CachedHuntTarget
+    {
+        get
+        {
+            var foreign = ValidForeign;
+            bool player = _playerValid && _playerTransform != null;
+            if (foreign != null && (!player || _nearestForeignDistance <= _playerDistance)) return new HuntTarget(foreign, null);
+            if (player) return new HuntTarget(null, _playerTransform);
+            var nearest = CachedNearest;
+            return nearest != null && IsFrenzied ? new HuntTarget(nearest, null) : default;
         }
     }
 
@@ -231,14 +258,42 @@ public class EntityModel : AEntity, IFoodReceiver
     }
 
     private double _warnedUntil = double.NegativeInfinity;
-    private double _lastDamageTime = double.NegativeInfinity;
+    private float2 _warnSource;
     public bool IsWarned => SimulationClock.TimeD < _warnedUntil;
-    public void Warn(double until) { if (until > _warnedUntil) _warnedUntil = until; }
+    public void Warn(double until, float2 source)
+    {
+        if (until <= _warnedUntil) return;
+        _warnedUntil = until;
+        _warnSource  = source;
+    }
+
+    private EntityModel _lastAttacker;
+    private double      _lastAttackTime = double.NegativeInfinity;
+    private bool        _threatResolved;
+    private float2      _threatSource;
+
+    public bool TryGetThreatSource(out float2 source)
+    {
+        source = _threatSource;
+        return _threatResolved;
+    }
+
+    private EntityModel RecentAttacker
+    {
+        get
+        {
+            var a = _lastAttacker;
+            if (a == null || a.IsDisposed || a.IsDeathPending) return null;
+            return SimulationClock.TimeD - _lastAttackTime < SimulationRules.Frame.WarnWindow ? a : null;
+        }
+    }
+
+    public bool HasDirectThreat => RecentAttacker != null || ValidForeign != null || _playerValid;
+
+    private bool  _nestFood;
+    public bool   CanEatFromNest => _nestFood;
 
     public bool IsAtNest { get; private set; }
-    public bool IsInDanger =>
-        SimulationClock.TimeD - _lastDamageTime < SimulationRules.Frame.WarnWindow
-        || _lastDanger >= SimulationRules.Frame.WarnDangerThreshold;
 
     public float2 Position2D => Extension.Flat(Motor.Position());
 
@@ -257,6 +312,9 @@ public class EntityModel : AEntity, IFoodReceiver
         => 1f + (Virology != null ? Virology.Modifiers.Frenzy : 0f) * SimulationRules.Frame.FrenzyDamageMul;
 
     public float BodyEnergy => Stats.En + (Digestion != null ? Digestion.Stomach : 0f) + Carrying;
+
+    public float EffectiveEnergyNorm
+        => (Stats.En + (Digestion != null ? Digestion.Stomach : 0f) * SimulationRules.Frame.DigestEffActive) / Stats.MaxEnergy;
 
     private R3.ReactiveProperty<float> _vecMaxHealth;
     private R3.ReactiveProperty<float> _vecMaxEnergy;
@@ -401,6 +459,7 @@ public class EntityModel : AEntity, IFoodReceiver
         ServiceLocator.Services.TryGet(out _foodIndex);
 
         ServiceLocator.Services.TryGet(out MovePlanner planner);
+        ServiceLocator.Services.TryGet(out _players);
         ServiceLocator.Services.TryGet(out InfectionService infection);
         Nest      = colony.Nest;
         Planner   = planner;
@@ -530,6 +589,7 @@ public class EntityModel : AEntity, IFoodReceiver
 
         float dayPhase = ResolveDayPhase();
         bool  night    = IsNightPhase(dayPhase);
+        _night = night;
 
         var host = new HostState
         {
@@ -576,7 +636,11 @@ public class EntityModel : AEntity, IFoodReceiver
         if (nest != null)
             nest.Mark(ColonyChannel.Explored, self, rules.ExploredMark * dt * (Caste == Caste.Scout ? rules.ScoutExploredMul : 1f));
         SampleTrail(in self, nowD, in rules);
-        _nearestForeign = FindNearestForeign(pos, detect);
+        _nearestForeign = FindNearestForeign(pos, detect, out _nearestForeignDistance);
+        _playerValid = _players != null
+            && _players.TryFindNearest(self, detect, out _playerPos, out _playerDistance, out _playerTransform);
+        if (!_playerValid) _playerTransform = null;
+        _nestFood = ComputeNestFood(nest, in rules);
 
         if (!_terrain.TrySample(pos.x, pos.z, out _lastTerrain))
             _lastTerrain = TerrainSample.Invalid;
@@ -618,7 +682,7 @@ public class EntityModel : AEntity, IFoodReceiver
             FlockHeading      = _flock.MeanHeading,
             FlockCentroidDir  = _flock.CentroidDir,
             MigrationDir      = nest != null ? math.normalizesafe(nest.Migration) * math.saturate(nest.MigrationPressure) : float2.zero,
-            NearestForeign    = _nearestForeign != null ? 1f : 0f,
+            NearestForeign    = _nearestForeign != null || _playerValid ? 1f : 0f,
             IsLeader          = IsLeader ? 1f : 0f,
             Caste             = (int)Caste,
             Speech            = Speech.Heard,
@@ -698,10 +762,11 @@ public class EntityModel : AEntity, IFoodReceiver
                 brainCtx.CoordBias[p] += w * math.log(math.max(colonyRef.LeaderPlanProbs[p], floor));
         }
 
-        bool hasThreat = (nearest != null && (IsInDanger || IsWarned)) || frame.LocalDanger > rules.ThreatMinDanger;
+        _threatResolved = ResolveThreatSource(in self, frame.LocalDanger, in rules, out _threatSource);
+        bool hasThreat = _threatResolved || frame.LocalDanger > rules.ThreatMinDanger;
         _hasThreat = hasThreat;
 
-        brainCtx.EnergyNorm    = Stats.En / Stats.MaxEnergy;
+        brainCtx.EnergyNorm    = EffectiveEnergyNorm;
         brainCtx.PlanHints     = PlanHints;
         brainCtx.ColonyStorage = frame.NestStorage;
 
@@ -720,9 +785,12 @@ public class EntityModel : AEntity, IFoodReceiver
             Alarm           = frame.Alarm,
             EntityDistance  = _nearestDistance,
             FoodDistance    = _foodValid ? _foodDistance : -1f,
+            Now             = now,
             ParentDistance  = parentDistance,
             Age             = TimeAlive,
             AtNest          = IsAtNest ? (byte)1 : (byte)0,
+            NestFood        = _nestFood ? (byte)1 : (byte)0,
+            FoodToxic       = _foodValid && foodKind == FoodKind.Toxic ? (byte)1 : (byte)0,
             Night           = night ? (byte)1 : (byte)0,
             Warned          = IsWarned ? (byte)1 : (byte)0,
             HasThreat       = hasThreat ? (byte)1 : (byte)0,
@@ -751,6 +819,9 @@ public class EntityModel : AEntity, IFoodReceiver
         if (Carrying >= CarryCapacity * r.CarryFullFraction) h |= PlanHint.CarryFull;
         if (IsAtNest) h |= PlanHint.AtNest;
         if (CachedNearest != null) h |= PlanHint.EntityNear;
+        if (_playerValid) h |= PlanHint.PlayerNear;
+        if (ValidForeign != null || _playerValid || (IsFrenzied && CachedNearest != null)) h |= PlanHint.PreyNear;
+        if (_nestFood) h |= PlanHint.NestHasFood;
         if (Stats.En >= math.max(r.AttackEnergyMin, Tuning.AttackEnergyCost)) h |= PlanHint.CanAttack;
         if (Stats.En >= Tuning.ReproduceEnergyCost && Stats.Hp >= Tuning.ReproduceHealthCost) h |= PlanHint.CanReproduce;
         if (IsSated) h |= PlanHint.Sated;
@@ -806,12 +877,62 @@ public class EntityModel : AEntity, IFoodReceiver
     }
 
     private static readonly EntityModel[] ForeignScratch = new EntityModel[16];
-    private static int _colonyCount = -1;
+    private static ColonyRegistry _registry;
 
-    private EntityModel FindNearestForeign(Vector3 pos, float radius)
+    private bool ComputeNestFood(NestState nest, in SimulationRules.RulesFrame r)
     {
-        if (_colonyCount < 0 && ServiceLocator.Services.TryGet(out ColonyRegistry registry)) _colonyCount = registry.Count;
-        if (_colonyCount <= 1) return null;
+        if (nest == null || !IsAtNest) return false;
+        float storage = nest.Storage;
+        if (storage < r.NestEatPortion * r.NestFoodMinPortionFraction) return false;
+        if (storage >= r.NestJuvenileReserve || IsJuvenile || Caste == Caste.Nurse) return true;
+        var colony = Colony;
+        if (colony == null || colony.JuvenileCount == 0) return true;
+        return FindNearbyJuvenile(nest.Radius) == null;
+    }
+
+    private bool ResolveThreatSource(in float2 self, float localDanger, in SimulationRules.RulesFrame r, out float2 source)
+    {
+        var attacker = RecentAttacker;
+        if (attacker != null)
+        {
+            source = attacker.Position2D;
+            return true;
+        }
+
+        var foreign = ValidForeign;
+        if (foreign != null && (!_playerValid || _nearestForeignDistance <= _playerDistance))
+        {
+            source = foreign.Position2D;
+            return true;
+        }
+        if (_playerValid)
+        {
+            source = _playerPos;
+            return true;
+        }
+
+        if (IsWarned)
+        {
+            source = _warnSource;
+            return true;
+        }
+
+        source = default;
+        var nest = Nest;
+        if (nest == null || localDanger <= r.ThreatMinDanger) return false;
+
+        float radius = Tuning.DetectionRadius * r.FleeDistanceMul;
+        float spread = nest.SampleDirection(self, radius, r.WanderGradientSamples, 0f, 0f, -1f, out float2 toDanger);
+        if (spread <= r.WanderGradientMin) return false;
+        source = self + toDanger * radius;
+        return true;
+    }
+
+    private EntityModel FindNearestForeign(Vector3 pos, float radius, out float distance)
+    {
+        distance = -1f;
+        if (_registry == null) ServiceLocator.Services.TryGet(out _registry);
+        if (_registry == null || _registry.Count <= 1) return null;
 
         int found = Perception.FindEntitiesInRadius(pos, this, radius, ForeignScratch);
         EntityModel best = null;
@@ -826,6 +947,7 @@ public class EntityModel : AEntity, IFoodReceiver
             bestD = d;
             best  = e;
         }
+        if (best != null) distance = math.sqrt(bestD);
         return best;
     }
 
@@ -896,7 +1018,7 @@ public class EntityModel : AEntity, IFoodReceiver
     public float Drive()
     {
         ref readonly var r = ref SimulationRules.Frame;
-        float stored = (Digestion != null ? Digestion.Stomach : 0f) + Carrying;
+        float stored = Digestion != null ? Digestion.Stomach : 0f;
         float en = math.saturate((Stats.En + stored * r.DigestEffActive) / Stats.MaxEnergy);
         float hp = math.saturate(Stats.Hp / Stats.MaxHealth);
         float de = 1f - en, dh = 1f - hp;
@@ -929,7 +1051,13 @@ public class EntityModel : AEntity, IFoodReceiver
         if (IsAtNest && LastAction == EntityAction.Rest) amount *= r.NestRestDamageMul;
         Mortality?.NoteHarm(cause, Stats.Hp - amount);
         Stats.Hp -= amount;
-        _lastDamageTime = SimulationClock.TimeD;
+        if (source != null && !ReferenceEquals(source, this))
+        {
+            _lastAttacker   = source;
+            _lastAttackTime = SimulationClock.TimeD;
+            _threatSource   = source.Position2D;
+            _threatResolved = true;
+        }
 
         var nest = Nest;
         if (nest == null) return;
@@ -950,7 +1078,8 @@ public class EntityModel : AEntity, IFoodReceiver
         if (Perception == null) return;
 
         ref readonly var r = ref SimulationRules.Frame;
-        bool warn = IsInDanger;
+        bool warn = _threatResolved && HasDirectThreat;
+        float2 source = _threatSource;
         double until = SimulationClock.TimeD + r.WarnWindow;
 
         int found = Perception.FindEntitiesInRadius(Motor.Position(), this, r.SpeechRadius, Neighbors);
@@ -960,7 +1089,7 @@ public class EntityModel : AEntity, IFoodReceiver
             Neighbors[i] = null;
             if (e == null || e.IsDisposed || e.IsDeathPending) continue;
             e.Speech.ReceiveVector(speech);
-            if (warn) e.Warn(until);
+            if (warn && e.Colony == Colony) e.Warn(until, source);
         }
     }
 
@@ -1040,6 +1169,9 @@ public class EntityModel : AEntity, IFoodReceiver
         _runner?.Abandon();
         Planner?.Cancel(this);
         _nearest = null;
+        _nearestForeign = null;
+        _lastAttacker = null;
+        _playerTransform = null;
         Vectorizer?.Dispose();
         Vectorizer = null;
         _vecMaxHealth?.Dispose();

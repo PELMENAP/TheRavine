@@ -36,6 +36,8 @@ public class EntityBrainContext : System.IDisposable
     public int   GoalFoodEaten;
     public int   GoalRestCount;
     public float GoalNovelty;
+    public float NoveltySum;
+    public int   NoveltyCount;
     public float EnergyNorm;
     public float IntrinsicReward;
     public readonly float[] CoordBias;
@@ -72,7 +74,9 @@ public class EntityBrainContext : System.IDisposable
     {
         GoalStartTime        = time;
         GoalStartEnergy      = EnergyNorm;
-        GoalNovelty          = IntrinsicReward;
+        GoalNovelty          = 0f;
+        NoveltySum           = 0f;
+        NoveltyCount         = 0;
         GoalFoodEaten        = 0;
         GoalRestCount        = 0;
         GoalBonus            = 0f;

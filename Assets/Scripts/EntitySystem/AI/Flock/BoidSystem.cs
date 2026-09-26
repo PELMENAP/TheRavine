@@ -11,6 +11,8 @@ public struct BoidAgent
     public float3 Weights;
     public int    Colony;
     public byte   Active;
+    public byte   Plan;
+    public byte   Night;
 }
 
 public struct BoidOutput
@@ -74,6 +76,8 @@ public struct BoidJob : IJobParallelFor
     public float InvCell;
     public float Radius;
     public float SeparationRadius;
+    public FixedList128Bytes<float3> PlanMul;
+    public float3 NightMul;
 
     public unsafe void Execute(int i)
     {
@@ -122,9 +126,11 @@ public struct BoidJob : IJobParallelFor
 
         float2 meanHeading = math.normalizesafe(ali);
         float2 centroidDir = math.normalizesafe(coh / n - self.Position);
-        float2 steer = self.Weights.x * math.normalizesafe(sep)
-                     + self.Weights.y * meanHeading
-                     + self.Weights.z * centroidDir;
+        int    plan = math.min(self.Plan, PlanMul.Length - 1);
+        float3 w    = self.Weights * PlanMul[plan] * (self.Night != 0 ? NightMul : new float3(1f));
+        float2 steer = w.x * math.normalizesafe(sep)
+                     + w.y * meanHeading
+                     + w.z * centroidDir;
 
         Outputs[i] = new BoidOutput
         {
@@ -196,6 +202,8 @@ public sealed class BoidSystem : IDisposable
             InvCell          = invCell,
             Radius           = radius,
             SeparationRadius = r.BoidSeparationRadius,
+            PlanMul          = r.BoidPlanMul,
+            NightMul         = r.BoidNightMul,
         }.Schedule(count, 16, bucket).Complete();
     }
 

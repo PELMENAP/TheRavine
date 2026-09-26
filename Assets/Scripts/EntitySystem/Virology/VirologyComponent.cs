@@ -176,8 +176,16 @@ namespace TheRavine.EntityControl.Virology
 
         private void SeedEndogenous()
         {
+            ref readonly var rules = ref SimulationRules.Frame;
+            ulong forbidden = rules.EndogenousForbiddenMask;
+            int attempts = math.max(rules.EndogenousRerollAttempts, 0);
             for (int i = 0; i < EndogenousLength; i++)
-                _scratch[i] = (ushort)(_rng.NextUInt() & 0xFFFFu);
+            {
+                ushort codon = (ushort)(_rng.NextUInt() & 0xFFFFu);
+                for (int k = 0; k < attempts && IsForbidden(codon, forbidden); k++)
+                    codon = (ushort)(_rng.NextUInt() & 0xFFFFu);
+                _scratch[i] = codon;
+            }
 
             InsertTranslated(0, _scratch, EndogenousLength);
             AppendEndogenous(EndogenousLength, _tape.ComputeHash(0, EndogenousLength));
@@ -543,6 +551,13 @@ namespace TheRavine.EntityControl.Virology
                 _segments[_segmentCount++] = tail;
                 return;
             }
+        }
+
+        private bool IsForbidden(ushort codon, ulong mask)
+        {
+            if (mask == 0UL) return false;
+            int action = _table.Translate(codon, out _);
+            return (uint)action < 64u && (mask & (1UL << action)) != 0UL;
         }
 
         private void TranslateAt(int pos)
