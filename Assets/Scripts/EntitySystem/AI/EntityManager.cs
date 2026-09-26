@@ -40,6 +40,11 @@ public class EntityManager : MonoBehaviour
     [Header("Rules")]
     [SerializeField] private SimulationRules rules;
 
+    [Header("Nest views")]
+    [SerializeField] private bool showNestViews = true;
+    [SerializeField] private NestDebugView nestViewPrefab;
+    private readonly List<NestDebugView> _nestViews = new();
+
     private InfectionService _infection;
     private uint _virologyTick;
 
@@ -265,6 +270,7 @@ public class EntityManager : MonoBehaviour
         }
         _nextPredatorTime = SimulationClock.TimeD;
         _lastColonyTime   = SimulationClock.Time;
+        CreateNestViews();
 
         for (int i = 0; i < initialFood; i++)
             SpawnFood();
@@ -1024,6 +1030,17 @@ public class EntityManager : MonoBehaviour
             if (!_colonies[c].IsWild) EvolveColony(_colonies[c]);
     }
 
+    private void CreateNestViews()
+    {
+        if (!showNestViews) return;
+        for (int c = 0; c < _colonies.Count; c++)
+        {
+            var view = nestViewPrefab != null ? Instantiate(nestViewPrefab) : NestDebugView.Create(null);
+            view.Bind(_colonies[c], this);
+            _nestViews.Add(view);
+        }
+    }
+
     private void CheckExtinctions()
     {
         var r = SimulationRules.Active;
@@ -1152,6 +1169,9 @@ public class EntityManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        for (int i = 0; i < _nestViews.Count; i++)
+            if (_nestViews[i] != null) Destroy(_nestViews[i].gameObject);
+        _nestViews.Clear();
         _infection?.Dispose();
         _tickCts?.Cancel();
         _tickCts?.Dispose();

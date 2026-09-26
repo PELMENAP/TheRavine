@@ -33,6 +33,7 @@ public abstract class EntityCommand : IEntityCommand
     protected EntityCommand(EntityModel m) => model = m;
 
     public virtual bool CanExecute() => true;
+    protected virtual float MinRuntime => 0f;
     protected virtual float InterruptionReward => SimulationRules.Active.InterruptionReward;
     protected virtual float FailureReward      => SimulationRules.Active.FailureReward;
 
@@ -40,7 +41,7 @@ public abstract class EntityCommand : IEntityCommand
     {
         decision     = d;
         Source       = source;
-        _watchdog    = d.EndTime + SimulationRules.Active.CommandWatchdogGrace;
+        _watchdog    = math.max((double)d.EndTime, SimulationClock.TimeD + MinRuntime) + SimulationRules.Active.CommandWatchdogGrace;
         _moveStarted = false;
         _moveCut     = false;
         _replans     = 0;
