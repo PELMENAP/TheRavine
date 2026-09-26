@@ -42,17 +42,7 @@ public class SimulationDebugDashboard : MonoBehaviour
     private GUIStyle _valueStyle;
     private bool     _stylesInitialized;
 
-    private Rect _windowRect = new Rect(10, 10, 420, 1200);
-    private GUIStyle _warnStyle;
-
-    private const int ColonyDiagLines = 9;
-    private static readonly string[] ColonyDiagKeys =
-    {
-        "  deaths K/S/V/T/A", "  storage % (abs) / fill", "  storage eaten / stored",
-        "  rest@nest / rest plans", "  attacks own/foreign/player",
-        "  top plan W/So/Sc/N", "  far >3R / reseeds", "  mimic / groom / speech", "  quorum votes max",
-    };
-    private string[] _colonyDiag = Array.Empty<string>();
+    private Rect _windowRect = new Rect(10, 10, 420, 640);
 
     private int _coordStaleDrops;
     private int _execStaleDrops;
@@ -65,7 +55,6 @@ public class SimulationDebugDashboard : MonoBehaviour
         int count    = entities.Count;
 
         _populationHistory.Push(count);
-        SampleColonyDiagnostics();
 
         int coordStale = 0, execStale = 0, coordSteps = 0, execSteps = 0;
 
@@ -115,36 +104,6 @@ public class SimulationDebugDashboard : MonoBehaviour
         _generationTracker.Record(entities, _manager.SharedBrain);
     }
 
-    private void SampleColonyDiagnostics()
-    {
-        var colonies = _manager.Colonies;
-        if (colonies == null) return;
-
-        int need = colonies.Count * ColonyDiagLines;
-        if (_colonyDiag.Length != need) _colonyDiag = new string[need];
-
-        for (int c = 0; c < colonies.Count; c++)
-        {
-            var colony = colonies[c];
-            var st     = colony.Stats;
-            var d      = st.DeathsByCause;
-            var a      = st.Attacks;
-            int o      = c * ColonyDiagLines;
-            _colonyDiag[o]     = $"{d[(int)DeathCause.Killed]}/{d[(int)DeathCause.Starved]}/{d[(int)DeathCause.Virus]}/{d[(int)DeathCause.Toxic]}/{d[(int)DeathCause.Age]}";
-            _colonyDiag[o + 1] = $"{st.StorageShare * 100f:0}% ({colony.Nest.Storage:F0}) / {st.MeanFill:F2}";
-            _colonyDiag[o + 2] = $"{st.StorageEaten:F0} / {st.StorageStored:F0}";
-            _colonyDiag[o + 3] = $"{st.RestAtNestShare * 100f:0}% / {st.PlanShare(PlanKind.Rest) * 100f:0}%";
-            _colonyDiag[o + 4] = $"{a[(int)ColonyStats.AttackTarget.Own]}/{a[(int)ColonyStats.AttackTarget.Foreign]}/{a[(int)ColonyStats.AttackTarget.Player]}";
-            _colonyDiag[o + 5] = $"{PlanName(st.TopPlan(Caste.Worker))}/{PlanName(st.TopPlan(Caste.Soldier))}/{PlanName(st.TopPlan(Caste.Scout))}/{PlanName(st.TopPlan(Caste.Nurse))}";
-            _colonyDiag[o + 6] = $"{st.FarShare * 100f:0}% / {st.Reseeds}";
-            var act = st.ActionsStarted;
-            _colonyDiag[o + 7] = $"{act[(int)EntityAction.Mimic]} / {act[(int)EntityAction.Groom]} / {act[(int)EntityAction.Speech]}";
-            _colonyDiag[o + 8] = colony.IsWild ? "wild" : colony.SiteVotesMax.ToString();
-        }
-    }
-
-    private static string PlanName(PlanKind plan) => plan < PlanKind.Count ? PlanCatalog.Names[(int)plan] : "-";
-
     private void DrawWindow(int id)
     {
         float y = 4f;
@@ -176,9 +135,6 @@ public class SimulationDebugDashboard : MonoBehaviour
         DrawDualGraph(ref y, _avgEntropyHistory, _avgRewardHistory,
             new Color(0.9f, 0.5f, 0.1f), Color.green, 0f, 2f);
 
-        DrawSection(ref y, "COLONIES");
-        DrawColonies(ref y);
-
         DrawSection(ref y, "GOAL DISTRIBUTION");
         DrawGoalBars(ref y);
         DrawGoalStackedGraph(ref y);
@@ -190,121 +146,6 @@ public class SimulationDebugDashboard : MonoBehaviour
         DrawTopEntities(ref y);
 
         GUI.DragWindow(new Rect(0, 0, _windowRect.width, 20));
-    }
-
-    private static readonly Color[] ColonyColors =
-    {
-        new(0.30f, 0.65f, 1f), new(1f, 0.42f, 0.42f), new(0.42f, 1f, 0.54f), new(1f, 0.82f, 0.30f),
-        new(0.78f, 0.49f, 1f), new(0.30f, 1f, 0.94f), new(1f, 0.62f, 0.30f), new(1f, 0.42f, 0.84f),
-    };
-
-    private static readonly Color[] PlanColors =
-    {
-        new(0.56f, 0.89f, 0.42f), new(0.89f, 0.77f, 0.42f), new(0.42f, 0.71f, 0.89f), new(0.89f, 0.42f, 0.42f),
-        new(0.60f, 0.60f, 0.89f), new(1f, 0.55f, 0.26f), new(0.89f, 0.42f, 0.78f), new(0.42f, 0.89f, 0.82f),
-        new(0.71f, 0.89f, 0.42f),
-    };
-
-    private readonly int[] _planCounts = new int[PlanCatalog.Count];
-    private GUIStyle _colonyStyle;
-
-    private void DrawPlanBar(ref float y, System.ReadOnlySpan<int> members)
-    {
-        System.Array.Clear(_planCounts, 0, _planCounts.Length);
-        int total = 0;
-        for (int i = 0; i < members.Length; i++)
-        {
-            var kind = _manager.Entities[members[i]].Plan.Kind;
-            if (kind >= PlanKind.Count) continue;
-            _planCounts[(int)kind]++;
-            total++;
-        }
-
-        Rect bg = new Rect(8, y, _windowRect.width - 16, 8);
-        DrawGraphBackground(bg);
-        if (total > 0)
-        {
-            var prev = GUI.color;
-            float x = bg.x;
-            for (int p = 0; p < _planCounts.Length; p++)
-            {
-                if (_planCounts[p] == 0) continue;
-                float w = bg.width * _planCounts[p] / total;
-                GUI.color = PlanColors[p];
-                GUI.DrawTexture(new Rect(x, bg.y, w, bg.height), Texture2D.whiteTexture);
-                x += w;
-            }
-            GUI.color = prev;
-        }
-        y += 10f;
-
-        float lx = 8f;
-        for (int p = 0; p < _planCounts.Length; p++)
-        {
-            if (_planCounts[p] == 0) continue;
-            _colonyStyle.normal.textColor = PlanColors[p];
-            GUI.Label(new Rect(lx, y, 60, 12), $"{PlanCatalog.Names[p]} {_planCounts[p]}", _colonyStyle);
-            lx += 58f;
-            if (lx > _windowRect.width - 60f) { lx = 8f; y += 12f; }
-        }
-        y += 14f;
-    }
-
-    private void DrawColonies(ref float y)
-    {
-        var colonies = _manager.Colonies;
-        if (colonies == null) return;
-
-        float interval = SimulationRules.Active.GenerationInterval;
-        for (int c = 0; c < colonies.Count; c++)
-        {
-            var colony = colonies[c];
-            var st     = colony.Stats;
-
-            _colonyStyle.normal.textColor = ColonyColors[(colony.ColonyId - 1 & 0x7FFFFFFF) % ColonyColors.Length];
-            GUI.Label(new Rect(8, y, 160, 14), $"C{colony.ColonyId} alive/born/died", _colonyStyle);
-            GUI.Label(new Rect(170, y, 120, 14), $"{colony.MemberCount} / {st.Born} / {st.Died}", _valueStyle);
-            y += 15f;
-            DrawPlanBar(ref y, colony.Members);
-            DrawKV(ref y, "  death rate /min", st.DeathRatePerMinute.ToString("F2"));
-            DrawKV(ref y, "  lifespan mean / ema", $"{st.MeanLifespan:F0}s / {st.LifespanEma:F0}s");
-            DrawKV(ref y, "  src brain/inst/plan",
-                $"{st.SourceFraction(CommandSource.Brain) * 100f:0}/{st.SourceFraction(CommandSource.Instinct) * 100f:0}/{st.SourceFraction(CommandSource.Plan) * 100f:0}%");
-            DrawKV(ref y, "  hunger / alarm", $"{colony.Nest.Hunger:F2} / {colony.Nest.Alarm:F2}");
-
-            int migrating = 0;
-            var members = colony.Members;
-            for (int i = 0; i < members.Length; i++)
-                if (_manager.Entities[members[i]].Plan.Kind == PlanKind.Migrate) migrating++;
-            DrawKV(ref y, "  migration p / share / moves",
-                $"{colony.Nest.MigrationPressure:F2} / {(members.Length > 0 ? migrating * 100f / members.Length : 0f):0}% / {colony.Nest.Relocations}");
-
-            var cc = colony.CasteCounts;
-            DrawKV(ref y, "  W/So/Sc/N/juv",
-                $"{cc[(int)Caste.Worker]}/{cc[(int)Caste.Soldier]}/{cc[(int)Caste.Scout]}/{cc[(int)Caste.Nurse]}/{colony.JuvenileCount}");
-            DrawKV(ref y, "  leader / colony POI",
-                $"{(colony.Leader != null ? colony.Leader.EntityId.ToString() : "-")} / {colony.Pois.Count}");
-
-            int started = 0, completed = 0;
-            for (int p = 0; p < st.PlansStarted.Length; p++)
-            {
-                started   += st.PlansStarted[p];
-                completed += st.PlansCompleted[p];
-            }
-            DrawKV(ref y, "  plans done", started > 0 ? $"{completed * 100f / started:0}% of {started}" : "-");
-
-            int o = c * ColonyDiagLines;
-            if (o + ColonyDiagLines <= _colonyDiag.Length)
-                for (int k = 0; k < ColonyDiagLines; k++)
-                    DrawKV(ref y, ColonyDiagKeys[k], _colonyDiag[o + k] ?? "-");
-
-            if (st.Died > 0 && interval <= st.MeanLifespan)
-            {
-                GUI.Label(new Rect(8, y, _windowRect.width - 16, 14),
-                    $"  ! GenerationInterval {interval:F0}s <= lifespan {st.MeanLifespan:F0}s", _warnStyle);
-                y += 15f;
-            }
-        }
     }
 
     private static string FormatDropRatio(int drops, int accepted)
@@ -576,17 +417,6 @@ public class SimulationDebugDashboard : MonoBehaviour
         {
             fontSize = 10,
             normal   = { textColor = new Color(0.75f, 0.75f, 0.75f) }
-        };
-        _colonyStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize  = 10,
-            fontStyle = FontStyle.Bold,
-        };
-        _warnStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize  = 10,
-            fontStyle = FontStyle.Bold,
-            normal    = { textColor = new Color(1f, 0.35f, 0.25f) }
         };
         _valueStyle = new GUIStyle(GUI.skin.label)
         {

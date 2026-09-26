@@ -1228,6 +1228,7 @@ public sealed class SimulationRules : ScriptableObject
     [SerializeField] private float casteSwitchMargin = 0.5f;
     [SerializeField] private float colonyRespawnDelay = 10f;
     [SerializeField] private int negativePoiCount = 6;
+    [SerializeField] private float attackMinEnergyScale = 0.3f;
     [SerializeField] private float[] planMinSecondsByPlan = { 4f, 4f, 6f, 3f, 4f, 3f, 4f, 10f, 12f };
     [SerializeField] private float[] planMaxSecondsByPlan = { 30f, 60f, 45f, 20f, 30f, 15f, 20f, 60f, 90f };
     [SerializeField] private float[] casteAffinity =
@@ -1688,6 +1689,7 @@ public sealed class SimulationRules : ScriptableObject
     public float CasteSwitchMargin => casteSwitchMargin;
     public float ColonyRespawnDelay => colonyRespawnDelay;
     public int NegativePoiCount => negativePoiCount;
+    public float AttackMinEnergyScale => attackMinEnergyScale;
     private static readonly float[] PlanMinBuf = new float[PlanCatalog.Count];
     private static readonly float[] PlanMaxBuf = new float[PlanCatalog.Count];
     private static readonly float[] CasteAffinityLogBuf = new float[(int)Caste.Count * PlanCatalog.Count];

@@ -706,30 +706,34 @@ public class ShareFoodCommand : EntityCommand
 
 public class AttackCommand : EntityCommand
 {
-    private enum Phase { Approach, Dash, Recover }
+    private enum Phase { Chase, Dash, Ready, Recover }
 
     private static readonly EntityModel[] Allies = new EntityModel[16];
     private HuntTarget _target;
     private Phase  _phase;
     private double _recoverEnd;
+    private float2 _chaseGoal;
 
     public AttackCommand(EntityModel model) : base(model) { }
 
     public override bool CanExecute()
         => model.Stats.En >= math.max(model.Tuning.AttackEnergyCost, SimulationRules.Active.AttackEnergyMin);
 
+    protected override float MinRuntime
+    {
+        get
+        {
+            var r = SimulationRules.Active;
+            float dash = r.DashDistance / math.max(model.Tuning.RunSpeed * r.DashMul * model.SpeedMul, 0.1f);
+            return r.AttackMoveMaxDuration + dash + 2f * r.DashRecovery;
+        }
+    }
+
     protected override EntityCommandStatus OnBegin()
     {
         _target = model.CachedHuntTarget;
         if (!_target.IsValid || !CanExecute()) return Fail();
-
-        var r = SimulationRules.Active;
-        _phase = Phase.Approach;
-        if (DistanceToTarget() <= r.DashDistance) return BeginDash(r);
-
-        StartMove(_target.Position, model.Tuning.MoveSpeed, r.AttackMoveMaxDuration,
-            model.Tuning.EnergyCostMoving);
-        return EntityCommandStatus.Running;
+        return Engage(SimulationRules.Active);
     }
 
     protected override EntityCommandStatus OnTick(float dt)
@@ -740,22 +744,49 @@ public class AttackCommand : EntityCommand
             return Elapsed(_recoverEnd) ? Complete() : EntityCommandStatus.Running;
 
         if (!_target.IsValid) return Fail();
+        float range = model.Tuning.AttackRange;
+        float d     = DistanceToTarget();
 
-        if (_phase == Phase.Approach)
+        switch (_phase)
         {
-            if (DistanceToTarget() <= r.DashDistance)
-            {
-                model.Motor.Stop();
-                return BeginDash(r);
-            }
-            if (!TryFinishMove(out _, out bool cutApproach)) return EntityCommandStatus.Running;
-            if (cutApproach) return Interrupted();
-            return DistanceToTarget() <= r.DashDistance ? BeginDash(r) : Fail();
-        }
+            case Phase.Ready:
+                if (d > range) return Engage(r);
+                return model.AttackReady ? Strike(r) : EntityCommandStatus.Running;
 
-        if (!TryFinishMove(out _, out bool cut)) return EntityCommandStatus.Running;
-        if (cut) return Interrupted();
-        return Strike(r);
+            case Phase.Chase:
+                if (d <= range + r.DashDistance) return Engage(r);
+                if (!TryFinishMove(out _, out bool cutChase))
+                {
+                    if (math.distance(_chaseGoal, _target.Position2D) > r.DashDistance) return Chase(r);
+                    return EntityCommandStatus.Running;
+                }
+                return cutChase ? Interrupted() : Chase(r);
+
+            default:
+                if (!TryFinishMove(out _, out bool cut)) return d <= range ? Engage(r) : EntityCommandStatus.Running;
+                return cut ? Interrupted() : Engage(r);
+        }
+    }
+
+    private EntityCommandStatus Engage(SimulationRules r)
+    {
+        float d     = DistanceToTarget();
+        float range = model.Tuning.AttackRange;
+        if (d <= range)
+        {
+            model.Motor.Stop();
+            _phase = Phase.Ready;
+            return model.AttackReady ? Strike(r) : EntityCommandStatus.Running;
+        }
+        return d <= range + r.DashDistance ? BeginDash(r) : Chase(r);
+    }
+
+    private EntityCommandStatus Chase(SimulationRules r)
+    {
+        _phase     = Phase.Chase;
+        _chaseGoal = _target.Position2D;
+        StartMove(_target.Position, model.Tuning.RunSpeed, r.AttackMoveMaxDuration, model.Tuning.EnergyCostRunning);
+        return EntityCommandStatus.Running;
     }
 
     private EntityCommandStatus BeginDash(SimulationRules r)
@@ -777,13 +808,12 @@ public class AttackCommand : EntityCommand
         var target = _target;
         if (!target.IsValid) return Fail();
 
-        float range = model.Tuning.AttackRange;
         var stats = model.Stats;
         float cost = model.Tuning.AttackEnergyCost;
         if (stats.En < cost) return Fail();
-        if (DistanceToTarget() > range || !model.TryStartAttackCooldown()) return Fail();
+        if (!model.TryStartAttackCooldown()) return EntityCommandStatus.Running;
 
-        float energyScale = math.saturate(stats.En / stats.MaxEnergy);
+        float energyScale = math.max(math.saturate(stats.En / stats.MaxEnergy), r.AttackMinEnergyScale);
         stats.En -= cost;
 
         float damage = model.Tuning.AttackDamage * model.AttackDamageMul * energyScale;
@@ -802,13 +832,12 @@ public class AttackCommand : EntityCommand
             : victim.Colony == model.Colony ? ColonyStats.AttackTarget.Own : ColonyStats.AttackTarget.Foreign);
 
         _phase      = Phase.Recover;
-        _recoverEnd = HoldUntil(r.DashRecovery);
+        _recoverEnd = SimulationClock.TimeD + r.DashRecovery;
         model.Motor.Stop();
-        return Elapsed(_recoverEnd) ? Complete() : EntityCommandStatus.Running;
+        return EntityCommandStatus.Running;
     }
 
-    private float DistanceToTarget()
-        => math.distance((float3)model.Motor.Position(), (float3)_target.Position);
+    private float DistanceToTarget() => math.distance(model.Position2D, _target.Position2D);
 
     private int CountAllies(in HuntTarget target, SimulationRules r)
     {

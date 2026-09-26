@@ -441,6 +441,8 @@ public class EntityModel : AEntity, IFoodReceiver
     private double _decisionStart;
     private float  _decisionDrive;
 
+    public bool AttackReady => SimulationClock.TimeD >= _attackReadyTime;
+
     public bool TryStartAttackCooldown()
     {
         double now = SimulationClock.TimeD;
