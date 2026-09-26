@@ -10,8 +10,22 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
     [SerializeField] private SurfaceMotor motor;
     public void BindMotion(MotionSystem system) => motor.BindMotion(system);
 
+    private Transform _tr;
+    private Vector3   _lastPosition;
+    private bool      _destroyed;
+
+    private void Awake() => _tr = transform;
+
+    public override void OnDestroy()
+    {
+        _destroyed = true;
+        base.OnDestroy();
+    }
+
     public void OnDeath()
     {
+        if (!_destroyed) _lastPosition = _tr.position;
+        _destroyed = true;
         DialogSystem.Instance.RemoveDialogListener(this);
         gameObject.SetActive(false);
         Destroy(gameObject);
@@ -28,8 +42,8 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
 
     public Vector3 Position()
     {
-        if (transform == null) return Vector3.zero;
-        return transform.position;
+        if (_destroyed || _tr == null) return _lastPosition;
+        return _lastPosition = _tr.position;
     }
 
     public void BeginMove(Vector3 target, float speed, float energyCostPerSec, double deadline)
@@ -48,11 +62,7 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
     protected override void OnViewDisable() { }
 
     public float GetDialogDistance() => 20f;
-    public Vector3 GetCurrentPosition()
-    {
-        if (transform == null) return Vector3.zero;
-        return transform.position;
-    }
+    public Vector3 GetCurrentPosition() => Position();
     public void OnSpeechGet(IDialogSender sender, string message)
     {
         if (sender is EntityViewModel) return;

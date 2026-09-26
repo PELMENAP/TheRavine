@@ -212,7 +212,7 @@ public sealed class NestDebugView : MonoBehaviour
             int idx = members[i];
             if ((uint)idx >= (uint)entities.Count) continue;
             var e = entities[idx];
-            if (e == null || e.IsDisposed) continue;
+            if (e == null || e.IsDisposed || e.IsDeathPending) continue;
 
             var kind = e.Plan.Kind;
             if (kind < PlanKind.Count) activePlans[(int)kind]++;
@@ -228,10 +228,18 @@ public sealed class NestDebugView : MonoBehaviour
             _groundY   = ySum / yCount;
             _hasGround = true;
         }
-        else if (!_hasGround && members.Length > 0 && (uint)members[0] < (uint)entities.Count)
+        else if (!_hasGround && ySum == 0f)
         {
-            _groundY   = entities[members[0]].Motor.Position().y;
-            _hasGround = true;
+            for (int i = 0; i < members.Length; i++)
+            {
+                int idx = members[i];
+                if ((uint)idx >= (uint)entities.Count) continue;
+                var e = entities[idx];
+                if (e == null || e.IsDisposed || e.IsDeathPending) continue;
+                _groundY   = e.Motor.Position().y;
+                _hasGround = true;
+                break;
+            }
         }
     }
 
