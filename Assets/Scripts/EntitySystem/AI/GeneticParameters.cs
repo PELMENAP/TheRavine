@@ -32,6 +32,9 @@ public struct GeneticParameters
     public float BoidSeparation;
     public float BoidAlignment;
     public float BoidCohesion;
+    public float MaxAgeMul;
+    public float ImmuneInvestment;
+    public float PlanBias0, PlanBias1, PlanBias2, PlanBias3, PlanBias4, PlanBias5, PlanBias6, PlanBias7, PlanBias8;
 
     public const int IdxMoveSpeedMul = 0;
     public const int IdxBaseLearningRate = 1;
@@ -53,6 +56,10 @@ public struct GeneticParameters
     public const int IdxBoidSeparation = 17;
     public const int IdxBoidAlignment = 18;
     public const int IdxBoidCohesion = 19;
+    public const int IdxMaxAgeMul = 20;
+    public const int IdxImmuneInvestment = 21;
+    public const int IdxPlanBias0 = 22;
+    public const int PlanBiasCount = 9;
 
     public static readonly (float min, float max, float mutationScale)[] ParameterRanges = {
         (0.7f, 1.4f, 0.08f),
@@ -75,12 +82,17 @@ public struct GeneticParameters
         (0f, 2f, 0.15f),
         (0f, 1.5f, 0.15f),
         (0f, 1.5f, 0.15f),
+        (0.7f, 1.3f, 0.05f),
+        (0f, 1f, 0.1f),
+        (-1f, 1f, 0.15f), (-1f, 1f, 0.15f), (-1f, 1f, 0.15f),
+        (-1f, 1f, 0.15f), (-1f, 1f, 0.15f), (-1f, 1f, 0.15f),
+        (-1f, 1f, 0.15f), (-1f, 1f, 0.15f), (-1f, 1f, 0.15f),
     };
 
     public static bool IsPhenotypic(int index)
         => index == IdxMoveSpeedMul || index == IdxMaxEnergyMul
         || index == IdxMetabolismMul || index == IdxDetectionRadiusMul
-        || IsInstinct(index);
+        || IsInstinct(index) || index >= IdxMaxAgeMul;
 
     public static bool IsInstinct(int index) => index >= IdxHungerOn && index <= IdxBoidCohesion;
 
@@ -91,6 +103,9 @@ public struct GeneticParameters
         for (int i = 0; i < dst.Length; i++)
             if (!IsPhenotypic(i)) dst[i] = src[i];
     }
+
+    public readonly float PlanBias(int plan)
+        => (uint)plan < PlanBiasCount ? AsReadOnlySpan(in this)[IdxPlanBias0 + plan] : 0f;
 
     public static readonly int GeneCount;
 

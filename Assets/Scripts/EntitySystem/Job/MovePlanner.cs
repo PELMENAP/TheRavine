@@ -22,6 +22,7 @@ public struct PlanRequest
     public byte   HasTarget;
     public byte   HasThreat;
     public byte   ColonyIndex;
+    public byte   AvoidSick;
 }
 
 public struct PlanResult
@@ -46,6 +47,7 @@ public struct PlanWeights
     public float Explored;
     public float KinDeath;
     public float Boid;
+    public float Sickness;
 }
 
 [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
@@ -108,7 +110,8 @@ public struct PlanJob : IJobParallelFor
                 if (!flee)
                     field = W.Trail * nest.At(ColonyChannel.Trail, cell)
                           - W.KinDeath * nest.At(ColonyChannel.KinDeath, cell)
-                          - (wander ? W.Explored * nest.At(ColonyChannel.Explored, cell) : 0f);
+                          - (wander ? W.Explored * nest.At(ColonyChannel.Explored, cell) : 0f)
+                          - (q.AvoidSick != 0 ? W.Sickness * nest.At(ColonyChannel.Sickness, cell) : 0f);
             }
             float goal  = 0f;
 
@@ -235,6 +238,7 @@ public sealed class MovePlanner : IDisposable
                 Explored          = f.PlannerExploredWeight,
                 KinDeath          = f.PlannerKinDeathWeight,
                 Boid              = f.PlannerBoidWeight,
+                Sickness          = f.PlannerSicknessWeight,
             },
         }.Schedule(n, 8).Complete();
 

@@ -36,7 +36,11 @@ public class RestCommand : EntityCommand
             float hp     = stats.Hp;
             float en     = stats.En;
             float cost   = r.RestHealEnergyCost;
-            float rate   = r.RestHealRate * (model.IsAtNest ? r.NestRestHealMul : 1f) * model.RestHealMul;
+            var   nest   = model.Nest;
+            float aura   = model.IsAtNest && nest != null
+                ? 1f + r.NurseHealAura * math.min(nest.NursesAtNest, r.NurseHealAuraMax)
+                : 1f;
+            float rate   = r.RestHealRate * (model.IsAtNest ? r.NestRestHealMul : 1f) * model.RestHealMul * aura;
             float spare  = math.max(0f, en - r.StarvationThreshold - r.RestMinEnergyReserve);
             float budget = cost > 0f ? spare / cost : (spare > 0f ? float.MaxValue : 0f);
             float heal   = math.min(math.min(rate * step, stats.MaxHealth - hp), budget);
@@ -125,13 +129,21 @@ public class WanderCommand : PlannedMoveCommand
             desired = math.normalizesafe(nest.Migration);
             radius  = math.min(r.MigrateLegRadius, r.PlannerRadiusMax);
         }
+        else if (decision.HasDirection && model.TryResolveDirection(decision.Direction, decision.DirOffset, out desired, out float dirRadius))
+            radius = math.max(dirRadius, r.LevyMinStep);
         else if (decision.HasHeading) desired = decision.Heading;
         else if (!TryFieldGradient(r, radius, out desired))
         {
-            float a = RavineRandom.RangeFloat(0f, 2f * math.PI);
-            math.sincos(a, out float sa, out float ca);
-            desired = new float2(ca, sa);
-            radius  = math.min(LevyStep(r), r.PlannerRadiusMax);
+            float2 course = model.Heading;
+            if (math.lengthsq(course) < 1e-6f)
+            {
+                float a = RavineRandom.RangeFloat(0f, 2f * math.PI);
+                math.sincos(a, out float sa, out float ca);
+                course = new float2(ca, sa);
+            }
+            math.sincos(model.OuAngle, out float so, out float co);
+            desired = new float2(course.x * co - course.y * so, course.x * so + course.y * co);
+            radius  = math.min(model.LevyStep(in SimulationRules.Frame), r.PlannerRadiusMax);
         }
 
         float2 dir = TerrainSteering.Blend(in desired, in model.LastTerrain);
@@ -150,11 +162,17 @@ public class WanderCommand : PlannedMoveCommand
         return spread > r.WanderGradientMin;
     }
 
-    private static float LevyStep(SimulationRules r)
+    protected override EntityCommandStatus OnArrived(in MoveResult move)
     {
-        float u = RavineRandom.RangeFloat(1e-4f, 1f);
-        float l = r.LevyMinStep * math.pow(u, -1f / math.max(r.LevyAlpha, 1e-3f));
-        return math.clamp(l, r.LevyMinStep, r.LevyMaxStep);
+        if (decision.Plan != PlanKind.Migrate || model.Caste != Caste.Scout) return Complete();
+        var colony = model.Colony;
+        if (colony == null || colony.IsWild) return Complete();
+
+        ref readonly var r = ref SimulationRules.Frame;
+        float2 here = model.Position2D;
+        if (!colony.Nest.Contains(here) && colony.Nest.FieldAt(ColonyChannel.Danger, here) < r.QuorumMaxDanger)
+            colony.VoteNestSite(here, model.EntityId);
+        return Complete();
     }
 }
 public class ApproachFoodCommand : PlannedMoveCommand
@@ -200,18 +218,34 @@ public class GoToPointCommand : PlannedMoveCommand
 {
     public GoToPointCommand(EntityModel model) : base(model) { }
 
-    public override bool CanExecute() => model.Points.Count > 0 || (model.Colony != null && model.Colony.Pois.Count > 0);
+    public override bool CanExecute()
+        => model.IsRecruited || model.Points.Count > 0 || (model.Colony != null && model.Colony.Pois.Count > 0);
 
     protected override EntityCommandStatus OnBegin()
     {
         float2 self = model.Position2D;
-        bool own = model.Points.TryPickBest(in self, out float2 target);
-        var colony = model.Colony;
-        if (colony != null && colony.Pois.TryPickBest(self, out float2 shared, out _)
-            && (!own || math.distancesq(shared, self) < math.distancesq(target, self)))
+        float2 target;
+        bool own;
+
+        if (Source == CommandSource.Instinct && model.IsRecruited)
         {
-            target = shared;
-            own = true;
+            target = model.RecruitTarget;
+            own    = true;
+        }
+        else if (decision.Direction == (byte)DirectionKind.OwnPoi)
+            own = model.Points.TryPickBest(in self, out target);
+        else if (decision.Direction == (byte)DirectionKind.ColonyPoi && model.Colony != null)
+            own = model.Colony.Pois.TryPickBest(self, out target, out _);
+        else
+        {
+            own = model.Points.TryPickBest(in self, out target);
+            var colony = model.Colony;
+            if (colony != null && colony.Pois.TryPickBest(self, out float2 shared, out _)
+                && (!own || math.distancesq(shared, self) < math.distancesq(target, self)))
+            {
+                target = shared;
+                own = true;
+            }
         }
         if (!own) return Fail();
 
@@ -223,6 +257,8 @@ public class GoToPointCommand : PlannedMoveCommand
     {
         float2 self = model.Position2D;
         model.Points.Visit(in self);
+        if (Source == CommandSource.Instinct) model.ClearRecruit();
+        if (!model.CachedFoodValid) model.Points.MarkNegative(in self, SimulationRules.Frame.NegativePoiEmpty);
         return Complete();
     }
 }
@@ -310,10 +346,11 @@ public class EatCommand : EntityCommand
 
         if (!foodNear && nest != null && model.CanEatFromNest && nest.Storage > 0f)
         {
-            float take = math.min(nest.Storage, r.NestEatPortion);
+            float cost = math.max(model.CasteMods.NestFoodCost, 1e-3f);
+            float take = math.min(nest.Storage, r.NestEatPortion * cost);
             nest.Storage -= take;
             model.Colony?.Stats.RecordStorageEaten(take);
-            return StartEating(take, false);
+            return StartEating(take / cost, false);
         }
 
         if (!foodNear) return Fail();
@@ -321,6 +358,7 @@ public class EatCommand : EntityCommand
         long cell = model.CachedFoodCell;
         model.InvalidateCachedFood();
         if (!index.TryClaim(cell, model, SimulationClock.TimeD, out var claim)) return Fail();
+        model.NoteFoodSite(ChunkFoodIndex.CellCenter(cell));
 
         if (claim.Infected && index.TryTakePayload(cell, out var payload))
         {
@@ -349,7 +387,7 @@ public class EatCommand : EntityCommand
         _eaten   = 0f;
         _toxic   = toxic;
         _start   = SimulationClock.TimeD;
-        _end     = _start + math.max(r.EatSecondsPerEnergy * portion, 1e-3f);
+        _end     = _start + math.max(r.EatSecondsPerEnergy * portion / math.max(model.CasteMods.EatSpeed, 1e-3f), 1e-3f);
 
         model.RegisterFitnessEvent(EntityModel.FitnessEvent.FoodEaten);
         model.Brain.Context.GoalFoodEaten++;
@@ -414,6 +452,7 @@ public class PickUpCommand : EntityCommand
         model.InvalidateCachedFood();
         if (!index.TryClaim(cell, model, SimulationClock.TimeD, out var claim) || claim.Energy <= 0f) return Fail();
         if (claim.Infected && index.TryTakePayload(cell, out var payload)) ViralPayloadPool.Release(ref payload);
+        model.NoteFoodSite(ChunkFoodIndex.CellCenter(cell));
 
         model.Carry(claim.Energy);
         return Complete();
@@ -430,12 +469,15 @@ public class StoreFoodCommand : EntityCommand
     {
         var nest = model.Nest;
         if (nest == null || !model.IsAtNest || model.Carrying <= 0f) return Fail();
-        float stored = model.TakeCarried();
+        ref readonly var r = ref SimulationRules.Frame;
+        float stored = model.TakeCarried() * model.CasteMods.StoreEfficiency;
         nest.Storage += stored;
+        model.RecordStored(stored);
         model.Colony?.Stats.RecordStorageStored(stored);
         model.DepositTrail();
         model.ShareMemoryWithColony();
-        return Complete();
+        if (model.TryGetFoodSite(out float2 site)) model.RecruitNearby(site, r.RecruitCount, nest.Radius);
+        return Complete(r.StoreFoodReward * stored / math.max(r.NestStorageNorm, 1e-3f));
     }
 }
 
@@ -447,7 +489,8 @@ public class RememberPointCommand : EntityCommand
     {
         float2 pos = model.Position2D;
         model.Points.TryRemember(in pos, SimulationRules.Active.RememberPointMinSpacing);
-        if (model.Caste == Caste.Scout) model.Colony?.Pois.Offer(pos, model.CachedFoodValid ? SimulationRules.Active.EatEnergyFood : 0f, 0f);
+        if (model.Caste == Caste.Scout)
+            model.Colony?.Pois.Offer(pos, model.CachedFoodValid ? SimulationRules.Active.EatEnergyFood * model.CasteMods.PoiWeight : 0f, 0f);
         return Complete();
     }
 }
@@ -493,6 +536,7 @@ public class SpeechCommand : EntityCommand
         stats.En = math.max(0f, stats.En - r.SpeechEnergyCost);
 
         model.Broadcast(decision.Speech);
+        ApplySignal(r);
 
         string hash = SpeechComponent.Encode(decision.Speech);
         DialogSystem.Instance.OnSpeechSend((IDialogSender)model.Motor, hash);
@@ -512,6 +556,22 @@ public class SpeechCommand : EntityCommand
     {
         if (_playing) return EntityCommandStatus.Running;
         return _failed ? Fail() : Complete();
+    }
+
+    private void ApplySignal(SimulationRules r)
+    {
+        switch (decision.Signal)
+        {
+            case SpeechSignal.Alarm:
+                if (model.HasDirectThreat) model.Nest?.RaiseAlarm(r.AlarmCryAmount);
+                break;
+            case SpeechSignal.Food:
+                if (model.TryGetFoodSite(out float2 site)) model.RecruitNearby(site, r.RecruitCount, r.SpeechRadius);
+                break;
+            case SpeechSignal.FollowMe:
+                model.RecruitNearby(model.Position2D, r.RecruitCount, r.SpeechRadius);
+                break;
+        }
     }
 
     protected override void OnCancel()
@@ -614,7 +674,10 @@ public class ShareFoodCommand : EntityCommand
     protected override EntityCommandStatus OnBegin()
     {
         var r = SimulationRules.Active;
-        var victim = model.Caste == Caste.Nurse ? model.FindNearbyJuvenile(r.EatRange * 2f) ?? model.CachedNearest : model.CachedNearest;
+        bool troph = Source == CommandSource.Instinct;
+        var victim = troph
+            ? model.FindHungriestKin(r.EatRange * 2f)
+            : model.Caste == Caste.Nurse ? model.FindNearbyJuvenile(r.EatRange * 2f) ?? model.CachedNearest : model.CachedNearest;
         if (victim == null || math.distance(model.Position2D, victim.Position2D) > r.EatRange * 2f) return Fail();
 
         float own   = model.Stats.En / model.Stats.MaxEnergy;
@@ -623,11 +686,14 @@ public class ShareFoodCommand : EntityCommand
 
         float portion;
         if (model.Carrying > 0f) portion = model.TakeCarried();
-        else portion = model.Digestion.Withdraw(model.Digestion.Capacity * r.ShareFoodTransferFraction);
+        else portion = model.Digestion.Withdraw(model.Digestion.Capacity * r.ShareFoodTransferFraction * model.CasteMods.Feed);
         if (portion <= 0f) return Fail();
 
-        float rest = portion - victim.Digestion.Ingest(portion);
+        float given = victim.Digestion.Ingest(portion);
+        float rest  = portion - given;
         if (rest > 0f) model.Digestion.Ingest(rest);
+        if (troph && model.Nest != null)
+            model.Nest.RelieveHunger(given / math.max(r.NestStorageNorm, 1e-3f) * r.TrophallaxisHungerRelief);
         model.Infection?.TryTransmitGift(model, victim);
 
         _holdEnd = HoldUntil(r.ShareFoodDuration);
@@ -722,7 +788,7 @@ public class AttackCommand : EntityCommand
 
         float damage = model.Tuning.AttackDamage * model.AttackDamageMul * energyScale;
         if (model.SinceAction(EntityAction.Threaten) < r.SynergyWindow) damage *= r.ThreatenAttackMul;
-        damage *= 1f + r.GroupAttackBonus * CountAllies(in target, r);
+        damage *= 1f + r.GroupAttackBonus * model.CasteMods.GroupBonus * CountAllies(in target, r);
 
         var victim = target.Entity;
         if (victim != null)
@@ -787,12 +853,38 @@ public class MoveNestCommand : EntityCommand
     public MoveNestCommand(EntityModel model) : base(model) { }
 
     public override bool CanExecute()
-        => model.IsLeader && model.Colony != null && !model.Colony.Nest.Contains(model.Position2D);
+        => model.IsLeader && model.Colony != null && model.Colony.TryGetQuorumSite(out float2 site)
+           && !model.Colony.Nest.Contains(site);
 
     protected override EntityCommandStatus OnBegin()
     {
-        if (!CanExecute()) return Fail();
-        model.Colony.Relocate(model.Position2D, model.FoodIndex);
+        var colony = model.Colony;
+        if (colony == null || !model.IsLeader || !colony.TryGetQuorumSite(out float2 site) || colony.Nest.Contains(site))
+            return Fail();
+        colony.Relocate(site, model.FoodIndex);
         return Complete();
     }
+}
+
+public class GroomCommand : EntityCommand
+{
+    private double _holdEnd;
+
+    public GroomCommand(EntityModel model) : base(model) { }
+
+    protected override EntityCommandStatus OnBegin()
+    {
+        var r = SimulationRules.Active;
+        var patient = model.FindSickestKin(r.EatRange * 2f, r.GroomMinLoad);
+        if (patient == null) return Fail();
+
+        model.Motor.Stop();
+        patient.Virology?.Groom(r.GroomAmount);
+        model.Infection?.TryTransmitContact(patient, model, r.GroomInfectChance);
+        _holdEnd = HoldUntil(model.Tuning.IdleTime);
+        return EntityCommandStatus.Running;
+    }
+
+    protected override EntityCommandStatus OnTick(float dt)
+        => Elapsed(_holdEnd) ? Complete() : EntityCommandStatus.Running;
 }

@@ -150,6 +150,7 @@ public abstract class EntityCommand : IEntityCommand
             HasThreat = hasThreat ? (byte)1 : (byte)0,
             ColonyIndex = (byte)model.ColonyIndex,
             Boid        = intent == MoveIntent.Flee ? float2.zero : model.FlockSteer,
+            AvoidSick   = model.IsSick ? (byte)0 : (byte)1,
         };
         _planSpeed    = speed * model.SpeedMul;
         _planCost     = energyCostPerSec;

@@ -23,12 +23,18 @@ public class SharedHierarchicalBrain : IDisposable
 
     public const int HeadingOutputs   = 2;
     public const int CurvatureOutputs = 1;
-    public const int SpeechOutputs    = 4;
+    public const int SpeechOutputs    = SpeechSignal.Count;
     public const int CurvatureAux     = HeadingOutputs;
     public const int SpeechAux        = HeadingOutputs + CurvatureOutputs;
+    public const int DirectionOutputs = (int)DirectionKind.Count;
+    public const int DirOffsetAux     = DirectionOutputs;
+
+    public static bool UsesDirections(int goal) => goal == (int)Goal.Survive || goal == (int)Goal.Forage;
 
     public static int ExecAux(int goal)
-        => HeadingOutputs + CurvatureOutputs + (goal == (int)Goal.Social ? SpeechOutputs : 0);
+        => UsesDirections(goal)
+            ? DirectionOutputs + 1
+            : HeadingOutputs + CurvatureOutputs + (goal == (int)Goal.Social ? SpeechOutputs : 0);
 
     private static int[] BuildExecSizes(int combined, int goal)
         => new[] { combined, 64, 32, 32, ActionSubsets[goal].Length + 1 + ExecAux(goal) };
@@ -417,7 +423,7 @@ public class SharedHierarchicalBrain : IDisposable
                 BiasRow     = d,
                 Owner       = d,
                 Dt          = mlp.DeltaTime,
-                Temperature = mlp.Params.SoftmaxTemperature,
+                Temperature = mlp.EffectiveTemperature,
             });
         }
 
@@ -445,6 +451,8 @@ public class SharedHierarchicalBrain : IDisposable
                 frame.PlanMinSeconds, frame.PlanMaxSeconds, coordEps, decay, false);
 
             var plan = (PlanKind)planTicket.Predicted;
+            planTicket.Duration = DelayedPerceptron.DurationFromLogit(planTicket.DurationLogit + planTicket.DurationNoise,
+                frame.PlanMinSecondsByPlan[(int)plan], frame.PlanMaxSecondsByPlan[(int)plan]);
             ctx.CoordAux = new float2(planTicket.AuxValue[0], planTicket.AuxValue[1]);
             for (int p = 0; p < PlanCount; p++) ctx.PlanProbs[p] = planTicket.Probs[p];
             ctx.CurrentPlan     = plan;
@@ -508,7 +516,7 @@ public class SharedHierarchicalBrain : IDisposable
                 BiasRow     = d,
                 Owner       = d,
                 Dt          = mlp.DeltaTime,
-                Temperature = mlp.Params.SoftmaxTemperature,
+                Temperature = mlp.EffectiveTemperature,
             });
         }
 
@@ -538,17 +546,57 @@ public class SharedHierarchicalBrain : IDisposable
             ctx.ExecWindow.Begin(ticket.DecisionId, simTime, math.max(clamped, ctx.GoalEndTime - simTime));
 
             var aux = ticket.AuxValue;
-            float4 speech = g == (int)Goal.Social
-                ? new float4(aux[SpeechAux], aux[SpeechAux + 1], aux[SpeechAux + 2], aux[SpeechAux + 3])
-                : float4.zero;
+            float2 heading   = float2.zero;
+            float  curvature = 0f;
+            float4 speech    = float4.zero;
+            float  offset    = 0f;
+            byte   direction = (byte)DirectionKind.None;
+            byte   signal    = SpeechSignal.None;
+
+            if (UsesDirections(g))
+            {
+                direction = PickMasked(ticket, 0, DirectionOutputs, ctx.DirectionMask);
+                offset    = aux[DirOffsetAux] * frame.DirMaxOffset;
+            }
+            else
+            {
+                heading   = new float2(ticket.HeadingSin, ticket.HeadingCos);
+                curvature = aux[CurvatureAux];
+                if (g == (int)Goal.Social)
+                {
+                    signal = PickMasked(ticket, SpeechAux, SpeechOutputs, 0xFF);
+                    if (signal < SpeechSignal.Count) speech = frame.SpeechSignals[signal];
+                }
+            }
 
             _dDecision[d] = new BrainDecision(action, ticket.DecisionId, ctx.CoordDecisionId,
-                ctx.CurrentGoal, simTime, clamped, new float2(ticket.HeadingSin, ticket.HeadingCos),
-                aux[CurvatureAux], speech, ctx.CurrentPlan, ctx.GoalEndTime);
+                ctx.CurrentGoal, simTime, clamped, in heading,
+                curvature, speech, ctx.CurrentPlan, ctx.GoalEndTime, direction, offset, signal);
             _dMade[d] = true;
         }
 
         ScheduleTraining();
+    }
+
+    private static byte PickMasked(DelayedItem ticket, int start, int count, int mask)
+    {
+        var aux   = ticket.AuxValue;
+        var noise = ticket.AuxNoise;
+        int best  = -1;
+        float top = float.MinValue;
+        for (int i = 0; i < count; i++)
+        {
+            if ((mask & (1 << i)) == 0)
+            {
+                noise[start + i] = 0f;
+                continue;
+            }
+            float v = aux[start + i];
+            if (v <= top) continue;
+            top  = v;
+            best = i;
+        }
+        return best < 0 ? byte.MaxValue : (byte)best;
     }
 
     private void ScheduleTraining()
@@ -707,8 +755,9 @@ public class SharedHierarchicalBrain : IDisposable
                    + curiosity * ctx.GoalNovelty;
 
         float clip = r.RewardClipSigma;
-        item.Evaluation    = Mathf.Clamp(goal, -clip, clip);
+        item.Evaluation    = math.clamp(goal, -clip, clip);
         item.RewardApplied = true;
+        ctx.Surprise = math.lerp(ctx.Surprise, math.abs(item.Evaluation - item.ValueEstimate), SimulationRules.Frame.SurpriseAlpha);
     }
 
     public float GetCoordinatorEntropy(EntityBrainContext ctx) => ctx.CoordMLP.AverageEntropy;

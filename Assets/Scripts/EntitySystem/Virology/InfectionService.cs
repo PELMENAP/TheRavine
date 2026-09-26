@@ -95,6 +95,18 @@ namespace TheRavine.EntityControl.Virology
             return Deliver(attacker, virology, index, target);
         }
 
+        public bool TryTransmitContact(EntityModel donor, EntityModel receiver, float chance)
+        {
+            if (!_created || Resolve(receiver) == null) return false;
+            var virology = donor?.Virology;
+            if (virology == null || !virology.IsCreated || virology.IsDisposed) return false;
+            if (ViralMutator.NextUnit(ref _rng) >= chance) return false;
+
+            int index = virology.RandomViralSegment();
+            if (index < 0) return false;
+            return Deliver(donor, virology, index, receiver);
+        }
+
         public bool TryTransmitGift(EntityModel donor, EntityModel receiver)
         {
             if (!_created || Resolve(receiver) == null) return false;

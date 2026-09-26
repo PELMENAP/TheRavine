@@ -19,6 +19,12 @@ public class EntityBrainContext : System.IDisposable
     public Unity.Mathematics.float2 CoordAux;
     public readonly float[] PlanProbs = new float[SharedHierarchicalBrain.PlanCount];
 
+    public void SetTemperatureScale(float scale)
+    {
+        CoordMLP.TemperatureScale = scale;
+        for (int i = 0; i < ExecMLPs.Length; i++) ExecMLPs[i].TemperatureScale = scale;
+    }
+
     public void SetPositiveAdvantageScale(float scale)
     {
         CoordMLP.PositiveAdvantageScale = scale;
@@ -40,6 +46,8 @@ public class EntityBrainContext : System.IDisposable
     public int   NoveltyCount;
     public float EnergyNorm;
     public float IntrinsicReward;
+    public byte  DirectionMask;
+    public float Surprise;
     public readonly float[] CoordBias;
 
     public EntityBrainContext(

@@ -215,6 +215,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
         item.CreatedOrdinal     = ordinal;
         item.Predicted          = pred;
         item.StartTime          = simTime;
+        item.Temperature        = ctx.EffectiveTemperature;
         item.ValueEstimate      = vNow;
         item.ExplorationEpsilon = adaptiveEpsilon;
         item.ExploreProb        = explore[pred];
@@ -368,7 +369,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
             LogProbability        = item.LogProbability,
             DurationNoise         = item.DurationNoise,
             Dt                    = ctx.DeltaTime,
-            Temperature           = p.SoftmaxTemperature,
+            Temperature           = item.Temperature > 0f ? item.Temperature : p.SoftmaxTemperature,
             EntropyRegularization = p.EntropyRegularization,
             MaxGradNorm           = p.MaxGradientNorm,
             LrMul                 = p.BaseLearningRate * InvBaseLearningRateReference,

@@ -11,6 +11,7 @@ public sealed class DelayedItem
     public float DurationNoise;
     public float Duration;
     public float StartTime;
+    public float Temperature;
     public int   BpttSlot;
     public bool  RewardApplied;
     public bool  Trained;
@@ -54,6 +55,7 @@ public sealed class DelayedItem
         DurationNoise = 0f;
         Duration = 0f;
         StartTime = 0f;
+        Temperature = 0f;
         BpttSlot = 0;
         BpttStamp = 0;
         CreatedOrdinal = 0;

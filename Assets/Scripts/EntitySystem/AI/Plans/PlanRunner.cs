@@ -13,6 +13,10 @@ public sealed class PlanRunner
     private bool   _ending;
     private double _instantTick = double.NaN;
     private int    _instantSteps;
+    private float  _storage0;
+    private float  _population0;
+    private float  _hunger0;
+    private float  _stored0;
 
     public PlanRunner(EntityModel model) => _model = model;
 
@@ -22,6 +26,7 @@ public sealed class PlanRunner
     public void Begin(in BrainDecision decision)
     {
         _p = new PlanProgress { Kind = decision.Plan, Variant = decision.Action };
+        PlanCatalog.Init(ref _p);
         _decision = decision;
         _start    = SimulationClock.TimeD;
         _return   = 0f;
@@ -29,6 +34,12 @@ public sealed class PlanRunner
         _ending   = false;
         _instantSteps = 0;
         _instantTick  = SimulationClock.TimeD;
+
+        var colony = _model.Colony;
+        _storage0    = colony != null ? colony.StorageEma : 0f;
+        _population0 = colony != null ? colony.PopulationEma : 0f;
+        _hunger0     = colony != null ? colony.HungerEma : 0f;
+        _stored0     = _model.StoredTotal;
 
         _model.BeginHomeostasis();
         Launch(decision.Action, CommandSource.Brain);
@@ -79,6 +90,20 @@ public sealed class PlanRunner
         End(EntityCommandStatus.Failed);
     }
 
+    private float ColonyReward()
+    {
+        var colony = _model.Colony;
+        if (colony == null || colony.IsWild || colony.MemberCount == 0) return 0f;
+        ref readonly var r = ref SimulationRules.Frame;
+
+        float own      = (_model.StoredTotal - _stored0) / math.max(r.NestStorageNorm, 1e-3f);
+        float dStorage = colony.StorageEma - _storage0 - own / colony.MemberCount;
+        float dPop     = (colony.PopulationEma - _population0) / math.max(r.ColonyPopulationNorm, 1f);
+        float dHunger  = colony.HungerEma - _hunger0;
+        return r.ColonyRewardWeight
+             * (dStorage + r.ColonyPopulationWeight * dPop - r.ColonyHungerWeight * dHunger) / colony.MemberCount;
+    }
+
     private bool Launch(int action, CommandSource source)
     {
         ref readonly var r = ref SimulationRules.Frame;
@@ -87,6 +112,7 @@ public sealed class PlanRunner
         float duration = math.clamp(_decision.Duration * math.max(scale, 0.05f),
             ActionDurationTable.Min(action), ActionDurationTable.Max(action));
         var step = _decision.WithStep(action, SimulationClock.Time, duration, source == CommandSource.Brain);
+        if (_p.Direction != (byte)DirectionKind.None) step = step.WithDirection(_p.Direction);
         if (_model.TryStartCommand(action, in step, source)) return true;
         if (_active && !_ending && source == CommandSource.Brain) Advance(EntityCommandStatus.Failed, action);
         return false;
@@ -106,12 +132,15 @@ public sealed class PlanRunner
         _ending = false;
 
         var r = SimulationRules.Active;
-        float total = _return + _model.HomeostaticReturn() + _model.ConsumeExtrinsicReward();
+        float total = _return + _model.HomeostaticReturn() + _model.ConsumeExtrinsicReward() + ColonyReward();
         if (_p.Achieved && status != EntityCommandStatus.Failed) total += r.PlanCompleteReward;
+        _model.OnPlanEnded(_p.Kind, total, _p.Achieved);
 
         var brain = _model.Brain;
         brain.CompleteDecision(in _decision, total, SimulationClock.Time, status);
         brain.Context.GoalEndTime = 0f;
-        _model.Colony?.Stats.RecordPlan(_p.Kind, status == EntityCommandStatus.Completed);
+        var stats = _model.Colony?.Stats;
+        stats?.RecordPlan(_p.Kind, status == EntityCommandStatus.Completed);
+        if (_model.CasteFixed && !_model.IsJuvenile) stats?.RecordCastePlan(_model.Caste, _p.Kind);
     }
 }

@@ -12,6 +12,8 @@ public enum ColonyChannel : byte
     Trail    = 2,
     KinDeath = 3,
     Explored = 4,
+    Sickness = 5,
+    Territory = 6,
     Count,
 }
 
@@ -144,6 +146,8 @@ public sealed unsafe class NestState : IDisposable
     public float  MigrationPressure => math.length(Migration);
     public float  DangerAtNest { get; private set; }
     public int    Relocations { get; private set; }
+    public int    HungryAtNest;
+    public int    NursesAtNest;
 
     private NativeArray<float> _field;
     private NativeArray<float> _scratch;
@@ -221,6 +225,28 @@ public sealed unsafe class NestState : IDisposable
         }
         return best - worst;
     }
+
+    public float SampleExtreme(float2 origin, float radius, int samples, float phase, ColonyChannel channel,
+        bool seekMin, out float2 bestDir)
+    {
+        samples = math.max(samples, 1);
+        float best = float.MaxValue, worst = float.MinValue;
+        bestDir = float2.zero;
+        float step = 2f * math.PI / samples;
+        float sign = seekMin ? 1f : -1f;
+
+        for (int k = 0; k < samples; k++)
+        {
+            math.sincos(phase + k * step, out float sa, out float ca);
+            float2 d = new float2(ca, sa);
+            float  v = sign * _view.FieldAt(channel, origin + d * radius);
+            if (v < best) { best = v; bestDir = d; }
+            if (v > worst) worst = v;
+        }
+        return worst - best;
+    }
+
+    public void RelieveHunger(float amount) => Hunger = math.max(0f, Hunger - math.max(0f, amount));
 
     public void RaiseAlarm(float amount) => Alarm = math.min(1f, Alarm + math.max(0f, amount));
 

@@ -67,7 +67,75 @@ public class EntityModel : AEntity, IFoodReceiver
     public CommandSource CurrentSource => _runner != null ? _runner.CurrentSource : CommandSource.Brain;
     public bool IsAliveForPlan => IsAliveForTick();
     public ulong LineageId => Virology != null ? Virology.EndogenousLineage : 0UL;
-    public float CarryCapacity => Stats.MaxEnergy * SimulationRules.Frame.StomachCapacityFraction;
+    public float CarryCapacity => Stats.MaxEnergy * SimulationRules.Frame.StomachCapacityFraction * _casteMods.Carry;
+
+    private CasteModifiers _casteMods = CasteModifiers.Neutral;
+    public ref readonly CasteModifiers CasteMods => ref _casteMods;
+    public bool IsWild => Colony != null && Colony.IsWild;
+
+    private readonly float2[] _dirVec    = new float2[(int)DirectionKind.Count];
+    private readonly float[]  _dirRadius = new float[(int)DirectionKind.Count];
+    private byte  _dirMask;
+    private float _ouAngle;
+    public byte  DirectionMask => _dirMask;
+    public float OuAngle => _ouAngle;
+
+    private readonly float[] _planRewardEma = new float[PlanCatalog.Count];
+    public float PlanRewardEma(PlanKind plan) => plan < PlanKind.Count ? _planRewardEma[(int)plan] : 0f;
+
+    private float _dopamine, _cortisol, _oxytocin, _ghrelin;
+    public float Dopamine => _dopamine;
+    public float Cortisol => _cortisol;
+    public float Oxytocin => _oxytocin;
+    public float Ghrelin  => _ghrelin;
+    private int   _kinCrowd;
+
+    public float MaxAge { get; private set; } = float.MaxValue;
+    public float AgeFraction => TimeAlive / math.max(MaxAge, 1f);
+    public double NextCasteReview;
+    private float _immuneUpkeepMul = 1f;
+
+    private bool _sick;
+    public bool IsSick => _sick;
+    private bool _kinSick;
+    private bool _onForeignTerritory;
+    private float _season;
+    private float _winterApproach;
+    private bool  _winter;
+
+    private float2 _recruitTarget;
+    private double _recruitUntil = double.NegativeInfinity;
+    public bool   IsRecruited   => SimulationClock.TimeD < _recruitUntil;
+    public float2 RecruitTarget => _recruitTarget;
+    public void   ClearRecruit() => _recruitUntil = double.NegativeInfinity;
+    public void Recruit(float2 target, double until)
+    {
+        _recruitTarget = target;
+        _recruitUntil  = until;
+    }
+
+    private float2 _foodSite;
+    private bool   _hasFoodSite;
+    public void NoteFoodSite(float2 p)
+    {
+        _foodSite    = p;
+        _hasFoodSite = true;
+    }
+    public bool TryGetFoodSite(out float2 site)
+    {
+        site = _foodSite;
+        return _hasFoodSite;
+    }
+
+    public float StoredTotal { get; private set; }
+    public void RecordStored(float amount) => StoredTotal += math.max(0f, amount);
+
+    private UtilityFeatures _utility;
+    public ref readonly UtilityFeatures UtilityInput => ref _utility;
+
+    private FoodKind _foodKind;
+
+    private CasteThresholdSystem _thresholds;
 
     private double _lastAlarmCry = double.NegativeInfinity;
 
@@ -103,7 +171,7 @@ public class EntityModel : AEntity, IFoodReceiver
         {
             Position = Position2D,
             Heading  = Heading,
-            Weights  = new float3(g.BoidSeparation * spacing, g.BoidAlignment * social, g.BoidCohesion * social),
+            Weights  = IsWild ? float3.zero : new float3(g.BoidSeparation * spacing, g.BoidAlignment * social, g.BoidCohesion * social),
             Colony   = ColonyIndex,
             Active   = (byte)(IsDisposed || IsDeathPending ? 0 : 1),
             Plan     = (byte)(_plan != null ? _plan.Kind : PlanKind.Count),
@@ -180,6 +248,7 @@ public class EntityModel : AEntity, IFoodReceiver
         Caste      = caste;
         CasteFixed = true;
         var mods   = CasteModifiers.For(caste);
+        _casteMods = mods;
         RestHealMul = mods.RestHeal;
 
         var tuning = EntityTuning.Express(in _baseTuning, in Brain.Context.CoordMLP.Params, in mods);
@@ -439,7 +508,12 @@ public class EntityModel : AEntity, IFoodReceiver
         _baseTuning = baseTuning;
         _trail = new float2[math.max(1, SimulationRules.Active.TrailCapacity)];
         ctx.CasteMask = ActionCatalog.CasteActionMask(Caste);
-        var tuning = EntityTuning.Express(in baseTuning, in ctx.CoordMLP.Params, CasteModifiers.For(Caste));
+        var rulesA = SimulationRules.Active;
+        _casteMods = colony.IsWild ? CasteModifiers.Predator() : CasteModifiers.For(Caste);
+        if (colony.IsWild) CasteFixed = true;
+        var tuning = EntityTuning.Express(in baseTuning, in ctx.CoordMLP.Params, _casteMods);
+        MaxAge = rulesA.BaseMaxAge * ctx.CoordMLP.Params.MaxAgeMul;
+        _immuneUpkeepMul = 1f + ctx.CoordMLP.Params.ImmuneInvestment * rulesA.ImmuneUpkeep;
         Motor = motor;
         SelfObject = selfObject;
         Tuning = tuning;
@@ -460,6 +534,7 @@ public class EntityModel : AEntity, IFoodReceiver
 
         ServiceLocator.Services.TryGet(out MovePlanner planner);
         ServiceLocator.Services.TryGet(out _players);
+        ServiceLocator.Services.TryGet(out _thresholds);
         ServiceLocator.Services.TryGet(out InfectionService infection);
         Nest      = colony.Nest;
         Planner   = planner;
@@ -484,7 +559,10 @@ public class EntityModel : AEntity, IFoodReceiver
         };
         Mortality.Died += () => death?.OnDeath();
 
-        _vecMaxHealth = new R3.ReactiveProperty<float>(tuning.MaxHealth);
+        float startHealth = colony.IsWild ? tuning.MaxHealth : tuning.MaxHealth * rulesA.JuvenileHealthMul;
+        if (!colony.IsWild) Stats.Rescale(startHealth, tuning.MaxEnergy);
+
+        _vecMaxHealth = new R3.ReactiveProperty<float>(startHealth);
         _vecMaxEnergy = new R3.ReactiveProperty<float>(tuning.MaxEnergy);
         Vectorizer = new InputVectorizer(_vecMaxHealth, _vecMaxEnergy);
 
@@ -495,6 +573,7 @@ public class EntityModel : AEntity, IFoodReceiver
             Virology.FillFromParent(parentVirology, in ctx.CoordMLP.Params, seed);
         else
             Virology.FillComponent(in ctx.CoordMLP.Params, seed);
+        Virology.SetImmuneStrength(math.lerp(rulesA.ImmuneThresholdMin, rulesA.ImmuneThresholdMax, ctx.CoordMLP.Params.ImmuneInvestment));
     }
 
     public override void Init()
@@ -518,6 +597,7 @@ public class EntityModel : AEntity, IFoodReceiver
         _commands[(int)EntityAction.StoreFood]     = new StoreFoodCommand(this);
         _commands[(int)EntityAction.Follow]        = new FollowCommand(this);
         _commands[(int)EntityAction.MoveNest]      = new MoveNestCommand(this);
+        _commands[(int)EntityAction.Groom]         = new GroomCommand(this);
     }
 
     private float ResolveDayPhase()
@@ -584,8 +664,19 @@ public class EntityModel : AEntity, IFoodReceiver
         float now = (float)nowD;
 
         TimeAlive += dt;
+        if (TimeAlive >= MaxAge)
+        {
+            Mortality.NoteHarm(DeathCause.Age, 0f);
+            Stats.Hp = 0f;
+            return false;
+        }
         UpdateHeading();
         Stress    *= math.exp(-dt / math.max(rules.StressTau, 1e-3f));
+        UpdateOrnsteinUhlenbeck(dt, in rules);
+
+        _season         = SeasonClock.Value(now);
+        _winterApproach = SeasonClock.WinterApproach(now);
+        _winter         = _season < -rules.WinterThreshold;
 
         float dayPhase = ResolveDayPhase();
         bool  night    = IsNightPhase(dayPhase);
@@ -613,7 +704,7 @@ public class EntityModel : AEntity, IFoodReceiver
         float detect = Tuning.DetectionRadius * math.max(0.1f, 1f - mods.Blind * rules.BlindStrength);
 
         _nearest = Perception.FindNearestEntity(pos, this, detect, out _nearestDistance);
-        _crowd   = CountAndRelease(Perception.FindEntitiesInRadius(pos, this, rules.CrowdRadius, Neighbors));
+        _crowd   = CountAndRelease(Perception.FindEntitiesInRadius(pos, this, rules.CrowdRadius, Neighbors), Colony, out _kinCrowd);
 
         _foodValid    = false;
         _foodDistance = -1f;
@@ -629,18 +720,22 @@ public class EntityModel : AEntity, IFoodReceiver
             foodPos = ChunkFoodIndex.CellCenter(_foodCell);
             _foodIndex.TryGetKind(_foodCell, out foodKind, out foodInfected);
         }
+        _foodKind = foodKind;
 
         var nest = Nest;
         IsAtNest = nest != null && nest.Contains(self);
         if (nest != null && _foodValid) nest.Mark(ColonyChannel.Food, foodPos, rules.NestFoodMark * dt);
         if (nest != null)
             nest.Mark(ColonyChannel.Explored, self, rules.ExploredMark * dt * (Caste == Caste.Scout ? rules.ScoutExploredMul : 1f));
+        if (nest != null && !IsWild) nest.Mark(ColonyChannel.Territory, self, rules.TerritoryMark * dt);
         SampleTrail(in self, nowD, in rules);
         _nearestForeign = FindNearestForeign(pos, detect, out _nearestForeignDistance);
         _playerValid = _players != null
             && _players.TryFindNearest(self, detect, out _playerPos, out _playerDistance, out _playerTransform);
         if (!_playerValid) _playerTransform = null;
         _nestFood = ComputeNestFood(nest, in rules);
+        UpdateTerritory(nest, in self, dt, in rules);
+        ComputeDirections(nest, in self, in foodPos, in rules);
 
         if (!_terrain.TrySample(pos.x, pos.z, out _lastTerrain))
             _lastTerrain = TerrainSample.Invalid;
@@ -650,6 +745,7 @@ public class EntityModel : AEntity, IFoodReceiver
         float neighborLoad = 0f;
         var nearest = CachedNearest;
         if (nearest != null) nearest.Virology.TryGetViralInputs(out neighborLoad, out _, out _);
+        _kinSick = nearest != null && nearest.Colony == Colony && neighborLoad >= rules.GroomMinLoad;
 
         var frame = new VectorizerFrame
         {
@@ -688,8 +784,14 @@ public class EntityModel : AEntity, IFoodReceiver
             Speech            = Speech.Heard,
             MimickedAction    = MimickedActionIndex,
             Now               = nowD,
+            PlanRewardEma     = _planRewardEma,
+            Season            = _season,
+            WinterApproach    = _winterApproach,
         };
         Virology.TryGetViralInputs(out frame.ViralLoad, out frame.ViralSegments, out frame.ViralNet);
+        _sick = mods.Fever >= rules.SickFeverThreshold || frame.ViralLoad >= rules.SickLoadThreshold;
+        if (_sick && nest != null) nest.Mark(ColonyChannel.Sickness, self, rules.SickMark * dt);
+        UpdateHormones(dt, in rules);
 
         LastInput = Vectorizer.Vectorize(in frame, _actionTimes, in _lastTerrain);
 
@@ -706,7 +808,10 @@ public class EntityModel : AEntity, IFoodReceiver
         float basal = rules.BasalEnergyDrain * Tuning.BasalDrainMul
                     * (1f - rules.WellFedBasalReduction * Digestion.WellFed)
                     * (night && !IsAtNest ? rules.NightOutsideDrainMul : 1f)
-                    * (1f + mods.Fever * rules.FeverDrainMul);
+                    * (1f + mods.Fever * rules.FeverDrainMul)
+                    * (_winter ? rules.WinterDrainMul : 1f)
+                    * SenescenceMul(in rules)
+                    * _immuneUpkeepMul;
 
         float hpBeforeStarve = Stats.Hp;
         Stats.Tick(dt,
@@ -752,6 +857,14 @@ public class EntityModel : AEntity, IFoodReceiver
         brainCtx.CoordBias[(int)PlanKind.Hunt] += mods.BiteSeek * rules.BiteSeekHuntBias;
         brainCtx.CoordBias[(int)PlanKind.Rest] += mods.HomeCompulsion * rules.HomeCompulsionRestBias;
         brainCtx.CoordBias[(int)PlanKind.Patrol] += mods.Isolate * rules.IsolateStrength;
+        brainCtx.CoordBias[(int)PlanKind.Harvest] += _winterApproach * rules.PreWinterHarvestBias;
+        if (_onForeignTerritory) brainCtx.CoordBias[(int)PlanKind.Hunt] -= rules.ForeignTerritoryHuntDrop;
+
+        ref readonly var genes = ref brainCtx.CoordMLP.Params;
+        bool adult = CasteFixed && !IsJuvenile && !IsWild;
+        int  affinityRow = (int)Caste * PlanCatalog.Count;
+        for (int p = 0; p < PlanCatalog.Count; p++)
+            brainCtx.CoordBias[p] += genes.PlanBias(p) + (adult ? rules.CasteAffinityLog[affinityRow + p] : 0f);
 
         var colonyRef = Colony;
         if (IsLeader) colonyRef.PublishLeaderPrior(brainCtx.PlanProbs);
@@ -769,6 +882,25 @@ public class EntityModel : AEntity, IFoodReceiver
         brainCtx.EnergyNorm    = EffectiveEnergyNorm;
         brainCtx.PlanHints     = PlanHints;
         brainCtx.ColonyStorage = frame.NestStorage;
+        brainCtx.DirectionMask = _dirMask;
+        brainCtx.SetTemperatureScale(TemperatureScale(brainCtx, in rules));
+
+        int members = Colony != null ? Colony.MemberCount : 0;
+        _utility = new UtilityFeatures
+        {
+            Hunger         = 1f - math.saturate(brainCtx.EnergyNorm),
+            Fill           = frame.Stomach,
+            Storage        = frame.NestStorage,
+            Threat         = hasThreat ? 1f : 0f,
+            Night          = night ? 1f : 0f,
+            Juveniles      = members > 0 ? Colony.JuvenileCount / (float)members : 0f,
+            Worker         = adult && Caste == Caste.Worker  ? 1f : 0f,
+            Soldier        = adult && Caste == Caste.Soldier ? 1f : 0f,
+            Scout          = adult && Caste == Caste.Scout   ? 1f : 0f,
+            Nurse          = adult && Caste == Caste.Nurse   ? 1f : 0f,
+            HpDeficit      = 1f - math.saturate(Stats.Hp / Stats.MaxHealth),
+            WinterApproach = _winterApproach,
+        };
 
         float parentDistance = -1f;
         if (Parent.TryGet(out var parent)) parentDistance = math.distance(self, parent.Position2D);
@@ -801,6 +933,11 @@ public class EntityModel : AEntity, IFoodReceiver
             PlanKind        = (byte)_plan.Kind,
             Caste           = (byte)Caste,
             NestDistance    = nest != null ? math.distance(self, nest.Position) : -1f,
+            HungerBias      = _ghrelin * rules.GhrelinHungerShift,
+            PanicBias       = _oxytocin * rules.OxytocinPanicShift - _cortisol * rules.CortisolPanicShift,
+            Sick            = _sick ? (byte)1 : (byte)0,
+            HungryKin       = nest != null && nest.HungryAtNest > 0 ? (byte)1 : (byte)0,
+            Recruited       = IsRecruited ? (byte)1 : (byte)0,
         };
 
         _cycleNow    = now;
@@ -833,6 +970,13 @@ public class EntityModel : AEntity, IFoodReceiver
         if (_nearestForeign != null) h |= PlanHint.ForeignNear;
         var nest = Nest;
         if (nest != null && nest.MigrationPressure > r.MigrationMinPressure) h |= PlanHint.MigrationUrge;
+        if (nest != null && nest.HasFoodPeak) h |= PlanHint.FoodPeak;
+        if (nest != null && nest.Storage < r.SeekStorageLow * r.NestStorageNorm) h |= PlanHint.StorageLow;
+        var colony = Colony;
+        if (colony != null && colony.Pois.Count > 0) h |= PlanHint.ColonyPoi;
+        if (colony != null && IsLeader && colony.TryGetQuorumSite(out _)) h |= PlanHint.QuorumReady;
+        if (Caste == Caste.Worker && CasteFixed && !IsJuvenile && !IsHungry) h |= PlanHint.PreferPickUp;
+        if (_kinSick) h |= PlanHint.KinSick;
         return h;
     }
 
@@ -878,6 +1022,22 @@ public class EntityModel : AEntity, IFoodReceiver
 
     private static readonly EntityModel[] ForeignScratch = new EntityModel[16];
     private static ColonyRegistry _registry;
+
+    private bool HasForeignEntities()
+    {
+        int populated = 0;
+        for (int c = 0; c < _registry.Count; c++)
+            if (_registry[c].MemberCount > 0 && ++populated > 1) return true;
+        return false;
+    }
+
+    public void ApplyUtilityPrior(ReadOnlySpan<float> prior)
+    {
+        if (!_cycleActive || prior.Length < PlanCatalog.Count) return;
+        float w = SimulationRules.Frame.UtilityPriorWeight;
+        var bias = Brain.Context.CoordBias;
+        for (int p = 0; p < PlanCatalog.Count; p++) bias[p] += w * prior[p];
+    }
 
     private bool ComputeNestFood(NestState nest, in SimulationRules.RulesFrame r)
     {
@@ -932,7 +1092,7 @@ public class EntityModel : AEntity, IFoodReceiver
     {
         distance = -1f;
         if (_registry == null) ServiceLocator.Services.TryGet(out _registry);
-        if (_registry == null || _registry.Count <= 1) return null;
+        if (_registry == null || !HasForeignEntities()) return null;
 
         int found = Perception.FindEntitiesInRadius(pos, this, radius, ForeignScratch);
         EntityModel best = null;
@@ -964,8 +1124,12 @@ public class EntityModel : AEntity, IFoodReceiver
         }
 
         int action = output.Reflex;
+        float2 heading = float2.zero;
+        var nest = Nest;
+        if ((output.Mask & InstinctBits.Sick) != 0 && nest != null)
+            heading = math.normalizesafe(Position2D - nest.Position, new float2(0f, 1f));
         var reflex = new BrainDecision(action, 0, 0, Brain.CurrentGoal, _cycleNow,
-            ActionDurationTable.Max(action), float2.zero);
+            ActionDurationTable.Max(action), in heading);
         TryStartCommand(action, in reflex, CommandSource.Instinct);
     }
 
@@ -1009,10 +1173,254 @@ public class EntityModel : AEntity, IFoodReceiver
         _plan.OnStepFinished(status, reward, action);
     }
 
+    private static int CountAndRelease(int found, ColonyState colony, out int kin)
+    {
+        kin = 0;
+        for (int i = 0; i < found; i++)
+        {
+            var e = Neighbors[i];
+            Neighbors[i] = null;
+            if (e != null && e.Colony == colony) kin++;
+        }
+        return found;
+    }
+
     private static int CountAndRelease(int found)
     {
         for (int i = 0; i < found; i++) Neighbors[i] = null;
         return found;
+    }
+
+    private float SenescenceMul(in SimulationRules.RulesFrame r)
+    {
+        float onset = math.saturate(r.SenescenceOnset);
+        float over  = math.saturate((AgeFraction - onset) / math.max(1f - onset, 1e-3f));
+        return 1f + r.SenescenceUpkeep * over;
+    }
+
+    private void UpdateOrnsteinUhlenbeck(float dt, in SimulationRules.RulesFrame r)
+    {
+        float u1 = RavineRandom.RangeFloat(1e-4f, 1f);
+        float u2 = RavineRandom.RangeFloat(0f, 1f);
+        float n  = math.sqrt(-2f * math.log(u1)) * math.cos(2f * math.PI * u2);
+        _ouAngle += -_ouAngle * dt / math.max(r.OuTau, 1e-3f) + r.OuSigma * math.sqrt(dt) * n;
+    }
+
+    private void UpdateHormones(float dt, in SimulationRules.RulesFrame r)
+    {
+        float k = 1f - math.exp(-dt / math.max(r.HormoneTau, 1e-3f));
+        _cortisol = math.lerp(_cortisol, Stress, k);
+        _oxytocin = math.lerp(_oxytocin, math.saturate(_kinCrowd / math.max(r.OxytocinNorm, 1e-3f)), k);
+        _ghrelin  = math.lerp(_ghrelin, 1f - math.saturate(EffectiveEnergyNorm), k);
+    }
+
+    private float TemperatureScale(EntityBrainContext ctx, in SimulationRules.RulesFrame r)
+    {
+        float x = -r.TempDopamine * _dopamine + r.TempCortisol * _cortisol + r.TempSurprise * ctx.Surprise;
+        return math.clamp(math.exp(x), r.TempMin, r.TempMax);
+    }
+
+    public void OnPlanEnded(PlanKind plan, float total, bool achieved)
+    {
+        if (plan >= PlanKind.Count) return;
+        ref readonly var r = ref SimulationRules.Frame;
+        float a = r.PlanRewardEmaAlpha;
+        _planRewardEma[(int)plan] = math.lerp(_planRewardEma[(int)plan], total, a);
+        _dopamine = math.lerp(_dopamine, math.tanh(total), a);
+
+        if (!CasteFixed || IsJuvenile || IsWild || _thresholds == null) return;
+        if (r.PlanCasteDomain[(int)plan] != (int)Caste) return;
+        _thresholds.Reinforce(ManagerIndex, Caste, achieved);
+    }
+
+    public float SelectionFitness
+    {
+        get
+        {
+            ref readonly var r = ref SimulationRules.Frame;
+            float colony = Colony != null && !Colony.IsWild ? Colony.Score : 0f;
+            float share  = StoredTotal / math.max(r.NestStorageNorm, 1e-3f);
+            return r.FitnessPersonalWeight * GetFitness() + r.FitnessColonyWeight * (colony + share);
+        }
+    }
+
+    private void UpdateTerritory(NestState nest, in float2 self, float dt, in SimulationRules.RulesFrame r)
+    {
+        _onForeignTerritory = false;
+        if (IsWild || nest == null) return;
+
+        var foreign = ValidForeign;
+        if (foreign != null && nest.FieldAt(ColonyChannel.Territory, foreign.Position2D) > r.TerritoryThreshold)
+            nest.RaiseAlarm(r.TerritoryAlarm * dt);
+
+        if (_registry == null) return;
+        for (int c = 0; c < _registry.Count; c++)
+        {
+            var other = _registry[c];
+            if (other == Colony || other.IsWild) continue;
+            if (other.Nest.FieldAt(ColonyChannel.Territory, self) <= r.TerritoryThreshold) continue;
+            _onForeignTerritory = true;
+            return;
+        }
+    }
+
+    private void ComputeDirections(NestState nest, in float2 self, in float2 foodPos, in SimulationRules.RulesFrame r)
+    {
+        _dirMask = 0;
+        if (_foodValid) SetDirectionTarget(DirectionKind.Food, in self, in foodPos, in r);
+        if (nest != null && nest.HasFoodPeak) SetDirectionTarget(DirectionKind.NestFood, in self, nest.FoodPeak, in r);
+        if (Points.TryPickBest(in self, out float2 own)) SetDirectionTarget(DirectionKind.OwnPoi, in self, in own, in r);
+        var colony = Colony;
+        if (colony != null && colony.Pois.TryPickBest(self, out float2 shared, out _))
+            SetDirectionTarget(DirectionKind.ColonyPoi, in self, in shared, in r);
+
+        if (nest != null)
+        {
+            float phase = RavineRandom.RangeFloat(0f, 2f * math.PI);
+            nest.SampleExtreme(self, r.FrontierRadius, r.WanderGradientSamples, phase, ColonyChannel.Explored, true, out float2 frontier);
+            SetDirection(DirectionKind.Frontier, in frontier, r.FrontierRadius);
+            if (nest.MigrationPressure > r.MigrationMinPressure)
+                SetDirection(DirectionKind.Migration, math.normalizesafe(nest.Migration), r.MigrateLegRadius);
+        }
+
+        if (_flock.Neighbors > 0) SetDirection(DirectionKind.Flock, in _flock.CentroidDir, r.BoidRadius * 2f);
+        _dirMask |= 1 << (int)DirectionKind.Levy;
+    }
+
+    private void SetDirectionTarget(DirectionKind kind, in float2 self, in float2 target, in SimulationRules.RulesFrame r)
+    {
+        float2 d = target - self;
+        float  l = math.length(d);
+        if (l < 0.5f) return;
+        SetDirection(kind, d / l, math.min(l, r.PlannerRadiusMax));
+    }
+
+    private void SetDirection(DirectionKind kind, in float2 dir, float radius)
+    {
+        if (math.lengthsq(dir) < 1e-6f) return;
+        _dirVec[(int)kind]    = dir;
+        _dirRadius[(int)kind] = radius;
+        _dirMask |= (byte)(1 << (int)kind);
+    }
+
+    public bool TryResolveDirection(byte kind, float offset, out float2 dir, out float radius)
+    {
+        ref readonly var r = ref SimulationRules.Frame;
+        dir    = float2.zero;
+        radius = 0f;
+        if (kind >= (byte)DirectionKind.Count) return false;
+
+        if (kind == (byte)DirectionKind.Levy)
+        {
+            float a = RavineRandom.RangeFloat(0f, 2f * math.PI);
+            math.sincos(a, out float sa, out float ca);
+            dir    = new float2(ca, sa);
+            radius = math.min(LevyStep(in r), r.PlannerRadiusMax);
+        }
+        else
+        {
+            if ((_dirMask & (1 << kind)) == 0) return false;
+            dir    = _dirVec[kind];
+            radius = _dirRadius[kind];
+        }
+
+        math.sincos(offset + _ouAngle, out float s, out float c);
+        dir = new float2(dir.x * c - dir.y * s, dir.x * s + dir.y * c);
+        return true;
+    }
+
+    public float LevyStep(in SimulationRules.RulesFrame r)
+    {
+        float alpha = math.max(r.LevyAlpha * _casteMods.LevyAlpha, 1e-3f);
+        float u = RavineRandom.RangeFloat(1e-4f, 1f);
+        return math.clamp(r.LevyMinStep * math.pow(u, -1f / alpha), r.LevyMinStep, r.LevyMaxStep);
+    }
+
+    public int RecruitNearby(float2 target, int count, float radius)
+    {
+        if (count <= 0 || Perception == null) return 0;
+        double until = SimulationClock.TimeD + SimulationRules.Frame.RecruitWindow;
+        int found = Perception.FindEntitiesInRadius(Motor.Position(), this, radius, Neighbors);
+        int n = 0;
+        for (int i = 0; i < found; i++)
+        {
+            var e = Neighbors[i];
+            Neighbors[i] = null;
+            if (n >= count || e == null || e.Colony != Colony || e.IsDisposed || e.IsDeathPending) continue;
+            if (e.IsJuvenile || e.IsHungry || e.IsRecruited || e.IsCommandRunning || e.Plan.IsActive) continue;
+            e.Recruit(target, until);
+            n++;
+        }
+        return n;
+    }
+
+    public EntityModel FindHungriestKin(float radius)
+    {
+        int found = Perception.FindEntitiesInRadius(Motor.Position(), this, radius, Neighbors);
+        EntityModel best = null;
+        float bestEnergy = float.MaxValue;
+        for (int i = 0; i < found; i++)
+        {
+            var e = Neighbors[i];
+            Neighbors[i] = null;
+            if (e == null || e.Colony != Colony || e.IsDisposed || e.IsDeathPending) continue;
+            float en = e.EffectiveEnergyNorm;
+            if (en >= bestEnergy) continue;
+            bestEnergy = en;
+            best = e;
+        }
+        return best;
+    }
+
+    public EntityModel FindSickestKin(float radius, float minLoad)
+    {
+        int found = Perception.FindEntitiesInRadius(Motor.Position(), this, radius, Neighbors);
+        EntityModel best = null;
+        float bestLoad = minLoad;
+        for (int i = 0; i < found; i++)
+        {
+            var e = Neighbors[i];
+            Neighbors[i] = null;
+            if (e == null || e.Colony != Colony || e.IsDisposed || e.IsDeathPending || e.Virology == null) continue;
+            e.Virology.TryGetViralInputs(out float load, out _, out _);
+            if (load < bestLoad) continue;
+            bestLoad = load;
+            best = e;
+        }
+        return best;
+    }
+
+    public void TickWild()
+    {
+        if (!_cycleActive || _runner.IsRunning) return;
+        ref readonly var r = ref SimulationRules.Frame;
+
+        float hp = Stats.Hp / Stats.MaxHealth;
+        float en = EffectiveEnergyNorm;
+        int action;
+        byte direction = (byte)DirectionKind.None;
+
+        if (hp < r.PredatorFleeHp && _threatResolved) action = (int)EntityAction.Flee;
+        else if (en < r.PredatorHungerOn)
+        {
+            bool meat = _foodValid && _foodKind == FoodKind.Meat;
+            if (meat && _foodDistance <= r.EatRange && !IsSated) action = (int)EntityAction.Eat;
+            else if (meat) action = (int)EntityAction.ApproachFood;
+            else if (CachedHuntTarget.IsValid) action = (int)EntityAction.Attack;
+            else { action = (int)EntityAction.Wander; direction = (byte)DirectionKind.Levy; }
+        }
+        else if (hp < 1f) action = (int)EntityAction.Rest;
+        else { action = (int)EntityAction.Wander; direction = (byte)DirectionKind.Levy; }
+
+        var decision = new BrainDecision(action, 0, 0, SharedHierarchicalBrain.Goal.Hunt, _cycleNow,
+            ActionDurationTable.Max(action), float2.zero, direction: direction);
+        if (!TryStartCommand(action, in decision, CommandSource.Instinct) && action != (int)EntityAction.Wander)
+        {
+            action = (int)EntityAction.Wander;
+            var roam = new BrainDecision(action, 0, 0, SharedHierarchicalBrain.Goal.Hunt, _cycleNow,
+                ActionDurationTable.Max(action), float2.zero, direction: (byte)DirectionKind.Levy);
+            TryStartCommand(action, in roam, CommandSource.Instinct);
+        }
     }
 
     public float Drive()
@@ -1049,6 +1457,8 @@ public class EntityModel : AEntity, IFoodReceiver
         ref readonly var r = ref SimulationRules.Frame;
 
         if (IsAtNest && LastAction == EntityAction.Rest) amount *= r.NestRestDamageMul;
+        amount *= _casteMods.DamageTaken;
+        if (source != null) Points?.MarkNegative(Position2D, r.NegativePoiHit);
         Mortality?.NoteHarm(cause, Stats.Hp - amount);
         Stats.Hp -= amount;
         if (source != null && !ReferenceEquals(source, this))
