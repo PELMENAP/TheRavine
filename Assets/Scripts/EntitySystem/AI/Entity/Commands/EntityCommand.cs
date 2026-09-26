@@ -84,6 +84,12 @@ public abstract class EntityCommand : IEntityCommand
         return EntityCommandStatus.Failed;
     }
 
+    protected EntityCommandStatus Fail(float reward)
+    {
+        Reward = reward;
+        return EntityCommandStatus.Failed;
+    }
+
     protected EntityCommandStatus Interrupted()
     {
         Cancel();

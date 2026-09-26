@@ -42,8 +42,16 @@ public class SimulationDebugDashboard : MonoBehaviour
     private GUIStyle _valueStyle;
     private bool     _stylesInitialized;
 
-    private Rect _windowRect = new Rect(10, 10, 420, 980);
+    private Rect _windowRect = new Rect(10, 10, 420, 1060);
     private GUIStyle _warnStyle;
+
+    private const int ColonyDiagLines = 5;
+    private static readonly string[] ColonyDiagKeys =
+    {
+        "  deaths K/S/V/T/A", "  storage % (abs) / fill", "  storage eaten / stored",
+        "  rest@nest / rest plans", "  attacks own/foreign/player",
+    };
+    private string[] _colonyDiag = Array.Empty<string>();
 
     private int _coordStaleDrops;
     private int _execStaleDrops;
@@ -56,6 +64,7 @@ public class SimulationDebugDashboard : MonoBehaviour
         int count    = entities.Count;
 
         _populationHistory.Push(count);
+        SampleColonyDiagnostics();
 
         int coordStale = 0, execStale = 0, coordSteps = 0, execSteps = 0;
 
@@ -103,6 +112,29 @@ public class SimulationDebugDashboard : MonoBehaviour
             _goalHistory[i].Push(_goalCounts[i] / count);
 
         _generationTracker.Record(entities, _manager.SharedBrain);
+    }
+
+    private void SampleColonyDiagnostics()
+    {
+        var colonies = _manager.Colonies;
+        if (colonies == null) return;
+
+        int need = colonies.Count * ColonyDiagLines;
+        if (_colonyDiag.Length != need) _colonyDiag = new string[need];
+
+        for (int c = 0; c < colonies.Count; c++)
+        {
+            var colony = colonies[c];
+            var st     = colony.Stats;
+            var d      = st.DeathsByCause;
+            var a      = st.Attacks;
+            int o      = c * ColonyDiagLines;
+            _colonyDiag[o]     = $"{d[(int)DeathCause.Killed]}/{d[(int)DeathCause.Starved]}/{d[(int)DeathCause.Virus]}/{d[(int)DeathCause.Toxic]}/{d[(int)DeathCause.Age]}";
+            _colonyDiag[o + 1] = $"{st.StorageShare * 100f:0}% ({colony.Nest.Storage:F0}) / {st.MeanFill:F2}";
+            _colonyDiag[o + 2] = $"{st.StorageEaten:F0} / {st.StorageStored:F0}";
+            _colonyDiag[o + 3] = $"{st.RestAtNestShare * 100f:0}% / {st.PlanShare(PlanKind.Rest) * 100f:0}%";
+            _colonyDiag[o + 4] = $"{a[(int)ColonyStats.AttackTarget.Own]}/{a[(int)ColonyStats.AttackTarget.Foreign]}/{a[(int)ColonyStats.AttackTarget.Player]}";
+        }
     }
 
     private void DrawWindow(int id)
@@ -251,6 +283,11 @@ public class SimulationDebugDashboard : MonoBehaviour
                 completed += st.PlansCompleted[p];
             }
             DrawKV(ref y, "  plans done", started > 0 ? $"{completed * 100f / started:0}% of {started}" : "-");
+
+            int o = c * ColonyDiagLines;
+            if (o + ColonyDiagLines <= _colonyDiag.Length)
+                for (int k = 0; k < ColonyDiagLines; k++)
+                    DrawKV(ref y, ColonyDiagKeys[k], _colonyDiag[o + k] ?? "-");
 
             if (st.Died > 0 && interval <= st.MeanLifespan)
             {

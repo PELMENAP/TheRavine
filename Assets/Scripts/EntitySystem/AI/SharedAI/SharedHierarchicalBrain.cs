@@ -262,6 +262,9 @@ public class SharedHierarchicalBrain : IDisposable
     private int[]                _dRow      = Array.Empty<int>();
     private BrainDecision[]      _dDecision = Array.Empty<BrainDecision>();
     private bool[]               _dMade     = Array.Empty<bool>();
+    private int[]                _dRnd      = Array.Empty<int>();
+    private EntityBrainContext[] _rndCtx    = Array.Empty<EntityBrainContext>();
+    private float[]              _rndReward = Array.Empty<float>();
     private NativeList<int>      _rndRows;
     private int _dCount;
     private int _rCount;
@@ -270,10 +273,14 @@ public class SharedHierarchicalBrain : IDisposable
     {
         CompletePending();
         for (int i = 0; i < _dCount; i++) _dCtx[i] = null;
+        if (_rndRows.IsCreated)
+        {
+            for (int i = 0; i < _rndRows.Length; i++) _rndCtx[i] = null;
+            _rndRows.Clear();
+        }
         _dCount = 0;
         _rCount = 0;
         _batch?.ClearReservoir();
-        if (_rndRows.IsCreated) _rndRows.Clear();
     }
 
     public unsafe int EnqueueDecision(EntityBrainContext ctx, float[] input, float simTime, float dt, bool allowDecision = true)
@@ -284,19 +291,26 @@ public class SharedHierarchicalBrain : IDisposable
         _batch.SetInput(row, input);
         _batch.AddReservoir(BuildReservoirItem(ctx.Reservoir, row, simTime, dt));
 
-        if (!allowDecision || ctx.ExecWindow.IsRunning(simTime)) return -1;
+        bool decider = allowDecision && !ctx.ExecWindow.IsRunning(simTime);
+        if (!decider && ctx.CoordDecisionId == 0) return -1;
+
+        if (!_rndRows.IsCreated) _rndRows = new NativeList<int>(64, Allocator.Persistent);
+        int k = _rndRows.Length;
+        EnsureRndCapacity(k + 1);
+        _rndRows.Add(row);
+        _rndCtx[k] = ctx;
+        _rnd.Collect(input);
+        if (!decider) return -1;
 
         int d = _dCount;
         EnsureDeciderCapacity(d + 1);
-        if (!_rndRows.IsCreated) _rndRows = new NativeList<int>(64, Allocator.Persistent);
 
         _dCtx[d]  = ctx;
         _dTime[d] = simTime;
         _dDt[d]   = dt;
         _dRow[d]  = row;
         _dMade[d] = false;
-        _rndRows.Add(row);
-        _rnd.Collect(input);
+        _dRnd[d]  = k;
 
         _dCount = d + 1;
         return d;
@@ -355,14 +369,18 @@ public class SharedHierarchicalBrain : IDisposable
 
         var reservoirHandle = batch.ScheduleReservoir(reservoir.WeightsPtr, reservoir.BiasesPtr, LstmHidden);
 
+        int rndCount = _rndRows.IsCreated ? _rndRows.Length : 0;
+        var rndHandle = rndCount > 0 ? _rnd.ScheduleInfer(batch.Inputs, _rndRows.AsArray(), rndCount) : default;
+
         if (n == 0)
         {
+            rndHandle.Complete();
+            ReadIntrinsic(rndCount);
+            AccumulateNovelty(rndCount);
             _pending = reservoirHandle;
             ScheduleTraining();
             return;
         }
-
-        var rndHandle = _rnd.ScheduleInfer(batch.Inputs, _rndRows.AsArray(), n);
 
         float decay = ExplorationDecay();
         ref readonly var frame = ref SimulationRules.Frame;
@@ -410,7 +428,8 @@ public class SharedHierarchicalBrain : IDisposable
 
         JobHandle.CombineDependencies(coordHandle, rndHandle).Complete();
 
-        for (int d = 0; d < n; d++) _dCtx[d].IntrinsicReward = _rnd.IntrinsicReward(d);
+        ReadIntrinsic(rndCount);
+        for (int d = 0; d < n; d++) _dCtx[d].IntrinsicReward = _rndReward[_dRnd[d]];
 
         for (int k = 0; k < coordCount; k++)
         {
@@ -434,6 +453,8 @@ public class SharedHierarchicalBrain : IDisposable
             ctx.GoalEndTime     = simTime + planTicket.Duration;
             ctx.BeginGoal(simTime);
         }
+
+        AccumulateNovelty(rndCount);
 
         for (int d = 0; d < n; d++)
         {
@@ -565,6 +586,30 @@ public class SharedHierarchicalBrain : IDisposable
             _nets[1 + g] = new NetWeights { W = executors[g].WeightsPtr, B = executors[g].BiasesPtr };
     }
 
+    private void ReadIntrinsic(int count)
+    {
+        for (int k = 0; k < count; k++) _rndReward[k] = _rnd.IntrinsicReward(k);
+    }
+
+    private void AccumulateNovelty(int count)
+    {
+        for (int k = 0; k < count; k++)
+        {
+            var ctx = _rndCtx[k];
+            if (ctx == null || ctx.CoordDecisionId == 0) continue;
+            ctx.NoveltySum += _rndReward[k];
+            ctx.NoveltyCount++;
+        }
+    }
+
+    private void EnsureRndCapacity(int needed)
+    {
+        if (needed <= _rndCtx.Length) return;
+        int cap = Math.Max(_rndCtx.Length << 1, Math.Max(needed, 64));
+        Array.Resize(ref _rndCtx, cap);
+        Array.Resize(ref _rndReward, cap);
+    }
+
     private void EnsureDeciderCapacity(int needed)
     {
         if (needed <= _dCtx.Length) return;
@@ -575,6 +620,7 @@ public class SharedHierarchicalBrain : IDisposable
         Array.Resize(ref _dRow, cap);
         Array.Resize(ref _dDecision, cap);
         Array.Resize(ref _dMade, cap);
+        Array.Resize(ref _dRnd, cap);
     }
 
     public void Dispose()
@@ -603,7 +649,7 @@ public class SharedHierarchicalBrain : IDisposable
         if (ctx.ExecWindow.DecisionId == decision.ExecDecisionId) ctx.ExecWindow.End();
     }
 
-    public void CompleteTerminal(EntityBrainContext ctx, float penalty)
+    public void CompleteTerminal(EntityBrainContext ctx, float penalty, float deathTime)
     {
         if (ctx == null) return;
         CompletePending();
@@ -631,10 +677,10 @@ public class SharedHierarchicalBrain : IDisposable
         float weight  = frame.DeathReplayWeight;
         for (int i = 0; i < GoalCount; i++)
             executors[i].FlushTerminal(ctx.ExecMLPs[i], execCritics[i], frame.ExecGammaPerSecond,
-                                       i == g ? scaled : 0f, replay, passes, weight);
+                                       scaled, deathTime, replay, passes, weight);
 
         FlushGoalRewardToCoordinator(ctx);
-        coordinator.FlushTerminal(ctx.CoordMLP, coordCritic, frame.CoordGammaPerSecond, scaled,
+        coordinator.FlushTerminal(ctx.CoordMLP, coordCritic, frame.CoordGammaPerSecond, scaled, deathTime,
                                   replay, passes, weight);
 
         ctx.CoordDecisionId = 0;
@@ -650,6 +696,7 @@ public class SharedHierarchicalBrain : IDisposable
         if (item == null) return;
 
         var r = SimulationRules.Active;
+        ctx.GoalNovelty = ctx.NoveltyCount > 0 ? ctx.NoveltySum / ctx.NoveltyCount : 0f;
         float curiosity = r.CoordCuriosityWeight * ExplorationDecay()
                         * (1f - r.CuriosityStorageDamp * math.saturate(ctx.ColonyStorage));
         float goal = ctx.GoalDiscountedReturn

@@ -77,6 +77,8 @@ public class EntityManager : MonoBehaviour
 
     private InstinctSystem _instincts;
     private BoidSystem _boids;
+    private readonly PlayerPresence _players = new();
+    public PlayerPresence Players => _players;
     public InstinctSystem Instincts => _instincts;
     private int _nextEntityId;
     private float[] _colonyFitness = Array.Empty<float>();
@@ -137,6 +139,7 @@ public class EntityManager : MonoBehaviour
         _instincts = new InstinctSystem(maxPopulation);
         _boids     = new BoidSystem(maxPopulation);
         ServiceLocator.Services.Register(_grid);
+        ServiceLocator.Services.Register(_players);
         _colonies = new ColonyRegistry();
         CreateColonies();
         ServiceLocator.Services.Register(_colonies);
@@ -331,6 +334,7 @@ public class EntityManager : MonoBehaviour
     private void RunTickBatch(int start, int end)
     {
         BeginColonyBatches();
+        _players.Refresh();
 
         int lo = int.MaxValue, hi = -1;
         for (int i = start; i < end; i++)
@@ -538,15 +542,28 @@ public class EntityManager : MonoBehaviour
         float dt  = now - _lastNestTime;
         _lastNestTime = now;
 
+        var r = SimulationRules.Active;
         for (int c = 0; c < _colonies.Count; c++)
         {
             var colony  = _colonies[c];
             var members = colony.Members;
-            int atNest  = 0;
+            int atNest  = 0, restingAtNest = 0;
+            float fill  = 0f;
             for (int i = 0; i < members.Length; i++)
-                if (_entities[members[i]].IsAtNest) atNest++;
+            {
+                var e = _entities[members[i]];
+                if (e.IsDisposed) continue;
+                fill += e.Digestion.Fill;
+                if (!e.IsAtNest) continue;
+                atNest++;
+                if (e.Plan.Kind == PlanKind.Rest || (e.IsCommandRunning && e.LastAction == EntityAction.Rest)) restingAtNest++;
+            }
 
             colony.Nest.Tick(dt, atNest);
+
+            float inv = members.Length > 0 ? 1f / members.Length : 0f;
+            colony.Stats.SampleMembers(fill * inv, restingAtNest * inv,
+                math.saturate(colony.Nest.Storage / math.max(r.NestStorageNorm, 1e-3f)));
         }
     }
 
@@ -743,7 +760,7 @@ public class EntityManager : MonoBehaviour
             HandleLeaderDeath(model);
             BroadcastDeath(model, cause);
             DropCorpse(model, cause);
-            model.Brain?.CompleteTerminal(TerminalPenaltyFor(model));
+            model.Brain?.CompleteTerminal(TerminalPenaltyFor(model, cause), SimulationClock.Time);
             RemoveEntitySwapBack(model);
             OnEntityDied?.Invoke(model);
 
@@ -850,16 +867,15 @@ public class EntityManager : MonoBehaviour
         model.ManagerIndex = -1;
     }
 
-    private float TerminalPenaltyFor(EntityModel model)
+    private float TerminalPenaltyFor(EntityModel model, DeathCause cause)
     {
         var rules = SimulationRules.Active;
-        float basePenalty = rules.TerminalPenalty;
+        float basePenalty = rules.TerminalPenalty * rules.DeathPenaltyMul(cause);
         if (!_fitnessStatsReady) return basePenalty;
 
         float z     = (model.FinalFitness - _fitnessMedian) / _fitnessSpread;
-        float scale = Mathf.Clamp(1f - z * rules.TerminalFitnessSensitivity,
-                                  Mathf.Max(1f, rules.TerminalPenaltyMinScale),
-                                  Mathf.Max(1f, rules.TerminalPenaltyMaxScale));
+        float lo    = math.max(rules.TerminalPenaltyMinScale, 0f);
+        float scale = math.clamp(1f - z * rules.TerminalFitnessSensitivity, lo, math.max(lo, rules.TerminalPenaltyMaxScale));
         return basePenalty * scale;
     }
 

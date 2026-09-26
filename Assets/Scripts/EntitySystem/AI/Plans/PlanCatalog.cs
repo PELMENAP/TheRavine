@@ -14,7 +14,7 @@ public enum PlanKind : byte
 }
 
 [Flags]
-public enum PlanHint : ushort
+public enum PlanHint : uint
 {
     None         = 0,
     FoodVisible  = 1 << 0,
@@ -33,6 +33,9 @@ public enum PlanHint : ushort
     MigrationUrge = 1 << 13,
     IsLeader     = 1 << 14,
     ForeignNear  = 1 << 15,
+    PreyNear     = 1 << 16,
+    PlayerNear   = 1 << 17,
+    NestHasFood  = 1 << 18,
 }
 
 public struct PlanProgress
@@ -43,6 +46,7 @@ public struct PlanProgress
     public int  Steps;
     public int  Failures;
     public bool Ate;
+    public bool Achieved;
 }
 
 public static class PlanCatalog
@@ -78,7 +82,7 @@ public static class PlanCatalog
         {
             case PlanKind.Graze:
                 if (Has(h, PlanHint.Sated)) return 0;
-                if (Has(h, PlanHint.FoodInRange)) return Bit(EntityAction.Eat);
+                if (Has(h, PlanHint.FoodInRange) || Has(h, PlanHint.NestHasFood)) return Bit(EntityAction.Eat);
                 return Has(h, PlanHint.FoodVisible) ? Bit(EntityAction.ApproachFood) : 0;
 
             case PlanKind.Harvest:
@@ -91,11 +95,12 @@ public static class PlanCatalog
                 return Bit(EntityAction.Wander) | (Has(h, PlanHint.HasPoi) ? Bit(EntityAction.GoToPoint) : 0);
 
             case PlanKind.Hunt:
-                return Has(h, PlanHint.EntityNear) && Has(h, PlanHint.CanAttack)
+                return Has(h, PlanHint.PreyNear) && Has(h, PlanHint.CanAttack)
                     ? Bit(EntityAction.Attack) | Bit(EntityAction.Threaten)
                     : 0;
 
             case PlanKind.Rest:
+                if (Has(h, PlanHint.Hungry) && (Has(h, PlanHint.FoodVisible) || Has(h, PlanHint.NestHasFood))) return 0;
                 return Bit(EntityAction.Rest) | (Has(h, PlanHint.AtNest) ? 0 : Bit(EntityAction.ReturnNest));
 
             case PlanKind.Flee:
@@ -122,13 +127,18 @@ public static class PlanCatalog
         switch (p.Kind)
         {
             case PlanKind.Graze:
+                p.Achieved = p.Ate;
                 if (Has(h, PlanHint.Sated)) return Complete;
-                if (Has(h, PlanHint.FoodInRange)) return (int)EntityAction.Eat;
+                if (Has(h, PlanHint.FoodInRange) || Has(h, PlanHint.NestHasFood)) return (int)EntityAction.Eat;
                 if (Has(h, PlanHint.FoodVisible)) return (int)EntityAction.ApproachFood;
                 return p.Ate ? Complete : Fail;
 
             case PlanKind.Harvest:
-                if (lastAction == (int)EntityAction.StoreFood) return ok ? Complete : Fail;
+                if (lastAction == (int)EntityAction.StoreFood)
+                {
+                    p.Achieved = ok;
+                    return ok ? Complete : Fail;
+                }
                 if (p.Phase == 0)
                 {
                     bool carrying = Has(h, PlanHint.Carrying);
@@ -150,7 +160,11 @@ public static class PlanCatalog
                 if (ok && lastAction != (int)EntityAction.RememberPoint)
                 {
                     p.Steps++;
-                    if (Has(h, PlanHint.FoodVisible)) return (int)EntityAction.RememberPoint;
+                    if (Has(h, PlanHint.FoodVisible))
+                    {
+                        p.Achieved = true;
+                        return (int)EntityAction.RememberPoint;
+                    }
                 }
                 if (p.Steps >= r.PatrolLegs) return Complete;
                 return p.Variant == (int)EntityAction.GoToPoint && Has(h, PlanHint.HasPoi)
@@ -159,11 +173,13 @@ public static class PlanCatalog
 
             case PlanKind.Hunt:
                 if (lastAction == (int)EntityAction.Attack && ok) p.Steps++;
-                if (!Has(h, PlanHint.EntityNear)) return p.Steps > 0 ? Complete : Fail;
+                p.Achieved = p.Steps > 0;
+                if (!Has(h, PlanHint.PreyNear)) return p.Steps > 0 ? Complete : Fail;
                 if (p.Steps >= r.HuntMaxStrikes || !Has(h, PlanHint.CanAttack)) return p.Steps > 0 ? Complete : Fail;
                 return (int)EntityAction.Attack;
 
             case PlanKind.Rest:
+                if (lastAction == (int)EntityAction.Rest && !ok && Has(h, PlanHint.Hungry)) return Fail;
                 if (lastAction == (int)EntityAction.Rest && ok) p.Steps++;
                 if (p.Steps >= r.RestMaxSteps || (p.Steps > 0 && Has(h, PlanHint.HpFull))) return Complete;
                 return (int)EntityAction.Rest;
@@ -174,12 +190,17 @@ public static class PlanCatalog
                 return (int)EntityAction.Flee;
 
             case PlanKind.Migrate:
-                if (lastAction == (int)EntityAction.MoveNest) return ok ? Complete : Fail;
+                if (lastAction == (int)EntityAction.MoveNest)
+                {
+                    p.Achieved = ok;
+                    return ok ? Complete : Fail;
+                }
                 if (ok && lastAction == (int)EntityAction.Wander) p.Steps++;
                 if (p.Steps < r.MigrateLegs) return (int)EntityAction.Wander;
                 return Has(h, PlanHint.IsLeader) ? (int)EntityAction.MoveNest : Complete;
 
             case PlanKind.Court:
+                if (ok && lastAction == (int)EntityAction.Reproduce) p.Achieved = true;
                 if (p.Phase == 0 && lastAction != (int)EntityAction.Reproduce && Has(h, PlanHint.CanReproduce))
                 {
                     p.Phase = 1;

@@ -107,7 +107,7 @@ public sealed class PlanRunner
 
         var r = SimulationRules.Active;
         float total = _return + _model.HomeostaticReturn() + _model.ConsumeExtrinsicReward();
-        if (status == EntityCommandStatus.Completed) total += r.PlanCompleteReward;
+        if (_p.Achieved && status != EntityCommandStatus.Failed) total += r.PlanCompleteReward;
 
         var brain = _model.Brain;
         brain.CompleteDecision(in _decision, total, SimulationClock.Time, status);

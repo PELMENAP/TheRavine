@@ -15,6 +15,7 @@ public class RestCommand : EntityCommand
 
     protected override EntityCommandStatus OnBegin()
     {
+        if (model.IsHungry) return Fail(SimulationRules.Active.InfeasibleActionReward);
         model.Motor.Stop();
         _prev = SimulationClock.TimeD;
         return EntityCommandStatus.Running;
@@ -24,6 +25,7 @@ public class RestCommand : EntityCommand
     {
         var r     = SimulationRules.Active;
         var stats = model.Stats;
+        if (model.IsHungry) return Fail(r.InfeasibleActionReward);
 
         double end = decision.EndTime;
         double t   = math.min(SimulationClock.TimeD, end);
@@ -35,7 +37,8 @@ public class RestCommand : EntityCommand
             float en     = stats.En;
             float cost   = r.RestHealEnergyCost;
             float rate   = r.RestHealRate * (model.IsAtNest ? r.NestRestHealMul : 1f) * model.RestHealMul;
-            float budget = cost > 0f ? en / cost : float.MaxValue;
+            float spare  = math.max(0f, en - r.StarvationThreshold - r.RestMinEnergyReserve);
+            float budget = cost > 0f ? spare / cost : (spare > 0f ? float.MaxValue : 0f);
             float heal   = math.min(math.min(rate * step, stats.MaxHealth - hp), budget);
             if (heal > 0f)
             {
@@ -242,9 +245,7 @@ public class FleeCommand : PlannedMoveCommand
         float2 self  = model.Position2D;
         float  total = model.Tuning.DetectionRadius * r.FleeDistanceMul;
 
-        var threat = model.CachedNearest;
-        if (threat != null) _threat = Extension.Flat(threat.Motor.Position());
-        else if (!TryDangerSource(r, self, total, out _threat)) return Complete();
+        if (!model.TryGetThreatSource(out _threat) && !TryDangerSource(r, self, total, out _threat)) return Complete();
 
         _legs      = math.max(1, r.FleeZigzagLegs);
         _leg       = 0;
@@ -307,10 +308,11 @@ public class EatCommand : EntityCommand
         var index = model.FoodIndex;
         bool foodNear = index != null && model.CachedFoodValid && model.CachedFoodDistance <= r.EatRange;
 
-        if (!foodNear && nest != null && model.IsAtNest && nest.Storage > 0f)
+        if (!foodNear && nest != null && model.CanEatFromNest && nest.Storage > 0f)
         {
             float take = math.min(nest.Storage, r.NestEatPortion);
             nest.Storage -= take;
+            model.Colony?.Stats.RecordStorageEaten(take);
             return StartEating(take, false);
         }
 
@@ -428,7 +430,9 @@ public class StoreFoodCommand : EntityCommand
     {
         var nest = model.Nest;
         if (nest == null || !model.IsAtNest || model.Carrying <= 0f) return Fail();
-        nest.Storage += model.TakeCarried();
+        float stored = model.TakeCarried();
+        nest.Storage += stored;
+        model.Colony?.Stats.RecordStorageStored(stored);
         model.DepositTrail();
         model.ShareMemoryWithColony();
         return Complete();
@@ -553,9 +557,9 @@ public class MimicCommand : EntityCommand
 
 public class ThreatenCommand : EntityCommand
 {
-    private double      _holdEnd;
-    private EntityModel _target;
-    private float2      _facing;
+    private double     _holdEnd;
+    private HuntTarget _target;
+    private float2     _facing;
 
     public ThreatenCommand(EntityModel model) : base(model) { }
 
@@ -563,7 +567,7 @@ public class ThreatenCommand : EntityCommand
     {
         var r = SimulationRules.Active;
         var target = model.CachedHuntTarget;
-        if (target == null) return Fail();
+        if (!target.IsValid) return Fail();
         float dist = math.distance(model.Position2D, target.Position2D);
         if (dist > model.Tuning.AttackRange * r.ThreatenRangeMul) return Fail();
 
@@ -579,7 +583,7 @@ public class ThreatenCommand : EntityCommand
     protected override EntityCommandStatus OnTick(float dt)
     {
         if (Elapsed(_holdEnd)) return Complete();
-        if (IsGone(_target)) return Complete();
+        if (!_target.IsValid) return Complete();
         if (!model.Motor.IsMoving) Face(SimulationRules.Active);
         return EntityCommandStatus.Running;
     }
@@ -587,7 +591,7 @@ public class ThreatenCommand : EntityCommand
     private void Face(SimulationRules r)
     {
         float2 self = model.Position2D;
-        float2 to   = math.normalizesafe(Extension.Flat(_target.Motor.Position()) - self);
+        float2 to   = math.normalizesafe(_target.Position2D - self);
         if (math.lengthsq(to) < 1e-6f) return;
 
         bool first = math.lengthsq(_facing) < 1e-6f;
@@ -599,7 +603,7 @@ public class ThreatenCommand : EntityCommand
             (float)math.max(_holdEnd - SimulationClock.TimeD, 0.05), model.Tuning.EnergyCostMoving);
     }
 
-    protected override void OnCancel() => _target = null;
+    protected override void OnCancel() => _target = default;
 }
 public class ShareFoodCommand : EntityCommand
 {
@@ -639,7 +643,7 @@ public class AttackCommand : EntityCommand
     private enum Phase { Approach, Dash, Recover }
 
     private static readonly EntityModel[] Allies = new EntityModel[16];
-    private EntityModel _target;
+    private HuntTarget _target;
     private Phase  _phase;
     private double _recoverEnd;
 
@@ -651,13 +655,13 @@ public class AttackCommand : EntityCommand
     protected override EntityCommandStatus OnBegin()
     {
         _target = model.CachedHuntTarget;
-        if (_target == null || !CanExecute()) return Fail();
+        if (!_target.IsValid || !CanExecute()) return Fail();
 
         var r = SimulationRules.Active;
         _phase = Phase.Approach;
         if (DistanceToTarget() <= r.DashDistance) return BeginDash(r);
 
-        StartMove(_target.Motor.Position(), model.Tuning.MoveSpeed, r.AttackMoveMaxDuration,
+        StartMove(_target.Position, model.Tuning.MoveSpeed, r.AttackMoveMaxDuration,
             model.Tuning.EnergyCostMoving);
         return EntityCommandStatus.Running;
     }
@@ -669,7 +673,7 @@ public class AttackCommand : EntityCommand
         if (_phase == Phase.Recover)
             return Elapsed(_recoverEnd) ? Complete() : EntityCommandStatus.Running;
 
-        if (IsGone(_target)) return Fail();
+        if (!_target.IsValid) return Fail();
 
         if (_phase == Phase.Approach)
         {
@@ -697,7 +701,7 @@ public class AttackCommand : EntityCommand
         _phase = Phase.Dash;
 
         float speed = model.Tuning.RunSpeed * r.DashMul;
-        StartMove(_target.Motor.Position(), speed, r.DashDistance / math.max(speed * model.SpeedMul, 0.1f) + r.DashRecovery,
+        StartMove(_target.Position, speed, r.DashDistance / math.max(speed * model.SpeedMul, 0.1f) + r.DashRecovery,
             model.Tuning.EnergyCostRunning);
         return EntityCommandStatus.Running;
     }
@@ -705,7 +709,7 @@ public class AttackCommand : EntityCommand
     private EntityCommandStatus Strike(SimulationRules r)
     {
         var target = _target;
-        if (IsGone(target)) return Fail();
+        if (!target.IsValid) return Fail();
 
         float range = model.Tuning.AttackRange;
         var stats = model.Stats;
@@ -718,11 +722,18 @@ public class AttackCommand : EntityCommand
 
         float damage = model.Tuning.AttackDamage * model.AttackDamageMul * energyScale;
         if (model.SinceAction(EntityAction.Threaten) < r.SynergyWindow) damage *= r.ThreatenAttackMul;
-        damage *= 1f + r.GroupAttackBonus * CountAllies(target, r);
+        damage *= 1f + r.GroupAttackBonus * CountAllies(in target, r);
 
-        target.TakeDamage(damage, model);
+        var victim = target.Entity;
+        if (victim != null)
+        {
+            victim.TakeDamage(damage, model);
+            model.Infection?.TryTransmitBite(model, victim);
+        }
+        else model.Players?.ReportHit(target.Player, damage, model);
         model.RegisterFitnessEvent(EntityModel.FitnessEvent.DamageDealt, damage);
-        model.Infection?.TryTransmitBite(model, target);
+        model.Colony?.Stats.RecordAttack(victim == null ? ColonyStats.AttackTarget.Player
+            : victim.Colony == model.Colony ? ColonyStats.AttackTarget.Own : ColonyStats.AttackTarget.Foreign);
 
         _phase      = Phase.Recover;
         _recoverEnd = HoldUntil(r.DashRecovery);
@@ -731,23 +742,23 @@ public class AttackCommand : EntityCommand
     }
 
     private float DistanceToTarget()
-        => math.distance((float3)model.Motor.Position(), (float3)_target.Motor.Position());
+        => math.distance((float3)model.Motor.Position(), (float3)_target.Position);
 
-    private int CountAllies(EntityModel target, SimulationRules r)
+    private int CountAllies(in HuntTarget target, SimulationRules r)
     {
-        int found = target.Perception.FindEntitiesInRadius(target.Motor.Position(), target, r.GroupAttackRadius, Allies);
+        int found = model.Perception.FindEntitiesInRadius(target.Position, target.Entity ?? model, r.GroupAttackRadius, Allies);
         int n = 0;
         for (int i = 0; i < found; i++)
         {
             var e = Allies[i];
             Allies[i] = null;
-            if (ReferenceEquals(e, model) || e.SinceAction(EntityAction.Attack) > r.GroupAttackWindow) continue;
+            if (e == null || ReferenceEquals(e, model) || e.SinceAction(EntityAction.Attack) > r.GroupAttackWindow) continue;
             n++;
         }
         return math.min(n, r.GroupAttackMaxCount);
     }
 
-    protected override void OnCancel() => _target = null;
+    protected override void OnCancel() => _target = default;
 }
 
 public class FollowCommand : PlannedMoveCommand

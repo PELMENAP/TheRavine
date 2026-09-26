@@ -1,4 +1,7 @@
 using UnityEngine;
+using Unity.Collections;
+using Unity.Mathematics;
+using TheRavine.EntityControl.Virology;
 
 [CreateAssetMenu(fileName = "SimulationRules", menuName = "Simulation/Rules")]
 public sealed class SimulationRules : ScriptableObject
@@ -323,6 +326,14 @@ public sealed class SimulationRules : ScriptableObject
         public readonly float CasteScoutNoFoodStimulus;
         public readonly float CasteNurseGain;
         public readonly float BiteSeekOwnThreshold;
+        public readonly float NestFoodMinPortionFraction;
+        public readonly float NestJuvenileReserve;
+        public readonly float HungerReinterruptSeconds;
+        public readonly float RestMinEnergyReserve;
+        public readonly ulong EndogenousForbiddenMask;
+        public readonly int   EndogenousRerollAttempts;
+        public readonly FixedList128Bytes<float3> BoidPlanMul;
+        public readonly float3 BoidNightMul;
 
         public RulesFrame(SimulationRules r)
         {
@@ -642,6 +653,14 @@ public sealed class SimulationRules : ScriptableObject
             CasteScoutNoFoodStimulus = r.casteScoutNoFoodStimulus;
             CasteNurseGain = r.casteNurseGain;
             BiteSeekOwnThreshold = r.biteSeekOwnThreshold;
+            NestFoodMinPortionFraction = r.nestFoodMinPortionFraction;
+            NestJuvenileReserve = r.nestJuvenileReserve;
+            HungerReinterruptSeconds = r.hungerReinterruptSeconds;
+            RestMinEnergyReserve = r.restMinEnergyReserve;
+            EndogenousForbiddenMask = r.BuildEndogenousForbiddenMask();
+            EndogenousRerollAttempts = r.endogenousRerollAttempts;
+            BoidPlanMul = r.BuildBoidPlanMul();
+            BoidNightMul = r.boidNightMul;
         }
     }
 
@@ -867,6 +886,30 @@ public sealed class SimulationRules : ScriptableObject
     [SerializeField] private float casteScoutNoFoodStimulus = 0.5f;
     [SerializeField] private float casteNurseGain = 2f;
     [SerializeField] private float biteSeekOwnThreshold = 0.5f;
+    [SerializeField] private float nestFoodMinPortionFraction = 1f;
+    [SerializeField] private float nestJuvenileReserve = 60f;
+    [SerializeField] private float hungerReinterruptSeconds = 8f;
+    [SerializeField] private float restMinEnergyReserve = 5f;
+    [SerializeField] private ProteinAction[] endogenousForbidden =
+    {
+        ProteinAction.DrainHealth, ProteinAction.DrainEnergy, ProteinAction.MetabolismUp,
+        ProteinAction.Fever, ProteinAction.HomeCompulsion,
+    };
+    [SerializeField] private int endogenousRerollAttempts = 8;
+    [SerializeField] private float[] deathPenaltyByCause = { 1f, 1.5f, 0.6f, 0.6f, 0.3f };
+    [SerializeField] private Vector3[] planBoidMul =
+    {
+        new(1.6f, 0.6f, 0.3f),
+        new(1.6f, 0.6f, 0.3f),
+        new(1.3f, 0.8f, 0.5f),
+        new(1f, 1f, 0.8f),
+        new(1f, 1f, 1f),
+        new(0.8f, 1.4f, 1.6f),
+        new(1f, 1f, 1f),
+        new(0.8f, 1.5f, 1.8f),
+        new(1f, 1f, 1f),
+    };
+    [SerializeField] private Vector3 boidNightMul = new(0.8f, 1.2f, 1.5f);
     [SerializeField] private float blockedSpeedThreshold = 0.15f;
     [SerializeField] private float blockedSeconds = 0.75f;
     [SerializeField] private float digestRateRest = 4f;
@@ -885,7 +928,7 @@ public sealed class SimulationRules : ScriptableObject
     [SerializeField] private float infeasibleActionReward = -0.15f;
     [SerializeField] private float goalFoodWeight = 0.3f;
     [SerializeField] private float goalEnergyWeight = 1f;
-    [SerializeField] private float goalRestWeight = 0.05f;
+    [SerializeField] private float goalRestWeight = 0f;
     [SerializeField] private float coordCuriosityWeight = 0.15f;
     [SerializeField] private float execGammaPerSecond = 0.9f;
     [SerializeField] private float coordGammaPerSecond = 0.97f;
@@ -1188,6 +1231,33 @@ public sealed class SimulationRules : ScriptableObject
     public float CasteScoutNoFoodStimulus => casteScoutNoFoodStimulus;
     public float CasteNurseGain => casteNurseGain;
     public float BiteSeekOwnThreshold => biteSeekOwnThreshold;
+    public float NestFoodMinPortionFraction => nestFoodMinPortionFraction;
+    public float NestJuvenileReserve => nestJuvenileReserve;
+    public float HungerReinterruptSeconds => hungerReinterruptSeconds;
+    public float RestMinEnergyReserve => restMinEnergyReserve;
+    public int EndogenousRerollAttempts => endogenousRerollAttempts;
+    public float DeathPenaltyMul(DeathCause cause)
+        => deathPenaltyByCause != null && (uint)cause < (uint)deathPenaltyByCause.Length ? deathPenaltyByCause[(int)cause] : 1f;
+
+    private ulong BuildEndogenousForbiddenMask()
+    {
+        ulong mask = 0UL;
+        if (endogenousForbidden == null) return mask;
+        for (int i = 0; i < endogenousForbidden.Length; i++)
+        {
+            int a = (int)endogenousForbidden[i];
+            if ((uint)a < 64u) mask |= 1UL << a;
+        }
+        return mask;
+    }
+
+    private FixedList128Bytes<float3> BuildBoidPlanMul()
+    {
+        var list = new FixedList128Bytes<float3>();
+        for (int p = 0; p <= PlanCatalog.Count; p++)
+            list.Add(planBoidMul != null && p < planBoidMul.Length ? (float3)planBoidMul[p] : new float3(1f));
+        return list;
+    }
     public float BlockedSpeedThreshold => blockedSpeedThreshold;
     public float BlockedSeconds => blockedSeconds;
     public float DigestRateRest => digestRateRest;

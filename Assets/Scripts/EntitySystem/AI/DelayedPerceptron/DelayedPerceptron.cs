@@ -264,7 +264,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
         return item;
     }
 
-    public void FlushTerminal(PerceptronContext ctx, ValueCritic critic, float gamma, float penalty,
+    public void FlushTerminal(PerceptronContext ctx, ValueCritic critic, float gamma, float penalty, float deathTime,
         int replayCount = 0, int replayPasses = 1, float replayWeight = 1f)
     {
         var ring  = ctx.Decisions;
@@ -277,7 +277,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
             if (item.Trained) continue;
 
             bool  last   = i == count - 1;
-            float reward = item.Evaluation + (last ? penalty : 0f);
+            float reward = item.Evaluation + penalty * DiscountTime(gamma, deathTime - item.StartTime);
 
             float tdTarget;
             if (last)

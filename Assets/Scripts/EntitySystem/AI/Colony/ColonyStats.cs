@@ -2,6 +2,8 @@ using Unity.Mathematics;
 
 public sealed class ColonyStats
 {
+    public enum AttackTarget : byte { Own = 0, Foreign = 1, Player = 2, Count = 3 }
+
     public int   Born;
     public int   Died;
     public float LifespanSum;
@@ -12,6 +14,13 @@ public sealed class ColonyStats
     public readonly int[] CommandsBySource = new int[(int)CommandSource.Count];
     public readonly int[] PlansStarted    = new int[PlanCatalog.Count];
     public readonly int[] PlansCompleted  = new int[PlanCatalog.Count];
+    public readonly int[] Attacks         = new int[(int)AttackTarget.Count];
+
+    public float StorageEaten;
+    public float StorageStored;
+    public float MeanFill;
+    public float RestAtNestShare;
+    public float StorageShare;
 
     private float  _deathRateEma;
     private double _lastDeathTime = double.NaN;
@@ -39,6 +48,24 @@ public sealed class ColonyStats
             _deathRateEma = math.lerp(_deathRateEma, rate, a);
         }
         _lastDeathTime = now;
+    }
+
+    public void RecordAttack(AttackTarget target) => Attacks[(int)target]++;
+    public void RecordStorageEaten(float amount)  => StorageEaten  += amount;
+    public void RecordStorageStored(float amount) => StorageStored += amount;
+
+    public void SampleMembers(float meanFill, float restAtNestShare, float storageShare)
+    {
+        MeanFill        = meanFill;
+        RestAtNestShare = restAtNestShare;
+        StorageShare    = storageShare;
+    }
+
+    public float PlanShare(PlanKind plan)
+    {
+        int total = 0;
+        for (int i = 0; i < PlansStarted.Length; i++) total += PlansStarted[i];
+        return total > 0 ? PlansStarted[(int)plan] / (float)total : 0f;
     }
 
     public void RecordCommand(CommandSource source) => CommandsBySource[(int)source]++;

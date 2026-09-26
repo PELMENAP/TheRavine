@@ -5,7 +5,7 @@ public class BrainComponent : IComponent
 
     public EntityBrainContext Context { get; }
     public BrainDecision ActiveDecision { get; private set; }
-    public void CompleteTerminal(float penalty) => _brain.CompleteTerminal(Context, penalty);
+    public void CompleteTerminal(float penalty, float deathTime) => _brain.CompleteTerminal(Context, penalty, deathTime);
 
     public BrainComponent(SharedHierarchicalBrain brain, EntityBrainContext ctx)
     {
