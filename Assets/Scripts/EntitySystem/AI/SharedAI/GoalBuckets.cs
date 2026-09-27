@@ -25,8 +25,13 @@ public sealed class GoalBuckets
 
         Array.Clear(_start, 0, _start.Length);
 
+        int included = 0;
         for (int i = 0; i < count; i++)
+        {
+            if (contexts[i].SkipExec) continue;
             _start[(int)contexts[i].CurrentGoal + 1]++;
+            included++;
+        }
 
         for (int g = 0; g < SharedHierarchicalBrain.GoalCount; g++)
         {
@@ -35,8 +40,9 @@ public sealed class GoalBuckets
         }
 
         for (int i = 0; i < count; i++)
-            _order[_cursor[(int)contexts[i].CurrentGoal]++] = i;
+            if (!contexts[i].SkipExec)
+                _order[_cursor[(int)contexts[i].CurrentGoal]++] = i;
 
-        Count = count;
+        Count = included;
     }
 }

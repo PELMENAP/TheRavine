@@ -6,7 +6,8 @@ public interface IEntityCommand
 {
     float Reward { get; }
     bool CanExecute();
-    EntityCommandStatus Begin(in BrainDecision decision);
+    CommandSource Source { get; }
+    EntityCommandStatus Begin(in BrainDecision decision, CommandSource source);
     EntityCommandStatus Tick(float dt);
     void Cancel();
 }
@@ -27,17 +28,20 @@ public abstract class EntityCommand : IEntityCommand
     private int    _replans;
 
     public float Reward { get; private set; }
+    public CommandSource Source { get; private set; }
 
     protected EntityCommand(EntityModel m) => model = m;
 
     public virtual bool CanExecute() => true;
+    protected virtual float MinRuntime => 0f;
     protected virtual float InterruptionReward => SimulationRules.Active.InterruptionReward;
     protected virtual float FailureReward      => SimulationRules.Active.FailureReward;
 
-    public EntityCommandStatus Begin(in BrainDecision d)
+    public EntityCommandStatus Begin(in BrainDecision d, CommandSource source)
     {
         decision     = d;
-        _watchdog    = d.EndTime + SimulationRules.Active.CommandWatchdogGrace;
+        Source       = source;
+        _watchdog    = math.max((double)d.EndTime, SimulationClock.TimeD + MinRuntime) + SimulationRules.Active.CommandWatchdogGrace;
         _moveStarted = false;
         _moveCut     = false;
         _replans     = 0;
@@ -81,10 +85,22 @@ public abstract class EntityCommand : IEntityCommand
         return EntityCommandStatus.Failed;
     }
 
+    protected EntityCommandStatus Fail(float reward)
+    {
+        Reward = reward;
+        return EntityCommandStatus.Failed;
+    }
+
     protected EntityCommandStatus Interrupted()
     {
         Cancel();
         return EntityCommandStatus.Interrupted;
+    }
+
+    protected void ExtendWatchdog(double until)
+    {
+        double w = until + SimulationRules.Active.CommandWatchdogGrace;
+        if (w > _watchdog) _watchdog = w;
     }
 
     protected double HoldUntil(float seconds) => math.min(SimulationClock.TimeD + seconds, (double)decision.EndTime);
@@ -92,7 +108,10 @@ public abstract class EntityCommand : IEntityCommand
     protected double PauseUntil()
     {
         var r = SimulationRules.Active;
-        return HoldUntil(RavineRandom.RangeFloat(r.MovePauseMin, r.MovePauseMax));
+        float mul = model.IsHungry
+            ? r.HungryPauseMul
+            : math.lerp(1f, r.SatedPauseMul, model.Digestion != null ? model.Digestion.Fill : 0f);
+        return HoldUntil(RavineRandom.RangeFloat(r.MovePauseMin, r.MovePauseMax) * mul);
     }
 
     protected static bool Elapsed(double time) => SimulationClock.TimeD >= time;
@@ -109,7 +128,7 @@ public abstract class EntityCommand : IEntityCommand
 
     protected void StartPlannedMove(MoveIntent intent, float2 direction, float2 target, bool hasTarget,
         float radius, float speed, float maxDuration, float energyCostPerSec,
-        float2 threat = default, bool hasThreat = false)
+        float2 threat = default, bool hasThreat = false, float side = 0f, float curvature = float.NaN)
     {
         var planner = model.Planner;
         if (planner == null)
@@ -130,12 +149,15 @@ public abstract class EntityCommand : IEntityCommand
             Target    = target,
             Threat    = threat,
             Radius    = radius,
-            Curvature = decision.Curvature,
-            Side      = model.NextPlanSide(),
+            Curvature = float.IsNaN(curvature) ? decision.Curvature : curvature,
+            Side      = side != 0f ? side : model.NextPlanSide(),
             Seed      = (uint)RavineRandom.RangeInt(1, int.MaxValue),
             Intent    = (byte)intent,
             HasTarget = hasTarget ? (byte)1 : (byte)0,
             HasThreat = hasThreat ? (byte)1 : (byte)0,
+            ColonyIndex = (byte)model.ColonyIndex,
+            Boid        = intent == MoveIntent.Flee ? float2.zero : model.FlockSteer,
+            AvoidSick   = model.IsSick ? (byte)0 : (byte)1,
         };
         _planSpeed    = speed * model.SpeedMul;
         _planCost     = energyCostPerSec;

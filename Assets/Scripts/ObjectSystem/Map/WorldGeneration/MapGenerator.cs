@@ -362,6 +362,21 @@ namespace TheRavine.Generator
         private void GetViewers(IReadOnlyList<Transform> players) =>
             viewer = players[0];
 
+        public static int ChunkCoord(float world) => Mathf.FloorToInt(world / chunkSize);
+
+        public bool TryGetViewerChunk(out int x, out int z)
+        {
+            if (viewer == null)
+            {
+                x = z = 0;
+                return false;
+            }
+            Vector3 v = viewer.position;
+            x = ChunkCoord(v.x);
+            z = ChunkCoord(v.z);
+            return true;
+        }
+
         public void ClearNALQueue() => nal?.Clear();
         public void AddNALObject(Vector2Int pos) => nal?.Enqueue(pos);
 

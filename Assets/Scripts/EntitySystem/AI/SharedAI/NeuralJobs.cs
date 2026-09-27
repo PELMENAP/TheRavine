@@ -27,7 +27,11 @@ public unsafe struct NetWeights
 public unsafe struct ReservoirItem
 {
     public float* State;
+    public float* Ema;
     public int    InputRow;
+    public float  Alpha;
+    public byte   UseEma;
+    public byte   Step;
 }
 
 public unsafe struct TrainTicket
@@ -46,7 +50,11 @@ public unsafe struct TrainTicket
     public float  EntropyRegularization;
     public float  MaxGradNorm;
     public float  LrMul;
+    public float  ExploreProb;
+    public int    Forced;
+    public int    HasBias;
     public fixed float Probs[KernelLayout.MaxActions];
+    public fixed float Bias[KernelLayout.MaxActions];
     public fixed float AuxNoise[KernelLayout.MaxAux];
 }
 
@@ -103,7 +111,16 @@ public unsafe struct ReservoirJob : IJobParallelFor
     {
         var it = Items[index];
         float* x = (float*)Inputs.GetUnsafeReadOnlyPtr() + it.InputRow * InputSize;
-        NeuralKernels.ReservoirStep(W, B, x, it.State, InputSize, Hidden);
+
+        if (it.UseEma != 0)
+        {
+            float* e = it.Ema;
+            float  a = it.Alpha;
+            for (int i = 0; i < InputSize; i++) e[i] += a * (x[i] - e[i]);
+            x = e;
+        }
+
+        if (it.Step != 0) NeuralKernels.ReservoirStep(W, B, x, it.State, InputSize, Hidden);
     }
 }
 

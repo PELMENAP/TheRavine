@@ -5,7 +5,7 @@ public class BrainComponent : IComponent
 
     public EntityBrainContext Context { get; }
     public BrainDecision ActiveDecision { get; private set; }
-    public void CompleteTerminal(float penalty) => _brain.CompleteTerminal(Context, penalty);
+    public void CompleteTerminal(float penalty, float deathTime) => _brain.CompleteTerminal(Context, penalty, deathTime);
 
     public BrainComponent(SharedHierarchicalBrain brain, EntityBrainContext ctx)
     {
@@ -22,9 +22,9 @@ public class BrainComponent : IComponent
     public void BeginBatch() => _brain.BeginDecisionBatch();
     public void RunBatch()   => _brain.RunDecisions();
 
-    public bool EnqueueDecision(float[] input, float simTime, float dt)
+    public bool EnqueueDecision(float[] input, float simTime, float dt, bool allowDecision = true)
     {
-        _batchSlot = _brain.EnqueueDecision(Context, input, simTime, dt);
+        _batchSlot = _brain.EnqueueDecision(Context, input, simTime, dt, allowDecision);
         return _batchSlot >= 0;
     }
 

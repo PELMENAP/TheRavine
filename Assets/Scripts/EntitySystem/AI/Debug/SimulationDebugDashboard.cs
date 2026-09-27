@@ -42,7 +42,7 @@ public class SimulationDebugDashboard : MonoBehaviour
     private GUIStyle _valueStyle;
     private bool     _stylesInitialized;
 
-    private Rect _windowRect = new Rect(10, 10, 420, 700);
+    private Rect _windowRect = new Rect(10, 10, 420, 640);
 
     private int _coordStaleDrops;
     private int _execStaleDrops;

@@ -32,23 +32,35 @@ public struct VectorizerFrame
     public float  Alarm;
     public float  AtNest;
     public float  NeighborViralLoad;
+    public float  Stress;
+    public float  ColonyHunger;
+    public float2 FlockHeading;
+    public float2 FlockCentroidDir;
+    public float2 MigrationDir;
+    public float  NearestForeign;
+    public float  IsLeader;
+    public int    Caste;
     public float4 Speech;
     public int    MimickedAction;
     public double Now;
+    public float[] PlanRewardEma;
+    public float  Season;
+    public float  WinterApproach;
 }
 
 public class InputVectorizer : IDisposable
 {
-    public const int VectorSize  = 80;
-    public const int ActionCount = (int)EntityAction.StoreFood + 1;
+    public const int ActionCount = ActionCatalog.Count;
 
     public const int TraceOffset     = 8;
     public const int DirectionOffset = TraceOffset + ActionCount;
     public const int StateOffset     = DirectionOffset + 10;
     public const int StateSlots      = 13;
     public const int TailOffset      = StateOffset + StateSlots;
-    public const int TailSlots       = 30;
-    public const int ReservedOffset  = TailOffset + TailSlots;
+    public const int TailSlots       = 43;
+    public const int PlanEmaOffset   = TailOffset + TailSlots;
+    public const int SeasonOffset    = PlanEmaOffset + PlanCatalog.Count;
+    public const int VectorSize      = SeasonOffset + 2;
 
     private float _maxHealth;
     private float _maxEnergy;
@@ -124,7 +136,7 @@ public class InputVectorizer : IDisposable
         v[s + 9]  = f.Alarm;
         v[s + 10] = f.AtNest;
         v[s + 11] = f.NeighborViralLoad;
-        v[s + 12] = 0f;
+        v[s + 12] = f.Stress;
 
         int idx = TailOffset;
         v[idx++] = math.saturate(f.InDanger);
@@ -149,8 +161,26 @@ public class InputVectorizer : IDisposable
         v[idx++] = hasMimic ? (f.MimickedAction + 0.5f) / ActionCount : 0f;
 
         v[idx++] = f.ViralNet;
+        v[idx++] = f.ColonyHunger;
 
-        for (int i = idx; i < VectorSize; i++) v[i] = 0f;
+        v[idx++] = f.FlockHeading.x;
+        v[idx++] = f.FlockHeading.y;
+        v[idx++] = f.FlockCentroidDir.x;
+        v[idx++] = f.FlockCentroidDir.y;
+        v[idx++] = f.MigrationDir.x;
+        v[idx++] = f.MigrationDir.y;
+        v[idx++] = f.NearestForeign;
+        v[idx++] = f.IsLeader;
+        for (int c = 0; c < (int)global::Caste.Count; c++) v[idx++] = f.Caste == c ? 1f : 0f;
+
+        for (int i = idx; i < PlanEmaOffset; i++) v[i] = 0f;
+
+        var ema = f.PlanRewardEma;
+        for (int p = 0; p < PlanCatalog.Count; p++)
+            v[PlanEmaOffset + p] = ema != null ? math.tanh(ema[p]) : 0f;
+
+        v[SeasonOffset]     = f.Season;
+        v[SeasonOffset + 1] = f.WinterApproach;
         return v;
     }
 
