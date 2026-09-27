@@ -115,8 +115,9 @@ namespace TheRavine.Inventory
             IInventoryItem item = activeCells[inventoryInputHandler.ActiveCellIndex - 1]._uiInventoryItem.item;
             if (!item.info.isPlaceable) return;
 
-            if (generator.TryAddObject(e.Position, generator.GetRealPosition(e.Position), 
-                item.info.prefab.GetInstanceID(), 1))
+            if (!objectSystem.TryGetIdByPrefab(item.info.prefab, out int placeId)) return;
+
+            if (generator.TryAddObject(e.Position, generator.GetRealPosition(e.Position), placeId, 1))
             {
                 item.state.amount--;
                 if (slot.amount <= 0) slot.Clear();
@@ -138,6 +139,7 @@ namespace TheRavine.Inventory
             if (generator.TryGetObject(e.Position, out ObjectInstInfo objectInstInfo))
             {
                 ObjectInfo data = objectSystem.GetInfo(objectInstInfo.PrefabID);
+                if (data == null || data.InventoryItemInfo == null) return;
 
                 IInventoryItem item = infoManager.GetInventoryItemByInfo(
                     data.InventoryItemInfo.id, 
@@ -152,7 +154,7 @@ namespace TheRavine.Inventory
                     if (pattern != null)
                     {
                         generator.TryAddObject(e.Position, generator.GetRealPosition(e.Position), 
-                            pattern.main.ObjectPrefab.GetInstanceID(), pattern.main.DefaultAmount);
+                            pattern.main.Id, pattern.main.DefaultAmount);
                         
                         if (pattern.other.Length != 0)
                         {
@@ -160,7 +162,7 @@ namespace TheRavine.Inventory
                             {
                                 long newPos = Position2Int.Pack(Extension.GetRandomPointAround(Position2Int.UnpackToVector(e.Position), pattern.factor));
                                 generator.TryAddObject(newPos, generator.GetRealPosition(newPos), 
-                                    pattern.other[i].ObjectPrefab.GetInstanceID(), 
+                                    pattern.other[i].Id, 
                                     pattern.other[i].DefaultAmount);
                             }
                         }

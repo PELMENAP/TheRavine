@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: BirchInfo
   m_EditorClassIdentifier: 
+  id: 19
   objectPrefab: {fileID: 948248636415433774, guid: e487b2f5e2401d74a9e583e59e72f6ce, type: 3}
   defaultAmount: 0
   initialPoolSize: 10

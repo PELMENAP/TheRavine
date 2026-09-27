@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Battery
   m_EditorClassIdentifier: 
+  id: 30
   objectPrefab: {fileID: 5420371829210926239, guid: 9912b47a10d32ca8389aeed9159b11c6, type: 3}
   defaultAmount: 0
   initialPoolSize: 10

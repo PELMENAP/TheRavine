@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: NettleInfo
   m_EditorClassIdentifier: 
+  id: 8
   objectPrefab: {fileID: 7852824295285712418, guid: b3d15d59ad9aa87a38c26c1e97de6448, type: 3}
   defaultAmount: 0
   initialPoolSize: 10

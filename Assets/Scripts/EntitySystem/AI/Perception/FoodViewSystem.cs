@@ -13,6 +13,9 @@ public sealed class FoodViewSystem : MonoBehaviour
     private MapGenerator   _map;
     private ObjectSystem   _objects;
     private ChunkFoodIndex _index;
+    private PoolManager.Pool _pool;
+    private PooledObject[] _active = new PooledObject[64];
+    private int _activeCount;
 
     private long _lastChunk;
     private int  _seenRevision = -1;
@@ -25,7 +28,8 @@ public sealed class FoodViewSystem : MonoBehaviour
         _objects = await ServiceLocator.WaitUntilServiceReady<ObjectSystem>();
         _index   = await ServiceLocator.WaitUntilServiceReady<ChunkFoodIndex>();
 
-        _objects.CreatePool(ChunkFoodIndex.FoodPrefabId, foodPrefab, poolSize);
+        _pool = _objects.RegisterPool(ChunkFoodIndex.FoodPrefabId, foodPrefab, poolSize);
+        _lastChunk = _map.WindowCenter;
         _map.onUpdate += OnChunkUpdate;
 
         PollLoopAsync().Forget();
@@ -53,7 +57,7 @@ public sealed class FoodViewSystem : MonoBehaviour
 
     private void TryRefresh()
     {
-        if (_map == null || _objects == null) return;
+        if (_map == null || _pool == null) return;
 
         int revision = _index != null ? _index.Revision : 0;
         int versionSum = 0;
@@ -90,13 +94,26 @@ public sealed class FoodViewSystem : MonoBehaviour
                 ObjectInstInfo info = cd.Objects[i];
                 if (info.PrefabID != ChunkFoodIndex.FoodPrefabId) continue;
 
-                _objects.Reuse(ChunkFoodIndex.FoodPrefabId, info.Position);
+                if (used < _activeCount)
+                {
+                    _pool.Move(_active[used], info.Position);
+                }
+                else
+                {
+                    if (used == _active.Length)
+                        System.Array.Resize(ref _active, _active.Length * 2);
+                    _active[used] = _pool.Get(info.Position);
+                }
                 used++;
             }
         }
 
-        int excess = _objects.GetPoolSize(ChunkFoodIndex.FoodPrefabId) - used;
-        for (int i = 0; i < excess; i++)
-            _objects.Deactivate(ChunkFoodIndex.FoodPrefabId);
+        for (int i = used; i < _activeCount; i++)
+        {
+            _pool.Release(_active[i]);
+            _active[i] = null;
+        }
+
+        _activeCount = used;
     }
 }

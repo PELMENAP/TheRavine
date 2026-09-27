@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: SaplingSpruceInfo
   m_EditorClassIdentifier: 
+  id: 23
   objectPrefab: {fileID: 3577697167160119698, guid: 08b602a56b598d3b38540061e3014be8, type: 3}
   defaultAmount: 0
   initialPoolSize: 30

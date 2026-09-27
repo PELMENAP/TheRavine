@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: ToadStoolInfo
   m_EditorClassIdentifier: 
+  id: 12
   objectPrefab: {fileID: 8079554152659468491, guid: c5084da282673450c9fb8dd73e6ae173, type: 3}
   defaultAmount: 1
   initialPoolSize: 10

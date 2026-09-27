@@ -1,4 +1,3 @@
-using Cysharp.Threading.Tasks;
 using TheRavine.Extensions;
 using UnityEngine;
 
@@ -9,25 +8,30 @@ namespace TheRavine.Generator
         public class EndlessLiquids : IEndless
         {
             private readonly MapGenerator generator;
-            private readonly int chunkSize = MapGenerator.chunkSize;
+
             public EndlessLiquids(MapGenerator _generator)
             {
                 generator = _generator;
             }
-            public async UniTaskVoid UpdateChunk(long position)
+
+            public void UpdateChunk(long center)
             {
-                float waterXPosition = (Position2Int.GetX(position) + 0.5f) * chunkSize;
-                float waterZPosition = (Position2Int.GetY(position) - 0.5f) * chunkSize;
-                Vector3 newPos = new(
+                float waterXPosition = (Position2Int.GetX(center) + 0.5f) * MapGenerator.chunkSize;
+                float waterZPosition = (Position2Int.GetY(center) + 0.5f) * MapGenerator.chunkSize;
+
+                generator.waterTransform.position = new Vector3(
                     waterXPosition,
                     generator.waterOffset.y,
                     waterZPosition);
 
-                generator.waterTransform.position = newPos;
                 RippleStampSystem.Instance.SetWaterPosition(waterXPosition, waterZPosition);
-
-                await UniTask.CompletedTask;
             }
+
+            public void Tick(long deadline) { }
+
+            public void OnChunkDirty(long chunkKey) { }
+
+            public void Dispose() { }
         }
     }
 }

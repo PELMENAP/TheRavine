@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Fern
   m_EditorClassIdentifier: 
+  id: 4
   objectPrefab: {fileID: 8438544788821673546, guid: 5ff145796436f9fdcaeaaf0c3506828c, type: 3}
   defaultAmount: 0
   initialPoolSize: 10

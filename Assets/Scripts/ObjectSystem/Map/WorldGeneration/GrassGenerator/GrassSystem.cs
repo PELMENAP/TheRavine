@@ -1,15 +1,12 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Collections;
+using Unity.Jobs;
 using TheRavine.Base;
 using TheRavine.Generator;
 
 public class GrassSystem : MonoBehaviour
 {
-    [Header("Target Mesh")]
-    [SerializeField] private MeshFilter targetMeshFilter;
-    [SerializeField] private Transform targetTransform;
-    
     [Header("Grass Settings")]
     [SerializeField] private Mesh grassMesh;
     [SerializeField] private Material grassMaterial;
@@ -58,26 +55,12 @@ public class GrassSystem : MonoBehaviour
     private bool isGrass, isShadows;
     private NativeArray<float> heightMap;
 
-    private Vector3 specialOffset = new(MapGenerator.mapChunkSize, 0, MapGenerator.mapChunkSize);
-    private Bounds TransformBounds(Bounds localBounds, Matrix4x4 matrix)
-    {
-        Vector3 center = matrix.MultiplyPoint3x4(localBounds.center) + specialOffset;
-        Vector3 extents = localBounds.extents;
-        
-        Vector3 axisX = matrix.MultiplyVector(new Vector3(extents.x, 0, 0));
-        Vector3 axisY = matrix.MultiplyVector(new Vector3(0, extents.y, 0));
-        Vector3 axisZ = matrix.MultiplyVector(new Vector3(0, 0, extents.z));
-        
-        extents.x = Mathf.Abs(axisX.x) + Mathf.Abs(axisY.x) + Mathf.Abs(axisZ.x);
-        extents.y = Mathf.Abs(axisX.y) + Mathf.Abs(axisY.y) + Mathf.Abs(axisZ.y);
-        extents.z = Mathf.Abs(axisX.z) + Mathf.Abs(axisY.z) + Mathf.Abs(axisZ.z);
-        
-        return new Bounds(center, extents * 2f);
-    }
-    
+    private MapGenerator pendingMap;
+    private long pendingCenter;
+    private bool hasPending;
+
     private void Start()
     {
-        heightMap = new(vertexCount, Allocator.Persistent);
         try
         {
             var gameSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
@@ -99,6 +82,13 @@ public class GrassSystem : MonoBehaviour
     private void Update()
     {
         if (!isGrass) return;
+
+        if (hasPending && instanceBuffer != null)
+        {
+            hasPending = false;
+            PlaceGrass(pendingMap, pendingCenter);
+        }
+
         RenderGrass();
     }
     
@@ -167,55 +157,56 @@ public class GrassSystem : MonoBehaviour
 
         grassMaterial.SetBuffer("instanceData", instanceBuffer);
 
+        if (!heightMap.IsCreated)
+            heightMap = new NativeArray<float>(vertexCount, Allocator.Persistent);
+
         heightMapBuffer?.Release();
         heightMapBuffer = new ComputeBuffer(vertexCount, sizeof(float));
     }
     
-    public void UpdateGrassPlacement()
+    public void UpdateGrassPlacement(MapGenerator map, long center)
     {
-        isGrass = false;
+        pendingMap = map;
+        pendingCenter = center;
+        hasPending = true;
 
-        Mesh mesh = targetMeshFilter.sharedMesh;
-        if (mesh == null) return;
-        
-        Vector3[] vertices = mesh.vertices;
-        Bounds meshBounds = mesh.bounds;
-        Matrix4x4 localToWorld = targetTransform.localToWorldMatrix;
-        
-        
-        for (int k = 0; k < vertexCount; k++)
+        if (!isGrass || instanceBuffer == null) return;
+
+        hasPending = false;
+        PlaceGrass(map, center);
+    }
+
+    private void PlaceGrass(MapGenerator map, long center)
+    {
+        if (map == null || !map.TryBuildHeightWindow(center, out HeightWindow window)) return;
+
+        new GatherHeightsJob
         {
-            int i = k / terrainResolution;
-            int j = k % terrainResolution;
+            Heights = window,
+            Resolution = terrainResolution,
+            Output = heightMap
+        }.ScheduleParallel(terrainResolution, 16, default).Complete();
 
-            heightMap[k] = vertices[j * terrainResolution + i].y;
-        }
-        
         heightMapBuffer.SetData(heightMap);
-        
-        Bounds worldBounds = TransformBounds(meshBounds, localToWorld);
-        
-        int minX = Mathf.FloorToInt(worldBounds.min.x);
-        int minZ = Mathf.FloorToInt(worldBounds.min.z);
-        
-        
+
+        Vector3 boundsMin = MapGenerator.WindowOriginWorld(center);
+        Vector3 boundsMax = boundsMin + new Vector3(MapGenerator.generationSize, 0f, MapGenerator.generationSize);
+
         grassPlacementShader.SetBuffer(kernelPlaceGrass, "instanceData", instanceBuffer);
         grassPlacementShader.SetBuffer(kernelPlaceGrass, "heightMap", heightMapBuffer);
-        
-        grassPlacementShader.SetInt("gridMinX", minX);
-        grassPlacementShader.SetInt("gridMinZ", minZ);
 
-        grassPlacementShader.SetVector("worldBoundsMin", worldBounds.min);
-        grassPlacementShader.SetVector("worldBoundsMax", worldBounds.max);
-        
+        grassPlacementShader.SetInt("gridMinX", Mathf.FloorToInt(boundsMin.x));
+        grassPlacementShader.SetInt("gridMinZ", Mathf.FloorToInt(boundsMin.z));
+
+        grassPlacementShader.SetVector("worldBoundsMin", boundsMin);
+        grassPlacementShader.SetVector("worldBoundsMax", boundsMax);
+
         int threadGroups = Mathf.CeilToInt(instanceCount / 64f);
 
         instanceBuffer.SetCounterValue(0);
         grassPlacementShader.Dispatch(kernelPlaceGrass, threadGroups, 1, 1);
 
         ComputeBuffer.CopyCount(instanceBuffer, argsBuffer, sizeof(uint));
-        
-        isGrass = true;
     }
     
     
@@ -242,7 +233,10 @@ public class GrassSystem : MonoBehaviour
         instanceBuffer?.Release();
         heightMapBuffer?.Release();
         argsBuffer?.Release();
+        instanceBuffer = null;
+        heightMapBuffer = null;
+        argsBuffer = null;
 
-        heightMap.Dispose();
+        if (heightMap.IsCreated) heightMap.Dispose();
     }
 }

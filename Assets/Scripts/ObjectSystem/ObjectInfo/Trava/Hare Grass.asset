@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Hare Grass
   m_EditorClassIdentifier: 
+  id: 5
   objectPrefab: {fileID: 6605657834375341550, guid: 89a896341b4a7b14485fc3f670ed5b1d, type: 3}
   defaultAmount: 0
   initialPoolSize: 10

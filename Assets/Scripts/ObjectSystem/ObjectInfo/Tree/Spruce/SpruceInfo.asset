@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: SpruceInfo
   m_EditorClassIdentifier: 
+  id: 26
   objectPrefab: {fileID: 3577697167160119698, guid: 0b72511b56e1ab54ca9f90bba1505377, type: 3}
   defaultAmount: 0
   initialPoolSize: 30

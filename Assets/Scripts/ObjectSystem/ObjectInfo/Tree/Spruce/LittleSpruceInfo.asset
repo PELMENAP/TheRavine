@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: LittleSpruceInfo
   m_EditorClassIdentifier: 
+  id: 24
   objectPrefab: {fileID: 3577697167160119698, guid: 7c87042f10af197a986677b487778ae7, type: 3}
   defaultAmount: 0
   initialPoolSize: 30

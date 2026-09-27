@@ -1,113 +1,129 @@
 using System;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace TheRavine.ObjectControl
 {
-    public delegate GameObject CreateInstance(Vector3 position, GameObject prefab);
-
-    public class PoolManager : IDisposable
+    public sealed class PooledObject
     {
+        public readonly GameObject GameObject;
+        public readonly Transform Transform;
+        public readonly PoolManager.Pool Owner;
+        private readonly IPlaceable placeable;
+
+        public Vector3 Position { get; private set; }
+        public bool IsActive { get; internal set; }
+
+        internal PooledObject(GameObject gameObject, PoolManager.Pool owner)
+        {
+            GameObject = gameObject;
+            Transform = gameObject.transform;
+            Owner = owner;
+            placeable = gameObject.GetComponent<IPlaceable>();
+            gameObject.SetActive(false);
+        }
+
+        internal void Place(Vector3 position)
+        {
+            Position = position;
+            Transform.position = position;
+            placeable?.Place(SeedOf(position));
+        }
+
+        public static int SeedOf(Vector3 position) =>
+            (int)(math.hash(new float3(position.x, position.y, position.z)) & 0x7FFFFFFFu);
+    }
+
+    public sealed class PoolManager : IDisposable
+    {
+        public sealed class Pool
+        {
+            public readonly int Id;
+            private readonly GameObject prefab;
+            private readonly Transform holder;
+            private readonly Stack<PooledObject> inactive;
+
+            public int ActiveCount { get; private set; }
+            public int InactiveCount => inactive.Count;
+
+            internal Pool(int id, GameObject prefab, Transform holder, int capacity)
+            {
+                Id = id;
+                this.prefab = prefab;
+                this.holder = holder;
+                inactive = new Stack<PooledObject>(math.max(capacity, 4));
+            }
+
+            public void Prewarm(int count)
+            {
+                for (int i = inactive.Count; i < count; i++)
+                    inactive.Push(Create());
+            }
+
+            public PooledObject Get(Vector3 position)
+            {
+                PooledObject obj = inactive.Count > 0 ? inactive.Pop() : Create();
+                obj.Place(position);
+                obj.IsActive = true;
+                obj.GameObject.SetActive(true);
+                ActiveCount++;
+                return obj;
+            }
+
+            public void Move(PooledObject obj, Vector3 position)
+            {
+                if (obj == null || !obj.IsActive) return;
+                obj.Place(position);
+            }
+
+            public void Release(PooledObject obj)
+            {
+                if (obj == null || !obj.IsActive || obj.Owner != this) return;
+                obj.IsActive = false;
+                obj.GameObject.SetActive(false);
+                inactive.Push(obj);
+                ActiveCount--;
+            }
+
+            private PooledObject Create() =>
+                new(UnityEngine.Object.Instantiate(prefab, Vector3.zero, Quaternion.identity, holder), this);
+        }
+
         private readonly Transform parent;
-        public PoolManager(Transform _parent) => parent = _parent;
+        private readonly Dictionary<int, Pool> pools = new();
 
-        private class PoolData
+        public PoolManager(Transform parent) => this.parent = parent;
+
+        public Pool Register(int id, GameObject prefab, int prewarm = 0)
         {
-            public Queue<ObjectInstance> Objects { get; } = new();
-            public Transform Parent { get; }
-            public int Size { get; set; }
-
-            public PoolData(Transform parent, int size)
+            if (pools.TryGetValue(id, out Pool pool))
             {
-                Parent = parent;
-                Size = size;
+                pool.Prewarm(prewarm);
+                return pool;
             }
+            if (prefab == null) return null;
+
+            GameObject holder = new(prefab.name + " pool");
+            holder.transform.SetParent(parent, false);
+
+            pool = new Pool(id, prefab, holder.transform, prewarm);
+            pools.Add(id, pool);
+            pool.Prewarm(prewarm);
+            return pool;
         }
 
-        private readonly Dictionary<int, PoolData> pools = new();
+        public bool TryGetPool(int id, out Pool pool) => pools.TryGetValue(id, out pool);
 
-        public void CreatePool(int poolKey, GameObject prefab, CreateInstance createInstance, int poolSize = 1)
+        public PooledObject Get(int id, Vector3 position) =>
+            pools.TryGetValue(id, out Pool pool) ? pool.Get(position) : null;
+
+        public void Release(int id, PooledObject obj)
         {
-            if(prefab == null) return;
-            if (!pools.ContainsKey(poolKey))
-            {
-                GameObject poolHolder = new(prefab.name + " pool") { isStatic = true };
-                poolHolder.transform.parent = parent;
-                pools[poolKey] = new PoolData(poolHolder.transform, poolSize);
-            }
-
-            var pool = pools[poolKey];
-            for (int i = 0; i < poolSize; i++)
-            {
-                GameObject obj = createInstance?.Invoke(Vector3.zero, prefab);
-                pool.Objects.Enqueue(new ObjectInstance(obj, pool.Parent));
-            }
+            if (obj != null && pools.TryGetValue(id, out Pool pool))
+                pool.Release(obj);
         }
 
-        public void Reuse(int prefabID, Vector3 position)
-        {
-            if (!pools.ContainsKey(prefabID)) return;
-
-            var pool = pools[prefabID];
-            if (pool.Objects.Count == 0) return;
-
-            ObjectInstance instance = pool.Objects.Dequeue();
-            instance.Reuse(position);
-            pool.Objects.Enqueue(instance);
-        }
-
-        public void Deactivate(int prefabID)
-        {
-            if (!pools.ContainsKey(prefabID)) return;
-
-            var pool = pools[prefabID];
-            if (pool.Objects.Count == 0) return;
-
-            ObjectInstance instance = pool.Objects.Dequeue();
-            instance.Deactivate();
-            pool.Objects.Enqueue(instance);
-        }
-
-        public int GetPoolSize(int prefabID) => pools.ContainsKey(prefabID) ? pools[prefabID].Size : (int)0;
-        public void IncreasePoolSize(int prefabID) { if (pools.ContainsKey(prefabID)) pools[prefabID].Size++; }
-
-        public void Dispose()
-        {
-            pools?.Clear();
-        }
-
-        private class ObjectInstance
-        {
-            private readonly GameObject gameObject;
-            private readonly Transform transform;
-            private readonly IPlaceable placeableScript;
-
-            public ObjectInstance(GameObject obj, Transform parent)
-            {
-                gameObject = obj;
-                transform = obj.transform;
-                obj.transform.parent = parent;
-                obj.SetActive(false);
-
-                placeableScript = gameObject.GetComponent<IPlaceable>();
-            }
-
-            public void Reuse(Vector3 position)
-            {
-                transform.position = position;
-                if(placeableScript != null)
-                    PlaceDetermine((int)(position.x + position.z));
-                gameObject.SetActive(true);
-            }
-
-            public void Deactivate()
-            {
-                gameObject.SetActive(false);
-            }
-            public void PlaceDetermine(int seed)
-            {
-                placeableScript.Place(seed);
-            }
-        }
+        public void Dispose() => pools.Clear();
     }
 }
