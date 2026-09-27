@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Raspberry
   m_EditorClassIdentifier: 
+  id: 9
   objectPrefab: {fileID: 7852824295285712418, guid: 534da7edf2843f4e589e6d876879396b, type: 3}
   defaultAmount: 0
   initialPoolSize: 10

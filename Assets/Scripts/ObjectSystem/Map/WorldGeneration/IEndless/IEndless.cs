@@ -1,6 +1,13 @@
-using UnityEngine;
-using Cysharp.Threading.Tasks;
-public interface IEndless
+using System;
+
+public interface IEndless : IDisposable
 {
-    UniTaskVoid UpdateChunk(long position);
+    void UpdateChunk(long center);
+    void Tick(long deadline);
+    void OnChunkDirty(long chunkKey);
+}
+
+public interface IViewDirectional
+{
+    void SetFacing(int facing);
 }

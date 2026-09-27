@@ -7,35 +7,32 @@ namespace TheRavine.ObjectControl
         public ObjectInfoRegistry infoRegistry;
 
         private PoolManager poolManager;
-        public GameObject InstantiatePoolObject(Vector3 position, GameObject prefab) =>
-            Instantiate(prefab, position, Quaternion.identity);
-        public ObjectInfo GetInfo(int prefabID) => infoRegistry.Get(prefabID);
 
-        public void CreatePool(int prefabID, GameObject prefab, int poolSize = 1) =>
-            poolManager.CreatePool(prefabID, prefab, InstantiatePoolObject, poolSize);
+        public ObjectInfo GetInfo(int id) => infoRegistry.Get(id);
 
-        public void Reuse(int prefabID, Vector3 position) =>
-            poolManager.Reuse(prefabID, position);
+        public bool TryGetIdByPrefab(GameObject prefab, out int id) => infoRegistry.TryGetIdByPrefab(prefab, out id);
 
-        public void Deactivate(int prefabID) =>
-            poolManager.Deactivate(prefabID);
+        public PoolManager.Pool RegisterPool(int id, GameObject prefab, int prewarm = 0) =>
+            poolManager.Register(id, prefab, prewarm);
 
-        public int GetPoolSize(int prefabID) =>
-            poolManager.GetPoolSize(prefabID);
+        public bool TryGetPool(int id, out PoolManager.Pool pool) => poolManager.TryGetPool(id, out pool);
 
-        public void IncreasePoolSize(int prefabID) =>
-            poolManager.IncreasePoolSize(prefabID);
+        public PooledObject Get(int id, Vector3 position) => poolManager.Get(id, position);
+
+        public void Release(int id, PooledObject obj) => poolManager.Release(id, obj);
 
         public void SetUp(ISetAble.Callback callback)
         {
             ServiceLocator.Services.Register(this);
 
-            infoRegistry.RebuildDictionary();
+            infoRegistry.Rebuild();
             poolManager = new PoolManager(transform);
 
-            var infos = infoRegistry.objectInfos;
-            for (int i = 0; i < infos.Count; i++)
-                CreatePool(infos[i].PrefabID, infos[i].ObjectPrefab, infos[i].InitialPoolSize);
+            for (int i = 0; i < infoRegistry.Count; i++)
+            {
+                ObjectInfo info = infoRegistry.GetDense(i);
+                RegisterPool(info.Id, info.ObjectPrefab, info.InitialPoolSize);
+            }
 
             callback?.Invoke();
         }

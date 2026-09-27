@@ -1,6 +1,8 @@
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
-using Cysharp.Threading.Tasks;
-using System.Collections.Generic;
+using UnityEngine.Rendering;
 
 using TheRavine.Extensions;
 
@@ -8,313 +10,257 @@ namespace TheRavine.Generator
 {
     namespace EndlessGenerators
     {
-        public class EndlessTerrain : IEndless
+        public sealed class EndlessTerrain : IEndless, IViewDirectional
         {
-            public class LodLevel
+            private const int BlockCells = MapGenerator.WindowSide * MapGenerator.mapChunkSize;
+            private const float BlockWorld = MapGenerator.WindowSide * MapGenerator.chunkSize;
+            private const float BoundsHeight = 1000f;
+            private const int RowBatch = 8;
+            private const MeshUpdateFlags UpdateFlags = MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontValidateIndices;
+
+            private sealed class MeshLevel
             {
                 public int Step;
-                public int VertsPerAxis;
-                public int QuadsPerAxis;
-                
-                public Mesh[] Meshes;
-                public Transform[] Transforms;
-                public Vector3[][] Vertices;
-                public int[] Triangles;
-                
-                public (int dx, int dz)[] Offsets; 
+                public int Verts;
+                public int VertexCount;
+                public int IndexCount;
+                public float SkirtDepth;
+                public NativeArray<ushort> Indices;
             }
-            private const int chunkScale = MapGenerator.chunkScale;
-            private const int chunkCount = 2 * chunkScale + 1;
-            private const int mapChunkSize = MapGenerator.mapChunkSize;
-            private const int scale = MapGenerator.scale;
-            private const int chunkSize = MapGenerator.chunkSize;
+
+            private sealed class MeshTarget
+            {
+                public MeshLevel Level;
+                public Mesh Mesh;
+                public Transform Transform;
+                public int Ring;
+                public int Dx;
+                public bool Dirty;
+            }
 
             private readonly MapGenerator generator;
+            private readonly MeshLevel[] levels;
+            private readonly MeshTarget central;
+            private readonly MeshTarget[] blocks;
+            private readonly Bounds localBounds;
+            private readonly Mesh.MeshDataArray[] pendingData;
+            private readonly int[] pendingBlocks;
+            private NativeArray<JobHandle> handles;
 
-            private readonly Mesh terrainMesh;
-            private readonly int totalVerticesZ;
-            private readonly Vector3[] vertices;
-            private readonly int[] triangles;
-            private readonly List<LodLevel> lodLevels = new();
+            private long center;
+            private bool hasCenter;
+            private int facing;
 
-            public EndlessTerrain(MapGenerator _generator, ChunkGenerationSettings _settings)
+            public EndlessTerrain(MapGenerator _generator, ChunkGenerationSettings settings)
             {
                 generator = _generator;
+                facing = generator.Facing;
+                localBounds = new Bounds(
+                    new Vector3(BlockWorld * 0.5f, 0f, BlockWorld * 0.5f),
+                    new Vector3(BlockWorld, BoundsHeight, BlockWorld));
 
-                int totalVerticesX = chunkCount * mapChunkSize + 1;
-                totalVerticesZ    = chunkCount * mapChunkSize + 1;
-                int totalVertices  = totalVerticesX * totalVerticesZ;
-                int totalTris      = 6 * chunkCount * chunkCount * mapChunkSize * mapChunkSize;
+                int ringCount = generator.LodRingCount;
+                levels = new MeshLevel[ringCount + 1];
+                levels[0] = CreateLevel(1, settings.skirtDepth);
+                for (int r = 1; r <= ringCount; r++)
+                    levels[r] = CreateLevel(ValidStep(settings.lodSteps[r - 1]), settings.skirtDepth);
 
-                vertices  = new Vector3[totalVertices];
-                triangles = new int[totalTris];
-                GenerateTriangles();
-
-                terrainMesh = new Mesh { vertices = vertices, triangles = triangles };
-                terrainMesh.RecalculateNormals();
-                terrainMesh.RecalculateTangents();
-                terrainMesh.bounds = new Bounds(
-                    new Vector3(chunkSize * chunkScale, 0, chunkSize * chunkScale),
-                    new Vector3(chunkSize * chunkCount, 1000f, chunkSize * chunkCount));
-                generator.terrainFilter.mesh = terrainMesh;
-
-                int resolution = 1;
-
-                var lodConfigs = new (int step, int ringSize)[]
+                central = new MeshTarget
                 {
-                    (4 / resolution, 1),
-                    (8 / resolution, 2),
-                    (16 / resolution, 3),
-                    (32 / resolution, 4)
+                    Level = levels[0],
+                    Mesh = CreateMesh("TerrainCentral"),
+                    Transform = generator.terrainTransform
                 };
+                generator.terrainFilter.sharedMesh = central.Mesh;
 
-                for (int i = 0; i < lodConfigs.Length; i++)
-                {
-                    var (step, ringSize) = lodConfigs[i];
-                    lodLevels.Add(CreateLodLevel(step, ringSize));
-                }
-            }
+                int blockCount = 0;
+                for (int r = 1; r <= ringCount; r++)
+                    blockCount += 2 * r + 1;
 
-            private LodLevel CreateLodLevel(int step, int ringIndex)
-            {
-                int quadsPerAxis = chunkCount * mapChunkSize / step;
-                int vertsPerAxis = quadsPerAxis + 1;
-                
-                var offsets = new List<(int, int)>();
-                
-                for (int x = -ringIndex; x <= ringIndex; x++)
-                {
-                    for (int z = -ringIndex; z <= ringIndex; z++)
-                    {
-                        if (Mathf.Abs(x) != 1)
-                            if(Mathf.Abs(z) < Mathf.Abs(x))
-                                continue;
+                blocks = new MeshTarget[blockCount];
+                pendingData = new Mesh.MeshDataArray[math.max(blockCount, 1)];
+                pendingBlocks = new int[math.max(blockCount, 1)];
+                handles = new NativeArray<JobHandle>(math.max(blockCount, 1), Allocator.Persistent);
 
-                        if (Mathf.Abs(x) == ringIndex || Mathf.Abs(z) == ringIndex)
-                            offsets.Add((x, z));
-                    }
-                }
-
-                var lod = new LodLevel
-                {
-                    Step = step,
-                    VertsPerAxis = vertsPerAxis,
-                    QuadsPerAxis = quadsPerAxis,
-                    Offsets = offsets.ToArray(),
-                    Triangles = BuildTrianglesForLod(quadsPerAxis, vertsPerAxis),
-                    Vertices = new Vector3[offsets.Count][],
-                    Meshes = new Mesh[offsets.Count],
-                    Transforms = new Transform[offsets.Count]
-                };
-
-                var mat  = generator.terrainFilter.GetComponent<MeshRenderer>().sharedMaterial;
+                var material = generator.terrainFilter.GetComponent<MeshRenderer>().sharedMaterial;
                 var root = generator.terrainTransform.parent;
 
-                for (int i = 0; i < offsets.Count; i++)
+                int b = 0;
+                for (int ring = 1; ring <= ringCount; ring++)
                 {
-                    lod.Vertices[i] = new Vector3[vertsPerAxis * vertsPerAxis];
-                    
-                    var go = new GameObject($"TerrainLOD_Step{step}_Ring{ringIndex}_{i}");
-                    if (root != null) go.transform.SetParent(root, false);
-                    lod.Transforms[i] = go.transform;
-
-                    var mesh = new Mesh
+                    for (int k = 0; k <= 2 * ring; k++)
                     {
-                        vertices = lod.Vertices[i],
-                        triangles = lod.Triangles,
-                        bounds = new Bounds(
-                            new Vector3(chunkSize * chunkScale, 0, chunkSize * chunkScale),
-                            new Vector3(chunkSize * chunkCount, 1000f, chunkSize * chunkCount))
-                    };
+                        int dx = ((k + 1) >> 1) * ((k & 1) == 1 ? -1 : 1);
 
-                    go.AddComponent<MeshFilter>().mesh = mesh;
-                    go.AddComponent<MeshRenderer>().sharedMaterial = mat;
-                    lod.Meshes[i] = mesh;
-                }
+                        var go = new GameObject($"TerrainLOD_Ring{ring}_{dx}");
+                        if (root != null) go.transform.SetParent(root, false);
 
-                return lod;
-            }
+                        Mesh mesh = CreateMesh(go.name);
+                        go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                        go.AddComponent<MeshRenderer>().sharedMaterial = material;
 
-            private static int[] BuildTrianglesForLod(int quadsPerAxis, int vertsPerAxis)
-            {
-                var triangleIndex = new int[6 * quadsPerAxis * quadsPerAxis];
-                int idx = triangleIndex.Length - 1;
-
-                for (int x = 0; x < quadsPerAxis; x++)
-                {
-                    for (int z = 0; z < quadsPerAxis; z++)
-                    {
-                        int bl = x * vertsPerAxis + z;
-                        int br = (x + 1) * vertsPerAxis + z;
-                        int tr = (x + 1) * vertsPerAxis + z + 1;
-                        int tl = x * vertsPerAxis + z + 1;
-
-                        triangleIndex[idx]     = bl; 
-                        triangleIndex[idx - 1] = br; 
-                        triangleIndex[idx - 2] = tr;
-                        
-                        triangleIndex[idx - 3] = bl; 
-                        triangleIndex[idx - 4] = tr; 
-                        triangleIndex[idx - 5] = tl;
-                        
-                        idx -= 6;
-                    }
-                }
-                return triangleIndex;
-            }
-
-            public async UniTaskVoid UpdateChunk(long position)
-            {
-                UpdateAllVertices(position);
-                terrainMesh.vertices = vertices;
-                terrainMesh.RecalculateNormals();
-
-                var centralWorldPos = new Vector3(
-                    (Position2Int.GetX(position) - 1) * chunkSize, 0,
-                    (Position2Int.GetY(position) - 2) * chunkSize);
-                    
-                generator.terrainTransform.position = centralWorldPos;
-
-                foreach (var lod in lodLevels)
-                {
-                    for (int i = 0; i < lod.Meshes.Length; i++)
-                    {
-                        var (dx, dz) = lod.Offsets[i];
-                        long lodCentre = Position2Int.Offset(position, dx * chunkCount, dz * chunkCount);
-                        
-                        FillLodVertices(lodCentre, lod.Vertices[i], lod.Step, lod.VertsPerAxis);
-
-                        lod.Meshes[i].vertices = lod.Vertices[i];
-                        lod.Meshes[i].RecalculateNormals();
-
-                        lod.Transforms[i].position = centralWorldPos +
-                            new Vector3(dx * chunkCount * chunkSize, 0, dz * chunkCount * chunkSize);
-                    }
-                }
-
-                await UniTask.CompletedTask;
-            }
-
-            private void FillLodVertices(long centre, Vector3[] targetVertices, int lodStep, int vertsPerAxis)
-            {
-                int maxOrig = chunkCount * mapChunkSize;
-
-                for (int vx = 0; vx < vertsPerAxis; vx++)
-                {
-                    for (int vz = 0; vz < vertsPerAxis; vz++)
-                    {
-                        int origX = vx * lodStep;
-                        int origZ = vz * lodStep;
-
-                        int chunkX = origX < maxOrig ? origX / mapChunkSize : chunkCount;
-                        int chunkZ = origZ < maxOrig ? origZ / mapChunkSize : chunkCount;
-                        int localX = origX < maxOrig ? origX % mapChunkSize : 0;
-                        int localZ = origZ < maxOrig ? origZ % mapChunkSize : 0;
-
-                        long chunkPos = Position2Int.Offset(centre, chunkX - chunkScale, chunkZ - chunkScale - 1);
-                        float h = generator.GetMapData(chunkPos).HeightRaw[localZ * mapChunkSize + localX];
-
-                        targetVertices[vx * vertsPerAxis + vz] = new Vector3(origX * scale, h, origZ * scale);
-                    }
-                }
-            }
-
-            private void GenerateTriangles()
-            {
-                int triangleIndex = triangles.Length - 1;
-
-                for (int chunkX = 0; chunkX < chunkCount; chunkX++)
-                {
-                    for (int chunkY = 0; chunkY < chunkCount; chunkY++)
-                    {
-                        int vertexOffsetX = chunkX * mapChunkSize;
-                        int vertexOffsetZ = chunkY * mapChunkSize;
-
-                        for (int x = 0; x < mapChunkSize; x++)
+                        blocks[b++] = new MeshTarget
                         {
-                            for (int y = 0; y < mapChunkSize; y++)
-                            {
-                                int bl = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + y;
-                                int br = (vertexOffsetX + x + 1) * totalVerticesZ + vertexOffsetZ + y;
-                                int tr = (vertexOffsetX + x + 1) * totalVerticesZ + vertexOffsetZ + y + 1;
-                                int tl = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + y + 1;
-
-                                triangles[triangleIndex]     = bl;
-                                triangles[triangleIndex - 1] = br;
-                                triangles[triangleIndex - 2] = tr;
-                                
-                                triangles[triangleIndex - 3] = bl;
-                                triangles[triangleIndex - 4] = tr;
-                                triangles[triangleIndex - 5] = tl;
-                                
-                                triangleIndex -= 6;
-                            }
-                        }
+                            Level = levels[ring],
+                            Mesh = mesh,
+                            Transform = go.transform,
+                            Ring = ring,
+                            Dx = dx,
+                            Dirty = true
+                        };
                     }
                 }
             }
 
-            private void UpdateAllVertices(long centre)
+            private static int ValidStep(int step)
             {
-                for (int chunkX = 0; chunkX < chunkCount; chunkX++)
+                step = math.clamp(step, 1, MapGenerator.mapChunkSize);
+                return math.min(math.ceilpow2(step), MapGenerator.mapChunkSize);
+            }
+
+            private static MeshLevel CreateLevel(int step, float skirtDepth)
+            {
+                int verts = BlockCells / step + 1;
+                int vertexCount = TerrainIndexBuilder.VertexCount(verts);
+                if (vertexCount > ushort.MaxValue + 1)
+                    throw new System.InvalidOperationException($"Terrain level step {step}: {vertexCount} vertices exceed 16-bit indices");
+
+                NativeArray<ushort> indices = TerrainIndexBuilder.Build(verts, Allocator.Persistent);
+
+                return new MeshLevel
                 {
-                    for (int chunkY = -1; chunkY < chunkCount - 1; chunkY++)
-                    {
-                        UpdateChunkVertices(
-                            Position2Int.Offset(centre, chunkX - chunkScale, chunkY - chunkScale),
-                            chunkX, chunkY + 1);
-                    }
+                    Step = step,
+                    Verts = verts,
+                    VertexCount = vertexCount,
+                    IndexCount = indices.Length,
+                    SkirtDepth = skirtDepth * step * MapGenerator.scale,
+                    Indices = indices
+                };
+            }
+
+            private Mesh CreateMesh(string name)
+            {
+                var mesh = new Mesh { name = name, bounds = localBounds };
+                mesh.MarkDynamic();
+                return mesh;
+            }
+
+            public void UpdateChunk(long newCenter)
+            {
+                center = newCenter;
+                hasCenter = true;
+
+                for (int i = 0; i < blocks.Length; i++)
+                    blocks[i].Dirty = true;
+
+                if (!generator.TryBuildHeightWindow(center, out HeightWindow window))
+                    return;
+
+                Schedule(central, window, out Mesh.MeshDataArray data).Complete();
+                Apply(central, data, MapGenerator.WindowOriginWorld(center));
+            }
+
+            public void SetFacing(int newFacing)
+            {
+                if (newFacing == facing) return;
+                facing = newFacing;
+
+                for (int i = 0; i < blocks.Length; i++)
+                    blocks[i].Dirty = true;
+            }
+
+            public void Tick(long deadline)
+            {
+                if (!hasCenter) return;
+
+                int n = 0;
+                for (int i = 0; i < blocks.Length; i++)
+                {
+                    MeshTarget block = blocks[i];
+                    if (!block.Dirty) continue;
+                    if (FrameBudget.Expired(deadline)) break;
+
+                    long blockCenter = BlockCenter(block);
+                    if (!generator.EnsureRegion(blockCenter, HeightWindow.Radius, block.Ring, deadline)) break;
+                    if (!generator.TryBuildHeightWindow(blockCenter, out HeightWindow window)) break;
+
+                    handles[n] = Schedule(block, window, out pendingData[n]);
+                    pendingBlocks[n++] = i;
+                    block.Dirty = false;
+                }
+
+                if (n == 0) return;
+
+                JobHandle.CombineDependencies(handles.GetSubArray(0, n)).Complete();
+
+                Vector3 origin = MapGenerator.WindowOriginWorld(center);
+                for (int k = 0; k < n; k++)
+                {
+                    MeshTarget block = blocks[pendingBlocks[k]];
+                    Apply(block, pendingData[k], origin + BlockOffset(block));
+                    pendingData[k] = default;
                 }
             }
 
-            private void UpdateChunkVertices(long chunkPos, int gridX, int gridY)
+            public void OnChunkDirty(long chunkKey) { }
+
+            private long BlockCenter(MeshTarget block) =>
+                Position2Int.Offset(center,
+                    block.Dx * MapGenerator.WindowSide,
+                    block.Ring * facing * MapGenerator.WindowSide);
+
+            private Vector3 BlockOffset(MeshTarget block) =>
+                new(block.Dx * BlockWorld, 0f, block.Ring * facing * BlockWorld);
+
+            private JobHandle Schedule(MeshTarget target, in HeightWindow window, out Mesh.MeshDataArray data)
             {
-                int vertexOffsetX = gridX * mapChunkSize;
-                int vertexOffsetZ = gridY * mapChunkSize;
+                MeshLevel level = target.Level;
 
-                ChunkData chunkData = generator.GetMapData(chunkPos);
+                data = Mesh.AllocateWritableMeshData(1);
+                Mesh.MeshData meshData = data[0];
 
-                for (int x = 0; x < mapChunkSize; x++)
+                meshData.SetVertexBufferParams(level.VertexCount, TerrainVertexLayout.Attributes);
+                meshData.SetIndexBufferParams(level.IndexCount, IndexFormat.UInt16);
+                meshData.GetIndexData<ushort>().CopyFrom(level.Indices);
+                meshData.subMeshCount = 1;
+                meshData.SetSubMesh(0, new SubMeshDescriptor(0, level.IndexCount)
                 {
-                    for (int y = 0; y < mapChunkSize; y++)
-                    {
-                        int vertexIndex = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + y;
-                        float h = chunkData.HeightRaw[y * mapChunkSize + x];
-                        vertices[vertexIndex] = new Vector3((vertexOffsetX + x) * scale, h, (vertexOffsetZ + y) * scale);
-                    }
+                    bounds = localBounds,
+                    firstVertex = 0,
+                    vertexCount = level.VertexCount
+                }, UpdateFlags);
+
+                JobHandle handle = new TerrainVertexJob
+                {
+                    Heights = window,
+                    Step = level.Step,
+                    Verts = level.Verts,
+                    CellSize = MapGenerator.scale,
+                    SkirtDepth = level.SkirtDepth,
+                    Vertices = meshData.GetVertexData<TerrainVertex>()
+                }.ScheduleParallel(level.Verts + 4, RowBatch, default);
+
+                JobHandle.ScheduleBatchedJobs();
+                return handle;
+            }
+
+            private void Apply(MeshTarget target, Mesh.MeshDataArray data, Vector3 position)
+            {
+                Mesh.ApplyAndDisposeWritableMeshData(data, target.Mesh, UpdateFlags);
+                target.Mesh.bounds = localBounds;
+                target.Transform.position = position;
+            }
+
+            public void Dispose()
+            {
+                for (int i = 0; i < levels.Length; i++)
+                {
+                    if (levels[i] != null && levels[i].Indices.IsCreated)
+                        levels[i].Indices.Dispose();
                 }
 
-                if (gridX == chunkCount - 1)
-                {
-                    ChunkData nearData = generator.GetMapData(Position2Int.Offset(chunkPos, 1, 0));
-                    for (int y = 0; y < mapChunkSize; y++)
-                    {
-                        int vi = (vertexOffsetX + mapChunkSize) * totalVerticesZ + vertexOffsetZ + y;
-                        vertices[vi] = new Vector3((vertexOffsetX + mapChunkSize) * scale,
-                            nearData.HeightRaw[y * mapChunkSize], (vertexOffsetZ + y) * scale);
-                    }
-                }
-
-                if (gridY == chunkCount - 1)
-                {
-                    ChunkData nearData = generator.GetMapData(Position2Int.Offset(chunkPos, 0, 1));
-                    for (int x = 0; x < mapChunkSize; x++)
-                    {
-                        int vi = (vertexOffsetX + x) * totalVerticesZ + vertexOffsetZ + mapChunkSize;
-                        vertices[vi] = new Vector3((vertexOffsetX + x) * scale,
-                            nearData.HeightRaw[x], (vertexOffsetZ + mapChunkSize) * scale);
-                    }
-                }
-
-                if (gridX == chunkCount - 1 && gridY == chunkCount - 1)
-                {
-                    ChunkData nearData = generator.GetMapData(Position2Int.Offset(chunkPos, 1, 1));
-                    int vi = (vertexOffsetX + mapChunkSize) * totalVerticesZ + vertexOffsetZ + mapChunkSize;
-                    vertices[vi] = new Vector3((vertexOffsetX + mapChunkSize) * scale,
-                        nearData.HeightRaw[0], (vertexOffsetZ + mapChunkSize) * scale);
-                }
+                if (handles.IsCreated) handles.Dispose();
             }
         }
-
     }
 }

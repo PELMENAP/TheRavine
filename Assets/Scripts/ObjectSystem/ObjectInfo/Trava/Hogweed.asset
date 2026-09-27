@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Hogweed
   m_EditorClassIdentifier: 
+  id: 6
   objectPrefab: {fileID: 7852824295285712418, guid: 08555fb144b61ee1690319482337598c, type: 3}
   defaultAmount: 0
   initialPoolSize: 10

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: MossInfo
   m_EditorClassIdentifier: 
+  id: 7
   objectPrefab: {fileID: 6908429162828912622, guid: adae632f026b24118899a930b4e1619f, type: 3}
   defaultAmount: 0
   initialPoolSize: 10

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Swap osot
   m_EditorClassIdentifier: 
+  id: 11
   objectPrefab: {fileID: 6605657834375341550, guid: 41cf727bea60c682b8005dea3726ff94, type: 3}
   defaultAmount: 0
   initialPoolSize: 10

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Brunner
   m_EditorClassIdentifier: 
+  id: 2
   objectPrefab: {fileID: 8438544788821673546, guid: fb0561befec814f9fa0473b621825565, type: 3}
   defaultAmount: 0
   initialPoolSize: 10

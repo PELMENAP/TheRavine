@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Politics
   m_EditorClassIdentifier: 
+  id: 33
   objectPrefab: {fileID: 5347812564416999424, guid: 6da45cec79a31d9ca86b81100581cfb3, type: 3}
   defaultAmount: 0
   initialPoolSize: 10

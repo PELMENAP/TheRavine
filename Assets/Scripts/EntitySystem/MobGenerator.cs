@@ -69,7 +69,7 @@ namespace TheRavine.EntityControl
         private void RegisterSpawnedEntity(AEntity entity, GameObject entityObject, Vector2Int worldPos)
         {
             long packed = Position2Int.Pack(worldPos.x, worldPos.y);
-            long chunkKey = mapGenerator.GetPosition2Int(packed);
+            long chunkKey = MapGenerator.WorldToChunk(packed);
             Vector2Int chunkPos = Position2Int.UnpackToVector(chunkKey);
 
             if (!entity.HasComponent<VisualCullingComponent>())

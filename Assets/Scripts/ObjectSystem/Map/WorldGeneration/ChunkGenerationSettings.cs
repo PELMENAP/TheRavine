@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace TheRavine.Generator
 {
@@ -30,5 +31,18 @@ namespace TheRavine.Generator
         public ErosionSettings erosion;
         public ObjectSpawnProfileSO[] spawnProfiles;
         public int maxObjectsPerChunk = 2048;
+
+        [Header("Streaming")]
+        [Min(0.5f)] public float frameBudgetMs = 4f;
+        [Min(0)] public int maxLodRing = 4;
+        public int[] lodSteps = { 4, 8, 16, 32 };
+        [Min(0f)] public float skirtDepth = 1.5f;
+
+        [Header("Chunk Lifecycle")]
+        [Min(2)] public int retainRadius = 3;
+        [Min(0)] public int evictionHysteresis = 2;
+        [Min(0)] public int evictionIdleFrames = 120;
+        [Min(0.1f)] public float evictionScanInterval = 5f;
+        [Min(0)] public int chunkPoolCapacity = 64;
     }
 }

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: RottenTorch
   m_EditorClassIdentifier: 
+  id: 34
   objectPrefab: {fileID: 4213350634147395220, guid: 85d083c10c66547089a16bc8bd32cea6, type: 3}
   defaultAmount: 0
   initialPoolSize: 10

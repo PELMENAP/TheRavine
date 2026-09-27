@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: BrokenRottenFence
   m_EditorClassIdentifier: 
+  id: 31
   objectPrefab: {fileID: 3573840205161904778, guid: f26b7cb4f4350ecf696bbb851c23a010, type: 3}
   defaultAmount: 0
   initialPoolSize: 10

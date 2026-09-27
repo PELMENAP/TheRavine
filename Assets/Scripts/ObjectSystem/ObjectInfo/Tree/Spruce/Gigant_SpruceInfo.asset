@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Gigant_SpruceInfo
   m_EditorClassIdentifier: 
+  id: 27
   objectPrefab: {fileID: 3577697167160119698, guid: 1b9a6119848b4a19aac375c50998fd9a, type: 3}
   defaultAmount: 0
   initialPoolSize: 30

@@ -19,6 +19,7 @@ MonoBehaviour:
   behaviourType: 0
   nalInfo: {fileID: 0}
   inventoryItemInfo: {fileID: 11400000, guid: f2bfaecbf7420f34a9d1db67ede0c0c4, type: 2}
+  id: 32
   objectPrefab: {fileID: 443920947200513725, guid: 4f59eba755cb9a4959b16369dc693a02, type: 3}
   evolutionStep: {fileID: 0}
   additionalOccupiedCells: []

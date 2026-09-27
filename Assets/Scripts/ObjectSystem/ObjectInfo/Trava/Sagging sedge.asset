@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Sagging sedge
   m_EditorClassIdentifier: 
+  id: 10
   objectPrefab: {fileID: 8438544788821673546, guid: b2e91fb5d600a9aad90fa8698f5291d6, type: 3}
   defaultAmount: 0
   initialPoolSize: 10

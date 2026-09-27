@@ -38,7 +38,9 @@ namespace TheRavine.Generator
         public int prefabID;
         public float density;
         public float minDistance;
+        public int radiusCells;
         public byte layer;
+        public byte visibleRings;
 
         public float4 heightRange; 
         public float4 tempRange;

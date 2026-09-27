@@ -1,4 +1,6 @@
 using System;
+using System.Runtime.CompilerServices;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Jobs;
@@ -40,6 +42,9 @@ namespace TheRavine.Generator
         private NativeArray<ObjectInstInfo> spawnOutput;
         private NativeReference<int> spawnCount;
         private NativeArray<byte> spawnGridBuffer;
+        private readonly int[] ringConfigEnd;
+        private readonly bool spawnEnabled;
+        private readonly int worldSeed;
                 
         public UnityAction<Vector2Int, int, int, Vector2Int> onSpawnPoint;
 
@@ -48,6 +53,8 @@ namespace TheRavine.Generator
             int seed)
         {
             this.settings     = settings;
+            worldSeed         = seed;
+            spawnEnabled      = settings.endlessFlag != null && settings.endlessFlag.Length > 2 && settings.endlessFlag[2];
             noise = new(
                 settings.heightNoiseSettings,
                 settings.riverNoiseSettings,
@@ -128,15 +135,20 @@ namespace TheRavine.Generator
 
             moveCost = new NativeArray<byte>(totalCells, Allocator.Persistent);
 
-            int gridRes = math.min(mapChunkSize * scale, 256);
-            spawnOutput     = new NativeArray<ObjectInstInfo>(settings.maxObjectsPerChunk, Allocator.Persistent);
+            spawnOutput     = new NativeArray<ObjectInstInfo>(math.max(1, settings.maxObjectsPerChunk), Allocator.Persistent);
             spawnCount      = new NativeReference<int>(0, Allocator.Persistent);
-            spawnGridBuffer = new NativeArray<byte>(gridRes * gridRes, Allocator.Persistent);
-            spawnConfigs    = SpawnConfigBaker.BakeSpawnConfigs(settings.spawnProfiles, Allocator.Persistent);       
+            spawnGridBuffer = new NativeArray<byte>(totalCells, Allocator.Persistent);
+            spawnConfigs    = SpawnConfigBaker.BakeSpawnConfigs(settings.spawnProfiles, Allocator.Persistent, out ringConfigEnd);
         }
-        public ChunkData GenerateMapData(long centre)
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public uint ChunkSeed(int x, int z) => math.hash(new int3(x, z, worldSeed));
+
+        public void Generate(ChunkData chunkData, long centre, int ring)
         {
-            uint hash = (uint)centre;
+            ring = math.clamp(ring, 0, ObjectInfo.MaxVisibleRings);
+            int2 chunkOrigin = new(Position2Int.GetX(centre), Position2Int.GetY(centre));
+            uint hash = ChunkSeed(chunkOrigin.x, chunkOrigin.y);
 
             JobHandle mapHandle = noise.GenerateAllMaps(
                 noiseMap, riverMap, temperatureMap, moistureMap,
@@ -203,62 +215,92 @@ namespace TheRavine.Generator
                 moveCost = moveCost
             }.Schedule(totalCells, 64, erosionHandle);
 
-            ChunkData chunkData = new();
-
-            if (settings.endlessFlag[2])
+            JobHandle fillHandle = new FillChunkArraysJob
             {
-                spawnCount.Value = 0;
-                int2 chunkOrigin = new(Position2Int.GetX(centre), Position2Int.GetY(centre));
-                float chunkWorldSize = mapChunkSize * scale;
+                height = biomeHeightMap,
+                biome = biomeResult,
+                moveCostIn = moveCost,
+                heightScale = maxTerrainHeight,
+                heightRaw = chunkData.HeightRaw,
+                biomeMap = chunkData.BiomeMap,
+                moveCostOut = chunkData.MoveCost
+            }.ScheduleParallel(totalCells, 256, finalizeHandle);
 
-                JobHandle spawnHandle = new SpawnLayerJob
-                {
-                    configs = spawnConfigs,
-                    heightMap = biomeHeightMap,
-                    temperatureMap = temperatureMap,
-                    moistureMap = moistureMap,
-                    chunkOrigin = chunkOrigin,
-                    seed = hash,
-                    output = spawnOutput,
-                    outputCount = spawnCount,
-                    gridBuffer = spawnGridBuffer
-                }.Schedule(finalizeHandle);
-
-                spawnHandle.Complete();
-
-                int finalCount = spawnCount.Value;
-                for (int i = 0; i < finalCount; i++)
-                {
-                    ObjectInstInfo inst = spawnOutput[i];
-                    float2 chunkWorldOrigin = new float2(chunkOrigin) * chunkWorldSize;
-                    int2 cell = (int2)math.floor(
-                        (new float2(inst.Position.x, inst.Position.z) - chunkWorldOrigin) / scale);
-
-                    int idx = math.clamp(cell.y * mapChunkSize + cell.x, 0, totalCells - 1);
-                    chunkData.TryAddObject(idx, in inst, null);
-                }
+            if (spawnEnabled)
+            {
+                RunSpawn(chunkData, chunkOrigin, hash, 0, ringConfigEnd[ring], fillHandle);
+                chunkData.DetailLevel = (byte)ring;
             }
             else
             {
-                finalizeHandle.Complete();
+                fillHandle.Complete();
+                chunkData.DetailLevel = 0;
             }
 
-            FillChunkArrays(chunkData);
-
-            return chunkData;
+            chunkData.CommitGeneration(false);
         }
 
-        private void FillChunkArrays(ChunkData cd)
+        public void RaiseDetail(ChunkData chunkData, long centre, int ring)
         {
-            biomeHeightMap.CopyTo(cd.HeightRaw);
-            biomeResult.CopyTo(cd.BiomeMap);
+            ring = math.clamp(ring, 0, ObjectInfo.MaxVisibleRings);
+            if (chunkData.DetailLevel <= ring) return;
 
-            moveCost.CopyTo(cd.MoveCost);
+            if (!spawnEnabled)
+            {
+                chunkData.DetailLevel = 0;
+                return;
+            }
 
-            for (int i = 0; i < totalCells; i++)
-                cd.HeightRaw[i] *= maxTerrainHeight;
+            int begin = ringConfigEnd[math.min((int)chunkData.DetailLevel, ObjectInfo.MaxVisibleRings)];
+            int end = ringConfigEnd[ring];
+            chunkData.DetailLevel = (byte)ring;
+            if (begin >= end) return;
+
+            int2 chunkOrigin = new(Position2Int.GetX(centre), Position2Int.GetY(centre));
+            bool wasModified = chunkData.IsModified;
+
+            JobHandle climateHandle = noise.GenerateClimate(
+                temperatureMap, moistureMap,
+                Position2Int.UnpackToVector(centre));
+
+            RunSpawn(chunkData, chunkOrigin, ChunkSeed(chunkOrigin.x, chunkOrigin.y), begin, end, climateHandle);
+            chunkData.CommitGeneration(wasModified);
         }
-        
+
+        private void RunSpawn(ChunkData chunkData, int2 chunkOrigin, uint hash, int firstConfig, int endConfig, JobHandle dependency)
+        {
+            if (firstConfig >= endConfig)
+            {
+                dependency.Complete();
+                return;
+            }
+
+            spawnCount.Value = 0;
+
+            new SpawnLayerJob
+            {
+                configs = spawnConfigs,
+                firstConfig = firstConfig,
+                endConfig = endConfig,
+                heightRaw = chunkData.HeightRaw,
+                temperatureMap = temperatureMap,
+                moistureMap = moistureMap,
+                existing = chunkData.Objects.AsArray(),
+                chunkOrigin = chunkOrigin,
+                seed = hash,
+                output = spawnOutput,
+                outputCount = spawnCount,
+                gridBuffer = spawnGridBuffer
+            }.Schedule(dependency).Complete();
+
+            int finalCount = spawnCount.Value;
+            for (int i = 0; i < finalCount; i++)
+            {
+                ObjectInstInfo inst = spawnOutput[i];
+                chunkData.TryAddObject(inst.PrimaryIdx, in inst);
+            }
+        }
+
         public void Dispose()
         {
             if (noiseMap.IsCreated)         noiseMap.Dispose();
@@ -292,6 +334,24 @@ namespace TheRavine.Generator
 
         }
     }
+
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Fast, DisableSafetyChecks = true)]
+    public struct FillChunkArraysJob : IJobFor
+    {
+        [ReadOnly] public NativeArray<float> height;
+        [ReadOnly] public NativeArray<int> biome;
+        [ReadOnly] public NativeArray<byte> moveCostIn;
+        public float heightScale;
+
+        [WriteOnly] public NativeArray<float> heightRaw;
+        [WriteOnly] public NativeArray<int> biomeMap;
+        [WriteOnly] public NativeArray<byte> moveCostOut;
+
+        public void Execute(int i)
+        {
+            heightRaw[i] = height[i] * heightScale;
+            biomeMap[i] = biome[i];
+            moveCostOut[i] = moveCostIn[i];
+        }
+    }
 }
-
-
