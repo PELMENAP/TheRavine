@@ -66,6 +66,7 @@ public class EntityView : AEntityView
 
     private void Render(EntityModel model)
     {
+        if (!label.gameObject.activeInHierarchy) return;
         var sb = _sb;
         sb.Clear();
 

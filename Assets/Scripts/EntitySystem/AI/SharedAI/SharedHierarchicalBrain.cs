@@ -751,7 +751,7 @@ public class SharedHierarchicalBrain : IDisposable
                    + ctx.GoalBonus
                    + r.GoalFoodWeight   * ctx.GoalFoodEaten
                    + r.GoalEnergyWeight * (ctx.EnergyNorm - ctx.GoalStartEnergy)
-                   + r.GoalRestWeight   * ctx.GoalRestCount
+                   + r.GoalRestWeight   * ctx.GoalRestScore
                    + curiosity * ctx.GoalNovelty;
 
         float clip = r.RewardClipSigma;

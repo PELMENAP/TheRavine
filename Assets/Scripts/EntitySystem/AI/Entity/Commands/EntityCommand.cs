@@ -97,6 +97,12 @@ public abstract class EntityCommand : IEntityCommand
         return EntityCommandStatus.Interrupted;
     }
 
+    protected void ExtendWatchdog(double until)
+    {
+        double w = until + SimulationRules.Active.CommandWatchdogGrace;
+        if (w > _watchdog) _watchdog = w;
+    }
+
     protected double HoldUntil(float seconds) => math.min(SimulationClock.TimeD + seconds, (double)decision.EndTime);
 
     protected double PauseUntil()

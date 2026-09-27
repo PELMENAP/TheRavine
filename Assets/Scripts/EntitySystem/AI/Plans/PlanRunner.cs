@@ -41,6 +41,9 @@ public sealed class PlanRunner
         _hunger0     = colony != null ? colony.HungerEma : 0f;
         _stored0     = _model.StoredTotal;
 
+        if (PlanCatalog.IsTravelPlan(_p.Kind) && decision.HasDirection)
+            ResolveDestination(decision.Direction, decision.DirOffset);
+
         _model.BeginHomeostasis();
         Launch(decision.Action, CommandSource.Brain);
     }
@@ -78,7 +81,13 @@ public sealed class PlanRunner
 
         for (int attempt = 0; attempt < MaxStartAttempts; attempt++)
         {
-            int next = PlanCatalog.Next(ref _p, _model.PlanHints, status, action);
+            int next = PlanCatalog.Next(ref _p, CurrentHints(), status, action);
+            if (_p.NeedsDestination)
+            {
+                _p.NeedsDestination = false;
+                byte dir = _p.Direction != (byte)DirectionKind.None ? _p.Direction : _decision.Direction;
+                ResolveDestination(dir, _decision.DirOffset);
+            }
             if (next == PlanCatalog.Complete) { End(EntityCommandStatus.Completed); return; }
             if (next == PlanCatalog.Fail)     { End(EntityCommandStatus.Failed);    return; }
 
@@ -88,6 +97,28 @@ public sealed class PlanRunner
         }
 
         End(EntityCommandStatus.Failed);
+    }
+
+    private PlanHint CurrentHints()
+    {
+        var h = _model.PlanHints;
+        if (_p.HasDestination
+            && math.distance(_model.Position2D, _p.Destination) <= SimulationRules.Frame.PlanArriveRadius)
+            h |= PlanHint.AtDestination;
+        return h;
+    }
+
+    private void ResolveDestination(byte direction, float offset)
+    {
+        _p.HasDestination = false;
+        _p.Hops = 0;
+        if (!_model.TryResolveDirection(direction, offset, out float2 dir, out float radius)) return;
+        ref readonly var r = ref SimulationRules.Frame;
+        bool  anchored = direction <= (byte)DirectionKind.ColonyPoi;
+        float maxTravel = math.max(r.PlanMinTravel, r.PlanMaxTravel);
+        float travel = anchored ? math.min(radius, maxTravel) : math.clamp(radius, r.PlanMinTravel, maxTravel);
+        _p.Destination    = _model.Position2D + dir * travel;
+        _p.HasDestination = true;
     }
 
     private float ColonyReward()
@@ -113,6 +144,7 @@ public sealed class PlanRunner
             ActionDurationTable.Min(action), ActionDurationTable.Max(action));
         var step = _decision.WithStep(action, SimulationClock.Time, duration, source == CommandSource.Brain);
         if (_p.Direction != (byte)DirectionKind.None) step = step.WithDirection(_p.Direction);
+        if (_p.HasDestination && action == (int)EntityAction.Wander) step = step.WithDestination(_p.Destination);
         if (_model.TryStartCommand(action, in step, source)) return true;
         if (_active && !_ending && source == CommandSource.Brain) Advance(EntityCommandStatus.Failed, action);
         return false;
