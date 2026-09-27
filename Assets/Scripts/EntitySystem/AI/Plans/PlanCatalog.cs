@@ -57,6 +57,8 @@ public enum PlanHint : uint
     PreferPickUp = 1 << 22,
     QuorumReady  = 1 << 23,
     KinSick      = 1 << 24,
+    AtDestination = 1 << 25,
+    Night        = 1 << 26,
 }
 
 public struct PlanProgress
@@ -71,6 +73,10 @@ public struct PlanProgress
     public int  Legs;
     public int  Used;
     public byte Direction;
+    public int  Hops;
+    public bool HasDestination;
+    public bool NeedsDestination;
+    public Unity.Mathematics.float2 Destination;
 }
 
 public static class PlanCatalog
@@ -101,6 +107,17 @@ public static class PlanCatalog
         ref readonly var r = ref SimulationRules.Frame;
         int lo = Math.Max(1, r.SeekMinLegs);
         p.Legs = RavineRandom.RangeInt(lo, Math.Max(lo, r.SeekMaxLegs) + 1);
+    }
+
+    public static bool IsTravelPlan(PlanKind plan) => plan == PlanKind.Patrol || plan == PlanKind.Seek;
+
+    private static bool CompleteHop(ref PlanProgress p, PlanHint h, int maxHops)
+    {
+        p.Hops++;
+        if (p.HasDestination && !Has(h, PlanHint.AtDestination) && p.Hops < maxHops) return false;
+        p.Hops = 0;
+        p.NeedsDestination = true;
+        return true;
     }
 
     private static byte NextSeekDirection(ref PlanProgress p, PlanHint h)
@@ -208,7 +225,8 @@ public static class PlanCatalog
                 return Fail;
 
             case PlanKind.Patrol:
-                if (ok && lastAction != (int)EntityAction.RememberPoint)
+                if (ok && (lastAction == (int)EntityAction.Wander || lastAction == (int)EntityAction.GoToPoint)
+                    && (lastAction == (int)EntityAction.GoToPoint || CompleteHop(ref p, h, r.PlanMaxHops)))
                 {
                     p.Steps++;
                     if (Has(h, PlanHint.FoodVisible))
@@ -232,6 +250,7 @@ public static class PlanCatalog
             case PlanKind.Rest:
                 if (lastAction == (int)EntityAction.Rest && !ok && Has(h, PlanHint.Hungry)) return Fail;
                 if (lastAction == (int)EntityAction.Rest && ok) p.Steps++;
+                if (Has(h, PlanHint.Night) && Has(h, PlanHint.AtNest) && !Has(h, PlanHint.Hungry)) return (int)EntityAction.Rest;
                 if (p.Steps >= r.RestMaxSteps || (p.Steps > 0 && Has(h, PlanHint.HpFull))) return Complete;
                 return (int)EntityAction.Rest;
 
@@ -261,9 +280,12 @@ public static class PlanCatalog
                 bool wantsFood = !Has(h, PlanHint.Sated) || (Has(h, PlanHint.PreferPickUp) && !Has(h, PlanHint.CarryFull));
                 if (Has(h, PlanHint.FoodVisible) && wantsFood) return (int)EntityAction.ApproachFood;
                 if (p.Achieved) return Complete;
-                if (ok && lastAction == (int)EntityAction.Wander) p.Steps++;
-                if (p.Steps >= p.Legs) return Fail;
-                p.Direction = NextSeekDirection(ref p, h);
+                if (ok && lastAction == (int)EntityAction.Wander && CompleteHop(ref p, h, r.PlanMaxHops))
+                {
+                    p.Steps++;
+                    if (p.Steps >= p.Legs) return Fail;
+                    p.Direction = NextSeekDirection(ref p, h);
+                }
                 return (int)EntityAction.Wander;
 
             case PlanKind.Court:

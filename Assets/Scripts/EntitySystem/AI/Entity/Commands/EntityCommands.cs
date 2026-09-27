@@ -9,7 +9,9 @@ using TheRavine.EntityControl.Virology;
 
 public class RestCommand : EntityCommand
 {
+    private static readonly EntityModel[] Nearby = new EntityModel[16];
     private double _prev;
+    private float  _rested;
 
     public RestCommand(EntityModel model) : base(model) { }
 
@@ -17,7 +19,8 @@ public class RestCommand : EntityCommand
     {
         if (model.IsHungry) return Fail(SimulationRules.Active.InfeasibleActionReward);
         model.Motor.Stop();
-        _prev = SimulationClock.TimeD;
+        _prev   = SimulationClock.TimeD;
+        _rested = 0f;
         return EntityCommandStatus.Running;
     }
 
@@ -33,6 +36,7 @@ public class RestCommand : EntityCommand
         if (step > 0f)
         {
             _prev = t;
+            _rested += step;
             float hp     = stats.Hp;
             float en     = stats.En;
             float cost   = r.RestHealEnergyCost;
@@ -53,8 +57,24 @@ public class RestCommand : EntityCommand
 
         if (t < end) return EntityCommandStatus.Running;
 
-        model.Brain.Context.GoalRestCount++;
-        return Complete();
+        float factor = RestFactor(r);
+        model.Brain.Context.GoalRestScore += factor;
+        return Complete(r.RestRewardPerSecond * _rested * factor);
+    }
+
+    private float RestFactor(SimulationRules r)
+    {
+        int found = model.Perception.FindEntitiesInRadius(model.Motor.Position(), model, r.CrowdRadius, Nearby);
+        int resting = 0;
+        for (int i = 0; i < found; i++)
+        {
+            var e = Nearby[i];
+            Nearby[i] = null;
+            if (e == null || e.Colony != model.Colony || !e.IsCommandRunning || e.LastAction != EntityAction.Rest) continue;
+            resting++;
+        }
+        float social = 1f + r.RestSocialBonus * math.min(resting, r.RestSocialMax);
+        return social * (model.IsNight && model.IsAtNest ? r.RestNightMul : 1f);
     }
 }
 
@@ -87,6 +107,12 @@ public abstract class PlannedMoveCommand : EntityCommand
     {
         _pausing = false;
         float remaining = math.max(0f, decision.EndTime - SimulationClock.Time);
+        float travel    = radius / math.max(speed * model.SpeedMul, 0.1f) * SimulationRules.Frame.LegTimeSlack;
+        if (travel > remaining)
+        {
+            remaining = travel;
+            ExtendWatchdog(SimulationClock.TimeD + travel);
+        }
         StartPlannedMove(intent, direction, target, hasTarget, radius, speed, remaining, energyCost,
             threat, hasThreat, side, curvature);
         return EntityCommandStatus.Running;
@@ -122,12 +148,23 @@ public class WanderCommand : PlannedMoveCommand
         var r = SimulationRules.Active;
         float2 desired;
         float  radius = model.Tuning.WanderRadius;
+        _reached = false;
 
         var nest = model.Nest;
         if (decision.Plan == PlanKind.Migrate && nest != null && nest.MigrationPressure > 1e-4f)
         {
             desired = math.normalizesafe(nest.Migration);
             radius  = math.min(r.MigrateLegRadius, r.PlannerRadiusMax);
+        }
+        else if (decision.HasDestination)
+        {
+            float2 self = model.Position2D;
+            float2 to   = decision.Destination - self;
+            float  dist = math.length(to);
+            _reached = dist <= r.PlanArriveRadius;
+            if (_reached) return Complete();
+            return BeginPlanned(MoveIntent.Wander, to, decision.Destination, true,
+                math.min(dist, r.PlannerRadiusMax), model.Tuning.MoveSpeed, model.Tuning.EnergyCostMoving);
         }
         else if (decision.HasDirection && model.TryResolveDirection(decision.Direction, decision.DirOffset, out desired, out float dirRadius))
             radius = math.max(dirRadius, r.LevyMinStep);
@@ -162,8 +199,14 @@ public class WanderCommand : PlannedMoveCommand
         return spread > r.WanderGradientMin;
     }
 
+    private bool _reached;
+
+    protected override bool PauseAfterArrival => !decision.HasDestination || _reached;
+
     protected override EntityCommandStatus OnArrived(in MoveResult move)
     {
+        if (decision.HasDestination)
+            _reached = math.distance(model.Position2D, decision.Destination) <= SimulationRules.Frame.PlanArriveRadius;
         if (decision.Plan != PlanKind.Migrate || model.Caste != Caste.Scout) return Complete();
         var colony = model.Colony;
         if (colony == null || colony.IsWild) return Complete();

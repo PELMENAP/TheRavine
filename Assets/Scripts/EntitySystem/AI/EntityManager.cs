@@ -40,6 +40,11 @@ public class EntityManager : MonoBehaviour
     [Header("Rules")]
     [SerializeField] private SimulationRules rules;
 
+    [Header("Visual culling")]
+    [SerializeField] private bool cullOutsideActiveChunks = true;
+    [SerializeField] private int  cullChunkMargin = 0;
+    private MapGenerator _map;
+
     [Header("Nest views")]
     [SerializeField] private bool showNestViews = true;
     [SerializeField] private NestDebugView nestViewPrefab;
@@ -259,6 +264,7 @@ public class EntityManager : MonoBehaviour
 
         var map = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
         _motion.Inject(map);
+        _map = map;
 
         _foodIndex = new ChunkFoodIndex(map);
         ServiceLocator.Services.Register(_foodIndex);
@@ -338,6 +344,7 @@ public class EntityManager : MonoBehaviour
                 _foodIndex?.PruneUnloaded();
                 TickNests();
                 TickColonies();
+                UpdateVisibility();
 
                 float now = SimulationClock.Time;
                 if (now >= _nextGenerationTime)
@@ -1028,6 +1035,27 @@ public class EntityManager : MonoBehaviour
         if (_tickCursor != 0) return;
         for (int c = 0; c < _colonies.Count; c++)
             if (!_colonies[c].IsWild) EvolveColony(_colonies[c]);
+    }
+
+    private void UpdateVisibility()
+    {
+        if (!cullOutsideActiveChunks || _map == null) return;
+        bool hasViewer = _map.TryGetViewerChunk(out int vx, out int vz);
+        int range = MapGenerator.chunkScale + cullChunkMargin;
+
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            var e = _entities[i];
+            if (e.IsDisposed || e.IsDeathPending) continue;
+            bool visible = true;
+            if (hasViewer)
+            {
+                float2 p = e.Position2D;
+                visible = math.abs(MapGenerator.ChunkCoord(p.x) - vx) <= range
+                       && math.abs(MapGenerator.ChunkCoord(p.y) - vz) <= range;
+            }
+            SetEntityVisible(e, visible);
+        }
     }
 
     private void CreateNestViews()

@@ -97,6 +97,7 @@ public class EntityModel : AEntity, IFoodReceiver
 
     private bool _sick;
     public bool IsSick => _sick;
+    public bool IsNight => _night;
     private bool _kinSick;
     private bool _onForeignTerritory;
     private float _season;
@@ -727,7 +728,7 @@ public class EntityModel : AEntity, IFoodReceiver
         var nest = Nest;
         IsAtNest = nest != null && nest.Contains(self);
         if (nest != null && _foodValid) nest.Mark(ColonyChannel.Food, foodPos, rules.NestFoodMark * dt);
-        if (nest != null)
+        if (nest != null && !IsWild)
             nest.Mark(ColonyChannel.Explored, self, rules.ExploredMark * dt * (Caste == Caste.Scout ? rules.ScoutExploredMul : 1f));
         if (nest != null && !IsWild) nest.Mark(ColonyChannel.Territory, self, rules.TerritoryMark * dt);
         SampleTrail(in self, nowD, in rules);
@@ -737,7 +738,7 @@ public class EntityModel : AEntity, IFoodReceiver
         if (!_playerValid) _playerTransform = null;
         _nestFood = ComputeNestFood(nest, in rules);
         UpdateTerritory(nest, in self, dt, in rules);
-        ComputeDirections(nest, in self, in foodPos, in rules);
+        if (!IsWild) ComputeDirections(nest, in self, in foodPos, in rules);
 
         if (!_terrain.TrySample(pos.x, pos.z, out _lastTerrain))
             _lastTerrain = TerrainSample.Invalid;
@@ -795,7 +796,7 @@ public class EntityModel : AEntity, IFoodReceiver
         if (_sick && nest != null) nest.Mark(ColonyChannel.Sickness, self, rules.SickMark * dt);
         UpdateHormones(dt, in rules);
 
-        LastInput = Vectorizer.Vectorize(in frame, _actionTimes, in _lastTerrain);
+        if (!IsWild) LastInput = Vectorizer.Vectorize(in frame, _actionTimes, in _lastTerrain);
 
         Speech.ConsumeOtherSpeech();
         ConsumeMimickedAction();
@@ -834,6 +835,16 @@ public class EntityModel : AEntity, IFoodReceiver
         _plan.Tick();
         if (!IsAliveForTick()) return false;
 
+        if (IsWild)
+        {
+            _threatResolved = ResolveThreatSource(in self, frame.LocalDanger, in rules, out _threatSource);
+            _hasThreat   = _threatResolved;
+            _cycleNow    = now;
+            _cycleDt     = dt;
+            _cycleActive = true;
+            return true;
+        }
+
         var goalBias = new float4(
             mods.WanderBias,
             mods.HuntBias + mods.Frenzy * rules.FrenzyHuntBias,
@@ -860,6 +871,7 @@ public class EntityModel : AEntity, IFoodReceiver
         brainCtx.CoordBias[(int)PlanKind.Rest] += mods.HomeCompulsion * rules.HomeCompulsionRestBias;
         brainCtx.CoordBias[(int)PlanKind.Patrol] += mods.Isolate * rules.IsolateStrength;
         brainCtx.CoordBias[(int)PlanKind.Harvest] += _winterApproach * rules.PreWinterHarvestBias;
+        if (night && IsAtNest && !IsHungry) brainCtx.CoordBias[(int)PlanKind.Rest] += rules.NightRestBias;
         if (_onForeignTerritory) brainCtx.CoordBias[(int)PlanKind.Hunt] -= rules.ForeignTerritoryHuntDrop;
 
         ref readonly var genes = ref brainCtx.CoordMLP.Params;
@@ -979,6 +991,7 @@ public class EntityModel : AEntity, IFoodReceiver
         if (colony != null && IsLeader && colony.TryGetQuorumSite(out _)) h |= PlanHint.QuorumReady;
         if (Caste == Caste.Worker && CasteFixed && !IsJuvenile && !IsHungry) h |= PlanHint.PreferPickUp;
         if (_kinSick) h |= PlanHint.KinSick;
+        if (_night) h |= PlanHint.Night;
         return h;
     }
 
@@ -1392,37 +1405,92 @@ public class EntityModel : AEntity, IFoodReceiver
         return best;
     }
 
+    private float2 _wildHome;
+    private float2 _wildGoal;
+    private bool   _wildHomeSet;
+    private bool   _wildHasGoal;
+    private bool   _wildLoiter;
+
     public void TickWild()
     {
-        if (!_cycleActive || _runner.IsRunning) return;
+        if (!_cycleActive) return;
         ref readonly var r = ref SimulationRules.Frame;
 
-        float hp = Stats.Hp / Stats.MaxHealth;
-        float en = EffectiveEnergyNorm;
-        int action;
-        byte direction = (byte)DirectionKind.None;
-
-        if (hp < r.PredatorFleeHp && _threatResolved) action = (int)EntityAction.Flee;
-        else if (en < r.PredatorHungerOn)
+        float2 self = Position2D;
+        if (!_wildHomeSet)
         {
-            bool meat = _foodValid && _foodKind == FoodKind.Meat;
-            if (meat && _foodDistance <= r.EatRange && !IsSated) action = (int)EntityAction.Eat;
-            else if (meat) action = (int)EntityAction.ApproachFood;
-            else if (CachedHuntTarget.IsValid) action = (int)EntityAction.Attack;
-            else { action = (int)EntityAction.Wander; direction = (byte)DirectionKind.Levy; }
+            _wildHome    = self;
+            _wildHomeSet = true;
         }
-        else if (hp < 1f) action = (int)EntityAction.Rest;
-        else { action = (int)EntityAction.Wander; direction = (byte)DirectionKind.Levy; }
 
-        var decision = new BrainDecision(action, 0, 0, SharedHierarchicalBrain.Goal.Hunt, _cycleNow,
-            ActionDurationTable.Max(action), float2.zero, direction: direction);
-        if (!TryStartCommand(action, in decision, CommandSource.Instinct) && action != (int)EntityAction.Wander)
+        float hp     = Stats.Hp / Stats.MaxHealth;
+        bool hungry  = EffectiveEnergyNorm < r.PredatorHungerOn;
+        bool flee    = hp < r.PredatorFleeHp && _threatResolved;
+        bool meat    = _foodValid && _foodKind == FoodKind.Meat;
+        var  prey    = hungry ? CachedHuntTarget : default;
+        bool urgent  = flee || (hungry && (meat || prey.IsValid));
+
+        if (_runner.IsRunning)
         {
-            action = (int)EntityAction.Wander;
-            var roam = new BrainDecision(action, 0, 0, SharedHierarchicalBrain.Goal.Hunt, _cycleNow,
-                ActionDurationTable.Max(action), float2.zero, direction: (byte)DirectionKind.Levy);
-            TryStartCommand(action, in roam, CommandSource.Instinct);
+            int current = _runner.CurrentAction;
+            bool calm = current == (int)EntityAction.Wander || current == (int)EntityAction.Idle
+                     || current == (int)EntityAction.Rest;
+            if (!calm || !urgent) return;
         }
+
+        if (flee)                                        StartWild(EntityAction.Flee, ActionDurationTable.Max((int)EntityAction.Flee));
+        else if (hungry && meat && _foodDistance <= r.EatRange && !IsSated) StartWild(EntityAction.Eat, ActionDurationTable.Max((int)EntityAction.Eat));
+        else if (hungry && meat)                         StartWild(EntityAction.ApproachFood, ActionDurationTable.Max((int)EntityAction.ApproachFood));
+        else if (prey.IsValid)
+        {
+            _wildHome    = prey.Position2D;
+            _wildHasGoal = false;
+            StartWild(EntityAction.Attack, ActionDurationTable.Max((int)EntityAction.Attack));
+        }
+        else if (!hungry && hp < 1f)                     StartWild(EntityAction.Rest, r.PredatorRestSeconds);
+        else if (_wildLoiter)
+        {
+            _wildLoiter = false;
+            StartWild(EntityAction.Idle, RavineRandom.RangeFloat(r.PredatorLoiterMin, math.max(r.PredatorLoiterMin, r.PredatorLoiterMax)));
+        }
+        else Roam(in self, in r);
+    }
+
+    private void Roam(in float2 self, in SimulationRules.RulesFrame r)
+    {
+        if (_wildHasGoal && math.distance(self, _wildGoal) <= r.PlanArriveRadius)
+        {
+            _wildHasGoal = false;
+            _wildLoiter  = true;
+            StartWild(EntityAction.Idle, RavineRandom.RangeFloat(r.PredatorLoiterMin, math.max(r.PredatorLoiterMin, r.PredatorLoiterMax)));
+            return;
+        }
+
+        if (!_wildHasGoal)
+        {
+            float a = RavineRandom.RangeFloat(0f, 2f * math.PI);
+            math.sincos(a, out float sa, out float ca);
+            float2 goal = self + new float2(ca, sa) * r.PredatorRoamDistance;
+            float2 fromHome = goal - _wildHome;
+            if (math.lengthsq(fromHome) > r.PredatorHomeRange * r.PredatorHomeRange)
+                goal = _wildHome + math.normalizesafe(fromHome) * math.max(r.PredatorHomeRange - r.PredatorRoamDistance, 0f);
+            _wildGoal    = goal;
+            _wildHasGoal = true;
+        }
+
+        float dist = math.distance(self, _wildGoal);
+        float time = dist / math.max(Tuning.MoveSpeed * SpeedMul, 0.1f) * r.LegTimeSlack;
+        var decision = new BrainDecision((int)EntityAction.Wander, 0, 0, SharedHierarchicalBrain.Goal.Hunt, _cycleNow,
+            time, float2.zero, destination: _wildGoal, hasDestination: true);
+        if (!TryStartCommand((int)EntityAction.Wander, in decision, CommandSource.Instinct)) _wildHasGoal = false;
+    }
+
+    private void StartWild(EntityAction action, float duration)
+    {
+        var decision = new BrainDecision((int)action, 0, 0, SharedHierarchicalBrain.Goal.Hunt, _cycleNow,
+            duration, float2.zero);
+        if (TryStartCommand((int)action, in decision, CommandSource.Instinct)) return;
+        Roam(Position2D, in SimulationRules.Frame);
     }
 
     public float Drive()

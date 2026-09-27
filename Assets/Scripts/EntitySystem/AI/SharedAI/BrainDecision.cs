@@ -19,12 +19,17 @@ public readonly struct BrainDecision
     public readonly byte   Direction;
     public readonly float  DirOffset;
     public readonly byte   Signal;
+    public readonly float2 Destination;
+    public readonly bool   HasDestination;
 
     public BrainDecision(int action, int execDecisionId, int coordDecisionId,
         SharedHierarchicalBrain.Goal goal, float startTime, float duration, in float2 heading,
         float curvature = 0f, float4 speech = default, PlanKind plan = PlanKind.Count, float planEnd = 0f,
-        byte direction = (byte)DirectionKind.None, float dirOffset = 0f, byte signal = SpeechSignal.None)
+        byte direction = (byte)DirectionKind.None, float dirOffset = 0f, byte signal = SpeechSignal.None,
+        float2 destination = default, bool hasDestination = false)
     {
+        Destination = destination;
+        HasDestination = hasDestination;
         Direction = direction;
         DirOffset = dirOffset;
         Signal = signal;
@@ -51,12 +56,16 @@ public readonly struct BrainDecision
     {
         float2 heading = keepHeading ? Heading : float2.zero;
         return new(action, ExecDecisionId, CoordDecisionId, Goal, startTime, duration, in heading,
-                   Curvature, Speech, Plan, PlanEnd, Direction, DirOffset, Signal);
+                   Curvature, Speech, Plan, PlanEnd, Direction, DirOffset, Signal, Destination, HasDestination);
     }
 
     public BrainDecision WithDirection(byte direction)
         => new(Action, ExecDecisionId, CoordDecisionId, Goal, StartTime, Duration, in Heading,
-               Curvature, Speech, Plan, PlanEnd, direction, DirOffset, Signal);
+               Curvature, Speech, Plan, PlanEnd, direction, DirOffset, Signal, Destination, HasDestination);
+
+    public BrainDecision WithDestination(float2 destination)
+        => new(Action, ExecDecisionId, CoordDecisionId, Goal, StartTime, Duration, in Heading,
+               Curvature, Speech, Plan, PlanEnd, Direction, DirOffset, Signal, destination, true);
 }
 
 public struct DecisionWindow

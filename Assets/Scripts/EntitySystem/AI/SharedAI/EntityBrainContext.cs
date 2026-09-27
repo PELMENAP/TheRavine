@@ -40,7 +40,7 @@ public class EntityBrainContext : System.IDisposable
     public float GoalStartTime;
     public float GoalStartEnergy;
     public int   GoalFoodEaten;
-    public int   GoalRestCount;
+    public float GoalRestScore;
     public float GoalNovelty;
     public float NoveltySum;
     public int   NoveltyCount;
@@ -86,7 +86,7 @@ public class EntityBrainContext : System.IDisposable
         NoveltySum           = 0f;
         NoveltyCount         = 0;
         GoalFoodEaten        = 0;
-        GoalRestCount        = 0;
+        GoalRestScore        = 0f;
         GoalBonus            = 0f;
         GoalTotalReward      = 0f;
         GoalDiscountedReturn = 0f;
