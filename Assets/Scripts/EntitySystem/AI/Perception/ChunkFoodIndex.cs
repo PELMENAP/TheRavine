@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Mathematics;
 using TheRavine.Extensions;
 using TheRavine.Generator;
+using TheRavine.EntityControl.Virology;
 
 public enum FoodKind : byte { Plant = 0, Toxic = 1, Large = 2, Meat = 3 }
 
@@ -40,6 +41,7 @@ public sealed class ChunkFoodIndex
     private readonly LongDictionary<FoodChunk> _chunks = new(64);
     private readonly LongDictionary<float> _meat = new(32);
     private readonly LongDictionary<ViralPayload> _payloads = new(16);
+    private readonly LongDictionary<int> _taboo = new(16);
 
     public int FoodCount { get; private set; }
     public int Revision  { get; private set; }
@@ -167,8 +169,9 @@ public sealed class ChunkFoodIndex
     }
 
     public bool TryFindNearestFood(float worldX, float worldZ, float radiusWorld,
-        out long worldCell, out float distance)
+        out long worldCell, out float distance, int excludeColony = 0)
     {
+        bool filter = excludeColony != 0 && _taboo.Count > 0;
         worldCell = 0L;
         distance  = -1f;
 
@@ -225,6 +228,8 @@ public sealed class ChunkFoodIndex
                     float wx = (baseX + lx) * MapGenerator.scale + HalfCell - worldX;
                     float sqr = wx * wx + dz2;
                     if (sqr > r2 || sqr >= bestSqr) continue;
+                    if (filter && _taboo.TryGetValue(Position2Int.Pack(baseX + lx, baseZ + lz), out int owner)
+                        && owner == excludeColony) continue;
 
                     bestSqr  = sqr;
                     bestCell = Position2Int.Pack(baseX + lx, baseZ + lz);
@@ -312,6 +317,11 @@ public sealed class ChunkFoodIndex
 
     public bool TryTakePayload(long cell, out ViralPayload payload) => _payloads.TryRemove(cell, out payload);
 
+    private void DropPayload(long cell)
+    {
+        if (_payloads.TryRemove(cell, out var payload)) ViralPayloadPool.Release(ref payload);
+    }
+
     private bool RemoveAt(FoodChunk fc, ChunkData cd, int idx, long cell, out bool infected)
     {
         int lz = idx / Size;
@@ -327,7 +337,8 @@ public sealed class ChunkFoodIndex
         fc.BuiltVersion = cd.Version;
 
         _meat.Remove(cell);
-        if (!infected) _payloads.Remove(cell);
+        _taboo.Remove(cell);
+        if (!infected) DropPayload(cell);
 
         FoodCount--;
         Revision++;
@@ -377,9 +388,50 @@ public sealed class ChunkFoodIndex
         return true;
     }
 
-    public bool TryAddCorpse(float2 position, float energy, in ViralPayload payload, bool hasPayload)
+    public int InfectNearby(float2 position, int radiusCells, int maxCells, in ViralPayload source)
     {
-        if (_map == null || energy <= SimulationRules.Active.CorpseMinEnergy) return false;
+        if (_map == null || source.Codons == null || source.Count <= 0 || maxCells <= 0) return 0;
+
+        int cx = Mathf.FloorToInt(position.x * InvScale);
+        int cz = Mathf.FloorToInt(position.y * InvScale);
+        int infected = 0;
+
+        for (int dz = -radiusCells; dz <= radiusCells; dz++)
+        for (int dx = -radiusCells; dx <= radiusCells; dx++)
+        {
+            int x = cx + dx, z = cz + dz;
+            var fc = Resolve(Position2Int.Pack(x >> ChunkShift, z >> ChunkShift), out _);
+            if (fc == null) continue;
+
+            int   lz  = z & ChunkMask;
+            ulong bit = 1UL << (x & ChunkMask);
+            if ((fc.Rows[lz] & bit) == 0UL || (fc.Infected[lz] & bit) != 0UL) continue;
+
+            long cell = Position2Int.Pack(x, z);
+            var copy = new ViralPayload
+            {
+                Codons    = ViralPayloadPool.Rent(),
+                Count     = math.min(source.Count, InfectionService.PayloadCapacity),
+                StrainId  = source.StrainId,
+                LineageId = source.LineageId,
+            };
+            System.Array.Copy(source.Codons, copy.Codons, copy.Count);
+
+            fc.Infected[lz] |= bit;
+            DropPayload(cell);
+            _payloads[cell] = copy;
+            if (++infected >= maxCells) return infected;
+        }
+        return infected;
+    }
+
+    public bool TryAddCorpse(float2 position, float energy, ref ViralPayload payload, bool hasPayload, int tabooColony = 0)
+    {
+        if (_map == null || energy <= SimulationRules.Active.CorpseMinEnergy)
+        {
+            ViralPayloadPool.Release(ref payload);
+            return false;
+        }
 
         int cx = Mathf.FloorToInt(position.x * InvScale);
         int cz = Mathf.FloorToInt(position.y * InvScale);
@@ -397,14 +449,19 @@ public sealed class ChunkFoodIndex
 
             long cell = Position2Int.Pack(x, z);
             _meat[cell] = energy;
+            if (tabooColony != 0) _taboo[cell] = tabooColony;
             if (hasPayload && payload.Codons != null && payload.Count > 0)
             {
                 int idx = (z & ChunkMask) * Size + (x & ChunkMask);
                 fc.Infected[idx / Size] |= 1UL << (idx & ChunkMask);
+                DropPayload(cell);
                 _payloads[cell] = payload;
+                payload = default;
             }
+            else ViralPayloadPool.Release(ref payload);
             return true;
         }
+        ViralPayloadPool.Release(ref payload);
         return false;
     }
 
@@ -513,7 +570,7 @@ public sealed class ChunkFoodIndex
             if (e >= min) { _meat[cell] = e; continue; }
 
             _meat.Remove(cell);
-            _payloads.Remove(cell);
+            DropPayload(cell);
             TryConsumeFood(cell);
         }
     }

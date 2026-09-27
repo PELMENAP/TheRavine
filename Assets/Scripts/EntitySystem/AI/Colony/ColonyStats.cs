@@ -1,0 +1,105 @@
+using Unity.Mathematics;
+
+public sealed class ColonyStats
+{
+    public enum AttackTarget : byte { Own = 0, Foreign = 1, Player = 2, Count = 3 }
+
+    public int   Born;
+    public int   Died;
+    public float LifespanSum;
+    public float LifespanEma;
+    public bool  HasLifespan;
+
+    public readonly int[] DeathsByCause   = new int[(int)DeathCause.Age + 1];
+    public readonly int[] CommandsBySource = new int[(int)CommandSource.Count];
+    public readonly int[] PlansStarted    = new int[PlanCatalog.Count];
+    public readonly int[] PlansCompleted  = new int[PlanCatalog.Count];
+    public readonly int[] Attacks         = new int[(int)AttackTarget.Count];
+    public readonly int[] ActionsStarted  = new int[ActionCatalog.Count];
+    public readonly int[] PlansByCaste    = new int[(int)Caste.Count * PlanCatalog.Count];
+    public float FarShare;
+    public int   Reseeds;
+
+    public float StorageEaten;
+    public float StorageStored;
+    public float MeanFill;
+    public float RestAtNestShare;
+    public float StorageShare;
+
+    private float  _deathRateEma;
+    private double _lastDeathTime = double.NaN;
+    public float DeathRatePerMinute => _deathRateEma;
+
+    public float MeanLifespan => Died > 0 ? LifespanSum / Died : 0f;
+
+    public void RecordBirth() => Born++;
+
+    public void RecordDeath(float lifespan, DeathCause cause)
+    {
+        Died++;
+        LifespanSum += lifespan;
+        DeathsByCause[(int)cause]++;
+
+        float a = SimulationRules.Active.StatsEmaAlpha;
+        LifespanEma = HasLifespan ? math.lerp(LifespanEma, lifespan, a) : lifespan;
+        HasLifespan = true;
+
+        double now = SimulationClock.TimeD;
+        if (!double.IsNaN(_lastDeathTime))
+        {
+            float gap  = (float)math.max(now - _lastDeathTime, 1e-3);
+            float rate = 60f / gap;
+            _deathRateEma = math.lerp(_deathRateEma, rate, a);
+        }
+        _lastDeathTime = now;
+    }
+
+    public void RecordAttack(AttackTarget target) => Attacks[(int)target]++;
+    public void RecordAction(int action) { if ((uint)action < (uint)ActionsStarted.Length) ActionsStarted[action]++; }
+
+    public void RecordCastePlan(Caste caste, PlanKind plan)
+    {
+        if (caste >= Caste.Count || plan >= PlanKind.Count) return;
+        PlansByCaste[(int)caste * PlanCatalog.Count + (int)plan]++;
+    }
+
+    public PlanKind TopPlan(Caste caste)
+    {
+        int row = (int)caste * PlanCatalog.Count, best = -1, bestCount = 0;
+        for (int p = 0; p < PlanCatalog.Count; p++)
+            if (PlansByCaste[row + p] > bestCount) { bestCount = PlansByCaste[row + p]; best = p; }
+        return best < 0 ? PlanKind.Count : (PlanKind)best;
+    }
+    public void RecordStorageEaten(float amount)  => StorageEaten  += amount;
+    public void RecordStorageStored(float amount) => StorageStored += amount;
+
+    public void SampleMembers(float meanFill, float restAtNestShare, float storageShare)
+    {
+        MeanFill        = meanFill;
+        RestAtNestShare = restAtNestShare;
+        StorageShare    = storageShare;
+    }
+
+    public float PlanShare(PlanKind plan)
+    {
+        int total = 0;
+        for (int i = 0; i < PlansStarted.Length; i++) total += PlansStarted[i];
+        return total > 0 ? PlansStarted[(int)plan] / (float)total : 0f;
+    }
+
+    public void RecordCommand(CommandSource source) => CommandsBySource[(int)source]++;
+
+    public void RecordPlan(PlanKind plan, bool completed)
+    {
+        if (plan >= PlanKind.Count) return;
+        PlansStarted[(int)plan]++;
+        if (completed) PlansCompleted[(int)plan]++;
+    }
+
+    public float SourceFraction(CommandSource source)
+    {
+        int total = 0;
+        for (int i = 0; i < CommandsBySource.Length; i++) total += CommandsBySource[i];
+        return total > 0 ? CommandsBySource[(int)source] / (float)total : 0f;
+    }
+}

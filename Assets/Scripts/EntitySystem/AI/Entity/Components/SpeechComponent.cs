@@ -2,6 +2,16 @@ using Cysharp.Threading.Tasks;
 using System.Threading;
 using Unity.Mathematics;
 
+public static class SpeechSignal
+{
+    public const byte Alarm    = 0;
+    public const byte Food     = 1;
+    public const byte FollowMe = 2;
+    public const byte Sick     = 3;
+    public const int  Count    = 4;
+    public const byte None     = byte.MaxValue;
+}
+
 public readonly struct SpeechHash
 {
     public readonly float A, B, C, D;

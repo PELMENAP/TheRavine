@@ -13,6 +13,7 @@ public struct PlanRequest
     public float2 Direction;
     public float2 Target;
     public float2 Threat;
+    public float2 Boid;
     public float  Radius;
     public float  Curvature;
     public float  Side;
@@ -20,6 +21,8 @@ public struct PlanRequest
     public byte   Intent;
     public byte   HasTarget;
     public byte   HasThreat;
+    public byte   ColonyIndex;
+    public byte   AvoidSick;
 }
 
 public struct PlanResult
@@ -40,6 +43,11 @@ public struct PlanWeights
     public float Align;
     public float CurvatureMin;
     public float CurvatureScale;
+    public float Trail;
+    public float Explored;
+    public float KinDeath;
+    public float Boid;
+    public float Sickness;
 }
 
 [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
@@ -48,17 +56,19 @@ public struct PlanJob : IJobParallelFor
     [ReadOnly] public NativeArray<PlanRequest> Requests;
     [WriteOnly] public NativeArray<PlanResult> Results;
     public HeightAtlas Atlas;
-    public NestMapView Nest;
+    [ReadOnly] public NativeArray<ColonyFieldView> Colonies;
     public PlanWeights W;
 
     public void Execute(int index)
     {
-        var q = Requests[index];
+        var q    = Requests[index];
+        var nest = Colonies[q.ColonyIndex];
 
         float2 dir0   = math.normalizesafe(q.Direction, new float2(0f, 1f));
         float  radius = math.max(q.Radius, 0.5f);
         bool   target = q.HasTarget != 0;
         bool   flee   = q.Intent == (byte)MoveIntent.Flee;
+        bool   wander = q.Intent == (byte)MoveIntent.Wander;
 
         if (target)
         {
@@ -90,15 +100,27 @@ public struct PlanJob : IJobParallelFor
 
             float sm    = Atlas.SpeedModifier(end.x, end.y, d);
             float cost  = len / math.max(sm, 0.05f) * invR;
-            float food  = Nest.FoodAt(end);
-            float dang  = Nest.DangerAt(end);
+            float food  = 0f;
+            float dang  = 0f;
+            float field = 0f;
+            if (nest.TryIndex(end, out int cell))
+            {
+                food = nest.At(ColonyChannel.Food, cell);
+                dang = nest.At(ColonyChannel.Danger, cell);
+                if (!flee)
+                    field = W.Trail * nest.At(ColonyChannel.Trail, cell)
+                          - W.KinDeath * nest.At(ColonyChannel.KinDeath, cell)
+                          - (wander ? W.Explored * nest.At(ColonyChannel.Explored, cell) : 0f)
+                          - (q.AvoidSick != 0 ? W.Sickness * nest.At(ColonyChannel.Sickness, cell) : 0f);
+            }
             float goal  = 0f;
 
             if (target) goal = -math.distance(end, q.Target) * invR;
             if (flee && q.HasThreat != 0) goal = math.distance(end, q.Threat) * invR;
 
             float score = -W.MoveCost * cost + W.Food * food - W.Danger * dang
-                        + W.Target * goal + W.Align * math.dot(d, dir0);
+                        + W.Target * goal + W.Align * math.dot(d, dir0)
+                        + field + W.Boid * math.dot(d, q.Boid);
 
             if (score <= best) continue;
             best    = score;
@@ -130,7 +152,7 @@ public sealed class MovePlanner : IDisposable
     private float2[]      _points   = new float2[32];
 
     private readonly MotionSystem _motion;
-    private NestState _nest;
+    private ColonyRegistry _colonies;
 
     public int Pending => _requests.IsCreated ? _requests.Length : 0;
 
@@ -140,7 +162,7 @@ public sealed class MovePlanner : IDisposable
         _requests = new NativeList<PlanRequest>(32, Allocator.Persistent);
     }
 
-    public void BindNest(NestState nest) => _nest = nest;
+    public void BindColonies(ColonyRegistry colonies) => _colonies = colonies;
 
     public void Enqueue(EntityModel owner, in PlanRequest request, float speed, float energyCost, double deadline)
     {
@@ -172,7 +194,7 @@ public sealed class MovePlanner : IDisposable
     {
         int n = Pending;
         if (n == 0) return;
-        if (_nest == null)
+        if (_colonies == null || _colonies.Count == 0)
         {
             for (int i = 0; i < n; i++)
             {
@@ -199,7 +221,7 @@ public sealed class MovePlanner : IDisposable
             Requests = _requests.AsArray(),
             Results  = _results,
             Atlas    = atlas,
-            Nest     = _nest.View,
+            Colonies = _colonies.Views,
             W = new PlanWeights
             {
                 Candidates        = f.PlannerCandidates,
@@ -212,6 +234,11 @@ public sealed class MovePlanner : IDisposable
                 Align             = f.PlannerAlignWeight,
                 CurvatureMin      = f.PlannerCurvatureMin,
                 CurvatureScale    = f.PlannerCurvatureScale,
+                Trail             = f.PlannerTrailWeight,
+                Explored          = f.PlannerExploredWeight,
+                KinDeath          = f.PlannerKinDeathWeight,
+                Boid              = f.PlannerBoidWeight,
+                Sickness          = f.PlannerSicknessWeight,
             },
         }.Schedule(n, 8).Complete();
 

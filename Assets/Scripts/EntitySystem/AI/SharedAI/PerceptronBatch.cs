@@ -27,7 +27,7 @@ public sealed unsafe class PerceptronBatch : IDisposable
     }
 
     public void ClearReservoir() => _reservoir.Clear();
-    public void AddReservoir(float* state, int row) => _reservoir.Add(new ReservoirItem { State = state, InputRow = row });
+    public void AddReservoir(in ReservoirItem item) => _reservoir.Add(item);
 
     public JobHandle ScheduleReservoir(float* w, float* b, int hidden)
         => _reservoir.Length == 0 ? default : new ReservoirJob
@@ -53,7 +53,8 @@ public sealed unsafe class PerceptronBatch : IDisposable
     public void Add(in ForwardItem item) => _items.Add(item);
     public ForwardItem ItemAt(int i) => _items[i];
 
-    public JobHandle Schedule(NativeArray<KernelLayout> kernels, NativeArray<NetWeights> nets, int lstmHidden)
+    public JobHandle Schedule(NativeArray<KernelLayout> kernels, NativeArray<NetWeights> nets, int lstmHidden,
+        JobHandle dependency = default)
         => new BrainForwardJob
         {
             Items      = _items.AsArray(),
@@ -64,7 +65,7 @@ public sealed unsafe class PerceptronBatch : IDisposable
             InputSize  = InputSize,
             LstmHidden = lstmHidden,
             BiasStride = BiasStride,
-        }.Schedule(_items.Length, 1);
+        }.Schedule(_items.Length, 1, dependency);
 
     private void EnsureRows(int rows)
     {

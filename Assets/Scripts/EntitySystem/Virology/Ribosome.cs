@@ -33,6 +33,17 @@ namespace TheRavine.EntityControl.Virology
         public bool ForceSpeechRequested;
         public bool SpreadViaSpeech;
         public bool CaptureRequested;
+        public float FearInvert;
+        public float BiteSeek;
+        public float Summit;
+        public float Liquefy;
+        public float HomeCompulsion;
+        public float Isolate;
+        public float GiftSpread;
+        public float CytoIncompat;
+        public float StepTempo;
+        public float MapShare;
+        public float CasteShift;
 
         public static EffectModifiers Neutral => new()
         {
@@ -65,6 +76,8 @@ namespace TheRavine.EntityControl.Virology
         public int   Crowd;
         public float WeakThreshold;
         public int   CrowdThreshold;
+        public bool  AtNest;
+        public int   HomeCrowd;
     }
 
     public struct TranslationResult
@@ -112,6 +125,12 @@ namespace TheRavine.EntityControl.Virology
                 primed = action == (int)ProteinAction.Prime;
             }
             else primed = false;
+
+            if (result.Executed && action == (int)ProteinAction.HomeCompulsion && host.AtNest && host.Crowd >= host.HomeCrowd)
+            {
+                modifiers.SpreadRequested = true;
+                modifiers.SpreadAmp       = math.max(modifiers.SpreadAmp, amp);
+            }
 
             tape.Advance(maxTapeLength, primed);
             if (result.Executed && ShouldSkip(action, in host)) tape.Advance(maxTapeLength, false);
@@ -175,6 +194,18 @@ namespace TheRavine.EntityControl.Virology
                 case ProteinAction.Blind:    m.Blind    = math.min(m.Blind + magnitude, 1f); break;
                 case ProteinAction.Frenzy:   m.Frenzy   = math.min(m.Frenzy + magnitude, 1f); break;
                 case ProteinAction.Lethargy: m.Lethargy = math.min(m.Lethargy + magnitude, 1f); break;
+                case ProteinAction.FearInvert:     m.FearInvert     = math.min(m.FearInvert + magnitude, 1f); break;
+                case ProteinAction.BiteSeek:       m.BiteSeek       = math.min(m.BiteSeek + magnitude, 1f); break;
+                case ProteinAction.Summit:         m.Summit         = math.min(m.Summit + magnitude, 1f); break;
+                case ProteinAction.Liquefy:        m.Liquefy        = math.min(m.Liquefy + magnitude, 1f); break;
+                case ProteinAction.HomeCompulsion: m.HomeCompulsion = math.min(m.HomeCompulsion + magnitude, 1f); break;
+                case ProteinAction.Isolate:        m.Isolate        = math.min(m.Isolate + magnitude, 1f); break;
+                case ProteinAction.GiftSpread:     m.GiftSpread     = math.min(m.GiftSpread + magnitude, 1f); break;
+                case ProteinAction.CytoIncompat:   m.CytoIncompat   = math.min(m.CytoIncompat + magnitude, 1f); break;
+                case ProteinAction.Persist:        m.StepTempo      = math.clamp(m.StepTempo + magnitude, -1f, 1f); break;
+                case ProteinAction.Impulse:        m.StepTempo      = math.clamp(m.StepTempo - magnitude, -1f, 1f); break;
+                case ProteinAction.MapShare:       m.MapShare       = math.min(m.MapShare + magnitude, 1f); break;
+                case ProteinAction.CasteShift:     m.CasteShift     = math.min(m.CasteShift + magnitude, 1f); break;
             }
         }
 
@@ -193,6 +224,17 @@ namespace TheRavine.EntityControl.Virology
             m.Frenzy   *= k;
             m.Lethargy *= k;
             m.CarryPoi *= k;
+            m.FearInvert     *= k;
+            m.BiteSeek       *= k;
+            m.Summit         *= k;
+            m.Liquefy        *= k;
+            m.HomeCompulsion *= k;
+            m.Isolate        *= k;
+            m.GiftSpread     *= k;
+            m.CytoIncompat   *= k;
+            m.StepTempo      *= k;
+            m.MapShare       *= k;
+            m.CasteShift     *= k;
             m.Dormant = false;
         }
     }
