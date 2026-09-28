@@ -166,7 +166,7 @@ namespace TheRavine.Generator
             {
                 if (!mapData.TryGetValue(Position2Int.Pack(ox + x, oz + z), out ChunkData cd))
                     return false;
-                window.Set(x, z, cd.HeightRaw);
+                window.Set(x, z, cd);
             }
 
             return true;
@@ -415,6 +415,7 @@ namespace TheRavine.Generator
         [SerializeField] private Transform viewer;
         [SerializeField] private Vector3 viewerOffset;
         [SerializeField] private GrassSystem grassSystem;
+        [SerializeField] private Texture2DArray biomeAlbedo;
 
         public ChunkGenerator chunkGenerator;
         public Vector3 waterOffset;
@@ -431,6 +432,10 @@ namespace TheRavine.Generator
 
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
             chunkGenerator = new ChunkGenerator(chunkGenerationSettings, seed);
+
+            CurvedWorld.Configure(chunkGenerationSettings.curveRadius, chunkGenerationSettings.curveFlat);
+            CurvedWorld.SetFacing(facing);
+            BiomeShaderGlobals.Apply(chunkGenerationSettings, biomeAlbedo);
 
             BindFirstPlayer();
 
@@ -456,15 +461,32 @@ namespace TheRavine.Generator
         {
             bool terrain = chunkGenerationSettings.endlessFlag[0];
             int[] steps = chunkGenerationSettings.lodSteps;
-            lodRingCount = terrain ? math.min(chunkGenerationSettings.maxLodRing, steps?.Length ?? 0) : 0;
+            lodRingCount = terrain ? math.min(math.min(chunkGenerationSettings.maxLodRing, steps?.Length ?? 0), HorizonRingCount()) : 0;
 
-            endless = new IEndless[3];
+            endless = new IEndless[4];
             if (terrain)
                 endless[0] = new EndlessTerrain(this, chunkGenerationSettings);
             if (chunkGenerationSettings.endlessFlag[1])
                 endless[1] = new EndlessLiquids(this);
             if (chunkGenerationSettings.endlessFlag[2])
+            {
                 endless[2] = new EndlessObjects(this, objectSystem);
+                if (lodRingCount > 0)
+                    endless[3] = new FarObjectRenderer(this, objectSystem, chunkGenerationSettings);
+            }
+        }
+
+        private int HorizonRingCount()
+        {
+            float distance = CurvedWorld.VisibleDistance(
+                chunkGenerationSettings.horizonCameraHeight,
+                chunkGenerationSettings.horizonCameraBack,
+                chunkGenerationSettings.horizonPeakHeight);
+
+            if (float.IsInfinity(distance)) return int.MaxValue;
+
+            float beyondWindow = distance - (chunkScale + 0.5f) * chunkSize;
+            return math.max(1, (int)math.ceil(beyondWindow / (WindowSide * chunkSize)));
         }
 
         private void BindFirstPlayer()
@@ -498,6 +520,7 @@ namespace TheRavine.Generator
             if (newFacing == facing) return;
 
             facing = newFacing;
+            CurvedWorld.SetFacing(facing);
             if (endless != null)
             {
                 for (int i = 0; i < endless.Length; i++)
@@ -673,6 +696,8 @@ namespace TheRavine.Generator
         public NativeArray<int>            Occupancy;
         public NativeList<ObjectInstInfo>  Objects;
         public NativeArray<byte>           MoveCost;
+        public NativeArray<float2>         Climate;
+        public NativeArray<float>          RiverBlend;
         public List<StructureSpawnPoint> StructureSpawnPoints;
 
         public bool IsDirty { get; private set; }
@@ -688,6 +713,8 @@ namespace TheRavine.Generator
             BiomeMap       = new NativeArray<int>   (TotalCells, Allocator.Persistent);
             Occupancy      = new NativeArray<int>   (TotalCells, Allocator.Persistent);
             MoveCost       = new NativeArray<byte>  (TotalCells, Allocator.Persistent);
+            Climate        = new NativeArray<float2>(TotalCells, Allocator.Persistent);
+            RiverBlend     = new NativeArray<float> (TotalCells, Allocator.Persistent);
             Objects        = new NativeList<ObjectInstInfo>(16, Allocator.Persistent);
         }
 
@@ -814,6 +841,8 @@ namespace TheRavine.Generator
             if (BiomeMap.IsCreated)       BiomeMap.Dispose();
             if (Occupancy.IsCreated)      Occupancy.Dispose();
             if (MoveCost.IsCreated)       MoveCost.Dispose();
+            if (Climate.IsCreated)        Climate.Dispose();
+            if (RiverBlend.IsCreated)     RiverBlend.Dispose();
             if (Objects.IsCreated)        Objects.Dispose();
         }
     }

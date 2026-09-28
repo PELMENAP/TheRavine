@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 using TheRavine.Base;
 using TheRavine.Generator;
 
@@ -36,6 +37,10 @@ public class GrassSystem : MonoBehaviour
     [SerializeField] private int octaves = 3;
     [SerializeField] private float persistence = 0.5f;
     [SerializeField] private float lacunarity = 2.0f;
+
+    [Header("Climate Mask")]
+    [SerializeField] private Vector4 temperatureRange = new(-1f, 0f, 1f, 2f);
+    [SerializeField] private Vector4 moistureRange = new(-1f, 0f, 1f, 2f);
     
     private const int terrainResolution = 1 + 3 * MapGenerator.mapChunkSize;
     private const int vertexCount = terrainResolution * terrainResolution;
@@ -43,6 +48,7 @@ public class GrassSystem : MonoBehaviour
     
     private ComputeBuffer instanceBuffer;
     private ComputeBuffer heightMapBuffer;
+    private ComputeBuffer climateBuffer;
     private ComputeBuffer argsBuffer;
     
     private int kernelPlaceGrass;
@@ -54,6 +60,7 @@ public class GrassSystem : MonoBehaviour
     private int densityFactor;
     private bool isGrass, isShadows;
     private NativeArray<float> heightMap;
+    private NativeArray<float2> climateMap;
 
     private MapGenerator pendingMap;
     private long pendingCenter;
@@ -133,6 +140,9 @@ public class GrassSystem : MonoBehaviour
         grassPlacementShader.SetFloat("scalePersistence", scalePersistence);
         grassPlacementShader.SetFloat("scaleLacunarity", scaleLacunarity);
 
+        grassPlacementShader.SetVector("climateTemperatureRange", temperatureRange);
+        grassPlacementShader.SetVector("climateMoistureRange", moistureRange);
+
         grassPlacementShader.SetFloat("globalMinHeight", globalMinHeight);
         grassPlacementShader.SetFloat("globalMaxHeight", globalMaxHeight);
 
@@ -160,8 +170,13 @@ public class GrassSystem : MonoBehaviour
         if (!heightMap.IsCreated)
             heightMap = new NativeArray<float>(vertexCount, Allocator.Persistent);
 
+        if (!climateMap.IsCreated)
+            climateMap = new NativeArray<float2>(vertexCount, Allocator.Persistent);
+
         heightMapBuffer?.Release();
         heightMapBuffer = new ComputeBuffer(vertexCount, sizeof(float));
+        climateBuffer?.Release();
+        climateBuffer = new ComputeBuffer(vertexCount, sizeof(float) * 2);
     }
     
     public void UpdateGrassPlacement(MapGenerator map, long center)
@@ -184,16 +199,20 @@ public class GrassSystem : MonoBehaviour
         {
             Heights = window,
             Resolution = terrainResolution,
-            Output = heightMap
+            Output = heightMap,
+            ClimateOutput = climateMap
         }.ScheduleParallel(terrainResolution, 16, default).Complete();
 
         heightMapBuffer.SetData(heightMap);
+        climateBuffer.SetData(climateMap);
+        BiomeShaderGlobals.ApplyTo(grassPlacementShader);
 
         Vector3 boundsMin = MapGenerator.WindowOriginWorld(center);
         Vector3 boundsMax = boundsMin + new Vector3(MapGenerator.generationSize, 0f, MapGenerator.generationSize);
 
         grassPlacementShader.SetBuffer(kernelPlaceGrass, "instanceData", instanceBuffer);
         grassPlacementShader.SetBuffer(kernelPlaceGrass, "heightMap", heightMapBuffer);
+        grassPlacementShader.SetBuffer(kernelPlaceGrass, "climateMap", climateBuffer);
 
         grassPlacementShader.SetInt("gridMinX", Mathf.FloorToInt(boundsMin.x));
         grassPlacementShader.SetInt("gridMinZ", Mathf.FloorToInt(boundsMin.z));
@@ -232,11 +251,14 @@ public class GrassSystem : MonoBehaviour
     {
         instanceBuffer?.Release();
         heightMapBuffer?.Release();
+        climateBuffer?.Release();
         argsBuffer?.Release();
         instanceBuffer = null;
         heightMapBuffer = null;
+        climateBuffer = null;
         argsBuffer = null;
 
         if (heightMap.IsCreated) heightMap.Dispose();
+        if (climateMap.IsCreated) climateMap.Dispose();
     }
 }

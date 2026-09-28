@@ -45,9 +45,11 @@ Shader "The Ravine/ChunkGrassShader"
         Cull Off
 
         HLSLINCLUDE
+        #pragma target 4.5
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+        #include "Assets/Shaders/Include/CurvedWorld.hlsl"
 
         struct InstanceData
         {
@@ -88,6 +90,9 @@ Shader "The Ravine/ChunkGrassShader"
 
         TEXTURE2D_ARRAY(_MainTex); SAMPLER(sampler_MainTex);  
         TEXTURE2D(_WindMap); SAMPLER(sampler_WindMap);   
+
+        float3 _LightDirection;
+        float3 _LightPosition;
 
         float3 RotateY(float3 v, float sinRot, float cosRot)
         {
@@ -161,7 +166,7 @@ Shader "The Ravine/ChunkGrassShader"
             windOffset = SampleWindOffset(positionWS, heightFactor, instancePos);
             float3 playerOffset = ApplyPlayerInteraction(positionWS, heightFactor);
 
-            return positionWS + windOffset + playerOffset;
+            return BendWorld(positionWS + windOffset + playerOffset);
         }
 
         float3 TransformInstanceVertex(
@@ -250,6 +255,7 @@ Shader "The Ravine/ChunkGrassShader"
             #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
+            #pragma multi_compile_fog
 
             struct Attributes
             {
@@ -271,6 +277,7 @@ Shader "The Ravine/ChunkGrassShader"
                 float3 windOffset : TEXCOORD5;
                 float3 instancePos : TEXCOORD6;
                 uint texIndex : TEXCOORD7;
+                float fogFactor : TEXCOORD8;
             };
 
             Varyings vert(Attributes input)
@@ -301,6 +308,7 @@ Shader "The Ravine/ChunkGrassShader"
                 output.instancePos = instance.position;
                 
                 output.texIndex = GetTextureIndex(instance.position);
+                output.fogFactor = ComputeFogFactor(output.positionCS.z);
 
                 return output;
             }
@@ -332,6 +340,8 @@ Shader "The Ravine/ChunkGrassShader"
 
                 InputData inputData = (InputData)0;
                 inputData.positionWS = input.positionWS;
+                inputData.normalWS = normalWS;
+                inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
 
                 LIGHT_LOOP_BEGIN(lightIndex)
                 {
@@ -343,6 +353,7 @@ Shader "The Ravine/ChunkGrassShader"
                 LIGHT_LOOP_END
 
                 finalColor.rgb *= lighting * ao;
+                finalColor.rgb = MixFog(finalColor.rgb, input.fogFactor);
                 return finalColor;
             }
             ENDHLSL
@@ -361,10 +372,12 @@ Shader "The Ravine/ChunkGrassShader"
             #pragma vertex ShadowVert
             #pragma fragment ShadowFrag
             #pragma multi_compile_instancing
+            #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
                 float2 uv : TEXCOORD0;
                 uint instanceID : SV_InstanceID;
             };
@@ -376,9 +389,15 @@ Shader "The Ravine/ChunkGrassShader"
                 uint texIndex : TEXCOORD1;
             };
 
-            float4 GetShadowPositionHClip(float3 positionWS)
+            float4 GetShadowPositionHClip(float3 positionWS, float3 normalWS)
             {
-                float4 positionCS = TransformWorldToHClip(positionWS);
+                #if defined(_CASTING_PUNCTUAL_LIGHT_SHADOW)
+                float3 lightDirectionWS = normalize(_LightPosition - positionWS);
+                #else
+                float3 lightDirectionWS = _LightDirection;
+                #endif
+
+                float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, lightDirectionWS));
                 #if UNITY_REVERSED_Z
                     positionCS.z = min(positionCS.z, positionCS.w * UNITY_NEAR_CLIP_VALUE);
                 #else
@@ -399,8 +418,9 @@ Shader "The Ravine/ChunkGrassShader"
                 float3 positionWS = TransformInstanceVertex(input.positionOS.xyz, instance, sinRot, cosRot);
                 heightFactor = input.positionOS.y;
                 positionWS = ApplyWind(positionWS, heightFactor, instance.position, windOffset);
+                float3 normalWS = normalize(RotateY(input.normalOS, sinRot, cosRot));
 
-                output.positionCS = GetShadowPositionHClip(positionWS);
+                output.positionCS = GetShadowPositionHClip(positionWS, normalWS);
                 output.uv = input.uv;
                 
                 output.texIndex = GetTextureIndex(instance.position);

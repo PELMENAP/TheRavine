@@ -12,5 +12,16 @@ public abstract class ObjectLodSet : ScriptableObject
     public abstract int GetMeshLod(int variant, int ring);
     public abstract Material GetMaterial(int ring, int submesh = 0);
 
-    public bool UsesBillboard(int ring) => BillboardFromRing > 0 && ring >= BillboardFromRing;
+    public virtual Material BillboardMaterial => null;
+    public virtual Vector4 GetBillboardBox(int variant) => Vector4.zero;
+    public virtual int GetBillboardCell(int variant) => variant;
+
+    public virtual void GetIndexRange(int variant, int lod, int submesh, out uint indexStart, out uint indexCount)
+    {
+        Mesh mesh = GetMesh(variant, 0);
+        indexStart = mesh.GetIndexStart(submesh);
+        indexCount = mesh.GetIndexCount(submesh);
+    }
+
+    public bool UsesBillboard(int ring) => BillboardFromRing > 0 && ring >= BillboardFromRing && BillboardMaterial != null;
 }

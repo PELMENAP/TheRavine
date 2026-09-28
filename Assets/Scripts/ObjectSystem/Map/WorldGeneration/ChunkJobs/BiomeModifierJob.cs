@@ -26,6 +26,8 @@ namespace TheRavine.Generator
         [ReadOnly] public NativeArray<float> riverRadius;
         [ReadOnly] public NativeArray<float> riverRadiusRcp;
         [WriteOnly] public NativeArray<float> heightOut;
+        [WriteOnly] public NativeArray<float2> climateOut;
+        [WriteOnly] public NativeArray<float> riverBlendOut;
         public float blendRadiusRcp2;
         public float altitudeCooling;
 
@@ -40,6 +42,8 @@ namespace TheRavine.Generator
 
             float moisture = moistureMap[idx];
             float riverValue = riverMap[idx];
+
+            climateOut[idx] = new float2(temp, moisture);
 
             float totalWeight = 0f;
             float scaleSum = 0f;
@@ -76,6 +80,7 @@ namespace TheRavine.Generator
             if (totalWeight < 0.01f)
             {
                 heightOut[idx] = baseH;
+                riverBlendOut[idx] = 0f;
                 return;
             }
 
@@ -90,6 +95,8 @@ namespace TheRavine.Generator
 
             float riverBlend =
                 riverWeightSum * rcpWeight;
+
+            riverBlendOut[idx] = math.saturate(riverBlend);
 
             if (riverBlend > 0.01f)
             {

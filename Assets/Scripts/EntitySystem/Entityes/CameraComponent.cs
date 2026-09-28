@@ -1,6 +1,7 @@
 using UnityEngine;
 
 using TheRavine.EntityControl;
+using TheRavine.Generator;
 using Unity.Mathematics;
 
 public interface ICameraComponent : IComponent
@@ -51,6 +52,7 @@ public class CameraComponent : ICameraComponent
     public void CameraUpdate()
     {
         UpdateDefault();
+        CurvedWorld.SetOrigin(playerTransformComponent.GetEntityPosition());
     }
 
     private void UpdateDefault()

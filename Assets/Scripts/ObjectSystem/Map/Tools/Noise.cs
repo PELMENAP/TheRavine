@@ -81,22 +81,6 @@ public class Noise
 
     }
 
-    public JobHandle GenerateClimate(
-        NativeArray<float> temperatureMap,
-        NativeArray<float> moistureMap,
-        Vector2Int chunkOffset)
-    {
-        return new ClimateDirect2xJob
-        {
-            WorldX = chunkOffset.x * chunkSize,
-            WorldY = chunkOffset.y * chunkSize,
-            TempNoise = temperatureNoise,
-            MoistNoise = moistureNoise,
-            TemperatureMap = temperatureMap,
-            MoistureMap = moistureMap
-        }.ScheduleParallel(halfSize, 8, default);
-    }
-
     [BurstCompile(FloatPrecision.Low, FloatMode.Fast, DisableSafetyChecks = true)]
     public struct HeightRiverMapJob : IJobFor
     {

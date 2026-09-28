@@ -64,6 +64,7 @@ Shader "The Ravine/Water/WaterShader"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
+            #include "Assets/Shaders/Include/CurvedWorld.hlsl"
             
             TEXTURE2D(NormalMap);       SAMPLER(samplerNormalMap);
             TEXTURE2D(FoamTexture);     SAMPLER(samplerFoamTexture);
@@ -294,18 +295,24 @@ Shader "The Ravine/Water/WaterShader"
 
                                 
                 // === TRANSFORM ===
-                VertexPositionInputs posInputs = GetVertexPositionInputs(displacedPos);
+                float3 bentPositionWS = BendWorld(TransformObjectToWorld(displacedPos));
+                float4 positionCS = TransformWorldToHClip(bentPositionWS);
+                float4 ndc = positionCS * 0.5;
+                float4 positionNDC;
+                positionNDC.xy = float2(ndc.x, ndc.y * _ProjectionParams.x) + ndc.w;
+                positionNDC.zw = positionCS.zw;
+
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
                 
-                output.positionCS = posInputs.positionCS;
-                output.positionWS = posInputs.positionWS;
+                output.positionCS = positionCS;
+                output.positionWS = bentPositionWS;
                 output.normalWS = normalInputs.normalWS;
                 output.tangentWS = float4(normalInputs.tangentWS, input.tangentOS.w);
                 output.uv0 = input.uv0;
-                output.positionNDC = posInputs.positionNDC;
-                output.screenPos = ComputeScreenPos(posInputs.positionCS);
-                output.viewDirWS = GetWorldSpaceNormalizeViewDir(posInputs.positionWS);
-                output.fogFactor = ComputeFogFactor(posInputs.positionCS.z);
+                output.positionNDC = positionNDC;
+                output.screenPos = ComputeScreenPos(positionCS);
+                output.viewDirWS = GetWorldSpaceNormalizeViewDir(bentPositionWS);
+                output.fogFactor = ComputeFogFactor(positionCS.z);
                 output.shadowCoord = TransformWorldToShadowCoord(output.positionWS);
                 
                 return output;
