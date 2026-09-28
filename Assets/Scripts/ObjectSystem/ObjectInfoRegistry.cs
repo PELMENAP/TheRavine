@@ -21,6 +21,7 @@ namespace TheRavine.ObjectControl
         private readonly Dictionary<GameObject, int> idByPrefab = new();
 
         public int Count => denseCount;
+        public int IdCapacity => byId.Length;
 
         public ObjectInfo Get(int id) => (uint)id < (uint)byId.Length ? byId[id] : null;
 

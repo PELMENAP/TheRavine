@@ -44,5 +44,16 @@ namespace TheRavine.Generator
         [Min(0)] public int evictionIdleFrames = 120;
         [Min(0.1f)] public float evictionScanInterval = 5f;
         [Min(0)] public int chunkPoolCapacity = 64;
+
+        [Header("Curved World")]
+        [Min(0f)] public float curveRadius = 3000f;
+        [Min(0f)] public float curveFlat = 64f;
+        [Min(0f)] public float horizonCameraHeight = 30f;
+        [Min(0f)] public float horizonCameraBack = 35f;
+        [Min(0f)] public float horizonPeakHeight = 100f;
+
+        [Header("Far Objects")]
+        [Min(1)] public int farMaxInstances = 65536;
+        [Min(1)] public int farRebuildIntervalFrames = 30;
     }
 }

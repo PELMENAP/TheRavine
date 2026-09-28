@@ -9,8 +9,7 @@ namespace TheRavine.Generator
     public struct TerrainFinalizeJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<float> heightValues;
-        [ReadOnly] public NativeArray<float> temperatureValues;
-        [ReadOnly] public NativeArray<float> moistureValues;
+        [ReadOnly] public NativeArray<float2> climateValues;
         [ReadOnly] public NativeArray<float> regionThresholds;
         [ReadOnly] public NativeArray<float> biomeCentersT;
         [ReadOnly] public NativeArray<float> biomeCentersM;
@@ -41,8 +40,9 @@ namespace TheRavine.Generator
             }
             else
             {
-                float temp = temperatureValues[index];
-                float moist = moistureValues[index];
+                float2 climate = climateValues[index];
+                float temp = climate.x;
+                float moist = climate.y;
                 int best = 0;
                 float bestD2 = float.MaxValue;
                 for (int b = 0; b < biomeCentersT.Length; b++)

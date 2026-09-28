@@ -1,5 +1,7 @@
 #pragma kernel PlaceGrass
 
+#include "Assets/Shaders/Include/BiomeCommon.hlsl"
+
 struct InstanceData
 {
     float3 position;  
@@ -11,6 +13,7 @@ struct InstanceData
 
 AppendStructuredBuffer<InstanceData> instanceData;
 StructuredBuffer<float> heightMap;
+StructuredBuffer<float2> climateMap;
 
 int terrainResolution;
 int instanceCount;
@@ -43,6 +46,9 @@ float globalMaxHeight;
 
 float terrainInvWidth;
 float terrainInvHeight;
+
+float4 climateTemperatureRange;
+float4 climateMoistureRange;
 
 
 uint Hash(uint input)
@@ -138,6 +144,20 @@ float SampleHeightBilinear(float worldX, float worldZ)
     return lerp(h0, h1, fz);
 }
 
+float2 SampleClimate(float worldX, float worldZ)
+{
+    float localX = saturate((worldX - worldBoundsMin.x) * terrainInvWidth);
+    float localZ = saturate((worldZ - worldBoundsMin.z) * terrainInvHeight);
+    int x = (int)round(localX * (terrainResolution - 1));
+    int z = (int)round(localZ * (terrainResolution - 1));
+    return climateMap[z * terrainResolution + x];
+}
+
+float ClimateRange(float v, float4 range)
+{
+    return smoothstep(range.x, range.y, v) * (1.0 - smoothstep(range.z, range.w, v));
+}
+
 uint PackColor(float r, float g, float b)
 {
     uint ri = (uint)(saturate(r) * 255.0 + 0.5);
@@ -173,7 +193,10 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     float2 noisePos = float2(gridX, gridZ) * noiseScale;
     float noiseValue = FractalNoise(noisePos, octaves, persistence, lacunarity);
     
-    float densityMultiplier = smoothstep(densityMinThreshold, densityMaxThreshold, noiseValue);
+    float2 climate = SampleClimate(worldX, worldZ);
+    float climateDensity = ClimateRange(climate.x, climateTemperatureRange) * ClimateRange(climate.y, climateMoistureRange);
+
+    float densityMultiplier = smoothstep(densityMinThreshold, densityMaxThreshold, noiseValue) * climateDensity;
     float finalDensity = density * densityMultiplier;
     
     float densityRoll = HashToFloat(Hash(bladeSeed));
@@ -208,6 +231,7 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     instance.rotation    = rotY;
     instance.scaleXZ     = scaleXZ;
     instance.scaleY      = scaleY;
-    instance.packedColor = PackColor(colorVariation, colorVariation, colorVariation);
+    float3 tint = BiomeGrassTint(climate) * colorVariation;
+    instance.packedColor = PackColor(tint.r, tint.g, tint.b);
     instanceData.Append(instance);
 }

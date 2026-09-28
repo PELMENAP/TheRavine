@@ -24,6 +24,8 @@ namespace TheRavine.Generator
         private NativeArray<float> deltaMap;
         private readonly NativeArray<float> riverMap, temperatureMap, moistureMap;
         private readonly NativeArray<float> biomeHeightMap;
+        private readonly NativeArray<float2> climateMap;
+        private readonly NativeArray<float> riverBlendMap;
         private readonly NativeArray<int>   heightResult, biomeResult;
         private readonly NativeArray<float> biomeCentersT, biomeCentersM, regionThresholds;
 
@@ -89,6 +91,8 @@ namespace TheRavine.Generator
                 regionThresholds[i] = settings.regions[i].height;
 
             biomeHeightMap = new NativeArray<float>(totalCells, Allocator.Persistent);
+            climateMap     = new NativeArray<float2>(totalCells, Allocator.Persistent);
+            riverBlendMap  = new NativeArray<float>(totalCells, Allocator.Persistent);
 
             biomeHeightScale = new NativeArray<float>(biomeCount, Allocator.Persistent);
             biomeHeightOffset = new NativeArray<float>(biomeCount, Allocator.Persistent);
@@ -183,7 +187,9 @@ namespace TheRavine.Generator
                     altitudeCooling =
                         settings.altitudeCooling,
 
-                    heightOut = biomeHeightMap
+                    heightOut = biomeHeightMap,
+                    climateOut = climateMap,
+                    riverBlendOut = riverBlendMap
                 }.Schedule(totalCells, 64, mapHandle);
 
             JobHandle erosionHandle =
@@ -200,8 +206,7 @@ namespace TheRavine.Generator
             {
                 heightValues = biomeHeightMap,
 
-                temperatureValues = temperatureMap,
-                moistureValues = moistureMap,
+                climateValues = climateMap,
 
                 regionThresholds = regionThresholds,
 
@@ -220,10 +225,14 @@ namespace TheRavine.Generator
                 height = biomeHeightMap,
                 biome = biomeResult,
                 moveCostIn = moveCost,
+                climateIn = climateMap,
+                riverIn = riverBlendMap,
                 heightScale = maxTerrainHeight,
                 heightRaw = chunkData.HeightRaw,
                 biomeMap = chunkData.BiomeMap,
-                moveCostOut = chunkData.MoveCost
+                moveCostOut = chunkData.MoveCost,
+                climateOut = chunkData.Climate,
+                riverOut = chunkData.RiverBlend
             }.ScheduleParallel(totalCells, 256, finalizeHandle);
 
             if (spawnEnabled)
@@ -259,11 +268,7 @@ namespace TheRavine.Generator
             int2 chunkOrigin = new(Position2Int.GetX(centre), Position2Int.GetY(centre));
             bool wasModified = chunkData.IsModified;
 
-            JobHandle climateHandle = noise.GenerateClimate(
-                temperatureMap, moistureMap,
-                Position2Int.UnpackToVector(centre));
-
-            RunSpawn(chunkData, chunkOrigin, ChunkSeed(chunkOrigin.x, chunkOrigin.y), begin, end, climateHandle);
+            RunSpawn(chunkData, chunkOrigin, ChunkSeed(chunkOrigin.x, chunkOrigin.y), begin, end, default);
             chunkData.CommitGeneration(wasModified);
         }
 
@@ -283,8 +288,7 @@ namespace TheRavine.Generator
                 firstConfig = firstConfig,
                 endConfig = endConfig,
                 heightRaw = chunkData.HeightRaw,
-                temperatureMap = temperatureMap,
-                moistureMap = moistureMap,
+                climate = chunkData.Climate,
                 existing = chunkData.Objects.AsArray(),
                 chunkOrigin = chunkOrigin,
                 seed = hash,
@@ -317,6 +321,8 @@ namespace TheRavine.Generator
 
 
             if (biomeHeightMap.IsCreated)   biomeHeightMap.Dispose();
+            if (climateMap.IsCreated)       climateMap.Dispose();
+            if (riverBlendMap.IsCreated)    riverBlendMap.Dispose();
             if (biomeHeightScale.IsCreated) biomeHeightScale.Dispose();
             if (biomeHeightOffset.IsCreated)biomeHeightOffset.Dispose();
             if (biomeHasRiver.IsCreated)    biomeHasRiver.Dispose();
@@ -341,17 +347,23 @@ namespace TheRavine.Generator
         [ReadOnly] public NativeArray<float> height;
         [ReadOnly] public NativeArray<int> biome;
         [ReadOnly] public NativeArray<byte> moveCostIn;
+        [ReadOnly] public NativeArray<float2> climateIn;
+        [ReadOnly] public NativeArray<float> riverIn;
         public float heightScale;
 
         [WriteOnly] public NativeArray<float> heightRaw;
         [WriteOnly] public NativeArray<int> biomeMap;
         [WriteOnly] public NativeArray<byte> moveCostOut;
+        [WriteOnly] public NativeArray<float2> climateOut;
+        [WriteOnly] public NativeArray<float> riverOut;
 
         public void Execute(int i)
         {
             heightRaw[i] = height[i] * heightScale;
             biomeMap[i] = biome[i];
             moveCostOut[i] = moveCostIn[i];
+            climateOut[i] = climateIn[i];
+            riverOut[i] = riverIn[i];
         }
     }
 }

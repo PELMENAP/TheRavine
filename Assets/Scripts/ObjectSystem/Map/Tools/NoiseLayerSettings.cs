@@ -98,6 +98,10 @@ namespace TheRavine.Generator
         [Range(0f, 0.5f)] public float detailStrength;
         public bool              hasRivers;
         public RiverBlendSettings riverBlend;
+
+        [Min(0)] public int albedoLayer;
+        public Color tint;
+        public Color grassTint;
         public readonly Vector2 Center => new(
             (minTemperature + maxTemperature) * 0.5f,
             (minMoisture    + maxMoisture)    * 0.5f);

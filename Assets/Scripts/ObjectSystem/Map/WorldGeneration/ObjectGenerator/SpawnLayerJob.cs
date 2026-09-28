@@ -15,8 +15,7 @@ namespace TheRavine.Generator
         public int firstConfig;
         public int endConfig;
         [ReadOnly] public NativeArray<float> heightRaw;
-        [ReadOnly] public NativeArray<float> temperatureMap;
-        [ReadOnly] public NativeArray<float> moistureMap;
+        [ReadOnly] public NativeArray<float2> climate;
         [ReadOnly] public NativeArray<ObjectInstInfo> existing;
         [ReadOnly] public int2 chunkOrigin;
         public uint seed;
@@ -33,8 +32,9 @@ namespace TheRavine.Generator
         private float SampleDensityMask(float2 localPos, int idx, in ObjectSpawnConfig cfg)
         {
             float hFactor = RangeFactor(heightRaw[idx] * InvMaxHeight, cfg.heightRange.x, cfg.heightRange.y);
-            float tFactor = RangeFactor(temperatureMap[idx], cfg.tempRange.x, cfg.tempRange.y);
-            float mFactor = RangeFactor(moistureMap[idx], cfg.moistRange.x, cfg.moistRange.y);
+            float2 c = climate[idx];
+            float tFactor = RangeFactor(c.x, cfg.tempRange.x, cfg.tempRange.y);
+            float mFactor = RangeFactor(c.y, cfg.moistRange.x, cfg.moistRange.y);
 
             float baseProb = hFactor * tFactor * mFactor;
             if (baseProb < 0.001f)
