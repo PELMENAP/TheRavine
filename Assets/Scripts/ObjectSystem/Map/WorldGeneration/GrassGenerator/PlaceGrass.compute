@@ -169,6 +169,8 @@ uint PackColor(float r, float g, float b)
 [numthreads(64, 1, 1)]
 void PlaceGrass(uint3 id : SV_DispatchThreadID)
 {
+    if (id.x >= (uint)instanceCount) return;
+
     uint cellIndex = id.x / bladesPerCell;
 
     int localX = (int)(cellIndex % gridWidth);
