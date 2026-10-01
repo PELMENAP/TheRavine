@@ -38,6 +38,9 @@ public class GrassSystem : MonoBehaviour
     [SerializeField] private float persistence = 0.5f;
     [SerializeField] private float lacunarity = 2.0f;
 
+    [Header("View Culling")]
+    [SerializeField, Min(0)] private int backMargin = 48;
+
     [Header("Climate Mask")]
     [SerializeField] private Vector4 temperatureRange = new(-1f, 0f, 1f, 2f);
     [SerializeField] private Vector4 moistureRange = new(-1f, 0f, 1f, 2f);
@@ -147,21 +150,12 @@ public class GrassSystem : MonoBehaviour
         grassPlacementShader.SetFloat("globalMinHeight", globalMinHeight);
         grassPlacementShader.SetFloat("globalMaxHeight", globalMaxHeight);
 
-        int gridWidth = MapGenerator.generationSize;
-        int gridHeight = MapGenerator.generationSize;
-        int totalGridPoints = gridWidth * gridHeight * bladesPerCell * densityFactor;
-        instanceCount = Mathf.Min(totalGridPoints, maxGrassInstances * densityFactor);
-
-        args[1] = (uint)instanceCount;
         argsBuffer.SetData(args);
         
         float terrainWidth = MapGenerator.generationSize;
         float terrainHeight = MapGenerator.generationSize;
-        
-        grassPlacementShader.SetInt("instanceCount", instanceCount);
 
-        grassPlacementShader.SetInt("gridWidth", gridWidth);
-        grassPlacementShader.SetInt("gridHeight", gridHeight);
+        grassPlacementShader.SetInt("gridWidth", MapGenerator.generationSize);
 
         grassPlacementShader.SetFloat("terrainInvWidth",  1f / terrainWidth);
         grassPlacementShader.SetFloat("terrainInvHeight", 1f / terrainHeight);
@@ -215,8 +209,18 @@ public class GrassSystem : MonoBehaviour
         grassPlacementShader.SetBuffer(kernelPlaceGrass, "heightMap", heightMapBuffer);
         grassPlacementShader.SetBuffer(kernelPlaceGrass, "climateMap", climateBuffer);
 
+        int gridWidth = MapGenerator.generationSize;
+        int gridHeight = Mathf.Min(MapGenerator.generationSize, MapGenerator.generationSize - MapGenerator.chunkSize + backMargin);
+        int skipped = MapGenerator.generationSize - gridHeight;
+        int gridMinZ = Mathf.FloorToInt(boundsMin.z) + (map.Facing > 0 ? skipped : 0);
+
+        long totalGridPoints = (long)gridWidth * gridHeight * bladesPerCell * densityFactor;
+        instanceCount = (int)System.Math.Min(totalGridPoints, (long)maxGrassInstances * densityFactor);
+
+        grassPlacementShader.SetInt("instanceCount", instanceCount);
+        grassPlacementShader.SetInt("gridHeight", gridHeight);
         grassPlacementShader.SetInt("gridMinX", Mathf.FloorToInt(boundsMin.x));
-        grassPlacementShader.SetInt("gridMinZ", Mathf.FloorToInt(boundsMin.z));
+        grassPlacementShader.SetInt("gridMinZ", gridMinZ);
 
         grassPlacementShader.SetVector("worldBoundsMin", boundsMin);
         grassPlacementShader.SetVector("worldBoundsMax", boundsMax);

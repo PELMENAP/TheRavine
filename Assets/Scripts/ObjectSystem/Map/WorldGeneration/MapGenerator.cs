@@ -523,6 +523,8 @@ namespace TheRavine.Generator
 
             facing = newFacing;
             CurvedWorld.SetFacing(facing);
+            if (hasWindow && grassSystem != null)
+                grassSystem.UpdateGrassPlacement(this, windowCenter);
             if (endless != null)
             {
                 for (int i = 0; i < endless.Length; i++)
@@ -540,16 +542,13 @@ namespace TheRavine.Generator
                 return;
             }
 
-            Transform t = camera.transform;
-            Vector3 position = t.position;
-            Vector3 forward = t.forward;
-            float2 axis = math.normalizesafe(new float2(forward.x, forward.z), new float2(0f, facing));
-            float2 origin = new float2(position.x, position.z) + axis * CurvedWorld.FocusDistance;
+            Vector3 position = camera.transform.position;
+            float originZ = position.z + facing * CurvedWorld.FocusDistance;
 
-            if (!TrySampleHeightBilinear(origin.x, origin.y, out float referenceHeight))
+            if (!TrySampleHeightBilinear(position.x, originZ, out float referenceHeight))
                 referenceHeight = position.y;
 
-            CurvedWorld.Push(origin, axis, referenceHeight);
+            CurvedWorld.Push(originZ, referenceHeight);
         }
 
         public bool TryGetViewerChunk(out int x, out int z)
