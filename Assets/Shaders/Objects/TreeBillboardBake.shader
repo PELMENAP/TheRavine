@@ -69,12 +69,13 @@ Shader "Hidden/TreeBillboardBake"
                 return output;
             }
 
-            BakeTargets frag(Varyings input, bool frontFace : SV_IsFrontFace)
+            BakeTargets frag(Varyings input)
             {
                 float4 albedo = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv) * _Color;
                 clip(albedo.a - _Cutoff);
 
-                float3 normalVS = normalize(input.normalVS) * (frontFace ? 1.0 : -1.0);
+                float3 normalVS = normalize(input.normalVS);
+                normalVS *= normalVS.z < 0.0 ? -1.0 : 1.0;
 
                 BakeTargets output;
                 output.albedo = float4(albedo.rgb * input.ao, 1.0);

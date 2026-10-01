@@ -233,7 +233,7 @@ public class TreeMeshBaker : EditorWindow
         Matrix4x4 view = Matrix4x4.Scale(new Vector3(1f, 1f, -1f)) *
                          Matrix4x4.TRS(cameraPos, Quaternion.LookRotation(dir, up), Vector3.one).inverse;
         Matrix4x4 proj = GL.GetGPUProjectionMatrix(
-            Matrix4x4.Ortho(-width * 0.5f, width * 0.5f, -height * 0.5f, height * 0.5f, 0.01f, depth * 2f), true);
+            Matrix4x4.Ortho(-width * 0.5f, width * 0.5f, -height * 0.5f, height * 0.5f, 0.01f, depth * 2f), false);
 
         var albedoRT = RenderTexture.GetTemporary(new RenderTextureDescriptor(_cellResolution, _cellResolution, RenderTextureFormat.ARGB32, 24) { sRGB = true });
         var normalRT = RenderTexture.GetTemporary(new RenderTextureDescriptor(_cellResolution, _cellResolution, RenderTextureFormat.ARGB32, 0) { sRGB = false });
