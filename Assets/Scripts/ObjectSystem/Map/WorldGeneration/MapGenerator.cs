@@ -5,6 +5,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Rendering;
 using System.Threading;
 
 using TheRavine.Extensions;
@@ -433,8 +434,9 @@ namespace TheRavine.Generator
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
             chunkGenerator = new ChunkGenerator(chunkGenerationSettings, seed);
 
-            CurvedWorld.Configure(chunkGenerationSettings.curveRadius, chunkGenerationSettings.curveFlat);
+            CurvedWorld.Configure(chunkGenerationSettings.curveRadius, chunkGenerationSettings.curveFlat, chunkGenerationSettings.curveFocusDistance);
             CurvedWorld.SetFacing(facing);
+            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
             BiomeShaderGlobals.Apply(chunkGenerationSettings, biomeAlbedo);
 
             BindFirstPlayer();
@@ -528,6 +530,26 @@ namespace TheRavine.Generator
                         directional.SetFacing(facing);
             }
             evictionPending = true;
+        }
+
+        private void OnBeginCameraRendering(ScriptableRenderContext context, Camera camera)
+        {
+            if (camera.cameraType != CameraType.Game && camera.cameraType != CameraType.SceneView)
+            {
+                CurvedWorld.PushFlat();
+                return;
+            }
+
+            Transform t = camera.transform;
+            Vector3 position = t.position;
+            Vector3 forward = t.forward;
+            float2 axis = math.normalizesafe(new float2(forward.x, forward.z), new float2(0f, facing));
+            float2 origin = new float2(position.x, position.z) + axis * CurvedWorld.FocusDistance;
+
+            if (!TrySampleHeightBilinear(origin.x, origin.y, out float referenceHeight))
+                referenceHeight = position.y;
+
+            CurvedWorld.Push(origin, axis, referenceHeight);
         }
 
         public bool TryGetViewerChunk(out int x, out int z)
@@ -658,6 +680,9 @@ namespace TheRavine.Generator
             if (disposed) return;
             disposed = true;
             ready = false;
+
+            RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+            CurvedWorld.PushFlat();
 
             playerSubscription?.Dispose();
             playerSubscription = null;

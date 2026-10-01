@@ -48,8 +48,9 @@ Shader "The Ravine/Objects/FarInstanced"
         void FarVertex(Attributes input, out float3 positionWS, out float3 normalWS)
         {
             float4 instance = FarInstance(input.instanceID);
-            positionWS = BendWorld(instance.xyz + input.positionOS.xyz * instance.w);
+            positionWS = instance.xyz + input.positionOS.xyz * instance.w;
             normalWS = normalize(input.normalOS);
+            BendWorld(positionWS, normalWS);
         }
 
         float SampleAlpha(float2 uv)
