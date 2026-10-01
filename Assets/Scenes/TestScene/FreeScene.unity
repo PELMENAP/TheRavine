@@ -2293,78 +2293,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: rules
-      value: 
-      objectReference: {fileID: 11400000, guid: cfa92a93c8192130ba2e500349f051a6, type: 2}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: maxFood
-      value: 1000
-      objectReference: {fileID: 0}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: foodPrefab
-      value: 
-      objectReference: {fileID: 443920947200513725, guid: 4f59eba755cb9a4959b16369dc693a02, type: 3}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: spawnRadius
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: initialCount
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: useSavedBrain
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: tuning.RunSpeed
-      value: 15
-      objectReference: {fileID: 0}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: tuning.MoveSpeed
-      value: 7
-      objectReference: {fileID: 0}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: tuning.AttackRange
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: tuning.AttackDamage
-      value: 30
-      objectReference: {fileID: 0}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: tuning.WanderRadius
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: tuning.MaxWanderTime
-      value: 50
-      objectReference: {fileID: 0}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: tuning.DetectionRadius
-      value: 30
-      objectReference: {fileID: 0}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: tuning.AttackEnergyCost
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: tuning.EnergyCostMoving
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: tuning.EnergyCostRunning
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: tuning.ReproduceEnergyCost
-      value: 80
-      objectReference: {fileID: 0}
-    - target: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      propertyPath: tuning.ReproduceHealthCost
-      value: 30
-      objectReference: {fileID: 0}
     - target: {fileID: 4326377108197735784, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
       propertyPath: m_Name
       value: experiment
@@ -2411,72 +2339,9 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 7119838140617067672, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1494877782}
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 4326377108197735784, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1371223892}
-    - targetCorrespondingSourceObject: {fileID: 4326377108197735784, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1371223895}
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
---- !u!1 &1371223888 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 4326377108197735784, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-  m_PrefabInstance: {fileID: 1269938585}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1371223890 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1310266290786588079, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-  m_PrefabInstance: {fileID: 1269938585}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1371223888}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f3a269ef178050344a5d3f479558d632, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: EntitySystem::EntityManager
---- !u!114 &1371223892
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1371223888}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c9dde1d9bed5b83078746218c90b0d23, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: EntitySystem::TheRavine.EntityControl.Virology.VirologyDebugSeeder
-  manager: {fileID: 1371223890}
-  probeOrigin: {fileID: 1494877782}
-  probeRadius: 30
-  recipe: 0417151712170f1117021717
-  validation: 
-  lastResult: 
---- !u!114 &1371223895
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1371223888}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b4a5c350edaf766a09b6207881e493fa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: EntitySystem::FoodViewSystem
-  foodPrefab: {fileID: 8578141244289343015, guid: 8ffdd9668390c336abd40c6fc62e49f3, type: 3}
-  poolSize: 128
-  pollIntervalMs: 250
---- !u!4 &1371223897 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7119838140617067672, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
-  m_PrefabInstance: {fileID: 1269938585}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1422389882
 GameObject:
   m_ObjectHideFlags: 0
@@ -2632,6 +2497,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1898770870}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: biomeAlbedo
+      value: 
+      objectReference: {fileID: 18700000, guid: f500d41bce4cec34ab4d346474076e80, type: 2}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: terrainFilter
       value: 
       objectReference: {fileID: 1500658428}
@@ -2643,6 +2512,10 @@ PrefabInstance:
       propertyPath: terrainTransform
       value: 
       objectReference: {fileID: 1500658424}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: chunkGenerationSettings.erosion.allowInfiniteErosionDepth
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: targetTransform
       value: 
@@ -2660,96 +2533,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
---- !u!1 &1494877779
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1494877782}
-  - component: {fileID: 1494877781}
-  - component: {fileID: 1494877780}
-  m_Layer: 0
-  m_Name: Sphere
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
---- !u!23 &1494877780
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1494877779}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: d3d9e3c1171195442ae8a9dd7b5baeea, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &1494877781
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1494877779}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!4 &1494877782
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1494877779}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 2}
-  m_ConstrainProportionsScale: 1
-  m_Children: []
-  m_Father: {fileID: 1371223897}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1500658424 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4116429206655119907, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
@@ -3390,6 +3173,10 @@ PrefabInstance:
       value: ObjectSystem
       objectReference: {fileID: 0}
     - target: {fileID: 1485577371347755464, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: m_InScenePlaced
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1485577371347755464, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 1672802306
       objectReference: {fileID: 0}
@@ -3433,6 +3220,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7807735556410648605, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c8b64274dad10e34f811acef1efaf31e, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3987,11 +3778,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ObjectSystem::TextureArrayCreator
   grassTextures:
-  - {fileID: 2800000, guid: 46212d6e49aed9ee0aae48ab8b9721ae, type: 3}
-  - {fileID: 2800000, guid: ca7152c96f78ded9189a7a004dfc1097, type: 3}
-  - {fileID: 2800000, guid: f2f2d2dcb43de0c3aac9ad10a2c82d67, type: 3}
-  - {fileID: 2800000, guid: 8818222dc048cf895b4661d4122074fa, type: 3}
-  - {fileID: 2800000, guid: 088ffa96d5dcf05158634cbe617750c7, type: 3}
+  - {fileID: 2800000, guid: dc1725dcc6e3d354192f645921ae4656, type: 3}
+  - {fileID: 2800000, guid: a6326eb3424b4879fbc06f539a440877, type: 3}
+  - {fileID: 2800000, guid: 044c77d7e5a70efc9a200fa42d2a02f3, type: 3}
+  - {fileID: 2800000, guid: 2b436bcf0f398403a9e336af6352f60c, type: 3}
+  - {fileID: 2800000, guid: d2a813d886f5299fea936ea11d9e913a, type: 3}
+  - {fileID: 2800000, guid: a9255d51995d201978ad572ea341813d, type: 3}
+  - {fileID: 2800000, guid: e1ac2511ab16aebd5b7c09653b047da4, type: 3}
+  - {fileID: 2800000, guid: fc62a62355378e988ba80a982c6cd627, type: 3}
+  assetPath: Assets/GrassTextureArray.asset
+  mipmaps: 1
+  linear: 0
+  filterMode: 1
+  anisoLevel: 4
 --- !u!4 &2046927391
 Transform:
   m_ObjectHideFlags: 0

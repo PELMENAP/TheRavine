@@ -55,12 +55,12 @@ public static class NeuralModelStorage
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Ошибка при сохранении модели {modelType}: {ex.Message}");
+                RavineLog.Error($"Ошибка при сохранении модели {modelType}: {ex.Message}");
                 throw;
             }
         }, cancellationToken: cancellationToken);
         
-        Debug.Log($"Модель {modelType} сохранена: {path}");
+        RavineLog.Info($"Модель {modelType} сохранена: {path}");
     }
     public static async UniTask<T> LoadAsync<T>(string fileName, CancellationToken cancellationToken = default) 
         where T : ISerializableNeuralModel
@@ -70,13 +70,13 @@ public static class NeuralModelStorage
         
         if (!File.Exists(path))
         {
-            Debug.LogWarning($"Файл модели {modelType} не найден: {path}");
+            RavineLog.Warning($"Файл модели {modelType} не найден: {path}");
             return default;
         }
         
         if (!_factories.TryGetValue(typeof(T), out var factoryObj))
         {
-            Debug.LogError($"Фабрика для типа {modelType} не зарегистрирована. Используйте RegisterFactory<{modelType}>()");
+            RavineLog.Error($"Фабрика для типа {modelType} не зарегистрирована. Используйте RegisterFactory<{modelType}>()");
             return default;
         }
         
@@ -94,14 +94,14 @@ public static class NeuralModelStorage
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Ошибка при загрузке модели {modelType}: {ex.Message}");
+                RavineLog.Error($"Ошибка при загрузке модели {modelType}: {ex.Message}");
                 throw;
             }
         }, cancellationToken: cancellationToken);
         
         if (data != null)
         {
-            Debug.Log($"Модель {modelType} загружена: {path}");
+            RavineLog.Info($"Модель {modelType} загружена: {path}");
             return factory.Deserialize(data);
         }
         
@@ -168,17 +168,17 @@ public static class NeuralModelStorage
             try
             {
                 File.Delete(path);
-                Debug.Log($"Модель {modelType} удалена: {fileName}");
+                RavineLog.Info($"Модель {modelType} удалена: {fileName}");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Ошибка при удалении модели {modelType}: {ex.Message}");
+                RavineLog.Error($"Ошибка при удалении модели {modelType}: {ex.Message}");
             }
         }
         else
         {
-            Debug.LogWarning($"Модель {modelType} не найдена для удаления: {fileName}");
+            RavineLog.Warning($"Модель {modelType} не найдена для удаления: {fileName}");
         }
         
         return false;
@@ -207,11 +207,11 @@ public static class NeuralModelStorage
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"Ошибка при удалении файла {file}: {ex.Message}");
+                    RavineLog.Error($"Ошибка при удалении файла {file}: {ex.Message}");
                 }
             }
             
-            Debug.Log($"Удалено {deletedCount} моделей типа {modelType}");
+            RavineLog.Info($"Удалено {deletedCount} моделей типа {modelType}");
             return deletedCount;
         }, cancellationToken: cancellationToken);
     }

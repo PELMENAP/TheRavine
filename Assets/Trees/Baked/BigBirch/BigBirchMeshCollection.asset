@@ -12,6 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36232c7ac27f177e8810571cc4703052, type: 3}
   m_Name: BigBirchMeshCollection
   m_EditorClassIdentifier: ObjectSystem::TreeMeshCollection
+  variants: []
+  lodCount: 1
+  ringLod: 0000000001000000020000000300000003000000
+  billboardFromRing: 3
+  farMaterials:
+  - {fileID: 2100000, guid: dc096035af852e9419c5e4f9bca1623e, type: 2}
+  - {fileID: 2100000, guid: 852aea451257a2d409b115380ec8c09d, type: 2}
+  billboardMaterial: {fileID: 2100000, guid: a8be57eeb53178d46a7f31dd48189131, type: 2}
+  billboardAlbedo: {fileID: 0}
+  billboardNormal: {fileID: 0}
+  billboardPitch: 30
   _entries:
   - {fileID: 4300000, guid: 3601f34cc946850d4867a5f112778af1, type: 2}
   - {fileID: 4300000, guid: a83f51cec544841c3b5eb5d75513a113, type: 2}

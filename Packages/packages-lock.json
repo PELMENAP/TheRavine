@@ -7,7 +7,7 @@
       "dependencies": {}
     },
     "com.unity.addressables": {
-      "version": "2.9.1",
+      "version": "2.10.3",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -17,7 +17,7 @@
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.imageconversion": "1.0.0",
         "com.unity.modules.unitywebrequest": "1.0.0",
-        "com.unity.scriptablebuildpipeline": "2.6.1",
+        "com.unity.scriptablebuildpipeline": "2.6.2",
         "com.unity.modules.unitywebrequestassetbundle": "1.0.0"
       },
       "url": "https://packages.unity.com"
@@ -160,7 +160,7 @@
       }
     },
     "com.unity.scriptablebuildpipeline": {
-      "version": "2.6.1",
+      "version": "2.6.2",
       "depth": 2,
       "source": "registry",
       "dependencies": {
@@ -191,7 +191,7 @@
       "source": "builtin",
       "dependencies": {
         "com.unity.render-pipelines.core": "17.3.0",
-        "com.unity.searcher": "4.9.3"
+        "com.unity.searcher": "4.9.5"
       }
     },
     "com.unity.sysroot.base": {

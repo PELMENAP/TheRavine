@@ -63,7 +63,7 @@ namespace TheRavine.Base
             }
             catch
             {
-                Debug.LogWarning("There is no camera data to add camera");
+                RavineLog.Warning("There is no camera data to add camera");
             }
         }
 

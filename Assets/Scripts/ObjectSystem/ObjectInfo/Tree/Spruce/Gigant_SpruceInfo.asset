@@ -24,3 +24,7 @@ MonoBehaviour:
   additionalOccupiedCells: []
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}
+  visibleRings: 4
+  farMode: 2
+  castShadowsFar: 0
+  lodSet: {fileID: 11400000, guid: c224df97e962622448bf20d7545a890a, type: 2}
