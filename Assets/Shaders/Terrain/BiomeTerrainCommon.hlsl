@@ -51,11 +51,13 @@ struct TerrainAttributes
     float river : TEXCOORD3;
 };
 
-void TerrainVertexWorld(TerrainAttributes input, out float3 flatPositionWS, out float3 positionWS, out float3 normalWS)
+void TerrainVertexWorld(TerrainAttributes input, out float3 flatPositionWS, out float3 flatNormalWS, out float3 positionWS, out float3 normalWS)
 {
     flatPositionWS = TransformObjectToWorld(input.positionOS.xyz);
-    normalWS = TransformObjectToWorldNormal(input.normalOS);
-    positionWS = BendWorld(flatPositionWS);
+    flatNormalWS = TransformObjectToWorldNormal(input.normalOS);
+    positionWS = flatPositionWS;
+    normalWS = flatNormalWS;
+    BendWorld(positionWS, normalWS);
 }
 
 float4 TerrainShadowPositionCS(float3 positionWS, float3 normalWS)

@@ -48,6 +48,7 @@ namespace TheRavine.Generator
         [Header("Curved World")]
         [Min(0f)] public float curveRadius = 3000f;
         [Min(0f)] public float curveFlat = 64f;
+        [Min(0f)] public float curveFocusDistance = 35f;
         [Min(0f)] public float horizonCameraHeight = 30f;
         [Min(0f)] public float horizonCameraBack = 35f;
         [Min(0f)] public float horizonPeakHeight = 100f;

@@ -80,18 +80,20 @@ Shader "The Ravine/Terrain/BiomeTerrain"
                 float3 normalWS : TEXCOORD2;
                 float3 climateRiver : TEXCOORD3;
                 float fogFactor : TEXCOORD4;
+                float3 flatNormalWS : TEXCOORD5;
             };
 
             Varyings vert(TerrainAttributes input)
             {
                 Varyings output;
-                float3 flatPositionWS, positionWS, normalWS;
-                TerrainVertexWorld(input, flatPositionWS, positionWS, normalWS);
+                float3 flatPositionWS, flatNormalWS, positionWS, normalWS;
+                TerrainVertexWorld(input, flatPositionWS, flatNormalWS, positionWS, normalWS);
 
                 output.positionCS = TransformWorldToHClip(positionWS);
                 output.positionWS = positionWS;
                 output.flatPositionWS = flatPositionWS;
                 output.normalWS = normalWS;
+                output.flatNormalWS = flatNormalWS;
                 output.climateRiver = float3(input.climate, input.river);
                 output.fogFactor = ComputeFogFactor(output.positionCS.z);
                 return output;
@@ -106,7 +108,7 @@ Shader "The Ravine/Terrain/BiomeTerrain"
 
                 float3 albedo;
                 float smoothness;
-                TerrainSurface(input.flatPositionWS, normalWS, input.climateRiver.xy, input.climateRiver.z, viewDistance, albedo, smoothness);
+                TerrainSurface(input.flatPositionWS, normalize(input.flatNormalWS), input.climateRiver.xy, input.climateRiver.z, viewDistance, albedo, smoothness);
 
                 InputData inputData = (InputData)0;
                 inputData.positionWS = input.positionWS;
@@ -169,8 +171,8 @@ Shader "The Ravine/Terrain/BiomeTerrain"
 
             float4 ShadowVert(TerrainAttributes input) : SV_POSITION
             {
-                float3 flatPositionWS, positionWS, normalWS;
-                TerrainVertexWorld(input, flatPositionWS, positionWS, normalWS);
+                float3 flatPositionWS, flatNormalWS, positionWS, normalWS;
+                TerrainVertexWorld(input, flatPositionWS, flatNormalWS, positionWS, normalWS);
                 return TerrainShadowPositionCS(positionWS, normalWS);
             }
 
@@ -196,8 +198,8 @@ Shader "The Ravine/Terrain/BiomeTerrain"
 
             float4 DepthVert(TerrainAttributes input) : SV_POSITION
             {
-                float3 flatPositionWS, positionWS, normalWS;
-                TerrainVertexWorld(input, flatPositionWS, positionWS, normalWS);
+                float3 flatPositionWS, flatNormalWS, positionWS, normalWS;
+                TerrainVertexWorld(input, flatPositionWS, flatNormalWS, positionWS, normalWS);
                 return TransformWorldToHClip(positionWS);
             }
 
@@ -230,8 +232,8 @@ Shader "The Ravine/Terrain/BiomeTerrain"
             NormalsVaryings DepthNormalsVert(TerrainAttributes input)
             {
                 NormalsVaryings output;
-                float3 flatPositionWS, positionWS, normalWS;
-                TerrainVertexWorld(input, flatPositionWS, positionWS, normalWS);
+                float3 flatPositionWS, flatNormalWS, positionWS, normalWS;
+                TerrainVertexWorld(input, flatPositionWS, flatNormalWS, positionWS, normalWS);
                 output.positionCS = TransformWorldToHClip(positionWS);
                 output.normalWS = normalWS;
                 return output;
