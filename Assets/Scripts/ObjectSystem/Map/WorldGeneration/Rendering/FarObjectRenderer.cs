@@ -379,7 +379,7 @@ namespace TheRavine.Generator.EndlessGenerators
             if (billboardQuad != null) Object.Destroy(billboardQuad);
         }
 
-        [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+        [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
         private unsafe struct CollectJob : IJob
         {
             [ReadOnly] public NativeArray<ChunkSource> Sources;

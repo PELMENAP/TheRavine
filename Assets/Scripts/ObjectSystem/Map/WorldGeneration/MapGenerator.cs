@@ -314,7 +314,7 @@ namespace TheRavine.Generator
             int secCount = additionalWorldCells.Length;
             if (secCount > ObjectInstInfo.MaxSecondary)
             {
-                Debug.LogWarning($"[MapGenerator] Too many secondary cells: {secCount} > {ObjectInstInfo.MaxSecondary}");
+                RavineLog.Warning($"[MapGenerator] Too many secondary cells: {secCount} > {ObjectInstInfo.MaxSecondary}");
                 return false;
             }
 
@@ -326,7 +326,7 @@ namespace TheRavine.Generator
 
                 if (WorldToChunk(worldCell) != chunk)
                 {
-                    Debug.LogWarning(
+                    RavineLog.Warning(
                         $"[MapGenerator] AdditionalCell {additionalWorldCells[i]} falls outside " +
                         $"primary chunk {chunk}. Cross-chunk multi-cell objects are not supported.");
                     return false;

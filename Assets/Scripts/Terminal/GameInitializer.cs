@@ -34,6 +34,7 @@ public class GameInitializer : MonoBehaviour
 
         RavineLogger logger = new RavineLogger(_onMessageDisplayTerminal);
         ServiceLocator.Services.Register(logger);
+        RavineLog.Initialize(logger);
 
         _actionMapController = new ActionMapController(inputAsset, logger);
         ServiceLocator.Services.Register(_actionMapController);

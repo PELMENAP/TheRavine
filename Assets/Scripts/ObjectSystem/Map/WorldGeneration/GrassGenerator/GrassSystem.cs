@@ -77,6 +77,7 @@ public class GrassSystem : MonoBehaviour
         }
         catch (System.Exception)
         {
+            RavineLog.Warning("GlobalSettingsController not found. Create a default grass");
             densityFactor = 5;
             isGrass = true;
             isShadows = true;
@@ -104,7 +105,7 @@ public class GrassSystem : MonoBehaviour
         
         if (grassPlacementShader == null)
         {
-            Debug.LogError("Grass placement shader not assigned!");
+            RavineLog.Error("Grass placement shader not assigned!");
             return;
         }
         
