@@ -120,6 +120,9 @@ MonoBehaviour:
         riverBedHeight: 0
         minTerrainHeight: 0
         domainWarpAmplitude: 0
+      albedoLayer: 5
+      tint: {r: 0, g: 0, b: 0, a: 0}
+      grassTint: {r: 0, g: 0, b: 0, a: 0}
     - name: Boreal Forest (Taiga)
       minTemperature: 0.1
       maxTemperature: 0.38
@@ -145,6 +148,9 @@ MonoBehaviour:
         riverBedHeight: 0.06
         minTerrainHeight: 0.2
         domainWarpAmplitude: 0
+      albedoLayer: 7
+      tint: {r: 0, g: 0, b: 0, a: 0}
+      grassTint: {r: 0, g: 0, b: 0, a: 0}
     - name: Temperate Grassland / Steppe
       minTemperature: 0.28
       maxTemperature: 0.6
@@ -170,6 +176,9 @@ MonoBehaviour:
         riverBedHeight: 0.06
         minTerrainHeight: 0.2
         domainWarpAmplitude: 0
+      albedoLayer: 1
+      tint: {r: 0, g: 0, b: 0, a: 0}
+      grassTint: {r: 0, g: 0, b: 0, a: 0}
     - name: Temperate Deciduous Forest
       minTemperature: 0.3
       maxTemperature: 0.62
@@ -195,6 +204,9 @@ MonoBehaviour:
         riverBedHeight: 0.04
         minTerrainHeight: 0.15
         domainWarpAmplitude: 30
+      albedoLayer: 6
+      tint: {r: 0, g: 0, b: 0, a: 0}
+      grassTint: {r: 0, g: 0, b: 0, a: 0}
     - name: Temperate Rainforest
       minTemperature: 0.22
       maxTemperature: 0.52
@@ -220,6 +232,9 @@ MonoBehaviour:
         riverBedHeight: 0.04
         minTerrainHeight: 0.15
         domainWarpAmplitude: 30
+      albedoLayer: 2
+      tint: {r: 0, g: 0, b: 0, a: 0}
+      grassTint: {r: 0, g: 0, b: 0, a: 0}
     - name: Hot Desert
       minTemperature: 0.62
       maxTemperature: 1
@@ -245,6 +260,9 @@ MonoBehaviour:
         riverBedHeight: 0.02
         minTerrainHeight: 0.25
         domainWarpAmplitude: 0
+      albedoLayer: 3
+      tint: {r: 0, g: 0, b: 0, a: 0}
+      grassTint: {r: 0, g: 0, b: 0, a: 0}
     - name: Savanna
       minTemperature: 0.6
       maxTemperature: 0.92
@@ -270,6 +288,9 @@ MonoBehaviour:
         riverBedHeight: 0.06
         minTerrainHeight: 0.2
         domainWarpAmplitude: 0
+      albedoLayer: 4
+      tint: {r: 0, g: 0, b: 0, a: 0}
+      grassTint: {r: 0, g: 0, b: 0, a: 0}
     - name: Tropical Forest
       minTemperature: 0.72
       maxTemperature: 1
@@ -295,6 +316,9 @@ MonoBehaviour:
         riverBedHeight: 0.04
         minTerrainHeight: 0.15
         domainWarpAmplitude: 30
+      albedoLayer: 1
+      tint: {r: 0, g: 0, b: 0, a: 0}
+      grassTint: {r: 0, g: 0, b: 0, a: 0}
     - name: Tropical Rainforest
       minTemperature: 0.78
       maxTemperature: 1
@@ -320,6 +344,9 @@ MonoBehaviour:
         riverBedHeight: 0.04
         minTerrainHeight: 0.15
         domainWarpAmplitude: 30
+      albedoLayer: 0
+      tint: {r: 0, g: 0, b: 0, a: 0}
+      grassTint: {r: 0, g: 0, b: 0, a: 0}
     - name: Wetlands / Swamp
       minTemperature: 0.38
       maxTemperature: 0.78
@@ -345,6 +372,9 @@ MonoBehaviour:
         riverBedHeight: 0.08
         minTerrainHeight: 0.05
         domainWarpAmplitude: 45
+      albedoLayer: 4
+      tint: {r: 0, g: 0, b: 0, a: 0}
+      grassTint: {r: 0, g: 0, b: 0, a: 0}
     biomeBlendRadius: 0.23
     altitudeCooling: 0.35
     erosion:
@@ -376,12 +406,30 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 7fc5d30b50c3ae1bf898b2fc24db6183, type: 2}
     - {fileID: 11400000, guid: 42c5f2ac4ddf8f5fa92f939f203a8a99, type: 2}
     maxObjectsPerChunk: 2048
+    frameBudgetMs: 4
+    maxLodRing: 4
+    lodSteps: 04000000080000001000000020000000
+    skirtDepth: 1.5
+    retainRadius: 3
+    evictionHysteresis: 2
+    evictionIdleFrames: 120
+    evictionScanInterval: 5
+    chunkPoolCapacity: 64
+    curveRadius: 10000
+    curveFlat: 100
+    curveFocusDistance: 30
+    horizonCameraHeight: 30
+    horizonCameraBack: 35
+    horizonPeakHeight: 100
+    farMaxInstances: 65536
+    farRebuildIntervalFrames: 30
   terrainTransform: {fileID: 0}
   waterTransform: {fileID: 0}
   terrainFilter: {fileID: 0}
   viewer: {fileID: 0}
   viewerOffset: {x: 0, y: 0, z: 10}
   grassSystem: {fileID: 3471819257872331844}
+  biomeAlbedo: {fileID: 18700000, guid: f500d41bce4cec34ab4d346474076e80, type: 2}
   waterOffset: {x: 0, y: 4, z: 0}
 --- !u!114 &6195408856844743971
 MonoBehaviour:
@@ -441,8 +489,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b872aee0f7bb99eea9f191223d57e77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ObjectSystem::GrassMeshPlacer
-  targetMeshFilter: {fileID: 0}
-  targetTransform: {fileID: 0}
   grassMesh: {fileID: 4300000, guid: 53a609b0811916efe86ba4ca4b01e48e, type: 2}
   grassMaterial: {fileID: 2100000, guid: 36571ee1032acddecaf946f49784b2d6, type: 2}
   grassPlacementShader: {fileID: 7200000, guid: e3ba6791a67a001f9a194ee1c04a4dfd, type: 3}
@@ -464,6 +510,9 @@ MonoBehaviour:
   octaves: 3
   persistence: 0.5
   lacunarity: 2
+  backMargin: 48
+  temperatureRange: {x: -1, y: 0, z: 1, w: 2}
+  moistureRange: {x: -1, y: 0, z: 1, w: 2}
 --- !u!114 &719320706938028729
 MonoBehaviour:
   m_ObjectHideFlags: 0

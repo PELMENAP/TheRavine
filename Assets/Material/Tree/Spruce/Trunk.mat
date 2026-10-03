@@ -125,7 +125,7 @@ Material:
     - _SrcBlendAlpha: 1
     - _Surface: 0
     - _Translucency: 0
-    - _VertexColorAO: 1
+    - _VertexColorAO: 0
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1

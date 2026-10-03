@@ -13,9 +13,9 @@ public class TreeMeshBaker : EditorWindow
     private TreeMeshCollection _targetCollection;
     private int _count = 8;
     private string _savePath = "Assets/Trees/Baked";
-    private float _billboardPitch = 30f;
+    private float _billboardPitch = 20f;
     private int _cellResolution = 256;
-    private int _dilationPasses = 8;
+    private int _dilationPasses = 4;
 
     [MenuItem("Tools/Tree Mesh Baker")]
     private static void Open() => GetWindow<TreeMeshBaker>("Tree Mesh Baker");
@@ -341,9 +341,9 @@ public class TreeMeshBaker : EditorWindow
         importer.alphaIsTransparency = sRGB;
         importer.alphaSource = TextureImporterAlphaSource.FromInput;
         importer.wrapMode = TextureWrapMode.Clamp;
-        importer.mipmapEnabled = true;
+        importer.mipmapEnabled = false;
         importer.maxTextureSize = Mathf.Max(2048, Mathf.NextPowerOfTwo(Mathf.Max(width, height)));
-        importer.textureCompression = sRGB ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed;
+        importer.textureCompression = TextureImporterCompression.Compressed;
         importer.SaveAndReimport();
 
         return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
