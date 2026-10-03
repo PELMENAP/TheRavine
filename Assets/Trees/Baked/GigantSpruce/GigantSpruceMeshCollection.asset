@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GigantSpruceMeshCollection
   m_EditorClassIdentifier: ObjectSystem::TreeMeshCollection
   variants:
-  - mesh: {fileID: 4300000, guid: 5b5bdd48e02747543aa50a1b275a1b02, type: 2}
+  - mesh: {fileID: 4300000, guid: 2d548017d6850314581530376e27ce60, type: 2}
     ranges:
     - start: 0
       count: 7866
@@ -31,9 +31,9 @@ MonoBehaviour:
       count: 1998
     - start: 21252
       count: 1092
-    billboardBox: {x: 40.665016, y: 109.74911, z: 53.612373, w: 0.72954845}
+    billboardBox: {x: 40.665016, y: 112.04068, z: 53.612373, w: 0.72954845}
     billboardCell: 0
-  - mesh: {fileID: 4300000, guid: b483addec6ee4bc4cae42b43399cf7e9, type: 2}
+  - mesh: {fileID: 4300000, guid: 4adee47e204b8dc4db6a9c7fe1d4134a, type: 2}
     ranges:
     - start: 0
       count: 7995
@@ -51,9 +51,9 @@ MonoBehaviour:
       count: 2034
     - start: 21924
       count: 984
-    billboardBox: {x: 36.15519, y: 111.05062, z: 53.71084, w: -0.79403114}
+    billboardBox: {x: 36.15519, y: 112.99937, z: 53.71084, w: -0.79403114}
     billboardCell: 1
-  - mesh: {fileID: 4300000, guid: 4db5d57ac8a675f4297d402ff0e0d615, type: 2}
+  - mesh: {fileID: 4300000, guid: c3d0966c606e81242ab0c548dc3c84d2, type: 2}
     ranges:
     - start: 0
       count: 8607
@@ -71,9 +71,9 @@ MonoBehaviour:
       count: 1962
     - start: 22302
       count: 1056
-    billboardBox: {x: 37.54236, y: 109.94135, z: 52.803688, w: 0.16339397}
+    billboardBox: {x: 37.54236, y: 111.61048, z: 52.803688, w: 0.16339397}
     billboardCell: 2
-  - mesh: {fileID: 4300000, guid: 654400ddd68b8174c8565966e0d7bc2a, type: 2}
+  - mesh: {fileID: 4300000, guid: c55bdece06c985044bf393a4662bcb97, type: 2}
     ranges:
     - start: 0
       count: 7977
@@ -91,16 +91,16 @@ MonoBehaviour:
       count: 1800
     - start: 21066
       count: 876
-    billboardBox: {x: 37.488754, y: 110.28892, z: 53.32547, w: -0.43247795}
+    billboardBox: {x: 37.488754, y: 112.210655, z: 53.32547, w: -0.43247795}
     billboardCell: 3
   lodCount: 4
   ringLod: 0000000001000000020000000300000003000000
   billboardFromRing: 3
   farMaterials:
-  - {fileID: 2100000, guid: 835b91bf19115795aacb7297d015d3ce, type: 2}
-  - {fileID: 0}
-  billboardMaterial: {fileID: 0}
-  billboardAlbedo: {fileID: 2800000, guid: 54f5eac186b03a342b02d5a94b1fa235, type: 3}
-  billboardNormal: {fileID: 2800000, guid: 94a113e6d820b304f81cf8e66fa9f34d, type: 3}
-  billboardPitch: 30
+  - {fileID: 2100000, guid: 721b1d3ae1cacd842b20770ed00c0ea3, type: 2}
+  - {fileID: 2100000, guid: e8b02875cb63e784f8f26246a6f47456, type: 2}
+  billboardMaterial: {fileID: 2100000, guid: b952eddc13aa15645a7ac7d197efe1f8, type: 2}
+  billboardAlbedo: {fileID: 2800000, guid: f6c249b7cc12b844689bbba20d5c76a7, type: 3}
+  billboardNormal: {fileID: 2800000, guid: 75faf7e0ac2e85a45b518a5aa23479be, type: 3}
+  billboardPitch: 20
   _entries: []

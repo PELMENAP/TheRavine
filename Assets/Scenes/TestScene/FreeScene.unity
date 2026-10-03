@@ -2297,6 +2297,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: experiment
       objectReference: {fileID: 0}
+    - target: {fileID: 4326377108197735784, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7119838140617067672, guid: ccc9b0a9726acd10ebb260ff3d6e9a44, type: 3}
       propertyPath: m_LocalPosition.x
       value: -31.86
@@ -2497,10 +2501,6 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1898770870}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: biomeAlbedo
-      value: 
-      objectReference: {fileID: 18700000, guid: f500d41bce4cec34ab4d346474076e80, type: 2}
-    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: terrainFilter
       value: 
       objectReference: {fileID: 1500658428}
@@ -2512,18 +2512,6 @@ PrefabInstance:
       propertyPath: terrainTransform
       value: 
       objectReference: {fileID: 1500658424}
-    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: chunkGenerationSettings.erosion.allowInfiniteErosionDepth
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: targetTransform
-      value: 
-      objectReference: {fileID: 1500658424}
-    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
-      propertyPath: targetMeshFilter
-      value: 
-      objectReference: {fileID: 1500658428}
     - target: {fileID: 7784986139299065775, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: m_Name
       value: MapGenerator
@@ -2605,7 +2593,7 @@ MonoBehaviour:
   slope: 2
   bias: 18.5
   saveTreeFolder: Assets
-  polycount: 3795
+  polycount: 892
   template: {fileID: 11400000, guid: ddbb875fa548217609d321fb78226073, type: 2}
   MtreeVersion: 020000000500000000000000
   savedFunction: {fileID: 0}
@@ -3220,10 +3208,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7807735556410648605, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: c8b64274dad10e34f811acef1efaf31e, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

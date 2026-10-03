@@ -73,7 +73,7 @@ namespace TheRavine.Generator
                 };
                 generator.terrainFilter.sharedMesh = central.Mesh;
 
-                int blockCount = 0;
+                int blockCount = 2; // dx = ±1 в строке 0
                 for (int r = 1; r <= ringCount; r++)
                     blockCount += 2 * r + 1;
 
@@ -86,30 +86,39 @@ namespace TheRavine.Generator
                 var root = generator.terrainTransform.parent;
 
                 int b = 0;
+
+                for (int side = -1; side <= 1; side += 2)
+                    blocks[b++] = CreateBlock(levels[2], ring: 0, dx: side, material, root);
+
                 for (int ring = 1; ring <= ringCount; ring++)
                 {
                     for (int k = 0; k <= 2 * ring; k++)
                     {
                         int dx = ((k + 1) >> 1) * ((k & 1) == 1 ? -1 : 1);
-
-                        var go = new GameObject($"TerrainLOD_Ring{ring}_{dx}");
-                        if (root != null) go.transform.SetParent(root, false);
-
-                        Mesh mesh = CreateMesh(go.name);
-                        go.AddComponent<MeshFilter>().sharedMesh = mesh;
-                        go.AddComponent<MeshRenderer>().sharedMaterial = material;
-
-                        blocks[b++] = new MeshTarget
-                        {
-                            Level = levels[ring],
-                            Mesh = mesh,
-                            Transform = go.transform,
-                            Ring = ring,
-                            Dx = dx,
-                            Dirty = true
-                        };
+                        blocks[b++] = CreateBlock(levels[ring], ring, dx, material, root);
                     }
                 }
+            }
+
+
+            private MeshTarget CreateBlock(MeshLevel level, int ring, int dx, Material material, Transform root)
+            {
+                var go = new GameObject($"TerrainLOD_Ring{ring}_{dx}");
+                if (root != null) go.transform.SetParent(root, false);
+
+                Mesh mesh = CreateMesh(go.name);
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                go.AddComponent<MeshRenderer>().sharedMaterial = material;
+
+                return new MeshTarget
+                {
+                    Level = level,
+                    Mesh = mesh,
+                    Transform = go.transform,
+                    Ring = ring,
+                    Dx = dx,
+                    Dirty = true
+                };
             }
 
             private static int ValidStep(int step)

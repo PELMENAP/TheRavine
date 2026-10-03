@@ -8,6 +8,12 @@ Shader "The Ravine/Objects/TreeBillboard"
         _BillboardPitch ("Bake Pitch", Range(0, 89)) = 30
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
         _Translucency ("Translucency", Range(0, 1)) = 0.3
+
+        [MainColor] _AlbedoTint ("Albedo Tint", Color) = (1, 1, 1, 1)
+        _AmbientStrength ("Ambient Strength", Range(0, 2)) = 1
+        _AmbientFlatten ("Ambient Flatten", Range(0, 1)) = 0.5
+        _AOStrength ("AO Strength", Range(0, 1)) = 1
+        _AOBottom ("Bottom Occlusion", Range(0, 1)) = 0.75
     }
 
     SubShader
@@ -30,6 +36,11 @@ Shader "The Ravine/Objects/TreeBillboard"
             float _BillboardPitch;
             float _Cutoff;
             float _Translucency;
+            float4 _AlbedoTint;
+            float _AmbientStrength;
+            float _AmbientFlatten;
+            float _AOStrength;
+            float _AOBottom;
         CBUFFER_END
 
         float4 _BillboardBox;
@@ -66,11 +77,12 @@ Shader "The Ravine/Objects/TreeBillboard"
             return frame;
         }
 
-        void BillboardVertex(Attributes input, out float3 positionWS, out float2 atlasUV, out BillboardFrame frame)
+        void BillboardVertex(Attributes input, out float3 positionWS, out float2 atlasUV,
+                             out BillboardFrame frame, out float2 quad)
         {
             frame = GetFrame();
             float4 instance = FarInstance(input.instanceID);
-            float2 quad = input.positionOS.xy;
+            quad = input.positionOS.xy;
 
             float3 center = instance.xyz + float3(0.0, _BillboardBox.z, _BillboardBox.w) * instance.w;
             positionWS = center
@@ -119,6 +131,7 @@ Shader "The Ravine/Objects/TreeBillboard"
                 float3 up : TEXCOORD3;
                 float3 back : TEXCOORD4;
                 float fogFactor : TEXCOORD5;
+                float aoGradient : TEXCOORD6; // 0 у основания, 1 у макушки
             };
 
             Varyings vert(Attributes input)
@@ -127,7 +140,8 @@ Shader "The Ravine/Objects/TreeBillboard"
                 float3 positionWS;
                 float2 uv;
                 BillboardFrame frame;
-                BillboardVertex(input, positionWS, uv, frame);
+                float2 quad;
+                BillboardVertex(input, positionWS, uv, frame, quad);
 
                 output.positionCS = TransformWorldToHClip(positionWS);
                 output.positionWS = positionWS;
@@ -136,6 +150,7 @@ Shader "The Ravine/Objects/TreeBillboard"
                 output.up = frame.up;
                 output.back = frame.back;
                 output.fogFactor = ComputeFogFactor(output.positionCS.z);
+                output.aoGradient = quad.y;
                 return output;
             }
 
@@ -147,7 +162,17 @@ Shader "The Ravine/Objects/TreeBillboard"
                 float3 n = SAMPLE_TEXTURE2D(_BillboardNormal, sampler_BillboardNormal, input.uv).xyz * 2.0 - 1.0;
                 float3 normalWS = normalize(input.right * n.x + input.up * n.y + input.back * n.z);
 
-                float3 color = FarLighting(albedo.rgb, input.positionWS, normalWS, input.positionCS, _Translucency);
+                float bakedAO = lerp(_AOBottom, 1.0, input.aoGradient);
+
+                FarShading shading;
+                shading.albedo = albedo.rgb * _AlbedoTint.rgb;
+                shading.translucency = _Translucency;
+                shading.bakedAO = bakedAO;
+                shading.aoStrength = _AOStrength;
+                shading.ambientScale = _AmbientStrength;
+                shading.ambientFlatten = _AmbientFlatten;
+
+                float3 color = FarLighting(shading, input.positionWS, normalWS, input.positionCS);
                 color = MixFog(color, input.fogFactor);
                 return half4(color, albedo.a);
             }
@@ -180,7 +205,8 @@ Shader "The Ravine/Objects/TreeBillboard"
                 float3 positionWS;
                 float2 uv;
                 BillboardFrame frame;
-                BillboardVertex(input, positionWS, uv, frame);
+                float2 quad;
+                BillboardVertex(input, positionWS, uv, frame, quad);
                 output.positionCS = FarShadowPositionCS(positionWS, frame.back);
                 output.uv = uv;
                 return output;
@@ -218,7 +244,8 @@ Shader "The Ravine/Objects/TreeBillboard"
                 float3 positionWS;
                 float2 uv;
                 BillboardFrame frame;
-                BillboardVertex(input, positionWS, uv, frame);
+                float2 quad;
+                BillboardVertex(input, positionWS, uv, frame, quad);
                 output.positionCS = TransformWorldToHClip(positionWS);
                 output.uv = uv;
                 return output;
