@@ -76,8 +76,8 @@ MonoBehaviour:
     moistureSettings:
       noiseType: 0
       fractalType: 1
-      frequency: 0.003
-      octaves: 3
+      frequency: 0.001
+      octaves: 2
       lacunarity: 2
       gain: 0.45
       weightedStrength: 0.1
@@ -122,7 +122,7 @@ MonoBehaviour:
         domainWarpAmplitude: 0
       albedoLayer: 5
       tint: {r: 0, g: 0, b: 0, a: 0}
-      grassTint: {r: 0, g: 0, b: 0, a: 0}
+      grassTint: {r: 0, g: 0.9367821, b: 1, a: 1}
     - name: Boreal Forest (Taiga)
       minTemperature: 0.1
       maxTemperature: 0.38
@@ -149,8 +149,8 @@ MonoBehaviour:
         minTerrainHeight: 0.2
         domainWarpAmplitude: 0
       albedoLayer: 7
-      tint: {r: 0, g: 0, b: 0, a: 0}
-      grassTint: {r: 0, g: 0, b: 0, a: 0}
+      tint: {r: 0, g: 0.2830189, b: 0.021770699, a: 0}
+      grassTint: {r: 0, g: 0.28235295, b: 0.023529412, a: 1}
     - name: Temperate Grassland / Steppe
       minTemperature: 0.28
       maxTemperature: 0.6
@@ -177,8 +177,8 @@ MonoBehaviour:
         minTerrainHeight: 0.2
         domainWarpAmplitude: 0
       albedoLayer: 1
-      tint: {r: 0, g: 0, b: 0, a: 0}
-      grassTint: {r: 0, g: 0, b: 0, a: 0}
+      tint: {r: 1, g: 0.9696857, b: 0, a: 0}
+      grassTint: {r: 1, g: 0.88739085, b: 0, a: 1}
     - name: Temperate Deciduous Forest
       minTemperature: 0.3
       maxTemperature: 0.62
@@ -233,8 +233,8 @@ MonoBehaviour:
         minTerrainHeight: 0.15
         domainWarpAmplitude: 30
       albedoLayer: 2
-      tint: {r: 0, g: 0, b: 0, a: 0}
-      grassTint: {r: 0, g: 0, b: 0, a: 0}
+      tint: {r: 0, g: 1, b: 0.6880622, a: 0}
+      grassTint: {r: 0, g: 1, b: 0.6862745, a: 1}
     - name: Hot Desert
       minTemperature: 0.62
       maxTemperature: 1
@@ -261,8 +261,8 @@ MonoBehaviour:
         minTerrainHeight: 0.25
         domainWarpAmplitude: 0
       albedoLayer: 3
-      tint: {r: 0, g: 0, b: 0, a: 0}
-      grassTint: {r: 0, g: 0, b: 0, a: 0}
+      tint: {r: 1, g: 0.80950654, b: 0.5518868, a: 0}
+      grassTint: {r: 1, g: 0.80784315, b: 0.5529412, a: 1}
     - name: Savanna
       minTemperature: 0.6
       maxTemperature: 0.92
@@ -289,8 +289,8 @@ MonoBehaviour:
         minTerrainHeight: 0.2
         domainWarpAmplitude: 0
       albedoLayer: 4
-      tint: {r: 0, g: 0, b: 0, a: 0}
-      grassTint: {r: 0, g: 0, b: 0, a: 0}
+      tint: {r: 1, g: 0.41228476, b: 0, a: 0}
+      grassTint: {r: 1, g: 0.4117647, b: 0, a: 1}
     - name: Tropical Forest
       minTemperature: 0.72
       maxTemperature: 1
@@ -345,8 +345,8 @@ MonoBehaviour:
         minTerrainHeight: 0.15
         domainWarpAmplitude: 30
       albedoLayer: 0
-      tint: {r: 0, g: 0, b: 0, a: 0}
-      grassTint: {r: 0, g: 0, b: 0, a: 0}
+      tint: {r: 0, g: 0.8862745, b: 0.44379663, a: 0}
+      grassTint: {r: 0, g: 0.8862745, b: 0.44313726, a: 1}
     - name: Wetlands / Swamp
       minTemperature: 0.38
       maxTemperature: 0.78
@@ -373,12 +373,12 @@ MonoBehaviour:
         minTerrainHeight: 0.05
         domainWarpAmplitude: 45
       albedoLayer: 4
-      tint: {r: 0, g: 0, b: 0, a: 0}
-      grassTint: {r: 0, g: 0, b: 0, a: 0}
-    biomeBlendRadius: 0.23
-    altitudeCooling: 0.35
+      tint: {r: 0.19926937, g: 0.15566039, b: 1, a: 0}
+      grassTint: {r: 0.2, g: 0.15686275, b: 1, a: 1}
+    biomeBlendRadius: 0.2
+    altitudeCooling: 0.4
     erosion:
-      allowInfiniteErosionDepth: 0
+      allowInfiniteErosionDepth: 1
       dropletCount: 2000
       lifetime: 4
       amplify: 0.8
@@ -429,7 +429,7 @@ MonoBehaviour:
   viewer: {fileID: 0}
   viewerOffset: {x: 0, y: 0, z: 10}
   grassSystem: {fileID: 3471819257872331844}
-  biomeAlbedo: {fileID: 18700000, guid: f500d41bce4cec34ab4d346474076e80, type: 2}
+  biomeAlbedo: {fileID: 18700000, guid: 9ce74b6359c921548848f1f820a24a2a, type: 2}
   waterOffset: {x: 0, y: 4, z: 0}
 --- !u!114 &6195408856844743971
 MonoBehaviour:

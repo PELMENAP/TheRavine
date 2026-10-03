@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: New Material
+  m_Name: Terrain
   m_Shader: {fileID: 4800000, guid: 15f69cd45965d6d48b4edac9100f586e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -65,15 +65,15 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RockTex:
-        m_Texture: {fileID: 2800000, guid: c6e2f801e750a4d4ea82816b303816ba, type: 3}
+        m_Texture: {fileID: 2800000, guid: 8535c5c42c1240c458004fe125f610e7, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SandTex:
-        m_Texture: {fileID: 2800000, guid: 2b436bcf0f398403a9e336af6352f60c, type: 3}
+        m_Texture: {fileID: 2800000, guid: 45c8e7b96fee1504799fb876bb20a917, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SnowTex:
-        m_Texture: {fileID: 2800000, guid: dae117d90a5d51d448ce6d18e0498468, type: 3}
+        m_Texture: {fileID: 2800000, guid: 83f3821f355847b4e82c2db80c922589, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SpecGlossMap:
@@ -105,7 +105,7 @@ Material:
     - _Cull: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
-    - _DetailFarDistance: 250
+    - _DetailFarDistance: 300
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _DstBlendAlpha: 0
@@ -114,31 +114,31 @@ Material:
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _HeightBlendDepth: 0.2
-    - _MacroScale: 0.004
-    - _MacroStrength: 0.15
+    - _MacroScale: 0.24
+    - _MacroStrength: 0.219
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RockScale: 0.08
-    - _RockSlopeMax: 0.45
-    - _RockSlopeMin: 0.25
-    - _SandHeight: 1.5
-    - _Smoothness: 0.1
+    - _RockScale: 0.01
+    - _RockSlopeMax: 0.6
+    - _RockSlopeMin: 0.3
+    - _SandHeight: 0.5
+    - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
-    - _SnowFlatness: 0.5
-    - _SnowTempMax: 0.2
-    - _SnowTempMin: 0.05
+    - _SnowFlatness: 0.149
+    - _SnowTempMax: 0.063
+    - _SnowTempMin: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
-    - _TexScale: 0.1
+    - _TexScale: 0.05
     - _WaterLevel: 4
-    - _WetDarken: 0.6
-    - _WetSmoothness: 0.6
-    - _WetStrength: 1.5
+    - _WetDarken: 0.182
+    - _WetSmoothness: 0.252
+    - _WetStrength: 0.74
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
@@ -146,8 +146,8 @@ Material:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _RockColor: {r: 1, g: 1, b: 1, a: 1}
-    - _SandColor: {r: 0.86, g: 0.8, b: 0.62, a: 1}
+    - _RockColor: {r: 0.7830189, g: 0.7830189, b: 0.7830189, a: 1}
+    - _SandColor: {r: 1, g: 0.9841761, b: 0.7028302, a: 1}
     - _SnowColor: {r: 1, g: 1, b: 1, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []

@@ -1,4 +1,3 @@
-using UnityEngine;
 using TheRavine.Generator;
 
 // Координаты биомов в пространстве (temperature, moisture) — схема Whittaker:
