@@ -90,10 +90,14 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AOBottom: 0
+    - _AOStrength: 1
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0
     - _AlphaToMask: 0
-    - _BillboardPitch: 20
+    - _AmbientFlatten: 0.182
+    - _AmbientStrength: 0.066
+    - _BillboardPitch: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
@@ -120,11 +124,12 @@ Material:
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
-    - _Translucency: 0
+    - _Translucency: 0.066
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
+    - _AlbedoTint: {r: 0.2272161, g: 0.4339623, b: 0.25822803, a: 1}
     - _AtlasGrid: {r: 2, g: 4, b: 0, a: 0}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}

@@ -3762,18 +3762,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ObjectSystem::TextureArrayCreator
   grassTextures:
-  - {fileID: 2800000, guid: dc1725dcc6e3d354192f645921ae4656, type: 3}
-  - {fileID: 2800000, guid: a6326eb3424b4879fbc06f539a440877, type: 3}
-  - {fileID: 2800000, guid: 044c77d7e5a70efc9a200fa42d2a02f3, type: 3}
-  - {fileID: 2800000, guid: 2b436bcf0f398403a9e336af6352f60c, type: 3}
-  - {fileID: 2800000, guid: d2a813d886f5299fea936ea11d9e913a, type: 3}
-  - {fileID: 2800000, guid: a9255d51995d201978ad572ea341813d, type: 3}
-  - {fileID: 2800000, guid: e1ac2511ab16aebd5b7c09653b047da4, type: 3}
-  - {fileID: 2800000, guid: fc62a62355378e988ba80a982c6cd627, type: 3}
+  - {fileID: 2800000, guid: 4563e7f3a9b9aae4e9fc1f85853a0053, type: 3}
+  - {fileID: 2800000, guid: db137b2a67b616d46ade412b74117a33, type: 3}
+  - {fileID: 2800000, guid: 4173d36f72356a0478035825a60afa85, type: 3}
+  - {fileID: 2800000, guid: 176cf4645693fad42b3938debb6855d2, type: 3}
+  - {fileID: 2800000, guid: 30af083fb43f3854cab2bdbaa44621a0, type: 3}
+  - {fileID: 2800000, guid: 5d88b94bcea282a41add145a6182a5bf, type: 3}
+  - {fileID: 2800000, guid: 4cf1ad67331f57446b6adbdc231ee980, type: 3}
+  - {fileID: 2800000, guid: a04bcb6e88b0ece49ac7c29ef3411b7f, type: 3}
+  - {fileID: 2800000, guid: 45c8e7b96fee1504799fb876bb20a917, type: 3}
+  - {fileID: 2800000, guid: 0e3511077812fbc4fbb0e0bbfd47ae06, type: 3}
   assetPath: Assets/GrassTextureArray.asset
-  mipmaps: 1
-  linear: 0
-  filterMode: 1
+  mipmaps: 0
+  linear: 1
+  filterMode: 0
   anisoLevel: 4
 --- !u!4 &2046927391
 Transform:
