@@ -3,74 +3,74 @@ using UnityEngine;
 [RequireComponent(typeof(SpriteRenderer))]
 public class SimpleUnitAnimator : MonoBehaviour
 {
+    public const int ClipFly = 0, ClipRest = 1, ClipLanding = 2, ClipTakeOff = 3;
+
     [Header("Animation Settings")]
     [Tooltip("Should animation run only once?")]
-    [SerializeField] private bool playOnce = false, isBird = false;
+    [SerializeField] private bool playOnce = false;
+    [Tooltip("Frames are driven externally via SetFrame.")]
+    [SerializeField] private bool isBird = false;
 
     [Tooltip("Frame duration in seconds.")]
-    [SerializeField] private float frameDuration = 0.1f, speedLimit = 0.1f;
+    [SerializeField] private float frameDuration = 0.1f;
 
     [Tooltip("Animation frames.")]
-    [SerializeField] private Sprite[] frames, defaults;
+    [SerializeField] private Sprite[] frames, defaults, landingFrames, takeOffFrames;
 
-    private int currentFrame = 0, defaultPose;
-    private bool isAnimation = true;
-    private Vector3 previousPosition, currentPosition;
     private SpriteRenderer spriteRenderer;
+    private int currentFrame;
+    private float elapsed;
+    private bool isAnimation = true;
+
+    public float FrameDuration => frameDuration;
 
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
-        previousPosition = this.transform.position;
-
-        if (isBird && defaults != null && defaults.Length > 0) defaultPose = RavineRandom.RangeInt(0, defaults.Length);
-        else isBird = false;
+        if (isBird) enabled = false;
     }
 
     private void OnEnable()
     {
-        if (frames == null || frames.Length == 0) return;
-        isAnimation = true;
-        previousPosition = this.transform.position;
-        InvokeRepeating(nameof(NextFrame), RavineRandom.RangeFloat(0, frameDuration), frameDuration);
-    }
-
-    private void OnDisable()
-    {
-        CancelInvoke(nameof(NextFrame));
         currentFrame = 0;
+        isAnimation = frames != null && frames.Length > 0;
+        elapsed = RavineRandom.RangeFloat(0f, frameDuration);
     }
 
-    private void NextFrame()
-    {
-        if (isBird && currentFrame == 0)
-        {
-            currentPosition = this.transform.position;
-            if (Vector3.Distance(previousPosition, currentPosition) < speedLimit)
-            {
-                spriteRenderer.sprite = defaults[defaultPose];
-                isAnimation = false;
-            }
-            else
-            {
-                isAnimation = true;
-            }
-            previousPosition = currentPosition;
-        }
+    public int FrameCount(int clip) => Clip(clip).Length;
 
-        if (!isAnimation) return;
+    public void SetFrame(int clip, int index)
+    {
+        Sprite[] c = Clip(clip);
+        if (c.Length == 0) return;
+        spriteRenderer.sprite = c[(uint)index < (uint)c.Length ? index : 0];
+    }
+
+    private Sprite[] Clip(int clip)
+    {
+        Sprite[] c = clip switch
+        {
+            ClipRest => defaults,
+            ClipLanding => landingFrames,
+            ClipTakeOff => takeOffFrames,
+            _ => frames
+        };
+        if (c != null && c.Length > 0) return c;
+        return frames ?? System.Array.Empty<Sprite>();
+    }
+
+    private void Update()
+    {
+        if (!isAnimation || frameDuration <= 0f) return;
+
+        elapsed += Time.deltaTime;
+        if (elapsed < frameDuration) return;
+        elapsed -= frameDuration;
 
         spriteRenderer.sprite = frames[currentFrame];
-        currentFrame++;
-
-        if (currentFrame < frames.Length) return;
+        if (++currentFrame < frames.Length) return;
 
         currentFrame = 0;
-        if (isBird) defaultPose = RavineRandom.RangeInt(defaults.Length);
-        if (playOnce)
-        {
-            isAnimation = false;
-            CancelInvoke(nameof(NextFrame));
-        }
+        if (playOnce) isAnimation = false;
     }
 }
