@@ -1,0 +1,149 @@
+#pragma kernel ClearGrid
+#pragma kernel BuildGrid
+#pragma kernel Step
+
+struct Boid
+{
+    float3 position;
+    float phase;
+    float3 velocity;
+    float bank;
+};
+
+StructuredBuffer<Boid> boidsIn;
+RWStructuredBuffer<Boid> boidsOut;
+RWStructuredBuffer<uint> cellCount;
+RWStructuredBuffer<uint> cellItems;
+
+uint boidCount;
+uint cellTotal;
+uint cellCap;
+uint maxNeighbors;
+int3 gridDims;
+float3 boundsExtents;
+float3 target;
+float cellInv;
+float perception2;
+float separation2;
+float wSep;
+float wAli;
+float wCoh;
+float wBounds;
+float wTarget;
+float wNoise;
+float minSpeed;
+float maxSpeed;
+float maxSteer;
+float dt;
+float time;
+
+int3 CellCoord(float3 p)
+{
+    int3 c = (int3)floor((p + boundsExtents) * cellInv);
+    return clamp(c, 0, gridDims - 1);
+}
+
+uint CellIndex(int3 c)
+{
+    return (uint)(c.x + gridDims.x * (c.y + gridDims.y * c.z));
+}
+
+[numthreads(64, 1, 1)]
+void ClearGrid(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= cellTotal) return;
+    cellCount[id.x] = 0;
+}
+
+[numthreads(64, 1, 1)]
+void BuildGrid(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= boidCount) return;
+    uint cell = CellIndex(CellCoord(boidsIn[id.x].position));
+    uint slot;
+    InterlockedAdd(cellCount[cell], 1, slot);
+    if (slot < cellCap) cellItems[cell * cellCap + slot] = id.x;
+}
+
+[numthreads(64, 1, 1)]
+void Step(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= boidCount) return;
+
+    Boid b = boidsIn[id.x];
+    float3 pos = b.position;
+    float3 vel = b.velocity;
+    int3 c = CellCoord(pos);
+
+    float3 sep = 0;
+    float3 ali = 0;
+    float3 coh = 0;
+    uint n = 0;
+
+    for (int z = -1; z <= 1; z++)
+    for (int y = -1; y <= 1; y++)
+    for (int x = -1; x <= 1; x++)
+    {
+        if (n >= maxNeighbors) continue;
+        int3 nc = c + int3(x, y, z);
+        if (any(nc < 0) || any(nc >= gridDims)) continue;
+
+        uint ci = CellIndex(nc);
+        uint cnt = min(cellCount[ci], cellCap);
+        uint baseIdx = ci * cellCap;
+
+        for (uint k = 0; k < cnt && n < maxNeighbors; k++)
+        {
+            uint j = cellItems[baseIdx + k];
+            if (j == id.x) continue;
+
+            Boid o = boidsIn[j];
+            float3 d = pos - o.position;
+            float d2 = dot(d, d);
+            if (d2 > perception2 || d2 < 1e-6) continue;
+
+            ali += o.velocity;
+            coh += o.position;
+            if (d2 < separation2) sep += d / d2;
+            n++;
+        }
+    }
+
+    float3 acc = 0;
+    if (n > 0)
+    {
+        float inv = 1.0 / n;
+        acc += wSep * sep;
+        acc += wAli * (ali * inv - vel);
+        acc += wCoh * (coh * inv - pos);
+    }
+
+    float3 q = pos / boundsExtents;
+    float ql = length(q);
+    if (ql > 0.85) acc -= (q / ql) * (ql - 0.85) * wBounds * maxSpeed;
+
+    float3 toTarget = target - pos;
+    acc += wTarget * toTarget * rsqrt(dot(toTarget, toTarget) + 1e-4);
+
+    float3 w = float3(
+        sin(pos.y * 0.31 + time * 0.7 + b.phase),
+        sin(pos.z * 0.27 + time * 0.5 + b.phase * 1.3),
+        sin(pos.x * 0.33 + time * 0.6 + b.phase * 0.7));
+    acc += w * wNoise;
+
+    float al = length(acc);
+    if (al > maxSteer) acc *= maxSteer / al;
+
+    float3 newVel = vel + acc * dt;
+    float s = max(length(newVel), 1e-4);
+    newVel *= clamp(s, minSpeed, maxSpeed) / s;
+
+    float3 f0 = normalize(vel + 1e-5);
+    float3 f1 = normalize(newVel);
+    float turn = cross(f0, f1).y / max(dt, 1e-4);
+
+    b.bank = lerp(b.bank, turn, saturate(dt * 6.0));
+    b.velocity = newVel;
+    b.position = pos + newVel * dt;
+    boidsOut[id.x] = b;
+}

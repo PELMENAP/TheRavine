@@ -68,6 +68,7 @@ public class GrassSystem : MonoBehaviour
     private MapGenerator pendingMap;
     private long pendingCenter;
     private bool hasPending;
+    private Vector3 boundsSize;
 
     private void Start()
     {
@@ -123,7 +124,9 @@ public class GrassSystem : MonoBehaviour
         args[3] = grassMesh.GetBaseVertex(0);
         args[4] = 0;
         
-        renderBounds = new Bounds(Vector3.zero, Vector3.one * 10000f);
+        float side = MapGenerator.generationSize;
+        boundsSize = new Vector3(side, MapGenerator.maxTerrainHeight * 2f, side);
+        renderBounds = new Bounds(Vector3.zero, boundsSize);
         
         grassPlacementShader.SetFloat("density", grassDensity);
         grassPlacementShader.SetInt("bladesPerCell", bladesPerCell * densityFactor);
@@ -203,6 +206,13 @@ public class GrassSystem : MonoBehaviour
         BiomeShaderGlobals.ApplyTo(grassPlacementShader);
 
         Vector3 boundsMin = MapGenerator.WindowOriginWorld(center);
+
+        Vector3 centerBound = boundsMin + new Vector3(
+            MapGenerator.generationSize * 0.5f,
+            MapGenerator.maxTerrainHeight * 0.5f,
+            MapGenerator.generationSize * 0.5f);
+        renderBounds = new Bounds(centerBound, boundsSize);
+
         Vector3 boundsMax = boundsMin + new Vector3(MapGenerator.generationSize, 0f, MapGenerator.generationSize);
 
         grassPlacementShader.SetBuffer(kernelPlaceGrass, "instanceData", instanceBuffer);

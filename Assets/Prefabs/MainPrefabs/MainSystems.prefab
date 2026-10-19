@@ -833,6 +833,10 @@ PrefabInstance:
       propertyPath: _scrollShader
       value: 
       objectReference: {fileID: 4800000, guid: 6b6dc0ff787395788b2f37cbab3aee28, type: 3}
+    - target: {fileID: 5230712088563022791, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
+      propertyPath: speed
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 6400751825280318941, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
