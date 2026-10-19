@@ -29,5 +29,5 @@ MonoBehaviour:
     y: 30
   maxDeltaTime: 0.1
   flipYaw: 180
-  yTarget: 20
+  cruiseAGL: 20
   ySpawnSpread: 10
