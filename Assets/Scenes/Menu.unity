@@ -281,7 +281,6 @@ MonoBehaviour:
   perception: 3
   separationRadius: 1.1
   maxNeighbors: 16
-  cellCapacity: 32
   separationWeight: 4
   alignmentWeight: 1.1
   cohesionWeight: 0.5
