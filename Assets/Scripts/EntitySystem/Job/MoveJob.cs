@@ -13,7 +13,7 @@ namespace TheRavine.EntityControl
         [ReadOnly] public NativeArray<bool> IsMoving;
         [ReadOnly] public NativeArray<float2> Accelerations;
         [ReadOnly] public float DeltaTime, VelocityLimitSq, VelocityLimit;
-        [ReadOnly] public Quaternion FlipRotation, IdentityRotation;
+        [ReadOnly] public quaternion FlipRotation, IdentityRotation;
 
         public void Execute(int index, TransformAccess transform)
         {

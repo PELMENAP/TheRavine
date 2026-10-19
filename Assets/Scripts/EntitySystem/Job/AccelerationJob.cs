@@ -13,7 +13,7 @@ namespace TheRavine.EntityControl
         [ReadOnly] public NativeArray<int> FlockIds;
         [ReadOnly] public NativeArray<bool> IsMoving;
         [WriteOnly] public NativeArray<float2> Accelerations;
-        [ReadOnly] public float DestinationThreshold, AvoidanceThreshold, AlongThreshold;
+        [ReadOnly] public float InvSlowRadius, MaxSpeed, TargetWeight, AvoidanceThreshold, AlongThreshold;
         [ReadOnly] public float3 Weights;
         [ReadOnly] public NativeParallelMultiHashMap<int2, int> SpatialGrid;
         [ReadOnly] public float InvCellSize;
@@ -89,15 +89,16 @@ namespace TheRavine.EntityControl
 
             float2 toTarget = OtherTargets[flockId] - pos;
             float targetDistSq = math.lengthsq(toTarget);
+            float2 steer = -vel;
 
-            if (targetDistSq > DestinationThreshold * DestinationThreshold)
+            if (targetDistSq > 1e-6f)
             {
                 float invTargetDist = math.rsqrt(targetDistSq);
                 float targetDist = targetDistSq * invTargetDist;
-                separation += toTarget * invTargetDist * (targetDist - DestinationThreshold);
+                steer += toTarget * (invTargetDist * MaxSpeed * math.saturate(targetDist * InvSlowRadius));
             }
 
-            Accelerations[index] = separation * Weights.x + alignment + cohesion;
+            Accelerations[index] = separation * Weights.x + alignment + cohesion + steer * TargetWeight;
         }
     }
 

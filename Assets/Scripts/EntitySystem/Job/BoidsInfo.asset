@@ -13,18 +13,21 @@ MonoBehaviour:
   m_Name: BoidsInfo
   m_EditorClassIdentifier: 
   numberOfEntities: 200
-  delayFactor: 3
   nearTheTarget: 30
   distanceOfTargetFromPlayer: 200
-  destinationThreshold: 40
   avoidanceThreshold: 6
-  alongThreshold: 2
-  cellSize: 20
+  alongThreshold: 6
   velocityLimit: 15
   accelerationWeights:
     x: 10
     y: 10
     z: 10
-  flip: {x: 0, y: 180, z: 0, w: 0}
+  slowRadius: 40
+  targetWeight: 2
+  flockRetargetInterval:
+    x: 3
+    y: 30
+  maxDeltaTime: 0.1
+  flipYaw: 180
   yTarget: 20
   ySpawnSpread: 10
