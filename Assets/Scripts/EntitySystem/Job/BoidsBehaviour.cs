@@ -15,6 +15,8 @@ namespace TheRavine.EntityControl
         [SerializeField] private BoidsInfo boidsInfo;
         [SerializeField] private GameObject[] prefabs;
 
+        [SerializeField] private bool isTest;
+
         private CancellationTokenSource _cts;
         private NativeArray<float4> _positionsAndVelocities;
         private NativeArray<float2> _accelerations, _otherTargets;
@@ -40,6 +42,11 @@ namespace TheRavine.EntityControl
             );
             if (_viewer == null) return offset;
             return new float2(-_viewer.position.x, -_viewer.position.z) + offset;
+        }
+
+        private void Start()
+        {
+            if(isTest) StartBoids(this.transform);
         }
 
         public void StartBoids(Transform viewer)

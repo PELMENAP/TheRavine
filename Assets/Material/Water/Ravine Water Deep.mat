@@ -32,7 +32,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - NormalMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: cccf5251b555e1c47baf2d624b2dfce2, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - RippleTex:
@@ -70,23 +70,23 @@ Material:
     m_Ints: []
     m_Floats:
     - CausticFade: 1.47
-    - Depth: 10
+    - Depth: 9.97
     - DepthFade: -0.24
     - Displacement: 0
-    - Foam: 0
-    - FoamCrestStrength: 0
-    - FoamRippleStrength: 0
-    - FoamScale: 0
-    - FoamShoreStrength: 0
+    - Foam: 0.09
+    - FoamCrestStrength: 0.99
+    - FoamRippleStrength: 0.83
+    - FoamScale: 0.19
+    - FoamShoreStrength: 0.78
     - Metallic: 0.084
-    - NormalStrength: 0
-    - Refraction: 0
+    - NormalStrength: 1.06
+    - Refraction: 0.28
     - RippleRefraction: 1
     - RippleStrength: 20
     - Scale: 10
-    - Smoothness: 0
+    - Smoothness: 0.855
     - WaterFresnel: 0.01
-    - WaterLerp: 0
+    - WaterLerp: 0.463
     - _CameraAdd: 1
     - _Displacement: 1
     - _FoamIntensity: 0.5
