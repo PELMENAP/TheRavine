@@ -23,12 +23,15 @@ public class SimpleUnitAnimator : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         previousPosition = this.transform.position;
 
-        if(isBird) defaultPose = RavineRandom.RangeInt(0, defaults.Length);
+        if (isBird && defaults != null && defaults.Length > 0) defaultPose = RavineRandom.RangeInt(0, defaults.Length);
+        else isBird = false;
     }
 
     private void OnEnable()
     {
         if (frames == null || frames.Length == 0) return;
+        isAnimation = true;
+        previousPosition = this.transform.position;
         InvokeRepeating(nameof(NextFrame), RavineRandom.RangeFloat(0, frameDuration), frameDuration);
     }
 
@@ -39,46 +42,35 @@ public class SimpleUnitAnimator : MonoBehaviour
     }
 
     private void NextFrame()
-    {   
-        if(isBird)
+    {
+        if (isBird && currentFrame == 0)
         {
-            if (currentFrame == 0)
+            currentPosition = this.transform.position;
+            if (Vector3.Distance(previousPosition, currentPosition) < speedLimit)
             {
-                currentPosition = this.transform.position;
-                if (Vector3.Distance(previousPosition, currentPosition) < speedLimit)
-                {
-                    spriteRenderer.sprite = defaults[defaultPose];
-                    isAnimation = false;
-                }
-                else
-                {
-                    isAnimation = true;
-                }
-                previousPosition = currentPosition;
+                spriteRenderer.sprite = defaults[defaultPose];
+                isAnimation = false;
             }
+            else
+            {
+                isAnimation = true;
+            }
+            previousPosition = currentPosition;
         }
 
-        if (isAnimation)
-        {
-            spriteRenderer.sprite = frames[currentFrame];
-            currentFrame++;
-
-            if (currentFrame >= frames.Length)
-            {
-                if (playOnce)
-                {
-                    isAnimation = false;
-                    currentFrame = 0;
-                    CancelInvoke(nameof(NextFrame));
-                }
-
-                if(isBird) defaultPose = RavineRandom.RangeInt(defaults.Length);
-
-
-                currentFrame = 0;
-            }
-        }
+        if (!isAnimation) return;
 
         spriteRenderer.sprite = frames[currentFrame];
+        currentFrame++;
+
+        if (currentFrame < frames.Length) return;
+
+        currentFrame = 0;
+        if (isBird) defaultPose = RavineRandom.RangeInt(defaults.Length);
+        if (playOnce)
+        {
+            isAnimation = false;
+            CancelInvoke(nameof(NextFrame));
+        }
     }
 }
