@@ -150,9 +150,9 @@ public sealed class BoidsMenuBackground : MonoBehaviour
         kernelStep = compute.FindKernel("Step");
 
         Vector3Int dims = new(
-            Mathf.CeilToInt(extents.x * 2f / perception),
-            Mathf.CeilToInt(extents.y * 2f / perception),
-            Mathf.CeilToInt(extents.z * 2f / perception));
+            Mathf.Max(1, Mathf.CeilToInt(extents.x * 2f / perception)),
+            Mathf.Max(1, Mathf.CeilToInt(extents.y * 2f / perception)),
+            Mathf.Max(1, Mathf.CeilToInt(extents.z * 2f / perception)));
         cellTotal = dims.x * dims.y * dims.z;
         boidGroups = Mathf.CeilToInt(count / (float)ThreadGroup);
         cellGroups = Mathf.CeilToInt((cellTotal + 1) / (float)ThreadGroup);

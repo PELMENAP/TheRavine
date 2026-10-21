@@ -273,11 +273,29 @@ BehaviourType: `None | NAL | GROW`
 
 ---
 
-## Boids (стаи птиц/животных) — `EntitySystem/Job/`
+## Boids (стаи птиц) — `EntitySystem/Job/`
 
-- `BoidsBehaviour` — Jobs-система: `InitSpatialGridJob` (hash grid) + `AccelerationJob` (separation/alignment/cohesion) + `MoveJob`
-- `NativeParallelMultiHashMap<int2, int>` — пространственная решётка для поиска соседей
-- Настраивается через `BoidsInfo : ScriptableObject`
+- `BoidsBehaviour` — оркестратор. Состояние в SoA `NativeArray` по индексу птицы (`_pos`, `_vel`, `_acc`, `_state`, `_flock`, `_timer`, `_phase`, `_perchRef`, `_panic`, …). Стаи = префабы, птицы стаи лежат непрерывным диапазоном `_flockStart[f].._flockStart[f+1]`. Популяция фиксирована: удаления и swap-back нет, повторный `StartBoids` переиспользует буферы, если не изменились `numberOfEntities` и число префабов
+- Время — только `SimulationClock` (dt ограничен `BoidsInfo.maxDeltaTime`); таймеры стай (`flockRetargetInterval`) тикают от того же dt
+- Цепочка джобов за кадр (Complete в `LateUpdate`):
+  - `BirdSlotJob` (`IJob`) — освобождение слотов присады у взлетевших, планирование посадки стаи по `FlockCommand` (дерево или земля)
+  - `BirdGridJob` (`IJob`) — counting-sort hash grid: `CellEnd`/`Items`/`BucketOf`, `Mask = ceilpow2(2n) - 1`, бакет через `BoidHash`; координаты вне мира хешируются в валидный бакет
+  - `AccelerationJob` (`IJobParallelFor`) — prioritized steering: flocking (3×3 бакета с дедупликацией, лимит соседей `SimulationRules.birdMaxNeighbors`, обход бакета со случайного смещения), цель стаи или точка присады, PD-регулятор высоты над кронами, обход деревьев, распространение паники
+  - `MoveJob` (`IJobParallelForTransform`) — интеграция полёта со сносом ветром, посадка по кубической Безье, присада (покачивание на дереве / подскоки на земле), взлёт, разворот спрайта к камере
+- State machine (`BirdState`): `Flying → Approach → Landing → Perched → TakeOff → Flying`
+- Анимация — покадровая: `SimpleUnitAnimator.SetFrame(clip, index)` вызывается только при смене кадра (`_frameKey`)
+- `BirdHeightField` — окно высот вокруг наблюдателя (terrain, canopy, флаги perchable по уклону и воде), пересборка при смещении наблюдателя на `recenterFraction` или по `MapGenerator.onUpdate`
+- `BirdPerchIndex` — индекс деревьев из объектов чанков: `TreePerch` (Xz, YMin/YMax, Radius, 64-битная маска слотов), собственный counting-sort grid. `_perchRef = tree << 6 | slot` (`PerchGround`, `PerchNone` — отрицательные). При пересборке `PerchRemapJob` переносит ссылки на новые индексы деревьев. Инвариант: бит слота занят ⇔ ровно одна птица держит этот ref; в редакторе проверяется `Debug.Assert` после каждого тика
+- `WindField` (`ObjectSystem/Wind/`) — сервис ветра (WindZone + MtreeWind + wind map из материала травы), в джобы передаётся `WindSampler`
+- Настройки: `BoidsInfo : ScriptableObject` → снимок `BirdParams` в `StartBoids`; общие лимиты — `SimulationRules`
+- Жизненный цикл: `EntitySystem.SetUpBoids` (после появления игрока) → `StartBoids`; `EntitySystem.BreakUp` → `DisableBoids` (джобы завершены, птицы скрыты); `OnDestroy` освобождает все `NativeArray`, `TransformAccessArray`, `BirdHeightField`, `BirdPerchIndex`. Флаг `isTest` работает только в редакторе
+
+### Фон меню — `GameSceneManagerSystem/Menu/BoidsMenuBackground.cs`, `Shaders/Boids/BoidsStep.compute`
+
+- Полностью на GPU: `ClearGrid → CountGrid (InterlockedAdd) → Scan` (иерархический префикс-скан блоками по 1024, до 4 уровней) `→ AddOffsets → Scatter → Step`
+- 3D-сетка с clamp координат ячейки, лимит `maxNeighbors`, обход соседних ячеек со случайного смещения
+- Курсор и ударная волна (LitMotion), ветер из `WindField`, рендер через `Graphics.RenderMeshIndirect`
+- Время — `Time.unscaledDeltaTime`: в сцене меню `SimulationClock` не продвигается
 
 ---
 

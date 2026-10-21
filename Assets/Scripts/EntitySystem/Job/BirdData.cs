@@ -31,8 +31,9 @@ namespace TheRavine.EntityControl
         public float ScareRadiusSq, PanicRadiusSq, PanicDelay;
         public float TakeOffUp, TakeOffOut, TakeOffDuration;
         public float WindDrift, FlapMinScale, FlipDeadzone;
+        public int MaxNeighbors;
 
-        public static BirdParams From(BoidsInfo b) => new()
+        public static BirdParams From(BoidsInfo b, SimulationRules r) => new()
         {
             MaxSpeed = b.velocityLimit,
             MinAirSpeed = b.minAirSpeed,
@@ -84,7 +85,8 @@ namespace TheRavine.EntityControl
             TakeOffDuration = b.takeOffDuration,
             WindDrift = b.windDrift,
             FlapMinScale = b.flapMinScale,
-            FlipDeadzone = b.flipDeadzone
+            FlipDeadzone = b.flipDeadzone,
+            MaxNeighbors = math.max(r.BirdMaxNeighbors, 1)
         };
     }
 }
