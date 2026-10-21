@@ -47,10 +47,10 @@ namespace TheRavine.Generator
             float water = 1f;
             float sediment = 0f;
 
+            HeightSample current = Sample(pos);
+
             for (int i = 0; i < settings.lifetime; i++)
             {
-                HeightSample current = Sample(pos);
-
                 float2 grad = current.gradient;
 
                 dir = dir * settings.inertia - grad * (1f - settings.inertia);
@@ -93,6 +93,7 @@ namespace TheRavine.Generator
                 water *= 1f - settings.evaporation;
 
                 pos = nextPos;
+                current = next;
 
                 if (water < 0.0001f)
                     break;
