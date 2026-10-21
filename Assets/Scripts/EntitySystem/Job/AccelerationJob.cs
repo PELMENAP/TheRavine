@@ -304,9 +304,11 @@ namespace TheRavine.EntityControl
             float alongSq = P.Along * P.Along;
             float3 sep = float3.zero, ali = float3.zero, coh = float3.zero;
             int n = 0;
+            int maxN = P.MaxNeighbors;
+            uint rot = math.hash(new uint2((uint)i, Seed));
 
-            for (int dz = -1; dz <= 1; dz++)
-            for (int dx = -1; dx <= 1; dx++)
+            for (int dz = -1; dz <= 1 && n < maxN; dz++)
+            for (int dx = -1; dx <= 1 && n < maxN; dx++)
             {
                 int b = BoidHash.Bucket(cell + new int2(dx, dz), Grid.Mask);
                 bool dup = false;
@@ -314,10 +316,16 @@ namespace TheRavine.EntityControl
                 if (dup) continue;
                 seen[seenCount++] = b;
 
+                int start = b == 0 ? 0 : Grid.CellEnd[b - 1];
                 int end = Grid.CellEnd[b];
-                for (int k = b == 0 ? 0 : Grid.CellEnd[b - 1]; k < end; k++)
+                int cnt = end - start;
+                if (cnt == 0) continue;
+
+                int idx = start + (int)(rot % (uint)cnt);
+                for (int c = 0; c < cnt && n < maxN; c++, idx++)
                 {
-                    int j = Grid.Items[k];
+                    if (idx == end) idx = start;
+                    int j = Grid.Items[idx];
                     if (j == i || Flock[j] != flock || !BirdState.IsAirborne(State[j])) continue;
 
                     float3 d = p - Pos[j];

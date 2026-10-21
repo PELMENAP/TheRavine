@@ -1082,6 +1082,7 @@ public sealed class SimulationRules : ScriptableObject
     [SerializeField] private float boidRadius = 6f;
     [SerializeField] private float boidSeparationRadius = 1.5f;
     [SerializeField] private float plannerBoidWeight = 0.5f;
+    [SerializeField] private int birdMaxNeighbors = 32;
     [SerializeField] private float headingEmaAlpha = 0.3f;
     [SerializeField] private float migrationTau = 60f;
     [SerializeField] private float migrationHungerWeight = 1f;
@@ -1574,6 +1575,7 @@ public sealed class SimulationRules : ScriptableObject
     public float BoidRadius => boidRadius;
     public float BoidSeparationRadius => boidSeparationRadius;
     public float PlannerBoidWeight => plannerBoidWeight;
+    public int BirdMaxNeighbors => birdMaxNeighbors;
     public float HeadingEmaAlpha => headingEmaAlpha;
     public float MigrationTau => migrationTau;
     public float MigrationHungerWeight => migrationHungerWeight;
