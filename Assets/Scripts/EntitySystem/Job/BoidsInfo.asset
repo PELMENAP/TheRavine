@@ -20,14 +20,69 @@ MonoBehaviour:
   velocityLimit: 15
   accelerationWeights:
     x: 10
-    y: 10
-    z: 10
+    y: 4
+    z: 4
   slowRadius: 40
   targetWeight: 2
   flockRetargetInterval:
     x: 3
     y: 30
+  verticalFlockScale: 1
+  minAirSpeed: 1
   maxDeltaTime: 0.1
   flipYaw: 180
-  cruiseAGL: 20
+  flipDeadzone: 0.1
   ySpawnSpread: 10
+  heightFieldSize: 128
+  heightCellStep: 2
+  recenterFraction: 0.5
+  cruiseAGL: 20
+  heightLookahead: 1.5
+  heightKp: 2
+  heightKd: 1.5
+  minClearance: 2
+  perchCellSize: 8
+  treeMargin: 2
+  treeAvoidWeight: 30
+  flockPerchChance: 0.35
+  groundPerchChance: 0.4
+  maxPerchSlope: 25
+  waterThreshold: 0.1
+  perchSearchRadius: 60
+  groundPerchSpread: 20
+  groundPerchTries: 4
+  groundPerchOffset: 1
+  perchMinHeight: 0.4
+  perchRadiusMin: 0.7
+  perchSlotsTheta: 8
+  perchSlotsHeight: 8
+  approachSlowRadius: 25
+  approachFlockFade: 20
+  approachTimeout: 20
+  landingStartDistance: 8
+  landingApproachHeight: 4
+  landingSpeed: 6
+  landingDuration:
+    x: 0.6
+    y: 2.5
+  landingFinalSpeed: 1.5
+  landingDescent: 0.5
+  landingWindBias: 2
+  perchDuration:
+    x: 8
+    y: 30
+  hopInterval:
+    x: 2
+    y: 6
+  hopDuration: 0.25
+  hopHeight: 0.4
+  hopDistance: 0.5
+  swayAmplitude: 0.3
+  scareRadius: 12
+  panicRadius: 5
+  panicDelay: 0.25
+  takeOffUp: 8
+  takeOffOut: 6
+  takeOffDuration: 1
+  windDrift: 10
+  flapMinScale: 0.5
