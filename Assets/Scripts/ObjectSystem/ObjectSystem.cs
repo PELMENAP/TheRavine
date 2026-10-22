@@ -23,7 +23,7 @@ namespace TheRavine.ObjectControl
 
         public void SetUp(ISetAble.Callback callback)
         {
-            ServiceLocator.Services.Register(this);
+            ServiceLocator.Register(this);
 
             infoRegistry.Rebuild();
             poolManager = new PoolManager(transform);

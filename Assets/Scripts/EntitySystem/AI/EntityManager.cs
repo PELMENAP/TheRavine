@@ -83,7 +83,6 @@ public class EntityManager : MonoBehaviour
 
     private ColonyRegistry _colonies;
     public ColonyRegistry Colonies => _colonies;
-    public SharedHierarchicalBrain SharedBrain => _colonies != null && _colonies.Count > 0 ? _colonies[0].Brain : null;
 
     private InstinctSystem _instincts;
     private BoidSystem _boids;
@@ -110,12 +109,11 @@ public class EntityManager : MonoBehaviour
 
     [SerializeField] private float simulationTimeScale = 1f;
 
-    private const float TickWindowSeconds = 1f;
-
     private EntityModel[] _tickSnapshot = new EntityModel[64];
     private int _tickCount;
     private int _tickCursor;
     private int _tickBatch = 1;
+    private TickWindowBudget _tickBudget;
 
     public EntityModel GetRandomEntity()
         => _entities.Count == 0 ? null : _entities[RavineRandom.RangeInt(0, _entities.Count)];
@@ -131,7 +129,6 @@ public class EntityManager : MonoBehaviour
         _motion.Step();
     }
 
-    public NestState Nest => _colonies != null && _colonies.Count > 0 ? _colonies[0].Nest : null;
     private MovePlanner _planner;
     private float _lastEcologyTime;
     private float _lastNestTime;
@@ -155,18 +152,18 @@ public class EntityManager : MonoBehaviour
         _boids     = new BoidSystem(maxPopulation);
         _utility    = new UtilityPriorSystem(maxPopulation);
         _thresholds = new CasteThresholdSystem(maxPopulation);
-        ServiceLocator.Services.Register(_thresholds);
-        ServiceLocator.Services.Register(_grid);
-        ServiceLocator.Services.Register(_players);
+        ServiceLocator.Register(_thresholds);
+        ServiceLocator.Register(_grid);
+        ServiceLocator.Register(_players);
         _colonies = new ColonyRegistry();
         CreateColonies();
-        ServiceLocator.Services.Register(_colonies);
+        ServiceLocator.Register(_colonies);
         _planner = new MovePlanner(_motion);
         _planner.BindColonies(_colonies);
-        ServiceLocator.Services.Register(_planner);
+        ServiceLocator.Register(_planner);
         NeuralModelStorage.RegisterFactory(new SharedBrainSnapshotFactory());
         _infection = new InfectionService((uint)UnityEngine.Random.Range(1, int.MaxValue));
-        ServiceLocator.Services.Register(_infection);
+        ServiceLocator.Register(_infection);
         _tournamentRng = new XorShift32((uint)UnityEngine.Random.Range(1, int.MaxValue));
 
         if (useSavedBrain)
@@ -260,14 +257,14 @@ public class EntityManager : MonoBehaviour
     
     private async void Start()
     {
-        await UniTask.Delay(3000);
+        if (await DelaySimulation(SimulationRules.Active.StartupDelaySeconds, destroyCancellationToken)) return;
 
         var map = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
         _motion.Inject(map);
         _map = map;
 
         _foodIndex = new ChunkFoodIndex(map);
-        ServiceLocator.Services.Register(_foodIndex);
+        ServiceLocator.Register(_foodIndex);
 
         for (int i = 0; i < initialCount; i++)
         {
@@ -292,22 +289,29 @@ public class EntityManager : MonoBehaviour
     }
 
 
+    private static async UniTask<bool> DelaySimulation(float seconds, CancellationToken ct)
+    {
+        double until = SimulationClock.TimeD + seconds;
+        do
+        {
+            if (await UniTask.Yield(PlayerLoopTiming.Update, ct).SuppressCancellationThrow()) return true;
+        }
+        while (SimulationClock.TimeD < until);
+        return false;
+    }
+
     private async UniTaskVoid EntityTickLoopAsync(CancellationToken ct)
     {
-        await UniTask.Delay(3000, cancellationToken: ct);
+        if (await DelaySimulation(SimulationRules.Active.TickLoopWarmupSeconds, ct)) return;
 
         while (!ct.IsCancellationRequested)
         {
             if (_tickCursor == 0)
             {
                 RebuildTickSnapshot();
-
-                int frames = Mathf.Clamp(
-                    Mathf.CeilToInt(TickWindowSeconds / Mathf.Max(Time.smoothDeltaTime, 0.001f)),
-                    1, 240);
-
-                _tickBatch = _tickCount > 0 ? (_tickCount + frames - 1) / frames : 1;
+                _tickBatch = _tickBudget.BeginWindow(SimulationClock.TimeD, SimulationClock.DeltaTime, _tickCount);
             }
+            _tickBudget.CountFrame();
 
             if (_tickCount == 0)
             {
@@ -949,14 +953,8 @@ public class EntityManager : MonoBehaviour
 
     private float TerminalPenaltyFor(EntityModel model, DeathCause cause)
     {
-        var rules = SimulationRules.Active;
-        float basePenalty = rules.TerminalPenalty * rules.DeathPenaltyMul(cause);
-        if (!_fitnessStatsReady) return basePenalty;
-
-        float z     = (model.FinalFitness - _fitnessMedian) / _fitnessSpread;
-        float lo    = math.max(rules.TerminalPenaltyMinScale, 0f);
-        float scale = math.clamp(1f - z * rules.TerminalFitnessSensitivity, lo, math.max(lo, rules.TerminalPenaltyMaxScale));
-        return basePenalty * scale;
+        float z = _fitnessStatsReady ? (model.FinalFitness - _fitnessMedian) / _fitnessSpread : 0f;
+        return TerminalPenaltyMath.For(SimulationRules.Active, cause, _fitnessStatsReady, z);
     }
 
     [ContextMenu("Seed Random Strain")]
@@ -1026,7 +1024,7 @@ public class EntityManager : MonoBehaviour
                 _fitnessStatsReady = false;
             }
 
-            await UniTask.Delay(1000, cancellationToken: ct);
+            if (await DelaySimulation(SimulationRules.Active.FitnessStatsInterval, ct)) return;
         }
     }
 
@@ -1195,8 +1193,21 @@ public class EntityManager : MonoBehaviour
         }
     }
 
+    private void UnregisterServices()
+    {
+        var services = ServiceLocator.Services;
+        services.Unregister(_thresholds);
+        services.Unregister(_grid);
+        services.Unregister(_players);
+        services.Unregister(_colonies);
+        services.Unregister(_planner);
+        services.Unregister(_infection);
+        services.Unregister(_foodIndex);
+    }
+
     private void OnDestroy()
     {
+        UnregisterServices();
         for (int i = 0; i < _nestViews.Count; i++)
             if (_nestViews[i] != null) Destroy(_nestViews[i].gameObject);
         _nestViews.Clear();

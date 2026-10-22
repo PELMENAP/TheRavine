@@ -17,6 +17,7 @@ namespace TheRavine.Base
         [SerializeField] private bool isTest;
 
         [SerializeField] private Button toMenuPauseButton;
+        private bool _ended;
         private void Start()
         {
             toMenuPauseButton.onClick.AddListener(SwitchToMainMenu);
@@ -24,8 +25,11 @@ namespace TheRavine.Base
 
             if (isTest)
             {
-                RavineLogger logger = new RavineLogger(null);
-                ServiceLocator.Services.Register(logger);
+                if (!ServiceLocator.Services.TryGet(out RavineLogger logger))
+                {
+                    logger = new RavineLogger(null);
+                    ServiceLocator.Register(logger);
+                }
                 gameStateMachine.Initialize(logger);
                 gameStateMachine.StartGame();
 
@@ -72,10 +76,14 @@ namespace TheRavine.Base
         }
         private void InTheEnd(Action inTheEndCallback)
         {
-            gameStateMachine.BreakUpServices();
-            NetworkManager.Singleton.Shutdown();
-            ServiceLocator.ClearAll();
-            GameInitializer.Instance.InitializeServices();
+            if (!_ended)
+            {
+                _ended = true;
+                gameStateMachine.BreakUpServices();
+                if (NetworkManager.Singleton != null) NetworkManager.Singleton.Shutdown();
+                ServiceLocator.ClearAll();
+                if (GameInitializer.Instance != null) GameInitializer.Instance.InitializeServices();
+            }
             inTheEndCallback?.Invoke();
         }
 

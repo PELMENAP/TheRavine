@@ -951,6 +951,9 @@ public sealed class SimulationRules : ScriptableObject
     [SerializeField] private float terminalPenaltyMaxScale = 2f;
     [SerializeField] private int tournamentSize = 3;
     [SerializeField] private float generationInterval = 60f;
+    [SerializeField] private float startupDelaySeconds = 3f;
+    [SerializeField] private float tickLoopWarmupSeconds = 3f;
+    [SerializeField] private float fitnessStatsInterval = 1f;
     [SerializeField] private float eliteFraction = 0.1f;
     [SerializeField] private float basalEnergyDrain = 0.5f;
     [SerializeField] private float terrainBiasWeight = 0.45f;
@@ -1443,6 +1446,9 @@ public sealed class SimulationRules : ScriptableObject
     public float TerminalPenaltyMaxScale => terminalPenaltyMaxScale;
     public int TournamentSize => tournamentSize;
     public float GenerationInterval => generationInterval;
+    public float StartupDelaySeconds => startupDelaySeconds;
+    public float TickLoopWarmupSeconds => tickLoopWarmupSeconds;
+    public float FitnessStatsInterval => fitnessStatsInterval;
     public float EliteFraction => eliteFraction;
     public float BasalEnergyDrain => basalEnergyDrain;
     public float TerrainBiasWeight => terrainBiasWeight;
@@ -1933,6 +1939,14 @@ public sealed class SimulationRules : ScriptableObject
         if (table == null || table.Length == 0) return fallback;
         int i = biome < 0 ? 0 : biome & 3;
         return i < table.Length ? table[i] : fallback;
+    }
+
+    public const float LearningRateFloor = 1e-6f;
+
+    private void OnValidate()
+    {
+        if (!(minLearningRate >= LearningRateFloor)) minLearningRate = LearningRateFloor;
+        if (!(lrDecayPerSecond >= 0f)) lrDecayPerSecond = 0f;
     }
 
     private static SimulationRules _active;

@@ -278,7 +278,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
             if (item.Trained) continue;
 
             bool  last   = i == count - 1;
-            float reward = item.Evaluation + penalty * DiscountTime(gamma, deathTime - item.StartTime);
+            float reward = TerminalReward(item.Evaluation, penalty, gamma, deathTime - item.StartTime);
 
             float tdTarget;
             if (last)
@@ -555,6 +555,9 @@ public unsafe partial class DelayedPerceptron : IDisposable
 
     public static float DiscountTime(float gammaPerSecond, float seconds)
         => seconds <= 0f ? 1f : Unity.Mathematics.math.exp(Unity.Mathematics.math.log(gammaPerSecond) * seconds);
+
+    public static float TerminalReward(float evaluation, float penalty, float gammaPerSecond, float seconds)
+        => evaluation + penalty * DiscountTime(gammaPerSecond, seconds);
 
     public static float Softplus(float x)
         => x > 20f ? x : MathF.Log(1f + MathF.Exp(x));

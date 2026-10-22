@@ -122,8 +122,10 @@ namespace TheRavine.EntityControl
         } 
         public override void OnDestroy() 
         {
+            Subscriptions.Dispose();
             cameraComponent?.Dispose();
             PlayerEntity.Dispose();
+            base.OnDestroy();
         }
     }
 }

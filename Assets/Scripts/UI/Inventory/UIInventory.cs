@@ -45,7 +45,7 @@ namespace TheRavine.Inventory
             slotList.AddRange(activeCells);
 
             eventDrivenInventoryProxy = new EventDrivenInventoryProxy(slotList.Count);
-            ServiceLocator.Services.Register(eventDrivenInventoryProxy);
+            ServiceLocator.Register(eventDrivenInventoryProxy);
 
             infoManager = new InfoManager(dataItems);
             tester = new InventoryTester(slotList.ToArray(), infoManager, eventDrivenInventoryProxy);

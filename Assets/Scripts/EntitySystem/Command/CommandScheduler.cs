@@ -58,6 +58,8 @@ public class CommandScheduler
 
     public void ResetCancellation()
     {
+        var old = _cts;
         _cts = new CancellationTokenSource();
+        old?.Dispose();
     }
 }

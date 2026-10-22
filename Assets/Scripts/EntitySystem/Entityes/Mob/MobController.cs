@@ -24,7 +24,7 @@ namespace TheRavine.EntityControl
 
         public void SetUp(ISetAble.Callback callback)
         {
-            ServiceLocator.Services.Register(this);
+            ServiceLocator.Register(this);
             
             logger = ServiceLocator.GetService<RavineLogger>();
             logger.LogInfo("MobController service is available now");

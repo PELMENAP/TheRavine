@@ -33,7 +33,7 @@ namespace TheRavine.Base
         private bool wasDay;
         public void SetUp(ISetAble.Callback callback)
         {
-            ServiceLocator.Services.Register(this);
+            ServiceLocator.Register(this);
             sun = GetComponent<Light>();
             cts = new CancellationTokenSource();
 
