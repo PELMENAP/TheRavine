@@ -114,8 +114,8 @@ Material:
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _HeightBlendDepth: 0.2
-    - _MacroScale: 0.24
-    - _MacroStrength: 0.219
+    - _MacroScale: 0.2
+    - _MacroStrength: 0.4
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005

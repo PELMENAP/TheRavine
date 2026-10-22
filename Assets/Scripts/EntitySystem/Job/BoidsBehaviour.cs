@@ -27,6 +27,7 @@ namespace TheRavine.EntityControl
         private NativeArray<float2> _flockTargets, _flockAnim, _windFallback;
         private NativeArray<int> _gridCellEnd, _gridItems, _gridBucketOf;
         private int _gridMask;
+        private float _invCell;
 
         private BirdHeightField _height;
         private BirdPerchIndex _perches;
@@ -58,10 +59,12 @@ namespace TheRavine.EntityControl
 
         private void Awake() => _onMapUpdate = OnMapUpdate;
 
+#if UNITY_EDITOR
         private void Start()
         {
             if (isTest) StartBoids(transform);
         }
+#endif
 
         private void OnMapUpdate(long center) => _mapDirty = true;
 
@@ -83,6 +86,7 @@ namespace TheRavine.EntityControl
         public void StartBoids(Transform viewer)
         {
             if (boidsInfo == null || prefabs == null || prefabs.Length == 0 || prefabs.Length > byte.MaxValue) return;
+            if (boidsInfo.numberOfEntities < 0 || !(boidsInfo.CellSize > 0f)) return;
 
             CompleteJobs();
             _isUpdate = false;
@@ -94,11 +98,13 @@ namespace TheRavine.EntityControl
                 Allocate();
             }
 
-            _params = BirdParams.From(boidsInfo);
+            _params = BirdParams.From(boidsInfo, SimulationRules.Active);
+            _invCell = 1f / boidsInfo.CellSize;
             _flipRotation = quaternion.RotateY(math.radians(boidsInfo.flipYaw));
 
             ReleaseServices();
             AcquireServices();
+            ClearPerchRefs();
             RebuildWorld(ViewerXZ());
             ResetState();
             SetBirdsVisible(true);
@@ -183,6 +189,13 @@ namespace TheRavine.EntityControl
 
             _birdsVisible = true;
             _transformAccessArray = new TransformAccessArray(_transforms);
+
+#if UNITY_EDITOR
+            Debug.Assert(_flockStart[flocks] == _count && _transformAccessArray.length == _count, "Boids: SoA size mismatch");
+            for (int f = 0; f < flocks; f++)
+                for (int i = _flockStart[f]; i < _flockStart[f + 1]; i++)
+                    Debug.Assert(_flock[i] == f, "Boids: flock range mismatch");
+#endif
         }
 
         private void AcquireServices()
@@ -220,6 +233,11 @@ namespace TheRavine.EntityControl
             _mapDirty = false;
         }
 
+        private void ClearPerchRefs()
+        {
+            for (int i = 0; i < _count; i++) _perchRef[i] = BirdState.PerchNone;
+        }
+
         private void ResetState()
         {
             for (int f = 0; f < _flockTargets.Length; f++)
@@ -249,7 +267,6 @@ namespace TheRavine.EntityControl
                 _aux[i] = 0f;
                 _duration[i] = 1f;
                 _panic[i] = BirdState.PanicNone;
-                _perchRef[i] = BirdState.PerchNone;
                 _flip[i] = 0;
                 _frameKey[i] = -1;
 
@@ -292,7 +309,6 @@ namespace TheRavine.EntityControl
             uint seed = (uint)RavineRandom.RangeInt(1, int.MaxValue);
             BirdHeightSampler height = _height.Sampler;
             BirdPerchGrid trees = _perches.Grid;
-            float invCell = 1f / boidsInfo.CellSize;
 
             JobHandle slot = new BirdSlotJob
             {
@@ -323,7 +339,7 @@ namespace TheRavine.EntityControl
                 Items = _gridItems,
                 BucketOf = _gridBucketOf,
                 Mask = _gridMask,
-                InvCell = invCell
+                InvCell = _invCell
             }.Schedule();
 
             JobHandle accel = new AccelerationJob
@@ -337,7 +353,7 @@ namespace TheRavine.EntityControl
                 FlockTargets = _flockTargets,
                 Acc = _acc,
                 Panic = _panic,
-                Grid = new BirdGrid { CellEnd = _gridCellEnd, Items = _gridItems, Mask = _gridMask, InvCell = invCell },
+                Grid = new BirdGrid { CellEnd = _gridCellEnd, Items = _gridItems, Mask = _gridMask, InvCell = _invCell },
                 Trees = trees,
                 Height = height,
                 Wind = wind,
@@ -401,8 +417,30 @@ namespace TheRavine.EntityControl
         {
             if (!_scheduled) return;
             CompleteJobs();
+#if UNITY_EDITOR
+            ValidatePerches();
+#endif
             UpdateAnimation();
         }
+
+#if UNITY_EDITOR
+        private void ValidatePerches()
+        {
+            NativeArray<TreePerch> trees = _perches.Trees;
+            int held = 0;
+            for (int i = 0; i < _count; i++)
+            {
+                int r = _perchRef[i];
+                if (r < 0) continue;
+                int t = r >> BirdState.SlotShift;
+                Debug.Assert(t < trees.Length && (trees[t].Slots & (1ul << (r & BirdState.SlotMask))) != 0, "Boids: perch ref without slot");
+                held++;
+            }
+            int used = 0;
+            for (int t = 0; t < trees.Length; t++) used += math.countbits(trees[t].Slots);
+            Debug.Assert(used == held, "Boids: perch slot count mismatch");
+        }
+#endif
 
         private void UpdateAnimation()
         {

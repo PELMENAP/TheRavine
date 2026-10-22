@@ -161,7 +161,7 @@ namespace TheRavine.EntityControl
                 int slot = r & BirdState.SlotMask;
                 int t = old < Previous.Length ? Grid.FindExact(Previous[old].Xz) : -1;
 
-                if (t >= 0)
+                if (t >= 0 && (Trees[t].Slots & (1ul << slot)) == 0)
                 {
                     TreePerch tree = Trees[t];
                     tree.Slots |= 1ul << slot;

@@ -31,6 +31,7 @@ namespace TheRavine.EntityControl
         private Dictionary<int, EntityInfo> mobInfo;
         public EntityInfo GetMobInfo(int id) => mobInfo[id];
         private RavineLogger logger;
+        private System.IDisposable playersSubscription;
         public void SetUp(ISetAble.Callback callback)
         {
             ServiceLocator.Register(this);
@@ -41,7 +42,8 @@ namespace TheRavine.EntityControl
             global  = new List<AEntity>();
             mobInfo = new Dictionary<int, EntityInfo>(4);
 
-            ServiceLocator.WhenPlayersNonEmpty()
+            playersSubscription?.Dispose();
+            playersSubscription = ServiceLocator.WhenPlayersNonEmpty()
                 .Subscribe(_ =>
                 {
                     SetUpBoids(ServiceLocator.Players.GetAllPlayersTransform());
@@ -73,6 +75,8 @@ namespace TheRavine.EntityControl
 
         public void OnDestroy()
         {
+            playersSubscription?.Dispose();
+            playersSubscription = null;
             global?.Clear();
         }
     }
