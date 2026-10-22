@@ -216,7 +216,7 @@ public class EntityManager : MonoBehaviour
     [ContextMenu("Load Brain")]
     private void LoadBrain() => LoadBrainAsync().Forget();
 
-    private string ColonyModelName(ColonyState colony) => $"{savedModelName}_c{colony.ColonyId}";
+    private string ColonyModelName(ColonyState colony) => NeuralModelStorage.ColonyFileName(savedModelName, colony.ColonyId);
 
     private async UniTaskVoid SaveBestBrainAsync()
     {
@@ -235,7 +235,8 @@ public class EntityManager : MonoBehaviour
         for (int c = 0; c < _colonies.Count; c++)
         {
             var colony   = _colonies[c];
-            var snapshot = await NeuralModelStorage.LoadAsync<SharedBrainSnapshot>(ColonyModelName(colony), destroyCancellationToken);
+            string file  = ColonyModelName(colony);
+            var snapshot = await NeuralModelStorage.LoadAsync<SharedBrainSnapshot>(file, destroyCancellationToken);
             var brain    = snapshot != null
                 ? SharedHierarchicalBrain.FromSnapshot(snapshot, InputVectorizer.VectorSize, lstmHidden)
                 : null;
@@ -248,10 +249,15 @@ public class EntityManager : MonoBehaviour
                     fallback = shared != null
                         ? SharedHierarchicalBrain.FromSnapshot(shared, InputVectorizer.VectorSize, lstmHidden)
                         : null;
-                    if (fallback == null) continue;
+                    if (fallback == null)
+                    {
+                        RavineLog.Warning($"Колония {colony.ColonyId}: снапшот {file} не загружен, используется новый мозг");
+                        continue;
+                    }
                     brain = fallback;
                 }
                 else brain = new SharedHierarchicalBrain(fallback);
+                RavineLog.Warning($"Колония {colony.ColonyId}: снапшот {file} не загружен, взят общий {savedModelName}");
             }
 
             if (!ReferenceEquals(brain, colony.Brain)) ApplyLoadedBrain(colony, brain);

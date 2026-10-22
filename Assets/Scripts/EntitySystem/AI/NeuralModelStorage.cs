@@ -18,6 +18,17 @@ public interface INeuralModelFactory<out T> where T : ISerializableNeuralModel
 public static class NeuralModelStorage
 {
     private const string DefaultModelsDirectory = "NeuralModels";
+    private const string ColonySuffix = "_c";
+
+    public static string ColonyFileName(string baseName, int colonyId) => $"{baseName}{ColonySuffix}{colonyId}";
+
+    public static bool TryParseColonyId(string fileName, out int colonyId)
+    {
+        colonyId = -1;
+        if (string.IsNullOrEmpty(fileName)) return false;
+        int at = fileName.LastIndexOf(ColonySuffix, StringComparison.Ordinal);
+        return at >= 0 && int.TryParse(fileName.AsSpan(at + ColonySuffix.Length), out colonyId) && colonyId > 0;
+    }
     private static readonly Dictionary<Type, object> _factories = new Dictionary<Type, object>();
     
     public static void RegisterFactory<T>(INeuralModelFactory<T> factory) where T : ISerializableNeuralModel
@@ -233,10 +244,12 @@ public static class NeuralModelStorage
             return null;
         
         var fileInfo = new FileInfo(path);
+        TryParseColonyId(fileName, out int colonyId);
         return new ModelInfo
         {
             Name = fileName,
             Type = modelType,
+            ColonyId = colonyId,
             Size = fileInfo.Length,
             CreatedTime = fileInfo.CreationTime,
             ModifiedTime = fileInfo.LastWriteTime

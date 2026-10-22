@@ -16,8 +16,7 @@ public static class ServiceLocator
         string message = service == null
             ? $"ServiceLocator: отказ регистрации {typeof(T).Name}: сервис null"
             : $"ServiceLocator: отказ регистрации {typeof(T).Name}: тип уже зарегистрирован";
-        if (RavineLog.IsInitialized) RavineLog.Error(message);
-        else UnityEngine.Debug.LogError(message);
+        RavineLog.Error(message);
         return false;
     }
 

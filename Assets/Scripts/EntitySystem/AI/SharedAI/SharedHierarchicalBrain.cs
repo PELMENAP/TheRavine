@@ -804,7 +804,7 @@ public class SharedHierarchicalBrain : IDisposable
     {
         if (reservoir == null || coordinator == null || executors == null || executors.Length != GoalCount)
         {
-            Debug.LogError("Снапшот мозга некорректен: состав моделей не совпадает");
+            RavineLog.Error("Снапшот мозга некорректен: состав моделей не совпадает, загрузка отменена");
             return null;
         }
 
@@ -812,7 +812,7 @@ public class SharedHierarchicalBrain : IDisposable
         {
             if (executors[i] == null)
             {
-                Debug.LogError($"Снапшот мозга некорректен: exec-модель {i} отсутствует");
+                RavineLog.Error($"Снапшот мозга некорректен: exec-модель {i} отсутствует, загрузка отменена");
                 return null;
             }
 
@@ -821,7 +821,7 @@ public class SharedHierarchicalBrain : IDisposable
             int expected = ActionSubsets[i].Length + 1 + ExecAux(i);
             if (actual != expected)
             {
-                Debug.LogError($"Снапшот мозга несовместим: exec {i} имеет {actual} выходов, ожидалось {expected} (directional head)");
+                RavineLog.Error($"Снапшот мозга несовместим: exec {i} имеет {actual} выходов, ожидалось {expected}, загрузка отменена; инкрементируйте SharedBrainSnapshot.Version при изменении выходов");
                 return null;
             }
         }
@@ -844,8 +844,9 @@ public class SharedHierarchicalBrain : IDisposable
 
         if (!snapshot.Brain.MatchesArchitecture(inputSize, lstmHidden))
         {
-            Debug.LogError($"Архитектура снапшота ({snapshot.Brain.InputSize}/{snapshot.Brain.LstmHidden}) " +
-                           $"не совпадает с текущей ({inputSize}/{lstmHidden})");
+            RavineLog.Error($"Архитектура снапшота ({snapshot.Brain.InputSize}/{snapshot.Brain.LstmHidden}) " +
+                            $"не совпадает с текущей ({inputSize}/{lstmHidden}), загрузка отменена");
+            snapshot.Brain.Dispose();
             return null;
         }
 
