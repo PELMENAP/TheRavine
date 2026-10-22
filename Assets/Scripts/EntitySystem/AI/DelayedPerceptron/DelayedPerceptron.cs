@@ -163,7 +163,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
         var outAct      = ctx.Activation(lay.L);
         int actionCount = lay.ActionCount;
 
-        float entropyBoost = 1f + MathF.Max(0f, 1.5f - ctx.AverageEntropy);
+        float entropyBoost = 1f + MathF.Max(0f, rules.ExplorationEntropyTarget - ctx.AverageEntropy);
         float adaptiveEpsilon = MathF.Max(rules.MinEpsilon,
             epsilon * rules.ExplorationEpsilonScale * entropyBoost * decay);
         if (adaptiveEpsilon > 1f) adaptiveEpsilon = 1f;
@@ -271,6 +271,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
         var ring  = ctx.Decisions;
         int count = ring.Count;
         int replayFrom = count - replayCount;
+        float minAdvantage = SimulationRules.Frame.MinTrainAdvantage;
 
         for (int i = 0; i < count; i++)
         {
@@ -302,7 +303,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
             ctx.Diagnostics.RecordCriticError(advantage);
 
             item.Trained = true;
-            if (MathF.Abs(advantage) <= 0.05f) continue;
+            if (MathF.Abs(advantage) <= minAdvantage) continue;
 
             if (i < replayFrom)
             {
@@ -336,7 +337,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
         ctx.Diagnostics.RecordCriticError(advantage);
 
         delayed.Trained = true;
-        if (MathF.Abs(advantage) > 0.05f)
+        if (MathF.Abs(advantage) > SimulationRules.Frame.MinTrainAdvantage)
             EnqueueTraining(delayed, advantage, ctx);
     }
 

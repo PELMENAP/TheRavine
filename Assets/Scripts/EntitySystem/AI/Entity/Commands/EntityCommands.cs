@@ -107,7 +107,7 @@ public abstract class PlannedMoveCommand : EntityCommand
     {
         _pausing = false;
         float remaining = math.max(0f, decision.EndTime - SimulationClock.Time);
-        float travel    = radius / math.max(speed * model.SpeedMul, 0.1f) * SimulationRules.Frame.LegTimeSlack;
+        float travel    = radius / math.max(speed * model.SpeedMul, SimulationRules.Frame.TimingMinSpeed) * SimulationRules.Frame.LegTimeSlack;
         if (travel > remaining)
         {
             remaining = travel;
@@ -338,7 +338,7 @@ public class FleeCommand : PlannedMoveCommand
 
     protected override EntityCommandStatus OnArrived(in MoveResult move)
     {
-        if (++_leg >= _legs || _legLength <= 0.5f) return Complete();
+        if (++_leg >= _legs || _legLength <= SimulationRules.Frame.FleeMinLegLength) return Complete();
 
         var r = SimulationRules.Active;
         float2 self = model.Position2D;
@@ -703,7 +703,7 @@ public class ThreatenCommand : EntityCommand
         _facing = to;
         float2 step = self + to * r.ThreatenStepDistance;
         StartMove(Extension.ToWorld(in step, model.Motor.Position().y), model.Tuning.MoveSpeed,
-            (float)math.max(_holdEnd - SimulationClock.TimeD, 0.05), model.Tuning.EnergyCostMoving);
+            (float)math.max(_holdEnd - SimulationClock.TimeD, r.ThreatenMinHoldSeconds), model.Tuning.EnergyCostMoving);
     }
 
     protected override void OnCancel() => _target = default;
@@ -719,9 +719,9 @@ public class ShareFoodCommand : EntityCommand
         var r = SimulationRules.Active;
         bool troph = Source == CommandSource.Instinct;
         var victim = troph
-            ? model.FindHungriestKin(r.EatRange * 2f)
-            : model.Caste == Caste.Nurse ? model.FindNearbyJuvenile(r.EatRange * 2f) ?? model.CachedNearest : model.CachedNearest;
-        if (victim == null || math.distance(model.Position2D, victim.Position2D) > r.EatRange * 2f) return Fail();
+            ? model.FindHungriestKin(r.EatRange * r.KinSearchRangeMul)
+            : model.Caste == Caste.Nurse ? model.FindNearbyJuvenile(r.EatRange * r.KinSearchRangeMul) ?? model.CachedNearest : model.CachedNearest;
+        if (victim == null || math.distance(model.Position2D, victim.Position2D) > r.EatRange * r.KinSearchRangeMul) return Fail();
 
         float own   = model.Stats.En / model.Stats.MaxEnergy;
         float their = victim.Stats.En / victim.Stats.MaxEnergy;
@@ -767,7 +767,7 @@ public class AttackCommand : EntityCommand
         get
         {
             var r = SimulationRules.Active;
-            float dash = r.DashDistance / math.max(model.Tuning.RunSpeed * r.DashMul * model.SpeedMul, 0.1f);
+            float dash = r.DashDistance / math.max(model.Tuning.RunSpeed * r.DashMul * model.SpeedMul, r.TimingMinSpeed);
             return r.AttackMoveMaxDuration + dash + 2f * r.DashRecovery;
         }
     }
@@ -841,7 +841,7 @@ public class AttackCommand : EntityCommand
         _phase = Phase.Dash;
 
         float speed = model.Tuning.RunSpeed * r.DashMul;
-        StartMove(_target.Position, speed, r.DashDistance / math.max(speed * model.SpeedMul, 0.1f) + r.DashRecovery,
+        StartMove(_target.Position, speed, r.DashDistance / math.max(speed * model.SpeedMul, r.TimingMinSpeed) + r.DashRecovery,
             model.Tuning.EnergyCostRunning);
         return EntityCommandStatus.Running;
     }
@@ -947,7 +947,7 @@ public class GroomCommand : EntityCommand
     protected override EntityCommandStatus OnBegin()
     {
         var r = SimulationRules.Active;
-        var patient = model.FindSickestKin(r.EatRange * 2f, r.GroomMinLoad);
+        var patient = model.FindSickestKin(r.EatRange * r.KinSearchRangeMul, r.GroomMinLoad);
         if (patient == null) return Fail();
 
         model.Motor.Stop();

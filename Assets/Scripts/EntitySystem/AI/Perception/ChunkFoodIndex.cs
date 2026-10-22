@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Mathematics;
+using Unity.Profiling;
 using TheRavine.Extensions;
 using TheRavine.Generator;
 using TheRavine.EntityControl.Virology;
@@ -59,6 +60,32 @@ public sealed class ChunkFoodIndex
         public float Fertility = -1f;
         public float GrowthBudget;
         public float MaturityBudget;
+
+        public void Reset()
+        {
+            System.Array.Clear(Rows, 0, Rows.Length);
+            System.Array.Clear(Infected, 0, Infected.Length);
+            System.Array.Clear(Maturity, 0, Maturity.Length);
+            Count          = 0;
+            BuiltVersion   = -1;
+            Source         = null;
+            Fertility      = -1f;
+            GrowthBudget   = 0f;
+            MaturityBudget = 0f;
+        }
+    }
+
+    private FoodChunk[] _freeChunks = new FoodChunk[8];
+    private int _freeChunkCount;
+
+    private FoodChunk RentChunk()
+        => _freeChunkCount > 0 ? _freeChunks[--_freeChunkCount] : new FoodChunk();
+
+    private void ReturnChunk(FoodChunk fc)
+    {
+        fc.Reset();
+        if (_freeChunkCount == _freeChunks.Length) System.Array.Resize(ref _freeChunks, _freeChunks.Length << 1);
+        _freeChunks[_freeChunkCount++] = fc;
     }
 
     private struct LargeClaim
@@ -78,16 +105,20 @@ public sealed class ChunkFoodIndex
                       Position2Int.GetY(cell) * MapGenerator.scale + HalfCell);
 
     public static long CellOf(float wx, float wz)
-        => Position2Int.Pack(Mathf.FloorToInt(wx * InvScale), Mathf.FloorToInt(wz * InvScale));
+        => Position2Int.Pack((int)math.floor(wx * InvScale), (int)math.floor(wz * InvScale));
 
     private FoodChunk Resolve(long chunkKey, out ChunkData cd)
     {
         if (!_map.TryGetChunk(chunkKey, out cd) || cd == null)
         {
-            if (_chunks.TryRemove(chunkKey, out FoodChunk stale) && stale.Count != 0)
+            if (_chunks.TryRemove(chunkKey, out FoodChunk stale))
             {
-                FoodCount -= stale.Count;
-                Revision++;
+                if (stale.Count != 0)
+                {
+                    FoodCount -= stale.Count;
+                    Revision++;
+                }
+                ReturnChunk(stale);
             }
             cd = null;
             return null;
@@ -95,7 +126,7 @@ public sealed class ChunkFoodIndex
 
         if (!_chunks.TryGetValue(chunkKey, out FoodChunk fc))
         {
-            fc = new FoodChunk();
+            fc = RentChunk();
             _chunks[chunkKey] = fc;
         }
 
@@ -154,6 +185,7 @@ public sealed class ChunkFoodIndex
         {
             if (!_chunks.TryRemove(_pruneKeys[i], out FoodChunk fc)) continue;
             removed += fc.Count;
+            ReturnChunk(fc);
         }
 
         if (removed != 0)
@@ -168,9 +200,12 @@ public sealed class ChunkFoodIndex
         if (_pruneKeys.Length < count) _pruneKeys = new long[math.ceilpow2(count)];
     }
 
+    private static readonly ProfilerMarker FindFoodMarker = new("ChunkFoodIndex.TryFindNearestFood");
+
     public bool TryFindNearestFood(float worldX, float worldZ, float radiusWorld,
         out long worldCell, out float distance, int excludeColony = 0)
     {
+        using var scope = FindFoodMarker.Auto();
         bool filter = excludeColony != 0 && _taboo.Count > 0;
         worldCell = 0L;
         distance  = -1f;
@@ -179,10 +214,10 @@ public sealed class ChunkFoodIndex
 
         float r2 = radiusWorld * radiusWorld;
 
-        int minCellX = Mathf.FloorToInt((worldX - radiusWorld) * InvScale);
-        int maxCellX = Mathf.FloorToInt((worldX + radiusWorld) * InvScale);
-        int minCellZ = Mathf.FloorToInt((worldZ - radiusWorld) * InvScale);
-        int maxCellZ = Mathf.FloorToInt((worldZ + radiusWorld) * InvScale);
+        int minCellX = (int)math.floor((worldX - radiusWorld) * InvScale);
+        int maxCellX = (int)math.floor((worldX + radiusWorld) * InvScale);
+        int minCellZ = (int)math.floor((worldZ - radiusWorld) * InvScale);
+        int maxCellZ = (int)math.floor((worldZ + radiusWorld) * InvScale);
 
         int minChunkX = minCellX >> ChunkShift, maxChunkX = maxCellX >> ChunkShift;
         int minChunkZ = minCellZ >> ChunkShift, maxChunkZ = maxCellZ >> ChunkShift;
@@ -241,7 +276,7 @@ public sealed class ChunkFoodIndex
         if (!found) return false;
 
         worldCell = bestCell;
-        distance  = Mathf.Sqrt(bestSqr);
+        distance  = math.sqrt(bestSqr);
         return true;
     }
 
@@ -392,8 +427,8 @@ public sealed class ChunkFoodIndex
     {
         if (_map == null || source.Codons == null || source.Count <= 0 || maxCells <= 0) return 0;
 
-        int cx = Mathf.FloorToInt(position.x * InvScale);
-        int cz = Mathf.FloorToInt(position.y * InvScale);
+        int cx = (int)math.floor(position.x * InvScale);
+        int cz = (int)math.floor(position.y * InvScale);
         int infected = 0;
 
         for (int dz = -radiusCells; dz <= radiusCells; dz++)
@@ -433,8 +468,8 @@ public sealed class ChunkFoodIndex
             return false;
         }
 
-        int cx = Mathf.FloorToInt(position.x * InvScale);
-        int cz = Mathf.FloorToInt(position.y * InvScale);
+        int cx = (int)math.floor(position.x * InvScale);
+        int cz = (int)math.floor(position.y * InvScale);
         int search = math.max(0, SimulationRules.Active.CorpseSearchCells);
 
         for (int ring = 0; ring <= search; ring++)

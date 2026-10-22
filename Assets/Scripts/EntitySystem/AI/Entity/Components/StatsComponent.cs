@@ -1,10 +1,9 @@
-using R3;
+using System;
 using Unity.Mathematics;
 
 public class StatsComponent : IComponent
 {
-    public ReactiveProperty<float> Health { get; private set; }
-    public ReactiveProperty<float> Energy { get; private set; }
+    public event Action HealthDepleted;
     public float MaxHealth { get; private set; }
     public float MaxEnergy { get; private set; }
 
@@ -13,18 +12,27 @@ public class StatsComponent : IComponent
     private bool _open;
     private float _hp;
     private float _en;
+    private float _health;
+    private float _energy;
     public bool IsDisposed { get; private set; }
 
     public float Hp
     {
-        get => _open ? _hp : Health.Value;
-        set { if (_open) _hp = value; else Health.Value = value; }
+        get => _open ? _hp : _health;
+        set { if (_open) _hp = value; else SetHealth(value); }
     }
 
     public float En
     {
-        get => _open ? _en : Energy.Value;
-        set { if (_open) _en = value; else Energy.Value = value; }
+        get => _open ? _en : _energy;
+        set { if (_open) _en = value; else _energy = value; }
+    }
+
+    private void SetHealth(float value)
+    {
+        if (value == _health) return;
+        _health = value;
+        if (value <= 0f) HealthDepleted?.Invoke();
     }
 
     public void FillComponent(float maxHealth, float maxEnergy)
@@ -33,8 +41,8 @@ public class StatsComponent : IComponent
         _filled = true;
         MaxHealth = maxHealth;
         MaxEnergy = maxEnergy;
-        Health = new ReactiveProperty<float>(maxHealth * 0.5f);
-        Energy = new ReactiveProperty<float>(maxEnergy * 0.5f);
+        _health = maxHealth * 0.5f;
+        _energy = maxEnergy * 0.5f;
     }
 
     public void Rescale(float maxHealth, float maxEnergy)
@@ -51,8 +59,8 @@ public class StatsComponent : IComponent
     public void Open()
     {
         if (_open || IsDisposed || !_filled) return;
-        _hp   = Health.Value;
-        _en   = Energy.Value;
+        _hp   = _health;
+        _en   = _energy;
         _open = true;
     }
 
@@ -61,8 +69,8 @@ public class StatsComponent : IComponent
         if (!_open) return;
         _open = false;
         if (IsDisposed) return;
-        if (_en != Energy.Value) Energy.Value = _en;
-        if (_hp != Health.Value) Health.Value = _hp;
+        _energy = _en;
+        SetHealth(_hp);
     }
 
     public void Tick(float deltaTime, float movementEnergy, float metabolismMultiplier, float basalDrain,
@@ -100,7 +108,6 @@ public class StatsComponent : IComponent
         if (IsDisposed) return;
         IsDisposed = true;
         _open = false;
-        Health?.Dispose();
-        Energy?.Dispose();
+        HealthDepleted = null;
     }
 }

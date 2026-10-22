@@ -126,17 +126,21 @@ public class TerminalPenaltyTests
     public void LearningRateIsAlwaysPositive()
     {
         float[] times  = { 0f, 1f, 1e3f, 1e6f, 1e9f };
+        float[] bases  = { -1f, 0f, 0.01f };
         float[] decays = { -1f, 0f, 5e-4f, 1f, 1e3f };
         float[] mins   = { -1f, 0f, 1e-9f, 1e-3f };
 
         foreach (float t in times)
+        foreach (float b in bases)
         foreach (float d in decays)
         foreach (float m in mins)
         {
-            float lr = SharedHierarchicalBrain.ResolveLearningRate(t, d, m);
-            Assert.Greater(lr, 0f, $"t={t}, decay={d}, min={m}");
-            Assert.IsTrue(float.IsFinite(lr), $"t={t}, decay={d}, min={m}");
+            float lr = SharedHierarchicalBrain.ResolveLearningRate(t, b, d, m);
+            Assert.Greater(lr, 0f, $"t={t}, base={b}, decay={d}, min={m}");
+            Assert.IsTrue(float.IsFinite(lr), $"t={t}, base={b}, decay={d}, min={m}");
         }
+
+        Assert.AreEqual(0.01f, SharedHierarchicalBrain.ResolveLearningRate(0f, 0.01f, 5e-4f, 1e-3f));
     }
 
     [Test]
@@ -147,6 +151,7 @@ public class TerminalPenaltyTests
             string path = AssetDatabase.GUIDToAssetPath(guid);
             var rules = AssetDatabase.LoadAssetAtPath<SimulationRules>(path);
             Assert.Greater(rules.MinLearningRate, 0f, path);
+            Assert.Greater(rules.OptimizerBaseLearningRate, 0f, path);
             Assert.GreaterOrEqual(rules.LrDecayPerSecond, 0f, path);
         }
     }

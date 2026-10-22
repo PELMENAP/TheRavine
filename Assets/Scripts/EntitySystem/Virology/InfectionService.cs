@@ -8,8 +8,6 @@ namespace TheRavine.EntityControl.Virology
     {
         public const int MaxNeighbors = 16;
         public const int PayloadCapacity = 96;
-        public const float AccuracyBias = 1.35f;
-        public const float RecombinationChance = 0.35f;
         private ushort[] _payload;
         private ushort[] _mutated;
         private XorShift32 _rng;
@@ -28,7 +26,6 @@ namespace TheRavine.EntityControl.Virology
             _created = true;
         }
 
-        public const float SelectionFloor = 0.05f;
         public void ProcessSpread(EntityModel[] batch, int start, int end)
         {
             if (!_created || batch == null) return;
@@ -73,7 +70,8 @@ namespace TheRavine.EntityControl.Virology
                 ? math.saturate(donor.Stats.Hp / donor.Stats.MaxHealth)
                 : 0f;
 
-            float chance = math.saturate(amp * AccuracyBias) * math.max(hostViability, SelectionFloor);
+            ref readonly var rules = ref SimulationRules.Frame;
+            float chance = math.saturate(amp * rules.InfectionAccuracyBias) * math.max(hostViability, rules.InfectionSelectionFloor);
             if (ViralMutator.NextUnit(ref _rng) > chance) { FailedAttempts++; return; }
 
             if (!Deliver(donor, virology, donorIndex, target)) return;
@@ -130,7 +128,7 @@ namespace TheRavine.EntityControl.Virology
             int count = math.min(payload.Count, PayloadCapacity);
             Array.Copy(payload.Codons, _payload, count);
 
-            int mutated = ViralMutator.Transmit(_payload, 0, count, _mutated, ViralMutator.BaseMutationRate, ref _rng);
+            int mutated = ViralMutator.Transmit(_payload, 0, count, _mutated, SimulationRules.Frame.BaseMutationRate, ref _rng);
             if (mutated <= 0) return false;
 
             return Insert(receiver.Virology, mutated, payload.LineageId);
@@ -157,7 +155,7 @@ namespace TheRavine.EntityControl.Virology
 
             if (receiver.HasStrain(strainId, out int existing))
             {
-                receiver.ReinforceSegment(existing, VirologyComponent.SuperinfectionBoost);
+                receiver.ReinforceSegment(existing, SimulationRules.Frame.SuperinfectionBoost);
                 SuperinfectionBlocks++;
                 return false;
             }
@@ -165,7 +163,7 @@ namespace TheRavine.EntityControl.Virology
             ulong signature = Segment.ComputeSignature(_mutated, 0, mutatedCount);
 
             if (receiver.TryFindLineageMatch(signature, strainId, out int partner)
-                && ViralMutator.NextUnit(ref _rng) < RecombinationChance)
+                && ViralMutator.NextUnit(ref _rng) < SimulationRules.Frame.RecombinationChance)
             {
                 bool ok = Recombine(receiver, partner, mutatedCount);
                 if (ok) Recombinations++;
@@ -263,7 +261,7 @@ namespace TheRavine.EntityControl.Virology
 
         private EntityModel SelectTarget(EntityModel donor, int found, float amp)
         {
-            if (amp >= 0.5f)
+            if (amp >= SimulationRules.Frame.InfectionTargetedAmp)
             {
                 EntityModel best = null;
                 float minD = float.MaxValue;

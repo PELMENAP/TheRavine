@@ -256,8 +256,7 @@ public class EntityModel : AEntity, IFoodReceiver
         Tuning = tuning;
         Stats.Rescale(tuning.MaxHealth, tuning.MaxEnergy);
         Digestion.Resize(tuning.MaxEnergy * SimulationRules.Active.StomachCapacityFraction);
-        if (_vecMaxHealth != null) _vecMaxHealth.Value = tuning.MaxHealth;
-        if (_vecMaxEnergy != null) _vecMaxEnergy.Value = tuning.MaxEnergy;
+        Vectorizer?.SetMaxima(tuning.MaxHealth, tuning.MaxEnergy);
         Brain.Context.CasteMask = ActionCatalog.CasteActionMask(caste);
     }
     public InfectionService Infection { get; private set; }
@@ -374,7 +373,7 @@ public class EntityModel : AEntity, IFoodReceiver
             ref readonly var r = ref SimulationRules.Frame;
             float lethargy = Virology != null ? Virology.Modifiers.Lethargy : 0f;
             float mul = (1f - lethargy * r.LethargySlow) * (Carrying > 0f ? r.CarrySpeedMul : 1f);
-            return math.max(mul, 0.1f);
+            return math.max(mul, r.MinSpeedMul);
         }
     }
 
@@ -386,8 +385,6 @@ public class EntityModel : AEntity, IFoodReceiver
     public float EffectiveEnergyNorm
         => (Stats.En + (Digestion != null ? Digestion.Stomach : 0f) * SimulationRules.Frame.DigestEffActive) / Stats.MaxEnergy;
 
-    private R3.ReactiveProperty<float> _vecMaxHealth;
-    private R3.ReactiveProperty<float> _vecMaxEnergy;
 
     private TerrainSensor _terrain;
     private ChunkFoodIndex _foodIndex;
@@ -553,7 +550,7 @@ public class EntityModel : AEntity, IFoodReceiver
         _runner = new EntityCommandRunner(this);
         _plan   = new PlanRunner(this);
 
-        AddComponentToEntity(new MortalityComponent(Stats.Health));
+        AddComponentToEntity(new MortalityComponent(Stats));
         Mortality = GetEntityComponent<MortalityComponent>();
         Mortality.Died += () =>
         {
@@ -565,9 +562,7 @@ public class EntityModel : AEntity, IFoodReceiver
         float startHealth = colony.IsWild ? tuning.MaxHealth : tuning.MaxHealth * rulesA.JuvenileHealthMul;
         if (!colony.IsWild) Stats.Rescale(startHealth, tuning.MaxEnergy);
 
-        _vecMaxHealth = new R3.ReactiveProperty<float>(startHealth);
-        _vecMaxEnergy = new R3.ReactiveProperty<float>(tuning.MaxEnergy);
-        Vectorizer = new InputVectorizer(_vecMaxHealth, _vecMaxEnergy);
+        Vectorizer = new InputVectorizer(startHealth, tuning.MaxEnergy);
 
         Virology = GetOrCreateEntityComponent<VirologyComponent>();
         uint seed = (uint)RavineRandom.RangeInt(1, int.MaxValue);
@@ -620,20 +615,15 @@ public class EntityModel : AEntity, IFoodReceiver
     private bool IsAliveForTick()
         => !IsDeathPending && !IsDisposed && !Stats.IsDisposed && Stats.Hp > 0f;
 
+    private static readonly Unity.Profiling.ProfilerMarker PerceptionMarker = new("EntityModel.Perception");
+
     private bool  _cycleActive;
     private float _cycleNow;
     private float _cycleDt;
 
     public bool CycleActive => _cycleActive;
 
-    public override void UpdateEntityCycle()
-    {
-        Brain.BeginBatch();
-        if (!BeginCycle()) return;
-        SubmitDecision(true);
-        Brain.RunBatch();
-        EndCycle();
-    }
+    public override void UpdateEntityCycle() { }
 
     public void SubmitDecision(bool allowDecision)
     {
@@ -647,7 +637,7 @@ public class EntityModel : AEntity, IFoodReceiver
 
         if (IsDisposed || IsDeathPending) return false;
         if (!IsActive.Value) return false;
-        if (Stats.IsDisposed || Stats.Health.Value <= 0f) return false;
+        if (Stats.IsDisposed || Stats.Hp <= 0f) return false;
 
         Stats.Open();
         bool ok = RunCycle();
@@ -662,7 +652,7 @@ public class EntityModel : AEntity, IFoodReceiver
         double nowD = SimulationClock.TimeD;
         float  dt   = (float)(nowD - _lastCycleTime);
         _lastCycleTime = nowD;
-        if (dt <= 0f) dt = 1f / 60f;
+        if (dt <= 0f) dt = rules.CycleFallbackDt;
         if (dt > rules.MaxCycleDt) dt = rules.MaxCycleDt;
         float now = (float)nowD;
 
@@ -704,8 +694,9 @@ public class EntityModel : AEntity, IFoodReceiver
 
         Vector3 pos  = Motor.Position();
         float2  self = new float2(pos.x, pos.z);
-        float detect = Tuning.DetectionRadius * math.max(0.1f, 1f - mods.Blind * rules.BlindStrength);
+        float detect = Tuning.DetectionRadius * math.max(rules.BlindMinDetectionFraction, 1f - mods.Blind * rules.BlindStrength);
 
+        PerceptionMarker.Begin();
         _nearest = Perception.FindNearestEntity(pos, this, detect, out _nearestDistance);
         _crowd   = CountAndRelease(Perception.FindEntitiesInRadius(pos, this, rules.CrowdRadius, Neighbors), Colony, out _kinCrowd);
 
@@ -736,6 +727,7 @@ public class EntityModel : AEntity, IFoodReceiver
         _playerValid = _players != null
             && _players.TryFindNearest(self, detect, out _playerPos, out _playerDistance, out _playerTransform);
         if (!_playerValid) _playerTransform = null;
+        PerceptionMarker.End();
         _nestFood = ComputeNestFood(nest, in rules);
         UpdateTerritory(nest, in self, dt, in rules);
         if (!IsWild) ComputeDirections(nest, in self, in foodPos, in rules);
@@ -1298,7 +1290,7 @@ public class EntityModel : AEntity, IFoodReceiver
                 SetDirection(DirectionKind.Migration, math.normalizesafe(nest.Migration), r.MigrateLegRadius);
         }
 
-        if (_flock.Neighbors > 0) SetDirection(DirectionKind.Flock, in _flock.CentroidDir, r.BoidRadius * 2f);
+        if (_flock.Neighbors > 0) SetDirection(DirectionKind.Flock, in _flock.CentroidDir, r.BoidRadius * r.FlockDirectionRadiusMul);
         _dirMask |= 1 << (int)DirectionKind.Levy;
     }
 
@@ -1306,7 +1298,7 @@ public class EntityModel : AEntity, IFoodReceiver
     {
         float2 d = target - self;
         float  l = math.length(d);
-        if (l < 0.5f) return;
+        if (l < r.DirectionMinDistance) return;
         SetDirection(kind, d / l, math.min(l, r.PlannerRadiusMax));
     }
 
@@ -1479,7 +1471,7 @@ public class EntityModel : AEntity, IFoodReceiver
         }
 
         float dist = math.distance(self, _wildGoal);
-        float time = dist / math.max(Tuning.MoveSpeed * SpeedMul, 0.1f) * r.LegTimeSlack;
+        float time = dist / math.max(Tuning.MoveSpeed * SpeedMul, r.TimingMinSpeed) * r.LegTimeSlack;
         var decision = new BrainDecision((int)EntityAction.Wander, 0, 0, SharedHierarchicalBrain.Goal.Hunt, _cycleNow,
             time, float2.zero, destination: _wildGoal, hasDestination: true);
         if (!TryStartCommand((int)EntityAction.Wander, in decision, CommandSource.Instinct)) _wildHasGoal = false;
@@ -1654,9 +1646,5 @@ public class EntityModel : AEntity, IFoodReceiver
         _playerTransform = null;
         Vectorizer?.Dispose();
         Vectorizer = null;
-        _vecMaxHealth?.Dispose();
-        _vecMaxEnergy?.Dispose();
-        _vecMaxHealth = null;
-        _vecMaxEnergy = null;
     }
 }
