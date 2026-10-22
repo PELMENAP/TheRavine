@@ -1,4 +1,3 @@
-using R3;
 using System;
 
 public enum DeathCause : byte
@@ -13,22 +12,26 @@ public enum DeathCause : byte
 public class MortalityComponent : IComponent
 {
     public event Action Died;
-    private IDisposable sub;
+    private StatsComponent _stats;
     private bool _died;
     private bool _causeLocked;
 
     public bool IsDead => _died;
     public DeathCause Cause { get; private set; } = DeathCause.Age;
 
-    public MortalityComponent(ReadOnlyReactiveProperty<float> health)
+    public MortalityComponent(StatsComponent stats)
     {
-        sub = health.Subscribe(h =>
-        {
-            if (_died || h > 0f) return;
-            _died = true;
-            _causeLocked = true;
-            Died?.Invoke();
-        });
+        _stats = stats;
+        _stats.HealthDepleted += OnHealthDepleted;
+        if (_stats.Hp <= 0f) OnHealthDepleted();
+    }
+
+    private void OnHealthDepleted()
+    {
+        if (_died) return;
+        _died = true;
+        _causeLocked = true;
+        Died?.Invoke();
     }
 
     public void NoteHarm(DeathCause cause, float healthAfter)
@@ -40,8 +43,8 @@ public class MortalityComponent : IComponent
 
     public void Dispose()
     {
-        sub?.Dispose();
-        sub = null;
+        if (_stats != null) _stats.HealthDepleted -= OnHealthDepleted;
+        _stats = null;
         Died = null;
     }
 }

@@ -1,9 +1,14 @@
 using System;
 using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEngine;
 
 public sealed class EntitySpatialGrid
 {
+    private static readonly ProfilerMarker RebuildMarker      = new("EntitySpatialGrid.Rebuild");
+    private static readonly ProfilerMarker FindNearestMarker  = new("EntitySpatialGrid.FindNearest");
+    private static readonly ProfilerMarker FindInRadiusMarker = new("EntitySpatialGrid.FindInRadius");
+
     private int[]         _cellEnd;
     private int[]         _bucketOf;
     private int[]         _items;
@@ -24,6 +29,7 @@ public sealed class EntitySpatialGrid
 
     public void Rebuild(EntityModel[] snapshot, int count, float cellSize)
     {
+        using var scope = RebuildMarker.Auto();
         if (cellSize < 0.01f) cellSize = 0.01f;
         _cellSize = cellSize;
         _invCell  = 1f / cellSize;
@@ -64,6 +70,7 @@ public sealed class EntitySpatialGrid
 
     public EntityModel FindNearest(Vector3 origin, EntityModel self, float radius, out float distance)
     {
+        using var scope = FindNearestMarker.Auto();
         distance = -1f;
         if (_count == 0) return null;
 
@@ -110,6 +117,7 @@ public sealed class EntitySpatialGrid
 
     public int FindInRadius(Vector3 origin, EntityModel self, float radius, EntityModel[] result)
     {
+        using var scope = FindInRadiusMarker.Auto();
         int cap = result.Length;
         if (_count == 0 || cap == 0) return 0;
 

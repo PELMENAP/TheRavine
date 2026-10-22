@@ -2,82 +2,113 @@ using NUnit.Framework;
 
 public class TickWindowBudgetTests
 {
-    [SetUp]
-    public void SetUp() => SimulationClock.Reset();
+    private static int RunWindow(ref TickWindowBudget budget, float dt, float interval, int count, int frames)
+    {
+        int cursor = 0;
+        for (int f = 0; f < frames; f++)
+        {
+            cursor += budget.Take(dt, interval, count, count - cursor);
+            if (cursor >= count) cursor = 0;
+        }
+        return cursor;
+    }
 
-    [TearDown]
-    public void TearDown() => SimulationClock.Reset();
-
-    [TestCase(1f / 64f, 64)]
-    [TestCase(1f / 32f, 32)]
-    [TestCase(0.25f, 4)]
-    [TestCase(0.5f, 2)]
-    [TestCase(1f, 1)]
-    [TestCase(2f, 1)]
-    [TestCase(0f, TickWindowBudget.MaxFrames)]
-    [TestCase(1f / 1024f, TickWindowBudget.MaxFrames)]
-    public void FramesFollowSimulationDt(float dt, int expected)
-        => Assert.AreEqual(expected, TickWindowBudget.Frames(dt));
-
-    [TestCase(200, 64, 4)]
-    [TestCase(17, 4, 5)]
-    [TestCase(1, 240, 1)]
-    [TestCase(0, 32, 1)]
-    public void BatchSizeCoversWholeSnapshot(int count, int frames, int expected)
-        => Assert.AreEqual(expected, TickWindowBudget.BatchSize(count, frames));
-
-    [TestCase(1f / 64f, 200)]
-    [TestCase(1f / 32f, 200)]
-    [TestCase(0.25f, 17)]
-    public void WindowBudgetUsesSimulationClockOnly(float dt, int agents)
+    [TestCase(1f / 64f, 64, 200)]
+    [TestCase(1f / 32f, 32, 200)]
+    [TestCase(1f / 64f, 64, 17)]
+    [TestCase(0.25f, 4, 8)]
+    public void EveryAgentTicksOncePerInterval(float dt, int framesPerInterval, int count)
     {
         var budget = new TickWindowBudget();
-        int frames = TickWindowBudget.Frames(dt);
-        int expected = TickWindowBudget.BatchSize(agents, frames);
+        int total = 0;
+        for (int f = 0; f < framesPerInterval; f++)
+            total += budget.Take(dt, 1f, count, count - total);
 
-        Assert.AreEqual(expected, budget.BeginWindow(SimulationClock.TimeD, dt, agents));
+        Assert.AreEqual(count, total);
+    }
 
-        for (int i = 0; i < frames; i++)
-        {
-            budget.CountFrame();
-            SimulationClock.Advance(dt);
-        }
+    [TestCase(1f / 64f)]
+    [TestCase(1f / 32f)]
+    [TestCase(1f / 128f)]
+    public void TickRateDependsOnlyOnSimulationTime(float dt)
+    {
+        var budget = new TickWindowBudget();
+        const int count = 64;
+        int frames = (int)(4f / dt);
+        int total = 0;
+        for (int f = 0; f < frames; f++)
+            total += budget.Take(dt, 1f, count, count);
 
-        Assert.AreEqual(dt, SimulationClock.DeltaTime);
-        Assert.AreEqual(frames, budget.FramesCounted);
-        Assert.AreEqual(expected, budget.BeginWindow(SimulationClock.TimeD, 123f, agents));
-        Assert.AreEqual(0, budget.FramesCounted);
+        Assert.AreEqual(4 * count, total);
     }
 
     [Test]
-    public void WindowBudgetTracksSimulationTimeScale()
+    public void IntervalScalesRate()
     {
         var budget = new TickWindowBudget();
-        budget.BeginWindow(SimulationClock.TimeD, 1f / 64f, 128);
-
-        for (int i = 0; i < 64; i++)
-        {
-            budget.CountFrame();
-            SimulationClock.Advance(2f / 64f);
-        }
-
-        Assert.AreEqual(TickWindowBudget.BatchSize(128, 32), budget.BeginWindow(SimulationClock.TimeD, 1f / 64f, 128));
+        int total = 0;
+        for (int f = 0; f < 64; f++) total += budget.Take(1f / 64f, 0.5f, 32, 64);
+        Assert.AreEqual(64, total);
     }
 
     [Test]
-    public void PausedClockClampsToMaxFrames()
+    public void SingleAgentWaitsForFullInterval()
     {
         var budget = new TickWindowBudget();
-        budget.BeginWindow(SimulationClock.TimeD, 1f / 64f, 480);
+        for (int f = 0; f < 63; f++) Assert.AreEqual(0, budget.Take(1f / 64f, 1f, 1, 1));
+        Assert.AreEqual(1, budget.Take(1f / 64f, 1f, 1, 1));
+    }
 
-        for (int i = 0; i < 10; i++)
-        {
-            budget.CountFrame();
-            SimulationClock.Advance(0f);
-        }
+    [Test]
+    public void PausedClockTicksNothing()
+    {
+        var budget = new TickWindowBudget();
+        for (int f = 0; f < 100; f++) Assert.AreEqual(0, budget.Take(0f, 1f, 50, 50));
+        Assert.AreEqual(0d, budget.Debt);
+    }
 
+    [Test]
+    public void HitchCatchesUpAtMostOneWindow()
+    {
+        var budget = new TickWindowBudget();
+        Assert.AreEqual(50, budget.Take(10f, 1f, 50, 50));
+        Assert.AreEqual(0d, budget.Debt);
+        Assert.AreEqual(0, budget.Take(1f / 1024f, 1f, 50, 50));
+    }
+
+    [Test]
+    public void RemainingCapsBatchAndCarriesDebt()
+    {
+        var budget = new TickWindowBudget();
+        Assert.AreEqual(10, budget.Take(0.5f, 1f, 50, 10));
+        Assert.AreEqual(15d, budget.Debt);
+        Assert.AreEqual(15, budget.Take(1f / 1024f, 1f, 50, 50));
+    }
+
+    [Test]
+    public void EmptyPopulationResetsDebt()
+    {
+        var budget = new TickWindowBudget();
+        budget.Take(0.3f, 1f, 10, 10);
+        Assert.AreEqual(0, budget.Take(1f, 1f, 0, 0));
+        Assert.AreEqual(0d, budget.Debt);
+    }
+
+    [Test]
+    public void WindowClosesAfterExactlyOneInterval()
+    {
+        var budget = new TickWindowBudget();
+        Assert.AreEqual(0, RunWindow(ref budget, 1f / 64f, 1f, 96, 64));
+    }
+
+    [Test]
+    public void SimulationClockReportsLastDelta()
+    {
+        SimulationClock.Reset();
+        SimulationClock.Advance(1f / 64f);
+        Assert.AreEqual(1f / 64f, SimulationClock.DeltaTime);
+        SimulationClock.Advance(0f);
         Assert.AreEqual(0f, SimulationClock.DeltaTime);
-        Assert.AreEqual(TickWindowBudget.BatchSize(480, TickWindowBudget.MaxFrames),
-            budget.BeginWindow(SimulationClock.TimeD, 1f / 64f, 480));
+        SimulationClock.Reset();
     }
 }

@@ -6,6 +6,7 @@ using UnityEngine;
 using Unity.Netcode;
 
 using Unity.Mathematics;
+using Unity.Profiling;
 using TheRavine.Generator;
 using TheRavine.EntityControl.Virology;
 
@@ -102,8 +103,6 @@ public class EntityManager : MonoBehaviour
     public List<EntityModel> Entities => _entities;
     private readonly Queue<EntityModel> _pendingDeath = new();
 
-    private const int FoodSpawnAttempts = 16;
-
     private ChunkFoodIndex _foodIndex;
     public ChunkFoodIndex FoodIndex => _foodIndex;
 
@@ -112,8 +111,17 @@ public class EntityManager : MonoBehaviour
     private EntityModel[] _tickSnapshot = new EntityModel[64];
     private int _tickCount;
     private int _tickCursor;
-    private int _tickBatch = 1;
+    private bool _windowOpen;
+    private bool _simulationStarted;
+    private double _tickStartTime;
+    private double _nextFitnessStatsTime;
     private TickWindowBudget _tickBudget;
+
+    private static readonly ProfilerMarker TickAgentsMarker  = new("EntityManager.TickAgents");
+    private static readonly ProfilerMarker SnapshotMarker    = new("EntityManager.RebuildTickSnapshot");
+    private static readonly ProfilerMarker BatchMarker       = new("EntityManager.RunTickBatch");
+    private static readonly ProfilerMarker SpreadMarker      = new("EntityManager.InfectionSpread");
+    private static readonly ProfilerMarker CloseWindowMarker = new("EntityManager.CloseTickWindow");
 
     public EntityModel GetRandomEntity()
         => _entities.Count == 0 ? null : _entities[RavineRandom.RangeInt(0, _entities.Count)];
@@ -125,6 +133,18 @@ public class EntityManager : MonoBehaviour
     private void Update()
     {
         SimulationClock.Advance(Time.deltaTime * simulationTimeScale);
+
+        if (_simulationStarted)
+        {
+            double now = SimulationClock.TimeD;
+            if (now >= _nextFitnessStatsTime)
+            {
+                UpdateFitnessStats();
+                _nextFitnessStatsTime = now + SimulationRules.Active.FitnessStatsInterval;
+            }
+            if (now >= _tickStartTime) TickAgents(SimulationClock.DeltaTime);
+        }
+
         _planner.Flush();
         _motion.Step();
     }
@@ -252,7 +272,6 @@ public class EntityManager : MonoBehaviour
 
         old?.Dispose();
     }
-    private CancellationTokenSource _tickCts;
 
     
     private async void Start()
@@ -282,10 +301,9 @@ public class EntityManager : MonoBehaviour
         _lastEcologyTime    = SimulationClock.Time;
         _lastNestTime       = SimulationClock.Time;
 
-        _tickCts = new CancellationTokenSource();
-        EntityTickLoopAsync(_tickCts.Token).Forget();
-
-        TrackDiagnosticsAsync(destroyCancellationToken).Forget();
+        _nextFitnessStatsTime = SimulationClock.TimeD;
+        _tickStartTime        = SimulationClock.TimeD + SimulationRules.Active.TickLoopWarmupSeconds;
+        _simulationStarted    = true;
     }
 
 
@@ -300,71 +318,77 @@ public class EntityManager : MonoBehaviour
         return false;
     }
 
-    private async UniTaskVoid EntityTickLoopAsync(CancellationToken ct)
+    private void TickAgents(float dt)
     {
-        if (await DelaySimulation(SimulationRules.Active.TickLoopWarmupSeconds, ct)) return;
-
-        while (!ct.IsCancellationRequested)
+        using var scope = TickAgentsMarker.Auto();
+        if (!_windowOpen && _entities.Count == 0)
         {
-            if (_tickCursor == 0)
+            _tickBudget.Reset();
+            ProcessPendingDeaths();
+            BeginColonyBatches();
+            RunColonyDecisions();
+            FlushDeferredDisposals();
+            TickFoodRespawn();
+            return;
+        }
+
+        int count = _windowOpen ? _tickCount : _entities.Count;
+        int batch = _tickBudget.Take(dt, SimulationRules.Active.AgentTickInterval, count, count - _tickCursor);
+
+        if (batch > 0)
+        {
+            if (!_windowOpen)
             {
                 RebuildTickSnapshot();
-                _tickBatch = _tickBudget.BeginWindow(SimulationClock.TimeD, SimulationClock.DeltaTime, _tickCount);
-            }
-            _tickBudget.CountFrame();
-
-            if (_tickCount == 0)
-            {
-                ProcessPendingDeaths();
-                BeginColonyBatches();
-                RunColonyDecisions();
-                FlushDeferredDisposals();
-                TickFoodRespawn();
-                await UniTask.Yield(PlayerLoopTiming.Update, ct);
-                continue;
+                _windowOpen = true;
             }
 
-            int end = _tickCursor + _tickBatch;
+            int end = _tickCursor + batch;
             if (end > _tickCount) end = _tickCount;
 
             RunTickBatch(_tickCursor, end);
 
             _planner.Flush();
+            SpreadMarker.Begin();
             _infection.ProcessSpread(_tickSnapshot, _tickCursor, end);
+            SpreadMarker.End();
 
             _transmissions        = _infection.Transmissions;
             _recombinations       = _infection.Recombinations;
             _superinfectionBlocks = _infection.SuperinfectionBlocks;
 
             _tickCursor = end;
+            if (_tickCursor >= _tickCount) CloseTickWindow();
+        }
 
-            if (_tickCursor >= _tickCount)
-            {
-                _tickCursor = 0;
-                ProcessPendingDeaths();
-                CheckExtinctions();
-                TickPredators();
-                for (int c = 0; c < _colonies.Count; c++) _colonies[c].Brain.ApplyPendingGradients();
-                _foodIndex?.PruneUnloaded();
-                TickNests();
-                TickColonies();
-                UpdateVisibility();
+        TickFoodRespawn();
+    }
 
-                float now = SimulationClock.Time;
-                if (now >= _nextGenerationTime)
-                {
-                    if (SimulationRules.Active.PeriodicGenotypeOverwrite) EvolveGenotypes();
-                    _nextGenerationTime = now + SimulationRules.Active.GenerationInterval;
-                }
-            }
+    private void CloseTickWindow()
+    {
+        using var scope = CloseWindowMarker.Auto();
+        _tickCursor = 0;
+        _windowOpen = false;
+        ProcessPendingDeaths();
+        CheckExtinctions();
+        TickPredators();
+        for (int c = 0; c < _colonies.Count; c++) _colonies[c].Brain.ApplyPendingGradients();
+        _foodIndex?.PruneUnloaded();
+        TickNests();
+        TickColonies();
+        UpdateVisibility();
 
-            TickFoodRespawn();
-
-            await UniTask.Yield(PlayerLoopTiming.Update, ct);
+        float now = SimulationClock.Time;
+        if (now >= _nextGenerationTime)
+        {
+            if (SimulationRules.Active.PeriodicGenotypeOverwrite) EvolveGenotypes();
+            _nextGenerationTime = now + SimulationRules.Active.GenerationInterval;
         }
     }
+
     private void RunTickBatch(int start, int end)
     {
+        using var scope = BatchMarker.Auto();
         BeginColonyBatches();
         _players.Refresh();
 
@@ -620,7 +644,7 @@ public class EntityManager : MonoBehaviour
             var members = colony.Members;
             int atNest  = 0, restingAtNest = 0, hungryAtNest = 0, nursesAtNest = 0, far = 0;
             float fill  = 0f;
-            float far2  = r.NestRadius * 3f;
+            float far2  = r.NestRadius * r.NestFarRadiusMul;
             far2 *= far2;
             float2 nestPos = colony.Nest.Position;
             for (int i = 0; i < members.Length; i++)
@@ -731,9 +755,10 @@ public class EntityManager : MonoBehaviour
         var colony   = parent.Colony;
         if (colony == null) return;
         var childCtx = colony.Brain.CreateContext(childParams);
+        var rules    = SimulationRules.Active;
         var pos      = parent.Motor.Position()
-                     + (Vector3)RavineRandom.GetInsideCircle().normalized * 2f
-                     + Vector3.up * 5f;
+                     + (Vector3)RavineRandom.GetInsideCircle().normalized * rules.ChildSpawnOffset
+                     + Vector3.up * rules.ChildSpawnLift;
 
         SpawnEntity(pos, colony, childCtx, parent);
     }
@@ -775,12 +800,13 @@ public class EntityManager : MonoBehaviour
             origin = new Vector3(home.x, origin.y, home.y);
         }
 
-        for (int i = 0; i < FoodSpawnAttempts; i++)
+        int attempts = SimulationRules.Active.FoodSpawnAttempts;
+        for (int i = 0; i < attempts; i++)
         {
             var v = RavineRandom.GetInsideCircle(spawnRadius);
 
-            int cellX = Mathf.FloorToInt((origin.x + v.x) / MapGenerator.scale);
-            int cellZ = Mathf.FloorToInt((origin.z + v.y) / MapGenerator.scale);
+            int cellX = (int)math.floor((origin.x + v.x) / MapGenerator.scale);
+            int cellZ = (int)math.floor((origin.z + v.y) / MapGenerator.scale);
 
             if (_foodIndex.TryAddFood(cellX, cellZ, _foodIndex.RollKind(0, SimulationRules.Active))) return true;
         }
@@ -803,6 +829,7 @@ public class EntityManager : MonoBehaviour
 
     private void RebuildTickSnapshot()
     {
+        using var scope = SnapshotMarker.Auto();
         int count = _entities.Count;
 
         if (count > _tickSnapshot.Length)
@@ -965,66 +992,61 @@ public class EntityManager : MonoBehaviour
         _infection.InjectStrain(victim, 12, (uint)RavineRandom.RangeInt(1, int.MaxValue));
     }
 
-    private async UniTaskVoid TrackDiagnosticsAsync(System.Threading.CancellationToken ct)
+    private void UpdateFitnessStats()
     {
-        while (!ct.IsCancellationRequested)
+        int n = _entities.Count;
+        _entityCount = n;
+        _foodCount   = _foodIndex != null ? _foodIndex.FoodCount : 0;
+
+        if (n > 0)
         {
-            int n = _entities.Count;
-            _entityCount = n;
-            _foodCount   = _foodIndex != null ? _foodIndex.FoodCount : 0;
-
-            if (n > 0)
+            if (n > _fitnessScratch.Length)
             {
-                if (n > _fitnessScratch.Length)
-                {
-                    int cap = _fitnessScratch.Length;
-                    while (cap < n) cap <<= 1;
-                    _fitnessScratch = new float[cap];
-                }
-
-                float entropySum = 0f;
-                float fitnessSum = 0f;
-                Array.Clear(_colonyFitness, 0, _colonyFitness.Length);
-                Array.Clear(_colonyAlive, 0, _colonyAlive.Length);
-
-                int counted = 0;
-                for (int i = 0; i < n; i++)
-                {
-                    var e = _entities[i];
-                    if (e.IsWild) continue;
-                    float f = e.GetFitness();
-                    _fitnessScratch[counted++] = f;
-                    fitnessSum += f;
-                    entropySum += e.Colony.Brain.GetCoordinatorEntropy(e.Brain.Context);
-
-                    int c = e.ColonyIndex;
-                    _colonyFitness[c] += f;
-                    _colonyAlive[c]++;
-                }
-
-                _avgEntropy = entropySum / math.max(counted, 1);
-                _avgFitness = fitnessSum / math.max(counted, 1);
-
-                int m = math.max(counted, 1);
-                if (counted == 0) _fitnessScratch[0] = 0f;
-                Array.Sort(_fitnessScratch, 0, m);
-
-                _fitnessMedian = _fitnessScratch[m >> 1];
-                float iqr = _fitnessScratch[(3 * m) >> 2] - _fitnessScratch[m >> 2];
-                _fitnessSpread = iqr > 1e-3f
-                    ? iqr
-                    : Mathf.Max(1e-3f, Mathf.Abs(_fitnessMedian) * 0.25f);
-                _fitnessStatsReady = true;
-                for (int c = 0; c < _colonies.Count; c++)
-                    if (_colonyAlive[c] > 0)
-                        _colonies[c].Brain?.ReportMeanFitness(_colonyFitness[c] / _colonyAlive[c]);
-            }
-            else
-            {
-                _fitnessStatsReady = false;
+                int cap = _fitnessScratch.Length;
+                while (cap < n) cap <<= 1;
+                _fitnessScratch = new float[cap];
             }
 
-            if (await DelaySimulation(SimulationRules.Active.FitnessStatsInterval, ct)) return;
+            float entropySum = 0f;
+            float fitnessSum = 0f;
+            Array.Clear(_colonyFitness, 0, _colonyFitness.Length);
+            Array.Clear(_colonyAlive, 0, _colonyAlive.Length);
+
+            int counted = 0;
+            for (int i = 0; i < n; i++)
+            {
+                var e = _entities[i];
+                if (e.IsWild) continue;
+                float f = e.GetFitness();
+                _fitnessScratch[counted++] = f;
+                fitnessSum += f;
+                entropySum += e.Colony.Brain.GetCoordinatorEntropy(e.Brain.Context);
+
+                int c = e.ColonyIndex;
+                _colonyFitness[c] += f;
+                _colonyAlive[c]++;
+            }
+
+            _avgEntropy = entropySum / math.max(counted, 1);
+            _avgFitness = fitnessSum / math.max(counted, 1);
+
+            int m = math.max(counted, 1);
+            if (counted == 0) _fitnessScratch[0] = 0f;
+            Array.Sort(_fitnessScratch, 0, m);
+
+            _fitnessMedian = _fitnessScratch[m >> 1];
+            float iqr = _fitnessScratch[(3 * m) >> 2] - _fitnessScratch[m >> 2];
+            _fitnessSpread = iqr > 1e-3f
+                ? iqr
+                : math.max(1e-3f, math.abs(_fitnessMedian) * SimulationRules.Active.FitnessSpreadMedianFraction);
+            _fitnessStatsReady = true;
+            for (int c = 0; c < _colonies.Count; c++)
+                if (_colonyAlive[c] > 0)
+                    _colonies[c].Brain?.ReportMeanFitness(_colonyFitness[c] / _colonyAlive[c]);
+        }
+        else
+        {
+            _fitnessStatsReady = false;
         }
     }
 
@@ -1166,7 +1188,7 @@ public class EntityManager : MonoBehaviour
 
         Array.Sort(_evolveKeys, _evolveIndices, 0, n);
 
-        int eliteCount = Mathf.Max(1, (int)(n * SimulationRules.Active.EliteFraction));
+        int eliteCount = math.max(1, (int)(n * SimulationRules.Active.EliteFraction));
         if (eliteCount >= n) eliteCount = n - 1;
 
         int eliteStart = n - eliteCount;
@@ -1212,8 +1234,6 @@ public class EntityManager : MonoBehaviour
             if (_nestViews[i] != null) Destroy(_nestViews[i].gameObject);
         _nestViews.Clear();
         _infection?.Dispose();
-        _tickCts?.Cancel();
-        _tickCts?.Dispose();
         ProcessPendingDeaths();
         FlushDeferredDisposals();
         _planner?.Dispose();

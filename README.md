@@ -209,7 +209,13 @@ BehaviourType: `None | NAL | GROW`
 
 Сохранение: `SharedBrainSnapshot` v7, файл на колонию `{savedModelName}_c{ColonyId}`. Любое изменение размеров входа/выхода (`InputVectorizer.VectorSize`, `PlanCatalog.Count`, `CoordAux`, `ActionCatalog.Count`, слои LSTM/перцептронов) роняет `BrainArchitectureVersionTests` — нужен инкремент `Version`, старые снапшоты несовместимы.
 
-Время: `SimulationClock` — единственный источник времени симуляции; Unity-время читается только в `EntityManager.Update` (`SimulationClock.Advance(Time.deltaTime * simulationTimeScale)`). Бюджет окна тика агентов — `TickWindowBudget` (средний dt `SimulationClock` за прошлое окно).
+Время: `SimulationClock` — единственный источник времени симуляции; Unity-время читается только в `EntityManager.Update` (`SimulationClock.Advance(Time.deltaTime * simulationTimeScale)`).
+
+### Драйвер тика (решение)
+- AI-агенты тикают только из `EntityManager.Update`, синхронно, с фиксированным шагом по `SimulationClock`: каждый агент обрабатывается раз в `SimulationRules.agentTickInterval` секунд симуляции (по умолчанию 1 с). `TickWindowBudget.Take` накапливает долг `dt × N / interval` и отдаёт целое число агентов на кадр; при паузе (dt = 0) агенты не тикают, после фриза догоняется не больше одного окна. `EntityModel.UpdateEntityCycle` пустой — второго пути тика AI нет.
+- `PlayerEntity` тикает в `EntitySystem.FixedUpdate` (`global` содержит только игроков).
+- Порядок в кадре: `SimulationClock.Advance` → статистика fitness (раз в `fitnessStatsInterval`) → `TickAgents`: снапшот + сетка + стая (в начале окна) → `BeginCycle` (перцепция, вирусология, тик команды/плана, векторизация) → инстинкты и utility (Burst) → решения колоний (`RunDecisions`, TD-flush отложенных решений в `FinishDecide`) → `EndCycle` (старт решения) → `MovePlanner.Flush` → распространение инфекции → в конце окна смерти/вымирания/хищники/`ApplyPendingGradients`/гнёзда/касты/видимость → `MovePlanner.Flush` → `MotionSystem.Step`. Порядок стадий внутри тика не менялся при переносе с UniTask-цикла (раннер `PlayerLoopTiming.Update` выполнялся до `ScriptRunBehaviourUpdate`).
+- ProfilerMarker: `EntityManager.TickAgents/RebuildTickSnapshot/RunTickBatch/InfectionSpread/CloseTickWindow`, `EntityModel.Perception`, `EntitySpatialGrid.Rebuild/FindNearest/FindInRadius`, `ChunkFoodIndex.TryFindNearestFood`.
 
 ### Обучение
 - `AI/DelayedPerceptron/` — continuous-time RNN с τ-весами; Truncated BPTT (8 шагов), reward-weighted; ε-greedy с adaptive epsilon по entropy
@@ -318,7 +324,7 @@ BehaviourType: `None | NAL | GROW`
 - **UI/Settings/**, **UI/Console/** — настройки и консоль
 - **Core/Utilities/** — `PriorityQueue`, `IndexedSet`, `Dence3DGrid`, `EnumerableSnapshot`, `CodeHelpers`, `Extentions`
 - **Test/** — экспериментальный код: `PointDraw` (используется в `Scenes/TestScene/56u5y3454e.unity`), `PriceChart` + `Market`/`MarketCore`/`MarketSimulator` (используются `Prefabs/Market.prefab`)
-- **Assets/Tests/EditMode/** — EditMode-тесты (`EntitySystem.Tests.EditMode.asmdef`, Editor-only): `TickWindowBudgetTests`, `TerminalPenaltyTests`, `BrainArchitectureVersionTests`, `ServiceContainerTests`
+- **Assets/Tests/EditMode/** — EditMode-тесты (`EntitySystem.Tests.EditMode.asmdef`, Editor-only): `TickWindowBudgetTests`, `TerminalPenaltyTests`, `BrainArchitectureVersionTests`, `ServiceContainerTests`, `DecisionRingTests`, `RunningMeanStdTests`, `BrainLearningTests` (знак градиента, изоляция LSTM, zero-alloc батча), `StatsMortalityTests`, `HotPathAllocationTests`, `RulesDefaultsTests`; zero-alloc через `GC.GetAllocatedBytesForCurrentThread` + `Is.Not.AllocatingGCMemory`
 
 ---
 
@@ -339,7 +345,7 @@ BehaviourType: `None | NAL | GROW`
 
 ## Известные проблемы (аудит 2026-08, статус 2026-10)
 
-1. **Два драйвера тика** (открыто, Этап 2.1): `PlayerEntity` — в `EntitySystem.FixedUpdate` (`global` содержит только игроков), AI-агенты — в `EntityManager.EntityTickLoopAsync`. Двойного тика одних сущностей нет.
+1. ~~**Два драйвера тика**~~ — закрыто: AI — только `EntityManager.Update` с фиксированным шагом `SimulationClock`, игроки — `EntitySystem.FixedUpdate` (см. «Драйвер тика»).
 2. ~~**PoolManager не пулит**~~ — закрыто: free/busy разделены, `Release` проверяет `IsActive` и `Owner`.
 3. **Спавн-рассинхрон** (открыто): `EntitySystem.CreateMob` ищет ViewModel через `GetComponentInChildren`, `MobNAL.RunLifecycle` — через `GetComponent` на корне; при расхождении сущность не регистрируется.
 4. ~~**Сеть**: авторизация `NetworkSpawner.IsAuthorizedClient` не работает~~ — закрыто: владелец/выданное право, whitelist int-ID, лимит частоты и радиуса (см. «Сеть»).
@@ -347,3 +353,4 @@ BehaviourType: `None | NAL | GROW`
 6. **AI**: ~~`lr` × знаковый reward~~ — не баг: advantage со знаком — корректный PPO-градиент, `lr > 0` гарантирован (`SharedHierarchicalBrain.ResolveLearningRate`, `SimulationRules.OnValidate`), знак терминального штрафа зафиксирован `TerminalPenaltyTests`; ~~fitness = AverageEntropy~~ — устарело, `EvolveGenotypes` сортирует по `SelectionFitness`; ~~`new DelayedItem` каждый тик~~ — закрыто, `DecisionRing` предаллоцирует буфер.
 7. ~~**Мёртвый код**~~ — удалены `RpcTest.cs`, `CraftModel.cs`, `PlayerUIService.cs`, `Test/Test.cs`, корневые `*CommandBuffer.cs`, дубли конфигов без точки; `mono_crash.mem.6929.1.blob` снят с индекса. `RavineNetworkManager.cs` в репозитории отсутствовал.
 8. ~~**Unity-время в логике агентов**~~ — закрыто: `UniTask.Delay`/`Time.smoothDeltaTime` в `EntityManager` заменены на `SimulationClock`.
+9. ~~**R3 в горячем пути агента**~~ — `StatsComponent.Health/Energy` и `_vecMaxHealth/_vecMaxEnergy` заменены полями + событием `HealthDepleted`/прямым вызовом; внешние подписчики (`AEntity.IsActive`, `OnUpdate`, игровые `EnergyComponent`/`CurrencyComponent`) сохранены.
