@@ -205,9 +205,9 @@ BehaviourType: `None | NAL | GROW`
 
 Пер-сущностное состояние: `SharedAI/LSTMContext.cs`, `SharedAI/PerceptronContext.cs` (пул состояний `RentState/ReturnState`, BPTT-истории).
 
-Один мозг на колонию: `ColonyRegistry` → `ColonyState` (`Brain`, `Nest`). `NestState` — per `ColonyState`, не singleton; доступ к колонии только явный (`EntityManager.Colonies[i]`, `EntityModel.Colony`).
+Один мозг на колонию: `ColonyRegistry` → `ColonyState` (`Index`, `ColonyId`, `Brain`, `Nest`, `Pois`, `Stats`). `NestState` (карты каналов в NativeArray, `NestDecayJob`) — per `ColonyState`, в ServiceLocator не регистрируется; доступ к колонии только явный (`EntityManager.Colonies[i]`, `ColonyRegistry.TryGetById`, `EntityModel.Colony/ColonyId/ManagerIndex`). `MovePlanner` читает поля всех колоний через `ColonyRegistry.Views`.
 
-Сохранение: `SharedBrainSnapshot` v7, файл на колонию `{savedModelName}_c{ColonyId}`. Любое изменение размеров входа/выхода (`InputVectorizer.VectorSize`, `PlanCatalog.Count`, `CoordAux`, `ActionCatalog.Count`, слои LSTM/перцептронов) роняет `BrainArchitectureVersionTests` — нужен инкремент `Version`, старые снапшоты несовместимы.
+Сохранение: `SharedBrainSnapshot` v7, файл на колонию `NeuralModelStorage.ColonyFileName(savedModelName, ColonyId)` = `{savedModelName}_c{ColonyId}` (`ModelInfo.ColonyId` разбирается из имени). Несовместимая версия, неизвестный формат, обрезанные данные или другая архитектура — ошибка через `RavineLog` и отказ от загрузки (колония остаётся с новым мозгом; общий файл `{savedModelName}` используется только как явный fallback с предупреждением). Любое изменение размеров входа/выхода (`InputVectorizer.VectorSize`, `PlanCatalog.Count`, `CoordAux`, `ActionCatalog.Count`, слои LSTM/перцептронов) роняет `BrainArchitectureVersionTests` — нужен инкремент `Version`, старые снапшоты несовместимы.
 
 Время: `SimulationClock` — единственный источник времени симуляции; Unity-время читается только в `EntityManager.Update` (`SimulationClock.Advance(Time.deltaTime * simulationTimeScale)`).
 
@@ -224,8 +224,13 @@ BehaviourType: `None | NAL | GROW`
 - `AI/GeneticParameters.cs` — LR, lambda, temperature и пр.; `AI/MimicPhenotype.cs` — фенотип мимикрии
 - `AI/LSTM/` — LSTMMemory; `AI/InputVectorizer.cs` — векторизация наблюдений; `AI/FoodObject.cs`, `AI/EntityAction.cs`
 
-### `AI/EntityManager.cs`
-Спавн, смерть, размножение (обычное + crossover), эволюция весов (`EvolveSharedWeights`), сохранение моделей (`NeuralModelStorage.cs`, `ModelInfo.cs`).
+### `AI/EntityManager.cs` и `AI/Population/`
+- `EntityManager` (MonoBehaviour): жизненный цикл, драйвер тика, управление колониями (касты, лидер, гнёзда), видимость, сохранение мозгов; публичный API (`SpawnEntity`, `SpawnChild`, `SpawnFood`, `EvolveGenotypes`, `SeedProbeStrain`, `Entities`, `Colonies`, события) делегирует сервисам.
+- `ColonyPopulation` — спавн, смерти (`ProcessPendingDeaths`, трупы, оповещение сородичей, терминальный штраф), размножение, swap-back SoA, вымирание/реинкарнация колоний, хищники, выбор лидера.
+- `ColonyFood` — рост еды, спавн, трупы. `EvolutionService` — fitness-статистика, турнирный выбор партнёра, элитный кроссовер, терминальный штраф. `InfectionCoordinator` — обёртка `InfectionService`.
+- `EntityModel` разнесён по partial-файлам: `.Cycle` (тик), `.Social`, `.Directions`, `.Homeostasis`, `.Wild`, `.Behaviour`, `.Fitness`; учёт fitness — `FitnessComponent`.
+- Команды агентов — по файлу на команду (`AI/Entity/Commands/*Command.cs`).
+- `SimulationRules` — partial: `SimulationRules.cs` (RulesFrame, Bind, константы, валидация) + `.Agent/.Colony/.Ecology/.Learning/.Movement/.Virology` (сериализуемые поля и свойства; имена полей не менялись, ассет совместим).
 
 ### AISpeech (`AI/AISpeech/`) — «речь» агентов
 Генетические аудио-профили: `AgentAudioProfile`, `GeneticAudioProfile` (+Cache), `AgentAudioProfileBuilder`, `TimbreResolver`, `AudioParameterMapper`; синтез: `StringToAudioGenerator` (hash строки → гармоники → Jobs → AudioClip) + `AudioSynthesizer` (Burst `IJobParallelFor`, 4 формы волны) + `StableHashService` (детерминированный хеш → ADSR огибающая).
@@ -324,7 +329,7 @@ BehaviourType: `None | NAL | GROW`
 - **UI/Settings/**, **UI/Console/** — настройки и консоль
 - **Core/Utilities/** — `PriorityQueue`, `IndexedSet`, `Dence3DGrid`, `EnumerableSnapshot`, `CodeHelpers`, `Extentions`
 - **Test/** — экспериментальный код: `PointDraw` (используется в `Scenes/TestScene/56u5y3454e.unity`), `PriceChart` + `Market`/`MarketCore`/`MarketSimulator` (используются `Prefabs/Market.prefab`)
-- **Assets/Tests/EditMode/** — EditMode-тесты (`EntitySystem.Tests.EditMode.asmdef`, Editor-only): `TickWindowBudgetTests`, `TerminalPenaltyTests`, `BrainArchitectureVersionTests`, `ServiceContainerTests`, `DecisionRingTests`, `RunningMeanStdTests`, `BrainLearningTests` (знак градиента, изоляция LSTM, zero-alloc батча), `StatsMortalityTests`, `HotPathAllocationTests`, `RulesDefaultsTests`; zero-alloc через `GC.GetAllocatedBytesForCurrentThread` + `Is.Not.AllocatingGCMemory`
+- **Assets/Tests/EditMode/** — EditMode-тесты (`EntitySystem.Tests.EditMode.asmdef`, Editor-only): `TickWindowBudgetTests`, `TerminalPenaltyTests`, `BrainArchitectureVersionTests`, `ServiceContainerTests`, `DecisionRingTests`, `RunningMeanStdTests`, `BrainLearningTests` (знак градиента, изоляция LSTM, zero-alloc батча), `StatsMortalityTests`, `HotPathAllocationTests`, `RulesDefaultsTests`, `ColonyRegistryTests`, `SnapshotVersionTests`, `FitnessComponentTests`, `SoaSwapBackTests`; zero-alloc через `GC.GetAllocatedBytesForCurrentThread` + `Is.Not.AllocatingGCMemory`
 
 ---
 
@@ -354,3 +359,4 @@ BehaviourType: `None | NAL | GROW`
 7. ~~**Мёртвый код**~~ — удалены `RpcTest.cs`, `CraftModel.cs`, `PlayerUIService.cs`, `Test/Test.cs`, корневые `*CommandBuffer.cs`, дубли конфигов без точки; `mono_crash.mem.6929.1.blob` снят с индекса. `RavineNetworkManager.cs` в репозитории отсутствовал.
 8. ~~**Unity-время в логике агентов**~~ — закрыто: `UniTask.Delay`/`Time.smoothDeltaTime` в `EntityManager` заменены на `SimulationClock`.
 9. ~~**R3 в горячем пути агента**~~ — `StatsComponent.Health/Energy` и `_vecMaxHealth/_vecMaxEnergy` заменены полями + событием `HealthDepleted`/прямым вызовом; внешние подписчики (`AEntity.IsActive`, `OnUpdate`, игровые `EnergyComponent`/`CurrencyComponent`) сохранены.
+10. ~~**God-классы**~~ — `EntityManager` 1253 → 728 строк (+ `AI/Population/`), `EntityModel` 1662 → 584 + 7 partial, `EntityCommands` → 21 файл, `SimulationRules` 2149 → 1109 + 6 partial. Физическое разделение `SimulationRules` на отдельные ScriptableObject-ассеты не сделано: нужна миграция данных ассета в Unity.
