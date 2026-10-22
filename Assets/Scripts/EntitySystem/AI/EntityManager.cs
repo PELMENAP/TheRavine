@@ -51,8 +51,10 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private NestDebugView nestViewPrefab;
     private readonly List<NestDebugView> _nestViews = new();
 
-    private InfectionService _infection;
-    private uint _virologyTick;
+    private InfectionCoordinator _infection;
+    private ColonyFood           _food;
+    private EvolutionService     _evolution;
+    private ColonyPopulation     _population;
 
     [SerializeField] private int _transmissions;
     [SerializeField] private int _recombinations;
@@ -64,16 +66,7 @@ public class EntityManager : MonoBehaviour
 
     [SerializeField] private bool useSavedBrain;
 
-    private float[] _fitnessScratch = new float[64];
-    private float   _fitnessMedian;
-    private float   _fitnessSpread = 1f;
-    private bool    _fitnessStatsReady;
-
-    private int[]   _evolveIndices = new int[64];
-    private float[] _evolveKeys    = new float[64];
     private float   _nextGenerationTime;
-
-    private XorShift32 _tournamentRng;
 
     private readonly EntitySpatialGrid _grid = new();
     public EntitySpatialGrid Grid => _grid;
@@ -81,6 +74,9 @@ public class EntityManager : MonoBehaviour
     public int MaxPopulation => maxPopulation;
     public event Action<EntityModel> OnEntitySpawned;
     public event Action<EntityModel> OnEntityDied;
+
+    private void RaiseSpawned(EntityModel model) => OnEntitySpawned?.Invoke(model);
+    private void RaiseDied(EntityModel model)    => OnEntityDied?.Invoke(model);
 
     private ColonyRegistry _colonies;
     public ColonyRegistry Colonies => _colonies;
@@ -92,19 +88,13 @@ public class EntityManager : MonoBehaviour
     private UtilityPriorSystem   _utility;
     private CasteThresholdSystem _thresholds;
     private ColonyState _wild;
-    private double _nextPredatorTime;
     private float  _lastColonyTime;
     public InstinctSystem Instincts => _instincts;
-    private int _nextEntityId;
-    private float[] _colonyFitness = Array.Empty<float>();
-    private int[]   _colonyAlive   = Array.Empty<int>();
 
     private readonly List<EntityModel> _entities = new();
     public List<EntityModel> Entities => _entities;
-    private readonly Queue<EntityModel> _pendingDeath = new();
 
-    private ChunkFoodIndex _foodIndex;
-    public ChunkFoodIndex FoodIndex => _foodIndex;
+    public ChunkFoodIndex FoodIndex => _food != null ? _food.Index : null;
 
     [SerializeField] private float simulationTimeScale = 1f;
 
@@ -120,15 +110,38 @@ public class EntityManager : MonoBehaviour
     private static readonly ProfilerMarker TickAgentsMarker  = new("EntityManager.TickAgents");
     private static readonly ProfilerMarker SnapshotMarker    = new("EntityManager.RebuildTickSnapshot");
     private static readonly ProfilerMarker BatchMarker       = new("EntityManager.RunTickBatch");
-    private static readonly ProfilerMarker SpreadMarker      = new("EntityManager.InfectionSpread");
     private static readonly ProfilerMarker CloseWindowMarker = new("EntityManager.CloseTickWindow");
 
     public EntityModel GetRandomEntity()
         => _entities.Count == 0 ? null : _entities[RavineRandom.RangeInt(0, _entities.Count)];
 
     public bool SeedProbeStrain(EntityModel target, ProteinAction[] recipe)
-            => _infection != null
-            && _infection.InjectRecipe(target, recipe, (uint)RavineRandom.RangeInt(1, int.MaxValue));
+        => _infection != null && _infection.SeedRecipe(target, recipe);
+
+    public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null)
+        => _population.SpawnEntity(position, colony, inheritedCtx, parent);
+
+    public void SpawnChild(EntityModel parent) => _population.SpawnChild(parent);
+
+    public bool SpawnFood() => _food.Spawn(transform.position, _population.CivilCount);
+
+    private void UpdateDiagnostics()
+    {
+        _evolution.UpdateFitnessStats();
+        _entityCount = _entities.Count;
+        _foodCount   = _food.FoodCount;
+        _avgEntropy  = _evolution.AvgEntropy;
+        _avgFitness  = _evolution.AvgFitness;
+    }
+
+    public void EvolveGenotypes()
+    {
+        if (_tickCursor != 0) return;
+        _evolution.Evolve();
+    }
+
+    [ContextMenu("Seed Random Strain")]
+    private void SeedRandomStrain() => _infection?.SeedRandomStrain(_entities, 12);
 
     private void Update()
     {
@@ -139,7 +152,7 @@ public class EntityManager : MonoBehaviour
             double now = SimulationClock.TimeD;
             if (now >= _nextFitnessStatsTime)
             {
-                UpdateFitnessStats();
+                UpdateDiagnostics();
                 _nextFitnessStatsTime = now + SimulationRules.Active.FitnessStatsInterval;
             }
             if (now >= _tickStartTime) TickAgents(SimulationClock.DeltaTime);
@@ -150,7 +163,6 @@ public class EntityManager : MonoBehaviour
     }
 
     private MovePlanner _planner;
-    private float _lastEcologyTime;
     private float _lastNestTime;
 
     public void ReportThreat(ColonyState colony, Vector3 position, float magnitude)
@@ -182,9 +194,14 @@ public class EntityManager : MonoBehaviour
         _planner.BindColonies(_colonies);
         ServiceLocator.Register(_planner);
         NeuralModelStorage.RegisterFactory(new SharedBrainSnapshotFactory());
-        _infection = new InfectionService((uint)UnityEngine.Random.Range(1, int.MaxValue));
-        ServiceLocator.Register(_infection);
-        _tournamentRng = new XorShift32((uint)UnityEngine.Random.Range(1, int.MaxValue));
+        _infection = new InfectionCoordinator((uint)UnityEngine.Random.Range(1, int.MaxValue));
+        ServiceLocator.Register(_infection.Service);
+        _food       = new ColonyFood(_colonies, maxFood, spawnRadius);
+        _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue));
+        _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, spawnRadius,
+            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _utility, _thresholds, _boids);
+        _population.Spawned += RaiseSpawned;
+        _population.Died    += RaiseDied;
 
         if (useSavedBrain)
             LoadBrain();
@@ -198,16 +215,12 @@ public class EntityManager : MonoBehaviour
 
         if (_colonies.Count == 0) AddColony(transform.position);
         if (SimulationRules.Active.PredatorCount > 0) _wild = AddColony(transform.position, true);
-
-        _colonyFitness = new float[_colonies.Count];
-        _colonyAlive   = new int[_colonies.Count];
     }
 
     private ColonyState AddColony(Vector3 position, bool wild = false)
         => _colonies.Add(new Unity.Mathematics.float2(position.x, position.z),
             new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden), maxPopulation, wild);
 
-    private int CivilCount => _colonies.Count - (_wild != null ? 1 : 0);
 
 
     [ContextMenu("Save Brain")]
@@ -288,15 +301,16 @@ public class EntityManager : MonoBehaviour
         _motion.Inject(map);
         _map = map;
 
-        _foodIndex = new ChunkFoodIndex(map);
-        ServiceLocator.Register(_foodIndex);
+        var foodIndex = new ChunkFoodIndex(map);
+        ServiceLocator.Register(foodIndex);
+        _food.Bind(foodIndex, SimulationClock.Time);
 
         for (int i = 0; i < initialCount; i++)
         {
-            var colony = _colonies[i % CivilCount];
-            SpawnEntity(RandomPosition(colony), colony);
+            var colony = _colonies[i % _population.CivilCount];
+            SpawnEntity(_population.RandomPosition(colony), colony);
         }
-        _nextPredatorTime = SimulationClock.TimeD;
+        _population.StartPredatorClock(SimulationClock.TimeD);
         _lastColonyTime   = SimulationClock.Time;
         CreateNestViews();
 
@@ -304,7 +318,6 @@ public class EntityManager : MonoBehaviour
             SpawnFood();
 
         _nextGenerationTime = SimulationClock.Time + SimulationRules.Active.GenerationInterval;
-        _lastEcologyTime    = SimulationClock.Time;
         _lastNestTime       = SimulationClock.Time;
 
         _nextFitnessStatsTime = SimulationClock.TimeD;
@@ -330,11 +343,11 @@ public class EntityManager : MonoBehaviour
         if (!_windowOpen && _entities.Count == 0)
         {
             _tickBudget.Reset();
-            ProcessPendingDeaths();
+            _population.ProcessPendingDeaths();
             BeginColonyBatches();
             RunColonyDecisions();
-            FlushDeferredDisposals();
-            TickFoodRespawn();
+            _population.FlushDeferredDisposals();
+            _food.Tick();
             return;
         }
 
@@ -355,9 +368,7 @@ public class EntityManager : MonoBehaviour
             RunTickBatch(_tickCursor, end);
 
             _planner.Flush();
-            SpreadMarker.Begin();
-            _infection.ProcessSpread(_tickSnapshot, _tickCursor, end);
-            SpreadMarker.End();
+            _infection.Spread(_tickSnapshot, _tickCursor, end);
 
             _transmissions        = _infection.Transmissions;
             _recombinations       = _infection.Recombinations;
@@ -367,7 +378,7 @@ public class EntityManager : MonoBehaviour
             if (_tickCursor >= _tickCount) CloseTickWindow();
         }
 
-        TickFoodRespawn();
+        _food.Tick();
     }
 
     private void CloseTickWindow()
@@ -375,11 +386,11 @@ public class EntityManager : MonoBehaviour
         using var scope = CloseWindowMarker.Auto();
         _tickCursor = 0;
         _windowOpen = false;
-        ProcessPendingDeaths();
-        CheckExtinctions();
-        TickPredators();
+        _population.ProcessPendingDeaths();
+        _population.CheckExtinctions();
+        _population.TickPredators();
         for (int c = 0; c < _colonies.Count; c++) _colonies[c].Brain.ApplyPendingGradients();
-        _foodIndex?.PruneUnloaded();
+        _food.PruneUnloaded();
         TickNests();
         TickColonies();
         UpdateVisibility();
@@ -434,7 +445,7 @@ public class EntityManager : MonoBehaviour
         }
 
         RunColonyDecisions();
-        FlushDeferredDisposals();
+        _population.FlushDeferredDisposals();
 
         for (int i = start; i < end; i++)
         {
@@ -442,22 +453,6 @@ public class EntityManager : MonoBehaviour
             if (e == null || e.IsDisposed) continue;
             e.EndCycle();
         }
-    }
-
-    private void TickFoodRespawn()
-    {
-        if (_foodIndex == null || maxFood <= 0) return;
-
-        var rules = SimulationRules.Active;
-        float now = SimulationClock.Time;
-        float dt  = now - _lastEcologyTime;
-        if (dt < rules.EcologyTickInterval) return;
-        _lastEcologyTime = now;
-        if (dt > rules.EcologyMaxStep) dt = rules.EcologyMaxStep;
-
-        float season = (1f + rules.SeasonAmplitude * SeasonClock.Value(now))
-                     * (SeasonClock.IsWinter(now) ? rules.WinterGrowthMul : 1f);
-        _foodIndex.TickEcology(dt, SimulationClock.TimeD, season, maxFood);
     }
 
     private void BeginColonyBatches()
@@ -550,44 +545,8 @@ public class EntityManager : MonoBehaviour
             if (!vacant && now < colony.NextElection) continue;
 
             colony.NextElection = now + r.LeaderElectionInterval;
-            colony.SetLeader(ElectLeader(colony));
+            colony.SetLeader(_population.ElectLeader(colony));
         }
-    }
-
-    private EntityModel ElectLeader(ColonyState colony)
-    {
-        var members = colony.Members;
-        EntityModel best = null;
-        float bestRating = float.MinValue;
-        for (int i = 0; i < members.Length; i++)
-        {
-            var e = _entities[members[i]];
-            if (e.IsDisposed || e.IsDeathPending || e.IsJuvenile) continue;
-            float rating = e.GetFitness() * e.TimeAlive;
-            if (rating <= bestRating) continue;
-            bestRating = rating;
-            best = e;
-        }
-        return best;
-    }
-
-    private void HandleLeaderDeath(EntityModel model)
-    {
-        var colony = model.Colony;
-        if (colony == null || !ReferenceEquals(colony.Leader, model)) return;
-
-        colony.SetLeader(null);
-        colony.NextElection = 0d;
-
-        float stress = SimulationRules.Active.LeaderSuccessionStress;
-        var members = colony.Members;
-        for (int i = 0; i < members.Length; i++)
-        {
-            var e = _entities[members[i]];
-            if (!ReferenceEquals(e, model) && !e.IsDisposed) e.AddStress(stress);
-        }
-
-        colony.SetLeader(ElectLeader(colony));
     }
 
     private readonly float[] _casteWeights = new float[(int)Caste.Count];
@@ -677,52 +636,6 @@ public class EntityManager : MonoBehaviour
         }
     }
 
-    public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null)
-    {
-        if (_entities.Count >= maxPopulation || colony == null)
-        {
-            inheritedCtx?.Dispose();
-            return null;
-        }
-
-        var go  = Instantiate(entityPrefab, position, Quaternion.identity, transform);
-        var ctx = inheritedCtx ?? colony.Brain.CreateContext();
-
-        foreach (var expressible in go.GetComponents<IGeneticPhenotype>())
-            expressible.ApplyGeneticPhenotype(ctx.CoordMLP.Params);
-
-        var netObj = go.GetComponent<NetworkObject>();
-        netObj?.Spawn();
-
-        var viewModel = go.GetComponent<EntityViewModel>();
-        var view      = go.GetComponent<EntityView>();
-
-        viewModel.BindMotion(_motion);
-
-        var model = new EntityModel();
-        model.AssignId(++_nextEntityId);
-
-        model.Configure(colony, ctx, viewModel, viewModel, go, tuning, parent);
-        model.Init();
-        viewModel.Initialize(model);
-        view.Initialize(viewModel);
-        model.AddComponentToEntity(new VisualCullingComponent(go, view.LabelObject));
-        model.SetUp();
-
-        model.GetEntityComponent<MortalityComponent>().Died += () => HandleEntityDied(model);
-        model.OnReproduceRequest += SpawnChild;
-
-        model.ManagerIndex = _entities.Count;
-        _entities.Add(model);
-        colony.AddMember(model);
-        colony.Stats.RecordBirth();
-        _instincts.Reset(model.ManagerIndex, InstinctGenes.From(in ctx.CoordMLP.Params));
-        _utility.Write(model.ManagerIndex, default);
-        _thresholds.Reset(model.ManagerIndex, CasteThresholdSystem.Initial());
-        OnEntitySpawned?.Invoke(model);
-        return model;
-    }
-
     public void SetEntityVisible(EntityModel model, bool visible)
     {
         if (model == null || model.IsDisposed) return;
@@ -733,104 +646,6 @@ public class EntityManager : MonoBehaviour
     {
         for (int i = 0; i < targets.Count; i++)
             SetEntityVisible(targets[i], visible);
-    }
-    public void SpawnChild(EntityModel parent)
-    {
-        if (_entities.Count >= maxPopulation || parent.IsWild) return;
-
-        var parentParams = parent.Brain.Context.CoordMLP.Params;
-        var mate         = SelectMateByTournament(parent);
-
-        var parentVirology = parent.Virology;
-        if (mate != null && parentVirology != null
-            && parentVirology.Modifiers.CytoIncompat >= SimulationRules.Active.CytoIncompatThreshold
-            && mate.LineageId != parent.LineageId)
-            return;
-
-        GeneticParameters childParams;
-        if (mate != null)
-        {
-            var mateParams = mate.Brain.Context.CoordMLP.Params;
-            GeneticParameters.Crossover(in parentParams, in mateParams, out childParams);
-        }
-        else
-        {
-            childParams = parentParams.GetMutatedGeneticParameters();
-        }
-
-        var colony   = parent.Colony;
-        if (colony == null) return;
-        var childCtx = colony.Brain.CreateContext(childParams);
-        var rules    = SimulationRules.Active;
-        var pos      = parent.Motor.Position()
-                     + (Vector3)RavineRandom.GetInsideCircle().normalized * rules.ChildSpawnOffset
-                     + Vector3.up * rules.ChildSpawnLift;
-
-        SpawnEntity(pos, colony, childCtx, parent);
-    }
-
-    private readonly EntityModel[] _mateCandidates = new EntityModel[InfectionService.MaxNeighbors];
-
-    private EntityModel SelectMateByTournament(EntityModel self)
-    {
-        int found = self.Perception.FindEntitiesInRadius(self.Motor.Position(), self, _mateCandidates);
-        if (found == 0) return null;
-
-        int size = SimulationRules.Active.TournamentSize;
-        if (size < 1) size = 1;
-
-        EntityModel best = null;
-        float bestFit = float.NegativeInfinity;
-
-        for (int i = 0; i < size; i++)
-        {
-            var cand = _mateCandidates[_tournamentRng.Range(0, found)];
-            if (cand == null || cand.IsDisposed || cand.IsDeathPending || cand.Colony != self.Colony) continue;
-
-            float f = cand.SelectionFitness;
-            if (f > bestFit) { bestFit = f; best = cand; }
-        }
-
-        Array.Clear(_mateCandidates, 0, found);
-        return best;
-    }
-
-    public bool SpawnFood()
-    {
-        if (_foodIndex == null || _foodIndex.FoodCount >= maxFood) return false;
-
-        Vector3 origin = transform.position;
-        if (CivilCount > 1)
-        {
-            var home = _colonies[RavineRandom.RangeInt(0, CivilCount)].Nest.Position;
-            origin = new Vector3(home.x, origin.y, home.y);
-        }
-
-        int attempts = SimulationRules.Active.FoodSpawnAttempts;
-        for (int i = 0; i < attempts; i++)
-        {
-            var v = RavineRandom.GetInsideCircle(spawnRadius);
-
-            int cellX = (int)math.floor((origin.x + v.x) / MapGenerator.scale);
-            int cellZ = (int)math.floor((origin.z + v.y) / MapGenerator.scale);
-
-            if (_foodIndex.TryAddFood(cellX, cellZ, _foodIndex.RollKind(0, SimulationRules.Active))) return true;
-        }
-        return false;
-    }
-    private Vector3 RandomPosition(ColonyState colony)
-    {
-        var v    = RavineRandom.GetInsideCircle(spawnRadius);
-        var home = colony.Nest.Position;
-        return new Vector3(home.x + v.x, transform.position.y, home.y + v.y);
-    }
-
-    private void HandleEntityDied(EntityModel model)
-    {
-        if (model == null || model.IsDisposed || model.IsDeathPending) return;
-        model.DeathPosition = model.Position2D;
-        model.MarkDeathPending();
-        _pendingDeath.Enqueue(model);
     }
 
     private void RebuildTickSnapshot()
@@ -856,211 +671,6 @@ public class EntityManager : MonoBehaviour
         SimulationRules.CaptureFrame();
         _grid.Rebuild(_tickSnapshot, _tickCount, tuning.DetectionRadius);
         RunFlocking();
-    }
-
-    private EntityModel[] _deferredDispose = Array.Empty<EntityModel>();
-    private int _deferredCount;
-
-    private void ProcessPendingDeaths()
-    {
-        while (_pendingDeath.Count > 0)
-        {
-            var model = _pendingDeath.Dequeue();
-            if (model == null || model.IsDisposed) continue;
-
-            model.OnReproduceRequest -= SpawnChild;
-            model.CaptureFinalFitness();
-            var cause = model.Mortality != null ? model.Mortality.Cause : DeathCause.Age;
-            model.Colony?.Stats.RecordDeath(model.TimeAlive, cause);
-            HandleLeaderDeath(model);
-            BroadcastDeath(model, cause);
-            DropCorpse(model, cause);
-            model.Brain?.CompleteTerminal(TerminalPenaltyFor(model, cause), SimulationClock.Time);
-            RemoveEntitySwapBack(model);
-            OnEntityDied?.Invoke(model);
-
-            if (_deferredCount == _deferredDispose.Length)
-                Array.Resize(ref _deferredDispose, Math.Max(_deferredDispose.Length << 1, 8));
-            _deferredDispose[_deferredCount++] = model;
-        }
-    }
-
-    private void DropCorpse(EntityModel model, DeathCause cause)
-    {
-        if (_foodIndex == null || model.Stats == null || model.Stats.IsDisposed) return;
-
-        var virology = model.Virology;
-        ViralPayload payload = default;
-        bool infected = virology != null && virology.TryExtractPayload(out payload);
-
-        var r = SimulationRules.Active;
-        if (infected && virology.Modifiers.Liquefy >= r.LiquefyThreshold)
-            _foodIndex.InfectNearby(model.DeathPosition, r.LiquefyRadiusCells, r.LiquefyMaxCells, in payload);
-
-        bool tainted = cause == DeathCause.Virus || cause == DeathCause.Toxic;
-        int  taboo   = tainted && model.Colony != null ? model.Colony.ColonyId : 0;
-        _foodIndex.TryAddCorpse(model.DeathPosition, model.BodyEnergy, ref payload, infected, taboo);
-    }
-
-    private readonly EntityModel[] _witnesses = new EntityModel[InfectionService.MaxNeighbors];
-
-    private void BroadcastDeath(EntityModel model, DeathCause cause)
-    {
-        var colony = model.Colony;
-        if (colony == null) return;
-
-        var r    = SimulationRules.Active;
-        var nest = colony.Nest;
-        float2 at = model.DeathPosition;
-
-        nest.Mark(ColonyChannel.KinDeath, at, r.KinDeathMark);
-        float poiDanger = cause == DeathCause.Killed || cause == DeathCause.Virus || cause == DeathCause.Toxic
-            ? r.ColonyPoiDeathDanger : 0f;
-        if (poiDanger > 0f) colony.Pois.Offer(at, 0f, poiDanger);
-
-        if (cause == DeathCause.Killed || cause == DeathCause.Virus)
-        {
-            nest.Mark(ColonyChannel.Danger, at, r.KinDeathDangerMark);
-            nest.RaiseAlarm(r.KinDeathAlarm);
-        }
-        if (cause == DeathCause.Starved) nest.RaiseHunger(r.StarvedHungerRise);
-        if (cause == DeathCause.Virus || cause == DeathCause.Toxic) nest.Mark(ColonyChannel.Danger, at, r.CorpseDangerMark);
-
-        ulong lineage = model.LineageId;
-        int found = _grid.FindInRadius(new Vector3(at.x, 0f, at.y), model, r.KinDeathRadius, _witnesses);
-        for (int i = 0; i < found; i++)
-        {
-            var w = _witnesses[i];
-            _witnesses[i] = null;
-            if (w == null || w.IsDisposed || w.IsDeathPending) continue;
-
-            float kin = 0f;
-            if (w.Colony == colony) kin += r.KinColonyWeight;
-            if (lineage != 0UL && w.LineageId == lineage) kin += r.KinLineageWeight;
-            kin = math.saturate(kin);
-            if (kin <= 0f) continue;
-
-            w.AddStress(r.KinDeathStress * kin);
-            w.AddExtrinsicReward(r.WitnessPenalty * kin);
-        }
-    }
-
-    private void FlushDeferredDisposals()
-    {
-        for (int i = 0; i < _deferredCount; i++)
-        {
-            _deferredDispose[i].Dispose();
-            _deferredDispose[i] = null;
-        }
-        _deferredCount = 0;
-    }
-
-    private void RemoveEntitySwapBack(EntityModel model)
-    {
-        int idx = model.ManagerIndex;
-
-        if ((uint)idx >= (uint)_entities.Count || !ReferenceEquals(_entities[idx], model))
-        {
-            idx = _entities.IndexOf(model);
-            if (idx < 0) { model.ManagerIndex = -1; return; }
-        }
-
-        model.Colony?.RemoveMember(model, _entities);
-
-        int last = _entities.Count - 1;
-        if (idx != last)
-        {
-            var moved = _entities[last];
-            _entities[idx]    = moved;
-            moved.ManagerIndex = idx;
-            moved.Colony?.RemapMember(moved.ColonySlot, idx);
-        }
-
-        _instincts.RemoveSwapBack(idx, last);
-        _boids.RemoveSwapBack(idx, last);
-        _utility.RemoveSwapBack(idx, last);
-        _thresholds.RemoveSwapBack(idx, last);
-        _entities.RemoveAt(last);
-        model.ManagerIndex = -1;
-    }
-
-    private float TerminalPenaltyFor(EntityModel model, DeathCause cause)
-    {
-        float z = _fitnessStatsReady ? (model.FinalFitness - _fitnessMedian) / _fitnessSpread : 0f;
-        return TerminalPenaltyMath.For(SimulationRules.Active, cause, _fitnessStatsReady, z);
-    }
-
-    [ContextMenu("Seed Random Strain")]
-    private void SeedRandomStrain()
-    {
-        if (_entities.Count == 0 || _infection == null) return;
-        var victim = _entities[RavineRandom.RangeInt(0, _entities.Count)];
-        _infection.InjectStrain(victim, 12, (uint)RavineRandom.RangeInt(1, int.MaxValue));
-    }
-
-    private void UpdateFitnessStats()
-    {
-        int n = _entities.Count;
-        _entityCount = n;
-        _foodCount   = _foodIndex != null ? _foodIndex.FoodCount : 0;
-
-        if (n > 0)
-        {
-            if (n > _fitnessScratch.Length)
-            {
-                int cap = _fitnessScratch.Length;
-                while (cap < n) cap <<= 1;
-                _fitnessScratch = new float[cap];
-            }
-
-            float entropySum = 0f;
-            float fitnessSum = 0f;
-            Array.Clear(_colonyFitness, 0, _colonyFitness.Length);
-            Array.Clear(_colonyAlive, 0, _colonyAlive.Length);
-
-            int counted = 0;
-            for (int i = 0; i < n; i++)
-            {
-                var e = _entities[i];
-                if (e.IsWild) continue;
-                float f = e.GetFitness();
-                _fitnessScratch[counted++] = f;
-                fitnessSum += f;
-                entropySum += e.Colony.Brain.GetCoordinatorEntropy(e.Brain.Context);
-
-                int c = e.ColonyIndex;
-                _colonyFitness[c] += f;
-                _colonyAlive[c]++;
-            }
-
-            _avgEntropy = entropySum / math.max(counted, 1);
-            _avgFitness = fitnessSum / math.max(counted, 1);
-
-            int m = math.max(counted, 1);
-            if (counted == 0) _fitnessScratch[0] = 0f;
-            Array.Sort(_fitnessScratch, 0, m);
-
-            _fitnessMedian = _fitnessScratch[m >> 1];
-            float iqr = _fitnessScratch[(3 * m) >> 2] - _fitnessScratch[m >> 2];
-            _fitnessSpread = iqr > 1e-3f
-                ? iqr
-                : math.max(1e-3f, math.abs(_fitnessMedian) * SimulationRules.Active.FitnessSpreadMedianFraction);
-            _fitnessStatsReady = true;
-            for (int c = 0; c < _colonies.Count; c++)
-                if (_colonyAlive[c] > 0)
-                    _colonies[c].Brain?.ReportMeanFitness(_colonyFitness[c] / _colonyAlive[c]);
-        }
-        else
-        {
-            _fitnessStatsReady = false;
-        }
-    }
-
-    public void EvolveGenotypes()
-    {
-        if (_tickCursor != 0) return;
-        for (int c = 0; c < _colonies.Count; c++)
-            if (!_colonies[c].IsWild) EvolveColony(_colonies[c]);
     }
 
     private void UpdateVisibility()
@@ -1095,132 +705,6 @@ public class EntityManager : MonoBehaviour
         }
     }
 
-    private void CheckExtinctions()
-    {
-        var r = SimulationRules.Active;
-        double now = SimulationClock.TimeD;
-        for (int c = 0; c < _colonies.Count; c++)
-        {
-            var colony = _colonies[c];
-            if (colony.IsWild) continue;
-            if (colony.MemberCount > 0)
-            {
-                colony.ExtinctSince = double.NaN;
-                continue;
-            }
-            if (double.IsNaN(colony.ExtinctSince)) { colony.ExtinctSince = now; continue; }
-            if (now - colony.ExtinctSince < r.ColonyRespawnDelay) continue;
-            ReseedColony(colony, BestDonor(colony));
-        }
-    }
-
-    private ColonyState BestDonor(ColonyState exclude)
-    {
-        ColonyState best = null;
-        float bestScore = float.MinValue;
-        for (int c = 0; c < _colonies.Count; c++)
-        {
-            var colony = _colonies[c];
-            if (colony == exclude || colony.IsWild || colony.MemberCount == 0) continue;
-            float score = colony.Score;
-            if (score <= bestScore) continue;
-            bestScore = score;
-            best = colony;
-        }
-        return best;
-    }
-
-    private void ReseedColony(ColonyState colony, ColonyState donor)
-    {
-        colony.ExtinctSince = double.NaN;
-        colony.EmaPrimed    = false;
-        colony.Stats.Reseeds++;
-
-        if (donor != null)
-        {
-            var old = colony.Brain;
-            colony.ReplaceBrain(new SharedHierarchicalBrain(donor.Brain));
-            old?.Dispose();
-        }
-
-        int count = SimulationRules.Active.ColonyRespawnCount;
-        var donorMembers = donor != null ? donor.Members : default;
-        for (int i = 0; i < count && _entities.Count < maxPopulation; i++)
-        {
-            GeneticParameters genes = donorMembers.Length > 0
-                ? _entities[donorMembers[RavineRandom.RangeInt(0, donorMembers.Length)]].Brain.Context.CoordMLP.Params.GetMutatedGeneticParameters()
-                : GeneticParameters.Default;
-            SpawnEntity(RandomPosition(colony), colony, colony.Brain.CreateContext(genes));
-            if (donor != null) donorMembers = donor.Members;
-        }
-    }
-
-    private void TickPredators()
-    {
-        var wild = _wild;
-        if (wild == null) return;
-        var r = SimulationRules.Active;
-        double now = SimulationClock.TimeD;
-        if (now < _nextPredatorTime || wild.MemberCount >= r.PredatorCount || CivilCount == 0) return;
-        _nextPredatorTime = now + r.PredatorRespawnInterval;
-
-        var home = _colonies[RavineRandom.RangeInt(0, CivilCount)].Nest.Position;
-        float a = RavineRandom.RangeFloat(0f, 2f * math.PI);
-        math.sincos(a, out float sa, out float ca);
-        var p = home + new float2(ca, sa) * r.PredatorSpawnDistance;
-        SpawnEntity(new Vector3(p.x, transform.position.y, p.y), wild);
-    }
-
-    private void EvolveColony(ColonyState colony)
-    {
-        var members = colony.Members;
-        int n = members.Length;
-        if (n < 2) return;
-
-        if (n > _evolveIndices.Length)
-        {
-            int cap = _evolveIndices.Length;
-            while (cap < n) cap <<= 1;
-            _evolveIndices = new int[cap];
-            _evolveKeys    = new float[cap];
-        }
-
-        for (int i = 0; i < n; i++)
-        {
-            int idx = members[i];
-            _evolveIndices[i] = idx;
-            _evolveKeys[i]    = _entities[idx].SelectionFitness;
-        }
-
-        Array.Sort(_evolveKeys, _evolveIndices, 0, n);
-
-        int eliteCount = math.max(1, (int)(n * SimulationRules.Active.EliteFraction));
-        if (eliteCount >= n) eliteCount = n - 1;
-
-        int eliteStart = n - eliteCount;
-
-        for (int r = 0; r < eliteStart; r++)
-        {
-            var target = _entities[_evolveIndices[r]];
-            if (target.IsDisposed || target.IsDeathPending) continue;
-
-            var pa = _entities[_evolveIndices[eliteStart + _tournamentRng.Range(0, eliteCount)]]
-                     .Brain.Context.CoordMLP.Params;
-            var pb = _entities[_evolveIndices[eliteStart + _tournamentRng.Range(0, eliteCount)]]
-                     .Brain.Context.CoordMLP.Params;
-
-            GeneticParameters.Crossover(in pa, in pb, out var child);
-
-            var ctx = target.Brain.Context;
-            var own = ctx.CoordMLP.Params;
-            GeneticParameters.CopyLearningGenes(in child, ref own);
-
-            ctx.CoordMLP.Params = own;
-            for (int g = 0; g < ctx.ExecMLPs.Length; g++)
-                ctx.ExecMLPs[g].Params = own;
-        }
-    }
-
     private void UnregisterServices()
     {
         var services = ServiceLocator.Services;
@@ -1229,8 +713,8 @@ public class EntityManager : MonoBehaviour
         services.Unregister(_players);
         services.Unregister(_colonies);
         services.Unregister(_planner);
-        services.Unregister(_infection);
-        services.Unregister(_foodIndex);
+        services.Unregister(_infection?.Service);
+        services.Unregister(_food?.Index);
     }
 
     private void OnDestroy()
@@ -1240,8 +724,8 @@ public class EntityManager : MonoBehaviour
             if (_nestViews[i] != null) Destroy(_nestViews[i].gameObject);
         _nestViews.Clear();
         _infection?.Dispose();
-        ProcessPendingDeaths();
-        FlushDeferredDisposals();
+        _population?.ProcessPendingDeaths();
+        _population?.FlushDeferredDisposals();
         _planner?.Dispose();
         _motion?.Dispose();
         _instincts?.Dispose();
