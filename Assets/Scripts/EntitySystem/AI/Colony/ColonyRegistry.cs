@@ -28,6 +28,18 @@ public sealed class ColonyRegistry : IDisposable
         return colony;
     }
 
+    public bool TryGetById(int colonyId, out ColonyState colony)
+    {
+        for (int i = 0; i < _count; i++)
+        {
+            if (_colonies[i].ColonyId != colonyId) continue;
+            colony = _colonies[i];
+            return true;
+        }
+        colony = null;
+        return false;
+    }
+
     public int CivilCount
     {
         get

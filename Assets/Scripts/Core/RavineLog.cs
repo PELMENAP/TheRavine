@@ -21,12 +21,14 @@ public static class RavineLog
 
     public static void Error(string message)
     {
-        _logger?.LogError(message);
+        if (_logger != null) _logger.LogError(message);
+        else UnityEngine.Debug.LogError(message);
     }
 
     public static void Warning(string message)
     {
-        _logger?.LogWarning(message);
+        if (_logger != null) _logger.LogWarning(message);
+        else UnityEngine.Debug.LogWarning(message);
     }
 
     public static void Info(string message)

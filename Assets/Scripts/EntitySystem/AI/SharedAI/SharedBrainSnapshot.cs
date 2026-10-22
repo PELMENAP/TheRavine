@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 public class SharedBrainSnapshot : ISerializableNeuralModel
@@ -34,30 +35,52 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
         }
     }
 
+    public static bool TryReadVersion(byte[] data, out int version)
+    {
+        version = 0;
+        if (data == null || data.Length < 8 || BitConverter.ToUInt32(data, 0) != Magic) return false;
+        version = BitConverter.ToInt32(data, 4);
+        return true;
+    }
+
     public static SharedBrainSnapshot Deserialize(byte[] data)
     {
         if (data == null || data.Length < 8)
         {
-            UnityEngine.Debug.LogError("Снапшот мозга: файл пуст или обрезан");
+            RavineLog.Error("Снапшот мозга: файл пуст или обрезан, загрузка отменена");
             return null;
         }
 
+        if (!TryReadVersion(data, out int version))
+        {
+            RavineLog.Error("Снапшот мозга: неизвестный формат, загрузка отменена, переобучение обязательно");
+            return null;
+        }
+
+        if (version != Version)
+        {
+            RavineLog.Error($"Снапшот мозга: версия {version}, ожидалась {Version} (координатор: {PlanCatalog.Count} планов + {SharedHierarchicalBrain.CoordAux} aux стайности, вход {InputVectorizer.VectorSize}, {ActionCatalog.Count} действий), сохранённый мозг несовместим, загрузка отменена, переобучение обязательно");
+            return null;
+        }
+
+        try
+        {
+            return ReadModels(data);
+        }
+        catch (Exception ex)
+        {
+            RavineLog.Error($"Снапшот мозга v{version}: повреждённые данные ({ex.Message}), загрузка отменена");
+            return null;
+        }
+    }
+
+    private static SharedBrainSnapshot ReadModels(byte[] data)
+    {
         using (var ms = new MemoryStream(data))
         using (var br = new BinaryReader(ms))
         {
-            uint magic = br.ReadUInt32();
-            if (magic != Magic)
-            {
-                UnityEngine.Debug.LogError("Снапшот мозга: неизвестный формат, переобучение обязательно");
-                return null;
-            }
-
-            int version = br.ReadInt32();
-            if (version != Version)
-            {
-                UnityEngine.Debug.LogError($"Снапшот мозга: версия {version}, ожидалась {Version} (координатор: {PlanCatalog.Count} планов + {SharedHierarchicalBrain.CoordAux} aux стайности, вход {InputVectorizer.VectorSize}, {ActionCatalog.Count} действий), сохранённый мозг несовместим, переобучение обязательно");
-                return null;
-            }
+            br.ReadUInt32();
+            br.ReadInt32();
 
             var reservoir = LSTMMemory.Deserialize(ReadBlock(br));
             var coordMlp  = DelayedPerceptron.Deserialize(ReadBlock(br));
@@ -81,6 +104,8 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
     private static byte[] ReadBlock(BinaryReader br)
     {
         int len = br.ReadInt32();
+        if (len < 0 || len > br.BaseStream.Length - br.BaseStream.Position)
+            throw new EndOfStreamException($"блок {len} байт выходит за конец файла");
         return br.ReadBytes(len);
     }
 }

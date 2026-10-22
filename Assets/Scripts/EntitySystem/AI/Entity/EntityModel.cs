@@ -30,6 +30,7 @@ public class EntityModel : AEntity, IFoodReceiver
 
     public ColonyState Colony { get; private set; }
     public int ColonyIndex => Colony != null ? Colony.Index : 0;
+    public int ColonyId    => Colony != null ? Colony.ColonyId : 0;
     public int ColonySlot = -1;
     public NestState Nest { get; private set; }
     public MovePlanner Planner { get; private set; }
