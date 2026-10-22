@@ -19,7 +19,7 @@ public class SharedHierarchicalBrain : IDisposable
 
     public const int CoordAux = 2;
 
-    private static int[] BuildCoordSizes(int combined) => new[] { combined, 32, 16, 16, PlanCount + 1 + CoordAux };
+    public static int[] BuildCoordSizes(int combined) => new[] { combined, 32, 16, 16, PlanCount + 1 + CoordAux };
 
     public const int HeadingOutputs   = 2;
     public const int CurvatureOutputs = 1;
@@ -36,7 +36,7 @@ public class SharedHierarchicalBrain : IDisposable
             ? DirectionOutputs + 1
             : HeadingOutputs + CurvatureOutputs + (goal == (int)Goal.Social ? SpeechOutputs : 0);
 
-    private static int[] BuildExecSizes(int combined, int goal)
+    public static int[] BuildExecSizes(int combined, int goal)
         => new[] { combined, 64, 32, 32, ActionSubsets[goal].Length + 1 + ExecAux(goal) };
 
 
@@ -132,9 +132,8 @@ public class SharedHierarchicalBrain : IDisposable
     public void ApplyPendingGradients()
     {
         CompletePending();
-        var   rules   = SimulationRules.Active;
-        float decayed = OptimizerBaseLr * math.exp(-SimulationClock.Time * rules.LrDecayPerSecond);
-        float lr      = math.max(rules.MinLearningRate, decayed);
+        var   rules = SimulationRules.Active;
+        float lr    = ResolveLearningRate(SimulationClock.Time, rules.LrDecayPerSecond, rules.MinLearningRate);
         CurrentLearningRate = lr;
 
         coordinator.ApplyAccumulatedGradients(lr, OptimizerWeightDecay, GlobalDiagnostics);
@@ -143,6 +142,12 @@ public class SharedHierarchicalBrain : IDisposable
 
         _rnd.TrainSweep();
         GlobalTrainingSteps++;
+    }
+
+    public static float ResolveLearningRate(float time, float decayPerSecond, float minLearningRate)
+    {
+        float decayed = OptimizerBaseLr * math.exp(-time * math.max(decayPerSecond, 0f));
+        return math.max(math.max(minLearningRate, SimulationRules.LearningRateFloor), decayed);
     }
 
     private float _plateauScale = 1f;

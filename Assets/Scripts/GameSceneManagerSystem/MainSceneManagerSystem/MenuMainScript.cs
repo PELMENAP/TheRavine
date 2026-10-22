@@ -71,7 +71,7 @@ namespace TheRavine.Base
                 FaderOnTransit.Instance.GetFaderCamera()
             );
 
-            ServiceLocator.Services.Register(sceneLaunch);
+            ServiceLocator.Register(sceneLaunch);
         }
 
         private void InitializeComponents()
@@ -159,6 +159,7 @@ namespace TheRavine.Base
 
         private void OnDestroy()
         {
+            ServiceLocator.Services.Unregister(sceneLaunch);
             disposables.Dispose();
             currentSection.Dispose();
         }

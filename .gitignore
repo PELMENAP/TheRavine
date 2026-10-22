@@ -49,3 +49,7 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 *.gguf
 /[Aa]ssets/[Ss]treamingAssets/
+
+# Crash dumps
+*.blob
+mono_crash*

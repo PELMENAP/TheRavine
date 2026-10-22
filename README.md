@@ -54,7 +54,7 @@ Open-world sandbox game developed in Unity.
 - `AutosaveCoordinator`
 - `WorldSettingsController`
 
-⚠️ Очистка сервисов в `OnDestroy` закомментирована — при перезаходе возможны «зомби»-сервисы (см. «Известные проблемы»).
+Очистка: `GameInitializer.OnDestroy` (только активный `Instance`) → `ServiceLocator.ClearAll()` + `RavineLog.Shutdown()`. Выход из игровой сцены — `Bootstrap.InTheEnd` (однократно на сцену): `BreakUpServices` → `ClearAll` → `InitializeServices`.
 
 ### Главное меню — `GameSceneManagerSystem/Menu/`
 - `WorldManagerUI` — список миров, создание/удаление/переименование
@@ -78,7 +78,7 @@ Open-world sandbox game developed in Unity.
 ServiceLocator.Services  — Dictionary<Type, object>  — игровые сервисы
 ServiceLocator.Players   — PlayerContainer            — зарегистрированные игроки
 ```
-`ServiceContainer.Register` молча игнорирует повторную регистрацию (нет replace) — важно при перезаходе на сцену.
+`ServiceContainer.Register` возвращает `false` при повторной регистрации типа или `null` (без replace). `ServiceLocator.Register` — та же регистрация с ошибкой через `RavineLogger` при отказе; все вызовы в проекте идут через него. Сервисы сцены снимаются через `ServiceContainer.Unregister(instance)` — снимает только свой экземпляр (`EntityManager.OnDestroy`, `MobGenerator.BreakUp`, `MenuMainScript.OnDestroy`).
 
 ---
 
@@ -130,7 +130,7 @@ Chunk-based спавн/деспавн сущностей по позиции и�
 - `DayCycle` (`Core/DayCycle.cs`) — NetworkVariable<bool> isDay, сервер управляет временем
 - `CurrencyNetworkComponent` — NetworkVariable<int>, только сервер пишет, RPC от клиента
 - `PlayerController.MoveServerRpc` — движение валидируется на сервере
-- `NetCode/NetworkSpawner.cs` — ServerRpc-спавн по имени префаба (⚠️ авторизация не работает — см. «Известные проблемы»); `NetCode/RavineNetworkManager.cs` — мёртвый код (полностью закомментирован, старый UNet)
+- `NetCode/NetworkSpawner.cs` — `SpawnObjectServerRpc(int prefabId, Vector3 position)`: ID — индекс в whitelist `spawnablePrefabs` (только префабы из `NetworkConfig.Prefabs`); право — подключённый клиент с `PlayerObject`, владелец спавнера или `GrantSpawnRights(clientId)`; лимит `maxSpawnsPerWindow` за `rateWindowSeconds` (по `ServerTime`) и `maxSpawnRadius` от `PlayerObject`; отказы — `RavineLog.Warning`. Сборка `Netcode` ссылается на `Core` (обратная ссылка `Core → Netcode` удалена)
 - Соединение: `GameSceneManagerSystem/NetworkConnectionManager.cs`, `NetworkTransportConfig.cs`, `NetworkUIController.cs`
 
 ---
@@ -205,6 +205,12 @@ BehaviourType: `None | NAL | GROW`
 
 Пер-сущностное состояние: `SharedAI/LSTMContext.cs`, `SharedAI/PerceptronContext.cs` (пул состояний `RentState/ReturnState`, BPTT-истории).
 
+Один мозг на колонию: `ColonyRegistry` → `ColonyState` (`Brain`, `Nest`). `NestState` — per `ColonyState`, не singleton; доступ к колонии только явный (`EntityManager.Colonies[i]`, `EntityModel.Colony`).
+
+Сохранение: `SharedBrainSnapshot` v7, файл на колонию `{savedModelName}_c{ColonyId}`. Любое изменение размеров входа/выхода (`InputVectorizer.VectorSize`, `PlanCatalog.Count`, `CoordAux`, `ActionCatalog.Count`, слои LSTM/перцептронов) роняет `BrainArchitectureVersionTests` — нужен инкремент `Version`, старые снапшоты несовместимы.
+
+Время: `SimulationClock` — единственный источник времени симуляции; Unity-время читается только в `EntityManager.Update` (`SimulationClock.Advance(Time.deltaTime * simulationTimeScale)`). Бюджет окна тика агентов — `TickWindowBudget` (средний dt `SimulationClock` за прошлое окно).
+
 ### Обучение
 - `AI/DelayedPerceptron/` — continuous-time RNN с τ-весами; Truncated BPTT (8 шагов), reward-weighted; ε-greedy с adaptive epsilon по entropy
 - `AI/SharedAI/ValueCritic.cs` — линейный TD-критик (baseline для reward)
@@ -225,7 +231,7 @@ BehaviourType: `None | NAL | GROW`
 - `InventoryModel` — чистая модель (слоты, стаки, крафт)
 - `EventDrivenInventoryProxy` — обёртка с событиями (Added/Removed/Changed)
 - `UIInventory : ISetAble` — View, подписан на PlaceEvent/PickUpEvent из EventBus игрока
-- `CraftService` (`UI/CraftService.cs`) — проверяет рецепты, заполняет прогресс-бар; `CraftPresenter` — MVP-слой; `CraftModel.cs` — мёртвый код
+- `CraftService` (`UI/CraftService.cs`) — проверяет рецепты, заполняет прогресс-бар; `CraftPresenter` — MVP-слой
 - `UIDragger` — drag-and-drop (PC мышь + mobile touch)
 - **LLM-описания**: `LLMItemDescriptionService` с debounce (0.4s), кеш в `ItemDescriptionRegistry`
 
@@ -293,7 +299,8 @@ BehaviourType: `None | NAL | GROW`
 - **View/** — `ParallaxEffect`, `PlayerDialogOutput`, `ChangeRandomSprite`
 - **UI/Settings/**, **UI/Console/** — настройки и консоль
 - **Core/Utilities/** — `PriorityQueue`, `IndexedSet`, `Dence3DGrid`, `EnumerableSnapshot`, `CodeHelpers`, `Extentions`
-- **Test/** — `MarketSimulator`, `PriceChart`, `PointDraw` и пр. — экспериментальный/мёртвый код (кандидаты на вынос в отдельную asmdef или удаление)
+- **Test/** — экспериментальный код: `PointDraw` (используется в `Scenes/TestScene/56u5y3454e.unity`), `PriceChart` + `Market`/`MarketCore`/`MarketSimulator` (используются `Prefabs/Market.prefab`)
+- **Assets/Tests/EditMode/** — EditMode-тесты (`EntitySystem.Tests.EditMode.asmdef`, Editor-only): `TickWindowBudgetTests`, `TerminalPenaltyTests`, `BrainArchitectureVersionTests`, `ServiceContainerTests`
 
 ---
 
@@ -312,12 +319,13 @@ BehaviourType: `None | NAL | GROW`
 
 ---
 
-## Известные проблемы (аудит 2026-08, по приоритету)
+## Известные проблемы (аудит 2026-08, статус 2026-10)
 
-1. **Двойной тик сущностей**: `EntitySystem.FixedUpdate` и `EntityManager.EntityTickLoopAsync` оба крутят `UpdateEntityCycle` — нужен один драйвер.
-2. **PoolManager не пулит**: `Reuse/Deactivate` сразу возвращают объект в очередь — нет разделения free/busy.
-3. **Спавн-рассинхрон**: `EntitySystem.CreateMob` ищет ViewModel через `GetComponentInChildren`, `MobNAL.RunLifecycle` — через `GetComponent` на корне; при расхождении сущность не регистрируется.
-4. **Сеть**: авторизация в `NetworkSpawner.IsAuthorizedClient` не работает (на сервере LocalClientId=0 — проверка бессмысленна).
-5. **Утечки**: подписки R3 в `AEntityViewModel.SetupSubscriptions` не в DisposableBag; `CommandScheduler.ResetCancellation` не диспоузит старый CTS; вечные async-лупы; очистка сервисов в `GameInitializer.OnDestroy` закомментирована.
-6. **AI**: `lr` умножается на знаковый reward в `DelayedPerceptron.Train` (отрицательная награда инвертирует градиент); `EvolveSharedWeights` использует AverageEntropy как fitness; `new DelayedItem` каждый тик (нужен кольцевой буфер).
-7. **Мёртвый код**: `RavineNetworkManager.cs`, `RpcTest.cs`, `CraftModel.cs`, `PlayerUIService.cs`, папка `Test/`.
+1. **Два драйвера тика** (открыто, Этап 2.1): `PlayerEntity` — в `EntitySystem.FixedUpdate` (`global` содержит только игроков), AI-агенты — в `EntityManager.EntityTickLoopAsync`. Двойного тика одних сущностей нет.
+2. ~~**PoolManager не пулит**~~ — закрыто: free/busy разделены, `Release` проверяет `IsActive` и `Owner`.
+3. **Спавн-рассинхрон** (открыто): `EntitySystem.CreateMob` ищет ViewModel через `GetComponentInChildren`, `MobNAL.RunLifecycle` — через `GetComponent` на корне; при расхождении сущность не регистрируется.
+4. ~~**Сеть**: авторизация `NetworkSpawner.IsAuthorizedClient` не работает~~ — закрыто: владелец/выданное право, whitelist int-ID, лимит частоты и радиуса (см. «Сеть»).
+5. **Утечки**: ~~R3-подписки `AEntityViewModel`~~ — `DisposableBag` (`Clear` в `OnNetworkDespawn`, `Dispose` в `OnDestroy`); ~~`CommandScheduler.ResetCancellation`~~ — старый CTS диспоузится; ~~`GameInitializer.OnDestroy`~~ — `ClearAll`; ~~молчаливый отказ `Register`~~ — `ServiceLocator.Register` логирует. Открыто: `CommandScheduler._isProcessing` не сбрасывается при выходе цикла по отмене.
+6. **AI**: ~~`lr` × знаковый reward~~ — не баг: advantage со знаком — корректный PPO-градиент, `lr > 0` гарантирован (`SharedHierarchicalBrain.ResolveLearningRate`, `SimulationRules.OnValidate`), знак терминального штрафа зафиксирован `TerminalPenaltyTests`; ~~fitness = AverageEntropy~~ — устарело, `EvolveGenotypes` сортирует по `SelectionFitness`; ~~`new DelayedItem` каждый тик~~ — закрыто, `DecisionRing` предаллоцирует буфер.
+7. ~~**Мёртвый код**~~ — удалены `RpcTest.cs`, `CraftModel.cs`, `PlayerUIService.cs`, `Test/Test.cs`, корневые `*CommandBuffer.cs`, дубли конфигов без точки; `mono_crash.mem.6929.1.blob` снят с индекса. `RavineNetworkManager.cs` в репозитории отсутствовал.
+8. ~~**Unity-время в логике агентов**~~ — закрыто: `UniTask.Delay`/`Time.smoothDeltaTime` в `EntityManager` заменены на `SimulationClock`.

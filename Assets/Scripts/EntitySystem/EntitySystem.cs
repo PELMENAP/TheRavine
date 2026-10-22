@@ -33,8 +33,8 @@ namespace TheRavine.EntityControl
         private RavineLogger logger;
         public void SetUp(ISetAble.Callback callback)
         {
-            ServiceLocator.Services.Register(this);
-            ServiceLocator.Services.Register(new ChunkFoodIndex(ServiceLocator.Services.Get<MapGenerator>()));
+            ServiceLocator.Register(this);
+            ServiceLocator.Register(new ChunkFoodIndex(ServiceLocator.Services.Get<MapGenerator>()));
             
             logger = ServiceLocator.GetService<RavineLogger>();
             logger.LogInfo("EntitySystem service is available now");

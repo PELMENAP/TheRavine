@@ -14,6 +14,13 @@ public class ServiceContainer
         return true;
     }
 
+    public bool Unregister<T>(T service) where T : class
+    {
+        if (service == null || !_services.TryGetValue(typeof(T), out var current) || !ReferenceEquals(current, service))
+            return false;
+        return _services.Remove(typeof(T));
+    }
+
     public bool TryGet<T>(out T service) where T : class
     {
         if (_services.TryGetValue(typeof(T), out var s) && s is T casted)

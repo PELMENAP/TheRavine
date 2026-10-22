@@ -68,7 +68,7 @@ namespace TheRavine.Generator
             if (windZone == null) windZone = GetComponent<WindZone>();
             if (mtreeWind == null) mtreeWind = GetComponent<MtreeWind>();
             LoadMap();
-            ServiceLocator.Services.Register(this);
+            ServiceLocator.Register(this);
         }
 
         public WindParams GetParams(float time)

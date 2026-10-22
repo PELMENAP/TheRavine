@@ -425,7 +425,7 @@ namespace TheRavine.Generator
 
         public void SetUp(ISetAble.Callback callback)
         {
-            ServiceLocator.Services.Register(this);
+            ServiceLocator.Register(this);
 
             seed = 16;
             mapData = new LongDictionary<ChunkData>(256);
