@@ -53,8 +53,11 @@ public class BoidsInfo : ScriptableObject
     public float groundPerchOffset = 0.2f;
 
     [Header("Tree Slots")]
-    [Range(0f, 1f)] public float perchMinHeight = 0.4f;
-    [Range(0f, 1f)] public float perchRadiusMin = 0.7f;
+    [Range(0f, 1f)] public float perchMinHeight   = 0.35f;
+    [Range(0f, 1f)] public float perchTopMargin   = 0.1f;
+    [Range(0f, 1f)] public float perchRadiusBase  = 0.85f;
+    [Range(0f, 1f)] public float perchRadiusTop   = 0.15f;
+    [Range(0f, 1f)] public float perchRadiusInner = 0.3f;
     public int perchSlotsTheta = 8, perchSlotsHeight = 8;
 
     [Header("Approach / Landing")]
@@ -86,6 +89,21 @@ public class BoidsInfo : ScriptableObject
 
     [Header("Animation")]
     [Range(0f, 1f)] public float flapMinScale = 0.5f;
+
+
+    [Header("Chaos / Wander")]
+    [Tooltip("Радиус случайного смещения личной цели агента вокруг флоковой")]
+    public float targetJitterRadius = 12f;
+    [Tooltip("Скорость дрейфа личного смещения")]
+    public float targetJitterRate = 0.15f;
+    [Tooltip("Сила случайного блуждания (м/с²)")]
+    public float wanderStrength = 2f;
+    [Tooltip("Частота случайного блуждания")]
+    public float wanderRate = 0.7f;
+    [Tooltip("0..1 — насколько желаемое направление разворачивается к цели (1 = жёстко, 0 = очень мягко)")]
+    [Range(0.02f, 1f)] public float targetHeadingGain = 0.2f;
+    [Tooltip("Время сглаживания перехода флоковой цели к новой точке, сек")]
+    public float targetSmoothTime = 2.5f;
 
     public float CellSize => math.max(avoidanceThreshold, alongThreshold);
     public int SlotCount => perchSlotsTheta * perchSlotsHeight;
@@ -128,5 +146,11 @@ public class BoidsInfo : ScriptableObject
         takeOffDuration = math.max(takeOffDuration, 0.01f);
 
         panicRadius = math.clamp(panicRadius, 0f, CellSize);
+
+        perchMinHeight   = math.clamp(perchMinHeight, 0f, 1f);
+        perchTopMargin   = math.clamp(perchTopMargin, 0f, 1f - perchMinHeight);
+        perchRadiusBase  = math.clamp(perchRadiusBase, 0f, 1f);
+        perchRadiusTop   = math.clamp(perchRadiusTop, 0f, perchRadiusBase);
+        perchRadiusInner = math.clamp(perchRadiusInner, 0f, 1f);
     }
 }

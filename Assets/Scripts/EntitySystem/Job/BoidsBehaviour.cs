@@ -24,7 +24,7 @@ namespace TheRavine.EntityControl
         private NativeArray<byte> _state, _flock, _flip, _flockCommand;
         private NativeArray<float> _timer, _phase, _aux, _duration, _panic;
         private NativeArray<int> _perchRef, _flockStart;
-        private NativeArray<float2> _flockTargets, _flockAnim, _windFallback;
+        private NativeArray<float2> _flockTargets, _flockTargetGoal, _flockAnim, _windFallback;
         private NativeArray<int> _gridCellEnd, _gridItems, _gridBucketOf;
         private int _gridMask;
         private float _invCell;
@@ -139,6 +139,7 @@ namespace TheRavine.EntityControl
             _flockStart = new NativeArray<int>(flocks + 1, Allocator.Persistent);
             _flockCommand = new NativeArray<byte>(flocks, Allocator.Persistent);
             _flockTargets = new NativeArray<float2>(flocks, Allocator.Persistent);
+            _flockTargetGoal = new NativeArray<float2>(flocks, Allocator.Persistent);
             _flockAnim = new NativeArray<float2>(flocks, Allocator.Persistent);
             _windFallback = new NativeArray<float2>(1, Allocator.Persistent);
 
@@ -243,6 +244,7 @@ namespace TheRavine.EntityControl
             for (int f = 0; f < _flockTargets.Length; f++)
             {
                 _flockTargets[f] = GetTargetPositionCloseToViewer();
+                _flockTargetGoal[f] = _flockTargets[f];
                 _flockTimers[f] = NextFlockInterval();
                 _flockCommand[f] = 0;
             }
@@ -359,7 +361,8 @@ namespace TheRavine.EntityControl
                 Wind = wind,
                 P = _params,
                 Viewer = viewer,
-                Seed = seed
+                Seed = seed,
+                Time = (float)SimulationClock.Time,
             }.Schedule(_count, 32, JobHandle.CombineDependencies(slot, grid));
 
             _handle = new MoveJob
@@ -398,20 +401,20 @@ namespace TheRavine.EntityControl
 
         private void TickFlocks(float dt)
         {
+            float smooth = math.saturate(dt / math.max(boidsInfo.targetSmoothTime, 0.01f));
+
             for (int f = 0; f < _flockTimers.Length; f++)
             {
+                _flockTargets[f] = math.lerp(_flockTargets[f], _flockTargetGoal[f], smooth);
+
                 float t = _flockTimers[f] - dt;
-                if (t > 0f)
-                {
-                    _flockTimers[f] = t;
-                    continue;
-                }
+                if (t > 0f) { _flockTimers[f] = t; continue; }
                 _flockTimers[f] = NextFlockInterval();
 
                 if (RavineRandom.RangeFloat() < boidsInfo.flockPerchChance) _flockCommand[f] = 1;
-                else _flockTargets[f] = GetTargetPositionCloseToViewer();
+                else _flockTargetGoal[f] = GetTargetPositionCloseToViewer();
             }
-        }
+}
 
         private void LateUpdate()
         {
@@ -539,6 +542,7 @@ namespace TheRavine.EntityControl
             if (_flockStart.IsCreated) _flockStart.Dispose();
             if (_flockCommand.IsCreated) _flockCommand.Dispose();
             if (_flockTargets.IsCreated) _flockTargets.Dispose();
+            if (_flockTargetGoal.IsCreated) _flockTargetGoal.Dispose();
             if (_flockAnim.IsCreated) _flockAnim.Dispose();
             if (_windFallback.IsCreated) _windFallback.Dispose();
             if (_gridCellEnd.IsCreated) _gridCellEnd.Dispose();

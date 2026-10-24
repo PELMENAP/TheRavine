@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: BoidsInfo
   m_EditorClassIdentifier: 
   numberOfEntities: 200
-  nearTheTarget: 30
-  distanceOfTargetFromPlayer: 200
+  nearTheTarget: 50
+  distanceOfTargetFromPlayer: 300
   avoidanceThreshold: 6
   alongThreshold: 6
   velocityLimit: 15
   accelerationWeights:
     x: 10
-    y: 4
-    z: 4
+    y: 5
+    z: 5
   slowRadius: 40
   targetWeight: 2
   flockRetargetInterval:
@@ -86,3 +86,9 @@ MonoBehaviour:
   takeOffDuration: 1
   windDrift: 10
   flapMinScale: 0.5
+  targetJitterRadius: 12
+  targetJitterRate: 0.15
+  wanderStrength: 2
+  wanderRate: 0.7
+  targetHeadingGain: 0.2
+  targetSmoothTime: 2.5

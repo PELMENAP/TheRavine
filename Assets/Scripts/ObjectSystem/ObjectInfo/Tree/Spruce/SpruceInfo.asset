@@ -24,4 +24,7 @@ MonoBehaviour:
   additionalOccupiedCells: []
   onDeathPattern: {fileID: 11400000, guid: 542ebb51784c0fab7b7d5f0e5e3ffbfc, type: 2}
   onPickUpPattern: {fileID: 0}
-  ObjectName: SPRUCE
+  visibleRings: 4
+  farMode: 2
+  castShadowsFar: 1
+  lodSet: {fileID: 11400000, guid: 2056bf03326bae8eaad4d68326dd0d00, type: 2}

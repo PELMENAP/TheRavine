@@ -136,17 +136,25 @@ namespace TheRavine.EntityControl
 
                     int ti = slot % P.SlotsTheta;
                     int hi = slot / P.SlotsTheta;
+
                     float u = (hi + rnd.NextFloat()) / P.SlotsHeight;
-                    float u2 = rnd.NextFloat();
-                    float theta = baseAngle + ((ti + rnd.NextFloat()) / P.SlotsTheta - 0.5f) * math.PI;
+                    float v = u;
                     float height = t.YMax - t.YMin;
-                    float h = math.lerp(t.YMin + P.PerchMinHeight * height, t.YMax, math.sqrt(u));
-                    float r = t.Radius * math.lerp(P.PerchRadiusMin, 1f, u2);
+                    float hLow   = t.YMin + P.PerchMinHeight  * height;
+                    float hHigh  = t.YMax - P.PerchTopMargin  * height;
+                    float h      = math.lerp(hLow, hHigh, v);
+
+                    float outerFrac = math.lerp(P.PerchRadiusBase, P.PerchRadiusTop, v);
+                    float innerFrac = outerFrac * P.PerchRadiusInner;
+                    float frac      = math.lerp(innerFrac, outerFrac, rnd.NextFloat());
+                    float r         = t.PerchRadius * frac;
+
+                    float theta = baseAngle + ((ti + rnd.NextFloat()) / P.SlotsTheta - 0.5f) * math.PI;
                     math.sincos(theta, out float sn, out float cs);
 
                     PerchPoint[i] = new float3(t.Xz.x + cs * r, h, t.Xz.y + sn * r);
-                    PerchRef[i] = (tree << BirdState.SlotShift) | slot;
-                    Aux[i] = height > 1e-3f ? (h - t.YMin) / height : 0f;
+                    PerchRef[i]   = (tree << BirdState.SlotShift) | slot;
+                    Aux[i]        = height > 1e-3f ? (h - t.YMin) / height : 0f;
                 }
                 else
                 {
@@ -226,6 +234,8 @@ namespace TheRavine.EntityControl
         public float2 Viewer;
         public uint Seed;
 
+        public float Time;
+
         public void Execute(int i)
         {
             byte s = State[i];
@@ -249,9 +259,11 @@ namespace TheRavine.EntityControl
             float3 flocking = Flocking(i, p, vAir);
 
             float2 target;
-            float invSlow, flockWeight = 1f;
+            float invSlow;
+            float flockWeight = 1f;
             float distXZ = 0f;
             int ownTree = -1;
+            float gain;
 
             if (s == BirdState.Approach)
             {
@@ -262,23 +274,43 @@ namespace TheRavine.EntityControl
                 flockWeight = math.saturate(distXZ * P.InvApproachFade);
                 int r = PerchRef[i];
                 if (r >= 0) ownTree = r >> BirdState.SlotShift;
+                gain = 1f;                            // для посадки — жёстко
             }
             else
             {
-                target = FlockTargets[Flock[i]];
+                // личный дрейф вокруг флоковой цели
+                float2 jit = new float2(
+                    noise.snoise(new float2(i * 0.173f + 3.1f, Time * P.TargetJitterRate)),
+                    noise.snoise(new float2(i * 0.291f + 41.7f, Time * P.TargetJitterRate)));
+                target = FlockTargets[Flock[i]] + jit * P.TargetJitterRadius;
                 invSlow = P.InvSlowRadius;
+                gain = P.TargetHeadingGain;           // для полёта — мягко
             }
 
             float2 toTarget = target - p.xz;
-            float targetDistSq = math.lengthsq(toTarget);
-            float2 steer = -vAir.xz;
-            if (targetDistSq > 1e-6f)
+            float dist = math.length(toTarget);
+            float2 steer = float2.zero;
+            if (dist > 1e-3f)
             {
-                float invDist = math.rsqrt(targetDistSq);
-                steer += toTarget * (invDist * P.MaxSpeed * math.saturate(targetDistSq * invDist * invSlow));
+                float2 targetDir = toTarget / dist;
+                float2 vDir = math.normalizesafe(vAir.xz, targetDir);
+                // желаемое направление = смесь текущего и направления на цель
+                float2 desiredDir = math.normalizesafe(math.lerp(vDir, targetDir, gain), targetDir);
+                float speed = P.MaxSpeed * math.saturate(dist * invSlow);
+                steer = desiredDir * speed - vAir.xz;
             }
 
-            float3 acc = flocking * flockWeight + new float3(steer.x, 0f, steer.y) * P.TargetWeight;
+            float2 wander = float2.zero;
+            if (s == BirdState.Flying)
+            {
+                wander = new float2(
+                    noise.snoise(new float2(i * 0.37f + 11.3f, Time * P.WanderRate)),
+                    noise.snoise(new float2(i * 0.53f + 79.1f, Time * P.WanderRate)));
+            }
+
+            float3 acc = flocking * flockWeight
+                    + new float3(steer.x, 0f, steer.y) * P.TargetWeight
+                    + new float3(wander.x, 0f, wander.y) * P.WanderStrength;
 
             float cruise = math.max(Height.SampleCanopy(p.xz), Height.SampleCanopy(p.xz + v.xz * P.Lookahead)) + P.CruiseAGL;
             float yT = cruise;

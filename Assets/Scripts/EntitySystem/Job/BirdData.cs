@@ -22,7 +22,8 @@ namespace TheRavine.EntityControl
         public float GroundPerchChance, MaxPerchSlope, WaterThreshold, PerchSearchRadius;
         public float GroundPerchSpread, GroundPerchOffset;
         public int GroundPerchTries;
-        public float PerchMinHeight, PerchRadiusMin;
+        public float PerchMinHeight, PerchTopMargin;
+        public float PerchRadiusBase, PerchRadiusTop, PerchRadiusInner;
         public int SlotsTheta, SlotsHeight;
         public float InvApproachSlow, InvApproachFade, ApproachTimeout;
         public float LandingStart, LandingApproachHeight, LandingSpeed, LandingFinalSpeed, LandingDescent, LandingWindBias;
@@ -32,6 +33,10 @@ namespace TheRavine.EntityControl
         public float TakeOffUp, TakeOffOut, TakeOffDuration;
         public float WindDrift, FlapMinScale, FlipDeadzone;
         public int MaxNeighbors;
+
+        public float TargetJitterRadius, TargetJitterRate;
+        public float WanderStrength, WanderRate;
+        public float TargetHeadingGain;
 
         public static BirdParams From(BoidsInfo b, SimulationRules r) => new()
         {
@@ -57,8 +62,11 @@ namespace TheRavine.EntityControl
             GroundPerchSpread = b.groundPerchSpread,
             GroundPerchOffset = b.groundPerchOffset,
             GroundPerchTries = b.groundPerchTries,
-            PerchMinHeight = b.perchMinHeight,
-            PerchRadiusMin = b.perchRadiusMin,
+            PerchMinHeight   = b.perchMinHeight,
+            PerchTopMargin   = b.perchTopMargin,
+            PerchRadiusBase  = b.perchRadiusBase,
+            PerchRadiusTop   = b.perchRadiusTop,
+            PerchRadiusInner = b.perchRadiusInner,
             SlotsTheta = b.perchSlotsTheta,
             SlotsHeight = b.perchSlotsHeight,
             InvApproachSlow = 1f / b.approachSlowRadius,
@@ -86,7 +94,13 @@ namespace TheRavine.EntityControl
             WindDrift = b.windDrift,
             FlapMinScale = b.flapMinScale,
             FlipDeadzone = b.flipDeadzone,
-            MaxNeighbors = math.max(r.BirdMaxNeighbors, 1)
+            MaxNeighbors = math.max(r.BirdMaxNeighbors, 1),
+
+            TargetJitterRadius = b.targetJitterRadius,
+            TargetJitterRate = b.targetJitterRate,
+            WanderStrength = b.wanderStrength,
+            WanderRate = b.wanderRate,
+            TargetHeadingGain = b.targetHeadingGain,
         };
     }
 }
