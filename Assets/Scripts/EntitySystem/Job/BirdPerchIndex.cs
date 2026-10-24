@@ -15,7 +15,9 @@ namespace TheRavine.EntityControl
     public struct TreePerch
     {
         public float2 Xz;
-        public float YMin, YMax, Radius;
+        public float YMin, YMax;
+        public float Radius;
+        public float PerchRadius; 
         public ulong Slots;
     }
 
@@ -72,7 +74,6 @@ namespace TheRavine.EntityControl
             }
         }
     }
-
     [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
     public unsafe struct PerchBuildJob : IJob
     {
@@ -86,6 +87,7 @@ namespace TheRavine.EntityControl
         {
             Trees.Clear();
             float maxR = 0f;
+
             for (int c = 0; c < Chunks.Length; c++)
             {
                 ChunkObjects co = Chunks[c];
@@ -98,15 +100,22 @@ namespace TheRavine.EntityControl
                     int seed = (int)(math.hash(p) & 0x7FFFFFFFu);
                     if (!Dims.TryGetValue((o.PrefabID << 8) | (seed % vc), out float4 d)) continue;
 
+                    float collisionR = d.x;
+                    float perchR = d.w > 0f
+                        ? math.min(d.w, collisionR)
+                        : collisionR;
+
                     Trees.Add(new TreePerch
                     {
-                        Xz = p.xz,
-                        YMin = p.y + d.y,
-                        YMax = p.y + d.z,
-                        Radius = d.x,
-                        Slots = 0ul
+                        Xz         = p.xz,
+                        YMin       = p.y + d.y,
+                        YMax       = p.y + d.z,
+                        Radius     = collisionR,
+                        PerchRadius = perchR,
+                        Slots      = 0ul
                     });
-                    maxR = math.max(maxR, d.x);
+
+                    maxR = math.max(maxR, collisionR);
                 }
             }
             MaxRadius[0] = maxR;
@@ -314,7 +323,15 @@ namespace TheRavine.EntityControl
                     Mesh mesh = trees.GetMesh(v, 0);
                     if (mesh == null) continue;
                     Bounds b = mesh.bounds;
-                    _dims[(id << 8) | v] = new float4(math.max(b.extents.x, b.extents.z), b.min.y, b.max.y, 0f);
+
+                    float circumscribed = math.max(b.extents.x, b.extents.z);
+                    float inscribed     = math.min(b.extents.x, b.extents.z);
+
+                    float perchR = trees.GetPerchRadius(v);
+                    if (perchR <= 0f) perchR = inscribed;
+                    perchR = math.min(perchR, circumscribed);
+
+                    _dims[(id << 8) | v] = new float4(circumscribed, b.min.y, b.max.y, perchR);
                 }
                 _variants[id] = count;
             }

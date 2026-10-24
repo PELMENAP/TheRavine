@@ -17,6 +17,8 @@ public class TreeMeshCollection : ObjectLodSet
     public class TreeVariant
     {
         public Mesh mesh;
+        [Tooltip("Радиус посадки. 0 = авто (вписанный в AABB)")]
+        public float perchRadius;
         public IndexRange[] ranges;
         public Vector4 billboardBox;
         public int billboardCell;
@@ -42,6 +44,9 @@ public class TreeMeshCollection : ObjectLodSet
     public override int SubmeshCount => Submeshes;
     public override int BillboardFromRing => billboardFromRing;
     public override Material BillboardMaterial => billboardMaterial;
+
+    public float GetPerchRadius(int variant) =>
+        (uint)variant < (uint)variants.Length ? Mathf.Max(variants[variant].perchRadius, 0f) : 0f;
 
     public Mesh GetMesh(int seed)
     {
@@ -99,5 +104,24 @@ public class TreeMeshCollection : ObjectLodSet
         billboardMaterial.SetVector("_AtlasGrid", new Vector4(2f, Mathf.Max(variants.Length, 1), 0f, 0f));
         billboardMaterial.SetFloat("_BillboardPitch", billboardPitch);
     }
+
+
+    #if UNITY_EDITOR
+    public void SetMaterials(Material[] newFarMaterials, Material newBillboardMaterial)
+    {
+        farMaterials = new Material[Submeshes];
+
+        if (newFarMaterials != null)
+        {
+            Array.Copy(
+                newFarMaterials,
+                farMaterials,
+                Mathf.Min(newFarMaterials.Length, Submeshes));
+        }
+
+        billboardMaterial = newBillboardMaterial;
+    }
+    #endif
+
 #endif
 }
