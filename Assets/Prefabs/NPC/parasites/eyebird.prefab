@@ -130,6 +130,6 @@ MonoBehaviour:
   - {fileID: -911789948, guid: 8f363398b072ac94e9a520e6ccb1745c, type: 3}
   - {fileID: 455453718, guid: 8f363398b072ac94e9a520e6ccb1745c, type: 3}
   landingFrames:
-  - {fileID: 1047390953, guid: 7e8419ae36b6fabf3a00b836dd4ad9fe, type: 3}
+  - {fileID: -782249374, guid: 4bdbf48f436696a7d8e72fa389e8d1c1, type: 3}
   takeOffFrames:
-  - {fileID: -1142207518, guid: 7e8419ae36b6fabf3a00b836dd4ad9fe, type: 3}
+  - {fileID: -978679009, guid: 8f363398b072ac94e9a520e6ccb1745c, type: 3}

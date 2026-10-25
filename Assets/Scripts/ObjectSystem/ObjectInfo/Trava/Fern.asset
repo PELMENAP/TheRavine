@@ -20,8 +20,13 @@ MonoBehaviour:
   behaviourType: 1
   nalInfo: {fileID: 11400000, guid: 035feb6819559826fb707f722186ce0b, type: 2}
   inventoryItemInfo: {fileID: 0}
+  isFood: 0
+  foodKind: 0
   evolutionStep: {fileID: 0}
   additionalOccupiedCells: []
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}
-  ObjectName: Fern
+  visibleRings: 0
+  farMode: 0
+  castShadowsFar: 0
+  lodSet: {fileID: 0}
