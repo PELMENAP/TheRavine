@@ -27,6 +27,33 @@ public struct FoodClaim
     public bool     Infected;
 }
 
+public readonly struct CorpseBite
+{
+    public readonly float Energy;
+    public readonly float Remaining;
+    public readonly bool  Infected;
+    public readonly bool  Stays;
+
+    private CorpseBite(float energy, float remaining, bool infected, bool stays)
+    {
+        Energy    = energy;
+        Remaining = remaining;
+        Infected  = infected;
+        Stays     = stays;
+    }
+
+    public static CorpseBite Plan(bool hasRecord, float left, bool infected, float biteEnergy, float minEnergy)
+    {
+        if (!hasRecord) return default;
+
+        float bite = math.min(left, biteEnergy);
+        if (bite <= 0f) return new CorpseBite(0f, left, false, false);
+
+        float remaining = left - bite;
+        return new CorpseBite(bite, remaining, infected, remaining >= minEnergy);
+    }
+}
+
 public sealed class ChunkFoodIndex
 {
     private const int   Size       = MapGenerator.mapChunkSize;
@@ -370,26 +397,27 @@ public sealed class ChunkFoodIndex
     private bool BiteMeat(FoodChunk fc, ChunkData cd, int idx, long cell, ref FoodClaim claim)
     {
         var r = SimulationRules.Active;
-        if (!_meat.TryGetValue(cell, out float left))
+        bool hasRecord = _meat.TryGetValue(cell, out float left);
+        int  lz        = idx / Size;
+        ulong bit      = 1UL << (idx & ChunkMask);
+        bool infected  = (fc.Infected[lz] & bit) != 0UL;
+
+        var bite = CorpseBite.Plan(hasRecord, left, infected, r.CorpseBiteEnergy, r.CorpseMinEnergy);
+        claim.Energy   = bite.Energy;
+        claim.Infected = bite.Infected;
+
+        if (bite.Stays)
         {
-            RemoveAt(fc, cd, idx, cell, out _);
-            return false;
-        }
-
-        float bite = math.min(left, r.CorpseBiteEnergy);
-        if (bite <= 0f) return false;
-
-        claim.Energy   = bite;
-        claim.Infected = (fc.Infected[idx / Size] & (1UL << (idx & ChunkMask))) != 0UL;
-
-        left -= bite;
-        if (left >= r.CorpseMinEnergy)
-        {
-            _meat[cell] = left;
+            _meat[cell]     = bite.Remaining;
+            fc.Infected[lz] &= ~bit;
             return true;
         }
 
-        return RemoveAt(fc, cd, idx, cell, out _);
+        if (!RemoveAt(fc, cd, idx, cell, out bool removedInfected)) return false;
+        if (bite.Energy > 0f) return true;
+
+        if (removedInfected) DropPayload(cell);
+        return false;
     }
 
     public bool TryTakePayload(long cell, out ViralPayload payload) => _payloads.TryRemove(cell, out payload);
@@ -420,12 +448,6 @@ public sealed class ChunkFoodIndex
         FoodCount--;
         Revision++;
         return true;
-    }
-
-    public bool TryConsumeFood(long cell)
-    {
-        if (!TryLocate(cell, out var fc, out var cd, out int idx, out _)) return false;
-        return RemoveAt(fc, cd, idx, cell, out _);
     }
 
     private bool AddAt(FoodChunk fc, ChunkData cd, int cellX, int cellZ, FoodKind kind)
@@ -640,9 +662,16 @@ public sealed class ChunkFoodIndex
             if (e >= min) { _meat[cell] = e; continue; }
 
             _meat.Remove(cell);
-            DropPayload(cell);
-            TryConsumeFood(cell);
+            RemoveSpoiledCorpse(cell);
         }
+    }
+
+    private void RemoveSpoiledCorpse(long cell)
+    {
+        if (!TryLocate(cell, out var fc, out var cd, out int idx, out FoodKind kind) || kind != FoodKind.Meat) return;
+
+        DropPayload(cell);
+        RemoveAt(fc, cd, idx, cell, out _);
     }
 
     private int FindClaim(long cell)
