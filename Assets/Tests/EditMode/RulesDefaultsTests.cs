@@ -20,7 +20,6 @@ public class RulesDefaultsTests
         Assert.AreEqual(1f, r.FitnessStatsInterval);
         Assert.AreEqual(1f, r.AgentTickInterval);
 
-        Assert.AreEqual(16, r.FoodSpawnAttempts);
         Assert.AreEqual(3f, r.NestFarRadiusMul);
         Assert.AreEqual(2f, r.ChildSpawnOffset);
         Assert.AreEqual(5f, r.ChildSpawnLift);

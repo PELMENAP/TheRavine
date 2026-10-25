@@ -12,11 +12,11 @@ namespace TheRavine.Inventory
         const int CellsCount = 8;
         [SerializeField] private UIInventory UIInventory;
         [SerializeField] private CraftPresenter craftPresenter;
-        [SerializeField] private InventoryCraftInfo[] CraftInfo;
-        [SerializeField] private string[] names = new string[CellsCount], craftIngredients = new string[CellsCount];
-        [SerializeField] private int[] currentCount = new int[CellsCount], ingredientsCount = new int[CellsCount];
         [SerializeField] private UIInventorySlot[] craftCells;
         [SerializeField] private UIInventorySlot resultCell;
+        private readonly CraftStack[] grid = new CraftStack[CellsCount];
+        private readonly int[] deductions = new int[CellsCount];
+        private CraftModel craftModel;
         private InventoryItemInfo resultItemInfo;
         private int resultCount, craftDelay;
         private bool cancel, inProcess;
@@ -31,64 +31,35 @@ namespace TheRavine.Inventory
             this.infoManager = infoManager;
             inventory = inventoryModel;
 
-            CraftInfo = infoManager.GetAllCraftRecepts();
+            craftModel = CraftModel.FromInfos(infoManager.GetAllCraftRecepts());
         }
         public bool OnInventoryCraftCheck(object sender)
         {
-            if(!resultCell.slot.isEmpty) return false;
+            if(inProcess || !resultCell.slot.isEmpty) return false;
 
             for (int i = 0; i < CellsCount; i++)
             {
-                names[i] = craftCells[i].slot.isEmpty ? "#" : craftCells[i]._uiInventoryItem.item.info.id;
-                currentCount[i] = craftCells[i].slot.isEmpty ? 0 : craftCells[i]._uiInventoryItem.item.state.amount;
+                if(craftCells[i].slot.isEmpty)
+                {
+                    grid[i] = default;
+                    continue;
+                }
+
+                var item = craftCells[i]._uiInventoryItem.item;
+                grid[i] = new CraftStack { Info = item.info, Amount = item.state.amount };
             }
 
-            bool isPossible = false;
-
-            for (int i = 0; i < CraftInfo.Length; i++)
+            if(!craftModel.TryPlan(grid, CellsCount, deductions, out CraftRecipe recipe))
             {
-                var craftInfo = CraftInfo[i];
-                if(!craftInfo.IsAvailable) continue;
-                
-                for (int j = 0; j < CellsCount; j++)
-                {
-                    if(j >= craftInfo.Ingr.Length)
-                    {
-                        craftIngredients[j] = "#";
-                        ingredientsCount[j] = 0;
-                    }
-                    else
-                    {
-                        craftIngredients[j] = craftInfo.Ingr[j] != null ? craftInfo.Ingr[j].id : "#";
-                        ingredientsCount[j] = craftInfo.Ingr[j] != null ? craftInfo.AmountIngr[j] : 0;
-                    }
-                }
-
-                for (int j = 0; j < CellsCount; j++)
-                {
-                    if (craftIngredients[j].Equals(names[j], StringComparison.OrdinalIgnoreCase) && currentCount[j] >= ingredientsCount[j])
-                    {
-                        isPossible = true;
-                    }
-                    else
-                    {
-                        isPossible = false;
-                        break;
-                    }
-                }
-
-                if(isPossible)
-                {
-                    resultItemInfo = craftInfo.Res;
-                    resultCount = craftInfo.AmountRes;
-                    craftDelay = craftInfo.TimeToComplete;
-                }
-
-                craftPresenter.CraftPossible(isPossible);
-                if (isPossible) break;
+                craftPresenter.CraftPossible(false);
+                return false;
             }
 
-            return isPossible;
+            resultItemInfo = recipe.Result;
+            resultCount    = recipe.ResultCount;
+            craftDelay     = recipe.TimeToComplete;
+            craftPresenter.CraftPossible(true);
+            return true;
         }
         public void OnCraftAction()
         {
@@ -101,31 +72,47 @@ namespace TheRavine.Inventory
         {
             if(inProcess) return;
             inProcess = true;
-            for(int i = 0; i < CellsCount; i++){
-                if(craftCells[i].slot.isEmpty) continue;
-                craftCells[i]._uiInventoryItem.item.state.amount -= ingredientsCount[i];
-                if (craftCells[i].slot.amount <= 0)
-                    craftCells[i].slot.Clear();
-                craftCells[i].Refresh();
-            }
             craftPresenter.CraftPossible(false);
 
-            while(true)
-            { 
-                await UniTask.NextFrame(PlayerLoopTiming.LastPostLateUpdate, cancellationToken: _cts.Token, true);
-                if(!craftPresenter.FillProgressBar(Time.deltaTime / craftDelay)) break;
+            if(craftDelay > 0)
+            {
+                while(true)
+                {
+                    bool canceled = await UniTask.NextFrame(PlayerLoopTiming.LastPostLateUpdate, _cts.Token, true).SuppressCancellationThrow();
+                    if(canceled)
+                    {
+                        inProcess = false;
+                        return;
+                    }
+                    if(!craftPresenter.FillProgressBar(Time.deltaTime / craftDelay)) break;
+                }
             }
 
+            inProcess = false;
             CraftThing();
         }
 
         public void CraftThing()
         {
-            inventory.TryToAddSlot(this, resultCell.slot, infoManager.GetInventoryItemByInfo(resultItemInfo.id, resultItemInfo, resultCount));
-            
-            if(cancel) return;
-            OnInventoryCraftCheck(this);
-            inProcess = false;
+            if(cancel || !OnInventoryCraftCheck(this) || !HasRoomForResult()) return;
+
+            var resultInfo = resultItemInfo;
+            int resultTotal = resultCount;
+            ConsumeIngredients();
+            inventory.TryToAddSlot(this, resultCell.slot, infoManager.GetInventoryItemByInfo(resultInfo.id, resultInfo, resultTotal));
+        }
+
+        private bool HasRoomForResult() => resultCount <= resultItemInfo.maxItemsInInventorySlot || !inventory.isFull;
+
+        private void ConsumeIngredients()
+        {
+            for(int i = 0; i < CellsCount; i++){
+                if(craftCells[i].slot.isEmpty) continue;
+                craftCells[i]._uiInventoryItem.item.state.amount -= deductions[i];
+                if (craftCells[i].slot.amount <= 0)
+                    craftCells[i].slot.Clear();
+                craftCells[i].Refresh();
+            }
         }
 
 

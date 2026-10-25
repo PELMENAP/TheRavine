@@ -12,16 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Boletus
   m_EditorClassIdentifier: 
-  objectName: boletus
+  id: 15
+  objectPrefab: {fileID: 8079554152659468491, guid: cf647ee06476156918555c7d1e90b593, type: 3}
   defaultAmount: 1
   initialPoolSize: 10
   instanceType: 1
   behaviourType: 1
   nalInfo: {fileID: 11400000, guid: 5b1df9b1d0e866a77a3d6462c2f59359, type: 2}
   inventoryItemInfo: {fileID: 11400000, guid: 9e7ae9b92de171d7f978905cea99b482, type: 2}
-  id: 15
-  objectPrefab: {fileID: 8079554152659468491, guid: cf647ee06476156918555c7d1e90b593, type: 3}
+  isFood: 1
+  foodKind: 0
   evolutionStep: {fileID: 0}
   additionalOccupiedCells: []
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}
+  visibleRings: 0
+  farMode: 0
+  castShadowsFar: 0
+  lodSet: {fileID: 0}

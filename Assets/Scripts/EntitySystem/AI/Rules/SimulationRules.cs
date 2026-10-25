@@ -152,6 +152,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float CorpseMinEnergy;
         public readonly int CorpseSearchCells;
         public readonly float CorpseSpoilTau;
+        public readonly float CorpseBiteEnergy;
         public readonly float NestEatPortion;
         public readonly float NestStorageNorm;
         public readonly float CarrySpeedMul;
@@ -641,6 +642,7 @@ public sealed partial class SimulationRules : ScriptableObject
             CorpseMinEnergy = r.corpseMinEnergy;
             CorpseSearchCells = r.corpseSearchCells;
             CorpseSpoilTau = r.corpseSpoilTau;
+            CorpseBiteEnergy = r.corpseBiteEnergy;
             NestEatPortion = r.nestEatPortion;
             NestStorageNorm = r.nestStorageNorm;
             CarrySpeedMul = r.carrySpeedMul;

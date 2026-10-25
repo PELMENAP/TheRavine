@@ -9,7 +9,6 @@ public sealed partial class SimulationRules
     [SerializeField] private float starvationDamage = 12f;
     [SerializeField] private float starvationEnergyReturn = 5f;
     [SerializeField] private float starvationThreshold = 5f;
-    [SerializeField] private int foodSpawnAttempts = 16;
     [SerializeField] private float basalEnergyDrain = 0.5f;
     [SerializeField] private float eatRange = 2f;
     [SerializeField] private float shareFoodDuration = 0.5f;
@@ -60,6 +59,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float corpseMinEnergy = 2f;
     [SerializeField] private int corpseSearchCells = 3;
     [SerializeField] private float corpseSpoilTau = 120f;
+    [SerializeField] private float corpseBiteEnergy = 6f;
     [SerializeField] private float carrySpeedMul = 0.8f;
     [SerializeField] private float carryPoiThreshold = 0.2f;
     [SerializeField] private float[] biomeFertility = { 1f, 0.6f, 0.3f, 1.2f };
@@ -70,7 +70,6 @@ public sealed partial class SimulationRules
     public float StarvationDamage => starvationDamage;
     public float StarvationEnergyReturn => starvationEnergyReturn;
     public float StarvationThreshold => starvationThreshold;
-    public int FoodSpawnAttempts => foodSpawnAttempts;
     public float BasalEnergyDrain => basalEnergyDrain;
     public float EatRange => eatRange;
     public float ShareFoodDuration => shareFoodDuration;
@@ -121,6 +120,7 @@ public sealed partial class SimulationRules
     public float CorpseMinEnergy => corpseMinEnergy;
     public int CorpseSearchCells => corpseSearchCells;
     public float CorpseSpoilTau => corpseSpoilTau;
+    public float CorpseBiteEnergy => corpseBiteEnergy;
     public float CarrySpeedMul => carrySpeedMul;
     public float CarryPoiThreshold => carryPoiThreshold;
 }
