@@ -65,6 +65,7 @@ public sealed class ChunkFoodIndex
     private readonly MapGenerator _map;
     private readonly ObjectInfoRegistry _registry;
     private readonly ObjectInfo[] _foodByKind = new ObjectInfo[(int)FoodKind.Meat + 1];
+    private bool _foodTableBuilt;
     private readonly LongDictionary<FoodChunk> _chunks = new(64);
     private readonly LongDictionary<float> _meat = new(32);
     private readonly LongDictionary<ViralPayload> _payloads = new(16);
@@ -76,13 +77,23 @@ public sealed class ChunkFoodIndex
     {
         _map      = map;
         _registry = registry;
+    }
 
-        for (int i = 0; i < registry.Count; i++)
+    private ObjectInfo FoodByKind(FoodKind kind)
+    {
+        if (!_foodTableBuilt) BuildFoodTable();
+        return _foodByKind[(int)kind];
+    }
+
+    private void BuildFoodTable()
+    {
+        for (int i = 0; i < _registry.Count; i++)
         {
-            ObjectInfo info = registry.GetDense(i);
+            ObjectInfo info = _registry.GetDense(i);
             if (info == null || !info.IsFood) continue;
             _foodByKind[(int)info.FoodKind] ??= info;
         }
+        _foodTableBuilt = _registry.Count > 0;
     }
 
     private ObjectInfo FoodInfoOf(int prefabId)
@@ -447,7 +458,7 @@ public sealed class ChunkFoodIndex
         float h = cd.HeightRaw[idx];
         if (h <= WaterLevel) return false;
 
-        ObjectInfo food = _foodByKind[(int)kind];
+        ObjectInfo food = FoodByKind(kind);
         if (food == null) return false;
 
         var info = new ObjectInstInfo(

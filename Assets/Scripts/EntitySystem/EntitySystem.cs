@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using R3;
 
 using TheRavine.Generator;
+using TheRavine.ObjectControl;
 
 namespace TheRavine.EntityControl
 {
@@ -32,9 +34,13 @@ namespace TheRavine.EntityControl
         public EntityInfo GetMobInfo(int id) => mobInfo[id];
         private RavineLogger logger;
         private System.IDisposable playersSubscription;
+        private ChunkFoodIndex foodIndex;
+        private bool brokenUp;
         public void SetUp(ISetAble.Callback callback)
         {
             ServiceLocator.Register(this);
+            brokenUp = false;
+            RegisterFoodIndex().Forget();
 
             logger = ServiceLocator.GetService<RavineLogger>();
             logger.LogInfo("EntitySystem service is available now");
@@ -53,6 +59,16 @@ namespace TheRavine.EntityControl
 
             callback?.Invoke();
         }
+        private async UniTaskVoid RegisterFoodIndex()
+        {
+            var map     = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
+            var objects = await ServiceLocator.WaitUntilServiceReady<ObjectSystem>();
+            if (brokenUp) return;
+
+            foodIndex = new ChunkFoodIndex(map, objects.infoRegistry);
+            ServiceLocator.Register(foodIndex);
+        }
+
         private void SetUpBoids(IReadOnlyList<Transform> players)
         {
             Transform playerTransform = players[0];
@@ -68,6 +84,9 @@ namespace TheRavine.EntityControl
         {
             for (int i = 0; i < global.Count; i++) global[i].Dispose();
             if(boidsBehaviour != null) boidsBehaviour.DisableBoids();
+            brokenUp = true;
+            if (foodIndex != null) ServiceLocator.Services.Unregister(foodIndex);
+            foodIndex = null;
             OnDestroy();
             callback?.Invoke();
         }

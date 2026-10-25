@@ -295,13 +295,11 @@ public class EntityManager : MonoBehaviour
     {
         if (await DelaySimulation(SimulationRules.Active.StartupDelaySeconds, destroyCancellationToken)) return;
 
-        var map     = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
-        var objects = await ServiceLocator.WaitUntilServiceReady<ObjectSystem>();
+        var map = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
         _motion.Inject(map);
         _map = map;
 
-        var foodIndex = new ChunkFoodIndex(map, objects.infoRegistry);
-        ServiceLocator.Register(foodIndex);
+        var foodIndex = await ServiceLocator.WaitUntilServiceReady<ChunkFoodIndex>();
         _food.Bind(foodIndex, SimulationClock.Time);
 
         for (int i = 0; i < initialCount; i++)
@@ -710,7 +708,6 @@ public class EntityManager : MonoBehaviour
         services.Unregister(_colonies);
         services.Unregister(_planner);
         services.Unregister(_infection?.Service);
-        services.Unregister(_food?.Index);
     }
 
     private void OnDestroy()
