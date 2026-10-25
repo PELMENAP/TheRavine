@@ -475,7 +475,6 @@ MonoBehaviour:
   initialCount: 0
   maxPopulation: 50
   spawnRadius: 15
-  initialFood: 100
   maxFood: 100
   lstmHidden: 32
   _entityCount: 0

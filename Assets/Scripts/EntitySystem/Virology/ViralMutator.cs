@@ -5,25 +5,21 @@ namespace TheRavine.EntityControl.Virology
 {
     public static class ViralMutator
     {
-        public const float BaseMutationRate = 0.08f;
-        public const float PointWeight = 0.55f;
-        public const float InsertWeight = 0.15f;
-        public const float DeleteWeight = 0.15f;
-        public const float DuplicateWeight = 0.15f;
-
         public static float ResolveRate(ushort firstCodon, float[] centroids,
             float[] cellBias, float sharpness, float mutationRateDelta)
         {
             int action = CodonEmbedding.Translate(firstCodon, centroids, cellBias, sharpness, out float amp);
+            ref readonly var r = ref SimulationRules.Frame;
+            float baseRate = r.BaseMutationRate;
 
             float rate = (ProteinAction)action switch
             {
-                ProteinAction.MutationRateUp => math.min(BaseMutationRate * (1f + amp * 3f), 0.5f),
-                ProteinAction.MutationRateDown => BaseMutationRate / (1f + amp * 3f),
-                _ => BaseMutationRate
+                ProteinAction.MutationRateUp => math.min(baseRate * (1f + amp * r.MutationAmpGain), r.MutationRateMax),
+                ProteinAction.MutationRateDown => baseRate / (1f + amp * r.MutationAmpGain),
+                _ => baseRate
             };
 
-            return math.clamp(rate * (1f + mutationRateDelta * 2f), 0.001f, 0.5f);
+            return math.clamp(rate * (1f + mutationRateDelta * r.MutationRateDeltaGain), r.MutationRateMin, r.MutationRateMax);
         }
 
         public static int Transmit(ushort[] source, int start, int count,
@@ -31,6 +27,10 @@ namespace TheRavine.EntityControl.Virology
         {
             int written = 0;
             int capacity = destination.Length;
+            ref readonly var r = ref SimulationRules.Frame;
+            float point  = r.MutationPointWeight;
+            float insert = point + r.MutationInsertWeight;
+            float delete = insert + r.MutationDeleteWeight;
 
             for (int i = 0; i < count && written < capacity; i++)
             {
@@ -40,18 +40,18 @@ namespace TheRavine.EntityControl.Virology
                 {
                     float roll = NextUnit(ref rng);
 
-                    if (roll < PointWeight)
+                    if (roll < point)
                     {
                         codon ^= (ushort)(1 << (int)(rng.NextUInt() & 15u));
-                        if (NextUnit(ref rng) < 0.4f)
+                        if (NextUnit(ref rng) < r.MutationDoubleFlipChance)
                             codon ^= (ushort)(1 << (int)(rng.NextUInt() & 15u));
                     }
-                    else if (roll < PointWeight + InsertWeight)
+                    else if (roll < insert)
                     {
                         destination[written++] = (ushort)(rng.NextUInt() & 0xFFFFu);
                         if (written >= capacity) break;
                     }
-                    else if (roll < PointWeight + InsertWeight + DeleteWeight)
+                    else if (roll < delete)
                     {
                         continue;
                     }

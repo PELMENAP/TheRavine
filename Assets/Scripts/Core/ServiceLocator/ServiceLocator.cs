@@ -9,6 +9,17 @@ public static class ServiceLocator
     }
     public static PlayerContainer Players { get; } = new PlayerContainer();
 
+    public static bool Register<T>(T service) where T : class
+    {
+        if (Services.Register(service)) return true;
+
+        string message = service == null
+            ? $"ServiceLocator: отказ регистрации {typeof(T).Name}: сервис null"
+            : $"ServiceLocator: отказ регистрации {typeof(T).Name}: тип уже зарегистрирован";
+        RavineLog.Error(message);
+        return false;
+    }
+
     public static Observable<Unit> WhenPlayersNonEmpty()
     {
         if (Players.GetAllPlayers().Count > 0)

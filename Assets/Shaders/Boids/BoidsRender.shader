@@ -103,7 +103,7 @@ Shader "TheRavine/Menu/BoidsRender"
                 o.normalWS = normalize(r2 * v.normalOS.x + u2 * v.normalOS.y + f * v.normalOS.z);
 
                 float t = saturate((speed - _SpeedRange.x) / max(_SpeedRange.y - _SpeedRange.x, 1e-3));
-                float h = BoidHash(id);
+                float h = BoidHash(asuint(b.phase));
                 float3 col = lerp(_ColorA.rgb, _ColorB.rgb, saturate(t + (h - 0.5) * 0.35));
                 col *= lerp(0.8, 1.2, h);
                 col += v.uv.x * _Rim * col;

@@ -4,6 +4,7 @@ using UnityEngine;
 public class ObjectInfo : ScriptableObject
 {
     public const int MaxVisibleRings = 4;
+    public const int MaxLevels = 8;
 
     [SerializeField] private ushort id;
     [SerializeField] private GameObject objectPrefab;
@@ -19,6 +20,8 @@ public class ObjectInfo : ScriptableObject
     [ConditionalField(nameof(instanceType), InstanceType.Static, inverse: true)]
     [SerializeField] private InventoryItemInfo inventoryItemInfo;
 
+    [SerializeField] private bool isFood;
+    [SerializeField] private FoodKind foodKind;
 
     [ConditionalField(nameof(behaviourType), BehaviourType.GROW)]
     [SerializeField] private ObjectInfo evolutionStep;
@@ -30,6 +33,8 @@ public class ObjectInfo : ScriptableObject
     [ConditionalField(nameof(instanceType), InstanceType.Interactable)]
     [SerializeField] private SpreadPattern onPickUpPattern;
 
+    [Range(1, MaxLevels)]
+    [SerializeField] private int levels = 1;
     [Range(0, MaxVisibleRings)]
     [SerializeField] private int visibleRings;
     [SerializeField] private FarMode farMode;
@@ -41,6 +46,8 @@ public class ObjectInfo : ScriptableObject
     public ushort InitialPoolSize => initialPoolSize;
     public InstanceType InstanceType => instanceType;
     public BehaviourType BehaviourType => behaviourType;
+    public bool IsFood => isFood;
+    public FoodKind FoodKind => foodKind;
     public NAlInfo NalInfo => nalInfo;
     public InventoryItemInfo InventoryItemInfo => inventoryItemInfo;
     public GameObject ObjectPrefab => objectPrefab;
@@ -49,6 +56,7 @@ public class ObjectInfo : ScriptableObject
     public SpreadPattern OnDeathPattern => onDeathPattern;
     public SpreadPattern OnPickUpPattern => onPickUpPattern;
     public byte VisibleRings => (byte)Mathf.Clamp(visibleRings, 0, MaxVisibleRings);
+    public int Levels => levels;
     public FarMode FarMode => farMode;
     public bool CastShadowsFar => castShadowsFar;
     public ObjectLodSet LodSet => lodSet;
@@ -78,3 +86,5 @@ public enum FarMode : byte
     Mesh = 1,
     MeshThenBillboard = 2
 }
+
+public enum FoodKind : byte { Plant = 0, Toxic = 1, Large = 2, Meat = 3 }

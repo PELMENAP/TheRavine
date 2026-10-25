@@ -68,8 +68,8 @@ public sealed class TerrainSensor
         sample = default;
         if (_map == null) return false;
 
-        int cellX = Mathf.FloorToInt(worldX * InvScale);
-        int cellZ = Mathf.FloorToInt(worldZ * InvScale);
+        int cellX = (int)math.floor(worldX * InvScale);
+        int cellZ = (int)math.floor(worldZ * InvScale);
 
         if (!_map.TryGetChunk(
                 Position2Int.Pack(cellX >> ChunkShift, cellZ >> ChunkShift),
@@ -98,7 +98,7 @@ public sealed class TerrainSensor
         float gx = spanX > 0f ? (hR - hL) / spanX : 0f;
         float gz = spanZ > 0f ? (hU - hD) / spanZ : 0f;
 
-        float slopeDeg = Mathf.Atan(Mathf.Sqrt(gx * gx + gz * gz)) * Mathf.Rad2Deg;
+        float slopeDeg = math.degrees(math.atan(math.sqrt(gx * gx + gz * gz)));
 
         float cost   = cd.MoveCost[baseIdx] * InvCost;
         float costPX = (hasR ? cd.MoveCost[baseIdx + 1]    : cd.MoveCost[baseIdx]) * InvCost;
@@ -110,10 +110,10 @@ public sealed class TerrainSensor
         EncodeBiome(cd.BiomeMap[baseIdx], biome);
 
         sample = new TerrainSample(
-            Mathf.Clamp01(h * InvMaxH),
-            Mathf.Clamp01(slopeDeg * InvSlopeMax),
-            Mathf.Clamp(gx, -1f, 1f),
-            Mathf.Clamp(gz, -1f, 1f),
+            math.saturate(h * InvMaxH),
+            math.saturate(slopeDeg * InvSlopeMax),
+            math.clamp(gx, -1f, 1f),
+            math.clamp(gz, -1f, 1f),
             WaterProximity(cd, lx, lz, baseIdx),
             cost, costPX, costNX, costPZ, costNZ,
             biome[0], biome[1], biome[2], biome[3],
@@ -214,6 +214,6 @@ public sealed class TerrainSensor
         }
 
         if (cnt == 0) return 0f;
-        return Mathf.Clamp((h - sum / cnt) * InvRelSpan, -1f, 1f);
+        return math.clamp((h - sum / cnt) * InvRelSpan, -1f, 1f);
     }
 }

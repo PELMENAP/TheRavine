@@ -95,7 +95,7 @@ MonoBehaviour:
     billboardCell: 3
   lodCount: 4
   ringLod: 0000000001000000020000000300000003000000
-  billboardFromRing: 3
+  billboardFromRing: 2
   farMaterials:
   - {fileID: 2100000, guid: 721b1d3ae1cacd842b20770ed00c0ea3, type: 2}
   - {fileID: 2100000, guid: e8b02875cb63e784f8f26246a6f47456, type: 2}

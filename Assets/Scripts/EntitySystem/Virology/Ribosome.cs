@@ -149,39 +149,44 @@ namespace TheRavine.EntityControl.Virology
 
         private static void Apply(ref EffectModifiers m, int action, float magnitude, float amp, int owner)
         {
+            ref readonly var r = ref SimulationRules.Frame;
+            float multMax  = r.RibosomeMultiplierMax;
+            float bias     = r.RibosomeBiasLimit;
+            float sharp    = r.RibosomeSharpnessDeltaLimit;
+            float mutation = r.RibosomeMutationDeltaLimit;
             switch ((ProteinAction)action)
             {
                 case ProteinAction.AddHealth: m.HealthDelta += magnitude; break;
                 case ProteinAction.DrainHealth: m.HealthDelta -= magnitude; break;
                 case ProteinAction.AddEnergy:
-                    m.RegenMultiplier = math.min(m.RegenMultiplier + magnitude, 4f);
+                    m.RegenMultiplier = math.min(m.RegenMultiplier + magnitude, multMax);
                     m.RegenOwner = owner; break;
                 case ProteinAction.DrainEnergy: m.EnergyDelta -= magnitude; break;
                 case ProteinAction.RegenBoost:
-                    m.RegenMultiplier = math.min(m.RegenMultiplier + magnitude, 4f);
+                    m.RegenMultiplier = math.min(m.RegenMultiplier + magnitude, multMax);
                     m.RegenOwner = owner; break;
                 case ProteinAction.MetabolismUp:
-                    m.MetabolismMultiplier = math.min(m.MetabolismMultiplier + magnitude, 4f);
+                    m.MetabolismMultiplier = math.min(m.MetabolismMultiplier + magnitude, multMax);
                     m.MetabolismOwner = owner; break;
                 case ProteinAction.MetabolismDown:
-                    m.MetabolismMultiplier = math.max(m.MetabolismMultiplier - magnitude, 0.1f);
+                    m.MetabolismMultiplier = math.max(m.MetabolismMultiplier - magnitude, r.RibosomeMetabolismMin);
                     m.MetabolismOwner = owner; break;
-                case ProteinAction.ModifyWander: m.WanderBias = math.clamp(m.WanderBias + magnitude, -2f, 2f); break;
-                case ProteinAction.ModifyForage: m.ForageBias = math.clamp(m.ForageBias + magnitude, -2f, 2f); break;
-                case ProteinAction.ModifyHunt: m.HuntBias = math.clamp(m.HuntBias + magnitude, -2f, 2f); break;
-                case ProteinAction.ModifySocial: m.SocialBias = math.clamp(m.SocialBias + magnitude, -2f, 2f); break;
-                case ProteinAction.ModifyFlee: m.FleeBias = math.clamp(m.FleeBias + magnitude, -2f, 2f); break;
-                case ProteinAction.SharpnessUp: m.SharpnessDelta = math.clamp(m.SharpnessDelta + magnitude, -0.5f, 0.5f); break;
-                case ProteinAction.SharpnessDown: m.SharpnessDelta = math.clamp(m.SharpnessDelta - magnitude, -0.5f, 0.5f); break;
+                case ProteinAction.ModifyWander: m.WanderBias = math.clamp(m.WanderBias + magnitude, -bias, bias); break;
+                case ProteinAction.ModifyForage: m.ForageBias = math.clamp(m.ForageBias + magnitude, -bias, bias); break;
+                case ProteinAction.ModifyHunt: m.HuntBias = math.clamp(m.HuntBias + magnitude, -bias, bias); break;
+                case ProteinAction.ModifySocial: m.SocialBias = math.clamp(m.SocialBias + magnitude, -bias, bias); break;
+                case ProteinAction.ModifyFlee: m.FleeBias = math.clamp(m.FleeBias + magnitude, -bias, bias); break;
+                case ProteinAction.SharpnessUp: m.SharpnessDelta = math.clamp(m.SharpnessDelta + magnitude, -sharp, sharp); break;
+                case ProteinAction.SharpnessDown: m.SharpnessDelta = math.clamp(m.SharpnessDelta - magnitude, -sharp, sharp); break;
                 case ProteinAction.Replicate: m.ReplicateRequested = true; break;
                 case ProteinAction.SpreadToOther: m.SpreadRequested = true; m.SpreadAmp = amp; break;
                 case ProteinAction.Reinforce: m.ReinforceAmount += magnitude; break;
                 case ProteinAction.Excise: m.ExciseRequested = true; break;
                 case ProteinAction.Dormant: m.Dormant = true; break;
                 case ProteinAction.MutationRateUp:
-                    m.MutationRateDelta = math.clamp(m.MutationRateDelta + magnitude, -0.5f, 0.5f); break;
+                    m.MutationRateDelta = math.clamp(m.MutationRateDelta + magnitude, -mutation, mutation); break;
                 case ProteinAction.MutationRateDown:
-                    m.MutationRateDelta = math.clamp(m.MutationRateDelta - magnitude, -0.5f, 0.5f); break;
+                    m.MutationRateDelta = math.clamp(m.MutationRateDelta - magnitude, -mutation, mutation); break;
                 case ProteinAction.ForceSpeech:
                     m.ForceSpeechRequested = true;
                     m.SpreadRequested = true;

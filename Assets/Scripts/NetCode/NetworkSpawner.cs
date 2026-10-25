@@ -1,81 +1,169 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
-using System.Collections.Generic;
-using ZLinq;
 
 namespace TheRavine.Netcode
 {
     public class NetworkSpawner : NetworkBehaviour
     {
+        [SerializeField] private NetworkObject[] spawnablePrefabs;
+        [SerializeField, Min(0f)] private float maxSpawnRadius = 10f;
+        [SerializeField, Min(1)] private int maxSpawnsPerWindow = 4;
+        [SerializeField, Min(0.01f)] private float rateWindowSeconds = 1f;
+
+        private struct RateState
+        {
+            public double WindowStart;
+            public int    Count;
+            public bool   Reported;
+        }
+
+        private NetworkObject[] _whitelist = System.Array.Empty<NetworkObject>();
+        private readonly HashSet<ulong> _spawnRights = new();
+        private readonly Dictionary<ulong, RateState> _rates = new();
+        private readonly ulong[] _replyTarget = new ulong[1];
         private NetworkObject currentObject;
-        private Dictionary<string, GameObject> prefabDictionary;
 
         public NetworkObject GetCurrentSpawnedObject() => currentObject;
 
-        private void Awake()
+        public override void OnNetworkSpawn()
         {
-            prefabDictionary = NetworkManager.Singleton.NetworkConfig.Prefabs.Prefabs
-                .AsValueEnumerable().ToDictionary(prefab => prefab.Prefab.name, prefab => prefab.Prefab);
+            if (!IsServer) return;
+            BuildWhitelist();
+            NetworkManager.OnClientDisconnectCallback += RevokeSpawnRights;
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            if (NetworkManager != null) NetworkManager.OnClientDisconnectCallback -= RevokeSpawnRights;
+            _spawnRights.Clear();
+            _rates.Clear();
+        }
+
+        public void GrantSpawnRights(ulong clientId)
+        {
+            if (IsServer) _spawnRights.Add(clientId);
+        }
+
+        public void RevokeSpawnRights(ulong clientId)
+        {
+            _spawnRights.Remove(clientId);
+            _rates.Remove(clientId);
         }
 
         [ServerRpc(RequireOwnership = false)]
-        public void SpawnObjectServerRpc(string prefabName, ServerRpcParams rpcParams = default)
+        public void SpawnObjectServerRpc(int prefabId, Vector3 position, ServerRpcParams rpcParams = default)
         {
-            if (!IsAuthorizedClient(rpcParams.Receive.SenderClientId))
+            ulong sender = rpcParams.Receive.SenderClientId;
+
+            if (!IsAuthorizedClient(sender, out var client))
             {
-                Debug.LogWarning($"Unauthorized client {rpcParams.Receive.SenderClientId} attempted to spawn an object!");
+                Reject(sender, "нет прав на спавн");
                 return;
             }
 
-            GameObject prefab = GetPrefabByName(prefabName);
+            if (!ConsumeRate(sender)) return;
+
+            var prefab = GetWhitelistedPrefab(prefabId);
             if (prefab == null)
             {
-                Debug.LogWarning("Invalid prefab name!");
+                Reject(sender, $"prefabId {prefabId} вне whitelist");
                 return;
             }
 
-            NetworkObject networkObject = Instantiate(prefab).GetComponent<NetworkObject>();
-            if (networkObject == null)
+            if (!IsWithinRadius(client, position))
             {
-                Debug.LogError("Prefab does not contain a NetworkObject component!");
+                Reject(sender, $"позиция {position} дальше {maxSpawnRadius} от игрока");
                 return;
             }
 
+            var networkObject = Instantiate(prefab, position, Quaternion.identity);
             networkObject.Spawn();
-            ReturnSpawnedObjectClientRpc(networkObject.NetworkObjectId, rpcParams.Receive.SenderClientId);
+
+            _replyTarget[0] = sender;
+            ReturnSpawnedObjectClientRpc(networkObject.NetworkObjectId, new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams { TargetClientIds = _replyTarget }
+            });
         }
 
         [ClientRpc]
-        private void ReturnSpawnedObjectClientRpc(ulong networkObjectId, ulong clientId, ClientRpcParams rpcParams = default)
+        private void ReturnSpawnedObjectClientRpc(ulong networkObjectId, ClientRpcParams rpcParams = default)
         {
-            if (NetworkManager.Singleton.LocalClientId == clientId)
+            if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject spawnedObject))
             {
-                if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject spawnedObject))
-                {
-                    currentObject = spawnedObject;
-                    OnObjectSpawned(spawnedObject);
-                }
-                else
-                {
-                    Debug.LogError("Spawned object not found!");
-                }
+                currentObject = spawnedObject;
+                OnObjectSpawned(spawnedObject);
+            }
+            else
+            {
+                RavineLog.Error($"NetworkSpawner: заспавненный объект {networkObjectId} не найден");
             }
         }
 
         private void OnObjectSpawned(NetworkObject spawnedObject)
         {
-            Debug.Log($"Object spawned with ID: {spawnedObject.NetworkObjectId}");
+            RavineLog.Info($"NetworkSpawner: объект заспавнен, ID {spawnedObject.NetworkObjectId}");
         }
 
-        private GameObject GetPrefabByName(string prefabName)
+        private void BuildWhitelist()
         {
-            prefabDictionary.TryGetValue(prefabName, out GameObject prefab);
-            return prefab;
+            int n = spawnablePrefabs != null ? spawnablePrefabs.Length : 0;
+            _whitelist = new NetworkObject[n];
+            var registered = NetworkManager.NetworkConfig.Prefabs;
+
+            for (int i = 0; i < n; i++)
+            {
+                var prefab = spawnablePrefabs[i];
+                if (prefab == null) continue;
+                if (!registered.Contains(prefab.gameObject))
+                {
+                    RavineLog.Error($"NetworkSpawner: prefabId {i} ({prefab.name}) не зарегистрирован в NetworkConfig.Prefabs, исключён из whitelist");
+                    continue;
+                }
+                _whitelist[i] = prefab;
+            }
         }
 
-        private bool IsAuthorizedClient(ulong clientId)
+        private NetworkObject GetWhitelistedPrefab(int prefabId)
+            => (uint)prefabId < (uint)_whitelist.Length ? _whitelist[prefabId] : null;
+
+        private bool IsAuthorizedClient(ulong clientId, out NetworkClient client)
         {
-            return clientId == NetworkManager.Singleton.LocalClientId || IsServer;
+            client = null;
+            if (!IsServer || !NetworkManager.ConnectedClients.TryGetValue(clientId, out client)) return false;
+            if (client.PlayerObject == null) return false;
+            return clientId == OwnerClientId || _spawnRights.Contains(clientId);
         }
+
+        private bool IsWithinRadius(NetworkClient client, Vector3 position)
+            => (position - client.PlayerObject.transform.position).sqrMagnitude <= maxSpawnRadius * maxSpawnRadius;
+
+        private bool ConsumeRate(ulong clientId)
+        {
+            double now = NetworkManager.ServerTime.Time;
+            _rates.TryGetValue(clientId, out var state);
+
+            if (now - state.WindowStart >= rateWindowSeconds)
+            {
+                state.WindowStart = now;
+                state.Count       = 0;
+                state.Reported    = false;
+            }
+
+            bool allowed = state.Count < maxSpawnsPerWindow;
+            if (allowed) state.Count++;
+            else if (!state.Reported)
+            {
+                state.Reported = true;
+                Reject(clientId, $"превышен лимит {maxSpawnsPerWindow} спавнов за {rateWindowSeconds} с");
+            }
+
+            _rates[clientId] = state;
+            return allowed;
+        }
+
+        private static void Reject(ulong clientId, string reason)
+            => RavineLog.Warning($"NetworkSpawner: отказ клиенту {clientId}: {reason}");
     }
 }

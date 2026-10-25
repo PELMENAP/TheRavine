@@ -11,7 +11,7 @@ public class TreeMeshBaker : EditorWindow
 
     private MtreeComponent _source;
     private TreeMeshCollection _targetCollection;
-    private int _count = 8;
+    private int _count = 4;
     private string _savePath = "Assets/Trees/Baked";
     private float _billboardPitch = 20f;
     private int _cellResolution = 256;
@@ -24,6 +24,7 @@ public class TreeMeshBaker : EditorWindow
     {
         _source = (MtreeComponent)EditorGUILayout.ObjectField("MtreeComponent", _source, typeof(MtreeComponent), true);
         _targetCollection = (TreeMeshCollection)EditorGUILayout.ObjectField("Collection", _targetCollection, typeof(TreeMeshCollection), false);
+        DrawMaterialSettings();
         _count = Mathf.Max(1, EditorGUILayout.IntField("Variant Count", _count));
         _billboardPitch = EditorGUILayout.Slider("Billboard Pitch", _billboardPitch, 0f, 89f);
         _cellResolution = Mathf.ClosestPowerOfTwo(Mathf.Clamp(EditorGUILayout.IntField("Billboard Cell", _cellResolution), 32, 2048));
@@ -129,6 +130,26 @@ public class TreeMeshBaker : EditorWindow
 
             Texture2D albedoAtlas = SaveAtlas(atlasAlbedo, atlasWidth, atlasHeight, $"{_savePath}/tree_billboard_albedo.png", true);
             Texture2D normalAtlas = SaveAtlas(atlasNormal, atlasWidth, atlasHeight, $"{_savePath}/tree_billboard_normal.png", false);
+
+
+            TreeMeshBakerSettings settings = TreeMeshBakerSettings.instance;
+
+            _targetCollection.SetMaterials(
+                settings.FarMaterials,
+                settings.BillboardMaterial);
+
+            _targetCollection.SetBakeResult(
+                variants,
+                lodCount,
+                albedoAtlas,
+                normalAtlas,
+                _billboardPitch);
+
+            _targetCollection.ApplyBillboardMaterial();
+
+            EditorUtility.SetDirty(_targetCollection);
+            AssetDatabase.SaveAssets();
+
 
             _targetCollection.SetBakeResult(variants, lodCount, albedoAtlas, normalAtlas, _billboardPitch);
             _targetCollection.ApplyBillboardMaterial();
@@ -348,5 +369,38 @@ public class TreeMeshBaker : EditorWindow
 
         return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
     }
+
+
+    private void DrawMaterialSettings()
+    {
+        TreeMeshBakerSettings settings = TreeMeshBakerSettings.instance;
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Output Materials", EditorStyles.boldLabel);
+
+        for (int i = 0; i < TreeMeshCollection.Submeshes; i++)
+        {
+            Material material = settings.FarMaterials[i];
+
+            Material selected = (Material)EditorGUILayout.ObjectField(
+                $"Far Material {i}",
+                material,
+                typeof(Material),
+                false);
+
+            if (selected != material)
+                settings.SetFarMaterial(i, selected);
+        }
+
+        Material billboard = (Material)EditorGUILayout.ObjectField(
+            "Billboard Material",
+            settings.BillboardMaterial,
+            typeof(Material),
+            false);
+
+        if (billboard != settings.BillboardMaterial)
+            settings.SetBillboardMaterial(billboard);
+    }
+
 }
 #endif

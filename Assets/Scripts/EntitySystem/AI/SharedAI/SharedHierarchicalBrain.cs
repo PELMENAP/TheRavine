@@ -6,7 +6,6 @@ using UnityEngine;
 
 public class SharedHierarchicalBrain : IDisposable
 {
-    private const float OptimizerMaxGradNorm = 3f;
     public enum Goal { Survive = 0, Hunt = 1, Forage = 2, Social = 3 }
     public const int GoalCount = 4;
 
@@ -19,7 +18,7 @@ public class SharedHierarchicalBrain : IDisposable
 
     public const int CoordAux = 2;
 
-    private static int[] BuildCoordSizes(int combined) => new[] { combined, 32, 16, 16, PlanCount + 1 + CoordAux };
+    public static int[] BuildCoordSizes(int combined) => new[] { combined, 32, 16, 16, PlanCount + 1 + CoordAux };
 
     public const int HeadingOutputs   = 2;
     public const int CurvatureOutputs = 1;
@@ -36,7 +35,7 @@ public class SharedHierarchicalBrain : IDisposable
             ? DirectionOutputs + 1
             : HeadingOutputs + CurvatureOutputs + (goal == (int)Goal.Social ? SpeechOutputs : 0);
 
-    private static int[] BuildExecSizes(int combined, int goal)
+    public static int[] BuildExecSizes(int combined, int goal)
         => new[] { combined, 64, 32, 32, ActionSubsets[goal].Length + 1 + ExecAux(goal) };
 
 
@@ -61,9 +60,6 @@ public class SharedHierarchicalBrain : IDisposable
     public readonly BrainDiagnostics GlobalDiagnostics = new();
     public int GlobalTrainingSteps { get; private set; }
 
-    private const float OptimizerBaseLr      = 0.01f;
-    private const float OptimizerLrDecay     = 2e-5f;
-    private const float OptimizerWeightDecay = 1e-5f;
     private RunningMeanStd _rewardNorm;
 
     private PerceptronLayout   _coordCtxLayout;
@@ -102,9 +98,10 @@ public class SharedHierarchicalBrain : IDisposable
 
     private void ConfigureOptimizer()
     {
-        coordinator.OptimizerMaxGradNorm = OptimizerMaxGradNorm;
+        float maxGradNorm = SimulationRules.Active.OptimizerMaxGradNorm;
+        coordinator.OptimizerMaxGradNorm = maxGradNorm;
         for (int i = 0; i < GoalCount; i++)
-            executors[i].OptimizerMaxGradNorm = OptimizerMaxGradNorm;
+            executors[i].OptimizerMaxGradNorm = maxGradNorm;
     }
 
     private const int TruncWindow       = 8;
@@ -112,7 +109,7 @@ public class SharedHierarchicalBrain : IDisposable
     private const int CoordRingCapacity = CoordDelaySteps + DecisionRingSlack;
     private const int ExecRingCapacity  = ExecDelaySteps  + DecisionRingSlack;
 
-    public float CurrentLearningRate { get; private set; } = OptimizerBaseLr;
+    public float CurrentLearningRate { get; private set; }
 
     private JobHandle _pending;
     private bool      _trainingScheduled;
@@ -132,17 +129,23 @@ public class SharedHierarchicalBrain : IDisposable
     public void ApplyPendingGradients()
     {
         CompletePending();
-        var   rules   = SimulationRules.Active;
-        float decayed = OptimizerBaseLr * math.exp(-SimulationClock.Time * rules.LrDecayPerSecond);
-        float lr      = math.max(rules.MinLearningRate, decayed);
+        var   rules = SimulationRules.Active;
+        float lr    = ResolveLearningRate(SimulationClock.Time, rules.OptimizerBaseLearningRate, rules.LrDecayPerSecond, rules.MinLearningRate);
+        float decay = rules.OptimizerWeightDecay;
         CurrentLearningRate = lr;
 
-        coordinator.ApplyAccumulatedGradients(lr, OptimizerWeightDecay, GlobalDiagnostics);
+        coordinator.ApplyAccumulatedGradients(lr, decay, GlobalDiagnostics);
         for (int i = 0; i < GoalCount; i++)
-            executors[i].ApplyAccumulatedGradients(lr, OptimizerWeightDecay, GlobalDiagnostics);
+            executors[i].ApplyAccumulatedGradients(lr, decay, GlobalDiagnostics);
 
         _rnd.TrainSweep();
         GlobalTrainingSteps++;
+    }
+
+    public static float ResolveLearningRate(float time, float baseLearningRate, float decayPerSecond, float minLearningRate)
+    {
+        float decayed = baseLearningRate * math.exp(-time * math.max(decayPerSecond, 0f));
+        return math.max(math.max(minLearningRate, SimulationRules.LearningRateFloor), decayed);
     }
 
     private float _plateauScale = 1f;
@@ -359,7 +362,7 @@ public class SharedHierarchicalBrain : IDisposable
         return false;
     }
 
-    public unsafe void RunDecisions(float coordEps = 0.05f, float execEps = 0.15f)
+    public unsafe void RunDecisions()
     {
         CompletePending();
 
@@ -390,6 +393,8 @@ public class SharedHierarchicalBrain : IDisposable
 
         float decay = ExplorationDecay();
         ref readonly var frame = ref SimulationRules.Frame;
+        float coordEps = frame.CoordExplorationEpsilon;
+        float execEps  = frame.ExecExplorationEpsilon;
         float coordGamma = frame.CoordGammaPerSecond;
         float execGamma  = frame.ExecGammaPerSecond;
 
@@ -799,7 +804,7 @@ public class SharedHierarchicalBrain : IDisposable
     {
         if (reservoir == null || coordinator == null || executors == null || executors.Length != GoalCount)
         {
-            Debug.LogError("Снапшот мозга некорректен: состав моделей не совпадает");
+            RavineLog.Error("Снапшот мозга некорректен: состав моделей не совпадает, загрузка отменена");
             return null;
         }
 
@@ -807,7 +812,7 @@ public class SharedHierarchicalBrain : IDisposable
         {
             if (executors[i] == null)
             {
-                Debug.LogError($"Снапшот мозга некорректен: exec-модель {i} отсутствует");
+                RavineLog.Error($"Снапшот мозга некорректен: exec-модель {i} отсутствует, загрузка отменена");
                 return null;
             }
 
@@ -816,7 +821,7 @@ public class SharedHierarchicalBrain : IDisposable
             int expected = ActionSubsets[i].Length + 1 + ExecAux(i);
             if (actual != expected)
             {
-                Debug.LogError($"Снапшот мозга несовместим: exec {i} имеет {actual} выходов, ожидалось {expected} (directional head)");
+                RavineLog.Error($"Снапшот мозга несовместим: exec {i} имеет {actual} выходов, ожидалось {expected}, загрузка отменена; инкрементируйте SharedBrainSnapshot.Version при изменении выходов");
                 return null;
             }
         }
@@ -839,8 +844,9 @@ public class SharedHierarchicalBrain : IDisposable
 
         if (!snapshot.Brain.MatchesArchitecture(inputSize, lstmHidden))
         {
-            Debug.LogError($"Архитектура снапшота ({snapshot.Brain.InputSize}/{snapshot.Brain.LstmHidden}) " +
-                           $"не совпадает с текущей ({inputSize}/{lstmHidden})");
+            RavineLog.Error($"Архитектура снапшота ({snapshot.Brain.InputSize}/{snapshot.Brain.LstmHidden}) " +
+                            $"не совпадает с текущей ({inputSize}/{lstmHidden}), загрузка отменена");
+            snapshot.Brain.Dispose();
             return null;
         }
 

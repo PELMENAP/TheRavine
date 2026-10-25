@@ -12,16 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: TeenSpruceInfo
   m_EditorClassIdentifier: 
+  id: 25
+  objectPrefab: {fileID: 3577697167160119698, guid: f505c8a1dd467c61db362f776adb1796, type: 3}
   defaultAmount: 0
   initialPoolSize: 30
   instanceType: 0
   behaviourType: 2
   nalInfo: {fileID: 0}
   inventoryItemInfo: {fileID: 0}
-  id: 25
-  objectPrefab: {fileID: 3577697167160119698, guid: f505c8a1dd467c61db362f776adb1796, type: 3}
   evolutionStep: {fileID: 11400000, guid: 1f5a9fa98ce0357a1a045ec4af226c89, type: 2}
   additionalOccupiedCells: []
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}
-  ObjectName: TEEN_SPRUCE
+  visibleRings: 4
+  farMode: 2
+  castShadowsFar: 1
+  lodSet: {fileID: 11400000, guid: 70973d1f03c5fd7c58bbcc2358c471ca, type: 2}

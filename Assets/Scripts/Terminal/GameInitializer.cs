@@ -30,14 +30,14 @@ public class GameInitializer : MonoBehaviour
 
     public void InitializeServices()
     {
-        _onMessageDisplayTerminal += terminal.Display;
+        _onMessageDisplayTerminal = terminal.Display;
 
         RavineLogger logger = new RavineLogger(_onMessageDisplayTerminal);
-        ServiceLocator.Services.Register(logger);
+        ServiceLocator.Register(logger);
         RavineLog.Initialize(logger);
 
         _actionMapController = new ActionMapController(inputAsset, logger);
-        ServiceLocator.Services.Register(_actionMapController);
+        ServiceLocator.Register(_actionMapController);
 
         terminal.gameObject.SetActive(true);
         terminal.Setup(logger, _actionMapController);
@@ -45,16 +45,16 @@ public class GameInitializer : MonoBehaviour
         IAsyncPersistentStorage persistenceStorage = new EncryptedPlayerPrefsStorage();
 
         GlobalSettingsController globalSettings = new(persistenceStorage, logger);
-        ServiceLocator.Services.Register(globalSettings);
+        ServiceLocator.Register(globalSettings);
 
         WorldRegistry worldRegistry = new(persistenceStorage, logger);
-        ServiceLocator.Services.Register(worldRegistry);
+        ServiceLocator.Register(worldRegistry);
 
         AutosaveCoordinator autosave = new(worldRegistry, logger);
-        ServiceLocator.Services.Register(autosave);
+        ServiceLocator.Register(autosave);
 
         WorldSettingsController worldSettings = new(worldRegistry, autosave, logger);
-        ServiceLocator.Services.Register(worldSettings);
+        ServiceLocator.Register(worldSettings);
 
         if (createTestWorld)
         {
@@ -62,17 +62,14 @@ public class GameInitializer : MonoBehaviour
         }
     }
 
-    // private void OnDestroy()
-    // {
-    //     _onMessageDisplayTerminal -= terminal.Display;
-        
-    //     if (ServiceLocator.Services.TryGet<AutosaveCoordinator>(out var autosave))
-    //     {
-    //         autosave.Stop();
-    //     }
-
-    //     ServiceLocator.ClearAll();
-    // }
+    private void OnDestroy()
+    {
+        if (Instance != this) return;
+        Instance = null;
+        _onMessageDisplayTerminal = null;
+        ServiceLocator.ClearAll();
+        RavineLog.Shutdown();
+    }
 
     private void OnApplicationPause(bool pauseStatus)
     {

@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5225736764547891146}
   - component: {fileID: 196158797454246836}
   - component: {fileID: 8496710106785266827}
+  - component: {fileID: 3170456213298764113}
   m_Layer: 0
   m_Name: WindZone
   m_TagString: Untagged
@@ -67,3 +68,19 @@ MonoBehaviour:
   windRandomness: 1
   BillboardWind: 1
   BillboardWindInfluence: 0.968
+--- !u!114 &3170456213298764113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4618117551731458441}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 268612218095402fa8c964e37cac1051, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  windZone: {fileID: 196158797454246836}
+  mtreeWind: {fileID: 8496710106785266827}
+  grassMaterial: {fileID: 2100000, guid: 36571ee1032acddecaf946f49784b2d6, type: 2}
+  phaseScale: 0.1
