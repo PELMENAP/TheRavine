@@ -82,3 +82,5 @@ public enum FarMode : byte
     Mesh = 1,
     MeshThenBillboard = 2
 }
+
+public enum FoodKind : byte { Plant = 0, Toxic = 1, Large = 2, Meat = 3 }
