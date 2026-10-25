@@ -35,8 +35,7 @@ namespace TheRavine.EntityControl
         public void SetUp(ISetAble.Callback callback)
         {
             ServiceLocator.Register(this);
-            ServiceLocator.Register(new ChunkFoodIndex(ServiceLocator.Services.Get<MapGenerator>()));
-            
+
             logger = ServiceLocator.GetService<RavineLogger>();
             logger.LogInfo("EntitySystem service is available now");
             global  = new List<AEntity>();

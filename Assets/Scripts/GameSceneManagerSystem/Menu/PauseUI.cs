@@ -26,9 +26,10 @@ public class PauseUI : MonoBehaviour, ISetAble
         playerData = (PlayerEntity) ServiceLocator.Players.GetAllPlayers()[0];
         playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
 
-        cameraSlider.onValueChanged.AddListener(CameraSliderChanged);
-        cameraFlip.onValueChanged.AddListener(CameraToggleChanged);
-        cameraFlip.isOn = false;
+        cameraSlider.SetValueWithoutNotify(cameraScale);
+        cameraSlider.interactable = false;
+        cameraFlip.SetIsOnWithoutNotify(isFlips);
+        cameraFlip.interactable = false;
 
         // EnterRef.action.performed += ChangeTerminalState;
         // QuitRef.action.performed += ChangeTerminalState;
@@ -42,18 +43,32 @@ public class PauseUI : MonoBehaviour, ISetAble
         callback?.Invoke();
     }
 
+    private const float CameraScaleStep = 0.05f;
     private float cameraScale;
     private bool isFlips;
-    private void CameraSliderChanged(float value)
+
+    private void Update()
     {
-        cameraScale = value;
-        playerEventBus.Invoke(null, new CameraPlace { scale = cameraScale, flip = isFlips } );
+        if (actionMapController == null || Mouse.current == null || !actionMapController.IsGamePlayActive()) return;
+
+        float wheel = Mouse.current.scroll.ReadValue().y;
+        if (wheel != 0f)
+        {
+            cameraScale = Mathf.Clamp(cameraScale + Mathf.Sign(wheel) * CameraScaleStep, cameraSlider.minValue, cameraSlider.maxValue);
+            cameraSlider.SetValueWithoutNotify(cameraScale);
+            PublishCameraPlace();
+        }
+
+        if (Mouse.current.middleButton.wasPressedThisFrame)
+        {
+            isFlips = !isFlips;
+            cameraFlip.SetIsOnWithoutNotify(isFlips);
+            PublishCameraPlace();
+        }
     }
-    private void CameraToggleChanged(bool value)
-    {
-        isFlips = value;
-        playerEventBus.Invoke(null, new CameraPlace { scale = cameraScale, flip = isFlips } );
-    }
+
+    private void PublishCameraPlace() => playerEventBus.Invoke(null, new CameraPlace { scale = cameraScale, flip = isFlips });
+
     private bool isActive = false;
 
     public void ChangeTerminalState()
@@ -84,9 +99,6 @@ public class PauseUI : MonoBehaviour, ISetAble
     {
         // EnterRef.action.performed -= ChangeTerminalState;
         // QuitRef.action.performed -= ChangeTerminalState;
-
-        cameraSlider.onValueChanged.RemoveAllListeners();
-        cameraFlip.onValueChanged.RemoveAllListeners();
 
         enterInputBindingAdapter.Unbind();
         quitInputBindingAdapter.Unbind();

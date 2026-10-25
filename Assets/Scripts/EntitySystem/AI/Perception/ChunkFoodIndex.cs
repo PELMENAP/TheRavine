@@ -3,6 +3,7 @@ using Unity.Mathematics;
 using Unity.Profiling;
 using TheRavine.Extensions;
 using TheRavine.Generator;
+using TheRavine.ObjectControl;
 using TheRavine.EntityControl.Virology;
 
 public enum FoodKind : byte { Plant = 0, Toxic = 1, Large = 2, Meat = 3 }
@@ -30,8 +31,6 @@ public struct FoodClaim
 
 public sealed class ChunkFoodIndex
 {
-    public const int FoodPrefabId = 0x0F00D;
-
     private const int   Size       = MapGenerator.mapChunkSize;
     private const int   ChunkShift = 6;
     private const int   ChunkMask  = Size - 1;
@@ -39,6 +38,8 @@ public sealed class ChunkFoodIndex
     private const float HalfCell   = MapGenerator.scale * 0.5f;
     private const float WaterLevel = 5f;
     private readonly MapGenerator _map;
+    private readonly ObjectInfoRegistry _registry;
+    private readonly ObjectInfo[] _foodByKind = new ObjectInfo[(int)FoodKind.Meat + 1];
     private readonly LongDictionary<FoodChunk> _chunks = new(64);
     private readonly LongDictionary<float> _meat = new(32);
     private readonly LongDictionary<ViralPayload> _payloads = new(16);
@@ -47,7 +48,24 @@ public sealed class ChunkFoodIndex
     public int FoodCount { get; private set; }
     public int Revision  { get; private set; }
 
-    public ChunkFoodIndex(MapGenerator map) => _map = map;
+    public ChunkFoodIndex(MapGenerator map, ObjectInfoRegistry registry)
+    {
+        _map      = map;
+        _registry = registry;
+
+        for (int i = 0; i < registry.Count; i++)
+        {
+            ObjectInfo info = registry.GetDense(i);
+            if (info == null || !info.IsFood) continue;
+            _foodByKind[(int)info.FoodKind] ??= info;
+        }
+    }
+
+    private ObjectInfo FoodInfoOf(int prefabId)
+    {
+        ObjectInfo info = _registry.Get(prefabId);
+        return info != null && info.IsFood ? info : null;
+    }
 
     private sealed class FoodChunk
     {
@@ -140,7 +158,7 @@ public sealed class ChunkFoodIndex
             for (int i = 0; i < cd.Objects.Length; i++)
             {
                 ObjectInstInfo info = cd.Objects[i];
-                if (info.PrefabID != FoodPrefabId) continue;
+                if (FoodInfoOf(info.PrefabID) == null) continue;
 
                 int idx = info.PrimaryIdx;
                 if ((uint)idx >= (uint)ChunkData.TotalCells) continue;
@@ -289,9 +307,12 @@ public sealed class ChunkFoodIndex
 
         fc = Resolve(Position2Int.Pack(cellX >> ChunkShift, cellZ >> ChunkShift), out cd);
         if (fc == null) return false;
-        if (!cd.TryGetObject(idx, out ObjectInstInfo info) || info.PrefabID != FoodPrefabId) return false;
+        if (!cd.TryGetObject(idx, out ObjectInstInfo info)) return false;
 
-        kind = (FoodKind)math.clamp(info.Amount, 0, (int)FoodKind.Meat);
+        ObjectInfo food = FoodInfoOf(info.PrefabID);
+        if (food == null) return false;
+
+        kind = food.FoodKind;
         return true;
     }
 
@@ -303,14 +324,10 @@ public sealed class ChunkFoodIndex
         return true;
     }
 
-    private float NutritionOf(FoodChunk fc, int idx, FoodKind kind, long cell)
+    private float NutritionOf(FoodChunk fc, int idx, FoodKind kind)
     {
         var r = SimulationRules.Active;
-        switch (kind)
-        {
-            case FoodKind.Large: return r.LargeFoodEnergy;
-            case FoodKind.Meat:  return _meat.TryGetValue(cell, out float e) ? e : 0f;
-        }
+        if (kind == FoodKind.Large) return r.LargeFoodEnergy;
 
         float maturity = fc.Maturity[idx] * (1f / 255f);
         float energy   = r.EatEnergyFood * math.lerp(r.FoodMinNutritionFraction, 1f, maturity);
@@ -323,6 +340,8 @@ public sealed class ChunkFoodIndex
         if (!TryLocate(cell, out var fc, out var cd, out int idx, out FoodKind kind)) return false;
 
         claim.Kind = kind;
+
+        if (kind == FoodKind.Meat) return BiteMeat(fc, cd, idx, cell, ref claim);
 
         if (kind == FoodKind.Large)
         {
@@ -339,15 +358,40 @@ public sealed class ChunkFoodIndex
             var partner = _claims[slot].Eater;
             RemoveClaimAt(slot);
 
-            float share = NutritionOf(fc, idx, kind, cell) * 0.5f;
+            float share = NutritionOf(fc, idx, kind) * 0.5f;
             if (!RemoveAt(fc, cd, idx, cell, out claim.Infected)) return false;
             partner?.ReceiveFood(share);
             claim.Energy = share;
             return true;
         }
 
-        claim.Energy = NutritionOf(fc, idx, kind, cell);
+        claim.Energy = NutritionOf(fc, idx, kind);
         return RemoveAt(fc, cd, idx, cell, out claim.Infected);
+    }
+
+    private bool BiteMeat(FoodChunk fc, ChunkData cd, int idx, long cell, ref FoodClaim claim)
+    {
+        var r = SimulationRules.Active;
+        if (!_meat.TryGetValue(cell, out float left))
+        {
+            RemoveAt(fc, cd, idx, cell, out _);
+            return false;
+        }
+
+        float bite = math.min(left, r.CorpseBiteEnergy);
+        if (bite <= 0f) return false;
+
+        claim.Energy   = bite;
+        claim.Infected = (fc.Infected[idx / Size] & (1UL << (idx & ChunkMask))) != 0UL;
+
+        left -= bite;
+        if (left >= r.CorpseMinEnergy)
+        {
+            _meat[cell] = left;
+            return true;
+        }
+
+        return RemoveAt(fc, cd, idx, cell, out _);
     }
 
     public bool TryTakePayload(long cell, out ViralPayload payload) => _payloads.TryRemove(cell, out payload);
@@ -386,16 +430,6 @@ public sealed class ChunkFoodIndex
         return RemoveAt(fc, cd, idx, cell, out _);
     }
 
-    public bool TryAddFood(int cellX, int cellZ, FoodKind kind)
-    {
-        if (_map == null) return false;
-
-        long key = Position2Int.Pack(cellX >> ChunkShift, cellZ >> ChunkShift);
-        var fc = Resolve(key, out ChunkData cd);
-        if (fc == null) return false;
-        return AddAt(fc, cd, cellX, cellZ, kind);
-    }
-
     private bool AddAt(FoodChunk fc, ChunkData cd, int cellX, int cellZ, FoodKind kind)
     {
         int lx  = cellX & ChunkMask;
@@ -407,9 +441,12 @@ public sealed class ChunkFoodIndex
         float h = cd.HeightRaw[idx];
         if (h <= WaterLevel) return false;
 
+        ObjectInfo food = _foodByKind[(int)kind];
+        if (food == null) return false;
+
         var info = new ObjectInstInfo(
             new Vector3(cellX * MapGenerator.scale + HalfCell, h, cellZ * MapGenerator.scale + HalfCell),
-            FoodPrefabId, (int)kind);
+            food.Id, (int)kind);
 
         if (!cd.TryAddObject(idx, in info)) return false;
 
