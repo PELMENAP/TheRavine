@@ -71,7 +71,6 @@ public sealed class ChunkFoodIndex
     private readonly LongDictionary<int> _taboo = new(16);
 
     public int FoodCount { get; private set; }
-    public int Revision  { get; private set; }
 
     public ChunkFoodIndex(MapGenerator map, ObjectInfoRegistry registry)
     {
@@ -156,11 +155,7 @@ public sealed class ChunkFoodIndex
         {
             if (_chunks.TryRemove(chunkKey, out FoodChunk stale))
             {
-                if (stale.Count != 0)
-                {
-                    FoodCount -= stale.Count;
-                    Revision++;
-                }
+                FoodCount -= stale.Count;
                 ReturnChunk(stale);
             }
             cd = null;
@@ -200,11 +195,7 @@ public sealed class ChunkFoodIndex
             fc.BuiltVersion = cd.Version;
             fc.Source       = cd;
 
-            if (fc.Count != oldCount)
-            {
-                FoodCount += fc.Count - oldCount;
-                Revision++;
-            }
+            FoodCount += fc.Count - oldCount;
         }
 
         return fc;
@@ -231,11 +222,7 @@ public sealed class ChunkFoodIndex
             ReturnChunk(fc);
         }
 
-        if (removed != 0)
-        {
-            FoodCount -= removed;
-            Revision++;
-        }
+        FoodCount -= removed;
     }
 
     private void EnsureKeyBuffer(int count)
@@ -446,7 +433,6 @@ public sealed class ChunkFoodIndex
         if (!infected) DropPayload(cell);
 
         FoodCount--;
-        Revision++;
         return true;
     }
 
@@ -476,7 +462,6 @@ public sealed class ChunkFoodIndex
         fc.BuiltVersion = cd.Version;
 
         FoodCount++;
-        Revision++;
         return true;
     }
 

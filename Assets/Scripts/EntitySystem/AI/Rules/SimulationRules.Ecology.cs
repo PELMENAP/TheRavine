@@ -9,7 +9,6 @@ public sealed partial class SimulationRules
     [SerializeField] private float starvationDamage = 12f;
     [SerializeField] private float starvationEnergyReturn = 5f;
     [SerializeField] private float starvationThreshold = 5f;
-    [SerializeField] private int foodSpawnAttempts = 16;
     [SerializeField] private float basalEnergyDrain = 0.5f;
     [SerializeField] private float eatRange = 2f;
     [SerializeField] private float shareFoodDuration = 0.5f;
@@ -71,7 +70,6 @@ public sealed partial class SimulationRules
     public float StarvationDamage => starvationDamage;
     public float StarvationEnergyReturn => starvationEnergyReturn;
     public float StarvationThreshold => starvationThreshold;
-    public int FoodSpawnAttempts => foodSpawnAttempts;
     public float BasalEnergyDrain => basalEnergyDrain;
     public float EatRange => eatRange;
     public float ShareFoodDuration => shareFoodDuration;

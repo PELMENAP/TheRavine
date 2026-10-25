@@ -80,7 +80,6 @@ MonoBehaviour:
   colonyOrigins:
   - {fileID: 1414807777015065501}
   - {fileID: 5206657449003180179}
-  initialFood: 100
   maxFood: 1000
   lstmHidden: 32
   savedModelName: shared_brain
