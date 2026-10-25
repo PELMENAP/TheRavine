@@ -4,6 +4,7 @@ using UnityEngine;
 public class ObjectInfo : ScriptableObject
 {
     public const int MaxVisibleRings = 4;
+    public const int MaxLevels = 8;
 
     [SerializeField] private ushort id;
     [SerializeField] private GameObject objectPrefab;
@@ -32,6 +33,8 @@ public class ObjectInfo : ScriptableObject
     [ConditionalField(nameof(instanceType), InstanceType.Interactable)]
     [SerializeField] private SpreadPattern onPickUpPattern;
 
+    [Range(1, MaxLevels)]
+    [SerializeField] private int levels = 1;
     [Range(0, MaxVisibleRings)]
     [SerializeField] private int visibleRings;
     [SerializeField] private FarMode farMode;
@@ -53,6 +56,7 @@ public class ObjectInfo : ScriptableObject
     public SpreadPattern OnDeathPattern => onDeathPattern;
     public SpreadPattern OnPickUpPattern => onPickUpPattern;
     public byte VisibleRings => (byte)Mathf.Clamp(visibleRings, 0, MaxVisibleRings);
+    public int Levels => levels;
     public FarMode FarMode => farMode;
     public bool CastShadowsFar => castShadowsFar;
     public ObjectLodSet LodSet => lodSet;

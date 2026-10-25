@@ -184,6 +184,7 @@ IFileManager<TId, TEntity>
 - `PoolManager` (`Core/PoolManager.cs`) — Dictionary<prefabID, Queue<ObjectInstance>>
 - `ObjectInfoRegistry : ScriptableObject` — база всех объектов; SO-данные предметов — `ScriptableData/Item/` (Environment, NPC, квесты, описания)
 - `ObjectSystem/TreeGenerator/` — деревья; `ObjectInfo/NAL/` — NAL-поведение объектов
+- Многоуровневые постройки: `ObjectInfo.Levels` (1..`ObjectInfo.MaxLevels`). Поверхностная сетка остаётся 2D; `ChunkData.LevelMask` (байт на клетку, бит k = занята на уровне k≥1) — флаг для чтения `MapGenerator.IsOccupiedAt`/`ChunkData.HasLevelAt`. Реестр `ChunkData.TryGetBuilding(anchor)` хранит `BuildingVolume` (список `LevelCell` по всем уровням) только для построек с `Levels > 1`; размер реестра зависит от числа построек, а не от высоты. Сохранение построек не реализовано (см. решение 2.2).
 
 ### NAL (Natural Artificial Life) — `NAL_PC.cs`
 Псевдо-экосистема: объекты размножаются/умирают по вероятностям.
