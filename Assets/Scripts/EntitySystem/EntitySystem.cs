@@ -5,6 +5,7 @@ using R3;
 
 using TheRavine.Generator;
 using TheRavine.ObjectControl;
+using TheRavine.Events;
 
 namespace TheRavine.EntityControl
 {
@@ -35,6 +36,7 @@ namespace TheRavine.EntityControl
         private RavineLogger logger;
         private System.IDisposable playersSubscription;
         private ChunkFoodIndex foodIndex;
+        private CameraInputController cameraInput;
         private bool brokenUp;
         public void SetUp(ISetAble.Callback callback)
         {
@@ -52,6 +54,7 @@ namespace TheRavine.EntityControl
                 .Subscribe(_ =>
                 {
                     SetUpBoids(ServiceLocator.Players.GetAllPlayersTransform());
+                    SetUpCameraInput();
                     logger.LogInfo("EntitySystem get all players list");
                 });
 
@@ -74,6 +77,20 @@ namespace TheRavine.EntityControl
             Transform playerTransform = players[0];
             if(boidsBehaviour != null) boidsBehaviour.StartBoids(playerTransform);
         }
+
+        private void SetUpCameraInput()
+        {
+            if (cameraInput != null) return;
+            if (!ServiceLocator.Services.TryGet(out ActionMapController actions)) return;
+
+            var player = ServiceLocator.Players.GetAllPlayers()[0];
+            cameraInput = new CameraInputController(
+                actions.GetActionFrom("Gameplay", "Camera Scroll"),
+                actions.GetActionFrom("Gameplay", "Camera Flip"),
+                player.GetEntityComponent<EventBusComponent>().EventBus);
+            ServiceLocator.Register(cameraInput);
+            cameraInput.Start();
+        }
         private void FixedUpdate()
         {
             if(global == null) return;
@@ -87,6 +104,9 @@ namespace TheRavine.EntityControl
             brokenUp = true;
             if (foodIndex != null) ServiceLocator.Services.Unregister(foodIndex);
             foodIndex = null;
+            cameraInput?.Stop();
+            if (cameraInput != null) ServiceLocator.Services.Unregister(cameraInput);
+            cameraInput = null;
             OnDestroy();
             callback?.Invoke();
         }
