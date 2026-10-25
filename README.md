@@ -225,9 +225,9 @@ BehaviourType: `None | NAL | GROW`
 - `AI/LSTM/` — LSTMMemory; `AI/InputVectorizer.cs` — векторизация наблюдений; `AI/FoodObject.cs`, `AI/EntityAction.cs`
 
 ### `AI/EntityManager.cs` и `AI/Population/`
-- `EntityManager` (MonoBehaviour): жизненный цикл, драйвер тика, управление колониями (касты, лидер, гнёзда), видимость, сохранение мозгов; публичный API (`SpawnEntity`, `SpawnChild`, `SpawnFood`, `EvolveGenotypes`, `SeedProbeStrain`, `Entities`, `Colonies`, события) делегирует сервисам.
+- `EntityManager` (MonoBehaviour): жизненный цикл, драйвер тика, управление колониями (касты, лидер, гнёзда), видимость, сохранение мозгов; публичный API (`SpawnEntity`, `SpawnChild`, `EvolveGenotypes`, `SeedProbeStrain`, `Entities`, `Colonies`, события) делегирует сервисам.
 - `ColonyPopulation` — спавн, смерти (`ProcessPendingDeaths`, трупы, оповещение сородичей, терминальный штраф), размножение, swap-back SoA, вымирание/реинкарнация колоний, хищники, выбор лидера.
-- `ColonyFood` — рост еды, спавн, трупы. `EvolutionService` — fitness-статистика, турнирный выбор партнёра, элитный кроссовер, терминальный штраф. `InfectionCoordinator` — обёртка `InfectionService`.
+- `ColonyFood` — рост еды (регенерация объектов ObjectInfo с `IsFood`), трупы. `EvolutionService` — fitness-статистика, турнирный выбор партнёра, элитный кроссовер, терминальный штраф. `InfectionCoordinator` — обёртка `InfectionService`.
 - `EntityModel` разнесён по partial-файлам: `.Cycle` (тик), `.Social`, `.Directions`, `.Homeostasis`, `.Wild`, `.Behaviour`, `.Fitness`; учёт fitness — `FitnessComponent`.
 - Команды агентов — по файлу на команду (`AI/Entity/Commands/*Command.cs`).
 - `SimulationRules` — partial: `SimulationRules.cs` (RulesFrame, Bind, константы, валидация) + `.Agent/.Colony/.Ecology/.Learning/.Movement/.Virology` (сериализуемые поля и свойства; имена полей не менялись, ассет совместим).

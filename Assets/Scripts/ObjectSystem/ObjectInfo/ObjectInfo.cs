@@ -19,6 +19,8 @@ public class ObjectInfo : ScriptableObject
     [ConditionalField(nameof(instanceType), InstanceType.Static, inverse: true)]
     [SerializeField] private InventoryItemInfo inventoryItemInfo;
 
+    [SerializeField] private bool isFood;
+    [SerializeField] private FoodKind foodKind;
 
     [ConditionalField(nameof(behaviourType), BehaviourType.GROW)]
     [SerializeField] private ObjectInfo evolutionStep;
@@ -41,6 +43,8 @@ public class ObjectInfo : ScriptableObject
     public ushort InitialPoolSize => initialPoolSize;
     public InstanceType InstanceType => instanceType;
     public BehaviourType BehaviourType => behaviourType;
+    public bool IsFood => isFood;
+    public FoodKind FoodKind => foodKind;
     public NAlInfo NalInfo => nalInfo;
     public InventoryItemInfo InventoryItemInfo => inventoryItemInfo;
     public GameObject ObjectPrefab => objectPrefab;
