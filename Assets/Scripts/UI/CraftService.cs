@@ -35,7 +35,7 @@ namespace TheRavine.Inventory
         }
         public bool OnInventoryCraftCheck(object sender)
         {
-            if(!resultCell.slot.isEmpty) return false;
+            if(inProcess || !resultCell.slot.isEmpty) return false;
 
             for (int i = 0; i < CellsCount; i++)
             {
@@ -101,6 +101,40 @@ namespace TheRavine.Inventory
         {
             if(inProcess) return;
             inProcess = true;
+            craftPresenter.CraftPossible(false);
+
+            if(craftDelay > 0)
+            {
+                while(true)
+                {
+                    bool canceled = await UniTask.NextFrame(PlayerLoopTiming.LastPostLateUpdate, _cts.Token, true).SuppressCancellationThrow();
+                    if(canceled)
+                    {
+                        inProcess = false;
+                        return;
+                    }
+                    if(!craftPresenter.FillProgressBar(Time.deltaTime / craftDelay)) break;
+                }
+            }
+
+            inProcess = false;
+            CraftThing();
+        }
+
+        public void CraftThing()
+        {
+            if(cancel || !OnInventoryCraftCheck(this) || !HasRoomForResult()) return;
+
+            var resultInfo = resultItemInfo;
+            int resultTotal = resultCount;
+            ConsumeIngredients();
+            inventory.TryToAddSlot(this, resultCell.slot, infoManager.GetInventoryItemByInfo(resultInfo.id, resultInfo, resultTotal));
+        }
+
+        private bool HasRoomForResult() => resultCount <= resultItemInfo.maxItemsInInventorySlot || !inventory.isFull;
+
+        private void ConsumeIngredients()
+        {
             for(int i = 0; i < CellsCount; i++){
                 if(craftCells[i].slot.isEmpty) continue;
                 craftCells[i]._uiInventoryItem.item.state.amount -= ingredientsCount[i];
@@ -108,24 +142,6 @@ namespace TheRavine.Inventory
                     craftCells[i].slot.Clear();
                 craftCells[i].Refresh();
             }
-            craftPresenter.CraftPossible(false);
-
-            while(true)
-            { 
-                await UniTask.NextFrame(PlayerLoopTiming.LastPostLateUpdate, cancellationToken: _cts.Token, true);
-                if(!craftPresenter.FillProgressBar(Time.deltaTime / craftDelay)) break;
-            }
-
-            CraftThing();
-        }
-
-        public void CraftThing()
-        {
-            inventory.TryToAddSlot(this, resultCell.slot, infoManager.GetInventoryItemByInfo(resultItemInfo.id, resultItemInfo, resultCount));
-            
-            if(cancel) return;
-            OnInventoryCraftCheck(this);
-            inProcess = false;
         }
 
 
