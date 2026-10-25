@@ -27,7 +27,7 @@ Open-world sandbox game developed in Unity.
 # TheRavine — Project Architecture Summary
 
 ## Расположение
-Все скрипты: `Assets/Scripts/` (~364 файла). Сборки (asmdef): `Core`, `BehavioursMap`, `EntitySystem`, `ObjectSystem`, `UIInventory`.
+Все скрипты: `Assets/Scripts/` (483 файла `.cs`, подсчёт: `find Assets/Scripts -name '*.cs' | wc -l`). Сборки (asmdef в `Assets/Scripts`, 14): `Audio`, `BehavioursMap`, `Core`, `DetectorSystem`, `DialogGraph`, `EntitySystem`, `EventSystem`, `Info`, `Inventory`, `Netcode`, `ObjectSystem`, `SkillSystem`, `UIInventory`, `View`.
 
 ## Stack
 - **Unity 6000.3** (3D, URP), **C#**, **Netcode for GameObjects** (host/server/client)
@@ -54,7 +54,7 @@ Open-world sandbox game developed in Unity.
 - `AutosaveCoordinator`
 - `WorldSettingsController`
 
-Очистка: `GameInitializer.OnDestroy` (только активный `Instance`) → `ServiceLocator.ClearAll()` + `RavineLog.Shutdown()`. Выход из игровой сцены — `Bootstrap.InTheEnd` (однократно на сцену): `BreakUpServices` → `ClearAll` → `InitializeServices`.
+Очистка: `GameInitializer.OnDestroy` (только активный `Instance`) → `ServiceLocator.ClearAll()` + `RavineLog.Shutdown()`. Выход в главное меню — `Bootstrap.SwitchToMainMenu`: кнопка блокируется на первом нажатии. Колбэк `SceneLoader.LoadScene(0, ReleaseServices)` вызывается после `FadeIn`, до `LoadSceneAsync`: `ReleaseServices` → `BreakUpServices` → Netcode `Shutdown` → `ClearAll` → `InitializeServices`. `OnDisable` вызывает `ReleaseServices` тоже; повторный вызов не действует.
 
 ### Главное меню — `GameSceneManagerSystem/Menu/`
 - `WorldManagerUI` — список миров, создание/удаление/переименование
@@ -196,7 +196,7 @@ BehaviourType: `None | NAL | GROW`
 
 ## AI-система (`EntitySystem/AI/`) — ядро проекта
 
-**Встроена в основной EntitySystem** (не sandbox): сущности `AI/Entity/` имеют собственный MVP (`EntityModel` / `EntityViewModel` / `EntityView`), компоненты (`AI/Entity/Components/`: `BrainComponent`, `PerceptionComponent`, `MortalityComponent`, `StatsComponent`, `SpeechComponent`, `PointsOfInterestComponent`, `VisualCullingComponent`) и состояния действий (`AI/Entity/State/EntityActionState.cs` — действия с ценой энергии/HP).
+**Встроена в основной EntitySystem** (не sandbox): сущности `AI/Entity/` имеют собственный MVP (`EntityModel` / `EntityViewModel` / `EntityView`), компоненты (`AI/Entity/Components/`: `BrainComponent`, `DigestionComponent`, `FitnessComponent`, `MortalityComponent`, `PerceptionComponent`, `PointsOfInterestComponent`, `SpeechComponent`, `StatsComponent`, `VisualCullingComponent`) и действия с ценой энергии/HP (`AI/EntityAction.cs`, каталог `AI/ActionCatalog.cs`).
 
 ### `SharedHierarchicalBrain` (`AI/SharedAI/SharedHierarchicalBrain.cs`)
 Двухуровневая иерархия, **веса общие на всех сущностей** (эволюция на уровне популяции), пер-сущностные контексты `EntityBrainContext`:
@@ -222,7 +222,7 @@ BehaviourType: `None | NAL | GROW`
 - `AI/SharedAI/ValueCritic.cs` — линейный TD-критик (baseline для reward)
 - `AI/SharedAI/RandomNetworkDistillation.cs` — intrinsic motivation (RND: target+predictor сети, novelty reward)
 - `AI/GeneticParameters.cs` — LR, lambda, temperature и пр.; `AI/MimicPhenotype.cs` — фенотип мимикрии
-- `AI/LSTM/` — LSTMMemory; `AI/InputVectorizer.cs` — векторизация наблюдений; `AI/FoodObject.cs`, `AI/EntityAction.cs`
+- `AI/LSTM/` — LSTMMemory; `AI/InputVectorizer.cs` — векторизация наблюдений; `AI/EntityAction.cs`, `AI/ActionCatalog.cs`
 
 ### `AI/EntityManager.cs` и `AI/Population/`
 - `EntityManager` (MonoBehaviour): жизненный цикл, драйвер тика, управление колониями (касты, лидер, гнёзда), видимость, сохранение мозгов; публичный API (`SpawnEntity`, `SpawnChild`, `EvolveGenotypes`, `SeedProbeStrain`, `Entities`, `Colonies`, события) делегирует сервисам.
@@ -329,7 +329,7 @@ BehaviourType: `None | NAL | GROW`
 - **UI/Settings/**, **UI/Console/** — настройки и консоль
 - **Core/Utilities/** — `PriorityQueue`, `IndexedSet`, `Dence3DGrid`, `EnumerableSnapshot`, `CodeHelpers`, `Extentions`
 - **Test/** — экспериментальный код: `PointDraw` (используется в `Scenes/TestScene/56u5y3454e.unity`), `PriceChart` + `Market`/`MarketCore`/`MarketSimulator` (используются `Prefabs/Market.prefab`)
-- **Assets/Tests/EditMode/** — EditMode-тесты (`EntitySystem.Tests.EditMode.asmdef`, Editor-only): `TickWindowBudgetTests`, `TerminalPenaltyTests`, `BrainArchitectureVersionTests`, `ServiceContainerTests`, `DecisionRingTests`, `RunningMeanStdTests`, `BrainLearningTests` (знак градиента, изоляция LSTM, zero-alloc батча), `StatsMortalityTests`, `HotPathAllocationTests`, `RulesDefaultsTests`, `ColonyRegistryTests`, `SnapshotVersionTests`, `FitnessComponentTests`, `SoaSwapBackTests`; zero-alloc через `GC.GetAllocatedBytesForCurrentThread` + `Is.Not.AllocatingGCMemory`
+- **Assets/Tests/EditMode/** — EditMode-тесты (`EntitySystem.Tests.EditMode.asmdef`, Editor-only): `TickWindowBudgetTests`, `TerminalPenaltyTests`, `BrainArchitectureVersionTests`, `ServiceContainerTests`, `DecisionRingTests`, `RunningMeanStdTests`, `BrainLearningTests` (знак градиента, изоляция LSTM, zero-alloc батча), `StatsMortalityTests`, `HotPathAllocationTests`, `RulesDefaultsTests`, `ColonyRegistryTests`, `SnapshotVersionTests`, `FitnessComponentTests`, `SoaSwapBackTests`, `CorpseBiteTests` (порции укуса трупа, инфекция один раз), `ViralPayloadPoolTests` (`Release` идемпотентен); `AllocationAssert` — общий хелпер; zero-alloc через `GC.GetAllocatedBytesForCurrentThread` + `Is.Not.AllocatingGCMemory`
 
 ---
 
@@ -359,4 +359,4 @@ BehaviourType: `None | NAL | GROW`
 7. ~~**Мёртвый код**~~ — удалены `RpcTest.cs`, `CraftModel.cs`, `PlayerUIService.cs`, `Test/Test.cs`, корневые `*CommandBuffer.cs`, дубли конфигов без точки; `mono_crash.mem.6929.1.blob` снят с индекса. `RavineNetworkManager.cs` в репозитории отсутствовал.
 8. ~~**Unity-время в логике агентов**~~ — закрыто: `UniTask.Delay`/`Time.smoothDeltaTime` в `EntityManager` заменены на `SimulationClock`.
 9. ~~**R3 в горячем пути агента**~~ — `StatsComponent.Health/Energy` и `_vecMaxHealth/_vecMaxEnergy` заменены полями + событием `HealthDepleted`/прямым вызовом; внешние подписчики (`AEntity.IsActive`, `OnUpdate`, игровые `EnergyComponent`/`CurrencyComponent`) сохранены.
-10. ~~**God-классы**~~ — `EntityManager` 1253 → 728 строк (+ `AI/Population/`), `EntityModel` 1662 → 584 + 7 partial, `EntityCommands` → 21 файл, `SimulationRules` 2149 → 1109 + 6 partial. Физическое разделение `SimulationRules` на отдельные ScriptableObject-ассеты не сделано: нужна миграция данных ассета в Unity.
+10. ~~**God-классы**~~ — `EntityManager` 1253 → 733 строки (+ `AI/Population/`), `EntityModel` 1662 → 583 + 7 partial, `EntityCommands` → 23 файла, `SimulationRules` 2149 → 1111 + 6 partial. Физическое разделение `SimulationRules` на отдельные ScriptableObject-ассеты не сделано: нужна миграция данных ассета в Unity.
