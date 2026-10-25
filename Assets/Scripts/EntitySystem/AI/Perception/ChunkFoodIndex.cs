@@ -6,8 +6,6 @@ using TheRavine.Generator;
 using TheRavine.ObjectControl;
 using TheRavine.EntityControl.Virology;
 
-public enum FoodKind : byte { Plant = 0, Toxic = 1, Large = 2, Meat = 3 }
-
 public interface IFoodReceiver
 {
     void ReceiveFood(float energy);
