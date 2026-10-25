@@ -153,6 +153,7 @@ IFileManager<TId, TEntity>
 ### Данные (`Core/Settings/WorldData/`, `WorldSettings/`, `GameSettings/`)
 - **`GlobalSettings`** — качество, трава, тип управления (MemoryPack)
 - **`WorldState`** — seed, позиция игрока, cycleCount, инвентарь[], lastSaveTime
+  Состояние карты не сохраняется: трупы, payload заражения и метки табу еды (`ChunkFoodIndex._meat/_payloads/_taboo`) живут только в памяти сессии; после загрузки мира чанки генерируются из seed, трупов и их записей нет. Модифицированные чанки удерживаются в памяти `MapGenerator` (`ChunkData.IsModified`), на диск не пишутся.
 - **`WorldConfiguration`** — имя мира, сложность, autosave interval, timeScale
 
 ### `WorldRegistry` (`Core/Settings/WorldRegistry.cs`)
