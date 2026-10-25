@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 1310266290786588079}
   - component: {fileID: 4621192879906923552}
   - component: {fileID: 3806075514010894874}
-  - component: {fileID: 6786553470857009099}
   m_Layer: 0
   m_Name: experiment
   m_TagString: Untagged
@@ -81,7 +80,6 @@ MonoBehaviour:
   colonyOrigins:
   - {fileID: 1414807777015065501}
   - {fileID: 5206657449003180179}
-  initialFood: 100
   maxFood: 1000
   lstmHidden: 32
   savedModelName: shared_brain
@@ -133,21 +131,6 @@ MonoBehaviour:
   recipe: 0417151712170f1117021717
   validation: 
   lastResult: 
---- !u!114 &6786553470857009099
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4326377108197735784}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b4a5c350edaf766a09b6207881e493fa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: EntitySystem::FoodViewSystem
-  foodPrefab: {fileID: 8578141244289343015, guid: 8ffdd9668390c336abd40c6fc62e49f3, type: 3}
-  poolSize: 128
-  pollIntervalMs: 250
 --- !u!1 &6314945778291234322
 GameObject:
   m_ObjectHideFlags: 0

@@ -39,7 +39,7 @@ The Ravine — виртуальное место, где человек и ИИ 
 # TheRavine — Project Architecture Summary
 
 ## Расположение
-Все скрипты: `Assets/Scripts/` (~364 файла). Сборки (asmdef): `Core`, `BehavioursMap`, `EntitySystem`, `ObjectSystem`, `UIInventory`.
+Все скрипты: `Assets/Scripts/` (483 файла `.cs`, подсчёт: `find Assets/Scripts -name '*.cs' | wc -l`). Сборки (asmdef в `Assets/Scripts`, 14): `Audio`, `BehavioursMap`, `Core`, `DetectorSystem`, `DialogGraph`, `EntitySystem`, `EventSystem`, `Info`, `Inventory`, `Netcode`, `ObjectSystem`, `SkillSystem`, `UIInventory`, `View`.
 
 ## Stack
 - **Unity 6000.3** (3D, URP), **C#**, **Netcode for GameObjects** (host/server/client)
@@ -66,7 +66,7 @@ The Ravine — виртуальное место, где человек и ИИ 
 - `AutosaveCoordinator`
 - `WorldSettingsController`
 
-Очистка: `GameInitializer.OnDestroy` (только активный `Instance`) → `ServiceLocator.ClearAll()` + `RavineLog.Shutdown()`. Выход из игровой сцены — `Bootstrap.InTheEnd` (однократно на сцену): `BreakUpServices` → `ClearAll` → `InitializeServices`.
+Очистка: `GameInitializer.OnDestroy` (только активный `Instance`) → `ServiceLocator.ClearAll()` + `RavineLog.Shutdown()`. Выход в главное меню — `Bootstrap.SwitchToMainMenu`: кнопка блокируется на первом нажатии. Колбэк `SceneLoader.LoadScene(0, ReleaseServices)` вызывается после `FadeIn`, до `LoadSceneAsync`: `ReleaseServices` → `BreakUpServices` → Netcode `Shutdown` → `ClearAll` → `InitializeServices`. `OnDisable` вызывает `ReleaseServices` тоже; повторный вызов не действует.
 
 ### Главное меню — `GameSceneManagerSystem/Menu/`
 - `WorldManagerUI` — список миров, создание/удаление/переименование
@@ -165,6 +165,7 @@ IFileManager<TId, TEntity>
 ### Данные (`Core/Settings/WorldData/`, `WorldSettings/`, `GameSettings/`)
 - **`GlobalSettings`** — качество, трава, тип управления (MemoryPack)
 - **`WorldState`** — seed, позиция игрока, cycleCount, инвентарь[], lastSaveTime
+  Состояние карты не сохраняется: трупы, payload заражения и метки табу еды (`ChunkFoodIndex._meat/_payloads/_taboo`) живут только в памяти сессии; после загрузки мира чанки генерируются из seed, трупов и их записей нет. Модифицированные чанки удерживаются в памяти `MapGenerator` (`ChunkData.IsModified`), на диск не пишутся.
 - **`WorldConfiguration`** — имя мира, сложность, autosave interval, timeScale
 
 ### `WorldRegistry` (`Core/Settings/WorldRegistry.cs`)
@@ -195,6 +196,7 @@ IFileManager<TId, TEntity>
 - `PoolManager` (`Core/PoolManager.cs`) — Dictionary<prefabID, Queue<ObjectInstance>>
 - `ObjectInfoRegistry : ScriptableObject` — база всех объектов; SO-данные предметов — `ScriptableData/Item/` (Environment, NPC, квесты, описания)
 - `ObjectSystem/TreeGenerator/` — деревья; `ObjectInfo/NAL/` — NAL-поведение объектов
+- Многоуровневые постройки: `ObjectInfo.Levels` (1..`ObjectInfo.MaxLevels`). Поверхностная сетка остаётся 2D; `ChunkData.LevelMask` (байт на клетку, бит k = занята на уровне k≥1) — флаг для чтения `MapGenerator.IsOccupiedAt`/`ChunkData.HasLevelAt`. Реестр `ChunkData.TryGetBuilding(anchor)` хранит `BuildingVolume` (список `LevelCell` по всем уровням) только для построек с `Levels > 1`; размер реестра зависит от числа построек, а не от высоты. Сохранение построек не реализовано (см. решение 2.2).
 
 ### NAL (Natural Artificial Life) — `NAL_PC.cs`
 Псевдо-экосистема: объекты размножаются/умирают по вероятностям.
@@ -208,7 +210,7 @@ BehaviourType: `None | NAL | GROW`
 
 ## AI-система (`EntitySystem/AI/`) — ядро проекта
 
-**Встроена в основной EntitySystem** (не sandbox): сущности `AI/Entity/` имеют собственный MVP (`EntityModel` / `EntityViewModel` / `EntityView`), компоненты (`AI/Entity/Components/`: `BrainComponent`, `PerceptionComponent`, `MortalityComponent`, `StatsComponent`, `SpeechComponent`, `PointsOfInterestComponent`, `VisualCullingComponent`) и состояния действий (`AI/Entity/State/EntityActionState.cs` — действия с ценой энергии/HP).
+**Встроена в основной EntitySystem** (не sandbox): сущности `AI/Entity/` имеют собственный MVP (`EntityModel` / `EntityViewModel` / `EntityView`), компоненты (`AI/Entity/Components/`: `BrainComponent`, `DigestionComponent`, `FitnessComponent`, `MortalityComponent`, `PerceptionComponent`, `PointsOfInterestComponent`, `SpeechComponent`, `StatsComponent`, `VisualCullingComponent`) и действия с ценой энергии/HP (`AI/EntityAction.cs`, каталог `AI/ActionCatalog.cs`).
 
 ### `SharedHierarchicalBrain` (`AI/SharedAI/SharedHierarchicalBrain.cs`)
 Двухуровневая иерархия, **веса общие на всех сущностей** (эволюция на уровне популяции), пер-сущностные контексты `EntityBrainContext`:
@@ -234,12 +236,12 @@ BehaviourType: `None | NAL | GROW`
 - `AI/SharedAI/ValueCritic.cs` — линейный TD-критик (baseline для reward)
 - `AI/SharedAI/RandomNetworkDistillation.cs` — intrinsic motivation (RND: target+predictor сети, novelty reward)
 - `AI/GeneticParameters.cs` — LR, lambda, temperature и пр.; `AI/MimicPhenotype.cs` — фенотип мимикрии
-- `AI/LSTM/` — LSTMMemory; `AI/InputVectorizer.cs` — векторизация наблюдений; `AI/FoodObject.cs`, `AI/EntityAction.cs`
+- `AI/LSTM/` — LSTMMemory; `AI/InputVectorizer.cs` — векторизация наблюдений; `AI/EntityAction.cs`, `AI/ActionCatalog.cs`
 
 ### `AI/EntityManager.cs` и `AI/Population/`
-- `EntityManager` (MonoBehaviour): жизненный цикл, драйвер тика, управление колониями (касты, лидер, гнёзда), видимость, сохранение мозгов; публичный API (`SpawnEntity`, `SpawnChild`, `SpawnFood`, `EvolveGenotypes`, `SeedProbeStrain`, `Entities`, `Colonies`, события) делегирует сервисам.
+- `EntityManager` (MonoBehaviour): жизненный цикл, драйвер тика, управление колониями (касты, лидер, гнёзда), видимость, сохранение мозгов; публичный API (`SpawnEntity`, `SpawnChild`, `EvolveGenotypes`, `SeedProbeStrain`, `Entities`, `Colonies`, события) делегирует сервисам.
 - `ColonyPopulation` — спавн, смерти (`ProcessPendingDeaths`, трупы, оповещение сородичей, терминальный штраф), размножение, swap-back SoA, вымирание/реинкарнация колоний, хищники, выбор лидера.
-- `ColonyFood` — рост еды, спавн, трупы. `EvolutionService` — fitness-статистика, турнирный выбор партнёра, элитный кроссовер, терминальный штраф. `InfectionCoordinator` — обёртка `InfectionService`.
+- `ColonyFood` — рост еды (регенерация объектов ObjectInfo с `IsFood`), трупы. `EvolutionService` — fitness-статистика, турнирный выбор партнёра, элитный кроссовер, терминальный штраф. `InfectionCoordinator` — обёртка `InfectionService`.
 - `EntityModel` разнесён по partial-файлам: `.Cycle` (тик), `.Social`, `.Directions`, `.Homeostasis`, `.Wild`, `.Behaviour`, `.Fitness`; учёт fitness — `FitnessComponent`.
 - Команды агентов — по файлу на команду (`AI/Entity/Commands/*Command.cs`).
 - `SimulationRules` — partial: `SimulationRules.cs` (RulesFrame, Bind, константы, валидация) + `.Agent/.Colony/.Ecology/.Learning/.Movement/.Virology` (сериализуемые поля и свойства; имена полей не менялись, ассет совместим).
@@ -341,7 +343,7 @@ BehaviourType: `None | NAL | GROW`
 - **UI/Settings/**, **UI/Console/** — настройки и консоль
 - **Core/Utilities/** — `PriorityQueue`, `IndexedSet`, `Dence3DGrid`, `EnumerableSnapshot`, `CodeHelpers`, `Extentions`
 - **Test/** — экспериментальный код: `PointDraw` (используется в `Scenes/TestScene/56u5y3454e.unity`), `PriceChart` + `Market`/`MarketCore`/`MarketSimulator` (используются `Prefabs/Market.prefab`)
-- **Assets/Tests/EditMode/** — EditMode-тесты (`EntitySystem.Tests.EditMode.asmdef`, Editor-only): `TickWindowBudgetTests`, `TerminalPenaltyTests`, `BrainArchitectureVersionTests`, `ServiceContainerTests`, `DecisionRingTests`, `RunningMeanStdTests`, `BrainLearningTests` (знак градиента, изоляция LSTM, zero-alloc батча), `StatsMortalityTests`, `HotPathAllocationTests`, `RulesDefaultsTests`, `ColonyRegistryTests`, `SnapshotVersionTests`, `FitnessComponentTests`, `SoaSwapBackTests`; zero-alloc через `GC.GetAllocatedBytesForCurrentThread` + `Is.Not.AllocatingGCMemory`
+- **Assets/Tests/EditMode/** — EditMode-тесты (`EntitySystem.Tests.EditMode.asmdef`, Editor-only): `TickWindowBudgetTests`, `TerminalPenaltyTests`, `BrainArchitectureVersionTests`, `ServiceContainerTests`, `DecisionRingTests`, `RunningMeanStdTests`, `BrainLearningTests` (знак градиента, изоляция LSTM, zero-alloc батча), `StatsMortalityTests`, `HotPathAllocationTests`, `RulesDefaultsTests`, `ColonyRegistryTests`, `SnapshotVersionTests`, `FitnessComponentTests`, `SoaSwapBackTests`, `CorpseBiteTests` (порции укуса трупа, инфекция один раз), `ViralPayloadPoolTests` (`Release` идемпотентен); `AllocationAssert` — общий хелпер; zero-alloc через `GC.GetAllocatedBytesForCurrentThread` + `Is.Not.AllocatingGCMemory`
 
 ---
 
@@ -371,4 +373,4 @@ BehaviourType: `None | NAL | GROW`
 7. ~~**Мёртвый код**~~ — удалены `RpcTest.cs`, `CraftModel.cs`, `PlayerUIService.cs`, `Test/Test.cs`, корневые `*CommandBuffer.cs`, дубли конфигов без точки; `mono_crash.mem.6929.1.blob` снят с индекса. `RavineNetworkManager.cs` в репозитории отсутствовал.
 8. ~~**Unity-время в логике агентов**~~ — закрыто: `UniTask.Delay`/`Time.smoothDeltaTime` в `EntityManager` заменены на `SimulationClock`.
 9. ~~**R3 в горячем пути агента**~~ — `StatsComponent.Health/Energy` и `_vecMaxHealth/_vecMaxEnergy` заменены полями + событием `HealthDepleted`/прямым вызовом; внешние подписчики (`AEntity.IsActive`, `OnUpdate`, игровые `EnergyComponent`/`CurrencyComponent`) сохранены.
-10. ~~**God-классы**~~ — `EntityManager` 1253 → 728 строк (+ `AI/Population/`), `EntityModel` 1662 → 584 + 7 partial, `EntityCommands` → 21 файл, `SimulationRules` 2149 → 1109 + 6 partial. Физическое разделение `SimulationRules` на отдельные ScriptableObject-ассеты не сделано: нужна миграция данных ассета в Unity.
+10. ~~**God-классы**~~ — `EntityManager` 1253 → 733 строки (+ `AI/Population/`), `EntityModel` 1662 → 583 + 7 partial, `EntityCommands` → 23 файла, `SimulationRules` 2149 → 1111 + 6 partial. Физическое разделение `SimulationRules` на отдельные ScriptableObject-ассеты не сделано: нужна миграция данных ассета в Unity.

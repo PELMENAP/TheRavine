@@ -95,6 +95,24 @@
                     "processors": "",
                     "interactions": "Tap",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Camera Scroll",
+                    "type": "Value",
+                    "id": "72b37d2d-2cb8-44ae-b5d0-0ac9d6472912",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Camera Flip",
+                    "type": "Button",
+                    "id": "ecc2b969-a1fc-4f75-a8ba-478b1565185b",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -326,6 +344,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "Gesture Recognize (Alt)",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1af50e1a-2f59-4d83-b87b-8e2ea0dfb51f",
+                    "path": "<Mouse>/scroll/y",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Camera Scroll",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4a83f62d-4937-435e-a7ee-296e60dff83c",
+                    "path": "<Mouse>/middleButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Camera Flip",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

@@ -8,6 +8,7 @@ using Unity.Netcode;
 using Unity.Mathematics;
 using Unity.Profiling;
 using TheRavine.Generator;
+using TheRavine.ObjectControl;
 using TheRavine.EntityControl.Virology;
 
 public class EntityManager : MonoBehaviour
@@ -26,8 +27,7 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private Transform[] colonyOrigins;
 
     [Header("Food")]
-    [SerializeField] private int initialFood = 50;
-    [SerializeField] private int maxFood     = 100;
+    [SerializeField] private int maxFood = 100;
 
     [Header("Brain")]
     [SerializeField] private int lstmHidden  = 32;
@@ -123,8 +123,6 @@ public class EntityManager : MonoBehaviour
 
     public void SpawnChild(EntityModel parent) => _population.SpawnChild(parent);
 
-    public bool SpawnFood() => _food.Spawn(transform.position, _population.CivilCount);
-
     private void UpdateDiagnostics()
     {
         _evolution.UpdateFitnessStats();
@@ -196,7 +194,7 @@ public class EntityManager : MonoBehaviour
         NeuralModelStorage.RegisterFactory(new SharedBrainSnapshotFactory());
         _infection = new InfectionCoordinator((uint)UnityEngine.Random.Range(1, int.MaxValue));
         ServiceLocator.Register(_infection.Service);
-        _food       = new ColonyFood(_colonies, maxFood, spawnRadius);
+        _food       = new ColonyFood(maxFood);
         _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue));
         _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, spawnRadius,
             _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _utility, _thresholds, _boids);
@@ -301,8 +299,7 @@ public class EntityManager : MonoBehaviour
         _motion.Inject(map);
         _map = map;
 
-        var foodIndex = new ChunkFoodIndex(map);
-        ServiceLocator.Register(foodIndex);
+        var foodIndex = await ServiceLocator.WaitUntilServiceReady<ChunkFoodIndex>();
         _food.Bind(foodIndex, SimulationClock.Time);
 
         for (int i = 0; i < initialCount; i++)
@@ -313,9 +310,6 @@ public class EntityManager : MonoBehaviour
         _population.StartPredatorClock(SimulationClock.TimeD);
         _lastColonyTime   = SimulationClock.Time;
         CreateNestViews();
-
-        for (int i = 0; i < initialFood; i++)
-            SpawnFood();
 
         _nextGenerationTime = SimulationClock.Time + SimulationRules.Active.GenerationInterval;
         _lastNestTime       = SimulationClock.Time;
@@ -714,7 +708,6 @@ public class EntityManager : MonoBehaviour
         services.Unregister(_colonies);
         services.Unregister(_planner);
         services.Unregister(_infection?.Service);
-        services.Unregister(_food?.Index);
     }
 
     private void OnDestroy()

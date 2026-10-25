@@ -305,7 +305,8 @@ namespace TheRavine.Generator
             Vector3 realPos,
             int prefabID,
             int amount,
-            ReadOnlySpan<Vector2Int> additionalWorldCells = default)
+            ReadOnlySpan<Vector2Int> additionalWorldCells = default,
+            int levels = 1)
         {
             long chunk = WorldToChunk(worldPos);
             ChunkData cd = GetMapData(chunk);
@@ -337,7 +338,7 @@ namespace TheRavine.Generator
             }
 
             var info = new ObjectInstInfo(realPos, prefabID, amount);
-            if (!cd.TryAddObject(primaryIdx, in info, additionalLocalIdxs[..secCount]))
+            if (!cd.TryAddObject(primaryIdx, in info, additionalLocalIdxs[..secCount], levels))
                 return false;
 
             MarkChunkDirty(chunk);
@@ -374,6 +375,14 @@ namespace TheRavine.Generator
                 return false;
 
             return cd.Occupancy[WorldToLocalIdx(worldPos)] != 0;
+        }
+
+        public bool IsOccupiedAt(long worldPos, int level)
+        {
+            if (!mapData.TryGetValue(WorldToChunk(worldPos), out ChunkData cd))
+                return false;
+
+            return cd.HasLevelAt(WorldToLocalIdx(worldPos), level);
         }
 
         public bool TryToAddPositionToChunk(long worldPos)
@@ -718,7 +727,9 @@ namespace TheRavine.Generator
         public NativeArray<float>          HeightRaw;
         public readonly NativeArray<int>   BiomeMap;
         public NativeArray<int>            Occupancy;
+        public NativeArray<byte>           LevelMask;
         public NativeList<ObjectInstInfo>  Objects;
+        private Dictionary<int, BuildingVolume> buildings;
         public NativeArray<byte>           MoveCost;
         public NativeArray<float2>         Climate;
         public NativeArray<float>          RiverBlend;
@@ -736,14 +747,17 @@ namespace TheRavine.Generator
             HeightRaw      = new NativeArray<float> (TotalCells, Allocator.Persistent);
             BiomeMap       = new NativeArray<int>   (TotalCells, Allocator.Persistent);
             Occupancy      = new NativeArray<int>   (TotalCells, Allocator.Persistent);
+            LevelMask      = new NativeArray<byte>  (TotalCells, Allocator.Persistent);
             MoveCost       = new NativeArray<byte>  (TotalCells, Allocator.Persistent);
             Climate        = new NativeArray<float2>(TotalCells, Allocator.Persistent);
             RiverBlend     = new NativeArray<float> (TotalCells, Allocator.Persistent);
             Objects        = new NativeList<ObjectInstInfo>(16, Allocator.Persistent);
         }
 
+        public int BuildingCount => buildings != null ? buildings.Count : 0;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryAddObject(int primaryIdx, in ObjectInstInfo info, ReadOnlySpan<int> additionalIdxs = default)
+        public bool TryAddObject(int primaryIdx, in ObjectInstInfo info, ReadOnlySpan<int> additionalIdxs = default, int levels = 1)
         {
             if ((uint)primaryIdx >= TotalCells) return false;
             if (Occupancy[primaryIdx] != 0)    return false;
@@ -757,6 +771,9 @@ namespace TheRavine.Generator
                 if ((uint)ac >= TotalCells) return false;
                 if (Occupancy[ac] != 0)    return false;
             }
+
+            if (levels < 1 || levels > ObjectInfo.MaxLevels) return false;
+            if (!UpperLevelsFree(primaryIdx, additionalIdxs, levels)) return false;
 
             ObjectInstInfo stored = info;
             stored.PrimaryIdx     = primaryIdx;
@@ -775,9 +792,72 @@ namespace TheRavine.Generator
             for (int i = 0; i < secCount; i++)
                 Occupancy[additionalIdxs[i]] = -handle;
 
+            if (levels > 1) AddVolume(primaryIdx, additionalIdxs, levels);
+
             IsDirty = true;
             Version++;
             return true;
+        }
+
+        private bool UpperLevelsFree(int primaryIdx, ReadOnlySpan<int> additionalIdxs, int levels)
+        {
+            for (int l = 1; l < levels; l++)
+            {
+                byte bit = (byte)(1 << l);
+                if ((LevelMask[primaryIdx] & bit) != 0) return false;
+                for (int i = 0; i < additionalIdxs.Length; i++)
+                    if ((LevelMask[additionalIdxs[i]] & bit) != 0) return false;
+            }
+            return true;
+        }
+
+        private void AddVolume(int anchor, ReadOnlySpan<int> additionalIdxs, int levels)
+        {
+            var cells = new LevelCell[(1 + additionalIdxs.Length) * levels];
+            int n = 0;
+
+            for (int l = 0; l < levels; l++)
+            {
+                byte level = (byte)l;
+                byte bit   = (byte)(1 << l);
+
+                cells[n++] = new LevelCell(anchor, level);
+                if (l > 0) SetLevelBit(anchor, bit);
+
+                for (int i = 0; i < additionalIdxs.Length; i++)
+                {
+                    cells[n++] = new LevelCell(additionalIdxs[i], level);
+                    if (l > 0) SetLevelBit(additionalIdxs[i], bit);
+                }
+            }
+
+            buildings ??= new Dictionary<int, BuildingVolume>();
+            buildings[anchor] = new BuildingVolume(anchor, levels, cells);
+        }
+
+        private void SetLevelBit(int cellIdx, byte bit) => LevelMask[cellIdx] = (byte)(LevelMask[cellIdx] | bit);
+
+        private void ClearVolume(BuildingVolume volume)
+        {
+            for (int i = 0; i < volume.Cells.Length; i++)
+            {
+                LevelCell cell = volume.Cells[i];
+                if (cell.Level == 0) continue;
+                LevelMask[cell.LocalIdx] = (byte)(LevelMask[cell.LocalIdx] & ~(1 << cell.Level));
+            }
+        }
+
+        public bool TryGetBuilding(int anchorIdx, out BuildingVolume volume)
+        {
+            volume = null;
+            return buildings != null && buildings.TryGetValue(anchorIdx, out volume);
+        }
+
+        public bool HasLevelAt(int cellIdx, int level)
+        {
+            if ((uint)cellIdx >= TotalCells || (uint)level >= (uint)ObjectInfo.MaxLevels) return false;
+            if (level == 0) return Occupancy[cellIdx] != 0;
+            return (LevelMask[cellIdx] & (1 << level)) != 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -807,6 +887,9 @@ namespace TheRavine.Generator
             if ((uint)objIdx >= (uint)Objects.Length) return false;
 
             ObjectInstInfo obj = Objects[objIdx];
+
+            if (buildings != null && buildings.Remove(obj.PrimaryIdx, out BuildingVolume volume))
+                ClearVolume(volume);
 
             Occupancy[obj.PrimaryIdx] = 0;
             unsafe
@@ -844,9 +927,11 @@ namespace TheRavine.Generator
             unsafe
             {
                 UnsafeUtility.MemClear(Occupancy.GetUnsafePtr(), (long)TotalCells * sizeof(int));
+                UnsafeUtility.MemClear(LevelMask.GetUnsafePtr(), TotalCells);
             }
 
             Objects.Clear();
+            buildings?.Clear();
             StructureSpawnPoints?.Clear();
             DetailLevel = NotGenerated;
             IsDirty = false;
@@ -864,6 +949,7 @@ namespace TheRavine.Generator
             if (HeightRaw.IsCreated)      HeightRaw.Dispose();
             if (BiomeMap.IsCreated)       BiomeMap.Dispose();
             if (Occupancy.IsCreated)      Occupancy.Dispose();
+            if (LevelMask.IsCreated)      LevelMask.Dispose();
             if (MoveCost.IsCreated)       MoveCost.Dispose();
             if (Climate.IsCreated)        Climate.Dispose();
             if (RiverBlend.IsCreated)     RiverBlend.Dispose();
