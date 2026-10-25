@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using R3;
 using Unity.Mathematics;
 
 public struct VectorizerFrame
@@ -72,16 +71,12 @@ public class InputVectorizer : IDisposable
 
     private readonly float[] _vector = new float[VectorSize];
 
-    private IDisposable _subHealth;
-    private IDisposable _subEnergy;
+    public InputVectorizer(float maxHealth, float maxEnergy) => SetMaxima(maxHealth, maxEnergy);
 
-    public InputVectorizer(ReactiveProperty<float> maxHealth, ReactiveProperty<float> maxEnergy)
+    public void SetMaxima(float maxHealth, float maxEnergy)
     {
-        _maxHealth = maxHealth.Value;
-        _maxEnergy = maxEnergy.Value;
-
-        _subHealth = maxHealth.Subscribe(v => _maxHealth = v);
-        _subEnergy = maxEnergy.Subscribe(v => _maxEnergy = v);
+        _maxHealth = maxHealth;
+        _maxEnergy = maxEnergy;
     }
 
     public int GetVectorSize() => VectorSize;
@@ -219,11 +214,5 @@ public class InputVectorizer : IDisposable
         return hash.ToString("X8");
     }
 
-    public void Dispose()
-    {
-        _subHealth?.Dispose();
-        _subEnergy?.Dispose();
-        _subHealth = null;
-        _subEnergy = null;
-    }
+    public void Dispose() { }
 }

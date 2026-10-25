@@ -4,7 +4,6 @@ using UnityEngine.InputSystem;
 
 using TheRavine.EntityControl;
 using TheRavine.Base;
-using TheRavine.Events;
 
 public class PauseUI : MonoBehaviour, ISetAble
 {
@@ -16,7 +15,6 @@ public class PauseUI : MonoBehaviour, ISetAble
     private PlayerEntity playerData;
     private GlobalSettings gameSettings;
     private InputBindingAdapter enterInputBindingAdapter, quitInputBindingAdapter;
-    private EventBus playerEventBus;
     [SerializeField] private Slider cameraSlider;
     [SerializeField] private Toggle cameraFlip;
     public void SetUp(ISetAble.Callback callback)
@@ -24,11 +22,8 @@ public class PauseUI : MonoBehaviour, ISetAble
         gameSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
         actionMapController = ServiceLocator.GetService<ActionMapController>();
         playerData = (PlayerEntity) ServiceLocator.Players.GetAllPlayers()[0];
-        playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
-
-        cameraSlider.onValueChanged.AddListener(CameraSliderChanged);
-        cameraFlip.onValueChanged.AddListener(CameraToggleChanged);
-        cameraFlip.isOn = false;
+        cameraSlider.interactable = false;
+        cameraFlip.interactable = false;
 
         // EnterRef.action.performed += ChangeTerminalState;
         // QuitRef.action.performed += ChangeTerminalState;
@@ -42,19 +37,15 @@ public class PauseUI : MonoBehaviour, ISetAble
         callback?.Invoke();
     }
 
-    private float cameraScale;
-    private bool isFlips;
-    private void CameraSliderChanged(float value)
-    {
-        cameraScale = value;
-        playerEventBus.Invoke(null, new CameraPlace { scale = cameraScale, flip = isFlips } );
-    }
-    private void CameraToggleChanged(bool value)
-    {
-        isFlips = value;
-        playerEventBus.Invoke(null, new CameraPlace { scale = cameraScale, flip = isFlips } );
-    }
     private bool isActive = false;
+
+    private void RefreshCameraIndicators()
+    {
+        if (!ServiceLocator.Services.TryGet(out CameraInputController camera)) return;
+
+        cameraSlider.SetValueWithoutNotify(camera.Scale);
+        cameraFlip.SetIsOnWithoutNotify(camera.Flipped);
+    }
 
     public void ChangeTerminalState()
     {
@@ -68,6 +59,7 @@ public class PauseUI : MonoBehaviour, ISetAble
             }
             playerData.SetBehaviourSit();
             actionMapController.SwitchToPause();
+            RefreshCameraIndicators();
         }
         else
         {
@@ -84,9 +76,6 @@ public class PauseUI : MonoBehaviour, ISetAble
     {
         // EnterRef.action.performed -= ChangeTerminalState;
         // QuitRef.action.performed -= ChangeTerminalState;
-
-        cameraSlider.onValueChanged.RemoveAllListeners();
-        cameraFlip.onValueChanged.RemoveAllListeners();
 
         enterInputBindingAdapter.Unbind();
         quitInputBindingAdapter.Unbind();

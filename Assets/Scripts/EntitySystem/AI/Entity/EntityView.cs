@@ -100,7 +100,7 @@ public class EntityView : AEntityView
         sb.Append('\n');
 
         var stats = model.Stats;
-        float hp = stats.Health.Value, en = stats.Energy.Value;
+        float hp = stats.Hp, en = stats.En;
         Open(sb, Grad(hp / stats.MaxHealth)).Append((int)hp).Append(" HP").Close();
         sb.Append(" / ");
         Open(sb, Grad(en / stats.MaxEnergy)).Append((int)en).Append(" EN").Close();

@@ -34,7 +34,7 @@ namespace TheRavine.EntityControl
 
         public void SetUp(ISetAble.Callback callback)
         {
-            ServiceLocator.Services.Register(this);
+            ServiceLocator.Register(this);
 
             mapGenerator = ServiceLocator.GetService<MapGenerator>();
             mobController = ServiceLocator.GetService<MobController>();
@@ -202,6 +202,7 @@ namespace TheRavine.EntityControl
 
         public void BreakUp(ISetAble.Callback callback)
         {
+            ServiceLocator.Services.Unregister(this);
             if (mapGenerator != null)
             {
                 mapGenerator.chunkGenerator.onSpawnPoint -= AddSpawnPoint;

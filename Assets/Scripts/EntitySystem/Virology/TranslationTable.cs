@@ -181,10 +181,6 @@ namespace TheRavine.EntityControl.Virology
         public SharedCentroids Shared;
         public float Sharpness;
 
-        public const float CentroidSpread = 0.50f;
-        public const float JitterScale = 0.18f;
-        public const float MutationScale = 0.12f;
-
         public float[] Centroids => Shared?.Centroids;
         public bool IsCreated => Shared != null;
 
@@ -192,9 +188,10 @@ namespace TheRavine.EntityControl.Virology
         {
             var array = new float[ProteinTable.ActionCount * ProteinTable.EmbedDim];
 
+            float spread = SimulationRules.Active.VirologyCentroidSpread;
             var rng = new XorShift32(seed);
             for (int i = 0; i < array.Length; i++)
-                array[i] = NextSymmetric(ref rng) * CentroidSpread;
+                array[i] = NextSymmetric(ref rng) * spread;
 
             return array;
         }
@@ -204,9 +201,10 @@ namespace TheRavine.EntityControl.Virology
         {
             var centroids = new float[prototype.Length];
 
+            float scale = jitter * SimulationRules.Active.VirologyJitterScale;
             var rng = new XorShift32(seed);
             for (int i = 0; i < prototype.Length; i++)
-                centroids[i] = prototype[i] + NextSymmetric(ref rng) * jitter * JitterScale;
+                centroids[i] = prototype[i] + NextSymmetric(ref rng) * scale;
 
             return new TranslationTable
             {
@@ -221,6 +219,9 @@ namespace TheRavine.EntityControl.Virology
         {
             var source = parent.Shared.Centroids;
             float[] copy = null;
+            var   rules = SimulationRules.Active;
+            float step  = rules.VirologyCentroidMutationScale;
+            float limit = rules.VirologyCentroidClamp;
 
             var rng = new XorShift32(seed);
             for (int i = 0; i < source.Length; i++)
@@ -232,7 +233,7 @@ namespace TheRavine.EntityControl.Virology
                     copy = new float[source.Length];
                     Array.Copy(source, copy, source.Length);
                 }
-                copy[i] = math.clamp(copy[i] + NextSymmetric(ref rng) * MutationScale, -1.5f, 1.5f);
+                copy[i] = math.clamp(copy[i] + NextSymmetric(ref rng) * step, -limit, limit);
             }
 
             return new TranslationTable

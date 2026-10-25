@@ -74,11 +74,22 @@ public class SpeechComponent : IComponent
         HasHeard = false;
     }
 
+    private static readonly string[] EncodeCache = new string[SimulationRules.SpeechEncodeCacheSize];
+    private static readonly uint[]   EncodeKeys  = new uint[SimulationRules.SpeechEncodeCacheSize];
+
     public static string Encode(float4 speech)
     {
         uint4 q = (uint4)math.round(math.saturate(speech * 0.5f + 0.5f) * 255f);
         uint packed = q.x | (q.y << 8) | (q.z << 16) | (q.w << 24);
-        return packed.ToString("X8");
+
+        int slot = (int)((packed * 2654435769u) >> 16) & (SimulationRules.SpeechEncodeCacheSize - 1);
+        var cached = EncodeCache[slot];
+        if (cached != null && EncodeKeys[slot] == packed) return cached;
+
+        cached = packed.ToString("X8");
+        EncodeCache[slot] = cached;
+        EncodeKeys[slot]  = packed;
+        return cached;
     }
 
     public UniTask PlayAsync(string speech, float health, float energy, float danger,

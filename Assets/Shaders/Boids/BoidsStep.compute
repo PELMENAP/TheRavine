@@ -1,6 +1,12 @@
 #pragma kernel ClearGrid
-#pragma kernel BuildGrid
+#pragma kernel CountGrid
+#pragma kernel Scan
+#pragma kernel AddOffsets
+#pragma kernel Scatter
 #pragma kernel Step
+
+#define SCAN_THREADS 512
+#define SCAN_BLOCK 1024
 
 struct Boid
 {
@@ -12,18 +18,22 @@ struct Boid
 
 StructuredBuffer<Boid> boidsIn;
 RWStructuredBuffer<Boid> boidsOut;
-RWStructuredBuffer<uint> cellCount;
-RWStructuredBuffer<uint> cellItems;
+RWStructuredBuffer<uint> cellStart;
+RWStructuredBuffer<uint2> boidKey;
+RWStructuredBuffer<uint> scanData;
+RWStructuredBuffer<uint> scanSums;
 
 uint boidCount;
 uint cellTotal;
-uint cellCap;
+uint scanCount;
 uint maxNeighbors;
+uint frame;
 int3 gridDims;
 float3 boundsExtents;
 float3 target;
 float cellInv;
 float perception2;
+float sepMin2;
 float separation2;
 float wSep;
 float wAli;
@@ -36,6 +46,27 @@ float maxSpeed;
 float maxSteer;
 float dt;
 float time;
+
+float3 cursorOrigin;
+float3 cursorDir;
+float3 cursorPrevOrigin;
+float3 cursorPrevDir;
+float4 cursorParams;
+float3 shockCenter;
+float4 shockParams;
+float3 windVelocity;
+
+groupshared uint scanTmp[2][SCAN_THREADS];
+
+uint Hash(uint x)
+{
+    x ^= x >> 16;
+    x *= 0x7feb352d;
+    x ^= x >> 15;
+    x *= 0x846ca68b;
+    x ^= x >> 16;
+    return x;
+}
 
 int3 CellCoord(float3 p)
 {
@@ -51,18 +82,136 @@ uint CellIndex(int3 c)
 [numthreads(64, 1, 1)]
 void ClearGrid(uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= cellTotal) return;
-    cellCount[id.x] = 0;
+    if (id.x > cellTotal) return;
+    cellStart[id.x] = 0;
 }
 
 [numthreads(64, 1, 1)]
-void BuildGrid(uint3 id : SV_DispatchThreadID)
+void CountGrid(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= boidCount) return;
     uint cell = CellIndex(CellCoord(boidsIn[id.x].position));
     uint slot;
-    InterlockedAdd(cellCount[cell], 1, slot);
-    if (slot < cellCap) cellItems[cell * cellCap + slot] = id.x;
+    InterlockedAdd(cellStart[cell], 1, slot);
+    boidKey[id.x] = uint2(cell, slot);
+}
+
+[numthreads(SCAN_THREADS, 1, 1)]
+void Scan(uint3 gid : SV_GroupID, uint gi : SV_GroupIndex)
+{
+    uint base = gid.x * SCAN_BLOCK + gi * 2;
+    uint a = base < scanCount ? scanData[base] : 0;
+    uint b = base + 1 < scanCount ? scanData[base + 1] : 0;
+
+    scanTmp[0][gi] = a + b;
+    GroupMemoryBarrierWithGroupSync();
+
+    uint pin = 0;
+    [unroll]
+    for (uint off = 1; off < SCAN_THREADS; off <<= 1)
+    {
+        uint v = scanTmp[pin][gi];
+        if (gi >= off) v += scanTmp[pin][gi - off];
+        scanTmp[1 - pin][gi] = v;
+        pin = 1 - pin;
+        GroupMemoryBarrierWithGroupSync();
+    }
+
+    uint incl = scanTmp[pin][gi];
+    uint excl = incl - a - b;
+    if (base < scanCount) scanData[base] = excl;
+    if (base + 1 < scanCount) scanData[base + 1] = excl + a;
+    if (gi == SCAN_THREADS - 1) scanSums[gid.x] = incl;
+}
+
+[numthreads(SCAN_THREADS, 1, 1)]
+void AddOffsets(uint3 gid : SV_GroupID, uint gi : SV_GroupIndex)
+{
+    uint add = scanSums[gid.x];
+    uint base = gid.x * SCAN_BLOCK + gi * 2;
+    if (base < scanCount) scanData[base] += add;
+    if (base + 1 < scanCount) scanData[base + 1] += add;
+}
+
+[numthreads(64, 1, 1)]
+void Scatter(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= boidCount) return;
+    uint2 key = boidKey[id.x];
+    boidsOut[cellStart[key.x] + key.y] = boidsIn[id.x];
+}
+
+void VisitCell(uint ci, uint self, uint rot, float3 pos, inout float3 sep, inout float3 ali, inout float3 coh, inout uint n)
+{
+    uint start = cellStart[ci];
+    uint cnt = cellStart[ci + 1] - start;
+    if (cnt == 0) return;
+
+    uint first = rot % cnt;
+    for (uint k = 0; k < cnt && n < maxNeighbors; k++)
+    {
+        uint j = start + (first + k) % cnt;
+        if (j == self) continue;
+
+        Boid o = boidsIn[j];
+        float3 d = pos - o.position;
+        float d2 = dot(d, d);
+        if (d2 > perception2) continue;
+
+        ali += o.velocity;
+        coh += o.position;
+        if (d2 < separation2) sep += d / max(d2, sepMin2);
+        n++;
+    }
+}
+
+void Spend(inout float3 acc, inout float budget, float3 f)
+{
+    float m = length(f);
+    if (m <= budget)
+    {
+        acc += f;
+        budget -= m;
+    }
+    else if (budget > 0)
+    {
+        acc += f * (budget / m);
+        budget = 0;
+    }
+}
+
+float3 CursorForce(float3 pos)
+{
+    float strength = cursorParams.z;
+    if (strength <= 0) return 0;
+
+    float t = dot(pos - cursorOrigin, cursorDir);
+    if (t <= 0) return 0;
+
+    float3 onRay = cursorOrigin + cursorDir * t;
+    float3 d = pos - onRay;
+    float dist = length(d);
+    float radius = cursorParams.x + t * cursorParams.y;
+    if (dist >= radius) return 0;
+
+    float k = 1.0 - dist / radius;
+    float3 away = dist > 1e-4 ? d / dist : float3(0, 1, 0);
+    float3 prevOnRay = cursorPrevOrigin + cursorPrevDir * t;
+    float3 cursorVel = (onRay - prevOnRay) / max(dt, 1e-4);
+    return strength * (away * k * k + cursorVel * (cursorParams.w * k));
+}
+
+float3 ShockForce(float3 pos)
+{
+    float strength = shockParams.z;
+    if (strength <= 0) return 0;
+
+    float3 d = pos - shockCenter;
+    float dist = length(d);
+    float ring = abs(shockParams.x - dist);
+    if (ring >= shockParams.y || dist < 1e-4) return 0;
+
+    return (d / dist) * (strength * (1.0 - ring / shockParams.y));
 }
 
 [numthreads(64, 1, 1)]
@@ -74,67 +223,54 @@ void Step(uint3 id : SV_DispatchThreadID)
     float3 pos = b.position;
     float3 vel = b.velocity;
     int3 c = CellCoord(pos);
+    uint rot = Hash(id.x ^ (frame * 0x9E3779B9));
 
     float3 sep = 0;
     float3 ali = 0;
     float3 coh = 0;
     uint n = 0;
 
-    for (int z = -1; z <= 1; z++)
-    for (int y = -1; y <= 1; y++)
-    for (int x = -1; x <= 1; x++)
+    VisitCell(CellIndex(c), id.x, rot, pos, sep, ali, coh, n);
+
+    uint startOffset = rot % 26;
+    for (uint k = 0; k < 26 && n < maxNeighbors; k++)
     {
-        if (n >= maxNeighbors) continue;
-        int3 nc = c + int3(x, y, z);
+        uint o = (startOffset + k) % 26;
+        o += o >= 13 ? 1 : 0;
+        int3 nc = c + int3(o % 3, (o / 3) % 3, o / 9) - 1;
         if (any(nc < 0) || any(nc >= gridDims)) continue;
-
-        uint ci = CellIndex(nc);
-        uint cnt = min(cellCount[ci], cellCap);
-        uint baseIdx = ci * cellCap;
-
-        for (uint k = 0; k < cnt && n < maxNeighbors; k++)
-        {
-            uint j = cellItems[baseIdx + k];
-            if (j == id.x) continue;
-
-            Boid o = boidsIn[j];
-            float3 d = pos - o.position;
-            float d2 = dot(d, d);
-            if (d2 > perception2 || d2 < 1e-6) continue;
-
-            ali += o.velocity;
-            coh += o.position;
-            if (d2 < separation2) sep += d / d2;
-            n++;
-        }
+        VisitCell(CellIndex(nc), id.x, rot >> 8, pos, sep, ali, coh, n);
     }
 
-    float3 acc = 0;
+    float3 avoid = CursorForce(pos) + ShockForce(pos);
+    float3 q = pos / boundsExtents;
+    float ql = length(q);
+    if (ql > 0.85) avoid -= (q / ql) * (ql - 0.85) * wBounds * maxSpeed;
+
+    float3 rest = 0;
     if (n > 0)
     {
         float inv = 1.0 / n;
-        acc += wSep * sep;
-        acc += wAli * (ali * inv - vel);
-        acc += wCoh * (coh * inv - pos);
+        rest += wAli * (ali * inv - vel);
+        rest += wCoh * (coh * inv - pos);
     }
 
-    float3 q = pos / boundsExtents;
-    float ql = length(q);
-    if (ql > 0.85) acc -= (q / ql) * (ql - 0.85) * wBounds * maxSpeed;
-
     float3 toTarget = target - pos;
-    acc += wTarget * toTarget * rsqrt(dot(toTarget, toTarget) + 1e-4);
+    rest += wTarget * toTarget * rsqrt(dot(toTarget, toTarget) + 1e-4);
 
     float3 w = float3(
         sin(pos.y * 0.31 + time * 0.7 + b.phase),
         sin(pos.z * 0.27 + time * 0.5 + b.phase * 1.3),
         sin(pos.x * 0.33 + time * 0.6 + b.phase * 0.7));
-    acc += w * wNoise;
+    rest += w * wNoise;
 
-    float al = length(acc);
-    if (al > maxSteer) acc *= maxSteer / al;
+    float3 acc = 0;
+    float budget = maxSteer;
+    Spend(acc, budget, avoid);
+    Spend(acc, budget, wSep * sep);
+    Spend(acc, budget, rest);
 
-    float3 newVel = vel + acc * dt;
+    float3 newVel = vel + acc * dt + windVelocity * dt;
     float s = max(length(newVel), 1e-4);
     newVel *= clamp(s, minSpeed, maxSpeed) / s;
 

@@ -29,11 +29,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BillboardAlbedo:
-        m_Texture: {fileID: 2800000, guid: f6c249b7cc12b844689bbba20d5c76a7, type: 3}
+        m_Texture: {fileID: 2800000, guid: 41cfeac3711a00d4a8a20d7c6e453164, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BillboardNormal:
-        m_Texture: {fileID: 2800000, guid: 75faf7e0ac2e85a45b518a5aa23479be, type: 3}
+        m_Texture: {fileID: 2800000, guid: 0e8b550ce8470ab4586c9439e3663df3, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
@@ -97,7 +97,7 @@ Material:
     - _AlphaToMask: 0
     - _AmbientFlatten: 0.182
     - _AmbientStrength: 0.066
-    - _BillboardPitch: 0
+    - _BillboardPitch: 20
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1

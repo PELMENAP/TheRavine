@@ -7,8 +7,11 @@ namespace TheRavine.EntityControl
     {
         public AEntity Entity { get; private set; }
 
+        protected DisposableBag Subscriptions;
+
         public void Initialize(AEntity entity)
         {
+            Subscriptions.Clear();
             Entity = entity;
             SetupSubscriptions();
         }
@@ -19,9 +22,21 @@ namespace TheRavine.EntityControl
             {
                 if(isActive) OnViewEnable();
                 else OnViewDisable();
-            });
+            }).AddTo(ref Subscriptions);
 
-            Entity.OnUpdate.Subscribe(_ => OnViewUpdate());
+            Entity.OnUpdate.Subscribe(_ => OnViewUpdate()).AddTo(ref Subscriptions);
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            Subscriptions.Clear();
+            base.OnNetworkDespawn();
+        }
+
+        public override void OnDestroy()
+        {
+            Subscriptions.Dispose();
+            base.OnDestroy();
         }
         protected abstract void OnViewUpdate();
         protected abstract void OnViewDisable();

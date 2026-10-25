@@ -173,7 +173,8 @@ public abstract class EntityCommand : IEntityCommand
         if (_replans >= SimulationRules.Active.PlannerMaxReplans) return false;
 
         _replans++;
-        float angle = SimulationRules.Active.PlannerReplanAngle * ((_replans & 1) == 0 ? -2f : 2f);
+        var   rules = SimulationRules.Active;
+        float angle = rules.PlannerReplanAngle * ((_replans & 1) == 0 ? -rules.PlannerReplanAngleMul : rules.PlannerReplanAngleMul);
         math.sincos(angle, out float s, out float c);
 
         float2 d = math.normalizesafe(_plan.HasTarget != 0 ? _plan.Target - _plan.Origin : _plan.Direction, new float2(0f, 1f));

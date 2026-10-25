@@ -19,9 +19,6 @@ public class BrainComponent : IComponent
         _batchSlot = -1;
     }
 
-    public void BeginBatch() => _brain.BeginDecisionBatch();
-    public void RunBatch()   => _brain.RunDecisions();
-
     public bool EnqueueDecision(float[] input, float simTime, float dt, bool allowDecision = true)
     {
         _batchSlot = _brain.EnqueueDecision(Context, input, simTime, dt, allowDecision);

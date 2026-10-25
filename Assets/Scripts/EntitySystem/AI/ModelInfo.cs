@@ -4,6 +4,7 @@ public class ModelInfo
 {
     public string Name { get; set; }
     public string Type { get; set; }
+    public int ColonyId { get; set; } = -1;
     public long Size { get; set; }
     public DateTime CreatedTime { get; set; }
     public DateTime ModifiedTime { get; set; }

@@ -50,9 +50,6 @@ namespace TheRavine.EntityControl.Virology
         public bool SegmentsDirty => _segmentsDirty;
         public void ConsumeSegmentsDirty() => _segmentsDirty = false;
 
-        public const float SplitIntegrityPenalty = 0.85f;
-        public const float SuperinfectionBoost = 0.25f;
-        public const int LineageProximityBits = 12;
 
         private int _lastCodonIndex;
         public int LastCodonIndex => _lastCodonIndex;
@@ -105,7 +102,7 @@ namespace TheRavine.EntityControl.Virology
             {
                 var s = _segments[i];
                 if (s.StrainId == 0UL || s.StrainId == strainId) continue;
-                if (math.countbits(s.Signature ^ signature) > LineageProximityBits) continue;
+                if (math.countbits(s.Signature ^ signature) > SimulationRules.Frame.LineageProximityBits) continue;
                 index = i;
                 return true;
             }
@@ -253,7 +250,8 @@ namespace TheRavine.EntityControl.Virology
             stats.Hp = math.min(healthBefore + _modifiers.HealthDelta, stats.MaxHealth);
             stats.En = math.clamp(energyBefore - result.SpentEnergy + _modifiers.EnergyDelta, 0f, stats.MaxEnergy);
 
-            _table.Sharpness = math.clamp(_table.Sharpness + _modifiers.SharpnessDelta * 0.01f, 0.05f, 3f);
+            _table.Sharpness = math.clamp(_table.Sharpness + _modifiers.SharpnessDelta * rules.SharpnessStepScale,
+                rules.SharpnessMin, rules.SharpnessMax);
             _modifiers.SharpnessDelta = 0f;
 
             if (_modifiers.Dormant) _dormantLeft = rules.DormantCodons;
@@ -273,8 +271,9 @@ namespace TheRavine.EntityControl.Virology
 
             if (gain >= 0f)
             {
-                if (seg.TamedTicks < TamedThreshold) seg.TamedTicks++;
-                if (seg.TamedTicks >= TamedThreshold) seg.Tamed = true;
+                int tamedThreshold = SimulationRules.Frame.TamedThreshold;
+                if (seg.TamedTicks < tamedThreshold) seg.TamedTicks++;
+                if (seg.TamedTicks >= tamedThreshold) seg.Tamed = true;
             }
             else
             {
@@ -536,7 +535,7 @@ namespace TheRavine.EntityControl.Virology
                 LineageId = seg.LineageId,
                 Signature = seg.Signature,
                 InsertTick = _tick,
-                Integrity = seg.Integrity * SplitIntegrityPenalty,
+                Integrity = seg.Integrity * SimulationRules.Frame.SplitIntegrityPenalty,
                 DominantAction = seg.DominantAction
             };
 
@@ -556,7 +555,7 @@ namespace TheRavine.EntityControl.Virology
                 tail.Start = index;
                 tail.Length = s.Start + s.Length - index;
                 tail.Signature = Segment.ComputeSignature(_tape.Codons, tail.Start, tail.Length);
-                tail.Integrity = s.Integrity * SplitIntegrityPenalty;
+                tail.Integrity = s.Integrity * SimulationRules.Frame.SplitIntegrityPenalty;
                 tail.NetFitnessDelta = 0f;
                 tail.PrevFitnessDelta = 0f;
                 tail.TamedTicks = 0;
@@ -564,7 +563,7 @@ namespace TheRavine.EntityControl.Virology
 
                 s.Length = index - s.Start;
                 s.Signature = Segment.ComputeSignature(_tape.Codons, s.Start, s.Length);
-                s.Integrity *= SplitIntegrityPenalty;
+                s.Integrity *= SimulationRules.Frame.SplitIntegrityPenalty;
                 s.PrevFitnessDelta = s.NetFitnessDelta;
                 s.TamedTicks = 0;
                 s.Tamed = false;
@@ -734,8 +733,6 @@ namespace TheRavine.EntityControl.Virology
 
             return (ProteinAction)best;
         }
-
-        public const int TamedThreshold = 8;
 
         private int _dormantLeft;
 

@@ -12,6 +12,9 @@ public class SimulationDebugDashboard : MonoBehaviour
     [Header("Sampling")]
     [SerializeField] private float sampleInterval = 1f;
 
+    [Header("Colony")]
+    [SerializeField, Min(0)] private int colonyIndex;
+
     private EntityManager _manager;
 
     private readonly RingBuffer<float> _populationHistory = new(120);
@@ -23,10 +26,10 @@ public class SimulationDebugDashboard : MonoBehaviour
 
     private readonly GenerationTracker _generationTracker = new();
 
-    private float _sampleTimer;
-    private int   _totalBorn;
-    private int   _totalDied;
-    private float _simTime;
+    private double _nextSampleTime = double.NegativeInfinity;
+    private double _startTime = double.NaN;
+    private int    _totalBorn;
+    private int    _totalDied;
 
     private static readonly string[] GoalNames  = { "Survive", "Hunt", "Forage", "Social" };
     private static readonly Color[]  GoalColors =
@@ -42,7 +45,7 @@ public class SimulationDebugDashboard : MonoBehaviour
     private GUIStyle _valueStyle;
     private bool     _stylesInitialized;
 
-    private Rect _windowRect = new Rect(10, 10, 420, 640);
+    private Rect _windowRect = new Rect(10, 10, 420, 660);
 
     private int _coordStaleDrops;
     private int _execStaleDrops;
@@ -101,7 +104,33 @@ public class SimulationDebugDashboard : MonoBehaviour
         for (int i = 0; i < SharedHierarchicalBrain.GoalCount; i++)
             _goalHistory[i].Push(_goalCounts[i] / count);
 
-        _generationTracker.Record(entities, _manager.SharedBrain);
+        _generationTracker.Record(entities, SelectedColony()?.Brain);
+    }
+
+    private ColonyState SelectedColony()
+    {
+        var colonies = _manager.Colonies;
+        if (colonies == null || colonies.Count == 0) return null;
+        if (colonyIndex >= colonies.Count) colonyIndex = colonies.Count - 1;
+        return colonies[colonyIndex];
+    }
+
+    private void DrawColonySelector(ref float y)
+    {
+        var colonies = _manager.Colonies;
+        int count    = colonies != null ? colonies.Count : 0;
+        var colony   = SelectedColony();
+
+        if (GUI.Button(new Rect(8, y, 24, 14), "<") && count > 0)
+            colonyIndex = (colonyIndex - 1 + count) % count;
+        if (GUI.Button(new Rect(36, y, 24, 14), ">") && count > 0)
+            colonyIndex = (colonyIndex + 1) % count;
+
+        string label = colony == null
+            ? "none"
+            : $"#{colonyIndex} C{colony.ColonyId}{(colony.IsWild ? " (wild)" : "")} [{colony.MemberCount}]";
+        GUI.Label(new Rect(66, y, _windowRect.width - 70, 14), label, _labelStyle);
+        y += 16f;
     }
 
     private void DrawWindow(int id)
@@ -112,16 +141,17 @@ public class SimulationDebugDashboard : MonoBehaviour
         DrawKV(ref y, "Alive",        _manager.Entities.Count.ToString());
         DrawKV(ref y, "Born total",   _totalBorn.ToString());
         DrawKV(ref y, "Died total",   _totalDied.ToString());
-        DrawKV(ref y, "Uptime",       FormatTime(_simTime));
+        DrawKV(ref y, "Uptime",       FormatTime(double.IsNaN(_startTime) ? 0f : (float)(SimulationClock.TimeD - _startTime)));
         DrawMiniGraph(ref y, _populationHistory, Color.cyan, 0f, _manager.MaxPopulation);
 
         DrawSection(ref y, "LEARNING");
+        DrawColonySelector(ref y);
         float lastEntropy = _avgEntropyHistory.LastOrDefault();
         float lastReward  = _avgRewardHistory.LastOrDefault();
         DrawKV(ref y, "Avg entropy",  lastEntropy.ToString("F3"));
         DrawKV(ref y, "Avg reward",   lastReward.ToString("F3"));
 
-        var brain = _manager.SharedBrain;
+        var brain = SelectedColony()?.Brain;
         if (brain != null)
         {
             var gd = brain.GlobalDiagnostics;
@@ -167,14 +197,12 @@ public class SimulationDebugDashboard : MonoBehaviour
 
     private void Update()
     {
-        _simTime    += Time.deltaTime;
-        _sampleTimer += Time.deltaTime;
+        double now = SimulationClock.TimeD;
+        if (double.IsNaN(_startTime)) _startTime = now;
+        if (now < _nextSampleTime) return;
 
-        if (_sampleTimer >= sampleInterval)
-        {
-            _sampleTimer = 0f;
-            SampleMetrics();
-        }
+        _nextSampleTime = now + sampleInterval;
+        SampleMetrics();
     }
 
     private void OnGUI()

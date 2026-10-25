@@ -276,12 +276,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BoidsMenuBackground
   compute: {fileID: 7200000, guid: c341bb8a553741f4797d96307db7aef3, type: 3}
   material: {fileID: 2100000, guid: e8287edf807188c40bd99c6a1e3f623a, type: 2}
-  count: 8192
-  extents: {x: 100, y: 50, z: 300}
+  count: 4096
+  extents: {x: 100, y: 50, z: 200}
   perception: 3
   separationRadius: 1.1
+  separationMin: 0.25
   maxNeighbors: 16
-  cellCapacity: 32
   separationWeight: 4
   alignmentWeight: 1.1
   cohesionWeight: 0.5
@@ -290,9 +290,27 @@ MonoBehaviour:
   noiseWeight: 1.8
   speedRange: {x: 4, y: 15}
   maxSteer: 14
+  maxDeltaTime: 0.033
   targetSpeed: 0.15
   targetRadius: {x: 25, y: 10, z: 18}
   seed: 1234
+  cursorRadius: 15
+  cursorSlope: 0.08
+  cursorStrength: 50
+  cursorTrail: 0.6
+  cursorMoveThreshold: 1
+  cursorIdleTime: 0.6
+  cursorFadeIn: 0.2
+  cursorFadeOut: 0.8
+  cursorEase: 5
+  shockMaxRadius: 80
+  shockWidth: 4
+  shockStrength: 60
+  shockDuration: 1.2
+  shockEase: 8
+  windDirection: {x: 1, y: 0}
+  windStrength: 0.3
+  windDrift: 2
 --- !u!4 &417156110
 Transform:
   m_ObjectHideFlags: 0
@@ -360,6 +378,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4014546370517865931, guid: 0b72511b56e1ab54ca9f90bba1505377, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300000, guid: 2d548017d6850314581530376e27ce60, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1909,7 +1931,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 303555932843236425, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1427804959842484500, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: m_SizeDelta.y
@@ -2045,11 +2067,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6525812998122429727, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6525812998122429727, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6525812998122429727, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: m_AnchorMin.y
@@ -2057,15 +2079,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7859450981325186452, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7859450981325186452, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7859450981325186452, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: m_SizeDelta.x
-      value: -17
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7859450981325186452, guid: dccf51e8f6e228042a8c8cc70f6bb832, type: 3}
       propertyPath: m_SizeDelta.y

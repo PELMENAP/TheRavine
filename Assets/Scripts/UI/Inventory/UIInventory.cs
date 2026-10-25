@@ -45,7 +45,7 @@ namespace TheRavine.Inventory
             slotList.AddRange(activeCells);
 
             eventDrivenInventoryProxy = new EventDrivenInventoryProxy(slotList.Count);
-            ServiceLocator.Services.Register(eventDrivenInventoryProxy);
+            ServiceLocator.Register(eventDrivenInventoryProxy);
 
             infoManager = new InfoManager(dataItems);
             tester = new InventoryTester(slotList.ToArray(), infoManager, eventDrivenInventoryProxy);
@@ -117,7 +117,10 @@ namespace TheRavine.Inventory
 
             if (!objectSystem.TryGetIdByPrefab(item.info.prefab, out int placeId)) return;
 
-            if (generator.TryAddObject(e.Position, generator.GetRealPosition(e.Position), placeId, 1))
+            ObjectInfo placeInfo = objectSystem.GetInfo(placeId);
+            int levels = placeInfo != null ? placeInfo.Levels : 1;
+
+            if (generator.TryAddObject(e.Position, generator.GetRealPosition(e.Position), placeId, 1, levels: levels))
             {
                 item.state.amount--;
                 if (slot.amount <= 0) slot.Clear();
