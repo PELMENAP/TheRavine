@@ -17,9 +17,11 @@ namespace TheRavine.Base
         [SerializeField] private bool isTest;
 
         [SerializeField] private Button toMenuPauseButton;
-        private bool _ended;
+        private bool _transitStarted;
+        private bool _servicesReleased;
         private void Start()
         {
+            sceneLoader = new SceneLoader();
             toMenuPauseButton.onClick.AddListener(SwitchToMainMenu);
 
 
@@ -54,8 +56,6 @@ namespace TheRavine.Base
         {
             AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
 
-            sceneLoader = new SceneLoader();
-
             gameStateMachine.StartGame();
         }
 
@@ -63,7 +63,7 @@ namespace TheRavine.Base
         {
             try
             {
-                _cameraData.cameraStack.Add(_cameraToAdd);
+                if (!_cameraData.cameraStack.Contains(_cameraToAdd)) _cameraData.cameraStack.Add(_cameraToAdd);
             }
             catch
             {
@@ -71,30 +71,30 @@ namespace TheRavine.Base
             }
         }
 
-        public void SwitchToMainMenu(){
-            InTheEnd(() => TransitToOtherScene(0));
-        }
-        private void InTheEnd(Action inTheEndCallback)
+        public void SwitchToMainMenu()
         {
-            if (!_ended)
-            {
-                _ended = true;
-                gameStateMachine.BreakUpServices();
-                if (NetworkManager.Singleton != null) NetworkManager.Singleton.Shutdown();
-                ServiceLocator.ClearAll();
-                if (GameInitializer.Instance != null) GameInitializer.Instance.InitializeServices();
-            }
-            inTheEndCallback?.Invoke();
+            if (_transitStarted || sceneLoader == null) return;
+
+            _transitStarted = true;
+            toMenuPauseButton.interactable = false;
+            AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
+            sceneLoader.LoadScene(0, ReleaseServices).Forget();
         }
 
-        private void TransitToOtherScene(int sceneNumber){
-            sceneLoader.LoadScene(sceneNumber).Forget();
-            AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
+        private void ReleaseServices()
+        {
+            if (_servicesReleased) return;
+            _servicesReleased = true;
+
+            gameStateMachine.BreakUpServices();
+            if (NetworkManager.Singleton != null) NetworkManager.Singleton.Shutdown();
+            ServiceLocator.ClearAll();
+            if (GameInitializer.Instance != null) GameInitializer.Instance.InitializeServices();
         }
 
         private void OnDisable()
         {
-            InTheEnd(null);
+            ReleaseServices();
             toMenuPauseButton.onClick.RemoveAllListeners();
         }
     }
