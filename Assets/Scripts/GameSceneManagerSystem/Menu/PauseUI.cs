@@ -4,7 +4,6 @@ using UnityEngine.InputSystem;
 
 using TheRavine.EntityControl;
 using TheRavine.Base;
-using TheRavine.Events;
 
 public class PauseUI : MonoBehaviour, ISetAble
 {
@@ -16,7 +15,6 @@ public class PauseUI : MonoBehaviour, ISetAble
     private PlayerEntity playerData;
     private GlobalSettings gameSettings;
     private InputBindingAdapter enterInputBindingAdapter, quitInputBindingAdapter;
-    private EventBus playerEventBus;
     [SerializeField] private Slider cameraSlider;
     [SerializeField] private Toggle cameraFlip;
     public void SetUp(ISetAble.Callback callback)
@@ -24,11 +22,7 @@ public class PauseUI : MonoBehaviour, ISetAble
         gameSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
         actionMapController = ServiceLocator.GetService<ActionMapController>();
         playerData = (PlayerEntity) ServiceLocator.Players.GetAllPlayers()[0];
-        playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
-
-        cameraSlider.SetValueWithoutNotify(cameraScale);
         cameraSlider.interactable = false;
-        cameraFlip.SetIsOnWithoutNotify(isFlips);
         cameraFlip.interactable = false;
 
         // EnterRef.action.performed += ChangeTerminalState;
@@ -43,33 +37,15 @@ public class PauseUI : MonoBehaviour, ISetAble
         callback?.Invoke();
     }
 
-    private const float CameraScaleStep = 0.05f;
-    private float cameraScale;
-    private bool isFlips;
-
-    private void Update()
-    {
-        if (actionMapController == null || Mouse.current == null || !actionMapController.IsGamePlayActive()) return;
-
-        float wheel = Mouse.current.scroll.ReadValue().y;
-        if (wheel != 0f)
-        {
-            cameraScale = Mathf.Clamp(cameraScale + Mathf.Sign(wheel) * CameraScaleStep, cameraSlider.minValue, cameraSlider.maxValue);
-            cameraSlider.SetValueWithoutNotify(cameraScale);
-            PublishCameraPlace();
-        }
-
-        if (Mouse.current.middleButton.wasPressedThisFrame)
-        {
-            isFlips = !isFlips;
-            cameraFlip.SetIsOnWithoutNotify(isFlips);
-            PublishCameraPlace();
-        }
-    }
-
-    private void PublishCameraPlace() => playerEventBus.Invoke(null, new CameraPlace { scale = cameraScale, flip = isFlips });
-
     private bool isActive = false;
+
+    private void RefreshCameraIndicators()
+    {
+        if (!ServiceLocator.Services.TryGet(out CameraInputController camera)) return;
+
+        cameraSlider.SetValueWithoutNotify(camera.Scale);
+        cameraFlip.SetIsOnWithoutNotify(camera.Flipped);
+    }
 
     public void ChangeTerminalState()
     {
@@ -83,6 +59,7 @@ public class PauseUI : MonoBehaviour, ISetAble
             }
             playerData.SetBehaviourSit();
             actionMapController.SwitchToPause();
+            RefreshCameraIndicators();
         }
         else
         {
