@@ -170,7 +170,7 @@ namespace TheRavine.EntityControl
                 int size = flockSize + (flock < extra ? 1 : 0);
                 for (int i = 0; i < size; i++)
                 {
-                    GameObject bird = Instantiate(prefabs[flock]);
+                    GameObject bird = Instantiate(prefabs[flock], this.transform);
                     if (bird.scene != scene) SceneManager.MoveGameObjectToScene(bird, scene);
                     _birds[index] = bird;
                     _transforms[index] = bird.transform;

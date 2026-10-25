@@ -276,7 +276,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BoidsMenuBackground
   compute: {fileID: 7200000, guid: c341bb8a553741f4797d96307db7aef3, type: 3}
   material: {fileID: 2100000, guid: e8287edf807188c40bd99c6a1e3f623a, type: 2}
-  count: 8192
+  count: 4096
   extents: {x: 100, y: 50, z: 200}
   perception: 3
   separationRadius: 1.1
@@ -378,6 +378,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4014546370517865931, guid: 0b72511b56e1ab54ca9f90bba1505377, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300000, guid: 2d548017d6850314581530376e27ce60, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
