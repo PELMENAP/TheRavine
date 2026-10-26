@@ -633,7 +633,7 @@ public class EntityManager : MonoBehaviour
     public void SetEntityVisible(EntityModel model, bool visible)
     {
         if (model == null || model.IsDisposed) return;
-        model.GetEntityComponent<VisualCullingComponent>()?.SetVisible(visible);
+        model.VisualCulling?.SetVisible(visible);
     }
 
     public void SetEntitiesVisible(IReadOnlyList<EntityModel> targets, bool visible)

@@ -27,8 +27,6 @@ public partial class EntityModel
     private bool IsAliveForTick()
         => !IsDeathPending && !IsDisposed && !Stats.IsDisposed && Stats.Hp > 0f;
 
-    public override void UpdateEntityCycle() { }
-
     public void SubmitDecision(bool allowDecision)
     {
         if (!_cycleActive) return;
@@ -40,7 +38,7 @@ public partial class EntityModel
         _cycleActive = false;
 
         if (IsDisposed || IsDeathPending) return false;
-        if (!IsActive.Value) return false;
+        if (!_isActive.Value) return false;
         if (Stats.IsDisposed || Stats.Hp <= 0f) return false;
 
         Stats.Open();
@@ -408,7 +406,7 @@ public partial class EntityModel
             StartDecision(in decision);
         }
 
-        OnUpdate.Execute(R3.Unit.Default);
+        _onUpdate.Execute(R3.Unit.Default);
     }
 
     private void StartDecision(in BrainDecision decision)
