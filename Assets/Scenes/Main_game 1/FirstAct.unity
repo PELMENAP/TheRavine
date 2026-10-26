@@ -415,6 +415,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: MainSystems
       objectReference: {fileID: 0}
+    - target: {fileID: 1092031635345732441, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1292949632736594377, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -459,6 +463,10 @@ PrefabInstance:
       propertyPath: boidsBehaviour
       value: 
       objectReference: {fileID: 1021793570}
+    - target: {fileID: 4777647365431390853, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4989413111709226666, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
       propertyPath: 'scriptsLoadedOnBootstrapState.Array.data[1]'
       value: 
@@ -470,6 +478,10 @@ PrefabInstance:
     - target: {fileID: 7161299290317673880, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7490548169657107517, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7944488623204431999, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
       propertyPath: m_Enabled
@@ -520,7 +532,9 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 1092031635345732441, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
+    - {fileID: 4777647365431390853, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 8476075289225520149, guid: e283621cf7f5d497c818075c0fc5f0a7, type: 3}
       insertIndex: -1

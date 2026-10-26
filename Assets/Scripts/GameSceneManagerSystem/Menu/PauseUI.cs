@@ -15,15 +15,11 @@ public class PauseUI : MonoBehaviour, ISetAble
     private PlayerEntity playerData;
     private GlobalSettings gameSettings;
     private InputBindingAdapter enterInputBindingAdapter, quitInputBindingAdapter;
-    [SerializeField] private Slider cameraSlider;
-    [SerializeField] private Toggle cameraFlip;
     public void SetUp(ISetAble.Callback callback)
     {
         gameSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
         actionMapController = ServiceLocator.GetService<ActionMapController>();
         playerData = (PlayerEntity) ServiceLocator.Players.GetAllPlayers()[0];
-        cameraSlider.interactable = false;
-        cameraFlip.interactable = false;
 
         // EnterRef.action.performed += ChangeTerminalState;
         // QuitRef.action.performed += ChangeTerminalState;
@@ -39,13 +35,6 @@ public class PauseUI : MonoBehaviour, ISetAble
 
     private bool isActive = false;
 
-    private void RefreshCameraIndicators()
-    {
-        if (!ServiceLocator.Services.TryGet(out CameraInputController camera)) return;
-
-        cameraSlider.SetValueWithoutNotify(camera.Scale);
-        cameraFlip.SetIsOnWithoutNotify(camera.Flipped);
-    }
 
     public void ChangeTerminalState()
     {
@@ -59,7 +48,6 @@ public class PauseUI : MonoBehaviour, ISetAble
             }
             playerData.SetBehaviourSit();
             actionMapController.SwitchToPause();
-            RefreshCameraIndicators();
         }
         else
         {
