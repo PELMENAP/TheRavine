@@ -61,9 +61,6 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private int _superinfectionBlocks;
     [SerializeField] private float _avgFitness;
 
-    [Header("Virology")]
-    [SerializeField] private StrainCodonTable strainCodonTable;
-
     [SerializeField] private bool useSavedBrain;
 
     private float   _nextGenerationTime;

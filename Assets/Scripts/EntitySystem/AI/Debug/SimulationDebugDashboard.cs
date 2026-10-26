@@ -349,7 +349,6 @@ public class SimulationDebugDashboard : MonoBehaviour
                 float[] arr = _goalHistory[g].ToArray();
                 float v0 = arr[i - 1], v1 = arr[i];
                 float top0 = bg.yMax - (base0 + v0) * bg.height;
-                float top1 = bg.yMax - (base1 + v1) * bg.height;
 
                 Color fill = GoalColors[g];
                 fill.a = 0.5f;
