@@ -8,7 +8,7 @@ using TheRavine.Extensions;
 using TheRavine.Generator;
 using TheRavine.EntityControl.Virology;
 
-public partial class EntityModel : AEntity, IFoodReceiver
+public partial class EntityModel : IEntity, IFoodReceiver
 {
     public enum FitnessEvent { FoodEaten, Reproduced, DamageDealt }
 
@@ -21,6 +21,15 @@ public partial class EntityModel : AEntity, IFoodReceiver
     public PointsOfInterestComponent Points { get; private set; }
     public VirologyComponent Virology { get; private set; }
     public DigestionComponent Digestion { get; private set; }
+    public VisualCullingComponent VisualCulling { get; set; }
+
+    private readonly R3.ReactiveProperty<bool> _isActive = new(true);
+    private readonly R3.ReactiveCommand<R3.Unit> _onUpdate = new();
+    public R3.ReadOnlyReactiveProperty<bool> IsActive => _isActive;
+    public R3.Observable<R3.Unit> OnUpdate => _onUpdate;
+    public bool IsDisposed { get; private set; }
+    public void Activate() => _isActive.Value = true;
+    public void Deactivate() => _isActive.Value = false;
 
     public IEntityDialogHost DialogHost { get; private set; }
 
@@ -425,7 +434,7 @@ public partial class EntityModel : AEntity, IFoodReceiver
         return true;
     }
 
-    public override void SetUp()
+    public void SetUp()
     {
         _lastCycleTime   = SimulationClock.TimeD;
         _attackReadyTime = 0d;
@@ -459,16 +468,14 @@ public partial class EntityModel : AEntity, IFoodReceiver
         Tuning = tuning;
         DialogHost = (IEntityDialogHost)motor;
 
-        Stats = GetOrCreateEntityComponent<StatsComponent>();
+        Stats = new StatsComponent();
         Stats.FillComponent(tuning.MaxHealth, tuning.MaxEnergy);
 
-        Digestion = GetOrCreateEntityComponent<DigestionComponent>();
-        AddComponentToEntity(_fitness);
+        Digestion = new DigestionComponent();
         Digestion.Configure(tuning.MaxEnergy * SimulationRules.Active.StomachCapacityFraction);
 
         ServiceLocator.Services.TryGet(out _grid);
-        AddComponentToEntity(new PerceptionComponent(tuning.DetectionRadius, _grid));
-        Perception = GetEntityComponent<PerceptionComponent>();
+        Perception = new PerceptionComponent(tuning.DetectionRadius, _grid);
 
         _terrain = new TerrainSensor(ServiceLocator.GetService<MapGenerator>());
         ServiceLocator.Services.TryGet(out _foodIndex);
@@ -481,18 +488,16 @@ public partial class EntityModel : AEntity, IFoodReceiver
         Planner   = planner;
         Infection = infection;
 
-        Speech = GetOrCreateEntityComponent<SpeechComponent>();
+        Speech = new SpeechComponent();
         Speech.Inject((IEntityAudio)motor);
-        Points = GetOrCreateEntityComponent<PointsOfInterestComponent>();
+        Points = new PointsOfInterestComponent();
 
-        AddComponentToEntity(new BrainComponent(brain, ctx));
-        Brain = GetEntityComponent<BrainComponent>();
+        Brain = new BrainComponent(brain, ctx);
 
         _runner = new EntityCommandRunner(this);
         _plan   = new PlanRunner(this);
 
-        AddComponentToEntity(new MortalityComponent(Stats));
-        Mortality = GetEntityComponent<MortalityComponent>();
+        Mortality = new MortalityComponent(Stats);
         Mortality.Died += () =>
         {
             _plan.Interrupt();
@@ -505,7 +510,7 @@ public partial class EntityModel : AEntity, IFoodReceiver
 
         Vectorizer = new InputVectorizer(startHealth, tuning.MaxEnergy);
 
-        Virology = GetOrCreateEntityComponent<VirologyComponent>();
+        Virology = new VirologyComponent();
         uint seed = (uint)RavineRandom.RangeInt(1, int.MaxValue);
         var parentVirology = parent?.Virology;
         if (parentVirology != null && parentVirology.IsCreated && !parentVirology.IsDisposed)
@@ -515,7 +520,7 @@ public partial class EntityModel : AEntity, IFoodReceiver
         Virology.SetImmuneStrength(math.lerp(rulesA.ImmuneThresholdMin, rulesA.ImmuneThresholdMax, ctx.CoordMLP.Params.ImmuneInvestment));
     }
 
-    public override void Init()
+    public void Init()
     {
         _commands[(int)EntityAction.Idle]          = new IdleCommand(this);
         _commands[(int)EntityAction.Wander]        = new WanderCommand(this);
@@ -569,7 +574,29 @@ public partial class EntityModel : AEntity, IFoodReceiver
 
     public void InterruptCommand() => _runner?.Interrupt();
 
-    public override void DeepClean()
+    public void Dispose()
+    {
+        if (IsDisposed) return;
+        IsDisposed = true;
+
+        DeepClean();
+
+        Stats?.Dispose();
+        Digestion?.Dispose();
+        _fitness.Dispose();
+        Perception?.Dispose();
+        Speech?.Dispose();
+        Points?.Dispose();
+        Brain?.Dispose();
+        Mortality?.Dispose();
+        Virology?.Dispose();
+        VisualCulling?.Dispose();
+
+        _isActive.Dispose();
+        _onUpdate.Dispose();
+    }
+
+    private void DeepClean()
     {
         _runner?.Abandon();
         Planner?.Cancel(this);
