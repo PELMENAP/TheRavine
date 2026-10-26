@@ -14,6 +14,14 @@ public class ServiceContainer
         return true;
     }
 
+    public T Replace<T>(T service) where T : class
+    {
+        if (service == null) return null;
+        _services.TryGetValue(typeof(T), out var previous);
+        _services[typeof(T)] = service;
+        return previous as T;
+    }
+
     public bool Unregister<T>(T service) where T : class
     {
         if (service == null || !_services.TryGetValue(typeof(T), out var current) || !ReferenceEquals(current, service))
