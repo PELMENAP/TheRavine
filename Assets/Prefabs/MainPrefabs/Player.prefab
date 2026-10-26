@@ -59,12 +59,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3031338226
+  GlobalObjectIdHash: 4011542423
   InScenePlacedSourceGlobalObjectIdHash: 4011542423
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
+  m_InScenePlaced: 0
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
@@ -237,15 +238,15 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 4.610223
-      outSlope: 4.610223
+      inSlope: 0.8811602
+      outSlope: 0.8811602
       tangentMode: 34
       weightedMode: 0
       inWeight: 0
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 0.10932696
-      value: 0.50402164
+      time: 0.23269427
+      value: 0.20504093
       inSlope: -0.052184865
       outSlope: -0.052184865
       tangentMode: 0
@@ -411,6 +412,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30ef29729fd56c64ea4221f148998096, type: 3}
   m_Name: 
   m_EditorClassIdentifier: View::RippleSystem
+  maxWaterRespondHeight: 4
+  minWaterRespondHeight: -2
 --- !u!81 &7792962233447484037
 AudioListener:
   m_ObjectHideFlags: 0

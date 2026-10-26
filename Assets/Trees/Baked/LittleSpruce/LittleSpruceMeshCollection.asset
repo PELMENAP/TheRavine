@@ -12,12 +12,99 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36232c7ac27f177e8810571cc4703052, type: 3}
   m_Name: LittleSpruceMeshCollection
   m_EditorClassIdentifier: ObjectSystem::TreeMeshCollection
-  _entries:
-  - {fileID: 4300000, guid: 1f64e60b6f4bb52a0ae3836431c23c95, type: 2}
-  - {fileID: 4300000, guid: 4352cda19cdfab7758da82f274c1d8d6, type: 2}
-  - {fileID: 4300000, guid: 9af74dc53557754b6a81669a916dcf8f, type: 2}
-  - {fileID: 4300000, guid: b13a72341aadb21d49a01c561567c352, type: 2}
-  - {fileID: 4300000, guid: d12447de3e12e92b7a964a4f0090c2a4, type: 2}
-  - {fileID: 4300000, guid: a601dc56e6598b82593aa276850d3b15, type: 2}
-  - {fileID: 4300000, guid: e121da8cd131af58d8f7f5ff1cafc447, type: 2}
-  - {fileID: 4300000, guid: e047e5f850c3648ffa57b8eeeaf2ff88, type: 2}
+  variants:
+  - mesh: {fileID: 4300000, guid: 3e6f6c29ecf52a04698457708f794703, type: 2}
+    perchRadius: 0
+    ranges:
+    - start: 0
+      count: 468
+    - start: 768
+      count: 360
+    - start: 468
+      count: 210
+    - start: 1128
+      count: 288
+    - start: 678
+      count: 54
+    - start: 1416
+      count: 168
+    - start: 732
+      count: 36
+    - start: 1584
+      count: 144
+    billboardBox: {x: 4.2283826, y: 12.880714, z: 6.54975, w: 0.080411375}
+    billboardCell: 0
+  - mesh: {fileID: 4300000, guid: 0b4578136cbee484bb00f73349325cc4, type: 2}
+    perchRadius: 0
+    ranges:
+    - start: 0
+      count: 432
+    - start: 732
+      count: 360
+    - start: 432
+      count: 210
+    - start: 1092
+      count: 264
+    - start: 642
+      count: 54
+    - start: 1356
+      count: 216
+    - start: 696
+      count: 36
+    - start: 1572
+      count: 168
+    billboardBox: {x: 4.0745144, y: 13.721002, z: 6.8186765, w: 0.20811856}
+    billboardCell: 1
+  - mesh: {fileID: 4300000, guid: 10ccc13c5e7efe548a779e5fe393ecad, type: 2}
+    perchRadius: 0
+    ranges:
+    - start: 0
+      count: 414
+    - start: 714
+      count: 360
+    - start: 414
+      count: 210
+    - start: 1074
+      count: 324
+    - start: 624
+      count: 54
+    - start: 1398
+      count: 216
+    - start: 678
+      count: 36
+    - start: 1614
+      count: 132
+    billboardBox: {x: 4.00133, y: 13.523049, z: 6.7969146, w: -0.05093217}
+    billboardCell: 2
+  - mesh: {fileID: 4300000, guid: a3c062d60607c8c4591239e3ad777000, type: 2}
+    perchRadius: 0
+    ranges:
+    - start: 0
+      count: 432
+    - start: 732
+      count: 360
+    - start: 432
+      count: 210
+    - start: 1092
+      count: 288
+    - start: 642
+      count: 54
+    - start: 1380
+      count: 240
+    - start: 696
+      count: 36
+    - start: 1620
+      count: 156
+    billboardBox: {x: 3.9824538, y: 13.0873375, z: 6.5916553, w: -0.068211794}
+    billboardCell: 3
+  lodCount: 4
+  ringLod: 0000000001000000020000000300000003000000
+  billboardFromRing: 2
+  farMaterials:
+  - {fileID: 2100000, guid: 721b1d3ae1cacd842b20770ed00c0ea3, type: 2}
+  - {fileID: 2100000, guid: e8b02875cb63e784f8f26246a6f47456, type: 2}
+  billboardMaterial: {fileID: 2100000, guid: b952eddc13aa15645a7ac7d197efe1f8, type: 2}
+  billboardAlbedo: {fileID: 2800000, guid: 265adaf9695902f408c5d20d110d417a, type: 3}
+  billboardNormal: {fileID: 2800000, guid: 58658f86b954b7442ab3371b8090b10d, type: 3}
+  billboardPitch: 20
+  _entries: []
