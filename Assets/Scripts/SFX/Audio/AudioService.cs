@@ -52,7 +52,6 @@ public class AudioService : MonoBehaviour
 
     [Header("Mixer")]
     [SerializeField] private AudioMixer mixer;
-    [SerializeField] private AudioMixerGroup[] channelGroups;
 
     [Header("Pooling")]
     [SerializeField] private int defaultPoolSize = 32;
