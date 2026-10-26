@@ -1,6 +1,7 @@
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 using TheRavine.InventoryElements;
@@ -16,6 +17,7 @@ namespace TheRavine.Inventory
         [SerializeField] private UIInventorySlot resultCell;
         private readonly CraftStack[] grid = new CraftStack[CellsCount];
         private readonly int[] deductions = new int[CellsCount];
+        private CraftMatch[] matches = Array.Empty<CraftMatch>();
         private CraftModel craftModel;
         private InventoryItemInfo resultItemInfo;
         private int resultCount, craftDelay;
@@ -23,6 +25,7 @@ namespace TheRavine.Inventory
         private CancellationTokenSource _cts;
         private EventDrivenInventoryProxy inventory;
         private InfoManager infoManager;
+        public IReadOnlyList<CraftStack> Grid => grid;
         public void SetUp(InfoManager infoManager, EventDrivenInventoryProxy inventoryModel)
         {
             cancel = false;
@@ -32,6 +35,12 @@ namespace TheRavine.Inventory
             inventory = inventoryModel;
 
             craftModel = CraftModel.FromInfos(infoManager.GetAllCraftRecepts());
+            matches = new CraftMatch[craftModel.Count];
+        }
+        public CraftMatch[] Evaluate()
+        {
+            craftModel?.Score(grid, CellsCount, matches);
+            return matches;
         }
         public bool OnInventoryCraftCheck(object sender)
         {
