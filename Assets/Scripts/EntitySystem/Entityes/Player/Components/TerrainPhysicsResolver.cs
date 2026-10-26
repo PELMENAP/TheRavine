@@ -7,22 +7,29 @@ namespace TheRavine.EntityControl
     public sealed class TerrainPhysicsResolver
     {
         private const float GroundedDistance = 0.15f;
+        private const float RisingVelocity   = 0.1f;
 
         private readonly MapGenerator map;
         private readonly Rigidbody    rb;
         private readonly float        halfHeight;
+        private readonly float        maxStepHeight;
         private bool                  active;
+        private float                 lastValidX;
+        private float                 lastValidZ;
 
         public bool IsGrounded { get; private set; }
 
-        public TerrainPhysicsResolver(MapGenerator _map, Rigidbody _rb, float _halfHeight)
+        public TerrainPhysicsResolver(MapGenerator _map, Rigidbody _rb, float _halfHeight, float _maxStepHeight)
         {
-            map        = _map;
-            rb         = _rb;
-            halfHeight = _halfHeight;
+            map           = _map;
+            rb            = _rb;
+            halfHeight    = _halfHeight;
+            maxStepHeight = _maxStepHeight;
         }
 
         public void SetActive(bool value) => active = value;
+
+        public void ConsumeGround() => IsGrounded = false;
 
         public void Resolve()
         {
@@ -36,19 +43,43 @@ namespace TheRavine.EntityControl
 
             if (penetration >= 0f)
             {
+                Vector3 velocity = rb.linearVelocity;
+
+                if (IsGrounded && penetration > maxStepHeight)
+                {
+                    pos.x = lastValidX;
+                    pos.z = lastValidZ;
+                    rb.position = pos;
+                    velocity.x = 0f;
+                    velocity.z = 0f;
+                    rb.linearVelocity = velocity;
+                    return;
+                }
+
                 pos.y += penetration;
                 rb.position = pos;
-                Vector3 velocity = rb.linearVelocity;
                 if (velocity.y < 0f)
                     velocity.y = 0f;
                 rb.linearVelocity = velocity;
-                rb.useGravity = false;
-                IsGrounded = true;
+
+                bool rising = velocity.y > RisingVelocity;
+                rb.useGravity = rising;
+                IsGrounded = !rising;
+                if (IsGrounded)
+                {
+                    lastValidX = pos.x;
+                    lastValidZ = pos.z;
+                }
             }
             else
             {
                 rb.useGravity = true;
-                IsGrounded = penetration > -GroundedDistance;
+                IsGrounded = penetration > -GroundedDistance && rb.linearVelocity.y <= RisingVelocity;
+                if (IsGrounded)
+                {
+                    lastValidX = pos.x;
+                    lastValidZ = pos.z;
+                }
             }
         }
     }

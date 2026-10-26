@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Unity.Mathematics;
 using Unity.Netcode;
 using Cysharp.Threading.Tasks;
 
@@ -18,7 +19,7 @@ namespace TheRavine.EntityControl
         private const float SpawnHeightY = 200f;
 
         [SerializeField] private int placeObjectDelay;
-        [SerializeField] private float movementMinimum, sendInterval = 0.1f;
+        [SerializeField] private float movementMinimum, sendInterval = 0.1f, maxStepHeight = 0.6f;
         [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick, Jump;
         [SerializeField] private Joystick joystick;
         [SerializeField] private Transform crosshair;
@@ -31,7 +32,6 @@ namespace TheRavine.EntityControl
         [SerializeField] private float characterHalfHeight = 1f;
         private TerrainPhysicsResolver terrainResolver;
 
-        private bool IsOnGround => playerRigidbody.linearVelocity.y <= 0.1f;
         private bool IsOnTerrain => terrainResolver.IsGrounded;
         private Rigidbody playerRigidbody;
         private Vector2 movementDirection;
@@ -88,7 +88,7 @@ namespace TheRavine.EntityControl
             };
 
             map = ServiceLocator.GetService<MapGenerator>();
-            terrainResolver = new TerrainPhysicsResolver(map, playerRigidbody, characterHalfHeight);
+            terrainResolver = new TerrainPhysicsResolver(map, playerRigidbody, characterHalfHeight, maxStepHeight);
 
             WorldRegistry worldRegistry = ServiceLocator.GetService<WorldRegistry>();
             unsubscribe = ServiceLocator.GetService<AutosaveCoordinator>().SubscribeBeforeSave(() =>
@@ -206,25 +206,30 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void MoveServerRpc(Vector2 direction, float inputSpeed)
         {
-            if (inputSpeed <= 0.01f)
-                CurrentSpeed = Mathf.MoveTowards(CurrentSpeed, 0f, movementComponent.Deceleration * Time.deltaTime);
-
-            float targetSpeed =
-                inputSpeed *
-                movementComponent.BaseSpeed;
+            float targetSpeed = inputSpeed * movementComponent.BaseSpeed;
+            float terrainModifier = 1f;
 
             if (IsOnTerrain)
             {
-                float terrainModifier =
-                    map.GetSpeedModifier(
-                        playerRigidbody.position.x,
-                        playerRigidbody.position.z,
-                        direction);
+                terrainModifier = map.GetSpeedModifier(
+                    playerRigidbody.position.x,
+                    playerRigidbody.position.z,
+                    direction);
 
                 targetSpeed *= terrainModifier;
             }
 
-            CurrentSpeed = Mathf.MoveTowards(CurrentSpeed, targetSpeed, movementComponent.Acceleration * Time.deltaTime);
+            if (terrainModifier <= 0f)
+            {
+                CurrentSpeed = 0f;
+            }
+            else
+            {
+                float rate = inputSpeed <= 0.01f ? movementComponent.Deceleration : movementComponent.Acceleration;
+                float step = rate * sendInterval;
+                float delta = targetSpeed - CurrentSpeed;
+                CurrentSpeed = math.abs(delta) <= step ? targetSpeed : CurrentSpeed + math.sign(delta) * step;
+            }
 
             playerRigidbody.linearVelocity = new Vector3(
                 direction.x * CurrentSpeed,
@@ -245,7 +250,7 @@ namespace TheRavine.EntityControl
         }
         private void OnJumpStarted(InputAction.CallbackContext ctx)
         {
-            if (!IsOwner || !IsOnGround) return; 
+            if (!IsOwner) return;
             jumpCharge.StartCharge();
         }
 
@@ -259,7 +264,6 @@ namespace TheRavine.EntityControl
         {
             if (!IsOwner || !jumpCharge.JumpRequested) return;
             jumpCharge.ConsumeJump();
-            if (!IsOnGround) return;
             float forceMultiplier = jumpForceCurve.Evaluate(jumpCharge.ChargeNormalized);
             JumpServerRpc(baseJumpForce * forceMultiplier);
         }
@@ -268,6 +272,9 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void JumpServerRpc(float force)
         {
+            if (terrainResolver == null || !terrainResolver.IsGrounded) return;
+            terrainResolver.ConsumeGround();
+
             Vector3 vel = playerRigidbody.linearVelocity;
             vel.y = force;
             playerRigidbody.linearVelocity = vel;
