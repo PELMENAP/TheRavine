@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 using Unity.Mathematics;
 using Unity.Netcode;
 using Cysharp.Threading.Tasks;
@@ -28,6 +29,15 @@ namespace TheRavine.EntityControl
         [Header("Jump")]
         [SerializeField] private float baseJumpForce = 7f;
         [SerializeField] private AnimationCurve jumpForceCurve;
+        [SerializeField] private Transform jumpIndicator;
+        [SerializeField] private float jumpIndicatorHeight = 1.5f, jumpIndicatorWidth = 0.15f, jumpIndicatorBase = 1f;
+
+        [Header("Sprint")]
+        [SerializeField] private float sprintMultiplier = 1.6f;
+        [SerializeField] private float staminaPerMaxEnergy = 0.5f, capAtZeroEnergy = 0.3f;
+        [SerializeField] private float staminaDrainFraction = 0.2f, staminaRegenFraction = 0.15f;
+        [SerializeField] private float staminaRecoveryDelay = 1f, energyPerStamina = 0.2f;
+        [SerializeField] private Image staminaFill;
 
         [SerializeField] private float characterHalfHeight = 1f;
         private TerrainPhysicsResolver terrainResolver;
@@ -54,6 +64,8 @@ namespace TheRavine.EntityControl
 
         private readonly DoubleTapDetector forwardTap = new();
         private readonly JumpChargeDetector jumpCharge = new(maxChargeTime: 1f);
+        private PlayerStamina stamina;
+        private NetworkVariable<float> staminaRatio = new(1f);
         private IDisposable unsubscribe;
 
         public void SetInitialValues(AEntity entity, RavineLogger logger)
@@ -64,6 +76,10 @@ namespace TheRavine.EntityControl
 
             playerAnimator.SetUpAsync().Forget();
             GetPlayerComponents();
+            stamina = new PlayerStamina(
+                playerEntity.GetEntityComponent<EnergyComponent>(),
+                staminaPerMaxEnergy, capAtZeroEnergy, staminaDrainFraction,
+                staminaRegenFraction, staminaRecoveryDelay, energyPerStamina);
 
             Raise.action.performed += AimRaise;
             LeftClick.action.performed += AimPlace;
@@ -170,6 +186,41 @@ namespace TheRavine.EntityControl
             if (!IsServer) return;
             terrainResolver?.Resolve();
         }
+        private void Update()
+        {
+            if (!IsOwner) return;
+
+            UpdateJumpIndicator();
+            if (staminaFill != null) staminaFill.fillAmount = staminaRatio.Value;
+        }
+
+        private void UpdateJumpIndicator()
+        {
+            if (!jumpCharge.IsCharging)
+            {
+                if (jumpIndicator != null) jumpIndicator.gameObject.SetActive(false);
+                return;
+            }
+
+            if (jumpIndicator == null) jumpIndicator = CreateJumpIndicator();
+
+            float height = jumpForceCurve.Evaluate(jumpCharge.LiveChargeNormalized) * jumpIndicatorHeight;
+            jumpIndicator.gameObject.SetActive(true);
+            jumpIndicator.localScale = new Vector3(jumpIndicatorWidth, height, jumpIndicatorWidth);
+            jumpIndicator.localPosition = new Vector3(0f, jumpIndicatorBase + height * 0.5f, 0f);
+        }
+
+        private Transform CreateJumpIndicator()
+        {
+            GameObject bar = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            bar.name = "JumpIndicator";
+            Destroy(bar.GetComponent<Collider>());
+            bar.transform.SetParent(transform, false);
+            return bar.transform;
+        }
+
+        private static bool IsSprintHeld() => Keyboard.current != null && Keyboard.current.rightCtrlKey.isPressed;
+
         public void Move()
         {
             if (isAimMode || !IsOwner) return;
@@ -186,7 +237,7 @@ namespace TheRavine.EntityControl
             timeSinceLastSend += Time.deltaTime;
             if (timeSinceLastSend >= sendInterval)
             {
-                MoveServerRpc(movementDirection.normalized, movementSpeed);
+                MoveServerRpc(movementDirection.normalized, movementSpeed, IsSprintHeld());
                 timeSinceLastSend = 0f;
             }
 
@@ -204,9 +255,12 @@ namespace TheRavine.EntityControl
         
 
         [ServerRpc]
-        private void MoveServerRpc(Vector2 direction, float inputSpeed)
+        private void MoveServerRpc(Vector2 direction, float inputSpeed, bool sprint)
         {
-            float targetSpeed = inputSpeed * movementComponent.BaseSpeed;
+            bool sprinting = stamina.Step(sendInterval, sprint, direction.sqrMagnitude > 0f);
+            staminaRatio.Value = stamina.Ratio;
+
+            float targetSpeed = inputSpeed * movementComponent.BaseSpeed * (sprinting ? sprintMultiplier : 1f);
             float terrainModifier = 1f;
 
             if (IsOnTerrain)
