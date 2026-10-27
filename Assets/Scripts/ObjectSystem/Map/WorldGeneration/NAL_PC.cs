@@ -27,6 +27,8 @@ namespace TheRavine.Generator
         public int StaleDrops, HeightDrops, WindowDrops;
         public int SpawnPushed;
         public int FarDecisions, Decays, RegionChunks;
+        public int Ticks, SkippedSameTime, SkippedNoAuthority;
+        public double ClockTime, NextDueIn;
     }
 
     public class NAL_PC
@@ -55,6 +57,7 @@ namespace TheRavine.Generator
         private long lastReportTicks = Stopwatch.GetTimestamp();
         public readonly NalStats Stats = new();
         private double lastTickTime = -1d;
+        private double lastReportClock = -1d;
         private double catchUpElapsed;
         private int syncStamp;
         private bool tiersDirty;
@@ -270,8 +273,15 @@ namespace TheRavine.Generator
             {
                 TryReport();
 
-                if (store.Count == 0 || !WorldAuthority.IsAuthority)
+                if (store.Count == 0)
                 {
+                    await UniTask.Yield();
+                    continue;
+                }
+
+                if (!WorldAuthority.IsAuthority)
+                {
+                    Stats.SkippedNoAuthority++;
                     await UniTask.Yield();
                     continue;
                 }
@@ -279,11 +289,13 @@ namespace TheRavine.Generator
                 double now = SimulationClock.TimeD;
                 if (now == lastTickTime && Stats.DueBacklog == 0)
                 {
+                    Stats.SkippedSameTime++;
                     await UniTask.Yield();
                     continue;
                 }
 
                 lastTickTime = now;
+                Stats.Ticks++;
                 long start = Stopwatch.GetTimestamp();
 
                 int capacity = decisions.Length;
@@ -526,6 +538,19 @@ namespace TheRavine.Generator
 
             lastReportTicks = now;
             Debug.Assert(store.IsConsistent(), "NAL: store desync");
+
+            double clock = SimulationClock.TimeD;
+            double minDue = double.MaxValue;
+            for (int i = 0; i < store.Count; i++)
+                if (store.Due[i] < minDue) minDue = store.Due[i];
+
+            Stats.ClockTime = clock;
+            Stats.NextDueIn = store.Count > 0 ? minDue - clock : 0d;
+
+            if (store.Count > 0 && clock == lastReportClock)
+                RavineLog.Warning($"[NAL] SimulationClock is frozen at {clock:F2} s: nothing advances world time, so no slot becomes due");
+            lastReportClock = clock;
+
             Report();
         }
 
@@ -538,6 +563,7 @@ namespace TheRavine.Generator
                 $"queue={s.QueueLength}/{s.QueueMax} store={s.StoreCount} " +
                 $"deathRoll={s.RollDeaths} deathClose={s.CloseDeaths} growDecay={s.GrowDecays} evolved={s.Evolved} " +
                 $"spawnPushed={s.SpawnPushed} dropStale={s.StaleDrops} dropHeight={s.HeightDrops} dropWindow={s.WindowDrops} " +
+                $"ticks={s.Ticks} skipSameTime={s.SkippedSameTime} skipAuthority={s.SkippedNoAuthority} clock={s.ClockTime:F2} nextDueIn={s.NextDueIn:F2} " +
                 $"far={s.FarDecisions} decay={s.Decays} regionChunks={s.RegionChunks} " +
                 $"cmdQ={s.CommandQueueLength}/{s.CommandQueueMax} batchMs={s.BatchMs}/{s.BatchMsMax} tickMs={s.TickMs} jobMs={s.JobMs}");
         }
