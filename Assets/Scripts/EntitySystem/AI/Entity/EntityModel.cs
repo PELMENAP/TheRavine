@@ -462,7 +462,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         if (colony.IsWild) CasteFixed = true;
         var tuning = EntityTuning.Express(in baseTuning, in ctx.CoordMLP.Params, _casteMods);
         MaxAge = rulesA.BaseMaxAge * ctx.CoordMLP.Params.MaxAgeMul;
-        _immuneUpkeepMul = 1f + ctx.CoordMLP.Params.ImmuneInvestment * rulesA.ImmuneUpkeep;
+        _immuneUpkeepMul = CreatureCore.ImmuneUpkeepMul(in ctx.CoordMLP.Params, rulesA);
         Motor = motor;
         SelfObject = selfObject;
         Tuning = tuning;
@@ -510,14 +510,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
         Vectorizer = new InputVectorizer(startHealth, tuning.MaxEnergy);
 
-        Virology = new VirologyComponent();
-        uint seed = (uint)RavineRandom.RangeInt(1, int.MaxValue);
-        var parentVirology = parent?.Virology;
-        if (parentVirology != null && parentVirology.IsCreated && !parentVirology.IsDisposed)
-            Virology.FillFromParent(parentVirology, in ctx.CoordMLP.Params, seed);
-        else
-            Virology.FillComponent(in ctx.CoordMLP.Params, seed);
-        Virology.SetImmuneStrength(math.lerp(rulesA.ImmuneThresholdMin, rulesA.ImmuneThresholdMax, ctx.CoordMLP.Params.ImmuneInvestment));
+        Virology = CreatureCore.CreateVirology(in ctx.CoordMLP.Params, parent?.Virology, rulesA);
     }
 
     public void Init()
