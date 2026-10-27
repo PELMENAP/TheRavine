@@ -434,7 +434,7 @@ namespace TheRavine.Generator
         [SerializeField] private GrassSystem grassSystem;
         [SerializeField] private Texture2DArray biomeAlbedo;
         [SerializeField, Min(100)] private int nalApplyIntervalMs = 1000;
-        [SerializeField, Min(4)] private int nalScheduleCapacity = 4096;
+        [SerializeField, Min(16)] private int nalStoreCapacity = 8192;
         [SerializeField, Min(1)] private int nalMaxDecisionsPerTick = 256;
         [SerializeField, Min(0f)] private float nalSecondsPerDelayUnit = 0.01f;
 
@@ -478,7 +478,7 @@ namespace TheRavine.Generator
 
             if (chunkGenerationSettings.endlessFlag[3])
             {
-                nal = new NAL_PC(this, objectSystem, _cts.Token, nalApplyIntervalMs, nalScheduleCapacity);
+                nal = new NAL_PC(this, objectSystem, _cts.Token, nalApplyIntervalMs, nalStoreCapacity);
                 nal.RunNAL().Forget();
                 nal.RunUpdate().Forget();
             }
@@ -768,6 +768,8 @@ namespace TheRavine.Generator
             sampleKey = long.MinValue;
 
             _cts.Cancel();
+            nal?.Dispose();
+            nal = null;
             chunkGenerator?.Dispose();
         }
     }
