@@ -9,6 +9,7 @@ using UnityEngine.Rendering;
 using System.Threading;
 
 using TheRavine.Extensions;
+using TheRavine.Base;
 using TheRavine.ObjectControl;
 using TheRavine.EntityControl;
 using TheRavine.Events;
@@ -121,6 +122,7 @@ namespace TheRavine.Generator
             {
                 data = chunkPool.Count > 0 ? chunkPool.Pop() : new ChunkData();
                 chunkGenerator.Generate(data, chunkKey, ring);
+                chunkStore?.TryRestore(chunkKey, data);
                 mapData[chunkKey] = data;
             }
 
@@ -418,9 +420,12 @@ namespace TheRavine.Generator
         public MeshFilter terrainFilter;
         private int seed;
         public int Seed { get => seed; private set => seed = value; }
+        private const int DefaultSeed = 16;
 
         private ObjectSystem objectSystem;
         private NAL_PC nal;
+        private ChunkStore chunkStore;
+        private IDisposable autosaveSubscription;
 
         [SerializeField] private Transform viewer;
         [SerializeField] private Vector3 viewerOffset;
@@ -436,12 +441,15 @@ namespace TheRavine.Generator
         {
             ServiceLocator.Register(this);
 
-            seed = 16;
+            ServiceLocator.Services.TryGet(out WorldRegistry worldRegistry);
+            bool worldLoaded = worldRegistry != null && worldRegistry.HasLoadedWorld;
+            seed = worldLoaded ? worldRegistry.GetCurrentState().seed : DefaultSeed;
             mapData = new LongDictionary<ChunkData>(256);
             budgetTicks = FrameBudget.TicksFromMs(chunkGenerationSettings.frameBudgetMs);
 
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
             chunkGenerator = new ChunkGenerator(chunkGenerationSettings, seed);
+            if (worldLoaded) chunkStore = ChunkStore.ForWorld(worldRegistry.GetCurrentWorldId(), seed);
 
             CurvedWorld.Configure(chunkGenerationSettings.curveRadius, chunkGenerationSettings.curveFlat, chunkGenerationSettings.curveFocusDistance);
             CurvedWorld.SetFacing(facing);
@@ -450,11 +458,14 @@ namespace TheRavine.Generator
 
             BindFirstPlayer();
 
-            if (ServiceLocator.Services.TryGet(out WorldRegistry worldRegistry))
+            if (worldLoaded)
             {
                 var config = worldRegistry.GetCurrentConfig();
                 chunkGenerationSettings.isRiver = config.generateRivers;
             }
+
+            if (chunkStore != null && ServiceLocator.Services.TryGet(out AutosaveCoordinator autosave))
+                autosaveSubscription = autosave.SubscribeBeforeSave(SaveModifiedChunks);
 
             if (chunkGenerationSettings.endlessFlag[3])
             {
@@ -632,6 +643,18 @@ namespace TheRavine.Generator
             return Position2Int.Pack(ChunkCoord(p.x), ChunkCoord(p.z));
         }
 
+        private void SaveModifiedChunks()
+        {
+            if (chunkStore == null) return;
+
+            foreach (var kv in mapData)
+            {
+                ChunkData cd = kv.Value;
+                if (cd.NeedsSave && chunkStore.TrySave(kv.Key, cd))
+                    cd.MarkPersisted();
+            }
+        }
+
         private void EvictChunks()
         {
             evictionPending = false;
@@ -644,7 +667,7 @@ namespace TheRavine.Generator
             foreach (var kv in mapData)
             {
                 ChunkData cd = kv.Value;
-                if (cd.IsModified || frame - cd.LastAccessFrame < idleFrames || IsRetained(kv.Key))
+                if (cd.NeedsSave || frame - cd.LastAccessFrame < idleFrames || IsRetained(kv.Key))
                     continue;
 
                 if (n == evictBuffer.Length)
@@ -698,6 +721,10 @@ namespace TheRavine.Generator
             playerEventBus = null;
             boundPlayer = null;
 
+            autosaveSubscription?.Dispose();
+            autosaveSubscription = null;
+            SaveModifiedChunks();
+
             if (endless != null)
             {
                 for (int i = 0; i < endless.Length; i++)
@@ -739,6 +766,8 @@ namespace TheRavine.Generator
         public int Version { get; private set; }
         public int GeneratedVersion { get; private set; }
         public bool IsModified => Version != GeneratedVersion;
+        public bool NeedsSave => IsModified && Version != SavedVersion;
+        public int SavedVersion { get; private set; }
         public byte DetailLevel { get; internal set; } = NotGenerated;
         public int LastAccessFrame;
 
@@ -922,7 +951,7 @@ namespace TheRavine.Generator
 
         public void ClearDirty() => IsDirty = false;
 
-        internal void ResetForReuse()
+        public void ClearObjects()
         {
             unsafe
             {
@@ -932,6 +961,24 @@ namespace TheRavine.Generator
 
             Objects.Clear();
             buildings?.Clear();
+            Version++;
+            IsDirty = true;
+        }
+
+        public int LevelsAt(int anchorIdx) => TryGetBuilding(anchorIdx, out BuildingVolume volume) ? volume.Levels : 1;
+
+        internal void MarkPersisted() => SavedVersion = Version;
+
+        internal void CommitRestore(byte detailLevel)
+        {
+            DetailLevel = detailLevel;
+            GeneratedVersion = Version;
+            SavedVersion = Version;
+        }
+
+        internal void ResetForReuse()
+        {
+            ClearObjects();
             StructureSpawnPoints?.Clear();
             DetailLevel = NotGenerated;
             IsDirty = false;

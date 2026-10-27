@@ -165,7 +165,7 @@ IFileManager<TId, TEntity>
 ### Данные (`Core/Settings/WorldData/`, `WorldSettings/`, `GameSettings/`)
 - **`GlobalSettings`** — качество, трава, тип управления (MemoryPack)
 - **`WorldState`** — seed, позиция игрока, cycleCount, инвентарь[], lastSaveTime
-  Состояние карты не сохраняется: трупы, payload заражения и метки табу еды (`ChunkFoodIndex._meat/_payloads/_taboo`) живут только в памяти сессии; после загрузки мира чанки генерируются из seed, трупов и их записей нет. Модифицированные чанки удерживаются в памяти `MapGenerator` (`ChunkData.IsModified`), на диск не пишутся.
+  Модифицированные чанки сохраняются `ChunkStore` (`ObjectSystem/Map/WorldGeneration/ChunkStore.cs`) в `persistentDataPath/worlds/{worldId}/chunks/{x}_{z}.chunk`: при каждом автосохранении (`AutosaveCoordinator.SubscribeBeforeSave`) и при выходе из сцены пишутся чанки с `ChunkData.NeedsSave`; при генерации чанка файл накладывается поверх процедурного результата (`TryRestore`), `DetailLevel` восстанавливается из файла. Формат v1: заголовок (magic, версия, seed, ключ чанка, `DetailLevel`) + объекты с уровнями. Сохранённые чанки выгружаются из памяти вместе с обычными. Трупы, payload заражения и метки табу еды (`ChunkFoodIndex._meat/_payloads/_taboo`) по-прежнему живут только в памяти сессии.
 - **`WorldConfiguration`** — имя мира, сложность, autosave interval, timeScale
 
 ### `WorldRegistry` (`Core/Settings/WorldRegistry.cs`)
@@ -196,7 +196,7 @@ IFileManager<TId, TEntity>
 - `PoolManager` (`Core/PoolManager.cs`) — Dictionary<prefabID, Queue<ObjectInstance>>
 - `ObjectInfoRegistry : ScriptableObject` — база всех объектов; SO-данные предметов — `ScriptableData/Item/` (Environment, NPC, квесты, описания)
 - `ObjectSystem/TreeGenerator/` — деревья; `ObjectInfo/NAL/` — NAL-поведение объектов
-- Многоуровневые постройки: `ObjectInfo.Levels` (1..`ObjectInfo.MaxLevels`). Поверхностная сетка остаётся 2D; `ChunkData.LevelMask` (байт на клетку, бит k = занята на уровне k≥1) — флаг для чтения `MapGenerator.IsOccupiedAt`/`ChunkData.HasLevelAt`. Реестр `ChunkData.TryGetBuilding(anchor)` хранит `BuildingVolume` (список `LevelCell` по всем уровням) только для построек с `Levels > 1`; размер реестра зависит от числа построек, а не от высоты. Сохранение построек не реализовано (см. решение 2.2).
+- Многоуровневые постройки: `ObjectInfo.Levels` (1..`ObjectInfo.MaxLevels`). Поверхностная сетка остаётся 2D; `ChunkData.LevelMask` (байт на клетку, бит k = занята на уровне k≥1) — флаг для чтения `MapGenerator.IsOccupiedAt`/`ChunkData.HasLevelAt`. Реестр `ChunkData.TryGetBuilding(anchor)` хранит `BuildingVolume` (список `LevelCell` по всем уровням) только для построек с `Levels > 1`; размер реестра зависит от числа построек, а не от высоты. Постройки сохраняются вместе с чанком через `ChunkStore` (уровни каждого объекта пишутся в файл).
 
 ### NAL (Natural Artificial Life) — `NAL_PC.cs`
 Псевдо-экосистема: объекты размножаются/умирают по вероятностям.

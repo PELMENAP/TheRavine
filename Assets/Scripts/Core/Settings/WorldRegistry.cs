@@ -247,6 +247,8 @@ namespace TheRavine.Base
             }
         }
 
+        public string GetCurrentWorldId() => currentWorldId.Value;
+
         public WorldState GetCurrentState()
         {
             if (!HasLoadedWorld)
