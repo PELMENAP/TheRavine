@@ -120,4 +120,30 @@ public class NalStoreTests
         Assert.IsFalse(local.SlotByPos.IsCreated);
         local.Dispose();
     }
+
+    [Test]
+    public void TierFollowsSlotThroughSwapBack()
+    {
+        _store.Add(new Vector2Int(0, 0), 1, 0, 0d, 0);
+        _store.Add(new Vector2Int(1, 0), 2, 0, 0d, 1);
+        _store.Add(new Vector2Int(2, 0), 3, 0, 0d, 2);
+
+        _store.Remove(Key(0, 0));
+
+        Assert.IsTrue(_store.TryGetSlot(Key(2, 0), out int slot));
+        Assert.AreEqual(2, _store.Tier[slot]);
+        Assert.IsTrue(_store.TryGetSlot(Key(1, 0), out slot));
+        Assert.AreEqual(1, _store.Tier[slot]);
+        Assert.IsTrue(_store.IsConsistent());
+    }
+
+    [Test]
+    public void ClearForgetsRegisteredChunks()
+    {
+        _store.Registered[7L] = new NalChunkState { Detail = 1, Ring = 2, Stamp = 3 };
+
+        _store.Clear();
+
+        Assert.AreEqual(0, _store.Registered.Count);
+    }
 }

@@ -6,38 +6,50 @@ using TheRavine.Extensions;
 
 namespace TheRavine.Generator
 {
+    public struct NalChunkState
+    {
+        public byte Detail;
+        public byte Ring;
+        public int Stamp;
+    }
+
     public sealed class NalStore
     {
         public NativeList<int2> Cell;
         public NativeList<long> Chunk;
+        public NativeList<byte> Tier;
         public NativeList<int> Dense;
         public NativeList<int> PrefabId;
         public NativeList<double> Due;
         public NativeHashMap<long, int> SlotByPos;
         public NativeHashMap<long, double> LeftAt;
+        public NativeHashMap<long, NalChunkState> Registered;
 
         public NalStore(int capacity)
         {
             capacity = math.max(capacity, 4);
             Cell = new NativeList<int2>(capacity, Allocator.Persistent);
             Chunk = new NativeList<long>(capacity, Allocator.Persistent);
+            Tier = new NativeList<byte>(capacity, Allocator.Persistent);
             Dense = new NativeList<int>(capacity, Allocator.Persistent);
             PrefabId = new NativeList<int>(capacity, Allocator.Persistent);
             Due = new NativeList<double>(capacity, Allocator.Persistent);
             SlotByPos = new NativeHashMap<long, int>(capacity, Allocator.Persistent);
             LeftAt = new NativeHashMap<long, double>(64, Allocator.Persistent);
+            Registered = new NativeHashMap<long, NalChunkState>(64, Allocator.Persistent);
         }
 
         public int Count => Cell.Length;
         public bool IsCreated => Cell.IsCreated;
 
-        public bool Add(Vector2Int pos, int prefabId, int dense, double due)
+        public bool Add(Vector2Int pos, int prefabId, int dense, double due, byte tier = 0)
         {
             long packed = Position2Int.Pack(pos);
             if (!SlotByPos.TryAdd(packed, Cell.Length)) return false;
 
             Cell.Add(new int2(pos.x, pos.y));
             Chunk.Add(MapGenerator.WorldToChunk(packed));
+            Tier.Add(tier);
             Dense.Add(dense);
             PrefabId.Add(prefabId);
             Due.Add(due);
@@ -74,6 +86,7 @@ namespace TheRavine.Generator
             SlotByPos.Remove(Position2Int.Pack(cell.x, cell.y));
             Cell.RemoveAtSwapBack(slot);
             Chunk.RemoveAtSwapBack(slot);
+            Tier.RemoveAtSwapBack(slot);
             Dense.RemoveAtSwapBack(slot);
             PrefabId.RemoveAtSwapBack(slot);
             Due.RemoveAtSwapBack(slot);
@@ -105,17 +118,19 @@ namespace TheRavine.Generator
         {
             Cell.Clear();
             Chunk.Clear();
+            Tier.Clear();
             Dense.Clear();
             PrefabId.Clear();
             Due.Clear();
             SlotByPos.Clear();
             LeftAt.Clear();
+            Registered.Clear();
         }
 
         public bool IsConsistent()
         {
             if (SlotByPos.Count != Cell.Length) return false;
-            if (Chunk.Length != Cell.Length || Dense.Length != Cell.Length
+            if (Chunk.Length != Cell.Length || Tier.Length != Cell.Length || Dense.Length != Cell.Length
                 || PrefabId.Length != Cell.Length || Due.Length != Cell.Length) return false;
 
             for (int i = 0; i < Cell.Length; i++)
@@ -133,11 +148,13 @@ namespace TheRavine.Generator
         {
             if (Cell.IsCreated) Cell.Dispose();
             if (Chunk.IsCreated) Chunk.Dispose();
+            if (Tier.IsCreated) Tier.Dispose();
             if (Dense.IsCreated) Dense.Dispose();
             if (PrefabId.IsCreated) PrefabId.Dispose();
             if (Due.IsCreated) Due.Dispose();
             if (SlotByPos.IsCreated) SlotByPos.Dispose();
             if (LeftAt.IsCreated) LeftAt.Dispose();
+            if (Registered.IsCreated) Registered.Dispose();
         }
     }
 }

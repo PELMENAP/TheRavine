@@ -20,6 +20,9 @@ public class ObjectInfo : ScriptableObject
     [ConditionalField(nameof(instanceType), InstanceType.Static, inverse: true)]
     [SerializeField] private InventoryItemInfo inventoryItemInfo;
 
+    [Min(0f)]
+    [SerializeField] private float decaySeconds;
+
     [SerializeField] private bool isFood;
     [SerializeField] private FoodKind foodKind;
 
@@ -62,7 +65,8 @@ public class ObjectInfo : ScriptableObject
     public FarMode FarMode => farMode;
     public bool CastShadowsFar => castShadowsFar;
     public ObjectLodSet LodSet => lodSet;
-    public bool HasLifecycle => behaviourType == BehaviourType.NAL || behaviourType == BehaviourType.GROW;
+    public float DecaySeconds => decaySeconds;
+    public bool HasLifecycle => behaviourType == BehaviourType.NAL || behaviourType == BehaviourType.GROW || decaySeconds > 0f;
 
 #if UNITY_EDITOR
     public void EditorAssignId(ushort value) => id = value;

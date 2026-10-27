@@ -26,6 +26,7 @@ namespace TheRavine.Generator
         [ReadOnly] public NativeArray<int2> Cell;
         [ReadOnly] public NativeArray<int> Dense;
         [ReadOnly] public NativeArray<double> Due;
+        [ReadOnly] public NativeArray<byte> Tier;
         [ReadOnly] public NativeArray<NalSpeciesParams> Species;
         [NativeDisableParallelForRestriction] public NativeArray<NalDecision> Output;
         [NativeDisableParallelForRestriction] public NativeArray<int> Counter;
@@ -36,18 +37,26 @@ namespace TheRavine.Generator
         public float FallbackDelaySeconds;
         public int GrowDecayChance;
         public int CatchUpMaxSteps;
+        public int NearCapacity;
+        public float FarPeriodScale;
+        public float DecayCheckSeconds;
 
         public unsafe void Execute(int slot)
         {
             if (Due[slot] > Now) return;
 
-            int index = Interlocked.Increment(ref ((int*)Counter.GetUnsafePtr())[0]) - 1;
-            if (index >= Output.Length) return;
+            int tier = Tier[slot];
+            int lane = tier > 0 ? 1 : 0;
+            int index = Interlocked.Increment(ref ((int*)Counter.GetUnsafePtr())[lane]) - 1;
+            int limit = lane == 0 ? NearCapacity : Output.Length - NearCapacity;
+            if (index >= limit) return;
 
             NalSpeciesParams p = Species[Dense[slot]];
             var rng = Unity.Mathematics.Random.CreateFromIndex(Seed + (uint)slot * 747796405u);
 
-            double period = p.Period(SecondsPerDelayUnit, FallbackDelaySeconds);
+            double period = p.Period(SecondsPerDelayUnit, FallbackDelaySeconds, DecayCheckSeconds);
+            if (tier > 0) period *= FarPeriodScale * tier;
+
             var d = new NalDecision
             {
                 Slot = slot,
@@ -55,7 +64,11 @@ namespace TheRavine.Generator
                 NextDue = math.max(Due[slot], Now - period * math.max(CatchUpMaxSteps - 1, 0)) + period
             };
 
-            if (p.Kind == (byte)BehaviourType.GROW)
+            if (p.Kind == NalSpeciesParams.KindDecay)
+            {
+                d.DeathRoll = rng.NextFloat() < 1f - math.exp((float)(-period / p.DecaySeconds));
+            }
+            else if (p.Kind == (byte)BehaviourType.GROW)
             {
                 if (p.EvolutionDense < 0)
                     d.DeathRoll = rng.NextInt(1, 101) <= GrowDecayChance;
@@ -80,7 +93,7 @@ namespace TheRavine.Generator
                 }
             }
 
-            Output[index] = d;
+            Output[lane == 0 ? index : NearCapacity + index] = d;
         }
     }
 }

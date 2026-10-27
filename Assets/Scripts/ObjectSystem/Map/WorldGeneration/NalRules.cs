@@ -15,9 +15,15 @@ namespace TheRavine.Generator
         public int DeathOtherStart;
         public int DeathOtherCount;
         public byte DeathFactor;
+        public float DecaySeconds;
 
-        public double Period(float secondsPerDelayUnit, float fallbackSeconds) =>
-            HasDelay != 0 ? math.max((int)Delay, 1) * secondsPerDelayUnit : fallbackSeconds;
+        public const byte KindDecay = 3;
+
+        public double Period(float secondsPerDelayUnit, float growStageSeconds, float decayCheckSeconds)
+        {
+            if (Kind == KindDecay) return decayCheckSeconds;
+            return HasDelay != 0 ? math.max((int)Delay, 1) * secondsPerDelayUnit : growStageSeconds;
+        }
     }
 
     public sealed class NalRules
@@ -46,7 +52,7 @@ namespace TheRavine.Generator
                 var p = new NalSpeciesParams { EvolutionDense = -1, DeathMainDense = -1 };
 
                 NAlInfo n = info.NalInfo;
-                if (info.HasLifecycle && (info.BehaviourType == BehaviourType.GROW || n != null))
+                if (info.BehaviourType == BehaviourType.GROW || (info.BehaviourType == BehaviourType.NAL && n != null))
                 {
                     p.Kind = (byte)info.BehaviourType;
 
@@ -83,6 +89,11 @@ namespace TheRavine.Generator
 
                         p.DeathOtherCount = cursor - p.DeathOtherStart;
                     }
+                }
+                else if (info.DecaySeconds > 0f)
+                {
+                    p.Kind = NalSpeciesParams.KindDecay;
+                    p.DecaySeconds = info.DecaySeconds;
                 }
 
                 Species[i] = p;

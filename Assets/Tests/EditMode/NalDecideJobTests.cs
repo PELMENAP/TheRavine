@@ -11,6 +11,7 @@ public class NalDecideJobTests
     private NativeArray<int2> _cell;
     private NativeArray<int> _dense;
     private NativeArray<double> _due;
+    private NativeArray<byte> _tier;
     private NativeArray<NalSpeciesParams> _species;
     private NativeArray<NalDecision> _output;
     private NativeArray<int> _counter;
@@ -21,6 +22,7 @@ public class NalDecideJobTests
         if (_cell.IsCreated) _cell.Dispose();
         if (_dense.IsCreated) _dense.Dispose();
         if (_due.IsCreated) _due.Dispose();
+        if (_tier.IsCreated) _tier.Dispose();
         if (_species.IsCreated) _species.Dispose();
         if (_output.IsCreated) _output.Dispose();
         if (_counter.IsCreated) _counter.Dispose();
@@ -44,6 +46,7 @@ public class NalDecideJobTests
         _cell = new NativeArray<int2>(dues.Length, Allocator.Persistent);
         _dense = new NativeArray<int>(dues.Length, Allocator.Persistent);
         _due = new NativeArray<double>(dues.Length, Allocator.Persistent);
+        _tier = new NativeArray<byte>(dues.Length, Allocator.Persistent);
         for (int i = 0; i < dues.Length; i++)
         {
             _cell[i] = new int2(10 * i, -10 * i);
@@ -52,16 +55,17 @@ public class NalDecideJobTests
 
         _species = new NativeArray<NalSpeciesParams>(species, Allocator.Persistent);
         _output = new NativeArray<NalDecision>(outputCapacity, Allocator.Persistent);
-        _counter = new NativeArray<int>(1, Allocator.Persistent);
+        _counter = new NativeArray<int>(2, Allocator.Persistent);
     }
 
-    private int Run(double now, float deadChance = 0f, int growDecayChance = 0, int catchUpMaxSteps = 0)
+    private int Run(double now, float deadChance = 0f, int growDecayChance = 0, int catchUpMaxSteps = 0, int nearCapacity = -1)
     {
         var job = new NalDecideJob
         {
             Cell = _cell,
             Dense = _dense,
             Due = _due,
+            Tier = _tier,
             Species = _species,
             Output = _output,
             Counter = _counter,
@@ -71,7 +75,10 @@ public class NalDecideJobTests
             SecondsPerDelayUnit = 0.5f,
             FallbackDelaySeconds = 7f,
             GrowDecayChance = growDecayChance,
-            CatchUpMaxSteps = catchUpMaxSteps
+            CatchUpMaxSteps = catchUpMaxSteps,
+            NearCapacity = nearCapacity < 0 ? _output.Length : nearCapacity,
+            FarPeriodScale = 4f,
+            DecayCheckSeconds = 30f
         };
         job.Run(_cell.Length);
         return _counter[0];
@@ -275,5 +282,88 @@ public class NalDecideJobTests
         }
 
         Assert.AreEqual(1, steps);
+    }
+
+    [Test]
+    public void FarSlotsUseTheirOwnBudgetLane()
+    {
+        Setup(4, new double[6], Species(Nal, 0, 0, 0, 1, -1));
+        for (int i = 0; i < 3; i++) _tier[i] = 1;
+
+        Run(1d, nearCapacity: 2);
+
+        Assert.AreEqual(3, _counter[0]);
+        Assert.AreEqual(3, _counter[1]);
+        Assert.GreaterOrEqual(_output[0].Slot, 3);
+        Assert.GreaterOrEqual(_output[1].Slot, 3);
+        Assert.Less(_output[2].Slot, 3);
+        Assert.Less(_output[3].Slot, 3);
+    }
+
+    [Test]
+    public void FarDecisionsLandInTheFarRegionOfTheOutput()
+    {
+        Setup(4, new[] { 0d, 0d }, Species(Nal, 0, 0, 0, 1, -1));
+        _tier[1] = 2;
+
+        Run(1d, nearCapacity: 3);
+
+        Assert.AreEqual(1, _counter[0]);
+        Assert.AreEqual(1, _counter[1]);
+        Assert.AreEqual(0, _output[0].Slot);
+        Assert.AreEqual(1, _output[3].Slot);
+    }
+
+    [Test]
+    public void FarPeriodGrowsWithTier()
+    {
+        Setup(4, new[] { 0d, 0d }, Species(Nal, 0, 0, 0, 6, -1));
+        _tier[1] = 2;
+
+        Run(10d, nearCapacity: 3);
+
+        Assert.AreEqual(13d, _output[0].NextDue, 1e-9);
+        Assert.AreEqual(34d, _output[3].NextDue, 1e-9);
+    }
+
+    [Test]
+    public void DecayKindDiesWhenPeriodDwarfsMeanLifetime()
+    {
+        NalSpeciesParams decay = Species(NalSpeciesParams.KindDecay, 0, 0, 0, 0, -1);
+        decay.HasDelay = 0;
+        decay.DecaySeconds = 0.001f;
+        Setup(16, new double[16], decay);
+
+        int count = Run(1d);
+
+        Assert.AreEqual(16, count);
+        for (int i = 0; i < count; i++) Assert.IsTrue(_output[i].DeathRoll);
+    }
+
+    [Test]
+    public void DecayKindSurvivesWhenMeanLifetimeDwarfsPeriod()
+    {
+        NalSpeciesParams decay = Species(NalSpeciesParams.KindDecay, 0, 0, 0, 0, -1);
+        decay.HasDelay = 0;
+        decay.DecaySeconds = 1e9f;
+        Setup(16, new double[16], decay);
+
+        int count = Run(1d);
+
+        Assert.AreEqual(16, count);
+        for (int i = 0; i < count; i++) Assert.IsFalse(_output[i].DeathRoll);
+    }
+
+    [Test]
+    public void DecayKindChecksAtDecayInterval()
+    {
+        NalSpeciesParams decay = Species(NalSpeciesParams.KindDecay, 0, 0, 0, 0, -1);
+        decay.HasDelay = 0;
+        decay.DecaySeconds = 1e9f;
+        Setup(4, new[] { 0d }, decay);
+
+        Run(10d);
+
+        Assert.AreEqual(40d, _output[0].NextDue, 1e-9);
     }
 }
