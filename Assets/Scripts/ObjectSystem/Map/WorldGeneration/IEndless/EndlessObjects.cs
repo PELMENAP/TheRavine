@@ -58,6 +58,7 @@ namespace TheRavine.Generator.EndlessGenerators
             for (int i = 0; i < stale; i++)
             {
                 if (!views.TryRemove(staleKeys[i], out ChunkView view)) continue;
+                generator.RemoveNALChunk(staleKeys[i]);
                 ReleaseView(view);
                 freeViews.Push(view);
             }
@@ -80,7 +81,7 @@ namespace TheRavine.Generator.EndlessGenerators
                 views[key] = view;
 
                 Refresh(view, cd);
-                RegisterLifecycle(cd);
+                RegisterLifecycle(key, cd);
             }
         }
 
@@ -146,8 +147,10 @@ namespace TheRavine.Generator.EndlessGenerators
             view.Version = cd.Version;
         }
 
-        private void RegisterLifecycle(ChunkData cd)
+        private void RegisterLifecycle(long key, ChunkData cd)
         {
+            generator.BeginNALChunk(key);
+
             for (int i = 0; i < cd.Objects.Length; i++)
             {
                 ObjectInstInfo info = cd.Objects[i];
@@ -158,6 +161,8 @@ namespace TheRavine.Generator.EndlessGenerators
                     (int)math.floor(info.Position.x),
                     (int)math.floor(info.Position.z)), info.PrefabID);
             }
+
+            generator.EndNALChunk();
         }
 
         private static void ReleaseView(ChunkView view)

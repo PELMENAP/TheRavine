@@ -1,4 +1,5 @@
 using Unity.Collections;
+using Unity.Mathematics;
 
 using TheRavine.ObjectControl;
 
@@ -14,6 +15,9 @@ namespace TheRavine.Generator
         public int DeathOtherStart;
         public int DeathOtherCount;
         public byte DeathFactor;
+
+        public double Period(float secondsPerDelayUnit, float fallbackSeconds) =>
+            HasDelay != 0 ? math.max((int)Delay, 1) * secondsPerDelayUnit : fallbackSeconds;
     }
 
     public sealed class NalRules

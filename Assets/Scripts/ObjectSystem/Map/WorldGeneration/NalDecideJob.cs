@@ -35,6 +35,7 @@ namespace TheRavine.Generator
         public float SecondsPerDelayUnit;
         public float FallbackDelaySeconds;
         public int GrowDecayChance;
+        public int CatchUpMaxSteps;
 
         public unsafe void Execute(int slot)
         {
@@ -46,13 +47,12 @@ namespace TheRavine.Generator
             NalSpeciesParams p = Species[Dense[slot]];
             var rng = Unity.Mathematics.Random.CreateFromIndex(Seed + (uint)slot * 747796405u);
 
+            double period = p.Period(SecondsPerDelayUnit, FallbackDelaySeconds);
             var d = new NalDecision
             {
                 Slot = slot,
                 SpawnDense = p.EvolutionDense,
-                NextDue = Now + (p.HasDelay != 0
-                    ? math.max((int)p.Delay, 1) * SecondsPerDelayUnit
-                    : FallbackDelaySeconds)
+                NextDue = math.max(Due[slot], Now - period * math.max(CatchUpMaxSteps - 1, 0)) + period
             };
 
             if (p.Kind == (byte)BehaviourType.GROW)
