@@ -71,6 +71,7 @@ namespace TheRavine.Generator.EndlessGenerators
         private int facing;
         private bool hasCenter;
         private bool dirty;
+        private bool contentChanged;
         private int framesSinceBuild;
 
         public FarObjectRenderer(MapGenerator generator, ObjectSystem objectSystem, ChunkGenerationSettings settings)
@@ -244,13 +245,22 @@ namespace TheRavine.Generator.EndlessGenerators
             dirty = true;
         }
 
-        public void OnChunkDirty(long chunkKey) { }
+        public void OnChunkDirty(long chunkKey)
+        {
+            if (generator.RingOfChunk(chunkKey) > 0) contentChanged = true;
+        }
 
         public void Tick(long deadline)
         {
             if (!hasCenter || batchCount == 0) return;
 
             framesSinceBuild++;
+            if (contentChanged && framesSinceBuild >= settings.farContentRebuildIntervalFrames)
+            {
+                contentChanged = false;
+                dirty = true;
+            }
+
             if (dirty)
             {
                 int missing = CollectSources(out int sourceCount);

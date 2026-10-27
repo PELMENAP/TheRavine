@@ -105,6 +105,22 @@ namespace TheRavine.Generator
         public bool IsInActiveWindow(long worldPos) =>
             hasWindow && IsInWindow(windowCenter, WorldToChunk(worldPos), chunkScale);
 
+        public static int RingOf(long center, int facing, int ringCount, long chunk)
+        {
+            int dx = math.abs(Position2Int.GetX(chunk) - Position2Int.GetX(center));
+            int forward = (Position2Int.GetY(chunk) - Position2Int.GetY(center)) * facing;
+
+            if (dx <= chunkScale && math.abs(forward) <= chunkScale) return 0;
+            if (forward <= chunkScale) return -1;
+
+            int ring = (forward + chunkScale) / WindowSide;
+            if (ring > ringCount || dx > ring * WindowSide + chunkScale) return -1;
+            return ring;
+        }
+
+        public int RingOfChunk(long chunkKey) =>
+            hasWindow ? RingOf(windowCenter, facing, NalRingCount, chunkKey) : -1;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ChunkData GetMapData(long chunkKey) => EnsureChunk(chunkKey, 0);
 
@@ -217,9 +233,12 @@ namespace TheRavine.Generator
         public bool IsWaterHeight(long position) =>
             GetRealPosition(position).y < 5;
 
+        private ChunkData ChunkForCell(long chunkKey) =>
+            mapData.TryGetValue(chunkKey, out ChunkData data) ? data : GetMapData(chunkKey);
+
         public Vector3 GetRealPosition(long pos) => new(
             Position2Int.GetX(pos),
-            GetMapData(WorldToChunk(pos)).HeightRaw[WorldToLocalIdx(pos)],
+            ChunkForCell(WorldToChunk(pos)).HeightRaw[WorldToLocalIdx(pos)],
             Position2Int.GetY(pos));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -348,7 +367,7 @@ namespace TheRavine.Generator
             int levels = 1)
         {
             long chunk = WorldToChunk(worldPos);
-            ChunkData cd = GetMapData(chunk);
+            ChunkData cd = ChunkForCell(chunk);
             if (cd == null) return PlacementResult.NoChunk;
 
             int primaryIdx = WorldToLocalIdx(worldPos);
@@ -465,6 +484,8 @@ namespace TheRavine.Generator
 
         private ObjectSystem objectSystem;
         private NAL_PC nal;
+        private bool nalSyncPending;
+        private int nalSyncFrames;
         private ChunkStore chunkStore;
         private IDisposable autosaveSubscription;
         private WorldRegistry boundRegistry;
@@ -478,6 +499,10 @@ namespace TheRavine.Generator
         [SerializeField, Min(0f)] private float nalCatchUpMaxSeconds = 600f;
         [SerializeField, Min(0)] private int nalCatchUpMaxSteps = 8;
         [SerializeField, Min(0.01f)] private float nalGrowStageSeconds = 20f;
+        [SerializeField, Min(1f)] private float nalDecayCheckSeconds = 30f;
+        [SerializeField, Min(1f)] private float nalFarPeriodScale = 8f;
+        [SerializeField, Range(0f, 0.9f)] private float nalFarBudgetShare = 0.25f;
+        [SerializeField, Min(1)] private int nalRegionSyncIntervalFrames = 30;
         [SerializeField, Min(16)] private int nalStoreCapacity = 8192;
         [SerializeField, Min(1)] private int nalMaxDecisionsPerTick = 256;
         [SerializeField, Min(0f)] private float nalSecondsPerDelayUnit = 0.01f;
@@ -487,6 +512,10 @@ namespace TheRavine.Generator
         public float NalCatchUpMaxSeconds => nalCatchUpMaxSeconds;
         public int NalCatchUpMaxSteps => nalCatchUpMaxSteps;
         public float NalGrowStageSeconds => nalGrowStageSeconds;
+        public float NalDecayCheckSeconds => nalDecayCheckSeconds;
+        public float NalFarPeriodScale => nalFarPeriodScale;
+        public float NalFarBudgetShare => nalFarBudgetShare;
+        public int NalRingCount => nalFarBudgetShare > 0f ? math.min(lodRingCount, ObjectInfo.MaxVisibleRings) : 0;
 
         public WorldCommandBuffer Commands { get; private set; }
         public WorldCommandStats CommandStats { get; } = new();
@@ -603,6 +632,7 @@ namespace TheRavine.Generator
             if (newFacing == facing) return;
 
             facing = newFacing;
+            nalSyncPending = true;
             CurvedWorld.SetFacing(facing);
             if (hasWindow && grassSystem != null)
                 grassSystem.UpdateGrassPlacement(this, windowCenter);
@@ -640,9 +670,15 @@ namespace TheRavine.Generator
         }
 
         public void ClearNALQueue() => nal?.Clear();
-        public void BeginNALChunk(long chunkKey) => nal?.BeginChunk(chunkKey);
-        public void EndNALChunk() => nal?.EndChunk();
-        public void RemoveNALChunk(long chunkKey) => nal?.RemoveChunk(chunkKey);
+
+        private void SyncNalRegion()
+        {
+            if (nal == null || !hasWindow) return;
+            if (!nalSyncPending && ++nalSyncFrames < nalRegionSyncIntervalFrames) return;
+
+            nalSyncFrames = 0;
+            nalSyncPending = nal.SyncRegion();
+        }
 
         public bool ApplyImmediate(in WorldCommand command) =>
             WorldCommandBuffer.ApplyOne(this, in command, ImmediateStats);
@@ -661,7 +697,6 @@ namespace TheRavine.Generator
 
             ExtraUpdate();
         }
-        public void AddNALObject(Vector2Int pos, int prefabId) => nal?.Enqueue(pos, prefabId);
 
         public UnityAction<long> onUpdate;
 
@@ -677,6 +712,7 @@ namespace TheRavine.Generator
                 MoveWindow(center);
 
             ApplyWorldCommands();
+            SyncNalRegion();
             FlushDirty();
 
             for (int i = 0; i < endless.Length; i++)
@@ -690,6 +726,7 @@ namespace TheRavine.Generator
         {
             windowCenter = center;
             hasWindow = true;
+            nalSyncPending = true;
 
             EnsureRegion(center, chunkScale, 0, FrameBudget.Unlimited);
             EnsureRegion(center, HeightWindow.Radius, 1, FrameBudget.Unlimited);

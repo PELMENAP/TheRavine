@@ -26,6 +26,7 @@ namespace TheRavine.Generator
         public int RollDeaths, CloseDeaths, GrowDecays, Evolved;
         public int StaleDrops, HeightDrops, WindowDrops;
         public int SpawnPushed;
+        public int FarDecisions, Decays, RegionChunks;
     }
 
     public class NAL_PC
@@ -34,6 +35,7 @@ namespace TheRavine.Generator
         private const int BusyThreshold = 200;
         private const int BusyDeadChance = 10;
         private const int JobBatchSize = 64;
+        private const int MaxChunkRegistrationsPerSync = 2;
         private const int NeighbourRadiusCells = (MapGenerator.scale + (1 << MapGenerator.CellShift) - 1) >> MapGenerator.CellShift;
 
         private readonly ObjectSystem objectSystem;
@@ -46,6 +48,7 @@ namespace TheRavine.Generator
         private NativeArray<NalDecision> decisions;
         private NativeArray<int> counter;
         private NativeList<int> dropSlots;
+        private NativeList<long> staleChunks;
         private readonly WorldCommandBuffer commands;
 
         private readonly long reportIntervalTicks = 10 * Stopwatch.Frequency;
@@ -53,6 +56,8 @@ namespace TheRavine.Generator
         public readonly NalStats Stats = new();
         private double lastTickTime = -1d;
         private double catchUpElapsed;
+        private int syncStamp;
+        private bool tiersDirty;
         private bool disposed;
 
         public NAL_PC(MapGenerator generator, ObjectSystem objectSystem, CancellationToken token, int storeCapacity)
@@ -65,8 +70,9 @@ namespace TheRavine.Generator
             rules = new NalRules(registry);
             store = new NalStore(storeCapacity);
             decisions = new NativeArray<NalDecision>(math.max(generator.NalMaxDecisionsPerTick, 1), Allocator.Persistent);
-            counter = new NativeArray<int>(1, Allocator.Persistent);
+            counter = new NativeArray<int>(2, Allocator.Persistent);
             dropSlots = new NativeList<int>(64, Allocator.Persistent);
+            staleChunks = new NativeList<long>(16, Allocator.Persistent);
         }
 
         public void Dispose()
@@ -77,22 +83,25 @@ namespace TheRavine.Generator
             if (decisions.IsCreated) decisions.Dispose();
             if (counter.IsCreated) counter.Dispose();
             if (dropSlots.IsCreated) dropSlots.Dispose();
+            if (staleChunks.IsCreated) staleChunks.Dispose();
         }
 
-        public void Enqueue(Vector2Int pos, int prefabId) => Register(pos, prefabId, false);
-
-        private void Register(Vector2Int pos, int prefabId, bool newborn)
+        private void Register(Vector2Int pos, int prefabId, bool newborn, int tier)
         {
             if (disposed || !WorldAuthority.IsAuthority) return;
-
-            long packed = Position2Int.Pack(pos);
-            if (!generator.IsInActiveWindow(packed)) return;
 
             int dense = registry.DenseIndexOf(prefabId);
             if (dense < 0 || rules.Species[dense].Kind == 0) return;
 
+            if (tier < 0)
+            {
+                tier = generator.RingOfChunk(MapGenerator.WorldToChunk(Position2Int.Pack(pos)));
+                if (tier < 0) return;
+            }
+
             double now = SimulationClock.TimeD;
-            double period = rules.Species[dense].Period(generator.NalSecondsPerDelayUnit, generator.NalGrowStageSeconds);
+            double period = rules.Species[dense].Period(generator.NalSecondsPerDelayUnit, generator.NalGrowStageSeconds, generator.NalDecayCheckSeconds);
+            if (tier > 0) period *= generator.NalFarPeriodScale * tier;
             double due = newborn ? now + period : now + RavineRandom.RangeFloat() * period;
 
             if (!newborn && catchUpElapsed > 0d)
@@ -101,25 +110,126 @@ namespace TheRavine.Generator
                 if (steps >= 1d) due = now - (steps - 1d) * period;
             }
 
-            if (store.Add(pos, prefabId, dense, due) && store.Count > Stats.QueueMax)
+            if (store.Add(pos, prefabId, dense, due, (byte)tier) && store.Count > Stats.QueueMax)
                 Stats.QueueMax = store.Count;
         }
 
-        public void BeginChunk(long chunk)
+        private void RegisterChunk(long chunk, ChunkData cd, int ring)
         {
             catchUpElapsed = 0d;
-            if (disposed) return;
-
             if (store.TakeLeftAt(chunk, out double leftAt))
                 catchUpElapsed = math.clamp(SimulationClock.TimeD - leftAt, 0d, generator.NalCatchUpMaxSeconds);
+
+            for (int i = 0; i < cd.Objects.Length; i++)
+            {
+                ObjectInstInfo info = cd.Objects[i];
+                Register(
+                    new Vector2Int((int)math.floor(info.Position.x), (int)math.floor(info.Position.z)),
+                    info.PrefabID,
+                    false,
+                    ring);
+            }
+
+            catchUpElapsed = 0d;
         }
 
-        public void EndChunk() => catchUpElapsed = 0d;
+        public bool SyncRegion()
+        {
+            if (disposed || !WorldAuthority.IsAuthority) return false;
+
+            syncStamp++;
+            int budget = MaxChunkRegistrationsPerSync;
+            bool pending = false;
+
+            long center = generator.WindowCenter;
+            for (int gz = 0; gz < MapGenerator.WindowSide; gz++)
+                for (int gx = 0; gx < MapGenerator.WindowSide; gx++)
+                    SyncChunk(MapGenerator.WindowChunk(center, gx, gz), 0, ref budget, ref pending);
+
+            int rings = generator.NalRingCount;
+            int facing = generator.Facing;
+            for (int ring = 1; ring <= rings; ring++)
+            {
+                for (int dx = -ring; dx <= ring; dx++)
+                {
+                    long block = Position2Int.Offset(center, dx * MapGenerator.WindowSide, ring * facing * MapGenerator.WindowSide);
+                    for (int gz = 0; gz < MapGenerator.WindowSide; gz++)
+                        for (int gx = 0; gx < MapGenerator.WindowSide; gx++)
+                            SyncChunk(MapGenerator.WindowChunk(block, gx, gz), ring, ref budget, ref pending);
+                }
+            }
+
+            staleChunks.Clear();
+            foreach (var kv in store.Registered)
+                if (kv.Value.Stamp != syncStamp) staleChunks.Add(kv.Key);
+
+            for (int i = 0; i < staleChunks.Length; i++)
+                RemoveChunk(staleChunks[i]);
+
+            if (tiersDirty) RefreshTiers();
+
+            Stats.RegionChunks = store.Registered.Count;
+            Stats.StoreCount = store.Count;
+            return pending;
+        }
+
+        private void SyncChunk(long key, int ring, ref int budget, ref bool pending)
+        {
+            bool known = store.Registered.TryGetValue(key, out NalChunkState state);
+
+            if (!generator.TryGetChunk(key, out ChunkData cd) || cd.DetailLevel > ring)
+            {
+                if (known)
+                {
+                    state.Stamp = syncStamp;
+                    store.Registered[key] = state;
+                }
+                return;
+            }
+
+            if (known && state.Ring != ring) tiersDirty = true;
+
+            if (known && state.Detail == cd.DetailLevel)
+            {
+                state.Ring = (byte)ring;
+                state.Stamp = syncStamp;
+                store.Registered[key] = state;
+                return;
+            }
+
+            if (budget == 0)
+            {
+                pending = true;
+                if (known)
+                {
+                    state.Stamp = syncStamp;
+                    store.Registered[key] = state;
+                }
+                return;
+            }
+
+            budget--;
+            RegisterChunk(key, cd, ring);
+            store.Registered[key] = new NalChunkState { Detail = cd.DetailLevel, Ring = (byte)ring, Stamp = syncStamp };
+        }
+
+        private void RefreshTiers()
+        {
+            tiersDirty = false;
+            for (int i = 0; i < store.Count; i++)
+            {
+                long chunk = store.Chunk[i];
+                store.Tier[i] = store.Registered.TryGetValue(chunk, out NalChunkState state)
+                    ? state.Ring
+                    : (byte)math.max(generator.RingOfChunk(chunk), 0);
+            }
+        }
 
         public void RemoveChunk(long chunk)
         {
             if (disposed) return;
 
+            store.Registered.Remove(chunk);
             if (store.RemoveChunk(chunk) > 0)
                 store.SetLeftAt(chunk, SimulationClock.TimeD);
 
@@ -131,7 +241,7 @@ namespace TheRavine.Generator
             if (disposed) return;
 
             for (int i = 0; i < adds.Length; i++)
-                Register(Position2Int.UnpackToVector(adds[i].Pos), adds[i].PrefabId, true);
+                Register(Position2Int.UnpackToVector(adds[i].Pos), adds[i].PrefabId, true, -1);
 
             NalStats s = Stats;
             s.BornApplied = applied.AddApplied;
@@ -176,13 +286,19 @@ namespace TheRavine.Generator
                 long start = Stopwatch.GetTimestamp();
 
                 int capacity = decisions.Length;
+                int nearCapacity = generator.NalFarBudgetShare > 0f
+                    ? math.max(1, capacity - (int)(capacity * generator.NalFarBudgetShare))
+                    : capacity;
+                int farCapacity = capacity - nearCapacity;
                 counter[0] = 0;
+                counter[1] = 0;
 
                 var job = new NalDecideJob
                 {
                     Cell = store.Cell.AsArray(),
                     Dense = store.Dense.AsArray(),
                     Due = store.Due.AsArray(),
+                    Tier = store.Tier.AsArray(),
                     Species = rules.Species,
                     Output = decisions,
                     Counter = counter,
@@ -192,7 +308,10 @@ namespace TheRavine.Generator
                     SecondsPerDelayUnit = generator.NalSecondsPerDelayUnit,
                     FallbackDelaySeconds = generator.NalGrowStageSeconds,
                     GrowDecayChance = GrowDecayChance,
-                    CatchUpMaxSteps = generator.NalCatchUpMaxSteps
+                    CatchUpMaxSteps = generator.NalCatchUpMaxSteps,
+                    NearCapacity = nearCapacity,
+                    FarPeriodScale = generator.NalFarPeriodScale,
+                    DecayCheckSeconds = generator.NalDecayCheckSeconds
                 };
 
                 job.ScheduleParallel(store.Count, JobBatchSize, default).Complete();
@@ -200,12 +319,16 @@ namespace TheRavine.Generator
                 long jobEnd = Stopwatch.GetTimestamp();
                 Stats.JobMs = (int)((jobEnd - start) * 1000 / Stopwatch.Frequency);
 
-                int produced = counter[0];
-                int written = math.min(produced, capacity);
-                Stats.DueBacklog = produced - written;
-                Stats.Processed += written;
+                int nearProduced = counter[0];
+                int farProduced = counter[1];
+                int nearWritten = math.min(nearProduced, nearCapacity);
+                int farWritten = math.min(farProduced, farCapacity);
+                Stats.DueBacklog = (nearProduced - nearWritten) + (farProduced - farWritten);
+                Stats.Processed += nearWritten + farWritten;
+                Stats.FarDecisions += farWritten;
 
-                Apply(written);
+                Apply(0, nearWritten);
+                Apply(nearCapacity, nearCapacity + farWritten);
                 DropSlots();
 
                 Stats.StoreCount = store.Count;
@@ -216,9 +339,9 @@ namespace TheRavine.Generator
             }
         }
 
-        private void Apply(int count)
+        private void Apply(int from, int to)
         {
-            for (int i = 0; i < count; i++)
+            for (int i = from; i < to; i++)
             {
                 NalDecision d = decisions[i];
                 int slot = d.Slot;
@@ -226,6 +349,7 @@ namespace TheRavine.Generator
                 var pos = new Vector2Int(cell.x, cell.y);
                 long packed = Position2Int.Pack(pos);
                 int prefabId = store.PrefabId[slot];
+                int tier = store.Tier[slot];
 
                 if (!generator.TryGetObject(packed, out ObjectInstInfo inst) || inst.PrefabID != prefabId)
                 {
@@ -255,8 +379,23 @@ namespace TheRavine.Generator
 
                     Stats.Evolved++;
                     PushRemove(packed, prefabId);
-                    PushAdd(packed, registry.GetDense(p.EvolutionDense));
+                    PushAdd(packed, registry.GetDense(p.EvolutionDense), tier);
                     dropSlots.Add(slot);
+                    continue;
+                }
+
+                if (p.Kind == NalSpeciesParams.KindDecay)
+                {
+                    if (d.DeathRoll)
+                    {
+                        Stats.Decays++;
+                        PushRemove(packed, prefabId);
+                        dropSlots.Add(slot);
+                    }
+                    else
+                    {
+                        Reschedule(slot, packed, d.NextDue);
+                    }
                     continue;
                 }
 
@@ -273,7 +412,7 @@ namespace TheRavine.Generator
                     if (rolled) Stats.RollDeaths++;
                     else Stats.CloseDeaths++;
                     PushRemove(packed, prefabId);
-                    PushDeathPattern(pos, p);
+                    PushDeathPattern(pos, p, tier);
                     dropSlots.Add(slot);
                     continue;
                 }
@@ -289,8 +428,7 @@ namespace TheRavine.Generator
                 {
                     ObjectInfo spawn = registry.GetDense(d.SpawnDense);
                     for (int k = 0; k < d.SpawnCount; k++)
-                        PushAdd(Position2Int.Pack(d.TargetsX[k], d.TargetsZ[k]), spawn);
-                    Stats.SpawnPushed += d.SpawnCount;
+                        if (PushAdd(Position2Int.Pack(d.TargetsX[k], d.TargetsZ[k]), spawn, tier)) Stats.SpawnPushed++;
                 }
 
                 Reschedule(slot, packed, d.NextDue);
@@ -325,9 +463,10 @@ namespace TheRavine.Generator
                 ExpectedPrefabId = prefabId
             });
 
-        private void PushAdd(long pos, ObjectInfo info)
+        private bool PushAdd(long pos, ObjectInfo info, int tier)
         {
-            if (info == null) return;
+            if (info == null) return false;
+            if (tier > 0 && !generator.HasChunk(MapGenerator.WorldToChunk(pos))) return false;
 
             commands.Push(new WorldCommand
             {
@@ -338,24 +477,25 @@ namespace TheRavine.Generator
                 ExpectedPrefabId = WorldCommand.NoExpectation,
                 Levels = 1
             });
+            return true;
         }
 
-        private void PushDeathPattern(Vector2Int pos, in NalSpeciesParams p)
+        private void PushDeathPattern(Vector2Int pos, in NalSpeciesParams p, int tier)
         {
             if (p.DeathMainDense >= 0)
-                PushAdd(Position2Int.Pack(pos), registry.GetDense(p.DeathMainDense));
+                PushAdd(Position2Int.Pack(pos), registry.GetDense(p.DeathMainDense), tier);
 
             for (int k = 0; k < p.DeathOtherCount; k++)
             {
                 ObjectInfo other = registry.GetDense(rules.OtherDense[p.DeathOtherStart + k]);
                 Vector2Int point = Extension.GetRandomPointAround(pos, p.DeathFactor);
-                PushAdd(Position2Int.Pack(point), other);
+                PushAdd(Position2Int.Pack(point), other, tier);
             }
         }
 
         private void Reschedule(int slot, long packed, double nextDue)
         {
-            if (generator.IsInActiveWindow(packed))
+            if (generator.RingOfChunk(MapGenerator.WorldToChunk(packed)) >= 0)
                 store.Due[slot] = nextDue;
             else
             {
@@ -397,6 +537,7 @@ namespace TheRavine.Generator
                 $"queue={s.QueueLength}/{s.QueueMax} store={s.StoreCount} " +
                 $"deathRoll={s.RollDeaths} deathClose={s.CloseDeaths} growDecay={s.GrowDecays} evolved={s.Evolved} " +
                 $"spawnPushed={s.SpawnPushed} dropStale={s.StaleDrops} dropHeight={s.HeightDrops} dropWindow={s.WindowDrops} " +
+                $"far={s.FarDecisions} decay={s.Decays} regionChunks={s.RegionChunks} " +
                 $"cmdQ={s.CommandQueueLength}/{s.CommandQueueMax} batchMs={s.BatchMs}/{s.BatchMsMax} tickMs={s.TickMs} jobMs={s.JobMs}");
         }
     }
