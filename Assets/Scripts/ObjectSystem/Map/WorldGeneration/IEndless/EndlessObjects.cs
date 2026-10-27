@@ -156,7 +156,7 @@ namespace TheRavine.Generator.EndlessGenerators
 
                 generator.AddNALObject(new Vector2Int(
                     (int)math.floor(info.Position.x),
-                    (int)math.floor(info.Position.z)));
+                    (int)math.floor(info.Position.z)), info.PrefabID);
             }
         }
 

@@ -434,6 +434,12 @@ namespace TheRavine.Generator
         [SerializeField] private GrassSystem grassSystem;
         [SerializeField] private Texture2DArray biomeAlbedo;
         [SerializeField, Min(100)] private int nalApplyIntervalMs = 1000;
+        [SerializeField, Min(4)] private int nalScheduleCapacity = 4096;
+        [SerializeField, Min(1)] private int nalMaxDecisionsPerTick = 256;
+        [SerializeField, Min(0f)] private float nalSecondsPerDelayUnit = 0.01f;
+
+        public int NalMaxDecisionsPerTick => nalMaxDecisionsPerTick;
+        public float NalSecondsPerDelayUnit => nalSecondsPerDelayUnit;
 
         public ChunkGenerator chunkGenerator;
         public Vector3 waterOffset;
@@ -472,7 +478,7 @@ namespace TheRavine.Generator
 
             if (chunkGenerationSettings.endlessFlag[3])
             {
-                nal = new NAL_PC(this, objectSystem, _cts.Token, nalApplyIntervalMs);
+                nal = new NAL_PC(this, objectSystem, _cts.Token, nalApplyIntervalMs, nalScheduleCapacity);
                 nal.RunNAL().Forget();
                 nal.RunUpdate().Forget();
             }
@@ -582,7 +588,7 @@ namespace TheRavine.Generator
         }
 
         public void ClearNALQueue() => nal?.Clear();
-        public void AddNALObject(Vector2Int pos) => nal?.Enqueue(pos);
+        public void AddNALObject(Vector2Int pos, int prefabId) => nal?.Enqueue(pos, prefabId);
 
         public UnityAction<long> onUpdate;
 

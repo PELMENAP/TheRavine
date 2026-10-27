@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Mathematics;
 using Debug = UnityEngine.Debug;
 
 using TheRavine.Extensions;
@@ -12,13 +13,14 @@ namespace TheRavine.Generator
 {
     public sealed class NalStats
     {
-        public int Processed, Skipped;
+        public int Processed, DueBacklog;
         public int BornApplied, BornRejected;
         public int Deaths, RemoveNoEffect, StaleRemovals;
         public int QueueLength, QueueMax;
         public int RemoveQueueLength, RemoveQueueMax;
         public int AddQueueLength, AddQueueMax;
         public int BatchMs, BatchMsMax;
+        public int TickMs;
     }
 
     public class NAL_PC
@@ -39,52 +41,47 @@ namespace TheRavine.Generator
         private readonly MapGenerator generator;
         private readonly CancellationToken token;
 
-        private readonly Queue<Vector2Int> nalQueue = new(128);
+        private readonly NalSchedule schedule;
         private readonly HashSet<long> queued = new();
         private readonly Queue<RemoveOp> removeQueue = new(64);
         private readonly Queue<Pair<Vector2Int, ObjectInfo>> addQueue = new(64);
 
-        private readonly int step = 10;
         private readonly int applyIntervalMs;
         private readonly long reportIntervalTicks = 10 * Stopwatch.Frequency;
         private long lastReportTicks;
         public readonly NalStats Stats = new();
         private int deadChance;
-        private int cycle;
 
-        public NAL_PC(MapGenerator generator, ObjectSystem objectSystem, CancellationToken token, int applyIntervalMs)
+        public NAL_PC(MapGenerator generator, ObjectSystem objectSystem, CancellationToken token, int applyIntervalMs, int scheduleCapacity)
         {
             this.generator = generator;
             this.objectSystem = objectSystem;
             this.token = token;
             this.applyIntervalMs = applyIntervalMs;
+            schedule = new NalSchedule(scheduleCapacity);
         }
 
-        public void Enqueue(Vector2Int pos)
-        {
-            if (!queued.Add(Position2Int.Pack(pos))) return;
-
-            nalQueue.Enqueue(pos);
-            if (nalQueue.Count > Stats.QueueMax) Stats.QueueMax = nalQueue.Count;
-        }
+        public void Enqueue(Vector2Int pos, int prefabId) => Schedule(pos, prefabId, SimulationClock.TimeD);
 
         public void Clear()
         {
-            nalQueue.Clear();
+            schedule.Clear();
             queued.Clear();
         }
 
-        private Vector2Int Dequeue()
+        private void Schedule(Vector2Int pos, int prefabId, double due)
         {
-            Vector2Int pos = nalQueue.Dequeue();
-            queued.Remove(Position2Int.Pack(pos));
-            return pos;
+            long packed = Position2Int.Pack(pos);
+            if (!queued.Add(packed)) return;
+
+            schedule.Push(due, packed, prefabId);
+            if (schedule.Count > Stats.QueueMax) Stats.QueueMax = schedule.Count;
         }
 
-        private void Requeue(Vector2Int pos)
+        private void Requeue(Vector2Int pos, int prefabId, double due)
         {
             if (generator.IsInActiveWindow(Position2Int.Pack(pos)))
-                Enqueue(pos);
+                Schedule(pos, prefabId, due);
         }
 
         public async UniTaskVoid RunNAL()
@@ -93,43 +90,47 @@ namespace TheRavine.Generator
 
             while (!token.IsCancellationRequested)
             {
-                cycle++;
-                Debug.Assert(queued.Count == nalQueue.Count, "NAL: queued/nalQueue desync");
+                Debug.Assert(queued.Count == schedule.Count, "NAL: queued/schedule desync");
 
-                if (nalQueue.Count == 0)
+                if (schedule.Count == 0)
                 {
                     await UniTask.Delay(1000, cancellationToken: token);
                     continue;
                 }
 
-                bool skip = nalQueue.Count > 100
-                            ? cycle % (step * step) != 0
-                            : cycle % step != 0;
+                long start = Stopwatch.GetTimestamp();
+                double now = SimulationClock.TimeD;
+                deadChance = schedule.Count > 200 ? 10 : 0;
 
-                if (skip)
+                int budget = generator.NalMaxDecisionsPerTick;
+                while (budget > 0 && schedule.TryPopDue(now, out NalSchedule.Entry entry))
                 {
-                    Stats.Skipped++;
-                    Requeue(Dequeue());
-                    await UniTask.Delay(100, cancellationToken: token);
-                    continue;
+                    budget--;
+                    queued.Remove(entry.Pos);
+                    Stats.Processed++;
+                    if (!Decide(Position2Int.UnpackToVector(entry.Pos), entry.PrefabId, now))
+                        Stats.StaleRemovals++;
                 }
 
-                deadChance = nalQueue.Count > 200 ? 10 : 0;
-
-                Vector2Int current = Dequeue();
-                Stats.Processed++;
-                ProcessNAL(current).Forget();
+                Stats.DueBacklog = budget == 0 ? schedule.CountDue(now) : 0;
+                Stats.TickMs = (int)((Stopwatch.GetTimestamp() - start) * 1000 / Stopwatch.Frequency);
 
                 await UniTask.Yield();
             }
         }
 
-        private async UniTaskVoid ProcessNAL(Vector2Int current)
+        private double DelaySeconds(NAlInfo n) =>
+            n != null
+                ? math.max((int)n.delay, 1) * generator.NalSecondsPerDelayUnit
+                : applyIntervalMs * 0.00001d;
+
+        private bool Decide(Vector2Int current, int prefabId, double now)
         {
-            if (!generator.TryGetObject(Position2Int.Pack(current), out ObjectInstInfo instInfo)) return;
+            if (!generator.TryGetObject(Position2Int.Pack(current), out ObjectInstInfo instInfo)) return false;
+            if (instInfo.PrefabID != prefabId) return false;
 
             ObjectInfo info = objectSystem.GetInfo(instInfo.PrefabID);
-            if (info == null) return;
+            if (info == null) return false;
 
             ObjectInfo next = info.EvolutionStep;
 
@@ -140,13 +141,13 @@ namespace TheRavine.Generator
                     if (Extension.ComparePercent(25))
                         removeQueue.Enqueue(new RemoveOp(current, instInfo.PrefabID));
                     else
-                        Requeue(current);
-                    return;
+                        Requeue(current, prefabId, now + DelaySeconds(info.NalInfo));
+                    return true;
                 }
 
                 removeQueue.Enqueue(new RemoveOp(current, instInfo.PrefabID));
                 addQueue.Enqueue(new Pair<Vector2Int, ObjectInfo>(current, next));
-                return;
+                return true;
             }
 
             bool close = false;
@@ -156,7 +157,7 @@ namespace TheRavine.Generator
                         close = true;
 
             NAlInfo n = info.NalInfo;
-            if (n == null) return;
+            if (n == null) return true;
 
             if (Extension.ComparePercent(n.chance / 2 + deadChance) || close)
             {
@@ -171,10 +172,10 @@ namespace TheRavine.Generator
                         addQueue.Enqueue(new Pair<Vector2Int, ObjectInfo>(p, other));
                     }
                 }
-                return;
+                return true;
             }
 
-            if (!generator.IsHeightIsLiveAble(Position2Int.Pack(current))) return;
+            if (!generator.IsHeightIsLiveAble(Position2Int.Pack(current))) return true;
 
             int attempts = n.attempt;
             while (attempts-- > 0)
@@ -184,11 +185,10 @@ namespace TheRavine.Generator
                     Vector2Int p = Extension.GetRandomPointAround(current, n.distance);
                     addQueue.Enqueue(new Pair<Vector2Int, ObjectInfo>(p, next));
                 }
-                await UniTask.Delay(10, cancellationToken: token);
             }
 
-            await UniTask.Delay(10 * n.delay, cancellationToken: token);
-            Requeue(current);
+            Requeue(current, prefabId, now + DelaySeconds(n));
+            return true;
         }
 
         public async UniTaskVoid RunUpdate()
@@ -236,7 +236,7 @@ namespace TheRavine.Generator
                             item.Second.DefaultAmount))
                     {
                         Stats.BornApplied++;
-                        if (item.Second.HasLifecycle) Requeue(item.First);
+                        if (item.Second.HasLifecycle) Requeue(item.First, item.Second.Id, SimulationClock.TimeD);
                     }
                     else
                     {
@@ -247,12 +247,12 @@ namespace TheRavine.Generator
                 generator.ExtraUpdate();
 
                 Debug.Assert(removeQueue.Count == 0 && addQueue.Count == 0, "NAL: apply queues not drained");
-                Debug.Assert(queued.Count == nalQueue.Count, "NAL: queued/nalQueue desync");
+                Debug.Assert(queued.Count == schedule.Count, "NAL: queued/schedule desync");
 
                 long end = Stopwatch.GetTimestamp();
                 Stats.BatchMs = (int)((end - start) * 1000 / Stopwatch.Frequency);
                 if (Stats.BatchMs > Stats.BatchMsMax) Stats.BatchMsMax = Stats.BatchMs;
-                Stats.QueueLength = nalQueue.Count;
+                Stats.QueueLength = schedule.Count;
 
                 if (end - lastReportTicks >= reportIntervalTicks)
                 {
@@ -266,10 +266,10 @@ namespace TheRavine.Generator
         {
             NalStats s = Stats;
             RavineLog.Info(
-                $"[NAL] processed={s.Processed} skipped={s.Skipped} born={s.BornApplied}/{s.BornRejected} " +
+                $"[NAL] processed={s.Processed} dueBacklog={s.DueBacklog} born={s.BornApplied}/{s.BornRejected} " +
                 $"deaths={s.Deaths} removeNoEffect={s.RemoveNoEffect} stale={s.StaleRemovals} " +
                 $"queue={s.QueueLength}/{s.QueueMax} removeQ={s.RemoveQueueLength}/{s.RemoveQueueMax} " +
-                $"addQ={s.AddQueueLength}/{s.AddQueueMax} batchMs={s.BatchMs}/{s.BatchMsMax}");
+                $"addQ={s.AddQueueLength}/{s.AddQueueMax} batchMs={s.BatchMs}/{s.BatchMsMax} tickMs={s.TickMs}");
         }
     }
 }
