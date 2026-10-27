@@ -6,6 +6,14 @@ public struct CraftStack
     public int Amount;
 }
 
+public struct CraftMatch
+{
+    public CraftRecipe Recipe;
+    public int Matched;
+    public int Missing;
+    public int Foreign;
+}
+
 public sealed class CraftRecipe
 {
     public readonly InventoryItemInfo Result;
@@ -55,6 +63,10 @@ public sealed class CraftModel
 
     public CraftModel(CraftRecipe[] recipes) => _recipes = recipes;
 
+    public int Count => _recipes.Length;
+
+    public CraftRecipe this[int index] => _recipes[index];
+
     public static CraftModel FromInfos(InventoryCraftInfo[] infos)
     {
         var recipes = new List<CraftRecipe>(infos.Length);
@@ -79,8 +91,6 @@ public sealed class CraftModel
         return byIngredients != 0 ? byIngredients : string.CompareOrdinal(a.Result.id, b.Result.id);
     }
 
-    public int RecipeCount => _recipes.Length;
-
     public bool TryPlan(CraftStack[] grid, int cellCount, int[] deductions, out CraftRecipe recipe)
     {
         for (int r = 0; r < _recipes.Length; r++)
@@ -94,6 +104,36 @@ public sealed class CraftModel
 
         recipe = null;
         return false;
+    }
+
+    public void Score(CraftStack[] grid, int cellCount, CraftMatch[] results)
+    {
+        for (int r = 0; r < _recipes.Length; r++)
+        {
+            CraftRecipe recipe = _recipes[r];
+            int matched = 0;
+            int missing = 0;
+
+            for (int i = 0; i < recipe.Ingredients.Length; i++)
+            {
+                int have = 0;
+                for (int c = 0; c < cellCount; c++)
+                    if (ReferenceEquals(grid[c].Info, recipe.Ingredients[i].info)) have += grid[c].Amount;
+
+                int need = recipe.Ingredients[i].amount;
+                matched += System.Math.Min(have, need);
+                missing += System.Math.Max(0, need - have);
+            }
+
+            int foreign = 0;
+            for (int c = 0; c < cellCount; c++)
+            {
+                if (grid[c].Info == null) continue;
+                if (!Contains(recipe, grid[c].Info)) foreign++;
+            }
+
+            results[r] = new CraftMatch { Recipe = recipe, Matched = matched, Missing = missing, Foreign = foreign };
+        }
     }
 
     private static bool Covers(CraftRecipe recipe, CraftStack[] grid, int cellCount)

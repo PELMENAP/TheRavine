@@ -94,10 +94,10 @@ public sealed class ColonyPopulation
         model.Init();
         viewModel.Initialize(model);
         view.Initialize(viewModel);
-        model.AddComponentToEntity(new VisualCullingComponent(go, view.LabelObject));
+        model.VisualCulling = new VisualCullingComponent(go, view.LabelObject);
         model.SetUp();
 
-        model.GetEntityComponent<MortalityComponent>().Died += () => HandleEntityDied(model);
+        model.Mortality.Died += () => HandleEntityDied(model);
         model.OnReproduceRequest += SpawnChild;
 
         model.ManagerIndex = _entities.Count;

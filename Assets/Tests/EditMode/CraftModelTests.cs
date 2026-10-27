@@ -129,6 +129,50 @@ public class CraftModelTests
     {
         var infos = Resources.LoadAll<InventoryCraftInfo>("CraftInfo");
 
-        Assert.AreEqual(5, CraftModel.FromInfos(infos).RecipeCount);
+        Assert.AreEqual(5, CraftModel.FromInfos(infos).Count);
+    }
+
+    [Test]
+    public void ScoreCountsMatchedMissingAndForeign()
+    {
+        var model = new CraftModel(new[] { Recipe(_y, (_a, 3), (_b, 2)) });
+        var grid = new CraftStack[8];
+        grid[0] = Stack(_a, 1);
+        grid[2] = Stack(_a, 1);
+        grid[3] = Stack(_b, 5);
+        grid[4] = Stack(_c, 1);
+        var results = new CraftMatch[1];
+
+        model.Score(grid, 8, results);
+
+        Assert.AreSame(model[0], results[0].Recipe);
+        Assert.AreEqual(4, results[0].Matched);
+        Assert.AreEqual(1, results[0].Missing);
+        Assert.AreEqual(1, results[0].Foreign);
+    }
+
+    [Test]
+    public void ScoreOnEmptyGridIsAllMissing()
+    {
+        var model = new CraftModel(new[] { Recipe(_y, (_a, 2), (_b, 1)) });
+        var results = new CraftMatch[model.Count];
+
+        model.Score(new CraftStack[8], 8, results);
+
+        Assert.AreEqual(0, results[0].Matched);
+        Assert.AreEqual(3, results[0].Missing);
+        Assert.AreEqual(0, results[0].Foreign);
+    }
+
+    [Test]
+    public void ScoreIsZeroAlloc()
+    {
+        var model = new CraftModel(new[] { Recipe(_y, (_a, 2), (_b, 1)), Recipe(_x, (_c, 1)) });
+        var grid = new CraftStack[8];
+        grid[0] = Stack(_a, 2);
+        grid[1] = Stack(_c, 1);
+        var results = new CraftMatch[model.Count];
+
+        AllocationAssert.Zero(() => model.Score(grid, 8, results), 100, "CraftModel.Score");
     }
 }
