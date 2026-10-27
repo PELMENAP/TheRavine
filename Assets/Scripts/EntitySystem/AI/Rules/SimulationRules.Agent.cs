@@ -37,6 +37,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float hungerReinterruptSeconds = 8f;
     [SerializeField] private float restMinEnergyReserve = 5f;
     [SerializeField] private float baseMaxAge = 1200f;
+    [SerializeField] private float baseMaxHealth = 200f;
     [SerializeField] private float senescenceOnset = 0.7f;
     [SerializeField] private float senescenceUpkeep = 1.5f;
     [SerializeField] private float groomAmount = 0.2f;
@@ -96,6 +97,7 @@ public sealed partial class SimulationRules
     public float HungerReinterruptSeconds => hungerReinterruptSeconds;
     public float RestMinEnergyReserve => restMinEnergyReserve;
     public float BaseMaxAge => baseMaxAge;
+    public float BaseMaxHealth => baseMaxHealth;
     public float SenescenceOnset => senescenceOnset;
     public float SenescenceUpkeep => senescenceUpkeep;
     public float GroomAmount => groomAmount;

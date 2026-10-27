@@ -10,20 +10,6 @@ using TheRavine.EntityControl.Virology;
 
 public partial class EntityModel
 {
-    private float ResolveDayPhase()
-    {
-        if (_dayCycle == null && !ServiceLocator.Services.TryGet(out _dayCycle)) return 0f;
-        return _dayCycle.NormalizedTime.CurrentValue;
-    }
-
-    private static bool IsNightPhase(float phase)
-    {
-        ref readonly var r = ref SimulationRules.Frame;
-        return r.NightStart > r.NightEnd
-            ? phase >= r.NightStart || phase < r.NightEnd
-            : phase >= r.NightStart && phase < r.NightEnd;
-    }
-
     private bool IsAliveForTick()
         => !IsDeathPending && !IsDisposed && !Stats.IsDisposed && Stats.Hp > 0f;
 
@@ -73,8 +59,8 @@ public partial class EntityModel
         _winterApproach = SeasonClock.WinterApproach(now);
         _winter         = _season < -rules.WinterThreshold;
 
-        float dayPhase = ResolveDayPhase();
-        bool  night    = IsNightPhase(dayPhase);
+        float dayPhase = CreatureCore.DayPhase(ref _dayCycle);
+        bool  night    = CreatureCore.IsNightPhase(dayPhase, in rules);
         _night = night;
 
         var host = new HostState
@@ -87,9 +73,7 @@ public partial class EntityModel
             AtNest         = IsAtNest,
             HomeCrowd      = rules.HomeCompulsionCrowd,
         };
-        float hpBeforeVirus = Stats.Hp;
-        Virology.Step(Stats, dt, in host);
-        if (Stats.Hp < hpBeforeVirus) Mortality.NoteHarm(DeathCause.Virus, Stats.Hp);
+        CreatureCore.StepVirology(Virology, Stats, Mortality, dt, in host);
         ref var mods = ref Virology.Modifiers;
         if (mods.ForceSpeechRequested) Broadcast(Speech.Own);
         if (!IsAliveForTick()) return false;
@@ -202,22 +186,13 @@ public partial class EntityModel
 
         Digestion.Tick(Stats, dt, resting, digestMul, mods.RegenMultiplier, in rules, out float regenCredit);
 
-        float basal = rules.BasalEnergyDrain * Tuning.BasalDrainMul
-                    * (1f - rules.WellFedBasalReduction * Digestion.WellFed)
-                    * (night && !IsAtNest ? rules.NightOutsideDrainMul : 1f)
-                    * (1f + mods.Fever * rules.FeverDrainMul)
-                    * (_winter ? rules.WinterDrainMul : 1f)
-                    * SenescenceMul(in rules)
-                    * _immuneUpkeepMul;
+        float basalMul = Tuning.BasalDrainMul
+                       * CreatureCore.EnvironmentDrainMul(Digestion.WellFed, night && !IsAtNest, mods.Fever, _winter, in rules)
+                       * SenescenceMul(in rules)
+                       * _immuneUpkeepMul;
 
-        float hpBeforeStarve = Stats.Hp;
-        Stats.Tick(dt,
-            Motor.DrainEnergy(),
-            mods.MetabolismMultiplier,
-            basal,
-            rules.StarvationThreshold, rules.StarvationDamage, rules.StarvationEnergyReturn,
-            out float metabolismCredit);
-        if (Stats.Hp < hpBeforeStarve) Mortality.NoteHarm(DeathCause.Starved, Stats.Hp);
+        CreatureCore.Metabolize(Stats, Mortality, dt, Motor.DrainEnergy(), mods.MetabolismMultiplier, basalMul,
+            in rules, out float metabolismCredit);
 
         Virology.CreditDurableEffects(regenCredit, metabolismCredit, Stats.MaxEnergy);
         if (!IsAliveForTick()) return false;

@@ -1,7 +1,7 @@
 using System;
 using Unity.Mathematics;
 
-public class StatsComponent : IComponent
+public class StatsComponent : IComponent, IEnergyStore
 {
     public event Action HealthDepleted;
     public float MaxHealth { get; private set; }
