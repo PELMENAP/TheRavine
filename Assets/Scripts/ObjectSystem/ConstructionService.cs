@@ -1,11 +1,16 @@
+using TheRavine.Generator;
+
 namespace TheRavine.ObjectControl
 {
     public static class ConstructionService
     {
-        public static bool TryRequestPlacement(long position, ObjectInfo info)
+        public static PlacementResult Place(MapGenerator generator, long position, ObjectInfo info, int amount)
         {
-            RavineLog.Info($"[ConstructionService] Construction3D не реализован: id={(info != null ? info.Id : -1)}, pos={position}");
-            return false;
+            if (info == null || info.Levels <= 1) return PlacementResult.InvalidLevels;
+
+            PlacementResult result = generator.TryAddFromInfo(position, generator.GetRealPosition(position), info, amount, info.Levels);
+            if (result == PlacementResult.Ok) generator.ExtraUpdate();
+            return result;
         }
     }
 }

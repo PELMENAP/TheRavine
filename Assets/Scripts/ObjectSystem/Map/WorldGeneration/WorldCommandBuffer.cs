@@ -133,8 +133,8 @@ namespace TheRavine.Generator
         NotPickable = 2,
         UnknownObject = 3,
         NotPlaceable = 4,
-        Occupied = 5,
-        Rejected = 6
+        Rejected = 5,
+        Refused = 6
     }
 
     public static class WorldEdits
@@ -158,17 +158,22 @@ namespace TheRavine.Generator
             return WorldEditResult.Ok;
         }
 
-        public static WorldEditResult TryPlace(MapGenerator generator, ObjectSystem objects, long pos, int objectId)
+        public static WorldEditResult TryPlace(MapGenerator generator, ObjectSystem objects, long pos, int objectId, out PlacementResult placement)
         {
+            placement = PlacementResult.Ok;
             ObjectInfo info = objects.GetInfo(objectId);
             if (info == null) return WorldEditResult.UnknownObject;
-            if (info.InventoryItemInfo == null || !info.InventoryItemInfo.isPlaceable || info.PlacementKind != PlacementKind.Surface2D)
-                return WorldEditResult.NotPlaceable;
-            if (generator.ContainsObject(pos)) return WorldEditResult.Occupied;
+            if (info.InventoryItemInfo == null || !info.InventoryItemInfo.isPlaceable) return WorldEditResult.NotPlaceable;
 
-            bool ok = ApplyAdd(generator, pos, info, 1);
-            generator.ExtraUpdate();
-            return ok ? WorldEditResult.Ok : WorldEditResult.Rejected;
+            if (info.PlacementKind == PlacementKind.Construction3D)
+                placement = ConstructionService.Place(generator, pos, info, 1);
+            else
+            {
+                placement = generator.TryAddFromInfo(pos, generator.GetRealPosition(pos), info, 1, info.Levels);
+                if (placement == PlacementResult.Ok) generator.ExtraUpdate();
+            }
+
+            return placement == PlacementResult.Ok ? WorldEditResult.Ok : WorldEditResult.Rejected;
         }
 
         public static void MirrorPickUp(MapGenerator generator, long pos, int prefabId)

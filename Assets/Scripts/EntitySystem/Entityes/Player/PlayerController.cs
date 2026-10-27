@@ -434,14 +434,14 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void PlaceRequestServerRpc(long position, int objectId)
         {
-            bool ok = false;
+            WorldEditResult result = WorldEditResult.Refused;
+            PlacementResult placement = PlacementResult.Ok;
             if (aimComponent != null && TryResolveEditor(position, aimComponent.CrosshairDistance, out MapGenerator generator, out ObjectSystem objects))
             {
-                WorldEditResult result = WorldEdits.TryPlace(generator, objects, position, objectId);
-                ok = result == WorldEditResult.Ok;
-                if (!ok) Refuse(position, $"place {objectId}: {result}");
+                result = WorldEdits.TryPlace(generator, objects, position, objectId, out placement);
+                if (result != WorldEditResult.Ok) Refuse(position, $"place {objectId}: {result}/{placement}");
             }
-            PlaceResultClientRpc(position, objectId, ok, OwnerTarget());
+            PlaceResultClientRpc(position, objectId, (byte)result, (byte)placement, OwnerTarget());
         }
 
         [ServerRpc]
@@ -461,13 +461,14 @@ namespace TheRavine.EntityControl
         }
 
         [ClientRpc]
-        private void PlaceResultClientRpc(long position, int objectId, bool ok, ClientRpcParams rpcParams = default)
+        private void PlaceResultClientRpc(long position, int objectId, byte result, byte placement, ClientRpcParams rpcParams = default)
         {
+            bool ok = result == (byte)WorldEditResult.Ok;
             if (ok && !IsServer && ServiceLocator.Services.TryGet(out MapGenerator generator)
                 && ServiceLocator.Services.TryGet(out ObjectSystem objects))
                 WorldEdits.MirrorPlace(generator, objects, position, objectId);
 
-            entityEventBus?.Invoke(playerEntity, new PlaceResultEvent { Position = position, Ok = ok });
+            entityEventBus?.Invoke(playerEntity, new PlaceResultEvent { Position = position, Ok = ok, Edit = result, Placement = placement });
         }
 
         [ClientRpc]
