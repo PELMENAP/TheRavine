@@ -409,7 +409,11 @@ namespace TheRavine.EntityControl
             
             int currentX = Mathf.RoundToInt(crosshair.position.x);
             int currentZ = Mathf.RoundToInt(crosshair.position.z);
-            entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = Position2Int.Pack(currentX, currentZ) });
+            long position = Position2Int.Pack(currentX, currentZ);
+            if (ServiceLocator.Services.TryGet(out IPlacementSource placement) && placement.HasPlaceableInActiveCell())
+                entityEventBus.Invoke(playerEntity, new PlaceEvent { Position = position });
+            else
+                entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = position });
 
             await UniTask.Delay(placeObjectDelay);
             canPlace = true;

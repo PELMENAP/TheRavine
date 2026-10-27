@@ -433,6 +433,7 @@ namespace TheRavine.Generator
         [SerializeField] private Vector3 viewerOffset;
         [SerializeField] private GrassSystem grassSystem;
         [SerializeField] private Texture2DArray biomeAlbedo;
+        [SerializeField, Min(100)] private int nalApplyIntervalMs = 1000;
 
         public ChunkGenerator chunkGenerator;
         public Vector3 waterOffset;
@@ -471,7 +472,7 @@ namespace TheRavine.Generator
 
             if (chunkGenerationSettings.endlessFlag[3])
             {
-                nal = new NAL_PC(this, objectSystem, _cts.Token);
+                nal = new NAL_PC(this, objectSystem, _cts.Token, nalApplyIntervalMs);
                 nal.RunNAL().Forget();
                 nal.RunUpdate().Forget();
             }

@@ -13,7 +13,7 @@ using TheRavine.Events;
 
 namespace TheRavine.Inventory
 {
-    public class UIInventory : MonoBehaviour, ISetAble
+    public class UIInventory : MonoBehaviour, ISetAble, IPlacementSource
     {
         [SerializeField] private UIInventorySlot[] activeCells;
         [SerializeField] private RectTransform cell;
@@ -46,6 +46,7 @@ namespace TheRavine.Inventory
 
             eventDrivenInventoryProxy = new EventDrivenInventoryProxy(slotList.Count);
             ServiceLocator.Register(eventDrivenInventoryProxy);
+            ServiceLocator.Register<IPlacementSource>(this);
 
             infoManager = new InfoManager(dataItems);
             tester = new InventoryTester(slotList.ToArray(), infoManager, eventDrivenInventoryProxy);
@@ -107,24 +108,50 @@ namespace TheRavine.Inventory
             }
         }
 
+        private bool TryGetActiveCell(out UIInventorySlot cell)
+        {
+            int index = inventoryInputHandler.ActiveCellIndex - 1;
+            if (index < 0 || index >= activeCells.Length)
+            {
+                cell = null;
+                return false;
+            }
+
+            cell = activeCells[index];
+            return cell != null && cell.slot != null && !cell.slot.isEmpty;
+        }
+
+        public bool HasPlaceableInActiveCell() =>
+            TryGetActiveCell(out UIInventorySlot cell) && cell.slot.item.info.isPlaceable;
+
         private void PlaceObjectEvent(AEntity entity, PlaceEvent e)
         {
-            InventorySlot slot = activeCells[inventoryInputHandler.ActiveCellIndex - 1].slot;
-            if (slot.isEmpty) return;
+            if (!TryGetActiveCell(out UIInventorySlot cell)) return;
 
-            IInventoryItem item = activeCells[inventoryInputHandler.ActiveCellIndex - 1]._uiInventoryItem.item;
+            InventorySlot slot = cell.slot;
+            IInventoryItem item = slot.item;
             if (!item.info.isPlaceable) return;
 
-            if (!objectSystem.TryGetIdByPrefab(item.info.prefab, out int placeId)) return;
+            if (!objectSystem.TryGetIdByPrefab(item.info.prefab, out int placeId))
+            {
+                logger.LogWarning($"[UIInventory] Нет ObjectInfo для префаба предмета {item.info.id}");
+                return;
+            }
 
             ObjectInfo placeInfo = objectSystem.GetInfo(placeId);
+            if (placeInfo != null && placeInfo.PlacementKind == PlacementKind.Construction3D)
+            {
+                ConstructionService.TryRequestPlacement(e.Position, placeInfo);
+                return;
+            }
+
             int levels = placeInfo != null ? placeInfo.Levels : 1;
 
             if (generator.TryAddObject(e.Position, generator.GetRealPosition(e.Position), placeId, 1, levels: levels))
             {
                 item.state.amount--;
                 if (slot.amount <= 0) slot.Clear();
-                activeCells[inventoryInputHandler.ActiveCellIndex - 1].Refresh();
+                cell.Refresh();
                 generator.TryToAddPositionToChunk(e.Position);
             }
 
@@ -196,6 +223,7 @@ namespace TheRavine.Inventory
             uIDragger.BreakUp();
             craftService.BreakUp();
 
+            ServiceLocator.Services.Unregister<IPlacementSource>(this);
             eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce -= OnInventoryStateChanged;
             eventDrivenInventoryProxy.Dispose();
             inventoryInputHandler.UnregisterInput();

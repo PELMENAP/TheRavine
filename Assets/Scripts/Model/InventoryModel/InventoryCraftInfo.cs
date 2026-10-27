@@ -7,6 +7,7 @@ public class InventoryCraftInfo : ScriptableObject
     [SerializeField] private string _id;
     [SerializeField] private InventoryItemInfo[] _ingr;
     [SerializeField, Min(0)] private int[] _amountIngr;
+    [SerializeField] private bool[] _catalystIngr;
     [SerializeField] private InventoryItemInfo _res;
     [SerializeField, Min(0)] private int _amountRes;
     public bool IsAvailable => _isAvailable;
@@ -15,5 +16,6 @@ public class InventoryCraftInfo : ScriptableObject
     public InventoryItemInfo[] Ingr => _ingr;
     public InventoryItemInfo Res => _res;
     public int[] AmountIngr => _amountIngr;
+    public bool[] CatalystIngr => _catalystIngr;
     public int AmountRes => _amountRes;
 }
