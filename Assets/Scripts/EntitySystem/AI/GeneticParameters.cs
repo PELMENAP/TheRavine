@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Unity.Mathematics;
 
 public interface IGeneticPhenotype
 {
@@ -151,7 +152,7 @@ public struct GeneticParameters
         {
             if (RavineRandom.RangeFloat() >= chance) continue;
             var (min, max, scale) = ParameterRanges[i];
-            span[i] = Mathf.Clamp(span[i] + RavineRandom.RangeFloat(-1f, 1f) * scale, min, max);
+            span[i] = math.clamp(span[i] + RavineRandom.RangeFloat(-1f, 1f) * scale, min, max);
         }
     }
 

@@ -8,7 +8,6 @@ using TMPro;
 [RequireComponent(typeof(Detector))]
 public class DialogRequire : MonoBehaviour
 {
-    // [SerializeField] private BotController Controller;
     [SerializeField] private TextMeshPro text;
     [SerializeField] private string[] lines;
     [SerializeField] private float textSpeed;
@@ -68,7 +67,6 @@ public class DialogRequire : MonoBehaviour
             Dialog = false;
             if (bot)
             {
-                // Controller.SetBehaviourIdle();
             }
         }
     }
@@ -78,16 +76,12 @@ public class DialogRequire : MonoBehaviour
         do
         {
             yield return new WaitForSeconds(1f);
-            // if (TimeUpdate.globalTimeInt - startSilent > silentOnGUI && !Dialog)
-            //     StartCoroutine(TypeLineIdle());
             if ((Input.GetKey("0") || Input.GetKey("q")) && mayStartDialog)
             {
                 if (!Dialog && dialogComplete)
                     DialogStart();
                 if (bot)
                 {
-                    // Controller.SetBehaviourDialog();
-                    // Controller.SetSpeed();
                 }
             }
         }
@@ -96,7 +90,6 @@ public class DialogRequire : MonoBehaviour
 
     private IEnumerator TypeLineIdle()
     {
-        // startSilent = TimeUpdate.globalTimeInt;
         text.text = "";
         foreach (char i in lines[UnityEngine.Random.Range(0, lines.Length)].ToCharArray())
         {
@@ -105,7 +98,6 @@ public class DialogRequire : MonoBehaviour
                 text.text = "";
                 yield break;
             }
-            //continue;
             text.text += i;
             yield return new WaitForSeconds(textSpeed);
         }
@@ -121,26 +113,18 @@ public class DialogRequire : MonoBehaviour
         do
             await DialogProcess();
         while (Dialog);
-        // PlayerController.instance.dialog.SetActive(false);
         dialogComplete = true;
     }
 
     private async Task DialogProcess()
     {
-        // PlayerController.instance.dialog.SetActive(true);
-        // while ((!Input.GetKey(KeyCode.Return) || PlayerController.instance.InputWindow.text.Length > 50) && Dialog) await Task.Delay(100);
         if (!Dialog)
             return;
-        // PlayerController.instance.SetBehaviourDialog();
-        // PlayerController.instance.dialog.SetActive(false);
-        // playerText = PlayerController.instance.InputWindow.text.Remove(PlayerController.instance.InputWindow.text.Length - 1);
-        // StartCoroutine(PlayerDialogControoller.instance.TypeLine(playerText));
         if (endDialog.AsValueEnumerable().Contains(playerText))
         {
             Dialog = false;
             if (bot)
             {
-                // Controller.SetBehaviourIdle();
             }
         }
         bool niceDialog = false;
@@ -156,10 +140,6 @@ public class DialogRequire : MonoBehaviour
                         {
                             StartCoroutine(TypeLineCompanion(conversations[i].Answer[conversations[i].step].comment[UnityEngine.Random.Range(0, conversations[i].Answer[conversations[i].step].comment.Length)]));
                             conversations[i].step++;
-                            // if (conversations[i].step >= conversations[i].Speech.Length && PData.pdata.taskManager != null && conversations[i].TaskID != 0)
-                            // {
-                            //     PData.pdata.taskManager.ActivateTask(conversations[i].TaskID, this.transform.position);
-                            // }
                             niceDialog = true;
                             break;
                         }
@@ -176,7 +156,6 @@ public class DialogRequire : MonoBehaviour
             await Task.Delay(9000);
         else
             await Task.Delay(1000);
-        // PlayerController.instance.SetBehaviourIdle();
     }
     private IEnumerator TypeLineCompanion(string speech)
     {

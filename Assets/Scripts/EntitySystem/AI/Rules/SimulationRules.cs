@@ -689,7 +689,7 @@ public sealed partial class SimulationRules : ScriptableObject
             FrenzyFleeSuppress = r.frenzyFleeSuppress;
             LethargySlow = r.lethargySlow;
             EpsilonScheduleMode   = (int)r.epsilonScheduleMode;
-            ActionTraceInvLogNorm = 1f / Mathf.Log(1f + Mathf.Max(r.actionTraceHorizon, 1e-3f));
+            ActionTraceInvLogNorm = 1f / math.log(1f + math.max(r.actionTraceHorizon, 1e-3f));
             ReservoirHz           = r.reservoirHz;
             ExploreTemperature = r.exploreTemperature;
             PoiEnergyEmaAlpha = r.poiEnergyEmaAlpha;

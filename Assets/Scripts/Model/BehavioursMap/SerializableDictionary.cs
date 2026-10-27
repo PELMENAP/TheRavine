@@ -79,7 +79,6 @@ public class SerializableDictionary<TKey, TValue> : SerializableDictionary, IDic
         _keyPositions = new Lazy<Dictionary<TKey, uint>>(MakeKeyPositions);
     }
 
-    #region IDictionary
     public TValue this[TKey key]
     {
         get => list[(int) KeyPositions[key]].Value;
@@ -153,9 +152,7 @@ public class SerializableDictionary<TKey, TValue> : SerializableDictionary, IDic
             
         return false;
     }
-    #endregion
 
-    #region ICollection
     public int Count => list.Count;
     public bool IsReadOnly => false;
 
@@ -187,9 +184,7 @@ public class SerializableDictionary<TKey, TValue> : SerializableDictionary, IDic
     }
 
     public bool Remove(KeyValuePair<TKey, TValue> kvp) => Remove(kvp.Key);
-    #endregion
 
-    #region IEnumerable
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
     {
         return list.Select(ToKeyValuePair).GetEnumerator();
@@ -200,5 +195,4 @@ public class SerializableDictionary<TKey, TValue> : SerializableDictionary, IDic
         }
     }
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-    #endregion
 }

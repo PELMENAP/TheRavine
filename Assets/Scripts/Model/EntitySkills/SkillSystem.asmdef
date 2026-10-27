@@ -2,7 +2,9 @@
     "name": "SkillSystem",
     "rootNamespace": "",
     "references": [
-        "GUID:20b215ea2c8c4fdf0ac01bc81823f116"
+        "GUID:20b215ea2c8c4fdf0ac01bc81823f116",
+        "GUID:bb56edd6d4b8a2f2b98e39a884e3754c",
+        "GUID:d8b63aba1907145bea998dd612889d6b"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

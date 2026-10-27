@@ -1,5 +1,6 @@
 using System.Text;
 using UnityEngine;
+using Unity.Mathematics;
 using TMPro;
 using TheRavine.EntityControl;
 using TheRavine.EntityControl.Virology;
@@ -52,7 +53,7 @@ public class EntityView : AEntityView
         return g;
     }
 
-    private static string Grad(float fraction) => Gradient[Mathf.Clamp(Mathf.RoundToInt(fraction * 10f), 0, 10)];
+    private static string Grad(float fraction) => Gradient[math.clamp((int)math.round(fraction * 10f), 0, 10)];
 
     protected override void SetupBindings()
     {
@@ -126,8 +127,8 @@ public class EntityView : AEntityView
         {
             string hex = allTamed ? TamedHex : net > 0f ? SymbiontHex : net < 0f ? ParasiteHex : DimHex;
             Open(sb.Append('\n'), hex).Append("V:").Append(viralCount).Append(' ')
-                .Append(net >= 0f ? '+' : '-').Append((int)Mathf.Abs(net * 10f) / 10).Append('.')
-                .Append((int)Mathf.Abs(net * 10f) % 10).Close();
+                .Append(net >= 0f ? '+' : '-').Append((int)math.abs(net * 10f) / 10).Append('.')
+                .Append((int)math.abs(net * 10f) % 10).Close();
         }
 
         label.SetText(sb);

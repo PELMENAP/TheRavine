@@ -18,17 +18,10 @@ namespace TheRavine.Base
         public Queue<Pair<ISetAble, string>> RegisterSomeServices(MonoBehaviour[] scripts)
         {
             Queue<Pair<ISetAble, string>> someServices = new();
-            // var servicesType = ServiceLocator.Services.GetType();
 
             for (byte i = 0; i < scripts.Length; i++)
             {
-                // if (scripts[i] == null) continue;
-                // Type serviceType = scripts[i].GetType();
 
-                // MethodInfo registerMethod = servicesType
-                //     .GetMethod("Register")
-                //     .MakeGenericMethod(serviceType);
-                // registerMethod.Invoke(ServiceLocator.Services, new object[] { scripts[i] });
                 someServices.Enqueue(new Pair<ISetAble, string>((ISetAble)scripts[i], scripts[i].name));
             }
 
