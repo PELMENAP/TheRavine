@@ -123,4 +123,12 @@ public class CraftModelTests
         Assert.AreSame(_b, merged[1].info);
         Assert.AreEqual(4, merged[1].amount);
     }
+
+    [Test]
+    public void ProjectCraftRecipesLoadFromResources()
+    {
+        var infos = Resources.LoadAll<InventoryCraftInfo>("CraftInfo");
+
+        Assert.AreEqual(5, CraftModel.FromInfos(infos).RecipeCount);
+    }
 }

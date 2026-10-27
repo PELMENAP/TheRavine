@@ -69,8 +69,17 @@ public sealed class CraftModel
 
             recipes.Add(new CraftRecipe(info.Res, info.AmountRes, info.TimeToComplete, ingredients));
         }
+        recipes.Sort(CompareRecipes);
         return new CraftModel(recipes.ToArray());
     }
+
+    private static int CompareRecipes(CraftRecipe a, CraftRecipe b)
+    {
+        int byIngredients = b.Ingredients.Length.CompareTo(a.Ingredients.Length);
+        return byIngredients != 0 ? byIngredients : string.CompareOrdinal(a.Result.id, b.Result.id);
+    }
+
+    public int RecipeCount => _recipes.Length;
 
     public bool TryPlan(CraftStack[] grid, int cellCount, int[] deductions, out CraftRecipe recipe)
     {

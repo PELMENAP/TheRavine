@@ -32,6 +32,8 @@ namespace TheRavine.Inventory
             inventory = inventoryModel;
 
             craftModel = CraftModel.FromInfos(infoManager.GetAllCraftRecepts());
+            if (craftModel.RecipeCount == 0)
+                Debug.LogWarning("[CraftService] No craft recipes loaded: CraftInfo assets must live under Resources/CraftInfo");
         }
         public bool OnInventoryCraftCheck(object sender)
         {
@@ -96,10 +98,11 @@ namespace TheRavine.Inventory
         {
             if(cancel || !OnInventoryCraftCheck(this) || !HasRoomForResult()) return;
 
-            var resultInfo = resultItemInfo;
-            int resultTotal = resultCount;
+            var result = infoManager.GetInventoryItemByInfo(resultItemInfo.id, resultItemInfo, resultCount);
+            if (result == null) return;
+
             ConsumeIngredients();
-            inventory.TryToAddSlot(this, resultCell.slot, infoManager.GetInventoryItemByInfo(resultInfo.id, resultInfo, resultTotal));
+            inventory.TryToAddSlot(this, resultCell.slot, result);
         }
 
         private bool HasRoomForResult() => resultCount <= resultItemInfo.maxItemsInInventorySlot || !inventory.isFull;
