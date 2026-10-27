@@ -5,10 +5,10 @@
   <Project Path="UniTask.Linq.csproj" />
   <Project Path="LitMotion.csproj" />
   <Project Path="LitMotion.Extensions.csproj" />
+  <Project Path="EntitySystem.Tests.EditMode.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="ObjectSystem.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
-  <Project Path="EntitySystem.Tests.EditMode.csproj" />
   <Project Path="B.csproj" />
   <Project Path="Info.csproj" />
   <Project Path="UniTask.Addressables.csproj" />
@@ -26,5 +26,4 @@
   <Project Path="EventSystem.csproj" />
   <Project Path="SkillSystem.csproj" />
   <Project Path="DialogGraph.csproj" />
-  <Project Path="Netcode.csproj" />
 </Solution>

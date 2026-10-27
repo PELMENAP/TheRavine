@@ -1,7 +1,6 @@
 using UnityEngine;
 
 using TheRavine.EntityControl;
-using Unity.Mathematics;
 
 public interface ICameraComponent : IComponent
 {

@@ -73,10 +73,10 @@ Material:
     - _InstanceColorBlend: 1
     - _NormalWindInfluence: 1.055
     - _PlayerCount: 1
-    - _PlayerHeight: 0.5
+    - _PlayerHeight: 50
     - _PlayerRadius: 2
     - _PlayerSmoothness: 2
-    - _PlayerStrength: 1
+    - _PlayerStrength: 2
     - _SaturationVariation: 0.1
     - _TextureCount: 1
     - _TranslucencyStrength: 0.416
@@ -88,7 +88,7 @@ Material:
     - _WindStrength: 0.015
     m_Colors:
     - _BaseColor: {r: 1, g: 0, b: 0.30714318, a: 1}
-    - _PlayerPosition: {r: 0, g: 0, b: 0, a: 0}
+    - _PlayerPosition: {r: 972.4595, g: 99.32518, b: 978.4023, a: 0}
     - _TipColor: {r: 0.76907253, g: 0, b: 1, a: 1}
     - _WindDirection: {r: 1, g: 0, b: 1, a: 0}
     - _WindVelocity: {r: 0.05, g: 0.01, b: 0, a: 0}

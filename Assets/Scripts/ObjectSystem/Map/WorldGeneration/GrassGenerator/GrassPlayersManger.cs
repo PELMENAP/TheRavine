@@ -3,9 +3,9 @@ using UnityEngine;
 public class GrassPlayersManger : MonoBehaviour
 {
     [Header("Player Interaction")]
-    [SerializeField] private Transform player;
     [SerializeField] private Material grassMaterial;
 
+    private Transform player = null;
     private Vector3 playerPosition;
 
     private void FixedUpdate()
