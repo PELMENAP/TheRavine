@@ -27,6 +27,7 @@ public class ObjectInfo : ScriptableObject
     [SerializeField] private ObjectInfo evolutionStep;
 
     [SerializeField] private Vector2Int[] additionalOccupiedCells;
+    [SerializeField] private PlacementKind placementKind;
     [ConditionalField(nameof(behaviourType), BehaviourType.NAL)]
     [SerializeField] private SpreadPattern onDeathPattern;
 
@@ -53,6 +54,7 @@ public class ObjectInfo : ScriptableObject
     public GameObject ObjectPrefab => objectPrefab;
     public ObjectInfo EvolutionStep => evolutionStep;
     public Vector2Int[] AdditionalOccupiedCells => additionalOccupiedCells;
+    public PlacementKind PlacementKind => placementKind;
     public SpreadPattern OnDeathPattern => onDeathPattern;
     public SpreadPattern OnPickUpPattern => onPickUpPattern;
     public byte VisibleRings => (byte)Mathf.Clamp(visibleRings, 0, MaxVisibleRings);
@@ -72,6 +74,12 @@ public enum BehaviourType : byte
     None = 0,
     NAL = 1,
     GROW = 2
+}
+
+public enum PlacementKind : byte
+{
+    Surface2D = 0,
+    Construction3D = 1
 }
 
 public enum InstanceType : byte

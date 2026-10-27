@@ -35,6 +35,16 @@ public class CraftModelTests
         return new CraftRecipe(result, 1, 0, list);
     }
 
+    private CraftRecipe CatalystRecipe(InventoryItemInfo result, InventoryItemInfo consumed, int consumedAmount, InventoryItemInfo catalyst, int catalystAmount)
+    {
+        var list = new[]
+        {
+            new CraftIngredient { info = consumed, amount = consumedAmount },
+            new CraftIngredient { info = catalyst, amount = catalystAmount, isCatalyst = true }
+        };
+        return new CraftRecipe(result, 1, 0, list);
+    }
+
     private static CraftStack Stack(IInventoryItemInfo info, int amount) => new CraftStack { Info = info, Amount = amount };
 
     [Test]
@@ -101,6 +111,58 @@ public class CraftModelTests
 
         Assert.IsTrue(model.TryPlan(grid, 8, _deductions, out CraftRecipe recipe));
         Assert.AreSame(_x, recipe.Result);
+    }
+
+    [Test]
+    public void CatalystIsMatchedButNotDeducted()
+    {
+        var model = new CraftModel(new[] { CatalystRecipe(_y, _a, 2, _b, 1) });
+        var grid = new CraftStack[8];
+        grid[0] = Stack(_a, 2);
+        grid[1] = Stack(_b, 3);
+
+        Assert.IsTrue(model.TryPlan(grid, 8, _deductions, out CraftRecipe recipe));
+        Assert.AreSame(_y, recipe.Result);
+        Assert.AreEqual(2, _deductions[0]);
+        Assert.AreEqual(0, _deductions[1]);
+    }
+
+    [Test]
+    public void MissingCatalystBlocksMatch()
+    {
+        var model = new CraftModel(new[] { CatalystRecipe(_y, _a, 1, _b, 2) });
+        var grid = new CraftStack[8];
+        grid[0] = Stack(_a, 1);
+        grid[1] = Stack(_b, 1);
+
+        Assert.IsFalse(model.TryPlan(grid, 8, _deductions, out _));
+
+        grid[1] = default;
+
+        Assert.IsFalse(model.TryPlan(grid, 8, _deductions, out _));
+    }
+
+    [Test]
+    public void RegularIngredientIsDeducted()
+    {
+        var model = new CraftModel(new[] { Recipe(_y, (_a, 2), (_b, 1)) });
+        var grid = new CraftStack[8];
+        grid[0] = Stack(_a, 2);
+        grid[1] = Stack(_b, 4);
+
+        Assert.IsTrue(model.TryPlan(grid, 8, _deductions, out _));
+        Assert.AreEqual(2, _deductions[0]);
+        Assert.AreEqual(1, _deductions[1]);
+    }
+
+    [Test]
+    public void MergeKeepsCatalystOnlyWhenAllEntriesAreCatalysts()
+    {
+        var merged = CraftRecipe.Merge(new[] { _a, _b, _a }, new[] { 1, 1, 1 }, new[] { true, true, false });
+
+        Assert.AreEqual(2, merged.Length);
+        Assert.IsFalse(merged[0].isCatalyst);
+        Assert.IsTrue(merged[1].isCatalyst);
     }
 
     [Test]
