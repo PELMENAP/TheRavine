@@ -426,6 +426,8 @@ namespace TheRavine.Generator
         private NAL_PC nal;
         private ChunkStore chunkStore;
         private IDisposable autosaveSubscription;
+        private WorldRegistry boundRegistry;
+        private string boundWorldId;
 
         [SerializeField] private Transform viewer;
         [SerializeField] private Vector3 viewerOffset;
@@ -449,7 +451,7 @@ namespace TheRavine.Generator
 
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
             chunkGenerator = new ChunkGenerator(chunkGenerationSettings, seed);
-            if (worldLoaded) chunkStore = ChunkStore.ForWorld(worldRegistry.GetCurrentWorldId(), seed);
+            if (worldLoaded) BindChunkStore(worldRegistry);
 
             CurvedWorld.Configure(chunkGenerationSettings.curveRadius, chunkGenerationSettings.curveFlat, chunkGenerationSettings.curveFocusDistance);
             CurvedWorld.SetFacing(facing);
@@ -643,6 +645,22 @@ namespace TheRavine.Generator
             return Position2Int.Pack(ChunkCoord(p.x), ChunkCoord(p.z));
         }
 
+        private void BindChunkStore(WorldRegistry registry)
+        {
+            boundRegistry = registry;
+            boundWorldId = registry.GetCurrentWorldId();
+            chunkStore = ChunkStore.ForWorld(boundWorldId, seed);
+            registry.WorldRenamed += OnWorldRenamed;
+        }
+
+        private void OnWorldRenamed(string oldId, string newId)
+        {
+            if (chunkStore == null || oldId != boundWorldId) return;
+
+            boundWorldId = newId;
+            chunkStore.Rebind(newId);
+        }
+
         private void SaveModifiedChunks()
         {
             if (chunkStore == null) return;
@@ -723,6 +741,8 @@ namespace TheRavine.Generator
 
             autosaveSubscription?.Dispose();
             autosaveSubscription = null;
+            if (boundRegistry != null) boundRegistry.WorldRenamed -= OnWorldRenamed;
+            boundRegistry = null;
             SaveModifiedChunks();
 
             if (endless != null)

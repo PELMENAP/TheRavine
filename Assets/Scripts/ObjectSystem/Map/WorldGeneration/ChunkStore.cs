@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
+using TheRavine.Base;
 using TheRavine.Extensions;
 
 namespace TheRavine.Generator
@@ -12,7 +13,7 @@ namespace TheRavine.Generator
         private const int Magic  = 0x4B435652;
         private const int Format = 1;
 
-        private readonly string _directory;
+        private string _directory;
         private readonly int _seed;
         private readonly List<ObjectInstInfo> _infos = new(64);
         private readonly List<int> _levels = new(64);
@@ -26,9 +27,18 @@ namespace TheRavine.Generator
 
         public static ChunkStore ForWorld(string worldId, int seed)
         {
-            string directory = Path.Combine(Application.persistentDataPath, "worlds", worldId, "chunks");
+            string directory = DirectoryFor(worldId);
             Directory.CreateDirectory(directory);
             return new ChunkStore(directory, seed);
+        }
+
+        public static string DirectoryFor(string worldId) =>
+            Path.Combine(WorldRegistry.GetWorldDirectory(worldId), "chunks");
+
+        public void Rebind(string worldId)
+        {
+            _directory = DirectoryFor(worldId);
+            Directory.CreateDirectory(_directory);
         }
 
         public bool TrySave(long chunkKey, ChunkData chunk)

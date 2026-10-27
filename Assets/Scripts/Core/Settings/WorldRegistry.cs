@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Cysharp.Threading.Tasks;
 using R3;
 using ObservableCollections;
@@ -175,6 +176,7 @@ namespace TheRavine.Base
                 }
 
                 await storage.DeleteAsync(worldId);
+                DeleteDirectoryIfExists(GetWorldDirectory(worldId));
                 AvailableWorlds.Remove(worldId);
 
                 logger.LogInfo($"[WorldRegistry] Мир '{worldId}' удалён");
@@ -222,6 +224,8 @@ namespace TheRavine.Base
 
                 await storage.SaveFullAsync(newName, state, config);
                 await storage.DeleteAsync(oldName);
+                MoveDirectoryIfExists(GetWorldDirectory(oldName), GetWorldDirectory(newName));
+                WorldRenamed?.Invoke(oldName, newName);
 
                 var index = AvailableWorlds.IndexOf(oldName);
                 AvailableWorlds.RemoveAt(index);
@@ -245,6 +249,22 @@ namespace TheRavine.Base
             {
                 isLoading.Value = false;
             }
+        }
+
+        public event Action<string, string> WorldRenamed;
+
+        public static string GetWorldDirectory(string worldId) => Path.Combine(Application.persistentDataPath, "worlds", worldId);
+
+        private static void DeleteDirectoryIfExists(string path)
+        {
+            if (Directory.Exists(path)) Directory.Delete(path, true);
+        }
+
+        private static void MoveDirectoryIfExists(string from, string to)
+        {
+            if (!Directory.Exists(from)) return;
+            DeleteDirectoryIfExists(to);
+            Directory.Move(from, to);
         }
 
         public string GetCurrentWorldId() => currentWorldId.Value;
