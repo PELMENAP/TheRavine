@@ -477,6 +477,7 @@ namespace TheRavine.Generator
         [SerializeField, Min(0.1f)] private float nalApplyBudgetMs = 1f;
         [SerializeField, Min(0f)] private float nalCatchUpMaxSeconds = 600f;
         [SerializeField, Min(0)] private int nalCatchUpMaxSteps = 8;
+        [SerializeField, Min(0.01f)] private float nalGrowStageSeconds = 20f;
         [SerializeField, Min(16)] private int nalStoreCapacity = 8192;
         [SerializeField, Min(1)] private int nalMaxDecisionsPerTick = 256;
         [SerializeField, Min(0f)] private float nalSecondsPerDelayUnit = 0.01f;
@@ -485,6 +486,7 @@ namespace TheRavine.Generator
         public float NalSecondsPerDelayUnit => nalSecondsPerDelayUnit;
         public float NalCatchUpMaxSeconds => nalCatchUpMaxSeconds;
         public int NalCatchUpMaxSteps => nalCatchUpMaxSteps;
+        public float NalGrowStageSeconds => nalGrowStageSeconds;
 
         public WorldCommandBuffer Commands { get; private set; }
         public WorldCommandStats CommandStats { get; } = new();

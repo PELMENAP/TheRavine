@@ -41,19 +41,44 @@ namespace TheRavine.Generator
 
         private NativeList<WorldCommand> commands;
         private NativeList<WorldCommand> appliedAdds;
+        private NativeHashMap<long, int> pendingRemoves;
         private int head;
 
         public WorldCommandBuffer(int capacity)
         {
             commands = new NativeList<WorldCommand>(capacity, Allocator.Persistent);
             appliedAdds = new NativeList<WorldCommand>(capacity, Allocator.Persistent);
+            pendingRemoves = new NativeHashMap<long, int>(capacity, Allocator.Persistent);
         }
 
         public int Count => commands.Length - head;
         public bool IsCreated => commands.IsCreated;
         public NativeList<WorldCommand> AppliedAdds => appliedAdds;
 
-        public void Push(in WorldCommand command) => commands.Add(command);
+        public void Push(in WorldCommand command)
+        {
+            commands.Add(command);
+
+            if (command.Kind != WorldCommand.Remove) return;
+
+            long cell = CellKey(command.Pos);
+            pendingRemoves.TryGetValue(cell, out int count);
+            pendingRemoves[cell] = count + 1;
+        }
+
+        public bool HasPendingRemove(long worldPos) => pendingRemoves.ContainsKey(CellKey(worldPos));
+
+        private static long CellKey(long worldPos) =>
+            Position2Int.Pack(Position2Int.GetX(worldPos) >> MapGenerator.CellShift, Position2Int.GetY(worldPos) >> MapGenerator.CellShift);
+
+        private void ReleasePendingRemove(long worldPos)
+        {
+            long cell = CellKey(worldPos);
+            if (!pendingRemoves.TryGetValue(cell, out int count)) return;
+
+            if (count <= 1) pendingRemoves.Remove(cell);
+            else pendingRemoves[cell] = count - 1;
+        }
 
         public int Apply(IWorldCommandTarget target, long deadline, WorldCommandStats stats)
         {
@@ -61,6 +86,7 @@ namespace TheRavine.Generator
             while (head < commands.Length)
             {
                 WorldCommand command = commands[head++];
+                if (command.Kind == WorldCommand.Remove) ReleasePendingRemove(command.Pos);
                 if (ApplyOne(target, in command, stats) && command.Kind == WorldCommand.Add)
                     appliedAdds.Add(command);
                 processed++;
@@ -123,6 +149,7 @@ namespace TheRavine.Generator
         {
             if (commands.IsCreated) commands.Dispose();
             if (appliedAdds.IsCreated) appliedAdds.Dispose();
+            if (pendingRemoves.IsCreated) pendingRemoves.Dispose();
         }
     }
 

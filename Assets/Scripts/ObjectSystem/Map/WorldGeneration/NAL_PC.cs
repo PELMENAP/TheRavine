@@ -34,6 +34,7 @@ namespace TheRavine.Generator
         private const int BusyThreshold = 200;
         private const int BusyDeadChance = 10;
         private const int JobBatchSize = 64;
+        private const int NeighbourRadiusCells = (MapGenerator.scale + (1 << MapGenerator.CellShift) - 1) >> MapGenerator.CellShift;
 
         private readonly ObjectSystem objectSystem;
         private readonly ObjectInfoRegistry registry;
@@ -78,7 +79,9 @@ namespace TheRavine.Generator
             if (dropSlots.IsCreated) dropSlots.Dispose();
         }
 
-        public void Enqueue(Vector2Int pos, int prefabId)
+        public void Enqueue(Vector2Int pos, int prefabId) => Register(pos, prefabId, false);
+
+        private void Register(Vector2Int pos, int prefabId, bool newborn)
         {
             if (disposed || !WorldAuthority.IsAuthority) return;
 
@@ -88,12 +91,14 @@ namespace TheRavine.Generator
             int dense = registry.DenseIndexOf(prefabId);
             if (dense < 0 || rules.Species[dense].Kind == 0) return;
 
-            double due = SimulationClock.TimeD;
-            if (catchUpElapsed > 0d)
+            double now = SimulationClock.TimeD;
+            double period = rules.Species[dense].Period(generator.NalSecondsPerDelayUnit, generator.NalGrowStageSeconds);
+            double due = newborn ? now + period : now + RavineRandom.RangeFloat() * period;
+
+            if (!newborn && catchUpElapsed > 0d)
             {
-                double period = rules.Species[dense].Period(generator.NalSecondsPerDelayUnit, generator.NalSecondsPerDelayUnit);
                 double steps = period > 0d ? math.min((double)generator.NalCatchUpMaxSteps, math.floor(catchUpElapsed / period)) : 0d;
-                if (steps >= 1d) due -= (steps - 1d) * period;
+                if (steps >= 1d) due = now - (steps - 1d) * period;
             }
 
             if (store.Add(pos, prefabId, dense, due) && store.Count > Stats.QueueMax)
@@ -126,7 +131,7 @@ namespace TheRavine.Generator
             if (disposed) return;
 
             for (int i = 0; i < adds.Length; i++)
-                Enqueue(Position2Int.UnpackToVector(adds[i].Pos), adds[i].PrefabId);
+                Register(Position2Int.UnpackToVector(adds[i].Pos), adds[i].PrefabId, true);
 
             NalStats s = Stats;
             s.BornApplied = applied.AddApplied;
@@ -185,7 +190,7 @@ namespace TheRavine.Generator
                     DeadChance = store.Count > BusyThreshold ? BusyDeadChance : 0,
                     Seed = (uint)RavineRandom.RangeInt(1, int.MaxValue),
                     SecondsPerDelayUnit = generator.NalSecondsPerDelayUnit,
-                    FallbackDelaySeconds = generator.NalSecondsPerDelayUnit,
+                    FallbackDelaySeconds = generator.NalGrowStageSeconds,
                     GrowDecayChance = GrowDecayChance,
                     CatchUpMaxSteps = generator.NalCatchUpMaxSteps
                 };
@@ -294,10 +299,19 @@ namespace TheRavine.Generator
 
         private bool HasNeighbour(Vector2Int pos)
         {
-            for (int x = -MapGenerator.scale; x <= MapGenerator.scale; x++)
-                for (int y = -MapGenerator.scale; y <= MapGenerator.scale; y++)
-                    if ((x != 0 || y != 0) && generator.ContainsObject(Position2Int.Pack(pos + new Vector2Int(x, y))))
-                        return true;
+            int cellX = pos.x >> MapGenerator.CellShift;
+            int cellZ = pos.y >> MapGenerator.CellShift;
+
+            for (int dx = -NeighbourRadiusCells; dx <= NeighbourRadiusCells; dx++)
+            {
+                for (int dz = -NeighbourRadiusCells; dz <= NeighbourRadiusCells; dz++)
+                {
+                    if (dx == 0 && dz == 0) continue;
+
+                    long cell = Position2Int.Pack((cellX + dx) << MapGenerator.CellShift, (cellZ + dz) << MapGenerator.CellShift);
+                    if (generator.ContainsObject(cell) && !commands.HasPendingRemove(cell)) return true;
+                }
+            }
 
             return false;
         }
