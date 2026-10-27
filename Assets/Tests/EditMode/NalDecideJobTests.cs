@@ -55,7 +55,7 @@ public class NalDecideJobTests
         _counter = new NativeArray<int>(1, Allocator.Persistent);
     }
 
-    private int Run(double now, float deadChance = 0f, int growDecayChance = 0)
+    private int Run(double now, float deadChance = 0f, int growDecayChance = 0, int catchUpMaxSteps = 0)
     {
         var job = new NalDecideJob
         {
@@ -70,7 +70,8 @@ public class NalDecideJobTests
             Seed = 12345u,
             SecondsPerDelayUnit = 0.5f,
             FallbackDelaySeconds = 7f,
-            GrowDecayChance = growDecayChance
+            GrowDecayChance = growDecayChance,
+            CatchUpMaxSteps = catchUpMaxSteps
         };
         job.Run(_cell.Length);
         return _counter[0];
@@ -219,5 +220,60 @@ public class NalDecideJobTests
 
         Assert.AreEqual(5, count);
         Assert.AreEqual(2, _output.Length);
+    }
+
+    [Test]
+    public void LaggingSlotKeepsItsOwnCadence()
+    {
+        Setup(4, new[] { 95d }, Species(Nal, 0, 0, 0, 6, -1));
+
+        Run(100d, catchUpMaxSteps: 4);
+
+        Assert.AreEqual(98d, _output[0].NextDue, 1e-9);
+    }
+
+    [Test]
+    public void LagIsClampedToCatchUpMaxSteps()
+    {
+        Setup(4, new[] { 0d }, Species(Nal, 0, 0, 0, 6, -1));
+
+        Run(100d, catchUpMaxSteps: 4);
+
+        Assert.AreEqual(94d, _output[0].NextDue, 1e-9);
+    }
+
+    [Test]
+    public void CatchUpStepsNeverExceedLimit()
+    {
+        const int limit = 4;
+        Setup(4, new[] { 0d }, Species(Nal, 0, 0, 0, 6, -1));
+
+        int steps = 0;
+        while (steps < 100)
+        {
+            _counter[0] = 0;
+            if (Run(100d, catchUpMaxSteps: limit) == 0) break;
+            _due[0] = _output[0].NextDue;
+            steps++;
+        }
+
+        Assert.AreEqual(limit, steps);
+    }
+
+    [Test]
+    public void ZeroCatchUpStepsKeepsSingleStep()
+    {
+        Setup(4, new[] { 0d }, Species(Nal, 0, 0, 0, 6, -1));
+
+        int steps = 0;
+        while (steps < 100)
+        {
+            _counter[0] = 0;
+            if (Run(100d) == 0) break;
+            _due[0] = _output[0].NextDue;
+            steps++;
+        }
+
+        Assert.AreEqual(1, steps);
     }
 }

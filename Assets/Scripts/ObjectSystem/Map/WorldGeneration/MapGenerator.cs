@@ -21,7 +21,7 @@ namespace TheRavine.Generator
     using TheRavine.Base;
     using Unity.Mathematics;
 
-    public class MapGenerator : MonoBehaviour, ISetAble
+    public class MapGenerator : MonoBehaviour, ISetAble, IWorldCommandTarget
     {
         [SerializeField] private ChunkGenerationSettings chunkGenerationSettings;
         private readonly CancellationTokenSource _cts = new();
@@ -192,6 +192,7 @@ namespace TheRavine.Generator
 
         private void ReleaseChunk(long chunkKey, ChunkData cd)
         {
+            nal?.RemoveChunk(chunkKey);
             mapData.Remove(chunkKey);
 
             if (ReferenceEquals(sampleChunk, cd))
@@ -433,13 +434,21 @@ namespace TheRavine.Generator
         [SerializeField] private Vector3 viewerOffset;
         [SerializeField] private GrassSystem grassSystem;
         [SerializeField] private Texture2DArray biomeAlbedo;
-        [SerializeField, Min(100)] private int nalApplyIntervalMs = 1000;
+        [SerializeField, Min(0.1f)] private float nalApplyBudgetMs = 1f;
+        [SerializeField, Min(0f)] private float nalCatchUpMaxSeconds = 600f;
+        [SerializeField, Min(0)] private int nalCatchUpMaxSteps = 8;
         [SerializeField, Min(16)] private int nalStoreCapacity = 8192;
         [SerializeField, Min(1)] private int nalMaxDecisionsPerTick = 256;
         [SerializeField, Min(0f)] private float nalSecondsPerDelayUnit = 0.01f;
 
         public int NalMaxDecisionsPerTick => nalMaxDecisionsPerTick;
         public float NalSecondsPerDelayUnit => nalSecondsPerDelayUnit;
+        public float NalCatchUpMaxSeconds => nalCatchUpMaxSeconds;
+        public int NalCatchUpMaxSteps => nalCatchUpMaxSteps;
+
+        public WorldCommandBuffer Commands { get; private set; }
+        public WorldCommandStats CommandStats { get; } = new();
+        public WorldCommandStats ImmediateStats { get; } = new();
 
         public ChunkGenerator chunkGenerator;
         public Vector3 waterOffset;
@@ -476,11 +485,12 @@ namespace TheRavine.Generator
             if (chunkStore != null && ServiceLocator.Services.TryGet(out AutosaveCoordinator autosave))
                 autosaveSubscription = autosave.SubscribeBeforeSave(SaveModifiedChunks);
 
+            Commands = new WorldCommandBuffer(256);
+
             if (chunkGenerationSettings.endlessFlag[3])
             {
-                nal = new NAL_PC(this, objectSystem, _cts.Token, nalApplyIntervalMs, nalStoreCapacity);
+                nal = new NAL_PC(this, objectSystem, _cts.Token, nalStoreCapacity);
                 nal.RunNAL().Forget();
-                nal.RunUpdate().Forget();
             }
 
             SetupEndless();
@@ -588,6 +598,27 @@ namespace TheRavine.Generator
         }
 
         public void ClearNALQueue() => nal?.Clear();
+        public void BeginNALChunk(long chunkKey) => nal?.BeginChunk(chunkKey);
+        public void EndNALChunk() => nal?.EndChunk();
+        public void RemoveNALChunk(long chunkKey) => nal?.RemoveChunk(chunkKey);
+
+        public bool ApplyImmediate(in WorldCommand command) =>
+            WorldCommandBuffer.ApplyOne(this, in command, ImmediateStats);
+
+        private void ApplyWorldCommands()
+        {
+            if (Commands == null || Commands.Count == 0) return;
+
+            int pendingBefore = Commands.Count;
+            long start = FrameBudget.Now;
+            Commands.Apply(this, start + FrameBudget.TicksFromMs(nalApplyBudgetMs), CommandStats);
+            int applyMs = (int)((FrameBudget.Now - start) * 1000 / System.Diagnostics.Stopwatch.Frequency);
+
+            nal?.OnCommandsApplied(Commands.AppliedAdds, CommandStats, applyMs, pendingBefore, Commands.Count);
+            Commands.AppliedAdds.Clear();
+
+            ExtraUpdate();
+        }
         public void AddNALObject(Vector2Int pos, int prefabId) => nal?.Enqueue(pos, prefabId);
 
         public UnityAction<long> onUpdate;
@@ -603,6 +634,7 @@ namespace TheRavine.Generator
             if (!hasWindow || center != windowCenter)
                 MoveWindow(center);
 
+            ApplyWorldCommands();
             FlushDirty();
 
             for (int i = 0; i < endless.Length; i++)
@@ -770,6 +802,8 @@ namespace TheRavine.Generator
             _cts.Cancel();
             nal?.Dispose();
             nal = null;
+            Commands?.Dispose();
+            Commands = null;
             chunkGenerator?.Dispose();
         }
     }

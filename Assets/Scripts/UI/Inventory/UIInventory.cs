@@ -147,7 +147,17 @@ namespace TheRavine.Inventory
 
             int levels = placeInfo != null ? placeInfo.Levels : 1;
 
-            if (generator.TryAddObject(e.Position, generator.GetRealPosition(e.Position), placeId, 1, levels: levels))
+            var place = new WorldCommand
+            {
+                Kind = WorldCommand.Add,
+                Pos = e.Position,
+                PrefabId = placeId,
+                Amount = 1,
+                ExpectedPrefabId = WorldCommand.NoExpectation,
+                Levels = (byte)levels
+            };
+
+            if (generator.ApplyImmediate(in place))
             {
                 item.state.amount--;
                 if (slot.amount <= 0) slot.Clear();
@@ -178,22 +188,26 @@ namespace TheRavine.Inventory
 
                 if (eventDrivenInventoryProxy.TryToAdd(this, item))
                 {
-                    generator.RemoveObject(e.Position);
+                    var remove = new WorldCommand
+                    {
+                        Kind = WorldCommand.Remove,
+                        Pos = e.Position,
+                        PrefabId = objectInstInfo.PrefabID,
+                        ExpectedPrefabId = objectInstInfo.PrefabID
+                    };
+                    generator.ApplyImmediate(in remove);
                     SpreadPattern pattern = data.OnPickUpPattern;
                     
                     if (pattern != null)
                     {
-                        generator.TryAddObject(e.Position, generator.GetRealPosition(e.Position), 
-                            pattern.main.Id, pattern.main.DefaultAmount);
+                        PlaceSpread(e.Position, pattern.main);
                         
                         if (pattern.other.Length != 0)
                         {
                             for (byte i = 0; i < pattern.other.Length; i++)
                             {
                                 long newPos = Position2Int.Pack(Extension.GetRandomPointAround(Position2Int.UnpackToVector(e.Position), pattern.factor));
-                                generator.TryAddObject(newPos, generator.GetRealPosition(newPos), 
-                                    pattern.other[i].Id, 
-                                    pattern.other[i].DefaultAmount);
+                                PlaceSpread(newPos, pattern.other[i]);
                             }
                         }
                     }
@@ -201,6 +215,20 @@ namespace TheRavine.Inventory
 
                 generator.ExtraUpdate();
             }
+        }
+
+        private void PlaceSpread(long pos, ObjectInfo info)
+        {
+            var add = new WorldCommand
+            {
+                Kind = WorldCommand.Add,
+                Pos = pos,
+                PrefabId = info.Id,
+                Amount = info.DefaultAmount,
+                ExpectedPrefabId = WorldCommand.NoExpectation,
+                Levels = 1
+            };
+            generator.ApplyImmediate(in add);
         }
 
         private void SaveInventory()
