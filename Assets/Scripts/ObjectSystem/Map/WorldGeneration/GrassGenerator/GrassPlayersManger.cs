@@ -10,7 +10,16 @@ public class GrassPlayersManger : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (player == null) TryBindFirstPlayer();
         UpdatePlayerPositions();
+    }
+
+    private void TryBindFirstPlayer()
+    {
+        var players = ServiceLocator.Players.GetAllPlayers();
+        if (players.Count == 0) return;
+
+        player = players[0].GetEntityComponent<TransformComponent>().GetEntityTransform();
     }
 
     private void UpdatePlayerPositions()
