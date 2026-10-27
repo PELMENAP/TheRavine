@@ -80,7 +80,7 @@ public class NalDecideJobTests
             FarPeriodScale = 4f,
             DecayCheckSeconds = 30f
         };
-        job.Run(_cell.Length);
+        job.Execute(_cell.Length);
         return _counter[0];
     }
 
