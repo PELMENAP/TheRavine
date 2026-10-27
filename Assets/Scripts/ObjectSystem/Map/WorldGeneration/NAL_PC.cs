@@ -264,6 +264,7 @@ namespace TheRavine.Generator
         public async UniTaskVoid RunNAL()
         {
             await UniTask.Delay(10000);
+            lastReportTicks = Stopwatch.GetTimestamp();
 
             while (!token.IsCancellationRequested && !disposed)
             {
