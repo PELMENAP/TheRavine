@@ -23,6 +23,9 @@ namespace TheRavine.Generator
         public int CommandQueueLength, CommandQueueMax;
         public int BatchMs, BatchMsMax;
         public int TickMs, JobMs;
+        public int RollDeaths, CloseDeaths, GrowDecays, Evolved;
+        public int StaleDrops, HeightDrops, WindowDrops;
+        public int SpawnPushed;
     }
 
     public class NAL_PC
@@ -45,11 +48,10 @@ namespace TheRavine.Generator
         private readonly WorldCommandBuffer commands;
 
         private readonly long reportIntervalTicks = 10 * Stopwatch.Frequency;
-        private long lastReportTicks;
+        private long lastReportTicks = Stopwatch.GetTimestamp();
         public readonly NalStats Stats = new();
         private double lastTickTime = -1d;
         private double catchUpElapsed;
-        private int decisionStale;
         private bool disposed;
 
         public NAL_PC(MapGenerator generator, ObjectSystem objectSystem, CancellationToken token, int storeCapacity)
@@ -131,7 +133,7 @@ namespace TheRavine.Generator
             s.BornRejected = applied.AddRejected;
             s.Deaths = applied.RemoveApplied;
             s.RemoveNoEffect = applied.RemoveNoEffect;
-            s.StaleRemovals = decisionStale + applied.RemoveStale;
+            s.StaleRemovals = s.StaleDrops + applied.RemoveStale;
             s.CommandQueueLength = pendingAfter;
             if (pendingBefore > s.CommandQueueMax) s.CommandQueueMax = pendingBefore;
             s.BatchMs = applyMs;
@@ -150,6 +152,8 @@ namespace TheRavine.Generator
 
             while (!token.IsCancellationRequested && !disposed)
             {
+                TryReport();
+
                 if (store.Count == 0 || !WorldAuthority.IsAuthority)
                 {
                     await UniTask.Yield();
@@ -199,17 +203,9 @@ namespace TheRavine.Generator
                 Apply(written);
                 DropSlots();
 
-                long end = Stopwatch.GetTimestamp();
                 Stats.StoreCount = store.Count;
                 Stats.QueueLength = store.Count;
-                Stats.TickMs = (int)((end - start) * 1000 / Stopwatch.Frequency);
-
-                if (end - lastReportTicks >= reportIntervalTicks)
-                {
-                    lastReportTicks = end;
-                    Debug.Assert(store.IsConsistent(), "NAL: store desync");
-                    Report();
-                }
+                Stats.TickMs = (int)((Stopwatch.GetTimestamp() - start) * 1000 / Stopwatch.Frequency);
 
                 await UniTask.Yield();
             }
@@ -228,7 +224,7 @@ namespace TheRavine.Generator
 
                 if (!generator.TryGetObject(packed, out ObjectInstInfo inst) || inst.PrefabID != prefabId)
                 {
-                    decisionStale++;
+                    Stats.StaleDrops++;
                     dropSlots.Add(slot);
                     continue;
                 }
@@ -241,6 +237,7 @@ namespace TheRavine.Generator
                     {
                         if (d.DeathRoll)
                         {
+                            Stats.GrowDecays++;
                             PushRemove(packed, prefabId);
                             dropSlots.Add(slot);
                         }
@@ -251,6 +248,7 @@ namespace TheRavine.Generator
                         continue;
                     }
 
+                    Stats.Evolved++;
                     PushRemove(packed, prefabId);
                     PushAdd(packed, registry.GetDense(p.EvolutionDense));
                     dropSlots.Add(slot);
@@ -263,8 +261,12 @@ namespace TheRavine.Generator
                     continue;
                 }
 
-                if (d.DeathRoll || HasNeighbour(pos))
+                bool rolled = d.DeathRoll;
+                bool crowded = !rolled && HasNeighbour(pos);
+                if (rolled || crowded)
                 {
+                    if (rolled) Stats.RollDeaths++;
+                    else Stats.CloseDeaths++;
                     PushRemove(packed, prefabId);
                     PushDeathPattern(pos, p);
                     dropSlots.Add(slot);
@@ -273,6 +275,7 @@ namespace TheRavine.Generator
 
                 if (!generator.IsHeightIsLiveAble(packed))
                 {
+                    Stats.HeightDrops++;
                     dropSlots.Add(slot);
                     continue;
                 }
@@ -282,6 +285,7 @@ namespace TheRavine.Generator
                     ObjectInfo spawn = registry.GetDense(d.SpawnDense);
                     for (int k = 0; k < d.SpawnCount; k++)
                         PushAdd(Position2Int.Pack(d.TargetsX[k], d.TargetsZ[k]), spawn);
+                    Stats.SpawnPushed += d.SpawnCount;
                 }
 
                 Reschedule(slot, packed, d.NextDue);
@@ -340,7 +344,10 @@ namespace TheRavine.Generator
             if (generator.IsInActiveWindow(packed))
                 store.Due[slot] = nextDue;
             else
+            {
+                Stats.WindowDrops++;
                 dropSlots.Add(slot);
+            }
         }
 
         private void DropSlots()
@@ -357,6 +364,16 @@ namespace TheRavine.Generator
             dropSlots.Clear();
         }
 
+        private void TryReport()
+        {
+            long now = Stopwatch.GetTimestamp();
+            if (now - lastReportTicks < reportIntervalTicks) return;
+
+            lastReportTicks = now;
+            Debug.Assert(store.IsConsistent(), "NAL: store desync");
+            Report();
+        }
+
         private void Report()
         {
             NalStats s = Stats;
@@ -364,6 +381,8 @@ namespace TheRavine.Generator
                 $"[NAL] processed={s.Processed} dueBacklog={s.DueBacklog} born={s.BornApplied}/{s.BornRejected} " +
                 $"deaths={s.Deaths} removeNoEffect={s.RemoveNoEffect} stale={s.StaleRemovals} " +
                 $"queue={s.QueueLength}/{s.QueueMax} store={s.StoreCount} " +
+                $"deathRoll={s.RollDeaths} deathClose={s.CloseDeaths} growDecay={s.GrowDecays} evolved={s.Evolved} " +
+                $"spawnPushed={s.SpawnPushed} dropStale={s.StaleDrops} dropHeight={s.HeightDrops} dropWindow={s.WindowDrops} " +
                 $"cmdQ={s.CommandQueueLength}/{s.CommandQueueMax} batchMs={s.BatchMs}/{s.BatchMsMax} tickMs={s.TickMs} jobMs={s.JobMs}");
         }
     }
