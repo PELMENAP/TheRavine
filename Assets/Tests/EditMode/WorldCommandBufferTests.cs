@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
+using TheRavine.Extensions;
 using TheRavine.Generator;
 
 public class WorldCommandBufferTests
@@ -203,6 +204,48 @@ public class WorldCommandBufferTests
         Assert.AreEqual(0, _buffer.Count);
         Assert.AreEqual(1, _stats.AddApplied);
         Assert.AreEqual(1, _stats.AddRejected);
+    }
+
+    [Test]
+    public void PendingRemoveCoversWholeCellUntilApplied()
+    {
+        long pos = Position2Int.Pack(10, 10);
+        long sameCell = Position2Int.Pack(11, 11);
+        long otherCell = Position2Int.Pack(12, 10);
+        _buffer.Push(Remove(pos));
+
+        Assert.IsTrue(_buffer.HasPendingRemove(pos));
+        Assert.IsTrue(_buffer.HasPendingRemove(sameCell));
+        Assert.IsFalse(_buffer.HasPendingRemove(otherCell));
+
+        _buffer.Apply(_world, FrameBudget.Unlimited, _stats);
+
+        Assert.IsFalse(_buffer.HasPendingRemove(pos));
+    }
+
+    [Test]
+    public void PendingRemovesAreCountedPerCell()
+    {
+        long pos = Position2Int.Pack(10, 10);
+        _buffer.Push(Remove(pos));
+        _buffer.Push(Remove(Position2Int.Pack(11, 10)));
+
+        _buffer.Apply(_world, 0L, _stats);
+
+        Assert.IsTrue(_buffer.HasPendingRemove(pos));
+
+        _buffer.Apply(_world, FrameBudget.Unlimited, _stats);
+
+        Assert.IsFalse(_buffer.HasPendingRemove(pos));
+    }
+
+    [Test]
+    public void AddsDoNotMarkPendingRemoves()
+    {
+        long pos = Position2Int.Pack(10, 10);
+        _buffer.Push(Add(pos, 3));
+
+        Assert.IsFalse(_buffer.HasPendingRemove(pos));
     }
 
     [Test]
