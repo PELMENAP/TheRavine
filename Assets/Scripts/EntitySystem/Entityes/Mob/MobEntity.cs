@@ -12,8 +12,6 @@ namespace TheRavine.EntityControl
         {
             base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.Prefab.GetInstanceID(), 0));
             moveController.SetInitialValues(this, logger);
-            // _entityGameData = new EntityGameData(_entityInfo);
-            // crosshair.gameObject.SetActive(false);
         }
         public override void SetUp()
         {
@@ -25,18 +23,6 @@ namespace TheRavine.EntityControl
         }
         public override void UpdateEntityCycle()
         {
-            // if (isAlife)
-            //     moveController.UpdateMobControllerCycle();
         }
-        // public override void EnableView()
-        // {
-        //     Activate();
-        //     moveController.EnableComponents();
-        // }
-        // public override void DisableView()
-        // {
-        //     Deactivate();
-        //     moveController.DisableComponents();
-        // }
     }
 }
