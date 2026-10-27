@@ -27,7 +27,7 @@ namespace TheRavine.EntityControl
             current = Capacity;
         }
 
-        public float Capacity => energy.MaxEnergy.Value * staminaPerMaxEnergy;
+        public float Capacity => energy.MaxEnergy.CurrentValue * staminaPerMaxEnergy;
 
         public float Ratio
         {
@@ -65,8 +65,8 @@ namespace TheRavine.EntityControl
 
         private float EnergyRatio()
         {
-            float max = energy.MaxEnergy.Value;
-            return max > 0f ? energy.Energy.Value / max : 0f;
+            float max = energy.MaxEnergy.CurrentValue;
+            return max > 0f ? energy.Energy.CurrentValue / max : 0f;
         }
     }
 }
