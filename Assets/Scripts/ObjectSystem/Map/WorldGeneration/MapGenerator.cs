@@ -309,10 +309,47 @@ namespace TheRavine.Generator
             int prefabID,
             int amount,
             ReadOnlySpan<Vector2Int> additionalWorldCells = default,
+            int levels = 1) =>
+            TryAddObjectEx(worldPos, realPos, prefabID, amount, additionalWorldCells, levels) == PlacementResult.Ok;
+
+        bool IWorldCommandTarget.TryAddObject(
+            long worldPos,
+            Vector3 realPos,
+            int prefabID,
+            int amount,
+            ReadOnlySpan<Vector2Int> additionalWorldCells,
+            int levels)
+        {
+            ObjectInfo info = additionalWorldCells.IsEmpty && objectSystem != null ? objectSystem.GetInfo(prefabID) : null;
+            return info != null
+                ? TryAddFromInfo(worldPos, realPos, info, amount, levels) == PlacementResult.Ok
+                : TryAddObjectEx(worldPos, realPos, prefabID, amount, additionalWorldCells, levels) == PlacementResult.Ok;
+        }
+
+        public PlacementResult TryAddFromInfo(long worldPos, Vector3 realPos, ObjectInfo info, int amount, int levels)
+        {
+            Span<Vector2Int> cells = stackalloc Vector2Int[ObjectInstInfo.MaxSecondary];
+            int count = Footprint.Resolve(info, Position2Int.UnpackToVector(worldPos), cells);
+            if (count > cells.Length)
+            {
+                RavineLog.Warning($"[MapGenerator] Too many secondary cells: {count} > {ObjectInstInfo.MaxSecondary}");
+                return PlacementResult.TooManyCells;
+            }
+
+            return TryAddObjectEx(worldPos, realPos, info.Id, amount, cells[..count], levels);
+        }
+
+        public PlacementResult TryAddObjectEx(
+            long worldPos,
+            Vector3 realPos,
+            int prefabID,
+            int amount,
+            ReadOnlySpan<Vector2Int> additionalWorldCells = default,
             int levels = 1)
         {
             long chunk = WorldToChunk(worldPos);
             ChunkData cd = GetMapData(chunk);
+            if (cd == null) return PlacementResult.NoChunk;
 
             int primaryIdx = WorldToLocalIdx(worldPos);
 
@@ -320,10 +357,11 @@ namespace TheRavine.Generator
             if (secCount > ObjectInstInfo.MaxSecondary)
             {
                 RavineLog.Warning($"[MapGenerator] Too many secondary cells: {secCount} > {ObjectInstInfo.MaxSecondary}");
-                return false;
+                return PlacementResult.TooManyCells;
             }
 
             Span<int> additionalLocalIdxs = stackalloc int[ObjectInstInfo.MaxSecondary];
+            int unique = 0;
 
             for (int i = 0; i < secCount; i++)
             {
@@ -334,18 +372,20 @@ namespace TheRavine.Generator
                     RavineLog.Warning(
                         $"[MapGenerator] AdditionalCell {additionalWorldCells[i]} falls outside " +
                         $"primary chunk {chunk}. Cross-chunk multi-cell objects are not supported.");
-                    return false;
+                    return PlacementResult.CrossChunk;
                 }
 
-                additionalLocalIdxs[i] = WorldToLocalIdx(worldCell);
+                int local = WorldToLocalIdx(worldCell);
+                if (local == primaryIdx || additionalLocalIdxs[..unique].IndexOf(local) >= 0) continue;
+                additionalLocalIdxs[unique++] = local;
             }
 
             var info = new ObjectInstInfo(realPos, prefabID, amount);
-            if (!cd.TryAddObject(primaryIdx, in info, additionalLocalIdxs[..secCount], levels))
-                return false;
+            if (!cd.TryAddObject(primaryIdx, in info, additionalLocalIdxs[..unique], levels, out PlacementResult result))
+                return result;
 
             MarkChunkDirty(chunk);
-            return true;
+            return PlacementResult.Ok;
         }
 
         public bool TryGetObject(long worldPos, out ObjectInstInfo info)
@@ -850,23 +890,14 @@ namespace TheRavine.Generator
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryAddObject(int primaryIdx, in ObjectInstInfo info, ReadOnlySpan<int> additionalIdxs = default, int levels = 1)
+            => TryAddObject(primaryIdx, in info, additionalIdxs, levels, out _);
+
+        public bool TryAddObject(int primaryIdx, in ObjectInstInfo info, ReadOnlySpan<int> additionalIdxs, int levels, out PlacementResult result)
         {
-            if ((uint)primaryIdx >= TotalCells) return false;
-            if (Occupancy[primaryIdx] != 0)    return false;
+            result = Validate(primaryIdx, additionalIdxs, levels);
+            if (result != PlacementResult.Ok) return false;
 
             int secCount = additionalIdxs.Length;
-            if (secCount > ObjectInstInfo.MaxSecondary) return false;
-
-            for (int i = 0; i < secCount; i++)
-            {
-                int ac = additionalIdxs[i];
-                if ((uint)ac >= TotalCells) return false;
-                if (Occupancy[ac] != 0)    return false;
-            }
-
-            if (levels < 1 || levels > ObjectInfo.MaxLevels) return false;
-            if (!UpperLevelsFree(primaryIdx, additionalIdxs, levels)) return false;
-
             ObjectInstInfo stored = info;
             stored.PrimaryIdx     = primaryIdx;
             stored.SecondaryCount = secCount;
@@ -889,6 +920,28 @@ namespace TheRavine.Generator
             IsDirty = true;
             Version++;
             return true;
+        }
+
+        private PlacementResult Validate(int primaryIdx, ReadOnlySpan<int> additionalIdxs, int levels)
+        {
+            if ((uint)primaryIdx >= TotalCells) return PlacementResult.OutOfBounds;
+            if (Occupancy[primaryIdx] != 0)    return PlacementResult.Occupied;
+
+            int secCount = additionalIdxs.Length;
+            if (secCount > ObjectInstInfo.MaxSecondary) return PlacementResult.TooManyCells;
+
+            for (int i = 0; i < secCount; i++)
+            {
+                int ac = additionalIdxs[i];
+                if ((uint)ac >= TotalCells) return PlacementResult.OutOfBounds;
+                if (Occupancy[ac] != 0 || ac == primaryIdx) return PlacementResult.Occupied;
+                for (int j = 0; j < i; j++)
+                    if (additionalIdxs[j] == ac) return PlacementResult.Occupied;
+            }
+
+            if (levels < 1 || levels > ObjectInfo.MaxLevels) return PlacementResult.InvalidLevels;
+            if (!UpperLevelsFree(primaryIdx, additionalIdxs, levels)) return PlacementResult.UpperLevelOccupied;
+            return PlacementResult.Ok;
         }
 
         private bool UpperLevelsFree(int primaryIdx, ReadOnlySpan<int> additionalIdxs, int levels)

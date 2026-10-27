@@ -152,13 +152,6 @@ namespace TheRavine.Inventory
                 return;
             }
 
-            ObjectInfo placeInfo = objectSystem.GetInfo(placeId);
-            if (placeInfo != null && placeInfo.PlacementKind == PlacementKind.Construction3D)
-            {
-                ConstructionService.TryRequestPlacement(e.Position, placeInfo);
-                return;
-            }
-
             int reserved = 0;
             foreach (PendingPlace pending in pendingPlaces)
                 if (pending.Item == item) reserved++;
@@ -173,7 +166,12 @@ namespace TheRavine.Inventory
             if (pendingPlaces.Count == 0) return;
 
             PendingPlace pending = pendingPlaces.Dequeue();
-            if (!e.Ok || pending.Position != e.Position) return;
+            if (!e.Ok)
+            {
+                logger.LogInfo($"[UIInventory] Размещение в {Position2Int.UnpackToVector(e.Position)} отклонено: {(WorldEditResult)e.Edit}/{(PlacementResult)e.Placement}");
+                return;
+            }
+            if (pending.Position != e.Position) return;
 
             InventorySlot slot = pending.Cell.slot;
             if (slot == null || slot.item != pending.Item) return;
