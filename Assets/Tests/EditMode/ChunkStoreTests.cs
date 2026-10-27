@@ -5,6 +5,7 @@ using TheRavine.Base;
 using TheRavine.Extensions;
 using TheRavine.Generator;
 using UnityEngine;
+using Unity.Collections;
 
 public class ChunkStoreTests
 {

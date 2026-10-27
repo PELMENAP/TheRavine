@@ -30,14 +30,16 @@ namespace TheRavine.EntityControl
         [SerializeField] private float baseJumpForce = 7f;
         [SerializeField] private AnimationCurve jumpForceCurve;
         [SerializeField] private Transform jumpIndicator;
-        [SerializeField] private float jumpIndicatorHeight = 1.5f, jumpIndicatorWidth = 0.15f, jumpIndicatorBase = 1f;
+        [SerializeField] private float jumpIndicatorHeight = 1.5f, jumpIndicatorWidth = 0.15f;
+        [SerializeField] private float jumpIndicatorXOffset = 2f, jumpIndicatorYOffset = 2f;
 
         [Header("Sprint")]
         [SerializeField] private float sprintMultiplier = 1.6f;
         [SerializeField] private float staminaPerMaxEnergy = 0.5f, capAtZeroEnergy = 0.3f;
         [SerializeField] private float staminaDrainFraction = 0.2f, staminaRegenFraction = 0.15f;
         [SerializeField] private float staminaRecoveryDelay = 1f, energyPerStamina = 0.2f;
-        [SerializeField] private Image staminaFill;
+        [SerializeField] private Transform staminaFill;
+        [SerializeField] private float staminaIndicatorXOffset = 2f, staminaIndicatorYOffset = 2f;
 
         [SerializeField] private float characterHalfHeight = 1f;
         private TerrainPhysicsResolver terrainResolver;
@@ -191,7 +193,11 @@ namespace TheRavine.EntityControl
             if (!IsOwner) return;
 
             UpdateJumpIndicator();
-            if (staminaFill != null) staminaFill.fillAmount = staminaRatio.Value;
+            if (staminaFill != null) 
+            {
+                staminaFill.localScale = new Vector3(staminaRatio.Value, jumpIndicatorWidth, jumpIndicatorWidth);
+                staminaFill.localPosition = new Vector3(staminaIndicatorXOffset - staminaRatio.Value * 0.5f, staminaIndicatorYOffset, 0f);
+            }
         }
 
         private void UpdateJumpIndicator()
@@ -202,21 +208,10 @@ namespace TheRavine.EntityControl
                 return;
             }
 
-            if (jumpIndicator == null) jumpIndicator = CreateJumpIndicator();
-
             float height = jumpForceCurve.Evaluate(jumpCharge.LiveChargeNormalized) * jumpIndicatorHeight;
             jumpIndicator.gameObject.SetActive(true);
             jumpIndicator.localScale = new Vector3(jumpIndicatorWidth, height, jumpIndicatorWidth);
-            jumpIndicator.localPosition = new Vector3(0f, jumpIndicatorBase + height * 0.5f, 0f);
-        }
-
-        private Transform CreateJumpIndicator()
-        {
-            GameObject bar = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            bar.name = "JumpIndicator";
-            Destroy(bar.GetComponent<Collider>());
-            bar.transform.SetParent(transform, false);
-            return bar.transform;
+            jumpIndicator.localPosition = new Vector3(jumpIndicatorXOffset, jumpIndicatorYOffset + height * 0.5f, 0f);
         }
 
         private static bool IsSprintHeld() => Keyboard.current != null && Keyboard.current.rightCtrlKey.isPressed;

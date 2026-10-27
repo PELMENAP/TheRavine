@@ -91,7 +91,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _AOBottom: 0
-    - _AOStrength: 0
+    - _AOStrength: 1
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0
     - _AlphaToMask: 0
@@ -129,7 +129,7 @@ Material:
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
-    - _AlbedoTint: {r: 0.12557846, g: 0.3137255, b: 0.12156863, a: 1}
+    - _AlbedoTint: {r: 0.16582543, g: 0.3773585, b: 0.16197936, a: 1}
     - _AtlasGrid: {r: 2, g: 4, b: 0, a: 0}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
