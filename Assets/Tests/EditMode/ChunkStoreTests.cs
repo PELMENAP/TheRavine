@@ -1,9 +1,10 @@
 using System;
 using System.IO;
 using NUnit.Framework;
-using UnityEngine;
+using TheRavine.Base;
 using TheRavine.Extensions;
 using TheRavine.Generator;
+using UnityEngine;
 
 public class ChunkStoreTests
 {
@@ -27,7 +28,7 @@ public class ChunkStoreTests
     {
         _source.Dispose();
         _restored.Dispose();
-        Directory.Delete(Path.Combine(Application.persistentDataPath, "worlds", _worldId), true);
+        Directory.Delete(WorldRegistry.GetWorldDirectory(_worldId), true);
     }
 
     private static ObjectInstInfo Info(int prefab) => new ObjectInstInfo(new Vector3(prefab, 0.5f, -prefab), prefab, prefab * 3);
