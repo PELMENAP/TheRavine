@@ -7,6 +7,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Debug = UnityEngine.Debug;
 
+using TheRavine.Base;
 using TheRavine.Extensions;
 using TheRavine.ObjectControl;
 
@@ -77,7 +78,7 @@ namespace TheRavine.Generator
 
         public void Enqueue(Vector2Int pos, int prefabId)
         {
-            if (disposed) return;
+            if (disposed || !WorldAuthority.IsAuthority) return;
 
             long packed = Position2Int.Pack(pos);
             if (!generator.IsInActiveWindow(packed)) return;
@@ -149,7 +150,7 @@ namespace TheRavine.Generator
 
             while (!token.IsCancellationRequested && !disposed)
             {
-                if (store.Count == 0)
+                if (store.Count == 0 || !WorldAuthority.IsAuthority)
                 {
                     await UniTask.Yield();
                     continue;

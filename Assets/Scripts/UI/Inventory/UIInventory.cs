@@ -29,6 +29,17 @@ namespace TheRavine.Inventory
         private InfoManager infoManager;
         private WorldRegistry worldRegistry;
         private RavineLogger logger;
+        private PlayerEntity player;
+        private readonly Queue<PendingPlace> pendingPlaces = new();
+        private readonly HashSet<long> pendingPickUps = new();
+
+        private struct PendingPlace
+        {
+            public UIInventorySlot Cell;
+            public IInventoryItem Item;
+            public long Position;
+        }
+
         public bool HasItem(InventoryItemInfo info) => 
             eventDrivenInventoryProxy.HasItem(infoManager.GetItemType(info));
 
@@ -53,6 +64,7 @@ namespace TheRavine.Inventory
             
 
             PlayerEntity playerData = (PlayerEntity) ServiceLocator.Players.GetAllPlayers()[0];
+            player = playerData;
             var gameSettings = ServiceLocator.GetService<GlobalSettingsController>().Settings.CurrentValue;
             inventoryInputHandler.RegisterInput(playerData, gameSettings);
 
@@ -101,6 +113,8 @@ namespace TheRavine.Inventory
                 EventBus playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
                 playerEventBus.Subscribe<PlaceEvent>(PlaceObjectEvent);
                 playerEventBus.Subscribe<PickUpEvent>(PickUpEvent);
+                playerEventBus.Subscribe<PlaceResultEvent>(OnPlaceResult);
+                playerEventBus.Subscribe<PickUpResultEvent>(OnPickUpResult);
             }
             catch (Exception ex)
             {
@@ -145,27 +159,28 @@ namespace TheRavine.Inventory
                 return;
             }
 
-            int levels = placeInfo != null ? placeInfo.Levels : 1;
+            int reserved = 0;
+            foreach (PendingPlace pending in pendingPlaces)
+                if (pending.Item == item) reserved++;
+            if (reserved >= slot.amount) return;
 
-            var place = new WorldCommand
-            {
-                Kind = WorldCommand.Add,
-                Pos = e.Position,
-                PrefabId = placeId,
-                Amount = 1,
-                ExpectedPrefabId = WorldCommand.NoExpectation,
-                Levels = (byte)levels
-            };
+            if (player.RequestPlace(e.Position, placeId))
+                pendingPlaces.Enqueue(new PendingPlace { Cell = cell, Item = item, Position = e.Position });
+        }
 
-            if (generator.ApplyImmediate(in place))
-            {
-                item.state.amount--;
-                if (slot.amount <= 0) slot.Clear();
-                cell.Refresh();
-                generator.TryToAddPositionToChunk(e.Position);
-            }
+        private void OnPlaceResult(AEntity entity, PlaceResultEvent e)
+        {
+            if (pendingPlaces.Count == 0) return;
 
-            generator.ExtraUpdate();
+            PendingPlace pending = pendingPlaces.Dequeue();
+            if (!e.Ok || pending.Position != e.Position) return;
+
+            InventorySlot slot = pending.Cell.slot;
+            if (slot == null || slot.item != pending.Item) return;
+
+            pending.Item.state.amount--;
+            if (slot.amount <= 0) slot.Clear();
+            pending.Cell.Refresh();
         }
 
         private void OnInventoryStateChanged(object sender)
@@ -176,59 +191,32 @@ namespace TheRavine.Inventory
 
         private void PickUpEvent(AEntity entity, PickUpEvent e)
         {
-            if (generator.TryGetObject(e.Position, out ObjectInstInfo objectInstInfo))
-            {
-                ObjectInfo data = objectSystem.GetInfo(objectInstInfo.PrefabID);
-                if (data == null || data.InventoryItemInfo == null) return;
+            if (pendingPickUps.Contains(e.Position)) return;
+            if (!generator.TryGetObject(e.Position, out ObjectInstInfo objectInstInfo)) return;
 
-                IInventoryItem item = infoManager.GetInventoryItemByInfo(
-                    data.InventoryItemInfo.id, 
-                    data.InventoryItemInfo, 
-                    objectInstInfo.Amount);
+            ObjectInfo data = objectSystem.GetInfo(objectInstInfo.PrefabID);
+            if (data == null || data.InventoryItemInfo == null) return;
+            if (eventDrivenInventoryProxy.isFull && !HasItem(data.InventoryItemInfo)) return;
 
-                if (eventDrivenInventoryProxy.TryToAdd(this, item))
-                {
-                    var remove = new WorldCommand
-                    {
-                        Kind = WorldCommand.Remove,
-                        Pos = e.Position,
-                        PrefabId = objectInstInfo.PrefabID,
-                        ExpectedPrefabId = objectInstInfo.PrefabID
-                    };
-                    generator.ApplyImmediate(in remove);
-                    SpreadPattern pattern = data.OnPickUpPattern;
-                    
-                    if (pattern != null)
-                    {
-                        PlaceSpread(e.Position, pattern.main);
-                        
-                        if (pattern.other.Length != 0)
-                        {
-                            for (byte i = 0; i < pattern.other.Length; i++)
-                            {
-                                long newPos = Position2Int.Pack(Extension.GetRandomPointAround(Position2Int.UnpackToVector(e.Position), pattern.factor));
-                                PlaceSpread(newPos, pattern.other[i]);
-                            }
-                        }
-                    }
-                }
-
-                generator.ExtraUpdate();
-            }
+            if (player.RequestPickUp(e.Position))
+                pendingPickUps.Add(e.Position);
         }
 
-        private void PlaceSpread(long pos, ObjectInfo info)
+        private void OnPickUpResult(AEntity entity, PickUpResultEvent e)
         {
-            var add = new WorldCommand
-            {
-                Kind = WorldCommand.Add,
-                Pos = pos,
-                PrefabId = info.Id,
-                Amount = info.DefaultAmount,
-                ExpectedPrefabId = WorldCommand.NoExpectation,
-                Levels = 1
-            };
-            generator.ApplyImmediate(in add);
+            pendingPickUps.Remove(e.Position);
+            if (!e.Ok) return;
+
+            ObjectInfo data = objectSystem.GetInfo(e.PrefabId);
+            if (data == null || data.InventoryItemInfo == null) return;
+
+            IInventoryItem item = infoManager.GetInventoryItemByInfo(
+                data.InventoryItemInfo.id,
+                data.InventoryItemInfo,
+                e.Amount);
+
+            if (!eventDrivenInventoryProxy.TryToAdd(this, item))
+                logger.LogWarning($"[UIInventory] Нет места для {data.InventoryItemInfo.id}, подобранный предмет потерян");
         }
 
         private void SaveInventory()

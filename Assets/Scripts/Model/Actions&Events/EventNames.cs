@@ -8,5 +8,7 @@ public interface IEntityEvent : IGameEvent
 
 public struct PickUpEvent : IGameEvent { public long Position; } 
 public struct PlaceEvent : IGameEvent { public long Position; }
+public struct PickUpResultEvent : IGameEvent { public long Position; public int PrefabId; public int Amount; public bool Ok; }
+public struct PlaceResultEvent : IGameEvent { public long Position; public bool Ok; }
 public struct AimAddition : IGameEvent { public Vector2 Position; }
 public struct CameraPlace : IGameEvent { public float scale; public bool flip; }
