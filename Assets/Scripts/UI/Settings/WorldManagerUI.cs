@@ -10,7 +10,6 @@ namespace TheRavine.Base
     public class WorldManagerUI : MonoBehaviour
     {
         [Header("Управление мирами")]
-        [SerializeField] private ScrollRect worldsScrollView;
         [SerializeField] private Transform worldsContainer;
         [SerializeField] private GameObject worldItemPrefab;
         [SerializeField] private Button createWorldButton;

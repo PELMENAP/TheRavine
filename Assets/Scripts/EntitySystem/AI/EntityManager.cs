@@ -61,9 +61,6 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private int _superinfectionBlocks;
     [SerializeField] private float _avgFitness;
 
-    [Header("Virology")]
-    [SerializeField] private StrainCodonTable strainCodonTable;
-
     [SerializeField] private bool useSavedBrain;
 
     private float   _nextGenerationTime;
@@ -633,7 +630,7 @@ public class EntityManager : MonoBehaviour
     public void SetEntityVisible(EntityModel model, bool visible)
     {
         if (model == null || model.IsDisposed) return;
-        model.GetEntityComponent<VisualCullingComponent>()?.SetVisible(visible);
+        model.VisualCulling?.SetVisible(visible);
     }
 
     public void SetEntitiesVisible(IReadOnlyList<EntityModel> targets, bool visible)
