@@ -11,6 +11,7 @@ using TheRavine.Extensions;
 using TheRavine.Base;
 using TheRavine.Events;
 using TheRavine.Generator;
+using TheRavine.ObjectControl;
 
 namespace TheRavine.EntityControl
 {
@@ -20,6 +21,7 @@ namespace TheRavine.EntityControl
         private const float SpawnHeightY = 200f;
 
         [SerializeField] private int placeObjectDelay;
+        [SerializeField] private float reachTolerance = 2f;
         [SerializeField] private float movementMinimum, sendInterval = 0.1f, maxStepHeight = 0.6f;
         [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick, Jump;
         [SerializeField] private Joystick joystick;
@@ -69,6 +71,7 @@ namespace TheRavine.EntityControl
         private PlayerStamina stamina;
         private NetworkVariable<float> staminaRatio = new(1f);
         private IDisposable unsubscribe;
+        private readonly ulong[] ownerTarget = new ulong[1];
 
         public void SetInitialValues(AEntity entity, RavineLogger logger)
         {
@@ -412,6 +415,104 @@ namespace TheRavine.EntityControl
 
             await UniTask.Delay(placeObjectDelay);
             canPlace = true;
+        }
+
+        public bool RequestPlace(long position, int objectId)
+        {
+            if (!IsSpawned || !IsOwner) return false;
+            PlaceRequestServerRpc(position, objectId);
+            return true;
+        }
+
+        public bool RequestPickUp(long position)
+        {
+            if (!IsSpawned || !IsOwner) return false;
+            PickUpRequestServerRpc(position);
+            return true;
+        }
+
+        [ServerRpc]
+        private void PlaceRequestServerRpc(long position, int objectId)
+        {
+            bool ok = false;
+            if (aimComponent != null && TryResolveEditor(position, aimComponent.CrosshairDistance, out MapGenerator generator, out ObjectSystem objects))
+            {
+                WorldEditResult result = WorldEdits.TryPlace(generator, objects, position, objectId);
+                ok = result == WorldEditResult.Ok;
+                if (!ok) Refuse(position, $"place {objectId}: {result}");
+            }
+            PlaceResultClientRpc(position, objectId, ok, OwnerTarget());
+        }
+
+        [ServerRpc]
+        private void PickUpRequestServerRpc(long position)
+        {
+            bool ok = false;
+            int prefabId = ObjectInstInfo.PlaceholderId, amount = 0;
+            if (aimComponent != null && TryResolveEditor(position,
+                    math.max(aimComponent.PickDistance * math.SQRT2, aimComponent.CrosshairDistance),
+                    out MapGenerator generator, out ObjectSystem objects))
+            {
+                WorldEditResult result = WorldEdits.TryPickUp(generator, objects, position, out prefabId, out amount);
+                ok = result == WorldEditResult.Ok;
+                if (!ok) Refuse(position, $"pick up: {result}");
+            }
+            PickUpResultClientRpc(position, prefabId, amount, ok, OwnerTarget());
+        }
+
+        [ClientRpc]
+        private void PlaceResultClientRpc(long position, int objectId, bool ok, ClientRpcParams rpcParams = default)
+        {
+            if (ok && !IsServer && ServiceLocator.Services.TryGet(out MapGenerator generator)
+                && ServiceLocator.Services.TryGet(out ObjectSystem objects))
+                WorldEdits.MirrorPlace(generator, objects, position, objectId);
+
+            entityEventBus?.Invoke(playerEntity, new PlaceResultEvent { Position = position, Ok = ok });
+        }
+
+        [ClientRpc]
+        private void PickUpResultClientRpc(long position, int prefabId, int amount, bool ok, ClientRpcParams rpcParams = default)
+        {
+            if (ok && !IsServer && ServiceLocator.Services.TryGet(out MapGenerator generator))
+                WorldEdits.MirrorPickUp(generator, position, prefabId);
+
+            entityEventBus?.Invoke(playerEntity, new PickUpResultEvent { Position = position, PrefabId = prefabId, Amount = amount, Ok = ok });
+        }
+
+        private bool TryResolveEditor(long position, float reach, out MapGenerator generator, out ObjectSystem objects)
+        {
+            generator = null;
+            objects = null;
+
+            if (playerEntity == null || playerEntity.IsDisposed || !playerEntity.IsActive.Value)
+                return Refuse(position, "player inactive");
+
+            MortalityComponent mortality = playerEntity.GetEntityComponent<MortalityComponent>();
+            if (mortality != null && mortality.IsDead)
+                return Refuse(position, "player dead");
+
+            Vector3 self = transform.position;
+            float2 delta = new(Position2Int.GetX(position) - self.x, Position2Int.GetY(position) - self.z);
+            float limit = reach + reachTolerance;
+            if (math.lengthsq(delta) > limit * limit)
+                return Refuse(position, $"out of reach {math.length(delta):F1} > {limit:F1}");
+
+            if (!ServiceLocator.Services.TryGet(out generator) || !ServiceLocator.Services.TryGet(out objects))
+                return Refuse(position, "world not ready");
+
+            return true;
+        }
+
+        private bool Refuse(long position, string reason)
+        {
+            RavineLog.Warning($"[PlayerController] Client {OwnerClientId} edit at {Position2Int.UnpackToVector(position)} refused: {reason}");
+            return false;
+        }
+
+        private ClientRpcParams OwnerTarget()
+        {
+            ownerTarget[0] = OwnerClientId;
+            return new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = ownerTarget } };
         }
 
         public void OnDisable()
