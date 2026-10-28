@@ -1,11 +1,5 @@
-using Cysharp.Threading.Tasks;
 using System.Diagnostics;
-using System.Threading;
 using UnityEngine;
-using Unity.Collections;
-using Unity.Jobs;
-using Unity.Mathematics;
-using Debug = UnityEngine.Debug;
 
 using TheRavine.Base;
 using TheRavine.Extensions;
@@ -15,436 +9,164 @@ namespace TheRavine.Generator
 {
     public sealed class NalStats
     {
-        public int Processed, DueBacklog;
+        public int Processed;
         public int BornApplied, BornRejected;
         public int Deaths, RemoveNoEffect, StaleRemovals;
-        public int QueueLength, QueueMax;
-        public int StoreCount;
         public int CommandQueueLength, CommandQueueMax;
         public int BatchMs, BatchMsMax;
-        public int TickMs, JobMs;
         public int RollDeaths, CloseDeaths, GrowDecays, Evolved;
         public int StaleDrops, HeightDrops, WindowDrops;
         public int SpawnPushed;
-        public int FarDecisions, Decays, RegionChunks;
-        public int Ticks, SkippedSameTime, SkippedNoAuthority;
-        public double ClockTime, NextDueIn;
+        public int FarEvents, Decays, RegionChunks;
+        public int Ticks, Events, EventsDropped, CatchUpRounds;
+        public float TicksPerSecond, JobMs, DispatchMs;
+        public double ClockTime;
     }
 
-    public class NAL_PC
+    public sealed class NalTickHandler : IRandomTickHandler
     {
         private const int GrowDecayChance = 25;
-        private const int BusyThreshold = 200;
-        private const int BusyDeadChance = 10;
-        private const int JobBatchSize = 64;
-        private const int MaxChunkRegistrationsPerSync = 2;
+        private const int MaxSpawns = 4;
+        private const double ReportIntervalSeconds = 10d;
         private const int NeighbourRadiusCells = (MapGenerator.scale + (1 << MapGenerator.CellShift) - 1) >> MapGenerator.CellShift;
 
-        private readonly ObjectSystem objectSystem;
-        private readonly ObjectInfoRegistry registry;
         private readonly MapGenerator generator;
-        private readonly CancellationToken token;
-
-        private readonly NalRules rules;
-        private readonly NalStore store;
-        private NativeArray<NalDecision> decisions;
-        private NativeArray<int> counter;
-        private NativeList<int> dropSlots;
-        private NativeList<long> staleChunks;
+        private readonly ObjectInfoRegistry registry;
+        private readonly RandomTickService ticks;
+        private readonly WorldTickRules tickRules;
         private readonly WorldCommandBuffer commands;
+        private readonly NalRules rules;
 
-        private readonly long reportIntervalTicks = 10 * Stopwatch.Frequency;
-        private long lastReportTicks = Stopwatch.GetTimestamp();
-        public readonly NalStats Stats = new();
-        private double lastTickTime = -1d;
+        private readonly long frozenCheckInterval = (long)(ReportIntervalSeconds * Stopwatch.Frequency);
+        private long lastFrozenCheck = Stopwatch.GetTimestamp();
+        private double frozenCheckClock = -1d;
         private double lastReportClock = -1d;
-        private double catchUpElapsed;
-        private int syncStamp;
-        private bool tiersDirty;
+        private int lastReportTicks;
+        public readonly NalStats Stats = new();
         private bool disposed;
 
-        public NAL_PC(MapGenerator generator, ObjectSystem objectSystem, CancellationToken token, int storeCapacity)
+        public NalTickHandler(MapGenerator generator, ObjectInfoRegistry registry, RandomTickService ticks)
         {
             this.generator = generator;
-            this.objectSystem = objectSystem;
-            this.token = token;
+            this.registry = registry;
+            this.ticks = ticks;
+            tickRules = ticks.Rules;
             commands = generator.Commands;
-            registry = objectSystem.infoRegistry;
             rules = new NalRules(registry);
-            store = new NalStore(storeCapacity);
-            decisions = new NativeArray<NalDecision>(math.max(generator.NalMaxDecisionsPerTick, 1), Allocator.Persistent);
-            counter = new NativeArray<int>(2, Allocator.Persistent);
-            dropSlots = new NativeList<int>(64, Allocator.Persistent);
-            staleChunks = new NativeList<long>(16, Allocator.Persistent);
         }
 
         public void Dispose()
         {
+            if (disposed) return;
             disposed = true;
             rules.Dispose();
-            store.Dispose();
-            if (decisions.IsCreated) decisions.Dispose();
-            if (counter.IsCreated) counter.Dispose();
-            if (dropSlots.IsCreated) dropSlots.Dispose();
-            if (staleChunks.IsCreated) staleChunks.Dispose();
         }
 
-        private void Register(Vector2Int pos, int prefabId, bool newborn, int tier)
+        public bool Accepts(int prefabId)
         {
-            if (disposed || !WorldAuthority.IsAuthority) return;
-
             int dense = registry.DenseIndexOf(prefabId);
-            if (dense < 0 || rules.Species[dense].Kind == 0) return;
-
-            if (tier < 0)
-            {
-                tier = generator.RingOfChunk(MapGenerator.WorldToChunk(Position2Int.Pack(pos)));
-                if (tier < 0) return;
-            }
-
-            double now = SimulationClock.TimeD;
-            double period = rules.Species[dense].Period(generator.NalSecondsPerDelayUnit, generator.NalGrowStageSeconds, generator.NalDecayCheckSeconds);
-            if (tier > 0) period *= generator.NalFarPeriodScale * tier;
-            double due = newborn ? now + period : now + RavineRandom.RangeFloat() * period;
-
-            if (!newborn && catchUpElapsed > 0d)
-            {
-                double steps = period > 0d ? math.min((double)generator.NalCatchUpMaxSteps, math.floor(catchUpElapsed / period)) : 0d;
-                if (steps >= 1d) due = now - (steps - 1d) * period;
-            }
-
-            if (store.Add(pos, prefabId, dense, due, (byte)tier) && store.Count > Stats.QueueMax)
-                Stats.QueueMax = store.Count;
+            return dense >= 0 && rules.Species[dense].Kind != 0;
         }
 
-        private void RegisterChunk(long chunk, ChunkData cd, int ring)
-        {
-            catchUpElapsed = 0d;
-            if (store.TakeLeftAt(chunk, out double leftAt))
-                catchUpElapsed = math.clamp(SimulationClock.TimeD - leftAt, 0d, generator.NalCatchUpMaxSeconds);
-
-            for (int i = 0; i < cd.Objects.Length; i++)
-            {
-                ObjectInstInfo info = cd.Objects[i];
-                Register(
-                    new Vector2Int((int)math.floor(info.Position.x), (int)math.floor(info.Position.z)),
-                    info.PrefabID,
-                    false,
-                    ring);
-            }
-
-            catchUpElapsed = 0d;
-        }
-
-        public bool SyncRegion()
-        {
-            if (disposed || !WorldAuthority.IsAuthority) return false;
-
-            syncStamp++;
-            int budget = MaxChunkRegistrationsPerSync;
-            bool pending = false;
-
-            long center = generator.WindowCenter;
-            for (int gz = 0; gz < MapGenerator.WindowSide; gz++)
-                for (int gx = 0; gx < MapGenerator.WindowSide; gx++)
-                    SyncChunk(MapGenerator.WindowChunk(center, gx, gz), 0, ref budget, ref pending);
-
-            int rings = generator.NalRingCount;
-            int facing = generator.Facing;
-            for (int ring = 1; ring <= rings; ring++)
-            {
-                for (int dx = -ring; dx <= ring; dx++)
-                {
-                    long block = Position2Int.Offset(center, dx * MapGenerator.WindowSide, ring * facing * MapGenerator.WindowSide);
-                    for (int gz = 0; gz < MapGenerator.WindowSide; gz++)
-                        for (int gx = 0; gx < MapGenerator.WindowSide; gx++)
-                            SyncChunk(MapGenerator.WindowChunk(block, gx, gz), ring, ref budget, ref pending);
-                }
-            }
-
-            staleChunks.Clear();
-            foreach (var kv in store.Registered)
-                if (kv.Value.Stamp != syncStamp) staleChunks.Add(kv.Key);
-
-            for (int i = 0; i < staleChunks.Length; i++)
-                RemoveChunk(staleChunks[i]);
-
-            if (tiersDirty) RefreshTiers();
-
-            Stats.RegionChunks = store.Registered.Count;
-            Stats.StoreCount = store.Count;
-            return pending;
-        }
-
-        private void SyncChunk(long key, int ring, ref int budget, ref bool pending)
-        {
-            bool known = store.Registered.TryGetValue(key, out NalChunkState state);
-
-            if (!generator.TryGetChunk(key, out ChunkData cd) || cd.DetailLevel > ring)
-            {
-                if (known)
-                {
-                    state.Stamp = syncStamp;
-                    store.Registered[key] = state;
-                }
-                return;
-            }
-
-            if (known && state.Ring != ring) tiersDirty = true;
-
-            if (known && state.Detail == cd.DetailLevel)
-            {
-                state.Ring = (byte)ring;
-                state.Stamp = syncStamp;
-                store.Registered[key] = state;
-                return;
-            }
-
-            if (budget == 0)
-            {
-                pending = true;
-                if (known)
-                {
-                    state.Stamp = syncStamp;
-                    store.Registered[key] = state;
-                }
-                return;
-            }
-
-            budget--;
-            RegisterChunk(key, cd, ring);
-            store.Registered[key] = new NalChunkState { Detail = cd.DetailLevel, Ring = (byte)ring, Stamp = syncStamp };
-        }
-
-        private void RefreshTiers()
-        {
-            tiersDirty = false;
-            for (int i = 0; i < store.Count; i++)
-            {
-                long chunk = store.Chunk[i];
-                store.Tier[i] = store.Registered.TryGetValue(chunk, out NalChunkState state)
-                    ? state.Ring
-                    : (byte)math.max(generator.RingOfChunk(chunk), 0);
-            }
-        }
-
-        public void RemoveChunk(long chunk)
+        public void OnRandomTick(in RandomTickEvent e, double now)
         {
             if (disposed) return;
 
-            store.Registered.Remove(chunk);
-            if (store.RemoveChunk(chunk) > 0)
-                store.SetLeftAt(chunk, SimulationClock.TimeD);
+            int dense = registry.DenseIndexOf(e.PrefabId);
+            if (dense < 0) return;
 
-            Stats.StoreCount = store.Count;
-        }
-
-        public void OnCommandsApplied(NativeList<WorldCommand> adds, WorldCommandStats applied, int applyMs, int pendingBefore, int pendingAfter)
-        {
-            if (disposed) return;
-
-            for (int i = 0; i < adds.Length; i++)
-                Register(Position2Int.UnpackToVector(adds[i].Pos), adds[i].PrefabId, true, -1);
-
-            NalStats s = Stats;
-            s.BornApplied = applied.AddApplied;
-            s.BornRejected = applied.AddRejected;
-            s.Deaths = applied.RemoveApplied;
-            s.RemoveNoEffect = applied.RemoveNoEffect;
-            s.StaleRemovals = s.StaleDrops + applied.RemoveStale;
-            s.CommandQueueLength = pendingAfter;
-            if (pendingBefore > s.CommandQueueMax) s.CommandQueueMax = pendingBefore;
-            s.BatchMs = applyMs;
-            if (applyMs > s.BatchMsMax) s.BatchMsMax = applyMs;
-            s.StoreCount = store.Count;
-        }
-
-        public void Clear()
-        {
-            if (!disposed) store.Clear();
-        }
-
-        public async UniTaskVoid RunNAL()
-        {
-            await UniTask.Delay(10000);
-            lastReportTicks = Stopwatch.GetTimestamp();
-
-            while (!token.IsCancellationRequested && !disposed)
+            NalSpeciesParams p = rules.Species[dense];
+            if (p.Kind == (byte)BehaviourType.NAL)
             {
-                TryReport();
-
-                if (store.Count == 0)
-                {
-                    await UniTask.Yield();
-                    continue;
-                }
-
-                if (!WorldAuthority.IsAuthority)
-                {
-                    Stats.SkippedNoAuthority++;
-                    await UniTask.Yield();
-                    continue;
-                }
-
-                double now = SimulationClock.TimeD;
-                if (now == lastTickTime && Stats.DueBacklog == 0)
-                {
-                    Stats.SkippedSameTime++;
-                    await UniTask.Yield();
-                    continue;
-                }
-
-                lastTickTime = now;
-                Stats.Ticks++;
-                long start = Stopwatch.GetTimestamp();
-
-                int capacity = decisions.Length;
-                int nearCapacity = generator.NalFarBudgetShare > 0f
-                    ? math.max(1, capacity - (int)(capacity * generator.NalFarBudgetShare))
-                    : capacity;
-                int farCapacity = capacity - nearCapacity;
-                counter[0] = 0;
-                counter[1] = 0;
-
-                var job = new NalDecideJob
-                {
-                    Cell = store.Cell.AsArray(),
-                    Dense = store.Dense.AsArray(),
-                    Due = store.Due.AsArray(),
-                    Tier = store.Tier.AsArray(),
-                    Species = rules.Species,
-                    Output = decisions,
-                    Counter = counter,
-                    Now = now,
-                    DeadChance = store.Count > BusyThreshold ? BusyDeadChance : 0,
-                    Seed = (uint)RavineRandom.RangeInt(1, int.MaxValue),
-                    SecondsPerDelayUnit = generator.NalSecondsPerDelayUnit,
-                    FallbackDelaySeconds = generator.NalGrowStageSeconds,
-                    GrowDecayChance = GrowDecayChance,
-                    CatchUpMaxSteps = generator.NalCatchUpMaxSteps,
-                    NearCapacity = nearCapacity,
-                    FarPeriodScale = generator.NalFarPeriodScale,
-                    DecayCheckSeconds = generator.NalDecayCheckSeconds
-                };
-
-                job.ScheduleParallel(store.Count, JobBatchSize, default).Complete();
-
-                long jobEnd = Stopwatch.GetTimestamp();
-                Stats.JobMs = (int)((jobEnd - start) * 1000 / Stopwatch.Frequency);
-
-                int nearProduced = counter[0];
-                int farProduced = counter[1];
-                int nearWritten = math.min(nearProduced, nearCapacity);
-                int farWritten = math.min(farProduced, farCapacity);
-                Stats.DueBacklog = (nearProduced - nearWritten) + (farProduced - farWritten);
-                Stats.Processed += nearWritten + farWritten;
-                Stats.FarDecisions += farWritten;
-
-                Apply(0, nearWritten);
-                Apply(nearCapacity, nearCapacity + farWritten);
-                DropSlots();
-
-                Stats.StoreCount = store.Count;
-                Stats.QueueLength = store.Count;
-                Stats.TickMs = (int)((Stopwatch.GetTimestamp() - start) * 1000 / Stopwatch.Frequency);
-
-                await UniTask.Yield();
+                if (RavineRandom.RangeFloat() >= RandomTickMath.NalAcceptChance(p.Delay, tickRules.nalDelayReference)) return;
             }
-        }
-
-        private void Apply(int from, int to)
-        {
-            for (int i = from; i < to; i++)
+            else if (p.Kind == (byte)BehaviourType.GROW)
             {
-                NalDecision d = decisions[i];
-                int slot = d.Slot;
-                int2 cell = store.Cell[slot];
-                var pos = new Vector2Int(cell.x, cell.y);
-                long packed = Position2Int.Pack(pos);
-                int prefabId = store.PrefabId[slot];
-                int tier = store.Tier[slot];
+                if (RavineRandom.RangeFloat() >= tickRules.growAcceptChance) return;
+            }
+            else if (p.Kind != NalSpeciesParams.KindDecay) return;
 
-                if (!generator.TryGetObject(packed, out ObjectInstInfo inst) || inst.PrefabID != prefabId)
+            Stats.Processed++;
+            if (e.Ring > 0) Stats.FarEvents++;
+
+            int worldX = ((Position2Int.GetX(e.Chunk) << MapGenerator.RowShift) + (e.Cell & MapGenerator.RowMask)) << MapGenerator.CellShift;
+            int worldZ = ((Position2Int.GetY(e.Chunk) << MapGenerator.RowShift) + (e.Cell >> MapGenerator.RowShift)) << MapGenerator.CellShift;
+            long packed = Position2Int.Pack(worldX, worldZ);
+
+            if (commands.HasPendingRemove(packed)
+                || !generator.TryGetObject(packed, out ObjectInstInfo inst)
+                || inst.PrefabID != e.PrefabId)
+            {
+                Stats.StaleDrops++;
+                return;
+            }
+
+            int ring = generator.RingOfChunk(e.Chunk);
+            if (ring < 0)
+            {
+                Stats.WindowDrops++;
+                return;
+            }
+
+            if (p.Kind == (byte)BehaviourType.GROW)
+            {
+                if (p.EvolutionDense < 0)
                 {
-                    Stats.StaleDrops++;
-                    dropSlots.Add(slot);
-                    continue;
-                }
-
-                NalSpeciesParams p = rules.Species[store.Dense[slot]];
-
-                if (p.Kind == (byte)BehaviourType.GROW)
-                {
-                    if (p.EvolutionDense < 0)
+                    if (RavineRandom.RangeInt(1, 101) <= GrowDecayChance)
                     {
-                        if (d.DeathRoll)
-                        {
-                            Stats.GrowDecays++;
-                            PushRemove(packed, prefabId);
-                            dropSlots.Add(slot);
-                        }
-                        else
-                        {
-                            Reschedule(slot, packed, d.NextDue);
-                        }
-                        continue;
+                        Stats.GrowDecays++;
+                        PushRemove(packed, e.PrefabId);
                     }
-
-                    Stats.Evolved++;
-                    PushRemove(packed, prefabId);
-                    PushAdd(packed, registry.GetDense(p.EvolutionDense), tier);
-                    dropSlots.Add(slot);
-                    continue;
+                    return;
                 }
 
-                if (p.Kind == NalSpeciesParams.KindDecay)
+                Stats.Evolved++;
+                PushRemove(packed, e.PrefabId);
+                PushAdd(packed, registry.GetDense(p.EvolutionDense), ring);
+                return;
+            }
+
+            if (p.Kind == NalSpeciesParams.KindDecay)
+            {
+                float meanHit = RandomTickMath.MeanHitSeconds(
+                    ChunkData.TotalCells, tickRules.cellsPerChunkPerTick, tickRules.tickSeconds, e.Ring, tickRules.farCellDivisor);
+                if (RavineRandom.RangeFloat() < RandomTickMath.DecayChance(meanHit, p.DecaySeconds))
                 {
-                    if (d.DeathRoll)
-                    {
-                        Stats.Decays++;
-                        PushRemove(packed, prefabId);
-                        dropSlots.Add(slot);
-                    }
-                    else
-                    {
-                        Reschedule(slot, packed, d.NextDue);
-                    }
-                    continue;
+                    Stats.Decays++;
+                    PushRemove(packed, e.PrefabId);
                 }
+                return;
+            }
 
-                if (p.Kind != (byte)BehaviourType.NAL)
-                {
-                    dropSlots.Add(slot);
-                    continue;
-                }
+            var pos = new Vector2Int(worldX, worldZ);
+            bool rolled = RavineRandom.RangeInt(1, 101) <= p.Chance >> 1;
+            if (rolled || HasNeighbour(pos))
+            {
+                if (rolled) Stats.RollDeaths++;
+                else Stats.CloseDeaths++;
+                PushRemove(packed, e.PrefabId);
+                PushDeathPattern(pos, p, ring);
+                return;
+            }
 
-                bool rolled = d.DeathRoll;
-                bool crowded = !rolled && HasNeighbour(pos);
-                if (rolled || crowded)
-                {
-                    if (rolled) Stats.RollDeaths++;
-                    else Stats.CloseDeaths++;
-                    PushRemove(packed, prefabId);
-                    PushDeathPattern(pos, p, tier);
-                    dropSlots.Add(slot);
-                    continue;
-                }
+            if (!generator.IsHeightIsLiveAble(packed))
+            {
+                Stats.HeightDrops++;
+                return;
+            }
 
-                if (!generator.IsHeightIsLiveAble(packed))
-                {
-                    Stats.HeightDrops++;
-                    dropSlots.Add(slot);
-                    continue;
-                }
+            if (p.EvolutionDense < 0) return;
 
-                if (d.SpawnCount > 0)
-                {
-                    ObjectInfo spawn = registry.GetDense(d.SpawnDense);
-                    for (int k = 0; k < d.SpawnCount; k++)
-                        if (PushAdd(Position2Int.Pack(d.TargetsX[k], d.TargetsZ[k]), spawn, tier)) Stats.SpawnPushed++;
-                }
+            ObjectInfo spawn = registry.GetDense(p.EvolutionDense);
+            int spawned = 0;
+            for (int a = 0; a < p.Attempt && spawned < MaxSpawns; a++)
+            {
+                if (RavineRandom.RangeInt(1, 101) > p.Chance) continue;
 
-                Reschedule(slot, packed, d.NextDue);
+                int tx = worldX + (int)(RavineRandom.RangeFloat(-1f, 1f) * p.Distance);
+                int tz = worldZ + (int)(RavineRandom.RangeFloat(-1f, 1f) * p.Distance);
+                spawned++;
+                if (PushAdd(Position2Int.Pack(tx, tz), spawn, ring)) Stats.SpawnPushed++;
             }
         }
 
@@ -476,10 +198,10 @@ namespace TheRavine.Generator
                 ExpectedPrefabId = prefabId
             });
 
-        private bool PushAdd(long pos, ObjectInfo info, int tier)
+        private bool PushAdd(long pos, ObjectInfo info, int ring)
         {
             if (info == null) return false;
-            if (tier > 0 && !generator.HasChunk(MapGenerator.WorldToChunk(pos))) return false;
+            if (ring > 0 && !generator.HasChunk(MapGenerator.WorldToChunk(pos))) return false;
 
             commands.Push(new WorldCommand
             {
@@ -493,64 +215,73 @@ namespace TheRavine.Generator
             return true;
         }
 
-        private void PushDeathPattern(Vector2Int pos, in NalSpeciesParams p, int tier)
+        private void PushDeathPattern(Vector2Int pos, in NalSpeciesParams p, int ring)
         {
             if (p.DeathMainDense >= 0)
-                PushAdd(Position2Int.Pack(pos), registry.GetDense(p.DeathMainDense), tier);
+                PushAdd(Position2Int.Pack(pos), registry.GetDense(p.DeathMainDense), ring);
 
             for (int k = 0; k < p.DeathOtherCount; k++)
             {
                 ObjectInfo other = registry.GetDense(rules.OtherDense[p.DeathOtherStart + k]);
                 Vector2Int point = Extension.GetRandomPointAround(pos, p.DeathFactor);
-                PushAdd(Position2Int.Pack(point), other, tier);
+                PushAdd(Position2Int.Pack(point), other, ring);
             }
         }
 
-        private void Reschedule(int slot, long packed, double nextDue)
+        public void OnCommandsApplied(WorldCommandStats applied, int applyMs, int pendingBefore, int pendingAfter)
         {
-            if (generator.RingOfChunk(MapGenerator.WorldToChunk(packed)) >= 0)
-                store.Due[slot] = nextDue;
-            else
-            {
-                Stats.WindowDrops++;
-                dropSlots.Add(slot);
-            }
+            if (disposed) return;
+
+            NalStats s = Stats;
+            s.BornApplied = applied.AddApplied;
+            s.BornRejected = applied.AddRejected;
+            s.Deaths = applied.RemoveApplied;
+            s.RemoveNoEffect = applied.RemoveNoEffect;
+            s.StaleRemovals = s.StaleDrops + applied.RemoveStale;
+            s.CommandQueueLength = pendingAfter;
+            if (pendingBefore > s.CommandQueueMax) s.CommandQueueMax = pendingBefore;
+            s.BatchMs = applyMs;
+            if (applyMs > s.BatchMsMax) s.BatchMsMax = applyMs;
         }
 
-        private void DropSlots()
+        public void Poll()
         {
-            if (dropSlots.Length == 0) return;
-
-            dropSlots.Sort();
-            for (int i = dropSlots.Length - 1; i >= 0; i--)
-            {
-                int2 cell = store.Cell[dropSlots[i]];
-                store.Remove(Position2Int.Pack(cell.x, cell.y));
-            }
-
-            dropSlots.Clear();
-        }
-
-        private void TryReport()
-        {
-            long now = Stopwatch.GetTimestamp();
-            if (now - lastReportTicks < reportIntervalTicks) return;
-
-            lastReportTicks = now;
-            Debug.Assert(store.IsConsistent(), "NAL: store desync");
+            if (disposed) return;
 
             double clock = SimulationClock.TimeD;
-            double minDue = double.MaxValue;
-            for (int i = 0; i < store.Count; i++)
-                if (store.Due[i] < minDue) minDue = store.Due[i];
+            long timestamp = Stopwatch.GetTimestamp();
+            if (timestamp - lastFrozenCheck >= frozenCheckInterval)
+            {
+                lastFrozenCheck = timestamp;
+                if (clock == frozenCheckClock && WorldAuthority.IsAuthority)
+                    RavineLog.Warning($"[NAL] SimulationClock is frozen at {clock:F2} s: nothing advances world time, so no random tick runs");
+                frozenCheckClock = clock;
+            }
 
-            Stats.ClockTime = clock;
-            Stats.NextDueIn = store.Count > 0 ? minDue - clock : 0d;
+            RandomTickStats t = ticks.Stats;
+            if (lastReportClock < 0d || clock < lastReportClock)
+            {
+                lastReportClock = clock;
+                lastReportTicks = t.Ticks;
+                return;
+            }
 
-            if (store.Count > 0 && clock == lastReportClock)
-                RavineLog.Warning($"[NAL] SimulationClock is frozen at {clock:F2} s: nothing advances world time, so no slot becomes due");
+            double elapsed = clock - lastReportClock;
+            if (elapsed < ReportIntervalSeconds) return;
+
+            NalStats s = Stats;
+            s.TicksPerSecond = (float)((t.Ticks - lastReportTicks) / elapsed);
+            s.Ticks = t.Ticks;
+            s.Events = t.Events;
+            s.EventsDropped = t.EventsDropped;
+            s.CatchUpRounds = t.CatchUpRounds;
+            s.RegionChunks = t.RegionChunks;
+            s.JobMs = t.JobMs;
+            s.DispatchMs = t.DispatchMs;
+            s.ClockTime = clock;
+
             lastReportClock = clock;
-
+            lastReportTicks = t.Ticks;
             Report();
         }
 
@@ -558,14 +289,13 @@ namespace TheRavine.Generator
         {
             NalStats s = Stats;
             RavineLog.Info(
-                $"[NAL] processed={s.Processed} dueBacklog={s.DueBacklog} born={s.BornApplied}/{s.BornRejected} " +
+                $"[NAL] processed={s.Processed} far={s.FarEvents} born={s.BornApplied}/{s.BornRejected} " +
                 $"deaths={s.Deaths} removeNoEffect={s.RemoveNoEffect} stale={s.StaleRemovals} " +
-                $"queue={s.QueueLength}/{s.QueueMax} store={s.StoreCount} " +
                 $"deathRoll={s.RollDeaths} deathClose={s.CloseDeaths} growDecay={s.GrowDecays} evolved={s.Evolved} " +
-                $"spawnPushed={s.SpawnPushed} dropStale={s.StaleDrops} dropHeight={s.HeightDrops} dropWindow={s.WindowDrops} " +
-                $"ticks={s.Ticks} skipSameTime={s.SkippedSameTime} skipAuthority={s.SkippedNoAuthority} clock={s.ClockTime:F2} nextDueIn={s.NextDueIn:F2} " +
-                $"far={s.FarDecisions} decay={s.Decays} regionChunks={s.RegionChunks} " +
-                $"cmdQ={s.CommandQueueLength}/{s.CommandQueueMax} batchMs={s.BatchMs}/{s.BatchMsMax} tickMs={s.TickMs} jobMs={s.JobMs}");
+                $"spawnPushed={s.SpawnPushed} decay={s.Decays} dropStale={s.StaleDrops} dropHeight={s.HeightDrops} dropWindow={s.WindowDrops} " +
+                $"ticks={s.Ticks} tps={s.TicksPerSecond:F2} events={s.Events} eventsDropped={s.EventsDropped} catchUp={s.CatchUpRounds} " +
+                $"regionChunks={s.RegionChunks} clock={s.ClockTime:F2} " +
+                $"cmdQ={s.CommandQueueLength}/{s.CommandQueueMax} batchMs={s.BatchMs}/{s.BatchMsMax} jobMs={s.JobMs:F3} dispatchMs={s.DispatchMs:F3}");
         }
     }
 }

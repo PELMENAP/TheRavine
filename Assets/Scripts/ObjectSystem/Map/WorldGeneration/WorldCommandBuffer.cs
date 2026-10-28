@@ -40,20 +40,17 @@ namespace TheRavine.Generator
         private const int CompactThreshold = 1024;
 
         private NativeList<WorldCommand> commands;
-        private NativeList<WorldCommand> appliedAdds;
         private NativeHashMap<long, int> pendingRemoves;
         private int head;
 
         public WorldCommandBuffer(int capacity)
         {
             commands = new NativeList<WorldCommand>(capacity, Allocator.Persistent);
-            appliedAdds = new NativeList<WorldCommand>(capacity, Allocator.Persistent);
             pendingRemoves = new NativeHashMap<long, int>(capacity, Allocator.Persistent);
         }
 
         public int Count => commands.Length - head;
         public bool IsCreated => commands.IsCreated;
-        public NativeList<WorldCommand> AppliedAdds => appliedAdds;
 
         public void Push(in WorldCommand command)
         {
@@ -87,8 +84,7 @@ namespace TheRavine.Generator
             {
                 WorldCommand command = commands[head++];
                 if (command.Kind == WorldCommand.Remove) ReleasePendingRemove(command.Pos);
-                if (ApplyOne(target, in command, stats) && command.Kind == WorldCommand.Add)
-                    appliedAdds.Add(command);
+                ApplyOne(target, in command, stats);
                 processed++;
 
                 if (FrameBudget.Expired(deadline)) break;
@@ -148,7 +144,6 @@ namespace TheRavine.Generator
         public void Dispose()
         {
             if (commands.IsCreated) commands.Dispose();
-            if (appliedAdds.IsCreated) appliedAdds.Dispose();
             if (pendingRemoves.IsCreated) pendingRemoves.Dispose();
         }
     }

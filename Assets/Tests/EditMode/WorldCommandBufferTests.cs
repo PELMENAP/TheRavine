@@ -181,20 +181,6 @@ public class WorldCommandBufferTests
     }
 
     [Test]
-    public void AppliedAddsListsOnlySuccessfulAdds()
-    {
-        _world.Objects[2] = 5;
-        _buffer.Push(Add(1, 7));
-        _buffer.Push(Add(2, 7));
-        _buffer.Push(Remove(2));
-
-        _buffer.Apply(_world, FrameBudget.Unlimited, _stats);
-
-        Assert.AreEqual(1, _buffer.AppliedAdds.Length);
-        Assert.AreEqual(1L, _buffer.AppliedAdds[0].Pos);
-    }
-
-    [Test]
     public void ApplyOneReportsResultWithoutBuffering()
     {
         WorldCommand add = Add(1, 5);

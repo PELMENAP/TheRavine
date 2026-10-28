@@ -6,7 +6,6 @@ using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Rendering;
-using System.Threading;
 
 using TheRavine.Extensions;
 using TheRavine.Base;
@@ -24,7 +23,6 @@ namespace TheRavine.Generator
     public class MapGenerator : MonoBehaviour, ISetAble, IWorldCommandTarget
     {
         [SerializeField] private ChunkGenerationSettings chunkGenerationSettings;
-        private readonly CancellationTokenSource _cts = new();
 
         public const int mapChunkSize = 64, chunkScale = 1, scale = 2;
         public const int chunkSize = scale * mapChunkSize;
@@ -208,7 +206,7 @@ namespace TheRavine.Generator
 
         private void ReleaseChunk(long chunkKey, ChunkData cd)
         {
-            nal?.RemoveChunk(chunkKey);
+            randomTicks?.OnChunkReleased(chunkKey);
             mapData.Remove(chunkKey);
 
             if (ReferenceEquals(sampleChunk, cd))
@@ -483,9 +481,9 @@ namespace TheRavine.Generator
         private const int DefaultSeed = 16;
 
         private ObjectSystem objectSystem;
-        private NAL_PC nal;
-        private bool nalSyncPending;
-        private int nalSyncFrames;
+        private NalTickHandler nal;
+        private RandomTickService randomTicks;
+        private bool ownsTickRules;
         private ChunkStore chunkStore;
         private IDisposable autosaveSubscription;
         private WorldRegistry boundRegistry;
@@ -495,27 +493,11 @@ namespace TheRavine.Generator
         [SerializeField] private Vector3 viewerOffset;
         [SerializeField] private GrassSystem grassSystem;
         [SerializeField] private Texture2DArray biomeAlbedo;
+        [SerializeField] private WorldTickRules tickRules;
         [SerializeField, Min(0.1f)] private float nalApplyBudgetMs = 1f;
-        [SerializeField, Min(0f)] private float nalCatchUpMaxSeconds = 600f;
-        [SerializeField, Min(0)] private int nalCatchUpMaxSteps = 8;
-        [SerializeField, Min(0.01f)] private float nalGrowStageSeconds = 20f;
-        [SerializeField, Min(1f)] private float nalDecayCheckSeconds = 30f;
-        [SerializeField, Min(1f)] private float nalFarPeriodScale = 8f;
-        [SerializeField, Range(0f, 0.9f)] private float nalFarBudgetShare = 0.25f;
-        [SerializeField, Min(1)] private int nalRegionSyncIntervalFrames = 30;
-        [SerializeField, Min(16)] private int nalStoreCapacity = 8192;
-        [SerializeField, Min(1)] private int nalMaxDecisionsPerTick = 256;
-        [SerializeField, Min(0f)] private float nalSecondsPerDelayUnit = 0.01f;
 
-        public int NalMaxDecisionsPerTick => nalMaxDecisionsPerTick;
-        public float NalSecondsPerDelayUnit => nalSecondsPerDelayUnit;
-        public float NalCatchUpMaxSeconds => nalCatchUpMaxSeconds;
-        public int NalCatchUpMaxSteps => nalCatchUpMaxSteps;
-        public float NalGrowStageSeconds => nalGrowStageSeconds;
-        public float NalDecayCheckSeconds => nalDecayCheckSeconds;
-        public float NalFarPeriodScale => nalFarPeriodScale;
-        public float NalFarBudgetShare => nalFarBudgetShare;
-        public int NalRingCount => nalFarBudgetShare > 0f ? math.min(lodRingCount, ObjectInfo.MaxVisibleRings) : 0;
+        public int NalRingCount => math.min(lodRingCount, ObjectInfo.MaxVisibleRings);
+        public RandomTickService RandomTicks => randomTicks;
 
         public WorldCommandBuffer Commands { get; private set; }
         public WorldCommandStats CommandStats { get; } = new();
@@ -558,10 +540,21 @@ namespace TheRavine.Generator
 
             Commands = new WorldCommandBuffer(256);
 
-            if (chunkGenerationSettings.endlessFlag[3])
+            if (tickRules == null)
             {
-                nal = new NAL_PC(this, objectSystem, _cts.Token, nalStoreCapacity);
-                nal.RunNAL().Forget();
+                tickRules = ScriptableObject.CreateInstance<WorldTickRules>();
+                ownsTickRules = true;
+                RavineLog.Warning("[MapGenerator] WorldTickRules is not assigned, using defaults");
+            }
+
+            if (objectSystem != null)
+            {
+                randomTicks = new RandomTickService(this, objectSystem.infoRegistry, tickRules);
+                if (chunkGenerationSettings.endlessFlag[3])
+                {
+                    nal = new NalTickHandler(this, objectSystem.infoRegistry, randomTicks);
+                    randomTicks.Register(nal);
+                }
             }
 
             SetupEndless();
@@ -632,7 +625,6 @@ namespace TheRavine.Generator
             if (newFacing == facing) return;
 
             facing = newFacing;
-            nalSyncPending = true;
             CurvedWorld.SetFacing(facing);
             if (hasWindow && grassSystem != null)
                 grassSystem.UpdateGrassPlacement(this, windowCenter);
@@ -669,17 +661,6 @@ namespace TheRavine.Generator
             return hasWindow && viewer != null;
         }
 
-        public void ClearNALQueue() => nal?.Clear();
-
-        private void SyncNalRegion()
-        {
-            if (nal == null || !hasWindow) return;
-            if (!nalSyncPending && ++nalSyncFrames < nalRegionSyncIntervalFrames) return;
-
-            nalSyncFrames = 0;
-            nalSyncPending = nal.SyncRegion();
-        }
-
         public bool ApplyImmediate(in WorldCommand command) =>
             WorldCommandBuffer.ApplyOne(this, in command, ImmediateStats);
 
@@ -692,8 +673,7 @@ namespace TheRavine.Generator
             Commands.Apply(this, start + FrameBudget.TicksFromMs(nalApplyBudgetMs), CommandStats);
             int applyMs = (int)((FrameBudget.Now - start) * 1000 / System.Diagnostics.Stopwatch.Frequency);
 
-            nal?.OnCommandsApplied(Commands.AppliedAdds, CommandStats, applyMs, pendingBefore, Commands.Count);
-            Commands.AppliedAdds.Clear();
+            nal?.OnCommandsApplied(CommandStats, applyMs, pendingBefore, Commands.Count);
 
             ExtraUpdate();
         }
@@ -712,7 +692,8 @@ namespace TheRavine.Generator
                 MoveWindow(center);
 
             ApplyWorldCommands();
-            SyncNalRegion();
+            randomTicks?.Update();
+            nal?.Poll();
             FlushDirty();
 
             for (int i = 0; i < endless.Length; i++)
@@ -726,7 +707,6 @@ namespace TheRavine.Generator
         {
             windowCenter = center;
             hasWindow = true;
-            nalSyncPending = true;
 
             EnsureRegion(center, chunkScale, 0, FrameBudget.Unlimited);
             EnsureRegion(center, HeightWindow.Radius, 1, FrameBudget.Unlimited);
@@ -878,9 +858,12 @@ namespace TheRavine.Generator
             sampleChunk = null;
             sampleKey = long.MinValue;
 
-            _cts.Cancel();
             nal?.Dispose();
             nal = null;
+            randomTicks?.Dispose();
+            randomTicks = null;
+            if (ownsTickRules && tickRules != null) Destroy(tickRules);
+            ownsTickRules = false;
             Commands?.Dispose();
             Commands = null;
             chunkGenerator?.Dispose();
