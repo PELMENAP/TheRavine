@@ -1,5 +1,4 @@
 using Unity.Collections;
-using Unity.Mathematics;
 
 using TheRavine.ObjectControl;
 
@@ -9,7 +8,6 @@ namespace TheRavine.Generator
     {
         public byte Chance, Attempt, Distance, Delay;
         public byte Kind;
-        public byte HasDelay;
         public int EvolutionDense;
         public int DeathMainDense;
         public int DeathOtherStart;
@@ -18,12 +16,6 @@ namespace TheRavine.Generator
         public float DecaySeconds;
 
         public const byte KindDecay = 3;
-
-        public double Period(float secondsPerDelayUnit, float growStageSeconds, float decayCheckSeconds)
-        {
-            if (Kind == KindDecay) return decayCheckSeconds;
-            return HasDelay != 0 ? math.max((int)Delay, 1) * secondsPerDelayUnit : growStageSeconds;
-        }
     }
 
     public sealed class NalRules
@@ -62,7 +54,6 @@ namespace TheRavine.Generator
                         p.Attempt = n.attempt;
                         p.Distance = n.distance;
                         p.Delay = n.delay;
-                        p.HasDelay = 1;
                     }
 
                     if (info.EvolutionStep != null)

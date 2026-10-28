@@ -198,9 +198,13 @@ IFileManager<TId, TEntity>
 - `ObjectSystem/TreeGenerator/` — деревья; `ObjectInfo/NAL/` — NAL-поведение объектов
 - Многоуровневые постройки: `ObjectInfo.Levels` (1..`ObjectInfo.MaxLevels`). Поверхностная сетка остаётся 2D; `ChunkData.LevelMask` (байт на клетку, бит k = занята на уровне k≥1) — флаг для чтения `MapGenerator.IsOccupiedAt`/`ChunkData.HasLevelAt`. Реестр `ChunkData.TryGetBuilding(anchor)` хранит `BuildingVolume` (список `LevelCell` по всем уровням) только для построек с `Levels > 1`; размер реестра зависит от числа построек, а не от высоты. Сохранение построек не реализовано (см. решение 2.2).
 
-### NAL (Natural Artificial Life) — `NAL_PC.cs`
-Псевдо-экосистема: объекты размножаются/умирают по вероятностям.
-BehaviourType: `None | NAL | GROW`
+### Случайные тики мира — `WorldGeneration/Ticks/`
+`RandomTickService` (вызов из `MapGenerator.Update` после `ApplyWorldCommands`, только при `WorldAuthority.IsAuthority`): каждые `WorldTickRules.tickSeconds` мирового времени (`SimulationClock`) Burst-джоб `RandomTickJob` выбирает в каждом чанке области (окно 3×3 + кольца `1..NalRingCount`) `cellsPerChunkPerTick` случайных клеток (в дальних кольцах в `farCellDivisor × ring` раз меньше) и отдаёт события по первичным клеткам объектов подписчикам `IRandomTickHandler`. Стоимость тика не зависит от числа объектов. Догон: чанк, вернувшийся в область, получает до `catchUpBurstRounds` доп. раундов за тик, пока не отработает `min(отсутствие, catchUpMaxSeconds) / tickSeconds` тиков (только в рантайме, не сохраняется).
+
+### NAL (Natural Artificial Life) — `NAL_PC.cs` (`NalTickHandler`)
+Псевдо-экосистема на случайных тиках: объекты размножаются/умирают по вероятностям `NalRules`.
+BehaviourType: `None | NAL | GROW`; объекты с `ObjectInfo.decaySeconds > 0` без NAL/GROW гниют (вероятность `1 - exp(-meanHit / decaySeconds)` на попадание).
+NAL принимает событие с вероятностью `nalDelayReference / delay`, GROW — `growAcceptChance`. Все изменения мира — через `WorldCommandBuffer`.
 При смерти/подборе — `SpreadPattern` (spawn новых объектов вокруг)
 
 ### WFC (Wave Function Collapse) — `WorldGeneration/StructGenerator/`
