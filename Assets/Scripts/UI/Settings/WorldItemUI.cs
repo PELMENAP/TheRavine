@@ -41,6 +41,12 @@ namespace TheRavine.Base
             await UpdateWorldInfoAsync();
         }
 
+        public void Refresh()
+        {
+            if (worldRegistry == null) return;
+            UpdateWorldInfoAsync().Forget();
+        }
+
         private void SetupUI()
         {
             if (worldNameText != null)
@@ -67,8 +73,7 @@ namespace TheRavine.Base
                     return;
                 }
 
-                WorldState worldState = worldRegistry.GetCurrentState();
-                WorldConfiguration worldConfiguration = worldRegistry.GetCurrentConfig();
+                var (worldState, worldConfiguration) = await worldRegistry.LoadWorldDataAsync(worldName);
                 
                 UpdateWorldNameDisplay(worldConfiguration.worldName);
                 UpdateLastSaveTime(worldState.lastSaveTime);
@@ -118,7 +123,9 @@ namespace TheRavine.Base
             if (worldIcon == null) return;
 
             bool isCurrent = worldRegistry.CurrentWorldName == worldName;
-            worldIcon.sprite = isCurrent ? currentWorldIcon : defaultWorldIcon;
+            Sprite icon = isCurrent && currentWorldIcon != null ? currentWorldIcon : defaultWorldIcon;
+            if (icon != null)
+                worldIcon.sprite = icon;
         }
 
         private string FormatLastSaveTime(DateTimeOffset saveTime)

@@ -13,11 +13,9 @@ public class PauseUI : MonoBehaviour, ISetAble
     [SerializeField] private InputActionReference QuitRef;
     private ActionMapController actionMapController;
     private PlayerEntity playerData;
-    private GlobalSettings gameSettings;
     private InputBindingAdapter enterInputBindingAdapter, quitInputBindingAdapter;
     public void SetUp(ISetAble.Callback callback)
     {
-        gameSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
         actionMapController = ServiceLocator.GetService<ActionMapController>();
         playerData = (PlayerEntity) ServiceLocator.Players.GetAllPlayers()[0];
 
@@ -28,12 +26,15 @@ public class PauseUI : MonoBehaviour, ISetAble
         quitInputBindingAdapter = InputBindingAdapter.Bind(quitPauseButton, QuitRef, ChangeTerminalState);
         
         window.SetActive(false);
-        mobileInput.SetActive(gameSettings.controlType == ControlType.Mobile);
+        mobileInput.SetActive(IsMobileControl());
 
         callback?.Invoke();
     }
 
     private bool isActive = false;
+
+    private static bool IsMobileControl() =>
+        ServiceLocator.GetService<GlobalSettingsController>().GetCurrent().controlType == ControlType.Mobile;
 
 
     public void ChangeTerminalState()
@@ -54,7 +55,7 @@ public class PauseUI : MonoBehaviour, ISetAble
             playerData.SetBehaviourIdle();
             actionMapController.SwitchToGameplay();
         }
-        if (gameSettings.controlType == ControlType.Mobile) mobileInput.SetActive(!isActive);
+        if (IsMobileControl()) mobileInput.SetActive(!isActive);
         window.SetActive(isActive);
     }
 

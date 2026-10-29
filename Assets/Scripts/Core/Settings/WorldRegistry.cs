@@ -11,6 +11,10 @@ namespace TheRavine.Base
 {
     public class WorldRegistry : IDisposable
     {
+        public const int MaxWorldNameLength = 32;
+
+        private static readonly char[] InvalidNameChars = Path.GetInvalidFileNameChars();
+
         private readonly WorldStorage storage;
         private readonly RavineLogger logger;
         
@@ -48,13 +52,27 @@ namespace TheRavine.Base
             RefreshWorldListAsync().Forget();
         }
 
+        public static bool IsValidWorldName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return false;
+
+            string trimmed = name.Trim();
+            if (trimmed.Length > MaxWorldNameLength) return false;
+            if (trimmed == "." || trimmed == "..") return false;
+            if (trimmed.IndexOfAny(InvalidNameChars) >= 0) return false;
+
+            return trimmed.IndexOf('/') < 0 && trimmed.IndexOf('\\') < 0;
+        }
+
         public async UniTask<bool> CreateWorldAsync(string worldName, WorldConfiguration customConfig = null)
         {
-            if (string.IsNullOrWhiteSpace(worldName))
+            if (!IsValidWorldName(worldName))
             {
-                logger.LogWarning("[WorldRegistry] Пустое имя мира");
+                logger.LogWarning($"[WorldRegistry] Недопустимое имя мира: '{worldName}'");
                 return false;
             }
+
+            worldName = worldName.Trim();
 
             if (AvailableWorlds.Contains(worldName))
             {
@@ -201,11 +219,13 @@ namespace TheRavine.Base
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(newName))
+            if (!IsValidWorldName(newName))
             {
-                logger.LogWarning("[WorldRegistry] Новое имя пустое");
+                logger.LogWarning($"[WorldRegistry] Недопустимое имя мира: '{newName}'");
                 return false;
             }
+
+            newName = newName.Trim();
 
             if (AvailableWorlds.Contains(newName))
             {
@@ -217,7 +237,25 @@ namespace TheRavine.Base
 
             try
             {
-                var (state, config) = await storage.LoadFullAsync(oldName);
+                bool isCurrent = currentWorldId.Value == oldName;
+
+                if (isCurrent && hasUnsavedChanges && !await SaveCurrentWorldAsync())
+                {
+                    logger.LogWarning($"[WorldRegistry] Не удалось сохранить мир '{oldName}' перед переименованием");
+                    return false;
+                }
+
+                WorldState state;
+                WorldConfiguration config;
+                if (isCurrent)
+                {
+                    state = currentState.Clone();
+                    config = currentConfig.Clone();
+                }
+                else
+                {
+                    (state, config) = await storage.LoadFullAsync(oldName);
+                }
                 
                 config.worldName = newName;
                 config.lastModifiedTime = DateTimeOffset.Now.ToUnixTimeSeconds();
@@ -231,10 +269,11 @@ namespace TheRavine.Base
                 AvailableWorlds.RemoveAt(index);
                 AvailableWorlds.Insert(index, newName);
 
-                if (currentWorldId.Value == oldName)
+                if (isCurrent)
                 {
-                    currentWorldId.Value = newName;
                     currentConfig = config;
+                    hasUnsavedChanges = false;
+                    currentWorldId.Value = newName;
                 }
 
                 logger.LogInfo($"[WorldRegistry] Мир переименован: '{oldName}' → '{newName}'");
