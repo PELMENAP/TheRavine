@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using LitMotion;
@@ -19,8 +20,9 @@ namespace TheRavine.Base
         private int _first;
         private bool _initialized;
         private MotionHandle _motion;
+        private Action _onComplete;
 
-        private int MaxFirst => Mathf.Max(0, groups.Length - visibleCount);
+        private bool CanScroll => _initialized && groups.Length > visibleCount;
 
         private void Awake()
         {
@@ -41,6 +43,7 @@ namespace TheRavine.Base
 
             _baseX = groups[0].anchoredPosition.x;
             _step = groups[1].anchoredPosition.x - _baseX;
+            _onComplete = Snap;
             _initialized = true;
 
             Snap();
@@ -63,33 +66,52 @@ namespace TheRavine.Base
             Snap();
         }
 
-        public void Next() => MoveTo(_first + 1);
+        public void Next() => MoveBy(1);
 
-        public void Previous() => MoveTo(_first - 1);
+        public void Previous() => MoveBy(-1);
 
-        private void MoveTo(int first)
+        private void MoveBy(int direction)
         {
-            if (!_initialized) return;
+            if (!CanScroll) return;
 
-            first = Mathf.Clamp(first, 0, MaxFirst);
-            if (first == _first) return;
-
-            _first = first;
-            UpdateButtons();
+            int count = groups.Length;
+            int oldFirst = _first;
+            _first = Wrap(_first + direction, count);
 
             _motion.TryCancel();
-            for (int i = 0; i < groups.Length; i++)
+            for (int i = 0; i < count; i++)
             {
-                _fromX[i] = groups[i].anchoredPosition.x;
-                _fromAlpha[i] = _canvasGroups[i].alpha;
-                _toX[i] = SlotX(i);
-                _toAlpha[i] = IsVisible(i) ? 1f : 0f;
-                SetInteractable(i, IsVisible(i));
+                int oldOffset = Wrap(i - oldFirst, count);
+                int newOffset = Wrap(i - _first, count);
+
+                float fromX = groups[i].anchoredPosition.x;
+                float fromAlpha = _canvasGroups[i].alpha;
+                int targetOffset = newOffset;
+
+                if (direction > 0)
+                {
+                    if (oldOffset == 0)
+                        targetOffset = -1;
+                    else if (newOffset == visibleCount - 1 && oldOffset >= visibleCount && fromAlpha <= 0.01f)
+                        fromX = OffsetX(visibleCount);
+                }
+                else if (newOffset == 0 && oldOffset >= visibleCount && fromAlpha <= 0.01f)
+                {
+                    fromX = OffsetX(-1);
+                }
+
+                bool visible = newOffset < visibleCount;
+                _fromX[i] = fromX;
+                _fromAlpha[i] = fromAlpha;
+                _toX[i] = OffsetX(targetOffset);
+                _toAlpha[i] = visible ? 1f : 0f;
+                SetInteractable(i, visible);
             }
 
             _motion = LMotion.Create(0f, 1f, duration)
                 .WithEase(ease)
                 .WithScheduler(MotionScheduler.UpdateIgnoreTimeScale)
+                .WithOnComplete(_onComplete)
                 .Bind(this, static (t, self) => self.Apply(t));
         }
 
@@ -106,19 +128,23 @@ namespace TheRavine.Base
 
         private void Snap()
         {
-            for (int i = 0; i < groups.Length; i++)
+            int count = groups.Length;
+            for (int i = 0; i < count; i++)
             {
+                int offset = Wrap(i - _first, count);
+                bool visible = offset < visibleCount;
+
                 Vector2 position = groups[i].anchoredPosition;
-                position.x = SlotX(i);
+                position.x = OffsetX(offset);
                 groups[i].anchoredPosition = position;
-                _canvasGroups[i].alpha = IsVisible(i) ? 1f : 0f;
-                SetInteractable(i, IsVisible(i));
+                _canvasGroups[i].alpha = visible ? 1f : 0f;
+                SetInteractable(i, visible);
             }
         }
 
-        private float SlotX(int index) => _baseX + (index - _first) * _step;
+        private static int Wrap(int value, int count) => (value % count + count) % count;
 
-        private bool IsVisible(int index) => index >= _first && index < _first + visibleCount;
+        private float OffsetX(int offset) => _baseX + offset * _step;
 
         private void SetInteractable(int index, bool value)
         {
@@ -128,9 +154,9 @@ namespace TheRavine.Base
 
         private void UpdateButtons()
         {
-            if (!_initialized) return;
-            if (previousButton != null) previousButton.interactable = _first > 0;
-            if (nextButton != null) nextButton.interactable = _first < MaxFirst;
+            bool canScroll = CanScroll;
+            if (previousButton != null) previousButton.interactable = canScroll;
+            if (nextButton != null) nextButton.interactable = canScroll;
         }
     }
 }
