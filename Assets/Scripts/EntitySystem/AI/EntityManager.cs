@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Unity.Netcode;
-using R3;
 
 using Unity.Mathematics;
 using Unity.Profiling;
@@ -53,7 +52,6 @@ public class EntityManager : MonoBehaviour
     private readonly List<NestDebugView> _nestViews = new();
 
     private InfectionCoordinator _infection;
-    private IDisposable _timeScaleSubscription;
     private ColonyFood           _food;
     private EvolutionService     _evolution;
     private ColonyPopulation     _population;
@@ -292,9 +290,6 @@ public class EntityManager : MonoBehaviour
     
     private async void Start()
     {
-        if (ServiceLocator.Services.TryGet<TheRavine.Base.WorldSettingsController>(out var worldSettings))
-            _timeScaleSubscription = worldSettings.Config.Subscribe(c => SimulationClock.TimeScale = c.timeScale);
-
         if (await DelaySimulation(SimulationRules.Active.StartupDelaySeconds, destroyCancellationToken)) return;
 
         var map = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
@@ -714,8 +709,6 @@ public class EntityManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        _timeScaleSubscription?.Dispose();
-        SimulationClock.TimeScale = 1f;
         UnregisterServices();
         for (int i = 0; i < _nestViews.Count; i++)
             if (_nestViews[i] != null) Destroy(_nestViews[i].gameObject);

@@ -86,6 +86,7 @@ namespace TheRavine.Base
         private void Publish(WorldConfiguration config)
         {
             _config.Value = config;
+            SimulationClock.TimeScale = config.timeScale;
 
             if (_autosave.IntervalSeconds != config.autosaveInterval)
             {
