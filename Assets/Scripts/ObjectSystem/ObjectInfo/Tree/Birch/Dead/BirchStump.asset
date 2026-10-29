@@ -12,16 +12,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: BirchStump
   m_EditorClassIdentifier: 
+  id: 22
+  objectPrefab: {fileID: 3882641584267046540, guid: 4d6f584d0f98bef638b51fa8328a47e5, type: 3}
   defaultAmount: 0
   initialPoolSize: 10
   instanceType: 0
   behaviourType: 1
   nalInfo: {fileID: 0}
   inventoryItemInfo: {fileID: 0}
-  id: 22
-  objectPrefab: {fileID: 3882641584267046540, guid: 4d6f584d0f98bef638b51fa8328a47e5, type: 3}
+  decaySeconds: 120
+  isFood: 0
+  foodKind: 0
   evolutionStep: {fileID: 0}
   additionalOccupiedCells: []
+  placementKind: 0
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}
-  ObjectName: STUMP
+  levels: 1
+  visibleRings: 0
+  farMode: 0
+  castShadowsFar: 0
+  lodSet: {fileID: 0}

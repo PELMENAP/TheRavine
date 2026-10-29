@@ -5,7 +5,6 @@ using R3;
 
 using TheRavine.Generator;
 using TheRavine.ObjectControl;
-using TheRavine.Events;
 
 namespace TheRavine.EntityControl
 {

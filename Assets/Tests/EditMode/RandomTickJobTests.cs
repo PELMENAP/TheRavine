@@ -56,7 +56,7 @@ public class RandomTickJobTests
             FarCellDivisor = 8f,
             TotalCells = ChunkData.TotalCells,
             Seed = 12345u
-        }.Run(chunks);
+        }.Execute(chunks);
 
         return _counter[0];
     }

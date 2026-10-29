@@ -12,16 +12,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: DeadBirch
   m_EditorClassIdentifier: 
+  id: 21
+  objectPrefab: {fileID: 948248636415433774, guid: cba762d8aadc673c8a0416847a303f15, type: 3}
   defaultAmount: 0
   initialPoolSize: 10
   instanceType: 0
   behaviourType: 1
   nalInfo: {fileID: 0}
   inventoryItemInfo: {fileID: 0}
-  id: 21
-  objectPrefab: {fileID: 948248636415433774, guid: cba762d8aadc673c8a0416847a303f15, type: 3}
+  decaySeconds: 60
+  isFood: 0
+  foodKind: 0
   evolutionStep: {fileID: 0}
   additionalOccupiedCells: []
+  placementKind: 0
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}
-  ObjectName: DEAD_BIRCH
+  levels: 1
+  visibleRings: 0
+  farMode: 0
+  castShadowsFar: 0
+  lodSet: {fileID: 0}
