@@ -20,10 +20,12 @@ MonoBehaviour:
   behaviourType: 1
   nalInfo: {fileID: 11400000, guid: e300f278e3f22cce2b173b38cdb47cf8, type: 2}
   inventoryItemInfo: {fileID: 0}
+  decaySeconds: 0
   isFood: 0
   foodKind: 0
   evolutionStep: {fileID: 0}
   additionalOccupiedCells: []
+  placementKind: 0
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}
   levels: 1

@@ -1,7 +1,6 @@
 using UnityEngine;
 using Unity.Collections;
 using Unity.Mathematics;
-using TheRavine.EntityControl.Virology;
 
 [CreateAssetMenu(fileName = "SimulationRules", menuName = "Simulation/Rules")]
 public sealed partial class SimulationRules : ScriptableObject
