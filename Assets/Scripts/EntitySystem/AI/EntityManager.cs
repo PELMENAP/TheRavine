@@ -172,7 +172,8 @@ public class EntityManager : MonoBehaviour
 
     private void Awake()
     {
-        SimulationRules.Bind(rules);
+        SimulationRules.ReleaseVariant();
+        SimulationRules.Bind(ResolveRules());
         ContextSlabs.Reserve(maxPopulation);
         _motion = new MotionSystem(maxPopulation);
         _instincts = new InstinctSystem(maxPopulation);
@@ -707,8 +708,25 @@ public class EntityManager : MonoBehaviour
         services.Unregister(_infection?.Service);
     }
 
+    private SimulationRules ResolveRules()
+    {
+        if (rules == null) return null;
+        if (!ServiceLocator.Services.TryGet(out TheRavine.Base.WorldRegistry registry) || !registry.HasLoadedWorld) return rules;
+
+        var state = registry.GetCurrentState();
+        float[] multipliers = state.rulesMultipliers;
+        if (multipliers == null || multipliers.Length != (int)VarianceAxis.Count)
+        {
+            multipliers = rules.RollVariance(state.seed);
+            registry.UpdateState(s => s.rulesMultipliers = multipliers);
+        }
+
+        return rules.CreateVariant(multipliers);
+    }
+
     private void OnDestroy()
     {
+        SimulationRules.ReleaseVariant();
         UnregisterServices();
         for (int i = 0; i < _nestViews.Count; i++)
             if (_nestViews[i] != null) Destroy(_nestViews[i].gameObject);

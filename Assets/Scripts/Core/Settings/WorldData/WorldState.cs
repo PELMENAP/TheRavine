@@ -15,6 +15,7 @@ namespace TheRavine.Base
         public bool gameWon;
         public long lastSaveTime;
         public SerializableInventorySlot[] inventory;
+        public float[] rulesMultipliers;
 
         public WorldState Clone()
         {
@@ -26,7 +27,8 @@ namespace TheRavine.Base
                 startTime = this.startTime,
                 gameWon = this.gameWon,
                 lastSaveTime = this.lastSaveTime,
-                inventory = this.inventory != null ? (SerializableInventorySlot[])this.inventory.Clone() : null
+                inventory = this.inventory != null ? (SerializableInventorySlot[])this.inventory.Clone() : null,
+                rulesMultipliers = this.rulesMultipliers != null ? (float[])this.rulesMultipliers.Clone() : null
             };
         }
 
@@ -65,7 +67,21 @@ namespace TheRavine.Base
         public bool Equals(WorldState other)
         {
             return seed == other.seed &&
-                cycleCount == other.cycleCount;
+                cycleCount == other.cycleCount &&
+                MultipliersEqual(rulesMultipliers, other.rulesMultipliers);
+        }
+
+        private static bool MultipliersEqual(float[] a, float[] b)
+        {
+            if (ReferenceEquals(a, b)) return true;
+            if (a == null || b == null || a.Length != b.Length) return false;
+
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i]) return false;
+            }
+
+            return true;
         }
     }
 }
