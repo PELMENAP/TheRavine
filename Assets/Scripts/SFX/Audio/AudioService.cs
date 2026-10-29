@@ -50,7 +50,7 @@ public class AudioService : MonoBehaviour
 {
     public const string MasterVolumeParam = "MasterVolume";
     public const string MusicVolumeParam = "MusicVolume";
-    public const string SfxVolumeParam = "SfxVolume";
+    public const string SfxVolumeParam = "SFXVolume";
 
     public static AudioService Instance { get; private set; }
 
