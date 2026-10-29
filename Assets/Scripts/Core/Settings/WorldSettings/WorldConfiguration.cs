@@ -7,6 +7,14 @@ namespace TheRavine.Base
     [MemoryPackable]
     public partial class WorldConfiguration : IEquatable<WorldConfiguration>
     {
+        public const float MinTimeScale = 0.1f;
+        public const float MaxTimeScale = 5f;
+        public const int MinEntityCount = 100;
+        public const int MaxEntityCount = 5000;
+        public const int MinParticleCount = 50;
+        public const int MaxParticleCount = 1000;
+        public const int MaxAutosaveInterval = 300;
+
         public string worldName = "New World";
         public int autosaveInterval = 120;
         public float timeScale = 1.0f;
@@ -38,7 +46,7 @@ namespace TheRavine.Base
             difficulty = other.difficulty;
             version = other.version;
             createdTime = other.createdTime;
-            lastModifiedTime = DateTimeOffset.Now.ToUnixTimeSeconds();
+            lastModifiedTime = other.lastModifiedTime;
         }
 
         public WorldConfiguration Clone()
@@ -48,26 +56,15 @@ namespace TheRavine.Base
             return clone;
         }
 
-        public bool IsValid()
-        {
-            return !string.IsNullOrWhiteSpace(worldName) &&
-                   autosaveInterval >= 0 &&
-                   timeScale > 0 &&
-                   maxEntityCount > 0 &&
-                   maxParticleCount > 0;
-        }
-
         public void Validate()
         {
             if (string.IsNullOrWhiteSpace(worldName))
                 worldName = "New World";
             
-            autosaveInterval = Mathf.Clamp(autosaveInterval, 0, 600);
-            timeScale = Mathf.Clamp(timeScale, 0.1f, 5.0f);
-            maxEntityCount = Mathf.Clamp(maxEntityCount, 100, 5000);
-            maxParticleCount = Mathf.Clamp(maxParticleCount, 50, 1000);
-            
-            lastModifiedTime = DateTimeOffset.Now.ToUnixTimeSeconds();
+            autosaveInterval = Mathf.Clamp(autosaveInterval, 0, MaxAutosaveInterval);
+            timeScale = Mathf.Clamp(timeScale, MinTimeScale, MaxTimeScale);
+            maxEntityCount = Mathf.Clamp(maxEntityCount, MinEntityCount, MaxEntityCount);
+            maxParticleCount = Mathf.Clamp(maxParticleCount, MinParticleCount, MaxParticleCount);
         }
 
         public bool Equals(WorldConfiguration other)

@@ -48,6 +48,10 @@ public sealed class PooledAudio : IDisposable
 
 public class AudioService : MonoBehaviour
 {
+    public const string MasterVolumeParam = "MasterVolume";
+    public const string MusicVolumeParam = "MusicVolume";
+    public const string SfxVolumeParam = "SfxVolume";
+
     public static AudioService Instance { get; private set; }
 
     [Header("Mixer")]
@@ -62,6 +66,8 @@ public class AudioService : MonoBehaviour
     private readonly Dictionary<AudioChannel, AudioMixerGroup> groupMap = new();
     private readonly Dictionary<AudioChannel, int> channelLimits = new();
     
+    private readonly HashSet<string> missingMixerParams = new();
+    private readonly CompositeDisposable settingsSubscriptions = new();
     private CancellationTokenSource lifetimeCts;
     private readonly Subject<(AudioChannel channel, AudioClip clip)> onSoundPlayed = new();
     
@@ -93,8 +99,44 @@ public class AudioService : MonoBehaviour
         InitializePools();
     }
 
+    private void Start()
+    {
+        if (lifetimeCts == null) return;
+        BindSettingsAsync(lifetimeCts.Token).Forget();
+    }
+
+    private async UniTaskVoid BindSettingsAsync(CancellationToken ct)
+    {
+        TheRavine.Base.GlobalSettingsController controller;
+        while (!ServiceLocator.Services.TryGet(out controller))
+        {
+            await UniTask.Yield(ct);
+        }
+
+        controller.Settings
+            .Subscribe(ApplyVolumes)
+            .AddTo(settingsSubscriptions);
+    }
+
+    private void ApplyVolumes(TheRavine.Base.GlobalSettings settings)
+    {
+        SetMixerVolume(MasterVolumeParam, settings.masterVolume);
+        SetMixerVolume(MusicVolumeParam, settings.musicVolume);
+        SetMixerVolume(SfxVolumeParam, settings.sfxVolume);
+    }
+
+    private void SetMixerVolume(string param, float volume)
+    {
+        if (mixer == null) return;
+
+        float dB = Mathf.Log10(Mathf.Max(volume, 0.0001f)) * 20f;
+        if (!mixer.SetFloat(param, dB) && missingMixerParams.Add(param))
+            RavineLog.Warning($"[AudioService] Параметр AudioMixer '{param}' не экспонирован");
+    }
+
     private void OnDestroy()
     {
+        settingsSubscriptions.Dispose();
         lifetimeCts?.Cancel();
         lifetimeCts?.Dispose();
         

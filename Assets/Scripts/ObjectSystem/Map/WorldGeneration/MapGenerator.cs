@@ -23,6 +23,7 @@ namespace TheRavine.Generator
     public class MapGenerator : MonoBehaviour, ISetAble, IWorldCommandTarget
     {
         [SerializeField] private ChunkGenerationSettings chunkGenerationSettings;
+        private ChunkGenerationSettings activeSettings;
 
         public const int mapChunkSize = 64, chunkScale = 1, scale = 2;
         public const int chunkSize = scale * mapChunkSize;
@@ -61,7 +62,7 @@ namespace TheRavine.Generator
         private AEntity boundPlayer;
         private EventBus playerEventBus;
 
-        public ChunkGenerationSettings Settings => chunkGenerationSettings;
+        public ChunkGenerationSettings Settings => activeSettings ?? chunkGenerationSettings;
         public long WindowCenter => windowCenter;
         public int Facing => facing;
         public int LodRingCount => lodRingCount;
@@ -215,7 +216,7 @@ namespace TheRavine.Generator
                 sampleKey = long.MinValue;
             }
 
-            if (chunkPool.Count >= chunkGenerationSettings.chunkPoolCapacity)
+            if (chunkPool.Count >= Settings.chunkPoolCapacity)
             {
                 cd.Dispose();
                 return;
@@ -512,28 +513,29 @@ namespace TheRavine.Generator
         {
             ServiceLocator.Register(this);
 
+            activeSettings = Settings.ShallowCopy();
+
             ServiceLocator.Services.TryGet(out WorldRegistry worldRegistry);
             bool worldLoaded = worldRegistry != null && worldRegistry.HasLoadedWorld;
-            seed = worldLoaded ? worldRegistry.GetCurrentState().seed : DefaultSeed;
-            mapData = new LongDictionary<ChunkData>(256);
-            budgetTicks = FrameBudget.TicksFromMs(chunkGenerationSettings.frameBudgetMs);
-
-            objectSystem = ServiceLocator.GetService<ObjectSystem>();
-            chunkGenerator = new ChunkGenerator(chunkGenerationSettings, seed);
-            if (worldLoaded) BindChunkStore(worldRegistry);
-
-            CurvedWorld.Configure(chunkGenerationSettings.curveRadius, chunkGenerationSettings.curveFlat, chunkGenerationSettings.curveFocusDistance);
-            CurvedWorld.SetFacing(facing);
-            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
-            BiomeShaderGlobals.Apply(chunkGenerationSettings, biomeAlbedo);
-
-            BindFirstPlayer();
-
             if (worldLoaded)
             {
                 var config = worldRegistry.GetCurrentConfig();
-                chunkGenerationSettings.isRiver = config.generateRivers;
+                activeSettings.isRiver = config.generateRivers;
             }
+            seed = worldLoaded ? worldRegistry.GetCurrentState().seed : DefaultSeed;
+            mapData = new LongDictionary<ChunkData>(256);
+            budgetTicks = FrameBudget.TicksFromMs(Settings.frameBudgetMs);
+
+            objectSystem = ServiceLocator.GetService<ObjectSystem>();
+            chunkGenerator = new ChunkGenerator(Settings, seed);
+            if (worldLoaded) BindChunkStore(worldRegistry);
+
+            CurvedWorld.Configure(Settings.curveRadius, Settings.curveFlat, Settings.curveFocusDistance);
+            CurvedWorld.SetFacing(facing);
+            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
+            BiomeShaderGlobals.Apply(Settings, biomeAlbedo);
+
+            BindFirstPlayer();
 
             if (chunkStore != null && ServiceLocator.Services.TryGet(out AutosaveCoordinator autosave))
                 autosaveSubscription = autosave.SubscribeBeforeSave(SaveModifiedChunks);
@@ -550,7 +552,7 @@ namespace TheRavine.Generator
             if (objectSystem != null)
             {
                 randomTicks = new RandomTickService(this, objectSystem.infoRegistry, tickRules);
-                if (chunkGenerationSettings.endlessFlag[3])
+                if (Settings.endlessFlag[3])
                 {
                     nal = new NalTickHandler(this, objectSystem.infoRegistry, randomTicks);
                     randomTicks.Register(nal);
@@ -564,29 +566,29 @@ namespace TheRavine.Generator
 
         private void SetupEndless()
         {
-            bool terrain = chunkGenerationSettings.endlessFlag[0];
-            int[] steps = chunkGenerationSettings.lodSteps;
-            lodRingCount = terrain ? math.min(math.min(chunkGenerationSettings.maxLodRing, steps?.Length ?? 0), HorizonRingCount()) : 0;
+            bool terrain = Settings.endlessFlag[0];
+            int[] steps = Settings.lodSteps;
+            lodRingCount = terrain ? math.min(math.min(Settings.maxLodRing, steps?.Length ?? 0), HorizonRingCount()) : 0;
 
             endless = new IEndless[4];
             if (terrain)
-                endless[0] = new EndlessTerrain(this, chunkGenerationSettings);
-            if (chunkGenerationSettings.endlessFlag[1])
+                endless[0] = new EndlessTerrain(this, Settings);
+            if (Settings.endlessFlag[1])
                 endless[1] = new EndlessLiquids(this);
-            if (chunkGenerationSettings.endlessFlag[2])
+            if (Settings.endlessFlag[2])
             {
                 endless[2] = new EndlessObjects(this, objectSystem);
                 if (lodRingCount > 0)
-                    endless[3] = new FarObjectRenderer(this, objectSystem, chunkGenerationSettings);
+                    endless[3] = new FarObjectRenderer(this, objectSystem, Settings);
             }
         }
 
         private int HorizonRingCount()
         {
             float distance = CurvedWorld.VisibleDistance(
-                chunkGenerationSettings.horizonCameraHeight,
-                chunkGenerationSettings.horizonCameraBack,
-                chunkGenerationSettings.horizonPeakHeight);
+                Settings.horizonCameraHeight,
+                Settings.horizonCameraBack,
+                Settings.horizonPeakHeight);
 
             if (float.IsInfinity(distance)) return int.MaxValue;
 
@@ -774,10 +776,10 @@ namespace TheRavine.Generator
         private void EvictChunks()
         {
             evictionPending = false;
-            nextEvictionScan = Time.unscaledTime + chunkGenerationSettings.evictionScanInterval;
+            nextEvictionScan = Time.unscaledTime + Settings.evictionScanInterval;
             if (!hasWindow) return;
 
-            int idleFrames = chunkGenerationSettings.evictionIdleFrames;
+            int idleFrames = Settings.evictionIdleFrames;
             int n = 0;
 
             foreach (var kv in mapData)
@@ -800,11 +802,11 @@ namespace TheRavine.Generator
 
         private bool IsRetained(long chunkKey)
         {
-            int hysteresis = chunkGenerationSettings.evictionHysteresis;
+            int hysteresis = Settings.evictionHysteresis;
             int dx = math.abs(Position2Int.GetX(chunkKey) - Position2Int.GetX(windowCenter));
             int dz = Position2Int.GetY(chunkKey) - Position2Int.GetY(windowCenter);
 
-            int near = math.max(chunkGenerationSettings.retainRadius, HeightWindow.Radius) + hysteresis;
+            int near = math.max(Settings.retainRadius, HeightWindow.Radius) + hysteresis;
             if (dx <= near && math.abs(dz) <= near) return true;
             if (lodRingCount <= 0) return false;
 

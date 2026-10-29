@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using Unity.Mathematics;
 using Unity.Netcode;
 using Cysharp.Threading.Tasks;
+using R3;
 
 using System;
 
@@ -63,7 +64,9 @@ namespace TheRavine.EntityControl
         private MovementComponent movementComponent;
         private EventBus entityEventBus;
         private AimComponent aimComponent;
-        private GlobalSettings globalSettings;
+        private ControlType controlType;
+        private bool controllerViewEnabled;
+        private Camera playerCamera;
         private AEntity playerEntity;
 
         private readonly DoubleTapDetector forwardTap = new();
@@ -72,11 +75,11 @@ namespace TheRavine.EntityControl
         private NetworkVariable<float> staminaRatio = new(1f);
         private IDisposable unsubscribe;
         private readonly ulong[] ownerTarget = new ulong[1];
+        private readonly CompositeDisposable settingsSubscriptions = new();
 
         public void SetInitialValues(AEntity entity, RavineLogger logger)
         {
             playerEntity = entity;
-            globalSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
             this.logger = logger;
 
             playerAnimator.SetUpAsync().Forget();
@@ -99,14 +102,13 @@ namespace TheRavine.EntityControl
 
         public void SetUp()
         {
-            Camera camera = playerEntity.GetEntityComponent<CameraComponent>().GetCamera();
+            playerCamera = playerEntity.GetEntityComponent<CameraComponent>().GetCamera();
 
-            currentController = globalSettings.controlType switch
-            {
-                ControlType.Personal => new PCController(Movement, camera, transform, aimComponent.CrosshairDistance),
-                ControlType.Mobile => new JoistickController(joystick),
-                _ => null
-            };
+            ServiceLocator.GetService<GlobalSettingsController>().Settings
+                .Select(s => s.controlType)
+                .DistinctUntilChanged()
+                .Subscribe(ApplyControlType)
+                .AddTo(settingsSubscriptions);
 
             map = ServiceLocator.GetService<MapGenerator>();
             terrainResolver = new TerrainPhysicsResolver(map, playerRigidbody, characterHalfHeight, maxStepHeight);
@@ -117,6 +119,27 @@ namespace TheRavine.EntityControl
                 SavePlayerPosition(worldRegistry);
             });
             DelayedInit(worldRegistry).Forget();
+        }
+
+        private void ApplyControlType(ControlType type)
+        {
+            controlType = type;
+
+            if (currentController != null)
+            {
+                currentController.DisableView();
+                currentController.MeetEnds();
+                (currentController as IDisposable)?.Dispose();
+            }
+
+            currentController = type switch
+            {
+                ControlType.Personal => new PCController(Movement, playerCamera, transform, aimComponent.CrosshairDistance),
+                ControlType.Mobile => new JoistickController(joystick),
+                _ => null
+            };
+
+            if (controllerViewEnabled) currentController?.EnableView();
         }
 
         private void SavePlayerPosition(WorldRegistry worldRegistry)
@@ -182,8 +205,17 @@ namespace TheRavine.EntityControl
             playerAnimator.Animate(movementDirection, 0);
         }
 
-        public void EnableComponents() => currentController.EnableView();
-        public void DisableComponents() => currentController.DisableView();
+        public void EnableComponents()
+        {
+            controllerViewEnabled = true;
+            currentController?.EnableView();
+        }
+
+        public void DisableComponents()
+        {
+            controllerViewEnabled = false;
+            currentController?.DisableView();
+        }
 
 
         private void FixedUpdate()
@@ -362,7 +394,7 @@ namespace TheRavine.EntityControl
 
         private void SetAimAddition(float magnitude, Vector2 aimNorm)
         {
-            float factMouseFactor = globalSettings.controlType == ControlType.Mobile && isAimMode ? 0.2f : 1f;
+            float factMouseFactor = controlType == ControlType.Mobile && isAimMode ? 0.2f : 1f;
 
             if (magnitude > aimComponent.MaxCrosshairDistance * factMouseFactor)
                 aimNorm *= aimComponent.MaxCrosshairDistance;
@@ -527,6 +559,7 @@ namespace TheRavine.EntityControl
             Jump.action.started -= OnJumpStarted;
             Jump.action.canceled -= OnJumpCanceled;
 
+            settingsSubscriptions.Dispose();
             currentController?.MeetEnds();
             unsubscribe?.Dispose();
         }

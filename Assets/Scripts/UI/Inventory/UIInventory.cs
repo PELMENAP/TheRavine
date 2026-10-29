@@ -65,8 +65,7 @@ namespace TheRavine.Inventory
 
             PlayerEntity playerData = (PlayerEntity) ServiceLocator.Players.GetAllPlayers()[0];
             player = playerData;
-            var gameSettings = ServiceLocator.GetService<GlobalSettingsController>().Settings.CurrentValue;
-            inventoryInputHandler.RegisterInput(playerData, gameSettings);
+            inventoryInputHandler.RegisterInput(playerData);
 
     
 
