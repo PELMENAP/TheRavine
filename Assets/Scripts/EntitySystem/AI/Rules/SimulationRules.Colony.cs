@@ -163,6 +163,9 @@ public sealed partial class SimulationRules
     [SerializeField] private float alarmTau = 20f;
     [SerializeField] private int alarmHuntMinMembers = 5;
     [SerializeField] private float alarmFromDamage = 2f;
+    [SerializeField] private float birdAlarmRadius = 40f;
+    [SerializeField] private float birdAlarmMagnitude = 0.2f;
+    [SerializeField] private int birdAlarmMaxPerFrame = 4;
     [SerializeField] private float alarmHuntBias = 1.5f;
     [SerializeField] private float alarmSurviveBias = 1.5f;
     [SerializeField] private float alarmFleeBias = 1.5f;
@@ -317,6 +320,9 @@ public sealed partial class SimulationRules
     public float AlarmTau => alarmTau;
     public int AlarmHuntMinMembers => alarmHuntMinMembers;
     public float AlarmFromDamage => alarmFromDamage;
+    public float BirdAlarmRadius => birdAlarmRadius;
+    public float BirdAlarmMagnitude => birdAlarmMagnitude;
+    public int BirdAlarmMaxPerFrame => birdAlarmMaxPerFrame;
     public float AlarmHuntBias => alarmHuntBias;
     public float AlarmSurviveBias => alarmSurviveBias;
     public float AlarmFleeBias => alarmFleeBias;

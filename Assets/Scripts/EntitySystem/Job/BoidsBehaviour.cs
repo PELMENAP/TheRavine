@@ -21,7 +21,8 @@ namespace TheRavine.EntityControl
         [SerializeField] private bool isTest;
 
         private NativeArray<float3> _pos, _vel, _acc, _perchPoint, _curve0, _curve1, _curve2;
-        private NativeArray<byte> _state, _flock, _flip, _flockCommand;
+        private NativeArray<byte> _state, _prevState, _flock, _flip, _flockCommand;
+        private NativeList<float2> _takeOffEvents;
         private NativeArray<float> _timer, _phase, _aux, _duration, _panic;
         private NativeArray<int> _perchRef, _flockStart;
         private NativeArray<float2> _flockTargets, _flockTargetGoal, _flockAnim, _windFallback;
@@ -127,6 +128,8 @@ namespace TheRavine.EntityControl
             _curve1 = new NativeArray<float3>(n, Allocator.Persistent);
             _curve2 = new NativeArray<float3>(n, Allocator.Persistent);
             _state = new NativeArray<byte>(n, Allocator.Persistent);
+            _prevState = new NativeArray<byte>(n, Allocator.Persistent);
+            _takeOffEvents = new NativeList<float2>(n, Allocator.Persistent);
             _flock = new NativeArray<byte>(n, Allocator.Persistent);
             _flip = new NativeArray<byte>(n, Allocator.Persistent);
             _timer = new NativeArray<float>(n, Allocator.Persistent);
@@ -274,6 +277,9 @@ namespace TheRavine.EntityControl
 
                 _transforms[i].SetPositionAndRotation(p, Quaternion.identity);
             }
+
+            _prevState.CopyFrom(_state);
+            _takeOffEvents.Clear();
         }
 
         private void Update()
@@ -423,7 +429,43 @@ namespace TheRavine.EntityControl
 #if UNITY_EDITOR
             ValidatePerches();
 #endif
+            CollectTakeOffs();
+            RaiseTakeOffAlarms();
             UpdateAnimation();
+        }
+
+        private void CollectTakeOffs()
+        {
+            _takeOffEvents.Clear();
+            for (int i = 0; i < _count; i++)
+            {
+                if (_prevState[i] == BirdState.TakeOff || _state[i] != BirdState.TakeOff) continue;
+                float3 p = _pos[i];
+                _takeOffEvents.Add(new float2(p.x, p.z));
+            }
+            _prevState.CopyFrom(_state);
+        }
+
+        private void RaiseTakeOffAlarms()
+        {
+            if (_takeOffEvents.Length == 0) return;
+            if (!ServiceLocator.Services.TryGet(out ColonyRegistry colonies) || colonies == null) return;
+
+            ref readonly var rules = ref SimulationRules.Frame;
+            float radiusSq = rules.BirdAlarmRadius * rules.BirdAlarmRadius;
+            int budget = rules.BirdAlarmMaxPerFrame;
+
+            for (int e = 0; e < _takeOffEvents.Length && budget > 0; e++)
+            {
+                float2 at = _takeOffEvents[e];
+                for (int c = 0; c < colonies.Count && budget > 0; c++)
+                {
+                    ColonyState colony = colonies[c];
+                    if (colony.IsWild || math.distancesq(colony.Nest.Position, at) > radiusSq) continue;
+                    EntityManager.ReportThreat(colony, new Vector3(at.x, 0f, at.y), rules.BirdAlarmMagnitude);
+                    budget--;
+                }
+            }
         }
 
 #if UNITY_EDITOR
@@ -531,6 +573,8 @@ namespace TheRavine.EntityControl
             if (_curve1.IsCreated) _curve1.Dispose();
             if (_curve2.IsCreated) _curve2.Dispose();
             if (_state.IsCreated) _state.Dispose();
+            if (_prevState.IsCreated) _prevState.Dispose();
+            if (_takeOffEvents.IsCreated) _takeOffEvents.Dispose();
             if (_flock.IsCreated) _flock.Dispose();
             if (_flip.IsCreated) _flip.Dispose();
             if (_timer.IsCreated) _timer.Dispose();

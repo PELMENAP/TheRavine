@@ -33,6 +33,13 @@ public partial class EntityModel
         return ok;
     }
 
+    private static float2 NoisyDirection(float2 dir, float magnitude)
+    {
+        if (magnitude <= 0f || math.lengthsq(dir) <= 0f) return dir;
+        math.sincos(RavineRandom.RangeFloat(0f, 2f * math.PI), out float s, out float c);
+        return math.normalizesafe(dir + new float2(c, s) * magnitude);
+    }
+
     private bool RunCycle()
     {
         ref readonly var rules = ref SimulationRules.Frame;
@@ -52,7 +59,8 @@ public partial class EntityModel
             return false;
         }
         UpdateHeading();
-        Stress    *= math.exp(-dt / math.max(rules.StressTau, 1e-3f));
+        float stressTau = IsAtNest ? rules.StressTau / math.max(rules.StressNestRecoveryMul, 1f) : rules.StressTau;
+        Stress    *= math.exp(-dt / math.max(stressTau, 1e-3f));
         UpdateOrnsteinUhlenbeck(dt, in rules);
 
         _season         = SeasonClock.Value(now);
@@ -128,6 +136,7 @@ public partial class EntityModel
         if (nearest != null) nearest.Virology.TryGetViralInputs(out neighborLoad, out _, out _);
         _kinSick = nearest != null && nearest.Colony == Colony && neighborLoad >= rules.GroomMinLoad;
 
+        float dirNoise = Stress * rules.StressPerceptionNoise;
         var frame = new VectorizerFrame
         {
             Health            = Stats.Hp,
@@ -137,10 +146,10 @@ public partial class EntityModel
             TimeToBreed       = ComputeBreedReadiness(),
             NearestEntityDist = _nearestDistance,
             NearestFoodDist   = _foodValid ? _foodDistance : -1f,
-            FoodDir           = _foodValid ? DirectionTo(in self, in foodPos) : float2.zero,
-            EntityDir         = nearest != null ? DirectionTo(in self, Extension.Flat(nearest.Motor.Position())) : float2.zero,
-            NestDir           = nest != null ? DirectionTo(in self, nest.Position) : float2.zero,
-            PoiDir            = Points.TryGetNearest(in self, out float2 poi) ? DirectionTo(in self, in poi) : float2.zero,
+            FoodDir           = NoisyDirection(_foodValid ? DirectionTo(in self, in foodPos) : float2.zero, dirNoise),
+            EntityDir         = NoisyDirection(nearest != null ? DirectionTo(in self, Extension.Flat(nearest.Motor.Position())) : float2.zero, dirNoise),
+            NestDir           = NoisyDirection(nest != null ? DirectionTo(in self, nest.Position) : float2.zero, dirNoise),
+            PoiDir            = NoisyDirection(Points.TryGetNearest(in self, out float2 poi) ? DirectionTo(in self, in poi) : float2.zero, dirNoise),
             NestFoodDir       = nest != null && nest.HasFoodPeak ? DirectionTo(in self, nest.FoodPeak) : float2.zero,
             Stomach           = Digestion.Fill,
             WellFed           = Digestion.WellFed,
