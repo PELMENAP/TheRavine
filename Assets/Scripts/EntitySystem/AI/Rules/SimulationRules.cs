@@ -146,6 +146,8 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float FoodGrowthRate;
         public readonly float FoodSeedFraction;
         public readonly float FoodChunkCapacity;
+        public readonly float PastureDepletionPerEat;
+        public readonly float PastureRecoveryPerSecond;
         public readonly float SeasonAmplitude;
         public readonly float SeasonPeriod;
         public readonly float EcologyTickInterval;
@@ -188,6 +190,9 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float AlarmTau;
         public readonly int AlarmHuntMinMembers;
         public readonly float AlarmFromDamage;
+        public readonly float BirdAlarmRadius;
+        public readonly float BirdAlarmMagnitude;
+        public readonly int BirdAlarmMaxPerFrame;
         public readonly float AlarmHuntBias;
         public readonly float AlarmSurviveBias;
         public readonly float AlarmFleeBias;
@@ -229,6 +234,8 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float KinDeathRadius;
         public readonly float KinDeathStress;
         public readonly float StressTau;
+        public readonly float StressNestRecoveryMul;
+        public readonly float StressPerceptionNoise;
         public readonly float KinColonyWeight;
         public readonly float KinLineageWeight;
         public readonly float WitnessPenalty;
@@ -651,6 +658,8 @@ public sealed partial class SimulationRules : ScriptableObject
             FoodGrowthRate = r.foodGrowthRate;
             FoodSeedFraction = r.foodSeedFraction;
             FoodChunkCapacity = r.foodChunkCapacity;
+            PastureDepletionPerEat = r.pastureDepletionPerEat;
+            PastureRecoveryPerSecond = r.pastureRecoveryPerSecond;
             SeasonAmplitude = r.seasonAmplitude;
             SeasonPeriod = r.seasonPeriod;
             EcologyTickInterval = r.ecologyTickInterval;
@@ -693,6 +702,9 @@ public sealed partial class SimulationRules : ScriptableObject
             AlarmTau = r.alarmTau;
             AlarmHuntMinMembers = r.alarmHuntMinMembers;
             AlarmFromDamage = r.alarmFromDamage;
+            BirdAlarmRadius = r.birdAlarmRadius;
+            BirdAlarmMagnitude = r.birdAlarmMagnitude;
+            BirdAlarmMaxPerFrame = r.birdAlarmMaxPerFrame;
             AlarmHuntBias = r.alarmHuntBias;
             AlarmSurviveBias = r.alarmSurviveBias;
             AlarmFleeBias = r.alarmFleeBias;
@@ -734,6 +746,8 @@ public sealed partial class SimulationRules : ScriptableObject
             KinDeathRadius = r.kinDeathRadius;
             KinDeathStress = r.kinDeathStress;
             StressTau = r.stressTau;
+            StressNestRecoveryMul = r.stressNestRecoveryMul;
+            StressPerceptionNoise = r.stressPerceptionNoise;
             KinColonyWeight = r.kinColonyWeight;
             KinLineageWeight = r.kinLineageWeight;
             WitnessPenalty = r.witnessPenalty;
@@ -1134,6 +1148,8 @@ public sealed partial class SimulationRules : ScriptableObject
         if (densityRadiusMid < 1) densityRadiusMid = 1;
         if (densityRadiusFar < 1) densityRadiusFar = 1;
         if (relativeHeightRadius < 1) relativeHeightRadius = 1;
+        if (!(stressNestRecoveryMul >= 1f)) stressNestRecoveryMul = 1f;
+        if (!(stressPerceptionNoise >= 0f)) stressPerceptionNoise = 0f;
     }
 
     private static SimulationRules _active;

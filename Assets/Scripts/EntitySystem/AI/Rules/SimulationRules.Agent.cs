@@ -22,6 +22,8 @@ public sealed partial class SimulationRules
     [SerializeField] private float rememberPointMinSpacing = 10f;
     [SerializeField] private float actionTraceHorizon = 120f;
     [SerializeField] private float stressTau = 90f;
+    [SerializeField] private float stressNestRecoveryMul = 3f;
+    [SerializeField] private float stressPerceptionNoise = 0.5f;
     [SerializeField] private int huntMaxStrikes = 3;
     [SerializeField] private int restMaxSteps = 3;
     [SerializeField] private float panicHpRelease = 0.15f;
@@ -82,6 +84,8 @@ public sealed partial class SimulationRules
     public float RememberPointMinSpacing => rememberPointMinSpacing;
     public float ActionTraceHorizon => actionTraceHorizon;
     public float StressTau => stressTau;
+    public float StressNestRecoveryMul => stressNestRecoveryMul;
+    public float StressPerceptionNoise => stressPerceptionNoise;
     public int HuntMaxStrikes => huntMaxStrikes;
     public int RestMaxSteps => restMaxSteps;
     public float PanicHpRelease => panicHpRelease;

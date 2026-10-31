@@ -46,6 +46,8 @@ public sealed partial class SimulationRules
     [SerializeField] private float foodGrowthRate = 0.02f;
     [SerializeField] private float foodSeedFraction = 0.02f;
     [SerializeField] private float foodChunkCapacity = 40f;
+    [SerializeField] private float pastureDepletionPerEat = 0.02f;
+    [SerializeField] private float pastureRecoveryPerSecond = 0.005f;
     [SerializeField] private float seasonAmplitude = 0.3f;
     [SerializeField] private float seasonPeriod = 600f;
     [SerializeField] private float ecologyTickInterval = 0.5f;
@@ -109,6 +111,8 @@ public sealed partial class SimulationRules
     public float FoodGrowthRate => foodGrowthRate;
     public float FoodSeedFraction => foodSeedFraction;
     public float FoodChunkCapacity => foodChunkCapacity;
+    public float PastureDepletionPerEat => pastureDepletionPerEat;
+    public float PastureRecoveryPerSecond => pastureRecoveryPerSecond;
     public float SeasonAmplitude => seasonAmplitude;
     public float SeasonPeriod => seasonPeriod;
     public float EcologyTickInterval => ecologyTickInterval;

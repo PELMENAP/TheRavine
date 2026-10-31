@@ -165,7 +165,7 @@ public class EntityManager : MonoBehaviour
     private MovePlanner _planner;
     private float _lastNestTime;
 
-    public void ReportThreat(ColonyState colony, Vector3 position, float magnitude)
+    public static void ReportThreat(ColonyState colony, Vector3 position, float magnitude)
     {
         if (colony == null) return;
         var p = new Unity.Mathematics.float2(position.x, position.z);

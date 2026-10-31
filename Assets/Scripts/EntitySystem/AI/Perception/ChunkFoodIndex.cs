@@ -119,6 +119,7 @@ public sealed class ChunkFoodIndex
         public int   BuiltEpoch = -1;
         public ChunkData Source;
         public float Fertility = -1f;
+        public float Depletion;
         public float GrowthBudget;
         public float MaturityBudget;
 
@@ -132,6 +133,7 @@ public sealed class ChunkFoodIndex
             BuiltEpoch     = -1;
             Source         = null;
             Fertility      = -1f;
+            Depletion      = 0f;
             GrowthBudget   = 0f;
             MaturityBudget = 0f;
         }
@@ -511,6 +513,7 @@ public sealed class ChunkFoodIndex
         fc.Maturity[idx] = 0;
         fc.Count--;
         fc.BuiltFoodRevision = cd.FoodRevision;
+        fc.Depletion = math.min(1f, fc.Depletion + SimulationRules.Frame.PastureDepletionPerEat);
 
         _meat.Remove(cell);
         _taboo.Remove(cell);
@@ -640,6 +643,7 @@ public sealed class ChunkFoodIndex
         float seed     = r.FoodSeedFraction;
         float matSteps = r.FoodMaturityPerSecond * 255f * dt;
         int   burst    = math.max(1, r.FoodRegenBurst);
+        float recovery = r.PastureRecoveryPerSecond * dt;
 
         for (int k = 0; k < n; k++)
         {
@@ -657,7 +661,9 @@ public sealed class ChunkFoodIndex
                 AgeFood(fc, steps);
             }
 
-            float K = r.FoodChunkCapacity * fc.Fertility * season;
+            fc.Depletion = math.max(0f, fc.Depletion - recovery);
+
+            float K = r.FoodChunkCapacity * fc.Fertility * season * (1f - fc.Depletion);
             int   N = fc.Count;
             if (K <= 0f || N >= K || FoodCount >= maxFood) { fc.GrowthBudget = 0f; continue; }
 
