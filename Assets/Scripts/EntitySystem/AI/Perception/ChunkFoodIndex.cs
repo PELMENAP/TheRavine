@@ -449,11 +449,11 @@ public sealed class ChunkFoodIndex
                 return true;
             }
 
-            var partner = _claims[slot].Eater;
-            RemoveClaimAt(slot);
-
             float share = NutritionOf(fc, idx, kind) * SimulationRules.Frame.LargeFoodShare;
             if (!RemoveAt(fc, cd, idx, cell, out claim.Infected)) return false;
+
+            var partner = _claims[slot].Eater;
+            RemoveClaimAt(slot);
             partner?.ReceiveFood(share);
             claim.Energy = share;
             return true;
@@ -503,6 +503,7 @@ public sealed class ChunkFoodIndex
         infected = (fc.Infected[lz] & (1UL << lx)) != 0UL;
 
         if (!cd.RemoveObject(idx)) return false;
+        _map.Commands?.TouchCell(cell);
 
         fc.Rows[lz]     &= ~(1UL << lx);
         fc.Infected[lz] &= ~(1UL << lx);
@@ -537,6 +538,7 @@ public sealed class ChunkFoodIndex
             food.Id, (int)kind);
 
         if (!cd.TryAddObject(idx, in info)) return false;
+        _map.Commands?.TouchCell(Position2Int.Pack(cellX, cellZ));
 
         fc.Rows[lz] |= 1UL << lx;
         fc.Maturity[idx] = 0;
