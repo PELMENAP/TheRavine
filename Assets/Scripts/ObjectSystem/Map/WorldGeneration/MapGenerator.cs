@@ -424,7 +424,18 @@ namespace TheRavine.Generator
                 return result;
 
             MarkChunkDirty(chunk);
+            TouchEdited(worldPos, additionalWorldCells);
             return PlacementResult.Ok;
+        }
+
+        private void TouchEdited(long worldPos, ReadOnlySpan<Vector2Int> additionalWorldCells)
+        {
+            WorldCommandBuffer commands = Commands;
+            if (commands == null || !commands.HasAnyPendingRemove) return;
+
+            commands.Touch(worldPos);
+            for (int i = 0; i < additionalWorldCells.Length; i++)
+                commands.Touch(Position2Int.Pack(additionalWorldCells[i]));
         }
 
         public bool TryGetObject(long worldPos, out ObjectInstInfo info)
@@ -448,6 +459,7 @@ namespace TheRavine.Generator
                 return false;
 
             MarkChunkDirty(chunk);
+            TouchEdited(worldPos, default);
             return true;
         }
 
@@ -482,6 +494,7 @@ namespace TheRavine.Generator
                 return false;
 
             MarkChunkDirty(chunk);
+            TouchEdited(worldPos, default);
             return true;
         }
 
@@ -685,7 +698,7 @@ namespace TheRavine.Generator
         }
 
         public bool ApplyImmediate(in WorldCommand command) =>
-            WorldCommandBuffer.ApplyOne(this, in command, ImmediateStats);
+            WorldCommandBuffer.ApplyOne(this, in command, ImmediateStats, Commands);
 
         private void ApplyWorldCommands()
         {

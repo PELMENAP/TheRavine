@@ -12,12 +12,14 @@ namespace TheRavine.Generator
         public const byte Remove = 0;
         public const byte Add = 1;
         public const int NoExpectation = -1;
+        public const int NoStamp = 0;
 
         public byte Kind;
         public long Pos;
         public int PrefabId;
         public int Amount;
         public int ExpectedPrefabId;
+        public int ExpectedStamp;
         public byte Levels;
     }
 
@@ -39,14 +41,20 @@ namespace TheRavine.Generator
     {
         private const int CompactThreshold = 1024;
 
+        private struct PendingCell
+        {
+            public int Count;
+            public int Stamp;
+        }
+
         private NativeList<WorldCommand> commands;
-        private NativeHashMap<long, int> pendingRemoves;
+        private NativeHashMap<long, PendingCell> pendingRemoves;
         private int head;
 
         public WorldCommandBuffer(int capacity)
         {
             commands = new NativeList<WorldCommand>(capacity, Allocator.Persistent);
-            pendingRemoves = new NativeHashMap<long, int>(capacity, Allocator.Persistent);
+            pendingRemoves = new NativeHashMap<long, PendingCell>(capacity, Allocator.Persistent);
         }
 
         public int Count => commands.Length - head;
@@ -54,16 +62,37 @@ namespace TheRavine.Generator
 
         public void Push(in WorldCommand command)
         {
-            commands.Add(command);
-
-            if (command.Kind != WorldCommand.Remove) return;
+            if (command.Kind != WorldCommand.Remove)
+            {
+                commands.Add(command);
+                return;
+            }
 
             long cell = CellKey(command.Pos);
-            pendingRemoves.TryGetValue(cell, out int count);
-            pendingRemoves[cell] = count + 1;
+            if (!pendingRemoves.TryGetValue(cell, out PendingCell pending)) pending.Stamp = 1;
+            pending.Count++;
+            pendingRemoves[cell] = pending;
+
+            WorldCommand stamped = command;
+            stamped.ExpectedStamp = pending.Stamp;
+            commands.Add(stamped);
         }
 
         public bool HasPendingRemove(long worldPos) => pendingRemoves.ContainsKey(CellKey(worldPos));
+
+        public bool HasAnyPendingRemove => pendingRemoves.IsCreated && !pendingRemoves.IsEmpty;
+
+        public void Touch(long worldPos) => TouchCell(CellKey(worldPos));
+
+        public void TouchCell(long cell)
+        {
+            if (!HasAnyPendingRemove || !pendingRemoves.TryGetValue(cell, out PendingCell pending)) return;
+            pending.Stamp++;
+            pendingRemoves[cell] = pending;
+        }
+
+        private bool StampMatches(long worldPos, int stamp) =>
+            pendingRemoves.TryGetValue(CellKey(worldPos), out PendingCell pending) && pending.Stamp == stamp;
 
         private static long CellKey(long worldPos) =>
             Position2Int.Pack(Position2Int.GetX(worldPos) >> MapGenerator.CellShift, Position2Int.GetY(worldPos) >> MapGenerator.CellShift);
@@ -71,10 +100,14 @@ namespace TheRavine.Generator
         private void ReleasePendingRemove(long worldPos)
         {
             long cell = CellKey(worldPos);
-            if (!pendingRemoves.TryGetValue(cell, out int count)) return;
+            if (!pendingRemoves.TryGetValue(cell, out PendingCell pending)) return;
 
-            if (count <= 1) pendingRemoves.Remove(cell);
-            else pendingRemoves[cell] = count - 1;
+            if (pending.Count <= 1) pendingRemoves.Remove(cell);
+            else
+            {
+                pending.Count--;
+                pendingRemoves[cell] = pending;
+            }
         }
 
         public int Apply(IWorldCommandTarget target, long deadline, WorldCommandStats stats)
@@ -83,8 +116,8 @@ namespace TheRavine.Generator
             while (head < commands.Length)
             {
                 WorldCommand command = commands[head++];
+                ApplyOne(target, in command, stats, this);
                 if (command.Kind == WorldCommand.Remove) ReleasePendingRemove(command.Pos);
-                ApplyOne(target, in command, stats);
                 processed++;
 
                 if (FrameBudget.Expired(deadline)) break;
@@ -104,10 +137,17 @@ namespace TheRavine.Generator
             return processed;
         }
 
-        public static bool ApplyOne(IWorldCommandTarget target, in WorldCommand command, WorldCommandStats stats)
+        public static bool ApplyOne(IWorldCommandTarget target, in WorldCommand command, WorldCommandStats stats, WorldCommandBuffer stamps = null)
         {
             if (command.Kind == WorldCommand.Remove)
             {
+                if (command.ExpectedStamp != WorldCommand.NoStamp
+                    && (stamps == null || !stamps.StampMatches(command.Pos, command.ExpectedStamp)))
+                {
+                    stats.RemoveStale++;
+                    return false;
+                }
+
                 if (command.ExpectedPrefabId != WorldCommand.NoExpectation
                     && (!target.TryGetObject(command.Pos, out ObjectInstInfo current) || current.PrefabID != command.ExpectedPrefabId))
                 {
