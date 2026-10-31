@@ -139,6 +139,7 @@ namespace TheRavine.Generator
                 chunkGenerator.Generate(data, chunkKey, ring);
                 chunkStore?.TryRestore(chunkKey, data);
                 mapData[chunkKey] = data;
+                chunkSetVersion++;
             }
 
             data.LastAccessFrame = frame;
@@ -198,13 +199,18 @@ namespace TheRavine.Generator
             mapData.TryGetValue(chunkKey, out data);
 
         private readonly ChunkData[] waterNeighborhood = new ChunkData[9];
+        private int chunkSetVersion;
+        private long[] chunkRequests = Array.Empty<long>();
+        private int chunkRequestCount;
 
         public void EnsureWaterDistance(long chunkKey, ChunkData cd, float level, int ring)
         {
-            if (cd.WaterRingStamp == ring && cd.WaterLevelStamp == level) return;
+            bool stamped = cd.WaterRingStamp == ring && cd.WaterLevelStamp == level;
+            if (stamped && cd.WaterHoodVersion == chunkSetVersion) return;
 
             int cx = Position2Int.GetX(chunkKey);
             int cz = Position2Int.GetY(chunkKey);
+            int mask = 0;
 
             for (int sz = -1; sz <= 1; sz++)
             for (int sx = -1; sx <= 1; sx++)
@@ -212,10 +218,41 @@ namespace TheRavine.Generator
                 ChunkData neighbor = null;
                 if (sx == 0 && sz == 0) neighbor = cd;
                 else mapData.TryGetValue(Position2Int.Pack(cx + sx, cz + sz), out neighbor);
-                waterNeighborhood[(sz + 1) * 3 + sx + 1] = neighbor;
+                int slot = (sz + 1) * 3 + sx + 1;
+                waterNeighborhood[slot] = neighbor;
+                if (neighbor != null) mask |= 1 << slot;
             }
 
+            cd.WaterHoodVersion = chunkSetVersion;
+            if (stamped && cd.WaterHoodMask == mask) return;
+
+            cd.WaterHoodMask = mask;
             chunkGenerator.BuildWaterDistance(cd, waterNeighborhood, level, ring);
+        }
+
+        public void RequestChunk(long chunkKey)
+        {
+            if (mapData.ContainsKey(chunkKey)) return;
+            for (int i = 0; i < chunkRequestCount; i++)
+                if (chunkRequests[i] == chunkKey) return;
+            if (chunkRequestCount == chunkRequests.Length) return;
+            chunkRequests[chunkRequestCount++] = chunkKey;
+        }
+
+        private void ProcessChunkRequests(long deadline)
+        {
+            int done = 0;
+            while (done < chunkRequestCount)
+            {
+                if (done > 0 && FrameBudget.Expired(deadline)) break;
+                long key = chunkRequests[done++];
+                if (!mapData.ContainsKey(key)) EnsureChunk(key, 0);
+            }
+
+            if (done == 0) return;
+            int left = chunkRequestCount - done;
+            if (left > 0) Array.Copy(chunkRequests, done, chunkRequests, 0, left);
+            chunkRequestCount = left;
         }
 
         public void RemoveChunk(long chunkKey) => UnloadChunk(chunkKey);
@@ -230,6 +267,7 @@ namespace TheRavine.Generator
         {
             randomTicks?.OnChunkReleased(chunkKey);
             mapData.Remove(chunkKey);
+            chunkSetVersion++;
 
             if (ReferenceEquals(sampleChunk, cd))
             {
@@ -530,6 +568,7 @@ namespace TheRavine.Generator
         [SerializeField] private Texture2DArray biomeAlbedo;
         [SerializeField] private WorldTickRules tickRules;
         [SerializeField, Min(0.1f)] private float nalApplyBudgetMs = 1f;
+        [SerializeField, Min(1)] private int chunkRequestCapacity = 32;
 
         public int NalRingCount => math.min(lodRingCount, ObjectInfo.MaxVisibleRings);
         public RandomTickService RandomTicks => randomTicks;
@@ -575,6 +614,8 @@ namespace TheRavine.Generator
                 autosaveSubscription = autosave.SubscribeBeforeSave(SaveModifiedChunks);
 
             Commands = new WorldCommandBuffer(256);
+            chunkRequests = new long[chunkRequestCapacity];
+            chunkRequestCount = 0;
 
             if (tickRules == null)
             {
@@ -734,6 +775,8 @@ namespace TheRavine.Generator
 
             for (int i = 0; i < endless.Length; i++)
                 endless[i]?.Tick(deadline);
+
+            ProcessChunkRequests(deadline);
 
             if (evictionPending || Time.unscaledTime >= nextEvictionScan)
                 EvictChunks();
@@ -924,6 +967,8 @@ namespace TheRavine.Generator
         public NativeArray<byte>           WaterDistance;
         public float WaterLevelStamp;
         public int   WaterRingStamp;
+        public int   WaterHoodVersion;
+        public int   WaterHoodMask;
         public List<StructureSpawnPoint> StructureSpawnPoints;
 
         private static bool[] foodTable = Array.Empty<bool>();
@@ -1177,6 +1222,7 @@ namespace TheRavine.Generator
             ClearObjects();
             StructureSpawnPoints?.Clear();
             WaterRingStamp = 0;
+            WaterHoodMask = 0;
             Epoch++;
             DetailLevel = NotGenerated;
             IsDirty = false;

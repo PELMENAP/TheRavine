@@ -23,6 +23,7 @@ namespace TheRavine.EntityControl
 
         [SerializeField] private int placeObjectDelay;
         [SerializeField] private float reachTolerance = 2f;
+        [SerializeField] private float maxLatencyCompensation = 0.5f;
         [SerializeField] private float movementMinimum, sendInterval = 0.1f, maxStepHeight = 0.6f;
         [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick, Jump;
         [SerializeField] private Joystick joystick;
@@ -526,7 +527,7 @@ namespace TheRavine.EntityControl
 
             Vector3 self = transform.position;
             float2 delta = new(Position2Int.GetX(position) - self.x, Position2Int.GetY(position) - self.z);
-            float limit = reach + reachTolerance;
+            float limit = reach + reachTolerance + LatencyCompensation();
             if (math.lengthsq(delta) > limit * limit)
                 return Refuse(position, $"out of reach {math.length(delta):F1} > {limit:F1}");
 
@@ -534,6 +535,21 @@ namespace TheRavine.EntityControl
                 return Refuse(position, "world not ready");
 
             return true;
+        }
+
+        private float LatencyCompensation()
+        {
+            if (movementComponent == null || playerRigidbody == null) return 0f;
+
+            Vector3 velocity = playerRigidbody.linearVelocity;
+            float maxSpeed = math.max(0f, movementComponent.BaseSpeed * sprintMultiplier);
+            float speedXZ = math.clamp(math.length(new float2(velocity.x, velocity.z)), 0f, maxSpeed);
+            if (speedXZ <= 0f) return 0f;
+
+            NetworkManager network = NetworkManager;
+            NetworkTransport transport = network != null ? network.NetworkConfig?.NetworkTransport : null;
+            float rtt = transport != null ? transport.GetCurrentRtt(OwnerClientId) * 0.001f : 0f;
+            return speedXZ * (math.min(rtt, math.max(0f, maxLatencyCompensation)) * 0.5f + sendInterval);
         }
 
         private bool Refuse(long position, string reason)

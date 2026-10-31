@@ -67,7 +67,7 @@ public sealed class ColonyPopulation
 
     public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null)
     {
-        if (_entities.Count >= _maxPopulation || colony == null)
+        if (!TheRavine.Base.WorldAuthority.IsAuthority || _entities.Count >= _maxPopulation || colony == null)
         {
             inheritedCtx?.Dispose();
             return null;
@@ -80,7 +80,8 @@ public sealed class ColonyPopulation
             expressible.ApplyGeneticPhenotype(ctx.CoordMLP.Params);
 
         var netObj = go.GetComponent<NetworkObject>();
-        netObj?.Spawn();
+        var network = NetworkManager.Singleton;
+        if (netObj != null && network != null && network.IsServer) netObj.Spawn();
 
         var viewModel = go.GetComponent<EntityViewModel>();
         var view      = go.GetComponent<EntityView>();

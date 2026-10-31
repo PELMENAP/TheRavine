@@ -1,28 +1,42 @@
 using UnityEngine;
+using UnityEngine.Rendering;
+using Unity.Mathematics;
 
 public class LegRenderer
 {
+    private const MeshUpdateFlags VertexFlags = MeshUpdateFlags.DontRecalculateBounds;
+
     private Mesh mesh;
     private Vector3[] vertices;
     private int[] triangles;
-    private int verticesCount;
+    private int baseVertexCount;
     private int resolution;
-    private int verticesPerLeg;
-    private int trianglesPerLeg;
-    private int maxVertices;
+    private int maxLegs;
+    private float boundsExtent;
+
+    private int lod = -1;
+    private int lodStride;
+    private int lodSamples;
+    private int lodRing;
+    private int lodVerticesPerLeg;
+    private int lodTrianglesPerLeg;
+    private bool lodNormalsPerFrame;
+
+    private int activeLegs = -1;
+    private int uploadedVertices;
 
     public void Initialize(Mimic mimic)
     {
-        verticesCount = mimic.verticeCount;
+        baseVertexCount = mimic.verticeCount;
         resolution = mimic.legResolution;
-        verticesPerLeg = (resolution - 1) * verticesCount + 1;
-        trianglesPerLeg = (resolution - 2) * verticesCount * 6 + (verticesCount - 1) * 3;
+        maxLegs = mimic.maxLegs;
 
-        maxVertices = verticesPerLeg * mimic.maxLegs;
-        int maxTris = trianglesPerLeg * mimic.maxLegs;
+        int verticesPerLeg = (resolution - 1) * baseVertexCount + 1;
+        int trianglesPerLeg = (resolution - 2) * baseVertexCount * 6 + (baseVertexCount - 1) * 3;
 
-        vertices = new Vector3[maxVertices];
-        triangles = new int[maxTris];
+        vertices = new Vector3[verticesPerLeg * maxLegs];
+        triangles = new int[trianglesPerLeg * maxLegs];
+        boundsExtent = mimic.maxLegDistance + mimic.newLegRadius + mimic.legMaxHeight + mimic.legWidth;
 
         mesh = new Mesh { name = "ProceduralLegs" };
         mesh.MarkDynamic();
@@ -33,30 +47,39 @@ public class LegRenderer
         filter.sharedMesh = mesh;
         renderer.sharedMaterial = mimic.legMaterial;
 
-        PrecomputeTriangles(mimic.maxLegs);
-        
-        mesh.SetVertices(vertices, 0, maxVertices);
-        mesh.SetTriangles(triangles, 0, maxTris, 0);
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
+        lod = -1;
+        activeLegs = -1;
+        uploadedVertices = 0;
     }
 
-    private void PrecomputeTriangles(int maxLegs)
+    private void ApplyLod(Mimic mimic)
+    {
+        lod = mimic.Lod;
+        lodStride = math.max(1, mimic.LodStride);
+        lodSamples = (resolution - 2) / lodStride + 2;
+        lodRing = math.min(baseVertexCount, math.max(3, mimic.LodRingVertices));
+        lodVerticesPerLeg = (lodSamples - 1) * lodRing + 1;
+        lodTrianglesPerLeg = (lodSamples - 2) * lodRing * 6 + (lodRing - 1) * 3;
+        lodNormalsPerFrame = mimic.LodNormalsPerFrame;
+        PrecomputeTriangles();
+    }
+
+    private void PrecomputeTriangles()
     {
         int tIdx = 0;
         for (int l = 0; l < maxLegs; l++)
         {
-            int offset = l * verticesPerLeg;
-            for (int i = 0; i < resolution - 2; i++)
+            int offset = l * lodVerticesPerLeg;
+            for (int i = 0; i < lodSamples - 2; i++)
             {
-                for (int j = 0; j < verticesCount; j++)
+                for (int j = 0; j < lodRing; j++)
                 {
-                    int next = (j + 1) % verticesCount;
-                    int a = offset + i * verticesCount + j;
-                    int b = offset + i * verticesCount + next;
-                    int c = offset + (i + 1) * verticesCount + j;
-                    int d = offset + (i + 1) * verticesCount + next;
-                    
+                    int next = (j + 1) % lodRing;
+                    int a = offset + i * lodRing + j;
+                    int b = offset + i * lodRing + next;
+                    int c = offset + (i + 1) * lodRing + j;
+                    int d = offset + (i + 1) * lodRing + next;
+
                     triangles[tIdx++] = a;
                     triangles[tIdx++] = b;
                     triangles[tIdx++] = c;
@@ -65,9 +88,9 @@ public class LegRenderer
                     triangles[tIdx++] = d;
                 }
             }
-            int ringStart = offset + (resolution - 2) * verticesCount;
-            int tip = offset + verticesPerLeg - 1;
-            for (int i = 1; i < verticesCount; i++)
+            int ringStart = offset + (lodSamples - 2) * lodRing;
+            int tip = offset + lodVerticesPerLeg - 1;
+            for (int i = 1; i < lodRing; i++)
             {
                 triangles[tIdx++] = ringStart + i - 1;
                 triangles[tIdx++] = ringStart + i;
@@ -78,38 +101,42 @@ public class LegRenderer
 
     public void UpdateMesh(Mimic mimic)
     {
-        int vIdx = 0;
-        float legWidth = mimic.legWidth;
+        bool structural = false;
+        if (mimic.Lod != lod)
+        {
+            ApplyLod(mimic);
+            structural = true;
+        }
 
-        float angleStep = 360f / verticesCount;
-        float cosTheta = Mathf.Cos(angleStep * Mathf.Deg2Rad);
-        float sinTheta = Mathf.Sin(angleStep * Mathf.Deg2Rad);
+        int vIdx = 0;
+        int legs = 0;
+        float legWidth = mimic.legWidth;
+        int last = resolution - 1;
+
+        math.sincos(2f * math.PI / lodRing, out float sinTheta, out float cosTheta);
         float oneMinusCos = 1f - cosTheta;
 
         Vector3 mimicPosition = mimic.transform.position;
+        var all = mimic.Pool.GetAll();
 
-        foreach (var leg in mimic.Pool.GetAll())
+        for (int l = 0; l < all.Count; l++)
         {
-            if (leg.state == LegState.Disabled) 
-            {
-                for (int i = 0; i < verticesPerLeg; i++)
-                {
-                    vertices[vIdx++] = Vector3.zero;
-                }
-                continue;
-            }
+            var leg = all[l];
+            if (leg.state == LegState.Disabled) continue;
+            legs++;
 
-            for (int i = 0; i < resolution - 1; i++)
+            Vector3[] samples = leg.sampleBuffer;
+            for (int k = 0; k < lodSamples - 1; k++)
             {
-                Vector3 p1 = leg.sampleBuffer[i];
-                Vector3 p2 = leg.sampleBuffer[i + 1];
+                Vector3 p1 = samples[math.min(k * lodStride, last)];
+                Vector3 p2 = samples[math.min((k + 1) * lodStride, last)];
                 Vector3 dir = (p2 - p1).normalized;
                 if (dir.sqrMagnitude < 0.001f) dir = Vector3.up;
-                
+
                 Vector3 perp = Vector3.Cross(dir, Vector3.up).normalized * (legWidth * 0.5f);
                 if (perp.sqrMagnitude < 0.001f) perp = Vector3.right * (legWidth * 0.5f);
 
-                for (int j = 0; j < verticesCount; j++)
+                for (int j = 0; j < lodRing; j++)
                 {
                     vertices[vIdx++] = p1 + perp - mimicPosition;
                     Vector3 cross = Vector3.Cross(dir, perp);
@@ -117,13 +144,36 @@ public class LegRenderer
                     perp = perp * cosTheta + cross * sinTheta + dir * (dot * oneMinusCos);
                 }
             }
-            vertices[vIdx++] =
-                leg.sampleBuffer[resolution - 1]
-                - mimicPosition;
+            vertices[vIdx++] = samples[last] - mimicPosition;
         }
 
-        mesh.SetVertices(vertices, 0, maxVertices);
+        if (legs != activeLegs)
+        {
+            activeLegs = legs;
+            structural = true;
+        }
+
+        if (!structural)
+        {
+            mesh.SetVertices(vertices, 0, vIdx, VertexFlags);
+            if (lodNormalsPerFrame) mesh.RecalculateNormals();
+            return;
+        }
+
+        int indexCount = legs * lodTrianglesPerLeg;
+        if (vIdx >= uploadedVertices)
+        {
+            mesh.SetVertices(vertices, 0, vIdx, VertexFlags);
+            mesh.SetIndices(triangles, 0, indexCount, MeshTopology.Triangles, 0, false);
+        }
+        else
+        {
+            mesh.SetIndices(triangles, 0, indexCount, MeshTopology.Triangles, 0, false);
+            mesh.SetVertices(vertices, 0, vIdx, VertexFlags);
+        }
+        uploadedVertices = vIdx;
+
+        mesh.bounds = legs > 0 ? new Bounds(Vector3.zero, Vector3.one * (2f * boundsExtent)) : default;
         mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
     }
 }

@@ -161,6 +161,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly int CorpseSearchCells;
         public readonly float CorpseSpoilTau;
         public readonly float CorpseBiteEnergy;
+        public readonly float CorpseFallbackEnergy;
         public readonly float NestEatPortion;
         public readonly float NestStorageNorm;
         public readonly float CarrySpeedMul;
@@ -665,6 +666,7 @@ public sealed partial class SimulationRules : ScriptableObject
             CorpseSearchCells = r.corpseSearchCells;
             CorpseSpoilTau = r.corpseSpoilTau;
             CorpseBiteEnergy = r.corpseBiteEnergy;
+            CorpseFallbackEnergy = r.corpseFallbackEnergy;
             NestEatPortion = r.nestEatPortion;
             NestStorageNorm = r.nestStorageNorm;
             CarrySpeedMul = r.carrySpeedMul;
@@ -1021,7 +1023,12 @@ public sealed partial class SimulationRules : ScriptableObject
 
     public static void Bind(SimulationRules rules)
     {
-        if (rules != null) _active = rules;
+        _active = rules;
+        if (rules == null)
+        {
+            _frame = default;
+            return;
+        }
         CaptureFrame();
     }
 
@@ -1135,8 +1142,12 @@ public sealed partial class SimulationRules : ScriptableObject
     {
         get
         {
-            if (_active == null) _active = CreateInstance<SimulationRules>();
+            if (_active == null) ThrowNotBound();
             return _active;
         }
     }
+
+    private static void ThrowNotBound() =>
+        throw new System.InvalidOperationException(
+            "SimulationRules asset is not bound: assign a SimulationRules asset to EntityManager.rules (Assets/Scripts/EntitySystem/AI/SimulationRules.asset)");
 }
