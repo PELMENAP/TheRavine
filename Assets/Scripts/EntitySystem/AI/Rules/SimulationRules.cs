@@ -45,6 +45,14 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float TerrainCostWeight;
         public readonly float TerrainSlopeWeight;
         public readonly float TerrainWaterWeight;
+        public readonly float WaterLevel;
+        public readonly int   MaxRing;
+        public readonly float SlopeMaxDeg;
+        public readonly float RelSpan;
+        public readonly int   DensityRadiusNear;
+        public readonly int   DensityRadiusMid;
+        public readonly int   DensityRadiusFar;
+        public readonly int   RelativeHeightRadius;
         public readonly float MaxCycleDt;
         public readonly float ModifierDecayTau;
         public readonly float EatRange;
@@ -145,6 +153,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float LargeFoodChance;
         public readonly float LargeFoodEnergy;
         public readonly float LargeFoodWindow;
+        public readonly float LargeFoodShare;
         public readonly float ToxicNutritionMul;
         public readonly float ToxicDamage;
         public readonly float EatSecondsPerEnergy;
@@ -496,6 +505,11 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float[] UtilityWeights;
         public readonly int[]   PlanCasteDomain;
         public readonly float4[] SpeechSignals;
+        public readonly float[] BiomeFertilityTable;
+        public readonly float[] BiomeToxicityTable;
+
+        public float BiomeFertility(int biome) => BiomeValue(BiomeFertilityTable, biome, 1f);
+        public float BiomeToxicity(int biome)  => BiomeValue(BiomeToxicityTable, biome, 0f);
 
         public RulesFrame(SimulationRules r)
         {
@@ -535,6 +549,14 @@ public sealed partial class SimulationRules : ScriptableObject
             TerrainCostWeight = r.terrainCostWeight;
             TerrainSlopeWeight = r.terrainSlopeWeight;
             TerrainWaterWeight = r.terrainWaterWeight;
+            WaterLevel = r.waterLevel;
+            MaxRing = r.maxRing;
+            SlopeMaxDeg = r.slopeMaxDeg;
+            RelSpan = r.relSpan;
+            DensityRadiusNear = r.densityRadiusNear;
+            DensityRadiusMid = r.densityRadiusMid;
+            DensityRadiusFar = r.densityRadiusFar;
+            RelativeHeightRadius = r.relativeHeightRadius;
             MaxCycleDt = r.maxCycleDt;
             ModifierDecayTau = r.modifierDecayTau;
             EatRange = r.eatRange;
@@ -635,6 +657,7 @@ public sealed partial class SimulationRules : ScriptableObject
             LargeFoodChance = r.largeFoodChance;
             LargeFoodEnergy = r.largeFoodEnergy;
             LargeFoodWindow = r.largeFoodWindow;
+            LargeFoodShare = r.largeFoodShare;
             ToxicNutritionMul = r.toxicNutritionMul;
             ToxicDamage = r.toxicDamage;
             EatSecondsPerEnergy = r.eatSecondsPerEnergy;
@@ -986,6 +1009,8 @@ public sealed partial class SimulationRules : ScriptableObject
             UtilityWeights       = r.FillUtilityWeights();
             PlanCasteDomain      = r.FillPlanCasteDomain();
             SpeechSignals        = r.FillSpeechSignals();
+            BiomeFertilityTable  = r.biomeFertility;
+            BiomeToxicityTable   = r.biomeToxicity;
         }
     }
 
@@ -1095,6 +1120,13 @@ public sealed partial class SimulationRules : ScriptableObject
         if (!(agentTickInterval >= MinAgentTickInterval)) agentTickInterval = MinAgentTickInterval;
         if (!(optimizerBaseLearningRate >= LearningRateFloor)) optimizerBaseLearningRate = LearningRateFloor;
         if (!(optimizerWeightDecay >= 0f)) optimizerWeightDecay = 0f;
+        if (maxRing < 1) maxRing = 1;
+        if (!(slopeMaxDeg > 0f)) slopeMaxDeg = 1f;
+        if (!(relSpan > 0f)) relSpan = 1f;
+        if (densityRadiusNear < 1) densityRadiusNear = 1;
+        if (densityRadiusMid < 1) densityRadiusMid = 1;
+        if (densityRadiusFar < 1) densityRadiusFar = 1;
+        if (relativeHeightRadius < 1) relativeHeightRadius = 1;
     }
 
     private static SimulationRules _active;

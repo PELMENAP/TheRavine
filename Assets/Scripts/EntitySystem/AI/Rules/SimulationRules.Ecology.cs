@@ -53,6 +53,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float largeFoodChance = 0.05f;
     [SerializeField] private float largeFoodEnergy = 60f;
     [SerializeField] private float largeFoodWindow = 3f;
+    [SerializeField] private float largeFoodShare = 0.5f;
     [SerializeField] private float toxicNutritionMul = 0.5f;
     [SerializeField] private float toxicDamage = 15f;
     [SerializeField] private float eatSecondsPerEnergy = 0.05f;
@@ -114,6 +115,7 @@ public sealed partial class SimulationRules
     public float LargeFoodChance => largeFoodChance;
     public float LargeFoodEnergy => largeFoodEnergy;
     public float LargeFoodWindow => largeFoodWindow;
+    public float LargeFoodShare => largeFoodShare;
     public float ToxicNutritionMul => toxicNutritionMul;
     public float ToxicDamage => toxicDamage;
     public float EatSecondsPerEnergy => eatSecondsPerEnergy;

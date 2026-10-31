@@ -197,6 +197,27 @@ namespace TheRavine.Generator
         public bool TryGetChunk(long chunkKey, out ChunkData data) =>
             mapData.TryGetValue(chunkKey, out data);
 
+        private readonly ChunkData[] waterNeighborhood = new ChunkData[9];
+
+        public void EnsureWaterDistance(long chunkKey, ChunkData cd, float level, int ring)
+        {
+            if (cd.WaterRingStamp == ring && cd.WaterLevelStamp == level) return;
+
+            int cx = Position2Int.GetX(chunkKey);
+            int cz = Position2Int.GetY(chunkKey);
+
+            for (int sz = -1; sz <= 1; sz++)
+            for (int sx = -1; sx <= 1; sx++)
+            {
+                ChunkData neighbor = null;
+                if (sx == 0 && sz == 0) neighbor = cd;
+                else mapData.TryGetValue(Position2Int.Pack(cx + sx, cz + sz), out neighbor);
+                waterNeighborhood[(sz + 1) * 3 + sx + 1] = neighbor;
+            }
+
+            chunkGenerator.BuildWaterDistance(cd, waterNeighborhood, level, ring);
+        }
+
         public void RemoveChunk(long chunkKey) => UnloadChunk(chunkKey);
 
         public void UnloadChunk(long chunkKey)
@@ -887,10 +908,22 @@ namespace TheRavine.Generator
         public NativeArray<byte>           MoveCost;
         public NativeArray<float2>         Climate;
         public NativeArray<float>          RiverBlend;
+        public NativeArray<byte>           WaterDistance;
+        public float WaterLevelStamp;
+        public int   WaterRingStamp;
         public List<StructureSpawnPoint> StructureSpawnPoints;
+
+        private static bool[] foodTable = Array.Empty<bool>();
+
+        public static void SetFoodTable(bool[] table) => foodTable = table ?? Array.Empty<bool>();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFoodPrefab(int prefabId) => (uint)prefabId < (uint)foodTable.Length && foodTable[prefabId];
 
         public bool IsDirty { get; private set; }
         public int Version { get; private set; }
+        public int FoodRevision { get; private set; }
+        public int Epoch { get; private set; }
         public int GeneratedVersion { get; private set; }
         public bool IsModified => Version != GeneratedVersion;
         public bool NeedsSave => IsModified && Version != SavedVersion;
@@ -907,6 +940,7 @@ namespace TheRavine.Generator
             MoveCost       = new NativeArray<byte>  (TotalCells, Allocator.Persistent);
             Climate        = new NativeArray<float2>(TotalCells, Allocator.Persistent);
             RiverBlend     = new NativeArray<float> (TotalCells, Allocator.Persistent);
+            WaterDistance  = new NativeArray<byte>  (TotalCells, Allocator.Persistent);
             Objects        = new NativeList<ObjectInstInfo>(16, Allocator.Persistent);
         }
 
@@ -943,6 +977,7 @@ namespace TheRavine.Generator
 
             IsDirty = true;
             Version++;
+            if (IsFoodPrefab(info.PrefabID)) FoodRevision++;
             return true;
         }
 
@@ -1086,6 +1121,7 @@ namespace TheRavine.Generator
             Objects.RemoveAt(last);
             IsDirty = true;
             Version++;
+            if (IsFoodPrefab(obj.PrefabID)) FoodRevision++;
             return true;
         }
 
@@ -1097,6 +1133,13 @@ namespace TheRavine.Generator
             {
                 UnsafeUtility.MemClear(Occupancy.GetUnsafePtr(), (long)TotalCells * sizeof(int));
                 UnsafeUtility.MemClear(LevelMask.GetUnsafePtr(), TotalCells);
+            }
+
+            for (int i = 0; i < Objects.Length; i++)
+            {
+                if (!IsFoodPrefab(Objects[i].PrefabID)) continue;
+                FoodRevision++;
+                break;
             }
 
             Objects.Clear();
@@ -1120,6 +1163,8 @@ namespace TheRavine.Generator
         {
             ClearObjects();
             StructureSpawnPoints?.Clear();
+            WaterRingStamp = 0;
+            Epoch++;
             DetailLevel = NotGenerated;
             IsDirty = false;
             Version++;
@@ -1140,6 +1185,7 @@ namespace TheRavine.Generator
             if (MoveCost.IsCreated)       MoveCost.Dispose();
             if (Climate.IsCreated)        Climate.Dispose();
             if (RiverBlend.IsCreated)     RiverBlend.Dispose();
+            if (WaterDistance.IsCreated)  WaterDistance.Dispose();
             if (Objects.IsCreated)        Objects.Dispose();
         }
     }

@@ -9,20 +9,15 @@ public sealed class TerrainSensor
     private const int   Size        = MapGenerator.mapChunkSize;
     private const int   ChunkMask   = Size - 1;
     private static readonly int ChunkShift;
-    private const int   MaxRing     = 16;
     private const float InvScale    = 1f / MapGenerator.scale;
     private const float InvMaxH     = 1f / MapGenerator.maxTerrainHeight;
-    private const float InvSlopeMax = 1f / 60f;
-    private const float InvWaterMax = 1f / MaxRing;
     private const float InvCost     = 1f / 255f;
-    private const float InvRelSpan  = 1f / 10f;
-    private const float WaterLevel  = 5f;
-    
 
-    private static readonly int[] RingStart = new int[MaxRing + 2];
-    private static readonly int[] RingDx;
-    private static readonly int[] RingDz;
-    private static readonly int[] RingDzMul;
+    private static int   _ringMax;
+    private static int[] RingStart = System.Array.Empty<int>();
+    private static int[] RingDx    = System.Array.Empty<int>();
+    private static int[] RingDz    = System.Array.Empty<int>();
+    private static int[] RingDzMul = System.Array.Empty<int>();
 
     static TerrainSensor()
     {
@@ -31,32 +26,44 @@ public sealed class TerrainSensor
                 $"TerrainSensor: mapChunkSize({Size}) must be a positive power of two");
 
         ChunkShift = math.tzcnt((uint)Size);
+    }
+
+    private static void EnsureRings(int maxRadius)
+    {
+        if (maxRadius <= _ringMax) return;
 
         int total = 0;
-        for (int r = 1; r <= MaxRing; r++) total += 8 * r;
+        for (int r = 1; r <= maxRadius; r++) total += 8 * r;
 
-        RingDx    = new int[total];
-        RingDz    = new int[total];
-        RingDzMul = new int[total];
+        var start = new int[maxRadius + 2];
+        var dxs   = new int[total];
+        var dzs   = new int[total];
+        var dzMul = new int[total];
 
         int w = 0;
-        for (int r = 1; r <= MaxRing; r++)
+        for (int r = 1; r <= maxRadius; r++)
         {
-            RingStart[r] = w;
+            start[r] = w;
 
             for (int dx = -r; dx <= r; dx++)
             {
-                RingDx[w] = dx; RingDz[w] = -r; RingDzMul[w] = -r * Size; w++;
-                RingDx[w] = dx; RingDz[w] =  r; RingDzMul[w] =  r * Size; w++;
+                dxs[w] = dx; dzs[w] = -r; dzMul[w] = -r * Size; w++;
+                dxs[w] = dx; dzs[w] =  r; dzMul[w] =  r * Size; w++;
             }
 
             for (int dz = -r + 1; dz <= r - 1; dz++)
             {
-                RingDx[w] = -r; RingDz[w] = dz; RingDzMul[w] = dz * Size; w++;
-                RingDx[w] =  r; RingDz[w] = dz; RingDzMul[w] = dz * Size; w++;
+                dxs[w] = -r; dzs[w] = dz; dzMul[w] = dz * Size; w++;
+                dxs[w] =  r; dzs[w] = dz; dzMul[w] = dz * Size; w++;
             }
         }
-        RingStart[MaxRing + 1] = w;
+        start[maxRadius + 1] = w;
+
+        RingStart = start;
+        RingDx    = dxs;
+        RingDz    = dzs;
+        RingDzMul = dzMul;
+        _ringMax  = maxRadius;
     }
 
     private readonly MapGenerator _map;
@@ -71,10 +78,15 @@ public sealed class TerrainSensor
         int cellX = (int)math.floor(worldX * InvScale);
         int cellZ = (int)math.floor(worldZ * InvScale);
 
-        if (!_map.TryGetChunk(
-                Position2Int.Pack(cellX >> ChunkShift, cellZ >> ChunkShift),
-                out ChunkData cd) || cd == null)
+        long chunkKey = Position2Int.Pack(cellX >> ChunkShift, cellZ >> ChunkShift);
+        if (!_map.TryGetChunk(chunkKey, out ChunkData cd) || cd == null)
             return false;
+
+        ref readonly var rules = ref SimulationRules.Frame;
+        int rNear = math.clamp(rules.DensityRadiusNear, 1, Size);
+        int rMid  = math.clamp(rules.DensityRadiusMid, 1, Size);
+        int rFar  = math.clamp(rules.DensityRadiusFar, 1, Size);
+        EnsureRings(math.max(rNear, math.max(rMid, rFar)));
 
         int lx = cellX & ChunkMask;
         int lz = cellZ & ChunkMask;
@@ -111,16 +123,16 @@ public sealed class TerrainSensor
 
         sample = new TerrainSample(
             math.saturate(h * InvMaxH),
-            math.saturate(slopeDeg * InvSlopeMax),
+            math.saturate(slopeDeg * math.rcp(rules.SlopeMaxDeg)),
             math.clamp(gx, -1f, 1f),
             math.clamp(gz, -1f, 1f),
-            WaterProximity(cd, lx, lz, baseIdx),
+            WaterProximity(chunkKey, cd, baseIdx, in rules),
             cost, costPX, costNX, costPZ, costNZ,
             biome[0], biome[1], biome[2], biome[3],
-            RingDensity(cd, lx, lz, baseIdx, 2),
-            RingDensity(cd, lx, lz, baseIdx, 4),
-            RingDensity(cd, lx, lz, baseIdx, 8),
-            RelativeHeight(cd, lx, lz, baseIdx, h));
+            RingDensity(cd, lx, lz, baseIdx, rNear),
+            RingDensity(cd, lx, lz, baseIdx, rMid),
+            RingDensity(cd, lx, lz, baseIdx, rFar),
+            RelativeHeight(cd, lx, lz, baseIdx, h, rules.RelativeHeightRadius, rules.RelSpan));
 
         return true;
     }
@@ -169,41 +181,30 @@ public sealed class TerrainSensor
         return known > 0 ? (float)busy / known : 0f;
     }
 
-    private static float WaterProximity(ChunkData cd, int lx, int lz, int baseIdx)
+    private float WaterProximity(long chunkKey, ChunkData cd, int baseIdx, in SimulationRules.RulesFrame rules)
     {
-        if (cd.HeightRaw[baseIdx] < WaterLevel) return 1f;
+        int ring = math.clamp(rules.MaxRing, 1, Size);
+        _map.EnsureWaterDistance(chunkKey, cd, rules.WaterLevel, ring);
 
-        for (int r = 1; r <= MaxRing; r++)
-        {
-            int start = RingStart[r];
-            int end   = RingStart[r + 1];
-
-            for (int i = start; i < end; i++)
-            {
-                int nx = lx + RingDx[i];
-                if ((uint)nx >= (uint)Size) continue;
-                int nz = lz + RingDz[i];
-                if ((uint)nz >= (uint)Size) continue;
-
-                if (cd.HeightRaw[baseIdx + RingDx[i] + RingDzMul[i]] < WaterLevel)
-                    return 1f - r * InvWaterMax;
-            }
-        }
-        return 0f;
+        int d = cd.WaterDistance[baseIdx];
+        if (d == 0) return 1f;
+        return d <= ring ? 1f - d * (1f / ring) : 0f;
     }
 
-    private static float RelativeHeight(ChunkData cd, int lx, int lz, int baseIdx, float h)
+    private static float RelativeHeight(ChunkData cd, int lx, int lz, int baseIdx, float h, int radius, float span)
     {
+        radius = math.clamp(radius, 1, Size);
+
         float sum = 0f;
         int   cnt = 0;
-        int   row = baseIdx - 4 * Size;
+        int   row = baseIdx - radius * Size;
 
-        for (int dz = -4; dz <= 3; dz++, row += Size)
+        for (int dz = -radius; dz < radius; dz++, row += Size)
         {
             int nz = lz + dz;
             if ((uint)nz >= (uint)Size) continue;
 
-            for (int dx = -4; dx <= 3; dx++)
+            for (int dx = -radius; dx < radius; dx++)
             {
                 int nx = lx + dx;
                 if ((uint)nx >= (uint)Size) continue;
@@ -214,6 +215,6 @@ public sealed class TerrainSensor
         }
 
         if (cnt == 0) return 0f;
-        return math.clamp((h - sum / cnt) * InvRelSpan, -1f, 1f);
+        return math.clamp((h - sum / cnt) * math.rcp(span), -1f, 1f);
     }
 }

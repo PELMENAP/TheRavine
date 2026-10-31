@@ -75,7 +75,7 @@ namespace TheRavine.EntityControl
             if (!entity.HasComponent<VisualCullingComponent>())
             {
                 var view = entityObject.GetComponentInChildren<EntityView>(true);
-                entity.AddComponentToEntity(new VisualCullingComponent(entityObject, view != null ? view.LabelObject : null));
+                entity.AddComponentToEntity(new VisualCullingComponent(entityObject, view != null ? view.LabelObject : null, true));
             }
 
             GetOrCreateChunkData(chunkPos).entitiesInChunk.Add(entity);

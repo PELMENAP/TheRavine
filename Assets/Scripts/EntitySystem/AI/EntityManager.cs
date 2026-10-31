@@ -44,6 +44,8 @@ public class EntityManager : MonoBehaviour
     [Header("Visual culling")]
     [SerializeField] private bool cullOutsideActiveChunks = true;
     [SerializeField] private int  cullChunkMargin = 0;
+    [SerializeField] private float cullAxisMargin = 8f;
+    private Camera _cullCamera;
     private MapGenerator _map;
 
     [Header("Nest views")]
@@ -668,6 +670,14 @@ public class EntityManager : MonoBehaviour
     private void UpdateVisibility()
     {
         if (!cullOutsideActiveChunks || _map == null) return;
+
+        if (_cullCamera == null) _cullCamera = Camera.main;
+        if (_cullCamera != null)
+        {
+            UpdateVisibilityByCamera(_cullCamera);
+            return;
+        }
+
         bool hasViewer = _map.TryGetViewerChunk(out int vx, out int vz);
         int range = MapGenerator.chunkScale + cullChunkMargin;
 
@@ -681,6 +691,33 @@ public class EntityManager : MonoBehaviour
                 float2 p = e.Position2D;
                 visible = math.abs(MapGenerator.ChunkCoord(p.x) - vx) <= range
                        && math.abs(MapGenerator.ChunkCoord(p.y) - vz) <= range;
+            }
+            SetEntityVisible(e, visible);
+        }
+    }
+
+    private void UpdateVisibilityByCamera(Camera cam)
+    {
+        Vector3 cp = cam.transform.position;
+        int facing = _map.Facing;
+        float margin = cullAxisMargin;
+        bool ortho = cam.orthographic;
+        float orthoHalf = cam.orthographicSize * cam.aspect;
+        float halfWidthPerDepth = math.tan(math.radians(cam.fieldOfView * 0.5f)) * cam.aspect;
+        float height2 = cp.y * cp.y;
+
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            var e = _entities[i];
+            if (e.IsDisposed || e.IsDeathPending) continue;
+
+            float2 p = e.Position2D;
+            float forward = (p.y - cp.z) * facing;
+            bool visible = forward >= -margin;
+            if (visible)
+            {
+                float halfWidth = ortho ? orthoHalf : math.sqrt(forward * forward + height2) * halfWidthPerDepth;
+                visible = math.abs(p.x - cp.x) <= halfWidth + margin;
             }
             SetEntityVisible(e, visible);
         }
