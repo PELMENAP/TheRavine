@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using Unity.Jobs;
 using UnityEngine;
@@ -44,6 +45,7 @@ namespace TheRavine.Generator
         private NativeArray<ObjectInstInfo> spawnOutput;
         private NativeReference<int> spawnCount;
         private NativeArray<byte> spawnGridBuffer;
+        private NativeArray<float> waterPad;
         private readonly int[] ringConfigEnd;
         private readonly bool spawnEnabled;
         private readonly int worldSeed;
@@ -249,6 +251,58 @@ namespace TheRavine.Generator
             chunkData.CommitGeneration(false);
         }
 
+        public unsafe void BuildWaterDistance(ChunkData chunkData, ChunkData[] neighborhood, float waterLevel, int requestedRing)
+        {
+            int ring = math.clamp(requestedRing, 1, mapChunkSize);
+            int dim = mapChunkSize + 2 * ring;
+            int cells = dim * dim;
+
+            if (!waterPad.IsCreated || waterPad.Length < cells)
+            {
+                if (waterPad.IsCreated) waterPad.Dispose();
+                waterPad = new NativeArray<float>(cells, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            }
+
+            float* pad = (float*)waterPad.GetUnsafePtr();
+            for (int i = 0; i < cells; i++) pad[i] = float.MaxValue;
+
+            for (int sz = -1; sz <= 1; sz++)
+            {
+                int lz0 = sz < 0 ? mapChunkSize - ring : 0;
+                int lz1 = sz > 0 ? ring : mapChunkSize;
+
+                for (int sx = -1; sx <= 1; sx++)
+                {
+                    ChunkData source = neighborhood[(sz + 1) * 3 + sx + 1];
+                    if (source == null || !source.HeightRaw.IsCreated) continue;
+
+                    int lx0 = sx < 0 ? mapChunkSize - ring : 0;
+                    int lx1 = sx > 0 ? ring : mapChunkSize;
+                    int px0 = ring + sx * mapChunkSize + lx0;
+                    long bytes = (long)(lx1 - lx0) * sizeof(float);
+                    float* from = (float*)source.HeightRaw.GetUnsafeReadOnlyPtr();
+
+                    for (int lz = lz0; lz < lz1; lz++)
+                    {
+                        int pz = ring + sz * mapChunkSize + lz;
+                        UnsafeUtility.MemCpy(pad + pz * dim + px0, from + lz * mapChunkSize + lx0, bytes);
+                    }
+                }
+            }
+
+            new WaterDistanceJob
+            {
+                padded = waterPad,
+                output = chunkData.WaterDistance,
+                size = mapChunkSize,
+                ring = ring,
+                waterLevel = waterLevel
+            }.Run();
+
+            chunkData.WaterLevelStamp = waterLevel;
+            chunkData.WaterRingStamp = requestedRing;
+        }
+
         public void RaiseDetail(ChunkData chunkData, long centre, int ring)
         {
             ring = math.clamp(ring, 0, ObjectInfo.MaxVisibleRings);
@@ -337,7 +391,79 @@ namespace TheRavine.Generator
             if (spawnOutput.IsCreated)      spawnOutput.Dispose();
             if (spawnCount.IsCreated)       spawnCount.Dispose();
             if (spawnGridBuffer.IsCreated)  spawnGridBuffer.Dispose();
+            if (waterPad.IsCreated)         waterPad.Dispose();
 
+        }
+    }
+
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Fast, DisableSafetyChecks = true)]
+    public struct WaterDistanceJob : IJob
+    {
+        [ReadOnly] public NativeArray<float> padded;
+        [WriteOnly] public NativeArray<byte> output;
+        public int size;
+        public int ring;
+        public float waterLevel;
+
+        public void Execute()
+        {
+            int dim = size + 2 * ring;
+            int cells = dim * dim;
+            int far = ring + 1;
+            var d = new NativeArray<byte>(cells, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+
+            for (int i = 0; i < cells; i++)
+                d[i] = padded[i] < waterLevel ? (byte)0 : (byte)far;
+
+            for (int z = 0; z < dim; z++)
+            {
+                int row = z * dim;
+                for (int x = 0; x < dim; x++)
+                {
+                    int i = row + x;
+                    int v = d[i];
+                    if (v == 0) continue;
+
+                    if (x > 0) v = math.min(v, d[i - 1] + 1);
+                    if (z > 0)
+                    {
+                        v = math.min(v, d[i - dim] + 1);
+                        if (x > 0) v = math.min(v, d[i - dim - 1] + 1);
+                        if (x < dim - 1) v = math.min(v, d[i - dim + 1] + 1);
+                    }
+                    d[i] = (byte)v;
+                }
+            }
+
+            for (int z = dim - 1; z >= 0; z--)
+            {
+                int row = z * dim;
+                for (int x = dim - 1; x >= 0; x--)
+                {
+                    int i = row + x;
+                    int v = d[i];
+                    if (v == 0) continue;
+
+                    if (x < dim - 1) v = math.min(v, d[i + 1] + 1);
+                    if (z < dim - 1)
+                    {
+                        v = math.min(v, d[i + dim] + 1);
+                        if (x < dim - 1) v = math.min(v, d[i + dim + 1] + 1);
+                        if (x > 0) v = math.min(v, d[i + dim - 1] + 1);
+                    }
+                    d[i] = (byte)v;
+                }
+            }
+
+            for (int z = 0; z < size; z++)
+            {
+                int src = (z + ring) * dim + ring;
+                int dst = z * size;
+                for (int x = 0; x < size; x++)
+                    output[dst + x] = d[src + x];
+            }
+
+            d.Dispose();
         }
     }
 
