@@ -186,6 +186,7 @@ public class EntityManager : MonoBehaviour
             RavineLog.Error($"[EntityManager] SimulationRules asset is not assigned to '{name}': agent simulation is disabled");
             return;
         }
+        VirologyRuntime.Initialize();
         ContextSlabs.Reserve(maxPopulation);
         _motion = new MotionSystem(maxPopulation);
         _instincts = new InstinctSystem(maxPopulation);

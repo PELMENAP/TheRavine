@@ -9,7 +9,7 @@ public static class StrainCodonTableBuilder
     [MenuItem("Tools/Ravine/Rebuild Strain Codon Table")]
     public static void Rebuild()
     {
-        VirologyRuntime.Initialize();
+        if (!VirologyRuntime.IsReady && !BindRulesAndInitialize()) return;
         if (!VirologyRuntime.IsReady)
         {
             Debug.LogError("[StrainCodonTableBuilder] VirologyRuntime не готов");
@@ -35,5 +35,23 @@ public static class StrainCodonTableBuilder
         AssetDatabase.SaveAssets();
 
         Debug.Log($"[StrainCodonTableBuilder] Таблица пересобрана: {AssetPath}");
+    }
+
+    private static bool BindRulesAndInitialize()
+    {
+        string[] guids = AssetDatabase.FindAssets("t:SimulationRules");
+        SimulationRules rules = guids.Length > 0
+            ? AssetDatabase.LoadAssetAtPath<SimulationRules>(AssetDatabase.GUIDToAssetPath(guids[0]))
+            : null;
+        if (rules == null)
+        {
+            Debug.LogError("[StrainCodonTableBuilder] Ассет SimulationRules не найден");
+            return false;
+        }
+
+        SimulationRules.Bind(rules);
+        VirologyRuntime.Initialize();
+        if (!Application.isPlaying) SimulationRules.Bind(null);
+        return true;
     }
 }

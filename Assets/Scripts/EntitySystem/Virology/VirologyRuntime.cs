@@ -16,7 +16,6 @@ namespace TheRavine.EntityControl.Virology
         public static float[] Prototype => _prototype;
         public static bool IsReady => _ready;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         public static void Initialize()
         {
             if (_ready) return;
