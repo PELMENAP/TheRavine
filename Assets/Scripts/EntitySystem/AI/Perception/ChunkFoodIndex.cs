@@ -466,12 +466,16 @@ public sealed class ChunkFoodIndex
     private bool BiteMeat(FoodChunk fc, ChunkData cd, int idx, long cell, ref FoodClaim claim)
     {
         ref readonly var r = ref SimulationRules.Frame;
-        bool hasRecord = _meat.TryGetValue(cell, out float left);
+        if (!_meat.TryGetValue(cell, out float left))
+        {
+            left        = r.CorpseFallbackEnergy;
+            _meat[cell] = left;
+        }
         int  lz        = idx / Size;
         ulong bit      = 1UL << (idx & ChunkMask);
         bool infected  = (fc.Infected[lz] & bit) != 0UL;
 
-        var bite = CorpseBite.Plan(hasRecord, left, infected, r.CorpseBiteEnergy, r.CorpseMinEnergy);
+        var bite = CorpseBite.Plan(true, left, infected, r.CorpseBiteEnergy, r.CorpseMinEnergy);
         claim.Energy   = bite.Energy;
         claim.Infected = bite.Infected;
 
@@ -482,11 +486,8 @@ public sealed class ChunkFoodIndex
             return true;
         }
 
-        if (!RemoveAt(fc, cd, idx, cell, out bool removedInfected)) return false;
-        if (bite.Energy > 0f) return true;
-
-        if (removedInfected) DropPayload(cell);
-        return false;
+        if (bite.Energy <= 0f) return false;
+        return RemoveAt(fc, cd, idx, cell, out _);
     }
 
     public bool TryTakePayload(long cell, out ViralPayload payload) => _payloads.TryRemove(cell, out payload);

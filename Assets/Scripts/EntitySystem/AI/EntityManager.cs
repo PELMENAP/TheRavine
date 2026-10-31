@@ -102,6 +102,7 @@ public class EntityManager : MonoBehaviour
     private int _tickCursor;
     private bool _windowOpen;
     private bool _simulationStarted;
+    private bool _rulesMissing;
     private double _tickStartTime;
     private double _nextFitnessStatsTime;
     private TickWindowBudget _tickBudget;
@@ -144,6 +145,8 @@ public class EntityManager : MonoBehaviour
     {
         SimulationClock.Advance(Time.deltaTime * simulationTimeScale);
 
+        if (_rulesMissing || !TheRavine.Base.WorldAuthority.IsAuthority) return;
+
         if (_simulationStarted)
         {
             double now = SimulationClock.TimeD;
@@ -175,7 +178,14 @@ public class EntityManager : MonoBehaviour
     private void Awake()
     {
         SimulationRules.ReleaseVariant();
-        SimulationRules.Bind(ResolveRules());
+        SimulationRules resolved = ResolveRules();
+        SimulationRules.Bind(resolved);
+        if (resolved == null)
+        {
+            _rulesMissing = true;
+            RavineLog.Error($"[EntityManager] SimulationRules asset is not assigned to '{name}': agent simulation is disabled");
+            return;
+        }
         ContextSlabs.Reserve(maxPopulation);
         _motion = new MotionSystem(maxPopulation);
         _instincts = new InstinctSystem(maxPopulation);
@@ -293,6 +303,7 @@ public class EntityManager : MonoBehaviour
     
     private async void Start()
     {
+        if (_rulesMissing) return;
         if (await DelaySimulation(SimulationRules.Active.StartupDelaySeconds, destroyCancellationToken)) return;
 
         var map = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();

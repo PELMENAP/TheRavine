@@ -66,9 +66,39 @@ public sealed class TerrainSensor
         _ringMax  = maxRadius;
     }
 
+    private static readonly ChunkData[] Hood = new ChunkData[9];
+    private static int  _hoodResolved;
+    private static int  _hoodX;
+    private static int  _hoodZ;
+
     private readonly MapGenerator _map;
 
     public TerrainSensor(MapGenerator map) => _map = map;
+
+    private void BeginHood(long chunkKey, ChunkData cd)
+    {
+        _hoodX = Position2Int.GetX(chunkKey);
+        _hoodZ = Position2Int.GetY(chunkKey);
+        Hood[4] = cd;
+        _hoodResolved = 1 << 4;
+    }
+
+    private ChunkData Neighbor(int sx, int sz)
+    {
+        int slot = (sz + 1) * 3 + sx + 1;
+        int bit  = 1 << slot;
+        if ((_hoodResolved & bit) != 0) return Hood[slot];
+
+        _hoodResolved |= bit;
+        long key = Position2Int.Pack(_hoodX + sx, _hoodZ + sz);
+        if (!_map.TryGetChunk(key, out ChunkData n) || n == null)
+        {
+            n = null;
+            _map.RequestChunk(key);
+        }
+        Hood[slot] = n;
+        return n;
+    }
 
     public bool TrySample(float worldX, float worldZ, out TerrainSample sample)
     {
@@ -81,6 +111,8 @@ public sealed class TerrainSensor
         long chunkKey = Position2Int.Pack(cellX >> ChunkShift, cellZ >> ChunkShift);
         if (!_map.TryGetChunk(chunkKey, out ChunkData cd) || cd == null)
             return false;
+
+        BeginHood(chunkKey, cd);
 
         ref readonly var rules = ref SimulationRules.Frame;
         int rNear = math.clamp(rules.DensityRadiusNear, 1, Size);
@@ -126,13 +158,13 @@ public sealed class TerrainSensor
             math.saturate(slopeDeg * math.rcp(rules.SlopeMaxDeg)),
             math.clamp(gx, -1f, 1f),
             math.clamp(gz, -1f, 1f),
-            WaterProximity(chunkKey, cd, baseIdx, in rules),
+            WaterProximity(chunkKey, cd, lx, lz, baseIdx, in rules),
             cost, costPX, costNX, costPZ, costNZ,
             biome[0], biome[1], biome[2], biome[3],
             RingDensity(cd, lx, lz, baseIdx, rNear),
             RingDensity(cd, lx, lz, baseIdx, rMid),
             RingDensity(cd, lx, lz, baseIdx, rFar),
-            RelativeHeight(cd, lx, lz, baseIdx, h, rules.RelativeHeightRadius, rules.RelSpan));
+            RelativeHeight(cd, lx, lz, h, rules.RelativeHeightRadius, rules.RelSpan));
 
         return true;
     }
@@ -159,7 +191,7 @@ public sealed class TerrainSensor
         channels[3] *= inv;
     }
 
-    private static float RingDensity(ChunkData cd, int lx, int lz, int baseIdx, int r)
+    private float RingDensity(ChunkData cd, int lx, int lz, int baseIdx, int r)
     {
         int start = RingStart[r];
         int end   = RingStart[r + 1];
@@ -170,20 +202,37 @@ public sealed class TerrainSensor
         for (int i = start; i < end; i++)
         {
             int nx = lx + RingDx[i];
-            if ((uint)nx >= (uint)Size) continue;
             int nz = lz + RingDz[i];
-            if ((uint)nz >= (uint)Size) continue;
+
+            if ((uint)nx < (uint)Size && (uint)nz < (uint)Size)
+            {
+                known++;
+                if (cd.Occupancy[baseIdx + RingDx[i] + RingDzMul[i]] != 0) busy++;
+                continue;
+            }
+
+            ChunkData n = Neighbor(nx >> ChunkShift, nz >> ChunkShift);
+            if (n == null) continue;
 
             known++;
-            if (cd.Occupancy[baseIdx + RingDx[i] + RingDzMul[i]] != 0) busy++;
+            if (n.Occupancy[(nz & ChunkMask) * Size + (nx & ChunkMask)] != 0) busy++;
         }
 
         return known > 0 ? (float)busy / known : 0f;
     }
 
-    private float WaterProximity(long chunkKey, ChunkData cd, int baseIdx, in SimulationRules.RulesFrame rules)
+    private float WaterProximity(long chunkKey, ChunkData cd, int lx, int lz, int baseIdx, in SimulationRules.RulesFrame rules)
     {
         int ring = math.clamp(rules.MaxRing, 1, Size);
+
+        int sx0 = lx - ring < 0 ? -1 : 0;
+        int sx1 = lx + ring >= Size ? 1 : 0;
+        int sz0 = lz - ring < 0 ? -1 : 0;
+        int sz1 = lz + ring >= Size ? 1 : 0;
+        for (int sz = sz0; sz <= sz1; sz++)
+        for (int sx = sx0; sx <= sx1; sx++)
+            if (sx != 0 || sz != 0) Neighbor(sx, sz);
+
         _map.EnsureWaterDistance(chunkKey, cd, rules.WaterLevel, ring);
 
         int d = cd.WaterDistance[baseIdx];
@@ -191,25 +240,27 @@ public sealed class TerrainSensor
         return d <= ring ? 1f - d * (1f / ring) : 0f;
     }
 
-    private static float RelativeHeight(ChunkData cd, int lx, int lz, int baseIdx, float h, int radius, float span)
+    private float RelativeHeight(ChunkData cd, int lx, int lz, float h, int radius, float span)
     {
         radius = math.clamp(radius, 1, Size);
 
         float sum = 0f;
         int   cnt = 0;
-        int   row = baseIdx - radius * Size;
 
-        for (int dz = -radius; dz < radius; dz++, row += Size)
+        for (int dz = -radius; dz < radius; dz++)
         {
-            int nz = lz + dz;
-            if ((uint)nz >= (uint)Size) continue;
+            int nz  = lz + dz;
+            int sz  = nz >> ChunkShift;
+            int row = (nz & ChunkMask) * Size;
 
             for (int dx = -radius; dx < radius; dx++)
             {
                 int nx = lx + dx;
-                if ((uint)nx >= (uint)Size) continue;
+                int sx = nx >> ChunkShift;
+                ChunkData src = (sx | sz) == 0 ? cd : Neighbor(sx, sz);
+                if (src == null) continue;
 
-                sum += cd.HeightRaw[row + dx];
+                sum += src.HeightRaw[row + (nx & ChunkMask)];
                 cnt++;
             }
         }
