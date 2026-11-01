@@ -150,6 +150,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float PastureRecoveryPerSecond;
         public readonly float SoilReturnFraction;
         public readonly float SoilPerDepletion;
+        public readonly float WarmthDecayPerSecond;
         public readonly float SeasonAmplitude;
         public readonly float SeasonPeriod;
         public readonly float EcologyTickInterval;
@@ -240,6 +241,8 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float StressNestRecoveryMul;
         public readonly float StressPerceptionNoise;
         public readonly float ForeignHarmStress;
+        public readonly float BasalEmitFraction;
+        public readonly float WarmthDrawFraction;
         public readonly float KinColonyWeight;
         public readonly float KinLineageWeight;
         public readonly float WitnessPenalty;
@@ -693,6 +696,7 @@ public sealed partial class SimulationRules : ScriptableObject
             PastureRecoveryPerSecond = r.pastureRecoveryPerSecond;
             SoilReturnFraction = r.soilReturnFraction;
             SoilPerDepletion = r.soilPerDepletion;
+            WarmthDecayPerSecond = r.warmthDecayPerSecond;
             SeasonAmplitude = r.seasonAmplitude;
             SeasonPeriod = r.seasonPeriod;
             EcologyTickInterval = r.ecologyTickInterval;
@@ -783,6 +787,8 @@ public sealed partial class SimulationRules : ScriptableObject
             StressNestRecoveryMul = r.stressNestRecoveryMul;
             StressPerceptionNoise = r.stressPerceptionNoise;
             ForeignHarmStress = r.foreignHarmStress;
+            BasalEmitFraction = r.basalEmitFraction;
+            WarmthDrawFraction = r.warmthDrawFraction;
             KinColonyWeight = r.kinColonyWeight;
             KinLineageWeight = r.kinLineageWeight;
             WitnessPenalty = r.witnessPenalty;
@@ -1218,6 +1224,11 @@ public sealed partial class SimulationRules : ScriptableObject
         if (!(nestExitRadiusMul >= 1f)) nestExitRadiusMul = 1f;
         soilReturnFraction = soilReturnFraction >= 0f ? math.min(soilReturnFraction, 1f) : 0f;
         if (!(soilPerDepletion >= 0f)) soilPerDepletion = 0f;
+        basalEmitFraction  = basalEmitFraction >= 0f ? math.min(basalEmitFraction, 1f) : 0f;
+        warmthDrawFraction = warmthDrawFraction >= 0f ? math.min(warmthDrawFraction, 1f) : 0f;
+        if (!(warmthCellSize > 0f)) warmthCellSize = 1f;
+        if (warmthBuckets < 1) warmthBuckets = 1;
+        if (!(warmthDecayPerSecond >= 0f)) warmthDecayPerSecond = 0f;
     }
 
     private static SimulationRules _active;

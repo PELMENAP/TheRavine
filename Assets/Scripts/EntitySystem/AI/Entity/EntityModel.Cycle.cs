@@ -238,16 +238,25 @@ public partial class EntityModel
                        * SenescenceMul(in rules)
                        * _immuneUpkeepMul;
 
+        bool  warm       = _warmth != null && (rules.WarmthDrawFraction > 0f || rules.BasalEmitFraction > 0f);
+        int   warmthCell = warm ? _warmth.Index(self) : 0;
+        float warmthHere = warm ? _warmth.Read(warmthCell) : 0f;
+
         CreatureCore.Metabolize(Stats, Mortality, dt, Motor.DrainEnergy(), mods.MetabolismMultiplier, basalMul,
-            in rules, out float metabolismCredit, out float basalSpent, out float moveSpent,
-            out float starvationReturned, out float clampGain);
+            in rules, warmthHere, out float metabolismCredit, out float basalSpent, out float moveSpent,
+            out float starvationReturned, out float clampGain, out float warmthDrawn, out float warmthEmitted);
+
+        if (warm) _warmth.Add(warmthCell, warmthEmitted - warmthDrawn);
+        if (warmthDrawn > 0f) Colony?.Stats.RecordWarmthDraw();
 
         float soilStored = _foodIndex != null ? _foodIndex.ReturnToSoil(pos.x, pos.z, digestLoss) : 0f;
 
         ref var flows = ref _ledger.Flows;
         flows.DigestionLoss    += digestLoss - soilStored;
         flows.SoilReturn       += soilStored;
-        flows.Basal            += basalSpent;
+        flows.Basal            += basalSpent - warmthEmitted;
+        flows.WarmthEmit       += warmthEmitted;
+        flows.WarmthDraw       += warmthDrawn;
         flows.Movement         += moveSpent;
         flows.StarvationReturn += starvationReturned;
         flows.ClampGain        += clampGain;
