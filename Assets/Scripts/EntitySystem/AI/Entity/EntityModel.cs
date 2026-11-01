@@ -195,6 +195,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
     private EntityModel _nearestForeign;
     private float       _nearestForeignDistance = -1f;
+    private StatsComponent _harmKey;
+    private float          _harmPrevHp;
     private PlayerPresence _players;
     private bool      _playerValid;
     private float2    _playerPos;
@@ -604,6 +606,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         Planner?.Cancel(this);
         _nearest = null;
         _nearestForeign = null;
+        _harmKey = null;
         _lastAttacker = null;
         _playerTransform = null;
         Vectorizer?.Dispose();

@@ -161,7 +161,16 @@ public partial class EntityModel
         if (nearest != null) nearest.Virology.TryGetViralInputs(out neighborLoad, out _, out _);
         _kinSick = nearest != null && nearest.Colony == Colony && neighborLoad >= rules.GroomMinLoad;
 
-        ReadForeignVitals(playerStats, playerVirology, out float foreignHp, out float foreignEnergy, out float foreignViral);
+        ReadForeignVitals(playerStats, playerVirology, out float foreignHp, out float foreignEnergy, out float foreignViral,
+            out StatsComponent foreignSource);
+        float foreignHarm = ReferenceEquals(foreignSource, _harmKey) ? math.max(0f, _harmPrevHp - foreignHp) : 0f;
+        _harmKey    = foreignSource;
+        _harmPrevHp = foreignHp;
+        if (foreignHarm > 0f)
+        {
+            AddStress(rules.ForeignHarmStress * foreignHarm);
+            Colony?.Stats.RecordForeignHarm();
+        }
 
         float dirNoise = Stress * rules.StressPerceptionNoise;
         var frame = new VectorizerFrame

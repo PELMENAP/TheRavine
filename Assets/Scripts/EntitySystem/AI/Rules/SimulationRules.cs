@@ -237,6 +237,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float StressTau;
         public readonly float StressNestRecoveryMul;
         public readonly float StressPerceptionNoise;
+        public readonly float ForeignHarmStress;
         public readonly float KinColonyWeight;
         public readonly float KinLineageWeight;
         public readonly float WitnessPenalty;
@@ -777,6 +778,7 @@ public sealed partial class SimulationRules : ScriptableObject
             StressTau = r.stressTau;
             StressNestRecoveryMul = r.stressNestRecoveryMul;
             StressPerceptionNoise = r.stressPerceptionNoise;
+            ForeignHarmStress = r.foreignHarmStress;
             KinColonyWeight = r.kinColonyWeight;
             KinLineageWeight = r.kinLineageWeight;
             WitnessPenalty = r.witnessPenalty;
@@ -1208,6 +1210,7 @@ public sealed partial class SimulationRules : ScriptableObject
         if (relativeHeightRadius < 1) relativeHeightRadius = 1;
         if (!(stressNestRecoveryMul >= 1f)) stressNestRecoveryMul = 1f;
         if (!(stressPerceptionNoise >= 0f)) stressPerceptionNoise = 0f;
+        if (!(foreignHarmStress >= 0f)) foreignHarmStress = 0f;
         if (!(nestExitRadiusMul >= 1f)) nestExitRadiusMul = 1f;
     }
 

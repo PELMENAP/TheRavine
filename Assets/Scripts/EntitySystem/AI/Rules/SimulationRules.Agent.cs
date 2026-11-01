@@ -24,6 +24,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float stressTau = 90f;
     [SerializeField] private float stressNestRecoveryMul = 3f;
     [SerializeField] private float stressPerceptionNoise = 0.5f;
+    [SerializeField] private float foreignHarmStress = 1f;
     [SerializeField] private int huntMaxStrikes = 3;
     [SerializeField] private int restMaxSteps = 3;
     [SerializeField] private float panicHpRelease = 0.15f;
@@ -86,6 +87,7 @@ public sealed partial class SimulationRules
     public float StressTau => stressTau;
     public float StressNestRecoveryMul => stressNestRecoveryMul;
     public float StressPerceptionNoise => stressPerceptionNoise;
+    public float ForeignHarmStress => foreignHarmStress;
     public int HuntMaxStrikes => huntMaxStrikes;
     public int RestMaxSteps => restMaxSteps;
     public float PanicHpRelease => panicHpRelease;

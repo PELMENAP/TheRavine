@@ -19,6 +19,7 @@ public sealed class ColonyStats
     public readonly int[] PlansByCaste    = new int[(int)Caste.Count * PlanCatalog.Count];
     public float FarShare;
     public int   Reseeds;
+    public int   ForeignHarmTicks;
 
     public float StorageEaten;
     public float StorageStored;
@@ -55,6 +56,7 @@ public sealed class ColonyStats
     }
 
     public void RecordAttack(AttackTarget target) => Attacks[(int)target]++;
+    public void RecordForeignHarm() => ForeignHarmTicks++;
     public void RecordAction(int action) { if ((uint)action < (uint)ActionsStarted.Length) ActionsStarted[action]++; }
 
     public void RecordCastePlan(Caste caste, PlanKind plan)
