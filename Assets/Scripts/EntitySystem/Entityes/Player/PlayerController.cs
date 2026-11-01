@@ -204,6 +204,7 @@ namespace TheRavine.EntityControl
         public void SetZeroValues()
         {
             playerAnimator.Animate(movementDirection, 0);
+            movementDirection = Vector2.zero;
         }
 
         public void EnableComponents()
