@@ -117,7 +117,7 @@ public partial class EntityModel
     }
 
     private void ReadForeignVitals(StatsComponent playerStats, VirologyComponent playerVirology,
-        out float hp, out float energy, out float viral)
+        out float hp, out float energy, out float viral, out StatsComponent source)
     {
         StatsComponent    stats    = null;
         VirologyComponent virology = null;
@@ -133,6 +133,7 @@ public partial class EntityModel
             virology = playerVirology;
         }
         CreatureCore.ReadVitals(stats, virology, out hp, out energy, out viral);
+        source = stats;
     }
 
     private EntityModel FindNearestForeign(Vector3 pos, float radius, out float distance)
