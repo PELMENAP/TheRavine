@@ -432,6 +432,21 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float PreWinterWorkerStimulus;
         public readonly float WinterGrowthMul;
         public readonly float WinterDrainMul;
+        public readonly float FireIgnitionChance;
+        public readonly float FireSeasonBias;
+        public readonly float FireSpreadChance;
+        public readonly float FireWindBias;
+        public readonly float FireBurnSeconds;
+        public readonly float FireDamagePerSecond;
+        public readonly float FireStepInterval;
+        public readonly int FireMaxBurning;
+        public readonly float[] FoodFlammabilityTable;
+        public readonly float WaterSpeedMul;
+        public readonly float WaterDrainMul;
+        public readonly float HibernateEnterEnergy;
+        public readonly float HibernateDrainMul;
+        public readonly float HibernateWakeHpFraction;
+        public readonly float HibernateWakeCooldown;
         public readonly float HormoneTau;
         public readonly float TempDopamine;
         public readonly float TempCortisol;
@@ -518,6 +533,7 @@ public sealed partial class SimulationRules : ScriptableObject
 
         public float BiomeFertility(int biome) => BiomeValue(BiomeFertilityTable, biome, 1f);
         public float BiomeToxicity(int biome)  => BiomeValue(BiomeToxicityTable, biome, 0f);
+        public float FoodFlammability(FoodKind kind) => FoodFlammabilityTable != null && (uint)kind < (uint)FoodFlammabilityTable.Length ? FoodFlammabilityTable[(int)kind] : 0f;
 
         public RulesFrame(SimulationRules r)
         {
@@ -944,6 +960,21 @@ public sealed partial class SimulationRules : ScriptableObject
             PreWinterWorkerStimulus = r.preWinterWorkerStimulus;
             WinterGrowthMul = r.winterGrowthMul;
             WinterDrainMul = r.winterDrainMul;
+            FireIgnitionChance = r.fireIgnitionChance;
+            FireSeasonBias = r.fireSeasonBias;
+            FireSpreadChance = r.fireSpreadChance;
+            FireWindBias = r.fireWindBias;
+            FireBurnSeconds = r.fireBurnSeconds;
+            FireDamagePerSecond = r.fireDamagePerSecond;
+            FireStepInterval = r.fireStepInterval;
+            FireMaxBurning = r.fireMaxBurning;
+            FoodFlammabilityTable = r.foodFlammability;
+            WaterSpeedMul = r.waterSpeedMul;
+            WaterDrainMul = r.waterDrainMul;
+            HibernateEnterEnergy = r.hibernateEnterEnergy;
+            HibernateDrainMul = r.hibernateDrainMul;
+            HibernateWakeHpFraction = r.hibernateWakeHpFraction;
+            HibernateWakeCooldown = r.hibernateWakeCooldown;
             HormoneTau = r.hormoneTau;
             TempDopamine = r.tempDopamine;
             TempCortisol = r.tempCortisol;

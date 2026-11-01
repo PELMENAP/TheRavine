@@ -67,6 +67,7 @@ namespace TheRavine.EntityControl
             var objects = await ServiceLocator.WaitUntilServiceReady<ObjectSystem>();
             if (brokenUp) return;
 
+            map.BindWaterLevel(SimulationRules.Frame.WaterLevel);
             foodIndex = new ChunkFoodIndex(map, objects.infoRegistry);
             ServiceLocator.Register(foodIndex);
         }

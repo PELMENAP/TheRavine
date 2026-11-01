@@ -47,6 +47,7 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private float cullAxisMargin = 8f;
     private Camera _cullCamera;
     private MapGenerator _map;
+    private FireTickHandler _fire;
 
     [Header("Nest views")]
     [SerializeField] private bool showNestViews = true;
@@ -156,6 +157,7 @@ public class EntityManager : MonoBehaviour
                 _nextFitnessStatsTime = now + SimulationRules.Active.FitnessStatsInterval;
             }
             if (now >= _tickStartTime) TickAgents(SimulationClock.DeltaTime);
+            _fire?.Step(now, SimulationClock.DeltaTime, _entities);
         }
 
         _planner.Flush();
@@ -313,6 +315,12 @@ public class EntityManager : MonoBehaviour
 
         var foodIndex = await ServiceLocator.WaitUntilServiceReady<ChunkFoodIndex>();
         _food.Bind(foodIndex, SimulationClock.Time);
+
+        if (map.RandomTicks != null && ServiceLocator.Services.TryGet(out ObjectSystem objects))
+        {
+            _fire = new FireTickHandler(map, objects.infoRegistry, foodIndex);
+            map.RandomTicks.Register(_fire);
+        }
 
         for (int i = 0; i < initialCount; i++)
         {
@@ -780,6 +788,7 @@ public class EntityManager : MonoBehaviour
         for (int i = 0; i < _nestViews.Count; i++)
             if (_nestViews[i] != null) Destroy(_nestViews[i].gameObject);
         _nestViews.Clear();
+        _fire?.Dispose();
         _infection?.Dispose();
         _population?.ProcessPendingDeaths();
         _population?.FlushDeferredDisposals();

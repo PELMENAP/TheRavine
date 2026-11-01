@@ -17,11 +17,11 @@ public static class CreatureCore
             : phase >= r.NightStart && phase < r.NightEnd;
 
     public static float EnvironmentDrainMul(float wellFed, bool exposedAtNight, float fever, bool winter,
-        in SimulationRules.RulesFrame r)
+        in SimulationRules.RulesFrame r, bool dormant = false)
         => (1f - r.WellFedBasalReduction * wellFed)
          * (exposedAtNight ? r.NightOutsideDrainMul : 1f)
          * (1f + fever * r.FeverDrainMul)
-         * (winter ? r.WinterDrainMul : 1f);
+         * (dormant ? r.HibernateDrainMul : winter ? r.WinterDrainMul : 1f);
 
     public static float ImmuneUpkeepMul(in GeneticParameters genes, SimulationRules r)
         => 1f + genes.ImmuneInvestment * r.ImmuneUpkeep;

@@ -100,6 +100,11 @@ public partial class EntityModel
 
         if (IsAtNest && LastAction == EntityAction.Rest) amount *= r.NestRestDamageMul;
         amount *= _casteMods.DamageTaken;
+        if (_dormant)
+        {
+            _dormant = false;
+            _dormantBlockUntil = SimulationClock.TimeD + r.HibernateWakeCooldown;
+        }
         if (source != null) Points?.MarkNegative(Position2D, r.NegativePoiHit);
         Mortality?.NoteHarm(cause, Stats.Hp - amount);
         Stats.Hp -= amount;

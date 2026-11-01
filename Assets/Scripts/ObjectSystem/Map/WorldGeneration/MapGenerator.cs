@@ -285,11 +285,19 @@ namespace TheRavine.Generator
             chunkPool.Push(cd);
         }
 
+        public float WaterLevel { get; private set; } = float.MinValue;
+
+        public void BindWaterLevel(float level) => WaterLevel = level;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float WaterModifier(float height, float waterLevel, float inWaterMul)
+            => height < waterLevel ? inWaterMul : 1f;
+
         public bool IsHeightIsLiveAble(long position) =>
-            GetRealPosition(position).y > 5;
+            GetRealPosition(position).y > WaterLevel;
 
         public bool IsWaterHeight(long position) =>
-            GetRealPosition(position).y < 5;
+            GetRealPosition(position).y < WaterLevel;
 
         private ChunkData ChunkForCell(long chunkKey) =>
             mapData.TryGetValue(chunkKey, out ChunkData data) ? data : GetMapData(chunkKey);

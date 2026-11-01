@@ -40,6 +40,25 @@ public partial class EntityModel
         return math.normalizesafe(dir + new float2(c, s) * magnitude);
     }
 
+    private void UpdateDormancy(double now, in SimulationRules.RulesFrame rules)
+    {
+        if (IsWild) return;
+
+        bool hpOk = Stats.Hp >= Stats.MaxHealth * rules.HibernateWakeHpFraction;
+        if (_dormant)
+        {
+            if (!_winter || !hpOk) _dormant = false;
+            return;
+        }
+
+        if (!_winter || !IsAtNest || IsHungry || !hpOk || now < _dormantBlockUntil) return;
+        if (Stats.En < Stats.MaxEnergy * rules.HibernateEnterEnergy) return;
+
+        _plan.Interrupt();
+        _runner.Interrupt();
+        _dormant = true;
+    }
+
     private bool RunCycle()
     {
         ref readonly var rules = ref SimulationRules.Frame;
@@ -66,6 +85,7 @@ public partial class EntityModel
         _season         = SeasonClock.Value(now);
         _winterApproach = SeasonClock.WinterApproach(now);
         _winter         = _season < -rules.WinterThreshold;
+        UpdateDormancy(nowD, in rules);
 
         float dayPhase = CreatureCore.DayPhase(ref _dayCycle);
         bool  night    = CreatureCore.IsNightPhase(dayPhase, in rules);
@@ -196,7 +216,7 @@ public partial class EntityModel
         Digestion.Tick(Stats, dt, resting, digestMul, mods.RegenMultiplier, in rules, out float regenCredit);
 
         float basalMul = Tuning.BasalDrainMul
-                       * CreatureCore.EnvironmentDrainMul(Digestion.WellFed, night && !IsAtNest, mods.Fever, _winter, in rules)
+                       * CreatureCore.EnvironmentDrainMul(Digestion.WellFed, night && !IsAtNest, mods.Fever, _winter, in rules, _dormant)
                        * SenescenceMul(in rules)
                        * _immuneUpkeepMul;
 
@@ -205,6 +225,7 @@ public partial class EntityModel
 
         Virology.CreditDurableEffects(regenCredit, metabolismCredit, Stats.MaxEnergy);
         if (!IsAliveForTick()) return false;
+        if (_dormant) return false;
 
         _driveIntegral += Drive() * dt;
 

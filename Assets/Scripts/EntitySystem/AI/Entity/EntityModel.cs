@@ -113,6 +113,9 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private float _season;
     private float _winterApproach;
     private bool  _winter;
+    private bool  _dormant;
+    private double _dormantBlockUntil;
+    public bool IsDormant => _dormant;
 
     private float2 _recruitTarget;
     private double _recruitUntil = double.NegativeInfinity;

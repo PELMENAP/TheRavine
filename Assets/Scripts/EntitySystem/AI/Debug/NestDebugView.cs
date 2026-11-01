@@ -53,7 +53,7 @@ public sealed class NestDebugView : MonoBehaviour
     [Header("Mortality & combat")]
     [SerializeField] private float deathRatePerMinute;
     [SerializeField] private float lifespanMean;
-    [SerializeField] private int[] deathsByCause = new int[(int)DeathCause.Age + 1];
+    [SerializeField] private int[] deathsByCause = new int[(int)DeathCause.Burn + 1];
     [SerializeField] private int[] attacks       = new int[(int)ColonyStats.AttackTarget.Count];
 
     [Header("Selection")]
@@ -69,7 +69,7 @@ public sealed class NestDebugView : MonoBehaviour
     };
     private static readonly Color WildColor = new(0.75f, 0.5f, 0.25f);
     private static readonly string[] CasteShort = { "W", "So", "Sc", "N" };
-    private static readonly string[] CauseShort = { "K", "S", "V", "T", "A" };
+    private static readonly string[] CauseShort = { "K", "S", "V", "T", "A", "B" };
 
     private readonly StringBuilder _sb = new(512);
     private ColonyState   _colony;
