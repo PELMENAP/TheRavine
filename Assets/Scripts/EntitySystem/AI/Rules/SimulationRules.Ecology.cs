@@ -36,6 +36,9 @@ public sealed partial class SimulationRules
     [SerializeField] private float fireStepInterval = 0.5f;
     [SerializeField] private int fireMaxBurning = 512;
     [SerializeField] private float[] foodFlammability = { 1f, 0.6f, 0.8f, 0f };
+    [SerializeField] private float[] foodToxicity     = { 0f, 1f, 0f, 0f };
+    [SerializeField] private float[] foodSize         = { 0f, 0f, 1f, 0f };
+    [SerializeField] private float[] foodMeat         = { 0f, 0f, 0f, 1f };
     [SerializeField] private float waterSpeedMul = 0.5f;
     [SerializeField] private float waterDrainMul = 1.5f;
     [SerializeField] private float hibernateEnterEnergy = 0.6f;

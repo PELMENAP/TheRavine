@@ -38,6 +38,18 @@ public static class CreatureCore
         return virology;
     }
 
+    public static void ReadVitals(StatsComponent stats, VirologyComponent virology,
+        out float hp, out float energy, out float viral)
+    {
+        hp     = 0f;
+        energy = 0f;
+        viral  = 0f;
+        if (stats == null || stats.IsDisposed) return;
+        hp     = stats.MaxHealth > 0f ? math.saturate(stats.Hp / stats.MaxHealth) : 0f;
+        energy = stats.MaxEnergy > 0f ? math.saturate(stats.En / stats.MaxEnergy) : 0f;
+        virology?.TryGetViralInputs(out viral, out _, out _);
+    }
+
     public static void StepVirology(VirologyComponent virology, StatsComponent stats, MortalityComponent mortality,
         float dt, in HostState host)
     {

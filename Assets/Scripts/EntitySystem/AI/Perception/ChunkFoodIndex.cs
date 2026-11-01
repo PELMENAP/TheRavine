@@ -19,10 +19,18 @@ public struct ViralPayload
     public ulong    LineageId;
 }
 
+public struct FoodTraits
+{
+    public float Toxicity;
+    public float Size;
+    public float Meat;
+}
+
 public struct FoodClaim
 {
     public float    Energy;
     public FoodKind Kind;
+    public float    Toxicity;
     public bool     Pending;
     public bool     Infected;
 }
@@ -420,6 +428,16 @@ public sealed class ChunkFoodIndex
         return true;
     }
 
+    public bool TryGetTraits(long cell, out FoodTraits traits, out bool infected)
+    {
+        traits   = default;
+        infected = false;
+        if (!TryLocate(cell, out var fc, out _, out int idx, out FoodKind kind)) return false;
+        traits   = SimulationRules.Frame.TraitsOf(kind);
+        infected = (fc.Infected[idx / Size] & (1UL << (idx & ChunkMask))) != 0UL;
+        return true;
+    }
+
     private float NutritionOf(FoodChunk fc, int idx, FoodKind kind)
     {
         ref readonly var r = ref SimulationRules.Frame;
@@ -435,7 +453,8 @@ public sealed class ChunkFoodIndex
         claim = default;
         if (!TryLocate(cell, out var fc, out var cd, out int idx, out FoodKind kind)) return false;
 
-        claim.Kind = kind;
+        claim.Kind     = kind;
+        claim.Toxicity = SimulationRules.Frame.TraitsOf(kind).Toxicity;
 
         if (kind == FoodKind.Meat) return BiteMeat(fc, cd, idx, cell, ref claim);
 

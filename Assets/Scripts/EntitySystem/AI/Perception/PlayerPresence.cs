@@ -3,12 +3,15 @@ using Unity.Mathematics;
 using UnityEngine;
 
 using TheRavine.EntityControl;
+using TheRavine.EntityControl.Virology;
 
 public sealed class PlayerPresence
 {
-    private AEntity[]   _players    = Array.Empty<AEntity>();
-    private Transform[] _transforms = Array.Empty<Transform>();
-    private float2[]    _positions  = Array.Empty<float2>();
+    private AEntity[]           _players    = Array.Empty<AEntity>();
+    private Transform[]         _transforms = Array.Empty<Transform>();
+    private StatsComponent[]    _stats      = Array.Empty<StatsComponent>();
+    private VirologyComponent[] _virology   = Array.Empty<VirologyComponent>();
+    private float2[]            _positions  = Array.Empty<float2>();
     private int _count;
 
     public int Count => _count;
@@ -31,6 +34,8 @@ public sealed class PlayerPresence
             {
                 _players[k]    = p;
                 _transforms[k] = p.GetEntityComponent<TransformComponent>()?.GetEntityTransform();
+                _stats[k]      = p.GetEntityComponent<StatsComponent>();
+                _virology[k]   = p.GetEntityComponent<VirologyComponent>();
             }
 
             var t = _transforms[k];
@@ -45,14 +50,19 @@ public sealed class PlayerPresence
         {
             _players[i]    = null;
             _transforms[i] = null;
+            _stats[i]      = null;
+            _virology[i]   = null;
         }
         _count = k;
     }
 
-    public bool TryFindNearest(float2 from, float radius, out float2 position, out float distance, out Transform transform)
+    public bool TryFindNearest(float2 from, float radius, out float2 position, out float distance, out Transform transform,
+        out StatsComponent stats, out VirologyComponent virology)
     {
         position  = default;
         transform = null;
+        stats     = null;
+        virology  = null;
         distance  = -1f;
         float best = radius * radius;
         int   idx  = -1;
@@ -67,6 +77,8 @@ public sealed class PlayerPresence
 
         position  = _positions[idx];
         transform = _transforms[idx];
+        stats     = _stats[idx];
+        virology  = _virology[idx];
         distance  = math.sqrt(best);
         return true;
     }
@@ -80,5 +92,7 @@ public sealed class PlayerPresence
         Array.Resize(ref _players, cap);
         Array.Resize(ref _transforms, cap);
         Array.Resize(ref _positions, cap);
+        Array.Resize(ref _stats, cap);
+        Array.Resize(ref _virology, cap);
     }
 }

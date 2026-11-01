@@ -442,6 +442,10 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float FireStepInterval;
         public readonly int FireMaxBurning;
         public readonly float[] FoodFlammabilityTable;
+        public readonly FoodTraits FoodTraitsPlant;
+        public readonly FoodTraits FoodTraitsToxic;
+        public readonly FoodTraits FoodTraitsLarge;
+        public readonly FoodTraits FoodTraitsMeat;
         public readonly float WaterSpeedMul;
         public readonly float WaterDrainMul;
         public readonly float HibernateEnterEnergy;
@@ -535,6 +539,13 @@ public sealed partial class SimulationRules : ScriptableObject
         public float BiomeFertility(int biome) => BiomeValue(BiomeFertilityTable, biome, 1f);
         public float BiomeToxicity(int biome)  => BiomeValue(BiomeToxicityTable, biome, 0f);
         public float FoodFlammability(FoodKind kind) => FoodFlammabilityTable != null && (uint)kind < (uint)FoodFlammabilityTable.Length ? FoodFlammabilityTable[(int)kind] : 0f;
+        public FoodTraits TraitsOf(FoodKind kind) => kind switch
+        {
+            FoodKind.Toxic => FoodTraitsToxic,
+            FoodKind.Large => FoodTraitsLarge,
+            FoodKind.Meat  => FoodTraitsMeat,
+            _              => FoodTraitsPlant,
+        };
 
         public RulesFrame(SimulationRules r)
         {
@@ -971,6 +982,10 @@ public sealed partial class SimulationRules : ScriptableObject
             FireStepInterval = r.fireStepInterval;
             FireMaxBurning = r.fireMaxBurning;
             FoodFlammabilityTable = r.foodFlammability;
+            FoodTraitsPlant = r.FoodTraitsFor(FoodKind.Plant);
+            FoodTraitsToxic = r.FoodTraitsFor(FoodKind.Toxic);
+            FoodTraitsLarge = r.FoodTraitsFor(FoodKind.Large);
+            FoodTraitsMeat  = r.FoodTraitsFor(FoodKind.Meat);
             WaterSpeedMul = r.waterSpeedMul;
             WaterDrainMul = r.waterDrainMul;
             HibernateEnterEnergy = r.hibernateEnterEnergy;
@@ -1155,6 +1170,16 @@ public sealed partial class SimulationRules : ScriptableObject
 
     public float BiomeFertility(int biome) => BiomeValue(biomeFertility, biome, 1f);
     public float BiomeToxicity(int biome)  => BiomeValue(biomeToxicity, biome, 0f);
+
+    private FoodTraits FoodTraitsFor(FoodKind kind) => new FoodTraits
+    {
+        Toxicity = KindValue(foodToxicity, kind),
+        Size     = KindValue(foodSize, kind),
+        Meat     = KindValue(foodMeat, kind),
+    };
+
+    private static float KindValue(float[] table, FoodKind kind)
+        => table != null && (uint)kind < (uint)table.Length ? table[(int)kind] : 0f;
 
     private static float BiomeValue(float[] table, int biome, float fallback)
     {
