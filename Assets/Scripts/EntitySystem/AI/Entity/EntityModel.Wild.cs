@@ -25,7 +25,7 @@ public partial class EntityModel
         float hp     = Stats.Hp / Stats.MaxHealth;
         bool hungry  = EffectiveEnergyNorm < r.PredatorHungerOn;
         bool flee    = hp < r.PredatorFleeHp && _threatResolved;
-        bool meat    = _foodValid && _foodKind == FoodKind.Meat;
+        bool meat    = _foodValid && _foodTraits.Meat > 0f;
         var  prey    = hungry ? CachedHuntTarget : default;
         bool urgent  = flee || (hungry && (meat || prey.IsValid));
 

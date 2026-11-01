@@ -21,8 +21,8 @@ public struct VectorizerFrame
     public float2 NestFoodDir;
     public float  Stomach;
     public float  WellFed;
-    public float  FoodToxic;
-    public float  FoodLarge;
+    public float  FoodToxicity;
+    public float  FoodSize;
     public float  FoodMeat;
     public float  FoodInfected;
     public float  Carrying;
@@ -36,7 +36,9 @@ public struct VectorizerFrame
     public float2 FlockHeading;
     public float2 FlockCentroidDir;
     public float2 MigrationDir;
-    public float  NearestForeign;
+    public float  ForeignHp;
+    public float  ForeignEnergy;
+    public float  ForeignViral;
     public float  IsLeader;
     public int    Caste;
     public float4 Speech;
@@ -56,7 +58,7 @@ public class InputVectorizer : IDisposable
     public const int StateOffset     = DirectionOffset + 10;
     public const int StateSlots      = 13;
     public const int TailOffset      = StateOffset + StateSlots;
-    public const int TailSlots       = 43;
+    public const int TailSlots       = 45;
     public const int PlanEmaOffset   = TailOffset + TailSlots;
     public const int SeasonOffset    = PlanEmaOffset + PlanCatalog.Count;
     public const int VectorSize      = SeasonOffset + 2;
@@ -121,8 +123,8 @@ public class InputVectorizer : IDisposable
         int s = StateOffset;
         v[s]      = f.Stomach;
         v[s + 1]  = f.WellFed;
-        v[s + 2]  = f.FoodToxic;
-        v[s + 3]  = f.FoodLarge;
+        v[s + 2]  = f.FoodToxicity;
+        v[s + 3]  = f.FoodSize;
         v[s + 4]  = f.FoodMeat;
         v[s + 5]  = f.FoodInfected;
         v[s + 6]  = f.Carrying;
@@ -164,7 +166,9 @@ public class InputVectorizer : IDisposable
         v[idx++] = f.FlockCentroidDir.y;
         v[idx++] = f.MigrationDir.x;
         v[idx++] = f.MigrationDir.y;
-        v[idx++] = f.NearestForeign;
+        v[idx++] = f.ForeignHp;
+        v[idx++] = f.ForeignEnergy;
+        v[idx++] = f.ForeignViral;
         v[idx++] = f.IsLeader;
         for (int c = 0; c < (int)global::Caste.Count; c++) v[idx++] = f.Caste == c ? 1f : 0f;
 

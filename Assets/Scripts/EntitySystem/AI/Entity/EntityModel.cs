@@ -147,7 +147,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private UtilityFeatures _utility;
     public ref readonly UtilityFeatures UtilityInput => ref _utility;
 
-    private FoodKind _foodKind;
+    private FoodTraits _foodTraits;
 
     private CasteThresholdSystem _thresholds;
 

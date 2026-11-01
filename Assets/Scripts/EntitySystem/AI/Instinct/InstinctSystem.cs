@@ -38,13 +38,13 @@ public struct InstinctInput
     public float Now;
     public float HungerBias;
     public float PanicBias;
+    public float FoodToxicity;
     public byte  Sick;
     public byte  HungryKin;
     public byte  Recruited;
     public byte  Caste;
     public byte  AtNest;
     public byte  NestFood;
-    public byte  FoodToxic;
     public byte  Night;
     public byte  Warned;
     public byte  HasThreat;
@@ -152,7 +152,7 @@ public struct InstinctJob : IJobFor
         latches = (hungry ? InstinctBits.Hungry : 0u) | (panic ? InstinctBits.Panic : 0u);
 
         bool sated      = x.Stomach >= g.SatedFill;
-        bool edible     = x.FoodDistance >= 0f && x.FoodToxic == 0;
+        bool edible     = x.FoodDistance >= 0f && x.FoodToxicity <= 0f;
         bool foodNear   = edible && x.FoodDistance <= R.EatRange;
         bool foodFar    = edible && x.FoodDistance > R.EatRange;
         bool atNest     = x.AtNest != 0;

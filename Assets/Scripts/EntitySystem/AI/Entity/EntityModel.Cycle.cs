@@ -122,15 +122,15 @@ public partial class EntityModel
             _foodIndex.TryFindNearestFood(pos.x, pos.z, detect, out _foodCell, out _foodDistance, Colony.ColonyId))
             _foodValid = true;
 
-        FoodKind foodKind = FoodKind.Plant;
+        FoodTraits foodTraits = default;
         bool foodInfected = false;
         float2 foodPos = float2.zero;
         if (_foodValid)
         {
             foodPos = ChunkFoodIndex.CellCenter(_foodCell);
-            _foodIndex.TryGetKind(_foodCell, out foodKind, out foodInfected);
+            _foodIndex.TryGetTraits(_foodCell, out foodTraits, out foodInfected);
         }
-        _foodKind = foodKind;
+        _foodTraits = foodTraits;
 
         var nest = Nest;
         IsAtNest = nest != null && nest.Contains(self, IsAtNest ? nest.Radius * math.max(rules.NestExitRadiusMul, 1f) : nest.Radius);
@@ -140,8 +140,11 @@ public partial class EntityModel
         if (nest != null && !IsWild) nest.Mark(ColonyChannel.Territory, self, rules.TerritoryMark * dt);
         SampleTrail(in self, nowD, in rules);
         _nearestForeign = FindNearestForeign(pos, detect, out _nearestForeignDistance);
+        StatsComponent    playerStats    = null;
+        VirologyComponent playerVirology = null;
         _playerValid = _players != null
-            && _players.TryFindNearest(self, detect, out _playerPos, out _playerDistance, out _playerTransform);
+            && _players.TryFindNearest(self, detect, out _playerPos, out _playerDistance, out _playerTransform,
+                out playerStats, out playerVirology);
         if (!_playerValid) _playerTransform = null;
         PerceptionMarker.End();
         _nestFood = ComputeNestFood(nest, in rules);
@@ -157,6 +160,8 @@ public partial class EntityModel
         var nearest = CachedNearest;
         if (nearest != null) nearest.Virology.TryGetViralInputs(out neighborLoad, out _, out _);
         _kinSick = nearest != null && nearest.Colony == Colony && neighborLoad >= rules.GroomMinLoad;
+
+        ReadForeignVitals(playerStats, playerVirology, out float foreignHp, out float foreignEnergy, out float foreignViral);
 
         float dirNoise = Stress * rules.StressPerceptionNoise;
         var frame = new VectorizerFrame
@@ -175,9 +180,9 @@ public partial class EntityModel
             NestFoodDir       = nest != null && nest.HasFoodPeak ? DirectionTo(in self, nest.FoodPeak) : float2.zero,
             Stomach           = Digestion.Fill,
             WellFed           = Digestion.WellFed,
-            FoodToxic         = _foodValid && foodKind == FoodKind.Toxic ? 1f : 0f,
-            FoodLarge         = _foodValid && foodKind == FoodKind.Large ? 1f : 0f,
-            FoodMeat          = _foodValid && foodKind == FoodKind.Meat ? 1f : 0f,
+            FoodToxicity      = foodTraits.Toxicity,
+            FoodSize          = foodTraits.Size,
+            FoodMeat          = foodTraits.Meat,
             FoodInfected      = foodInfected ? 1f : 0f,
             Carrying          = Carrying > 0f ? math.saturate(Carrying / math.max(Stats.MaxEnergy * rules.StomachCapacityFraction, 1e-3f)) : 0f,
             NestStorage       = nest != null ? math.saturate(nest.Storage / math.max(rules.NestStorageNorm, 1e-3f)) : 0f,
@@ -190,7 +195,9 @@ public partial class EntityModel
             FlockHeading      = _flock.MeanHeading,
             FlockCentroidDir  = _flock.CentroidDir,
             MigrationDir      = nest != null ? math.normalizesafe(nest.Migration) * math.saturate(nest.MigrationPressure) : float2.zero,
-            NearestForeign    = _nearestForeign != null || _playerValid ? 1f : 0f,
+            ForeignHp         = foreignHp,
+            ForeignEnergy     = foreignEnergy,
+            ForeignViral      = foreignViral,
             IsLeader          = IsLeader ? 1f : 0f,
             Caste             = (int)Caste,
             Speech            = Speech.Heard,
@@ -346,7 +353,7 @@ public partial class EntityModel
             Age             = TimeAlive,
             AtNest          = IsAtNest ? (byte)1 : (byte)0,
             NestFood        = _nestFood ? (byte)1 : (byte)0,
-            FoodToxic       = _foodValid && foodKind == FoodKind.Toxic ? (byte)1 : (byte)0,
+            FoodToxicity    = foodTraits.Toxicity,
             Night           = night ? (byte)1 : (byte)0,
             Warned          = IsWarned ? (byte)1 : (byte)0,
             HasThreat       = hasThreat ? (byte)1 : (byte)0,
