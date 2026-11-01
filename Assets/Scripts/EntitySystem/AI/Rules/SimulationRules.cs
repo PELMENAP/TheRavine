@@ -148,6 +148,8 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float FoodChunkCapacity;
         public readonly float PastureDepletionPerEat;
         public readonly float PastureRecoveryPerSecond;
+        public readonly float SoilReturnFraction;
+        public readonly float SoilPerDepletion;
         public readonly float SeasonAmplitude;
         public readonly float SeasonPeriod;
         public readonly float EcologyTickInterval;
@@ -689,6 +691,8 @@ public sealed partial class SimulationRules : ScriptableObject
             FoodChunkCapacity = r.foodChunkCapacity;
             PastureDepletionPerEat = r.pastureDepletionPerEat;
             PastureRecoveryPerSecond = r.pastureRecoveryPerSecond;
+            SoilReturnFraction = r.soilReturnFraction;
+            SoilPerDepletion = r.soilPerDepletion;
             SeasonAmplitude = r.seasonAmplitude;
             SeasonPeriod = r.seasonPeriod;
             EcologyTickInterval = r.ecologyTickInterval;
@@ -1212,6 +1216,8 @@ public sealed partial class SimulationRules : ScriptableObject
         if (!(stressPerceptionNoise >= 0f)) stressPerceptionNoise = 0f;
         if (!(foreignHarmStress >= 0f)) foreignHarmStress = 0f;
         if (!(nestExitRadiusMul >= 1f)) nestExitRadiusMul = 1f;
+        soilReturnFraction = soilReturnFraction >= 0f ? math.min(soilReturnFraction, 1f) : 0f;
+        if (!(soilPerDepletion >= 0f)) soilPerDepletion = 0f;
     }
 
     private static SimulationRules _active;

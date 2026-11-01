@@ -128,6 +128,7 @@ public sealed class ChunkFoodIndex
         public ChunkData Source;
         public float Fertility = -1f;
         public float Depletion;
+        public float SoilEnergy;
         public float GrowthBudget;
         public float MaturityBudget;
 
@@ -142,6 +143,7 @@ public sealed class ChunkFoodIndex
             Source         = null;
             Fertility      = -1f;
             Depletion      = 0f;
+            SoilEnergy     = 0f;
             GrowthBudget   = 0f;
             MaturityBudget = 0f;
         }
@@ -178,6 +180,19 @@ public sealed class ChunkFoodIndex
 
     public static long CellOf(float wx, float wz)
         => Position2Int.Pack((int)math.floor(wx * InvScale), (int)math.floor(wz * InvScale));
+
+    public float ReturnToSoil(float wx, float wz, float amount)
+    {
+        float stored = amount * SimulationRules.Frame.SoilReturnFraction;
+        if (_map == null || !(stored > 0f)) return 0f;
+
+        long cell = CellOf(wx, wz);
+        var fc = Resolve(Position2Int.Pack(Position2Int.GetX(cell) >> ChunkShift, Position2Int.GetY(cell) >> ChunkShift), out _);
+        if (fc == null) return 0f;
+
+        fc.SoilEnergy += stored;
+        return stored;
+    }
 
     private FoodChunk Resolve(long chunkKey, out ChunkData cd)
     {
@@ -650,11 +665,12 @@ public sealed class ChunkFoodIndex
     }
 
     public void TickEcology(float dt, double now, float season, int maxFood,
-        out float spawnedEnergy, out float maturedEnergy, out float spoiledEnergy)
+        out float spawnedEnergy, out float maturedEnergy, out float spoiledEnergy, out float soilReleased)
     {
         spawnedEnergy = 0f;
         maturedEnergy = 0f;
         spoiledEnergy = 0f;
+        soilReleased  = 0f;
         if (_map == null || dt <= 0f) return;
         ref readonly var r = ref SimulationRules.Frame;
 
@@ -667,6 +683,7 @@ public sealed class ChunkFoodIndex
         float matSteps = r.FoodMaturityPerSecond * 255f * dt;
         int   burst    = math.max(1, r.FoodRegenBurst);
         float recovery = r.PastureRecoveryPerSecond * dt;
+        bool  soilBound = r.SoilReturnFraction > 0f && r.SoilPerDepletion > 0f;
 
         for (int k = 0; k < n; k++)
         {
@@ -684,7 +701,15 @@ public sealed class ChunkFoodIndex
                 maturedEnergy += AgeFood(fc, cd, steps, in r);
             }
 
-            fc.Depletion = math.max(0f, fc.Depletion - recovery);
+            float recovered = recovery;
+            if (soilBound)
+            {
+                recovered = math.min(math.min(recovery, fc.Depletion), fc.SoilEnergy / r.SoilPerDepletion);
+                float used = math.min(fc.SoilEnergy, recovered * r.SoilPerDepletion);
+                fc.SoilEnergy -= used;
+                soilReleased  += used;
+            }
+            fc.Depletion = math.max(0f, fc.Depletion - recovered);
 
             float K = r.FoodChunkCapacity * fc.Fertility * season * (1f - fc.Depletion);
             int   N = fc.Count;
@@ -755,14 +780,16 @@ public sealed class ChunkFoodIndex
         return gained;
     }
 
-    public void SumEnergy(out float foodEnergy, out float corpseEnergy)
+    public void SumEnergy(out float foodEnergy, out float corpseEnergy, out float soilEnergy)
     {
         foodEnergy   = 0f;
         corpseEnergy = 0f;
+        soilEnergy   = 0f;
 
         foreach (var kv in _chunks)
         {
             var fc = kv.Value;
+            soilEnergy += fc.SoilEnergy;
             var cd = fc.Source;
             if (cd == null || fc.Count == 0) continue;
 

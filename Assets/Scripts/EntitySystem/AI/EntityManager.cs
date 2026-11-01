@@ -185,11 +185,11 @@ public class EntityManager : MonoBehaviour
         float nest = 0f;
         for (int c = 0; c < _colonies.Count; c++) nest += _colonies[c].Nest.Storage;
 
-        float food = 0f, corpses = 0f;
+        float food = 0f, corpses = 0f, soil = 0f;
         var index = FoodIndex;
-        if (index != null) index.SumEnergy(out food, out corpses);
+        if (index != null) index.SumEnergy(out food, out corpses, out soil);
 
-        _ledger.Sample(body, nest, food, corpses);
+        _ledger.Sample(body, nest, food, corpses, soil);
     }
 
     private MovePlanner _planner;
