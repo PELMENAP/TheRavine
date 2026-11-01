@@ -38,11 +38,13 @@ public sealed class ColonyFood
 
         float season = (1f + rules.SeasonAmplitude * SeasonClock.Value(now))
                      * (SeasonClock.IsWinter(now) ? rules.WinterGrowthMul : 1f);
-        _index.TickEcology(dt, SimulationClock.TimeD, season, _maxFood, out float spawned, out float matured, out float spoiled);
+        _index.TickEcology(dt, SimulationClock.TimeD, season, _maxFood, out float spawned, out float matured, out float spoiled,
+            out float soilReleased);
         ref var flows = ref _ledger.Flows;
         flows.FoodSpawn      += spawned;
         flows.FoodMaturation += matured;
         flows.CorpseSpoil    += spoiled;
+        flows.SoilRelease    += soilReleased;
     }
 
     public void DropCorpse(EntityModel model, DeathCause cause)

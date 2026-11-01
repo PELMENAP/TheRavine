@@ -45,7 +45,7 @@ public class SimulationDebugDashboard : MonoBehaviour
     private GUIStyle _valueStyle;
     private bool     _stylesInitialized;
 
-    private Rect _windowRect = new Rect(10, 10, 420, 960);
+    private Rect _windowRect = new Rect(10, 10, 420, 1005);
 
     private int _coordStaleDrops;
     private int _execStaleDrops;
@@ -392,6 +392,8 @@ public class SimulationDebugDashboard : MonoBehaviour
         DrawKV(ref y, "Body/Nest",            $"{ledger.StockEntities:F1} / {ledger.StockNest:F1}");
         DrawKV(ref y, "Food/Corpses",         $"{ledger.StockFood:F1} / {ledger.StockCorpses:F1}");
         DrawKV(ref y, "Residual (sum)",       $"{ledger.Residual:F2} ({ledger.ResidualSum:F1})");
+        DrawKV(ref y, "Soil stock",           ledger.StockSoil.ToString("F1"));
+        DrawKV(ref y, "Soil residual (sum)",  $"{ledger.SoilResidual:F2} ({ledger.SoilResidualSum:F1})");
         DrawKV(ref y, "In/Out",               $"{f.Inflow:F2} / {f.Outflow:F2}");
         DrawKV(ref y, "Food spawn/mature",    $"{f.FoodSpawn:F2} / {f.FoodMaturation:F2}");
         DrawKV(ref y, "Spawn/Child start",    $"{f.SpawnStart:F2} / {f.ChildStart:F2}");
@@ -403,6 +405,7 @@ public class SimulationDebugDashboard : MonoBehaviour
         DrawKV(ref y, "Dash/Strike",          $"{f.Dash:F2} / {f.Strike:F2}");
         DrawKV(ref y, "Reproduce/Rest heal",  $"{f.Reproduce:F2} / {f.RestHeal:F2}");
         DrawKV(ref y, "Spoil/Death loss",     $"{f.CorpseSpoil:F2} / {f.DeathLoss:F2}");
+        DrawKV(ref y, "Soil return/release",  $"{f.SoilReturn:F2} / {f.SoilRelease:F2}");
         DrawKV(ref y, "Metab credit (viral)", f.MetabolismCredit.ToString("F2"));
     }
 

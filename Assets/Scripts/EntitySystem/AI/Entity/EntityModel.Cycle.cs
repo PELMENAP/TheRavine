@@ -242,8 +242,11 @@ public partial class EntityModel
             in rules, out float metabolismCredit, out float basalSpent, out float moveSpent,
             out float starvationReturned, out float clampGain);
 
+        float soilStored = _foodIndex != null ? _foodIndex.ReturnToSoil(pos.x, pos.z, digestLoss) : 0f;
+
         ref var flows = ref _ledger.Flows;
-        flows.DigestionLoss    += digestLoss;
+        flows.DigestionLoss    += digestLoss - soilStored;
+        flows.SoilReturn       += soilStored;
         flows.Basal            += basalSpent;
         flows.Movement         += moveSpent;
         flows.StarvationReturn += starvationReturned;
