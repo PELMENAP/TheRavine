@@ -34,6 +34,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float coordExplorationEpsilon = 0.05f;
     [SerializeField] private float execExplorationEpsilon = 0.15f;
     [SerializeField] private float fitnessSpreadMedianFraction = 0.25f;
+    [SerializeField] private float outlierSigma = 3f;
     [SerializeField] private float optimizerBaseLearningRate = 0.01f;
     [SerializeField] private float optimizerWeightDecay = 1e-5f;
     [SerializeField] private float optimizerMaxGradNorm = 3f;
@@ -156,6 +157,7 @@ public sealed partial class SimulationRules
     public float CoordExplorationEpsilon => coordExplorationEpsilon;
     public float ExecExplorationEpsilon => execExplorationEpsilon;
     public float FitnessSpreadMedianFraction => fitnessSpreadMedianFraction;
+    public float OutlierSigma => outlierSigma;
     public float OptimizerBaseLearningRate => optimizerBaseLearningRate;
     public float OptimizerWeightDecay => optimizerWeightDecay;
     public float OptimizerMaxGradNorm => optimizerMaxGradNorm;

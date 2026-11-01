@@ -76,8 +76,20 @@ public class StatsComponent : IComponent, IEnergyStore
     public void Tick(float deltaTime, float movementEnergy, float metabolismMultiplier, float basalDrain,
         float starvationThreshold, float starvationDamage, float starvationEnergyReturn,
         out float metabolismCredit)
+        => Tick(deltaTime, movementEnergy, metabolismMultiplier, basalDrain,
+            starvationThreshold, starvationDamage, starvationEnergyReturn,
+            out metabolismCredit, out _, out _, out _, out _);
+
+    public void Tick(float deltaTime, float movementEnergy, float metabolismMultiplier, float basalDrain,
+        float starvationThreshold, float starvationDamage, float starvationEnergyReturn,
+        out float metabolismCredit, out float basalSpent, out float moveSpent,
+        out float starvationReturned, out float clampGain)
     {
-        metabolismCredit = 0f;
+        metabolismCredit   = 0f;
+        basalSpent         = 0f;
+        moveSpent          = 0f;
+        starvationReturned = 0f;
+        clampGain          = 0f;
         if (IsDisposed || !_filled) return;
 
         float health = Hp;
@@ -86,6 +98,8 @@ public class StatsComponent : IComponent, IEnergyStore
         float basal = basalDrain * deltaTime;
         energy          -= (basal + movementEnergy) * metabolismMultiplier;
         metabolismCredit = basal * (1f - metabolismMultiplier);
+        basalSpent       = basal * metabolismMultiplier;
+        moveSpent        = movementEnergy * metabolismMultiplier;
 
         if (energy < starvationThreshold)
         {
@@ -94,12 +108,15 @@ public class StatsComponent : IComponent, IEnergyStore
             {
                 health -= starvationDamage;
                 energy += starvationEnergyReturn;
+                starvationReturned = starvationEnergyReturn;
                 _starvationTimer = 0f;
             }
         }
         else _starvationTimer = 0f;
 
-        En = math.clamp(energy, 0f, MaxEnergy);
+        float clamped = math.clamp(energy, 0f, MaxEnergy);
+        clampGain = clamped - energy;
+        En = clamped;
         Hp = math.min(health, MaxHealth);
     }
 

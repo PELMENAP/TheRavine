@@ -101,7 +101,9 @@ public partial class EntityModel
             AtNest         = IsAtNest,
             HomeCrowd      = rules.HomeCompulsionCrowd,
         };
+        float enBeforeVirus = Stats.En;
         CreatureCore.StepVirology(Virology, Stats, Mortality, dt, in host);
+        _ledger.Flows.ViralNet += Stats.En - enBeforeVirus;
         ref var mods = ref Virology.Modifiers;
         if (mods.ForceSpeechRequested) Broadcast(Speech.Own);
         if (!IsAliveForTick()) return false;
@@ -213,7 +215,7 @@ public partial class EntityModel
         if (LastAction == EntityAction.Rest && SinceAction(EntityAction.Eat) < rules.SynergyWindow)
             digestMul *= rules.RestAfterEatDigestMul;
 
-        Digestion.Tick(Stats, dt, resting, digestMul, mods.RegenMultiplier, in rules, out float regenCredit);
+        Digestion.Tick(Stats, dt, resting, digestMul, mods.RegenMultiplier, in rules, out float regenCredit, out float digestLoss);
 
         float basalMul = Tuning.BasalDrainMul
                        * CreatureCore.EnvironmentDrainMul(Digestion.WellFed, night && !IsAtNest, mods.Fever, _winter, in rules, _dormant)
@@ -221,7 +223,16 @@ public partial class EntityModel
                        * _immuneUpkeepMul;
 
         CreatureCore.Metabolize(Stats, Mortality, dt, Motor.DrainEnergy(), mods.MetabolismMultiplier, basalMul,
-            in rules, out float metabolismCredit);
+            in rules, out float metabolismCredit, out float basalSpent, out float moveSpent,
+            out float starvationReturned, out float clampGain);
+
+        ref var flows = ref _ledger.Flows;
+        flows.DigestionLoss    += digestLoss;
+        flows.Basal            += basalSpent;
+        flows.Movement         += moveSpent;
+        flows.StarvationReturn += starvationReturned;
+        flows.ClampGain        += clampGain;
+        flows.MetabolismCredit += metabolismCredit;
 
         Virology.CreditDurableEffects(regenCredit, metabolismCredit, Stats.MaxEnergy);
         if (!IsAliveForTick()) return false;

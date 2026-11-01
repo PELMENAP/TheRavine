@@ -16,7 +16,9 @@ public class SpeechCommand : EntityCommand
     {
         var r = SimulationRules.Active;
         var stats = model.Stats;
+        float enBefore = stats.En;
         stats.En = math.max(0f, stats.En - r.SpeechEnergyCost);
+        model.Ledger.Flows.Speech += enBefore - stats.En;
 
         model.Broadcast(decision.Speech);
         ApplySignal(r);

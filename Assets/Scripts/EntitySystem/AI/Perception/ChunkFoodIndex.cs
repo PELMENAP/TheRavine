@@ -630,8 +630,12 @@ public sealed class ChunkFoodIndex
         return false;
     }
 
-    public void TickEcology(float dt, double now, float season, int maxFood)
+    public void TickEcology(float dt, double now, float season, int maxFood,
+        out float spawnedEnergy, out float maturedEnergy, out float spoiledEnergy)
     {
+        spawnedEnergy = 0f;
+        maturedEnergy = 0f;
+        spoiledEnergy = 0f;
         if (_map == null || dt <= 0f) return;
         ref readonly var r = ref SimulationRules.Frame;
 
@@ -658,7 +662,7 @@ public sealed class ChunkFoodIndex
             if (steps > 0)
             {
                 fc.MaturityBudget -= steps;
-                AgeFood(fc, steps);
+                maturedEnergy += AgeFood(fc, cd, steps, in r);
             }
 
             fc.Depletion = math.max(0f, fc.Depletion - recovery);
@@ -678,12 +682,14 @@ public sealed class ChunkFoodIndex
             {
                 int lx = RavineRandom.RangeInt(0, Size);
                 int lz = RavineRandom.RangeInt(0, Size);
-                AddAt(fc, cd, baseX + lx, baseZ + lz, RollKind(cd.BiomeMap[lz * Size + lx], in r));
+                FoodKind kind = RollKind(cd.BiomeMap[lz * Size + lx], in r);
+                if (AddAt(fc, cd, baseX + lx, baseZ + lz, kind))
+                    spawnedEnergy += NutritionOf(fc, lz * Size + lx, kind);
             }
             if (fc.GrowthBudget > burst) fc.GrowthBudget = burst;
         }
 
-        TickMeat(dt, in r);
+        spoiledEnergy = TickMeat(dt, in r);
         ExpireClaims(now, r.LargeFoodWindow);
     }
 
@@ -704,8 +710,10 @@ public sealed class ChunkFoodIndex
         return sum / total;
     }
 
-    private static void AgeFood(FoodChunk fc, int steps)
+    private float AgeFood(FoodChunk fc, ChunkData cd, int steps, in SimulationRules.RulesFrame r)
     {
+        float perStep = r.EatEnergyFood * (1f - r.FoodMinNutritionFraction) * (1f / 255f);
+        float gained  = 0f;
         for (int lz = 0; lz < Size; lz++)
         {
             ulong row = fc.Rows[lz];
@@ -714,14 +722,54 @@ public sealed class ChunkFoodIndex
                 int lx = math.tzcnt(row);
                 row &= row - 1UL;
                 int idx = lz * Size + lx;
+                int before = fc.Maturity[idx];
                 fc.Maturity[idx] = (byte)math.min(255, fc.Maturity[idx] + steps);
+                int grown = fc.Maturity[idx] - before;
+                if (grown == 0 || !cd.TryGetObject(idx, out ObjectInstInfo info)) continue;
+
+                ObjectInfo food = FoodInfoOf(info.PrefabID);
+                if (food == null) continue;
+                if (food.FoodKind == FoodKind.Plant) gained += grown * perStep;
+                else if (food.FoodKind == FoodKind.Toxic) gained += grown * perStep * r.ToxicNutritionMul;
             }
         }
+        return gained;
     }
 
-    private void TickMeat(float dt, in SimulationRules.RulesFrame r)
+    public void SumEnergy(out float foodEnergy, out float corpseEnergy)
     {
-        if (_meat.Count == 0) return;
+        foodEnergy   = 0f;
+        corpseEnergy = 0f;
+
+        foreach (var kv in _chunks)
+        {
+            var fc = kv.Value;
+            var cd = fc.Source;
+            if (cd == null || fc.Count == 0) continue;
+
+            for (int lz = 0; lz < Size; lz++)
+            {
+                ulong row = fc.Rows[lz];
+                while (row != 0UL)
+                {
+                    int lx = math.tzcnt(row);
+                    row &= row - 1UL;
+                    int idx = lz * Size + lx;
+                    if (!cd.TryGetObject(idx, out ObjectInstInfo info)) continue;
+
+                    ObjectInfo food = FoodInfoOf(info.PrefabID);
+                    if (food == null || food.FoodKind == FoodKind.Meat) continue;
+                    foodEnergy += NutritionOf(fc, idx, food.FoodKind);
+                }
+            }
+        }
+
+        foreach (var kv in _meat) corpseEnergy += kv.Value;
+    }
+
+    private float TickMeat(float dt, in SimulationRules.RulesFrame r)
+    {
+        if (_meat.Count == 0) return 0f;
 
         float keep = math.exp(-dt / math.max(r.CorpseSpoilTau, 1e-3f));
         float min  = r.CorpseMinEnergy;
@@ -730,16 +778,20 @@ public sealed class ChunkFoodIndex
         int n = 0;
         foreach (var kv in _meat) _pruneKeys[n++] = kv.Key;
 
+        float spoiled = 0f;
         for (int i = 0; i < n; i++)
         {
             long cell = _pruneKeys[i];
             if (!_meat.TryGetValue(cell, out float e)) continue;
+            float before = e;
             e *= keep;
-            if (e >= min) { _meat[cell] = e; continue; }
+            if (e >= min) { _meat[cell] = e; spoiled += before - e; continue; }
 
+            spoiled += before;
             _meat.Remove(cell);
             RemoveSpoiledCorpse(cell);
         }
+        return spoiled;
     }
 
     private void RemoveSpoiledCorpse(long cell)

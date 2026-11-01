@@ -26,6 +26,7 @@ public sealed class ColonyPopulation
     private readonly UtilityPriorSystem   _utility;
     private readonly CasteThresholdSystem _thresholds;
     private readonly BoidSystem           _boids;
+    private readonly EnergyLedger         _ledger;
 
     private readonly Queue<EntityModel> _pendingDeath = new();
     private EntityModel[] _deferredDispose = Array.Empty<EntityModel>();
@@ -43,7 +44,7 @@ public sealed class ColonyPopulation
     public ColonyPopulation(GameObject prefab, Transform parent, EntityTuning tuning, int maxPopulation, float spawnRadius,
         List<EntityModel> entities, ColonyRegistry colonies, ColonyState wild, ColonyFood food, EvolutionService evolution,
         EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, UtilityPriorSystem utility,
-        CasteThresholdSystem thresholds, BoidSystem boids)
+        CasteThresholdSystem thresholds, BoidSystem boids, EnergyLedger ledger)
     {
         _prefab        = prefab;
         _parent        = parent;
@@ -61,6 +62,7 @@ public sealed class ColonyPopulation
         _utility       = utility;
         _thresholds    = thresholds;
         _boids         = boids;
+        _ledger        = ledger;
     }
 
     public void StartPredatorClock(double now) => _nextPredatorTime = now;
@@ -97,6 +99,10 @@ public sealed class ColonyPopulation
         view.Initialize(viewModel);
         model.VisualCulling = new VisualCullingComponent(go, view.LabelObject);
         model.SetUp();
+
+        float startEnergy = model.BodyEnergy;
+        if (parent != null) _ledger.Flows.ChildStart += startEnergy;
+        else _ledger.Flows.SpawnStart += startEnergy;
 
         model.Mortality.Died += () => HandleEntityDied(model);
         model.OnReproduceRequest += SpawnChild;
