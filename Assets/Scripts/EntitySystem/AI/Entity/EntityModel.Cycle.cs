@@ -131,7 +131,7 @@ public partial class EntityModel
         _foodKind = foodKind;
 
         var nest = Nest;
-        IsAtNest = nest != null && nest.Contains(self);
+        IsAtNest = nest != null && nest.Contains(self, IsAtNest ? nest.Radius * math.max(rules.NestExitRadiusMul, 1f) : nest.Radius);
         if (nest != null && _foodValid) nest.Mark(ColonyChannel.Food, foodPos, rules.NestFoodMark * dt);
         if (nest != null && !IsWild)
             nest.Mark(ColonyChannel.Explored, self, rules.ExploredMark * dt * (Caste == Caste.Scout ? rules.ScoutExploredMul : 1f));
