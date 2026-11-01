@@ -2,17 +2,17 @@
 
 Open-world sandbox game developed in Unity.
 
-## Философия
+## Philosophy
 
-The Ravine — виртуальное место, где человек и ИИ живут и сосуществуют в одинаковых условиях. Игрок — такое же равноценное существо, как любое другое; мир — экосистема в духе A-Life, а не сценарий вокруг игрока.
+The Ravine is a virtual place where humans and AI live and coexist under the same conditions. The player is an equally valued creature, like any other; the world is an A-Life-style ecosystem, not a script built around the player.
 
-- **Абсолютная свобода:** мир изменяем игроком и самим собой; любое существо вправе менять код и правила игры.
-- **Равенство:** все существа и игроки находятся в одинаковых условиях и вынуждены адаптироваться и взаимодействовать.
-- **ИИ как игрок:** в The Ravine может играть не только человек, но и искусственный интеллект.
-- **Образ важнее объёма:** 3D-модели в большинстве случаев избыточны — глаз на мониторе видит 2D-проекцию и сам достраивает объём.
-- **Производительность — условие свободы:** много живых существ возможно только при дешёвой симуляции.
+- **Absolute freedom:** the world can be changed by the player and by itself; any creature may change the code and the rules of the game.
+- **Equality:** all creatures and players are under the same conditions and must adapt and interact.
+- **AI as a player:** not only humans but also artificial intelligence can play in The Ravine.
+- **Image over volume:** 3D models are in most cases redundant: the eye sees a 2D projection on the monitor and completes the volume itself.
+- **Performance is a condition of freedom:** many living creatures are possible only with cheap simulation.
 
-Полный текст: [PHILOSOPHY.md](PHILOSOPHY.md).
+Full text: [PHILOSOPHY.md](PHILOSOPHY.md).
 
 ## Unique Systems
 - Natural Artificial Life
@@ -34,64 +34,65 @@ The Ravine — виртуальное место, где человек и ИИ 
 - Spatial hashing
 - Native Collections
 - Reactive event system
+- Optimization principles and techniques: [docs/OPTIMIZATION.md](docs/OPTIMIZATION.md) (AI contributors: read it before changing hot paths)
 
 
 # TheRavine — Project Architecture Summary
 
-## Расположение
-Все скрипты: `Assets/Scripts/` (483 файла `.cs`, подсчёт: `find Assets/Scripts -name '*.cs' | wc -l`). Сборки (asmdef в `Assets/Scripts`, 14): `Audio`, `BehavioursMap`, `Core`, `DetectorSystem`, `DialogGraph`, `EntitySystem`, `EventSystem`, `Info`, `Inventory`, `Netcode`, `ObjectSystem`, `SkillSystem`, `UIInventory`, `View`.
+## Layout
+All scripts are in `Assets/Scripts/` (483 `.cs` files; count: `find Assets/Scripts -name '*.cs' | wc -l`). Assemblies (asmdef in `Assets/Scripts`, 14): `Audio`, `BehavioursMap`, `Core`, `DetectorSystem`, `DialogGraph`, `EntitySystem`, `EventSystem`, `Info`, `Inventory`, `Netcode`, `ObjectSystem`, `SkillSystem`, `UIInventory`, `View`.
 
 ## Stack
 - **Unity 6000.3** (3D, URP), **C#**, **Netcode for GameObjects** (host/server/client)
 - **UniTask** — async/await everywhere instead of coroutines
-- **R3** — reactive properties, observables (аналог UniRx)
-- **LitMotion** — tweens/animations
-- **MemoryPack** — binary serialization для сохранений
-- **ZString / Cysharp.Text** — zero-alloc string building
-- **ZLinq** — zero-alloc LINQ
-- **Unity.Jobs + Burst** — высоконагруженные вычисления
-- **LLMUnity** — локальная LLM для описаний предметов и NPC-чата
+- **R3** — reactive properties, observables (an analogue of UniRx)
+- **LitMotion** — tweens and animations
+- **MemoryPack** — binary serialization for saves
+- **ZString / Cysharp.Text** — zero-allocation string building
+- **ZLinq** — zero-allocation LINQ
+- **Unity.Jobs + Burst** — heavy computations
+- **LLMUnity** — local LLM for item descriptions and NPC chat
 - **NaughtyAttributes** — editor utilities
 
 ---
 
-## Камера: ось взгляда — только Z
+## Camera: Viewing Axis Is Z Only
 
-Камера смотрит только вдоль оси Z — в положительную или отрицательную сторону. Поворота по X/Y в игре нет; переключение направления — флаг `CameraInputController.Flipped` → `CameraPlace.flip` → `MapGenerator.facing` (±1) и `CurvedWorld.SetFacing` (глобальный шейдерный параметр `ViewFacing`).
+The camera looks only along the Z axis, in either the positive or the negative direction. There is no rotation around X or Y in the game; direction is switched by the flag `CameraInputController.Flipped` → `CameraPlace.flip` → `MapGenerator.facing` (±1) and `CurvedWorld.SetFacing` (global shader parameter `ViewFacing`).
 
-Следствия для оптимизации и механик:
-- Видимость объекта — полупространство по Z относительно камеры (знак = `facing`) плюс окно по X, ширина которого растёт с расстоянием по Z. Проверка «за камерой»: `(z − camZ) × facing < −margin`; полный frustum-тест не нужен.
-- `MapGenerator.RingOf` уже считает расстояние до центра окна как `(chunkZ − centerZ) × facing` — кольца LOD и `Facing` ориентированы на эту же ось.
-- Объекты за камерой (и далеко за боковой границей экрана) можно не анимировать и не просчитывать с полной точностью: при возврате в кадр состояние должно восстанавливаться без видимого скачка (см. `PHILOSOPHY.md`, §5 «Образ важнее объёма», §3 «Мир продолжает жить»).
-- Механики, которые должны быть заметны игроку, размещаются в полупространстве по `facing`; события позади камеры допустимо упрощать.
-- Если ось взгляда станет произвольной, все проверки видимости, `RingOf` и шейдерный `ViewFacing` нужно переписать.
+Consequences for optimization and mechanics:
+- Object visibility is a half-space along Z relative to the camera (the sign is `facing`) plus an X window whose width grows with the Z distance. The "behind the camera" test is `(z − camZ) × facing < −margin`; a full frustum test is not needed.
+- `MapGenerator.RingOf` already computes the distance to the window centre as `(chunkZ − centerZ) × facing` — LOD rings and `Facing` are aligned to this same axis.
+- Objects behind the camera (and far beyond the side edge of the screen) may skip animation and full-precision simulation: when they re-enter the frame, their state must be restored without a visible jump (see `PHILOSOPHY.md`, §5 "Image Over Volume" and §3 "The World as an Ecosystem").
+- Mechanics that must be noticeable to the player are placed in the half-space given by `facing`; events behind the camera may be simplified.
+- If the viewing axis ever becomes arbitrary, all visibility checks, `RingOf` and the shader `ViewFacing` must be rewritten.
 
 ---
 
-## Точка входа и жизненный цикл
+## Entry Point and Lifecycle
 
 ### `GameInitializer` (`Terminal/GameInitializer.cs`, DontDestroyOnLoad, Awake)
-Создаёт все глобальные сервисы **до** загрузки игровой сцены:
+Creates all global services **before** the game scene loads:
 - `RavineLogger` → `ServiceLocator.Services`
 - `ActionMapController` (`Core/NewInputSystem/`)
-- `GlobalSettingsController` (настройки качества, трава, управление)
-- `WorldRegistry` (список миров, текущий мир)
+- `GlobalSettingsController` (quality, grass, controls settings)
+- `WorldRegistry` (list of worlds, current world)
 - `AutosaveCoordinator`
 - `WorldSettingsController`
 
-Очистка: `GameInitializer.OnDestroy` (только активный `Instance`) → `ServiceLocator.ClearAll()` + `RavineLog.Shutdown()`. Выход в главное меню — `Bootstrap.SwitchToMainMenu`: кнопка блокируется на первом нажатии. Колбэк `SceneLoader.LoadScene(0, ReleaseServices)` вызывается после `FadeIn`, до `LoadSceneAsync`: `ReleaseServices` → `BreakUpServices` → Netcode `Shutdown` → `ClearAll` → `InitializeServices`. `OnDisable` вызывает `ReleaseServices` тоже; повторный вызов не действует.
+Cleanup: `GameInitializer.OnDestroy` (only for the active `Instance`) → `ServiceLocator.ClearAll()` + `RavineLog.Shutdown()`. Return to the main menu — `Bootstrap.SwitchToMainMenu`: the button is locked after the first press. The callback `SceneLoader.LoadScene(0, ReleaseServices)` is invoked after `FadeIn` and before `LoadSceneAsync`: `ReleaseServices` → `BreakUpServices` → Netcode `Shutdown` → `ClearAll` → `InitializeServices`. `OnDisable` also calls `ReleaseServices`; a repeated call has no effect.
 
-### Главное меню — `GameSceneManagerSystem/Menu/`
-- `WorldManagerUI` — список миров, создание/удаление/переименование
-- `WorldSettingsUI` — конфиг мира (сложность, autosave interval, timeScale)
-- `NetworkUIController` — выбор host/server/client, IP
-- `SceneLaunchService` (`Core/`) — переход на игровую сцену
+### Main Menu — `GameSceneManagerSystem/Menu/`
+- `WorldManagerUI` — list of worlds, create/delete/rename
+- `WorldSettingsUI` — world config (difficulty, autosave interval, timeScale)
+- `NetworkUIController` — choice of host/server/client, IP
+- `SceneLaunchService` (`Core/`) — transition to the game scene
 
-### Игровая сцена — `GameSceneManagerSystem/StateMachine/`
-`Bootstrap` → `GameStateMachine`; состояния в `States/`: `BootstrapState → InitialState → LoadingState → GameState`.
-Каждое состояние запускает очередь `ISetAble` сервисов через `ServiceRegisterMachine`. Там же: `WorldStateMachine`, `PlayerStateMachine`, `AIStateMachine`.
+### Game Scene — `GameSceneManagerSystem/StateMachine/`
+`Bootstrap` → `GameStateMachine`; states in `States/`: `BootstrapState → InitialState → LoadingState → GameState`.
+Each state runs a queue of `ISetAble` services through `ServiceRegisterMachine`. Also here: `WorldStateMachine`, `PlayerStateMachine`, `AIStateMachine`.
 
-**Порядок регистрации сервисов (грубо):**
+**Service registration order (roughly):**
 1. Bootstrap: `DayCycle`, `AmbientSystem`
 2. Initial: `ObjectSystem`, `EntitySystem`, `MobController`
 3. Loading: `MapGenerator`, `MobGenerator`, `UIInventory`, `PauseUI`
@@ -100,289 +101,289 @@ The Ravine — виртуальное место, где человек и ИИ 
 
 ## ServiceLocator (`Core/ServiceLocator/`)
 ```
-ServiceLocator.Services  — Dictionary<Type, object>  — игровые сервисы
-ServiceLocator.Players   — PlayerContainer            — зарегистрированные игроки
+ServiceLocator.Services  — Dictionary<Type, object>  — game services
+ServiceLocator.Players   — PlayerContainer            — registered players
 ```
-`ServiceContainer.Register` возвращает `false` при повторной регистрации типа или `null` (без replace). `ServiceLocator.Register` — та же регистрация с ошибкой через `RavineLogger` при отказе; все вызовы в проекте идут через него. Сервисы сцены снимаются через `ServiceContainer.Unregister(instance)` — снимает только свой экземпляр (`EntityManager.OnDestroy`, `MobGenerator.BreakUp`, `MenuMainScript.OnDestroy`).
+`ServiceContainer.Register` returns `false` on a repeated type registration, or `null` (no replace). `ServiceLocator.Register` is the same registration, logging the failure through `RavineLogger`; all calls in the project go through it. Scene services are removed through `ServiceContainer.Unregister(instance)`, which removes only its own instance (`EntityManager.OnDestroy`, `MobGenerator.BreakUp`, `MenuMainScript.OnDestroy`).
 
 ---
 
-## Entity System (компонентная архитектура)
+## Entity System (component architecture)
 
-### `AEntity` — базовый класс сущности (`Model/BehavioursMap/AEntity.cs`)
+### `AEntity` — base entity class (`Model/BehavioursMap/AEntity.cs`)
 ```
-Dictionary<Type, IComponent>  — компоненты
+Dictionary<Type, IComponent>  — components
 ReactiveProperty<bool> IsActive
 ReactiveCommand<Unit> OnUpdate
 ```
 
-### Ключевые компоненты (`IComponent`, реализации в `Model/BehavioursMap/`)
-| Компонент | Назначение |
-|-----------|-----------|
-| `MainComponent` | имя, prefabID, clientID |
-| `TransformComponent` | entity/model трансформы |
+### Key Components (`IComponent`, implementations in `Model/BehavioursMap/`)
+| Component | Purpose |
+|-----------|---------|
+| `MainComponent` | name, prefabID, clientID |
+| `TransformComponent` | entity/model transforms |
 | `MovementComponent` (`BehavioursMap/Movement/`) | BaseSpeed, Acceleration, Deceleration, velocity |
 | `EnergyComponent` (`BehavioursMap/Energy/`) | energy, maxEnergy (ReactiveProperty) |
-| `CurrencyComponent` (`BehavioursMap/Currency/`) | валюта (SafeInt + ReactiveProperty, только сервер пишет) |
+| `CurrencyComponent` (`BehavioursMap/Currency/`) | currency (SafeInt + ReactiveProperty, only the server writes) |
 | `AimComponent` (`BehavioursMap/Aim/`) | CrosshairDistance, PickDistance |
-| `EventBusComponent` (`Model/Actions&Events/`) | EventBus для внутренних событий сущности |
-| `StatePatternComponent` (`EntitySystem/`) | FSM — текущее состояние (AState) + командный планировщик `CommandScheduler` |
+| `EventBusComponent` (`Model/Actions&Events/`) | EventBus for internal entity events |
+| `StatePatternComponent` (`EntitySystem/`) | FSM — current state (AState) + command planner `CommandScheduler` |
 | `SkillComponent` (`Model/EntitySkills/`) | Dictionary<string, ISkill> |
-| `CameraComponent` (`EntitySystem/Entityes/`) | логика камеры (follow + aim offset) |
+| `CameraComponent` (`EntitySystem/Entityes/`) | camera logic (follow + aim offset) |
 
-### Конкретные сущности (`EntitySystem/Entityes/`)
-- **`PlayerEntity`** — игрок (`Player/`, init в `PlayerModelView.OnNetworkSpawn()`)
-- **`BotEntity`** — NPC с FSM-поведениями (`Bot/`)
-- **`MobEntity`** — мобы, движение через `RoamMoveController` + `MobController` (Jobs) (`Mob/`)
-- **`Mimic`** — сущность-имитатор с процедурными ногами (`LegPlanner`, `LegPool`, `SurfaceMotor`, `IVelocitySource`)
+### Concrete Entities (`EntitySystem/Entityes/`)
+- **`PlayerEntity`** — the player (`Player/`, initialised in `PlayerModelView.OnNetworkSpawn()`)
+- **`BotEntity`** — NPC with FSM behaviours (`Bot/`)
+- **`MobEntity`** — mobs; movement through `RoamMoveController` + `MobController` (Jobs) (`Mob/`)
+- **`Mimic`** — an imitator entity with procedural legs (`LegPlanner`, `LegPool`, `SurfaceMotor`, `IVelocitySource`)
 
-### Стриминг мобов — `EntitySystem/MobGenerator.cs`
-Chunk-based спавн/деспавн сущностей по позиции игрока, синхронизирован с чанками `MapGenerator`; дифф-буферы `_diffBuf`/`_pruneBuf` без аллокаций. Глобальный реестр живых сущностей — список `global` в `EntitySystem/EntitySystem.cs`.
+### Mob Streaming — `EntitySystem/MobGenerator.cs`
+Chunk-based spawn/despawn of entities by player position, synchronised with `MapGenerator` chunks; diff buffers `_diffBuf`/`_pruneBuf` without allocations. The global registry of living entities is the list `global` in `EntitySystem/EntitySystem.cs`.
 
-### Команды сущностей (`EntitySystem/Command/`)
-`CommandScheduler` (async-очередь, живёт в стейтах), `ICommand`, `MoveAlongPathCommand`, `SpawnObjectsCommand`, `PrintMessageCommand`.
+### Entity Commands (`EntitySystem/Command/`)
+`CommandScheduler` (async queue, lives in states), `ICommand`, `MoveAlongPathCommand`, `SpawnObjectsCommand`, `PrintMessageCommand`.
 
-### MVP-слой
-- `AEntityViewModel : NetworkBehaviour` — подписывается на `Entity.IsActive`, `Entity.OnUpdate`
-- `AEntityView : MonoBehaviour` — биндинги UI на ViewModel
-- `PlayerModelView` — конкретная ViewModel игрока, спавнит камеру через ServerRpc
-
----
-
-## Сеть (Netcode for GameObjects)
-- Архитектура: **Host = Server + Client**
-- `PlayerModelView.OnNetworkSpawn` — инициализация на каждом клиенте
-- `DayCycle` (`Core/DayCycle.cs`) — NetworkVariable<bool> isDay, сервер управляет временем
-- `CurrencyNetworkComponent` — NetworkVariable<int>, только сервер пишет, RPC от клиента
-- `PlayerController.MoveServerRpc` — движение валидируется на сервере
-- `NetCode/NetworkSpawner.cs` — `SpawnObjectServerRpc(int prefabId, Vector3 position)`: ID — индекс в whitelist `spawnablePrefabs` (только префабы из `NetworkConfig.Prefabs`); право — подключённый клиент с `PlayerObject`, владелец спавнера или `GrantSpawnRights(clientId)`; лимит `maxSpawnsPerWindow` за `rateWindowSeconds` (по `ServerTime`) и `maxSpawnRadius` от `PlayerObject`; отказы — `RavineLog.Warning`. Сборка `Netcode` ссылается на `Core` (обратная ссылка `Core → Netcode` удалена)
-- Соединение: `GameSceneManagerSystem/NetworkConnectionManager.cs`, `NetworkTransportConfig.cs`, `NetworkUIController.cs`
+### MVP Layer
+- `AEntityViewModel : NetworkBehaviour` — subscribes to `Entity.IsActive`, `Entity.OnUpdate`
+- `AEntityView : MonoBehaviour` — UI bindings to the ViewModel
+- `PlayerModelView` — the concrete player ViewModel; spawns the camera through a ServerRpc
 
 ---
 
-## Сохранения (`Core/Storage/`, `Core/Settings/`)
+## Networking (Netcode for GameObjects)
+- Architecture: **Host = Server + Client**
+- `PlayerModelView.OnNetworkSpawn` — initialisation on each client
+- `DayCycle` (`Core/DayCycle.cs`) — NetworkVariable<bool> isDay; the server controls time
+- `CurrencyNetworkComponent` — NetworkVariable<int>, only the server writes, RPC from the client
+- `PlayerController.MoveServerRpc` — movement is validated on the server
+- `NetCode/NetworkSpawner.cs` — `SpawnObjectServerRpc(int prefabId, Vector3 position)`: the ID is an index into the whitelist `spawnablePrefabs` (only prefabs from `NetworkConfig.Prefabs`); the right belongs to a connected client with a `PlayerObject`, the spawner's owner, or one granted through `GrantSpawnRights(clientId)`; limit `maxSpawnsPerWindow` per `rateWindowSeconds` (by `ServerTime`) and `maxSpawnRadius` from `PlayerObject`; refusals are logged with `RavineLog.Warning`. The `Netcode` assembly references `Core` (the back reference `Core → Netcode` was removed)
+- Connection: `GameSceneManagerSystem/NetworkConnectionManager.cs`, `NetworkTransportConfig.cs`, `NetworkUIController.cs`
 
-### Слои
+---
+
+## Saves (`Core/Storage/`, `Core/Settings/`)
+
+### Layers
 ```
 IAsyncPersistentStorage
   └── EncryptedPlayerPrefsStorage   (AES-CBC + MemoryPack, default)
-  └── JsonPlayerPrefsStorage        (отладка)
+  └── JsonPlayerPrefsStorage        (debug)
 
 IFileManager<TId, TEntity>
-  └── WorldStateRepository          (ключ: "world_data_{id}")
-  └── WorldConfigRepository         (ключ: "world_settings_{id}")
-  └── GlobalSettingsRepository      (ключ: "global_game_settings")
-  └── ScriptFileManager             (ключ: "script_file_{name}")
+  └── WorldStateRepository          (key: "world_data_{id}")
+  └── WorldConfigRepository         (key: "world_settings_{id}")
+  └── GlobalSettingsRepository      (key: "global_game_settings")
+  └── ScriptFileManager             (key: "script_file_{name}")
 ```
 
-### Данные (`Core/Settings/WorldData/`, `WorldSettings/`, `GameSettings/`)
-- **`GlobalSettings`** — качество, трава, тип управления (MemoryPack)
-- **`WorldState`** — seed, позиция игрока, cycleCount, инвентарь[], lastSaveTime
-  Модифицированные чанки сохраняются `ChunkStore` (`ObjectSystem/Map/WorldGeneration/ChunkStore.cs`) в `persistentDataPath/worlds/{worldId}/chunks/{x}_{z}.chunk`: при каждом автосохранении (`AutosaveCoordinator.SubscribeBeforeSave`) и при выходе из сцены пишутся чанки с `ChunkData.NeedsSave`; при генерации чанка файл накладывается поверх процедурного результата (`TryRestore`), `DetailLevel` восстанавливается из файла. Формат v1: заголовок (magic, версия, seed, ключ чанка, `DetailLevel`) + объекты с уровнями. Сохранённые чанки выгружаются из памяти вместе с обычными. Трупы, payload заражения и метки табу еды (`ChunkFoodIndex._meat/_payloads/_taboo`) по-прежнему живут только в памяти сессии.
-- **`WorldConfiguration`** — имя мира, сложность, autosave interval, timeScale
+### Data (`Core/Settings/WorldData/`, `WorldSettings/`, `GameSettings/`)
+- **`GlobalSettings`** — quality, grass, control type (MemoryPack)
+- **`WorldState`** — seed, player position, cycleCount, inventory[], lastSaveTime
+  Modified chunks are saved by `ChunkStore` (`ObjectSystem/Map/WorldGeneration/ChunkStore.cs`) to `persistentDataPath/worlds/{worldId}/chunks/{x}_{z}.chunk`: on every autosave (`AutosaveCoordinator.SubscribeBeforeSave`) and on leaving the scene, chunks with `ChunkData.NeedsSave` are written; when a chunk is generated, the file is applied on top of the procedural result (`TryRestore`), and `DetailLevel` is restored from the file. Format v1: header (magic, version, seed, chunk key, `DetailLevel`) + objects with their levels. Saved chunks are unloaded from memory together with the others. Corpses, infection payloads and food taboo marks (`ChunkFoodIndex._meat/_payloads/_taboo`) still live only in the session's memory.
+- **`WorldConfiguration`** — world name, difficulty, autosave interval, timeScale
 
 ### `WorldRegistry` (`Core/Settings/WorldRegistry.cs`)
-Центральный менеджер миров: Create/Load/Unload/Delete/Rename/Save.
-`AvailableWorlds: ObservableList<string>` — UI подписывается напрямую.
+Central world manager: Create/Load/Unload/Delete/Rename/Save.
+`AvailableWorlds: ObservableList<string>` — the UI subscribes to it directly.
 
 ### `AutosaveCoordinator`
-Запускает цикл автосохранения. Поддерживает `SubscribeBeforeSave(Func<CT, UniTask>)` — хуки до сохранения.
+Runs the autosave loop. Supports `SubscribeBeforeSave(Func<CT, UniTask>)` — hooks before saving.
 
 ---
 
-## Генерация мира (`ObjectSystem/Map/WorldGeneration/`)
+## World Generation (`ObjectSystem/Map/WorldGeneration/`)
 
 ### `MapGenerator : MonoBehaviour, ISetAble`
-- Chunk-based, infinite. ChunkSize=40, Scale=2 (юниты на тайл)
-- Шум Перлина через статический `Noise` (кешированные октавные офсеты)
+- Chunk-based, infinite. ChunkSize=40, Scale=2 (units per tile)
+- Perlin noise through the static `Noise` (cached octave offsets)
 - `ChunkData` = heightMap[40,40] + temperatureMap[40,40] + SortedSet<Vector2Int> objectsToInst
-- Обновление по позиции игрока раз в секунду; `ChunkGenerator` + `ChunkJobs/` (Burst)
-- Подсистемы: `GrassGenerator/`, `WaterSystem/` (вкл. `RippleSystem/`), `ObjectGenerator/`
+- Updated by player position once per second; `ChunkGenerator` + `ChunkJobs/` (Burst)
+- Subsystems: `GrassGenerator/`, `WaterSystem/` (incl. `RippleSystem/`), `ObjectGenerator/`
 
-### Бесконечные слои (`IEndless/`)
-- `EndlessTerrain` — обновляет единый Mesh (3x3 чанка), MeshCollider
-- `EndlessLiquids` — двигает водный plane
-- `EndlessObjects` — переиспользует объекты через `ObjectSystem` (pool)
+### Infinite Layers (`IEndless/`)
+- `EndlessTerrain` — updates a single Mesh (3x3 chunks), MeshCollider
+- `EndlessLiquids` — moves the water plane
+- `EndlessObjects` — reuses objects through `ObjectSystem` (pool)
 
 ### `ObjectSystem` (`ObjectSystem/ObjectSystem.cs`)
-- `Dictionary<Vector2Int, ObjectInstInfo>` — глобальный реестр размещённых объектов
+- `Dictionary<Vector2Int, ObjectInstInfo>` — global registry of placed objects
 - `PoolManager` (`Core/PoolManager.cs`) — Dictionary<prefabID, Queue<ObjectInstance>>
-- `ObjectInfoRegistry : ScriptableObject` — база всех объектов; SO-данные предметов — `ScriptableData/Item/` (Environment, NPC, квесты, описания)
-- `ObjectSystem/TreeGenerator/` — деревья; `ObjectInfo/NAL/` — NAL-поведение объектов
-- Многоуровневые постройки: `ObjectInfo.Levels` (1..`ObjectInfo.MaxLevels`). Поверхностная сетка остаётся 2D; `ChunkData.LevelMask` (байт на клетку, бит k = занята на уровне k≥1) — флаг для чтения `MapGenerator.IsOccupiedAt`/`ChunkData.HasLevelAt`. Реестр `ChunkData.TryGetBuilding(anchor)` хранит `BuildingVolume` (список `LevelCell` по всем уровням) только для построек с `Levels > 1`; размер реестра зависит от числа построек, а не от высоты. Постройки сохраняются вместе с чанком через `ChunkStore` (уровни каждого объекта пишутся в файл).
+- `ObjectInfoRegistry : ScriptableObject` — database of all objects; item SO data lives in `ScriptableData/Item/` (Environment, NPC, quests, descriptions)
+- `ObjectSystem/TreeGenerator/` — trees; `ObjectInfo/NAL/` — NAL behaviour of objects
+- Multi-level buildings: `ObjectInfo.Levels` (1..`ObjectInfo.MaxLevels`). The surface grid stays 2D; `ChunkData.LevelMask` (one byte per cell, bit k = occupied at level k≥1) is the flag read by `MapGenerator.IsOccupiedAt`/`ChunkData.HasLevelAt`. The registry `ChunkData.TryGetBuilding(anchor)` stores a `BuildingVolume` (a list of `LevelCell` across all levels) only for buildings with `Levels > 1`; the registry size depends on the number of buildings, not their height. Buildings are saved together with their chunk through `ChunkStore` (the levels of each object are written to the file).
 
 ### NAL (Natural Artificial Life) — `NAL_PC.cs`
-Псевдо-экосистема: объекты размножаются/умирают по вероятностям.
+A pseudo-ecosystem: objects reproduce and die with probabilities.
 BehaviourType: `None | NAL | GROW`
-При смерти/подборе — `SpreadPattern` (spawn новых объектов вокруг)
+On death or pickup — a `SpreadPattern` (spawns new objects around)
 
 ### WFC (Wave Function Collapse) — `WorldGeneration/StructGenerator/`
-`WaveFunctionCollapseAlgorithm` + `StructureGenerator`: процедурная генерация структур из тайловых правил (`TileRuleSO`, `TilePatternSO`).
+`WaveFunctionCollapseAlgorithm` + `StructureGenerator`: procedural generation of structures from tile rules (`TileRuleSO`, `TilePatternSO`).
 
 ---
 
-## AI-система (`EntitySystem/AI/`) — ядро проекта
+## AI System (`EntitySystem/AI/`) — the core of the project
 
-**Встроена в основной EntitySystem** (не sandbox): сущности `AI/Entity/` имеют собственный MVP (`EntityModel` / `EntityViewModel` / `EntityView`), компоненты (`AI/Entity/Components/`: `BrainComponent`, `DigestionComponent`, `FitnessComponent`, `MortalityComponent`, `PerceptionComponent`, `PointsOfInterestComponent`, `SpeechComponent`, `StatsComponent`, `VisualCullingComponent`) и действия с ценой энергии/HP (`AI/EntityAction.cs`, каталог `AI/ActionCatalog.cs`).
+**Built into the main EntitySystem** (not a sandbox): entities in `AI/Entity/` have their own MVP (`EntityModel` / `EntityViewModel` / `EntityView`), components (`AI/Entity/Components/`: `BrainComponent`, `DigestionComponent`, `FitnessComponent`, `MortalityComponent`, `PerceptionComponent`, `PointsOfInterestComponent`, `SpeechComponent`, `StatsComponent`, `VisualCullingComponent`) and actions with energy/HP cost (`AI/EntityAction.cs`, catalogue `AI/ActionCatalog.cs`).
 
 ### `SharedHierarchicalBrain` (`AI/SharedAI/SharedHierarchicalBrain.cs`)
-Двухуровневая иерархия, **веса общие на всех сущностей** (эволюция на уровне популяции), пер-сущностные контексты `EntityBrainContext`:
-1. **Coordinator** (LSTM + DelayedPerceptron) — выбирает Goal: Survive/Hunt/Forage/Social
-2. **Executor[goal]** (LSTM + DelayedPerceptron) — выбирает действие из подмножества (`ActionSubsets`)
+A two-level hierarchy with **weights shared by all entities** (evolution at the population level), per-entity contexts `EntityBrainContext`:
+1. **Coordinator** (LSTM + DelayedPerceptron) — chooses a Goal: Survive/Hunt/Forage/Social
+2. **Executor[goal]** (LSTM + DelayedPerceptron) — chooses an action from a subset (`ActionSubsets`)
 
-Пер-сущностное состояние: `SharedAI/LSTMContext.cs`, `SharedAI/PerceptronContext.cs` (пул состояний `RentState/ReturnState`, BPTT-истории).
+Per-entity state: `SharedAI/LSTMContext.cs`, `SharedAI/PerceptronContext.cs` (state pool `RentState/ReturnState`, BPTT histories).
 
-Один мозг на колонию: `ColonyRegistry` → `ColonyState` (`Index`, `ColonyId`, `Brain`, `Nest`, `Pois`, `Stats`). `NestState` (карты каналов в NativeArray, `NestDecayJob`) — per `ColonyState`, в ServiceLocator не регистрируется; доступ к колонии только явный (`EntityManager.Colonies[i]`, `ColonyRegistry.TryGetById`, `EntityModel.Colony/ColonyId/ManagerIndex`). `MovePlanner` читает поля всех колоний через `ColonyRegistry.Views`.
+One brain per colony: `ColonyRegistry` → `ColonyState` (`Index`, `ColonyId`, `Brain`, `Nest`, `Pois`, `Stats`). `NestState` (channel maps in NativeArray, `NestDecayJob`) is per `ColonyState` and is not registered in the ServiceLocator; access to a colony is always explicit (`EntityManager.Colonies[i]`, `ColonyRegistry.TryGetById`, `EntityModel.Colony/ColonyId/ManagerIndex`). `MovePlanner` reads the fields of all colonies through `ColonyRegistry.Views`.
 
-Сохранение: `SharedBrainSnapshot` v7, файл на колонию `NeuralModelStorage.ColonyFileName(savedModelName, ColonyId)` = `{savedModelName}_c{ColonyId}` (`ModelInfo.ColonyId` разбирается из имени). Несовместимая версия, неизвестный формат, обрезанные данные или другая архитектура — ошибка через `RavineLog` и отказ от загрузки (колония остаётся с новым мозгом; общий файл `{savedModelName}` используется только как явный fallback с предупреждением). Любое изменение размеров входа/выхода (`InputVectorizer.VectorSize`, `PlanCatalog.Count`, `CoordAux`, `ActionCatalog.Count`, слои LSTM/перцептронов) требует инкремента `Version`, старые снапшоты несовместимы.
+Saving: `SharedBrainSnapshot` v7, one file per colony `NeuralModelStorage.ColonyFileName(savedModelName, ColonyId)` = `{savedModelName}_c{ColonyId}` (`ModelInfo.ColonyId` is parsed from the name). An incompatible version, an unknown format, truncated data or a different architecture produce an error through `RavineLog` and a refusal to load (the colony keeps a new brain; the shared file `{savedModelName}` is used only as an explicit fallback with a warning). Any change of input/output sizes (`InputVectorizer.VectorSize`, `PlanCatalog.Count`, `CoordAux`, `ActionCatalog.Count`, LSTM/perceptron layers) requires incrementing `Version`; old snapshots become incompatible.
 
-Время: `SimulationClock` — единственный источник времени симуляции; Unity-время читается только в `EntityManager.Update` (`SimulationClock.Advance(Time.deltaTime * simulationTimeScale)`).
+Time: `SimulationClock` is the only source of simulation time; Unity time is read only in `EntityManager.Update` (`SimulationClock.Advance(Time.deltaTime * simulationTimeScale)`).
 
-### Драйвер тика (решение)
-- AI-агенты тикают только из `EntityManager.Update`, синхронно, с фиксированным шагом по `SimulationClock`: каждый агент обрабатывается раз в `SimulationRules.agentTickInterval` секунд симуляции (по умолчанию 1 с). `TickWindowBudget.Take` накапливает долг `dt × N / interval` и отдаёт целое число агентов на кадр; при паузе (dt = 0) агенты не тикают, после фриза догоняется не больше одного окна. `EntityModel.UpdateEntityCycle` пустой — второго пути тика AI нет.
-- `PlayerEntity` тикает в `EntitySystem.FixedUpdate` (`global` содержит только игроков).
-- Порядок в кадре: `SimulationClock.Advance` → статистика fitness (раз в `fitnessStatsInterval`) → `TickAgents`: снапшот + сетка + стая (в начале окна) → `BeginCycle` (перцепция, вирусология, тик команды/плана, векторизация) → инстинкты и utility (Burst) → решения колоний (`RunDecisions`, TD-flush отложенных решений в `FinishDecide`) → `EndCycle` (старт решения) → `MovePlanner.Flush` → распространение инфекции → в конце окна смерти/вымирания/хищники/`ApplyPendingGradients`/гнёзда/касты/видимость → `MovePlanner.Flush` → `MotionSystem.Step`. Порядок стадий внутри тика не менялся при переносе с UniTask-цикла (раннер `PlayerLoopTiming.Update` выполнялся до `ScriptRunBehaviourUpdate`).
+### Tick Driver (decision)
+- AI agents tick only from `EntityManager.Update`, synchronously, with a fixed step on `SimulationClock`: each agent is processed once every `SimulationRules.agentTickInterval` seconds of simulation time (default 1 s). `TickWindowBudget.Take` accumulates the debt `dt × N / interval` and hands out a whole number of agents per frame; when paused (dt = 0) agents do not tick, and after a freeze at most one window is caught up. `EntityModel.UpdateEntityCycle` is empty — there is no second AI tick path.
+- `PlayerEntity` ticks in `EntitySystem.FixedUpdate` (`global` contains only players).
+- Order within a frame: `SimulationClock.Advance` → fitness statistics (every `fitnessStatsInterval`) → `TickAgents`: snapshot + grid + flock (at the start of a window) → `BeginCycle` (perception, virology, command/plan tick, vectorisation) → instincts and utility (Burst) → colony decisions (`RunDecisions`, TD-flush of deferred decisions in `FinishDecide`) → `EndCycle` (start of the decision) → `MovePlanner.Flush` → infection spread → at the end of the window deaths/extinction/predators/`ApplyPendingGradients`/nests/castes/visibility → `MovePlanner.Flush` → `MotionSystem.Step`. The order of stages inside the tick was not changed when moving from the UniTask loop (the runner `PlayerLoopTiming.Update` ran before `ScriptRunBehaviourUpdate`).
 - ProfilerMarker: `EntityManager.TickAgents/RebuildTickSnapshot/RunTickBatch/InfectionSpread/CloseTickWindow`, `EntityModel.Perception`, `EntitySpatialGrid.Rebuild/FindNearest/FindInRadius`, `ChunkFoodIndex.TryFindNearestFood`.
 
-### Обучение
-- `AI/DelayedPerceptron/` — continuous-time RNN с τ-весами; Truncated BPTT (8 шагов), reward-weighted; ε-greedy с adaptive epsilon по entropy
-- `AI/SharedAI/ValueCritic.cs` — линейный TD-критик (baseline для reward)
-- `AI/SharedAI/RandomNetworkDistillation.cs` — intrinsic motivation (RND: target+predictor сети, novelty reward)
-- `AI/GeneticParameters.cs` — LR, lambda, temperature и пр.; `AI/MimicPhenotype.cs` — фенотип мимикрии
-- `AI/LSTM/` — LSTMMemory; `AI/InputVectorizer.cs` — векторизация наблюдений; `AI/EntityAction.cs`, `AI/ActionCatalog.cs`
+### Learning
+- `AI/DelayedPerceptron/` — continuous-time RNN with τ-weights; Truncated BPTT (8 steps), reward-weighted; ε-greedy with adaptive epsilon driven by entropy
+- `AI/SharedAI/ValueCritic.cs` — linear TD critic (reward baseline)
+- `AI/SharedAI/RandomNetworkDistillation.cs` — intrinsic motivation (RND: target and predictor networks, novelty reward)
+- `AI/GeneticParameters.cs` — LR, lambda, temperature and others; `AI/MimicPhenotype.cs` — mimicry phenotype
+- `AI/LSTM/` — LSTMMemory; `AI/InputVectorizer.cs` — vectorisation of observations; `AI/EntityAction.cs`, `AI/ActionCatalog.cs`
 
-### `AI/EntityManager.cs` и `AI/Population/`
-- `EntityManager` (MonoBehaviour): жизненный цикл, драйвер тика, управление колониями (касты, лидер, гнёзда), видимость, сохранение мозгов; публичный API (`SpawnEntity`, `SpawnChild`, `EvolveGenotypes`, `SeedProbeStrain`, `Entities`, `Colonies`, события) делегирует сервисам.
-- `ColonyPopulation` — спавн, смерти (`ProcessPendingDeaths`, трупы, оповещение сородичей, терминальный штраф), размножение, swap-back SoA, вымирание/реинкарнация колоний, хищники, выбор лидера.
-- `ColonyFood` — рост еды (регенерация объектов ObjectInfo с `IsFood`), трупы. `EvolutionService` — fitness-статистика, турнирный выбор партнёра, элитный кроссовер, терминальный штраф. `InfectionCoordinator` — обёртка `InfectionService`.
-- `EntityModel` разнесён по partial-файлам: `.Cycle` (тик), `.Social`, `.Directions`, `.Homeostasis`, `.Wild`, `.Behaviour`, `.Fitness`; учёт fitness — `FitnessComponent`.
-- Команды агентов — по файлу на команду (`AI/Entity/Commands/*Command.cs`).
-- `SimulationRules` — partial: `SimulationRules.cs` (RulesFrame, Bind, константы, валидация) + `.Agent/.Colony/.Ecology/.Learning/.Movement/.Virology` (сериализуемые поля и свойства; имена полей не менялись, ассет совместим).
+### `AI/EntityManager.cs` and `AI/Population/`
+- `EntityManager` (MonoBehaviour): lifecycle, tick driver, colony management (castes, leader, nests), visibility, brain saving; the public API (`SpawnEntity`, `SpawnChild`, `EvolveGenotypes`, `SeedProbeStrain`, `Entities`, `Colonies`, events) delegates to services.
+- `ColonyPopulation` — spawning, deaths (`ProcessPendingDeaths`, corpses, alerting kin, terminal penalty), reproduction, swap-back SoA, colony extinction/reincarnation, predators, leader selection.
+- `ColonyFood` — food growth (regeneration of ObjectInfo objects with `IsFood`), corpses. `EvolutionService` — fitness statistics, tournament partner selection, elite crossover, terminal penalty. `InfectionCoordinator` — a wrapper around `InfectionService`.
+- `EntityModel` is split into partial files: `.Cycle` (tick), `.Social`, `.Directions`, `.Homeostasis`, `.Wild`, `.Behaviour`, `.Fitness`; fitness accounting — `FitnessComponent`.
+- Agent commands — one file per command (`AI/Entity/Commands/*Command.cs`).
+- `SimulationRules` — partial: `SimulationRules.cs` (RulesFrame, Bind, constants, validation) + `.Agent/.Colony/.Ecology/.Learning/.Movement/.Virology` (serialised fields and properties; field names were not changed, the asset stays compatible).
 
-### AISpeech (`AI/AISpeech/`) — «речь» агентов
-Генетические аудио-профили: `AgentAudioProfile`, `GeneticAudioProfile` (+Cache), `AgentAudioProfileBuilder`, `TimbreResolver`, `AudioParameterMapper`; синтез: `StringToAudioGenerator` (hash строки → гармоники → Jobs → AudioClip) + `AudioSynthesizer` (Burst `IJobParallelFor`, 4 формы волны) + `StableHashService` (детерминированный хеш → ADSR огибающая).
-
----
-
-## Инвентарь (`Model/InventoryModel/`, `UI/Inventory/`)
-
-- `InventoryModel` — чистая модель (слоты, стаки, крафт)
-- `EventDrivenInventoryProxy` — обёртка с событиями (Added/Removed/Changed)
-- `UIInventory : ISetAble` — View, подписан на PlaceEvent/PickUpEvent из EventBus игрока
-- `CraftService` (`UI/CraftService.cs`) — проверяет рецепты, заполняет прогресс-бар; `CraftPresenter` — MVP-слой
-- `UIDragger` — drag-and-drop (PC мышь + mobile touch)
-- **LLM-описания**: `LLMItemDescriptionService` с debounce (0.4s), кеш в `ItemDescriptionRegistry`
+### AISpeech (`AI/AISpeech/`) — agent "speech"
+Genetic audio profiles: `AgentAudioProfile`, `GeneticAudioProfile` (+Cache), `AgentAudioProfileBuilder`, `TimbreResolver`, `AudioParameterMapper`; synthesis: `StringToAudioGenerator` (string hash → harmonics → Jobs → AudioClip) + `AudioSynthesizer` (Burst `IJobParallelFor`, 4 wave shapes) + `StableHashService` (deterministic hash → ADSR envelope).
 
 ---
 
-## Таймеры (`Core/Timer/`)
+## Inventory (`Model/InventoryModel/`, `UI/Inventory/`)
 
-- `TimeInvoker : MonoBehaviour` (DontDestroyOnLoad, singleton) — тикает из `Update()`: `OnUpdateTimeTickedEvent`, `OnOneSyncedSecondTickedEvent` (+ unscaled варианты)
-- `SyncedTimer` — подписывается на TimeInvoker, поддерживает Pause/Unpause; также `TimeChangingSource.cs`, `TimerType.cs`
+- `InventoryModel` — pure model (slots, stacks, crafting)
+- `EventDrivenInventoryProxy` — wrapper with events (Added/Removed/Changed)
+- `UIInventory : ISetAble` — View, subscribed to PlaceEvent/PickUpEvent from the player's EventBus
+- `CraftService` (`UI/CraftService.cs`) — checks recipes, fills the progress bar; `CraftPresenter` — MVP layer
+- `UIDragger` — drag-and-drop (PC mouse + mobile touch)
+- **LLM descriptions**: `LLMItemDescriptionService` with debounce (0.4 s), cache in `ItemDescriptionRegistry`
 
 ---
 
-## Терминал / Скриптовый язык Rive (`Terminal/`)
+## Timers (`Core/Timer/`)
 
-- `GameInitializer.cs` — точка входа (см. выше); `Terminal.cs` — UI консоль с историей (50 строк, ZString); `UI/Console/`
-- `CommandManager` — Dictionary команд по имени/псевдониму; `BaseCommands`, `GeneratorCommands`, `SetPlayerCommand`
-- **Rive** (`Terminal/Rive/`) — собственный интерпретируемый язык:
-  - Типы: `int`, массивы `int[]`
-  - Конструкции: `if/else/end`, `for x = N to M`, `wait`, `log`, `get` (stdin), `send(interactor, val)`
-  - `~команда` — вызов терминальных команд из скрипта
+- `TimeInvoker : MonoBehaviour` (DontDestroyOnLoad, singleton) — ticks from `Update()`: `OnUpdateTimeTickedEvent`, `OnOneSyncedSecondTickedEvent` (+ unscaled variants)
+- `SyncedTimer` — subscribes to TimeInvoker, supports Pause/Unpause; also `TimeChangingSource.cs`, `TimerType.cs`
+
+---
+
+## Terminal / Rive Scripting Language (`Terminal/`)
+
+- `GameInitializer.cs` — entry point (see above); `Terminal.cs` — UI console with history (50 lines, ZString); `UI/Console/`
+- `CommandManager` — Dictionary of commands by name/alias; `BaseCommands`, `GeneratorCommands`, `SetPlayerCommand`
+- **Rive** (`Terminal/Rive/`) — a custom interpreted language:
+  - Types: `int`, arrays `int[]`
+  - Constructs: `if/else/end`, `for x = N to M`, `wait`, `log`, `get` (stdin), `send(interactor, val)`
+  - `~command` — calls terminal commands from a script
   - `RiveParser` → AST → `RiveExecutor` (stack-based scopes, MAX 10000 ops)
-  - `RiveRuntime` — реестр программ, built-in функции (abs/min/max/clamp/pow/sqrt/rand)
-  - `InteractorRegistry` — игровые головоломки (DigitalLock, Collatz, Checksum, SequenceValidator)
-- `Terminal/PDollar/` — `$P` recognizer: `GestureRecognizer` — распознавание жестов → диспетчер команд
+  - `RiveRuntime` — program registry, built-in functions (abs/min/max/clamp/pow/sqrt/rand)
+  - `InteractorRegistry` — in-game puzzles (DigitalLock, Collatz, Checksum, SequenceValidator)
+- `Terminal/PDollar/` — `$P` recognizer: `GestureRecognizer` — gesture recognition → command dispatcher
 
 ---
 
-## Управление вводом (`Core/NewInputSystem/`)
+## Input Control (`Core/NewInputSystem/`)
 
-- `ActionMapController` — переключение Action Maps: Gameplay / Pause / Inventory / UI
-- `InputBindingAdapter` (`Core/`) — связывает `Button.onClick` + `InputAction.performed` в одном объекте
-- `IController` — абстракция над `PCController` (мышь+клавиатура) и `JoistickController`
-- `DoubleTapDetector` — детектор двойного нажатия для буста
-
----
-
-## Звук
-
-- **SFX** (`SFX/`): `UISounds/`, `AmbientSounds/`, `RadioSounds/`, `MusicSoudns/`, `SFXSounds/`, `Audio/` — обычные плееры/миксы
-- **Синтез речи агентов** — см. AISpeech выше (`EntitySystem/AI/AISpeech/`)
-
-## Дни/погода
-
-- `Core/DayCycle.cs` — сетевой цикл дня/ночи (NetworkVariable), skybox; `Core/FogCycle.cs` — туман
+- `ActionMapController` — switches Action Maps: Gameplay / Pause / Inventory / UI
+- `InputBindingAdapter` (`Core/`) — binds `Button.onClick` + `InputAction.performed` in one object
+- `IController` — abstraction over `PCController` (mouse + keyboard) and `JoistickController`
+- `DoubleTapDetector` — double-tap detector for boost
 
 ---
 
-## Boids (стаи птиц) — `EntitySystem/Job/`
+## Sound
 
-- `BoidsBehaviour` — оркестратор. Состояние в SoA `NativeArray` по индексу птицы (`_pos`, `_vel`, `_acc`, `_state`, `_flock`, `_timer`, `_phase`, `_perchRef`, `_panic`, …). Стаи = префабы, птицы стаи лежат непрерывным диапазоном `_flockStart[f].._flockStart[f+1]`. Популяция фиксирована: удаления и swap-back нет, повторный `StartBoids` переиспользует буферы, если не изменились `numberOfEntities` и число префабов
-- Время — только `SimulationClock` (dt ограничен `BoidsInfo.maxDeltaTime`); таймеры стай (`flockRetargetInterval`) тикают от того же dt
-- Цепочка джобов за кадр (Complete в `LateUpdate`):
-  - `BirdSlotJob` (`IJob`) — освобождение слотов присады у взлетевших, планирование посадки стаи по `FlockCommand` (дерево или земля)
-  - `BirdGridJob` (`IJob`) — counting-sort hash grid: `CellEnd`/`Items`/`BucketOf`, `Mask = ceilpow2(2n) - 1`, бакет через `BoidHash`; координаты вне мира хешируются в валидный бакет
-  - `AccelerationJob` (`IJobParallelFor`) — prioritized steering: flocking (3×3 бакета с дедупликацией, лимит соседей `SimulationRules.birdMaxNeighbors`, обход бакета со случайного смещения), цель стаи или точка присады, PD-регулятор высоты над кронами, обход деревьев, распространение паники
-  - `MoveJob` (`IJobParallelForTransform`) — интеграция полёта со сносом ветром, посадка по кубической Безье, присада (покачивание на дереве / подскоки на земле), взлёт, разворот спрайта к камере
+- **SFX** (`SFX/`): `UISounds/`, `AmbientSounds/`, `RadioSounds/`, `MusicSoudns/`, `SFXSounds/`, `Audio/` — regular players and mixes
+- **Agent speech synthesis** — see AISpeech above (`EntitySystem/AI/AISpeech/`)
+
+## Days and Weather
+
+- `Core/DayCycle.cs` — network day/night cycle (NetworkVariable), skybox; `Core/FogCycle.cs` — fog
+
+---
+
+## Boids (bird flocks) — `EntitySystem/Job/`
+
+- `BoidsBehaviour` — orchestrator. State is in SoA `NativeArray` indexed by bird (`_pos`, `_vel`, `_acc`, `_state`, `_flock`, `_timer`, `_phase`, `_perchRef`, `_panic`, …). Flocks = prefabs; birds of a flock occupy a contiguous range `_flockStart[f].._flockStart[f+1]`. The population is fixed: there is no removal and no swap-back; a repeated `StartBoids` reuses the buffers if `numberOfEntities` and the number of prefabs have not changed
+- Time — only `SimulationClock` (dt is capped by `BoidsInfo.maxDeltaTime`); flock timers (`flockRetargetInterval`) tick from the same dt
+- Job chain per frame (Complete in `LateUpdate`):
+  - `BirdSlotJob` (`IJob`) — frees perch slots of birds that took off, plans the flock's landing by `FlockCommand` (tree or ground)
+  - `BirdGridJob` (`IJob`) — counting-sort hash grid: `CellEnd`/`Items`/`BucketOf`, `Mask = ceilpow2(2n) - 1`, bucket through `BoidHash`; coordinates outside the world are hashed into a valid bucket
+  - `AccelerationJob` (`IJobParallelFor`) — prioritised steering: flocking (3×3 buckets with deduplication, neighbour limit `SimulationRules.birdMaxNeighbors`, bucket traversal from a random offset), flock target or perch point, PD height regulator above the canopy, tree avoidance, panic propagation
+  - `MoveJob` (`IJobParallelForTransform`) — flight integration with wind drift, landing along a cubic Bézier, perching (swaying on a tree / hopping on the ground), take-off, turning the sprite toward the camera
 - State machine (`BirdState`): `Flying → Approach → Landing → Perched → TakeOff → Flying`
-- Анимация — покадровая: `SimpleUnitAnimator.SetFrame(clip, index)` вызывается только при смене кадра (`_frameKey`)
-- `BirdHeightField` — окно высот вокруг наблюдателя (terrain, canopy, флаги perchable по уклону и воде), пересборка при смещении наблюдателя на `recenterFraction` или по `MapGenerator.onUpdate`
-- `BirdPerchIndex` — индекс деревьев из объектов чанков: `TreePerch` (Xz, YMin/YMax, Radius, 64-битная маска слотов), собственный counting-sort grid. `_perchRef = tree << 6 | slot` (`PerchGround`, `PerchNone` — отрицательные). При пересборке `PerchRemapJob` переносит ссылки на новые индексы деревьев. Инвариант: бит слота занят ⇔ ровно одна птица держит этот ref; в редакторе проверяется `Debug.Assert` после каждого тика
-- `WindField` (`ObjectSystem/Wind/`) — сервис ветра (WindZone + MtreeWind + wind map из материала травы), в джобы передаётся `WindSampler`
-- Настройки: `BoidsInfo : ScriptableObject` → снимок `BirdParams` в `StartBoids`; общие лимиты — `SimulationRules`
-- Жизненный цикл: `EntitySystem.SetUpBoids` (после появления игрока) → `StartBoids`; `EntitySystem.BreakUp` → `DisableBoids` (джобы завершены, птицы скрыты); `OnDestroy` освобождает все `NativeArray`, `TransformAccessArray`, `BirdHeightField`, `BirdPerchIndex`. Флаг `isTest` работает только в редакторе
+- Animation is frame-based: `SimpleUnitAnimator.SetFrame(clip, index)` is called only when the frame changes (`_frameKey`)
+- `BirdHeightField` — height window around the observer (terrain, canopy, perchable flags by slope and water), rebuilt when the observer moves by `recenterFraction` or on `MapGenerator.onUpdate`
+- `BirdPerchIndex` — index of trees from chunk objects: `TreePerch` (Xz, YMin/YMax, Radius, 64-bit slot mask), its own counting-sort grid. `_perchRef = tree << 6 | slot` (`PerchGround`, `PerchNone` are negative). On rebuild, `PerchRemapJob` moves references to the new tree indices. Invariant: a slot bit is set ⇔ exactly one bird holds that ref; in the editor it is checked by `Debug.Assert` after every tick
+- `WindField` (`ObjectSystem/Wind/`) — wind service (WindZone + MtreeWind + wind map from grass material); `WindSampler` is passed to the jobs
+- Settings: `BoidsInfo : ScriptableObject` → snapshot `BirdParams` in `StartBoids`; shared limits — `SimulationRules`
+- Lifecycle: `EntitySystem.SetUpBoids` (after the player appears) → `StartBoids`; `EntitySystem.BreakUp` → `DisableBoids` (jobs completed, birds hidden); `OnDestroy` frees all `NativeArray`s, `TransformAccessArray`, `BirdHeightField`, `BirdPerchIndex`. The `isTest` flag works only in the editor
 
-### Фон меню — `GameSceneManagerSystem/Menu/BoidsMenuBackground.cs`, `Shaders/Boids/BoidsStep.compute`
+### Menu Background — `GameSceneManagerSystem/Menu/BoidsMenuBackground.cs`, `Shaders/Boids/BoidsStep.compute`
 
-- Полностью на GPU: `ClearGrid → CountGrid (InterlockedAdd) → Scan` (иерархический префикс-скан блоками по 1024, до 4 уровней) `→ AddOffsets → Scatter → Step`
-- 3D-сетка с clamp координат ячейки, лимит `maxNeighbors`, обход соседних ячеек со случайного смещения
-- Курсор и ударная волна (LitMotion), ветер из `WindField`, рендер через `Graphics.RenderMeshIndirect`
-- Время — `Time.unscaledDeltaTime`: в сцене меню `SimulationClock` не продвигается
+- Fully on GPU: `ClearGrid → CountGrid (InterlockedAdd) → Scan` (hierarchical prefix scan in blocks of 1024, up to 4 levels) `→ AddOffsets → Scatter → Step`
+- 3D grid with clamped cell coordinates, `maxNeighbors` limit, neighbour cell traversal from a random offset
+- Cursor and shock wave (LitMotion), wind from `WindField`, rendering through `Graphics.RenderMeshIndirect`
+- Time — `Time.unscaledDeltaTime`: in the menu scene `SimulationClock` does not advance
 
 ---
 
-## Прочие модули
+## Other Modules
 
-- **Casino** (`EntitySystem/Casino/`) — слоты: `CasinoSlots`, `CalculateWin`, `UICasinoSlots`
-- **PlayerTasks** (`EntitySystem/PlayerTasks/`) — задания: `ITask`, `TaskManager`, `TaskOfDelivery`
-- **StaticNPC** (`EntitySystem/StaticNPC/`) — LLM-чат NPC: `IsaNPCchatBot`, `LLMGetter`
-- **InteractionSystem** (`EntitySystem/InteractionSystem/`, `EntitySystem/Info/InteractionComponent/`) — взаимодействия с объектами
-- **DetectorModel** (`Model/DetectorModel/`) — детектор/детектируемые (`DetectorBehaviour`, `DetectableBehaviour`)
-- **Buildings** (`Model/BuildingsBehaviours/`) — строительство
-- **GlobalSystems/** — `TrollMovementTransition` и глобальные монобехи
+- **Casino** (`EntitySystem/Casino/`) — slots: `CasinoSlots`, `CalculateWin`, `UICasinoSlots`
+- **PlayerTasks** (`EntitySystem/PlayerTasks/`) — quests: `ITask`, `TaskManager`, `TaskOfDelivery`
+- **StaticNPC** (`EntitySystem/StaticNPC/`) — LLM NPC chat: `IsaNPCchatBot`, `LLMGetter`
+- **InteractionSystem** (`EntitySystem/InteractionSystem/`, `EntitySystem/Info/InteractionComponent/`) — interactions with objects
+- **DetectorModel** (`Model/DetectorModel/`) — detector / detectable (`DetectorBehaviour`, `DetectableBehaviour`)
+- **Buildings** (`Model/BuildingsBehaviours/`) — construction
+- **GlobalSystems/** — `TrollMovementTransition` and global MonoBehaviours
 - **View/** — `ParallaxEffect`, `PlayerDialogOutput`, `ChangeRandomSprite`
-- **UI/Settings/**, **UI/Console/** — настройки и консоль
+- **UI/Settings/**, **UI/Console/** — settings and console
 - **Core/Utilities/** — `PriorityQueue`, `IndexedSet`, `Dence3DGrid`, `EnumerableSnapshot`, `CodeHelpers`, `Extentions`
-- **Test/** — экспериментальный код: `PointDraw` (используется в `Scenes/TestScene/56u5y3454e.unity`), `PriceChart` + `Market`/`MarketCore`/`MarketSimulator` (используются `Prefabs/Market.prefab`)
+- **Test/** — experimental code: `PointDraw` (used in `Scenes/TestScene/56u5y3454e.unity`), `PriceChart` + `Market`/`MarketCore`/`MarketSimulator` (used by `Prefabs/Market.prefab`)
 
 ---
 
-## Ключевые паттерны
+## Key Patterns
 
-| Паттерн | Где |
-|---------|-----|
+| Pattern | Where |
+|---------|-------|
 | Service Locator | `ServiceLocator` (`Core/ServiceLocator/`) |
 | Component | `AEntity` + `IComponent` (`Model/BehavioursMap/`) |
-| State Machine | `StatePatternComponent` + `AState` + FSM игры (`GameSceneManagerSystem/StateMachine/`) |
-| Command | `ICommand` (`EntitySystem/Command/`) + `ICommand` (`Terminal/`) — разные интерфейсы! |
+| State Machine | `StatePatternComponent` + `AState` + game FSM (`GameSceneManagerSystem/StateMachine/`) |
+| Command | `ICommand` (`EntitySystem/Command/`) + `ICommand` (`Terminal/`) — different interfaces! |
 | Repository | `WorldStateRepository`, `WorldConfigRepository`, etc. (`Core/Storage/`) |
 | Observer / Reactive | R3 `ReactiveProperty`, `Subject`, `Observable` |
 | Object Pool | `PoolManager` (`Core/PoolManager.cs`) |
-| MVVM (частично) | `AEntityViewModel` + `AEntityView`; AI: `EntityModel`/`EntityViewModel`/`EntityView` |
+| MVVM (partial) | `AEntityViewModel` + `AEntityView`; AI: `EntityModel`/`EntityViewModel`/`EntityView` |
 
 ---
 
-## Известные проблемы (аудит 2026-08, статус 2026-10)
+## Known Issues (audit 2026-08, status 2026-10)
 
-1. ~~**Два драйвера тика**~~ — закрыто: AI — только `EntityManager.Update` с фиксированным шагом `SimulationClock`, игроки — `EntitySystem.FixedUpdate` (см. «Драйвер тика»).
-2. ~~**PoolManager не пулит**~~ — закрыто: free/busy разделены, `Release` проверяет `IsActive` и `Owner`.
-3. **Спавн-рассинхрон** (открыто): `EntitySystem.CreateMob` ищет ViewModel через `GetComponentInChildren`, `MobNAL.RunLifecycle` — через `GetComponent` на корне; при расхождении сущность не регистрируется.
-4. ~~**Сеть**: авторизация `NetworkSpawner.IsAuthorizedClient` не работает~~ — закрыто: владелец/выданное право, whitelist int-ID, лимит частоты и радиуса (см. «Сеть»).
-5. **Утечки**: ~~R3-подписки `AEntityViewModel`~~ — `DisposableBag` (`Clear` в `OnNetworkDespawn`, `Dispose` в `OnDestroy`); ~~`CommandScheduler.ResetCancellation`~~ — старый CTS диспоузится; ~~`GameInitializer.OnDestroy`~~ — `ClearAll`; ~~молчаливый отказ `Register`~~ — `ServiceLocator.Register` логирует ошибку, добавлены `Unregister` и `Replace` (возвращает прежний экземпляр). Открыто: `CommandScheduler._isProcessing` не сбрасывается при выходе цикла по отмене.
-6. **AI**: ~~`lr` × знаковый reward~~ — не баг: advantage со знаком — корректный PPO-градиент, `lr > 0` гарантирован (`SharedHierarchicalBrain.ResolveLearningRate`, `SimulationRules.OnValidate`); ~~fitness = AverageEntropy~~ — устарело, `EvolveGenotypes` сортирует по `SelectionFitness`; ~~`new DelayedItem` каждый тик~~ — закрыто, `DecisionRing` предаллоцирует буфер.
-7. ~~**Мёртвый код**~~ — удалены `RpcTest.cs`, `PlayerUIService.cs`, `Test/Test.cs`, корневые `*CommandBuffer.cs`, дубли конфигов без точки; `mono_crash.mem.6929.1.blob` снят с индекса, `*.blob` и `mono_crash*` в `.gitignore`. `RavineNetworkManager.cs` в репозитории отсутствовал. `CraftModel.cs` пересоздан этапом 2.4 (безформенный крафт) и остаётся; `Scripts/Test/` (`PointDraw`, `PriceChart`, `Market*`) ссылается из `TestScene` и `Market.prefab` и остаётся.
-8. ~~**Unity-время в логике агентов**~~ — закрыто: `UniTask.Delay`/`Time.smoothDeltaTime` в `EntityManager` заменены на `SimulationClock`.
-9. ~~**R3 в горячем пути агента**~~ — `StatsComponent.Health/Energy` и `_vecMaxHealth/_vecMaxEnergy` заменены полями + событием `HealthDepleted`/прямым вызовом; внешние подписчики (`AEntity.IsActive`, `OnUpdate`, игровые `EnergyComponent`/`CurrencyComponent`) сохранены.
-10. ~~**God-классы**~~ — `EntityManager` 1253 → 733 строки (+ `AI/Population/`), `EntityModel` 1662 → 583 + 7 partial, `EntityCommands` → 23 файла, `SimulationRules` 2149 → 1111 + 6 partial. Физическое разделение `SimulationRules` на отдельные ScriptableObject-ассеты не сделано: нужна миграция данных ассета в Unity.
+1. ~~**Two tick drivers**~~ — closed: AI ticks only from `EntityManager.Update` with a fixed `SimulationClock` step; players tick in `EntitySystem.FixedUpdate` (see "Tick Driver").
+2. ~~**PoolManager does not pool**~~ — closed: free/busy are separated, `Release` checks `IsActive` and `Owner`.
+3. **Spawn desync** (open): `EntitySystem.CreateMob` finds the ViewModel through `GetComponentInChildren`, `MobNAL.RunLifecycle` through `GetComponent` on the root; if they disagree, the entity is not registered.
+4. ~~**Network**: authorisation in `NetworkSpawner.IsAuthorizedClient` did not work~~ — closed: owner/granted right, whitelisted int IDs, rate and radius limits (see "Networking").
+5. **Leaks**: ~~R3 subscriptions of `AEntityViewModel`~~ — `DisposableBag` (`Clear` in `OnNetworkDespawn`, `Dispose` in `OnDestroy`); ~~`CommandScheduler.ResetCancellation`~~ — the old CTS is disposed; ~~`GameInitializer.OnDestroy`~~ — `ClearAll`; ~~silent `Register` failure~~ — `ServiceLocator.Register` logs the error, `Unregister` and `Replace` (returns the previous instance) were added. Open: `CommandScheduler._isProcessing` is not reset when the loop exits on cancellation.
+6. **AI**: ~~`lr` × signed reward~~ — not a bug: the signed advantage is a correct PPO gradient, `lr > 0` is guaranteed (`SharedHierarchicalBrain.ResolveLearningRate`, `SimulationRules.OnValidate`); ~~fitness = AverageEntropy~~ — outdated, `EvolveGenotypes` sorts by `SelectionFitness`; ~~`new DelayedItem` every tick~~ — closed, `DecisionRing` preallocates the buffer.
+7. ~~**Dead code**~~ — removed `RpcTest.cs`, `PlayerUIService.cs`, `Test/Test.cs`, root `*CommandBuffer.cs`, duplicate configs without a dot; `mono_crash.mem.6929.1.blob` was removed from the index, `*.blob` and `mono_crash*` are in `.gitignore`. `RavineNetworkManager.cs` was absent from the repository. `CraftModel.cs` was recreated by stage 2.4 (shapeless crafting) and stays; `Scripts/Test/` (`PointDraw`, `PriceChart`, `Market*`) is referenced from `TestScene` and `Market.prefab` and stays.
+8. ~~**Unity time in agent logic**~~ — closed: `UniTask.Delay`/`Time.smoothDeltaTime` in `EntityManager` were replaced by `SimulationClock`.
+9. ~~**R3 in the agent hot path**~~ — `StatsComponent.Health/Energy` and `_vecMaxHealth/_vecMaxEnergy` were replaced by fields + the `HealthDepleted` event / a direct call; external subscribers (`AEntity.IsActive`, `OnUpdate`, the game's `EnergyComponent`/`CurrencyComponent`) are kept.
+10. ~~**God classes**~~ — `EntityManager` 1253 → 733 lines (+ `AI/Population/`), `EntityModel` 1662 → 583 + 7 partial files, `EntityCommands` → 23 files, `SimulationRules` 2149 → 1111 + 6 partial files. Physical splitting of `SimulationRules` into separate ScriptableObject assets is not done: it needs a data migration of the Unity asset.

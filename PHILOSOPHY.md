@@ -1,67 +1,67 @@
-# Философия TheRavine
+# TheRavine Philosophy
 
-TheRavine — не игра «про игрока», а виртуальное место, где живут существа. Игрок — одно из них.
-
----
-
-## 1. Абсолютная свобода
-
-Мир открыт для изменения со всех сторон: игроком, существами и самим миром.
-
-- Игрок вправе изменять мир.
-- Мир вправе изменять сам себя.
-- Любое существо вправе изменять код и правила игры.
-
-Правила — не стены, а часть мира, которая тоже может меняться. Единственные ограничения — те, что мир накладывает на всех одинаково.
-
-## 2. Равенство
-
-Игрок — такое же равноценное существо, как любое другое.
-
-- Все существа и игроки помещены в одинаковые условия.
-- Ни у кого нет скрытых преимуществ: ни у игрока перед остальными, ни у одних существ перед другими.
-- Каждому предстоит адаптироваться и взаимодействовать с остальными: сотрудничать, конкурировать, избегать.
-- Игрок для мира — часть среды, а не её центр.
-
-## 3. Мир как экосистема
-
-Мир — живая экосистема, по духу близкая искусственной жизни (A-Life).
-
-- Геймплей рождается из жизни, а не из сценария.
-- Поведение возникает из адаптации и обучения, а не из заранее прописанных ролей.
-- Всё взаимосвязано: изменение в одном месте отзывается в другом.
-- Жизнь и смерть имеют значение и последствия.
-- Мир продолжает жить и без наблюдателя.
-
-## 4. Человек и ИИ
-
-Играть может не только человек, но и искусственный интеллект.
-
-- The Ravine — виртуальное место, где человек и ИИ живут и сосуществуют в одинаковых условиях.
-- Природа игрока не даёт ему ни привилегий, ни ограничений: правила едины для всех.
-
-## 5. Образ важнее объёма
-
-3D-модели в большинстве случаев избыточны: человеческий глаз на мониторе видит 2D-проекцию и способен сам достроить объём.
-
-- Достаточно того, что воспринимается, — не того, что существует в точной геометрии.
-- Ресурсы направляются на то, что зритель действительно замечает.
-- Графика служит ощущению живого мира, а не соревнуется с ним по детализации.
-
-## 6. Живость важнее детализации
-
-- Количество и разнообразие живого ценнее точности отдельной сцены.
-- Приоритет решений: производительность → корректность → расширяемость.
-- Точная воспроизводимость не цель: мир должен быть живым, а не повторяемым.
-
-## 7. Принципы
-
-1. Не прописывать то, что может возникнуть само.
-2. Не выделять игрока: любое правило действует одинаково для всех.
-3. Правила — данные, которые можно менять.
-4. Внешний вид не должен менять суть мира.
-5. Ничто не должно мешать масштабу живого.
+TheRavine is not a game about the player. It is a virtual place where creatures live. The player is one of them.
 
 ---
 
-*The Ravine — место, где никто не главный, а мир живёт, даже когда на него никто не смотрит.*
+## 1. Absolute Freedom
+
+The world is open to change from every side: by the player, by the creatures, and by the world itself.
+
+- The player may change the world.
+- The world may change itself.
+- Any creature may change the code and the rules of the game.
+
+Rules are not walls but part of the world, and they may change too. The only constraints are those the world imposes on everyone equally.
+
+## 2. Equality
+
+The player is an equally valued creature, like any other.
+
+- All creatures and players are placed under the same conditions.
+- No one has hidden advantages: neither the player over the others, nor some creatures over the others.
+- Everyone must adapt and interact with the others: cooperate, compete, avoid.
+- To the world, the player is part of the environment, not its center.
+
+## 3. The World as an Ecosystem
+
+The world is a living ecosystem, close in spirit to artificial life (A-Life).
+
+- Gameplay emerges from life, not from a script.
+- Behaviour arises from adaptation and learning, not from roles written in advance.
+- Everything is interconnected: a change in one place echoes in another.
+- Life and death have meaning and consequences.
+- The world keeps living even without an observer.
+
+## 4. Humans and AI
+
+Not only humans can play, but also artificial intelligence.
+
+- The Ravine is a virtual place where humans and AI live and coexist under the same conditions.
+- The nature of the player grants neither privileges nor restrictions: the rules are the same for everyone.
+
+## 5. Image Over Volume
+
+3D models are in most cases redundant: the human eye sees a 2D projection on the monitor and can complete the volume itself.
+
+- What is perceived is enough; exact geometry is not required.
+- Resources go to what the viewer actually notices.
+- Graphics serve the feeling of a living world and do not compete with it on detail.
+
+## 6. Liveliness Over Detail
+
+- The amount and diversity of life are worth more than the precision of a single scene.
+- Priority of decisions: performance → correctness → extensibility.
+- Exact reproducibility is not a goal: the world must be alive, not repeatable.
+
+## 7. Principles
+
+1. Do not script what can emerge by itself.
+2. Do not single out the player: every rule applies equally to everyone.
+3. Rules are data that can be changed.
+4. Appearance must not change the essence of the world.
+5. Nothing should hinder the scale of life.
+
+---
+
+*The Ravine is a place where nobody is in charge, and the world lives even when nobody is looking at it.*
