@@ -152,6 +152,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float nestEatPortion = 15f;
     [SerializeField] private float nestStorageNorm = 200f;
     [SerializeField] private float nestRadius = 8f;
+    [SerializeField] private float nestExitRadiusMul = 1.25f;
     [SerializeField] private int nestMapSize = 64;
     [SerializeField] private float nestMapCellSize = 4f;
     [SerializeField] private float nestMapMaxValue = 10f;
@@ -311,6 +312,7 @@ public sealed partial class SimulationRules
     public float NestEatPortion => nestEatPortion;
     public float NestStorageNorm => nestStorageNorm;
     public float NestRadius => nestRadius;
+    public float NestExitRadiusMul => nestExitRadiusMul;
     public int NestMapSize => nestMapSize;
     public float NestMapCellSize => nestMapCellSize;
     public float NestMapMaxValue => nestMapMaxValue;

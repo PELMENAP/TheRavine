@@ -181,6 +181,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly int PlannerMaxReplans;
         public readonly float PlannerReplanAngle;
         public readonly float NestRadius;
+        public readonly float NestExitRadiusMul;
         public readonly int NestMapSize;
         public readonly float NestMapCellSize;
         public readonly float NestMapMaxValue;
@@ -709,6 +710,7 @@ public sealed partial class SimulationRules : ScriptableObject
             PlannerMaxReplans = r.plannerMaxReplans;
             PlannerReplanAngle = r.plannerReplanAngle;
             NestRadius = r.nestRadius;
+            NestExitRadiusMul = r.nestExitRadiusMul;
             NestMapSize = r.nestMapSize;
             NestMapCellSize = r.nestMapCellSize;
             NestMapMaxValue = r.nestMapMaxValue;
@@ -1181,6 +1183,7 @@ public sealed partial class SimulationRules : ScriptableObject
         if (relativeHeightRadius < 1) relativeHeightRadius = 1;
         if (!(stressNestRecoveryMul >= 1f)) stressNestRecoveryMul = 1f;
         if (!(stressPerceptionNoise >= 0f)) stressPerceptionNoise = 0f;
+        if (!(nestExitRadiusMul >= 1f)) nestExitRadiusMul = 1f;
     }
 
     private static SimulationRules _active;
