@@ -124,25 +124,28 @@ Shader "The Ravine/ChunkGrassShader"
 
         float3 ApplyPlayerInteraction(float3 positionWS, float heightFactor)
         {
-            float2 posXZ = positionWS.xz;
-            float2 playerXZ = _PlayerPosition.xz;
-            float distanceXZ = length(posXZ - playerXZ);
-            
-            float heightDiff = positionWS.y - _PlayerPosition.y;
-            float halfHeight = _PlayerHeight * 0.5;
-            
-            float radiusMask = saturate(1.0 - distanceXZ / _PlayerRadius);
+            float3 center = _PlayerPosition;
+            center.y += max(_PlayerHeight, 1e-4);
+
+            float2 posXZ    = positionWS.xz;
+            float2 delta    = posXZ - center.xz;
+            float  distanceXZ = length(delta);
+
+            float heightDiff = positionWS.y - center.y;
+            float halfHeight = max(_PlayerHeight * 0.5, 1e-4);
+
+            float radiusMask = saturate(1.0 - distanceXZ / max(_PlayerRadius, 1e-4));
             float heightMask = saturate(1.0 - abs(heightDiff) / halfHeight);
-            
+
             float falloff = radiusMask * radiusMask * heightMask;
-            
-            float2 dirXZ = (distanceXZ > 0.0001) ? normalize(posXZ - playerXZ) : 0;
-            
+
+            float2 dirXZ = delta / max(distanceXZ, 1e-4);
+
             float3 offset;
-            offset.xz = dirXZ * falloff * _PlayerStrength * heightFactor;
-            offset.y = -falloff * _PlayerStrength * 0.2;
-            
-            return offset * saturate(radiusMask) * saturate(heightMask);
+            offset.xz = dirXZ * (falloff * _PlayerStrength * heightFactor);
+            offset.y  = -falloff * _PlayerStrength * 0.2;
+
+            return offset;
         }
 
         float3 SampleWindOffset(float3 positionWS, float heightFactor, float3 instancePos)
