@@ -454,6 +454,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public ChunkFoodIndex FoodIndex => _foodIndex;
 
     private EnergyLedger _ledger;
+    private WarmthField  _warmth;
     public EnergyLedger Ledger => _ledger;
 
     public void Configure(
@@ -490,6 +491,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         _terrain = new TerrainSensor(ServiceLocator.GetService<MapGenerator>());
         ServiceLocator.Services.TryGet(out _foodIndex);
         if (!ServiceLocator.Services.TryGet(out _ledger)) _ledger = new EnergyLedger();
+        ServiceLocator.Services.TryGet(out _warmth);
 
         ServiceLocator.Services.TryGet(out MovePlanner planner);
         ServiceLocator.Services.TryGet(out _players);

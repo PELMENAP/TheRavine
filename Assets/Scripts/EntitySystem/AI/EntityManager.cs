@@ -59,6 +59,8 @@ public class EntityManager : MonoBehaviour
     private EvolutionService     _evolution;
     private ColonyPopulation     _population;
     private readonly EnergyLedger _ledger = new();
+    private WarmthField _warmth;
+    private double _lastWarmthDecayTime;
     public EnergyLedger Energy => _ledger;
     public EvolutionService Evolution => _evolution;
 
@@ -162,6 +164,7 @@ public class EntityManager : MonoBehaviour
             }
             if (now >= _nextEnergySampleTime)
             {
+                DecayWarmth(now);
                 SampleEnergy();
                 _nextEnergySampleTime = now + SimulationRules.Active.EcologyTickInterval;
             }
@@ -171,6 +174,14 @@ public class EntityManager : MonoBehaviour
 
         _planner.Flush();
         _motion.Step();
+    }
+
+    private void DecayWarmth(double now)
+    {
+        float dt = (float)(now - _lastWarmthDecayTime);
+        _lastWarmthDecayTime = now;
+        float keep = dt > 0f ? math.exp(-SimulationRules.Active.WarmthDecayPerSecond * dt) : 1f;
+        _ledger.Flows.WarmthDecay += _warmth.Decay(keep);
     }
 
     private void SampleEnergy()
@@ -189,7 +200,7 @@ public class EntityManager : MonoBehaviour
         var index = FoodIndex;
         if (index != null) index.SumEnergy(out food, out corpses, out soil);
 
-        _ledger.Sample(body, nest, food, corpses, soil);
+        _ledger.Sample(body, nest, food, corpses, soil, _warmth.Total);
     }
 
     private MovePlanner _planner;
@@ -227,6 +238,8 @@ public class EntityManager : MonoBehaviour
         ServiceLocator.Register(_grid);
         ServiceLocator.Register(_players);
         ServiceLocator.Register(_ledger);
+        _warmth = new WarmthField(SimulationRules.Active.WarmthCellSize, SimulationRules.Active.WarmthBuckets);
+        ServiceLocator.Register(_warmth);
         _colonies = new ColonyRegistry();
         CreateColonies();
         ServiceLocator.Register(_colonies);
@@ -365,6 +378,7 @@ public class EntityManager : MonoBehaviour
 
         _nextFitnessStatsTime = SimulationClock.TimeD;
         _nextEnergySampleTime = SimulationClock.TimeD;
+        _lastWarmthDecayTime  = SimulationClock.TimeD;
         _tickStartTime        = SimulationClock.TimeD + SimulationRules.Active.TickLoopWarmupSeconds;
         _simulationStarted    = true;
     }
@@ -791,6 +805,7 @@ public class EntityManager : MonoBehaviour
         services.Unregister(_grid);
         services.Unregister(_players);
         services.Unregister(_ledger);
+        services.Unregister(_warmth);
         services.Unregister(_colonies);
         services.Unregister(_planner);
         services.Unregister(_infection?.Service);

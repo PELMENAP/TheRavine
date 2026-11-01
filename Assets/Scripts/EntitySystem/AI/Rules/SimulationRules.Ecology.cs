@@ -68,6 +68,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float pastureRecoveryPerSecond = 0.005f;
     [SerializeField] private float soilReturnFraction = 0f;
     [SerializeField] private float soilPerDepletion = 800f;
+    [SerializeField] private float warmthDecayPerSecond = 0.1f;
     [SerializeField] private float seasonAmplitude = 0.3f;
     [SerializeField] private float seasonPeriod = 600f;
     [SerializeField] private float ecologyTickInterval = 0.5f;
@@ -149,6 +150,7 @@ public sealed partial class SimulationRules
     public float PastureRecoveryPerSecond => pastureRecoveryPerSecond;
     public float SoilReturnFraction => soilReturnFraction;
     public float SoilPerDepletion => soilPerDepletion;
+    public float WarmthDecayPerSecond => warmthDecayPerSecond;
     public float SeasonAmplitude => seasonAmplitude;
     public float SeasonPeriod => seasonPeriod;
     public float EcologyTickInterval => ecologyTickInterval;

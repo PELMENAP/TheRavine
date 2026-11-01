@@ -20,6 +20,7 @@ public sealed class ColonyStats
     public float FarShare;
     public int   Reseeds;
     public int   ForeignHarmTicks;
+    public int   WarmthDrawTicks;
 
     public float StorageEaten;
     public float StorageStored;
@@ -57,6 +58,7 @@ public sealed class ColonyStats
 
     public void RecordAttack(AttackTarget target) => Attacks[(int)target]++;
     public void RecordForeignHarm() => ForeignHarmTicks++;
+    public void RecordWarmthDraw() => WarmthDrawTicks++;
     public void RecordAction(int action) { if ((uint)action < (uint)ActionsStarted.Length) ActionsStarted[action]++; }
 
     public void RecordCastePlan(Caste caste, PlanKind plan)

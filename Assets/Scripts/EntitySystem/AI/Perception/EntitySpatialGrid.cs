@@ -161,8 +161,10 @@ public sealed class EntitySpatialGrid
 
     private int CellCoord(float v) => (int)math.floor(v * _invCell);
 
-    private int BucketOf(int cx, int cz)
-        => ((cx * 73856093) ^ (cz * 19349663)) & _bucketMask;
+    private int BucketOf(int cx, int cz) => HashCell(cx, cz, _bucketMask);
+
+    public static int HashCell(int cx, int cz, int mask)
+        => ((cx * 73856093) ^ (cz * 19349663)) & mask;
 
     private int NextEpoch()
     {
