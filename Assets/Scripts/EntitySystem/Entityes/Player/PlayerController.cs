@@ -288,10 +288,14 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void MoveServerRpc(Vector2 direction, float inputSpeed, bool sprint)
         {
-            bool sprinting = stamina.Step(sendInterval, sprint, direction.sqrMagnitude > 0f);
+            ref readonly var rules = ref SimulationRules.Frame;
+            float ground = map.SampleHeightBilinear(playerRigidbody.position.x, playerRigidbody.position.z);
+            bool sprinting = stamina.Step(sendInterval, sprint, direction.sqrMagnitude > 0f,
+                MapGenerator.WaterModifier(ground, rules.WaterLevel, rules.WaterDrainMul));
             staminaRatio.Value = stamina.Ratio;
 
-            float targetSpeed = inputSpeed * movementComponent.BaseSpeed * (sprinting ? sprintMultiplier : 1f);
+            float targetSpeed = inputSpeed * movementComponent.BaseSpeed * (sprinting ? sprintMultiplier : 1f)
+                * MapGenerator.WaterModifier(ground, rules.WaterLevel, rules.WaterSpeedMul);
             float terrainModifier = 1f;
 
             if (IsOnTerrain)

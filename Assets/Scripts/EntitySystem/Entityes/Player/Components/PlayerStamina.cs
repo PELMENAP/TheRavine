@@ -38,7 +38,7 @@ namespace TheRavine.EntityControl
             }
         }
 
-        public bool Step(float dt, bool wantsSprint, bool moving)
+        public bool Step(float dt, bool wantsSprint, bool moving, float drainMul = 1f)
         {
             float capacity = Capacity;
             float energyRatio = EnergyRatio();
@@ -49,7 +49,7 @@ namespace TheRavine.EntityControl
             if (wantsSprint && moving && cooldown <= 0f && current > 0f)
             {
                 float fatigue = math.lerp(1.5f, 0.75f, energyRatio);
-                float drain = math.min(current, capacity * drainFraction * fatigue * dt);
+                float drain = math.min(current, capacity * drainFraction * fatigue * drainMul * dt);
                 if (energy.TryConsume(drain * energyPerStamina))
                 {
                     current -= drain;

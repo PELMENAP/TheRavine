@@ -10,7 +10,7 @@ public sealed class ColonyStats
     public float LifespanEma;
     public bool  HasLifespan;
 
-    public readonly int[] DeathsByCause   = new int[(int)DeathCause.Age + 1];
+    public readonly int[] DeathsByCause   = new int[(int)DeathCause.Burn + 1];
     public readonly int[] CommandsBySource = new int[(int)CommandSource.Count];
     public readonly int[] PlansStarted    = new int[PlanCatalog.Count];
     public readonly int[] PlansCompleted  = new int[PlanCatalog.Count];

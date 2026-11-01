@@ -68,7 +68,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float planCompleteReward = 0.2f;
     [SerializeField] private int planMaxFailures = 2;
     [SerializeField] private int planMaxInstantSteps = 6;
-    [SerializeField] private float[] deathPenaltyByCause = { 1f, 1.5f, 0.6f, 0.6f, 0.3f };
+    [SerializeField] private float[] deathPenaltyByCause = { 1f, 1.5f, 0.6f, 0.6f, 0.3f, 1f };
     [SerializeField] private Vector3[] planBoidMul =
     {
         new(1.6f, 0.6f, 0.3f),
