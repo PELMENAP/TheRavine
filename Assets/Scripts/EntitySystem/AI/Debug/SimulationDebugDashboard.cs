@@ -45,7 +45,7 @@ public class SimulationDebugDashboard : MonoBehaviour
     private GUIStyle _valueStyle;
     private bool     _stylesInitialized;
 
-    private Rect _windowRect = new Rect(10, 10, 420, 660);
+    private Rect _windowRect = new Rect(10, 10, 420, 960);
 
     private int _coordStaleDrops;
     private int _execStaleDrops;
@@ -171,6 +171,10 @@ public class SimulationDebugDashboard : MonoBehaviour
 
         DrawSection(ref y, "GENERATION STATS");
         DrawGenerationInfo(ref y);
+        DrawFitnessDistribution(ref y);
+
+        DrawSection(ref y, "ENERGY LEDGER");
+        DrawEnergyLedger(ref y);
 
         DrawSection(ref y, "TOP ENTITIES");
         DrawTopEntities(ref y);
@@ -368,6 +372,38 @@ public class SimulationDebugDashboard : MonoBehaviour
         DrawKV(ref y, "Best lr",        stats.BestLr.ToString("F4"));
         DrawKV(ref y, "Best temp",      stats.BestTemp.ToString("F3"));
         DrawKV(ref y, "Avg train steps", stats.AvgTrainSteps.ToString("F0"));
+    }
+
+    private void DrawFitnessDistribution(ref float y)
+    {
+        var evo = _manager.Evolution;
+        if (evo == null) return;
+        DrawKV(ref y, "Fitness P10/P50/P90", $"{evo.FitnessP10:F2} / {evo.FitnessP50:F2} / {evo.FitnessP90:F2}");
+        DrawKV(ref y, "Fitness max",         evo.FitnessMax.ToString("F2"));
+        DrawKV(ref y, "Fitness outliers",    evo.FitnessOutliers.ToString());
+    }
+
+    private void DrawEnergyLedger(ref float y)
+    {
+        var ledger = _manager.Energy;
+        if (ledger == null) return;
+        var f = ledger.Last;
+        DrawKV(ref y, "Stock",                ledger.Stock.ToString("F1"));
+        DrawKV(ref y, "Body/Nest",            $"{ledger.StockEntities:F1} / {ledger.StockNest:F1}");
+        DrawKV(ref y, "Food/Corpses",         $"{ledger.StockFood:F1} / {ledger.StockCorpses:F1}");
+        DrawKV(ref y, "Residual (sum)",       $"{ledger.Residual:F2} ({ledger.ResidualSum:F1})");
+        DrawKV(ref y, "In/Out",               $"{f.Inflow:F2} / {f.Outflow:F2}");
+        DrawKV(ref y, "Food spawn/mature",    $"{f.FoodSpawn:F2} / {f.FoodMaturation:F2}");
+        DrawKV(ref y, "Spawn/Child start",    $"{f.SpawnStart:F2} / {f.ChildStart:F2}");
+        DrawKV(ref y, "Starve ret/Clamp",     $"{f.StarvationReturn:F2} / {f.ClampGain:F2}");
+        DrawKV(ref y, "Viral/Rescale",        $"{f.ViralNet:F2} / {f.RescaleNet:F2}");
+        DrawKV(ref y, "Basal/Move",           $"{f.Basal:F2} / {f.Movement:F2}");
+        DrawKV(ref y, "Digest loss",          f.DigestionLoss.ToString("F2"));
+        DrawKV(ref y, "Speech/Threaten",      $"{f.Speech:F2} / {f.Threaten:F2}");
+        DrawKV(ref y, "Dash/Strike",          $"{f.Dash:F2} / {f.Strike:F2}");
+        DrawKV(ref y, "Reproduce/Rest heal",  $"{f.Reproduce:F2} / {f.RestHeal:F2}");
+        DrawKV(ref y, "Spoil/Death loss",     $"{f.CorpseSpoil:F2} / {f.DeathLoss:F2}");
+        DrawKV(ref y, "Metab credit (viral)", f.MetabolismCredit.ToString("F2"));
     }
 
     private void DrawTopEntities(ref float y)

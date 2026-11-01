@@ -58,6 +58,9 @@ public class EntityManager : MonoBehaviour
     private ColonyFood           _food;
     private EvolutionService     _evolution;
     private ColonyPopulation     _population;
+    private readonly EnergyLedger _ledger = new();
+    public EnergyLedger Energy => _ledger;
+    public EvolutionService Evolution => _evolution;
 
     [SerializeField] private int _transmissions;
     [SerializeField] private int _recombinations;
@@ -106,6 +109,7 @@ public class EntityManager : MonoBehaviour
     private bool _rulesMissing;
     private double _tickStartTime;
     private double _nextFitnessStatsTime;
+    private double _nextEnergySampleTime;
     private TickWindowBudget _tickBudget;
 
     private static readonly ProfilerMarker TickAgentsMarker  = new("EntityManager.TickAgents");
@@ -156,12 +160,36 @@ public class EntityManager : MonoBehaviour
                 UpdateDiagnostics();
                 _nextFitnessStatsTime = now + SimulationRules.Active.FitnessStatsInterval;
             }
+            if (now >= _nextEnergySampleTime)
+            {
+                SampleEnergy();
+                _nextEnergySampleTime = now + SimulationRules.Active.EcologyTickInterval;
+            }
             if (now >= _tickStartTime) TickAgents(SimulationClock.DeltaTime);
             _fire?.Step(now, SimulationClock.DeltaTime, _entities);
         }
 
         _planner.Flush();
         _motion.Step();
+    }
+
+    private void SampleEnergy()
+    {
+        float body = 0f;
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            var e = _entities[i];
+            if (!e.IsDisposed) body += e.BodyEnergy;
+        }
+
+        float nest = 0f;
+        for (int c = 0; c < _colonies.Count; c++) nest += _colonies[c].Nest.Storage;
+
+        float food = 0f, corpses = 0f;
+        var index = FoodIndex;
+        if (index != null) index.SumEnergy(out food, out corpses);
+
+        _ledger.Sample(body, nest, food, corpses);
     }
 
     private MovePlanner _planner;
@@ -198,6 +226,7 @@ public class EntityManager : MonoBehaviour
         ServiceLocator.Register(_thresholds);
         ServiceLocator.Register(_grid);
         ServiceLocator.Register(_players);
+        ServiceLocator.Register(_ledger);
         _colonies = new ColonyRegistry();
         CreateColonies();
         ServiceLocator.Register(_colonies);
@@ -207,10 +236,10 @@ public class EntityManager : MonoBehaviour
         NeuralModelStorage.RegisterFactory(new SharedBrainSnapshotFactory());
         _infection = new InfectionCoordinator((uint)UnityEngine.Random.Range(1, int.MaxValue));
         ServiceLocator.Register(_infection.Service);
-        _food       = new ColonyFood(maxFood);
+        _food       = new ColonyFood(maxFood, _ledger);
         _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue));
         _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, spawnRadius,
-            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _utility, _thresholds, _boids);
+            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _utility, _thresholds, _boids, _ledger);
         _population.Spawned += RaiseSpawned;
         _population.Died    += RaiseDied;
 
@@ -335,6 +364,7 @@ public class EntityManager : MonoBehaviour
         _lastNestTime       = SimulationClock.Time;
 
         _nextFitnessStatsTime = SimulationClock.TimeD;
+        _nextEnergySampleTime = SimulationClock.TimeD;
         _tickStartTime        = SimulationClock.TimeD + SimulationRules.Active.TickLoopWarmupSeconds;
         _simulationStarted    = true;
     }
@@ -760,6 +790,7 @@ public class EntityManager : MonoBehaviour
         services.Unregister(_thresholds);
         services.Unregister(_grid);
         services.Unregister(_players);
+        services.Unregister(_ledger);
         services.Unregister(_colonies);
         services.Unregister(_planner);
         services.Unregister(_infection?.Service);

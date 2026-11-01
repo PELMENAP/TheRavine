@@ -45,9 +45,10 @@ public class DigestionComponent : IComponent
     }
 
     public float Tick(StatsComponent stats, float dt, bool resting, float rateMul, float boostMul,
-        in SimulationRules.RulesFrame r, out float boostCredit)
+        in SimulationRules.RulesFrame r, out float boostCredit, out float loss)
     {
         boostCredit = 0f;
+        loss        = 0f;
         if (dt <= 0f) return 0f;
 
         float rate = (resting ? r.DigestRateRest : r.DigestRateActive) * rateMul;
@@ -62,6 +63,7 @@ public class DigestionComponent : IComponent
         Stomach  -= moved;
         stats.En += moved * eff;
         boostCredit = math.max(0f, moved - math.min(baseMove, moved)) * eff;
+        loss        = moved - moved * eff;
 
         if (resting && Stomach > 0f) WellFed = math.min(1f, WellFed + r.WellFedGainPerSecond * dt);
         else WellFed = math.max(0f, WellFed - r.WellFedDecayPerSecond * dt);

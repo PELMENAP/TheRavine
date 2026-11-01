@@ -25,6 +25,11 @@ public sealed class EvolutionService
 
     public float AvgEntropy { get; private set; }
     public float AvgFitness { get; private set; }
+    public float FitnessP10 { get; private set; }
+    public float FitnessP50 { get; private set; }
+    public float FitnessP90 { get; private set; }
+    public float FitnessMax { get; private set; }
+    public int   FitnessOutliers { get; private set; }
 
     public EvolutionService(List<EntityModel> entities, ColonyRegistry colonies, uint seed)
     {
@@ -80,6 +85,15 @@ public sealed class EvolutionService
                 ? iqr
                 : math.max(1e-3f, math.abs(_fitnessMedian) * SimulationRules.Active.FitnessSpreadMedianFraction);
             _fitnessStatsReady = true;
+
+            FitnessP10 = _fitnessScratch[m / 10];
+            FitnessP50 = _fitnessMedian;
+            FitnessP90 = _fitnessScratch[9 * m / 10];
+            FitnessMax = _fitnessScratch[m - 1];
+            float outlierCut = _fitnessMedian + SimulationRules.Active.OutlierSigma * _fitnessSpread;
+            int outliers = 0;
+            for (int i = m - 1; i >= 0 && _fitnessScratch[i] > outlierCut; i--) outliers++;
+            FitnessOutliers = outliers;
             for (int c = 0; c < _colonies.Count; c++)
                 if (_colonyAlive[c] > 0)
                     _colonies[c].Brain?.ReportMeanFitness(_colonyFitness[c] / _colonyAlive[c]);

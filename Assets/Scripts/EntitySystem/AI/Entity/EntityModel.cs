@@ -245,8 +245,10 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
         var tuning = EntityTuning.Express(in _baseTuning, in Brain.Context.CoordMLP.Params, in mods);
         Tuning = tuning;
+        float bodyBefore = BodyEnergy;
         Stats.Rescale(tuning.MaxHealth, tuning.MaxEnergy);
         Digestion.Resize(tuning.MaxEnergy * SimulationRules.Active.StomachCapacityFraction);
+        _ledger.Flows.RescaleNet += BodyEnergy - bodyBefore;
         Vectorizer?.SetMaxima(tuning.MaxHealth, tuning.MaxEnergy);
         Brain.Context.CasteMask = ActionCatalog.CasteActionMask(caste);
     }
@@ -449,6 +451,9 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
     public ChunkFoodIndex FoodIndex => _foodIndex;
 
+    private EnergyLedger _ledger;
+    public EnergyLedger Ledger => _ledger;
+
     public void Configure(
         ColonyState colony, EntityBrainContext ctx,
         IEntityMotor motor, IEntityDeathHandler death,
@@ -482,6 +487,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
         _terrain = new TerrainSensor(ServiceLocator.GetService<MapGenerator>());
         ServiceLocator.Services.TryGet(out _foodIndex);
+        if (!ServiceLocator.Services.TryGet(out _ledger)) _ledger = new EnergyLedger();
 
         ServiceLocator.Services.TryGet(out MovePlanner planner);
         ServiceLocator.Services.TryGet(out _players);

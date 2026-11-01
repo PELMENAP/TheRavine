@@ -48,6 +48,12 @@ public static class CreatureCore
 
     public static void Metabolize(StatsComponent stats, MortalityComponent mortality, float dt, float movementEnergy,
         float metabolismMultiplier, float basalMul, in SimulationRules.RulesFrame r, out float metabolismCredit)
+        => Metabolize(stats, mortality, dt, movementEnergy, metabolismMultiplier, basalMul, in r,
+            out metabolismCredit, out _, out _, out _, out _);
+
+    public static void Metabolize(StatsComponent stats, MortalityComponent mortality, float dt, float movementEnergy,
+        float metabolismMultiplier, float basalMul, in SimulationRules.RulesFrame r, out float metabolismCredit,
+        out float basalSpent, out float moveSpent, out float starvationReturned, out float clampGain)
     {
         float hpBefore = stats.Hp;
         stats.Tick(dt,
@@ -55,7 +61,7 @@ public static class CreatureCore
             metabolismMultiplier,
             r.BasalEnergyDrain * basalMul,
             r.StarvationThreshold, r.StarvationDamage, r.StarvationEnergyReturn,
-            out metabolismCredit);
+            out metabolismCredit, out basalSpent, out moveSpent, out starvationReturned, out clampGain);
         if (stats.Hp < hpBefore) mortality.NoteHarm(DeathCause.Starved, stats.Hp);
     }
 }

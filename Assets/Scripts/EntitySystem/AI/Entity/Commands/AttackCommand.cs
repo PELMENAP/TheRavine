@@ -90,7 +90,9 @@ public class AttackCommand : EntityCommand
         var stats = model.Stats;
         if (stats.En < math.max(model.Tuning.AttackEnergyCost, r.AttackEnergyMin)) return Fail();
 
+        float enBefore = stats.En;
         stats.En = math.max(0f, stats.En - r.DashEnergyCost);
+        model.Ledger.Flows.Dash += enBefore - stats.En;
         _phase = Phase.Dash;
 
         float speed = model.Tuning.RunSpeed * r.DashMul;
@@ -111,6 +113,7 @@ public class AttackCommand : EntityCommand
 
         float energyScale = math.max(math.saturate(stats.En / stats.MaxEnergy), r.AttackMinEnergyScale);
         stats.En -= cost;
+        model.Ledger.Flows.Strike += cost;
 
         float damage = model.Tuning.AttackDamage * model.AttackDamageMul * energyScale;
         if (model.SinceAction(EntityAction.Threaten) < r.SynergyWindow) damage *= r.ThreatenAttackMul;

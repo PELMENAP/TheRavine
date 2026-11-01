@@ -45,6 +45,7 @@ public class RestCommand : EntityCommand
             {
                 stats.Hp = hp + heal;
                 stats.En = math.max(0f, en - heal * cost);
+                model.Ledger.Flows.RestHeal += en - stats.En;
             }
         }
 
