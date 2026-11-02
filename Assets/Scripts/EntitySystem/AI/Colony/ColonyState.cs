@@ -174,6 +174,7 @@ public sealed class ColonyState : IDisposable
         float  storage = Nest.Storage;
         Nest.Storage = 0f;
         Nest.Relocate(position);
+        Stats.RecordRelocation();
         ClearSites();
 
         if (storage > 0f && food != null)
