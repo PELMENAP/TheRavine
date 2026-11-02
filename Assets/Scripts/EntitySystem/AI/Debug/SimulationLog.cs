@@ -12,12 +12,13 @@ public sealed class SimulationLog : IDisposable
     private const int SourceCount = (int)CommandSource.Count;
     private const int AttackCount = (int)ColonyStats.AttackTarget.Count;
     private const int ActionCount = ActionCatalog.Count;
+    private const int ActionFields = 4;
 
     private const int OffBorn           = 0;
     private const int OffDied           = 1;
     private const int OffDeaths         = 2;
     private const int OffActions        = OffDeaths + DeathCount;
-    private const int OffPlansStarted   = OffActions + 3 * ActionCount;
+    private const int OffPlansStarted   = OffActions + ActionFields * ActionCount;
     private const int OffPlansCompleted = OffPlansStarted + 1;
     private const int OffSources        = OffPlansCompleted + 1;
     private const int OffRelocations    = OffSources + SourceCount;
@@ -26,12 +27,53 @@ public sealed class SimulationLog : IDisposable
     private const int OffWarmth         = OffHarm + 1;
     private const int Stride            = OffWarmth + 1;
 
-    private readonly int[]   _prev         = new int[ColonyRegistry.MaxColonies * Stride];
-    private readonly int[]   _delta        = new int[ColonyRegistry.MaxColonies * Stride];
-    private readonly float[] _prevLifespan = new float[ColonyRegistry.MaxColonies];
+    private const int ResidualColumns = 8;
+
+    private static readonly (string Name, Func<EnergyFlows, float> Get)[] FlowColumns =
+    {
+        ("flow_food_spawn",        f => f.FoodSpawn),
+        ("flow_food_maturation",   f => f.FoodMaturation),
+        ("flow_child_start",       f => f.ChildStart),
+        ("flow_spawn_start",       f => f.SpawnStart),
+        ("flow_starvation_return", f => f.StarvationReturn),
+        ("flow_clamp_gain",        f => f.ClampGain),
+        ("flow_viral_net",         f => f.ViralNet),
+        ("flow_rescale_net",       f => f.RescaleNet),
+        ("flow_basal",             f => f.Basal),
+        ("flow_movement",          f => f.Movement),
+        ("flow_digestion_loss",    f => f.DigestionLoss),
+        ("flow_speech",            f => f.Speech),
+        ("flow_threaten",          f => f.Threaten),
+        ("flow_dash",              f => f.Dash),
+        ("flow_strike",            f => f.Strike),
+        ("flow_reproduce",         f => f.Reproduce),
+        ("flow_rest_heal",         f => f.RestHeal),
+        ("flow_corpse_spoil",      f => f.CorpseSpoil),
+        ("flow_death_loss",        f => f.DeathLoss),
+        ("flow_soil_release",      f => f.SoilRelease),
+        ("flow_warmth_draw",       f => f.WarmthDraw),
+        ("flow_warmth_decay",      f => f.WarmthDecay),
+        ("flow_soil_return",       f => f.SoilReturn),
+        ("flow_warmth_emit",       f => f.WarmthEmit),
+        ("flow_metabolism_credit", f => f.MetabolismCredit),
+        ("flow_inflow",            f => f.Inflow),
+        ("flow_outflow",           f => f.Outflow),
+    };
+
+    private static readonly string[] StockColumns =
+    {
+        "stock_entities", "stock_nest", "stock_food", "stock_corpses", "stock_soil", "stock_warmth", "stock_total",
+    };
+
+    private static readonly int WorldOnlyColumns = ResidualColumns + FlowColumns.Length + StockColumns.Length;
+    private static readonly string WorldOnlyPlaceholder = new string(',', WorldOnlyColumns);
+
+    private readonly int[]   _prev          = new int[ColonyRegistry.MaxColonies * Stride];
+    private readonly int[]   _delta         = new int[ColonyRegistry.MaxColonies * Stride];
+    private readonly float[] _prevLifespan  = new float[ColonyRegistry.MaxColonies];
     private readonly float[] _deltaLifespan = new float[ColonyRegistry.MaxColonies];
-    private readonly int[]   _current      = new int[Stride];
-    private readonly int[]   _world        = new int[Stride];
+    private readonly int[]   _current       = new int[Stride];
+    private readonly int[]   _world         = new int[Stride];
     private float _prevResidualSum;
 
     private StreamWriter _writer;
@@ -66,6 +108,7 @@ public sealed class SimulationLog : IDisposable
         float time   = (float)now;
         float season = SeasonClock.Value(time);
         bool  winter = SeasonClock.IsWinter(time);
+        bool  night  = IsNight();
 
         Array.Clear(_world, 0, Stride);
         float worldLifespan = 0f, fill = 0f, rest = 0f, storage = 0f;
@@ -107,23 +150,8 @@ public sealed class SimulationLog : IDisposable
 
         try
         {
-            WriteCommon(time, season, winter, "world", -1, alive, _world, 0, worldLifespan, fill * inv, rest * inv, storage * inv);
-            _writer.Write(',');
-            WriteFloat(residual);
-            _writer.Write(',');
-            WriteFloat(evolution != null ? evolution.FitnessP10 : 0f);
-            _writer.Write(',');
-            WriteFloat(evolution != null ? evolution.FitnessP50 : 0f);
-            _writer.Write(',');
-            WriteFloat(evolution != null ? evolution.FitnessP90 : 0f);
-            _writer.Write(',');
-            WriteFloat(evolution != null ? evolution.FitnessMax : 0f);
-            _writer.Write(',');
-            WriteInt(evolution != null ? evolution.FitnessOutliers : 0);
-            _writer.Write(',');
-            WriteFloat(evolution != null ? evolution.AvgFitness : 0f);
-            _writer.Write(',');
-            WriteFloat(evolution != null ? evolution.AvgEntropy : 0f);
+            WriteCommon(time, season, winter, night, "world", -1, alive, _world, 0, worldLifespan, fill * inv, rest * inv, storage * inv);
+            WriteWorldOnly(ledger, evolution, residual);
             _writer.WriteLine();
 
             for (int c = 0; c < n; c++)
@@ -131,9 +159,10 @@ public sealed class SimulationLog : IDisposable
                 var colony = colonies[c];
                 if (colony.MemberCount <= 0) continue;
                 var s = colony.Stats;
-                WriteCommon(time, season, winter, "colony", colony.ColonyId, colony.MemberCount, _delta, c * Stride,
+                WriteCommon(time, season, winter, night, "colony", colony.ColonyId, colony.MemberCount, _delta, c * Stride,
                     _deltaLifespan[c], s.MeanFill, s.RestAtNestShare, s.StorageShare);
-                _writer.WriteLine(",,,,,,,,");
+                _writer.Write(WorldOnlyPlaceholder);
+                _writer.WriteLine();
             }
             _writer.Flush();
         }
@@ -144,6 +173,56 @@ public sealed class SimulationLog : IDisposable
         }
     }
 
+    private void WriteWorldOnly(EnergyLedger ledger, EvolutionService evolution, float residual)
+    {
+        WriteComma();
+        WriteFloat(residual);
+        WriteComma();
+        WriteFloat(evolution != null ? evolution.FitnessP10 : 0f);
+        WriteComma();
+        WriteFloat(evolution != null ? evolution.FitnessP50 : 0f);
+        WriteComma();
+        WriteFloat(evolution != null ? evolution.FitnessP90 : 0f);
+        WriteComma();
+        WriteFloat(evolution != null ? evolution.FitnessMax : 0f);
+        WriteComma();
+        WriteInt(evolution != null ? evolution.FitnessOutliers : 0);
+        WriteComma();
+        WriteFloat(evolution != null ? evolution.AvgFitness : 0f);
+        WriteComma();
+        WriteFloat(evolution != null ? evolution.AvgEntropy : 0f);
+
+        EnergyFlows last = ledger != null ? ledger.Last : default;
+        for (int i = 0; i < FlowColumns.Length; i++)
+        {
+            WriteComma();
+            WriteFloat(FlowColumns[i].Get(last));
+        }
+
+        WriteComma();
+        WriteFloat(ledger != null ? ledger.StockEntities : 0f);
+        WriteComma();
+        WriteFloat(ledger != null ? ledger.StockNest : 0f);
+        WriteComma();
+        WriteFloat(ledger != null ? ledger.StockFood : 0f);
+        WriteComma();
+        WriteFloat(ledger != null ? ledger.StockCorpses : 0f);
+        WriteComma();
+        WriteFloat(ledger != null ? ledger.StockSoil : 0f);
+        WriteComma();
+        WriteFloat(ledger != null ? ledger.StockWarmth : 0f);
+        WriteComma();
+        WriteFloat(ledger != null ? ledger.Stock : 0f);
+    }
+
+    private static bool IsNight()
+    {
+        DayCycle dayCycle = null;
+        float phase = CreatureCore.DayPhase(ref dayCycle);
+        ref readonly var r = ref SimulationRules.Frame;
+        return CreatureCore.IsNightPhase(phase, in r);
+    }
+
     private static void Fill(ColonyStats s, int[] dst)
     {
         dst[OffBorn] = s.Born;
@@ -151,10 +230,11 @@ public sealed class SimulationLog : IDisposable
         for (int i = 0; i < DeathCount; i++) dst[OffDeaths + i] = s.DeathsByCause[i];
         for (int a = 0; a < ActionCount; a++)
         {
-            int o = OffActions + 3 * a;
+            int o = OffActions + ActionFields * a;
             dst[o]     = s.ActionsStarted[a];
             dst[o + 1] = s.ActionsCompleted[a];
             dst[o + 2] = s.ActionsFailed[a];
+            dst[o + 3] = s.ActionsInterrupted[a];
         }
 
         int started = 0, completed = 0;
@@ -173,29 +253,29 @@ public sealed class SimulationLog : IDisposable
         dst[OffWarmth] = s.WarmthDrawTicks;
     }
 
-    private void WriteCommon(float time, float season, bool winter, string scope, int colonyId, int alive,
+    private void WriteCommon(float time, float season, bool winter, bool night, string scope, int colonyId, int alive,
         int[] d, int o, float lifespanSum, float fill, float rest, float storage)
     {
         WriteFloat(time);
-        _writer.Write(',');
+        WriteComma();
         WriteFloat(season);
-        _writer.Write(',');
+        WriteComma();
         _writer.Write(winter ? '1' : '0');
-        _writer.Write(',');
+        WriteComma();
         _writer.Write(scope);
-        _writer.Write(',');
+        WriteComma();
         WriteInt(colonyId);
-        _writer.Write(',');
+        WriteComma();
         WriteInt(alive);
 
         int died = d[o + OffDied];
         WriteNext(d[o + OffBorn]);
         WriteNext(died);
         for (int i = 0; i < DeathCount; i++) WriteNext(d[o + OffDeaths + i]);
-        _writer.Write(',');
+        WriteComma();
         WriteFloat(died > 0 ? lifespanSum / died : 0f);
 
-        for (int k = OffActions; k < OffActions + 3 * ActionCount; k++) WriteNext(d[o + k]);
+        for (int k = OffActions; k < OffActions + ActionFields * ActionCount; k++) WriteNext(d[o + k]);
         WriteNext(d[o + OffPlansStarted]);
         WriteNext(d[o + OffPlansCompleted]);
 
@@ -204,7 +284,7 @@ public sealed class SimulationLog : IDisposable
         float invCommands = commands > 0 ? 1f / commands : 0f;
         for (int i = 0; i < SourceCount; i++)
         {
-            _writer.Write(',');
+            WriteComma();
             WriteFloat(d[o + OffSources + i] * invCommands);
         }
 
@@ -212,17 +292,21 @@ public sealed class SimulationLog : IDisposable
         for (int i = 0; i < AttackCount; i++) WriteNext(d[o + OffAttacks + i]);
         WriteNext(d[o + OffHarm]);
         WriteNext(d[o + OffWarmth]);
-        _writer.Write(',');
+        WriteComma();
         WriteFloat(fill);
-        _writer.Write(',');
+        WriteComma();
         WriteFloat(rest);
-        _writer.Write(',');
+        WriteComma();
         WriteFloat(storage);
+        WriteComma();
+        _writer.Write(night ? '1' : '0');
     }
+
+    private void WriteComma() => _writer.Write(',');
 
     private void WriteNext(int value)
     {
-        _writer.Write(',');
+        WriteComma();
         WriteInt(value);
     }
 
@@ -232,7 +316,7 @@ public sealed class SimulationLog : IDisposable
 
     private static string BuildHeader()
     {
-        var sb = new StringBuilder(4096);
+        var sb = new StringBuilder(8192);
         sb.Append("time_s,season,winter,scope,colony_id,alive,born,died");
         sb.Append(",deaths_killed,deaths_starved,deaths_virus,deaths_toxic,deaths_age,deaths_burn,mean_lifespan_s");
 
@@ -243,12 +327,15 @@ public sealed class SimulationLog : IDisposable
             sb.Append(',').Append(name).Append("_started");
             sb.Append(',').Append(name).Append("_completed");
             sb.Append(',').Append(name).Append("_failed");
+            sb.Append(',').Append(name).Append("_interrupted");
         }
 
         sb.Append(",plans_started,plans_completed,brain_share,instinct_share,plan_share,relocations");
         sb.Append(",attacks_own,attacks_foreign,attacks_player,foreign_harm_ticks,warmth_draw_ticks");
-        sb.Append(",mean_fill,rest_at_nest_share,storage_share");
+        sb.Append(",mean_fill,rest_at_nest_share,storage_share,night");
         sb.Append(",ledger_residual,fitness_p10,fitness_p50,fitness_p90,fitness_max,fitness_outliers,avg_fitness,avg_entropy");
+        for (int i = 0; i < FlowColumns.Length; i++) sb.Append(',').Append(FlowColumns[i].Name);
+        for (int i = 0; i < StockColumns.Length; i++) sb.Append(',').Append(StockColumns[i]);
         return sb.ToString();
     }
 
