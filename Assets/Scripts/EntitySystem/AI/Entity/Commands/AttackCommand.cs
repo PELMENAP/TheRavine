@@ -9,6 +9,7 @@ public class AttackCommand : EntityCommand
     private Phase  _phase;
     private double _recoverEnd;
     private float2 _chaseGoal;
+    private float  _damageShare;
 
     public AttackCommand(EntityModel model) : base(model) { }
 
@@ -28,6 +29,7 @@ public class AttackCommand : EntityCommand
     protected override EntityCommandStatus OnBegin()
     {
         _target = model.CachedHuntTarget;
+        _damageShare = 0f;
         if (!_target.IsValid || !CanExecute()) return Fail();
         return Engage(SimulationRules.Active);
     }
@@ -37,7 +39,7 @@ public class AttackCommand : EntityCommand
         var r = SimulationRules.Active;
 
         if (_phase == Phase.Recover)
-            return Elapsed(_recoverEnd) ? Complete() : EntityCommandStatus.Running;
+            return Elapsed(_recoverEnd) ? Complete(r.DamageEventReward * _damageShare) : EntityCommandStatus.Running;
 
         if (!_target.IsValid) return Fail();
         float range = model.Tuning.AttackRange;
@@ -126,6 +128,9 @@ public class AttackCommand : EntityCommand
             model.Infection?.TryTransmitBite(model, victim);
         }
         else model.Players?.ReportHit(target.Player, damage, model);
+        var victimStats = victim != null ? victim.Stats : model.Players?.StatsOf(target.Player);
+        bool outside    = victim == null || victim.Colony != model.Colony;
+        if (outside && victimStats != null && victimStats.MaxHealth > 0f) _damageShare += damage / victimStats.MaxHealth;
         model.RegisterFitnessEvent(EntityModel.FitnessEvent.DamageDealt, damage);
         model.Colony?.Stats.RecordAttack(victim == null ? ColonyStats.AttackTarget.Player
             : victim.Colony == model.Colony ? ColonyStats.AttackTarget.Own : ColonyStats.AttackTarget.Foreign);

@@ -350,6 +350,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float CasteScoutNoFoodStimulus;
         public readonly float CasteNurseGain;
         public readonly float BiteSeekOwnThreshold;
+        public readonly bool FrenzyTargetsOwnColony;
         public readonly float NestFoodMinPortionFraction;
         public readonly float NestJuvenileReserve;
         public readonly float HungerReinterruptSeconds;
@@ -896,6 +897,7 @@ public sealed partial class SimulationRules : ScriptableObject
             CasteScoutNoFoodStimulus = r.casteScoutNoFoodStimulus;
             CasteNurseGain = r.casteNurseGain;
             BiteSeekOwnThreshold = r.biteSeekOwnThreshold;
+            FrenzyTargetsOwnColony = r.frenzyTargetsOwnColony;
             NestFoodMinPortionFraction = r.nestFoodMinPortionFraction;
             NestJuvenileReserve = r.nestJuvenileReserve;
             HungerReinterruptSeconds = r.hungerReinterruptSeconds;

@@ -118,6 +118,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float driveRewardWeight = 0.1f;
     [SerializeField] private float driveShapingWeight = 1f;
     [SerializeField] private float eventReproduceReward = 1f;
+    [SerializeField] private float damageEventReward = 0.2f;
     [SerializeField] private float infeasibleActionReward = -0.15f;
     [SerializeField] private float goalFoodWeight = 0.3f;
     [SerializeField] private float goalEnergyWeight = 1f;
@@ -213,6 +214,7 @@ public sealed partial class SimulationRules
     public float DriveRewardWeight => driveRewardWeight;
     public float DriveShapingWeight => driveShapingWeight;
     public float EventReproduceReward => eventReproduceReward;
+    public float DamageEventReward => damageEventReward;
     public float InfeasibleActionReward => infeasibleActionReward;
     public float GoalFoodWeight => goalFoodWeight;
     public float GoalEnergyWeight => goalEnergyWeight;
