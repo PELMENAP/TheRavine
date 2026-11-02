@@ -162,6 +162,7 @@ public struct InstinctJob : IJobFor
         bool grazing    = x.PlanActive != 0 && (x.PlanKind == (byte)PlanKind.Graze || x.PlanKind == (byte)PlanKind.Harvest
                                                 || x.PlanKind == (byte)PlanKind.Seek);
         bool sick       = x.Sick != 0;
+        bool nightAtNest = x.Night != 0 && atNest;
 
         uint mask   = 0u;
         byte reflex = InstinctBits.NoReflex;
@@ -188,7 +189,7 @@ public struct InstinctJob : IJobFor
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ShareFood, 3, InstinctBits.Troph);
         else if (x.Recruited != 0 && !hungry && !hasThreat && x.PlanActive == 0)
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.GoToPoint, 3, InstinctBits.Recruit);
-        else if (hungry && !sated && foodFar && !nestFood && !hasThreat && !grazing)
+        else if (hungry && !sated && foodFar && !nestFood && !hasThreat && !grazing && !nightAtNest)
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ApproachFood, 2, InstinctBits.Seek);
         else if (hungry && !sated && (foodNear || nestFood))
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.Eat, 1, InstinctBits.Eat);
