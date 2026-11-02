@@ -84,3 +84,29 @@ All ratios are computed inside one window, from the deltas of one row.
 - Interrupted commands are counted in `ColonyStats.ActionsInterrupted` but have no column. The remainder `started − completed − failed` approximates interrupted plus still running.
 - A command abandoned because its creature was destroyed (`EntityCommandRunner.Abandon`) is not counted as any outcome.
 - `plans_started` counts plans when they end, so the plan completion rate has no lag between numerator and denominator.
+
+## Columns added in revision 2
+
+| Column | Scope | Unit | Meaning and computation |
+|---|---|---|---|
+| `<action>_interrupted` | both | commands | Δ `ColonyStats.ActionsInterrupted[action]`, one per action in enum order, after `<action>_failed`. A command that is cancelled by a higher-priority reflex, a plan change or a watchdog ends here. Started = completed + failed + interrupted + still running at the sample |
+| `night` | both | 0/1 | `CreatureCore.IsNightPhase(DayPhase, RulesFrame)` at the sample time. A snapshot, not a window share |
+| `ledger_residual` | world | energy | Δ of `EnergyLedger.ResidualSum` over the window. Non-zero means energy that the flows do not explain |
+| `flow_<name>` | world | energy | Window flow from `EnergyLedger.Last`, one column per `EnergyFlows` field in declaration order (`flow_food_spawn` … `flow_metabolism_credit`) |
+| `flow_inflow`, `flow_outflow` | world | energy | `EnergyFlows.Inflow` and `EnergyFlows.Outflow` of the window |
+| `stock_entities` | world | energy | Snapshot of `EnergyLedger.StockEntities`: body energy of living creatures |
+| `stock_nest` | world | energy | Snapshot of `EnergyLedger.StockNest`: nest storage of all colonies |
+| `stock_food` | world | energy | Snapshot of `EnergyLedger.StockFood`: energy of food chunks. This is the food supply the creatures can reach |
+| `stock_corpses` | world | energy | Snapshot of `EnergyLedger.StockCorpses` |
+| `stock_soil` | world | energy | Snapshot of `EnergyLedger.StockSoil` |
+| `stock_warmth` | world | energy | Snapshot of `EnergyLedger.StockWarmth` |
+| `stock_total` | world | energy | Snapshot of `EnergyLedger.Stock`, the sum of the six stocks above |
+
+Metrics added with these columns:
+
+| Metric | Formula |
+|---|---|
+| interrupted share of an action | `<action>_interrupted / <action>_started` |
+| food per creature in stock | `stock_food / alive` (world row) |
+| energy residual share | `ledger_residual / flow_outflow` (world row) |
+| unexplained growth share | `(stock_total − stock_total_prev − flow_inflow + flow_outflow) / flow_outflow` (world row) |
