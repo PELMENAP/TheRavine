@@ -70,6 +70,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float casteScoutNoFoodStimulus = 0.5f;
     [SerializeField] private float casteNurseGain = 2f;
     [SerializeField] private float biteSeekOwnThreshold = 0.5f;
+    [SerializeField] private bool frenzyTargetsOwnColony = false;
     [SerializeField] private float nestFoodMinPortionFraction = 1f;
     [SerializeField] private float nestJuvenileReserve = 60f;
     [SerializeField] private float frontierRadius = 20f;
@@ -239,6 +240,7 @@ public sealed partial class SimulationRules
     public float CasteScoutNoFoodStimulus => casteScoutNoFoodStimulus;
     public float CasteNurseGain => casteNurseGain;
     public float BiteSeekOwnThreshold => biteSeekOwnThreshold;
+    public bool FrenzyTargetsOwnColony => frenzyTargetsOwnColony;
     public float NestFoodMinPortionFraction => nestFoodMinPortionFraction;
     public float NestJuvenileReserve => nestJuvenileReserve;
     public float FrontierRadius => frontierRadius;

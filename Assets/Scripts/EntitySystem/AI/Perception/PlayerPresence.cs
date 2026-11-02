@@ -83,6 +83,13 @@ public sealed class PlayerPresence
         return true;
     }
 
+    public StatsComponent StatsOf(Transform player)
+    {
+        for (int i = 0; i < _count; i++)
+            if (ReferenceEquals(_transforms[i], player)) return _stats[i];
+        return null;
+    }
+
     public void ReportHit(Transform player, float damage, EntityModel attacker) => Hit?.Invoke(player, damage, attacker);
 
     private void EnsureCapacity(int n)

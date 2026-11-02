@@ -228,7 +228,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
             if (foreign != null && (!player || _nearestForeignDistance <= _playerDistance)) return new HuntTarget(foreign, null);
             if (player) return new HuntTarget(null, _playerTransform);
             var nearest = CachedNearest;
-            return nearest != null && IsFrenzied ? new HuntTarget(nearest, null) : default;
+            if (nearest == null || !IsFrenzied) return default;
+            return SimulationRules.Frame.FrenzyTargetsOwnColony || nearest.Colony != Colony ? new HuntTarget(nearest, null) : default;
         }
     }
 
