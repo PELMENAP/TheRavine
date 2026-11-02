@@ -76,6 +76,14 @@ public sealed class EntityCommandRunner
     {
         var command = _current;
         _current = null;
+        var stats = _model.Colony?.Stats;
+        if (stats != null)
+        {
+            int action = _decision.Action;
+            if (status == EntityCommandStatus.Completed) stats.RecordCompleted(action);
+            else if (status == EntityCommandStatus.Failed) stats.RecordFailed(action);
+            else if (status == EntityCommandStatus.Interrupted) stats.RecordInterrupted(action);
+        }
         _model.OnCommandFinished(_source, status, command.Reward, _decision.Action);
     }
 }

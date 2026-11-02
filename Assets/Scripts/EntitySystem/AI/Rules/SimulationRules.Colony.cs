@@ -16,6 +16,8 @@ public sealed partial class SimulationRules
     [SerializeField] private float colonyHungerTau = 120f;
     [SerializeField] private float kinDeathRadius = 12f;
     [SerializeField] private float kinDeathStress = 0.5f;
+    [SerializeField] private bool simulationLogEnabled = false;
+    [SerializeField] private float simulationLogIntervalSeconds = 10f;
     [SerializeField] private float kinColonyWeight = 0.5f;
     [SerializeField] private float kinLineageWeight = 0.5f;
     [SerializeField] private float witnessPenalty = -0.2f;
@@ -183,6 +185,8 @@ public sealed partial class SimulationRules
     public float ColonyHungerTau => colonyHungerTau;
     public float KinDeathRadius => kinDeathRadius;
     public float KinDeathStress => kinDeathStress;
+    public bool SimulationLogEnabled => simulationLogEnabled;
+    public float SimulationLogIntervalSeconds => simulationLogIntervalSeconds;
     public float KinColonyWeight => kinColonyWeight;
     public float KinLineageWeight => kinLineageWeight;
     public float WitnessPenalty => witnessPenalty;

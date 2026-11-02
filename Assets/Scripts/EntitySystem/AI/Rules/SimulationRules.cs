@@ -1229,6 +1229,7 @@ public sealed partial class SimulationRules : ScriptableObject
         if (!(warmthCellSize > 0f)) warmthCellSize = 1f;
         if (warmthBuckets < 1) warmthBuckets = 1;
         if (!(warmthDecayPerSecond >= 0f)) warmthDecayPerSecond = 0f;
+        if (!(simulationLogIntervalSeconds >= 1f)) simulationLogIntervalSeconds = 1f;
     }
 
     private static SimulationRules _active;

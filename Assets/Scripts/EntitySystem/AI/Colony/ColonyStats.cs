@@ -16,11 +16,15 @@ public sealed class ColonyStats
     public readonly int[] PlansCompleted  = new int[PlanCatalog.Count];
     public readonly int[] Attacks         = new int[(int)AttackTarget.Count];
     public readonly int[] ActionsStarted  = new int[ActionCatalog.Count];
+    public readonly int[] ActionsCompleted   = new int[ActionCatalog.Count];
+    public readonly int[] ActionsFailed      = new int[ActionCatalog.Count];
+    public readonly int[] ActionsInterrupted = new int[ActionCatalog.Count];
     public readonly int[] PlansByCaste    = new int[(int)Caste.Count * PlanCatalog.Count];
     public float FarShare;
     public int   Reseeds;
     public int   ForeignHarmTicks;
     public int   WarmthDrawTicks;
+    public int   Relocations;
 
     public float StorageEaten;
     public float StorageStored;
@@ -60,6 +64,10 @@ public sealed class ColonyStats
     public void RecordForeignHarm() => ForeignHarmTicks++;
     public void RecordWarmthDraw() => WarmthDrawTicks++;
     public void RecordAction(int action) { if ((uint)action < (uint)ActionsStarted.Length) ActionsStarted[action]++; }
+    public void RecordCompleted(int action) { if ((uint)action < (uint)ActionsCompleted.Length) ActionsCompleted[action]++; }
+    public void RecordFailed(int action) { if ((uint)action < (uint)ActionsFailed.Length) ActionsFailed[action]++; }
+    public void RecordInterrupted(int action) { if ((uint)action < (uint)ActionsInterrupted.Length) ActionsInterrupted[action]++; }
+    public void RecordRelocation() => Relocations++;
 
     public void RecordCastePlan(Caste caste, PlanKind plan)
     {

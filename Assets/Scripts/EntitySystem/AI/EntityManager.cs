@@ -60,6 +60,8 @@ public class EntityManager : MonoBehaviour
     private ColonyPopulation     _population;
     private readonly EnergyLedger _ledger = new();
     private WarmthField _warmth;
+    private SimulationLog _simulationLog;
+    private double _nextSimulationLogTime;
     private double _lastWarmthDecayTime;
     public EnergyLedger Energy => _ledger;
     public EvolutionService Evolution => _evolution;
@@ -167,6 +169,12 @@ public class EntityManager : MonoBehaviour
                 DecayWarmth(now);
                 SampleEnergy();
                 _nextEnergySampleTime = now + SimulationRules.Active.EcologyTickInterval;
+            }
+            if (SimulationRules.Active.SimulationLogEnabled && now >= _nextSimulationLogTime)
+            {
+                _simulationLog ??= new SimulationLog();
+                _simulationLog.Sample(now, _colonies, _entities.Count, _ledger, _evolution);
+                _nextSimulationLogTime = now + SimulationRules.Active.SimulationLogIntervalSeconds;
             }
             if (now >= _tickStartTime) TickAgents(SimulationClock.DeltaTime);
             _fire?.Step(now, SimulationClock.DeltaTime, _entities);
@@ -379,6 +387,7 @@ public class EntityManager : MonoBehaviour
         _nextFitnessStatsTime = SimulationClock.TimeD;
         _nextEnergySampleTime = SimulationClock.TimeD;
         _lastWarmthDecayTime  = SimulationClock.TimeD;
+        _nextSimulationLogTime = SimulationClock.TimeD;
         _tickStartTime        = SimulationClock.TimeD + SimulationRules.Active.TickLoopWarmupSeconds;
         _simulationStarted    = true;
     }
@@ -830,6 +839,7 @@ public class EntityManager : MonoBehaviour
     private void OnDestroy()
     {
         SimulationRules.ReleaseVariant();
+        _simulationLog?.Dispose();
         UnregisterServices();
         for (int i = 0; i < _nestViews.Count; i++)
             if (_nestViews[i] != null) Destroy(_nestViews[i].gameObject);
