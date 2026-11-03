@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 
+using TheRavine.Base;
 public sealed class SimulationLog : IDisposable
 {
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
