@@ -792,6 +792,7 @@ public sealed class ChunkFoodIndex
             soilEnergy += fc.SoilEnergy;
             var cd = fc.Source;
             if (cd == null || fc.Count == 0) continue;
+            if (_map == null || !_map.TryGetChunk(kv.Key, out ChunkData live) || !ReferenceEquals(live, cd)) continue;
 
             for (int lz = 0; lz < Size; lz++)
             {
