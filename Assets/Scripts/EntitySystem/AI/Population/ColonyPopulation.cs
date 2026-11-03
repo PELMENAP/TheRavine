@@ -27,6 +27,7 @@ public sealed class ColonyPopulation
     private readonly CasteThresholdSystem _thresholds;
     private readonly BoidSystem           _boids;
     private readonly EnergyLedger         _ledger;
+    private readonly SpeechBus            _speech;
 
     private readonly Queue<EntityModel> _pendingDeath = new();
     private EntityModel[] _deferredDispose = Array.Empty<EntityModel>();
@@ -44,7 +45,7 @@ public sealed class ColonyPopulation
     public ColonyPopulation(GameObject prefab, Transform parent, EntityTuning tuning, int maxPopulation, float spawnRadius,
         List<EntityModel> entities, ColonyRegistry colonies, ColonyState wild, ColonyFood food, EvolutionService evolution,
         EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, UtilityPriorSystem utility,
-        CasteThresholdSystem thresholds, BoidSystem boids, EnergyLedger ledger)
+        CasteThresholdSystem thresholds, BoidSystem boids, EnergyLedger ledger, SpeechBus speech)
     {
         _prefab        = prefab;
         _parent        = parent;
@@ -63,6 +64,7 @@ public sealed class ColonyPopulation
         _thresholds    = thresholds;
         _boids         = boids;
         _ledger        = ledger;
+        _speech        = speech;
     }
 
     public void StartPredatorClock(double now) => _nextPredatorTime = now;
@@ -114,6 +116,10 @@ public sealed class ColonyPopulation
         _instincts.Reset(model.ManagerIndex, InstinctGenes.From(in ctx.CoordMLP.Params));
         _utility.Write(model.ManagerIndex, default);
         _thresholds.Reset(model.ManagerIndex, CasteThresholdSystem.Initial());
+        ref readonly var rules = ref SimulationRules.Frame;
+        bool muted = rules.SpeechMuteSampling && !colony.IsWild && RavineRandom.RangeFloat() < rules.SpeechMuteFraction;
+        model.Speech.SetMuted(muted);
+        _speech.Reset(model.ManagerIndex, model.ColonyIndex, model.EntityId, muted);
         Spawned?.Invoke(model);
         return model;
     }
@@ -268,6 +274,8 @@ public sealed class ColonyPopulation
         _boids.RemoveSwapBack(idx, last);
         _utility.RemoveSwapBack(idx, last);
         _thresholds.RemoveSwapBack(idx, last);
+        _speech.RemoveSwapBack(idx, last);
+        _grid.MarkStale();
         _entities.RemoveAt(last);
         model.ManagerIndex = -1;
     }

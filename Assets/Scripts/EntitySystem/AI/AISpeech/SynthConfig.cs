@@ -1,5 +1,7 @@
 using UnityEngine;
 
+public enum WaveformType { Sine, Saw, Square, Triangle }
+
 [CreateAssetMenu(menuName = "Audio/SynthConfig")]
 public class SynthConfig : ScriptableObject
 {

@@ -126,17 +126,64 @@ public partial class EntityModel
         double now = SimulationClock.TimeD;
         if (now - _lastAlarmCry < r.AlarmCryCooldown || IsDisposed || Stats.Hp <= 0f) return;
         _lastAlarmCry = now;
-        Broadcast(r.AlarmCrySpeech);
+        var cry = MakeUtterance(Utterance.Repeat(r.AlarmCryToken), (byte)SimulationRules.SpeechLen, Utterance.FlagReflex);
+        Emit(in cry);
         nest.RaiseAlarm(r.AlarmCryAmount);
     }
 
-    public void Broadcast(float4 speech)
+    public Utterance MakeUtterance(ushort tokens, byte len, byte flags = 0)
+        => new Utterance
+        {
+            Tokens   = tokens,
+            Len      = len,
+            Loudness = (byte)SimulationRules.Frame.SpeechLoudness,
+            Context  = SpeechContext(),
+            Flags    = (byte)(flags | (_voice << Utterance.VoiceShift)),
+            Speaker  = ManagerIndex,
+            Pos      = Position2D,
+            Time     = SimulationClock.Time,
+        };
+
+    public byte SpeechContext()
     {
-        Speech.SetOwn(speech);
-        if (Perception == null) return;
+        var hints = PlanHints;
+        int bits = 0;
+        if ((hints & PlanHint.Threat) != 0)        bits |= 1 << 0;
+        if ((hints & PlanHint.FoodVisible) != 0)   bits |= 1 << 1;
+        if ((hints & PlanHint.Carrying) != 0)      bits |= 1 << 2;
+        if (_sick)                                 bits |= 1 << 3;
+        if ((hints & PlanHint.AtNest) != 0)        bits |= 1 << 4;
+        if ((hints & PlanHint.CanReproduce) != 0)  bits |= 1 << 5;
+        return (byte)bits;
+    }
+
+    private int _voice;
+    private BrainDecision _speechDecision;
+    private double _speechReadyTime;
+
+    public void NoteSpeechDecision(in BrainDecision decision) => _speechDecision = decision;
+
+    public void CreditSpeech(float reward)
+    {
+        if (_speechDecision.IsValid && Brain.TryAddReward(reward, in _speechDecision)) return;
+        AddExtrinsicReward(reward);
+    }
+
+    public bool TryStartSpeechCooldown() => SpeechBus.TryStartCooldown(ref _speechReadyTime);
+
+    public void Emit(in Utterance utterance)
+    {
+        Speech.SetOwn(in utterance);
+        _speechBus?.Emit(in utterance);
+        SpeechMetrics.RecordEmission(in utterance);
+        PropagateWarn();
+    }
+
+    private void PropagateWarn()
+    {
+        if (Perception == null || !_threatResolved || !HasDirectThreat) return;
 
         ref readonly var r = ref SimulationRules.Frame;
-        bool warn = _threatResolved && HasDirectThreat;
         float2 source = _threatSource;
         double until = SimulationClock.TimeD + r.WarnWindow;
 
@@ -146,8 +193,7 @@ public partial class EntityModel
             var e = Neighbors[i];
             Neighbors[i] = null;
             if (e == null || e.IsDisposed || e.IsDeathPending) continue;
-            e.Speech.ReceiveVector(speech);
-            if (warn && e.Colony == Colony) e.Warn(until, source);
+            if (e.Colony == Colony) e.Warn(until, source);
         }
     }
 }

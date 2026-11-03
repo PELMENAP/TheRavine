@@ -243,7 +243,7 @@ public static unsafe class NeuralKernels
             bool clipped = (adv > 0f && ratio > 1f + clipEps) || (adv < 0f && ratio < 1f - clipEps);
             gate = clipped ? 0f : ratio * adv;
 
-            if (clipped && entReg <= 0f) return 0;
+            if (clipped && entReg <= 0f && tk->DecodeValid == 0) return 0;
             policyGate = gate * mixScale;
         }
 
@@ -259,9 +259,22 @@ public static unsafe class NeuralKernels
         const float auxVar = DelayedPerceptron.AuxNoiseSigma      * DelayedPerceptron.AuxNoiseSigma;
 
         outErr[lay->DurationIndex] = gate * tk->DurationNoise / durVar;
-        int aux = lay->AuxOutputs;
+        int aux = lay->AuxOutputs - lay->DecodeOutputs;
         for (int i = 0; i < aux; i++)
             outErr[lay->HeadingIndex + i] = gate * tk->AuxNoise[i] / auxVar;
+
+        if (tk->DecodeValid != 0)
+        {
+            float* decodeOut = tk->UseStored != 0
+                ? tk->DecodeOut
+                : evalAct + lay->ActOffset[L] + lay->DecodeIndex;
+            for (int i = 0; i < lay->DecodeOutputs; i++)
+            {
+                float p = 1f / (1f + math.exp(-decodeOut[i]));
+                float target = (tk->DecodeTarget >> i) & 1;
+                outErr[lay->DecodeIndex + i] = tk->DecodeWeight * (target - p);
+            }
+        }
 
         UnsafeUtility.MemClear(deltaA, (long)hs * sizeof(float));
         UnsafeUtility.MemClear(deltaB, (long)hs * sizeof(float));

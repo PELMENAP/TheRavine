@@ -79,9 +79,9 @@ public unsafe partial class DelayedPerceptron : IDisposable
 
     public bool HasResidual(int layer) => _residual[layer];
 
-    public PerceptronLayout BuildContextLayout(int truncWindow, int decisionCapacity, int auxOutputs)
+    public PerceptronLayout BuildContextLayout(int truncWindow, int decisionCapacity, int auxOutputs, int decodeOutputs = 0)
     {
-        _ctxLayout = new PerceptronLayout(LayerSizes, truncWindow, decisionCapacity, auxOutputs);
+        _ctxLayout = new PerceptronLayout(LayerSizes, truncWindow, decisionCapacity, auxOutputs, decodeOutputs);
         if (_kernel.IsCreated) _kernel.Dispose();
         return _ctxLayout;
     }
@@ -236,7 +236,8 @@ public unsafe partial class DelayedPerceptron : IDisposable
         item.DurationNoise = noise;
         item.Duration      = DurationFromLogit(baseLogit + noise, minDuration, maxDuration);
 
-        int aux = lay.AuxOutputs;
+        int aux = lay.AuxOutputs - lay.DecodeOutputs;
+        for (int i = 0; i < lay.DecodeOutputs; i++) item.DecodeOut[i] = outAct[lay.DecodeIndex + i];
         for (int i = 0; i < aux; i++)
         {
             float n = SampleGaussian() * AuxNoiseSigma;
@@ -303,7 +304,11 @@ public unsafe partial class DelayedPerceptron : IDisposable
             ctx.Diagnostics.RecordCriticError(advantage);
 
             item.Trained = true;
-            if (MathF.Abs(advantage) <= minAdvantage) continue;
+            if (MathF.Abs(advantage) <= minAdvantage)
+            {
+                if (item.DecodeValid) EnqueueTraining(item, 0f, ctx);
+                continue;
+            }
 
             if (i < replayFrom)
             {
@@ -313,7 +318,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
 
             int passes = Math.Max(replayPasses, 1);
             for (int pass = 0; pass < passes; pass++)
-                EnqueueTraining(item, advantage * replayWeight, ctx);
+                EnqueueTraining(item, advantage * replayWeight, ctx, pass == 0);
         }
 
         ring.Clear();
@@ -337,11 +342,11 @@ public unsafe partial class DelayedPerceptron : IDisposable
         ctx.Diagnostics.RecordCriticError(advantage);
 
         delayed.Trained = true;
-        if (MathF.Abs(advantage) > SimulationRules.Frame.MinTrainAdvantage)
+        if (MathF.Abs(advantage) > SimulationRules.Frame.MinTrainAdvantage || delayed.DecodeValid)
             EnqueueTraining(delayed, advantage, ctx);
     }
 
-    private void EnqueueTraining(DelayedItem item, float advantage, PerceptronContext ctx)
+    private void EnqueueTraining(DelayedItem item, float advantage, PerceptronContext ctx, bool decode = true)
     {
         if (!float.IsFinite(advantage))
         {
@@ -378,8 +383,17 @@ public unsafe partial class DelayedPerceptron : IDisposable
 
         int ac = ctx.Layout.ActionCount;
         for (int i = 0; i < ac; i++) t.Probs[i] = item.Probs[i];
-        int aux = ctx.Layout.AuxOutputs;
+        int aux = ctx.Layout.AuxOutputs - ctx.Layout.DecodeOutputs;
         for (int i = 0; i < aux; i++) t.AuxNoise[i] = item.AuxNoise[i];
+
+        float decodeWeight = SimulationRules.Frame.SpeechDecodeLossWeight;
+        if (decode && item.DecodeValid && decodeWeight > 0f)
+        {
+            t.DecodeValid  = 1;
+            t.DecodeTarget = item.DecodeTarget;
+            t.DecodeWeight = decodeWeight;
+            for (int i = 0; i < ctx.Layout.DecodeOutputs; i++) t.DecodeOut[i] = item.DecodeOut[i];
+        }
 
         t.ExploreProb = item.ExploreProb;
         t.Forced      = item.ActionForced ? 1 : 0;

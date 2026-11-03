@@ -42,6 +42,10 @@ public class EntityManager : MonoBehaviour
     [Header("Rules")]
     [SerializeField] private SimulationRules rules;
 
+    [Header("Speech audio")]
+    [SerializeField] private bool speechAudio = true;
+    [SerializeField] private bool speechLabels = true;
+
     [Header("Visual culling")]
     [SerializeField] private bool cullOutsideActiveChunks = true;
     [SerializeField] private int  cullChunkMargin = 0;
@@ -95,6 +99,8 @@ public class EntityManager : MonoBehaviour
     public PlayerPresence Players => _players;
     private UtilityPriorSystem   _utility;
     private CasteThresholdSystem _thresholds;
+    private SpeechBus            _speech;
+    public SpeechBus Speech => _speech;
     private ColonyState _wild;
     private float  _lastColonyTime;
     public InstinctSystem Instincts => _instincts;
@@ -154,6 +160,7 @@ public class EntityManager : MonoBehaviour
     private void Update()
     {
         SimulationClock.Advance(Time.deltaTime * simulationTimeScale);
+        _speech?.ClearAudible();
 
         if (_rulesMissing || !TheRavine.Base.WorldAuthority.IsAuthority) return;
 
@@ -181,6 +188,7 @@ public class EntityManager : MonoBehaviour
             _fire?.Step(now, SimulationClock.DeltaTime, _entities);
         }
 
+        _speech.Flush(_grid, SimulationClock.TimeD);
         _planner.Flush();
         _motion.Step();
     }
@@ -243,7 +251,14 @@ public class EntityManager : MonoBehaviour
         _boids     = new BoidSystem(maxPopulation);
         _utility    = new UtilityPriorSystem(maxPopulation);
         _thresholds = new CasteThresholdSystem(maxPopulation);
+        _speech     = new SpeechBus(maxPopulation, _entities);
+        SpeechMetrics.Reset();
         ServiceLocator.Register(_thresholds);
+        ServiceLocator.Register(_speech);
+        if (speechAudio && FindFirstObjectByType<SpeechAudioPlayer>() == null)
+            gameObject.AddComponent<SpeechAudioPlayer>().Bind(_speech);
+        if (speechLabels && FindFirstObjectByType<SpeechLabelFeed>() == null)
+            gameObject.AddComponent<SpeechLabelFeed>().Bind(_speech);
         ServiceLocator.Register(_grid);
         ServiceLocator.Register(_players);
         ServiceLocator.Register(_ledger);
@@ -261,7 +276,7 @@ public class EntityManager : MonoBehaviour
         _food       = new ColonyFood(maxFood, _ledger);
         _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue));
         _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, spawnRadius,
-            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _utility, _thresholds, _boids, _ledger);
+            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _utility, _thresholds, _boids, _ledger, _speech);
         _population.Spawned += RaiseSpawned;
         _population.Died    += RaiseDied;
 
@@ -454,6 +469,7 @@ public class EntityManager : MonoBehaviour
         using var scope = CloseWindowMarker.Auto();
         _tickCursor = 0;
         _windowOpen = false;
+        _speech.Flush(_grid, SimulationClock.TimeD);
         _population.ProcessPendingDeaths();
         _population.CheckExtinctions();
         _population.TickPredators();
@@ -734,6 +750,7 @@ public class EntityManager : MonoBehaviour
 
         SimulationRules.CaptureFrame();
         _grid.Rebuild(_tickSnapshot, _tickCount, tuning.DetectionRadius);
+        _speech.Flush(_grid, SimulationClock.TimeD);
         RunFlocking();
     }
 
@@ -809,6 +826,7 @@ public class EntityManager : MonoBehaviour
         var services = ServiceLocator.Services;
         services.Unregister(_thresholds);
         services.Unregister(_grid);
+        services.Unregister(_speech);
         services.Unregister(_players);
         services.Unregister(_ledger);
         services.Unregister(_warmth);
@@ -851,6 +869,8 @@ public class EntityManager : MonoBehaviour
         _boids?.Dispose();
         _utility?.Dispose();
         _thresholds?.Dispose();
+        _speech?.Dispose();
+        _grid.Dispose();
         _colonies?.Dispose();
         ContextSlabs.DisposeAll();
     }

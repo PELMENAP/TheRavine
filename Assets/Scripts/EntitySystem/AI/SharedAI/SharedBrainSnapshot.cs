@@ -8,7 +8,7 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
     internal SharedBrainSnapshot(SharedHierarchicalBrain brain) => Brain = brain;
 
     private const uint Magic   = 0x4E414C45;
-    public const int   Version = 9;
+    public const int   Version = 10;
 
     public byte[] Serialize()
     {
@@ -59,7 +59,7 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
 
         if (version != Version)
         {
-            RavineLog.Error($"Снапшот мозга: версия {version}, ожидалась {Version} (координатор: {PlanCatalog.Count} планов + {SharedHierarchicalBrain.CoordAux} aux стайности, вход {InputVectorizer.VectorSize}, {ActionCatalog.Count} действий), сохранённый мозг несовместим, загрузка отменена, переобучение обязательно");
+            RavineLog.Error($"Снапшот мозга: версия {version}, ожидалась {Version} (координатор: {PlanCatalog.Count} планов + {SharedHierarchicalBrain.CoordAux} aux стайности, вход {InputVectorizer.VectorSize}, {ActionCatalog.Count} действий, речь {SimulationRules.SpeechLen}x{SimulationRules.SpeechVocab} токенов, inbox {SimulationRules.SpeechInbox}, декодер контекста {SimulationRules.SpeechContextBits} бит), сохранённый мозг несовместим, загрузка отменена, переобучение обязательно");
             return null;
         }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 [RequireComponent(typeof(EntityManager))]
@@ -45,7 +46,14 @@ public class SimulationDebugDashboard : MonoBehaviour
     private GUIStyle _valueStyle;
     private bool     _stylesInitialized;
 
-    private Rect _windowRect = new Rect(10, 10, 420, 1065);
+    private Rect _windowRect = new Rect(10, 10, 420, 1165);
+
+    private readonly StringBuilder _speechText = new();
+    private string _speechEntropy = "";
+    private string _speechInfo    = "";
+    private string _speechDecode  = "";
+    private string _speechFlow    = "";
+    private string _speechMute    = "";
 
     private int _coordStaleDrops;
     private int _execStaleDrops;
@@ -72,8 +80,17 @@ public class SimulationDebugDashboard : MonoBehaviour
         float sumEntropy = 0f, sumReward = 0f;
         Array.Clear(_goalCounts, 0, _goalCounts.Length);
 
+        float openFit = 0f, mutedFit = 0f;
+        int openCount = 0, mutedCount = 0;
+
         foreach (var e in entities)
         {
+            if (!e.IsWild)
+            {
+                if (e.Speech.Muted) { mutedFit += e.GetFitness(); mutedCount++; }
+                else { openFit += e.GetFitness(); openCount++; }
+            }
+
             var ctx = e.Brain.Context;
             var coord = ctx.CoordMLP;
             sumEntropy += coord.AverageEntropy;
@@ -105,6 +122,41 @@ public class SimulationDebugDashboard : MonoBehaviour
             _goalHistory[i].Push(_goalCounts[i] / count);
 
         _generationTracker.Record(entities, SelectedColony()?.Brain);
+        FormatSpeech(openFit, openCount, mutedFit, mutedCount);
+    }
+
+    private void FormatSpeech(float openFit, int openCount, float mutedFit, int mutedCount)
+    {
+        var sb = _speechText;
+
+        sb.Clear();
+        sb.Append(SpeechMetrics.TokenEntropy().ToString("F2")).Append(" / ")
+          .Append(Mathf.Log(SimulationRules.SpeechVocab, 2f).ToString("F2")).Append(" bit (n=").Append(SpeechMetrics.TokenTotal).Append(')');
+        _speechEntropy = sb.ToString();
+
+        sb.Clear();
+        sb.Append(SpeechMetrics.MeanMutualInformation().ToString("F3")).Append(" bit |");
+        for (int b = 0; b < SimulationRules.SpeechContextBits; b++)
+            sb.Append(' ').Append(SpeechMetrics.ContextNames[b][0]).Append(':').Append(SpeechMetrics.MutualInformation(b).ToString("F2"));
+        _speechInfo = sb.ToString();
+
+        sb.Clear();
+        sb.Append((SpeechMetrics.DecodeAccuracy() * 100f).ToString("F1")).Append("% vs ")
+          .Append((SpeechMetrics.DecodeBaseline() * 100f).ToString("F1")).Append("% (n=").Append(SpeechMetrics.DecodeEvents).Append(')');
+        _speechDecode = sb.ToString();
+
+        var bus = _manager.Speech;
+        sb.Clear();
+        if (bus != null)
+            sb.Append(bus.Emitted).Append(" / ").Append(bus.Delivered).Append(" / ").Append(bus.Credited).Append(" / ").Append(bus.Dropped);
+        _speechFlow = sb.ToString();
+
+        sb.Clear();
+        if (SimulationRules.Active.SpeechMuteSampling)
+            sb.Append((mutedCount > 0 ? mutedFit / mutedCount : 0f).ToString("F3")).Append(" (").Append(mutedCount).Append(") vs ")
+              .Append((openCount > 0 ? openFit / openCount : 0f).ToString("F3")).Append(" (").Append(openCount).Append(')');
+        else sb.Append("off");
+        _speechMute = sb.ToString();
     }
 
     private ColonyState SelectedColony()
@@ -176,6 +228,13 @@ public class SimulationDebugDashboard : MonoBehaviour
         DrawSection(ref y, "ENERGY LEDGER");
         DrawEnergyLedger(ref y);
 
+        DrawSection(ref y, "SPEECH");
+        DrawKV(ref y, "Token entropy",   _speechEntropy);
+        DrawKV(ref y, "MI token-ctx",    _speechInfo);
+        DrawKV(ref y, "Decode acc",      _speechDecode);
+        DrawKV(ref y, "Emit/Dlv/Cred/Drop", _speechFlow);
+        DrawKV(ref y, "Muted vs open fit", _speechMute);
+
         DrawSection(ref y, "TOP ENTITIES");
         DrawTopEntities(ref y);
 
@@ -235,7 +294,7 @@ public class SimulationDebugDashboard : MonoBehaviour
     private void DrawKV(ref float y, string key, string value)
     {
         GUI.Label(new Rect(8, y, 160, 14), key,   _labelStyle);
-        GUI.Label(new Rect(170, y, 120, 14), value, _valueStyle);
+        GUI.Label(new Rect(170, y, _windowRect.width - 178, 14), value, _valueStyle);
         y += 15f;
     }
 

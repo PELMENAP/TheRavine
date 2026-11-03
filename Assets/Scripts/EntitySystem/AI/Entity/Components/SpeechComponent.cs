@@ -1,100 +1,70 @@
-using Cysharp.Threading.Tasks;
-using System.Threading;
+using System;
 using Unity.Mathematics;
-
-public static class SpeechSignal
-{
-    public const byte Alarm    = 0;
-    public const byte Food     = 1;
-    public const byte FollowMe = 2;
-    public const byte Sick     = 3;
-    public const int  Count    = 4;
-    public const byte None     = byte.MaxValue;
-}
-
-public readonly struct SpeechHash
-{
-    public readonly float A, B, C, D;
-
-    private SpeechHash(float a, float b, float c, float d)
-    {
-        A = a; B = b; C = c; D = d;
-    }
-
-    public float4 ToFloat4() => new float4(A, B, C, D) * 2f - 1f;
-
-    public static SpeechHash Compute(string speech)
-    {
-        if (string.IsNullOrEmpty(speech)) return default;
-
-        ulong h1 = 5381UL, h2 = 2166136261UL;
-        for (int i = 0; i < speech.Length; i++)
-        {
-            char c = speech[i];
-            h1 = ((h1 << 5) + h1) ^ c;
-            h2 = (h2 ^ c) * 16777619UL;
-        }
-
-        return new SpeechHash(
-            (h1 & 0xFFFF) / 65535f,
-            ((h1 >> 16) & 0xFFFF) / 65535f,
-            (h2 & 0xFFFF) / 65535f,
-            ((h2 >> 16) & 0xFFFF) / 65535f);
-    }
-}
 
 public class SpeechComponent : IComponent
 {
-    public float4 Own   { get; private set; }
-    public float4 Heard { get; private set; }
-    public bool   HasHeard { get; private set; }
+    public Utterance Own { get; private set; }
+    public bool Muted { get; private set; }
 
-    private IEntityAudio _audio;
+    public readonly float[] Bag = new float[SimulationRules.SpeechVocab];
+    public Utterance Loudest { get; private set; }
+    public bool   HasLoudest { get; private set; }
+    public float2 Dir  { get; private set; }
+    public float  Dist { get; private set; }
+    public float  Kin  { get; private set; }
+    public float  Age  { get; private set; }
 
-    public void Inject(IEntityAudio audio) => _audio = audio;
+    public void SetOwn(in Utterance utterance) => Own = utterance;
 
-    public void SetOwn(float4 speech) => Own = speech;
+    public void SetMuted(bool muted) => Muted = muted;
 
-    public void ReceiveVector(float4 speech)
+    public void Listen(SpeechBus bus, int index, in float2 self, float now)
     {
-        Heard    = speech;
-        HasHeard = true;
+        Array.Clear(Bag, 0, Bag.Length);
+        HasLoudest = false;
+        Dir  = float2.zero;
+        Dist = 0f;
+        Kin  = 0f;
+        Age  = 0f;
+        if (bus == null || index < 0) return;
+
+        ref readonly var r = ref SimulationRules.Frame;
+        float invFresh = 1f / r.SpeechFreshSeconds;
+        float best = 0f;
+        var loudest = default(Utterance);
+
+        for (int s = 0; s < SimulationRules.SpeechInbox; s++)
+        {
+            var u = bus.InboxAt(index, s);
+            if (u.Len == 0) continue;
+
+            float fresh = 1f - math.max(now - u.Time, 0f) * invFresh;
+            if (fresh <= 0f) continue;
+
+            float w   = u.Loudness * (1f / 255f) * fresh;
+            int   len = math.min((int)u.Len, SimulationRules.SpeechLen);
+            for (int t = 0; t < len; t++)
+            {
+                int token = u.Token(t);
+                Bag[token] = math.min(1f, Bag[token] + w);
+            }
+
+            if (w <= best) continue;
+            best    = w;
+            loudest = u;
+            HasLoudest = true;
+        }
+
+        if (!HasLoudest) return;
+        Loudest = loudest;
+
+        float2 d    = loudest.Pos - self;
+        float  dist = math.length(d);
+        Dir  = dist > 1e-4f ? d / dist : float2.zero;
+        Dist = 1f - math.saturate(dist / math.max(r.SpeechRadius, 1e-3f));
+        Kin  = loudest.IsKin ? 1f : 0f;
+        Age  = math.saturate(math.max(now - loudest.Time, 0f) * invFresh);
     }
-
-    public void ReceiveSpeech(string message)
-    {
-        if (string.IsNullOrEmpty(message)) return;
-        ReceiveVector(SpeechHash.Compute(message).ToFloat4());
-    }
-
-    public void ConsumeOtherSpeech()
-    {
-        if (!HasHeard) return;
-        Heard    = float4.zero;
-        HasHeard = false;
-    }
-
-    private static readonly string[] EncodeCache = new string[SimulationRules.SpeechEncodeCacheSize];
-    private static readonly uint[]   EncodeKeys  = new uint[SimulationRules.SpeechEncodeCacheSize];
-
-    public static string Encode(float4 speech)
-    {
-        uint4 q = (uint4)math.round(math.saturate(speech * 0.5f + 0.5f) * 255f);
-        uint packed = q.x | (q.y << 8) | (q.z << 16) | (q.w << 24);
-
-        int slot = (int)((packed * 2654435769u) >> 16) & (SimulationRules.SpeechEncodeCacheSize - 1);
-        var cached = EncodeCache[slot];
-        if (cached != null && EncodeKeys[slot] == packed) return cached;
-
-        cached = packed.ToString("X8");
-        EncodeCache[slot] = cached;
-        EncodeKeys[slot]  = packed;
-        return cached;
-    }
-
-    public UniTask PlayAsync(string speech, float health, float energy, float danger,
-        float timeToBreed, int lastAction, float nearestEnemyDist, CancellationToken ct)
-        => _audio.PlaySpeechAsync(speech, health, energy, danger, timeToBreed, lastAction, nearestEnemyDist, ct);
 
     public void Dispose() { }
 }
