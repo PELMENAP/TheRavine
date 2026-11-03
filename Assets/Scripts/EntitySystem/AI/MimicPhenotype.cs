@@ -1,4 +1,4 @@
-using UnityEngine;
+using Unity.Mathematics;
 
 public struct MimicPhenotype
 {
@@ -28,28 +28,28 @@ public struct MimicPhenotype
 
         return new MimicPhenotype
         {
-            NumberOfLegs          = rng.Range(3, 6) + Mathf.RoundToInt(exploration * 3f),
-            PartsPerLeg           = rng.Range(2, 4) + Mathf.RoundToInt(gradientNorm * 2f),
-            MinimumAnchoredLegs   = Mathf.Max(1, rng.Range(1, 3)),
-            LegResolution         = 20 + rng.Range(0, 20) + Mathf.RoundToInt(capacity * 20f),
+            NumberOfLegs          = rng.Range(3, 6) + (int)math.round(exploration * 3f),
+            PartsPerLeg           = rng.Range(2, 4) + (int)math.round(gradientNorm * 2f),
+            MinimumAnchoredLegs   = math.max(1, rng.Range(1, 3)),
+            LegResolution         = 20 + rng.Range(0, 20) + (int)math.round(capacity * 20f),
             VerticeCount          = rng.Range(4, 9),
 
-            MinLegLifetime        = Mathf.Lerp(3f, 8f, 1f - speed),
-            MaxLegLifetime        = Mathf.Lerp(8f, 20f, 1f - speed),
-            NewLegRadius          = Mathf.Lerp(2f, 5f, gradientNorm),
-            MinLegDistance        = Mathf.Lerp(3f, 6f, 1f - exploration),
-            MinGrowCoef           = Mathf.Lerp(3f, 6f, learningRate),
-            MaxGrowCoef           = Mathf.Lerp(6f, 10f, learningRate),
-            NewLegCooldown        = Mathf.Lerp(0.1f, 0.6f, 1f - temperature),
-            LegMinHeight          = Mathf.Lerp(0.5f, 1.5f, detection),
-            LegMaxHeight          = Mathf.Lerp(1.5f, 4f, detection),
-            HandleOffsetMinRadius = Mathf.Lerp(0.2f, 0.8f, noise),
-            HandleOffsetMaxRadius = Mathf.Lerp(0.8f, 2.2f, noise),
-            MinRotSpeed           = Mathf.Lerp(5f, 20f, temperature),
-            MaxRotSpeed           = Mathf.Lerp(20f, 45f, temperature),
-            MinOscillationSpeed   = Mathf.Lerp(0.5f, 2f, entropyAlpha),
-            MaxOscillationSpeed   = Mathf.Lerp(2f, 5f, entropyAlpha),
-            LegWidth              = Mathf.Lerp(0.1f, 0.4f, mutability),
+            MinLegLifetime        = math.lerp(3f, 8f, 1f - speed),
+            MaxLegLifetime        = math.lerp(8f, 20f, 1f - speed),
+            NewLegRadius          = math.lerp(2f, 5f, gradientNorm),
+            MinLegDistance        = math.lerp(3f, 6f, 1f - exploration),
+            MinGrowCoef           = math.lerp(3f, 6f, learningRate),
+            MaxGrowCoef           = math.lerp(6f, 10f, learningRate),
+            NewLegCooldown        = math.lerp(0.1f, 0.6f, 1f - temperature),
+            LegMinHeight          = math.lerp(0.5f, 1.5f, detection),
+            LegMaxHeight          = math.lerp(1.5f, 4f, detection),
+            HandleOffsetMinRadius = math.lerp(0.2f, 0.8f, noise),
+            HandleOffsetMaxRadius = math.lerp(0.8f, 2.2f, noise),
+            MinRotSpeed           = math.lerp(5f, 20f, temperature),
+            MaxRotSpeed           = math.lerp(20f, 45f, temperature),
+            MinOscillationSpeed   = math.lerp(0.5f, 2f, entropyAlpha),
+            MaxOscillationSpeed   = math.lerp(2f, 5f, entropyAlpha),
+            LegWidth              = math.lerp(0.1f, 0.4f, mutability),
         };
     }
 
@@ -79,5 +79,5 @@ public struct MimicPhenotype
     }
 
     private static float Normalize(float value, (float min, float max, float mutationScale) range)
-        => Mathf.Clamp01((value - range.min) / (range.max - range.min));
+        => math.saturate((value - range.min) / (range.max - range.min));
 }

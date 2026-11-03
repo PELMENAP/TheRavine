@@ -113,8 +113,7 @@ public partial class EntityModel
         float detect = Tuning.DetectionRadius * math.max(rules.BlindMinDetectionFraction, 1f - mods.Blind * rules.BlindStrength);
 
         PerceptionMarker.Begin();
-        _nearest = Perception.FindNearestEntity(pos, this, detect, out _nearestDistance);
-        _crowd   = CountAndRelease(Perception.FindEntitiesInRadius(pos, this, rules.CrowdRadius, Neighbors), Colony, out _kinCrowd);
+        _nearest = Perception.Survey(pos, this, Colony, detect, rules.CrowdRadius, Neighbors.Length, out _nearestDistance, out _crowd, out _kinCrowd);
 
         _foodValid    = false;
         _foodDistance = -1f;
