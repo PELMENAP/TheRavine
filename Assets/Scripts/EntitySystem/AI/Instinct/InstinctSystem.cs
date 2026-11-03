@@ -68,6 +68,9 @@ public struct InstinctGenes
     public float Tether;
     public float Nursery;
     public float Home;
+    public float PanicHome;
+    public float CarryFull;
+    public float Reinterrupt;
 
     public static InstinctGenes From(in GeneticParameters g) => new()
     {
@@ -79,6 +82,9 @@ public struct InstinctGenes
         Tether      = g.TetherDrive,
         Nursery     = g.NurseryDrive,
         Home        = g.HomeDrive,
+        PanicHome   = g.PanicHome,
+        CarryFull   = g.CarryFullMul,
+        Reinterrupt = g.ReinterruptMul,
     };
 }
 
@@ -191,13 +197,13 @@ public struct InstinctJob : IJobFor
 
         if (panic && hasThreat)
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.Flee, 7, InstinctBits.Panic);
-        else if (x.Carrying >= R.CarryFull && !atNest)
+        else if (x.Carrying >= math.min(R.CarryFull * g.CarryFull, 1f) && !atNest)
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ReturnNest, 6, InstinctBits.Carry);
         else if (x.Carrying > 0f && atNest)
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.StoreFood, 6, InstinctBits.Carry);
         else if (sick && atNest)
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.Wander, 5, InstinctBits.Sick);
-        else if (panic && !wasPanic && !atNest && !sick)
+        else if (panic && !wasPanic && !atNest && !sick && x.NestDistance >= 0f && rng.NextFloat() < g.PanicHome)
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ReturnNest, 5, InstinctBits.Panic);
         else if (x.Night != 0 && !atNest && !sick && !forage && x.NestDistance >= 0f
                  && Urge(ref rng, R.NightHomeRate * g.Home, x.Dt))
@@ -234,7 +240,8 @@ public struct InstinctJob : IJobFor
 
         byte  interrupt  = 0;
         bool  front      = hungry && !wasHungry;
-        float nextHunger = !hungry ? 0f : front ? x.Now + R.HungerReinterrupt : state.NextHungerInterrupt;
+        float reinterrupt = R.HungerReinterrupt * g.Reinterrupt;
+        float nextHunger = !hungry ? 0f : front ? x.Now + reinterrupt : state.NextHungerInterrupt;
         if (reflex == InstinctBits.NoReflex && x.PlanActive != 0)
         {
             bool again = hungry && !front && x.Now >= nextHunger
@@ -243,7 +250,7 @@ public struct InstinctJob : IJobFor
             {
                 interrupt  = 1;
                 mask      |= InstinctBits.Hungry;
-                nextHunger = x.Now + R.HungerReinterrupt;
+                nextHunger = x.Now + reinterrupt;
             }
             if (panic && !wasPanic && x.PlanKind != (byte)PlanKind.Rest && x.PlanKind != (byte)PlanKind.Flee)
             {

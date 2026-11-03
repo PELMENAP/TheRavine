@@ -27,6 +27,8 @@ public sealed class PlanRunner
     {
         _p = new PlanProgress { Kind = decision.Plan, Variant = decision.Action };
         PlanCatalog.Init(ref _p);
+        _p.MaxFailures = _model.PlanMaxFailures;
+        _p.MaxStrikes  = _model.HuntMaxStrikes;
         _decision = decision;
         _start    = SimulationClock.TimeD;
         _return   = 0f;

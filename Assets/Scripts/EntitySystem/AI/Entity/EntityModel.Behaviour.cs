@@ -91,7 +91,7 @@ public partial class EntityModel
 
         if (!CasteFixed || IsJuvenile || IsWild || _thresholds == null) return;
         if (r.PlanCasteDomain[(int)plan] != (int)Caste) return;
-        _thresholds.Reinforce(ManagerIndex, Caste, achieved);
+        _thresholds.Reinforce(ManagerIndex, Caste, achieved, Brain.Context.CoordMLP.Params.CasteLearnMul);
     }
 
     public void TakeDamage(float amount, EntityModel source, DeathCause cause = DeathCause.Killed)
