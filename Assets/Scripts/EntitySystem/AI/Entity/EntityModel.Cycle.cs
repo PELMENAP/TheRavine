@@ -135,8 +135,9 @@ public partial class EntityModel
         IsAtNest = nest != null && nest.Contains(self, IsAtNest ? nest.Radius * math.max(rules.NestExitRadiusMul, 1f) : nest.Radius);
         if (nest != null && _foodValid) nest.Mark(ColonyChannel.Food, foodPos, rules.NestFoodMark * dt);
         if (nest != null && !IsWild)
-            nest.Mark(ColonyChannel.Explored, self, rules.ExploredMark * dt * (Caste == Caste.Scout ? rules.ScoutExploredMul : 1f));
-        if (nest != null && !IsWild) nest.Mark(ColonyChannel.Territory, self, rules.TerritoryMark * dt);
+            nest.MarkPair(self,
+                ColonyChannel.Explored, rules.ExploredMark * dt * (Caste == Caste.Scout ? rules.ScoutExploredMul : 1f),
+                ColonyChannel.Territory, rules.TerritoryMark * dt);
         SampleTrail(in self, nowD, in rules);
         _nearestForeign = FindNearestForeign(pos, detect, out _nearestForeignDistance);
         StatsComponent    playerStats    = null;
