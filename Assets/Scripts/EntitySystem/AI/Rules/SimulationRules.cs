@@ -1,7 +1,6 @@
 using UnityEngine;
 using Unity.Collections;
 using Unity.Mathematics;
-using TheRavine.EntityControl.Virology;
 
 [CreateAssetMenu(fileName = "SimulationRules", menuName = "Simulation/Rules")]
 public sealed partial class SimulationRules : ScriptableObject
@@ -46,6 +45,14 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float TerrainCostWeight;
         public readonly float TerrainSlopeWeight;
         public readonly float TerrainWaterWeight;
+        public readonly float WaterLevel;
+        public readonly int   MaxRing;
+        public readonly float SlopeMaxDeg;
+        public readonly float RelSpan;
+        public readonly int   DensityRadiusNear;
+        public readonly int   DensityRadiusMid;
+        public readonly int   DensityRadiusFar;
+        public readonly int   RelativeHeightRadius;
         public readonly float MaxCycleDt;
         public readonly float ModifierDecayTau;
         public readonly float EatRange;
@@ -139,6 +146,11 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float FoodGrowthRate;
         public readonly float FoodSeedFraction;
         public readonly float FoodChunkCapacity;
+        public readonly float PastureDepletionPerEat;
+        public readonly float PastureRecoveryPerSecond;
+        public readonly float SoilReturnFraction;
+        public readonly float SoilPerDepletion;
+        public readonly float WarmthDecayPerSecond;
         public readonly float SeasonAmplitude;
         public readonly float SeasonPeriod;
         public readonly float EcologyTickInterval;
@@ -146,6 +158,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float LargeFoodChance;
         public readonly float LargeFoodEnergy;
         public readonly float LargeFoodWindow;
+        public readonly float LargeFoodShare;
         public readonly float ToxicNutritionMul;
         public readonly float ToxicDamage;
         public readonly float EatSecondsPerEnergy;
@@ -153,6 +166,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly int CorpseSearchCells;
         public readonly float CorpseSpoilTau;
         public readonly float CorpseBiteEnergy;
+        public readonly float CorpseFallbackEnergy;
         public readonly float NestEatPortion;
         public readonly float NestStorageNorm;
         public readonly float CarrySpeedMul;
@@ -170,6 +184,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly int PlannerMaxReplans;
         public readonly float PlannerReplanAngle;
         public readonly float NestRadius;
+        public readonly float NestExitRadiusMul;
         public readonly int NestMapSize;
         public readonly float NestMapCellSize;
         public readonly float NestMapMaxValue;
@@ -179,6 +194,9 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float AlarmTau;
         public readonly int AlarmHuntMinMembers;
         public readonly float AlarmFromDamage;
+        public readonly float BirdAlarmRadius;
+        public readonly float BirdAlarmMagnitude;
+        public readonly int BirdAlarmMaxPerFrame;
         public readonly float AlarmHuntBias;
         public readonly float AlarmSurviveBias;
         public readonly float AlarmFleeBias;
@@ -220,6 +238,11 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float KinDeathRadius;
         public readonly float KinDeathStress;
         public readonly float StressTau;
+        public readonly float StressNestRecoveryMul;
+        public readonly float StressPerceptionNoise;
+        public readonly float ForeignHarmStress;
+        public readonly float BasalEmitFraction;
+        public readonly float WarmthDrawFraction;
         public readonly float KinColonyWeight;
         public readonly float KinLineageWeight;
         public readonly float WitnessPenalty;
@@ -327,6 +350,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float CasteScoutNoFoodStimulus;
         public readonly float CasteNurseGain;
         public readonly float BiteSeekOwnThreshold;
+        public readonly bool FrenzyTargetsOwnColony;
         public readonly float NestFoodMinPortionFraction;
         public readonly float NestJuvenileReserve;
         public readonly float HungerReinterruptSeconds;
@@ -416,6 +440,25 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float PreWinterWorkerStimulus;
         public readonly float WinterGrowthMul;
         public readonly float WinterDrainMul;
+        public readonly float FireIgnitionChance;
+        public readonly float FireSeasonBias;
+        public readonly float FireSpreadChance;
+        public readonly float FireWindBias;
+        public readonly float FireBurnSeconds;
+        public readonly float FireDamagePerSecond;
+        public readonly float FireStepInterval;
+        public readonly int FireMaxBurning;
+        public readonly float[] FoodFlammabilityTable;
+        public readonly FoodTraits FoodTraitsPlant;
+        public readonly FoodTraits FoodTraitsToxic;
+        public readonly FoodTraits FoodTraitsLarge;
+        public readonly FoodTraits FoodTraitsMeat;
+        public readonly float WaterSpeedMul;
+        public readonly float WaterDrainMul;
+        public readonly float HibernateEnterEnergy;
+        public readonly float HibernateDrainMul;
+        public readonly float HibernateWakeHpFraction;
+        public readonly float HibernateWakeCooldown;
         public readonly float HormoneTau;
         public readonly float TempDopamine;
         public readonly float TempCortisol;
@@ -497,6 +540,19 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float[] UtilityWeights;
         public readonly int[]   PlanCasteDomain;
         public readonly float4[] SpeechSignals;
+        public readonly float[] BiomeFertilityTable;
+        public readonly float[] BiomeToxicityTable;
+
+        public float BiomeFertility(int biome) => BiomeValue(BiomeFertilityTable, biome, 1f);
+        public float BiomeToxicity(int biome)  => BiomeValue(BiomeToxicityTable, biome, 0f);
+        public float FoodFlammability(FoodKind kind) => FoodFlammabilityTable != null && (uint)kind < (uint)FoodFlammabilityTable.Length ? FoodFlammabilityTable[(int)kind] : 0f;
+        public FoodTraits TraitsOf(FoodKind kind) => kind switch
+        {
+            FoodKind.Toxic => FoodTraitsToxic,
+            FoodKind.Large => FoodTraitsLarge,
+            FoodKind.Meat  => FoodTraitsMeat,
+            _              => FoodTraitsPlant,
+        };
 
         public RulesFrame(SimulationRules r)
         {
@@ -536,6 +592,14 @@ public sealed partial class SimulationRules : ScriptableObject
             TerrainCostWeight = r.terrainCostWeight;
             TerrainSlopeWeight = r.terrainSlopeWeight;
             TerrainWaterWeight = r.terrainWaterWeight;
+            WaterLevel = r.waterLevel;
+            MaxRing = r.maxRing;
+            SlopeMaxDeg = r.slopeMaxDeg;
+            RelSpan = r.relSpan;
+            DensityRadiusNear = r.densityRadiusNear;
+            DensityRadiusMid = r.densityRadiusMid;
+            DensityRadiusFar = r.densityRadiusFar;
+            RelativeHeightRadius = r.relativeHeightRadius;
             MaxCycleDt = r.maxCycleDt;
             ModifierDecayTau = r.modifierDecayTau;
             EatRange = r.eatRange;
@@ -629,6 +693,11 @@ public sealed partial class SimulationRules : ScriptableObject
             FoodGrowthRate = r.foodGrowthRate;
             FoodSeedFraction = r.foodSeedFraction;
             FoodChunkCapacity = r.foodChunkCapacity;
+            PastureDepletionPerEat = r.pastureDepletionPerEat;
+            PastureRecoveryPerSecond = r.pastureRecoveryPerSecond;
+            SoilReturnFraction = r.soilReturnFraction;
+            SoilPerDepletion = r.soilPerDepletion;
+            WarmthDecayPerSecond = r.warmthDecayPerSecond;
             SeasonAmplitude = r.seasonAmplitude;
             SeasonPeriod = r.seasonPeriod;
             EcologyTickInterval = r.ecologyTickInterval;
@@ -636,6 +705,7 @@ public sealed partial class SimulationRules : ScriptableObject
             LargeFoodChance = r.largeFoodChance;
             LargeFoodEnergy = r.largeFoodEnergy;
             LargeFoodWindow = r.largeFoodWindow;
+            LargeFoodShare = r.largeFoodShare;
             ToxicNutritionMul = r.toxicNutritionMul;
             ToxicDamage = r.toxicDamage;
             EatSecondsPerEnergy = r.eatSecondsPerEnergy;
@@ -643,6 +713,7 @@ public sealed partial class SimulationRules : ScriptableObject
             CorpseSearchCells = r.corpseSearchCells;
             CorpseSpoilTau = r.corpseSpoilTau;
             CorpseBiteEnergy = r.corpseBiteEnergy;
+            CorpseFallbackEnergy = r.corpseFallbackEnergy;
             NestEatPortion = r.nestEatPortion;
             NestStorageNorm = r.nestStorageNorm;
             CarrySpeedMul = r.carrySpeedMul;
@@ -660,6 +731,7 @@ public sealed partial class SimulationRules : ScriptableObject
             PlannerMaxReplans = r.plannerMaxReplans;
             PlannerReplanAngle = r.plannerReplanAngle;
             NestRadius = r.nestRadius;
+            NestExitRadiusMul = r.nestExitRadiusMul;
             NestMapSize = r.nestMapSize;
             NestMapCellSize = r.nestMapCellSize;
             NestMapMaxValue = r.nestMapMaxValue;
@@ -669,6 +741,9 @@ public sealed partial class SimulationRules : ScriptableObject
             AlarmTau = r.alarmTau;
             AlarmHuntMinMembers = r.alarmHuntMinMembers;
             AlarmFromDamage = r.alarmFromDamage;
+            BirdAlarmRadius = r.birdAlarmRadius;
+            BirdAlarmMagnitude = r.birdAlarmMagnitude;
+            BirdAlarmMaxPerFrame = r.birdAlarmMaxPerFrame;
             AlarmHuntBias = r.alarmHuntBias;
             AlarmSurviveBias = r.alarmSurviveBias;
             AlarmFleeBias = r.alarmFleeBias;
@@ -689,7 +764,7 @@ public sealed partial class SimulationRules : ScriptableObject
             FrenzyFleeSuppress = r.frenzyFleeSuppress;
             LethargySlow = r.lethargySlow;
             EpsilonScheduleMode   = (int)r.epsilonScheduleMode;
-            ActionTraceInvLogNorm = 1f / Mathf.Log(1f + Mathf.Max(r.actionTraceHorizon, 1e-3f));
+            ActionTraceInvLogNorm = 1f / math.log(1f + math.max(r.actionTraceHorizon, 1e-3f));
             ReservoirHz           = r.reservoirHz;
             ExploreTemperature = r.exploreTemperature;
             PoiEnergyEmaAlpha = r.poiEnergyEmaAlpha;
@@ -710,6 +785,11 @@ public sealed partial class SimulationRules : ScriptableObject
             KinDeathRadius = r.kinDeathRadius;
             KinDeathStress = r.kinDeathStress;
             StressTau = r.stressTau;
+            StressNestRecoveryMul = r.stressNestRecoveryMul;
+            StressPerceptionNoise = r.stressPerceptionNoise;
+            ForeignHarmStress = r.foreignHarmStress;
+            BasalEmitFraction = r.basalEmitFraction;
+            WarmthDrawFraction = r.warmthDrawFraction;
             KinColonyWeight = r.kinColonyWeight;
             KinLineageWeight = r.kinLineageWeight;
             WitnessPenalty = r.witnessPenalty;
@@ -817,6 +897,7 @@ public sealed partial class SimulationRules : ScriptableObject
             CasteScoutNoFoodStimulus = r.casteScoutNoFoodStimulus;
             CasteNurseGain = r.casteNurseGain;
             BiteSeekOwnThreshold = r.biteSeekOwnThreshold;
+            FrenzyTargetsOwnColony = r.frenzyTargetsOwnColony;
             NestFoodMinPortionFraction = r.nestFoodMinPortionFraction;
             NestJuvenileReserve = r.nestJuvenileReserve;
             HungerReinterruptSeconds = r.hungerReinterruptSeconds;
@@ -906,6 +987,25 @@ public sealed partial class SimulationRules : ScriptableObject
             PreWinterWorkerStimulus = r.preWinterWorkerStimulus;
             WinterGrowthMul = r.winterGrowthMul;
             WinterDrainMul = r.winterDrainMul;
+            FireIgnitionChance = r.fireIgnitionChance;
+            FireSeasonBias = r.fireSeasonBias;
+            FireSpreadChance = r.fireSpreadChance;
+            FireWindBias = r.fireWindBias;
+            FireBurnSeconds = r.fireBurnSeconds;
+            FireDamagePerSecond = r.fireDamagePerSecond;
+            FireStepInterval = r.fireStepInterval;
+            FireMaxBurning = r.fireMaxBurning;
+            FoodFlammabilityTable = r.foodFlammability;
+            FoodTraitsPlant = r.FoodTraitsFor(FoodKind.Plant);
+            FoodTraitsToxic = r.FoodTraitsFor(FoodKind.Toxic);
+            FoodTraitsLarge = r.FoodTraitsFor(FoodKind.Large);
+            FoodTraitsMeat  = r.FoodTraitsFor(FoodKind.Meat);
+            WaterSpeedMul = r.waterSpeedMul;
+            WaterDrainMul = r.waterDrainMul;
+            HibernateEnterEnergy = r.hibernateEnterEnergy;
+            HibernateDrainMul = r.hibernateDrainMul;
+            HibernateWakeHpFraction = r.hibernateWakeHpFraction;
+            HibernateWakeCooldown = r.hibernateWakeCooldown;
             HormoneTau = r.hormoneTau;
             TempDopamine = r.tempDopamine;
             TempCortisol = r.tempCortisol;
@@ -987,6 +1087,8 @@ public sealed partial class SimulationRules : ScriptableObject
             UtilityWeights       = r.FillUtilityWeights();
             PlanCasteDomain      = r.FillPlanCasteDomain();
             SpeechSignals        = r.FillSpeechSignals();
+            BiomeFertilityTable  = r.biomeFertility;
+            BiomeToxicityTable   = r.biomeToxicity;
         }
     }
 
@@ -997,7 +1099,12 @@ public sealed partial class SimulationRules : ScriptableObject
 
     public static void Bind(SimulationRules rules)
     {
-        if (rules != null) _active = rules;
+        _active = rules;
+        if (rules == null)
+        {
+            _frame = default;
+            return;
+        }
         CaptureFrame();
     }
 
@@ -1078,6 +1185,16 @@ public sealed partial class SimulationRules : ScriptableObject
     public float BiomeFertility(int biome) => BiomeValue(biomeFertility, biome, 1f);
     public float BiomeToxicity(int biome)  => BiomeValue(biomeToxicity, biome, 0f);
 
+    private FoodTraits FoodTraitsFor(FoodKind kind) => new FoodTraits
+    {
+        Toxicity = KindValue(foodToxicity, kind),
+        Size     = KindValue(foodSize, kind),
+        Meat     = KindValue(foodMeat, kind),
+    };
+
+    private static float KindValue(float[] table, FoodKind kind)
+        => table != null && (uint)kind < (uint)table.Length ? table[(int)kind] : 0f;
+
     private static float BiomeValue(float[] table, int biome, float fallback)
     {
         if (table == null || table.Length == 0) return fallback;
@@ -1096,6 +1213,25 @@ public sealed partial class SimulationRules : ScriptableObject
         if (!(agentTickInterval >= MinAgentTickInterval)) agentTickInterval = MinAgentTickInterval;
         if (!(optimizerBaseLearningRate >= LearningRateFloor)) optimizerBaseLearningRate = LearningRateFloor;
         if (!(optimizerWeightDecay >= 0f)) optimizerWeightDecay = 0f;
+        if (maxRing < 1) maxRing = 1;
+        if (!(slopeMaxDeg > 0f)) slopeMaxDeg = 1f;
+        if (!(relSpan > 0f)) relSpan = 1f;
+        if (densityRadiusNear < 1) densityRadiusNear = 1;
+        if (densityRadiusMid < 1) densityRadiusMid = 1;
+        if (densityRadiusFar < 1) densityRadiusFar = 1;
+        if (relativeHeightRadius < 1) relativeHeightRadius = 1;
+        if (!(stressNestRecoveryMul >= 1f)) stressNestRecoveryMul = 1f;
+        if (!(stressPerceptionNoise >= 0f)) stressPerceptionNoise = 0f;
+        if (!(foreignHarmStress >= 0f)) foreignHarmStress = 0f;
+        if (!(nestExitRadiusMul >= 1f)) nestExitRadiusMul = 1f;
+        soilReturnFraction = soilReturnFraction >= 0f ? math.min(soilReturnFraction, 1f) : 0f;
+        if (!(soilPerDepletion >= 0f)) soilPerDepletion = 0f;
+        basalEmitFraction  = basalEmitFraction >= 0f ? math.min(basalEmitFraction, 1f) : 0f;
+        warmthDrawFraction = warmthDrawFraction >= 0f ? math.min(warmthDrawFraction, 1f) : 0f;
+        if (!(warmthCellSize > 0f)) warmthCellSize = 1f;
+        if (warmthBuckets < 1) warmthBuckets = 1;
+        if (!(warmthDecayPerSecond >= 0f)) warmthDecayPerSecond = 0f;
+        if (!(simulationLogIntervalSeconds >= 1f)) simulationLogIntervalSeconds = 1f;
     }
 
     private static SimulationRules _active;
@@ -1104,8 +1240,12 @@ public sealed partial class SimulationRules : ScriptableObject
     {
         get
         {
-            if (_active == null) _active = CreateInstance<SimulationRules>();
+            if (_active == null) ThrowNotBound();
             return _active;
         }
     }
+
+    private static void ThrowNotBound() =>
+        throw new System.InvalidOperationException(
+            "SimulationRules asset is not bound: assign a SimulationRules asset to EntityManager.rules (Assets/Scripts/EntitySystem/AI/SimulationRules.asset)");
 }

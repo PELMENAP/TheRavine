@@ -193,6 +193,8 @@ public sealed unsafe class NestState : IDisposable
 
     public bool Contains(float2 p) => math.distancesq(p, Position) <= Radius * Radius;
 
+    public bool Contains(float2 p, float radius) => math.distancesq(p, Position) <= radius * radius;
+
     public void Mark(ColonyChannel channel, float2 p, float amount)
     {
         if (!_view.TryIndex(p, out int i)) return;

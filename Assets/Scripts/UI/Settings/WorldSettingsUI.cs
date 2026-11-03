@@ -85,7 +85,7 @@ namespace TheRavine.Base
             {
                 if (float.TryParse(value, out float scale))
                 {
-                    _controller.Update(c => c.timeScale = Mathf.Clamp(scale, 0.1f, 5.0f));
+                    _controller.Update(c => c.timeScale = Mathf.Clamp(scale, WorldConfiguration.MinTimeScale, WorldConfiguration.MaxTimeScale));
                 }
             });
 
@@ -93,7 +93,7 @@ namespace TheRavine.Base
             {
                 if (int.TryParse(value, out int count))
                 {
-                    _controller.Update(c => c.maxEntityCount = Mathf.Max(100, count));
+                    _controller.Update(c => c.maxEntityCount = Mathf.Clamp(count, WorldConfiguration.MinEntityCount, WorldConfiguration.MaxEntityCount));
                 }
             });
         }

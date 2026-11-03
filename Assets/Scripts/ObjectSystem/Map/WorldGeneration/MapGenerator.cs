@@ -6,9 +6,9 @@ using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Rendering;
-using System.Threading;
 
 using TheRavine.Extensions;
+using TheRavine.Base;
 using TheRavine.ObjectControl;
 using TheRavine.EntityControl;
 using TheRavine.Events;
@@ -20,10 +20,10 @@ namespace TheRavine.Generator
     using TheRavine.Base;
     using Unity.Mathematics;
 
-    public class MapGenerator : MonoBehaviour, ISetAble
+    public class MapGenerator : MonoBehaviour, ISetAble, IWorldCommandTarget
     {
         [SerializeField] private ChunkGenerationSettings chunkGenerationSettings;
-        private readonly CancellationTokenSource _cts = new();
+        private ChunkGenerationSettings activeSettings;
 
         public const int mapChunkSize = 64, chunkScale = 1, scale = 2;
         public const int chunkSize = scale * mapChunkSize;
@@ -62,7 +62,7 @@ namespace TheRavine.Generator
         private AEntity boundPlayer;
         private EventBus playerEventBus;
 
-        public ChunkGenerationSettings Settings => chunkGenerationSettings;
+        public ChunkGenerationSettings Settings => activeSettings ?? chunkGenerationSettings;
         public long WindowCenter => windowCenter;
         public int Facing => facing;
         public int LodRingCount => lodRingCount;
@@ -104,6 +104,22 @@ namespace TheRavine.Generator
         public bool IsInActiveWindow(long worldPos) =>
             hasWindow && IsInWindow(windowCenter, WorldToChunk(worldPos), chunkScale);
 
+        public static int RingOf(long center, int facing, int ringCount, long chunk)
+        {
+            int dx = math.abs(Position2Int.GetX(chunk) - Position2Int.GetX(center));
+            int forward = (Position2Int.GetY(chunk) - Position2Int.GetY(center)) * facing;
+
+            if (dx <= chunkScale && math.abs(forward) <= chunkScale) return 0;
+            if (forward <= chunkScale) return -1;
+
+            int ring = (forward + chunkScale) / WindowSide;
+            if (ring > ringCount || dx > ring * WindowSide + chunkScale) return -1;
+            return ring;
+        }
+
+        public int RingOfChunk(long chunkKey) =>
+            hasWindow ? RingOf(windowCenter, facing, NalRingCount, chunkKey) : -1;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ChunkData GetMapData(long chunkKey) => EnsureChunk(chunkKey, 0);
 
@@ -121,7 +137,9 @@ namespace TheRavine.Generator
             {
                 data = chunkPool.Count > 0 ? chunkPool.Pop() : new ChunkData();
                 chunkGenerator.Generate(data, chunkKey, ring);
+                chunkStore?.TryRestore(chunkKey, data);
                 mapData[chunkKey] = data;
+                chunkSetVersion++;
             }
 
             data.LastAccessFrame = frame;
@@ -180,6 +198,63 @@ namespace TheRavine.Generator
         public bool TryGetChunk(long chunkKey, out ChunkData data) =>
             mapData.TryGetValue(chunkKey, out data);
 
+        private readonly ChunkData[] waterNeighborhood = new ChunkData[9];
+        private int chunkSetVersion;
+        private long[] chunkRequests = Array.Empty<long>();
+        private int chunkRequestCount;
+
+        public void EnsureWaterDistance(long chunkKey, ChunkData cd, float level, int ring)
+        {
+            bool stamped = cd.WaterRingStamp == ring && cd.WaterLevelStamp == level;
+            if (stamped && cd.WaterHoodVersion == chunkSetVersion) return;
+
+            int cx = Position2Int.GetX(chunkKey);
+            int cz = Position2Int.GetY(chunkKey);
+            int mask = 0;
+
+            for (int sz = -1; sz <= 1; sz++)
+            for (int sx = -1; sx <= 1; sx++)
+            {
+                ChunkData neighbor = null;
+                if (sx == 0 && sz == 0) neighbor = cd;
+                else mapData.TryGetValue(Position2Int.Pack(cx + sx, cz + sz), out neighbor);
+                int slot = (sz + 1) * 3 + sx + 1;
+                waterNeighborhood[slot] = neighbor;
+                if (neighbor != null) mask |= 1 << slot;
+            }
+
+            cd.WaterHoodVersion = chunkSetVersion;
+            if (stamped && cd.WaterHoodMask == mask) return;
+
+            cd.WaterHoodMask = mask;
+            chunkGenerator.BuildWaterDistance(cd, waterNeighborhood, level, ring);
+        }
+
+        public void RequestChunk(long chunkKey)
+        {
+            if (mapData.ContainsKey(chunkKey)) return;
+            for (int i = 0; i < chunkRequestCount; i++)
+                if (chunkRequests[i] == chunkKey) return;
+            if (chunkRequestCount == chunkRequests.Length) return;
+            chunkRequests[chunkRequestCount++] = chunkKey;
+        }
+
+        private void ProcessChunkRequests(long deadline)
+        {
+            int done = 0;
+            while (done < chunkRequestCount)
+            {
+                if (done > 0 && FrameBudget.Expired(deadline)) break;
+                long key = chunkRequests[done++];
+                if (!mapData.ContainsKey(key)) EnsureChunk(key, 0);
+            }
+
+            if (done == 0) return;
+            int left = chunkRequestCount - done;
+            if (left > 0) Array.Copy(chunkRequests, done, chunkRequests, 0, left);
+            chunkRequestCount = left;
+        }
+
         public void RemoveChunk(long chunkKey) => UnloadChunk(chunkKey);
 
         public void UnloadChunk(long chunkKey)
@@ -190,7 +265,9 @@ namespace TheRavine.Generator
 
         private void ReleaseChunk(long chunkKey, ChunkData cd)
         {
+            randomTicks?.OnChunkReleased(chunkKey);
             mapData.Remove(chunkKey);
+            chunkSetVersion++;
 
             if (ReferenceEquals(sampleChunk, cd))
             {
@@ -198,7 +275,7 @@ namespace TheRavine.Generator
                 sampleKey = long.MinValue;
             }
 
-            if (chunkPool.Count >= chunkGenerationSettings.chunkPoolCapacity)
+            if (chunkPool.Count >= Settings.chunkPoolCapacity)
             {
                 cd.Dispose();
                 return;
@@ -208,15 +285,26 @@ namespace TheRavine.Generator
             chunkPool.Push(cd);
         }
 
+        public float WaterLevel { get; private set; } = float.MinValue;
+
+        public void BindWaterLevel(float level) => WaterLevel = level;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float WaterModifier(float height, float waterLevel, float inWaterMul)
+            => height < waterLevel ? inWaterMul : 1f;
+
         public bool IsHeightIsLiveAble(long position) =>
-            GetRealPosition(position).y > 5;
+            GetRealPosition(position).y > WaterLevel;
 
         public bool IsWaterHeight(long position) =>
-            GetRealPosition(position).y < 5;
+            GetRealPosition(position).y < WaterLevel;
+
+        private ChunkData ChunkForCell(long chunkKey) =>
+            mapData.TryGetValue(chunkKey, out ChunkData data) ? data : GetMapData(chunkKey);
 
         public Vector3 GetRealPosition(long pos) => new(
             Position2Int.GetX(pos),
-            GetMapData(WorldToChunk(pos)).HeightRaw[WorldToLocalIdx(pos)],
+            ChunkForCell(WorldToChunk(pos)).HeightRaw[WorldToLocalIdx(pos)],
             Position2Int.GetY(pos));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -306,10 +394,47 @@ namespace TheRavine.Generator
             int prefabID,
             int amount,
             ReadOnlySpan<Vector2Int> additionalWorldCells = default,
+            int levels = 1) =>
+            TryAddObjectEx(worldPos, realPos, prefabID, amount, additionalWorldCells, levels) == PlacementResult.Ok;
+
+        bool IWorldCommandTarget.TryAddObject(
+            long worldPos,
+            Vector3 realPos,
+            int prefabID,
+            int amount,
+            ReadOnlySpan<Vector2Int> additionalWorldCells,
+            int levels)
+        {
+            ObjectInfo info = additionalWorldCells.IsEmpty && objectSystem != null ? objectSystem.GetInfo(prefabID) : null;
+            return info != null
+                ? TryAddFromInfo(worldPos, realPos, info, amount, levels) == PlacementResult.Ok
+                : TryAddObjectEx(worldPos, realPos, prefabID, amount, additionalWorldCells, levels) == PlacementResult.Ok;
+        }
+
+        public PlacementResult TryAddFromInfo(long worldPos, Vector3 realPos, ObjectInfo info, int amount, int levels)
+        {
+            Span<Vector2Int> cells = stackalloc Vector2Int[ObjectInstInfo.MaxSecondary];
+            int count = Footprint.Resolve(info, Position2Int.UnpackToVector(worldPos), cells);
+            if (count > cells.Length)
+            {
+                RavineLog.Warning($"[MapGenerator] Too many secondary cells: {count} > {ObjectInstInfo.MaxSecondary}");
+                return PlacementResult.TooManyCells;
+            }
+
+            return TryAddObjectEx(worldPos, realPos, info.Id, amount, cells[..count], levels);
+        }
+
+        public PlacementResult TryAddObjectEx(
+            long worldPos,
+            Vector3 realPos,
+            int prefabID,
+            int amount,
+            ReadOnlySpan<Vector2Int> additionalWorldCells = default,
             int levels = 1)
         {
             long chunk = WorldToChunk(worldPos);
-            ChunkData cd = GetMapData(chunk);
+            ChunkData cd = ChunkForCell(chunk);
+            if (cd == null) return PlacementResult.NoChunk;
 
             int primaryIdx = WorldToLocalIdx(worldPos);
 
@@ -317,10 +442,11 @@ namespace TheRavine.Generator
             if (secCount > ObjectInstInfo.MaxSecondary)
             {
                 RavineLog.Warning($"[MapGenerator] Too many secondary cells: {secCount} > {ObjectInstInfo.MaxSecondary}");
-                return false;
+                return PlacementResult.TooManyCells;
             }
 
             Span<int> additionalLocalIdxs = stackalloc int[ObjectInstInfo.MaxSecondary];
+            int unique = 0;
 
             for (int i = 0; i < secCount; i++)
             {
@@ -331,18 +457,31 @@ namespace TheRavine.Generator
                     RavineLog.Warning(
                         $"[MapGenerator] AdditionalCell {additionalWorldCells[i]} falls outside " +
                         $"primary chunk {chunk}. Cross-chunk multi-cell objects are not supported.");
-                    return false;
+                    return PlacementResult.CrossChunk;
                 }
 
-                additionalLocalIdxs[i] = WorldToLocalIdx(worldCell);
+                int local = WorldToLocalIdx(worldCell);
+                if (local == primaryIdx || additionalLocalIdxs[..unique].IndexOf(local) >= 0) continue;
+                additionalLocalIdxs[unique++] = local;
             }
 
             var info = new ObjectInstInfo(realPos, prefabID, amount);
-            if (!cd.TryAddObject(primaryIdx, in info, additionalLocalIdxs[..secCount], levels))
-                return false;
+            if (!cd.TryAddObject(primaryIdx, in info, additionalLocalIdxs[..unique], levels, out PlacementResult result))
+                return result;
 
             MarkChunkDirty(chunk);
-            return true;
+            TouchEdited(worldPos, additionalWorldCells);
+            return PlacementResult.Ok;
+        }
+
+        private void TouchEdited(long worldPos, ReadOnlySpan<Vector2Int> additionalWorldCells)
+        {
+            WorldCommandBuffer commands = Commands;
+            if (commands == null || !commands.HasAnyPendingRemove) return;
+
+            commands.Touch(worldPos);
+            for (int i = 0; i < additionalWorldCells.Length; i++)
+                commands.Touch(Position2Int.Pack(additionalWorldCells[i]));
         }
 
         public bool TryGetObject(long worldPos, out ObjectInstInfo info)
@@ -366,6 +505,7 @@ namespace TheRavine.Generator
                 return false;
 
             MarkChunkDirty(chunk);
+            TouchEdited(worldPos, default);
             return true;
         }
 
@@ -400,6 +540,7 @@ namespace TheRavine.Generator
                 return false;
 
             MarkChunkDirty(chunk);
+            TouchEdited(worldPos, default);
             return true;
         }
 
@@ -418,14 +559,31 @@ namespace TheRavine.Generator
         public MeshFilter terrainFilter;
         private int seed;
         public int Seed { get => seed; private set => seed = value; }
+        private const int DefaultSeed = 16;
 
         private ObjectSystem objectSystem;
-        private NAL_PC nal;
+        private NalTickHandler nal;
+        private RandomTickService randomTicks;
+        private bool ownsTickRules;
+        private ChunkStore chunkStore;
+        private IDisposable autosaveSubscription;
+        private WorldRegistry boundRegistry;
+        private string boundWorldId;
 
         [SerializeField] private Transform viewer;
         [SerializeField] private Vector3 viewerOffset;
         [SerializeField] private GrassSystem grassSystem;
         [SerializeField] private Texture2DArray biomeAlbedo;
+        [SerializeField] private WorldTickRules tickRules;
+        [SerializeField, Min(0.1f)] private float nalApplyBudgetMs = 1f;
+        [SerializeField, Min(1)] private int chunkRequestCapacity = 32;
+
+        public int NalRingCount => math.min(lodRingCount, ObjectInfo.MaxVisibleRings);
+        public RandomTickService RandomTicks => randomTicks;
+
+        public WorldCommandBuffer Commands { get; private set; }
+        public WorldCommandStats CommandStats { get; } = new();
+        public WorldCommandStats ImmediateStats { get; } = new();
 
         public ChunkGenerator chunkGenerator;
         public Vector3 waterOffset;
@@ -436,31 +594,52 @@ namespace TheRavine.Generator
         {
             ServiceLocator.Register(this);
 
-            seed = 16;
+            activeSettings = Settings.ShallowCopy();
+
+            ServiceLocator.Services.TryGet(out WorldRegistry worldRegistry);
+            bool worldLoaded = worldRegistry != null && worldRegistry.HasLoadedWorld;
+            if (worldLoaded)
+            {
+                var config = worldRegistry.GetCurrentConfig();
+                activeSettings.isRiver = config.generateRivers;
+            }
+            seed = worldLoaded ? worldRegistry.GetCurrentState().seed : DefaultSeed;
             mapData = new LongDictionary<ChunkData>(256);
-            budgetTicks = FrameBudget.TicksFromMs(chunkGenerationSettings.frameBudgetMs);
+            budgetTicks = FrameBudget.TicksFromMs(Settings.frameBudgetMs);
 
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
-            chunkGenerator = new ChunkGenerator(chunkGenerationSettings, seed);
+            chunkGenerator = new ChunkGenerator(Settings, seed);
+            if (worldLoaded) BindChunkStore(worldRegistry);
 
-            CurvedWorld.Configure(chunkGenerationSettings.curveRadius, chunkGenerationSettings.curveFlat, chunkGenerationSettings.curveFocusDistance);
+            CurvedWorld.Configure(Settings.curveRadius, Settings.curveFlat, Settings.curveFocusDistance);
             CurvedWorld.SetFacing(facing);
             RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
-            BiomeShaderGlobals.Apply(chunkGenerationSettings, biomeAlbedo);
+            BiomeShaderGlobals.Apply(Settings, biomeAlbedo);
 
             BindFirstPlayer();
 
-            if (ServiceLocator.Services.TryGet(out WorldRegistry worldRegistry))
+            if (chunkStore != null && ServiceLocator.Services.TryGet(out AutosaveCoordinator autosave))
+                autosaveSubscription = autosave.SubscribeBeforeSave(SaveModifiedChunks);
+
+            Commands = new WorldCommandBuffer(256);
+            chunkRequests = new long[chunkRequestCapacity];
+            chunkRequestCount = 0;
+
+            if (tickRules == null)
             {
-                var config = worldRegistry.GetCurrentConfig();
-                chunkGenerationSettings.isRiver = config.generateRivers;
+                tickRules = ScriptableObject.CreateInstance<WorldTickRules>();
+                ownsTickRules = true;
+                RavineLog.Warning("[MapGenerator] WorldTickRules is not assigned, using defaults");
             }
 
-            if (chunkGenerationSettings.endlessFlag[3])
+            if (objectSystem != null)
             {
-                nal = new NAL_PC(this, objectSystem, _cts.Token);
-                nal.RunNAL().Forget();
-                nal.RunUpdate().Forget();
+                randomTicks = new RandomTickService(this, objectSystem.infoRegistry, tickRules);
+                if (Settings.endlessFlag[3])
+                {
+                    nal = new NalTickHandler(this, objectSystem.infoRegistry, randomTicks);
+                    randomTicks.Register(nal);
+                }
             }
 
             SetupEndless();
@@ -470,29 +649,29 @@ namespace TheRavine.Generator
 
         private void SetupEndless()
         {
-            bool terrain = chunkGenerationSettings.endlessFlag[0];
-            int[] steps = chunkGenerationSettings.lodSteps;
-            lodRingCount = terrain ? math.min(math.min(chunkGenerationSettings.maxLodRing, steps?.Length ?? 0), HorizonRingCount()) : 0;
+            bool terrain = Settings.endlessFlag[0];
+            int[] steps = Settings.lodSteps;
+            lodRingCount = terrain ? math.min(math.min(Settings.maxLodRing, steps?.Length ?? 0), HorizonRingCount()) : 0;
 
             endless = new IEndless[4];
             if (terrain)
-                endless[0] = new EndlessTerrain(this, chunkGenerationSettings);
-            if (chunkGenerationSettings.endlessFlag[1])
+                endless[0] = new EndlessTerrain(this, Settings);
+            if (Settings.endlessFlag[1])
                 endless[1] = new EndlessLiquids(this);
-            if (chunkGenerationSettings.endlessFlag[2])
+            if (Settings.endlessFlag[2])
             {
                 endless[2] = new EndlessObjects(this, objectSystem);
                 if (lodRingCount > 0)
-                    endless[3] = new FarObjectRenderer(this, objectSystem, chunkGenerationSettings);
+                    endless[3] = new FarObjectRenderer(this, objectSystem, Settings);
             }
         }
 
         private int HorizonRingCount()
         {
             float distance = CurvedWorld.VisibleDistance(
-                chunkGenerationSettings.horizonCameraHeight,
-                chunkGenerationSettings.horizonCameraBack,
-                chunkGenerationSettings.horizonPeakHeight);
+                Settings.horizonCameraHeight,
+                Settings.horizonCameraBack,
+                Settings.horizonPeakHeight);
 
             if (float.IsInfinity(distance)) return int.MaxValue;
 
@@ -567,8 +746,22 @@ namespace TheRavine.Generator
             return hasWindow && viewer != null;
         }
 
-        public void ClearNALQueue() => nal?.Clear();
-        public void AddNALObject(Vector2Int pos) => nal?.Enqueue(pos);
+        public bool ApplyImmediate(in WorldCommand command) =>
+            WorldCommandBuffer.ApplyOne(this, in command, ImmediateStats, Commands);
+
+        private void ApplyWorldCommands()
+        {
+            if (Commands == null || Commands.Count == 0) return;
+
+            int pendingBefore = Commands.Count;
+            long start = FrameBudget.Now;
+            Commands.Apply(this, start + FrameBudget.TicksFromMs(nalApplyBudgetMs), CommandStats);
+            int applyMs = (int)((FrameBudget.Now - start) * 1000 / System.Diagnostics.Stopwatch.Frequency);
+
+            nal?.OnCommandsApplied(CommandStats, applyMs, pendingBefore, Commands.Count);
+
+            ExtraUpdate();
+        }
 
         public UnityAction<long> onUpdate;
 
@@ -583,10 +776,15 @@ namespace TheRavine.Generator
             if (!hasWindow || center != windowCenter)
                 MoveWindow(center);
 
+            ApplyWorldCommands();
+            randomTicks?.Update();
+            nal?.Poll();
             FlushDirty();
 
             for (int i = 0; i < endless.Length; i++)
                 endless[i]?.Tick(deadline);
+
+            ProcessChunkRequests(deadline);
 
             if (evictionPending || Time.unscaledTime >= nextEvictionScan)
                 EvictChunks();
@@ -632,19 +830,47 @@ namespace TheRavine.Generator
             return Position2Int.Pack(ChunkCoord(p.x), ChunkCoord(p.z));
         }
 
+        private void BindChunkStore(WorldRegistry registry)
+        {
+            boundRegistry = registry;
+            boundWorldId = registry.GetCurrentWorldId();
+            chunkStore = ChunkStore.ForWorld(boundWorldId, seed);
+            registry.WorldRenamed += OnWorldRenamed;
+        }
+
+        private void OnWorldRenamed(string oldId, string newId)
+        {
+            if (chunkStore == null || oldId != boundWorldId) return;
+
+            boundWorldId = newId;
+            chunkStore.Rebind(newId);
+        }
+
+        private void SaveModifiedChunks()
+        {
+            if (chunkStore == null) return;
+
+            foreach (var kv in mapData)
+            {
+                ChunkData cd = kv.Value;
+                if (cd.NeedsSave && chunkStore.TrySave(kv.Key, cd))
+                    cd.MarkPersisted();
+            }
+        }
+
         private void EvictChunks()
         {
             evictionPending = false;
-            nextEvictionScan = Time.unscaledTime + chunkGenerationSettings.evictionScanInterval;
+            nextEvictionScan = Time.unscaledTime + Settings.evictionScanInterval;
             if (!hasWindow) return;
 
-            int idleFrames = chunkGenerationSettings.evictionIdleFrames;
+            int idleFrames = Settings.evictionIdleFrames;
             int n = 0;
 
             foreach (var kv in mapData)
             {
                 ChunkData cd = kv.Value;
-                if (cd.IsModified || frame - cd.LastAccessFrame < idleFrames || IsRetained(kv.Key))
+                if (cd.NeedsSave || frame - cd.LastAccessFrame < idleFrames || IsRetained(kv.Key))
                     continue;
 
                 if (n == evictBuffer.Length)
@@ -661,11 +887,11 @@ namespace TheRavine.Generator
 
         private bool IsRetained(long chunkKey)
         {
-            int hysteresis = chunkGenerationSettings.evictionHysteresis;
+            int hysteresis = Settings.evictionHysteresis;
             int dx = math.abs(Position2Int.GetX(chunkKey) - Position2Int.GetX(windowCenter));
             int dz = Position2Int.GetY(chunkKey) - Position2Int.GetY(windowCenter);
 
-            int near = math.max(chunkGenerationSettings.retainRadius, HeightWindow.Radius) + hysteresis;
+            int near = math.max(Settings.retainRadius, HeightWindow.Radius) + hysteresis;
             if (dx <= near && math.abs(dz) <= near) return true;
             if (lodRingCount <= 0) return false;
 
@@ -698,6 +924,12 @@ namespace TheRavine.Generator
             playerEventBus = null;
             boundPlayer = null;
 
+            autosaveSubscription?.Dispose();
+            autosaveSubscription = null;
+            if (boundRegistry != null) boundRegistry.WorldRenamed -= OnWorldRenamed;
+            boundRegistry = null;
+            SaveModifiedChunks();
+
             if (endless != null)
             {
                 for (int i = 0; i < endless.Length; i++)
@@ -713,7 +945,14 @@ namespace TheRavine.Generator
             sampleChunk = null;
             sampleKey = long.MinValue;
 
-            _cts.Cancel();
+            nal?.Dispose();
+            nal = null;
+            randomTicks?.Dispose();
+            randomTicks = null;
+            if (ownsTickRules && tickRules != null) Destroy(tickRules);
+            ownsTickRules = false;
+            Commands?.Dispose();
+            Commands = null;
             chunkGenerator?.Dispose();
         }
     }
@@ -733,12 +972,28 @@ namespace TheRavine.Generator
         public NativeArray<byte>           MoveCost;
         public NativeArray<float2>         Climate;
         public NativeArray<float>          RiverBlend;
+        public NativeArray<byte>           WaterDistance;
+        public float WaterLevelStamp;
+        public int   WaterRingStamp;
+        public int   WaterHoodVersion;
+        public int   WaterHoodMask;
         public List<StructureSpawnPoint> StructureSpawnPoints;
+
+        private static bool[] foodTable = Array.Empty<bool>();
+
+        public static void SetFoodTable(bool[] table) => foodTable = table ?? Array.Empty<bool>();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFoodPrefab(int prefabId) => (uint)prefabId < (uint)foodTable.Length && foodTable[prefabId];
 
         public bool IsDirty { get; private set; }
         public int Version { get; private set; }
+        public int FoodRevision { get; private set; }
+        public int Epoch { get; private set; }
         public int GeneratedVersion { get; private set; }
         public bool IsModified => Version != GeneratedVersion;
+        public bool NeedsSave => IsModified && Version != SavedVersion;
+        public int SavedVersion { get; private set; }
         public byte DetailLevel { get; internal set; } = NotGenerated;
         public int LastAccessFrame;
 
@@ -751,6 +1006,7 @@ namespace TheRavine.Generator
             MoveCost       = new NativeArray<byte>  (TotalCells, Allocator.Persistent);
             Climate        = new NativeArray<float2>(TotalCells, Allocator.Persistent);
             RiverBlend     = new NativeArray<float> (TotalCells, Allocator.Persistent);
+            WaterDistance  = new NativeArray<byte>  (TotalCells, Allocator.Persistent);
             Objects        = new NativeList<ObjectInstInfo>(16, Allocator.Persistent);
         }
 
@@ -758,23 +1014,14 @@ namespace TheRavine.Generator
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryAddObject(int primaryIdx, in ObjectInstInfo info, ReadOnlySpan<int> additionalIdxs = default, int levels = 1)
+            => TryAddObject(primaryIdx, in info, additionalIdxs, levels, out _);
+
+        public bool TryAddObject(int primaryIdx, in ObjectInstInfo info, ReadOnlySpan<int> additionalIdxs, int levels, out PlacementResult result)
         {
-            if ((uint)primaryIdx >= TotalCells) return false;
-            if (Occupancy[primaryIdx] != 0)    return false;
+            result = Validate(primaryIdx, additionalIdxs, levels);
+            if (result != PlacementResult.Ok) return false;
 
             int secCount = additionalIdxs.Length;
-            if (secCount > ObjectInstInfo.MaxSecondary) return false;
-
-            for (int i = 0; i < secCount; i++)
-            {
-                int ac = additionalIdxs[i];
-                if ((uint)ac >= TotalCells) return false;
-                if (Occupancy[ac] != 0)    return false;
-            }
-
-            if (levels < 1 || levels > ObjectInfo.MaxLevels) return false;
-            if (!UpperLevelsFree(primaryIdx, additionalIdxs, levels)) return false;
-
             ObjectInstInfo stored = info;
             stored.PrimaryIdx     = primaryIdx;
             stored.SecondaryCount = secCount;
@@ -796,7 +1043,30 @@ namespace TheRavine.Generator
 
             IsDirty = true;
             Version++;
+            if (IsFoodPrefab(info.PrefabID)) FoodRevision++;
             return true;
+        }
+
+        private PlacementResult Validate(int primaryIdx, ReadOnlySpan<int> additionalIdxs, int levels)
+        {
+            if ((uint)primaryIdx >= TotalCells) return PlacementResult.OutOfBounds;
+            if (Occupancy[primaryIdx] != 0)    return PlacementResult.Occupied;
+
+            int secCount = additionalIdxs.Length;
+            if (secCount > ObjectInstInfo.MaxSecondary) return PlacementResult.TooManyCells;
+
+            for (int i = 0; i < secCount; i++)
+            {
+                int ac = additionalIdxs[i];
+                if ((uint)ac >= TotalCells) return PlacementResult.OutOfBounds;
+                if (Occupancy[ac] != 0 || ac == primaryIdx) return PlacementResult.Occupied;
+                for (int j = 0; j < i; j++)
+                    if (additionalIdxs[j] == ac) return PlacementResult.Occupied;
+            }
+
+            if (levels < 1 || levels > ObjectInfo.MaxLevels) return PlacementResult.InvalidLevels;
+            if (!UpperLevelsFree(primaryIdx, additionalIdxs, levels)) return PlacementResult.UpperLevelOccupied;
+            return PlacementResult.Ok;
         }
 
         private bool UpperLevelsFree(int primaryIdx, ReadOnlySpan<int> additionalIdxs, int levels)
@@ -917,12 +1187,13 @@ namespace TheRavine.Generator
             Objects.RemoveAt(last);
             IsDirty = true;
             Version++;
+            if (IsFoodPrefab(obj.PrefabID)) FoodRevision++;
             return true;
         }
 
         public void ClearDirty() => IsDirty = false;
 
-        internal void ResetForReuse()
+        public void ClearObjects()
         {
             unsafe
             {
@@ -930,9 +1201,37 @@ namespace TheRavine.Generator
                 UnsafeUtility.MemClear(LevelMask.GetUnsafePtr(), TotalCells);
             }
 
+            for (int i = 0; i < Objects.Length; i++)
+            {
+                if (!IsFoodPrefab(Objects[i].PrefabID)) continue;
+                FoodRevision++;
+                break;
+            }
+
             Objects.Clear();
             buildings?.Clear();
+            Version++;
+            IsDirty = true;
+        }
+
+        public int LevelsAt(int anchorIdx) => TryGetBuilding(anchorIdx, out BuildingVolume volume) ? volume.Levels : 1;
+
+        internal void MarkPersisted() => SavedVersion = Version;
+
+        internal void CommitRestore(byte detailLevel)
+        {
+            DetailLevel = detailLevel;
+            GeneratedVersion = Version;
+            SavedVersion = Version;
+        }
+
+        internal void ResetForReuse()
+        {
+            ClearObjects();
             StructureSpawnPoints?.Clear();
+            WaterRingStamp = 0;
+            WaterHoodMask = 0;
+            Epoch++;
             DetailLevel = NotGenerated;
             IsDirty = false;
             Version++;
@@ -953,6 +1252,7 @@ namespace TheRavine.Generator
             if (MoveCost.IsCreated)       MoveCost.Dispose();
             if (Climate.IsCreated)        Climate.Dispose();
             if (RiverBlend.IsCreated)     RiverBlend.Dispose();
+            if (WaterDistance.IsCreated)  WaterDistance.Dispose();
             if (Objects.IsCreated)        Objects.Dispose();
         }
     }

@@ -4,7 +4,7 @@ using System;
 
 namespace TheRavine.EntityControl
 {
-    public abstract class AEntity : IDisposable
+    public abstract class AEntity : IEntity
     {
         public ReactiveCommand<Unit> OnUpdate { get; } = new();
         public ReactiveProperty<bool> IsActive { get; } = new ReactiveProperty<bool>(true);
@@ -41,6 +41,9 @@ namespace TheRavine.EntityControl
             }
             return false;
         }
+        ReadOnlyReactiveProperty<bool> IEntity.IsActive => IsActive;
+        Observable<Unit> IEntity.OnUpdate => OnUpdate;
+
         public void Activate() => IsActive.Value = true;
         public void Deactivate() => IsActive.Value = false;
 

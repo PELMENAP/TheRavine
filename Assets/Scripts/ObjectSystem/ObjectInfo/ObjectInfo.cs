@@ -20,6 +20,9 @@ public class ObjectInfo : ScriptableObject
     [ConditionalField(nameof(instanceType), InstanceType.Static, inverse: true)]
     [SerializeField] private InventoryItemInfo inventoryItemInfo;
 
+    [Min(0f)]
+    [SerializeField] private float decaySeconds;
+
     [SerializeField] private bool isFood;
     [SerializeField] private FoodKind foodKind;
 
@@ -27,6 +30,7 @@ public class ObjectInfo : ScriptableObject
     [SerializeField] private ObjectInfo evolutionStep;
 
     [SerializeField] private Vector2Int[] additionalOccupiedCells;
+    [SerializeField] private PlacementKind placementKind;
     [ConditionalField(nameof(behaviourType), BehaviourType.NAL)]
     [SerializeField] private SpreadPattern onDeathPattern;
 
@@ -53,6 +57,7 @@ public class ObjectInfo : ScriptableObject
     public GameObject ObjectPrefab => objectPrefab;
     public ObjectInfo EvolutionStep => evolutionStep;
     public Vector2Int[] AdditionalOccupiedCells => additionalOccupiedCells;
+    public PlacementKind PlacementKind => placementKind;
     public SpreadPattern OnDeathPattern => onDeathPattern;
     public SpreadPattern OnPickUpPattern => onPickUpPattern;
     public byte VisibleRings => (byte)Mathf.Clamp(visibleRings, 0, MaxVisibleRings);
@@ -60,7 +65,8 @@ public class ObjectInfo : ScriptableObject
     public FarMode FarMode => farMode;
     public bool CastShadowsFar => castShadowsFar;
     public ObjectLodSet LodSet => lodSet;
-    public bool HasLifecycle => behaviourType == BehaviourType.NAL || behaviourType == BehaviourType.GROW;
+    public float DecaySeconds => decaySeconds;
+    public bool HasLifecycle => behaviourType == BehaviourType.NAL || behaviourType == BehaviourType.GROW || decaySeconds > 0f;
 
 #if UNITY_EDITOR
     public void EditorAssignId(ushort value) => id = value;
@@ -72,6 +78,12 @@ public enum BehaviourType : byte
     None = 0,
     NAL = 1,
     GROW = 2
+}
+
+public enum PlacementKind : byte
+{
+    Surface2D = 0,
+    Construction3D = 1
 }
 
 public enum InstanceType : byte

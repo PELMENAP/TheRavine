@@ -38,13 +38,13 @@ public struct InstinctInput
     public float Now;
     public float HungerBias;
     public float PanicBias;
+    public float FoodToxicity;
     public byte  Sick;
     public byte  HungryKin;
     public byte  Recruited;
     public byte  Caste;
     public byte  AtNest;
     public byte  NestFood;
-    public byte  FoodToxic;
     public byte  Night;
     public byte  Warned;
     public byte  HasThreat;
@@ -152,7 +152,7 @@ public struct InstinctJob : IJobFor
         latches = (hungry ? InstinctBits.Hungry : 0u) | (panic ? InstinctBits.Panic : 0u);
 
         bool sated      = x.Stomach >= g.SatedFill;
-        bool edible     = x.FoodDistance >= 0f && x.FoodToxic == 0;
+        bool edible     = x.FoodDistance >= 0f && x.FoodToxicity <= 0f;
         bool foodNear   = edible && x.FoodDistance <= R.EatRange;
         bool foodFar    = edible && x.FoodDistance > R.EatRange;
         bool atNest     = x.AtNest != 0;
@@ -162,6 +162,7 @@ public struct InstinctJob : IJobFor
         bool grazing    = x.PlanActive != 0 && (x.PlanKind == (byte)PlanKind.Graze || x.PlanKind == (byte)PlanKind.Harvest
                                                 || x.PlanKind == (byte)PlanKind.Seek);
         bool sick       = x.Sick != 0;
+        bool nightAtNest = x.Night != 0 && atNest;
 
         uint mask   = 0u;
         byte reflex = InstinctBits.NoReflex;
@@ -188,7 +189,7 @@ public struct InstinctJob : IJobFor
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ShareFood, 3, InstinctBits.Troph);
         else if (x.Recruited != 0 && !hungry && !hasThreat && x.PlanActive == 0)
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.GoToPoint, 3, InstinctBits.Recruit);
-        else if (hungry && !sated && foodFar && !nestFood && !hasThreat && !grazing)
+        else if (hungry && !sated && foodFar && !nestFood && !hasThreat && !grazing && !nightAtNest)
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ApproachFood, 2, InstinctBits.Seek);
         else if (hungry && !sated && (foodNear || nestFood))
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.Eat, 1, InstinctBits.Eat);

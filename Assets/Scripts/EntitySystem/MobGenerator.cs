@@ -75,7 +75,7 @@ namespace TheRavine.EntityControl
             if (!entity.HasComponent<VisualCullingComponent>())
             {
                 var view = entityObject.GetComponentInChildren<EntityView>(true);
-                entity.AddComponentToEntity(new VisualCullingComponent(entityObject, view != null ? view.LabelObject : null));
+                entity.AddComponentToEntity(new VisualCullingComponent(entityObject, view != null ? view.LabelObject : null, true));
             }
 
             GetOrCreateChunkData(chunkPos).entitiesInChunk.Add(entity);
@@ -332,8 +332,8 @@ namespace TheRavine.EntityControl
                     if (curMob == null) continue;
 
                     var viewModel = curMob.GetComponent<AEntityViewModel>();
-                    if (viewModel?.Entity != null)
-                        onSpawned?.Invoke(viewModel.Entity, curMob, item.First);
+                    if (viewModel != null && viewModel.Entity is AEntity entity)
+                        onSpawned?.Invoke(entity, curMob, item.First);
                 }
             }
         }

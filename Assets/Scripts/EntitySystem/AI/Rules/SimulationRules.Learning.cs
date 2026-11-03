@@ -34,6 +34,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float coordExplorationEpsilon = 0.05f;
     [SerializeField] private float execExplorationEpsilon = 0.15f;
     [SerializeField] private float fitnessSpreadMedianFraction = 0.25f;
+    [SerializeField] private float outlierSigma = 3f;
     [SerializeField] private float optimizerBaseLearningRate = 0.01f;
     [SerializeField] private float optimizerWeightDecay = 1e-5f;
     [SerializeField] private float optimizerMaxGradNorm = 3f;
@@ -68,7 +69,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float planCompleteReward = 0.2f;
     [SerializeField] private int planMaxFailures = 2;
     [SerializeField] private int planMaxInstantSteps = 6;
-    [SerializeField] private float[] deathPenaltyByCause = { 1f, 1.5f, 0.6f, 0.6f, 0.3f };
+    [SerializeField] private float[] deathPenaltyByCause = { 1f, 1.5f, 0.6f, 0.6f, 0.3f, 1f };
     [SerializeField] private Vector3[] planBoidMul =
     {
         new(1.6f, 0.6f, 0.3f),
@@ -117,6 +118,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float driveRewardWeight = 0.1f;
     [SerializeField] private float driveShapingWeight = 1f;
     [SerializeField] private float eventReproduceReward = 1f;
+    [SerializeField] private float damageEventReward = 0.2f;
     [SerializeField] private float infeasibleActionReward = -0.15f;
     [SerializeField] private float goalFoodWeight = 0.3f;
     [SerializeField] private float goalEnergyWeight = 1f;
@@ -156,6 +158,7 @@ public sealed partial class SimulationRules
     public float CoordExplorationEpsilon => coordExplorationEpsilon;
     public float ExecExplorationEpsilon => execExplorationEpsilon;
     public float FitnessSpreadMedianFraction => fitnessSpreadMedianFraction;
+    public float OutlierSigma => outlierSigma;
     public float OptimizerBaseLearningRate => optimizerBaseLearningRate;
     public float OptimizerWeightDecay => optimizerWeightDecay;
     public float OptimizerMaxGradNorm => optimizerMaxGradNorm;
@@ -211,6 +214,7 @@ public sealed partial class SimulationRules
     public float DriveRewardWeight => driveRewardWeight;
     public float DriveShapingWeight => driveShapingWeight;
     public float EventReproduceReward => eventReproduceReward;
+    public float DamageEventReward => damageEventReward;
     public float InfeasibleActionReward => infeasibleActionReward;
     public float GoalFoodWeight => goalFoodWeight;
     public float GoalEnergyWeight => goalEnergyWeight;

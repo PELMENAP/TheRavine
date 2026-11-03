@@ -68,7 +68,7 @@ public class WanderCommand : PlannedMoveCommand
     {
         if (decision.HasDestination)
             _reached = math.distance(model.Position2D, decision.Destination) <= SimulationRules.Frame.PlanArriveRadius;
-        if (decision.Plan != PlanKind.Migrate || model.Caste != Caste.Scout) return Complete();
+        if (decision.Plan != PlanKind.Migrate) return Complete();
         var colony = model.Colony;
         if (colony == null || colony.IsWild) return Complete();
 

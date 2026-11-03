@@ -26,6 +26,7 @@ public sealed class ColonyPopulation
     private readonly UtilityPriorSystem   _utility;
     private readonly CasteThresholdSystem _thresholds;
     private readonly BoidSystem           _boids;
+    private readonly EnergyLedger         _ledger;
 
     private readonly Queue<EntityModel> _pendingDeath = new();
     private EntityModel[] _deferredDispose = Array.Empty<EntityModel>();
@@ -43,7 +44,7 @@ public sealed class ColonyPopulation
     public ColonyPopulation(GameObject prefab, Transform parent, EntityTuning tuning, int maxPopulation, float spawnRadius,
         List<EntityModel> entities, ColonyRegistry colonies, ColonyState wild, ColonyFood food, EvolutionService evolution,
         EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, UtilityPriorSystem utility,
-        CasteThresholdSystem thresholds, BoidSystem boids)
+        CasteThresholdSystem thresholds, BoidSystem boids, EnergyLedger ledger)
     {
         _prefab        = prefab;
         _parent        = parent;
@@ -61,13 +62,14 @@ public sealed class ColonyPopulation
         _utility       = utility;
         _thresholds    = thresholds;
         _boids         = boids;
+        _ledger        = ledger;
     }
 
     public void StartPredatorClock(double now) => _nextPredatorTime = now;
 
     public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null)
     {
-        if (_entities.Count >= _maxPopulation || colony == null)
+        if (!TheRavine.Base.WorldAuthority.IsAuthority || _entities.Count >= _maxPopulation || colony == null)
         {
             inheritedCtx?.Dispose();
             return null;
@@ -80,7 +82,8 @@ public sealed class ColonyPopulation
             expressible.ApplyGeneticPhenotype(ctx.CoordMLP.Params);
 
         var netObj = go.GetComponent<NetworkObject>();
-        netObj?.Spawn();
+        var network = NetworkManager.Singleton;
+        if (netObj != null && network != null && network.IsServer) netObj.Spawn();
 
         var viewModel = go.GetComponent<EntityViewModel>();
         var view      = go.GetComponent<EntityView>();
@@ -94,10 +97,14 @@ public sealed class ColonyPopulation
         model.Init();
         viewModel.Initialize(model);
         view.Initialize(viewModel);
-        model.AddComponentToEntity(new VisualCullingComponent(go, view.LabelObject));
+        model.VisualCulling = new VisualCullingComponent(go, view.LabelObject);
         model.SetUp();
 
-        model.GetEntityComponent<MortalityComponent>().Died += () => HandleEntityDied(model);
+        float startEnergy = model.BodyEnergy;
+        if (parent != null) _ledger.Flows.ChildStart += startEnergy;
+        else _ledger.Flows.SpawnStart += startEnergy;
+
+        model.Mortality.Died += () => HandleEntityDied(model);
         model.OnReproduceRequest += SpawnChild;
 
         model.ManagerIndex = _entities.Count;

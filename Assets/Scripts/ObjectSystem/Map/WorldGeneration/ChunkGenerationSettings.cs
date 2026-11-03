@@ -56,5 +56,8 @@ namespace TheRavine.Generator
         [Header("Far Objects")]
         [Min(1)] public int farMaxInstances = 65536;
         [Min(1)] public int farRebuildIntervalFrames = 30;
+        [Min(1)] public int farContentRebuildIntervalFrames = 300;
+
+        public ChunkGenerationSettings ShallowCopy() => (ChunkGenerationSettings)MemberwiseClone();
     }
 }

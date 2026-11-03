@@ -77,6 +77,8 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
             Speed         = speed,
             EnergyCost    = energyCostPerSec,
             SpeedModifier = 1f,
+            WaterSpeed    = 1f,
+            WaterDrain    = 1f,
             Arrive2       = arriveThreshold * arriveThreshold,
             HeightOffset  = heightOffset,
             VelocityLerp  = velocityLerpCoef,

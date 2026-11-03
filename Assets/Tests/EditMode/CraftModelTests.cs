@@ -35,6 +35,16 @@ public class CraftModelTests
         return new CraftRecipe(result, 1, 0, list);
     }
 
+    private CraftRecipe CatalystRecipe(InventoryItemInfo result, InventoryItemInfo consumed, int consumedAmount, InventoryItemInfo catalyst, int catalystAmount)
+    {
+        var list = new[]
+        {
+            new CraftIngredient { info = consumed, amount = consumedAmount },
+            new CraftIngredient { info = catalyst, amount = catalystAmount, isCatalyst = true }
+        };
+        return new CraftRecipe(result, 1, 0, list);
+    }
+
     private static CraftStack Stack(IInventoryItemInfo info, int amount) => new CraftStack { Info = info, Amount = amount };
 
     [Test]
@@ -104,6 +114,58 @@ public class CraftModelTests
     }
 
     [Test]
+    public void CatalystIsMatchedButNotDeducted()
+    {
+        var model = new CraftModel(new[] { CatalystRecipe(_y, _a, 2, _b, 1) });
+        var grid = new CraftStack[8];
+        grid[0] = Stack(_a, 2);
+        grid[1] = Stack(_b, 3);
+
+        Assert.IsTrue(model.TryPlan(grid, 8, _deductions, out CraftRecipe recipe));
+        Assert.AreSame(_y, recipe.Result);
+        Assert.AreEqual(2, _deductions[0]);
+        Assert.AreEqual(0, _deductions[1]);
+    }
+
+    [Test]
+    public void MissingCatalystBlocksMatch()
+    {
+        var model = new CraftModel(new[] { CatalystRecipe(_y, _a, 1, _b, 2) });
+        var grid = new CraftStack[8];
+        grid[0] = Stack(_a, 1);
+        grid[1] = Stack(_b, 1);
+
+        Assert.IsFalse(model.TryPlan(grid, 8, _deductions, out _));
+
+        grid[1] = default;
+
+        Assert.IsFalse(model.TryPlan(grid, 8, _deductions, out _));
+    }
+
+    [Test]
+    public void RegularIngredientIsDeducted()
+    {
+        var model = new CraftModel(new[] { Recipe(_y, (_a, 2), (_b, 1)) });
+        var grid = new CraftStack[8];
+        grid[0] = Stack(_a, 2);
+        grid[1] = Stack(_b, 4);
+
+        Assert.IsTrue(model.TryPlan(grid, 8, _deductions, out _));
+        Assert.AreEqual(2, _deductions[0]);
+        Assert.AreEqual(1, _deductions[1]);
+    }
+
+    [Test]
+    public void MergeKeepsCatalystOnlyWhenAllEntriesAreCatalysts()
+    {
+        var merged = CraftRecipe.Merge(new[] { _a, _b, _a }, new[] { 1, 1, 1 }, new[] { true, true, false });
+
+        Assert.AreEqual(2, merged.Length);
+        Assert.IsFalse(merged[0].isCatalyst);
+        Assert.IsTrue(merged[1].isCatalyst);
+    }
+
+    [Test]
     public void EmptyGridMatchesNothing()
     {
         var model = new CraftModel(new[] { Recipe(_y, (_a, 1)) });
@@ -122,5 +184,57 @@ public class CraftModelTests
         Assert.AreEqual(3, merged[0].amount);
         Assert.AreSame(_b, merged[1].info);
         Assert.AreEqual(4, merged[1].amount);
+    }
+
+    [Test]
+    public void ProjectCraftRecipesLoadFromResources()
+    {
+        var infos = Resources.LoadAll<InventoryCraftInfo>("CraftInfo");
+
+        Assert.AreEqual(5, CraftModel.FromInfos(infos).Count);
+    }
+
+    [Test]
+    public void ScoreCountsMatchedMissingAndForeign()
+    {
+        var model = new CraftModel(new[] { Recipe(_y, (_a, 3), (_b, 2)) });
+        var grid = new CraftStack[8];
+        grid[0] = Stack(_a, 1);
+        grid[2] = Stack(_a, 1);
+        grid[3] = Stack(_b, 5);
+        grid[4] = Stack(_c, 1);
+        var results = new CraftMatch[1];
+
+        model.Score(grid, 8, results);
+
+        Assert.AreSame(model[0], results[0].Recipe);
+        Assert.AreEqual(4, results[0].Matched);
+        Assert.AreEqual(1, results[0].Missing);
+        Assert.AreEqual(1, results[0].Foreign);
+    }
+
+    [Test]
+    public void ScoreOnEmptyGridIsAllMissing()
+    {
+        var model = new CraftModel(new[] { Recipe(_y, (_a, 2), (_b, 1)) });
+        var results = new CraftMatch[model.Count];
+
+        model.Score(new CraftStack[8], 8, results);
+
+        Assert.AreEqual(0, results[0].Matched);
+        Assert.AreEqual(3, results[0].Missing);
+        Assert.AreEqual(0, results[0].Foreign);
+    }
+
+    [Test]
+    public void ScoreIsZeroAlloc()
+    {
+        var model = new CraftModel(new[] { Recipe(_y, (_a, 2), (_b, 1)), Recipe(_x, (_c, 1)) });
+        var grid = new CraftStack[8];
+        grid[0] = Stack(_a, 2);
+        grid[1] = Stack(_c, 1);
+        var results = new CraftMatch[model.Count];
+
+        AllocationAssert.Zero(() => model.Score(grid, 8, results), 100, "CraftModel.Score");
     }
 }

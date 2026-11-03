@@ -7,6 +7,7 @@ public enum DeathCause : byte
     Virus   = 2,
     Toxic   = 3,
     Age     = 4,
+    Burn    = 5,
 }
 
 public class MortalityComponent : IComponent

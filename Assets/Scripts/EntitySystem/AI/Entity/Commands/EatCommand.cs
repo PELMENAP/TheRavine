@@ -11,7 +11,7 @@ public class EatCommand : EntityCommand
     private float  _eaten;
     private double _start;
     private double _end;
-    private bool   _toxic;
+    private float  _toxicity;
 
     public EatCommand(EntityModel model) : base(model) { }
 
@@ -23,7 +23,7 @@ public class EatCommand : EntityCommand
         model.Motor.Stop();
 
         if (model.Carrying > 0f)
-            return StartEating(model.TakeCarried(), false);
+            return StartEating(model.TakeCarried(), 0f);
 
         var nest  = model.Nest;
         var index = model.FoodIndex;
@@ -35,7 +35,7 @@ public class EatCommand : EntityCommand
             float take = math.min(nest.Storage, r.NestEatPortion * cost);
             nest.Storage -= take;
             model.Colony?.Stats.RecordStorageEaten(take);
-            return StartEating(take / cost, false);
+            return StartEating(take / cost, 0f);
         }
 
         if (!foodNear) return Fail();
@@ -59,20 +59,20 @@ public class EatCommand : EntityCommand
             return EntityCommandStatus.Running;
         }
 
-        return StartEating(claim.Energy, claim.Kind == FoodKind.Toxic);
+        return StartEating(claim.Energy, claim.Toxicity);
     }
 
-    private EntityCommandStatus StartEating(float portion, bool toxic)
+    private EntityCommandStatus StartEating(float portion, float toxicity)
     {
         if (portion <= 0f) return Fail();
 
         var r = SimulationRules.Active;
-        _phase   = Phase.Eating;
-        _portion = portion;
-        _eaten   = 0f;
-        _toxic   = toxic;
-        _start   = SimulationClock.TimeD;
-        _end     = _start + math.max(r.EatSecondsPerEnergy * portion / math.max(model.CasteMods.EatSpeed, 1e-3f), 1e-3f);
+        _phase    = Phase.Eating;
+        _portion  = portion;
+        _eaten    = 0f;
+        _toxicity = toxicity;
+        _start    = SimulationClock.TimeD;
+        _end      = _start + math.max(r.EatSecondsPerEnergy * portion / math.max(model.CasteMods.EatSpeed, 1e-3f), 1e-3f);
 
         model.RegisterFitnessEvent(EntityModel.FitnessEvent.FoodEaten);
         model.Brain.Context.GoalFoodEaten++;
@@ -97,7 +97,7 @@ public class EatCommand : EntityCommand
         Deliver();
         if (!Elapsed(_end)) return EntityCommandStatus.Running;
 
-        if (_toxic) model.TakeDamage(SimulationRules.Active.ToxicDamage, null, DeathCause.Toxic);
+        if (_toxicity > 0f) model.TakeDamage(SimulationRules.Active.ToxicDamage, null, DeathCause.Toxic);
         return Complete();
     }
 

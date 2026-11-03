@@ -29,7 +29,7 @@ namespace TheRavine.Inventory
         private readonly List<RaycastResult> results = new(10);
         private PointerEventData eventData;
         private UIInventorySlot lastSlot;
-        private GlobalSettings globalSettings;
+        private ControlType registeredControlType;
         private EventDrivenInventoryProxy inventoryModel;
         private LLMItemDescriptionService llmDescriptionService;
         private ItemDescriptionRegistry descriptionRegistry;
@@ -49,12 +49,12 @@ namespace TheRavine.Inventory
 
             llmDescriptionService.OnDescriptionEnded   += OnLLMDescriptionEnded;
 
-            globalSettings = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent();
+            registeredControlType = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent().controlType;
             eventSystem = EventSystem.current;
             eventData = new PointerEventData(eventSystem);
             mouse = Mouse.current;
 
-            switch (globalSettings.controlType)
+            switch (registeredControlType)
             {
                 case ControlType.Personal:
                     leftclick.action.performed += OnDragPC;
@@ -210,7 +210,7 @@ namespace TheRavine.Inventory
                 llmDescriptionService.OnDescriptionEnded   -= OnLLMDescriptionEnded;
             }
 
-            switch (globalSettings.controlType)
+            switch (registeredControlType)
             {
                 case ControlType.Personal:
                     leftclick.action.performed -= OnDragPC;

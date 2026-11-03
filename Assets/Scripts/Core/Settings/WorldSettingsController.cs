@@ -36,7 +36,7 @@ namespace TheRavine.Base
                 {
                     if (string.IsNullOrEmpty(worldId))
                     {
-                        _config.Value = new WorldConfiguration();
+                        Publish(new WorldConfiguration());
                     }
                     else
                     {
@@ -50,10 +50,7 @@ namespace TheRavine.Base
         {
             try
             {
-                var config = _worldRegistry.GetCurrentConfig();
-                _config.Value = config;
-                
-                _autosave.SetInterval(config.autosaveInterval);
+                Publish(_worldRegistry.GetCurrentConfig());
                 
                 _logger.LogInfo("[WorldSettings] Настройки мира загружены");
             }
@@ -81,15 +78,20 @@ namespace TheRavine.Base
 
             _worldRegistry.UpdateConfig(modifier);
             
-            var updatedConfig = _worldRegistry.GetCurrentConfig();
-            _config.Value = updatedConfig;
-
-            if (updatedConfig.autosaveInterval != _autosave.IntervalSeconds)
-            {
-                _autosave.SetInterval(updatedConfig.autosaveInterval);
-            }
+            Publish(_worldRegistry.GetCurrentConfig());
 
             SaveAsync().Forget();
+        }
+
+        private void Publish(WorldConfiguration config)
+        {
+            _config.Value = config;
+            SimulationClock.TimeScale = config.timeScale;
+
+            if (_autosave.IntervalSeconds != config.autosaveInterval)
+            {
+                _autosave.SetInterval(config.autosaveInterval);
+            }
         }
 
         public async UniTask<bool> SaveAsync()
@@ -107,6 +109,12 @@ namespace TheRavine.Base
 
         public async UniTask<bool> RenameWorldAsync(string newName)
         {
+            if (!WorldRegistry.IsValidWorldName(newName))
+            {
+                _logger.LogWarning($"[WorldSettings] Недопустимое имя мира: '{newName}'");
+                return false;
+            }
+
             if (!_worldRegistry.HasLoadedWorld)
             {
                 _logger.LogWarning("[WorldSettings] Нет загруженного мира");
@@ -118,8 +126,7 @@ namespace TheRavine.Base
 
             if (success)
             {
-                var config = _worldRegistry.GetCurrentConfig();
-                _config.Value = config;
+                Publish(_worldRegistry.GetCurrentConfig());
             }
 
             return success;

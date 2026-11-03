@@ -1,7 +1,7 @@
 using System;
 using Unity.Mathematics;
 
-public class StatsComponent : IComponent
+public class StatsComponent : IComponent, IEnergyStore
 {
     public event Action HealthDepleted;
     public float MaxHealth { get; private set; }
@@ -76,16 +76,37 @@ public class StatsComponent : IComponent
     public void Tick(float deltaTime, float movementEnergy, float metabolismMultiplier, float basalDrain,
         float starvationThreshold, float starvationDamage, float starvationEnergyReturn,
         out float metabolismCredit)
+        => Tick(deltaTime, movementEnergy, metabolismMultiplier, basalDrain,
+            starvationThreshold, starvationDamage, starvationEnergyReturn,
+            0f, 0f, 0f,
+            out metabolismCredit, out _, out _, out _, out _, out _, out _);
+
+    public void Tick(float deltaTime, float movementEnergy, float metabolismMultiplier, float basalDrain,
+        float starvationThreshold, float starvationDamage, float starvationEnergyReturn,
+        float warmthAvailable, float warmthDrawFraction, float basalEmitFraction,
+        out float metabolismCredit, out float basalSpent, out float moveSpent,
+        out float starvationReturned, out float clampGain, out float warmthDrawn, out float warmthEmitted)
     {
-        metabolismCredit = 0f;
+        metabolismCredit   = 0f;
+        basalSpent         = 0f;
+        moveSpent          = 0f;
+        starvationReturned = 0f;
+        clampGain          = 0f;
+        warmthDrawn        = 0f;
+        warmthEmitted      = 0f;
         if (IsDisposed || !_filled) return;
 
         float health = Hp;
         float energy = En;
 
         float basal = basalDrain * deltaTime;
+        warmthDrawn      = math.min(warmthDrawFraction * basal, math.max(warmthAvailable, 0f));
+        basal           -= warmthDrawn;
         energy          -= (basal + movementEnergy) * metabolismMultiplier;
         metabolismCredit = basal * (1f - metabolismMultiplier);
+        basalSpent       = basal * metabolismMultiplier;
+        warmthEmitted    = basalSpent * basalEmitFraction;
+        moveSpent        = movementEnergy * metabolismMultiplier;
 
         if (energy < starvationThreshold)
         {
@@ -94,12 +115,15 @@ public class StatsComponent : IComponent
             {
                 health -= starvationDamage;
                 energy += starvationEnergyReturn;
+                starvationReturned = starvationEnergyReturn;
                 _starvationTimer = 0f;
             }
         }
         else _starvationTimer = 0f;
 
-        En = math.clamp(energy, 0f, MaxEnergy);
+        float clamped = math.clamp(energy, 0f, MaxEnergy);
+        clampGain = clamped - energy;
+        En = clamped;
         Hp = math.min(health, MaxHealth);
     }
 

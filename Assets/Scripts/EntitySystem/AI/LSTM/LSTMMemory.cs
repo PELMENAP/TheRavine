@@ -1,6 +1,7 @@
 using System;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Mathematics;
 using UnityEngine;
 
 public unsafe partial class LSTMMemory : IDisposable
@@ -59,12 +60,12 @@ public unsafe partial class LSTMMemory : IDisposable
                     nv[r] = sum;
                     norm += sum * sum;
                 }
-                norm = Mathf.Sqrt(norm);
+                norm = math.sqrt(norm);
                 if (norm < 1e-8f) { rho = 0f; break; }
 
                 float vn = 0f;
                 for (int i = 0; i < hiddenSize; i++) vn += v[i] * v[i];
-                rho = norm / Mathf.Sqrt(vn);
+                rho = norm / math.sqrt(vn);
 
                 float inv = 1f / norm;
                 for (int i = 0; i < hiddenSize; i++) v[i] = nv[i] * inv;
@@ -104,7 +105,7 @@ public unsafe partial class LSTMMemory : IDisposable
 
     private void InitWeights(float[] weights, int rows, int cols)
     {
-        float scale = Mathf.Sqrt(2f / (rows + cols));
+        float scale = math.sqrt(2f / (rows + cols));
         for (int i = 0; i < weights.Length; i++)
             weights[i] = UnityEngine.Random.Range(-scale, scale);
     }

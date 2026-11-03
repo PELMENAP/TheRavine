@@ -10,24 +10,8 @@ using TheRavine.EntityControl.Virology;
 
 public partial class EntityModel
 {
-    private float ResolveDayPhase()
-    {
-        if (_dayCycle == null && !ServiceLocator.Services.TryGet(out _dayCycle)) return 0f;
-        return _dayCycle.NormalizedTime.CurrentValue;
-    }
-
-    private static bool IsNightPhase(float phase)
-    {
-        ref readonly var r = ref SimulationRules.Frame;
-        return r.NightStart > r.NightEnd
-            ? phase >= r.NightStart || phase < r.NightEnd
-            : phase >= r.NightStart && phase < r.NightEnd;
-    }
-
     private bool IsAliveForTick()
         => !IsDeathPending && !IsDisposed && !Stats.IsDisposed && Stats.Hp > 0f;
-
-    public override void UpdateEntityCycle() { }
 
     public void SubmitDecision(bool allowDecision)
     {
@@ -40,13 +24,39 @@ public partial class EntityModel
         _cycleActive = false;
 
         if (IsDisposed || IsDeathPending) return false;
-        if (!IsActive.Value) return false;
+        if (!_isActive.Value) return false;
         if (Stats.IsDisposed || Stats.Hp <= 0f) return false;
 
         Stats.Open();
         bool ok = RunCycle();
         Stats.Commit();
         return ok;
+    }
+
+    private static float2 NoisyDirection(float2 dir, float magnitude)
+    {
+        if (magnitude <= 0f || math.lengthsq(dir) <= 0f) return dir;
+        math.sincos(RavineRandom.RangeFloat(0f, 2f * math.PI), out float s, out float c);
+        return math.normalizesafe(dir + new float2(c, s) * magnitude);
+    }
+
+    private void UpdateDormancy(double now, in SimulationRules.RulesFrame rules)
+    {
+        if (IsWild) return;
+
+        bool hpOk = Stats.Hp >= Stats.MaxHealth * rules.HibernateWakeHpFraction;
+        if (_dormant)
+        {
+            if (!_winter || !hpOk) _dormant = false;
+            return;
+        }
+
+        if (!_winter || !IsAtNest || IsHungry || !hpOk || now < _dormantBlockUntil) return;
+        if (Stats.En < Stats.MaxEnergy * rules.HibernateEnterEnergy) return;
+
+        _plan.Interrupt();
+        _runner.Interrupt();
+        _dormant = true;
     }
 
     private bool RunCycle()
@@ -68,15 +78,17 @@ public partial class EntityModel
             return false;
         }
         UpdateHeading();
-        Stress    *= math.exp(-dt / math.max(rules.StressTau, 1e-3f));
+        float stressTau = IsAtNest ? rules.StressTau / math.max(rules.StressNestRecoveryMul, 1f) : rules.StressTau;
+        Stress    *= math.exp(-dt / math.max(stressTau, 1e-3f));
         UpdateOrnsteinUhlenbeck(dt, in rules);
 
         _season         = SeasonClock.Value(now);
         _winterApproach = SeasonClock.WinterApproach(now);
         _winter         = _season < -rules.WinterThreshold;
+        UpdateDormancy(nowD, in rules);
 
-        float dayPhase = ResolveDayPhase();
-        bool  night    = IsNightPhase(dayPhase);
+        float dayPhase = CreatureCore.DayPhase(ref _dayCycle);
+        bool  night    = CreatureCore.IsNightPhase(dayPhase, in rules);
         _night = night;
 
         var host = new HostState
@@ -89,9 +101,9 @@ public partial class EntityModel
             AtNest         = IsAtNest,
             HomeCrowd      = rules.HomeCompulsionCrowd,
         };
-        float hpBeforeVirus = Stats.Hp;
-        Virology.Step(Stats, dt, in host);
-        if (Stats.Hp < hpBeforeVirus) Mortality.NoteHarm(DeathCause.Virus, Stats.Hp);
+        float enBeforeVirus = Stats.En;
+        CreatureCore.StepVirology(Virology, Stats, Mortality, dt, in host);
+        _ledger.Flows.ViralNet += Stats.En - enBeforeVirus;
         ref var mods = ref Virology.Modifiers;
         if (mods.ForceSpeechRequested) Broadcast(Speech.Own);
         if (!IsAliveForTick()) return false;
@@ -110,26 +122,29 @@ public partial class EntityModel
             _foodIndex.TryFindNearestFood(pos.x, pos.z, detect, out _foodCell, out _foodDistance, Colony.ColonyId))
             _foodValid = true;
 
-        FoodKind foodKind = FoodKind.Plant;
+        FoodTraits foodTraits = default;
         bool foodInfected = false;
         float2 foodPos = float2.zero;
         if (_foodValid)
         {
             foodPos = ChunkFoodIndex.CellCenter(_foodCell);
-            _foodIndex.TryGetKind(_foodCell, out foodKind, out foodInfected);
+            _foodIndex.TryGetTraits(_foodCell, out foodTraits, out foodInfected);
         }
-        _foodKind = foodKind;
+        _foodTraits = foodTraits;
 
         var nest = Nest;
-        IsAtNest = nest != null && nest.Contains(self);
+        IsAtNest = nest != null && nest.Contains(self, IsAtNest ? nest.Radius * math.max(rules.NestExitRadiusMul, 1f) : nest.Radius);
         if (nest != null && _foodValid) nest.Mark(ColonyChannel.Food, foodPos, rules.NestFoodMark * dt);
         if (nest != null && !IsWild)
             nest.Mark(ColonyChannel.Explored, self, rules.ExploredMark * dt * (Caste == Caste.Scout ? rules.ScoutExploredMul : 1f));
         if (nest != null && !IsWild) nest.Mark(ColonyChannel.Territory, self, rules.TerritoryMark * dt);
         SampleTrail(in self, nowD, in rules);
         _nearestForeign = FindNearestForeign(pos, detect, out _nearestForeignDistance);
+        StatsComponent    playerStats    = null;
+        VirologyComponent playerVirology = null;
         _playerValid = _players != null
-            && _players.TryFindNearest(self, detect, out _playerPos, out _playerDistance, out _playerTransform);
+            && _players.TryFindNearest(self, detect, out _playerPos, out _playerDistance, out _playerTransform,
+                out playerStats, out playerVirology);
         if (!_playerValid) _playerTransform = null;
         PerceptionMarker.End();
         _nestFood = ComputeNestFood(nest, in rules);
@@ -146,6 +161,18 @@ public partial class EntityModel
         if (nearest != null) nearest.Virology.TryGetViralInputs(out neighborLoad, out _, out _);
         _kinSick = nearest != null && nearest.Colony == Colony && neighborLoad >= rules.GroomMinLoad;
 
+        ReadForeignVitals(playerStats, playerVirology, out float foreignHp, out float foreignEnergy, out float foreignViral,
+            out StatsComponent foreignSource);
+        float foreignHarm = ReferenceEquals(foreignSource, _harmKey) ? math.max(0f, _harmPrevHp - foreignHp) : 0f;
+        _harmKey    = foreignSource;
+        _harmPrevHp = foreignHp;
+        if (foreignHarm > 0f)
+        {
+            AddStress(rules.ForeignHarmStress * foreignHarm);
+            Colony?.Stats.RecordForeignHarm();
+        }
+
+        float dirNoise = Stress * rules.StressPerceptionNoise;
         var frame = new VectorizerFrame
         {
             Health            = Stats.Hp,
@@ -155,16 +182,16 @@ public partial class EntityModel
             TimeToBreed       = ComputeBreedReadiness(),
             NearestEntityDist = _nearestDistance,
             NearestFoodDist   = _foodValid ? _foodDistance : -1f,
-            FoodDir           = _foodValid ? DirectionTo(in self, in foodPos) : float2.zero,
-            EntityDir         = nearest != null ? DirectionTo(in self, Extension.Flat(nearest.Motor.Position())) : float2.zero,
-            NestDir           = nest != null ? DirectionTo(in self, nest.Position) : float2.zero,
-            PoiDir            = Points.TryGetNearest(in self, out float2 poi) ? DirectionTo(in self, in poi) : float2.zero,
+            FoodDir           = NoisyDirection(_foodValid ? DirectionTo(in self, in foodPos) : float2.zero, dirNoise),
+            EntityDir         = NoisyDirection(nearest != null ? DirectionTo(in self, Extension.Flat(nearest.Motor.Position())) : float2.zero, dirNoise),
+            NestDir           = NoisyDirection(nest != null ? DirectionTo(in self, nest.Position) : float2.zero, dirNoise),
+            PoiDir            = NoisyDirection(Points.TryGetNearest(in self, out float2 poi) ? DirectionTo(in self, in poi) : float2.zero, dirNoise),
             NestFoodDir       = nest != null && nest.HasFoodPeak ? DirectionTo(in self, nest.FoodPeak) : float2.zero,
             Stomach           = Digestion.Fill,
             WellFed           = Digestion.WellFed,
-            FoodToxic         = _foodValid && foodKind == FoodKind.Toxic ? 1f : 0f,
-            FoodLarge         = _foodValid && foodKind == FoodKind.Large ? 1f : 0f,
-            FoodMeat          = _foodValid && foodKind == FoodKind.Meat ? 1f : 0f,
+            FoodToxicity      = foodTraits.Toxicity,
+            FoodSize          = foodTraits.Size,
+            FoodMeat          = foodTraits.Meat,
             FoodInfected      = foodInfected ? 1f : 0f,
             Carrying          = Carrying > 0f ? math.saturate(Carrying / math.max(Stats.MaxEnergy * rules.StomachCapacityFraction, 1e-3f)) : 0f,
             NestStorage       = nest != null ? math.saturate(nest.Storage / math.max(rules.NestStorageNorm, 1e-3f)) : 0f,
@@ -177,7 +204,9 @@ public partial class EntityModel
             FlockHeading      = _flock.MeanHeading,
             FlockCentroidDir  = _flock.CentroidDir,
             MigrationDir      = nest != null ? math.normalizesafe(nest.Migration) * math.saturate(nest.MigrationPressure) : float2.zero,
-            NearestForeign    = _nearestForeign != null || _playerValid ? 1f : 0f,
+            ForeignHp         = foreignHp,
+            ForeignEnergy     = foreignEnergy,
+            ForeignViral      = foreignViral,
             IsLeader          = IsLeader ? 1f : 0f,
             Caste             = (int)Caste,
             Speech            = Speech.Heard,
@@ -202,27 +231,40 @@ public partial class EntityModel
         if (LastAction == EntityAction.Rest && SinceAction(EntityAction.Eat) < rules.SynergyWindow)
             digestMul *= rules.RestAfterEatDigestMul;
 
-        Digestion.Tick(Stats, dt, resting, digestMul, mods.RegenMultiplier, in rules, out float regenCredit);
+        Digestion.Tick(Stats, dt, resting, digestMul, mods.RegenMultiplier, in rules, out float regenCredit, out float digestLoss);
 
-        float basal = rules.BasalEnergyDrain * Tuning.BasalDrainMul
-                    * (1f - rules.WellFedBasalReduction * Digestion.WellFed)
-                    * (night && !IsAtNest ? rules.NightOutsideDrainMul : 1f)
-                    * (1f + mods.Fever * rules.FeverDrainMul)
-                    * (_winter ? rules.WinterDrainMul : 1f)
-                    * SenescenceMul(in rules)
-                    * _immuneUpkeepMul;
+        float basalMul = Tuning.BasalDrainMul
+                       * CreatureCore.EnvironmentDrainMul(Digestion.WellFed, night && !IsAtNest, mods.Fever, _winter, in rules, _dormant)
+                       * SenescenceMul(in rules)
+                       * _immuneUpkeepMul;
 
-        float hpBeforeStarve = Stats.Hp;
-        Stats.Tick(dt,
-            Motor.DrainEnergy(),
-            mods.MetabolismMultiplier,
-            basal,
-            rules.StarvationThreshold, rules.StarvationDamage, rules.StarvationEnergyReturn,
-            out float metabolismCredit);
-        if (Stats.Hp < hpBeforeStarve) Mortality.NoteHarm(DeathCause.Starved, Stats.Hp);
+        bool  warm       = _warmth != null && (rules.WarmthDrawFraction > 0f || rules.BasalEmitFraction > 0f);
+        int   warmthCell = warm ? _warmth.Index(self) : 0;
+        float warmthHere = warm ? _warmth.Read(warmthCell) : 0f;
+
+        CreatureCore.Metabolize(Stats, Mortality, dt, Motor.DrainEnergy(), mods.MetabolismMultiplier, basalMul,
+            in rules, warmthHere, out float metabolismCredit, out float basalSpent, out float moveSpent,
+            out float starvationReturned, out float clampGain, out float warmthDrawn, out float warmthEmitted);
+
+        if (warm) _warmth.Add(warmthCell, warmthEmitted - warmthDrawn);
+        if (warmthDrawn > 0f) Colony?.Stats.RecordWarmthDraw();
+
+        float soilStored = _foodIndex != null ? _foodIndex.ReturnToSoil(pos.x, pos.z, digestLoss) : 0f;
+
+        ref var flows = ref _ledger.Flows;
+        flows.DigestionLoss    += digestLoss - soilStored;
+        flows.SoilReturn       += soilStored;
+        flows.Basal            += basalSpent - warmthEmitted;
+        flows.WarmthEmit       += warmthEmitted;
+        flows.WarmthDraw       += warmthDrawn;
+        flows.Movement         += moveSpent;
+        flows.StarvationReturn += starvationReturned;
+        flows.ClampGain        += clampGain;
+        flows.MetabolismCredit += metabolismCredit;
 
         Virology.CreditDurableEffects(regenCredit, metabolismCredit, Stats.MaxEnergy);
         if (!IsAliveForTick()) return false;
+        if (_dormant) return false;
 
         _driveIntegral += Drive() * dt;
 
@@ -332,7 +374,7 @@ public partial class EntityModel
             Age             = TimeAlive,
             AtNest          = IsAtNest ? (byte)1 : (byte)0,
             NestFood        = _nestFood ? (byte)1 : (byte)0,
-            FoodToxic       = _foodValid && foodKind == FoodKind.Toxic ? (byte)1 : (byte)0,
+            FoodToxicity    = foodTraits.Toxicity,
             Night           = night ? (byte)1 : (byte)0,
             Warned          = IsWarned ? (byte)1 : (byte)0,
             HasThreat       = hasThreat ? (byte)1 : (byte)0,
@@ -408,7 +450,7 @@ public partial class EntityModel
             StartDecision(in decision);
         }
 
-        OnUpdate.Execute(R3.Unit.Default);
+        _onUpdate.Execute(R3.Unit.Default);
     }
 
     private void StartDecision(in BrainDecision decision)

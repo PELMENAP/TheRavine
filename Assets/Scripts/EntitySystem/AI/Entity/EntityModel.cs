@@ -8,7 +8,7 @@ using TheRavine.Extensions;
 using TheRavine.Generator;
 using TheRavine.EntityControl.Virology;
 
-public partial class EntityModel : AEntity, IFoodReceiver
+public partial class EntityModel : IEntity, IFoodReceiver
 {
     public enum FitnessEvent { FoodEaten, Reproduced, DamageDealt }
 
@@ -21,6 +21,15 @@ public partial class EntityModel : AEntity, IFoodReceiver
     public PointsOfInterestComponent Points { get; private set; }
     public VirologyComponent Virology { get; private set; }
     public DigestionComponent Digestion { get; private set; }
+    public VisualCullingComponent VisualCulling { get; set; }
+
+    private readonly R3.ReactiveProperty<bool> _isActive = new(true);
+    private readonly R3.ReactiveCommand<R3.Unit> _onUpdate = new();
+    public R3.ReadOnlyReactiveProperty<bool> IsActive => _isActive;
+    public R3.Observable<R3.Unit> OnUpdate => _onUpdate;
+    public bool IsDisposed { get; private set; }
+    public void Activate() => _isActive.Value = true;
+    public void Deactivate() => _isActive.Value = false;
 
     public IEntityDialogHost DialogHost { get; private set; }
 
@@ -104,6 +113,9 @@ public partial class EntityModel : AEntity, IFoodReceiver
     private float _season;
     private float _winterApproach;
     private bool  _winter;
+    private bool  _dormant;
+    private double _dormantBlockUntil;
+    public bool IsDormant => _dormant;
 
     private float2 _recruitTarget;
     private double _recruitUntil = double.NegativeInfinity;
@@ -135,7 +147,7 @@ public partial class EntityModel : AEntity, IFoodReceiver
     private UtilityFeatures _utility;
     public ref readonly UtilityFeatures UtilityInput => ref _utility;
 
-    private FoodKind _foodKind;
+    private FoodTraits _foodTraits;
 
     private CasteThresholdSystem _thresholds;
 
@@ -183,6 +195,8 @@ public partial class EntityModel : AEntity, IFoodReceiver
 
     private EntityModel _nearestForeign;
     private float       _nearestForeignDistance = -1f;
+    private StatsComponent _harmKey;
+    private float          _harmPrevHp;
     private PlayerPresence _players;
     private bool      _playerValid;
     private float2    _playerPos;
@@ -214,7 +228,8 @@ public partial class EntityModel : AEntity, IFoodReceiver
             if (foreign != null && (!player || _nearestForeignDistance <= _playerDistance)) return new HuntTarget(foreign, null);
             if (player) return new HuntTarget(null, _playerTransform);
             var nearest = CachedNearest;
-            return nearest != null && IsFrenzied ? new HuntTarget(nearest, null) : default;
+            if (nearest == null || !IsFrenzied) return default;
+            return SimulationRules.Frame.FrenzyTargetsOwnColony || nearest.Colony != Colony ? new HuntTarget(nearest, null) : default;
         }
     }
 
@@ -233,8 +248,10 @@ public partial class EntityModel : AEntity, IFoodReceiver
 
         var tuning = EntityTuning.Express(in _baseTuning, in Brain.Context.CoordMLP.Params, in mods);
         Tuning = tuning;
+        float bodyBefore = BodyEnergy;
         Stats.Rescale(tuning.MaxHealth, tuning.MaxEnergy);
         Digestion.Resize(tuning.MaxEnergy * SimulationRules.Active.StomachCapacityFraction);
+        _ledger.Flows.RescaleNet += BodyEnergy - bodyBefore;
         Vectorizer?.SetMaxima(tuning.MaxHealth, tuning.MaxEnergy);
         Brain.Context.CasteMask = ActionCatalog.CasteActionMask(caste);
     }
@@ -425,7 +442,7 @@ public partial class EntityModel : AEntity, IFoodReceiver
         return true;
     }
 
-    public override void SetUp()
+    public void SetUp()
     {
         _lastCycleTime   = SimulationClock.TimeD;
         _attackReadyTime = 0d;
@@ -436,6 +453,10 @@ public partial class EntityModel : AEntity, IFoodReceiver
     public void RequestReproduce() => OnReproduceRequest?.Invoke(this);
 
     public ChunkFoodIndex FoodIndex => _foodIndex;
+
+    private EnergyLedger _ledger;
+    private WarmthField  _warmth;
+    public EnergyLedger Ledger => _ledger;
 
     public void Configure(
         ColonyState colony, EntityBrainContext ctx,
@@ -453,25 +474,25 @@ public partial class EntityModel : AEntity, IFoodReceiver
         if (colony.IsWild) CasteFixed = true;
         var tuning = EntityTuning.Express(in baseTuning, in ctx.CoordMLP.Params, _casteMods);
         MaxAge = rulesA.BaseMaxAge * ctx.CoordMLP.Params.MaxAgeMul;
-        _immuneUpkeepMul = 1f + ctx.CoordMLP.Params.ImmuneInvestment * rulesA.ImmuneUpkeep;
+        _immuneUpkeepMul = CreatureCore.ImmuneUpkeepMul(in ctx.CoordMLP.Params, rulesA);
         Motor = motor;
         SelfObject = selfObject;
         Tuning = tuning;
         DialogHost = (IEntityDialogHost)motor;
 
-        Stats = GetOrCreateEntityComponent<StatsComponent>();
+        Stats = new StatsComponent();
         Stats.FillComponent(tuning.MaxHealth, tuning.MaxEnergy);
 
-        Digestion = GetOrCreateEntityComponent<DigestionComponent>();
-        AddComponentToEntity(_fitness);
+        Digestion = new DigestionComponent();
         Digestion.Configure(tuning.MaxEnergy * SimulationRules.Active.StomachCapacityFraction);
 
         ServiceLocator.Services.TryGet(out _grid);
-        AddComponentToEntity(new PerceptionComponent(tuning.DetectionRadius, _grid));
-        Perception = GetEntityComponent<PerceptionComponent>();
+        Perception = new PerceptionComponent(tuning.DetectionRadius, _grid);
 
         _terrain = new TerrainSensor(ServiceLocator.GetService<MapGenerator>());
         ServiceLocator.Services.TryGet(out _foodIndex);
+        if (!ServiceLocator.Services.TryGet(out _ledger)) _ledger = new EnergyLedger();
+        ServiceLocator.Services.TryGet(out _warmth);
 
         ServiceLocator.Services.TryGet(out MovePlanner planner);
         ServiceLocator.Services.TryGet(out _players);
@@ -481,18 +502,16 @@ public partial class EntityModel : AEntity, IFoodReceiver
         Planner   = planner;
         Infection = infection;
 
-        Speech = GetOrCreateEntityComponent<SpeechComponent>();
+        Speech = new SpeechComponent();
         Speech.Inject((IEntityAudio)motor);
-        Points = GetOrCreateEntityComponent<PointsOfInterestComponent>();
+        Points = new PointsOfInterestComponent();
 
-        AddComponentToEntity(new BrainComponent(brain, ctx));
-        Brain = GetEntityComponent<BrainComponent>();
+        Brain = new BrainComponent(brain, ctx);
 
         _runner = new EntityCommandRunner(this);
         _plan   = new PlanRunner(this);
 
-        AddComponentToEntity(new MortalityComponent(Stats));
-        Mortality = GetEntityComponent<MortalityComponent>();
+        Mortality = new MortalityComponent(Stats);
         Mortality.Died += () =>
         {
             _plan.Interrupt();
@@ -505,17 +524,10 @@ public partial class EntityModel : AEntity, IFoodReceiver
 
         Vectorizer = new InputVectorizer(startHealth, tuning.MaxEnergy);
 
-        Virology = GetOrCreateEntityComponent<VirologyComponent>();
-        uint seed = (uint)RavineRandom.RangeInt(1, int.MaxValue);
-        var parentVirology = parent?.Virology;
-        if (parentVirology != null && parentVirology.IsCreated && !parentVirology.IsDisposed)
-            Virology.FillFromParent(parentVirology, in ctx.CoordMLP.Params, seed);
-        else
-            Virology.FillComponent(in ctx.CoordMLP.Params, seed);
-        Virology.SetImmuneStrength(math.lerp(rulesA.ImmuneThresholdMin, rulesA.ImmuneThresholdMax, ctx.CoordMLP.Params.ImmuneInvestment));
+        Virology = CreatureCore.CreateVirology(in ctx.CoordMLP.Params, parent?.Virology, rulesA);
     }
 
-    public override void Init()
+    public void Init()
     {
         _commands[(int)EntityAction.Idle]          = new IdleCommand(this);
         _commands[(int)EntityAction.Wander]        = new WanderCommand(this);
@@ -569,12 +581,35 @@ public partial class EntityModel : AEntity, IFoodReceiver
 
     public void InterruptCommand() => _runner?.Interrupt();
 
-    public override void DeepClean()
+    public void Dispose()
+    {
+        if (IsDisposed) return;
+        IsDisposed = true;
+
+        DeepClean();
+
+        Stats?.Dispose();
+        Digestion?.Dispose();
+        _fitness.Dispose();
+        Perception?.Dispose();
+        Speech?.Dispose();
+        Points?.Dispose();
+        Brain?.Dispose();
+        Mortality?.Dispose();
+        Virology?.Dispose();
+        VisualCulling?.Dispose();
+
+        _isActive.Dispose();
+        _onUpdate.Dispose();
+    }
+
+    private void DeepClean()
     {
         _runner?.Abandon();
         Planner?.Cancel(this);
         _nearest = null;
         _nearestForeign = null;
+        _harmKey = null;
         _lastAttacker = null;
         _playerTransform = null;
         Vectorizer?.Dispose();

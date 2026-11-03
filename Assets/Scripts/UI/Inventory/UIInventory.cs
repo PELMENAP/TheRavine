@@ -13,7 +13,7 @@ using TheRavine.Events;
 
 namespace TheRavine.Inventory
 {
-    public class UIInventory : MonoBehaviour, ISetAble
+    public class UIInventory : MonoBehaviour, ISetAble, IPlacementSource
     {
         [SerializeField] private UIInventorySlot[] activeCells;
         [SerializeField] private RectTransform cell;
@@ -29,6 +29,17 @@ namespace TheRavine.Inventory
         private InfoManager infoManager;
         private WorldRegistry worldRegistry;
         private RavineLogger logger;
+        private PlayerEntity player;
+        private readonly Queue<PendingPlace> pendingPlaces = new();
+        private readonly HashSet<long> pendingPickUps = new();
+
+        private struct PendingPlace
+        {
+            public UIInventorySlot Cell;
+            public IInventoryItem Item;
+            public long Position;
+        }
+
         public bool HasItem(InventoryItemInfo info) => 
             eventDrivenInventoryProxy.HasItem(infoManager.GetItemType(info));
 
@@ -46,14 +57,15 @@ namespace TheRavine.Inventory
 
             eventDrivenInventoryProxy = new EventDrivenInventoryProxy(slotList.Count);
             ServiceLocator.Register(eventDrivenInventoryProxy);
+            ServiceLocator.Register<IPlacementSource>(this);
 
             infoManager = new InfoManager(dataItems);
             tester = new InventoryTester(slotList.ToArray(), infoManager, eventDrivenInventoryProxy);
             
 
             PlayerEntity playerData = (PlayerEntity) ServiceLocator.Players.GetAllPlayers()[0];
-            var gameSettings = ServiceLocator.GetService<GlobalSettingsController>().Settings.CurrentValue;
-            inventoryInputHandler.RegisterInput(playerData, gameSettings);
+            player = playerData;
+            inventoryInputHandler.RegisterInput(playerData);
 
     
 
@@ -100,6 +112,8 @@ namespace TheRavine.Inventory
                 EventBus playerEventBus = playerData.GetEntityComponent<EventBusComponent>().EventBus;
                 playerEventBus.Subscribe<PlaceEvent>(PlaceObjectEvent);
                 playerEventBus.Subscribe<PickUpEvent>(PickUpEvent);
+                playerEventBus.Subscribe<PlaceResultEvent>(OnPlaceResult);
+                playerEventBus.Subscribe<PickUpResultEvent>(OnPickUpResult);
             }
             catch (Exception ex)
             {
@@ -107,28 +121,63 @@ namespace TheRavine.Inventory
             }
         }
 
-        private void PlaceObjectEvent(AEntity entity, PlaceEvent e)
+        private bool TryGetActiveCell(out UIInventorySlot cell)
         {
-            InventorySlot slot = activeCells[inventoryInputHandler.ActiveCellIndex - 1].slot;
-            if (slot.isEmpty) return;
-
-            IInventoryItem item = activeCells[inventoryInputHandler.ActiveCellIndex - 1]._uiInventoryItem.item;
-            if (!item.info.isPlaceable) return;
-
-            if (!objectSystem.TryGetIdByPrefab(item.info.prefab, out int placeId)) return;
-
-            ObjectInfo placeInfo = objectSystem.GetInfo(placeId);
-            int levels = placeInfo != null ? placeInfo.Levels : 1;
-
-            if (generator.TryAddObject(e.Position, generator.GetRealPosition(e.Position), placeId, 1, levels: levels))
+            int index = inventoryInputHandler.ActiveCellIndex - 1;
+            if (index < 0 || index >= activeCells.Length)
             {
-                item.state.amount--;
-                if (slot.amount <= 0) slot.Clear();
-                activeCells[inventoryInputHandler.ActiveCellIndex - 1].Refresh();
-                generator.TryToAddPositionToChunk(e.Position);
+                cell = null;
+                return false;
             }
 
-            generator.ExtraUpdate();
+            cell = activeCells[index];
+            return cell != null && cell.slot != null && !cell.slot.isEmpty;
+        }
+
+        public bool HasPlaceableInActiveCell() =>
+            TryGetActiveCell(out UIInventorySlot cell) && cell.slot.item.info.isPlaceable;
+
+        private void PlaceObjectEvent(AEntity entity, PlaceEvent e)
+        {
+            if (!TryGetActiveCell(out UIInventorySlot cell)) return;
+
+            InventorySlot slot = cell.slot;
+            IInventoryItem item = slot.item;
+            if (!item.info.isPlaceable) return;
+
+            if (!objectSystem.TryGetIdByPrefab(item.info.prefab, out int placeId))
+            {
+                logger.LogWarning($"[UIInventory] Нет ObjectInfo для префаба предмета {item.info.id}");
+                return;
+            }
+
+            int reserved = 0;
+            foreach (PendingPlace pending in pendingPlaces)
+                if (pending.Item == item) reserved++;
+            if (reserved >= slot.amount) return;
+
+            if (player.RequestPlace(e.Position, placeId))
+                pendingPlaces.Enqueue(new PendingPlace { Cell = cell, Item = item, Position = e.Position });
+        }
+
+        private void OnPlaceResult(AEntity entity, PlaceResultEvent e)
+        {
+            if (pendingPlaces.Count == 0) return;
+
+            PendingPlace pending = pendingPlaces.Dequeue();
+            if (!e.Ok)
+            {
+                logger.LogInfo($"[UIInventory] Размещение в {Position2Int.UnpackToVector(e.Position)} отклонено: {(WorldEditResult)e.Edit}/{(PlacementResult)e.Placement}");
+                return;
+            }
+            if (pending.Position != e.Position) return;
+
+            InventorySlot slot = pending.Cell.slot;
+            if (slot == null || slot.item != pending.Item) return;
+
+            pending.Item.state.amount--;
+            if (slot.amount <= 0) slot.Clear();
+            pending.Cell.Refresh();
         }
 
         private void OnInventoryStateChanged(object sender)
@@ -139,41 +188,32 @@ namespace TheRavine.Inventory
 
         private void PickUpEvent(AEntity entity, PickUpEvent e)
         {
-            if (generator.TryGetObject(e.Position, out ObjectInstInfo objectInstInfo))
-            {
-                ObjectInfo data = objectSystem.GetInfo(objectInstInfo.PrefabID);
-                if (data == null || data.InventoryItemInfo == null) return;
+            if (pendingPickUps.Contains(e.Position)) return;
+            if (!generator.TryGetObject(e.Position, out ObjectInstInfo objectInstInfo)) return;
 
-                IInventoryItem item = infoManager.GetInventoryItemByInfo(
-                    data.InventoryItemInfo.id, 
-                    data.InventoryItemInfo, 
-                    objectInstInfo.Amount);
+            ObjectInfo data = objectSystem.GetInfo(objectInstInfo.PrefabID);
+            if (data == null || data.InventoryItemInfo == null) return;
+            if (eventDrivenInventoryProxy.isFull && !HasItem(data.InventoryItemInfo)) return;
 
-                if (eventDrivenInventoryProxy.TryToAdd(this, item))
-                {
-                    generator.RemoveObject(e.Position);
-                    SpreadPattern pattern = data.OnPickUpPattern;
-                    
-                    if (pattern != null)
-                    {
-                        generator.TryAddObject(e.Position, generator.GetRealPosition(e.Position), 
-                            pattern.main.Id, pattern.main.DefaultAmount);
-                        
-                        if (pattern.other.Length != 0)
-                        {
-                            for (byte i = 0; i < pattern.other.Length; i++)
-                            {
-                                long newPos = Position2Int.Pack(Extension.GetRandomPointAround(Position2Int.UnpackToVector(e.Position), pattern.factor));
-                                generator.TryAddObject(newPos, generator.GetRealPosition(newPos), 
-                                    pattern.other[i].Id, 
-                                    pattern.other[i].DefaultAmount);
-                            }
-                        }
-                    }
-                }
+            if (player.RequestPickUp(e.Position))
+                pendingPickUps.Add(e.Position);
+        }
 
-                generator.ExtraUpdate();
-            }
+        private void OnPickUpResult(AEntity entity, PickUpResultEvent e)
+        {
+            pendingPickUps.Remove(e.Position);
+            if (!e.Ok) return;
+
+            ObjectInfo data = objectSystem.GetInfo(e.PrefabId);
+            if (data == null || data.InventoryItemInfo == null) return;
+
+            IInventoryItem item = infoManager.GetInventoryItemByInfo(
+                data.InventoryItemInfo.id,
+                data.InventoryItemInfo,
+                e.Amount);
+
+            if (!eventDrivenInventoryProxy.TryToAdd(this, item))
+                logger.LogWarning($"[UIInventory] Нет места для {data.InventoryItemInfo.id}, подобранный предмет потерян");
         }
 
         private void SaveInventory()
@@ -196,6 +236,7 @@ namespace TheRavine.Inventory
             uIDragger.BreakUp();
             craftService.BreakUp();
 
+            ServiceLocator.Services.Unregister<IPlacementSource>(this);
             eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce -= OnInventoryStateChanged;
             eventDrivenInventoryProxy.Dispose();
             inventoryInputHandler.UnregisterInput();

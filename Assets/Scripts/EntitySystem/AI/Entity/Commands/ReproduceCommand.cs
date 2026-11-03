@@ -11,6 +11,7 @@ public class ReproduceCommand : EntityCommand
     protected override EntityCommandStatus OnBegin()
     {
         model.Stats.En -= model.Tuning.ReproduceEnergyCost;
+        model.Ledger.Flows.Reproduce += model.Tuning.ReproduceEnergyCost;
         model.Stats.Hp -= model.Tuning.ReproduceHealthCost;
         model.RequestReproduce();
         model.RegisterFitnessEvent(EntityModel.FitnessEvent.Reproduced);
