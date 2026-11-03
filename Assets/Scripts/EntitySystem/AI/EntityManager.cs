@@ -670,6 +670,8 @@ public class EntityManager : MonoBehaviour
         _lastNestTime = now;
 
         var r = SimulationRules.Active;
+        for (int c = 0; c < _colonies.Count; c++) _colonies[c].Nest.BeginTick(dt);
+
         for (int c = 0; c < _colonies.Count; c++)
         {
             var colony  = _colonies[c];
@@ -694,7 +696,7 @@ public class EntityManager : MonoBehaviour
             colony.Nest.HungryAtNest = hungryAtNest;
             colony.Nest.NursesAtNest = nursesAtNest;
 
-            colony.Nest.Tick(dt, atNest);
+            colony.Nest.EndTick(dt, atNest);
 
             float inv = members.Length > 0 ? 1f / members.Length : 0f;
             colony.Stats.SampleMembers(fill * inv, restingAtNest * inv,
