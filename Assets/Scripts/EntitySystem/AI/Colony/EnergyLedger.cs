@@ -34,12 +34,44 @@ public struct EnergyFlows
     public readonly float Outflow
         => Basal + Movement + DigestionLoss + Speech + Threaten + Dash + Strike + Reproduce + RestHeal
          + CorpseSpoil + DeathLoss + SoilRelease + WarmthDraw + WarmthDecay;
+
+    public void Add(in EnergyFlows o)
+    {
+        FoodSpawn        += o.FoodSpawn;
+        FoodMaturation   += o.FoodMaturation;
+        ChildStart       += o.ChildStart;
+        SpawnStart       += o.SpawnStart;
+        StarvationReturn += o.StarvationReturn;
+        ClampGain        += o.ClampGain;
+        ViralNet         += o.ViralNet;
+        RescaleNet       += o.RescaleNet;
+
+        Basal         += o.Basal;
+        Movement      += o.Movement;
+        DigestionLoss += o.DigestionLoss;
+        Speech        += o.Speech;
+        Threaten      += o.Threaten;
+        Dash          += o.Dash;
+        Strike        += o.Strike;
+        Reproduce     += o.Reproduce;
+        RestHeal      += o.RestHeal;
+        CorpseSpoil   += o.CorpseSpoil;
+        DeathLoss     += o.DeathLoss;
+        SoilRelease   += o.SoilRelease;
+        WarmthDraw    += o.WarmthDraw;
+        WarmthDecay   += o.WarmthDecay;
+
+        SoilReturn       += o.SoilReturn;
+        WarmthEmit       += o.WarmthEmit;
+        MetabolismCredit += o.MetabolismCredit;
+    }
 }
 
 public sealed class EnergyLedger
 {
     public EnergyFlows Flows;
     public EnergyFlows Last;
+    public EnergyFlows Window;
 
     public float StockEntities;
     public float StockNest;
@@ -59,6 +91,8 @@ public sealed class EnergyLedger
 
     private bool _primed;
 
+    public void ResetWindow() => Window = default;
+
     public void Sample(float entities, float nest, float food, float corpses, float soil, float warmth)
     {
         float soilPrev   = StockSoil;
@@ -73,6 +107,7 @@ public sealed class EnergyLedger
         StockPrev = Stock;
         Stock     = entities + nest + food + corpses + soil + warmth;
         Last      = Flows;
+        Window.Add(in Last);
         Flows     = default;
 
         if (!_primed)
