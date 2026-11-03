@@ -42,8 +42,6 @@ public partial class EntityModel
 
     private void UpdateDormancy(double now, in SimulationRules.RulesFrame rules)
     {
-        if (IsWild) return;
-
         bool hpOk = Stats.Hp >= Stats.MaxHealth * rules.HibernateWakeHpFraction;
         if (_dormant)
         {
@@ -132,7 +130,7 @@ public partial class EntityModel
         _foodTraits = foodTraits;
 
         var nest = Nest;
-        IsAtNest = nest != null && nest.Contains(self, IsAtNest ? nest.Radius * math.max(rules.NestExitRadiusMul, 1f) : nest.Radius);
+        IsAtNest = ComputeAtHome(nest, in self, in rules);
         if (nest != null && _foodValid) nest.Mark(ColonyChannel.Food, foodPos, rules.NestFoodMark * dt);
         if (nest != null && !IsWild)
             nest.MarkPair(self,
@@ -149,7 +147,7 @@ public partial class EntityModel
         PerceptionMarker.End();
         _nestFood = ComputeNestFood(nest, in rules);
         UpdateTerritory(nest, in self, dt, in rules);
-        if (!IsWild) ComputeDirections(nest, in self, in foodPos, in rules);
+        ComputeDirections(nest, in self, in foodPos, in rules);
 
         if (!_terrain.TrySample(pos.x, pos.z, out _lastTerrain))
             _lastTerrain = TerrainSample.Invalid;
@@ -184,7 +182,7 @@ public partial class EntityModel
             NearestFoodDist   = _foodValid ? _foodDistance : -1f,
             FoodDir           = NoisyDirection(_foodValid ? DirectionTo(in self, in foodPos) : float2.zero, dirNoise),
             EntityDir         = NoisyDirection(nearest != null ? DirectionTo(in self, Extension.Flat(nearest.Motor.Position())) : float2.zero, dirNoise),
-            NestDir           = NoisyDirection(nest != null ? DirectionTo(in self, nest.Position) : float2.zero, dirNoise),
+            NestDir           = NoisyDirection(HasHome ? DirectionTo(in self, HomePosition) : float2.zero, dirNoise),
             PoiDir            = NoisyDirection(Points.TryGetNearest(in self, out float2 poi) ? DirectionTo(in self, in poi) : float2.zero, dirNoise),
             NestFoodDir       = nest != null && nest.HasFoodPeak ? DirectionTo(in self, nest.FoodPeak) : float2.zero,
             Stomach           = Digestion.Fill,
@@ -221,7 +219,7 @@ public partial class EntityModel
         if (_sick && nest != null) nest.Mark(ColonyChannel.Sickness, self, rules.SickMark * dt);
         UpdateHormones(dt, in rules);
 
-        if (!IsWild) LastInput = Vectorizer.Vectorize(in frame, _actionTimes, in _lastTerrain);
+        LastInput = Vectorizer.Vectorize(in frame, _actionTimes, in _lastTerrain);
 
         Speech.ConsumeOtherSpeech();
         ConsumeMimickedAction();
@@ -272,16 +270,6 @@ public partial class EntityModel
         if (!IsAliveForTick()) return false;
         _plan.Tick();
         if (!IsAliveForTick()) return false;
-
-        if (IsWild)
-        {
-            _threatResolved = ResolveThreatSource(in self, frame.LocalDanger, in rules, out _threatSource);
-            _hasThreat   = _threatResolved;
-            _cycleNow    = now;
-            _cycleDt     = dt;
-            _cycleActive = true;
-            return true;
-        }
 
         var goalBias = new float4(
             mods.WanderBias,
@@ -384,12 +372,14 @@ public partial class EntityModel
             PlanActive      = _plan.IsActive ? (byte)1 : (byte)0,
             PlanKind        = (byte)_plan.Kind,
             Caste           = (byte)Caste,
-            NestDistance    = nest != null ? math.distance(self, nest.Position) : -1f,
+            NestDistance    = HasHome ? math.distance(self, HomePosition) : -1f,
             HungerBias      = _ghrelin * rules.GhrelinHungerShift,
             PanicBias       = _oxytocin * rules.OxytocinPanicShift - _cortisol * rules.CortisolPanicShift,
             Sick            = _sick ? (byte)1 : (byte)0,
             HungryKin       = nest != null && nest.HungryAtNest > 0 ? (byte)1 : (byte)0,
             Recruited       = IsRecruited ? (byte)1 : (byte)0,
+            Colonial        = nest != null ? (byte)1 : (byte)0,
+            Dt              = dt,
         };
 
         _cycleNow    = now;
@@ -407,6 +397,8 @@ public partial class EntityModel
         if (Carrying > 0f) h |= PlanHint.Carrying;
         if (Carrying >= CarryCapacity * r.CarryFullFraction) h |= PlanHint.CarryFull;
         if (IsAtNest) h |= PlanHint.AtNest;
+        if (Nest != null) h |= PlanHint.HasNest;
+        if (HasHome) h |= PlanHint.HasHome;
         if (CachedNearest != null) h |= PlanHint.EntityNear;
         if (_playerValid) h |= PlanHint.PlayerNear;
         if (ValidForeign != null || _playerValid || (IsFrenzied && CachedNearest != null)) h |= PlanHint.PreyNear;
@@ -425,9 +417,9 @@ public partial class EntityModel
         if (nest != null && nest.HasFoodPeak) h |= PlanHint.FoodPeak;
         if (nest != null && nest.Storage < r.SeekStorageLow * r.NestStorageNorm) h |= PlanHint.StorageLow;
         var colony = Colony;
-        if (colony != null && colony.Pois.Count > 0) h |= PlanHint.ColonyPoi;
+        if (colony != null && !colony.IsWild && colony.Pois.Count > 0) h |= PlanHint.ColonyPoi;
         if (colony != null && IsLeader && colony.TryGetQuorumSite(out _)) h |= PlanHint.QuorumReady;
-        if (Caste == Caste.Worker && CasteFixed && !IsJuvenile && !IsHungry) h |= PlanHint.PreferPickUp;
+        if (nest != null && Caste == Caste.Worker && CasteFixed && !IsJuvenile && !IsHungry) h |= PlanHint.PreferPickUp;
         if (_kinSick) h |= PlanHint.KinSick;
         if (_night) h |= PlanHint.Night;
         return h;

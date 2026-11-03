@@ -312,6 +312,11 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float CasteScoutThreshold;
         public readonly float CasteNurseThreshold;
         public readonly float NurseLeash;
+        public readonly float NurseLeashRate;
+        public readonly float NurseryRadius;
+        public readonly float NurseryRate;
+        public readonly float TetherRate;
+        public readonly float NightHomeRate;
         public readonly float SoldierAttackMul;
         public readonly float SoldierHealthMul;
         public readonly float SoldierUpkeepMul;
@@ -402,8 +407,6 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float PredatorUpkeepMul;
         public readonly float PredatorSpawnDistance;
         public readonly float PredatorRespawnInterval;
-        public readonly float PredatorHungerOn;
-        public readonly float PredatorFleeHp;
         public readonly float TrophallaxisMinFill;
         public readonly float TrophallaxisHungerRelief;
         public readonly int RecruitCount;
@@ -487,11 +490,6 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float PlanArriveRadius;
         public readonly int PlanMaxHops;
         public readonly float LegTimeSlack;
-        public readonly float PredatorRoamDistance;
-        public readonly float PredatorHomeRange;
-        public readonly float PredatorLoiterMin;
-        public readonly float PredatorLoiterMax;
-        public readonly float PredatorRestSeconds;
         public readonly float CasteSwitchMargin;
         public readonly float ColonyRespawnDelay;
         public readonly int NegativePoiCount;
@@ -859,6 +857,11 @@ public sealed partial class SimulationRules : ScriptableObject
             CasteScoutThreshold = r.casteScoutThreshold;
             CasteNurseThreshold = r.casteNurseThreshold;
             NurseLeash = r.nurseLeash;
+            NurseLeashRate = r.nurseLeashRate;
+            NurseryRadius = r.nurseryRadius;
+            NurseryRate = r.nurseryRate;
+            TetherRate = r.tetherRate;
+            NightHomeRate = r.nightHomeRate;
             SoldierAttackMul = r.soldierAttackMul;
             SoldierHealthMul = r.soldierHealthMul;
             SoldierUpkeepMul = r.soldierUpkeepMul;
@@ -949,8 +952,6 @@ public sealed partial class SimulationRules : ScriptableObject
             PredatorUpkeepMul = r.predatorUpkeepMul;
             PredatorSpawnDistance = r.predatorSpawnDistance;
             PredatorRespawnInterval = r.predatorRespawnInterval;
-            PredatorHungerOn = r.predatorHungerOn;
-            PredatorFleeHp = r.predatorFleeHp;
             TrophallaxisMinFill = r.trophallaxisMinFill;
             TrophallaxisHungerRelief = r.trophallaxisHungerRelief;
             RecruitCount = r.recruitCount;
@@ -1034,11 +1035,6 @@ public sealed partial class SimulationRules : ScriptableObject
             PlanArriveRadius = r.planArriveRadius;
             PlanMaxHops = r.planMaxHops;
             LegTimeSlack = r.legTimeSlack;
-            PredatorRoamDistance = r.predatorRoamDistance;
-            PredatorHomeRange = r.predatorHomeRange;
-            PredatorLoiterMin = r.predatorLoiterMin;
-            PredatorLoiterMax = r.predatorLoiterMax;
-            PredatorRestSeconds = r.predatorRestSeconds;
             CasteSwitchMargin = r.casteSwitchMargin;
             ColonyRespawnDelay = r.colonyRespawnDelay;
             NegativePoiCount = r.negativePoiCount;
@@ -1232,6 +1228,10 @@ public sealed partial class SimulationRules : ScriptableObject
         if (warmthBuckets < 1) warmthBuckets = 1;
         if (!(warmthDecayPerSecond >= 0f)) warmthDecayPerSecond = 0f;
         if (!(simulationLogIntervalSeconds >= 1f)) simulationLogIntervalSeconds = 1f;
+        if (!(nurseLeashRate >= 0f)) nurseLeashRate = 0f;
+        if (!(nurseryRate >= 0f)) nurseryRate = 0f;
+        if (!(tetherRate >= 0f)) tetherRate = 0f;
+        if (!(nightHomeRate >= 0f)) nightHomeRate = 0f;
     }
 
     private static SimulationRules _active;

@@ -36,6 +36,9 @@ public struct GeneticParameters
     public float MaxAgeMul;
     public float ImmuneInvestment;
     public float PlanBias0, PlanBias1, PlanBias2, PlanBias3, PlanBias4, PlanBias5, PlanBias6, PlanBias7, PlanBias8;
+    public float TetherDrive;
+    public float NurseryDrive;
+    public float HomeDrive;
 
     public const int IdxMoveSpeedMul = 0;
     public const int IdxBaseLearningRate = 1;
@@ -61,6 +64,9 @@ public struct GeneticParameters
     public const int IdxImmuneInvestment = 21;
     public const int IdxPlanBias0 = 22;
     public const int PlanBiasCount = 9;
+    public const int IdxTetherDrive = IdxPlanBias0 + PlanBiasCount;
+    public const int IdxNurseryDrive = IdxTetherDrive + 1;
+    public const int IdxHomeDrive = IdxNurseryDrive + 1;
 
     public static readonly (float min, float max, float mutationScale)[] ParameterRanges = {
         (0.7f, 1.4f, 0.08f),
@@ -88,6 +94,9 @@ public struct GeneticParameters
         (-1f, 1f, 0.15f), (-1f, 1f, 0.15f), (-1f, 1f, 0.15f),
         (-1f, 1f, 0.15f), (-1f, 1f, 0.15f), (-1f, 1f, 0.15f),
         (-1f, 1f, 0.15f), (-1f, 1f, 0.15f), (-1f, 1f, 0.15f),
+        (0f, 1f, 0.1f),
+        (0f, 1f, 0.1f),
+        (0f, 1f, 0.1f),
     };
 
     public static bool IsPhenotypic(int index)

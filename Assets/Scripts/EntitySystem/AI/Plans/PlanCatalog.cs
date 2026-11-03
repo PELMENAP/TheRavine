@@ -59,6 +59,8 @@ public enum PlanHint : uint
     KinSick      = 1 << 24,
     AtDestination = 1 << 25,
     Night        = 1 << 26,
+    HasNest      = 1 << 27,
+    HasHome      = 1 << 28,
 }
 
 public struct PlanProgress
@@ -146,6 +148,7 @@ public static class PlanCatalog
                 return Has(h, PlanHint.FoodVisible) ? Bit(EntityAction.ApproachFood) : 0;
 
             case PlanKind.Harvest:
+                if (!Has(h, PlanHint.HasNest)) return 0;
                 if (Has(h, PlanHint.Carrying) && (Has(h, PlanHint.CarryFull) || !Has(h, PlanHint.FoodVisible)))
                     return Has(h, PlanHint.AtNest) ? Bit(EntityAction.StoreFood) : Bit(EntityAction.ReturnNest);
                 if (Has(h, PlanHint.FoodInRange)) return Bit(EntityAction.PickUp);
@@ -161,7 +164,7 @@ public static class PlanCatalog
 
             case PlanKind.Rest:
                 if (Has(h, PlanHint.Hungry) && (Has(h, PlanHint.FoodVisible) || Has(h, PlanHint.NestHasFood))) return 0;
-                return Bit(EntityAction.Rest) | (Has(h, PlanHint.AtNest) ? 0 : Bit(EntityAction.ReturnNest));
+                return Bit(EntityAction.Rest) | (Has(h, PlanHint.AtNest) || !Has(h, PlanHint.HasHome) ? 0 : Bit(EntityAction.ReturnNest));
 
             case PlanKind.Flee:
                 return Has(h, PlanHint.Threat) ? Bit(EntityAction.Flee) : 0;

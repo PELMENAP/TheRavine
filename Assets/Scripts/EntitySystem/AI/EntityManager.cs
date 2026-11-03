@@ -500,11 +500,6 @@ public class EntityManager : MonoBehaviour
         {
             var e = _tickSnapshot[i];
             if (e == null || e.IsDisposed || !e.CycleActive) continue;
-            if (e.IsWild)
-            {
-                e.TickWild();
-                continue;
-            }
             e.ApplyUtilityPrior(_utility.Output(e.ManagerIndex));
             var output = _instincts.Output(e.ManagerIndex);
             e.ApplyInstinct(in output);

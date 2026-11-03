@@ -3,6 +3,8 @@ using Unity.Mathematics;
 
 public enum EntityCommandStatus { Started, Running, Completed, Interrupted, Failed }
 
+public enum AttackStyle : byte { Pursue = 0, Stalk = 1, Ambush = 2, Count }
+
 public readonly struct BrainDecision
 {
     public readonly int   Action;
@@ -21,13 +23,18 @@ public readonly struct BrainDecision
     public readonly byte   Signal;
     public readonly float2 Destination;
     public readonly bool   HasDestination;
+    public readonly AttackStyle Style;
+    public readonly float  Tempo;
 
     public BrainDecision(int action, int execDecisionId, int coordDecisionId,
         SharedHierarchicalBrain.Goal goal, float startTime, float duration, in float2 heading,
         float curvature = 0f, float4 speech = default, PlanKind plan = PlanKind.Count, float planEnd = 0f,
         byte direction = (byte)DirectionKind.None, float dirOffset = 0f, byte signal = SpeechSignal.None,
-        float2 destination = default, bool hasDestination = false)
+        float2 destination = default, bool hasDestination = false,
+        AttackStyle style = AttackStyle.Pursue, float tempo = 0f)
     {
+        Style = style;
+        Tempo = tempo;
         Destination = destination;
         HasDestination = hasDestination;
         Direction = direction;
@@ -56,16 +63,16 @@ public readonly struct BrainDecision
     {
         float2 heading = keepHeading ? Heading : float2.zero;
         return new(action, ExecDecisionId, CoordDecisionId, Goal, startTime, duration, in heading,
-                   Curvature, Speech, Plan, PlanEnd, Direction, DirOffset, Signal, Destination, HasDestination);
+                   Curvature, Speech, Plan, PlanEnd, Direction, DirOffset, Signal, Destination, HasDestination, Style, Tempo);
     }
 
     public BrainDecision WithDirection(byte direction)
         => new(Action, ExecDecisionId, CoordDecisionId, Goal, StartTime, Duration, in Heading,
-               Curvature, Speech, Plan, PlanEnd, direction, DirOffset, Signal, Destination, HasDestination);
+               Curvature, Speech, Plan, PlanEnd, direction, DirOffset, Signal, Destination, HasDestination, Style, Tempo);
 
     public BrainDecision WithDestination(float2 destination)
         => new(Action, ExecDecisionId, CoordDecisionId, Goal, StartTime, Duration, in Heading,
-               Curvature, Speech, Plan, PlanEnd, Direction, DirOffset, Signal, destination, true);
+               Curvature, Speech, Plan, PlanEnd, Direction, DirOffset, Signal, destination, true, Style, Tempo);
 }
 
 public struct DecisionWindow
