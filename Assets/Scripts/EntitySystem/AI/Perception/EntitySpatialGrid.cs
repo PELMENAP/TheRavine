@@ -8,6 +8,7 @@ public sealed class EntitySpatialGrid
     private static readonly ProfilerMarker RebuildMarker      = new("EntitySpatialGrid.Rebuild");
     private static readonly ProfilerMarker FindNearestMarker  = new("EntitySpatialGrid.FindNearest");
     private static readonly ProfilerMarker FindInRadiusMarker = new("EntitySpatialGrid.FindInRadius");
+    private static readonly ProfilerMarker SurveyMarker       = new("EntitySpatialGrid.Survey");
 
     private int[]         _cellEnd;
     private int[]         _bucketOf;
@@ -112,6 +113,69 @@ public sealed class EntitySpatialGrid
         }
 
         if (best != null) distance = math.sqrt(minSqr);
+        return best;
+    }
+
+    public EntityModel Survey(Vector3 origin, EntityModel self, ColonyState colony,
+        float nearestRadius, float crowdRadius, int crowdCap,
+        out float nearestDistance, out int crowd, out int kin)
+    {
+        using var scope = SurveyMarker.Auto();
+        nearestDistance = -1f;
+        crowd = 0;
+        kin   = 0;
+        if (_count == 0) return null;
+
+        float nr2   = nearestRadius * nearestRadius;
+        float cr2   = crowdRadius * crowdRadius;
+        int   ring  = RingOf(math.max(nearestRadius, crowdRadius));
+        int   cx    = CellCoord(origin.x);
+        int   cz    = CellCoord(origin.z);
+        int   epoch = NextEpoch();
+
+        EntityModel best = null;
+        float minSqr = float.MaxValue;
+
+        for (int dz = -ring; dz <= ring; dz++)
+        for (int dx = -ring; dx <= ring; dx++)
+        {
+            int b = BucketOf(cx + dx, cz + dz);
+            if (_visit[b] == epoch) continue;
+            _visit[b] = epoch;
+
+            int s = b == 0 ? 0 : _cellEnd[b - 1];
+            int e = _cellEnd[b];
+
+            for (int k = s; k < e; k++)
+            {
+                int i = _items[k];
+
+                float ddx = _px[i] - origin.x;
+                float ddy = _py[i] - origin.y;
+                float ddz = _pz[i] - origin.z;
+                float sqr = ddx * ddx + ddy * ddy + ddz * ddz;
+
+                bool asNearest = sqr <= nr2 && sqr < minSqr;
+                bool asCrowd   = sqr <= cr2 && crowd < crowdCap;
+                if (!asNearest && !asCrowd) continue;
+
+                var m = _models[i];
+                if (ReferenceEquals(m, self) || m.IsDeathPending || m.IsDisposed) continue;
+
+                if (asNearest)
+                {
+                    minSqr = sqr;
+                    best   = m;
+                }
+                if (asCrowd)
+                {
+                    crowd++;
+                    if (m.Colony == colony) kin++;
+                }
+            }
+        }
+
+        if (best != null) nearestDistance = math.sqrt(minSqr);
         return best;
     }
 

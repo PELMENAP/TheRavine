@@ -76,21 +76,21 @@ public sealed class UtilityPriorSystem : IDisposable
     public ReadOnlySpan<float> Output(int index)
         => (uint)index < (uint)Capacity ? _outputs.AsReadOnlySpan().Slice(index * Plans, Plans) : ReadOnlySpan<float>.Empty;
 
-    public void Evaluate(int start, int end)
+    public JobHandle Schedule(int start, int end)
     {
         if (start < 0) start = 0;
         if (end > Capacity) end = Capacity;
-        if (end <= start) return;
+        if (end <= start) return default;
 
         _weights.CopyFrom(SimulationRules.Frame.UtilityWeights);
-        new UtilityPriorJob
+        return new UtilityPriorJob
         {
             Offset  = start,
             Plans   = Plans,
             Inputs  = _inputs,
             Weights = _weights,
             Outputs = _outputs,
-        }.Run(end - start);
+        }.ScheduleParallel(end - start, 64, default);
     }
 
     public void RemoveSwapBack(int index, int last)

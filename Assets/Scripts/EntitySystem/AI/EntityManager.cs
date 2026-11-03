@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Unity.Netcode;
 
+using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using TheRavine.Generator;
@@ -492,8 +493,7 @@ public class EntityManager : MonoBehaviour
 
         if (hi >= lo)
         {
-            _instincts.Evaluate(lo, hi + 1);
-            _utility.Evaluate(lo, hi + 1);
+            JobHandle.CombineDependencies(_instincts.Schedule(lo, hi + 1), _utility.Schedule(lo, hi + 1)).Complete();
         }
 
         for (int i = start; i < end; i++)

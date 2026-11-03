@@ -302,13 +302,13 @@ public sealed class InstinctSystem : IDisposable
             ? _outputs[index]
             : new InstinctOutput { Reflex = InstinctBits.NoReflex, NeedsDecision = 1 };
 
-    public void Evaluate(int start, int end)
+    public JobHandle Schedule(int start, int end)
     {
         if (start < 0) start = 0;
         if (end > Capacity) end = Capacity;
-        if (end <= start) return;
+        if (end <= start) return default;
 
-        new InstinctJob
+        return new InstinctJob
         {
             Offset  = start,
             R       = InstinctRules.Capture(),
@@ -316,7 +316,7 @@ public sealed class InstinctSystem : IDisposable
             Genes   = _genes,
             States  = _states,
             Outputs = _outputs,
-        }.Run(end - start);
+        }.ScheduleParallel(end - start, 64, default);
     }
 
     public void RemoveSwapBack(int index, int last)
