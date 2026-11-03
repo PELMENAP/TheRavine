@@ -44,7 +44,7 @@ public sealed class EntitySpatialGrid : IDisposable
 
     public void MarkStale() => IsStale = true;
 
-    public int ReserveEpochs(int count)
+    public unsafe int ReserveEpochs(int count)
     {
         if (_epoch > int.MaxValue - count - 2)
         {
@@ -56,7 +56,7 @@ public sealed class EntitySpatialGrid : IDisposable
         return start;
     }
 
-    public void Rebuild(EntityModel[] snapshot, int count, float cellSize)
+    public unsafe void Rebuild(EntityModel[] snapshot, int count, float cellSize)
     {
         using var scope = RebuildMarker.Auto();
         if (cellSize < 0.01f) cellSize = 0.01f;
@@ -261,7 +261,7 @@ public sealed class EntitySpatialGrid : IDisposable
     public static int HashCell(int cx, int cz, int mask)
         => ((cx * 73856093) ^ (cz * 19349663)) & mask;
 
-    private int NextEpoch()
+    private unsafe int NextEpoch()
     {
         if (++_epoch != int.MaxValue) return _epoch;
         UnsafeUtility.MemClear(_visit.GetUnsafePtr(), (long)_visit.Length * sizeof(int));
