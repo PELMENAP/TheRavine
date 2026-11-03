@@ -103,7 +103,11 @@ public partial class EntityModel
         CreatureCore.StepVirology(Virology, Stats, Mortality, dt, in host);
         _ledger.Flows.ViralNet += Stats.En - enBeforeVirus;
         ref var mods = ref Virology.Modifiers;
-        if (mods.ForceSpeechRequested) Broadcast(Speech.Own);
+        if (mods.ForceSpeechRequested && Speech.Own.Len > 0)
+        {
+            var forced = MakeUtterance(Speech.Own.Tokens, Speech.Own.Len, Utterance.FlagReflex);
+            Emit(in forced);
+        }
         if (!IsAliveForTick()) return false;
 
         Vector3 pos  = Motor.Position();
@@ -171,6 +175,10 @@ public partial class EntityModel
         }
 
         float dirNoise = Stress * rules.StressPerceptionNoise;
+
+        Speech.Listen(_speechBus, ManagerIndex, in self, now);
+        _speechBus?.SetFitness(ManagerIndex, GetFitness());
+
         var frame = new VectorizerFrame
         {
             Health            = Stats.Hp,
@@ -207,7 +215,11 @@ public partial class EntityModel
             ForeignViral      = foreignViral,
             IsLeader          = IsLeader ? 1f : 0f,
             Caste             = (int)Caste,
-            Speech            = Speech.Heard,
+            SpeechBag         = Speech.Bag,
+            SpeechDir         = Speech.Dir,
+            SpeechDist        = Speech.Dist,
+            SpeechKin         = Speech.Kin,
+            SpeechAge         = Speech.Age,
             MimickedAction    = MimickedActionIndex,
             Now               = nowD,
             PlanRewardEma     = _planRewardEma,
@@ -221,7 +233,6 @@ public partial class EntityModel
 
         LastInput = Vectorizer.Vectorize(in frame, _actionTimes, in _lastTerrain);
 
-        Speech.ConsumeOtherSpeech();
         ConsumeMimickedAction();
 
         bool resting = LastAction == EntityAction.Idle || LastAction == EntityAction.Rest;
@@ -290,6 +301,11 @@ public partial class EntityModel
         }
 
         var brainCtx = Brain.Context;
+        if (Speech.HasLoudest && Speech.Loudest.Speaker != Utterance.External)
+        {
+            brainCtx.DecodeTarget = Speech.Loudest.Context;
+            brainCtx.DecodeTime   = Speech.Loudest.Time;
+        }
         for (int p = 0; p < PlanCatalog.Count; p++)
             brainCtx.CoordBias[p] = goalBias[(int)PlanCatalog.GoalOf((PlanKind)p)];
         brainCtx.CoordBias[(int)PlanKind.Flee] += fleeBias - mods.FearInvert * rules.FearInvertStrength;

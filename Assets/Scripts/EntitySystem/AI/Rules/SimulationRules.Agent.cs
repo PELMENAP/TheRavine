@@ -54,13 +54,18 @@ public sealed partial class SimulationRules
     [SerializeField] private float oxytocinNorm = 5f;
     [SerializeField] private float restSocialBonus = 0.5f;
     [SerializeField] private int restSocialMax = 4;
-    [SerializeField] private Vector4[] speechSignals =
-    {
-        new(1f, -1f, 1f, -1f),
-        new(1f, 1f, -1f, -1f),
-        new(-1f, 1f, 1f, -1f),
-        new(-1f, -1f, -1f, 1f),
-    };
+    [SerializeField] private int speechLoudness = 255;
+    [SerializeField] private float speechMinRadiusFraction = 0.4f;
+    [SerializeField] private float speechAttenuationExp = 1.5f;
+    [SerializeField] private float speechFreshSeconds = 6f;
+    [SerializeField] private float speechSyllableSeconds = 0.25f;
+    [SerializeField] private float speechCooldown = 1f;
+    [SerializeField] private float speechCreditWindow = 6f;
+    [SerializeField] private float speechCreditWeight = 0.5f;
+    [SerializeField] private float speechCreditBaselineAlpha = 0.05f;
+    [SerializeField] private float speechDecodeLossWeight = 0.2f;
+    [SerializeField] private bool speechMuteSampling;
+    [SerializeField] private float speechMuteFraction = 0.05f;
     [SerializeField] private float synergyWindow = 6f;
     [SerializeField] private float warnWindow = 4f;
     [SerializeField] private float warnDangerThreshold = 0.5f;
@@ -125,6 +130,18 @@ public sealed partial class SimulationRules
     public float WarnWindow => warnWindow;
     public float WarnDangerThreshold => warnDangerThreshold;
     public float SpeechRadius => speechRadius;
+    public int SpeechLoudness => speechLoudness;
+    public float SpeechMinRadiusFraction => speechMinRadiusFraction;
+    public float SpeechAttenuationExp => speechAttenuationExp;
+    public float SpeechFreshSeconds => speechFreshSeconds;
+    public float SpeechSyllableSeconds => speechSyllableSeconds;
+    public float SpeechCooldown => speechCooldown;
+    public float SpeechCreditWindow => speechCreditWindow;
+    public float SpeechCreditWeight => speechCreditWeight;
+    public float SpeechCreditBaselineAlpha => speechCreditBaselineAlpha;
+    public float SpeechDecodeLossWeight => speechDecodeLossWeight;
+    public bool SpeechMuteSampling => speechMuteSampling;
+    public float SpeechMuteFraction => speechMuteFraction;
     public float SkipWeakHpFraction => skipWeakHpFraction;
     public int SkipCrowdCount => skipCrowdCount;
     public float CrowdRadius => crowdRadius;

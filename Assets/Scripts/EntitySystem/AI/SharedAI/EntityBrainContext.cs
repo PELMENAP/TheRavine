@@ -48,6 +48,9 @@ public class EntityBrainContext : System.IDisposable
     public float IntrinsicReward;
     public byte  DirectionMask;
     public float Surprise;
+    public int   DecodeTarget;
+    public float DecodeTime;
+    public float DecodeDoneTime;
     public readonly float[] CoordBias;
 
     public EntityBrainContext(

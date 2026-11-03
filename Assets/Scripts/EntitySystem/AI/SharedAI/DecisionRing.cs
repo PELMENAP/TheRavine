@@ -25,6 +25,9 @@ public sealed class DelayedItem
     public float HeadingCos;
     public readonly float[] AuxNoise = new float[KernelLayout.MaxAux];
     public readonly float[] AuxValue = new float[KernelLayout.MaxAux];
+    public readonly float[] DecodeOut = new float[KernelLayout.MaxDecode];
+    public bool DecodeValid;
+    public int  DecodeTarget;
     public float ExplorationEpsilon;
     public float ExploreProb;
     public bool  ActionForced;
@@ -67,6 +70,9 @@ public sealed class DelayedItem
         HeadingCos = 0f;
         System.Array.Clear(AuxNoise, 0, AuxNoise.Length);
         System.Array.Clear(AuxValue, 0, AuxValue.Length);
+        System.Array.Clear(DecodeOut, 0, DecodeOut.Length);
+        DecodeValid = false;
+        DecodeTarget = 0;
     }
 }
 

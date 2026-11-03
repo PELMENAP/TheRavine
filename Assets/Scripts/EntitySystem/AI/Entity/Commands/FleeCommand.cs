@@ -13,8 +13,6 @@ public class FleeCommand : PlannedMoveCommand
 
     protected override EntityCommandStatus OnBegin()
     {
-        model.DialogHost.UpdateDialogPosition((IDialogListener)model.Motor);
-
         var r = SimulationRules.Active;
         float2 self  = model.Position2D;
         float  total = model.Tuning.DetectionRadius * r.FleeDistanceMul;

@@ -8,6 +8,8 @@ public sealed class PerceptronLayout
     public readonly int   OutputSize;
     public readonly int   ActionCount;
     public readonly int   AuxOutputs;
+    public readonly int   DecodeOutputs;
+    public readonly int   DecodeIndex;
     public readonly int   DurationIndex;
     public readonly int   HeadingIndex;
     public readonly int   TruncWindow;
@@ -42,7 +44,7 @@ public sealed class PerceptronLayout
     public readonly int   WeightTotal;
     public readonly int   BiasTotal;
 
-    public PerceptronLayout(int[] layerSizes, int truncWindow, int decisionCapacity, int auxOutputs)
+    public PerceptronLayout(int[] layerSizes, int truncWindow, int decisionCapacity, int auxOutputs, int decodeOutputs = 0)
     {
         if (truncWindow < 1) truncWindow = 1;
         if (decisionCapacity < 2) decisionCapacity = 2;
@@ -55,6 +57,8 @@ public sealed class PerceptronLayout
         ActionCount      = OutputSize - 1 - auxOutputs;
         DurationIndex    = ActionCount;
         HeadingIndex     = ActionCount + 1;
+        DecodeOutputs    = decodeOutputs;
+        DecodeIndex      = HeadingIndex + auxOutputs - decodeOutputs;
         TruncWindow      = truncWindow;
         DecisionCapacity = decisionCapacity;
         HistoryDepth     = decisionCapacity + truncWindow;

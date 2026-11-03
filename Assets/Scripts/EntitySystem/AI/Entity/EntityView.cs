@@ -120,7 +120,8 @@ public class EntityView : AEntityView
         }
         if (flags > 0) sb.Append('\n');
 
-        Open(sb, DimHex).Append(SpeechComponent.Encode(model.Speech.Own)).Close();
+        var own = model.Speech.Own;
+        Open(sb, DimHex).Append(own.Len > 0 ? SpeechLexicon.Default.Label(own.Tokens, own.Len) : "-").Close();
 
         var virology = model.Virology;
         if (virology != null && virology.TryGetViralSummary(out float net, out int viralCount, out bool allTamed))

@@ -31,8 +31,6 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public void Activate() => _isActive.Value = true;
     public void Deactivate() => _isActive.Value = false;
 
-    public IEntityDialogHost DialogHost { get; private set; }
-
     public IEntityMotor Motor { get; private set; }
     public EntityTuning Tuning { get; private set; }
     public GameObject SelfObject { get; private set; }
@@ -422,6 +420,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public float[] DecisionInput => _decisionInput;
 
     private EntitySpatialGrid _grid;
+    private SpeechBus _speechBus;
     private static readonly EntityModel[] Neighbors = new EntityModel[16];
 
     private long  _foodCell;
@@ -502,7 +501,6 @@ public partial class EntityModel : IEntity, IFoodReceiver
         Motor = motor;
         SelfObject = selfObject;
         Tuning = tuning;
-        DialogHost = (IEntityDialogHost)motor;
 
         Stats = new StatsComponent();
         Stats.FillComponent(tuning.MaxHealth, tuning.MaxEnergy);
@@ -526,8 +524,9 @@ public partial class EntityModel : IEntity, IFoodReceiver
         Planner   = planner;
         Infection = infection;
 
+        ServiceLocator.Services.TryGet(out _speechBus);
         Speech = new SpeechComponent();
-        Speech.Inject((IEntityAudio)motor);
+        _voice = SpeechVoiceBank.ClassOf(in ctx.CoordMLP.Params);
         Points = new PointsOfInterestComponent();
 
         Brain = new BrainComponent(brain, ctx);

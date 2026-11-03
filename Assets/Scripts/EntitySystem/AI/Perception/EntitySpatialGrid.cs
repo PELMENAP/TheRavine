@@ -1,23 +1,26 @@
 using System;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
 
-public sealed class EntitySpatialGrid
+public sealed class EntitySpatialGrid : IDisposable
 {
     private static readonly ProfilerMarker RebuildMarker      = new("EntitySpatialGrid.Rebuild");
     private static readonly ProfilerMarker FindNearestMarker  = new("EntitySpatialGrid.FindNearest");
     private static readonly ProfilerMarker FindInRadiusMarker = new("EntitySpatialGrid.FindInRadius");
     private static readonly ProfilerMarker SurveyMarker       = new("EntitySpatialGrid.Survey");
 
-    private int[]         _cellEnd;
-    private int[]         _bucketOf;
-    private int[]         _items;
-    private int[]         _visit;
-    private float[]       _px;
-    private float[]       _py;
-    private float[]       _pz;
-    private EntityModel[] _models;
+    private NativeArray<int>   _cellEnd;
+    private int[]              _bucketOf;
+    private NativeArray<int>   _items;
+    private NativeArray<int>   _visit;
+    private NativeArray<int>   _ids;
+    private NativeArray<float> _px;
+    private NativeArray<float> _py;
+    private NativeArray<float> _pz;
+    private EntityModel[]      _models;
 
     private int   _count;
     private int   _bucketMask;
@@ -27,6 +30,31 @@ public sealed class EntitySpatialGrid
 
     public int   Count    => _count;
     public float CellSize => _cellSize;
+    public bool  IsStale  { get; private set; } = true;
+    public bool  IsReady  => _count > 0 && !IsStale && _items.IsCreated;
+    public int   BucketMask => _bucketMask;
+    public float InvCell    => _invCell;
+
+    public NativeArray<int>   CellEnd => _cellEnd;
+    public NativeArray<int>   Items   => _items;
+    public NativeArray<int>   Ids     => _ids;
+    public NativeArray<int>   Visit   => _visit;
+    public NativeArray<float> Px      => _px;
+    public NativeArray<float> Pz      => _pz;
+
+    public void MarkStale() => IsStale = true;
+
+    public int ReserveEpochs(int count)
+    {
+        if (_epoch > int.MaxValue - count - 2)
+        {
+            UnsafeUtility.MemClear(_visit.GetUnsafePtr(), (long)_visit.Length * sizeof(int));
+            _epoch = 0;
+        }
+        int start = _epoch;
+        _epoch += count;
+        return start;
+    }
 
     public void Rebuild(EntityModel[] snapshot, int count, float cellSize)
     {
@@ -38,7 +66,7 @@ public sealed class EntitySpatialGrid
         EnsureCapacity(count);
 
         int buckets = _bucketMask + 1;
-        Array.Clear(_cellEnd, 0, buckets + 1);
+        UnsafeUtility.MemClear(_cellEnd.GetUnsafePtr(), (long)(buckets + 1) * sizeof(int));
 
         int prev    = _count;
         int written = 0;
@@ -52,6 +80,7 @@ public sealed class EntitySpatialGrid
             _py[written]     = p.y;
             _pz[written]     = p.z;
             _models[written] = e;
+            _ids[written]    = e.ManagerIndex;
 
             int b = BucketOf(CellCoord(p.x), CellCoord(p.z));
             _bucketOf[written] = b;
@@ -67,6 +96,8 @@ public sealed class EntitySpatialGrid
 
         for (int i = 0; i < written; i++)
             _items[_cellEnd[_bucketOf[i]]++] = i;
+
+        IsStale = false;
     }
 
     public EntityModel FindNearest(Vector3 origin, EntityModel self, float radius, out float distance)
@@ -233,30 +264,50 @@ public sealed class EntitySpatialGrid
     private int NextEpoch()
     {
         if (++_epoch != int.MaxValue) return _epoch;
-        Array.Clear(_visit, 0, _visit.Length);
+        UnsafeUtility.MemClear(_visit.GetUnsafePtr(), (long)_visit.Length * sizeof(int));
         _epoch = 1;
         return _epoch;
     }
 
     private void EnsureCapacity(int count)
     {
-        if (_items != null && _items.Length >= count) return;
+        if (_items.IsCreated && _items.Length >= count) return;
 
         int cap = 64;
         while (cap < count) cap <<= 1;
 
-        _items    = new int[cap];
+        DisposeNative();
+
+        _items    = new NativeArray<int>(cap, Allocator.Persistent);
+        _ids      = new NativeArray<int>(cap, Allocator.Persistent);
         _bucketOf = new int[cap];
-        _px       = new float[cap];
-        _py       = new float[cap];
-        _pz       = new float[cap];
+        _px       = new NativeArray<float>(cap, Allocator.Persistent);
+        _py       = new NativeArray<float>(cap, Allocator.Persistent);
+        _pz       = new NativeArray<float>(cap, Allocator.Persistent);
         _models   = new EntityModel[cap];
 
         int buckets = cap << 1;
         _bucketMask = buckets - 1;
-        _cellEnd    = new int[buckets + 1];
-        _visit      = new int[buckets];
+        _cellEnd    = new NativeArray<int>(buckets + 1, Allocator.Persistent);
+        _visit      = new NativeArray<int>(buckets, Allocator.Persistent);
         _epoch      = 0;
         _count      = 0;
+    }
+
+    private void DisposeNative()
+    {
+        if (_items.IsCreated)   _items.Dispose();
+        if (_ids.IsCreated)     _ids.Dispose();
+        if (_px.IsCreated)      _px.Dispose();
+        if (_py.IsCreated)      _py.Dispose();
+        if (_pz.IsCreated)      _pz.Dispose();
+        if (_cellEnd.IsCreated) _cellEnd.Dispose();
+        if (_visit.IsCreated)   _visit.Dispose();
+    }
+
+    public void Dispose()
+    {
+        DisposeNative();
+        _count = 0;
     }
 }

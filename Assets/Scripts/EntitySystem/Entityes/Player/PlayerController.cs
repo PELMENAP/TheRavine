@@ -55,6 +55,7 @@ namespace TheRavine.EntityControl
         public float CurrentSpeed { get; private set; }
         private bool isAimMode;
         private bool canPlace = true;
+        private double speechReadyTime;
         private bool isAccurance;
         private bool isHolding;
         private bool isFlip;
@@ -460,6 +461,42 @@ namespace TheRavine.EntityControl
             if (!IsSpawned || !IsOwner) return false;
             PlaceRequestServerRpc(position, objectId);
             return true;
+        }
+
+        public bool RequestSpeak(ushort tokens, byte len)
+        {
+            if (!IsSpawned || !IsOwner) return false;
+            SpeakServerRpc(tokens, len);
+            return true;
+        }
+
+        [ServerRpc]
+        private void SpeakServerRpc(ushort tokens, byte len)
+        {
+            if (playerEntity == null || playerEntity.IsDisposed || !playerEntity.IsActive.Value) return;
+
+            MortalityComponent mortality = playerEntity.GetEntityComponent<MortalityComponent>();
+            if (mortality != null && mortality.IsDead) return;
+
+            if (len == 0 || len > SimulationRules.SpeechLen) return;
+            if ((tokens >> (len * SimulationRules.SpeechTokenBits)) != 0) return;
+
+            EnergyComponent energy = playerEntity.GetEntityComponent<EnergyComponent>();
+            if (energy == null || !ServiceLocator.Services.TryGet(out SpeechBus bus)) return;
+            if (!SpeechBus.TryStartCooldown(ref speechReadyTime)) return;
+            if (!energy.TryConsume(SimulationRules.Active.SpeechEnergyCost)) return;
+
+            Vector3 p = transform.position;
+            var utterance = new Utterance
+            {
+                Tokens   = tokens,
+                Len      = len,
+                Loudness = (byte)SimulationRules.Frame.SpeechLoudness,
+                Speaker  = Utterance.External,
+                Pos      = new float2(p.x, p.z),
+                Time     = SimulationClock.Time,
+            };
+            bus.Emit(in utterance);
         }
 
         public bool RequestPickUp(long position)

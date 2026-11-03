@@ -138,6 +138,18 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float WarnDangerThreshold;
         public readonly float WarnedFleeSpeedMul;
         public readonly float SpeechRadius;
+        public readonly float SpeechLoudness;
+        public readonly float SpeechMinRadiusFraction;
+        public readonly float SpeechAttenuationExp;
+        public readonly float SpeechFreshSeconds;
+        public readonly float SpeechSyllableSeconds;
+        public readonly float SpeechCooldown;
+        public readonly float SpeechCreditWindow;
+        public readonly float SpeechCreditWeight;
+        public readonly float SpeechCreditBaselineAlpha;
+        public readonly float SpeechDecodeLossWeight;
+        public readonly bool SpeechMuteSampling;
+        public readonly float SpeechMuteFraction;
         public readonly float MovePauseMin;
         public readonly float MovePauseMax;
         public readonly float AttackMoveMaxDuration;
@@ -266,7 +278,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float JuvenileTime;
         public readonly float TetherRadius;
         public readonly float AlarmCryCooldown;
-        public readonly Vector4 AlarmCrySpeech;
+        public readonly int AlarmCryToken;
         public readonly float AlarmCryAmount;
         public readonly float ThreatMinDanger;
         public readonly float DashMul;
@@ -537,7 +549,6 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float[] CasteAffinityLog;
         public readonly float[] UtilityWeights;
         public readonly int[]   PlanCasteDomain;
-        public readonly float4[] SpeechSignals;
         public readonly float[] BiomeFertilityTable;
         public readonly float[] BiomeToxicityTable;
 
@@ -683,6 +694,18 @@ public sealed partial class SimulationRules : ScriptableObject
             WarnDangerThreshold = r.warnDangerThreshold;
             WarnedFleeSpeedMul = r.warnedFleeSpeedMul;
             SpeechRadius = r.speechRadius;
+            SpeechLoudness = math.clamp(r.speechLoudness, 0, 255);
+            SpeechMinRadiusFraction = math.saturate(r.speechMinRadiusFraction);
+            SpeechAttenuationExp = math.max(r.speechAttenuationExp, 0f);
+            SpeechFreshSeconds = math.max(r.speechFreshSeconds, 1e-3f);
+            SpeechSyllableSeconds = math.max(r.speechSyllableSeconds, 1e-3f);
+            SpeechCooldown = math.max(r.speechCooldown, 0f);
+            SpeechCreditWindow = math.max(r.speechCreditWindow, 0f);
+            SpeechCreditWeight = r.speechCreditWeight;
+            SpeechCreditBaselineAlpha = math.saturate(r.speechCreditBaselineAlpha);
+            SpeechDecodeLossWeight = math.max(r.speechDecodeLossWeight, 0f);
+            SpeechMuteSampling = r.speechMuteSampling;
+            SpeechMuteFraction = math.saturate(r.speechMuteFraction);
             MovePauseMin = r.movePauseMin;
             MovePauseMax = r.movePauseMax;
             AttackMoveMaxDuration = r.attackMoveMaxDuration;
@@ -811,7 +834,7 @@ public sealed partial class SimulationRules : ScriptableObject
             JuvenileTime = r.juvenileTime;
             TetherRadius = r.tetherRadius;
             AlarmCryCooldown = r.alarmCryCooldown;
-            AlarmCrySpeech = r.alarmCrySpeech;
+            AlarmCryToken = math.clamp(r.alarmCryToken, 0, SpeechVocab - 1);
             AlarmCryAmount = r.alarmCryAmount;
             ThreatMinDanger = r.threatMinDanger;
             DashMul = r.dashMul;
@@ -1082,7 +1105,6 @@ public sealed partial class SimulationRules : ScriptableObject
             CasteAffinityLog     = r.FillCasteAffinityLog();
             UtilityWeights       = r.FillUtilityWeights();
             PlanCasteDomain      = r.FillPlanCasteDomain();
-            SpeechSignals        = r.FillSpeechSignals();
             BiomeFertilityTable  = r.biomeFertility;
             BiomeToxicityTable   = r.biomeToxicity;
         }
@@ -1112,7 +1134,6 @@ public sealed partial class SimulationRules : ScriptableObject
     private static readonly float[] CasteAffinityLogBuf = new float[(int)Caste.Count * PlanCatalog.Count];
     private static readonly float[] UtilityWeightsBuf = new float[PlanCatalog.Count * UtilityFeatures.Count];
     private static readonly int[]   PlanCasteDomainBuf = new int[PlanCatalog.Count];
-    private static readonly float4[] SpeechSignalsBuf = new float4[SpeechSignal.Count];
 
     private float[] FillPlanSeconds(float[] source, float fallback, float[] target)
     {
@@ -1142,14 +1163,6 @@ public sealed partial class SimulationRules : ScriptableObject
         var t = PlanCasteDomainBuf;
         for (int i = 0; i < t.Length; i++)
             t[i] = planCasteDomain != null && i < planCasteDomain.Length ? planCasteDomain[i] : -1;
-        return t;
-    }
-
-    private float4[] FillSpeechSignals()
-    {
-        var t = SpeechSignalsBuf;
-        for (int i = 0; i < t.Length; i++)
-            t[i] = speechSignals != null && i < speechSignals.Length ? (float4)speechSignals[i] : float4.zero;
         return t;
     }
 
@@ -1200,7 +1213,14 @@ public sealed partial class SimulationRules : ScriptableObject
 
     public const float LearningRateFloor = 1e-6f;
     public const float MinAgentTickInterval = 1e-3f;
-    public const int   SpeechEncodeCacheSize = 64;
+    public const int   SpeechVocab = 16;
+    public const int   SpeechLen = 2;
+    public const int   SpeechInbox = 4;
+    public const int   SpeechTokenBits = 4;
+    public const int   SpeechContextBits = 6;
+    public const int   SpeechCreditRing = 256;
+    public const int   SpeechCreditListeners = 8;
+    private const int  SpeechLayoutCheck = 1 / (SpeechLen * SpeechTokenBits <= 16 && SpeechVocab == 1 << SpeechTokenBits && (SpeechInbox & (SpeechInbox - 1)) == 0 && SpeechContextBits <= 8 ? 1 : 0);
 
     private void OnValidate()
     {

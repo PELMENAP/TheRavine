@@ -23,7 +23,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float witnessPenalty = -0.2f;
     [SerializeField] private float juvenileTime = 60f;
     [SerializeField] private float alarmCryCooldown = 3f;
-    [SerializeField] private Vector4 alarmCrySpeech = new Vector4(1f, -1f, 1f, -1f);
+    [SerializeField] private int alarmCryToken;
     [SerializeField] private float alarmCryAmount = 0.3f;
     [SerializeField] private float trailDeposit = 1f;
     [SerializeField] private float trailSampleInterval = 1f;
@@ -191,7 +191,7 @@ public sealed partial class SimulationRules
     public float WitnessPenalty => witnessPenalty;
     public float JuvenileTime => juvenileTime;
     public float AlarmCryCooldown => alarmCryCooldown;
-    public Vector4 AlarmCrySpeech => alarmCrySpeech;
+    public int AlarmCryToken => alarmCryToken;
     public float AlarmCryAmount => alarmCryAmount;
     public float TrailDeposit => trailDeposit;
     public float TrailSampleInterval => trailSampleInterval;

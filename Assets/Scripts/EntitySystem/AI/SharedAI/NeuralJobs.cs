@@ -53,9 +53,13 @@ public unsafe struct TrainTicket
     public float  ExploreProb;
     public int    Forced;
     public int    HasBias;
+    public int    DecodeValid;
+    public int    DecodeTarget;
+    public float  DecodeWeight;
     public fixed float Probs[KernelLayout.MaxActions];
     public fixed float Bias[KernelLayout.MaxActions];
     public fixed float AuxNoise[KernelLayout.MaxAux];
+    public fixed float DecodeOut[KernelLayout.MaxDecode];
 }
 
 public struct TrainResult
