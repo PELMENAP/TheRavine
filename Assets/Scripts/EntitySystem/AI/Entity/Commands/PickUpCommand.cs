@@ -7,7 +7,7 @@ public class PickUpCommand : EntityCommand
     public PickUpCommand(EntityModel model) : base(model) { }
 
     public override bool CanExecute()
-        => model.Carrying < model.CarryCapacity * SimulationRules.Active.CarryFullFraction;
+        => model.Carrying < model.CarryCapacity * model.CarryFullFraction;
 
     protected override EntityCommandStatus OnBegin()
     {

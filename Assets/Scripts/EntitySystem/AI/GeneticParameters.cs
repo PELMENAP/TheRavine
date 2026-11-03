@@ -39,6 +39,15 @@ public struct GeneticParameters
     public float TetherDrive;
     public float NurseryDrive;
     public float HomeDrive;
+    public float PanicHome;
+    public float CarryFullMul;
+    public float HungryRest;
+    public float HuntPersistence;
+    public float PlanPatience;
+    public float NightRestMul;
+    public float CasteAffinityMul;
+    public float CasteLearnMul;
+    public float ReinterruptMul;
 
     public const int IdxMoveSpeedMul = 0;
     public const int IdxBaseLearningRate = 1;
@@ -67,6 +76,15 @@ public struct GeneticParameters
     public const int IdxTetherDrive = IdxPlanBias0 + PlanBiasCount;
     public const int IdxNurseryDrive = IdxTetherDrive + 1;
     public const int IdxHomeDrive = IdxNurseryDrive + 1;
+    public const int IdxPanicHome = IdxHomeDrive + 1;
+    public const int IdxCarryFullMul = IdxPanicHome + 1;
+    public const int IdxHungryRest = IdxCarryFullMul + 1;
+    public const int IdxHuntPersistence = IdxHungryRest + 1;
+    public const int IdxPlanPatience = IdxHuntPersistence + 1;
+    public const int IdxNightRestMul = IdxPlanPatience + 1;
+    public const int IdxCasteAffinityMul = IdxNightRestMul + 1;
+    public const int IdxCasteLearnMul = IdxCasteAffinityMul + 1;
+    public const int IdxReinterruptMul = IdxCasteLearnMul + 1;
 
     public static readonly (float min, float max, float mutationScale)[] ParameterRanges = {
         (0.7f, 1.4f, 0.08f),
@@ -97,6 +115,15 @@ public struct GeneticParameters
         (0f, 1f, 0.1f),
         (0f, 1f, 0.1f),
         (0f, 1f, 0.1f),
+        (0f, 1f, 0.1f),
+        (0.5f, 1.8f, 0.1f),
+        (0f, 1f, 0.1f),
+        (0.5f, 2f, 0.15f),
+        (0.5f, 2f, 0.15f),
+        (0f, 2f, 0.15f),
+        (0f, 2f, 0.15f),
+        (0.5f, 2f, 0.15f),
+        (0.5f, 2f, 0.15f),
     };
 
     public static bool IsPhenotypic(int index)

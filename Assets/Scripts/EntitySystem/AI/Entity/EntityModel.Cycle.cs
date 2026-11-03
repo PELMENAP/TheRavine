@@ -297,14 +297,15 @@ public partial class EntityModel
         brainCtx.CoordBias[(int)PlanKind.Rest] += mods.HomeCompulsion * rules.HomeCompulsionRestBias;
         brainCtx.CoordBias[(int)PlanKind.Patrol] += mods.Isolate * rules.IsolateStrength;
         brainCtx.CoordBias[(int)PlanKind.Harvest] += _winterApproach * rules.PreWinterHarvestBias;
-        if (night && IsAtNest && !IsHungry) brainCtx.CoordBias[(int)PlanKind.Rest] += rules.NightRestBias;
+        if (night && IsAtNest && !RestBlockedByHunger)
+            brainCtx.CoordBias[(int)PlanKind.Rest] += rules.NightRestBias * brainCtx.CoordMLP.Params.NightRestMul;
         if (_onForeignTerritory) brainCtx.CoordBias[(int)PlanKind.Hunt] -= rules.ForeignTerritoryHuntDrop;
 
         ref readonly var genes = ref brainCtx.CoordMLP.Params;
         bool adult = CasteFixed && !IsJuvenile && !IsWild;
         int  affinityRow = (int)Caste * PlanCatalog.Count;
         for (int p = 0; p < PlanCatalog.Count; p++)
-            brainCtx.CoordBias[p] += genes.PlanBias(p) + (adult ? rules.CasteAffinityLog[affinityRow + p] : 0f);
+            brainCtx.CoordBias[p] += genes.PlanBias(p) + (adult ? rules.CasteAffinityLog[affinityRow + p] * genes.CasteAffinityMul : 0f);
 
         var colonyRef = Colony;
         if (IsLeader) colonyRef.PublishLeaderPrior(brainCtx.PlanProbs);
@@ -395,7 +396,7 @@ public partial class EntityModel
         if (_foodValid) h |= PlanHint.FoodVisible;
         if (_foodValid && _foodDistance <= r.EatRange) h |= PlanHint.FoodInRange;
         if (Carrying > 0f) h |= PlanHint.Carrying;
-        if (Carrying >= CarryCapacity * r.CarryFullFraction) h |= PlanHint.CarryFull;
+        if (Carrying >= CarryCapacity * CarryFullFraction) h |= PlanHint.CarryFull;
         if (IsAtNest) h |= PlanHint.AtNest;
         if (Nest != null) h |= PlanHint.HasNest;
         if (HasHome) h |= PlanHint.HasHome;
@@ -410,6 +411,7 @@ public partial class EntityModel
         if (Points.Count > 0) h |= PlanHint.HasPoi;
         if (hasThreat) h |= PlanHint.Threat;
         if (IsHungry) h |= PlanHint.Hungry;
+        if (RestBlockedByHunger) h |= PlanHint.RestBlocked;
         if (IsLeader) h |= PlanHint.IsLeader;
         if (_nearestForeign != null) h |= PlanHint.ForeignNear;
         var nest = Nest;

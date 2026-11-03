@@ -24,13 +24,13 @@ public sealed class CasteThresholdSystem : IDisposable
 
     public float4 Get(int index) => (uint)index < (uint)Capacity ? _thresholds[index] : Initial();
 
-    public void Reinforce(int index, Caste caste, bool success)
+    public void Reinforce(int index, Caste caste, bool success, float scale = 1f)
     {
         if ((uint)index >= (uint)Capacity || caste >= Caste.Count) return;
         ref readonly var r = ref SimulationRules.Frame;
         float4 t = _thresholds[index];
         int c = (int)caste;
-        t[c] = math.clamp(t[c] + (success ? -r.CasteThresholdLearn : r.CasteThresholdForget),
+        t[c] = math.clamp(t[c] + (success ? -r.CasteThresholdLearn : r.CasteThresholdForget) * math.max(scale, 0f),
             r.CasteThresholdMin, r.CasteThresholdMax);
         _thresholds[index] = t;
     }

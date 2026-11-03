@@ -38,7 +38,6 @@ public static class ActionCatalog
     private const byte Social  = 1 << (int)SharedHierarchicalBrain.Goal.Social;
 
     private const byte AllCastes = byte.MaxValue;
-    private const byte NoSoldier = AllCastes & ~(1 << (int)Caste.Soldier);
 
     private static readonly ActionInfo[] Table = BuildTable();
 
@@ -60,8 +59,8 @@ public static class ActionCatalog
         Set(t, EntityAction.ShareFood,     ActionFlags.NeedsTarget | ActionFlags.Communal, Social);
         Set(t, EntityAction.ApproachFood,  ActionFlags.IsMove | ActionFlags.NeedsTarget,  Survive | Hunt | Forage);
         Set(t, EntityAction.ReturnNest,    ActionFlags.IsMove,                            Survive | Forage | Social);
-        Set(t, EntityAction.PickUp,        ActionFlags.NeedsTarget | ActionFlags.Communal, Forage, NoSoldier);
-        Set(t, EntityAction.StoreFood,     ActionFlags.Communal,                          Forage, NoSoldier);
+        Set(t, EntityAction.PickUp,        ActionFlags.NeedsTarget | ActionFlags.Communal, Forage);
+        Set(t, EntityAction.StoreFood,     ActionFlags.Communal,                          Forage);
         Set(t, EntityAction.Follow,        ActionFlags.IsMove | ActionFlags.NeedsTarget | ActionFlags.InstinctOnly, 0);
         Set(t, EntityAction.MoveNest,      ActionFlags.PlanOnly | ActionFlags.Communal,   0);
         Set(t, EntityAction.Groom,         ActionFlags.NeedsTarget | ActionFlags.Communal, Social);

@@ -56,6 +56,26 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public bool IsHungry => (InstinctLatches & InstinctBits.Hungry) != 0;
     public bool IsSated  => Digestion != null && Digestion.Fill >= Brain.Context.CoordMLP.Params.SatedFill;
 
+    public float CarryFullFraction
+        => math.min(SimulationRules.Frame.CarryFullFraction * Brain.Context.CoordMLP.Params.CarryFullMul, 1f);
+
+    public bool RestBlockedByHunger
+    {
+        get
+        {
+            if (!IsHungry) return false;
+            ref readonly var g = ref Brain.Context.CoordMLP.Params;
+            float deficit = math.saturate(1f - Stats.En / math.max(Stats.MaxEnergy * g.HungerOn, 1e-3f));
+            return deficit > g.HungryRest;
+        }
+    }
+
+    public int PlanMaxFailures
+        => math.max(0, (int)math.round(SimulationRules.Active.PlanMaxFailures * Brain.Context.CoordMLP.Params.PlanPatience));
+
+    public int HuntMaxStrikes
+        => math.max(1, (int)math.round(SimulationRules.Active.HuntMaxStrikes * Brain.Context.CoordMLP.Params.HuntPersistence));
+
     private PlanRunner _plan;
     public PlanRunner Plan => _plan;
     private bool _hasThreat;
