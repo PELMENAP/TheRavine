@@ -153,6 +153,7 @@ public sealed class SimulationLog : IDisposable
             WriteCommon(time, season, winter, night, "world", -1, alive, _world, 0, worldLifespan, fill * inv, rest * inv, storage * inv);
             WriteWorldOnly(ledger, evolution, residual);
             _writer.WriteLine();
+            ledger?.ResetWindow();
 
             for (int c = 0; c < n; c++)
             {
@@ -192,11 +193,11 @@ public sealed class SimulationLog : IDisposable
         WriteComma();
         WriteFloat(evolution != null ? evolution.AvgEntropy : 0f);
 
-        EnergyFlows last = ledger != null ? ledger.Last : default;
+        EnergyFlows window = ledger != null ? ledger.Window : default;
         for (int i = 0; i < FlowColumns.Length; i++)
         {
             WriteComma();
-            WriteFloat(FlowColumns[i].Get(last));
+            WriteFloat(FlowColumns[i].Get(window));
         }
 
         WriteComma();

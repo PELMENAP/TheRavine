@@ -17,7 +17,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float shareFoodVictimRatio = 0.8f;
     [SerializeField] private float starvedHungerRise = 0.2f;
     [SerializeField] private float corpseDangerMark = 2f;
-    [SerializeField] private float carryFullFraction = 0.9f;
+    [SerializeField] private float carryFullFraction = 0.5f;
     [SerializeField] private float satedPauseMul = 1.8f;
     [SerializeField] private float mapShareThreshold = 0.3f;
     [SerializeField] private float storeFoodReward = 0.5f;
@@ -56,8 +56,8 @@ public sealed partial class SimulationRules
     [SerializeField] private float wellFedDecayPerSecond = 0.02f;
     [SerializeField] private float wellFedBasalReduction = 0.3f;
     [SerializeField] private float restAfterEatDigestMul = 1.5f;
-    [SerializeField] private float nightStart = 0.75f;
-    [SerializeField] private float nightEnd = 0.25f;
+    [SerializeField] private float nightStart = 0.85f;
+    [SerializeField] private float nightEnd = 0.15f;
     [SerializeField] private float nightOutsideDrainMul = 1.5f;
     [SerializeField] private float foodMinNutritionFraction = 0.3f;
     [SerializeField] private float foodMaturityPerSecond = 0.01f;
