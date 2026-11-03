@@ -50,7 +50,7 @@ public partial class EntityModel
         if (nest != null && nest.HasFoodPeak) SetDirectionTarget(DirectionKind.NestFood, in self, nest.FoodPeak, in r);
         if (Points.TryPickBest(in self, out float2 own)) SetDirectionTarget(DirectionKind.OwnPoi, in self, in own, in r);
         var colony = Colony;
-        if (colony != null && colony.Pois.TryPickBest(self, out float2 shared, out _))
+        if (colony != null && !colony.IsWild && colony.Pois.TryPickBest(self, out float2 shared, out _))
             SetDirectionTarget(DirectionKind.ColonyPoi, in self, in shared, in r);
 
         if (nest != null)
@@ -62,7 +62,7 @@ public partial class EntityModel
                 SetDirection(DirectionKind.Migration, math.normalizesafe(nest.Migration), r.MigrateLegRadius);
         }
 
-        if (_flock.Neighbors > 0) SetDirection(DirectionKind.Flock, in _flock.CentroidDir, r.BoidRadius * r.FlockDirectionRadiusMul);
+        if (_flock.Neighbors > 0 && !IsWild) SetDirection(DirectionKind.Flock, in _flock.CentroidDir, r.BoidRadius * r.FlockDirectionRadiusMul);
         _dirMask |= 1 << (int)DirectionKind.Levy;
     }
 

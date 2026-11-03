@@ -17,6 +17,6 @@ public class FollowCommand : PlannedMoveCommand
         if (math.distance(self, target) <= SimulationRules.Active.TetherRadius) return Complete();
 
         return BeginPlanned(MoveIntent.GoToPOI, target - self, target, true,
-            SimulationRules.Active.PlannerRadiusMax, model.Tuning.RunSpeed, model.Tuning.EnergyCostRunning);
+            SimulationRules.Active.PlannerRadiusMax, model.Tuning.MoveSpeed, model.Tuning.EnergyCostMoving);
     }
 }

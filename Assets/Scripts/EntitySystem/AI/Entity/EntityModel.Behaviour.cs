@@ -76,6 +76,7 @@ public partial class EntityModel
 
     public void OnCommandFinished(CommandSource source, EntityCommandStatus status, float reward, int action)
     {
+        SettleDen(action, status);
         if (source == CommandSource.Instinct) return;
         _plan.OnStepFinished(status, reward, action);
     }

@@ -253,8 +253,11 @@ public partial class EntityModel : IEntity, IFoodReceiver
         Digestion.Resize(tuning.MaxEnergy * SimulationRules.Active.StomachCapacityFraction);
         _ledger.Flows.RescaleNet += BodyEnergy - bodyBefore;
         Vectorizer?.SetMaxima(tuning.MaxHealth, tuning.MaxEnergy);
-        Brain.Context.CasteMask = ActionCatalog.CasteActionMask(caste);
+        Brain.Context.CasteMask = ActionMask(caste);
     }
+
+    private int ActionMask(Caste caste)
+        => ActionCatalog.CasteActionMask(caste) & (IsWild ? ActionCatalog.SolitaryActionMask : -1);
     public InfectionService Infection { get; private set; }
 
     public InputVectorizer Vectorizer;
@@ -433,6 +436,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private float  _decisionDrive;
 
     public bool AttackReady => SimulationClock.TimeD >= _attackReadyTime;
+    public double AttackReadyTime => _attackReadyTime;
 
     public bool TryStartAttackCooldown()
     {
@@ -468,7 +472,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         var brain  = colony.Brain;
         _baseTuning = baseTuning;
         _trail = new float2[math.max(1, SimulationRules.Active.TrailCapacity)];
-        ctx.CasteMask = ActionCatalog.CasteActionMask(Caste);
+        ctx.CasteMask = ActionMask(Caste);
         var rulesA = SimulationRules.Active;
         _casteMods = colony.IsWild ? CasteModifiers.Predator() : CasteModifiers.For(Caste);
         if (colony.IsWild) CasteFixed = true;
@@ -498,7 +502,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         ServiceLocator.Services.TryGet(out _players);
         ServiceLocator.Services.TryGet(out _thresholds);
         ServiceLocator.Services.TryGet(out InfectionService infection);
-        Nest      = colony.Nest;
+        Nest      = colony.IsWild ? null : colony.Nest;
         Planner   = planner;
         Infection = infection;
 
@@ -573,11 +577,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
         }
     }
 
-    private float2 _wildHome;
-    private float2 _wildGoal;
-    private bool   _wildHomeSet;
-    private bool   _wildHasGoal;
-    private bool   _wildLoiter;
+    private float2 _den;
+    private bool   _hasDen;
 
     public void InterruptCommand() => _runner?.Interrupt();
 

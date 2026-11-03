@@ -17,6 +17,7 @@ public static class InstinctBits
     public const uint Sick   = 1u << 8;
     public const uint Troph  = 1u << 9;
     public const uint Recruit = 1u << 10;
+    public const uint Nursery = 1u << 11;
 
     public const byte NoReflex = byte.MaxValue;
 }
@@ -39,6 +40,8 @@ public struct InstinctInput
     public float HungerBias;
     public float PanicBias;
     public float FoodToxicity;
+    public float Dt;
+    public byte  Colonial;
     public byte  Sick;
     public byte  HungryKin;
     public byte  Recruited;
@@ -62,6 +65,9 @@ public struct InstinctGenes
     public float SatedFill;
     public float PanicHp;
     public float PanicDanger;
+    public float Tether;
+    public float Nursery;
+    public float Home;
 
     public static InstinctGenes From(in GeneticParameters g) => new()
     {
@@ -70,6 +76,9 @@ public struct InstinctGenes
         SatedFill   = g.SatedFill,
         PanicHp     = g.PanicHp,
         PanicDanger = g.PanicDanger,
+        Tether      = g.TetherDrive,
+        Nursery     = g.NurseryDrive,
+        Home        = g.HomeDrive,
     };
 }
 
@@ -99,6 +108,11 @@ public struct InstinctRules
     public float NurseLeash;
     public float HungerReinterrupt;
     public float TrophallaxisMinFill;
+    public float NurseLeashRate;
+    public float NurseryRadius;
+    public float NurseryRate;
+    public float TetherRate;
+    public float NightHomeRate;
 
     public static InstinctRules Capture()
     {
@@ -114,6 +128,11 @@ public struct InstinctRules
             NurseLeash         = r.NurseLeash,
             HungerReinterrupt  = r.HungerReinterruptSeconds,
             TrophallaxisMinFill = r.TrophallaxisMinFill,
+            NurseLeashRate     = r.NurseLeashRate,
+            NurseryRadius      = r.NurseryRadius,
+            NurseryRate        = r.NurseryRate,
+            TetherRate         = r.TetherRate,
+            NightHomeRate      = r.NightHomeRate,
         };
     }
 }
@@ -158,10 +177,13 @@ public struct InstinctJob : IJobFor
         bool atNest     = x.AtNest != 0;
         bool nestFood   = atNest && x.NestFood != 0;
         bool hasThreat  = x.HasThreat != 0;
-        bool juvenile   = x.Age < R.JuvenileTime && x.ParentDistance >= 0f;
+        bool young      = x.Age < R.JuvenileTime;
+        bool juvenile   = young && x.ParentDistance >= 0f;
         bool grazing    = x.PlanActive != 0 && (x.PlanKind == (byte)PlanKind.Graze || x.PlanKind == (byte)PlanKind.Harvest
                                                 || x.PlanKind == (byte)PlanKind.Seek);
         bool sick       = x.Sick != 0;
+        bool forage     = hungry && edible && !hasThreat;
+        var  rng        = new Unity.Mathematics.Random(math.hash(new uint2((uint)i, math.asuint(x.Now))) | 1u);
 
         uint mask   = 0u;
         byte reflex = InstinctBits.NoReflex;
@@ -177,11 +199,17 @@ public struct InstinctJob : IJobFor
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.Wander, 5, InstinctBits.Sick);
         else if (panic && !wasPanic && !atNest && !sick)
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ReturnNest, 5, InstinctBits.Panic);
-        else if (x.Night != 0 && !atNest && !sick && !(hungry && edible && !hasThreat))
+        else if (x.Night != 0 && !atNest && !sick && !forage && x.NestDistance >= 0f
+                 && Urge(ref rng, R.NightHomeRate * g.Home, x.Dt))
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ReturnNest, 5, InstinctBits.Night);
-        else if (x.Caste == (byte)global::Caste.Nurse && !juvenile && !sick && x.NestDistance > R.NurseLeash)
+        else if (x.Caste == (byte)global::Caste.Nurse && !juvenile && !sick && x.NestDistance > R.NurseLeash
+                 && Urge(ref rng, R.NurseLeashRate * g.Home, x.Dt))
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ReturnNest, 5, InstinctBits.Leash);
-        else if (juvenile && x.ParentDistance > R.TetherRadius)
+        else if (young && x.Colonial != 0 && !forage && !sick && x.NestDistance > R.NurseryRadius
+                 && Urge(ref rng, R.NurseryRate * g.Nursery, x.Dt))
+            Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ReturnNest, 4, InstinctBits.Nursery);
+        else if (juvenile && !forage && x.ParentDistance > R.TetherRadius
+                 && Urge(ref rng, R.TetherRate * g.Tether, x.Dt))
             Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.Follow, 4, InstinctBits.Tether);
         else if (atNest && !hungry && !sick && x.HungryKin != 0 && x.Stomach >= R.TrophallaxisMinFill
                  && x.PlanActive == 0 && x.Busy == 0)
@@ -236,6 +264,9 @@ public struct InstinctJob : IJobFor
             NeedsDecision = (byte)(reflex == InstinctBits.NoReflex && (interrupt != 0 || idle) ? 1 : 0),
         };
     }
+
+    private static bool Urge(ref Unity.Mathematics.Random rng, float rate, float dt)
+        => rate > 0f && rng.NextFloat() < 1f - math.exp(-rate * math.max(dt, 0f));
 
     private static void Pick(ref byte reflex, ref int prio, ref uint mask, byte action, int priority, uint bit)
     {

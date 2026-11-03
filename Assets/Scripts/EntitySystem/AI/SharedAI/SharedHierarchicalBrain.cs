@@ -27,13 +27,18 @@ public class SharedHierarchicalBrain : IDisposable
     public const int SpeechAux        = HeadingOutputs + CurvatureOutputs;
     public const int DirectionOutputs = (int)DirectionKind.Count;
     public const int DirOffsetAux     = DirectionOutputs;
+    public const int StyleOutputs     = (int)AttackStyle.Count;
+    public const int StyleAux         = HeadingOutputs + CurvatureOutputs;
+    public const int TempoAux         = StyleAux + StyleOutputs;
 
     public static bool UsesDirections(int goal) => goal == (int)Goal.Survive || goal == (int)Goal.Forage;
 
     public static int ExecAux(int goal)
         => UsesDirections(goal)
             ? DirectionOutputs + 1
-            : HeadingOutputs + CurvatureOutputs + (goal == (int)Goal.Social ? SpeechOutputs : 0);
+            : HeadingOutputs + CurvatureOutputs
+              + (goal == (int)Goal.Social ? SpeechOutputs : 0)
+              + (goal == (int)Goal.Hunt ? StyleOutputs + 1 : 0);
 
     public static int[] BuildExecSizes(int combined, int goal)
         => new[] { combined, 64, 32, 32, ActionSubsets[goal].Length + 1 + ExecAux(goal) };
@@ -557,6 +562,8 @@ public class SharedHierarchicalBrain : IDisposable
             float  offset    = 0f;
             byte   direction = (byte)DirectionKind.None;
             byte   signal    = SpeechSignal.None;
+            var    style     = AttackStyle.Pursue;
+            float  tempo     = 0f;
 
             if (UsesDirections(g))
             {
@@ -572,11 +579,18 @@ public class SharedHierarchicalBrain : IDisposable
                     signal = PickMasked(ticket, SpeechAux, SpeechOutputs, 0xFF);
                     if (signal < SpeechSignal.Count) speech = frame.SpeechSignals[signal];
                 }
+                else if (g == (int)Goal.Hunt)
+                {
+                    byte pick = PickMasked(ticket, StyleAux, StyleOutputs, 0xFF);
+                    if (pick < StyleOutputs) style = (AttackStyle)pick;
+                    tempo = aux[TempoAux];
+                }
             }
 
             _dDecision[d] = new BrainDecision(action, ticket.DecisionId, ctx.CoordDecisionId,
                 ctx.CurrentGoal, simTime, clamped, in heading,
-                curvature, speech, ctx.CurrentPlan, ctx.GoalEndTime, direction, offset, signal);
+                curvature, speech, ctx.CurrentPlan, ctx.GoalEndTime, direction, offset, signal,
+                style: style, tempo: tempo);
             _dMade[d] = true;
         }
 

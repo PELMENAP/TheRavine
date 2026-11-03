@@ -381,6 +381,10 @@ public sealed class ColonyPopulation
         float a = RavineRandom.RangeFloat(0f, 2f * math.PI);
         math.sincos(a, out float sa, out float ca);
         var p = home + new float2(ca, sa) * r.PredatorSpawnDistance;
-        SpawnEntity(new Vector3(p.x, _parent.position.y, p.y), wild);
+        var members = wild.Members;
+        var ctx = members.Length > 0
+            ? wild.Brain.CreateContext(_entities[members[RavineRandom.RangeInt(0, members.Length)]].Brain.Context.CoordMLP.Params.GetMutatedGeneticParameters())
+            : null;
+        SpawnEntity(new Vector3(p.x, _parent.position.y, p.y), wild, ctx);
     }
 }

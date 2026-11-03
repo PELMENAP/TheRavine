@@ -9,6 +9,7 @@ public enum ActionFlags : byte
     EnergyGated = 1 << 2,
     InstinctOnly = 1 << 3,
     PlanOnly     = 1 << 4,
+    Communal     = 1 << 5,
 }
 
 public readonly struct ActionInfo
@@ -51,19 +52,19 @@ public static class ActionCatalog
         Set(t, EntityAction.Attack,        ActionFlags.IsMove | ActionFlags.NeedsTarget | ActionFlags.EnergyGated, Hunt);
         Set(t, EntityAction.Flee,          ActionFlags.IsMove,                            Survive | Hunt);
         Set(t, EntityAction.Eat,           ActionFlags.None,                              Survive | Forage);
-        Set(t, EntityAction.Reproduce,     ActionFlags.EnergyGated,                       Social);
-        Set(t, EntityAction.Speech,        ActionFlags.None,                              Social);
-        Set(t, EntityAction.Mimic,         ActionFlags.NeedsTarget,                       Social);
+        Set(t, EntityAction.Reproduce,     ActionFlags.EnergyGated | ActionFlags.Communal, Social);
+        Set(t, EntityAction.Speech,        ActionFlags.Communal,                          Social);
+        Set(t, EntityAction.Mimic,         ActionFlags.NeedsTarget | ActionFlags.Communal, Social);
         Set(t, EntityAction.Rest,          ActionFlags.None,                              Survive);
         Set(t, EntityAction.Threaten,      ActionFlags.NeedsTarget,                       Hunt);
-        Set(t, EntityAction.ShareFood,     ActionFlags.NeedsTarget,                       Social);
+        Set(t, EntityAction.ShareFood,     ActionFlags.NeedsTarget | ActionFlags.Communal, Social);
         Set(t, EntityAction.ApproachFood,  ActionFlags.IsMove | ActionFlags.NeedsTarget,  Survive | Hunt | Forage);
         Set(t, EntityAction.ReturnNest,    ActionFlags.IsMove,                            Survive | Forage | Social);
-        Set(t, EntityAction.PickUp,        ActionFlags.NeedsTarget,                       Forage, NoSoldier);
-        Set(t, EntityAction.StoreFood,     ActionFlags.None,                              Forage, NoSoldier);
+        Set(t, EntityAction.PickUp,        ActionFlags.NeedsTarget | ActionFlags.Communal, Forage, NoSoldier);
+        Set(t, EntityAction.StoreFood,     ActionFlags.Communal,                          Forage, NoSoldier);
         Set(t, EntityAction.Follow,        ActionFlags.IsMove | ActionFlags.NeedsTarget | ActionFlags.InstinctOnly, 0);
-        Set(t, EntityAction.MoveNest,      ActionFlags.PlanOnly,                          0);
-        Set(t, EntityAction.Groom,         ActionFlags.NeedsTarget,                       Social);
+        Set(t, EntityAction.MoveNest,      ActionFlags.PlanOnly | ActionFlags.Communal,   0);
+        Set(t, EntityAction.Groom,         ActionFlags.NeedsTarget | ActionFlags.Communal, Social);
         return t;
     }
 
@@ -82,6 +83,16 @@ public static class ActionCatalog
     }
 
     public static int CasteActionMask(Caste caste) => CasteActionMasks[(int)caste];
+
+    public static readonly int SolitaryActionMask = BuildSolitaryMask();
+
+    private static int BuildSolitaryMask()
+    {
+        int mask = 0;
+        for (int a = 0; a < Count; a++)
+            if (!Table[a].Has(ActionFlags.Communal)) mask |= 1 << a;
+        return mask;
+    }
 
     public static ref readonly ActionInfo Get(int action) => ref Table[action];
     public static ref readonly ActionInfo Get(EntityAction action) => ref Table[(int)action];

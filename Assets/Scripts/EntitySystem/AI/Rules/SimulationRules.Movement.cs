@@ -74,6 +74,13 @@ public sealed partial class SimulationRules
     [SerializeField] private float movePauseMin = 0.3f;
     [SerializeField] private float movePauseMax = 1.2f;
     [SerializeField] private float attackMoveMaxDuration = 2f;
+    [SerializeField] private float attackTriggerMinMul = 0f;
+    [SerializeField] private float attackTriggerMaxMul = 2.5f;
+    [SerializeField] private float attackContactFraction = 0.6f;
+    [SerializeField] private float ambushMinHold = 1.5f;
+    [SerializeField] private float ambushMaxHold = 12f;
+    [SerializeField] private float ambushDamageMul = 1.5f;
+    [SerializeField] private float dashStrikeMul = 1.2f;
     [SerializeField] private int plannerCandidates = 8;
     [SerializeField] private float plannerSectorHalf = 0.9f;
     [SerializeField] private float plannerMinRadiusFraction = 0.6f;
@@ -157,6 +164,13 @@ public sealed partial class SimulationRules
     public float MovePauseMin => movePauseMin;
     public float MovePauseMax => movePauseMax;
     public float AttackMoveMaxDuration => attackMoveMaxDuration;
+    public float AttackTriggerMinMul => attackTriggerMinMul;
+    public float AttackTriggerMaxMul => attackTriggerMaxMul;
+    public float AttackContactFraction => attackContactFraction;
+    public float AmbushMinHold => ambushMinHold;
+    public float AmbushMaxHold => ambushMaxHold;
+    public float AmbushDamageMul => ambushDamageMul;
+    public float DashStrikeMul => dashStrikeMul;
     public int PlannerCandidates => plannerCandidates;
     public float PlannerSectorHalf => plannerSectorHalf;
     public float PlannerMinRadiusFraction => plannerMinRadiusFraction;
