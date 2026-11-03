@@ -191,6 +191,26 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""interactions"": ""Tap"",
                     ""initialStateCheck"": false,
                     ""priority"": 0
+                },
+                {
+                    ""name"": ""Camera Scroll"",
+                    ""type"": ""Value"",
+                    ""id"": ""72b37d2d-2cb8-44ae-b5d0-0ac9d6472912"",
+                    ""expectedControlType"": ""Axis"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true,
+                    ""priority"": 0
+                },
+                {
+                    ""name"": ""Camera Flip"",
+                    ""type"": ""Button"",
+                    ""id"": ""ecc2b969-a1fc-4f75-a8ba-478b1565185b"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false,
+                    ""priority"": 0
                 }
             ],
             ""bindings"": [
@@ -422,6 +442,28 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Gesture Recognize (Alt)"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1af50e1a-2f59-4d83-b87b-8e2ea0dfb51f"",
+                    ""path"": ""<Mouse>/scroll/y"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Camera Scroll"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""4a83f62d-4937-435e-a7ee-296e60dff83c"",
+                    ""path"": ""<Mouse>/middleButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Camera Flip"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1079,6 +1121,8 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         m_Gameplay_PauseEscape = m_Gameplay.FindAction("Pause (Escape)", throwIfNotFound: true);
         m_Gameplay_GestureAreaHoldAlt = m_Gameplay.FindAction("Gesture Area (Hold Alt)", throwIfNotFound: true);
         m_Gameplay_GestureRecognizeAlt = m_Gameplay.FindAction("Gesture Recognize (Alt)", throwIfNotFound: true);
+        m_Gameplay_CameraScroll = m_Gameplay.FindAction("Camera Scroll", throwIfNotFound: true);
+        m_Gameplay_CameraFlip = m_Gameplay.FindAction("Camera Flip", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1192,6 +1236,8 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_Gameplay_PauseEscape;
     private readonly InputAction m_Gameplay_GestureAreaHoldAlt;
     private readonly InputAction m_Gameplay_GestureRecognizeAlt;
+    private readonly InputAction m_Gameplay_CameraScroll;
+    private readonly InputAction m_Gameplay_CameraFlip;
     /// <summary>
     /// Provides access to input actions defined in input action map "Gameplay".
     /// </summary>
@@ -1243,6 +1289,14 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Gameplay/GestureRecognizeAlt".
         /// </summary>
         public InputAction @GestureRecognizeAlt => m_Wrapper.m_Gameplay_GestureRecognizeAlt;
+        /// <summary>
+        /// Provides access to the underlying input action "Gameplay/CameraScroll".
+        /// </summary>
+        public InputAction @CameraScroll => m_Wrapper.m_Gameplay_CameraScroll;
+        /// <summary>
+        /// Provides access to the underlying input action "Gameplay/CameraFlip".
+        /// </summary>
+        public InputAction @CameraFlip => m_Wrapper.m_Gameplay_CameraFlip;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1299,6 +1353,12 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @GestureRecognizeAlt.started += instance.OnGestureRecognizeAlt;
             @GestureRecognizeAlt.performed += instance.OnGestureRecognizeAlt;
             @GestureRecognizeAlt.canceled += instance.OnGestureRecognizeAlt;
+            @CameraScroll.started += instance.OnCameraScroll;
+            @CameraScroll.performed += instance.OnCameraScroll;
+            @CameraScroll.canceled += instance.OnCameraScroll;
+            @CameraFlip.started += instance.OnCameraFlip;
+            @CameraFlip.performed += instance.OnCameraFlip;
+            @CameraFlip.canceled += instance.OnCameraFlip;
         }
 
         /// <summary>
@@ -1340,6 +1400,12 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @GestureRecognizeAlt.started -= instance.OnGestureRecognizeAlt;
             @GestureRecognizeAlt.performed -= instance.OnGestureRecognizeAlt;
             @GestureRecognizeAlt.canceled -= instance.OnGestureRecognizeAlt;
+            @CameraScroll.started -= instance.OnCameraScroll;
+            @CameraScroll.performed -= instance.OnCameraScroll;
+            @CameraScroll.canceled -= instance.OnCameraScroll;
+            @CameraFlip.started -= instance.OnCameraFlip;
+            @CameraFlip.performed -= instance.OnCameraFlip;
+            @CameraFlip.canceled -= instance.OnCameraFlip;
         }
 
         /// <summary>
@@ -1859,6 +1925,20 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnGestureRecognizeAlt(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Camera Scroll" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnCameraScroll(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Camera Flip" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnCameraFlip(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

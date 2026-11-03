@@ -1,6 +1,7 @@
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Unity.Mathematics;
+using UnityEngine;
 using UnityEngine.InputSystem;
 using TheRavine.Events;
 
@@ -14,6 +15,7 @@ namespace TheRavine.EntityControl
         private readonly CancellationTokenSource _cts = new();
         private float _scale;
         private bool _flipped;
+        private float _lastFlipTime = float.NegativeInfinity;
 
         public float Scale => _scale;
         public bool Flipped => _flipped;
@@ -52,8 +54,9 @@ namespace TheRavine.EntityControl
                 Publish();
             }
 
-            if (_flip.WasPressedThisFrame())
+            if (_flip.WasPressedThisFrame() && Time.unscaledTime - _lastFlipTime >= SimulationRules.Active.CameraFlipDebounce)
             {
+                _lastFlipTime = Time.unscaledTime;
                 _flipped = !_flipped;
                 Publish();
             }

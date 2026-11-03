@@ -9,6 +9,7 @@ public class AttackCommand : EntityCommand
     private Phase  _phase;
     private double _recoverEnd;
     private float2 _chaseGoal;
+    private float  _damageShare;
 
     public AttackCommand(EntityModel model) : base(model) { }
 
@@ -28,6 +29,7 @@ public class AttackCommand : EntityCommand
     protected override EntityCommandStatus OnBegin()
     {
         _target = model.CachedHuntTarget;
+        _damageShare = 0f;
         if (!_target.IsValid || !CanExecute()) return Fail();
         return Engage(SimulationRules.Active);
     }
@@ -37,7 +39,7 @@ public class AttackCommand : EntityCommand
         var r = SimulationRules.Active;
 
         if (_phase == Phase.Recover)
-            return Elapsed(_recoverEnd) ? Complete() : EntityCommandStatus.Running;
+            return Elapsed(_recoverEnd) ? Complete(r.DamageEventReward * _damageShare) : EntityCommandStatus.Running;
 
         if (!_target.IsValid) return Fail();
         float range = model.Tuning.AttackRange;
@@ -90,7 +92,9 @@ public class AttackCommand : EntityCommand
         var stats = model.Stats;
         if (stats.En < math.max(model.Tuning.AttackEnergyCost, r.AttackEnergyMin)) return Fail();
 
+        float enBefore = stats.En;
         stats.En = math.max(0f, stats.En - r.DashEnergyCost);
+        model.Ledger.Flows.Dash += enBefore - stats.En;
         _phase = Phase.Dash;
 
         float speed = model.Tuning.RunSpeed * r.DashMul;
@@ -111,6 +115,7 @@ public class AttackCommand : EntityCommand
 
         float energyScale = math.max(math.saturate(stats.En / stats.MaxEnergy), r.AttackMinEnergyScale);
         stats.En -= cost;
+        model.Ledger.Flows.Strike += cost;
 
         float damage = model.Tuning.AttackDamage * model.AttackDamageMul * energyScale;
         if (model.SinceAction(EntityAction.Threaten) < r.SynergyWindow) damage *= r.ThreatenAttackMul;
@@ -123,6 +128,9 @@ public class AttackCommand : EntityCommand
             model.Infection?.TryTransmitBite(model, victim);
         }
         else model.Players?.ReportHit(target.Player, damage, model);
+        var victimStats = victim != null ? victim.Stats : model.Players?.StatsOf(target.Player);
+        bool outside    = victim == null || victim.Colony != model.Colony;
+        if (outside && victimStats != null && victimStats.MaxHealth > 0f) _damageShare += damage / victimStats.MaxHealth;
         model.RegisterFitnessEvent(EntityModel.FitnessEvent.DamageDealt, damage);
         model.Colony?.Stats.RecordAttack(victim == null ? ColonyStats.AttackTarget.Player
             : victim.Colony == model.Colony ? ColonyStats.AttackTarget.Own : ColonyStats.AttackTarget.Foreign);

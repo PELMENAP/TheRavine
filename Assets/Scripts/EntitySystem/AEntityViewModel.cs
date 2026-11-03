@@ -5,11 +5,11 @@ namespace TheRavine.EntityControl
 {
     public abstract class AEntityViewModel : NetworkBehaviour
     {
-        public AEntity Entity { get; private set; }
+        public IEntity Entity { get; private set; }
 
         protected DisposableBag Subscriptions;
 
-        public void Initialize(AEntity entity)
+        public void Initialize(IEntity entity)
         {
             Subscriptions.Clear();
             Entity = entity;

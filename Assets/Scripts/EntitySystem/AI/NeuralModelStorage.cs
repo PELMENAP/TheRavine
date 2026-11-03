@@ -20,6 +20,8 @@ public static class NeuralModelStorage
     private const string DefaultModelsDirectory = "NeuralModels";
     private const string ColonySuffix = "_c";
 
+    public static string BaseDirectory => Path.Combine(Application.persistentDataPath, DefaultModelsDirectory);
+
     public static string ColonyFileName(string baseName, int colonyId) => $"{baseName}{ColonySuffix}{colonyId}";
 
     public static bool TryParseColonyId(string fileName, out int colonyId)

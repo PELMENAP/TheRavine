@@ -19,7 +19,9 @@ public class ThreatenCommand : EntityCommand
         if (dist > model.Tuning.AttackRange * r.ThreatenRangeMul) return Fail();
 
         var stats = model.Stats;
+        float enBefore = stats.En;
         stats.En = math.max(0f, stats.En - r.ThreatenEnergyCost);
+        model.Ledger.Flows.Threaten += enBefore - stats.En;
         _target  = target;
         _facing  = float2.zero;
         _holdEnd = HoldUntil(r.ThreatenDuration);

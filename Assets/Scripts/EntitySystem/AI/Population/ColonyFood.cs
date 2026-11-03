@@ -4,13 +4,18 @@ using TheRavine.EntityControl.Virology;
 public sealed class ColonyFood
 {
     private readonly int _maxFood;
+    private readonly EnergyLedger _ledger;
     private ChunkFoodIndex _index;
     private float _lastEcologyTime;
 
     public ChunkFoodIndex Index => _index;
     public int FoodCount => _index != null ? _index.FoodCount : 0;
 
-    public ColonyFood(int maxFood) => _maxFood = maxFood;
+    public ColonyFood(int maxFood, EnergyLedger ledger)
+    {
+        _maxFood = maxFood;
+        _ledger  = ledger;
+    }
 
     public void Bind(ChunkFoodIndex index, float now)
     {
@@ -33,12 +38,23 @@ public sealed class ColonyFood
 
         float season = (1f + rules.SeasonAmplitude * SeasonClock.Value(now))
                      * (SeasonClock.IsWinter(now) ? rules.WinterGrowthMul : 1f);
-        _index.TickEcology(dt, SimulationClock.TimeD, season, _maxFood);
+        _index.TickEcology(dt, SimulationClock.TimeD, season, _maxFood, out float spawned, out float matured, out float spoiled,
+            out float soilReleased);
+        ref var flows = ref _ledger.Flows;
+        flows.FoodSpawn      += spawned;
+        flows.FoodMaturation += matured;
+        flows.CorpseSpoil    += spoiled;
+        flows.SoilRelease    += soilReleased;
     }
 
     public void DropCorpse(EntityModel model, DeathCause cause)
     {
-        if (_index == null || model.Stats == null || model.Stats.IsDisposed) return;
+        if (model.Stats == null || model.Stats.IsDisposed) return;
+        if (_index == null)
+        {
+            _ledger.Flows.DeathLoss += model.BodyEnergy;
+            return;
+        }
 
         var virology = model.Virology;
         ViralPayload payload = default;
@@ -50,6 +66,8 @@ public sealed class ColonyFood
 
         bool tainted = cause == DeathCause.Virus || cause == DeathCause.Toxic;
         int  taboo   = tainted && model.Colony != null ? model.Colony.ColonyId : 0;
-        _index.TryAddCorpse(model.DeathPosition, model.BodyEnergy, ref payload, infected, taboo);
+        float body = model.BodyEnergy;
+        if (!_index.TryAddCorpse(model.DeathPosition, body, ref payload, infected, taboo))
+            _ledger.Flows.DeathLoss += body;
     }
 }

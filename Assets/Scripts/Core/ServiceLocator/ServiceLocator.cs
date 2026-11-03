@@ -20,6 +20,9 @@ public static class ServiceLocator
         return false;
     }
 
+    public static T Replace<T>(T service) where T : class
+        => Services.Replace(service);
+
     public static Observable<Unit> WhenPlayersNonEmpty()
     {
         if (Players.GetAllPlayers().Count > 0)

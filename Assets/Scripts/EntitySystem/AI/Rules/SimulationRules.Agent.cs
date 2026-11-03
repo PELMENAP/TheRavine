@@ -22,6 +22,13 @@ public sealed partial class SimulationRules
     [SerializeField] private float rememberPointMinSpacing = 10f;
     [SerializeField] private float actionTraceHorizon = 120f;
     [SerializeField] private float stressTau = 90f;
+    [SerializeField] private float stressNestRecoveryMul = 3f;
+    [SerializeField] private float stressPerceptionNoise = 0.5f;
+    [SerializeField] private float foreignHarmStress = 1f;
+    [SerializeField] private float basalEmitFraction = 0f;
+    [SerializeField] private float warmthDrawFraction = 0f;
+    [SerializeField] private float warmthCellSize = 4f;
+    [SerializeField] private int warmthBuckets = 4096;
     [SerializeField] private int huntMaxStrikes = 3;
     [SerializeField] private int restMaxSteps = 3;
     [SerializeField] private float panicHpRelease = 0.15f;
@@ -37,6 +44,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float hungerReinterruptSeconds = 8f;
     [SerializeField] private float restMinEnergyReserve = 5f;
     [SerializeField] private float baseMaxAge = 1200f;
+    [SerializeField] private float baseMaxHealth = 200f;
     [SerializeField] private float senescenceOnset = 0.7f;
     [SerializeField] private float senescenceUpkeep = 1.5f;
     [SerializeField] private float groomAmount = 0.2f;
@@ -81,6 +89,13 @@ public sealed partial class SimulationRules
     public float RememberPointMinSpacing => rememberPointMinSpacing;
     public float ActionTraceHorizon => actionTraceHorizon;
     public float StressTau => stressTau;
+    public float StressNestRecoveryMul => stressNestRecoveryMul;
+    public float StressPerceptionNoise => stressPerceptionNoise;
+    public float ForeignHarmStress => foreignHarmStress;
+    public float BasalEmitFraction => basalEmitFraction;
+    public float WarmthDrawFraction => warmthDrawFraction;
+    public float WarmthCellSize => warmthCellSize;
+    public int WarmthBuckets => warmthBuckets;
     public int HuntMaxStrikes => huntMaxStrikes;
     public int RestMaxSteps => restMaxSteps;
     public float PanicHpRelease => panicHpRelease;
@@ -96,6 +111,7 @@ public sealed partial class SimulationRules
     public float HungerReinterruptSeconds => hungerReinterruptSeconds;
     public float RestMinEnergyReserve => restMinEnergyReserve;
     public float BaseMaxAge => baseMaxAge;
+    public float BaseMaxHealth => baseMaxHealth;
     public float SenescenceOnset => senescenceOnset;
     public float SenescenceUpkeep => senescenceUpkeep;
     public float GroomAmount => groomAmount;

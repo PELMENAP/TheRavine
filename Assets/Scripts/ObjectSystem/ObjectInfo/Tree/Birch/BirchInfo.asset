@@ -17,13 +17,18 @@ MonoBehaviour:
   defaultAmount: 0
   initialPoolSize: 10
   instanceType: 0
-  behaviourType: 1
+  behaviourType: 2
   nalInfo: {fileID: 11400000, guid: e300f278e3f22cce2b173b38cdb47cf8, type: 2}
   inventoryItemInfo: {fileID: 0}
-  evolutionStep: {fileID: 0}
+  decaySeconds: 0
+  isFood: 0
+  foodKind: 0
+  evolutionStep: {fileID: 11400000, guid: 257a26db7986565cb8ea65438dd7b43b, type: 2}
   additionalOccupiedCells: []
+  placementKind: 0
   onDeathPattern: {fileID: 11400000, guid: 2c5f330952253c0f590b988ee87196cf, type: 2}
   onPickUpPattern: {fileID: 0}
+  levels: 1
   visibleRings: 4
   farMode: 2
   castShadowsFar: 0

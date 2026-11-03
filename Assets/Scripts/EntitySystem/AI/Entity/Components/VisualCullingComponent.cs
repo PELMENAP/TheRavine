@@ -10,10 +10,10 @@ public sealed class VisualCullingComponent : IComponent
     public bool IsVisible { get; private set; } = true;
     public bool IsDisposed { get; private set; }
 
-    public VisualCullingComponent(GameObject root, GameObject labelObject = null)
+    public VisualCullingComponent(GameObject root, GameObject labelObject = null, bool toggleColliders = false)
     {
         _bodyRenderers = root.GetComponentsInChildren<Renderer>(true);
-        _colliders = root.GetComponentsInChildren<Collider>(true);
+        _colliders = toggleColliders ? root.GetComponentsInChildren<Collider>(true) : System.Array.Empty<Collider>();
         _mimic = root.GetComponentInChildren<Mimic>(true);
         _labelObject = labelObject;
     }

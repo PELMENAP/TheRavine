@@ -1,6 +1,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 using R3;
+using UnityEngine;
 
 namespace TheRavine.Base
 {
@@ -23,7 +24,30 @@ namespace TheRavine.Base
             _settings = new ReactiveProperty<GlobalSettings>(new GlobalSettings());
             Settings = _settings.ToReadOnlyReactiveProperty();
 
+            _settings.Subscribe(ApplyDisplayAndGraphics).AddTo(_disposables);
+
             LoadAsync().Forget();
+        }
+
+        private static void ApplyDisplayAndGraphics(GlobalSettings s)
+        {
+            int quality = Mathf.Clamp(s.qualityLevel, 0, QualitySettings.count - 1);
+            if (QualitySettings.GetQualityLevel() != quality)
+                QualitySettings.SetQualityLevel(quality);
+
+            QualitySettings.shadows = s.enableShadows ? ShadowQuality.All : ShadowQuality.Disable;
+            QualitySettings.vSyncCount = s.vSync ? 1 : 0;
+            Application.targetFrameRate = s.vSync || s.targetFps <= 0 ? -1 : s.targetFps;
+
+            if (s.resolutionWidth > 0 && s.resolutionHeight > 0 &&
+                (Screen.width != s.resolutionWidth || Screen.height != s.resolutionHeight))
+            {
+                Screen.SetResolution(s.resolutionWidth, s.resolutionHeight, s.fullscreen);
+            }
+
+            FullScreenMode mode = s.fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
+            if (Screen.fullScreenMode != mode)
+                Screen.fullScreenMode = mode;
         }
 
         private async UniTask LoadAsync()
@@ -47,7 +71,7 @@ namespace TheRavine.Base
             }
         }
 
-        public void Update(Action<GlobalSettings> modifier)
+        public void Update(Action<GlobalSettings> modifier, bool persist = true)
         {
             if (modifier == null)
             {
@@ -59,7 +83,7 @@ namespace TheRavine.Base
             modifier(settings);
             _settings.Value = settings;
 
-            SaveAsync().Forget();
+            if (persist) SaveAsync().Forget();
         }
 
         public async UniTask<bool> SaveAsync()

@@ -16,6 +16,8 @@ public sealed partial class SimulationRules
     [SerializeField] private float colonyHungerTau = 120f;
     [SerializeField] private float kinDeathRadius = 12f;
     [SerializeField] private float kinDeathStress = 0.5f;
+    [SerializeField] private bool simulationLogEnabled = false;
+    [SerializeField] private float simulationLogIntervalSeconds = 10f;
     [SerializeField] private float kinColonyWeight = 0.5f;
     [SerializeField] private float kinLineageWeight = 0.5f;
     [SerializeField] private float witnessPenalty = -0.2f;
@@ -68,6 +70,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float casteScoutNoFoodStimulus = 0.5f;
     [SerializeField] private float casteNurseGain = 2f;
     [SerializeField] private float biteSeekOwnThreshold = 0.5f;
+    [SerializeField] private bool frenzyTargetsOwnColony = false;
     [SerializeField] private float nestFoodMinPortionFraction = 1f;
     [SerializeField] private float nestJuvenileReserve = 60f;
     [SerializeField] private float frontierRadius = 20f;
@@ -152,6 +155,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float nestEatPortion = 15f;
     [SerializeField] private float nestStorageNorm = 200f;
     [SerializeField] private float nestRadius = 8f;
+    [SerializeField] private float nestExitRadiusMul = 1.25f;
     [SerializeField] private int nestMapSize = 64;
     [SerializeField] private float nestMapCellSize = 4f;
     [SerializeField] private float nestMapMaxValue = 10f;
@@ -163,6 +167,9 @@ public sealed partial class SimulationRules
     [SerializeField] private float alarmTau = 20f;
     [SerializeField] private int alarmHuntMinMembers = 5;
     [SerializeField] private float alarmFromDamage = 2f;
+    [SerializeField] private float birdAlarmRadius = 40f;
+    [SerializeField] private float birdAlarmMagnitude = 0.2f;
+    [SerializeField] private int birdAlarmMaxPerFrame = 4;
     [SerializeField] private float alarmHuntBias = 1.5f;
     [SerializeField] private float alarmSurviveBias = 1.5f;
     [SerializeField] private float alarmFleeBias = 1.5f;
@@ -179,6 +186,8 @@ public sealed partial class SimulationRules
     public float ColonyHungerTau => colonyHungerTau;
     public float KinDeathRadius => kinDeathRadius;
     public float KinDeathStress => kinDeathStress;
+    public bool SimulationLogEnabled => simulationLogEnabled;
+    public float SimulationLogIntervalSeconds => simulationLogIntervalSeconds;
     public float KinColonyWeight => kinColonyWeight;
     public float KinLineageWeight => kinLineageWeight;
     public float WitnessPenalty => witnessPenalty;
@@ -231,6 +240,7 @@ public sealed partial class SimulationRules
     public float CasteScoutNoFoodStimulus => casteScoutNoFoodStimulus;
     public float CasteNurseGain => casteNurseGain;
     public float BiteSeekOwnThreshold => biteSeekOwnThreshold;
+    public bool FrenzyTargetsOwnColony => frenzyTargetsOwnColony;
     public float NestFoodMinPortionFraction => nestFoodMinPortionFraction;
     public float NestJuvenileReserve => nestJuvenileReserve;
     public float FrontierRadius => frontierRadius;
@@ -308,6 +318,7 @@ public sealed partial class SimulationRules
     public float NestEatPortion => nestEatPortion;
     public float NestStorageNorm => nestStorageNorm;
     public float NestRadius => nestRadius;
+    public float NestExitRadiusMul => nestExitRadiusMul;
     public int NestMapSize => nestMapSize;
     public float NestMapCellSize => nestMapCellSize;
     public float NestMapMaxValue => nestMapMaxValue;
@@ -317,6 +328,9 @@ public sealed partial class SimulationRules
     public float AlarmTau => alarmTau;
     public int AlarmHuntMinMembers => alarmHuntMinMembers;
     public float AlarmFromDamage => alarmFromDamage;
+    public float BirdAlarmRadius => birdAlarmRadius;
+    public float BirdAlarmMagnitude => birdAlarmMagnitude;
+    public int BirdAlarmMaxPerFrame => birdAlarmMaxPerFrame;
     public float AlarmHuntBias => alarmHuntBias;
     public float AlarmSurviveBias => alarmSurviveBias;
     public float AlarmFleeBias => alarmFleeBias;

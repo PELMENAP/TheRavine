@@ -7,6 +7,8 @@ namespace TheRavine.EntityControl
         public bool JumpRequested { get; private set; }
         public float ChargeNormalized { get; private set; }
         public bool IsCharging => isCharging;
+        public float LiveChargeNormalized =>
+            isCharging ? Mathf.Clamp01((Time.time - chargeStartTime) / maxChargeTime) : ChargeNormalized;
 
         private readonly float maxChargeTime;
         private bool isCharging;

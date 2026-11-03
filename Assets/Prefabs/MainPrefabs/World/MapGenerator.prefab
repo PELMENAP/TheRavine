@@ -423,6 +423,7 @@ MonoBehaviour:
     horizonPeakHeight: 100
     farMaxInstances: 65536
     farRebuildIntervalFrames: 30
+    farContentRebuildIntervalFrames: 300
   terrainTransform: {fileID: 0}
   waterTransform: {fileID: 0}
   terrainFilter: {fileID: 0}
@@ -430,6 +431,17 @@ MonoBehaviour:
   viewerOffset: {x: 0, y: 0, z: 10}
   grassSystem: {fileID: 3471819257872331844}
   biomeAlbedo: {fileID: 18700000, guid: 9ce74b6359c921548848f1f820a24a2a, type: 2}
+  nalApplyBudgetMs: 1
+  nalCatchUpMaxSeconds: 600
+  nalCatchUpMaxSteps: 8
+  nalGrowStageSeconds: 300
+  nalDecayCheckSeconds: 30
+  nalFarPeriodScale: 8
+  nalFarBudgetShare: 0.25
+  nalRegionSyncIntervalFrames: 30
+  nalStoreCapacity: 8192
+  nalMaxDecisionsPerTick: 256
+  nalSecondsPerDelayUnit: 1
   waterOffset: {x: 0, y: 4, z: 0}
 --- !u!114 &6195408856844743971
 MonoBehaviour:
@@ -525,5 +537,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61e113457dceefbd3b30aed2f3261017, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  player: {fileID: 7715484481313537229}
   grassMaterial: {fileID: 2100000, guid: 36571ee1032acddecaf946f49784b2d6, type: 2}

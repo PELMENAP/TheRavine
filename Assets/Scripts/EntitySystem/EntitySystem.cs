@@ -5,7 +5,6 @@ using R3;
 
 using TheRavine.Generator;
 using TheRavine.ObjectControl;
-using TheRavine.Events;
 
 namespace TheRavine.EntityControl
 {
@@ -14,11 +13,11 @@ namespace TheRavine.EntityControl
         public GameObject CreateMob(Vector2 position, GameObject prefab)
         {
             GameObject curMob = Instantiate(prefab, position, Quaternion.identity);
-            AEntity entity = curMob.GetComponentInChildren<AEntityViewModel>().Entity;
-            
-            if(entity != null)
+            IEntity entity = curMob.GetComponentInChildren<AEntityViewModel>().Entity;
+
+            if(entity is AEntity aEntity)
             {
-                entity.Init();
+                aEntity.Init();
             }
 
             return curMob;
@@ -68,6 +67,7 @@ namespace TheRavine.EntityControl
             var objects = await ServiceLocator.WaitUntilServiceReady<ObjectSystem>();
             if (brokenUp) return;
 
+            map.BindWaterLevel(SimulationRules.Frame.WaterLevel);
             foodIndex = new ChunkFoodIndex(map, objects.infoRegistry);
             ServiceLocator.Register(foodIndex);
         }

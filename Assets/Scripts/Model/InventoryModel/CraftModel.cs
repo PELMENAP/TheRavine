@@ -6,6 +6,14 @@ public struct CraftStack
     public int Amount;
 }
 
+public struct CraftMatch
+{
+    public CraftRecipe Recipe;
+    public int Matched;
+    public int Missing;
+    public int Foreign;
+}
+
 public sealed class CraftRecipe
 {
     public readonly InventoryItemInfo Result;
@@ -21,7 +29,7 @@ public sealed class CraftRecipe
         Ingredients    = ingredients;
     }
 
-    public static CraftIngredient[] Merge(InventoryItemInfo[] infos, int[] amounts)
+    public static CraftIngredient[] Merge(InventoryItemInfo[] infos, int[] amounts, bool[] catalysts = null)
     {
         var merged = new List<CraftIngredient>(infos.Length);
         int count  = System.Math.Min(infos.Length, amounts.Length);
@@ -30,18 +38,20 @@ public sealed class CraftRecipe
         {
             if (infos[i] == null || amounts[i] <= 0) continue;
 
+            bool catalyst = catalysts != null && i < catalysts.Length && catalysts[i];
             int index = -1;
             for (int k = 0; k < merged.Count; k++)
                 if (ReferenceEquals(merged[k].info, infos[i])) { index = k; break; }
 
             if (index < 0)
             {
-                merged.Add(new CraftIngredient { info = infos[i], amount = amounts[i] });
+                merged.Add(new CraftIngredient { info = infos[i], amount = amounts[i], isCatalyst = catalyst });
                 continue;
             }
 
             var ingredient = merged[index];
             ingredient.amount += amounts[i];
+            ingredient.isCatalyst &= catalyst;
             merged[index] = ingredient;
         }
 
@@ -55,6 +65,10 @@ public sealed class CraftModel
 
     public CraftModel(CraftRecipe[] recipes) => _recipes = recipes;
 
+    public int Count => _recipes.Length;
+
+    public CraftRecipe this[int index] => _recipes[index];
+
     public static CraftModel FromInfos(InventoryCraftInfo[] infos)
     {
         var recipes = new List<CraftRecipe>(infos.Length);
@@ -64,12 +78,26 @@ public sealed class CraftModel
             if (info == null || !info.IsAvailable || info.Res == null || info.AmountRes <= 0) continue;
             if (info.Ingr == null || info.AmountIngr == null) continue;
 
-            var ingredients = CraftRecipe.Merge(info.Ingr, info.AmountIngr);
-            if (ingredients.Length == 0) continue;
+            var ingredients = CraftRecipe.Merge(info.Ingr, info.AmountIngr, info.CatalystIngr);
+            if (ingredients.Length == 0 || !HasConsumable(ingredients)) continue;
 
             recipes.Add(new CraftRecipe(info.Res, info.AmountRes, info.TimeToComplete, ingredients));
         }
+        recipes.Sort(CompareRecipes);
         return new CraftModel(recipes.ToArray());
+    }
+
+    private static bool HasConsumable(CraftIngredient[] ingredients)
+    {
+        for (int i = 0; i < ingredients.Length; i++)
+            if (!ingredients[i].isCatalyst) return true;
+        return false;
+    }
+
+    private static int CompareRecipes(CraftRecipe a, CraftRecipe b)
+    {
+        int byIngredients = b.Ingredients.Length.CompareTo(a.Ingredients.Length);
+        return byIngredients != 0 ? byIngredients : string.CompareOrdinal(a.Result.id, b.Result.id);
     }
 
     public bool TryPlan(CraftStack[] grid, int cellCount, int[] deductions, out CraftRecipe recipe)
@@ -85,6 +113,36 @@ public sealed class CraftModel
 
         recipe = null;
         return false;
+    }
+
+    public void Score(CraftStack[] grid, int cellCount, CraftMatch[] results)
+    {
+        for (int r = 0; r < _recipes.Length; r++)
+        {
+            CraftRecipe recipe = _recipes[r];
+            int matched = 0;
+            int missing = 0;
+
+            for (int i = 0; i < recipe.Ingredients.Length; i++)
+            {
+                int have = 0;
+                for (int c = 0; c < cellCount; c++)
+                    if (ReferenceEquals(grid[c].Info, recipe.Ingredients[i].info)) have += grid[c].Amount;
+
+                int need = recipe.Ingredients[i].amount;
+                matched += System.Math.Min(have, need);
+                missing += System.Math.Max(0, need - have);
+            }
+
+            int foreign = 0;
+            for (int c = 0; c < cellCount; c++)
+            {
+                if (grid[c].Info == null) continue;
+                if (!Contains(recipe, grid[c].Info)) foreign++;
+            }
+
+            results[r] = new CraftMatch { Recipe = recipe, Matched = matched, Missing = missing, Foreign = foreign };
+        }
     }
 
     private static bool Covers(CraftRecipe recipe, CraftStack[] grid, int cellCount)
@@ -119,6 +177,8 @@ public sealed class CraftModel
 
         for (int i = 0; i < recipe.Ingredients.Length; i++)
         {
+            if (recipe.Ingredients[i].isCatalyst) continue;
+
             int need = recipe.Ingredients[i].amount;
             for (int c = 0; c < cellCount && need > 0; c++)
             {

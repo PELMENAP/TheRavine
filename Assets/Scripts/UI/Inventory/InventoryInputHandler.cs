@@ -13,14 +13,13 @@ namespace TheRavine.Inventory
         [SerializeField] private RectTransform activeCellIndicator;
         [SerializeField] private InputActionReference enterToggleAction, quitToggleAction, selectSlot;
         private PlayerEntity playerData;
-        private GlobalSettings gameSettings;
         public int ActiveCellIndex {get; private set;}
         private bool isInventoryActive;
 
         public event Action<int> OnActiveCellChanged;
 
         private ActionMapController actionMapController;
-        public void RegisterInput(PlayerEntity playerData, GlobalSettings gameSettings)
+        public void RegisterInput(PlayerEntity playerData)
         {
             enterToggleAction.action.performed += ToggleInventory;
             quitToggleAction.action.performed += ToggleInventory;
@@ -29,7 +28,6 @@ namespace TheRavine.Inventory
             actionMapController = ServiceLocator.GetService<ActionMapController>();
 
             this.playerData = playerData;
-            this.gameSettings = gameSettings;
 
             ActiveCellIndex = 1;
 
@@ -62,7 +60,7 @@ namespace TheRavine.Inventory
                 playerData.SetBehaviourIdle();
             }
             
-            if (gameSettings.controlType == ControlType.Mobile)
+            if (ServiceLocator.GetService<GlobalSettingsController>().GetCurrent().controlType == ControlType.Mobile)
                 mobileInput.SetActive(!isInventoryActive);
             
             grid.SetActive(isInventoryActive);

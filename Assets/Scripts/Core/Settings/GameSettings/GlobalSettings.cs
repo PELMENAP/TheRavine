@@ -16,6 +16,16 @@ namespace TheRavine.Base
         public bool enableGrass = false;
         public bool enableGrassShadows = false;
         public int grassDensityFactor = 5;
+
+        public bool fullscreen = true;
+        public int resolutionWidth;
+        public int resolutionHeight;
+        public bool vSync = false;
+        public int targetFps = 60;
+
+        public float masterVolume = 1f;
+        public float musicVolume = 1f;
+        public float sfxVolume = 1f;
         
 
         public void CopyFrom(GlobalSettings other)
@@ -28,6 +38,14 @@ namespace TheRavine.Base
             enableGrassShadows = other.enableGrassShadows;
             grassDensityFactor = other.grassDensityFactor;
             controlType = other.controlType;
+            fullscreen = other.fullscreen;
+            resolutionWidth = other.resolutionWidth;
+            resolutionHeight = other.resolutionHeight;
+            vSync = other.vSync;
+            targetFps = other.targetFps;
+            masterVolume = other.masterVolume;
+            musicVolume = other.musicVolume;
+            sfxVolume = other.sfxVolume;
         }
 
         public GlobalSettings Clone()
@@ -48,7 +66,15 @@ namespace TheRavine.Base
                    enableGrass == other.enableGrass &&
                    enableGrassShadows == other.enableGrassShadows &&
                    grassDensityFactor == other.grassDensityFactor &&
-                   controlType == other.controlType;
+                   controlType == other.controlType &&
+                   fullscreen == other.fullscreen &&
+                   resolutionWidth == other.resolutionWidth &&
+                   resolutionHeight == other.resolutionHeight &&
+                   vSync == other.vSync &&
+                   targetFps == other.targetFps &&
+                   masterVolume == other.masterVolume &&
+                   musicVolume == other.musicVolume &&
+                   sfxVolume == other.sfxVolume;
         }
     }
 

@@ -44,7 +44,10 @@ public class EntityManager : MonoBehaviour
     [Header("Visual culling")]
     [SerializeField] private bool cullOutsideActiveChunks = true;
     [SerializeField] private int  cullChunkMargin = 0;
+    [SerializeField] private float cullAxisMargin = 8f;
+    private Camera _cullCamera;
     private MapGenerator _map;
+    private FireTickHandler _fire;
 
     [Header("Nest views")]
     [SerializeField] private bool showNestViews = true;
@@ -55,14 +58,18 @@ public class EntityManager : MonoBehaviour
     private ColonyFood           _food;
     private EvolutionService     _evolution;
     private ColonyPopulation     _population;
+    private readonly EnergyLedger _ledger = new();
+    private WarmthField _warmth;
+    private SimulationLog _simulationLog;
+    private double _nextSimulationLogTime;
+    private double _lastWarmthDecayTime;
+    public EnergyLedger Energy => _ledger;
+    public EvolutionService Evolution => _evolution;
 
     [SerializeField] private int _transmissions;
     [SerializeField] private int _recombinations;
     [SerializeField] private int _superinfectionBlocks;
     [SerializeField] private float _avgFitness;
-
-    [Header("Virology")]
-    [SerializeField] private StrainCodonTable strainCodonTable;
 
     [SerializeField] private bool useSavedBrain;
 
@@ -103,8 +110,10 @@ public class EntityManager : MonoBehaviour
     private int _tickCursor;
     private bool _windowOpen;
     private bool _simulationStarted;
+    private bool _rulesMissing;
     private double _tickStartTime;
     private double _nextFitnessStatsTime;
+    private double _nextEnergySampleTime;
     private TickWindowBudget _tickBudget;
 
     private static readonly ProfilerMarker TickAgentsMarker  = new("EntityManager.TickAgents");
@@ -145,6 +154,8 @@ public class EntityManager : MonoBehaviour
     {
         SimulationClock.Advance(Time.deltaTime * simulationTimeScale);
 
+        if (_rulesMissing || !TheRavine.Base.WorldAuthority.IsAuthority) return;
+
         if (_simulationStarted)
         {
             double now = SimulationClock.TimeD;
@@ -153,17 +164,57 @@ public class EntityManager : MonoBehaviour
                 UpdateDiagnostics();
                 _nextFitnessStatsTime = now + SimulationRules.Active.FitnessStatsInterval;
             }
+            if (now >= _nextEnergySampleTime)
+            {
+                DecayWarmth(now);
+                SampleEnergy();
+                _nextEnergySampleTime = now + SimulationRules.Active.EcologyTickInterval;
+            }
+            if (SimulationRules.Active.SimulationLogEnabled && now >= _nextSimulationLogTime)
+            {
+                _simulationLog ??= new SimulationLog();
+                _simulationLog.Sample(now, _colonies, _entities.Count, _ledger, _evolution);
+                _nextSimulationLogTime = now + SimulationRules.Active.SimulationLogIntervalSeconds;
+            }
             if (now >= _tickStartTime) TickAgents(SimulationClock.DeltaTime);
+            _fire?.Step(now, SimulationClock.DeltaTime, _entities);
         }
 
         _planner.Flush();
         _motion.Step();
     }
 
+    private void DecayWarmth(double now)
+    {
+        float dt = (float)(now - _lastWarmthDecayTime);
+        _lastWarmthDecayTime = now;
+        float keep = dt > 0f ? math.exp(-SimulationRules.Active.WarmthDecayPerSecond * dt) : 1f;
+        _ledger.Flows.WarmthDecay += _warmth.Decay(keep);
+    }
+
+    private void SampleEnergy()
+    {
+        float body = 0f;
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            var e = _entities[i];
+            if (!e.IsDisposed) body += e.BodyEnergy;
+        }
+
+        float nest = 0f;
+        for (int c = 0; c < _colonies.Count; c++) nest += _colonies[c].Nest.Storage;
+
+        float food = 0f, corpses = 0f, soil = 0f;
+        var index = FoodIndex;
+        if (index != null) index.SumEnergy(out food, out corpses, out soil);
+
+        _ledger.Sample(body, nest, food, corpses, soil, _warmth.Total);
+    }
+
     private MovePlanner _planner;
     private float _lastNestTime;
 
-    public void ReportThreat(ColonyState colony, Vector3 position, float magnitude)
+    public static void ReportThreat(ColonyState colony, Vector3 position, float magnitude)
     {
         if (colony == null) return;
         var p = new Unity.Mathematics.float2(position.x, position.z);
@@ -175,7 +226,16 @@ public class EntityManager : MonoBehaviour
 
     private void Awake()
     {
-        SimulationRules.Bind(rules);
+        SimulationRules.ReleaseVariant();
+        SimulationRules resolved = ResolveRules();
+        SimulationRules.Bind(resolved);
+        if (resolved == null)
+        {
+            _rulesMissing = true;
+            RavineLog.Error($"[EntityManager] SimulationRules asset is not assigned to '{name}': agent simulation is disabled");
+            return;
+        }
+        VirologyRuntime.Initialize();
         ContextSlabs.Reserve(maxPopulation);
         _motion = new MotionSystem(maxPopulation);
         _instincts = new InstinctSystem(maxPopulation);
@@ -185,6 +245,9 @@ public class EntityManager : MonoBehaviour
         ServiceLocator.Register(_thresholds);
         ServiceLocator.Register(_grid);
         ServiceLocator.Register(_players);
+        ServiceLocator.Register(_ledger);
+        _warmth = new WarmthField(SimulationRules.Active.WarmthCellSize, SimulationRules.Active.WarmthBuckets);
+        ServiceLocator.Register(_warmth);
         _colonies = new ColonyRegistry();
         CreateColonies();
         ServiceLocator.Register(_colonies);
@@ -194,10 +257,10 @@ public class EntityManager : MonoBehaviour
         NeuralModelStorage.RegisterFactory(new SharedBrainSnapshotFactory());
         _infection = new InfectionCoordinator((uint)UnityEngine.Random.Range(1, int.MaxValue));
         ServiceLocator.Register(_infection.Service);
-        _food       = new ColonyFood(maxFood);
+        _food       = new ColonyFood(maxFood, _ledger);
         _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue));
         _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, spawnRadius,
-            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _utility, _thresholds, _boids);
+            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _utility, _thresholds, _boids, _ledger);
         _population.Spawned += RaiseSpawned;
         _population.Died    += RaiseDied;
 
@@ -293,6 +356,7 @@ public class EntityManager : MonoBehaviour
     
     private async void Start()
     {
+        if (_rulesMissing) return;
         if (await DelaySimulation(SimulationRules.Active.StartupDelaySeconds, destroyCancellationToken)) return;
 
         var map = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
@@ -301,6 +365,12 @@ public class EntityManager : MonoBehaviour
 
         var foodIndex = await ServiceLocator.WaitUntilServiceReady<ChunkFoodIndex>();
         _food.Bind(foodIndex, SimulationClock.Time);
+
+        if (map.RandomTicks != null && ServiceLocator.Services.TryGet(out ObjectSystem objects))
+        {
+            _fire = new FireTickHandler(map, objects.infoRegistry, foodIndex);
+            map.RandomTicks.Register(_fire);
+        }
 
         for (int i = 0; i < initialCount; i++)
         {
@@ -315,6 +385,9 @@ public class EntityManager : MonoBehaviour
         _lastNestTime       = SimulationClock.Time;
 
         _nextFitnessStatsTime = SimulationClock.TimeD;
+        _nextEnergySampleTime = SimulationClock.TimeD;
+        _lastWarmthDecayTime  = SimulationClock.TimeD;
+        _nextSimulationLogTime = SimulationClock.TimeD;
         _tickStartTime        = SimulationClock.TimeD + SimulationRules.Active.TickLoopWarmupSeconds;
         _simulationStarted    = true;
     }
@@ -633,7 +706,7 @@ public class EntityManager : MonoBehaviour
     public void SetEntityVisible(EntityModel model, bool visible)
     {
         if (model == null || model.IsDisposed) return;
-        model.GetEntityComponent<VisualCullingComponent>()?.SetVisible(visible);
+        model.VisualCulling?.SetVisible(visible);
     }
 
     public void SetEntitiesVisible(IReadOnlyList<EntityModel> targets, bool visible)
@@ -670,6 +743,14 @@ public class EntityManager : MonoBehaviour
     private void UpdateVisibility()
     {
         if (!cullOutsideActiveChunks || _map == null) return;
+
+        if (_cullCamera == null) _cullCamera = Camera.main;
+        if (_cullCamera != null)
+        {
+            UpdateVisibilityByCamera(_cullCamera);
+            return;
+        }
+
         bool hasViewer = _map.TryGetViewerChunk(out int vx, out int vz);
         int range = MapGenerator.chunkScale + cullChunkMargin;
 
@@ -683,6 +764,33 @@ public class EntityManager : MonoBehaviour
                 float2 p = e.Position2D;
                 visible = math.abs(MapGenerator.ChunkCoord(p.x) - vx) <= range
                        && math.abs(MapGenerator.ChunkCoord(p.y) - vz) <= range;
+            }
+            SetEntityVisible(e, visible);
+        }
+    }
+
+    private void UpdateVisibilityByCamera(Camera cam)
+    {
+        Vector3 cp = cam.transform.position;
+        int facing = _map.Facing;
+        float margin = cullAxisMargin;
+        bool ortho = cam.orthographic;
+        float orthoHalf = cam.orthographicSize * cam.aspect;
+        float halfWidthPerDepth = math.tan(math.radians(cam.fieldOfView * 0.5f)) * cam.aspect;
+        float height2 = cp.y * cp.y;
+
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            var e = _entities[i];
+            if (e.IsDisposed || e.IsDeathPending) continue;
+
+            float2 p = e.Position2D;
+            float forward = (p.y - cp.z) * facing;
+            bool visible = forward >= -margin;
+            if (visible)
+            {
+                float halfWidth = ortho ? orthoHalf : math.sqrt(forward * forward + height2) * halfWidthPerDepth;
+                visible = math.abs(p.x - cp.x) <= halfWidth + margin;
             }
             SetEntityVisible(e, visible);
         }
@@ -705,17 +813,38 @@ public class EntityManager : MonoBehaviour
         services.Unregister(_thresholds);
         services.Unregister(_grid);
         services.Unregister(_players);
+        services.Unregister(_ledger);
+        services.Unregister(_warmth);
         services.Unregister(_colonies);
         services.Unregister(_planner);
         services.Unregister(_infection?.Service);
     }
 
+    private SimulationRules ResolveRules()
+    {
+        if (rules == null) return null;
+        if (!ServiceLocator.Services.TryGet(out TheRavine.Base.WorldRegistry registry) || !registry.HasLoadedWorld) return rules;
+
+        var state = registry.GetCurrentState();
+        float[] multipliers = state.rulesMultipliers;
+        if (multipliers == null || multipliers.Length != (int)VarianceAxis.Count)
+        {
+            multipliers = rules.RollVariance(state.seed);
+            registry.UpdateState(s => s.rulesMultipliers = multipliers);
+        }
+
+        return rules.CreateVariant(multipliers);
+    }
+
     private void OnDestroy()
     {
+        SimulationRules.ReleaseVariant();
+        _simulationLog?.Dispose();
         UnregisterServices();
         for (int i = 0; i < _nestViews.Count; i++)
             if (_nestViews[i] != null) Destroy(_nestViews[i].gameObject);
         _nestViews.Clear();
+        _fire?.Dispose();
         _infection?.Dispose();
         _population?.ProcessPendingDeaths();
         _population?.FlushDeferredDisposals();

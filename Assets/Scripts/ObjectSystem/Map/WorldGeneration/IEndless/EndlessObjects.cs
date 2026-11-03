@@ -23,7 +23,6 @@ namespace TheRavine.Generator.EndlessGenerators
         private readonly MapGenerator generator;
         private readonly ObjectInfoRegistry registry;
         private readonly PoolManager.Pool[] poolByDense;
-        private readonly bool[] lifecycleByDense;
         private readonly LongDictionary<ChunkView> views = new(ViewCapacity * 2);
         private readonly Stack<ChunkView> freeViews = new(ViewCapacity);
         private readonly long[] staleKeys = new long[ViewCapacity * 2];
@@ -36,13 +35,11 @@ namespace TheRavine.Generator.EndlessGenerators
 
             int count = registry.Count;
             poolByDense = new PoolManager.Pool[count];
-            lifecycleByDense = new bool[count];
 
             for (int i = 0; i < count; i++)
             {
                 ObjectInfo info = registry.GetDense(i);
                 objectSystem.TryGetPool(info.Id, out poolByDense[i]);
-                lifecycleByDense[i] = info.HasLifecycle;
             }
         }
 
@@ -80,7 +77,6 @@ namespace TheRavine.Generator.EndlessGenerators
                 views[key] = view;
 
                 Refresh(view, cd);
-                RegisterLifecycle(cd);
             }
         }
 
@@ -144,20 +140,6 @@ namespace TheRavine.Generator.EndlessGenerators
 
             view.CellCount = write;
             view.Version = cd.Version;
-        }
-
-        private void RegisterLifecycle(ChunkData cd)
-        {
-            for (int i = 0; i < cd.Objects.Length; i++)
-            {
-                ObjectInstInfo info = cd.Objects[i];
-                int dense = registry.DenseIndexOf(info.PrefabID);
-                if (dense < 0 || !lifecycleByDense[dense]) continue;
-
-                generator.AddNALObject(new Vector2Int(
-                    (int)math.floor(info.Position.x),
-                    (int)math.floor(info.Position.z)));
-            }
         }
 
         private static void ReleaseView(ChunkView view)

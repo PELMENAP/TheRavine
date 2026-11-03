@@ -24,6 +24,8 @@ public struct MotionState
     public float  Speed;
     public float  EnergyCost;
     public float  SpeedModifier;
+    public float  WaterSpeed;
+    public float  WaterDrain;
     public float  Arrive2;
     public float  HeightOffset;
     public float  VelocityLerp;
@@ -103,6 +105,9 @@ public struct MotionJob : IJobParallelFor
     public int    SpeedResampleFrames;
     public float  BlockedSpeedThreshold;
     public float  BlockedSeconds;
+    public float  WaterLevel;
+    public float  WaterSpeedMul;
+    public float  WaterDrainMul;
 
     public void Execute(int index)
     {
@@ -132,7 +137,13 @@ public struct MotionJob : IJobParallelFor
         float  tl2 = math.lengthsq(tan);
         float2 dir = tl2 > 1e-8f ? tan * math.rsqrt(tl2) : math.normalizesafe(toGoal);
 
-        if (s.Frame == 0) s.SpeedModifier = Atlas.SpeedModifier(pos.x, pos.z, dir);
+        if (s.Frame == 0)
+        {
+            s.SpeedModifier = Atlas.SpeedModifier(pos.x, pos.z, dir);
+            float ground = Atlas.SampleHeight(pos.x, pos.z);
+            s.WaterSpeed = MapGenerator.WaterModifier(ground, WaterLevel, WaterSpeedMul);
+            s.WaterDrain = MapGenerator.WaterModifier(ground, WaterLevel, WaterDrainMul);
+        }
         if (++s.Frame >= SpeedResampleFrames) s.Frame = 0;
 
         if (s.SpeedModifier < BlockedSpeedThreshold) s.LowSpeedTime += Dt;
@@ -146,7 +157,7 @@ public struct MotionJob : IJobParallelFor
         }
 
         float costModifier = math.max(s.SpeedModifier, MinSpeedModifier);
-        s.CurrentSpeed = math.lerp(s.CurrentSpeed, s.Speed * s.SpeedModifier, math.saturate(s.VelocityLerp * Dt));
+        s.CurrentSpeed = math.lerp(s.CurrentSpeed, s.Speed * s.SpeedModifier * s.WaterSpeed, math.saturate(s.VelocityLerp * Dt));
 
         float advance = s.CurrentSpeed * Dt;
         float dT = tl2 > 1e-8f ? advance * math.rsqrt(tl2) : advance * s.InvLength;
@@ -169,7 +180,7 @@ public struct MotionJob : IJobParallelFor
 
         if (s.EnergyCost > 0f)
         {
-            float spent = s.EnergyCost / costModifier * Dt;
+            float spent = s.EnergyCost / costModifier * s.WaterDrain * Dt;
             s.Energy  += spent;
             s.Pending += spent;
         }
@@ -303,6 +314,9 @@ public sealed unsafe class MotionSystem : IDisposable
             SpeedResampleFrames   = SpeedResampleFrames,
             BlockedSpeedThreshold = SimulationRules.Frame.BlockedSpeedThreshold,
             BlockedSeconds        = SimulationRules.Frame.BlockedSeconds,
+            WaterLevel            = SimulationRules.Frame.WaterLevel,
+            WaterSpeedMul         = SimulationRules.Frame.WaterSpeedMul,
+            WaterDrainMul         = SimulationRules.Frame.WaterDrainMul,
         }.Schedule(_count, JobBatch);
 
         new MotionApplyJob { States = states }.Schedule(_transforms, move).Complete();

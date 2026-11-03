@@ -5,7 +5,6 @@ using TheRavine.EntityControl;
 [RequireComponent(typeof(Detector))]
 public class InteractionRequire : MonoBehaviour
 {
-    [SerializeField] private PlayerModelView playerModelView;
     private IDetector _IDetector;
     private IInteractable _currentInteractable;
     private GameObject _currentDetectedObject;

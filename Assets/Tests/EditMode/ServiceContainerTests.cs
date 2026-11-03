@@ -32,6 +32,22 @@ public class ServiceContainerTests
     }
 
     [Test]
+    public void ReplaceSwapsInstanceAndReturnsPrevious()
+    {
+        var container = new ServiceContainer();
+        var first     = new Probe();
+        var second    = new Probe();
+
+        Assert.IsNull(container.Replace(first));
+        Assert.AreSame(first, container.Replace(second));
+        Assert.IsTrue(container.TryGet(out Probe current));
+        Assert.AreSame(second, current);
+        Assert.IsNull(container.Replace<Probe>(null));
+        Assert.IsTrue(container.TryGet(out current));
+        Assert.AreSame(second, current);
+    }
+
+    [Test]
     public void SceneReentryRegistersWithoutRefusal()
     {
         var container = new ServiceContainer();
