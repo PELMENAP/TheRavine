@@ -3,12 +3,14 @@ using Unity.Mathematics;
 public class ShareFoodCommand : EntityCommand
 {
     private double _holdEnd;
+    private float  _given;
 
     public ShareFoodCommand(EntityModel model) : base(model) { }
 
     protected override EntityCommandStatus OnBegin()
     {
         var r = SimulationRules.Active;
+        _given = 0f;
         bool troph = Source == CommandSource.Instinct;
         var victim = troph
             ? model.FindHungriestKin(r.EatRange * r.KinSearchRangeMul)
@@ -25,6 +27,7 @@ public class ShareFoodCommand : EntityCommand
         if (portion <= 0f) return Fail();
 
         float given = victim.Digestion.Ingest(portion);
+        _given = given;
         float rest  = portion - given;
         if (rest > 0f) model.Digestion.Ingest(rest);
         if (troph && model.Nest != null)
@@ -36,5 +39,9 @@ public class ShareFoodCommand : EntityCommand
     }
 
     protected override EntityCommandStatus OnTick(float dt)
-        => Elapsed(_holdEnd) ? Complete() : EntityCommandStatus.Running;
+    {
+        if (!Elapsed(_holdEnd)) return EntityCommandStatus.Running;
+        var r = SimulationRules.Active;
+        return Complete(r.ShareFoodReward * _given / math.max(r.EatEnergyFood, 1e-3f));
+    }
 }
