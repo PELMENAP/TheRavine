@@ -29,8 +29,12 @@ public class RippleStampSystem : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        stampBuffer = new ComputeBuffer(MaxStamps, 16); // float2+float+float = 16 bytes
         kernelId = stampCompute.FindKernel("StampKernel");
+    }
+
+    private void OnEnable()
+    {
+        stampBuffer ??= new ComputeBuffer(MaxStamps, 16);
     }
     private const float WaterSize = 375f;
     private readonly float waterSizeInv = 1f / WaterSize;
@@ -53,7 +57,7 @@ public class RippleStampSystem : MonoBehaviour
 
     public void FlushToRT(RenderTexture target)
     {
-        if (pending.Count == 0) return;
+        if (pending.Count == 0 || stampBuffer == null) return;
         int count = Mathf.Min(pending.Count, MaxStamps);
         for (int i = 0; i < count; i++)
             stampArray[i] = new StampData { center = pending[i].UVCenter, invRadius = pending[i].Radius, strength = pending[i].Strength };
@@ -68,5 +72,9 @@ public class RippleStampSystem : MonoBehaviour
         pending.Clear();
     }
 
-    private void OnDisable() => stampBuffer?.Release();
+    private void OnDisable()
+    {
+        stampBuffer?.Release();
+        stampBuffer = null;
+    }
 }
