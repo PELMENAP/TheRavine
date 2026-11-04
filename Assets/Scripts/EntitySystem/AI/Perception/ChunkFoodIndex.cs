@@ -624,9 +624,11 @@ public sealed class ChunkFoodIndex
         return infected;
     }
 
-    public bool TryAddCorpse(float2 position, float energy, ref ViralPayload payload, bool hasPayload, int tabooColony = 0)
+    public bool TryAddCorpse(float2 position, float energy, ref ViralPayload payload, bool hasPayload, int tabooColony = 0,
+        bool fallback = false)
     {
-        if (_map == null || energy <= SimulationRules.Frame.CorpseMinEnergy)
+        ref readonly var r = ref SimulationRules.Frame;
+        if (_map == null || energy <= r.CorpseMinEnergy || FoodByKind(FoodKind.Meat) == null)
         {
             ViralPayloadPool.Release(ref payload);
             return false;
@@ -634,7 +636,7 @@ public sealed class ChunkFoodIndex
 
         int cx = (int)math.floor(position.x * InvScale);
         int cz = (int)math.floor(position.y * InvScale);
-        int search = math.max(0, SimulationRules.Frame.CorpseSearchCells);
+        int search = math.max(0, r.CorpseSearchCells) + (fallback ? math.max(0, r.CorpseFallbackCells) : 0);
 
         for (int ring = 0; ring <= search; ring++)
         for (int dz = -ring; dz <= ring; dz++)

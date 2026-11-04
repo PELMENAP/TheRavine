@@ -176,6 +176,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float EatSecondsPerEnergy;
         public readonly float CorpseMinEnergy;
         public readonly int CorpseSearchCells;
+        public readonly int CorpseFallbackCells;
         public readonly float CorpseSpoilTau;
         public readonly float CorpseBiteEnergy;
         public readonly float CorpseFallbackEnergy;
@@ -286,6 +287,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float DashRecovery;
         public readonly float DashEnergyCost;
         public readonly float AttackEnergyMin;
+        public readonly float AttackBudgetMargin;
         public readonly float FleeSprintDistance;
         public readonly int FleeZigzagLegs;
         public readonly float FleeZigzagCurvature;
@@ -732,6 +734,7 @@ public sealed partial class SimulationRules : ScriptableObject
             EatSecondsPerEnergy = r.eatSecondsPerEnergy;
             CorpseMinEnergy = r.corpseMinEnergy;
             CorpseSearchCells = r.corpseSearchCells;
+            CorpseFallbackCells = r.corpseFallbackCells;
             CorpseSpoilTau = r.corpseSpoilTau;
             CorpseBiteEnergy = r.corpseBiteEnergy;
             CorpseFallbackEnergy = r.corpseFallbackEnergy;
@@ -842,6 +845,7 @@ public sealed partial class SimulationRules : ScriptableObject
             DashRecovery = r.dashRecovery;
             DashEnergyCost = r.dashEnergyCost;
             AttackEnergyMin = r.attackEnergyMin;
+            AttackBudgetMargin = r.attackBudgetMargin;
             FleeSprintDistance = r.fleeSprintDistance;
             FleeZigzagLegs = r.fleeZigzagLegs;
             FleeZigzagCurvature = r.fleeZigzagCurvature;

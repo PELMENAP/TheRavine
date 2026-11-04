@@ -237,18 +237,37 @@ public partial class EntityModel : IEntity, IFoodReceiver
         }
     }
 
-    public HuntTarget CachedHuntTarget
+    public HuntTarget CachedHuntTarget => SelectHuntTarget(out _);
+
+    public float HuntTargetDistance
     {
         get
         {
-            var foreign = ValidForeign;
-            bool player = _playerValid && _playerTransform != null;
-            if (foreign != null && (!player || _nearestForeignDistance <= _playerDistance)) return new HuntTarget(foreign, null);
-            if (player) return new HuntTarget(null, _playerTransform);
-            var nearest = CachedNearest;
-            if (nearest == null || !IsFrenzied) return default;
-            return SimulationRules.Frame.FrenzyTargetsOwnColony || nearest.Colony != Colony ? new HuntTarget(nearest, null) : default;
+            SelectHuntTarget(out float distance);
+            return distance;
         }
+    }
+
+    private HuntTarget SelectHuntTarget(out float distance)
+    {
+        var foreign = ValidForeign;
+        bool player = _playerValid && _playerTransform != null;
+        if (foreign != null && (!player || _nearestForeignDistance <= _playerDistance))
+        {
+            distance = _nearestForeignDistance;
+            return new HuntTarget(foreign, null);
+        }
+        if (player)
+        {
+            distance = _playerDistance;
+            return new HuntTarget(null, _playerTransform);
+        }
+        distance = 0f;
+        var nearest = CachedNearest;
+        if (nearest == null || !IsFrenzied) return default;
+        if (!SimulationRules.Frame.FrenzyTargetsOwnColony && nearest.Colony == Colony) return default;
+        distance = _nearestDistance;
+        return new HuntTarget(nearest, null);
     }
 
     private float2[] _trail;

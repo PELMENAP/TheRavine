@@ -25,6 +25,10 @@ public sealed class ColonyStats
     public int   ForeignHarmTicks;
     public int   WarmthDrawTicks;
     public int   Relocations;
+    public int   AttackFailNoTarget;
+    public int   AttackFailTargetLost;
+    public int   AttackFailLowEnergy;
+    public int   AttackFailLurkTimeout;
 
     public float StorageEaten;
     public float StorageStored;
@@ -68,6 +72,10 @@ public sealed class ColonyStats
     public void RecordFailed(int action) { if ((uint)action < (uint)ActionsFailed.Length) ActionsFailed[action]++; }
     public void RecordInterrupted(int action) { if ((uint)action < (uint)ActionsInterrupted.Length) ActionsInterrupted[action]++; }
     public void RecordRelocation() => Relocations++;
+    public void RecordAttackFailNoTarget()    => AttackFailNoTarget++;
+    public void RecordAttackFailTargetLost()  => AttackFailTargetLost++;
+    public void RecordAttackFailLowEnergy()   => AttackFailLowEnergy++;
+    public void RecordAttackFailLurkTimeout() => AttackFailLurkTimeout++;
 
     public void RecordCastePlan(Caste caste, PlanKind plan)
     {

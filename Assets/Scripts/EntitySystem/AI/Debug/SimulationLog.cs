@@ -26,7 +26,9 @@ public sealed class SimulationLog : IDisposable
     private const int OffAttacks        = OffRelocations + 1;
     private const int OffHarm           = OffAttacks + AttackCount;
     private const int OffWarmth         = OffHarm + 1;
-    private const int Stride            = OffWarmth + 1;
+    private const int OffAttackFails    = OffWarmth + 1;
+    private const int AttackFailCount   = 4;
+    private const int Stride            = OffAttackFails + AttackFailCount;
 
     private const int ResidualColumns = 8;
 
@@ -153,6 +155,7 @@ public sealed class SimulationLog : IDisposable
         {
             WriteCommon(time, season, winter, night, "world", -1, alive, _world, 0, worldLifespan, fill * inv, rest * inv, storage * inv);
             WriteWorldOnly(ledger, evolution, residual);
+            WriteAttackFails(_world, 0);
             _writer.WriteLine();
             ledger?.ResetWindow();
 
@@ -164,6 +167,7 @@ public sealed class SimulationLog : IDisposable
                 WriteCommon(time, season, winter, night, "colony", colony.ColonyId, colony.MemberCount, _delta, c * Stride,
                     _deltaLifespan[c], s.MeanFill, s.RestAtNestShare, s.StorageShare);
                 _writer.Write(WorldOnlyPlaceholder);
+                WriteAttackFails(_delta, c * Stride);
                 _writer.WriteLine();
             }
             _writer.Flush();
@@ -253,6 +257,15 @@ public sealed class SimulationLog : IDisposable
         for (int i = 0; i < AttackCount; i++) dst[OffAttacks + i] = s.Attacks[i];
         dst[OffHarm]   = s.ForeignHarmTicks;
         dst[OffWarmth] = s.WarmthDrawTicks;
+        dst[OffAttackFails]     = s.AttackFailNoTarget;
+        dst[OffAttackFails + 1] = s.AttackFailTargetLost;
+        dst[OffAttackFails + 2] = s.AttackFailLowEnergy;
+        dst[OffAttackFails + 3] = s.AttackFailLurkTimeout;
+    }
+
+    private void WriteAttackFails(int[] d, int o)
+    {
+        for (int i = 0; i < AttackFailCount; i++) WriteNext(d[o + OffAttackFails + i]);
     }
 
     private void WriteCommon(float time, float season, bool winter, bool night, string scope, int colonyId, int alive,
@@ -338,6 +351,7 @@ public sealed class SimulationLog : IDisposable
         sb.Append(",ledger_residual,fitness_p10,fitness_p50,fitness_p90,fitness_max,fitness_outliers,avg_fitness,avg_entropy");
         for (int i = 0; i < FlowColumns.Length; i++) sb.Append(',').Append(FlowColumns[i].Name);
         for (int i = 0; i < StockColumns.Length; i++) sb.Append(',').Append(StockColumns[i]);
+        sb.Append(",attack_fail_no_target,attack_fail_target_lost,attack_fail_low_energy,attack_fail_lurk_timeout");
         return sb.ToString();
     }
 

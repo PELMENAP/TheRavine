@@ -67,7 +67,10 @@ public sealed class ColonyFood
         bool tainted = cause == DeathCause.Virus || cause == DeathCause.Toxic;
         int  taboo   = tainted && model.Colony != null ? model.Colony.ColonyId : 0;
         float body = model.BodyEnergy;
-        if (!_index.TryAddCorpse(model.DeathPosition, body, ref payload, infected, taboo))
-            _ledger.Flows.DeathLoss += body;
+        if (_index.TryAddCorpse(model.DeathPosition, body, ref payload, infected, taboo, true)) return;
+
+        var colony = model.Colony;
+        if (body > 0f && colony != null && colony.Nest != null) colony.Nest.Storage += body;
+        else _ledger.Flows.DeathLoss += body;
     }
 }

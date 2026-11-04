@@ -14,6 +14,8 @@ public class AttackCommand : EntityCommand
     private float2 _chaseGoal;
     private float  _damageShare;
     private float  _trigger;
+    private float  _approachDist;
+    private float  _approachCredit;
     private bool   _dashed;
     private bool   _ambushed;
     private bool   _closing;
@@ -21,7 +23,19 @@ public class AttackCommand : EntityCommand
     public AttackCommand(EntityModel model) : base(model) { }
 
     public override bool CanExecute()
-        => model.Stats.En >= math.max(model.Tuning.AttackEnergyCost, SimulationRules.Active.AttackEnergyMin);
+    {
+        var tuning = model.Tuning;
+        return model.Stats.En >= EnergyBudget(tuning.AttackEnergyCost, tuning.EnergyCostRunning, tuning.RunSpeed,
+            model.SpeedMul, model.HuntTargetDistance, in SimulationRules.Frame);
+    }
+
+    public static float EnergyBudget(float attackCost, float runCost, float runSpeed, float speedMul, float distance,
+        in SimulationRules.RulesFrame r)
+    {
+        float speed = math.max(runSpeed * speedMul, r.TimingMinSpeed);
+        float need  = (attackCost + math.max(distance, 0f) * runCost / speed + r.DashEnergyCost) * r.AttackBudgetMargin;
+        return math.max(r.AttackEnergyMin, need);
+    }
 
     protected override float MinRuntime
     {
@@ -35,12 +49,22 @@ public class AttackCommand : EntityCommand
 
     protected override EntityCommandStatus OnBegin()
     {
-        _target      = model.CachedHuntTarget;
-        _damageShare = 0f;
-        _dashed      = false;
-        _ambushed    = false;
-        _closing     = false;
-        if (!_target.IsValid || !CanExecute()) return Fail();
+        _target         = model.CachedHuntTarget;
+        _damageShare    = 0f;
+        _dashed         = false;
+        _ambushed       = false;
+        _closing        = false;
+        _approachCredit = 0f;
+        if (!_target.IsValid)
+        {
+            model.Colony?.Stats.RecordAttackFailNoTarget();
+            return FailCredited();
+        }
+        if (!CanExecute())
+        {
+            model.Colony?.Stats.RecordAttackFailLowEnergy();
+            return FailCredited();
+        }
 
         var r = SimulationRules.Active;
         _style   = decision.Style < AttackStyle.Count ? decision.Style : AttackStyle.Pursue;
@@ -56,9 +80,13 @@ public class AttackCommand : EntityCommand
         var r = SimulationRules.Active;
 
         if (_phase == Phase.Recover)
-            return Elapsed(_recoverEnd) ? Complete(r.DamageEventReward * _damageShare) : EntityCommandStatus.Running;
+            return Elapsed(_recoverEnd) ? Complete(r.DamageEventReward * _damageShare + _approachCredit) : EntityCommandStatus.Running;
 
-        if (!_target.IsValid) return Fail();
+        if (!_target.IsValid)
+        {
+            model.Colony?.Stats.RecordAttackFailTargetLost();
+            return FailCredited();
+        }
         float range = model.Tuning.AttackRange;
         float d     = DistanceToTarget();
 
@@ -70,7 +98,12 @@ public class AttackCommand : EntityCommand
                     _ambushed = SimulationClock.TimeD - _lurkStart >= r.AmbushMinHold;
                     return Engage(r);
                 }
-                if (d > model.Tuning.DetectionRadius || Elapsed(_lurkEnd)) return Fail();
+                if (d > model.Tuning.DetectionRadius)
+                {
+                    model.Colony?.Stats.RecordAttackFailLurkTimeout();
+                    return FailCredited();
+                }
+                if (Elapsed(_lurkEnd)) return Complete(_approachCredit);
                 return EntityCommandStatus.Running;
 
             case Phase.Ready:
@@ -78,6 +111,8 @@ public class AttackCommand : EntityCommand
                 return model.AttackReady ? Strike(r) : Contact(r, d, range);
 
             case Phase.Approach:
+                _approachCredit += math.max(0f, _approachDist - d) * r.ApproachRewardWeight;
+                _approachDist    = d;
                 if (d <= range || (d <= range + _trigger && CanDash(r))) return Engage(r);
                 if (!TryFinishMove(out _, out bool cutChase))
                 {
@@ -140,9 +175,10 @@ public class AttackCommand : EntityCommand
 
     private EntityCommandStatus Approach(SimulationRules r)
     {
-        _phase     = Phase.Approach;
-        _chaseGoal = _target.Position2D;
-        bool walk  = _style == AttackStyle.Stalk;
+        _phase        = Phase.Approach;
+        _chaseGoal    = _target.Position2D;
+        _approachDist = DistanceToTarget();
+        bool walk     = _style == AttackStyle.Stalk;
         StartMove(_target.Position, walk ? model.Tuning.MoveSpeed : model.Tuning.RunSpeed, r.AttackMoveMaxDuration,
             walk ? model.Tuning.EnergyCostMoving : model.Tuning.EnergyCostRunning);
         return EntityCommandStatus.Running;
@@ -169,11 +205,19 @@ public class AttackCommand : EntityCommand
     private EntityCommandStatus Strike(SimulationRules r)
     {
         var target = _target;
-        if (!target.IsValid) return Fail();
+        if (!target.IsValid)
+        {
+            model.Colony?.Stats.RecordAttackFailTargetLost();
+            return FailCredited();
+        }
 
         var stats = model.Stats;
         float cost = model.Tuning.AttackEnergyCost;
-        if (stats.En < cost) return Fail();
+        if (stats.En < cost)
+        {
+            model.Colony?.Stats.RecordAttackFailLowEnergy();
+            return FailCredited();
+        }
         if (!model.TryStartAttackCooldown()) return EntityCommandStatus.Running;
 
         float energyScale = math.max(math.saturate(stats.En / stats.MaxEnergy), r.AttackMinEnergyScale);
@@ -207,6 +251,8 @@ public class AttackCommand : EntityCommand
         model.Motor.Stop();
         return EntityCommandStatus.Running;
     }
+
+    private EntityCommandStatus FailCredited() => Fail(FailureReward + _approachCredit);
 
     private float DistanceToTarget() => math.distance(model.Position2D, _target.Position2D);
 

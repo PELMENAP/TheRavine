@@ -385,6 +385,7 @@ MonoBehaviour:
   eatSecondsPerEnergy: 0.05
   corpseMinEnergy: 2
   corpseSearchCells: 3
+  corpseFallbackCells: 8
   corpseSpoilTau: 120
   corpseBiteEnergy: 6
   corpseFallbackEnergy: 12
@@ -634,10 +635,12 @@ MonoBehaviour:
   driveShapingWeight: 1
   eventReproduceReward: 1
   damageEventReward: 0.2
+  approachRewardWeight: 0
   shareFoodReward: 0.3
   rememberFoodReward: 0.3
   infeasibleActionReward: -0.15
   goalFoodWeight: 0.3
+  digestRewardWeight: 0
   goalEnergyWeight: 1
   goalRestWeight: 0.05
   coordCuriosityWeight: 0.15
@@ -680,6 +683,7 @@ MonoBehaviour:
   dashRecovery: 0.6
   dashEnergyCost: 2
   attackEnergyMin: 2
+  attackBudgetMargin: 1
   fleeSprintDistance: 6
   fleeZigzagLegs: 3
   fleeZigzagCurvature: 0.8

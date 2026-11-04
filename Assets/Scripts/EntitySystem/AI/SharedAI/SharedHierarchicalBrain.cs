@@ -797,6 +797,7 @@ public class SharedHierarchicalBrain : IDisposable
         float goal = ctx.GoalDiscountedReturn
                    + ctx.GoalBonus
                    + r.GoalFoodWeight   * ctx.GoalFoodEaten
+                   + r.DigestRewardWeight * ctx.GoalDigested
                    + r.GoalEnergyWeight * (ctx.EnergyNorm - ctx.GoalStartEnergy)
                    + r.GoalRestWeight   * ctx.GoalRestScore
                    + curiosity * ctx.GoalNovelty;
