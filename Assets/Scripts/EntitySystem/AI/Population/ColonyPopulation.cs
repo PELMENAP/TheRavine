@@ -12,6 +12,7 @@ public sealed class ColonyPopulation
     private readonly Transform    _parent;
     private readonly EntityTuning _tuning;
     private readonly int          _maxPopulation;
+    private readonly int          _capacity;
     private readonly float        _spawnRadius;
 
     private readonly List<EntityModel> _entities;
@@ -41,8 +42,17 @@ public sealed class ColonyPopulation
     public event Action<EntityModel> Died;
 
     public int CivilCount => _colonies.Count - (_wild != null ? 1 : 0);
+    public int CivilPopulation => _entities.Count - (_wild != null ? _wild.MemberCount : 0);
 
-    public ColonyPopulation(GameObject prefab, Transform parent, EntityTuning tuning, int maxPopulation, float spawnRadius,
+    public bool HasFreeSlot(ColonyState colony)
+    {
+        if (colony == null || _entities.Count >= _capacity) return false;
+        return colony.IsWild
+            ? colony.MemberCount < SimulationRules.Active.PredatorCount
+            : CivilPopulation < _maxPopulation;
+    }
+
+    public ColonyPopulation(GameObject prefab, Transform parent, EntityTuning tuning, int maxPopulation, int capacity, float spawnRadius,
         List<EntityModel> entities, ColonyRegistry colonies, ColonyState wild, ColonyFood food, EvolutionService evolution,
         EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, UtilityPriorSystem utility,
         CasteThresholdSystem thresholds, BoidSystem boids, EnergyLedger ledger, SpeechBus speech)
@@ -51,6 +61,7 @@ public sealed class ColonyPopulation
         _parent        = parent;
         _tuning        = tuning;
         _maxPopulation = maxPopulation;
+        _capacity      = capacity;
         _spawnRadius   = spawnRadius;
         _entities      = entities;
         _colonies      = colonies;
@@ -71,7 +82,7 @@ public sealed class ColonyPopulation
 
     public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null)
     {
-        if (!TheRavine.Base.WorldAuthority.IsAuthority || _entities.Count >= _maxPopulation || colony == null)
+        if (!TheRavine.Base.WorldAuthority.IsAuthority || !HasFreeSlot(colony))
         {
             inheritedCtx?.Dispose();
             return null;
@@ -124,9 +135,10 @@ public sealed class ColonyPopulation
         return model;
     }
 
-    public void SpawnChild(EntityModel parent)
+    public bool SpawnChild(EntityModel parent)
     {
-        if (_entities.Count >= _maxPopulation || parent.IsWild) return;
+        var colony = parent.Colony;
+        if (parent.IsWild || !HasFreeSlot(colony)) return false;
 
         var parentParams = parent.Brain.Context.CoordMLP.Params;
         var mate         = _evolution.SelectMate(parent);
@@ -135,7 +147,7 @@ public sealed class ColonyPopulation
         if (mate != null && parentVirology != null
             && parentVirology.Modifiers.CytoIncompat >= SimulationRules.Active.CytoIncompatThreshold
             && mate.LineageId != parent.LineageId)
-            return;
+            return false;
 
         GeneticParameters childParams;
         if (mate != null)
@@ -148,15 +160,13 @@ public sealed class ColonyPopulation
             childParams = parentParams.GetMutatedGeneticParameters();
         }
 
-        var colony   = parent.Colony;
-        if (colony == null) return;
         var childCtx = colony.Brain.CreateContext(childParams);
         var rules    = SimulationRules.Active;
         var pos      = parent.Motor.Position()
                      + (Vector3)RavineRandom.GetInsideCircle().normalized * rules.ChildSpawnOffset
                      + Vector3.up * rules.ChildSpawnLift;
 
-        SpawnEntity(pos, colony, childCtx, parent);
+        return SpawnEntity(pos, colony, childCtx, parent) != null;
     }
 
     public Vector3 RandomPosition(ColonyState colony)
@@ -366,7 +376,7 @@ public sealed class ColonyPopulation
 
         int count = SimulationRules.Active.ColonyRespawnCount;
         var donorMembers = donor != null ? donor.Members : default;
-        for (int i = 0; i < count && _entities.Count < _maxPopulation; i++)
+        for (int i = 0; i < count && HasFreeSlot(colony); i++)
         {
             GeneticParameters genes = donorMembers.Length > 0
                 ? _entities[donorMembers[RavineRandom.RangeInt(0, donorMembers.Length)]].Brain.Context.CoordMLP.Params.GetMutatedGeneticParameters()

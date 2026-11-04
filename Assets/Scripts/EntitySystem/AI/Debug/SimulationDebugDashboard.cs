@@ -466,6 +466,7 @@ public class SimulationDebugDashboard : MonoBehaviour
         DrawKV(ref y, "Dash/Strike",          $"{f.Dash:F2} / {f.Strike:F2}");
         DrawKV(ref y, "Reproduce/Rest heal",  $"{f.Reproduce:F2} / {f.RestHeal:F2}");
         DrawKV(ref y, "Spoil/Death loss",     $"{f.CorpseSpoil:F2} / {f.DeathLoss:F2}");
+        DrawKV(ref y, "Intake loss/Wilt",     $"{f.IntakeLoss:F2} / {f.Wilt:F2}");
         DrawKV(ref y, "Soil return/release",  $"{f.SoilReturn:F2} / {f.SoilRelease:F2}");
         DrawKV(ref y, "Warmth emit/draw/decay", $"{f.WarmthEmit:F2} / {f.WarmthDraw:F2} / {f.WarmthDecay:F2}");
         var colony = SelectedColony();

@@ -171,6 +171,10 @@ public sealed partial class SimulationRules
     [SerializeField] private float alarmHuntBias = 1.5f;
     [SerializeField] private float alarmSurviveBias = 1.5f;
     [SerializeField] private float alarmFleeBias = 1.5f;
+    [SerializeField] private float scarcityMigrateBias = 2f;
+    [SerializeField] private float scarcityForeignForageBias = 1.5f;
+    [SerializeField] private float scoutVoteWeight = 2f;
+    [SerializeField] private int scarcityChunkRadius = 1;
 
     public float KinSearchRangeMul => kinSearchRangeMul;
     public float NestFarRadiusMul => nestFarRadiusMul;
@@ -330,4 +334,8 @@ public sealed partial class SimulationRules
     public float AlarmHuntBias => alarmHuntBias;
     public float AlarmSurviveBias => alarmSurviveBias;
     public float AlarmFleeBias => alarmFleeBias;
+    public float ScarcityMigrateBias => scarcityMigrateBias;
+    public float ScarcityForeignForageBias => scarcityForeignForageBias;
+    public float ScoutVoteWeight => scoutVoteWeight;
+    public int ScarcityChunkRadius => scarcityChunkRadius;
 }

@@ -20,6 +20,8 @@ public struct EnergyFlows
     public float RestHeal;
     public float CorpseSpoil;
     public float DeathLoss;
+    public float IntakeLoss;
+    public float Wilt;
     public float SoilRelease;
     public float WarmthDraw;
     public float WarmthDecay;
@@ -33,7 +35,7 @@ public struct EnergyFlows
 
     public readonly float Outflow
         => Basal + Movement + DigestionLoss + Speech + Threaten + Dash + Strike + Reproduce + RestHeal
-         + CorpseSpoil + DeathLoss + SoilRelease + WarmthDraw + WarmthDecay;
+         + CorpseSpoil + DeathLoss + IntakeLoss + Wilt + SoilRelease + WarmthDraw + WarmthDecay;
 
     public void Add(in EnergyFlows o)
     {
@@ -57,6 +59,8 @@ public struct EnergyFlows
         RestHeal      += o.RestHeal;
         CorpseSpoil   += o.CorpseSpoil;
         DeathLoss     += o.DeathLoss;
+        IntakeLoss    += o.IntakeLoss;
+        Wilt          += o.Wilt;
         SoilRelease   += o.SoilRelease;
         WarmthDraw    += o.WarmthDraw;
         WarmthDecay   += o.WarmthDecay;

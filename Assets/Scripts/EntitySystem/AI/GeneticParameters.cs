@@ -48,6 +48,7 @@ public struct GeneticParameters
     public float CasteAffinityMul;
     public float CasteLearnMul;
     public float ReinterruptMul;
+    public float DietCarnivory;
 
     public const int IdxMoveSpeedMul = 0;
     public const int IdxBaseLearningRate = 1;
@@ -85,6 +86,7 @@ public struct GeneticParameters
     public const int IdxCasteAffinityMul = IdxNightRestMul + 1;
     public const int IdxCasteLearnMul = IdxCasteAffinityMul + 1;
     public const int IdxReinterruptMul = IdxCasteLearnMul + 1;
+    public const int IdxDietCarnivory = IdxReinterruptMul + 1;
 
     public static readonly (float min, float max, float mutationScale)[] ParameterRanges = {
         (0.7f, 1.4f, 0.08f),
@@ -124,6 +126,7 @@ public struct GeneticParameters
         (0f, 2f, 0.15f),
         (0.5f, 2f, 0.15f),
         (0.5f, 2f, 0.15f),
+        (0f, 1f, 0.1f),
     };
 
     public static bool IsPhenotypic(int index)

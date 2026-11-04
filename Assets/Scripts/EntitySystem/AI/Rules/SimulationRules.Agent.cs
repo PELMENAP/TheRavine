@@ -75,6 +75,8 @@ public sealed partial class SimulationRules
     [SerializeField] private float crowdRadius = 4f;
     [SerializeField] private float biteTransmissionChance = 0.2f;
     [SerializeField] private int captureLength = 6;
+    [SerializeField] private float senescenceSpeedLoss = 0.4f;
+    [SerializeField] private float senescenceDigestLoss = 0.4f;
 
     public float RestHealRate => restHealRate;
     public float StartupDelaySeconds => startupDelaySeconds;
@@ -147,4 +149,6 @@ public sealed partial class SimulationRules
     public float CrowdRadius => crowdRadius;
     public float BiteTransmissionChance => biteTransmissionChance;
     public int CaptureLength => captureLength;
+    public float SenescenceSpeedLoss => senescenceSpeedLoss;
+    public float SenescenceDigestLoss => senescenceDigestLoss;
 }

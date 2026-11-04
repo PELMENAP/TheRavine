@@ -61,6 +61,8 @@ public sealed class SimulationLog : IDisposable
         ("flow_rest_heal",         f => f.RestHeal),
         ("flow_corpse_spoil",      f => f.CorpseSpoil),
         ("flow_death_loss",        f => f.DeathLoss),
+        ("flow_intake_loss",       f => f.IntakeLoss),
+        ("flow_wilt",              f => f.Wilt),
         ("flow_soil_release",      f => f.SoilRelease),
         ("flow_warmth_draw",       f => f.WarmthDraw),
         ("flow_warmth_decay",      f => f.WarmthDecay),

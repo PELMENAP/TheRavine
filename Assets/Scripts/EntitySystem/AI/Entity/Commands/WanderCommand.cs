@@ -68,14 +68,14 @@ public class WanderCommand : PlannedMoveCommand
     {
         if (decision.HasDestination)
             _reached = math.distance(model.Position2D, decision.Destination) <= SimulationRules.Frame.PlanArriveRadius;
-        if (decision.Plan != PlanKind.Migrate) return Complete();
+        if (decision.Plan != PlanKind.Migrate || !model.CasteFixed || model.IsJuvenile) return Complete();
         var colony = model.Colony;
         if (colony == null || colony.IsWild) return Complete();
 
         ref readonly var r = ref SimulationRules.Frame;
         float2 here = model.Position2D;
         if (!colony.Nest.Contains(here) && colony.Nest.FieldAt(ColonyChannel.Danger, here) < r.QuorumMaxDanger)
-            colony.VoteNestSite(here, model.EntityId);
+            colony.VoteNestSite(here, model.EntityId, model.Caste == Caste.Scout ? r.ScoutVoteWeight : 1f);
         return Complete();
     }
 }
