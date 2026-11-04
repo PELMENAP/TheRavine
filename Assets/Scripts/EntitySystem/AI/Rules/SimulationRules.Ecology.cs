@@ -90,6 +90,11 @@ public sealed partial class SimulationRules
     [SerializeField] private float carryPoiThreshold = 0.2f;
     [SerializeField] private float[] biomeFertility = { 1f, 0.6f, 0.3f, 1.2f };
     [SerializeField] private float[] biomeToxicity  = { 0.02f, 0.08f, 0.25f, 0.04f };
+    [SerializeField] private float hungerForageBias = 2f;
+    [SerializeField] private float hungerRestDrop = 3f;
+    [SerializeField] private float dietPlantFloor = 0.4f;
+    [SerializeField] private float dietMeatFloor = 0.4f;
+    [SerializeField] private float winterWiltTau = 120f;
 
     public float EatEnergyFood => eatEnergyFood;
     public int FoodRegenBurst => foodRegenBurst;
@@ -171,4 +176,9 @@ public sealed partial class SimulationRules
     public float CorpseFallbackEnergy => corpseFallbackEnergy;
     public float CarrySpeedMul => carrySpeedMul;
     public float CarryPoiThreshold => carryPoiThreshold;
+    public float HungerForageBias => hungerForageBias;
+    public float HungerRestDrop => hungerRestDrop;
+    public float DietPlantFloor => dietPlantFloor;
+    public float DietMeatFloor => dietMeatFloor;
+    public float WinterWiltTau => winterWiltTau;
 }

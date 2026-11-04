@@ -12,6 +12,7 @@ public class EatCommand : EntityCommand
     private double _start;
     private double _end;
     private float  _toxicity;
+    private float  _yield;
 
     public EatCommand(EntityModel model) : base(model) { }
 
@@ -23,7 +24,7 @@ public class EatCommand : EntityCommand
         model.Motor.Stop();
 
         if (model.Carrying > 0f)
-            return StartEating(model.TakeCarried(), 0f);
+            return StartEating(model.TakeCarried(), 0f, FoodKind.Plant);
 
         var nest  = model.Nest;
         var index = model.FoodIndex;
@@ -35,7 +36,8 @@ public class EatCommand : EntityCommand
             float take = math.min(nest.Storage, r.NestEatPortion * cost);
             nest.Storage -= take;
             model.Colony?.Stats.RecordStorageEaten(take);
-            return StartEating(take / cost, 0f);
+            model.Ledger.Flows.IntakeLoss += take - take / cost;
+            return StartEating(take / cost, 0f, FoodKind.Plant);
         }
 
         if (!foodNear) return Fail();
@@ -59,10 +61,10 @@ public class EatCommand : EntityCommand
             return EntityCommandStatus.Running;
         }
 
-        return StartEating(claim.Energy, claim.Toxicity);
+        return StartEating(claim.Energy, claim.Toxicity, claim.Kind);
     }
 
-    private EntityCommandStatus StartEating(float portion, float toxicity)
+    private EntityCommandStatus StartEating(float portion, float toxicity, FoodKind kind)
     {
         if (portion <= 0f) return Fail();
 
@@ -71,6 +73,7 @@ public class EatCommand : EntityCommand
         _portion  = portion;
         _eaten    = 0f;
         _toxicity = toxicity;
+        _yield    = model.EatYield(kind);
         _start    = SimulationClock.TimeD;
         _end      = _start + math.max(r.EatSecondsPerEnergy * portion / math.max(model.CasteMods.EatSpeed, 1e-3f), 1e-3f);
 
@@ -107,13 +110,18 @@ public class EatCommand : EntityCommand
         float frac  = span > 0d ? (float)math.saturate((SimulationClock.TimeD - _start) / span) : 1f;
         float due   = _portion * frac - _eaten;
         if (due <= 0f) return;
-        model.Digestion.Ingest(due);
+        float taken = model.Digestion.Ingest(due * _yield);
+        model.Ledger.Flows.IntakeLoss += due - taken;
         _eaten += due;
     }
 
     protected override void OnCancel()
     {
-        if (_phase == Phase.Eating) Deliver();
+        if (_phase == Phase.Eating)
+        {
+            Deliver();
+            model.Ledger.Flows.IntakeLoss += math.max(0f, _portion - _eaten);
+        }
         _portion = 0f;
     }
 }

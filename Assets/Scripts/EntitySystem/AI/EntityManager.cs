@@ -137,7 +137,7 @@ public class EntityManager : MonoBehaviour
     public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null)
         => _population.SpawnEntity(position, colony, inheritedCtx, parent);
 
-    public void SpawnChild(EntityModel parent) => _population.SpawnChild(parent);
+    public bool SpawnChild(EntityModel parent) => _population.SpawnChild(parent);
 
     private void UpdateDiagnostics()
     {
@@ -231,6 +231,7 @@ public class EntityManager : MonoBehaviour
         colony.Nest.RaiseAlarm(magnitude);
     }
     private MotionSystem _motion;
+    private int _capacity;
     public MotionSystem Motion => _motion;
 
     private void Awake()
@@ -245,13 +246,14 @@ public class EntityManager : MonoBehaviour
             return;
         }
         VirologyRuntime.Initialize();
-        ContextSlabs.Reserve(maxPopulation);
-        _motion = new MotionSystem(maxPopulation);
-        _instincts = new InstinctSystem(maxPopulation);
-        _boids     = new BoidSystem(maxPopulation);
-        _utility    = new UtilityPriorSystem(maxPopulation);
-        _thresholds = new CasteThresholdSystem(maxPopulation);
-        _speech     = new SpeechBus(maxPopulation, _entities);
+        _capacity = maxPopulation + math.max(0, SimulationRules.Active.PredatorCount);
+        ContextSlabs.Reserve(_capacity);
+        _motion = new MotionSystem(_capacity);
+        _instincts = new InstinctSystem(_capacity);
+        _boids     = new BoidSystem(_capacity);
+        _utility    = new UtilityPriorSystem(_capacity);
+        _thresholds = new CasteThresholdSystem(_capacity);
+        _speech     = new SpeechBus(_capacity, _entities);
         SpeechMetrics.Reset();
         ServiceLocator.Register(_thresholds);
         ServiceLocator.Register(_speech);
@@ -275,7 +277,7 @@ public class EntityManager : MonoBehaviour
         ServiceLocator.Register(_infection.Service);
         _food       = new ColonyFood(maxFood, _ledger);
         _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue));
-        _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, spawnRadius,
+        _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, _capacity, spawnRadius,
             _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _utility, _thresholds, _boids, _ledger, _speech);
         _population.Spawned += RaiseSpawned;
         _population.Died    += RaiseDied;
@@ -296,7 +298,7 @@ public class EntityManager : MonoBehaviour
 
     private ColonyState AddColony(Vector3 position, bool wild = false)
         => _colonies.Add(new Unity.Mathematics.float2(position.x, position.z),
-            new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden), maxPopulation, wild);
+            new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden), _capacity, wild);
 
 
 
@@ -707,7 +709,12 @@ public class EntityManager : MonoBehaviour
             colony.Nest.HungryAtNest = hungryAtNest;
             colony.Nest.NursesAtNest = nursesAtNest;
 
-            colony.Nest.EndTick(dt, atNest);
+            var foodIndex = FoodIndex;
+            colony.Scarcity = colony.IsWild || foodIndex == null
+                ? 0f
+                : foodIndex.NestScarcity(nestPos, r.ScarcityChunkRadius);
+
+            colony.Nest.EndTick(dt, atNest, colony.Scarcity);
 
             float inv = members.Length > 0 ? 1f / members.Length : 0f;
             colony.Stats.SampleMembers(fill * inv, restingAtNest * inv,

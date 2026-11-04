@@ -354,7 +354,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private bool _receivedFood;
     public void ReceiveFood(float energy)
     {
-        Digestion?.Ingest(energy);
+        float taken = Digestion != null ? Digestion.Ingest(energy * EatYield(FoodKind.Large)) : 0f;
+        _ledger.Flows.IntakeLoss += energy - taken;
         _receivedFood = true;
     }
 
@@ -411,7 +412,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
         {
             ref readonly var r = ref SimulationRules.Frame;
             float lethargy = Virology != null ? Virology.Modifiers.Lethargy : 0f;
-            float mul = (1f - lethargy * r.LethargySlow) * (Carrying > 0f ? r.CarrySpeedMul : 1f);
+            float mul = (1f - lethargy * r.LethargySlow) * (Carrying > 0f ? r.CarrySpeedMul : 1f)
+                      * (1f - r.SenescenceSpeedLoss * _senescence);
             return math.max(mul, r.MinSpeedMul);
         }
     }
@@ -492,8 +494,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
         BeginHomeostasis();
     }
 
-    public event Action<EntityModel> OnReproduceRequest;
-    public void RequestReproduce() => OnReproduceRequest?.Invoke(this);
+    public event Func<EntityModel, bool> OnReproduceRequest;
+    public bool RequestReproduce() => OnReproduceRequest != null && OnReproduceRequest.Invoke(this);
 
     public ChunkFoodIndex FoodIndex => _foodIndex;
 

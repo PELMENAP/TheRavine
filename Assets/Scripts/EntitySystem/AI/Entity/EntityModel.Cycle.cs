@@ -69,6 +69,7 @@ public partial class EntityModel
         float now = (float)nowD;
 
         TimeAlive += dt;
+        UpdateSenescence(in rules);
         if (TimeAlive >= MaxAge)
         {
             Mortality.NoteHarm(DeathCause.Age, 0f);
@@ -161,7 +162,8 @@ public partial class EntityModel
         float neighborLoad = 0f;
         var nearest = CachedNearest;
         if (nearest != null) nearest.Virology.TryGetViralInputs(out neighborLoad, out _, out _);
-        _kinSick = nearest != null && nearest.Colony == Colony && neighborLoad >= rules.GroomMinLoad;
+        _kinSick = nearest != null && nearest.Colony == Colony && neighborLoad >= rules.GroomMinLoad
+                && _nearestDistance <= rules.EatRange * rules.KinSearchRangeMul;
 
         ReadForeignVitals(playerStats, playerVirology, out float foreignHp, out float foreignEnergy, out float foreignViral,
             out StatsComponent foreignSource);
@@ -311,12 +313,22 @@ public partial class EntityModel
             brainCtx.CoordBias[p] = goalBias[(int)PlanCatalog.GoalOf((PlanKind)p)];
         brainCtx.CoordBias[(int)PlanKind.Flee] += fleeBias - mods.FearInvert * rules.FearInvertStrength;
         brainCtx.CoordBias[(int)PlanKind.Hunt] += mods.BiteSeek * rules.BiteSeekHuntBias;
-        brainCtx.CoordBias[(int)PlanKind.Rest] += mods.HomeCompulsion * rules.HomeCompulsionRestBias;
+        if (!RestBlockedByHunger) brainCtx.CoordBias[(int)PlanKind.Rest] += mods.HomeCompulsion * rules.HomeCompulsionRestBias;
         brainCtx.CoordBias[(int)PlanKind.Patrol] += mods.Isolate * rules.IsolateStrength;
         brainCtx.CoordBias[(int)PlanKind.Harvest] += _winterApproach * rules.PreWinterHarvestBias;
         if (night && IsAtNest && !RestBlockedByHunger)
             brainCtx.CoordBias[(int)PlanKind.Rest] += rules.NightRestBias * brainCtx.CoordMLP.Params.NightRestMul;
-        if (_onForeignTerritory) brainCtx.CoordBias[(int)PlanKind.Hunt] -= rules.ForeignTerritoryHuntDrop;
+        float scarcity = Colony != null ? Colony.Scarcity : 0f;
+        float forage = rules.HungerForageBias * _ghrelin;
+        if (_onForeignTerritory)
+        {
+            brainCtx.CoordBias[(int)PlanKind.Hunt] -= rules.ForeignTerritoryHuntDrop;
+            forage += rules.ScarcityForeignForageBias * scarcity;
+        }
+        brainCtx.CoordBias[(int)PlanKind.Graze] += forage;
+        brainCtx.CoordBias[(int)PlanKind.Seek] += forage;
+        brainCtx.CoordBias[(int)PlanKind.Rest] -= rules.HungerRestDrop * _ghrelin;
+        brainCtx.CoordBias[(int)PlanKind.Migrate] += rules.ScarcityMigrateBias * scarcity;
 
         ref readonly var genes = ref brainCtx.CoordMLP.Params;
         bool adult = CasteFixed && !IsJuvenile && !IsWild;

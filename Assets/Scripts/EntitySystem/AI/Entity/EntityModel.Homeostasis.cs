@@ -10,11 +10,22 @@ using TheRavine.EntityControl.Virology;
 
 public partial class EntityModel
 {
-    private float SenescenceMul(in SimulationRules.RulesFrame r)
+    private float _senescence;
+
+    private void UpdateSenescence(in SimulationRules.RulesFrame r)
     {
         float onset = math.saturate(r.SenescenceOnset);
-        float over  = math.saturate((AgeFraction - onset) / math.max(1f - onset, 1e-3f));
-        return 1f + r.SenescenceUpkeep * over;
+        _senescence = math.saturate((AgeFraction - onset) / math.max(1f - onset, 1e-3f));
+    }
+
+    private float SenescenceMul(in SimulationRules.RulesFrame r) => 1f + r.SenescenceUpkeep * _senescence;
+
+    public float EatYield(FoodKind kind)
+    {
+        ref readonly var r = ref SimulationRules.Frame;
+        float g = Brain.Context.CoordMLP.Params.DietCarnivory;
+        float diet = kind == FoodKind.Meat ? math.lerp(r.DietMeatFloor, 1f, g) : math.lerp(1f, r.DietPlantFloor, g);
+        return diet * (1f - r.SenescenceDigestLoss * _senescence);
     }
 
     private void UpdateOrnsteinUhlenbeck(float dt, in SimulationRules.RulesFrame r)

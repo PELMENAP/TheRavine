@@ -36,15 +36,18 @@ public sealed class ColonyFood
         _lastEcologyTime = now;
         if (dt > rules.EcologyMaxStep) dt = rules.EcologyMaxStep;
 
+        bool winter  = SeasonClock.IsWinter(now);
         float season = (1f + rules.SeasonAmplitude * SeasonClock.Value(now))
-                     * (SeasonClock.IsWinter(now) ? rules.WinterGrowthMul : 1f);
-        _index.TickEcology(dt, SimulationClock.TimeD, season, _maxFood, out float spawned, out float matured, out float spoiled,
-            out float soilReleased);
+                     * (winter ? rules.WinterGrowthMul : 1f);
+        _index.TickEcology(dt, SimulationClock.TimeD, season, _maxFood, winter, out float spawned, out float matured, out float spoiled,
+            out float soilReleased, out float wilted, out float soilStored);
         ref var flows = ref _ledger.Flows;
         flows.FoodSpawn      += spawned;
         flows.FoodMaturation += matured;
         flows.CorpseSpoil    += spoiled;
         flows.SoilRelease    += soilReleased;
+        flows.Wilt           += wilted;
+        flows.SoilReturn     += soilStored;
     }
 
     public void DropCorpse(EntityModel model, DeathCause cause)
