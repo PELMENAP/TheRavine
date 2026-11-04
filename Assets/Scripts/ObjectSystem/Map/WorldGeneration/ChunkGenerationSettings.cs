@@ -37,6 +37,7 @@ namespace TheRavine.Generator
         [Min(0)] public int maxLodRing = 4;
         public int[] lodSteps = { 4, 8, 16, 32 };
         [Min(0f)] public float skirtDepth = 1.5f;
+        [Range(8, 128)] public int waterCells = 128;
 
         [Header("Chunk Lifecycle")]
         [Min(2)] public int retainRadius = 3;
