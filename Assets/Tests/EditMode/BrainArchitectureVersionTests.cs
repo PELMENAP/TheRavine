@@ -4,30 +4,30 @@ using UnityEngine;
 
 public class BrainArchitectureVersionTests
 {
-    private const int ExpectedVersion          = 7;
-    private const int ExpectedInputSize        = 105;
+    private const int ExpectedVersion          = 10;
+    private const int ExpectedInputSize        = 124;
     private const int ExpectedPlanCount        = 9;
     private const int ExpectedCoordAux         = 2;
     private const int ExpectedActionCount      = 20;
     private const int ExpectedGoalCount        = 4;
-    private const int ExpectedSpeechOutputs    = 4;
+    private const int ExpectedSpeechOutputs    = 32;
     private const int ExpectedDirectionOutputs = 8;
     private const int ExpectedLstmHidden       = 32;
     private const int ExpectedLstmWeights      = 4 * ExpectedLstmHidden * (ExpectedInputSize + ExpectedLstmHidden);
     private const int ExpectedLstmBiases       = 4 * ExpectedLstmHidden;
 
-    private static readonly int[] ExpectedCoordLayers = { 137, 32, 16, 16, 12 };
+    private static readonly int[] ExpectedCoordLayers = { 156, 32, 16, 16, 12 };
 
     private static readonly int[][] ExpectedExecLayers =
     {
-        new[] { 137, 64, 32, 32, 18 },
-        new[] { 137, 64, 32, 32, 9 },
-        new[] { 137, 64, 32, 32, 18 },
-        new[] { 137, 64, 32, 32, 15 },
+        new[] { 156, 64, 32, 32, 24 },
+        new[] { 156, 64, 32, 32, 19 },
+        new[] { 156, 64, 32, 32, 24 },
+        new[] { 156, 64, 32, 32, 49 },
     };
 
     private static readonly int[] ExpectedSubsetSizes = { 8, 5, 8, 7 };
-    private static readonly int[] ExpectedExecAux     = { 9, 3, 9, 7 };
+    private static readonly int[] ExpectedExecAux     = { 15, 13, 15, 41 };
 
     private static string Bump(string what)
         => $"{what} изменился: инкрементируйте SharedBrainSnapshot.Version (сейчас {SharedBrainSnapshot.Version}) "
@@ -49,7 +49,7 @@ public class BrainArchitectureVersionTests
         Assert.AreEqual(ExpectedCoordAux, SharedHierarchicalBrain.CoordAux, Bump("SharedHierarchicalBrain.CoordAux"));
         Assert.AreEqual(ExpectedActionCount, ActionCatalog.Count, Bump("ActionCatalog.Count"));
         Assert.AreEqual(ExpectedGoalCount, SharedHierarchicalBrain.GoalCount, Bump("SharedHierarchicalBrain.GoalCount"));
-        Assert.AreEqual(ExpectedSpeechOutputs, SharedHierarchicalBrain.SpeechOutputs, Bump("SpeechSignal.Count"));
+        Assert.AreEqual(ExpectedSpeechOutputs, SharedHierarchicalBrain.SpeechOutputs, Bump("SpeechLen x SpeechVocab"));
         Assert.AreEqual(ExpectedDirectionOutputs, SharedHierarchicalBrain.DirectionOutputs, Bump("DirectionKind.Count"));
     }
 
