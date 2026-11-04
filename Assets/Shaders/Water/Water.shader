@@ -11,6 +11,10 @@ Shader "The Ravine/Water/WaterShader"
         FresnelF0("Fresnel F0", Range(0, 0.1)) = 0.02
         SunGlint("Sun Glint", Float) = 3
         SunGlintPower("Sun Glint Power", Range(64, 2048)) = 512
+        SSRIntensity("SSR Intensity", Range(0, 1)) = 1
+        SSRStep("SSR Start Step", Float) = 1
+        SSRThickness("SSR Thickness", Float) = 3
+        SSRMaxDistance("SSR Max Camera Distance", Float) = 120
         
         [Normal][NoScaleOffset] NormalMap("Normal Map", 2D) = "bump" {}
         UV1("UV1 (TilingXY, OffsetZW)", Vector) = (1, 1, 0, 0)
@@ -110,6 +114,10 @@ Shader "The Ravine/Water/WaterShader"
                 float FresnelF0;
                 float SunGlint;
                 float SunGlintPower;
+                float SSRIntensity;
+                float SSRStep;
+                float SSRThickness;
+                float SSRMaxDistance;
             CBUFFER_END
             
             // ----------------------------------------------------------------
@@ -215,6 +223,62 @@ Shader "The Ravine/Water/WaterShader"
             {
                 return SAMPLE_TEXTURE2D(_CameraOpaqueTexture, 
                     sampler_CameraOpaqueTexture, screenUV).rgb;
+            }
+
+            bool SSRProject(float3 posWS, out float2 uv, out float eyeDepth)
+            {
+                float4 clip = TransformWorldToHClip(posWS);
+                eyeDepth = clip.w;
+                uv = float2(clip.x, clip.y * _ProjectionParams.x) / max(clip.w, 1e-4) * 0.5 + 0.5;
+                return clip.w > 0.0 && all(uv > 0.0) && all(uv < 1.0);
+            }
+
+            float SSRDiff(float3 posWS, out float2 uv)
+            {
+                float eyeDepth;
+                if (!SSRProject(posWS, uv, eyeDepth)) return -1e4;
+                float rawDepth = SAMPLE_TEXTURE2D_LOD(_CameraDepthTexture, sampler_CameraDepthTexture, uv, 0).r;
+                return eyeDepth - LinearEyeDepth(rawDepth, _ZBufferParams);
+            }
+
+            float4 SSRTrace(float3 posWS, float3 dirWS, float jitter)
+            {
+                float stepLen = SSRStep;
+                float t = stepLen * jitter;
+
+                [loop]
+                for (int i = 0; i < 16; i++)
+                {
+                    float prevT = t;
+                    t += stepLen;
+                    stepLen *= 1.25;
+
+                    float2 uv;
+                    float eyeDepth;
+                    if (!SSRProject(posWS + dirWS * t, uv, eyeDepth)) break;
+
+                    float diff = SSRDiff(posWS + dirWS * t, uv);
+                    if (diff > 0.0 && diff < SSRThickness + stepLen)
+                    {
+                        float lo = prevT;
+                        float hi = t;
+                        [unroll]
+                        for (int j = 0; j < 4; j++)
+                        {
+                            float mid = 0.5 * (lo + hi);
+                            float2 midUV;
+                            if (SSRDiff(posWS + dirWS * mid, midUV) > 0.0) hi = mid; else lo = mid;
+                        }
+
+                        float2 hitUV;
+                        SSRDiff(posWS + dirWS * hi, hitUV);
+                        float2 e = saturate(min(hitUV, 1.0 - hitUV) * 8.0);
+                        float3 color = SAMPLE_TEXTURE2D_LOD(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, hitUV, 0).rgb;
+                        return float4(color, e.x * e.y);
+                    }
+                }
+
+                return 0;
             }
 
             float3 GerstnerWave(
@@ -469,6 +533,15 @@ Shader "The Ravine/Water/WaterShader"
 
                 float NdotV = saturate(dot(normalWS, viewDirWS));
                 float fresnel = (FresnelF0 + (1.0 - FresnelF0) * pow(1.0 - NdotV, 5.0)) * ReflectionStrength * isFrontFace;
+
+                float ssrCamDist = length(input.positionWS - _WorldSpaceCameraPos);
+                float ssrFade = saturate((SSRMaxDistance - ssrCamDist) / max(SSRMaxDistance * 0.3, 1e-3)) * SSRIntensity;
+                if (fresnel > 0.01 && ssrFade > 0.0)
+                {
+                    float jitter = frac(52.9829189 * frac(dot(input.positionCS.xy, float2(0.06711056, 0.00583715))));
+                    float4 ssr = SSRTrace(input.positionWS, reflectDir, jitter);
+                    reflColor = lerp(reflColor, ssr.rgb, ssr.a * ssrFade);
+                }
 
                 // === РУЧНОЕ ОСВЕЩЕНИЕ (вместо UniversalFragmentPBR) ===
 
