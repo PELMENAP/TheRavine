@@ -13,7 +13,7 @@ public class StoreFoodCommand : EntityCommand
         ref readonly var r = ref SimulationRules.Frame;
         float carried = model.TakeCarried();
         float stored  = carried * model.CasteMods.StoreEfficiency;
-        model.Ledger.Flows.IntakeLoss += carried - stored;
+        model.Ledger.Flows.StoreLoss += carried - stored;
         nest.Storage += stored;
         model.RecordStored(stored);
         model.Colony?.Stats.RecordStorageStored(stored);

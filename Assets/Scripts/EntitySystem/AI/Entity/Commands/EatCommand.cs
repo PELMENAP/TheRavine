@@ -36,7 +36,7 @@ public class EatCommand : EntityCommand
             float take = math.min(nest.Storage, r.NestEatPortion * cost);
             nest.Storage -= take;
             model.Colony?.Stats.RecordStorageEaten(take);
-            model.Ledger.Flows.IntakeLoss += take - take / cost;
+            model.Ledger.Flows.StoreLoss += take - take / cost;
             return StartEating(take / cost, 0f, FoodKind.Plant);
         }
 
@@ -110,18 +110,24 @@ public class EatCommand : EntityCommand
         float frac  = span > 0d ? (float)math.saturate((SimulationClock.TimeD - _start) / span) : 1f;
         float due   = _portion * frac - _eaten;
         if (due <= 0f) return;
-        float taken = model.Digestion.Ingest(due * _yield);
-        model.Ledger.Flows.IntakeLoss += due - taken;
+        model.IngestFood(due, _yield);
         _eaten += due;
+    }
+
+    private bool Finish()
+    {
+        float due = _portion - _eaten;
+        if (due <= 0f) return false;
+        model.IngestFood(due, _yield);
+        _eaten = _portion;
+        return true;
     }
 
     protected override void OnCancel()
     {
-        if (_phase == Phase.Eating)
-        {
-            Deliver();
-            model.Ledger.Flows.IntakeLoss += math.max(0f, _portion - _eaten);
-        }
+        if (_phase == Phase.Eating && Finish() && _toxicity > 0f && !model.IsDisposed && !model.IsDeathPending)
+            model.TakeDamage(SimulationRules.Active.ToxicDamage, null, DeathCause.Toxic);
         _portion = 0f;
+        _eaten   = 0f;
     }
 }

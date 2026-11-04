@@ -36,6 +36,9 @@ public sealed class ColonyStats
     public float MeanFill;
     public float RestAtNestShare;
     public float StorageShare;
+    public float DietMean;
+    public float GhrelinMean;
+    public float HungryShare;
 
     private float  _deathRateEma;
     private double _lastDeathTime = double.NaN;
@@ -100,6 +103,13 @@ public sealed class ColonyStats
         MeanFill        = meanFill;
         RestAtNestShare = restAtNestShare;
         StorageShare    = storageShare;
+    }
+
+    public void SampleDiagnostics(float diet, float ghrelin, float hungry)
+    {
+        DietMean    = diet;
+        GhrelinMean = ghrelin;
+        HungryShare = hungry;
     }
 
     public float PlanShare(PlanKind plan)
