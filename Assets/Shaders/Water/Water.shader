@@ -7,6 +7,10 @@ Shader "The Ravine/Water/WaterShader"
         [HDR] FoamColor("Foam Color", Color) = (1, 1, 1, 1)
         
         Smoothness("Smoothness", Range(0, 1)) = 0.9
+        ReflectionStrength("Reflection Strength", Range(0, 1)) = 1
+        FresnelF0("Fresnel F0", Range(0, 0.1)) = 0.02
+        SunGlint("Sun Glint", Float) = 3
+        SunGlintPower("Sun Glint Power", Range(64, 2048)) = 512
         
         [Normal][NoScaleOffset] NormalMap("Normal Map", 2D) = "bump" {}
         UV1("UV1 (TilingXY, OffsetZW)", Vector) = (1, 1, 0, 0)
@@ -102,6 +106,10 @@ Shader "The Ravine/Water/WaterShader"
                 float Scale;
                 float Smoothness;
                 float Metallic;
+                float ReflectionStrength;
+                float FresnelF0;
+                float SunGlint;
+                float SunGlintPower;
             CBUFFER_END
             
             // ----------------------------------------------------------------
@@ -447,7 +455,7 @@ Shader "The Ravine/Water/WaterShader"
                 // === BACK FACE LOGIC ===
                 // Front face: full water with foam, reflection, etc.
                 // Back face: only ShallowColor * SceneColor (простое преломление)
-                float3 frontFaceColor = lerp(waterColor, FoamColor.rgb, foam.rgb);;
+                float3 frontFaceColor = lerp(waterColor, FoamColor.rgb, foam.rgb);
                 float3 backFaceColor = shallowColor; // ShallowColor * SceneColor
                 
                 float3 baseColor = lerp(backFaceColor, frontFaceColor, isFrontFace);
@@ -455,8 +463,12 @@ Shader "The Ravine/Water/WaterShader"
                 // === REFLECTION ===
                 float3 viewDirWS = normalize(input.viewDirWS);
                 float3 reflectDir = reflect(-viewDirWS, normalWS);
-                
+                reflectDir.y = abs(reflectDir.y);
+
                 half3 reflColor = GlossyEnvironmentReflection(reflectDir, input.positionWS, 1.0 - Smoothness, 1.0);
+
+                float NdotV = saturate(dot(normalWS, viewDirWS));
+                float fresnel = (FresnelF0 + (1.0 - FresnelF0) * pow(1.0 - NdotV, 5.0)) * ReflectionStrength * isFrontFace;
 
                 // === РУЧНОЕ ОСВЕЩЕНИЕ (вместо UniversalFragmentPBR) ===
 
@@ -506,7 +518,6 @@ Shader "The Ravine/Water/WaterShader"
                 float3 finalColor = ambient + mainDiffuse + mainSpecular + addDiffuse + addSpecular + scattering;
 
                 float ao = SampleAmbientOcclusion(screenUV);
-                ambient *= ao;
                 finalColor *= ao;
 
                 // 6. Дистанс фейд
@@ -515,6 +526,12 @@ Shader "The Ravine/Water/WaterShader"
                 float lightIntensity = saturate(Luminance(bakedGI) + Luminance(mainLight.color));
                 float3 deepColorAdjusted = DeepColor.rgb * max(lightIntensity, 0.05); // минимум 5% яркости
                 finalColor = lerp(finalColor, deepColorAdjusted, distFade);
+
+                // 7. Reflection and sun glint
+                finalColor = lerp(finalColor, reflColor, fresnel);
+                float glintNdotH = saturate(dot(normalWS, halfDir));
+                finalColor += pow(glintNdotH, SunGlintPower) * SunGlint * mainLight.color
+                    * (mainLight.shadowAttenuation * mainLight.distanceAttenuation * isFrontFace);
 
                 // 8. Water color boost
                 float lighting = saturate(Luminance(mainLight.color * mainLight.shadowAttenuation + scatteredLight));
@@ -526,6 +543,7 @@ Shader "The Ravine/Water/WaterShader"
                 // 10. Alpha
                 float waterAlpha = lerp(0.2, 0.9, depthFade);
                 float alpha = lerp(0.5, waterAlpha, isFrontFace);
+                alpha = lerp(alpha, 1.0, fresnel);
 
                 return float4(finalColor, alpha);
             }
