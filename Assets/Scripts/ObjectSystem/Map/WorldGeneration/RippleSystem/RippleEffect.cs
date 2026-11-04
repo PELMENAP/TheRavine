@@ -34,7 +34,7 @@ public class RippleEffect : MonoBehaviour
 
         RippleMat = new Material(RippleShader);
     
-        waterMat = GetComponent<Renderer>().material;
+        waterMat = GetComponent<Renderer>().sharedMaterial;
         waterMat.SetTexture("RippleTex", CurrRT);
     }
 
