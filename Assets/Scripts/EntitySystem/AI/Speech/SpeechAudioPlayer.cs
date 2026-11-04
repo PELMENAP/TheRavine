@@ -24,6 +24,14 @@ public sealed class SpeechAudioPlayer : MonoBehaviour
     private float[] _score;
     private bool _grouped;
     private bool _attached;
+    private AudioListener _listener;
+
+    [Header("Diagnostics")]
+    [SerializeField] private int heard;
+    [SerializeField] private int outOfRange;
+    [SerializeField] private int played;
+    [SerializeField] private int dropped;
+    [SerializeField] private bool noListener;
 
     public void Bind(SpeechBus bus)
     {
@@ -93,12 +101,15 @@ public sealed class SpeechAudioPlayer : MonoBehaviour
         int n = audible.Length;
         if (n == 0) return;
 
-        var cam = Camera.main;
-        if (cam == null) return;
+        if (!TryGetListenerPosition(out Vector3 listener))
+        {
+            noListener = true;
+            return;
+        }
+        noListener = false;
 
         if (!_grouped) TryAssignGroup();
 
-        Vector3 listener = cam.transform.position;
         double dsp = AudioSettings.dspTime;
         float gap = SimulationRules.Frame.SpeechSyllableSeconds;
         float r2 = audibleRadius * audibleRadius;
@@ -109,7 +120,12 @@ public sealed class SpeechAudioPlayer : MonoBehaviour
             float dx = u.Pos.x - listener.x;
             float dz = u.Pos.y - listener.z;
             float d2 = dx * dx + dz * dz;
-            if (d2 > r2) continue;
+            heard++;
+            if (d2 > r2)
+            {
+                outOfRange++;
+                continue;
+            }
 
             float score = u.Loudness * (1f / 255f) * (1f - math.sqrt(d2) / audibleRadius);
             Play(in u, score, listener.y, dsp, gap);
@@ -122,7 +138,12 @@ public sealed class SpeechAudioPlayer : MonoBehaviour
         for (int k = 0; k < len; k++)
         {
             int v = Acquire(score, dsp);
-            if (v < 0) return;
+            if (v < 0)
+            {
+                dropped++;
+                return;
+            }
+            played++;
 
             var src = _sources[v];
             var clip = _bank.Get(u.Voice, u.Token(k));
@@ -131,12 +152,71 @@ public sealed class SpeechAudioPlayer : MonoBehaviour
             src.Stop();
             src.transform.position = new Vector3(u.Pos.x, height, u.Pos.y);
             src.clip = clip;
-            src.volume = volume * score;
+            src.volume = volume;
             src.PlayScheduled(start);
 
             _busyUntil[v] = start + clip.length;
             _score[v] = score;
         }
+    }
+
+    private bool TryGetListenerPosition(out Vector3 position)
+    {
+        if (_listener == null || !_listener.isActiveAndEnabled) _listener = FindFirstObjectByType<AudioListener>();
+        if (_listener != null)
+        {
+            position = _listener.transform.position;
+            return true;
+        }
+
+        var cam = Camera.main;
+        position = cam != null ? cam.transform.position : default;
+        return cam != null;
+    }
+
+    [ContextMenu("Test/Play all tokens")]
+    private void TestPlayAllTokens()
+    {
+        if (!Application.isPlaying || _bank == null) return;
+        if (!TryGetListenerPosition(out Vector3 listener))
+        {
+            Debug.LogWarning("[SpeechAudioPlayer] нет AudioListener и Camera.main: звук не услышать");
+            return;
+        }
+
+        double dsp = AudioSettings.dspTime;
+        int vocab = SimulationRules.SpeechVocab;
+        for (int t = 0; t < vocab; t++)
+        {
+            int v = t % _sources.Length;
+            var clip = _bank.Get(0, t);
+            var src = _sources[v];
+            src.Stop();
+            src.transform.position = listener;
+            src.clip = clip;
+            src.volume = volume;
+            src.PlayScheduled(dsp + 0.1 + t * 0.2);
+        }
+        Debug.Log($"[SpeechAudioPlayer] тест: {vocab} токенов подряд у слушателя, группа микшера: {(_sources[0].outputAudioMixerGroup != null ? _sources[0].outputAudioMixerGroup.name : "нет")}");
+    }
+
+    [ContextMenu("Test/Emit through bus")]
+    private void TestEmitThroughBus()
+    {
+        if (!Application.isPlaying || _bus == null) return;
+        if (!TryGetListenerPosition(out Vector3 listener)) return;
+
+        var u = new Utterance
+        {
+            Tokens   = Utterance.SetToken(Utterance.SetToken(0, 0, 3), 1, 12),
+            Len      = (byte)SimulationRules.SpeechLen,
+            Loudness = 255,
+            Speaker  = Utterance.External,
+            Pos      = new Unity.Mathematics.float2(listener.x, listener.z),
+            Time     = SimulationClock.Time,
+        };
+        bool ok = _bus.Emit(in u);
+        Debug.Log($"[SpeechAudioPlayer] тест через шину: Emit={ok}; прозвучит после ближайшей доставки, если сетка готова");
     }
 
     private int Acquire(float score, double dsp)
