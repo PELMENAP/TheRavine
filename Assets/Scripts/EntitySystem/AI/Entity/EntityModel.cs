@@ -354,9 +354,17 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private bool _receivedFood;
     public void ReceiveFood(float energy)
     {
-        float taken = Digestion != null ? Digestion.Ingest(energy * EatYield(FoodKind.Large)) : 0f;
-        _ledger.Flows.IntakeLoss += energy - taken;
+        IngestFood(energy, EatYield(FoodKind.Large));
         _receivedFood = true;
+    }
+
+    public float IngestFood(float raw, float yield)
+    {
+        float gain = raw * yield;
+        float taken = Digestion != null ? Digestion.Ingest(gain) : 0f;
+        _ledger.Flows.YieldLoss    += raw - gain;
+        _ledger.Flows.OverflowLoss += gain - taken;
+        return taken;
     }
 
     public bool ConsumeReceivedFood()

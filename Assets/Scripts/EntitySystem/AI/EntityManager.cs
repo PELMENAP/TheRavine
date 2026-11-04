@@ -690,7 +690,8 @@ public class EntityManager : MonoBehaviour
             var colony  = _colonies[c];
             var members = colony.Members;
             int atNest  = 0, restingAtNest = 0, hungryAtNest = 0, nursesAtNest = 0, far = 0;
-            float fill  = 0f;
+            float fill  = 0f, diet = 0f, ghrelin = 0f;
+            int   hungry = 0;
             float far2  = r.NestRadius * r.NestFarRadiusMul;
             far2 *= far2;
             float2 nestPos = colony.Nest.Position;
@@ -699,6 +700,9 @@ public class EntityManager : MonoBehaviour
                 var e = _entities[members[i]];
                 if (e.IsDisposed) continue;
                 fill += e.Digestion.Fill;
+                diet += e.Brain.Context.CoordMLP.Params.DietCarnivory;
+                ghrelin += e.Ghrelin;
+                if (e.IsHungry) hungry++;
                 if (math.distancesq(e.Position2D, nestPos) > far2) far++;
                 if (!e.IsAtNest) continue;
                 atNest++;
@@ -720,6 +724,7 @@ public class EntityManager : MonoBehaviour
             colony.Stats.SampleMembers(fill * inv, restingAtNest * inv,
                 math.saturate(colony.Nest.Storage / math.max(r.NestStorageNorm, 1e-3f)));
             colony.Stats.FarShare = far * inv;
+            colony.Stats.SampleDiagnostics(diet * inv, ghrelin * inv, hungry * inv);
         }
     }
 
