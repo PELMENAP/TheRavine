@@ -73,7 +73,7 @@ Shader "The Ravine/Water/WaterShader"
             TEXTURE2D(_CameraDepthTexture);     SAMPLER(sampler_CameraDepthTexture);
 
             CBUFFER_START(RippleBuffer)
-                float4 RippleOffset;
+                float4 RippleWindow;
             CBUFFER_END
 
                         
@@ -112,7 +112,6 @@ Shader "The Ravine/Water/WaterShader"
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
                 float4 tangentOS : TANGENT;
-                float2 uv0 : TEXCOORD0;
             };
             
             struct Varyings
@@ -308,7 +307,7 @@ Shader "The Ravine/Water/WaterShader"
                 output.positionWS = bentPositionWS;
                 output.normalWS = normalInputs.normalWS;
                 output.tangentWS = float4(normalInputs.tangentWS, input.tangentOS.w);
-                output.uv0 = input.uv0;
+                output.uv0 = worldPos.xz * RippleWindow.z;
                 output.positionNDC = positionNDC;
                 output.screenPos = ComputeScreenPos(positionCS);
                 output.viewDirWS = GetWorldSpaceNormalizeViewDir(bentPositionWS);
@@ -360,9 +359,11 @@ Shader "The Ravine/Water/WaterShader"
                 
                 // === RIPPLES ===
                 // LowResNormalFromHeight для RippleTex
-                float2 rippleUV = input.uv0 + RippleOffset.xy;
+                float2 rippleUV = input.uv0;
+                float2 rippleDelta = abs(rippleUV - RippleWindow.xy);
+                float rippleMask = step(max(rippleDelta.x, rippleDelta.y), 0.5);
                 float3 rippleNormalForRefract = LowResNormalFromHeight(RippleTex, samplerRippleTex, rippleUV, RippleTex_TexelSize.zw, RippleRefraction);
-                float rippleHeight = abs(SAMPLE_TEXTURE2D(RippleTex, samplerRippleTex, rippleUV).r);
+                float rippleHeight = abs(SAMPLE_TEXTURE2D(RippleTex, samplerRippleTex, rippleUV).r) * rippleMask;
                 float3 finalNormalTS  = lerp(normalTS, rippleNormalForRefract,  rippleHeight);
 
                 

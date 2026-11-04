@@ -188,7 +188,7 @@ IFileManager<TId, TEntity>
 
 ### Бесконечные слои (`IEndless/`)
 - `EndlessTerrain` — обновляет единый Mesh (3x3 чанка), MeshCollider
-- `EndlessLiquids` — двигает водный plane
+- `EndlessLiquids` — LOD-блоки воды с собственной генерацией меша (кольца как у `EndlessTerrain`, сшивка границ по индексам)
 - `EndlessObjects` — переиспользует объекты через `ObjectSystem` (pool)
 
 ### `ObjectSystem` (`ObjectSystem/ObjectSystem.cs`)

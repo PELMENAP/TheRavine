@@ -202,7 +202,7 @@ Runs the autosave loop. Supports `SubscribeBeforeSave(Func<CT, UniTask>)` — ho
 
 ### Infinite Layers (`IEndless/`)
 - `EndlessTerrain` — updates a single Mesh (3x3 chunks), MeshCollider
-- `EndlessLiquids` — moves the water plane
+- `EndlessLiquids` — LOD water blocks with self-generated mesh (rings like `EndlessTerrain`, index-based edge stitching)
 - `EndlessObjects` — reuses objects through `ObjectSystem` (pool)
 
 ### `ObjectSystem` (`ObjectSystem/ObjectSystem.cs`)

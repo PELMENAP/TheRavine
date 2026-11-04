@@ -34,16 +34,14 @@ public class RippleStampSystem : MonoBehaviour
     }
     private const float WaterSize = 375f;
     private readonly float waterSizeInv = 1f / WaterSize;
-    private static readonly int RippleOffsetID = Shader.PropertyToID("RippleOffset");
+    private static readonly int RippleWindowID = Shader.PropertyToID("RippleWindow");
 
     private static Vector2 Frac(Vector2 v) =>
         v - new Vector2(Mathf.Floor(v.x), Mathf.Floor(v.y));
 
     public void SetWaterPosition(float _waterX, float _waterZ)
     {
-        Vector2 corner = new(_waterX - WaterSize * 0.5f, _waterZ - WaterSize * 0.5f);
-        Vector2 offset = Frac(corner * waterSizeInv);
-        Shader.SetGlobalVector(RippleOffsetID, new Vector4(offset.x, offset.y, 0f, 0f));
+        Shader.SetGlobalVector(RippleWindowID, new Vector4(_waterX * waterSizeInv, _waterZ * waterSizeInv, waterSizeInv, 0f));
     }
 
     public void Stamp(Vector3 worldPos, float radius, float strength)

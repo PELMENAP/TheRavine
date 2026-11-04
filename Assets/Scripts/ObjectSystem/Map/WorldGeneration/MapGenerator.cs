@@ -657,7 +657,7 @@ namespace TheRavine.Generator
             if (terrain)
                 endless[0] = new EndlessTerrain(this, Settings);
             if (Settings.endlessFlag[1])
-                endless[1] = new EndlessLiquids(this);
+                endless[1] = new EndlessLiquids(this, Settings);
             if (Settings.endlessFlag[2])
             {
                 endless[2] = new EndlessObjects(this, objectSystem);
