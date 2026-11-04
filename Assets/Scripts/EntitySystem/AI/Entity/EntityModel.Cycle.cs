@@ -240,7 +240,8 @@ public partial class EntityModel
         if (LastAction == EntityAction.Rest && SinceAction(EntityAction.Eat) < rules.SynergyWindow)
             digestMul *= rules.RestAfterEatDigestMul;
 
-        Digestion.Tick(Stats, dt, resting, digestMul, mods.RegenMultiplier, in rules, out float regenCredit, out float digestLoss);
+        float digested = Digestion.Tick(Stats, dt, resting, digestMul, mods.RegenMultiplier, in rules, out float regenCredit, out float digestLoss);
+        Brain.Context.GoalDigested += digested - digestLoss;
 
         float basalMul = Tuning.BasalDrainMul
                        * CreatureCore.EnvironmentDrainMul(Digestion.WellFed, night && !IsAtNest, mods.Fever, _winter, in rules, _dormant)
@@ -420,8 +421,11 @@ public partial class EntityModel
         if (_playerValid) h |= PlanHint.PlayerNear;
         if (ValidForeign != null || _playerValid || (IsFrenzied && CachedNearest != null)) h |= PlanHint.PreyNear;
         if (_nestFood) h |= PlanHint.NestHasFood;
-        if (Stats.En >= math.max(r.AttackEnergyMin, Tuning.AttackEnergyCost)) h |= PlanHint.CanAttack;
-        if (Stats.En >= Tuning.ReproduceEnergyCost && Stats.Hp >= Tuning.ReproduceHealthCost) h |= PlanHint.CanReproduce;
+        var tuning = Tuning;
+        if (Stats.En >= AttackCommand.EnergyBudget(tuning.AttackEnergyCost, tuning.EnergyCostRunning, tuning.RunSpeed,
+                SpeedMul, HuntTargetDistance, in r))
+            h |= PlanHint.CanAttack;
+        if (Stats.En >= tuning.ReproduceEnergyCost && Stats.Hp >= tuning.ReproduceHealthCost) h |= PlanHint.CanReproduce;
         if (IsSated) h |= PlanHint.Sated;
         if (Stats.Hp >= Stats.MaxHealth) h |= PlanHint.HpFull;
         if (Points.Count > 0) h |= PlanHint.HasPoi;

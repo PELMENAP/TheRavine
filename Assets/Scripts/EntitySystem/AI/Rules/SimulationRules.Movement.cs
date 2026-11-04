@@ -40,6 +40,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float dashRecovery = 0.6f;
     [SerializeField] private float dashEnergyCost = 2f;
     [SerializeField] private float attackEnergyMin = 5f;
+    [SerializeField] private float attackBudgetMargin = 1f;
     [SerializeField] private float fleeSprintDistance = 6f;
     [SerializeField] private int fleeZigzagLegs = 3;
     [SerializeField] private float fleeZigzagCurvature = 0.8f;
@@ -131,6 +132,7 @@ public sealed partial class SimulationRules
     public float DashRecovery => dashRecovery;
     public float DashEnergyCost => dashEnergyCost;
     public float AttackEnergyMin => attackEnergyMin;
+    public float AttackBudgetMargin => attackBudgetMargin;
     public float FleeSprintDistance => fleeSprintDistance;
     public int FleeZigzagLegs => fleeZigzagLegs;
     public float FleeZigzagCurvature => fleeZigzagCurvature;

@@ -82,6 +82,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float eatSecondsPerEnergy = 0.05f;
     [SerializeField] private float corpseMinEnergy = 2f;
     [SerializeField] private int corpseSearchCells = 3;
+    [SerializeField] private int corpseFallbackCells = 8;
     [SerializeField] private float corpseSpoilTau = 120f;
     [SerializeField] private float corpseBiteEnergy = 6f;
     [SerializeField] private float corpseFallbackEnergy = 12f;
@@ -164,6 +165,7 @@ public sealed partial class SimulationRules
     public float EatSecondsPerEnergy => eatSecondsPerEnergy;
     public float CorpseMinEnergy => corpseMinEnergy;
     public int CorpseSearchCells => corpseSearchCells;
+    public int CorpseFallbackCells => corpseFallbackCells;
     public float CorpseSpoilTau => corpseSpoilTau;
     public float CorpseBiteEnergy => corpseBiteEnergy;
     public float CorpseFallbackEnergy => corpseFallbackEnergy;
