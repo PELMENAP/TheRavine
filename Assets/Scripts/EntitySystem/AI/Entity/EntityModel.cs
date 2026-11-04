@@ -238,6 +238,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     }
 
     public HuntTarget CachedHuntTarget => SelectHuntTarget(out _);
+    public bool HasHuntTarget => SelectHuntTarget(out _).IsValid;
 
     public float HuntTargetDistance
     {

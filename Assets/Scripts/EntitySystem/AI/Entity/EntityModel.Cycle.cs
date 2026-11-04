@@ -419,7 +419,7 @@ public partial class EntityModel
         if (HasHome) h |= PlanHint.HasHome;
         if (CachedNearest != null) h |= PlanHint.EntityNear;
         if (_playerValid) h |= PlanHint.PlayerNear;
-        if (ValidForeign != null || _playerValid || (IsFrenzied && CachedNearest != null)) h |= PlanHint.PreyNear;
+        if (HasHuntTarget) h |= PlanHint.PreyNear;
         if (_nestFood) h |= PlanHint.NestHasFood;
         var tuning = Tuning;
         if (Stats.En >= AttackCommand.EnergyBudget(tuning.AttackEnergyCost, tuning.EnergyCostRunning, tuning.RunSpeed,

@@ -124,6 +124,14 @@ The four columns are appended at the end of every row, after `stock_total`, so n
 
 Every `Failed` status of `AttackCommand` records exactly one of the four reasons, so per window `attack_fail_no_target + attack_fail_target_lost + attack_fail_low_energy + attack_fail_lurk_timeout = attack_failed`, up to commands that straddle a window boundary.
 
+## Columns added in revision 4
+
+| Column | Scope | Unit | Meaning and computation |
+|---|---|---|---|
+| `<action>_started_brain`, `<action>_started_instinct`, `<action>_started_plan` | both | commands | Δ `ColonyStats.ActionsStartedBySource[action × CommandSource.Count + source]`, counted in `EntityCommandRunner.Start`. Actions, in column order: `flee`, `attack`, `approach_food`, `wander`, `return_nest`, `eat`, `rest`. The block of 21 columns follows `attack_fail_lurk_timeout` |
+
+The three columns of an action sum to `<action>_started` in the same window.
+
 | Metric | Formula |
 |---|---|
 | attack failure reason share | `attack_fail_<reason> / attack_failed` |

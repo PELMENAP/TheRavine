@@ -16,6 +16,7 @@ public sealed class ColonyStats
     public readonly int[] PlansCompleted  = new int[PlanCatalog.Count];
     public readonly int[] Attacks         = new int[(int)AttackTarget.Count];
     public readonly int[] ActionsStarted  = new int[ActionCatalog.Count];
+    public readonly int[] ActionsStartedBySource = new int[ActionCatalog.Count * (int)CommandSource.Count];
     public readonly int[] ActionsCompleted   = new int[ActionCatalog.Count];
     public readonly int[] ActionsFailed      = new int[ActionCatalog.Count];
     public readonly int[] ActionsInterrupted = new int[ActionCatalog.Count];
@@ -68,6 +69,7 @@ public sealed class ColonyStats
     public void RecordForeignHarm() => ForeignHarmTicks++;
     public void RecordWarmthDraw() => WarmthDrawTicks++;
     public void RecordAction(int action) { if ((uint)action < (uint)ActionsStarted.Length) ActionsStarted[action]++; }
+    public void RecordActionSource(int action, CommandSource source) { if ((uint)action < (uint)ActionsStarted.Length) ActionsStartedBySource[action * (int)CommandSource.Count + (int)source]++; }
     public void RecordCompleted(int action) { if ((uint)action < (uint)ActionsCompleted.Length) ActionsCompleted[action]++; }
     public void RecordFailed(int action) { if ((uint)action < (uint)ActionsFailed.Length) ActionsFailed[action]++; }
     public void RecordInterrupted(int action) { if ((uint)action < (uint)ActionsInterrupted.Length) ActionsInterrupted[action]++; }

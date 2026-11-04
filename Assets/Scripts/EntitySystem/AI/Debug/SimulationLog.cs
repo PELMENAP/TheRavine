@@ -28,7 +28,15 @@ public sealed class SimulationLog : IDisposable
     private const int OffWarmth         = OffHarm + 1;
     private const int OffAttackFails    = OffWarmth + 1;
     private const int AttackFailCount   = 4;
-    private const int Stride            = OffAttackFails + AttackFailCount;
+    private const int OffSourceStarts   = OffAttackFails + AttackFailCount;
+
+    private static readonly EntityAction[] SourceActions =
+    {
+        EntityAction.Flee, EntityAction.Attack, EntityAction.ApproachFood, EntityAction.Wander,
+        EntityAction.ReturnNest, EntityAction.Eat, EntityAction.Rest,
+    };
+
+    private static readonly int Stride = OffSourceStarts + SourceActions.Length * SourceCount;
 
     private const int ResidualColumns = 8;
 
@@ -261,11 +269,19 @@ public sealed class SimulationLog : IDisposable
         dst[OffAttackFails + 1] = s.AttackFailTargetLost;
         dst[OffAttackFails + 2] = s.AttackFailLowEnergy;
         dst[OffAttackFails + 3] = s.AttackFailLurkTimeout;
+        for (int k = 0; k < SourceActions.Length; k++)
+        {
+            int action = (int)SourceActions[k];
+            for (int i = 0; i < SourceCount; i++)
+                dst[OffSourceStarts + k * SourceCount + i] = s.ActionsStartedBySource[action * SourceCount + i];
+        }
     }
 
     private void WriteAttackFails(int[] d, int o)
     {
         for (int i = 0; i < AttackFailCount; i++) WriteNext(d[o + OffAttackFails + i]);
+        int sourceColumns = SourceActions.Length * SourceCount;
+        for (int i = 0; i < sourceColumns; i++) WriteNext(d[o + OffSourceStarts + i]);
     }
 
     private void WriteCommon(float time, float season, bool winter, bool night, string scope, int colonyId, int alive,
@@ -352,6 +368,13 @@ public sealed class SimulationLog : IDisposable
         for (int i = 0; i < FlowColumns.Length; i++) sb.Append(',').Append(FlowColumns[i].Name);
         for (int i = 0; i < StockColumns.Length; i++) sb.Append(',').Append(StockColumns[i]);
         sb.Append(",attack_fail_no_target,attack_fail_target_lost,attack_fail_low_energy,attack_fail_lurk_timeout");
+        string[] sources = Enum.GetNames(typeof(CommandSource));
+        for (int k = 0; k < SourceActions.Length; k++)
+        {
+            string name = SnakeCase(SourceActions[k].ToString());
+            for (int i = 0; i < SourceCount; i++)
+                sb.Append(',').Append(name).Append("_started_").Append(SnakeCase(sources[i]));
+        }
         return sb.ToString();
     }
 
