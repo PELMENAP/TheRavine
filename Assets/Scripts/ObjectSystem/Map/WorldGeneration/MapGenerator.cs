@@ -416,14 +416,18 @@ namespace TheRavine.Generator
             int levels,
             int baseLevel)
         {
-            ObjectInfo info = additionalWorldCells.IsEmpty && objectSystem != null ? objectSystem.GetInfo(prefabID) : null;
-            return info != null
-                ? TryAddFromInfo(worldPos, realPos, info, amount, levels, baseLevel) == PlacementResult.Ok
-                : TryAddObjectEx(worldPos, realPos, prefabID, amount, additionalWorldCells, levels, baseLevel) == PlacementResult.Ok;
+            ObjectInfo info = objectSystem != null ? objectSystem.GetInfo(prefabID) : null;
+            if (info != null && additionalWorldCells.IsEmpty)
+                return TryAddFromInfo(worldPos, realPos, info, amount, levels, baseLevel) == PlacementResult.Ok;
+
+            if (info != null)
+                realPos = LevelSpace.Resolve(realPos, info.PlacementKind, baseLevel, Settings.levelHeight);
+            return TryAddObjectEx(worldPos, realPos, prefabID, amount, additionalWorldCells, levels, baseLevel) == PlacementResult.Ok;
         }
 
         public PlacementResult TryAddFromInfo(long worldPos, Vector3 realPos, ObjectInfo info, int amount, int levels, int baseLevel = 0)
         {
+            realPos = LevelSpace.Resolve(realPos, info.PlacementKind, baseLevel, Settings.levelHeight);
             Span<Vector2Int> cells = stackalloc Vector2Int[ObjectInstInfo.MaxSecondary];
             int count = Footprint.Resolve(info, Position2Int.UnpackToVector(worldPos), cells);
             if (count > cells.Length)
@@ -685,7 +689,7 @@ namespace TheRavine.Generator
                 endless[1] = new EndlessLiquids(this, Settings);
             if (Settings.endlessFlag[2])
             {
-                endless[2] = new EndlessObjects(this, objectSystem, Settings.levelHeight);
+                endless[2] = new EndlessObjects(this, objectSystem);
                 if (lodRingCount > 0)
                     endless[3] = new FarObjectRenderer(this, objectSystem, Settings);
             }

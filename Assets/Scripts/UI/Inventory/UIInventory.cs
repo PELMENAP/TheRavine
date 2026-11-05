@@ -170,16 +170,29 @@ namespace TheRavine.Inventory
         public bool HasPlaceableInActiveCell() =>
             TryGetActiveCell(out UIInventorySlot cell) && cell.slot.item.info.isPlaceable;
 
+        private ObjectInfo GetActivePlaceableInfo()
+        {
+            if (!TryGetActiveCell(out UIInventorySlot cell)) return null;
+            IInventoryItemInfo itemInfo = cell.slot.item.info;
+            if (!itemInfo.isPlaceable || itemInfo.prefab == null) return null;
+            return objectSystem.TryGetIdByPrefab(itemInfo.prefab, out int placeId) ? objectSystem.GetInfo(placeId) : null;
+        }
+
         public int ActivePlaceableLevels
         {
             get
             {
-                if (!TryGetActiveCell(out UIInventorySlot cell)) return 1;
-                IInventoryItemInfo itemInfo = cell.slot.item.info;
-                if (!itemInfo.isPlaceable || itemInfo.prefab == null) return 1;
-                if (!objectSystem.TryGetIdByPrefab(itemInfo.prefab, out int placeId)) return 1;
-                ObjectInfo info = objectSystem.GetInfo(placeId);
+                ObjectInfo info = GetActivePlaceableInfo();
                 return info != null ? Mathf.Max(1, info.Levels) : 1;
+            }
+        }
+
+        public byte ActivePlaceableKind
+        {
+            get
+            {
+                ObjectInfo info = GetActivePlaceableInfo();
+                return info != null ? (byte)info.PlacementKind : (byte)0;
             }
         }
 

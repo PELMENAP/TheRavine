@@ -326,8 +326,7 @@ namespace TheRavine.Generator.EndlessGenerators
                 Cursors = cursors,
                 Instances = instances,
                 Total = total,
-                BatchCount = batchCount,
-                LevelHeight = settings.levelHeight
+                BatchCount = batchCount
             }.Run();
 
             int written = total.Value;
@@ -404,7 +403,6 @@ namespace TheRavine.Generator.EndlessGenerators
             [WriteOnly] public NativeArray<float4> Instances;
             public NativeReference<int> Total;
             public int BatchCount;
-            public float LevelHeight;
 
             private int BatchOf(in ObjectInstInfo info, int ring)
             {
@@ -460,7 +458,7 @@ namespace TheRavine.Generator.EndlessGenerators
                         int cursor = Cursors[b];
                         if (cursor >= Offsets[b] + Counts[b]) continue;
 
-                        Instances[cursor] = new float4(info.Position.x, info.Position.y + info.BaseLevel * LevelHeight, info.Position.z, 1f);
+                        Instances[cursor] = new float4(info.Position.x, info.Position.y, info.Position.z, 1f);
                         Cursors[b] = cursor + 1;
                     }
                 }

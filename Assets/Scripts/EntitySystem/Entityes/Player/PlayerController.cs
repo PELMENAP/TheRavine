@@ -64,6 +64,7 @@ namespace TheRavine.EntityControl
         private long aimCell = AimSnap.NoCell;
         private int aimLevel;
         private object aimPlaceable;
+        private PlacementKind aimKind;
         private CameraInputController cameraInput;
 
         private IController currentController;
@@ -441,7 +442,10 @@ namespace TheRavine.EntityControl
 
             aimCell = AimSnap.Resolve(target, aimCell, aimHysteresis);
             Vector3 aimPosition = map.GetRealPosition(aimCell);
-            aimPosition.y += aimLevel * map.Settings.levelHeight;
+            if (aimPlaceable == null && map.TryGetObject(aimCell, aimLevel, out ObjectInstInfo aimObject))
+                aimPosition = aimObject.Position;
+            else
+                aimPosition = LevelSpace.Resolve(aimPosition, aimKind, aimLevel, map.Settings.levelHeight);
             crosshair.position = aimPosition;
 
             crosshair.gameObject.SetActive(true);
@@ -455,10 +459,15 @@ namespace TheRavine.EntityControl
 
             int placeableLevels = 1;
             object placeable = null;
+            aimKind = PlacementKind.Surface2D;
             if (ServiceLocator.Services.TryGet(out IPlacementSource placement))
             {
                 placeable = placement.ActivePlaceable;
-                if (placeable != null) placeableLevels = placement.ActivePlaceableLevels;
+                if (placeable != null)
+                {
+                    placeableLevels = placement.ActivePlaceableLevels;
+                    aimKind = (PlacementKind)placement.ActivePlaceableKind;
+                }
             }
 
             if (!ReferenceEquals(placeable, aimPlaceable))
