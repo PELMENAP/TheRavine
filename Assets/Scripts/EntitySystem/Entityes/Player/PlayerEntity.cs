@@ -129,6 +129,7 @@ namespace TheRavine.EntityControl
         public void SetBehaviourIdle()
         {
             statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<PlayerBehaviourIdle>()).Forget();
+            playerController.Resume();
             playerController.EnableComponents();
         }
 
@@ -142,7 +143,7 @@ namespace TheRavine.EntityControl
         public void SetBehaviourSit()
         {
             statePatternComponent.SetBehaviourAsync(statePatternComponent.GetBehaviour<PlayerBehaviourSit>()).Forget();
-            playerController.SetZeroValues();
+            playerController.Suspend();
             playerController.DisableComponents();
         }
 

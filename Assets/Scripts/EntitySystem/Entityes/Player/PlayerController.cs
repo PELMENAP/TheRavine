@@ -60,6 +60,7 @@ namespace TheRavine.EntityControl
         private bool isAccurance;
         private bool isHolding;
         private bool isFlip;
+        private bool inputSuspended;
         private long aimCell = AimSnap.NoCell;
         private int aimLevel;
         private object aimPlaceable;
@@ -198,8 +199,7 @@ namespace TheRavine.EntityControl
             actions += TryJump;
             component.AddBehaviour(typeof(PlayerBehaviourIdle), new PlayerBehaviourIdle(this, actions, logger));
 
-            actions = Aim;
-            component.AddBehaviour(typeof(PlayerBehaviourSit), new PlayerBehaviourSit(this, actions));
+            component.AddBehaviour(typeof(PlayerBehaviourSit), new PlayerBehaviourSit(this, null));
         }
 
         private void CameraPlaceHandleEvent(AEntity entity, CameraPlace e)
@@ -211,6 +211,32 @@ namespace TheRavine.EntityControl
         {
             playerAnimator.Animate(movementDirection, 0);
             movementDirection = Vector2.zero;
+        }
+
+        public void Suspend()
+        {
+            inputSuspended = true;
+            isHolding = false;
+            jumpCharge.Cancel();
+            ResetAim();
+            SetZeroValues();
+            timeSinceLastSend = 0f;
+            if (IsSpawned && IsOwner) StopMoveServerRpc();
+        }
+
+        public void Resume()
+        {
+            inputSuspended = false;
+        }
+
+        private void ResetAim()
+        {
+            crosshair.gameObject.SetActive(false);
+            isAccurance = false;
+            aimCell = AimSnap.NoCell;
+            aimLevel = 0;
+            aimPlaceable = null;
+            if (cameraInput != null) cameraInput.WheelCaptured = false;
         }
 
         public void EnableComponents()
@@ -261,7 +287,7 @@ namespace TheRavine.EntityControl
 
         public void Move()
         {
-            if (isAimMode || !IsOwner) return;
+            if (isAimMode || !IsOwner || inputSuspended) return;
 
             movementDirection = currentController.GetMove() * (isFlip ? -1 : 1);
             float movementMagnitude = movementDirection.magnitude;
@@ -336,6 +362,16 @@ namespace TheRavine.EntityControl
             UpdateClientPositionClientRpc(playerRigidbody.position, playerRigidbody.linearVelocity);
         }
 
+        [ServerRpc]
+        private void StopMoveServerRpc()
+        {
+            CurrentSpeed = 0f;
+            if (playerRigidbody == null) return;
+
+            playerRigidbody.linearVelocity = new Vector3(0f, playerRigidbody.linearVelocity.y, 0f);
+            UpdateClientPositionClientRpc(playerRigidbody.position, playerRigidbody.linearVelocity);
+        }
+
         [ClientRpc]
         private void UpdateClientPositionClientRpc(Vector3 position, Vector3 velocity)
         {
@@ -346,7 +382,7 @@ namespace TheRavine.EntityControl
         }
         private void OnJumpStarted(InputAction.CallbackContext ctx)
         {
-            if (!IsOwner) return;
+            if (!IsOwner || inputSuspended) return;
             jumpCharge.StartCharge();
         }
 
@@ -378,19 +414,14 @@ namespace TheRavine.EntityControl
             UpdateClientPositionClientRpc(playerRigidbody.position, playerRigidbody.linearVelocity);
         }
 
-        private void OnActionStarted(InputAction.CallbackContext ctx) => isHolding = true;
+        private void OnActionStarted(InputAction.CallbackContext ctx) => isHolding = !inputSuspended;
         private void OnActionCanceled(InputAction.CallbackContext ctx) => isHolding = false;
 
         public void Aim()
         {
-            if (!isHolding)
+            if (!isHolding || inputSuspended)
             {
-                crosshair.gameObject.SetActive(false);
-                isAccurance = false;
-                aimCell = AimSnap.NoCell;
-                aimLevel = 0;
-                aimPlaceable = null;
-                if (cameraInput != null) cameraInput.WheelCaptured = false;
+                ResetAim();
                 return;
             }
 
@@ -460,6 +491,7 @@ namespace TheRavine.EntityControl
 
         private void AimRaise(InputAction.CallbackContext obj)
         {
+            if (inputSuspended) return;
             if (!isAccurance)
             {
                 int currentX = Mathf.RoundToInt(transform.position.x);
@@ -476,6 +508,7 @@ namespace TheRavine.EntityControl
 
         private void AimPlace(InputAction.CallbackContext obj)
         {
+            if (inputSuspended) return;
             if (crosshair.gameObject.activeSelf && canPlace && aimCell != AimSnap.NoCell)
                 Placing().Forget();
         }
