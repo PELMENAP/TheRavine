@@ -20,8 +20,16 @@ MonoBehaviour:
   behaviourType: 2
   nalInfo: {fileID: 0}
   inventoryItemInfo: {fileID: 0}
+  decaySeconds: 0
+  isFood: 0
+  foodKind: 0
   evolutionStep: {fileID: 11400000, guid: 3b41bc4f6c3c5b397bc6bb6f81d8fa8a, type: 2}
   additionalOccupiedCells: []
+  placementKind: 0
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}
-  ObjectName: TEEN_BIRCH
+  levels: 1
+  visibleRings: 0
+  farMode: 0
+  castShadowsFar: 0
+  lodSet: {fileID: 11400000, guid: 8927269e0a0d58d5182f30779f7ea4aa, type: 2}

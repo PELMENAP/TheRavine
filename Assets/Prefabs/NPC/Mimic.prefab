@@ -431,13 +431,7 @@ MonoBehaviour:
   minimumAnchoredParts: 4
   maxLegs: 8
   velocitySourceBehaviour: {fileID: 4054312466666063946}
-  lodMidRing: 1
-  lodFarRing: 2
-  lodRecheckFrames: 15
-  lodMidStride: 2
-  lodFarStride: 4
-  lodMidVertices: 4
-  lodFarVertices: 3
+  meshQuality: 0.3
   legPlacerOrigin: {x: 0, y: 0, z: 0}
 --- !u!23 &7914963399030977405
 MeshRenderer:
