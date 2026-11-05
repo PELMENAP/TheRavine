@@ -61,6 +61,9 @@ namespace TheRavine.EntityControl
         private bool isHolding;
         private bool isFlip;
         private long aimCell = AimSnap.NoCell;
+        private int aimLevel;
+        private object aimPlaceable;
+        private CameraInputController cameraInput;
 
         private IController currentController;
         private MapGenerator map;
@@ -385,10 +388,14 @@ namespace TheRavine.EntityControl
                 crosshair.gameObject.SetActive(false);
                 isAccurance = false;
                 aimCell = AimSnap.NoCell;
+                aimLevel = 0;
+                aimPlaceable = null;
+                if (cameraInput != null) cameraInput.WheelCaptured = false;
                 return;
             }
 
             if (map == null) return;
+            UpdateAimLevel();
 
             Vector2 aim = currentController.GetAim();
             Vector2 aimNorm = aim.normalized;
@@ -402,10 +409,36 @@ namespace TheRavine.EntityControl
                 : new float2(aimNorm.x * aimComponent.CrosshairDistance + self.x, aimNorm.y * aimComponent.CrosshairDistance + self.z);
 
             aimCell = AimSnap.Resolve(target, aimCell, aimHysteresis);
-            crosshair.position = map.GetRealPosition(aimCell);
+            Vector3 aimPosition = map.GetRealPosition(aimCell);
+            aimPosition.y += aimLevel * map.Settings.levelHeight;
+            crosshair.position = aimPosition;
 
             crosshair.gameObject.SetActive(true);
             isAccurance = true;
+        }
+
+        private void UpdateAimLevel()
+        {
+            if (cameraInput == null && !ServiceLocator.Services.TryGet(out cameraInput)) return;
+            cameraInput.WheelCaptured = true;
+
+            int placeableLevels = 1;
+            object placeable = null;
+            if (ServiceLocator.Services.TryGet(out IPlacementSource placement))
+            {
+                placeable = placement.ActivePlaceable;
+                if (placeable != null) placeableLevels = placement.ActivePlaceableLevels;
+            }
+
+            if (!ReferenceEquals(placeable, aimPlaceable))
+            {
+                aimPlaceable = placeable;
+                aimLevel = 0;
+                cameraInput.ConsumeWheelStep();
+            }
+
+            int maxAimLevel = math.max(0, ObjectInfo.MaxLevels - placeableLevels);
+            aimLevel = math.clamp(aimLevel + cameraInput.ConsumeWheelStep(), 0, maxAimLevel);
         }
 
         private void SetAimAddition(float magnitude, Vector2 aimNorm)
@@ -437,7 +470,7 @@ namespace TheRavine.EntityControl
             }
             else if (aimCell != AimSnap.NoCell)
             {
-                entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = aimCell });
+                entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = aimCell, Level = (byte)aimLevel });
             }
         }
 
@@ -452,19 +485,20 @@ namespace TheRavine.EntityControl
             canPlace = false;
             
             long position = aimCell;
+            byte level = (byte)aimLevel;
             if (ServiceLocator.Services.TryGet(out IPlacementSource placement) && placement.HasPlaceableInActiveCell())
-                entityEventBus.Invoke(playerEntity, new PlaceEvent { Position = position });
+                entityEventBus.Invoke(playerEntity, new PlaceEvent { Position = position, Level = level });
             else
-                entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = position });
+                entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = position, Level = level });
 
             await UniTask.Delay(placeObjectDelay);
             canPlace = true;
         }
 
-        public bool RequestPlace(long position, int objectId)
+        public bool RequestPlace(long position, int objectId, byte level = 0)
         {
             if (!IsSpawned || !IsOwner) return false;
-            PlaceRequestServerRpc(position, objectId);
+            PlaceRequestServerRpc(position, objectId, level);
             return true;
         }
 
@@ -504,28 +538,28 @@ namespace TheRavine.EntityControl
             bus.Emit(in utterance);
         }
 
-        public bool RequestPickUp(long position)
+        public bool RequestPickUp(long position, byte level = 0)
         {
             if (!IsSpawned || !IsOwner) return false;
-            PickUpRequestServerRpc(position);
+            PickUpRequestServerRpc(position, level);
             return true;
         }
 
         [ServerRpc]
-        private void PlaceRequestServerRpc(long position, int objectId)
+        private void PlaceRequestServerRpc(long position, int objectId, byte level)
         {
             WorldEditResult result = WorldEditResult.Refused;
             PlacementResult placement = PlacementResult.Ok;
             if (aimComponent != null && TryResolveEditor(position, aimComponent.CrosshairDistance, out MapGenerator generator, out ObjectSystem objects))
             {
-                result = WorldEdits.TryPlace(generator, objects, position, objectId, out placement);
-                if (result != WorldEditResult.Ok) Refuse(position, $"place {objectId}: {result}/{placement}");
+                result = WorldEdits.TryPlace(generator, objects, position, level, objectId, out placement);
+                if (result != WorldEditResult.Ok) Refuse(position, $"place {objectId}@{level}: {result}/{placement}");
             }
-            PlaceResultClientRpc(position, objectId, (byte)result, (byte)placement, OwnerTarget());
+            PlaceResultClientRpc(position, level, objectId, (byte)result, (byte)placement, OwnerTarget());
         }
 
         [ServerRpc]
-        private void PickUpRequestServerRpc(long position)
+        private void PickUpRequestServerRpc(long position, byte level)
         {
             bool ok = false;
             int prefabId = ObjectInstInfo.PlaceholderId, amount = 0;
@@ -533,31 +567,31 @@ namespace TheRavine.EntityControl
                     math.max(aimComponent.PickDistance * math.SQRT2, aimComponent.CrosshairDistance),
                     out MapGenerator generator, out ObjectSystem objects))
             {
-                WorldEditResult result = WorldEdits.TryPickUp(generator, objects, position, out prefabId, out amount);
+                WorldEditResult result = WorldEdits.TryPickUp(generator, objects, position, level, out prefabId, out amount);
                 ok = result == WorldEditResult.Ok;
                 if (!ok) Refuse(position, $"pick up: {result}");
             }
-            PickUpResultClientRpc(position, prefabId, amount, ok, OwnerTarget());
+            PickUpResultClientRpc(position, level, prefabId, amount, ok, OwnerTarget());
         }
 
         [ClientRpc]
-        private void PlaceResultClientRpc(long position, int objectId, byte result, byte placement, ClientRpcParams rpcParams = default)
+        private void PlaceResultClientRpc(long position, byte level, int objectId, byte result, byte placement, ClientRpcParams rpcParams = default)
         {
             bool ok = result == (byte)WorldEditResult.Ok;
             if (ok && !IsServer && ServiceLocator.Services.TryGet(out MapGenerator generator)
                 && ServiceLocator.Services.TryGet(out ObjectSystem objects))
-                WorldEdits.MirrorPlace(generator, objects, position, objectId);
+                WorldEdits.MirrorPlace(generator, objects, position, level, objectId);
 
-            entityEventBus?.Invoke(playerEntity, new PlaceResultEvent { Position = position, Ok = ok, Edit = result, Placement = placement });
+            entityEventBus?.Invoke(playerEntity, new PlaceResultEvent { Position = position, Level = level, Ok = ok, Edit = result, Placement = placement });
         }
 
         [ClientRpc]
-        private void PickUpResultClientRpc(long position, int prefabId, int amount, bool ok, ClientRpcParams rpcParams = default)
+        private void PickUpResultClientRpc(long position, byte level, int prefabId, int amount, bool ok, ClientRpcParams rpcParams = default)
         {
             if (ok && !IsServer && ServiceLocator.Services.TryGet(out MapGenerator generator))
-                WorldEdits.MirrorPickUp(generator, position, prefabId);
+                WorldEdits.MirrorPickUp(generator, position, level, prefabId);
 
-            entityEventBus?.Invoke(playerEntity, new PickUpResultEvent { Position = position, PrefabId = prefabId, Amount = amount, Ok = ok });
+            entityEventBus?.Invoke(playerEntity, new PickUpResultEvent { Position = position, Level = level, PrefabId = prefabId, Amount = amount, Ok = ok });
         }
 
         private bool TryResolveEditor(long position, float reach, out MapGenerator generator, out ObjectSystem objects)
@@ -622,6 +656,7 @@ namespace TheRavine.EntityControl
             Jump.action.started -= OnJumpStarted;
             Jump.action.canceled -= OnJumpCanceled;
 
+            if (cameraInput != null) cameraInput.WheelCaptured = false;
             settingsSubscriptions.Dispose();
             currentController?.MeetEnds();
             unsubscribe?.Dispose();
