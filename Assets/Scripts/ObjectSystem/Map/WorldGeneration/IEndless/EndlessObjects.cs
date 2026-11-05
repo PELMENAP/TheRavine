@@ -28,13 +28,11 @@ namespace TheRavine.Generator.EndlessGenerators
         private readonly LongDictionary<ChunkView> views = new(ViewCapacity * 2);
         private readonly Stack<ChunkView> freeViews = new(ViewCapacity);
         private readonly long[] staleKeys = new long[ViewCapacity * 2];
-        private readonly float levelHeight;
         private int stamp;
 
-        public EndlessObjects(MapGenerator generator, ObjectSystem objectSystem, float levelHeight)
+        public EndlessObjects(MapGenerator generator, ObjectSystem objectSystem)
         {
             this.generator = generator;
-            this.levelHeight = levelHeight;
             registry = objectSystem.infoRegistry;
 
             int count = registry.Count;
@@ -108,7 +106,6 @@ namespace TheRavine.Generator.EndlessGenerators
 
                 int cell = (info.PrimaryIdx << LevelShift) | info.BaseLevel;
                 Vector3 position = info.Position;
-                position.y += info.BaseLevel * levelHeight;
 
                 PooledObject current = view.ByCell[cell];
                 if (current != null)
