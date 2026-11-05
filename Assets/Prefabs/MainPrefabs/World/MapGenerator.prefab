@@ -410,6 +410,7 @@ MonoBehaviour:
     maxLodRing: 4
     lodSteps: 04000000080000001000000020000000
     skirtDepth: 1.5
+    waterCells: 128
     retainRadius: 3
     evictionHysteresis: 2
     evictionIdleFrames: 120
@@ -431,18 +432,10 @@ MonoBehaviour:
   viewerOffset: {x: 0, y: 0, z: 10}
   grassSystem: {fileID: 3471819257872331844}
   biomeAlbedo: {fileID: 18700000, guid: 9ce74b6359c921548848f1f820a24a2a, type: 2}
+  tickRules: {fileID: 0}
   nalApplyBudgetMs: 1
-  nalCatchUpMaxSeconds: 600
-  nalCatchUpMaxSteps: 8
-  nalGrowStageSeconds: 300
-  nalDecayCheckSeconds: 30
-  nalFarPeriodScale: 8
-  nalFarBudgetShare: 0.25
-  nalRegionSyncIntervalFrames: 30
-  nalStoreCapacity: 8192
-  nalMaxDecisionsPerTick: 256
-  nalSecondsPerDelayUnit: 1
-  waterOffset: {x: 0, y: 4, z: 0}
+  chunkRequestCapacity: 32
+  waterOffset: {x: 0, y: 5, z: 0}
 --- !u!114 &6195408856844743971
 MonoBehaviour:
   m_ObjectHideFlags: 0
