@@ -9,15 +9,17 @@ namespace TheRavine.Generator.EndlessGenerators
     public sealed class EndlessObjects : IEndless
     {
         private const int ViewCapacity = MapGenerator.WindowSide * MapGenerator.WindowSide;
+        private const int LevelShift = 3;
+        private const int SlotCount = ChunkData.TotalCells << LevelShift;
 
         private sealed class ChunkView
         {
             public long Key;
             public int Version;
             public int CellCount;
-            public readonly PooledObject[] ByCell = new PooledObject[ChunkData.TotalCells];
-            public readonly int[] Stamp = new int[ChunkData.TotalCells];
-            public readonly int[] Cells = new int[ChunkData.TotalCells];
+            public readonly PooledObject[] ByCell = new PooledObject[SlotCount];
+            public readonly int[] Stamp = new int[SlotCount];
+            public readonly int[] Cells = new int[SlotCount];
         }
 
         private readonly MapGenerator generator;
@@ -26,11 +28,13 @@ namespace TheRavine.Generator.EndlessGenerators
         private readonly LongDictionary<ChunkView> views = new(ViewCapacity * 2);
         private readonly Stack<ChunkView> freeViews = new(ViewCapacity);
         private readonly long[] staleKeys = new long[ViewCapacity * 2];
+        private readonly float levelHeight;
         private int stamp;
 
-        public EndlessObjects(MapGenerator generator, ObjectSystem objectSystem)
+        public EndlessObjects(MapGenerator generator, ObjectSystem objectSystem, float levelHeight)
         {
             this.generator = generator;
+            this.levelHeight = levelHeight;
             registry = objectSystem.infoRegistry;
 
             int count = registry.Count;
@@ -100,15 +104,18 @@ namespace TheRavine.Generator.EndlessGenerators
                 if (dense < 0) continue;
 
                 PoolManager.Pool pool = poolByDense[dense];
-                int cell = info.PrimaryIdx;
-                if (pool == null || (uint)cell >= ChunkData.TotalCells) continue;
+                if (pool == null || (uint)info.PrimaryIdx >= ChunkData.TotalCells || info.BaseLevel >= ObjectInfo.MaxLevels) continue;
+
+                int cell = (info.PrimaryIdx << LevelShift) | info.BaseLevel;
+                Vector3 position = info.Position;
+                position.y += info.BaseLevel * levelHeight;
 
                 PooledObject current = view.ByCell[cell];
                 if (current != null)
                 {
                     if (current.Owner == pool)
                     {
-                        if (current.Position != info.Position) pool.Move(current, info.Position);
+                        if (current.Position != position) pool.Move(current, position);
                         view.Stamp[cell] = s;
                         continue;
                     }
@@ -119,7 +126,7 @@ namespace TheRavine.Generator.EndlessGenerators
                     view.Cells[view.CellCount++] = cell;
                 }
 
-                view.ByCell[cell] = pool.Get(info.Position);
+                view.ByCell[cell] = pool.Get(position);
                 view.Stamp[cell] = s;
             }
 

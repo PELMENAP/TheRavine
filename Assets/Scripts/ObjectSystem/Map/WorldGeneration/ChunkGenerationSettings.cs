@@ -54,6 +54,9 @@ namespace TheRavine.Generator
         [Min(0f)] public float horizonCameraBack = 35f;
         [Min(0f)] public float horizonPeakHeight = 100f;
 
+        [Header("Levels")]
+        [Min(0f)] public float levelHeight = 2f;
+
         [Header("Far Objects")]
         [Min(1)] public int farMaxInstances = 65536;
         [Min(1)] public int farRebuildIntervalFrames = 30;

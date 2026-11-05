@@ -15,10 +15,30 @@ namespace TheRavine.EntityControl
         private readonly CancellationTokenSource _cts = new();
         private float _scale;
         private bool _flipped;
+        private bool _wheelCaptured;
+        private int _wheelStep;
         private float _lastFlipTime = float.NegativeInfinity;
 
         public float Scale => _scale;
         public bool Flipped => _flipped;
+
+        public bool WheelCaptured
+        {
+            get => _wheelCaptured;
+            set
+            {
+                if (_wheelCaptured == value) return;
+                _wheelCaptured = value;
+                _wheelStep = 0;
+            }
+        }
+
+        public int ConsumeWheelStep()
+        {
+            int step = _wheelStep;
+            _wheelStep = 0;
+            return step;
+        }
 
         public CameraInputController(InputAction scroll, InputAction flip, EventBus bus)
         {
@@ -47,7 +67,11 @@ namespace TheRavine.EntityControl
             if (_scroll == null || _flip == null) return;
 
             float wheel = _scroll.ReadValue<float>();
-            if (wheel != 0f)
+            if (wheel != 0f && _wheelCaptured)
+            {
+                _wheelStep += (int)math.sign(wheel);
+            }
+            else if (wheel != 0f)
             {
                 var rules = SimulationRules.Active;
                 _scale = math.clamp(_scale + math.sign(wheel) * rules.CameraScaleStep, rules.CameraScaleMin, rules.CameraScaleMax);

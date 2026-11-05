@@ -394,8 +394,9 @@ namespace TheRavine.Generator
             int prefabID,
             int amount,
             ReadOnlySpan<Vector2Int> additionalWorldCells = default,
-            int levels = 1) =>
-            TryAddObjectEx(worldPos, realPos, prefabID, amount, additionalWorldCells, levels) == PlacementResult.Ok;
+            int levels = 1,
+            int baseLevel = 0) =>
+            TryAddObjectEx(worldPos, realPos, prefabID, amount, additionalWorldCells, levels, baseLevel) == PlacementResult.Ok;
 
         bool IWorldCommandTarget.TryAddObject(
             long worldPos,
@@ -403,15 +404,25 @@ namespace TheRavine.Generator
             int prefabID,
             int amount,
             ReadOnlySpan<Vector2Int> additionalWorldCells,
-            int levels)
+            int levels) =>
+            ((IWorldCommandTarget)this).TryAddObject(worldPos, realPos, prefabID, amount, additionalWorldCells, levels, 0);
+
+        bool IWorldCommandTarget.TryAddObject(
+            long worldPos,
+            Vector3 realPos,
+            int prefabID,
+            int amount,
+            ReadOnlySpan<Vector2Int> additionalWorldCells,
+            int levels,
+            int baseLevel)
         {
             ObjectInfo info = additionalWorldCells.IsEmpty && objectSystem != null ? objectSystem.GetInfo(prefabID) : null;
             return info != null
-                ? TryAddFromInfo(worldPos, realPos, info, amount, levels) == PlacementResult.Ok
-                : TryAddObjectEx(worldPos, realPos, prefabID, amount, additionalWorldCells, levels) == PlacementResult.Ok;
+                ? TryAddFromInfo(worldPos, realPos, info, amount, levels, baseLevel) == PlacementResult.Ok
+                : TryAddObjectEx(worldPos, realPos, prefabID, amount, additionalWorldCells, levels, baseLevel) == PlacementResult.Ok;
         }
 
-        public PlacementResult TryAddFromInfo(long worldPos, Vector3 realPos, ObjectInfo info, int amount, int levels)
+        public PlacementResult TryAddFromInfo(long worldPos, Vector3 realPos, ObjectInfo info, int amount, int levels, int baseLevel = 0)
         {
             Span<Vector2Int> cells = stackalloc Vector2Int[ObjectInstInfo.MaxSecondary];
             int count = Footprint.Resolve(info, Position2Int.UnpackToVector(worldPos), cells);
@@ -421,7 +432,7 @@ namespace TheRavine.Generator
                 return PlacementResult.TooManyCells;
             }
 
-            return TryAddObjectEx(worldPos, realPos, info.Id, amount, cells[..count], levels);
+            return TryAddObjectEx(worldPos, realPos, info.Id, amount, cells[..count], levels, baseLevel);
         }
 
         public PlacementResult TryAddObjectEx(
@@ -430,7 +441,8 @@ namespace TheRavine.Generator
             int prefabID,
             int amount,
             ReadOnlySpan<Vector2Int> additionalWorldCells = default,
-            int levels = 1)
+            int levels = 1,
+            int baseLevel = 0)
         {
             long chunk = WorldToChunk(worldPos);
             ChunkData cd = ChunkForCell(chunk);
@@ -466,7 +478,7 @@ namespace TheRavine.Generator
             }
 
             var info = new ObjectInstInfo(realPos, prefabID, amount);
-            if (!cd.TryAddObject(primaryIdx, in info, additionalLocalIdxs[..unique], levels, out PlacementResult result))
+            if (!cd.TryAddObject(primaryIdx, in info, additionalLocalIdxs[..unique], levels, baseLevel, out PlacementResult result))
                 return result;
 
             MarkChunkDirty(chunk);
@@ -495,13 +507,26 @@ namespace TheRavine.Generator
             return cd.TryGetObject(WorldToLocalIdx(worldPos), out info);
         }
 
-        public bool RemoveObject(long worldPos)
+        public bool TryGetObject(long worldPos, int level, out ObjectInstInfo info)
+        {
+            if (!mapData.TryGetValue(WorldToChunk(worldPos), out ChunkData cd))
+            {
+                info = default;
+                return false;
+            }
+
+            return cd.TryGetObject(WorldToLocalIdx(worldPos), level, out info);
+        }
+
+        public bool RemoveObject(long worldPos) => RemoveObject(worldPos, 0);
+
+        public bool RemoveObject(long worldPos, int level)
         {
             long chunk = WorldToChunk(worldPos);
             if (!mapData.TryGetValue(chunk, out ChunkData cd))
                 return false;
 
-            if (!cd.RemoveObject(WorldToLocalIdx(worldPos)))
+            if (!cd.RemoveObject(WorldToLocalIdx(worldPos), level))
                 return false;
 
             MarkChunkDirty(chunk);
@@ -660,7 +685,7 @@ namespace TheRavine.Generator
                 endless[1] = new EndlessLiquids(this, Settings);
             if (Settings.endlessFlag[2])
             {
-                endless[2] = new EndlessObjects(this, objectSystem);
+                endless[2] = new EndlessObjects(this, objectSystem, Settings.levelHeight);
                 if (lodRingCount > 0)
                     endless[3] = new FarObjectRenderer(this, objectSystem, Settings);
             }
@@ -967,6 +992,7 @@ namespace TheRavine.Generator
         public readonly NativeArray<int>   BiomeMap;
         public NativeArray<int>            Occupancy;
         public NativeArray<byte>           LevelMask;
+        public NativeParallelHashMap<int, int> UpperHandles;
         public NativeList<ObjectInstInfo>  Objects;
         private Dictionary<int, BuildingVolume> buildings;
         public NativeArray<byte>           MoveCost;
@@ -1003,6 +1029,7 @@ namespace TheRavine.Generator
             BiomeMap       = new NativeArray<int>   (TotalCells, Allocator.Persistent);
             Occupancy      = new NativeArray<int>   (TotalCells, Allocator.Persistent);
             LevelMask      = new NativeArray<byte>  (TotalCells, Allocator.Persistent);
+            UpperHandles   = new NativeParallelHashMap<int, int>(16, Allocator.Persistent);
             MoveCost       = new NativeArray<byte>  (TotalCells, Allocator.Persistent);
             Climate        = new NativeArray<float2>(TotalCells, Allocator.Persistent);
             RiverBlend     = new NativeArray<float> (TotalCells, Allocator.Persistent);
@@ -1017,14 +1044,22 @@ namespace TheRavine.Generator
             => TryAddObject(primaryIdx, in info, additionalIdxs, levels, out _);
 
         public bool TryAddObject(int primaryIdx, in ObjectInstInfo info, ReadOnlySpan<int> additionalIdxs, int levels, out PlacementResult result)
+            => TryAddObject(primaryIdx, in info, additionalIdxs, levels, 0, out result);
+
+        public bool TryAddObject(int primaryIdx, in ObjectInstInfo info, ReadOnlySpan<int> additionalIdxs, int levels, int baseLevel)
+            => TryAddObject(primaryIdx, in info, additionalIdxs, levels, baseLevel, out _);
+
+        public bool TryAddObject(int primaryIdx, in ObjectInstInfo info, ReadOnlySpan<int> additionalIdxs, int levels, int baseLevel, out PlacementResult result)
         {
-            result = Validate(primaryIdx, additionalIdxs, levels);
+            result = Validate(primaryIdx, additionalIdxs, levels, baseLevel);
             if (result != PlacementResult.Ok) return false;
 
             int secCount = additionalIdxs.Length;
             ObjectInstInfo stored = info;
             stored.PrimaryIdx     = primaryIdx;
             stored.SecondaryCount = secCount;
+            stored.BaseLevel      = (byte)baseLevel;
+            stored.Levels         = (byte)levels;
 
             unsafe
             {
@@ -1034,12 +1069,17 @@ namespace TheRavine.Generator
 
             int handle = Objects.Length + 1;
             Objects.Add(stored);
-            Occupancy[primaryIdx] = handle;
 
-            for (int i = 0; i < secCount; i++)
-                Occupancy[additionalIdxs[i]] = -handle;
+            if (baseLevel == 0)
+            {
+                Occupancy[primaryIdx] = handle;
 
-            if (levels > 1) AddVolume(primaryIdx, additionalIdxs, levels);
+                for (int i = 0; i < secCount; i++)
+                    Occupancy[additionalIdxs[i]] = -handle;
+            }
+
+            if (baseLevel + levels > 1) RegisterUpper(primaryIdx, additionalIdxs, baseLevel, levels, handle);
+            if (baseLevel == 0 && levels > 1) AddVolume(primaryIdx, additionalIdxs, levels);
 
             IsDirty = true;
             Version++;
@@ -1047,10 +1087,17 @@ namespace TheRavine.Generator
             return true;
         }
 
-        private PlacementResult Validate(int primaryIdx, ReadOnlySpan<int> additionalIdxs, int levels)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte SpanMask(int baseLevel, int levels) => (byte)(((1 << levels) - 1) << baseLevel);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int UpperKey(int cellIdx, int level) => (cellIdx << 3) | level;
+
+        private PlacementResult Validate(int primaryIdx, ReadOnlySpan<int> additionalIdxs, int levels, int baseLevel)
         {
+            bool ground = baseLevel == 0;
             if ((uint)primaryIdx >= TotalCells) return PlacementResult.OutOfBounds;
-            if (Occupancy[primaryIdx] != 0)    return PlacementResult.Occupied;
+            if (ground && Occupancy[primaryIdx] != 0) return PlacementResult.Occupied;
 
             int secCount = additionalIdxs.Length;
             if (secCount > ObjectInstInfo.MaxSecondary) return PlacementResult.TooManyCells;
@@ -1059,26 +1106,67 @@ namespace TheRavine.Generator
             {
                 int ac = additionalIdxs[i];
                 if ((uint)ac >= TotalCells) return PlacementResult.OutOfBounds;
-                if (Occupancy[ac] != 0 || ac == primaryIdx) return PlacementResult.Occupied;
+                if (ac == primaryIdx || (ground && Occupancy[ac] != 0)) return PlacementResult.Occupied;
                 for (int j = 0; j < i; j++)
                     if (additionalIdxs[j] == ac) return PlacementResult.Occupied;
             }
 
-            if (levels < 1 || levels > ObjectInfo.MaxLevels) return PlacementResult.InvalidLevels;
-            if (!UpperLevelsFree(primaryIdx, additionalIdxs, levels)) return PlacementResult.UpperLevelOccupied;
+            if (levels < 1 || baseLevel < 0 || baseLevel + levels > ObjectInfo.MaxLevels) return PlacementResult.InvalidLevels;
+
+            byte upper = (byte)(SpanMask(baseLevel, levels) & 0xFE);
+            if (upper != 0 && !UpperLevelsFree(primaryIdx, additionalIdxs, upper)) return PlacementResult.UpperLevelOccupied;
             return PlacementResult.Ok;
         }
 
-        private bool UpperLevelsFree(int primaryIdx, ReadOnlySpan<int> additionalIdxs, int levels)
+        private bool UpperLevelsFree(int primaryIdx, ReadOnlySpan<int> additionalIdxs, byte upperMask)
         {
-            for (int l = 1; l < levels; l++)
+            if ((LevelMask[primaryIdx] & upperMask) != 0) return false;
+            for (int i = 0; i < additionalIdxs.Length; i++)
+                if ((LevelMask[additionalIdxs[i]] & upperMask) != 0) return false;
+            return true;
+        }
+
+        private void RegisterUpper(int primaryIdx, ReadOnlySpan<int> additionalIdxs, int baseLevel, int levels, int handle)
+        {
+            int first = baseLevel > 0 ? baseLevel : 1;
+            for (int l = first; l < baseLevel + levels; l++)
             {
                 byte bit = (byte)(1 << l);
-                if ((LevelMask[primaryIdx] & bit) != 0) return false;
+                UpperHandles[UpperKey(primaryIdx, l)] = handle;
+                SetLevelBit(primaryIdx, bit);
                 for (int i = 0; i < additionalIdxs.Length; i++)
-                    if ((LevelMask[additionalIdxs[i]] & bit) != 0) return false;
+                {
+                    UpperHandles[UpperKey(additionalIdxs[i], l)] = handle;
+                    SetLevelBit(additionalIdxs[i], bit);
+                }
             }
-            return true;
+        }
+
+        private unsafe void UnregisterUpper(in ObjectInstInfo obj)
+        {
+            int first = obj.BaseLevel > 0 ? obj.BaseLevel : 1;
+            for (int l = first; l < obj.BaseLevel + obj.Levels; l++)
+            {
+                byte mask = (byte)~(1 << l);
+                UpperHandles.Remove(UpperKey(obj.PrimaryIdx, l));
+                LevelMask[obj.PrimaryIdx] &= mask;
+                for (int i = 0; i < obj.SecondaryCount; i++)
+                {
+                    UpperHandles.Remove(UpperKey(obj.SecondaryIdxs[i], l));
+                    LevelMask[obj.SecondaryIdxs[i]] &= mask;
+                }
+            }
+        }
+
+        private unsafe void RemapUpper(in ObjectInstInfo obj, int handle)
+        {
+            int first = obj.BaseLevel > 0 ? obj.BaseLevel : 1;
+            for (int l = first; l < obj.BaseLevel + obj.Levels; l++)
+            {
+                UpperHandles[UpperKey(obj.PrimaryIdx, l)] = handle;
+                for (int i = 0; i < obj.SecondaryCount; i++)
+                    UpperHandles[UpperKey(obj.SecondaryIdxs[i], l)] = handle;
+            }
         }
 
         private void AddVolume(int anchor, ReadOnlySpan<int> additionalIdxs, int levels)
@@ -1127,7 +1215,21 @@ namespace TheRavine.Generator
         {
             if ((uint)cellIdx >= TotalCells || (uint)level >= (uint)ObjectInfo.MaxLevels) return false;
             if (level == 0) return Occupancy[cellIdx] != 0;
-            return (LevelMask[cellIdx] & (1 << level)) != 0;
+            return (LevelMask[cellIdx] & (1 << level)) != 0 || UpperHandles.ContainsKey(UpperKey(cellIdx, level));
+        }
+
+        public bool TryGetObject(int cellIdx, int level, out ObjectInstInfo info)
+        {
+            info = default;
+            if (level == 0) return TryGetObject(cellIdx, out info);
+            if ((uint)cellIdx >= TotalCells || (uint)level >= (uint)ObjectInfo.MaxLevels) return false;
+            if (!UpperHandles.TryGetValue(UpperKey(cellIdx, level), out int handle)) return false;
+
+            int objIdx = handle - 1;
+            if ((uint)objIdx >= (uint)Objects.Length) return false;
+
+            info = Objects[objIdx];
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1145,28 +1247,42 @@ namespace TheRavine.Generator
             info = Objects[objIdx];
             return true;
         }
-        public bool RemoveObject(int cellIdx)
+        public bool RemoveObject(int cellIdx) => RemoveObject(cellIdx, 0);
+
+        public bool RemoveObject(int cellIdx, int level)
         {
-            if ((uint)cellIdx >= TotalCells) return false;
+            if ((uint)cellIdx >= TotalCells || (uint)level >= (uint)ObjectInfo.MaxLevels) return false;
 
-            int h = Occupancy[cellIdx];
-            if (h == 0) return false;
+            int primaryHandle;
+            if (level == 0)
+            {
+                int h = Occupancy[cellIdx];
+                if (h == 0) return false;
+                primaryHandle = h > 0 ? h : -h;
+            }
+            else if (!UpperHandles.TryGetValue(UpperKey(cellIdx, level), out primaryHandle))
+            {
+                return false;
+            }
 
-            int primaryHandle = h > 0 ? h : -h;
-            int objIdx        = primaryHandle - 1;
+            int objIdx = primaryHandle - 1;
             if ((uint)objIdx >= (uint)Objects.Length) return false;
 
             ObjectInstInfo obj = Objects[objIdx];
 
-            if (buildings != null && buildings.Remove(obj.PrimaryIdx, out BuildingVolume volume))
+            if (obj.BaseLevel == 0 && buildings != null && buildings.Remove(obj.PrimaryIdx, out BuildingVolume volume))
                 ClearVolume(volume);
 
-            Occupancy[obj.PrimaryIdx] = 0;
-            unsafe
+            if (obj.BaseLevel == 0)
             {
-                for (int i = 0; i < obj.SecondaryCount; i++)
-                    Occupancy[obj.SecondaryIdxs[i]] = 0;
+                Occupancy[obj.PrimaryIdx] = 0;
+                unsafe
+                {
+                    for (int i = 0; i < obj.SecondaryCount; i++)
+                        Occupancy[obj.SecondaryIdxs[i]] = 0;
+                }
             }
+            UnregisterUpper(in obj);
 
             int last = Objects.Length - 1;
             if (objIdx != last)
@@ -1174,12 +1290,16 @@ namespace TheRavine.Generator
                 ObjectInstInfo tail = Objects[last];
                 int newH = objIdx + 1;
 
-                Occupancy[tail.PrimaryIdx] = newH;
-                unsafe
+                if (tail.BaseLevel == 0)
                 {
-                    for (int i = 0; i < tail.SecondaryCount; i++)
-                        Occupancy[tail.SecondaryIdxs[i]] = -newH;
+                    Occupancy[tail.PrimaryIdx] = newH;
+                    unsafe
+                    {
+                        for (int i = 0; i < tail.SecondaryCount; i++)
+                            Occupancy[tail.SecondaryIdxs[i]] = -newH;
+                    }
                 }
+                RemapUpper(in tail, newH);
 
                 Objects[objIdx] = tail;
             }
@@ -1209,6 +1329,7 @@ namespace TheRavine.Generator
             }
 
             Objects.Clear();
+            if (UpperHandles.IsCreated) UpperHandles.Clear();
             buildings?.Clear();
             Version++;
             IsDirty = true;
@@ -1249,6 +1370,7 @@ namespace TheRavine.Generator
             if (BiomeMap.IsCreated)       BiomeMap.Dispose();
             if (Occupancy.IsCreated)      Occupancy.Dispose();
             if (LevelMask.IsCreated)      LevelMask.Dispose();
+            if (UpperHandles.IsCreated)   UpperHandles.Dispose();
             if (MoveCost.IsCreated)       MoveCost.Dispose();
             if (Climate.IsCreated)        Climate.Dispose();
             if (RiverBlend.IsCreated)     RiverBlend.Dispose();
@@ -1286,6 +1408,8 @@ namespace TheRavine.Generator
         public int     PrimaryIdx;
         public int     SecondaryCount;
         public int     SpawnConfig;
+        public byte    BaseLevel;
+        public byte    Levels;
         public fixed int SecondaryIdxs[MaxSecondary];
 
         public ObjectInstInfo(Vector3 pos, int prefab, int amount)
@@ -1296,6 +1420,8 @@ namespace TheRavine.Generator
             PrimaryIdx     = -1;
             SecondaryCount = 0;
             SpawnConfig    = NoSpawnConfig;
+            BaseLevel      = 0;
+            Levels         = 1;
         }
     }
 }

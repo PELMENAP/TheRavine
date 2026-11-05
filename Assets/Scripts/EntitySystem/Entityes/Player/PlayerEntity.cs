@@ -123,8 +123,8 @@ namespace TheRavine.EntityControl
         private void OnDied()
             => RavineLog.Warning($"Player {clientId} died: {mortality.Cause}");
 
-        public bool RequestPlace(long position, int objectId) => playerController.RequestPlace(position, objectId);
-        public bool RequestPickUp(long position) => playerController.RequestPickUp(position);
+        public bool RequestPlace(long position, int objectId, byte level = 0) => playerController.RequestPlace(position, objectId, level);
+        public bool RequestPickUp(long position, byte level = 0) => playerController.RequestPickUp(position, level);
 
         public void SetBehaviourIdle()
         {

@@ -11,12 +11,12 @@ namespace TheRavine.Generator
     public sealed class ChunkStore
     {
         private const int Magic  = 0x4B435652;
-        private const int Format = 1;
+        private const int Format = 2;
+        private const int MinFormat = 1;
 
         private string _directory;
         private readonly int _seed;
         private readonly List<ObjectInstInfo> _infos = new(64);
-        private readonly List<int> _levels = new(64);
         private byte _detailLevel;
 
         private ChunkStore(string directory, int seed)
@@ -82,7 +82,7 @@ namespace TheRavine.Generator
 
             int failed = 0;
             for (int i = 0; i < _infos.Count; i++)
-                if (!ApplyObject(chunk, _infos[i], _levels[i])) failed++;
+                if (!ApplyObject(chunk, _infos[i])) failed++;
 
             chunk.CommitRestore(_detailLevel);
 
@@ -103,26 +103,28 @@ namespace TheRavine.Generator
             writer.Write(obj.Amount);
             writer.Write(obj.PrimaryIdx);
             writer.Write(obj.SpawnConfig);
-            writer.Write((byte)chunk.LevelsAt(obj.PrimaryIdx));
+            writer.Write(obj.BaseLevel);
+            writer.Write((byte)Math.Max((int)obj.Levels, 1));
             writer.Write((byte)obj.SecondaryCount);
 
             for (int k = 0; k < obj.SecondaryCount; k++)
                 writer.Write(obj.SecondaryIdxs[k]);
         }
 
-        private static unsafe bool ApplyObject(ChunkData chunk, ObjectInstInfo info, int levels) =>
-            chunk.TryAddObject(info.PrimaryIdx, in info, new ReadOnlySpan<int>(info.SecondaryIdxs, info.SecondaryCount), levels);
+        private static unsafe bool ApplyObject(ChunkData chunk, ObjectInstInfo info) =>
+            chunk.TryAddObject(info.PrimaryIdx, in info, new ReadOnlySpan<int>(info.SecondaryIdxs, info.SecondaryCount), info.Levels, info.BaseLevel);
 
         private unsafe bool TryRead(string path, long chunkKey)
         {
             _infos.Clear();
-            _levels.Clear();
 
             try
             {
                 using (var reader = new BinaryReader(new MemoryStream(File.ReadAllBytes(path))))
                 {
-                    if (reader.ReadInt32() != Magic || reader.ReadInt32() != Format || reader.ReadInt32() != _seed || reader.ReadInt64() != chunkKey)
+                    int magic = reader.ReadInt32();
+                    int format = reader.ReadInt32();
+                    if (magic != Magic || format < MinFormat || format > Format || reader.ReadInt32() != _seed || reader.ReadInt64() != chunkKey)
                     {
                         RavineLog.Warning($"[ChunkStore] Chunk {chunkKey}: header mismatch, file ignored");
                         return false;
@@ -141,21 +143,24 @@ namespace TheRavine.Generator
                         int amount = reader.ReadInt32();
                         int primary = reader.ReadInt32();
                         int spawnConfig = reader.ReadInt32();
+                        int baseLevel = format >= 2 ? reader.ReadByte() : 0;
                         int levels = reader.ReadByte();
                         int secondaryCount = reader.ReadByte();
 
                         if (primary < 0 || primary >= ChunkData.TotalCells) return false;
                         if (levels < 1 || secondaryCount > ObjectInstInfo.MaxSecondary) return false;
+                        if (baseLevel + levels > ObjectInfo.MaxLevels) return false;
 
                         var info = new ObjectInstInfo(new Vector3(x, y, z), prefab, amount);
                         info.PrimaryIdx = primary;
                         info.SpawnConfig = spawnConfig;
                         info.SecondaryCount = secondaryCount;
+                        info.BaseLevel = (byte)baseLevel;
+                        info.Levels = (byte)levels;
                         for (int k = 0; k < secondaryCount; k++)
                             info.SecondaryIdxs[k] = reader.ReadInt32();
 
                         _infos.Add(info);
-                        _levels.Add(levels);
                     }
                 }
                 return true;

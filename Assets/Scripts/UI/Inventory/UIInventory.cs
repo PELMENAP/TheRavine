@@ -31,7 +31,7 @@ namespace TheRavine.Inventory
         private RavineLogger logger;
         private PlayerEntity player;
         private readonly Queue<PendingPlace> pendingPlaces = new();
-        private readonly Dictionary<long, PendingPickUp> pendingPickUps = new();
+        private readonly Dictionary<(long Position, byte Level), PendingPickUp> pendingPickUps = new();
         private readonly PickUpReservation pickUpReservation = new();
 
         private struct PendingPickUp
@@ -45,6 +45,7 @@ namespace TheRavine.Inventory
             public UIInventorySlot Cell;
             public IInventoryItem Item;
             public long Position;
+            public byte Level;
         }
 
         public bool HasItem(InventoryItemInfo info) => 
@@ -169,6 +170,22 @@ namespace TheRavine.Inventory
         public bool HasPlaceableInActiveCell() =>
             TryGetActiveCell(out UIInventorySlot cell) && cell.slot.item.info.isPlaceable;
 
+        public int ActivePlaceableLevels
+        {
+            get
+            {
+                if (!TryGetActiveCell(out UIInventorySlot cell)) return 1;
+                IInventoryItemInfo itemInfo = cell.slot.item.info;
+                if (!itemInfo.isPlaceable || itemInfo.prefab == null) return 1;
+                if (!objectSystem.TryGetIdByPrefab(itemInfo.prefab, out int placeId)) return 1;
+                ObjectInfo info = objectSystem.GetInfo(placeId);
+                return info != null ? Mathf.Max(1, info.Levels) : 1;
+            }
+        }
+
+        public object ActivePlaceable =>
+            TryGetActiveCell(out UIInventorySlot cell) && cell.slot.item.info.isPlaceable ? cell.slot.item : null;
+
         private void PlaceObjectEvent(AEntity entity, PlaceEvent e)
         {
             if (!TryGetActiveCell(out UIInventorySlot cell)) return;
@@ -188,8 +205,8 @@ namespace TheRavine.Inventory
                 if (pending.Item == item) reserved++;
             if (reserved >= slot.amount) return;
 
-            if (player.RequestPlace(e.Position, placeId))
-                pendingPlaces.Enqueue(new PendingPlace { Cell = cell, Item = item, Position = e.Position });
+            if (player.RequestPlace(e.Position, placeId, e.Level))
+                pendingPlaces.Enqueue(new PendingPlace { Cell = cell, Item = item, Position = e.Position, Level = e.Level });
         }
 
         private void OnPlaceResult(AEntity entity, PlaceResultEvent e)
@@ -202,7 +219,7 @@ namespace TheRavine.Inventory
                 logger.LogInfo($"[UIInventory] Размещение в {Position2Int.UnpackToVector(e.Position)} отклонено: {(WorldEditResult)e.Edit}/{(PlacementResult)e.Placement}");
                 return;
             }
-            if (pending.Position != e.Position) return;
+            if (pending.Position != e.Position || pending.Level != e.Level) return;
 
             InventorySlot slot = pending.Cell.slot;
             if (slot == null || slot.item != pending.Item) return;
@@ -218,8 +235,8 @@ namespace TheRavine.Inventory
 
         private void PickUpEvent(AEntity entity, PickUpEvent e)
         {
-            if (pendingPickUps.ContainsKey(e.Position)) return;
-            if (!generator.TryGetObject(e.Position, out ObjectInstInfo objectInstInfo)) return;
+            if (pendingPickUps.ContainsKey((e.Position, e.Level))) return;
+            if (!generator.TryGetObject(e.Position, e.Level, out ObjectInstInfo objectInstInfo)) return;
 
             ObjectInfo data = objectSystem.GetInfo(objectInstInfo.PrefabID);
             if (data == null || data.InventoryItemInfo == null) return;
@@ -228,15 +245,15 @@ namespace TheRavine.Inventory
             int amount = objectInstInfo.Amount;
             if (!pickUpReservation.TryReserve(info, amount, eventDrivenInventoryProxy.FreeRoomFor(info))) return;
 
-            if (player.RequestPickUp(e.Position))
-                pendingPickUps.Add(e.Position, new PendingPickUp { Info = info, Amount = amount });
+            if (player.RequestPickUp(e.Position, e.Level))
+                pendingPickUps.Add((e.Position, e.Level), new PendingPickUp { Info = info, Amount = amount });
             else
                 pickUpReservation.Release(info, amount);
         }
 
         private void OnPickUpResult(AEntity entity, PickUpResultEvent e)
         {
-            if (pendingPickUps.Remove(e.Position, out PendingPickUp pendingPickUp))
+            if (pendingPickUps.Remove((e.Position, e.Level), out PendingPickUp pendingPickUp))
                 pickUpReservation.Release(pendingPickUp.Info, pendingPickUp.Amount);
             if (!e.Ok) return;
 
