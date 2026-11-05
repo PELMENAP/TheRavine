@@ -26,6 +26,8 @@ namespace TheRavine.Inventory
         private EventDrivenInventoryProxy inventory;
         private InfoManager infoManager;
         public IReadOnlyList<CraftStack> Grid => grid;
+        public IReadOnlyList<UIInventorySlot> CraftCells => craftCells;
+        public UIInventorySlot ResultCell => resultCell;
         public void SetUp(InfoManager infoManager, EventDrivenInventoryProxy inventoryModel)
         {
             cancel = false;
@@ -110,21 +112,22 @@ namespace TheRavine.Inventory
             var result = infoManager.GetInventoryItemByInfo(resultItemInfo.id, resultItemInfo, resultCount);
             if (result == null) return;
 
+            if (!inventory.TryProduceToSlot(this, resultCell.slot, result)) return;
             ConsumeIngredients();
-            inventory.TryToAddSlot(this, resultCell.slot, result);
         }
 
-        private bool HasRoomForResult() => resultCount <= resultItemInfo.maxItemsInInventorySlot || !inventory.isFull;
+        private bool HasRoomForResult() =>
+            resultCount <= resultItemInfo.maxItemsInInventorySlot ||
+            inventory.CanFit(resultItemInfo, resultCount - resultItemInfo.maxItemsInInventorySlot);
 
         private void ConsumeIngredients()
         {
             for(int i = 0; i < CellsCount; i++){
-                if(craftCells[i].slot.isEmpty) continue;
-                craftCells[i]._uiInventoryItem.item.state.amount -= deductions[i];
-                if (craftCells[i].slot.amount <= 0)
-                    craftCells[i].slot.Clear();
-                craftCells[i].Refresh();
+                var slot = craftCells[i].slot;
+                if(slot.isEmpty || deductions[i] <= 0) continue;
+                inventory.ConsumeFromSlot(this, slot, Math.Min(deductions[i], slot.amount), false);
             }
+            inventory.NotifyStateChanged(this);
         }
 
 

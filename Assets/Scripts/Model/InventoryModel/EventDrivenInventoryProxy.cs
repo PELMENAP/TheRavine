@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace TheRavine.Inventory
 {
@@ -15,6 +16,12 @@ namespace TheRavine.Inventory
         {
             _inventory = new InventoryModel(slotCount);
         }
+
+        public EventDrivenInventoryProxy(SlotKind[] kinds)
+        {
+            _inventory = new InventoryModel(kinds);
+        }
+
         public int capacity
         {
             get => _inventory.Capacity;
@@ -22,6 +29,7 @@ namespace TheRavine.Inventory
         }
 
         public bool isFull => _inventory.IsFull;
+        public IReadOnlyList<InventorySlot> Slots => _inventory.Slots;
 
         public IInventoryItem GetItem(Type itemType) => _inventory.GetItem(itemType);
         public IInventoryItem[] GetAllItems() => _inventory.GetAllItems();
@@ -29,18 +37,24 @@ namespace TheRavine.Inventory
         public IInventoryItem[] GetEquippedItems() => _inventory.GetEquippedItems();
         public InventorySlot[] GetAllSlots() => _inventory.GetAllSlots();
         public int GetItemAmount(Type itemType) => _inventory.GetItemAmount(itemType);
+        public bool CanFit(IInventoryItemInfo info, int amount) => _inventory.CanFit(info, amount);
+        public int FreeRoomFor(IInventoryItemInfo info) => _inventory.FreeRoomFor(info);
+
+        public void NotifyStateChanged(object sender)
+        {
+            OnInventoryStateChangedEvent?.Invoke(sender);
+            OnInventoryStateChangedEventOnce?.Invoke(sender);
+        }
 
         public bool TryToAdd(object sender, IInventoryItem item)
         {
-            var initialAmount = item.state.amount;
+            var amount = item.state.amount;
             var success = _inventory.TryToAdd(item);
 
             if (success)
             {
-                var addedAmount = initialAmount - item.state.amount;
-                OnInventoryItemAddedEvent?.Invoke(sender, item, addedAmount);
-                OnInventoryStateChangedEvent?.Invoke(sender);
-                OnInventoryStateChangedEventOnce?.Invoke(sender);
+                OnInventoryItemAddedEvent?.Invoke(sender, item, amount);
+                NotifyStateChanged(sender);
             }
 
             return success;
@@ -48,26 +62,65 @@ namespace TheRavine.Inventory
 
         public bool TryToAddSlot(object sender, InventorySlot slot, IInventoryItem item)
         {
-            var initialAmount = item.state.amount;
+            var amount = item.state.amount;
             var success = _inventory.TryToAddSlot(slot, item);
 
             if (success)
             {
-                var addedAmount = initialAmount - item.state.amount;
-                OnInventoryItemAddedEvent?.Invoke(sender, item, addedAmount);
-                OnInventoryStateChangedEvent?.Invoke(sender);
-                OnInventoryStateChangedEventOnce?.Invoke(sender);
+                OnInventoryItemAddedEvent?.Invoke(sender, item, amount);
+                NotifyStateChanged(sender);
             }
 
             return success;
         }
 
-        public void TransitFromSlotToSlot(object sender, InventorySlot fromSlot, InventorySlot toSlot)
+        public bool TryProduceToSlot(object sender, InventorySlot slot, IInventoryItem item)
         {
-            _inventory.TransitFromSlotToSlot(fromSlot, toSlot);
+            var amount = item.state.amount;
+            var success = _inventory.TryProduceToSlot(slot, item);
 
-            OnInventoryStateChangedEvent?.Invoke(sender);
-            OnInventoryStateChangedEventOnce?.Invoke(sender);
+            if (success)
+            {
+                OnInventoryItemAddedEvent?.Invoke(sender, item, amount);
+                NotifyStateChanged(sender);
+            }
+
+            return success;
+        }
+
+        public bool TransitFromSlotToSlot(object sender, InventorySlot fromSlot, InventorySlot toSlot)
+        {
+            var changed = _inventory.TransitFromSlotToSlot(fromSlot, toSlot);
+            if (changed) NotifyStateChanged(sender);
+            return changed;
+        }
+
+        public bool ConsumeFromSlot(object sender, InventorySlot slot, int amount, bool notify = true)
+        {
+            var type = slot?.itemType;
+            var success = _inventory.ConsumeFromSlot(slot, amount);
+
+            if (success)
+            {
+                OnInventoryItemRemovedEvent?.Invoke(sender, type, amount);
+                if (notify) NotifyStateChanged(sender);
+            }
+
+            return success;
+        }
+
+        public bool TrySplit(object sender, InventorySlot from, int amount, out InventorySlot to)
+        {
+            var success = _inventory.TrySplit(from, amount, out to);
+            if (success) NotifyStateChanged(sender);
+            return success;
+        }
+
+        public bool TryUnequip(object sender, InventorySlot from)
+        {
+            var success = _inventory.TryUnequip(from);
+            if (success) NotifyStateChanged(sender);
+            return success;
         }
 
         public bool Remove(object sender, Type itemType, int amount = 1)
@@ -77,8 +130,7 @@ namespace TheRavine.Inventory
             if (success)
             {
                 OnInventoryItemRemovedEvent?.Invoke(sender, itemType, amount);
-                OnInventoryStateChangedEvent?.Invoke(sender);
-                OnInventoryStateChangedEventOnce?.Invoke(sender);
+                NotifyStateChanged(sender);
             }
 
             return success;

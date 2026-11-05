@@ -1,8 +1,7 @@
 using System.Collections.Generic;
-using ZLinq;
+using UnityEngine;
 
 using TheRavine.InventoryElements;
-using System.Linq;
 
 namespace TheRavine.Inventory
 {
@@ -23,12 +22,11 @@ namespace TheRavine.Inventory
 
         private void FillRandomItems(List<string> titles, int itemsPerTitle)
         {
-            InventorySlot[] inventorySlots = inventoryProxy.GetAllSlots();
-            var freeSlots = inventorySlots
-                .AsValueEnumerable()
-                .Select((slot, idx) => slot.isEmpty ? idx : -1)
-                .Where(idx => idx >= 0)
-                .ToList();
+            var inventorySlots = inventoryProxy.Slots;
+            var freeSlots = new List<int>(inventorySlots.Count);
+            for (int i = 0; i < inventorySlots.Count; i++)
+                if (inventorySlots[i].isEmpty && inventorySlots[i].kind.IsStorage())
+                    freeSlots.Add(i);
 
             foreach (var title in titles)
             {
@@ -75,18 +73,25 @@ namespace TheRavine.Inventory
                 return;
             }
 
-            var inventorySlots = new List<InventorySlot>(data.Length);
+            if (data.Length > uiSlots.Length)
+                Debug.LogWarning($"[InventoryTester] Сохранение содержит {data.Length} слотов, UI содержит {uiSlots.Length}: лишние слоты отброшены");
 
-            foreach (var slotData in data)
+            var inventorySlots = new List<InventorySlot>(uiSlots.Length);
+
+            for (int i = 0; i < uiSlots.Length; i++)
             {
-                var slot = new InventorySlot();
+                var slot = new InventorySlot(uiSlots[i].Kind);
 
-                if (!slotData.isEmpty && !string.IsNullOrEmpty(slotData.title) && slotData.amount > 0)
+                if (i < data.Length)
                 {
-                    var item = infoManager.GetInventoryItem(slotData.title, slotData.amount);
-                    if (item != null)
+                    var slotData = data[i];
+                    if (slotData != null && !slotData.isEmpty && !string.IsNullOrEmpty(slotData.title) && slotData.amount > 0)
                     {
-                        slot.SetItem(item);
+                        var item = infoManager.GetInventoryItem(slotData.title, slotData.amount);
+                        if (item != null)
+                        {
+                            slot.SetItem(item);
+                        }
                     }
                 }
 
@@ -105,8 +110,9 @@ namespace TheRavine.Inventory
         }
         private void RefreshAllSlots()
         {
-            var slots = inventoryProxy.GetAllSlots();
-            for (int i = 0; i < slots.Length; i++)
+            var slots = inventoryProxy.Slots;
+            int count = Mathf.Min(slots.Count, uiSlots.Length);
+            for (int i = 0; i < count; i++)
             {
                 uiSlots[i].SetSlot(slots[i], i);
                 uiSlots[i].Refresh();
