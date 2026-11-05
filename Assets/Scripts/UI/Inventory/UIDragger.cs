@@ -28,6 +28,7 @@ namespace TheRavine.Inventory
         private EventSystem eventSystem;
         private Mouse mouse;
         private bool isDragging = false;
+        private bool pressStartedOnMenu;
         private readonly List<RaycastResult> results = new(10);
         private PointerEventData eventData;
         private UIInventorySlot lastSlot;
@@ -106,6 +107,21 @@ namespace TheRavine.Inventory
         private void OnDragPC(InputAction.CallbackContext context)
         {
             if(_uiInventory == null) return;
+            if (contextMenu != null)
+            {
+                if (mouse.leftButton.wasPressedThisFrame && contextMenu.ContainsScreenPoint(mouse.position.ReadValue()))
+                {
+                    pressStartedOnMenu = true;
+                    isDragging = false;
+                    lastSlot = null;
+                    return;
+                }
+                if (pressStartedOnMenu)
+                {
+                    if (mouse.leftButton.wasReleasedThisFrame) pressStartedOnMenu = false;
+                    return;
+                }
+            }
             if (mouse.leftButton.wasReleasedThisFrame && lastSlot != null)
             {
                 isDragging = false;
@@ -150,6 +166,7 @@ namespace TheRavine.Inventory
         private void OnRightClickPC(InputAction.CallbackContext context)
         {
             if (_uiInventory == null || contextMenu == null || !mouse.rightButton.wasPressedThisFrame) return;
+            if (contextMenu.ContainsScreenPoint(mouse.position.ReadValue())) return;
             results.Clear();
             eventData.position = mouse.position.ReadValue();
             eventSystem.RaycastAll(eventData, results);
@@ -226,6 +243,7 @@ namespace TheRavine.Inventory
 
         public void BreakUp()
         {
+            pressStartedOnMenu = false;
             if (contextMenu != null) contextMenu.TearDown();
             if (llmDescriptionService != null)
             {

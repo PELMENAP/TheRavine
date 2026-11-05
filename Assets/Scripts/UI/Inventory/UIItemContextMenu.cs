@@ -24,6 +24,9 @@ namespace TheRavine.Inventory
 
         public bool IsOpen => target != null;
 
+        public bool ContainsScreenPoint(Vector2 screenPosition) =>
+            IsOpen && panel != null && RectTransformUtility.RectangleContainsScreenPoint(panel, screenPosition, UICamera);
+
         public void SetUp(EventDrivenInventoryProxy inventory, AEntity entity)
         {
             this.inventory = inventory;
@@ -140,8 +143,7 @@ namespace TheRavine.Inventory
             }
 
             var mouse = Mouse.current;
-            if (mouse != null && mouse.leftButton.wasPressedThisFrame &&
-                !RectTransformUtility.RectangleContainsScreenPoint(panel, mouse.position.ReadValue(), UICamera))
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame && !ContainsScreenPoint(mouse.position.ReadValue()))
                 Close();
         }
 
