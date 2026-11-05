@@ -175,6 +175,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float scarcityForeignForageBias = 1.5f;
     [SerializeField] private float scoutVoteWeight = 2f;
     [SerializeField] private int scarcityChunkRadius = 1;
+    [SerializeField] private float quorumMigrateBias = 2f;
 
     public float KinSearchRangeMul => kinSearchRangeMul;
     public float NestFarRadiusMul => nestFarRadiusMul;
@@ -338,4 +339,5 @@ public sealed partial class SimulationRules
     public float ScarcityForeignForageBias => scarcityForeignForageBias;
     public float ScoutVoteWeight => scoutVoteWeight;
     public int ScarcityChunkRadius => scarcityChunkRadius;
+    public float QuorumMigrateBias => quorumMigrateBias;
 }

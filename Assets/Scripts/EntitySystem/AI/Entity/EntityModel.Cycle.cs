@@ -329,6 +329,8 @@ public partial class EntityModel
         brainCtx.CoordBias[(int)PlanKind.Seek] += forage;
         brainCtx.CoordBias[(int)PlanKind.Rest] -= rules.HungerRestDrop * _ghrelin;
         brainCtx.CoordBias[(int)PlanKind.Migrate] += rules.ScarcityMigrateBias * scarcity;
+        if (Colony != null && Colony.QuorumReady && CasteFixed && !IsJuvenile)
+            brainCtx.CoordBias[(int)PlanKind.Migrate] += rules.QuorumMigrateBias;
 
         ref readonly var genes = ref brainCtx.CoordMLP.Params;
         bool adult = CasteFixed && !IsJuvenile && !IsWild;
@@ -452,7 +454,7 @@ public partial class EntityModel
         if (nest != null && nest.Storage < r.SeekStorageLow * r.NestStorageNorm) h |= PlanHint.StorageLow;
         var colony = Colony;
         if (colony != null && !colony.IsWild && colony.Pois.Count > 0) h |= PlanHint.ColonyPoi;
-        if (colony != null && IsLeader && colony.TryGetQuorumSite(out _)) h |= PlanHint.QuorumReady;
+        if (colony != null && CasteFixed && !IsJuvenile && colony.QuorumReady) h |= PlanHint.QuorumReady;
         if (nest != null && Caste == Caste.Worker && CasteFixed && !IsJuvenile && !IsHungry) h |= PlanHint.PreferPickUp;
         if (_kinSick) h |= PlanHint.KinSick;
         if (_night) h |= PlanHint.Night;

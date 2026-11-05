@@ -18,6 +18,7 @@ public sealed class ColonyState : IDisposable
     public int JuvenileCount;
     public readonly bool IsWild;
     public float Scarcity;
+    public bool  QuorumReady { get; private set; }
 
     public float StorageEma;
     public float PopulationEma;
@@ -85,6 +86,7 @@ public sealed class ColonyState : IDisposable
                 _siteWeight[i] += weight;
             }
             _siteUpdated[i] = now;
+            RefreshQuorum();
             return;
         }
 
@@ -94,7 +96,11 @@ public sealed class ColonyState : IDisposable
         _siteWeight[slot]  = weight;
         _siteUpdated[slot] = now;
         _siteVoters[slot * _voterStride] = voterId;
+        RefreshQuorum();
     }
+
+    public void RefreshQuorum()
+        => QuorumReady = !IsWild && TryGetQuorumSite(out float2 site) && !Nest.Contains(site);
 
     public bool TryGetQuorumSite(out float2 site)
     {
@@ -124,6 +130,7 @@ public sealed class ColonyState : IDisposable
     {
         Array.Clear(_siteVotes, 0, _siteVotes.Length);
         Array.Clear(_siteWeight, 0, _siteWeight.Length);
+        QuorumReady = false;
     }
 
     public void SetLeader(EntityModel leader)

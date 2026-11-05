@@ -557,6 +557,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float WinterWiltTau;
         public readonly float SenescenceSpeedLoss;
         public readonly float SenescenceDigestLoss;
+        public readonly float QuorumMigrateBias;
         public readonly float[] PlanMinSecondsByPlan;
         public readonly float[] PlanMaxSecondsByPlan;
         public readonly float[] CasteAffinityLog;
@@ -1126,6 +1127,7 @@ public sealed partial class SimulationRules : ScriptableObject
             WinterWiltTau = r.winterWiltTau;
             SenescenceSpeedLoss = r.senescenceSpeedLoss;
             SenescenceDigestLoss = r.senescenceDigestLoss;
+            QuorumMigrateBias = r.quorumMigrateBias;
             PlanMinSecondsByPlan = r.FillPlanSeconds(r.planMinSecondsByPlan, r.planMinSeconds, PlanMinBuf);
             PlanMaxSecondsByPlan = r.FillPlanSeconds(r.planMaxSecondsByPlan, r.planMaxSeconds, PlanMaxBuf);
             CasteAffinityLog     = r.FillCasteAffinityLog();
