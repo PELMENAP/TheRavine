@@ -24,6 +24,7 @@ namespace TheRavine.EntityControl
         [SerializeField] private int placeObjectDelay;
         [SerializeField] private float reachTolerance = 2f;
         [SerializeField] private float maxLatencyCompensation = 0.5f;
+        [SerializeField] private float aimHysteresis = 0.15f;
         [SerializeField] private float movementMinimum, sendInterval = 0.1f, maxStepHeight = 0.6f;
         [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick, Jump;
         [SerializeField] private Joystick joystick;
@@ -59,6 +60,7 @@ namespace TheRavine.EntityControl
         private bool isAccurance;
         private bool isHolding;
         private bool isFlip;
+        private long aimCell = AimSnap.NoCell;
 
         private IController currentController;
         private MapGenerator map;
@@ -382,8 +384,11 @@ namespace TheRavine.EntityControl
             {
                 crosshair.gameObject.SetActive(false);
                 isAccurance = false;
+                aimCell = AimSnap.NoCell;
                 return;
             }
+
+            if (map == null) return;
 
             Vector2 aim = currentController.GetAim();
             Vector2 aimNorm = aim.normalized;
@@ -391,9 +396,13 @@ namespace TheRavine.EntityControl
 
             SetAimAddition(magnitude, aimNorm);
 
-            crosshair.position = magnitude < aimComponent.CrosshairDistance
-                ? new Vector3(aim.x + transform.position.x, transform.position.y, aim.y + transform.position.z)
-                : new Vector3(aimNorm.x * aimComponent.CrosshairDistance + transform.position.x, transform.position.y, aimNorm.y * aimComponent.CrosshairDistance + transform.position.z);
+            Vector3 self = transform.position;
+            float2 target = magnitude < aimComponent.CrosshairDistance
+                ? new float2(aim.x + self.x, aim.y + self.z)
+                : new float2(aimNorm.x * aimComponent.CrosshairDistance + self.x, aimNorm.y * aimComponent.CrosshairDistance + self.z);
+
+            aimCell = AimSnap.Resolve(target, aimCell, aimHysteresis);
+            crosshair.position = map.GetRealPosition(aimCell);
 
             crosshair.gameObject.SetActive(true);
             isAccurance = true;
@@ -426,17 +435,15 @@ namespace TheRavine.EntityControl
                     for (int zOffset = -aimComponent.PickDistance; zOffset <= aimComponent.PickDistance; zOffset++)
                         entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = Position2Int.Pack(currentX + xOffset, currentZ + zOffset) });
             }
-            else
+            else if (aimCell != AimSnap.NoCell)
             {
-                int currentX = Mathf.RoundToInt(crosshair.position.x);
-                int currentZ = Mathf.RoundToInt(crosshair.position.z);
-                entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = Position2Int.Pack(currentX, currentZ) });
+                entityEventBus.Invoke(playerEntity, new PickUpEvent { Position = aimCell });
             }
         }
 
         private void AimPlace(InputAction.CallbackContext obj)
         {
-            if (crosshair.gameObject.activeSelf && canPlace)
+            if (crosshair.gameObject.activeSelf && canPlace && aimCell != AimSnap.NoCell)
                 Placing().Forget();
         }
 
@@ -444,9 +451,7 @@ namespace TheRavine.EntityControl
         {
             canPlace = false;
             
-            int currentX = Mathf.RoundToInt(crosshair.position.x);
-            int currentZ = Mathf.RoundToInt(crosshair.position.z);
-            long position = Position2Int.Pack(currentX, currentZ);
+            long position = aimCell;
             if (ServiceLocator.Services.TryGet(out IPlacementSource placement) && placement.HasPlaceableInActiveCell())
                 entityEventBus.Invoke(playerEntity, new PlaceEvent { Position = position });
             else
