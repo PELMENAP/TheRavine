@@ -173,7 +173,7 @@ public static class PlanCatalog
                 return Has(h, PlanHint.Threat) ? Bit(EntityAction.Flee) : 0;
 
             case PlanKind.Migrate:
-                return Has(h, PlanHint.MigrationUrge) ? Bit(EntityAction.Wander) : 0;
+                return Has(h, PlanHint.MigrationUrge) || Has(h, PlanHint.QuorumReady) ? Bit(EntityAction.Wander) : 0;
 
             case PlanKind.Seek:
                 if (!Has(h, PlanHint.Hungry) && !Has(h, PlanHint.StorageLow)) return 0;
@@ -271,9 +271,10 @@ public static class PlanCatalog
                     p.Achieved = ok;
                     return ok ? Complete : Fail;
                 }
+                if (Has(h, PlanHint.QuorumReady)) return (int)EntityAction.MoveNest;
                 if (ok && lastAction == (int)EntityAction.Wander) p.Steps++;
                 if (p.Steps < r.MigrateLegs) return (int)EntityAction.Wander;
-                return Has(h, PlanHint.IsLeader) && Has(h, PlanHint.QuorumReady) ? (int)EntityAction.MoveNest : Complete;
+                return Complete;
 
             case PlanKind.Seek:
                 if (ok && lastAction == (int)EntityAction.PickUp) p.Achieved = true;

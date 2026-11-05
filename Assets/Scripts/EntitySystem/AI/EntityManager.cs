@@ -719,6 +719,7 @@ public class EntityManager : MonoBehaviour
                 : foodIndex.NestScarcity(nestPos, r.ScarcityChunkRadius);
 
             colony.Nest.EndTick(dt, atNest, colony.Scarcity);
+            colony.RefreshQuorum();
 
             float inv = members.Length > 0 ? 1f / members.Length : 0f;
             colony.Stats.SampleMembers(fill * inv, restingAtNest * inv,
