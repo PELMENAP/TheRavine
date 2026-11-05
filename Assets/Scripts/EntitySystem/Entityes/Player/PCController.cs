@@ -37,10 +37,6 @@ public class PCController : IController
 
         Vector3 hitPoint = ray.origin + ray.direction * t;
 
-        Vector3 lineStart = hitPoint + Vector3.down * 10f;
-        Vector3 lineEnd = hitPoint + Vector3.up * 10f; 
-        Debug.DrawLine(lineStart, lineEnd, Color.red, 0.1f);
-
         Vector2 aimOffset = new(hitPoint.x - playerPos.x, hitPoint.z - playerPos.z);
 
         float distance = aimOffset.magnitude;
