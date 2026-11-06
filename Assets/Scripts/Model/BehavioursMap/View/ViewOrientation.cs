@@ -13,11 +13,13 @@ namespace TheRavine.ViewControl
         private static int count;
         private static ViewFacing facing;
         private static float pitch;
+        private static float yaw;
         private static Quaternion rotation = Quaternion.identity;
         private static Quaternion yawRotation = Quaternion.identity;
 
         public static ViewFacing Facing => facing;
         public static float PitchDegrees => pitch;
+        public static float YawDegrees => yaw;
         public static Quaternion Rotation => rotation;
         public static Quaternion YawRotation => yawRotation;
 
@@ -30,22 +32,25 @@ namespace TheRavine.ViewControl
             count = 0;
             facing = ViewFacing.PlusZ;
             pitch = 0f;
+            yaw = 0f;
             rotation = Quaternion.identity;
             yawRotation = Quaternion.identity;
             FacingChanged = null;
             PushShaderGlobals();
         }
 
-        public static void Set(ViewFacing newFacing, float newPitch)
+        public static void Set(ViewFacing newFacing, float newPitch) => Set(newFacing, newPitch, newFacing.Yaw());
+
+        public static void Set(ViewFacing newFacing, float newPitch, float newYaw)
         {
             bool facingChanged = newFacing != facing;
-            if (!facingChanged && newPitch == pitch) return;
+            if (!facingChanged && newPitch == pitch && newYaw == yaw) return;
 
             facing = newFacing;
             pitch = newPitch;
-            float yaw = newFacing.Yaw();
-            rotation = Quaternion.Euler(newPitch, yaw, 0f);
-            yawRotation = Quaternion.Euler(0f, yaw, 0f);
+            yaw = newYaw;
+            rotation = Quaternion.Euler(newPitch, newYaw, 0f);
+            yawRotation = Quaternion.Euler(0f, newYaw, 0f);
 
             if (facingChanged) PushShaderGlobals();
 

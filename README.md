@@ -174,7 +174,7 @@ IFileManager<TId, TEntity>
 ```
 
 ### Data (`Core/Settings/WorldData/`, `WorldSettings/`, `GameSettings/`)
-- **`GlobalSettings`** — quality, grass, control type (MemoryPack)
+- **`GlobalSettings`** — quality, grass, control type, smooth camera rotation (MemoryPack)
 - **`WorldState`** — seed, player position, cycleCount, inventory[], lastSaveTime
   Modified chunks are saved by `ChunkStore` (`ObjectSystem/Map/WorldGeneration/ChunkStore.cs`) to `persistentDataPath/worlds/{worldId}/chunks/{x}_{z}.chunk`: on every autosave (`AutosaveCoordinator.SubscribeBeforeSave`) and on leaving the scene, chunks with `ChunkData.NeedsSave` are written; when a chunk is generated, the file is applied on top of the procedural result (`TryRestore`), and `DetailLevel` is restored from the file. Format v1: header (magic, version, seed, chunk key, `DetailLevel`) + objects with their levels. Saved chunks are unloaded from memory together with the others. Corpses, infection payloads and food taboo marks (`ChunkFoodIndex._meat/_payloads/_taboo`) still live only in the session's memory.
 - **`WorldConfiguration`** — world name, difficulty, autosave interval, timeScale
@@ -208,6 +208,7 @@ Runs the autosave loop. Supports `SubscribeBeforeSave(Func<CT, UniTask>)` — ho
 - The chunk "fir tree" goes along the viewing axis: block centre = window centre + `dx · WindowSide · Right` + `ring · WindowSide · Forward` (`EndlessTerrain`, `EndlessLiquids`, `FarObjectRenderer`). `MapGenerator.ViewRingOf` / `ViewRingOfChunk` describe only what the camera draws
 - Side blocks: the two ring-0 terrain blocks (dx = ±1) next to the window carry their objects as LOD ring 1 (`MapGenerator.SideBlockRing`), drawn by `FarObjectRenderer`
 - NAL / random-tick simulation covers a square around the window out to the last LOD ring (`SimRingOf`, `WorldTickRules.nalRings`) regardless of the view; the fir tree and side blocks are only what the camera draws. Missing chunks of the square are supplied by `MapGenerator.SupplySimSquare`, from the inside out within the frame budget; `IsRetained` keeps the same square
+- During a smooth turn `CameraComponent` passes the continuous yaw to `ViewOrientation.Set(facing, pitch, yaw)`: sprites and labels turn with the camera, while `Facing` (chunks, bend, billboards, input) switches at the start of the turn
 - The world bend follows the viewing axis: `CurvedWorld.hlsl` computes `dot(positionWS.xz, ViewForward()) - _CurveParams.z`; `OnBeginCameraRendering` passes the origin on the axis `dot(camera.xz, Forward) + FocusDistance`
 - Far-LOD billboards have four sides: `TreeBillboard.shader` takes its frame from `ViewForward()` / `ViewRight()` and the atlas column from `_ViewColumn`. After the switch to four columns the atlas must be re-baked in the `TreeMeshBaker` window; until then (with `_AtlasGrid.x < 4`) the X views reuse the Z pictures
 - Agent and nest labels and the player's sprites turn through `IViewOriented` / `ViewOrientedTransform` (only when the view changes); birds through `BoidsBehaviour.ApplyViewRotations`
@@ -316,7 +317,7 @@ Genetic audio profiles: `AgentAudioProfile`, `GeneticAudioProfile` (+Cache), `Ag
 - `InputBindingAdapter` (`Core/`) — binds `Button.onClick` + `InputAction.performed` in one object
 - `IController` — abstraction over `PCController` (mouse + keyboard) and `JoistickController`
 - `DoubleTapDetector` — double-tap detector for boost
-- Camera: the mouse wheel only zooms (`Camera Scroll`); the view is rotated with the mouse side buttons — Mouse4 (`<Mouse>/backButton`, `Camera Rotate Right`) clockwise (+Z → +X → −Z → −X), Mouse5 (`<Mouse>/forwardButton`, `Camera Rotate Left`) the other way; one press is one 90° step, debounce `SimulationRules.CameraFlipDebounce`. The Camera Flip action is removed
+- Camera: the mouse wheel only zooms (`Camera Scroll`); the view is rotated with the mouse side buttons — Mouse4 (`<Mouse>/backButton`, `Camera Rotate Right`) clockwise (+Z → +X → −Z → −X), Mouse5 (`<Mouse>/forwardButton`, `Camera Rotate Left`) the other way; one press is one 90° step, debounce `SimulationRules.CameraFlipDebounce`. The turn is smooth by default (`GlobalSettings.smoothCameraRotation`, a toggle in the settings; duration `SimulationRules.CameraRotateSeconds`); with the toggle off it is instant. The Camera Flip action is removed
 
 ---
 

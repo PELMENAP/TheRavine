@@ -163,7 +163,7 @@ IFileManager<TId, TEntity>
 ```
 
 ### Данные (`Core/Settings/WorldData/`, `WorldSettings/`, `GameSettings/`)
-- **`GlobalSettings`** — качество, трава, тип управления (MemoryPack)
+- **`GlobalSettings`** — качество, трава, тип управления, плавный поворот камеры (MemoryPack)
 - **`WorldState`** — seed, позиция игрока, cycleCount, инвентарь[], lastSaveTime
   Состояние карты не сохраняется: трупы, payload заражения и метки табу еды (`ChunkFoodIndex._meat/_payloads/_taboo`) живут только в памяти сессии; после загрузки мира чанки генерируются из seed, трупов и их записей нет. Модифицированные чанки удерживаются в памяти `MapGenerator` (`ChunkData.IsModified`), на диск не пишутся.
 - **`WorldConfiguration`** — имя мира, сложность, autosave interval, timeScale
@@ -197,6 +197,7 @@ IFileManager<TId, TEntity>
 - «Ёлочка» чанков идёт вдоль оси взгляда: центр блока = центр окна + `dx · WindowSide · Right` + `ring · WindowSide · Forward` (`EndlessTerrain`, `EndlessLiquids`, `FarObjectRenderer`). `MapGenerator.ViewRingOf` / `ViewRingOfChunk` описывают только то, что рисует камера
 - Боковые блоки: два блока terrain ring 0 (dx = ±1) рядом с окном несут объекты как LOD ring 1 (`MapGenerator.SideBlockRing`), их рисует `FarObjectRenderer`
 - Симуляция NAL / случайные тики идёт по квадрату вокруг окна до последнего LOD-кольца (`SimRingOf`, `WorldTickRules.nalRings`), независимо от ракурса; ёлочка и боковые блоки — только то, что рисует камера. Недостающие чанки квадрата догружает `MapGenerator.SupplySimSquare` изнутри наружу в бюджет кадра; `IsRetained` держит тот же квадрат
+- При плавном повороте `CameraComponent` передаёт непрерывный yaw в `ViewOrientation.Set(facing, pitch, yaw)`: спрайты и метки поворачиваются вместе с камерой, а `Facing` (чанки, изгиб, билборды, ввод) переключается в начале поворота
 - Изгиб мира идёт вдоль оси взгляда: `CurvedWorld.hlsl` считает `dot(positionWS.xz, ViewForward()) - _CurveParams.z`; `OnBeginCameraRendering` передаёт начало на оси `dot(camera.xz, Forward) + FocusDistance`
 - Билборды дальнего LOD — 4 стороны: `TreeBillboard.shader` берёт кадр из `ViewForward()` / `ViewRight()` и колонку атласа из `_ViewColumn`. После смены на 4 колонки нужна перепечь атласа в окне `TreeMeshBaker`; до неё (при `_AtlasGrid.x < 4`) виды по X берут картинки Z
 - Метки агентов и гнёзд, спрайты игрока поворачиваются через `IViewOriented` / `ViewOrientedTransform` (только при смене ракурса); птицы — через `BoidsBehaviour.ApplyViewRotations`
@@ -309,7 +310,7 @@ NAL принимает событие с вероятностью `nalDelayRefer
 - `InputBindingAdapter` (`Core/`) — связывает `Button.onClick` + `InputAction.performed` в одном объекте
 - `IController` — абстракция над `PCController` (мышь+клавиатура) и `JoistickController`
 - `DoubleTapDetector` — детектор двойного нажатия для буста
-- Камера: колёсико мыши — только масштаб (`Camera Scroll`); поворот вида боковыми кнопками мыши — Mouse4 (`<Mouse>/backButton`, `Camera Rotate Right`) по часовой стрелке (+Z → +X → −Z → −X), Mouse5 (`<Mouse>/forwardButton`, `Camera Rotate Left`) в обратную сторону; одно нажатие — один шаг 90°, дебаунс `SimulationRules.CameraFlipDebounce`. Действие Camera Flip удалено
+- Камера: колёсико мыши — только масштаб (`Camera Scroll`); поворот вида боковыми кнопками мыши — Mouse4 (`<Mouse>/backButton`, `Camera Rotate Right`) по часовой стрелке (+Z → +X → −Z → −X), Mouse5 (`<Mouse>/forwardButton`, `Camera Rotate Left`) в обратную сторону; одно нажатие — один шаг 90°, дебаунс `SimulationRules.CameraFlipDebounce`. Поворот плавный по умолчанию (`GlobalSettings.smoothCameraRotation`, переключатель в настройках; длительность `SimulationRules.CameraRotateSeconds`), при выключенном — мгновенный. Действие Camera Flip удалено
 
 ---
 
