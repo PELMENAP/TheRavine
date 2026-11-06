@@ -49,6 +49,7 @@ namespace TheRavine.Generator
 
             private long center;
             private bool hasCenter;
+            private bool centralDirty;
             private int facing;
 
             public EndlessTerrain(MapGenerator _generator, ChunkGenerationSettings settings)
@@ -178,9 +179,33 @@ namespace TheRavine.Generator
                     blocks[i].Dirty = true;
             }
 
+            public void OnTerrainChanged(long chunkKey)
+            {
+                if (!hasCenter) return;
+
+                if (MapGenerator.IsInWindow(center, chunkKey, MapGenerator.chunkScale + HeightWindow.Radius))
+                    centralDirty = true;
+
+                for (int i = 0; i < blocks.Length; i++)
+                {
+                    if (MapGenerator.IsInWindow(BlockCenter(blocks[i]), chunkKey, MapGenerator.chunkScale + HeightWindow.Radius))
+                        blocks[i].Dirty = true;
+                }
+            }
+
             public void Tick(long deadline)
             {
                 if (!hasCenter) return;
+
+                if (centralDirty)
+                {
+                    centralDirty = false;
+                    if (generator.TryBuildHeightWindow(center, out HeightWindow centralWindow))
+                    {
+                        Schedule(central, centralWindow, out Mesh.MeshDataArray centralData).Complete();
+                        Apply(central, centralData, MapGenerator.WindowOriginWorld(center));
+                    }
+                }
 
                 int n = 0;
                 for (int i = 0; i < blocks.Length; i++)

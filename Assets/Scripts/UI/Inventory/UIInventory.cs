@@ -178,6 +178,15 @@ namespace TheRavine.Inventory
             return objectSystem.TryGetIdByPrefab(itemInfo.prefab, out int placeId) ? objectSystem.GetInfo(placeId) : null;
         }
 
+        public int ActivePlaceableObjectId
+        {
+            get
+            {
+                ObjectInfo info = GetActivePlaceableInfo();
+                return info != null ? info.Id : -1;
+            }
+        }
+
         public int ActivePlaceableLevels
         {
             get
@@ -187,14 +196,6 @@ namespace TheRavine.Inventory
             }
         }
 
-        public byte ActivePlaceableKind
-        {
-            get
-            {
-                ObjectInfo info = GetActivePlaceableInfo();
-                return info != null ? (byte)info.PlacementKind : (byte)0;
-            }
-        }
 
         public object ActivePlaceable =>
             TryGetActiveCell(out UIInventorySlot cell) && cell.slot.item.info.isPlaceable ? cell.slot.item : null;

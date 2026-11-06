@@ -233,7 +233,7 @@ namespace TheRavine.Generator
 
             prefabId = inst.PrefabID;
             amount = inst.Amount;
-            Spread(generator, pos, info.OnPickUpPattern, inst.BaseLevel);
+            Spread(generator, pos, info.OnPickUpPattern);
             generator.ExtraUpdate();
             return WorldEditResult.Ok;
         }
@@ -255,7 +255,7 @@ namespace TheRavine.Generator
                 return WorldEditResult.Refused;
             }
 
-            placement = generator.TryAddFromInfo(pos, generator.GetRealPosition(pos), info, 1, levels, level);
+            placement = generator.TryPlaceSnapped(pos, info, 1, level);
             if (placement == PlacementResult.Ok) generator.ExtraUpdate();
 
             return placement == PlacementResult.Ok ? WorldEditResult.Ok : WorldEditResult.Rejected;
@@ -277,7 +277,7 @@ namespace TheRavine.Generator
         {
             ObjectInfo info = objects.GetInfo(objectId);
             if (info == null) return;
-            ApplyAdd(generator, pos, info, 1, level);
+            generator.TryPlaceSnapped(pos, info, 1, level);
             generator.ExtraUpdate();
         }
 
@@ -309,11 +309,11 @@ namespace TheRavine.Generator
             return generator.ApplyImmediate(in add);
         }
 
-        private static void Spread(MapGenerator generator, long pos, SpreadPattern pattern, int baseLevel)
+        private static void Spread(MapGenerator generator, long pos, SpreadPattern pattern)
         {
             if (pattern == null) return;
 
-            if (pattern.main != null) ApplyAdd(generator, pos, pattern.main, pattern.main.DefaultAmount, baseLevel);
+            if (pattern.main != null) ApplyAdd(generator, pos, pattern.main, pattern.main.DefaultAmount, 0);
             if (pattern.other == null) return;
 
             Vector2Int center = Position2Int.UnpackToVector(pos);
@@ -322,7 +322,7 @@ namespace TheRavine.Generator
                 ObjectInfo other = pattern.other[i];
                 if (other == null) continue;
                 long point = Position2Int.Pack(Extension.GetRandomPointAround(center, pattern.factor));
-                ApplyAdd(generator, point, other, other.DefaultAmount, baseLevel);
+                ApplyAdd(generator, point, other, other.DefaultAmount, 0);
             }
         }
     }

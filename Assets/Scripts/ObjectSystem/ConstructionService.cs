@@ -8,7 +8,7 @@ namespace TheRavine.ObjectControl
         {
             if (info == null) return PlacementResult.InvalidLevels;
 
-            PlacementResult result = generator.TryAddFromInfo(position, generator.GetRealPosition(position), info, amount, info.Levels, baseLevel);
+            PlacementResult result = generator.TryPlaceSnapped(position, info, amount, baseLevel);
             if (result == PlacementResult.Ok) generator.ExtraUpdate();
             return result;
         }
