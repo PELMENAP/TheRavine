@@ -558,6 +558,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float SenescenceSpeedLoss;
         public readonly float SenescenceDigestLoss;
         public readonly float QuorumMigrateBias;
+        public readonly float UnreachableFoodSeconds;
         public readonly float[] PlanMinSecondsByPlan;
         public readonly float[] PlanMaxSecondsByPlan;
         public readonly float[] CasteAffinityLog;
@@ -1128,6 +1129,7 @@ public sealed partial class SimulationRules : ScriptableObject
             SenescenceSpeedLoss = r.senescenceSpeedLoss;
             SenescenceDigestLoss = r.senescenceDigestLoss;
             QuorumMigrateBias = r.quorumMigrateBias;
+            UnreachableFoodSeconds = r.unreachableFoodSeconds;
             PlanMinSecondsByPlan = r.FillPlanSeconds(r.planMinSecondsByPlan, r.planMinSeconds, PlanMinBuf);
             PlanMaxSecondsByPlan = r.FillPlanSeconds(r.planMaxSecondsByPlan, r.planMaxSeconds, PlanMaxBuf);
             CasteAffinityLog     = r.FillCasteAffinityLog();

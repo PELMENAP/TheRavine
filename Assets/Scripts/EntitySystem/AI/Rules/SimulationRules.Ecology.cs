@@ -95,6 +95,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float dietPlantFloor = 0.4f;
     [SerializeField] private float dietMeatFloor = 0.4f;
     [SerializeField] private float winterWiltTau = 120f;
+    [SerializeField] private float unreachableFoodSeconds = 120f;
 
     public float EatEnergyFood => eatEnergyFood;
     public int FoodRegenBurst => foodRegenBurst;
@@ -181,4 +182,5 @@ public sealed partial class SimulationRules
     public float DietPlantFloor => dietPlantFloor;
     public float DietMeatFloor => dietMeatFloor;
     public float WinterWiltTau => winterWiltTau;
+    public float UnreachableFoodSeconds => unreachableFoodSeconds;
 }

@@ -78,6 +78,7 @@ public sealed class ChunkFoodIndex
     private readonly LongDictionary<float> _meat = new(32);
     private readonly LongDictionary<ViralPayload> _payloads = new(16);
     private readonly LongDictionary<int> _taboo = new(16);
+    private readonly LongDictionary<double> _unreachable = new(16);
 
     public int FoodCount { get; private set; }
 
@@ -285,6 +286,7 @@ public sealed class ChunkFoodIndex
         fc.Maturity[idx] = 0;
         _meat.Remove(cell);
         _taboo.Remove(cell);
+        _unreachable.Remove(cell);
         DropPayload(cell);
     }
 
@@ -344,6 +346,8 @@ public sealed class ChunkFoodIndex
     {
         using var scope = FindFoodMarker.Auto();
         bool filter = excludeColony != 0 && _taboo.Count > 0;
+        bool skipUnreachable = _unreachable.Count > 0;
+        double nowTime = skipUnreachable ? SimulationClock.TimeD : 0d;
         worldCell = 0L;
         distance  = -1f;
 
@@ -402,6 +406,8 @@ public sealed class ChunkFoodIndex
                     if (sqr > r2 || sqr >= bestSqr) continue;
                     if (filter && _taboo.TryGetValue(Position2Int.Pack(baseX + lx, baseZ + lz), out int owner)
                         && owner == excludeColony) continue;
+                    if (skipUnreachable && _unreachable.TryGetValue(Position2Int.Pack(baseX + lx, baseZ + lz), out double until)
+                        && until > nowTime) continue;
 
                     bestSqr  = sqr;
                     bestCell = Position2Int.Pack(baseX + lx, baseZ + lz);
@@ -551,6 +557,7 @@ public sealed class ChunkFoodIndex
 
         _meat.Remove(cell);
         _taboo.Remove(cell);
+        _unreachable.Remove(cell);
         if (!infected) DropPayload(cell);
 
         FoodCount--;
@@ -750,6 +757,7 @@ public sealed class ChunkFoodIndex
 
         spoiledEnergy = TickMeat(dt, in r, ref soilStored);
         ExpireClaims(now, r.LargeFoodWindow);
+        ExpireUnreachable(now);
     }
 
     public float NestScarcity(float2 position, int radiusChunks)
@@ -932,6 +940,19 @@ public sealed class ChunkFoodIndex
 
         DropPayload(cell);
         RemoveAt(fc, cd, idx, cell, out _);
+    }
+
+    public void MarkUnreachable(long cell, double until) => _unreachable[cell] = until;
+
+    private void ExpireUnreachable(double now)
+    {
+        if (_unreachable.Count == 0) return;
+
+        EnsureKeyBuffer(_unreachable.Count);
+        int n = 0;
+        foreach (var kv in _unreachable)
+            if (kv.Value <= now) _pruneKeys[n++] = kv.Key;
+        for (int i = 0; i < n; i++) _unreachable.Remove(_pruneKeys[i]);
     }
 
     private int FindClaim(long cell)
