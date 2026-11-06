@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Unity.Collections;
 using UnityEngine;
 
 using TheRavine.Base;
@@ -11,12 +12,14 @@ namespace TheRavine.Generator
     public sealed class ChunkStore
     {
         private const int Magic  = 0x4B435652;
-        private const int Format = 2;
+        private const int Format = 3;
         private const int MinFormat = 1;
 
         private string _directory;
         private readonly int _seed;
         private readonly List<ObjectInstInfo> _infos = new(64);
+        private readonly List<int> _editCells = new(16);
+        private readonly List<float> _editHeights = new(16);
         private byte _detailLevel;
 
         private ChunkStore(string directory, int seed)
@@ -60,6 +63,15 @@ namespace TheRavine.Generator
 
                     for (int i = 0; i < chunk.Objects.Length; i++)
                         WriteObject(writer, chunk, chunk.Objects[i]);
+
+                    var edits = chunk.HeightEdits.GetKeyValueArrays(Allocator.Temp);
+                    writer.Write(edits.Length);
+                    for (int i = 0; i < edits.Length; i++)
+                    {
+                        writer.Write(edits.Keys[i]);
+                        writer.Write(edits.Values[i]);
+                    }
+                    edits.Dispose();
                 }
 
                 if (File.Exists(path)) File.Delete(path);
@@ -83,6 +95,9 @@ namespace TheRavine.Generator
             int failed = 0;
             for (int i = 0; i < _infos.Count; i++)
                 if (!ApplyObject(chunk, _infos[i])) failed++;
+
+            for (int i = 0; i < _editCells.Count; i++)
+                chunk.RestoreHeight(_editCells[i], _editHeights[i]);
 
             chunk.CommitRestore(_detailLevel);
 
@@ -117,6 +132,8 @@ namespace TheRavine.Generator
         private unsafe bool TryRead(string path, long chunkKey)
         {
             _infos.Clear();
+            _editCells.Clear();
+            _editHeights.Clear();
 
             try
             {
@@ -161,6 +178,22 @@ namespace TheRavine.Generator
                             info.SecondaryIdxs[k] = reader.ReadInt32();
 
                         _infos.Add(info);
+                    }
+
+                    if (format >= 3)
+                    {
+                        int editCount = reader.ReadInt32();
+                        if (editCount < 0 || editCount > ChunkData.TotalCells) return false;
+
+                        for (int i = 0; i < editCount; i++)
+                        {
+                            int cell = reader.ReadInt32();
+                            float height = reader.ReadSingle();
+                            if (cell < 0 || cell >= ChunkData.TotalCells) return false;
+
+                            _editCells.Add(cell);
+                            _editHeights.Add(height);
+                        }
                     }
                 }
                 return true;

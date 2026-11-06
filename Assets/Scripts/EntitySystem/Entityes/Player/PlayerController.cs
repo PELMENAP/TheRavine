@@ -64,7 +64,7 @@ namespace TheRavine.EntityControl
         private long aimCell = AimSnap.NoCell;
         private int aimLevel;
         private object aimPlaceable;
-        private PlacementKind aimKind;
+        private ObjectInfo aimInfo;
         private CameraInputController cameraInput;
 
         private IController currentController;
@@ -445,7 +445,7 @@ namespace TheRavine.EntityControl
             if (aimPlaceable == null && map.TryGetObject(aimCell, aimLevel, out ObjectInstInfo aimObject))
                 aimPosition = aimObject.Position;
             else
-                aimPosition = LevelSpace.Resolve(aimPosition, aimKind, aimLevel, map.Settings.levelHeight);
+                aimPosition.y = map.PlacementY(aimCell, aimInfo, aimLevel);
             crosshair.position = aimPosition;
 
             crosshair.gameObject.SetActive(true);
@@ -459,20 +459,20 @@ namespace TheRavine.EntityControl
 
             int placeableLevels = 1;
             object placeable = null;
-            aimKind = PlacementKind.Surface2D;
-            if (ServiceLocator.Services.TryGet(out IPlacementSource placement))
+            IPlacementSource placement = null;
+            if (ServiceLocator.Services.TryGet(out placement))
             {
                 placeable = placement.ActivePlaceable;
-                if (placeable != null)
-                {
-                    placeableLevels = placement.ActivePlaceableLevels;
-                    aimKind = (PlacementKind)placement.ActivePlaceableKind;
-                }
+                if (placeable != null) placeableLevels = placement.ActivePlaceableLevels;
             }
 
             if (!ReferenceEquals(placeable, aimPlaceable))
             {
                 aimPlaceable = placeable;
+                aimInfo = null;
+                int aimObjectId = placeable != null ? placement.ActivePlaceableObjectId : -1;
+                if (aimObjectId >= 0 && ServiceLocator.Services.TryGet(out ObjectSystem aimObjects))
+                    aimInfo = aimObjects.GetInfo(aimObjectId);
                 aimLevel = 0;
                 cameraInput.ConsumeWheelStep();
             }

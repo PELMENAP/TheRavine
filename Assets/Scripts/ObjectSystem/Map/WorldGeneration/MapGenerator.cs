@@ -416,18 +416,14 @@ namespace TheRavine.Generator
             int levels,
             int baseLevel)
         {
-            ObjectInfo info = objectSystem != null ? objectSystem.GetInfo(prefabID) : null;
-            if (info != null && additionalWorldCells.IsEmpty)
-                return TryAddFromInfo(worldPos, realPos, info, amount, levels, baseLevel) == PlacementResult.Ok;
-
-            if (info != null)
-                realPos = LevelSpace.Resolve(realPos, info.PlacementKind, baseLevel, Settings.levelHeight);
-            return TryAddObjectEx(worldPos, realPos, prefabID, amount, additionalWorldCells, levels, baseLevel) == PlacementResult.Ok;
+            ObjectInfo info = additionalWorldCells.IsEmpty && objectSystem != null ? objectSystem.GetInfo(prefabID) : null;
+            return info != null
+                ? TryAddFromInfo(worldPos, realPos, info, amount, levels, baseLevel) == PlacementResult.Ok
+                : TryAddObjectEx(worldPos, realPos, prefabID, amount, additionalWorldCells, levels, baseLevel) == PlacementResult.Ok;
         }
 
         public PlacementResult TryAddFromInfo(long worldPos, Vector3 realPos, ObjectInfo info, int amount, int levels, int baseLevel = 0)
         {
-            realPos = LevelSpace.Resolve(realPos, info.PlacementKind, baseLevel, Settings.levelHeight);
             Span<Vector2Int> cells = stackalloc Vector2Int[ObjectInstInfo.MaxSecondary];
             int count = Footprint.Resolve(info, Position2Int.UnpackToVector(worldPos), cells);
             if (count > cells.Length)
@@ -437,6 +433,75 @@ namespace TheRavine.Generator
             }
 
             return TryAddObjectEx(worldPos, realPos, info.Id, amount, cells[..count], levels, baseLevel);
+        }
+
+        public float PlacementY(long worldPos, ObjectInfo info, int baseLevel)
+        {
+            float top = GetRealPosition(worldPos).y;
+            if (info != null)
+            {
+                Span<Vector2Int> cells = stackalloc Vector2Int[ObjectInstInfo.MaxSecondary];
+                int count = Footprint.Resolve(info, Position2Int.UnpackToVector(worldPos), cells);
+                if (count > cells.Length) count = 0;
+                for (int i = 0; i < count; i++)
+                    top = math.max(top, GetRealPosition(Position2Int.Pack(cells[i])).y);
+            }
+
+            return LevelSpace.SnapY(top, baseLevel, Settings.levelHeight);
+        }
+
+        public PlacementResult TryPlaceSnapped(long worldPos, ObjectInfo info, int amount, int baseLevel)
+        {
+            Span<Vector2Int> cells = stackalloc Vector2Int[ObjectInstInfo.MaxSecondary];
+            int count = Footprint.Resolve(info, Position2Int.UnpackToVector(worldPos), cells);
+            if (count > cells.Length)
+            {
+                RavineLog.Warning($"[MapGenerator] Too many secondary cells: {count} > {ObjectInstInfo.MaxSecondary}");
+                return PlacementResult.TooManyCells;
+            }
+
+            float y = PlacementY(worldPos, info, baseLevel);
+            Vector3 realPos = GetRealPosition(worldPos);
+            realPos.y = y;
+
+            PlacementResult result = TryAddObjectEx(worldPos, realPos, info.Id, amount, cells[..count], info.Levels, baseLevel);
+            if (result != PlacementResult.Ok) return result;
+
+            FillGround(worldPos, y);
+            for (int i = 0; i < count; i++)
+                FillGround(Position2Int.Pack(cells[i]), y);
+            return PlacementResult.Ok;
+        }
+
+        private void FillGround(long worldPos, float objectY)
+        {
+            long chunk = WorldToChunk(worldPos);
+            if (!mapData.TryGetValue(chunk, out ChunkData cd)) return;
+
+            int idx = WorldToLocalIdx(worldPos);
+            if (!LevelSpace.NeedsFill(objectY, cd.HeightRaw[idx], Settings.levelHeight)) return;
+
+            SetTerrainHeight(chunk, cd, idx, objectY);
+        }
+
+        public bool SetTerrainHeight(long worldPos, float height)
+        {
+            long chunk = WorldToChunk(worldPos);
+            if (!mapData.TryGetValue(chunk, out ChunkData cd)) return false;
+            return SetTerrainHeight(chunk, cd, WorldToLocalIdx(worldPos), height);
+        }
+
+        private bool SetTerrainHeight(long chunk, ChunkData cd, int idx, float height)
+        {
+            if (!cd.SetHeight(idx, height)) return false;
+
+            MarkChunkDirty(chunk);
+            if (endless != null)
+            {
+                for (int i = 0; i < endless.Length; i++)
+                    endless[i]?.OnTerrainChanged(chunk);
+            }
+            return true;
         }
 
         public PlacementResult TryAddObjectEx(
@@ -997,6 +1062,7 @@ namespace TheRavine.Generator
         public NativeArray<int>            Occupancy;
         public NativeArray<byte>           LevelMask;
         public NativeParallelHashMap<int, int> UpperHandles;
+        public NativeParallelHashMap<int, float> HeightEdits;
         public NativeList<ObjectInstInfo>  Objects;
         private Dictionary<int, BuildingVolume> buildings;
         public NativeArray<byte>           MoveCost;
@@ -1034,6 +1100,7 @@ namespace TheRavine.Generator
             Occupancy      = new NativeArray<int>   (TotalCells, Allocator.Persistent);
             LevelMask      = new NativeArray<byte>  (TotalCells, Allocator.Persistent);
             UpperHandles   = new NativeParallelHashMap<int, int>(16, Allocator.Persistent);
+            HeightEdits    = new NativeParallelHashMap<int, float>(16, Allocator.Persistent);
             MoveCost       = new NativeArray<byte>  (TotalCells, Allocator.Persistent);
             Climate        = new NativeArray<float2>(TotalCells, Allocator.Persistent);
             RiverBlend     = new NativeArray<float> (TotalCells, Allocator.Persistent);
@@ -1339,6 +1406,28 @@ namespace TheRavine.Generator
             IsDirty = true;
         }
 
+        public bool SetHeight(int cellIdx, float height)
+        {
+            if ((uint)cellIdx >= TotalCells || HeightRaw[cellIdx] == height) return false;
+
+            HeightRaw[cellIdx] = height;
+            HeightEdits[cellIdx] = height;
+            WaterRingStamp = 0;
+            IsDirty = true;
+            Version++;
+            return true;
+        }
+
+        internal void RestoreHeight(int cellIdx, float height)
+        {
+            if ((uint)cellIdx >= TotalCells) return;
+
+            HeightRaw[cellIdx] = height;
+            HeightEdits[cellIdx] = height;
+            WaterRingStamp = 0;
+            Version++;
+        }
+
         public int LevelsAt(int anchorIdx) => TryGetBuilding(anchorIdx, out BuildingVolume volume) ? volume.Levels : 1;
 
         internal void MarkPersisted() => SavedVersion = Version;
@@ -1353,6 +1442,7 @@ namespace TheRavine.Generator
         internal void ResetForReuse()
         {
             ClearObjects();
+            if (HeightEdits.IsCreated) HeightEdits.Clear();
             StructureSpawnPoints?.Clear();
             WaterRingStamp = 0;
             WaterHoodMask = 0;
@@ -1375,6 +1465,7 @@ namespace TheRavine.Generator
             if (Occupancy.IsCreated)      Occupancy.Dispose();
             if (LevelMask.IsCreated)      LevelMask.Dispose();
             if (UpperHandles.IsCreated)   UpperHandles.Dispose();
+            if (HeightEdits.IsCreated)    HeightEdits.Dispose();
             if (MoveCost.IsCreated)       MoveCost.Dispose();
             if (Climate.IsCreated)        Climate.Dispose();
             if (RiverBlend.IsCreated)     RiverBlend.Dispose();

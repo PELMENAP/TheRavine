@@ -1,17 +1,16 @@
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace TheRavine.Generator
 {
     public static class LevelSpace
     {
-        public static Vector3 Resolve(Vector3 terrainPosition, PlacementKind kind, int baseLevel, float levelHeight)
+        public static float SnapY(float groundTop, int baseLevel, float levelHeight)
         {
-            if (kind == PlacementKind.Construction3D && levelHeight > 0f)
-                terrainPosition.y = (math.floor(terrainPosition.y / levelHeight) + baseLevel) * levelHeight;
-            else
-                terrainPosition.y += baseLevel * levelHeight;
-            return terrainPosition;
+            if (levelHeight <= 0f) return groundTop;
+            return (math.ceil(groundTop / levelHeight) + baseLevel) * levelHeight;
         }
+
+        public static bool NeedsFill(float objectY, float ground, float levelHeight) =>
+            objectY > ground && objectY - ground < levelHeight;
     }
 }

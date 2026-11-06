@@ -55,7 +55,7 @@ namespace TheRavine.Generator
         [Min(0f)] public float horizonPeakHeight = 100f;
 
         [Header("Levels")]
-        [Min(0f)] public float levelHeight = 2f;
+        [Min(0.01f)] public float levelHeight = 1f;
 
         [Header("Far Objects")]
         [Min(1)] public int farMaxInstances = 65536;
