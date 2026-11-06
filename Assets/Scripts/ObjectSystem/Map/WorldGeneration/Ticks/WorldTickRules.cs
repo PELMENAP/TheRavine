@@ -11,6 +11,7 @@ namespace TheRavine.Generator
         [Min(1)] public int maxTicksPerFrame = 4;
         [Min(1)] public int maxEventsPerTick = 1024;
         [Min(1)] public int regionRebuildIntervalFrames = 30;
+        [Min(0)] public int nalRings = 4;
         [Min(0f)] public float warmupSeconds = 10f;
         [Min(0f)] public float catchUpMaxSeconds = 600f;
         [Min(0)] public int catchUpBurstRounds = 4;

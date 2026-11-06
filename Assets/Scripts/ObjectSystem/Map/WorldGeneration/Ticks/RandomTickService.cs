@@ -53,7 +53,6 @@ namespace TheRavine.Generator
         private double warmupUntil;
         private double accumulator;
         private long regionCenter;
-        private int regionFacing;
         private int regionRings;
         private int framesSinceRebuild;
         private int stamp;
@@ -151,7 +150,6 @@ namespace TheRavine.Generator
             if (!regionBuilt
                 || framesSinceRebuild >= rules.regionRebuildIntervalFrames
                 || generator.WindowCenter != regionCenter
-                || generator.Facing != regionFacing
                 || generator.NalRingCount != regionRings)
                 RebuildRegion(now);
 
@@ -234,25 +232,20 @@ namespace TheRavine.Generator
             regionBuilt = true;
             framesSinceRebuild = 0;
             regionCenter = generator.WindowCenter;
-            regionFacing = generator.Facing;
             regionRings = generator.NalRingCount;
             stamp++;
             region.Clear();
 
-            for (int gz = 0; gz < MapGenerator.WindowSide; gz++)
-                for (int gx = 0; gx < MapGenerator.WindowSide; gx++)
-                    AddRegionChunk(MapGenerator.WindowChunk(regionCenter, gx, gz), 0, now);
+            int reach = regionRings * MapGenerator.WindowSide + MapGenerator.chunkScale;
+            int cx = Position2Int.GetX(regionCenter);
+            int cz = Position2Int.GetY(regionCenter);
 
-            for (int ring = 1; ring <= regionRings; ring++)
-            {
-                for (int dx = -ring; dx <= ring; dx++)
+            for (int dz = -reach; dz <= reach; dz++)
+                for (int dx = -reach; dx <= reach; dx++)
                 {
-                    long block = Position2Int.Offset(regionCenter, dx * MapGenerator.WindowSide, ring * regionFacing * MapGenerator.WindowSide);
-                    for (int gz = 0; gz < MapGenerator.WindowSide; gz++)
-                        for (int gx = 0; gx < MapGenerator.WindowSide; gx++)
-                            AddRegionChunk(MapGenerator.WindowChunk(block, gx, gz), ring, now);
+                    long key = Position2Int.Pack(cx + dx, cz + dz);
+                    AddRegionChunk(key, MapGenerator.SimRingOf(regionCenter, regionRings, key), now);
                 }
-            }
 
             stale.Clear();
             foreach (var kv in members)

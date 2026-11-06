@@ -1,4 +1,5 @@
 using System;
+using TheRavine.ViewControl;
 
 public interface IEndless : IDisposable
 {
@@ -10,5 +11,5 @@ public interface IEndless : IDisposable
 
 public interface IViewDirectional
 {
-    void SetFacing(int facing);
+    void SetFacing(ViewFacing facing);
 }

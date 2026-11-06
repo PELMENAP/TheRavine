@@ -86,7 +86,8 @@ namespace TheRavine.EntityControl
             var player = ServiceLocator.Players.GetAllPlayers()[0];
             cameraInput = new CameraInputController(
                 actions.GetActionFrom("Gameplay", "Camera Scroll"),
-                actions.GetActionFrom("Gameplay", "Camera Flip"),
+                actions.GetActionFrom("Gameplay", "Camera Rotate Right"),
+                actions.GetActionFrom("Gameplay", "Camera Rotate Left"),
                 player.GetEntityComponent<EventBusComponent>().EventBus);
             ServiceLocator.Register(cameraInput);
             cameraInput.Start();

@@ -12,6 +12,7 @@ using TheRavine.Base;
 using TheRavine.ObjectControl;
 using TheRavine.EntityControl;
 using TheRavine.Events;
+using TheRavine.ViewControl;
 using R3;
 
 namespace TheRavine.Generator
@@ -29,6 +30,7 @@ namespace TheRavine.Generator
         public const int chunkSize = scale * mapChunkSize;
         public const int generationSize = scale * mapChunkSize * (1 + 2 * chunkScale);
         public const float maxTerrainHeight = 100f;
+        public const int SideBlockRing = 1;
 
         public const int CellShift = 1;
         public const int RowShift = 6;
@@ -51,7 +53,9 @@ namespace TheRavine.Generator
 
         private long windowCenter;
         private bool hasWindow, ready, disposed;
-        private int facing = 1;
+        private ViewFacing facing;
+        private bool simPending;
+        private int simShell, simStep;
         private int frame;
         private int lodRingCount;
         private bool evictionPending;
@@ -60,11 +64,10 @@ namespace TheRavine.Generator
 
         private IDisposable playerSubscription;
         private AEntity boundPlayer;
-        private EventBus playerEventBus;
 
         public ChunkGenerationSettings Settings => activeSettings ?? chunkGenerationSettings;
         public long WindowCenter => windowCenter;
-        public int Facing => facing;
+        public ViewFacing Facing => facing;
         public int LodRingCount => lodRingCount;
         public int LoadedChunkCount => mapData.Count;
 
@@ -104,21 +107,42 @@ namespace TheRavine.Generator
         public bool IsInActiveWindow(long worldPos) =>
             hasWindow && IsInWindow(windowCenter, WorldToChunk(worldPos), chunkScale);
 
-        public static int RingOf(long center, int facing, int ringCount, long chunk)
+        public static int ViewRingOf(long center, ViewFacing facing, int ringCount, long chunk)
         {
-            int dx = math.abs(Position2Int.GetX(chunk) - Position2Int.GetX(center));
-            int forward = (Position2Int.GetY(chunk) - Position2Int.GetY(center)) * facing;
+            int2 delta = new(Position2Int.GetX(chunk) - Position2Int.GetX(center), Position2Int.GetY(chunk) - Position2Int.GetY(center));
+            int lateral = math.abs(math.dot(delta, facing.Right()));
+            int forward = math.dot(delta, facing.Forward());
 
-            if (dx <= chunkScale && math.abs(forward) <= chunkScale) return 0;
-            if (forward <= chunkScale) return -1;
+            if (lateral <= chunkScale && math.abs(forward) <= chunkScale) return 0;
+
+            if (forward <= chunkScale)
+            {
+                bool sideBlock = math.abs(forward) <= chunkScale && lateral <= chunkScale + WindowSide;
+                return sideBlock && ringCount >= SideBlockRing ? SideBlockRing : -1;
+            }
 
             int ring = (forward + chunkScale) / WindowSide;
-            if (ring > ringCount || dx > ring * WindowSide + chunkScale) return -1;
+            if (ring > ringCount || lateral > ring * WindowSide + chunkScale) return -1;
             return ring;
         }
 
+        public static int SimRingOf(long center, int ringCount, long chunk)
+        {
+            int d = math.max(
+                math.abs(Position2Int.GetX(chunk) - Position2Int.GetX(center)),
+                math.abs(Position2Int.GetY(chunk) - Position2Int.GetY(center)));
+
+            if (d <= chunkScale) return 0;
+
+            int ring = (d - chunkScale + WindowSide - 1) / WindowSide;
+            return ring > ringCount ? -1 : ring;
+        }
+
+        public int ViewRingOfChunk(long chunkKey) =>
+            hasWindow ? ViewRingOf(windowCenter, facing, ViewRingCount, chunkKey) : -1;
+
         public int RingOfChunk(long chunkKey) =>
-            hasWindow ? RingOf(windowCenter, facing, NalRingCount, chunkKey) : -1;
+            hasWindow ? SimRingOf(windowCenter, NalRingCount, chunkKey) : -1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ChunkData GetMapData(long chunkKey) => EnsureChunk(chunkKey, 0);
@@ -672,7 +696,9 @@ namespace TheRavine.Generator
         [SerializeField, Min(0.1f)] private float nalApplyBudgetMs = 1f;
         [SerializeField, Min(1)] private int chunkRequestCapacity = 32;
 
-        public int NalRingCount => math.min(lodRingCount, ObjectInfo.MaxVisibleRings);
+        public int ViewRingCount => math.min(lodRingCount, ObjectInfo.MaxVisibleRings);
+        public int NalRingCount => tickRules != null ? math.min(ViewRingCount, tickRules.nalRings) : ViewRingCount;
+        public int NalReach => NalRingCount * WindowSide + chunkScale;
         public RandomTickService RandomTicks => randomTicks;
 
         public WorldCommandBuffer Commands { get; private set; }
@@ -706,7 +732,8 @@ namespace TheRavine.Generator
             if (worldLoaded) BindChunkStore(worldRegistry);
 
             CurvedWorld.Configure(Settings.curveRadius, Settings.curveFlat, Settings.curveFocusDistance);
-            CurvedWorld.SetFacing(facing);
+            facing = ViewOrientation.Facing;
+            ViewOrientation.FacingChanged += OnFacingChanged;
             RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
             BiomeShaderGlobals.Apply(Settings, biomeAlbedo);
 
@@ -793,18 +820,13 @@ namespace TheRavine.Generator
             TransformComponent transformComponent = player.GetEntityComponent<TransformComponent>();
             if (transformComponent != null)
                 viewer = transformComponent.GetEntityTransform();
-
-            playerEventBus = player.GetEntityComponent<EventBusComponent>()?.EventBus;
-            playerEventBus?.Subscribe<CameraPlace>(OnCameraPlace);
         }
 
-        private void OnCameraPlace(AEntity sender, CameraPlace e)
+        private void OnFacingChanged(ViewFacing newFacing)
         {
-            int newFacing = e.flip ? -1 : 1;
             if (newFacing == facing) return;
 
             facing = newFacing;
-            CurvedWorld.SetFacing(facing);
             if (hasWindow && grassSystem != null)
                 grassSystem.UpdateGrassPlacement(this, windowCenter);
             if (endless != null)
@@ -825,12 +847,14 @@ namespace TheRavine.Generator
             }
 
             Vector3 position = camera.transform.position;
-            float originZ = position.z + facing * CurvedWorld.FocusDistance;
+            float2 forward = (float2)facing.Forward();
+            float2 focus = new float2(position.x, position.z) + forward * CurvedWorld.FocusDistance;
+            float origin = math.dot(new float2(position.x, position.z), forward) + CurvedWorld.FocusDistance;
 
-            if (!TrySampleHeightBilinear(position.x, originZ, out float referenceHeight))
+            if (!TrySampleHeightBilinear(focus.x, focus.y, out float referenceHeight))
                 referenceHeight = position.y;
 
-            CurvedWorld.Push(originZ, referenceHeight);
+            CurvedWorld.Push(origin, referenceHeight);
         }
 
         public bool TryGetViewerChunk(out int x, out int z)
@@ -875,6 +899,9 @@ namespace TheRavine.Generator
             nal?.Poll();
             FlushDirty();
 
+            if (simPending)
+                SupplySimSquare(FrameBudget.Now + (deadline - FrameBudget.Now) / 2);
+
             for (int i = 0; i < endless.Length; i++)
                 endless[i]?.Tick(deadline);
 
@@ -901,6 +928,54 @@ namespace TheRavine.Generator
                 grassSystem.UpdateGrassPlacement(this, center);
 
             evictionPending = true;
+            RestartSimSupply();
+        }
+
+        private void RestartSimSupply()
+        {
+            simPending = lodRingCount > 0 && NalRingCount > 0;
+            simShell = 0;
+            simStep = 0;
+        }
+
+        private void SupplySimSquare(long deadline)
+        {
+            int reach = NalReach;
+            int cx = Position2Int.GetX(windowCenter);
+            int cz = Position2Int.GetY(windowCenter);
+
+            while (simShell <= reach)
+            {
+                int d = simShell;
+                int perimeter = d == 0 ? 1 : 8 * d;
+                int ring = d <= chunkScale ? 0 : (d - chunkScale + WindowSide - 1) / WindowSide;
+
+                while (simStep < perimeter)
+                {
+                    int k = simStep;
+                    int x, z;
+                    if (d == 0) { x = 0; z = 0; }
+                    else if (k <= 2 * d) { x = -d + k; z = -d; }
+                    else if (k <= 4 * d) { x = d; z = -d + (k - 2 * d); }
+                    else if (k <= 6 * d) { x = d - (k - 4 * d); z = d; }
+                    else { x = -d; z = d - (k - 6 * d); }
+
+                    long key = Position2Int.Pack(cx + x, cz + z);
+                    if (!mapData.TryGetValue(key, out ChunkData cd) || cd.DetailLevel > ring)
+                    {
+                        if (FrameBudget.Expired(deadline)) return;
+                        EnsureChunk(key, ring);
+                    }
+
+                    simStep++;
+                }
+
+                simShell++;
+                simStep = 0;
+            }
+
+            simPending = false;
+            simShell = 0;
         }
 
         public void ExtraUpdate() => FlushDirty();
@@ -977,24 +1052,20 @@ namespace TheRavine.Generator
                 if (mapData.TryGetValue(evictBuffer[i], out ChunkData cd))
                     ReleaseChunk(evictBuffer[i], cd);
             }
+
+            if (n > 0) RestartSimSupply();
         }
 
         private bool IsRetained(long chunkKey)
         {
             int hysteresis = Settings.evictionHysteresis;
-            int dx = math.abs(Position2Int.GetX(chunkKey) - Position2Int.GetX(windowCenter));
-            int dz = Position2Int.GetY(chunkKey) - Position2Int.GetY(windowCenter);
+            int d = math.max(
+                math.abs(Position2Int.GetX(chunkKey) - Position2Int.GetX(windowCenter)),
+                math.abs(Position2Int.GetY(chunkKey) - Position2Int.GetY(windowCenter)));
 
             int near = math.max(Settings.retainRadius, HeightWindow.Radius) + hysteresis;
-            if (dx <= near && math.abs(dz) <= near) return true;
-            if (lodRingCount <= 0) return false;
-
-            int forward = dz * facing;
-            int reach = HeightWindow.Radius + hysteresis;
-            if (forward < 0 || forward > lodRingCount * WindowSide + reach) return false;
-
-            int ring = math.min((forward + reach) / WindowSide, lodRingCount);
-            return ring > 0 && dx <= ring * WindowSide + reach;
+            if (d <= near) return true;
+            return lodRingCount > 0 && d <= NalReach + hysteresis;
         }
 
         public void BreakUp(ISetAble.Callback callback)
@@ -1010,12 +1081,11 @@ namespace TheRavine.Generator
             ready = false;
 
             RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+            ViewOrientation.FacingChanged -= OnFacingChanged;
             CurvedWorld.PushFlat();
 
             playerSubscription?.Dispose();
             playerSubscription = null;
-            playerEventBus?.Unsubscribe<CameraPlace>(OnCameraPlace);
-            playerEventBus = null;
             boundPlayer = null;
 
             autosaveSubscription?.Dispose();

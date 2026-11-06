@@ -9,7 +9,7 @@ The Ravine is a virtual place where humans and AI live and coexist under the sam
 - **Absolute freedom:** the world can be changed by the player and by itself; any creature may change the code and the rules of the game.
 - **Equality:** all creatures and players are under the same conditions and must adapt and interact.
 - **AI as a player:** not only humans but also artificial intelligence can play in The Ravine.
-- **Image over volume:** 3D models are in most cases redundant: the eye sees a 2D projection on the monitor and completes the volume itself.
+- **Image over volume:** 3D models are in most cases redundant: the eye sees a 2D projection on the monitor and completes the volume itself; the view is available from four sides (±Z, ±X) and flat objects turn toward the camera.
 - **Performance is a condition of freedom:** many living creatures are possible only with cheap simulation.
 
 Full text: [PHILOSOPHY.md](PHILOSOPHY.md).
@@ -56,18 +56,15 @@ All scripts are in `Assets/Scripts/` (483 `.cs` files; count: `find Assets/Scrip
 
 ---
 
-## Camera: Viewing Axis Is Z Only
+## Camera: Four Viewing Axes
 
-The camera looks only along the Z axis, in either the positive or the negative direction. There is no rotation around X or Y in the game; direction is switched by the flag `CameraInputController.Flipped` → `CameraPlace.flip` → `MapGenerator.facing` (±1) and `CurvedWorld.SetFacing` (global shader parameter `ViewFacing`).
+The camera looks along one of four horizontal axes: +Z, −Z, +X, −X (`ViewFacing`). The view is turned in 90° steps (see "Input Control"); there is no free rotation around X or Y. The single source of the view is `ViewOrientation`, written only by the local `CameraComponent`; `CameraPlace.facing` carries the requested side.
 
 Consequences for optimization and mechanics:
-- Object visibility is a half-space along Z relative to the camera (the sign is `facing`) plus an X window whose width grows with the Z distance. The "behind the camera" test is `(z − camZ) × facing < −margin`; a full frustum test is not needed.
-- `MapGenerator.RingOf` already computes the distance to the window centre as `(chunkZ − centerZ) × facing` — LOD rings and `Facing` are aligned to this same axis.
+- Object visibility is a half-space along `Forward()` relative to the camera plus a lateral window along `Right()` whose width grows with the distance. The "behind the camera" test is `dot(pos − cam, Forward) < −margin`; a full frustum test is not needed.
+- `MapGenerator.ViewRingOf` computes the distance to the window centre along `Forward()` and the lateral offset along `Right()` — LOD rings, the water and terrain blocks and `Facing` are aligned to this same axis.
 - Objects behind the camera (and far beyond the side edge of the screen) may skip animation and full-precision simulation: when they re-enter the frame, their state must be restored without a visible jump (see `PHILOSOPHY.md`, §5 "Image Over Volume" and §3 "The World as an Ecosystem").
-- Mechanics that must be noticeable to the player are placed in the half-space given by `facing`; events behind the camera may be simplified.
-- If the viewing axis ever becomes arbitrary, all visibility checks, `RingOf` and the shader `ViewFacing` must be rewritten.
-
----
+- The simulation, perception and rules do not depend on the view: the NAL / random-tick region is a square around the window (see "Camera View" below), and chunks behind the camera are loaded, ticked and retained like the others. Mechanics that must be noticeable to the player may still be simplified outside the camera frame, but never by reading `ViewOrientation` in agent code.
 
 ## Entry Point and Lifecycle
 
@@ -129,7 +126,7 @@ ReactiveCommand<Unit> OnUpdate
 | `EventBusComponent` (`Model/Actions&Events/`) | EventBus for internal entity events |
 | `StatePatternComponent` (`EntitySystem/`) | FSM — current state (AState) + command planner `CommandScheduler` |
 | `SkillComponent` (`Model/EntitySkills/`) | Dictionary<string, ISkill> |
-| `CameraComponent` (`EntitySystem/Entityes/`) | camera logic (follow + aim offset) |
+| `CameraComponent` (`EntitySystem/Entityes/`) | camera logic (follow + aim offset, four view sides) |
 
 ### Concrete Entities (`EntitySystem/Entityes/`)
 - **`PlayerEntity`** — the player (`Player/`, initialised in `PlayerModelView.OnNetworkSpawn()`)
@@ -201,9 +198,24 @@ Runs the autosave loop. Supports `SubscribeBeforeSave(Func<CT, UniTask>)` — ho
 - Subsystems: `GrassGenerator/`, `WaterSystem/` (incl. `RippleSystem/`), `ObjectGenerator/`
 
 ### Infinite Layers (`IEndless/`)
-- `EndlessTerrain` — updates a single Mesh (3x3 chunks), MeshCollider
+- `EndlessTerrain` — central Mesh of the window (3x3 chunks, MeshCollider), ring blocks of the "fir tree" along the viewing axis and two side blocks of ring 0 (dx = ±1)
 - `EndlessLiquids` — LOD water blocks with self-generated mesh (rings like `EndlessTerrain`, index-based edge stitching)
 - `EndlessObjects` — reuses objects through `ObjectSystem` (pool)
+
+#### Camera View
+- `ViewFacing` (`Model/BehavioursMap/View/`): `PlusZ=0, MinusZ=1, PlusX=2, MinusX=3` — the values match the billboard atlas columns 0..3. Helpers: `Forward()` / `Right()` (`int2` over (x, z)), `Yaw()`, `Rotate(±1)` along the cycle +Z → +X → −Z → −X, `Opposite()`
+- `ViewOrientation` is the single source of the view (`Facing`, `PitchDegrees`, `Rotation`, event `FacingChanged`); it is written only by the local `CameraComponent` (`Set(facing, pitch)`). On a change it sets the shader globals `_ViewBasis` (forward.xz, right.xz) and `_ViewColumn`
+- The chunk "fir tree" goes along the viewing axis: block centre = window centre + `dx · WindowSide · Right` + `ring · WindowSide · Forward` (`EndlessTerrain`, `EndlessLiquids`, `FarObjectRenderer`). `MapGenerator.ViewRingOf` / `ViewRingOfChunk` describe only what the camera draws
+- Side blocks: the two ring-0 terrain blocks (dx = ±1) next to the window carry their objects as LOD ring 1 (`MapGenerator.SideBlockRing`), drawn by `FarObjectRenderer`
+- NAL / random-tick simulation covers a square around the window out to the last LOD ring (`SimRingOf`, `WorldTickRules.nalRings`) regardless of the view; the fir tree and side blocks are only what the camera draws. Missing chunks of the square are supplied by `MapGenerator.SupplySimSquare`, from the inside out within the frame budget; `IsRetained` keeps the same square
+- The world bend follows the viewing axis: `CurvedWorld.hlsl` computes `dot(positionWS.xz, ViewForward()) - _CurveParams.z`; `OnBeginCameraRendering` passes the origin on the axis `dot(camera.xz, Forward) + FocusDistance`
+- Far-LOD billboards have four sides: `TreeBillboard.shader` takes its frame from `ViewForward()` / `ViewRight()` and the atlas column from `_ViewColumn`. After the switch to four columns the atlas must be re-baked in the `TreeMeshBaker` window; until then (with `_AtlasGrid.x < 4`) the X views reuse the Z pictures
+- Agent and nest labels and the player's sprites turn through `IViewOriented` / `ViewOrientedTransform` (only when the view changes); birds through `BoidsBehaviour.ApplyViewRotations`
+
+How to mark an object that depends on the view:
+- C# component: implement `IViewOriented` (`ViewSlot`, `OnViewChanged`) and call `ViewOrientation.Register` / `Unregister` in `OnEnable` / `OnDisable`; for a plain Transform rotation use `ViewOrientedTransform.Attach(go, Yaw | Full)` from code
+- Shader: include `Shaders/Include/ViewOrientation.hlsl` (`_ViewBasis`, `_ViewColumn`, `ViewForward()`, `ViewRight()`); the list of oriented shaders is `grep ViewOrientation.hlsl`
+- Data: `ObjectLodSet.BillboardSideCount` (number of baked sides); `FarMode.MeshThenBillboard` marks that an object becomes flat on the far rings
 
 ### `ObjectSystem` (`ObjectSystem/ObjectSystem.cs`)
 - `Dictionary<Vector2Int, ObjectInstInfo>` — global registry of placed objects
@@ -304,6 +316,7 @@ Genetic audio profiles: `AgentAudioProfile`, `GeneticAudioProfile` (+Cache), `Ag
 - `InputBindingAdapter` (`Core/`) — binds `Button.onClick` + `InputAction.performed` in one object
 - `IController` — abstraction over `PCController` (mouse + keyboard) and `JoistickController`
 - `DoubleTapDetector` — double-tap detector for boost
+- Camera: the mouse wheel only zooms (`Camera Scroll`); the view is rotated with the mouse side buttons — Mouse4 (`<Mouse>/backButton`, `Camera Rotate Right`) clockwise (+Z → +X → −Z → −X), Mouse5 (`<Mouse>/forwardButton`, `Camera Rotate Left`) the other way; one press is one 90° step, debounce `SimulationRules.CameraFlipDebounce`. The Camera Flip action is removed
 
 ---
 

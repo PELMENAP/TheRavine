@@ -4,10 +4,13 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEditor;
+using TheRavine.ViewControl;
+using int2 = Unity.Mathematics.int2;
 
 public class TreeMeshBaker : EditorWindow
 {
     private const string BakeShaderName = "Hidden/TreeBillboardBake";
+    private const int BillboardSides = 4;
 
     private MtreeComponent _source;
     private TreeMeshCollection _targetCollection;
@@ -67,7 +70,7 @@ public class TreeMeshBaker : EditorWindow
             originalSeeds[i] = _source.treeFunctionsAssets[i].seed;
 
         int lodCount = Mathf.Max(1, _source.LODs.Count);
-        int atlasWidth = _cellResolution * 2;
+        int atlasWidth = _cellResolution * BillboardSides;
         int atlasHeight = _cellResolution * _count;
         var atlasAlbedo = new Color32[atlasWidth * atlasHeight];
         var atlasNormal = new Color32[atlasWidth * atlasHeight];
@@ -100,9 +103,9 @@ public class TreeMeshBaker : EditorWindow
                 Bounds bounds = lodMeshes[0].bounds;
                 Material[] materials = renderer.sharedMaterials;
 
-                for (int k = 0; k < 2; k++)
+                for (int k = 0; k < BillboardSides; k++)
                 {
-                    RenderView(lodMeshes[0], materials, bounds, k == 0 ? 1 : -1, bakeMaterial,
+                    RenderView(lodMeshes[0], materials, bounds, ((ViewFacing)k).Forward(), bakeMaterial,
                         out Color32[] albedo, out Color32[] normal);
                     Dilate(albedo, normal, _cellResolution, _dilationPasses);
                     Blit(albedo, atlasAlbedo, k * _cellResolution, i * _cellResolution, atlasWidth);
@@ -110,15 +113,17 @@ public class TreeMeshBaker : EditorWindow
                 }
 
                 float p = _billboardPitch * Mathf.Deg2Rad;
+                float footprint = Mathf.Max(bounds.size.x, bounds.size.z);
                 variants[i] = new TreeMeshCollection.TreeVariant
                 {
                     mesh = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath),
                     ranges = ranges,
                     billboardBox = new Vector4(
-                        bounds.size.x,
-                        bounds.size.y * Mathf.Cos(p) + bounds.size.z * Mathf.Sin(p),
+                        footprint,
+                        bounds.size.y * Mathf.Cos(p) + footprint * Mathf.Sin(p),
                         bounds.center.y,
                         bounds.center.z),
+                    billboardCenterX = bounds.center.x,
                     billboardCell = i
                 };
 
@@ -143,7 +148,8 @@ public class TreeMeshBaker : EditorWindow
                 lodCount,
                 albedoAtlas,
                 normalAtlas,
-                _billboardPitch);
+                _billboardPitch,
+                BillboardSides);
 
             _targetCollection.ApplyBillboardMaterial();
 
@@ -151,7 +157,7 @@ public class TreeMeshBaker : EditorWindow
             AssetDatabase.SaveAssets();
 
 
-            _targetCollection.SetBakeResult(variants, lodCount, albedoAtlas, normalAtlas, _billboardPitch);
+            _targetCollection.SetBakeResult(variants, lodCount, albedoAtlas, normalAtlas, _billboardPitch, BillboardSides);
             _targetCollection.ApplyBillboardMaterial();
             EditorUtility.SetDirty(_targetCollection);
             AssetDatabase.SaveAssets();
@@ -239,15 +245,16 @@ public class TreeMeshBaker : EditorWindow
             target.Add(indices[i] + offset);
     }
 
-    private void RenderView(Mesh mesh, Material[] materials, Bounds bounds, int facing, Material bakeMaterial,
+    private void RenderView(Mesh mesh, Material[] materials, Bounds bounds, int2 forward, Material bakeMaterial,
         out Color32[] albedo, out Color32[] normal)
     {
         float p = _billboardPitch * Mathf.Deg2Rad;
-        Vector3 dir = new(0f, -Mathf.Sin(p), facing * Mathf.Cos(p));
-        Vector3 up = new(0f, Mathf.Cos(p), facing * Mathf.Sin(p));
+        Vector3 dir = new(forward.x * Mathf.Cos(p), -Mathf.Sin(p), forward.y * Mathf.Cos(p));
+        Vector3 up = new(forward.x * Mathf.Sin(p), Mathf.Cos(p), forward.y * Mathf.Sin(p));
 
-        float width = bounds.size.x;
-        float height = bounds.size.y * Mathf.Cos(p) + bounds.size.z * Mathf.Sin(p);
+        float footprint = Mathf.Max(bounds.size.x, bounds.size.z);
+        float width = footprint;
+        float height = bounds.size.y * Mathf.Cos(p) + footprint * Mathf.Sin(p);
         float depth = bounds.size.magnitude + 1f;
         Vector3 cameraPos = bounds.center - dir * depth;
 

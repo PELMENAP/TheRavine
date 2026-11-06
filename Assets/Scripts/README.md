@@ -9,7 +9,7 @@ The Ravine — виртуальное место, где человек и ИИ 
 - **Абсолютная свобода:** мир изменяем игроком и самим собой; любое существо вправе менять код и правила игры.
 - **Равенство:** все существа и игроки находятся в одинаковых условиях и вынуждены адаптироваться и взаимодействовать.
 - **ИИ как игрок:** в The Ravine может играть не только человек, но и искусственный интеллект.
-- **Образ важнее объёма:** 3D-модели в большинстве случаев избыточны — глаз на мониторе видит 2D-проекцию и сам достраивает объём.
+- **Образ важнее объёма:** 3D-модели в большинстве случаев избыточны — глаз на мониторе видит 2D-проекцию и сам достраивает объём; взгляд с четырёх сторон (±Z, ±X), плоские объекты поворачиваются к камере.
 - **Производительность — условие свободы:** много живых существ возможно только при дешёвой симуляции.
 
 Полный текст: [PHILOSOPHY.md](../../PHILOSOPHY.md).
@@ -115,7 +115,7 @@ ReactiveCommand<Unit> OnUpdate
 | `EventBusComponent` (`Model/Actions&Events/`) | EventBus для внутренних событий сущности |
 | `StatePatternComponent` (`EntitySystem/`) | FSM — текущее состояние (AState) + командный планировщик `CommandScheduler` |
 | `SkillComponent` (`Model/EntitySkills/`) | Dictionary<string, ISkill> |
-| `CameraComponent` (`EntitySystem/Entityes/`) | логика камеры (follow + aim offset) |
+| `CameraComponent` (`EntitySystem/Entityes/`) | логика камеры (follow + aim offset, 4 стороны взгляда) |
 
 ### Конкретные сущности (`EntitySystem/Entityes/`)
 - **`PlayerEntity`** — игрок (`Player/`, init в `PlayerModelView.OnNetworkSpawn()`)
@@ -187,9 +187,24 @@ IFileManager<TId, TEntity>
 - Подсистемы: `GrassGenerator/`, `WaterSystem/` (вкл. `RippleSystem/`), `ObjectGenerator/`
 
 ### Бесконечные слои (`IEndless/`)
-- `EndlessTerrain` — обновляет единый Mesh (3x3 чанка), MeshCollider
+- `EndlessTerrain` — центральный Mesh окна (3x3 чанка, MeshCollider), блоки колец «ёлочки» вдоль оси взгляда и два боковых блока ring 0 (dx = ±1)
 - `EndlessLiquids` — LOD-блоки воды с собственной генерацией меша (кольца как у `EndlessTerrain`, сшивка границ по индексам)
 - `EndlessObjects` — переиспользует объекты через `ObjectSystem` (pool)
+
+#### Ракурс камеры
+- `ViewFacing` (`Model/BehavioursMap/View/`): `PlusZ=0, MinusZ=1, PlusX=2, MinusX=3` — значения совпадают с колонками атласа билбордов 0..3. Хелперы: `Forward()` / `Right()` (`int2` по (x, z)), `Yaw()`, `Rotate(±1)` по циклу +Z → +X → −Z → −X, `Opposite()`
+- `ViewOrientation` — единственный источник ракурса (`Facing`, `PitchDegrees`, `Rotation`, событие `FacingChanged`); пишет только локальный `CameraComponent` (`Set(facing, pitch)`). При смене выставляет шейдерные глобалы `_ViewBasis` (forward.xz, right.xz) и `_ViewColumn`
+- «Ёлочка» чанков идёт вдоль оси взгляда: центр блока = центр окна + `dx · WindowSide · Right` + `ring · WindowSide · Forward` (`EndlessTerrain`, `EndlessLiquids`, `FarObjectRenderer`). `MapGenerator.ViewRingOf` / `ViewRingOfChunk` описывают только то, что рисует камера
+- Боковые блоки: два блока terrain ring 0 (dx = ±1) рядом с окном несут объекты как LOD ring 1 (`MapGenerator.SideBlockRing`), их рисует `FarObjectRenderer`
+- Симуляция NAL / случайные тики идёт по квадрату вокруг окна до последнего LOD-кольца (`SimRingOf`, `WorldTickRules.nalRings`), независимо от ракурса; ёлочка и боковые блоки — только то, что рисует камера. Недостающие чанки квадрата догружает `MapGenerator.SupplySimSquare` изнутри наружу в бюджет кадра; `IsRetained` держит тот же квадрат
+- Изгиб мира идёт вдоль оси взгляда: `CurvedWorld.hlsl` считает `dot(positionWS.xz, ViewForward()) - _CurveParams.z`; `OnBeginCameraRendering` передаёт начало на оси `dot(camera.xz, Forward) + FocusDistance`
+- Билборды дальнего LOD — 4 стороны: `TreeBillboard.shader` берёт кадр из `ViewForward()` / `ViewRight()` и колонку атласа из `_ViewColumn`. После смены на 4 колонки нужна перепечь атласа в окне `TreeMeshBaker`; до неё (при `_AtlasGrid.x < 4`) виды по X берут картинки Z
+- Метки агентов и гнёзд, спрайты игрока поворачиваются через `IViewOriented` / `ViewOrientedTransform` (только при смене ракурса); птицы — через `BoidsBehaviour.ApplyViewRotations`
+
+Как пометить объект, зависящий от ракурса:
+- C#-компонент: реализовать `IViewOriented` (`ViewSlot`, `OnViewChanged`) и вызывать `ViewOrientation.Register` / `Unregister` в `OnEnable` / `OnDisable`; для простого поворота Transform — `ViewOrientedTransform.Attach(go, Yaw | Full)` из кода
+- Шейдер: подключить `Shaders/Include/ViewOrientation.hlsl` (`_ViewBasis`, `_ViewColumn`, `ViewForward()`, `ViewRight()`); список ориентированных шейдеров — `grep ViewOrientation.hlsl`
+- Данные: `ObjectLodSet.BillboardSideCount` (число запечённых сторон), `FarMode.MeshThenBillboard` — маркер того, что объект на дальних кольцах становится плоским
 
 ### `ObjectSystem` (`ObjectSystem/ObjectSystem.cs`)
 - `Dictionary<Vector2Int, ObjectInstInfo>` — глобальный реестр размещённых объектов
@@ -199,7 +214,7 @@ IFileManager<TId, TEntity>
 - Многоуровневые постройки: `ObjectInfo.Levels` (1..`ObjectInfo.MaxLevels`). Поверхностная сетка остаётся 2D; `ChunkData.LevelMask` (байт на клетку, бит k = занята на уровне k≥1) — флаг для чтения `MapGenerator.IsOccupiedAt`/`ChunkData.HasLevelAt`. Реестр `ChunkData.TryGetBuilding(anchor)` хранит `BuildingVolume` (список `LevelCell` по всем уровням) только для построек с `Levels > 1`; размер реестра зависит от числа построек, а не от высоты. Сохранение построек не реализовано (см. решение 2.2).
 
 ### Случайные тики мира — `WorldGeneration/Ticks/`
-`RandomTickService` (вызов из `MapGenerator.Update` после `ApplyWorldCommands`, только при `WorldAuthority.IsAuthority`): каждые `WorldTickRules.tickSeconds` мирового времени (`SimulationClock`) Burst-джоб `RandomTickJob` выбирает в каждом чанке области (окно 3×3 + кольца `1..NalRingCount`) `cellsPerChunkPerTick` случайных клеток (в дальних кольцах в `farCellDivisor × ring` раз меньше) и отдаёт события по первичным клеткам объектов подписчикам `IRandomTickHandler`. Стоимость тика не зависит от числа объектов. Догон: чанк, вернувшийся в область, получает до `catchUpBurstRounds` доп. раундов за тик, пока не отработает `min(отсутствие, catchUpMaxSeconds) / tickSeconds` тиков (только в рантайме, не сохраняется).
+`RandomTickService` (вызов из `MapGenerator.Update` после `ApplyWorldCommands`, только при `WorldAuthority.IsAuthority`): каждые `WorldTickRules.tickSeconds` мирового времени (`SimulationClock`) Burst-джоб `RandomTickJob` выбирает в каждом чанке области (квадрат вокруг окна до `NalRingCount` колец по `WorldTickRules.nalRings`, не зависит от ракурса камеры) `cellsPerChunkPerTick` случайных клеток (в дальних кольцах в `farCellDivisor × ring` раз меньше) и отдаёт события по первичным клеткам объектов подписчикам `IRandomTickHandler`. Стоимость тика не зависит от числа объектов. Догон: чанк, вернувшийся в область, получает до `catchUpBurstRounds` доп. раундов за тик, пока не отработает `min(отсутствие, catchUpMaxSeconds) / tickSeconds` тиков (только в рантайме, не сохраняется).
 
 ### NAL (Natural Artificial Life) — `NAL_PC.cs` (`NalTickHandler`)
 Псевдо-экосистема на случайных тиках: объекты размножаются/умирают по вероятностям `NalRules`.
@@ -294,6 +309,7 @@ NAL принимает событие с вероятностью `nalDelayRefer
 - `InputBindingAdapter` (`Core/`) — связывает `Button.onClick` + `InputAction.performed` в одном объекте
 - `IController` — абстракция над `PCController` (мышь+клавиатура) и `JoistickController`
 - `DoubleTapDetector` — детектор двойного нажатия для буста
+- Камера: колёсико мыши — только масштаб (`Camera Scroll`); поворот вида боковыми кнопками мыши — Mouse4 (`<Mouse>/backButton`, `Camera Rotate Right`) по часовой стрелке (+Z → +X → −Z → −X), Mouse5 (`<Mouse>/forwardButton`, `Camera Rotate Left`) в обратную сторону; одно нажатие — один шаг 90°, дебаунс `SimulationRules.CameraFlipDebounce`. Действие Camera Flip удалено
 
 ---
 

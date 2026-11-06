@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 using TheRavine.Extensions;
+using TheRavine.ViewControl;
 
 namespace TheRavine.Generator
 {
@@ -34,6 +35,7 @@ namespace TheRavine.Generator
                 public Mesh Mesh;
                 public Transform Transform;
                 public int Ring;
+                public int Lod;
                 public int Dx;
                 public bool Dirty;
             }
@@ -50,7 +52,7 @@ namespace TheRavine.Generator
             private long center;
             private bool hasCenter;
             private bool centralDirty;
-            private int facing;
+            private ViewFacing facing;
 
             public EndlessTerrain(MapGenerator _generator, ChunkGenerationSettings settings)
             {
@@ -88,21 +90,22 @@ namespace TheRavine.Generator
 
                 int b = 0;
 
+                int sideLod = math.min(MapGenerator.SideBlockRing, ringCount);
                 for (int side = -1; side <= 1; side += 2)
-                    blocks[b++] = CreateBlock(levels[2], ring: 0, dx: side, material, root);
+                    blocks[b++] = CreateBlock(levels[sideLod], ring: 0, lod: sideLod, dx: side, material, root);
 
                 for (int ring = 1; ring <= ringCount; ring++)
                 {
                     for (int k = 0; k <= 2 * ring; k++)
                     {
                         int dx = ((k + 1) >> 1) * ((k & 1) == 1 ? -1 : 1);
-                        blocks[b++] = CreateBlock(levels[ring], ring, dx, material, root);
+                        blocks[b++] = CreateBlock(levels[ring], ring, ring, dx, material, root);
                     }
                 }
             }
 
 
-            private MeshTarget CreateBlock(MeshLevel level, int ring, int dx, Material material, Transform root)
+            private MeshTarget CreateBlock(MeshLevel level, int ring, int lod, int dx, Material material, Transform root)
             {
                 var go = new GameObject($"TerrainLOD_Ring{ring}_{dx}");
                 if (root != null) go.transform.SetParent(root, false);
@@ -117,6 +120,7 @@ namespace TheRavine.Generator
                     Mesh = mesh,
                     Transform = go.transform,
                     Ring = ring,
+                    Lod = lod,
                     Dx = dx,
                     Dirty = true
                 };
@@ -170,7 +174,7 @@ namespace TheRavine.Generator
                 Apply(central, data, MapGenerator.WindowOriginWorld(center));
             }
 
-            public void SetFacing(int newFacing)
+            public void SetFacing(ViewFacing newFacing)
             {
                 if (newFacing == facing) return;
                 facing = newFacing;
@@ -215,7 +219,7 @@ namespace TheRavine.Generator
                     if (FrameBudget.Expired(deadline)) break;
 
                     long blockCenter = BlockCenter(block);
-                    if (!generator.EnsureRegion(blockCenter, HeightWindow.Radius, block.Ring, deadline)) break;
+                    if (!generator.EnsureRegion(blockCenter, HeightWindow.Radius, block.Lod, deadline)) break;
                     if (!generator.TryBuildHeightWindow(blockCenter, out HeightWindow window)) break;
 
                     handles[n] = Schedule(block, window, out pendingData[n]);
@@ -238,13 +242,25 @@ namespace TheRavine.Generator
 
             public void OnChunkDirty(long chunkKey) { }
 
-            private long BlockCenter(MeshTarget block) =>
-                Position2Int.Offset(center,
-                    block.Dx * MapGenerator.WindowSide,
-                    block.Ring * facing * MapGenerator.WindowSide);
+            private long BlockCenter(MeshTarget block)
+            {
+                int2 right = facing.Right();
+                int2 forward = facing.Forward();
+                int lateral = block.Dx * MapGenerator.WindowSide;
+                int ahead = block.Ring * MapGenerator.WindowSide;
+                return Position2Int.Offset(center,
+                    right.x * lateral + forward.x * ahead,
+                    right.y * lateral + forward.y * ahead);
+            }
 
-            private Vector3 BlockOffset(MeshTarget block) =>
-                new(block.Dx * BlockWorld, 0f, block.Ring * facing * BlockWorld);
+            private Vector3 BlockOffset(MeshTarget block)
+            {
+                int2 right = facing.Right();
+                int2 forward = facing.Forward();
+                float lateral = block.Dx * BlockWorld;
+                float ahead = block.Ring * BlockWorld;
+                return new Vector3(right.x * lateral + forward.x * ahead, 0f, right.y * lateral + forward.y * ahead);
+            }
 
             private JobHandle Schedule(MeshTarget target, in HeightWindow window, out Mesh.MeshDataArray data)
             {

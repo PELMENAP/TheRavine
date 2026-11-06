@@ -47,6 +47,8 @@ Not only humans can play, but also artificial intelligence.
 - What is perceived is enough; exact geometry is not required.
 - Resources go to what the viewer actually notices.
 - Graphics serve the feeling of a living world and do not compete with it on detail.
+- The world is the same from every side: the camera looks along any of the four axes (±Z, ±X), and no side is privileged.
+- Flat things adapt to the view: sprites, billboards and labels turn toward the viewer; the world, the rules and the creatures' perception do not depend on the view angle.
 
 ## 6. Liveliness Over Detail
 
@@ -59,8 +61,9 @@ Not only humans can play, but also artificial intelligence.
 1. Do not script what can emerge by itself.
 2. Do not single out the player: every rule applies equally to everyone.
 3. Rules are data that can be changed.
-4. Appearance must not change the essence of the world.
+4. Appearance, including the camera view angle, must not change the essence of the world.
 5. Nothing should hinder the scale of life.
+6. The view angle belongs to the viewer, not to the world.
 
 ---
 

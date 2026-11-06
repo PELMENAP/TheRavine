@@ -13,6 +13,8 @@ using TheRavine.Base;
 using TheRavine.Events;
 using TheRavine.Generator;
 using TheRavine.ObjectControl;
+using TheRavine.ViewControl;
+using TMPro;
 
 namespace TheRavine.EntityControl
 {
@@ -59,7 +61,6 @@ namespace TheRavine.EntityControl
         private double speechReadyTime;
         private bool isAccurance;
         private bool isHolding;
-        private bool isFlip;
         private bool inputSuspended;
         private long aimCell = AimSnap.NoCell;
         private int aimLevel;
@@ -93,6 +94,7 @@ namespace TheRavine.EntityControl
 
             playerAnimator.SetUpAsync().Forget();
             GetPlayerComponents();
+            AttachViewOrientation();
             stamina = new PlayerStamina(
                 playerEntity.GetEntityComponent<EnergyComponent>(),
                 staminaPerMaxEnergy, capAtZeroEnergy, staminaDrainFraction,
@@ -189,8 +191,20 @@ namespace TheRavine.EntityControl
             movementComponent = playerEntity.GetEntityComponent<MovementComponent>();
             aimComponent = playerEntity.GetEntityComponent<AimComponent>();
             InitStatePattern(playerEntity.GetEntityComponent<StatePatternComponent>());
+        }
 
-            playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<CameraPlace>(CameraPlaceHandleEvent);
+        private void AttachViewOrientation()
+        {
+            SpriteRenderer[] sprites = GetComponentsInChildren<SpriteRenderer>(true);
+            for (int i = 0; i < sprites.Length; i++)
+                ViewOrientedTransform.Attach(sprites[i].gameObject, ViewOrientMode.Yaw);
+
+            TMP_Text[] texts = GetComponentsInChildren<TMP_Text>(true);
+            for (int i = 0; i < texts.Length; i++)
+                ViewOrientedTransform.Attach(texts[i].gameObject, ViewOrientMode.Yaw);
+
+            if (jumpIndicator != null) ViewOrientedTransform.Attach(jumpIndicator.gameObject, ViewOrientMode.Yaw);
+            if (staminaFill != null) ViewOrientedTransform.Attach(staminaFill.gameObject, ViewOrientMode.Yaw);
         }
 
         private void InitStatePattern(StatePatternComponent component)
@@ -201,11 +215,6 @@ namespace TheRavine.EntityControl
             component.AddBehaviour(typeof(PlayerBehaviourIdle), new PlayerBehaviourIdle(this, actions, logger));
 
             component.AddBehaviour(typeof(PlayerBehaviourSit), new PlayerBehaviourSit(this, null));
-        }
-
-        private void CameraPlaceHandleEvent(AEntity entity, CameraPlace e)
-        {
-            isFlip = e.flip;
         }
 
         public void SetZeroValues()
@@ -266,7 +275,7 @@ namespace TheRavine.EntityControl
             if (staminaFill != null) 
             {
                 staminaFill.localScale = new Vector3(staminaRatio.Value, jumpIndicatorWidth, jumpIndicatorWidth);
-                staminaFill.localPosition = new Vector3(staminaIndicatorXOffset - staminaRatio.Value * 0.5f, staminaIndicatorYOffset, 0f);
+                staminaFill.localPosition = ViewOrientation.YawRotation * new Vector3(staminaIndicatorXOffset - staminaRatio.Value * 0.5f, staminaIndicatorYOffset, 0f);
             }
         }
 
@@ -281,7 +290,7 @@ namespace TheRavine.EntityControl
             float height = jumpForceCurve.Evaluate(jumpCharge.LiveChargeNormalized) * jumpIndicatorHeight;
             jumpIndicator.gameObject.SetActive(true);
             jumpIndicator.localScale = new Vector3(jumpIndicatorWidth, height, jumpIndicatorWidth);
-            jumpIndicator.localPosition = new Vector3(jumpIndicatorXOffset, jumpIndicatorYOffset + height * 0.5f, 0f);
+            jumpIndicator.localPosition = ViewOrientation.YawRotation * new Vector3(jumpIndicatorXOffset, jumpIndicatorYOffset + height * 0.5f, 0f);
         }
 
         private static bool IsSprintHeld() => Keyboard.current != null && Keyboard.current.rightCtrlKey.isPressed;
@@ -290,14 +299,20 @@ namespace TheRavine.EntityControl
         {
             if (isAimMode || !IsOwner || inputSuspended) return;
 
-            movementDirection = currentController.GetMove() * (isFlip ? -1 : 1);
+            Vector2 screenInput = currentController.GetMove();
+            float2 world = ViewOrientation.Facing.ToWorld(screenInput);
+            movementDirection = new Vector2(world.x, world.y);
             float movementMagnitude = movementDirection.magnitude;
 
             CheckBust(movementMagnitude);
 
             float movementSpeed = Mathf.Clamp(movementMagnitude, 0f, 1f);
 
-            if (movementSpeed < movementMinimum) movementDirection = Vector2.zero;
+            if (movementSpeed < movementMinimum)
+            {
+                movementDirection = Vector2.zero;
+                screenInput = Vector2.zero;
+            }
 
             timeSinceLastSend += Time.deltaTime;
             if (timeSinceLastSend >= sendInterval)
@@ -306,9 +321,7 @@ namespace TheRavine.EntityControl
                 timeSinceLastSend = 0f;
             }
 
-            if (isFlip) movementDirection.y *= -1;
-
-            playerAnimator.Animate(movementDirection, movementSpeed);
+            playerAnimator.Animate(screenInput, movementSpeed);
         }
 
         private void CheckBust(float movementMagnitude)
@@ -322,6 +335,12 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void MoveServerRpc(Vector2 direction, float inputSpeed, bool sprint)
         {
+            if (!math.isfinite(direction.x) || !math.isfinite(direction.y) || !math.isfinite(inputSpeed)) return;
+
+            float directionSq = direction.sqrMagnitude;
+            if (directionSq > 1f) direction *= math.rsqrt(directionSq);
+            inputSpeed = math.saturate(inputSpeed);
+
             ref readonly var rules = ref SimulationRules.Frame;
             float ground = map.SampleHeightBilinear(playerRigidbody.position.x, playerRigidbody.position.z);
             bool sprinting = stamina.Step(sendInterval, sprint, direction.sqrMagnitude > 0f,

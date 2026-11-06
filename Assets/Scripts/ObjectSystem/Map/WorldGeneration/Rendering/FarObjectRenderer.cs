@@ -9,6 +9,7 @@ using UnityEngine.Rendering;
 
 using TheRavine.Extensions;
 using TheRavine.ObjectControl;
+using TheRavine.ViewControl;
 
 namespace TheRavine.Generator.EndlessGenerators
 {
@@ -20,6 +21,7 @@ namespace TheRavine.Generator.EndlessGenerators
         private static readonly int InstancesId = Shader.PropertyToID("_FarInstances");
         private static readonly int InstanceOffsetId = Shader.PropertyToID("_InstanceOffset");
         private static readonly int BillboardBoxId = Shader.PropertyToID("_BillboardBox");
+        private static readonly int BillboardCenterXId = Shader.PropertyToID("_BillboardCenterX");
         private static readonly int BillboardCellId = Shader.PropertyToID("_BillboardCell");
 
         private struct ChunkSource
@@ -68,7 +70,7 @@ namespace TheRavine.Generator.EndlessGenerators
         private GraphicsBuffer commandBuffer;
 
         private long center;
-        private int facing;
+        private ViewFacing facing;
         private bool hasCenter;
         private bool dirty;
         private bool contentChanged;
@@ -144,6 +146,7 @@ namespace TheRavine.Generator.EndlessGenerators
                         if (slotKeys[s] == BillboardSlot)
                         {
                             props.SetVector(BillboardBoxId, set.GetBillboardBox(v));
+                            props.SetFloat(BillboardCenterXId, set.GetBillboardCenterX(v));
                             props.SetFloat(BillboardCellId, set.GetBillboardCell(v));
                             commandList.Add(new Command
                             {
@@ -193,6 +196,8 @@ namespace TheRavine.Generator.EndlessGenerators
             int sourceCapacity = 0;
             for (int r = 1; r <= rings; r++)
                 sourceCapacity += (2 * r + 1) * MapGenerator.WindowSide * MapGenerator.WindowSide;
+            if (rings >= MapGenerator.SideBlockRing)
+                sourceCapacity += 2 * MapGenerator.WindowSide * MapGenerator.WindowSide;
             sources = new NativeArray<ChunkSource>(math.max(sourceCapacity, 1), Allocator.Persistent);
 
             args = new NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs>(math.max(commands.Length, 1), Allocator.Persistent);
@@ -238,7 +243,7 @@ namespace TheRavine.Generator.EndlessGenerators
             dirty = true;
         }
 
-        public void SetFacing(int newFacing)
+        public void SetFacing(ViewFacing newFacing)
         {
             if (newFacing == facing) return;
             facing = newFacing;
@@ -247,7 +252,7 @@ namespace TheRavine.Generator.EndlessGenerators
 
         public void OnChunkDirty(long chunkKey)
         {
-            if (generator.RingOfChunk(chunkKey) > 0) contentChanged = true;
+            if (generator.ViewRingOfChunk(chunkKey) > 0) contentChanged = true;
         }
 
         public void Tick(long deadline)
@@ -274,7 +279,7 @@ namespace TheRavine.Generator.EndlessGenerators
             Render();
         }
 
-        private unsafe int CollectSources(out int sourceCount)
+        private int CollectSources(out int sourceCount)
         {
             int n = 0;
             int missing = 0;
@@ -283,31 +288,49 @@ namespace TheRavine.Generator.EndlessGenerators
             for (int ring = 1; ring <= rings; ring++)
             {
                 for (int dx = -ring; dx <= ring; dx++)
-                {
-                    long block = Position2Int.Offset(center, dx * MapGenerator.WindowSide, ring * facing * MapGenerator.WindowSide);
+                    CollectBlock(BlockCenter(dx, ring), ring, ref n, ref missing);
+            }
 
-                    for (int gz = 0; gz < MapGenerator.WindowSide; gz++)
-                    for (int gx = 0; gx < MapGenerator.WindowSide; gx++)
-                    {
-                        long key = MapGenerator.WindowChunk(block, gx, gz);
-                        if (!generator.TryGetChunk(key, out ChunkData cd) || cd.DetailLevel > ring)
-                        {
-                            missing++;
-                            continue;
-                        }
-
-                        sources[n++] = new ChunkSource
-                        {
-                            Objects = (ObjectInstInfo*)cd.Objects.GetUnsafeReadOnlyPtr(),
-                            Count = cd.Objects.Length,
-                            Ring = ring
-                        };
-                    }
-                }
+            if (rings >= MapGenerator.SideBlockRing)
+            {
+                CollectBlock(BlockCenter(-1, 0), MapGenerator.SideBlockRing, ref n, ref missing);
+                CollectBlock(BlockCenter(1, 0), MapGenerator.SideBlockRing, ref n, ref missing);
             }
 
             sourceCount = n;
             return missing;
+        }
+
+        private long BlockCenter(int dx, int ahead)
+        {
+            int2 right = facing.Right();
+            int2 forward = facing.Forward();
+            int lateral = dx * MapGenerator.WindowSide;
+            int distance = ahead * MapGenerator.WindowSide;
+            return Position2Int.Offset(center,
+                right.x * lateral + forward.x * distance,
+                right.y * lateral + forward.y * distance);
+        }
+
+        private unsafe void CollectBlock(long block, int ring, ref int n, ref int missing)
+        {
+            for (int gz = 0; gz < MapGenerator.WindowSide; gz++)
+            for (int gx = 0; gx < MapGenerator.WindowSide; gx++)
+            {
+                long key = MapGenerator.WindowChunk(block, gx, gz);
+                if (!generator.TryGetChunk(key, out ChunkData cd) || cd.DetailLevel > ring)
+                {
+                    missing++;
+                    continue;
+                }
+
+                sources[n++] = new ChunkSource
+                {
+                    Objects = (ObjectInstInfo*)cd.Objects.GetUnsafeReadOnlyPtr(),
+                    Count = cd.Objects.Length,
+                    Ring = ring
+                };
+            }
         }
 
         private void Rebuild(int sourceCount)
