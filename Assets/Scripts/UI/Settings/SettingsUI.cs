@@ -17,6 +17,7 @@ namespace TheRavine.Base
         [SerializeField] private TMP_Dropdown qualityDropdown;
         [SerializeField] private Toggle shadowToggle;
         [SerializeField] private Toggle joystickToggle;
+        [SerializeField] private Toggle smoothCameraToggle;
         [SerializeField] private Toggle particlesToggle;
         [SerializeField] private Toggle profileToggle;
         [SerializeField] private GameObject profiler;
@@ -186,6 +187,10 @@ namespace TheRavine.Base
             joystickToggle.onValueChanged.AddListener(value =>
                 _controller.Update(s => s.controlType = value ? ControlType.Mobile : ControlType.Personal));
 
+            if (smoothCameraToggle != null)
+                smoothCameraToggle.onValueChanged.AddListener(value =>
+                    _controller.Update(s => s.smoothCameraRotation = value));
+
             particlesToggle.onValueChanged.AddListener(value =>
                 _controller.Update(s => s.enableParticles = value));
 
@@ -212,6 +217,7 @@ namespace TheRavine.Base
             grassDensityDropdown.SetValueWithoutNotify(_grassDensityLevels.IndexOf(settings.grassDensityFactor));
             shadowToggle.SetIsOnWithoutNotify(settings.enableShadows);
             joystickToggle.SetIsOnWithoutNotify(settings.controlType == ControlType.Mobile);
+            smoothCameraToggle?.SetIsOnWithoutNotify(settings.smoothCameraRotation);
             particlesToggle.SetIsOnWithoutNotify(settings.enableParticles);
             profileToggle.SetIsOnWithoutNotify(settings.enableProfiling);
             grassShadows.SetIsOnWithoutNotify(settings.enableGrassShadows);
