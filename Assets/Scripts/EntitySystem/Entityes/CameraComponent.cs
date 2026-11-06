@@ -1,6 +1,7 @@
 using UnityEngine;
 
 using TheRavine.EntityControl;
+using TheRavine.ViewControl;
 
 public interface ICameraComponent : IComponent
 {
@@ -33,6 +34,7 @@ public class CameraComponent : ICameraComponent
         this.cameraTransform = cameraTransform;
         this.cameraMove = cameraMove;
         cameraTransform.position = playerTransformComponent.GetEntityPosition() + zOffset;
+        ViewOrientation.Set(ViewOrientation.Facing, cameraTransform.eulerAngles.x);
     }
 
     private void AimAdditionHandleEvent(AEntity entity, AimAddition e)
@@ -41,10 +43,13 @@ public class CameraComponent : ICameraComponent
     }
     private void CameraPlaceHandleEvent(AEntity entity, CameraPlace e)
     {
-        zOffset.y = 30 - cameraMove.yCurve.Evaluate(e.scale) * 20;
-        zOffset.z = (-35 + cameraMove.zCurve.Evaluate(e.scale) * 15) * (e.flip ? -1 : 1);
+        float pitch = 40 - cameraMove.xRotationCurve.Evaluate(e.scale) * 20;
+        float yaw = e.facing.Yaw();
 
-        cameraTransform.rotation = Quaternion.Euler(40 - cameraMove.xRotationCurve.Evaluate(e.scale) * 20, e.flip ? 180 : 0, 0);
+        zOffset = Quaternion.Euler(0, yaw, 0) * new Vector3(0, 30 - cameraMove.yCurve.Evaluate(e.scale) * 20, -35 + cameraMove.zCurve.Evaluate(e.scale) * 15);
+
+        cameraTransform.rotation = Quaternion.Euler(pitch, yaw, 0);
+        ViewOrientation.Set(e.facing, pitch);
     }
 
     public void CameraUpdate()

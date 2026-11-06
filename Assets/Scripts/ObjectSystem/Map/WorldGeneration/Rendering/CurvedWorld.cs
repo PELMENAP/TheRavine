@@ -6,7 +6,6 @@ namespace TheRavine.Generator
     public static class CurvedWorld
     {
         private static readonly int CurveParamsId = Shader.PropertyToID("_CurveParams");
-        private static readonly int ViewFacingId = Shader.PropertyToID("_ViewFacing");
 
         public static float K { get; private set; }
         public static float Flat { get; private set; }
@@ -20,11 +19,8 @@ namespace TheRavine.Generator
             PushFlat();
         }
 
-        public static void SetFacing(int facing) =>
-            Shader.SetGlobalFloat(ViewFacingId, facing < 0 ? -1f : 1f);
-
-        public static void Push(float originZ, float referenceHeight) =>
-            Shader.SetGlobalVector(CurveParamsId, new Vector4(K, Flat, originZ, referenceHeight));
+        public static void Push(float origin, float referenceHeight) =>
+            Shader.SetGlobalVector(CurveParamsId, new Vector4(K, Flat, origin, referenceHeight));
 
         public static void PushFlat() =>
             Shader.SetGlobalVector(CurveParamsId, Vector4.zero);

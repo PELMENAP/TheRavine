@@ -4,23 +4,25 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using TheRavine.Events;
+using TheRavine.ViewControl;
 
 namespace TheRavine.EntityControl
 {
     public sealed class CameraInputController
     {
         private readonly InputAction _scroll;
-        private readonly InputAction _flip;
+        private readonly InputAction _rotateRight;
+        private readonly InputAction _rotateLeft;
         private readonly EventBus _bus;
         private readonly CancellationTokenSource _cts = new();
         private float _scale;
-        private bool _flipped;
+        private ViewFacing _facing;
         private bool _wheelCaptured;
         private int _wheelStep;
-        private float _lastFlipTime = float.NegativeInfinity;
+        private float _lastRotateTime = float.NegativeInfinity;
 
         public float Scale => _scale;
-        public bool Flipped => _flipped;
+        public ViewFacing Facing => _facing;
 
         public bool WheelCaptured
         {
@@ -40,11 +42,13 @@ namespace TheRavine.EntityControl
             return step;
         }
 
-        public CameraInputController(InputAction scroll, InputAction flip, EventBus bus)
+        public CameraInputController(InputAction scroll, InputAction rotateRight, InputAction rotateLeft, EventBus bus)
         {
-            _scroll = scroll;
-            _flip   = flip;
-            _bus    = bus;
+            _scroll      = scroll;
+            _rotateRight = rotateRight;
+            _rotateLeft  = rotateLeft;
+            _bus         = bus;
+            _facing      = ViewOrientation.Facing;
         }
 
         public void Start() => Run(_cts.Token).Forget();
@@ -64,28 +68,37 @@ namespace TheRavine.EntityControl
 
         private void Tick()
         {
-            if (_scroll == null || _flip == null) return;
+            if (_scroll != null)
+            {
+                float wheel = _scroll.ReadValue<float>();
+                if (wheel != 0f && _wheelCaptured)
+                {
+                    _wheelStep += (int)math.sign(wheel);
+                }
+                else if (wheel != 0f)
+                {
+                    var rules = SimulationRules.Active;
+                    _scale = math.clamp(_scale + math.sign(wheel) * rules.CameraScaleStep, rules.CameraScaleMin, rules.CameraScaleMax);
+                    Publish();
+                }
+            }
 
-            float wheel = _scroll.ReadValue<float>();
-            if (wheel != 0f && _wheelCaptured)
-            {
-                _wheelStep += (int)math.sign(wheel);
-            }
-            else if (wheel != 0f)
-            {
-                var rules = SimulationRules.Active;
-                _scale = math.clamp(_scale + math.sign(wheel) * rules.CameraScaleStep, rules.CameraScaleMin, rules.CameraScaleMax);
-                Publish();
-            }
-
-            if (_flip.WasPressedThisFrame() && Time.unscaledTime - _lastFlipTime >= SimulationRules.Active.CameraFlipDebounce)
-            {
-                _lastFlipTime = Time.unscaledTime;
-                _flipped = !_flipped;
-                Publish();
-            }
+            TryRotate(_rotateRight, 1);
+            TryRotate(_rotateLeft, -1);
         }
 
-        private void Publish() => _bus.Invoke(null, new CameraPlace { scale = _scale, flip = _flipped });
+        private void TryRotate(InputAction action, int quarterTurns)
+        {
+            if (action == null || !action.WasPressedThisFrame()) return;
+
+            float now = Time.unscaledTime;
+            if (now - _lastRotateTime < SimulationRules.Active.CameraFlipDebounce) return;
+
+            _lastRotateTime = now;
+            _facing = _facing.Rotate(quarterTurns);
+            Publish();
+        }
+
+        private void Publish() => _bus.Invoke(null, new CameraPlace { scale = _scale, facing = _facing });
     }
 }

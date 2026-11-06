@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem.EnhancedTouch;
+using Unity.Mathematics;
+using TheRavine.ViewControl;
 
 public class JoistickController : IController
 {
@@ -11,7 +13,11 @@ public class JoistickController : IController
         joystick.Activate();
     }
     public Vector2 GetMove() => joystick.Movement;
-    public Vector2 GetAim() => joystick.Aim;
+    public Vector2 GetAim()
+    {
+        float2 world = ViewOrientation.Facing.ToWorld(joystick.Aim);
+        return new Vector2(world.x, world.y);
+    }
     public void EnableView()
     {
         joystick.gameObject.SetActive(true);

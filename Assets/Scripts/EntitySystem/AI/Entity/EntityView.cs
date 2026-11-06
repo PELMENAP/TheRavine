@@ -4,6 +4,7 @@ using Unity.Mathematics;
 using TMPro;
 using TheRavine.EntityControl;
 using TheRavine.EntityControl.Virology;
+using TheRavine.ViewControl;
 
 using R3;
 
@@ -61,6 +62,7 @@ public class EntityView : AEntityView
         var model = (EntityModel)vm.Entity;
         label.richText = true;
         label.color    = Color.white;
+        ViewOrientedTransform.Attach(label.gameObject, ViewOrientMode.Full);
 
         model.OnUpdate.Subscribe(_ => Render(model));
     }

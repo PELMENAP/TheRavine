@@ -11,6 +11,7 @@ using Unity.Profiling;
 using TheRavine.Generator;
 using TheRavine.ObjectControl;
 using TheRavine.EntityControl.Virology;
+using TheRavine.ViewControl;
 
 public class EntityManager : MonoBehaviour
 {
@@ -799,7 +800,8 @@ public class EntityManager : MonoBehaviour
     private void UpdateVisibilityByCamera(Camera cam)
     {
         Vector3 cp = cam.transform.position;
-        int facing = _map.Facing;
+        int2 forwardAxis = _map.Facing.Forward();
+        int2 rightAxis = _map.Facing.Right();
         float margin = cullAxisMargin;
         bool ortho = cam.orthographic;
         float orthoHalf = cam.orthographicSize * cam.aspect;
@@ -812,12 +814,13 @@ public class EntityManager : MonoBehaviour
             if (e.IsDisposed || e.IsDeathPending) continue;
 
             float2 p = e.Position2D;
-            float forward = (p.y - cp.z) * facing;
+            float2 rel = new float2(p.x - cp.x, p.y - cp.z);
+            float forward = rel.x * forwardAxis.x + rel.y * forwardAxis.y;
             bool visible = forward >= -margin;
             if (visible)
             {
                 float halfWidth = ortho ? orthoHalf : math.sqrt(forward * forward + height2) * halfWidthPerDepth;
-                visible = math.abs(p.x - cp.x) <= halfWidth + margin;
+                visible = math.abs(rel.x * rightAxis.x + rel.y * rightAxis.y) <= halfWidth + margin;
             }
             SetEntityVisible(e, visible);
         }

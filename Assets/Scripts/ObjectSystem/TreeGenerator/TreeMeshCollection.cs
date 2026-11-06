@@ -21,6 +21,7 @@ public class TreeMeshCollection : ObjectLodSet
         public float perchRadius;
         public IndexRange[] ranges;
         public Vector4 billboardBox;
+        public float billboardCenterX;
         public int billboardCell;
     }
 
@@ -33,6 +34,7 @@ public class TreeMeshCollection : ObjectLodSet
     [SerializeField] private Texture2D billboardAlbedo;
     [SerializeField] private Texture2D billboardNormal;
     [SerializeField] private float billboardPitch = 30f;
+    [SerializeField, HideInInspector] private int billboardSides = 2;
 
     [SerializeField, HideInInspector] private Mesh[] _entries;
 
@@ -44,6 +46,7 @@ public class TreeMeshCollection : ObjectLodSet
     public override int SubmeshCount => Submeshes;
     public override int BillboardFromRing => billboardFromRing;
     public override Material BillboardMaterial => billboardMaterial;
+    public override int BillboardSideCount => billboardSides;
 
     public float GetPerchRadius(int variant) =>
         (uint)variant < (uint)variants.Length ? Mathf.Max(variants[variant].perchRadius, 0f) : 0f;
@@ -69,6 +72,8 @@ public class TreeMeshCollection : ObjectLodSet
 
     public override Vector4 GetBillboardBox(int variant) => variants[variant].billboardBox;
 
+    public override float GetBillboardCenterX(int variant) => variants[variant].billboardCenterX;
+
     public override int GetBillboardCell(int variant) => variants[variant].billboardCell;
 
     public override void GetIndexRange(int variant, int lod, int submesh, out uint indexStart, out uint indexCount)
@@ -86,8 +91,9 @@ public class TreeMeshCollection : ObjectLodSet
     }
 
 #if UNITY_EDITOR
-    public void SetBakeResult(TreeVariant[] bakedVariants, int bakedLodCount, Texture2D albedo, Texture2D normal, float pitch)
+    public void SetBakeResult(TreeVariant[] bakedVariants, int bakedLodCount, Texture2D albedo, Texture2D normal, float pitch, int sides)
     {
+        billboardSides = sides;
         variants = bakedVariants;
         lodCount = bakedLodCount;
         billboardAlbedo = albedo;
@@ -101,7 +107,7 @@ public class TreeMeshCollection : ObjectLodSet
         if (billboardMaterial == null) return;
         billboardMaterial.SetTexture("_BillboardAlbedo", billboardAlbedo);
         billboardMaterial.SetTexture("_BillboardNormal", billboardNormal);
-        billboardMaterial.SetVector("_AtlasGrid", new Vector4(2f, Mathf.Max(variants.Length, 1), 0f, 0f));
+        billboardMaterial.SetVector("_AtlasGrid", new Vector4(billboardSides, Mathf.Max(variants.Length, 1), 0f, 0f));
         billboardMaterial.SetFloat("_BillboardPitch", billboardPitch);
     }
 

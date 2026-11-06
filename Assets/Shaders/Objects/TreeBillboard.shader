@@ -4,7 +4,7 @@ Shader "The Ravine/Objects/TreeBillboard"
     {
         [NoScaleOffset] _BillboardAlbedo ("Atlas Albedo", 2D) = "white" {}
         [NoScaleOffset] _BillboardNormal ("Atlas View Normal", 2D) = "gray" {}
-        _AtlasGrid ("Atlas Grid (Columns, Rows)", Vector) = (2, 1, 0, 0)
+        _AtlasGrid ("Atlas Grid (Columns, Rows)", Vector) = (4, 1, 0, 0)
         _BillboardPitch ("Bake Pitch", Range(0, 89)) = 30
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
         _Translucency ("Translucency", Range(0, 1)) = 0.3
@@ -29,6 +29,7 @@ Shader "The Ravine/Objects/TreeBillboard"
 
         HLSLINCLUDE
         #pragma target 4.5
+        #include "Assets/Shaders/Include/ViewOrientation.hlsl"
         #include "Assets/Shaders/Objects/FarObjectCommon.hlsl"
 
         CBUFFER_START(UnityPerMaterial)
@@ -44,6 +45,7 @@ Shader "The Ravine/Objects/TreeBillboard"
         CBUFFER_END
 
         float4 _BillboardBox;
+        float _BillboardCenterX;
         float _BillboardCell;
 
         TEXTURE2D(_BillboardAlbedo); SAMPLER(sampler_BillboardAlbedo);
@@ -65,15 +67,16 @@ Shader "The Ravine/Objects/TreeBillboard"
 
         BillboardFrame GetFrame()
         {
-            float f = _ViewFacing < 0.0 ? -1.0 : 1.0;
+            float2 f = ViewForward();
+            float2 r = ViewRight();
             float s, c;
             sincos(radians(_BillboardPitch), s, c);
 
             BillboardFrame frame;
-            frame.right = float3(f, 0.0, 0.0);
-            frame.up = float3(0.0, c, f * s);
-            frame.back = -float3(0.0, -s, f * c);
-            frame.column = f > 0.0 ? 0.0 : 1.0;
+            frame.right = float3(r.x, 0.0, r.y);
+            frame.up = float3(s * f.x, c, s * f.y);
+            frame.back = float3(-c * f.x, s, -c * f.y);
+            frame.column = _AtlasGrid.x < 4.0 && _ViewColumn >= _AtlasGrid.x ? _ViewColumn - 2.0 : _ViewColumn;
             return frame;
         }
 
@@ -84,7 +87,7 @@ Shader "The Ravine/Objects/TreeBillboard"
             float4 instance = FarInstance(input.instanceID);
             quad = input.positionOS.xy;
 
-            float3 center = instance.xyz + float3(0.0, _BillboardBox.z, _BillboardBox.w) * instance.w;
+            float3 center = instance.xyz + float3(_BillboardCenterX, _BillboardBox.z, _BillboardBox.w) * instance.w;
             positionWS = center
                 + frame.right * (quad.x - 0.5) * _BillboardBox.x * instance.w
                 + frame.up * (quad.y - 0.5) * _BillboardBox.y * instance.w;

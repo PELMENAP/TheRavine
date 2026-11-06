@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using TheRavine.Extensions;
+using TheRavine.ViewControl;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -54,7 +55,7 @@ namespace TheRavine.Generator
 
             private long center;
             private bool hasCenter;
-            private int facing;
+            private ViewFacing facing;
 
             public EndlessLiquids(MapGenerator _generator, ChunkGenerationSettings settings)
             {
@@ -142,11 +143,13 @@ namespace TheRavine.Generator
             private int StitchMask(WaterBlock block)
             {
                 int cells = CellsOf(block.Level);
+                int2 right = facing.Right();
+                int2 forward = facing.Forward();
                 int mask = 0;
-                if (Coarser(block.Dx - 1, block.Row, cells)) mask |= NegX;
-                if (Coarser(block.Dx + 1, block.Row, cells)) mask |= PosX;
-                if (Coarser(block.Dx, block.Row - facing, cells)) mask |= NegZ;
-                if (Coarser(block.Dx, block.Row + facing, cells)) mask |= PosZ;
+                if (Coarser(block.Dx - right.x, block.Row - forward.x, cells)) mask |= NegX;
+                if (Coarser(block.Dx + right.x, block.Row + forward.x, cells)) mask |= PosX;
+                if (Coarser(block.Dx - right.y, block.Row - forward.y, cells)) mask |= NegZ;
+                if (Coarser(block.Dx + right.y, block.Row + forward.y, cells)) mask |= PosZ;
                 return mask;
             }
 
@@ -257,7 +260,7 @@ namespace TheRavine.Generator
                 RippleStampSystem.Instance.SetWaterPosition(waterXPosition, waterZPosition);
             }
 
-            public void SetFacing(int newFacing)
+            public void SetFacing(ViewFacing newFacing)
             {
                 if (newFacing == facing) return;
                 facing = newFacing;
@@ -270,14 +273,16 @@ namespace TheRavine.Generator
             {
                 Vector3 origin = MapGenerator.WindowOriginWorld(center);
                 origin.y = generator.waterOffset.y;
+                int2 right = facing.Right();
+                int2 forward = facing.Forward();
 
                 for (int i = 0; i < blocks.Length; i++)
                 {
                     WaterBlock block = blocks[i];
                     block.Transform.position = origin + new Vector3(
-                        block.Dx * BlockWorld,
+                        (right.x * block.Dx + forward.x * block.Row) * BlockWorld,
                         0f,
-                        block.Row * facing * BlockWorld);
+                        (right.y * block.Dx + forward.y * block.Row) * BlockWorld);
                 }
             }
 
