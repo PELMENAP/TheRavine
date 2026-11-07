@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
@@ -6,7 +7,10 @@ public class LegRenderer
 {
     private const MeshUpdateFlags VertexFlags = MeshUpdateFlags.DontRecalculateBounds;
 
+    private static readonly Dictionary<(int legs, int samples, int ring), int[]> TriangleCache = new();
+
     private Mesh mesh;
+    private MeshFilter meshFilter;
     private Vector3[] vertices;
     private int[] triangles;
     private int baseVertexCount;
@@ -35,25 +39,42 @@ public class LegRenderer
         trianglesPerLeg = (renderSamples - 2) * renderRing * 6 + (renderRing - 1) * 3;
 
         vertices = new Vector3[verticesPerLeg * maxLegs];
-        triangles = new int[trianglesPerLeg * maxLegs];
         boundsExtent = mimic.maxLegDistance + mimic.newLegRadius + mimic.legMaxHeight + mimic.legWidth;
 
         mesh = new Mesh { name = "ProceduralLegs" };
         mesh.MarkDynamic();
 
-        var filter = mimic.GetComponent<MeshFilter>();
+        meshFilter = mimic.GetComponent<MeshFilter>();
         var renderer = mimic.GetComponent<MeshRenderer>();
 
-        filter.sharedMesh = mesh;
+        meshFilter.sharedMesh = mesh;
         renderer.sharedMaterial = mimic.legMaterial;
 
         activeLegs = -1;
         uploadedVertices = 0;
-        PrecomputeTriangles();
+
+        var key = (maxLegs, renderSamples, renderRing);
+        if (!TriangleCache.TryGetValue(key, out triangles))
+        {
+            triangles = PrecomputeTriangles();
+            TriangleCache[key] = triangles;
+        }
     }
 
-    private void PrecomputeTriangles()
+    public void Dispose()
     {
+        if (meshFilter != null && meshFilter.sharedMesh == mesh) meshFilter.sharedMesh = null;
+        if (mesh != null) UnityEngine.Object.Destroy(mesh);
+
+        mesh = null;
+        meshFilter = null;
+        vertices = null;
+        triangles = null;
+    }
+
+    private int[] PrecomputeTriangles()
+    {
+        var triangles = new int[trianglesPerLeg * maxLegs];
         int tIdx = 0;
         for (int l = 0; l < maxLegs; l++)
         {
@@ -85,6 +106,8 @@ public class LegRenderer
                 triangles[tIdx++] = tip;
             }
         }
+
+        return triangles;
     }
 
     public void UpdateMesh(Mimic mimic)

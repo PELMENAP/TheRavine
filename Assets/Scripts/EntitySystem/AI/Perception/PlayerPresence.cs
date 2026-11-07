@@ -3,6 +3,7 @@ using Unity.Mathematics;
 using UnityEngine;
 
 using TheRavine.EntityControl;
+using TheRavine.Generator;
 using TheRavine.EntityControl.Virology;
 
 public sealed class PlayerPresence
@@ -54,6 +55,18 @@ public sealed class PlayerPresence
             _virology[i]   = null;
         }
         _count = k;
+    }
+
+    public int MinChunkDistance(int chunkX, int chunkZ)
+    {
+        int best = int.MaxValue;
+        for (int i = 0; i < _count; i++)
+        {
+            int dx = math.abs(MapGenerator.ChunkCoord(_positions[i].x) - chunkX);
+            int dz = math.abs(MapGenerator.ChunkCoord(_positions[i].y) - chunkZ);
+            best = math.min(best, math.max(dx, dz));
+        }
+        return best;
     }
 
     public bool TryFindNearest(float2 from, float radius, out float2 position, out float distance, out Transform transform,

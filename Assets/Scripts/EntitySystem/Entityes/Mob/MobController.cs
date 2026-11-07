@@ -18,6 +18,10 @@ namespace TheRavine.EntityControl
         private List<GCHandle> gcHandles;
         private TransformAccessArray transformAccessArray;
         private NativeArray<float2> velocities;
+        private NativeList<int> mobIntervals;
+        private NativeList<float> mobAccumulated;
+        private Dictionary<AEntity, int> mobIndex;
+        private int updateFrame;
 
         private MoveMobsJob moveMobsJob;
         private JobHandle moveJobHandle;
@@ -33,6 +37,9 @@ namespace TheRavine.EntityControl
             gcHandles = new List<GCHandle>();
             transformAccessArray = new TransformAccessArray(0);
             velocities = new NativeArray<float2>(0, Allocator.Persistent);
+            mobIntervals = new NativeList<int>(Allocator.Persistent);
+            mobAccumulated = new NativeList<float>(Allocator.Persistent);
+            mobIndex = new Dictionary<AEntity, int>();
 
             callback?.Invoke();
         }
@@ -49,7 +56,10 @@ namespace TheRavine.EntityControl
             {
                 GCHandle handle = GCHandle.Alloc(mobEntity, GCHandleType.Pinned);
                 gcHandles.Add(handle);
+                mobIndex[mobEntity] = mobEntities.Length;
                 mobEntities.Add(GCHandle.ToIntPtr(handle));
+                mobIntervals.Add(1);
+                mobAccumulated.Add(0f);
 
                 var transformComponent = mobEntity.GetEntityComponent<TransformComponent>();
 
@@ -76,46 +86,69 @@ namespace TheRavine.EntityControl
                 return;
             }
 
-            for (int i = 0; i < mobEntities.Length; i++)
+            if (mobIndex.TryGetValue(mobEntity, out int i))
             {
-                GCHandle handle = GCHandle.FromIntPtr(mobEntities[i]);
-                if ((AEntity)handle.Target == mobEntity)
+                try
                 {
-                    try
-                    {
-                        handle.Free();
-                        gcHandles.Remove(handle);
+                    GCHandle handle = GCHandle.FromIntPtr(mobEntities[i]);
+                    handle.Free();
+                    gcHandles.Remove(handle);
 
-                        mobEntities.RemoveAtSwapBack(i);
-                        transformAccessArray.RemoveAtSwapBack(i);
-                        ReallocateVelocities();
-                        return;
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError($"Failed to remove mob from update: {ex.Message}");
-                    }
+                    int last = mobEntities.Length - 1;
+                    mobIndex.Remove(mobEntity);
+                    if (i != last)
+                        mobIndex[(AEntity)GCHandle.FromIntPtr(mobEntities[last]).Target] = i;
+
+                    mobEntities.RemoveAtSwapBack(i);
+                    mobIntervals.RemoveAtSwapBack(i);
+                    mobAccumulated.RemoveAtSwapBack(i);
+                    transformAccessArray.RemoveAtSwapBack(i);
+                    ReallocateVelocities();
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError($"Failed to remove mob from update: {ex.Message}");
+                    return;
                 }
             }
 
             logger.LogWarning($"Mob entity not found in update list: {mobEntity}");
         }
 
+        public void SetMobInterval(AEntity mobEntity, int interval)
+        {
+            if (mobEntity != null && mobIndex.TryGetValue(mobEntity, out int i))
+                mobIntervals[i] = math.max(interval, 1);
+        }
+
         private void Update()
         {
             if (!mobEntities.IsCreated || mobEntities.Length == 0) return;
 
+            float deltaTime = Time.deltaTime;
+            updateFrame++;
+
             for (int i = 0; i < mobEntities.Length; i++)
             {
+                float accumulated = mobAccumulated[i] + deltaTime;
+                if ((uint)(updateFrame + i) % (uint)mobIntervals[i] != 0u)
+                {
+                    mobAccumulated[i] = accumulated;
+                    velocities[i] = float2.zero;
+                    continue;
+                }
+
+                mobAccumulated[i] = 0f;
                 GCHandle handle = GCHandle.FromIntPtr(mobEntities[i]);
                 AEntity mob = (AEntity)handle.Target;
-                velocities[i] = mob.GetEntityComponent<MovementComponent>().GetEntityVelocity();
+                velocities[i] = mob.GetEntityComponent<MovementComponent>().GetEntityVelocity() * accumulated;
             }
 
             moveMobsJob = new MoveMobsJob
             {
                 Velocities = velocities,
-                DeltaTime = Time.deltaTime
+                DeltaTime = 1f
             };
 
             moveJobHandle = moveMobsJob.Schedule(transformAccessArray, moveJobHandle);
@@ -137,6 +170,9 @@ namespace TheRavine.EntityControl
                 }
                 gcHandles.Clear();
                 mobEntities.Dispose();
+                if (mobIntervals.IsCreated) mobIntervals.Dispose();
+                if (mobAccumulated.IsCreated) mobAccumulated.Dispose();
+                mobIndex?.Clear();
                 transformAccessArray.Dispose();
                 velocities.Dispose();
                 logger?.LogInfo("MobController service is disabled");

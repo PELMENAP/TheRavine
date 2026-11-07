@@ -84,6 +84,12 @@ public static class RavineRandom
         );
     }
 
+    public static UnityEngine.Vector3 UnitSphere()
+    {
+        float3 direction = fastRandom.NextFloat3Direction();
+        return new(direction.x, direction.y, direction.z);
+    }
+
     public static UnityEngine.Vector3 GetInsideSphere(float radius = 1)
     {
         return new(
