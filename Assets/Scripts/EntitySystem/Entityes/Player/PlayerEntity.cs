@@ -149,6 +149,7 @@ namespace TheRavine.EntityControl
 
         public override void DeepClean()
         {
+            ServiceLocator.Players.UnregisterPlayer(this);
         }
     }
 }

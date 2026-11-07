@@ -86,6 +86,9 @@ namespace TheRavine.Base
             if (_servicesReleased) return;
             _servicesReleased = true;
 
+            EntityManager entities = FindAnyObjectByType<EntityManager>();
+            if (entities != null) entities.enabled = false;
+
             gameStateMachine.BreakUpServices();
             if (NetworkManager.Singleton != null) NetworkManager.Singleton.Shutdown();
             ServiceLocator.ClearAll();
