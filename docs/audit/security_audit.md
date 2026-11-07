@@ -1,6 +1,6 @@
 # Security audit
 
-Snapshot: commit `57e3fd9` (branch `claude/practical-mendel-c5lbxd`). Offline audit, no code change. Principles: [../SECURITY.md](../SECURITY.md). Paths are relative to `Assets/Scripts/` unless they start with `Assets/`.
+Snapshot: commit `fc9cb3f` (branch `claude/practical-mendel-c5lbxd`). Offline audit, no code change. Principles: [../SECURITY.md](../SECURITY.md). Paths are relative to `Assets/Scripts/` unless they start with `Assets/`.
 
 Severity: **Critical** — a remote client breaks equality or the world directly. **High** — remote DoS or a cheat that needs only RPC spam. **Medium** — needs a crafted file, a shared session with a debug command, or a hostile script. **Low** — local only or hardening.
 
@@ -18,7 +18,7 @@ Severity: **Critical** — a remote client breaks equality or the world directly
 | 8 | Medium | `Terminal/Rive/RiveExecutor.cs:137` | `for` counts operations only inside body statements: an empty body iterates up to 2³¹ times on the main thread without yielding. `i <= e` with `e == int.MaxValue` never terminates (overflow). | §8 |
 | 9 | Medium | `Terminal/SetPlayerCommand.cs:46`, `:99` | `~tp` and `~set speed` modify the local entity directly. On the host this changes the server's entity: teleport and speed up to 100 for the host player only. No release / multiplayer gate in the code. Rive scripts can issue these commands too. | §3 |
 | 10 | Medium | `EntitySystem/AI/LSTM/LSTMMemoryStorage.cs:29`, `EntitySystem/AI/DelayedPerceptron/DelayedPerceptronStorage.cs:66` | Network sizes read from the file are used to allocate before they are compared with the expected architecture; weights are not checked for NaN / Inf. A crafted model file → huge allocation or NaN brain. (`SharedBrainSnapshot.ReadBlock` bounds blocks correctly.) | §7 |
-| 11 | Medium | `ObjectSystem/Map/WorldGeneration/ChunkStore.cs:191` | Terrain edit heights and object positions from chunk files are not checked for finiteness. | §7 |
+| 11 | Medium | `ObjectSystem/Map/WorldGeneration/ChunkStore.cs:204-206`, `:238` | Terrain edit heights and object positions from chunk files are not checked for finiteness. | §7 |
 | 12 | Medium | `Assets/Prefabs/MainPrefabs/Netcore/NetworkManager.prefab:58`, `:62`, `:92`, `:100` | `ConnectionApproval: 0`, `ProtocolVersion: 0`, `EnsureNetworkVariableLengthSafety: 0`, `m_UseEncryption: 0`, public IP `185.16.139.218 ` (with a trailing space) hardcoded, listen on `::`. | §9, §10 |
 | 13 | Low | `Core/Storage/EncryptionUtility.cs:10`, `:95` | Key is a constant in the client (obfuscation only); HMAC compared byte by byte, not in constant time. Local saves only, no remote timing. | §9 |
 | 14 | Low | `Core/Settings/WorldRegistry.cs:299`, `:393` | World ids read back from storage are not re-validated before `Directory.Delete(path, true)`; a tampered list with `..` deletes outside `worlds/`. Local only. | §7 |
