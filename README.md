@@ -36,6 +36,12 @@ Full text: [PHILOSOPHY.md](PHILOSOPHY.md).
 - Reactive event system
 - Optimization principles and techniques: [docs/OPTIMIZATION.md](docs/OPTIMIZATION.md) (AI contributors: read it before changing hot paths)
 
+## Security
+- Server-authoritative world: clients send intent, not results
+- Equality as a security property: no creature, host included, gets hidden powers
+- Budgeted sandbox for Rive scripts
+- Security principles and techniques: [docs/SECURITY.md](docs/SECURITY.md) (AI contributors: read it before changing RPCs, loaders, the Rive interpreter or anything that accepts external input); current gaps: [docs/audit/security_audit.md](docs/audit/security_audit.md)
+
 
 # TheRavine — Project Architecture Summary
 
