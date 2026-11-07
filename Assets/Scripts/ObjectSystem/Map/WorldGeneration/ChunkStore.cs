@@ -12,7 +12,7 @@ namespace TheRavine.Generator
     public sealed class ChunkStore
     {
         private const int Magic  = 0x4B435652;
-        private const int Format = 3;
+        private const int Format = 4;
         private const int MinFormat = 1;
 
         private string _directory;
@@ -21,6 +21,10 @@ namespace TheRavine.Generator
         private readonly List<int> _editCells = new(16);
         private readonly List<float> _editHeights = new(16);
         private byte _detailLevel;
+        private int _erosionEpoch;
+        private long _lastTick;
+        private long _objectTick;
+        private bool _hasClocks;
 
         private ChunkStore(string directory, int seed)
         {
@@ -59,6 +63,9 @@ namespace TheRavine.Generator
                     writer.Write(_seed);
                     writer.Write(chunkKey);
                     writer.Write(chunk.DetailLevel);
+                    writer.Write(chunk.ErosionEpoch);
+                    writer.Write(chunk.LastTick);
+                    writer.Write(chunk.ObjectTick);
                     writer.Write(chunk.Objects.Length);
 
                     for (int i = 0; i < chunk.Objects.Length; i++)
@@ -85,7 +92,32 @@ namespace TheRavine.Generator
             }
         }
 
-        public bool TryRestore(long chunkKey, ChunkData chunk)
+        public int PeekErosionEpoch(long chunkKey)
+        {
+            string path = PathOf(chunkKey);
+            if (!File.Exists(path)) return 0;
+
+            try
+            {
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (var reader = new BinaryReader(stream))
+                {
+                    if (reader.ReadInt32() != Magic) return 0;
+
+                    int format = reader.ReadInt32();
+                    if (format < MinFormat || format > Format || reader.ReadInt32() != _seed || reader.ReadInt64() != chunkKey) return 0;
+
+                    reader.ReadByte();
+                    return format >= 4 ? Math.Max(reader.ReadInt32(), 1) : 1;
+                }
+            }
+            catch (IOException)
+            {
+                return 0;
+            }
+        }
+
+        public bool TryRestore(long chunkKey, ChunkData chunk, long worldTick = 0L)
         {
             string path = PathOf(chunkKey);
             if (!File.Exists(path) || !TryRead(path, chunkKey)) return false;
@@ -100,6 +132,9 @@ namespace TheRavine.Generator
                 chunk.RestoreHeight(_editCells[i], _editHeights[i]);
 
             chunk.CommitRestore(_detailLevel);
+            chunk.ErosionEpoch = _erosionEpoch;
+            chunk.LastTick = _lastTick;
+            chunk.ObjectTick = _hasClocks ? _objectTick : worldTick;
 
             if (failed > 0)
                 RavineLog.Warning($"[ChunkStore] Chunk {chunkKey}: {failed} objects were not restored");
@@ -134,6 +169,10 @@ namespace TheRavine.Generator
             _infos.Clear();
             _editCells.Clear();
             _editHeights.Clear();
+            _erosionEpoch = 1;
+            _lastTick = 0L;
+            _objectTick = 0L;
+            _hasClocks = false;
 
             try
             {
@@ -148,6 +187,14 @@ namespace TheRavine.Generator
                     }
 
                     _detailLevel = reader.ReadByte();
+                    if (format >= 4)
+                    {
+                        _erosionEpoch = Math.Max(reader.ReadInt32(), 1);
+                        _lastTick = reader.ReadInt64();
+                        _objectTick = reader.ReadInt64();
+                        _hasClocks = true;
+                    }
+
                     int count = reader.ReadInt32();
                     if (count < 0 || count > ChunkData.TotalCells) return false;
 

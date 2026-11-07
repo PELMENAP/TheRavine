@@ -18,7 +18,8 @@ namespace TheRavine.Generator
         public int StaleDrops, HeightDrops, WindowDrops;
         public int SpawnPushed;
         public int FarEvents, Decays, RegionChunks;
-        public int Ticks, Events, EventsDropped, CatchUpRounds;
+        public int Ticks, Events, EventsDropped;
+        public int CatchUpEpochs, CatchUpClosedFormObjects, CatchUpBudgetHits, CatchUpTicksSimulated;
         public float TicksPerSecond, JobMs, DispatchMs;
         public double ClockTime;
     }
@@ -68,6 +69,72 @@ namespace TheRavine.Generator
             return dense >= 0 && rules.Species[dense].Kind != 0;
         }
 
+        public bool AcceptsSpread(int prefabId)
+        {
+            int dense = registry.DenseIndexOf(prefabId);
+            return dense >= 0 && rules.Species[dense].Kind == (byte)BehaviourType.NAL;
+        }
+
+        public void OnChunkEnter(long chunkKey, ChunkData chunk, long deltaTicks, int ring)
+        {
+            if (disposed || deltaTicks <= 0L || !chunk.Objects.IsCreated) return;
+
+            float perTick = RandomTickMath.CellsPerTick(tickRules.cellsPerChunkPerTick, ring, tickRules.farCellDivisor);
+            if (perTick <= 0f) return;
+
+            float rate = RandomTickMath.SamplingRate(perTick, ChunkData.TotalCells);
+            float meanHit = RandomTickMath.MeanHitSeconds(
+                ChunkData.TotalCells, tickRules.cellsPerChunkPerTick, tickRules.tickSeconds, ring, tickRules.farCellDivisor);
+            float evolveChance = RandomTickMath.GrowEvolveChance(deltaTicks, rate, tickRules.growAcceptChance);
+            float growRemoveChance = RandomTickMath.GrowRemovalChance(deltaTicks, rate, tickRules.growAcceptChance, GrowDecayChance);
+
+            int count = chunk.Objects.Length;
+            for (int i = 0; i < count; i++)
+            {
+                ObjectInstInfo inst = chunk.Objects[i];
+                if (inst.BaseLevel != 0) continue;
+
+                int dense = registry.DenseIndexOf(inst.PrefabID);
+                if (dense < 0) continue;
+
+                NalSpeciesParams p = rules.Species[dense];
+                bool decay = p.Kind == NalSpeciesParams.KindDecay;
+                if (!decay && p.Kind != (byte)BehaviourType.GROW) continue;
+
+                long packed = WorldCell(chunkKey, inst.PrimaryIdx, out _, out _);
+                if (commands.HasPendingRemove(packed)) continue;
+
+                Stats.CatchUpClosedFormObjects++;
+
+                if (decay)
+                {
+                    if (RavineRandom.RangeFloat() < RandomTickMath.DecayRemovalChance(deltaTicks, rate, meanHit, p.DecaySeconds))
+                        PushRemove(packed, inst.PrefabID);
+                    continue;
+                }
+
+                if (p.EvolutionDense < 0)
+                {
+                    if (RavineRandom.RangeFloat() < growRemoveChance)
+                        PushRemove(packed, inst.PrefabID);
+                    continue;
+                }
+
+                if (RavineRandom.RangeFloat() < evolveChance)
+                {
+                    PushRemove(packed, inst.PrefabID);
+                    PushAdd(packed, registry.GetDense(p.EvolutionDense), ring);
+                }
+            }
+        }
+
+        private static long WorldCell(long chunk, int cell, out int worldX, out int worldZ)
+        {
+            worldX = ((Position2Int.GetX(chunk) << MapGenerator.RowShift) + (cell & MapGenerator.RowMask)) << MapGenerator.CellShift;
+            worldZ = ((Position2Int.GetY(chunk) << MapGenerator.RowShift) + (cell >> MapGenerator.RowShift)) << MapGenerator.CellShift;
+            return Position2Int.Pack(worldX, worldZ);
+        }
+
         public void OnRandomTick(in RandomTickEvent e, double now)
         {
             if (disposed) return;
@@ -89,9 +156,7 @@ namespace TheRavine.Generator
             Stats.Processed++;
             if (e.Ring > 0) Stats.FarEvents++;
 
-            int worldX = ((Position2Int.GetX(e.Chunk) << MapGenerator.RowShift) + (e.Cell & MapGenerator.RowMask)) << MapGenerator.CellShift;
-            int worldZ = ((Position2Int.GetY(e.Chunk) << MapGenerator.RowShift) + (e.Cell >> MapGenerator.RowShift)) << MapGenerator.CellShift;
-            long packed = Position2Int.Pack(worldX, worldZ);
+            long packed = WorldCell(e.Chunk, e.Cell, out int worldX, out int worldZ);
 
             if (commands.HasPendingRemove(packed)
                 || !generator.TryGetObject(packed, out ObjectInstInfo inst)
@@ -274,7 +339,9 @@ namespace TheRavine.Generator
             s.Ticks = t.Ticks;
             s.Events = t.Events;
             s.EventsDropped = t.EventsDropped;
-            s.CatchUpRounds = t.CatchUpRounds;
+            s.CatchUpEpochs = t.CatchUpEpochs;
+            s.CatchUpBudgetHits = t.CatchUpBudgetHits;
+            s.CatchUpTicksSimulated = t.CatchUpTicksSimulated;
             s.RegionChunks = t.RegionChunks;
             s.JobMs = t.JobMs;
             s.DispatchMs = t.DispatchMs;
@@ -293,7 +360,8 @@ namespace TheRavine.Generator
                 $"deaths={s.Deaths} removeNoEffect={s.RemoveNoEffect} stale={s.StaleRemovals} " +
                 $"deathRoll={s.RollDeaths} deathClose={s.CloseDeaths} growDecay={s.GrowDecays} evolved={s.Evolved} " +
                 $"spawnPushed={s.SpawnPushed} decay={s.Decays} dropStale={s.StaleDrops} dropHeight={s.HeightDrops} dropWindow={s.WindowDrops} " +
-                $"ticks={s.Ticks} tps={s.TicksPerSecond:F2} events={s.Events} eventsDropped={s.EventsDropped} catchUp={s.CatchUpRounds} " +
+                $"ticks={s.Ticks} tps={s.TicksPerSecond:F2} events={s.Events} eventsDropped={s.EventsDropped} " +
+                $"catchUp[epochs={s.CatchUpEpochs} closedForm={s.CatchUpClosedFormObjects} budgetHits={s.CatchUpBudgetHits} ticksSim={s.CatchUpTicksSimulated}] " +
                 $"regionChunks={s.RegionChunks} clock={s.ClockTime:F2} " +
                 $"cmdQ={s.CommandQueueLength}/{s.CommandQueueMax} batchMs={s.BatchMs}/{s.BatchMsMax} jobMs={s.JobMs:F3} dispatchMs={s.DispatchMs:F3}");
         }

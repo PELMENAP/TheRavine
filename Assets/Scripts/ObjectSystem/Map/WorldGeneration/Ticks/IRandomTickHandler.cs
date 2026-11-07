@@ -15,5 +15,8 @@ namespace TheRavine.Generator
     {
         bool Accepts(int prefabId);
         void OnRandomTick(in RandomTickEvent e, double now);
+
+        bool AcceptsSpread(int prefabId) => false;
+        void OnChunkEnter(long chunkKey, ChunkData chunk, long deltaTicks, int ring) { }
     }
 }

@@ -12,6 +12,27 @@ using TheRavine.Extensions;
 
 namespace TheRavine.Generator
 {
+    public sealed class ErosionBudget
+    {
+        public long LimitTicks;
+
+        private int frame = -1;
+        private long spent;
+
+        public bool CanStart()
+        {
+            int now = Time.frameCount;
+            if (now != frame)
+            {
+                frame = now;
+                spent = 0L;
+            }
+            return spent < LimitTicks;
+        }
+
+        public void Spend(long ticks) => spent += ticks;
+    }
+
     public sealed class ChunkGenerator : IDisposable
     {
         private const int mapChunkSize   = MapGenerator.mapChunkSize;
@@ -150,9 +171,10 @@ namespace TheRavine.Generator
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public uint ChunkSeed(int x, int z) => math.hash(new int3(x, z, worldSeed));
 
-        public void Generate(ChunkData chunkData, long centre, int ring)
+        public int Generate(ChunkData chunkData, long centre, int ring, int baseEpochs, int catchUpEpochs, ErosionBudget budget, out bool budgetHit)
         {
             ring = math.clamp(ring, 0, ObjectInfo.MaxVisibleRings);
+            baseEpochs = math.max(baseEpochs, 1);
             int2 chunkOrigin = new(Position2Int.GetX(centre), Position2Int.GetY(centre));
             uint hash = ChunkSeed(chunkOrigin.x, chunkOrigin.y);
 
@@ -194,15 +216,17 @@ namespace TheRavine.Generator
                     riverBlendOut = riverBlendMap
                 }.Schedule(totalCells, 64, mapHandle);
 
-            JobHandle erosionHandle =
-                new HydraulicErosionJob
-                {
-                    seed = hash,
-                    settings = settings.erosion,
+            JobHandle erosionHandle = ScheduleErosion(hash, 0, biomeHandle);
+            for (int epoch = 1; epoch < baseEpochs; epoch++)
+                erosionHandle = ScheduleErosion(hash, epoch, erosionHandle);
 
-                    heightMap = biomeHeightMap,
-                    deltaMap = deltaMap
-                }.Schedule(biomeHandle);
+            int applied = 0;
+            budgetHit = false;
+            if (catchUpEpochs > 0)
+            {
+                erosionHandle.Complete();
+                applied = RunEpochs(hash, baseEpochs, catchUpEpochs, budget, out budgetHit);
+            }
 
             JobHandle finalizeHandle = new TerrainFinalizeJob
             {
@@ -249,6 +273,98 @@ namespace TheRavine.Generator
             }
 
             chunkData.CommitGeneration(false);
+            chunkData.CommitErosion(baseEpochs + applied);
+            return applied;
+        }
+
+        private JobHandle ScheduleErosion(uint hash, int epochIndex, JobHandle dependency) =>
+            new HydraulicErosionJob
+            {
+                seed = hash,
+                epochIndex = epochIndex,
+                settings = settings.erosion,
+
+                heightMap = biomeHeightMap,
+                deltaMap = deltaMap
+            }.Schedule(dependency);
+
+        private int RunEpochs(uint hash, int firstEpoch, int count, ErosionBudget budget, out bool budgetHit)
+        {
+            budgetHit = false;
+            int applied = 0;
+
+            while (applied < count)
+            {
+                if (!budget.CanStart())
+                {
+                    budgetHit = true;
+                    break;
+                }
+
+                long start = FrameBudget.Now;
+                ScheduleErosion(hash, firstEpoch + applied, default).Complete();
+                budget.Spend(FrameBudget.Now - start);
+                applied++;
+            }
+
+            return applied;
+        }
+
+        public int CatchUpTerrain(ChunkData chunkData, long centre, int count, ErosionBudget budget, out bool budgetHit)
+        {
+            budgetHit = false;
+            if (count <= 0) return 0;
+
+            uint hash = ChunkSeed(Position2Int.GetX(centre), Position2Int.GetY(centre));
+            const float invHeight = 1f / maxTerrainHeight;
+
+            new ScaleCopyJob { source = chunkData.HeightRaw, target = biomeHeightMap, factor = invHeight }.Run(totalCells);
+
+            int first = chunkData.ErosionEpoch;
+            int applied = RunEpochs(hash, first, count, budget, out budgetHit);
+            if (applied == 0) return 0;
+
+            new ScaleCopyJob { source = biomeHeightMap, target = noiseMap, factor = maxTerrainHeight }.Run(totalCells);
+
+            foreach (var edit in chunkData.HeightEdits)
+            {
+                noiseMap[edit.Key] = edit.Value;
+                biomeHeightMap[edit.Key] = edit.Value * invHeight;
+            }
+
+            for (int i = 0; i < chunkData.Objects.Length; i++)
+            {
+                ObjectInstInfo obj = chunkData.Objects[i];
+                if (obj.BaseLevel != 0 || (uint)obj.PrimaryIdx >= totalCells || obj.Position.y != chunkData.HeightRaw[obj.PrimaryIdx]) continue;
+
+                float y = noiseMap[obj.PrimaryIdx];
+                if (y == obj.Position.y) continue;
+
+                obj.Position.y = y;
+                chunkData.Objects[i] = obj;
+            }
+
+            chunkData.HeightRaw.CopyFrom(noiseMap);
+
+            new TerrainFinalizeJob
+            {
+                heightValues = biomeHeightMap,
+                climateValues = chunkData.Climate,
+
+                regionThresholds = regionThresholds,
+
+                biomeCentersT = biomeCentersT,
+                biomeCentersM = biomeCentersM,
+
+                mountainRegionIndex = settings.mountainRegionIndex,
+
+                regionMap = heightResult,
+                biomeMap = chunkData.BiomeMap,
+                moveCost = chunkData.MoveCost
+            }.Schedule(totalCells, 64).Complete();
+
+            chunkData.CommitErosion(first + applied);
+            return applied;
         }
 
         public unsafe void BuildWaterDistance(ChunkData chunkData, ChunkData[] neighborhood, float waterLevel, int requestedRing)
@@ -465,6 +581,16 @@ namespace TheRavine.Generator
 
             d.Dispose();
         }
+    }
+
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Fast, DisableSafetyChecks = true)]
+    public struct ScaleCopyJob : IJobFor
+    {
+        [ReadOnly] public NativeArray<float> source;
+        [WriteOnly] public NativeArray<float> target;
+        public float factor;
+
+        public void Execute(int i) => target[i] = source[i] * factor;
     }
 
     [BurstCompile(FloatPrecision.Standard, FloatMode.Fast, DisableSafetyChecks = true)]
