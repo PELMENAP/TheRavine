@@ -28,6 +28,8 @@ namespace TheRavine.EntityControl
         [SerializeField] private float maxLatencyCompensation = 0.5f;
         [SerializeField] private float aimHysteresis = 0.15f;
         [SerializeField] private float movementMinimum, sendInterval = 0.1f, maxStepHeight = 0.6f;
+        [SerializeField] private float intentTimeout = 0.6f;
+        [SerializeField] private float editRate = 20f, editBurst = 16f, refuseLogInterval = 5f;
         [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick, Jump;
         [SerializeField] private Joystick joystick;
         [SerializeField] private Transform crosshair;
@@ -86,6 +88,17 @@ namespace TheRavine.EntityControl
         private IDisposable unsubscribe;
         private readonly ulong[] ownerTarget = new ulong[1];
         private readonly CompositeDisposable settingsSubscriptions = new();
+
+        private Vector2 intentDirection;
+        private float intentSpeed;
+        private bool intentSprint;
+        private double intentTime;
+        private float broadcastTimer;
+        private Vector3 lastBroadcastPosition;
+        private Vector3 lastBroadcastVelocity;
+        private double editReadyTime;
+        private double refuseLogTime;
+        private int refusedEdits;
 
         public void SetInitialValues(AEntity entity, RavineLogger logger)
         {
@@ -266,6 +279,7 @@ namespace TheRavine.EntityControl
         {
             if (!IsServer) return;
             terrainResolver?.Resolve();
+            StepServerMovement(Time.fixedDeltaTime);
         }
         private void Update()
         {
@@ -339,13 +353,31 @@ namespace TheRavine.EntityControl
 
             float directionSq = direction.sqrMagnitude;
             if (directionSq > 1f) direction *= math.rsqrt(directionSq);
-            inputSpeed = math.saturate(inputSpeed);
+
+            intentDirection = direction;
+            intentSpeed = math.saturate(inputSpeed);
+            intentSprint = sprint;
+            intentTime = Time.timeAsDouble;
+        }
+
+        private void StepServerMovement(float dt)
+        {
+            if (stamina == null || map == null || terrainResolver == null || movementComponent == null || playerRigidbody == null) return;
+
+            if (Time.timeAsDouble - intentTime > intentTimeout)
+            {
+                intentDirection = Vector2.zero;
+                intentSpeed = 0f;
+                intentSprint = false;
+            }
+
+            Vector2 direction = intentDirection;
+            float inputSpeed = intentSpeed;
 
             ref readonly var rules = ref SimulationRules.Frame;
             float ground = map.SampleHeightBilinear(playerRigidbody.position.x, playerRigidbody.position.z);
-            bool sprinting = stamina.Step(sendInterval, sprint, direction.sqrMagnitude > 0f,
+            bool sprinting = stamina.Step(dt, intentSprint, direction.sqrMagnitude > 0f,
                 MapGenerator.WaterModifier(ground, rules.WaterLevel, rules.WaterDrainMul));
-            staminaRatio.Value = stamina.Ratio;
 
             float targetSpeed = inputSpeed * movementComponent.BaseSpeed * (sprinting ? sprintMultiplier : 1f)
                 * MapGenerator.WaterModifier(ground, rules.WaterLevel, rules.WaterSpeedMul);
@@ -368,7 +400,7 @@ namespace TheRavine.EntityControl
             else
             {
                 float rate = inputSpeed <= 0.01f ? movementComponent.Deceleration : movementComponent.Acceleration;
-                float step = rate * sendInterval;
+                float step = rate * dt;
                 float delta = targetSpeed - CurrentSpeed;
                 CurrentSpeed = math.abs(delta) <= step ? targetSpeed : CurrentSpeed + math.sign(delta) * step;
             }
@@ -379,17 +411,35 @@ namespace TheRavine.EntityControl
                 direction.y * CurrentSpeed
             );
 
-            UpdateClientPositionClientRpc(playerRigidbody.position, playerRigidbody.linearVelocity);
+            broadcastTimer += dt;
+            if (broadcastTimer < sendInterval) return;
+            broadcastTimer = 0f;
+
+            staminaRatio.Value = stamina.Ratio;
+            BroadcastState();
+        }
+
+        private void BroadcastState()
+        {
+            Vector3 position = playerRigidbody.position;
+            Vector3 velocity = playerRigidbody.linearVelocity;
+            if ((position - lastBroadcastPosition).sqrMagnitude < 1e-6f && (velocity - lastBroadcastVelocity).sqrMagnitude < 1e-6f) return;
+
+            lastBroadcastPosition = position;
+            lastBroadcastVelocity = velocity;
+            UpdateClientPositionClientRpc(position, velocity);
         }
 
         [ServerRpc]
         private void StopMoveServerRpc()
         {
+            intentDirection = Vector2.zero;
+            intentSpeed = 0f;
+            intentSprint = false;
             CurrentSpeed = 0f;
             if (playerRigidbody == null) return;
 
             playerRigidbody.linearVelocity = new Vector3(0f, playerRigidbody.linearVelocity.y, 0f);
-            UpdateClientPositionClientRpc(playerRigidbody.position, playerRigidbody.linearVelocity);
         }
 
         [ClientRpc]
@@ -416,22 +466,22 @@ namespace TheRavine.EntityControl
         {
             if (!IsOwner || !jumpCharge.JumpRequested) return;
             jumpCharge.ConsumeJump();
-            float forceMultiplier = jumpForceCurve.Evaluate(jumpCharge.ChargeNormalized);
-            JumpServerRpc(baseJumpForce * forceMultiplier);
+            JumpServerRpc(jumpCharge.ChargeNormalized);
         }
 
 
         [ServerRpc]
-        private void JumpServerRpc(float force)
+        private void JumpServerRpc(float charge)
         {
+            if (!math.isfinite(charge)) return;
             if (terrainResolver == null || !terrainResolver.IsGrounded) return;
             terrainResolver.ConsumeGround();
 
             Vector3 vel = playerRigidbody.linearVelocity;
-            vel.y = force;
+            vel.y = baseJumpForce * jumpForceCurve.Evaluate(math.saturate(charge));
             playerRigidbody.linearVelocity = vel;
 
-            UpdateClientPositionClientRpc(playerRigidbody.position, playerRigidbody.linearVelocity);
+            BroadcastState();
         }
 
         private void OnActionStarted(InputAction.CallbackContext ctx) => isHolding = !inputSuspended;
@@ -614,7 +664,7 @@ namespace TheRavine.EntityControl
             if (aimComponent != null && TryResolveEditor(position, aimComponent.CrosshairDistance, out MapGenerator generator, out ObjectSystem objects))
             {
                 result = WorldEdits.TryPlace(generator, objects, position, level, objectId, out placement);
-                if (result != WorldEditResult.Ok) Refuse(position, $"place {objectId}@{level}: {result}/{placement}");
+                if (result != WorldEditResult.Ok) Refuse(position, EditRefusal.Place, result, placement);
             }
             PlaceResultClientRpc(position, level, objectId, (byte)result, (byte)placement, OwnerTarget());
         }
@@ -630,7 +680,7 @@ namespace TheRavine.EntityControl
             {
                 WorldEditResult result = WorldEdits.TryPickUp(generator, objects, position, level, out prefabId, out amount);
                 ok = result == WorldEditResult.Ok;
-                if (!ok) Refuse(position, $"pick up: {result}");
+                if (!ok) Refuse(position, EditRefusal.PickUp, result);
             }
             PickUpResultClientRpc(position, level, prefabId, amount, ok, OwnerTarget());
         }
@@ -660,22 +710,34 @@ namespace TheRavine.EntityControl
             generator = null;
             objects = null;
 
+            if (!TryConsumeEdit())
+                return Refuse(position, EditRefusal.Rate);
+
             if (playerEntity == null || playerEntity.IsDisposed || !playerEntity.IsActive.Value)
-                return Refuse(position, "player inactive");
+                return Refuse(position, EditRefusal.Inactive);
 
             MortalityComponent mortality = playerEntity.GetEntityComponent<MortalityComponent>();
             if (mortality != null && mortality.IsDead)
-                return Refuse(position, "player dead");
+                return Refuse(position, EditRefusal.Dead);
 
             Vector3 self = transform.position;
             float2 delta = new(Position2Int.GetX(position) - self.x, Position2Int.GetY(position) - self.z);
             float limit = reach + reachTolerance + LatencyCompensation();
             if (math.lengthsq(delta) > limit * limit)
-                return Refuse(position, $"out of reach {math.length(delta):F1} > {limit:F1}");
+                return Refuse(position, EditRefusal.OutOfReach);
 
             if (!ServiceLocator.Services.TryGet(out generator) || !ServiceLocator.Services.TryGet(out objects))
-                return Refuse(position, "world not ready");
+                return Refuse(position, EditRefusal.NotReady);
 
+            return true;
+        }
+
+        private bool TryConsumeEdit()
+        {
+            double now = Time.unscaledTimeAsDouble;
+            double ready = math.max(editReadyTime, now);
+            if (ready - now > editBurst / editRate) return false;
+            editReadyTime = ready + 1.0 / editRate;
             return true;
         }
 
@@ -694,9 +756,26 @@ namespace TheRavine.EntityControl
             return speedXZ * (math.min(rtt, math.max(0f, maxLatencyCompensation)) * 0.5f + sendInterval);
         }
 
-        private bool Refuse(long position, string reason)
+        private enum EditRefusal : byte
         {
-            RavineLog.Warning($"[PlayerController] Client {OwnerClientId} edit at {Position2Int.UnpackToVector(position)} refused: {reason}");
+            Rate,
+            Inactive,
+            Dead,
+            OutOfReach,
+            NotReady,
+            Place,
+            PickUp
+        }
+
+        private bool Refuse(long position, EditRefusal reason, WorldEditResult edit = WorldEditResult.Refused, PlacementResult placement = PlacementResult.Ok)
+        {
+            refusedEdits++;
+            double now = Time.unscaledTimeAsDouble;
+            if (now < refuseLogTime) return false;
+
+            refuseLogTime = now + refuseLogInterval;
+            RavineLog.Warning($"[PlayerController] Client {OwnerClientId}: {refusedEdits} edits refused, last at {Position2Int.UnpackToVector(position)}: {reason} {edit}/{placement}");
+            refusedEdits = 0;
             return false;
         }
 

@@ -1,7 +1,9 @@
 using Cysharp.Text; // Для ZString
 using System;
 using System.Collections.Generic;
+using Stopwatch = System.Diagnostics.Stopwatch;
 using System.IO;
+using System.Text;
 using UnityEngine;
 
 public class RavineLogger
@@ -11,6 +13,15 @@ public class RavineLogger
     private readonly HashSet<string> loggedErrors = new();
     private byte criticalErrorNumber;
     private readonly byte maxCriticalNumber = 10;
+
+    private const int FlushChars = 8192;
+    private const long MaxFileChars = 16L * 1024 * 1024;
+
+    private readonly StringBuilder pending = new(FlushChars * 2);
+    private readonly object fileLock = new();
+    private long fileChars;
+    private long lastFlushTicks;
+    private bool fileLimitReached;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     private readonly bool isDebugBuild = true;
@@ -35,6 +46,8 @@ public class RavineLogger
         logFilePath = Path.Combine(Application.persistentDataPath, logFileName);
         
         File.WriteAllText(logFilePath, ZString.Concat("Game Log Started: ", DateTime.Now, "\n"));
+        lastFlushTicks = Stopwatch.GetTimestamp();
+        Application.quitting += Flush;
     }
 
     public void LogError(string message)
@@ -52,7 +65,7 @@ public class RavineLogger
             Debug.LogError(logMessage);
         }
         
-        WriteToFile(logMessage);
+        WriteToFile(logMessage, true);
         DisplayInGameConsole(styledMessage);
 
         loggedErrors.Add(message);
@@ -101,24 +114,54 @@ public class RavineLogger
             Debug.LogError(logMessage);
         }
         
-        WriteToFile(logMessage);
+        WriteToFile(logMessage, true);
         DisplayInGameConsole(styledMessage);
 
         if (criticalErrorNumber > maxCriticalNumber)
             StopApplication();
     }
 
-    private void WriteToFile(string message)
+    private void WriteToFile(string message, bool flushNow = false)
     {
+        lock (fileLock)
+        {
+            if (fileLimitReached) return;
+
+            using var line = ZString.CreateStringBuilder();
+            line.Append(DateTime.Now);
+            line.Append(": ");
+            line.Append(message);
+            line.Append('\n');
+
+            fileChars += line.Length;
+            if (fileChars > MaxFileChars)
+            {
+                fileLimitReached = true;
+                pending.Append(ZString.Concat(DateTime.Now, ": ", CriticalPrefix, "Log size limit reached, file logging stopped\n"));
+                FlushLocked();
+                return;
+            }
+
+            pending.Append(line.AsSpan());
+
+            if (flushNow || pending.Length >= FlushChars || Stopwatch.GetTimestamp() - lastFlushTicks >= Stopwatch.Frequency)
+                FlushLocked();
+        }
+    }
+
+    public void Flush()
+    {
+        lock (fileLock) FlushLocked();
+    }
+
+    private void FlushLocked()
+    {
+        lastFlushTicks = Stopwatch.GetTimestamp();
+        if (pending.Length == 0) return;
+
         try
         {
-            using var sb = ZString.CreateUtf8StringBuilder();
-            sb.Append(DateTime.Now);
-            sb.Append(": ");
-            sb.Append(message);
-            sb.Append("\n");
-
-            File.AppendAllText(logFilePath, sb.ToString());
+            File.AppendAllText(logFilePath, pending.ToString());
         }
         catch (Exception ex)
         {
@@ -131,6 +174,7 @@ public class RavineLogger
             
             onMessageDisplayTerminal?.Invoke(ZString.Concat(StyledErrorPrefix, errorMsg));
         }
+        pending.Clear();
     }
 
     private void DisplayInGameConsole(string styledMessage)
@@ -151,7 +195,7 @@ public class RavineLogger
         string criticalMsg = "Too many critical errors occurred. Application will now close.";
         
         Debug.LogError(criticalMsg);
-        WriteToFile(ZString.Concat(CriticalPrefix, criticalMsg));
+        WriteToFile(ZString.Concat(CriticalPrefix, criticalMsg), true);
         
         onMessageDisplayTerminal?.Invoke(ZString.Concat(StyledCriticalPrefix, criticalMsg));
         
