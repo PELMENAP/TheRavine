@@ -31,6 +31,7 @@ namespace TheRavine.Base
         private CancellationTokenSource cts;
         private float localTime;
         private bool wasDay;
+        private bool disposed;
         public void SetUp(ISetAble.Callback callback)
         {
             ServiceLocator.Register(this);
@@ -52,11 +53,15 @@ namespace TheRavine.Base
 
         private void OnDisable()
         {
+            if (disposed) return;
+            disposed = true;
+
             serverTime?.Dispose();
             isDay?.Dispose();
             normalizedTime?.Dispose();
             cts?.Cancel();
             cts?.Dispose();
+            cts = null;
         }
 
         private async UniTaskVoid ServerLoop(CancellationToken token)

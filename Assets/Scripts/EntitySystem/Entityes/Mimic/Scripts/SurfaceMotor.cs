@@ -52,7 +52,7 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
         _arrived  = false;
         _blocked  = false;
 
-        if (motion == null)
+        if (motion == null || _tr == null)
         {
             Stop();
             return;

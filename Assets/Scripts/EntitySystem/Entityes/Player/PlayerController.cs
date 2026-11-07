@@ -254,7 +254,7 @@ namespace TheRavine.EntityControl
 
         private void ResetAim()
         {
-            crosshair.gameObject.SetActive(false);
+            if (crosshair != null) crosshair.gameObject.SetActive(false);
             isAccurance = false;
             aimCell = AimSnap.NoCell;
             aimLevel = 0;

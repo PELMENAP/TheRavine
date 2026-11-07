@@ -42,8 +42,11 @@ namespace TheRavine.Inventory
             selectSlot.action.performed -= HandleDigitInput;
         }
 
+        private void OnDestroy() => UnregisterInput();
+
         private void ToggleInventory(InputAction.CallbackContext context)
         {
+            if (playerData == null || playerData.IsDisposed) return;
             isInventoryActive = !isInventoryActive;
             
             if (isInventoryActive && !actionMapController.IsGamePlayActive()) 

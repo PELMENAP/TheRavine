@@ -39,6 +39,7 @@ public class PauseUI : MonoBehaviour, ISetAble
 
     public void ChangeTerminalState()
     {
+        if (playerData == null || playerData.IsDisposed) return;
         isActive = !isActive;
         if (isActive)
         {

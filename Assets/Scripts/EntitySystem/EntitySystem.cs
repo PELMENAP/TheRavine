@@ -95,12 +95,20 @@ namespace TheRavine.EntityControl
         private void FixedUpdate()
         {
             if(global == null) return;
-            for (int i = 0; i < global.Count; i++) global[i].UpdateEntityCycle();
+            for (int i = 0; i < global.Count; i++)
+                if (!global[i].IsDisposed) global[i].UpdateEntityCycle();
         }
 
         public void BreakUp(ISetAble.Callback callback)
         {
-            for (int i = 0; i < global.Count; i++) global[i].Dispose();
+            try
+            {
+                for (int i = 0; i < global.Count; i++) global[i].Dispose();
+            }
+            finally
+            {
+                global.Clear();
+            }
             if(boidsBehaviour != null) boidsBehaviour.DisableBoids();
             brokenUp = true;
             if (foodIndex != null) ServiceLocator.Services.Unregister(foodIndex);

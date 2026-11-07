@@ -17,9 +17,12 @@ public class GrassPlayersManger : MonoBehaviour
     private void TryBindFirstPlayer()
     {
         var players = ServiceLocator.Players.GetAllPlayers();
-        if (players.Count == 0) return;
+        if (players.Count == 0 || players[0].IsDisposed) return;
 
-        player = players[0].GetEntityComponent<TransformComponent>().GetEntityTransform();
+        TransformComponent transformComponent = players[0].GetEntityComponent<TransformComponent>();
+        if (transformComponent == null) return;
+
+        player = transformComponent.GetEntityTransform();
     }
 
     private void UpdatePlayerPositions()

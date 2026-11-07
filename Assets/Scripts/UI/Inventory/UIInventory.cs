@@ -300,6 +300,7 @@ namespace TheRavine.Inventory
 
         public void BreakUp(ISetAble.Callback callback)
         {
+            inventoryInputHandler.UnregisterInput();
             uIDragger.BreakUp();
             craftService.BreakUp();
             pendingPickUps.Clear();
@@ -309,7 +310,6 @@ namespace TheRavine.Inventory
             ServiceLocator.Services.Unregister<IPlacementSource>(this);
             eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce -= OnInventoryStateChanged;
             eventDrivenInventoryProxy.Dispose();
-            inventoryInputHandler.UnregisterInput();
 
             callback?.Invoke();
         }
