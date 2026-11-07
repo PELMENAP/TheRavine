@@ -16,6 +16,7 @@ namespace TheRavine.EntityControl
 
         [SerializeField] private CameraMovingConfig cameraMove;
         private CameraComponent cameraComponent;
+        private NetworkObject spawnedCamera;
         private RavineLogger logger;
         public override async void OnNetworkSpawn()
         {
@@ -60,7 +61,7 @@ namespace TheRavine.EntityControl
             {
                 if (!IsClient || !IsOwner) return;
                 
-                RequestCameraServerRpc(NetworkManager.Singleton.LocalClientId);
+                RequestCameraServerRpc();
                 EntitySystem entitySystem = await ServiceLocator.WaitUntilServiceReady<EntitySystem>();
                 entitySystem.AddToGlobal(PlayerEntity);
 
@@ -72,17 +73,19 @@ namespace TheRavine.EntityControl
             }
         }
         [ServerRpc]
-        private void RequestCameraServerRpc(ulong clientId)
+        private void RequestCameraServerRpc()
         {
-            NetworkObject cameraObject = Instantiate(cameraPrefab);
-            cameraObject.SpawnWithOwnership(clientId);
-            NotifyCameraCreatedClientRpc(cameraObject.NetworkObjectId, clientId);
+            if (spawnedCamera != null && spawnedCamera.IsSpawned) return;
+
+            spawnedCamera = Instantiate(cameraPrefab);
+            spawnedCamera.SpawnWithOwnership(OwnerClientId);
+            NotifyCameraCreatedClientRpc(spawnedCamera.NetworkObjectId, OwnerClientId);
         }
 
         [ClientRpc]
         private void NotifyCameraCreatedClientRpc(ulong cameraObjectId, ulong clientId)
         {
-            var cameraObject = NetworkManager.Singleton.SpawnManager.SpawnedObjects[cameraObjectId];
+            if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(cameraObjectId, out NetworkObject cameraObject)) return;
             Camera camera = cameraObject.GetComponent<Camera>();
             cameraComponent = new CameraComponent();
 
