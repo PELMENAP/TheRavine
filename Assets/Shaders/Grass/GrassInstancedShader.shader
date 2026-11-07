@@ -336,7 +336,7 @@ Shader "The Ravine/ChunkGrassShader"
                 float3 directLighting = mainLight.color * NdotL * mainLight.shadowAttenuation;
 
                 float backLighting = saturate(dot(-mainLight.direction, normalWS));
-                float3 translucency = mainLight.color * backLighting * _TranslucencyStrength * input.heightFactor;
+                float3 translucency = mainLight.color * backLighting * _TranslucencyStrength * input.heightFactor * mainLight.shadowAttenuation;
 
                 float3 ambientLighting = SampleSH(normalWS) * _AmbientStrength;
                 float3 lighting = directLighting + translucency + ambientLighting;
