@@ -61,6 +61,8 @@ namespace TheRavine.Generator
         private bool evictionPending;
         private float nextEvictionScan;
         private long budgetTicks;
+        private long worldTickReached;
+        private readonly ErosionBudget erosionBudget = new();
 
         private IDisposable playerSubscription;
         private AEntity boundPlayer;
@@ -70,6 +72,19 @@ namespace TheRavine.Generator
         public ViewFacing Facing => facing;
         public int LodRingCount => lodRingCount;
         public int LoadedChunkCount => mapData.Count;
+
+        public long WorldTick
+        {
+            get
+            {
+                if (tickRules != null)
+                {
+                    long tick = (long)math.floor(SimulationClock.TimeD / tickRules.tickSeconds);
+                    if (tick > worldTickReached) worldTickReached = tick;
+                }
+                return worldTickReached;
+            }
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long WorldToChunk(long worldPos) =>
@@ -160,14 +175,54 @@ namespace TheRavine.Generator
             else
             {
                 data = chunkPool.Count > 0 ? chunkPool.Pop() : new ChunkData();
-                chunkGenerator.Generate(data, chunkKey, ring);
-                chunkStore?.TryRestore(chunkKey, data);
+                GenerateChunk(chunkKey, data, ring);
                 mapData[chunkKey] = data;
                 chunkSetVersion++;
             }
 
             data.LastAccessFrame = frame;
             return data;
+        }
+
+        private void GenerateChunk(long chunkKey, ChunkData data, int ring)
+        {
+            long worldTick = WorldTick;
+            long epochTicks = tickRules.erosionEpochTicks;
+            erosionBudget.LimitTicks = FrameBudget.TicksFromMs(tickRules.erosionEpochBudgetMs);
+
+            int stored = chunkStore != null ? chunkStore.PeekErosionEpoch(chunkKey) : 0;
+            if (stored <= 0)
+            {
+                int due = ErosionEpochsDue(0L, worldTick);
+                int applied = chunkGenerator.Generate(data, chunkKey, ring, 1, due, erosionBudget, out bool hit);
+                data.LastTick = applied * epochTicks;
+                RecordErosion(applied, hit);
+                return;
+            }
+
+            chunkGenerator.Generate(data, chunkKey, ring, stored, 0, erosionBudget, out _);
+            data.LastTick = (stored - 1) * epochTicks;
+            chunkStore.TryRestore(chunkKey, data, worldTick);
+
+            if (data.LastTick > worldTick) data.LastTick = worldTick;
+            int remaining = ErosionEpochsDue(data.LastTick, worldTick);
+            int done = chunkGenerator.CatchUpTerrain(data, chunkKey, remaining, erosionBudget, out bool budgetHit);
+            data.LastTick += done * epochTicks;
+            RecordErosion(done, budgetHit);
+        }
+
+        private int ErosionEpochsDue(long lastTick, long worldTick)
+        {
+            long elapsed = worldTick - lastTick;
+            if (elapsed <= 0L) return 0;
+            return (int)Math.Min(elapsed / tickRules.erosionEpochTicks, tickRules.erosionMaxEpochsPerEntry);
+        }
+
+        private void RecordErosion(int applied, bool budgetHit)
+        {
+            if (randomTicks == null) return;
+            randomTicks.Stats.CatchUpEpochs += applied;
+            if (budgetHit) randomTicks.Stats.CatchUpBudgetHits++;
         }
 
         public bool EnsureRegion(long center, int radius, int ring, long deadline)
@@ -1022,7 +1077,10 @@ namespace TheRavine.Generator
             foreach (var kv in mapData)
             {
                 ChunkData cd = kv.Value;
-                if (cd.NeedsSave && chunkStore.TrySave(kv.Key, cd))
+                if (!cd.NeedsSave) continue;
+
+                randomTicks?.StampActive(kv.Key, cd);
+                if (chunkStore.TrySave(kv.Key, cd))
                     cd.MarkPersisted();
             }
         }
@@ -1162,6 +1220,10 @@ namespace TheRavine.Generator
         public int SavedVersion { get; private set; }
         public byte DetailLevel { get; internal set; } = NotGenerated;
         public int LastAccessFrame;
+        public long LastTick;
+        public long ObjectTick;
+        public int ErosionEpoch;
+        public int SpreadOwed;
 
         public ChunkData()
         {
@@ -1516,11 +1578,29 @@ namespace TheRavine.Generator
             StructureSpawnPoints?.Clear();
             WaterRingStamp = 0;
             WaterHoodMask = 0;
+            LastTick = 0L;
+            ObjectTick = 0L;
+            ErosionEpoch = 0;
+            SpreadOwed = 0;
             Epoch++;
             DetailLevel = NotGenerated;
             IsDirty = false;
             Version++;
             GeneratedVersion = Version;
+        }
+
+        internal void CommitErosion(int epoch)
+        {
+            ErosionEpoch = epoch;
+            InvalidateWater();
+        }
+
+        internal void InvalidateWater()
+        {
+            WaterLevelStamp = float.NaN;
+            WaterRingStamp = 0;
+            WaterHoodVersion = -1;
+            WaterHoodMask = 0;
         }
 
         internal void CommitGeneration(bool wasModified)
