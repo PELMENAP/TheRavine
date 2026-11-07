@@ -55,6 +55,7 @@ public class Mimic : MonoBehaviour
     private Vector3 lastForward = Vector3.forward;
 
     private bool _phenotypeApplied;
+    private bool _structuresReady;
 
     private void Awake()
     {
@@ -72,16 +73,16 @@ public class Mimic : MonoBehaviour
         if (!_phenotypeApplied)
             ApplyGeneticPhenotype(GeneticParameters.Default);
 
-        InitializeStructures();
+        maxLegs = numberOfLegs * partsPerLeg;
+        minimumAnchoredParts = minimumAnchoredLegs * partsPerLeg;
+        maxLegDistance = newLegRadius * 2.1f;
 
         MapGenerator = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
     }
 
     private void InitializeStructures()
     {
-        maxLegs = numberOfLegs * partsPerLeg;
-        minimumAnchoredParts = minimumAnchoredLegs * partsPerLeg;
-        maxLegDistance = newLegRadius * 2.1f;
+        _structuresReady = true;
 
         Pool = new LegPool(maxLegs, legResolution);
         planner = new LegPlanner();
@@ -89,8 +90,15 @@ public class Mimic : MonoBehaviour
         legRenderer = new LegRenderer();
         legRenderer.Initialize(this);
     }
+
+    private void OnDestroy()
+    {
+        legRenderer?.Dispose();
+    }
+
     private void Update()
     {
+        if (!_structuresReady) InitializeStructures();
         if (MapGenerator == null || velocitySource == null) return;
 
         Velocity = velocitySource.Velocity;

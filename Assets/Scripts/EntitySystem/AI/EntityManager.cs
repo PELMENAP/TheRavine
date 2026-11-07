@@ -69,7 +69,12 @@ public class EntityManager : MonoBehaviour
     private SimulationLog _simulationLog;
     private double _nextSimulationLogTime;
     private double _lastWarmthDecayTime;
+    private int _energyConsumers;
     public EnergyLedger Energy => _ledger;
+    public bool EnergySamplingRequired => _energyConsumers > 0 || SimulationRules.Active.SimulationLogEnabled;
+
+    public void RegisterEnergyConsumer() => _energyConsumers++;
+    public void UnregisterEnergyConsumer() => _energyConsumers = Math.Max(_energyConsumers - 1, 0);
     public EvolutionService Evolution => _evolution;
 
     [SerializeField] private int _transmissions;
@@ -176,7 +181,7 @@ public class EntityManager : MonoBehaviour
             if (now >= _nextEnergySampleTime)
             {
                 DecayWarmth(now);
-                SampleEnergy();
+                if (EnergySamplingRequired) SampleEnergy();
                 _nextEnergySampleTime = now + SimulationRules.Active.EcologyTickInterval;
             }
             if (SimulationRules.Active.SimulationLogEnabled && now >= _nextSimulationLogTime)

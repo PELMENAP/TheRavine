@@ -18,6 +18,8 @@ namespace TheRavine.EntityControl
         [SerializeField] private SpawnPointDataHeight[] regions;
         [SerializeField, Min(0)] private int MaxSpawnEntityCount;
         [SerializeField] private int step;
+        [SerializeField, Min(1)] private int lodStep = 1;
+        [SerializeField, Min(1)] private int lodMaxInterval = 8;
 
         private MapGenerator mapGenerator;
         private MobController mobController;
@@ -26,6 +28,7 @@ namespace TheRavine.EntityControl
         private readonly Dictionary<Vector2Int, ChunkEntityData> mapData = new(64);
         private readonly Dictionary<AEntity, Vector2Int> entityChunkLookup = new(256);
 
+        private readonly PlayerPresence _presence = new();
         private readonly HashSet<Vector2Int> _diffBuf = new(64);
         private readonly HashSet<Vector2Int> _newChunksBuf = new(64);
         private List<Vector2Int> _pruneBuf;
@@ -75,11 +78,16 @@ namespace TheRavine.EntityControl
             if (!entity.HasComponent<VisualCullingComponent>())
             {
                 var view = entityObject.GetComponentInChildren<EntityView>(true);
-                entity.AddComponentToEntity(new VisualCullingComponent(entityObject, view != null ? view.LabelObject : null, true));
+                entity.AddComponentToEntity(new VisualCullingComponent(entityObject, view != null ? view.LabelObject : null, false));
             }
 
             GetOrCreateChunkData(chunkPos).entitiesInChunk.Add(entity);
             entityChunkLookup[entity] = chunkPos;
+
+            mobController.AddMobToUpdate(entity);
+            entity.Activate();
+            _presence.Refresh();
+            mobController.SetMobInterval(entity, LodInterval(chunkPos));
 
             var mortality = entity.GetEntityComponent<MortalityComponent>();
             if (mortality != null)
@@ -130,10 +138,7 @@ namespace TheRavine.EntityControl
                 var entities = data.entitiesInChunk;
                 for (int i = 0; i < entities.Count; i++)
                 {
-                    var entity = entities[i];
-                    entity.Deactivate();
-                    mobController.RemoveMobFromUpdate(entity);
-                    entity.GetEntityComponent<VisualCullingComponent>()?.SetVisible(false);
+                    entities[i].GetEntityComponent<VisualCullingComponent>()?.SetVisible(false);
                 }
             }
 
@@ -147,19 +152,41 @@ namespace TheRavine.EntityControl
                     var entities = data.entitiesInChunk;
                     for (int i = 0; i < entities.Count; i++)
                     {
-                        var entity = entities[i];
-                        mobController.AddMobToUpdate(entity);
-                        entity.Activate();
-                        entity.GetEntityComponent<VisualCullingComponent>()?.SetVisible(true);
+                        entities[i].GetEntityComponent<VisualCullingComponent>()?.SetVisible(true);
                     }
                 }
             }
 
+            RefreshLod();
             PruneStaleChunks(position);
 
             oldChunkPosition = position;
 
             UpdateNALQueue(position);
+        }
+
+        private int LodInterval(Vector2Int chunk)
+        {
+            int distance = _presence.MinChunkDistance(chunk.x, chunk.y);
+            if (distance == int.MaxValue) return lodMaxInterval;
+
+            int outside = distance - chunkScale;
+            return outside <= 0 ? 1 : Mathf.Clamp(1 + outside * lodStep, 1, lodMaxInterval);
+        }
+
+        private void RefreshLod()
+        {
+            _presence.Refresh();
+
+            foreach (var kv in mapData)
+            {
+                var entities = kv.Value.entitiesInChunk;
+                if (entities.Count == 0) continue;
+
+                int interval = LodInterval(kv.Key);
+                for (int i = 0; i < entities.Count; i++)
+                    mobController.SetMobInterval(entities[i], interval);
+            }
         }
 
         private void PruneStaleChunks(Vector2Int center)
