@@ -24,6 +24,12 @@ Severity: **Critical** — a remote client breaks equality or the world directly
 | 14 | Low | `Core/Settings/WorldRegistry.cs:299`, `:393` | World ids read back from storage are not re-validated before `Directory.Delete(path, true)`; a tampered list with `..` deletes outside `worlds/`. Local only. | §7 | Open |
 | 15 | Low | `Core/RavineLogger.cs:58` | `loggedErrors` grows without bound. | §6 | Open |
 | 16 | Low | `Terminal/Rive/RiveExecutor.cs:166` | Variable substitution into terminal commands uses substring `Replace`: a variable named `i` rewrites every `i` in the command. | §8 | Open |
+| 17 | High | `ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs:244`, `UI/Inventory/UIInventory.cs:217-222` | The server does not know a remote player's inventory: `TryPlace` checks only that the object is placeable; ownership is checked on the client. A patched client places any placeable object without limit. Crafting and the inventory live only in the client's local save. | §2 | Fixed, see §5 |
+| 18 | High | `EntitySystem/Entityes/Player/PlayerModelView.cs:62-66`, `EntitySystem/Entityes/Player/PlayerEntity.cs:79-86` | A remote player's `PlayerEntity` is not ticked on the server (`AddToGlobal` only for the owner): no metabolism, `MortalityComponent` never dies, server-side `player dead` checks always pass. Hunger and death are decided by the client. | §2, §3 | Fixed, see §5 |
+| 19 | Medium | `Core/Storage/EncryptionUtility.cs:10`, `ProjectSettings/ProjectSettings.asset:725-727` | The save key is a `const string`: in IL2CPP it is stored in plain text in `global-metadata.dat`; Android builds use Mono (`scriptingBackend: Android: 0`), so `Assembly-CSharp.dll` decompiles directly. | §9 | Open |
+| 20 | Medium | `Model/BehavioursMap/Currency/SafeInt.cs`, `Model/BehavioursMap/Currency/CurrencyComponent.cs:27` | `SafeInt` only hides the value from memory scanners; a patched getter (`GetRaw`, `operator int`) returns any value. The initial amount comes from the local `WorldState.currency`; `CurrencyNetworkComponent.Initialize` is never called. Dormant: currency is not spent anywhere yet. | §2 | Open |
+| 21 | Low | `EntitySystem/Entityes/Player/PlayerController.cs` (`JumpServerRpc`) | The charge is not checked against time: a patched client always sends `charge = 1` and gets the maximum jump without holding. | §5 | Open |
+| 22 | Low | design | Listen-server: the host process runs server code, so a host who patches it bypasses every check. Only a dedicated server fixes this. | §3 | Accepted |
 
 ## 2. What already follows the principles
 
@@ -54,3 +60,21 @@ Findings 1–6 are fixed in the commit that adds this section. Line references i
 6. Refusals: `Refuse` takes an enum reason and result codes, increments a counter and writes at most one summary line per `refuseLogInterval` (5 s) per player; no string formatting for suppressed refusals. `RavineLogger` buffers file writes: flush on error / critical, at 8 K characters or once per second, and on `Application.quitting`; file logging stops at 16 M characters with one final line.
 
 Not verified in the Unity Editor: the container has no Unity; the changed files were checked only by a C# syntax parse. Behaviour to check in play mode: movement feel (acceleration now integrates per physics step instead of per RPC), sprint drain / regen rates, area pick-up (9 requests per press fits the burst), host and remote client.
+
+## 5. Fixes for findings 17–18
+
+Source of findings 17–22: client patching as in the article on IL2CPP reversing (a getter patched to return `INT_MAX`); the question is which values the client decides.
+
+17. Server-side item ledger for remote players (`EntitySystem/Entityes/Player/Components/PlayerItemLedger.cs`), one per player on the server instance of `PlayerController`.
+    - Credited by a server-validated pick-up (`PickUpRequestServerRpc`: item of the picked object, its amount).
+    - Debited by a placement: `PlaceRequestServerRpc` refuses with the new `WorldEditResult.NotOwned` when the ledger has no such item.
+    - Crafting goes through `CraftRequestServerRpc(recipeIndex)`: the server checks the ingredients in the ledger, consumes the non-catalysts, credits the result, and allows the next craft only after `TimeToComplete × craftTimeTolerance` (0.9). Recipe indices come from one catalog for both sides, `CraftModel.Shared`; `CraftService` now uses it too.
+    - The host is not checked against the ledger: its inventory already lives in the server process (finding 22).
+    - Limitations: the ledger lives for the session and is lost on disconnect. Items a remote player brings from their own save, and items crafted while the server refused the craft, are visible in their inventory but cannot be placed. Persisting remote inventories in the host's world needs a stable player identity, which the project does not have yet.
+18. The server ticks every player.
+    - `PlayerModelView` adds the player to `EntitySystem` on the server for every player, and on a client only for its own player.
+    - `PlayerEntity.UpdateEntityCycle` runs metabolism only where `WorldAuthority.IsAuthority`, and the behaviour only for the owner.
+    - The server publishes health and energy through `NetworkVariable`s every `sendInterval`; a client applies them to its local `StatsComponent` (`PlayerEntity.ApplyServerVitals`), so death on the client follows the server. Initial values are NaN, so nothing is applied before the first publish.
+    - Needed for this: `PlayerController.SetUp` sets up the camera, controls and autosave only for the owner (it used to throw for other players' instances without a `CameraComponent`, and every instance on the host wrote its position into the host's save); the spawn position is set only on the server, from the save only for the host's player; `PlayerModelView` creates `CameraComponent` only for the local player.
+
+Not verified in the Unity Editor: the container has no Unity; changed files were checked only by a C# syntax parse. To check in play mode with a host and a remote client: pick-up then place, place without the item (expected refusal `NotOwned`), crafting then placing the result, hunger and death of the remote player.

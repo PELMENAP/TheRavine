@@ -79,8 +79,8 @@ namespace TheRavine.EntityControl
         public override void UpdateEntityCycle()
         {
             if (!base.IsActive.Value) return;
-            TickMetabolism();
-            if (statePatternComponent.behaviourCurrent == null) return;
+            if (WorldAuthority.IsAuthority) TickMetabolism();
+            if (playerController.IsOwner && statePatternComponent.behaviourCurrent != null)
                 statePatternComponent.behaviourCurrent.Update();
             base.OnUpdate.Execute(Unit.Default);
         }
@@ -125,6 +125,15 @@ namespace TheRavine.EntityControl
 
         public bool RequestPlace(long position, int objectId, byte level = 0) => playerController.RequestPlace(position, objectId, level);
         public bool RequestPickUp(long position, byte level = 0) => playerController.RequestPickUp(position, level);
+        public bool RequestCraft(int recipeIndex) => playerController.RequestCraft(recipeIndex);
+
+        public void ApplyServerVitals(float health, float energyValue)
+        {
+            if (stats == null || stats.IsDisposed) return;
+            stats.En = energyValue;
+            stats.Hp = health;
+            energy.Sync();
+        }
 
         public void SetBehaviourIdle()
         {

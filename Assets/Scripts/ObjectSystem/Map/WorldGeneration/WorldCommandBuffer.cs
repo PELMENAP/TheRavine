@@ -210,7 +210,8 @@ namespace TheRavine.Generator
         UnknownObject = 3,
         NotPlaceable = 4,
         Rejected = 5,
-        Refused = 6
+        Refused = 6,
+        NotOwned = 7
     }
 
     public static class WorldEdits

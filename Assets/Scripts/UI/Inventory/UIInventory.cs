@@ -100,7 +100,7 @@ namespace TheRavine.Inventory
             uIDragger.SetUp(eventDrivenInventoryProxy, playerData.GetEntityComponent<MainComponent>(), playerData);
 
 
-            craftService.SetUp(infoManager, eventDrivenInventoryProxy);
+            craftService.SetUp(infoManager, eventDrivenInventoryProxy, playerData);
 
             eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce += OnInventoryStateChanged;
             

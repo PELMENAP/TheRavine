@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 public struct CraftStack
 {
@@ -61,13 +62,29 @@ public sealed class CraftRecipe
 
 public sealed class CraftModel
 {
+    private static CraftModel _shared;
     private readonly CraftRecipe[] _recipes;
 
     public CraftModel(CraftRecipe[] recipes) => _recipes = recipes;
 
+    public static CraftModel Shared => _shared ??= FromInfos(Resources.LoadAll<InventoryCraftInfo>("CraftInfo"));
+
     public int Count => _recipes.Length;
 
     public CraftRecipe this[int index] => _recipes[index];
+
+    public bool TryGet(int index, out CraftRecipe recipe)
+    {
+        recipe = (uint)index < (uint)_recipes.Length ? _recipes[index] : null;
+        return recipe != null;
+    }
+
+    public int IndexOf(CraftRecipe recipe)
+    {
+        for (int i = 0; i < _recipes.Length; i++)
+            if (ReferenceEquals(_recipes[i], recipe)) return i;
+        return -1;
+    }
 
     public static CraftModel FromInfos(InventoryCraftInfo[] infos)
     {
