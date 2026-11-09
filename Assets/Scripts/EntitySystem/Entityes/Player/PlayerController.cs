@@ -30,6 +30,7 @@ namespace TheRavine.EntityControl
         [SerializeField] private float movementMinimum, sendInterval = 0.1f, maxStepHeight = 0.6f;
         [SerializeField] private float intentTimeout = 0.6f;
         [SerializeField] private float editRate = 20f, editBurst = 16f, refuseLogInterval = 5f;
+        [SerializeField] private float craftTimeTolerance = 0.9f;
         [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick, Jump;
         [SerializeField] private Joystick joystick;
         [SerializeField] private Transform crosshair;
@@ -99,6 +100,13 @@ namespace TheRavine.EntityControl
         private double editReadyTime;
         private double refuseLogTime;
         private int refusedEdits;
+        private float vitalsTimer;
+        private double craftReadyTime;
+        private float mirroredHealth = float.NaN, mirroredEnergy = float.NaN;
+        private StatsComponent stats;
+        private readonly PlayerItemLedger ledger = new();
+        private readonly NetworkVariable<float> netHealth = new(float.NaN);
+        private readonly NetworkVariable<float> netEnergy = new(float.NaN);
 
         public void SetInitialValues(AEntity entity, RavineLogger logger)
         {
@@ -126,22 +134,25 @@ namespace TheRavine.EntityControl
 
         public void SetUp()
         {
-            playerCamera = playerEntity.GetEntityComponent<CameraComponent>().GetCamera();
-
-            ServiceLocator.GetService<GlobalSettingsController>().Settings
-                .Select(s => s.controlType)
-                .DistinctUntilChanged()
-                .Subscribe(ApplyControlType)
-                .AddTo(settingsSubscriptions);
-
             map = ServiceLocator.GetService<MapGenerator>();
             terrainResolver = new TerrainPhysicsResolver(map, playerRigidbody, characterHalfHeight, maxStepHeight);
-
             WorldRegistry worldRegistry = ServiceLocator.GetService<WorldRegistry>();
-            unsubscribe = ServiceLocator.GetService<AutosaveCoordinator>().SubscribeBeforeSave(() =>
+
+            if (IsOwner)
             {
-                SavePlayerPosition(worldRegistry);
-            });
+                playerCamera = playerEntity.GetEntityComponent<CameraComponent>()?.GetCamera();
+
+                ServiceLocator.GetService<GlobalSettingsController>().Settings
+                    .Select(s => s.controlType)
+                    .DistinctUntilChanged()
+                    .Subscribe(ApplyControlType)
+                    .AddTo(settingsSubscriptions);
+
+                unsubscribe = ServiceLocator.GetService<AutosaveCoordinator>().SubscribeBeforeSave(() =>
+                {
+                    SavePlayerPosition(worldRegistry);
+                });
+            }
             DelayedInit(worldRegistry).Forget();
         }
 
@@ -179,16 +190,19 @@ namespace TheRavine.EntityControl
             playerRigidbody.useGravity = false;
             terrainResolver.SetActive(false); 
 
-            WorldState worldState = worldRegistry.GetCurrentState();
+            if (IsServer)
+            {
+                WorldState worldState = IsOwner ? worldRegistry.GetCurrentState() : null;
 
-            if (!worldState.playerPosition.IsNull())
-            {
-                transform.position = worldState.playerPosition.ToSpawnPoint();
-            }
-            else
-            {
-                Vector2 spawnPoint = Extension.GetRandomPointAround(transform.position, 10);
-                transform.position = new Vector3(spawnPoint.x, SpawnHeightY, spawnPoint.y);
+                if (worldState != null && !worldState.playerPosition.IsNull())
+                {
+                    transform.position = worldState.playerPosition.ToSpawnPoint();
+                }
+                else
+                {
+                    Vector2 spawnPoint = Extension.GetRandomPointAround(transform.position, 10);
+                    transform.position = new Vector3(spawnPoint.x, SpawnHeightY, spawnPoint.y);
+                }
             }
 
             await UniTask.Delay(5000);
@@ -203,6 +217,7 @@ namespace TheRavine.EntityControl
             entityEventBus = playerEntity.GetEntityComponent<EventBusComponent>().EventBus;
             movementComponent = playerEntity.GetEntityComponent<MovementComponent>();
             aimComponent = playerEntity.GetEntityComponent<AimComponent>();
+            stats = playerEntity.GetEntityComponent<StatsComponent>();
             InitStatePattern(playerEntity.GetEntityComponent<StatePatternComponent>());
         }
 
@@ -280,9 +295,34 @@ namespace TheRavine.EntityControl
             if (!IsServer) return;
             terrainResolver?.Resolve();
             StepServerMovement(Time.fixedDeltaTime);
+            PublishVitals(Time.fixedDeltaTime);
         }
+
+        private void PublishVitals(float dt)
+        {
+            vitalsTimer += dt;
+            if (vitalsTimer < sendInterval || stats == null || stats.IsDisposed) return;
+            vitalsTimer = 0f;
+
+            netHealth.Value = stats.Hp;
+            netEnergy.Value = stats.En;
+        }
+
+        private void MirrorVitals()
+        {
+            float health = netHealth.Value, energyValue = netEnergy.Value;
+            if (!math.isfinite(health) || !math.isfinite(energyValue)) return;
+            if (health == mirroredHealth && energyValue == mirroredEnergy) return;
+            if (playerEntity is not PlayerEntity player) return;
+
+            mirroredHealth = health;
+            mirroredEnergy = energyValue;
+            player.ApplyServerVitals(health, energyValue);
+        }
+
         private void Update()
         {
+            if (IsSpawned && !IsServer) MirrorVitals();
             if (!IsOwner) return;
 
             UpdateJumpIndicator();
@@ -656,6 +696,27 @@ namespace TheRavine.EntityControl
             return true;
         }
 
+        public bool RequestCraft(int recipeIndex)
+        {
+            if (!IsSpawned || !IsOwner || IsServer || recipeIndex < 0) return false;
+            CraftRequestServerRpc(recipeIndex);
+            return true;
+        }
+
+        private bool UsesLedger => IsServer && !IsOwner;
+
+        [ServerRpc]
+        private void CraftRequestServerRpc(int recipeIndex)
+        {
+            if (!UsesLedger || !CraftModel.Shared.TryGet(recipeIndex, out CraftRecipe recipe)) return;
+
+            double now = Time.unscaledTimeAsDouble;
+            if (now < craftReadyTime) return;
+            if (!ledger.TryCraft(recipe)) return;
+
+            craftReadyTime = now + math.max(0f, recipe.TimeToComplete) * craftTimeTolerance;
+        }
+
         [ServerRpc]
         private void PlaceRequestServerRpc(long position, int objectId, byte level)
         {
@@ -663,7 +724,13 @@ namespace TheRavine.EntityControl
             PlacementResult placement = PlacementResult.Ok;
             if (aimComponent != null && TryResolveEditor(position, aimComponent.CrosshairDistance, out MapGenerator generator, out ObjectSystem objects))
             {
-                result = WorldEdits.TryPlace(generator, objects, position, level, objectId, out placement);
+                IInventoryItemInfo item = UsesLedger ? objects.GetInfo(objectId)?.InventoryItemInfo : null;
+                if (UsesLedger && ledger.Count(item) < 1)
+                    result = WorldEditResult.NotOwned;
+                else
+                    result = WorldEdits.TryPlace(generator, objects, position, level, objectId, out placement);
+
+                if (result == WorldEditResult.Ok && UsesLedger) ledger.TryDebit(item, 1);
                 if (result != WorldEditResult.Ok) Refuse(position, EditRefusal.Place, result, placement);
             }
             PlaceResultClientRpc(position, level, objectId, (byte)result, (byte)placement, OwnerTarget());
@@ -680,6 +747,7 @@ namespace TheRavine.EntityControl
             {
                 WorldEditResult result = WorldEdits.TryPickUp(generator, objects, position, level, out prefabId, out amount);
                 ok = result == WorldEditResult.Ok;
+                if (ok && UsesLedger) ledger.Credit(objects.GetInfo(prefabId)?.InventoryItemInfo, amount);
                 if (!ok) Refuse(position, EditRefusal.PickUp, result);
             }
             PickUpResultClientRpc(position, level, prefabId, amount, ok, OwnerTarget());

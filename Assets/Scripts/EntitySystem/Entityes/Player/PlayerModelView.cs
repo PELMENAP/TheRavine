@@ -59,9 +59,9 @@ namespace TheRavine.EntityControl
         {
             try
             {
-                if (!IsClient || !IsOwner) return;
-                
-                RequestCameraServerRpc();
+                if (IsClient && IsOwner) RequestCameraServerRpc();
+                if (!IsOwner && !IsServer) return;
+
                 EntitySystem entitySystem = await ServiceLocator.WaitUntilServiceReady<EntitySystem>();
                 entitySystem.AddToGlobal(PlayerEntity);
 
@@ -87,10 +87,10 @@ namespace TheRavine.EntityControl
         {
             if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(cameraObjectId, out NetworkObject cameraObject)) return;
             Camera camera = cameraObject.GetComponent<Camera>();
-            cameraComponent = new CameraComponent();
 
             if (NetworkManager.Singleton.LocalClientId == clientId)
             {
+                cameraComponent = new CameraComponent();
                 cameraComponent.SetUp(PlayerEntity, camera, cameraObject.transform, cameraMove);
                 PlayerEntity.AddComponentToEntity(cameraComponent);
             }

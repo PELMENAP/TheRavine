@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 
 using TheRavine.InventoryElements;
+using TheRavine.EntityControl;
 
 namespace TheRavine.Inventory
 {
@@ -20,7 +21,8 @@ namespace TheRavine.Inventory
         private CraftMatch[] matches = Array.Empty<CraftMatch>();
         private CraftModel craftModel;
         private InventoryItemInfo resultItemInfo;
-        private int resultCount, craftDelay;
+        private int resultCount, craftDelay, resultRecipe = -1;
+        private PlayerEntity player;
         private bool cancel, inProcess;
         private CancellationTokenSource _cts;
         private EventDrivenInventoryProxy inventory;
@@ -28,15 +30,16 @@ namespace TheRavine.Inventory
         public IReadOnlyList<CraftStack> Grid => grid;
         public IReadOnlyList<UIInventorySlot> CraftCells => craftCells;
         public UIInventorySlot ResultCell => resultCell;
-        public void SetUp(InfoManager infoManager, EventDrivenInventoryProxy inventoryModel)
+        public void SetUp(InfoManager infoManager, EventDrivenInventoryProxy inventoryModel, PlayerEntity player)
         {
             cancel = false;
             _cts = new();
 
             this.infoManager = infoManager;
+            this.player = player;
             inventory = inventoryModel;
 
-            craftModel = CraftModel.FromInfos(infoManager.GetAllCraftRecepts());
+            craftModel = CraftModel.Shared;
             if (craftModel.Count == 0)
                 Debug.LogWarning("[CraftService] No craft recipes loaded: CraftInfo assets must live under Resources/CraftInfo");
             matches = new CraftMatch[craftModel.Count];
@@ -71,6 +74,7 @@ namespace TheRavine.Inventory
             resultItemInfo = recipe.Result;
             resultCount    = recipe.ResultCount;
             craftDelay     = recipe.TimeToComplete;
+            resultRecipe   = craftModel.IndexOf(recipe);
             craftPresenter.CraftPossible(true);
             return true;
         }
@@ -114,6 +118,7 @@ namespace TheRavine.Inventory
 
             if (!inventory.TryProduceToSlot(this, resultCell.slot, result)) return;
             ConsumeIngredients();
+            player?.RequestCraft(resultRecipe);
         }
 
         private bool HasRoomForResult() =>
