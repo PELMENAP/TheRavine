@@ -8,6 +8,9 @@ namespace TheRavine.InventoryElements
         public UIInventoryItem _uiInventoryItem;
         public InventorySlot slot { get; private set; }
         public int index;
+        [SerializeField] private SlotKind kind = SlotKind.Bag;
+        public SlotKind Kind => kind;
+        public void SetKind(SlotKind newKind) => kind = newKind;
         public void SetSlot(InventorySlot newSlot, int index)
         {
             slot = newSlot;

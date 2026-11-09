@@ -42,8 +42,6 @@ public partial class EntityModel
 
     private void UpdateDormancy(double now, in SimulationRules.RulesFrame rules)
     {
-        if (IsWild) return;
-
         bool hpOk = Stats.Hp >= Stats.MaxHealth * rules.HibernateWakeHpFraction;
         if (_dormant)
         {
@@ -71,6 +69,7 @@ public partial class EntityModel
         float now = (float)nowD;
 
         TimeAlive += dt;
+        UpdateSenescence(in rules);
         if (TimeAlive >= MaxAge)
         {
             Mortality.NoteHarm(DeathCause.Age, 0f);
@@ -105,7 +104,11 @@ public partial class EntityModel
         CreatureCore.StepVirology(Virology, Stats, Mortality, dt, in host);
         _ledger.Flows.ViralNet += Stats.En - enBeforeVirus;
         ref var mods = ref Virology.Modifiers;
-        if (mods.ForceSpeechRequested) Broadcast(Speech.Own);
+        if (mods.ForceSpeechRequested && Speech.Own.Len > 0)
+        {
+            var forced = MakeUtterance(Speech.Own.Tokens, Speech.Own.Len, Utterance.FlagReflex);
+            Emit(in forced);
+        }
         if (!IsAliveForTick()) return false;
 
         Vector3 pos  = Motor.Position();
@@ -113,8 +116,7 @@ public partial class EntityModel
         float detect = Tuning.DetectionRadius * math.max(rules.BlindMinDetectionFraction, 1f - mods.Blind * rules.BlindStrength);
 
         PerceptionMarker.Begin();
-        _nearest = Perception.FindNearestEntity(pos, this, detect, out _nearestDistance);
-        _crowd   = CountAndRelease(Perception.FindEntitiesInRadius(pos, this, rules.CrowdRadius, Neighbors), Colony, out _kinCrowd);
+        _nearest = Perception.Survey(pos, this, Colony, detect, rules.CrowdRadius, Neighbors.Length, out _nearestDistance, out _crowd, out _kinCrowd);
 
         _foodValid    = false;
         _foodDistance = -1f;
@@ -133,11 +135,12 @@ public partial class EntityModel
         _foodTraits = foodTraits;
 
         var nest = Nest;
-        IsAtNest = nest != null && nest.Contains(self, IsAtNest ? nest.Radius * math.max(rules.NestExitRadiusMul, 1f) : nest.Radius);
+        IsAtNest = ComputeAtHome(nest, in self, in rules);
         if (nest != null && _foodValid) nest.Mark(ColonyChannel.Food, foodPos, rules.NestFoodMark * dt);
         if (nest != null && !IsWild)
-            nest.Mark(ColonyChannel.Explored, self, rules.ExploredMark * dt * (Caste == Caste.Scout ? rules.ScoutExploredMul : 1f));
-        if (nest != null && !IsWild) nest.Mark(ColonyChannel.Territory, self, rules.TerritoryMark * dt);
+            nest.MarkPair(self,
+                ColonyChannel.Explored, rules.ExploredMark * dt * (Caste == Caste.Scout ? rules.ScoutExploredMul : 1f),
+                ColonyChannel.Territory, rules.TerritoryMark * dt);
         SampleTrail(in self, nowD, in rules);
         _nearestForeign = FindNearestForeign(pos, detect, out _nearestForeignDistance);
         StatsComponent    playerStats    = null;
@@ -149,7 +152,7 @@ public partial class EntityModel
         PerceptionMarker.End();
         _nestFood = ComputeNestFood(nest, in rules);
         UpdateTerritory(nest, in self, dt, in rules);
-        if (!IsWild) ComputeDirections(nest, in self, in foodPos, in rules);
+        ComputeDirections(nest, in self, in foodPos, in rules);
 
         if (!_terrain.TrySample(pos.x, pos.z, out _lastTerrain))
             _lastTerrain = TerrainSample.Invalid;
@@ -159,7 +162,8 @@ public partial class EntityModel
         float neighborLoad = 0f;
         var nearest = CachedNearest;
         if (nearest != null) nearest.Virology.TryGetViralInputs(out neighborLoad, out _, out _);
-        _kinSick = nearest != null && nearest.Colony == Colony && neighborLoad >= rules.GroomMinLoad;
+        _kinSick = nearest != null && nearest.Colony == Colony && neighborLoad >= rules.GroomMinLoad
+                && _nearestDistance <= rules.EatRange * rules.KinSearchRangeMul;
 
         ReadForeignVitals(playerStats, playerVirology, out float foreignHp, out float foreignEnergy, out float foreignViral,
             out StatsComponent foreignSource);
@@ -173,6 +177,10 @@ public partial class EntityModel
         }
 
         float dirNoise = Stress * rules.StressPerceptionNoise;
+
+        Speech.Listen(_speechBus, ManagerIndex, in self, now);
+        _speechBus?.SetFitness(ManagerIndex, GetFitness());
+
         var frame = new VectorizerFrame
         {
             Health            = Stats.Hp,
@@ -184,7 +192,7 @@ public partial class EntityModel
             NearestFoodDist   = _foodValid ? _foodDistance : -1f,
             FoodDir           = NoisyDirection(_foodValid ? DirectionTo(in self, in foodPos) : float2.zero, dirNoise),
             EntityDir         = NoisyDirection(nearest != null ? DirectionTo(in self, Extension.Flat(nearest.Motor.Position())) : float2.zero, dirNoise),
-            NestDir           = NoisyDirection(nest != null ? DirectionTo(in self, nest.Position) : float2.zero, dirNoise),
+            NestDir           = NoisyDirection(HasHome ? DirectionTo(in self, HomePosition) : float2.zero, dirNoise),
             PoiDir            = NoisyDirection(Points.TryGetNearest(in self, out float2 poi) ? DirectionTo(in self, in poi) : float2.zero, dirNoise),
             NestFoodDir       = nest != null && nest.HasFoodPeak ? DirectionTo(in self, nest.FoodPeak) : float2.zero,
             Stomach           = Digestion.Fill,
@@ -209,7 +217,11 @@ public partial class EntityModel
             ForeignViral      = foreignViral,
             IsLeader          = IsLeader ? 1f : 0f,
             Caste             = (int)Caste,
-            Speech            = Speech.Heard,
+            SpeechBag         = Speech.Bag,
+            SpeechDir         = Speech.Dir,
+            SpeechDist        = Speech.Dist,
+            SpeechKin         = Speech.Kin,
+            SpeechAge         = Speech.Age,
             MimickedAction    = MimickedActionIndex,
             Now               = nowD,
             PlanRewardEma     = _planRewardEma,
@@ -221,9 +233,8 @@ public partial class EntityModel
         if (_sick && nest != null) nest.Mark(ColonyChannel.Sickness, self, rules.SickMark * dt);
         UpdateHormones(dt, in rules);
 
-        if (!IsWild) LastInput = Vectorizer.Vectorize(in frame, _actionTimes, in _lastTerrain);
+        LastInput = Vectorizer.Vectorize(in frame, _actionTimes, in _lastTerrain);
 
-        Speech.ConsumeOtherSpeech();
         ConsumeMimickedAction();
 
         bool resting = LastAction == EntityAction.Idle || LastAction == EntityAction.Rest;
@@ -231,7 +242,8 @@ public partial class EntityModel
         if (LastAction == EntityAction.Rest && SinceAction(EntityAction.Eat) < rules.SynergyWindow)
             digestMul *= rules.RestAfterEatDigestMul;
 
-        Digestion.Tick(Stats, dt, resting, digestMul, mods.RegenMultiplier, in rules, out float regenCredit, out float digestLoss);
+        float digested = Digestion.Tick(Stats, dt, resting, digestMul, mods.RegenMultiplier, in rules, out float regenCredit, out float digestLoss);
+        Brain.Context.GoalDigested += digested - digestLoss;
 
         float basalMul = Tuning.BasalDrainMul
                        * CreatureCore.EnvironmentDrainMul(Digestion.WellFed, night && !IsAtNest, mods.Fever, _winter, in rules, _dormant)
@@ -273,16 +285,6 @@ public partial class EntityModel
         _plan.Tick();
         if (!IsAliveForTick()) return false;
 
-        if (IsWild)
-        {
-            _threatResolved = ResolveThreatSource(in self, frame.LocalDanger, in rules, out _threatSource);
-            _hasThreat   = _threatResolved;
-            _cycleNow    = now;
-            _cycleDt     = dt;
-            _cycleActive = true;
-            return true;
-        }
-
         var goalBias = new float4(
             mods.WanderBias,
             mods.HuntBias + mods.Frenzy * rules.FrenzyHuntBias,
@@ -302,21 +304,39 @@ public partial class EntityModel
         }
 
         var brainCtx = Brain.Context;
+        if (Speech.HasLoudest && Speech.Loudest.Speaker != Utterance.External)
+        {
+            brainCtx.DecodeTarget = Speech.Loudest.Context;
+            brainCtx.DecodeTime   = Speech.Loudest.Time;
+        }
         for (int p = 0; p < PlanCatalog.Count; p++)
             brainCtx.CoordBias[p] = goalBias[(int)PlanCatalog.GoalOf((PlanKind)p)];
         brainCtx.CoordBias[(int)PlanKind.Flee] += fleeBias - mods.FearInvert * rules.FearInvertStrength;
         brainCtx.CoordBias[(int)PlanKind.Hunt] += mods.BiteSeek * rules.BiteSeekHuntBias;
-        brainCtx.CoordBias[(int)PlanKind.Rest] += mods.HomeCompulsion * rules.HomeCompulsionRestBias;
+        if (!RestBlockedByHunger) brainCtx.CoordBias[(int)PlanKind.Rest] += mods.HomeCompulsion * rules.HomeCompulsionRestBias;
         brainCtx.CoordBias[(int)PlanKind.Patrol] += mods.Isolate * rules.IsolateStrength;
         brainCtx.CoordBias[(int)PlanKind.Harvest] += _winterApproach * rules.PreWinterHarvestBias;
-        if (night && IsAtNest && !IsHungry) brainCtx.CoordBias[(int)PlanKind.Rest] += rules.NightRestBias;
-        if (_onForeignTerritory) brainCtx.CoordBias[(int)PlanKind.Hunt] -= rules.ForeignTerritoryHuntDrop;
+        if (night && IsAtNest && !RestBlockedByHunger)
+            brainCtx.CoordBias[(int)PlanKind.Rest] += rules.NightRestBias * brainCtx.CoordMLP.Params.NightRestMul;
+        float scarcity = Colony != null ? Colony.Scarcity : 0f;
+        float forage = rules.HungerForageBias * _ghrelin;
+        if (_onForeignTerritory)
+        {
+            brainCtx.CoordBias[(int)PlanKind.Hunt] -= rules.ForeignTerritoryHuntDrop;
+            forage += rules.ScarcityForeignForageBias * scarcity;
+        }
+        brainCtx.CoordBias[(int)PlanKind.Graze] += forage;
+        brainCtx.CoordBias[(int)PlanKind.Seek] += forage;
+        brainCtx.CoordBias[(int)PlanKind.Rest] -= rules.HungerRestDrop * _ghrelin;
+        brainCtx.CoordBias[(int)PlanKind.Migrate] += rules.ScarcityMigrateBias * scarcity;
+        if (Colony != null && Colony.QuorumReady && CasteFixed && !IsJuvenile)
+            brainCtx.CoordBias[(int)PlanKind.Migrate] += rules.QuorumMigrateBias;
 
         ref readonly var genes = ref brainCtx.CoordMLP.Params;
         bool adult = CasteFixed && !IsJuvenile && !IsWild;
         int  affinityRow = (int)Caste * PlanCatalog.Count;
         for (int p = 0; p < PlanCatalog.Count; p++)
-            brainCtx.CoordBias[p] += genes.PlanBias(p) + (adult ? rules.CasteAffinityLog[affinityRow + p] : 0f);
+            brainCtx.CoordBias[p] += genes.PlanBias(p) + (adult ? rules.CasteAffinityLog[affinityRow + p] * genes.CasteAffinityMul : 0f);
 
         var colonyRef = Colony;
         if (IsLeader) colonyRef.PublishLeaderPrior(brainCtx.PlanProbs);
@@ -384,12 +404,14 @@ public partial class EntityModel
             PlanActive      = _plan.IsActive ? (byte)1 : (byte)0,
             PlanKind        = (byte)_plan.Kind,
             Caste           = (byte)Caste,
-            NestDistance    = nest != null ? math.distance(self, nest.Position) : -1f,
+            NestDistance    = HasHome ? math.distance(self, HomePosition) : -1f,
             HungerBias      = _ghrelin * rules.GhrelinHungerShift,
             PanicBias       = _oxytocin * rules.OxytocinPanicShift - _cortisol * rules.CortisolPanicShift,
             Sick            = _sick ? (byte)1 : (byte)0,
             HungryKin       = nest != null && nest.HungryAtNest > 0 ? (byte)1 : (byte)0,
             Recruited       = IsRecruited ? (byte)1 : (byte)0,
+            Colonial        = nest != null ? (byte)1 : (byte)0,
+            Dt              = dt,
         };
 
         _cycleNow    = now;
@@ -405,19 +427,25 @@ public partial class EntityModel
         if (_foodValid) h |= PlanHint.FoodVisible;
         if (_foodValid && _foodDistance <= r.EatRange) h |= PlanHint.FoodInRange;
         if (Carrying > 0f) h |= PlanHint.Carrying;
-        if (Carrying >= CarryCapacity * r.CarryFullFraction) h |= PlanHint.CarryFull;
+        if (Carrying >= CarryCapacity * CarryFullFraction) h |= PlanHint.CarryFull;
         if (IsAtNest) h |= PlanHint.AtNest;
+        if (Nest != null) h |= PlanHint.HasNest;
+        if (HasHome) h |= PlanHint.HasHome;
         if (CachedNearest != null) h |= PlanHint.EntityNear;
         if (_playerValid) h |= PlanHint.PlayerNear;
-        if (ValidForeign != null || _playerValid || (IsFrenzied && CachedNearest != null)) h |= PlanHint.PreyNear;
+        if (HasHuntTarget) h |= PlanHint.PreyNear;
         if (_nestFood) h |= PlanHint.NestHasFood;
-        if (Stats.En >= math.max(r.AttackEnergyMin, Tuning.AttackEnergyCost)) h |= PlanHint.CanAttack;
-        if (Stats.En >= Tuning.ReproduceEnergyCost && Stats.Hp >= Tuning.ReproduceHealthCost) h |= PlanHint.CanReproduce;
+        var tuning = Tuning;
+        if (Stats.En >= AttackCommand.EnergyBudget(tuning.AttackEnergyCost, tuning.EnergyCostRunning, tuning.RunSpeed,
+                SpeedMul, HuntTargetDistance, in r))
+            h |= PlanHint.CanAttack;
+        if (Stats.En >= tuning.ReproduceEnergyCost && Stats.Hp >= tuning.ReproduceHealthCost) h |= PlanHint.CanReproduce;
         if (IsSated) h |= PlanHint.Sated;
         if (Stats.Hp >= Stats.MaxHealth) h |= PlanHint.HpFull;
         if (Points.Count > 0) h |= PlanHint.HasPoi;
         if (hasThreat) h |= PlanHint.Threat;
         if (IsHungry) h |= PlanHint.Hungry;
+        if (RestBlockedByHunger) h |= PlanHint.RestBlocked;
         if (IsLeader) h |= PlanHint.IsLeader;
         if (_nearestForeign != null) h |= PlanHint.ForeignNear;
         var nest = Nest;
@@ -425,9 +453,9 @@ public partial class EntityModel
         if (nest != null && nest.HasFoodPeak) h |= PlanHint.FoodPeak;
         if (nest != null && nest.Storage < r.SeekStorageLow * r.NestStorageNorm) h |= PlanHint.StorageLow;
         var colony = Colony;
-        if (colony != null && colony.Pois.Count > 0) h |= PlanHint.ColonyPoi;
-        if (colony != null && IsLeader && colony.TryGetQuorumSite(out _)) h |= PlanHint.QuorumReady;
-        if (Caste == Caste.Worker && CasteFixed && !IsJuvenile && !IsHungry) h |= PlanHint.PreferPickUp;
+        if (colony != null && !colony.IsWild && colony.Pois.Count > 0) h |= PlanHint.ColonyPoi;
+        if (colony != null && CasteFixed && !IsJuvenile && colony.QuorumReady) h |= PlanHint.QuorumReady;
+        if (nest != null && Caste == Caste.Worker && CasteFixed && !IsJuvenile && !IsHungry) h |= PlanHint.PreferPickUp;
         if (_kinSick) h |= PlanHint.KinSick;
         if (_night) h |= PlanHint.Night;
         return h;

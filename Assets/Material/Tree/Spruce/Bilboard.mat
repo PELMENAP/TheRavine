@@ -97,7 +97,7 @@ Material:
     - _AlphaToMask: 0
     - _AmbientFlatten: 0.182
     - _AmbientStrength: 0.066
-    - _BillboardPitch: 20
+    - _BillboardPitch: 5
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1

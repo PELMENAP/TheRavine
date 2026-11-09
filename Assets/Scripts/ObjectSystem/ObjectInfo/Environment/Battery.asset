@@ -20,8 +20,16 @@ MonoBehaviour:
   behaviourType: 0
   nalInfo: {fileID: 0}
   inventoryItemInfo: {fileID: 11400000, guid: e5cfe49da93835e5ca11e7078e3ccd82, type: 2}
+  decaySeconds: 0
+  isFood: 0
+  foodKind: 0
   evolutionStep: {fileID: 0}
   additionalOccupiedCells: []
+  placementKind: 1
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}
-  ObjectName: battery
+  levels: 1
+  visibleRings: 0
+  farMode: 0
+  castShadowsFar: 0
+  lodSet: {fileID: 0}

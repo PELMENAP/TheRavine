@@ -4,6 +4,7 @@ using Unity.Mathematics;
 using TMPro;
 using TheRavine.EntityControl;
 using TheRavine.EntityControl.Virology;
+using TheRavine.ViewControl;
 
 using R3;
 
@@ -61,6 +62,7 @@ public class EntityView : AEntityView
         var model = (EntityModel)vm.Entity;
         label.richText = true;
         label.color    = Color.white;
+        ViewOrientedTransform.Attach(label.gameObject, ViewOrientMode.Full);
 
         model.OnUpdate.Subscribe(_ => Render(model));
     }
@@ -120,7 +122,8 @@ public class EntityView : AEntityView
         }
         if (flags > 0) sb.Append('\n');
 
-        Open(sb, DimHex).Append(SpeechComponent.Encode(model.Speech.Own)).Close();
+        var own = model.Speech.Own;
+        Open(sb, DimHex).Append(own.Len > 0 ? SpeechLexicon.Default.Label(own.Tokens, own.Len) : "-").Close();
 
         var virology = model.Virology;
         if (virology != null && virology.TryGetViralSummary(out float net, out int viralCount, out bool allTamed))

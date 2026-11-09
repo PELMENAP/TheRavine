@@ -11,7 +11,9 @@ public class StoreFoodCommand : EntityCommand
         var nest = model.Nest;
         if (nest == null || !model.IsAtNest || model.Carrying <= 0f) return Fail();
         ref readonly var r = ref SimulationRules.Frame;
-        float stored = model.TakeCarried() * model.CasteMods.StoreEfficiency;
+        float carried = model.TakeCarried();
+        float stored  = carried * model.CasteMods.StoreEfficiency;
+        model.Ledger.Flows.StoreLoss += carried - stored;
         nest.Storage += stored;
         model.RecordStored(stored);
         model.Colony?.Stats.RecordStorageStored(stored);

@@ -2,6 +2,7 @@ using System.Text;
 using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
+using TheRavine.ViewControl;
 
 public sealed class NestDebugView : MonoBehaviour
 {
@@ -9,7 +10,6 @@ public sealed class NestDebugView : MonoBehaviour
     [SerializeField] private TextMeshPro  label;
     [SerializeField] private LineRenderer ring;
     [SerializeField] private bool  showLabel       = true;
-    [SerializeField] private bool  faceCamera      = true;
     [SerializeField] private float refreshInterval = 0.5f;
     [SerializeField] private float labelHeight     = 14f;
     [SerializeField] private float groundOffset    = 0.5f;
@@ -74,7 +74,6 @@ public sealed class NestDebugView : MonoBehaviour
     private readonly StringBuilder _sb = new(512);
     private ColonyState   _colony;
     private EntityManager _manager;
-    private Camera _camera;
     private float  _nextRefresh;
     private float  _ringRadius = -1f;
     private float  _groundY;
@@ -115,6 +114,7 @@ public sealed class NestDebugView : MonoBehaviour
             label.textWrappingMode   = TextWrappingModes.NoWrap;
             label.color              = Color.white;
             label.transform.localPosition = new Vector3(0f, labelHeight, 0f);
+            ViewOrientedTransform.Attach(label.gameObject, ViewOrientMode.Full);
         }
 
         if (ring != null)
@@ -138,14 +138,6 @@ public sealed class NestDebugView : MonoBehaviour
         if (now < _nextRefresh) return;
         _nextRefresh = now + refreshInterval;
         Refresh();
-    }
-
-    private void LateUpdate()
-    {
-        if (!faceCamera || label == null || !showLabel) return;
-        if (_camera == null) _camera = Camera.main;
-        if (_camera == null) return;
-        label.transform.rotation = Quaternion.LookRotation(label.transform.position - _camera.transform.position);
     }
 
     private void Refresh()

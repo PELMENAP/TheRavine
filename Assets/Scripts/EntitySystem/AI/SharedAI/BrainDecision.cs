@@ -3,6 +3,8 @@ using Unity.Mathematics;
 
 public enum EntityCommandStatus { Started, Running, Completed, Interrupted, Failed }
 
+public enum AttackStyle : byte { Pursue = 0, Stalk = 1, Ambush = 2, Count }
+
 public readonly struct BrainDecision
 {
     public readonly int   Action;
@@ -13,30 +15,35 @@ public readonly struct BrainDecision
     public readonly float Duration;
     public readonly float2 Heading;
     public readonly float  Curvature;
-    public readonly float4 Speech;
+    public readonly ushort Tokens;
     public readonly PlanKind Plan;
     public readonly float  PlanEnd;
     public readonly byte   Direction;
     public readonly float  DirOffset;
-    public readonly byte   Signal;
+    public readonly byte   SpeechLen;
     public readonly float2 Destination;
     public readonly bool   HasDestination;
+    public readonly AttackStyle Style;
+    public readonly float  Tempo;
 
     public BrainDecision(int action, int execDecisionId, int coordDecisionId,
         SharedHierarchicalBrain.Goal goal, float startTime, float duration, in float2 heading,
-        float curvature = 0f, float4 speech = default, PlanKind plan = PlanKind.Count, float planEnd = 0f,
-        byte direction = (byte)DirectionKind.None, float dirOffset = 0f, byte signal = SpeechSignal.None,
-        float2 destination = default, bool hasDestination = false)
+        float curvature = 0f, ushort tokens = 0, PlanKind plan = PlanKind.Count, float planEnd = 0f,
+        byte direction = (byte)DirectionKind.None, float dirOffset = 0f, byte speechLen = 0,
+        float2 destination = default, bool hasDestination = false,
+        AttackStyle style = AttackStyle.Pursue, float tempo = 0f)
     {
+        Style = style;
+        Tempo = tempo;
         Destination = destination;
         HasDestination = hasDestination;
         Direction = direction;
         DirOffset = dirOffset;
-        Signal = signal;
+        SpeechLen = speechLen;
         Plan = plan;
         PlanEnd = planEnd;
         Curvature = curvature;
-        Speech = speech;
+        Tokens = tokens;
         Action = action;
         ExecDecisionId = execDecisionId;
         CoordDecisionId = coordDecisionId;
@@ -56,16 +63,16 @@ public readonly struct BrainDecision
     {
         float2 heading = keepHeading ? Heading : float2.zero;
         return new(action, ExecDecisionId, CoordDecisionId, Goal, startTime, duration, in heading,
-                   Curvature, Speech, Plan, PlanEnd, Direction, DirOffset, Signal, Destination, HasDestination);
+                   Curvature, Tokens, Plan, PlanEnd, Direction, DirOffset, SpeechLen, Destination, HasDestination, Style, Tempo);
     }
 
     public BrainDecision WithDirection(byte direction)
         => new(Action, ExecDecisionId, CoordDecisionId, Goal, StartTime, Duration, in Heading,
-               Curvature, Speech, Plan, PlanEnd, direction, DirOffset, Signal, Destination, HasDestination);
+               Curvature, Tokens, Plan, PlanEnd, direction, DirOffset, SpeechLen, Destination, HasDestination, Style, Tempo);
 
     public BrainDecision WithDestination(float2 destination)
         => new(Action, ExecDecisionId, CoordDecisionId, Goal, StartTime, Duration, in Heading,
-               Curvature, Speech, Plan, PlanEnd, Direction, DirOffset, Signal, destination, true);
+               Curvature, Tokens, Plan, PlanEnd, Direction, DirOffset, SpeechLen, destination, true, Style, Tempo);
 }
 
 public struct DecisionWindow

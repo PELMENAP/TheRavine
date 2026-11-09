@@ -63,31 +63,53 @@ public struct ColonyFieldDecayJob : IJob
     public void Execute()
     {
         int channels = Keep.Length;
+        int food     = (int)ColonyChannel.Food;
+        int danger   = (int)ColonyChannel.Danger;
+
         for (int c = 0; c < channels; c++)
         {
+            if (c == food || c == danger) continue;
             float k   = Keep[c];
             int   off = c * Cells;
             for (int i = 0; i < Cells; i++) Field[off + i] *= k;
         }
 
+        float kFood   = Keep[food];
+        float kDanger = Keep[danger];
+        int   fo = food * Cells;
+        int   dO = danger * Cells;
+
         int   best    = -1;
         float bestVal = 0f;
         float mass = 0f, mx = 0f, my = 0f;
         float dMass = 0f, dx = 0f, dy = 0f;
-        int   fo = (int)ColonyChannel.Food * Cells;
-        int   dO = (int)ColonyChannel.Danger * Cells;
 
-        for (int i = 0; i < Cells; i++)
+        for (int y = 0; y < Size; y++)
         {
-            float x = i % Size + 0.5f;
-            float y = i / Size + 0.5f;
+            int   row = y * Size;
+            float rowF = 0f, rowFx = 0f;
+            float rowD = 0f, rowDx = 0f;
 
-            float f = Field[fo + i];
-            if (f > bestVal) { bestVal = f; best = i; }
-            mass += f; mx += f * x; my += f * y;
+            for (int x = 0; x < Size; x++)
+            {
+                int   i  = row + x;
+                float fx = x + 0.5f;
 
-            float d = Field[dO + i];
-            dMass += d; dx += d * x; dy += d * y;
+                float f = Field[fo + i] * kFood;
+                Field[fo + i] = f;
+                if (f > bestVal) { bestVal = f; best = i; }
+                rowF  += f;
+                rowFx += f * fx;
+
+                float d = Field[dO + i] * kDanger;
+                Field[dO + i] = d;
+                rowD  += d;
+                rowDx += d * fx;
+            }
+
+            float fy = y + 0.5f;
+            mass  += rowF;  mx += rowFx;  my += rowF * fy;
+            dMass += rowD;  dx += rowDx;  dy += rowD * fy;
         }
 
         Stats[ColonyFieldStats.PeakIndex]  = best;
@@ -153,6 +175,8 @@ public sealed unsafe class NestState : IDisposable
     private NativeArray<float> _scratch;
     private NativeArray<float> _keep;
     private NativeArray<float> _stats;
+    private JobHandle _decay;
+    private bool _decayScheduled;
     private ColonyFieldView _view;
     private readonly int   _size;
     private readonly int   _cells;
@@ -200,6 +224,16 @@ public sealed unsafe class NestState : IDisposable
         if (!_view.TryIndex(p, out int i)) return;
         float* cell = _view.Data + (int)channel * _cells + i;
         *cell = math.min(*cell + amount, SimulationRules.Frame.NestMapMaxValue);
+    }
+
+    public void MarkPair(float2 p, ColonyChannel a, float amountA, ColonyChannel b, float amountB)
+    {
+        if (!_view.TryIndex(p, out int i)) return;
+        float max = SimulationRules.Frame.NestMapMaxValue;
+        float* ca = _view.Data + (int)a * _cells + i;
+        float* cb = _view.Data + (int)b * _cells + i;
+        *ca = math.min(*ca + amountA, max);
+        *cb = math.min(*cb + amountB, max);
     }
 
     public float FieldAt(ColonyChannel channel, float2 p) => _view.FieldAt(channel, p);
@@ -254,22 +288,32 @@ public sealed unsafe class NestState : IDisposable
 
     public void RaiseHunger(float amount) => Hunger = math.min(1f, Hunger + math.max(0f, amount));
 
-    public void Tick(float dt, int membersNearNest)
+    public void BeginTick(float dt)
     {
+        _decayScheduled = false;
         if (dt <= 0f) return;
         var r = SimulationRules.Active;
 
         for (int c = 0; c < ChannelCount; c++)
             _keep[c] = math.exp(-dt / math.max(r.ColonyChannelTau(c), 1e-3f));
 
-        new ColonyFieldDecayJob
+        _decay = new ColonyFieldDecayJob
         {
             Field = _field,
             Keep  = _keep,
             Stats = _stats,
             Cells = _cells,
             Size  = _size,
-        }.Run();
+        }.Schedule();
+        _decayScheduled = true;
+    }
+
+    public void EndTick(float dt, int membersNearNest, float scarcity = 0f)
+    {
+        if (!_decayScheduled) return;
+        _decayScheduled = false;
+        _decay.Complete();
+        var r = SimulationRules.Active;
 
         int peak = (int)_stats[ColonyFieldStats.PeakIndex];
         HasFoodPeak = peak >= 0 && _stats[ColonyFieldStats.PeakValue] >= r.NestFoodPeakMin;
@@ -281,10 +325,10 @@ public sealed unsafe class NestState : IDisposable
         AlarmHunt = membersNearNest >= r.AlarmHuntMinMembers;
         DangerAtNest = FieldAt(ColonyChannel.Danger, Position);
 
-        UpdateMigration(dt, r);
+        UpdateMigration(dt, r, scarcity);
     }
 
-    private void UpdateMigration(float dt, SimulationRules r)
+    private void UpdateMigration(float dt, SimulationRules r, float scarcity)
     {
         float2 toFood = float2.zero;
         if (_stats[ColonyFieldStats.FoodMass] > 1e-3f)
@@ -294,7 +338,7 @@ public sealed unsafe class NestState : IDisposable
         if (_stats[ColonyFieldStats.DangerMass] > 1e-3f)
             fromDanger = math.normalizesafe(Position - (_origin + new float2(_stats[ColonyFieldStats.DangerX], _stats[ColonyFieldStats.DangerY]) * _cell));
 
-        float hunger = r.MigrationHungerWeight * Hunger;
+        float hunger = r.MigrationHungerWeight * math.max(Hunger, scarcity);
         float danger = r.MigrationDangerWeight * math.saturate(DangerAtNest);
         float2 target = hunger * toFood + danger * fromDanger;
 
@@ -328,6 +372,11 @@ public sealed unsafe class NestState : IDisposable
 
     public void Dispose()
     {
+        if (_decayScheduled)
+        {
+            _decay.Complete();
+            _decayScheduled = false;
+        }
         if (_field.IsCreated)   _field.Dispose();
         if (_scratch.IsCreated) _scratch.Dispose();
         if (_keep.IsCreated)    _keep.Dispose();

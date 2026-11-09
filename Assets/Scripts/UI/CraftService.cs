@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 
 using TheRavine.InventoryElements;
+using TheRavine.EntityControl;
 
 namespace TheRavine.Inventory
 {
@@ -20,21 +21,25 @@ namespace TheRavine.Inventory
         private CraftMatch[] matches = Array.Empty<CraftMatch>();
         private CraftModel craftModel;
         private InventoryItemInfo resultItemInfo;
-        private int resultCount, craftDelay;
+        private int resultCount, craftDelay, resultRecipe = -1;
+        private PlayerEntity player;
         private bool cancel, inProcess;
         private CancellationTokenSource _cts;
         private EventDrivenInventoryProxy inventory;
         private InfoManager infoManager;
         public IReadOnlyList<CraftStack> Grid => grid;
-        public void SetUp(InfoManager infoManager, EventDrivenInventoryProxy inventoryModel)
+        public IReadOnlyList<UIInventorySlot> CraftCells => craftCells;
+        public UIInventorySlot ResultCell => resultCell;
+        public void SetUp(InfoManager infoManager, EventDrivenInventoryProxy inventoryModel, PlayerEntity player)
         {
             cancel = false;
             _cts = new();
 
             this.infoManager = infoManager;
+            this.player = player;
             inventory = inventoryModel;
 
-            craftModel = CraftModel.FromInfos(infoManager.GetAllCraftRecepts());
+            craftModel = CraftModel.Shared;
             if (craftModel.Count == 0)
                 Debug.LogWarning("[CraftService] No craft recipes loaded: CraftInfo assets must live under Resources/CraftInfo");
             matches = new CraftMatch[craftModel.Count];
@@ -69,6 +74,7 @@ namespace TheRavine.Inventory
             resultItemInfo = recipe.Result;
             resultCount    = recipe.ResultCount;
             craftDelay     = recipe.TimeToComplete;
+            resultRecipe   = craftModel.IndexOf(recipe);
             craftPresenter.CraftPossible(true);
             return true;
         }
@@ -110,21 +116,23 @@ namespace TheRavine.Inventory
             var result = infoManager.GetInventoryItemByInfo(resultItemInfo.id, resultItemInfo, resultCount);
             if (result == null) return;
 
+            if (!inventory.TryProduceToSlot(this, resultCell.slot, result)) return;
             ConsumeIngredients();
-            inventory.TryToAddSlot(this, resultCell.slot, result);
+            player?.RequestCraft(resultRecipe);
         }
 
-        private bool HasRoomForResult() => resultCount <= resultItemInfo.maxItemsInInventorySlot || !inventory.isFull;
+        private bool HasRoomForResult() =>
+            resultCount <= resultItemInfo.maxItemsInInventorySlot ||
+            inventory.CanFit(resultItemInfo, resultCount - resultItemInfo.maxItemsInInventorySlot);
 
         private void ConsumeIngredients()
         {
             for(int i = 0; i < CellsCount; i++){
-                if(craftCells[i].slot.isEmpty) continue;
-                craftCells[i]._uiInventoryItem.item.state.amount -= deductions[i];
-                if (craftCells[i].slot.amount <= 0)
-                    craftCells[i].slot.Clear();
-                craftCells[i].Refresh();
+                var slot = craftCells[i].slot;
+                if(slot.isEmpty || deductions[i] <= 0) continue;
+                inventory.ConsumeFromSlot(this, slot, Math.Min(deductions[i], slot.amount), false);
             }
+            inventory.NotifyStateChanged(this);
         }
 
 

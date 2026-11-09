@@ -20,7 +20,16 @@ MonoBehaviour:
   behaviourType: 2
   nalInfo: {fileID: 0}
   inventoryItemInfo: {fileID: 0}
+  decaySeconds: 0
+  isFood: 0
+  foodKind: 0
   evolutionStep: {fileID: 11400000, guid: cac3f76b468575364a79212e2dc85ceb, type: 2}
   additionalOccupiedCells: []
+  placementKind: 0
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}
+  levels: 1
+  visibleRings: 0
+  farMode: 0
+  castShadowsFar: 0
+  lodSet: {fileID: 11400000, guid: 509a4c4b026c1d9cbb9d419871e53816, type: 2}

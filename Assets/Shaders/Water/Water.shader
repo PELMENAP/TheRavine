@@ -7,6 +7,31 @@ Shader "The Ravine/Water/WaterShader"
         [HDR] FoamColor("Foam Color", Color) = (1, 1, 1, 1)
         
         Smoothness("Smoothness", Range(0, 1)) = 0.9
+        ReflectionStrength("Reflection Strength", Range(0, 1)) = 1
+        FresnelF0("Fresnel F0", Range(0, 0.1)) = 0.02
+        SunGlint("Sun Glint", Float) = 3
+        SunGlintPower("Sun Glint Power", Range(64, 2048)) = 512
+        SSRIntensity("SSR Intensity", Range(0, 1)) = 1
+        SSRStep("SSR Start Step", Float) = 1
+        SSRThickness("SSR Thickness", Float) = 3
+        SSRMaxDistance("SSR Max Camera Distance", Float) = 120
+        SSRBlur("SSR Blur", Range(0, 2)) = 0.5
+        SSRRayFade("SSR Ray Fade Distance", Float) = 80
+        ReflectionDistortion("Reflection Distortion", Range(0, 1)) = 0.3
+
+        NightFloor("Night Floor", Range(0, 0.1)) = 0.01
+        BodyBoost("Body Boost", Range(0, 1)) = 0.5
+
+        [HDR] Absorption("Absorption Per Meter", Color) = (0.35, 0.08, 0.04, 1)
+        AbsorptionStrength("Absorption Strength", Range(0, 2)) = 0.7
+
+        [NoScaleOffset] CausticTex("Caustic Texture", 2D) = "white" {}
+        CausticStrength("Caustic Strength", Range(0, 2)) = 0.5
+        CausticScale("Caustic Scale", Float) = 0.15
+        CausticSpeed("Caustic Speed", Float) = 0.03
+        CausticDepth("Caustic Depth", Float) = 6
+
+        ShoreSoftness("Shore Softness", Float) = 0.4
         
         [Normal][NoScaleOffset] NormalMap("Normal Map", 2D) = "bump" {}
         UV1("UV1 (TilingXY, OffsetZW)", Vector) = (1, 1, 0, 0)
@@ -69,11 +94,12 @@ Shader "The Ravine/Water/WaterShader"
             TEXTURE2D(NormalMap);       SAMPLER(samplerNormalMap);
             TEXTURE2D(FoamTexture);     SAMPLER(samplerFoamTexture);
             TEXTURE2D(RippleTex);      SAMPLER(samplerRippleTex);
+            TEXTURE2D(CausticTex);     SAMPLER(samplerCausticTex);
             TEXTURE2D(_CameraOpaqueTexture);    SAMPLER(sampler_CameraOpaqueTexture);
             TEXTURE2D(_CameraDepthTexture);     SAMPLER(sampler_CameraDepthTexture);
 
             CBUFFER_START(RippleBuffer)
-                float4 RippleOffset;
+                float4 RippleWindow;
             CBUFFER_END
 
                         
@@ -102,6 +128,26 @@ Shader "The Ravine/Water/WaterShader"
                 float Scale;
                 float Smoothness;
                 float Metallic;
+                float ReflectionStrength;
+                float FresnelF0;
+                float SunGlint;
+                float SunGlintPower;
+                float SSRIntensity;
+                float SSRStep;
+                float SSRThickness;
+                float SSRMaxDistance;
+                float SSRBlur;
+                float SSRRayFade;
+                float ReflectionDistortion;
+                float NightFloor;
+                float BodyBoost;
+                float4 Absorption;
+                float AbsorptionStrength;
+                float CausticStrength;
+                float CausticScale;
+                float CausticSpeed;
+                float CausticDepth;
+                float ShoreSoftness;
             CBUFFER_END
             
             // ----------------------------------------------------------------
@@ -112,7 +158,6 @@ Shader "The Ravine/Water/WaterShader"
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
                 float4 tangentOS : TANGENT;
-                float2 uv0 : TEXCOORD0;
             };
             
             struct Varyings
@@ -208,6 +253,73 @@ Shader "The Ravine/Water/WaterShader"
             {
                 return SAMPLE_TEXTURE2D(_CameraOpaqueTexture, 
                     sampler_CameraOpaqueTexture, screenUV).rgb;
+            }
+
+            bool SSRProject(float3 posWS, out float2 uv, out float eyeDepth)
+            {
+                float4 clip = TransformWorldToHClip(posWS);
+                eyeDepth = clip.w;
+                uv = float2(clip.x, clip.y * _ProjectionParams.x) / max(clip.w, 1e-4) * 0.5 + 0.5;
+                return clip.w > 0.0 && all(uv > 0.0) && all(uv < 1.0);
+            }
+
+            float SSRDiff(float3 posWS, out float2 uv)
+            {
+                float eyeDepth;
+                if (!SSRProject(posWS, uv, eyeDepth)) return -1e4;
+                float rawDepth = SAMPLE_TEXTURE2D_LOD(_CameraDepthTexture, sampler_CameraDepthTexture, uv, 0).r;
+                return eyeDepth - LinearEyeDepth(rawDepth, _ZBufferParams);
+            }
+
+            float3 SSRColor(float2 uv)
+            {
+                return SAMPLE_TEXTURE2D_LOD(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, uv, 0).rgb;
+            }
+
+            float4 SSRTrace(float3 posWS, float3 dirWS, float jitter)
+            {
+                float stepLen = SSRStep;
+                float t = stepLen * jitter;
+
+                [loop]
+                for (int i = 0; i < 16; i++)
+                {
+                    float prevT = t;
+                    t += stepLen;
+                    stepLen *= 1.25;
+
+                    float2 uv;
+                    float eyeDepth;
+                    if (!SSRProject(posWS + dirWS * t, uv, eyeDepth)) break;
+
+                    float diff = SSRDiff(posWS + dirWS * t, uv);
+                    if (diff > 0.0 && diff < SSRThickness + stepLen)
+                    {
+                        float lo = prevT;
+                        float hi = t;
+                        [unroll]
+                        for (int j = 0; j < 4; j++)
+                        {
+                            float mid = 0.5 * (lo + hi);
+                            float2 midUV;
+                            if (SSRDiff(posWS + dirWS * mid, midUV) > 0.0) hi = mid; else lo = mid;
+                        }
+
+                        float2 hitUV;
+                        SSRDiff(posWS + dirWS * hi, hitUV);
+                        float2 e = saturate(min(hitUV, 1.0 - hitUV) * 8.0);
+                        float radius = SSRBlur * 0.01 * saturate(hi / 40.0);
+                        float3 color = SSRColor(hitUV) * 0.4
+                            + (SSRColor(hitUV + float2(radius, 0.0))
+                            + SSRColor(hitUV - float2(radius, 0.0))
+                            + SSRColor(hitUV + float2(0.0, radius))
+                            + SSRColor(hitUV - float2(0.0, radius))) * 0.15;
+                        float rayFade = 1.0 - saturate(hi / max(SSRRayFade, 1e-3));
+                        return float4(color, e.x * e.y * rayFade);
+                    }
+                }
+
+                return 0;
             }
 
             float3 GerstnerWave(
@@ -308,7 +420,7 @@ Shader "The Ravine/Water/WaterShader"
                 output.positionWS = bentPositionWS;
                 output.normalWS = normalInputs.normalWS;
                 output.tangentWS = float4(normalInputs.tangentWS, input.tangentOS.w);
-                output.uv0 = input.uv0;
+                output.uv0 = worldPos.xz * RippleWindow.z;
                 output.positionNDC = positionNDC;
                 output.screenPos = ComputeScreenPos(positionCS);
                 output.viewDirWS = GetWorldSpaceNormalizeViewDir(bentPositionWS);
@@ -360,9 +472,11 @@ Shader "The Ravine/Water/WaterShader"
                 
                 // === RIPPLES ===
                 // LowResNormalFromHeight для RippleTex
-                float2 rippleUV = input.uv0 + RippleOffset.xy;
+                float2 rippleUV = input.uv0;
+                float2 rippleDelta = abs(rippleUV - RippleWindow.xy);
+                float rippleMask = step(max(rippleDelta.x, rippleDelta.y), 0.5);
                 float3 rippleNormalForRefract = LowResNormalFromHeight(RippleTex, samplerRippleTex, rippleUV, RippleTex_TexelSize.zw, RippleRefraction);
-                float rippleHeight = abs(SAMPLE_TEXTURE2D(RippleTex, samplerRippleTex, rippleUV).r);
+                float rippleHeight = abs(SAMPLE_TEXTURE2D(RippleTex, samplerRippleTex, rippleUV).r) * rippleMask;
                 float3 finalNormalTS  = lerp(normalTS, rippleNormalForRefract,  rippleHeight);
 
                 
@@ -391,8 +505,9 @@ Shader "The Ravine/Water/WaterShader"
                 float depthDiff2 = sceneDepth2 - surfaceDepth;
                 
                 // ShallowColor * SceneColor (УМНОЖЕНИЕ, не lerp!)
+                float3 absorbT = exp(-Absorption.rgb * (depthDiff2 * AbsorptionStrength));
                 float3 shallowColor =
-                    sceneColor +
+                    sceneColor * absorbT +
                     ShallowColor.rgb * 0.25;
                 
                 // Depth fade: (sceneDepth - surfaceDepth) / Depth
@@ -400,6 +515,14 @@ Shader "The Ravine/Water/WaterShader"
                 
                 // Lerp(Shallow*SceneColor, DeepColor, depthFade)
                 float3 waterColor = lerp(shallowColor, DeepColor.rgb, depthFade);
+
+                float3 bottomWS = _WorldSpaceCameraPos + (input.positionWS - _WorldSpaceCameraPos) * (sceneDepth2 / max(surfaceDepth, 1e-3));
+                float2 causticUV = bottomWS.xz * CausticScale;
+                float causticTime = _Time.y * CausticSpeed;
+                float caustic1 = SAMPLE_TEXTURE2D(CausticTex, samplerCausticTex, causticUV + float2(causticTime, causticTime * 0.7)).r;
+                float caustic2 = SAMPLE_TEXTURE2D(CausticTex, samplerCausticTex, causticUV * 1.3 - float2(causticTime * 0.8, -causticTime)).r;
+                float causticFade = saturate(1.0 - depthDiff2 / max(CausticDepth, 1e-3)) * saturate(depthDiff2 * 2.0);
+                float caustic = min(caustic1, caustic2) * 2.0 * CausticStrength * causticFade * isFrontFace;
 
                 // === NORMALS TO WORLD SPACE ===
                 float3x3 tangentToWorld = CreateTangentToWorld(
@@ -446,16 +569,30 @@ Shader "The Ravine/Water/WaterShader"
                 // === BACK FACE LOGIC ===
                 // Front face: full water with foam, reflection, etc.
                 // Back face: only ShallowColor * SceneColor (простое преломление)
-                float3 frontFaceColor = lerp(waterColor, FoamColor.rgb, foam.rgb);;
+                float3 frontFaceColor = lerp(waterColor, FoamColor.rgb, foam.rgb);
                 float3 backFaceColor = shallowColor; // ShallowColor * SceneColor
                 
                 float3 baseColor = lerp(backFaceColor, frontFaceColor, isFrontFace);
                 
                 // === REFLECTION ===
                 float3 viewDirWS = normalize(input.viewDirWS);
-                float3 reflectDir = reflect(-viewDirWS, normalWS);
-                
+                float3 reflectNormal = normalize(lerp(float3(0.0, 1.0, 0.0), normalWS, ReflectionDistortion));
+                float3 reflectDir = reflect(-viewDirWS, reflectNormal);
+                reflectDir.y = abs(reflectDir.y);
+
                 half3 reflColor = GlossyEnvironmentReflection(reflectDir, input.positionWS, 1.0 - Smoothness, 1.0);
+
+                float NdotV = saturate(dot(reflectNormal, viewDirWS));
+                float fresnel = (FresnelF0 + (1.0 - FresnelF0) * pow(1.0 - NdotV, 5.0)) * ReflectionStrength * isFrontFace;
+
+                float ssrCamDist = length(input.positionWS - _WorldSpaceCameraPos);
+                float ssrFade = saturate((SSRMaxDistance - ssrCamDist) / max(SSRMaxDistance * 0.3, 1e-3)) * SSRIntensity;
+                if (fresnel > 0.01 && ssrFade > 0.0)
+                {
+                    float jitter = frac(52.9829189 * frac(dot(input.positionCS.xy, float2(0.06711056, 0.00583715))));
+                    float4 ssr = SSRTrace(input.positionWS, reflectDir, jitter);
+                    reflColor = lerp(reflColor, ssr.rgb, ssr.a * ssrFade);
+                }
 
                 // === РУЧНОЕ ОСВЕЩЕНИЕ (вместо UniversalFragmentPBR) ===
 
@@ -505,19 +642,25 @@ Shader "The Ravine/Water/WaterShader"
                 float3 finalColor = ambient + mainDiffuse + mainSpecular + addDiffuse + addSpecular + scattering;
 
                 float ao = SampleAmbientOcclusion(screenUV);
-                ambient *= ao;
                 finalColor *= ao;
 
                 // 6. Дистанс фейд
                 float dist = length(input.positionWS - _WorldSpaceCameraPos);
                 float distFade = saturate((dist - 50.0) / 100.0);
                 float lightIntensity = saturate(Luminance(bakedGI) + Luminance(mainLight.color));
-                float3 deepColorAdjusted = DeepColor.rgb * max(lightIntensity, 0.05); // минимум 5% яркости
+                float3 deepColorAdjusted = DeepColor.rgb * max(lightIntensity, NightFloor);
                 finalColor = lerp(finalColor, deepColorAdjusted, distFade);
+
+                // 7. Reflection and sun glint
+                finalColor = lerp(finalColor, reflColor, fresnel);
+                float glintNdotH = saturate(dot(normalWS, halfDir));
+                finalColor += pow(glintNdotH, SunGlintPower) * SunGlint * mainLight.color
+                    * (mainLight.shadowAttenuation * mainLight.distanceAttenuation * isFrontFace);
 
                 // 8. Water color boost
                 float lighting = saturate(Luminance(mainLight.color * mainLight.shadowAttenuation + scatteredLight));
-                finalColor += waterColor * lighting * 0.5;
+                finalColor += waterColor * lighting * BodyBoost * saturate(lightIntensity);
+                finalColor += caustic * mainLight.color * (mainLight.shadowAttenuation * (1.0 - distFade));
 
                 // 9. Fog
                 finalColor = MixFog(finalColor, input.fogFactor);
@@ -525,8 +668,12 @@ Shader "The Ravine/Water/WaterShader"
                 // 10. Alpha
                 float waterAlpha = lerp(0.2, 0.9, depthFade);
                 float alpha = lerp(0.5, waterAlpha, isFrontFace);
+                alpha = lerp(alpha, 1.0, fresnel);
 
-                return float4(finalColor, alpha);
+                float shoreEdge = smoothstep(0.0, max(ShoreSoftness, 1e-3), foamDepth);
+                float shoreMask = lerp(1.0, max(shoreEdge, foamMask), isFrontFace);
+
+                return float4(finalColor * shoreMask, alpha * shoreMask);
             }
             ENDHLSL
         }

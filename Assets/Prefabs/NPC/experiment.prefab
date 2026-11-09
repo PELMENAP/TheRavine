@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 1310266290786588079}
   - component: {fileID: 4621192879906923552}
   - component: {fileID: 3806075514010894874}
+  - component: {fileID: -863795880643086887}
+  - component: {fileID: 6314390251705389236}
   m_Layer: 0
   m_Name: experiment
   m_TagString: Untagged
@@ -87,15 +89,17 @@ MonoBehaviour:
   _foodCount: 0
   _avgEntropy: 0
   rules: {fileID: 11400000, guid: cfa92a93c8192130ba2e500349f051a6, type: 2}
+  speechAudio: 1
+  speechLabels: 1
   cullOutsideActiveChunks: 1
   cullChunkMargin: 0
+  cullAxisMargin: 8
   showNestViews: 1
   nestViewPrefab: {fileID: 0}
   _transmissions: 0
   _recombinations: 0
   _superinfectionBlocks: 0
   _avgFitness: 0
-  strainCodonTable: {fileID: 0}
   useSavedBrain: 1
   simulationTimeScale: 1
 --- !u!114 &4621192879906923552
@@ -113,6 +117,7 @@ MonoBehaviour:
   showDashboard: 1
   windowId: 9999
   sampleInterval: 1
+  colonyIndex: 0
 --- !u!114 &3806075514010894874
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -131,6 +136,45 @@ MonoBehaviour:
   recipe: 0417151712170f1117021717
   validation: 
   lastResult: 
+--- !u!114 &-863795880643086887
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4326377108197735784}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee4fdad702f549cfa4cc5304c26353d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EntitySystem::SpeechAudioPlayer
+  voices: 8
+  audibleRadius: 50
+  volume: 1
+  scheduleLead: 0.03
+  sampleRate: 11025
+  syllableSeconds: 0.07
+  baseFrequency: 330
+  voiceStep: 3
+  gain: 0.6
+  heard: 0
+  outOfRange: 0
+  played: 0
+  dropped: 0
+  noListener: 0
+--- !u!114 &6314390251705389236
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4326377108197735784}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f995b0335ba461d87ff23da91518088, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EntitySystem::SpeechLabelFeed
+  lexicon: {fileID: 0}
 --- !u!1 &6314945778291234322
 GameObject:
   m_ObjectHideFlags: 0

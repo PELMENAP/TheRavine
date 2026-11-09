@@ -6,7 +6,7 @@ public class PlayerBehaviourSit : AState
     public PlayerBehaviourSit(PlayerController _controller, System.Action _delegateIdle)
     {
         controller = _controller;
-        behaviourSit = _delegateIdle.Invoke;
+        behaviourSit = _delegateIdle != null ? _delegateIdle.Invoke : null;
     }
 
     public override void Enter()
@@ -21,6 +21,6 @@ public class PlayerBehaviourSit : AState
 
     public override void Update()
     {
-        behaviourSit();
+        behaviourSit?.Invoke();
     }
 }

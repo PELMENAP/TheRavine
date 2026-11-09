@@ -59,6 +59,9 @@ public enum PlanHint : uint
     KinSick      = 1 << 24,
     AtDestination = 1 << 25,
     Night        = 1 << 26,
+    HasNest      = 1 << 27,
+    HasHome      = 1 << 28,
+    RestBlocked  = 1 << 29,
 }
 
 public struct PlanProgress
@@ -74,6 +77,8 @@ public struct PlanProgress
     public int  Used;
     public byte Direction;
     public int  Hops;
+    public int  MaxFailures;
+    public int  MaxStrikes;
     public bool HasDestination;
     public bool NeedsDestination;
     public Unity.Mathematics.float2 Destination;
@@ -146,6 +151,7 @@ public static class PlanCatalog
                 return Has(h, PlanHint.FoodVisible) ? Bit(EntityAction.ApproachFood) : 0;
 
             case PlanKind.Harvest:
+                if (!Has(h, PlanHint.HasNest)) return 0;
                 if (Has(h, PlanHint.Carrying) && (Has(h, PlanHint.CarryFull) || !Has(h, PlanHint.FoodVisible)))
                     return Has(h, PlanHint.AtNest) ? Bit(EntityAction.StoreFood) : Bit(EntityAction.ReturnNest);
                 if (Has(h, PlanHint.FoodInRange)) return Bit(EntityAction.PickUp);
@@ -160,14 +166,14 @@ public static class PlanCatalog
                     : 0;
 
             case PlanKind.Rest:
-                if (Has(h, PlanHint.Hungry) && (Has(h, PlanHint.FoodVisible) || Has(h, PlanHint.NestHasFood))) return 0;
-                return Bit(EntityAction.Rest) | (Has(h, PlanHint.AtNest) ? 0 : Bit(EntityAction.ReturnNest));
+                if (Has(h, PlanHint.RestBlocked) && (Has(h, PlanHint.FoodVisible) || Has(h, PlanHint.NestHasFood))) return 0;
+                return Bit(EntityAction.Rest) | (Has(h, PlanHint.AtNest) || !Has(h, PlanHint.HasHome) ? 0 : Bit(EntityAction.ReturnNest));
 
             case PlanKind.Flee:
                 return Has(h, PlanHint.Threat) ? Bit(EntityAction.Flee) : 0;
 
             case PlanKind.Migrate:
-                return Has(h, PlanHint.MigrationUrge) ? Bit(EntityAction.Wander) : 0;
+                return Has(h, PlanHint.MigrationUrge) || Has(h, PlanHint.QuorumReady) ? Bit(EntityAction.Wander) : 0;
 
             case PlanKind.Seek:
                 if (!Has(h, PlanHint.Hungry) && !Has(h, PlanHint.StorageLow)) return 0;
@@ -189,7 +195,7 @@ public static class PlanCatalog
     {
         var r = SimulationRules.Active;
         bool ok = status == EntityCommandStatus.Completed;
-        if (!ok && ++p.Failures > r.PlanMaxFailures) return Fail;
+        if (!ok && ++p.Failures > p.MaxFailures) return Fail;
         if (ok && lastAction == (int)EntityAction.Eat) p.Ate = true;
 
         switch (p.Kind)
@@ -244,13 +250,13 @@ public static class PlanCatalog
                 if (lastAction == (int)EntityAction.Attack && ok) p.Steps++;
                 p.Achieved = p.Steps > 0;
                 if (!Has(h, PlanHint.PreyNear)) return p.Steps > 0 ? Complete : Fail;
-                if (p.Steps >= r.HuntMaxStrikes || !Has(h, PlanHint.CanAttack)) return p.Steps > 0 ? Complete : Fail;
+                if (p.Steps >= p.MaxStrikes || !Has(h, PlanHint.CanAttack)) return p.Steps > 0 ? Complete : Fail;
                 return (int)EntityAction.Attack;
 
             case PlanKind.Rest:
-                if (lastAction == (int)EntityAction.Rest && !ok && Has(h, PlanHint.Hungry)) return Fail;
+                if (lastAction == (int)EntityAction.Rest && !ok && Has(h, PlanHint.RestBlocked)) return Fail;
                 if (lastAction == (int)EntityAction.Rest && ok) p.Steps++;
-                if (Has(h, PlanHint.Night) && Has(h, PlanHint.AtNest) && !Has(h, PlanHint.Hungry)) return (int)EntityAction.Rest;
+                if (Has(h, PlanHint.Night) && Has(h, PlanHint.AtNest) && !Has(h, PlanHint.RestBlocked)) return (int)EntityAction.Rest;
                 if (p.Steps >= r.RestMaxSteps || (p.Steps > 0 && Has(h, PlanHint.HpFull))) return Complete;
                 return (int)EntityAction.Rest;
 
@@ -265,9 +271,10 @@ public static class PlanCatalog
                     p.Achieved = ok;
                     return ok ? Complete : Fail;
                 }
+                if (Has(h, PlanHint.QuorumReady)) return (int)EntityAction.MoveNest;
                 if (ok && lastAction == (int)EntityAction.Wander) p.Steps++;
                 if (p.Steps < r.MigrateLegs) return (int)EntityAction.Wander;
-                return Has(h, PlanHint.IsLeader) && Has(h, PlanHint.QuorumReady) ? (int)EntityAction.MoveNest : Complete;
+                return Complete;
 
             case PlanKind.Seek:
                 if (ok && lastAction == (int)EntityAction.PickUp) p.Achieved = true;

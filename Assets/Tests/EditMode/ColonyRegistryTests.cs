@@ -3,6 +3,14 @@ using Unity.Mathematics;
 
 public class ColonyRegistryTests
 {
+    private SimulationRules _rules;
+
+    [SetUp]
+    public void SetUp() => _rules = TestRules.Bind();
+
+    [TearDown]
+    public void TearDown() => TestRules.Release(_rules);
+
     [Test]
     public void ColoniesHaveIndependentNestsAndIds()
     {

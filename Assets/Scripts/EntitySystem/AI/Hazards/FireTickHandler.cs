@@ -101,6 +101,8 @@ public sealed class FireTickHandler : IRandomTickHandler, IDisposable
         foreach (var kv in _burning) _keys.Add(kv.Key);
 
         WorldCommandBuffer commands = _generator.Commands;
+        float margin = MapGenerator.scale * 1.5f;
+        float4 bounds = new float4(float.MaxValue, float.MaxValue, float.MinValue, float.MinValue);
         for (int k = 0; k < _keys.Length; k++)
         {
             long cell = _keys[k];
@@ -134,9 +136,13 @@ public sealed class FireTickHandler : IRandomTickHandler, IDisposable
 
             _burning[cell] = left;
             Spread(cell, in sampler, in r);
+
+            float2 center = ChunkFoodIndex.CellCenter(cell);
+            bounds.xy = math.min(bounds.xy, center - margin);
+            bounds.zw = math.max(bounds.zw, center + margin);
         }
 
-        Scorch(entities, step, in r);
+        if (bounds.x <= bounds.z) Scorch(entities, step, bounds, in r);
     }
 
     private void Spread(long cell, in WindSampler sampler, in SimulationRules.RulesFrame r)
@@ -162,7 +168,7 @@ public sealed class FireTickHandler : IRandomTickHandler, IDisposable
         }
     }
 
-    private void Scorch(List<EntityModel> entities, float step, in SimulationRules.RulesFrame r)
+    private void Scorch(List<EntityModel> entities, float step, float4 bounds, in SimulationRules.RulesFrame r)
     {
         if (entities == null) return;
 
@@ -173,6 +179,7 @@ public sealed class FireTickHandler : IRandomTickHandler, IDisposable
             if (e.IsDisposed || e.IsDeathPending) continue;
 
             float2 p = e.Position2D;
+            if (p.x < bounds.x || p.y < bounds.y || p.x > bounds.z || p.y > bounds.w) continue;
             if (!_burning.ContainsKey(ChunkFoodIndex.CellOf(p.x, p.y))) continue;
             e.TakeDamage(damage, null, DeathCause.Burn);
         }

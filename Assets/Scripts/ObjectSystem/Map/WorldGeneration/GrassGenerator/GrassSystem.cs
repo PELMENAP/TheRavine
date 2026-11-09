@@ -5,6 +5,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using TheRavine.Base;
 using TheRavine.Generator;
+using TheRavine.ViewControl;
 
 public class GrassSystem : MonoBehaviour
 {
@@ -158,8 +159,6 @@ public class GrassSystem : MonoBehaviour
         float terrainWidth = MapGenerator.generationSize;
         float terrainHeight = MapGenerator.generationSize;
 
-        grassPlacementShader.SetInt("gridWidth", MapGenerator.generationSize);
-
         grassPlacementShader.SetFloat("terrainInvWidth",  1f / terrainWidth);
         grassPlacementShader.SetFloat("terrainInvHeight", 1f / terrainHeight);
 
@@ -219,17 +218,23 @@ public class GrassSystem : MonoBehaviour
         grassPlacementShader.SetBuffer(kernelPlaceGrass, "heightMap", heightMapBuffer);
         grassPlacementShader.SetBuffer(kernelPlaceGrass, "climateMap", climateBuffer);
 
-        int gridWidth = MapGenerator.generationSize;
-        int gridHeight = Mathf.Min(MapGenerator.generationSize, MapGenerator.generationSize - MapGenerator.chunkSize + backMargin);
-        int skipped = MapGenerator.generationSize - gridHeight;
-        int gridMinZ = Mathf.FloorToInt(boundsMin.z) + (map.Facing > 0 ? skipped : 0);
+        ViewFacing facing = map.Facing;
+        int2 forward = facing.Forward();
+        bool alongX = forward.x != 0;
+        int trimmed = Mathf.Min(MapGenerator.generationSize, MapGenerator.generationSize - MapGenerator.chunkSize + backMargin);
+        int skipped = MapGenerator.generationSize - trimmed;
+        int gridWidth = alongX ? trimmed : MapGenerator.generationSize;
+        int gridHeight = alongX ? MapGenerator.generationSize : trimmed;
+        int gridMinX = Mathf.FloorToInt(boundsMin.x) + (forward.x > 0 ? skipped : 0);
+        int gridMinZ = Mathf.FloorToInt(boundsMin.z) + (forward.y > 0 ? skipped : 0);
 
         long totalGridPoints = (long)gridWidth * gridHeight * bladesPerCell * densityFactor;
         instanceCount = (int)System.Math.Min(totalGridPoints, (long)maxGrassInstances * densityFactor);
 
         grassPlacementShader.SetInt("instanceCount", instanceCount);
+        grassPlacementShader.SetInt("gridWidth", gridWidth);
         grassPlacementShader.SetInt("gridHeight", gridHeight);
-        grassPlacementShader.SetInt("gridMinX", Mathf.FloorToInt(boundsMin.x));
+        grassPlacementShader.SetInt("gridMinX", gridMinX);
         grassPlacementShader.SetInt("gridMinZ", gridMinZ);
 
         grassPlacementShader.SetVector("worldBoundsMin", boundsMin);

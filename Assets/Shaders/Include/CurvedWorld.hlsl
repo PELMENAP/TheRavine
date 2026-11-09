@@ -1,28 +1,45 @@
 #ifndef RAVINE_CURVED_WORLD_INCLUDED
 #define RAVINE_CURVED_WORLD_INCLUDED
 
-float4 _CurveParams;
-float _ViewFacing;
+#include "Assets/Shaders/Include/ViewOrientation.hlsl"
 
-float CurveArc(float dz)
+float4 _CurveParams;
+
+float CurveArc(float dist)
 {
-    return max(abs(dz) - _CurveParams.y, 0.0);
+    return max(abs(dist) - _CurveParams.y, 0.0);
+}
+
+float CurveDistance(float3 positionWS)
+{
+    return dot(positionWS.xz, ViewForward()) - _CurveParams.z;
 }
 
 float3 BendWorld(float3 positionWS)
 {
-    float arc = CurveArc(positionWS.z - _CurveParams.z);
+    float arc = CurveArc(CurveDistance(positionWS));
     positionWS.y -= _CurveParams.x * arc * arc;
     return positionWS;
 }
 
+float3 TiltNormal(float3 normalWS, float c, float s)
+{
+    float2 forward = ViewForward();
+    float along = dot(normalWS.xz, forward);
+    float tilted = along * c + normalWS.y * s;
+    float y = normalWS.y * c - along * s;
+    normalWS.xz += forward * (tilted - along);
+    normalWS.y = y;
+    return normalWS;
+}
+
 float3 BendNormal(float3 positionWS, float3 normalWS)
 {
-    float dz = positionWS.z - _CurveParams.z;
-    float slope = 2.0 * _CurveParams.x * CurveArc(dz) * (dz >= 0.0 ? 1.0 : -1.0);
+    float dist = CurveDistance(positionWS);
+    float slope = 2.0 * _CurveParams.x * CurveArc(dist) * (dist >= 0.0 ? 1.0 : -1.0);
     float c = rsqrt(1.0 + slope * slope);
     float s = slope * c;
-    return float3(normalWS.x, normalWS.y * c - normalWS.z * s, normalWS.z * c + normalWS.y * s);
+    return TiltNormal(normalWS, c, s);
 }
 
 void BendWorld(inout float3 positionWS, inout float3 normalWS)
@@ -36,20 +53,21 @@ void BendWorldExact(inout float3 positionWS, inout float3 normalWS)
     float k = _CurveParams.x;
     if (k <= 0.0) return;
 
+    float2 forward = ViewForward();
     float radius = 0.5 / k;
-    float dz = positionWS.z - _CurveParams.z;
-    float side = dz >= 0.0 ? 1.0 : -1.0;
-    float angle = CurveArc(dz) / radius;
+    float dist = CurveDistance(positionWS);
+    float side = dist >= 0.0 ? 1.0 : -1.0;
+    float angle = CurveArc(dist) / radius;
 
     float s, c;
     sincos(angle, s, c);
 
     float r = radius + positionWS.y - _CurveParams.w;
-    positionWS.z = _CurveParams.z + side * (min(abs(dz), _CurveParams.y) + r * s);
+    float along = _CurveParams.z + side * (min(abs(dist), _CurveParams.y) + r * s);
+    positionWS.xz += forward * (along - dot(positionWS.xz, forward));
     positionWS.y = _CurveParams.w - radius + r * c;
 
-    float sa = side * s;
-    normalWS = float3(normalWS.x, normalWS.y * c - normalWS.z * sa, normalWS.z * c + normalWS.y * sa);
+    normalWS = TiltNormal(normalWS, c, side * s);
 }
 
 #endif

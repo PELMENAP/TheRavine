@@ -4,13 +4,16 @@ public unsafe struct KernelLayout
 {
     public const int MaxLayers  = 8;
     public const int MaxActions = 16;
-    public const int MaxAux     = 12;
+    public const int MaxAux     = 48;
+    public const int MaxDecode  = 8;
 
     public int L;
     public int InputSize;
     public int OutputSize;
     public int ActionCount;
     public int AuxOutputs;
+    public int DecodeOutputs;
+    public int DecodeIndex;
     public int DurationIndex;
     public int HeadingIndex;
     public int HiddenSum;
@@ -44,6 +47,8 @@ public unsafe struct KernelLayout
             throw new ArgumentException($"KernelLayout: {lay.L} слоёв > {MaxLayers}");
         if (lay.ActionCount > MaxActions)
             throw new ArgumentException($"KernelLayout: {lay.ActionCount} действий > {MaxActions}");
+        if (lay.DecodeOutputs > MaxDecode)
+            throw new ArgumentException($"KernelLayout: {lay.DecodeOutputs} decode-выходов > {MaxDecode}");
         if (lay.AuxOutputs > MaxAux)
             throw new ArgumentException($"KernelLayout: {lay.AuxOutputs} aux-выходов > {MaxAux}");
 
@@ -54,6 +59,8 @@ public unsafe struct KernelLayout
             OutputSize         = lay.OutputSize,
             ActionCount        = lay.ActionCount,
             AuxOutputs         = lay.AuxOutputs,
+            DecodeOutputs      = lay.DecodeOutputs,
+            DecodeIndex        = lay.DecodeIndex,
             DurationIndex      = lay.DurationIndex,
             HeadingIndex       = lay.HeadingIndex,
             HiddenSum          = lay.HiddenSum,

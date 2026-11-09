@@ -1,6 +1,4 @@
 using UnityEngine;
-using Cysharp.Threading.Tasks;
-using System.Threading;
 
 public interface IEnergySink
 {
@@ -17,20 +15,7 @@ public interface IEntityMotor
     void Stop();
 }
 
-public interface IEntityDialogHost
-{
-    void RegisterDialog(IDialogListener listener);
-    void UnregisterDialog(IDialogListener listener);
-    void UpdateDialogPosition(IDialogListener listener);
-}
-
 public interface IEntityDeathHandler
 {
     void OnDeath();
-}
-
-public interface IEntityAudio
-{
-    UniTask PlaySpeechAsync(string speech, float health, float energy, float danger,
-        float timeToBreed, int lastAction, float nearestEnemyDist, CancellationToken ct);
 }

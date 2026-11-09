@@ -27,7 +27,8 @@ namespace TheRavine.EntityControl
         public float DeltaTime;
         public float2 Viewer;
         public float3 CameraRight;
-        public quaternion FlipRotation, IdentityRotation;
+        public quaternion FlipRotation, BaseRotation;
+        public bool RewriteRotations;
         public uint Seed;
 
         public void Execute(int i, TransformAccess transform)
@@ -64,14 +65,12 @@ namespace TheRavine.EntityControl
             }
 
             float side = math.dot(v, CameraRight);
-            if (math.abs(side) > P.FlipDeadzone)
+            byte previous = Flip[i];
+            byte f = math.abs(side) > P.FlipDeadzone ? (side < 0f ? (byte)1 : (byte)0) : previous;
+            if (f != previous || RewriteRotations)
             {
-                byte f = side < 0f ? (byte)1 : (byte)0;
-                if (f != Flip[i])
-                {
-                    Flip[i] = f;
-                    transform.rotation = f != 0 ? FlipRotation : IdentityRotation;
-                }
+                Flip[i] = f;
+                transform.rotation = f != 0 ? FlipRotation : BaseRotation;
             }
 
             transform.position = p;

@@ -22,18 +22,24 @@ public class SharedHierarchicalBrain : IDisposable
 
     public const int HeadingOutputs   = 2;
     public const int CurvatureOutputs = 1;
-    public const int SpeechOutputs    = SpeechSignal.Count;
+    public const int SpeechOutputs    = SimulationRules.SpeechLen * SimulationRules.SpeechVocab;
+    public const int DecodeOutputs    = SimulationRules.SpeechContextBits;
     public const int CurvatureAux     = HeadingOutputs;
     public const int SpeechAux        = HeadingOutputs + CurvatureOutputs;
     public const int DirectionOutputs = (int)DirectionKind.Count;
     public const int DirOffsetAux     = DirectionOutputs;
+    public const int StyleOutputs     = (int)AttackStyle.Count;
+    public const int StyleAux         = HeadingOutputs + CurvatureOutputs;
+    public const int TempoAux         = StyleAux + StyleOutputs;
 
     public static bool UsesDirections(int goal) => goal == (int)Goal.Survive || goal == (int)Goal.Forage;
 
     public static int ExecAux(int goal)
-        => UsesDirections(goal)
+        => DecodeOutputs + (UsesDirections(goal)
             ? DirectionOutputs + 1
-            : HeadingOutputs + CurvatureOutputs + (goal == (int)Goal.Social ? SpeechOutputs : 0);
+            : HeadingOutputs + CurvatureOutputs
+              + (goal == (int)Goal.Social ? SpeechOutputs : 0)
+              + (goal == (int)Goal.Hunt ? StyleOutputs + 1 : 0));
 
     public static int[] BuildExecSizes(int combined, int goal)
         => new[] { combined, 64, 32, 32, ActionSubsets[goal].Length + 1 + ExecAux(goal) };
@@ -186,7 +192,7 @@ public class SharedHierarchicalBrain : IDisposable
         _coordCtxLayout = coordinator.BuildContextLayout(TruncWindow, CoordRingCapacity, CoordAux);
         _execCtxLayouts = new PerceptronLayout[GoalCount];
         for (int i = 0; i < GoalCount; i++)
-            _execCtxLayouts[i] = executors[i].BuildContextLayout(TruncWindow, ExecRingCapacity, ExecAux(i));
+            _execCtxLayouts[i] = executors[i].BuildContextLayout(TruncWindow, ExecRingCapacity, ExecAux(i), DecodeOutputs);
     }
 
     public void GiveReward(float reward, in BrainDecision decision, EntityBrainContext ctx)
@@ -214,6 +220,16 @@ public class SharedHierarchicalBrain : IDisposable
         ctx.GoalDiscountedReturn += scaled * DelayedPerceptron.DiscountTime(
             SimulationRules.Frame.CoordGammaPerSecond, SimulationClock.Time - ctx.GoalStartTime);
         ctx.GoalRewardCount++;
+    }
+
+    public bool TryAddReward(float reward, in BrainDecision decision, EntityBrainContext ctx)
+    {
+        var item = ctx.ExecMLPs[(int)decision.Goal].Decisions.Find(decision.ExecDecisionId);
+        if (item == null || item.Trained) return false;
+
+        var rules = SimulationRules.Active;
+        item.Evaluation += _rewardNorm.Scale(reward, rules.RewardClipSigma, rules.RewardStdFloor);
+        return true;
     }
 
     public SharedHierarchicalBrain(SharedHierarchicalBrain src) : this(src.InputSize, src.LstmHidden)
@@ -553,10 +569,24 @@ public class SharedHierarchicalBrain : IDisposable
             var aux = ticket.AuxValue;
             float2 heading   = float2.zero;
             float  curvature = 0f;
-            float4 speech    = float4.zero;
+            ushort tokens    = 0;
             float  offset    = 0f;
             byte   direction = (byte)DirectionKind.None;
-            byte   signal    = SpeechSignal.None;
+            byte   speechLen = 0;
+            var    style     = AttackStyle.Pursue;
+            float  tempo     = 0f;
+
+            if (ctx.DecodeTime > ctx.DecodeDoneTime && frame.SpeechDecodeLossWeight > 0f)
+            {
+                ctx.DecodeDoneTime  = ctx.DecodeTime;
+                ticket.DecodeValid  = true;
+                ticket.DecodeTarget = ctx.DecodeTarget;
+
+                int correct = 0;
+                for (int b = 0; b < DecodeOutputs; b++)
+                    if ((ticket.DecodeOut[b] > 0f) == (((ctx.DecodeTarget >> b) & 1) != 0)) correct++;
+                SpeechMetrics.RecordDecode(correct, ctx.DecodeTarget);
+            }
 
             if (UsesDirections(g))
             {
@@ -569,14 +599,26 @@ public class SharedHierarchicalBrain : IDisposable
                 curvature = aux[CurvatureAux];
                 if (g == (int)Goal.Social)
                 {
-                    signal = PickMasked(ticket, SpeechAux, SpeechOutputs, 0xFF);
-                    if (signal < SpeechSignal.Count) speech = frame.SpeechSignals[signal];
+                    for (int s = 0; s < SimulationRules.SpeechLen; s++)
+                    {
+                        byte token = PickMasked(ticket, SpeechAux + s * SimulationRules.SpeechVocab,
+                            SimulationRules.SpeechVocab, (1 << SimulationRules.SpeechVocab) - 1);
+                        tokens = Utterance.SetToken(tokens, s, token < SimulationRules.SpeechVocab ? token : 0);
+                    }
+                    speechLen = (byte)SimulationRules.SpeechLen;
+                }
+                else if (g == (int)Goal.Hunt)
+                {
+                    byte pick = PickMasked(ticket, StyleAux, StyleOutputs, 0xFF);
+                    if (pick < StyleOutputs) style = (AttackStyle)pick;
+                    tempo = aux[TempoAux];
                 }
             }
 
             _dDecision[d] = new BrainDecision(action, ticket.DecisionId, ctx.CoordDecisionId,
                 ctx.CurrentGoal, simTime, clamped, in heading,
-                curvature, speech, ctx.CurrentPlan, ctx.GoalEndTime, direction, offset, signal);
+                curvature, tokens, ctx.CurrentPlan, ctx.GoalEndTime, direction, offset, speechLen,
+                style: style, tempo: tempo);
             _dMade[d] = true;
         }
 
@@ -755,6 +797,7 @@ public class SharedHierarchicalBrain : IDisposable
         float goal = ctx.GoalDiscountedReturn
                    + ctx.GoalBonus
                    + r.GoalFoodWeight   * ctx.GoalFoodEaten
+                   + r.DigestRewardWeight * ctx.GoalDigested
                    + r.GoalEnergyWeight * (ctx.EnergyNorm - ctx.GoalStartEnergy)
                    + r.GoalRestWeight   * ctx.GoalRestScore
                    + curiosity * ctx.GoalNovelty;

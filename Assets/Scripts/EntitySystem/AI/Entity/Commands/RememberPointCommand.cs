@@ -7,9 +7,9 @@ public class RememberPointCommand : EntityCommand
     protected override EntityCommandStatus OnBegin()
     {
         float2 pos = model.Position2D;
-        model.Points.TryRemember(in pos, SimulationRules.Active.RememberPointMinSpacing);
+        bool added = model.Points.TryRemember(in pos, SimulationRules.Active.RememberPointMinSpacing);
         if (model.Caste == Caste.Scout)
             model.Colony?.Pois.Offer(pos, model.CachedFoodValid ? SimulationRules.Active.EatEnergyFood * model.CasteMods.PoiWeight : 0f, 0f);
-        return Complete();
+        return added && model.CachedFoodValid ? Complete(SimulationRules.Active.RememberFoodReward) : Complete();
     }
 }

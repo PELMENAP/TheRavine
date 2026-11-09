@@ -21,6 +21,7 @@ namespace TheRavine.Generator
         public int ExpectedPrefabId;
         public int ExpectedStamp;
         public byte Levels;
+        public byte BaseLevel;
     }
 
     public sealed class WorldCommandStats
@@ -35,6 +36,18 @@ namespace TheRavine.Generator
         bool RemoveObject(long worldPos);
         bool TryAddObject(long worldPos, Vector3 realPos, int prefabID, int amount, ReadOnlySpan<Vector2Int> additionalWorldCells, int levels);
         Vector3 GetRealPosition(long worldPos);
+
+        bool TryGetObject(long worldPos, int level, out ObjectInstInfo info)
+        {
+            if (level == 0) return TryGetObject(worldPos, out info);
+            info = default;
+            return false;
+        }
+
+        bool RemoveObject(long worldPos, int level) => level == 0 && RemoveObject(worldPos);
+
+        bool TryAddObject(long worldPos, Vector3 realPos, int prefabID, int amount, ReadOnlySpan<Vector2Int> additionalWorldCells, int levels, int baseLevel) =>
+            baseLevel == 0 && TryAddObject(worldPos, realPos, prefabID, amount, additionalWorldCells, levels);
     }
 
     public sealed class WorldCommandBuffer
@@ -149,13 +162,13 @@ namespace TheRavine.Generator
                 }
 
                 if (command.ExpectedPrefabId != WorldCommand.NoExpectation
-                    && (!target.TryGetObject(command.Pos, out ObjectInstInfo current) || current.PrefabID != command.ExpectedPrefabId))
+                    && (!target.TryGetObject(command.Pos, command.BaseLevel, out ObjectInstInfo current) || current.PrefabID != command.ExpectedPrefabId))
                 {
                     stats.RemoveStale++;
                     return false;
                 }
 
-                if (target.RemoveObject(command.Pos))
+                if (target.RemoveObject(command.Pos, command.BaseLevel))
                 {
                     stats.RemoveApplied++;
                     return true;
@@ -171,7 +184,8 @@ namespace TheRavine.Generator
                     command.PrefabId,
                     command.Amount,
                     default,
-                    Math.Max((int)command.Levels, 1)))
+                    Math.Max((int)command.Levels, 1),
+                    command.BaseLevel))
             {
                 stats.AddApplied++;
                 return true;
@@ -196,22 +210,27 @@ namespace TheRavine.Generator
         UnknownObject = 3,
         NotPlaceable = 4,
         Rejected = 5,
-        Refused = 6
+        Refused = 6,
+        NotOwned = 7
     }
 
     public static class WorldEdits
     {
-        public static WorldEditResult TryPickUp(MapGenerator generator, ObjectSystem objects, long pos, out int prefabId, out int amount)
+        public static WorldEditResult TryPickUp(MapGenerator generator, ObjectSystem objects, long pos, out int prefabId, out int amount) =>
+            TryPickUp(generator, objects, pos, 0, out prefabId, out amount);
+
+        public static WorldEditResult TryPickUp(MapGenerator generator, ObjectSystem objects, long pos, int level, out int prefabId, out int amount)
         {
             prefabId = ObjectInstInfo.PlaceholderId;
             amount = 0;
 
-            if (!generator.TryGetObject(pos, out ObjectInstInfo inst)) return WorldEditResult.NoObject;
+            if ((uint)level >= (uint)ObjectInfo.MaxLevels) return WorldEditResult.Refused;
+            if (!generator.TryGetObject(pos, level, out ObjectInstInfo inst)) return WorldEditResult.NoObject;
 
             ObjectInfo info = objects.GetInfo(inst.PrefabID);
             if (info == null || info.InventoryItemInfo == null) return WorldEditResult.NotPickable;
 
-            if (!ApplyRemove(generator, pos, inst.PrefabID)) return WorldEditResult.Rejected;
+            if (!ApplyRemove(generator, pos, inst.PrefabID, level)) return WorldEditResult.Rejected;
 
             prefabId = inst.PrefabID;
             amount = inst.Amount;
@@ -220,51 +239,63 @@ namespace TheRavine.Generator
             return WorldEditResult.Ok;
         }
 
-        public static WorldEditResult TryPlace(MapGenerator generator, ObjectSystem objects, long pos, int objectId, out PlacementResult placement)
+        public static WorldEditResult TryPlace(MapGenerator generator, ObjectSystem objects, long pos, int objectId, out PlacementResult placement) =>
+            TryPlace(generator, objects, pos, 0, objectId, out placement);
+
+        public static WorldEditResult TryPlace(MapGenerator generator, ObjectSystem objects, long pos, int level, int objectId, out PlacementResult placement)
         {
             placement = PlacementResult.Ok;
             ObjectInfo info = objects.GetInfo(objectId);
             if (info == null) return WorldEditResult.UnknownObject;
             if (info.InventoryItemInfo == null || !info.InventoryItemInfo.isPlaceable) return WorldEditResult.NotPlaceable;
 
-            if (info.PlacementKind == PlacementKind.Construction3D)
-                placement = ConstructionService.Place(generator, pos, info, 1);
-            else
+            int levels = Math.Max(info.Levels, 1);
+            if (level < 0 || level > ObjectInfo.MaxLevels - levels)
             {
-                placement = generator.TryAddFromInfo(pos, generator.GetRealPosition(pos), info, 1, info.Levels);
-                if (placement == PlacementResult.Ok) generator.ExtraUpdate();
+                placement = PlacementResult.InvalidLevels;
+                return WorldEditResult.Refused;
             }
+
+            placement = generator.TryPlaceSnapped(pos, info, 1, level);
+            if (placement == PlacementResult.Ok) generator.ExtraUpdate();
 
             return placement == PlacementResult.Ok ? WorldEditResult.Ok : WorldEditResult.Rejected;
         }
 
-        public static void MirrorPickUp(MapGenerator generator, long pos, int prefabId)
+        public static void MirrorPickUp(MapGenerator generator, long pos, int prefabId) =>
+            MirrorPickUp(generator, pos, 0, prefabId);
+
+        public static void MirrorPickUp(MapGenerator generator, long pos, int level, int prefabId)
         {
-            ApplyRemove(generator, pos, prefabId);
+            ApplyRemove(generator, pos, prefabId, level);
             generator.ExtraUpdate();
         }
 
-        public static void MirrorPlace(MapGenerator generator, ObjectSystem objects, long pos, int objectId)
+        public static void MirrorPlace(MapGenerator generator, ObjectSystem objects, long pos, int objectId) =>
+            MirrorPlace(generator, objects, pos, 0, objectId);
+
+        public static void MirrorPlace(MapGenerator generator, ObjectSystem objects, long pos, int level, int objectId)
         {
             ObjectInfo info = objects.GetInfo(objectId);
             if (info == null) return;
-            ApplyAdd(generator, pos, info, 1);
+            generator.TryPlaceSnapped(pos, info, 1, level);
             generator.ExtraUpdate();
         }
 
-        private static bool ApplyRemove(MapGenerator generator, long pos, int prefabId)
+        private static bool ApplyRemove(MapGenerator generator, long pos, int prefabId, int level)
         {
             var remove = new WorldCommand
             {
                 Kind = WorldCommand.Remove,
                 Pos = pos,
                 PrefabId = prefabId,
-                ExpectedPrefabId = prefabId
+                ExpectedPrefabId = prefabId,
+                BaseLevel = (byte)level
             };
             return generator.ApplyImmediate(in remove);
         }
 
-        private static bool ApplyAdd(MapGenerator generator, long pos, ObjectInfo info, int amount)
+        private static bool ApplyAdd(MapGenerator generator, long pos, ObjectInfo info, int amount, int baseLevel)
         {
             var add = new WorldCommand
             {
@@ -273,7 +304,8 @@ namespace TheRavine.Generator
                 PrefabId = info.Id,
                 Amount = amount,
                 ExpectedPrefabId = WorldCommand.NoExpectation,
-                Levels = (byte)Math.Max(info.Levels, 1)
+                Levels = (byte)Math.Max(info.Levels, 1),
+                BaseLevel = (byte)baseLevel
             };
             return generator.ApplyImmediate(in add);
         }
@@ -282,7 +314,7 @@ namespace TheRavine.Generator
         {
             if (pattern == null) return;
 
-            if (pattern.main != null) ApplyAdd(generator, pos, pattern.main, pattern.main.DefaultAmount);
+            if (pattern.main != null) ApplyAdd(generator, pos, pattern.main, pattern.main.DefaultAmount, 0);
             if (pattern.other == null) return;
 
             Vector2Int center = Position2Int.UnpackToVector(pos);
@@ -291,7 +323,7 @@ namespace TheRavine.Generator
                 ObjectInfo other = pattern.other[i];
                 if (other == null) continue;
                 long point = Position2Int.Pack(Extension.GetRandomPointAround(center, pattern.factor));
-                ApplyAdd(generator, point, other, other.DefaultAmount);
+                ApplyAdd(generator, point, other, other.DefaultAmount, 0);
             }
         }
     }
