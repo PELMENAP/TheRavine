@@ -34,12 +34,19 @@ The Ravine — виртуальное место, где человек и ИИ 
 - Spatial hashing
 - Native Collections
 - Reactive event system
+- Принципы оптимизации: [docs/OPTIMIZATION.md](../../docs/OPTIMIZATION.md)
+
+## Безопасность
+- Мир авторитетен на сервере: клиент присылает намерение, а не результат
+- Равенство как свойство безопасности: никто, включая хоста, не получает скрытых возможностей
+- Песочница с бюджетом для Rive-скриптов
+- Принципы: [docs/SECURITY.md](../../docs/SECURITY.md); текущее состояние: [docs/audit/security_audit.md](../../docs/audit/security_audit.md)
 
 
 # TheRavine — Project Architecture Summary
 
 ## Расположение
-Все скрипты: `Assets/Scripts/` (483 файла `.cs`, подсчёт: `find Assets/Scripts -name '*.cs' | wc -l`). Сборки (asmdef в `Assets/Scripts`, 14): `Audio`, `BehavioursMap`, `Core`, `DetectorSystem`, `DialogGraph`, `EntitySystem`, `EventSystem`, `Info`, `Inventory`, `Netcode`, `ObjectSystem`, `SkillSystem`, `UIInventory`, `View`.
+Все скрипты: `Assets/Scripts/` (491 файл `.cs`, подсчёт: `find Assets/Scripts -name '*.cs' | wc -l`). Сборки (asmdef в `Assets/Scripts`, 14): `Audio`, `BehavioursMap`, `Core`, `DetectorSystem`, `DialogGraph`, `EntitySystem`, `EventSystem`, `Info`, `Inventory`, `Netcode`, `ObjectSystem`, `SkillSystem`, `UIInventory`, `View`.
 
 ## Stack
 - **Unity 6000.3** (3D, URP), **C#**, **Netcode for GameObjects** (host/server/client)
@@ -59,14 +66,14 @@ The Ravine — виртуальное место, где человек и ИИ 
 
 ### `GameInitializer` (`Terminal/GameInitializer.cs`, DontDestroyOnLoad, Awake)
 Создаёт все глобальные сервисы **до** загрузки игровой сцены:
-- `RavineLogger` → `ServiceLocator.Services`
+- `RavineLogger` → `ServiceLocator.Services` (запись в файл буферизуется: сброс при ошибке, на 8 тыс. символов, раз в секунду и при выходе; после 16 млн символов запись в файл прекращается)
 - `ActionMapController` (`Core/NewInputSystem/`)
 - `GlobalSettingsController` (настройки качества, трава, управление)
 - `WorldRegistry` (список миров, текущий мир)
 - `AutosaveCoordinator`
 - `WorldSettingsController`
 
-Очистка: `GameInitializer.OnDestroy` (только активный `Instance`) → `ServiceLocator.ClearAll()` + `RavineLog.Shutdown()`. Выход в главное меню — `Bootstrap.SwitchToMainMenu`: кнопка блокируется на первом нажатии. Колбэк `SceneLoader.LoadScene(0, ReleaseServices)` вызывается после `FadeIn`, до `LoadSceneAsync`: `ReleaseServices` → `BreakUpServices` → Netcode `Shutdown` → `ClearAll` → `InitializeServices`. `OnDisable` вызывает `ReleaseServices` тоже; повторный вызов не действует.
+Очистка: `GameInitializer.OnDestroy` (только активный `Instance`) → `ServiceLocator.ClearAll()` + `RavineLog.Shutdown()`. Выход в главное меню — `Bootstrap.SwitchToMainMenu`: кнопка блокируется на первом нажатии. Колбэк `SceneLoader.LoadScene(0, ReleaseServices)` вызывается после `FadeIn`, до `LoadSceneAsync`: `ReleaseServices` → `EntityManager` выключается (AI не тикает, пока грузится меню) → `BreakUpServices` → Netcode `Shutdown` → `ClearAll` → `InitializeServices`. Освобождённый `PlayerEntity` сам убирается из `ServiceLocator.Players` (`DeepClean`); `EntitySystem` пропускает освобождённые сущности и очищает `global`, даже если `Dispose` бросил исключение. `OnDisable` вызывает `ReleaseServices` тоже; повторный вызов не действует.
 
 ### Главное меню — `GameSceneManagerSystem/Menu/`
 - `WorldManagerUI` — список миров, создание/удаление/переименование
@@ -110,7 +117,7 @@ ReactiveCommand<Unit> OnUpdate
 | `TransformComponent` | entity/model трансформы |
 | `MovementComponent` (`BehavioursMap/Movement/`) | BaseSpeed, Acceleration, Deceleration, velocity |
 | `EnergyComponent` (`BehavioursMap/Energy/`) | energy, maxEnergy (ReactiveProperty) |
-| `CurrencyComponent` (`BehavioursMap/Currency/`) | валюта (SafeInt + ReactiveProperty, только сервер пишет) |
+| `CurrencyComponent` (`BehavioursMap/Currency/`) | валюта (SafeInt + ReactiveProperty); начальная сумма из локального `WorldState`, серверные изменения через `CurrencyNetworkComponent.TryServerAdd` (пока не подключено: `Initialize` не вызывается) |
 | `AimComponent` (`BehavioursMap/Aim/`) | CrosshairDistance, PickDistance |
 | `EventBusComponent` (`Model/Actions&Events/`) | EventBus для внутренних событий сущности |
 | `StatePatternComponent` (`EntitySystem/`) | FSM — текущее состояние (AState) + командный планировщик `CommandScheduler` |
@@ -132,7 +139,7 @@ Chunk-based спавн/деспавн сущностей по позиции и�
 ### MVP-слой
 - `AEntityViewModel : NetworkBehaviour` — подписывается на `Entity.IsActive`, `Entity.OnUpdate`
 - `AEntityView : MonoBehaviour` — биндинги UI на ViewModel
-- `PlayerModelView` — конкретная ViewModel игрока, спавнит камеру через ServerRpc
+- `PlayerModelView` — конкретная ViewModel игрока, запрашивает одну камеру на владельца через ServerRpc (владелец — `OwnerClientId`, повторный запрос игнорируется); `CameraComponent` есть только у локального игрока
 
 ---
 
@@ -140,9 +147,15 @@ Chunk-based спавн/деспавн сущностей по позиции и�
 - Архитектура: **Host = Server + Client**
 - `PlayerModelView.OnNetworkSpawn` — инициализация на каждом клиенте
 - `DayCycle` (`Core/DayCycle.cs`) — NetworkVariable<bool> isDay, сервер управляет временем
-- `CurrencyNetworkComponent` — NetworkVariable<int>, только сервер пишет, RPC от клиента
-- `PlayerController.MoveServerRpc` — движение валидируется на сервере
-- `NetCode/NetworkSpawner.cs` — `SpawnObjectServerRpc(int prefabId, Vector3 position)`: ID — индекс в whitelist `spawnablePrefabs` (только префабы из `NetworkConfig.Prefabs`); право — подключённый клиент с `PlayerObject`, владелец спавнера или `GrantSpawnRights(clientId)`; лимит `maxSpawnsPerWindow` за `rateWindowSeconds` (по `ServerTime`) и `maxSpawnRadius` от `PlayerObject`; отказы — `RavineLog.Warning`. Сборка `Netcode` ссылается на `Core` (обратная ссылка `Core → Netcode` удалена)
+- Клиент присылает намерение, результат считает сервер (принципы: `docs/SECURITY.md`, состояние: `docs/audit/security_audit.md`)
+- `CurrencyNetworkComponent` — NetworkVariable<int>, серверный `TryServerAdd(delta)` (клиентского RPC нет)
+- `PlayerController`:
+  - `MoveServerRpc` сохраняет проверенное намерение; выносливость, ускорение и скорость интегрируются в серверном `FixedUpdate`, намерение старше `intentTimeout` считается нулевым, состояние рассылается раз в `sendInterval`
+  - `JumpServerRpc(charge)` — силу считает сервер по `baseJumpForce` и `jumpForceCurve`
+  - Place / PickUp — проверка дальности, лимит частоты на игрока (`editRate`, `editBurst`), отказы — одна сводка за `refuseLogInterval`
+  - удалённые игроки: серверный журнал предметов `PlayerItemLedger` (пополняется подбором и `CraftRequestServerRpc`, списывается установкой, отказ `WorldEditResult.NotOwned`; живёт до конца сессии); хост проверяется по своему локальному инвентарю
+  - здоровье и энергию публикует сервер через NetworkVariable; клиент применяет их (`PlayerEntity.ApplyServerVitals`)
+- В `NetCode/` только asmdef `Netcode` (`NetworkSpawner.cs` в репозитории нет)
 - Соединение: `GameSceneManagerSystem/NetworkConnectionManager.cs`, `NetworkTransportConfig.cs`, `NetworkUIController.cs`
 
 ---
@@ -247,7 +260,7 @@ NAL принимает событие с вероятностью `nalDelayRefer
 
 ### Драйвер тика (решение)
 - AI-агенты тикают только из `EntityManager.Update`, синхронно, с фиксированным шагом по `SimulationClock`: каждый агент обрабатывается раз в `SimulationRules.agentTickInterval` секунд симуляции (по умолчанию 1 с). `TickWindowBudget.Take` накапливает долг `dt × N / interval` и отдаёт целое число агентов на кадр; при паузе (dt = 0) агенты не тикают, после фриза догоняется не больше одного окна. `EntityModel.UpdateEntityCycle` пустой — второго пути тика AI нет.
-- `PlayerEntity` тикает в `EntitySystem.FixedUpdate` (`global` содержит только игроков).
+- `PlayerEntity` тикает в `EntitySystem.FixedUpdate` (`global` содержит только игроков): на сервере — все игроки, на клиенте — только свой; метаболизм — только там, где `WorldAuthority.IsAuthority`, поведение — только у владельца.
 - Порядок в кадре: `SimulationClock.Advance` → статистика fitness (раз в `fitnessStatsInterval`) → `TickAgents`: снапшот + сетка + стая (в начале окна) → `BeginCycle` (перцепция, вирусология, тик команды/плана, векторизация) → инстинкты и utility (Burst) → решения колоний (`RunDecisions`, TD-flush отложенных решений в `FinishDecide`) → `EndCycle` (старт решения) → `MovePlanner.Flush` → распространение инфекции → в конце окна смерти/вымирания/хищники/`ApplyPendingGradients`/гнёзда/касты/видимость → `MovePlanner.Flush` → `MotionSystem.Step`. Порядок стадий внутри тика не менялся при переносе с UniTask-цикла (раннер `PlayerLoopTiming.Update` выполнялся до `ScriptRunBehaviourUpdate`).
 - ProfilerMarker: `EntityManager.TickAgents/RebuildTickSnapshot/RunTickBatch/InfectionSpread/CloseTickWindow`, `EntityModel.Perception`, `EntitySpatialGrid.Rebuild/FindNearest/FindInRadius`, `ChunkFoodIndex.TryFindNearestFood`.
 
@@ -276,7 +289,7 @@ NAL принимает событие с вероятностью `nalDelayRefer
 - `InventoryModel` — чистая модель (слоты, стаки, крафт)
 - `EventDrivenInventoryProxy` — обёртка с событиями (Added/Removed/Changed)
 - `UIInventory : ISetAble` — View, подписан на PlaceEvent/PickUpEvent из EventBus игрока
-- `CraftService` (`UI/CraftService.cs`) — проверяет рецепты, заполняет прогресс-бар; `CraftPresenter` — MVP-слой
+- `CraftService` (`UI/CraftService.cs`) — проверяет рецепты, заполняет прогресс-бар, сообщает серверу о крафте удалённого игрока (`PlayerEntity.RequestCraft`); рецепты из общего каталога `CraftModel.Shared` (одинаковые индексы на клиенте и сервере); `CraftPresenter` — MVP-слой
 - `UIDragger` — drag-and-drop (PC мышь + mobile touch)
 - **LLM-описания**: `LLMItemDescriptionService` с debounce (0.4s), кеш в `ItemDescriptionRegistry`
 
@@ -383,15 +396,16 @@ NAL принимает событие с вероятностью `nalDelayRefer
 
 ---
 
-## Известные проблемы (аудит 2026-08, статус 2026-10)
+## Известные проблемы (аудит 2026-08, статус 2026-11)
 
 1. ~~**Два драйвера тика**~~ — закрыто: AI — только `EntityManager.Update` с фиксированным шагом `SimulationClock`, игроки — `EntitySystem.FixedUpdate` (см. «Драйвер тика»).
 2. ~~**PoolManager не пулит**~~ — закрыто: free/busy разделены, `Release` проверяет `IsActive` и `Owner`.
 3. **Спавн-рассинхрон** (открыто): `EntitySystem.CreateMob` ищет ViewModel через `GetComponentInChildren`, `MobNAL.RunLifecycle` — через `GetComponent` на корне; при расхождении сущность не регистрируется.
-4. ~~**Сеть**: авторизация `NetworkSpawner.IsAuthorizedClient` не работает~~ — закрыто: владелец/выданное право, whitelist int-ID, лимит частоты и радиуса (см. «Сеть»).
+4. ~~**Сеть**: авторизация `NetworkSpawner.IsAuthorizedClient` не работает~~ — закрыто; `NetworkSpawner.cs` в репозитории больше нет. Находки по безопасности и их статус: `docs/audit/security_audit.md`.
 5. **Утечки**: ~~R3-подписки `AEntityViewModel`~~ — `DisposableBag` (`Clear` в `OnNetworkDespawn`, `Dispose` в `OnDestroy`); ~~`CommandScheduler.ResetCancellation`~~ — старый CTS диспоузится; ~~`GameInitializer.OnDestroy`~~ — `ClearAll`; ~~молчаливый отказ `Register`~~ — `ServiceLocator.Register` логирует ошибку, добавлены `Unregister` и `Replace` (возвращает прежний экземпляр). Открыто: `CommandScheduler._isProcessing` не сбрасывается при выходе цикла по отмене.
 6. **AI**: ~~`lr` × знаковый reward~~ — не баг: advantage со знаком — корректный PPO-градиент, `lr > 0` гарантирован (`SharedHierarchicalBrain.ResolveLearningRate`, `SimulationRules.OnValidate`), знак терминального штрафа зафиксирован `TerminalPenaltyTests`; ~~fitness = AverageEntropy~~ — устарело, `EvolveGenotypes` сортирует по `SelectionFitness`; ~~`new DelayedItem` каждый тик~~ — закрыто, `DecisionRing` предаллоцирует буфер.
 7. ~~**Мёртвый код**~~ — удалены `RpcTest.cs`, `PlayerUIService.cs`, `Test/Test.cs`, корневые `*CommandBuffer.cs`, дубли конфигов без точки; `mono_crash.mem.6929.1.blob` снят с индекса, `*.blob` и `mono_crash*` в `.gitignore`. `RavineNetworkManager.cs` в репозитории отсутствовал. `CraftModel.cs` пересоздан этапом 2.4 (безформенный крафт, `CraftModelTests`) и остаётся; `Scripts/Test/` (`PointDraw`, `PriceChart`, `Market*`) ссылается из `TestScene` и `Market.prefab` и остаётся.
 8. ~~**Unity-время в логике агентов**~~ — закрыто: `UniTask.Delay`/`Time.smoothDeltaTime` в `EntityManager` заменены на `SimulationClock`.
 9. ~~**R3 в горячем пути агента**~~ — `StatsComponent.Health/Energy` и `_vecMaxHealth/_vecMaxEnergy` заменены полями + событием `HealthDepleted`/прямым вызовом; внешние подписчики (`AEntity.IsActive`, `OnUpdate`, игровые `EnergyComponent`/`CurrencyComponent`) сохранены.
 10. ~~**God-классы**~~ — `EntityManager` 1253 → 733 строки (+ `AI/Population/`), `EntityModel` 1662 → 583 + 7 partial, `EntityCommands` → 23 файла, `SimulationRules` 2149 → 1111 + 6 partial. Физическое разделение `SimulationRules` на отдельные ScriptableObject-ассеты не сделано: нужна миграция данных ассета в Unity.
+11. **Идентичность игрока в мультиплеере** (открыто): `PlayerEntity` получает `NetworkManager.LocalClientId` вместо `OwnerClientId`, поэтому `PlayerContainer` регистрирует только первого игрока на машине, а UI полагается на то, что `GetAllPlayers()[0]` — локальный игрок. У удалённого клиента `PlayerController.SetUp` может выполниться раньше RPC камеры (контроллер получает пустую камеру). Сохранять инвентари удалённых игроков в мире хоста нельзя без постоянного идентификатора игрока.
