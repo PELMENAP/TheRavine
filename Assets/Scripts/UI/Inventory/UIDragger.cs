@@ -10,14 +10,16 @@ using LLMUnity;
 using TMPro;
 
 using TheRavine.Base;
+using TheRavine.EntityControl;
 using TheRavine.InventoryElements;
 
 namespace TheRavine.Inventory
 {
     public class UIDragger : MonoBehaviour
     {
-        [SerializeField] private InputActionReference point, leftclick;
+        [SerializeField] private InputActionReference point, leftclick, rightClick;
         [SerializeField] private UIInventory _uiInventory;
+        [SerializeField] private UIItemContextMenu contextMenu;
         [SerializeField] private TextMeshProUGUI text, title;
         [SerializeField] private Image image;
         [SerializeField] private ItemTagProvider _itemTagProvider;
@@ -26,6 +28,7 @@ namespace TheRavine.Inventory
         private EventSystem eventSystem;
         private Mouse mouse;
         private bool isDragging = false;
+        private bool pressStartedOnMenu;
         private readonly List<RaycastResult> results = new(10);
         private PointerEventData eventData;
         private UIInventorySlot lastSlot;
@@ -37,7 +40,8 @@ namespace TheRavine.Inventory
 
         public void SetUp(
             EventDrivenInventoryProxy inventoryModel,
-            MainComponent playerMainComponent)
+            MainComponent playerMainComponent,
+            AEntity entity = null)
         {
 
             _itemTagProvider.Initialize();
@@ -46,6 +50,7 @@ namespace TheRavine.Inventory
 
             this.inventoryModel = inventoryModel;
             this.playerMainComponent = playerMainComponent;
+            if (contextMenu != null) contextMenu.SetUp(inventoryModel, entity);
 
             llmDescriptionService.OnDescriptionEnded   += OnLLMDescriptionEnded;
 
@@ -58,6 +63,7 @@ namespace TheRavine.Inventory
             {
                 case ControlType.Personal:
                     leftclick.action.performed += OnDragPC;
+                    if (rightClick != null) rightClick.action.performed += OnRightClickPC;
                     break;
                 case ControlType.Mobile:
                     point.action.performed += OnDragMobile;
@@ -101,6 +107,21 @@ namespace TheRavine.Inventory
         private void OnDragPC(InputAction.CallbackContext context)
         {
             if(_uiInventory == null) return;
+            if (contextMenu != null)
+            {
+                if (mouse.leftButton.wasPressedThisFrame && contextMenu.ContainsScreenPoint(mouse.position.ReadValue()))
+                {
+                    pressStartedOnMenu = true;
+                    isDragging = false;
+                    lastSlot = null;
+                    return;
+                }
+                if (pressStartedOnMenu)
+                {
+                    if (mouse.leftButton.wasReleasedThisFrame) pressStartedOnMenu = false;
+                    return;
+                }
+            }
             if (mouse.leftButton.wasReleasedThisFrame && lastSlot != null)
             {
                 isDragging = false;
@@ -140,6 +161,23 @@ namespace TheRavine.Inventory
                     break;
                 }
             }
+        }
+
+        private void OnRightClickPC(InputAction.CallbackContext context)
+        {
+            if (_uiInventory == null || contextMenu == null || !mouse.rightButton.wasPressedThisFrame) return;
+            if (contextMenu.ContainsScreenPoint(mouse.position.ReadValue())) return;
+            results.Clear();
+            eventData.position = mouse.position.ReadValue();
+            eventSystem.RaycastAll(eventData, results);
+            for (int i = 0; i < results.Count; i++)
+            {
+                var slotUI = (UIInventorySlot)results[i].gameObject.GetComponent("UIInventorySlot");
+                if (slotUI == null || slotUI.slot == null || slotUI.slot.isEmpty) continue;
+                contextMenu.Open(slotUI, eventData.position);
+                return;
+            }
+            contextMenu.Close();
         }
 
         private void OnDragMobile(InputAction.CallbackContext context)
@@ -205,6 +243,8 @@ namespace TheRavine.Inventory
 
         public void BreakUp()
         {
+            pressStartedOnMenu = false;
+            if (contextMenu != null) contextMenu.TearDown();
             if (llmDescriptionService != null)
             {
                 llmDescriptionService.OnDescriptionEnded   -= OnLLMDescriptionEnded;
@@ -214,6 +254,7 @@ namespace TheRavine.Inventory
             {
                 case ControlType.Personal:
                     leftclick.action.performed -= OnDragPC;
+                    if (rightClick != null) rightClick.action.performed -= OnRightClickPC;
                     break;
                 case ControlType.Mobile:
                     point.action.performed -= OnDragMobile;

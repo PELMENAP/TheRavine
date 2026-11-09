@@ -35,6 +35,7 @@ public sealed class EntityCommandRunner
         var stats = _model.Colony?.Stats;
         stats?.RecordCommand(source);
         stats?.RecordAction(decision.Action);
+        stats?.RecordActionSource(decision.Action, source);
 
         var status = command.Begin(in decision, source);
         if (status != EntityCommandStatus.Running && ReferenceEquals(_current, command))

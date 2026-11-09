@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class RippleTrigger : MonoBehaviour
 {
-    [SerializeField] private float maxWaterRespondHeight = 4f, minWaterRespondHeight = -2f;
+    [SerializeField] private float maxWaterRespondHeight = 5f, minWaterRespondHeight = -2f;
     private float _lastStampTime;
     private const float StampCooldown = 0.05f;
 

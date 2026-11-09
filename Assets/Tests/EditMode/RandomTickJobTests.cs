@@ -46,7 +46,7 @@ public class RandomTickJobTests
 
     private int Run(float cellsPerChunkPerTick, int chunks)
     {
-        new RandomTickJob
+        var job = new RandomTickJob
         {
             Sources = _sources,
             AcceptById = _accept,
@@ -56,7 +56,8 @@ public class RandomTickJobTests
             FarCellDivisor = 8f,
             TotalCells = ChunkData.TotalCells,
             Seed = 12345u
-        }.Execute(chunks);
+        };
+        for (int i = 0; i < chunks; i++) job.Execute(i);
 
         return _counter[0];
     }

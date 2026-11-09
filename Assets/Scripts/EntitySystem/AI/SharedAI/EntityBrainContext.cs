@@ -40,6 +40,7 @@ public class EntityBrainContext : System.IDisposable
     public float GoalStartTime;
     public float GoalStartEnergy;
     public int   GoalFoodEaten;
+    public float GoalDigested;
     public float GoalRestScore;
     public float GoalNovelty;
     public float NoveltySum;
@@ -48,6 +49,9 @@ public class EntityBrainContext : System.IDisposable
     public float IntrinsicReward;
     public byte  DirectionMask;
     public float Surprise;
+    public int   DecodeTarget;
+    public float DecodeTime;
+    public float DecodeDoneTime;
     public readonly float[] CoordBias;
 
     public EntityBrainContext(
@@ -86,6 +90,7 @@ public class EntityBrainContext : System.IDisposable
         NoveltySum           = 0f;
         NoveltyCount         = 0;
         GoalFoodEaten        = 0;
+        GoalDigested         = 0f;
         GoalRestScore        = 0f;
         GoalBonus            = 0f;
         GoalTotalReward      = 0f;

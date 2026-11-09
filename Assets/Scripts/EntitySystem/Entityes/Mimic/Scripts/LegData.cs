@@ -34,14 +34,14 @@ public class LegData
         growCoef = coef;
         lifeTimer = lifeTime;
 
-        legHeight = Random.Range(mimic.legMinHeight, mimic.legMaxHeight);
-        rotationSpeed = Random.Range(mimic.minRotSpeed, mimic.maxRotSpeed);
-        oscillationSpeed = Random.Range(mimic.minOscillationSpeed, mimic.maxOscillationSpeed);
+        legHeight = RavineRandom.RangeFloat(mimic.legMinHeight, mimic.legMaxHeight);
+        rotationSpeed = RavineRandom.RangeFloat(mimic.minRotSpeed, mimic.maxRotSpeed);
+        oscillationSpeed = RavineRandom.RangeFloat(mimic.minOscillationSpeed, mimic.maxOscillationSpeed);
         oscillationProgress = 0f;
 
         for (int i = 0; i < 7; i++)
         {
-            handleOffsets[i] = Random.onUnitSphere * Random.Range(mimic.handleOffsetMinRadius, mimic.handleOffsetMaxRadius);
+            handleOffsets[i] = RavineRandom.UnitSphere() * RavineRandom.RangeFloat(mimic.handleOffsetMinRadius, mimic.handleOffsetMaxRadius);
         }
     }
 }

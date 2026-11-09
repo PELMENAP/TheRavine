@@ -159,18 +159,6 @@ public partial class EntityModel
         return best;
     }
 
-    private static int CountAndRelease(int found, ColonyState colony, out int kin)
-    {
-        kin = 0;
-        for (int i = 0; i < found; i++)
-        {
-            var e = Neighbors[i];
-            Neighbors[i] = null;
-            if (e != null && e.Colony == colony) kin++;
-        }
-        return found;
-    }
-
     private static int CountAndRelease(int found)
     {
         for (int i = 0; i < found; i++) Neighbors[i] = null;

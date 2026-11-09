@@ -29,5 +29,19 @@ public class PerceptionComponent : IComponent
         return _grid.FindNearest(origin, self, _radius, out distance);
     }
 
+    public EntityModel Survey(Vector3 origin, EntityModel self, ColonyState colony,
+        float nearestRadius, float crowdRadius, int crowdCap,
+        out float nearestDistance, out int crowd, out int kin)
+    {
+        if (_grid == null)
+        {
+            nearestDistance = -1f;
+            crowd = 0;
+            kin   = 0;
+            return null;
+        }
+        return _grid.Survey(origin, self, colony, nearestRadius, crowdRadius, crowdCap, out nearestDistance, out crowd, out kin);
+    }
+
     public void Dispose() { }
 }

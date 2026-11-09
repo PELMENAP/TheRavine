@@ -12,6 +12,7 @@ public sealed class ColonyPopulation
     private readonly Transform    _parent;
     private readonly EntityTuning _tuning;
     private readonly int          _maxPopulation;
+    private readonly int          _capacity;
     private readonly float        _spawnRadius;
 
     private readonly List<EntityModel> _entities;
@@ -27,6 +28,7 @@ public sealed class ColonyPopulation
     private readonly CasteThresholdSystem _thresholds;
     private readonly BoidSystem           _boids;
     private readonly EnergyLedger         _ledger;
+    private readonly SpeechBus            _speech;
 
     private readonly Queue<EntityModel> _pendingDeath = new();
     private EntityModel[] _deferredDispose = Array.Empty<EntityModel>();
@@ -40,16 +42,26 @@ public sealed class ColonyPopulation
     public event Action<EntityModel> Died;
 
     public int CivilCount => _colonies.Count - (_wild != null ? 1 : 0);
+    public int CivilPopulation => _entities.Count - (_wild != null ? _wild.MemberCount : 0);
 
-    public ColonyPopulation(GameObject prefab, Transform parent, EntityTuning tuning, int maxPopulation, float spawnRadius,
+    public bool HasFreeSlot(ColonyState colony)
+    {
+        if (colony == null || _entities.Count >= _capacity) return false;
+        return colony.IsWild
+            ? colony.MemberCount < SimulationRules.Active.PredatorCount
+            : CivilPopulation < _maxPopulation;
+    }
+
+    public ColonyPopulation(GameObject prefab, Transform parent, EntityTuning tuning, int maxPopulation, int capacity, float spawnRadius,
         List<EntityModel> entities, ColonyRegistry colonies, ColonyState wild, ColonyFood food, EvolutionService evolution,
         EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, UtilityPriorSystem utility,
-        CasteThresholdSystem thresholds, BoidSystem boids, EnergyLedger ledger)
+        CasteThresholdSystem thresholds, BoidSystem boids, EnergyLedger ledger, SpeechBus speech)
     {
         _prefab        = prefab;
         _parent        = parent;
         _tuning        = tuning;
         _maxPopulation = maxPopulation;
+        _capacity      = capacity;
         _spawnRadius   = spawnRadius;
         _entities      = entities;
         _colonies      = colonies;
@@ -63,13 +75,14 @@ public sealed class ColonyPopulation
         _thresholds    = thresholds;
         _boids         = boids;
         _ledger        = ledger;
+        _speech        = speech;
     }
 
     public void StartPredatorClock(double now) => _nextPredatorTime = now;
 
     public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null)
     {
-        if (!TheRavine.Base.WorldAuthority.IsAuthority || _entities.Count >= _maxPopulation || colony == null)
+        if (!TheRavine.Base.WorldAuthority.IsAuthority || !HasFreeSlot(colony))
         {
             inheritedCtx?.Dispose();
             return null;
@@ -114,13 +127,18 @@ public sealed class ColonyPopulation
         _instincts.Reset(model.ManagerIndex, InstinctGenes.From(in ctx.CoordMLP.Params));
         _utility.Write(model.ManagerIndex, default);
         _thresholds.Reset(model.ManagerIndex, CasteThresholdSystem.Initial());
+        ref readonly var rules = ref SimulationRules.Frame;
+        bool muted = rules.SpeechMuteSampling && !colony.IsWild && RavineRandom.RangeFloat() < rules.SpeechMuteFraction;
+        model.Speech.SetMuted(muted);
+        _speech.Reset(model.ManagerIndex, model.ColonyIndex, model.EntityId, muted);
         Spawned?.Invoke(model);
         return model;
     }
 
-    public void SpawnChild(EntityModel parent)
+    public bool SpawnChild(EntityModel parent)
     {
-        if (_entities.Count >= _maxPopulation || parent.IsWild) return;
+        var colony = parent.Colony;
+        if (parent.IsWild || !HasFreeSlot(colony)) return false;
 
         var parentParams = parent.Brain.Context.CoordMLP.Params;
         var mate         = _evolution.SelectMate(parent);
@@ -129,7 +147,7 @@ public sealed class ColonyPopulation
         if (mate != null && parentVirology != null
             && parentVirology.Modifiers.CytoIncompat >= SimulationRules.Active.CytoIncompatThreshold
             && mate.LineageId != parent.LineageId)
-            return;
+            return false;
 
         GeneticParameters childParams;
         if (mate != null)
@@ -142,15 +160,13 @@ public sealed class ColonyPopulation
             childParams = parentParams.GetMutatedGeneticParameters();
         }
 
-        var colony   = parent.Colony;
-        if (colony == null) return;
         var childCtx = colony.Brain.CreateContext(childParams);
         var rules    = SimulationRules.Active;
         var pos      = parent.Motor.Position()
                      + (Vector3)RavineRandom.GetInsideCircle().normalized * rules.ChildSpawnOffset
                      + Vector3.up * rules.ChildSpawnLift;
 
-        SpawnEntity(pos, colony, childCtx, parent);
+        return SpawnEntity(pos, colony, childCtx, parent) != null;
     }
 
     public Vector3 RandomPosition(ColonyState colony)
@@ -268,6 +284,8 @@ public sealed class ColonyPopulation
         _boids.RemoveSwapBack(idx, last);
         _utility.RemoveSwapBack(idx, last);
         _thresholds.RemoveSwapBack(idx, last);
+        _speech.RemoveSwapBack(idx, last);
+        _grid.MarkStale();
         _entities.RemoveAt(last);
         model.ManagerIndex = -1;
     }
@@ -358,7 +376,7 @@ public sealed class ColonyPopulation
 
         int count = SimulationRules.Active.ColonyRespawnCount;
         var donorMembers = donor != null ? donor.Members : default;
-        for (int i = 0; i < count && _entities.Count < _maxPopulation; i++)
+        for (int i = 0; i < count && HasFreeSlot(colony); i++)
         {
             GeneticParameters genes = donorMembers.Length > 0
                 ? _entities[donorMembers[RavineRandom.RangeInt(0, donorMembers.Length)]].Brain.Context.CoordMLP.Params.GetMutatedGeneticParameters()
@@ -381,6 +399,10 @@ public sealed class ColonyPopulation
         float a = RavineRandom.RangeFloat(0f, 2f * math.PI);
         math.sincos(a, out float sa, out float ca);
         var p = home + new float2(ca, sa) * r.PredatorSpawnDistance;
-        SpawnEntity(new Vector3(p.x, _parent.position.y, p.y), wild);
+        var members = wild.Members;
+        var ctx = members.Length > 0
+            ? wild.Brain.CreateContext(_entities[members[RavineRandom.RangeInt(0, members.Length)]].Brain.Context.CoordMLP.Params.GetMutatedGeneticParameters())
+            : null;
+        SpawnEntity(new Vector3(p.x, _parent.position.y, p.y), wild, ctx);
     }
 }

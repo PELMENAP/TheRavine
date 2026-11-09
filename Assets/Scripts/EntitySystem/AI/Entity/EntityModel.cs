@@ -31,8 +31,6 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public void Activate() => _isActive.Value = true;
     public void Deactivate() => _isActive.Value = false;
 
-    public IEntityDialogHost DialogHost { get; private set; }
-
     public IEntityMotor Motor { get; private set; }
     public EntityTuning Tuning { get; private set; }
     public GameObject SelfObject { get; private set; }
@@ -55,6 +53,26 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public uint InstinctLatches { get; private set; }
     public bool IsHungry => (InstinctLatches & InstinctBits.Hungry) != 0;
     public bool IsSated  => Digestion != null && Digestion.Fill >= Brain.Context.CoordMLP.Params.SatedFill;
+
+    public float CarryFullFraction
+        => math.min(SimulationRules.Frame.CarryFullFraction * Brain.Context.CoordMLP.Params.CarryFullMul, 1f);
+
+    public bool RestBlockedByHunger
+    {
+        get
+        {
+            if (!IsHungry) return false;
+            ref readonly var g = ref Brain.Context.CoordMLP.Params;
+            float deficit = math.saturate(1f - Stats.En / math.max(Stats.MaxEnergy * g.HungerOn, 1e-3f));
+            return deficit > g.HungryRest;
+        }
+    }
+
+    public int PlanMaxFailures
+        => math.max(0, (int)math.round(SimulationRules.Active.PlanMaxFailures * Brain.Context.CoordMLP.Params.PlanPatience));
+
+    public int HuntMaxStrikes
+        => math.max(1, (int)math.round(SimulationRules.Active.HuntMaxStrikes * Brain.Context.CoordMLP.Params.HuntPersistence));
 
     private PlanRunner _plan;
     public PlanRunner Plan => _plan;
@@ -219,18 +237,38 @@ public partial class EntityModel : IEntity, IFoodReceiver
         }
     }
 
-    public HuntTarget CachedHuntTarget
+    public HuntTarget CachedHuntTarget => SelectHuntTarget(out _);
+    public bool HasHuntTarget => SelectHuntTarget(out _).IsValid;
+
+    public float HuntTargetDistance
     {
         get
         {
-            var foreign = ValidForeign;
-            bool player = _playerValid && _playerTransform != null;
-            if (foreign != null && (!player || _nearestForeignDistance <= _playerDistance)) return new HuntTarget(foreign, null);
-            if (player) return new HuntTarget(null, _playerTransform);
-            var nearest = CachedNearest;
-            if (nearest == null || !IsFrenzied) return default;
-            return SimulationRules.Frame.FrenzyTargetsOwnColony || nearest.Colony != Colony ? new HuntTarget(nearest, null) : default;
+            SelectHuntTarget(out float distance);
+            return distance;
         }
+    }
+
+    private HuntTarget SelectHuntTarget(out float distance)
+    {
+        var foreign = ValidForeign;
+        bool player = _playerValid && _playerTransform != null;
+        if (foreign != null && (!player || _nearestForeignDistance <= _playerDistance))
+        {
+            distance = _nearestForeignDistance;
+            return new HuntTarget(foreign, null);
+        }
+        if (player)
+        {
+            distance = _playerDistance;
+            return new HuntTarget(null, _playerTransform);
+        }
+        distance = 0f;
+        var nearest = CachedNearest;
+        if (nearest == null || !IsFrenzied) return default;
+        if (!SimulationRules.Frame.FrenzyTargetsOwnColony && nearest.Colony == Colony) return default;
+        distance = _nearestDistance;
+        return new HuntTarget(nearest, null);
     }
 
     private float2[] _trail;
@@ -253,8 +291,11 @@ public partial class EntityModel : IEntity, IFoodReceiver
         Digestion.Resize(tuning.MaxEnergy * SimulationRules.Active.StomachCapacityFraction);
         _ledger.Flows.RescaleNet += BodyEnergy - bodyBefore;
         Vectorizer?.SetMaxima(tuning.MaxHealth, tuning.MaxEnergy);
-        Brain.Context.CasteMask = ActionCatalog.CasteActionMask(caste);
+        Brain.Context.CasteMask = ActionMask(caste);
     }
+
+    private int ActionMask(Caste caste)
+        => ActionCatalog.CasteActionMask(caste) & (IsWild ? ActionCatalog.SolitaryActionMask : -1);
     public InfectionService Infection { get; private set; }
 
     public InputVectorizer Vectorizer;
@@ -313,8 +354,17 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private bool _receivedFood;
     public void ReceiveFood(float energy)
     {
-        Digestion?.Ingest(energy);
+        IngestFood(energy, EatYield(FoodKind.Large));
         _receivedFood = true;
+    }
+
+    public float IngestFood(float raw, float yield)
+    {
+        float gain = raw * yield;
+        float taken = Digestion != null ? Digestion.Ingest(gain) : 0f;
+        _ledger.Flows.YieldLoss    += raw - gain;
+        _ledger.Flows.OverflowLoss += gain - taken;
+        return taken;
     }
 
     public bool ConsumeReceivedFood()
@@ -370,7 +420,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
         {
             ref readonly var r = ref SimulationRules.Frame;
             float lethargy = Virology != null ? Virology.Modifiers.Lethargy : 0f;
-            float mul = (1f - lethargy * r.LethargySlow) * (Carrying > 0f ? r.CarrySpeedMul : 1f);
+            float mul = (1f - lethargy * r.LethargySlow) * (Carrying > 0f ? r.CarrySpeedMul : 1f)
+                      * (1f - r.SenescenceSpeedLoss * _senescence);
             return math.max(mul, r.MinSpeedMul);
         }
     }
@@ -399,6 +450,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public float[] DecisionInput => _decisionInput;
 
     private EntitySpatialGrid _grid;
+    private SpeechBus _speechBus;
     private static readonly EntityModel[] Neighbors = new EntityModel[16];
 
     private long  _foodCell;
@@ -433,6 +485,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private float  _decisionDrive;
 
     public bool AttackReady => SimulationClock.TimeD >= _attackReadyTime;
+    public double AttackReadyTime => _attackReadyTime;
 
     public bool TryStartAttackCooldown()
     {
@@ -449,8 +502,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
         BeginHomeostasis();
     }
 
-    public event Action<EntityModel> OnReproduceRequest;
-    public void RequestReproduce() => OnReproduceRequest?.Invoke(this);
+    public event Func<EntityModel, bool> OnReproduceRequest;
+    public bool RequestReproduce() => OnReproduceRequest != null && OnReproduceRequest.Invoke(this);
 
     public ChunkFoodIndex FoodIndex => _foodIndex;
 
@@ -468,7 +521,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         var brain  = colony.Brain;
         _baseTuning = baseTuning;
         _trail = new float2[math.max(1, SimulationRules.Active.TrailCapacity)];
-        ctx.CasteMask = ActionCatalog.CasteActionMask(Caste);
+        ctx.CasteMask = ActionMask(Caste);
         var rulesA = SimulationRules.Active;
         _casteMods = colony.IsWild ? CasteModifiers.Predator() : CasteModifiers.For(Caste);
         if (colony.IsWild) CasteFixed = true;
@@ -478,7 +531,6 @@ public partial class EntityModel : IEntity, IFoodReceiver
         Motor = motor;
         SelfObject = selfObject;
         Tuning = tuning;
-        DialogHost = (IEntityDialogHost)motor;
 
         Stats = new StatsComponent();
         Stats.FillComponent(tuning.MaxHealth, tuning.MaxEnergy);
@@ -498,12 +550,13 @@ public partial class EntityModel : IEntity, IFoodReceiver
         ServiceLocator.Services.TryGet(out _players);
         ServiceLocator.Services.TryGet(out _thresholds);
         ServiceLocator.Services.TryGet(out InfectionService infection);
-        Nest      = colony.Nest;
+        Nest      = colony.IsWild ? null : colony.Nest;
         Planner   = planner;
         Infection = infection;
 
+        ServiceLocator.Services.TryGet(out _speechBus);
         Speech = new SpeechComponent();
-        Speech.Inject((IEntityAudio)motor);
+        _voice = SpeechVoiceBank.ClassOf(in ctx.CoordMLP.Params);
         Points = new PointsOfInterestComponent();
 
         Brain = new BrainComponent(brain, ctx);
@@ -573,11 +626,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
         }
     }
 
-    private float2 _wildHome;
-    private float2 _wildGoal;
-    private bool   _wildHomeSet;
-    private bool   _wildHasGoal;
-    private bool   _wildLoiter;
+    private float2 _den;
+    private bool   _hasDen;
 
     public void InterruptCommand() => _runner?.Interrupt();
 

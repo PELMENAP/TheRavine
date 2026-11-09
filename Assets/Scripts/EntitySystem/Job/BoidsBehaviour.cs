@@ -8,6 +8,7 @@ using UnityEngine.SceneManagement;
 
 using TheRavine.Generator;
 using TheRavine.ObjectControl;
+using TheRavine.ViewControl;
 
 namespace TheRavine.EntityControl
 {
@@ -42,7 +43,6 @@ namespace TheRavine.EntityControl
         private float[] _flockTimers;
 
         private Transform _viewer;
-        private Camera _camera;
         private MapGenerator _map;
         private ObjectSystem _objects;
         private WindField _wind;
@@ -50,7 +50,9 @@ namespace TheRavine.EntityControl
         private bool _mapDirty;
 
         private BirdParams _params;
-        private quaternion _flipRotation;
+        private quaternion _flipRotation, _baseRotation;
+        private ViewFacing _appliedFacing;
+        private bool _rewriteRotations;
         private JobHandle _handle;
         private double _lastTime;
         private int _count;
@@ -101,7 +103,7 @@ namespace TheRavine.EntityControl
 
             _params = BirdParams.From(boidsInfo, SimulationRules.Active);
             _invCell = 1f / boidsInfo.CellSize;
-            _flipRotation = quaternion.RotateY(math.radians(boidsInfo.flipYaw));
+            ApplyViewRotations();
 
             ReleaseServices();
             AcquireServices();
@@ -216,7 +218,6 @@ namespace TheRavine.EntityControl
                 _mapDirty = true;
             }
             if (_wind is null && ServiceLocator.Services.TryGet(out WindField wind) && wind != null) _wind = wind;
-            if (_camera == null) _camera = Camera.main;
         }
 
         private void ReleaseServices()
@@ -225,7 +226,6 @@ namespace TheRavine.EntityControl
             _map = null;
             _objects = null;
             _wind = null;
-            _camera = null;
         }
 
         private void RebuildWorld(float2 viewer)
@@ -275,7 +275,7 @@ namespace TheRavine.EntityControl
                 _flip[i] = 0;
                 _frameKey[i] = -1;
 
-                _transforms[i].SetPositionAndRotation(p, Quaternion.identity);
+                _transforms[i].SetPositionAndRotation(p, _baseRotation);
             }
 
             _prevState.CopyFrom(_state);
@@ -299,15 +299,12 @@ namespace TheRavine.EntityControl
 
             TickFlocks(dt);
 
-            float3 camRight = new(1f, 0f, 0f);
-            float2 camForward = new(0f, 1f);
-            if (_camera != null)
-            {
-                Transform ct = _camera.transform;
-                camRight = ct.right;
-                Vector3 fwd = ct.forward;
-                camForward = math.normalizesafe(new float2(fwd.x, fwd.z), camForward);
-            }
+            ViewFacing facing = ViewOrientation.Facing;
+            if (facing != _appliedFacing) ApplyViewRotations();
+
+            int2 right = facing.Right();
+            float3 camRight = new(right.x, 0f, right.y);
+            float2 camForward = (float2)facing.Forward();
 
             float time = SimulationClock.Time;
             WindSampler wind = _wind != null
@@ -398,11 +395,22 @@ namespace TheRavine.EntityControl
                 Viewer = viewer,
                 CameraRight = camRight,
                 FlipRotation = _flipRotation,
-                IdentityRotation = quaternion.identity,
+                BaseRotation = _baseRotation,
+                RewriteRotations = _rewriteRotations,
                 Seed = seed * 747796405u + 2891336453u
             }.Schedule(_transformAccessArray, accel);
 
+            _rewriteRotations = false;
             _scheduled = true;
+        }
+
+        private void ApplyViewRotations()
+        {
+            _appliedFacing = ViewOrientation.Facing;
+            float yaw = math.radians(_appliedFacing.Yaw());
+            _baseRotation = quaternion.RotateY(yaw);
+            _flipRotation = quaternion.RotateY(yaw + math.radians(boidsInfo.flipYaw));
+            _rewriteRotations = true;
         }
 
         private void TickFlocks(float dt)

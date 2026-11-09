@@ -36,15 +36,18 @@ public sealed class ColonyFood
         _lastEcologyTime = now;
         if (dt > rules.EcologyMaxStep) dt = rules.EcologyMaxStep;
 
+        bool winter  = SeasonClock.IsWinter(now);
         float season = (1f + rules.SeasonAmplitude * SeasonClock.Value(now))
-                     * (SeasonClock.IsWinter(now) ? rules.WinterGrowthMul : 1f);
-        _index.TickEcology(dt, SimulationClock.TimeD, season, _maxFood, out float spawned, out float matured, out float spoiled,
-            out float soilReleased);
+                     * (winter ? rules.WinterGrowthMul : 1f);
+        _index.TickEcology(dt, SimulationClock.TimeD, season, _maxFood, winter, out float spawned, out float matured, out float spoiled,
+            out float soilReleased, out float wilted, out float soilStored);
         ref var flows = ref _ledger.Flows;
         flows.FoodSpawn      += spawned;
         flows.FoodMaturation += matured;
         flows.CorpseSpoil    += spoiled;
         flows.SoilRelease    += soilReleased;
+        flows.Wilt           += wilted;
+        flows.SoilReturn     += soilStored;
     }
 
     public void DropCorpse(EntityModel model, DeathCause cause)
@@ -67,7 +70,10 @@ public sealed class ColonyFood
         bool tainted = cause == DeathCause.Virus || cause == DeathCause.Toxic;
         int  taboo   = tainted && model.Colony != null ? model.Colony.ColonyId : 0;
         float body = model.BodyEnergy;
-        if (!_index.TryAddCorpse(model.DeathPosition, body, ref payload, infected, taboo))
-            _ledger.Flows.DeathLoss += body;
+        if (_index.TryAddCorpse(model.DeathPosition, body, ref payload, infected, taboo, true)) return;
+
+        var colony = model.Colony;
+        if (body > 0f && colony != null && colony.Nest != null) colony.Nest.Storage += body;
+        else _ledger.Flows.DeathLoss += body;
     }
 }

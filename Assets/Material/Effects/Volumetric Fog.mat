@@ -41,10 +41,10 @@ Material:
     - _Steps: 10
     m_Floats:
     - _AdditionalLightSelfShadowDistance: 3
-    - _Density: 0.26486135
+    - _Density: 0.010013697
     - _HeightMaskBlend: 0.99
     - _HeightMaskFalloff: 9.5
-    - _HeightMaskLength: 7.3469815
+    - _HeightMaskLength: 1.1985948
     - _HeightMaskOffset: 0
     - _HeightMaskRemapMax: 0.8
     - _HeightMaskRemapMin: 0.2
@@ -60,7 +60,7 @@ Material:
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _HeightMaskTextureAnimation: {r: 0.01, g: 0.02, b: 0, a: 0}
-    - _SelfShadowColor: {r: 0.1811322, g: 0.1811322, b: 0.1811322, a: 0.5882353}
+    - _SelfShadowColor: {r: 0.26415092, g: 0.26415092, b: 0.26415092, a: 0.7176471}
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

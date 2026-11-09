@@ -1,5 +1,4 @@
 using Unity.Netcode;
-using UnityEngine;
 
 public sealed class CurrencyNetworkComponent : NetworkBehaviour, IComponent
 {
@@ -22,11 +21,15 @@ public sealed class CurrencyNetworkComponent : NetworkBehaviour, IComponent
         _currencyComponent?.ApplyServerValue(CurrencyComponent.AccessToken, next);
     }
 
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void RequestUpdateRpc(int newValue)
+    public bool TryServerAdd(int delta)
     {
-        int clamped = Mathf.Max(0, newValue);
-        _networkCurrency.Value = clamped;
+        if (!IsServer) return false;
+
+        long next = (long)_networkCurrency.Value + delta;
+        if (next < 0 || next > int.MaxValue) return false;
+
+        _networkCurrency.Value = (int)next;
+        return true;
     }
 
     public void Dispose()

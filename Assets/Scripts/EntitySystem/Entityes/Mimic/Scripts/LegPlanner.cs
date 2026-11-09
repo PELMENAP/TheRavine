@@ -17,8 +17,8 @@ public class LegPlanner
     private void TrySpawnLegs(Mimic mimic)
     {
         Vector3 forward = mimic.Velocity.sqrMagnitude > 0.1f ? mimic.Velocity.normalized : mimic.transform.forward;
-        float randomAngle = Random.Range(-45f, 45f);
-        float randomDist = Random.Range(mimic.minLegDistance, mimic.maxLegDistance);
+        float randomAngle = RavineRandom.RangeFloat(-45f, 45f);
+        float randomDist = RavineRandom.RangeFloat(mimic.minLegDistance, mimic.maxLegDistance);
         
         Vector3 direction = Quaternion.Euler(0, randomAngle, 0) * forward;
         Vector3 newFootPos = mimic.legPlacerOrigin + direction * randomDist;
@@ -40,7 +40,7 @@ public class LegPlanner
 
         if (!tooClose)
         {
-            float lifeTime = Random.Range(mimic.minLegLifetime, mimic.maxLegLifetime);
+            float lifeTime = RavineRandom.RangeFloat(mimic.minLegLifetime, mimic.maxLegLifetime);
             for (int i = 0; i < mimic.partsPerLeg; i++)
             {
                 if (mimic.legCount >= mimic.maxLegs) return;
@@ -48,7 +48,7 @@ public class LegPlanner
                 LegData leg = mimic.Pool.Get();
                 if (leg == null) return;
 
-                float growCoef = Random.Range(mimic.minGrowCoef, mimic.maxGrowCoef);
+                float growCoef = RavineRandom.RangeFloat(mimic.minGrowCoef, mimic.maxGrowCoef);
                 leg.Activate(mimic, newFootPos, growCoef, lifeTime);
                 mimic.legCount++;
             }

@@ -86,7 +86,8 @@ namespace TheRavine.EntityControl
             var player = ServiceLocator.Players.GetAllPlayers()[0];
             cameraInput = new CameraInputController(
                 actions.GetActionFrom("Gameplay", "Camera Scroll"),
-                actions.GetActionFrom("Gameplay", "Camera Flip"),
+                actions.GetActionFrom("Gameplay", "Camera Rotate Right"),
+                actions.GetActionFrom("Gameplay", "Camera Rotate Left"),
                 player.GetEntityComponent<EventBusComponent>().EventBus);
             ServiceLocator.Register(cameraInput);
             cameraInput.Start();
@@ -94,12 +95,20 @@ namespace TheRavine.EntityControl
         private void FixedUpdate()
         {
             if(global == null) return;
-            for (int i = 0; i < global.Count; i++) global[i].UpdateEntityCycle();
+            for (int i = 0; i < global.Count; i++)
+                if (!global[i].IsDisposed) global[i].UpdateEntityCycle();
         }
 
         public void BreakUp(ISetAble.Callback callback)
         {
-            for (int i = 0; i < global.Count; i++) global[i].Dispose();
+            try
+            {
+                for (int i = 0; i < global.Count; i++) global[i].Dispose();
+            }
+            finally
+            {
+                global.Clear();
+            }
             if(boidsBehaviour != null) boidsBehaviour.DisableBoids();
             brokenUp = true;
             if (foodIndex != null) ServiceLocator.Services.Unregister(foodIndex);

@@ -10,4 +10,6 @@ public interface IInventoryItemInfo
     Sprite spriteIcon { get; }
     Sprite infoSprite { get; }
     GameObject prefab { get; }
+    SlotMask slotMask => SlotMask.Bag | SlotMask.Hotbar | SlotMask.Craft;
+    bool Accepts(SlotKind kind) => (slotMask & kind.ToMask()) != 0;
 }

@@ -138,6 +138,18 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float WarnDangerThreshold;
         public readonly float WarnedFleeSpeedMul;
         public readonly float SpeechRadius;
+        public readonly float SpeechLoudness;
+        public readonly float SpeechMinRadiusFraction;
+        public readonly float SpeechAttenuationExp;
+        public readonly float SpeechFreshSeconds;
+        public readonly float SpeechSyllableSeconds;
+        public readonly float SpeechCooldown;
+        public readonly float SpeechCreditWindow;
+        public readonly float SpeechCreditWeight;
+        public readonly float SpeechCreditBaselineAlpha;
+        public readonly float SpeechDecodeLossWeight;
+        public readonly bool SpeechMuteSampling;
+        public readonly float SpeechMuteFraction;
         public readonly float MovePauseMin;
         public readonly float MovePauseMax;
         public readonly float AttackMoveMaxDuration;
@@ -164,6 +176,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float EatSecondsPerEnergy;
         public readonly float CorpseMinEnergy;
         public readonly int CorpseSearchCells;
+        public readonly int CorpseFallbackCells;
         public readonly float CorpseSpoilTau;
         public readonly float CorpseBiteEnergy;
         public readonly float CorpseFallbackEnergy;
@@ -266,7 +279,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float JuvenileTime;
         public readonly float TetherRadius;
         public readonly float AlarmCryCooldown;
-        public readonly Vector4 AlarmCrySpeech;
+        public readonly int AlarmCryToken;
         public readonly float AlarmCryAmount;
         public readonly float ThreatMinDanger;
         public readonly float DashMul;
@@ -274,6 +287,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float DashRecovery;
         public readonly float DashEnergyCost;
         public readonly float AttackEnergyMin;
+        public readonly float AttackBudgetMargin;
         public readonly float FleeSprintDistance;
         public readonly int FleeZigzagLegs;
         public readonly float FleeZigzagCurvature;
@@ -312,6 +326,11 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float CasteScoutThreshold;
         public readonly float CasteNurseThreshold;
         public readonly float NurseLeash;
+        public readonly float NurseLeashRate;
+        public readonly float NurseryRadius;
+        public readonly float NurseryRate;
+        public readonly float TetherRate;
+        public readonly float NightHomeRate;
         public readonly float SoldierAttackMul;
         public readonly float SoldierHealthMul;
         public readonly float SoldierUpkeepMul;
@@ -402,8 +421,6 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float PredatorUpkeepMul;
         public readonly float PredatorSpawnDistance;
         public readonly float PredatorRespawnInterval;
-        public readonly float PredatorHungerOn;
-        public readonly float PredatorFleeHp;
         public readonly float TrophallaxisMinFill;
         public readonly float TrophallaxisHungerRelief;
         public readonly int RecruitCount;
@@ -487,11 +504,6 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float PlanArriveRadius;
         public readonly int PlanMaxHops;
         public readonly float LegTimeSlack;
-        public readonly float PredatorRoamDistance;
-        public readonly float PredatorHomeRange;
-        public readonly float PredatorLoiterMin;
-        public readonly float PredatorLoiterMax;
-        public readonly float PredatorRestSeconds;
         public readonly float CasteSwitchMargin;
         public readonly float ColonyRespawnDelay;
         public readonly int NegativePoiCount;
@@ -534,12 +546,24 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float RecombinationChance;
         public readonly float InfectionSelectionFloor;
         public readonly float InfectionTargetedAmp;
+        public readonly float HungerForageBias;
+        public readonly float HungerRestDrop;
+        public readonly float DietPlantFloor;
+        public readonly float DietMeatFloor;
+        public readonly float ScarcityMigrateBias;
+        public readonly float ScarcityForeignForageBias;
+        public readonly float ScoutVoteWeight;
+        public readonly int ScarcityChunkRadius;
+        public readonly float WinterWiltTau;
+        public readonly float SenescenceSpeedLoss;
+        public readonly float SenescenceDigestLoss;
+        public readonly float QuorumMigrateBias;
+        public readonly float UnreachableFoodSeconds;
         public readonly float[] PlanMinSecondsByPlan;
         public readonly float[] PlanMaxSecondsByPlan;
         public readonly float[] CasteAffinityLog;
         public readonly float[] UtilityWeights;
         public readonly int[]   PlanCasteDomain;
-        public readonly float4[] SpeechSignals;
         public readonly float[] BiomeFertilityTable;
         public readonly float[] BiomeToxicityTable;
 
@@ -685,6 +709,18 @@ public sealed partial class SimulationRules : ScriptableObject
             WarnDangerThreshold = r.warnDangerThreshold;
             WarnedFleeSpeedMul = r.warnedFleeSpeedMul;
             SpeechRadius = r.speechRadius;
+            SpeechLoudness = math.clamp(r.speechLoudness, 0, 255);
+            SpeechMinRadiusFraction = math.saturate(r.speechMinRadiusFraction);
+            SpeechAttenuationExp = math.max(r.speechAttenuationExp, 0f);
+            SpeechFreshSeconds = math.max(r.speechFreshSeconds, 1e-3f);
+            SpeechSyllableSeconds = math.max(r.speechSyllableSeconds, 1e-3f);
+            SpeechCooldown = math.max(r.speechCooldown, 0f);
+            SpeechCreditWindow = math.max(r.speechCreditWindow, 0f);
+            SpeechCreditWeight = r.speechCreditWeight;
+            SpeechCreditBaselineAlpha = math.saturate(r.speechCreditBaselineAlpha);
+            SpeechDecodeLossWeight = math.max(r.speechDecodeLossWeight, 0f);
+            SpeechMuteSampling = r.speechMuteSampling;
+            SpeechMuteFraction = math.saturate(r.speechMuteFraction);
             MovePauseMin = r.movePauseMin;
             MovePauseMax = r.movePauseMax;
             AttackMoveMaxDuration = r.attackMoveMaxDuration;
@@ -711,6 +747,7 @@ public sealed partial class SimulationRules : ScriptableObject
             EatSecondsPerEnergy = r.eatSecondsPerEnergy;
             CorpseMinEnergy = r.corpseMinEnergy;
             CorpseSearchCells = r.corpseSearchCells;
+            CorpseFallbackCells = r.corpseFallbackCells;
             CorpseSpoilTau = r.corpseSpoilTau;
             CorpseBiteEnergy = r.corpseBiteEnergy;
             CorpseFallbackEnergy = r.corpseFallbackEnergy;
@@ -813,7 +850,7 @@ public sealed partial class SimulationRules : ScriptableObject
             JuvenileTime = r.juvenileTime;
             TetherRadius = r.tetherRadius;
             AlarmCryCooldown = r.alarmCryCooldown;
-            AlarmCrySpeech = r.alarmCrySpeech;
+            AlarmCryToken = math.clamp(r.alarmCryToken, 0, SpeechVocab - 1);
             AlarmCryAmount = r.alarmCryAmount;
             ThreatMinDanger = r.threatMinDanger;
             DashMul = r.dashMul;
@@ -821,6 +858,7 @@ public sealed partial class SimulationRules : ScriptableObject
             DashRecovery = r.dashRecovery;
             DashEnergyCost = r.dashEnergyCost;
             AttackEnergyMin = r.attackEnergyMin;
+            AttackBudgetMargin = r.attackBudgetMargin;
             FleeSprintDistance = r.fleeSprintDistance;
             FleeZigzagLegs = r.fleeZigzagLegs;
             FleeZigzagCurvature = r.fleeZigzagCurvature;
@@ -859,6 +897,11 @@ public sealed partial class SimulationRules : ScriptableObject
             CasteScoutThreshold = r.casteScoutThreshold;
             CasteNurseThreshold = r.casteNurseThreshold;
             NurseLeash = r.nurseLeash;
+            NurseLeashRate = r.nurseLeashRate;
+            NurseryRadius = r.nurseryRadius;
+            NurseryRate = r.nurseryRate;
+            TetherRate = r.tetherRate;
+            NightHomeRate = r.nightHomeRate;
             SoldierAttackMul = r.soldierAttackMul;
             SoldierHealthMul = r.soldierHealthMul;
             SoldierUpkeepMul = r.soldierUpkeepMul;
@@ -949,8 +992,6 @@ public sealed partial class SimulationRules : ScriptableObject
             PredatorUpkeepMul = r.predatorUpkeepMul;
             PredatorSpawnDistance = r.predatorSpawnDistance;
             PredatorRespawnInterval = r.predatorRespawnInterval;
-            PredatorHungerOn = r.predatorHungerOn;
-            PredatorFleeHp = r.predatorFleeHp;
             TrophallaxisMinFill = r.trophallaxisMinFill;
             TrophallaxisHungerRelief = r.trophallaxisHungerRelief;
             RecruitCount = r.recruitCount;
@@ -1034,11 +1075,6 @@ public sealed partial class SimulationRules : ScriptableObject
             PlanArriveRadius = r.planArriveRadius;
             PlanMaxHops = r.planMaxHops;
             LegTimeSlack = r.legTimeSlack;
-            PredatorRoamDistance = r.predatorRoamDistance;
-            PredatorHomeRange = r.predatorHomeRange;
-            PredatorLoiterMin = r.predatorLoiterMin;
-            PredatorLoiterMax = r.predatorLoiterMax;
-            PredatorRestSeconds = r.predatorRestSeconds;
             CasteSwitchMargin = r.casteSwitchMargin;
             ColonyRespawnDelay = r.colonyRespawnDelay;
             NegativePoiCount = r.negativePoiCount;
@@ -1081,12 +1117,24 @@ public sealed partial class SimulationRules : ScriptableObject
             RecombinationChance = r.recombinationChance;
             InfectionSelectionFloor = r.infectionSelectionFloor;
             InfectionTargetedAmp = r.infectionTargetedAmp;
+            HungerForageBias = r.hungerForageBias;
+            HungerRestDrop = r.hungerRestDrop;
+            DietPlantFloor = r.dietPlantFloor;
+            DietMeatFloor = r.dietMeatFloor;
+            ScarcityMigrateBias = r.scarcityMigrateBias;
+            ScarcityForeignForageBias = r.scarcityForeignForageBias;
+            ScoutVoteWeight = r.scoutVoteWeight;
+            ScarcityChunkRadius = r.scarcityChunkRadius;
+            WinterWiltTau = r.winterWiltTau;
+            SenescenceSpeedLoss = r.senescenceSpeedLoss;
+            SenescenceDigestLoss = r.senescenceDigestLoss;
+            QuorumMigrateBias = r.quorumMigrateBias;
+            UnreachableFoodSeconds = r.unreachableFoodSeconds;
             PlanMinSecondsByPlan = r.FillPlanSeconds(r.planMinSecondsByPlan, r.planMinSeconds, PlanMinBuf);
             PlanMaxSecondsByPlan = r.FillPlanSeconds(r.planMaxSecondsByPlan, r.planMaxSeconds, PlanMaxBuf);
             CasteAffinityLog     = r.FillCasteAffinityLog();
             UtilityWeights       = r.FillUtilityWeights();
             PlanCasteDomain      = r.FillPlanCasteDomain();
-            SpeechSignals        = r.FillSpeechSignals();
             BiomeFertilityTable  = r.biomeFertility;
             BiomeToxicityTable   = r.biomeToxicity;
         }
@@ -1116,7 +1164,6 @@ public sealed partial class SimulationRules : ScriptableObject
     private static readonly float[] CasteAffinityLogBuf = new float[(int)Caste.Count * PlanCatalog.Count];
     private static readonly float[] UtilityWeightsBuf = new float[PlanCatalog.Count * UtilityFeatures.Count];
     private static readonly int[]   PlanCasteDomainBuf = new int[PlanCatalog.Count];
-    private static readonly float4[] SpeechSignalsBuf = new float4[SpeechSignal.Count];
 
     private float[] FillPlanSeconds(float[] source, float fallback, float[] target)
     {
@@ -1146,14 +1193,6 @@ public sealed partial class SimulationRules : ScriptableObject
         var t = PlanCasteDomainBuf;
         for (int i = 0; i < t.Length; i++)
             t[i] = planCasteDomain != null && i < planCasteDomain.Length ? planCasteDomain[i] : -1;
-        return t;
-    }
-
-    private float4[] FillSpeechSignals()
-    {
-        var t = SpeechSignalsBuf;
-        for (int i = 0; i < t.Length; i++)
-            t[i] = speechSignals != null && i < speechSignals.Length ? (float4)speechSignals[i] : float4.zero;
         return t;
     }
 
@@ -1204,7 +1243,14 @@ public sealed partial class SimulationRules : ScriptableObject
 
     public const float LearningRateFloor = 1e-6f;
     public const float MinAgentTickInterval = 1e-3f;
-    public const int   SpeechEncodeCacheSize = 64;
+    public const int   SpeechVocab = 16;
+    public const int   SpeechLen = 2;
+    public const int   SpeechInbox = 4;
+    public const int   SpeechTokenBits = 4;
+    public const int   SpeechContextBits = 6;
+    public const int   SpeechCreditRing = 256;
+    public const int   SpeechCreditListeners = 8;
+    private const int  SpeechLayoutCheck = 1 / (SpeechLen * SpeechTokenBits <= 16 && SpeechVocab == 1 << SpeechTokenBits && (SpeechInbox & (SpeechInbox - 1)) == 0 && SpeechContextBits <= 8 ? 1 : 0);
 
     private void OnValidate()
     {
@@ -1232,6 +1278,10 @@ public sealed partial class SimulationRules : ScriptableObject
         if (warmthBuckets < 1) warmthBuckets = 1;
         if (!(warmthDecayPerSecond >= 0f)) warmthDecayPerSecond = 0f;
         if (!(simulationLogIntervalSeconds >= 1f)) simulationLogIntervalSeconds = 1f;
+        if (!(nurseLeashRate >= 0f)) nurseLeashRate = 0f;
+        if (!(nurseryRate >= 0f)) nurseryRate = 0f;
+        if (!(tetherRate >= 0f)) tetherRate = 0f;
+        if (!(nightHomeRate >= 0f)) nightHomeRate = 0f;
     }
 
     private static SimulationRules _active;

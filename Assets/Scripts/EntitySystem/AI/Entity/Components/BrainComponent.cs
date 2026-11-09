@@ -47,6 +47,9 @@ public class BrainComponent : IComponent
     public void GiveReward(float reward, in BrainDecision decision) =>
         _brain.GiveReward(reward, in decision, Context);
 
+    public bool TryAddReward(float reward, in BrainDecision decision) =>
+        _brain.TryAddReward(reward, in decision, Context);
+
     public void CompleteDecision(in BrainDecision decision, float reward, float simTime, EntityCommandStatus status) =>
         _brain.CompleteDecision(in decision, reward, Context, simTime, status);
 

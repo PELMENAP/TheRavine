@@ -201,6 +201,9 @@ public class AudioService : MonoBehaviour
         return new PooledAudio { Source = src, Channel = channel };
     }
 
+    public AudioMixerGroup GetMixerGroup(AudioChannel channel)
+        => groupMap.TryGetValue(channel, out var group) ? group : null;
+
     public PooledAudio Play(AudioChannel channel, AudioPlayConfig config)
     {
         if (config.Clip == null) return null;

@@ -31,13 +31,21 @@ namespace TheRavine.Inventory
         private RavineLogger logger;
         private PlayerEntity player;
         private readonly Queue<PendingPlace> pendingPlaces = new();
-        private readonly HashSet<long> pendingPickUps = new();
+        private readonly Dictionary<(long Position, byte Level), PendingPickUp> pendingPickUps = new();
+        private readonly PickUpReservation pickUpReservation = new();
+
+        private struct PendingPickUp
+        {
+            public IInventoryItemInfo Info;
+            public int Amount;
+        }
 
         private struct PendingPlace
         {
             public UIInventorySlot Cell;
             public IInventoryItem Item;
             public long Position;
+            public byte Level;
         }
 
         public bool HasItem(InventoryItemInfo info) => 
@@ -50,12 +58,32 @@ namespace TheRavine.Inventory
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
             worldRegistry = ServiceLocator.GetService<WorldRegistry>();
 
-            var uiSlot = GetComponentsInChildren<UIInventorySlot>();
             var slotList = new List<UIInventorySlot>();
-            slotList.AddRange(uiSlot);
-            slotList.AddRange(activeCells);
+            var uiSlot = GetComponentsInChildren<UIInventorySlot>();
+            for (int i = 0; i < uiSlot.Length; i++) AddUniqueSlot(slotList, uiSlot[i]);
+            for (int i = 0; i < activeCells.Length; i++)
+            {
+                if (activeCells[i] == null) continue;
+                activeCells[i].SetKind(SlotKind.Hotbar);
+                AddUniqueSlot(slotList, activeCells[i]);
+            }
+            var craftCells = craftService.CraftCells;
+            for (int i = 0; i < craftCells.Count; i++)
+            {
+                if (craftCells[i] == null) continue;
+                craftCells[i].SetKind(SlotKind.Craft);
+                AddUniqueSlot(slotList, craftCells[i]);
+            }
+            if (craftService.ResultCell != null)
+            {
+                craftService.ResultCell.SetKind(SlotKind.CraftResult);
+                AddUniqueSlot(slotList, craftService.ResultCell);
+            }
 
-            eventDrivenInventoryProxy = new EventDrivenInventoryProxy(slotList.Count);
+            var kinds = new SlotKind[slotList.Count];
+            for (int i = 0; i < kinds.Length; i++) kinds[i] = slotList[i].Kind;
+
+            eventDrivenInventoryProxy = new EventDrivenInventoryProxy(kinds);
             ServiceLocator.Register(eventDrivenInventoryProxy);
             ServiceLocator.Register<IPlacementSource>(this);
 
@@ -69,16 +97,21 @@ namespace TheRavine.Inventory
 
     
 
-            uIDragger.SetUp(eventDrivenInventoryProxy, playerData.GetEntityComponent<MainComponent>());
+            uIDragger.SetUp(eventDrivenInventoryProxy, playerData.GetEntityComponent<MainComponent>(), playerData);
 
 
-            craftService.SetUp(infoManager, eventDrivenInventoryProxy);
+            craftService.SetUp(infoManager, eventDrivenInventoryProxy, playerData);
 
             eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce += OnInventoryStateChanged;
             
             LoadInventoryDataAsync(playerData).Forget();
 
             callback?.Invoke();
+        }
+
+        private static void AddUniqueSlot(List<UIInventorySlot> list, UIInventorySlot slot)
+        {
+            if (!list.Contains(slot)) list.Add(slot);
         }
 
         private async UniTaskVoid LoadInventoryDataAsync(PlayerEntity playerData)
@@ -137,6 +170,36 @@ namespace TheRavine.Inventory
         public bool HasPlaceableInActiveCell() =>
             TryGetActiveCell(out UIInventorySlot cell) && cell.slot.item.info.isPlaceable;
 
+        private ObjectInfo GetActivePlaceableInfo()
+        {
+            if (!TryGetActiveCell(out UIInventorySlot cell)) return null;
+            IInventoryItemInfo itemInfo = cell.slot.item.info;
+            if (!itemInfo.isPlaceable || itemInfo.prefab == null) return null;
+            return objectSystem.TryGetIdByPrefab(itemInfo.prefab, out int placeId) ? objectSystem.GetInfo(placeId) : null;
+        }
+
+        public int ActivePlaceableObjectId
+        {
+            get
+            {
+                ObjectInfo info = GetActivePlaceableInfo();
+                return info != null ? info.Id : -1;
+            }
+        }
+
+        public int ActivePlaceableLevels
+        {
+            get
+            {
+                ObjectInfo info = GetActivePlaceableInfo();
+                return info != null ? Mathf.Max(1, info.Levels) : 1;
+            }
+        }
+
+
+        public object ActivePlaceable =>
+            TryGetActiveCell(out UIInventorySlot cell) && cell.slot.item.info.isPlaceable ? cell.slot.item : null;
+
         private void PlaceObjectEvent(AEntity entity, PlaceEvent e)
         {
             if (!TryGetActiveCell(out UIInventorySlot cell)) return;
@@ -156,8 +219,8 @@ namespace TheRavine.Inventory
                 if (pending.Item == item) reserved++;
             if (reserved >= slot.amount) return;
 
-            if (player.RequestPlace(e.Position, placeId))
-                pendingPlaces.Enqueue(new PendingPlace { Cell = cell, Item = item, Position = e.Position });
+            if (player.RequestPlace(e.Position, placeId, e.Level))
+                pendingPlaces.Enqueue(new PendingPlace { Cell = cell, Item = item, Position = e.Position, Level = e.Level });
         }
 
         private void OnPlaceResult(AEntity entity, PlaceResultEvent e)
@@ -170,14 +233,12 @@ namespace TheRavine.Inventory
                 logger.LogInfo($"[UIInventory] Размещение в {Position2Int.UnpackToVector(e.Position)} отклонено: {(WorldEditResult)e.Edit}/{(PlacementResult)e.Placement}");
                 return;
             }
-            if (pending.Position != e.Position) return;
+            if (pending.Position != e.Position || pending.Level != e.Level) return;
 
             InventorySlot slot = pending.Cell.slot;
             if (slot == null || slot.item != pending.Item) return;
 
-            pending.Item.state.amount--;
-            if (slot.amount <= 0) slot.Clear();
-            pending.Cell.Refresh();
+            eventDrivenInventoryProxy.ConsumeFromSlot(this, slot, 1);
         }
 
         private void OnInventoryStateChanged(object sender)
@@ -188,20 +249,26 @@ namespace TheRavine.Inventory
 
         private void PickUpEvent(AEntity entity, PickUpEvent e)
         {
-            if (pendingPickUps.Contains(e.Position)) return;
-            if (!generator.TryGetObject(e.Position, out ObjectInstInfo objectInstInfo)) return;
+            if (pendingPickUps.ContainsKey((e.Position, e.Level))) return;
+            if (!generator.TryGetObject(e.Position, e.Level, out ObjectInstInfo objectInstInfo)) return;
 
             ObjectInfo data = objectSystem.GetInfo(objectInstInfo.PrefabID);
             if (data == null || data.InventoryItemInfo == null) return;
-            if (eventDrivenInventoryProxy.isFull && !HasItem(data.InventoryItemInfo)) return;
 
-            if (player.RequestPickUp(e.Position))
-                pendingPickUps.Add(e.Position);
+            IInventoryItemInfo info = data.InventoryItemInfo;
+            int amount = objectInstInfo.Amount;
+            if (!pickUpReservation.TryReserve(info, amount, eventDrivenInventoryProxy.FreeRoomFor(info))) return;
+
+            if (player.RequestPickUp(e.Position, e.Level))
+                pendingPickUps.Add((e.Position, e.Level), new PendingPickUp { Info = info, Amount = amount });
+            else
+                pickUpReservation.Release(info, amount);
         }
 
         private void OnPickUpResult(AEntity entity, PickUpResultEvent e)
         {
-            pendingPickUps.Remove(e.Position);
+            if (pendingPickUps.Remove((e.Position, e.Level), out PendingPickUp pendingPickUp))
+                pickUpReservation.Release(pendingPickUp.Info, pendingPickUp.Amount);
             if (!e.Ok) return;
 
             ObjectInfo data = objectSystem.GetInfo(e.PrefabId);
@@ -233,13 +300,16 @@ namespace TheRavine.Inventory
 
         public void BreakUp(ISetAble.Callback callback)
         {
+            inventoryInputHandler.UnregisterInput();
             uIDragger.BreakUp();
             craftService.BreakUp();
+            pendingPickUps.Clear();
+            pendingPlaces.Clear();
+            pickUpReservation.Clear();
 
             ServiceLocator.Services.Unregister<IPlacementSource>(this);
             eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce -= OnInventoryStateChanged;
             eventDrivenInventoryProxy.Dispose();
-            inventoryInputHandler.UnregisterInput();
 
             callback?.Invoke();
         }

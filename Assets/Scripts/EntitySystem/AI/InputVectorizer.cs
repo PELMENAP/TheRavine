@@ -41,7 +41,11 @@ public struct VectorizerFrame
     public float  ForeignViral;
     public float  IsLeader;
     public int    Caste;
-    public float4 Speech;
+    public float[] SpeechBag;
+    public float2 SpeechDir;
+    public float  SpeechDist;
+    public float  SpeechKin;
+    public float  SpeechAge;
     public int    MimickedAction;
     public double Now;
     public float[] PlanRewardEma;
@@ -58,7 +62,8 @@ public class InputVectorizer : IDisposable
     public const int StateOffset     = DirectionOffset + 10;
     public const int StateSlots      = 13;
     public const int TailOffset      = StateOffset + StateSlots;
-    public const int TailSlots       = 45;
+    public const int SpeechSlots     = SimulationRules.SpeechVocab + 5;
+    public const int TailSlots       = 41 + SpeechSlots;
     public const int PlanEmaOffset   = TailOffset + TailSlots;
     public const int SeasonOffset    = PlanEmaOffset + PlanCatalog.Count;
     public const int VectorSize      = SeasonOffset + 2;
@@ -139,10 +144,13 @@ public class InputVectorizer : IDisposable
         v[idx++] = math.saturate(f.InDanger);
         v[idx++] = math.saturate(f.TimeToBreed);
 
-        v[idx++] = f.Speech.x;
-        v[idx++] = f.Speech.y;
-        v[idx++] = f.Speech.z;
-        v[idx++] = f.Speech.w;
+        var bag = f.SpeechBag;
+        for (int t = 0; t < SimulationRules.SpeechVocab; t++) v[idx++] = bag != null ? bag[t] : 0f;
+        v[idx++] = f.SpeechDir.x;
+        v[idx++] = f.SpeechDir.y;
+        v[idx++] = f.SpeechDist;
+        v[idx++] = f.SpeechKin;
+        v[idx++] = f.SpeechAge;
 
         v[idx++] = f.NearestEntityDist >= 0f ? 1f - math.saturate(f.NearestEntityDist / MaxDetectionRadius) : 0f;
         v[idx++] = f.NearestFoodDist   >= 0f ? 1f - math.saturate(f.NearestFoodDist   / MaxDetectionRadius) : 0f;

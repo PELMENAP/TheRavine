@@ -12,21 +12,99 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36232c7ac27f177e8810571cc4703052, type: 3}
   m_Name: BigBirchMeshCollection
   m_EditorClassIdentifier: ObjectSystem::TreeMeshCollection
-  variants: []
-  lodCount: 1
+  variants:
+  - mesh: {fileID: 4300000, guid: 911e6806d7fc69f4b881ff37a8c4cb2c, type: 2}
+    perchRadius: 0
+    ranges:
+    - start: 0
+      count: 2781
+    - start: 9261
+      count: 1800
+    - start: 2781
+      count: 2907
+    - start: 11061
+      count: 1368
+    - start: 5688
+      count: 2007
+    - start: 12429
+      count: 996
+    - start: 7695
+      count: 1566
+    - start: 13425
+      count: 720
+    billboardBox: {x: 27.547653, y: 63.53082, z: 28.088884, w: 0.051712036}
+    billboardCell: 0
+  - mesh: {fileID: 4300000, guid: e28028e53e1635f4da0a9d7d5d1e5978, type: 2}
+    perchRadius: 0
+    ranges:
+    - start: 0
+      count: 2979
+    - start: 9603
+      count: 1800
+    - start: 2979
+      count: 3105
+    - start: 11403
+      count: 1476
+    - start: 6084
+      count: 2025
+    - start: 12879
+      count: 1080
+    - start: 8109
+      count: 1494
+    - start: 13959
+      count: 612
+    billboardBox: {x: 31.592402, y: 65.32003, z: 28.126759, w: 0.78028965}
+    billboardCell: 1
+  - mesh: {fileID: 4300000, guid: b483f264eb24b9442a1390cff6315da3, type: 2}
+    perchRadius: 0
+    ranges:
+    - start: 0
+      count: 3285
+    - start: 10074
+      count: 1800
+    - start: 3285
+      count: 3072
+    - start: 11874
+      count: 1500
+    - start: 6357
+      count: 2115
+    - start: 13374
+      count: 1140
+    - start: 8472
+      count: 1602
+    - start: 14514
+      count: 732
+    billboardBox: {x: 33.28189, y: 67.116714, z: 29.706888, w: 2.198944}
+    billboardCell: 2
+  - mesh: {fileID: 4300000, guid: ffd61e83ab74e904ab65ce61ccacb792, type: 2}
+    perchRadius: 0
+    ranges:
+    - start: 0
+      count: 2997
+    - start: 9285
+      count: 1800
+    - start: 2997
+      count: 2949
+    - start: 11085
+      count: 1512
+    - start: 5946
+      count: 1845
+    - start: 12597
+      count: 1092
+    - start: 7791
+      count: 1494
+    - start: 13689
+      count: 768
+    billboardBox: {x: 33.39903, y: 67.177284, z: 30.13549, w: -0.7974796}
+    billboardCell: 3
+  lodCount: 4
   ringLod: 0000000001000000020000000300000003000000
   billboardFromRing: 3
   farMaterials:
   - {fileID: 2100000, guid: dc096035af852e9419c5e4f9bca1623e, type: 2}
   - {fileID: 2100000, guid: 852aea451257a2d409b115380ec8c09d, type: 2}
   billboardMaterial: {fileID: 2100000, guid: a8be57eeb53178d46a7f31dd48189131, type: 2}
-  billboardAlbedo: {fileID: 0}
-  billboardNormal: {fileID: 0}
-  billboardPitch: 30
-  _entries:
-  - {fileID: 4300000, guid: 3601f34cc946850d4867a5f112778af1, type: 2}
-  - {fileID: 4300000, guid: a83f51cec544841c3b5eb5d75513a113, type: 2}
-  - {fileID: 4300000, guid: 75be62b166d896c6f8c89e98357331c0, type: 2}
-  - {fileID: 4300000, guid: e0885b47c8f41308b889e84a16bb3125, type: 2}
-  - {fileID: 4300000, guid: 5fc47efde0da03c65a71f5522cdb0e56, type: 2}
-  - {fileID: 4300000, guid: 678a35ee42a716b57979629efb34c18f, type: 2}
+  billboardAlbedo: {fileID: 2800000, guid: 2a2724ced00c97d41a0fe416f9045829, type: 3}
+  billboardNormal: {fileID: 2800000, guid: ccad82e59d008e4498b6816c5e2f514b, type: 3}
+  billboardPitch: 20
+  _entries: []

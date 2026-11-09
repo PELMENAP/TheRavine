@@ -17,6 +17,8 @@ public sealed class ColonyState : IDisposable
     public readonly int[] CasteCounts = new int[(int)Caste.Count];
     public int JuvenileCount;
     public readonly bool IsWild;
+    public float Scarcity;
+    public bool  QuorumReady { get; private set; }
 
     public float StorageEma;
     public float PopulationEma;
@@ -53,11 +55,12 @@ public sealed class ColonyState : IDisposable
 
     private float2[] _sitePos;
     private int[]    _siteVotes;
+    private float[]  _siteWeight;
     private double[] _siteUpdated;
     private int[]    _siteVoters;
     private int      _voterStride;
 
-    public void VoteNestSite(float2 position, int voterId)
+    public void VoteNestSite(float2 position, int voterId, float weight = 1f)
     {
         ref readonly var r = ref SimulationRules.Frame;
         double now = SimulationClock.TimeD;
@@ -66,7 +69,7 @@ public sealed class ColonyState : IDisposable
 
         for (int i = 0; i < _sitePos.Length; i++)
         {
-            if (_siteVotes[i] > 0 && now - _siteUpdated[i] > r.QuorumWindow) _siteVotes[i] = 0;
+            if (_siteVotes[i] > 0 && now - _siteUpdated[i] > r.QuorumWindow) { _siteVotes[i] = 0; _siteWeight[i] = 0f; }
             if (_siteVotes[i] == 0) { if (free < 0) free = i; continue; }
             if (_siteUpdated[i] < _siteUpdated[oldest]) oldest = i;
             if (math.distancesq(_sitePos[i], position) > merge2) continue;
@@ -80,17 +83,24 @@ public sealed class ColonyState : IDisposable
                 _siteVoters[baseIdx + votes] = voterId;
                 _sitePos[i] = math.lerp(_sitePos[i], position, 1f / (votes + 1));
                 _siteVotes[i] = votes + 1;
+                _siteWeight[i] += weight;
             }
             _siteUpdated[i] = now;
+            RefreshQuorum();
             return;
         }
 
         int slot = free >= 0 ? free : oldest;
         _sitePos[slot]     = position;
         _siteVotes[slot]   = 1;
+        _siteWeight[slot]  = weight;
         _siteUpdated[slot] = now;
         _siteVoters[slot * _voterStride] = voterId;
+        RefreshQuorum();
     }
+
+    public void RefreshQuorum()
+        => QuorumReady = !IsWild && TryGetQuorumSite(out float2 site) && !Nest.Contains(site);
 
     public bool TryGetQuorumSite(out float2 site)
     {
@@ -99,8 +109,8 @@ public sealed class ColonyState : IDisposable
         int best = -1;
         for (int i = 0; i < _sitePos.Length; i++)
         {
-            if (_siteVotes[i] < math.max(r.QuorumSize, 1) || now - _siteUpdated[i] > r.QuorumWindow) continue;
-            if (best < 0 || _siteVotes[i] > _siteVotes[best]) best = i;
+            if (_siteWeight[i] < math.max(r.QuorumSize, 1) || now - _siteUpdated[i] > r.QuorumWindow) continue;
+            if (best < 0 || _siteWeight[i] > _siteWeight[best]) best = i;
         }
         site = best >= 0 ? _sitePos[best] : default;
         return best >= 0;
@@ -110,15 +120,17 @@ public sealed class ColonyState : IDisposable
     {
         get
         {
-            int m = 0;
-            for (int i = 0; i < _siteVotes.Length; i++) m = math.max(m, _siteVotes[i]);
-            return m;
+            float m = 0f;
+            for (int i = 0; i < _siteWeight.Length; i++) m = math.max(m, _siteWeight[i]);
+            return (int)m;
         }
     }
 
     private void ClearSites()
     {
         Array.Clear(_siteVotes, 0, _siteVotes.Length);
+        Array.Clear(_siteWeight, 0, _siteWeight.Length);
+        QuorumReady = false;
     }
 
     public void SetLeader(EntityModel leader)
@@ -154,6 +166,7 @@ public sealed class ColonyState : IDisposable
         _voterStride = math.max(rules.QuorumSize, 1) * 2;
         _sitePos     = new float2[sites];
         _siteVotes   = new int[sites];
+        _siteWeight  = new float[sites];
         _siteUpdated = new double[sites];
         _siteVoters  = new int[sites * _voterStride];
         _registry = registry;

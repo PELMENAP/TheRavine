@@ -1,11 +1,8 @@
 using UnityEngine;
-using Cysharp.Threading.Tasks;
-using System.Threading;
 
 using TheRavine.EntityControl;
 
-public class EntityViewModel : AEntityViewModel, IEntityMotor,
-    IDialogListener, IDialogSender, IEntityDialogHost, IEntityDeathHandler, IEntityAudio
+public class EntityViewModel : AEntityViewModel, IEntityMotor, IEntityDeathHandler
 {
     [SerializeField] private SurfaceMotor motor;
     public void BindMotion(MotionSystem system) => motor.BindMotion(system);
@@ -26,18 +23,8 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
     {
         if (!_destroyed) _lastPosition = _tr.position;
         _destroyed = true;
-        DialogSystem.Instance.RemoveDialogListener(this);
         gameObject.SetActive(false);
         Destroy(gameObject);
-    }
-
-    [SerializeField] private StringToAudioGenerator audioGenerator;
-
-    public async UniTask PlaySpeechAsync(string speech, float health, float energy, float danger,
-        float timeToBreed, int lastAction, float nearestEnemyDist, CancellationToken ct)
-    {
-        await audioGenerator.PlayFromStringAsync(speech, health, energy, danger, timeToBreed,
-            lastAction, nearestEnemyDist, 1, 1, ct);
     }
 
     public Vector3 Position()
@@ -61,20 +48,5 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor,
     protected override void OnViewEnable() { }
     protected override void OnViewDisable() { }
 
-    public float GetDialogDistance() => 20f;
-    public Vector3 GetCurrentPosition() => Position();
-    public void OnSpeechGet(IDialogSender sender, string message)
-    {
-        if (sender is EntityViewModel) return;
-        ((EntityModel)Entity).Speech.ReceiveSpeech(message);
-    }
-    public void OnDialogGetRequire() { }
     public override void OnNetworkSpawn() { }
-
-    private void OnEnable()  => DialogSystem.Instance.AddDialogListener(this);
-    private void OnDisable() => DialogSystem.Instance.RemoveDialogListener(this);
-
-    public void RegisterDialog(IDialogListener l)   => DialogSystem.Instance.AddDialogListener(l);
-    public void UnregisterDialog(IDialogListener l)  => DialogSystem.Instance.RemoveDialogListener(l);
-    public void UpdateDialogPosition(IDialogListener l) => DialogSystem.Instance.UpdateListenerPosition(l);
 }

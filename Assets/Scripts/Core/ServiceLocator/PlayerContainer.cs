@@ -56,12 +56,15 @@ public class PlayerContainer
         if (player == null || !_players.Contains(player))
             return false;
 
-        var mainComponent = player.GetEntityComponent<MainComponent>();
-        var clientId = mainComponent.GetClientID();
         var displayName = GetPlayerDisplayName(player);
 
         _players.Remove(player);
-        _playersByClientId.Remove(clientId);
+        foreach (var kvp in _playersByClientId)
+        {
+            if (kvp.Value != player) continue;
+            _playersByClientId.Remove(kvp.Key);
+            break;
+        }
         
         if (!string.IsNullOrEmpty(displayName))
             _playersByDisplayName.Remove(displayName);

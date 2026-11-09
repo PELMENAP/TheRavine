@@ -1,6 +1,4 @@
 using UnityEngine;
-using Unity.Mathematics;
-using TheRavine.Extensions;
 using TheRavine.Generator;
 
 [RequireComponent(typeof(IVelocitySource))]
@@ -45,22 +43,10 @@ public class Mimic : MonoBehaviour
 
     [SerializeField] private MonoBehaviour velocitySourceBehaviour;
 
-    [Header("Leg LOD")]
-    [SerializeField] private int lodMidRing = 1;
-    [SerializeField] private int lodFarRing = 2;
-    [SerializeField] private int lodRecheckFrames = 15;
-    [SerializeField] private int lodMidStride = 2;
-    [SerializeField] private int lodFarStride = 4;
-    [SerializeField] private int lodMidVertices = 4;
-    [SerializeField] private int lodFarVertices = 3;
+    [Header("Mesh")]
+    [SerializeField, Range(0.1f, 1f)] private float meshQuality = 1f;
 
-    private long lodChunk = long.MinValue;
-    private int lodFrames;
-
-    public int Lod { get; private set; }
-    public int LodStride => Lod == 0 ? 1 : Lod == 1 ? lodMidStride : lodFarStride;
-    public int LodRingVertices => Lod == 0 ? verticeCount : Lod == 1 ? lodMidVertices : lodFarVertices;
-    public bool LodNormalsPerFrame => Lod < 2;
+    public float MeshQuality => meshQuality;
     private IVelocitySource velocitySource;
 
     public Vector3 Velocity { get; private set; }
@@ -69,6 +55,7 @@ public class Mimic : MonoBehaviour
     private Vector3 lastForward = Vector3.forward;
 
     private bool _phenotypeApplied;
+    private bool _structuresReady;
 
     private void Awake()
     {
@@ -86,16 +73,16 @@ public class Mimic : MonoBehaviour
         if (!_phenotypeApplied)
             ApplyGeneticPhenotype(GeneticParameters.Default);
 
-        InitializeStructures();
+        maxLegs = numberOfLegs * partsPerLeg;
+        minimumAnchoredParts = minimumAnchoredLegs * partsPerLeg;
+        maxLegDistance = newLegRadius * 2.1f;
 
         MapGenerator = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
     }
 
     private void InitializeStructures()
     {
-        maxLegs = numberOfLegs * partsPerLeg;
-        minimumAnchoredParts = minimumAnchoredLegs * partsPerLeg;
-        maxLegDistance = newLegRadius * 2.1f;
+        _structuresReady = true;
 
         Pool = new LegPool(maxLegs, legResolution);
         planner = new LegPlanner();
@@ -103,8 +90,15 @@ public class Mimic : MonoBehaviour
         legRenderer = new LegRenderer();
         legRenderer.Initialize(this);
     }
+
+    private void OnDestroy()
+    {
+        legRenderer?.Dispose();
+    }
+
     private void Update()
     {
+        if (!_structuresReady) InitializeStructures();
         if (MapGenerator == null || velocitySource == null) return;
 
         Velocity = velocitySource.Velocity;
@@ -115,20 +109,6 @@ public class Mimic : MonoBehaviour
 
         planner.Update(this, Time.deltaTime);
         animator.Update(this, Time.deltaTime);
-        RefreshLod();
         legRenderer.UpdateMesh(this);
-    }
-
-    private void RefreshLod()
-    {
-        Vector3 p = transform.position;
-        long chunk = MapGenerator.WorldToChunk(Position2Int.Pack((int)math.floor(p.x), (int)math.floor(p.z)));
-        if (chunk == lodChunk && ++lodFrames < lodRecheckFrames) return;
-
-        lodChunk = chunk;
-        lodFrames = 0;
-
-        int ring = MapGenerator.RingOfChunk(chunk);
-        Lod = ring < 0 || ring >= lodFarRing ? 2 : ring >= lodMidRing ? 1 : 0;
     }
 }

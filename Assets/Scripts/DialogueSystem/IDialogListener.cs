@@ -2,6 +2,6 @@ using UnityEngine;
 
 public interface IDialogListener
 {
-    void OnSpeechGet(IDialogSender sender, string message);
+    void OnSpeechGet(Vector3 position, string label);
     Vector3 GetCurrentPosition();
 }

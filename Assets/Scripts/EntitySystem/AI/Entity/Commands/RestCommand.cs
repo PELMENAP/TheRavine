@@ -10,7 +10,7 @@ public class RestCommand : EntityCommand
 
     protected override EntityCommandStatus OnBegin()
     {
-        if (model.IsHungry) return Fail(SimulationRules.Active.InfeasibleActionReward);
+        if (model.RestBlockedByHunger) return Fail(SimulationRules.Active.InfeasibleActionReward);
         model.Motor.Stop();
         _prev   = SimulationClock.TimeD;
         _rested = 0f;
@@ -21,7 +21,7 @@ public class RestCommand : EntityCommand
     {
         var r     = SimulationRules.Active;
         var stats = model.Stats;
-        if (model.IsHungry) return Fail(r.InfeasibleActionReward);
+        if (model.RestBlockedByHunger) return Fail(r.InfeasibleActionReward);
 
         double end = decision.EndTime;
         double t   = math.min(SimulationClock.TimeD, end);

@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 
+using TheRavine.Base;
 public sealed class SimulationLog : IDisposable
 {
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
@@ -25,7 +26,18 @@ public sealed class SimulationLog : IDisposable
     private const int OffAttacks        = OffRelocations + 1;
     private const int OffHarm           = OffAttacks + AttackCount;
     private const int OffWarmth         = OffHarm + 1;
-    private const int Stride            = OffWarmth + 1;
+    private const int OffAttackFails    = OffWarmth + 1;
+    private const int AttackFailCount   = 4;
+    private const int OffSourceStarts   = OffAttackFails + AttackFailCount;
+
+    private static readonly EntityAction[] SourceActions =
+    {
+        EntityAction.Flee, EntityAction.Attack, EntityAction.ApproachFood, EntityAction.Wander,
+        EntityAction.ReturnNest, EntityAction.Eat, EntityAction.Rest,
+    };
+
+    private static readonly int OffPlanKinds = OffSourceStarts + SourceActions.Length * SourceCount;
+    private static readonly int Stride = OffPlanKinds + PlanCatalog.Count * 2;
 
     private const int ResidualColumns = 8;
 
@@ -50,6 +62,10 @@ public sealed class SimulationLog : IDisposable
         ("flow_rest_heal",         f => f.RestHeal),
         ("flow_corpse_spoil",      f => f.CorpseSpoil),
         ("flow_death_loss",        f => f.DeathLoss),
+        ("flow_yield_loss",        f => f.YieldLoss),
+        ("flow_overflow_loss",     f => f.OverflowLoss),
+        ("flow_store_loss",        f => f.StoreLoss),
+        ("flow_wilt",              f => f.Wilt),
         ("flow_soil_release",      f => f.SoilRelease),
         ("flow_warmth_draw",       f => f.WarmthDraw),
         ("flow_warmth_decay",      f => f.WarmthDecay),
@@ -152,7 +168,11 @@ public sealed class SimulationLog : IDisposable
         {
             WriteCommon(time, season, winter, night, "world", -1, alive, _world, 0, worldLifespan, fill * inv, rest * inv, storage * inv);
             WriteWorldOnly(ledger, evolution, residual);
+            WriteAttackFails(_world, 0);
+            WriteWorldDiagnostics(colonies, n);
+            WritePlanKinds(_world, 0);
             _writer.WriteLine();
+            ledger?.ResetWindow();
 
             for (int c = 0; c < n; c++)
             {
@@ -162,6 +182,9 @@ public sealed class SimulationLog : IDisposable
                 WriteCommon(time, season, winter, night, "colony", colony.ColonyId, colony.MemberCount, _delta, c * Stride,
                     _deltaLifespan[c], s.MeanFill, s.RestAtNestShare, s.StorageShare);
                 _writer.Write(WorldOnlyPlaceholder);
+                WriteAttackFails(_delta, c * Stride);
+                WriteColonyDiagnostics(colony);
+                WritePlanKinds(_delta, c * Stride);
                 _writer.WriteLine();
             }
             _writer.Flush();
@@ -192,11 +215,11 @@ public sealed class SimulationLog : IDisposable
         WriteComma();
         WriteFloat(evolution != null ? evolution.AvgEntropy : 0f);
 
-        EnergyFlows last = ledger != null ? ledger.Last : default;
+        EnergyFlows window = ledger != null ? ledger.Window : default;
         for (int i = 0; i < FlowColumns.Length; i++)
         {
             WriteComma();
-            WriteFloat(FlowColumns[i].Get(last));
+            WriteFloat(FlowColumns[i].Get(window));
         }
 
         WriteComma();
@@ -251,6 +274,91 @@ public sealed class SimulationLog : IDisposable
         for (int i = 0; i < AttackCount; i++) dst[OffAttacks + i] = s.Attacks[i];
         dst[OffHarm]   = s.ForeignHarmTicks;
         dst[OffWarmth] = s.WarmthDrawTicks;
+        dst[OffAttackFails]     = s.AttackFailNoTarget;
+        dst[OffAttackFails + 1] = s.AttackFailTargetLost;
+        dst[OffAttackFails + 2] = s.AttackFailLowEnergy;
+        dst[OffAttackFails + 3] = s.AttackFailLurkTimeout;
+        for (int p = 0; p < PlanCatalog.Count; p++)
+        {
+            dst[OffPlanKinds + p * 2]     = s.PlansStarted[p];
+            dst[OffPlanKinds + p * 2 + 1] = s.PlansCompleted[p];
+        }
+        for (int k = 0; k < SourceActions.Length; k++)
+        {
+            int action = (int)SourceActions[k];
+            for (int i = 0; i < SourceCount; i++)
+                dst[OffSourceStarts + k * SourceCount + i] = s.ActionsStartedBySource[action * SourceCount + i];
+        }
+    }
+
+    private void WriteColonyDiagnostics(ColonyState colony)
+    {
+        var s = colony.Stats;
+        WriteComma();
+        WriteFloat(colony.Scarcity);
+        WriteComma();
+        WriteFloat(colony.Nest.Hunger);
+        WriteComma();
+        WriteFloat(colony.IsWild ? 0f : colony.Nest.MigrationPressure);
+        WriteComma();
+        WriteFloat(colony.SiteVotesMax);
+        WriteComma();
+        WriteFloat(s.DietMean);
+        WriteComma();
+        WriteFloat(s.GhrelinMean);
+        WriteComma();
+        WriteFloat(s.HungryShare);
+    }
+
+    private void WriteWorldDiagnostics(ColonyRegistry colonies, int n)
+    {
+        float scarcity = 0f, hunger = 0f, pressure = 0f, quorum = 0f, diet = 0f, ghrelin = 0f, hungry = 0f;
+        int civil = 0, all = 0;
+        for (int c = 0; c < n; c++)
+        {
+            var colony = colonies[c];
+            int m = colony.MemberCount;
+            if (m <= 0) continue;
+            var s = colony.Stats;
+            diet    += s.DietMean * m;
+            ghrelin += s.GhrelinMean * m;
+            hungry  += s.HungryShare * m;
+            all     += m;
+            if (colony.IsWild) continue;
+            scarcity += colony.Scarcity * m;
+            hunger   += colony.Nest.Hunger * m;
+            pressure  = Math.Max(pressure, colony.Nest.MigrationPressure);
+            quorum    = Math.Max(quorum, colony.SiteVotesMax);
+            civil    += m;
+        }
+        float invCivil = civil > 0 ? 1f / civil : 0f;
+        float invAll   = all > 0 ? 1f / all : 0f;
+        WriteComma();
+        WriteFloat(scarcity * invCivil);
+        WriteComma();
+        WriteFloat(hunger * invCivil);
+        WriteComma();
+        WriteFloat(pressure);
+        WriteComma();
+        WriteFloat(quorum);
+        WriteComma();
+        WriteFloat(diet * invAll);
+        WriteComma();
+        WriteFloat(ghrelin * invAll);
+        WriteComma();
+        WriteFloat(hungry * invAll);
+    }
+
+    private void WritePlanKinds(int[] d, int o)
+    {
+        for (int i = 0; i < PlanCatalog.Count * 2; i++) WriteNext(d[o + OffPlanKinds + i]);
+    }
+
+    private void WriteAttackFails(int[] d, int o)
+    {
+        for (int i = 0; i < AttackFailCount; i++) WriteNext(d[o + OffAttackFails + i]);
+        int sourceColumns = SourceActions.Length * SourceCount;
+        for (int i = 0; i < sourceColumns; i++) WriteNext(d[o + OffSourceStarts + i]);
     }
 
     private void WriteCommon(float time, float season, bool winter, bool night, string scope, int colonyId, int alive,
@@ -336,6 +444,20 @@ public sealed class SimulationLog : IDisposable
         sb.Append(",ledger_residual,fitness_p10,fitness_p50,fitness_p90,fitness_max,fitness_outliers,avg_fitness,avg_entropy");
         for (int i = 0; i < FlowColumns.Length; i++) sb.Append(',').Append(FlowColumns[i].Name);
         for (int i = 0; i < StockColumns.Length; i++) sb.Append(',').Append(StockColumns[i]);
+        sb.Append(",attack_fail_no_target,attack_fail_target_lost,attack_fail_low_energy,attack_fail_lurk_timeout");
+        string[] sources = Enum.GetNames(typeof(CommandSource));
+        for (int k = 0; k < SourceActions.Length; k++)
+        {
+            string name = SnakeCase(SourceActions[k].ToString());
+            for (int i = 0; i < SourceCount; i++)
+                sb.Append(',').Append(name).Append("_started_").Append(SnakeCase(sources[i]));
+        }
+        sb.Append(",scarcity,nest_hunger,migration_pressure,quorum_weight,diet_mean,ghrelin_mean,hungry_share");
+        for (int p = 0; p < PlanCatalog.Count; p++)
+        {
+            string name = SnakeCase(PlanCatalog.Names[p]);
+            sb.Append(",plan_").Append(name).Append("_started,plan_").Append(name).Append("_completed");
+        }
         return sb.ToString();
     }
 

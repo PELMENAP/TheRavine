@@ -10,6 +10,7 @@ namespace TheRavine.Generator
     public struct HydraulicErosionJob : IJob
     {
         [ReadOnly] public uint seed;
+        [ReadOnly] public int epochIndex;
         [ReadOnly] public ErosionSettings settings;
         public NativeArray<float> heightMap, deltaMap;
 
@@ -17,7 +18,8 @@ namespace TheRavine.Generator
 
         public void Execute()
         {
-            Random rng = new(math.max(seed, 1));
+            uint epochSeed = math.hash(new uint2(seed, (uint)epochIndex));
+            Random rng = new(math.max(epochSeed, 1));
 
             for (int i = 0; i < deltaMap.Length; i++)
             {
@@ -131,7 +133,7 @@ namespace TheRavine.Generator
                     if (!settings.allowInfiniteErosionDepth)
                     {
                         float minAllowedHeight = -0.5f; 
-                        float maxRemove = math.max(0f, (currentHeight + deltaMap[idx]) - minAllowedHeight);
+                        float maxRemove = math.max(0f, currentHeight - minAllowedHeight);
                         float remove = math.min(amount * w, maxRemove);
                         deltaMap[idx] -= remove;
                     }

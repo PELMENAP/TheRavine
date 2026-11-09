@@ -17,7 +17,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float shareFoodVictimRatio = 0.8f;
     [SerializeField] private float starvedHungerRise = 0.2f;
     [SerializeField] private float corpseDangerMark = 2f;
-    [SerializeField] private float carryFullFraction = 0.9f;
+    [SerializeField] private float carryFullFraction = 0.5f;
     [SerializeField] private float satedPauseMul = 1.8f;
     [SerializeField] private float mapShareThreshold = 0.3f;
     [SerializeField] private float storeFoodReward = 0.5f;
@@ -56,8 +56,8 @@ public sealed partial class SimulationRules
     [SerializeField] private float wellFedDecayPerSecond = 0.02f;
     [SerializeField] private float wellFedBasalReduction = 0.3f;
     [SerializeField] private float restAfterEatDigestMul = 1.5f;
-    [SerializeField] private float nightStart = 0.75f;
-    [SerializeField] private float nightEnd = 0.25f;
+    [SerializeField] private float nightStart = 0.85f;
+    [SerializeField] private float nightEnd = 0.15f;
     [SerializeField] private float nightOutsideDrainMul = 1.5f;
     [SerializeField] private float foodMinNutritionFraction = 0.3f;
     [SerializeField] private float foodMaturityPerSecond = 0.01f;
@@ -82,6 +82,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float eatSecondsPerEnergy = 0.05f;
     [SerializeField] private float corpseMinEnergy = 2f;
     [SerializeField] private int corpseSearchCells = 3;
+    [SerializeField] private int corpseFallbackCells = 8;
     [SerializeField] private float corpseSpoilTau = 120f;
     [SerializeField] private float corpseBiteEnergy = 6f;
     [SerializeField] private float corpseFallbackEnergy = 12f;
@@ -89,6 +90,12 @@ public sealed partial class SimulationRules
     [SerializeField] private float carryPoiThreshold = 0.2f;
     [SerializeField] private float[] biomeFertility = { 1f, 0.6f, 0.3f, 1.2f };
     [SerializeField] private float[] biomeToxicity  = { 0.02f, 0.08f, 0.25f, 0.04f };
+    [SerializeField] private float hungerForageBias = 2f;
+    [SerializeField] private float hungerRestDrop = 3f;
+    [SerializeField] private float dietPlantFloor = 0.4f;
+    [SerializeField] private float dietMeatFloor = 0.4f;
+    [SerializeField] private float winterWiltTau = 120f;
+    [SerializeField] private float unreachableFoodSeconds = 120f;
 
     public float EatEnergyFood => eatEnergyFood;
     public int FoodRegenBurst => foodRegenBurst;
@@ -164,9 +171,16 @@ public sealed partial class SimulationRules
     public float EatSecondsPerEnergy => eatSecondsPerEnergy;
     public float CorpseMinEnergy => corpseMinEnergy;
     public int CorpseSearchCells => corpseSearchCells;
+    public int CorpseFallbackCells => corpseFallbackCells;
     public float CorpseSpoilTau => corpseSpoilTau;
     public float CorpseBiteEnergy => corpseBiteEnergy;
     public float CorpseFallbackEnergy => corpseFallbackEnergy;
     public float CarrySpeedMul => carrySpeedMul;
     public float CarryPoiThreshold => carryPoiThreshold;
+    public float HungerForageBias => hungerForageBias;
+    public float HungerRestDrop => hungerRestDrop;
+    public float DietPlantFloor => dietPlantFloor;
+    public float DietMeatFloor => dietMeatFloor;
+    public float WinterWiltTau => winterWiltTau;
+    public float UnreachableFoodSeconds => unreachableFoodSeconds;
 }

@@ -37,6 +37,13 @@ namespace TheRavine.EntityControl
             JumpRequested = true;
         }
 
+        public void Cancel()
+        {
+            isCharging = false;
+            JumpRequested = false;
+            ChargeNormalized = 0f;
+        }
+
         public void ConsumeJump()
         {
             JumpRequested = false;

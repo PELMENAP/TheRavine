@@ -92,8 +92,8 @@ All ratios are computed inside one window, from the deltas of one row.
 | `<action>_interrupted` | both | commands | Δ `ColonyStats.ActionsInterrupted[action]`, one per action in enum order, after `<action>_failed`. A command that is cancelled by a higher-priority reflex, a plan change or a watchdog ends here. Started = completed + failed + interrupted + still running at the sample |
 | `night` | both | 0/1 | `CreatureCore.IsNightPhase(DayPhase, RulesFrame)` at the sample time. A snapshot, not a window share |
 | `ledger_residual` | world | energy | Δ of `EnergyLedger.ResidualSum` over the window. Non-zero means energy that the flows do not explain |
-| `flow_<name>` | world | energy | Window flow from `EnergyLedger.Last`, one column per `EnergyFlows` field in declaration order (`flow_food_spawn` … `flow_metabolism_credit`) |
-| `flow_inflow`, `flow_outflow` | world | energy | `EnergyFlows.Inflow` and `EnergyFlows.Outflow` of the window |
+| `flow_<name>` | world | energy | Sum over the log window from `EnergyLedger.Window`: every ecology sample (`EcologyTickInterval`) adds its `Last` into `Window`, the log resets it after the world row. One column per `EnergyFlows` field in declaration order (`flow_food_spawn` … `flow_metabolism_credit`) |
+| `flow_inflow`, `flow_outflow` | world | energy | `EnergyFlows.Inflow` and `EnergyFlows.Outflow` of `EnergyLedger.Window`, summed over the log window |
 | `stock_entities` | world | energy | Snapshot of `EnergyLedger.StockEntities`: body energy of living creatures |
 | `stock_nest` | world | energy | Snapshot of `EnergyLedger.StockNest`: nest storage of all colonies |
 | `stock_food` | world | energy | Snapshot of `EnergyLedger.StockFood`: energy of food chunks. This is the food supply the creatures can reach |
@@ -110,3 +110,28 @@ Metrics added with these columns:
 | food per creature in stock | `stock_food / alive` (world row) |
 | energy residual share | `ledger_residual / flow_outflow` (world row) |
 | unexplained growth share | `(stock_total − stock_total_prev − flow_inflow + flow_outflow) / flow_outflow` (world row) |
+
+## Columns added in revision 3
+
+The four columns are appended at the end of every row, after `stock_total`, so no earlier column changes position. They are written in both scopes: in colony rows they follow the empty world-only columns.
+
+| Column | Scope | Unit | Meaning and computation |
+|---|---|---|---|
+| `attack_fail_no_target` | both | commands | Δ `ColonyStats.AttackFailNoTarget`: the attack began without a valid hunt target (`AttackCommand.OnBegin`) |
+| `attack_fail_target_lost` | both | commands | Δ `ColonyStats.AttackFailTargetLost`: the target became invalid during the command (outside the lurk check below), or was invalid at the strike |
+| `attack_fail_low_energy` | both | commands | Δ `ColonyStats.AttackFailLowEnergy`: energy below the chase budget at the start (`AttackCommand.EnergyBudget`), or below `AttackEnergyCost` at the strike |
+| `attack_fail_lurk_timeout` | both | commands | Δ `ColonyStats.AttackFailLurkTimeout`: the ambush lurk ended in failure because the target left `DetectionRadius` before the trigger distance was reached. A lurk that times out (`AmbushMaxHold` × patience) with the target still in range completes and is not counted in any failure column |
+
+Every `Failed` status of `AttackCommand` records exactly one of the four reasons, so per window `attack_fail_no_target + attack_fail_target_lost + attack_fail_low_energy + attack_fail_lurk_timeout = attack_failed`, up to commands that straddle a window boundary.
+
+## Columns added in revision 4
+
+| Column | Scope | Unit | Meaning and computation |
+|---|---|---|---|
+| `<action>_started_brain`, `<action>_started_instinct`, `<action>_started_plan` | both | commands | Δ `ColonyStats.ActionsStartedBySource[action × CommandSource.Count + source]`, counted in `EntityCommandRunner.Start`. Actions, in column order: `flee`, `attack`, `approach_food`, `wander`, `return_nest`, `eat`, `rest`. The block of 21 columns follows `attack_fail_lurk_timeout` |
+
+The three columns of an action sum to `<action>_started` in the same window.
+
+| Metric | Formula |
+|---|---|
+| attack failure reason share | `attack_fail_<reason> / attack_failed` |

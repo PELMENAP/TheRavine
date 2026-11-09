@@ -11,6 +11,7 @@ public class InventoryItemInfo : ScriptableObject, IInventoryItemInfo
     [SerializeField] private Sprite _spriteIcon;
     [SerializeField] private Sprite _infoSprite;
     [SerializeField] private GameObject _prefab;
+    [SerializeField] private SlotMask _slotMask = SlotMask.Bag | SlotMask.Hotbar | SlotMask.Craft;
     private string _description;
     public string description { get { return _description; } set { _description = value; } }
     public bool isPlaceable => _isPlaceable;
@@ -20,5 +21,7 @@ public class InventoryItemInfo : ScriptableObject, IInventoryItemInfo
     public Sprite spriteIcon => _spriteIcon;
     public Sprite infoSprite => _infoSprite;
     public GameObject prefab => _prefab;
+    public SlotMask slotMask => _slotMask;
+    public bool Accepts(SlotKind kind) => (_slotMask & kind.ToMask()) != 0;
 }
 

@@ -23,7 +23,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float witnessPenalty = -0.2f;
     [SerializeField] private float juvenileTime = 60f;
     [SerializeField] private float alarmCryCooldown = 3f;
-    [SerializeField] private Vector4 alarmCrySpeech = new Vector4(1f, -1f, 1f, -1f);
+    [SerializeField] private int alarmCryToken;
     [SerializeField] private float alarmCryAmount = 0.3f;
     [SerializeField] private float trailDeposit = 1f;
     [SerializeField] private float trailSampleInterval = 1f;
@@ -47,6 +47,11 @@ public sealed partial class SimulationRules
     [SerializeField] private float casteScoutThreshold = 0.3f;
     [SerializeField] private float casteNurseThreshold = 0.3f;
     [SerializeField] private float nurseLeash = 12f;
+    [SerializeField] private float nurseLeashRate = 0.2f;
+    [SerializeField] private float nurseryRadius = 12f;
+    [SerializeField] private float nurseryRate = 0.3f;
+    [SerializeField] private float tetherRate = 0.15f;
+    [SerializeField] private float nightHomeRate = 0.05f;
     [SerializeField] private float soldierAttackMul = 1.6f;
     [SerializeField] private float soldierHealthMul = 1.5f;
     [SerializeField] private float soldierUpkeepMul = 1.4f;
@@ -110,8 +115,6 @@ public sealed partial class SimulationRules
     [SerializeField] private float predatorUpkeepMul = 0.6f;
     [SerializeField] private float predatorSpawnDistance = 60f;
     [SerializeField] private float predatorRespawnInterval = 30f;
-    [SerializeField] private float predatorHungerOn = 0.5f;
-    [SerializeField] private float predatorFleeHp = 0.25f;
     [SerializeField] private float trophallaxisMinFill = 0.6f;
     [SerializeField] private float trophallaxisHungerRelief = 0.3f;
     [SerializeField] private int recruitCount = 2;
@@ -138,11 +141,6 @@ public sealed partial class SimulationRules
     [SerializeField] private float casteSwitchMargin = 0.5f;
     [SerializeField] private float colonyRespawnDelay = 10f;
     [SerializeField] private int negativePoiCount = 6;
-    [SerializeField] private float predatorRoamDistance = 40f;
-    [SerializeField] private float predatorHomeRange = 80f;
-    [SerializeField] private float predatorLoiterMin = 3f;
-    [SerializeField] private float predatorLoiterMax = 8f;
-    [SerializeField] private float predatorRestSeconds = 15f;
     [SerializeField] private float[] casteAffinity =
     {
         1.0f, 1.8f, 0.8f, 0.6f, 1.0f, 1.0f, 0.8f, 0.8f, 1.2f,
@@ -173,6 +171,11 @@ public sealed partial class SimulationRules
     [SerializeField] private float alarmHuntBias = 1.5f;
     [SerializeField] private float alarmSurviveBias = 1.5f;
     [SerializeField] private float alarmFleeBias = 1.5f;
+    [SerializeField] private float scarcityMigrateBias = 2f;
+    [SerializeField] private float scarcityForeignForageBias = 1.5f;
+    [SerializeField] private float scoutVoteWeight = 2f;
+    [SerializeField] private int scarcityChunkRadius = 1;
+    [SerializeField] private float quorumMigrateBias = 2f;
 
     public float KinSearchRangeMul => kinSearchRangeMul;
     public float NestFarRadiusMul => nestFarRadiusMul;
@@ -193,7 +196,7 @@ public sealed partial class SimulationRules
     public float WitnessPenalty => witnessPenalty;
     public float JuvenileTime => juvenileTime;
     public float AlarmCryCooldown => alarmCryCooldown;
-    public Vector4 AlarmCrySpeech => alarmCrySpeech;
+    public int AlarmCryToken => alarmCryToken;
     public float AlarmCryAmount => alarmCryAmount;
     public float TrailDeposit => trailDeposit;
     public float TrailSampleInterval => trailSampleInterval;
@@ -217,6 +220,11 @@ public sealed partial class SimulationRules
     public float CasteScoutThreshold => casteScoutThreshold;
     public float CasteNurseThreshold => casteNurseThreshold;
     public float NurseLeash => nurseLeash;
+    public float NurseLeashRate => nurseLeashRate;
+    public float NurseryRadius => nurseryRadius;
+    public float NurseryRate => nurseryRate;
+    public float TetherRate => tetherRate;
+    public float NightHomeRate => nightHomeRate;
     public float SoldierAttackMul => soldierAttackMul;
     public float SoldierHealthMul => soldierHealthMul;
     public float SoldierUpkeepMul => soldierUpkeepMul;
@@ -280,8 +288,6 @@ public sealed partial class SimulationRules
     public float PredatorUpkeepMul => predatorUpkeepMul;
     public float PredatorSpawnDistance => predatorSpawnDistance;
     public float PredatorRespawnInterval => predatorRespawnInterval;
-    public float PredatorHungerOn => predatorHungerOn;
-    public float PredatorFleeHp => predatorFleeHp;
     public float TrophallaxisMinFill => trophallaxisMinFill;
     public float TrophallaxisHungerRelief => trophallaxisHungerRelief;
     public int RecruitCount => recruitCount;
@@ -308,11 +314,6 @@ public sealed partial class SimulationRules
     public float CasteSwitchMargin => casteSwitchMargin;
     public float ColonyRespawnDelay => colonyRespawnDelay;
     public int NegativePoiCount => negativePoiCount;
-    public float PredatorRoamDistance => predatorRoamDistance;
-    public float PredatorHomeRange => predatorHomeRange;
-    public float PredatorLoiterMin => predatorLoiterMin;
-    public float PredatorLoiterMax => predatorLoiterMax;
-    public float PredatorRestSeconds => predatorRestSeconds;
     public float NestRestHealMul => nestRestHealMul;
     public float NestRestDamageMul => nestRestDamageMul;
     public float NestEatPortion => nestEatPortion;
@@ -334,4 +335,9 @@ public sealed partial class SimulationRules
     public float AlarmHuntBias => alarmHuntBias;
     public float AlarmSurviveBias => alarmSurviveBias;
     public float AlarmFleeBias => alarmFleeBias;
+    public float ScarcityMigrateBias => scarcityMigrateBias;
+    public float ScarcityForeignForageBias => scarcityForeignForageBias;
+    public float ScoutVoteWeight => scoutVoteWeight;
+    public int ScarcityChunkRadius => scarcityChunkRadius;
+    public float QuorumMigrateBias => quorumMigrateBias;
 }

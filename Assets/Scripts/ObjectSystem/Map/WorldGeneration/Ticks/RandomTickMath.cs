@@ -18,5 +18,20 @@ namespace TheRavine.Generator
 
         public static float DecayChance(float meanHitSeconds, float decaySeconds) =>
             decaySeconds > 0f ? 1f - math.exp(-meanHitSeconds / decaySeconds) : 1f;
+
+        public static float SamplingRate(float cellsPerTick, int totalCells) =>
+            totalCells > 0 ? cellsPerTick / totalCells : 0f;
+
+        public static float HitChance(long ticks, float samplingRate, float acceptChance) =>
+            1f - math.exp(-ticks * samplingRate * acceptChance);
+
+        public static float DecayRemovalChance(long ticks, float samplingRate, float meanHitSeconds, float decaySeconds) =>
+            HitChance(ticks, samplingRate, DecayChance(meanHitSeconds, decaySeconds));
+
+        public static float GrowEvolveChance(long ticks, float samplingRate, float growAcceptChance) =>
+            HitChance(ticks, samplingRate, growAcceptChance);
+
+        public static float GrowRemovalChance(long ticks, float samplingRate, float growAcceptChance, int growDecayPercent) =>
+            HitChance(ticks, samplingRate, growAcceptChance * growDecayPercent * 0.01f);
     }
 }

@@ -6,16 +6,22 @@ using UnityEngine.TestTools;
 
 public class SnapshotVersionTests
 {
+    private SimulationRules _rules;
     private SharedHierarchicalBrain _brain;
 
     [SetUp]
-    public void SetUp() => _brain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, 32);
+    public void SetUp()
+    {
+        _rules = TestRules.Bind();
+        _brain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, 32);
+    }
 
     [TearDown]
     public void TearDown()
     {
-        _brain.Dispose();
+        _brain?.Dispose();
         ContextSlabs.DisposeAll();
+        TestRules.Release(_rules);
     }
 
     [Test]

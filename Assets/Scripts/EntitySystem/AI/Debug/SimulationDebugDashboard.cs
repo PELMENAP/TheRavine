@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 [RequireComponent(typeof(EntityManager))]
@@ -26,6 +27,7 @@ public class SimulationDebugDashboard : MonoBehaviour
 
     private readonly GenerationTracker _generationTracker = new();
 
+    private bool _energyConsumerRegistered;
     private double _nextSampleTime = double.NegativeInfinity;
     private double _startTime = double.NaN;
     private int    _totalBorn;
@@ -45,7 +47,50 @@ public class SimulationDebugDashboard : MonoBehaviour
     private GUIStyle _valueStyle;
     private bool     _stylesInitialized;
 
-    private Rect _windowRect = new Rect(10, 10, 420, 1065);
+    private Rect _windowRect = new Rect(10, 10, 420, 1165);
+
+    private readonly StringBuilder _speechText = new();
+    private string _speechEntropy = "";
+    private string _speechInfo    = "";
+    private string _speechDecode  = "";
+    private string _speechFlow    = "";
+    private string _speechMute    = "";
+
+    private static readonly string[] PopulationLabels = { "Alive", "Born total", "Died total", "Uptime" };
+    private static readonly string[] BrainLabels = { "LR", "LR min", "Stale coord", "Stale exec", "Dropped rewards" };
+    private static readonly string[] GenerationLabels = { "Best entropy", "Worst entropy", "Best lr", "Best temp", "Avg train steps" };
+    private static readonly string[] FitnessLabels = { "Fitness P10/P50/P90", "Fitness max", "Fitness outliers" };
+    private static readonly string[] LedgerLabels =
+    {
+        "Stock", "Body/Nest", "Food/Corpses", "Residual (sum)", "Soil stock", "Soil residual (sum)",
+        "Warmth stock", "Warmth residual (sum)", "In/Out", "Food spawn/mature", "Spawn/Child start",
+        "Starve ret/Clamp", "Viral/Rescale", "Basal/Move", "Digest loss", "Speech/Threaten", "Dash/Strike",
+        "Reproduce/Rest heal", "Spoil/Death loss", "Yield/Overflow loss", "Store loss/Wilt",
+        "Soil return/release", "Warmth emit/draw/decay", "Warmth draw ticks", "Metab credit (viral)"
+    };
+    private const int WarmthTicksRow = 23;
+    private const int TopShown = 5;
+
+    private readonly string[] _populationText = new string[PopulationLabels.Length];
+    private readonly string[] _brainText = new string[BrainLabels.Length];
+    private readonly string[] _generationText = new string[GenerationLabels.Length];
+    private readonly string[] _fitnessText = new string[FitnessLabels.Length];
+    private readonly string[] _ledgerText = new string[LedgerLabels.Length];
+    private readonly string[] _goalBarText = new string[SharedHierarchicalBrain.GoalCount];
+    private readonly string[] _topLines = new string[TopShown];
+    private readonly List<EntityModel> _sortBuf = new(64);
+    private string _avgEntropyText = "";
+    private string _avgRewardText = "";
+    private string _entropyGraphText = "";
+    private string _rewardGraphText = "";
+    private string _colonyLabel = "none";
+    private bool _hasBrain;
+    private bool _hasFitness;
+    private bool _hasLedger;
+    private int _topCount;
+    private int _goalTotal = 1;
+    private GUIStyle _entropyGraphStyle;
+    private GUIStyle _rewardGraphStyle;
 
     private int _coordStaleDrops;
     private int _execStaleDrops;
@@ -66,14 +111,24 @@ public class SimulationDebugDashboard : MonoBehaviour
             _avgEntropyHistory.Push(0f);
             _avgRewardHistory.Push(0f);
             _coordStaleDrops = _execStaleDrops = _coordTrainSteps = _execTrainSteps = 0;
+            BuildTexts();
             return;
         }
 
         float sumEntropy = 0f, sumReward = 0f;
         Array.Clear(_goalCounts, 0, _goalCounts.Length);
 
+        float openFit = 0f, mutedFit = 0f;
+        int openCount = 0, mutedCount = 0;
+
         foreach (var e in entities)
         {
+            if (!e.IsWild)
+            {
+                if (e.Speech.Muted) { mutedFit += e.GetFitness(); mutedCount++; }
+                else { openFit += e.GetFitness(); openCount++; }
+            }
+
             var ctx = e.Brain.Context;
             var coord = ctx.CoordMLP;
             sumEntropy += coord.AverageEntropy;
@@ -105,6 +160,165 @@ public class SimulationDebugDashboard : MonoBehaviour
             _goalHistory[i].Push(_goalCounts[i] / count);
 
         _generationTracker.Record(entities, SelectedColony()?.Brain);
+        FormatSpeech(openFit, openCount, mutedFit, mutedCount);
+        BuildTexts();
+    }
+
+    private void FormatSpeech(float openFit, int openCount, float mutedFit, int mutedCount)
+    {
+        var sb = _speechText;
+
+        sb.Clear();
+        sb.Append(SpeechMetrics.TokenEntropy().ToString("F2")).Append(" / ")
+          .Append(Mathf.Log(SimulationRules.SpeechVocab, 2f).ToString("F2")).Append(" bit (n=").Append(SpeechMetrics.TokenTotal).Append(')');
+        _speechEntropy = sb.ToString();
+
+        sb.Clear();
+        sb.Append(SpeechMetrics.MeanMutualInformation().ToString("F3")).Append(" bit |");
+        for (int b = 0; b < SimulationRules.SpeechContextBits; b++)
+            sb.Append(' ').Append(SpeechMetrics.ContextNames[b][0]).Append(':').Append(SpeechMetrics.MutualInformation(b).ToString("F2"));
+        _speechInfo = sb.ToString();
+
+        sb.Clear();
+        sb.Append((SpeechMetrics.DecodeAccuracy() * 100f).ToString("F1")).Append("% vs ")
+          .Append((SpeechMetrics.DecodeBaseline() * 100f).ToString("F1")).Append("% (n=").Append(SpeechMetrics.DecodeEvents).Append(')');
+        _speechDecode = sb.ToString();
+
+        var bus = _manager.Speech;
+        sb.Clear();
+        if (bus != null)
+            sb.Append(bus.Emitted).Append(" / ").Append(bus.Delivered).Append(" / ").Append(bus.Credited).Append(" / ").Append(bus.Dropped);
+        _speechFlow = sb.ToString();
+
+        sb.Clear();
+        if (SimulationRules.Active.SpeechMuteSampling)
+            sb.Append((mutedCount > 0 ? mutedFit / mutedCount : 0f).ToString("F3")).Append(" (").Append(mutedCount).Append(") vs ")
+              .Append((openCount > 0 ? openFit / openCount : 0f).ToString("F3")).Append(" (").Append(openCount).Append(')');
+        else sb.Append("off");
+        _speechMute = sb.ToString();
+    }
+
+    private void BuildTexts()
+    {
+        var entities = _manager.Entities;
+        _goalTotal = Mathf.Max(1, entities.Count);
+
+        _populationText[0] = entities.Count.ToString();
+        _populationText[1] = _totalBorn.ToString();
+        _populationText[2] = _totalDied.ToString();
+        _populationText[3] = FormatTime(double.IsNaN(_startTime) ? 0f : (float)(SimulationClock.TimeD - _startTime));
+
+        float lastEntropy = _avgEntropyHistory.LastOrDefault();
+        float lastReward  = _avgRewardHistory.LastOrDefault();
+        _avgEntropyText   = lastEntropy.ToString("F3");
+        _avgRewardText    = lastReward.ToString("F3");
+        _entropyGraphText = $"E:{lastEntropy:F2}";
+        _rewardGraphText  = $"R:{lastReward:F2}";
+
+        for (int g = 0; g < SharedHierarchicalBrain.GoalCount; g++)
+        {
+            float frac = _goalCounts[g] / _goalTotal;
+            _goalBarText[g] = $"{GoalNames[g]}: {_goalCounts[g]:0}/{_goalTotal} ({frac * 100:0}%)";
+        }
+
+        var stats = _generationTracker.Current;
+        _generationText[0] = stats.BestEntropy.ToString("F3");
+        _generationText[1] = stats.WorstEntropy.ToString("F3");
+        _generationText[2] = stats.BestLr.ToString("F4");
+        _generationText[3] = stats.BestTemp.ToString("F3");
+        _generationText[4] = stats.AvgTrainSteps.ToString("F0");
+
+        var evo = _manager.Evolution;
+        _hasFitness = evo != null;
+        if (_hasFitness)
+        {
+            _fitnessText[0] = $"{evo.FitnessP10:F2} / {evo.FitnessP50:F2} / {evo.FitnessP90:F2}";
+            _fitnessText[1] = evo.FitnessMax.ToString("F2");
+            _fitnessText[2] = evo.FitnessOutliers.ToString();
+        }
+
+        BuildLedgerText();
+        BuildSelectionTexts();
+        BuildTopEntities(entities);
+    }
+
+    private void BuildSelectionTexts()
+    {
+        var colony = SelectedColony();
+
+        _colonyLabel = colony == null
+            ? "none"
+            : $"#{colonyIndex} C{colony.ColonyId}{(colony.IsWild ? " (wild)" : "")} [{colony.MemberCount}]";
+
+        var brain = colony?.Brain;
+        _hasBrain = brain != null;
+        if (_hasBrain)
+        {
+            var gd = brain.GlobalDiagnostics;
+            _brainText[0] = brain.CurrentLearningRate.ToString("0.000000");
+            _brainText[1] = SimulationRules.Active.MinLearningRate.ToString("0.000000");
+            _brainText[2] = FormatDropRatio(_coordStaleDrops, _coordTrainSteps);
+            _brainText[3] = FormatDropRatio(_execStaleDrops, _execTrainSteps);
+            _brainText[4] = FormatDropRatio(gd.DroppedRewards, gd.AppliedRewards);
+        }
+
+        if (_hasLedger)
+            _ledgerText[WarmthTicksRow] = colony != null ? colony.Stats.WarmthDrawTicks.ToString() : null;
+    }
+
+    private void BuildLedgerText()
+    {
+        var ledger = _manager.Energy;
+        _hasLedger = ledger != null;
+        if (!_hasLedger) return;
+
+        var f = ledger.Last;
+        var t = _ledgerText;
+        t[0]  = ledger.Stock.ToString("F1");
+        t[1]  = $"{ledger.StockEntities:F1} / {ledger.StockNest:F1}";
+        t[2]  = $"{ledger.StockFood:F1} / {ledger.StockCorpses:F1}";
+        t[3]  = $"{ledger.Residual:F2} ({ledger.ResidualSum:F1})";
+        t[4]  = ledger.StockSoil.ToString("F1");
+        t[5]  = $"{ledger.SoilResidual:F2} ({ledger.SoilResidualSum:F1})";
+        t[6]  = ledger.StockWarmth.ToString("F1");
+        t[7]  = $"{ledger.WarmthResidual:F2} ({ledger.WarmthResidualSum:F1})";
+        t[8]  = $"{f.Inflow:F2} / {f.Outflow:F2}";
+        t[9]  = $"{f.FoodSpawn:F2} / {f.FoodMaturation:F2}";
+        t[10] = $"{f.SpawnStart:F2} / {f.ChildStart:F2}";
+        t[11] = $"{f.StarvationReturn:F2} / {f.ClampGain:F2}";
+        t[12] = $"{f.ViralNet:F2} / {f.RescaleNet:F2}";
+        t[13] = $"{f.Basal:F2} / {f.Movement:F2}";
+        t[14] = f.DigestionLoss.ToString("F2");
+        t[15] = $"{f.Speech:F2} / {f.Threaten:F2}";
+        t[16] = $"{f.Dash:F2} / {f.Strike:F2}";
+        t[17] = $"{f.Reproduce:F2} / {f.RestHeal:F2}";
+        t[18] = $"{f.CorpseSpoil:F2} / {f.DeathLoss:F2}";
+        t[19] = $"{f.YieldLoss:F2} / {f.OverflowLoss:F2}";
+        t[20] = $"{f.StoreLoss:F2} / {f.Wilt:F2}";
+        t[21] = $"{f.SoilReturn:F2} / {f.SoilRelease:F2}";
+        t[22] = $"{f.WarmthEmit:F2} / {f.WarmthDraw:F2} / {f.WarmthDecay:F2}";
+        t[24] = f.MetabolismCredit.ToString("F2");
+    }
+
+    private static int CompareEntropyDescending(EntityModel a, EntityModel b) =>
+        b.Brain.Context.CoordMLP.AverageEntropy.CompareTo(a.Brain.Context.CoordMLP.AverageEntropy);
+
+    private void BuildTopEntities(IReadOnlyList<EntityModel> entities)
+    {
+        _topCount = Mathf.Min(TopShown, entities.Count);
+        if (_topCount == 0) return;
+
+        _sortBuf.Clear();
+        for (int i = 0; i < entities.Count; i++) _sortBuf.Add(entities[i]);
+        _sortBuf.Sort(CompareEntropyDescending);
+
+        for (int i = 0; i < _topCount; i++)
+        {
+            var ctx = _sortBuf[i].Brain.Context;
+            _topLines[i] = $"#{i + 1} G:{ctx.CurrentGoal,-7} "
+                         + $"E:{ctx.CoordMLP.AverageEntropy:F2} "
+                         + $"T:{ctx.CoordMLP.TrainingSteps}";
+        }
     }
 
     private ColonyState SelectedColony()
@@ -119,17 +333,19 @@ public class SimulationDebugDashboard : MonoBehaviour
     {
         var colonies = _manager.Colonies;
         int count    = colonies != null ? colonies.Count : 0;
-        var colony   = SelectedColony();
 
         if (GUI.Button(new Rect(8, y, 24, 14), "<") && count > 0)
+        {
             colonyIndex = (colonyIndex - 1 + count) % count;
+            BuildSelectionTexts();
+        }
         if (GUI.Button(new Rect(36, y, 24, 14), ">") && count > 0)
+        {
             colonyIndex = (colonyIndex + 1) % count;
+            BuildSelectionTexts();
+        }
 
-        string label = colony == null
-            ? "none"
-            : $"#{colonyIndex} C{colony.ColonyId}{(colony.IsWild ? " (wild)" : "")} [{colony.MemberCount}]";
-        GUI.Label(new Rect(66, y, _windowRect.width - 70, 14), label, _labelStyle);
+        GUI.Label(new Rect(66, y, _windowRect.width - 70, 14), _colonyLabel, _labelStyle);
         y += 16f;
     }
 
@@ -138,28 +354,19 @@ public class SimulationDebugDashboard : MonoBehaviour
         float y = 4f;
 
         DrawSection(ref y, "POPULATION");
-        DrawKV(ref y, "Alive",        _manager.Entities.Count.ToString());
-        DrawKV(ref y, "Born total",   _totalBorn.ToString());
-        DrawKV(ref y, "Died total",   _totalDied.ToString());
-        DrawKV(ref y, "Uptime",       FormatTime(double.IsNaN(_startTime) ? 0f : (float)(SimulationClock.TimeD - _startTime)));
+        for (int i = 0; i < PopulationLabels.Length; i++)
+            DrawKV(ref y, PopulationLabels[i], _populationText[i]);
         DrawMiniGraph(ref y, _populationHistory, Color.cyan, 0f, _manager.MaxPopulation);
 
         DrawSection(ref y, "LEARNING");
         DrawColonySelector(ref y);
-        float lastEntropy = _avgEntropyHistory.LastOrDefault();
-        float lastReward  = _avgRewardHistory.LastOrDefault();
-        DrawKV(ref y, "Avg entropy",  lastEntropy.ToString("F3"));
-        DrawKV(ref y, "Avg reward",   lastReward.ToString("F3"));
+        DrawKV(ref y, "Avg entropy",  _avgEntropyText);
+        DrawKV(ref y, "Avg reward",   _avgRewardText);
 
-        var brain = SelectedColony()?.Brain;
-        if (brain != null)
+        if (_hasBrain)
         {
-            var gd = brain.GlobalDiagnostics;
-            DrawKV(ref y, "LR",              brain.CurrentLearningRate.ToString("0.000000"));
-            DrawKV(ref y, "LR min",          SimulationRules.Active.MinLearningRate.ToString("0.000000"));
-            DrawKV(ref y, "Stale coord",     FormatDropRatio(_coordStaleDrops, _coordTrainSteps));
-            DrawKV(ref y, "Stale exec",      FormatDropRatio(_execStaleDrops, _execTrainSteps));
-            DrawKV(ref y, "Dropped rewards", FormatDropRatio(gd.DroppedRewards, gd.AppliedRewards));
+            for (int i = 0; i < BrainLabels.Length; i++)
+                DrawKV(ref y, BrainLabels[i], _brainText[i]);
         }
 
         DrawDualGraph(ref y, _avgEntropyHistory, _avgRewardHistory,
@@ -176,6 +383,13 @@ public class SimulationDebugDashboard : MonoBehaviour
         DrawSection(ref y, "ENERGY LEDGER");
         DrawEnergyLedger(ref y);
 
+        DrawSection(ref y, "SPEECH");
+        DrawKV(ref y, "Token entropy",   _speechEntropy);
+        DrawKV(ref y, "MI token-ctx",    _speechInfo);
+        DrawKV(ref y, "Decode acc",      _speechDecode);
+        DrawKV(ref y, "Emit/Dlv/Cred/Drop", _speechFlow);
+        DrawKV(ref y, "Muted vs open fit", _speechMute);
+
         DrawSection(ref y, "TOP ENTITIES");
         DrawTopEntities(ref y);
 
@@ -187,6 +401,29 @@ public class SimulationDebugDashboard : MonoBehaviour
         int   total = drops + accepted;
         float pct   = total > 0 ? drops * 100f / total : 0f;
         return $"{drops} ({pct:0.00}%)";
+    }
+
+    private void OnEnable() => SyncEnergyConsumer();
+
+    private void OnDisable() => ReleaseEnergyConsumer();
+
+    private void OnDestroy() => ReleaseEnergyConsumer();
+
+    private void SyncEnergyConsumer()
+    {
+        if (_manager == null || showDashboard == _energyConsumerRegistered) return;
+
+        if (showDashboard) _manager.RegisterEnergyConsumer();
+        else _manager.UnregisterEnergyConsumer();
+        _energyConsumerRegistered = showDashboard;
+    }
+
+    private void ReleaseEnergyConsumer()
+    {
+        if (!_energyConsumerRegistered) return;
+
+        _energyConsumerRegistered = false;
+        if (_manager != null) _manager.UnregisterEnergyConsumer();
     }
 
     private void Awake()
@@ -201,6 +438,7 @@ public class SimulationDebugDashboard : MonoBehaviour
 
     private void Update()
     {
+        SyncEnergyConsumer();
         double now = SimulationClock.TimeD;
         if (double.IsNaN(_startTime)) _startTime = now;
         if (now < _nextSampleTime) return;
@@ -235,7 +473,7 @@ public class SimulationDebugDashboard : MonoBehaviour
     private void DrawKV(ref float y, string key, string value)
     {
         GUI.Label(new Rect(8, y, 160, 14), key,   _labelStyle);
-        GUI.Label(new Rect(170, y, 120, 14), value, _valueStyle);
+        GUI.Label(new Rect(170, y, _windowRect.width - 178, 14), value, _valueStyle);
         y += 15f;
     }
 
@@ -283,10 +521,11 @@ public class SimulationDebugDashboard : MonoBehaviour
         DrawGraphLine(bg, a.ToArray(), ca, minV, maxV);
         DrawGraphLine(bg, b.ToArray(), cb, minV, maxV);
 
-        GUI.Label(new Rect(bg.x + 2, bg.y + 2, 80, 12),
-            $"E:{a.LastOrDefault():F2}", new GUIStyle(_labelStyle) { normal = { textColor = ca } });
-        GUI.Label(new Rect(bg.x + 86, bg.y + 2, 80, 12),
-            $"R:{b.LastOrDefault():F2}", new GUIStyle(_labelStyle) { normal = { textColor = cb } });
+        _entropyGraphStyle ??= new GUIStyle(_labelStyle) { normal = { textColor = ca } };
+        _rewardGraphStyle ??= new GUIStyle(_labelStyle) { normal = { textColor = cb } };
+
+        GUI.Label(new Rect(bg.x + 2, bg.y + 2, 80, 12), _entropyGraphText, _entropyGraphStyle);
+        GUI.Label(new Rect(bg.x + 86, bg.y + 2, 80, 12), _rewardGraphText, _rewardGraphStyle);
 
         y += height + 4f;
     }
@@ -307,12 +546,9 @@ public class SimulationDebugDashboard : MonoBehaviour
 
     private void DrawGoalBars(ref float y)
     {
-        var entities = _manager.Entities;
-        int total    = Mathf.Max(1, entities.Count);
-
         for (int g = 0; g < SharedHierarchicalBrain.GoalCount; g++)
         {
-            float frac = _goalCounts[g] / total;
+            float frac = _goalCounts[g] / _goalTotal;
             Rect  bg   = new Rect(8,  y, _windowRect.width - 16, 10);
             Rect  fill = new Rect(8,  y, (_windowRect.width - 16) * frac, 10);
 
@@ -322,9 +558,7 @@ public class SimulationDebugDashboard : MonoBehaviour
             GUI.color = GoalColors[g];
             GUI.DrawTexture(fill, Texture2D.whiteTexture);
             GUI.color = Color.white;
-            GUI.Label(new Rect(12, y - 1, 200, 12),
-                $"{GoalNames[g]}: {_goalCounts[g]:0}/{total} ({frac * 100:0}%)",
-                _labelStyle);
+            GUI.Label(new Rect(12, y - 1, 200, 12), _goalBarText[g], _labelStyle);
             GUI.color = prev;
             y += 12f;
         }
@@ -366,73 +600,32 @@ public class SimulationDebugDashboard : MonoBehaviour
 
     private void DrawGenerationInfo(ref float y)
     {
-        var stats = _generationTracker.Current;
-        DrawKV(ref y, "Best entropy",   stats.BestEntropy.ToString("F3"));
-        DrawKV(ref y, "Worst entropy",  stats.WorstEntropy.ToString("F3"));
-        DrawKV(ref y, "Best lr",        stats.BestLr.ToString("F4"));
-        DrawKV(ref y, "Best temp",      stats.BestTemp.ToString("F3"));
-        DrawKV(ref y, "Avg train steps", stats.AvgTrainSteps.ToString("F0"));
+        for (int i = 0; i < GenerationLabels.Length; i++)
+            DrawKV(ref y, GenerationLabels[i], _generationText[i]);
     }
 
     private void DrawFitnessDistribution(ref float y)
     {
-        var evo = _manager.Evolution;
-        if (evo == null) return;
-        DrawKV(ref y, "Fitness P10/P50/P90", $"{evo.FitnessP10:F2} / {evo.FitnessP50:F2} / {evo.FitnessP90:F2}");
-        DrawKV(ref y, "Fitness max",         evo.FitnessMax.ToString("F2"));
-        DrawKV(ref y, "Fitness outliers",    evo.FitnessOutliers.ToString());
+        if (!_hasFitness) return;
+        for (int i = 0; i < FitnessLabels.Length; i++)
+            DrawKV(ref y, FitnessLabels[i], _fitnessText[i]);
     }
 
     private void DrawEnergyLedger(ref float y)
     {
-        var ledger = _manager.Energy;
-        if (ledger == null) return;
-        var f = ledger.Last;
-        DrawKV(ref y, "Stock",                ledger.Stock.ToString("F1"));
-        DrawKV(ref y, "Body/Nest",            $"{ledger.StockEntities:F1} / {ledger.StockNest:F1}");
-        DrawKV(ref y, "Food/Corpses",         $"{ledger.StockFood:F1} / {ledger.StockCorpses:F1}");
-        DrawKV(ref y, "Residual (sum)",       $"{ledger.Residual:F2} ({ledger.ResidualSum:F1})");
-        DrawKV(ref y, "Soil stock",           ledger.StockSoil.ToString("F1"));
-        DrawKV(ref y, "Soil residual (sum)",  $"{ledger.SoilResidual:F2} ({ledger.SoilResidualSum:F1})");
-        DrawKV(ref y, "Warmth stock",         ledger.StockWarmth.ToString("F1"));
-        DrawKV(ref y, "Warmth residual (sum)", $"{ledger.WarmthResidual:F2} ({ledger.WarmthResidualSum:F1})");
-        DrawKV(ref y, "In/Out",               $"{f.Inflow:F2} / {f.Outflow:F2}");
-        DrawKV(ref y, "Food spawn/mature",    $"{f.FoodSpawn:F2} / {f.FoodMaturation:F2}");
-        DrawKV(ref y, "Spawn/Child start",    $"{f.SpawnStart:F2} / {f.ChildStart:F2}");
-        DrawKV(ref y, "Starve ret/Clamp",     $"{f.StarvationReturn:F2} / {f.ClampGain:F2}");
-        DrawKV(ref y, "Viral/Rescale",        $"{f.ViralNet:F2} / {f.RescaleNet:F2}");
-        DrawKV(ref y, "Basal/Move",           $"{f.Basal:F2} / {f.Movement:F2}");
-        DrawKV(ref y, "Digest loss",          f.DigestionLoss.ToString("F2"));
-        DrawKV(ref y, "Speech/Threaten",      $"{f.Speech:F2} / {f.Threaten:F2}");
-        DrawKV(ref y, "Dash/Strike",          $"{f.Dash:F2} / {f.Strike:F2}");
-        DrawKV(ref y, "Reproduce/Rest heal",  $"{f.Reproduce:F2} / {f.RestHeal:F2}");
-        DrawKV(ref y, "Spoil/Death loss",     $"{f.CorpseSpoil:F2} / {f.DeathLoss:F2}");
-        DrawKV(ref y, "Soil return/release",  $"{f.SoilReturn:F2} / {f.SoilRelease:F2}");
-        DrawKV(ref y, "Warmth emit/draw/decay", $"{f.WarmthEmit:F2} / {f.WarmthDraw:F2} / {f.WarmthDecay:F2}");
-        var colony = SelectedColony();
-        if (colony != null) DrawKV(ref y, "Warmth draw ticks",    colony.Stats.WarmthDrawTicks.ToString());
-        DrawKV(ref y, "Metab credit (viral)", f.MetabolismCredit.ToString("F2"));
+        if (!_hasLedger) return;
+        for (int i = 0; i < LedgerLabels.Length; i++)
+        {
+            if (_ledgerText[i] == null) continue;
+            DrawKV(ref y, LedgerLabels[i], _ledgerText[i]);
+        }
     }
 
     private void DrawTopEntities(ref float y)
     {
-        var entities = _manager.Entities;
-        if (entities.Count == 0) return;
-
-        int shown = Mathf.Min(5, entities.Count);
-        var sorted = new List<EntityModel>(entities);
-        sorted.Sort((a, b) =>
-            b.Brain.Context.CoordMLP.AverageEntropy
-             .CompareTo(a.Brain.Context.CoordMLP.AverageEntropy));
-
-        for (int i = 0; i < shown; i++)
+        for (int i = 0; i < _topCount; i++)
         {
-            var e   = sorted[i];
-            var ctx = e.Brain.Context;
-            string line = $"#{i + 1} G:{ctx.CurrentGoal,-7} "
-                        + $"E:{ctx.CoordMLP.AverageEntropy:F2} "
-                        + $"T:{ctx.CoordMLP.TrainingSteps}";
-            GUI.Label(new Rect(8, y, _windowRect.width - 12, 13), line, _labelStyle);
+            GUI.Label(new Rect(8, y, _windowRect.width - 12, 13), _topLines[i], _labelStyle);
             y += 13f;
         }
     }
