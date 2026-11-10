@@ -82,17 +82,40 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
             br.ReadUInt32();
             br.ReadInt32();
 
-            var reservoir = LSTMMemory.Deserialize(ReadBlock(br));
-            var coordMlp  = DelayedPerceptron.Deserialize(ReadBlock(br));
-
             int goalCount = SharedHierarchicalBrain.GoalCount;
+            LSTMMemory reservoir = null;
+            DelayedPerceptron coordMlp = null;
             var executors = new DelayedPerceptron[goalCount];
-            for (int i = 0; i < goalCount; i++)
-                executors[i] = DelayedPerceptron.Deserialize(ReadBlock(br));
 
-            var brain = SharedHierarchicalBrain.FromModels(reservoir, coordMlp, executors);
-            return brain != null ? new SharedBrainSnapshot(brain) : null;
+            try
+            {
+                reservoir = LSTMMemory.Deserialize(ReadBlock(br), InputVectorizer.VectorSize);
+                int combined = reservoir.InputSize + reservoir.HiddenSize;
+
+                coordMlp = DelayedPerceptron.Deserialize(ReadBlock(br), SharedHierarchicalBrain.BuildCoordSizes(combined));
+                for (int i = 0; i < goalCount; i++)
+                    executors[i] = DelayedPerceptron.Deserialize(ReadBlock(br), SharedHierarchicalBrain.BuildExecSizes(combined, i));
+
+                var brain = SharedHierarchicalBrain.FromModels(reservoir, coordMlp, executors);
+                if (brain != null) return new SharedBrainSnapshot(brain);
+            }
+            catch
+            {
+                DisposeModels(reservoir, coordMlp, executors);
+                throw;
+            }
+
+            DisposeModels(reservoir, coordMlp, executors);
+            return null;
         }
+    }
+
+    private static void DisposeModels(LSTMMemory reservoir, DelayedPerceptron coordMlp, DelayedPerceptron[] executors)
+    {
+        reservoir?.Dispose();
+        coordMlp?.Dispose();
+        for (int i = 0; i < executors.Length; i++)
+            executors[i]?.Dispose();
     }
 
     private static void WriteBlock(BinaryWriter bw, byte[] block)
