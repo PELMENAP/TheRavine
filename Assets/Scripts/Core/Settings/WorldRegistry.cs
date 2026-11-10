@@ -194,7 +194,11 @@ namespace TheRavine.Base
                 }
 
                 await storage.DeleteAsync(worldId);
-                DeleteDirectoryIfExists(GetWorldDirectory(worldId));
+
+                if (TryGetSafeWorldDirectory(worldId, out string directory))
+                    DeleteDirectoryIfExists(directory);
+                else
+                    logger.LogWarning($"[WorldRegistry] Каталог мира '{worldId}' не удалён: имя недопустимо");
                 AvailableWorlds.Remove(worldId);
 
                 logger.LogInfo($"[WorldRegistry] Мир '{worldId}' удалён");
@@ -219,6 +223,12 @@ namespace TheRavine.Base
                 return false;
             }
 
+            if (!TryGetSafeWorldDirectory(oldName, out string oldDirectory))
+            {
+                logger.LogWarning($"[WorldRegistry] Недопустимое имя мира: '{oldName}'");
+                return false;
+            }
+
             if (!IsValidWorldName(newName))
             {
                 logger.LogWarning($"[WorldRegistry] Недопустимое имя мира: '{newName}'");
@@ -226,6 +236,12 @@ namespace TheRavine.Base
             }
 
             newName = newName.Trim();
+
+            if (!TryGetSafeWorldDirectory(newName, out string newDirectory))
+            {
+                logger.LogWarning($"[WorldRegistry] Недопустимое имя мира: '{newName}'");
+                return false;
+            }
 
             if (AvailableWorlds.Contains(newName))
             {
@@ -262,7 +278,7 @@ namespace TheRavine.Base
 
                 await storage.SaveFullAsync(newName, state, config);
                 await storage.DeleteAsync(oldName);
-                MoveDirectoryIfExists(GetWorldDirectory(oldName), GetWorldDirectory(newName));
+                MoveDirectoryIfExists(oldDirectory, newDirectory);
                 WorldRenamed?.Invoke(oldName, newName);
 
                 var index = AvailableWorlds.IndexOf(oldName);
@@ -293,6 +309,22 @@ namespace TheRavine.Base
         public event Action<string, string> WorldRenamed;
 
         public static string GetWorldDirectory(string worldId) => Path.Combine(Application.persistentDataPath, "worlds", worldId);
+
+        public static bool TryGetSafeWorldDirectory(string worldId, out string path)
+        {
+            path = null;
+            if (!IsValidWorldName(worldId) || worldId != worldId.Trim()) return false;
+
+            string root = Path.GetFullPath(Path.Combine(Application.persistentDataPath, "worlds"));
+            string prefix = root.EndsWith(Path.DirectorySeparatorChar) ? root : root + Path.DirectorySeparatorChar;
+            string full = Path.GetFullPath(Path.Combine(root, worldId));
+
+            if (full.Length <= prefix.Length || !full.StartsWith(prefix, StringComparison.Ordinal)) return false;
+            if (full.IndexOf(Path.DirectorySeparatorChar, prefix.Length) >= 0 || full.IndexOf(Path.AltDirectorySeparatorChar, prefix.Length) >= 0) return false;
+
+            path = full;
+            return true;
+        }
 
         private static void DeleteDirectoryIfExists(string path)
         {
@@ -395,6 +427,12 @@ namespace TheRavine.Base
 
                 foreach (var worldId in worldIds)
                 {
+                    if (!IsValidWorldName(worldId) || worldId != worldId.Trim())
+                    {
+                        logger.LogWarning($"[WorldRegistry] Запись мира с недопустимым именем пропущена: '{worldId}'");
+                        continue;
+                    }
+
                     if (await storage.ExistsAsync(worldId))
                     {
                         validWorlds.Add(worldId);
