@@ -6,11 +6,9 @@ namespace TheRavine.Base
 {
     public class RiveExecutor
     {
-        private readonly Stack<Dictionary<string, object>> _variableScopes = new();
         private readonly RiveRuntime _runtime;
         private readonly InputStreamManager _inputStream;
         private readonly InteractorRegistry _interactorRegistry;
-        private int _operationCount;
         private const int MAX_OPERATIONS = 10000;
         
         public RiveExecutor(RiveRuntime runtime, InputStreamManager inputStream, InteractorRegistry interactorRegistry)
@@ -20,25 +18,31 @@ namespace TheRavine.Base
             _interactorRegistry = interactorRegistry;
         }
         
-        public async UniTask<ExecutionResult> ExecuteAsync(ProgramNode program, params int[] args)
+        public async UniTask<ExecutionResult> ExecuteAsync(ProgramNode program, int[] args, RiveRun run)
         {
             if (args.Length != program.Parameters.Count)
             {
                 return ExecutionResult.CreateError(
                     $"Argument count mismatch. Expected: {program.Parameters.Count}, got: {args.Length}");
             }
-            
-            _operationCount = 0;
-            PushScope();
-            
+
+            var frame = new RiveFrame(run);
+            frame.PushScope();
+            run.CallDepth++;
+
             try
             {
                 for (int i = 0; i < program.Parameters.Count; i++)
                 {
-                    SetVariable(program.Parameters[i], args[i]);
+                    frame.SetVariable(program.Parameters[i], args[i]);
                 }
-                
-                return await ExecuteStatementsAsync(program.Statements);
+
+                var result = await ExecuteStatementsAsync(program.Statements, frame);
+
+                if (run.AbortMessage != null)
+                    return ExecutionResult.CreateError(run.AbortMessage);
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -46,101 +50,110 @@ namespace TheRavine.Base
             }
             finally
             {
-                PopScope();
+                run.CallDepth--;
+                frame.PopScope();
             }
         }
-        
-        private async UniTask<ExecutionResult> ExecuteStatementsAsync(List<StatementNode> statements)
+
+        private async UniTask<ExecutionResult> ExecuteStatementsAsync(List<StatementNode> statements, RiveFrame frame)
         {
+            var run = frame.Run;
+
             foreach (var statement in statements)
             {
-                if (++_operationCount >= MAX_OPERATIONS)
-                    return ExecutionResult.CreateError($"Operation limit exceeded ({MAX_OPERATIONS})");
-                
-                var result = await ExecuteStatementAsync(statement);
-                
+                if (run.AbortMessage != null)
+                    return ExecutionResult.CreateError(run.AbortMessage);
+
+                if (++run.OperationCount >= MAX_OPERATIONS)
+                {
+                    run.AbortMessage = $"Operation limit exceeded ({MAX_OPERATIONS})";
+                    return ExecutionResult.CreateError(run.AbortMessage);
+                }
+
+                var result = await ExecuteStatementAsync(statement, frame);
+
                 if (result.Action != ExecutionAction.Continue)
                     return result;
-                
-                if (_operationCount % 10 == 0)
+
+                if (run.OperationCount % 10 == 0)
                     await UniTask.Yield();
             }
-            
+
             return ExecutionResult.CreateSuccess();
         }
-        
-        private async UniTask<ExecutionResult> ExecuteStatementAsync(StatementNode statement)
+
+        private async UniTask<ExecutionResult> ExecuteStatementAsync(StatementNode statement, RiveFrame frame)
         {
             return statement switch
             {
-                ReturnNode ret => await ExecuteReturnAsync(ret),
-                VariableDeclarationNode varDecl => await ExecuteVariableDeclarationAsync(varDecl),
-                AssignmentNode assign => await ExecuteAssignmentAsync(assign),
-                IfNode ifNode => await ExecuteIfAsync(ifNode),
-                ForLoopNode forLoop => await ExecuteForLoopAsync(forLoop),
-                TerminalCommandNode termCmd => await ExecuteTerminalCommandAsync(termCmd),
-                LogNode log => await ExecuteLogAsync(log),
-                WaitNode wait => await ExecuteWaitAsync(wait),
-                ExpressionStatementNode exprStmt => await ExecuteExpressionStatementAsync(exprStmt),
-                IndexAssignNode idxAssign        => await ExecuteIndexAssignAsync(idxAssign),
+                ReturnNode ret => await ExecuteReturnAsync(ret, frame),
+                VariableDeclarationNode varDecl => await ExecuteVariableDeclarationAsync(varDecl, frame),
+                AssignmentNode assign => await ExecuteAssignmentAsync(assign, frame),
+                IfNode ifNode => await ExecuteIfAsync(ifNode, frame),
+                ForLoopNode forLoop => await ExecuteForLoopAsync(forLoop, frame),
+                TerminalCommandNode termCmd => await ExecuteTerminalCommandAsync(termCmd, frame),
+                LogNode log => await ExecuteLogAsync(log, frame),
+                WaitNode wait => await ExecuteWaitAsync(wait, frame),
+                ExpressionStatementNode exprStmt => await ExecuteExpressionStatementAsync(exprStmt, frame),
+                IndexAssignNode idxAssign        => await ExecuteIndexAssignAsync(idxAssign, frame),
                 _ => ExecutionResult.CreateError($"Unknown statement type: {statement.GetType().Name}")
             };
         }
         
-        private async UniTask<ExecutionResult> ExecuteReturnAsync(ReturnNode node)
+        private async UniTask<ExecutionResult> ExecuteReturnAsync(ReturnNode node, RiveFrame frame)
         {
-            var value = await EvaluateExpressionAsync(node.Value);
+            var value = await EvaluateExpressionAsync(node.Value, frame);
             return ExecutionResult.CreateReturn(value);
         }
         
-        private async UniTask<ExecutionResult> ExecuteVariableDeclarationAsync(VariableDeclarationNode node)
+        private async UniTask<ExecutionResult> ExecuteVariableDeclarationAsync(VariableDeclarationNode node, RiveFrame frame)
         {
-            var value = await EvaluateExpressionAsync(node.InitialValue);
-            SetVariable(node.Name, value);
+            var value = await EvaluateExpressionAsync(node.InitialValue, frame);
+            frame.SetVariable(node.Name, value);
             return ExecutionResult.CreateSuccess();
         }
         
-        private async UniTask<ExecutionResult> ExecuteAssignmentAsync(AssignmentNode node)
+        private async UniTask<ExecutionResult> ExecuteAssignmentAsync(AssignmentNode node, RiveFrame frame)
         {
-            if (GetVariable(node.VariableName) == null)
+            if (frame.GetVariable(node.VariableName) == null)
                 return ExecutionResult.CreateError($"Variable '{node.VariableName}' not declared");
             
-            var value = await EvaluateExpressionAsync(node.Value);
-            SetVariable(node.VariableName, value);
+            var value = await EvaluateExpressionAsync(node.Value, frame);
+            frame.SetVariable(node.VariableName, value);
             return ExecutionResult.CreateSuccess();
         }
         
-        private async UniTask<ExecutionResult> ExecuteIfAsync(IfNode node)
+        private async UniTask<ExecutionResult> ExecuteIfAsync(IfNode node, RiveFrame frame)
         {
-            var condition = await EvaluateConditionAsync(node.Condition);
+            var condition = await EvaluateConditionAsync(node.Condition, frame);
             
             if (condition)
-                return await ExecuteStatementsAsync(node.ThenBlock);
+                return await ExecuteStatementsAsync(node.ThenBlock, frame);
             else if (node.ElseBlock.Count > 0)
-                return await ExecuteStatementsAsync(node.ElseBlock);
+                return await ExecuteStatementsAsync(node.ElseBlock, frame);
             
             return ExecutionResult.CreateSuccess();
         }
         
-        private async UniTask<ExecutionResult> ExecuteForLoopAsync(ForLoopNode node)
+        private async UniTask<ExecutionResult> ExecuteForLoopAsync(ForLoopNode node, RiveFrame frame)
         {
-            PushScope();
+            frame.PushScope();
             
             try
             {
-                var startValue = await EvaluateExpressionAsync(node.StartExpression);
-                var endValue = await EvaluateExpressionAsync(node.EndExpression);
+                var startValue = await EvaluateExpressionAsync(node.StartExpression, frame);
+                var endValue = await EvaluateExpressionAsync(node.EndExpression, frame);
 
                 if (startValue is not int s || endValue is not int e)
                     return ExecutionResult.CreateError("You can loop only int values");
                 
                 for (int i = s; i <= e; i++)
                 {
-                    if (_operationCount >= MAX_OPERATIONS)
+                    if (frame.Run.OperationCount >= MAX_OPERATIONS)
                         return ExecutionResult.CreateError("Operation limit exceeded in loop");
                     
-                    SetVariable(node.VariableName, i);
-                    var result = await ExecuteStatementsAsync(node.Body);
+                    frame.SetVariable(node.VariableName, i);
+                    var result = await ExecuteStatementsAsync(node.Body, frame);
                     
                     if (result.Action == ExecutionAction.Return || result.Action == ExecutionAction.Stop)
                         return result;
@@ -148,19 +161,19 @@ namespace TheRavine.Base
             }
             finally
             {
-                PopScope();
+                frame.PopScope();
             }
             
             return ExecutionResult.CreateSuccess();
         }
         
-        private async UniTask<ExecutionResult> ExecuteTerminalCommandAsync(TerminalCommandNode node)
+        private async UniTask<ExecutionResult> ExecuteTerminalCommandAsync(TerminalCommandNode node, RiveFrame frame)
         {
             var command = node.Command;
             
             foreach (var varName in node.VariableReferences)
             {
-                var value = GetVariable(varName);
+                var value = frame.GetVariable(varName);
 
                 if (value != null)
                     command = command.Replace($"{varName}", value.ToRiveString());
@@ -171,16 +184,16 @@ namespace TheRavine.Base
                 ExecutionResult.CreateError($"Command failed: {command}");
         }
 
-        private async UniTask<ExecutionResult> ExecuteLogAsync(LogNode node)
+        private async UniTask<ExecutionResult> ExecuteLogAsync(LogNode node, RiveFrame frame)
         {
-            var value = await EvaluateExpressionAsync(node.Expression);
+            var value = await EvaluateExpressionAsync(node.Expression, frame);
             await _runtime.ExecuteTerminalCommandAsync($"~print {node.OriginalExpression} = {value}");
             return ExecutionResult.CreateSuccess();
         }
         
-        private async UniTask<ExecutionResult> ExecuteWaitAsync(WaitNode node)
+        private async UniTask<ExecutionResult> ExecuteWaitAsync(WaitNode node, RiveFrame frame)
         {
-            var milliseconds = await EvaluateExpressionAsync(node.Milliseconds);
+            var milliseconds = await EvaluateExpressionAsync(node.Milliseconds, frame);
 
             if(milliseconds is not int mil)
                 return ExecutionResult.CreateError("Wait time should be a int number");
@@ -196,27 +209,27 @@ namespace TheRavine.Base
             return ExecutionResult.CreateSuccess();
         }
         
-        private async UniTask<object> EvaluateExpressionAsync(ExpressionNode expr)
+        private async UniTask<object> EvaluateExpressionAsync(ExpressionNode expr, RiveFrame frame)
         {
             return expr switch
             {
                 LiteralNode lit => lit.Value,
-                VariableNode var => GetVariable(var.Name) ?? 0,
-                BinaryOpNode bin => await EvaluateBinaryOpAsync(bin),
-                FunctionCallNode funcCall => await EvaluateFunctionCallAsync(funcCall),
+                VariableNode var => frame.GetVariable(var.Name) ?? 0,
+                BinaryOpNode bin => await EvaluateBinaryOpAsync(bin, frame),
+                FunctionCallNode funcCall => await EvaluateFunctionCallAsync(funcCall, frame),
                 GetInputNode => await _inputStream.GetAsync(),
-                SendToInteractorNode send => await EvaluateSendAsync(send),
-                UnaryOpNode unary       => await EvaluateUnaryOpAsync(unary),
-                ArrayLiteralNode arrLit => await EvaluateArrayLiteralAsync(arrLit),
-                IndexAccessNode idxAcc  => await EvaluateIndexAccessAsync(idxAcc),
+                SendToInteractorNode send => await EvaluateSendAsync(send, frame),
+                UnaryOpNode unary       => await EvaluateUnaryOpAsync(unary, frame),
+                ArrayLiteralNode arrLit => await EvaluateArrayLiteralAsync(arrLit, frame),
+                IndexAccessNode idxAcc  => await EvaluateIndexAccessAsync(idxAcc, frame),
                 _ => 0
             };
         }
         
-        private async UniTask<object> EvaluateBinaryOpAsync(BinaryOpNode node)
+        private async UniTask<object> EvaluateBinaryOpAsync(BinaryOpNode node, RiveFrame frame)
         {
-            var left = await EvaluateExpressionAsync(node.Left);
-            var right = await EvaluateExpressionAsync(node.Right);
+            var left = await EvaluateExpressionAsync(node.Left, frame);
+            var right = await EvaluateExpressionAsync(node.Right, frame);
             
             if (left is not int l || right is not int r)
                 return 0;
@@ -240,29 +253,29 @@ namespace TheRavine.Base
             };
         }
 
-        private async UniTask<object> EvaluateFunctionCallAsync(FunctionCallNode funcCall)
+        private async UniTask<object> EvaluateFunctionCallAsync(FunctionCallNode funcCall, RiveFrame frame)
         {
-            var args = new List<object>();
-            foreach (var arg in funcCall.Arguments)
+            var args = new object[funcCall.Arguments.Count];
+            for (int i = 0; i < args.Length; i++)
             {
-                args.Add(await EvaluateExpressionAsync(arg));
+                args[i] = await EvaluateExpressionAsync(funcCall.Arguments[i], frame);
             }
             
-            var result = await _runtime.CallFunctionAsync(funcCall.FunctionName, args.ToArray());
+            var result = await _runtime.CallFunctionAsync(funcCall.FunctionName, frame.Run, args);
             return result.Success ? result.ReturnValue : 0;
         }
 
-        private async UniTask<int> EvaluateSendAsync(SendToInteractorNode node)
+        private async UniTask<int> EvaluateSendAsync(SendToInteractorNode node, RiveFrame frame)
         {
-            var value = await EvaluateExpressionAsync(node.Value);
+            var value = await EvaluateExpressionAsync(node.Value, frame);
             if (value is not int intValue)
                 return 0;
             return await _interactorRegistry.SendToInteractorAsync(node.InteractorName, intValue);
         }
 
-        private async UniTask<object> EvaluateUnaryOpAsync(UnaryOpNode node)
+        private async UniTask<object> EvaluateUnaryOpAsync(UnaryOpNode node, RiveFrame frame)
         {
-            var operand = await EvaluateExpressionAsync(node.Operand);
+            var operand = await EvaluateExpressionAsync(node.Operand, frame);
             if (operand is not int v) return 0;
             return node.Operator switch
             {
@@ -272,48 +285,48 @@ namespace TheRavine.Base
             };
         }
 
-        private async UniTask<object> EvaluateArrayLiteralAsync(ArrayLiteralNode node)
+        private async UniTask<object> EvaluateArrayLiteralAsync(ArrayLiteralNode node, RiveFrame frame)
         {
             var list = new List<int>(node.Elements.Count);
             foreach (var el in node.Elements)
             {
-                var val = await EvaluateExpressionAsync(el);
+                var val = await EvaluateExpressionAsync(el, frame);
                 list.Add(val is int i ? i : 0);
             }
             return list;
         }
 
-        private async UniTask<object> EvaluateIndexAccessAsync(IndexAccessNode node)
+        private async UniTask<object> EvaluateIndexAccessAsync(IndexAccessNode node, RiveFrame frame)
         {
-            var arr = GetVariable(node.ArrayName);
+            var arr = frame.GetVariable(node.ArrayName);
             if (arr is not List<int> list) return 0;
             
-            var idx = await EvaluateExpressionAsync(node.Index);
+            var idx = await EvaluateExpressionAsync(node.Index, frame);
             if (idx is not int i || i < 0 || i >= list.Count) return 0;
             
             return list[i];
         }
                 
-        private async UniTask<bool> EvaluateConditionAsync(ExpressionNode expr)
+        private async UniTask<bool> EvaluateConditionAsync(ExpressionNode expr, RiveFrame frame)
         {
-            var result = await EvaluateExpressionAsync(expr);
+            var result = await EvaluateExpressionAsync(expr, frame);
             if (result is int iv) return iv != 0;
             return false;
         }
-        private async UniTask<ExecutionResult> ExecuteExpressionStatementAsync(ExpressionStatementNode node)
+        private async UniTask<ExecutionResult> ExecuteExpressionStatementAsync(ExpressionStatementNode node, RiveFrame frame)
         {
-            await EvaluateExpressionAsync(node.Expression);
+            await EvaluateExpressionAsync(node.Expression, frame);
             return ExecutionResult.CreateSuccess();
         }
 
-        private async UniTask<ExecutionResult> ExecuteIndexAssignAsync(IndexAssignNode node)
+        private async UniTask<ExecutionResult> ExecuteIndexAssignAsync(IndexAssignNode node, RiveFrame frame)
         {
-            var arr = GetVariable(node.ArrayName);
+            var arr = frame.GetVariable(node.ArrayName);
             if (arr is not List<int> list)
                 return ExecutionResult.CreateError($"'{node.ArrayName}' is not an array");
             
-            var idx = await EvaluateExpressionAsync(node.Index);
-            var val = await EvaluateExpressionAsync(node.Value);
+            var idx = await EvaluateExpressionAsync(node.Index, frame);
+            var val = await EvaluateExpressionAsync(node.Value, frame);
             
             if (idx is not int i || val is not int v)
                 return ExecutionResult.CreateError("Array index and value must be int");
@@ -323,41 +336,6 @@ namespace TheRavine.Base
             
             list[i] = v;
             return ExecutionResult.CreateSuccess();
-        }
-        private void PushScope()
-        {
-            _variableScopes.Push(new Dictionary<string, object>());
-        }
-        
-        private void PopScope()
-        {
-            if (_variableScopes.Count > 0)
-                _variableScopes.Pop();
-        }
-        
-        private void SetVariable(string name, object value)
-        {
-            foreach (var scope in _variableScopes)
-            {
-                if (scope.ContainsKey(name))
-                {
-                    scope[name] = value;
-                    return;
-                }
-            }
-            
-            if (_variableScopes.Count > 0)
-                _variableScopes.Peek()[name] = value;
-        }
-        
-        private object GetVariable(string name)
-        {
-            foreach (var scope in _variableScopes)
-            {
-                if (scope.TryGetValue(name, out var value))
-                    return value;
-            }
-            return null;
         }
     }
     
@@ -384,4 +362,4 @@ namespace TheRavine.Base
         Return,
         Stop
     }
-}
+}
