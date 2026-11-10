@@ -279,6 +279,7 @@ namespace TheRavine.Generator
 
         private readonly ChunkData[] waterNeighborhood = new ChunkData[9];
         private int chunkSetVersion;
+        public int UnloadStamp { get; private set; }
         private long[] chunkRequests = Array.Empty<long>();
         private int chunkRequestCount;
 
@@ -347,6 +348,7 @@ namespace TheRavine.Generator
             randomTicks?.OnChunkReleased(chunkKey);
             mapData.Remove(chunkKey);
             chunkSetVersion++;
+            UnloadStamp++;
 
             if (ReferenceEquals(sampleChunk, cd))
             {
@@ -1158,6 +1160,7 @@ namespace TheRavine.Generator
                     endless[i]?.Dispose();
             }
 
+            UnloadStamp++;
             foreach (var cd in mapData) cd.Value.Dispose();
             mapData.Clear();
 

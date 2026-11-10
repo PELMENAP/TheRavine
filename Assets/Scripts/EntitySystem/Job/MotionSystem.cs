@@ -50,6 +50,24 @@ public unsafe struct HeightAtlas
 
     public float SampleHeight(float wx, float wz)
     {
+        long key  = long.MinValue;
+        int  slot = -1;
+        return Sample(wx, wz, ref key, ref slot);
+    }
+
+    public float SpeedModifier(float x, float z, float2 dir)
+    {
+        const float s = MapGenerator.scale;
+        long key  = long.MinValue;
+        int  slot = -1;
+        float3 normal = MapGenerator.NormalFromHeights(
+            Sample(x - s, z, ref key, ref slot), Sample(x + s, z, ref key, ref slot),
+            Sample(x, z - s, ref key, ref slot), Sample(x, z + s, ref key, ref slot));
+        return MapGenerator.SpeedFromNormal(normal, dir);
+    }
+
+    private float Sample(float wx, float wz, ref long cachedKey, ref int cachedSlot)
+    {
         const int size = MapGenerator.mapChunkSize;
 
         float gx = wx / MapGenerator.scale;
@@ -67,19 +85,28 @@ public unsafe struct HeightAtlas
         float tx = lxf - x0;
         float tz = lzf - z0;
 
+        if ((uint)x0 < (uint)(size - 1) && (uint)z0 < (uint)(size - 1))
+        {
+            long key = Position2Int.Pack(cx, cz);
+            if (key != cachedKey)
+            {
+                cachedKey  = key;
+                cachedSlot = Index.TryGetValue(key, out int found) ? found : -1;
+            }
+            if (cachedSlot < 0) return 0f;
+
+            float* h = Chunks[cachedSlot].Heights;
+            int i0 = z0 * size + x0;
+            return math.lerp(
+                math.lerp(h[i0],        h[i0 + 1],        tx),
+                math.lerp(h[i0 + size], h[i0 + size + 1], tx),
+                tz);
+        }
+
         return math.lerp(
             math.lerp(Cell(cx, cz, x0,     z0),     Cell(cx, cz, x0 + 1, z0),     tx),
             math.lerp(Cell(cx, cz, x0,     z0 + 1), Cell(cx, cz, x0 + 1, z0 + 1), tx),
             tz);
-    }
-
-    public float SpeedModifier(float x, float z, float2 dir)
-    {
-        const float s = MapGenerator.scale;
-        float3 normal = MapGenerator.NormalFromHeights(
-            SampleHeight(x - s, z), SampleHeight(x + s, z),
-            SampleHeight(x, z - s), SampleHeight(x, z + s));
-        return MapGenerator.SpeedFromNormal(normal, dir);
     }
 
     private float Cell(int cx, int cz, int lx, int lz)
@@ -216,6 +243,8 @@ public sealed unsafe class MotionSystem : IDisposable
     private const float AtlasMarginCells    = 3f;
     private const int   JobBatch            = 16;
 
+    private static readonly int4 Unwindowed = new int4(int.MinValue);
+
     private NativeList<MotionState>          _states;
     private NativeList<int>                  _owners;
     private NativeArray<float3>              _positions;
@@ -225,6 +254,8 @@ public sealed unsafe class MotionSystem : IDisposable
     private NativeList<HeightChunk>          _atlasChunks;
 
     private SurfaceMotor[] _motors;
+    private int4[]         _windows;
+    private int            _atlasStamp;
     private MapGenerator   _map;
     private int    _count;
     private double _lastTime;
@@ -244,10 +275,15 @@ public sealed unsafe class MotionSystem : IDisposable
         _atlasIndex  = new NativeParallelHashMap<long, int>(capacity, Allocator.Persistent);
         _atlasChunks = new NativeList<HeightChunk>(capacity, Allocator.Persistent);
         _motors      = new SurfaceMotor[capacity];
+        _windows     = new int4[capacity];
         _lastTime    = SimulationClock.TimeD;
     }
 
-    public void Inject(MapGenerator map) => _map = map;
+    public void Inject(MapGenerator map)
+    {
+        _map        = map;
+        _atlasStamp = int.MinValue;
+    }
 
     public NativeArray<float3> Positions => _positions;
 
@@ -296,13 +332,18 @@ public sealed unsafe class MotionSystem : IDisposable
         }
 
         if (_count == _motors.Length)
-            Array.Resize(ref _motors, Math.Max(_motors.Length << 1, _count + 1));
+        {
+            int cap = Math.Max(_motors.Length << 1, _count + 1);
+            Array.Resize(ref _motors, cap);
+            Array.Resize(ref _windows, cap);
+        }
 
         _states.Add(state);
         _owners.Add(slot);
         _transforms.Add(tr);
         _motionOf[slot] = _count;
         _motors[_count] = motor;
+        _windows[_count] = Unwindowed;
         motor.MotionIndex = _count;
         _count++;
         return true;
@@ -343,7 +384,7 @@ public sealed unsafe class MotionSystem : IDisposable
         float maxDt = SimulationRules.Frame.MaxCycleDt;
         if (dt > maxDt) dt = maxDt;
 
-        BuildAtlas();
+        SyncAtlas();
 
         var states = _states.AsArray();
 
@@ -374,23 +415,26 @@ public sealed unsafe class MotionSystem : IDisposable
     {
         if (!_disposed && _map != null)
         {
-            BuildAtlas();
-            for (int i = 0; i < count; i++) AppendAtlas(points[i].x, points[i].y, margin, false);
+            SyncAtlas();
+            for (int i = 0; i < count; i++) AppendWindow(WindowOf(points[i].x, points[i].y, margin), false);
         }
         return new HeightAtlas { Index = _atlasIndex, Chunks = _atlasChunks.AsArray() };
     }
 
-    private unsafe void AppendAtlas(float x, float z, float margin, bool generate)
+    private static int4 WindowOf(float x, float z, float margin)
     {
         const float invChunk = 1f / MapGenerator.chunkSize;
+        return new int4(
+            (int)math.floor((x - margin) * invChunk),
+            (int)math.floor((z - margin) * invChunk),
+            (int)math.floor((x + margin) * invChunk),
+            (int)math.floor((z + margin) * invChunk));
+    }
 
-        int x0 = (int)math.floor((x - margin) * invChunk);
-        int x1 = (int)math.floor((x + margin) * invChunk);
-        int z0 = (int)math.floor((z - margin) * invChunk);
-        int z1 = (int)math.floor((z + margin) * invChunk);
-
-        for (int cz = z0; cz <= z1; cz++)
-        for (int cx = x0; cx <= x1; cx++)
+    private unsafe void AppendWindow(int4 w, bool generate)
+    {
+        for (int cz = w.y; cz <= w.w; cz++)
+        for (int cx = w.x; cx <= w.z; cx++)
         {
             long key = Position2Int.Pack(cx, cz);
             if (_atlasIndex.ContainsKey(key)) continue;
@@ -404,18 +448,32 @@ public sealed unsafe class MotionSystem : IDisposable
         }
     }
 
-    private void BuildAtlas()
+    private void SyncAtlas()
     {
-        _atlasIndex.Clear();
-        _atlasChunks.Clear();
-
         const float margin = AtlasMarginCells * MapGenerator.scale;
 
-        for (int i = 0; i < _count; i++)
+        int stamp;
+        do
         {
-            float3 p = _positions[_owners[i]];
-            AppendAtlas(p.x, p.z, margin, true);
+            stamp = _map.UnloadStamp;
+            if (stamp != _atlasStamp)
+            {
+                _atlasStamp = stamp;
+                _atlasIndex.Clear();
+                _atlasChunks.Clear();
+                for (int i = 0; i < _count; i++) _windows[i] = Unwindowed;
+            }
+
+            for (int i = 0; i < _count; i++)
+            {
+                float3 p = _positions[_owners[i]];
+                int4 w = WindowOf(p.x, p.z, margin);
+                if (math.all(w == _windows[i])) continue;
+                AppendWindow(w, true);
+                _windows[i] = w;
+            }
         }
+        while (stamp != _map.UnloadStamp);
     }
 
     private void Finish(int idx)
@@ -433,6 +491,7 @@ public sealed unsafe class MotionSystem : IDisposable
         {
             var moved = _motors[last];
             _motors[idx] = moved;
+            _windows[idx] = _windows[last];
             moved.MotionIndex = idx;
             _motionOf[_owners[idx]] = idx;
         }
