@@ -38,6 +38,7 @@ Shader "The Ravine/VolumetricFog"
 
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -110,6 +111,26 @@ Shader "The Ravine/VolumetricFog"
                 return exp(-(half)opticalDepth);
             }
 
+            half3 AdditionalLightScatter(uint lightIndex, float3 pos, FogParams p)
+            {
+                Light al = GetAdditionalLight(lightIndex, pos);
+                half alShadow = (half)AdditionalLightShadow(lightIndex, pos, al.direction, half4(1,1,1,1), half4(1,1,1,1));
+                alShadow = lerp(1.0h, alShadow, _ShadowColor.a);
+                half alDist = (half)al.distanceAttenuation;
+
+                if (alShadow <= 0.001h || alDist <= 0.00001h) return 0.0h;
+
+                half alSelf = ComputeSelfShadow(pos, al.direction, _AdditionalLightSelfShadowDistance, p);
+                alSelf = lerp(1.0h, alSelf, alShadow * _SelfShadowColor.a);
+                alSelf = (half)smoothstep((float)_SelfShadowRemapMin, (float)_SelfShadowRemapMax, (float)alSelf);
+                alSelf = pow(alSelf, _SelfShadowPower);
+
+                half3 alColor = (half3)al.color;
+                alColor = lerp(alColor, _ShadowColor.rgb,     1.0h - alShadow);
+                alColor = lerp(alColor, _SelfShadowColor.rgb, 1.0h - alSelf);
+                return alColor * alDist;
+            }
+
             float GetRayDistance(int index, int stepCount, float maxDistance, float jitter)
             {
                 float u = ((float)index + jitter) / (float)stepCount;
@@ -118,7 +139,7 @@ Shader "The Ravine/VolumetricFog"
 
             half4 Frag(Varyings input) : SV_Target
             {
-                if (_Density < 0.01f) 
+                if ((float)_Density < 0.0002f) 
                 {
                     return SAMPLE_TEXTURE2D(_BlitTexture, sampler_LinearClamp, input.texcoord);
                 }
@@ -195,31 +216,21 @@ Shader "The Ravine/VolumetricFog"
                     half scatter = (1.0h - stepTrans) * (fogDens > 0.0001h); 
                     half3 stepLight = mainLightColor * scatter;
 
+                    InputData inputData = (InputData)0;
+                    inputData.positionWS = pos;
+                    inputData.normalizedScreenSpaceUV = uvSS;
+
+                    #if defined(_ADDITIONAL_LIGHTS) || USE_CLUSTER_LIGHT_LOOP
+                    #if USE_CLUSTER_LIGHT_LOOP
+                    UNITY_LOOP for (uint dirIndex = 0; dirIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); dirIndex++)
+                        stepLight += AdditionalLightScatter(dirIndex, pos, fp);
+                    #endif
+
                     uint lightCount = min(GetAdditionalLightsCount(), 8);
-                    [loop]
                     LIGHT_LOOP_BEGIN(lightCount)
-                    {
-                        Light al       = GetAdditionalLight(lightIndex, pos);
-                        half  alShadow = (half)AdditionalLightShadow(lightIndex, pos, al.direction, half4(1,1,1,1), half4(1,1,1,1));
-                        alShadow = lerp(1.0h, alShadow, _ShadowColor.a);
-                        half alDist = (half)al.distanceAttenuation;
-
-                        if (alShadow > 0.001h && alDist > 0.00001h)
-                        {
-                            float ssDist = _AdditionalLightSelfShadowDistance;
-                            half alSelf = ComputeSelfShadow(pos, al.direction, ssDist, fp);
-                            alSelf = lerp(1.0h, alSelf, alShadow * _SelfShadowColor.a);
-                            alSelf = (half)smoothstep((float)_SelfShadowRemapMin, (float)_SelfShadowRemapMax, (float)alSelf);
-                            alSelf = pow(alSelf, _SelfShadowPower);
-
-                            half3 alColor = (half3)al.color;
-                            alColor = lerp(alColor, _ShadowColor.rgb,     1.0h - alShadow);
-                            alColor = lerp(alColor, _SelfShadowColor.rgb, 1.0h - alSelf);
-                            alColor *= alDist;
-                            stepLight += alColor;
-                        }
-                    }
+                        stepLight += AdditionalLightScatter(lightIndex, pos, fp);
                     LIGHT_LOOP_END
+                    #endif
 
                     stepLight     *= scatter;
                     lighting      += stepLight * transmittance;
