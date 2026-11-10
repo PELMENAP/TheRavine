@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -54,13 +55,12 @@ namespace TheRavine.Generator
         public bool TrySave(long chunkKey, ChunkData chunk)
         {
             string path = PathOf(chunkKey);
-            string temp = path + ".tmp";
 
             try
             {
-                using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write))
-                using (var writer = new BinaryWriter(stream))
+                AtomicFile.Write(path, stream =>
                 {
+                    using var writer = new BinaryWriter(stream, Encoding.UTF8, true);
                     writer.Write(Magic);
                     writer.Write(Format);
                     writer.Write(_seed);
@@ -82,10 +82,8 @@ namespace TheRavine.Generator
                         writer.Write(edits.Values[i]);
                     }
                     edits.Dispose();
-                }
+                });
 
-                if (File.Exists(path)) File.Delete(path);
-                File.Move(temp, path);
                 return true;
             }
             catch (IOException e)
