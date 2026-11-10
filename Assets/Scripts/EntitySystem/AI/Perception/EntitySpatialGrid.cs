@@ -17,6 +17,7 @@ public sealed class EntitySpatialGrid : IDisposable
     private NativeArray<int>   _items;
     private NativeArray<int>   _visit;
     private NativeArray<int>   _ids;
+    private NativeArray<int>   _colony;
     private NativeArray<float> _px;
     private NativeArray<float> _py;
     private NativeArray<float> _pz;
@@ -81,6 +82,7 @@ public sealed class EntitySpatialGrid : IDisposable
             _pz[written]     = p.z;
             _models[written] = e;
             _ids[written]    = e.ManagerIndex;
+            _colony[written] = e.ColonyIndex;
 
             int b = BucketOf(CellCoord(p.x), CellCoord(p.z));
             _bucketOf[written] = b;
@@ -149,13 +151,18 @@ public sealed class EntitySpatialGrid : IDisposable
 
     public EntityModel Survey(Vector3 origin, EntityModel self, ColonyState colony,
         float nearestRadius, float crowdRadius, int crowdCap,
-        out float nearestDistance, out int crowd, out int kin)
+        out float nearestDistance, out int crowd, out int kin,
+        out EntityModel foreign, out float foreignDistance)
     {
         using var scope = SurveyMarker.Auto();
         nearestDistance = -1f;
+        foreignDistance = -1f;
+        foreign = null;
         crowd = 0;
         kin   = 0;
         if (_count == 0) return null;
+
+        int colonyIndex = colony != null ? colony.Index : 0;
 
         float nr2   = nearestRadius * nearestRadius;
         float cr2   = crowdRadius * crowdRadius;
@@ -166,6 +173,7 @@ public sealed class EntitySpatialGrid : IDisposable
 
         EntityModel best = null;
         float minSqr = float.MaxValue;
+        float minForeignSqr = float.MaxValue;
 
         for (int dz = -ring; dz <= ring; dz++)
         for (int dx = -ring; dx <= ring; dx++)
@@ -188,7 +196,8 @@ public sealed class EntitySpatialGrid : IDisposable
 
                 bool asNearest = sqr <= nr2 && sqr < minSqr;
                 bool asCrowd   = sqr <= cr2 && crowd < crowdCap;
-                if (!asNearest && !asCrowd) continue;
+                bool asForeign = sqr <= nr2 && sqr < minForeignSqr && _colony[i] != colonyIndex;
+                if (!asNearest && !asCrowd && !asForeign) continue;
 
                 var m = _models[i];
                 if (ReferenceEquals(m, self) || m.IsDeathPending || m.IsDisposed) continue;
@@ -201,12 +210,18 @@ public sealed class EntitySpatialGrid : IDisposable
                 if (asCrowd)
                 {
                     crowd++;
-                    if (m.Colony == colony) kin++;
+                    if (_colony[i] == colonyIndex) kin++;
+                }
+                if (asForeign)
+                {
+                    minForeignSqr = sqr;
+                    foreign       = m;
                 }
             }
         }
 
         if (best != null) nearestDistance = math.sqrt(minSqr);
+        if (foreign != null) foreignDistance = math.sqrt(minForeignSqr);
         return best;
     }
 
@@ -280,6 +295,7 @@ public sealed class EntitySpatialGrid : IDisposable
 
         _items    = new NativeArray<int>(cap, Allocator.Persistent);
         _ids      = new NativeArray<int>(cap, Allocator.Persistent);
+        _colony   = new NativeArray<int>(cap, Allocator.Persistent);
         _bucketOf = new int[cap];
         _px       = new NativeArray<float>(cap, Allocator.Persistent);
         _py       = new NativeArray<float>(cap, Allocator.Persistent);
@@ -298,6 +314,7 @@ public sealed class EntitySpatialGrid : IDisposable
     {
         if (_items.IsCreated)   _items.Dispose();
         if (_ids.IsCreated)     _ids.Dispose();
+        if (_colony.IsCreated)  _colony.Dispose();
         if (_px.IsCreated)      _px.Dispose();
         if (_py.IsCreated)      _py.Dispose();
         if (_pz.IsCreated)      _pz.Dispose();

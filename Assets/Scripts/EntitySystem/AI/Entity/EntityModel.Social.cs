@@ -59,14 +59,6 @@ public partial class EntityModel
         return best;
     }
 
-    private bool HasForeignEntities()
-    {
-        int populated = 0;
-        for (int c = 0; c < _registry.Count; c++)
-            if (_registry[c].MemberCount > 0 && ++populated > 1) return true;
-        return false;
-    }
-
     private bool ComputeNestFood(NestState nest, in SimulationRules.RulesFrame r)
     {
         if (nest == null || !IsAtNest) return false;
@@ -134,29 +126,6 @@ public partial class EntityModel
         }
         CreatureCore.ReadVitals(stats, virology, out hp, out energy, out viral);
         source = stats;
-    }
-
-    private EntityModel FindNearestForeign(Vector3 pos, float radius, out float distance)
-    {
-        distance = -1f;
-        if (_registry == null) ServiceLocator.Services.TryGet(out _registry);
-        if (_registry == null || !HasForeignEntities()) return null;
-
-        int found = Perception.FindEntitiesInRadius(pos, this, radius, ForeignScratch);
-        EntityModel best = null;
-        float bestD = float.MaxValue;
-        for (int i = 0; i < found; i++)
-        {
-            var e = ForeignScratch[i];
-            ForeignScratch[i] = null;
-            if (e == null || e.Colony == Colony) continue;
-            float d = math.distancesq((float3)e.Motor.Position(), (float3)pos);
-            if (d >= bestD) continue;
-            bestD = d;
-            best  = e;
-        }
-        if (best != null) distance = math.sqrt(bestD);
-        return best;
     }
 
     private static int CountAndRelease(int found)
