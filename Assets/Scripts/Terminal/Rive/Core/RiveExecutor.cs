@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Base
@@ -177,16 +178,27 @@ namespace TheRavine.Base
                 if (startValue is not int s || endValue is not int e)
                     return ExecutionResult.CreateError("You can loop only int values");
                 
-                for (int i = s; i <= e; i++)
+                var run = frame.Run;
+                
+                for (long i = s; i <= e; i++)
                 {
-                    if (frame.Run.OperationCount >= MAX_OPERATIONS)
-                        return ExecutionResult.CreateError("Operation limit exceeded in loop");
+                    if (run.AbortMessage != null)
+                        return ExecutionResult.CreateError(run.AbortMessage);
                     
-                    frame.SetVariable(node.VariableName, i);
+                    if (++run.OperationCount >= MAX_OPERATIONS)
+                    {
+                        run.AbortMessage = $"Operation limit exceeded ({MAX_OPERATIONS})";
+                        return ExecutionResult.CreateError(run.AbortMessage);
+                    }
+                    
+                    frame.SetVariable(node.VariableName, (int)i);
                     var result = await ExecuteStatementsAsync(node.Body, frame);
                     
                     if (result.Action == ExecutionAction.Return || result.Action == ExecutionAction.Stop)
                         return result;
+                    
+                    if (node.Body.Count == 0 && run.OperationCount % 10 == 0)
+                        await UniTask.Yield(run.Token);
                 }
             }
             finally
@@ -199,19 +211,45 @@ namespace TheRavine.Base
         
         private async UniTask<ExecutionResult> ExecuteTerminalCommandAsync(TerminalCommandNode node, RiveFrame frame)
         {
-            var command = node.Command;
-            
-            foreach (var varName in node.VariableReferences)
-            {
-                var value = frame.GetVariable(varName);
-
-                if (value != null)
-                    command = command.Replace($"{varName}", value.ToRiveString());
-            }
+            var command = node.VariableReferences.Count == 0
+                ? node.Command
+                : SubstituteVariables(node.Command, frame);
             
             var success = await _runtime.ExecuteTerminalCommandAsync(command);
             return success ? ExecutionResult.CreateSuccess() : 
                 ExecutionResult.CreateError($"Command failed: {command}");
+        }
+
+        private static string SubstituteVariables(string command, RiveFrame frame)
+        {
+            var sb = new StringBuilder(command.Length + 16);
+            int i = 0;
+            
+            while (i < command.Length)
+            {
+                if (command[i] == '{')
+                {
+                    int end = i + 1;
+                    while (end < command.Length && (char.IsLetterOrDigit(command[end]) || command[end] == '_'))
+                        end++;
+                    
+                    if (end > i + 1 && end < command.Length && command[end] == '}')
+                    {
+                        var value = frame.GetVariable(command.Substring(i + 1, end - i - 1));
+                        if (value != null)
+                        {
+                            sb.Append(value.ToRiveString());
+                            i = end + 1;
+                            continue;
+                        }
+                    }
+                }
+                
+                sb.Append(command[i]);
+                i++;
+            }
+            
+            return sb.ToString();
         }
 
         private async UniTask<ExecutionResult> ExecuteLogAsync(LogNode node, RiveFrame frame)

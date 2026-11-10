@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -571,5 +572,116 @@ public class RiveInterpreterSecurityTests
 
         Assert.IsTrue(result.Success, result.ErrorMessage);
         Assert.AreEqual(61, result.ReturnValue);
+    });
+
+    [UnityTest]
+    public IEnumerator EmptyLoopToIntMaxValueFailsOnOperationBudget() => UniTask.ToCoroutine(async () =>
+    {
+        var program = new RiveParser(_logger).Parse("empty_loop", "for i = 0 to 2147483647\nend\n>> 1");
+        var run = new RiveRun { OperationCount = 9900 };
+
+        var result = await NewExecutor().ExecuteAsync(program, Array.Empty<int>(), run);
+
+        Assert.IsFalse(result.Success);
+        StringAssert.Contains("Operation limit", result.ErrorMessage);
+    });
+
+    [UnityTest]
+    public IEnumerator EmptyLoopCountsOneOperationPerIteration() => UniTask.ToCoroutine(async () =>
+    {
+        var program = new RiveParser(_logger).Parse("count_loop", "for i = 1 to 5\nend\n>> 1");
+        var run = new RiveRun();
+
+        var result = await NewExecutor().ExecuteAsync(program, Array.Empty<int>(), run);
+
+        Assert.IsTrue(result.Success, result.ErrorMessage);
+        Assert.AreEqual(7, run.OperationCount);
+    });
+
+    [UnityTest]
+    public IEnumerator LoopUpToIntMaxValueTerminates() => UniTask.ToCoroutine(async () =>
+    {
+        var program = new RiveParser(_logger).Parse("max_loop", "int s = 0\nfor i = 2147483645 to 2147483647\ns = s + 1\nend\n>> s");
+        var run = new RiveRun();
+
+        var result = await NewExecutor().ExecuteAsync(program, Array.Empty<int>(), run);
+
+        Assert.IsTrue(result.Success, result.ErrorMessage);
+        Assert.AreEqual(3, result.ReturnValue);
+    });
+
+    [UnityTest]
+    public IEnumerator LoopVariableStillIteratesInclusively() => UniTask.ToCoroutine(async () =>
+    {
+        Load("loop_sum", "int s = 0\nfor i = 1 to 4\ns = s + i\nend\n>> s");
+
+        var result = await _runtime.ExecuteScriptAsync("loop_sum");
+
+        Assert.IsTrue(result.Success, result.ErrorMessage);
+        Assert.AreEqual(10, result.ReturnValue);
+    });
+
+    [UnityTest]
+    public IEnumerator LoopWithStatementsStaysInsideBudget() => UniTask.ToCoroutine(async () =>
+    {
+        var program = new RiveParser(_logger).Parse("heavy_loop", "int s = 0\nfor i = 0 to 100000\ns = s + 1\nend\n>> s");
+        var run = new RiveRun { OperationCount = 9900 };
+
+        var result = await NewExecutor().ExecuteAsync(program, Array.Empty<int>(), run);
+
+        Assert.IsFalse(result.Success);
+        StringAssert.Contains("Operation limit", result.ErrorMessage);
+    });
+
+    private (RiveRuntime runtime, List<string> commands) CommandRuntime()
+    {
+        var commands = new List<string>();
+        var runtime = new RiveRuntime(command =>
+        {
+            commands.Add(command);
+            return UniTask.FromResult(true);
+        }, _logger);
+        return (runtime, commands);
+    }
+
+    [UnityTest]
+    public IEnumerator VariableSubstitutionDoesNotRewriteCommandWords() => UniTask.ToCoroutine(async () =>
+    {
+        var (runtime, commands) = CommandRuntime();
+        runtime.LoadFile("subst", "int i = 7\n~print {i} item is in index\nprint item {i}\n>> 1");
+
+        var result = await runtime.ExecuteScriptAsync("subst");
+
+        Assert.IsTrue(result.Success, result.ErrorMessage);
+        Assert.AreEqual(2, commands.Count);
+        Assert.AreEqual("~print 7 item is in index", commands[0]);
+        Assert.AreEqual("~print item 7", commands[1]);
+    });
+
+    [UnityTest]
+    public IEnumerator VariableSubstitutionIsSinglePassAndKeepsUnknownPlaceholders() => UniTask.ToCoroutine(async () =>
+    {
+        var (runtime, commands) = CommandRuntime();
+        runtime.LoadFile("subst2", "int a = 5\nint b = 6\n~print {a}{b} {missing} {a");
+
+        var result = await runtime.ExecuteScriptAsync("subst2");
+
+        Assert.IsTrue(result.Success, result.ErrorMessage);
+        Assert.AreEqual("~print 56 {missing} {a", commands[0]);
+    });
+
+    [UnityTest]
+    public IEnumerator SubstitutionOfManyBracesIsLinear() => UniTask.ToCoroutine(async () =>
+    {
+        var (runtime, commands) = CommandRuntime();
+        runtime.LoadFile("braces", "int a = 1\n~print {a} " + new string('{', 60000));
+        var sw = Stopwatch.StartNew();
+
+        var result = await runtime.ExecuteScriptAsync("braces");
+        sw.Stop();
+
+        Assert.IsTrue(result.Success, result.ErrorMessage);
+        Assert.AreEqual(1, commands.Count);
+        Assert.Less(sw.ElapsedMilliseconds, 500);
     });
 }
