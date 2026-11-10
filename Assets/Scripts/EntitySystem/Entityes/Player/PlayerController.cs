@@ -31,6 +31,8 @@ namespace TheRavine.EntityControl
         [SerializeField] private float movementMinimum, sendInterval = 0.1f, maxStepHeight = 0.6f;
         [SerializeField] private float intentTimeout = 0.6f;
         [SerializeField] private float editRate = 20f, editBurst = 16f, refuseLogInterval = 5f;
+        [SerializeField] private float moveRateMargin = 2f, moveBurst = 8f;
+        [SerializeField] private float craftRate = 5f, craftBurst = 5f;
         [SerializeField] private float craftTimeTolerance = 0.9f;
         [SerializeField] private float jumpChargeSlack = 0.2f;
         [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick, Jump;
@@ -100,7 +102,9 @@ namespace TheRavine.EntityControl
         private float broadcastTimer;
         private Vector3 lastBroadcastPosition;
         private Vector3 lastBroadcastVelocity;
-        private double editReadyTime;
+        private RateBudget editBudget;
+        private RateBudget moveBudget;
+        private RateBudget craftBudget;
         private double lastJumpTime;
         private double refuseLogTime;
         private int refusedEdits;
@@ -398,6 +402,7 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void MoveServerRpc(Vector2 direction, float inputSpeed, bool sprint)
         {
+            if (!TryConsumeMove()) return;
             if (!math.isfinite(direction.x) || !math.isfinite(direction.y) || !math.isfinite(inputSpeed)) return;
 
             float directionSq = direction.sqrMagnitude;
@@ -484,6 +489,8 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void StopMoveServerRpc()
         {
+            if (!TryConsumeMove()) return;
+
             if (intentDirection.sqrMagnitude > 0f) brakeDirection = intentDirection;
             intentDirection = Vector2.zero;
             intentSpeed = 0f;
@@ -521,6 +528,7 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void JumpServerRpc(float charge)
         {
+            if (!TryConsumeMove()) return;
             if (!math.isfinite(charge)) return;
             if (terrainResolver == null || !terrainResolver.IsGrounded) return;
             terrainResolver.ConsumeGround();
@@ -720,7 +728,8 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void CraftRequestServerRpc(int recipeIndex)
         {
-            if (!UsesLedger || !CraftModel.Shared.TryGet(recipeIndex, out CraftRecipe recipe)) return;
+            if (!UsesLedger || !TryConsumeCraft()) return;
+            if (!CraftModel.Shared.TryGet(recipeIndex, out CraftRecipe recipe)) return;
 
             double now = Time.unscaledTimeAsDouble;
             if (now < craftReadyTime) return;
@@ -812,13 +821,22 @@ namespace TheRavine.EntityControl
             return true;
         }
 
-        private bool TryConsumeEdit()
+        private bool TryConsumeEdit() => editBudget.TryConsume(Time.unscaledTimeAsDouble, editRate, editBurst);
+
+        private bool TryConsumeMove()
         {
-            double now = Time.unscaledTimeAsDouble;
-            double ready = math.max(editReadyTime, now);
-            if (ready - now > editBurst / editRate) return false;
-            editReadyTime = ready + 1.0 / editRate;
-            return true;
+            if (moveBudget.TryConsume(Time.unscaledTimeAsDouble, moveRateMargin / math.max(sendInterval, 0.001f), moveBurst)) return true;
+
+            refusedEdits++;
+            return false;
+        }
+
+        private bool TryConsumeCraft()
+        {
+            if (craftBudget.TryConsume(Time.unscaledTimeAsDouble, craftRate, craftBurst)) return true;
+
+            refusedEdits++;
+            return false;
         }
 
         private float LatencyCompensation()
