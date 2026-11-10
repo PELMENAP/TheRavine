@@ -35,7 +35,7 @@ public class Mimic : MonoBehaviour
     public int minimumAnchoredParts;
     public int maxLegs;
 
-    public LegPool Pool { get; private set; }
+    public LegStore Legs { get; private set; }
     public MapGenerator MapGenerator { get; private set; }
 
     private LegPlanner planner;
@@ -68,6 +68,8 @@ public class Mimic : MonoBehaviour
     private static bool   _lodCameraValid;
     private static Vector3 _lodCameraPosition;
 
+    private float _jobDt;
+    private bool  _emitMesh;
     private int   _id;
     private int   _lod;
     private float _accumDt;
@@ -109,19 +111,34 @@ public class Mimic : MonoBehaviour
     {
         _structuresReady = true;
 
-        Pool = new LegPool(maxLegs);
         planner = new LegPlanner();
         animator = new LegAnimator();
         legRenderer = new LegRenderer();
         legRenderer.Initialize(this);
+        Legs = new LegStore(maxLegs, legRenderer.MaxVertices);
     }
 
     private void OnDestroy()
     {
+        Queued = false;
         legRenderer?.Dispose();
+        Legs?.Dispose();
     }
 
     private void OnEnable() => legRenderer?.ApplyShown();
+
+    private void OnDisable() => Queued = false;
+
+    internal bool Queued { get; private set; }
+
+    internal MimicWork BuildWork()
+        => Legs.MakeWork(transform.position, _jobDt, legWidth * 0.5f, _emitMesh ? legRenderer.Samples : 0, legRenderer.Ring, legResolution);
+
+    internal void ApplyWork(in MimicWork work)
+    {
+        Queued = false;
+        if (_emitMesh) legRenderer.Upload(Legs, work.VertexCount, work.ActiveLegs);
+    }
 
     private static bool TryGetCameraPosition(out Vector3 position)
     {
@@ -177,7 +194,12 @@ public class Mimic : MonoBehaviour
         legPlacerOrigin = transform.position + lastForward * newLegRadius;
 
         planner.Update(this, dt);
-        animator.Update(this, dt);
-        if (_lod < CullLevel) legRenderer.UpdateMesh(this);
+        animator.UpdateStates(this, dt);
+
+        _jobDt = dt;
+        _emitMesh = _lod < CullLevel;
+        if (Queued) return;
+        Queued = true;
+        MimicLegSystem.Enqueue(this);
     }
 }

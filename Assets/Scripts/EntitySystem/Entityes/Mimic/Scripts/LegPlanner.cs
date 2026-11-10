@@ -24,14 +24,17 @@ public class LegPlanner
         Vector3 newFootPos = mimic.legPlacerOrigin + direction * randomDist;
         newFootPos.y = mimic.MapGenerator.SampleHeightBilinear(newFootPos.x, newFootPos.z);
 
+        var store = mimic.Legs;
+        float minDistance2 = mimic.minLegDistance * mimic.minLegDistance;
         bool tooClose = false;
-        foreach (var otherLeg in mimic.Pool.GetAll())
+        for (int i = 0; i < store.Capacity; i++)
         {
-            if (otherLeg.state == LegState.Disabled) continue;
+            var otherLeg = store[i];
+            if (otherLeg.State == LegState.Disabled) continue;
             
-            float dx = newFootPos.x - otherLeg.footPosition.x;
-            float dz = newFootPos.z - otherLeg.footPosition.z;
-            if (dx * dx + dz * dz < mimic.minLegDistance * mimic.minLegDistance)
+            float dx = newFootPos.x - otherLeg.Foot.x;
+            float dz = newFootPos.z - otherLeg.Foot.z;
+            if (dx * dx + dz * dz < minDistance2)
             {
                 tooClose = true;
                 break;
@@ -45,11 +48,11 @@ public class LegPlanner
             {
                 if (mimic.legCount >= mimic.maxLegs) return;
                 
-                LegData leg = mimic.Pool.Get();
-                if (leg == null) return;
+                int slot = store.FindFree();
+                if (slot < 0) return;
 
                 float growCoef = RavineRandom.RangeFloat(mimic.minGrowCoef, mimic.maxGrowCoef);
-                leg.Activate(mimic, newFootPos, growCoef, lifeTime);
+                store.Activate(slot, mimic, newFootPos, growCoef, lifeTime);
                 mimic.legCount++;
             }
         }
