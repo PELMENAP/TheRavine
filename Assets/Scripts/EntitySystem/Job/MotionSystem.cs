@@ -11,7 +11,6 @@ using TheRavine.Generator;
 
 public struct MotionState
 {
-    public float3 Position;
     public float2 Start;
     public float2 Control;
     public float2 Goal;
@@ -98,6 +97,8 @@ public unsafe struct HeightAtlas
 public struct MotionJob : IJobParallelFor
 {
     public NativeArray<MotionState> States;
+    [ReadOnly] public NativeArray<int> Owners;
+    [NativeDisableParallelForRestriction] public NativeArray<float3> Positions;
     public HeightAtlas Atlas;
     public double Now;
     public float  Dt;
@@ -114,7 +115,8 @@ public struct MotionJob : IJobParallelFor
         var s = States[index];
         if (s.Done != 0) return;
 
-        float3 pos = s.Position;
+        int    owner = Owners[index];
+        float3 pos   = Positions[owner];
         float2 toGoal = s.Goal - pos.xz;
 
         if (s.T >= 1f || math.lengthsq(toGoal) <= s.Arrive2)
@@ -172,7 +174,7 @@ public struct MotionJob : IJobParallelFor
         pos.x = next.x;
         pos.z = next.y;
         pos.y = Atlas.SampleHeight(pos.x, pos.z) + s.HeightOffset;
-        s.Position = pos;
+        Positions[owner] = pos;
 
         float len = math.length(step);
         s.Distance += len;
@@ -200,10 +202,11 @@ public struct MotionJob : IJobParallelFor
 [BurstCompile]
 public struct MotionApplyJob : IJobParallelForTransform
 {
-    [ReadOnly] public NativeArray<MotionState> States;
+    [ReadOnly] public NativeArray<int> Owners;
+    [ReadOnly] public NativeArray<float3> Positions;
 
     public void Execute(int index, TransformAccess transform)
-        => transform.position = States[index].Position;
+        => transform.position = Positions[Owners[index]];
 }
 
 public sealed unsafe class MotionSystem : IDisposable
@@ -214,6 +217,9 @@ public sealed unsafe class MotionSystem : IDisposable
     private const int   JobBatch            = 16;
 
     private NativeList<MotionState>          _states;
+    private NativeList<int>                  _owners;
+    private NativeArray<float3>              _positions;
+    private NativeArray<int>                 _motionOf;
     private TransformAccessArray             _transforms;
     private NativeParallelHashMap<long, int> _atlasIndex;
     private NativeList<HeightChunk>          _atlasChunks;
@@ -230,6 +236,10 @@ public sealed unsafe class MotionSystem : IDisposable
     {
         if (capacity < 1) capacity = 1;
         _states      = new NativeList<MotionState>(capacity, Allocator.Persistent);
+        _owners      = new NativeList<int>(capacity, Allocator.Persistent);
+        _positions   = new NativeArray<float3>(capacity, Allocator.Persistent);
+        _motionOf    = new NativeArray<int>(capacity, Allocator.Persistent);
+        for (int i = 0; i < capacity; i++) _motionOf[i] = -1;
         _transforms  = new TransformAccessArray(capacity);
         _atlasIndex  = new NativeParallelHashMap<long, int>(capacity, Allocator.Persistent);
         _atlasChunks = new NativeList<HeightChunk>(capacity, Allocator.Persistent);
@@ -239,9 +249,40 @@ public sealed unsafe class MotionSystem : IDisposable
 
     public void Inject(MapGenerator map) => _map = map;
 
+    public NativeArray<float3> Positions => _positions;
+
+    public float3 PositionOf(int slot)
+        => _positions.IsCreated && (uint)slot < (uint)_positions.Length ? _positions[slot] : float3.zero;
+
+    public void SetPosition(int slot, float3 position)
+    {
+        if (_positions.IsCreated && (uint)slot < (uint)_positions.Length) _positions[slot] = position;
+    }
+
+    public void RemoveSwapBack(int index, int last)
+    {
+        if (_disposed || !_positions.IsCreated) return;
+        int cap = _positions.Length;
+        if ((uint)index >= (uint)cap || (uint)last >= (uint)cap) return;
+
+        int moving = _motionOf[index];
+        if (moving >= 0) Finish(moving);
+
+        if (index != last)
+        {
+            _positions[index] = _positions[last];
+            int movedMotion = _motionOf[last];
+            _motionOf[index] = movedMotion;
+            if (movedMotion >= 0) _owners[movedMotion] = index;
+        }
+        _motionOf[last]  = -1;
+        _positions[last] = default;
+    }
+
     internal bool Start(SurfaceMotor motor, Transform tr, in MotionState state)
     {
-        if (_disposed || _map == null) return false;
+        int slot = motor.Slot;
+        if (_disposed || _map == null || (uint)slot >= (uint)_positions.Length) return false;
 
         int idx = motor.MotionIndex;
         if ((uint)idx < (uint)_count && ReferenceEquals(_motors[idx], motor))
@@ -258,7 +299,9 @@ public sealed unsafe class MotionSystem : IDisposable
             Array.Resize(ref _motors, Math.Max(_motors.Length << 1, _count + 1));
 
         _states.Add(state);
+        _owners.Add(slot);
         _transforms.Add(tr);
+        _motionOf[slot] = _count;
         _motors[_count] = motor;
         motor.MotionIndex = _count;
         _count++;
@@ -307,6 +350,8 @@ public sealed unsafe class MotionSystem : IDisposable
         var move = new MotionJob
         {
             States              = states,
+            Owners              = _owners.AsArray(),
+            Positions           = _positions,
             Atlas               = new HeightAtlas { Index = _atlasIndex, Chunks = _atlasChunks.AsArray() },
             Now                 = now,
             Dt                  = dt,
@@ -319,7 +364,7 @@ public sealed unsafe class MotionSystem : IDisposable
             WaterDrainMul         = SimulationRules.Frame.WaterDrainMul,
         }.Schedule(_count, JobBatch);
 
-        new MotionApplyJob { States = states }.Schedule(_transforms, move).Complete();
+        new MotionApplyJob { Owners = _owners.AsArray(), Positions = _positions }.Schedule(_transforms, move).Complete();
 
         for (int i = _count - 1; i >= 0; i--)
             if (_states[i].Done != 0) Finish(i);
@@ -368,7 +413,7 @@ public sealed unsafe class MotionSystem : IDisposable
 
         for (int i = 0; i < _count; i++)
         {
-            float3 p = _states[i].Position;
+            float3 p = _positions[_owners[i]];
             AppendAtlas(p.x, p.z, margin, true);
         }
     }
@@ -379,7 +424,9 @@ public sealed unsafe class MotionSystem : IDisposable
         motor.OnMotionFinished(_states[idx]);
 
         int last = --_count;
+        _motionOf[_owners[idx]] = -1;
         _states.RemoveAtSwapBack(idx);
+        _owners.RemoveAtSwapBack(idx);
         _transforms.RemoveAtSwapBack(idx);
 
         if (idx != last)
@@ -387,6 +434,7 @@ public sealed unsafe class MotionSystem : IDisposable
             var moved = _motors[last];
             _motors[idx] = moved;
             moved.MotionIndex = idx;
+            _motionOf[_owners[idx]] = idx;
         }
         _motors[last] = null;
         motor.MotionIndex = -1;
@@ -402,6 +450,9 @@ public sealed unsafe class MotionSystem : IDisposable
         _count = 0;
 
         if (_states.IsCreated)       _states.Dispose();
+        if (_owners.IsCreated)       _owners.Dispose();
+        if (_positions.IsCreated)    _positions.Dispose();
+        if (_motionOf.IsCreated)     _motionOf.Dispose();
         if (_transforms.isCreated)   _transforms.Dispose();
         if (_atlasIndex.IsCreated)   _atlasIndex.Dispose();
         if (_atlasChunks.IsCreated)  _atlasChunks.Dispose();

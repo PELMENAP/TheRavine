@@ -17,7 +17,10 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
     private bool  _arrived;
     private bool  _blocked;
 
+    private float3 _detached;
+
     internal int MotionIndex = -1;
+    internal int Slot        = -1;
 
     public bool       IsMoving => MotionIndex >= 0;
     public MoveResult LastMove => new(_distance, _pathCost, _energy, _arrived, _blocked);
@@ -31,16 +34,27 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
         }
     }
 
-    private void Awake() => _tr = transform;
+    private void Awake()
+    {
+        _tr       = transform;
+        _detached = _tr.position;
+    }
+
     private void OnDisable() => Stop();
 
     public void BindMotion(MotionSystem system) => motion = system;
 
-    public Vector3 Position() => _tr != null ? _tr.position : Vector3.zero;
+    public void BindSlot(int slot)
+    {
+        if (slot < 0 && Slot >= 0 && motion != null) _detached = motion.PositionOf(Slot);
+        Slot = slot;
+    }
+
+    public Vector3 Position() => Slot >= 0 && motion != null ? motion.PositionOf(Slot) : _detached;
 
     public void BeginMove(Vector3 target, float speed, float energyCostPerSec, double deadline)
     {
-        Vector3 from = _tr != null ? _tr.position : target;
+        Vector3 from = Position();
         BeginMove(target, (from + target) * 0.5f, speed, energyCostPerSec, deadline);
     }
 
@@ -52,13 +66,13 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
         _arrived  = false;
         _blocked  = false;
 
-        if (motion == null || _tr == null)
+        if (motion == null || _tr == null || Slot < 0)
         {
             Stop();
             return;
         }
 
-        float3 pos   = _tr.position;
+        float3 pos   = Position();
         float2 start = pos.xz;
         float2 ctrl  = new float2(control.x, control.z);
         float2 goal  = new float2(target.x, target.z);
@@ -66,7 +80,6 @@ public class SurfaceMotor : MonoBehaviour, IEntityMotor, IVelocitySource
 
         var state = new MotionState
         {
-            Position      = pos,
             Start         = start,
             Control       = ctrl,
             Goal          = goal,

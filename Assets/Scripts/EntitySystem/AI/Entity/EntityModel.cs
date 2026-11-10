@@ -444,7 +444,16 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public bool IsDeathPending { get; private set; }
     public void MarkDeathPending() => IsDeathPending = true;
 
-    public int ManagerIndex = -1;
+    private int _managerIndex = -1;
+    public int ManagerIndex
+    {
+        get => _managerIndex;
+        set
+        {
+            _managerIndex = value;
+            Motor?.BindSlot(value);
+        }
+    }
 
     private readonly float[] _decisionInput = new float[InputVectorizer.VectorSize];
     public float[] DecisionInput => _decisionInput;

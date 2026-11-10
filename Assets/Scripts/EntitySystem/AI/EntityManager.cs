@@ -768,7 +768,7 @@ public class EntityManager : MonoBehaviour
         _tickCount = count;
 
         SimulationRules.CaptureFrame();
-        _grid.Rebuild(_tickSnapshot, _tickCount, tuning.DetectionRadius);
+        _grid.Rebuild(_tickSnapshot, _tickCount, tuning.DetectionRadius, _motion.Positions);
         _speech.Flush(_grid, SimulationClock.TimeD);
         RunFlocking();
     }

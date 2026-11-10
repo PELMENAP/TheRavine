@@ -7,6 +7,7 @@ public interface IEnergySink
 public interface IEntityMotor
 {
     Vector3 Position();
+    void BindSlot(int slot);
     void BeginMove(Vector3 target, float speed, float energyCostPerSec, double deadline);
     void BeginMove(Vector3 target, Vector3 control, float speed, float energyCostPerSec, double deadline);
     bool IsMoving { get; }

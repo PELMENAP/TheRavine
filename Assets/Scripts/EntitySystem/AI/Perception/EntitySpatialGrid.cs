@@ -56,7 +56,7 @@ public sealed class EntitySpatialGrid : IDisposable
         return start;
     }
 
-    public unsafe void Rebuild(EntityModel[] snapshot, int count, float cellSize)
+    public unsafe void Rebuild(EntityModel[] snapshot, int count, float cellSize, NativeArray<float3> positions)
     {
         using var scope = RebuildMarker.Auto();
         if (cellSize < 0.01f) cellSize = 0.01f;
@@ -73,9 +73,9 @@ public sealed class EntitySpatialGrid : IDisposable
         for (int i = 0; i < count; i++)
         {
             var e = snapshot[i];
-            if (e == null || e.IsDisposed || e.IsDeathPending) continue;
+            if (e == null || e.IsDisposed || e.IsDeathPending || (uint)e.ManagerIndex >= (uint)positions.Length) continue;
 
-            Vector3 p = e.Motor.Position();
+            float3 p = positions[e.ManagerIndex];
             _px[written]     = p.x;
             _py[written]     = p.y;
             _pz[written]     = p.z;
