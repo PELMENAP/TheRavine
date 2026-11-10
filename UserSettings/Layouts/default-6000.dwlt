@@ -1372,13 +1372,13 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: 422.83005, y: 145.37146, z: -532.0465}
+    m_Target: {x: 271.03732, y: -103.519806, z: 2761.8665}
     speed: 2
     m_Value: {x: 422.83005, y: 145.37146, z: -532.0465}
   m_RenderMode: 0
   m_CameraMode:
-    drawMode: 0
-    name: Shaded
+    drawMode: 1
+    name: Wireframe
     section: Shading Mode
   m_ValidateTrueMetals: 0
   m_DoValidateTrueMetals: 0
@@ -1420,11 +1420,11 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: -0.10148654, y: 0.78624547, z: 0.13568814, w: 0.594851}
+    m_Target: {x: 0.06528746, y: 0.013198381, z: 0.00008726231, w: 0.99816656}
     speed: 2
     m_Value: {x: -0.101486534, y: 0.78624547, z: 0.13568813, w: 0.594851}
   m_Size:
-    m_Target: 170.72525
+    m_Target: 2280.3228
     speed: 2
     m_Value: 170.72525
   m_Ortho:
@@ -1533,11 +1533,11 @@ MonoBehaviour:
       m_Data: 87082
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 59918
-    - m_Data: 59920
-    - m_Data: 59922
-    - m_Data: 59924
-    - m_Data: 59926
+    - m_Data: 52852
+    - m_Data: 52854
+    - m_Data: 52856
+    - m_Data: 52858
+    - m_Data: 52860
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1570,11 +1570,11 @@ MonoBehaviour:
       m_Data: 0
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 59918
-    - m_Data: 59920
-    - m_Data: 59922
-    - m_Data: 59924
-    - m_Data: 59926
+    - m_Data: 52852
+    - m_Data: 52854
+    - m_Data: 52856
+    - m_Data: 52858
+    - m_Data: 52860
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 

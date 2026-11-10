@@ -45,7 +45,7 @@ namespace TheRavine.Generator
         private NativeArray<float> noiseMap;
         private NativeArray<float> deltaMap;
         private readonly NativeArray<float> riverMap, temperatureMap, moistureMap;
-        private readonly NativeArray<float> biomeHeightMap;
+        private NativeArray<float> biomeHeightMap;
         private readonly NativeArray<float2> climateMap;
         private readonly NativeArray<float> riverBlendMap;
         private readonly NativeArray<int>   heightResult, biomeResult;

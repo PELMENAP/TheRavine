@@ -16,6 +16,7 @@ MonoBehaviour:
   _id: Toadstool
   _title: Toadstool
   _maxItemsInInventorySlot: 99
-  _spriteIcon: {fileID: 605634512, guid: 8837d63393fff123ba02503d5ebdf73f, type: 3}
+  _spriteIcon: {fileID: -1742557593, guid: 8837d63393fff123ba02503d5ebdf73f, type: 3}
   _infoSprite: {fileID: -1857465614, guid: 7c2a870de4fe8c8a6824b4d14f9c7496, type: 3}
-  _prefab: {fileID: 8079554152659468491, guid: b4ca380ab861563c1868b8b809fbf5e6, type: 3}
+  _prefab: {fileID: 8079554152659468491, guid: c5084da282673450c9fb8dd73e6ae173, type: 3}
+  _slotMask: 131

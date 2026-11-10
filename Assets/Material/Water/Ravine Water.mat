@@ -24,7 +24,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - CausticTex:
-        m_Texture: {fileID: 2800000, guid: 8de7ec1fe45edc742b55fc1e6b500cbe, type: 3}
+        m_Texture: {fileID: 2800000, guid: fe9a5271f26a88f4f85847c1531876f7, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - FoamTexture:
@@ -36,7 +36,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - RippleTex:
-        m_Texture: {fileID: 8400000, guid: 06b3c706231987b4e847ce31e03332dc, type: 2}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _FoamTexture:
@@ -69,24 +69,43 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - AbsorptionStrength: 0.7
+    - BodyBoost: 0.3
+    - CausticDepth: 7
     - CausticFade: 1.47
-    - Depth: 5
+    - CausticScale: 0.1
+    - CausticSpeed: 0.03
+    - CausticStrength: 1.5
+    - Depth: 10
     - DepthFade: -0.24
     - Displacement: 0.3
     - Foam: 0.5
-    - FoamCrestStrength: 0.1
-    - FoamRippleStrength: 0.1
+    - FoamCrestStrength: 1
+    - FoamRippleStrength: 1
     - FoamScale: 0.5
-    - FoamShoreStrength: 0.3
+    - FoamShoreStrength: 1.5
+    - FresnelF0: 0.1
     - Metallic: 0.084
-    - NormalStrength: 0.4
-    - Refraction: 0.02
-    - RippleRefraction: 2
+    - NightFloor: 0.01
+    - NormalStrength: 0.3
+    - ReflectionDistortion: 0.1
+    - ReflectionStrength: 1
+    - Refraction: 0.05
+    - RippleRefraction: 4
     - RippleStrength: 20
+    - SSRBlur: 0.2
+    - SSRIntensity: 1
+    - SSRMaxDistance: 300
+    - SSRRayFade: 100
+    - SSRStep: 1
+    - SSRThickness: 3
     - Scale: 10
-    - Smoothness: 0.871
+    - ShoreSoftness: 1
+    - Smoothness: 0.9
+    - SunGlint: 3
+    - SunGlintPower: 2048
     - WaterFresnel: 0.01
-    - WaterLerp: 0.5
+    - WaterLerp: 0.7
     - _CameraAdd: 1
     - _Displacement: 1
     - _FoamIntensity: 0.5
@@ -106,9 +125,10 @@ Material:
     - _WaveSteepness: 0.5
     - _WaveTiling: 1
     m_Colors:
+    - Absorption: {r: 0.35, g: 0.08, b: 0.04, a: 1}
     - DeepColor: {r: 0, g: 0.17962846, b: 2.2872663, a: 1}
-    - FoamColor: {r: 1.6905668, g: 1.6905668, b: 1.6905668, a: 1}
-    - ShallowColor: {r: 0, g: 0.2421875, b: 1, a: 1}
+    - FoamColor: {r: 2.2570395, g: 2.2570395, b: 2.2570395, a: 1}
+    - ShallowColor: {r: 0.2688679, g: 0.44663343, b: 1, a: 1}
     - UV1: {r: 0.2, g: 0.2, b: 0, a: 0}
     - UV2: {r: 0.2, g: 0.2, b: 0, a: 0}
     - WaterSpeed1: {r: -0.3, g: 0.02, b: 0, a: 0}
