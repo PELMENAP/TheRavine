@@ -16,7 +16,7 @@ Severity: **Critical** — a remote client breaks equality or the world directly
 | 6 | High | `EntitySystem/Entityes/Player/PlayerController.cs:697`, `Core/RavineLogger.cs:121` | Every refused edit formats a string and writes it with synchronous `File.AppendAllText`. RPC spam → main-thread file I/O and unbounded log growth on the server. | §6 | Fixed, see §4 |
 | 7 | Medium | `Terminal/Rive/RiveExecutor.cs:31` | `ExecuteAsync` resets `_operationCount` on every call, including nested script-to-script calls (`RiveRuntime.CallFunctionAsync`). No recursion depth limit: self-recursion bypasses `MAX_OPERATIONS` and can overflow the stack. | §8 | Fixed, see §6 |
 | 8 | Medium | `Terminal/Rive/RiveExecutor.cs:137` | `for` counts operations only inside body statements: an empty body iterates up to 2³¹ times on the main thread without yielding. `i <= e` with `e == int.MaxValue` never terminates (overflow). | §8 | Fixed, see §6 |
-| 9 | Medium | `Terminal/SetPlayerCommand.cs:46`, `:99` | `~tp` and `~set speed` modify the local entity directly. On the host this changes the server's entity: teleport and speed up to 100 for the host player only. No release / multiplayer gate in the code. Rive scripts can issue these commands too. | §3 | Open |
+| 9 | Medium | `Terminal/SetPlayerCommand.cs:46`, `:99` | `~tp` and `~set speed` modify the local entity directly. On the host this changes the server's entity: teleport and speed up to 100 for the host player only. No release / multiplayer gate in the code. Rive scripts can issue these commands too. | §3 | Fixed, see §6 |
 | 10 | Medium | `EntitySystem/AI/LSTM/LSTMMemoryStorage.cs:29`, `EntitySystem/AI/DelayedPerceptron/DelayedPerceptronStorage.cs:66` | Network sizes read from the file are used to allocate before they are compared with the expected architecture; weights are not checked for NaN / Inf. A crafted model file → huge allocation or NaN brain. (`SharedBrainSnapshot.ReadBlock` bounds blocks correctly.) | §7 | Open |
 | 11 | Medium | `ObjectSystem/Map/WorldGeneration/ChunkStore.cs:204-206`, `:238` | Terrain edit heights and object positions from chunk files are not checked for finiteness. | §7 | Open |
 | 12 | Medium | `Assets/Prefabs/MainPrefabs/Netcore/NetworkManager.prefab:58`, `:62`, `:92`, `:100` | `ConnectionApproval: 0`, `ProtocolVersion: 0`, `EnsureNetworkVariableLengthSafety: 0`, `m_UseEncryption: 0`, public IP `185.16.139.218 ` (with a trailing space) hardcoded, listen on `::`. | §9, §10 | Open |
@@ -96,11 +96,13 @@ Not verified in the Unity Editor: the container has no Unity; changed files were
 
 16. Terminal commands from scripts: `{name}` placeholders are replaced in one left-to-right pass (`SubstituteVariables`), by the whole placeholder; text that is not a placeholder of a defined variable stays as written, a substituted value is not scanned again, and the scan is linear (a placeholder is an identifier directly between braces). Previously the variable name was replaced as a substring anywhere in the command and the braces stayed (`{i}` → `{7}`, and every `i` of `item` too).
 
+9. Debug commands (`~tp`, `~set`, `~debug`, `~showSLRS`): the classes and their registration in `Terminal.Setup` exist only under `UNITY_EDITOR || DEVELOPMENT_BUILD`, so in a release build the commands are unknown, also to Rive scripts. `Validate` of each calls `DebugCommandGate.TryEnter`, which refuses with a message while `WorldAuthority.HasRemotePeers` is true (a client of someone else's server, or a host with another client connected). Both the typed path (`Terminal.ProcessInput`) and the script path (`Terminal.ExecuteTerminalCommandAsync`) call `Validate`. `~rotate` was not in the finding and is unchanged.
+
 23. Per-run Rive state.
     - `RiveRun` (`Terminal/Rive/Core/RiveRun.cs`) holds the operation counter, call depth and abort message of one top-level run; `RiveFrame` holds the scope stack of one script call and a reference to its run.
     - `RiveExecutor` has no mutable fields: every `Execute*` / `Evaluate*` method takes the frame. A top-level `RiveRuntime.ExecuteScriptAsync` creates a new `RiveRun`; a script-to-script call (`RiveRuntime.CallFunctionAsync`) gets a new `RiveFrame` (parameters and own locals only) that shares the caller's `RiveRun`.
     - A budget breach sets `RiveRun.AbortMessage`; every statement list checks it, so a callee that ran out of budget stops the caller too instead of returning `0` into it.
-    - Finding 7: the shared counter is this fix; the call depth limit is in the next item.
+    - Finding 7: the shared counter is this fix; the call depth limit is item 7 above.
 
 24. `pow` uses exponentiation by squaring: at most 31 steps for any `int` exponent, wrapping multiplication (identical results to the old loop). `abs(int.MinValue)` wraps instead of throwing `OverflowException`. Cost of the other built-ins does not depend on argument values; `min`, `max`, `sum`, `avg` are linear in the argument count, which is bounded by the parser (finding 25).
 
@@ -112,6 +114,6 @@ Not verified in the Unity Editor: the container has no Unity; changed files were
     - `RiveRun.WaitedMilliseconds` counts every `wait` (requested time, charged before waiting) and every `get` (measured time); the total per run is capped at 300 s (`RiveExecutor.MaxTotalWaitMs`), a `get` never waits longer than the remaining budget.
     - At most 4 top-level runs execute at once (`RiveRuntime.MaxConcurrentRuns`); the next one returns `Too many running scripts`. Terminal commands issued from a script start new top-level runs, so this is also what bounds `~run` recursion through the terminal.
 
-Tests: `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs`. The interpreter now lives in its own `Rive` assembly (`Terminal/Rive/Core/Rive.asmdef`) so EditMode tests can reference it.
+Tests: `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs`, `Assets/Tests/EditMode/WorldAuthorityTests.cs` (only the no-session case: `Terminal` lives in Assembly-CSharp, which the test assembly cannot reference, so the command gate itself is not covered by a test). The interpreter now lives in its own `Rive` assembly (`Terminal/Rive/Core/Rive.asmdef`) so EditMode tests can reference it.
 
 Not verified in the Unity Editor: the container has no Unity; the changed files were not compiled and the tests were not run.

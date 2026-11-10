@@ -72,12 +72,17 @@ namespace TheRavine.Base
                 new HelpCommand(),
                 new PrintCommand(),
                 new ClearCommand(),
+                new RotateCommand()
+            );
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            CommandManager.Register(
                 new TeleportCommand(),
                 new SetValueCommand(),
-                new RotateCommand(),
                 new DebugCommand(),
                 new ShowServiceLocatorCommand()
             );
+#endif
 
             graphyManager.SetActive(false);
             _context = new CommandContext(outputWindow, CommandManager, null, graphyManager, scriptEditor, interpreter);
