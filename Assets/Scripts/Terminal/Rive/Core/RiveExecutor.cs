@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Cysharp.Threading.Tasks;
 
 namespace TheRavine.Base
@@ -10,6 +11,8 @@ namespace TheRavine.Base
         private readonly InputStreamManager _inputStream;
         private readonly InteractorRegistry _interactorRegistry;
         private const int MAX_OPERATIONS = 10000;
+        public const int MaxInputWaitMs = 60000;
+        public const int MaxTotalWaitMs = 300000;
         
         public RiveExecutor(RiveRuntime runtime, InputStreamManager inputStream, InteractorRegistry interactorRegistry)
         {
@@ -44,6 +47,11 @@ namespace TheRavine.Base
 
                 return result;
             }
+            catch (OperationCanceledException)
+            {
+                run.AbortMessage ??= "Script cancelled";
+                return ExecutionResult.CreateError(run.AbortMessage);
+            }
             catch (Exception ex)
             {
                 return ExecutionResult.CreateError($"Execution error: {ex.Message}");
@@ -76,7 +84,7 @@ namespace TheRavine.Base
                     return result;
 
                 if (run.OperationCount % 10 == 0)
-                    await UniTask.Yield();
+                    await UniTask.Yield(run.Token);
             }
 
             return ExecutionResult.CreateSuccess();
@@ -204,7 +212,15 @@ namespace TheRavine.Base
             if (mil > 60000)
                 return ExecutionResult.CreateError("Wait time cannot exceed more than 60000ms (60 seconds)");
             
-            await UniTask.Delay(mil);
+            var run = frame.Run;
+            if (run.WaitedMilliseconds + mil > MaxTotalWaitMs)
+            {
+                run.AbortMessage = $"Total wait budget exceeded ({MaxTotalWaitMs}ms)";
+                return ExecutionResult.CreateError(run.AbortMessage);
+            }
+            
+            run.WaitedMilliseconds += mil;
+            await UniTask.Delay(mil, cancellationToken: run.Token, cancelImmediately: true);
             
             return ExecutionResult.CreateSuccess();
         }
@@ -217,7 +233,7 @@ namespace TheRavine.Base
                 VariableNode var => frame.GetVariable(var.Name) ?? 0,
                 BinaryOpNode bin => await EvaluateBinaryOpAsync(bin, frame),
                 FunctionCallNode funcCall => await EvaluateFunctionCallAsync(funcCall, frame),
-                GetInputNode => await _inputStream.GetAsync(),
+                GetInputNode => await EvaluateGetAsync(frame),
                 SendToInteractorNode send => await EvaluateSendAsync(send, frame),
                 UnaryOpNode unary       => await EvaluateUnaryOpAsync(unary, frame),
                 ArrayLiteralNode arrLit => await EvaluateArrayLiteralAsync(arrLit, frame),
@@ -226,6 +242,38 @@ namespace TheRavine.Base
             };
         }
         
+        private async UniTask<object> EvaluateGetAsync(RiveFrame frame)
+        {
+            var run = frame.Run;
+            var remaining = MaxTotalWaitMs - run.WaitedMilliseconds;
+            
+            if (remaining <= 0)
+            {
+                run.AbortMessage ??= $"Total wait budget exceeded ({MaxTotalWaitMs}ms)";
+                return 0;
+            }
+            
+            var timeout = Math.Min(MaxInputWaitMs, remaining);
+            var started = Stopwatch.GetTimestamp();
+            
+            try
+            {
+                return await _inputStream.GetAsync(run.Token, timeout);
+            }
+            catch (TimeoutException)
+            {
+                run.AbortMessage ??= timeout < MaxInputWaitMs
+                    ? $"Total wait budget exceeded ({MaxTotalWaitMs}ms)"
+                    : $"Input timed out ({MaxInputWaitMs}ms)";
+                return 0;
+            }
+            finally
+            {
+                var elapsed = (Stopwatch.GetTimestamp() - started) * 1000 / Stopwatch.Frequency;
+                run.WaitedMilliseconds += (int)Math.Min(elapsed, MaxTotalWaitMs);
+            }
+        }
+
         private async UniTask<object> EvaluateBinaryOpAsync(BinaryOpNode node, RiveFrame frame)
         {
             var left = await EvaluateExpressionAsync(node.Left, frame);
