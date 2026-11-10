@@ -170,7 +170,7 @@ Every RPC of the project is in this table. A new RPC is added here in the same c
 | RPC | Arguments (intent) | Server checks | Budget | Result goes to |
 |---|---|---|---|---|
 | `PlayerController.MoveServerRpc` | direction, input speed, sprint flag | finite; direction clamped to unit length; speed saturated; intent expires after `intentTimeout` | none (stores intent, integrated in `FixedUpdate`) | all, at `sendInterval` |
-| `PlayerController.StopMoveServerRpc` | — | — | none | all, at `sendInterval` |
+| `PlayerController.StopMoveServerRpc` | — | clears the intent; the last direction is kept as the brake direction, speed decays at `Deceleration` | none | all, at `sendInterval` |
 | `PlayerController.JumpServerRpc` | charge 0..1 | finite; saturated; capped by the server time since the last jump (+ `jumpChargeSlack`); grounded, ground consumed | one per ground contact | all |
 | `PlayerController.SpeakServerRpc` | tokens, length | active; alive; length; bit width; energy cost | `SpeechCooldown` | listeners through `SpeechBus` |
 | `PlayerController.CraftRequestServerRpc` | recipe index | remote players only; index in `CraftModel.Shared`; ingredients in the ledger | recipe time × `craftTimeTolerance` | nobody (ledger only) |
