@@ -121,6 +121,7 @@ public sealed class ColonyPopulation
         model.OnReproduceRequest += SpawnChild;
 
         model.ManagerIndex = _entities.Count;
+        _motion.SetPosition(model.ManagerIndex, position);
         _entities.Add(model);
         colony.AddMember(model);
         colony.Stats.RecordBirth();
@@ -270,8 +271,10 @@ public sealed class ColonyPopulation
         }
 
         model.Colony?.RemoveMember(model, _entities);
+        model.Motor.BindSlot(-1);
 
         int last = _entities.Count - 1;
+        _motion.RemoveSwapBack(idx, last);
         if (idx != last)
         {
             var moved = _entities[last];
