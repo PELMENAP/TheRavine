@@ -7,6 +7,7 @@ namespace TheRavine.Base
     {
         public int OperationCount;
         public int CallDepth;
+        public int StackDepth;
         public int WaitedMilliseconds;
         public string AbortMessage;
         public CancellationToken Token;

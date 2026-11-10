@@ -484,4 +484,92 @@ public class RiveInterpreterSecurityTests
         _runtime.PushInput(0);
         Assert.IsTrue((await again).Success);
     });
+
+    private async UniTask<RiveRuntime.ScriptResult> RunWithArgs(string name, params object[] args)
+    {
+        return await _runtime.ExecuteScriptAsync(name, args);
+    }
+
+    [UnityTest]
+    public IEnumerator SelfRecursionFailsOnCallDepth() => UniTask.ToCoroutine(async () =>
+    {
+        Load("selfy", "int r = selfy()\n>> r");
+
+        var result = await _runtime.ExecuteScriptAsync("selfy");
+
+        Assert.IsFalse(result.Success);
+        StringAssert.Contains("Call depth", result.ErrorMessage);
+    });
+
+    [UnityTest]
+    public IEnumerator MutualRecursionFailsOnCallDepth() => UniTask.ToCoroutine(async () =>
+    {
+        Load("ping", "int r = pong()\n>> r");
+        Load("pong", "int r = ping()\n>> r");
+
+        var result = await _runtime.ExecuteScriptAsync("ping");
+
+        Assert.IsFalse(result.Success);
+        StringAssert.Contains("Call depth", result.ErrorMessage);
+    });
+
+    [UnityTest]
+    public IEnumerator RecursionWithBranchesFailsCleanly() => UniTask.ToCoroutine(async () =>
+    {
+        Load("fork", "(n)\nint a = fork(n + 1)\nint b = fork(n + 1)\n>> a + b");
+
+        var result = await RunWithArgs("fork", 0);
+
+        Assert.IsFalse(result.Success);
+    });
+
+    [UnityTest]
+    public IEnumerator RecursionAtTheDepthLimitStillWorks() => UniTask.ToCoroutine(async () =>
+    {
+        Load("count_down", "(n)\nif n <= 0\n>> 0\nend\n>> 1 + count_down(n - 1)");
+
+        var ok = await RunWithArgs("count_down", RiveExecutor.MaxCallDepth - 1);
+        var tooDeep = await RunWithArgs("count_down", RiveExecutor.MaxCallDepth);
+
+        Assert.IsTrue(ok.Success, ok.ErrorMessage);
+        Assert.AreEqual(RiveExecutor.MaxCallDepth - 1, ok.ReturnValue);
+        Assert.IsFalse(tooDeep.Success);
+        StringAssert.Contains("Call depth", tooDeep.ErrorMessage);
+    });
+
+    [UnityTest]
+    public IEnumerator RecursionDepthIsReleasedAfterCalls() => UniTask.ToCoroutine(async () =>
+    {
+        Load("leaf", ">> 1");
+        var calls = string.Concat(Enumerable.Repeat("int t = leaf()\n", RiveExecutor.MaxCallDepth * 3));
+        Load("many_calls", calls + ">> 1");
+
+        var result = await _runtime.ExecuteScriptAsync("many_calls");
+
+        Assert.IsTrue(result.Success, result.ErrorMessage);
+    });
+
+    [UnityTest]
+    public IEnumerator LongLeftDeepExpressionFailsWithoutStackOverflow() => UniTask.ToCoroutine(async () =>
+    {
+        var chain = "int x = 1" + string.Concat(Enumerable.Repeat("+1", 8000)) + "\n>> x";
+        Load("chain", chain);
+        Assert.IsTrue(_runtime.IsFileLoaded("chain"));
+
+        var result = await _runtime.ExecuteScriptAsync("chain");
+
+        Assert.IsFalse(result.Success);
+        StringAssert.Contains("depth", result.ErrorMessage);
+    });
+
+    [UnityTest]
+    public IEnumerator ModerateExpressionStillEvaluates() => UniTask.ToCoroutine(async () =>
+    {
+        Load("sum_chain", "int x = 1" + string.Concat(Enumerable.Repeat("+1", 60)) + "\n>> x");
+
+        var result = await _runtime.ExecuteScriptAsync("sum_chain");
+
+        Assert.IsTrue(result.Success, result.ErrorMessage);
+        Assert.AreEqual(61, result.ReturnValue);
+    });
 }
