@@ -202,7 +202,7 @@ namespace TheRavine.Generator
 
             chunkGenerator.Generate(data, chunkKey, ring, stored, 0, erosionBudget, out _);
             data.LastTick = (stored - 1) * epochTicks;
-            chunkStore.TryRestore(chunkKey, data, worldTick);
+            chunkStore.TryRestore(chunkKey, data, worldTick, objectSystem != null ? objectSystem.infoRegistry : null);
 
             if (data.LastTick > worldTick) data.LastTick = worldTick;
             int remaining = ErosionEpochsDue(data.LastTick, worldTick);
