@@ -22,6 +22,7 @@ namespace TheRavine.EntityControl
     public class PlayerController : NetworkBehaviour
     {
         private const float SpawnHeightY = 200f;
+        private const float JumpMaxChargeTime = 1f;
 
         [SerializeField] private int placeObjectDelay;
         [SerializeField] private float reachTolerance = 2f;
@@ -31,6 +32,7 @@ namespace TheRavine.EntityControl
         [SerializeField] private float intentTimeout = 0.6f;
         [SerializeField] private float editRate = 20f, editBurst = 16f, refuseLogInterval = 5f;
         [SerializeField] private float craftTimeTolerance = 0.9f;
+        [SerializeField] private float jumpChargeSlack = 0.2f;
         [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick, Jump;
         [SerializeField] private Joystick joystick;
         [SerializeField] private Transform crosshair;
@@ -83,7 +85,7 @@ namespace TheRavine.EntityControl
         private AEntity playerEntity;
 
         private readonly DoubleTapDetector forwardTap = new();
-        private readonly JumpChargeDetector jumpCharge = new(maxChargeTime: 1f);
+        private readonly JumpChargeDetector jumpCharge = new(maxChargeTime: JumpMaxChargeTime);
         private PlayerStamina stamina;
         private NetworkVariable<float> staminaRatio = new(1f);
         private IDisposable unsubscribe;
@@ -98,6 +100,7 @@ namespace TheRavine.EntityControl
         private Vector3 lastBroadcastPosition;
         private Vector3 lastBroadcastVelocity;
         private double editReadyTime;
+        private double lastJumpTime;
         private double refuseLogTime;
         private int refusedEdits;
         private float vitalsTimer;
@@ -112,6 +115,7 @@ namespace TheRavine.EntityControl
         {
             playerEntity = entity;
             this.logger = logger;
+            lastJumpTime = Time.timeAsDouble;
 
             playerAnimator.SetUpAsync().Forget();
             GetPlayerComponents();
@@ -517,8 +521,12 @@ namespace TheRavine.EntityControl
             if (terrainResolver == null || !terrainResolver.IsGrounded) return;
             terrainResolver.ConsumeGround();
 
+            double now = Time.timeAsDouble;
+            charge = JumpChargeLimit.Clamp(charge, now - lastJumpTime, JumpMaxChargeTime, jumpChargeSlack);
+            lastJumpTime = now;
+
             Vector3 vel = playerRigidbody.linearVelocity;
-            vel.y = baseJumpForce * jumpForceCurve.Evaluate(math.saturate(charge));
+            vel.y = baseJumpForce * jumpForceCurve.Evaluate(charge);
             playerRigidbody.linearVelocity = vel;
 
             BroadcastState();
