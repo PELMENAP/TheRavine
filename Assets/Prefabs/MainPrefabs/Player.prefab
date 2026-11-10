@@ -151,8 +151,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3031338226
+  GlobalObjectIdHash: 4011542423
   InScenePlacedSourceGlobalObjectIdHash: 4011542423
+  m_InScenePlacedDisabledByDefault: 0
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
@@ -313,6 +314,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   placeObjectDelay: 100
+  reachTolerance: 2
+  maxLatencyCompensation: 0.5
+  aimHysteresis: 0.15
   movementMinimum: 0.1
   sendInterval: 0.2
   maxStepHeight: 0.6
@@ -365,8 +369,8 @@ MonoBehaviour:
       inWeight: 0.33333334
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 0.8961221
-      value: 0.6806853
+      time: 0.9245645
+      value: 0.78285813
       inSlope: -6.1968765
       outSlope: -6.1968765
       tangentMode: 0
@@ -374,8 +378,8 @@ MonoBehaviour:
       inWeight: 0.33333334
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 0.99892443
-      value: 0.4988396
+      time: 1.0114576
+      value: 0.8092075
       inSlope: 1.0289806
       outSlope: 1.0289806
       tangentMode: 0
@@ -415,7 +419,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   InputWindow: {fileID: 0}
   playerText: {fileID: 0}
-  dialogDistance: 20
+  heardLabel: {fileID: 0}
+  lexicon: {fileID: 0}
+  controller: {fileID: 0}
 --- !u!114 &5917629485289192058
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -519,7 +525,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30ef29729fd56c64ea4221f148998096, type: 3}
   m_Name: 
   m_EditorClassIdentifier: View::RippleSystem
-  maxWaterRespondHeight: 4
+  maxWaterRespondHeight: 5
   minWaterRespondHeight: -2
 --- !u!81 &7792962233447484037
 AudioListener:

@@ -37,6 +37,7 @@ namespace TheRavine.Base
 
             for (int i = 0; i < count; i++)
             {
+                groups[i].gameObject.SetActive(true);
                 if (!groups[i].TryGetComponent(out _canvasGroups[i]))
                     _canvasGroups[i] = groups[i].gameObject.AddComponent<CanvasGroup>();
             }
