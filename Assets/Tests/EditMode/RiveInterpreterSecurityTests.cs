@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using TheRavine.Base;
@@ -285,4 +286,202 @@ public class RiveInterpreterSecurityTests
         Assert.DoesNotThrow(() => _runtime.LoadFile("long", new string('a', RiveParser.MaxSourceLength + 1)));
         Assert.IsFalse(_runtime.IsFileLoaded("long"));
     }
+
+    private RiveExecutor NewExecutor(InputStreamManager inputs = null)
+    {
+        return new RiveExecutor(_runtime, inputs ?? new InputStreamManager(), new InteractorRegistry(_logger));
+    }
+
+    [UnityTest]
+    public IEnumerator InputReadTimesOut() => UniTask.ToCoroutine(async () =>
+    {
+        var inputs = new InputStreamManager();
+        TimeoutException caught = null;
+        try { await inputs.GetAsync(CancellationToken.None, 50); }
+        catch (TimeoutException ex) { caught = ex; }
+
+        Assert.NotNull(caught);
+        Assert.AreEqual(0, inputs.GetWaitingReadersCount());
+    });
+
+    [UnityTest]
+    public IEnumerator InputReadIsCancelledByToken() => UniTask.ToCoroutine(async () =>
+    {
+        var inputs = new InputStreamManager();
+        using var cts = new CancellationTokenSource();
+        var pending = inputs.GetAsync(cts.Token, 60000).Preserve();
+        Assert.AreEqual(1, inputs.GetWaitingReadersCount());
+
+        cts.Cancel();
+        OperationCanceledException caught = null;
+        try { await pending; }
+        catch (OperationCanceledException ex) { caught = ex; }
+
+        Assert.NotNull(caught);
+        Assert.AreEqual(0, inputs.GetWaitingReadersCount());
+    });
+
+    [UnityTest]
+    public IEnumerator InputReadStillReturnsPushedValue() => UniTask.ToCoroutine(async () =>
+    {
+        var inputs = new InputStreamManager();
+        var pending = inputs.GetAsync(CancellationToken.None, 60000).Preserve();
+        inputs.PushInput(42);
+
+        Assert.AreEqual(42, await pending);
+        Assert.AreEqual(0, inputs.GetWaitingReadersCount());
+    });
+
+    [UnityTest]
+    public IEnumerator GetFailsWhenTotalWaitBudgetRunsOut() => UniTask.ToCoroutine(async () =>
+    {
+        var program = new RiveParser(_logger).Parse("get_budget", "int g = get\n>> 1");
+        var run = new RiveRun { WaitedMilliseconds = RiveExecutor.MaxTotalWaitMs - 50 };
+
+        var result = await NewExecutor().ExecuteAsync(program, Array.Empty<int>(), run);
+
+        Assert.IsFalse(result.Success);
+        StringAssert.Contains("Total wait budget", result.ErrorMessage);
+        Assert.GreaterOrEqual(run.WaitedMilliseconds, RiveExecutor.MaxTotalWaitMs - 50);
+    });
+
+    [UnityTest]
+    public IEnumerator GetWithNoBudgetLeftFailsWithoutWaiting() => UniTask.ToCoroutine(async () =>
+    {
+        var program = new RiveParser(_logger).Parse("get_spent", "int g = get\n>> 1");
+        var inputs = new InputStreamManager();
+        var run = new RiveRun { WaitedMilliseconds = RiveExecutor.MaxTotalWaitMs };
+
+        var result = await NewExecutor(inputs).ExecuteAsync(program, Array.Empty<int>(), run);
+
+        Assert.IsFalse(result.Success);
+        StringAssert.Contains("Total wait budget", result.ErrorMessage);
+        Assert.AreEqual(0, inputs.GetWaitingReadersCount());
+    });
+
+    [UnityTest]
+    public IEnumerator WaitFailsWhenTotalWaitBudgetIsExceeded() => UniTask.ToCoroutine(async () =>
+    {
+        var program = new RiveParser(_logger).Parse("wait_budget", "wait 100\n>> 1");
+        var run = new RiveRun { WaitedMilliseconds = RiveExecutor.MaxTotalWaitMs - 10 };
+
+        var result = await NewExecutor().ExecuteAsync(program, Array.Empty<int>(), run);
+
+        Assert.IsFalse(result.Success);
+        StringAssert.Contains("Total wait budget", result.ErrorMessage);
+    });
+
+    [UnityTest]
+    public IEnumerator WaitsAreAccumulatedAcrossStatements() => UniTask.ToCoroutine(async () =>
+    {
+        var program = new RiveParser(_logger).Parse("wait_sum", "wait 5\nwait 7\n>> 1");
+        var run = new RiveRun();
+
+        var result = await NewExecutor().ExecuteAsync(program, Array.Empty<int>(), run);
+
+        Assert.IsTrue(result.Success, result.ErrorMessage);
+        Assert.AreEqual(12, run.WaitedMilliseconds);
+    });
+
+    [UnityTest]
+    public IEnumerator CancelAllTerminatesScriptInsideWait() => UniTask.ToCoroutine(async () =>
+    {
+        Load("sleeper", "wait 60000\n>> 1");
+        var pending = _runtime.ExecuteScriptAsync("sleeper").Preserve();
+
+        _runtime.CancelAll();
+        var result = await pending;
+
+        Assert.IsFalse(result.Success);
+        StringAssert.Contains("cancelled", result.ErrorMessage);
+    });
+
+    [UnityTest]
+    public IEnumerator CancelAllTerminatesScriptInsideGet() => UniTask.ToCoroutine(async () =>
+    {
+        Load("reader_wait", "int g = get\n>> 1");
+        var pending = _runtime.ExecuteScriptAsync("reader_wait").Preserve();
+        Assert.AreEqual(1, _runtime.GetWaitingInputReaders());
+
+        _runtime.CancelAll();
+        var result = await pending;
+
+        Assert.IsFalse(result.Success);
+        StringAssert.Contains("cancelled", result.ErrorMessage);
+        Assert.AreEqual(0, _runtime.GetWaitingInputReaders());
+    });
+
+    [UnityTest]
+    public IEnumerator CancelAllTerminatesBusyLoop() => UniTask.ToCoroutine(async () =>
+    {
+        Load("busy", "for i = 0 to 5000\nint t = i\nend\n>> 1");
+        var pending = _runtime.ExecuteScriptAsync("busy").Preserve();
+
+        _runtime.CancelAll();
+        var result = await pending;
+
+        Assert.IsFalse(result.Success);
+        StringAssert.Contains("cancelled", result.ErrorMessage);
+    });
+
+    [UnityTest]
+    public IEnumerator CancelAllStopsCallerWhenCalleeIsCancelled() => UniTask.ToCoroutine(async () =>
+    {
+        Load("inner_wait", "int g = get\n>> 1");
+        Load("outer_wait", "int r = inner_wait()\nint after = 5\n>> after");
+        var pending = _runtime.ExecuteScriptAsync("outer_wait").Preserve();
+        Assert.AreEqual(1, _runtime.GetWaitingInputReaders());
+
+        _runtime.CancelAll();
+        var result = await pending;
+
+        Assert.IsFalse(result.Success);
+        StringAssert.Contains("cancelled", result.ErrorMessage);
+    });
+
+    [UnityTest]
+    public IEnumerator RuntimeRunsScriptsAfterCancelAll() => UniTask.ToCoroutine(async () =>
+    {
+        Load("after_cancel", ">> 9");
+        _runtime.CancelAll();
+
+        var result = await _runtime.ExecuteScriptAsync("after_cancel");
+
+        Assert.IsTrue(result.Success, result.ErrorMessage);
+        Assert.AreEqual(9, result.ReturnValue);
+    });
+
+    [UnityTest]
+    public IEnumerator DisposedRuntimeRefusesScripts() => UniTask.ToCoroutine(async () =>
+    {
+        Load("after_dispose", ">> 9");
+        _runtime.Dispose();
+
+        var result = await _runtime.ExecuteScriptAsync("after_dispose");
+
+        Assert.IsFalse(result.Success);
+    });
+
+    [UnityTest]
+    public IEnumerator ConcurrentRunsAreCapped() => UniTask.ToCoroutine(async () =>
+    {
+        Load("parked", "int g = get\n>> 1");
+        var parked = new UniTask<RiveRuntime.ScriptResult>[RiveRuntime.MaxConcurrentRuns];
+        for (int i = 0; i < parked.Length; i++)
+            parked[i] = _runtime.ExecuteScriptAsync("parked").Preserve();
+        Assert.AreEqual(RiveRuntime.MaxConcurrentRuns, _runtime.GetWaitingInputReaders());
+
+        var refused = await _runtime.ExecuteScriptAsync("parked");
+        Assert.IsFalse(refused.Success);
+        StringAssert.Contains("Too many running scripts", refused.ErrorMessage);
+
+        _runtime.PushInput(0);
+        foreach (var task in parked)
+            Assert.IsTrue((await task).Success);
+
+        _runtime.PushInput(0);
+        var again = _runtime.ExecuteScriptAsync("parked").Preserve();
+        _runtime.PushInput(0);
+        Assert.IsTrue((await again).Success);
+    });
 }

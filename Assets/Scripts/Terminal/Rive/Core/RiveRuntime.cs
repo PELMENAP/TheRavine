@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using ZLinq;
 
 namespace TheRavine.Base
 {
-    public class RiveRuntime
+    public class RiveRuntime : IDisposable
     {
         private readonly RiveParser _parser;
         private readonly RavineLogger _logger;
@@ -13,6 +14,11 @@ namespace TheRavine.Base
         private readonly InputStreamManager _inputStream;
         private readonly InteractorRegistry _interactorRegistry;
         private RiveExecutor _executor;
+        private CancellationTokenSource _lifetime = new();
+        private int _activeRuns;
+        private bool _disposed;
+
+        public const int MaxConcurrentRuns = 4;
         
         public delegate UniTask<bool> TerminalCommandDelegate(string command);
         private TerminalCommandDelegate _terminalCommandHandler;
@@ -99,7 +105,7 @@ namespace TheRavine.Base
 
         public UniTask<ScriptResult> ExecuteScriptAsync(string fileName, params object[] args)
         {
-            return RunScriptAsync(fileName, new RiveRun(), args);
+            return RunScriptAsync(fileName, null, args);
         }
 
         private async UniTask<ScriptResult> RunScriptAsync(string fileName, RiveRun run, object[] args)
@@ -143,7 +149,9 @@ namespace TheRavine.Base
                     intArgs[i] = iv;
             }
             
-            var execResult = await _executor.ExecuteAsync(program, intArgs, run);
+            var execResult = run != null
+                ? await _executor.ExecuteAsync(program, intArgs, run)
+                : await ExecuteTopLevelAsync(program, intArgs);
             
             return new ScriptResult
             {
@@ -151,6 +159,58 @@ namespace TheRavine.Base
                 ReturnValue = execResult.Action == ExecutionAction.Return ? execResult.ReturnValue : 0,
                 ErrorMessage = execResult.ErrorMessage
             };
+        }
+
+        private async UniTask<ExecutionResult> ExecuteTopLevelAsync(ProgramNode program, int[] args)
+        {
+            if (_disposed)
+                return ExecutionResult.CreateError("Script runtime is disposed");
+
+            if (_activeRuns >= MaxConcurrentRuns)
+                return ExecutionResult.CreateError($"Too many running scripts (max {MaxConcurrentRuns})");
+
+            _activeRuns++;
+            try
+            {
+                return await _executor.ExecuteAsync(program, args, new RiveRun { Token = _lifetime.Token });
+            }
+            finally
+            {
+                _activeRuns--;
+            }
+        }
+
+        public void CancelAll()
+        {
+            if (_disposed) return;
+
+            var previous = _lifetime;
+            _lifetime = new CancellationTokenSource();
+            Cancel(previous);
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+
+            _disposed = true;
+            Cancel(_lifetime);
+        }
+
+        private void Cancel(CancellationTokenSource source)
+        {
+            try
+            {
+                source.Cancel();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to cancel scripts: {ex.Message}");
+            }
+            finally
+            {
+                source.Dispose();
+            }
         }
 
         internal async UniTask<bool> ExecuteTerminalCommandAsync(string command)

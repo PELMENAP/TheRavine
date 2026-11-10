@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 
 namespace TheRavine.Base
 {
@@ -6,7 +7,9 @@ namespace TheRavine.Base
     {
         public int OperationCount;
         public int CallDepth;
+        public int WaitedMilliseconds;
         public string AbortMessage;
+        public CancellationToken Token;
     }
 
     public sealed class RiveFrame
