@@ -56,6 +56,7 @@ Shader "The Ravine/Water/WaterShader"
         FoamRippleStrength("Ripple Foam", Range(0,10)) = 1
         
         RippleRefraction("Ripple Refraction", Float) = 0.1
+        RippleShading("Ripple Shading", Range(0, 1)) = 0.35
         [NoScaleOffset] RippleTex("Ripple Height Map", 2D) = "white" {}
         
         Displacement("Displacement", Float) = 0.3
@@ -125,6 +126,7 @@ Shader "The Ravine/Water/WaterShader"
                 float FoamCrestStrength;
                 float FoamRippleStrength;
                 float RippleRefraction;
+                float RippleShading;
                 float4 RippleTex_TexelSize;
                 float Displacement;
                 float Scale;
@@ -531,8 +533,9 @@ Shader "The Ravine/Water/WaterShader"
                 // === NORMALS TO WORLD SPACE ===
                 float3x3 tangentToWorld = CreateTangentToWorld(
                     input.normalWS, input.tangentWS.xyz, input.tangentWS.w);
-                float3 normalWS = TransformTangentToWorld(finalNormalTS, tangentToWorld);
-                normalWS = NormalizeNormalPerPixel(normalWS);
+                float3 baseNormalWS = NormalizeNormalPerPixel(TransformTangentToWorld(normalTS, tangentToWorld));
+                float3 rippleNormalWS = NormalizeNormalPerPixel(TransformTangentToWorld(finalNormalTS, tangentToWorld));
+                float3 normalWS = NormalizeNormalPerPixel(lerp(baseNormalWS, rippleNormalWS, RippleShading));
                 
                 // === FOAM ===
                 // Foam texture
