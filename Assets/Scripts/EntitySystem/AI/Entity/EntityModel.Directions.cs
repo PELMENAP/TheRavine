@@ -32,6 +32,7 @@ public partial class EntityModel
         if (foreign != null && nest.FieldAt(ColonyChannel.Territory, foreign.Position2D) > r.TerritoryThreshold)
             nest.RaiseAlarm(r.TerritoryAlarm * dt);
 
+        if (_registry == null) ServiceLocator.Services.TryGet(out _registry);
         if (_registry == null) return;
         for (int c = 0; c < _registry.Count; c++)
         {

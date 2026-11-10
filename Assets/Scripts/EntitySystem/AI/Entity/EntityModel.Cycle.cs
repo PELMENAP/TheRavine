@@ -116,7 +116,8 @@ public partial class EntityModel
         float detect = Tuning.DetectionRadius * math.max(rules.BlindMinDetectionFraction, 1f - mods.Blind * rules.BlindStrength);
 
         PerceptionMarker.Begin();
-        _nearest = Perception.Survey(pos, this, Colony, detect, rules.CrowdRadius, Neighbors.Length, out _nearestDistance, out _crowd, out _kinCrowd);
+        _nearest = Perception.Survey(pos, this, Colony, detect, rules.CrowdRadius, Neighbors.Length, out _nearestDistance, out _crowd, out _kinCrowd,
+            out _nearestForeign, out _nearestForeignDistance);
 
         _foodValid    = false;
         _foodDistance = -1f;
@@ -142,7 +143,6 @@ public partial class EntityModel
                 ColonyChannel.Explored, rules.ExploredMark * dt * (Caste == Caste.Scout ? rules.ScoutExploredMul : 1f),
                 ColonyChannel.Territory, rules.TerritoryMark * dt);
         SampleTrail(in self, nowD, in rules);
-        _nearestForeign = FindNearestForeign(pos, detect, out _nearestForeignDistance);
         StatsComponent    playerStats    = null;
         VirologyComponent playerVirology = null;
         _playerValid = _players != null
