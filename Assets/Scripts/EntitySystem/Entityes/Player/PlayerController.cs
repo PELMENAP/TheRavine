@@ -106,6 +106,8 @@ namespace TheRavine.EntityControl
         private int refusedEdits;
         private float vitalsTimer;
         private double craftReadyTime;
+        private MortalityComponent mortalityComponent;
+        private EnergyComponent energyComponent;
         private float mirroredHealth = float.NaN, mirroredEnergy = float.NaN;
         private StatsComponent stats;
         private readonly PlayerItemLedger ledger = new();
@@ -223,6 +225,8 @@ namespace TheRavine.EntityControl
             movementComponent = playerEntity.GetEntityComponent<MovementComponent>();
             aimComponent = playerEntity.GetEntityComponent<AimComponent>();
             stats = playerEntity.GetEntityComponent<StatsComponent>();
+            mortalityComponent = playerEntity.GetEntityComponent<MortalityComponent>();
+            energyComponent = playerEntity.GetEntityComponent<EnergyComponent>();
             InitStatePattern(playerEntity.GetEntityComponent<StatePatternComponent>());
         }
 
@@ -671,17 +675,17 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void SpeakServerRpc(ushort tokens, byte len)
         {
-            if (playerEntity == null || playerEntity.IsDisposed || !playerEntity.IsActive.Value) return;
-
-            MortalityComponent mortality = playerEntity.GetEntityComponent<MortalityComponent>();
-            if (mortality != null && mortality.IsDead) return;
-
             if (len == 0 || len > SimulationRules.SpeechLen) return;
             if ((tokens >> (len * SimulationRules.SpeechTokenBits)) != 0) return;
-
-            EnergyComponent energy = playerEntity.GetEntityComponent<EnergyComponent>();
-            if (energy == null || !ServiceLocator.Services.TryGet(out SpeechBus bus)) return;
             if (!SpeechBus.TryStartCooldown(ref speechReadyTime)) return;
+
+            if (playerEntity == null || playerEntity.IsDisposed || !playerEntity.IsActive.Value) return;
+
+            MortalityComponent mortality = mortalityComponent ??= playerEntity.GetEntityComponent<MortalityComponent>();
+            if (mortality != null && mortality.IsDead) return;
+
+            EnergyComponent energy = energyComponent ??= playerEntity.GetEntityComponent<EnergyComponent>();
+            if (energy == null || !ServiceLocator.Services.TryGet(out SpeechBus bus)) return;
             if (!energy.TryConsume(SimulationRules.Active.SpeechEnergyCost)) return;
 
             Vector3 p = transform.position;
@@ -792,7 +796,7 @@ namespace TheRavine.EntityControl
             if (playerEntity == null || playerEntity.IsDisposed || !playerEntity.IsActive.Value)
                 return Refuse(position, EditRefusal.Inactive);
 
-            MortalityComponent mortality = playerEntity.GetEntityComponent<MortalityComponent>();
+            MortalityComponent mortality = mortalityComponent ??= playerEntity.GetEntityComponent<MortalityComponent>();
             if (mortality != null && mortality.IsDead)
                 return Refuse(position, EditRefusal.Dead);
 
