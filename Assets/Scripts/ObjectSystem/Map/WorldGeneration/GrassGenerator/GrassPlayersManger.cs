@@ -5,8 +5,12 @@ public class GrassPlayersManger : MonoBehaviour
     [Header("Player Interaction")]
     [SerializeField] private Material grassMaterial;
 
+    private static readonly int PlayerPositionId = Shader.PropertyToID("_PlayerPosition");
+
     private Transform player = null;
     private Vector3 playerPosition;
+    private bool playerPositionApplied;
+    private Vector3 appliedPosition;
 
     private void FixedUpdate()
     {
@@ -36,6 +40,10 @@ public class GrassPlayersManger : MonoBehaviour
             playerPosition = new Vector3(0, -10000, 0);
         }
         
-        grassMaterial.SetVector("_PlayerPosition", playerPosition);
+        if (playerPositionApplied && playerPosition == appliedPosition) return;
+
+        appliedPosition = playerPosition;
+        playerPositionApplied = true;
+        grassMaterial.SetVector(PlayerPositionId, playerPosition);
     }
 }

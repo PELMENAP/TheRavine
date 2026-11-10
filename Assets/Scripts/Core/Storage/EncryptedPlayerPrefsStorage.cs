@@ -11,6 +11,51 @@ namespace TheRavine.Base
 {
     public class EncryptedPlayerPrefsStorage : IAsyncPersistentStorage
     {
+        private const int FlushDelayMs = 1500;
+
+        private static bool _dirty;
+        private static bool _flushScheduled;
+
+        static EncryptedPlayerPrefsStorage()
+        {
+            Application.quitting += FlushNow;
+            Application.focusChanged += OnFocusChanged;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetState()
+        {
+            _dirty          = false;
+            _flushScheduled = false;
+        }
+
+        private static void OnFocusChanged(bool focus)
+        {
+            if (!focus) FlushNow();
+        }
+
+        private static void FlushNow()
+        {
+            if (!_dirty) return;
+            _dirty = false;
+            PlayerPrefs.Save();
+        }
+
+        private static void MarkDirty()
+        {
+            _dirty = true;
+            if (_flushScheduled) return;
+            _flushScheduled = true;
+            FlushLaterAsync().Forget();
+        }
+
+        private static async UniTaskVoid FlushLaterAsync()
+        {
+            await UniTask.Delay(FlushDelayMs, DelayType.UnscaledDeltaTime);
+            _flushScheduled = false;
+            FlushNow();
+        }
+
         public async UniTask SaveAsync<T>(string key, T data, CancellationToken ct = default)
         {
             var encrypted = await UniTask.RunOnThreadPool(() =>
@@ -24,7 +69,7 @@ namespace TheRavine.Base
             await UniTask.SwitchToMainThread(ct);
 
             PlayerPrefs.SetString(key, encrypted);
-            PlayerPrefs.Save();
+            MarkDirty();
         }
 
         public async UniTask<T> LoadAsync<T>(string key, CancellationToken ct = default)
@@ -65,7 +110,7 @@ namespace TheRavine.Base
             if (PlayerPrefs.HasKey(key))
             {
                 PlayerPrefs.DeleteKey(key);
-                PlayerPrefs.Save();
+                MarkDirty();
             }
         }
     }

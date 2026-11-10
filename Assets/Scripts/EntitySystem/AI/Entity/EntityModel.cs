@@ -292,6 +292,32 @@ public partial class EntityModel : IEntity, IFoodReceiver
         _ledger.Flows.RescaleNet += BodyEnergy - bodyBefore;
         Vectorizer?.SetMaxima(tuning.MaxHealth, tuning.MaxEnergy);
         Brain.Context.CasteMask = ActionMask(caste);
+        SyncCount();
+    }
+
+    private int _countBucket = ColonyState.NoBucket;
+
+    public void SyncCount()
+    {
+        var colony = Colony;
+        int bucket = colony == null || IsWild ? ColonyState.NoBucket
+            : IsJuvenile ? ColonyState.JuvenileBucket
+            : CasteFixed ? (int)Caste
+            : ColonyState.NoBucket;
+        if (bucket == _countBucket) return;
+
+        if (colony != null)
+        {
+            colony.Count(_countBucket, -1);
+            colony.Count(bucket, 1);
+        }
+        _countBucket = bucket;
+    }
+
+    public void ClearCount()
+    {
+        Colony?.Count(_countBucket, -1);
+        _countBucket = ColonyState.NoBucket;
     }
 
     private int ActionMask(Caste caste)

@@ -124,6 +124,7 @@ public sealed class ColonyPopulation
         _motion.SetPosition(model.ManagerIndex, position);
         _entities.Add(model);
         colony.AddMember(model);
+        model.SyncCount();
         colony.Stats.RecordBirth();
         _instincts.Reset(model.ManagerIndex, InstinctGenes.From(in ctx.CoordMLP.Params));
         _utility.Write(model.ManagerIndex, default);
@@ -270,6 +271,7 @@ public sealed class ColonyPopulation
             if (idx < 0) { model.ManagerIndex = -1; return; }
         }
 
+        model.ClearCount();
         model.Colony?.RemoveMember(model, _entities);
         model.Motor.BindSlot(-1);
 
