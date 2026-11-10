@@ -15,6 +15,7 @@ namespace TheRavine.EntityControl
         private RavineLogger logger;
         public int GetEntityCount() => mobEntities.Length;
         private NativeList<IntPtr> mobEntities;
+        private MovementComponent[] mobMovement = Array.Empty<MovementComponent>();
         private List<GCHandle> gcHandles;
         private TransformAccessArray transformAccessArray;
         private NativeArray<float2> velocities;
@@ -57,7 +58,11 @@ namespace TheRavine.EntityControl
                 GCHandle handle = GCHandle.Alloc(mobEntity, GCHandleType.Pinned);
                 gcHandles.Add(handle);
                 mobIndex[mobEntity] = mobEntities.Length;
+                int slot = mobEntities.Length;
                 mobEntities.Add(GCHandle.ToIntPtr(handle));
+                if (slot == mobMovement.Length)
+                    Array.Resize(ref mobMovement, math.max(8, slot << 1));
+                mobMovement[slot] = mobEntity.GetEntityComponent<MovementComponent>();
                 mobIntervals.Add(1);
                 mobAccumulated.Add(0f);
 
@@ -99,6 +104,8 @@ namespace TheRavine.EntityControl
                     if (i != last)
                         mobIndex[(AEntity)GCHandle.FromIntPtr(mobEntities[last]).Target] = i;
 
+                    mobMovement[i] = mobMovement[last];
+                    mobMovement[last] = null;
                     mobEntities.RemoveAtSwapBack(i);
                     mobIntervals.RemoveAtSwapBack(i);
                     mobAccumulated.RemoveAtSwapBack(i);
@@ -140,9 +147,8 @@ namespace TheRavine.EntityControl
                 }
 
                 mobAccumulated[i] = 0f;
-                GCHandle handle = GCHandle.FromIntPtr(mobEntities[i]);
-                AEntity mob = (AEntity)handle.Target;
-                velocities[i] = mob.GetEntityComponent<MovementComponent>().GetEntityVelocity() * accumulated;
+                var movement = mobMovement[i];
+                velocities[i] = movement != null ? movement.GetEntityVelocity() * accumulated : float2.zero;
             }
 
             moveMobsJob = new MoveMobsJob
@@ -169,6 +175,7 @@ namespace TheRavine.EntityControl
                     if (handle.IsAllocated) handle.Free();
                 }
                 gcHandles.Clear();
+                Array.Clear(mobMovement, 0, mobMovement.Length);
                 mobEntities.Dispose();
                 if (mobIntervals.IsCreated) mobIntervals.Dispose();
                 if (mobAccumulated.IsCreated) mobAccumulated.Dispose();

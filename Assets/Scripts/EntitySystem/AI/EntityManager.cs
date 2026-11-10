@@ -583,15 +583,6 @@ public class EntityManager : MonoBehaviour
             colony.TickEma(dt);
             if (colony.IsWild) continue;
 
-            Array.Clear(colony.CasteCounts, 0, colony.CasteCounts.Length);
-            colony.JuvenileCount = 0;
-            for (int i = 0; i < members.Length; i++)
-            {
-                var e = _entities[members[i]];
-                if (e.IsJuvenile) colony.JuvenileCount++;
-                else if (e.CasteFixed) colony.CasteCounts[(int)e.Caste]++;
-            }
-
             for (int i = 0; i < members.Length; i++)
             {
                 var e = _entities[members[i]];
@@ -599,10 +590,8 @@ public class EntityManager : MonoBehaviour
 
                 if (!e.CasteFixed)
                 {
-                    var caste = ChooseCaste(colony, members.Length, e, false);
-                    e.AssignCaste(caste);
+                    e.AssignCaste(ChooseCaste(colony, members.Length, e, false));
                     e.NextCasteReview = now + r.CasteReviewInterval;
-                    colony.CasteCounts[(int)caste]++;
                     continue;
                 }
 
@@ -611,8 +600,8 @@ public class EntityManager : MonoBehaviour
                     e.NextCasteReview = now + r.CasteReviewInterval;
                     colony.CasteCounts[(int)e.Caste]--;
                     var review = ChooseCaste(colony, members.Length, e, true);
+                    colony.CasteCounts[(int)e.Caste]++;
                     if (review != e.Caste) e.AssignCaste(review);
-                    colony.CasteCounts[(int)review]++;
                 }
 
                 var virology = e.Virology;
@@ -620,10 +609,7 @@ public class EntityManager : MonoBehaviour
                 if (now - e.LastCasteShift < r.CasteShiftCooldown) continue;
 
                 e.LastCasteShift = now;
-                colony.CasteCounts[(int)e.Caste]--;
-                var shifted = (Caste)(((int)e.Caste + 1) % (int)Caste.Count);
-                e.AssignCaste(shifted);
-                colony.CasteCounts[(int)shifted]++;
+                e.AssignCaste((Caste)(((int)e.Caste + 1) % (int)Caste.Count));
             }
 
             var leader = colony.Leader;

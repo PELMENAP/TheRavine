@@ -16,6 +16,16 @@ public sealed class ColonyState : IDisposable
     public double NextElection;
     public readonly int[] CasteCounts = new int[(int)Caste.Count];
     public int JuvenileCount;
+
+    public const int NoBucket       = -1;
+    public const int JuvenileBucket = (int)Caste.Count;
+
+    public void Count(int bucket, int delta)
+    {
+        if (bucket == NoBucket) return;
+        if (bucket == JuvenileBucket) JuvenileCount += delta;
+        else CasteCounts[bucket] += delta;
+    }
     public readonly bool IsWild;
     public float Scarcity;
     public bool  QuorumReady { get; private set; }

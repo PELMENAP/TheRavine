@@ -69,6 +69,7 @@ public partial class EntityModel
         float now = (float)nowD;
 
         TimeAlive += dt;
+        SyncCount();
         UpdateSenescence(in rules);
         if (TimeAlive >= MaxAge)
         {
