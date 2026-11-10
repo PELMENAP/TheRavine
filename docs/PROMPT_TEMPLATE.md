@@ -62,7 +62,7 @@ Mass per-agent computations (instincts, boids, colony fields): SoA NativeArray i
 New numeric constants of agent simulation — only in SimulationRules (plus a RulesFrame field if read on a hot path), never hard-coded. Player tuning and UI — [SerializeField] next to existing fields; name such an exception in the report.
 Simulation time — only SimulationClock. Time.time, Time.deltaTime and UniTask.Delay(ms) are forbidden in agent logic. For player input and physics, Time.unscaledTime and Time.deltaTime are allowed if the file already uses them.
 Do not create a PR. Do not multiply commits — only when meaningful; session trailers follow session settings; do not write the model identifier in commit messages.
-Do not write or modify tests (EditMode/PlayMode); do not touch files in Assets/Tests/.
+Tests (EditMode/PlayMode, Assets/Tests/) may be written and modified. Do not delete, skip or weaken an existing test to make it pass; change a test only together with the behaviour it checks. State in the report whether tests were run.
 [If the task changes the size of network inputs or outputs] Any such change -> increment SharedBrainSnapshot.Version and state explicitly that saved brains are incompatible.
 [If the task touches network code] The server is the source of truth: validate client requests on the server.
 [If the task removes code] Before removing anything, grep the name across Assets and the GUID from .meta across .prefab/.unity/.asset files. Delete a script together with its .meta. Do not hand-edit asset YAML.
