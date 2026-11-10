@@ -1,3 +1,4 @@
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using System.Collections.Generic;
 using TMPro;
@@ -10,6 +11,18 @@ using TheRavine.EntityControl;
 
 namespace TheRavine.Base
 {
+    public static class DebugCommandGate
+    {
+        public static bool TryEnter(CommandContext context)
+        {
+            if (!WorldAuthority.HasRemotePeers)
+                return true;
+
+            context.Display("Отладочные команды недоступны в общей сессии");
+            return false;
+        }
+    }
+
     public class TeleportCommand : IValidatedCommand
     {
         public string Name => "~tp";
@@ -18,6 +31,9 @@ namespace TheRavine.Base
 
         public bool Validate(CommandContext context)
         {
+            if (!DebugCommandGate.TryEnter(context))
+                return false;
+
             if (context.PlayersData == null || context.PlayersData.Count < 1)
             {
                 context.Display("Игрок ещё не инициализирован");
@@ -55,6 +71,9 @@ namespace TheRavine.Base
         public string Description => "Устанавливает числовые параметры игрока: ~set i [parameter] <0..100>";
         public bool Validate(CommandContext context)
         {
+            if (!DebugCommandGate.TryEnter(context))
+                return false;
+
             if (context.PlayersData == null || context.PlayersData.Count < 1)
             {
                 context.Display("Игрок ещё не инициализирован");
@@ -101,3 +120,4 @@ namespace TheRavine.Base
         }
     }
 }
+#endif
