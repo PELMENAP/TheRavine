@@ -11,6 +11,8 @@ namespace TheRavine.Base
         private readonly InputStreamManager _inputStream;
         private readonly InteractorRegistry _interactorRegistry;
         private const int MAX_OPERATIONS = 10000;
+        public const int MaxCallDepth = 32;
+        public const int MaxStackDepth = 128;
         public const int MaxInputWaitMs = 60000;
         public const int MaxTotalWaitMs = 300000;
         
@@ -23,6 +25,12 @@ namespace TheRavine.Base
         
         public async UniTask<ExecutionResult> ExecuteAsync(ProgramNode program, int[] args, RiveRun run)
         {
+            if (run.CallDepth >= MaxCallDepth)
+            {
+                run.AbortMessage ??= $"Call depth limit exceeded ({MaxCallDepth})";
+                return ExecutionResult.CreateError(run.AbortMessage);
+            }
+
             if (args.Length != program.Parameters.Count)
             {
                 return ExecutionResult.CreateError(
@@ -67,27 +75,41 @@ namespace TheRavine.Base
         {
             var run = frame.Run;
 
-            foreach (var statement in statements)
+            if (++run.StackDepth > MaxStackDepth)
             {
-                if (run.AbortMessage != null)
-                    return ExecutionResult.CreateError(run.AbortMessage);
-
-                if (++run.OperationCount >= MAX_OPERATIONS)
-                {
-                    run.AbortMessage = $"Operation limit exceeded ({MAX_OPERATIONS})";
-                    return ExecutionResult.CreateError(run.AbortMessage);
-                }
-
-                var result = await ExecuteStatementAsync(statement, frame);
-
-                if (result.Action != ExecutionAction.Continue)
-                    return result;
-
-                if (run.OperationCount % 10 == 0)
-                    await UniTask.Yield(run.Token);
+                run.StackDepth--;
+                run.AbortMessage ??= $"Evaluation depth limit exceeded ({MaxStackDepth})";
+                return ExecutionResult.CreateError(run.AbortMessage);
             }
 
-            return ExecutionResult.CreateSuccess();
+            try
+            {
+                foreach (var statement in statements)
+                {
+                    if (run.AbortMessage != null)
+                        return ExecutionResult.CreateError(run.AbortMessage);
+
+                    if (++run.OperationCount >= MAX_OPERATIONS)
+                    {
+                        run.AbortMessage = $"Operation limit exceeded ({MAX_OPERATIONS})";
+                        return ExecutionResult.CreateError(run.AbortMessage);
+                    }
+
+                    var result = await ExecuteStatementAsync(statement, frame);
+
+                    if (result.Action != ExecutionAction.Continue)
+                        return result;
+
+                    if (run.OperationCount % 10 == 0)
+                        await UniTask.Yield(run.Token);
+                }
+
+                return ExecutionResult.CreateSuccess();
+            }
+            finally
+            {
+                run.StackDepth--;
+            }
         }
 
         private async UniTask<ExecutionResult> ExecuteStatementAsync(StatementNode statement, RiveFrame frame)
@@ -227,19 +249,35 @@ namespace TheRavine.Base
         
         private async UniTask<object> EvaluateExpressionAsync(ExpressionNode expr, RiveFrame frame)
         {
-            return expr switch
+            var run = frame.Run;
+
+            if (++run.StackDepth > MaxStackDepth)
             {
-                LiteralNode lit => lit.Value,
-                VariableNode var => frame.GetVariable(var.Name) ?? 0,
-                BinaryOpNode bin => await EvaluateBinaryOpAsync(bin, frame),
-                FunctionCallNode funcCall => await EvaluateFunctionCallAsync(funcCall, frame),
-                GetInputNode => await EvaluateGetAsync(frame),
-                SendToInteractorNode send => await EvaluateSendAsync(send, frame),
-                UnaryOpNode unary       => await EvaluateUnaryOpAsync(unary, frame),
-                ArrayLiteralNode arrLit => await EvaluateArrayLiteralAsync(arrLit, frame),
-                IndexAccessNode idxAcc  => await EvaluateIndexAccessAsync(idxAcc, frame),
-                _ => 0
-            };
+                run.StackDepth--;
+                run.AbortMessage ??= $"Evaluation depth limit exceeded ({MaxStackDepth})";
+                return 0;
+            }
+
+            try
+            {
+                return expr switch
+                {
+                    LiteralNode lit => lit.Value,
+                    VariableNode var => frame.GetVariable(var.Name) ?? 0,
+                    BinaryOpNode bin => await EvaluateBinaryOpAsync(bin, frame),
+                    FunctionCallNode funcCall => await EvaluateFunctionCallAsync(funcCall, frame),
+                    GetInputNode => await EvaluateGetAsync(frame),
+                    SendToInteractorNode send => await EvaluateSendAsync(send, frame),
+                    UnaryOpNode unary       => await EvaluateUnaryOpAsync(unary, frame),
+                    ArrayLiteralNode arrLit => await EvaluateArrayLiteralAsync(arrLit, frame),
+                    IndexAccessNode idxAcc  => await EvaluateIndexAccessAsync(idxAcc, frame),
+                    _ => 0
+                };
+            }
+            finally
+            {
+                run.StackDepth--;
+            }
         }
         
         private async UniTask<object> EvaluateGetAsync(RiveFrame frame)
