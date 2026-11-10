@@ -32,6 +32,8 @@ Shader "The Ravine/Water/WaterShader"
         CausticDepth("Caustic Depth", Float) = 6
 
         ShoreSoftness("Shore Softness", Float) = 0.4
+
+        DebugView("Debug View (0 off, 1 reflection, 2 fresnel, 3 scene color, 4 depth fade, 5 normal)", Range(0, 5)) = 0
         
         [Normal][NoScaleOffset] NormalMap("Normal Map", 2D) = "bump" {}
         UV1("UV1 (TilingXY, OffsetZW)", Vector) = (1, 1, 0, 0)
@@ -83,7 +85,6 @@ Shader "The Ravine/Water/WaterShader"
             #pragma vertex vert
             #pragma fragment frag
             
-            #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX
             
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -148,6 +149,7 @@ Shader "The Ravine/Water/WaterShader"
                 float CausticSpeed;
                 float CausticDepth;
                 float ShoreSoftness;
+                float DebugView;
             CBUFFER_END
             
             // ----------------------------------------------------------------
@@ -641,9 +643,6 @@ Shader "The Ravine/Water/WaterShader"
                 // 5. Сборка финального цвета
                 float3 finalColor = ambient + mainDiffuse + mainSpecular + addDiffuse + addSpecular + scattering;
 
-                float ao = SampleAmbientOcclusion(screenUV);
-                finalColor *= ao;
-
                 // 6. Дистанс фейд
                 float dist = length(input.positionWS - _WorldSpaceCameraPos);
                 float distFade = saturate((dist - 50.0) / 100.0);
@@ -669,6 +668,17 @@ Shader "The Ravine/Water/WaterShader"
                 float waterAlpha = lerp(0.2, 0.9, depthFade);
                 float alpha = lerp(0.5, waterAlpha, isFrontFace);
                 alpha = lerp(alpha, 1.0, fresnel);
+
+                if (DebugView > 0.5)
+                {
+                    int view = (int)(DebugView + 0.5);
+                    float3 debugColor = view == 1 ? (float3)reflColor
+                        : view == 2 ? fresnel.xxx
+                        : view == 3 ? sceneColor
+                        : view == 4 ? depthFade.xxx
+                        : normalWS * 0.5 + 0.5;
+                    return float4(debugColor, 1.0);
+                }
 
                 float shoreEdge = smoothstep(0.0, max(ShoreSoftness, 1e-3), foamDepth);
                 float shoreMask = lerp(1.0, max(shoreEdge, foamMask), isFrontFace);
