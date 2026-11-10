@@ -88,7 +88,7 @@ Source of findings 17–22: client patching as in the article on IL2CPP reversin
 
 Not verified in the Unity Editor: the container has no Unity; changed files were checked only by a C# syntax parse. To check in play mode with a host and a remote client: pick-up then place, place without the item (expected refusal `NotOwned`), crafting then placing the result, hunger and death of the remote player.
 
-## 6. Fixes for findings 7, 8, 16 and 23+
+## 6. Fixes for findings 7–11, 14–16, 21 and 23–31
 
 7. Recursion limits (`RiveExecutor.ExecuteAsync`, checked on every script-to-script call): at most 32 nested script calls per run (`MaxCallDepth`); a breach sets the run's abort message, so self- and mutual recursion end with `Call depth limit exceeded` in the top-level result. Besides, `RiveRun.StackDepth` counts nested `ExecuteStatementsAsync` / `EvaluateExpressionAsync` levels across all frames of a run and is capped at 128 (`MaxStackDepth`): this bounds the real stack for a deep call chain with deep expressions and for a long left-deep chain (`1+1+…`), which the parser does not bound (finding 25). With 4 concurrent runs the worst synchronous nesting is 4 × 128 levels.
 
@@ -134,4 +134,6 @@ Not verified in the Unity Editor: the container has no Unity; changed files were
 
 Tests: `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs`, `Assets/Tests/EditMode/AtomicFileTests.cs`, `Assets/Tests/EditMode/RateBudgetTests.cs`, `Assets/Tests/EditMode/JumpChargeLimitTests.cs`, `Assets/Tests/EditMode/ModelLoaderFuzzTests.cs`, `Assets/Tests/EditMode/WorldRegistryPathTests.cs`, `Assets/Tests/EditMode/RavineLoggerTests.cs`, `Assets/Tests/EditMode/WorldAuthorityTests.cs` (only the no-session case: `Terminal` lives in Assembly-CSharp, which the test assembly cannot reference, so the command gate itself is not covered by a test). The interpreter now lives in its own `Rive` assembly (`Terminal/Rive/Core/Rive.asmdef`) so EditMode tests can reference it.
 
-Not verified in the Unity Editor: the container has no Unity; the changed files were not compiled and the tests were not run.
+Not verified in the Unity Editor: the container has no Unity and no C# compiler; the changed files were checked only by a C# syntax parse, and the new tests were not run. To check in the Editor: compile (the interpreter moved into the `Rive` assembly, `Terminal/Rive/Core/Rive.asmdef`; the EditMode test assembly references it and UniTask), run the EditMode tests, and in Play Mode with a host and a client: movement and jump feel (findings 21, 29, 31), speech (30), the debug commands refusing while a client is connected (9), the Rive terminal (`wait`, `get`, a script left running when the world is unloaded).
+
+Still open from the task list, both need a Unity check and an owner decision: finding 27 (world edits reach only the editing client; late-joiner sync needs a data-volume decision) and finding 12 (`NetworkManager.prefab` settings and the transport certificate).

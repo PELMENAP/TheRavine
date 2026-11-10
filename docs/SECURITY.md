@@ -153,7 +153,7 @@ The world keeps living even without an observer (PHILOSOPHY §3). It must also k
 - A spam scenario: one client sends each request kind at 100× the normal rate; the server's frame time and log size stay within budget.
 - A replication scenario with three peers (host and two clients): an accepted edit by one client is visible to the other, and to a client that joins afterwards.
 - A concurrency scenario for scripts: two executions interleaved through `wait`; neither sees the other's variables or resets its budget.
-- Tests live in `Assets/Tests/EditMode`. Today that folder covers the simulation, chunk store and command buffer; it has no tests for RPC handlers, the Rive interpreter or loader fuzzing. A change at one of those boundaries adds the first test for it instead of waiting for a suite.
+- Tests live in `Assets/Tests/EditMode`. Today that folder covers the simulation, chunk store and command buffer, the Rive interpreter limits and loader fuzzing (neural models, chunks), plus the pure helpers of the RPC handlers (`RateBudget`, `JumpChargeLimit`); it still has no test that calls an RPC handler or a terminal command (they need a `NetworkManager` or Assembly-CSharp). A change at one of those boundaries adds the first test for it instead of waiting for a suite.
 - Static checks that must return nothing, run before a commit that touches networking or storage:
   - `InvokePermission.Everyone` or `RequireOwnership = false` on an RPC outside the registry of section 14;
   - a `ServerRpc` with a `float`, `Vector2` or `Vector3` parameter and no `math.isfinite` in its body;

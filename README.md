@@ -312,11 +312,11 @@ Genetic audio profiles: `AgentAudioProfile`, `GeneticAudioProfile` (+Cache), `Ag
 
 - `GameInitializer.cs` — entry point (see above); `Terminal.cs` — UI console with history (50 lines, ZString); `UI/Console/`
 - `CommandManager` — Dictionary of commands by name/alias; `BaseCommands`, `GeneratorCommands`, `SetPlayerCommand`
-- **Rive** (`Terminal/Rive/`) — a custom interpreted language:
+- **Rive** (`Terminal/Rive/`; the interpreter itself is the `Rive` assembly in `Terminal/Rive/Core/`) — a custom interpreted language:
   - Types: `int`, arrays `int[]`
   - Constructs: `if/else/end`, `for x = N to M`, `wait`, `log`, `get` (stdin), `send(interactor, val)`
   - `~command` — calls terminal commands from a script
-  - `RiveParser` → AST → `RiveExecutor` (stack-based scopes, MAX 10000 ops)
+  - `RiveParser` (limits on source, tokens, nesting, array literals, arguments) → AST → `RiveExecutor` (a `RiveRun` per top-level run: 10000 ops, call depth 32, 300 s of waiting, cancellable; a `RiveFrame` with its own scopes per script call)
   - `RiveRuntime` — program registry, built-in functions (abs/min/max/clamp/pow/sqrt/rand)
   - `InteractorRegistry` — in-game puzzles (DigitalLock, Collatz, Checksum, SequenceValidator)
 - `Terminal/PDollar/` — `$P` recognizer: `GestureRecognizer` — gesture recognition → command dispatcher
