@@ -31,7 +31,7 @@ Severity: **Critical** — a remote client breaks equality or the world directly
 | 21 | Low | `EntitySystem/Entityes/Player/PlayerController.cs` (`JumpServerRpc`) | The charge is not checked against time: a patched client always sends `charge = 1` and gets the maximum jump without holding. | §5 | Open |
 | 22 | Low | design | Listen-server: the host process runs server code, so a host who patches it bypasses every check. Only a dedicated server fixes this. | §3 | Accepted |
 | 23 | Medium | `Terminal/Rive/RiveRuntime.cs`, `Terminal/Rive/Core/RiveExecutor.cs` | One `RiveExecutor` held shared `_variableScopes` and `_operationCount`: a second run (after `wait` / `get`) pushed scopes onto the same stack and reset the counter; callees read and overwrote caller variables. | §8 | Fixed, see §6 |
-| 24 | Medium | `Terminal/Rive/Core/RiveBuiltInFunctions.cs` | `pow` loops `exp` times on the main thread without op accounting: `pow(2, 2147483647)` runs 2³¹ iterations. | §8 | Open |
+| 24 | Medium | `Terminal/Rive/Core/RiveBuiltInFunctions.cs` | `pow` loops `exp` times on the main thread without op accounting: `pow(2, 2147483647)` runs 2³¹ iterations. | §8 | Fixed, see §6 |
 | 25 | Medium | `Terminal/Rive/Core/RiveParser.cs` | Recursive descent has no depth tracking; source length, token count, array literal length and call argument count are unbounded: uncatchable stack overflow. | §6, §8 | Open |
 | 26 | Medium | `Terminal/Rive/Core/InputStreamManager.cs`, `Terminal/Rive/Core/RiveExecutor.cs`, `Terminal/Terminal.cs` | `get` waits forever; `UniTask.Delay` has no cancellation, scripts outlive the world; only a single `wait` is capped, total wait is not. | §6, §8 | Open |
 | 27 | Medium | `EntitySystem/Entityes/Player/PlayerController.cs`, `ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | Edit results go only to `OwnerTarget`: other clients and late joiners never see world edits. | §2 | Open |
@@ -95,6 +95,8 @@ Not verified in the Unity Editor: the container has no Unity; changed files were
     - `RiveExecutor` has no mutable fields: every `Execute*` / `Evaluate*` method takes the frame. A top-level `RiveRuntime.ExecuteScriptAsync` creates a new `RiveRun`; a script-to-script call (`RiveRuntime.CallFunctionAsync`) gets a new `RiveFrame` (parameters and own locals only) that shares the caller's `RiveRun`.
     - A budget breach sets `RiveRun.AbortMessage`; every statement list checks it, so a callee that ran out of budget stops the caller too instead of returning `0` into it.
     - Finding 7 stays open until the call depth limit lands.
+
+24. `pow` uses exponentiation by squaring: at most 31 steps for any `int` exponent, wrapping multiplication (identical results to the old loop). `abs(int.MinValue)` wraps instead of throwing `OverflowException`. Cost of the other built-ins does not depend on argument values; `min`, `max`, `sum`, `avg` are linear in the argument count, which is bounded by the parser (finding 25).
 
 Tests: `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs`. The interpreter now lives in its own `Rive` assembly (`Terminal/Rive/Core/Rive.asmdef`) so EditMode tests can reference it.
 
