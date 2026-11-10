@@ -169,11 +169,11 @@ Every RPC of the project is in this table. A new RPC is added here in the same c
 
 | RPC | Arguments (intent) | Server checks | Budget | Result goes to |
 |---|---|---|---|---|
-| `PlayerController.MoveServerRpc` | direction, input speed, sprint flag | finite; direction clamped to unit length; speed saturated; intent expires after `intentTimeout` | none (stores intent, integrated in `FixedUpdate`) | all, at `sendInterval` |
-| `PlayerController.StopMoveServerRpc` | — | clears the intent; the last direction is kept as the brake direction, speed decays at `Deceleration` | none | all, at `sendInterval` |
-| `PlayerController.JumpServerRpc` | charge 0..1 | finite; saturated; capped by the server time since the last jump (+ `jumpChargeSlack`); grounded, ground consumed | one per ground contact | all |
+| `PlayerController.MoveServerRpc` | direction, input speed, sprint flag | finite; direction clamped to unit length; speed saturated; intent expires after `intentTimeout` | movement budget: `moveRateMargin / sendInterval` per second, burst `moveBurst`, shared with Stop and Jump; excess dropped silently (counted in `refusedEdits`) | all, at `sendInterval` |
+| `PlayerController.StopMoveServerRpc` | — | clears the intent; the last direction is kept as the brake direction, speed decays at `Deceleration` | the movement budget of Move | all, at `sendInterval` |
+| `PlayerController.JumpServerRpc` | charge 0..1 | finite; saturated; capped by the server time since the last jump (+ `jumpChargeSlack`); grounded, ground consumed | one per ground contact; the movement budget of Move | all |
 | `PlayerController.SpeakServerRpc` | tokens, length | length; bit width; cooldown (taken before the energy check); active; alive; energy cost | `SpeechCooldown` | listeners through `SpeechBus` |
-| `PlayerController.CraftRequestServerRpc` | recipe index | remote players only; index in `CraftModel.Shared`; ingredients in the ledger | recipe time × `craftTimeTolerance` | nobody (ledger only) |
+| `PlayerController.CraftRequestServerRpc` | recipe index | remote players only; index in `CraftModel.Shared`; ingredients in the ledger | `craftRate` / `craftBurst`; recipe time × `craftTimeTolerance` | nobody (ledger only) |
 | `PlayerController.PlaceRequestServerRpc` | cell, object id, level | active; alive; reach + latency compensation; item in the ledger; `WorldEdits.TryPlace` | `editRate` / `editBurst` | owner only |
 | `PlayerController.PickUpRequestServerRpc` | cell, level | active; alive; reach + latency compensation; `WorldEdits.TryPickUp` | `editRate` / `editBurst` | owner only |
 | `PlayerModelView.RequestCameraServerRpc` | — | owner from transport | one camera per owner | all |
@@ -182,7 +182,7 @@ Every RPC of the project is in this table. A new RPC is added here in the same c
 | `PlayerController.PickUpResultClientRpc` | server → client | — | one per request | owner |
 | `PlayerModelView.NotifyCameraCreatedClientRpc` | server → clients | — | one per camera | all |
 
-Rows that do not meet the principles yet (no budget on Move, Stop and Jump; Stop bypassing deceleration; edit results reaching only the owner) are open gaps, tracked in the audit. The table states what the code does, not what it should do.
+Rows that do not meet the principles yet (edit results reaching only the owner) are open gaps, tracked in the audit. The table states what the code does, not what it should do.
 
 ## 15. Accepted Exceptions
 
