@@ -1,15 +1,14 @@
 using UnityEngine;
+using Unity.Mathematics;
 
 public enum LegState { Disabled, Growing, Supporting, Retracting }
 
 public class LegData
 {
     public LegState state = LegState.Disabled;
-    public Vector3 footPosition;
-    public Vector3[] handles = new Vector3[7];
-    public Vector3[] handleOffsets = new Vector3[7];
-    public Vector3[] sampleBuffer;
-    public int resolution;
+    public float3 footPosition;
+    public float3[] handles = new float3[7];
+    public float3[] handleOffsets = new float3[7];
     public float progression;
     public float growTarget;
     public float lifeTimer;
@@ -18,12 +17,6 @@ public class LegData
     public float rotationSpeed;
     public float oscillationSpeed;
     public float oscillationProgress;
-
-    public void Initialize(int res)
-    {
-        resolution = res;
-        sampleBuffer = new Vector3[resolution];
-    }
 
     public void Activate(Mimic mimic, Vector3 footPos, float coef, float lifeTime)
     {
