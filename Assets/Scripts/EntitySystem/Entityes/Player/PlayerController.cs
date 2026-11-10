@@ -93,6 +93,7 @@ namespace TheRavine.EntityControl
         private readonly CompositeDisposable settingsSubscriptions = new();
 
         private Vector2 intentDirection;
+        private Vector2 brakeDirection;
         private float intentSpeed;
         private bool intentSprint;
         private double intentTime;
@@ -417,6 +418,7 @@ namespace TheRavine.EntityControl
 
             Vector2 direction = intentDirection;
             float inputSpeed = intentSpeed;
+            if (direction.sqrMagnitude > 0f) brakeDirection = Vector2.zero;
 
             ref readonly var rules = ref SimulationRules.Frame;
             float ground = map.SampleHeightBilinear(playerRigidbody.position.x, playerRigidbody.position.z);
@@ -449,10 +451,11 @@ namespace TheRavine.EntityControl
                 CurrentSpeed = math.abs(delta) <= step ? targetSpeed : CurrentSpeed + math.sign(delta) * step;
             }
 
+            Vector2 travel = direction.sqrMagnitude > 0f ? direction : brakeDirection;
             playerRigidbody.linearVelocity = new Vector3(
-                direction.x * CurrentSpeed,
+                travel.x * CurrentSpeed,
                 playerRigidbody.linearVelocity.y,
-                direction.y * CurrentSpeed
+                travel.y * CurrentSpeed
             );
 
             broadcastTimer += dt;
@@ -477,13 +480,10 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void StopMoveServerRpc()
         {
+            if (intentDirection.sqrMagnitude > 0f) brakeDirection = intentDirection;
             intentDirection = Vector2.zero;
             intentSpeed = 0f;
             intentSprint = false;
-            CurrentSpeed = 0f;
-            if (playerRigidbody == null) return;
-
-            playerRigidbody.linearVelocity = new Vector3(0f, playerRigidbody.linearVelocity.y, 0f);
         }
 
         [ClientRpc]
