@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Linq;
 using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using TheRavine.Base;
@@ -14,8 +15,15 @@ public class RiveInterpreterSecurityTests
     [SetUp]
     public void SetUp()
     {
+        LogAssert.ignoreFailingMessages = true;
         _logger = new RavineLogger(null);
         _runtime = new RiveRuntime(null, _logger);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        LogAssert.ignoreFailingMessages = false;
     }
 
     private void Load(string name, string source) => _runtime.LoadFile(name, source);
@@ -159,4 +167,122 @@ public class RiveInterpreterSecurityTests
         Assert.IsTrue(result.Success, result.ErrorMessage);
         Assert.AreEqual(int.MinValue, result.ReturnValue);
     });
+
+    private RiveParseException ParseFails(string source)
+    {
+        return Assert.Throws<RiveParseException>(() => new RiveParser(_logger).Parse("malicious", source));
+    }
+
+    [Test]
+    public void DeeplyNestedParenthesesAreRejected()
+    {
+        var source = "int x = " + new string('(', 1000) + "1" + new string(')', 1000);
+        var ex = ParseFails(source);
+        StringAssert.Contains("Nesting", ex.Message);
+    }
+
+    [Test]
+    public void TenThousandNestedParenthesesAreRejected()
+    {
+        ParseFails("int x = " + new string('(', 10000) + "1" + new string(')', 10000));
+    }
+
+    [Test]
+    public void DeeplyNestedUnaryOperatorsAreRejected()
+    {
+        var ex = ParseFails("int x = " + new string('-', 10000) + "1");
+        StringAssert.Contains("Nesting", ex.Message);
+    }
+
+    [Test]
+    public void DeeplyNestedBlocksAreRejected()
+    {
+        var source = new System.Text.StringBuilder();
+        for (int i = 0; i < 1000; i++) source.Append("if 1\n");
+        for (int i = 0; i < 1000; i++) source.Append("end\n");
+
+        var ex = ParseFails(source.ToString());
+        StringAssert.Contains("Nesting", ex.Message);
+    }
+
+    [Test]
+    public void TenThousandNestedIfBlocksAreRejected()
+    {
+        var source = new System.Text.StringBuilder();
+        for (int i = 0; i < 10000; i++) source.Append("if 1\n");
+        for (int i = 0; i < 10000; i++) source.Append("end\n");
+
+        ParseFails(source.ToString());
+    }
+
+    [Test]
+    public void OversizedSourceIsRejectedBeforeLexing()
+    {
+        var ex = ParseFails(new string('a', RiveParser.MaxSourceLength + 1));
+        StringAssert.Contains("characters", ex.Message);
+    }
+
+    [Test]
+    public void TooManyTokensAreRejected()
+    {
+        var ex = ParseFails("int x = 1" + string.Concat(System.Linq.Enumerable.Repeat("+1", RiveParser.MaxTokens)));
+        StringAssert.Contains("tokens", ex.Message);
+    }
+
+    [Test]
+    public void OversizedArrayLiteralIsRejected()
+    {
+        var items = string.Join(",", System.Linq.Enumerable.Repeat("1", RiveParser.MaxArrayLiteralLength + 1));
+        var ex = ParseFails($"int a = [{items}]");
+        StringAssert.Contains("Array literal", ex.Message);
+    }
+
+    [Test]
+    public void TooManyCallArgumentsAreRejected()
+    {
+        var items = string.Join(",", System.Linq.Enumerable.Repeat("1", RiveParser.MaxCallArguments + 1));
+        var ex = ParseFails($"int a = max({items})");
+        StringAssert.Contains("arguments", ex.Message);
+    }
+
+    [Test]
+    public void TooManyParametersAreRejected()
+    {
+        var names = string.Join(",", System.Linq.Enumerable.Range(0, RiveParser.MaxCallArguments + 1).Select(i => "p" + i));
+        ParseFails($"({names})\n>> 1");
+    }
+
+    [Test]
+    public void OutOfRangeNumberIsParseErrorNotOverflow()
+    {
+        ParseFails("int x = 99999999999");
+    }
+
+    [Test]
+    public void UnexpectedCharacterOnFirstParseIsParseError()
+    {
+        ParseFails("int x = $");
+    }
+
+    [Test]
+    public void SourceAtTheLimitsStillParses()
+    {
+        var elements = string.Join(",", System.Linq.Enumerable.Repeat("1", RiveParser.MaxArrayLiteralLength));
+        var args = string.Join(",", System.Linq.Enumerable.Repeat("1", RiveParser.MaxCallArguments));
+        var source = $"int a = [{elements}]\nint b = max({args})\nint c = {new string('(', 30)}1{new string(')', 30)}\n>> c";
+
+        var program = new RiveParser(_logger).Parse("limits", source);
+
+        Assert.AreEqual(3 + 1, program.Statements.Count);
+    }
+
+    [Test]
+    public void LoadFileWithMaliciousSourceDoesNotThrowAndDoesNotLoad()
+    {
+        Assert.DoesNotThrow(() => _runtime.LoadFile("huge", new string('(', 10000)));
+        Assert.IsFalse(_runtime.IsFileLoaded("huge"));
+
+        Assert.DoesNotThrow(() => _runtime.LoadFile("long", new string('a', RiveParser.MaxSourceLength + 1)));
+        Assert.IsFalse(_runtime.IsFileLoaded("long"));
+    }
 }

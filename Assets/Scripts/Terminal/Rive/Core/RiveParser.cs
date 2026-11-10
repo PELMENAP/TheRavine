@@ -10,6 +10,13 @@ namespace TheRavine.Base
         private readonly RavineLogger _logger;
         private List<Token> _tokens;
         private int _position;
+        private int _depth;
+
+        public const int MaxSourceLength = 65536;
+        public const int MaxTokens = 16384;
+        public const int MaxNestingDepth = 128;
+        public const int MaxArrayLiteralLength = 256;
+        public const int MaxCallArguments = 16;
 
         public RiveParser(RavineLogger logger)
         {
@@ -32,9 +39,15 @@ namespace TheRavine.Base
         
         public ProgramNode Parse(string fileName, string content)
         {
+            _tokens = null;
+            _position = 0;
+            _depth = 0;
+
+            if (content.Length > MaxSourceLength)
+                throw LogAndThrow($"Source is longer than {MaxSourceLength} characters", 0);
+
             var lines = PreprocessLines(content);
             _tokens = Tokenize(lines);
-            _position = 0;
             
             var program = new ProgramNode { Name = fileName };
             
@@ -74,9 +87,9 @@ namespace TheRavine.Base
                         continue;
                     }
                     
-                    if (line.Substring(pos).StartsWith(">>"))
+                    if (line[pos] == '>' && pos + 1 < line.Length && line[pos + 1] == '>')
                     {
-                        tokens.Add(new Token(TokenType.Return, ">>", lineIndex));
+                        AddToken(tokens, TokenType.Return, ">>", lineIndex);
                         pos += 2;
                         continue;
                     }
@@ -84,7 +97,7 @@ namespace TheRavine.Base
                     if (line[pos] == '~')
                     {
                         var cmdEnd = line.Length;
-                        tokens.Add(new Token(TokenType.TerminalCommand, line.Substring(pos, cmdEnd - pos), lineIndex));
+                        AddToken(tokens, TokenType.TerminalCommand, line.Substring(pos, cmdEnd - pos), lineIndex);
                         pos = cmdEnd;
                         continue;
                     }
@@ -95,7 +108,7 @@ namespace TheRavine.Base
                         if (twoChar == ">=" || twoChar == "<=" || twoChar == "==" || twoChar == "!=" ||
                                 twoChar == "&&" || twoChar == "||")
                         {
-                            tokens.Add(new Token(TokenType.Operator, twoChar, lineIndex));
+                            AddToken(tokens, TokenType.Operator, twoChar, lineIndex);
                             pos += 2;
                             continue;
                         }
@@ -115,7 +128,7 @@ namespace TheRavine.Base
                             ',' => TokenType.Comma,
                             _ => TokenType.Operator
                         };
-                        tokens.Add(new Token(type, line[pos].ToString(), lineIndex));
+                        AddToken(tokens, type, line[pos].ToString(), lineIndex);
                         pos++;
                         continue;
                     }
@@ -125,7 +138,7 @@ namespace TheRavine.Base
                         int start = pos;
                         while (pos < line.Length && char.IsDigit(line[pos]))
                             pos++;
-                        tokens.Add(new Token(TokenType.Number, line.Substring(start, pos - start), lineIndex));
+                        AddToken(tokens, TokenType.Number, line.Substring(start, pos - start), lineIndex);
                         continue;
                     }
 
@@ -137,18 +150,32 @@ namespace TheRavine.Base
 
                         var word = line.Substring(start, pos - start);
                         var type = Keywords.TryGetValue(word, out var kwType) ? kwType : TokenType.Identifier;
-                        tokens.Add(new Token(type, word, lineIndex));
+                        AddToken(tokens, type, word, lineIndex);
                         continue;
                     }
                     
-                    throw LogAndThrow($"Unexpected character: {line[pos]}");
+                    throw LogAndThrow($"Unexpected character: {line[pos]}", lineIndex);
                 }
                 
-                tokens.Add(new Token(TokenType.NewLine, "\n", lineIndex));
+                AddToken(tokens, TokenType.NewLine, "\n", lineIndex);
             }
             
             tokens.Add(new Token(TokenType.EOF, "", lines.Count));
             return tokens;
+        }
+
+        private void AddToken(List<Token> tokens, TokenType type, string value, int line)
+        {
+            if (tokens.Count >= MaxTokens)
+                throw LogAndThrow($"Source has more than {MaxTokens} tokens", line);
+
+            tokens.Add(new Token(type, value, line));
+        }
+
+        private void EnterNesting()
+        {
+            if (++_depth > MaxNestingDepth)
+                throw LogAndThrow($"Nesting is deeper than {MaxNestingDepth} levels");
         }
         
         private List<string> ParseParameters()
@@ -160,6 +187,9 @@ namespace TheRavine.Base
             
             do
             {
+                if (parameters.Count >= MaxCallArguments)
+                    throw LogAndThrow($"More than {MaxCallArguments} parameters");
+
                 var token = Consume(TokenType.Identifier, "Expected parameter name");
                 parameters.Add(token.Value);
             } while (Match(TokenType.Comma));
@@ -169,6 +199,7 @@ namespace TheRavine.Base
         
         private List<StatementNode> ParseStatements(TokenType endToken)
         {
+            EnterNesting();
             var statements = new List<StatementNode>();
             SkipNewLines();
             
@@ -178,6 +209,7 @@ namespace TheRavine.Base
                 SkipNewLines();
             }
             
+            _depth--;
             return statements;
         }
         
@@ -372,7 +404,13 @@ namespace TheRavine.Base
             return ParseTerminalCommand(sb.ToString());
         }
 
-        private ExpressionNode ParseExpression() => ParseLogicalOr();
+        private ExpressionNode ParseExpression()
+        {
+            EnterNesting();
+            var expr = ParseLogicalOr();
+            _depth--;
+            return expr;
+        }
 
         private ExpressionNode ParseLogicalOr()
         {
@@ -475,6 +513,14 @@ namespace TheRavine.Base
 
         private ExpressionNode ParsePrimary()
         {
+            EnterNesting();
+            var node = ParsePrimaryCore();
+            _depth--;
+            return node;
+        }
+
+        private ExpressionNode ParsePrimaryCore()
+        {
             if (Check(TokenType.Operator) && Current().Value == "-")
             {
                 Advance();
@@ -492,14 +538,25 @@ namespace TheRavine.Base
                 var elements = new List<ExpressionNode>();
                 if (!Check(TokenType.RightBracket))
                 {
-                    do { elements.Add(ParseExpression()); } while (Match(TokenType.Comma));
+                    do
+                    {
+                        if (elements.Count >= MaxArrayLiteralLength)
+                            throw LogAndThrow($"Array literal has more than {MaxArrayLiteralLength} elements");
+
+                        elements.Add(ParseExpression());
+                    } while (Match(TokenType.Comma));
                 }
                 Consume(TokenType.RightBracket, "Expected ']'");
                 return new ArrayLiteralNode { Elements = elements };
             }
             
             if (Match(TokenType.Number))
-                return new LiteralNode { Value = int.Parse(Previous().Value) };
+            {
+                if (!int.TryParse(Previous().Value, out var number))
+                    throw LogAndThrow($"Number is out of range: {Previous().Value}");
+
+                return new LiteralNode { Value = number };
+            }
 
             if (Match(TokenType.Get))
                 return new GetInputNode();
@@ -545,6 +602,9 @@ namespace TheRavine.Base
                     {
                         do
                         {
+                            if (args.Count >= MaxCallArguments)
+                                throw LogAndThrow($"Call has more than {MaxCallArguments} arguments");
+
                             args.Add(ParseExpression());
                         } while (Match(TokenType.Comma));
                     }
@@ -621,8 +681,13 @@ namespace TheRavine.Base
         
         private RiveParseException LogAndThrow(string message)
         {
-            _logger.LogError($"Line {Current().Line}: {message}");
-            return new RiveParseException(message, Current().Line);
+            return LogAndThrow(message, _tokens != null && _position < _tokens.Count ? Current().Line : 0);
+        }
+
+        private RiveParseException LogAndThrow(string message, int line)
+        {
+            _logger.LogError($"Line {line}: {message}");
+            return new RiveParseException(message, line);
         }
 
         
