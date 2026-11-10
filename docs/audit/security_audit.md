@@ -30,6 +30,15 @@ Severity: **Critical** — a remote client breaks equality or the world directly
 | 20 | Medium | `Model/BehavioursMap/Currency/SafeInt.cs`, `Model/BehavioursMap/Currency/CurrencyComponent.cs:27` | `SafeInt` only hides the value from memory scanners; a patched getter (`GetRaw`, `operator int`) returns any value. The initial amount comes from the local `WorldState.currency`; `CurrencyNetworkComponent.Initialize` is never called. Dormant: currency is not spent anywhere yet. | §2 | Open |
 | 21 | Low | `EntitySystem/Entityes/Player/PlayerController.cs` (`JumpServerRpc`) | The charge is not checked against time: a patched client always sends `charge = 1` and gets the maximum jump without holding. | §5 | Open |
 | 22 | Low | design | Listen-server: the host process runs server code, so a host who patches it bypasses every check. Only a dedicated server fixes this. | §3 | Accepted |
+| 23 | Medium | `Terminal/Rive/RiveRuntime.cs`, `Terminal/Rive/Core/RiveExecutor.cs` | One `RiveExecutor` held shared `_variableScopes` and `_operationCount`: a second run (after `wait` / `get`) pushed scopes onto the same stack and reset the counter; callees read and overwrote caller variables. | §8 | Fixed, see §6 |
+| 24 | Medium | `Terminal/Rive/Core/RiveBuiltInFunctions.cs` | `pow` loops `exp` times on the main thread without op accounting: `pow(2, 2147483647)` runs 2³¹ iterations. | §8 | Open |
+| 25 | Medium | `Terminal/Rive/Core/RiveParser.cs` | Recursive descent has no depth tracking; source length, token count, array literal length and call argument count are unbounded: uncatchable stack overflow. | §6, §8 | Open |
+| 26 | Medium | `Terminal/Rive/Core/InputStreamManager.cs`, `Terminal/Rive/Core/RiveExecutor.cs`, `Terminal/Terminal.cs` | `get` waits forever; `UniTask.Delay` has no cancellation, scripts outlive the world; only a single `wait` is capped, total wait is not. | §6, §8 | Open |
+| 27 | Medium | `EntitySystem/Entityes/Player/PlayerController.cs`, `ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | Edit results go only to `OwnerTarget`: other clients and late joiners never see world edits. | §2 | Open |
+| 28 | Low | `EntitySystem/AI/NeuralModelStorage.cs`, `Terminal/PDollar/Scripts/GestureRepository.cs` | Direct `FileMode.Create` / `File.WriteAllBytes` (crash mid-write destroys the previous save); unbounded `File.ReadAllBytes`; gesture count and points not capped. | §7 | Open |
+| 29 | Low | `EntitySystem/Entityes/Player/PlayerController.cs` (`StopMoveServerRpc`) | Sets `CurrentSpeed = 0` and zeroes velocity directly, bypassing server `Deceleration`; no rate limit. | §5 | Open |
+| 30 | Low | `EntitySystem/Entityes/Player/PlayerController.cs` (`SpeakServerRpc`) | Two `GetEntityComponent` lookups run before token length, bit width and cooldown are checked. | §4, §5 | Open |
+| 31 | Low | `EntitySystem/Entityes/Player/PlayerController.cs` | Move, Stop, Jump and Craft ServerRpcs have no per-client rate limit. | §5, §6 | Open |
 
 ## 2. What already follows the principles
 
@@ -78,3 +87,15 @@ Source of findings 17–22: client patching as in the article on IL2CPP reversin
     - Needed for this: `PlayerController.SetUp` sets up the camera, controls and autosave only for the owner (it used to throw for other players' instances without a `CameraComponent`, and every instance on the host wrote its position into the host's save); the spawn position is set only on the server, from the save only for the host's player; `PlayerModelView` creates `CameraComponent` only for the local player.
 
 Not verified in the Unity Editor: the container has no Unity; changed files were checked only by a C# syntax parse. To check in play mode with a host and a remote client: pick-up then place, place without the item (expected refusal `NotOwned`), crafting then placing the result, hunger and death of the remote player.
+
+## 6. Fixes for findings 23+
+
+23. Per-run Rive state.
+    - `RiveRun` (`Terminal/Rive/Core/RiveRun.cs`) holds the operation counter, call depth and abort message of one top-level run; `RiveFrame` holds the scope stack of one script call and a reference to its run.
+    - `RiveExecutor` has no mutable fields: every `Execute*` / `Evaluate*` method takes the frame. A top-level `RiveRuntime.ExecuteScriptAsync` creates a new `RiveRun`; a script-to-script call (`RiveRuntime.CallFunctionAsync`) gets a new `RiveFrame` (parameters and own locals only) that shares the caller's `RiveRun`.
+    - A budget breach sets `RiveRun.AbortMessage`; every statement list checks it, so a callee that ran out of budget stops the caller too instead of returning `0` into it.
+    - Finding 7 stays open until the call depth limit lands.
+
+Tests: `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs`. The interpreter now lives in its own `Rive` assembly (`Terminal/Rive/Core/Rive.asmdef`) so EditMode tests can reference it.
+
+Not verified in the Unity Editor: the container has no Unity; the changed files were not compiled and the tests were not run.
