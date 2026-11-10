@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Diagnostics;
 using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using TheRavine.Base;
@@ -106,5 +107,56 @@ public class RiveInterpreterSecurityTests
 
         Assert.IsFalse(result.Success);
         StringAssert.Contains("Operation limit", result.ErrorMessage);
+    });
+
+    private static int ReferencePow(int b, int e)
+    {
+        int r = 1;
+        for (int i = 0; i < e; i++) r = unchecked(r * b);
+        return r;
+    }
+
+    [UnityTest]
+    public IEnumerator PowWithHugeExponentReturnsImmediately() => UniTask.ToCoroutine(async () =>
+    {
+        var sw = Stopwatch.StartNew();
+        var max = await _runtime.ExecuteScriptAsync("pow", 2, int.MaxValue);
+        var odd = await _runtime.ExecuteScriptAsync("pow", 3, int.MaxValue - 1);
+        sw.Stop();
+
+        Assert.IsTrue(max.Success, max.ErrorMessage);
+        Assert.IsTrue(odd.Success, odd.ErrorMessage);
+        Assert.AreEqual(0, max.ReturnValue);
+        Assert.Less(sw.ElapsedMilliseconds, 200);
+    });
+
+    [UnityTest]
+    public IEnumerator PowMatchesRepeatedMultiplicationForSmallArguments() => UniTask.ToCoroutine(async () =>
+    {
+        int[] bases = { -3, -2, -1, 0, 1, 2, 3, 5, 10, 123456789, int.MaxValue, int.MinValue };
+        foreach (var b in bases)
+        {
+            for (int e = 0; e <= 70; e++)
+            {
+                var result = await _runtime.ExecuteScriptAsync("pow", b, e);
+                Assert.IsTrue(result.Success, result.ErrorMessage);
+                Assert.AreEqual(ReferencePow(b, e), result.ReturnValue, $"pow({b}, {e})");
+            }
+        }
+    });
+
+    [UnityTest]
+    public IEnumerator PowRejectsNegativeExponent() => UniTask.ToCoroutine(async () =>
+    {
+        var result = await _runtime.ExecuteScriptAsync("pow", 2, -1);
+        Assert.IsFalse(result.Success);
+    });
+
+    [UnityTest]
+    public IEnumerator AbsOfIntMinValueWrapsWithoutException() => UniTask.ToCoroutine(async () =>
+    {
+        var result = await _runtime.ExecuteScriptAsync("abs", int.MinValue);
+        Assert.IsTrue(result.Success, result.ErrorMessage);
+        Assert.AreEqual(int.MinValue, result.ReturnValue);
     });
 }

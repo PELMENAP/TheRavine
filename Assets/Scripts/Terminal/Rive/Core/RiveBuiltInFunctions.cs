@@ -47,7 +47,7 @@ namespace TheRavine.Base
             if (args.Length != 1 || args[0] is not int val)
                 throw new RiveRuntimeException("abs: expected 1 int argument");
             
-            return UniTask.FromResult<object>(Math.Abs(val));
+            return UniTask.FromResult<object>(val < 0 ? unchecked(-val) : val);
         }
 
         private static UniTask<object> Min(params object[] args)
@@ -99,8 +99,14 @@ namespace TheRavine.Base
                 throw new RiveRuntimeException("pow: negative exponents not supported");
             
             int result = 1;
-            for (int i = 0; i < exp; i++)
-                result *= baseVal;
+            while (exp > 0)
+            {
+                if ((exp & 1) != 0)
+                    result = unchecked(result * baseVal);
+                
+                baseVal = unchecked(baseVal * baseVal);
+                exp >>= 1;
+            }
             
             return UniTask.FromResult<object>(result);
         }
