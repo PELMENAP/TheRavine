@@ -165,9 +165,10 @@ Every per-agent array is indexed by `EntityModel.ManagerIndex` and sized from th
 - `BoidSystem`
 - `UtilityPriorSystem`
 - `CasteThresholdSystem`
+- `MotionSystem` (`Positions` by ManagerIndex, slot map to the motion list; `Transform` is written only by `MotionApplyJob`)
 - `SpeechBus`
 - colony membership (`ColonyState.RemoveMember`, `RemapMember`)
-- `EntitySpatialGrid` (marked stale, rebuilt at the next tick window)
+- `EntitySpatialGrid` (marked stale, rebuilt at the next tick window; holds colony index in an SoA next to positions)
 
 Rules:
 
