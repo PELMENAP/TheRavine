@@ -18,6 +18,7 @@ Shader "The Ravine/Water/WaterShader"
         SSRBlur("SSR Blur", Range(0, 2)) = 0.5
         SSRRayFade("SSR Ray Fade Distance", Float) = 80
         ReflectionDistortion("Reflection Distortion", Range(0, 1)) = 0.3
+        ReflectionGain("Reflection Gain", Range(0, 8)) = 1
 
         NightFloor("Night Floor", Range(0, 0.1)) = 0.01
         BodyBoost("Body Boost", Range(0, 1)) = 0.5
@@ -140,6 +141,7 @@ Shader "The Ravine/Water/WaterShader"
                 float SSRBlur;
                 float SSRRayFade;
                 float ReflectionDistortion;
+                float ReflectionGain;
                 float NightFloor;
                 float BodyBoost;
                 float4 Absorption;
@@ -582,7 +584,7 @@ Shader "The Ravine/Water/WaterShader"
                 float3 reflectDir = reflect(-viewDirWS, reflectNormal);
                 reflectDir.y = abs(reflectDir.y);
 
-                half3 reflColor = GlossyEnvironmentReflection(reflectDir, input.positionWS, 1.0 - Smoothness, 1.0);
+                half3 reflColor = GlossyEnvironmentReflection(reflectDir, input.positionWS, 1.0 - Smoothness, 1.0) * ReflectionGain;
 
                 float NdotV = saturate(dot(reflectNormal, viewDirWS));
                 float fresnel = (FresnelF0 + (1.0 - FresnelF0) * pow(1.0 - NdotV, 5.0)) * ReflectionStrength * isFrontFace;

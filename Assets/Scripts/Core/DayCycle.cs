@@ -22,7 +22,9 @@ namespace TheRavine.Base
         private readonly static int nightBlendId = Shader.PropertyToID("_NightBlend");
         [SerializeField] private int awakeDelay = 1000;
         [SerializeField, Min(0.1f)] private float environmentUpdateInterval = 1.5f;
+        [SerializeField] private AnimationCurve reflectionIntensityCurve = AnimationCurve.Constant(0f, 1f, 0.25f);
         private float nextEnvironmentUpdate;
+        private float appliedReflectionIntensity = -1f;
         private readonly float rotationSpeedX = 360f; 
 
         private readonly NetworkVariable<float> serverTime = new(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -124,6 +126,13 @@ namespace TheRavine.Base
             skyboxMaterial.SetFloat(
                 nightBlendId,
                 nightBlendCurve.Evaluate(t));
+
+            float reflectionIntensity = reflectionIntensityCurve.Evaluate(t);
+            if (!Mathf.Approximately(reflectionIntensity, appliedReflectionIntensity))
+            {
+                appliedReflectionIntensity = reflectionIntensity;
+                RenderSettings.reflectionIntensity = reflectionIntensity;
+            }
 
             if (Time.unscaledTime >= nextEnvironmentUpdate)
             {
