@@ -1,19 +1,21 @@
 using UnityEngine;
+using Unity.Mathematics;
 
 public class LegAnimator
 {
     public void Update(Mimic mimic, float dt)
     {
-        Vector3 rootPos = mimic.transform.position;
-        
-        foreach (var leg in mimic.Pool.GetAll())
+        float3 rootPos = mimic.transform.position;
+        var legs = mimic.Pool.GetAll();
+
+        for (int i = 0; i < legs.Count; i++)
         {
+            var leg = legs[i];
             if (leg.state == LegState.Disabled) continue;
 
             UpdateState(mimic, leg, dt);
-            leg.progression = Mathf.Lerp(leg.progression, leg.growTarget, leg.growCoef * dt);
-            UpdateHandles(mimic, leg, rootPos, dt);
-            UpdateBezier(leg);
+            leg.progression = math.lerp(leg.progression, leg.growTarget, math.saturate(leg.growCoef * dt));
+            UpdateHandles(leg, rootPos, dt);
         }
     }
 
@@ -53,26 +55,29 @@ public class LegAnimator
         }
     }
 
-    private void UpdateHandles(Mimic mimic, LegData leg, Vector3 rootPos, float dt)
+    private void UpdateHandles(LegData leg, float3 rootPos, float dt)
     {
-        leg.handles[0] = rootPos;
-        leg.handles[6] = leg.footPosition + new Vector3(0f, 0.05f, 0f);
+        float3[] h = leg.handles;
+        float3[] o = leg.handleOffsets;
 
-        leg.handles[2] = Vector3.Lerp(leg.handles[0], leg.handles[6], 0.4f);
-        leg.handles[2].y = leg.handles[0].y + leg.legHeight;
+        h[0] = rootPos;
+        h[6] = leg.footPosition + new float3(0f, 0.05f, 0f);
 
-        leg.handles[1] = Vector3.Lerp(leg.handles[0], leg.handles[2], 0.5f);
-        leg.handles[3] = Vector3.Lerp(leg.handles[2], leg.handles[6], 0.25f);
-        leg.handles[4] = Vector3.Lerp(leg.handles[2], leg.handles[6], 0.5f);
-        leg.handles[5] = Vector3.Lerp(leg.handles[2], leg.handles[6], 0.75f);
+        h[2] = math.lerp(h[0], h[6], 0.4f);
+        h[2].y = h[0].y + leg.legHeight;
+
+        h[1] = math.lerp(h[0], h[2], 0.5f);
+        h[3] = math.lerp(h[2], h[6], 0.25f);
+        h[4] = math.lerp(h[2], h[6], 0.5f);
+        h[5] = math.lerp(h[2], h[6], 0.75f);
 
         RotateHandleOffsets(leg, dt);
 
-        leg.handles[1] += leg.handleOffsets[0];
-        leg.handles[2] += leg.handleOffsets[1];
-        leg.handles[3] += leg.handleOffsets[2];
-        leg.handles[4] += leg.handleOffsets[3] * 0.5f;
-        leg.handles[5] += leg.handleOffsets[4] * 0.25f;
+        h[1] += o[0];
+        h[2] += o[1];
+        h[3] += o[2];
+        h[4] += o[3] * 0.5f;
+        h[5] += o[4] * 0.25f;
     }
 
     private void RotateHandleOffsets(LegData leg, float dt)
@@ -80,54 +85,22 @@ public class LegAnimator
         leg.oscillationProgress += dt * leg.oscillationSpeed;
         if (leg.oscillationProgress >= 360f) leg.oscillationProgress -= 360f;
 
-        float angle = leg.rotationSpeed * Mathf.Sin(leg.oscillationProgress * Mathf.Deg2Rad);
-        float cosTheta = Mathf.Cos(angle * Mathf.Deg2Rad);
-        float sinTheta = Mathf.Sin(angle * Mathf.Deg2Rad);
+        float angle = leg.rotationSpeed * math.sin(math.radians(leg.oscillationProgress));
+        math.sincos(math.radians(angle), out float sinTheta, out float cosTheta);
         float oneMinusCos = 1f - cosTheta;
+
+        float3[] h = leg.handles;
+        float3[] o = leg.handleOffsets;
 
         for (int i = 1; i < 6; i++)
         {
-            Vector3 axis = leg.handles[i + 1] - leg.handles[i - 1];
-            if (axis.sqrMagnitude > 0.0001f)
-            {
-                axis.Normalize();
-                Vector3 v = leg.handleOffsets[i - 1];
-                Vector3 cross = Vector3.Cross(axis, v);
-                float dot = Vector3.Dot(axis, v);
-                leg.handleOffsets[i - 1] = v * cosTheta + cross * sinTheta + axis * (dot * oneMinusCos);
-            }
-        }
-    }
+            float3 axis = h[i + 1] - h[i - 1];
+            float l2 = math.lengthsq(axis);
+            if (l2 <= 0.0001f) continue;
 
-    private void UpdateBezier(LegData leg)
-    {
-        float step = 1f / (leg.resolution - 1);
-        Vector3[] pts = leg.handles;
-        
-        for (int i = 0; i < leg.resolution; i++)
-        {
-            float t = i * step * leg.progression;
-            if (leg.progression < 0.0001f) t = 0;
-            
-            float u = 1f - t;
-            float u2 = u * u;
-            float u3 = u2 * u;
-            float u4 = u3 * u;
-            float u5 = u4 * u;
-            float u6 = u5 * u;
-            float t2 = t * t;
-            float t3 = t2 * t;
-            float t4 = t3 * t;
-            float t5 = t4 * t;
-            float t6 = t5 * t;
-
-            leg.sampleBuffer[i] = pts[0] * u6 +
-                                  6f * t * u5 * pts[1] +
-                                  15f * t2 * u4 * pts[2] +
-                                  20f * t3 * u3 * pts[3] +
-                                  15f * t4 * u2 * pts[4] +
-                                  6f * t5 * u * pts[5] +
-                                  pts[6] * t6;
+            axis *= math.rsqrt(l2);
+            float3 v = o[i - 1];
+            o[i - 1] = v * cosTheta + math.cross(axis, v) * sinTheta + axis * (math.dot(axis, v) * oneMinusCos);
         }
     }
 }
