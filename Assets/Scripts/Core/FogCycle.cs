@@ -22,6 +22,12 @@ namespace TheRavine.Base
         [SerializeField] private bool disableAtNight = false;
         [SerializeField] private float fadeDuration = 2f;
 
+        [Header("Appearance")]
+        [SerializeField, Min(0f)] private float appearDelay = 5f;
+        [SerializeField, Min(0.01f)] private float appearDuration = 40f;
+        [SerializeField, Range(0f, 1f)] private float appearStartHeight = 0.2f;
+        [SerializeField, Min(0.01f)] private float multiplierSmoothTime = 20f;
+
         private CancellationTokenSource cts;
         private CancellationTokenSource fadeCts;
         private readonly CompositeDisposable subscriptions = new();
@@ -34,6 +40,16 @@ namespace TheRavine.Base
 
         private float activeHeightMaskLengthMultiplier = 1f;
         private float pendingHeightMaskLengthMultiplier = 1f;
+
+        private float shownDensityMultiplier = 1f;
+        private float shownHeightMaskLengthMultiplier = 1f;
+        private float densityVelocity;
+        private float heightVelocity;
+
+        private float normalizedTime;
+        private float appear;
+        private float appearTimer;
+        private bool fogEnabled = true;
 
         private static readonly int DensityId = Shader.PropertyToID("_Density");
         private static readonly int HeightMaskLengthId = Shader.PropertyToID("_HeightMaskLength");
@@ -49,6 +65,14 @@ namespace TheRavine.Base
 
             activeHeightMaskLengthMultiplier = GenerateDensityMultiplier();
             pendingHeightMaskLengthMultiplier = GenerateDensityMultiplier();
+
+            shownDensityMultiplier = activeDensityMultiplier;
+            shownHeightMaskLengthMultiplier = activeHeightMaskLengthMultiplier;
+            densityVelocity = 0f;
+            heightVelocity = 0f;
+            appear = 0f;
+            appearTimer = 0f;
+            Apply();
 
             wasDay = dayCycle.IsDay.CurrentValue;
 
@@ -68,19 +92,51 @@ namespace TheRavine.Base
             cts?.Dispose();
             fadeCts?.Cancel();
             fadeCts?.Dispose();
+
+            appear = 0f;
+            if (fogMaterial != null) fogMaterial.SetFloat(DensityId, 0f);
+        }
+
+        public void SetFogEnabled(bool value)
+        {
+            fogEnabled = value;
+            if (!value) appearTimer = 0f;
+        }
+
+        private void Update()
+        {
+            float dt = Time.unscaledDeltaTime;
+
+            if (fogEnabled)
+            {
+                appearTimer += dt;
+                if (appearTimer > appearDelay)
+                    appear = Mathf.MoveTowards(appear, 1f, dt / appearDuration);
+            }
+            else
+            {
+                appear = Mathf.MoveTowards(appear, 0f, dt / appearDuration);
+            }
+
+            shownDensityMultiplier = Mathf.SmoothDamp(shownDensityMultiplier, activeDensityMultiplier, ref densityVelocity, multiplierSmoothTime, float.PositiveInfinity, dt);
+            shownHeightMaskLengthMultiplier = Mathf.SmoothDamp(shownHeightMaskLengthMultiplier, activeHeightMaskLengthMultiplier, ref heightVelocity, multiplierSmoothTime, float.PositiveInfinity, dt);
+
+            Apply();
         }
 
         private void OnTimeChanged(float t)
         {
-            float density = densityCurve.Evaluate(t) * activeDensityMultiplier * currentVisibility;
+            normalizedTime = t;
+        }
 
-            if(density < 0.01f)
-            {
-                return;
-            }
+        private void Apply()
+        {
+            if (fogMaterial == null) return;
 
+            float ease = appear * appear * (3f - 2f * appear);
 
-            float heightLength = heightMaskLengthCurve.Evaluate(t) * activeHeightMaskLengthMultiplier;
+            float density = densityCurve.Evaluate(normalizedTime) * shownDensityMultiplier * currentVisibility * ease;
+            float heightLength = heightMaskLengthCurve.Evaluate(normalizedTime) * shownHeightMaskLengthMultiplier * Mathf.Lerp(appearStartHeight, 1f, ease);
 
             fogMaterial.SetFloat(DensityId, density);
             fogMaterial.SetFloat(HeightMaskLengthId, heightLength);
