@@ -5,6 +5,7 @@ using UnityEngine;
 public class ServiceContainer
 {
     private readonly Dictionary<Type, object> _services = new();
+    private readonly List<object> _clearBuffer = new();
 
     public bool Register<T>(T service) where T : class
     {
@@ -49,9 +50,25 @@ public class ServiceContainer
 
     public void Clear()
     {
-        foreach (var s in _services.Values)
-            if (s is IDisposable d) d.Dispose();
+        _clearBuffer.Clear();
+        foreach (var s in _services.Values) _clearBuffer.Add(s);
         _services.Clear();
+
+        for (int i = 0; i < _clearBuffer.Count; i++)
+        {
+            object s = _clearBuffer[i];
+            if (s is UnityEngine.Object) continue;
+            if (!(s is IDisposable d)) continue;
+            try
+            {
+                d.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"ServiceContainer: {s.GetType().Name}.Dispose failed: {ex}");
+            }
+        }
+        _clearBuffer.Clear();
     }
     public List<string> GetRegisteredServices()
     {

@@ -6,12 +6,12 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 | File | Lines |
 |---|---|
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1681 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1688 |
 | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1301 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1052 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 918 |
+| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 908 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 903 |
-| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 902 |
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 849 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 775 |
 | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | 730 |
@@ -25,7 +25,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs`
 
-- 24–1189 class MapGenerator
+- 24–1196 class MapGenerator
   - 89 WorldToChunk
   - 93 WorldToLocalIdx
   - 97 CellToChunk
@@ -112,46 +112,47 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 1125 IsRetained
   - 1137 BreakUp
   - 1143 OnDisable
-- 1191–1634 class ChunkData
-  - 1217 SetFoodTable
-  - 1219 IsFoodPrefab
-  - 1237 ChunkData
-  - 1254 TryAddObject
-  - 1258 TryAddObject
+  - 1170 OnDestroy
+- 1198–1641 class ChunkData
+  - 1224 SetFoodTable
+  - 1226 IsFoodPrefab
+  - 1244 ChunkData
   - 1261 TryAddObject
-  - 1264 TryAddObject
-  - 1302 SpanMask
-  - 1305 UpperKey
-  - 1308 Validate
-  - 1333 UpperLevelsFree
-  - 1341 RegisterUpper
-  - 1357 UnregisterUpper
-  - 1373 RemapUpper
-  - 1384 AddVolume
-  - 1408 SetLevelBit
-  - 1410 ClearVolume
-  - 1420 TryGetBuilding
-  - 1426 HasLevelAt
-  - 1433 TryGetObject
-  - 1447 TryGetObject
-  - 1462 RemoveObject
-  - 1464 RemoveObject
-  - 1526 ClearDirty
-  - 1528 ClearObjects
-  - 1550 SetHeight
-  - 1562 RestoreHeight
-  - 1572 LevelsAt
-  - 1574 MarkPersisted
-  - 1576 CommitRestore
-  - 1583 ResetForReuse
-  - 1601 CommitErosion
-  - 1607 InvalidateWater
-  - 1615 CommitGeneration
-  - 1620 Dispose
-- 1636–1651 struct StructureSpawnPoint
-  - 1642 StructureSpawnPoint
-- 1653–1680 struct ObjectInstInfo
-  - 1669 ObjectInstInfo
+  - 1265 TryAddObject
+  - 1268 TryAddObject
+  - 1271 TryAddObject
+  - 1309 SpanMask
+  - 1312 UpperKey
+  - 1315 Validate
+  - 1340 UpperLevelsFree
+  - 1348 RegisterUpper
+  - 1364 UnregisterUpper
+  - 1380 RemapUpper
+  - 1391 AddVolume
+  - 1415 SetLevelBit
+  - 1417 ClearVolume
+  - 1427 TryGetBuilding
+  - 1433 HasLevelAt
+  - 1440 TryGetObject
+  - 1454 TryGetObject
+  - 1469 RemoveObject
+  - 1471 RemoveObject
+  - 1533 ClearDirty
+  - 1535 ClearObjects
+  - 1557 SetHeight
+  - 1569 RestoreHeight
+  - 1579 LevelsAt
+  - 1581 MarkPersisted
+  - 1583 CommitRestore
+  - 1590 ResetForReuse
+  - 1608 CommitErosion
+  - 1614 InvalidateWater
+  - 1622 CommitGeneration
+  - 1627 Dispose
+- 1643–1658 struct StructureSpawnPoint
+  - 1649 StructureSpawnPoint
+- 1660–1687 struct ObjectInstInfo
+  - 1676 ObjectInstInfo
 
 ## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
 
@@ -290,6 +291,56 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 911 SizesMatch
   - 9–9 enum Goal
 
+## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
+
+- 16–908 class EntityManager
+  - 85 RegisterEnergyConsumer
+  - 86 UnregisterEnergyConsumer
+  - 105 RaiseSpawned
+  - 106 RaiseDied
+  - 146 GetRandomEntity
+  - 149 SeedProbeStrain
+  - 152 SpawnEntity
+  - 155 SpawnChild
+  - 157 UpdateDiagnostics
+  - 166 EvolveGenotypes
+  - 172 SeedRandomStrain
+  - 175 Update
+  - 216 DecayWarmth
+  - 224 SampleEnergy
+  - 246 ReportThreat
+  - 257 Awake
+  - 309 CreateColonies
+  - 319 AddColony
+  - 325 SaveBrain
+  - 328 LoadBrain
+  - 331 ColonyModelName
+  - 333 SaveBestBrainAsync
+  - 343 LoadBrainAsync
+  - 379 ApplyLoadedBrain
+  - 395 Start
+  - 437 DelaySimulation
+  - 448 TickAgents
+  - 492 CloseTickWindow
+  - 515 RunTickBatch
+  - 561 BeginColonyBatches
+  - 566 RunColonyDecisions
+  - 571 RunFlocking
+  - 589 TickColonies
+  - 643 ChooseCaste
+  - 681 Stimulus
+  - 688 TickNests
+  - 741 SetEntityVisible
+  - 747 SetEntitiesVisible
+  - 753 RebuildTickSnapshot
+  - 779 UpdateVisibility
+  - 808 UpdateVisibilityByCamera
+  - 837 CreateNestViews
+  - 848 ReleaseServices
+  - 854 UnregisterServices
+  - 868 ResolveRules
+  - 884 OnDestroy
+
 ## `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs`
 
 - 21–902 class PlayerController
@@ -354,55 +405,6 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 880 OwnerTarget
   - 886 OnDisable
   - 857–866 enum EditRefusal
-
-## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
-
-- 16–902 class EntityManager
-  - 85 RegisterEnergyConsumer
-  - 86 UnregisterEnergyConsumer
-  - 105 RaiseSpawned
-  - 106 RaiseDied
-  - 146 GetRandomEntity
-  - 149 SeedProbeStrain
-  - 152 SpawnEntity
-  - 155 SpawnChild
-  - 157 UpdateDiagnostics
-  - 166 EvolveGenotypes
-  - 172 SeedRandomStrain
-  - 175 Update
-  - 216 DecayWarmth
-  - 224 SampleEnergy
-  - 246 ReportThreat
-  - 257 Awake
-  - 309 CreateColonies
-  - 319 AddColony
-  - 325 SaveBrain
-  - 328 LoadBrain
-  - 331 ColonyModelName
-  - 333 SaveBestBrainAsync
-  - 343 LoadBrainAsync
-  - 379 ApplyLoadedBrain
-  - 395 Start
-  - 437 DelaySimulation
-  - 448 TickAgents
-  - 492 CloseTickWindow
-  - 515 RunTickBatch
-  - 561 BeginColonyBatches
-  - 566 RunColonyDecisions
-  - 571 RunFlocking
-  - 589 TickColonies
-  - 643 ChooseCaste
-  - 681 Stimulus
-  - 688 TickNests
-  - 741 SetEntityVisible
-  - 747 SetEntitiesVisible
-  - 753 RebuildTickSnapshot
-  - 779 UpdateVisibility
-  - 808 UpdateVisibilityByCamera
-  - 837 CreateNestViews
-  - 848 UnregisterServices
-  - 862 ResolveRules
-  - 878 OnDestroy
 
 ## `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs`
 

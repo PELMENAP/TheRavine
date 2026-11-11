@@ -845,6 +845,12 @@ public class EntityManager : MonoBehaviour
         }
     }
 
+    public void ReleaseServices()
+    {
+        enabled = false;
+        UnregisterServices();
+    }
+
     private void UnregisterServices()
     {
         var services = ServiceLocator.Services;

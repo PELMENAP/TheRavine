@@ -52,6 +52,7 @@ namespace TheRavine.EntityControl
                 logger.LogError("Mob entity is null!");
                 return;
             }
+            if (!mobEntities.IsCreated) return;
 
             try
             {
@@ -90,6 +91,7 @@ namespace TheRavine.EntityControl
                 logger.LogError("Mob entity is null!");
                 return;
             }
+            if (!mobEntities.IsCreated) return;
 
             if (mobIndex.TryGetValue(mobEntity, out int i))
             {
@@ -170,25 +172,30 @@ namespace TheRavine.EntityControl
         {
             try
             {
-                foreach (var handle in gcHandles)
+                moveJobHandle.Complete();
+                moveJobHandle = default;
+                if (gcHandles != null)
                 {
-                    if (handle.IsAllocated) handle.Free();
+                    foreach (var handle in gcHandles)
+                    {
+                        if (handle.IsAllocated) handle.Free();
+                    }
+                    gcHandles.Clear();
                 }
-                gcHandles.Clear();
                 Array.Clear(mobMovement, 0, mobMovement.Length);
-                mobEntities.Dispose();
+                if (mobEntities.IsCreated) mobEntities.Dispose();
                 if (mobIntervals.IsCreated) mobIntervals.Dispose();
                 if (mobAccumulated.IsCreated) mobAccumulated.Dispose();
                 mobIndex?.Clear();
-                transformAccessArray.Dispose();
-                velocities.Dispose();
+                if (transformAccessArray.isCreated) transformAccessArray.Dispose();
+                if (velocities.IsCreated) velocities.Dispose();
                 logger?.LogInfo("MobController service is disabled");
-                callback?.Invoke();
             }
             catch (Exception ex)
             {
                 logger?.LogError($"Error during break up: {ex.Message}");
             }
+            callback?.Invoke();
         }
 
         private void OnDisable()
