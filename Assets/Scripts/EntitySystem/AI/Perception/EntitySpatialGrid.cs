@@ -16,6 +16,8 @@ public sealed class EntitySpatialGrid : IDisposable
     private int[]              _bucketOf;
     private NativeArray<int>   _items;
     private NativeArray<int>   _visit;
+    private const int NoColony = -1;
+
     private NativeArray<int>   _ids;
     private NativeArray<int>   _colony;
     private NativeArray<float> _px;
@@ -82,7 +84,7 @@ public sealed class EntitySpatialGrid : IDisposable
             _pz[written]     = p.z;
             _models[written] = e;
             _ids[written]    = e.ManagerIndex;
-            _colony[written] = e.ColonyIndex;
+            _colony[written] = e.Colony != null ? e.Colony.Index : NoColony;
 
             int b = BucketOf(CellCoord(p.x), CellCoord(p.z));
             _bucketOf[written] = b;
@@ -162,7 +164,7 @@ public sealed class EntitySpatialGrid : IDisposable
         kin   = 0;
         if (_count == 0) return null;
 
-        int colonyIndex = colony != null ? colony.Index : 0;
+        int colonyIndex = colony != null ? colony.Index : NoColony;
 
         float nr2   = nearestRadius * nearestRadius;
         float cr2   = crowdRadius * crowdRadius;

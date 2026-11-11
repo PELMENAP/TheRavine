@@ -280,6 +280,12 @@ namespace TheRavine.Generator
         private readonly ChunkData[] waterNeighborhood = new ChunkData[9];
         private int chunkSetVersion;
         public int UnloadStamp { get; private set; }
+        public int EvictionTouchInterval => math.max(1, Settings.evictionIdleFrames / 2);
+
+        public void TouchChunk(long chunkKey)
+        {
+            if (mapData.TryGetValue(chunkKey, out ChunkData cd)) cd.LastAccessFrame = frame;
+        }
         private long[] chunkRequests = Array.Empty<long>();
         private int chunkRequestCount;
 

@@ -256,6 +256,7 @@ public sealed unsafe class MotionSystem : IDisposable
     private SurfaceMotor[] _motors;
     private int4[]         _windows;
     private int            _atlasStamp;
+    private int            _lastTouchFrame;
     private MapGenerator   _map;
     private int    _count;
     private double _lastTime;
@@ -474,6 +475,18 @@ public sealed unsafe class MotionSystem : IDisposable
             }
         }
         while (stamp != _map.UnloadStamp);
+
+        int frame = Time.frameCount;
+        if (frame - _lastTouchFrame < _map.EvictionTouchInterval) return;
+        _lastTouchFrame = frame;
+        for (int i = 0; i < _count; i++) TouchWindow(_windows[i]);
+    }
+
+    private void TouchWindow(int4 w)
+    {
+        for (int cz = w.y; cz <= w.w; cz++)
+        for (int cx = w.x; cx <= w.z; cx++)
+            _map.TouchChunk(Position2Int.Pack(cx, cz));
     }
 
     private void Finish(int idx)
