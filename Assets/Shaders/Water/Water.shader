@@ -54,6 +54,8 @@ Shader "The Ravine/Water/WaterShader"
         FoamShoreStrength("Shore Foam", Range(0,10)) = 3
         FoamCrestStrength("Crest Foam", Range(0,10)) = 2
         FoamRippleStrength("Ripple Foam", Range(0,10)) = 1
+        FoamIntensity("Foam Intensity", Range(0, 1)) = 1
+        FoamThreshold("Foam Threshold", Range(0, 0.95)) = 0.1
         
         RippleRefraction("Ripple Refraction", Float) = 0.1
         RippleShading("Ripple Shading", Range(0, 1)) = 0.35
@@ -125,6 +127,8 @@ Shader "The Ravine/Water/WaterShader"
                 float FoamShoreStrength;
                 float FoamCrestStrength;
                 float FoamRippleStrength;
+                float FoamIntensity;
+                float FoamThreshold;
                 float RippleRefraction;
                 float RippleShading;
                 float4 RippleTex_TexelSize;
@@ -569,6 +573,7 @@ Shader "The Ravine/Water/WaterShader"
                     rippleFoam * FoamRippleStrength;
 
                 foamMask = saturate(foamMask);
+                foamMask = saturate((foamMask - FoamThreshold) / max(1.0 - FoamThreshold, 1e-3)) * FoamIntensity;
                 
                 // FoamTex * foamMask + 0.2 * foamMask (базовая пена)
                 float4 foam = foamTex * foamMask + 0.2 * foamMask;
