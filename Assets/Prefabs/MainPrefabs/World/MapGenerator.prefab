@@ -405,6 +405,7 @@ MonoBehaviour:
     - {fileID: 11400000, guid: abc25fcce611099e994dc689110fdc05, type: 2}
     - {fileID: 11400000, guid: 7fc5d30b50c3ae1bf898b2fc24db6183, type: 2}
     - {fileID: 11400000, guid: 42c5f2ac4ddf8f5fa92f939f203a8a99, type: 2}
+    - {fileID: 11400000, guid: a2e5f77f50fa5ed4bbd69a55acc8b957, type: 2}
     maxObjectsPerChunk: 2048
     frameBudgetMs: 4
     maxLodRing: 4

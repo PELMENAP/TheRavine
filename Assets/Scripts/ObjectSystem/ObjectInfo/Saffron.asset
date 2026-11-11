@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
-  m_Name: Saffon
+  m_Name: Saffron
   m_EditorClassIdentifier: 
   id: 37
   objectPrefab: {fileID: 8079554152659468491, guid: 5dc3403e38c34c149bbe50fe41909046, type: 3}
