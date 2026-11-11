@@ -67,6 +67,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 |---|---|---|
 | Agent motion | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | `Step`, `MotionJob`, `MotionApplyJob`, `PositionOf`, `SetPosition` |
 | Move planning | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | `Enqueue`, `Flush`, `PlanJob` |
+| Obstacles | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision/ObstacleQuery.cs` | whole file; called per agent per frame and per player per physics step |
 | Mobs | `Assets/Scripts/EntitySystem/Entityes/Mob/MobController.cs` | `Update`, `LateUpdate`, `MoveMobsJob` |
 | Mimic legs | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/MimicLegJob.cs` | whole file |
 

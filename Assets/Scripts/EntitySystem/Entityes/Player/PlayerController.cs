@@ -56,6 +56,7 @@ namespace TheRavine.EntityControl
         [SerializeField] private float staminaIndicatorXOffset = 2f, staminaIndicatorYOffset = 2f;
 
         [SerializeField] private float characterHalfHeight = 1f;
+        [SerializeField] private float bodyRadius = 0.4f;
         private TerrainPhysicsResolver terrainResolver;
 
         private bool IsOnTerrain => terrainResolver.IsGrounded;
@@ -146,7 +147,7 @@ namespace TheRavine.EntityControl
         public void SetUp()
         {
             map = ServiceLocator.GetService<MapGenerator>();
-            terrainResolver = new TerrainPhysicsResolver(map, playerRigidbody, characterHalfHeight, maxStepHeight);
+            terrainResolver = new TerrainPhysicsResolver(map, playerRigidbody, characterHalfHeight, maxStepHeight, bodyRadius);
             WorldRegistry worldRegistry = ServiceLocator.GetService<WorldRegistry>();
 
             if (IsOwner)
@@ -461,10 +462,13 @@ namespace TheRavine.EntityControl
             }
 
             Vector2 travel = direction.sqrMagnitude > 0f ? direction : brakeDirection;
+            float velocityX = travel.x * CurrentSpeed;
+            float velocityZ = travel.y * CurrentSpeed;
+            terrainResolver.ClipVelocity(ref velocityX, ref velocityZ);
             playerRigidbody.linearVelocity = new Vector3(
-                travel.x * CurrentSpeed,
+                velocityX,
                 playerRigidbody.linearVelocity.y,
-                travel.y * CurrentSpeed
+                velocityZ
             );
 
             broadcastTimer += dt;

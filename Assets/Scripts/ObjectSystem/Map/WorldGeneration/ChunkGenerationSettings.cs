@@ -56,6 +56,7 @@ namespace TheRavine.Generator
 
         [Header("Levels")]
         [Min(0.01f)] public float levelHeight = 1f;
+        [Min(0.01f)] public float buildStep = 1f;
 
         [Header("Far Objects")]
         [Min(1)] public int farMaxInstances = 65536;
