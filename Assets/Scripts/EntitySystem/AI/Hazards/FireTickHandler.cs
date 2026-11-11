@@ -34,6 +34,10 @@ public sealed class FireTickHandler : IRandomTickHandler, IDisposable
     private bool _disposed;
 
     public int BurningCount => _burning.IsCreated ? _burning.Count : 0;
+    public NativeHashMap<long, float>.ReadOnly Burning => _burning.AsReadOnly();
+    public int Version { get; private set; }
+    public double StepTime { get; private set; }
+    public bool IsDisposed => _disposed;
 
     public FireTickHandler(MapGenerator generator, ObjectInfoRegistry registry, ChunkFoodIndex food)
     {
@@ -74,7 +78,7 @@ public sealed class FireTickHandler : IRandomTickHandler, IDisposable
             || !_generator.TryGetObject(packed, out ObjectInstInfo inst)
             || inst.PrefabID != e.PrefabId) return;
 
-        _burning.TryAdd(cell, r.FireBurnSeconds);
+        if (_burning.TryAdd(cell, r.FireBurnSeconds)) Version++;
     }
 
     public void Step(double now, float dt, List<EntityModel> entities)
@@ -91,6 +95,8 @@ public sealed class FireTickHandler : IRandomTickHandler, IDisposable
         if (_accumulator < r.FireStepInterval) return;
         float step = _accumulator;
         _accumulator = 0f;
+        StepTime = now;
+        Version++;
 
         if (_wind == null) ServiceLocator.Services.TryGet(out _wind);
         WindSampler sampler = _wind != null
@@ -164,7 +170,7 @@ public sealed class FireTickHandler : IRandomTickHandler, IDisposable
 
             float chance = r.FireSpreadChance * flammability
                          * math.max(0f, 1f + r.FireWindBias * math.dot(wind, NeighbourDirs[i]));
-            if (RavineRandom.RangeFloat() < chance) _burning.TryAdd(neighbour, r.FireBurnSeconds);
+            if (RavineRandom.RangeFloat() < chance && _burning.TryAdd(neighbour, r.FireBurnSeconds)) Version++;
         }
     }
 

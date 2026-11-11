@@ -9,7 +9,7 @@ Files and lines of `.cs` directly in the folder.
 
 | Folder | Files | Lines |
 |---|---|---|
-| `Assets/Scripts/Core` | 16 | 1315 |
+| `Assets/Scripts/Core` | 16 | 1297 |
 | `Assets/Scripts/Core/NewInputSystem` | 2 | 2208 |
 | `Assets/Scripts/Core/ServiceLocator` | 3 | 293 |
 | `Assets/Scripts/Core/Settings` | 4 | 786 |
@@ -22,7 +22,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 8 | 872 |
 | `Assets/Scripts/EntitySystem` | 7 | 776 |
-| `Assets/Scripts/EntitySystem/AI` | 10 | 1912 |
+| `Assets/Scripts/EntitySystem/AI` | 10 | 1930 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
 | `Assets/Scripts/EntitySystem/AI/Colony` | 6 | 737 |
 | `Assets/Scripts/EntitySystem/AI/Debug` | 3 | 1601 |
@@ -31,7 +31,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 23 | 1384 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 692 |
 | `Assets/Scripts/EntitySystem/AI/Flock` | 1 | 230 |
-| `Assets/Scripts/EntitySystem/AI/Hazards` | 1 | 207 |
+| `Assets/Scripts/EntitySystem/AI/Hazards` | 2 | 666 |
 | `Assets/Scripts/EntitySystem/AI/Instinct` | 1 | 382 |
 | `Assets/Scripts/EntitySystem/AI/LSTM` | 2 | 198 |
 | `Assets/Scripts/EntitySystem/AI/Nest` | 1 | 385 |
@@ -63,7 +63,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/Virology` | 16 | 2523 |
 | `Assets/Scripts/GameSceneManagerSystem` | 3 | 295 |
 | `Assets/Scripts/GameSceneManagerSystem/IStates & IStatesBehaviour` | 1 | 15 |
-| `Assets/Scripts/GameSceneManagerSystem/MainSceneManagerSystem` | 2 | 292 |
+| `Assets/Scripts/GameSceneManagerSystem/MainSceneManagerSystem` | 2 | 274 |
 | `Assets/Scripts/GameSceneManagerSystem/Menu` | 2 | 540 |
 | `Assets/Scripts/GameSceneManagerSystem/StateMachine` | 4 | 313 |
 | `Assets/Scripts/GameSceneManagerSystem/States` | 4 | 144 |
@@ -214,7 +214,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | CraftMatch | struct | `Assets/Scripts/Model/InventoryModel/CraftModel.cs` | 10 |
 | CraftRecipe | class | `Assets/Scripts/Model/InventoryModel/CraftModel.cs` | 18 |
 | CraftStack | struct | `Assets/Scripts/Model/InventoryModel/CraftModel.cs` | 4 |
-| DayConstants | class | `Assets/Scripts/Core/DayCycle.cs` | 154 |
+| DayConstants | class | `Assets/Scripts/Core/DayCycle.cs` | 136 |
 | DeathCause | enum | `Assets/Scripts/EntitySystem/AI/Entity/Components/MortalityComponent.cs` | 3 |
 | DebugCommand | class | `Assets/Scripts/Terminal/BaseCommands.cs` | 41 |
 | DebugCommandGate | class | `Assets/Scripts/Terminal/SetPlayerCommand.cs` | 14 |
