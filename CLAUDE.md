@@ -1,6 +1,36 @@
 # TheRavine — rules for AI contributors
 
-Read before any task: [PHILOSOPHY.md](PHILOSOPHY.md), [docs/OPTIMIZATION.md](docs/OPTIMIZATION.md) (hot paths), [docs/SECURITY.md](docs/SECURITY.md) (RPCs, loaders, the Rive interpreter, external input), [docs/audit/security_audit.md](docs/audit/security_audit.md) (open findings). Task prompts follow [docs/PROMPT_TEMPLATE.md](docs/PROMPT_TEMPLATE.md).
+Unity 6, C#. Own code: `Assets/Scripts`. Tests: `Assets/Tests/EditMode`. Task prompts follow [docs/PROMPT_TEMPLATE.md](docs/PROMPT_TEMPLATE.md).
+
+## What to read
+Read only what the task touches. The Philosophy and Project constraints sections below are sufficient for everything else.
+
+| The change touches | Read first |
+|---|---|
+| Agent AI, colonies, learning, speech | [docs/map/ai.md](docs/map/ai.md) |
+| Virology | [docs/map/virology.md](docs/map/virology.md) |
+| World, chunks, NAL, random ticks, camera rings, rendering | [docs/map/world.md](docs/map/world.md) |
+| Player, Netcode | [docs/map/player-net.md](docs/map/player-net.md) |
+| Agent motion, birds, other jobs | [docs/map/jobs.md](docs/map/jobs.md) |
+| Entity base classes, mobs, small modules | [docs/map/entities.md](docs/map/entities.md) |
+| Lifecycle, services, saves, settings, timers, input, sound | [docs/map/core.md](docs/map/core.md) |
+| Inventory, craft, UI | [docs/map/inventory-ui.md](docs/map/inventory-ui.md) |
+| Terminal, Rive, gestures | [docs/map/terminal.md](docs/map/terminal.md) |
+| A hot path (list: [docs/map/HOT_PATHS.md](docs/map/HOT_PATHS.md)) | [docs/OPTIMIZATION.md](docs/OPTIMIZATION.md) |
+| RPCs, loaders, the Rive interpreter, external input | [docs/SECURITY.md](docs/SECURITY.md), open rows of [docs/audit/security_audit.md](docs/audit/security_audit.md) |
+| A new mechanic or rule | [PHILOSOPHY.md](PHILOSOPHY.md) |
+
+## Search
+- Search `Assets/Scripts` and `Assets/Tests` only. Third-party code: `Assets/Plugins`, `Assets/Packages`, `Assets/LLMUnity`; do not read it.
+- Do not read `*.meta`, `Assets/Scripts/Core/NewInputSystem/GameInput.cs` (generated), `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
+- A type is often not in a file of its name: `grep -n "TypeName" docs/map/INDEX.md` gives file and line.
+- A file over 500 lines: take the member's line from `docs/map/LARGE_FILES.md` and read that range, not the file.
+- Assemblies and their references: `docs/map/INDEX.md`, section Assemblies.
+
+## Documentation
+- A change that moves, renames, adds or deletes a file or type named in `docs/map` updates that map in the same commit.
+- After changing `.cs` files run `python3 tools/docmap.py gen`, then `python3 tools/docmap.py check`; commit the regenerated files.
+- Rules for maps and structural rules for new code: [docs/map/README.md](docs/map/README.md).
 
 ## Language
 Task prompts and instructions are in English. The explanation to the user after the work is in Russian.

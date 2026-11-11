@@ -53,3 +53,6 @@ crashlytics-build.properties
 # Crash dumps
 *.blob
 mono_crash*
+
+# Python cache of tools/
+__pycache__/
