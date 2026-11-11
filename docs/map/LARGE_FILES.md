@@ -11,7 +11,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1052 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 918 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 903 |
-| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 884 |
+| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 902 |
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 849 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 775 |
 | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | 730 |
@@ -357,52 +357,52 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
 
-- 16–884 class EntityManager
-  - 76 RegisterEnergyConsumer
-  - 77 UnregisterEnergyConsumer
-  - 96 RaiseSpawned
-  - 97 RaiseDied
-  - 137 GetRandomEntity
-  - 140 SeedProbeStrain
-  - 143 SpawnEntity
-  - 146 SpawnChild
-  - 148 UpdateDiagnostics
-  - 157 EvolveGenotypes
-  - 163 SeedRandomStrain
-  - 166 Update
-  - 202 DecayWarmth
-  - 210 SampleEnergy
-  - 232 ReportThreat
-  - 243 Awake
-  - 295 CreateColonies
-  - 305 AddColony
-  - 311 SaveBrain
-  - 314 LoadBrain
-  - 317 ColonyModelName
-  - 319 SaveBestBrainAsync
-  - 329 LoadBrainAsync
-  - 365 ApplyLoadedBrain
-  - 381 Start
-  - 420 DelaySimulation
-  - 431 TickAgents
-  - 475 CloseTickWindow
-  - 498 RunTickBatch
-  - 544 BeginColonyBatches
-  - 549 RunColonyDecisions
-  - 554 RunFlocking
-  - 572 TickColonies
-  - 626 ChooseCaste
-  - 664 Stimulus
-  - 671 TickNests
-  - 724 SetEntityVisible
-  - 730 SetEntitiesVisible
-  - 736 RebuildTickSnapshot
-  - 762 UpdateVisibility
-  - 791 UpdateVisibilityByCamera
-  - 820 CreateNestViews
-  - 831 UnregisterServices
-  - 845 ResolveRules
-  - 861 OnDestroy
+- 16–902 class EntityManager
+  - 85 RegisterEnergyConsumer
+  - 86 UnregisterEnergyConsumer
+  - 105 RaiseSpawned
+  - 106 RaiseDied
+  - 146 GetRandomEntity
+  - 149 SeedProbeStrain
+  - 152 SpawnEntity
+  - 155 SpawnChild
+  - 157 UpdateDiagnostics
+  - 166 EvolveGenotypes
+  - 172 SeedRandomStrain
+  - 175 Update
+  - 216 DecayWarmth
+  - 224 SampleEnergy
+  - 246 ReportThreat
+  - 257 Awake
+  - 309 CreateColonies
+  - 319 AddColony
+  - 325 SaveBrain
+  - 328 LoadBrain
+  - 331 ColonyModelName
+  - 333 SaveBestBrainAsync
+  - 343 LoadBrainAsync
+  - 379 ApplyLoadedBrain
+  - 395 Start
+  - 437 DelaySimulation
+  - 448 TickAgents
+  - 492 CloseTickWindow
+  - 515 RunTickBatch
+  - 561 BeginColonyBatches
+  - 566 RunColonyDecisions
+  - 571 RunFlocking
+  - 589 TickColonies
+  - 643 ChooseCaste
+  - 681 Stimulus
+  - 688 TickNests
+  - 741 SetEntityVisible
+  - 747 SetEntitiesVisible
+  - 753 RebuildTickSnapshot
+  - 779 UpdateVisibility
+  - 808 UpdateVisibilityByCamera
+  - 837 CreateNestViews
+  - 848 UnregisterServices
+  - 862 ResolveRules
+  - 878 OnDestroy
 
 ## `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs`
 
