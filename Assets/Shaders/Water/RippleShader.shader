@@ -51,7 +51,7 @@ Shader "The Ravine/Water/RippleShader"
             {
                 float3 e = float3(CurrentRT_TexelSize.xy, 0.0);
                 float2 uv = input.uv;
-                float speed = 0.2;
+                float speed = 0.1;
 
                 float p10 = SAMPLE_TEXTURE2D(CurrentRT, sampler_CurrentRT, uv - e.zy * speed).x;
                 float p01 = SAMPLE_TEXTURE2D(CurrentRT, sampler_CurrentRT, uv - e.xz * speed).x;
@@ -61,7 +61,7 @@ Shader "The Ravine/Water/RippleShader"
                 float p11 = SAMPLE_TEXTURE2D(PrevRT, sampler_PrevRT, uv).x;
 
                 float d = (p10 + p01 + p21 + p12) * 0.5 - p11;
-                d *= 0.99;
+                d *= 0.999;
 
                 return half4(d, d, d, 1.0);
             }

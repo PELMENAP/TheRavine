@@ -55,8 +55,8 @@ namespace TheRavine.Inventory
             FillRandomItems(
                 new List<string> {
                     nameof(Porchini), nameof(Toadstool),
-                    nameof(BrownBoletus), nameof(Boletus), nameof(Battery),
-                    nameof(Politics), nameof(Kirieshky)
+                    nameof(BirchBolete), nameof(AspenBolete), nameof(Battery),
+                    nameof(Politics), nameof(Kirieshky), nameof(Saffron)
                 },
                 itemsPerTitle: 5
             );

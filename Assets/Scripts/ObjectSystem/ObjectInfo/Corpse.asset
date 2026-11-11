@@ -29,7 +29,7 @@ MonoBehaviour:
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}
   levels: 1
-  visibleRings: 0
+  visibleRings: 2
   farMode: 0
   castShadowsFar: 0
   lodSet: {fileID: 0}
