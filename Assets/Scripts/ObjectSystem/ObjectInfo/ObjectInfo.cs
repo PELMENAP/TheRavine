@@ -1,4 +1,6 @@
 using UnityEngine;
+using Unity.Mathematics;
+using TheRavine.Generator;
 
 [CreateAssetMenu(fileName = "ObjectInfo", menuName = "Gameplay/Create New ObjectInfo")]
 public class ObjectInfo : ScriptableObject
@@ -45,6 +47,16 @@ public class ObjectInfo : ScriptableObject
     [SerializeField] private bool castShadowsFar;
     [SerializeField] private ObjectLodSet lodSet;
 
+    [Header("Collision")]
+    [SerializeField] private CollisionKind collisionKind;
+    [ConditionalField(nameof(collisionKind), CollisionKind.Cylinder)]
+    [SerializeField] private float collisionRadius = 0.5f;
+    [ConditionalField(nameof(collisionKind), CollisionKind.Cylinder)]
+    [SerializeField] private float collisionHeight = 2f;
+    [ConditionalField(nameof(collisionKind), CollisionKind.Box)]
+    [SerializeField] private Vector3Int collisionSteps = Vector3Int.one;
+    [SerializeField] private Vector3 collisionOffsetSteps;
+
     public ushort Id => id;
     public ushort DefaultAmount => defaultAmount;
     public ushort InitialPoolSize => initialPoolSize;
@@ -66,6 +78,24 @@ public class ObjectInfo : ScriptableObject
     public bool CastShadowsFar => castShadowsFar;
     public ObjectLodSet LodSet => lodSet;
     public float DecaySeconds => decaySeconds;
+    public CollisionKind CollisionKind => collisionKind;
+
+    public CollisionShape BakeCollision(float buildStep, float levelHeight)
+    {
+        float3 offset = new float3(collisionOffsetSteps.x * buildStep, collisionOffsetSteps.y * levelHeight, collisionOffsetSteps.z * buildStep);
+
+        if (collisionKind == CollisionKind.Cylinder)
+            return CollisionShape.Cylinder(collisionRadius, collisionHeight, offset);
+
+        if (collisionKind == CollisionKind.Box)
+            return CollisionShape.Box(
+                0.5f * buildStep * new float2(collisionSteps.x, collisionSteps.z),
+                collisionSteps.y * levelHeight,
+                offset);
+
+        return default;
+    }
+
     public bool HasLifecycle => behaviourType == BehaviourType.NAL || behaviourType == BehaviourType.GROW || decaySeconds > 0f;
 
 #if UNITY_EDITOR

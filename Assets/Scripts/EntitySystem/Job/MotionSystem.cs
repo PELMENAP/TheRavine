@@ -36,17 +36,31 @@ public struct MotionState
     public byte   Done;
     public byte   Arrived;
     public byte   Blocked;
+    public byte   Obstructed;
+    public byte   Stalled;
 }
 
 public unsafe struct HeightChunk
 {
     public float* Heights;
+    public ObstacleChunk Obstacles;
 }
 
-public unsafe struct HeightAtlas
+public unsafe struct HeightAtlas : IObstacleLookup
 {
     [ReadOnly] public NativeParallelHashMap<long, int> Index;
     [ReadOnly] public NativeArray<HeightChunk> Chunks;
+
+    public bool TryGetObstacles(long chunkKey, out ObstacleChunk chunk)
+    {
+        if (Index.TryGetValue(chunkKey, out int slot))
+        {
+            chunk = Chunks[slot].Obstacles;
+            return true;
+        }
+        chunk = default;
+        return false;
+    }
 
     public float SampleHeight(float wx, float wz)
     {
@@ -127,6 +141,10 @@ public struct MotionJob : IJobParallelFor
     [ReadOnly] public NativeArray<int> Owners;
     [NativeDisableParallelForRestriction] public NativeArray<float3> Positions;
     public HeightAtlas Atlas;
+    public ObstacleSet Obstacles;
+    public float  BodyRadius;
+    public float  BodyHeight;
+    public float  CatchUpMul;
     public double Now;
     public float  Dt;
     public float  MinSpeedModifier;
@@ -175,7 +193,7 @@ public struct MotionJob : IJobParallelFor
         }
         if (++s.Frame >= SpeedResampleFrames) s.Frame = 0;
 
-        if (s.SpeedModifier < BlockedSpeedThreshold) s.LowSpeedTime += Dt;
+        if (s.SpeedModifier < BlockedSpeedThreshold || s.Stalled != 0) s.LowSpeedTime += Dt;
         else s.LowSpeedTime = 0f;
 
         if (s.LowSpeedTime >= BlockedSeconds)
@@ -196,6 +214,28 @@ public struct MotionJob : IJobParallelFor
 
         float2 next = u * u * s.Start + 2f * u * t * s.Control + t * t * s.Goal;
         float2 step = next - pos.xz;
+
+        if (s.Obstructed != 0)
+        {
+            float limit = advance * CatchUpMul;
+            float step2 = math.lengthsq(step);
+            if (step2 > limit * limit) step *= limit * math.rsqrt(step2);
+            else s.Obstructed = 0;
+            next = pos.xz + step;
+        }
+
+        s.Stalled = 0;
+        if (Obstacles.Any)
+        {
+            float feet = pos.y - s.HeightOffset;
+            if (ObstacleQuery.Resolve(ref Atlas, in Obstacles, ref next, BodyRadius, feet, feet + BodyHeight, out _))
+            {
+                s.Obstructed = 1;
+                step = next - pos.xz;
+                float stall = advance * BlockedSpeedThreshold;
+                if (math.lengthsq(step) < stall * stall) s.Stalled = 1;
+            }
+        }
 
         s.Velocity = step * (1f / math.max(Dt, 1e-5f));
         pos.x = next.x;
@@ -252,6 +292,7 @@ public sealed unsafe class MotionSystem : IDisposable
     private TransformAccessArray             _transforms;
     private NativeParallelHashMap<long, int> _atlasIndex;
     private NativeList<HeightChunk>          _atlasChunks;
+    private NativeArray<CollisionShape>      _noShapes;
 
     private SurfaceMotor[] _motors;
     private int4[]         _windows;
@@ -275,6 +316,7 @@ public sealed unsafe class MotionSystem : IDisposable
         _transforms  = new TransformAccessArray(capacity);
         _atlasIndex  = new NativeParallelHashMap<long, int>(capacity, Allocator.Persistent);
         _atlasChunks = new NativeList<HeightChunk>(capacity, Allocator.Persistent);
+        _noShapes    = new NativeArray<CollisionShape>(1, Allocator.Persistent);
         _motors      = new SurfaceMotor[capacity];
         _windows     = new int4[capacity];
         _lastTime    = SimulationClock.TimeD;
@@ -395,6 +437,10 @@ public sealed unsafe class MotionSystem : IDisposable
             Owners              = _owners.AsArray(),
             Positions           = _positions,
             Atlas               = new HeightAtlas { Index = _atlasIndex, Chunks = _atlasChunks.AsArray() },
+            Obstacles           = _map.Collision != null ? _map.Collision.Set : new ObstacleSet { Shapes = _noShapes },
+            BodyRadius          = SimulationRules.Frame.AgentBodyRadius,
+            BodyHeight          = SimulationRules.Frame.AgentBodyHeight,
+            CatchUpMul          = SimulationRules.Frame.ObstacleCatchUpMul,
             Now                 = now,
             Dt                  = dt,
             MinSpeedModifier      = MinSpeedModifier,
@@ -445,7 +491,11 @@ public sealed unsafe class MotionSystem : IDisposable
             else if (!_map.TryGetChunk(key, out chunk) || chunk == null) continue;
 
             _atlasIndex.Add(key, _atlasChunks.Length);
-            _atlasChunks.Add(new HeightChunk { Heights = (float*)chunk.HeightRaw.GetUnsafeReadOnlyPtr() });
+            _atlasChunks.Add(new HeightChunk
+            {
+                Heights   = (float*)chunk.HeightRaw.GetUnsafeReadOnlyPtr(),
+                Obstacles = chunk.ObstacleView()
+            });
         }
     }
 
@@ -528,5 +578,6 @@ public sealed unsafe class MotionSystem : IDisposable
         if (_transforms.isCreated)   _transforms.Dispose();
         if (_atlasIndex.IsCreated)   _atlasIndex.Dispose();
         if (_atlasChunks.IsCreated)  _atlasChunks.Dispose();
+        if (_noShapes.IsCreated)     _noShapes.Dispose();
     }
 }

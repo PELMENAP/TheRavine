@@ -102,6 +102,9 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float ReservoirSpectralRadius;
         public readonly float BlockedSpeedThreshold;
         public readonly float BlockedSeconds;
+        public readonly float AgentBodyRadius;
+        public readonly float AgentBodyHeight;
+        public readonly float ObstacleCatchUpMul;
         public readonly float DigestRateRest;
         public readonly float DigestRateActive;
         public readonly float DigestEffRest;
@@ -673,6 +676,9 @@ public sealed partial class SimulationRules : ScriptableObject
             ReservoirSpectralRadius = r.reservoirSpectralRadius;
             BlockedSpeedThreshold = r.blockedSpeedThreshold;
             BlockedSeconds = r.blockedSeconds;
+            AgentBodyRadius = r.agentBodyRadius;
+            AgentBodyHeight = r.agentBodyHeight;
+            ObstacleCatchUpMul = r.obstacleCatchUpMul;
             DigestRateRest = r.digestRateRest;
             DigestRateActive = r.digestRateActive;
             DigestEffRest = r.digestEffRest;

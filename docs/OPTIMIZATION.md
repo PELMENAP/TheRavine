@@ -148,6 +148,7 @@ Before writing a structure, check this table. A second spatial index or a second
 | Per-agent float buffers | `ContextSlabs`, `FloatSlabPool` | `EntitySystem/AI/SharedAI/` |
 | Colony fields (food, danger, trail, territory) | `NestState` with `ColonyFieldView`: `Mark`, `MarkPair`, `FieldAt`, decay job | `EntitySystem/AI/Nest/NestState.cs` |
 | Scalar field on hashed cells | `WarmthField` | `EntitySystem/AI/Perception/WarmthField.cs` |
+| Obstacles for a moving body (trees, blocks) | `ObstacleQuery.Resolve` over `IObstacleLookup`; shapes from `CollisionTable` | `ObjectSystem/Map/WorldGeneration/Collision/` |
 | Movement along a curve over terrain | `MotionSystem`, `HeightAtlas`, `MovePlanner` | `EntitySystem/Job/` |
 | Time-slicing the agent tick | `TickWindowBudget` | `EntitySystem/AI/TickWindowBudget.cs` |
 | A deadline inside the frame | `FrameBudget` (`Now`, `TicksFromMs`, `Expired`) | `ObjectSystem/Map/WorldGeneration/FrameBudget.cs` |

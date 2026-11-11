@@ -25,9 +25,11 @@ The flocking of agents (not birds) is `BoidSystem` in `Assets/Scripts/EntitySyst
 1. Commands call `MovePlanner.Enqueue`; `MovePlanner.Flush` runs `PlanJob` for the batch (`PlanRequest` → `PlanResult`).
 2. Results start a motion in `MotionSystem` (`Start`, `Stop`); state per agent is `MotionState`.
 3. `MotionSystem.Step` runs `MotionJob` (integration over `HeightAtlas`) and `MotionApplyJob` (the only writer of agent transforms).
-4. Positions are read with `MotionSystem.PositionOf`; nothing in the tick reads a `Transform`.
-5. `MotionSystem.RemoveSwapBack` is called from `ColonyPopulation.RemoveEntitySwapBack`.
-6. `HeightAtlas` is synced from loaded chunks (`PrepareAtlas`, `SyncAtlas`); it is rebuilt on change, not every frame.
+4. After the step along the curve `MotionJob` calls `ObstacleQuery.Resolve`; a pushed agent catches up at `ObstacleCatchUpMul` of its speed.
+   A push that leaves almost no progress counts toward `BlockedSeconds`. Body size: `AgentBodyRadius`, `AgentBodyHeight`.
+5. Positions are read with `MotionSystem.PositionOf`; nothing in the tick reads a `Transform`.
+6. `MotionSystem.RemoveSwapBack` is called from `ColonyPopulation.RemoveEntitySwapBack`.
+7. `HeightAtlas` is synced from loaded chunks (`PrepareAtlas`, `SyncAtlas`); it is rebuilt on change, not every frame.
 
 ## Birds
 

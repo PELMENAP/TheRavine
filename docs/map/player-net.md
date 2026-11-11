@@ -45,6 +45,10 @@ Open security findings: `docs/audit/security_audit.md`.
 
 ## Player tick
 
+- `TerrainPhysicsResolver.Resolve` first pushes the body out of object shapes (`MapGenerator.ResolveObstacles`), then resolves the terrain.
+- `StepServerMovement` removes the velocity component directed into the obstacle (`ClipVelocity`), so the player slides along it.
+- Body size: `bodyRadius` and `characterHalfHeight` of `PlayerController`. Collision data: `docs/map/world.md`, section Collision.
+
 - `PlayerEntity` ticks in `EntitySystem.FixedUpdate`: every player on the server, only its own on a client.
 - Metabolism runs only where `WorldAuthority.IsAuthority`; behaviour runs only for the owner.
 - Player behaviours: `Assets/Scripts/EntitySystem/Entityes/Player/PlayerBehaviours/`.

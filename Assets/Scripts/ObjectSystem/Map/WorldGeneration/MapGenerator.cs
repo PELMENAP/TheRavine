@@ -424,6 +424,37 @@ namespace TheRavine.Generator
         public static float3 NormalFromHeights(float hL, float hR, float hD, float hU)
             => math.normalize(new float3(hL - hR, scale * 2f, hD - hU));
 
+        public CollisionTable Collision { get; private set; }
+
+        private struct ChunkObstacles : IObstacleLookup
+        {
+            public LongDictionary<ChunkData> Chunks;
+
+            public bool TryGetObstacles(long chunkKey, out ObstacleChunk chunk)
+            {
+                if (Chunks.TryGetValue(chunkKey, out ChunkData data))
+                {
+                    chunk = data.ObstacleView();
+                    return true;
+                }
+                chunk = default;
+                return false;
+            }
+        }
+
+        public bool ResolveObstacles(ref float2 position, float radius, float feetY, float headY, out float2 normal)
+        {
+            if (Collision == null)
+            {
+                normal = float2.zero;
+                return false;
+            }
+
+            ObstacleSet set = Collision.Set;
+            var lookup = new ChunkObstacles { Chunks = mapData };
+            return ObstacleQuery.Resolve(ref lookup, in set, ref position, radius, feetY, headY, out normal);
+        }
+
         public float SampleHeightBilinear(float wx, float wz)
         {
             TrySampleHeightBilinear(wx, wz, out float height);
@@ -806,6 +837,8 @@ namespace TheRavine.Generator
                 autosaveSubscription = autosave.SubscribeBeforeSave(SaveModifiedChunks);
 
             Commands = new WorldCommandBuffer(256);
+            Collision?.Dispose();
+            Collision = new CollisionTable(objectSystem != null ? objectSystem.infoRegistry : null, Settings.buildStep, Settings.levelHeight);
             chunkRequests = new long[chunkRequestCapacity];
             chunkRequestCount = 0;
 
@@ -1191,6 +1224,8 @@ namespace TheRavine.Generator
             ownsTickRules = false;
             Commands?.Dispose();
             Commands = null;
+            Collision?.Dispose();
+            Collision = null;
             chunkGenerator?.Dispose();
         }
     }
@@ -1208,6 +1243,7 @@ namespace TheRavine.Generator
         public NativeParallelHashMap<int, int> UpperHandles;
         public NativeParallelHashMap<int, float> HeightEdits;
         public NativeList<ObjectInstInfo>  Objects;
+        public NativeArray<int>            ElevatedCount;
         private Dictionary<int, BuildingVolume> buildings;
         public NativeArray<byte>           MoveCost;
         public NativeArray<float2>         Climate;
@@ -1254,7 +1290,16 @@ namespace TheRavine.Generator
             RiverBlend     = new NativeArray<float> (TotalCells, Allocator.Persistent);
             WaterDistance  = new NativeArray<byte>  (TotalCells, Allocator.Persistent);
             Objects        = new NativeList<ObjectInstInfo>(16, Allocator.Persistent);
+            ElevatedCount  = new NativeArray<int>   (1, Allocator.Persistent);
         }
+
+        public unsafe ObstacleChunk ObstacleView() => new ObstacleChunk
+        {
+            Occupancy = (int*)Occupancy.GetUnsafeReadOnlyPtr(),
+            LevelMask = (byte*)LevelMask.GetUnsafeReadOnlyPtr(),
+            Elevated  = (int*)ElevatedCount.GetUnsafeReadOnlyPtr(),
+            Objects   = Objects.GetUnsafeList()
+        };
 
         public int BuildingCount => buildings != null ? buildings.Count : 0;
 
@@ -1295,6 +1340,10 @@ namespace TheRavine.Generator
 
                 for (int i = 0; i < secCount; i++)
                     Occupancy[additionalIdxs[i]] = -handle;
+            }
+            else
+            {
+                ElevatedCount[0] = ElevatedCount[0] + 1;
             }
 
             if (baseLevel + levels > 1) RegisterUpper(primaryIdx, additionalIdxs, baseLevel, levels, handle);
@@ -1501,6 +1550,10 @@ namespace TheRavine.Generator
                         Occupancy[obj.SecondaryIdxs[i]] = 0;
                 }
             }
+            else
+            {
+                ElevatedCount[0] = ElevatedCount[0] - 1;
+            }
             UnregisterUpper(in obj);
 
             int last = Objects.Length - 1;
@@ -1548,6 +1601,7 @@ namespace TheRavine.Generator
             }
 
             Objects.Clear();
+            ElevatedCount[0] = 0;
             if (UpperHandles.IsCreated) UpperHandles.Clear();
             buildings?.Clear();
             Version++;
@@ -1637,6 +1691,7 @@ namespace TheRavine.Generator
             if (RiverBlend.IsCreated)     RiverBlend.Dispose();
             if (WaterDistance.IsCreated)  WaterDistance.Dispose();
             if (Objects.IsCreated)        Objects.Dispose();
+            if (ElevatedCount.IsCreated)  ElevatedCount.Dispose();
         }
     }
 

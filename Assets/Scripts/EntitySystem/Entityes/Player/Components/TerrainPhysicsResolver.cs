@@ -1,3 +1,4 @@
+using Unity.Mathematics;
 using UnityEngine;
 
 using TheRavine.Generator;
@@ -13,18 +14,51 @@ namespace TheRavine.EntityControl
         private readonly Rigidbody    rb;
         private readonly float        halfHeight;
         private readonly float        maxStepHeight;
+        private readonly float        bodyRadius;
+        private float2                obstacleNormal;
+        private bool                  obstructed;
         private bool                  active;
         private float                 lastValidX;
         private float                 lastValidZ;
 
         public bool IsGrounded { get; private set; }
 
-        public TerrainPhysicsResolver(MapGenerator _map, Rigidbody _rb, float _halfHeight, float _maxStepHeight)
+        public TerrainPhysicsResolver(MapGenerator _map, Rigidbody _rb, float _halfHeight, float _maxStepHeight, float _bodyRadius)
         {
             map           = _map;
             rb            = _rb;
             halfHeight    = _halfHeight;
             maxStepHeight = _maxStepHeight;
+            bodyRadius    = _bodyRadius;
+        }
+
+        public void ClipVelocity(ref float x, ref float z)
+        {
+            if (!obstructed) return;
+            float into = x * obstacleNormal.x + z * obstacleNormal.y;
+            if (into >= 0f) return;
+            x -= into * obstacleNormal.x;
+            z -= into * obstacleNormal.y;
+        }
+
+        private void ResolveObstacles()
+        {
+            Vector3 pos = rb.position;
+            float2 xz = new float2(pos.x, pos.z);
+            obstructed = map.ResolveObstacles(ref xz, bodyRadius, pos.y - halfHeight, pos.y + halfHeight, out obstacleNormal);
+            if (!obstructed) return;
+
+            pos.x = xz.x;
+            pos.z = xz.y;
+            rb.position = pos;
+
+            Vector3 velocity = rb.linearVelocity;
+            float vx = velocity.x;
+            float vz = velocity.z;
+            ClipVelocity(ref vx, ref vz);
+            velocity.x = vx;
+            velocity.z = vz;
+            rb.linearVelocity = velocity;
         }
 
         public void SetActive(bool value) => active = value;
@@ -34,7 +68,12 @@ namespace TheRavine.EntityControl
         public void Resolve()
         {
             if (!active)
+            {
+                obstructed = false;
                 return;
+            }
+
+            ResolveObstacles();
 
             Vector3 pos = rb.position;
             float terrainY = map.SampleHeightBilinear(pos.x, pos.z) - 1;

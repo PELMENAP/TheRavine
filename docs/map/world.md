@@ -67,6 +67,19 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 - Trees: `Assets/Scripts/ObjectSystem/TreeGenerator/`. Wind: `WindField` and `WindSampler` in `Assets/Scripts/ObjectSystem/Wind/WindField.cs`.
 - Structures: `WaveFunctionCollapseAlgorithm` and `StructureGenerator` in the StructGenerator folder, rules in `TileRuleSO`, `TilePatternSO`.
 
+## Collision (`Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision/`)
+
+- No PhysX for world objects: a body is a circle with a vertical span, pushed out of object shapes found through `ChunkData.Occupancy`.
+- Shape of an object kind is data in `ObjectInfo`: `CollisionKind` is `None`, `Cylinder` (radius and height in world units) or `Box`.
+- A box is `collisionSteps` in build-grid steps: x and z times `buildStep`, y times `levelHeight` (both in `ChunkGenerationSettings`).
+- `collisionOffsetSteps` moves the shape from the object position, in the same steps. The shape bottom is the object's y.
+- `CollisionTable` bakes every `ObjectInfo.BakeCollision` into `CollisionShape` by object id; `MapGenerator.Collision` owns it.
+- `ObstacleQuery.Resolve` is the only query; it is generic over `IObstacleLookup` and Burst-compatible.
+- Callers: `MapGenerator.ResolveObstacles` (player, through `TerrainPhysicsResolver`) and `MotionJob` (agents, through `HeightAtlas`).
+- Ground objects are found by their primary cell; objects with a base level above zero by a scan gated by `ChunkData.ElevatedCount`.
+- The search covers at most `ObstacleQuery.MaxCellReach` cells around the body; a larger shape extent is not found beyond it.
+- A body whose feet are at or above the shape top is not blocked; standing on a shape is not implemented.
+
 ## Random ticks and NAL (`Assets/Scripts/ObjectSystem/Map/WorldGeneration/Ticks/`)
 
 - Every `WorldTickRules.tickSeconds` of `SimulationClock` time, `RandomTickJob` samples `cellsPerChunkPerTick` cells per chunk of the square.
@@ -95,6 +108,8 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 - Per-frame generation work takes the `FrameBudget` deadline and stops when it expires.
 - Random ticks and world edits run only on the authority.
 - Loaders follow `docs/SECURITY.md` section 7.
+- Player and agents collide with the same shapes through the same `ObstacleQuery.Resolve`; neither has its own obstacle rules.
+- `ChunkData.ElevatedCount` equals the number of objects with a base level above zero; every add, remove and clear keeps it.
 
 ## Hot paths
 
