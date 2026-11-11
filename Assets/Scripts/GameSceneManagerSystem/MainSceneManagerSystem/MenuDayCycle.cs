@@ -23,8 +23,6 @@ namespace TheRavine.Base
         [SerializeField] private Transform secondSun;
         [SerializeField] private Material skyboxMaterial;
         [SerializeField, Min(0.1f)] private float environmentUpdateInterval = 1.5f;
-        [SerializeField] private AnimationCurve reflectionIntensityCurve = AnimationCurve.Constant(0f, 1f, 0.25f);
-        [SerializeField] private AnimationCurve ambientIntensityCurve = AnimationCurve.Constant(0f, 1f, 0.8f);
 
         private readonly static int nightBlendId = Shader.PropertyToID("_NightBlend");
         private const float RotationSpeedX = 360f;
@@ -36,8 +34,6 @@ namespace TheRavine.Base
         private float currentTime;
         private Material runtimeSkybox;
         private float nextEnvironmentUpdate;
-        private float appliedReflectionIntensity = -1f;
-        private float appliedAmbientIntensity = -1f;
 
         private void Awake()
         {
@@ -89,20 +85,6 @@ namespace TheRavine.Base
             if (runtimeSkybox != null)
             {
                 runtimeSkybox.SetFloat(nightBlendId, nightBlendCurve.Evaluate(t));
-            }
-
-            float reflectionIntensity = reflectionIntensityCurve.length > 0 ? reflectionIntensityCurve.Evaluate(t) : 0.25f;
-            if (!Mathf.Approximately(reflectionIntensity, appliedReflectionIntensity))
-            {
-                appliedReflectionIntensity = reflectionIntensity;
-                RenderSettings.reflectionIntensity = reflectionIntensity;
-            }
-
-            float ambientIntensity = ambientIntensityCurve.length > 0 ? ambientIntensityCurve.Evaluate(t) : 0.8f;
-            if (!Mathf.Approximately(ambientIntensity, appliedAmbientIntensity))
-            {
-                appliedAmbientIntensity = ambientIntensity;
-                RenderSettings.ambientIntensity = ambientIntensity;
             }
 
             if (Time.unscaledTime >= nextEnvironmentUpdate)
