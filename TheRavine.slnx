@@ -20,6 +20,7 @@
   <Project Path="View.csproj" />
   <Project Path="Tayx.Graphy.csproj" />
   <Project Path="UniTask.TextMeshPro.csproj" />
+  <Project Path="Rive.csproj" />
   <Project Path="undream.llmunity.Editor.csproj" />
   <Project Path="Cloud.Unum.USearch.csproj" />
   <Project Path="Inventory.csproj" />

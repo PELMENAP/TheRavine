@@ -56,3 +56,4 @@ mono_crash*
 
 # Python cache of tools/
 __pycache__/
+/LLMUnityBuild

@@ -44,7 +44,7 @@ Material:
     - _Density: 0
     - _HeightMaskBlend: 0.99
     - _HeightMaskFalloff: 9.5
-    - _HeightMaskLength: 3.5401468
+    - _HeightMaskLength: 32.983944
     - _HeightMaskOffset: 0
     - _HeightMaskRemapMax: 0.8
     - _HeightMaskRemapMin: 0.2

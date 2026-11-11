@@ -69,29 +69,34 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - AbsorptionStrength: 0.7
-    - BodyBoost: 0.3
+    - AbsorptionStrength: 1.2
+    - BodyBoost: 0.1
     - CausticDepth: 7
     - CausticFade: 1.47
     - CausticScale: 0.1
     - CausticSpeed: 0.03
     - CausticStrength: 1.5
+    - DebugView: 0
     - Depth: 10
     - DepthFade: -0.24
     - Displacement: 0.3
-    - Foam: 0.5
-    - FoamCrestStrength: 1
-    - FoamRippleStrength: 1
-    - FoamScale: 0.5
-    - FoamShoreStrength: 1.5
+    - Foam: 0.8
+    - FoamCrestStrength: 0.01
+    - FoamIntensity: 0.8
+    - FoamRippleStrength: 0.01
+    - FoamScale: 1
+    - FoamShoreStrength: 0.3
+    - FoamThreshold: 0.1
     - FresnelF0: 0.1
     - Metallic: 0.084
-    - NightFloor: 0.01
+    - NightFloor: 0.1
     - NormalStrength: 0.3
     - ReflectionDistortion: 0.1
+    - ReflectionGain: 1
     - ReflectionStrength: 1
-    - Refraction: 0.05
-    - RippleRefraction: 4
+    - Refraction: 0.02
+    - RippleRefraction: 3
+    - RippleShading: 0.3
     - RippleStrength: 20
     - SSRBlur: 0.2
     - SSRIntensity: 1
