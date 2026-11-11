@@ -83,10 +83,13 @@ MonoBehaviour:
   crowdRadius: 5
   biteTransmissionChance: 0.2
   captureLength: 6
+  senescenceSpeedLoss: 0.4
+  senescenceDigestLoss: 0.4
   cameraScaleStep: 0.05
   cameraScaleMin: 0
   cameraScaleMax: 1
   cameraFlipDebounce: 0.25
+  cameraRotateSeconds: 1
   kinSearchRangeMul: 2
   nestFarRadiusMul: 3
   poiEnergyEmaAlpha: 0.3
@@ -291,6 +294,11 @@ MonoBehaviour:
   alarmHuntBias: 1.5
   alarmSurviveBias: 1.5
   alarmFleeBias: 1.5
+  scarcityMigrateBias: 2
+  scarcityForeignForageBias: 1.5
+  scoutVoteWeight: 2
+  scarcityChunkRadius: 1
+  quorumMigrateBias: 2
   eatEnergyFood: 100
   foodRegenBurst: 10
   starvationDamage: 12
@@ -401,6 +409,12 @@ MonoBehaviour:
   - 0.08
   - 0.25
   - 0.04
+  hungerForageBias: 2
+  hungerRestDrop: 3
+  dietPlantFloor: 0.4
+  dietMeatFloor: 0.4
+  winterWiltTau: 120
+  unreachableFoodSeconds: 120
   terminalPenalty: -1
   interruptionReward: -0.1
   failureReward: -0.2
@@ -640,9 +654,9 @@ MonoBehaviour:
   rememberFoodReward: 0.3
   infeasibleActionReward: -0.15
   goalFoodWeight: 0.3
-  digestRewardWeight: 0
   goalEnergyWeight: 1
   goalRestWeight: 0.05
+  digestRewardWeight: 0
   coordCuriosityWeight: 0.15
   execGammaPerSecond: 0.9
   coordGammaPerSecond: 0.97
