@@ -9,7 +9,7 @@ Files and lines of `.cs` directly in the folder.
 
 | Folder | Files | Lines |
 |---|---|---|
-| `Assets/Scripts/Core` | 16 | 1306 |
+| `Assets/Scripts/Core` | 16 | 1315 |
 | `Assets/Scripts/Core/NewInputSystem` | 2 | 2208 |
 | `Assets/Scripts/Core/ServiceLocator` | 3 | 293 |
 | `Assets/Scripts/Core/Settings` | 4 | 786 |
@@ -63,7 +63,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/Virology` | 16 | 2523 |
 | `Assets/Scripts/GameSceneManagerSystem` | 3 | 295 |
 | `Assets/Scripts/GameSceneManagerSystem/IStates & IStatesBehaviour` | 1 | 15 |
-| `Assets/Scripts/GameSceneManagerSystem/MainSceneManagerSystem` | 2 | 283 |
+| `Assets/Scripts/GameSceneManagerSystem/MainSceneManagerSystem` | 2 | 292 |
 | `Assets/Scripts/GameSceneManagerSystem/Menu` | 2 | 540 |
 | `Assets/Scripts/GameSceneManagerSystem/StateMachine` | 4 | 313 |
 | `Assets/Scripts/GameSceneManagerSystem/States` | 4 | 144 |
@@ -214,7 +214,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | CraftMatch | struct | `Assets/Scripts/Model/InventoryModel/CraftModel.cs` | 10 |
 | CraftRecipe | class | `Assets/Scripts/Model/InventoryModel/CraftModel.cs` | 18 |
 | CraftStack | struct | `Assets/Scripts/Model/InventoryModel/CraftModel.cs` | 4 |
-| DayConstants | class | `Assets/Scripts/Core/DayCycle.cs` | 145 |
+| DayConstants | class | `Assets/Scripts/Core/DayCycle.cs` | 154 |
 | DeathCause | enum | `Assets/Scripts/EntitySystem/AI/Entity/Components/MortalityComponent.cs` | 3 |
 | DebugCommand | class | `Assets/Scripts/Terminal/BaseCommands.cs` | 41 |
 | DebugCommandGate | class | `Assets/Scripts/Terminal/SetPlayerCommand.cs` | 14 |
