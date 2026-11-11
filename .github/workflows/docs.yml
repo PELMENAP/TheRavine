@@ -1,0 +1,16 @@
+name: docs
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Paths and names in the documentation exist in the code
+        run: python3 tools/docmap.py check
