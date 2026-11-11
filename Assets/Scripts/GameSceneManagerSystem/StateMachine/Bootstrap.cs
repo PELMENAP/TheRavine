@@ -89,16 +89,44 @@ namespace TheRavine.Base
             EntityManager entities = FindAnyObjectByType<EntityManager>();
             if (entities != null) entities.enabled = false;
 
-            gameStateMachine.BreakUpServices();
+            RunStep(BreakUpSceneServices, "break up");
+            if (entities != null) RunStep(entities.ReleaseServices, "entity services");
+            RunStep(ShutdownNetwork, "network shutdown");
+            RunStep(ServiceLocator.ClearAll, "clear services");
+            RunStep(RestoreGlobalServices, "global services");
+        }
+
+        private void BreakUpSceneServices()
+        {
+            if (gameStateMachine != null) gameStateMachine.BreakUpServices();
+        }
+
+        private static void ShutdownNetwork()
+        {
             if (NetworkManager.Singleton != null) NetworkManager.Singleton.Shutdown();
-            ServiceLocator.ClearAll();
+        }
+
+        private static void RestoreGlobalServices()
+        {
             if (GameInitializer.Instance != null) GameInitializer.Instance.InitializeServices();
+        }
+
+        private static void RunStep(Action step, string name)
+        {
+            try
+            {
+                step();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Bootstrap.ReleaseServices: {name} failed: {ex}");
+            }
         }
 
         private void OnDisable()
         {
             ReleaseServices();
-            toMenuPauseButton.onClick.RemoveAllListeners();
+            if (toMenuPauseButton != null) toMenuPauseButton.onClick.RemoveAllListeners();
         }
     }
 }

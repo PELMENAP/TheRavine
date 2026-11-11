@@ -84,6 +84,11 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 - File: header with magic, version, seed, chunk key, then objects with their levels; writes through `AtomicFile`.
 - Non-finite values or an oversized file reject the whole file; unknown object ids are skipped.
 
+## Teardown
+
+- `MapGenerator.BreakUp` (same as `OnDisable`): stops `Update`, unsubscribes, saves modified chunks, disposes the endless layers.
+- Chunk data, the chunk pool, `ChunkGenerator`, random ticks and `Commands` are disposed in `OnDestroy`, when nothing can query them.
+
 ## Invariants
 
 - Simulation, perception and rules never depend on the view; only drawing does.

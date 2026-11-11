@@ -52,7 +52,7 @@ namespace TheRavine.Generator
         private ChunkData sampleChunk;
 
         private long windowCenter;
-        private bool hasWindow, ready, disposed;
+        private bool hasWindow, ready, disposed, nativeReleased;
         private ViewFacing facing;
         private bool simPending;
         private int simShell, simStep;
@@ -1165,6 +1165,13 @@ namespace TheRavine.Generator
                 for (int i = 0; i < endless.Length; i++)
                     endless[i]?.Dispose();
             }
+        }
+
+        private void OnDestroy()
+        {
+            OnDisable();
+            if (nativeReleased) return;
+            nativeReleased = true;
 
             UnloadStamp++;
             foreach (var cd in mapData) cd.Value.Dispose();

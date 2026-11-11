@@ -1,9 +1,11 @@
 using System;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class SceneLoader
 {
+    private const float FadeTimeoutSeconds = 4f;
     private bool _isLoading = false;
 
     public async UniTask LoadScene(int numberSceneToTranslate, Action beforeLoad = null)
@@ -13,11 +15,27 @@ public class SceneLoader
         _isLoading = true;
         bool waitFading = true;
 
-        FaderOnTransit.Instance.FadeIn(() => waitFading = false);
+        float fadeDeadline = Time.unscaledTime + FadeTimeoutSeconds;
+        try
+        {
+            FaderOnTransit.Instance.FadeIn(() => waitFading = false);
+        }
+        catch (Exception ex)
+        {
+            waitFading = false;
+            Debug.LogError($"SceneLoader: fade failed: {ex}");
+        }
 
-        await UniTask.WaitUntil(() => waitFading == false);
+        await UniTask.WaitUntil(() => waitFading == false || Time.unscaledTime >= fadeDeadline);
 
-        beforeLoad?.Invoke();
+        try
+        {
+            beforeLoad?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"SceneLoader: beforeLoad failed: {ex}");
+        }
 
         var loadScene = SceneManager.LoadSceneAsync(numberSceneToTranslate);
         loadScene.allowSceneActivation = false; 

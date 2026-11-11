@@ -9,9 +9,9 @@ Files and lines of `.cs` directly in the folder.
 
 | Folder | Files | Lines |
 |---|---|---|
-| `Assets/Scripts/Core` | 16 | 1297 |
+| `Assets/Scripts/Core` | 16 | 1315 |
 | `Assets/Scripts/Core/NewInputSystem` | 2 | 2208 |
-| `Assets/Scripts/Core/ServiceLocator` | 3 | 293 |
+| `Assets/Scripts/Core/ServiceLocator` | 3 | 310 |
 | `Assets/Scripts/Core/Settings` | 4 | 786 |
 | `Assets/Scripts/Core/Settings/GameSettings` | 2 | 113 |
 | `Assets/Scripts/Core/Settings/WorldData` | 3 | 310 |
@@ -22,7 +22,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 8 | 872 |
 | `Assets/Scripts/EntitySystem` | 7 | 776 |
-| `Assets/Scripts/EntitySystem/AI` | 10 | 1930 |
+| `Assets/Scripts/EntitySystem/AI` | 10 | 1936 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
 | `Assets/Scripts/EntitySystem/AI/Colony` | 6 | 737 |
 | `Assets/Scripts/EntitySystem/AI/Debug` | 3 | 1601 |
@@ -40,7 +40,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Population` | 4 | 722 |
 | `Assets/Scripts/EntitySystem/AI/Rules` | 9 | 2707 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI` | 21 | 3442 |
-| `Assets/Scripts/EntitySystem/AI/Speech` | 7 | 1097 |
+| `Assets/Scripts/EntitySystem/AI/Speech` | 7 | 1099 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
 | `Assets/Scripts/EntitySystem/Command` | 4 | 153 |
@@ -49,7 +49,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/Entityes/Bot` | 2 | 117 |
 | `Assets/Scripts/EntitySystem/Entityes/Bot/BotBehavious` | 3 | 55 |
 | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts` | 10 | 986 |
-| `Assets/Scripts/EntitySystem/Entityes/Mob` | 4 | 394 |
+| `Assets/Scripts/EntitySystem/Entityes/Mob` | 4 | 401 |
 | `Assets/Scripts/EntitySystem/Entityes/Player` | 7 | 1390 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/Components` | 7 | 336 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/Joystick Pack` | 2 | 116 |
@@ -65,7 +65,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/GameSceneManagerSystem/IStates & IStatesBehaviour` | 1 | 15 |
 | `Assets/Scripts/GameSceneManagerSystem/MainSceneManagerSystem` | 2 | 274 |
 | `Assets/Scripts/GameSceneManagerSystem/Menu` | 2 | 540 |
-| `Assets/Scripts/GameSceneManagerSystem/StateMachine` | 4 | 313 |
+| `Assets/Scripts/GameSceneManagerSystem/StateMachine` | 4 | 341 |
 | `Assets/Scripts/GameSceneManagerSystem/States` | 4 | 144 |
 | `Assets/Scripts/GlobalSystems` | 1 | 62 |
 | `Assets/Scripts/Model/Actions&Events` | 3 | 65 |
@@ -85,7 +85,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Model/InventoryModel/IInventory` | 3 | 28 |
 | `Assets/Scripts/ObjectSystem` | 3 | 212 |
 | `Assets/Scripts/ObjectSystem/Map/Tools` | 3 | 2780 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 12 | 3555 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 12 | 3562 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs` | 5 | 742 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator` | 3 | 386 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless` | 5 | 1062 |
@@ -109,7 +109,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/ScriptableData/Item/ItemInfo/Environment` | 7 | 130 |
 | `Assets/Scripts/ScriptableData/Item/ItemInfo/NPC` | 4 | 83 |
 | `Assets/Scripts/ScriptableData/Item/ItemInfo/kvest` | 1 | 19 |
-| `Assets/Scripts/Terminal` | 8 | 782 |
+| `Assets/Scripts/Terminal` | 8 | 787 |
 | `Assets/Scripts/Terminal/PDollar/Scripts` | 7 | 736 |
 | `Assets/Scripts/Terminal/Rive` | 5 | 825 |
 | `Assets/Scripts/Terminal/Rive/Core` | 9 | 2163 |
@@ -192,7 +192,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | CasteModifiers | struct | `Assets/Scripts/EntitySystem/AI/Entity/EntityTuning.cs` | 13 |
 | Cell | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/StructGenerator/WaveFunctionCollapseAlgorithm.cs` | 17 |
 | ChecksumInteractor | class | `Assets/Scripts/Terminal/Rive/Core/RiveInteractors.cs` | 102 |
-| ChunkData | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1191 |
+| ChunkData | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1198 |
 | ChunkEntityData | class | `Assets/Scripts/EntitySystem/MobGenerator.cs` | 249 |
 | ChunkObjects | struct | `Assets/Scripts/EntitySystem/Job/BirdPerchIndex.cs` | 24 |
 | ChunkTickSource | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Ticks/RandomTickJob.cs` | 10 |
@@ -334,7 +334,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | NegativePoint | struct | `Assets/Scripts/EntitySystem/AI/Entity/Components/PointsOfInterestComponent.cs` | 10 |
 | NetWeights | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 21 |
 | NewScriptCommand | class | `Assets/Scripts/Terminal/Rive/RiveRedactorCommands.cs` | 329 |
-| ObjectInstInfo | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1653 |
+| ObjectInstInfo | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1660 |
 | ObjectSpawnConfig | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator/ObjectGeneratorStructures.cs` | 36 |
 | Pair | struct | `Assets/Scripts/Core/Utilities/Extentions.cs` | 97 |
 | PerceptronApplyJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 184 |
@@ -392,7 +392,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | RotateCommand | class | `Assets/Scripts/Terminal/GeneratorCommands.cs` | 12 |
 | SaveScriptCommand | class | `Assets/Scripts/Terminal/Rive/RiveRedactorCommands.cs` | 286 |
 | ScaleCopyJob | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 586 |
-| SceneLoader | class | `Assets/Scripts/Core/SceneTransition.cs` | 5 |
+| SceneLoader | class | `Assets/Scripts/Core/SceneTransition.cs` | 6 |
 | ScriptInfoCommand | class | `Assets/Scripts/Terminal/Rive/RiveRedactorCommands.cs` | 146 |
 | SendToInteractorNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 49 |
 | SequenceValidatorInteractor | class | `Assets/Scripts/Terminal/Rive/Core/RiveInteractors.cs` | 62 |
@@ -417,7 +417,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | SpeechSyllableJob | struct | `Assets/Scripts/EntitySystem/AI/Speech/SpeechVoiceBank.cs` | 7 |
 | StatementNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 55 |
 | StringBuilderNumeric | class | `Assets/Scripts/EntitySystem/AI/Debug/NestDebugView.cs` | 305 |
-| StructureSpawnPoint | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1636 |
+| StructureSpawnPoint | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1643 |
 | TeleportCommand | class | `Assets/Scripts/Terminal/SetPlayerCommand.cs` | 26 |
 | TerminalCommandNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 89 |
 | TerrainIndexBuilder | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/TerrainMeshJobs.cs` | 168 |

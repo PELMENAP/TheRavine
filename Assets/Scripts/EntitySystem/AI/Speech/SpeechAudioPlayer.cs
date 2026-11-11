@@ -98,6 +98,7 @@ public sealed class SpeechAudioPlayer : MonoBehaviour
         }
 
         var audible = _bus.Audible;
+        if (!audible.IsCreated) return;
         int n = audible.Length;
         if (n == 0) return;
 
