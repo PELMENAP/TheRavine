@@ -13,22 +13,29 @@ namespace TheRavine.Inventory
             data = new Dictionary<string, InventoryItemInfo>();
             for (int i = 0; i < _dataItems.data.Count; i++) 
             {
-                data[_dataItems.data[i].title] = _dataItems.data[i];
+                InventoryItemInfo info = _dataItems.data[i];
+                if (info == null || string.IsNullOrEmpty(info.id))
+                {
+                    Debug.LogError($"[InfoManager] {_dataItems.name}: empty entry or id at index {i}");
+                    continue;
+                }
+                if (!data.TryAdd(info.id, info))
+                    Debug.LogError($"[InfoManager] duplicate item id {info.id} ({data[info.id].name}, {info.name})");
             }
         }
-        public IInventoryItem GetInventoryItem(string title, int amount = 1)
+        public IInventoryItem GetInventoryItem(string id, int amount = 1)
         {   
-            Type itemType = InventoryTypeCache.GetType(title);
+            Type itemType = InventoryTypeCache.GetType(id);
             
             if (itemType == null)
             {
-                Debug.LogError($"Type {title} not found in cache");
+                Debug.LogError($"Type {id} not found in cache");
                 return null;
             }
             
-            if (!data.TryGetValue(title, out var itemInfo))
+            if (!data.TryGetValue(id, out var itemInfo))
             {
-                Debug.Log($"there's no {title}");
+                Debug.LogError($"[InfoManager] there's no item with id {id} in DataItems");
                 return null;
             }
             
@@ -37,11 +44,11 @@ namespace TheRavine.Inventory
             return item;
         }
 
-        public IInventoryItem GetInventoryItemByInfo(string title, InventoryItemInfo itemInfo, int amount = 1)
+        public IInventoryItem GetInventoryItemByInfo(string id, InventoryItemInfo itemInfo, int amount = 1)
         {
             if (itemInfo == null) return null;
 
-            Type itemType = InventoryTypeCache.GetType(title);
+            Type itemType = InventoryTypeCache.GetType(id);
 
             if (itemType != null)
             {
@@ -55,7 +62,7 @@ namespace TheRavine.Inventory
         public Type GetItemType(InventoryItemInfo itemInfo)
         {
             if (itemInfo == null || string.IsNullOrEmpty(itemInfo.id)) return null;
-            return Type.GetType(itemInfo.id, false, true);
+            return InventoryTypeCache.GetType(itemInfo.id);
         }
         public InventoryCraftInfo[] GetAllCraftRecepts() => Resources.LoadAll("CraftInfo", typeof(InventoryCraftInfo)).Cast<InventoryCraftInfo>().ToArray();
     }

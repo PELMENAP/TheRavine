@@ -100,7 +100,7 @@ namespace TheRavine.ObjectControl
         }
 
         [ContextMenu("Assign Missing Ids")]
-        private void AssignMissingIds()
+        public void EditorAssignMissingIds()
         {
             var used = new HashSet<int>();
             int next = 1;
