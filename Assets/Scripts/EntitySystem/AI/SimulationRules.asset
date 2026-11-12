@@ -322,11 +322,11 @@ MonoBehaviour:
   preWinterWorkerStimulus: 0.4
   winterGrowthMul: 0.3
   winterDrainMul: 1.3
-  fireIgnitionChance: 0.002
+  fireIgnitionChance: 0.2
   fireSeasonBias: 0.5
-  fireSpreadChance: 0.3
+  fireSpreadChance: 0.5
   fireWindBias: 0.8
-  fireBurnSeconds: 6
+  fireBurnSeconds: 30
   fireDamagePerSecond: 8
   fireStepInterval: 0.5
   fireMaxBurning: 512
@@ -723,6 +723,9 @@ MonoBehaviour:
   legTimeSlack: 1.5
   blockedSpeedThreshold: 0.15
   blockedSeconds: 0.75
+  agentBodyRadius: 0.3
+  agentBodyHeight: 1
+  obstacleCatchUpMul: 1.25
   threatenAttackMul: 1.3
   groupAttackBonus: 0.25
   groupAttackRadius: 4

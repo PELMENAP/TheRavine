@@ -12,16 +12,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Kirieshky
   m_EditorClassIdentifier: 
-  objectName: kirieshki
+  id: 32
+  objectPrefab: {fileID: 443920947200513725, guid: 4f59eba755cb9a4959b16369dc693a02, type: 3}
   defaultAmount: 1
   initialPoolSize: 10
   instanceType: 1
   behaviourType: 0
   nalInfo: {fileID: 0}
   inventoryItemInfo: {fileID: 11400000, guid: f2bfaecbf7420f34a9d1db67ede0c0c4, type: 2}
-  id: 32
-  objectPrefab: {fileID: 443920947200513725, guid: 4f59eba755cb9a4959b16369dc693a02, type: 3}
+  decaySeconds: 0
+  isFood: 0
+  foodKind: 0
   evolutionStep: {fileID: 0}
   additionalOccupiedCells: []
+  placementKind: 0
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}
+  levels: 1
+  visibleRings: 0
+  farMode: 0
+  castShadowsFar: 0
+  lodSet: {fileID: 0}
+  collisionKind: 0
+  collisionRadius: 0.5
+  collisionHeight: 2
+  collisionSteps: {x: 1, y: 1, z: 1}
+  collisionOffsetSteps: {x: 0, y: 0, z: 0}
+  objectCanBurn: 1

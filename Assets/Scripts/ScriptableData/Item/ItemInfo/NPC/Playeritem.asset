@@ -19,3 +19,9 @@ MonoBehaviour:
   _spriteIcon: {fileID: 0}
   _infoSprite: {fileID: 1284575992285204154, guid: 4497af406020841419d8e59d32b57a6c, type: 3}
   _prefab: {fileID: 1671218706617821313, guid: 1b0040924df5a54fca8e1f98646d3d7e, type: 3}
+  _slotMask: 131
+  _description: "\u0447\u0442\u043E \u0431\u043B\u044F\u0442\u044C, \u044D\u0442\u043E
+    \u0447\u0435 \u0437\u0430 \u0445\u0443\u0439\u043D\u044F? \r\n\u043A\u0430\u043A
+    \u0442\u044B \u044D\u0442\u043E \u0441\u043A\u0440\u0430\u0444\u0442\u0438\u043B?
+    \r\n\u0445\u0430\u0440\u0430\u043A\u0442\u0435\u0440 \u043D\u043E\u0440\u043C\u0438\u0441\u043D\u044B\u0439
+    \r\n\u043D\u0435 \u0436\u0435\u043D\u0430\u0442"

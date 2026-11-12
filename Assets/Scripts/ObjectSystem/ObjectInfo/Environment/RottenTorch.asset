@@ -20,8 +20,22 @@ MonoBehaviour:
   behaviourType: 0
   nalInfo: {fileID: 0}
   inventoryItemInfo: {fileID: 0}
+  decaySeconds: 0
+  isFood: 0
+  foodKind: 0
   evolutionStep: {fileID: 0}
   additionalOccupiedCells: []
+  placementKind: 0
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}
-  ObjectName: Rotten_Torch
+  levels: 1
+  visibleRings: 0
+  farMode: 0
+  castShadowsFar: 0
+  lodSet: {fileID: 0}
+  collisionKind: 1
+  collisionRadius: 0.4
+  collisionHeight: 9.76
+  collisionSteps: {x: 1, y: 1, z: 1}
+  collisionOffsetSteps: {x: 0.21, y: -0.28999996, z: 0}
+  objectCanBurn: 1
