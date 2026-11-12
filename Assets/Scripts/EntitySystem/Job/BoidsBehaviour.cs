@@ -51,7 +51,7 @@ namespace TheRavine.EntityControl
 
         private BirdParams _params;
         private quaternion _flipRotation, _baseRotation;
-        private ViewFacing _appliedFacing;
+        private float _appliedYaw;
         private bool _rewriteRotations;
         private JobHandle _handle;
         private double _lastTime;
@@ -299,12 +299,11 @@ namespace TheRavine.EntityControl
 
             TickFlocks(dt);
 
-            ViewFacing facing = ViewOrientation.Facing;
-            if (facing != _appliedFacing) ApplyViewRotations();
+            if (ViewOrientation.YawDegrees != _appliedYaw) ApplyViewRotations();
 
-            int2 right = facing.Right();
+            float2 right = ViewOrientation.Right;
             float3 camRight = new(right.x, 0f, right.y);
-            float2 camForward = (float2)facing.Forward();
+            float2 camForward = ViewOrientation.Forward;
 
             float time = SimulationClock.Time;
             WindSampler wind = _wind != null
@@ -406,8 +405,8 @@ namespace TheRavine.EntityControl
 
         private void ApplyViewRotations()
         {
-            _appliedFacing = ViewOrientation.Facing;
-            float yaw = math.radians(_appliedFacing.Yaw());
+            _appliedYaw = ViewOrientation.YawDegrees;
+            float yaw = math.radians(_appliedYaw);
             _baseRotation = quaternion.RotateY(yaw);
             _flipRotation = quaternion.RotateY(yaw + math.radians(boidsInfo.flipYaw));
             _rewriteRotations = true;

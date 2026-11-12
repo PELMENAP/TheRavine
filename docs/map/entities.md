@@ -31,7 +31,7 @@ AI agents are a separate family (`EntityModel`): `docs/map/ai.md`. The player: `
 | `AimComponent` | `Assets/Scripts/Model/BehavioursMap/Aim/AimComponent.cs` | crosshair distance, pick distance |
 | `EventBusComponent` | `Assets/Scripts/Model/Actions&Events/EventBusComponent.cs` | per-entity event bus |
 | `SkillComponent` | `Assets/Scripts/Model/EntitySkills/SkillComponent.cs` | skills by name (`ISkill`) |
-| `CameraComponent` | `Assets/Scripts/EntitySystem/Entityes/CameraComponent.cs` | follow, aim offset, four view sides; local player only |
+| `CameraComponent` | `Assets/Scripts/EntitySystem/Entityes/CameraComponent.cs` | smoothed pivot with aim offset, rigid orbit by yaw, pitch and distance; local player only |
 
 ## Concrete entities
 
@@ -53,7 +53,7 @@ AI agents are a separate family (`EntityModel`): `docs/map/ai.md`. The player: `
 ## Shared types
 
 - Events and their payload structs: `Assets/Scripts/Model/Actions&Events/EventNames.cs` (several types in one file).
-- `ViewFacing`, `ViewOrientation`, `IViewOriented`, `ViewOrientedTransform`: `Assets/Scripts/Model/BehavioursMap/View/`; described in `docs/map/world.md`.
+- `ViewSector`, `ViewOrientation`, `IViewOriented`, `ViewOrientedTransform`: `Assets/Scripts/Model/BehavioursMap/View/`; described in `docs/map/world.md`.
 - `IController`: `Assets/Scripts/Model/BehavioursMap/Movement/IController.cs`.
 
 ## Small modules

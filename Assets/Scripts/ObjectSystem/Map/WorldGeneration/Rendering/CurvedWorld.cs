@@ -6,6 +6,7 @@ namespace TheRavine.Generator
     public static class CurvedWorld
     {
         private static readonly int CurveParamsId = Shader.PropertyToID("_CurveParams");
+        private static readonly int CurveFocusId = Shader.PropertyToID("_CurveFocus");
 
         public static float K { get; private set; }
         public static float Flat { get; private set; }
@@ -19,11 +20,17 @@ namespace TheRavine.Generator
             PushFlat();
         }
 
-        public static void Push(float origin, float referenceHeight) =>
-            Shader.SetGlobalVector(CurveParamsId, new Vector4(K, Flat, origin, referenceHeight));
+        public static void Push(float2 focus, float referenceHeight)
+        {
+            Shader.SetGlobalVector(CurveParamsId, new Vector4(K, Flat, 0f, 0f));
+            Shader.SetGlobalVector(CurveFocusId, new Vector4(focus.x, focus.y, referenceHeight, 0f));
+        }
 
-        public static void PushFlat() =>
+        public static void PushFlat()
+        {
             Shader.SetGlobalVector(CurveParamsId, Vector4.zero);
+            Shader.SetGlobalVector(CurveFocusId, Vector4.zero);
+        }
 
         public static float MaxDrop(float distance)
         {

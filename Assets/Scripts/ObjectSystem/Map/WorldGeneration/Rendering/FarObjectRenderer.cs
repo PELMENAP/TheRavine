@@ -70,7 +70,8 @@ namespace TheRavine.Generator.EndlessGenerators
         private GraphicsBuffer commandBuffer;
 
         private long center;
-        private ViewFacing facing;
+        private ViewSector sector;
+        private readonly ViewBlock[] wanted;
         private bool hasCenter;
         private bool dirty;
         private bool contentChanged;
@@ -80,12 +81,17 @@ namespace TheRavine.Generator.EndlessGenerators
         {
             this.generator = generator;
             this.settings = settings;
-            facing = generator.Facing;
-            capacity = math.max(1, settings.farMaxInstances);
+            sector = generator.Sector;
 
             ObjectInfoRegistry registry = objectSystem.infoRegistry;
             int typeCount = registry.Count;
             int rings = math.min(generator.LodRingCount, ObjectInfo.MaxVisibleRings);
+
+            int wedgeBlocks = rings > 0 ? ViewWedge.MaxBlocks(rings) : 0;
+            int firBlocks = 2;
+            for (int r = 1; r <= rings; r++) firBlocks += 2 * r + 1;
+            long scaledCapacity = (long)settings.farMaxInstances * math.max(wedgeBlocks, firBlocks) / firBlocks;
+            capacity = (int)System.Math.Min(System.Math.Max(1L, scaledCapacity), int.MaxValue / 16);
 
             denseById = new NativeArray<int>(math.max(registry.IdCapacity, 1), Allocator.Persistent);
             for (int id = 0; id < denseById.Length; id++)
@@ -193,11 +199,8 @@ namespace TheRavine.Generator.EndlessGenerators
             instances = new NativeArray<float4>(capacity, Allocator.Persistent);
             total = new NativeReference<int>(0, Allocator.Persistent);
 
-            int sourceCapacity = 0;
-            for (int r = 1; r <= rings; r++)
-                sourceCapacity += (2 * r + 1) * MapGenerator.WindowSide * MapGenerator.WindowSide;
-            if (rings >= MapGenerator.SideBlockRing)
-                sourceCapacity += 2 * MapGenerator.WindowSide * MapGenerator.WindowSide;
+            wanted = new ViewBlock[math.max(wedgeBlocks, 1)];
+            int sourceCapacity = wedgeBlocks * MapGenerator.WindowSide * MapGenerator.WindowSide;
             sources = new NativeArray<ChunkSource>(math.max(sourceCapacity, 1), Allocator.Persistent);
 
             args = new NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs>(math.max(commands.Length, 1), Allocator.Persistent);
@@ -243,10 +246,10 @@ namespace TheRavine.Generator.EndlessGenerators
             dirty = true;
         }
 
-        public void SetFacing(ViewFacing newFacing)
+        public void SetSector(ViewSector newSector)
         {
-            if (newFacing == facing) return;
-            facing = newFacing;
+            if (newSector == sector) return;
+            sector = newSector;
             dirty = true;
         }
 
@@ -284,32 +287,16 @@ namespace TheRavine.Generator.EndlessGenerators
             int n = 0;
             int missing = 0;
             int rings = math.min(generator.LodRingCount, ObjectInfo.MaxVisibleRings);
+            int blocks = rings > 0 ? ViewWedge.Collect(sector, rings, wanted) : 0;
 
-            for (int ring = 1; ring <= rings; ring++)
+            for (int i = 0; i < blocks; i++)
             {
-                for (int dx = -ring; dx <= ring; dx++)
-                    CollectBlock(BlockCenter(dx, ring), ring, ref n, ref missing);
-            }
-
-            if (rings >= MapGenerator.SideBlockRing)
-            {
-                CollectBlock(BlockCenter(-1, 0), MapGenerator.SideBlockRing, ref n, ref missing);
-                CollectBlock(BlockCenter(1, 0), MapGenerator.SideBlockRing, ref n, ref missing);
+                ViewBlock block = wanted[i];
+                CollectBlock(MapGenerator.BlockCenterChunk(center, block.X, block.Z), block.Ring, ref n, ref missing);
             }
 
             sourceCount = n;
             return missing;
-        }
-
-        private long BlockCenter(int dx, int ahead)
-        {
-            int2 right = facing.Right();
-            int2 forward = facing.Forward();
-            int lateral = dx * MapGenerator.WindowSide;
-            int distance = ahead * MapGenerator.WindowSide;
-            return Position2Int.Offset(center,
-                right.x * lateral + forward.x * distance,
-                right.y * lateral + forward.y * distance);
         }
 
         private unsafe void CollectBlock(long block, int ring, ref int n, ref int missing)
@@ -360,7 +347,7 @@ namespace TheRavine.Generator.EndlessGenerators
                 batchProps[b].SetFloat(InstanceOffsetId, offsets[b]);
 
             float reach = (generator.LodRingCount * MapGenerator.WindowSide + 2) * MapGenerator.chunkSize;
-            float drop = CurvedWorld.MaxDrop(reach);
+            float drop = CurvedWorld.MaxDrop(reach * 1.4143f);
             Vector3 origin = MapGenerator.WindowOriginWorld(center);
             Vector3 mid = origin + new Vector3(MapGenerator.generationSize * 0.5f, 0f, MapGenerator.generationSize * 0.5f);
             var bounds = new Bounds(

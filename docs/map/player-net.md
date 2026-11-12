@@ -59,10 +59,12 @@ Open security findings: `docs/audit/security_audit.md`.
 ## Camera
 
 - One camera per owner, requested through `PlayerModelView.RequestCameraServerRpc`; a repeated request is ignored.
-- `CameraComponent` exists only for the local player and is the only writer of `ViewOrientation`.
-- The mouse wheel zooms; Mouse4 and Mouse5 turn the view by 90°, one step per press.
-- Debounce and turn time: `SimulationRules.CameraFlipDebounce`, `SimulationRules.CameraRotateSeconds`.
-- Smooth or instant turn: `GlobalSettings.smoothCameraRotation`.
+- `CameraComponent` exists only for the local player and is the only writer of `ViewOrientation`: yaw, pitch and distance, a rigid orbit around a smoothed pivot (player plus `AimAddition`), never below the terrain.
+- The mouse wheel changes only the camera distance (`CameraInputController`); `WheelCaptured` and `ConsumeWheelStep` serve the aim level.
+- Dragging the left button (on mobile a single touch that did not start on the joystick) inside the central square of 0.9 of the short screen side turns the view; a press over UI is not a drag. The rules are in `ViewDragGesture` and are tested.
+- A press that stays within `CameraDragThresholdPixels` is a click: `ViewClick` on release triggers `PlayerController.AimPlace`; a drag suppresses it.
+- Tuning is in `SimulationRules`: `CameraYawDegreesPerSide`, `CameraPitchDegreesPerSide`, `CameraPitchMin`, `CameraPitchMax`, `CameraDistanceMax`, `CameraDistanceMin`, `CameraTerrainClearance`.
+- Movement goes to the server as a world vector (`ViewOrientation.ToWorld` on the client); the server does not know the view.
 - What the view changes in the world: `docs/map/world.md`, section Camera view.
 
 ## Invariants

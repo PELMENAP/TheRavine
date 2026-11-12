@@ -27,8 +27,6 @@ namespace TheRavine.Base
         public float musicVolume = 1f;
         public float sfxVolume = 1f;
 
-        public bool smoothCameraRotation = true;
-        
 
         public void CopyFrom(GlobalSettings other)
         {
@@ -48,7 +46,6 @@ namespace TheRavine.Base
             masterVolume = other.masterVolume;
             musicVolume = other.musicVolume;
             sfxVolume = other.sfxVolume;
-            smoothCameraRotation = other.smoothCameraRotation;
         }
 
         public GlobalSettings Clone()
@@ -77,8 +74,7 @@ namespace TheRavine.Base
                    targetFps == other.targetFps &&
                    masterVolume == other.masterVolume &&
                    musicVolume == other.musicVolume &&
-                   sfxVolume == other.sfxVolume &&
-                   smoothCameraRotation == other.smoothCameraRotation;
+                   sfxVolume == other.sfxVolume;
         }
     }
 

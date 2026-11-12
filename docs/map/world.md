@@ -41,21 +41,25 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 
 ## Endless layers (`Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/`)
 
-- `EndlessTerrain`: central window mesh with collider, ring blocks along the viewing axis, two side blocks of ring 0.
-- `EndlessLiquids`: LOD water blocks on the same rings, index-based edge stitching.
+- `EndlessTerrain`: central window mesh with collider and a pool of block meshes for the blocks of the current view sector.
+- `EndlessLiquids`: LOD water blocks on the same blocks, index-based edge stitching against a coarser neighbour on any world side.
 - `EndlessObjects`: reuses object instances through `ObjectSystem`.
 - Mesh jobs: `TerrainMeshJobs.cs`. Grass: `GrassSystem` in the GrassGenerator folder. Ripples: the RippleSystem folder.
 
 ## Camera view
 
-- `ViewFacing` (`Assets/Scripts/Model/BehavioursMap/View/ViewFacing.cs`): four sides; helpers `Forward()`, `Right()`, `Yaw()`, `Rotate`, `Opposite()`.
-- `ViewOrientation`: single source of the view; written only by the local `CameraComponent`; event `FacingChanged`.
-- On a change it sets shader globals `_ViewBasis` and `_ViewColumn`; shader side in `Assets/Shaders/Include/ViewOrientation.hlsl`.
-- `MapGenerator.ViewRingOf` / `ViewRingOfChunk` describe only what the camera draws. `SimRingOf` describes what is simulated.
-- Visibility is a half-space along `Forward()` plus a lateral window along `Right()`; no frustum test.
-- World bend: `Assets/Shaders/Include/CurvedWorld.hlsl`, pushed by `CurvedWorld` in the Rendering folder.
-- A view-dependent component implements `IViewOriented` and registers with `ViewOrientation`; a plain transform uses `ViewOrientedTransform.Attach`.
-- Far billboards: `ObjectLodSet.BillboardSideCount`; atlas baked by `Assets/Scripts/Editor/TreeMeshBaker.cs`.
+- `ViewSector` (`Assets/Scripts/Model/BehavioursMap/View/ViewSector.cs`): 16 sectors of 22.5° with 3° hysteresis, each with a central direction; 0 is +Z, 4 is +X.
+- `ViewOrientation`: single source of the view (continuous yaw and pitch, `Forward`, `Right`, `ToWorld`); written only by the local `CameraComponent`. `ViewChanged` fires on every change, its listeners must be O(1); `SectorChanged` fires on a sector change, for heavy consumers.
+- Shader globals: `_ViewBasis` (continuous) and `_ViewColumn` (`ViewOrientation.ColumnOf`, nearest of `BakedSides` baked sides); shader side in `Assets/Shaders/Include/ViewOrientation.hlsl`.
+- Blocks sit on a world-anchored lattice: offset (bx, bz) from the window centre in `WindowSide` chunks; the LOD is the Chebyshev ring, equal to `SimRingOf`. A turn never changes the LOD or the mesh of a block.
+- `ViewWedge` picks the blocks of a sector. With f along and l across the central direction a block is drawn if f >= -0.75 and l <= 1.5 + tan(52° + 14.25°) * f. The half-angle is the ground half-angle of the frame (vertical FOV 50°, aspect up to 2.4) plus half a sector and the hysteresis; a wider screen needs a larger `FrustumHalfDegrees`.
+- `MapGenerator.ViewRingOf` / `ViewRingOfChunk` describe only what the camera draws. `SimRingOf` describes what is simulated and does not depend on the sector.
+- `IViewDirectional.SetSector`: `EndlessTerrain` and `EndlessLiquids` build only the blocks that entered (nearest rings and nearest to the view axis first); blocks that left are hidden and keep their mesh in the pool. `EndlessTerrain.BuiltBlocks` counts builds.
+- `FarObjectRenderer` rebuilds its instance buffer on a sector or window change at its existing rate limit; the pool, `sources` and the `farMaxInstances` budget are sized from `ViewWedge.MaxBlocks`.
+- `GrassSystem` lays out the whole window; `PlaceGrass.compute` drops blades behind a half-plane along the sector direction (`backMargin`; `cullBehind` and `logStats` compare counts).
+- World bend: `Assets/Shaders/Include/CurvedWorld.hlsl` bends radially around the camera pivot (`_CurveParams`, `_CurveFocus`), pushed by `CurvedWorld`; the focus is `ViewOrientation.Pivot`.
+- A view-dependent component implements `IViewOriented` (called on every `ViewChanged`, O(1)) and registers with `ViewOrientation`; a plain transform uses `ViewOrientedTransform.Attach`.
+- Far billboards: `BakedSides` sides in a circle (column k looks with yaw k * 360 / N); atlas baked by `Assets/Scripts/Editor/TreeMeshBaker.cs`; atlases baked with another side count must be re-baked.
 
 ## Objects
 

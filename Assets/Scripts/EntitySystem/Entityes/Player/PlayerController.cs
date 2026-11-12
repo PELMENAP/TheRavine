@@ -35,7 +35,7 @@ namespace TheRavine.EntityControl
         [SerializeField] private float craftRate = 5f, craftBurst = 5f;
         [SerializeField] private float craftTimeTolerance = 0.9f;
         [SerializeField] private float jumpChargeSlack = 0.2f;
-        [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick, Jump;
+        [SerializeField] private InputActionReference Movement, Raise, RightClick, Jump;
         [SerializeField] private Joystick joystick;
         [SerializeField] private Transform crosshair;
         [SerializeField] private PlayerAnimator playerAnimator;
@@ -134,7 +134,6 @@ namespace TheRavine.EntityControl
                 staminaRegenFraction, staminaRecoveryDelay, energyPerStamina);
 
             Raise.action.performed += AimRaise;
-            LeftClick.action.performed += AimPlace;
 
             RightClick.action.started += OnActionStarted;
             RightClick.action.canceled += OnActionCanceled;
@@ -227,6 +226,7 @@ namespace TheRavine.EntityControl
             playerRigidbody = GetComponent<Rigidbody>();
 
             entityEventBus = playerEntity.GetEntityComponent<EventBusComponent>().EventBus;
+            entityEventBus.Subscribe<ViewClick>(OnViewClick);
             movementComponent = playerEntity.GetEntityComponent<MovementComponent>();
             aimComponent = playerEntity.GetEntityComponent<AimComponent>();
             stats = playerEntity.GetEntityComponent<StatsComponent>();
@@ -368,7 +368,7 @@ namespace TheRavine.EntityControl
             if (isAimMode || !IsOwner || inputSuspended) return;
 
             Vector2 screenInput = currentController.GetMove();
-            float2 world = ViewOrientation.Facing.ToWorld(screenInput);
+            float2 world = ViewOrientation.ToWorld(screenInput);
             movementDirection = new Vector2(world.x, world.y);
             float movementMagnitude = movementDirection.magnitude;
 
@@ -648,6 +648,8 @@ namespace TheRavine.EntityControl
             }
         }
 
+        private void OnViewClick(AEntity sender, ViewClick e) => AimPlace(new InputAction.CallbackContext());
+
         private void AimPlace(InputAction.CallbackContext obj)
         {
             if (inputSuspended) return;
@@ -890,7 +892,7 @@ namespace TheRavine.EntityControl
         public void OnDisable()
         {
             Raise.action.performed -= AimRaise;
-            LeftClick.action.performed -= AimPlace;
+            entityEventBus?.Unsubscribe<ViewClick>(OnViewClick);
 
             RightClick.action.started -= OnActionStarted;
             RightClick.action.canceled -= OnActionCanceled;

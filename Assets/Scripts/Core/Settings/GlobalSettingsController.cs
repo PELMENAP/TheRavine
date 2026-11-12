@@ -57,8 +57,15 @@ namespace TheRavine.Base
                 if (await _repository.ExistsAsync())
                 {
                     var settings = await _repository.LoadAsync();
-                    _settings.Value = settings;
-                    _logger.LogInfo("[GlobalSettings] Настройки загружены");
+                    if (settings != null)
+                    {
+                        _settings.Value = settings;
+                        _logger.LogInfo("[GlobalSettings] Настройки загружены");
+                    }
+                    else
+                    {
+                        _logger.LogWarning("[GlobalSettings] Сохранённые настройки не прочитаны, используются настройки по умолчанию");
+                    }
                 }
                 else
                 {

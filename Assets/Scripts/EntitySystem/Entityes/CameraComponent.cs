@@ -2,6 +2,7 @@ using UnityEngine;
 
 using TheRavine.Base;
 using TheRavine.EntityControl;
+using TheRavine.Generator;
 using TheRavine.ViewControl;
 
 public interface ICameraComponent : IComponent
@@ -19,17 +20,12 @@ public class CameraComponent : ICameraComponent
     private readonly float SoftLerpSpeed = 2f;
 
     private readonly float FollowFactor = 4f;
-    private Vector3 baseOffset = new(0, 30, -35);
-    private Vector3 zOffset = new(0, 30, -35);
-    private ViewFacing facing;
-    private float pitch, yaw, rotateFrom, rotateTo, rotateTime, rotateDuration;
-    private bool rotating;
+    private float yaw, pitch, distance;
     private TransformComponent playerTransformComponent;
-    private Vector3 targetPos, factMousePositionOffset;
+    private Vector3 pivot, targetPos, factMousePositionOffset;
+    private MapGenerator map;
 
-    private CameraMovingConfig cameraMove;
-    
-    public void SetUp(PlayerEntity playerEntity, Camera camera, Transform cameraTransform, CameraMovingConfig cameraMove)
+    public void SetUp(PlayerEntity playerEntity, Camera camera, Transform cameraTransform)
     {
         playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<AimAddition>(AimAdditionHandleEvent);
         playerEntity.GetEntityComponent<EventBusComponent>().EventBus.Subscribe<CameraPlace>(CameraPlaceHandleEvent);
@@ -37,139 +33,86 @@ public class CameraComponent : ICameraComponent
         playerTransformComponent = playerEntity.GetEntityComponent<TransformComponent>();
         this.camera = camera;
         this.cameraTransform = cameraTransform;
-        this.cameraMove = cameraMove;
-        facing = ViewOrientation.Facing;
-        yaw = facing.Yaw();
-        pitch = cameraTransform.eulerAngles.x;
-        zOffset = Quaternion.Euler(0, yaw, 0) * baseOffset;
-        cameraTransform.position = playerTransformComponent.GetEntityPosition() + zOffset;
-        ViewOrientation.Set(facing, pitch, yaw);
+
+        var rules = SimulationRules.Active;
+        yaw = ViewOrientation.YawDegrees;
+        pitch = rules.CameraPitchInitial;
+        distance = DistanceFor(0f);
+
+        pivot = playerTransformComponent.GetEntityPosition();
+        ApplyView();
     }
 
     private void AimAdditionHandleEvent(AEntity entity, AimAddition e)
     {
         factMousePositionOffset = new Vector3(e.Position.x, 0, e.Position.y);
     }
+
     private void CameraPlaceHandleEvent(AEntity entity, CameraPlace e)
     {
-        pitch = 40 - cameraMove.xRotationCurve.Evaluate(e.scale) * 20;
-        baseOffset = new Vector3(0, 30 - cameraMove.yCurve.Evaluate(e.scale) * 20, -35 + cameraMove.zCurve.Evaluate(e.scale) * 15);
-
-        if (e.facing != facing) BeginRotation(e.facing);
-        else if (!rotating) ApplyView();
-    }
-
-    private void BeginRotation(ViewFacing newFacing)
-    {
-        facing = newFacing;
-        float target = yaw + Mathf.DeltaAngle(yaw, newFacing.Yaw());
-        float seconds = IsSmoothRotation() ? SimulationRules.Active.CameraRotateSeconds : 0f;
-
-        if (seconds <= 0f)
-        {
-            rotating = false;
-            yaw = newFacing.Yaw();
-        }
-        else
-        {
-            rotating = true;
-            rotateFrom = yaw;
-            rotateTo = target;
-            rotateTime = 0f;
-            rotateDuration = seconds;
-        }
-
+        var rules = SimulationRules.Active;
+        yaw = e.yaw;
+        pitch = Mathf.Clamp(e.pitch, rules.CameraPitchMin, rules.CameraPitchMax);
+        distance = DistanceFor(e.scale);
         ApplyView();
     }
 
-    private static bool IsSmoothRotation() =>
-        ServiceLocator.Services.TryGet(out GlobalSettingsController settings) && settings.GetCurrent().smoothCameraRotation;
-
-    private void UpdateRotation()
+    private static float DistanceFor(float scale)
     {
-        if (!rotating) return;
-
-        rotateTime += Time.deltaTime;
-        float t = Mathf.Clamp01(rotateTime / rotateDuration);
-        if (t >= 1f)
-        {
-            rotating = false;
-            yaw = Mathf.Repeat(rotateTo, 360f);
-        }
-        else
-        {
-            yaw = Mathf.Lerp(rotateFrom, rotateTo, t * t * (3f - 2f * t));
-        }
-
-        ApplyView();
+        var rules = SimulationRules.Active;
+        return Mathf.Lerp(rules.CameraDistanceMax, rules.CameraDistanceMin, scale);
     }
 
     private void ApplyView()
     {
-        zOffset = Quaternion.Euler(0, yaw, 0) * baseOffset;
-        cameraTransform.rotation = Quaternion.Euler(pitch, yaw, 0);
-        ViewOrientation.Set(facing, pitch, yaw);
+        Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
+        Vector3 position = pivot + rotation * new Vector3(0f, 0f, -distance);
+
+        if (map != null || ServiceLocator.Services.TryGet(out map))
+        {
+            if (map.TrySampleHeightBilinear(position.x, position.z, out float ground))
+                position.y = Mathf.Max(position.y, ground + SimulationRules.Active.CameraTerrainClearance);
+        }
+
+        cameraTransform.SetPositionAndRotation(position, rotation);
+        ViewOrientation.SetPivot(pivot);
+        ViewOrientation.Set(yaw, pitch);
     }
 
     public void CameraUpdate()
     {
-        UpdateRotation();
-        UpdateDefault();
+        UpdatePivot();
+        ApplyView();
     }
 
-    private void UpdateDefault()
+    private void UpdatePivot()
     {
-        targetPos = playerTransformComponent.GetEntityPosition()
-                    + factMousePositionOffset
-                    + zOffset;
+        targetPos = playerTransformComponent.GetEntityPosition() + factMousePositionOffset;
 
-        var currentPos = cameraTransform.position;
-        var delta = targetPos - currentPos;
-        var distance = delta.magnitude;
+        var delta = targetPos - pivot;
+        var dist = delta.magnitude;
 
-        if (distance < MinDistance)
+        if (dist < MinDistance)
             return;
 
-        if (distance < SoftDistance)
+        if (dist < SoftDistance)
         {
-            var t = Mathf.InverseLerp(MinDistance, SoftDistance, distance);
+            var t = Mathf.InverseLerp(MinDistance, SoftDistance, dist);
             var lerpSpeed = SoftLerpSpeed * t;
 
-            cameraTransform.position = Vector3.Lerp(
-                currentPos,
-                targetPos,
-                lerpSpeed * Time.deltaTime
-            );
-
+            pivot = Vector3.Lerp(pivot, targetPos, lerpSpeed * Time.deltaTime);
             return;
         }
 
-        var speed = distance * FollowFactor;
+        var speed = dist * FollowFactor;
 
-        cameraTransform.position = Vector3.MoveTowards(
-            currentPos,
-            targetPos,
-            speed * Time.deltaTime
-        );
+        pivot = Vector3.MoveTowards(pivot, targetPos, speed * Time.deltaTime);
     }
+
     public void Dispose()
     {
+        ViewOrientation.ClearPivot();
     }
 
     public Camera GetCamera() => camera;
-}
-
-[System.Serializable]
-public struct CameraMovingConfig
-{
-    public AnimationCurve zCurve;
-    public AnimationCurve yCurve;
-    public AnimationCurve xRotationCurve;
-
-    public CameraMovingConfig(AnimationCurve zCurve, AnimationCurve yCurve, AnimationCurve xRotationCurve)
-    {
-        this.zCurve = zCurve;
-        this.yCurve = yCurve;
-        this.xRotationCurve = xRotationCurve;
-    }
 }

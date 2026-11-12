@@ -39,9 +39,10 @@ namespace TheRavine.Generator
             {
                 public Transform Transform;
                 public MeshFilter Filter;
+                public MeshRenderer Renderer;
                 public GameObject Owned;
-                public int Dx;
-                public int Row;
+                public int Bx;
+                public int Bz;
                 public int Level;
             }
 
@@ -49,66 +50,59 @@ namespace TheRavine.Generator
             private readonly int ringCount;
             private readonly int baseCells;
             private readonly Bounds localBounds;
-            private readonly WaterBlock[] blocks;
+            private readonly WaterBlock central;
+            private readonly WaterBlock[] pool;
+            private readonly ViewBlock[] wanted;
             private readonly Dictionary<int, Mesh> meshes = new();
             private readonly Mesh centralOriginal;
 
             private long center;
             private bool hasCenter;
-            private ViewFacing facing;
+            private ViewSector sector;
 
             public EndlessLiquids(MapGenerator _generator, ChunkGenerationSettings settings)
             {
                 generator = _generator;
-                facing = generator.Facing;
+                sector = generator.Sector;
                 ringCount = generator.LodRingCount;
                 baseCells = math.clamp(math.ceilpow2(settings.waterCells), MinCells, MaxCells);
+                float reach = (ringCount * MapGenerator.WindowSide + 2) * MapGenerator.chunkSize * 1.4143f;
+                float boundsHeight = BoundsHeight + 2f * CurvedWorld.MaxDrop(reach);
                 localBounds = new Bounds(
                     new Vector3(BlockWorld * 0.5f, 0f, BlockWorld * 0.5f),
-                    new Vector3(BlockWorld, BoundsHeight, BlockWorld));
+                    new Vector3(BlockWorld, boundsHeight, BlockWorld));
 
-                Transform central = generator.waterTransform;
-                central.localScale = Vector3.one;
+                Transform central0 = generator.waterTransform;
+                central0.localScale = Vector3.one;
 
-                var centralFilter = central.GetComponent<MeshFilter>();
-                if (centralFilter == null) centralFilter = central.gameObject.AddComponent<MeshFilter>();
+                var centralFilter = central0.GetComponent<MeshFilter>();
+                if (centralFilter == null) centralFilter = central0.gameObject.AddComponent<MeshFilter>();
                 centralOriginal = centralFilter.sharedMesh;
 
-                var renderer = central.GetComponent<MeshRenderer>();
+                var renderer = central0.GetComponent<MeshRenderer>();
                 Material material = renderer.sharedMaterial;
-                Transform root = central.parent;
+                Transform root = central0.parent;
 
-                int count = 3;
-                for (int r = 1; r <= ringCount; r++)
-                    count += 2 * r + 1;
+                int poolSize = ringCount > 0 ? ViewWedge.MaxBlocks(ringCount) : 0;
+                pool = new WaterBlock[poolSize];
+                wanted = new ViewBlock[math.max(poolSize, 1)];
 
-                blocks = new WaterBlock[count];
-                blocks[0] = new WaterBlock { Transform = central, Filter = centralFilter, Dx = 0, Row = 0, Level = 0 };
+                central = new WaterBlock { Transform = central0, Filter = centralFilter, Renderer = renderer, Bx = 0, Bz = 0, Level = 0 };
+                for (int i = 0; i < poolSize; i++)
+                    pool[i] = CreateBlock(i, material, root);
 
-                int b = 1;
-                for (int side = -1; side <= 1; side += 2)
-                    blocks[b++] = CreateBlock(side, 0, material, root);
-
-                for (int row = 1; row <= ringCount; row++)
-                {
-                    for (int k = 0; k <= 2 * row; k++)
-                    {
-                        int dx = ((k + 1) >> 1) * ((k & 1) == 1 ? -1 : 1);
-                        blocks[b++] = CreateBlock(dx, row, material, root);
-                    }
-                }
-
-                AssignMeshes();
+                ApplySector();
             }
 
-            private WaterBlock CreateBlock(int dx, int row, Material material, Transform root)
+            private WaterBlock CreateBlock(int index, Material material, Transform root)
             {
-                var go = new GameObject($"WaterLOD_Ring{row}_{dx}") { layer = generator.waterTransform.gameObject.layer };
+                var go = new GameObject($"WaterBlock_{index}") { layer = generator.waterTransform.gameObject.layer };
                 if (root != null) go.transform.SetParent(root, false);
 
                 var filter = go.AddComponent<MeshFilter>();
                 var renderer = go.AddComponent<MeshRenderer>();
                 renderer.sharedMaterial = material;
+                renderer.enabled = false;
                 var source = generator.waterTransform.GetComponent<MeshRenderer>();
                 renderer.shadowCastingMode = source.shadowCastingMode;
                 renderer.receiveShadows = source.receiveShadows;
@@ -120,58 +114,72 @@ namespace TheRavine.Generator
                 {
                     Transform = go.transform,
                     Filter = filter,
+                    Renderer = renderer,
                     Owned = go,
-                    Dx = dx,
-                    Row = row,
-                    Level = LevelAt(dx, row)
+                    Level = -1
                 };
             }
 
-            private int LevelAt(int dx, int row)
+            private int LevelAt(int bx, int bz)
             {
-                if (row < 0 || row > ringCount) return -1;
-                if (row == 0)
-                {
-                    int ax = math.abs(dx);
-                    return ax == 0 ? 0 : (ax == 1 ? 1 : -1);
-                }
-                return math.abs(dx) <= row ? row : -1;
+                int ring = ViewWedge.Ring(bx, bz);
+                if (ring > ringCount) return -1;
+                return ViewWedge.Contains(sector, bx, bz) ? ring : -1;
             }
 
             private int CellsOf(int level) => math.max(MinCells, baseCells >> level);
 
-            private int StitchMask(WaterBlock block)
+            private int StitchMask(int bx, int bz, int level)
             {
-                int cells = CellsOf(block.Level);
-                int2 right = facing.Right();
-                int2 forward = facing.Forward();
+                int cells = CellsOf(level);
                 int mask = 0;
-                if (Coarser(block.Dx - right.x, block.Row - forward.x, cells)) mask |= NegX;
-                if (Coarser(block.Dx + right.x, block.Row + forward.x, cells)) mask |= PosX;
-                if (Coarser(block.Dx - right.y, block.Row - forward.y, cells)) mask |= NegZ;
-                if (Coarser(block.Dx + right.y, block.Row + forward.y, cells)) mask |= PosZ;
+                if (Coarser(bx - 1, bz, cells)) mask |= NegX;
+                if (Coarser(bx + 1, bz, cells)) mask |= PosX;
+                if (Coarser(bx, bz - 1, cells)) mask |= NegZ;
+                if (Coarser(bx, bz + 1, cells)) mask |= PosZ;
                 return mask;
             }
 
-            private bool Coarser(int dx, int row, int cells)
+            private bool Coarser(int bx, int bz, int cells)
             {
-                int level = LevelAt(dx, row);
+                int level = LevelAt(bx, bz);
                 return level >= 0 && CellsOf(level) < cells;
             }
 
-            private void AssignMeshes()
+            private void AssignMesh(WaterBlock block)
             {
-                for (int i = 0; i < blocks.Length; i++)
+                int key = (block.Level << 4) | StitchMask(block.Bx, block.Bz, block.Level);
+                if (!meshes.TryGetValue(key, out Mesh mesh))
                 {
-                    WaterBlock block = blocks[i];
-                    int key = (block.Level << 4) | StitchMask(block);
-                    if (!meshes.TryGetValue(key, out Mesh mesh))
-                    {
-                        mesh = BuildMesh(block.Level, key & 15);
-                        meshes.Add(key, mesh);
-                    }
-                    block.Filter.sharedMesh = mesh;
+                    mesh = BuildMesh(block.Level, key & 15);
+                    meshes.Add(key, mesh);
                 }
+                block.Filter.sharedMesh = mesh;
+            }
+
+            private void ApplySector()
+            {
+                AssignMesh(central);
+
+                int count = pool.Length > 0 ? ViewWedge.Collect(sector, ringCount, wanted) : 0;
+                for (int i = 0; i < pool.Length; i++)
+                {
+                    WaterBlock block = pool[i];
+                    if (i >= count)
+                    {
+                        block.Renderer.enabled = false;
+                        block.Level = -1;
+                        continue;
+                    }
+
+                    block.Bx = wanted[i].X;
+                    block.Bz = wanted[i].Z;
+                    block.Level = wanted[i].Ring;
+                    AssignMesh(block);
+                    block.Renderer.enabled = true;
+                }
+
+                if (hasCenter) Place();
             }
 
             private Mesh BuildMesh(int level, int mask)
@@ -253,36 +261,32 @@ namespace TheRavine.Generator
                 center = newCenter;
                 hasCenter = true;
 
-                Place();
+                ApplySector();
 
                 float waterXPosition = (Position2Int.GetX(center) + 0.5f) * MapGenerator.chunkSize;
                 float waterZPosition = (Position2Int.GetY(center) + 0.5f) * MapGenerator.chunkSize;
                 RippleStampSystem.Instance.SetWaterPosition(waterXPosition, waterZPosition);
             }
 
-            public void SetFacing(ViewFacing newFacing)
+            public void SetSector(ViewSector newSector)
             {
-                if (newFacing == facing) return;
-                facing = newFacing;
+                if (newSector == sector) return;
+                sector = newSector;
 
-                AssignMeshes();
-                if (hasCenter) Place();
+                ApplySector();
             }
 
             private void Place()
             {
                 Vector3 origin = MapGenerator.WindowOriginWorld(center);
                 origin.y = generator.waterOffset.y;
-                int2 right = facing.Right();
-                int2 forward = facing.Forward();
 
-                for (int i = 0; i < blocks.Length; i++)
+                central.Transform.position = origin;
+                for (int i = 0; i < pool.Length; i++)
                 {
-                    WaterBlock block = blocks[i];
-                    block.Transform.position = origin + new Vector3(
-                        (right.x * block.Dx + forward.x * block.Row) * BlockWorld,
-                        0f,
-                        (right.y * block.Dx + forward.y * block.Row) * BlockWorld);
+                    WaterBlock block = pool[i];
+                    if (block.Level < 0) continue;
+                    block.Transform.position = origin + new Vector3(block.Bx * BlockWorld, 0f, block.Bz * BlockWorld);
                 }
             }
 
@@ -292,17 +296,17 @@ namespace TheRavine.Generator
 
             public void Dispose()
             {
-                if (blocks != null)
+                if (pool != null)
                 {
-                    for (int i = 0; i < blocks.Length; i++)
+                    for (int i = 0; i < pool.Length; i++)
                     {
-                        if (blocks[i].Owned != null)
-                            Object.Destroy(blocks[i].Owned);
+                        if (pool[i].Owned != null)
+                            Object.Destroy(pool[i].Owned);
                     }
-
-                    if (blocks[0].Filter != null)
-                        blocks[0].Filter.sharedMesh = centralOriginal;
                 }
+
+                if (central != null && central.Filter != null)
+                    central.Filter.sharedMesh = centralOriginal;
 
                 foreach (var pair in meshes)
                 {
