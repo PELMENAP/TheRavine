@@ -1,0 +1,51 @@
+#pragma kernel Decay
+#pragma kernel Stamp
+
+struct StampData
+{
+    float2 position;
+    float radius;
+    float strength;
+};
+
+Texture2D<float> Source;
+RWTexture2D<float> Target;
+StructuredBuffer<StampData> Stamps;
+
+int Size;
+int ShiftX;
+int ShiftZ;
+float Keep;
+float Floor;
+
+static const int Footprint = 16;
+static const int HalfFootprint = Footprint / 2;
+
+[numthreads(8, 8, 1)]
+void Decay(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)Size || id.y >= (uint)Size) return;
+
+    int2 src = int2(id.xy) + int2(ShiftX, ShiftZ);
+    float v = 0.0;
+    if (all(src >= 0) && all(src < Size))
+        v = Source[src];
+
+    Target[id.xy] = max(0.0, v * Keep - Floor);
+}
+
+[numthreads(16, 16, 1)]
+void Stamp(uint3 group : SV_GroupID, uint3 thread : SV_GroupThreadID)
+{
+    StampData s = Stamps[group.x];
+
+    int2 texel = (int2)floor(s.position) - HalfFootprint + int2(thread.xy);
+    if (any(texel < 0) || any(texel >= Size)) return;
+
+    float d = length(float2(texel) + 0.5 - s.position);
+    float t = saturate(1.0 - d / s.radius);
+    float add = s.strength * t * t;
+    if (add <= 0.0) return;
+
+    Target[texel] = saturate(Target[texel] + add);
+}

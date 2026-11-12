@@ -130,6 +130,7 @@ public class EntityManager : MonoBehaviour
     private double _nextSoilFeedTime;
     private double _nextSeasonFeedTime;
     private SoilShaderFeed _soilFeed;
+    private GrassTrampleField _trample;
     private TickWindowBudget _tickBudget;
 
     private static readonly ProfilerMarker TickAgentsMarker  = new("EntityManager.TickAgents");
@@ -214,6 +215,21 @@ public class EntityManager : MonoBehaviour
         _speech.Flush(_grid, SimulationClock.TimeD);
         _planner.Flush();
         _motion.Step();
+        StampAgents(SimulationClock.DeltaTime);
+    }
+
+    private void StampAgents(float dt)
+    {
+        if (dt <= 0f || _entities.Count == 0) return;
+        if ((_trample == null || _trample.IsDisposed) && !ServiceLocator.Services.TryGet(out _trample)) return;
+
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            var e = _entities[i];
+            if (e == null || e.IsDisposed || e.IsDeathPending) continue;
+            Vector3 v = e.Motor is IVelocitySource source ? source.Velocity : Vector3.zero;
+            _trample.StampCreature(e.Position2D, new float2(v.x, v.z), e.Stats.MaxEnergy, dt);
+        }
     }
 
     private void ApplyFireHeat()

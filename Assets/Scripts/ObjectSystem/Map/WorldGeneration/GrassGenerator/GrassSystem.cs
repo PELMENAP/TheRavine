@@ -187,6 +187,9 @@ public class GrassSystem : MonoBehaviour
         pendingCenter = center;
         hasPending = true;
 
+        if (ServiceLocator.Services.TryGet(out GrassTrampleField trampleField) && !trampleField.IsDisposed)
+            trampleField.Recenter(center);
+
         if (!isGrass || instanceBuffer == null) return;
 
         hasPending = false;
