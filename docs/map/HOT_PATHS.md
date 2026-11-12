@@ -91,6 +91,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 ## Rendering
 
 `FarObjectRenderer`, `GrassSystem`, `EndlessTerrain`, `EndlessLiquids`: per-frame `Tick` and `Render`. Shader properties by cached id only.
+`GrassTrampleField.Stamp` and `StampCreature`, `EntityManager.StampAgents`, `SoilShaderFeed.Publish`: no allocation; tests `GrassTrampleFieldTests`, `SoilShaderFeedTests`.
 
 ## Server request path
 

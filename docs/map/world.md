@@ -44,6 +44,14 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 - `EndlessTerrain`: central window mesh with collider and a pool of block meshes for the blocks of the current view sector.
 - `EndlessLiquids`: LOD water blocks on the same blocks, index-based edge stitching against a coarser neighbour on any world side.
 - `EndlessObjects`: reuses object instances through `ObjectSystem`.
+- `EndlessObjects` animates only an existing view whose `ChunkData.Version` changed; streaming a new view never animates.
+- `ObjectViewMotion` (`Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/ObjectViewMotion.cs`): LitMotion slots, fixed budget; over budget a change is instant.
+- A new object pops in, a removed one shrinks and is then released; `ReleaseView` cancels motions and releases at once. `PooledObject.BaseScale` is restored in `Pool.Get`.
+- NAL growth: a `BehaviourType.GROW` object whose cell turns into its `EvolutionStep` keeps its pooled instance and scales to the next size over `growthDuration`, then the next stage is taken.
+- Growth ratio: `ObjectGrowthMath.Resolve`: renderer bounds per axis (cached per pool pair), else `CollisionTable` heights, else 1. The data already holds the next stage.
+- Soil and trample on grass: `GrassInstancedShader.shader` reads `SoilShaderFeed` (`_SoilBuffer`) and `GrassTrampleField` (`_GrassTrample`) at render time; placement is untouched.
+- `GrassTrampleField`: window-aligned R16 texture, compute decay and stamps from a fixed-capacity buffer; hosted by `GrassPlayersManger`, found by `ServiceLocator`, recentred by `GrassSystem`.
+- Every creature stamps through `GrassTrampleField.StampCreature`: `EntityManager` for agents, `PlayerController` for players. Colony trails are not written into it.
 - Mesh jobs: `TerrainMeshJobs.cs`. Grass: `GrassSystem` in the GrassGenerator folder. Ripples: the RippleSystem folder.
 
 ## Camera view

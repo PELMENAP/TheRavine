@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -202,9 +203,18 @@ namespace TheRavine.Generator.EndlessGenerators
                 && next.TryGetFirstActive(out PooledObject sample)
                 && TryMeasure(sample, out toSize);
 
-            Vector3 ratio = ObjectGrowthMath.Resolve(fromSize, toSize, infoFrom.Levels, infoNext.Levels);
+            Vector3 ratio = ObjectGrowthMath.Resolve(fromSize, toSize, CollisionHeight(infoFrom.Id), CollisionHeight(infoNext.Id));
             if (known) growthRatios[key] = ratio;
             return ratio;
+        }
+
+        private float CollisionHeight(int id)
+        {
+            CollisionTable table = generator.Collision;
+            if (table == null) return 0f;
+
+            NativeArray<CollisionShape> shapes = table.Set.Shapes;
+            return shapes.IsCreated && (uint)id < (uint)shapes.Length ? shapes[id].Height : 0f;
         }
 
         private bool TryMeasure(PooledObject obj, out Vector3 size)

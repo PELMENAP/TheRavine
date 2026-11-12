@@ -9,7 +9,12 @@ namespace TheRavine.Generator
     {
         private IMapEvent[] _events = new IMapEvent[4];
         private int _count;
+        private static readonly int SeasonId         = Shader.PropertyToID("_Season");
+        private static readonly int WinterApproachId = Shader.PropertyToID("_WinterApproach");
+        private const double SeasonPublishInterval = 1d;
+
         private Camera _camera;
+        private double _nextSeasonPublish;
         private bool _disposed;
 
         public MapEventRules Rules { get; }
@@ -47,8 +52,22 @@ namespace TheRavine.Generator
                 for (int i = 0; i < _count; i++) _events[i].Step(now, dt);
             }
 
+            PublishSeason();
+
             if (_camera == null) _camera = Camera.main;
             for (int i = 0; i < _count; i++) _events[i].Render(_camera);
+        }
+
+        private void PublishSeason()
+        {
+            if (Season == null) return;
+
+            double now = SimulationClock.TimeD;
+            if (now < _nextSeasonPublish) return;
+            _nextSeasonPublish = now + SeasonPublishInterval;
+
+            Shader.SetGlobalFloat(SeasonId, Season.Value(now));
+            Shader.SetGlobalFloat(WinterApproachId, Season.WinterApproach(now));
         }
 
         public void Dispose()
@@ -59,6 +78,8 @@ namespace TheRavine.Generator
             Array.Clear(_events, 0, _count);
             _count = 0;
             Season = null;
+            Shader.SetGlobalFloat(SeasonId, 0f);
+            Shader.SetGlobalFloat(WinterApproachId, 0f);
             _camera = null;
         }
     }

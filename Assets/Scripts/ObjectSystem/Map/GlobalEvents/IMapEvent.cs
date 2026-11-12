@@ -13,5 +13,6 @@ namespace TheRavine.Generator
     {
         float Value(double time);
         bool IsWinter(double time);
+        float WinterApproach(double time);
     }
 }

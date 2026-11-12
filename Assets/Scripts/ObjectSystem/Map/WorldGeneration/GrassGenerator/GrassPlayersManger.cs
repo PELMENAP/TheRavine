@@ -7,13 +7,16 @@ public class GrassPlayersManger : MonoBehaviour
     [SerializeField] private ComputeShader trampleCompute;
     [SerializeField] private GrassTrampleSettings trample = new();
 
+    private const string ResourcePath = "Grass/GrassTrample";
+
     private GrassTrampleField field;
 
     private void OnEnable()
     {
-        if (trampleCompute == null)
+        ComputeShader compute = trampleCompute != null ? trampleCompute : Resources.Load<ComputeShader>(ResourcePath);
+        if (compute == null)
         {
-            RavineLog.Warning("Grass trample compute shader is not assigned: grass will not react to creatures");
+            RavineLog.Warning("Grass trample compute shader not found: grass will not react to creatures");
             return;
         }
 
@@ -27,7 +30,7 @@ public class GrassPlayersManger : MonoBehaviour
         }
         if (!grass) return;
 
-        field = new GrassTrampleField(trampleCompute, trample);
+        field = new GrassTrampleField(compute, trample);
         ServiceLocator.Register(field);
     }
 
