@@ -10,6 +10,7 @@ One map per subsystem. Open only the map of the area the task touches; the routi
 | `docs/map/ai.md` | Agents, colonies, shared brain, learning, perception, speech, debug |
 | `docs/map/virology.md` | Genome tape, ribosome, strains, infection |
 | `docs/map/world.md` | Chunks, terrain, objects, random ticks, NAL, camera rings, rendering |
+| `docs/map/map-events.md` | `GlobalMapEvents` over `MapGenerator`: fire, later weather |
 | `docs/map/jobs.md` | Agent motion, move planner, bird boids, menu boids |
 | `docs/map/inventory-ui.md` | Inventory, craft, item data, UI |
 | `docs/map/terminal.md` | Terminal, Rive interpreter, gestures |

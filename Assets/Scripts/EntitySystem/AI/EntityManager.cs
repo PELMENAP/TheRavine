@@ -53,16 +53,8 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private float cullAxisMargin = 8f;
     private Camera _cullCamera;
     private MapGenerator _map;
-    private FireTickHandler _fire;
-    private FireView _fireView;
-
-    [Header("Fire view")]
-    [SerializeField] private bool showFire = true;
-    [SerializeField] private Material fireFlameMaterial;
-    [SerializeField] private Material fireSmokeMaterial;
-    [SerializeField, Min(0)] private int fireLights = 4;
-    [SerializeField, Min(0f)] private float fireLightIntensity = 6f;
-    [SerializeField, Min(0.1f)] private float fireLightRange = 14f;
+    private FireEvent _fire;
+    private int _fireStepSeen = -1;
 
     [Header("Nest views")]
     [SerializeField] private bool showNestViews = true;
@@ -200,17 +192,33 @@ public class EntityManager : MonoBehaviour
                 _nextSimulationLogTime = now + SimulationRules.Active.SimulationLogIntervalSeconds;
             }
             if (now >= _tickStartTime) TickAgents(SimulationClock.DeltaTime);
-            _fire?.Step(now, SimulationClock.DeltaTime, _entities);
-            if (_fireView != null)
-            {
-                if (_cullCamera == null) _cullCamera = Camera.main;
-                _fireView.Render(_cullCamera);
-            }
+            ApplyFireHeat();
         }
 
         _speech.Flush(_grid, SimulationClock.TimeD);
         _planner.Flush();
         _motion.Step();
+    }
+
+    private void ApplyFireHeat()
+    {
+        FireEvent fire = _fire;
+        if (fire == null || fire.IsDisposed || fire.StepIndex == _fireStepSeen) return;
+        _fireStepSeen = fire.StepIndex;
+        if (fire.BurningCount == 0) return;
+
+        float step = fire.LastStep;
+        float4 bounds = fire.HeatBounds;
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            EntityModel e = _entities[i];
+            if (e.IsDisposed || e.IsDeathPending) continue;
+
+            float2 p = e.Position2D;
+            if (p.x < bounds.x || p.y < bounds.y || p.x > bounds.z || p.y > bounds.w) continue;
+            float damage = fire.HeatDamageAt(p) * step;
+            if (damage > 0f) e.TakeDamage(damage, null, DeathCause.Burn);
+        }
     }
 
     private void DecayWarmth(double now)
@@ -405,13 +413,10 @@ public class EntityManager : MonoBehaviour
         var foodIndex = await ServiceLocator.WaitUntilServiceReady<ChunkFoodIndex>();
         _food.Bind(foodIndex, SimulationClock.Time);
 
-        if (map.RandomTicks != null && ServiceLocator.Services.TryGet(out ObjectSystem objects))
+        if (map.Events != null)
         {
-            _fire = new FireTickHandler(map, objects.infoRegistry, foodIndex);
-            map.RandomTicks.Register(_fire);
-            if (showFire)
-                _fireView = FireView.TryCreate(_fire, map, fireFlameMaterial, fireSmokeMaterial,
-                    fireLights, fireLightIntensity, fireLightRange);
+            map.Events.Season = SeasonClockSource.Instance;
+            _fire = map.Events.Fire;
         }
 
         for (int i = 0; i < initialCount; i++)
@@ -891,8 +896,7 @@ public class EntityManager : MonoBehaviour
         for (int i = 0; i < _nestViews.Count; i++)
             if (_nestViews[i] != null) Destroy(_nestViews[i].gameObject);
         _nestViews.Clear();
-        _fireView?.Dispose();
-        _fire?.Dispose();
+        _fire = null;
         _infection?.Dispose();
         _population?.ProcessPendingDeaths();
         _population?.FlushDeferredDisposals();

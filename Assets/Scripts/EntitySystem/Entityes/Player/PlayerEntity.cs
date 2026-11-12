@@ -4,6 +4,7 @@ using Unity.Mathematics;
 
 using TheRavine.Base;
 using TheRavine.EntityControl.Virology;
+using TheRavine.Generator;
 
 namespace TheRavine.EntityControl
 {
@@ -16,6 +17,8 @@ namespace TheRavine.EntityControl
         private VirologyComponent virology;
         private EnergyComponent energy;
         private DayCycle dayCycle;
+        private TransformComponent transformComponent;
+        private MapGenerator map;
         private float immuneUpkeepMul = 1f;
         private double lastCycleTime;
         private ulong clientId;
@@ -36,7 +39,8 @@ namespace TheRavine.EntityControl
             base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.Prefab.GetInstanceID(), clientId));
             base.AddComponentToEntity(new MovementComponent(entityInfo.MovementInfo));
             base.AddComponentToEntity(new AimComponent(entityInfo.AimStatsInfo));
-            base.AddComponentToEntity(new TransformComponent(aEntityModelView.transform, aEntityModelView.transform));
+            transformComponent = new TransformComponent(aEntityModelView.transform, aEntityModelView.transform);
+            base.AddComponentToEntity(transformComponent);
             this.clientId = clientId;
         }
 
@@ -116,8 +120,24 @@ namespace TheRavine.EntityControl
             CreatureCore.Metabolize(stats, mortality, dt, 0f, mods.MetabolismMultiplier, basalMul,
                 in rules, out float metabolismCredit);
             virology.CreditDurableEffects(0f, metabolismCredit, stats.MaxEnergy);
+            float burn = BurnDamage(dt);
+            if (burn > 0f)
+            {
+                mortality.NoteHarm(DeathCause.Burn, stats.Hp - burn);
+                stats.Hp -= burn;
+            }
             stats.Commit();
             energy.Sync();
+        }
+
+        private float BurnDamage(float dt)
+        {
+            if (map == null && !ServiceLocator.Services.TryGet(out map)) return 0f;
+            FireEvent fire = map.Events?.Fire;
+            if (fire == null || fire.BurningCount == 0 || transformComponent == null) return 0f;
+
+            var p = transformComponent.GetEntityPosition();
+            return fire.HeatDamageAt(new float2(p.x, p.z)) * dt;
         }
 
         private void OnDied()

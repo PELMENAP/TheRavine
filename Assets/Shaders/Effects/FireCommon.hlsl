@@ -10,11 +10,11 @@ struct FireInstance
     float4 posSeed;
     float4 life;
     float4 normal;
+    float4 shape;
 };
 
 StructuredBuffer<FireInstance> _FireInstances;
 float  _FireTime;
-float  _FireBurnSeconds;
 float  _FireKeep;
 float4 _FireWind;
 
@@ -29,6 +29,8 @@ struct FireState
     float3 base;
     float3 normal;
     float  seed;
+    float  size;
+    float  total;
     float  heat;
     float  age;
     float  ended;
@@ -80,6 +82,8 @@ FireState FireLoad(uint id)
     s.base   = f.posSeed.xyz;
     s.seed   = f.posSeed.w;
     s.normal = normalize(f.normal.xyz + float3(0.0, 1e-4, 0.0));
+    s.size   = max(f.shape.x, 0.05);
+    s.total  = max(f.shape.y, 0.1);
     s.age    = max(_FireTime - f.life.x, 0.0);
 
     if (f.life.w < 0.0)
@@ -87,7 +91,7 @@ FireState FireLoad(uint id)
         float left  = max(f.life.y - max(_FireTime - f.life.z, 0.0), 0.0);
         float rise  = smoothstep(0.0, 0.6, s.age);
         float flare = 1.0 + 0.6 * exp(-s.age * 3.0) * rise;
-        float fade  = smoothstep(0.0, max(_FireBurnSeconds * 0.3, 0.5), left);
+        float fade  = smoothstep(0.0, max(s.total * 0.3, 0.5), left);
         s.heat   = rise * flare * fade;
         s.ended  = -1.0;
         s.burned = 0.0;
@@ -129,6 +133,11 @@ float2 FireRotate(float2 v, float angle)
     float s, c;
     sincos(angle, s, c);
     return float2(v.x * c - v.y * s, v.x * s + v.y * c);
+}
+
+uint FireCount(float perSize, float size, uint minimum, uint maximum)
+{
+    return (uint)clamp(round(perSize * size), (float)minimum, (float)maximum);
 }
 
 float4 FireCulled()

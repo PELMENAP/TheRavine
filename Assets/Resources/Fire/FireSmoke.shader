@@ -13,6 +13,8 @@ Shader "The Ravine/Effects/Fire Smoke"
         _SmokeSizeMax ("Size Max", Float) = 3.6
         _SmokeDrift ("Wind Drift", Float) = 1.2
         _SmokeLinger ("Linger Seconds", Float) = 6
+        _PuffsPerSize ("Puffs Per Size", Float) = 3
+        _SizeStart ("Start From Size", Range(0, 1)) = 0.7
         _UnderGlowColor ("Under Glow", Color) = (1.0, 0.45, 0.15, 1)
         _UnderGlowStrength ("Under Glow Strength", Float) = 0.8
 
@@ -64,6 +66,8 @@ Shader "The Ravine/Effects/Fire Smoke"
                 float  _SmokeSizeMax;
                 float  _SmokeDrift;
                 float  _SmokeLinger;
+                float  _PuffsPerSize;
+                float  _SizeStart;
                 float4 _UnderGlowColor;
                 float  _UnderGlowStrength;
                 float4 _ScorchColor;
@@ -73,6 +77,8 @@ Shader "The Ravine/Effects/Fire Smoke"
                 float  _ScorchHold;
                 float  _ScorchSeconds;
             CBUFFER_END
+
+            static const uint MaxPuffs = 5;
 
             struct Varyings
             {
@@ -100,18 +106,19 @@ Shader "The Ravine/Effects/Fire Smoke"
                 float3 positionWS;
                 float4 data;
                 float glow = 0.0;
+                float rootSize = sqrt(s.size);
 
                 if (quad == 0)
                 {
                     float opacity = s.ended < 0.0
-                        ? saturate(s.age / max(_FireBurnSeconds, 0.01))
+                        ? saturate(s.age / s.total)
                         : lerp(0.4, 1.0, s.burned) * (1.0 - smoothstep(_ScorchHold, max(_ScorchSeconds, _ScorchHold + 0.01), s.ended));
                     opacity *= _ScorchOpacity;
                     if (opacity <= 0.002) return Culled();
 
                     float3 t, b;
                     FireGroundFrame(s.normal, t, b);
-                    float size = _ScorchSize * (0.85 + 0.3 * FireRand(s.seed, 3));
+                    float size = _ScorchSize * rootSize * (0.85 + 0.3 * FireRand(s.seed, 3));
                     float2 offset = FireRotate((corner - 0.5) * size, FireRand(s.seed, 5) * 6.2831853);
                     positionWS = s.base + t * offset.x + b * offset.y + s.normal * 0.08;
                     data = float4(0.0, opacity, s.seed * 13.0, 0.0);
@@ -122,7 +129,8 @@ Shader "The Ravine/Effects/Fire Smoke"
                     float density = s.ended < 0.0
                         ? saturate(s.heat) * smoothstep(0.0, 1.5, s.age)
                         : exp(-s.ended / max(_SmokeLinger, 0.01)) * lerp(0.35, 1.0, s.burned);
-                    if (density <= 0.01 || FireRand(s.seed, 71 + puff) > _FireKeep) return Culled();
+                    if (density <= 0.01 || puff >= FireCount(_PuffsPerSize, s.size, 1, MaxPuffs)
+                        || FireRand(s.seed, 71 + puff) > _FireKeep) return Culled();
 
                     float life  = _SmokeLife * (0.75 + 0.5 * FireRand(s.seed, 73 + puff));
                     float cycle = _FireTime / life + FireRand(s.seed, 79 + puff);
@@ -130,14 +138,15 @@ Shader "The Ravine/Effects/Fire Smoke"
                     uint  salt  = (uint)floor(cycle) * 8 + puff;
 
                     float angle = FireRand(s.seed, 83 + salt) * 6.2831853;
-                    float3 start = s.base + float3(cos(angle), 0.0, sin(angle)) * 0.5 + float3(0.0, _SmokeStart, 0.0);
-                    float  rise  = _SmokeRise * phase * (0.8 + 0.4 * FireRand(s.seed, 89 + salt));
+                    float3 start = s.base + float3(cos(angle), 0.0, sin(angle)) * (0.5 * rootSize)
+                                 + float3(0.0, _SmokeStart * lerp(1.0, s.size, _SizeStart), 0.0);
+                    float  rise  = _SmokeRise * lerp(1.0, rootSize, 0.5) * phase * (0.8 + 0.4 * FireRand(s.seed, 89 + salt));
                     float3 curl  = float3(sin(phase * 3.0 + angle), 0.0, cos(phase * 2.3 + angle)) * (0.6 * phase);
                     float3 drift = float3(_FireWind.x, 0.0, _FireWind.y) * (_SmokeDrift * phase * life);
                     float3 centre = start + float3(0.0, rise, 0.0) + curl + drift;
 
                     float thinning = lerp(1.0, rsqrt(max(_FireKeep, 0.05)), 0.6);
-                    float size = lerp(_SmokeSizeMin, _SmokeSizeMax, sqrt(phase)) * thinning;
+                    float size = lerp(_SmokeSizeMin, _SmokeSizeMax, sqrt(phase)) * thinning * rootSize;
                     float spin = FireRand(s.seed, 97 + salt) * 6.2831853 + phase * (FireRand(s.seed, 101 + salt) - 0.5) * 1.5;
                     float2 offset = FireRotate((corner - 0.5) * size, spin);
                     positionWS = centre + FireCameraRight() * offset.x + FireCameraUp() * offset.y;

@@ -93,7 +93,7 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 - Every `WorldTickRules.tickSeconds` of `SimulationClock` time, `RandomTickJob` samples `cellsPerChunkPerTick` cells per chunk of the square.
 - The square is the window out to `WorldTickRules.nalRings` rings; it does not depend on the camera view.
 - Far rings get fewer cells (`farCellDivisor`). The tick cost does not depend on the number of objects.
-- Hits on primary object cells go to `IRandomTickHandler` subscribers: `NalTickHandler`, `FireTickHandler`.
+- Hits on primary object cells go to `IRandomTickHandler` subscribers: `NalTickHandler`, `FireEvent` (map events: `docs/map/map-events.md`).
 - A chunk that re-enters the square catches up: up to `catchUpBurstRounds` extra rounds per tick, bounded by `catchUpMaxSeconds`.
 - NAL probabilities: `NalRules` and `RandomTickMath`. Objects with `decaySeconds` above zero and no behaviour rot.
 - Every world change made by a handler goes through `WorldCommandBuffer`.

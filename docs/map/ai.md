@@ -87,13 +87,7 @@ All are indexed by `EntityModel.ManagerIndex` and expose `RemoveSwapBack`. The r
 
 ## Other
 
-- `FireTickHandler` (`Assets/Scripts/EntitySystem/AI/Hazards/FireTickHandler.cs`): fire as a random-tick handler; stepped from `EntityManager.Update`.
-- `FireView` (`Assets/Scripts/EntitySystem/AI/Hazards/FireView.cs`): fire rendering, created by `EntityManager` next to `FireTickHandler`; only where the simulation runs (no replication).
-- `FireView` rebuilds one `GraphicsBuffer` when `FireTickHandler.Version` changes: burning cells (`Burning`) plus up to 1024 residues of burnt-out or quenched cells.
-- `FireView` draws with two mesh-less `Graphics.RenderPrimitives` calls; shaders: `Assets/Resources/Fire/FireSmoke.shader` (scorch, smoke), `Assets/Resources/Fire/FireFlame.shader` (glow, tongues, embers).
-- Fire shaders share `Assets/Shaders/Effects/FireCommon.hlsl`; they extrapolate time left from `FireTickHandler.StepTime`, so a fire fades out without a pop.
-- `FireView` materials are created from the shaders at runtime unless `EntityManager.fireFlameMaterial` / `fireSmokeMaterial` are set; the look is in material properties.
-- `FireView` lights: up to `fireLights` shadowless point lights on the heaviest fire clusters near the camera.
+- Fire is a map event: `docs/map/map-events.md`. `EntityManager` sets `GlobalMapEvents.Season` to `SeasonClockSource` and applies `FireEvent.HeatDamageAt` to agents once per fire step (`ApplyFireHeat`).
 - Debug, off the hot path: `SimulationDebugDashboard`, `SimulationLog`, `NestDebugView` in `Assets/Scripts/EntitySystem/AI/Debug/`.
 - Log columns: `docs/simulation_log.md`. Action and property audits: `docs/audit/action_census.md`, `docs/audit/property_system_matrix.md`.
 - Rules are partial files `SimulationRules.<Area>.cs` in `Assets/Scripts/EntitySystem/AI/Rules/`; the asset is `Assets/Scripts/EntitySystem/AI/SimulationRules.asset`.
