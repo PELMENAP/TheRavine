@@ -20,7 +20,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Core/Timer` | 4 | 271 |
 | `Assets/Scripts/Core/Utilities` | 10 | 1922 |
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
-| `Assets/Scripts/Editor` | 14 | 1870 |
+| `Assets/Scripts/Editor` | 18 | 2247 |
 | `Assets/Scripts/EntitySystem` | 7 | 781 |
 | `Assets/Scripts/EntitySystem/AI` | 10 | 1942 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
@@ -66,7 +66,6 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/GameSceneManagerSystem/Menu` | 2 | 540 |
 | `Assets/Scripts/GameSceneManagerSystem/StateMachine` | 4 | 341 |
 | `Assets/Scripts/GameSceneManagerSystem/States` | 4 | 144 |
-| `Assets/Scripts/GlobalSystems` | 1 | 62 |
 | `Assets/Scripts/Model/Actions&Events` | 3 | 65 |
 | `Assets/Scripts/Model/BehavioursMap` | 5 | 321 |
 | `Assets/Scripts/Model/BehavioursMap/Aim` | 2 | 63 |
@@ -144,7 +143,7 @@ References are resolved from GUIDs; `+N` is the number of package assemblies out
 | View | `Assets/Scripts/View` | UniTask +1 |
 | EntitySystem.Tests.EditMode | `Assets/Tests/EditMode` | BehavioursMap, Core, EntitySystem, Info, Inventory, ObjectSystem, Rive, UniTask +5 |
 
-Folders compiled into `Assembly-CSharp` (no asmdef above them): `Assets/Scripts/Editor`, `Assets/Scripts/GameSceneManagerSystem`, `Assets/Scripts/GlobalSystems`, `Assets/Scripts/Terminal`, `Assets/Scripts/Test`.
+Folders compiled into `Assembly-CSharp` (no asmdef above them): `Assets/Scripts/Editor`, `Assets/Scripts/GameSceneManagerSystem`, `Assets/Scripts/Terminal`, `Assets/Scripts/Test`.
 
 ## Types declared in a file with another name
 

@@ -33,6 +33,9 @@ Assemblies: `Inventory`, `UIInventory`, `Info`. Tests: `Assets/Tests/EditMode/Cr
 - `InventoryTypeCache.Resolve` maps `InventoryItemInfo.id` to a class of that name, else to `DefaultItem` (`Assets/Scripts/ScriptableData/Item/DefaultItem.cs`).
 - A class of its own is needed only for behaviour (`ItemClass.TryUse`); its name must equal the item id.
 - Editor tools: `Assets/Scripts/Editor/ItemPipelineValidator.cs` (menu Tools/Ravine/Items, runs before play and build), `ItemWizardWindow.cs`.
+- Validate And Fix fills safe gaps: registry, DataItems, ids, titles, stack size; missing prefab or icon gets a placeholder from `ItemPipelineStubs`.
+- `LegacyObjectInfoMigration` restores prefab and item of ObjectInfo assets saved with the old field names (`_prefab`, `_iteminfo`).
+- A spawn profile missing from MapGenerator is only reported: removing it from the list is how a profile is switched off.
 - The prompt for descriptions is built by `Assets/Scripts/UI/Inventory/Extensions/ItemPromptBuilder.cs` from item and player data only.
 
 ## Other UI
