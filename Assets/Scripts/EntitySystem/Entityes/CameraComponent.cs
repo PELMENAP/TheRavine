@@ -39,7 +39,7 @@ public class CameraComponent : ICameraComponent
         pitch = rules.CameraPitchInitial;
         distance = DistanceFor(0f);
 
-        pivot = playerTransformComponent.GetEntityPosition();
+        pivot = AnchorOf(playerTransformComponent.GetEntityPosition());
         ApplyView();
     }
 
@@ -85,9 +85,12 @@ public class CameraComponent : ICameraComponent
         ApplyView();
     }
 
+    private static Vector3 AnchorOf(Vector3 playerPosition) =>
+        playerPosition + new Vector3(0f, SimulationRules.Active.CameraPivotHeight, 0f);
+
     private void UpdatePivot()
     {
-        targetPos = playerTransformComponent.GetEntityPosition() + factMousePositionOffset;
+        targetPos = AnchorOf(playerTransformComponent.GetEntityPosition()) + factMousePositionOffset;
 
         var delta = targetPos - pivot;
         var dist = delta.magnitude;
