@@ -74,11 +74,19 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 - A box is `collisionSteps` in build-grid steps: x and z times `buildStep`, y times `levelHeight` (both in `ChunkGenerationSettings`).
 - `collisionOffsetSteps` moves the shape from the object position, in the same steps. The shape bottom is the object's y.
 - `CollisionTable` bakes every `ObjectInfo.BakeCollision` into `CollisionShape` by object id; `MapGenerator.Collision` owns it.
-- `ObstacleQuery.Resolve` is the only query; it is generic over `IObstacleLookup` and Burst-compatible.
-- Callers: `MapGenerator.ResolveObstacles` (player, through `TerrainPhysicsResolver`) and `MotionJob` (agents, through `HeightAtlas`).
+- `ObstacleQuery` is the only collision for world objects: `Resolve`, `ResolveSwept` and `Support`. All are generic over `IObstacleLookup` and Burst-compatible.
+- One cell walk serves all three: `ObstacleQuery.Walk` visits each shape found, a private visitor struct decides what to do with it.
+- `Resolve` pushes the body circle out of shapes. A shape whose top is not above `feetY + stepUp` is not blocking: the body steps onto it.
+- `Support` returns the highest shape top under the body circle that is not above `feetY + stepUp`; ground for a body is `max(terrain height, support)`.
+- `ResolveSwept` splits a move into sub-steps no longer than the body radius, resolves after each, and stops at the first hit.
+  A move not longer than the radius costs one `Resolve`. More than `MaxSweepSteps` sub-steps stop at the last resolved position (`SweepReach`).
+- Callers: `MapGenerator.ResolveObstacles` and `MapGenerator.SupportObstacles` (player, through `TerrainPhysicsResolver`),
+  `MotionJob` (agents, through `HeightAtlas`), `MoveMobsJob` (mobs, through the same `HeightAtlas`).
 - Ground objects are found by their primary cell; objects with a base level above zero by a scan gated by `ChunkData.ElevatedCount`.
 - The search covers at most `ObstacleQuery.MaxCellReach` cells around the body; a larger shape extent is not found beyond it.
-- A body whose feet are at or above the shape top is not blocked; standing on a shape is not implemented.
+- Tree and prop prefabs carry no `CapsuleCollider`; `CollisionCapsuleMigration` (`Assets/Scripts/Editor/CollisionCapsuleMigration.cs`) converts them to shape data.
+- A platform is an `ObjectInfo` with a shape and no `ObjectPrefab`: no pool, no near view, and `FarObjectRenderer` skips it while `LodSet` is empty.
+  A branch is such an object placed at a base level above zero on a tree's cell.
 
 ## Random ticks and NAL (`Assets/Scripts/ObjectSystem/Map/WorldGeneration/Ticks/`)
 

@@ -442,7 +442,7 @@ namespace TheRavine.Generator
             }
         }
 
-        public bool ResolveObstacles(ref float2 position, float radius, float feetY, float headY, out float2 normal)
+        public bool ResolveObstacles(float2 origin, ref float2 position, float radius, float feetY, float headY, float stepUp, out float2 normal)
         {
             if (Collision == null)
             {
@@ -452,7 +452,20 @@ namespace TheRavine.Generator
 
             ObstacleSet set = Collision.Set;
             var lookup = new ChunkObstacles { Chunks = mapData };
-            return ObstacleQuery.Resolve(ref lookup, in set, ref position, radius, feetY, headY, out normal);
+            return ObstacleQuery.ResolveSwept(ref lookup, in set, origin, ref position, radius, feetY, headY, stepUp, out normal);
+        }
+
+        public bool SupportObstacles(float2 position, float radius, float feetY, float stepUp, out float top)
+        {
+            if (Collision == null)
+            {
+                top = 0f;
+                return false;
+            }
+
+            ObstacleSet set = Collision.Set;
+            var lookup = new ChunkObstacles { Chunks = mapData };
+            return ObstacleQuery.Support(ref lookup, in set, position, radius, feetY, stepUp, out top);
         }
 
         public float SampleHeightBilinear(float wx, float wz)

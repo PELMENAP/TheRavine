@@ -104,6 +104,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float BlockedSeconds;
         public readonly float AgentBodyRadius;
         public readonly float AgentBodyHeight;
+        public readonly float AgentStepUp;
         public readonly float ObstacleCatchUpMul;
         public readonly float DigestRateRest;
         public readonly float DigestRateActive;
@@ -678,6 +679,7 @@ public sealed partial class SimulationRules : ScriptableObject
             BlockedSeconds = r.blockedSeconds;
             AgentBodyRadius = r.agentBodyRadius;
             AgentBodyHeight = r.agentBodyHeight;
+            AgentStepUp = r.agentStepUp;
             ObstacleCatchUpMul = r.obstacleCatchUpMul;
             DigestRateRest = r.digestRateRest;
             DigestRateActive = r.digestRateActive;

@@ -14,7 +14,7 @@ Job rules (attributes, allocators, batch sizes, one `Complete` per batch): `docs
 | `MovePlanner` | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | Batches move requests into `PlanJob`; reads colony fields |
 | `BoidsBehaviour` | `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs` | Bird flocks: orchestrator of the bird job chain |
 | `BoidsInfo` | `Assets/Scripts/EntitySystem/Job/BoidsInfo.cs` | Bird settings (ScriptableObject) |
-| `MobController` | `Assets/Scripts/EntitySystem/Entityes/Mob/MobController.cs` | Mob movement through `MoveMobsJob` |
+| `MobController` | `Assets/Scripts/EntitySystem/Entityes/Mob/MobController.cs` | Mob movement through `MoveMobsJob`; obstacles and ground from `MotionSystem.PrepareAtlas` |
 | `MimicLegSystem` | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/MimicLegSystem.cs` | Runs `MimicLegJob` once per frame from `MimicLegDriver` |
 | `BoidsMenuBackground` | `Assets/Scripts/GameSceneManagerSystem/Menu/BoidsMenuBackground.cs` | GPU boids behind the main menu |
 
@@ -25,11 +25,16 @@ The flocking of agents (not birds) is `BoidSystem` in `Assets/Scripts/EntitySyst
 1. Commands call `MovePlanner.Enqueue`; `MovePlanner.Flush` runs `PlanJob` for the batch (`PlanRequest` → `PlanResult`).
 2. Results start a motion in `MotionSystem` (`Start`, `Stop`); state per agent is `MotionState`.
 3. `MotionSystem.Step` runs `MotionJob` (integration over `HeightAtlas`) and `MotionApplyJob` (the only writer of agent transforms).
-4. After the step along the curve `MotionJob` calls `ObstacleQuery.Resolve`; a pushed agent catches up at `ObstacleCatchUpMul` of its speed.
-   A push that leaves almost no progress counts toward `BlockedSeconds`. Body size: `AgentBodyRadius`, `AgentBodyHeight`.
+4. After the step along the curve `MotionJob` calls `ObstacleQuery.ResolveSwept` from the previous to the new position; a pushed agent catches up at `ObstacleCatchUpMul` of its speed.
+   A push that leaves almost no progress counts toward `BlockedSeconds`. Body size: `AgentBodyRadius`, `AgentBodyHeight`; the step-up tolerance is `AgentStepUp`.
+   The height is `max(terrain, ObstacleQuery.Support)` plus `HeightOffset`: an agent stands on a shape top and drops to the terrain off its edge.
 5. Positions are read with `MotionSystem.PositionOf`; nothing in the tick reads a `Transform`.
 6. `MotionSystem.RemoveSwapBack` is called from `ColonyPopulation.RemoveEntitySwapBack`.
 7. `HeightAtlas` is synced from loaded chunks (`PrepareAtlas`, `SyncAtlas`); it is rebuilt on change, not every frame.
+   `MotionSystem` is a service: `EntityManager` registers it, `MobController` reads its atlas and `Obstacles`.
+8. `MobController.Update` fills the mob velocities, prepares the atlas around the mob positions, schedules `MoveMobsJob` and completes it in the same call:
+   the atlas arrays belong to `MotionSystem` and change later in the frame. `MoveMobsJob` resolves each mob like an agent and sets `y` from ground plus `GroundOffset`.
+   Mob body: `EntityInfo.BodyRadius`, `BodyHeight`, `GroundOffset`; step-up is `AgentStepUp`. Without `MotionSystem` the mobs hold their position.
 
 ## Birds
 

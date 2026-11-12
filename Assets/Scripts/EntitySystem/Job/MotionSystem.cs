@@ -69,6 +69,16 @@ public unsafe struct HeightAtlas : IObstacleLookup
         return Sample(wx, wz, ref key, ref slot);
     }
 
+    public bool Covers(float wx, float wz)
+    {
+        int x = (int)math.floor(wx * MapGenerator.InvScale);
+        int z = (int)math.floor(wz * MapGenerator.InvScale);
+        return Index.ContainsKey(MapGenerator.CellToChunk(x, z))
+            && Index.ContainsKey(MapGenerator.CellToChunk(x + 1, z))
+            && Index.ContainsKey(MapGenerator.CellToChunk(x, z + 1))
+            && Index.ContainsKey(MapGenerator.CellToChunk(x + 1, z + 1));
+    }
+
     public float SpeedModifier(float x, float z, float2 dir)
     {
         const float s = MapGenerator.scale;
@@ -144,6 +154,7 @@ public struct MotionJob : IJobParallelFor
     public ObstacleSet Obstacles;
     public float  BodyRadius;
     public float  BodyHeight;
+    public float  StepUp;
     public float  CatchUpMul;
     public double Now;
     public float  Dt;
@@ -225,10 +236,10 @@ public struct MotionJob : IJobParallelFor
         }
 
         s.Stalled = 0;
+        float feet = pos.y - s.HeightOffset;
         if (Obstacles.Any)
         {
-            float feet = pos.y - s.HeightOffset;
-            if (ObstacleQuery.Resolve(ref Atlas, in Obstacles, ref next, BodyRadius, feet, feet + BodyHeight, out _))
+            if (ObstacleQuery.ResolveSwept(ref Atlas, in Obstacles, pos.xz, ref next, BodyRadius, feet, feet + BodyHeight, StepUp, out _))
             {
                 s.Obstructed = 1;
                 step = next - pos.xz;
@@ -240,7 +251,10 @@ public struct MotionJob : IJobParallelFor
         s.Velocity = step * (1f / math.max(Dt, 1e-5f));
         pos.x = next.x;
         pos.z = next.y;
-        pos.y = Atlas.SampleHeight(pos.x, pos.z) + s.HeightOffset;
+        float ground = Atlas.SampleHeight(pos.x, pos.z);
+        if (ObstacleQuery.Support(ref Atlas, in Obstacles, next, BodyRadius, feet, StepUp, out float top) && top > ground)
+            ground = top;
+        pos.y = ground + s.HeightOffset;
         Positions[owner] = pos;
 
         float len = math.length(step);
@@ -304,6 +318,11 @@ public sealed unsafe class MotionSystem : IDisposable
     private bool   _disposed;
 
     public int Count => _count;
+
+    public bool IsAlive => !_disposed && _map != null;
+
+    public ObstacleSet Obstacles
+        => _map != null && _map.Collision != null ? _map.Collision.Set : new ObstacleSet { Shapes = _noShapes };
 
     public MotionSystem(int capacity)
     {
@@ -437,9 +456,10 @@ public sealed unsafe class MotionSystem : IDisposable
             Owners              = _owners.AsArray(),
             Positions           = _positions,
             Atlas               = new HeightAtlas { Index = _atlasIndex, Chunks = _atlasChunks.AsArray() },
-            Obstacles           = _map.Collision != null ? _map.Collision.Set : new ObstacleSet { Shapes = _noShapes },
+            Obstacles           = Obstacles,
             BodyRadius          = SimulationRules.Frame.AgentBodyRadius,
             BodyHeight          = SimulationRules.Frame.AgentBodyHeight,
+            StepUp              = SimulationRules.Frame.AgentStepUp,
             CatchUpMul          = SimulationRules.Frame.ObstacleCatchUpMul,
             Now                 = now,
             Dt                  = dt,

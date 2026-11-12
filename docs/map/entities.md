@@ -39,7 +39,7 @@ AI agents are a separate family (`EntityModel`): `docs/map/ai.md`. The player: `
 |---|---|---|
 | `PlayerEntity` | `Assets/Scripts/EntitySystem/Entityes/Player/` | Initialised in `PlayerModelView.OnNetworkSpawn` |
 | `BotEntity` | `Assets/Scripts/EntitySystem/Entityes/Bot/` | NPC with FSM behaviours |
-| `MobEntity` | `Assets/Scripts/EntitySystem/Entityes/Mob/` | Movement through `RoamMoveController` and `MobController` |
+| `MobEntity` | `Assets/Scripts/EntitySystem/Entityes/Mob/` | Movement through `RoamMoveController` and `MobController`; body size from `EntityInfo` (`BodyRadius`, `BodyHeight`, `GroundOffset`) |
 | `Mimic` | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/` | Procedural legs: `LegPlanner`, `LegStore`, `MimicLegJob` (Burst), `SurfaceMotor` |
 
 ## Data flow
@@ -76,6 +76,13 @@ AI agents are a separate family (`EntityModel`): `docs/map/ai.md`. The player: `
 - Two unrelated interfaces are both named `ICommand`: entity commands here, terminal commands in `Assets/Scripts/Terminal/ICommand.cs`.
 - R3 stays where it is (`AEntity.IsActive`, `OnUpdate`, `EnergyComponent`, `CurrencyComponent`); agent hot paths do not use it.
 - A disposed `PlayerEntity` removes itself from `ServiceLocator.Players`; `EntitySystem` skips disposed entities.
+
+## Mob collision
+
+- `MoveMobsJob` resolves a mob's new position with `ObstacleQuery.ResolveSwept` and takes its height from terrain plus `ObstacleQuery.Support`; no PhysX.
+- `MobController` keeps SoA per mob: `mobBodies` (radius, height, ground offset from `EntityInfo`) and `mobPositions`, both swap-back with the rest.
+- `RoamMoveController` still uses `Rigidbody2D`, `CircleCollider2D` and `OnTriggerEnter2D`: the trigger is a probe ahead of the mob (`colliderDistance`)
+  that replans the route backwards on contact with another 2D collider. It never meets the 3D world and was left in place.
 
 ## Hot paths
 
