@@ -7,7 +7,6 @@ using TheRavine.Generator;
 public sealed class ItemWizardWindow : EditorWindow
 {
     private const string DefaultItemFolder = "Assets/Scripts/ScriptableData/Item/ItemInfo/Environment";
-    private const string DefaultInfoFolder = "Assets/Scripts/ObjectSystem/ObjectInfo";
     private const string DefaultProfileFolder = "Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator/SpawnProfiles";
     private static readonly Regex IdPattern = new("^[A-Z][A-Za-z0-9_]*$");
 
@@ -37,7 +36,7 @@ public sealed class ItemWizardWindow : EditorWindow
             profileTemplate = (ObjectSpawnProfileSO)EditorGUILayout.ObjectField("Profile Template", profileTemplate, typeof(ObjectSpawnProfileSO), false);
 
         if (prefab != null && string.IsNullOrEmpty(itemId))
-            itemId = ToId(prefab.name);
+            itemId = ItemPipelineValidator.ToId(prefab.name);
         if (prefab != null && string.IsNullOrEmpty(itemTitle))
             itemTitle = prefab.name;
 
@@ -46,24 +45,6 @@ public sealed class ItemWizardWindow : EditorWindow
 
         using (new EditorGUI.DisabledScope(error != null))
             if (GUILayout.Button("Create")) Create();
-    }
-
-    private static string ToId(string source)
-    {
-        var chars = new System.Text.StringBuilder(source.Length);
-        bool upper = true;
-        for (int i = 0; i < source.Length; i++)
-        {
-            char c = source[i];
-            if (!char.IsLetterOrDigit(c))
-            {
-                upper = true;
-                continue;
-            }
-            chars.Append(upper ? char.ToUpperInvariant(c) : c);
-            upper = false;
-        }
-        return chars.ToString();
     }
 
     private string Check()
@@ -117,7 +98,7 @@ public sealed class ItemWizardWindow : EditorWindow
 
         ObjectInfo info = template != null ? Instantiate(template) : CreateInstance<ObjectInfo>();
         info.EditorAssignId(0);
-        AssetDatabase.CreateAsset(info, AssetDatabase.GenerateUniqueAssetPath($"{FolderOf(template, DefaultInfoFolder)}/{itemTitle}.asset"));
+        AssetDatabase.CreateAsset(info, AssetDatabase.GenerateUniqueAssetPath($"{FolderOf(template, ItemPipelineValidator.DefaultInfoFolder)}/{itemTitle}.asset"));
         var infoSo = new SerializedObject(info);
         infoSo.FindProperty("objectPrefab").objectReferenceValue = prefab;
         infoSo.FindProperty("inventoryItemInfo").objectReferenceValue = item;

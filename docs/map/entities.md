@@ -67,7 +67,6 @@ AI agents are a separate family (`EntityModel`): `docs/map/ai.md`. The player: `
 | Detector | `Assets/Scripts/Model/DetectorModel/` | `IDetector`, `IDetectableObject`, `Detector`, `DetectableObject` |
 | Skills | `Assets/Scripts/Model/EntitySkills/` | `ISkill`, `SkillBuilder`, `FlyingSkill`, `SwimmingSkill` |
 | View | `Assets/Scripts/View/` | `ParallaxEffect`, `ChangeRandomSprite` |
-| Global | `Assets/Scripts/GlobalSystems/` | `TrollMovementTransition` |
 | Experiments | `Assets/Scripts/Test/` | `PointDraw`, `PriceChart`, `Market`, `MarketCore`, `MarketSimulator`; referenced from a test scene and a prefab |
 | Editor tools | `Assets/Scripts/Editor/` | `TreeMeshBaker`, `SimulationRulesEditor`, `StrainCodonTableBuilder`, grass bakers |
 
