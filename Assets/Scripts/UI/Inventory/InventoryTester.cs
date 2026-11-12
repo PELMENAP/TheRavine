@@ -54,14 +54,14 @@ namespace TheRavine.Inventory
 
             FillRandomItems(
                 new List<string> {
-                    nameof(Porchini), nameof(Toadstool),
-                    nameof(BirchBolete), nameof(AspenBolete), nameof(Battery),
-                    nameof(Politics), nameof(Kirieshky), nameof(Saffron)
+                    "Porchini", "Toadstool",
+                    "BirchBolete", "AspenBolete", "Battery",
+                    "Politics", "Kirieshky", "Saffron"
                 },
                 itemsPerTitle: 5
             );
             FillRandomItems(
-                new List<string> { nameof(Isa), nameof(AndrewNovichenko), nameof(Jirinovskiy) },
+                new List<string> { "Isa", "AndrewNovichenko", "Jirinovskiy" },
                 itemsPerTitle: 2
             );
         }

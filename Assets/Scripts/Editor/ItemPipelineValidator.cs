@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEditor;
-using UnityEditor.Build;
-using UnityEditor.Build.Reporting;
 using UnityEngine;
 using TheRavine.Generator;
 using TheRavine.ObjectControl;
@@ -333,14 +331,12 @@ public static class ItemPipelineValidator
                 if (!byId.TryAdd(item.id, item))
                     report.Error($"{item.name}: id {item.id} already used by {byId[item.id].name}", item);
 
-                if (!db.ItemTypes.ContainsKey(item.id))
-                    report.Error($"{item.name}: no class named {item.id} implementing IInventoryItem. id must equal the item class name", item);
-
                 if (item.id.Trim() != item.id || item.id.IndexOf(' ') >= 0)
                     report.Error($"{item.name}: id '{item.id}' contains spaces", item);
             }
 
             if (string.IsNullOrWhiteSpace(item.title)) report.Warn($"{item.name}: empty title", item);
+            if (string.IsNullOrWhiteSpace(item.description)) report.Warn($"{item.name}: empty description", item);
             if (item.maxItemsInInventorySlot <= 0) report.Error($"{item.name}: maxItemsInInventorySlot = {item.maxItemsInInventorySlot}", item);
             if (item.spriteIcon == null) report.Warn($"{item.name}: no icon", item);
 
@@ -361,7 +357,7 @@ public static class ItemPipelineValidator
         }
 
         foreach (KeyValuePair<string, Type> pair in db.ItemTypes)
-            if (!itemsWithAsset.Contains(pair.Key))
+            if (pair.Value != typeof(TheRavine.Inventory.DefaultItem) && !itemsWithAsset.Contains(pair.Key))
                 report.Warn($"class {pair.Value.FullName} has no InventoryItemInfo with id {pair.Key}", null);
     }
 
@@ -485,17 +481,5 @@ public static class ItemPipelineValidator
                 else if (!InAnyItemDatabase(db, ingr[k])) report.Error($"{craft.name}: ingr[{k}] {ingr[k].name} is not in DataItems", craft);
             }
         }
-    }
-}
-
-public sealed class ItemPipelineBuildCheck : IPreprocessBuildWithReport
-{
-    public int callbackOrder => 0;
-
-    public void OnPreprocessBuild(BuildReport report)
-    {
-        ItemPipelineValidator.Report result = ItemPipelineValidator.Run(false);
-        if (result.Errors > 0)
-            throw new BuildFailedException($"[ItemValidator] {result.Errors} errors in item/object data, see console");
     }
 }

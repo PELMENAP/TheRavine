@@ -49,7 +49,7 @@ namespace TheRavine.Inventory
         }
 
         public bool HasItem(InventoryItemInfo info) => 
-            eventDrivenInventoryProxy.HasItem(infoManager.GetItemType(info));
+            info != null && eventDrivenInventoryProxy.HasItem(info.id);
 
         public void SetUp(ISetAble.Callback callback)
         {            
@@ -274,10 +274,7 @@ namespace TheRavine.Inventory
             ObjectInfo data = objectSystem.GetInfo(e.PrefabId);
             if (data == null || data.InventoryItemInfo == null) return;
 
-            IInventoryItem item = infoManager.GetInventoryItemByInfo(
-                data.InventoryItemInfo.id,
-                data.InventoryItemInfo,
-                e.Amount);
+            IInventoryItem item = infoManager.GetInventoryItemByInfo(data.InventoryItemInfo, e.Amount);
 
             if (!eventDrivenInventoryProxy.TryToAdd(this, item))
                 logger.LogWarning($"[UIInventory] Нет места для {data.InventoryItemInfo.id}, подобранный предмет потерян");

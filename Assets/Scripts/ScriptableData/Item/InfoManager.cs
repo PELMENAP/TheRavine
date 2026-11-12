@@ -25,44 +25,29 @@ namespace TheRavine.Inventory
         }
         public IInventoryItem GetInventoryItem(string id, int amount = 1)
         {   
-            Type itemType = InventoryTypeCache.GetType(id);
-            
-            if (itemType == null)
-            {
-                Debug.LogError($"Type {id} not found in cache");
-                return null;
-            }
-            
-            if (!data.TryGetValue(id, out var itemInfo))
+            if (id == null || !data.TryGetValue(id, out var itemInfo))
             {
                 Debug.LogError($"[InfoManager] there's no item with id {id} in DataItems");
                 return null;
             }
-            
-            IInventoryItem item = (IInventoryItem)System.Activator.CreateInstance(itemType, new object[] { itemInfo });
-            item.state.amount = amount;
-            return item;
+
+            return Create(itemInfo, amount);
         }
 
-        public IInventoryItem GetInventoryItemByInfo(string id, InventoryItemInfo itemInfo, int amount = 1)
-        {
-            if (itemInfo == null) return null;
-
-            Type itemType = InventoryTypeCache.GetType(id);
-
-            if (itemType != null)
-            {
-                IInventoryItem item = (IInventoryItem)Activator.CreateInstance(itemType, new object[] { itemInfo });
-                item.state.amount = amount;
-                return item;
-            }
-            return null;
-        }
-
-        public Type GetItemType(InventoryItemInfo itemInfo)
+        public IInventoryItem GetInventoryItemByInfo(InventoryItemInfo itemInfo, int amount = 1)
         {
             if (itemInfo == null || string.IsNullOrEmpty(itemInfo.id)) return null;
-            return InventoryTypeCache.GetType(itemInfo.id);
+            return Create(itemInfo, amount);
+        }
+
+        private static IInventoryItem Create(InventoryItemInfo itemInfo, int amount)
+        {
+            Type itemType = InventoryTypeCache.Resolve(itemInfo.id);
+            IInventoryItem item = itemType == typeof(DefaultItem)
+                ? new DefaultItem(itemInfo)
+                : (IInventoryItem)Activator.CreateInstance(itemType, new object[] { itemInfo });
+            item.state.amount = amount;
+            return item;
         }
         public InventoryCraftInfo[] GetAllCraftRecepts() => Resources.LoadAll("CraftInfo", typeof(InventoryCraftInfo)).Cast<InventoryCraftInfo>().ToArray();
     }

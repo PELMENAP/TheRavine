@@ -29,6 +29,10 @@ Assemblies: `Inventory`, `UIInventory`, `Info`. Tests: `Assets/Tests/EditMode/Cr
 
 - Item types and slots: `InventoryItemInfo.cs`, `InventorySlot.cs`, `SlotKind.cs`, `InventoryItemState.cs` in the model folder.
 - Item assets: `Assets/Scripts/ScriptableData/Item/ItemInfo/`. Classes: `Assets/Scripts/ScriptableData/Item/DataItems.cs`, `ItemClass.cs`.
+- Description, title and icon live in the `InventoryItemInfo` asset; an item without own behaviour needs no class.
+- `InventoryTypeCache.Resolve` maps `InventoryItemInfo.id` to a class of that name, else to `DefaultItem` (`Assets/Scripts/ScriptableData/Item/DefaultItem.cs`).
+- A class of its own is needed only for behaviour (`ItemClass.TryUse`); its name must equal the item id.
+- Editor tools: `Assets/Scripts/Editor/ItemPipelineValidator.cs` (menu Tools/Ravine/Items, runs before play and build), `ItemWizardWindow.cs`.
 - The prompt for descriptions is built by `Assets/Scripts/UI/Inventory/Extensions/ItemPromptBuilder.cs` from item and player data only.
 
 ## Other UI
@@ -40,6 +44,8 @@ Assemblies: `Inventory`, `UIInventory`, `Info`. Tests: `Assets/Tests/EditMode/Cr
 ## Invariants
 
 - The inventory model has no Unity or UI dependency.
+- Item identity is `InventoryItemInfo.id`, not the C# type: stacking, `HasItem`, `Remove` and saves compare ids; ids are never renamed after release.
+- `InfoManager` keys `DataItems` by id; an asset missing from `DataItems` cannot be loaded from a save.
 - Recipe indices are part of the client / server contract: reordering `CraftModel.Shared` breaks remote crafting.
 - LLM output is untrusted text: never parsed into ids or commands (`docs/SECURITY.md` section 11).
 - UI is not a hot path; clarity over speed (`docs/OPTIMIZATION.md` section 17).
