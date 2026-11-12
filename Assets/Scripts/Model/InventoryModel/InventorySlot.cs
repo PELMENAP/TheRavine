@@ -1,5 +1,3 @@
-using System;
-
 public class InventorySlot
 {
     public readonly SlotKind kind;
@@ -8,7 +6,7 @@ public class InventorySlot
     public bool isEmpty => _cachedIsEmpty;
 
     public IInventoryItem item { get; private set; }
-    public Type itemType => isEmpty ? null : item.type;
+    public string itemId => isEmpty ? null : item.info.id;
     public int amount => isEmpty ? 0 : item.state.amount;
     public int capacity { get; private set; }
 

@@ -12,8 +12,8 @@ public class InventoryItemInfo : ScriptableObject, IInventoryItemInfo
     [SerializeField] private Sprite _infoSprite;
     [SerializeField] private GameObject _prefab;
     [SerializeField] private SlotMask _slotMask = SlotMask.Bag | SlotMask.Hotbar | SlotMask.Craft;
-    private string _description;
-    public string description { get { return _description; } set { _description = value; } }
+    [SerializeField, TextArea(3, 12)] private string _description;
+    public string description => _description;
     public bool isPlaceable => _isPlaceable;
     public string id => _id;
     public string title => _title;

@@ -37,4 +37,10 @@ public static class InventoryTypeCache
         
         return _typeCache.TryGetValue(typeName, out var type) ? type : null;
     }
+
+    public static System.Type Resolve(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return null;
+        return GetType(id) ?? typeof(TheRavine.Inventory.DefaultItem);
+    }
 }

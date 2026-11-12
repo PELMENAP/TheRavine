@@ -22,7 +22,6 @@ Line numbers are those of the last generation; after local edits treat them as a
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 621 |
 | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 583 |
 | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 526 |
-| `Assets/Scripts/Editor/ItemPipelineValidator.cs` | 501 |
 
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs`
 
@@ -806,38 +805,4 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 485 StartDecision
   - 502 ComputeDangerLevel
   - 515 ComputeBreedReadiness
-
-## `Assets/Scripts/Editor/ItemPipelineValidator.cs`
-
-- 10–489 class ItemPipelineValidator
-  - 48 ItemPipelineValidator
-  - 53 OnPlayModeChanged
-  - 61 ValidateMenu
-  - 64 FixMenu
-  - 67 ToggleValidateOnPlay
-  - 70 ToggleValidateOnPlayCheck
-  - 77 Run
-  - 103 Load
-  - 127 LoadAll
-  - 139 LoadGenerators
-  - 169 Contains
-  - 171 InAnyItemDatabase
-  - 178 InAnyRegistry
-  - 185 InAnyGenerator
-  - 195 AddToItemDatabase
-  - 206 AddToRegistry
-  - 213 AddToGenerator
-  - 225 ValidateItemDatabases
-  - 250 ValidateRegistries
-  - 311 ValidateItems
-  - 368 ValidateObjectInfos
-  - 403 CheckPattern
-  - 418 ValidateProfiles
-  - 461 ValidateCrafts
-  - 17–34 class Report
-    - 23 Error
-    - 29 Warn
-  - 36–46 class Database
-- 491–501 class ItemPipelineBuildCheck
-  - 495 OnPreprocessBuild
 

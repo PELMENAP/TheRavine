@@ -113,7 +113,7 @@ namespace TheRavine.Inventory
         {
             if(cancel || !OnInventoryCraftCheck(this) || !HasRoomForResult()) return;
 
-            var result = infoManager.GetInventoryItemByInfo(resultItemInfo.id, resultItemInfo, resultCount);
+            var result = infoManager.GetInventoryItemByInfo(resultItemInfo, resultCount);
             if (result == null) return;
 
             if (!inventory.TryProduceToSlot(this, resultCell.slot, result)) return;

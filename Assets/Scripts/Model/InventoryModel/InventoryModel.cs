@@ -88,11 +88,11 @@ namespace TheRavine.Inventory
             }
         }
 
-        public IInventoryItem GetItem(Type itemType)
+        public IInventoryItem GetItem(string itemId)
         {
-            if (itemType == null) return null;
+            if (itemId == null) return null;
             for (int i = 0; i < _slots.Count; i++)
-                if (_slots[i].itemType == itemType) return _slots[i].item;
+                if (_slots[i].itemId == itemId) return _slots[i].item;
             return null;
         }
         public IInventoryItem[] GetAllItems()
@@ -103,10 +103,10 @@ namespace TheRavine.Inventory
                     allItems.Add(slot.item);
             return allItems.ToArray();
         }
-        public IInventoryItem[] GetAllItems(Type itemType)
+        public IInventoryItem[] GetAllItems(string itemId)
         {
             var allItemsOfType = new List<IInventoryItem>();
-            var slotsOfType = _slots.FindAll(slot => !slot.isEmpty && slot.itemType == itemType);
+            var slotsOfType = _slots.FindAll(slot => !slot.isEmpty && slot.itemId == itemId);
             foreach (var slot in slotsOfType)
                 allItemsOfType.Add(slot.item);
             return allItemsOfType.ToArray();
@@ -120,24 +120,18 @@ namespace TheRavine.Inventory
             return equippedItems.ToArray();
 
         }
-        public int GetItemAmount(Type itemType)
+        public int GetItemAmount(string itemId)
         {
             var amount = 0;
             for (int i = 0; i < _slots.Count; i++)
             {
                 var slot = _slots[i];
-                if (!slot.isEmpty && slot.itemType == itemType) amount += slot.amount;
+                if (!slot.isEmpty && slot.itemId == itemId) amount += slot.amount;
             }
             return amount;
         }
 
-        private static bool IsSame(InventorySlot slot, Type type, IInventoryItemInfo info)
-        {
-            if (slot.isEmpty) return false;
-            return type != null ? slot.itemType == type : string.Equals(slot.item.info.id, info.id);
-        }
-
-        private int FreeRoomCore(Type type, IInventoryItemInfo info, InventorySlot skip)
+        private int FreeRoomCore(IInventoryItemInfo info, InventorySlot skip)
         {
             int max = info.maxItemsInInventorySlot;
             int room = 0;
@@ -146,7 +140,7 @@ namespace TheRavine.Inventory
                 var slot = _slots[i];
                 if (slot == skip || !slot.kind.IsStorage()) continue;
                 if (slot.isEmpty) room += max > 0 ? max : 0;
-                else if (!slot.isFull && IsSame(slot, type, info)) room += slot.capacity - slot.amount;
+                else if (!slot.isFull && slot.itemId == info.id) room += slot.capacity - slot.amount;
             }
             return room;
         }
@@ -154,24 +148,24 @@ namespace TheRavine.Inventory
         public int FreeRoomFor(IInventoryItemInfo info)
         {
             if (info == null) return 0;
-            return FreeRoomCore(null, info, null);
+            return FreeRoomCore(info, null);
         }
 
         public bool CanFit(IInventoryItemInfo info, int amount)
         {
             if (info == null) return false;
             if (amount <= 0) return true;
-            return FreeRoomCore(null, info, null) >= amount;
+            return FreeRoomCore(info, null) >= amount;
         }
 
         private void AddToStorage(IInventoryItem item, int amount)
         {
             int left = amount;
-            var type = item.type;
+            var id = item.info.id;
             for (int i = 0; i < _slots.Count && left > 0; i++)
             {
                 var slot = _slots[i];
-                if (!slot.kind.IsStorage() || slot.isEmpty || slot.isFull || slot.itemType != type) continue;
+                if (!slot.kind.IsStorage() || slot.isEmpty || slot.isFull || slot.itemId != id) continue;
                 int take = Math.Min(left, slot.capacity - slot.amount);
                 slot.item.state.amount += take;
                 left -= take;
@@ -193,7 +187,7 @@ namespace TheRavine.Inventory
         {
             int amount = item.state.amount;
             if (amount <= 0) return false;
-            if (FreeRoomCore(item.type, item.info, null) < amount) return false;
+            if (FreeRoomCore(item.info, null) < amount) return false;
             AddToStorage(item, amount);
             return true;
         }
@@ -214,13 +208,13 @@ namespace TheRavine.Inventory
 
             int slotRoom;
             if (slot.isEmpty) slotRoom = item.info.maxItemsInInventorySlot;
-            else if (slot.itemType == item.type) slotRoom = slot.capacity - slot.amount;
+            else if (slot.itemId == item.info.id) slotRoom = slot.capacity - slot.amount;
             else return false;
             if (slotRoom <= 0) return false;
 
             int put = Math.Min(slotRoom, amount);
             int rest = amount - put;
-            if (rest > 0 && FreeRoomCore(item.type, item.info, slot) < rest) return false;
+            if (rest > 0 && FreeRoomCore(item.info, slot) < rest) return false;
 
             if (slot.isEmpty)
             {
@@ -242,7 +236,7 @@ namespace TheRavine.Inventory
             if (fromSlot == toSlot || fromSlot.isEmpty) return false;
             if (!CanPlace(fromSlot.item.info, toSlot.kind)) return false;
 
-            if (toSlot.isEmpty || toSlot.itemType == fromSlot.itemType)
+            if (toSlot.isEmpty || toSlot.itemId == fromSlot.itemId)
             {
                 var currentToAmount = toSlot.isEmpty ? 0 : toSlot.amount;
                 var room = fromSlot.capacity - currentToAmount;
@@ -314,36 +308,37 @@ namespace TheRavine.Inventory
             return true;
         }
 
-        public bool Remove(Type itemType, int amount = 1)
+        public bool Remove(string itemId, int amount = 1)
         {
-            if (amount <= 0 || itemType == null) return false;
-            if (GetItemAmount(itemType) < amount) return false;
+            if (amount <= 0 || itemId == null) return false;
+            if (GetItemAmount(itemId) < amount) return false;
 
             var left = amount;
             for (int i = _slots.Count - 1; i >= 0 && left > 0; i--)
             {
                 var slot = _slots[i];
-                if (slot.isEmpty || slot.itemType != itemType) continue;
+                if (slot.isEmpty || slot.itemId != itemId) continue;
                 var take = Math.Min(slot.amount, left);
                 ConsumeFromSlot(slot, take);
                 left -= take;
             }
             return true;
         }
-        public bool HasItem(Type itemType, out IInventoryItem item)
+        public bool HasItem(string itemId, out IInventoryItem item)
         {
-            item = GetItem(itemType);
+            item = GetItem(itemId);
             return item != null;
         }
-        public bool HasItem(Type itemType)
+        public bool HasItem(string itemId)
         {
-            for(int i = 0; i < _slots.Count; i++) if(_slots[i].itemType == itemType) return true;
+            if (itemId == null) return false;
+            for(int i = 0; i < _slots.Count; i++) if(_slots[i].itemId == itemId) return true;
             return false;
         }
 
-        public InventorySlot[] GetAllSlots(Type itemType)
+        public InventorySlot[] GetAllSlots(string itemId)
         {
-            return _slots.FindAll(slot => !slot.isEmpty && slot.itemType == itemType).ToArray();
+            return _slots.FindAll(slot => !slot.isEmpty && slot.itemId == itemId).ToArray();
         }
 
         public InventorySlot[] GetAllSlots()

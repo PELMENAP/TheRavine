@@ -20,7 +20,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Core/Timer` | 4 | 271 |
 | `Assets/Scripts/Core/Utilities` | 10 | 1922 |
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
-| `Assets/Scripts/Editor` | 10 | 1554 |
+| `Assets/Scripts/Editor` | 12 | 1583 |
 | `Assets/Scripts/EntitySystem` | 7 | 776 |
 | `Assets/Scripts/EntitySystem/AI` | 10 | 1936 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
@@ -81,7 +81,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Model/DetectorModel/DetectableBehaviour` | 7 | 479 |
 | `Assets/Scripts/Model/DetectorModel/DetectorBehaviour` | 1 | 43 |
 | `Assets/Scripts/Model/EntitySkills` | 6 | 168 |
-| `Assets/Scripts/Model/InventoryModel` | 12 | 945 |
+| `Assets/Scripts/Model/InventoryModel` | 12 | 938 |
 | `Assets/Scripts/Model/InventoryModel/IInventory` | 3 | 28 |
 | `Assets/Scripts/ObjectSystem` | 3 | 212 |
 | `Assets/Scripts/ObjectSystem/Map/Tools` | 3 | 2780 |
@@ -105,11 +105,8 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/SFX/RadioSounds` | 2 | 324 |
 | `Assets/Scripts/SFX/SFXSounds` | 2 | 124 |
 | `Assets/Scripts/SFX/UISounds` | 3 | 145 |
-| `Assets/Scripts/ScriptableData/Item` | 4 | 154 |
+| `Assets/Scripts/ScriptableData/Item` | 5 | 161 |
 | `Assets/Scripts/ScriptableData/Item/Descriprtion` | 2 | 83 |
-| `Assets/Scripts/ScriptableData/Item/ItemInfo/Environment` | 8 | 147 |
-| `Assets/Scripts/ScriptableData/Item/ItemInfo/NPC` | 4 | 83 |
-| `Assets/Scripts/ScriptableData/Item/ItemInfo/kvest` | 1 | 19 |
 | `Assets/Scripts/Terminal` | 8 | 787 |
 | `Assets/Scripts/Terminal/PDollar/Scripts` | 7 | 736 |
 | `Assets/Scripts/Terminal/Rive` | 5 | 825 |
@@ -117,11 +114,11 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Test` | 5 | 781 |
 | `Assets/Scripts/UI` | 2 | 171 |
 | `Assets/Scripts/UI/Console` | 1 | 14 |
-| `Assets/Scripts/UI/Inventory` | 7 | 1052 |
+| `Assets/Scripts/UI/Inventory` | 7 | 1049 |
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1082 |
 | `Assets/Scripts/View` | 2 | 23 |
-| `Assets/Tests/EditMode` | 39 | 4740 |
+| `Assets/Tests/EditMode` | 40 | 4828 |
 
 ## Assemblies
 
@@ -144,7 +141,7 @@ References are resolved from GUIDs; `+N` is the number of package assemblies out
 | Rive | `Assets/Scripts/Terminal/Rive/Core` | Core, UniTask |
 | UIInventory | `Assets/Scripts/UI` | BehavioursMap, Core, EntitySystem, EventSystem, Info, Inventory, LitMotion, ObjectSystem, SkillSystem, Tayx.Graphy, UniTask, UniTask.Addressables, UniTask.Linq, View, undream.llmunity.Runtime +5 |
 | View | `Assets/Scripts/View` | UniTask +1 |
-| EntitySystem.Tests.EditMode | `Assets/Tests/EditMode` | BehavioursMap, Core, EntitySystem, Inventory, ObjectSystem, Rive, UniTask +5 |
+| EntitySystem.Tests.EditMode | `Assets/Tests/EditMode` | BehavioursMap, Core, EntitySystem, Info, Inventory, ObjectSystem, Rive, UniTask +5 |
 
 Folders compiled into `Assembly-CSharp` (no asmdef above them): `Assets/Scripts/Editor`, `Assets/Scripts/GameSceneManagerSystem`, `Assets/Scripts/GlobalSystems`, `Assets/Scripts/Terminal`, `Assets/Scripts/Test`.
 
@@ -304,7 +301,6 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | IState | interface | `Assets/Scripts/GameSceneManagerSystem/IStates & IStatesBehaviour/IState & IStateMethods.cs` | 1 |
 | IStatePatternComponent | interface | `Assets/Scripts/EntitySystem/StatePatternComponent.cs` | 6 |
 | ItemContext | struct | `Assets/Scripts/Model/BehavioursMap/EntityBaseComponents/Contexts.cs` | 20 |
-| ItemPipelineBuildCheck | class | `Assets/Scripts/Editor/ItemPipelineValidator.cs` | 491 |
 | ITickable | interface | `Assets/Scripts/GameSceneManagerSystem/IStates & IStatesBehaviour/IState & IStateMethods.cs` | 9 |
 | ITransformComponent | interface | `Assets/Scripts/Model/BehavioursMap/EntityBaseComponents/TransformComponent.cs` | 2 |
 | IValidatedCommand | interface | `Assets/Scripts/Terminal/ICommand.cs` | 20 |
