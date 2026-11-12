@@ -63,7 +63,7 @@ Open security findings: `docs/audit/security_audit.md`.
 - The mouse wheel changes only the camera distance (`CameraInputController`); `WheelCaptured` and `ConsumeWheelStep` serve the aim level.
 - Dragging the left button (on mobile a single touch that did not start on the joystick) inside the central square of 0.9 of the short screen side turns the view; a press over UI is not a drag. The rules are in `ViewDragGesture` and are tested.
 - A press that stays within `CameraDragThresholdPixels` is a click: `ViewClick` on release triggers `PlayerController.AimPlace`; a drag suppresses it.
-- Tuning is in `SimulationRules`: `CameraYawDegreesPerSide`, `CameraPitchDegreesPerSide`, `CameraPitchMin`, `CameraPitchMax`, `CameraDistanceMax`, `CameraDistanceMin`, `CameraTerrainClearance`.
+- Tuning is in `SimulationRules`: `CameraYawDegreesPerSide`, `CameraPitchDegreesPerSide`, `CameraPitchMin`, `CameraPitchMax`, `CameraDistanceMax`, `CameraDistanceMin`, `CameraTerrainClearance`, `CameraPivotHeight` (height of the look-at point above the player), `CameraInvertDragYaw`, `CameraInvertDragPitch`.
 - Movement goes to the server as a world vector (`ViewOrientation.ToWorld` on the client); the server does not know the view.
 - What the view changes in the world: `docs/map/world.md`, section Camera view.
 

@@ -17,6 +17,15 @@ public sealed partial class SimulationRules
     [Tooltip("Смещение указателя в пикселях, после которого нажатие становится drag и подавляет клик.")]
     [SerializeField, Min(0f)] private float cameraDragThresholdPixels = 6f;
 
+    [Tooltip("Инвертировать горизонталь drag: по умолчанию вправо — камера поворачивается влево.")]
+    [SerializeField] private bool cameraInvertDragYaw = false;
+    [Tooltip("Инвертировать вертикаль drag: по умолчанию вверх — камера наклоняется вниз.")]
+    [SerializeField] private bool cameraInvertDragPitch = false;
+
+    [Header("Camera: anchor")]
+    [Tooltip("Высота точки, на которую смотрит камера, над позицией игрока, мировых единиц. 0 — в ноги.")]
+    [SerializeField] private float cameraPivotHeight = 1.5f;
+
     [Header("Camera: distance")]
     [Tooltip("Расстояние от точки опоры до камеры: scale 0 — максимум, scale 1 — минимум.")]
     [SerializeField, Min(1f)] private float cameraDistanceMax = 46f;
@@ -33,6 +42,9 @@ public sealed partial class SimulationRules
     public float CameraPitchMax => Mathf.Max(cameraPitchMin, cameraPitchMax);
     public float CameraPitchInitial => Mathf.Clamp(cameraPitchInitial, CameraPitchMin, CameraPitchMax);
     public float CameraDragThresholdPixels => cameraDragThresholdPixels;
+    public bool CameraInvertDragYaw => cameraInvertDragYaw;
+    public bool CameraInvertDragPitch => cameraInvertDragPitch;
+    public float CameraPivotHeight => cameraPivotHeight;
     public float CameraDistanceMax => Mathf.Max(cameraDistanceMin, cameraDistanceMax);
     public float CameraDistanceMin => Mathf.Min(cameraDistanceMin, cameraDistanceMax);
     public float CameraTerrainClearance => cameraTerrainClearance;

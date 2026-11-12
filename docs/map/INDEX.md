@@ -21,7 +21,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Core/Utilities` | 10 | 1922 |
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 18 | 2252 |
-| `Assets/Scripts/EntitySystem` | 8 | 965 |
+| `Assets/Scripts/EntitySystem` | 8 | 966 |
 | `Assets/Scripts/EntitySystem/AI` | 10 | 1970 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
 | `Assets/Scripts/EntitySystem/AI/Colony` | 7 | 749 |
@@ -37,14 +37,14 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Perception` | 8 | 2010 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 489 |
 | `Assets/Scripts/EntitySystem/AI/Population` | 4 | 722 |
-| `Assets/Scripts/EntitySystem/AI/Rules` | 9 | 2710 |
+| `Assets/Scripts/EntitySystem/AI/Rules` | 9 | 2722 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI` | 21 | 3442 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 7 | 1099 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
 | `Assets/Scripts/EntitySystem/Command` | 4 | 153 |
 | `Assets/Scripts/EntitySystem/Currency` | 1 | 39 |
-| `Assets/Scripts/EntitySystem/Entityes` | 1 | 118 |
+| `Assets/Scripts/EntitySystem/Entityes` | 1 | 121 |
 | `Assets/Scripts/EntitySystem/Entityes/Bot` | 2 | 117 |
 | `Assets/Scripts/EntitySystem/Entityes/Bot/BotBehavious` | 3 | 55 |
 | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts` | 10 | 986 |

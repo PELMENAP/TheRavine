@@ -178,6 +178,7 @@ namespace TheRavine.EntityControl
 
             float yaw = _yaw;
             float pitch = _pitch;
+            delta *= new float2(rules.CameraInvertDragYaw ? -1f : 1f, rules.CameraInvertDragPitch ? -1f : 1f);
             ViewDragGesture.Rotate(ref yaw, ref pitch, delta, _gesture.Side,
                 rules.CameraYawDegreesPerSide, rules.CameraPitchDegreesPerSide,
                 rules.CameraPitchMin, rules.CameraPitchMax);
