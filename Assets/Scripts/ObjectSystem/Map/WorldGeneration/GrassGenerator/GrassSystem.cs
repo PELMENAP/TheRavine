@@ -104,6 +104,7 @@ public class GrassSystem : MonoBehaviour
     
     private void InitializeSystem()
     {
+        GrassSoilBuffer.EnsureBound();
         
         if (grassPlacementShader == null)
         {
@@ -264,6 +265,7 @@ public class GrassSystem : MonoBehaviour
     
     private void OnDisable()
     {
+        GrassSoilBuffer.Release();
         instanceBuffer?.Release();
         heightMapBuffer?.Release();
         climateBuffer?.Release();

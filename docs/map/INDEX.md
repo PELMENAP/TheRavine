@@ -34,7 +34,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Instinct` | 1 | 382 |
 | `Assets/Scripts/EntitySystem/AI/LSTM` | 2 | 198 |
 | `Assets/Scripts/EntitySystem/AI/Nest` | 1 | 385 |
-| `Assets/Scripts/EntitySystem/AI/Perception` | 8 | 2010 |
+| `Assets/Scripts/EntitySystem/AI/Perception` | 8 | 1999 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 489 |
 | `Assets/Scripts/EntitySystem/AI/Population` | 4 | 722 |
 | `Assets/Scripts/EntitySystem/AI/Rules` | 9 | 2722 |
@@ -85,7 +85,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 13 | 3796 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs` | 5 | 742 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision` | 7 | 396 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator` | 4 | 580 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator` | 5 | 628 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless` | 7 | 1506 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator` | 4 | 400 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering` | 3 | 621 |

@@ -446,7 +446,7 @@ Shader "The Ravine/ChunkGrassShader"
                 return output;
             }
 
-            float4 frag(Varyings input, half facing : VFACE) : SV_Target
+            float4 frag(Varyings input, float facing : VFACE) : SV_Target
             {
                 if (input.color.a < 0.2) discard;
 
