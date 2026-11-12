@@ -19,6 +19,7 @@ CBUFFER_START(UnityPerMaterial)
     float _SnowTempMin;
     float _SnowTempMax;
     float _SnowFlatness;
+    float _SnowSeasonShift;
     float4 _SnowColor;
 
     float _WaterLevel;
@@ -42,6 +43,7 @@ TEXTURE2D(_SandTex); SAMPLER(sampler_SandTex);
 
 float3 _LightDirection;
 float3 _LightPosition;
+float _Season;
 
 struct TerrainAttributes
 {
@@ -140,7 +142,8 @@ void TerrainSurface(float3 flatPositionWS, float3 normalWS, float2 climate, floa
         albedo = lerp(albedo, rock * _RockColor.rgb, rockMask);
     }
 
-    float snowMask = smoothstep(_SnowTempMax, _SnowTempMin, climate.x) * smoothstep(1.0 - _SnowFlatness, 1.0, saturate(normalWS.y));
+    float snowShift = -_Season * _SnowSeasonShift;
+    float snowMask = smoothstep(_SnowTempMax + snowShift, _SnowTempMin + snowShift, climate.x) * smoothstep(1.0 - _SnowFlatness, 1.0, saturate(normalWS.y));
     UNITY_BRANCH
     if (snowMask > 0.001)
     {

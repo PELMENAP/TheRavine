@@ -20,6 +20,7 @@ Shader "The Ravine/Terrain/BiomeTerrain"
         _SnowTempMin ("Snow Full Temperature", Range(0, 1)) = 0.05
         _SnowTempMax ("Snow Start Temperature", Range(0, 1)) = 0.2
         _SnowFlatness ("Snow Flatness", Range(0.01, 1)) = 0.5
+        _SnowSeasonShift ("Snow Season Shift", Range(0, 0.5)) = 0.08
 
         [Header(Sand)]
         _SandTex ("Sand", 2D) = "white" {}
