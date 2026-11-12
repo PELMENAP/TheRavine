@@ -251,10 +251,10 @@ public struct MotionJob : IJobParallelFor
         s.Velocity = step * (1f / math.max(Dt, 1e-5f));
         pos.x = next.x;
         pos.z = next.y;
-        float ground = Atlas.SampleHeight(pos.x, pos.z);
-        if (ObstacleQuery.Support(ref Atlas, in Obstacles, next, BodyRadius, feet, StepUp, out float top) && top > ground)
-            ground = top;
-        pos.y = ground + s.HeightOffset;
+        float groundY = Atlas.SampleHeight(pos.x, pos.z);
+        if (ObstacleQuery.Support(ref Atlas, in Obstacles, next, BodyRadius, feet, StepUp, out float top) && top > groundY)
+            groundY = top;
+        pos.y = groundY + s.HeightOffset;
         Positions[owner] = pos;
 
         float len = math.length(step);
