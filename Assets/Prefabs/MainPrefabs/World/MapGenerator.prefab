@@ -531,4 +531,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61e113457dceefbd3b30aed2f3261017, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  grassMaterial: {fileID: 2100000, guid: 36571ee1032acddecaf946f49784b2d6, type: 2}
+  trampleCompute: {fileID: 7200000, guid: 0ee3081f8e954ddf8fb9275c0927e923, type: 3}

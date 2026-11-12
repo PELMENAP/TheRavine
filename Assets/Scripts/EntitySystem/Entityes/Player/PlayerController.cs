@@ -334,8 +334,19 @@ namespace TheRavine.EntityControl
             player.ApplyServerVitals(health, energyValue);
         }
 
+        private void StampTrample()
+        {
+            if (playerRigidbody == null || !ServiceLocator.Services.TryGet(out GrassTrampleField field) || field.IsDisposed) return;
+
+            Vector3 position = transform.position;
+            Vector3 velocity = playerRigidbody.linearVelocity;
+            float maxEnergy = stats != null && !stats.IsDisposed ? stats.MaxEnergy : 0f;
+            field.StampCreature(new float2(position.x, position.z), new float2(velocity.x, velocity.z), maxEnergy, Time.deltaTime);
+        }
+
         private void Update()
         {
+            StampTrample();
             if (IsSpawned && !IsServer) MirrorVitals();
             if (!IsOwner) return;
 
