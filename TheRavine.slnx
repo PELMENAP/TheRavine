@@ -12,7 +12,6 @@
   <Project Path="BehavioursMap.csproj" />
   <Project Path="Info.csproj" />
   <Project Path="UniTask.Addressables.csproj" />
-  <Project Path="DetectorSystem.csproj" />
   <Project Path="Core.csproj" />
   <Project Path="UIInventory.csproj" />
   <Project Path="Audio.csproj" />
