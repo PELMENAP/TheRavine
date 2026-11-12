@@ -100,6 +100,14 @@ public class ObjectInfo : ScriptableObject
 
 #if UNITY_EDITOR
     public void EditorAssignId(ushort value) => id = value;
+
+    public void EditorAssignCollision(CollisionKind kind, float radius, float height, Vector3 offsetSteps)
+    {
+        collisionKind = kind;
+        collisionRadius = radius;
+        collisionHeight = height;
+        collisionOffsetSteps = offsetSteps;
+    }
 #endif
 }
 

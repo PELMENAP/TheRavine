@@ -269,6 +269,7 @@ public class EntityManager : MonoBehaviour
         _capacity = maxPopulation + math.max(0, SimulationRules.Active.PredatorCount);
         ContextSlabs.Reserve(_capacity);
         _motion = new MotionSystem(_capacity);
+        ServiceLocator.Register(_motion);
         _instincts = new InstinctSystem(_capacity);
         _boids     = new BoidSystem(_capacity);
         _utility    = new UtilityPriorSystem(_capacity);
@@ -862,6 +863,7 @@ public class EntityManager : MonoBehaviour
         services.Unregister(_warmth);
         services.Unregister(_colonies);
         services.Unregister(_planner);
+        services.Unregister(_motion);
         services.Unregister(_infection?.Service);
     }
 

@@ -45,7 +45,10 @@ Open security findings: `docs/audit/security_audit.md`.
 
 ## Player tick
 
-- `TerrainPhysicsResolver.Resolve` first pushes the body out of object shapes (`MapGenerator.ResolveObstacles`), then resolves the terrain.
+- `TerrainPhysicsResolver.Resolve` first pushes the body out of object shapes (`MapGenerator.ResolveObstacles`, swept from the previous resolved position), then resolves the ground.
+- Ground is `max(terrain height, MapGenerator.SupportObstacles)` with `maxStepHeight` as the step-up tolerance; a body on a shape top keeps its height until it leaves the shape.
+- Feet for both queries are `pos.y - halfHeight + GroundOffset`: the surface height at the body centre, the same frame as the shape bottoms.
+- A displacement beyond `ObstacleQuery.SweepReach` or a `SetActive` call counts as a relocation: no sweep, the previous position is dropped.
 - `StepServerMovement` removes the velocity component directed into the obstacle (`ClipVelocity`), so the player slides along it.
 - Body size: `bodyRadius` and `characterHalfHeight` of `PlayerController`. Collision data: `docs/map/world.md`, section Collision.
 

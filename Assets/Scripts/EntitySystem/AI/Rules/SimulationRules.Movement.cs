@@ -68,6 +68,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float blockedSeconds = 0.75f;
     [SerializeField] private float agentBodyRadius = 0.3f;
     [SerializeField] private float agentBodyHeight = 1f;
+    [SerializeField, Min(0f)] private float agentStepUp = 0.5f;
     [SerializeField] private float obstacleCatchUpMul = 1.25f;
     [SerializeField] private float threatenAttackMul = 1.3f;
     [SerializeField] private float groupAttackBonus = 0.25f;
@@ -162,6 +163,7 @@ public sealed partial class SimulationRules
     public float BlockedSeconds => blockedSeconds;
     public float AgentBodyRadius => agentBodyRadius;
     public float AgentBodyHeight => agentBodyHeight;
+    public float AgentStepUp => agentStepUp;
     public float ObstacleCatchUpMul => obstacleCatchUpMul;
     public float ThreatenAttackMul => threatenAttackMul;
     public float GroupAttackBonus => groupAttackBonus;

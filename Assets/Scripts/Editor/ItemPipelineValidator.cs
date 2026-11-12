@@ -134,7 +134,7 @@ public static class ItemPipelineValidator
         return result.ToArray();
     }
 
-    private static MapGenerator[] LoadGenerators()
+    public static MapGenerator[] LoadGenerators()
     {
         string scriptPath = null;
         foreach (string guid in AssetDatabase.FindAssets("MapGenerator t:MonoScript"))

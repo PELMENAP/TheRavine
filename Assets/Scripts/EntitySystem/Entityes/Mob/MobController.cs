@@ -7,11 +7,14 @@ using UnityEngine.Jobs;
 using Unity.Mathematics;
 using Unity.Jobs;
 
+using TheRavine.Generator;
 
 namespace TheRavine.EntityControl
 {
     public class MobController : MonoBehaviour, ISetAble
     {
+        private const float AtlasMargin = (ObstacleQuery.MaxCellReach + 1) * MapGenerator.scale;
+
         private RavineLogger logger;
         public int GetEntityCount() => mobEntities.Length;
         private NativeList<IntPtr> mobEntities;
@@ -21,8 +24,12 @@ namespace TheRavine.EntityControl
         private NativeArray<float2> velocities;
         private NativeList<int> mobIntervals;
         private NativeList<float> mobAccumulated;
+        private NativeList<float3> mobBodies;
+        private NativeList<float2> mobPositions;
+        private float2[] atlasPoints = Array.Empty<float2>();
         private Dictionary<AEntity, int> mobIndex;
         private int updateFrame;
+        private bool motionMissingReported;
 
         private MoveMobsJob moveMobsJob;
         private JobHandle moveJobHandle;
@@ -40,6 +47,8 @@ namespace TheRavine.EntityControl
             velocities = new NativeArray<float2>(0, Allocator.Persistent);
             mobIntervals = new NativeList<int>(Allocator.Persistent);
             mobAccumulated = new NativeList<float>(Allocator.Persistent);
+            mobBodies = new NativeList<float3>(Allocator.Persistent);
+            mobPositions = new NativeList<float2>(Allocator.Persistent);
             mobIndex = new Dictionary<AEntity, int>();
 
             callback?.Invoke();
@@ -63,11 +72,15 @@ namespace TheRavine.EntityControl
                 mobEntities.Add(GCHandle.ToIntPtr(handle));
                 if (slot == mobMovement.Length)
                     Array.Resize(ref mobMovement, math.max(8, slot << 1));
+                if (slot >= atlasPoints.Length)
+                    Array.Resize(ref atlasPoints, math.max(8, slot << 1));
                 mobMovement[slot] = mobEntity.GetEntityComponent<MovementComponent>();
                 mobIntervals.Add(1);
                 mobAccumulated.Add(0f);
 
                 var transformComponent = mobEntity.GetEntityComponent<TransformComponent>();
+                mobBodies.Add(BodyOf(mobEntity));
+                mobPositions.Add(PositionOf(transformComponent));
 
                 if (transformComponent == null)
                 {
@@ -111,6 +124,8 @@ namespace TheRavine.EntityControl
                     mobEntities.RemoveAtSwapBack(i);
                     mobIntervals.RemoveAtSwapBack(i);
                     mobAccumulated.RemoveAtSwapBack(i);
+                    mobBodies.RemoveAtSwapBack(i);
+                    mobPositions.RemoveAtSwapBack(i);
                     transformAccessArray.RemoveAtSwapBack(i);
                     ReallocateVelocities();
                     return;
@@ -153,13 +168,34 @@ namespace TheRavine.EntityControl
                 velocities[i] = movement != null ? movement.GetEntityVelocity() * accumulated : float2.zero;
             }
 
+            if (!ServiceLocator.Services.TryGet(out MotionSystem motion) || !motion.IsAlive)
+            {
+                if (!motionMissingReported)
+                {
+                    motionMissingReported = true;
+                    logger?.LogWarning("MobController: MotionSystem is not available, mobs hold their position");
+                }
+                return;
+            }
+            motionMissingReported = false;
+
+            int count = mobEntities.Length;
+            for (int i = 0; i < count; i++) atlasPoints[i] = mobPositions[i];
+
             moveMobsJob = new MoveMobsJob
             {
                 Velocities = velocities,
-                DeltaTime = 1f
+                Bodies = mobBodies.AsArray(),
+                Positions = mobPositions.AsArray(),
+                Atlas = motion.PrepareAtlas(atlasPoints, count, AtlasMargin),
+                Obstacles = motion.Obstacles,
+                DeltaTime = 1f,
+                StepUp = SimulationRules.Frame.AgentStepUp
             };
 
             moveJobHandle = moveMobsJob.Schedule(transformAccessArray, moveJobHandle);
+            moveJobHandle.Complete();
+            moveJobHandle = default;
         }
 
         private void LateUpdate()
@@ -186,6 +222,8 @@ namespace TheRavine.EntityControl
                 if (mobEntities.IsCreated) mobEntities.Dispose();
                 if (mobIntervals.IsCreated) mobIntervals.Dispose();
                 if (mobAccumulated.IsCreated) mobAccumulated.Dispose();
+                if (mobBodies.IsCreated) mobBodies.Dispose();
+                if (mobPositions.IsCreated) mobPositions.Dispose();
                 mobIndex?.Clear();
                 if (transformAccessArray.isCreated) transformAccessArray.Dispose();
                 if (velocities.IsCreated) velocities.Dispose();
@@ -201,6 +239,23 @@ namespace TheRavine.EntityControl
         private void OnDisable()
         {
             BreakUp(null);
+        }
+
+        private static float3 BodyOf(AEntity mobEntity)
+        {
+            var main = mobEntity.GetEntityComponent<MainComponent>();
+            if (main != null
+                && ServiceLocator.Services.TryGet(out EntitySystem entities)
+                && entities.TryGetMobInfo(main.GetPrefabID(), out EntityInfo info))
+                return new float3(info.BodyRadius, info.BodyHeight, info.GroundOffset);
+
+            return new float3(SimulationRules.Frame.AgentBodyRadius, SimulationRules.Frame.AgentBodyHeight, 0f);
+        }
+
+        private static float2 PositionOf(TransformComponent transformComponent)
+        {
+            Transform tr = transformComponent?.GetEntityTransform();
+            return tr != null ? new float2(tr.position.x, tr.position.z) : float2.zero;
         }
 
         private void ReallocateVelocities()
