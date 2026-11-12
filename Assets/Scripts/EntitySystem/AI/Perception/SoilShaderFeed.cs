@@ -7,21 +7,15 @@ using TheRavine.Generator;
 
 public sealed class SoilShaderFeed : IDisposable
 {
-    public const int Side  = 5;
-    public const int Cells = Side * Side;
+    public const int Side  = GrassSoilBuffer.Side;
+    public const int Cells = GrassSoilBuffer.Cells;
     private const int Half = Side / 2;
 
-    private static readonly int BufferId  = Shader.PropertyToID("_SoilBuffer");
-    private static readonly int OriginId  = Shader.PropertyToID("_SoilOrigin");
-    private static readonly int EnabledId = Shader.PropertyToID("_SoilEnabled");
-
     private NativeArray<float4> _cells;
-    private GraphicsBuffer _buffer;
 
     public SoilShaderFeed()
     {
-        _cells  = new NativeArray<float4>(Cells, Allocator.Persistent);
-        _buffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Cells, sizeof(float) * 4);
+        _cells = new NativeArray<float4>(Cells, Allocator.Persistent);
     }
 
     public void Update(ChunkFoodIndex index, MapGenerator map)
@@ -29,12 +23,12 @@ public sealed class SoilShaderFeed : IDisposable
         if (index != null && map != null && map.TryGetViewerChunk(out int cx, out int cz))
             Publish(index, cx, cz);
         else
-            Shader.SetGlobalFloat(EnabledId, 0f);
+            GrassSoilBuffer.Disable();
     }
 
     public void Publish(ChunkFoodIndex index, int centerX, int centerZ)
     {
-        if (!_cells.IsCreated || _buffer == null) return;
+        if (!_cells.IsCreated) return;
 
         for (int z = 0; z < Side; z++)
         {
@@ -47,21 +41,16 @@ public sealed class SoilShaderFeed : IDisposable
             }
         }
 
-        _buffer.SetData(_cells);
-        Shader.SetGlobalBuffer(BufferId, _buffer);
-        Shader.SetGlobalVector(OriginId, new Vector4(
+        GrassSoilBuffer.Publish(_cells, new Vector4(
             (centerX - Half) * MapGenerator.chunkSize,
             (centerZ - Half) * MapGenerator.chunkSize,
             MapGenerator.chunkSize,
             MapGenerator.InvChunkSize));
-        Shader.SetGlobalFloat(EnabledId, 1f);
     }
 
     public void Dispose()
     {
-        Shader.SetGlobalFloat(EnabledId, 0f);
-        _buffer?.Release();
-        _buffer = null;
+        GrassSoilBuffer.Disable();
         if (_cells.IsCreated) _cells.Dispose();
     }
 }
