@@ -85,7 +85,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 13 | 3796 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs` | 5 | 742 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision` | 7 | 396 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator` | 5 | 628 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator` | 6 | 845 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless` | 7 | 1515 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator` | 4 | 400 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering` | 3 | 621 |
@@ -115,7 +115,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/View` | 2 | 23 |
-| `Assets/Tests/EditMode` | 46 | 5749 |
+| `Assets/Tests/EditMode` | 47 | 5921 |
 
 ## Assemblies
 

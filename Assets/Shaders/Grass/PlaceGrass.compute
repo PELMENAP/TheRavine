@@ -1,15 +1,7 @@
 #pragma kernel PlaceGrass
 
 #include "Assets/Shaders/Include/BiomeCommon.hlsl"
-
-struct InstanceData
-{
-    float3 position;  
-    float  rotation;  
-    float  scaleXZ;   
-    float  scaleY;   
-    uint   packedColor;
-};
+#include "Assets/Shaders/Include/GrassInstance.hlsl"
 
 AppendStructuredBuffer<InstanceData> instanceData;
 StructuredBuffer<float> heightMap;
