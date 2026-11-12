@@ -10,7 +10,7 @@ public class BotController : MonoBehaviour
     private const int PickDistance = 1;
     [SerializeField] private float movementSpeed, offset, timeLimit;
     [SerializeField] private Vector2 movementDirection, aim;
-    [SerializeField] private Rigidbody2D rb;
+    // [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Animator animator, shadowAnimator;
     [SerializeField] private InputActionReference MovementRef;
     private IController currentController;

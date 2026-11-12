@@ -326,7 +326,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3224021413022219001, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 1672802306
+      value: 3468601885
       objectReference: {fileID: 0}
     - target: {fileID: 8121373543420682481, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: m_Name
@@ -346,27 +346,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8121373543420682484, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.91068363
+      value: 0.90153
       objectReference: {fileID: 0}
     - target: {fileID: 8121373543420682484, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.41310447
+      value: 0.28598213
       objectReference: {fileID: 0}
     - target: {fileID: 8121373543420682484, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0.3095419
       objectReference: {fileID: 0}
     - target: {fileID: 8121373543420682484, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: 0.09819245
       objectReference: {fileID: 0}
     - target: {fileID: 8121373543420682484, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 48.8
+      value: 35.2
       objectReference: {fileID: 0}
     - target: {fileID: 8121373543420682484, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: -37.9
       objectReference: {fileID: 0}
     - target: {fileID: 8121373543420682484, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -374,12 +374,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8121373543420682486, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: speed
-      value: 31.72
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 8121373543420682486, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: secondSun
       value: 
       objectReference: {fileID: 514469933882998599}
+    - target: {fileID: 8121373543420682486, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
+      propertyPath: awakeDelay
+      value: 1000
+      objectReference: {fileID: 0}
     - target: {fileID: 8121373543420682486, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
       propertyPath: nightBlendCurve.m_Curve.Array.data[3].time
       value: 0.6191216

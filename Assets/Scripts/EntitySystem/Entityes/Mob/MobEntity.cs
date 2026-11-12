@@ -11,7 +11,7 @@ namespace TheRavine.EntityControl
         public MobEntity(EntityInfo entityInfo, RavineLogger logger)
         {
             base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.Prefab.GetInstanceID(), 0));
-            moveController.SetInitialValues(this, logger);
+            // moveController.SetInitialValues(this, logger);
         }
         public override void SetUp()
         {

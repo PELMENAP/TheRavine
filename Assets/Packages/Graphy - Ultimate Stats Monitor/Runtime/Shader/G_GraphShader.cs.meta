@@ -14,6 +14,6 @@ AssetOrigin:
   serializedVersion: 1
   productId: 105778
   packageName: '[Graphy] - Ultimate FPS Counter - Stats Monitor & Debugger'
-  packageVersion: 3.0.5
+  packageVersion: 4.0.0
   assetPath: Assets/Packages/Graphy - Ultimate Stats Monitor/Runtime/Shader/G_GraphShader.cs
-  uploadId: 626547
+  uploadId: 984674
