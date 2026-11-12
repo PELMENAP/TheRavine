@@ -30,7 +30,6 @@ namespace TheRavine.Generator
         public const int chunkSize = scale * mapChunkSize;
         public const int generationSize = scale * mapChunkSize * (1 + 2 * chunkScale);
         public const float maxTerrainHeight = 100f;
-        public const int SideBlockRing = 1;
 
         public const int CellShift = 1;
         public const int RowShift = 6;
@@ -53,7 +52,7 @@ namespace TheRavine.Generator
 
         private long windowCenter;
         private bool hasWindow, ready, disposed, nativeReleased;
-        private ViewFacing facing;
+        private ViewSector sector;
         private bool simPending;
         private int simShell, simStep;
         private int frame;
@@ -69,7 +68,7 @@ namespace TheRavine.Generator
 
         public ChunkGenerationSettings Settings => activeSettings ?? chunkGenerationSettings;
         public long WindowCenter => windowCenter;
-        public ViewFacing Facing => facing;
+        public ViewSector Sector => sector;
         public int LodRingCount => lodRingCount;
         public int LoadedChunkCount => mapData.Count;
 
@@ -122,23 +121,26 @@ namespace TheRavine.Generator
         public bool IsInActiveWindow(long worldPos) =>
             hasWindow && IsInWindow(windowCenter, WorldToChunk(worldPos), chunkScale);
 
-        public static int ViewRingOf(long center, ViewFacing facing, int ringCount, long chunk)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int BlockOfChunkDelta(int d)
         {
-            int2 delta = new(Position2Int.GetX(chunk) - Position2Int.GetX(center), Position2Int.GetY(chunk) - Position2Int.GetY(center));
-            int lateral = math.abs(math.dot(delta, facing.Right()));
-            int forward = math.dot(delta, facing.Forward());
+            int a = d + chunkScale;
+            return (a >= 0 ? a : a - WindowSide + 1) / WindowSide;
+        }
 
-            if (lateral <= chunkScale && math.abs(forward) <= chunkScale) return 0;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long BlockCenterChunk(long center, int bx, int bz) =>
+            Position2Int.Offset(center, bx * WindowSide, bz * WindowSide);
 
-            if (forward <= chunkScale)
-            {
-                bool sideBlock = math.abs(forward) <= chunkScale && lateral <= chunkScale + WindowSide;
-                return sideBlock && ringCount >= SideBlockRing ? SideBlockRing : -1;
-            }
+        public static int ViewRingOf(long center, ViewSector sector, int ringCount, long chunk)
+        {
+            int bx = BlockOfChunkDelta(Position2Int.GetX(chunk) - Position2Int.GetX(center));
+            int bz = BlockOfChunkDelta(Position2Int.GetY(chunk) - Position2Int.GetY(center));
+            int ring = ViewWedge.Ring(bx, bz);
 
-            int ring = (forward + chunkScale) / WindowSide;
-            if (ring > ringCount || lateral > ring * WindowSide + chunkScale) return -1;
-            return ring;
+            if (ring == 0) return 0;
+            if (ring > ringCount) return -1;
+            return ViewWedge.Contains(sector, bx, bz) ? ring : -1;
         }
 
         public static int SimRingOf(long center, int ringCount, long chunk)
@@ -154,7 +156,7 @@ namespace TheRavine.Generator
         }
 
         public int ViewRingOfChunk(long chunkKey) =>
-            hasWindow ? ViewRingOf(windowCenter, facing, ViewRingCount, chunkKey) : -1;
+            hasWindow ? ViewRingOf(windowCenter, sector, ViewRingCount, chunkKey) : -1;
 
         public int RingOfChunk(long chunkKey) =>
             hasWindow ? SimRingOf(windowCenter, NalRingCount, chunkKey) : -1;
@@ -844,8 +846,8 @@ namespace TheRavine.Generator
             if (worldLoaded) BindChunkStore(worldRegistry);
 
             CurvedWorld.Configure(Settings.curveRadius, Settings.curveFlat, Settings.curveFocusDistance);
-            facing = ViewOrientation.Facing;
-            ViewOrientation.FacingChanged += OnFacingChanged;
+            sector = ViewOrientation.Sector;
+            ViewOrientation.SectorChanged += OnSectorChanged;
             RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
             BiomeShaderGlobals.Apply(Settings, biomeAlbedo);
 
@@ -944,18 +946,18 @@ namespace TheRavine.Generator
                 viewer = transformComponent.GetEntityTransform();
         }
 
-        private void OnFacingChanged(ViewFacing newFacing)
+        private void OnSectorChanged(ViewSector newSector)
         {
-            if (newFacing == facing) return;
+            if (newSector == sector) return;
 
-            facing = newFacing;
+            sector = newSector;
             if (hasWindow && grassSystem != null)
                 grassSystem.UpdateGrassPlacement(this, windowCenter);
             if (endless != null)
             {
                 for (int i = 0; i < endless.Length; i++)
                     if (endless[i] is IViewDirectional directional)
-                        directional.SetFacing(facing);
+                        directional.SetSector(sector);
             }
             evictionPending = true;
         }
@@ -969,14 +971,28 @@ namespace TheRavine.Generator
             }
 
             Vector3 position = camera.transform.position;
-            float2 forward = (float2)facing.Forward();
-            float2 focus = new float2(position.x, position.z) + forward * CurvedWorld.FocusDistance;
-            float origin = math.dot(new float2(position.x, position.z), forward) + CurvedWorld.FocusDistance;
+            float2 focus;
+            float fallbackHeight;
+            if (camera.cameraType == CameraType.Game && ViewOrientation.HasPivot)
+            {
+                Vector3 pivot = ViewOrientation.Pivot;
+                focus = new float2(pivot.x, pivot.z);
+                fallbackHeight = pivot.y;
+            }
+            else
+            {
+                Vector3 look = camera.transform.forward;
+                float2 flat = new float2(look.x, look.z);
+                float length = math.length(flat);
+                float2 ahead = length > 1e-4f ? flat / length : float2.zero;
+                focus = new float2(position.x, position.z) + ahead * CurvedWorld.FocusDistance;
+                fallbackHeight = position.y;
+            }
 
             if (!TrySampleHeightBilinear(focus.x, focus.y, out float referenceHeight))
-                referenceHeight = position.y;
+                referenceHeight = fallbackHeight;
 
-            CurvedWorld.Push(origin, referenceHeight);
+            CurvedWorld.Push(focus, referenceHeight);
         }
 
         public bool TryGetViewerChunk(out int x, out int z)
@@ -1207,7 +1223,7 @@ namespace TheRavine.Generator
             ready = false;
 
             RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
-            ViewOrientation.FacingChanged -= OnFacingChanged;
+            ViewOrientation.SectorChanged -= OnSectorChanged;
             CurvedWorld.PushFlat();
 
             playerSubscription?.Dispose();

@@ -6,59 +6,105 @@ namespace TheRavine.ViewControl
 {
     public static class ViewOrientation
     {
+        public const int BakedSides = 8;
+        public const float BakedSideDegrees = 360f / BakedSides;
+
         private static readonly int ViewBasisId = Shader.PropertyToID("_ViewBasis");
         private static readonly int ViewColumnId = Shader.PropertyToID("_ViewColumn");
 
         private static IViewOriented[] items = new IViewOriented[128];
         private static int count;
-        private static ViewFacing facing;
-        private static float pitch;
         private static float yaw;
+        private static float pitch;
+        private static float2 forward = new(0f, 1f);
+        private static float2 right = new(1f, 0f);
         private static Quaternion rotation = Quaternion.identity;
         private static Quaternion yawRotation = Quaternion.identity;
+        private static ViewSector sector;
+        private static int column;
+        private static Vector3 pivot;
+        private static bool hasPivot;
 
-        public static ViewFacing Facing => facing;
-        public static float PitchDegrees => pitch;
         public static float YawDegrees => yaw;
+        public static float PitchDegrees => pitch;
+        public static float2 Forward => forward;
+        public static float2 Right => right;
         public static Quaternion Rotation => rotation;
         public static Quaternion YawRotation => yawRotation;
+        public static ViewSector Sector => sector;
+        public static int Column => column;
 
-        public static event Action<ViewFacing> FacingChanged;
+        public static bool HasPivot => hasPivot;
+        public static Vector3 Pivot => pivot;
+
+        public static event Action ViewChanged;
+
+        public static event Action<ViewSector> SectorChanged;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Reset()
         {
             Array.Clear(items, 0, count);
             count = 0;
-            facing = ViewFacing.PlusZ;
-            pitch = 0f;
             yaw = 0f;
+            pitch = 0f;
+            forward = new float2(0f, 1f);
+            right = new float2(1f, 0f);
             rotation = Quaternion.identity;
             yawRotation = Quaternion.identity;
-            FacingChanged = null;
+            sector = default;
+            column = 0;
+            pivot = Vector3.zero;
+            hasPivot = false;
+            ViewChanged = null;
+            SectorChanged = null;
             PushShaderGlobals();
         }
 
-        public static void Set(ViewFacing newFacing, float newPitch) => Set(newFacing, newPitch, newFacing.Yaw());
+        public static float2 ToWorld(float2 screen) => right * screen.x + forward * screen.y;
 
-        public static void Set(ViewFacing newFacing, float newPitch, float newYaw)
+        public static void SetPivot(Vector3 value)
         {
-            bool facingChanged = newFacing != facing;
-            if (!facingChanged && newPitch == pitch && newYaw == yaw) return;
+            pivot = value;
+            hasPivot = true;
+        }
 
-            facing = newFacing;
-            pitch = newPitch;
+        public static void ClearPivot() => hasPivot = false;
+
+        public static void Set(float newYaw, float newPitch)
+        {
+            newYaw = ViewSector.Wrap(newYaw);
+            if (newYaw == yaw && newPitch == pitch) return;
+
+            bool yawChanged = newYaw != yaw;
             yaw = newYaw;
-            rotation = Quaternion.Euler(newPitch, newYaw, 0f);
-            yawRotation = Quaternion.Euler(0f, newYaw, 0f);
+            pitch = newPitch;
 
-            if (facingChanged) PushShaderGlobals();
+            if (yawChanged)
+            {
+                math.sincos(math.radians(newYaw), out float s, out float c);
+                forward = new float2(s, c);
+                right = new float2(c, -s);
+                yawRotation = Quaternion.Euler(0f, newYaw, 0f);
+            }
+            rotation = Quaternion.Euler(newPitch, newYaw, 0f);
+
+            ViewSector newSector = ViewSector.FromYaw(newYaw, sector);
+            bool sectorChanged = newSector != sector;
+            sector = newSector;
+            column = ColumnOf(newYaw);
+
+            PushShaderGlobals();
 
             for (int i = count - 1; i >= 0; i--)
-                items[i].OnViewChanged(facing, rotation);
+                items[i].OnViewChanged(rotation);
 
-            if (facingChanged) FacingChanged?.Invoke(facing);
+            ViewChanged?.Invoke();
+            if (sectorChanged) SectorChanged?.Invoke(sector);
         }
+
+        public static int ColumnOf(float yawDegrees) =>
+            (int)math.round(ViewSector.Wrap(yawDegrees) / BakedSideDegrees) % BakedSides;
 
         public static void Register(IViewOriented item)
         {
@@ -72,7 +118,7 @@ namespace TheRavine.ViewControl
 
             item.ViewSlot = count;
             items[count++] = item;
-            item.OnViewChanged(facing, rotation);
+            item.OnViewChanged(rotation);
         }
 
         public static void Unregister(IViewOriented item)
@@ -97,10 +143,8 @@ namespace TheRavine.ViewControl
 
         private static void PushShaderGlobals()
         {
-            int2 f = facing.Forward();
-            int2 r = facing.Right();
-            Shader.SetGlobalVector(ViewBasisId, new Vector4(f.x, f.y, r.x, r.y));
-            Shader.SetGlobalFloat(ViewColumnId, (int)facing);
+            Shader.SetGlobalVector(ViewBasisId, new Vector4(forward.x, forward.y, right.x, right.y));
+            Shader.SetGlobalFloat(ViewColumnId, column);
         }
     }
 }

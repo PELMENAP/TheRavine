@@ -11,7 +11,6 @@ using Unity.Profiling;
 using TheRavine.Generator;
 using TheRavine.ObjectControl;
 using TheRavine.EntityControl.Virology;
-using TheRavine.ViewControl;
 
 public class EntityManager : MonoBehaviour
 {
@@ -814,8 +813,9 @@ public class EntityManager : MonoBehaviour
     private void UpdateVisibilityByCamera(Camera cam)
     {
         Vector3 cp = cam.transform.position;
-        int2 forwardAxis = _map.Facing.Forward();
-        int2 rightAxis = _map.Facing.Right();
+        math.sincos(math.radians(cam.transform.eulerAngles.y), out float yawSin, out float yawCos);
+        float2 forwardAxis = new float2(yawSin, yawCos);
+        float2 rightAxis = new float2(yawCos, -yawSin);
         float margin = cullAxisMargin;
         bool ortho = cam.orthographic;
         float orthoHalf = cam.orthographicSize * cam.aspect;

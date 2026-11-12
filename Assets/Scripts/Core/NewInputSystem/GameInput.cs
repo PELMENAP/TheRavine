@@ -201,26 +201,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""initialStateCheck"": true,
                     ""priority"": 0
-                },
-                {
-                    ""name"": ""Camera Rotate Right"",
-                    ""type"": ""Button"",
-                    ""id"": ""9d8a2b74-4a76-40c4-9940-45edec91a1e7"",
-                    ""expectedControlType"": """",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": false,
-                    ""priority"": 0
-                },
-                {
-                    ""name"": ""Camera Rotate Left"",
-                    ""type"": ""Button"",
-                    ""id"": ""3e6eafca-64c3-4adc-8798-d2320842e7d1"",
-                    ""expectedControlType"": """",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": false,
-                    ""priority"": 0
                 }
             ],
             ""bindings"": [
@@ -463,28 +443,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Camera Scroll"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
-                    ""id"": ""c301961b-a3e8-4d13-acd0-ce5553521c5c"",
-                    ""path"": ""<Mouse>/backButton"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Camera Rotate Right"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
-                    ""id"": ""05418809-e09d-4fcc-99d6-c36a106523db"",
-                    ""path"": ""<Mouse>/forwardButton"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Camera Rotate Left"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1143,8 +1101,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         m_Gameplay_GestureAreaHoldAlt = m_Gameplay.FindAction("Gesture Area (Hold Alt)", throwIfNotFound: true);
         m_Gameplay_GestureRecognizeAlt = m_Gameplay.FindAction("Gesture Recognize (Alt)", throwIfNotFound: true);
         m_Gameplay_CameraScroll = m_Gameplay.FindAction("Camera Scroll", throwIfNotFound: true);
-        m_Gameplay_CameraRotateRight = m_Gameplay.FindAction("Camera Rotate Right", throwIfNotFound: true);
-        m_Gameplay_CameraRotateLeft = m_Gameplay.FindAction("Camera Rotate Left", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1259,8 +1215,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_Gameplay_GestureAreaHoldAlt;
     private readonly InputAction m_Gameplay_GestureRecognizeAlt;
     private readonly InputAction m_Gameplay_CameraScroll;
-    private readonly InputAction m_Gameplay_CameraRotateRight;
-    private readonly InputAction m_Gameplay_CameraRotateLeft;
     /// <summary>
     /// Provides access to input actions defined in input action map "Gameplay".
     /// </summary>
@@ -1316,14 +1270,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Gameplay/CameraScroll".
         /// </summary>
         public InputAction @CameraScroll => m_Wrapper.m_Gameplay_CameraScroll;
-        /// <summary>
-        /// Provides access to the underlying input action "Gameplay/CameraRotateRight".
-        /// </summary>
-        public InputAction @CameraRotateRight => m_Wrapper.m_Gameplay_CameraRotateRight;
-        /// <summary>
-        /// Provides access to the underlying input action "Gameplay/CameraRotateLeft".
-        /// </summary>
-        public InputAction @CameraRotateLeft => m_Wrapper.m_Gameplay_CameraRotateLeft;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1383,12 +1329,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @CameraScroll.started += instance.OnCameraScroll;
             @CameraScroll.performed += instance.OnCameraScroll;
             @CameraScroll.canceled += instance.OnCameraScroll;
-            @CameraRotateRight.started += instance.OnCameraRotateRight;
-            @CameraRotateRight.performed += instance.OnCameraRotateRight;
-            @CameraRotateRight.canceled += instance.OnCameraRotateRight;
-            @CameraRotateLeft.started += instance.OnCameraRotateLeft;
-            @CameraRotateLeft.performed += instance.OnCameraRotateLeft;
-            @CameraRotateLeft.canceled += instance.OnCameraRotateLeft;
         }
 
         /// <summary>
@@ -1433,12 +1373,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
             @CameraScroll.started -= instance.OnCameraScroll;
             @CameraScroll.performed -= instance.OnCameraScroll;
             @CameraScroll.canceled -= instance.OnCameraScroll;
-            @CameraRotateRight.started -= instance.OnCameraRotateRight;
-            @CameraRotateRight.performed -= instance.OnCameraRotateRight;
-            @CameraRotateRight.canceled -= instance.OnCameraRotateRight;
-            @CameraRotateLeft.started -= instance.OnCameraRotateLeft;
-            @CameraRotateLeft.performed -= instance.OnCameraRotateLeft;
-            @CameraRotateLeft.canceled -= instance.OnCameraRotateLeft;
         }
 
         /// <summary>
@@ -1965,20 +1899,6 @@ public partial class @RavineGameInput: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnCameraScroll(InputAction.CallbackContext context);
-        /// <summary>
-        /// Method invoked when associated input action "Camera Rotate Right" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
-        /// </summary>
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnCameraRotateRight(InputAction.CallbackContext context);
-        /// <summary>
-        /// Method invoked when associated input action "Camera Rotate Left" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
-        /// </summary>
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnCameraRotateLeft(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

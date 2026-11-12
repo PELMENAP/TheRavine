@@ -34,16 +34,22 @@ namespace TheRavine.Generator
                 public MeshLevel Level;
                 public Mesh Mesh;
                 public Transform Transform;
-                public int Ring;
+                public MeshRenderer Renderer;
+                public int Bx;
+                public int Bz;
                 public int Lod;
-                public int Dx;
+                public bool Active;
                 public bool Dirty;
+                public bool HasContent;
+                public long Stamp;
             }
 
             private readonly MapGenerator generator;
             private readonly MeshLevel[] levels;
             private readonly MeshTarget central;
-            private readonly MeshTarget[] blocks;
+            private readonly MeshTarget[] pool;
+            private readonly ViewBlock[] wanted;
+            private readonly int[] order;
             private readonly Bounds localBounds;
             private readonly Mesh.MeshDataArray[] pendingData;
             private readonly int[] pendingBlocks;
@@ -52,12 +58,16 @@ namespace TheRavine.Generator
             private long center;
             private bool hasCenter;
             private bool centralDirty;
-            private ViewFacing facing;
+            private int orderCount;
+            private long stamp;
+            private ViewSector sector;
+
+            public int BuiltBlocks { get; private set; }
 
             public EndlessTerrain(MapGenerator _generator, ChunkGenerationSettings settings)
             {
                 generator = _generator;
-                facing = generator.Facing;
+                sector = generator.Sector;
                 localBounds = new Bounds(
                     new Vector3(BlockWorld * 0.5f, 0f, BlockWorld * 0.5f),
                     new Vector3(BlockWorld, BoundsHeight, BlockWorld));
@@ -72,57 +82,42 @@ namespace TheRavine.Generator
                 {
                     Level = levels[0],
                     Mesh = CreateMesh("TerrainCentral"),
-                    Transform = generator.terrainTransform
+                    Transform = generator.terrainTransform,
+                    Active = true
                 };
                 generator.terrainFilter.sharedMesh = central.Mesh;
 
-                int blockCount = 2; // dx = ±1 в строке 0
-                for (int r = 1; r <= ringCount; r++)
-                    blockCount += 2 * r + 1;
-
-                blocks = new MeshTarget[blockCount];
-                pendingData = new Mesh.MeshDataArray[math.max(blockCount, 1)];
-                pendingBlocks = new int[math.max(blockCount, 1)];
-                handles = new NativeArray<JobHandle>(math.max(blockCount, 1), Allocator.Persistent);
+                int poolSize = ringCount > 0 ? ViewWedge.MaxBlocks(ringCount) : 0;
+                pool = new MeshTarget[poolSize];
+                wanted = new ViewBlock[math.max(poolSize, 1)];
+                order = new int[math.max(poolSize, 1)];
+                pendingData = new Mesh.MeshDataArray[math.max(poolSize, 1)];
+                pendingBlocks = new int[math.max(poolSize, 1)];
+                handles = new NativeArray<JobHandle>(math.max(poolSize, 1), Allocator.Persistent);
 
                 var material = generator.terrainFilter.GetComponent<MeshRenderer>().sharedMaterial;
                 var root = generator.terrainTransform.parent;
 
-                int b = 0;
-
-                int sideLod = math.min(MapGenerator.SideBlockRing, ringCount);
-                for (int side = -1; side <= 1; side += 2)
-                    blocks[b++] = CreateBlock(levels[sideLod], ring: 0, lod: sideLod, dx: side, material, root);
-
-                for (int ring = 1; ring <= ringCount; ring++)
-                {
-                    for (int k = 0; k <= 2 * ring; k++)
-                    {
-                        int dx = ((k + 1) >> 1) * ((k & 1) == 1 ? -1 : 1);
-                        blocks[b++] = CreateBlock(levels[ring], ring, ring, dx, material, root);
-                    }
-                }
+                for (int i = 0; i < pool.Length; i++)
+                    pool[i] = CreateBlock(i, material, root);
             }
 
-
-            private MeshTarget CreateBlock(MeshLevel level, int ring, int lod, int dx, Material material, Transform root)
+            private MeshTarget CreateBlock(int index, Material material, Transform root)
             {
-                var go = new GameObject($"TerrainLOD_Ring{ring}_{dx}");
+                var go = new GameObject($"TerrainBlock_{index}");
                 if (root != null) go.transform.SetParent(root, false);
 
                 Mesh mesh = CreateMesh(go.name);
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
-                go.AddComponent<MeshRenderer>().sharedMaterial = material;
+                var renderer = go.AddComponent<MeshRenderer>();
+                renderer.sharedMaterial = material;
+                renderer.enabled = false;
 
                 return new MeshTarget
                 {
-                    Level = level,
                     Mesh = mesh,
                     Transform = go.transform,
-                    Ring = ring,
-                    Lod = lod,
-                    Dx = dx,
-                    Dirty = true
+                    Renderer = renderer
                 };
             }
 
@@ -164,8 +159,13 @@ namespace TheRavine.Generator
                 center = newCenter;
                 hasCenter = true;
 
-                for (int i = 0; i < blocks.Length; i++)
-                    blocks[i].Dirty = true;
+                for (int i = 0; i < pool.Length; i++)
+                {
+                    pool[i].HasContent = false;
+                    pool[i].Dirty = pool[i].Active;
+                }
+
+                ApplySector();
 
                 if (!generator.TryBuildHeightWindow(center, out HeightWindow window))
                     return;
@@ -174,13 +174,87 @@ namespace TheRavine.Generator
                 Apply(central, data, MapGenerator.WindowOriginWorld(center));
             }
 
-            public void SetFacing(ViewFacing newFacing)
+            public void SetSector(ViewSector newSector)
             {
-                if (newFacing == facing) return;
-                facing = newFacing;
+                if (newSector == sector) return;
+                sector = newSector;
 
-                for (int i = 0; i < blocks.Length; i++)
-                    blocks[i].Dirty = true;
+                if (hasCenter) ApplySector();
+            }
+
+            private void ApplySector()
+            {
+                int count = pool.Length > 0 ? ViewWedge.Collect(sector, generator.LodRingCount, wanted) : 0;
+
+                for (int i = 0; i < pool.Length; i++)
+                {
+                    MeshTarget slot = pool[i];
+                    if (!slot.Active) continue;
+
+                    if (IndexOfWanted(slot.Bx, slot.Bz, count) >= 0) continue;
+
+                    if (slot.Dirty) slot.HasContent = false;
+                    slot.Active = false;
+                    slot.Dirty = false;
+                    slot.Renderer.enabled = false;
+                    slot.Stamp = ++stamp;
+                }
+
+                orderCount = 0;
+                for (int w = 0; w < count; w++)
+                {
+                    ViewBlock block = wanted[w];
+                    int slotIndex = FindActive(block.X, block.Z);
+
+                    if (slotIndex < 0)
+                    {
+                        slotIndex = TakeSlot(block.X, block.Z, block.Ring);
+                        if (slotIndex < 0) continue;
+
+                        MeshTarget slot = pool[slotIndex];
+                        bool reuse = slot.HasContent && slot.Bx == block.X && slot.Bz == block.Z && slot.Lod == block.Ring;
+
+                        slot.Bx = block.X;
+                        slot.Bz = block.Z;
+                        slot.Lod = block.Ring;
+                        slot.Level = levels[block.Ring];
+                        slot.Active = true;
+                        slot.Dirty = !reuse;
+                        slot.HasContent = reuse;
+                        slot.Transform.position = BlockPosition(slot);
+                        slot.Renderer.enabled = reuse;
+                    }
+
+                    order[orderCount++] = slotIndex;
+                }
+            }
+
+            private int IndexOfWanted(int bx, int bz, int count)
+            {
+                for (int w = 0; w < count; w++)
+                    if (wanted[w].X == bx && wanted[w].Z == bz) return w;
+                return -1;
+            }
+
+            private int FindActive(int bx, int bz)
+            {
+                for (int i = 0; i < pool.Length; i++)
+                    if (pool[i].Active && pool[i].Bx == bx && pool[i].Bz == bz) return i;
+                return -1;
+            }
+
+            private int TakeSlot(int bx, int bz, int lod)
+            {
+                int best = -1;
+                for (int i = 0; i < pool.Length; i++)
+                {
+                    MeshTarget slot = pool[i];
+                    if (slot.Active) continue;
+
+                    if (slot.HasContent && slot.Bx == bx && slot.Bz == bz && slot.Lod == lod) return i;
+                    if (best < 0 || slot.Stamp < pool[best].Stamp) best = i;
+                }
+                return best;
             }
 
             public void OnTerrainChanged(long chunkKey)
@@ -190,10 +264,14 @@ namespace TheRavine.Generator
                 if (MapGenerator.IsInWindow(center, chunkKey, MapGenerator.chunkScale + HeightWindow.Radius))
                     centralDirty = true;
 
-                for (int i = 0; i < blocks.Length; i++)
+                for (int i = 0; i < pool.Length; i++)
                 {
-                    if (MapGenerator.IsInWindow(BlockCenter(blocks[i]), chunkKey, MapGenerator.chunkScale + HeightWindow.Radius))
-                        blocks[i].Dirty = true;
+                    MeshTarget slot = pool[i];
+                    if (!slot.HasContent && !slot.Dirty) continue;
+                    if (!MapGenerator.IsInWindow(BlockCenter(slot), chunkKey, MapGenerator.chunkScale + HeightWindow.Radius)) continue;
+
+                    if (slot.Active) slot.Dirty = true;
+                    else slot.HasContent = false;
                 }
             }
 
@@ -212,10 +290,11 @@ namespace TheRavine.Generator
                 }
 
                 int n = 0;
-                for (int i = 0; i < blocks.Length; i++)
+                for (int k = 0; k < orderCount; k++)
                 {
-                    MeshTarget block = blocks[i];
-                    if (!block.Dirty) continue;
+                    int index = order[k];
+                    MeshTarget block = pool[index];
+                    if (!block.Active || !block.Dirty) continue;
                     if (FrameBudget.Expired(deadline)) break;
 
                     long blockCenter = BlockCenter(block);
@@ -223,7 +302,7 @@ namespace TheRavine.Generator
                     if (!generator.TryBuildHeightWindow(blockCenter, out HeightWindow window)) break;
 
                     handles[n] = Schedule(block, window, out pendingData[n]);
-                    pendingBlocks[n++] = i;
+                    pendingBlocks[n++] = index;
                     block.Dirty = false;
                 }
 
@@ -234,33 +313,25 @@ namespace TheRavine.Generator
                 Vector3 origin = MapGenerator.WindowOriginWorld(center);
                 for (int k = 0; k < n; k++)
                 {
-                    MeshTarget block = blocks[pendingBlocks[k]];
+                    MeshTarget block = pool[pendingBlocks[k]];
                     Apply(block, pendingData[k], origin + BlockOffset(block));
                     pendingData[k] = default;
+                    block.HasContent = true;
+                    block.Renderer.enabled = true;
+                    BuiltBlocks++;
                 }
             }
 
             public void OnChunkDirty(long chunkKey) { }
 
-            private long BlockCenter(MeshTarget block)
-            {
-                int2 right = facing.Right();
-                int2 forward = facing.Forward();
-                int lateral = block.Dx * MapGenerator.WindowSide;
-                int ahead = block.Ring * MapGenerator.WindowSide;
-                return Position2Int.Offset(center,
-                    right.x * lateral + forward.x * ahead,
-                    right.y * lateral + forward.y * ahead);
-            }
+            private long BlockCenter(MeshTarget block) =>
+                MapGenerator.BlockCenterChunk(center, block.Bx, block.Bz);
 
-            private Vector3 BlockOffset(MeshTarget block)
-            {
-                int2 right = facing.Right();
-                int2 forward = facing.Forward();
-                float lateral = block.Dx * BlockWorld;
-                float ahead = block.Ring * BlockWorld;
-                return new Vector3(right.x * lateral + forward.x * ahead, 0f, right.y * lateral + forward.y * ahead);
-            }
+            private static Vector3 BlockOffset(MeshTarget block) =>
+                new(block.Bx * BlockWorld, 0f, block.Bz * BlockWorld);
+
+            private Vector3 BlockPosition(MeshTarget block) =>
+                MapGenerator.WindowOriginWorld(center) + BlockOffset(block);
 
             private JobHandle Schedule(MeshTarget target, in HeightWindow window, out Mesh.MeshDataArray data)
             {

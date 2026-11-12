@@ -9,7 +9,7 @@ The Ravine is a virtual place where humans and AI live and coexist under the sam
 - **Absolute freedom:** the world can be changed by the player and by itself; any creature may change the code and the rules of the game.
 - **Equality:** all creatures and players are under the same conditions and must adapt and interact.
 - **AI as a player:** not only humans but also artificial intelligence can play in The Ravine.
-- **Image over volume:** 3D models are in most cases redundant: the eye sees a 2D projection on the monitor and completes the volume itself; the view is available from four sides (±Z, ±X) and flat objects turn toward the camera.
+- **Image over volume:** 3D models are in most cases redundant: the eye sees a 2D projection on the monitor and completes the volume itself; the viewer may look in any direction (free yaw, limited pitch) and flat objects turn toward the camera.
 - **Performance is a condition of freedom:** many living creatures are possible only with cheap simulation.
 
 Full text: [PHILOSOPHY.md](PHILOSOPHY.md).

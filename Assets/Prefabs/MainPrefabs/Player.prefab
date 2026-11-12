@@ -224,79 +224,6 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   cameraPrefab: {fileID: 6626940321005811355, guid: 836879510508d084db2d3828d6a44892, type: 3}
   playerInfo: {fileID: 11400000, guid: 02864c9e0e65727ac845cf6cbdaad1f9, type: 2}
-  cameraMove:
-    zCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1.0022929
-        value: 1.5022526
-        inSlope: 2
-        outSlope: 2
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    yCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 1.2002131
-        outSlope: 1.2002131
-        tangentMode: 34
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0.33333334
-      - serializedVersion: 3
-        time: 0.99890137
-        value: 1.1988945
-        inSlope: 1.2002131
-        outSlope: 1.2002131
-        tangentMode: 34
-        weightedMode: 0
-        inWeight: 0.33333334
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    xRotationCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1.0014856
-        value: 2.00842
-        inSlope: 2
-        outSlope: 2
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
 --- !u!114 &4254181672267310821
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -330,7 +257,6 @@ MonoBehaviour:
   Movement: {fileID: -8258650051004762216, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
   Raise: {fileID: 2730610053698897496, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
   RightClick: {fileID: 650507527238210949, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
-  LeftClick: {fileID: -212504553695661567, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
   Jump: {fileID: -1685497067993046391, guid: 7a647ec6cc02b5604ac122cb0d98620e, type: 3}
   joystick: {fileID: 0}
   crosshair: {fileID: 1671218707826521824}

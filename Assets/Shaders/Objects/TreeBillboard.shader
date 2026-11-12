@@ -4,7 +4,7 @@ Shader "The Ravine/Objects/TreeBillboard"
     {
         [NoScaleOffset] _BillboardAlbedo ("Atlas Albedo", 2D) = "white" {}
         [NoScaleOffset] _BillboardNormal ("Atlas View Normal", 2D) = "gray" {}
-        _AtlasGrid ("Atlas Grid (Columns, Rows)", Vector) = (4, 1, 0, 0)
+        _AtlasGrid ("Atlas Grid (Columns, Rows)", Vector) = (8, 1, 0, 0)
         _BillboardPitch ("Bake Pitch", Range(0, 89)) = 30
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
         _Translucency ("Translucency", Range(0, 1)) = 0.3
@@ -76,7 +76,7 @@ Shader "The Ravine/Objects/TreeBillboard"
             frame.right = float3(r.x, 0.0, r.y);
             frame.up = float3(s * f.x, c, s * f.y);
             frame.back = float3(-c * f.x, s, -c * f.y);
-            frame.column = _AtlasGrid.x < 4.0 && _ViewColumn >= _AtlasGrid.x ? _ViewColumn - 2.0 : _ViewColumn;
+            frame.column = _ViewColumn;
             return frame;
         }
 

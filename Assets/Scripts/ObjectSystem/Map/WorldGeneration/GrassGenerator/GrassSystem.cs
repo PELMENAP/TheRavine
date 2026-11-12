@@ -40,7 +40,12 @@ public class GrassSystem : MonoBehaviour
     [SerializeField] private float lacunarity = 2.0f;
 
     [Header("View Culling")]
-    [SerializeField, Min(0)] private int backMargin = 48;
+    [Tooltip("Отсекать траву позади сектора обзора полуплоскостью в compute-шейдере; раскладка пересчитывается при смене сектора или окна. Выключить — для сравнения.")]
+    [SerializeField] private bool cullBehind = true;
+    [Tooltip("Запас полуплоскости, мировых единиц: камера позади опоры (до ~45) + боковой снос при повороте внутри сектора (~12) + сдвиг игрока от центра окна (до ~90).")]
+    [SerializeField, Min(0)] private int backMargin = 150;
+    [Tooltip("Писать в лог число экземпляров после каждой раскладки (асинхронное чтение args-буфера).")]
+    [SerializeField] private bool logStats;
 
     [Header("Climate Mask")]
     [SerializeField] private Vector4 temperatureRange = new(-1f, 0f, 1f, 2f);
@@ -218,18 +223,20 @@ public class GrassSystem : MonoBehaviour
         grassPlacementShader.SetBuffer(kernelPlaceGrass, "heightMap", heightMapBuffer);
         grassPlacementShader.SetBuffer(kernelPlaceGrass, "climateMap", climateBuffer);
 
-        ViewFacing facing = map.Facing;
-        int2 forward = facing.Forward();
-        bool alongX = forward.x != 0;
-        int trimmed = Mathf.Min(MapGenerator.generationSize, MapGenerator.generationSize - MapGenerator.chunkSize + backMargin);
-        int skipped = MapGenerator.generationSize - trimmed;
-        int gridWidth = alongX ? trimmed : MapGenerator.generationSize;
-        int gridHeight = alongX ? MapGenerator.generationSize : trimmed;
-        int gridMinX = Mathf.FloorToInt(boundsMin.x) + (forward.x > 0 ? skipped : 0);
-        int gridMinZ = Mathf.FloorToInt(boundsMin.z) + (forward.y > 0 ? skipped : 0);
+        int gridWidth = MapGenerator.generationSize;
+        int gridHeight = MapGenerator.generationSize;
+        int gridMinX = Mathf.FloorToInt(boundsMin.x);
+        int gridMinZ = Mathf.FloorToInt(boundsMin.z);
 
         long totalGridPoints = (long)gridWidth * gridHeight * bladesPerCell * densityFactor;
         instanceCount = (int)System.Math.Min(totalGridPoints, (long)maxGrassInstances * densityFactor);
+
+        float2 forward = map.Sector.Forward;
+        grassPlacementShader.SetVector("viewCull", new Vector4(
+            boundsMin.x + MapGenerator.generationSize * 0.5f,
+            boundsMin.z + MapGenerator.generationSize * 0.5f,
+            forward.x, forward.y));
+        grassPlacementShader.SetFloat("viewCullMargin", cullBehind ? backMargin : -1f);
 
         grassPlacementShader.SetInt("instanceCount", instanceCount);
         grassPlacementShader.SetInt("gridWidth", gridWidth);
@@ -246,6 +253,17 @@ public class GrassSystem : MonoBehaviour
         grassPlacementShader.Dispatch(kernelPlaceGrass, threadGroups, 1, 1);
 
         ComputeBuffer.CopyCount(instanceBuffer, argsBuffer, sizeof(uint));
+
+        if (logStats)
+        {
+            int dispatched = instanceCount;
+            AsyncGPUReadback.Request(argsBuffer, sizeof(uint), sizeof(uint), request =>
+            {
+                if (request.hasError) return;
+                uint placed = request.GetData<uint>()[0];
+                Debug.Log($"[Grass] cull {(cullBehind ? "on" : "off")}: {placed} of {dispatched} candidates");
+            });
+        }
     }
     
     
