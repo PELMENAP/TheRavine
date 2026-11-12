@@ -153,10 +153,10 @@ Shader "The Ravine/ChunkGrassShader"
                 return float4(0, 0, 0, 0);
 
             float2 u = (xz - _SoilOrigin.xy) * _SoilOrigin.w - 0.5;
-            float2 base = floor(u);
-            float2 f = u - base;
-            int2 i0 = clamp((int2)base, 0, SoilSide - 1);
-            int2 i1 = clamp((int2)base + 1, 0, SoilSide - 1);
+            float2 cellBase = floor(u);
+            float2 f = u - cellBase;
+            int2 i0 = clamp((int2)cellBase, 0, SoilSide - 1);
+            int2 i1 = clamp((int2)cellBase + 1, 0, SoilSide - 1);
 
             float4 c00 = _SoilBuffer[i0.y * SoilSide + i0.x];
             float4 c10 = _SoilBuffer[i0.y * SoilSide + i1.x];
