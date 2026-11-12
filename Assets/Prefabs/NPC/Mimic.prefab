@@ -283,7 +283,6 @@ GameObject:
   - component: {fileID: 6182207451873348224}
   - component: {fileID: 4086780941046595820}
   - component: {fileID: 6349717479139224224}
-  - component: {fileID: -5155700852802353849}
   - component: {fileID: 693275019552751192}
   - component: {fileID: 7914963399030977405}
   - component: {fileID: 7939782235869431694}
@@ -341,6 +340,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
   GlobalObjectIdHash: 1923562949
   InScenePlacedSourceGlobalObjectIdHash: 0
+  m_InScenePlacedDisabledByDefault: 0
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
@@ -367,29 +367,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: EntitySystem::EntityViewModel
   ShowTopMostFoldoutHeaderGroup: 1
   motor: {fileID: 4054312466666063946}
---- !u!136 &-5155700852802353849
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7498966713481436335}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 1
-  m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &693275019552751192
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -432,6 +409,11 @@ MonoBehaviour:
   maxLegs: 8
   velocitySourceBehaviour: {fileID: 4054312466666063946}
   meshQuality: 0.3
+  lodNearDistance: 40
+  lodFarDistance: 90
+  lodCullDistance: 200
+  lodMidQuality: 0.5
+  lodFarQuality: 0.3
   legPlacerOrigin: {x: 0, y: 0, z: 0}
 --- !u!23 &7914963399030977405
 MeshRenderer:

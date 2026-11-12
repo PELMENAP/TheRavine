@@ -16,7 +16,7 @@ MonoBehaviour:
   _id: PlayerItem
   _title: PlayerItem
   _maxItemsInInventorySlot: 99
-  _spriteIcon: {fileID: 0}
+  _spriteIcon: {fileID: 21300000, guid: c80ef4c8927cb564b98e9ca3dc13f98e, type: 3}
   _infoSprite: {fileID: 1284575992285204154, guid: 4497af406020841419d8e59d32b57a6c, type: 3}
   _prefab: {fileID: 1671218706617821313, guid: 1b0040924df5a54fca8e1f98646d3d7e, type: 3}
   _slotMask: 131

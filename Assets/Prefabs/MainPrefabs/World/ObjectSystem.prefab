@@ -577,6 +577,10 @@ MonoBehaviour:
     m_RotationOrder: 4
   disableAtNight: 0
   fadeDuration: 2
+  appearDelay: 5
+  appearDuration: 40
+  appearStartHeight: 0.2
+  multiplierSmoothTime: 20
 --- !u!4 &5230712088563022789 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8121373543420682484, guid: 38fe0aa31aa644c4091fb2737ede8bd5, type: 3}
@@ -681,7 +685,8 @@ PrefabInstance:
       propertyPath: textureSize
       value: 1024
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 3802184848743760996, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
     m_RemovedGameObjects:
     - {fileID: 6600631134399683104, guid: 088e5a2512f3438439ddad3659c75fdc, type: 3}
     m_AddedGameObjects: []

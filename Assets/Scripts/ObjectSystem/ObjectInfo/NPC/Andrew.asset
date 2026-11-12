@@ -12,15 +12,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80c4aeda88e566a9aa865345c07fe905, type: 3}
   m_Name: Andrew
   m_EditorClassIdentifier: 
-  _id: andrew
-  _amount: 1
-  _poolSize: 1
-  _iType: 1
-  _bType: 0
-  _nalinfo: {fileID: 0}
-  _iteminfo: {fileID: 11400000, guid: 89ccdf0a81f45ec1a9ca7fb251f16f56, type: 2}
-  _prefab: {fileID: 6242330467826230692, guid: a27eabf849e27c589b38e68d03b998eb, type: 3}
-  _nextStep: {fileID: 0}
-  _addspace: []
-  _deadPattern: {fileID: 0}
-  _pickUpPattern: {fileID: 0}
+  id: 38
+  objectPrefab: {fileID: 6242330467826230692, guid: a27eabf849e27c589b38e68d03b998eb, type: 3}
+  defaultAmount: 1
+  initialPoolSize: 1
+  instanceType: 1
+  behaviourType: 0
+  nalInfo: {fileID: 0}
+  inventoryItemInfo: {fileID: 11400000, guid: 89ccdf0a81f45ec1a9ca7fb251f16f56, type: 2}
+  decaySeconds: 0
+  isFood: 0
+  foodKind: 0
+  evolutionStep: {fileID: 0}
+  additionalOccupiedCells: []
+  placementKind: 0
+  onDeathPattern: {fileID: 0}
+  onPickUpPattern: {fileID: 0}
+  levels: 1
+  visibleRings: 0
+  farMode: 0
+  castShadowsFar: 0
+  lodSet: {fileID: 0}
+  collisionKind: 0
+  collisionRadius: 0.5
+  collisionHeight: 2
+  collisionSteps: {x: 1, y: 1, z: 1}
+  collisionOffsetSteps: {x: 0, y: 0, z: 0}
+  objectCanBurn: 0
