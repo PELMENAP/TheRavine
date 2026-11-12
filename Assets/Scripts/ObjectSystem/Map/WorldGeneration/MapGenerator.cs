@@ -808,6 +808,7 @@ namespace TheRavine.Generator
         [SerializeField, Min(0)] private int debugIgniteRadius = 6;
         [SerializeField, Min(0.1f)] private float nalApplyBudgetMs = 1f;
         [SerializeField, Min(1)] private int chunkRequestCapacity = 32;
+        [SerializeField] private ObjectViewMotionSettings objectMotion = new();
 
         public int ViewRingCount => math.min(lodRingCount, ObjectInfo.MaxVisibleRings);
         public int NalRingCount => tickRules != null ? math.min(ViewRingCount, tickRules.nalRings) : ViewRingCount;
@@ -905,7 +906,7 @@ namespace TheRavine.Generator
                 endless[1] = new EndlessLiquids(this, Settings);
             if (Settings.endlessFlag[2])
             {
-                endless[2] = new EndlessObjects(this, objectSystem);
+                endless[2] = new EndlessObjects(this, objectSystem, objectMotion);
                 if (lodRingCount > 0)
                     endless[3] = new FarObjectRenderer(this, objectSystem, Settings);
             }
