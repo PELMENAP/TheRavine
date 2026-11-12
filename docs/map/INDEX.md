@@ -86,7 +86,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs` | 5 | 742 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision` | 7 | 396 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator` | 5 | 628 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless` | 7 | 1506 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless` | 7 | 1515 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator` | 4 | 400 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering` | 3 | 621 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/RippleSystem` | 3 | 169 |
@@ -115,7 +115,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/View` | 2 | 23 |
-| `Assets/Tests/EditMode` | 46 | 5742 |
+| `Assets/Tests/EditMode` | 46 | 5749 |
 
 ## Assemblies
 
@@ -295,7 +295,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | InteractorListCommand | class | `Assets/Scripts/Terminal/Rive/InteractorCommands.cs` | 6 |
 | InteractorRegistry | class | `Assets/Scripts/Terminal/Rive/Core/RiveInteractors.cs` | 156 |
 | InteractorResetCommand | class | `Assets/Scripts/Terminal/Rive/InteractorCommands.cs` | 36 |
-| IObjectViewMotionHost | interface | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/ObjectViewMotion.cs` | 16 |
+| IObjectViewMotionHost | interface | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/ObjectViewMotion.cs` | 17 |
 | IReadOnlyAimComponent | interface | `Assets/Scripts/Model/BehavioursMap/Aim/AimComponent.cs` | 5 |
 | ISerializableNeuralModel | interface | `Assets/Scripts/EntitySystem/AI/NeuralModelStorage.cs` | 8 |
 | ISkillComponent | interface | `Assets/Scripts/Model/EntitySkills/SkillComponent.cs` | 3 |

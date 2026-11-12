@@ -68,6 +68,13 @@ public class ObjectGrowthMathTests
     }
 
     [Test]
+    public void FractionScalesTheRatioButNeverShrinks()
+    {
+        AssertVector(new Vector3(1.6f, 2.4f, 1f), ObjectGrowthMath.ApplyFraction(new Vector3(2f, 3f, 0.5f), 0.8f));
+        AssertVector(new Vector3(2f, 3f, 1f), ObjectGrowthMath.ApplyFraction(new Vector3(2f, 3f, 0.5f), 1f));
+    }
+
+    [Test]
     public void ScaleRunsFromBaseToBaseTimesRatio()
     {
         var baseScale = new Vector3(1f, 2f, 1f);

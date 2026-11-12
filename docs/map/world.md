@@ -47,7 +47,7 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 - `EndlessObjects` animates only an existing view whose `ChunkData.Version` changed; streaming a new view never animates.
 - `ObjectViewMotion` (`Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/ObjectViewMotion.cs`): LitMotion slots, fixed budget; over budget a change is instant.
 - A new object pops in, a removed one shrinks and is then released; `ReleaseView` cancels motions and releases at once. `PooledObject.BaseScale` is restored in `Pool.Get`.
-- NAL growth: a `BehaviourType.GROW` object whose cell turns into its `EvolutionStep` keeps its pooled instance and scales to the next size over `growthDuration`, then the next stage is taken.
+- NAL growth: a `BehaviourType.GROW` object whose cell turns into its `EvolutionStep` keeps its pooled instance and scales to `growthFraction` of the next size over `growthDuration`, then the next stage is taken.
 - Growth ratio: `ObjectGrowthMath.Resolve`: renderer bounds per axis (cached per pool pair), else `CollisionTable` heights, else 1. The data already holds the next stage.
 - Soil and trample on grass: `GrassInstancedShader.shader` reads `SoilShaderFeed` (`_SoilBuffer`) and `GrassTrampleField` (`_GrassTrample`) at render time; placement is untouched.
 - `GrassSoilBuffer` owns `_SoilBuffer` and keeps a neutral one bound while `GrassSystem` runs, because D3D12 skips draws with an unbound SRV; `SoilShaderFeed` only fills it.
