@@ -407,7 +407,7 @@ Shader "The Ravine/ChunkGrassShader"
                 float4 shadowCoord : TEXCOORD4;
                 float3 windOffset : TEXCOORD5;
                 float3 instancePos : TEXCOORD6;
-                uint texIndex : TEXCOORD7;
+                nointerpolation uint texIndex : TEXCOORD7;
                 float4 fogSoil : TEXCOORD8;
             };
 
@@ -446,7 +446,7 @@ Shader "The Ravine/ChunkGrassShader"
                 return output;
             }
 
-            float4 frag(Varyings input, float facing : VFACE) : SV_Target
+            float4 frag(Varyings input, FRONT_FACE_TYPE facing : FRONT_FACE_SEMANTIC) : SV_Target
             {
                 if (input.color.a < 0.2) discard;
 
@@ -454,7 +454,7 @@ Shader "The Ravine/ChunkGrassShader"
                 clip(texColor.a - _Cutoff);
 
                 float3 normalWS = normalize(input.normalWS);
-                normalWS *= facing > 0 ? 1 : -1;
+                normalWS *= IS_FRONT_VFACE(facing, 1.0, -1.0);
 
                 float4 finalColor = lerp(texColor, texColor * input.color, _InstanceColorBlend);
                 finalColor.rgb = ApplyHueVariation(finalColor.rgb, input.instancePos);
@@ -522,7 +522,7 @@ Shader "The Ravine/ChunkGrassShader"
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
-                uint texIndex : TEXCOORD1;
+                nointerpolation uint texIndex : TEXCOORD1;
             };
 
             float4 GetShadowPositionHClip(float3 positionWS, float3 normalWS)
@@ -599,7 +599,7 @@ Shader "The Ravine/ChunkGrassShader"
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
-                uint texIndex : TEXCOORD1;
+                nointerpolation uint texIndex : TEXCOORD1;
             };
 
             Varyings DepthVert(Attributes input)
