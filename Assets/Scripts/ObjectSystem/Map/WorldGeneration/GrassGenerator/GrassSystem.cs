@@ -39,14 +39,6 @@ public class GrassSystem : MonoBehaviour
     [SerializeField] private float persistence = 0.5f;
     [SerializeField] private float lacunarity = 2.0f;
 
-    [Header("View Culling")]
-    [Tooltip("Отсекать траву позади сектора обзора полуплоскостью в compute-шейдере; раскладка пересчитывается при смене сектора или окна. Выключить — для сравнения.")]
-    [SerializeField] private bool cullBehind = true;
-    [Tooltip("Запас полуплоскости, мировых единиц: камера позади опоры (до ~45) + боковой снос при повороте внутри сектора (~12) + сдвиг игрока от центра окна (до ~90).")]
-    [SerializeField, Min(0)] private int backMargin = 150;
-    [Tooltip("Писать в лог число экземпляров после каждой раскладки (асинхронное чтение args-буфера).")]
-    [SerializeField] private bool logStats;
-
     [Header("Climate Mask")]
     [SerializeField] private Vector4 temperatureRange = new(-1f, 0f, 1f, 2f);
     [SerializeField] private Vector4 moistureRange = new(-1f, 0f, 1f, 2f);
@@ -234,13 +226,6 @@ public class GrassSystem : MonoBehaviour
         long totalGridPoints = (long)gridWidth * gridHeight * bladesPerCell * densityFactor;
         instanceCount = (int)System.Math.Min(totalGridPoints, (long)maxGrassInstances * densityFactor);
 
-        float2 forward = map.Sector.Forward;
-        grassPlacementShader.SetVector("viewCull", new Vector4(
-            boundsMin.x + MapGenerator.generationSize * 0.5f,
-            boundsMin.z + MapGenerator.generationSize * 0.5f,
-            forward.x, forward.y));
-        grassPlacementShader.SetFloat("viewCullMargin", cullBehind ? backMargin : -1f);
-
         grassPlacementShader.SetInt("instanceCount", instanceCount);
         grassPlacementShader.SetInt("gridWidth", gridWidth);
         grassPlacementShader.SetInt("gridHeight", gridHeight);
@@ -256,17 +241,6 @@ public class GrassSystem : MonoBehaviour
         grassPlacementShader.Dispatch(kernelPlaceGrass, threadGroups, 1, 1);
 
         ComputeBuffer.CopyCount(instanceBuffer, argsBuffer, sizeof(uint));
-
-        if (logStats)
-        {
-            int dispatched = instanceCount;
-            AsyncGPUReadback.Request(argsBuffer, sizeof(uint), sizeof(uint), request =>
-            {
-                if (request.hasError) return;
-                uint placed = request.GetData<uint>()[0];
-                Debug.Log($"[Grass] cull {(cullBehind ? "on" : "off")}: {placed} of {dispatched} candidates");
-            });
-        }
     }
     
     

@@ -6,7 +6,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 | File | Lines |
 |---|---|
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1808 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1806 |
 | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1290 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1067 |
 | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 942 |
@@ -25,7 +25,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs`
 
-- 24–1296 class MapGenerator
+- 24–1294 class MapGenerator
   - 88 WorldToChunk
   - 92 WorldToLocalIdx
   - 96 CellToChunk
@@ -98,68 +98,68 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 928 BindFirstPlayer
   - 940 BindPlayer
   - 950 OnSectorChanged
-  - 966 OnBeginCameraRendering
-  - 999 TryGetViewerChunk
-  - 1006 ApplyImmediate
-  - 1009 ApplyWorldCommands
-  - 1025 Update
-  - 1054 MoveWindow
-  - 1074 RestartSimSupply
-  - 1081 SupplySimSquare
-  - 1121 ExtraUpdate
-  - 1123 FlushDirty
-  - 1134 ComputeWindowCenter
-  - 1142 BindChunkStore
-  - 1150 OnWorldRenamed
-  - 1158 SaveModifiedChunks
-  - 1173 EvictChunks
-  - 1202 IsRetained
-  - 1214 BreakUp
-  - 1220 OnDisable
-  - 1247 IgniteNearViewer
-  - 1264 OnDestroy
+  - 964 OnBeginCameraRendering
+  - 997 TryGetViewerChunk
+  - 1004 ApplyImmediate
+  - 1007 ApplyWorldCommands
+  - 1023 Update
+  - 1052 MoveWindow
+  - 1072 RestartSimSupply
+  - 1079 SupplySimSquare
+  - 1119 ExtraUpdate
+  - 1121 FlushDirty
+  - 1132 ComputeWindowCenter
+  - 1140 BindChunkStore
+  - 1148 OnWorldRenamed
+  - 1156 SaveModifiedChunks
+  - 1171 EvictChunks
+  - 1200 IsRetained
+  - 1212 BreakUp
+  - 1218 OnDisable
+  - 1245 IgniteNearViewer
+  - 1262 OnDestroy
   - 431–445 struct ChunkObstacles
     - 435 TryGetObstacles
-- 1298–1761 class ChunkData
-  - 1325 SetFoodTable
-  - 1327 IsFoodPrefab
-  - 1345 ChunkData
-  - 1371 TryAddObject
-  - 1375 TryAddObject
-  - 1378 TryAddObject
-  - 1381 TryAddObject
-  - 1423 SpanMask
-  - 1426 UpperKey
-  - 1429 Validate
-  - 1454 UpperLevelsFree
-  - 1462 RegisterUpper
-  - 1478 UnregisterUpper
-  - 1494 RemapUpper
-  - 1505 AddVolume
-  - 1529 SetLevelBit
-  - 1531 ClearVolume
-  - 1541 TryGetBuilding
-  - 1547 HasLevelAt
-  - 1554 TryGetObject
-  - 1568 TryGetObject
+- 1296–1759 class ChunkData
+  - 1323 SetFoodTable
+  - 1325 IsFoodPrefab
+  - 1343 ChunkData
+  - 1369 TryAddObject
+  - 1373 TryAddObject
+  - 1376 TryAddObject
+  - 1379 TryAddObject
+  - 1421 SpanMask
+  - 1424 UpperKey
+  - 1427 Validate
+  - 1452 UpperLevelsFree
+  - 1460 RegisterUpper
+  - 1476 UnregisterUpper
+  - 1492 RemapUpper
+  - 1503 AddVolume
+  - 1527 SetLevelBit
+  - 1529 ClearVolume
+  - 1539 TryGetBuilding
+  - 1545 HasLevelAt
+  - 1552 TryGetObject
+  - 1566 TryGetObject
+  - 1581 RemoveObject
   - 1583 RemoveObject
-  - 1585 RemoveObject
-  - 1651 ClearDirty
-  - 1653 ClearObjects
-  - 1676 SetHeight
-  - 1688 RestoreHeight
-  - 1698 LevelsAt
-  - 1700 MarkPersisted
-  - 1702 CommitRestore
-  - 1709 ResetForReuse
-  - 1727 CommitErosion
-  - 1733 InvalidateWater
-  - 1741 CommitGeneration
-  - 1746 Dispose
-- 1763–1778 struct StructureSpawnPoint
-  - 1769 StructureSpawnPoint
-- 1780–1807 struct ObjectInstInfo
-  - 1796 ObjectInstInfo
+  - 1649 ClearDirty
+  - 1651 ClearObjects
+  - 1674 SetHeight
+  - 1686 RestoreHeight
+  - 1696 LevelsAt
+  - 1698 MarkPersisted
+  - 1700 CommitRestore
+  - 1707 ResetForReuse
+  - 1725 CommitErosion
+  - 1731 InvalidateWater
+  - 1739 CommitGeneration
+  - 1744 Dispose
+- 1761–1776 struct StructureSpawnPoint
+  - 1767 StructureSpawnPoint
+- 1778–1805 struct ObjectInstInfo
+  - 1794 ObjectInstInfo
 
 ## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
 

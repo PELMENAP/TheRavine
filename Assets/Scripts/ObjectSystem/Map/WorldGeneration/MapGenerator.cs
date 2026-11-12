@@ -952,8 +952,6 @@ namespace TheRavine.Generator
             if (newSector == sector) return;
 
             sector = newSector;
-            if (hasWindow && grassSystem != null)
-                grassSystem.UpdateGrassPlacement(this, windowCenter);
             if (endless != null)
             {
                 for (int i = 0; i < endless.Length; i++)

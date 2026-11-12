@@ -22,8 +22,6 @@ int gridMinZ;
 int gridWidth;
 int gridHeight;
 int bladesPerCell;
-float4 viewCull;
-float viewCullMargin;
 float density;
 float scaleMin;
 float scaleMax;
@@ -190,8 +188,6 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     float worldX = gridX + offsetX;
     float worldZ = gridZ + offsetZ;
 
-    if (viewCullMargin >= 0.0 && dot(float2(worldX, worldZ) - viewCull.xy, viewCull.zw) < -viewCullMargin) return;
-    
     float height = SampleHeightBilinear(worldX, worldZ);
 
     if (height < globalMinHeight || height > globalMaxHeight) return;
