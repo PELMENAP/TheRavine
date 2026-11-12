@@ -1,0 +1,61 @@
+#pragma kernel PartitionGrass
+
+#include "Assets/Shaders/Include/GrassInstance.hlsl"
+
+StructuredBuffer<InstanceData> placed;
+ByteAddressBuffer placedCount;
+AppendStructuredBuffer<InstanceData> band0;
+AppendStructuredBuffer<InstanceData> band1;
+AppendStructuredBuffer<InstanceData> band2;
+
+float4 lodPivot;
+float4 lodEnds;
+float4 lodKeep;
+uint rowStride;
+
+uint Hash(uint input)
+{
+    uint state = input * 747796405u + 2891336453u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}
+
+float PositionRoll(float3 position)
+{
+    uint hash = Hash(asuint(position.x) ^ Hash(asuint(position.z)));
+    return (hash & 0xFFFFFF) / 16777216.0;
+}
+
+[numthreads(64, 1, 1)]
+void PartitionGrass(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.y * rowStride + id.x;
+    if (index >= placedCount.Load(0)) return;
+
+    InstanceData blade = placed[index];
+
+    float dist = length(blade.position.xz - lodPivot.xy);
+    int band = dist < lodEnds.x ? 0 : (dist < lodEnds.y ? 1 : (dist < lodEnds.z ? 2 : 3));
+    if (band > 2) return;
+
+    float4 starts = float4(0.0, lodEnds.x, lodEnds.y, lodEnds.z);
+    float start = starts[band];
+    float end = lodEnds[band];
+    float keep = lodKeep[band];
+    float nextKeep = lodKeep[band + 1];
+
+    float roll = PositionRoll(blade.position);
+    if (roll >= keep) return;
+
+    float fade = min(lodEnds.w, end - start);
+    float t = fade > 0.0 ? saturate((dist - (end - fade)) / fade) : 0.0;
+    float dropping = roll >= nextKeep ? 1.0 : 0.0;
+    float coverage = nextKeep > 0.0 ? lerp(keep, nextKeep, t) : keep;
+
+    blade.scaleY *= 1.0 - t * dropping;
+    blade.scaleXZ *= rsqrt(max(coverage, 1e-4));
+
+    if (band == 0) band0.Append(blade);
+    else if (band == 1) band1.Append(blade);
+    else band2.Append(blade);
+}
