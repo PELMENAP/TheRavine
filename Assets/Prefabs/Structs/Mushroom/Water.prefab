@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 6600631136331952965}
   - component: {fileID: 6871818272072717940}
   - component: {fileID: 1927289884321064616}
-  - component: {fileID: 3802184848743760996}
   m_Layer: 4
   m_Name: Water
   m_TagString: Untagged
@@ -119,24 +118,3 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ObjectSystem::RippleStampSystem
   stampCompute: {fileID: 7200000, guid: 0f758434d938f6910be769bfd8014c81, type: 3}
---- !u!65 &3802184848743760996
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6600631136331953019}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 250, y: 0.1, z: 250}
-  m_Center: {x: 0, y: 0, z: 0}
