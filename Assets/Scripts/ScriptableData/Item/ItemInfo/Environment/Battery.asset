@@ -19,3 +19,7 @@ MonoBehaviour:
   _spriteIcon: {fileID: -10094822, guid: 7565c2d8bf69c1da7ae0532571c39987, type: 3}
   _infoSprite: {fileID: -10094822, guid: 7565c2d8bf69c1da7ae0532571c39987, type: 3}
   _prefab: {fileID: 5420371829210926239, guid: 9912b47a10d32ca8389aeed9159b11c6, type: 3}
+  _slotMask: 131
+  _description: "\u041D\u0435\u0441\u043A\u043E\u043B\u044C\u043A\u043E \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u043D\u044B\u0445
+    \r\n\u043C\u0435\u0436\u0434\u0443 \u0441\u043E\u0431\u043E\u0439 \u0433\u0430\u043B\u044C\u0432\u0430\u043D\u0438\u0447\u0435\u0441\u043A\u0438\u0445
+    \u044D\u043B\u0435\u043C\u0435\u043D\u0442\u043E\u0432 \r\n2000 mAh"

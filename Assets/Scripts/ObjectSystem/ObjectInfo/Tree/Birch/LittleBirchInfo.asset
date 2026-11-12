@@ -33,3 +33,9 @@ MonoBehaviour:
   farMode: 0
   castShadowsFar: 0
   lodSet: {fileID: 11400000, guid: 509a4c4b026c1d9cbb9d419871e53816, type: 2}
+  collisionKind: 0
+  collisionRadius: 0.5
+  collisionHeight: 2
+  collisionSteps: {x: 1, y: 1, z: 1}
+  collisionOffsetSteps: {x: 0, y: 0, z: 0}
+  objectCanBurn: 1

@@ -1499,9 +1499,17 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: tickRules
+      value: 
+      objectReference: {fileID: 11400000, guid: fdffe36e7d7e3f5418600caa186f5be2, type: 2}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: rippleEffect
       value: 
       objectReference: {fileID: 5777932263901799525}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: mapEventRules
+      value: 
+      objectReference: {fileID: 11400000, guid: 3bd176ad56d9e4b4a909e6a885a201db, type: 2}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: terrainFilter
       value: 
@@ -1511,9 +1519,25 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 6118399043195273558}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: fireView.lights
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: terrainTransform
       value: 
       objectReference: {fileID: 6722119735624511312}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: fireView.lightRange
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: fireView.flameMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: ef4ced8e7c6d87e428017a7e541d49ea, type: 2}
+    - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: fireView.smokeMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: 40788233971bbec48a6d0e35570545fa, type: 2}
     - target: {fileID: 2265691849651761453, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: 'chunkGenerationSettings.endlessFlag.Array.data[3]'
       value: 1
@@ -1613,7 +1637,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8291761768583862468, guid: e6fc858b1c845550097ecb40c3760e4e, type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 3386079374
+      value: 2243241895
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1676,7 +1700,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1485577371347755464, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 4215341905
+      value: 3468601885
       objectReference: {fileID: 0}
     - target: {fileID: 3495164147535748133, guid: 4482eb5d7d3bb3039a5775e105c8c90f, type: 3}
       propertyPath: m_LocalScale.x

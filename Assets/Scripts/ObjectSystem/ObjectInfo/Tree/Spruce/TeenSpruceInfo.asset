@@ -20,11 +20,22 @@ MonoBehaviour:
   behaviourType: 2
   nalInfo: {fileID: 0}
   inventoryItemInfo: {fileID: 0}
+  decaySeconds: 0
+  isFood: 0
+  foodKind: 0
   evolutionStep: {fileID: 11400000, guid: 1f5a9fa98ce0357a1a045ec4af226c89, type: 2}
   additionalOccupiedCells: []
+  placementKind: 0
   onDeathPattern: {fileID: 0}
   onPickUpPattern: {fileID: 0}
+  levels: 1
   visibleRings: 4
   farMode: 2
   castShadowsFar: 1
   lodSet: {fileID: 11400000, guid: 70973d1f03c5fd7c58bbcc2358c471ca, type: 2}
+  collisionKind: 1
+  collisionRadius: 0.25
+  collisionHeight: 12.8
+  collisionSteps: {x: 1, y: 1, z: 1}
+  collisionOffsetSteps: {x: 0, y: -0.77, z: 0}
+  objectCanBurn: 1

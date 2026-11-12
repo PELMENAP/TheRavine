@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 242aab85f24a450f8203c07758fcf022, type: 3}
+  m_Name: MapEventRules
+  m_EditorClassIdentifier: ObjectSystem::TheRavine.Generator.MapEventRules
+  fire:
+    ignitionChance: 0.5
+    seasonBias: 0.5
+    stepInterval: 0.5
+    maxBurning: 512
+    defaultSize: 1
+    minSize: 0.25
+    maxSize: 100
+    burnSeconds: 6
+    burnSizeExponent: 0.5
+    damagePerSecond: 10
+    heatRadiusPerSize: 0.5
+    spreadChance: 0.8
+    windBias: 0.8
+    spreadReachPerSize: 1.5
+    spreadMaxReach: 50
+    spreadAttemptsPerSize: 10
+    spreadMaxAttempts: 20
