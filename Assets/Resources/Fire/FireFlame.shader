@@ -9,6 +9,9 @@ Shader "The Ravine/Effects/Fire Flame"
         _FlameSpeed ("Scroll Speed", Float) = 2.4
         _WindLean ("Wind Lean", Float) = 0.45
         _MaxLean ("Max Lean", Float) = 1.2
+        _TonguesPerSize ("Tongues Per Size", Float) = 3
+        _SizeHeight ("Height From Size", Range(0, 1)) = 0.6
+        _SizeLift ("Lift Along Tall Objects", Range(0, 1)) = 0.55
 
         [Header(Palette)]
         _ColorDeep ("Deep", Color) = (0.62, 0.08, 0.02, 1)
@@ -30,6 +33,7 @@ Shader "The Ravine/Effects/Fire Flame"
         _EmberSize ("Size", Float) = 0.11
         _EmberRise ("Rise", Float) = 4.5
         _EmberLife ("Life", Float) = 1.6
+        _EmbersPerSize ("Embers Per Size", Float) = 5
     }
 
     SubShader
@@ -67,6 +71,9 @@ Shader "The Ravine/Effects/Fire Flame"
                 float  _FlameSpeed;
                 float  _WindLean;
                 float  _MaxLean;
+                float  _TonguesPerSize;
+                float  _SizeHeight;
+                float  _SizeLift;
                 float4 _ColorDeep;
                 float4 _ColorMid;
                 float4 _ColorHot;
@@ -82,7 +89,11 @@ Shader "The Ravine/Effects/Fire Flame"
                 float  _EmberSize;
                 float  _EmberRise;
                 float  _EmberLife;
+                float  _EmbersPerSize;
             CBUFFER_END
+
+            static const uint MaxTongues = 6;
+            static const uint MaxEmbers = 10;
 
             struct Varyings
             {
@@ -107,6 +118,8 @@ Shader "The Ravine/Effects/Fire Flame"
 
                 float3 positionWS;
                 float4 data;
+                float rootSize = sqrt(s.size);
+                float tall = max(s.size - 1.0, 0.0);
 
                 if (quad == 0)
                 {
@@ -115,27 +128,28 @@ Shader "The Ravine/Effects/Fire Flame"
 
                     float3 t, b;
                     FireGroundFrame(s.normal, t, b);
-                    float2 offset = (corner - 0.5) * (_GlowSize * (0.8 + 0.25 * saturate(glow)));
+                    float2 offset = (corner - 0.5) * (_GlowSize * rootSize * (0.8 + 0.25 * saturate(glow)));
                     positionWS = s.base + t * offset.x + b * offset.y + s.normal * 0.15;
                     data = float4(0.0, glow * _GlowStrength, s.seed * 37.0, 0.0);
                 }
-                else if (quad <= 3)
+                else if (quad <= MaxTongues)
                 {
-                    if (s.heat <= 0.002) return Culled();
-
                     uint tongue = quad - 1;
+                    if (s.heat <= 0.002 || tongue >= FireCount(_TonguesPerSize, s.size, 1, MaxTongues)) return Culled();
+
                     bool primary = tongue == 0;
                     float angle  = FireRand(s.seed, 11 + tongue) * 6.2831853;
-                    float radius = primary ? 0.0 : _FlameSpread * (0.55 + 0.45 * FireRand(s.seed, 17 + tongue));
-                    float3 centre = s.base + float3(cos(angle), 0.0, sin(angle)) * radius;
+                    float radius = primary ? 0.0 : _FlameSpread * rootSize * (0.55 + 0.45 * FireRand(s.seed, 17 + tongue));
+                    float lift   = primary ? 0.0 : FireRand(s.seed, 19 + tongue) * tall * _SizeLift;
+                    float3 centre = s.base + float3(cos(angle) * radius, lift, sin(angle) * radius);
 
                     float scale = primary ? 1.0 : lerp(0.62, 0.85, FireRand(s.seed, 23 + tongue));
                     float flicker = 1.0
                         + 0.14 * sin(_FireTime * (7.0 + 3.0 * FireRand(s.seed, 29 + tongue)) + s.seed * 40.0)
                         + 0.08 * sin(_FireTime * 17.3 + tongue * 2.1);
                     float heat = saturate(s.heat);
-                    float height = _FlameHeight * scale * flicker * lerp(0.25, 1.0, heat) * max(s.heat, 1.0);
-                    float width  = _FlameWidth * scale * lerp(0.55, 1.0, heat);
+                    float height = _FlameHeight * scale * flicker * lerp(0.25, 1.0, heat) * max(s.heat, 1.0) * lerp(1.0, s.size, _SizeHeight);
+                    float width  = _FlameWidth * scale * rootSize * lerp(0.55, 1.0, heat);
 
                     float2 lean = _FireWind.xy * _WindLean;
                     float leanLength = length(lean);
@@ -150,11 +164,12 @@ Shader "The Ravine/Effects/Fire Flame"
                 }
                 else
                 {
-                    uint ember = quad - 4;
+                    uint ember = quad - 1 - MaxTongues;
                     float emit = s.ended < 0.0
                         ? saturate(s.heat)
                         : s.burned * exp(-s.ended / max(_SmoulderSeconds * 0.5, 0.01));
-                    if (emit <= 0.01 || FireRand(s.seed, 41 + ember) > _FireKeep) return Culled();
+                    if (emit <= 0.01 || ember >= FireCount(_EmbersPerSize, s.size, 1, MaxEmbers)
+                        || FireRand(s.seed, 41 + ember) > _FireKeep) return Culled();
 
                     float life  = _EmberLife * (0.7 + 0.6 * FireRand(s.seed, 47 + ember));
                     float cycle = _FireTime / life + FireRand(s.seed, 53 + ember);
@@ -162,9 +177,10 @@ Shader "The Ravine/Effects/Fire Flame"
                     uint  salt  = (uint)floor(cycle) * 16 + ember;
 
                     float angle  = FireRand(s.seed, 59 + salt) * 6.2831853;
-                    float radius = 0.6 * sqrt(FireRand(s.seed, 61 + salt));
-                    float3 start = s.base + float3(cos(angle) * radius, 0.4, sin(angle) * radius);
-                    float  rise  = _EmberRise * phase * (0.6 + 0.4 * FireRand(s.seed, 67 + salt));
+                    float radius = 0.6 * rootSize * sqrt(FireRand(s.seed, 61 + salt));
+                    float  lift  = 0.4 + FireRand(s.seed, 63 + salt) * tall * _SizeLift;
+                    float3 start = s.base + float3(cos(angle) * radius, lift, sin(angle) * radius);
+                    float  rise  = _EmberRise * rootSize * phase * (0.6 + 0.4 * FireRand(s.seed, 67 + salt));
                     float3 swirl = float3(sin(phase * 9.0 + angle * 3.0), 0.0, cos(phase * 7.0 + angle * 2.0)) * (0.25 * phase);
                     float3 drift = float3(_FireWind.x, 0.0, _FireWind.y) * (phase * life * 0.8);
                     float3 centre = start + float3(0.0, rise, 0.0) + swirl + drift;

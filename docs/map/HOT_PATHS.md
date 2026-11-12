@@ -21,7 +21,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 9. Third loop: `EntityModel.EndCycle`.
 10. `MovePlanner.Flush`, then `InfectionCoordinator.Spread` on the batch.
 11. At the end of a window, `CloseTickWindow`: deaths, extinctions, predators, `ApplyPendingGradients`, nests, castes, visibility.
-12. Every frame after the tick: `FireTickHandler.Step`, `FireView.Render`, `SpeechBus.Flush`, `MovePlanner.Flush`, `MotionSystem.Step`.
+12. Every frame after the tick: `EntityManager.ApplyFireHeat` (once per fire step), `SpeechBus.Flush`, `MovePlanner.Flush`, `MotionSystem.Step`.
 
 | Area | File | Hot methods |
 |---|---|---|
@@ -83,8 +83,9 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 |---|---|---|
 | Frame | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | `Update`, `ApplyWorldCommands`, `FlushDirty`, `SupplySimSquare`, height and occupancy queries |
 | Random ticks | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Ticks/RandomTickService.cs` | `Update`, `Tick`, `Dispatch`; `RandomTickJob` |
-| Tick handlers | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/NAL_PC.cs`, `Assets/Scripts/EntitySystem/AI/Hazards/FireTickHandler.cs` | `OnRandomTick`, `Step` |
-| Fire rendering | `Assets/Scripts/EntitySystem/AI/Hazards/FireView.cs` | `Render`, `Rebuild`, `UpdateLights` |
+| Tick handlers | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/NAL_PC.cs`, `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireEvent.cs` | `OnRandomTick`, `Step`, `Spread`, `HeatDamageAt` |
+| Map events | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/GlobalMapEvents.cs` | `Tick` |
+| Fire rendering | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireView.cs` | `Render`, `Rebuild`, `UpdateLights` |
 | Chunk jobs | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs/` | Burst jobs; budgeted by `FrameBudget`, not per frame |
 
 ## Rendering

@@ -57,6 +57,9 @@ public class ObjectInfo : ScriptableObject
     [SerializeField] private Vector3Int collisionSteps = Vector3Int.one;
     [SerializeField] private Vector3 collisionOffsetSteps;
 
+    [Header("Fire")]
+    [SerializeField] private bool objectCanBurn;
+
     public ushort Id => id;
     public ushort DefaultAmount => defaultAmount;
     public ushort InitialPoolSize => initialPoolSize;
@@ -79,6 +82,7 @@ public class ObjectInfo : ScriptableObject
     public ObjectLodSet LodSet => lodSet;
     public float DecaySeconds => decaySeconds;
     public CollisionKind CollisionKind => collisionKind;
+    public bool ObjectCanBurn => objectCanBurn;
 
     public CollisionShape BakeCollision(float buildStep, float levelHeight)
     {
@@ -108,6 +112,8 @@ public class ObjectInfo : ScriptableObject
         collisionHeight = height;
         collisionOffsetSteps = offsetSteps;
     }
+
+    public void EditorAssignCanBurn(bool value) => objectCanBurn = value;
 #endif
 }
 

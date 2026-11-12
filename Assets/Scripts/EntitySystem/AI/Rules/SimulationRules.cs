@@ -461,15 +461,6 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float PreWinterWorkerStimulus;
         public readonly float WinterGrowthMul;
         public readonly float WinterDrainMul;
-        public readonly float FireIgnitionChance;
-        public readonly float FireSeasonBias;
-        public readonly float FireSpreadChance;
-        public readonly float FireWindBias;
-        public readonly float FireBurnSeconds;
-        public readonly float FireDamagePerSecond;
-        public readonly float FireStepInterval;
-        public readonly int FireMaxBurning;
-        public readonly float[] FoodFlammabilityTable;
         public readonly FoodTraits FoodTraitsPlant;
         public readonly FoodTraits FoodTraitsToxic;
         public readonly FoodTraits FoodTraitsLarge;
@@ -573,7 +564,6 @@ public sealed partial class SimulationRules : ScriptableObject
 
         public float BiomeFertility(int biome) => BiomeValue(BiomeFertilityTable, biome, 1f);
         public float BiomeToxicity(int biome)  => BiomeValue(BiomeToxicityTable, biome, 0f);
-        public float FoodFlammability(FoodKind kind) => FoodFlammabilityTable != null && (uint)kind < (uint)FoodFlammabilityTable.Length ? FoodFlammabilityTable[(int)kind] : 0f;
         public FoodTraits TraitsOf(FoodKind kind) => kind switch
         {
             FoodKind.Toxic => FoodTraitsToxic,
@@ -1036,15 +1026,6 @@ public sealed partial class SimulationRules : ScriptableObject
             PreWinterWorkerStimulus = r.preWinterWorkerStimulus;
             WinterGrowthMul = r.winterGrowthMul;
             WinterDrainMul = r.winterDrainMul;
-            FireIgnitionChance = r.fireIgnitionChance;
-            FireSeasonBias = r.fireSeasonBias;
-            FireSpreadChance = r.fireSpreadChance;
-            FireWindBias = r.fireWindBias;
-            FireBurnSeconds = r.fireBurnSeconds;
-            FireDamagePerSecond = r.fireDamagePerSecond;
-            FireStepInterval = r.fireStepInterval;
-            FireMaxBurning = r.fireMaxBurning;
-            FoodFlammabilityTable = r.foodFlammability;
             FoodTraitsPlant = r.FoodTraitsFor(FoodKind.Plant);
             FoodTraitsToxic = r.FoodTraitsFor(FoodKind.Toxic);
             FoodTraitsLarge = r.FoodTraitsFor(FoodKind.Large);

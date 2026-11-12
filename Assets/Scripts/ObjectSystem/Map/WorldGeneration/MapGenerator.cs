@@ -790,6 +790,7 @@ namespace TheRavine.Generator
         private NalTickHandler nal;
         private RandomTickService randomTicks;
         private bool ownsTickRules;
+        private bool ownsMapEventRules;
         private ChunkStore chunkStore;
         private IDisposable autosaveSubscription;
         private WorldRegistry boundRegistry;
@@ -800,6 +801,9 @@ namespace TheRavine.Generator
         [SerializeField] private GrassSystem grassSystem;
         [SerializeField] private Texture2DArray biomeAlbedo;
         [SerializeField] private WorldTickRules tickRules;
+        [SerializeField] private MapEventRules mapEventRules;
+        [SerializeField] private FireViewSettings fireView = new();
+        [SerializeField, Min(0)] private int debugIgniteRadius = 6;
         [SerializeField, Min(0.1f)] private float nalApplyBudgetMs = 1f;
         [SerializeField, Min(1)] private int chunkRequestCapacity = 32;
 
@@ -807,6 +811,7 @@ namespace TheRavine.Generator
         public int NalRingCount => tickRules != null ? math.min(ViewRingCount, tickRules.nalRings) : ViewRingCount;
         public int NalReach => NalRingCount * WindowSide + chunkScale;
         public RandomTickService RandomTicks => randomTicks;
+        public GlobalMapEvents Events { get; private set; }
 
         public WorldCommandBuffer Commands { get; private set; }
         public WorldCommandStats CommandStats { get; } = new();
@@ -870,6 +875,14 @@ namespace TheRavine.Generator
                     nal = new NalTickHandler(this, objectSystem.infoRegistry, randomTicks);
                     randomTicks.Register(nal);
                 }
+
+                if (mapEventRules == null)
+                {
+                    mapEventRules = ScriptableObject.CreateInstance<MapEventRules>();
+                    ownsMapEventRules = true;
+                    RavineLog.Warning("[MapGenerator] MapEventRules is not assigned, using defaults");
+                }
+                Events = new GlobalMapEvents(this, objectSystem.infoRegistry, randomTicks, mapEventRules, fireView);
             }
 
             SetupEndless();
@@ -1005,6 +1018,7 @@ namespace TheRavine.Generator
 
             ApplyWorldCommands();
             randomTicks?.Update();
+            Events?.Tick();
             nal?.Poll();
             FlushDirty();
 
@@ -1213,6 +1227,23 @@ namespace TheRavine.Generator
             }
         }
 
+        [ContextMenu("Ignite Fire Near Viewer")]
+        private void IgniteNearViewer()
+        {
+            FireEvent fire = Events?.Fire;
+            if (fire == null || viewer == null) return;
+
+            Vector3 p = viewer.position;
+            long centre = FireEvent.CellOf(p.x, p.z);
+            int cx = Position2Int.GetX(centre);
+            int cz = Position2Int.GetY(centre);
+            int lit = 0;
+            for (int dz = -debugIgniteRadius; dz <= debugIgniteRadius && lit < 5; dz++)
+            for (int dx = -debugIgniteRadius; dx <= debugIgniteRadius && lit < 5; dx++)
+                if (fire.TryIgnite(Position2Int.Pack(cx + dx, cz + dz))) lit++;
+            RavineLog.Warning($"[MapGenerator] Ignited {lit} objects near the viewer");
+        }
+
         private void OnDestroy()
         {
             OnDisable();
@@ -1229,6 +1260,10 @@ namespace TheRavine.Generator
             sampleChunk = null;
             sampleKey = long.MinValue;
 
+            Events?.Dispose();
+            Events = null;
+            if (ownsMapEventRules && mapEventRules != null) Destroy(mapEventRules);
+            ownsMapEventRules = false;
             nal?.Dispose();
             nal = null;
             randomTicks?.Dispose();

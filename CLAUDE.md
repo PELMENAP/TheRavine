@@ -10,6 +10,7 @@ Read only what the task touches. The Philosophy and Project constraints sections
 | Agent AI, colonies, learning, speech | [docs/map/ai.md](docs/map/ai.md) |
 | Virology | [docs/map/virology.md](docs/map/virology.md) |
 | World, chunks, NAL, random ticks, camera rings, rendering | [docs/map/world.md](docs/map/world.md) |
+| Map events: fire, later weather | [docs/map/map-events.md](docs/map/map-events.md) |
 | Player, Netcode | [docs/map/player-net.md](docs/map/player-net.md) |
 | Agent motion, birds, other jobs | [docs/map/jobs.md](docs/map/jobs.md) |
 | Entity base classes, mobs, small modules | [docs/map/entities.md](docs/map/entities.md) |
