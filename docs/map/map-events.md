@@ -11,12 +11,13 @@ Root: `Assets/Scripts/ObjectSystem/Map/GlobalEvents/`. Assembly: `ObjectSystem`.
 | `FireEvent` | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireEvent.cs` | Fire simulation; also a random-tick handler; `FireCell` per burning object |
 | `FireMath` | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireMath.cs` | Pure formulas: size, burn time, spread reach and attempts, heat |
 | `FireView` | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireView.cs` | Fire rendering and lights; settings `FireViewSettings` in `MapGenerator.fireView` |
-| `SeasonClockSource` | `Assets/Scripts/EntitySystem/AI/Colony/SeasonClockSource.cs` | `IMapSeason` over `SeasonClock`; set by `EntityManager` |
+| `SeasonClockSource` | `Assets/Scripts/EntitySystem/AI/Colony/SeasonClockSource.cs` | `IMapSeason` over `SeasonClock`, incl. `WinterApproach`; set by `EntityManager` |
 
 ## Data flow
 
 1. `MapGenerator.SetUp` creates `GlobalMapEvents` after `RandomTickService`; it registers `FireEvent` as a tick handler.
 2. `MapGenerator.Update` calls `GlobalMapEvents.Tick` after the random ticks: `Step` where `WorldAuthority.IsAuthority`, then `Render`.
+   With a season source set, `Tick` also publishes the shader globals `_Season` and `_WinterApproach` once per second of `SimulationClock`.
 3. An object burns only if `ObjectInfo.ObjectCanBurn`. Its fire size is the height of its baked collision shape, else `FireRules.defaultSize`, clamped.
 4. A random tick on a burnable object ignites it with `ignitionChance` times the season factor; no fire in winter (`IMapSeason`).
 5. Every `stepInterval`: time left drops, a burnt-out object is removed through `WorldCommandBuffer`, the rest try to spread.

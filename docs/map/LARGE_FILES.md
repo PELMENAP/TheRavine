@@ -6,12 +6,12 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 | File | Lines |
 |---|---|
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1807 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1808 |
 | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1290 |
-| `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1052 |
+| `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1067 |
+| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 942 |
+| `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 920 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 918 |
-| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 914 |
-| `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 909 |
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 849 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 775 |
 | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | 730 |
@@ -25,7 +25,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs`
 
-- 24–1295 class MapGenerator
+- 24–1296 class MapGenerator
   - 88 WorldToChunk
   - 92 WorldToLocalIdx
   - 96 CellToChunk
@@ -92,74 +92,74 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 747 IsOccupiedAt
   - 755 TryToAddPositionToChunk
   - 774 MarkChunkDirty
-  - 827 SetUp
-  - 895 SetupEndless
-  - 914 HorizonRingCount
-  - 927 BindFirstPlayer
-  - 939 BindPlayer
-  - 949 OnSectorChanged
-  - 965 OnBeginCameraRendering
-  - 998 TryGetViewerChunk
-  - 1005 ApplyImmediate
-  - 1008 ApplyWorldCommands
-  - 1024 Update
-  - 1053 MoveWindow
-  - 1073 RestartSimSupply
-  - 1080 SupplySimSquare
-  - 1120 ExtraUpdate
-  - 1122 FlushDirty
-  - 1133 ComputeWindowCenter
-  - 1141 BindChunkStore
-  - 1149 OnWorldRenamed
-  - 1157 SaveModifiedChunks
-  - 1172 EvictChunks
-  - 1201 IsRetained
-  - 1213 BreakUp
-  - 1219 OnDisable
-  - 1246 IgniteNearViewer
-  - 1263 OnDestroy
+  - 828 SetUp
+  - 896 SetupEndless
+  - 915 HorizonRingCount
+  - 928 BindFirstPlayer
+  - 940 BindPlayer
+  - 950 OnSectorChanged
+  - 966 OnBeginCameraRendering
+  - 999 TryGetViewerChunk
+  - 1006 ApplyImmediate
+  - 1009 ApplyWorldCommands
+  - 1025 Update
+  - 1054 MoveWindow
+  - 1074 RestartSimSupply
+  - 1081 SupplySimSquare
+  - 1121 ExtraUpdate
+  - 1123 FlushDirty
+  - 1134 ComputeWindowCenter
+  - 1142 BindChunkStore
+  - 1150 OnWorldRenamed
+  - 1158 SaveModifiedChunks
+  - 1173 EvictChunks
+  - 1202 IsRetained
+  - 1214 BreakUp
+  - 1220 OnDisable
+  - 1247 IgniteNearViewer
+  - 1264 OnDestroy
   - 431–445 struct ChunkObstacles
     - 435 TryGetObstacles
-- 1297–1760 class ChunkData
-  - 1324 SetFoodTable
-  - 1326 IsFoodPrefab
-  - 1344 ChunkData
-  - 1370 TryAddObject
-  - 1374 TryAddObject
-  - 1377 TryAddObject
-  - 1380 TryAddObject
-  - 1422 SpanMask
-  - 1425 UpperKey
-  - 1428 Validate
-  - 1453 UpperLevelsFree
-  - 1461 RegisterUpper
-  - 1477 UnregisterUpper
-  - 1493 RemapUpper
-  - 1504 AddVolume
-  - 1528 SetLevelBit
-  - 1530 ClearVolume
-  - 1540 TryGetBuilding
-  - 1546 HasLevelAt
-  - 1553 TryGetObject
-  - 1567 TryGetObject
-  - 1582 RemoveObject
-  - 1584 RemoveObject
-  - 1650 ClearDirty
-  - 1652 ClearObjects
-  - 1675 SetHeight
-  - 1687 RestoreHeight
-  - 1697 LevelsAt
-  - 1699 MarkPersisted
-  - 1701 CommitRestore
-  - 1708 ResetForReuse
-  - 1726 CommitErosion
-  - 1732 InvalidateWater
-  - 1740 CommitGeneration
-  - 1745 Dispose
-- 1762–1777 struct StructureSpawnPoint
-  - 1768 StructureSpawnPoint
-- 1779–1806 struct ObjectInstInfo
-  - 1795 ObjectInstInfo
+- 1298–1761 class ChunkData
+  - 1325 SetFoodTable
+  - 1327 IsFoodPrefab
+  - 1345 ChunkData
+  - 1371 TryAddObject
+  - 1375 TryAddObject
+  - 1378 TryAddObject
+  - 1381 TryAddObject
+  - 1423 SpanMask
+  - 1426 UpperKey
+  - 1429 Validate
+  - 1454 UpperLevelsFree
+  - 1462 RegisterUpper
+  - 1478 UnregisterUpper
+  - 1494 RemapUpper
+  - 1505 AddVolume
+  - 1529 SetLevelBit
+  - 1531 ClearVolume
+  - 1541 TryGetBuilding
+  - 1547 HasLevelAt
+  - 1554 TryGetObject
+  - 1568 TryGetObject
+  - 1583 RemoveObject
+  - 1585 RemoveObject
+  - 1651 ClearDirty
+  - 1653 ClearObjects
+  - 1676 SetHeight
+  - 1688 RestoreHeight
+  - 1698 LevelsAt
+  - 1700 MarkPersisted
+  - 1702 CommitRestore
+  - 1709 ResetForReuse
+  - 1727 CommitErosion
+  - 1733 InvalidateWater
+  - 1741 CommitGeneration
+  - 1746 Dispose
+- 1763–1778 struct StructureSpawnPoint
+  - 1769 StructureSpawnPoint
+- 1780–1807 struct ObjectInstInfo
+  - 1796 ObjectInstInfo
 
 ## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
 
@@ -195,7 +195,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 - 38–63 struct CorpseBite
   - 45 CorpseBite
   - 53 Plan
-- 65–1052 class ChunkFoodIndex
+- 65–1067 class ChunkFoodIndex
   - 88 ChunkFoodIndex
   - 94 FoodByKind
   - 100 BuildFoodTable
@@ -224,31 +224,151 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 608 InfectNearby
   - 645 TryAddCorpse
   - 687 TickEcology
-  - 774 NestScarcity
-  - 797 RollKind
-  - 806 ComputeFertility
-  - 814 SpoilToSoil
-  - 822 WiltPlants
-  - 856 AgeFood
-  - 883 SumEnergy
-  - 890 SumEnergyScan
-  - 924 SetMeat
-  - 930 RemoveMeat
-  - 935 AddFood
-  - 941 AddSoil
-  - 947 TryFoodKind
-  - 957 ScanFood
-  - 974 TickMeat
-  - 1006 RemoveSpoiledCorpse
-  - 1014 MarkUnreachable
-  - 1016 ExpireUnreachable
-  - 1027 FindClaim
-  - 1034 AddClaim
-  - 1040 RemoveClaimAt
-  - 1047 ExpireClaims
+  - 774 TryGetSoil
+  - 789 NestScarcity
+  - 812 RollKind
+  - 821 ComputeFertility
+  - 829 SpoilToSoil
+  - 837 WiltPlants
+  - 871 AgeFood
+  - 898 SumEnergy
+  - 905 SumEnergyScan
+  - 939 SetMeat
+  - 945 RemoveMeat
+  - 950 AddFood
+  - 956 AddSoil
+  - 962 TryFoodKind
+  - 972 ScanFood
+  - 989 TickMeat
+  - 1021 RemoveSpoiledCorpse
+  - 1029 MarkUnreachable
+  - 1031 ExpireUnreachable
+  - 1042 FindClaim
+  - 1049 AddClaim
+  - 1055 RemoveClaimAt
+  - 1062 ExpireClaims
   - 123–156 class FoodChunk
     - 140 Reset
   - 173–178 struct LargeClaim
+
+## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
+
+- 15–942 class EntityManager
+  - 76 RegisterEnergyConsumer
+  - 77 UnregisterEnergyConsumer
+  - 96 RaiseSpawned
+  - 97 RaiseDied
+  - 140 GetRandomEntity
+  - 143 SeedProbeStrain
+  - 146 SpawnEntity
+  - 149 SpawnChild
+  - 151 UpdateDiagnostics
+  - 160 EvolveGenotypes
+  - 166 SeedRandomStrain
+  - 169 Update
+  - 213 StampAgents
+  - 227 ApplyFireHeat
+  - 248 DecayWarmth
+  - 256 SampleEnergy
+  - 278 ReportThreat
+  - 289 Awake
+  - 343 CreateColonies
+  - 353 AddColony
+  - 359 SaveBrain
+  - 362 LoadBrain
+  - 365 ColonyModelName
+  - 367 SaveBestBrainAsync
+  - 377 LoadBrainAsync
+  - 413 ApplyLoadedBrain
+  - 429 Start
+  - 469 DelaySimulation
+  - 480 TickAgents
+  - 524 CloseTickWindow
+  - 547 RunTickBatch
+  - 593 BeginColonyBatches
+  - 598 RunColonyDecisions
+  - 603 RunFlocking
+  - 621 TickColonies
+  - 675 ChooseCaste
+  - 713 Stimulus
+  - 720 TickNests
+  - 773 SetEntityVisible
+  - 779 SetEntitiesVisible
+  - 785 RebuildTickSnapshot
+  - 811 UpdateVisibility
+  - 840 UpdateVisibilityByCamera
+  - 870 CreateNestViews
+  - 881 ReleaseServices
+  - 887 UnregisterServices
+  - 902 ResolveRules
+  - 918 OnDestroy
+
+## `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs`
+
+- 21–919 class PlayerController
+  - 122 SetInitialValues
+  - 146 SetUp
+  - 170 ApplyControlType
+  - 191 SavePlayerPosition
+  - 199 DelayedInit
+  - 224 GetPlayerComponents
+  - 238 AttachViewOrientation
+  - 252 InitStatePattern
+  - 262 SetZeroValues
+  - 268 Suspend
+  - 279 Resume
+  - 284 ResetAim
+  - 294 EnableComponents
+  - 300 DisableComponents
+  - 307 FixedUpdate
+  - 315 PublishVitals
+  - 325 MirrorVitals
+  - 337 StampTrample
+  - 347 Update
+  - 361 UpdateJumpIndicator
+  - 375 IsSprintHeld
+  - 377 Move
+  - 406 CheckBust
+  - 414 MoveServerRpc
+  - 429 StepServerMovement
+  - 493 BroadcastState
+  - 504 StopMoveServerRpc
+  - 515 UpdateClientPositionClientRpc
+  - 523 OnJumpStarted
+  - 529 OnJumpCanceled
+  - 535 TryJump
+  - 543 JumpServerRpc
+  - 562 OnActionStarted
+  - 563 OnActionCanceled
+  - 565 Aim
+  - 599 UpdateAimLevel
+  - 628 SetAimAddition
+  - 640 ChangeAimMode
+  - 642 AimRaiseMobile
+  - 643 AimPlaceMobile
+  - 645 AimRaise
+  - 662 OnViewClick
+  - 664 AimPlace
+  - 671 Placing
+  - 686 RequestPlace
+  - 693 RequestSpeak
+  - 700 SpeakServerRpc
+  - 729 RequestPickUp
+  - 736 RequestCraft
+  - 745 CraftRequestServerRpc
+  - 758 PlaceRequestServerRpc
+  - 777 PickUpRequestServerRpc
+  - 794 PlaceResultClientRpc
+  - 805 PickUpResultClientRpc
+  - 814 TryResolveEditor
+  - 841 TryConsumeEdit
+  - 843 TryConsumeMove
+  - 851 TryConsumeCraft
+  - 859 LatencyCompensation
+  - 885 Refuse
+  - 897 OwnerTarget
+  - 903 OnDisable
+  - 874–883 enum EditRefusal
 
 ## `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs`
 
@@ -296,123 +416,6 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 899 MatchesArchitecture
   - 911 SizesMatch
   - 9–9 enum Goal
-
-## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
-
-- 15–914 class EntityManager
-  - 76 RegisterEnergyConsumer
-  - 77 UnregisterEnergyConsumer
-  - 96 RaiseSpawned
-  - 97 RaiseDied
-  - 137 GetRandomEntity
-  - 140 SeedProbeStrain
-  - 143 SpawnEntity
-  - 146 SpawnChild
-  - 148 UpdateDiagnostics
-  - 157 EvolveGenotypes
-  - 163 SeedRandomStrain
-  - 166 Update
-  - 202 ApplyFireHeat
-  - 223 DecayWarmth
-  - 231 SampleEnergy
-  - 253 ReportThreat
-  - 264 Awake
-  - 317 CreateColonies
-  - 327 AddColony
-  - 333 SaveBrain
-  - 336 LoadBrain
-  - 339 ColonyModelName
-  - 341 SaveBestBrainAsync
-  - 351 LoadBrainAsync
-  - 387 ApplyLoadedBrain
-  - 403 Start
-  - 442 DelaySimulation
-  - 453 TickAgents
-  - 497 CloseTickWindow
-  - 520 RunTickBatch
-  - 566 BeginColonyBatches
-  - 571 RunColonyDecisions
-  - 576 RunFlocking
-  - 594 TickColonies
-  - 648 ChooseCaste
-  - 686 Stimulus
-  - 693 TickNests
-  - 746 SetEntityVisible
-  - 752 SetEntitiesVisible
-  - 758 RebuildTickSnapshot
-  - 784 UpdateVisibility
-  - 813 UpdateVisibilityByCamera
-  - 843 CreateNestViews
-  - 854 ReleaseServices
-  - 860 UnregisterServices
-  - 875 ResolveRules
-  - 891 OnDestroy
-
-## `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs`
-
-- 21–908 class PlayerController
-  - 122 SetInitialValues
-  - 146 SetUp
-  - 170 ApplyControlType
-  - 191 SavePlayerPosition
-  - 199 DelayedInit
-  - 224 GetPlayerComponents
-  - 238 AttachViewOrientation
-  - 252 InitStatePattern
-  - 262 SetZeroValues
-  - 268 Suspend
-  - 279 Resume
-  - 284 ResetAim
-  - 294 EnableComponents
-  - 300 DisableComponents
-  - 307 FixedUpdate
-  - 315 PublishVitals
-  - 325 MirrorVitals
-  - 337 Update
-  - 350 UpdateJumpIndicator
-  - 364 IsSprintHeld
-  - 366 Move
-  - 395 CheckBust
-  - 403 MoveServerRpc
-  - 418 StepServerMovement
-  - 482 BroadcastState
-  - 493 StopMoveServerRpc
-  - 504 UpdateClientPositionClientRpc
-  - 512 OnJumpStarted
-  - 518 OnJumpCanceled
-  - 524 TryJump
-  - 532 JumpServerRpc
-  - 551 OnActionStarted
-  - 552 OnActionCanceled
-  - 554 Aim
-  - 588 UpdateAimLevel
-  - 617 SetAimAddition
-  - 629 ChangeAimMode
-  - 631 AimRaiseMobile
-  - 632 AimPlaceMobile
-  - 634 AimRaise
-  - 651 OnViewClick
-  - 653 AimPlace
-  - 660 Placing
-  - 675 RequestPlace
-  - 682 RequestSpeak
-  - 689 SpeakServerRpc
-  - 718 RequestPickUp
-  - 725 RequestCraft
-  - 734 CraftRequestServerRpc
-  - 747 PlaceRequestServerRpc
-  - 766 PickUpRequestServerRpc
-  - 783 PlaceResultClientRpc
-  - 794 PickUpResultClientRpc
-  - 803 TryResolveEditor
-  - 830 TryConsumeEdit
-  - 832 TryConsumeMove
-  - 840 TryConsumeCraft
-  - 848 LatencyCompensation
-  - 874 Refuse
-  - 886 OwnerTarget
-  - 892 OnDisable
-  - 863–872 enum EditRefusal
 
 ## `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs`
 

@@ -20,8 +20,6 @@ namespace TheRavine.Inventory
 
         public const string PickUpRefusal = "Can't pick up";
 
-        private static readonly int CurveParamsId = Shader.PropertyToID("_CurveParams");
-        private static readonly int ViewBasisId = Shader.PropertyToID("_ViewBasis");
         private static readonly Color RefusalColor = new(1f, 0.32f, 0.28f, 1f);
 
         private sealed class Marker
@@ -179,13 +177,7 @@ namespace TheRavine.Inventory
             world.z += MapGenerator.scale * 0.5f;
             world.y += 0.5f;
 
-            Vector4 curve = Shader.GetGlobalVector(CurveParamsId);
-            Vector4 basis = Shader.GetGlobalVector(ViewBasisId);
-            float distance = world.x * basis.x + world.z * basis.y - curve.z;
-            float arc = Mathf.Max(Mathf.Abs(distance) - curve.y, 0f);
-            world.y -= curve.x * arc * arc;
-
-            Vector3 point = cam.WorldToScreenPoint(world);
+            Vector3 point = cam.WorldToScreenPoint(CurvedWorld.Bend(world));
             if (point.z <= 0f) return false;
 
             screen = new Vector2(point.x, point.y);

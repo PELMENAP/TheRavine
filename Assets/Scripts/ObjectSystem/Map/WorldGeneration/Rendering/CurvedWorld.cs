@@ -12,6 +12,9 @@ namespace TheRavine.Generator
         public static float Flat { get; private set; }
         public static float FocusDistance { get; private set; }
 
+        private static float2 pushedFocus;
+        private static bool pushed;
+
         public static void Configure(float radius, float flat, float focusDistance)
         {
             K = radius > 0f ? 0.5f / radius : 0f;
@@ -22,14 +25,26 @@ namespace TheRavine.Generator
 
         public static void Push(float2 focus, float referenceHeight)
         {
+            pushedFocus = focus;
+            pushed = true;
             Shader.SetGlobalVector(CurveParamsId, new Vector4(K, Flat, 0f, 0f));
             Shader.SetGlobalVector(CurveFocusId, new Vector4(focus.x, focus.y, referenceHeight, 0f));
         }
 
         public static void PushFlat()
         {
+            pushed = false;
             Shader.SetGlobalVector(CurveParamsId, Vector4.zero);
             Shader.SetGlobalVector(CurveFocusId, Vector4.zero);
+        }
+
+        public static Vector3 Bend(Vector3 position)
+        {
+            if (!pushed) return position;
+
+            float arc = math.max(math.length(new float2(position.x, position.z) - pushedFocus) - Flat, 0f);
+            position.y -= K * arc * arc;
+            return position;
         }
 
         public static float MaxDrop(float distance)

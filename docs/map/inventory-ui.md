@@ -11,6 +11,7 @@ Assemblies: `Inventory`, `UIInventory`, `Info`. Tests: `Assets/Tests/EditMode/Cr
 | `EventDrivenInventoryProxy` | `Assets/Scripts/Model/InventoryModel/EventDrivenInventoryProxy.cs` | Wrapper that raises added / removed / changed events |
 | `CraftModel` | `Assets/Scripts/Model/InventoryModel/CraftModel.cs` | Recipes (`CraftRecipe`), matching; shared catalogue `CraftModel.Shared` |
 | `UIInventory` | `Assets/Scripts/UI/Inventory/UIInventory.cs` | Inventory view (`ISetAble`); listens to the player's place and pick-up events |
+| `WorldEditFeedback` | `Assets/Scripts/UI/Inventory/WorldEditFeedback.cs` | Local human only: refusal marker with a short reason and `UISoundSystem.PlayDeny`; pick-up icon flight to the slot |
 | `CraftService` | `Assets/Scripts/UI/CraftService.cs` | Checks recipes, drives the progress bar, reports a remote player's craft to the server |
 | `CraftPresenter` | `Assets/Scripts/UI/CraftPresenter.cs` | Presenter of the craft panel |
 | `UIDragger` | `Assets/Scripts/UI/Inventory/UIDragger.cs` | Drag and drop, mouse and touch |

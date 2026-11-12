@@ -128,7 +128,6 @@ public class EntityManager : MonoBehaviour
     private double _nextFitnessStatsTime;
     private double _nextEnergySampleTime;
     private double _nextSoilFeedTime;
-    private double _nextSeasonFeedTime;
     private SoilShaderFeed _soilFeed;
     private GrassTrampleField _trample;
     private TickWindowBudget _tickBudget;
@@ -173,13 +172,6 @@ public class EntityManager : MonoBehaviour
         _speech?.ClearAudible();
 
         if (_rulesMissing) return;
-
-        double clockNow = SimulationClock.TimeD;
-        if (clockNow >= _nextSeasonFeedTime)
-        {
-            SeasonShaderFeed.Publish((float)clockNow);
-            _nextSeasonFeedTime = clockNow + 1d;
-        }
 
         if (!TheRavine.Base.WorldAuthority.IsAuthority) return;
 
@@ -927,7 +919,6 @@ public class EntityManager : MonoBehaviour
     {
         SimulationRules.ReleaseVariant();
         _soilFeed?.Dispose();
-        if (!_rulesMissing) SeasonShaderFeed.Clear();
         _simulationLog?.Dispose();
         UnregisterServices();
         for (int i = 0; i < _nestViews.Count; i++)

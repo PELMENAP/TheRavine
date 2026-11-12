@@ -13,6 +13,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 |---|---|---|
 | `EntityManager` | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | MonoBehaviour: lifecycle, tick driver, colonies, visibility, brain saving |
 | `EntityModel` | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | One agent; partial files below |
+| `SoilShaderFeed` | `Assets/Scripts/EntitySystem/AI/Perception/SoilShaderFeed.cs` | 5x5 chunks of `ChunkFoodIndex.TryGetSoil` to the grass shader per `EcologyTickInterval`; owned by `EntityManager` |
 | `SharedHierarchicalBrain` | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | One brain per colony, weights shared by its agents |
 | `SimulationRules` | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | All simulation constants (ScriptableObject); `Frame` snapshot for the tick |
 | `ColonyRegistry` | `Assets/Scripts/EntitySystem/AI/Colony/ColonyRegistry.cs` | Colonies by index and id; `Views` for jobs |
