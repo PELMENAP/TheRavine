@@ -771,6 +771,21 @@ public sealed class ChunkFoodIndex
         ExpireUnreachable(now);
     }
 
+    public bool TryGetSoil(long chunkKey, out float fertility, out float depletion, out float soilEnergy)
+    {
+        if (_chunks.TryGetValue(chunkKey, out FoodChunk fc) && fc.Fertility >= 0f)
+        {
+            fertility  = fc.Fertility;
+            depletion  = fc.Depletion;
+            soilEnergy = fc.SoilEnergy;
+            return true;
+        }
+        fertility  = 0f;
+        depletion  = 0f;
+        soilEnergy = 0f;
+        return false;
+    }
+
     public float NestScarcity(float2 position, int radiusChunks)
     {
         if (_map == null) return 0f;

@@ -127,6 +127,9 @@ public class EntityManager : MonoBehaviour
     private double _tickStartTime;
     private double _nextFitnessStatsTime;
     private double _nextEnergySampleTime;
+    private double _nextSoilFeedTime;
+    private double _nextSeasonFeedTime;
+    private SoilShaderFeed _soilFeed;
     private TickWindowBudget _tickBudget;
 
     private static readonly ProfilerMarker TickAgentsMarker  = new("EntityManager.TickAgents");
@@ -168,7 +171,16 @@ public class EntityManager : MonoBehaviour
         SimulationClock.Advance(Time.deltaTime * simulationTimeScale);
         _speech?.ClearAudible();
 
-        if (_rulesMissing || !TheRavine.Base.WorldAuthority.IsAuthority) return;
+        if (_rulesMissing) return;
+
+        double clockNow = SimulationClock.TimeD;
+        if (clockNow >= _nextSeasonFeedTime)
+        {
+            SeasonShaderFeed.Publish((float)clockNow);
+            _nextSeasonFeedTime = clockNow + 1d;
+        }
+
+        if (!TheRavine.Base.WorldAuthority.IsAuthority) return;
 
         if (_simulationStarted)
         {
@@ -183,6 +195,11 @@ public class EntityManager : MonoBehaviour
                 DecayWarmth(now);
                 if (EnergySamplingRequired) SampleEnergy();
                 _nextEnergySampleTime = now + SimulationRules.Active.EcologyTickInterval;
+            }
+            if (now >= _nextSoilFeedTime)
+            {
+                _soilFeed.Update(FoodIndex, _map);
+                _nextSoilFeedTime = now + SimulationRules.Active.EcologyTickInterval;
             }
             if (SimulationRules.Active.SimulationLogEnabled && now >= _nextSimulationLogTime)
             {
@@ -304,6 +321,7 @@ public class EntityManager : MonoBehaviour
         _infection = new InfectionCoordinator((uint)UnityEngine.Random.Range(1, int.MaxValue));
         ServiceLocator.Register(_infection.Service);
         _food       = new ColonyFood(maxFood, _ledger);
+        _soilFeed   = new SoilShaderFeed();
         _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue));
         _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, _capacity, spawnRadius,
             _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _utility, _thresholds, _boids, _ledger, _speech);
@@ -432,6 +450,7 @@ public class EntityManager : MonoBehaviour
 
         _nextFitnessStatsTime = SimulationClock.TimeD;
         _nextEnergySampleTime = SimulationClock.TimeD;
+        _nextSoilFeedTime     = SimulationClock.TimeD;
         _lastWarmthDecayTime  = SimulationClock.TimeD;
         _nextSimulationLogTime = SimulationClock.TimeD;
         _tickStartTime        = SimulationClock.TimeD + SimulationRules.Active.TickLoopWarmupSeconds;
@@ -891,6 +910,8 @@ public class EntityManager : MonoBehaviour
     private void OnDestroy()
     {
         SimulationRules.ReleaseVariant();
+        _soilFeed?.Dispose();
+        if (!_rulesMissing) SeasonShaderFeed.Clear();
         _simulationLog?.Dispose();
         UnregisterServices();
         for (int i = 0; i < _nestViews.Count; i++)

@@ -30,6 +30,20 @@ Shader "The Ravine/ChunkGrassShader"
         _SaturationVariation ("Saturation Variation", Range(0, 1)) = 0.1
         _ValueVariation ("Value Variation", Range(0, 1)) = 0.1
         _HueVariationScale ("Hue Variation Scale", Float) = 0.5
+
+        [Header(Soil)]
+        _SoilHeightLoss ("Depletion Height Loss", Range(0, 1)) = 0.6
+        _SoilCollapse ("Depletion Blade Collapse", Range(0, 1)) = 0.6
+        _SoilStrawColor ("Depletion Straw Color", Color) = (0.8, 0.68, 0.35, 1)
+        _SoilStrawStrength ("Depletion Straw Strength", Range(0, 1)) = 0.8
+        _SoilEnergyRef ("Soil Energy Reference", Float) = 800
+        _SoilEnergySaturation ("Soil Energy Saturation", Range(0, 1)) = 0.25
+        _SoilEnergyDarken ("Soil Energy Darken", Range(0, 1)) = 0.25
+
+        [Header(Season)]
+        _WinterHue ("Winter Hue", Range(0, 1)) = 0.1
+        _WinterHueStrength ("Winter Hue Strength", Range(0, 1)) = 0.8
+        _WinterDesaturate ("Winter Desaturate", Range(0, 1)) = 0.25
     }
 
     SubShader
@@ -86,6 +100,18 @@ Shader "The Ravine/ChunkGrassShader"
             float _SaturationVariation;
             float _ValueVariation;
             float _HueVariationScale;
+
+            float _SoilHeightLoss;
+            float _SoilCollapse;
+            float4 _SoilStrawColor;
+            float _SoilStrawStrength;
+            float _SoilEnergyRef;
+            float _SoilEnergySaturation;
+            float _SoilEnergyDarken;
+
+            float _WinterHue;
+            float _WinterHueStrength;
+            float _WinterDesaturate;
         CBUFFER_END
 
         TEXTURE2D_ARRAY(_MainTex); SAMPLER(sampler_MainTex);  
@@ -93,6 +119,13 @@ Shader "The Ravine/ChunkGrassShader"
 
         float3 _LightDirection;
         float3 _LightPosition;
+
+        StructuredBuffer<float4> _SoilBuffer;
+        float4 _SoilOrigin;
+        float _SoilEnabled;
+        float _WinterApproach;
+
+        static const int SoilSide = 5;
 
         float3 RotateY(float3 v, float sinRot, float cosRot)
         {
@@ -108,6 +141,45 @@ Shader "The Ravine/ChunkGrassShader"
             p = frac(p * 0.3183099 + 0.1);
             p *= 17.0;
             return frac(p.x * p.y * (p.x + p.y));
+        }
+
+        float4 SampleSoil(float2 xz)
+        {
+            UNITY_BRANCH
+            if (_SoilEnabled < 0.5)
+                return float4(0, 0, 0, 0);
+
+            float2 u = (xz - _SoilOrigin.xy) * _SoilOrigin.w - 0.5;
+            float2 base = floor(u);
+            float2 f = u - base;
+            int2 i0 = clamp((int2)base, 0, SoilSide - 1);
+            int2 i1 = clamp((int2)base + 1, 0, SoilSide - 1);
+
+            float4 c00 = _SoilBuffer[i0.y * SoilSide + i0.x];
+            float4 c10 = _SoilBuffer[i0.y * SoilSide + i1.x];
+            float4 c01 = _SoilBuffer[i1.y * SoilSide + i0.x];
+            float4 c11 = _SoilBuffer[i1.y * SoilSide + i1.x];
+
+            float4 w = float4((1 - f.x) * (1 - f.y), f.x * (1 - f.y), (1 - f.x) * f.y, f.x * f.y)
+                     * float4(c00.w, c10.w, c01.w, c11.w);
+            float total = w.x + w.y + w.z + w.w;
+            float3 mean = (c00.xyz * w.x + c10.xyz * w.y + c01.xyz * w.z + c11.xyz * w.w) / max(total, 1e-4);
+
+            float known = step(1e-4, total);
+            return float4((1.0 - mean.x) * known, mean.y * known, mean.z * known, total);
+        }
+
+        InstanceData ApplySoilToInstance(InstanceData instance, out float4 soil)
+        {
+            soil = SampleSoil(instance.position.xz);
+            float depletion = soil.x;
+
+            float h = hash13(instance.position.xz * 1.73 + 11.1);
+            float keep = 1.0 - saturate((depletion * _SoilCollapse - h) / 0.08);
+
+            instance.scaleY *= lerp(1.0, 1.0 - _SoilHeightLoss, depletion) * keep;
+            instance.scaleXZ *= keep;
+            return instance;
         }
 
         uint GetTextureIndex(float3 instancePos)
@@ -237,6 +309,44 @@ Shader "The Ravine/ChunkGrassShader"
             return HSVtoRGB(hsv);
         }
 
+        float3 ApplySoilColor(float3 color, float depletion, float energy)
+        {
+            float e = saturate(energy / max(_SoilEnergyRef, 1e-3));
+            UNITY_BRANCH
+            if (e > 1e-4)
+            {
+                float3 hsv = RGBtoHSV(color);
+                hsv.y = saturate(hsv.y + e * _SoilEnergySaturation);
+                hsv.z *= 1.0 - e * _SoilEnergyDarken;
+                color = HSVtoRGB(hsv);
+            }
+
+            UNITY_BRANCH
+            if (depletion > 1e-4)
+            {
+                float3 lumaWeights = float3(0.299, 0.587, 0.114);
+                float3 straw = saturate(_SoilStrawColor.rgb * (dot(color, lumaWeights) / max(dot(_SoilStrawColor.rgb, lumaWeights), 1e-3)));
+                color = lerp(color, straw, saturate(depletion) * _SoilStrawStrength);
+            }
+            return color;
+        }
+
+        float3 ApplyWinterColor(float3 color)
+        {
+            float w = saturate(_WinterApproach);
+            UNITY_BRANCH
+            if (w > 1e-4)
+            {
+                float3 hsv = RGBtoHSV(color);
+                float d = _WinterHue - hsv.x;
+                d -= round(d);
+                hsv.x = frac(hsv.x + d * w * _WinterHueStrength);
+                hsv.y *= lerp(1.0, 1.0 - _WinterDesaturate, w);
+                color = HSVtoRGB(hsv);
+            }
+            return color;
+        }
+
         ENDHLSL
 
         Pass
@@ -281,12 +391,14 @@ Shader "The Ravine/ChunkGrassShader"
                 float3 instancePos : TEXCOORD6;
                 uint texIndex : TEXCOORD7;
                 float fogFactor : TEXCOORD8;
+                float2 soil : TEXCOORD9;
             };
 
             Varyings vert(Attributes input)
             {
                 Varyings output;
-                InstanceData instance = instanceData[input.instanceID];
+                float4 soil;
+                InstanceData instance = ApplySoilToInstance(instanceData[input.instanceID], soil);
 
                 float heightFactor;
                 float3 windOffset;
@@ -312,6 +424,7 @@ Shader "The Ravine/ChunkGrassShader"
                 
                 output.texIndex = GetTextureIndex(instance.position);
                 output.fogFactor = ComputeFogFactor(output.positionCS.z);
+                output.soil = soil.xy;
 
                 return output;
             }
@@ -328,6 +441,8 @@ Shader "The Ravine/ChunkGrassShader"
 
                 float4 finalColor = lerp(texColor, texColor * input.color, _InstanceColorBlend);
                 finalColor.rgb = ApplyHueVariation(finalColor.rgb, input.instancePos);
+                finalColor.rgb = ApplySoilColor(finalColor.rgb, input.soil.x, input.soil.y);
+                finalColor.rgb = ApplyWinterColor(finalColor.rgb);
 
                 float ao = lerp(1.0, 1.0 - _AmbientOcclusion, 1.0 - input.heightFactor);
 
@@ -412,7 +527,8 @@ Shader "The Ravine/ChunkGrassShader"
             Varyings ShadowVert(Attributes input)
             {
                 Varyings output;
-                InstanceData instance = instanceData[input.instanceID];
+                float4 soil;
+                InstanceData instance = ApplySoilToInstance(instanceData[input.instanceID], soil);
 
                 float heightFactor;
                 float3 windOffset;
@@ -470,7 +586,8 @@ Shader "The Ravine/ChunkGrassShader"
             Varyings DepthVert(Attributes input)
             {
                 Varyings output;
-                InstanceData instance = instanceData[input.instanceID];
+                float4 soil;
+                InstanceData instance = ApplySoilToInstance(instanceData[input.instanceID], soil);
 
                 float heightFactor;
                 float3 windOffset;
