@@ -1,172 +1,146 @@
 using NUnit.Framework;
-using UnityEngine;
 using TheRavine.Generator;
+using TheRavine.ViewControl;
 
 public class GrassLodBandsTests
 {
-    private const float Tolerance = 1e-5f;
+    private const int Window = 384;
 
-    private static void AssertVector(Vector3 expected, Vector3 actual)
+    [Test]
+    public void StepOneAndBelowIsFullDetail()
     {
-        Assert.AreEqual(expected.x, actual.x, Tolerance);
-        Assert.AreEqual(expected.y, actual.y, Tolerance);
-        Assert.AreEqual(expected.z, actual.z, Tolerance);
+        Assert.AreEqual(1, GrassLodBands.ValidStep(1, Window));
+        Assert.AreEqual(1, GrassLodBands.ValidStep(0, Window));
+        Assert.AreEqual(1, GrassLodBands.ValidStep(-7, Window));
+        Assert.AreEqual(1, GrassLodBands.ValidStep(4, 0));
     }
 
     [Test]
-    public void SortedDistancesArePacked()
+    public void StepIsRaisedToAPowerOfTwo()
     {
-        Vector4 packed = GrassLodBands.PackEnds(new Vector3(40f, 90f, 160f), 12f);
-        Assert.AreEqual(new Vector4(40f, 90f, 160f, 12f), packed);
+        Assert.AreEqual(2, GrassLodBands.ValidStep(2, Window));
+        Assert.AreEqual(4, GrassLodBands.ValidStep(3, Window));
+        Assert.AreEqual(4, GrassLodBands.ValidStep(4, Window));
+        Assert.AreEqual(8, GrassLodBands.ValidStep(5, Window));
     }
 
     [Test]
-    public void UnsortedDistancesAreRaisedToThePreviousEnd()
+    public void StepNeverExceedsTheLargestPowerOfTwoDividingTheWindow()
     {
-        AssertVector(new Vector3(100f, 100f, 100f), GrassLodBands.ClampEnds(new Vector3(100f, 40f, 70f)));
-        AssertVector(new Vector3(30f, 30f, 80f), GrassLodBands.ClampEnds(new Vector3(30f, 10f, 80f)));
+        Assert.AreEqual(128, GrassLodBands.ValidStep(1000, Window));
+        Assert.AreEqual(32, GrassLodBands.ValidStep(64, 96));
+        for (int step = 1; step <= 600; step++)
+            Assert.AreEqual(0, Window % GrassLodBands.ValidStep(step, Window), $"step {step}");
     }
 
     [Test]
-    public void NegativeAndNonFiniteDistancesCollapseToZero()
+    public void WidthScaleIsClampedAndNanSafe()
     {
-        AssertVector(new Vector3(0f, 0f, 50f), GrassLodBands.ClampEnds(new Vector3(-5f, float.NaN, 50f)));
-        Vector3 huge = GrassLodBands.ClampEnds(new Vector3(10f, float.PositiveInfinity, float.PositiveInfinity));
-        Assert.AreEqual(GrassLodBands.MaxDistance, huge.y);
-        Assert.AreEqual(GrassLodBands.MaxDistance, huge.z);
+        Assert.AreEqual(GrassLodBands.MinWidthScale, GrassLodBands.ValidWidthScale(float.NaN));
+        Assert.AreEqual(GrassLodBands.MinWidthScale, GrassLodBands.ValidWidthScale(-3f));
+        Assert.AreEqual(GrassLodBands.MaxWidthScale, GrassLodBands.ValidWidthScale(1000f));
+        Assert.AreEqual(GrassLodBands.MaxWidthScale, GrassLodBands.ValidWidthScale(float.PositiveInfinity));
+        Assert.AreEqual(2f, GrassLodBands.ValidWidthScale(2f));
     }
 
     [Test]
-    public void NegativeFadeWidthIsZero()
+    public void CellsPerSideFollowsTheValidStep()
     {
-        Assert.AreEqual(0f, GrassLodBands.PackEnds(new Vector3(10f, 20f, 30f), -3f).w);
-        Assert.AreEqual(0f, GrassLodBands.PackEnds(new Vector3(10f, 20f, 30f), float.NaN).w);
+        Assert.AreEqual(384, GrassLodBands.CellsPerSide(Window, 1));
+        Assert.AreEqual(96, GrassLodBands.CellsPerSide(Window, 4));
+        Assert.AreEqual(96, GrassLodBands.CellsPerSide(Window, 3));
+        Assert.AreEqual(3, GrassLodBands.CellsPerSide(Window, 1000));
+        Assert.AreEqual(0, GrassLodBands.CellsPerSide(0, 4));
     }
 
     [Test]
-    public void KeepFractionsAreClampedToUnitRange()
+    public void FullDetailCapacityIsThePlacedCapacity()
     {
-        AssertVector(new Vector3(1f, 1f, 0f), GrassLodBands.ClampKeep(new Vector3(2f, 3f, -1f)));
-        AssertVector(new Vector3(0f, 0f, 0f), GrassLodBands.ClampKeep(new Vector3(float.NaN, 0.5f, 0.2f)));
+        int perCell = 10;
+        int placed = Window * Window * perCell;
+        Assert.AreEqual(placed, GrassLodBands.Capacity(Window, 1, perCell, placed));
     }
 
     [Test]
-    public void KeepFractionsDoNotIncreaseWithDistance()
+    public void CapacityHoldsEveryBladeTheBlockCanPlace()
     {
-        AssertVector(new Vector3(0.5f, 0.5f, 0.2f), GrassLodBands.ClampKeep(new Vector3(0.5f, 0.9f, 0.2f)));
-        AssertVector(new Vector3(1f, 0.25f, 0.25f), GrassLodBands.ClampKeep(new Vector3(1f, 0.25f, 0.6f)));
+        int perCell = 10;
+        int placed = Window * Window * perCell;
+        for (int step = 1; step <= 128; step *= 2)
+        {
+            long side = Window / step;
+            Assert.AreEqual((int)(side * side * perCell), GrassLodBands.Capacity(Window, step, perCell, placed), $"step {step}");
+        }
     }
 
     [Test]
-    public void PackedKeepHasZeroAsTheNextKeepOfTheLastBand()
+    public void CapacityShrinksWithTheSquareOfTheStep()
     {
-        Vector4 packed = GrassLodBands.PackKeep(new Vector3(1f, 0.5f, 0.25f));
-        Assert.AreEqual(new Vector4(1f, 0.5f, 0.25f, 0f), packed);
+        int placed = int.MaxValue;
+        int one = GrassLodBands.Capacity(Window, 1, 6, placed);
+        Assert.AreEqual(one / 4, GrassLodBands.Capacity(Window, 2, 6, placed));
+        Assert.AreEqual(one / 16, GrassLodBands.Capacity(Window, 4, 6, placed));
+        Assert.AreEqual(one / 64, GrassLodBands.Capacity(Window, 8, 6, placed));
     }
 
     [Test]
     public void CapacityIsNeverAbovePlacedCapacity()
     {
-        Vector3 ends = new(60f, 120f, 200f);
-        int perCell = 10;
-        int placed = 5000;
-        for (int band = 0; band < GrassLodBands.BandCount; band++)
-            Assert.LessOrEqual(GrassLodBands.Capacity(band, ends, 384, perCell, placed), placed);
+        for (int step = 1; step <= 128; step *= 2)
+            Assert.LessOrEqual(GrassLodBands.Capacity(Window, step, 40, 5000), 5000);
     }
 
     [Test]
-    public void CapacityIsNeverAboveTheWindowArea()
+    public void InvalidStepGivesTheCapacityOfItsValidStep()
     {
-        int side = 64;
-        int perCell = 3;
-        int placed = side * side * perCell;
-        Vector3 ends = new(1000f, 2000f, 3000f);
-        Assert.AreEqual(placed, GrassLodBands.Capacity(0, ends, side, perCell, placed));
-        Assert.AreEqual(placed, GrassLodBands.Capacity(1, ends, side, perCell, placed));
-        Assert.AreEqual(placed, GrassLodBands.Capacity(2, ends, side, perCell, placed));
+        Assert.AreEqual(GrassLodBands.Capacity(Window, 4, 10, int.MaxValue), GrassLodBands.Capacity(Window, 3, 10, int.MaxValue));
+        Assert.AreEqual(GrassLodBands.Capacity(Window, 1, 10, int.MaxValue), GrassLodBands.Capacity(Window, -2, 10, int.MaxValue));
     }
 
     [Test]
-    public void CapacityHoldsAFullDensityBandForAnyPivot()
+    public void InvalidInputHasNoCapacity()
     {
-        int side = 48;
-        int perCell = 4;
-        int placed = side * side * perCell;
-        Vector3 ends = new(9f, 17f, 30f);
-        float[] pivots = { -20f, 0f, 5.5f, 24f, 47f, 70f };
+        Assert.AreEqual(0, GrassLodBands.Capacity(0, 4, 10, 1000));
+        Assert.AreEqual(0, GrassLodBands.Capacity(Window, 4, 0, 1000));
+        Assert.AreEqual(0, GrassLodBands.Capacity(Window, 4, 10, 0));
+    }
 
-        for (int band = 0; band < GrassLodBands.BandCount; band++)
+    [Test]
+    public void RingPoolHoldsEveryWedgeBlockOfThatRing()
+    {
+        Assert.AreEqual(0, ViewWedge.MaxBlocksInRing(0));
+        Assert.AreEqual(0, ViewWedge.MaxBlocksInRing(ViewWedge.MaxBlockRadius + 1));
+
+        for (int ring = 1; ring <= GrassLodBands.FarRings; ring++)
         {
-            int capacity = GrassLodBands.Capacity(band, ends, side, perCell, placed);
-            float lo = band == 0 ? 0f : ends[band - 1];
-            float hi = ends[band];
+            int pool = ViewWedge.MaxBlocksInRing(ring);
+            Assert.Greater(pool, 0, $"ring {ring}");
+            Assert.LessOrEqual(pool, 8 * ring, $"ring {ring}");
 
-            for (int px = 0; px < pivots.Length; px++)
+            for (int s = 0; s < ViewSector.Count; s++)
             {
-                for (int pz = 0; pz < pivots.Length; pz++)
-                {
-                    int cells = 0;
-                    for (int z = 0; z < side; z++)
-                    {
-                        for (int x = 0; x < side; x++)
-                        {
-                            if (CellTouchesBand(x, z, pivots[px], pivots[pz], lo, hi)) cells++;
-                        }
-                    }
-
-                    Assert.GreaterOrEqual(capacity, cells * perCell, $"band {band} pivot ({pivots[px]}, {pivots[pz]})");
-                }
+                ViewSector sector = ViewSector.FromIndex(s);
+                int n = 0;
+                for (int bz = -ring; bz <= ring; bz++)
+                for (int bx = -ring; bx <= ring; bx++)
+                    if (ViewWedge.Ring(bx, bz) == ring && ViewWedge.Contains(sector, bx, bz)) n++;
+                Assert.LessOrEqual(n, pool, $"ring {ring} sector {s}");
             }
         }
     }
 
     [Test]
-    public void CapacityScalesWithBladesPerCell()
+    public void RingPoolsCoverTheWedgeCollection()
     {
-        Vector3 ends = new(30f, 60f, 90f);
-        int single = GrassLodBands.Capacity(1, ends, 384, 1, int.MaxValue);
-        int tenfold = GrassLodBands.Capacity(1, ends, 384, 10, int.MaxValue);
-        Assert.Greater(single, 0);
-        Assert.AreEqual(single * 10, tenfold);
-    }
-
-    [Test]
-    public void EmptyBandAndInvalidInputHaveNoCapacity()
-    {
-        Vector3 ends = new(50f, 50f, 100f);
-        Assert.AreEqual(0, GrassLodBands.Capacity(1, ends, 384, 10, 100000));
-        Assert.AreEqual(0, GrassLodBands.Capacity(-1, ends, 384, 10, 100000));
-        Assert.AreEqual(0, GrassLodBands.Capacity(GrassLodBands.BandCount, ends, 384, 10, 100000));
-        Assert.AreEqual(0, GrassLodBands.Capacity(0, ends, 0, 10, 100000));
-        Assert.AreEqual(0, GrassLodBands.Capacity(0, ends, 384, 0, 100000));
-        Assert.AreEqual(0, GrassLodBands.Capacity(0, ends, 384, 10, 0));
-    }
-
-    [Test]
-    public void UnsortedEndsGiveTheSameCapacityAsTheirClamp()
-    {
-        Vector3 raw = new(80f, 30f, 120f);
-        Vector3 clamped = GrassLodBands.ClampEnds(raw);
-        for (int band = 0; band < GrassLodBands.BandCount; band++)
-            Assert.AreEqual(
-                GrassLodBands.Capacity(band, clamped, 384, 5, int.MaxValue),
-                GrassLodBands.Capacity(band, raw, 384, 5, int.MaxValue));
-    }
-
-    private static bool CellTouchesBand(int cellX, int cellZ, float pivotX, float pivotZ, float lo, float hi)
-    {
-        for (int sz = 0; sz <= 2; sz++)
+        var output = new ViewBlock[ViewWedge.MaxBlocks(GrassLodBands.FarRings)];
+        for (int s = 0; s < ViewSector.Count; s++)
         {
-            for (int sx = 0; sx <= 2; sx++)
-            {
-                float x = cellX - 0.5f + sx * 0.5f;
-                float z = cellZ - 0.5f + sz * 0.5f;
-                float dx = x - pivotX;
-                float dz = z - pivotZ;
-                float d = Mathf.Sqrt(dx * dx + dz * dz);
-                if (d >= lo && d < hi) return true;
-            }
+            int count = ViewWedge.Collect(ViewSector.FromIndex(s), GrassLodBands.FarRings, output);
+            int[] perRing = new int[GrassLodBands.FarRings + 1];
+            for (int i = 0; i < count; i++) perRing[output[i].Ring]++;
+
+            for (int ring = 1; ring <= GrassLodBands.FarRings; ring++)
+                Assert.LessOrEqual(perRing[ring], ViewWedge.MaxBlocksInRing(ring), $"ring {ring} sector {s}");
         }
-        return false;
     }
 }

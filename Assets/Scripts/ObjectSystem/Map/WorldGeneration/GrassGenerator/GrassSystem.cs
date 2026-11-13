@@ -7,13 +7,12 @@ using TheRavine.Base;
 using TheRavine.Generator;
 using TheRavine.ViewControl;
 
-public class GrassSystem : MonoBehaviour
+public partial class GrassSystem : MonoBehaviour
 {
     [Header("Grass Settings")]
     [SerializeField] private Mesh grassMesh;
     [SerializeField] private Material grassMaterial;
     [SerializeField] private ComputeShader grassPlacementShader;
-    [SerializeField] private ComputeShader grassLodShader;
     [Header("Placement Parameters")]
     [SerializeField] private float grassDensity = 0.3f;
     [SerializeField] private int bladesPerCell = 2;
@@ -23,15 +22,15 @@ public class GrassSystem : MonoBehaviour
 
     [SerializeField] private float globalMinHeight = 5f;
     [SerializeField] private float globalMaxHeight = 9f;
-    
-    
+
+
     [Header("Scale Variation")]
     [SerializeField] private float scaleNoiseScale = 0.05f;
     [SerializeField] private float scaleNoiseInfluence = 0.5f;
     [SerializeField] private int scaleOctaves = 2;
     [SerializeField] private float scalePersistence = 0.5f;
     [SerializeField] private float scaleLacunarity = 2.0f;
-    
+
     [Header("Density Control")]
     [SerializeField] private float noiseScale = 0.1f;
     [SerializeField] private float densityMinThreshold = 0.2f;
@@ -46,10 +45,9 @@ public class GrassSystem : MonoBehaviour
 
     [Header("LOD")]
     [SerializeField] private Mesh[] lodMeshes = new Mesh[GrassLodBands.BandCount];
-    [SerializeField] private Vector3 lodEndDistances = new(60f, 120f, 200f);
-    [SerializeField] private Vector3 lodKeepFractions = new(1f, 0.5f, 0.25f);
-    [SerializeField] private float lodFadeWidth = 15f;
-    [SerializeField] private float lodRefreshDistance = 4f;
+    [SerializeField] private Vector2Int lodCellSteps = new(4, 8);
+    [SerializeField] private Vector2 lodWidthScales = new(2f, 3f);
+    [SerializeField, Min(1)] private int lodBlocksPerFrame = 1;
 
     private const int terrainResolution = 1 + 3 * MapGenerator.mapChunkSize;
     private const int vertexCount = terrainResolution * terrainResolution;
@@ -57,47 +55,32 @@ public class GrassSystem : MonoBehaviour
     private const int instanceStride = 28;
     private const int argsStride = 5;
     private const int argsStrideBytes = argsStride * sizeof(uint);
-    private const int partitionThreads = 64;
-    private const int partitionGroupsPerRow = 4096;
+    private const int placeThreads = 64;
 
     private static readonly int InstanceDataId = Shader.PropertyToID("instanceData");
-    private static readonly int PlacedId = Shader.PropertyToID("placed");
-    private static readonly int PlacedCountId = Shader.PropertyToID("placedCount");
-    private static readonly int LodPivotId = Shader.PropertyToID("lodPivot");
-    private static readonly int LodEndsId = Shader.PropertyToID("lodEnds");
-    private static readonly int LodKeepId = Shader.PropertyToID("lodKeep");
-    private static readonly int RowStrideId = Shader.PropertyToID("rowStride");
-    private static readonly int[] BandIds =
-    {
-        Shader.PropertyToID("band0"),
-        Shader.PropertyToID("band1"),
-        Shader.PropertyToID("band2")
-    };
-    
+    private static readonly int HeightMapId = Shader.PropertyToID("heightMap");
+    private static readonly int ClimateMapId = Shader.PropertyToID("climateMap");
+    private static readonly int InstanceCountId = Shader.PropertyToID("instanceCount");
+    private static readonly int GridWidthId = Shader.PropertyToID("gridWidth");
+    private static readonly int GridHeightId = Shader.PropertyToID("gridHeight");
+    private static readonly int GridMinXId = Shader.PropertyToID("gridMinX");
+    private static readonly int GridMinZId = Shader.PropertyToID("gridMinZ");
+    private static readonly int WorldBoundsMinId = Shader.PropertyToID("worldBoundsMin");
+    private static readonly int WorldBoundsMaxId = Shader.PropertyToID("worldBoundsMax");
+    private static readonly int CellStepId = Shader.PropertyToID("cellStep");
+    private static readonly int WidthScaleId = Shader.PropertyToID("widthScale");
+
     private ComputeBuffer instanceBuffer;
     private ComputeBuffer heightMapBuffer;
     private ComputeBuffer climateBuffer;
     private ComputeBuffer argsBuffer;
-    private ComputeBuffer countBuffer;
-    private readonly ComputeBuffer[] bandBuffers = new ComputeBuffer[GrassLodBands.BandCount];
-    private readonly MaterialPropertyBlock[] bandBlocks = new MaterialPropertyBlock[GrassLodBands.BandCount];
-    private readonly Mesh[] bandMeshes = new Mesh[GrassLodBands.BandCount];
-    
+    private MaterialPropertyBlock nearBlock;
+    private readonly Mesh[] ringMeshes = new Mesh[GrassLodBands.BandCount];
+
     private int kernelPlaceGrass;
     private Bounds renderBounds;
-    private readonly uint[] args = new uint[argsStride * GrassLodBands.BandCount];
-    private int kernelPartition;
-    private int activeBands;
+    private readonly uint[] args = new uint[argsStride];
     private int placedCapacity;
-    private int partitionGroupsX;
-    private int partitionGroupsY;
-    private bool lodActive;
-    private bool hasPlaced;
-    private float refreshSqr;
-    private Vector2 windowCenter;
-    private Vector2 lastPartitionPivot;
-    
-    private int instanceCount;
 
     private int densityFactor;
     private bool isGrass, isShadows;
@@ -129,7 +112,7 @@ public class GrassSystem : MonoBehaviour
         if(!isGrass) return;
         InitializeSystem();
     }
-    
+
     private void Update()
     {
         if (!isGrass) return;
@@ -139,36 +122,51 @@ public class GrassSystem : MonoBehaviour
             hasPending = false;
             PlaceGrass(pendingMap, pendingCenter);
         }
-        else if (lodActive && hasPlaced && PivotTravelSqr() > refreshSqr)
+
+        if (hasFarCenter && far != null)
         {
-            Partition();
+            if (sectorDirty) ApplySector();
+            BuildFar();
         }
 
         RenderGrass();
     }
-    
+
     private void InitializeSystem()
     {
         GrassSoilBuffer.EnsureBound();
-        
+
         if (grassPlacementShader == null)
         {
             RavineLog.Error("Grass placement shader not assigned!");
             return;
         }
-        
+
         kernelPlaceGrass = grassPlacementShader.FindKernel("PlaceGrass");
-        
+
         instanceBuffer = new ComputeBuffer(maxGrassInstances * densityFactor, instanceStride, ComputeBufferType.Append);
-        argsBuffer = new ComputeBuffer(args.Length, sizeof(uint), ComputeBufferType.IndirectArguments);
+        argsBuffer = new ComputeBuffer(argsStride, sizeof(uint), ComputeBufferType.IndirectArguments);
 
         long windowCells = (long)MapGenerator.generationSize * MapGenerator.generationSize;
         placedCapacity = (int)System.Math.Min(windowCells * bladesPerCell * densityFactor, (long)maxGrassInstances * densityFactor);
 
+        for (int ring = 0; ring < ringMeshes.Length; ring++)
+            ringMeshes[ring] = MeshForRing(ring);
+
+        Mesh nearMesh = ringMeshes[0];
+        args[0] = nearMesh.GetIndexCount(0);
+        args[1] = 0;
+        args[2] = nearMesh.GetIndexStart(0);
+        args[3] = nearMesh.GetBaseVertex(0);
+        args[4] = 0;
+
+        nearBlock = new MaterialPropertyBlock();
+        nearBlock.SetBuffer(InstanceDataId, instanceBuffer);
+
         float side = MapGenerator.generationSize;
         boundsSize = new Vector3(side, MapGenerator.maxTerrainHeight * 2f, side);
         renderBounds = new Bounds(Vector3.zero, boundsSize);
-        
+
         grassPlacementShader.SetFloat("density", grassDensity);
         grassPlacementShader.SetInt("bladesPerCell", bladesPerCell * densityFactor);
         grassPlacementShader.SetFloat("scaleMin", scaleMin);
@@ -181,7 +179,7 @@ public class GrassSystem : MonoBehaviour
         grassPlacementShader.SetFloat("persistence", persistence);
         grassPlacementShader.SetFloat("lacunarity", lacunarity);
         grassPlacementShader.SetInt("terrainResolution", terrainResolution);
-        
+
         grassPlacementShader.SetFloat("scaleNoiseScale", scaleNoiseScale);
         grassPlacementShader.SetFloat("scaleNoiseInfluence", scaleNoiseInfluence);
         grassPlacementShader.SetInt("scaleOctaves", scaleOctaves);
@@ -194,13 +192,13 @@ public class GrassSystem : MonoBehaviour
         grassPlacementShader.SetFloat("globalMinHeight", globalMinHeight);
         grassPlacementShader.SetFloat("globalMaxHeight", globalMaxHeight);
 
+        argsBuffer.SetData(args);
+
         float terrainWidth = MapGenerator.generationSize;
         float terrainHeight = MapGenerator.generationSize;
 
         grassPlacementShader.SetFloat("terrainInvWidth",  1f / terrainWidth);
         grassPlacementShader.SetFloat("terrainInvHeight", 1f / terrainHeight);
-
-        InitializeLod();
 
         if (!heightMap.IsCreated)
             heightMap = new NativeArray<float>(vertexCount, Allocator.Persistent);
@@ -212,8 +210,13 @@ public class GrassSystem : MonoBehaviour
         heightMapBuffer = new ComputeBuffer(vertexCount, sizeof(float));
         climateBuffer?.Release();
         climateBuffer = new ComputeBuffer(vertexCount, sizeof(float) * 2);
+
+        ViewOrientation.SectorChanged += OnSectorChanged;
     }
-    
+
+    private Mesh MeshForRing(int ring) =>
+        lodMeshes != null && ring < lodMeshes.Length && lodMeshes[ring] != null ? lodMeshes[ring] : grassMesh;
+
     public void UpdateGrassPlacement(MapGenerator map, long center)
     {
         pendingMap = map;
@@ -233,6 +236,23 @@ public class GrassSystem : MonoBehaviour
     {
         if (map == null || !map.TryBuildHeightWindow(center, out HeightWindow window)) return;
 
+        if (!farPoolReady) BuildFarPool(map);
+
+        PlaceBlock(window, center, instanceBuffer, 1, 1f, out renderBounds);
+        ComputeBuffer.CopyCount(instanceBuffer, argsBuffer, sizeof(uint));
+
+        farMap = map;
+        farCenter = center;
+        hasFarCenter = true;
+        sectorDirty = true;
+
+        if (far == null) return;
+        for (int i = 0; i < far.Length; i++)
+            far[i].HasContent = false;
+    }
+
+    private void PlaceBlock(in HeightWindow window, long blockCenter, ComputeBuffer target, int step, float widthScale, out Bounds bounds)
+    {
         new GatherHeightsJob
         {
             Heights = window,
@@ -245,181 +265,81 @@ public class GrassSystem : MonoBehaviour
         climateBuffer.SetData(climateMap);
         BiomeShaderGlobals.ApplyTo(grassPlacementShader);
 
-        Vector3 boundsMin = MapGenerator.WindowOriginWorld(center);
+        Vector3 boundsMin = MapGenerator.WindowOriginWorld(blockCenter);
 
         Vector3 centerBound = boundsMin + new Vector3(
             MapGenerator.generationSize * 0.5f,
             MapGenerator.maxTerrainHeight * 0.5f,
             MapGenerator.generationSize * 0.5f);
-        renderBounds = new Bounds(centerBound, boundsSize);
+        bounds = new Bounds(centerBound, boundsSize);
 
         Vector3 boundsMax = boundsMin + new Vector3(MapGenerator.generationSize, 0f, MapGenerator.generationSize);
 
-        grassPlacementShader.SetBuffer(kernelPlaceGrass, "instanceData", instanceBuffer);
-        grassPlacementShader.SetBuffer(kernelPlaceGrass, "heightMap", heightMapBuffer);
-        grassPlacementShader.SetBuffer(kernelPlaceGrass, "climateMap", climateBuffer);
+        grassPlacementShader.SetBuffer(kernelPlaceGrass, InstanceDataId, target);
+        grassPlacementShader.SetBuffer(kernelPlaceGrass, HeightMapId, heightMapBuffer);
+        grassPlacementShader.SetBuffer(kernelPlaceGrass, ClimateMapId, climateBuffer);
 
-        int gridWidth = MapGenerator.generationSize;
-        int gridHeight = MapGenerator.generationSize;
+        int cellStep = GrassLodBands.ValidStep(step, MapGenerator.generationSize);
+        int gridWidth = GrassLodBands.CellsPerSide(MapGenerator.generationSize, cellStep);
+        int gridHeight = gridWidth;
         int gridMinX = Mathf.FloorToInt(boundsMin.x);
         int gridMinZ = Mathf.FloorToInt(boundsMin.z);
 
-        instanceCount = placedCapacity;
-        windowCenter = new Vector2(boundsMin.x + gridWidth * 0.5f, boundsMin.z + gridHeight * 0.5f);
+        int instanceCount = GrassLodBands.Capacity(MapGenerator.generationSize, cellStep, bladesPerCell * densityFactor, placedCapacity);
 
-        grassPlacementShader.SetInt("instanceCount", instanceCount);
-        grassPlacementShader.SetInt("gridWidth", gridWidth);
-        grassPlacementShader.SetInt("gridHeight", gridHeight);
-        grassPlacementShader.SetInt("gridMinX", gridMinX);
-        grassPlacementShader.SetInt("gridMinZ", gridMinZ);
+        grassPlacementShader.SetInt(InstanceCountId, instanceCount);
+        grassPlacementShader.SetInt(GridWidthId, gridWidth);
+        grassPlacementShader.SetInt(GridHeightId, gridHeight);
+        grassPlacementShader.SetInt(GridMinXId, gridMinX);
+        grassPlacementShader.SetInt(GridMinZId, gridMinZ);
+        grassPlacementShader.SetInt(CellStepId, cellStep);
+        grassPlacementShader.SetFloat(WidthScaleId, widthScale);
 
-        grassPlacementShader.SetVector("worldBoundsMin", boundsMin);
-        grassPlacementShader.SetVector("worldBoundsMax", boundsMax);
+        grassPlacementShader.SetVector(WorldBoundsMinId, boundsMin);
+        grassPlacementShader.SetVector(WorldBoundsMaxId, boundsMax);
 
-        int threadGroups = Mathf.CeilToInt(instanceCount / 64f);
+        int threadGroups = Mathf.CeilToInt(instanceCount / (float)placeThreads);
 
-        instanceBuffer.SetCounterValue(0);
+        target.SetCounterValue(0);
         grassPlacementShader.Dispatch(kernelPlaceGrass, threadGroups, 1, 1);
-
-        hasPlaced = true;
-
-        if (lodActive) Partition();
-        else ComputeBuffer.CopyCount(instanceBuffer, argsBuffer, sizeof(uint));
-    }
-
-    private void InitializeLod()
-    {
-        lodActive = grassLodShader != null;
-        activeBands = lodActive ? GrassLodBands.BandCount : 1;
-        float refresh = lodRefreshDistance > 0f ? lodRefreshDistance : 0f;
-        refreshSqr = refresh * refresh;
-
-        for (int band = 0; band < activeBands; band++)
-        {
-            Mesh mesh = lodMeshes != null && band < lodMeshes.Length && lodMeshes[band] != null ? lodMeshes[band] : grassMesh;
-            bandMeshes[band] = mesh;
-
-            int offset = band * argsStride;
-            args[offset] = mesh.GetIndexCount(0);
-            args[offset + 1] = 0;
-            args[offset + 2] = mesh.GetIndexStart(0);
-            args[offset + 3] = mesh.GetBaseVertex(0);
-            args[offset + 4] = 0;
-
-            bandBlocks[band] = new MaterialPropertyBlock();
-        }
-
-        argsBuffer.SetData(args);
-
-        if (!lodActive)
-        {
-            RavineLog.Warning("Grass LOD shader not assigned. Grass is drawn without LOD");
-            bandBlocks[0].SetBuffer(InstanceDataId, instanceBuffer);
-            return;
-        }
-
-        kernelPartition = grassLodShader.FindKernel("PartitionGrass");
-        countBuffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.Raw);
-
-        Vector3 ends = lodEndDistances;
-        for (int band = 0; band < activeBands; band++)
-        {
-            int capacity = GrassLodBands.Capacity(band, ends, MapGenerator.generationSize, bladesPerCell * densityFactor, placedCapacity);
-            bandBuffers[band] = new ComputeBuffer(System.Math.Max(capacity, 1), instanceStride, ComputeBufferType.Append);
-            bandBlocks[band].SetBuffer(InstanceDataId, bandBuffers[band]);
-        }
-
-        int groups = Mathf.Max(1, Mathf.CeilToInt(placedCapacity / (float)partitionThreads));
-        partitionGroupsX = Mathf.Min(groups, partitionGroupsPerRow);
-        partitionGroupsY = Mathf.CeilToInt(groups / (float)partitionGroupsX);
-
-        grassLodShader.SetVector(LodEndsId, GrassLodBands.PackEnds(ends, lodFadeWidth));
-        grassLodShader.SetVector(LodKeepId, GrassLodBands.PackKeep(lodKeepFractions));
-        grassLodShader.SetInt(RowStrideId, partitionGroupsX * partitionThreads);
-    }
-
-    private Vector2 CurrentPivot()
-    {
-        if (!ViewOrientation.HasPivot) return windowCenter;
-
-        Vector3 pivot = ViewOrientation.Pivot;
-        return new Vector2(pivot.x, pivot.z);
-    }
-
-    private float PivotTravelSqr()
-    {
-        Vector2 delta = CurrentPivot() - lastPartitionPivot;
-        return delta.sqrMagnitude;
-    }
-
-    private void Partition()
-    {
-        lastPartitionPivot = CurrentPivot();
-
-        ComputeBuffer.CopyCount(instanceBuffer, countBuffer, 0);
-
-        grassLodShader.SetVector(LodPivotId, new Vector4(lastPartitionPivot.x, lastPartitionPivot.y, 0f, 0f));
-        grassLodShader.SetBuffer(kernelPartition, PlacedId, instanceBuffer);
-        grassLodShader.SetBuffer(kernelPartition, PlacedCountId, countBuffer);
-
-        for (int band = 0; band < activeBands; band++)
-        {
-            bandBuffers[band].SetCounterValue(0);
-            grassLodShader.SetBuffer(kernelPartition, BandIds[band], bandBuffers[band]);
-        }
-
-        grassLodShader.Dispatch(kernelPartition, partitionGroupsX, partitionGroupsY, 1);
-
-        for (int band = 0; band < activeBands; band++)
-            ComputeBuffer.CopyCount(bandBuffers[band], argsBuffer, band * argsStrideBytes + sizeof(uint));
     }
 
     private void RenderGrass()
     {
         if (instanceBuffer == null) return;
 
-        for (int band = 0; band < activeBands; band++)
-        {
-            Graphics.DrawMeshInstancedIndirect(
-                bandMeshes[band],
-                0,
-                grassMaterial,
-                renderBounds,
-                argsBuffer,
-                band * argsStrideBytes,
-                bandBlocks[band],
-                band == 0 && isShadows ? ShadowCastingMode.On : ShadowCastingMode.Off,
-                false,
-                gameObject.layer
-            );
-        }
-    }
+        Graphics.DrawMeshInstancedIndirect(
+            ringMeshes[0],
+            0,
+            grassMaterial,
+            renderBounds,
+            argsBuffer,
+            0,
+            nearBlock,
+            isShadows ? ShadowCastingMode.On : ShadowCastingMode.Off,
+            false,
+            gameObject.layer
+        );
 
+        RenderFar();
+    }
+    
     private void OnDisable()
     {
+        ViewOrientation.SectorChanged -= OnSectorChanged;
+
         GrassSoilBuffer.Release();
         instanceBuffer?.Release();
         heightMapBuffer?.Release();
         climateBuffer?.Release();
         argsBuffer?.Release();
-        countBuffer?.Release();
         instanceBuffer = null;
         heightMapBuffer = null;
         climateBuffer = null;
         argsBuffer = null;
-        countBuffer = null;
+        nearBlock = null;
 
-        for (int band = 0; band < bandBuffers.Length; band++)
-        {
-            bandBuffers[band]?.Release();
-            bandBuffers[band] = null;
-            bandBlocks[band] = null;
-            bandMeshes[band] = null;
-        }
-
-        lodActive = false;
-        hasPlaced = false;
-        activeBands = 0;
+        ReleaseFar();
 
         if (heightMap.IsCreated) heightMap.Dispose();
         if (climateMap.IsCreated) climateMap.Dispose();
