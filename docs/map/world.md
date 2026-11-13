@@ -65,13 +65,12 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 - `MapGenerator.ViewRingOf` / `ViewRingOfChunk` describe only what the camera draws. `SimRingOf` describes what is simulated and does not depend on the sector.
 - `IViewDirectional.SetSector`: `EndlessTerrain` and `EndlessLiquids` build only the blocks that entered (nearest rings and nearest to the view axis first); blocks that left are hidden and keep their mesh in the pool. `EndlessTerrain.BuiltBlocks` counts builds.
 - `FarObjectRenderer` rebuilds its instance buffer on a sector or window change at its existing rate limit; the pool, `sources` and the `farMaxInstances` budget are sized from `ViewWedge.MaxBlocks`.
-- `GrassSystem` step 1, placement: `PlaceGrass` lays out the whole window into one buffer, only when the window centre changes.
-- `GrassSystem` step 2, partition: `Assets/Shaders/Grass/GrassLod.compute` (`PartitionGrass`) splits the placed set into 3 bands by XZ distance to `ViewOrientation.Pivot`; no pivot: the window centre.
-- Partition runs after every placement and in `Update` when the pivot travelled more than `lodRefreshDistance`; the draw reads the band buffers only.
-- Band ends, keep fractions and fade width are packed by `GrassLodBands`, which also bounds each band buffer by the cells that can reach the band.
-- A band thins its blades by a hash of the blade position; blades the next band drops shrink over the fade width; survivors widen by 1 / sqrt(keep).
-- One draw per band with `lodMeshes` (empty falls back to `grassMesh`); only band 0 casts shadows; beyond the last band nothing is drawn.
-- Without `grassLodShader` the placed set is drawn whole as before. The LOD is visual only and follows the pivot, not the view sector.
+- `GrassSystem` ring 0: `PlaceGrass` lays out the central window, one cell per unit, only when the window centre changes; the LOD does not thin it.
+- Grass rings 1 to `GrassLodBands.FarRings`: one pool slot per wedge block (`ViewWedge.MaxBlocksInRing`), on the same block lattice as the terrain and following the view sector.
+- A far block runs the same `PlaceGrass` kernel on a coarser cell grid (`lodCellSteps`, 4 and 8 units) with wider blades (`lodWidthScales`); buffer size is `GrassLodBands.Capacity`.
+- After a window-centre change far blocks are rebuilt nearest first, `lodBlocksPerFrame` per frame, once `MapGenerator.TryBuildHeightWindow` finds all chunks; blocks leaving the wedge keep their buffer.
+- One draw for the window and one per built far block; mesh by ring from `lodMeshes` (empty falls back to `grassMesh`); only ring 0 casts shadows; beyond the last grass ring there is no grass.
+- The grass LOD is drawing only: placement rules, trample and soil do not depend on it. Far grass lies outside `GrassTrampleField`, whose texture clamps at its edge.
 - World bend: `Assets/Shaders/Include/CurvedWorld.hlsl` bends radially around the camera pivot (`_CurveParams`, `_CurveFocus`), pushed by `CurvedWorld`; the focus is `ViewOrientation.Pivot`.
 - A view-dependent component implements `IViewOriented` (called on every `ViewChanged`, O(1)) and registers with `ViewOrientation`; a plain transform uses `ViewOrientedTransform.Attach`.
 - Far billboards: `BakedSides` sides in a circle (column k looks with yaw k * 360 / N); atlas baked by `Assets/Scripts/Editor/TreeMeshBaker.cs`; atlases baked with another side count must be re-baked.

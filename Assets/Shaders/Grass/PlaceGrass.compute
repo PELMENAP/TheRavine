@@ -1,7 +1,15 @@
 #pragma kernel PlaceGrass
 
 #include "Assets/Shaders/Include/BiomeCommon.hlsl"
-#include "Assets/Shaders/Include/GrassInstance.hlsl"
+
+struct InstanceData
+{
+    float3 position;  
+    float  rotation;  
+    float  scaleXZ;   
+    float  scaleY;   
+    uint   packedColor;
+};
 
 AppendStructuredBuffer<InstanceData> instanceData;
 StructuredBuffer<float> heightMap;
@@ -14,6 +22,8 @@ int gridMinZ;
 int gridWidth;
 int gridHeight;
 int bladesPerCell;
+int cellStep;
+float widthScale;
 float density;
 float scaleMin;
 float scaleMax;
@@ -169,16 +179,16 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     int localZ = (int)(cellIndex / gridWidth);
 
     uint bladeIndex = id.x % bladesPerCell;
-    int gridX = localX + gridMinX;
-    int gridZ = localZ + gridMinZ;
+    int gridX = gridMinX + localX * cellStep;
+    int gridZ = gridMinZ + localZ * cellStep;
 
     uint bladeSeed = Hash3D((uint)gridX, (uint)gridZ, bladeIndex);
 
     float offsetX = HashToFloat(Hash(bladeSeed + 1)) - 0.5;
     float offsetZ = HashToFloat(Hash(bladeSeed + 2)) - 0.5;
     
-    float worldX = gridX + offsetX;
-    float worldZ = gridZ + offsetZ;
+    float worldX = gridX + offsetX * cellStep;
+    float worldZ = gridZ + offsetZ * cellStep;
 
     float height = SampleHeightBilinear(worldX, worldZ);
 
@@ -210,6 +220,7 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     
     float scaleXZ = scaleBase * scaleNoiseFactor;
     scaleXZ *= lerp(0.7, 1.0, densityMultiplier);
+    scaleXZ *= widthScale;
     
     float scaleY = scaleBase * scaleNoiseFactor * lerp(0.8, 1.2, scaleNoiseValue);
     
