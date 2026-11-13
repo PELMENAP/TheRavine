@@ -7,7 +7,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 | File | Lines |
 |---|---|
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1806 |
-| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1290 |
+| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1316 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1067 |
 | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 942 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 920 |
@@ -15,13 +15,13 @@ Line numbers are those of the last generation; after local edits treat them as a
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 849 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 775 |
 | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | 730 |
-| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 703 |
+| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 715 |
 | `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs` | 687 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs` | 643 |
 | `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs` | 621 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 621 |
 | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 603 |
-| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 526 |
+| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 532 |
 
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs`
 
@@ -163,28 +163,28 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
 
-- 5–1290 class SimulationRules
-  - 1135 CaptureFrame
-  - 1137 Bind
-  - 1148 DeathPenaltyMul
-  - 1157 FillPlanSeconds
-  - 1164 FillCasteAffinityLog
-  - 1172 FillUtilityWeights
-  - 1180 FillPlanCasteDomain
-  - 1188 BuildEndogenousForbiddenMask
-  - 1200 BuildBoidPlanMul
-  - 1207 ColonyChannelTau
-  - 1213 BiomeFertility
-  - 1214 BiomeToxicity
-  - 1223 KindValue
-  - 1226 BiomeValue
-  - 1244 OnValidate
-  - 1287 ThrowNotBound
+- 5–1316 class SimulationRules
+  - 1153 CaptureFrame
+  - 1155 Bind
+  - 1166 DeathPenaltyMul
+  - 1175 FillPlanSeconds
+  - 1182 FillCasteAffinityLog
+  - 1190 FillUtilityWeights
+  - 1198 FillPlanCasteDomain
+  - 1206 BuildEndogenousForbiddenMask
+  - 1218 BuildBoidPlanMul
+  - 1225 ColonyChannelTau
+  - 1231 BiomeFertility
+  - 1232 BiomeToxicity
+  - 1241 KindValue
+  - 1244 BiomeValue
+  - 1263 OnValidate
+  - 1313 ThrowNotBound
   - 8–8 enum EpsilonSchedule
-  - 10–1130 struct RulesFrame
-    - 565 BiomeFertility
-    - 566 BiomeToxicity
-    - 575 RulesFrame
+  - 10–1148 struct RulesFrame
+    - 574 BiomeFertility
+    - 575 BiomeToxicity
+    - 584 RulesFrame
 
 ## `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs`
 
@@ -373,27 +373,28 @@ Line numbers are those of the last generation; after local edits treat them as a
 ## `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs`
 
 - 7–918 class SharedHierarchicalBrain
-  - 35 UsesDirections
-  - 37 ExecAux
-  - 75 SharedHierarchicalBrain
-  - 105 ConfigureOptimizer
-  - 123 CompletePending
-  - 135 ApplyPendingGradients
-  - 151 ResolveLearningRate
-  - 162 ReportMeanFitness
-  - 173 ExplorationDecay
-  - 183 CreateContext
-  - 190 BuildContextLayouts
-  - 198 GiveReward
-  - 225 TryAddReward
-  - 235 SharedHierarchicalBrain
-  - 257 BuildGoalDurations
-  - 272 BuildBiasStride
-  - 297 BeginDecisionBatch
-  - 311 EnqueueDecision
-  - 344 BuildReservoirItem
-  - 370 TryGetDecision
-  - 381 RunDecisions
+  - 34 DirectionAux
+  - 39 DirOffsetAux
+  - 41 ExecAux
+  - 74 SharedHierarchicalBrain
+  - 104 ConfigureOptimizer
+  - 122 CompletePending
+  - 134 ApplyPendingGradients
+  - 150 ResolveLearningRate
+  - 161 ReportMeanFitness
+  - 172 ExplorationDecay
+  - 182 CreateContext
+  - 189 BuildContextLayouts
+  - 197 GiveReward
+  - 224 TryAddReward
+  - 234 SharedHierarchicalBrain
+  - 256 BuildGoalDurations
+  - 271 BuildBiasStride
+  - 296 BeginDecisionBatch
+  - 310 EnqueueDecision
+  - 343 BuildReservoirItem
+  - 369 TryGetDecision
+  - 380 RunDecisions
   - 628 PickMasked
   - 649 ScheduleTraining
   - 662 EnsureNativeTables
@@ -567,51 +568,51 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs`
 
-- 11–703 class EntityModel
-  - 31 Activate
-  - 32 Deactivate
-  - 47 AssignId
-  - 83 AddStress
-  - 86 AddExtrinsicReward
-  - 87 ConsumeExtrinsicReward
-  - 112 PlanRewardEma
-  - 142 ClearRecruit
-  - 143 Recruit
-  - 151 NoteFoodSite
-  - 156 TryGetFoodSite
-  - 163 RecordStored
-  - 181 SetLeader
-  - 193 SetFlock
-  - 195 BuildBoidAgent
-  - 252 SelectHuntTarget
-  - 279 AssignCaste
-  - 300 SyncCount
-  - 317 ClearCount
-  - 323 ActionMask
-  - 330 SetMimickedAction
-  - 331 ConsumeMimickedAction
-  - 336 SetLastAction
-  - 346 CreateActionTimes
-  - 353 SinceAction
-  - 369 NextPlanSide
-  - 372 Carry
-  - 373 TakeCarried
-  - 381 ReceiveFood
-  - 387 IngestFood
-  - 396 ConsumeReceivedFood
-  - 406 Warn
-  - 418 TryGetThreatSource
-  - 471 MarkDeathPending
-  - 498 InvalidateCachedFood
-  - 525 TryStartAttackCooldown
-  - 533 SetUp
-  - 541 RequestReproduce
-  - 549 Configure
-  - 618 Init
-  - 667 InterruptCommand
-  - 669 Dispose
-  - 691 DeepClean
-  - 13–13 enum FitnessEvent
+- 12–715 class EntityModel
+  - 32 Activate
+  - 33 Deactivate
+  - 48 AssignId
+  - 84 AddStress
+  - 87 AddExtrinsicReward
+  - 88 ConsumeExtrinsicReward
+  - 113 PlanRewardEma
+  - 143 ClearRecruit
+  - 144 Recruit
+  - 152 NoteFoodSite
+  - 157 TryGetFoodSite
+  - 164 RecordStored
+  - 182 SetLeader
+  - 194 SetFlock
+  - 196 BuildBoidAgent
+  - 253 SelectHuntTarget
+  - 280 AssignCaste
+  - 301 SyncCount
+  - 318 ClearCount
+  - 324 ActionMask
+  - 333 SetLastAction
+  - 343 CreateActionTimes
+  - 350 SinceAction
+  - 357 NoteThreatDisplay
+  - 361 TryGetKinTarget
+  - 388 NextPlanSide
+  - 391 Carry
+  - 392 TakeCarried
+  - 400 ReceiveFood
+  - 406 IngestFood
+  - 415 ConsumeReceivedFood
+  - 425 Warn
+  - 437 TryGetThreatSource
+  - 490 MarkDeathPending
+  - 517 InvalidateCachedFood
+  - 544 TryStartAttackCooldown
+  - 552 SetUp
+  - 560 RequestReproduce
+  - 568 Configure
+  - 639 Init
+  - 679 InterruptCommand
+  - 681 Dispose
+  - 703 DeepClean
+  - 14–14 enum FitnessEvent
 
 ## `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs`
 
@@ -802,16 +803,16 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs`
 
-- 11–526 class EntityModel
+- 11–532 class EntityModel
   - 13 IsAliveForTick
   - 16 SubmitDecision
   - 22 BeginCycle
   - 36 NoisyDirection
   - 43 UpdateDormancy
   - 60 RunCycle
-  - 424 ComputePlanHints
-  - 465 EndCycle
-  - 485 StartDecision
-  - 502 ComputeDangerLevel
-  - 515 ComputeBreedReadiness
+  - 430 ComputePlanHints
+  - 471 EndCycle
+  - 491 StartDecision
+  - 508 ComputeDangerLevel
+  - 521 ComputeBreedReadiness
 

@@ -21,6 +21,7 @@ public sealed class EntityCommandRunner
     public bool IsRunning => _current != null;
     public CommandSource CurrentSource => _source;
     public int CurrentAction => _current != null ? _decision.Action : -1;
+    public byte CurrentDirection => _current != null ? _decision.Direction : (byte)DirectionKind.None;
     public int StartedBy(CommandSource source) => _startedBySource[(int)source];
 
     public void Start(IEntityCommand command, in BrainDecision decision, CommandSource source)

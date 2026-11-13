@@ -1,16 +1,16 @@
-
-
 using TheRavine.EntityControl.Virology;
 
-public class PickUpCommand : EntityCommand
+public class TakeCommand : EntityCommand
 {
-    public PickUpCommand(EntityModel model) : base(model) { }
+    public TakeCommand(EntityModel model) : base(model) { }
 
     public override bool CanExecute()
         => model.Carrying < model.CarryCapacity * model.CarryFullFraction;
 
     protected override EntityCommandStatus OnBegin()
     {
+        if (decision.Direction == (byte)DirectionKind.Object) return Fail();
+
         var r = SimulationRules.Active;
         var index = model.FoodIndex;
         if (index == null || !model.CachedFoodValid || model.CachedFoodDistance > r.EatRange) return Fail();

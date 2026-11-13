@@ -57,7 +57,7 @@ The file is `simulation_log_<yyyyMMdd_HHmmss>.csv` in `Application.persistentDat
 | `avg_fitness` | world | fitness | `EvolutionService.AvgFitness` |
 | `avg_entropy` | world | nats | `EvolutionService.AvgEntropy`, mean coordinator policy entropy |
 
-`<action>` is every `EntityAction` name in enum order, in snake case: `idle`, `wander`, `remember_point`, `go_to_point`, `attack`, `flee`, `eat`, `reproduce`, `speech`, `mimic`, `rest`, `threaten`, `share_food`, `approach_food`, `return_nest`, `pick_up`, `store_food`, `follow`, `move_nest`, `groom`. That makes 60 columns. The full header has 97 columns.
+`<action>` is every `EntityAction` name in enum order, in snake case: `idle`, `move_to`, `attack`, `eat`, `reproduce`, `signal`, `rest`, `give`, `take`, `put`, `move_nest`. That makes 33 columns for started, completed and failed; the interrupted columns follow in the same order. The header is built by `SimulationLog.BuildHeader`.
 
 ## Success metrics
 
@@ -128,7 +128,7 @@ Every `Failed` status of `AttackCommand` records exactly one of the four reasons
 
 | Column | Scope | Unit | Meaning and computation |
 |---|---|---|---|
-| `<action>_started_brain`, `<action>_started_instinct`, `<action>_started_plan` | both | commands | Δ `ColonyStats.ActionsStartedBySource[action × CommandSource.Count + source]`, counted in `EntityCommandRunner.Start`. Actions, in column order: `flee`, `attack`, `approach_food`, `wander`, `return_nest`, `eat`, `rest`. The block of 21 columns follows `attack_fail_lurk_timeout` |
+| `<action>_started_brain`, `<action>_started_instinct`, `<action>_started_plan` | both | commands | Δ `ColonyStats.ActionsStartedBySource[action × CommandSource.Count + source]`, counted in `EntityCommandRunner.Start`. Actions, in column order: `move_to`, `attack`, `eat`, `rest`, `signal`, `take`, `put`. The block of 21 columns follows `attack_fail_lurk_timeout` |
 
 The three columns of an action sum to `<action>_started` in the same window.
 

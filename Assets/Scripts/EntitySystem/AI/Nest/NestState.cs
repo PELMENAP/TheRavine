@@ -282,6 +282,15 @@ public sealed unsafe class NestState : IDisposable
         return worst - best;
     }
 
+    public bool TryGetDangerCentroid(float minMass, out float2 position)
+    {
+        position = default;
+        if (_decayScheduled || !_stats.IsCreated || _stats[ColonyFieldStats.DangerMass] <= minMass) return false;
+
+        position = _origin + new float2(_stats[ColonyFieldStats.DangerX], _stats[ColonyFieldStats.DangerY]) * _cell;
+        return true;
+    }
+
     public void RelieveHunger(float amount) => Hunger = math.max(0f, Hunger - math.max(0f, amount));
 
     public void RaiseAlarm(float amount) => Alarm = math.min(1f, Alarm + math.max(0f, amount));

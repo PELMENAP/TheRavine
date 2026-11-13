@@ -27,6 +27,8 @@ public sealed class PlanRunner
     {
         _p = new PlanProgress { Kind = decision.Plan, Variant = decision.Action };
         PlanCatalog.Init(ref _p);
+        _p.VariantDirection = decision.Direction;
+        _p.Direction        = decision.Direction;
         _p.MaxFailures = _model.PlanMaxFailures;
         _p.MaxStrikes  = _model.HuntMaxStrikes;
         _decision = decision;
@@ -87,7 +89,7 @@ public sealed class PlanRunner
             if (_p.NeedsDestination)
             {
                 _p.NeedsDestination = false;
-                byte dir = _p.Direction != (byte)DirectionKind.None ? _p.Direction : _decision.Direction;
+                byte dir = _p.LegDirection != (byte)DirectionKind.None ? _p.LegDirection : _decision.Direction;
                 ResolveDestination(dir, _decision.DirOffset);
             }
             if (next == PlanCatalog.Complete) { End(EntityCommandStatus.Completed); return; }
@@ -116,7 +118,7 @@ public sealed class PlanRunner
         _p.Hops = 0;
         if (!_model.TryResolveDirection(direction, offset, out float2 dir, out float radius)) return;
         ref readonly var r = ref SimulationRules.Frame;
-        bool  anchored = direction <= (byte)DirectionKind.ColonyPoi;
+        bool  anchored = PlanCatalog.IsAnchored(direction);
         float maxTravel = math.max(r.PlanMinTravel, r.PlanMaxTravel);
         float travel = anchored ? math.min(radius, maxTravel) : math.clamp(radius, r.PlanMinTravel, maxTravel);
         _p.Destination    = _model.Position2D + dir * travel;
@@ -145,8 +147,9 @@ public sealed class PlanRunner
         float duration = math.clamp(_decision.Duration * math.max(scale, 0.05f),
             ActionDurationTable.Min(action), ActionDurationTable.Max(action));
         var step = _decision.WithStep(action, SimulationClock.Time, duration, source == CommandSource.Brain);
-        if (_p.Direction != (byte)DirectionKind.None) step = step.WithDirection(_p.Direction);
-        if (_p.HasDestination && action == (int)EntityAction.Wander) step = step.WithDestination(_p.Destination);
+        step = step.WithDirection(_p.Direction);
+        if (_p.HasDestination && action == (int)EntityAction.MoveTo && PlanCatalog.IsExploratory(_p.Direction))
+            step = step.WithDestination(_p.Destination);
         if (_model.TryStartCommand(action, in step, source)) return true;
         if (_active && !_ending && source == CommandSource.Brain) Advance(EntityCommandStatus.Failed, action);
         return false;

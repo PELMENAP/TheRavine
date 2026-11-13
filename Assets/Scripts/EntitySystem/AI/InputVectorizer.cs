@@ -11,6 +11,10 @@ public struct VectorizerFrame
     public float  TimeToBreed;
     public float  NearestEntityDist;
     public float  NearestFoodDist;
+    public float  ObjectDist;
+    public float  TaskProximity;
+    public float  TaskReward;
+    public float  TaskKind;
     public float  ViralLoad;
     public float  ViralSegments;
     public float  ViralNet;
@@ -19,6 +23,9 @@ public struct VectorizerFrame
     public float2 NestDir;
     public float2 PoiDir;
     public float2 NestFoodDir;
+    public float2 ObjectDir;
+    public float2 DangerDir;
+    public float2 TaskDir;
     public float  Stomach;
     public float  WellFed;
     public float  FoodToxicity;
@@ -26,6 +33,7 @@ public struct VectorizerFrame
     public float  FoodMeat;
     public float  FoodInfected;
     public float  Carrying;
+    public float  HeldObject;
     public float  NestStorage;
     public float  LocalDanger;
     public float  Alarm;
@@ -59,11 +67,12 @@ public class InputVectorizer : IDisposable
 
     public const int TraceOffset     = 8;
     public const int DirectionOffset = TraceOffset + ActionCount;
-    public const int StateOffset     = DirectionOffset + 10;
-    public const int StateSlots      = 13;
+    public const int DirectionSlots  = 16;
+    public const int StateOffset     = DirectionOffset + DirectionSlots;
+    public const int StateSlots      = 14;
     public const int TailOffset      = StateOffset + StateSlots;
     public const int SpeechSlots     = SimulationRules.SpeechVocab + 5;
-    public const int TailSlots       = 41 + SpeechSlots;
+    public const int TailSlots       = 45 + SpeechSlots;
     public const int PlanEmaOffset   = TailOffset + TailSlots;
     public const int SeasonOffset    = PlanEmaOffset + PlanCatalog.Count;
     public const int VectorSize      = SeasonOffset + 2;
@@ -124,6 +133,9 @@ public class InputVectorizer : IDisposable
         v[d + 4] = f.NestDir.x;     v[d + 5] = f.NestDir.y;
         v[d + 6] = f.PoiDir.x;      v[d + 7] = f.PoiDir.y;
         v[d + 8] = f.NestFoodDir.x; v[d + 9] = f.NestFoodDir.y;
+        v[d + 10] = f.ObjectDir.x;  v[d + 11] = f.ObjectDir.y;
+        v[d + 12] = f.DangerDir.x;  v[d + 13] = f.DangerDir.y;
+        v[d + 14] = f.TaskDir.x;    v[d + 15] = f.TaskDir.y;
 
         int s = StateOffset;
         v[s]      = f.Stomach;
@@ -139,6 +151,7 @@ public class InputVectorizer : IDisposable
         v[s + 10] = f.AtNest;
         v[s + 11] = f.NeighborViralLoad;
         v[s + 12] = f.Stress;
+        v[s + 13] = f.HeldObject;
 
         int idx = TailOffset;
         v[idx++] = math.saturate(f.InDanger);
@@ -180,7 +193,10 @@ public class InputVectorizer : IDisposable
         v[idx++] = f.IsLeader;
         for (int c = 0; c < (int)global::Caste.Count; c++) v[idx++] = f.Caste == c ? 1f : 0f;
 
-        for (int i = idx; i < PlanEmaOffset; i++) v[i] = 0f;
+        v[idx++] = f.ObjectDist >= 0f ? 1f - math.saturate(f.ObjectDist / MaxDetectionRadius) : 0f;
+        v[idx++] = f.TaskProximity;
+        v[idx++] = f.TaskReward;
+        v[idx++] = f.TaskKind;
 
         var ema = f.PlanRewardEma;
         for (int p = 0; p < PlanCatalog.Count; p++)

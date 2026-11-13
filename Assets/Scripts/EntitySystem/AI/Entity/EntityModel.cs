@@ -6,6 +6,7 @@ using Unity.Mathematics;
 using TheRavine.Base;
 using TheRavine.Extensions;
 using TheRavine.Generator;
+using TheRavine.ObjectControl;
 using TheRavine.EntityControl.Virology;
 
 public partial class EntityModel : IEntity, IFoodReceiver
@@ -103,9 +104,9 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
     private readonly float2[] _dirVec    = new float2[(int)DirectionKind.Count];
     private readonly float[]  _dirRadius = new float[(int)DirectionKind.Count];
-    private byte  _dirMask;
-    private float _ouAngle;
-    public byte  DirectionMask => _dirMask;
+    private ushort _dirMask;
+    private float  _ouAngle;
+    public ushort DirectionMask => _dirMask;
     public float OuAngle => _ouAngle;
 
     private readonly float[] _planRewardEma = new float[PlanCatalog.Count];
@@ -326,10 +327,6 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
     public InputVectorizer Vectorizer;
 
-    public int MimickedActionIndex { get; private set; } = -1;
-    public void SetMimickedAction(int index) => MimickedActionIndex = index;
-    public void ConsumeMimickedAction() => MimickedActionIndex = -1;
-
     public float[] LastInput;
     public int LastActionIndex;
     public EntityAction LastAction { get; private set; }
@@ -354,6 +351,28 @@ public partial class EntityModel : IEntity, IFoodReceiver
     {
         double t = _actionTimes[(int)action];
         return double.IsNegativeInfinity(t) ? float.MaxValue : (float)(SimulationClock.TimeD - t);
+    }
+
+    private double _threatDisplayTime = double.NegativeInfinity;
+    public void NoteThreatDisplay() => _threatDisplayTime = SimulationClock.TimeD;
+    public float SinceThreatDisplay
+        => double.IsNegativeInfinity(_threatDisplayTime) ? float.MaxValue : (float)(SimulationClock.TimeD - _threatDisplayTime);
+
+    public bool TryGetKinTarget(out float2 position)
+    {
+        if (IsJuvenile && Parent.TryGet(out var parent))
+        {
+            position = parent.Position2D;
+            return true;
+        }
+        var kin = CachedNearest;
+        if (kin != null && kin.Colony == Colony)
+        {
+            position = kin.Position2D;
+            return true;
+        }
+        position = default;
+        return false;
     }
 
     public float TimeAlive { get; private set; }
@@ -446,7 +465,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         {
             ref readonly var r = ref SimulationRules.Frame;
             float lethargy = Virology != null ? Virology.Modifiers.Lethargy : 0f;
-            float mul = (1f - lethargy * r.LethargySlow) * (Carrying > 0f ? r.CarrySpeedMul : 1f)
+            float mul = (1f - lethargy * r.LethargySlow) * (Carrying > 0f ? r.CarrySpeedMul : 1f) * (HasHeldObject ? r.HeldObjectSpeedMul : 1f)
                       * (1f - r.SenescenceSpeedLoss * _senescence);
             return math.max(mul, r.MinSpeedMul);
         }
@@ -580,6 +599,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
         ServiceLocator.Services.TryGet(out _foodIndex);
         if (!ServiceLocator.Services.TryGet(out _ledger)) _ledger = new EnergyLedger();
         ServiceLocator.Services.TryGet(out _warmth);
+        ServiceLocator.Services.TryGet(out _map);
+        if (ServiceLocator.Services.TryGet(out ObjectSystem objectSystem)) _objectRegistry = objectSystem.infoRegistry;
 
         ServiceLocator.Services.TryGet(out MovePlanner planner);
         ServiceLocator.Services.TryGet(out _players);
@@ -617,26 +638,17 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
     public void Init()
     {
-        _commands[(int)EntityAction.Idle]          = new IdleCommand(this);
-        _commands[(int)EntityAction.Wander]        = new WanderCommand(this);
-        _commands[(int)EntityAction.RememberPoint] = new RememberPointCommand(this);
-        _commands[(int)EntityAction.GoToPoint]     = new GoToPointCommand(this);
-        _commands[(int)EntityAction.Attack]        = new AttackCommand(this);
-        _commands[(int)EntityAction.Flee]          = new FleeCommand(this);
-        _commands[(int)EntityAction.Eat]           = new EatCommand(this);
-        _commands[(int)EntityAction.Reproduce]     = new ReproduceCommand(this);
-        _commands[(int)EntityAction.Speech]        = new SpeechCommand(this);
-        _commands[(int)EntityAction.Mimic]         = new MimicCommand(this);
-        _commands[(int)EntityAction.Rest]          = new RestCommand(this);
-        _commands[(int)EntityAction.Threaten]      = new ThreatenCommand(this);
-        _commands[(int)EntityAction.ShareFood]     = new ShareFoodCommand(this);
-        _commands[(int)EntityAction.ApproachFood]  = new ApproachFoodCommand(this);
-        _commands[(int)EntityAction.ReturnNest]    = new ReturnNestCommand(this);
-        _commands[(int)EntityAction.PickUp]        = new PickUpCommand(this);
-        _commands[(int)EntityAction.StoreFood]     = new StoreFoodCommand(this);
-        _commands[(int)EntityAction.Follow]        = new FollowCommand(this);
-        _commands[(int)EntityAction.MoveNest]      = new MoveNestCommand(this);
-        _commands[(int)EntityAction.Groom]         = new GroomCommand(this);
+        _commands[(int)EntityAction.Idle]      = new IdleCommand(this);
+        _commands[(int)EntityAction.MoveTo]    = new MoveToCommand(this);
+        _commands[(int)EntityAction.Attack]    = new AttackCommand(this);
+        _commands[(int)EntityAction.Eat]       = new EatCommand(this);
+        _commands[(int)EntityAction.Reproduce] = new ReproduceCommand(this);
+        _commands[(int)EntityAction.Signal]    = new SignalCommand(this);
+        _commands[(int)EntityAction.Rest]      = new RestCommand(this);
+        _commands[(int)EntityAction.Give]      = new GiveCommand(this);
+        _commands[(int)EntityAction.Take]      = new TakeCommand(this);
+        _commands[(int)EntityAction.Put]       = new PutCommand(this);
+        _commands[(int)EntityAction.MoveNest]  = new MoveNestCommand(this);
     }
 
     private static readonly Unity.Profiling.ProfilerMarker PerceptionMarker = new("EntityModel.Perception");

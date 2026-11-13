@@ -100,6 +100,13 @@ public class PointsOfInterestComponent : IComponent
         return i >= 0;
     }
 
+    public bool TryGetNear(in float2 pos, float radius, out PointOfInterest point)
+    {
+        int i = NearestIndex(in pos, radius);
+        point = i >= 0 ? _points[i] : default;
+        return i >= 0;
+    }
+
     public bool TryPickBest(in float2 self, out float2 target)
     {
         ref readonly var r = ref SimulationRules.Frame;

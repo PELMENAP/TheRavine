@@ -64,7 +64,19 @@ public partial class EntityModel
         }
 
         if (_flock.Neighbors > 0 && !IsWild) SetDirection(DirectionKind.Flock, in _flock.CentroidDir, r.BoidRadius * r.FlockDirectionRadiusMul);
-        _dirMask |= 1 << (int)DirectionKind.Levy;
+        _dirMask |= (ushort)(1 << (int)DirectionKind.Levy);
+
+        if (HasHome) SetDirectionTarget(DirectionKind.Nest, in self, HomePosition, in r);
+        if (TryGetKinTarget(out float2 kin)) SetDirectionTarget(DirectionKind.Kin, in self, in kin, in r);
+        if (nest != null && !IsWild && nest.TryGetDangerCentroid(r.DangerDirectionMinMass, out float2 danger))
+            SetDirectionTarget(DirectionKind.Danger, in self, in danger, in r);
+        if (_objectValid && !HasHeldObject) SetDirectionTarget(DirectionKind.Object, in self, in _objectPos, in r);
+    }
+
+    private void ComputeEscapeDirection(in float2 self, in SimulationRules.RulesFrame r)
+    {
+        if (!_threatResolved) return;
+        SetDirection(DirectionKind.Escape, math.normalizesafe(self - _threatSource), Tuning.DetectionRadius * r.FleeDistanceMul);
     }
 
     private void SetDirectionTarget(DirectionKind kind, in float2 self, in float2 target, in SimulationRules.RulesFrame r)
@@ -80,8 +92,11 @@ public partial class EntityModel
         if (math.lengthsq(dir) < 1e-6f) return;
         _dirVec[(int)kind]    = dir;
         _dirRadius[(int)kind] = radius;
-        _dirMask |= (byte)(1 << (int)kind);
+        _dirMask |= (ushort)(1 << (int)kind);
     }
+
+    private float2 DirectionVector(DirectionKind kind)
+        => (_dirMask & (1 << (int)kind)) != 0 ? _dirVec[(int)kind] : float2.zero;
 
     public bool TryResolveDirection(byte kind, float offset, out float2 dir, out float radius)
     {

@@ -52,6 +52,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 | Neighbours | `Assets/Scripts/EntitySystem/AI/Perception/EntitySpatialGrid.cs` | `Rebuild`, `Survey`, `FindNearest`, `FindInRadius` |
 | Food | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | `TryFindNearestFood`, `TryLocate`, `TryClaim`, `BiteMeat`, `TryTakePayload` |
 | Terrain | `Assets/Scripts/EntitySystem/AI/Perception/TerrainSensor.cs`, `Assets/Scripts/EntitySystem/AI/Perception/TerrainSteering.cs` | whole files |
+| Objects | `Assets/Scripts/EntitySystem/AI/Perception/ObjectSensor.cs`, `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Objects.cs` | `TryFindNearest`, `ScanObject` |
 | Fields | `Assets/Scripts/EntitySystem/AI/Perception/WarmthField.cs`, `Assets/Scripts/EntitySystem/AI/Perception/PlayerPresence.cs` | `Read`, `Add`; `TryFindNearest` |
 | Instincts | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | `Write`, `Schedule`, `Output`, `InstinctJob` |
 | Utility | `Assets/Scripts/EntitySystem/AI/Utility/UtilityPriorSystem.cs` | `Write`, `Schedule`, `Output`, `UtilityPriorJob` |

@@ -5,7 +5,7 @@ using TheRavine.Extensions;
 public interface IEntityCommand
 {
     float Reward { get; }
-    bool CanExecute();
+    bool CanExecute(in BrainDecision decision);
     CommandSource Source { get; }
     EntityCommandStatus Begin(in BrainDecision decision, CommandSource source);
     EntityCommandStatus Tick(float dt);
@@ -33,6 +33,7 @@ public abstract class EntityCommand : IEntityCommand
     protected EntityCommand(EntityModel m) => model = m;
 
     public virtual bool CanExecute() => true;
+    public virtual bool CanExecute(in BrainDecision decision) => CanExecute();
     protected virtual float MinRuntime => 0f;
     protected virtual float InterruptionReward => SimulationRules.Active.InterruptionReward;
     protected virtual float FailureReward      => SimulationRules.Active.FailureReward;

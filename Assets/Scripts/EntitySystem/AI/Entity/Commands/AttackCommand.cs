@@ -225,7 +225,7 @@ public class AttackCommand : EntityCommand
         model.Ledger.Flows.Strike += cost;
 
         float damage = model.Tuning.AttackDamage * model.AttackDamageMul * energyScale;
-        if (model.SinceAction(EntityAction.Threaten) < r.SynergyWindow) damage *= r.ThreatenAttackMul;
+        if (model.SinceThreatDisplay < r.SynergyWindow) damage *= r.ThreatenAttackMul;
         if (_ambushed) damage *= r.AmbushDamageMul;
         if (_dashed)   damage *= r.DashStrikeMul;
         _ambushed = false;

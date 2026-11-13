@@ -47,7 +47,7 @@ public class EntityBrainContext : System.IDisposable
     public int   NoveltyCount;
     public float EnergyNorm;
     public float IntrinsicReward;
-    public byte  DirectionMask;
+    public ushort DirectionMask;
     public float Surprise;
     public int   DecodeTarget;
     public float DecodeTime;

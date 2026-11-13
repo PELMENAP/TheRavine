@@ -1,7 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
+using Unity.Mathematics;
 using UnityEngine;
+using TheRavine.Extensions;
+using TheRavine.Generator;
+using TheRavine.ObjectControl;
 
 public class BrainAllocationTests
 {
@@ -117,5 +122,108 @@ public class BrainAllocationTests
 
         Warm(step);
         AllocationAssert.Zero(step, Measured, "CompleteTerminal/FlushTerminal/ApplyPendingGradients");
+    }
+
+    [Test]
+    public void VectorizeWithNewInputsDoesNotAllocate()
+    {
+        var vectorizer = new InputVectorizer(100f, 100f);
+        var frame = new VectorizerFrame
+        {
+            Health = 60f, Energy = 40f, DayPhase = 0.3f,
+            ObjectDir = new float2(0.6f, 0.8f), DangerDir = new float2(-1f, 0f), HeldObject = 1f, ObjectDist = 3f,
+            SpeechBag = new float[SimulationRules.SpeechVocab],
+            PlanRewardEma = new float[PlanCatalog.Count],
+            MimickedAction = (int)EntityAction.Give,
+        };
+        var times = new double[ActionCatalog.Count];
+        float sink = 0f;
+
+        TestDelegate step = () => sink += vectorizer.Vectorize(in frame, times, in TerrainSample.Invalid)[InputVectorizer.StateOffset];
+
+        Warm(step);
+        AllocationAssert.Zero(step, 200, "InputVectorizer.Vectorize");
+    }
+
+    private sealed class ObjectWorld : IWorldCommandTarget
+    {
+        public readonly Dictionary<long, int> Objects = new();
+
+        public bool TryGetObject(long worldPos, out ObjectInstInfo info)
+        {
+            if (Objects.TryGetValue(worldPos, out int id))
+            {
+                info = new ObjectInstInfo(Vector3.zero, id, 1);
+                return true;
+            }
+            info = default;
+            return false;
+        }
+
+        public bool RemoveObject(long worldPos) => Objects.Remove(worldPos);
+
+        public bool TryAddObject(long worldPos, Vector3 realPos, int prefabID, int amount, ReadOnlySpan<Vector2Int> additionalWorldCells, int levels) => false;
+
+        public Vector3 GetRealPosition(long worldPos) => Vector3.zero;
+    }
+
+    private static ObjectInfo MakeInfo(ushort id, bool pickable, bool food)
+    {
+        var info = ScriptableObject.CreateInstance<ObjectInfo>();
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        typeof(ObjectInfo).GetField("id", flags).SetValue(info, id);
+        typeof(ObjectInfo).GetField("isFood", flags).SetValue(info, food);
+        if (pickable)
+            typeof(ObjectInfo).GetField("inventoryItemInfo", flags).SetValue(info, ScriptableObject.CreateInstance<InventoryItemInfo>());
+        return info;
+    }
+
+    [Test]
+    public void ObjectScanFindsTheNearestPickableAndDoesNotAllocate()
+    {
+        var registry = ScriptableObject.CreateInstance<ObjectInfoRegistry>();
+        var infos = new[] { MakeInfo(1, true, false), MakeInfo(2, false, false), MakeInfo(3, true, true) };
+        try
+        {
+            registry.objectInfos.AddRange(infos);
+            registry.Rebuild();
+
+            var self = new float2(10.5f, 20.5f);
+            Position2Int.Unpack(ChunkFoodIndex.CellOf(self.x, self.y), out int cx, out int cy);
+            var world = new ObjectWorld();
+            long far     = Position2Int.Pack(cx + 3, cy);
+            long near    = Position2Int.Pack(cx, cy + 2);
+            long nearest = Position2Int.Pack(cx + 1, cy);
+            world.Objects[far]     = 1;
+            world.Objects[near]    = 1;
+            world.Objects[nearest] = 2;
+            world.Objects[Position2Int.Pack(cx, cy - 1)] = 3;
+            world.Objects[Position2Int.Pack(cx + 40, cy)] = 1;
+
+            bool found = ObjectSensor.TryFindNearest(world, registry, in self, _rules.ObjectSenseRadius, out float2 pos, out float dist);
+            Assert.IsTrue(found);
+            Assert.AreEqual(ChunkFoodIndex.CellCenter(near).x, pos.x, 1e-4f);
+            Assert.AreEqual(ChunkFoodIndex.CellCenter(near).y, pos.y, 1e-4f);
+            Assert.AreEqual(math.distance(self, pos), dist, 1e-4f);
+
+            Assert.IsFalse(ObjectSensor.TryFindNearest(world, registry, in self, 0, out _, out float none));
+            Assert.AreEqual(-1f, none);
+
+            float sink = 0f;
+            int radius = _rules.ObjectSenseRadius;
+            TestDelegate step = () =>
+            {
+                ObjectSensor.TryFindNearest(world, registry, in self, radius, out float2 p, out float d);
+                sink += p.x + d;
+            };
+
+            Warm(step);
+            AllocationAssert.Zero(step, 200, "ObjectSensor.TryFindNearest");
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(registry);
+            for (int i = 0; i < infos.Length; i++) UnityEngine.Object.DestroyImmediate(infos[i]);
+        }
     }
 }
