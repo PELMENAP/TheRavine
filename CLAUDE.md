@@ -32,6 +32,7 @@ Read only what the task touches. The Philosophy and Project constraints sections
 - A change that moves, renames, adds or deletes a file or type named in `docs/map` updates that map in the same commit.
 - After changing `.cs` files run `python3 tools/docmap.py gen`, then `python3 tools/docmap.py check`; commit the regenerated files.
 - Rules for maps and structural rules for new code: [docs/map/README.md](docs/map/README.md).
+- Never commit ideas, backlogs, proposals, known defects, open problems or vulnerabilities (no idea files, TODO lists, DEFERRED sections or audit findings in the repository). Keep them in the chat report or outside git.
 
 ## Language
 Task prompts and instructions are in English. The explanation to the user after the work is in Russian.
