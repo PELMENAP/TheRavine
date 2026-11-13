@@ -27,6 +27,7 @@ public struct CasteModifiers
     public float StoreEfficiency;
     public float DamageTaken;
     public float LevyAlpha;
+    public float Range;
     public float PoiWeight;
     public float Feed;
 
@@ -34,7 +35,7 @@ public struct CasteModifiers
     {
         Attack = 1f, Health = 1f, EnergyUpkeep = 1f, Speed = 1f, EnergyCapacity = 1f, Detection = 1f,
         RestHeal = 1f, Cooldown = 1f, GroupBonus = 1f, NestFoodCost = 1f, EatSpeed = 1f, Carry = 1f,
-        StoreEfficiency = 1f, DamageTaken = 1f, LevyAlpha = 1f, PoiWeight = 1f, Feed = 1f,
+        StoreEfficiency = 1f, DamageTaken = 1f, LevyAlpha = 1f, Range = 1f, PoiWeight = 1f, Feed = 1f,
     };
 
     public static CasteModifiers For(Caste caste)
@@ -64,6 +65,7 @@ public struct CasteModifiers
                 m.EnergyCapacity = r.ScoutEnergyCapMul;
                 m.Detection      = r.ScoutDetectMul;
                 m.LevyAlpha      = r.ScoutLevyAlphaMul;
+                m.Range          = r.ScoutRangeMul;
                 m.PoiWeight      = r.ScoutPoiWeightMul;
                 m.Carry          = r.ScoutCarryMul;
                 break;

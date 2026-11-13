@@ -118,7 +118,9 @@ public partial class EntityModel
 
         PerceptionMarker.Begin();
         _nearest = Perception.Survey(pos, this, Colony, detect, rules.CrowdRadius, Neighbors.Length, out _nearestDistance, out _crowd, out _kinCrowd,
-            out _nearestForeign, out _nearestForeignDistance);
+            out _nearestForeign, out _nearestForeignDistance, RecentVictim, rules.HuntStickMul, rules.HuntLowHpMul);
+        float outnumbered = math.saturate((_crowd - _kinCrowd - _kinCrowd) / math.max(rules.OutnumberedNorm, 1e-3f));
+        if (outnumbered > 0f) AddStress(rules.OutnumberedStress * outnumbered * dt);
 
         _foodValid    = false;
         _foodDistance = -1f;
@@ -170,6 +172,7 @@ public partial class EntityModel
 
         ReadForeignVitals(playerStats, playerVirology, out float foreignHp, out float foreignEnergy, out float foreignViral,
             out StatsComponent foreignSource);
+        _targetWeak = foreignSource != null && foreignHp < rules.HuntFinishHp;
         float foreignHarm = ReferenceEquals(foreignSource, _harmKey) ? math.max(0f, _harmPrevHp - foreignHp) : 0f;
         _harmKey    = foreignSource;
         _harmPrevHp = foreignHp;
@@ -464,6 +467,7 @@ public partial class EntityModel
         if (colony != null && CasteFixed && !IsJuvenile && colony.QuorumReady) h |= PlanHint.QuorumReady;
         if (nest != null && Caste == Caste.Worker && CasteFixed && !IsJuvenile && !IsHungry) h |= PlanHint.PreferPickUp;
         if (_kinSick) h |= PlanHint.KinSick;
+        if (_targetWeak) h |= PlanHint.TargetWeak;
         if (_night) h |= PlanHint.Night;
         return h;
     }

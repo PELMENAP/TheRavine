@@ -24,7 +24,7 @@ Root: `Assets/Scripts/ObjectSystem/Map/GlobalEvents/`. Assembly: `ObjectSystem`.
 6. Spread: `SpreadAttempts(size)` random cells within `SpreadReach(size)` cells, chance falls with distance and follows the wind.
 7. A cell of a multi-cell object resolves to its primary cell; the burning key is always the primary cell.
 8. Heat: `HeatDamageAt(p)` is `damagePerSecond` scaled by cover inside `HeatRadius(size)`; `HeatBounds` bounds all heat.
-9. Agents take heat once per fire step (`EntityManager.ApplyFireHeat`, `StepIndex`, `LastStep`); players in `PlayerEntity` metabolism.
+9. Agents take heat once per fire step (`EntityManager.ApplyFireHeat`, `StepIndex`, `LastStep`); players in `PlayerEntity` metabolism. In the same pass `FindNearestBurning` (`TryFindNearestBurning`) gives an agent within `fireSenseRadius` cells the nearest burning cell, and `EntityModel.ReportHazard` turns it into a threat source before any damage.
 10. `FireView` rebuilds one `GraphicsBuffer` when `FireEvent.Version` changes and draws two mesh-less `Graphics.RenderPrimitives` calls.
 
 ## Rendering

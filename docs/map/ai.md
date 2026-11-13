@@ -31,7 +31,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 - One command per verb. `MoveToCommand` picks its behaviour from the decision's `DirectionKind`; `SignalCommand` from the goal of the decision; `GiveCommand` from the receiver; `TakeCommand` and `PutCommand` from the direction and the carried load.
 - Held object: `EntityModel.HeldObject` and `HeldAmount` (`EntityModel.Objects.cs`). `Take` with direction `Object` does not edit the world, so `HeldObject` stays empty; the object direction and proximity inputs are filled from `ObjectSensor`.
 - `CreatureCore`: metabolism, vitals and virology step shared by agents and the player.
-- `EntityTuning`: per-agent multipliers by `Caste` (`Worker`, `Soldier`, `Scout`, `Nurse`) and for predators.
+- `EntityTuning`: per-agent multipliers by `Caste` (`Worker`, `Soldier`, `Scout`, `Nurse`) and for predators; `CasteModifiers.Range` scales the radius of `Frontier` and `Levy` directions.
 - View side: `EntityViewModel`, `EntityView` in the same folder.
 
 ## Brain (`Assets/Scripts/EntitySystem/AI/SharedAI/`)
@@ -61,7 +61,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 - `ColonyState`: `Index`, `ColonyId`, `Brain`, `Nest`, `Pois`, `Stats`, members, leader, nest-site quorum.
 - `NestState` (`Assets/Scripts/EntitySystem/AI/Nest/NestState.cs`): channel fields in `NativeArray`, read through `ColonyFieldView`.
 - Channels (`ColonyChannel`): `Food`, `Danger`, `Trail`, `KinDeath`, `Explored`, `Sickness`, `Territory`.
-- `ColonyPoiBoard`: shared points of interest. `ColonyStats`: counters per colony. `EnergyLedger`: energy flows of the world.
+- `ColonyPoiBoard`: shared points of interest; `Offer` merges, `ReportEmpty` lowers `EnergyEma` of a point within the merge radius and never creates one. `ColonyStats`: counters per colony. `EnergyLedger`: energy flows of the world.
 - `SeasonClock`: season value and winter test from `SimulationRules.Frame`.
 - `CasteThresholdSystem` (`Assets/Scripts/EntitySystem/AI/Caste/CasteThresholdSystem.cs`): per-agent caste thresholds, SoA.
 - `ColonyFood`: food regrowth and corpses. `EvolutionService`: fitness statistics, partner selection, crossover.
@@ -69,7 +69,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 
 ## Perception (`Assets/Scripts/EntitySystem/AI/Perception/`)
 
-- `EntitySpatialGrid`: counting-sort buckets of agents; `Survey`, `FindNearest`, `FindInRadius`.
+- `EntitySpatialGrid`: counting-sort buckets of agents; `Survey`, `FindNearest`, `FindInRadius`. `Survey` keeps the foreign creature with the lowest score `distance × huntStickMul (last victim) × lerp(huntLowHpMul, 1, Hp fraction)`; it also counts crowd and kin.
 - `ChunkFoodIndex`: food, corpses, payloads and taboo marks per chunk; `TryFindNearestFood`, `TryClaim`, `BiteMeat`.
 - `TerrainSensor`, `TerrainSample`, `TerrainSteering`: terrain rings around an agent and the steering bias from them.
 - `ObjectSensor`: nearest pickable world object (`InventoryItemInfo != null`, not food) within `ObjectSenseRadius` cells through `IWorldCommandTarget.TryGetObject`.
@@ -79,7 +79,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 
 | System | File | Output |
 |---|---|---|
-| `InstinctSystem` | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | Urges and reflexes (verb plus direction); decides whether the brain is asked |
+| `InstinctSystem` | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | Urges and reflexes (verb plus direction); decides whether the brain is asked. The `Feeding` latch keeps the `Eat` reflex until the stomach reaches `SatedFill` |
 | `UtilityPriorSystem` | `Assets/Scripts/EntitySystem/AI/Utility/UtilityPriorSystem.cs` | Utility prior for the action choice |
 | `BoidSystem` | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | Flocking vector per agent |
 | `SpeechBus` | `Assets/Scripts/EntitySystem/AI/Speech/SpeechBus.cs` | Delivery of utterances to listeners |
@@ -94,7 +94,7 @@ All are indexed by `EntityModel.ManagerIndex` and expose `RemoveSwapBack`. The r
 
 ## Other
 
-- Fire is a map event: `docs/map/map-events.md`. `EntityManager` sets `GlobalMapEvents.Season` to `SeasonClockSource` and applies `FireEvent.HeatDamageAt` to agents once per fire step (`ApplyFireHeat`).
+- Fire is a map event: `docs/map/map-events.md`. `EntityManager` sets `GlobalMapEvents.Season` to `SeasonClockSource` and, once per fire step (`ApplyFireHeat`), applies `FireEvent.HeatDamageAt` to agents and calls `EntityModel.ReportHazard` for agents within `fireSenseRadius` of a burning cell (threat source, stress, negative memory mark, colony `Danger` mark).
 - Debug, off the hot path: `SimulationDebugDashboard`, `SimulationLog`, `NestDebugView` in `Assets/Scripts/EntitySystem/AI/Debug/`.
 - Log columns: `docs/simulation_log.md`. Action and property audits: `docs/audit/action_census.md`, `docs/audit/property_system_matrix.md`.
 - Rules are partial files `SimulationRules.<Area>.cs` in `Assets/Scripts/EntitySystem/AI/Rules/`; the asset is `Assets/Scripts/EntitySystem/AI/SimulationRules.asset`.

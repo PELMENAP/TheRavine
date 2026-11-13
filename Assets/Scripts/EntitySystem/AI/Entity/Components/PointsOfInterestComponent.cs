@@ -120,7 +120,7 @@ public class PointsOfInterestComponent : IComponent
             float since   = (float)(now - p.LastVisit);
             float novelty = r.PoiRevisitWeight * math.saturate(since / math.max(r.PoiRevisitTau, 1e-3f));
             float score   = p.EnergyEma + novelty - math.distance(p.Position, self) * r.PoiDistanceCost
-                          - r.NegativePoiWeight * NegativeAt(in p.Position);
+                          - r.NegativePoiWeight * NegativeAt(in p.Position) * r.EatEnergyFood;
             if (score <= best) continue;
             best = score;
             pick = i;
@@ -144,6 +144,15 @@ public class PointsOfInterestComponent : IComponent
         ref var p = ref _points[i];
         p.EnergyEma = math.lerp(p.EnergyEma, energy, r.PoiEnergyEmaAlpha);
         p.LastVisit = SimulationClock.TimeD;
+    }
+
+    public void ReportEmpty(in float2 pos)
+    {
+        ref readonly var r = ref SimulationRules.Frame;
+        int i = NearestIndex(in pos, r.PoiVisitRadius);
+        if (i < 0) return;
+        ref var p = ref _points[i];
+        p.EnergyEma = math.lerp(p.EnergyEma, 0f, r.PoiEnergyEmaAlpha);
     }
 
     private int NearestIndex(in float2 pos, float radius)

@@ -78,6 +78,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private PlanRunner _plan;
     public PlanRunner Plan => _plan;
     private bool _hasThreat;
+    private bool _targetWeak;
     public PlanHint PlanHints => ComputePlanHints(_hasThreat);
 
     public float Stress { get; private set; }
@@ -429,6 +430,27 @@ public partial class EntityModel : IEntity, IFoodReceiver
         _warnSource  = source;
     }
 
+    private double _hazardUntil = double.NegativeInfinity;
+    private float2 _hazardSource;
+
+    private EntityModel _lastVictim;
+    private double      _lastVictimTime = double.NegativeInfinity;
+    public void NoteVictim(EntityModel victim)
+    {
+        _lastVictim     = victim;
+        _lastVictimTime = SimulationClock.TimeD;
+    }
+
+    private EntityModel RecentVictim
+    {
+        get
+        {
+            var v = _lastVictim;
+            if (v == null || v.IsDisposed || v.IsDeathPending) return null;
+            return SimulationClock.TimeD - _lastVictimTime < SimulationRules.Frame.WarnWindow ? v : null;
+        }
+    }
+
     private EntityModel _lastAttacker;
     private double      _lastAttackTime = double.NegativeInfinity;
     private bool        _threatResolved;
@@ -708,6 +730,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         _nearestForeign = null;
         _harmKey = null;
         _lastAttacker = null;
+        _lastVictim = null;
         _playerTransform = null;
         Vectorizer?.Dispose();
         Vectorizer = null;

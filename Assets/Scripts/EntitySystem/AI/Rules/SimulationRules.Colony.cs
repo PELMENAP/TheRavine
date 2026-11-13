@@ -38,7 +38,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float colonyPoiDangerTau = 120f;
     [SerializeField] private float migrationTau = 60f;
     [SerializeField] private float migrationHungerWeight = 1f;
-    [SerializeField] private float migrationDangerWeight = 0.5f;
+    [SerializeField] private float migrationDangerWeight = 1.5f;
     [SerializeField] private int migrateLegs = 3;
     [SerializeField] private float migrateLegRadius = 20f;
     [SerializeField] private float migrationMinPressure = 0.15f;
@@ -55,8 +55,8 @@ public sealed partial class SimulationRules
     [SerializeField] private float soldierAttackMul = 1.6f;
     [SerializeField] private float soldierHealthMul = 1.5f;
     [SerializeField] private float soldierUpkeepMul = 1.4f;
-    [SerializeField] private float scoutSpeedMul = 1.3f;
-    [SerializeField] private float scoutEnergyCapMul = 1.3f;
+    [SerializeField] private float scoutSpeedMul = 1.6f;
+    [SerializeField] private float scoutEnergyCapMul = 1.6f;
     [SerializeField] private float scoutHealthMul = 0.7f;
     [SerializeField] private float scoutDetectMul = 1.5f;
     [SerializeField] private float scoutUpkeepMul = 1.1f;
@@ -78,7 +78,7 @@ public sealed partial class SimulationRules
     [SerializeField] private bool frenzyTargetsOwnColony = false;
     [SerializeField] private float nestFoodMinPortionFraction = 1f;
     [SerializeField] private float nestJuvenileReserve = 60f;
-    [SerializeField] private float frontierRadius = 20f;
+    [SerializeField] private float frontierRadius = 40f;
     [SerializeField] private int seekMinLegs = 4;
     [SerializeField] private int seekMaxLegs = 6;
     [SerializeField] private float seekStorageLow = 0.25f;
@@ -96,6 +96,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float workerDamageTakenMul = 1.3f;
     [SerializeField] private float nonWorkerStoreEfficiency = 0.8f;
     [SerializeField] private float scoutLevyAlphaMul = 0.7f;
+    [SerializeField] private float scoutRangeMul = 1.5f;
     [SerializeField] private float scoutPoiWeightMul = 2f;
     [SerializeField] private float scoutCarryMul = 0.6f;
     [SerializeField] private float nurseSpeedMul = 0.85f;
@@ -269,6 +270,7 @@ public sealed partial class SimulationRules
     public float WorkerDamageTakenMul => workerDamageTakenMul;
     public float NonWorkerStoreEfficiency => nonWorkerStoreEfficiency;
     public float ScoutLevyAlphaMul => scoutLevyAlphaMul;
+    public float ScoutRangeMul => scoutRangeMul;
     public float ScoutPoiWeightMul => scoutPoiWeightMul;
     public float ScoutCarryMul => scoutCarryMul;
     public float NurseSpeedMul => nurseSpeedMul;

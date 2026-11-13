@@ -39,9 +39,9 @@ public sealed partial class SimulationRules
     [SerializeField] private float restNightMul = 2f;
     [SerializeField] private float nightRestBias = 1.5f;
     [SerializeField] private float digestRateRest = 4f;
-    [SerializeField] private float digestRateActive = 1.5f;
+    [SerializeField] private float digestRateActive = 2.5f;
     [SerializeField] private float digestEffRest = 0.95f;
-    [SerializeField] private float digestEffActive = 0.7f;
+    [SerializeField] private float digestEffActive = 0.85f;
     [SerializeField] private float stomachCapacityFraction = 0.6f;
     [SerializeField] private float wellFedGainPerSecond = 0.05f;
     [SerializeField] private float wellFedDecayPerSecond = 0.02f;
@@ -83,8 +83,8 @@ public sealed partial class SimulationRules
     [SerializeField] private float[] biomeToxicity  = { 0.02f, 0.08f, 0.25f, 0.04f };
     [SerializeField] private float hungerForageBias = 2f;
     [SerializeField] private float hungerRestDrop = 3f;
-    [SerializeField] private float dietPlantFloor = 0.4f;
-    [SerializeField] private float dietMeatFloor = 0.4f;
+    [SerializeField] private float dietPlantFloor = 0.7f;
+    [SerializeField] private float dietMeatFloor = 0.7f;
     [SerializeField] private float winterWiltTau = 120f;
     [SerializeField] private float unreachableFoodSeconds = 120f;
 

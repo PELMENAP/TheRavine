@@ -233,12 +233,19 @@ public class EntityManager : MonoBehaviour
 
         float step = fire.LastStep;
         float4 bounds = fire.HeatBounds;
+        int senseCells = SimulationRules.Frame.FireSenseRadius;
+        float sense = senseCells * MapGenerator.scale;
+        float4 reach = new float4(bounds.x - sense, bounds.y - sense, bounds.z + sense, bounds.w + sense);
         for (int i = 0; i < _entities.Count; i++)
         {
             EntityModel e = _entities[i];
             if (e.IsDisposed || e.IsDeathPending) continue;
 
             float2 p = e.Position2D;
+            if (p.x < reach.x || p.y < reach.y || p.x > reach.z || p.y > reach.w) continue;
+            if (sense > 0f && fire.TryFindNearestBurning(p, senseCells, out float2 source, out float distance))
+                e.ReportHazard(source, 1f - distance / sense);
+
             if (p.x < bounds.x || p.y < bounds.y || p.x > bounds.z || p.y > bounds.w) continue;
             float damage = fire.HeatDamageAt(p) * step;
             if (damage > 0f) e.TakeDamage(damage, null, DeathCause.Burn);

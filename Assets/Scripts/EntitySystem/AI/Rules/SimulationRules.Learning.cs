@@ -95,7 +95,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float surpriseAlpha = 0.1f;
     [SerializeField] private float restRewardPerSecond = 0.02f;
     [SerializeField] private float planMinTravel = 15f;
-    [SerializeField] private float planMaxTravel = 60f;
+    [SerializeField] private float planMaxTravel = 120f;
     [SerializeField] private float planArriveRadius = 3f;
     [SerializeField] private int planMaxHops = 4;
     [SerializeField] private float[] planMinSecondsByPlan = { 4f, 4f, 6f, 3f, 4f, 3f, 4f, 10f, 12f };

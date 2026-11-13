@@ -6,6 +6,7 @@ public class MoveToCommand : PlannedMoveCommand
 
     private Mode   _mode;
     private bool   _reached;
+    private bool   _fromBoard;
     private long   _cell;
     private float2 _threat;
     private int    _leg;
@@ -150,16 +151,21 @@ public class MoveToCommand : PlannedMoveCommand
         float2 self = model.Position2D;
         float2 target;
         bool own;
+        _fromBoard = false;
 
         if (Source == CommandSource.Instinct && model.IsRecruited)
         {
-            target = model.RecruitTarget;
-            own    = true;
+            target     = model.RecruitTarget;
+            own        = true;
+            _fromBoard = true;
         }
         else if (decision.Direction == (byte)DirectionKind.OwnPoi)
             own = model.Points.TryPickBest(in self, out target);
         else if (model.Colony != null)
-            own = model.Colony.Pois.TryPickBest(self, out target, out _);
+        {
+            own        = model.Colony.Pois.TryPickBest(self, out target, out _);
+            _fromBoard = true;
+        }
         else
         {
             target = default;
@@ -176,7 +182,12 @@ public class MoveToCommand : PlannedMoveCommand
         float2 self = model.Position2D;
         model.Points.Visit(in self);
         if (Source == CommandSource.Instinct) model.ClearRecruit();
-        if (!model.CachedFoodValid) model.Points.MarkNegative(in self, SimulationRules.Frame.NegativePoiEmpty);
+        if (model.CachedFoodValid) return Complete();
+
+        model.Points.MarkNegative(in self, SimulationRules.Frame.NegativePoiEmpty);
+        model.Points.ReportEmpty(in self);
+        var colony = model.Colony;
+        if (_fromBoard && colony != null && !colony.IsWild) colony.Pois.ReportEmpty(self);
         return Complete();
     }
 
@@ -238,8 +249,11 @@ public class MoveToCommand : PlannedMoveCommand
         var r = SimulationRules.Active;
         float2 self = model.Position2D;
         float  side = (_leg & 1) == 0 ? 1f : -1f;
+        bool   threatened = model.TryGetThreatSource(out _) || (model.InstinctLatches & InstinctBits.Panic) != 0;
+        float  speed = threatened ? model.Tuning.RunSpeed * (model.IsWarned ? r.WarnedFleeSpeedMul : 1f) : model.Tuning.MoveSpeed;
+        float  cost  = threatened ? model.Tuning.EnergyCostRunning : model.Tuning.EnergyCostMoving;
         return BeginPlanned(MoveIntent.Flee, self - _threat, default, false,
-            _legLength, model.Tuning.MoveSpeed, model.Tuning.EnergyCostMoving, _threat, true,
+            _legLength, speed, cost, _threat, true,
             side, r.FleeZigzagCurvature);
     }
 

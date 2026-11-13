@@ -29,10 +29,10 @@ public sealed partial class SimulationRules
     [SerializeField] private float threatenRangeMul = 2f;
     [SerializeField] private int wanderGradientSamples = 6;
     [SerializeField] private float wanderGradientMin = 0.05f;
-    [SerializeField] private float levyAlpha = 1.5f;
-    [SerializeField] private float levyMinStep = 6f;
+    [SerializeField] private float levyAlpha = 1.2f;
+    [SerializeField] private float levyMinStep = 12f;
     [SerializeField] private float levyMaxStep = 60f;
-    [SerializeField] private int patrolLegs = 3;
+    [SerializeField] private int patrolLegs = 5;
     [SerializeField] private int fleeMaxLegs = 4;
     [SerializeField] private float tetherRadius = 8f;
     [SerializeField] private float dashMul = 1.6f;
@@ -41,7 +41,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float dashEnergyCost = 2f;
     [SerializeField] private float attackEnergyMin = 5f;
     [SerializeField] private float attackBudgetMargin = 1f;
-    [SerializeField] private float fleeSprintDistance = 6f;
+    [SerializeField] private float fleeSprintDistance = 30f;
     [SerializeField] private int fleeZigzagLegs = 3;
     [SerializeField] private float fleeZigzagCurvature = 0.8f;
     [SerializeField] private float threatenStepDistance = 0.3f;
@@ -83,7 +83,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float attackTriggerMaxMul = 2.5f;
     [SerializeField] private float attackContactFraction = 0.6f;
     [SerializeField] private float ambushMinHold = 1.5f;
-    [SerializeField] private float ambushMaxHold = 12f;
+    [SerializeField] private float ambushMaxHold = 5f;
     [SerializeField] private float ambushDamageMul = 1.5f;
     [SerializeField] private float dashStrikeMul = 1.2f;
     [SerializeField] private int plannerCandidates = 8;
@@ -96,7 +96,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float plannerAlignWeight = 0.3f;
     [SerializeField] private float plannerCurvatureMin = 0.1f;
     [SerializeField] private float plannerCurvatureScale = 0.35f;
-    [SerializeField] private float plannerRadiusMax = 30f;
+    [SerializeField] private float plannerRadiusMax = 60f;
     [SerializeField] private int plannerMaxReplans = 2;
     [SerializeField] private float plannerReplanAngle = 0.6f;
 

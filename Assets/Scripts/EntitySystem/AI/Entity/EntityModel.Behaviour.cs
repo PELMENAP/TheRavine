@@ -131,6 +131,21 @@ public partial class EntityModel
         nest.RaiseAlarm(r.AlarmCryAmount);
     }
 
+    public void ReportHazard(float2 source, float intensity)
+    {
+        if (!(intensity > 0f) || IsDisposed || IsDeathPending || Stats == null || Stats.IsDisposed) return;
+        ref readonly var r = ref SimulationRules.Frame;
+
+        _hazardSource   = source;
+        _hazardUntil    = SimulationClock.TimeD + r.WarnWindow;
+        _threatSource   = source;
+        _threatResolved = true;
+        AddStress(r.FireStress * intensity);
+        float2 here = Position2D;
+        Points?.MarkNegative(here, r.NegativePoiHit * intensity);
+        Nest?.Mark(ColonyChannel.Danger, here, r.FireDangerMark * intensity);
+    }
+
     public Utterance MakeUtterance(ushort tokens, byte len, byte flags = 0)
         => new Utterance
         {

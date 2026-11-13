@@ -7,21 +7,21 @@ Line numbers are those of the last generation; after local edits treat them as a
 | File | Lines |
 |---|---|
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1806 |
-| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1316 |
+| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1334 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1067 |
-| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 942 |
+| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 949 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 920 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 918 |
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 849 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 775 |
+| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 738 |
 | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | 730 |
-| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 715 |
 | `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs` | 687 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs` | 643 |
 | `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs` | 621 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 621 |
 | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 603 |
-| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 532 |
+| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 536 |
 
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs`
 
@@ -163,28 +163,28 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
 
-- 5–1316 class SimulationRules
-  - 1153 CaptureFrame
-  - 1155 Bind
-  - 1166 DeathPenaltyMul
-  - 1175 FillPlanSeconds
-  - 1182 FillCasteAffinityLog
-  - 1190 FillUtilityWeights
-  - 1198 FillPlanCasteDomain
-  - 1206 BuildEndogenousForbiddenMask
-  - 1218 BuildBoidPlanMul
-  - 1225 ColonyChannelTau
-  - 1231 BiomeFertility
-  - 1232 BiomeToxicity
-  - 1241 KindValue
-  - 1244 BiomeValue
-  - 1263 OnValidate
-  - 1313 ThrowNotBound
+- 5–1334 class SimulationRules
+  - 1169 CaptureFrame
+  - 1171 Bind
+  - 1182 DeathPenaltyMul
+  - 1191 FillPlanSeconds
+  - 1198 FillCasteAffinityLog
+  - 1206 FillUtilityWeights
+  - 1214 FillPlanCasteDomain
+  - 1222 BuildEndogenousForbiddenMask
+  - 1234 BuildBoidPlanMul
+  - 1241 ColonyChannelTau
+  - 1247 BiomeFertility
+  - 1248 BiomeToxicity
+  - 1257 KindValue
+  - 1260 BiomeValue
+  - 1280 OnValidate
+  - 1331 ThrowNotBound
   - 8–8 enum EpsilonSchedule
-  - 10–1148 struct RulesFrame
-    - 574 BiomeFertility
-    - 575 BiomeToxicity
-    - 584 RulesFrame
+  - 10–1164 struct RulesFrame
+    - 582 BiomeFertility
+    - 583 BiomeToxicity
+    - 592 RulesFrame
 
 ## `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs`
 
@@ -253,7 +253,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
 
-- 15–942 class EntityManager
+- 15–949 class EntityManager
   - 76 RegisterEnergyConsumer
   - 77 UnregisterEnergyConsumer
   - 96 RaiseSpawned
@@ -268,40 +268,40 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 169 Update
   - 213 StampAgents
   - 227 ApplyFireHeat
-  - 248 DecayWarmth
-  - 256 SampleEnergy
-  - 278 ReportThreat
-  - 289 Awake
-  - 343 CreateColonies
-  - 353 AddColony
-  - 359 SaveBrain
-  - 362 LoadBrain
-  - 365 ColonyModelName
-  - 367 SaveBestBrainAsync
-  - 377 LoadBrainAsync
-  - 413 ApplyLoadedBrain
-  - 429 Start
-  - 469 DelaySimulation
-  - 480 TickAgents
-  - 524 CloseTickWindow
-  - 547 RunTickBatch
-  - 593 BeginColonyBatches
-  - 598 RunColonyDecisions
-  - 603 RunFlocking
-  - 621 TickColonies
-  - 675 ChooseCaste
-  - 713 Stimulus
-  - 720 TickNests
-  - 773 SetEntityVisible
-  - 779 SetEntitiesVisible
-  - 785 RebuildTickSnapshot
-  - 811 UpdateVisibility
-  - 840 UpdateVisibilityByCamera
-  - 870 CreateNestViews
-  - 881 ReleaseServices
-  - 887 UnregisterServices
-  - 902 ResolveRules
-  - 918 OnDestroy
+  - 255 DecayWarmth
+  - 263 SampleEnergy
+  - 285 ReportThreat
+  - 296 Awake
+  - 350 CreateColonies
+  - 360 AddColony
+  - 366 SaveBrain
+  - 369 LoadBrain
+  - 372 ColonyModelName
+  - 374 SaveBestBrainAsync
+  - 384 LoadBrainAsync
+  - 420 ApplyLoadedBrain
+  - 436 Start
+  - 476 DelaySimulation
+  - 487 TickAgents
+  - 531 CloseTickWindow
+  - 554 RunTickBatch
+  - 600 BeginColonyBatches
+  - 605 RunColonyDecisions
+  - 610 RunFlocking
+  - 628 TickColonies
+  - 682 ChooseCaste
+  - 720 Stimulus
+  - 727 TickNests
+  - 780 SetEntityVisible
+  - 786 SetEntitiesVisible
+  - 792 RebuildTickSnapshot
+  - 818 UpdateVisibility
+  - 847 UpdateVisibilityByCamera
+  - 877 CreateNestViews
+  - 888 ReleaseServices
+  - 894 UnregisterServices
+  - 909 ResolveRules
+  - 925 OnDestroy
 
 ## `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs`
 
@@ -520,6 +520,55 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 743 Record
   - 734–739 struct Stats
 
+## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs`
+
+- 12–738 class EntityModel
+  - 32 Activate
+  - 33 Deactivate
+  - 48 AssignId
+  - 85 AddStress
+  - 88 AddExtrinsicReward
+  - 89 ConsumeExtrinsicReward
+  - 114 PlanRewardEma
+  - 144 ClearRecruit
+  - 145 Recruit
+  - 153 NoteFoodSite
+  - 158 TryGetFoodSite
+  - 165 RecordStored
+  - 183 SetLeader
+  - 195 SetFlock
+  - 197 BuildBoidAgent
+  - 254 SelectHuntTarget
+  - 281 AssignCaste
+  - 302 SyncCount
+  - 319 ClearCount
+  - 325 ActionMask
+  - 334 SetLastAction
+  - 344 CreateActionTimes
+  - 351 SinceAction
+  - 358 NoteThreatDisplay
+  - 362 TryGetKinTarget
+  - 389 NextPlanSide
+  - 392 Carry
+  - 393 TakeCarried
+  - 401 ReceiveFood
+  - 407 IngestFood
+  - 416 ConsumeReceivedFood
+  - 426 Warn
+  - 438 NoteVictim
+  - 459 TryGetThreatSource
+  - 512 MarkDeathPending
+  - 539 InvalidateCachedFood
+  - 566 TryStartAttackCooldown
+  - 574 SetUp
+  - 582 RequestReproduce
+  - 590 Configure
+  - 661 Init
+  - 701 InterruptCommand
+  - 703 Dispose
+  - 725 DeepClean
+  - 14–14 enum FitnessEvent
+
 ## `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs`
 
 - 8–694 class RiveParser
@@ -565,54 +614,6 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 713 Token
 - 721–729 class RiveParseException
   - 725 RiveParseException
-
-## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs`
-
-- 12–715 class EntityModel
-  - 32 Activate
-  - 33 Deactivate
-  - 48 AssignId
-  - 84 AddStress
-  - 87 AddExtrinsicReward
-  - 88 ConsumeExtrinsicReward
-  - 113 PlanRewardEma
-  - 143 ClearRecruit
-  - 144 Recruit
-  - 152 NoteFoodSite
-  - 157 TryGetFoodSite
-  - 164 RecordStored
-  - 182 SetLeader
-  - 194 SetFlock
-  - 196 BuildBoidAgent
-  - 253 SelectHuntTarget
-  - 280 AssignCaste
-  - 301 SyncCount
-  - 318 ClearCount
-  - 324 ActionMask
-  - 333 SetLastAction
-  - 343 CreateActionTimes
-  - 350 SinceAction
-  - 357 NoteThreatDisplay
-  - 361 TryGetKinTarget
-  - 388 NextPlanSide
-  - 391 Carry
-  - 392 TakeCarried
-  - 400 ReceiveFood
-  - 406 IngestFood
-  - 415 ConsumeReceivedFood
-  - 425 Warn
-  - 437 TryGetThreatSource
-  - 490 MarkDeathPending
-  - 517 InvalidateCachedFood
-  - 544 TryStartAttackCooldown
-  - 552 SetUp
-  - 560 RequestReproduce
-  - 568 Configure
-  - 639 Init
-  - 679 InterruptCommand
-  - 681 Dispose
-  - 703 DeepClean
-  - 14–14 enum FitnessEvent
 
 ## `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs`
 
@@ -803,16 +804,16 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs`
 
-- 11–532 class EntityModel
+- 11–536 class EntityModel
   - 13 IsAliveForTick
   - 16 SubmitDecision
   - 22 BeginCycle
   - 36 NoisyDirection
   - 43 UpdateDormancy
   - 60 RunCycle
-  - 430 ComputePlanHints
-  - 471 EndCycle
-  - 491 StartDecision
-  - 508 ComputeDangerLevel
-  - 521 ComputeBreedReadiness
+  - 433 ComputePlanHints
+  - 475 EndCycle
+  - 495 StartDecision
+  - 512 ComputeDangerLevel
+  - 525 ComputeBreedReadiness
 
