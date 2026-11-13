@@ -18,7 +18,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 | `SimulationRules` | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | All simulation constants (ScriptableObject); `Frame` snapshot for the tick |
 | `ColonyRegistry` | `Assets/Scripts/EntitySystem/AI/Colony/ColonyRegistry.cs` | Colonies by index and id; `Views` for jobs |
 | `ColonyPopulation` | `Assets/Scripts/EntitySystem/AI/Population/ColonyPopulation.cs` | Spawn, death, reproduction, swap-back removal |
-| `ActionCatalog` | `Assets/Scripts/EntitySystem/AI/ActionCatalog.cs` | Action list, flags, goal and caste masks; enum in `EntityAction.cs` |
+| `ActionCatalog` | `Assets/Scripts/EntitySystem/AI/ActionCatalog.cs` | Verb table, flags, goal and caste masks; enum in `EntityAction.cs` |
 | `InputVectorizer` | `Assets/Scripts/EntitySystem/AI/InputVectorizer.cs` | Observation → input vector (`VectorSize`) |
 | `TickWindowBudget` | `Assets/Scripts/EntitySystem/AI/TickWindowBudget.cs` | How many agents tick this frame |
 
@@ -28,13 +28,18 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 - Components in `Assets/Scripts/EntitySystem/AI/Entity/Components/`: `BrainComponent`, `DigestionComponent`, `FitnessComponent`,
   `MortalityComponent`, `PerceptionComponent`, `PointsOfInterestComponent`, `SpeechComponent`, `StatsComponent`, `VisualCullingComponent`.
 - Commands, one file each, in `Assets/Scripts/EntitySystem/AI/Entity/Commands/`; they run through `EntityCommandRunner`.
+- One command per verb. `MoveToCommand` picks its behaviour from the decision's `DirectionKind`; `SignalCommand` from the goal of the decision; `GiveCommand` from the receiver; `TakeCommand` and `PutCommand` from the direction and the carried load.
+- Held object: `EntityModel.HeldObject` and `HeldAmount` (`EntityModel.Objects.cs`). `Take` with direction `Object` does not edit the world, so `HeldObject` stays empty; the object direction and proximity inputs are filled from `ObjectSensor`.
 - `CreatureCore`: metabolism, vitals and virology step shared by agents and the player.
 - `EntityTuning`: per-agent multipliers by `Caste` (`Worker`, `Soldier`, `Scout`, `Nurse`) and for predators.
 - View side: `EntityViewModel`, `EntityView` in the same folder.
 
 ## Brain (`Assets/Scripts/EntitySystem/AI/SharedAI/`)
 
-- Two levels. Coordinator picks a `Goal`: `Survive`, `Hunt`, `Forage`, `Social`. Executor of that goal picks an action from `ActionSubsets`.
+- Two levels. Coordinator picks a `Goal`: `Survive`, `Hunt`, `Forage`, `Social`. Executor of that goal picks a verb from `ActionSubsets` and a direction.
+- Verbs (`EntityAction`, 11): `Idle`, `MoveTo`, `Attack`, `Eat`, `Reproduce`, `Signal`, `Rest`, `Give`, `Take`, `Put`, `MoveNest` (`PlanOnly`). Subsets: Survive `Idle MoveTo Eat Rest`; Hunt `Idle MoveTo Attack Signal`; Forage `MoveTo Eat Signal Take Put`; Social `Idle MoveTo Reproduce Signal Give`.
+- Directions (`DirectionKind`, 14 kinds): `Food`, `NestFood`, `OwnPoi`, `ColonyPoi`, `Frontier`, `Migration`, `Flock`, `Levy`, `Nest`, `Escape`, `Kin`, `Danger`, `Object`, `Task`. Every executor outputs a direction choice and an offset; the available kinds are a `ushort` mask (`EntityModel.ComputeDirections`), narrowed per plan by `PlanCatalog.DirectionMask`. `Task` is reserved for the colony task board and is never set yet.
+- Exec aux layout per goal: Hunt and Social keep heading, curvature, style, tempo and speech first, then the direction block, then the offset, then the speech-context decode bits (`SharedHierarchicalBrain.DirectionAux`, `DirOffsetAux`, `ExecAux`).
 - Each level is an LSTM plus a `DelayedPerceptron` (`Assets/Scripts/EntitySystem/AI/LSTM/`, `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/`).
 - Per-agent state: `EntityBrainContext`, `LSTMContext`, `PerceptronContext`; buffers from `ContextSlabs` and `FloatSlabPool`.
 - Batched inference: `BeginDecisionBatch` → `EnqueueDecision` → `RunDecisions`; kernels in `NeuralKernels.cs`, jobs in `NeuralJobs.cs`.
@@ -42,7 +47,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 - Learning: truncated BPTT, reward-weighted; gradients collected in `SharedGradientAccumulator`, applied by `ApplyPendingGradients`.
 - `ValueCritic`: linear TD critic. `RandomNetworkDistillation`: novelty reward. `RunningMeanStd`: normalisation.
 - Genome: `GeneticParameters` (learning rate, lambda, temperature and others), `MimicPhenotype`.
-- Plans: `PlanCatalog` (`PlanKind`: `Graze`, `Harvest`, `Patrol`, `Hunt`, `Rest`, `Flee`, `Court`, `Migrate`, `Seek`) and `PlanRunner`
+- Plans: `PlanCatalog` (`PlanKind`: `Graze`, `Harvest`, `Patrol`, `Hunt`, `Rest`, `Flee`, `Court`, `Migrate`, `Seek`; steps are a verb plus `PlanProgress.Direction`) and `PlanRunner`
   in `Assets/Scripts/EntitySystem/AI/Plans/`.
 
 ## Saving
@@ -67,13 +72,14 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 - `EntitySpatialGrid`: counting-sort buckets of agents; `Survey`, `FindNearest`, `FindInRadius`.
 - `ChunkFoodIndex`: food, corpses, payloads and taboo marks per chunk; `TryFindNearestFood`, `TryClaim`, `BiteMeat`.
 - `TerrainSensor`, `TerrainSample`, `TerrainSteering`: terrain rings around an agent and the steering bias from them.
+- `ObjectSensor`: nearest pickable world object (`InventoryItemInfo != null`, not food) within `ObjectSenseRadius` cells through `IWorldCommandTarget.TryGetObject`.
 - `WarmthField`: scalar field on hashed cells. `PlayerPresence`: players as seen by agents (`TryFindNearest`, `ReportHit`).
 
 ## Per-agent Burst systems
 
 | System | File | Output |
 |---|---|---|
-| `InstinctSystem` | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | Urges and forced actions; decides whether the brain is asked |
+| `InstinctSystem` | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | Urges and reflexes (verb plus direction); decides whether the brain is asked |
 | `UtilityPriorSystem` | `Assets/Scripts/EntitySystem/AI/Utility/UtilityPriorSystem.cs` | Utility prior for the action choice |
 | `BoidSystem` | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | Flocking vector per agent |
 | `SpeechBus` | `Assets/Scripts/EntitySystem/AI/Speech/SpeechBus.cs` | Delivery of utterances to listeners |

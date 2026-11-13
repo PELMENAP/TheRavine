@@ -554,6 +554,15 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float SenescenceDigestLoss;
         public readonly float QuorumMigrateBias;
         public readonly float UnreachableFoodSeconds;
+        public readonly float[] ActionMinSeconds;
+        public readonly float[] ActionMaxSeconds;
+        public readonly int   ObjectSenseRadius;
+        public readonly float ObjectReach;
+        public readonly float AgentEditRate;
+        public readonly float AgentEditBurst;
+        public readonly int   AgentEditsPerFrame;
+        public readonly float HeldObjectSpeedMul;
+        public readonly float DangerDirectionMinMass;
         public readonly float[] PlanMinSecondsByPlan;
         public readonly float[] PlanMaxSecondsByPlan;
         public readonly float[] CasteAffinityLog;
@@ -1119,6 +1128,15 @@ public sealed partial class SimulationRules : ScriptableObject
             SenescenceDigestLoss = r.senescenceDigestLoss;
             QuorumMigrateBias = r.quorumMigrateBias;
             UnreachableFoodSeconds = r.unreachableFoodSeconds;
+            ActionMinSeconds = r.actionMinSeconds;
+            ActionMaxSeconds = r.actionMaxSeconds;
+            ObjectSenseRadius = math.clamp(r.objectSenseRadius, 0, MaxObjectSenseRadius);
+            ObjectReach = r.objectReach;
+            AgentEditRate = r.agentEditRate;
+            AgentEditBurst = r.agentEditBurst;
+            AgentEditsPerFrame = r.agentEditsPerFrame;
+            HeldObjectSpeedMul = r.heldObjectSpeedMul;
+            DangerDirectionMinMass = r.dangerDirectionMinMass;
             PlanMinSecondsByPlan = r.FillPlanSeconds(r.planMinSecondsByPlan, r.planMinSeconds, PlanMinBuf);
             PlanMaxSecondsByPlan = r.FillPlanSeconds(r.planMaxSecondsByPlan, r.planMaxSeconds, PlanMaxBuf);
             CasteAffinityLog     = r.FillCasteAffinityLog();
@@ -1231,6 +1249,7 @@ public sealed partial class SimulationRules : ScriptableObject
     }
 
     public const float LearningRateFloor = 1e-6f;
+    public const int   MaxObjectSenseRadius = 8;
     public const float MinAgentTickInterval = 1e-3f;
     public const int   SpeechVocab = 16;
     public const int   SpeechLen = 2;
@@ -1271,6 +1290,13 @@ public sealed partial class SimulationRules : ScriptableObject
         if (!(nurseryRate >= 0f)) nurseryRate = 0f;
         if (!(tetherRate >= 0f)) tetherRate = 0f;
         if (!(nightHomeRate >= 0f)) nightHomeRate = 0f;
+        objectSenseRadius = math.clamp(objectSenseRadius, 0, MaxObjectSenseRadius);
+        if (!(objectReach >= 0f)) objectReach = 0f;
+        if (!(agentEditRate >= 0f)) agentEditRate = 0f;
+        if (!(agentEditBurst >= 0f)) agentEditBurst = 0f;
+        if (agentEditsPerFrame < 0) agentEditsPerFrame = 0;
+        if (!(heldObjectSpeedMul > 0f)) heldObjectSpeedMul = 1f;
+        if (!(dangerDirectionMinMass >= 0f)) dangerDirectionMinMass = 0f;
     }
 
     private static SimulationRules _active;

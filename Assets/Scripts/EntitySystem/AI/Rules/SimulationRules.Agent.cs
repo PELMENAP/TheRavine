@@ -5,6 +5,15 @@ using TheRavine.EntityControl.Virology;
 public sealed partial class SimulationRules
 {
     [SerializeField] private float restHealRate = 5f;
+    [SerializeField] private float[] actionMinSeconds = { 0.30f, 0.50f, 0.50f, 0.20f, 0.50f, 0.10f, 1.00f, 0.30f, 0.20f, 0.20f, 0.20f };
+    [SerializeField] private float[] actionMaxSeconds = { 2.00f, 8.00f, 4.00f, 4.00f, 2.00f, 2.50f, 6.00f, 2.00f, 1.00f, 1.00f, 1.00f };
+    [SerializeField] private int objectSenseRadius = 3;
+    [SerializeField] private float objectReach = 1.5f;
+    [SerializeField] private float agentEditRate = 2f;
+    [SerializeField] private float agentEditBurst = 2f;
+    [SerializeField] private int agentEditsPerFrame = 4;
+    [SerializeField] private float heldObjectSpeedMul = 0.6f;
+    [SerializeField] private float dangerDirectionMinMass = 0.25f;
     [SerializeField] private float startupDelaySeconds = 3f;
     [SerializeField] private float tickLoopWarmupSeconds = 3f;
     [SerializeField] private float agentTickInterval = 1f;
@@ -151,4 +160,13 @@ public sealed partial class SimulationRules
     public int CaptureLength => captureLength;
     public float SenescenceSpeedLoss => senescenceSpeedLoss;
     public float SenescenceDigestLoss => senescenceDigestLoss;
+    public float[] ActionMinSeconds => actionMinSeconds;
+    public float[] ActionMaxSeconds => actionMaxSeconds;
+    public int ObjectSenseRadius => objectSenseRadius;
+    public float ObjectReach => objectReach;
+    public float AgentEditRate => agentEditRate;
+    public float AgentEditBurst => agentEditBurst;
+    public int AgentEditsPerFrame => agentEditsPerFrame;
+    public float HeldObjectSpeedMul => heldObjectSpeedMul;
+    public float DangerDirectionMinMass => dangerDirectionMinMass;
 }

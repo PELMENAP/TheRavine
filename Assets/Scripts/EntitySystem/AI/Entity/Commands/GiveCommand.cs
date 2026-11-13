@@ -1,20 +1,33 @@
 using Unity.Mathematics;
 
-public class ShareFoodCommand : EntityCommand
+public class GiveCommand : EntityCommand
 {
     private double _holdEnd;
     private float  _given;
+    private bool   _fed;
 
-    public ShareFoodCommand(EntityModel model) : base(model) { }
+    public GiveCommand(EntityModel model) : base(model) { }
 
     protected override EntityCommandStatus OnBegin()
     {
         var r = SimulationRules.Active;
         _given = 0f;
+        _fed   = model.Carrying > 0f || model.Digestion.Stomach > 0f;
+        return _fed ? BeginFeed(r) : BeginGroom(r);
+    }
+
+    protected override EntityCommandStatus OnTick(float dt)
+    {
+        if (!Elapsed(_holdEnd)) return EntityCommandStatus.Running;
+        if (!_fed) return Complete();
+        var r = SimulationRules.Active;
+        return Complete(r.ShareFoodReward * _given / math.max(r.EatEnergyFood, 1e-3f));
+    }
+
+    private EntityCommandStatus BeginFeed(SimulationRules r)
+    {
         bool troph = Source == CommandSource.Instinct;
-        var victim = troph
-            ? model.FindHungriestKin(r.EatRange * r.KinSearchRangeMul)
-            : model.Caste == Caste.Nurse ? model.FindNearbyJuvenile(r.EatRange * r.KinSearchRangeMul) ?? model.CachedNearest : model.CachedNearest;
+        var victim = model.FindHungriestKin(r.EatRange * r.KinSearchRangeMul);
         if (victim == null || math.distance(model.Position2D, victim.Position2D) > r.EatRange * r.KinSearchRangeMul) return Fail();
 
         float own   = model.Stats.En / model.Stats.MaxEnergy;
@@ -38,10 +51,15 @@ public class ShareFoodCommand : EntityCommand
         return EntityCommandStatus.Running;
     }
 
-    protected override EntityCommandStatus OnTick(float dt)
+    private EntityCommandStatus BeginGroom(SimulationRules r)
     {
-        if (!Elapsed(_holdEnd)) return EntityCommandStatus.Running;
-        var r = SimulationRules.Active;
-        return Complete(r.ShareFoodReward * _given / math.max(r.EatEnergyFood, 1e-3f));
+        var patient = model.FindSickestKin(r.EatRange * r.KinSearchRangeMul, r.GroomMinLoad);
+        if (patient == null) return Fail();
+
+        model.Motor.Stop();
+        patient.Virology?.Groom(r.GroomAmount);
+        model.Infection?.TryTransmitContact(patient, model, r.GroomInfectChance);
+        _holdEnd = HoldUntil(model.Tuning.IdleTime);
+        return EntityCommandStatus.Running;
     }
 }

@@ -85,6 +85,53 @@ public class RulesDefaultsTests
         Assert.AreEqual(_rules.TamedThreshold, frame.TamedThreshold);
         Assert.AreEqual(_rules.InfectionTargetedAmp, frame.InfectionTargetedAmp);
         Assert.AreEqual(_rules.ExecExplorationEpsilon, frame.ExecExplorationEpsilon);
+        Assert.AreEqual(_rules.ObjectSenseRadius, frame.ObjectSenseRadius);
+        Assert.AreEqual(_rules.ObjectReach, frame.ObjectReach);
+        Assert.AreEqual(_rules.AgentEditRate, frame.AgentEditRate);
+        Assert.AreEqual(_rules.AgentEditBurst, frame.AgentEditBurst);
+        Assert.AreEqual(_rules.AgentEditsPerFrame, frame.AgentEditsPerFrame);
+        Assert.AreEqual(_rules.HeldObjectSpeedMul, frame.HeldObjectSpeedMul);
+        Assert.AreEqual(_rules.DangerDirectionMinMass, frame.DangerDirectionMinMass);
+        CollectionAssert.AreEqual(_rules.ActionMinSeconds, frame.ActionMinSeconds);
+        CollectionAssert.AreEqual(_rules.ActionMaxSeconds, frame.ActionMaxSeconds);
+    }
+
+    [Test]
+    public void VerbRulesHaveDefaults()
+    {
+        var r = _rules;
+        Assert.AreEqual(ActionCatalog.Count, r.ActionMinSeconds.Length);
+        Assert.AreEqual(ActionCatalog.Count, r.ActionMaxSeconds.Length);
+        CollectionAssert.AreEqual(
+            new[] { 0.30f, 0.50f, 0.50f, 0.20f, 0.50f, 0.10f, 1.00f, 0.30f, 0.20f, 0.20f, 0.20f }, r.ActionMinSeconds);
+        CollectionAssert.AreEqual(
+            new[] { 2.00f, 8.00f, 4.00f, 4.00f, 2.00f, 2.50f, 6.00f, 2.00f, 1.00f, 1.00f, 1.00f }, r.ActionMaxSeconds);
+        for (int a = 0; a < ActionCatalog.Count; a++) Assert.LessOrEqual(r.ActionMinSeconds[a], r.ActionMaxSeconds[a]);
+
+        Assert.AreEqual(3, r.ObjectSenseRadius);
+        Assert.AreEqual(1.5f, r.ObjectReach);
+        Assert.AreEqual(2f, r.AgentEditRate);
+        Assert.AreEqual(2f, r.AgentEditBurst);
+        Assert.AreEqual(4, r.AgentEditsPerFrame);
+        Assert.AreEqual(0.6f, r.HeldObjectSpeedMul);
+        Assert.AreEqual(0.25f, r.DangerDirectionMinMass);
+    }
+
+    [Test]
+    public void DurationTableReadsTheRules()
+    {
+        SimulationRules.Bind(_rules);
+        try
+        {
+            Assert.AreEqual(_rules.ActionMinSeconds[(int)EntityAction.MoveTo], ActionDurationTable.Min((int)EntityAction.MoveTo));
+            Assert.AreEqual(_rules.ActionMaxSeconds[(int)EntityAction.MoveTo], ActionDurationTable.Max((int)EntityAction.MoveTo));
+            Assert.AreEqual(0.3f, ActionDurationTable.Min(ActionCatalog.Count));
+            Assert.AreEqual(2f, ActionDurationTable.Max(-1));
+        }
+        finally
+        {
+            SimulationRules.Bind(null);
+        }
     }
 
     [Test]

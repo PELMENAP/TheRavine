@@ -22,23 +22,23 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 18 | 2252 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
-| `Assets/Scripts/EntitySystem/AI` | 10 | 1970 |
+| `Assets/Scripts/EntitySystem/AI` | 10 | 1973 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
 | `Assets/Scripts/EntitySystem/AI/Colony` | 7 | 749 |
 | `Assets/Scripts/EntitySystem/AI/Debug` | 3 | 1601 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 784 |
-| `Assets/Scripts/EntitySystem/AI/Entity` | 16 | 2449 |
-| `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 23 | 1384 |
-| `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 692 |
+| `Assets/Scripts/EntitySystem/AI/Entity` | 17 | 2510 |
+| `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1389 |
+| `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 699 |
 | `Assets/Scripts/EntitySystem/AI/Flock` | 1 | 230 |
-| `Assets/Scripts/EntitySystem/AI/Instinct` | 1 | 382 |
+| `Assets/Scripts/EntitySystem/AI/Instinct` | 1 | 405 |
 | `Assets/Scripts/EntitySystem/AI/LSTM` | 2 | 198 |
-| `Assets/Scripts/EntitySystem/AI/Nest` | 1 | 385 |
-| `Assets/Scripts/EntitySystem/AI/Perception` | 8 | 1999 |
-| `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 489 |
+| `Assets/Scripts/EntitySystem/AI/Nest` | 1 | 394 |
+| `Assets/Scripts/EntitySystem/AI/Perception` | 9 | 2041 |
+| `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 565 |
 | `Assets/Scripts/EntitySystem/AI/Population` | 4 | 722 |
-| `Assets/Scripts/EntitySystem/AI/Rules` | 9 | 2722 |
-| `Assets/Scripts/EntitySystem/AI/SharedAI` | 21 | 3442 |
+| `Assets/Scripts/EntitySystem/AI/Rules` | 9 | 2766 |
+| `Assets/Scripts/EntitySystem/AI/SharedAI` | 21 | 3434 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 7 | 1099 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
@@ -115,7 +115,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/View` | 2 | 23 |
-| `Assets/Tests/EditMode` | 47 | 5895 |
+| `Assets/Tests/EditMode` | 48 | 6334 |
 
 ## Assemblies
 
@@ -148,7 +148,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | Type | Kind | File | Line |
 |---|---|---|---|
 | ActionFlags | enum | `Assets/Scripts/EntitySystem/AI/ActionCatalog.cs` | 3 |
-| ActionInfo | struct | `Assets/Scripts/EntitySystem/AI/ActionCatalog.cs` | 15 |
+| ActionInfo | struct | `Assets/Scripts/EntitySystem/AI/ActionCatalog.cs` | 14 |
 | AimAddition | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 13 |
 | AmbientConfig | class | `Assets/Scripts/SFX/AmbientSounds/AmbientLibrary.cs` | 49 |
 | AmbientLayer | class | `Assets/Scripts/SFX/AmbientSounds/AmbientLibrary.cs` | 16 |
@@ -286,12 +286,12 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | InputCommand | class | `Assets/Scripts/Terminal/Rive/InteractorCommands.cs` | 66 |
 | InstanceType | enum | `Assets/Scripts/ObjectSystem/ObjectInfo/ObjectInfo.cs` | 133 |
 | InstinctBits | class | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 7 |
-| InstinctGenes | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 61 |
+| InstinctGenes | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 62 |
 | InstinctInput | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 25 |
-| InstinctJob | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 146 |
-| InstinctOutput | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 97 |
-| InstinctRules | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 106 |
-| InstinctState | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 91 |
+| InstinctJob | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 148 |
+| InstinctOutput | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 98 |
+| InstinctRules | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 108 |
+| InstinctState | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 92 |
 | InteractorListCommand | class | `Assets/Scripts/Terminal/Rive/InteractorCommands.cs` | 6 |
 | InteractorRegistry | class | `Assets/Scripts/Terminal/Rive/Core/RiveInteractors.cs` | 156 |
 | InteractorResetCommand | class | `Assets/Scripts/Terminal/Rive/InteractorCommands.cs` | 36 |
@@ -349,10 +349,10 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | PlaceEvent | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 10 |
 | PlacementKind | enum | `Assets/Scripts/ObjectSystem/ObjectInfo/ObjectInfo.cs` | 127 |
 | PlaceResultEvent | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 12 |
-| PlanHint | enum | `Assets/Scripts/EntitySystem/AI/Plans/PlanCatalog.cs` | 31 |
+| PlanHint | enum | `Assets/Scripts/EntitySystem/AI/Plans/PlanCatalog.cs` | 37 |
 | PlanJob | struct | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | 53 |
 | PlanKind | enum | `Assets/Scripts/EntitySystem/AI/Plans/PlanCatalog.cs` | 3 |
-| PlanProgress | struct | `Assets/Scripts/EntitySystem/AI/Plans/PlanCatalog.cs` | 67 |
+| PlanProgress | struct | `Assets/Scripts/EntitySystem/AI/Plans/PlanCatalog.cs` | 73 |
 | PlanRequest | struct | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | 10 |
 | PlanResult | struct | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | 28 |
 | PlanWeights | struct | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | 34 |

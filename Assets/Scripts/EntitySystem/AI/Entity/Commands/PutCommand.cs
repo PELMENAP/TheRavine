@@ -1,8 +1,8 @@
 using Unity.Mathematics;
 
-public class StoreFoodCommand : EntityCommand
+public class PutCommand : EntityCommand
 {
-    public StoreFoodCommand(EntityModel model) : base(model) { }
+    public PutCommand(EntityModel model) : base(model) { }
 
     public override bool CanExecute() => model.Carrying > 0f && model.IsAtNest;
 

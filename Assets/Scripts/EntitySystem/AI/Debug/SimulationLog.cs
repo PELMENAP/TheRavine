@@ -32,8 +32,8 @@ public sealed class SimulationLog : IDisposable
 
     private static readonly EntityAction[] SourceActions =
     {
-        EntityAction.Flee, EntityAction.Attack, EntityAction.ApproachFood, EntityAction.Wander,
-        EntityAction.ReturnNest, EntityAction.Eat, EntityAction.Rest,
+        EntityAction.MoveTo, EntityAction.Attack, EntityAction.Eat, EntityAction.Rest,
+        EntityAction.Signal, EntityAction.Take, EntityAction.Put,
     };
 
     private static readonly int OffPlanKinds = OffSourceStarts + SourceActions.Length * SourceCount;

@@ -126,6 +126,8 @@ public partial class EntityModel
             _foodIndex.TryFindNearestFood(pos.x, pos.z, detect, out _foodCell, out _foodDistance, Colony.ColonyId))
             _foodValid = true;
 
+        ScanObject(in self, in rules);
+
         FoodTraits foodTraits = default;
         bool foodInfected = false;
         float2 foodPos = float2.zero;
@@ -196,6 +198,10 @@ public partial class EntityModel
             NestDir           = NoisyDirection(HasHome ? DirectionTo(in self, HomePosition) : float2.zero, dirNoise),
             PoiDir            = NoisyDirection(Points.TryGetNearest(in self, out float2 poi) ? DirectionTo(in self, in poi) : float2.zero, dirNoise),
             NestFoodDir       = nest != null && nest.HasFoodPeak ? DirectionTo(in self, nest.FoodPeak) : float2.zero,
+            ObjectDir         = NoisyDirection(DirectionVector(DirectionKind.Object), dirNoise),
+            DangerDir         = DirectionVector(DirectionKind.Danger),
+            ObjectDist        = _objectValid ? _objectDistance : -1f,
+            HeldObject        = HasHeldObject ? 1f : 0f,
             Stomach           = Digestion.Fill,
             WellFed           = Digestion.WellFed,
             FoodToxicity      = foodTraits.Toxicity,
@@ -223,7 +229,7 @@ public partial class EntityModel
             SpeechDist        = Speech.Dist,
             SpeechKin         = Speech.Kin,
             SpeechAge         = Speech.Age,
-            MimickedAction    = MimickedActionIndex,
+            MimickedAction    = nearest != null ? nearest.LastActionIndex : -1,
             Now               = nowD,
             PlanRewardEma     = _planRewardEma,
             Season            = _season,
@@ -235,8 +241,6 @@ public partial class EntityModel
         UpdateHormones(dt, in rules);
 
         LastInput = Vectorizer.Vectorize(in frame, _actionTimes, in _lastTerrain);
-
-        ConsumeMimickedAction();
 
         bool resting = LastAction == EntityAction.Idle || LastAction == EntityAction.Rest;
         float digestMul = Tuning.DigestionMul;
@@ -351,6 +355,7 @@ public partial class EntityModel
         _threatResolved = ResolveThreatSource(in self, frame.LocalDanger, in rules, out _threatSource);
         bool hasThreat = _threatResolved || frame.LocalDanger > rules.ThreatMinDanger;
         _hasThreat = hasThreat;
+        ComputeEscapeDirection(in self, in rules);
 
         brainCtx.EnergyNorm    = EffectiveEnergyNorm;
         brainCtx.PlanHints     = PlanHints;
@@ -401,6 +406,7 @@ public partial class EntityModel
             HasThreat       = hasThreat ? (byte)1 : (byte)0,
             Busy            = _runner.IsRunning ? (byte)1 : (byte)0,
             RunningAction   = running >= 0 ? (byte)running : InstinctBits.NoReflex,
+            RunningDirection = _runner.CurrentDirection,
             RunningInstinct = _runner.IsRunning && _runner.CurrentSource == CommandSource.Instinct ? (byte)1 : (byte)0,
             PlanActive      = _plan.IsActive ? (byte)1 : (byte)0,
             PlanKind        = (byte)_plan.Kind,

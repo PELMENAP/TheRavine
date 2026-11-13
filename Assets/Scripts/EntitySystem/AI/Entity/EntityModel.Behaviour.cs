@@ -36,7 +36,7 @@ public partial class EntityModel
         if ((output.Mask & InstinctBits.Sick) != 0 && nest != null)
             heading = math.normalizesafe(Position2D - nest.Position, new float2(0f, 1f));
         var reflex = new BrainDecision(action, 0, 0, Brain.CurrentGoal, _cycleNow,
-            ActionDurationTable.Max(action), in heading);
+            ActionDurationTable.Max(action), in heading, direction: output.Direction);
         TryStartCommand(action, in reflex, CommandSource.Instinct);
     }
 
@@ -51,9 +51,9 @@ public partial class EntityModel
         if (math.lengthsq(uphill) < 1e-6f) return;
 
         _plan.Interrupt();
-        int action = (int)EntityAction.Wander;
+        int action = (int)EntityAction.MoveTo;
         var climb = new BrainDecision(action, 0, 0, Brain.CurrentGoal, _cycleNow,
-            ActionDurationTable.Max(action), in uphill);
+            ActionDurationTable.Max(action), in uphill, direction: (byte)DirectionKind.None);
         TryStartCommand(action, in climb, CommandSource.Instinct);
     }
 
@@ -62,7 +62,7 @@ public partial class EntityModel
         var cmd = (uint)action < (uint)_commands.Length ? _commands[action] : null;
         if (cmd == null) return false;
 
-        if (!cmd.CanExecute())
+        if (!cmd.CanExecute(in decision))
         {
             float penalty = SimulationRules.Active.InfeasibleActionHealthPenalty;
             if (source == CommandSource.Brain && penalty > 0f) Stats.Hp -= penalty;
