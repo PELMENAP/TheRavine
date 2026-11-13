@@ -18,6 +18,7 @@ public static class InstinctBits
     public const uint Troph  = 1u << 9;
     public const uint Recruit = 1u << 10;
     public const uint Nursery = 1u << 11;
+    public const uint Feeding = 1u << 12;
 
     public const byte NoReflex = byte.MaxValue;
 }
@@ -165,6 +166,7 @@ public struct InstinctJob : IJobFor
 
         bool wasHungry = (latches & InstinctBits.Hungry) != 0;
         bool wasPanic  = (latches & InstinctBits.Panic) != 0;
+        bool wasFeeding = (latches & InstinctBits.Feeding) != 0;
 
         float hungerOn  = g.HungerOn + x.HungerBias;
         float hungerOff = math.max(g.HungerOff + x.HungerBias, hungerOn);
@@ -227,8 +229,11 @@ public struct InstinctJob : IJobFor
             Pick(ref reflex, ref prio, ref mask, ref dir, Move, OwnPoi, 3, InstinctBits.Recruit);
         else if (hungry && !sated && foodFar && !nestFood && !hasThreat && !grazing)
             Pick(ref reflex, ref prio, ref mask, ref dir, Move, Food, 2, InstinctBits.Seek);
-        else if (hungry && !sated && (foodNear || nestFood))
+        else if ((hungry || wasFeeding) && !sated && (foodNear || nestFood))
             Pick(ref reflex, ref prio, ref mask, ref dir, Eat, NoDirection, 1, InstinctBits.Eat);
+
+        bool feeding = !sated && (foodNear || nestFood) && (reflex == Eat || wasFeeding);
+        if (feeding) latches |= InstinctBits.Feeding;
 
         if (reflex != InstinctBits.NoReflex)
         {

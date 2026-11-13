@@ -154,7 +154,8 @@ public sealed class EntitySpatialGrid : IDisposable
     public EntityModel Survey(Vector3 origin, EntityModel self, ColonyState colony,
         float nearestRadius, float crowdRadius, int crowdCap,
         out float nearestDistance, out int crowd, out int kin,
-        out EntityModel foreign, out float foreignDistance)
+        out EntityModel foreign, out float foreignDistance,
+        EntityModel lastVictim = null, float stickMul = 1f, float lowHpMul = 1f)
     {
         using var scope = SurveyMarker.Auto();
         nearestDistance = -1f;
@@ -176,6 +177,7 @@ public sealed class EntitySpatialGrid : IDisposable
         EntityModel best = null;
         float minSqr = float.MaxValue;
         float minForeignSqr = float.MaxValue;
+        float minForeignScore = float.MaxValue;
 
         for (int dz = -ring; dz <= ring; dz++)
         for (int dx = -ring; dx <= ring; dx++)
@@ -198,7 +200,7 @@ public sealed class EntitySpatialGrid : IDisposable
 
                 bool asNearest = sqr <= nr2 && sqr < minSqr;
                 bool asCrowd   = sqr <= cr2 && crowd < crowdCap;
-                bool asForeign = sqr <= nr2 && sqr < minForeignSqr && _colony[i] != colonyIndex;
+                bool asForeign = sqr <= nr2 && _colony[i] != colonyIndex;
                 if (!asNearest && !asCrowd && !asForeign) continue;
 
                 var m = _models[i];
@@ -216,8 +218,13 @@ public sealed class EntitySpatialGrid : IDisposable
                 }
                 if (asForeign)
                 {
-                    minForeignSqr = sqr;
-                    foreign       = m;
+                    float score = math.sqrt(sqr) * (ReferenceEquals(m, lastVictim) ? stickMul : 1f) * HealthWeight(m, lowHpMul);
+                    if (score < minForeignScore)
+                    {
+                        minForeignScore = score;
+                        minForeignSqr   = sqr;
+                        foreign         = m;
+                    }
                 }
             }
         }
@@ -225,6 +232,13 @@ public sealed class EntitySpatialGrid : IDisposable
         if (best != null) nearestDistance = math.sqrt(minSqr);
         if (foreign != null) foreignDistance = math.sqrt(minForeignSqr);
         return best;
+    }
+
+    private static float HealthWeight(EntityModel m, float lowHpMul)
+    {
+        var stats = m.Stats;
+        if (stats == null || stats.IsDisposed || stats.MaxHealth <= 0f) return 1f;
+        return math.lerp(lowHpMul, 1f, math.saturate(stats.Hp / stats.MaxHealth));
     }
 
     public int FindInRadius(Vector3 origin, EntityModel self, float radius, EntityModel[] result)

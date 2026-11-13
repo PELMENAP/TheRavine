@@ -68,6 +68,7 @@ public enum PlanHint : uint
     HasNest      = 1 << 27,
     HasHome      = 1 << 28,
     RestBlocked  = 1 << 29,
+    TargetWeak   = 1 << 30,
 }
 
 public struct PlanProgress
@@ -322,7 +323,8 @@ public static class PlanCatalog
                 if (lastAction == (int)EntityAction.Attack && ok) p.Steps++;
                 p.Achieved = p.Steps > 0;
                 if (!Has(h, PlanHint.PreyNear)) return p.Steps > 0 ? Complete : Fail;
-                if (p.Steps >= p.MaxStrikes || !Has(h, PlanHint.CanAttack)) return p.Steps > 0 ? Complete : Fail;
+                bool finishing = Has(h, PlanHint.TargetWeak) && Has(h, PlanHint.CanAttack);
+                if ((p.Steps >= p.MaxStrikes && !finishing) || !Has(h, PlanHint.CanAttack)) return p.Steps > 0 ? Complete : Fail;
                 return Step(ref p, EntityAction.Attack);
 
             case PlanKind.Rest:

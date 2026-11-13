@@ -563,6 +563,14 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly int   AgentEditsPerFrame;
         public readonly float HeldObjectSpeedMul;
         public readonly float DangerDirectionMinMass;
+        public readonly int   FireSenseRadius;
+        public readonly float FireStress;
+        public readonly float FireDangerMark;
+        public readonly float HuntStickMul;
+        public readonly float HuntLowHpMul;
+        public readonly float HuntFinishHp;
+        public readonly float OutnumberedStress;
+        public readonly float OutnumberedNorm;
         public readonly float[] PlanMinSecondsByPlan;
         public readonly float[] PlanMaxSecondsByPlan;
         public readonly float[] CasteAffinityLog;
@@ -1137,6 +1145,14 @@ public sealed partial class SimulationRules : ScriptableObject
             AgentEditsPerFrame = r.agentEditsPerFrame;
             HeldObjectSpeedMul = r.heldObjectSpeedMul;
             DangerDirectionMinMass = r.dangerDirectionMinMass;
+            FireSenseRadius = math.clamp(r.fireSenseRadius, 0, MaxFireSenseRadius);
+            FireStress = r.fireStress;
+            FireDangerMark = r.fireDangerMark;
+            HuntStickMul = r.huntStickMul;
+            HuntLowHpMul = r.huntLowHpMul;
+            HuntFinishHp = r.huntFinishHp;
+            OutnumberedStress = r.outnumberedStress;
+            OutnumberedNorm = r.outnumberedNorm;
             PlanMinSecondsByPlan = r.FillPlanSeconds(r.planMinSecondsByPlan, r.planMinSeconds, PlanMinBuf);
             PlanMaxSecondsByPlan = r.FillPlanSeconds(r.planMaxSecondsByPlan, r.planMaxSeconds, PlanMaxBuf);
             CasteAffinityLog     = r.FillCasteAffinityLog();
@@ -1250,6 +1266,7 @@ public sealed partial class SimulationRules : ScriptableObject
 
     public const float LearningRateFloor = 1e-6f;
     public const int   MaxObjectSenseRadius = 8;
+    public const int   MaxFireSenseRadius = 32;
     public const float MinAgentTickInterval = 1e-3f;
     public const int   SpeechVocab = 16;
     public const int   SpeechLen = 2;
@@ -1291,6 +1308,7 @@ public sealed partial class SimulationRules : ScriptableObject
         if (!(tetherRate >= 0f)) tetherRate = 0f;
         if (!(nightHomeRate >= 0f)) nightHomeRate = 0f;
         objectSenseRadius = math.clamp(objectSenseRadius, 0, MaxObjectSenseRadius);
+        fireSenseRadius = math.clamp(fireSenseRadius, 0, MaxFireSenseRadius);
         if (!(objectReach >= 0f)) objectReach = 0f;
         if (!(agentEditRate >= 0f)) agentEditRate = 0f;
         if (!(agentEditBurst >= 0f)) agentEditBurst = 0f;

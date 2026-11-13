@@ -79,6 +79,12 @@ public partial class EntityModel
             return true;
         }
 
+        if (SimulationClock.TimeD < _hazardUntil)
+        {
+            source = _hazardSource;
+            return true;
+        }
+
         var foreign = ValidForeign;
         if (foreign != null && (!_playerValid || _nearestForeignDistance <= _playerDistance))
         {

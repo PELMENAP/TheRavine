@@ -14,6 +14,14 @@ public sealed partial class SimulationRules
     [SerializeField] private int agentEditsPerFrame = 4;
     [SerializeField] private float heldObjectSpeedMul = 0.6f;
     [SerializeField] private float dangerDirectionMinMass = 0.25f;
+    [SerializeField] private int fireSenseRadius = 12;
+    [SerializeField] private float fireStress = 0.6f;
+    [SerializeField] private float fireDangerMark = 3f;
+    [SerializeField] private float huntStickMul = 0.5f;
+    [SerializeField] private float huntLowHpMul = 0.5f;
+    [SerializeField] private float huntFinishHp = 0.25f;
+    [SerializeField] private float outnumberedStress = 0.3f;
+    [SerializeField] private float outnumberedNorm = 3f;
     [SerializeField] private float startupDelaySeconds = 3f;
     [SerializeField] private float tickLoopWarmupSeconds = 3f;
     [SerializeField] private float agentTickInterval = 1f;
@@ -169,4 +177,12 @@ public sealed partial class SimulationRules
     public int AgentEditsPerFrame => agentEditsPerFrame;
     public float HeldObjectSpeedMul => heldObjectSpeedMul;
     public float DangerDirectionMinMass => dangerDirectionMinMass;
+    public int FireSenseRadius => fireSenseRadius;
+    public float FireStress => fireStress;
+    public float FireDangerMark => fireDangerMark;
+    public float HuntStickMul => huntStickMul;
+    public float HuntLowHpMul => huntLowHpMul;
+    public float HuntFinishHp => huntFinishHp;
+    public float OutnumberedStress => outnumberedStress;
+    public float OutnumberedNorm => outnumberedNorm;
 }

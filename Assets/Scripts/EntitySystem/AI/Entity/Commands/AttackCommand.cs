@@ -11,6 +11,8 @@ public class AttackCommand : EntityCommand
     private double _recoverEnd;
     private double _lurkStart;
     private double _lurkEnd;
+    private double _lurkSeen;
+    private float  _lurkClosest;
     private float2 _chaseGoal;
     private float  _damageShare;
     private float  _trigger;
@@ -103,6 +105,12 @@ public class AttackCommand : EntityCommand
                     model.Colony?.Stats.RecordAttackFailLurkTimeout();
                     return FailCredited();
                 }
+                if (d < _lurkClosest)
+                {
+                    _lurkClosest = d;
+                    _lurkSeen    = SimulationClock.TimeD;
+                }
+                else if (SimulationClock.TimeD - _lurkSeen >= r.AmbushMinHold) return Engage(r);
                 if (Elapsed(_lurkEnd)) return Complete(_approachCredit);
                 return EntityCommandStatus.Running;
 
@@ -130,8 +138,10 @@ public class AttackCommand : EntityCommand
     private EntityCommandStatus Lurk(SimulationRules r)
     {
         model.Motor.Stop();
-        _phase     = Phase.Lurk;
-        _lurkStart = SimulationClock.TimeD;
+        _phase       = Phase.Lurk;
+        _lurkStart   = SimulationClock.TimeD;
+        _lurkSeen    = _lurkStart;
+        _lurkClosest = DistanceToTarget();
         float patience = math.saturate(decision.Duration / math.max(ActionDurationTable.Max((int)EntityAction.Attack), 1e-3f));
         _lurkEnd   = _lurkStart + r.AmbushMaxHold * patience;
         ExtendWatchdog(_lurkEnd);
@@ -236,6 +246,7 @@ public class AttackCommand : EntityCommand
         if (victim != null)
         {
             victim.TakeDamage(damage, model);
+            model.NoteVictim(victim);
             model.Infection?.TryTransmitBite(model, victim);
         }
         else model.Players?.ReportHit(target.Player, damage, model);

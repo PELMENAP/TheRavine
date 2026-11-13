@@ -110,13 +110,14 @@ public partial class EntityModel
             float a = RavineRandom.RangeFloat(0f, 2f * math.PI);
             math.sincos(a, out float sa, out float ca);
             dir    = new float2(ca, sa);
-            radius = math.min(LevyStep(in r), r.PlannerRadiusMax);
+            radius = math.min(LevyStep(in r) * _casteMods.Range, r.PlannerRadiusMax);
         }
         else
         {
             if ((_dirMask & (1 << kind)) == 0) return false;
             dir    = _dirVec[kind];
             radius = _dirRadius[kind];
+            if (kind == (byte)DirectionKind.Frontier) radius = math.min(radius * _casteMods.Range, r.PlannerRadiusMax);
         }
 
         math.sincos(offset + _ouAngle, out float s, out float c);
