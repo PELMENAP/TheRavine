@@ -20,7 +20,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Core/Timer` | 4 | 271 |
 | `Assets/Scripts/Core/Utilities` | 10 | 1922 |
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
-| `Assets/Scripts/Editor` | 19 | 2344 |
+| `Assets/Scripts/Editor` | 20 | 2379 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
 | `Assets/Scripts/EntitySystem/AI` | 11 | 2084 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
@@ -37,8 +37,9 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Perception` | 9 | 2057 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 567 |
 | `Assets/Scripts/EntitySystem/AI/Population` | 4 | 738 |
-| `Assets/Scripts/EntitySystem/AI/Rules` | 9 | 2954 |
+| `Assets/Scripts/EntitySystem/AI/Rules` | 10 | 3082 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI` | 21 | 3445 |
+| `Assets/Scripts/EntitySystem/AI/Skills` | 10 | 1442 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 7 | 1099 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
@@ -115,7 +116,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/View` | 2 | 23 |
-| `Assets/Tests/EditMode` | 57 | 7135 |
+| `Assets/Tests/EditMode` | 58 | 7815 |
 
 ## Assemblies
 

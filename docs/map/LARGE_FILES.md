@@ -7,7 +7,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 | File | Lines |
 |---|---|
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1806 |
-| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1420 |
+| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1457 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1067 |
 | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1027 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 928 |
@@ -21,6 +21,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 | `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs` | 621 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 621 |
 | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 603 |
+| `Assets/Tests/EditMode/SkillGraphTests.cs` | 582 |
 | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 546 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassSystem.cs` | 509 |
 
@@ -164,28 +165,28 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
 
-- 5–1420 class SimulationRules
-  - 1231 CaptureFrame
-  - 1233 Bind
-  - 1244 DeathPenaltyMul
-  - 1253 FillPlanSeconds
-  - 1260 FillCasteAffinityLog
-  - 1268 FillUtilityWeights
-  - 1276 FillPlanCasteDomain
-  - 1284 BuildEndogenousForbiddenMask
-  - 1296 BuildBoidPlanMul
-  - 1303 ColonyChannelTau
-  - 1309 BiomeFertility
-  - 1310 BiomeToxicity
-  - 1319 KindValue
-  - 1322 BiomeValue
-  - 1342 OnValidate
-  - 1417 ThrowNotBound
+- 5–1457 class SimulationRules
+  - 1267 CaptureFrame
+  - 1269 Bind
+  - 1280 DeathPenaltyMul
+  - 1289 FillPlanSeconds
+  - 1296 FillCasteAffinityLog
+  - 1304 FillUtilityWeights
+  - 1312 FillPlanCasteDomain
+  - 1320 BuildEndogenousForbiddenMask
+  - 1332 BuildBoidPlanMul
+  - 1339 ColonyChannelTau
+  - 1345 BiomeFertility
+  - 1346 BiomeToxicity
+  - 1355 KindValue
+  - 1358 BiomeValue
+  - 1378 OnValidate
+  - 1454 ThrowNotBound
   - 8–8 enum EpsilonSchedule
-  - 10–1226 struct RulesFrame
-    - 613 BiomeFertility
-    - 614 BiomeToxicity
-    - 623 RulesFrame
+  - 10–1262 struct RulesFrame
+    - 631 BiomeFertility
+    - 632 BiomeToxicity
+    - 641 RulesFrame
 
 ## `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs`
 
@@ -806,6 +807,46 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 555 TouchWindow
   - 562 Finish
   - 585 Dispose
+
+## `Assets/Tests/EditMode/SkillGraphTests.cs`
+
+- 6–582 class SkillGraphTests
+  - 15 SetUp
+  - 23 TearDown
+  - 33 BuildGridAtlas
+  - 54 Link
+  - 60 Topology
+  - 67 Connected
+  - 84 RowsOf
+  - 91 DefaultAtlasHasEighteenPointsInsideTheUnitSquare
+  - 104 DefaultAtlasPotentialIsSymmetricWithoutSelfLoops
+  - 115 DefaultAtlasPotentialIsConnectedAndHasNoK5
+  - 124 K5CheckFindsACompleteFiveClique
+  - 136 BuilderProducesValidAtlasesForEverySizeAndSeed
+  - 148 XpTableHasAtMostTwoSourcesPerAction
+  - 163 FreshTreeHasNoCycleFactorBelowOne
+  - 171 IslandsAreDetachedFromTheMainComponent
+  - 183 OneAddedEdgeFormingATriangleGivesCliqueThreeForExactlyThreeVertices
+  - 204 ThreeAddedEdgesFormingK4GiveCliqueFour
+  - 219 BridgeIsReportedOnlyForEdgesOutsideCycles
+  - 242 BuildIsRefusedWithoutPointsAndLeavesStateUnchanged
+  - 267 PruneAndRestoreFollowTheBridgeRules
+  - 300 PruneRefusesACycleEdgeAndAnIsland
+  - 317 TalentIsOneAtTheOriginVertexAndNeverBelowTheMinimum
+  - 335 SixtyFourSkillsAtPeakOneEarnNoEdgePoints
+  - 354 DecayNeverCrossesTheSavingsFloor
+  - 370 CycleFactorLowersDecayInsideCyclesOnly
+  - 381 FallenSkillWithoutNeighboursGetsAPullAboveOnePointSix
+  - 401 NeighbourAbovePullsAHigherDelta
+  - 423 EffectGrowsWithTheFlooredLevelAndDividersInvert
+  - 434 AddXpOnAnUnavailableSkillChangesNothing
+  - 463 AddXpOnTheRootRaisesTheLevelAndEventuallyTheFlooredLevel
+  - 489 AddXpNeverAllocates
+  - 511 ModifiersAreNeutralUntilAChannelSkillLevelsUp
+  - 541 ModifiersIgnorePrunedSkills
+  - 576–581 class AtlasHandle
+    - 579 AtlasHandle
+    - 580 Dispose
 
 ## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs`
 
