@@ -317,7 +317,7 @@ public sealed unsafe class NestState : IDisposable
         _decayScheduled = true;
     }
 
-    public void EndTick(float dt, int membersNearNest, float scarcity = 0f)
+    public void EndTick(float dt, int membersNearNest, float scarcity = 0f, float pressure = 0f)
     {
         if (!_decayScheduled) return;
         _decayScheduled = false;
@@ -334,10 +334,10 @@ public sealed unsafe class NestState : IDisposable
         AlarmHunt = membersNearNest >= r.AlarmHuntMinMembers;
         DangerAtNest = FieldAt(ColonyChannel.Danger, Position);
 
-        UpdateMigration(dt, r, scarcity);
+        UpdateMigration(dt, r, scarcity, pressure);
     }
 
-    private void UpdateMigration(float dt, SimulationRules r, float scarcity)
+    private void UpdateMigration(float dt, SimulationRules r, float scarcity, float pressure)
     {
         float2 toFood = float2.zero;
         if (_stats[ColonyFieldStats.FoodMass] > 1e-3f)
@@ -348,7 +348,7 @@ public sealed unsafe class NestState : IDisposable
             fromDanger = math.normalizesafe(Position - (_origin + new float2(_stats[ColonyFieldStats.DangerX], _stats[ColonyFieldStats.DangerY]) * _cell));
 
         float hunger = r.MigrationHungerWeight * math.max(Hunger, scarcity);
-        float danger = r.MigrationDangerWeight * math.saturate(DangerAtNest);
+        float danger = r.MigrationDangerWeight * math.saturate(DangerAtNest + pressure);
         float2 target = hunger * toFood + danger * fromDanger;
 
         float k = 1f - math.exp(-dt / math.max(r.MigrationTau, 1e-3f));

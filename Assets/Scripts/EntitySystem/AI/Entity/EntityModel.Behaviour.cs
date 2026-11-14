@@ -23,7 +23,7 @@ public partial class EntityModel
         InstinctLatches = output.Latches;
         if (!_cycleActive) return;
 
-        if (output.StartleStress > 0f) AddStress(output.StartleStress * (1f - _familiarity));
+        if (output.StartleStress > 0f) AddStress(output.StartleStress * (1f - _familiarity) * _casteMods.Fear);
 
         if (output.Interrupt != 0 || output.Reflex != InstinctBits.NoReflex) _plan.Interrupt();
         if (output.Reflex == InstinctBits.NoReflex)
@@ -126,6 +126,7 @@ public partial class EntityModel
             {
                 BreakFamiliarity(source.Stats);
                 NotifyKinOfHarm(source.Stats);
+                Colony?.RaisePressure(amount / math.max(Stats.MaxHealth, 1e-3f) * r.PressureFromDamage);
             }
         }
         if (Stats.Hp > 0f) MarkTickDue();

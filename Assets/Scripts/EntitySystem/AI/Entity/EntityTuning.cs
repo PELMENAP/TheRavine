@@ -31,12 +31,14 @@ public struct CasteModifiers
     public float Range;
     public float PoiWeight;
     public float Feed;
+    public float Fear;
+    public float HuntBias;
 
     public static CasteModifiers Neutral => new()
     {
         Attack = 1f, Health = 1f, EnergyUpkeep = 1f, Speed = 1f, RunSpeed = 1f, EnergyCapacity = 1f, Detection = 1f,
         RestHeal = 1f, Cooldown = 1f, GroupBonus = 1f, NestFoodCost = 1f, EatSpeed = 1f, Carry = 1f,
-        StoreEfficiency = 1f, DamageTaken = 1f, LevyAlpha = 1f, Range = 1f, PoiWeight = 1f, Feed = 1f,
+        StoreEfficiency = 1f, DamageTaken = 1f, LevyAlpha = 1f, Range = 1f, PoiWeight = 1f, Feed = 1f, Fear = 1f,
     };
 
     public static CasteModifiers For(Caste caste)
@@ -92,6 +94,8 @@ public struct CasteModifiers
         m.Detection    = r.PredatorDetectMul;
         m.EnergyUpkeep = r.PredatorUpkeepMul;
         m.Carry        = 0f;
+        m.Fear         = r.PredatorFearMul;
+        m.HuntBias     = r.PredatorHuntBias;
         return m;
     }
 }

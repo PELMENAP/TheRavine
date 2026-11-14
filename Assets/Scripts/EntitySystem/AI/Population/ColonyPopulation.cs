@@ -228,6 +228,7 @@ public sealed class ColonyPopulation
             ? r.ColonyPoiDeathDanger : 0f;
         if (poiDanger > 0f) colony.Pois.Offer(at, 0f, poiDanger);
 
+        if (cause == DeathCause.Killed) colony.RaisePressure(r.PressureFromKill);
         if (cause == DeathCause.Killed || cause == DeathCause.Virus)
         {
             nest.Mark(ColonyChannel.Danger, at, r.KinDeathDangerMark);
@@ -404,11 +405,22 @@ public sealed class ColonyPopulation
         if (now < _nextPredatorTime || wild.MemberCount >= r.PredatorCount || CivilCount == 0) return;
         _nextPredatorTime = now + r.PredatorRespawnInterval;
 
-        var home = _colonies[RavineRandom.RangeInt(0, CivilCount)].Nest.Position;
+        var members = wild.Members;
+        float2 home;
+        float  spread;
+        if (members.Length > 0)
+        {
+            home   = _entities[members[RavineRandom.RangeInt(0, members.Length)]].Position2D;
+            spread = r.PredatorPackSpread;
+        }
+        else
+        {
+            home   = _colonies[RavineRandom.RangeInt(0, CivilCount)].Nest.Position;
+            spread = r.PredatorSpawnDistance;
+        }
         float a = RavineRandom.RangeFloat(0f, 2f * math.PI);
         math.sincos(a, out float sa, out float ca);
-        var p = home + new float2(ca, sa) * r.PredatorSpawnDistance;
-        var members = wild.Members;
+        var p = home + new float2(ca, sa) * spread;
         var ctx = members.Length > 0
             ? wild.Brain.CreateContext(_entities[members[RavineRandom.RangeInt(0, members.Length)]].Brain.Context.CoordMLP.Params.GetMutatedGeneticParameters())
             : null;

@@ -63,7 +63,7 @@ public partial class EntityModel
                 SetDirection(DirectionKind.Migration, math.normalizesafe(nest.Migration), r.MigrateLegRadius);
         }
 
-        if (_flock.Neighbors > 0 && !IsWild) SetDirection(DirectionKind.Flock, in _flock.CentroidDir, r.BoidRadius * r.FlockDirectionRadiusMul);
+        if (_flock.Neighbors > 0) SetDirection(DirectionKind.Flock, in _flock.CentroidDir, r.BoidRadius * r.FlockDirectionRadiusMul);
         _dirMask |= (ushort)(1 << (int)DirectionKind.Levy);
 
         if (HasHome) SetDirectionTarget(DirectionKind.Nest, in self, HomePosition, in r);

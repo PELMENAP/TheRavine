@@ -28,6 +28,17 @@ public sealed class ColonyState : IDisposable
     }
     public readonly bool IsWild;
     public float Scarcity;
+    public float Pressure { get; private set; }
+    public float2 PackCentre { get; private set; }
+    public int    PackCount  { get; private set; }
+
+    public void RaisePressure(float amount) => Pressure = math.saturate(Pressure + math.max(0f, amount));
+
+    public void SetPack(float2 centre, int count)
+    {
+        PackCentre = centre;
+        PackCount  = count;
+    }
     public bool  QuorumReady { get; private set; }
 
     public float StorageEma;
@@ -48,6 +59,7 @@ public sealed class ColonyState : IDisposable
     public void TickEma(float dt)
     {
         ref readonly var r = ref SimulationRules.Frame;
+        Pressure *= math.exp(-math.max(dt, 0f) / math.max(r.PressureTau, 1e-3f));
         float storage = math.saturate(Nest.Storage / math.max(r.NestStorageNorm, 1e-3f));
         if (!EmaPrimed)
         {
@@ -127,10 +139,11 @@ public sealed class ColonyState : IDisposable
     {
         ref readonly var r = ref SimulationRules.Frame;
         double now = SimulationClock.TimeD;
+        float needed = math.max(1f, r.QuorumSize * (1f - Pressure * r.PressureQuorumRelief));
         int best = -1;
         for (int i = 0; i < _sitePos.Length; i++)
         {
-            if (_siteWeight[i] < math.max(r.QuorumSize, 1) || now - _siteUpdated[i] > r.QuorumWindow) continue;
+            if (_siteWeight[i] < needed || now - _siteUpdated[i] > r.QuorumWindow) continue;
             if (best < 0 || _siteWeight[i] > _siteWeight[best]) best = i;
         }
         site = best >= 0 ? _sitePos[best] : default;

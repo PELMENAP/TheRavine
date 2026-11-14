@@ -48,6 +48,11 @@ public sealed partial class SimulationRules
     [SerializeField] private float familiarityGift = 0.5f;
     [SerializeField] private float familiarityCalm = 0.6f;
     [SerializeField] private float familiarityHuntMul = 1f;
+    [SerializeField] private float packRadius = 25f;
+    [SerializeField] private float packRate = 0.6f;
+    [SerializeField] private float packBoidSeparation = 1f;
+    [SerializeField] private float packBoidAlignment = 0.8f;
+    [SerializeField] private float packBoidCohesion = 1f;
     [SerializeField] private float basalEmitFraction = 0f;
     [SerializeField] private float warmthDrawFraction = 0f;
     [SerializeField] private float warmthCellSize = 4f;
@@ -128,6 +133,11 @@ public sealed partial class SimulationRules
     public float FamiliarityGift => familiarityGift;
     public float FamiliarityCalm => familiarityCalm;
     public float FamiliarityHuntMul => familiarityHuntMul;
+    public float PackRadius => packRadius;
+    public float PackRate => packRate;
+    public float PackBoidSeparation => packBoidSeparation;
+    public float PackBoidAlignment => packBoidAlignment;
+    public float PackBoidCohesion => packBoidCohesion;
     public float BasalEmitFraction => basalEmitFraction;
     public float WarmthDrawFraction => warmthDrawFraction;
     public float WarmthCellSize => warmthCellSize;

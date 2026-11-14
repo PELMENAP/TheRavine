@@ -3,7 +3,7 @@
 Root: `Assets/Scripts/EntitySystem/AI/`. Assembly: `EntitySystem`. Rules for this folder: `Assets/Scripts/EntitySystem/AI/CLAUDE.md`.
 Tests: `Assets/Tests/EditMode/` — `BrainAllocationTests`, `BrainLearningTests`, `BrainArchitectureVersionTests`, `SnapshotVersionTests`,
 `SoaSwapBackTests`, `TickWindowBudgetTests`, `DecisionRingTests`, `ColonyRegistryTests`, `EntitySpatialGridSurveyTests`, `RulesDefaultsTests`,
-`NestSiteScoreTests`, `FamiliarityTests`, `CuriositySurplusTests`, `StartleTests`, `FoodLookupAllocationTests`.
+`NestSiteScoreTests`, `FamiliarityTests`, `CuriositySurplusTests`, `StartleTests`, `FoodLookupAllocationTests`, `PredatorPressureTests`.
 
 Tick order and hot methods: `docs/map/HOT_PATHS.md`. Existing structures to reuse: `docs/OPTIMIZATION.md` section 13.
 Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.cs`, `SimulationRules.cs`, `EntityModel.cs`): `docs/map/LARGE_FILES.md`.
@@ -61,6 +61,8 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 ## Colony (`Assets/Scripts/EntitySystem/AI/Colony/` and the Nest, Caste, Population folders next to it)
 
 - `ColonyState`: `Index`, `ColonyId`, `Brain`, `Nest`, `Pois`, `Stats`, members, leader, nest-site quorum. A nest-site vote is weighted by `ColonyState.SiteScore` (slope, relative height, food field, distance from the nest).
+- `ColonyState.Pressure`: 0..1, raised by damage from a foreign attacker and by `Killed` deaths, decays with `pressureTau`. It raises the soldier stimulus in `EntityManager.ChooseCaste`, lowers the vote weight the quorum needs (`pressureQuorumRelief`), adds to the nest danger term of migration and to the `Migrate` plan bias.
+- Wild colony: `ColonyState.PackCentre` and `PackCount` are refreshed once per window by `EntityManager.UpdatePack`; the instinct `InstinctBits.Pack` pulls a creature farther than `packRadius` back toward the pack (`DirectionKind.Kin`); predators spawn within `predatorPackSpread` of a pack member; boid weights come from `packBoid*`. `CasteModifiers.Fear` (`predatorFearMul`) scales outnumbered, startle and foreign-harm stress; `CasteModifiers.HuntBias` (`predatorHuntBias`) biases the `Hunt` plan.
 - `NestState` (`Assets/Scripts/EntitySystem/AI/Nest/NestState.cs`): channel fields in `NativeArray`, read through `ColonyFieldView`.
 - Channels (`ColonyChannel`): `Food`, `Danger`, `Trail`, `KinDeath`, `Explored`, `Sickness`, `Territory`.
 - `ColonyPoiBoard`: shared points of interest; `Offer` merges, `ReportEmpty` lowers `EnergyEma` of a point within the merge radius and never creates one. `ColonyStats`: counters per colony. `EnergyLedger`: energy flows of the world.

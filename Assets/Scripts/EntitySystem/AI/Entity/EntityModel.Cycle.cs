@@ -121,7 +121,7 @@ public partial class EntityModel
             out _nearestForeign, out _nearestForeignDistance, RecentVictim, rules.HuntStickMul, rules.HuntLowHpMul,
             _harmKey, 1f + rules.FamiliarityHuntMul * _familiarity);
         float outnumbered = math.saturate((_crowd - _kinCrowd - _kinCrowd) / math.max(rules.OutnumberedNorm, 1e-3f));
-        if (outnumbered > 0f) AddStress(rules.OutnumberedStress * outnumbered * dt);
+        if (outnumbered > 0f) AddStress(rules.OutnumberedStress * outnumbered * dt * _casteMods.Fear);
 
         _foodValid    = false;
         _foodDistance = -1f;
@@ -181,7 +181,7 @@ public partial class EntityModel
         _harmPrevHp = foreignHp;
         if (foreignHarm > 0f)
         {
-            AddStress(rules.ForeignHarmStress * foreignHarm);
+            AddStress(rules.ForeignHarmStress * foreignHarm * _casteMods.Fear);
             Colony?.Stats.RecordForeignHarm();
         }
 
@@ -342,6 +342,9 @@ public partial class EntityModel
         brainCtx.CoordBias[(int)PlanKind.Migrate] += rules.ScarcityMigrateBias * scarcity;
         if (Colony != null && Colony.QuorumReady && CasteFixed && !IsJuvenile)
             brainCtx.CoordBias[(int)PlanKind.Migrate] += rules.QuorumMigrateBias;
+        if (Colony != null && !IsWild && CasteFixed && !IsJuvenile)
+            brainCtx.CoordBias[(int)PlanKind.Migrate] += rules.PressureMigrateBias * Colony.Pressure;
+        brainCtx.CoordBias[(int)PlanKind.Hunt] += _casteMods.HuntBias;
 
         ref readonly var genes = ref brainCtx.CoordMLP.Params;
         bool adult = CasteFixed && !IsJuvenile && !IsWild;
@@ -427,6 +430,7 @@ public partial class EntityModel
             Recruited       = IsRecruited ? (byte)1 : (byte)0,
             Colonial        = nest != null ? (byte)1 : (byte)0,
             Dt              = dt,
+            PackDistance    = Colony != null && Colony.PackCount > 1 ? math.distance(self, Colony.PackCentre) : -1f,
         };
 
         _cycleNow    = now;
@@ -465,6 +469,7 @@ public partial class EntityModel
         if (_nearestForeign != null) h |= PlanHint.ForeignNear;
         var nest = Nest;
         if (nest != null && nest.MigrationPressure > r.MigrationMinPressure) h |= PlanHint.MigrationUrge;
+        else if (nest != null && !IsWild && Colony.Pressure > r.PressureMigrateMin) h |= PlanHint.MigrationUrge;
         if (nest != null && nest.HasFoodPeak) h |= PlanHint.FoodPeak;
         if (nest != null && nest.Storage < r.SeekStorageLow * r.NestStorageNorm) h |= PlanHint.StorageLow;
         var colony = Colony;

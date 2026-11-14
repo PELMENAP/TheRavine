@@ -118,6 +118,9 @@ public sealed partial class SimulationRules
     [SerializeField] private float predatorUpkeepMul = 0.6f;
     [SerializeField] private float predatorSpawnDistance = 60f;
     [SerializeField] private float predatorRespawnInterval = 30f;
+    [SerializeField] private float predatorFearMul = 0f;
+    [SerializeField] private float predatorHuntBias = 1.5f;
+    [SerializeField] private float predatorPackSpread = 8f;
     [SerializeField] private float trophallaxisMinFill = 0.6f;
     [SerializeField] private float trophallaxisHungerRelief = 0.3f;
     [SerializeField] private int recruitCount = 2;
@@ -134,6 +137,13 @@ public sealed partial class SimulationRules
     [SerializeField] private float quorumSlopeWeight = 1f;
     [SerializeField] private float quorumHeightWeight = 1f;
     [SerializeField] private float quorumFoodWeight = 0.5f;
+    [SerializeField] private float pressureTau = 60f;
+    [SerializeField] private float pressureFromDamage = 3f;
+    [SerializeField] private float pressureFromKill = 0.3f;
+    [SerializeField] private float pressureSoldierGain = 1f;
+    [SerializeField] private float pressureQuorumRelief = 0.6f;
+    [SerializeField] private float pressureMigrateBias = 2f;
+    [SerializeField] private float pressureMigrateMin = 0.5f;
     [SerializeField] private float nurseAgeEnd = 0.2f;
     [SerializeField] private float workerAgeEnd = 0.5f;
     [SerializeField] private float polyethismStimulus = 0.4f;
@@ -301,6 +311,9 @@ public sealed partial class SimulationRules
     public float PredatorUpkeepMul => predatorUpkeepMul;
     public float PredatorSpawnDistance => predatorSpawnDistance;
     public float PredatorRespawnInterval => predatorRespawnInterval;
+    public float PredatorFearMul => predatorFearMul;
+    public float PredatorHuntBias => predatorHuntBias;
+    public float PredatorPackSpread => predatorPackSpread;
     public float TrophallaxisMinFill => trophallaxisMinFill;
     public float TrophallaxisHungerRelief => trophallaxisHungerRelief;
     public int RecruitCount => recruitCount;
@@ -317,6 +330,13 @@ public sealed partial class SimulationRules
     public float QuorumSlopeWeight => quorumSlopeWeight;
     public float QuorumHeightWeight => quorumHeightWeight;
     public float QuorumFoodWeight => quorumFoodWeight;
+    public float PressureTau => pressureTau;
+    public float PressureFromDamage => pressureFromDamage;
+    public float PressureFromKill => pressureFromKill;
+    public float PressureSoldierGain => pressureSoldierGain;
+    public float PressureQuorumRelief => pressureQuorumRelief;
+    public float PressureMigrateBias => pressureMigrateBias;
+    public float PressureMigrateMin => pressureMigrateMin;
     public float NurseAgeEnd => nurseAgeEnd;
     public float WorkerAgeEnd => workerAgeEnd;
     public float PolyethismStimulus => polyethismStimulus;

@@ -21,6 +21,7 @@ public static class InstinctBits
     public const uint Feeding = 1u << 12;
     public const uint Threat  = 1u << 13;
     public const uint Startle = 1u << 14;
+    public const uint Pack    = 1u << 15;
 
     public const byte NoReflex = byte.MaxValue;
 }
@@ -44,6 +45,7 @@ public struct InstinctInput
     public float PanicBias;
     public float FoodToxicity;
     public float Dt;
+    public float PackDistance;
     public byte  Colonial;
     public byte  Sick;
     public byte  HungryKin;
@@ -129,6 +131,8 @@ public struct InstinctRules
     public float NightHomeRate;
     public float StartleStress;
     public float StartleCooldown;
+    public float PackRadius;
+    public float PackRate;
 
     public static InstinctRules Capture()
     {
@@ -151,6 +155,8 @@ public struct InstinctRules
             NightHomeRate      = r.NightHomeRate,
             StartleStress      = r.StartleStress,
             StartleCooldown    = r.StartleCooldown,
+            PackRadius         = r.PackRadius,
+            PackRate           = r.PackRate,
         };
     }
 }
@@ -233,6 +239,9 @@ public struct InstinctJob : IJobFor
         else if (juvenile && !forage && x.ParentDistance > R.TetherRadius
                  && Urge(ref rng, R.TetherRate * g.Tether, x.Dt))
             Pick(ref reflex, ref prio, ref mask, ref dir, Move, Kin, 4, InstinctBits.Tether);
+        else if (x.PackDistance > R.PackRadius && !forage && !hasThreat && !sick
+                 && Urge(ref rng, R.PackRate * g.Tether, x.Dt))
+            Pick(ref reflex, ref prio, ref mask, ref dir, Move, Kin, 4, InstinctBits.Pack);
         else if (atNest && !hungry && !sick && x.HungryKin != 0 && x.Stomach >= R.TrophallaxisMinFill
                  && x.PlanActive == 0 && x.Busy == 0)
             Pick(ref reflex, ref prio, ref mask, ref dir, Give, NoDirection, 3, InstinctBits.Troph);
