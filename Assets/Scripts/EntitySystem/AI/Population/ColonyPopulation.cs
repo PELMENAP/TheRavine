@@ -40,6 +40,7 @@ public sealed class ColonyPopulation
 
     public event Action<EntityModel> Spawned;
     public event Action<EntityModel> Died;
+    public event Action<EntityModel> TickUrgent;
 
     public int CivilCount => _colonies.Count - (_wild != null ? 1 : 0);
     public int CivilPopulation => _entities.Count - (_wild != null ? _wild.MemberCount : 0);
@@ -119,6 +120,7 @@ public sealed class ColonyPopulation
 
         model.Mortality.Died += () => HandleEntityDied(model);
         model.OnReproduceRequest += SpawnChild;
+        model.OnUrgentTick += RaiseTickUrgent;
 
         model.ManagerIndex = _entities.Count;
         _motion.SetPosition(model.ManagerIndex, position);
@@ -177,6 +179,8 @@ public sealed class ColonyPopulation
         var home = colony.Nest.Position;
         return new Vector3(home.x + v.x, _parent.position.y, home.y + v.y);
     }
+
+    private void RaiseTickUrgent(EntityModel model) => TickUrgent?.Invoke(model);
 
     private void HandleEntityDied(EntityModel model)
     {

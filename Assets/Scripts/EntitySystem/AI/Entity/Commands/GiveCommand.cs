@@ -41,6 +41,7 @@ public class GiveCommand : EntityCommand
 
         float given = victim.Digestion.Ingest(portion);
         _given = given;
+        if (given > 0f) victim.NoteGift(model.Stats);
         float rest  = portion - given;
         if (rest > 0f) model.Digestion.Ingest(rest);
         if (troph && model.Nest != null)

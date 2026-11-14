@@ -23,6 +23,8 @@ public partial class EntityModel
         InstinctLatches = output.Latches;
         if (!_cycleActive) return;
 
+        if (output.StartleStress > 0f) AddStress(output.StartleStress * (1f - _familiarity));
+
         if (output.Interrupt != 0 || output.Reflex != InstinctBits.NoReflex) _plan.Interrupt();
         if (output.Reflex == InstinctBits.NoReflex)
         {
@@ -77,6 +79,11 @@ public partial class EntityModel
     public void OnCommandFinished(CommandSource source, EntityCommandStatus status, float reward, int action)
     {
         SettleDen(action, status);
+        if (action == (int)EntityAction.Eat)
+        {
+            if (status == EntityCommandStatus.Failed) _eatFailed = true;
+            else if (status == EntityCommandStatus.Completed) _eatFailed = false;
+        }
         if (source == CommandSource.Instinct) return;
         _plan.OnStepFinished(status, reward, action);
     }
@@ -115,7 +122,13 @@ public partial class EntityModel
             _lastAttackTime = SimulationClock.TimeD;
             _threatSource   = source.Position2D;
             _threatResolved = true;
+            if (source.Colony != Colony)
+            {
+                BreakFamiliarity(source.Stats);
+                NotifyKinOfHarm(source.Stats);
+            }
         }
+        if (Stats.Hp > 0f) MarkTickDue();
 
         var nest = Nest;
         if (nest == null) return;
@@ -144,7 +157,25 @@ public partial class EntityModel
         float2 here = Position2D;
         Points?.MarkNegative(here, r.NegativePoiHit * intensity);
         Nest?.Mark(ColonyChannel.Danger, here, r.FireDangerMark * intensity);
+        MarkTickDue();
     }
+
+    public event Action<EntityModel> OnUrgentTick;
+    public int TickSlot = -1;
+    private bool   _urgentQueued;
+    private double _nextUrgentTime;
+
+    public void MarkTickDue()
+    {
+        if (_urgentQueued || IsDisposed || IsDeathPending) return;
+        double now = SimulationClock.TimeD;
+        if (now < _nextUrgentTime) return;
+        _nextUrgentTime = now + SimulationRules.Frame.StartleCooldown;
+        _urgentQueued   = true;
+        OnUrgentTick?.Invoke(this);
+    }
+
+    public void ClearTickDue() => _urgentQueued = false;
 
     public Utterance MakeUtterance(ushort tokens, byte len, byte flags = 0)
         => new Utterance

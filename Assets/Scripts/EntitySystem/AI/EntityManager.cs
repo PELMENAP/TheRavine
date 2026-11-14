@@ -131,6 +131,7 @@ public class EntityManager : MonoBehaviour
     private SoilShaderFeed _soilFeed;
     private GrassTrampleField _trample;
     private TickWindowBudget _tickBudget;
+    private UrgentTickQueue _urgent;
 
     private static readonly ProfilerMarker TickAgentsMarker  = new("EntityManager.TickAgents");
     private static readonly ProfilerMarker SnapshotMarker    = new("EntityManager.RebuildTickSnapshot");
@@ -342,6 +343,8 @@ public class EntityManager : MonoBehaviour
             _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _utility, _thresholds, _boids, _ledger, _speech);
         _population.Spawned += RaiseSpawned;
         _population.Died    += RaiseDied;
+        _urgent = new UrgentTickQueue(_capacity);
+        _population.TickUrgent += _urgent.Enqueue;
 
         if (useSavedBrain)
             LoadBrain();
@@ -509,6 +512,8 @@ public class EntityManager : MonoBehaviour
                 _windowOpen = true;
             }
 
+            PromoteUrgent(batch);
+
             int end = _tickCursor + batch;
             if (end > _tickCount) end = _tickCount;
 
@@ -526,6 +531,56 @@ public class EntityManager : MonoBehaviour
         }
 
         _food.Tick();
+    }
+
+    private void PromoteUrgent(int batch)
+    {
+        int due = _urgent.Count;
+        if (due == 0) return;
+
+        int batchEnd = _tickCursor + batch;
+        int slot = _tickCursor;
+        int keep = 0;
+        for (int i = 0; i < due; i++)
+        {
+            var e = _urgent.At(i);
+            int from = e.TickSlot;
+            bool placed = !e.IsDisposed && !e.IsDeathPending && from >= 0 && from < _tickCount
+                       && ReferenceEquals(_tickSnapshot[from], e);
+            if (!placed || (from >= _tickCursor && from < batchEnd))
+            {
+                e.ClearTickDue();
+                continue;
+            }
+            if (slot >= batchEnd)
+            {
+                _urgent.Keep(keep++, e);
+                continue;
+            }
+
+            var displaced = _tickSnapshot[slot];
+            if (from >= batchEnd)
+            {
+                _tickSnapshot[from] = displaced;
+                if (displaced != null) displaced.TickSlot = from;
+            }
+            else if (_tickCount < _tickSnapshot.Length)
+            {
+                _tickSnapshot[_tickCount] = displaced;
+                if (displaced != null) displaced.TickSlot = _tickCount;
+                _tickCount++;
+            }
+            else
+            {
+                e.ClearTickDue();
+                continue;
+            }
+            _tickSnapshot[slot] = e;
+            e.TickSlot = slot;
+            slot++;
+            e.ClearTickDue();
+        }
+        _urgent.Truncate(keep);
     }
 
     private void CloseTickWindow()
@@ -794,15 +849,20 @@ public class EntityManager : MonoBehaviour
         using var scope = SnapshotMarker.Auto();
         int count = _entities.Count;
 
-        if (count > _tickSnapshot.Length)
+        int required = count + (count >> 3) + 1;
+        if (required > _tickSnapshot.Length)
         {
             int cap = _tickSnapshot.Length;
-            while (cap < count) cap <<= 1;
+            while (cap < required) cap <<= 1;
             _tickSnapshot = new EntityModel[cap];
         }
 
         for (int i = 0; i < count; i++)
-            _tickSnapshot[i] = _entities[i];
+        {
+            var e = _entities[i];
+            _tickSnapshot[i] = e;
+            e.TickSlot = i;
+        }
 
         if (_tickCount > count)
             Array.Clear(_tickSnapshot, count, _tickCount - count);

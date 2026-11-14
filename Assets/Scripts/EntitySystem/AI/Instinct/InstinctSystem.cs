@@ -19,6 +19,8 @@ public static class InstinctBits
     public const uint Recruit = 1u << 10;
     public const uint Nursery = 1u << 11;
     public const uint Feeding = 1u << 12;
+    public const uint Threat  = 1u << 13;
+    public const uint Startle = 1u << 14;
 
     public const byte NoReflex = byte.MaxValue;
 }
@@ -56,6 +58,7 @@ public struct InstinctInput
     public byte  RunningAction;
     public byte  RunningDirection;
     public byte  RunningInstinct;
+    public byte  EatFailed;
     public byte  PlanActive;
     public byte  PlanKind;
 }
@@ -94,6 +97,7 @@ public struct InstinctState
 {
     public uint  Latches;
     public float NextHungerInterrupt;
+    public float NextStartle;
 }
 
 public struct InstinctOutput
@@ -104,6 +108,7 @@ public struct InstinctOutput
     public byte Direction;
     public byte Interrupt;
     public byte NeedsDecision;
+    public float StartleStress;
 }
 
 public struct InstinctRules
@@ -122,6 +127,8 @@ public struct InstinctRules
     public float NurseryRate;
     public float TetherRate;
     public float NightHomeRate;
+    public float StartleStress;
+    public float StartleCooldown;
 
     public static InstinctRules Capture()
     {
@@ -142,6 +149,8 @@ public struct InstinctRules
             NurseryRate        = r.NurseryRate,
             TetherRate         = r.TetherRate,
             NightHomeRate      = r.NightHomeRate,
+            StartleStress      = r.StartleStress,
+            StartleCooldown    = r.StartleCooldown,
         };
     }
 }
@@ -187,6 +196,8 @@ public struct InstinctJob : IJobFor
         bool atNest     = x.AtNest != 0;
         bool nestFood   = atNest && x.NestFood != 0;
         bool hasThreat  = x.HasThreat != 0;
+        bool startle    = hasThreat && (state.Latches & InstinctBits.Threat) == 0 && x.Now >= state.NextStartle;
+        latches        |= hasThreat ? InstinctBits.Threat : 0u;
         bool young      = x.Age < R.JuvenileTime;
         bool juvenile   = young && x.ParentDistance >= 0f;
         bool grazing    = x.PlanActive != 0 && (x.PlanKind == (byte)PlanKind.Graze || x.PlanKind == (byte)PlanKind.Harvest
@@ -229,10 +240,10 @@ public struct InstinctJob : IJobFor
             Pick(ref reflex, ref prio, ref mask, ref dir, Move, OwnPoi, 3, InstinctBits.Recruit);
         else if (hungry && !sated && foodFar && !nestFood && !hasThreat && !grazing)
             Pick(ref reflex, ref prio, ref mask, ref dir, Move, Food, 2, InstinctBits.Seek);
-        else if ((hungry || wasFeeding) && !sated && (foodNear || nestFood))
+        else if ((hungry || (wasFeeding && x.EatFailed == 0)) && !sated && (foodNear || nestFood))
             Pick(ref reflex, ref prio, ref mask, ref dir, Eat, NoDirection, 1, InstinctBits.Eat);
 
-        bool feeding = !sated && (foodNear || nestFood) && (reflex == Eat || wasFeeding);
+        bool feeding = x.EatFailed == 0 && !sated && (foodNear || nestFood) && (reflex == Eat || wasFeeding);
         if (feeding) latches |= InstinctBits.Feeding;
 
         if (reflex != InstinctBits.NoReflex)
@@ -266,9 +277,19 @@ public struct InstinctJob : IJobFor
                 interrupt = 1;
                 mask |= InstinctBits.Panic;
             }
+            if (startle && x.PlanKind != (byte)PlanKind.Flee)
+            {
+                interrupt = 1;
+                mask |= InstinctBits.Startle;
+            }
         }
 
-        States[i] = new InstinctState { Latches = latches, NextHungerInterrupt = nextHunger };
+        States[i] = new InstinctState
+        {
+            Latches = latches,
+            NextHungerInterrupt = nextHunger,
+            NextStartle = startle ? x.Now + R.StartleCooldown : state.NextStartle,
+        };
 
         bool idle = x.Busy == 0 && x.PlanActive == 0;
         Outputs[i] = new InstinctOutput
@@ -279,6 +300,7 @@ public struct InstinctJob : IJobFor
             Direction     = dir,
             Interrupt     = interrupt,
             NeedsDecision = (byte)(reflex == InstinctBits.NoReflex && (interrupt != 0 || idle) ? 1 : 0),
+            StartleStress = startle ? R.StartleStress : 0f,
         };
     }
 

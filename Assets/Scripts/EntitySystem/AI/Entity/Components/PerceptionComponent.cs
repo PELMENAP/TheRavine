@@ -33,7 +33,8 @@ public class PerceptionComponent : IComponent
         float nearestRadius, float crowdRadius, int crowdCap,
         out float nearestDistance, out int crowd, out int kin,
         out EntityModel foreign, out float foreignDistance,
-        EntityModel lastVictim = null, float stickMul = 1f, float lowHpMul = 1f)
+        EntityModel lastVictim = null, float stickMul = 1f, float lowHpMul = 1f,
+        StatsComponent familiarKey = null, float familiarMul = 1f)
     {
         if (_grid == null)
         {
@@ -46,7 +47,7 @@ public class PerceptionComponent : IComponent
         }
         return _grid.Survey(origin, self, colony, nearestRadius, crowdRadius, crowdCap,
             out nearestDistance, out crowd, out kin, out foreign, out foreignDistance,
-            lastVictim, stickMul, lowHpMul);
+            lastVictim, stickMul, lowHpMul, familiarKey, familiarMul);
     }
 
     public void Dispose() { }

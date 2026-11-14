@@ -155,7 +155,8 @@ public sealed class EntitySpatialGrid : IDisposable
         float nearestRadius, float crowdRadius, int crowdCap,
         out float nearestDistance, out int crowd, out int kin,
         out EntityModel foreign, out float foreignDistance,
-        EntityModel lastVictim = null, float stickMul = 1f, float lowHpMul = 1f)
+        EntityModel lastVictim = null, float stickMul = 1f, float lowHpMul = 1f,
+        StatsComponent familiarKey = null, float familiarMul = 1f)
     {
         using var scope = SurveyMarker.Auto();
         nearestDistance = -1f;
@@ -218,7 +219,8 @@ public sealed class EntitySpatialGrid : IDisposable
                 }
                 if (asForeign)
                 {
-                    float score = math.sqrt(sqr) * (ReferenceEquals(m, lastVictim) ? stickMul : 1f) * HealthWeight(m, lowHpMul);
+                    float score = math.sqrt(sqr) * (ReferenceEquals(m, lastVictim) ? stickMul : 1f) * HealthWeight(m, lowHpMul)
+                                * (familiarKey != null && ReferenceEquals(m.Stats, familiarKey) ? familiarMul : 1f);
                     if (score < minForeignScore)
                     {
                         minForeignScore = score;

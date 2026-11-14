@@ -118,7 +118,8 @@ public partial class EntityModel
 
         PerceptionMarker.Begin();
         _nearest = Perception.Survey(pos, this, Colony, detect, rules.CrowdRadius, Neighbors.Length, out _nearestDistance, out _crowd, out _kinCrowd,
-            out _nearestForeign, out _nearestForeignDistance, RecentVictim, rules.HuntStickMul, rules.HuntLowHpMul);
+            out _nearestForeign, out _nearestForeignDistance, RecentVictim, rules.HuntStickMul, rules.HuntLowHpMul,
+            _harmKey, 1f + rules.FamiliarityHuntMul * _familiarity);
         float outnumbered = math.saturate((_crowd - _kinCrowd - _kinCrowd) / math.max(rules.OutnumberedNorm, 1e-3f));
         if (outnumbered > 0f) AddStress(rules.OutnumberedStress * outnumbered * dt);
 
@@ -173,6 +174,8 @@ public partial class EntityModel
         ReadForeignVitals(playerStats, playerVirology, out float foreignHp, out float foreignEnergy, out float foreignViral,
             out StatsComponent foreignSource);
         _targetWeak = foreignSource != null && foreignHp < rules.HuntFinishHp;
+        bool sameStranger = foreignSource != null && ReferenceEquals(foreignSource, _harmKey);
+        _familiarity = sameStranger ? FamiliarityMath.Grow(_familiarity, dt, rules.FamiliarityTau) : 0f;
         float foreignHarm = ReferenceEquals(foreignSource, _harmKey) ? math.max(0f, _harmPrevHp - foreignHp) : 0f;
         _harmKey    = foreignSource;
         _harmPrevHp = foreignHp;
@@ -363,6 +366,7 @@ public partial class EntityModel
         brainCtx.EnergyNorm    = EffectiveEnergyNorm;
         brainCtx.PlanHints     = PlanHints;
         brainCtx.ColonyStorage = frame.NestStorage;
+        brainCtx.EndedPlanShare = Colony != null && brainCtx.CurrentPlan < PlanKind.Count ? Colony.Stats.PlanShare(brainCtx.CurrentPlan) : 0f;
         brainCtx.DirectionMask = _dirMask;
         brainCtx.SetTemperatureScale(TemperatureScale(brainCtx, in rules));
 
@@ -411,6 +415,7 @@ public partial class EntityModel
             RunningAction   = running >= 0 ? (byte)running : InstinctBits.NoReflex,
             RunningDirection = _runner.CurrentDirection,
             RunningInstinct = _runner.IsRunning && _runner.CurrentSource == CommandSource.Instinct ? (byte)1 : (byte)0,
+            EatFailed       = _eatFailed ? (byte)1 : (byte)0,
             PlanActive      = _plan.IsActive ? (byte)1 : (byte)0,
             PlanKind        = (byte)_plan.Kind,
             Caste           = (byte)Caste,

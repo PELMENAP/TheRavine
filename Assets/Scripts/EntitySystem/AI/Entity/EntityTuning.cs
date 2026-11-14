@@ -16,6 +16,7 @@ public struct CasteModifiers
     public float Health;
     public float EnergyUpkeep;
     public float Speed;
+    public float RunSpeed;
     public float EnergyCapacity;
     public float Detection;
     public float RestHeal;
@@ -33,7 +34,7 @@ public struct CasteModifiers
 
     public static CasteModifiers Neutral => new()
     {
-        Attack = 1f, Health = 1f, EnergyUpkeep = 1f, Speed = 1f, EnergyCapacity = 1f, Detection = 1f,
+        Attack = 1f, Health = 1f, EnergyUpkeep = 1f, Speed = 1f, RunSpeed = 1f, EnergyCapacity = 1f, Detection = 1f,
         RestHeal = 1f, Cooldown = 1f, GroupBonus = 1f, NestFoodCost = 1f, EatSpeed = 1f, Carry = 1f,
         StoreEfficiency = 1f, DamageTaken = 1f, LevyAlpha = 1f, Range = 1f, PoiWeight = 1f, Feed = 1f,
     };
@@ -52,6 +53,8 @@ public struct CasteModifiers
                 m.Cooldown     = r.SoldierCooldownMul;
                 m.GroupBonus   = r.SoldierGroupBonusMul;
                 m.NestFoodCost = r.SoldierNestFoodCostMul;
+                m.RunSpeed     = r.SoldierRunSpeedMul;
+                m.Detection    = r.SoldierDetectMul;
                 break;
             case Caste.Worker:
                 m.EatSpeed    = r.WorkerEatSpeedMul;
@@ -144,7 +147,7 @@ public struct EntityTuning
 
         float speedCost = math.pow(speed, r.GeneSpeedCostExponent);
         t.MoveSpeed         *= speed;
-        t.RunSpeed          *= speed;
+        t.RunSpeed          *= speed * caste.RunSpeed;
         t.EnergyCostMoving  *= speedCost;
         t.EnergyCostRunning *= speedCost;
 

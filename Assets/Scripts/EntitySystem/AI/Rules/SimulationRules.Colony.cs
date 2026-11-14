@@ -91,6 +91,8 @@ public sealed partial class SimulationRules
     [SerializeField] private float soldierCooldownMul = 0.8f;
     [SerializeField] private float soldierGroupBonusMul = 1.5f;
     [SerializeField] private float soldierNestFoodCostMul = 1.5f;
+    [SerializeField] private float soldierRunSpeedMul = 1f;
+    [SerializeField] private float soldierDetectMul = 1f;
     [SerializeField] private float workerEatSpeedMul = 1.5f;
     [SerializeField] private float workerCarryMul = 1.5f;
     [SerializeField] private float workerDamageTakenMul = 1.3f;
@@ -125,6 +127,13 @@ public sealed partial class SimulationRules
     [SerializeField] private float quorumMergeRadius = 10f;
     [SerializeField] private float quorumWindow = 120f;
     [SerializeField] private float quorumMaxDanger = 0.3f;
+    [SerializeField] private float quorumMinDistance = 20f;
+    [SerializeField] private float quorumSlopeLimit = 0.5f;
+    [SerializeField] private float quorumDepressionMul = 2f;
+    [SerializeField] private float quorumFoodNorm = 0.2f;
+    [SerializeField] private float quorumSlopeWeight = 1f;
+    [SerializeField] private float quorumHeightWeight = 1f;
+    [SerializeField] private float quorumFoodWeight = 0.5f;
     [SerializeField] private float nurseAgeEnd = 0.2f;
     [SerializeField] private float workerAgeEnd = 0.5f;
     [SerializeField] private float polyethismStimulus = 0.4f;
@@ -265,6 +274,8 @@ public sealed partial class SimulationRules
     public float SoldierCooldownMul => soldierCooldownMul;
     public float SoldierGroupBonusMul => soldierGroupBonusMul;
     public float SoldierNestFoodCostMul => soldierNestFoodCostMul;
+    public float SoldierRunSpeedMul => soldierRunSpeedMul;
+    public float SoldierDetectMul => soldierDetectMul;
     public float WorkerEatSpeedMul => workerEatSpeedMul;
     public float WorkerCarryMul => workerCarryMul;
     public float WorkerDamageTakenMul => workerDamageTakenMul;
@@ -299,6 +310,13 @@ public sealed partial class SimulationRules
     public float QuorumMergeRadius => quorumMergeRadius;
     public float QuorumWindow => quorumWindow;
     public float QuorumMaxDanger => quorumMaxDanger;
+    public float QuorumMinDistance => quorumMinDistance;
+    public float QuorumSlopeLimit => quorumSlopeLimit;
+    public float QuorumDepressionMul => quorumDepressionMul;
+    public float QuorumFoodNorm => quorumFoodNorm;
+    public float QuorumSlopeWeight => quorumSlopeWeight;
+    public float QuorumHeightWeight => quorumHeightWeight;
+    public float QuorumFoodWeight => quorumFoodWeight;
     public float NurseAgeEnd => nurseAgeEnd;
     public float WorkerAgeEnd => workerAgeEnd;
     public float PolyethismStimulus => polyethismStimulus;

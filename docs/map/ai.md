@@ -2,7 +2,8 @@
 
 Root: `Assets/Scripts/EntitySystem/AI/`. Assembly: `EntitySystem`. Rules for this folder: `Assets/Scripts/EntitySystem/AI/CLAUDE.md`.
 Tests: `Assets/Tests/EditMode/` — `BrainAllocationTests`, `BrainLearningTests`, `BrainArchitectureVersionTests`, `SnapshotVersionTests`,
-`SoaSwapBackTests`, `TickWindowBudgetTests`, `DecisionRingTests`, `ColonyRegistryTests`, `EntitySpatialGridSurveyTests`, `RulesDefaultsTests`.
+`SoaSwapBackTests`, `TickWindowBudgetTests`, `DecisionRingTests`, `ColonyRegistryTests`, `EntitySpatialGridSurveyTests`, `RulesDefaultsTests`,
+`NestSiteScoreTests`, `FamiliarityTests`, `CuriositySurplusTests`, `StartleTests`, `FoodLookupAllocationTests`.
 
 Tick order and hot methods: `docs/map/HOT_PATHS.md`. Existing structures to reuse: `docs/OPTIMIZATION.md` section 13.
 Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.cs`, `SimulationRules.cs`, `EntityModel.cs`): `docs/map/LARGE_FILES.md`.
@@ -21,6 +22,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 | `ActionCatalog` | `Assets/Scripts/EntitySystem/AI/ActionCatalog.cs` | Verb table, flags, goal and caste masks; enum in `EntityAction.cs` |
 | `InputVectorizer` | `Assets/Scripts/EntitySystem/AI/InputVectorizer.cs` | Observation → input vector (`VectorSize`) |
 | `TickWindowBudget` | `Assets/Scripts/EntitySystem/AI/TickWindowBudget.cs` | How many agents tick this frame |
+| `UrgentTickQueue` | `Assets/Scripts/EntitySystem/AI/UrgentTickQueue.cs` | Creatures that took damage and are due for an early tick; `EntityManager.PromoteUrgent` moves them to the front of the current batch inside the same window |
 
 ## Agent (`Assets/Scripts/EntitySystem/AI/Entity/`)
 
@@ -58,7 +60,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 
 ## Colony (`Assets/Scripts/EntitySystem/AI/Colony/` and the Nest, Caste, Population folders next to it)
 
-- `ColonyState`: `Index`, `ColonyId`, `Brain`, `Nest`, `Pois`, `Stats`, members, leader, nest-site quorum.
+- `ColonyState`: `Index`, `ColonyId`, `Brain`, `Nest`, `Pois`, `Stats`, members, leader, nest-site quorum. A nest-site vote is weighted by `ColonyState.SiteScore` (slope, relative height, food field, distance from the nest).
 - `NestState` (`Assets/Scripts/EntitySystem/AI/Nest/NestState.cs`): channel fields in `NativeArray`, read through `ColonyFieldView`.
 - Channels (`ColonyChannel`): `Food`, `Danger`, `Trail`, `KinDeath`, `Explored`, `Sickness`, `Territory`.
 - `ColonyPoiBoard`: shared points of interest; `Offer` merges, `ReportEmpty` lowers `EnergyEma` of a point within the merge radius and never creates one. `ColonyStats`: counters per colony. `EnergyLedger`: energy flows of the world.
@@ -101,7 +103,7 @@ All are indexed by `EntityModel.ManagerIndex` and expose `RemoveSwapBack`. The r
 
 ## Invariants
 
-- Agents tick only from `EntityManager.Update`; there is no second tick path.
+- Agents tick only from `EntityManager.Update`; there is no second tick path. An urgent tick (damage) is a reorder of the current snapshot by `PromoteUrgent`, not a second path: the batch size stays `TickWindowBudget.Take`.
 - Simulation time is `SimulationClock`; Unity time is read only where `SimulationClock.Advance` is called.
 - A change of `InputVectorizer.VectorSize`, `PlanCatalog.Count`, `ActionCatalog.Count` or layer sizes increments `SharedBrainSnapshot.Version`.
 - Access to a colony is explicit (`EntityManager.Colonies`, `ColonyRegistry.TryGetById`, `EntityModel.Colony`); nests are not in the `ServiceLocator`.
