@@ -13,21 +13,11 @@ MonoBehaviour:
   m_Name: ObjectInfoRegistry
   m_EditorClassIdentifier: ObjectSystem::TheRavine.ObjectControl.ObjectInfoRegistry
   objectInfos:
-  - {fileID: 11400000, guid: e828bdd4414fd6592b45f8d69cc96244, type: 2}
-  - {fileID: 11400000, guid: 442dcb913e2c5725181655fa6b1775ea, type: 2}
-  - {fileID: 11400000, guid: 6e2a7935e8c3b36ff9f921cc974ab698, type: 2}
-  - {fileID: 11400000, guid: fa46cef959ea6ab58aa1f30ca15a892e, type: 2}
-  - {fileID: 11400000, guid: e96f92ed0b90302dba29c38db65524b0, type: 2}
-  - {fileID: 11400000, guid: e23769a0b98747349af18b93b2db8788, type: 2}
-  - {fileID: 11400000, guid: f93e1ffefd235d615a1bd882c75bb125, type: 2}
-  - {fileID: 11400000, guid: 80339deec3dfda594b587c1668a63245, type: 2}
-  - {fileID: 11400000, guid: 7d565ea7b99b72579852dce5694b2ecc, type: 2}
-  - {fileID: 11400000, guid: e0a889cafc4a1f2019435f6d304cd4be, type: 2}
-  - {fileID: 11400000, guid: 65c7559b8f03def1c9bbf0d14b5dca7e, type: 2}
   - {fileID: 11400000, guid: 96f33b9848660268f96576146d324d0d, type: 2}
   - {fileID: 11400000, guid: 7bbd0072588a487a28dc34b8065a12f4, type: 2}
   - {fileID: 11400000, guid: 52b6faea7c6afbc07a303852604016cb, type: 2}
   - {fileID: 11400000, guid: 6a7dff91e754bfb9f840836e5e5ab22d, type: 2}
+  - {fileID: 11400000, guid: ee1052fd7c1103e43b56138c6a16ed2c, type: 2}
   - {fileID: 11400000, guid: b208f53ee19693c95b5612deabface28, type: 2}
   - {fileID: 11400000, guid: 1c94f756ba3d0f29facea1cf91be7fec, type: 2}
   - {fileID: 11400000, guid: cac3f76b468575364a79212e2dc85ceb, type: 2}
@@ -43,12 +33,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 35a86ee8a8aacf6cbaf259f26251680e, type: 2}
   - {fileID: 11400000, guid: 442b367888fac8d03a12ffa4b207be67, type: 2}
   - {fileID: 11400000, guid: f2627d2fd63be5505a20238a9bb37833, type: 2}
-  - {fileID: 11400000, guid: 35620d5efb66ec8999023233c714062b, type: 2}
   - {fileID: 11400000, guid: a22de2c47c01b2b38893a134be810ed8, type: 2}
   - {fileID: 11400000, guid: d61c7046bb9c6ac2c8c2ba4c2c6cfc52, type: 2}
-  - {fileID: 11400000, guid: a6e3ef04c70c055e2802da530c9984aa, type: 2}
-  - {fileID: 11400000, guid: 862dc4caaae343dc38d50243c44cdf46, type: 2}
   - {fileID: 11400000, guid: ace90b27fe62411cb11fcb43663edbba, type: 2}
-  - {fileID: 11400000, guid: ee1052fd7c1103e43b56138c6a16ed2c, type: 2}
-  - {fileID: 11400000, guid: 28acdce1db38e71d48c91a3e33b7b61c, type: 2}
   - {fileID: 11400000, guid: 3bc87e0747cd47e6ebf8acfd92e061c5, type: 2}
+  - {fileID: 11400000, guid: 28acdce1db38e71d48c91a3e33b7b61c, type: 2}

@@ -113,7 +113,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 58c179839cc7e1e4bb7fdb33c0866483, type: 3}
-  m_Name: mtreee
+  m_Name: spruce
   m_EditorClassIdentifier: MTree.Runtime::Mtree.TreeTemplate
   treeFunctions:
   - {fileID: -8635709158396049940}
