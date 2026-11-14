@@ -41,6 +41,7 @@ public class EntityManager : MonoBehaviour
 
     [Header("Rules")]
     [SerializeField] private SimulationRules rules;
+    [SerializeField] private SkillAtlas skillAtlas;
 
     [Header("Speech audio")]
     [SerializeField] private bool speechAudio = true;
@@ -105,6 +106,10 @@ public class EntityManager : MonoBehaviour
     public PlayerPresence Players => _players;
     private UtilityPriorSystem   _utility;
     private CasteThresholdSystem _thresholds;
+    private SkillGraphStore _skills;
+    private SkillGraphSolver _skillSolver;
+    private float _lastSkillSweep;
+    private int _skillSweepCursor;
     private SpeechBus            _speech;
     public SpeechBus Speech => _speech;
     private ColonyState _wild;
@@ -137,6 +142,7 @@ public class EntityManager : MonoBehaviour
     private static readonly ProfilerMarker SnapshotMarker    = new("EntityManager.RebuildTickSnapshot");
     private static readonly ProfilerMarker BatchMarker       = new("EntityManager.RunTickBatch");
     private static readonly ProfilerMarker CloseWindowMarker = new("EntityManager.CloseTickWindow");
+    private static readonly ProfilerMarker SkillSweepMarker  = new("EntityManager.SkillDecaySweep");
 
     public EntityModel GetRandomEntity()
         => _entities.Count == 0 ? null : _entities[RavineRandom.RangeInt(0, _entities.Count)];
@@ -314,6 +320,10 @@ public class EntityManager : MonoBehaviour
         _boids     = new BoidSystem(_capacity);
         _utility    = new UtilityPriorSystem(_capacity);
         _thresholds = new CasteThresholdSystem(_capacity);
+        SkillAtlas.Bind(skillAtlas);
+        _skills      = new SkillGraphStore(_capacity, SkillAtlas.Active.Count);
+        _skillSolver = new SkillGraphSolver();
+        ServiceLocator.Register(_skills);
         _speech     = new SpeechBus(_capacity, _entities);
         SpeechMetrics.Reset();
         ServiceLocator.Register(_thresholds);
@@ -338,9 +348,9 @@ public class EntityManager : MonoBehaviour
         ServiceLocator.Register(_infection.Service);
         _food       = new ColonyFood(maxFood, _ledger);
         _soilFeed   = new SoilShaderFeed();
-        _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue));
+        _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue), _skills);
         _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, _capacity, spawnRadius,
-            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _utility, _thresholds, _boids, _ledger, _speech);
+            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _utility, _thresholds, _skills, _boids, _ledger, _speech);
         _population.Spawned += RaiseSpawned;
         _population.Died    += RaiseDied;
         _urgent = new UrgentTickQueue(_capacity);
@@ -361,8 +371,12 @@ public class EntityManager : MonoBehaviour
     }
 
     private ColonyState AddColony(Vector3 position, bool wild = false)
-        => _colonies.Add(new Unity.Mathematics.float2(position.x, position.z),
+    {
+        var colony = _colonies.Add(new Unity.Mathematics.float2(position.x, position.z),
             new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden), _capacity, wild);
+        _skills.PublishColony(colony.Index, colony.SkillTopology);
+        return colony;
+    }
 
 
 
@@ -596,6 +610,8 @@ public class EntityManager : MonoBehaviour
         _food.PruneUnloaded();
         TickNests();
         TickColonies();
+        SweepSkills();
+        SolveSkills();
         UpdateVisibility();
 
         float now = SimulationClock.Time;
@@ -603,6 +619,35 @@ public class EntityManager : MonoBehaviour
         {
             if (SimulationRules.Active.PeriodicGenotypeOverwrite) EvolveGenotypes();
             _nextGenerationTime = now + SimulationRules.Active.GenerationInterval;
+        }
+    }
+
+    private void SweepSkills()
+    {
+        int live = _entities.Count;
+        float now = SimulationClock.Time;
+        float dt = now - _lastSkillSweep;
+        if (live == 0 || !(dt > 0f)) return;
+        using var scope = SkillSweepMarker.Auto();
+        ref readonly var r = ref SimulationRules.Frame;
+        _lastSkillSweep = now;
+        int length = math.clamp((int)math.ceil(live * dt / math.max(r.SkillSweepInterval, 1e-3f)), 1, live);
+        if (_skillSweepCursor >= live) _skillSweepCursor = 0;
+        _skills.ScheduleDecay(_skillSweepCursor, length, live, now, r.SkillDecayRate, r.SkillSavingsFloor).Complete();
+        _skillSweepCursor = (_skillSweepCursor + length) % live;
+    }
+
+    private void SolveSkills()
+    {
+        double now = SimulationClock.TimeD;
+        var active = SimulationRules.Active;
+        var atlas = SkillAtlas.Active;
+        for (int c = 0; c < _colonies.Count; c++)
+        {
+            var colony = _colonies[c];
+            if (now < colony.NextSkillSolve) continue;
+            colony.NextSkillSolve = now + active.SkillSolverInterval;
+            _skillSolver.Step(colony, _skills, atlas, active);
         }
     }
 
@@ -973,6 +1018,7 @@ public class EntityManager : MonoBehaviour
     {
         var services = ServiceLocator.Services;
         services.Unregister(_thresholds);
+        services.Unregister(_skills);
         services.Unregister(_grid);
         services.Unregister(_speech);
         services.Unregister(_players);
@@ -1019,6 +1065,7 @@ public class EntityManager : MonoBehaviour
         _boids?.Dispose();
         _utility?.Dispose();
         _thresholds?.Dispose();
+        _skills?.Dispose();
         _speech?.Dispose();
         _grid.Dispose();
         _colonies?.Dispose();

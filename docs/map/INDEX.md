@@ -22,13 +22,13 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 20 | 2379 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
-| `Assets/Scripts/EntitySystem/AI` | 11 | 2084 |
+| `Assets/Scripts/EntitySystem/AI` | 11 | 2158 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
-| `Assets/Scripts/EntitySystem/AI/Colony` | 7 | 793 |
+| `Assets/Scripts/EntitySystem/AI/Colony` | 7 | 798 |
 | `Assets/Scripts/EntitySystem/AI/Debug` | 3 | 1615 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 784 |
-| `Assets/Scripts/EntitySystem/AI/Entity` | 17 | 2666 |
-| `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1456 |
+| `Assets/Scripts/EntitySystem/AI/Entity` | 18 | 2732 |
+| `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1460 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 713 |
 | `Assets/Scripts/EntitySystem/AI/Flock` | 1 | 230 |
 | `Assets/Scripts/EntitySystem/AI/Instinct` | 1 | 441 |
@@ -36,10 +36,10 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Nest` | 1 | 394 |
 | `Assets/Scripts/EntitySystem/AI/Perception` | 9 | 2057 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 567 |
-| `Assets/Scripts/EntitySystem/AI/Population` | 4 | 738 |
+| `Assets/Scripts/EntitySystem/AI/Population` | 4 | 753 |
 | `Assets/Scripts/EntitySystem/AI/Rules` | 10 | 3082 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI` | 21 | 3445 |
-| `Assets/Scripts/EntitySystem/AI/Skills` | 10 | 1442 |
+| `Assets/Scripts/EntitySystem/AI/Skills` | 13 | 1773 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 7 | 1099 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
@@ -116,7 +116,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/View` | 2 | 23 |
-| `Assets/Tests/EditMode` | 58 | 7815 |
+| `Assets/Tests/EditMode` | 60 | 8241 |
 
 ## Assemblies
 
@@ -471,7 +471,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | WorldCommandStats | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | 27 |
 | WorldEditResult | enum | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | 205 |
 | WorldEdits | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | 217 |
-| XorShift32 | struct | `Assets/Scripts/EntitySystem/AI/GeneticParameters.cs` | 232 |
+| XorShift32 | struct | `Assets/Scripts/EntitySystem/AI/GeneticParameters.cs` | 259 |
 
 ## Files not to read
 

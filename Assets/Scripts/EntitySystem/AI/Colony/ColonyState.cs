@@ -16,6 +16,8 @@ public sealed class ColonyState : IDisposable
     public double NextElection;
     public readonly int[] CasteCounts = new int[(int)Caste.Count];
     public int JuvenileCount;
+    public SkillGraphTopology SkillTopology { get; private set; }
+    public double NextSkillSolve;
 
     public const int NoBucket       = -1;
     public const int JuvenileBucket = (int)Caste.Count;
@@ -210,6 +212,7 @@ public sealed class ColonyState : IDisposable
         Pois     = new ColonyPoiBoard(SimulationRules.Active.ColonyPoiCount);
         Brain    = brain;
         _members = new int[math.max(capacity, 4)];
+        SkillTopology = SkillGraphTopology.Create(SkillAtlas.Active, SkillGraphTopology.DrawForestGenes());
     }
 
     public void ReplaceBrain(SharedHierarchicalBrain brain) => Brain = brain;
@@ -271,6 +274,8 @@ public sealed class ColonyState : IDisposable
     public void Dispose()
     {
         Nest.Dispose();
+        SkillTopology?.Dispose();
+        SkillTopology = null;
         Brain?.Dispose();
         Brain = null;
         _memberCount = 0;

@@ -158,6 +158,22 @@ public sealed partial class SkillGraphTopology : IDisposable
     public bool CanPrune(int u, int v, int rootVertex)
         => CanPrune(u, v, rootVertex, out _, out _, out _);
 
+    public bool CanPrune(int u, int v, int rootVertex, out ulong far)
+        => CanPrune(u, v, rootVertex, out far, out _, out _);
+
+    public void PreviewBuild(int u, int v, out float cycleFactor, out int cliqueSize)
+    {
+        ulong bitU = 1ul << u, bitV = 1ul << v;
+        _active[u] |= bitV;
+        _active[v] |= bitU;
+        Rebuild();
+        cycleFactor = _cycleFactor[u];
+        cliqueSize = _cliqueSize[u];
+        _active[u] &= ~bitV;
+        _active[v] &= ~bitU;
+        Rebuild();
+    }
+
     private bool CanPrune(int u, int v, int rootVertex, out ulong far, out int near, out int farVertex)
     {
         far = 0ul;

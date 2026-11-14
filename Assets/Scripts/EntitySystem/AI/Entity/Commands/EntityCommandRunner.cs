@@ -82,7 +82,11 @@ public sealed class EntityCommandRunner
         if (stats != null)
         {
             int action = _decision.Action;
-            if (status == EntityCommandStatus.Completed) stats.RecordCompleted(action);
+            if (status == EntityCommandStatus.Completed)
+            {
+                stats.RecordCompleted(action);
+                _model.AwardSkillXp(action);
+            }
             else if (status == EntityCommandStatus.Failed) stats.RecordFailed(action);
             else if (status == EntityCommandStatus.Interrupted) stats.RecordInterrupted(action);
         }

@@ -97,10 +97,13 @@ public static class SkillGraphMath
         => blockScore <= 0f ? 1f : f.SkillCycleMinFactor + (1f - f.SkillCycleMinFactor) / (1f + f.SkillCycleScale * blockScore);
 
     public static float Decay(float level, float peak, float dt, float cycleFactor, in SimulationRules.RulesFrame f)
+        => Decay(level, peak, dt, cycleFactor, f.SkillDecayRate, f.SkillSavingsFloor);
+
+    public static float Decay(float level, float peak, float dt, float cycleFactor, float decayRate, float savingsFloor)
     {
-        float floor = f.SkillSavingsFloor * peak;
+        float floor = savingsFloor * peak;
         if (!(dt > 0f) || level <= floor) return level;
-        return floor + (level - floor) * math.exp(-f.SkillDecayRate * cycleFactor * dt);
+        return floor + (level - floor) * math.exp(-decayRate * cycleFactor * dt);
     }
 
     public static float EnvironmentDelta(float level, float peak, int vertex, ulong activeRow,

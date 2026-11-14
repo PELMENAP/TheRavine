@@ -100,6 +100,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public ulong LineageId => Virology != null ? Virology.EndogenousLineage : 0UL;
     public float CarryCapacity => Stats.MaxEnergy * SimulationRules.Frame.StomachCapacityFraction * _casteMods.Carry;
 
+    private CasteModifiers _roleMods = CasteModifiers.Neutral;
     private CasteModifiers _casteMods = CasteModifiers.Neutral;
     public ref readonly CasteModifiers CasteMods => ref _casteMods;
     public bool IsWild => Colony != null && Colony.IsWild;
@@ -171,6 +172,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private FoodTraits _foodTraits;
 
     private CasteThresholdSystem _thresholds;
+    private SkillGraphStore _skills;
 
     private double _lastAlarmCry = double.NegativeInfinity;
 
@@ -286,17 +288,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
     {
         Caste      = caste;
         CasteFixed = true;
-        var mods   = CasteModifiers.For(caste);
-        _casteMods = mods;
-        RestHealMul = mods.RestHeal;
-
-        var tuning = EntityTuning.Express(in _baseTuning, in Brain.Context.CoordMLP.Params, in mods);
-        Tuning = tuning;
-        float bodyBefore = BodyEnergy;
-        Stats.Rescale(tuning.MaxHealth, tuning.MaxEnergy);
-        Digestion.Resize(tuning.MaxEnergy * SimulationRules.Active.StomachCapacityFraction);
-        _ledger.Flows.RescaleNet += BodyEnergy - bodyBefore;
-        Vectorizer?.SetMaxima(tuning.MaxHealth, tuning.MaxEnergy);
+        _roleMods  = CasteModifiers.For(caste);
+        ApplyTuning();
         Brain.Context.CasteMask = ActionMask(caste);
         SyncCount();
     }
@@ -608,7 +601,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
         _trail = new float2[math.max(1, SimulationRules.Active.TrailCapacity)];
         ctx.CasteMask = ActionMask(Caste);
         var rulesA = SimulationRules.Active;
-        _casteMods = colony.IsWild ? CasteModifiers.Predator() : CasteModifiers.For(Caste);
+        _roleMods = colony.IsWild ? CasteModifiers.Predator() : CasteModifiers.For(Caste);
+        _casteMods = _roleMods;
         if (colony.IsWild) CasteFixed = true;
         var tuning = EntityTuning.Express(in baseTuning, in ctx.CoordMLP.Params, _casteMods);
         MaxAge = rulesA.BaseMaxAge * ctx.CoordMLP.Params.MaxAgeMul;
@@ -636,6 +630,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         ServiceLocator.Services.TryGet(out MovePlanner planner);
         ServiceLocator.Services.TryGet(out _players);
         ServiceLocator.Services.TryGet(out _thresholds);
+        ServiceLocator.Services.TryGet(out _skills);
         ServiceLocator.Services.TryGet(out InfectionService infection);
         Nest      = colony.IsWild ? null : colony.Nest;
         Planner   = planner;

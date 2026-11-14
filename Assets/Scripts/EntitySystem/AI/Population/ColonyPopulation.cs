@@ -26,6 +26,7 @@ public sealed class ColonyPopulation
     private readonly InstinctSystem       _instincts;
     private readonly UtilityPriorSystem   _utility;
     private readonly CasteThresholdSystem _thresholds;
+    private readonly SkillGraphStore     _skills;
     private readonly BoidSystem           _boids;
     private readonly EnergyLedger         _ledger;
     private readonly SpeechBus            _speech;
@@ -56,7 +57,7 @@ public sealed class ColonyPopulation
     public ColonyPopulation(GameObject prefab, Transform parent, EntityTuning tuning, int maxPopulation, int capacity, float spawnRadius,
         List<EntityModel> entities, ColonyRegistry colonies, ColonyState wild, ColonyFood food, EvolutionService evolution,
         EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, UtilityPriorSystem utility,
-        CasteThresholdSystem thresholds, BoidSystem boids, EnergyLedger ledger, SpeechBus speech)
+        CasteThresholdSystem thresholds, SkillGraphStore skills, BoidSystem boids, EnergyLedger ledger, SpeechBus speech)
     {
         _prefab        = prefab;
         _parent        = parent;
@@ -74,6 +75,7 @@ public sealed class ColonyPopulation
         _instincts     = instincts;
         _utility       = utility;
         _thresholds    = thresholds;
+        _skills        = skills;
         _boids         = boids;
         _ledger        = ledger;
         _speech        = speech;
@@ -131,6 +133,8 @@ public sealed class ColonyPopulation
         _instincts.Reset(model.ManagerIndex, InstinctGenes.From(in ctx.CoordMLP.Params));
         _utility.Write(model.ManagerIndex, default);
         _thresholds.Reset(model.ManagerIndex, CasteThresholdSystem.Initial());
+        _skills.Reset(model.ManagerIndex, in ctx.CoordMLP.Params, colony.SkillTopology, SkillAtlas.Active);
+        _skills.SetColony(model.ManagerIndex, colony.Index);
         ref readonly var rules = ref SimulationRules.Frame;
         bool muted = rules.SpeechMuteSampling && !colony.IsWild && RavineRandom.RangeFloat() < rules.SpeechMuteFraction;
         model.Speech.SetMuted(muted);
@@ -294,6 +298,7 @@ public sealed class ColonyPopulation
         _boids.RemoveSwapBack(idx, last);
         _utility.RemoveSwapBack(idx, last);
         _thresholds.RemoveSwapBack(idx, last);
+        _skills.RemoveSwapBack(idx, last);
         _speech.RemoveSwapBack(idx, last);
         _grid.MarkStale();
         _entities.RemoveAt(last);

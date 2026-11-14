@@ -27,6 +27,7 @@ public partial class EntityModel
         if (!_isActive.Value) return false;
         if (Stats.IsDisposed || Stats.Hp <= 0f) return false;
 
+        RefreshSkillTuning();
         Stats.Open();
         bool ok = RunCycle();
         Stats.Commit();
