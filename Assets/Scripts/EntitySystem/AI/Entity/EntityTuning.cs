@@ -41,6 +41,26 @@ public struct CasteModifiers
         StoreEfficiency = 1f, DamageTaken = 1f, LevyAlpha = 1f, Range = 1f, PoiWeight = 1f, Feed = 1f, Fear = 1f,
     };
 
+    public static CasteModifiers Combine(in CasteModifiers role, in SkillModifiers skills)
+    {
+        var m = role;
+        m.Attack          *= skills.Attack;
+        m.Health          *= skills.Health;
+        m.Speed           *= skills.Speed;
+        m.RunSpeed        *= skills.RunSpeed;
+        m.EnergyCapacity  *= skills.EnergyCapacity;
+        m.Detection       *= skills.Detection;
+        m.RestHeal        *= skills.RestHeal;
+        m.Cooldown        *= skills.Cooldown;
+        m.GroupBonus      *= skills.GroupBonus;
+        m.EatSpeed        *= skills.EatSpeed;
+        m.Carry           *= skills.Carry;
+        m.StoreEfficiency *= skills.StoreEfficiency;
+        m.DamageTaken     *= skills.DamageTaken;
+        m.Feed            *= skills.Feed;
+        return m;
+    }
+
     public static CasteModifiers For(Caste caste)
     {
         var r = SimulationRules.Active;
@@ -135,6 +155,17 @@ public struct EntityTuning
 
     public static EntityTuning Express(in EntityTuning source, in GeneticParameters g)
         => Express(in source, in g, CasteModifiers.Neutral);
+
+    public static EntityTuning Express(in EntityTuning source, in GeneticParameters g, in CasteModifiers role, in SkillModifiers skills)
+    {
+        var combined = CasteModifiers.Combine(in role, in skills);
+        var t = Express(in source, in g, in combined);
+        t.EnergyCostMoving    *= skills.MoveEnergyCost;
+        t.EnergyCostRunning   *= skills.MoveEnergyCost;
+        t.ReproduceEnergyCost *= skills.ReproduceCost;
+        t.ReproduceHealthCost *= skills.ReproduceCost;
+        return t;
+    }
 
     public static EntityTuning Express(in EntityTuning source, in GeneticParameters g, in CasteModifiers caste)
     {

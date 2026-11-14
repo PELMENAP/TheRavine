@@ -3,7 +3,7 @@
 Root: `Assets/Scripts/EntitySystem/AI/`. Assembly: `EntitySystem`. Rules for this folder: `Assets/Scripts/EntitySystem/AI/CLAUDE.md`.
 Tests: `Assets/Tests/EditMode/` — `BrainAllocationTests`, `BrainLearningTests`, `BrainArchitectureVersionTests`, `SnapshotVersionTests`,
 `SoaSwapBackTests`, `TickWindowBudgetTests`, `DecisionRingTests`, `ColonyRegistryTests`, `EntitySpatialGridSurveyTests`, `RulesDefaultsTests`,
-`NestSiteScoreTests`, `FamiliarityTests`, `CuriositySurplusTests`, `StartleTests`, `FoodLookupAllocationTests`, `PredatorPressureTests`, `SkillGraphTests`.
+`NestSiteScoreTests`, `FamiliarityTests`, `CuriositySurplusTests`, `StartleTests`, `FoodLookupAllocationTests`, `PredatorPressureTests`, `SkillGraphTests`, `SkillGraphAgentTests`.
 
 Tick order and hot methods: `docs/map/HOT_PATHS.md`. Existing structures to reuse: `docs/OPTIMIZATION.md` section 13.
 Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.cs`, `SimulationRules.cs`, `EntityModel.cs`): `docs/map/LARGE_FILES.md`.
@@ -26,7 +26,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 
 ## Agent (`Assets/Scripts/EntitySystem/AI/Entity/`)
 
-- `EntityModel` partial files: `.Cycle` (tick), `.Behaviour`, `.Social`, `.Directions`, `.Homeostasis`, `.Wild`, `.Fitness`.
+- `EntityModel` partial files: `.Cycle` (tick), `.Behaviour`, `.Social`, `.Directions`, `.Homeostasis`, `.Wild`, `.Fitness`, `.Skills`.
 - Components in `Assets/Scripts/EntitySystem/AI/Entity/Components/`: `BrainComponent`, `DigestionComponent`, `FitnessComponent`,
   `MortalityComponent`, `PerceptionComponent`, `PointsOfInterestComponent`, `SpeechComponent`, `StatsComponent`, `VisualCullingComponent`.
 - Commands, one file each, in `Assets/Scripts/EntitySystem/AI/Entity/Commands/`; they run through `EntityCommandRunner`.
@@ -73,7 +73,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 
 ## Skills (`Assets/Scripts/EntitySystem/AI/Skills/`)
 
-Design: `docs/design/skill_graph.md`. Rules: `SimulationRules.Skills.cs`; `RulesFrame` mirrors the fields the math reads. Nothing in the tick calls these types before stage 2.
+Design: `docs/design/skill_graph.md`. Rules: `SimulationRules.Skills.cs`; `RulesFrame` mirrors the fields the math reads.
 
 - `SkillAtlas`: ScriptableObject, one per world; points, `PotentialRow` adjacency masks, per-skill curve and XP cost, XP table by `EntityAction`. `SkillAtlas.Active` is bound by `SkillAtlas.Bind`; unbound it is `SkillAtlasBuilder.BuildDefault()` with a fixed seed, so every machine builds the same atlas.
 - `SkillAtlasBuilder`: Poisson points, Bowyer–Watson Delaunay, second diagonals by cocircularity, K5 check (`HasK5`). The editor menu `Tools/Ravine/Skills/Build Atlas` is `Assets/Scripts/Editor/SkillAtlasMenu.cs`.
@@ -81,6 +81,11 @@ Design: `docs/design/skill_graph.md`. Rules: `SimulationRules.Skills.cs`; `Rules
 - `SkillGraphMath`: static rules 1–12 of the design, Burst-compatible, rules by `in RulesFrame`.
 - `SkillGraphStore`: per-agent SoA (`Levels`, `Peaks`, `LastUsed`, `Talents`, `Roots`, `Dirty`); `Reset`, `Retarget`, `AddXp`, `Materialize`, `RemoveSwapBack`.
 - `SkillModifiers`: one multiplier per `SkillChannel`; `From(store, index, topology, atlas)`.
+- `SkillGraphXp.Award` adds the XP of a completed `EntityAction`; `EntityCommandRunner.Finish` calls it through `EntityModel.AwardSkillXp` for every creature.
+- `EntityModel.RefreshSkillTuning` re-expresses tuning at the start of a cycle when the store `Dirty` flag is set; `EntityTuning.Express` with `SkillModifiers` and `CasteModifiers.Combine`.
+- `SkillDecayJob`: Burst sweep over a sliding window of agents from `EntityManager.SweepSkills`; reads per-colony cycle factors published by `SkillGraphStore.PublishColony`.
+- `SkillGraphSolver.Step`: per-colony plasticity (build, prune) once per `SkillSolverInterval` from `EntityManager.SolveSkills`; `ColonyState.SkillTopology` is the colony graph, the wild colony owns one too.
+- Skill genes (`SkillOriginX/Y`, `Plast*`) are phenotypic: `CopyLearningGenes` never overwrites them. Saved brains do not hold genes.
 - `SkillAtlas.Skill` is a graph vertex; the ability skills of `Assets/Scripts/Model/EntitySkills/` (`ISkill`) are unrelated.
 
 ## Perception (`Assets/Scripts/EntitySystem/AI/Perception/`)

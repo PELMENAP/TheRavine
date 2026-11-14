@@ -49,6 +49,12 @@ public struct GeneticParameters
     public float CasteLearnMul;
     public float ReinterruptMul;
     public float DietCarnivory;
+    public float SkillOriginX;
+    public float SkillOriginY;
+    public float PlastHebb;
+    public float PlastStruct;
+    public float PlastExplore;
+    public float PlastNeed;
 
     public const int IdxMoveSpeedMul = 0;
     public const int IdxBaseLearningRate = 1;
@@ -87,6 +93,15 @@ public struct GeneticParameters
     public const int IdxCasteLearnMul = IdxCasteAffinityMul + 1;
     public const int IdxReinterruptMul = IdxCasteLearnMul + 1;
     public const int IdxDietCarnivory = IdxReinterruptMul + 1;
+    public const int IdxSkillOriginX = IdxDietCarnivory + 1;
+    public const int IdxSkillOriginY = IdxSkillOriginX + 1;
+    public const int IdxPlastHebb = IdxSkillOriginY + 1;
+    public const int IdxPlastStruct = IdxPlastHebb + 1;
+    public const int IdxPlastExplore = IdxPlastStruct + 1;
+    public const int IdxPlastNeed = IdxPlastExplore + 1;
+
+    public const float DefaultSkillOrigin = 0.5f;
+    public const float DefaultPlasticity = 1f;
 
     public static readonly (float min, float max, float mutationScale)[] ParameterRanges = {
         (0.5f, 2f, 0.08f),
@@ -127,6 +142,12 @@ public struct GeneticParameters
         (0.2f, 3f, 0.15f),
         (0.1f, 2.5f, 0.15f),
         (0f, 2f, 0.1f),
+        (0f, 1f, 0.1f),
+        (0f, 1f, 0.1f),
+        (0f, 2f, 0.15f),
+        (0f, 2f, 0.15f),
+        (0f, 2f, 0.15f),
+        (0f, 2f, 0.15f),
     };
 
     public static bool IsPhenotypic(int index)
@@ -178,6 +199,12 @@ public struct GeneticParameters
                 var (min, max, _) = ParameterRanges[i];
                 span[i] = RavineRandom.RangeFloat(min, max);
             }
+            p.SkillOriginX = DefaultSkillOrigin;
+            p.SkillOriginY = DefaultSkillOrigin;
+            p.PlastHebb = DefaultPlasticity;
+            p.PlastStruct = DefaultPlasticity;
+            p.PlastExplore = DefaultPlasticity;
+            p.PlastNeed = DefaultPlasticity;
             return p;
         }
     }

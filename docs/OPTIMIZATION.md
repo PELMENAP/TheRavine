@@ -166,6 +166,7 @@ Every per-agent array is indexed by `EntityModel.ManagerIndex` and sized from th
 - `BoidSystem`
 - `UtilityPriorSystem`
 - `CasteThresholdSystem`
+- `SkillGraphStore` (levels, peaks, last-used, talent, root, dirty flag, colony index, plasticity; per-colony cycle factors are published by colony index and are not swapped)
 - `MotionSystem` (`Positions` by ManagerIndex, slot map to the motion list; `Transform` is written only by `MotionApplyJob`)
 - `SpeechBus`
 - colony membership (`ColonyState.RemoveMember`, `RemapMember`)

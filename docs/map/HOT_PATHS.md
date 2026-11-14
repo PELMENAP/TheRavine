@@ -20,7 +20,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 8. `SharedHierarchicalBrain.RunDecisions` for every colony.
 9. Third loop: `EntityModel.EndCycle`.
 10. `MovePlanner.Flush`, then `InfectionCoordinator.Spread` on the batch.
-11. At the end of a window, `CloseTickWindow`: deaths, extinctions, predators, `ApplyPendingGradients`, nests, castes, visibility.
+11. At the end of a window, `CloseTickWindow`: deaths, extinctions, predators, `ApplyPendingGradients`, nests, castes, `SweepSkills`, `SolveSkills`, visibility.
 12. Every frame after the tick: `EntityManager.ApplyFireHeat` (once per fire step), `SpeechBus.Flush`, `MovePlanner.Flush`, `MotionSystem.Step`.
 
 | Area | File | Hot methods |
@@ -58,6 +58,9 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 | Utility | `Assets/Scripts/EntitySystem/AI/Utility/UtilityPriorSystem.cs` | `Write`, `Schedule`, `Output`, `UtilityPriorJob` |
 | Flocking | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | `Write`, `Run`, `Output`, `BoidJob` |
 | Castes | `Assets/Scripts/EntitySystem/AI/Caste/CasteThresholdSystem.cs` | `Get`, `Reinforce` |
+| Skills | `Assets/Scripts/EntitySystem/AI/Skills/SkillGraphStore.cs`, `SkillGraphMath.cs`, `SkillGraphXp.cs` | `AddXp`, `Award`, `Materialize`, math functions; `EntityModel.AwardSkillXp`, `RefreshSkillTuning` |
+| Skill sweep | `Assets/Scripts/EntitySystem/AI/Skills/SkillDecayJob.cs` | `SkillDecayJob`, `SkillGraphStore.ScheduleDecay`; marker `EntityManager.SkillDecaySweep` |
+| Skill solver | `Assets/Scripts/EntitySystem/AI/Skills/SkillGraphSolver.cs` | `Step`, once per `SkillSolverInterval` per colony, scratch buffers only; marker `SkillGraphSolver.Step` |
 | Colony fields | `Assets/Scripts/EntitySystem/AI/Nest/NestState.cs` | `Mark`, `MarkPair`, `FieldAt`, `SampleDirection`, decay and shift jobs |
 | Points of interest | `Assets/Scripts/EntitySystem/AI/Colony/ColonyPoiBoard.cs` | `Offer`, `TryPickBest` |
 | Speech | `Assets/Scripts/EntitySystem/AI/Speech/SpeechBus.cs` | `Emit`, `TryStartCooldown`, `InboxAt`, `Flush`, `SpeechDeliverJob` |

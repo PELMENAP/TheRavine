@@ -8,21 +8,21 @@ Line numbers are those of the last generation; after local edits treat them as a
 |---|---|
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1806 |
 | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1457 |
+| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1074 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1067 |
-| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1027 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 928 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 920 |
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 849 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 775 |
-| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 748 |
+| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 743 |
 | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | 730 |
 | `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs` | 687 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs` | 643 |
 | `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs` | 621 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 621 |
 | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 603 |
-| `Assets/Tests/EditMode/SkillGraphTests.cs` | 582 |
-| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 546 |
+| `Assets/Tests/EditMode/SkillGraphTests.cs` | 562 |
+| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 547 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassSystem.cs` | 509 |
 
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs`
@@ -188,6 +188,62 @@ Line numbers are those of the last generation; after local edits treat them as a
     - 632 BiomeToxicity
     - 641 RulesFrame
 
+## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
+
+- 15–1074 class EntityManager
+  - 77 RegisterEnergyConsumer
+  - 78 UnregisterEnergyConsumer
+  - 97 RaiseSpawned
+  - 98 RaiseDied
+  - 147 GetRandomEntity
+  - 150 SeedProbeStrain
+  - 153 SpawnEntity
+  - 156 SpawnChild
+  - 158 UpdateDiagnostics
+  - 167 EvolveGenotypes
+  - 173 SeedRandomStrain
+  - 176 Update
+  - 220 StampAgents
+  - 234 ApplyFireHeat
+  - 262 DecayWarmth
+  - 270 SampleEnergy
+  - 292 ReportThreat
+  - 303 Awake
+  - 363 CreateColonies
+  - 373 AddColony
+  - 383 SaveBrain
+  - 386 LoadBrain
+  - 389 ColonyModelName
+  - 391 SaveBestBrainAsync
+  - 401 LoadBrainAsync
+  - 437 ApplyLoadedBrain
+  - 453 Start
+  - 493 DelaySimulation
+  - 504 TickAgents
+  - 550 PromoteUrgent
+  - 600 CloseTickWindow
+  - 625 SweepSkills
+  - 640 SolveSkills
+  - 654 RunTickBatch
+  - 700 BeginColonyBatches
+  - 705 RunColonyDecisions
+  - 710 RunFlocking
+  - 728 TickColonies
+  - 784 UpdatePack
+  - 800 ChooseCaste
+  - 838 Stimulus
+  - 845 TickNests
+  - 898 SetEntityVisible
+  - 904 SetEntitiesVisible
+  - 910 RebuildTickSnapshot
+  - 941 UpdateVisibility
+  - 970 UpdateVisibilityByCamera
+  - 1000 CreateNestViews
+  - 1011 ReleaseServices
+  - 1017 UnregisterServices
+  - 1033 ResolveRules
+  - 1049 OnDestroy
+
 ## `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs`
 
 - 9–12 interface IFoodReceiver
@@ -252,60 +308,6 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 123–156 class FoodChunk
     - 140 Reset
   - 173–178 struct LargeClaim
-
-## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
-
-- 15–1027 class EntityManager
-  - 76 RegisterEnergyConsumer
-  - 77 UnregisterEnergyConsumer
-  - 96 RaiseSpawned
-  - 97 RaiseDied
-  - 141 GetRandomEntity
-  - 144 SeedProbeStrain
-  - 147 SpawnEntity
-  - 150 SpawnChild
-  - 152 UpdateDiagnostics
-  - 161 EvolveGenotypes
-  - 167 SeedRandomStrain
-  - 170 Update
-  - 214 StampAgents
-  - 228 ApplyFireHeat
-  - 256 DecayWarmth
-  - 264 SampleEnergy
-  - 286 ReportThreat
-  - 297 Awake
-  - 353 CreateColonies
-  - 363 AddColony
-  - 369 SaveBrain
-  - 372 LoadBrain
-  - 375 ColonyModelName
-  - 377 SaveBestBrainAsync
-  - 387 LoadBrainAsync
-  - 423 ApplyLoadedBrain
-  - 439 Start
-  - 479 DelaySimulation
-  - 490 TickAgents
-  - 536 PromoteUrgent
-  - 586 CloseTickWindow
-  - 609 RunTickBatch
-  - 655 BeginColonyBatches
-  - 660 RunColonyDecisions
-  - 665 RunFlocking
-  - 683 TickColonies
-  - 739 UpdatePack
-  - 755 ChooseCaste
-  - 793 Stimulus
-  - 800 TickNests
-  - 853 SetEntityVisible
-  - 859 SetEntitiesVisible
-  - 865 RebuildTickSnapshot
-  - 896 UpdateVisibility
-  - 925 UpdateVisibilityByCamera
-  - 955 CreateNestViews
-  - 966 ReleaseServices
-  - 972 UnregisterServices
-  - 987 ResolveRules
-  - 1003 OnDestroy
 
 ## `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs`
 
@@ -528,51 +530,51 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs`
 
-- 12–748 class EntityModel
+- 12–743 class EntityModel
   - 32 Activate
   - 33 Deactivate
   - 48 AssignId
   - 86 AddStress
   - 89 AddExtrinsicReward
   - 90 ConsumeExtrinsicReward
-  - 115 PlanRewardEma
-  - 145 ClearRecruit
-  - 146 Recruit
-  - 154 NoteFoodSite
-  - 159 TryGetFoodSite
-  - 166 RecordStored
-  - 184 SetLeader
-  - 196 SetFlock
-  - 198 BuildBoidAgent
-  - 258 SelectHuntTarget
-  - 285 AssignCaste
-  - 306 SyncCount
-  - 323 ClearCount
-  - 329 ActionMask
-  - 338 SetLastAction
-  - 348 CreateActionTimes
-  - 355 SinceAction
-  - 362 NoteThreatDisplay
-  - 366 TryGetKinTarget
-  - 398 NextPlanSide
-  - 401 Carry
-  - 402 TakeCarried
-  - 410 ReceiveFood
-  - 416 IngestFood
-  - 425 ConsumeReceivedFood
-  - 435 Warn
-  - 447 NoteVictim
-  - 468 TryGetThreatSource
-  - 521 MarkDeathPending
-  - 548 InvalidateCachedFood
-  - 575 TryStartAttackCooldown
-  - 583 SetUp
-  - 591 RequestReproduce
-  - 599 Configure
-  - 670 Init
-  - 710 InterruptCommand
-  - 712 Dispose
-  - 734 DeepClean
+  - 116 PlanRewardEma
+  - 146 ClearRecruit
+  - 147 Recruit
+  - 155 NoteFoodSite
+  - 160 TryGetFoodSite
+  - 167 RecordStored
+  - 186 SetLeader
+  - 198 SetFlock
+  - 200 BuildBoidAgent
+  - 260 SelectHuntTarget
+  - 287 AssignCaste
+  - 299 SyncCount
+  - 316 ClearCount
+  - 322 ActionMask
+  - 331 SetLastAction
+  - 341 CreateActionTimes
+  - 348 SinceAction
+  - 355 NoteThreatDisplay
+  - 359 TryGetKinTarget
+  - 391 NextPlanSide
+  - 394 Carry
+  - 395 TakeCarried
+  - 403 ReceiveFood
+  - 409 IngestFood
+  - 418 ConsumeReceivedFood
+  - 428 Warn
+  - 440 NoteVictim
+  - 461 TryGetThreatSource
+  - 514 MarkDeathPending
+  - 541 InvalidateCachedFood
+  - 568 TryStartAttackCooldown
+  - 576 SetUp
+  - 584 RequestReproduce
+  - 592 Configure
+  - 665 Init
+  - 705 InterruptCommand
+  - 707 Dispose
+  - 729 DeepClean
   - 14–14 enum FitnessEvent
 
 ## `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs`
@@ -810,58 +812,58 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Tests/EditMode/SkillGraphTests.cs`
 
-- 6–582 class SkillGraphTests
-  - 15 SetUp
-  - 23 TearDown
-  - 33 BuildGridAtlas
-  - 54 Link
-  - 60 Topology
-  - 67 Connected
-  - 84 RowsOf
-  - 91 DefaultAtlasHasEighteenPointsInsideTheUnitSquare
-  - 104 DefaultAtlasPotentialIsSymmetricWithoutSelfLoops
-  - 115 DefaultAtlasPotentialIsConnectedAndHasNoK5
-  - 124 K5CheckFindsACompleteFiveClique
-  - 136 BuilderProducesValidAtlasesForEverySizeAndSeed
-  - 148 XpTableHasAtMostTwoSourcesPerAction
-  - 163 FreshTreeHasNoCycleFactorBelowOne
-  - 171 IslandsAreDetachedFromTheMainComponent
-  - 183 OneAddedEdgeFormingATriangleGivesCliqueThreeForExactlyThreeVertices
-  - 204 ThreeAddedEdgesFormingK4GiveCliqueFour
-  - 219 BridgeIsReportedOnlyForEdgesOutsideCycles
-  - 242 BuildIsRefusedWithoutPointsAndLeavesStateUnchanged
-  - 267 PruneAndRestoreFollowTheBridgeRules
-  - 300 PruneRefusesACycleEdgeAndAnIsland
-  - 317 TalentIsOneAtTheOriginVertexAndNeverBelowTheMinimum
-  - 335 SixtyFourSkillsAtPeakOneEarnNoEdgePoints
-  - 354 DecayNeverCrossesTheSavingsFloor
-  - 370 CycleFactorLowersDecayInsideCyclesOnly
-  - 381 FallenSkillWithoutNeighboursGetsAPullAboveOnePointSix
-  - 401 NeighbourAbovePullsAHigherDelta
-  - 423 EffectGrowsWithTheFlooredLevelAndDividersInvert
-  - 434 AddXpOnAnUnavailableSkillChangesNothing
-  - 463 AddXpOnTheRootRaisesTheLevelAndEventuallyTheFlooredLevel
-  - 489 AddXpNeverAllocates
-  - 511 ModifiersAreNeutralUntilAChannelSkillLevelsUp
-  - 541 ModifiersIgnorePrunedSkills
-  - 576–581 class AtlasHandle
-    - 579 AtlasHandle
-    - 580 Dispose
+- 6–562 class SkillGraphTests
+  - 13 SetUp
+  - 21 TearDown
+  - 31 BuildGridAtlas
+  - 34 Link
+  - 40 Topology
+  - 47 Connected
+  - 64 RowsOf
+  - 71 DefaultAtlasHasEighteenPointsInsideTheUnitSquare
+  - 84 DefaultAtlasPotentialIsSymmetricWithoutSelfLoops
+  - 95 DefaultAtlasPotentialIsConnectedAndHasNoK5
+  - 104 K5CheckFindsACompleteFiveClique
+  - 116 BuilderProducesValidAtlasesForEverySizeAndSeed
+  - 128 XpTableHasAtMostTwoSourcesPerAction
+  - 143 FreshTreeHasNoCycleFactorBelowOne
+  - 151 IslandsAreDetachedFromTheMainComponent
+  - 163 OneAddedEdgeFormingATriangleGivesCliqueThreeForExactlyThreeVertices
+  - 184 ThreeAddedEdgesFormingK4GiveCliqueFour
+  - 199 BridgeIsReportedOnlyForEdgesOutsideCycles
+  - 222 BuildIsRefusedWithoutPointsAndLeavesStateUnchanged
+  - 247 PruneAndRestoreFollowTheBridgeRules
+  - 280 PruneRefusesACycleEdgeAndAnIsland
+  - 297 TalentIsOneAtTheOriginVertexAndNeverBelowTheMinimum
+  - 315 SixtyFourSkillsAtPeakOneEarnNoEdgePoints
+  - 334 DecayNeverCrossesTheSavingsFloor
+  - 350 CycleFactorLowersDecayInsideCyclesOnly
+  - 361 FallenSkillWithoutNeighboursGetsAPullAboveOnePointSix
+  - 381 NeighbourAbovePullsAHigherDelta
+  - 403 EffectGrowsWithTheFlooredLevelAndDividersInvert
+  - 414 AddXpOnAnUnavailableSkillChangesNothing
+  - 443 AddXpOnTheRootRaisesTheLevelAndEventuallyTheFlooredLevel
+  - 469 AddXpNeverAllocates
+  - 491 ModifiersAreNeutralUntilAChannelSkillLevelsUp
+  - 521 ModifiersIgnorePrunedSkills
+  - 556–561 class AtlasHandle
+    - 559 AtlasHandle
+    - 560 Dispose
 
 ## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs`
 
-- 11–546 class EntityModel
+- 11–547 class EntityModel
   - 13 IsAliveForTick
   - 16 SubmitDecision
   - 22 BeginCycle
-  - 36 NoisyDirection
-  - 43 UpdateDormancy
-  - 60 RunCycle
-  - 442 ComputePlanHints
-  - 485 EndCycle
-  - 505 StartDecision
-  - 522 ComputeDangerLevel
-  - 535 ComputeBreedReadiness
+  - 37 NoisyDirection
+  - 44 UpdateDormancy
+  - 61 RunCycle
+  - 443 ComputePlanHints
+  - 486 EndCycle
+  - 506 StartDecision
+  - 523 ComputeDangerLevel
+  - 536 ComputeBreedReadiness
 
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassSystem.cs`
 

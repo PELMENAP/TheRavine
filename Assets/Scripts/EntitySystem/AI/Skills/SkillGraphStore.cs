@@ -1,5 +1,6 @@
 using System;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 
 public sealed class SkillGraphStore : IDisposable
@@ -12,6 +13,10 @@ public sealed class SkillGraphStore : IDisposable
     private NativeArray<float> _talent;
     private NativeArray<byte> _root;
     private NativeArray<byte> _dirty;
+    private NativeArray<byte> _colony;
+    private NativeArray<float4> _plast;
+    private NativeArray<float> _colonyCycle;
+    private NativeArray<ulong> _colonyPruned;
 
     public int Capacity => _capacity;
     public int SkillCount => _skillCount;
@@ -23,6 +28,10 @@ public sealed class SkillGraphStore : IDisposable
     public NativeArray<float> Talents => _talent;
     public NativeArray<byte> Roots => _root;
     public NativeArray<byte> Dirty => _dirty;
+    public NativeArray<byte> Colonies => _colony;
+    public NativeArray<float4> Plasticity => _plast;
+    public NativeArray<float> ColonyCycle => _colonyCycle;
+    public NativeArray<ulong> ColonyPruned => _colonyPruned;
 
     public SkillGraphStore(int capacity, int skillCount)
     {
@@ -35,6 +44,10 @@ public sealed class SkillGraphStore : IDisposable
         _talent = new NativeArray<float>(total, Allocator.Persistent);
         _root = new NativeArray<byte>(_capacity, Allocator.Persistent);
         _dirty = new NativeArray<byte>(_capacity, Allocator.Persistent);
+        _colony = new NativeArray<byte>(_capacity, Allocator.Persistent);
+        _plast = new NativeArray<float4>(_capacity, Allocator.Persistent);
+        _colonyCycle = new NativeArray<float>(ColonyRegistry.MaxColonies * skillCount, Allocator.Persistent);
+        _colonyPruned = new NativeArray<ulong>(ColonyRegistry.MaxColonies, Allocator.Persistent);
     }
 
     public float Level(int index, int skill) => _levels[index * _skillCount + skill];
@@ -54,12 +67,40 @@ public sealed class SkillGraphStore : IDisposable
         _dirty[index] = 1;
     }
 
+    public int ColonyOf(int index) => _colony[index];
+    public float4 PlasticityOf(int index) => _plast[index];
+
+    public void SetColony(int index, int colonyIndex)
+    {
+        if ((uint)index < (uint)_capacity && (uint)colonyIndex < (uint)ColonyRegistry.MaxColonies) _colony[index] = (byte)colonyIndex;
+    }
+
+    public void PublishColony(int colonyIndex, SkillGraphTopology topology)
+    {
+        if ((uint)colonyIndex >= (uint)ColonyRegistry.MaxColonies || topology.Count != _skillCount) return;
+        NativeArray<float>.Copy(topology.CycleFactors, 0, _colonyCycle, colonyIndex * _skillCount, _skillCount);
+        _colonyPruned[colonyIndex] = topology.PrunedMask;
+    }
+
     public void Reset(int index, float2 origin, SkillGraphTopology topology, SkillAtlas atlas)
     {
         if ((uint)index >= (uint)_capacity) return;
         ClearBlock(index);
         Retarget(index, origin, topology, atlas);
-        _dirty[index] = 1;
+    }
+
+    public void Reset(int index, in GeneticParameters genes, SkillGraphTopology topology, SkillAtlas atlas)
+    {
+        if ((uint)index >= (uint)_capacity) return;
+        ClearBlock(index);
+        Retarget(index, in genes, topology, atlas);
+    }
+
+    public void Retarget(int index, in GeneticParameters genes, SkillGraphTopology topology, SkillAtlas atlas)
+    {
+        if ((uint)index >= (uint)_capacity) return;
+        _plast[index] = new float4(genes.PlastHebb, genes.PlastStruct, genes.PlastExplore, genes.PlastNeed);
+        Retarget(index, new float2(genes.SkillOriginX, genes.SkillOriginY), topology, atlas);
     }
 
     public void Retarget(int index, float2 origin, SkillGraphTopology topology, SkillAtlas atlas)
@@ -103,6 +144,30 @@ public sealed class SkillGraphStore : IDisposable
         return changed;
     }
 
+    public JobHandle ScheduleDecay(int offset, int length, int liveCount, float now, float decayRate, float savingsFloor)
+    {
+        liveCount = math.min(liveCount, _capacity);
+        length = math.min(length, liveCount);
+        if (length <= 0) return default;
+        var job = new SkillDecayJob
+        {
+            Offset = offset,
+            Count = liveCount,
+            SkillCount = _skillCount,
+            Now = now,
+            DecayRate = decayRate,
+            SavingsFloor = savingsFloor,
+            Levels = _levels,
+            LastUsed = _lastUsed,
+            Dirty = _dirty,
+            Peaks = _peaks,
+            Colonies = _colony,
+            ColonyCycle = _colonyCycle,
+            ColonyPruned = _colonyPruned,
+        };
+        return job.Schedule(length, 8);
+    }
+
     public void Materialize(int index, float now, SkillGraphTopology topology, in SimulationRules.RulesFrame rules)
     {
         if ((uint)index >= (uint)_capacity) return;
@@ -140,6 +205,8 @@ public sealed class SkillGraphStore : IDisposable
             NativeArray<float>.Copy(_talent, last * n, _talent, index * n, n);
             _root[index] = _root[last];
             _dirty[index] = _dirty[last];
+            _colony[index] = _colony[last];
+            _plast[index] = _plast[last];
         }
         ClearBlock(last);
     }
@@ -156,6 +223,8 @@ public sealed class SkillGraphStore : IDisposable
         }
         _root[index] = 0;
         _dirty[index] = 0;
+        _colony[index] = 0;
+        _plast[index] = default;
     }
 
     public void Dispose()
@@ -166,5 +235,9 @@ public sealed class SkillGraphStore : IDisposable
         if (_talent.IsCreated) _talent.Dispose();
         if (_root.IsCreated) _root.Dispose();
         if (_dirty.IsCreated) _dirty.Dispose();
+        if (_colony.IsCreated) _colony.Dispose();
+        if (_plast.IsCreated) _plast.Dispose();
+        if (_colonyCycle.IsCreated) _colonyCycle.Dispose();
+        if (_colonyPruned.IsCreated) _colonyPruned.Dispose();
     }
 }

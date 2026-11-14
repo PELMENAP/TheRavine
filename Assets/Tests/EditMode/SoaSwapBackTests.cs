@@ -80,6 +80,10 @@ public class SoaSwapBackTests
                 store.ClearDirty(i);
             }
             store.MarkDirty(2);
+            var genes = GeneticParameters.Default;
+            genes.PlastNeed = 1.75f;
+            store.Retarget(2, in genes, topology, atlas);
+            store.SetColony(2, 5);
             int lastRoot = store.Root(2);
             float lastTalent = store.Talent(2, 4);
 
@@ -90,6 +94,8 @@ public class SoaSwapBackTests
             Assert.AreEqual(15f, store.LastUsed[0 * atlas.Count + 2]);
             Assert.AreEqual(lastTalent, store.Talent(0, 4));
             Assert.AreEqual(lastRoot, store.Root(0));
+            Assert.AreEqual(5, store.ColonyOf(0));
+            Assert.AreEqual(1.75f, store.PlasticityOf(0).w);
             Assert.IsTrue(store.IsDirty(0));
             Assert.AreEqual(20f, store.Level(1, 2));
 
@@ -98,6 +104,8 @@ public class SoaSwapBackTests
             Assert.AreEqual(0f, store.LastUsed[2 * atlas.Count + 2]);
             Assert.AreEqual(0f, store.Talent(2, 4));
             Assert.AreEqual(0, store.Root(2));
+            Assert.AreEqual(0, store.ColonyOf(2));
+            Assert.AreEqual(0f, store.PlasticityOf(2).w);
             Assert.IsFalse(store.IsDirty(2));
 
             store.RemoveSwapBack(1, 1);
