@@ -20,7 +20,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Core/Timer` | 4 | 271 |
 | `Assets/Scripts/Core/Utilities` | 10 | 1922 |
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
-| `Assets/Scripts/Editor` | 18 | 2252 |
+| `Assets/Scripts/Editor` | 19 | 2344 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
 | `Assets/Scripts/EntitySystem/AI` | 11 | 2084 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
