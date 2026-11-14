@@ -42,6 +42,12 @@ public sealed partial class SimulationRules
     [SerializeField] private float stressNestRecoveryMul = 3f;
     [SerializeField] private float stressPerceptionNoise = 0.5f;
     [SerializeField] private float foreignHarmStress = 1f;
+    [SerializeField] private float startleStress = 0.3f;
+    [SerializeField] private float startleCooldown = 2f;
+    [SerializeField] private float familiarityTau = 20f;
+    [SerializeField] private float familiarityGift = 0.5f;
+    [SerializeField] private float familiarityCalm = 0.6f;
+    [SerializeField] private float familiarityHuntMul = 1f;
     [SerializeField] private float basalEmitFraction = 0f;
     [SerializeField] private float warmthDrawFraction = 0f;
     [SerializeField] private float warmthCellSize = 4f;
@@ -116,6 +122,12 @@ public sealed partial class SimulationRules
     public float StressNestRecoveryMul => stressNestRecoveryMul;
     public float StressPerceptionNoise => stressPerceptionNoise;
     public float ForeignHarmStress => foreignHarmStress;
+    public float StartleStress => startleStress;
+    public float StartleCooldown => startleCooldown;
+    public float FamiliarityTau => familiarityTau;
+    public float FamiliarityGift => familiarityGift;
+    public float FamiliarityCalm => familiarityCalm;
+    public float FamiliarityHuntMul => familiarityHuntMul;
     public float BasalEmitFraction => basalEmitFraction;
     public float WarmthDrawFraction => warmthDrawFraction;
     public float WarmthCellSize => warmthCellSize;

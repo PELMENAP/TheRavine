@@ -52,6 +52,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private InstinctInput _instinctInput;
     public ref readonly InstinctInput InstinctInput => ref _instinctInput;
     public uint InstinctLatches { get; private set; }
+    private bool _eatFailed;
     public bool IsHungry => (InstinctLatches & InstinctBits.Hungry) != 0;
     public bool IsSated  => Digestion != null && Digestion.Fill >= Brain.Context.CoordMLP.Params.SatedFill;
 
@@ -217,6 +218,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private float       _nearestForeignDistance = -1f;
     private StatsComponent _harmKey;
     private float          _harmPrevHp;
+    private float          _familiarity;
+    public float Familiarity => _familiarity;
     private PlayerPresence _players;
     private bool      _playerValid;
     private float2    _playerPos;
@@ -472,7 +475,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         }
     }
 
-    public bool HasDirectThreat => RecentAttacker != null || ValidForeign != null || _playerValid;
+    public bool HasDirectThreat => RecentAttacker != null || ThreateningStranger(out _);
 
     private bool  _nestFood;
     public bool   CanEatFromNest => _nestFood;
@@ -729,6 +732,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         _nearest = null;
         _nearestForeign = null;
         _harmKey = null;
+        _familiarity = 0f;
         _lastAttacker = null;
         _lastVictim = null;
         _playerTransform = null;

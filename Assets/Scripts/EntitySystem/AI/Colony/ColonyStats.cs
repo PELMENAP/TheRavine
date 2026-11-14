@@ -3,6 +3,8 @@ using Unity.Mathematics;
 public sealed class ColonyStats
 {
     public enum AttackTarget : byte { Own = 0, Foreign = 1, Player = 2, Count = 3 }
+    public enum EatFail : byte { NoFood = 0, Claim = 1, Empty = 2, LargeNoPartner = 3, Count = 4 }
+    public enum TakeFail : byte { NoFood = 0, Kind = 1, Claim = 2, Count = 3 }
 
     public int   Born;
     public int   Died;
@@ -30,6 +32,8 @@ public sealed class ColonyStats
     public int   AttackFailTargetLost;
     public int   AttackFailLowEnergy;
     public int   AttackFailLurkTimeout;
+    public readonly int[] EatFails  = new int[(int)EatFail.Count];
+    public readonly int[] TakeFails = new int[(int)TakeFail.Count];
 
     public float StorageEaten;
     public float StorageStored;
@@ -81,6 +85,8 @@ public sealed class ColonyStats
     public void RecordAttackFailTargetLost()  => AttackFailTargetLost++;
     public void RecordAttackFailLowEnergy()   => AttackFailLowEnergy++;
     public void RecordAttackFailLurkTimeout() => AttackFailLurkTimeout++;
+    public void RecordEatFail(EatFail reason)   => EatFails[(int)reason]++;
+    public void RecordTakeFail(TakeFail reason) => TakeFails[(int)reason]++;
 
     public void RecordCastePlan(Caste caste, PlanKind plan)
     {

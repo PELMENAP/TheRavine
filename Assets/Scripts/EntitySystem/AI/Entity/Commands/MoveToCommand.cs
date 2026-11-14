@@ -141,8 +141,13 @@ public class MoveToCommand : PlannedMoveCommand
 
         ref readonly var r = ref SimulationRules.Frame;
         float2 here = model.Position2D;
-        if (!colony.Nest.Contains(here) && colony.Nest.FieldAt(ColonyChannel.Danger, here) < r.QuorumMaxDanger)
-            colony.VoteNestSite(here, model.EntityId, model.Caste == Caste.Scout ? r.ScoutVoteWeight : 1f);
+        var nest = colony.Nest;
+        if (nest.Contains(here) || nest.FieldAt(ColonyChannel.Danger, here) >= r.QuorumMaxDanger) return Complete();
+
+        float score = ColonyState.SiteScore(in r, in model.LastTerrain, nest.FieldAt(ColonyChannel.Food, here),
+            math.distance(here, nest.Position));
+        if (score > 0f)
+            colony.VoteNestSite(here, model.EntityId, (model.Caste == Caste.Scout ? r.ScoutVoteWeight : 1f) * score);
         return Complete();
     }
 

@@ -783,6 +783,12 @@ public class SharedHierarchicalBrain : IDisposable
         ctx.BeginGoal(0f);
     }
 
+    public static float EnergySurplus(float energyNorm, float floor)
+        => math.saturate((energyNorm - floor) / math.max(1f - floor, 1e-3f));
+
+    public static float RarityTerm(float weight, float surplus, float share)
+        => weight * surplus / math.sqrt(1f + share * PlanCatalog.Count);
+
     private void FlushGoalRewardToCoordinator(EntityBrainContext ctx)
     {
         if (ctx.CoordDecisionId == 0) return;
@@ -792,15 +798,19 @@ public class SharedHierarchicalBrain : IDisposable
 
         var r = SimulationRules.Active;
         ctx.GoalNovelty = ctx.NoveltyCount > 0 ? ctx.NoveltySum / ctx.NoveltyCount : 0f;
+        ref readonly var frame = ref SimulationRules.Frame;
+        float surplus = EnergySurplus(ctx.EnergyNorm, frame.CuriosityEnergyFloor);
         float curiosity = r.CoordCuriosityWeight * ExplorationDecay()
-                        * (1f - r.CuriosityStorageDamp * math.saturate(ctx.ColonyStorage));
+                        * (1f - r.CuriosityStorageDamp * math.saturate(ctx.ColonyStorage))
+                        * (1f + frame.CuriosityEnergyGain * surplus);
         float goal = ctx.GoalDiscountedReturn
                    + ctx.GoalBonus
                    + r.GoalFoodWeight   * ctx.GoalFoodEaten
                    + r.DigestRewardWeight * ctx.GoalDigested
                    + r.GoalEnergyWeight * (ctx.EnergyNorm - ctx.GoalStartEnergy)
                    + r.GoalRestWeight   * ctx.GoalRestScore
-                   + curiosity * ctx.GoalNovelty;
+                   + curiosity * ctx.GoalNovelty
+                   + RarityTerm(frame.CuriosityRarityWeight, surplus, ctx.EndedPlanShare);
 
         float clip = r.RewardClipSigma;
         item.Evaluation    = math.clamp(goal, -clip, clip);

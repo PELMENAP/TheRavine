@@ -70,6 +70,17 @@ public sealed class ColonyState : IDisposable
     private int[]    _siteVoters;
     private int      _voterStride;
 
+    public static float SiteScore(in SimulationRules.RulesFrame r, in TerrainSample terrain, float foodField, float nestDistance)
+    {
+        if (nestDistance < r.QuorumMinDistance) return 0f;
+        float flat   = math.saturate(1f - terrain.Slope / math.max(r.QuorumSlopeLimit, 1e-3f));
+        float height = math.saturate(1f + math.min(terrain.RelativeHeight, 0f) * r.QuorumDepressionMul);
+        float food   = math.saturate(foodField / math.max(r.QuorumFoodNorm, 1e-3f));
+        float total  = r.QuorumSlopeWeight + r.QuorumHeightWeight + r.QuorumFoodWeight;
+        if (total <= 0f) return 1f;
+        return (flat * r.QuorumSlopeWeight + height * r.QuorumHeightWeight + food * r.QuorumFoodWeight) / total;
+    }
+
     public void VoteNestSite(float2 position, int voterId, float weight = 1f)
     {
         ref readonly var r = ref SimulationRules.Frame;

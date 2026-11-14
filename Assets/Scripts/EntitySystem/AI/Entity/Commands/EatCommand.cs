@@ -40,11 +40,20 @@ public class EatCommand : EntityCommand
             return StartEating(take / cost, 0f, FoodKind.Plant);
         }
 
-        if (!foodNear) return Fail();
+        if (!foodNear) return Fail(ColonyStats.EatFail.NoFood);
 
         long cell = model.CachedFoodCell;
         model.InvalidateCachedFood();
-        if (!index.TryClaim(cell, model, SimulationClock.TimeD, out var claim)) return Fail();
+        double now = SimulationClock.TimeD;
+        if (!index.TryClaim(cell, model, now, out var claim))
+        {
+            float2 here = model.Position2D;
+            int colonyId = model.Colony != null ? model.Colony.ColonyId : 0;
+            if (!index.TryFindNearestFood(here.x, here.y, r.EatRange, out long next, out _, colonyId) || next == cell
+                || !index.TryClaim(next, model, now, out claim))
+                return Fail(ColonyStats.EatFail.Claim, 0f);
+            cell = next;
+        }
         model.NoteFoodSite(ChunkFoodIndex.CellCenter(cell));
 
         if (claim.Infected && index.TryTakePayload(cell, out var payload))
@@ -66,7 +75,7 @@ public class EatCommand : EntityCommand
 
     private EntityCommandStatus StartEating(float portion, float toxicity, FoodKind kind)
     {
-        if (portion <= 0f) return Fail();
+        if (portion <= 0f) return Fail(ColonyStats.EatFail.Empty);
 
         var r = SimulationRules.Active;
         _phase    = Phase.Eating;
@@ -80,6 +89,8 @@ public class EatCommand : EntityCommand
         model.RegisterFitnessEvent(EntityModel.FitnessEvent.FoodEaten);
         model.Brain.Context.GoalFoodEaten++;
         float2 here = model.Position2D;
+        if (kind == FoodKind.Meat && !model.Points.HasPointNear(in here, SimulationRules.Frame.PoiVisitRadius))
+            model.Points.TryRemember(in here, r.RememberPointMinSpacing);
         model.Points.CreditEnergy(in here, portion);
         return EntityCommandStatus.Running;
     }
@@ -94,7 +105,7 @@ public class EatCommand : EntityCommand
                 model.Brain.Context.GoalFoodEaten++;
                 return Complete();
             }
-            return Elapsed(_end) ? Fail() : EntityCommandStatus.Running;
+            return Elapsed(_end) ? Fail(ColonyStats.EatFail.LargeNoPartner) : EntityCommandStatus.Running;
         }
 
         Deliver();
@@ -121,6 +132,18 @@ public class EatCommand : EntityCommand
         model.IngestFood(due, _yield);
         _eaten = _portion;
         return true;
+    }
+
+    private EntityCommandStatus Fail(ColonyStats.EatFail reason)
+    {
+        model.Colony?.Stats.RecordEatFail(reason);
+        return Fail();
+    }
+
+    private EntityCommandStatus Fail(ColonyStats.EatFail reason, float reward)
+    {
+        model.Colony?.Stats.RecordEatFail(reason);
+        return Fail(reward);
     }
 
     protected override void OnCancel()

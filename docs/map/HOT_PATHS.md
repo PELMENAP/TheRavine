@@ -25,7 +25,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 
 | Area | File | Hot methods |
 |---|---|---|
-| Tick driver | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | `Update`, `TickAgents`, `RunTickBatch`, `RebuildTickSnapshot`, `RunFlocking`, `CloseTickWindow` |
+| Tick driver | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | `Update`, `TickAgents`, `RunTickBatch`, `RebuildTickSnapshot`, `PromoteUrgent`, `RunFlocking`, `CloseTickWindow` |
 | Agent cycle | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | `BeginCycle`, `RunCycle`, `EndCycle`, `SubmitDecision`, `StartDecision`, `ComputePlanHints` |
 | Agent behaviour | `Assets/Scripts/EntitySystem/AI/Entity/` | Other `EntityModel.*.cs` partial files when called from the cycle |
 | Agent commands | `Assets/Scripts/EntitySystem/AI/Entity/Commands/` | The tick method of every command; `EntityCommandRunner` |

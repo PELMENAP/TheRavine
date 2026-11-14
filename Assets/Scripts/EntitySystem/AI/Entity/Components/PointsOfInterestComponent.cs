@@ -130,6 +130,8 @@ public class PointsOfInterestComponent : IComponent
         return pick >= 0;
     }
 
+    public bool HasPointNear(in float2 pos, float radius) => NearestIndex(in pos, radius) >= 0;
+
     public void Visit(in float2 pos)
     {
         int i = NearestIndex(in pos, SimulationRules.Frame.PoiVisitRadius);

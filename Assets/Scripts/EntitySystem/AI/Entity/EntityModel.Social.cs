@@ -85,17 +85,7 @@ public partial class EntityModel
             return true;
         }
 
-        var foreign = ValidForeign;
-        if (foreign != null && (!_playerValid || _nearestForeignDistance <= _playerDistance))
-        {
-            source = foreign.Position2D;
-            return true;
-        }
-        if (_playerValid)
-        {
-            source = _playerPos;
-            return true;
-        }
+        if (ThreateningStranger(out source)) return true;
 
         if (IsWarned)
         {
@@ -112,6 +102,54 @@ public partial class EntityModel
         if (spread <= r.WanderGradientMin) return false;
         source = self + toDanger * radius;
         return true;
+    }
+
+    private bool ThreateningStranger(out float2 source)
+    {
+        var foreign = ValidForeign;
+        bool foreignFirst = foreign != null && (!_playerValid || _nearestForeignDistance <= _playerDistance);
+        bool calm = _familiarity > SimulationRules.Frame.FamiliarityCalm;
+        if (foreignFirst && !calm)
+        {
+            source = foreign.Position2D;
+            return true;
+        }
+        if (_playerValid && (foreignFirst || !calm))
+        {
+            source = _playerPos;
+            return true;
+        }
+        if (foreign != null && !foreignFirst)
+        {
+            source = foreign.Position2D;
+            return true;
+        }
+        source = default;
+        return false;
+    }
+
+    public void NoteGift(StatsComponent giver)
+    {
+        if (giver == null || !ReferenceEquals(giver, _harmKey)) return;
+        _familiarity = FamiliarityMath.Gift(_familiarity, SimulationRules.Frame.FamiliarityGift);
+    }
+
+    public void BreakFamiliarity(StatsComponent harmer)
+    {
+        if (harmer != null && ReferenceEquals(harmer, _harmKey)) _familiarity = 0f;
+    }
+
+    private void NotifyKinOfHarm(StatsComponent harmer)
+    {
+        if (Perception == null) return;
+        int found = Perception.FindEntitiesInRadius(Motor.Position(), this, Tuning.DetectionRadius, Neighbors);
+        for (int i = 0; i < found; i++)
+        {
+            var e = Neighbors[i];
+            Neighbors[i] = null;
+            if (e == null || e.IsDisposed || e.IsDeathPending || e.Colony != Colony) continue;
+            e.BreakFamiliarity(harmer);
+        }
     }
 
     private void ReadForeignVitals(StatsComponent playerStats, VirologyComponent playerVirology,
@@ -193,4 +231,12 @@ public partial class EntityModel
         }
         return best;
     }
+}
+
+public static class FamiliarityMath
+{
+    public static float Grow(float value, float dt, float tau)
+        => value + (1f - value) * (1f - math.exp(-math.max(dt, 0f) / math.max(tau, 1e-3f)));
+
+    public static float Gift(float value, float gift) => math.saturate(value + gift);
 }
