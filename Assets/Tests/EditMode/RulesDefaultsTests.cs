@@ -142,4 +142,53 @@ public class RulesDefaultsTests
         Assert.LessOrEqual(used, 1f);
         Assert.AreEqual(0.15f, 1f - used, 1e-6f);
     }
+
+    [Test]
+    public void SkillGraphDefaultsMatchTheDesign()
+    {
+        var r = _rules;
+        Assert.AreEqual(0.25f, r.SkillTalentMin);
+        Assert.AreEqual(2.5f, r.SkillTalentDecay);
+        Assert.AreEqual(0.65f, r.SkillTalentEuclidShare);
+        Assert.AreEqual(6f, r.SkillPhiRefLevel);
+        Assert.AreEqual(3.5f, r.SkillEdgeCostScale);
+        Assert.AreEqual(1.35f, r.SkillEdgeCostExp);
+        Assert.AreEqual(1.10f, r.SkillClique3Boost);
+        Assert.AreEqual(1.40f, r.SkillClique4Boost);
+        Assert.AreEqual(0.25f, r.SkillCycleMinFactor);
+        Assert.AreEqual(0.35f, r.SkillCycleScale);
+        Assert.AreEqual(0.60f, r.SkillLogicScale);
+        Assert.AreEqual(10f, r.SkillLogicOffset);
+        Assert.AreEqual(0.45f, r.SkillPruneFocusScale);
+        Assert.AreEqual(0.25f, r.SkillSavingsFloor);
+        Assert.AreEqual(4f, r.SkillXpLevelOffset);
+        Assert.AreEqual(100f, r.SkillSolverNormLevel);
+        Assert.AreEqual(0.5f, r.SkillSolverIslandBonus);
+        Assert.AreEqual(4, r.SkillPruneMinSize);
+        Assert.AreEqual(2, r.SkillIslandDropMax);
+        Assert.AreEqual(0.25f, r.SkillForestGeneRange);
+        Assert.AreEqual(0.15f, r.SkillK4Quantile);
+        Assert.Greater(r.SkillDecayRate, 0f);
+        Assert.Greater(r.SkillSweepInterval, 0f);
+        Assert.Greater(r.SkillSolverInterval, 0f);
+    }
+
+    [Test]
+    public void SkillGraphFrameMirrorsTheRules()
+    {
+        SimulationRules.Bind(_rules);
+        try
+        {
+            ref readonly var f = ref SimulationRules.Frame;
+            Assert.AreEqual(_rules.SkillDecayRate, f.SkillDecayRate);
+            Assert.AreEqual(_rules.SkillSavingsFloor, f.SkillSavingsFloor);
+            Assert.AreEqual(_rules.SkillLogicScale, f.SkillLogicScale);
+            Assert.AreEqual(_rules.SkillClique4Boost, f.SkillClique4Boost);
+            Assert.AreEqual(_rules.SkillSweepInterval, f.SkillSweepInterval);
+        }
+        finally
+        {
+            SimulationRules.Bind(null);
+        }
+    }
 }

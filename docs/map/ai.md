@@ -3,7 +3,7 @@
 Root: `Assets/Scripts/EntitySystem/AI/`. Assembly: `EntitySystem`. Rules for this folder: `Assets/Scripts/EntitySystem/AI/CLAUDE.md`.
 Tests: `Assets/Tests/EditMode/` — `BrainAllocationTests`, `BrainLearningTests`, `BrainArchitectureVersionTests`, `SnapshotVersionTests`,
 `SoaSwapBackTests`, `TickWindowBudgetTests`, `DecisionRingTests`, `ColonyRegistryTests`, `EntitySpatialGridSurveyTests`, `RulesDefaultsTests`,
-`NestSiteScoreTests`, `FamiliarityTests`, `CuriositySurplusTests`, `StartleTests`, `FoodLookupAllocationTests`, `PredatorPressureTests`.
+`NestSiteScoreTests`, `FamiliarityTests`, `CuriositySurplusTests`, `StartleTests`, `FoodLookupAllocationTests`, `PredatorPressureTests`, `SkillGraphTests`.
 
 Tick order and hot methods: `docs/map/HOT_PATHS.md`. Existing structures to reuse: `docs/OPTIMIZATION.md` section 13.
 Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.cs`, `SimulationRules.cs`, `EntityModel.cs`): `docs/map/LARGE_FILES.md`.
@@ -70,6 +70,18 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 - `CasteThresholdSystem` (`Assets/Scripts/EntitySystem/AI/Caste/CasteThresholdSystem.cs`): per-agent caste thresholds, SoA.
 - `ColonyFood`: food regrowth and corpses. `EvolutionService`: fitness statistics, partner selection, crossover.
 - `InfectionCoordinator`: wrapper over `InfectionService`; see `docs/map/virology.md`.
+
+## Skills (`Assets/Scripts/EntitySystem/AI/Skills/`)
+
+Design: `docs/design/skill_graph.md`. Rules: `SimulationRules.Skills.cs`; `RulesFrame` mirrors the fields the math reads. Nothing in the tick calls these types before stage 2.
+
+- `SkillAtlas`: ScriptableObject, one per world; points, `PotentialRow` adjacency masks, per-skill curve and XP cost, XP table by `EntityAction`. `SkillAtlas.Active` is bound by `SkillAtlas.Bind`; unbound it is `SkillAtlasBuilder.BuildDefault()` with a fixed seed, so every machine builds the same atlas.
+- `SkillAtlasBuilder`: Poisson points, Bowyer–Watson Delaunay, second diagonals by cocircularity, K5 check (`HasK5`). The editor menu `Tools/Ravine/Skills/Build Atlas` is `Assets/Scripts/Editor/SkillAtlasMenu.cs`.
+- `SkillGraphTopology` (+ `.Tarjan`): `Active` rows, `IslandMask`, `PrunedMask`, budget; `Create`, `TryBuild`, `TryPrune`, `TryRestore`; one iterative Tarjan pass rebuilds bridges, `CliqueSize`, `CycleFactor`, `ComponentOf`.
+- `SkillGraphMath`: static rules 1–12 of the design, Burst-compatible, rules by `in RulesFrame`.
+- `SkillGraphStore`: per-agent SoA (`Levels`, `Peaks`, `LastUsed`, `Talents`, `Roots`, `Dirty`); `Reset`, `Retarget`, `AddXp`, `Materialize`, `RemoveSwapBack`.
+- `SkillModifiers`: one multiplier per `SkillChannel`; `From(store, index, topology, atlas)`.
+- `SkillAtlas.Skill` is a graph vertex; the ability skills of `Assets/Scripts/Model/EntitySkills/` (`ISkill`) are unrelated.
 
 ## Perception (`Assets/Scripts/EntitySystem/AI/Perception/`)
 

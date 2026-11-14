@@ -602,6 +602,24 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float HuntFinishHp;
         public readonly float OutnumberedStress;
         public readonly float OutnumberedNorm;
+        public readonly float SkillTalentMin;
+        public readonly float SkillTalentDecay;
+        public readonly float SkillTalentEuclidShare;
+        public readonly float SkillPhiRefLevel;
+        public readonly float SkillEdgeCostScale;
+        public readonly float SkillEdgeCostExp;
+        public readonly float SkillClique3Boost;
+        public readonly float SkillClique4Boost;
+        public readonly float SkillCycleMinFactor;
+        public readonly float SkillCycleScale;
+        public readonly float SkillLogicScale;
+        public readonly float SkillLogicOffset;
+        public readonly float SkillPruneFocusScale;
+        public readonly float SkillDecayRate;
+        public readonly float SkillSavingsFloor;
+        public readonly float SkillXpLevelOffset;
+        public readonly float SkillSolverInterval;
+        public readonly float SkillSweepInterval;
         public readonly float[] PlanMinSecondsByPlan;
         public readonly float[] PlanMaxSecondsByPlan;
         public readonly float[] CasteAffinityLog;
@@ -1215,6 +1233,24 @@ public sealed partial class SimulationRules : ScriptableObject
             HuntFinishHp = r.huntFinishHp;
             OutnumberedStress = r.outnumberedStress;
             OutnumberedNorm = r.outnumberedNorm;
+            SkillTalentMin = r.skillTalentMin;
+            SkillTalentDecay = r.skillTalentDecay;
+            SkillTalentEuclidShare = r.skillTalentEuclidShare;
+            SkillPhiRefLevel = r.skillPhiRefLevel;
+            SkillEdgeCostScale = r.skillEdgeCostScale;
+            SkillEdgeCostExp = r.skillEdgeCostExp;
+            SkillClique3Boost = r.skillClique3Boost;
+            SkillClique4Boost = r.skillClique4Boost;
+            SkillCycleMinFactor = r.skillCycleMinFactor;
+            SkillCycleScale = r.skillCycleScale;
+            SkillLogicScale = r.skillLogicScale;
+            SkillLogicOffset = r.skillLogicOffset;
+            SkillPruneFocusScale = r.skillPruneFocusScale;
+            SkillDecayRate = r.skillDecayRate;
+            SkillSavingsFloor = r.skillSavingsFloor;
+            SkillXpLevelOffset = r.skillXpLevelOffset;
+            SkillSolverInterval = r.skillSolverInterval;
+            SkillSweepInterval = r.skillSweepInterval;
             PlanMinSecondsByPlan = r.FillPlanSeconds(r.planMinSecondsByPlan, r.planMinSeconds, PlanMinBuf);
             PlanMaxSecondsByPlan = r.FillPlanSeconds(r.planMaxSecondsByPlan, r.planMaxSeconds, PlanMaxBuf);
             CasteAffinityLog     = r.FillCasteAffinityLog();
@@ -1401,6 +1437,7 @@ public sealed partial class SimulationRules : ScriptableObject
         if (agentEditsPerFrame < 0) agentEditsPerFrame = 0;
         if (!(heldObjectSpeedMul > 0f)) heldObjectSpeedMul = 1f;
         if (!(dangerDirectionMinMass >= 0f)) dangerDirectionMinMass = 0f;
+        ValidateSkills();
     }
 
     private static SimulationRules _active;
