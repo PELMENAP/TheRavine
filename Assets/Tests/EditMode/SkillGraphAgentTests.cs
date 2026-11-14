@@ -226,7 +226,7 @@ public class SkillGraphAgentTests
         int n = _atlas.Count;
         for (int i = 0; i < 3; i++)
         {
-            _store.Reset(i, in GeneticParameters.Default, _topology, _atlas);
+            _store.Reset(i, GeneticParameters.Default, _topology, _atlas);
             _store.SetColony(i, 0);
             for (int v = 0; v < n; v++) _store.SetLevel(i, v, 40f, 0f);
             _store.ClearDirty(i);
@@ -265,7 +265,7 @@ public class SkillGraphAgentTests
         int n = _atlas.Count;
         for (int i = 0; i < 4; i++)
         {
-            _store.Reset(i, in GeneticParameters.Default, _topology, _atlas);
+            _store.Reset(i, GeneticParameters.Default, _topology, _atlas);
             _store.SetLevel(i, 0, 40f, 0f);
         }
         var cycle = _store.ColonyCycle;
