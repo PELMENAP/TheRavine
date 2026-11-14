@@ -106,12 +106,12 @@ colony topology and the plasticity solver. The brain's inputs and outputs do not
 Known facts (verify line numbers):
 1. `GeneticParameters` (`Assets/Scripts/EntitySystem/AI/GeneticParameters.cs`): flat floats, `Idx*` constants,
    `ParameterRanges` (`:91`), a `GeneCount` consistency check (`:155`), `Crossover` (`:198`).
-2. Children get genes at `ColonyPopulation.cs:158`; `EvolutionService.cs:181` overwrites the genes of a living agent.
-3. Per-agent systems are created in `EntityManager.Awake` (`:301`–`:308`) with `_capacity`.
-4. `ColonyPopulation.RemoveEntitySwapBack` (`:264`) is the only removal path.
-5. `EntityCommandRunner.cs:84` is where a completed action is recorded.
-6. `EntityModel.cs:287` and `:563` call `EntityTuning.Express(in base, in genes, in casteMods)`.
-7. `EntityManager.CloseTickWindow` (`:524`) calls `TickNests()` and `TickColonies()`.
+2. Children get genes at `ColonyPopulation.cs:160`; `EvolutionService.cs:181` overwrites the genes of a living agent.
+3. Per-agent systems are created in `EntityManager.Awake` (`:309`–`:316`) with `_capacity`.
+4. `ColonyPopulation.RemoveEntitySwapBack` (`:269`) is the only removal path.
+5. `EntityCommandRunner.cs:85` is where a completed action is recorded.
+6. `EntityModel.cs:293` and `:613` call `EntityTuning.Express(in base, in genes, in casteMods)`.
+7. `EntityManager.CloseTickWindow` (`:586`) calls `TickNests()` and `TickColonies()`.
 8. `ColonyState` (`Assets/Scripts/EntitySystem/AI/Colony/ColonyState.cs`) is `IDisposable`, exposes `Members` and `Stats`.
 
 ## TASK
