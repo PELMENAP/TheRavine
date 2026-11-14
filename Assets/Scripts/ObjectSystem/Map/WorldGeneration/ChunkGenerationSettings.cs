@@ -60,7 +60,7 @@ namespace TheRavine.Generator
 
         [Header("Far Objects")]
         [Min(1)] public int farMaxInstances = 65536;
-        [Min(0f)] public float farShadowDistance = 600f;
+        [Min(0f)] public float farShadowDistance = 500f;
         [Min(1)] public int farRebuildIntervalFrames = 30;
         [Min(1)] public int farContentRebuildIntervalFrames = 300;
 
