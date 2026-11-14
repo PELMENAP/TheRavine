@@ -52,6 +52,12 @@ float terrainInvHeight;
 float4 climateTemperatureRange;
 float4 climateMoistureRange;
 
+float4 cullPlanes[4];
+float3 viewOrigin;
+float4 grassFade;
+float cullMargin;
+int cullEnabled;
+
 
 uint Hash(uint input)
 {
@@ -194,6 +200,26 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
 
     if (height < globalMinHeight || height > globalMaxHeight) return;
 
+    float densityRoll = HashToFloat(Hash(bladeSeed));
+    float keep = 1.0;
+
+    if (cullEnabled != 0)
+    {
+        float3 blade = float3(worldX, height, worldZ);
+        float dist = length(blade - viewOrigin);
+        float fade = saturate((dist - grassFade.x) / max(grassFade.y - grassFade.x, 1e-3));
+        keep = 1.0 - pow(fade, grassFade.z);
+        if (keep <= 0.0) return;
+
+        [unroll]
+        for (int plane = 0; plane < 4; plane++)
+        {
+            if (dot(cullPlanes[plane].xyz, blade) + cullPlanes[plane].w < -cullMargin) return;
+        }
+    }
+
+    if (densityRoll > density * keep) return;
+
     float2 noisePos = float2(gridX, gridZ) * noiseScale;
     float noiseValue = FractalNoise(noisePos, octaves, persistence, lacunarity);
     
@@ -202,12 +228,10 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
 
     float densityMultiplier = smoothstep(densityMinThreshold, densityMaxThreshold, noiseValue) * climateDensity;
     float finalDensity = density * densityMultiplier;
-    
-    float densityRoll = HashToFloat(Hash(bladeSeed));
-    
+
     InstanceData instance;
-    
-    if (densityRoll > finalDensity) return;
+
+    if (densityRoll > finalDensity * keep) return;
 
     float3 worldPos = float3(worldX, height, worldZ);
     
@@ -221,6 +245,7 @@ void PlaceGrass(uint3 id : SV_DispatchThreadID)
     float scaleXZ = scaleBase * scaleNoiseFactor;
     scaleXZ *= lerp(0.7, 1.0, densityMultiplier);
     scaleXZ *= widthScale;
+    scaleXZ *= lerp(1.0, rsqrt(max(keep, 0.25)), grassFade.w);
     
     float scaleY = scaleBase * scaleNoiseFactor * lerp(0.8, 1.2, scaleNoiseValue);
     

@@ -65,7 +65,10 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 - `MapGenerator.ViewRingOf` / `ViewRingOfChunk` describe only what the camera draws. `SimRingOf` describes what is simulated and does not depend on the sector.
 - `IViewDirectional.SetSector`: `EndlessTerrain` and `EndlessLiquids` build only the blocks that entered (nearest rings and nearest to the view axis first); blocks that left are hidden and keep their mesh in the pool. `EndlessTerrain.BuiltBlocks` counts builds.
 - `FarObjectRenderer` rebuilds its instance buffer on a sector or window change at its existing rate limit; the pool, `sources` and the `farMaxInstances` budget are sized from `ViewWedge.MaxBlocks`.
-- `GrassSystem` ring 0: `PlaceGrass` lays out the central window, one cell per unit, only when the window centre changes; the LOD does not thin it.
+- Far types with `CastShadowsFar` get two batches: within `ChunkGenerationSettings.farShadowDistance` of the window centre they cast shadows, beyond it they do not.
+- `GrassSystem` ring 0: heights are uploaded when the window centre changes; the placement compute re-runs when `Camera.main` moves by `replaceMoveStep` or turns by `replaceTurnDegrees`.
+- Ring 0 placement culls by the camera frustum (`cullMargin`); with `drawDistance` above zero it also thins density to zero at that distance. Far blocks are not culled this way.
+- Ring 0 casts grass shadows only within `shadowDistance` of the camera (`_GrassView`, tested in the `ShadowCaster` vertex stage).
 - Grass rings 1 to `GrassLodBands.FarRings`: one pool slot per wedge block (`ViewWedge.MaxBlocksInRing`), on the same block lattice as the terrain and following the view sector.
 - A far block runs the same `PlaceGrass` kernel on a coarser cell grid (`lodCellSteps`, 4 and 8 units) with wider blades (`lodWidthScales`); buffer size is `GrassLodBands.Capacity`.
 - After a window-centre change far blocks are rebuilt nearest first, `lodBlocksPerFrame` per frame, once `MapGenerator.TryBuildHeightWindow` finds all chunks; blocks leaving the wedge keep their buffer.

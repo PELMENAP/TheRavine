@@ -4,6 +4,7 @@ Shader "The Ravine/ChunkGrassShader"
     {
         _MainTex ("Texture Array", 2DArray) = "" {}
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
+        [Toggle] _AlphaToMask ("Alpha To Mask", Float) = 1
 
         [Header(Wind)]
         _WindMap ("Wind Map", 2D) = "gray" {}
@@ -127,6 +128,7 @@ Shader "The Ravine/ChunkGrassShader"
         TEXTURE2D(_GrassTrample); SAMPLER(sampler_GrassTrample);
         float4 _GrassTrampleWindow;
         float _GrassTrampleEnabled;
+        float4 _GrassView;
 
         static const int SoilSide = 5;
 
@@ -374,7 +376,7 @@ Shader "The Ravine/ChunkGrassShader"
 
             ZWrite On
             ZTest LEqual
-            AlphaToMask On 
+            AlphaToMask [_AlphaToMask]
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -545,9 +547,24 @@ Shader "The Ravine/ChunkGrassShader"
             Varyings ShadowVert(Attributes input)
             {
                 Varyings output;
+                InstanceData raw = instanceData[input.instanceID];
+
+                UNITY_BRANCH
+                if (_GrassView.w > 0.0)
+                {
+                    float3 offset = raw.position - _GrassView.xyz;
+                    if (dot(offset, offset) > _GrassView.w)
+                    {
+                        output.positionCS = float4(0.0, 0.0, -2.0, 1.0);
+                        output.uv = float2(0.0, 0.0);
+                        output.texIndex = 0;
+                        return output;
+                    }
+                }
+
                 float4 soil;
                 float3 trample;
-                InstanceData instance = ApplySoilToInstance(instanceData[input.instanceID], soil, trample);
+                InstanceData instance = ApplySoilToInstance(raw, soil, trample);
 
                 float heightFactor;
                 float3 windOffset;
