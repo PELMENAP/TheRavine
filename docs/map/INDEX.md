@@ -39,7 +39,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Population` | 4 | 753 |
 | `Assets/Scripts/EntitySystem/AI/Rules` | 10 | 3088 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI` | 21 | 3445 |
-| `Assets/Scripts/EntitySystem/AI/Skills` | 15 | 1954 |
+| `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2155 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 7 | 1099 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
@@ -50,8 +50,8 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/Entityes/Bot/BotBehavious` | 3 | 55 |
 | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts` | 10 | 986 |
 | `Assets/Scripts/EntitySystem/Entityes/Mob` | 4 | 456 |
-| `Assets/Scripts/EntitySystem/Entityes/Player` | 7 | 1557 |
-| `Assets/Scripts/EntitySystem/Entityes/Player/Components` | 8 | 769 |
+| `Assets/Scripts/EntitySystem/Entityes/Player` | 7 | 1559 |
+| `Assets/Scripts/EntitySystem/Entityes/Player/Components` | 8 | 789 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/Joystick Pack` | 2 | 116 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerBehaviours` | 3 | 79 |
 | `Assets/Scripts/EntitySystem/Info` | 1 | 24 |
@@ -105,7 +105,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/SFX/UISounds` | 3 | 145 |
 | `Assets/Scripts/ScriptableData/Item` | 5 | 161 |
 | `Assets/Scripts/ScriptableData/Item/Descriprtion` | 2 | 83 |
-| `Assets/Scripts/Terminal` | 8 | 787 |
+| `Assets/Scripts/Terminal` | 9 | 830 |
 | `Assets/Scripts/Terminal/PDollar/Scripts` | 7 | 736 |
 | `Assets/Scripts/Terminal/Rive` | 5 | 825 |
 | `Assets/Scripts/Terminal/Rive/Core` | 9 | 2163 |
@@ -115,8 +115,9 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory` | 8 | 1358 |
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
+| `Assets/Scripts/UI/SkillGraph` | 5 | 611 |
 | `Assets/Scripts/View` | 2 | 23 |
-| `Assets/Tests/EditMode` | 61 | 8711 |
+| `Assets/Tests/EditMode` | 62 | 8947 |
 
 ## Assemblies
 
@@ -138,7 +139,7 @@ References are resolved from GUIDs; `+N` is the number of package assemblies out
 | Rive | `Assets/Scripts/Terminal/Rive/Core` | Core, UniTask |
 | UIInventory | `Assets/Scripts/UI` | Audio, BehavioursMap, Core, EntitySystem, EventSystem, Info, Inventory, LitMotion, ObjectSystem, SkillSystem, Tayx.Graphy, UniTask, UniTask.Addressables, UniTask.Linq, View, undream.llmunity.Runtime +5 |
 | View | `Assets/Scripts/View` | UniTask +1 |
-| EntitySystem.Tests.EditMode | `Assets/Tests/EditMode` | BehavioursMap, Core, EntitySystem, Info, Inventory, ObjectSystem, Rive, UniTask +5 |
+| EntitySystem.Tests.EditMode | `Assets/Tests/EditMode` | BehavioursMap, Core, EntitySystem, Info, Inventory, ObjectSystem, Rive, UIInventory, UniTask +5 |
 
 Folders compiled into `Assembly-CSharp` (no asmdef above them): `Assets/Scripts/Editor`, `Assets/Scripts/GameSceneManagerSystem`, `Assets/Scripts/Terminal`, `Assets/Scripts/Test`.
 
@@ -410,7 +411,9 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | SharedCentroids | class | `Assets/Scripts/EntitySystem/Virology/TranslationTable.cs` | 10 |
 | ShowServiceLocatorCommand | class | `Assets/Scripts/Terminal/BaseCommands.cs` | 94 |
 | SimpleUnitAnimator | class | `Assets/Scripts/Core/Utilities/SimpleUnitAnimation.cs` | 3 |
-| SkillCommandOp | enum | `Assets/Scripts/EntitySystem/Entityes/Player/Components/PlayerSkillGraph.cs` | 6 |
+| SkillCommandOp | enum | `Assets/Scripts/EntitySystem/Entityes/Player/Components/PlayerSkillGraph.cs` | 7 |
+| SkillEdgeKind | enum | `Assets/Scripts/EntitySystem/AI/Skills/SkillGraphSnapshot.cs` | 13 |
+| SkillVertexState | enum | `Assets/Scripts/EntitySystem/AI/Skills/SkillGraphSnapshot.cs` | 3 |
 | SlotCell | struct | `Assets/Scripts/EntitySystem/Casino/CasinoSlotsPref.cs` | 9 |
 | SlotKindExtensions | class | `Assets/Scripts/Model/InventoryModel/SlotKind.cs` | 31 |
 | SlotLine | struct | `Assets/Scripts/EntitySystem/Casino/CasinoSlots.cs` | 391 |

@@ -1,0 +1,136 @@
+.skill-panel {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    flex-direction: column;
+    background-color: rgba(10, 12, 18, 0.94);
+    color: rgb(228, 234, 245);
+    font-size: 14px;
+}
+
+.skill-panel__header {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 14px;
+    background-color: rgba(24, 28, 40, 0.98);
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+.skill-panel__title {
+    font-size: 18px;
+    -unity-font-style: bold;
+    margin-right: 24px;
+}
+
+.skill-panel__budget {
+    flex-grow: 1;
+    color: rgb(190, 205, 230);
+}
+
+.skill-panel__body {
+    flex-grow: 1;
+    flex-direction: row;
+}
+
+.skill-card {
+    width: 280px;
+    padding: 12px;
+    background-color: rgba(20, 24, 34, 0.98);
+    border-left-width: 1px;
+    border-left-color: rgba(255, 255, 255, 0.12);
+}
+
+.skill-card__title {
+    font-size: 17px;
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+}
+
+.skill-card__body {
+    white-space: normal;
+    color: rgb(200, 210, 228);
+}
+
+.skill-confirm {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.skill-confirm__box {
+    padding: 18px;
+    background-color: rgb(30, 36, 52);
+    border-radius: 8px;
+    max-width: 360px;
+}
+
+.skill-confirm__row {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.skill-canvas {
+    background-color: rgba(14, 17, 26, 1);
+    overflow: hidden;
+}
+
+.skill-node {
+    border-radius: 23px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(30, 36, 50, 0.96);
+}
+
+.skill-node--open {
+    background-color: rgb(38, 62, 96);
+}
+
+.skill-node--available {
+    background-color: rgb(34, 46, 70);
+}
+
+.skill-node--silhouette {
+    opacity: 0.4;
+}
+
+.skill-node--island {
+    opacity: 0.55;
+    background-color: rgb(46, 40, 64);
+}
+
+.skill-node--pruned {
+    opacity: 0.65;
+    background-color: rgb(66, 44, 44);
+}
+
+.skill-node__level {
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(240, 244, 252);
+}
+
+.skill-node__badge {
+    position: absolute;
+    font-size: 10px;
+    color: rgb(255, 224, 150);
+}
+
+.skill-node__badge--clique {
+    right: -2px;
+    top: -4px;
+}
+
+.skill-node__badge--decay {
+    left: -4px;
+    bottom: -4px;
+    color: rgb(150, 220, 255);
+}

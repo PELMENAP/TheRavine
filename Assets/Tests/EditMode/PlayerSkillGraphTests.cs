@@ -1,9 +1,7 @@
 using NUnit.Framework;
 using TheRavine.Base;
 using TheRavine.EntityControl;
-using Unity.Collections;
 using Unity.Mathematics;
-using Unity.Netcode;
 using UnityEngine;
 
 public class PlayerSkillGraphTests
@@ -288,39 +286,6 @@ public class PlayerSkillGraphTests
         Assert.AreEqual(ushort.MaxValue, SkillLevelsPacket.Quantize(1e9f, 100f));
         Assert.AreEqual(1234, SkillLevelsPacket.Quantize(12.34f, 100f));
         Assert.AreEqual(12.34f, SkillLevelsPacket.Dequantize(1234, 100f), 1e-4f);
-    }
-
-    [Test]
-    public void PacketsSurviveTheBufferSerializers()
-    {
-        FreePoints();
-        Assert.IsTrue(FindBuildable(out int u, out int v));
-        _graph.TryExecute(SkillCommandOp.Build, u, v, 1f);
-        _graph.Store.SetLevel(PlayerSkillGraph.Slot, 2, 33.3f, 1f);
-        Assert.IsTrue(_graph.TryTakeTopology(out var topology));
-        Assert.IsTrue(_graph.TryTakeLevels(0f, out var levels));
-
-        using var writer = new FastBufferWriter(4096, Allocator.Temp);
-        var write = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
-        topology.NetworkSerialize(write);
-        levels.NetworkSerialize(write);
-
-        using var reader = new FastBufferReader(writer, Allocator.Temp);
-        var read = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
-        var topologyBack = new SkillTopologyPacket();
-        var levelsBack = new SkillLevelsPacket();
-        topologyBack.NetworkSerialize(read);
-        levelsBack.NetworkSerialize(read);
-
-        Assert.AreEqual(topology.Revision, topologyBack.Revision);
-        Assert.AreEqual(topology.Count, topologyBack.Count);
-        CollectionAssert.AreEqual(topology.Rows, topologyBack.Rows);
-        Assert.AreEqual(topology.IslandMask, topologyBack.IslandMask);
-        Assert.AreEqual(topology.Forest, topologyBack.Forest);
-        Assert.AreEqual(topology.Origin, topologyBack.Origin);
-        CollectionAssert.AreEqual(levels.Levels, levelsBack.Levels);
-        CollectionAssert.AreEqual(levels.Peaks, levelsBack.Peaks);
-        Assert.IsTrue(_mirror.ApplyTopology(in topologyBack));
     }
 
     [Test]

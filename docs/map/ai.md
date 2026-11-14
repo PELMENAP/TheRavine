@@ -80,6 +80,7 @@ Design: `docs/design/skill_graph.md`. Rules: `SimulationRules.Skills.cs`; `Rules
 - `SkillGraphTopology` (+ `.Tarjan`): `Active` rows, `IslandMask`, `PrunedMask`, budget; `Create`, `TryBuild`, `TryPrune`, `TryRestore`; one iterative Tarjan pass rebuilds bridges, `CliqueSize`, `CycleFactor`, `ComponentOf`.
 - `SkillGraphMath`: static rules 1–12 of the design, Burst-compatible, rules by `in RulesFrame`.
 - `SkillGraphStore`: per-agent SoA (`Levels`, `Peaks`, `LastUsed`, `Talents`, `Roots`, `Dirty`); `Reset`, `Retarget`, `AddXp`, `Materialize`, `RemoveSwapBack`.
+- `SkillGraphQuery.Fill` writes a `SkillGraphSnapshot` for a view through `ISkillGraphSource`; `ISkillGraphCommands` is the command side (`PlayerSkillGraph` implements both). View: `docs/map/inventory-ui.md`.
 - `SkillModifiers`: one multiplier per `SkillChannel`; `From(store, index, topology, atlas)`.
 - `SkillGraphXp.Award` adds the XP of a completed `EntityAction`; `EntityCommandRunner.Finish` calls it through `EntityModel.AwardSkillXp` for every creature.
 - `EntityModel.RefreshSkillTuning` re-expresses tuning at the start of a cycle when the store `Dirty` flag is set; `EntityTuning.Express` with `SkillModifiers` and `CasteModifiers.Combine`.

@@ -237,6 +237,7 @@ namespace TheRavine.EntityControl
             aimComponent = playerEntity.GetEntityComponent<AimComponent>();
             stats = playerEntity.GetEntityComponent<StatsComponent>();
             skillGraph = playerEntity.GetEntityComponent<PlayerSkillGraph>();
+            skillGraph?.BindCommandSender(RequestSkillCommand);
             mortalityComponent = playerEntity.GetEntityComponent<MortalityComponent>();
             energyComponent = playerEntity.GetEntityComponent<EnergyComponent>();
             InitStatePattern(playerEntity.GetEntityComponent<StatePatternComponent>());
@@ -993,6 +994,7 @@ namespace TheRavine.EntityControl
 
         public void OnDisable()
         {
+            skillGraph?.BindCommandSender(null);
             Raise.action.performed -= AimRaise;
             entityEventBus?.Unsubscribe<ViewClick>(OnViewClick);
 
