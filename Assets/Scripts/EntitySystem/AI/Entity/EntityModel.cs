@@ -202,11 +202,12 @@ public partial class EntityModel : IEntity, IFoodReceiver
         float isolate = Virology != null ? Virology.Modifiers.Isolate * SimulationRules.Frame.IsolateStrength : 0f;
         float social  = math.max(0f, (1f + aux.x) * (1f - isolate));
         float spacing = (1f + aux.y) * (1f + isolate);
+        ref readonly var r = ref SimulationRules.Frame;
         return new BoidAgent
         {
             Position = Position2D,
             Heading  = Heading,
-            Weights  = IsWild ? float3.zero : new float3(g.BoidSeparation * spacing, g.BoidAlignment * social, g.BoidCohesion * social),
+            Weights  = IsWild ? new float3(r.PackBoidSeparation, r.PackBoidAlignment, r.PackBoidCohesion) : new float3(g.BoidSeparation * spacing, g.BoidAlignment * social, g.BoidCohesion * social),
             Colony   = ColonyIndex,
             Active   = (byte)(IsDisposed || IsDeathPending ? 0 : 1),
             Plan     = (byte)(_plan != null ? _plan.Kind : PlanKind.Count),
@@ -373,6 +374,11 @@ public partial class EntityModel : IEntity, IFoodReceiver
         if (kin != null && kin.Colony == Colony)
         {
             position = kin.Position2D;
+            return true;
+        }
+        if (IsWild && Colony.PackCount > 1)
+        {
+            position = Colony.PackCentre;
             return true;
         }
         position = default;

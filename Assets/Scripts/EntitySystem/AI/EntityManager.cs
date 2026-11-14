@@ -692,7 +692,11 @@ public class EntityManager : MonoBehaviour
             var colony  = _colonies[c];
             var members = colony.Members;
             colony.TickEma(dt);
-            if (colony.IsWild) continue;
+            if (colony.IsWild)
+            {
+                UpdatePack(colony, members);
+                continue;
+            }
 
             for (int i = 0; i < members.Length; i++)
             {
@@ -732,6 +736,20 @@ public class EntityManager : MonoBehaviour
         }
     }
 
+    private void UpdatePack(ColonyState colony, ReadOnlySpan<int> members)
+    {
+        float2 sum = float2.zero;
+        int count = 0;
+        for (int i = 0; i < members.Length; i++)
+        {
+            var e = _entities[members[i]];
+            if (e.IsDisposed || e.IsDeathPending) continue;
+            sum += e.Position2D;
+            count++;
+        }
+        colony.SetPack(count > 0 ? sum / count : float2.zero, count);
+    }
+
     private readonly float[] _casteWeights = new float[(int)Caste.Count];
 
     private Caste ChooseCaste(ColonyState colony, int members, EntityModel e, bool review)
@@ -749,7 +767,7 @@ public class EntityManager : MonoBehaviour
         float winter = SeasonClock.WinterApproach(SimulationClock.Time) * r.PreWinterWorkerStimulus;
 
         float storage = math.saturate(nest.Storage / math.max(r.NestStorageNorm, 1e-3f));
-        Stimulus(Caste.Soldier, math.saturate(nest.Alarm + nest.DangerAtNest) + old, th[(int)Caste.Soldier], colony, inv);
+        Stimulus(Caste.Soldier, math.saturate(nest.Alarm + nest.DangerAtNest + colony.Pressure * r.PressureSoldierGain) + old, th[(int)Caste.Soldier], colony, inv);
         Stimulus(Caste.Worker,  1f - storage + mid + winter,                   th[(int)Caste.Worker],  colony, inv);
         Stimulus(Caste.Scout,   math.saturate(nest.Hunger + (nest.HasFoodPeak ? 0f : r.CasteScoutNoFoodStimulus)) + old, th[(int)Caste.Scout], colony, inv);
         Stimulus(Caste.Nurse,   math.saturate(colony.JuvenileCount * r.CasteNurseGain / math.max(members, 1)) + young, th[(int)Caste.Nurse], colony, inv);
@@ -821,7 +839,7 @@ public class EntityManager : MonoBehaviour
                 ? 0f
                 : foodIndex.NestScarcity(nestPos, r.ScarcityChunkRadius);
 
-            colony.Nest.EndTick(dt, atNest, colony.Scarcity);
+            colony.Nest.EndTick(dt, atNest, colony.Scarcity, colony.Pressure);
             colony.RefreshQuorum();
 
             float inv = members.Length > 0 ? 1f / members.Length : 0f;

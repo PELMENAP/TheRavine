@@ -22,22 +22,22 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 18 | 2252 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
-| `Assets/Scripts/EntitySystem/AI` | 11 | 2066 |
+| `Assets/Scripts/EntitySystem/AI` | 11 | 2084 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
-| `Assets/Scripts/EntitySystem/AI/Colony` | 7 | 780 |
+| `Assets/Scripts/EntitySystem/AI/Colony` | 7 | 793 |
 | `Assets/Scripts/EntitySystem/AI/Debug` | 3 | 1615 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 784 |
-| `Assets/Scripts/EntitySystem/AI/Entity` | 17 | 2650 |
+| `Assets/Scripts/EntitySystem/AI/Entity` | 17 | 2666 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1456 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 713 |
 | `Assets/Scripts/EntitySystem/AI/Flock` | 1 | 230 |
-| `Assets/Scripts/EntitySystem/AI/Instinct` | 1 | 432 |
+| `Assets/Scripts/EntitySystem/AI/Instinct` | 1 | 441 |
 | `Assets/Scripts/EntitySystem/AI/LSTM` | 2 | 198 |
 | `Assets/Scripts/EntitySystem/AI/Nest` | 1 | 394 |
 | `Assets/Scripts/EntitySystem/AI/Perception` | 9 | 2057 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 567 |
-| `Assets/Scripts/EntitySystem/AI/Population` | 4 | 726 |
-| `Assets/Scripts/EntitySystem/AI/Rules` | 9 | 2885 |
+| `Assets/Scripts/EntitySystem/AI/Population` | 4 | 738 |
+| `Assets/Scripts/EntitySystem/AI/Rules` | 9 | 2954 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI` | 21 | 3445 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 7 | 1099 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
@@ -115,7 +115,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/View` | 2 | 23 |
-| `Assets/Tests/EditMode` | 54 | 6861 |
+| `Assets/Tests/EditMode` | 55 | 7032 |
 
 ## Assemblies
 
@@ -237,6 +237,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | FaderOnTransit | class | `Assets/Scripts/Core/Fader.cs` | 9 |
 | FamiliarityMath | class | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Social.cs` | 236 |
 | FarMode | enum | `Assets/Scripts/ObjectSystem/ObjectInfo/ObjectInfo.cs` | 139 |
+| FeedingLatchTests | class | `Assets/Tests/EditMode/StartleTests.cs` | 82 |
 | FillChunkArraysJob | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 596 |
 | FireCell | struct | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireEvent.cs` | 10 |
 | FireRules | class | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/MapEventRules.cs` | 20 |
@@ -287,12 +288,12 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | InputCommand | class | `Assets/Scripts/Terminal/Rive/InteractorCommands.cs` | 66 |
 | InstanceType | enum | `Assets/Scripts/ObjectSystem/ObjectInfo/ObjectInfo.cs` | 133 |
 | InstinctBits | class | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 7 |
-| InstinctGenes | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 66 |
-| InstinctInput | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 28 |
-| InstinctJob | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 158 |
-| InstinctOutput | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 103 |
-| InstinctRules | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 114 |
-| InstinctState | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 96 |
+| InstinctGenes | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 68 |
+| InstinctInput | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 29 |
+| InstinctJob | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 164 |
+| InstinctOutput | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 105 |
+| InstinctRules | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 116 |
+| InstinctState | struct | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | 98 |
 | InteractorListCommand | class | `Assets/Scripts/Terminal/Rive/InteractorCommands.cs` | 6 |
 | InteractorRegistry | class | `Assets/Scripts/Terminal/Rive/Core/RiveInteractors.cs` | 156 |
 | InteractorResetCommand | class | `Assets/Scripts/Terminal/Rive/InteractorCommands.cs` | 36 |
@@ -337,6 +338,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | ObjectInstInfo | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1778 |
 | ObjectSpawnConfig | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator/ObjectGeneratorStructures.cs` | 36 |
 | ObjectViewMotionSettings | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/ObjectViewMotion.cs` | 7 |
+| PackLeashTests | class | `Assets/Tests/EditMode/PredatorPressureTests.cs` | 54 |
 | Pair | struct | `Assets/Scripts/Core/Utilities/Extentions.cs` | 97 |
 | PerceptronApplyJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 184 |
 | PerceptronTrainJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 131 |
