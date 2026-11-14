@@ -13,6 +13,37 @@ MonoBehaviour:
   m_Name: SimulationRules
   m_EditorClassIdentifier: EntitySystem::SimulationRules
   restHealRate: 5
+  actionMinSeconds:
+  - 0.3
+  - 0.5
+  - 0.5
+  - 0.2
+  - 0.5
+  - 0.1
+  - 1
+  - 0.3
+  - 0.2
+  - 0.2
+  - 0.2
+  actionMaxSeconds:
+  - 2
+  - 8
+  - 4
+  - 4
+  - 2
+  - 2.5
+  - 6
+  - 2
+  - 1
+  - 1
+  - 1
+  objectSenseRadius: 3
+  objectReach: 1.5
+  agentEditRate: 2
+  agentEditBurst: 2
+  agentEditsPerFrame: 4
+  heldObjectSpeedMul: 0.6
+  dangerDirectionMinMass: 0.25
   startupDelaySeconds: 3
   tickLoopWarmupSeconds: 3
   agentTickInterval: 1
@@ -88,6 +119,18 @@ MonoBehaviour:
   cameraScaleStep: 0.05
   cameraScaleMin: 0
   cameraScaleMax: 1
+  cameraYawDegreesPerSide: 180
+  cameraPitchDegreesPerSide: 60
+  cameraPitchMin: -20
+  cameraPitchMax: 80
+  cameraPitchInitial: 40
+  cameraDragThresholdPixels: 6
+  cameraInvertDragYaw: 1
+  cameraInvertDragPitch: 1
+  cameraPivotHeight: 7
+  cameraDistanceMax: 50
+  cameraDistanceMin: 10
+  cameraTerrainClearance: 2
   kinSearchRangeMul: 2
   nestFarRadiusMul: 3
   poiEnergyEmaAlpha: 0.3
@@ -139,8 +182,8 @@ MonoBehaviour:
   soldierAttackMul: 1.6
   soldierHealthMul: 1.5
   soldierUpkeepMul: 1.1
-  scoutSpeedMul: 1.3
-  scoutEnergyCapMul: 1.3
+  scoutSpeedMul: 1.6
+  scoutEnergyCapMul: 1.5
   scoutHealthMul: 0.7
   scoutDetectMul: 1.5
   scoutUpkeepMul: 1.1
@@ -162,9 +205,9 @@ MonoBehaviour:
   frenzyTargetsOwnColony: 0
   nestFoodMinPortionFraction: 1
   nestJuvenileReserve: 60
-  frontierRadius: 20
-  seekMinLegs: 4
-  seekMaxLegs: 6
+  frontierRadius: 60
+  seekMinLegs: 2
+  seekMaxLegs: 10
   seekStorageLow: 0.25
   colonyEmaTau: 30
   colonyRewardWeight: 1
@@ -320,19 +363,6 @@ MonoBehaviour:
   preWinterWorkerStimulus: 0.4
   winterGrowthMul: 0.3
   winterDrainMul: 1.3
-  fireIgnitionChance: 0.2
-  fireSeasonBias: 0.5
-  fireSpreadChance: 0.5
-  fireWindBias: 0.8
-  fireBurnSeconds: 30
-  fireDamagePerSecond: 8
-  fireStepInterval: 0.5
-  fireMaxBurning: 512
-  foodFlammability:
-  - 1
-  - 0.6
-  - 0.8
-  - 0
   foodToxicity:
   - 0
   - 1
@@ -359,7 +389,7 @@ MonoBehaviour:
   digestRateRest: 4
   digestRateActive: 1.5
   digestEffRest: 0.95
-  digestEffActive: 0.7
+  digestEffActive: 0.9
   stomachCapacityFraction: 0.6
   wellFedGainPerSecond: 0.05
   wellFedDecayPerSecond: 0.02
@@ -409,8 +439,8 @@ MonoBehaviour:
   - 0.04
   hungerForageBias: 2
   hungerRestDrop: 3
-  dietPlantFloor: 0.4
-  dietMeatFloor: 0.4
+  dietPlantFloor: 0.7
+  dietMeatFloor: 0.7
   winterWiltTau: 120
   unreachableFoodSeconds: 120
   terminalPenalty: -1
@@ -508,7 +538,7 @@ MonoBehaviour:
   surpriseAlpha: 0.1
   restRewardPerSecond: 0.02
   planMinTravel: 15
-  planMaxTravel: 60
+  planMaxTravel: 150
   planArriveRadius: 3
   planMaxHops: 4
   planMinSecondsByPlan:
@@ -684,10 +714,10 @@ MonoBehaviour:
   threatenRangeMul: 2
   wanderGradientSamples: 6
   wanderGradientMin: 0.05
-  levyAlpha: 1.5
-  levyMinStep: 6
-  levyMaxStep: 60
-  patrolLegs: 3
+  levyAlpha: 1.2
+  levyMinStep: 10
+  levyMaxStep: 100
+  patrolLegs: 5
   fleeMaxLegs: 4
   tetherRadius: 8
   dashMul: 1.6
@@ -696,7 +726,7 @@ MonoBehaviour:
   dashEnergyCost: 2
   attackEnergyMin: 2
   attackBudgetMargin: 1
-  fleeSprintDistance: 6
+  fleeSprintDistance: 40
   fleeZigzagLegs: 3
   fleeZigzagCurvature: 0.8
   threatenStepDistance: 0.3
@@ -723,6 +753,7 @@ MonoBehaviour:
   blockedSeconds: 0.75
   agentBodyRadius: 0.3
   agentBodyHeight: 1
+  agentStepUp: 0.5
   obstacleCatchUpMul: 1.25
   threatenAttackMul: 1.3
   groupAttackBonus: 0.25
@@ -732,14 +763,14 @@ MonoBehaviour:
   warnedFleeSpeedMul: 1.3
   movePauseMin: 0.3
   movePauseMax: 1.2
-  attackMoveMaxDuration: 2
+  attackMoveMaxDuration: 1
   attackTriggerMinMul: 0
   attackTriggerMaxMul: 2.5
   attackContactFraction: 0.6
   ambushMinHold: 1.5
-  ambushMaxHold: 12
+  ambushMaxHold: 5
   ambushDamageMul: 1.5
-  dashStrikeMul: 1.2
+  dashStrikeMul: 1.5
   plannerCandidates: 8
   plannerSectorHalf: 0.9
   plannerMinRadiusFraction: 0.6
@@ -750,7 +781,7 @@ MonoBehaviour:
   plannerAlignWeight: 0.3
   plannerCurvatureMin: 0.1
   plannerCurvatureScale: 0.35
-  plannerRadiusMax: 30
+  plannerRadiusMax: 100
   plannerMaxReplans: 2
   plannerReplanAngle: 0.6
   varianceSpread:
@@ -825,7 +856,7 @@ MonoBehaviour:
   immuneUpkeep: 0.3
   immuneThresholdMin: 0.5
   immuneThresholdMax: 1.5
-  speechSpreadRadius: 10
+  speechSpreadRadius: 20
   immuneMemorySize: 8
   immuneHammingThreshold: 10
   feverIntegrityMul: 4

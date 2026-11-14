@@ -1458,6 +1458,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8476075289225520149}
     m_Modifications:
+    - target: {fileID: 719320706938028729, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: trampleCompute
+      value: 
+      objectReference: {fileID: 7200000, guid: 0ee3081f8e954ddf8fb9275c0927e923, type: 3}
     - target: {fileID: 2172697054823260749, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1543,6 +1547,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: grassLodShader
+      value: 
+      objectReference: {fileID: 7200000, guid: 4d7e9b2a1c8f4e35a6b0d3c7f1e82a54, type: 3}
+    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: targetTransform
       value: 
       objectReference: {fileID: 6722119735624511312}
@@ -1550,6 +1558,18 @@ PrefabInstance:
       propertyPath: targetMeshFilter
       value: 
       objectReference: {fileID: 3903556155217441569}
+    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: 'lodMeshes.Array.data[0]'
+      value: 
+      objectReference: {fileID: 4300000, guid: 53a609b0811916efe86ba4ca4b01e48e, type: 2}
+    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: 'lodMeshes.Array.data[1]'
+      value: 
+      objectReference: {fileID: 4300000, guid: 53a609b0811916efe86ba4ca4b01e48e, type: 2}
+    - target: {fileID: 3471819257872331844, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
+      propertyPath: 'lodMeshes.Array.data[2]'
+      value: 
+      objectReference: {fileID: 4300000, guid: 53a609b0811916efe86ba4ca4b01e48e, type: 2}
     - target: {fileID: 7784986139299065775, guid: 1677e97cfac9a4ebe9b27be80cfd6f36, type: 3}
       propertyPath: m_Name
       value: MapGenerator

@@ -29,11 +29,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BillboardAlbedo:
-        m_Texture: {fileID: 2800000, guid: 265adaf9695902f408c5d20d110d417a, type: 3}
+        m_Texture: {fileID: 2800000, guid: a877d173aefe02e448359ed9841a1cc8, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BillboardNormal:
-        m_Texture: {fileID: 2800000, guid: 58658f86b954b7442ab3371b8090b10d, type: 3}
+        m_Texture: {fileID: 2800000, guid: 5e544f8b45254a249af4243e74936bae, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
@@ -97,7 +97,7 @@ Material:
     - _AlphaToMask: 0
     - _AmbientFlatten: 0.182
     - _AmbientStrength: 0.066
-    - _BillboardPitch: 5
+    - _BillboardPitch: 20
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
@@ -130,7 +130,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _AlbedoTint: {r: 0.2272161, g: 0.4339623, b: 0.25822803, a: 1}
-    - _AtlasGrid: {r: 2, g: 4, b: 0, a: 0}
+    - _AtlasGrid: {r: 8, g: 4, b: 0, a: 0}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
