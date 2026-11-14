@@ -9,6 +9,7 @@ public sealed partial class SkillGraphTopology : IDisposable
     public const int UnreachableDistance = 255;
     public const int BuildCost = 1;
     public const int RestoreCost = 2;
+    public const float MaxPhiPeak = 1e6f;
 
     private readonly SkillAtlas _atlas;
     private readonly int _count;
@@ -160,6 +161,38 @@ public sealed partial class SkillGraphTopology : IDisposable
 
     public bool CanPrune(int u, int v, int rootVertex, out ulong far)
         => CanPrune(u, v, rootVertex, out far, out _, out _);
+
+    public bool TryApplyState(in SkillTopologyPacket p, bool keepRevision)
+    {
+        if (p.Count != _count || p.Rows == null || p.Rows.Length != _count || p.Bridges == null) return false;
+        if (p.Bridges.Length < MaxPrunedBridges || p.BridgeCount > MaxPrunedBridges) return false;
+        if (!math.isfinite(p.PhiPeak) || p.PhiPeak < 0f || p.PhiPeak > MaxPhiPeak) return false;
+        ulong all = _count == 64 ? ulong.MaxValue : (1ul << _count) - 1ul;
+        if ((p.IslandMask & ~all) != 0ul || (p.PrunedMask & ~all) != 0ul) return false;
+        for (int u = 0; u < _count; u++)
+        {
+            ulong row = p.Rows[u];
+            if ((row & ~_atlas.PotentialRow(u)) != 0ul || ((row >> u) & 1ul) != 0ul) return false;
+            for (ulong rest = row; rest != 0ul; rest &= rest - 1ul)
+                if (((p.Rows[math.tzcnt(rest)] >> u) & 1ul) == 0ul) return false;
+        }
+        for (int i = 0; i < p.BridgeCount; i++)
+        {
+            int near = p.Bridges[i] >> 8, far = p.Bridges[i] & 255;
+            if (near >= _count || far >= _count || near == far || ((p.PrunedMask >> far) & 1ul) == 0ul) return false;
+        }
+
+        for (int v = 0; v < _count; v++) _active[v] = p.Rows[v];
+        _islandMask = p.IslandMask;
+        _prunedMask = p.PrunedMask;
+        _prunedBridges.Clear();
+        for (int i = 0; i < p.BridgeCount; i++) _prunedBridges.Add(p.Bridges[i]);
+        _phiPeak = p.PhiPeak;
+        _spentEdgePoints = p.Spent;
+        Rebuild();
+        _revision = keepRevision ? p.Revision : _revision + 1;
+        return true;
+    }
 
     public void PreviewBuild(int u, int v, out float cycleFactor, out int cliqueSize)
     {

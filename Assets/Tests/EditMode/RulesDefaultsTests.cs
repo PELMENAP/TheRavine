@@ -168,6 +168,8 @@ public class RulesDefaultsTests
         Assert.AreEqual(2, r.SkillIslandDropMax);
         Assert.AreEqual(0.25f, r.SkillForestGeneRange);
         Assert.AreEqual(0.15f, r.SkillK4Quantile);
+        Assert.AreEqual(1f, r.SkillReplicateInterval);
+        Assert.AreEqual(100f, r.SkillLevelFixedScale);
         Assert.Greater(r.SkillDecayRate, 0f);
         Assert.Greater(r.SkillSweepInterval, 0f);
         Assert.Greater(r.SkillSolverInterval, 0f);

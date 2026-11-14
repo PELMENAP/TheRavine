@@ -14,7 +14,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Core/ServiceLocator` | 3 | 310 |
 | `Assets/Scripts/Core/Settings` | 4 | 793 |
 | `Assets/Scripts/Core/Settings/GameSettings` | 2 | 109 |
-| `Assets/Scripts/Core/Settings/WorldData` | 3 | 310 |
+| `Assets/Scripts/Core/Settings/WorldData` | 4 | 349 |
 | `Assets/Scripts/Core/Settings/WorldSettings` | 2 | 142 |
 | `Assets/Scripts/Core/Storage` | 5 | 351 |
 | `Assets/Scripts/Core/Timer` | 4 | 271 |
@@ -37,9 +37,9 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Perception` | 9 | 2057 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 567 |
 | `Assets/Scripts/EntitySystem/AI/Population` | 4 | 753 |
-| `Assets/Scripts/EntitySystem/AI/Rules` | 10 | 3082 |
+| `Assets/Scripts/EntitySystem/AI/Rules` | 10 | 3088 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI` | 21 | 3445 |
-| `Assets/Scripts/EntitySystem/AI/Skills` | 13 | 1773 |
+| `Assets/Scripts/EntitySystem/AI/Skills` | 15 | 1954 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 7 | 1099 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
@@ -50,8 +50,8 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/Entityes/Bot/BotBehavious` | 3 | 55 |
 | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts` | 10 | 986 |
 | `Assets/Scripts/EntitySystem/Entityes/Mob` | 4 | 456 |
-| `Assets/Scripts/EntitySystem/Entityes/Player` | 7 | 1426 |
-| `Assets/Scripts/EntitySystem/Entityes/Player/Components` | 7 | 400 |
+| `Assets/Scripts/EntitySystem/Entityes/Player` | 7 | 1557 |
+| `Assets/Scripts/EntitySystem/Entityes/Player/Components` | 8 | 769 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/Joystick Pack` | 2 | 116 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerBehaviours` | 3 | 79 |
 | `Assets/Scripts/EntitySystem/Info` | 1 | 24 |
@@ -116,7 +116,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/View` | 2 | 23 |
-| `Assets/Tests/EditMode` | 60 | 8241 |
+| `Assets/Tests/EditMode` | 61 | 8711 |
 
 ## Assemblies
 
@@ -410,6 +410,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | SharedCentroids | class | `Assets/Scripts/EntitySystem/Virology/TranslationTable.cs` | 10 |
 | ShowServiceLocatorCommand | class | `Assets/Scripts/Terminal/BaseCommands.cs` | 94 |
 | SimpleUnitAnimator | class | `Assets/Scripts/Core/Utilities/SimpleUnitAnimation.cs` | 3 |
+| SkillCommandOp | enum | `Assets/Scripts/EntitySystem/Entityes/Player/Components/PlayerSkillGraph.cs` | 6 |
 | SlotCell | struct | `Assets/Scripts/EntitySystem/Casino/CasinoSlotsPref.cs` | 9 |
 | SlotKindExtensions | class | `Assets/Scripts/Model/InventoryModel/SlotKind.cs` | 31 |
 | SlotLine | struct | `Assets/Scripts/EntitySystem/Casino/CasinoSlots.cs` | 391 |
