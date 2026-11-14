@@ -10,39 +10,53 @@ public sealed class SkillGraphSolver
     private readonly float[] _meanPeak = new float[SkillAtlas.MaxCount];
     private readonly float[] _meanTalent = new float[SkillAtlas.MaxCount];
     private readonly float[] _need = new float[(int)SkillNeed.Count];
+    private readonly int[] _single = new int[1];
     private float4 _weights;
     private ulong _openMask;
     private ulong _rootMask;
 
     public int Step(ColonyState colony, SkillGraphStore store, SkillAtlas atlas, SimulationRules rules)
     {
-        using var scope = StepMarker.Auto();
         var topology = colony.SkillTopology;
-        if (topology == null || !topology.IsCreated || topology.Count != atlas.Count || store.SkillCount != atlas.Count) return 0;
-        var members = colony.Members;
-        if (members.Length == 0) return 0;
+        if (topology == null || !topology.IsCreated) return 0;
+        FillNeeds(colony, in SimulationRules.Frame);
+        return Run(topology, colony.Index, colony.Members, colony.Pressure, store, atlas, rules);
+    }
+
+    public int StepSingle(SkillGraphTopology topology, int publishIndex, int storeIndex, SkillGraphStore store, SkillAtlas atlas, SimulationRules rules)
+    {
+        if (topology == null || !topology.IsCreated) return 0;
+        Array.Clear(_need, 0, _need.Length);
+        _single[0] = storeIndex;
+        return Run(topology, publishIndex, new ReadOnlySpan<int>(_single), 0f, store, atlas, rules);
+    }
+
+    private int Run(SkillGraphTopology topology, int publishIndex, ReadOnlySpan<int> members, float pressure,
+        SkillGraphStore store, SkillAtlas atlas, SimulationRules rules)
+    {
+        using var scope = StepMarker.Auto();
+        if (topology.Count != atlas.Count || store.SkillCount != atlas.Count || members.Length == 0) return 0;
 
         ref readonly var f = ref SimulationRules.Frame;
         Accumulate(store, topology, members);
         topology.UpdatePhi(PhiOfMeans(atlas.Count, in f));
-        FillNeeds(colony, in f);
 
         int changes = 0;
         while (topology.Available(in f) > 0 && TryPickBuild(topology, atlas, rules, in f, out int u, out int v))
         {
             MaterializeMembers(store, topology, members, in f);
             if (!topology.TryBuild(u, v)) break;
-            Commit(colony, store, topology, members);
+            Commit(publishIndex, store, topology, members);
             changes++;
             Accumulate(store, topology, members);
         }
 
-        if (colony.Pressure >= rules.PressureMigrateMin && TryPickPrune(topology, atlas.Count, rules, out int pu, out int pv))
+        if (pressure >= rules.PressureMigrateMin && TryPickPrune(topology, atlas.Count, rules, out int pu, out int pv))
         {
             MaterializeMembers(store, topology, members, in f);
             if (topology.TryPrune(pu, pv, -1))
             {
-                Commit(colony, store, topology, members);
+                Commit(publishIndex, store, topology, members);
                 changes++;
             }
         }
@@ -171,9 +185,9 @@ public sealed class SkillGraphSolver
         for (int i = 0; i < members.Length; i++) store.Materialize(members[i], now, topology, in f);
     }
 
-    private static void Commit(ColonyState colony, SkillGraphStore store, SkillGraphTopology topology, ReadOnlySpan<int> members)
+    private static void Commit(int publishIndex, SkillGraphStore store, SkillGraphTopology topology, ReadOnlySpan<int> members)
     {
-        store.PublishColony(colony.Index, topology);
+        store.PublishColony(publishIndex, topology);
         for (int i = 0; i < members.Length; i++) store.MarkDirty(members[i]);
     }
 }

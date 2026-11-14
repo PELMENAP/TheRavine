@@ -31,6 +31,8 @@ public sealed partial class SimulationRules
     [SerializeField] private int skillIslandDropMax = DefaultSkillIslandDropMax;
     [SerializeField] private float skillForestGeneRange = 0.25f;
     [SerializeField] private float skillK4Quantile = DefaultSkillK4Quantile;
+    [SerializeField] private float skillReplicateInterval = 1f;
+    [SerializeField] private float skillLevelFixedScale = 100f;
 
     public float SkillTalentMin => skillTalentMin;
     public float SkillTalentDecay => skillTalentDecay;
@@ -57,6 +59,8 @@ public sealed partial class SimulationRules
     public int SkillIslandDropMax => skillIslandDropMax;
     public float SkillForestGeneRange => skillForestGeneRange;
     public float SkillK4Quantile => skillK4Quantile;
+    public float SkillReplicateInterval => skillReplicateInterval;
+    public float SkillLevelFixedScale => skillLevelFixedScale;
 
     public static bool IsBound => _active != null;
 
@@ -87,5 +91,7 @@ public sealed partial class SimulationRules
         skillIslandDropMax = math.clamp(skillIslandDropMax, 0, 2);
         skillForestGeneRange = math.clamp(skillForestGeneRange, 0f, 1f);
         skillK4Quantile = math.clamp(skillK4Quantile, 0f, 1f);
+        if (!(skillReplicateInterval >= 0.1f)) skillReplicateInterval = 0.1f;
+        skillLevelFixedScale = math.clamp(skillLevelFixedScale, 1f, 100f);
     }
 }

@@ -168,6 +168,14 @@ public sealed class SkillGraphStore : IDisposable
         return job.Schedule(length, 8);
     }
 
+    public void SetReplicated(int index, int skill, float level, float peak, float now)
+    {
+        int slot = index * _skillCount + skill;
+        _levels[slot] = level;
+        _peaks[slot] = math.max(peak, level);
+        _lastUsed[slot] = now;
+    }
+
     public void Materialize(int index, float now, SkillGraphTopology topology, in SimulationRules.RulesFrame rules)
     {
         if ((uint)index >= (uint)_capacity) return;

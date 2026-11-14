@@ -101,6 +101,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 ## Server request path
 
 RPC handlers in `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs`: no allocation and no formatting on the success path.
+`PlayerSkillGraph.Award` (called from the place, pick-up and speak handlers and from `StepServerMovement`) and `PlayerSkillGraph.TryExecute` (`SkillGraphCommandServerRpc`) are on that path.
 
 ## Guards
 

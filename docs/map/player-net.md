@@ -2,7 +2,7 @@
 
 Root: `Assets/Scripts/EntitySystem/Entityes/Player/`, `Assets/Scripts/GameSceneManagerSystem/`.
 Assembly: `EntitySystem`; the connection classes are in `Assembly-CSharp`.
-Tests: `Assets/Tests/EditMode/RateBudgetTests.cs`, `Assets/Tests/EditMode/JumpChargeLimitTests.cs`.
+Tests: `Assets/Tests/EditMode/RateBudgetTests.cs`, `Assets/Tests/EditMode/JumpChargeLimitTests.cs`, `Assets/Tests/EditMode/PlayerSkillGraphTests.cs`.
 
 Read `docs/SECURITY.md` before changing an RPC. Its section 14 is the RPC registry and the only list of RPCs; do not copy it here.
 Open security findings: `docs/audit/security_audit.md`.
@@ -17,6 +17,7 @@ Open security findings: `docs/audit/security_audit.md`.
 | `PlayerItemLedger` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/PlayerItemLedger.cs` | Server-side item ledger of a remote player (session only) |
 | `RateBudget` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/RateBudget.cs` | GCRA rate limit per player |
 | `JumpChargeLimit` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/JumpChargeLimit.cs` | Caps a jump charge by server time |
+| `PlayerSkillGraph` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/PlayerSkillGraph.cs` | Skill graph of the player: store of capacity 1, own topology, commands, replication packets, save |
 | `PlayerStamina` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/PlayerStamina.cs` | Stamina integration |
 | `TerrainPhysicsResolver` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/TerrainPhysicsResolver.cs` | Terrain contact for the player body |
 | `PCController` | `Assets/Scripts/EntitySystem/Entityes/Player/PCController.cs` | Mouse and keyboard `IController` |
@@ -42,6 +43,16 @@ Open security findings: `docs/audit/security_audit.md`.
 8. A remote player's placement is debited from `PlayerItemLedger`; pick-ups and `CraftRequestServerRpc` credit it.
 9. Health and energy are published by the server; clients apply them through `PlayerEntity.ApplyServerVitals`.
 10. Refusals are counted; one summary line per `refuseLogInterval`, no formatting per refusal.
+
+## Skill graph
+
+- `PlayerSkillGraph` is an `IComponent` of `PlayerEntity`; the rules are those of `SkillGraphMath`, `SkillGraphSolver` and `SkillGraphXp` that agents use (`docs/map/ai.md`, Skills).
+- The graph is authoritative where `WorldAuthority.IsAuthority`; a client owner holds a mirror filled by `SkillTopologyClientRpc` and `SkillLevelsClientRpc`.
+- `PlayerEntity.UpdateEntityCycle` runs `PlayerSkillGraph.Tick` (decay sweep, solver in auto mode) and re-applies `SkillModifiers` to maximum health and energy.
+- `PlayerController.StepServerMovement` multiplies speed by the `Speed` and `RunSpeed` modifiers; reach compensation uses the same scale.
+- XP: movement distance (`skillMoveXpDistance`) gives `MoveTo`, a placement `Put`, a pick-up `Take`, speech `Signal`.
+- Commands: `PlayerController.RequestSkillCommand`; the host applies them directly through `PlayerSkillGraph.TryExecute`, a client sends `SkillGraphCommandServerRpc`.
+- Save: `WorldState.playerSkills` (`PlayerSkillSave`), written by `PlayerEntity.CaptureSkills` before autosave for the host player only.
 
 ## Player tick
 
@@ -85,5 +96,5 @@ RPC handlers are a server hot path: no allocation and no string formatting on th
 - Player identity: `PlayerEntity` is given `NetworkManager.LocalClientId` instead of `OwnerClientId`.
   `PlayerContainer` therefore registers only the first player on a machine, and UI relies on the first entry being local.
 - On a remote client `PlayerController.SetUp` may run before the camera RPC arrives; the controller then has no camera.
-- Remote inventories cannot be persisted in the host's world without a stable player identity.
+- Remote inventories and remote skill graphs cannot be persisted in the host's world without a stable player identity.
 - World edits reach only the editing client (audit finding 27); `NetworkManager` prefab settings (finding 12).

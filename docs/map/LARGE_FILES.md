@@ -10,8 +10,8 @@ Line numbers are those of the last generation; after local edits treat them as a
 | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1457 |
 | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1074 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1067 |
+| `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1011 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 928 |
-| `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 920 |
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 849 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 775 |
 | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 743 |
@@ -309,6 +309,80 @@ Line numbers are those of the last generation; after local edits treat them as a
     - 140 Reset
   - 173–178 struct LargeClaim
 
+## `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs`
+
+- 21–1010 class PlayerController
+  - 127 SetInitialValues
+  - 151 SetUp
+  - 176 ApplyControlType
+  - 197 SavePlayerPosition
+  - 205 DelayedInit
+  - 230 GetPlayerComponents
+  - 245 AttachViewOrientation
+  - 259 InitStatePattern
+  - 269 SetZeroValues
+  - 275 Suspend
+  - 286 Resume
+  - 291 ResetAim
+  - 301 EnableComponents
+  - 307 DisableComponents
+  - 314 FixedUpdate
+  - 323 PublishSkills
+  - 333 PublishVitals
+  - 343 MirrorVitals
+  - 355 StampTrample
+  - 365 Update
+  - 379 UpdateJumpIndicator
+  - 393 IsSprintHeld
+  - 395 Move
+  - 424 CheckBust
+  - 432 MoveServerRpc
+  - 447 StepServerMovement
+  - 530 BroadcastState
+  - 541 StopMoveServerRpc
+  - 552 UpdateClientPositionClientRpc
+  - 560 OnJumpStarted
+  - 566 OnJumpCanceled
+  - 572 TryJump
+  - 580 JumpServerRpc
+  - 599 OnActionStarted
+  - 600 OnActionCanceled
+  - 602 Aim
+  - 636 UpdateAimLevel
+  - 665 SetAimAddition
+  - 677 ChangeAimMode
+  - 679 AimRaiseMobile
+  - 680 AimPlaceMobile
+  - 682 AimRaise
+  - 699 OnViewClick
+  - 701 AimPlace
+  - 708 Placing
+  - 723 RequestPlace
+  - 730 RequestSpeak
+  - 737 SpeakServerRpc
+  - 767 RequestPickUp
+  - 774 RequestCraft
+  - 781 RequestSkillCommand
+  - 790 SkillGraphCommandServerRpc
+  - 797 ApplySkillCommand
+  - 808 SkillTopologyClientRpc
+  - 815 SkillLevelsClientRpc
+  - 825 CraftRequestServerRpc
+  - 838 PlaceRequestServerRpc
+  - 858 PickUpRequestServerRpc
+  - 876 PlaceResultClientRpc
+  - 887 PickUpResultClientRpc
+  - 896 TryResolveEditor
+  - 923 TryConsumeEdit
+  - 925 TryConsumeMove
+  - 933 TryConsumeSkill
+  - 941 TryConsumeCraft
+  - 949 LatencyCompensation
+  - 976 Refuse
+  - 988 OwnerTarget
+  - 994 OnDisable
+  - 965–974 enum EditRefusal
+
 ## `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs`
 
 - 7–928 class SharedHierarchicalBrain
@@ -358,73 +432,6 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 909 MatchesArchitecture
   - 921 SizesMatch
   - 9–9 enum Goal
-
-## `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs`
-
-- 21–919 class PlayerController
-  - 122 SetInitialValues
-  - 146 SetUp
-  - 170 ApplyControlType
-  - 191 SavePlayerPosition
-  - 199 DelayedInit
-  - 224 GetPlayerComponents
-  - 238 AttachViewOrientation
-  - 252 InitStatePattern
-  - 262 SetZeroValues
-  - 268 Suspend
-  - 279 Resume
-  - 284 ResetAim
-  - 294 EnableComponents
-  - 300 DisableComponents
-  - 307 FixedUpdate
-  - 315 PublishVitals
-  - 325 MirrorVitals
-  - 337 StampTrample
-  - 347 Update
-  - 361 UpdateJumpIndicator
-  - 375 IsSprintHeld
-  - 377 Move
-  - 406 CheckBust
-  - 414 MoveServerRpc
-  - 429 StepServerMovement
-  - 493 BroadcastState
-  - 504 StopMoveServerRpc
-  - 515 UpdateClientPositionClientRpc
-  - 523 OnJumpStarted
-  - 529 OnJumpCanceled
-  - 535 TryJump
-  - 543 JumpServerRpc
-  - 562 OnActionStarted
-  - 563 OnActionCanceled
-  - 565 Aim
-  - 599 UpdateAimLevel
-  - 628 SetAimAddition
-  - 640 ChangeAimMode
-  - 642 AimRaiseMobile
-  - 643 AimPlaceMobile
-  - 645 AimRaise
-  - 662 OnViewClick
-  - 664 AimPlace
-  - 671 Placing
-  - 686 RequestPlace
-  - 693 RequestSpeak
-  - 700 SpeakServerRpc
-  - 729 RequestPickUp
-  - 736 RequestCraft
-  - 745 CraftRequestServerRpc
-  - 758 PlaceRequestServerRpc
-  - 777 PickUpRequestServerRpc
-  - 794 PlaceResultClientRpc
-  - 805 PickUpResultClientRpc
-  - 814 TryResolveEditor
-  - 841 TryConsumeEdit
-  - 843 TryConsumeMove
-  - 851 TryConsumeCraft
-  - 859 LatencyCompensation
-  - 885 Refuse
-  - 897 OwnerTarget
-  - 903 OnDisable
-  - 874–883 enum EditRefusal
 
 ## `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs`
 
