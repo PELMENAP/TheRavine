@@ -17,6 +17,10 @@ Shader "The Ravine/Water/WaterShader"
         SSRMaxDistance("SSR Max Camera Distance", Float) = 120
         SSRBlur("SSR Blur", Range(0, 2)) = 0.5
         SSRRayFade("SSR Ray Fade Distance", Float) = 80
+        [IntRange] SSRStepCount("SSR Steps", Range(1, 32)) = 16
+        [IntRange] SSRRefineCount("SSR Refine Steps", Range(0, 8)) = 4
+        SSRMinWeight("SSR Min Reflection Weight", Range(0, 0.5)) = 0.01
+        [Toggle(_WATER_SSR_DISABLED)] SSRDisabled("Disable SSR", Float) = 0
         ReflectionDistortion("Reflection Distortion", Range(0, 1)) = 0.3
         ReflectionGain("Reflection Gain", Range(0, 8)) = 1
 
@@ -90,6 +94,10 @@ Shader "The Ravine/Water/WaterShader"
             #pragma fragment frag
             
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX
+            #pragma multi_compile_local_fragment _ _WATER_SSR_DISABLED
+
+            #define SSR_MAX_STEPS 32
+            #define SSR_MAX_REFINE 8
             
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -146,6 +154,9 @@ Shader "The Ravine/Water/WaterShader"
                 float SSRMaxDistance;
                 float SSRBlur;
                 float SSRRayFade;
+                float SSRStepCount;
+                float SSRRefineCount;
+                float SSRMinWeight;
                 float ReflectionDistortion;
                 float ReflectionGain;
                 float NightFloor;
@@ -273,12 +284,17 @@ Shader "The Ravine/Water/WaterShader"
                 return clip.w > 0.0 && all(uv > 0.0) && all(uv < 1.0);
             }
 
+            float SSRDepthDiff(float2 uv, float eyeDepth)
+            {
+                float rawDepth = SAMPLE_TEXTURE2D_LOD(_CameraDepthTexture, sampler_CameraDepthTexture, uv, 0).r;
+                return eyeDepth - LinearEyeDepth(rawDepth, _ZBufferParams);
+            }
+
             float SSRDiff(float3 posWS, out float2 uv)
             {
                 float eyeDepth;
                 if (!SSRProject(posWS, uv, eyeDepth)) return -1e4;
-                float rawDepth = SAMPLE_TEXTURE2D_LOD(_CameraDepthTexture, sampler_CameraDepthTexture, uv, 0).r;
-                return eyeDepth - LinearEyeDepth(rawDepth, _ZBufferParams);
+                return SSRDepthDiff(uv, eyeDepth);
             }
 
             float3 SSRColor(float2 uv)
@@ -290,9 +306,11 @@ Shader "The Ravine/Water/WaterShader"
             {
                 float stepLen = SSRStep;
                 float t = stepLen * jitter;
+                int stepCount = clamp((int)(SSRStepCount + 0.5), 1, SSR_MAX_STEPS);
+                int refineCount = clamp((int)(SSRRefineCount + 0.5), 0, SSR_MAX_REFINE);
 
                 [loop]
-                for (int i = 0; i < 16; i++)
+                for (int i = 0; i < stepCount; i++)
                 {
                     float prevT = t;
                     t += stepLen;
@@ -302,13 +320,13 @@ Shader "The Ravine/Water/WaterShader"
                     float eyeDepth;
                     if (!SSRProject(posWS + dirWS * t, uv, eyeDepth)) break;
 
-                    float diff = SSRDiff(posWS + dirWS * t, uv);
+                    float diff = SSRDepthDiff(uv, eyeDepth);
                     if (diff > 0.0 && diff < SSRThickness + stepLen)
                     {
                         float lo = prevT;
                         float hi = t;
-                        [unroll]
-                        for (int j = 0; j < 4; j++)
+                        [loop]
+                        for (int j = 0; j < refineCount; j++)
                         {
                             float mid = 0.5 * (lo + hi);
                             float2 midUV;
@@ -319,11 +337,16 @@ Shader "The Ravine/Water/WaterShader"
                         SSRDiff(posWS + dirWS * hi, hitUV);
                         float2 e = saturate(min(hitUV, 1.0 - hitUV) * 8.0);
                         float radius = SSRBlur * 0.01 * saturate(hi / 40.0);
-                        float3 color = SSRColor(hitUV) * 0.4
-                            + (SSRColor(hitUV + float2(radius, 0.0))
-                            + SSRColor(hitUV - float2(radius, 0.0))
-                            + SSRColor(hitUV + float2(0.0, radius))
-                            + SSRColor(hitUV - float2(0.0, radius))) * 0.15;
+                        float3 color = SSRColor(hitUV);
+                        [branch]
+                        if (radius > 1e-5)
+                        {
+                            color = color * 0.4
+                                + (SSRColor(hitUV + float2(radius, 0.0))
+                                + SSRColor(hitUV - float2(radius, 0.0))
+                                + SSRColor(hitUV + float2(0.0, radius))
+                                + SSRColor(hitUV - float2(0.0, radius))) * 0.15;
+                        }
                         float rayFade = 1.0 - saturate(hi / max(SSRRayFade, 1e-3));
                         return float4(color, e.x * e.y * rayFade);
                     }
@@ -597,14 +620,16 @@ Shader "The Ravine/Water/WaterShader"
                 float NdotV = saturate(dot(reflectNormal, viewDirWS));
                 float fresnel = (FresnelF0 + (1.0 - FresnelF0) * pow(1.0 - NdotV, 5.0)) * ReflectionStrength * isFrontFace;
 
+                #if !defined(_WATER_SSR_DISABLED)
                 float ssrCamDist = length(input.positionWS - _WorldSpaceCameraPos);
                 float ssrFade = saturate((SSRMaxDistance - ssrCamDist) / max(SSRMaxDistance * 0.3, 1e-3)) * SSRIntensity;
-                if (fresnel > 0.01 && ssrFade > 0.0)
+                if (fresnel > SSRMinWeight && ssrFade > 0.0)
                 {
                     float jitter = frac(52.9829189 * frac(dot(input.positionCS.xy, float2(0.06711056, 0.00583715))));
                     float4 ssr = SSRTrace(input.positionWS, reflectDir, jitter);
                     reflColor = lerp(reflColor, ssr.rgb, ssr.a * ssrFade);
                 }
+                #endif
 
                 // === РУЧНОЕ ОСВЕЩЕНИЕ (вместо UniversalFragmentPBR) ===
 

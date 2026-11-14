@@ -36,6 +36,7 @@ namespace TheRavine.Generator.EndlessGenerators
             public int BatchBase;
             public int VariantCount;
             public int SlotsPerVariant;
+            public int Stride;
         }
 
         private sealed class Command
@@ -133,19 +134,22 @@ namespace TheRavine.Generator.EndlessGenerators
                     slots[d * RingStride + r] = slot;
                 }
 
+                int stride = info.CastShadowsFar ? 2 : 1;
+
                 types[d] = new TypeInfo
                 {
                     BatchBase = batch,
                     VariantCount = set.VariantCount,
-                    SlotsPerVariant = slotKeys.Count
+                    SlotsPerVariant = slotKeys.Count,
+                    Stride = stride
                 };
-
-                ShadowCastingMode shadows = info.CastShadowsFar ? ShadowCastingMode.On : ShadowCastingMode.Off;
 
                 for (int v = 0; v < set.VariantCount; v++)
                 {
-                    for (int s = 0; s < slotKeys.Count; s++, batch++)
+                    for (int s = 0; s < slotKeys.Count; s++)
+                    for (int pass = 0; pass < stride; pass++, batch++)
                     {
+                        ShadowCastingMode shadows = pass == 0 && info.CastShadowsFar ? ShadowCastingMode.On : ShadowCastingMode.Off;
                         var props = new MaterialPropertyBlock();
                         propList.Add(props);
 
@@ -324,8 +328,13 @@ namespace TheRavine.Generator.EndlessGenerators
         {
             framesSinceBuild = 0;
 
+            Vector3 origin = MapGenerator.WindowOriginWorld(center);
+            Vector3 mid = origin + new Vector3(MapGenerator.generationSize * 0.5f, 0f, MapGenerator.generationSize * 0.5f);
+
             new CollectJob
             {
+                ShadowCenter = new float2(mid.x, mid.z),
+                ShadowDistanceSq = settings.farShadowDistance * settings.farShadowDistance,
                 Sources = sources,
                 SourceCount = sourceCount,
                 DenseById = denseById,
@@ -348,8 +357,6 @@ namespace TheRavine.Generator.EndlessGenerators
 
             float reach = (generator.LodRingCount * MapGenerator.WindowSide + 2) * MapGenerator.chunkSize;
             float drop = CurvedWorld.MaxDrop(reach * 1.4143f);
-            Vector3 origin = MapGenerator.WindowOriginWorld(center);
-            Vector3 mid = origin + new Vector3(MapGenerator.generationSize * 0.5f, 0f, MapGenerator.generationSize * 0.5f);
             var bounds = new Bounds(
                 mid + new Vector3(0f, (MapGenerator.maxTerrainHeight - drop) * 0.5f, 0f),
                 new Vector3(reach * 2f, MapGenerator.maxTerrainHeight * 4f + drop, reach * 2f));
@@ -413,6 +420,8 @@ namespace TheRavine.Generator.EndlessGenerators
             [WriteOnly] public NativeArray<float4> Instances;
             public NativeReference<int> Total;
             public int BatchCount;
+            public float2 ShadowCenter;
+            public float ShadowDistanceSq;
 
             private int BatchOf(in ObjectInstInfo info, int ring)
             {
@@ -428,7 +437,8 @@ namespace TheRavine.Generator.EndlessGenerators
                 TypeInfo t = Types[dense];
                 float3 p = info.Position;
                 int seed = (int)(math.hash(p) & 0x7FFFFFFFu);
-                return t.BatchBase + (seed % t.VariantCount) * t.SlotsPerVariant + slot;
+                return FarBatchMath.BatchIndex(t.BatchBase, seed % t.VariantCount, t.SlotsPerVariant, slot, t.Stride,
+                    p.xz, ShadowCenter, ShadowDistanceSq);
             }
 
             public void Execute()
@@ -475,6 +485,16 @@ namespace TheRavine.Generator.EndlessGenerators
 
                 Total.Value = running;
             }
+        }
+    }
+
+    public static class FarBatchMath
+    {
+        public static int BatchIndex(int batchBase, int variant, int slotsPerVariant, int slot, int stride,
+            float2 position, float2 shadowCenter, float shadowDistanceSq)
+        {
+            int beyond = stride > 1 && math.lengthsq(position - shadowCenter) > shadowDistanceSq ? 1 : 0;
+            return batchBase + (variant * slotsPerVariant + slot) * stride + beyond;
         }
     }
 }

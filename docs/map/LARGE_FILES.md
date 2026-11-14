@@ -22,6 +22,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 621 |
 | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 603 |
 | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 546 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassSystem.cs` | 509 |
 
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs`
 
@@ -820,4 +821,26 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 505 StartDecision
   - 522 ComputeDangerLevel
   - 535 ComputeBreedReadiness
+
+## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassSystem.cs`
+
+- 10–494 class GrassSystem
+  - 125 Start
+  - 146 Update
+  - 174 InitializeSystem
+  - 260 MeshForRing
+  - 263 UpdateGrassPlacement
+  - 278 PlaceGrass
+  - 300 UploadHeights
+  - 315 WindowBounds
+  - 322 PlaceBlock
+  - 338 DispatchPlace
+  - 365 ResolveCamera
+  - 371 PublishView
+  - 380 ViewChanged
+  - 392 DispatchNear
+  - 447 RenderGrass
+  - 467 OnDisable
+- 496–509 class GrassCullMath
+  - 498 CellRect
 

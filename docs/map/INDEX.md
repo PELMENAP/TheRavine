@@ -82,13 +82,13 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents` | 3 | 151 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire` | 3 | 833 |
 | `Assets/Scripts/ObjectSystem/Map/Tools` | 3 | 2780 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 13 | 3813 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 13 | 3814 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs` | 5 | 742 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision` | 7 | 396 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator` | 7 | 956 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator` | 7 | 1118 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless` | 7 | 1515 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator` | 4 | 400 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering` | 3 | 621 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering` | 3 | 641 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/RippleSystem` | 3 | 169 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/StructGenerator` | 5 | 446 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Ticks` | 5 | 496 |
@@ -115,7 +115,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/View` | 2 | 23 |
-| `Assets/Tests/EditMode` | 55 | 7032 |
+| `Assets/Tests/EditMode` | 57 | 7135 |
 
 ## Assemblies
 
@@ -236,6 +236,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | Extension | class | `Assets/Scripts/Core/Utilities/Extentions.cs` | 7 |
 | FaderOnTransit | class | `Assets/Scripts/Core/Fader.cs` | 9 |
 | FamiliarityMath | class | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Social.cs` | 236 |
+| FarBatchMath | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering/FarObjectRenderer.cs` | 491 |
 | FarMode | enum | `Assets/Scripts/ObjectSystem/ObjectInfo/ObjectInfo.cs` | 139 |
 | FeedingLatchTests | class | `Assets/Tests/EditMode/StartleTests.cs` | 82 |
 | FillChunkArraysJob | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 596 |
@@ -252,6 +253,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | GenerationTracker | class | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 732 |
 | Geometry | class | `Assets/Scripts/Terminal/PDollar/Scripts/PointCloudRecognizer.cs` | 101 |
 | GetInputNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 47 |
+| GrassCullMath | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassSystem.cs` | 496 |
 | GrassTextureArrayFactory | class | `Assets/Scripts/Editor/GrassTextureArrayBaker.cs` | 32 |
 | GrassTrampleSettings | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassTrampleField.cs` | 8 |
 | HeightAtlas | struct | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 49 |
