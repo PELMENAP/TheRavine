@@ -10,7 +10,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1457 |
 | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1074 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1067 |
-| `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1011 |
+| `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1013 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 928 |
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 849 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 775 |
@@ -311,77 +311,77 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs`
 
-- 21–1010 class PlayerController
+- 21–1012 class PlayerController
   - 127 SetInitialValues
   - 151 SetUp
   - 176 ApplyControlType
   - 197 SavePlayerPosition
   - 205 DelayedInit
   - 230 GetPlayerComponents
-  - 245 AttachViewOrientation
-  - 259 InitStatePattern
-  - 269 SetZeroValues
-  - 275 Suspend
-  - 286 Resume
-  - 291 ResetAim
-  - 301 EnableComponents
-  - 307 DisableComponents
-  - 314 FixedUpdate
-  - 323 PublishSkills
-  - 333 PublishVitals
-  - 343 MirrorVitals
-  - 355 StampTrample
-  - 365 Update
-  - 379 UpdateJumpIndicator
-  - 393 IsSprintHeld
-  - 395 Move
-  - 424 CheckBust
-  - 432 MoveServerRpc
-  - 447 StepServerMovement
-  - 530 BroadcastState
-  - 541 StopMoveServerRpc
-  - 552 UpdateClientPositionClientRpc
-  - 560 OnJumpStarted
-  - 566 OnJumpCanceled
-  - 572 TryJump
-  - 580 JumpServerRpc
-  - 599 OnActionStarted
-  - 600 OnActionCanceled
-  - 602 Aim
-  - 636 UpdateAimLevel
-  - 665 SetAimAddition
-  - 677 ChangeAimMode
-  - 679 AimRaiseMobile
-  - 680 AimPlaceMobile
-  - 682 AimRaise
-  - 699 OnViewClick
-  - 701 AimPlace
-  - 708 Placing
-  - 723 RequestPlace
-  - 730 RequestSpeak
-  - 737 SpeakServerRpc
-  - 767 RequestPickUp
-  - 774 RequestCraft
-  - 781 RequestSkillCommand
-  - 790 SkillGraphCommandServerRpc
-  - 797 ApplySkillCommand
-  - 808 SkillTopologyClientRpc
-  - 815 SkillLevelsClientRpc
-  - 825 CraftRequestServerRpc
-  - 838 PlaceRequestServerRpc
-  - 858 PickUpRequestServerRpc
-  - 876 PlaceResultClientRpc
-  - 887 PickUpResultClientRpc
-  - 896 TryResolveEditor
-  - 923 TryConsumeEdit
-  - 925 TryConsumeMove
-  - 933 TryConsumeSkill
-  - 941 TryConsumeCraft
-  - 949 LatencyCompensation
-  - 976 Refuse
-  - 988 OwnerTarget
-  - 994 OnDisable
-  - 965–974 enum EditRefusal
+  - 246 AttachViewOrientation
+  - 260 InitStatePattern
+  - 270 SetZeroValues
+  - 276 Suspend
+  - 287 Resume
+  - 292 ResetAim
+  - 302 EnableComponents
+  - 308 DisableComponents
+  - 315 FixedUpdate
+  - 324 PublishSkills
+  - 334 PublishVitals
+  - 344 MirrorVitals
+  - 356 StampTrample
+  - 366 Update
+  - 380 UpdateJumpIndicator
+  - 394 IsSprintHeld
+  - 396 Move
+  - 425 CheckBust
+  - 433 MoveServerRpc
+  - 448 StepServerMovement
+  - 531 BroadcastState
+  - 542 StopMoveServerRpc
+  - 553 UpdateClientPositionClientRpc
+  - 561 OnJumpStarted
+  - 567 OnJumpCanceled
+  - 573 TryJump
+  - 581 JumpServerRpc
+  - 600 OnActionStarted
+  - 601 OnActionCanceled
+  - 603 Aim
+  - 637 UpdateAimLevel
+  - 666 SetAimAddition
+  - 678 ChangeAimMode
+  - 680 AimRaiseMobile
+  - 681 AimPlaceMobile
+  - 683 AimRaise
+  - 700 OnViewClick
+  - 702 AimPlace
+  - 709 Placing
+  - 724 RequestPlace
+  - 731 RequestSpeak
+  - 738 SpeakServerRpc
+  - 768 RequestPickUp
+  - 775 RequestCraft
+  - 782 RequestSkillCommand
+  - 791 SkillGraphCommandServerRpc
+  - 798 ApplySkillCommand
+  - 809 SkillTopologyClientRpc
+  - 816 SkillLevelsClientRpc
+  - 826 CraftRequestServerRpc
+  - 839 PlaceRequestServerRpc
+  - 859 PickUpRequestServerRpc
+  - 877 PlaceResultClientRpc
+  - 888 PickUpResultClientRpc
+  - 897 TryResolveEditor
+  - 924 TryConsumeEdit
+  - 926 TryConsumeMove
+  - 934 TryConsumeSkill
+  - 942 TryConsumeCraft
+  - 950 LatencyCompensation
+  - 977 Refuse
+  - 989 OwnerTarget
+  - 995 OnDisable
+  - 966–975 enum EditRefusal
 
 ## `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs`
 

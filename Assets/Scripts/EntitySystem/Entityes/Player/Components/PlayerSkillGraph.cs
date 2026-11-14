@@ -1,3 +1,4 @@
+using System;
 using Unity.Mathematics;
 using TheRavine.Base;
 
@@ -13,7 +14,7 @@ namespace TheRavine.EntityControl
         Count,
     }
 
-    public sealed class PlayerSkillGraph : IComponent
+    public sealed class PlayerSkillGraph : IComponent, ISkillGraphSource, ISkillGraphCommands
     {
         public const int Slot = 0;
         public const int GeneCount = 6;
@@ -38,6 +39,7 @@ namespace TheRavine.EntityControl
         private ushort[] _sentLevels;
         private ushort[] _sentPeaks;
         private byte _sentRoot = byte.MaxValue;
+        private Func<SkillCommandOp, int, int, bool> _sender;
 
         public bool IsAuthority => _authority;
         public SkillAtlas Atlas => _atlas;
@@ -45,8 +47,10 @@ namespace TheRavine.EntityControl
         public SkillGraphStore Store => _store;
         public bool AutoMode => _auto;
         public int StateVersion => _stateVersion;
+        public int Revision => _topology.Revision;
         public ref readonly SkillModifiers Modifiers => ref _modifiers;
         public GeneticParameters Genes => _genes;
+        int ISkillGraphSource.StoreIndex => Slot;
 
         private PlayerSkillGraph(SkillAtlas atlas, bool authority)
         {
@@ -134,6 +138,22 @@ namespace TheRavine.EntityControl
         {
             var peaks = _store.Peaks;
             _topology.UpdatePhi(SkillGraphMath.Phi(in peaks, 0, _atlas.Count, in SimulationRules.Frame));
+        }
+
+        public void BindCommandSender(Func<SkillCommandOp, int, int, bool> sender) => _sender = sender;
+
+        public bool Build(int u, int v) => Send(SkillCommandOp.Build, u, v);
+
+        public bool Prune(int u, int v) => Send(SkillCommandOp.Prune, u, v);
+
+        public bool Restore(int u, int v) => Send(SkillCommandOp.Restore, u, v);
+
+        public bool ToggleAutoMode() => Send(SkillCommandOp.ToggleAuto, 0, 0);
+
+        private bool Send(SkillCommandOp op, int u, int v)
+        {
+            if (_sender != null) return _sender(op, u, v);
+            return _authority && TryExecute(op, u, v, SimulationClock.Time);
         }
 
         public bool IsOpen(int skill) => SkillGraphMath.IsOpen(_store.Peak(Slot, skill), skill, _store.Root(Slot));
