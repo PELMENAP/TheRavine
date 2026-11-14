@@ -14,10 +14,10 @@ Every number below is a default of a `SimulationRules` field or of the atlas ass
 3. Selection works inside a colony (`EvolutionService.EvolveColony`, `SelectMate`); every wild creature shares the
    single `ColonyState` `_wild`. Talent is therefore a gene of the individual; topology belongs to `ColonyState`.
 4. An agent's effective stats are `EntityTuning.Express(base, genes, casteModifiers)`, recomputed on spawn and on a
-   caste change (`EntityModel.cs` near lines 287 and 563), not per tick. `Tuning` is the existing multiplier cache.
-5. A completed agent action passes one place: `EntityCommandRunner.cs` near line 84 (`stats.RecordCompleted(action)`).
-6. Periodic colony work runs in `EntityManager.CloseTickWindow` (near line 524), outside the per-agent loops.
-7. Swap-back removal is one place: `ColonyPopulation.RemoveEntitySwapBack` (near line 264); registry in
+   caste change (`EntityModel.cs` near lines 293 and 613), not per tick. `Tuning` is the existing multiplier cache.
+5. A completed agent action passes one place: `EntityCommandRunner.cs` near line 85 (`stats.RecordCompleted(action)`).
+6. Periodic colony work runs in `EntityManager.CloseTickWindow` (near line 586), outside the per-agent loops.
+7. Swap-back removal is one place: `ColonyPopulation.RemoveEntitySwapBack` (near line 269); registry in
    `docs/OPTIMIZATION.md` section 14; tests in `Assets/Tests/EditMode/SoaSwapBackTests.cs`.
 8. Simulation time is `SimulationClock.Time` (seconds, float) and `TimeD`; there is no integer tick counter.
 9. `Assets/Scripts/Model/EntitySkills/` already holds ability skills (`ISkill`, `FlyingSkill`, `SwimmingSkill`) in an
