@@ -20,7 +20,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Core/Timer` | 4 | 271 |
 | `Assets/Scripts/Core/Utilities` | 10 | 1922 |
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
-| `Assets/Scripts/Editor` | 20 | 2379 |
+| `Assets/Scripts/Editor` | 19 | 2317 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
 | `Assets/Scripts/EntitySystem/AI` | 11 | 2158 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
@@ -44,9 +44,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
 | `Assets/Scripts/EntitySystem/Command` | 4 | 153 |
-| `Assets/Scripts/EntitySystem/Currency` | 1 | 39 |
 | `Assets/Scripts/EntitySystem/Entityes` | 1 | 121 |
-| `Assets/Scripts/EntitySystem/Entityes/Bot` | 2 | 117 |
 | `Assets/Scripts/EntitySystem/Entityes/Bot/BotBehavious` | 3 | 55 |
 | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts` | 10 | 986 |
 | `Assets/Scripts/EntitySystem/Entityes/Mob` | 4 | 456 |
@@ -58,7 +56,6 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/Info/InteractionComponent` | 2 | 55 |
 | `Assets/Scripts/EntitySystem/InteractionSystem` | 1 | 8 |
 | `Assets/Scripts/EntitySystem/Job` | 9 | 3110 |
-| `Assets/Scripts/EntitySystem/PlayerTasks` | 3 | 92 |
 | `Assets/Scripts/EntitySystem/StaticNPC` | 1 | 1 |
 | `Assets/Scripts/EntitySystem/Virology` | 16 | 2523 |
 | `Assets/Scripts/GameSceneManagerSystem` | 3 | 295 |
@@ -76,10 +73,10 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Model/BehavioursMap/Movement` | 3 | 48 |
 | `Assets/Scripts/Model/BehavioursMap/Random` | 2 | 136 |
 | `Assets/Scripts/Model/BehavioursMap/View` | 4 | 288 |
-| `Assets/Scripts/Model/EntitySkills` | 6 | 168 |
+| `Assets/Scripts/Model/EntitySkills` | 3 | 34 |
 | `Assets/Scripts/Model/InventoryModel` | 12 | 938 |
 | `Assets/Scripts/Model/InventoryModel/IInventory` | 3 | 28 |
-| `Assets/Scripts/ObjectSystem` | 3 | 212 |
+| `Assets/Scripts/ObjectSystem` | 2 | 196 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents` | 3 | 151 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire` | 3 | 833 |
 | `Assets/Scripts/ObjectSystem/Map/Tools` | 3 | 2780 |
@@ -100,7 +97,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/SFX/AmbientSounds` | 3 | 273 |
 | `Assets/Scripts/SFX/Audio` | 2 | 441 |
 | `Assets/Scripts/SFX/MusicSoudns` | 2 | 185 |
-| `Assets/Scripts/SFX/RadioSounds` | 2 | 324 |
+| `Assets/Scripts/SFX/RadioSounds` | 1 | 87 |
 | `Assets/Scripts/SFX/SFXSounds` | 2 | 124 |
 | `Assets/Scripts/SFX/UISounds` | 3 | 145 |
 | `Assets/Scripts/ScriptableData/Item` | 5 | 161 |
@@ -116,7 +113,6 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 945 |
-| `Assets/Scripts/View` | 2 | 23 |
 | `Assets/Tests/EditMode` | 63 | 9156 |
 
 ## Assemblies
@@ -127,7 +123,7 @@ References are resolved from GUIDs; `+N` is the number of package assemblies out
 |---|---|---|
 | Core | `Assets/Scripts/Core` | BehavioursMap, LitMotion, LitMotion.Extensions, Tayx.Graphy, UniTask, UniTask.Addressables, UniTask.Linq +8 |
 | DialogGraph | `Assets/Scripts/DialogueSystem` | BehavioursMap |
-| EntitySystem | `Assets/Scripts/EntitySystem` | Audio, BehavioursMap, Core, DialogGraph, EventSystem, Inventory, LitMotion, LitMotion.Extensions, ObjectSystem, SkillSystem, UniTask, UniTask.Addressables, UniTask.Linq, View +8 |
+| EntitySystem | `Assets/Scripts/EntitySystem` | Audio, BehavioursMap, Core, DialogGraph, EventSystem, Inventory, LitMotion, LitMotion.Extensions, ObjectSystem, SkillSystem, UniTask, UniTask.Addressables, UniTask.Linq +8 |
 | EventSystem | `Assets/Scripts/Model/Actions&Events` | BehavioursMap |
 | BehavioursMap | `Assets/Scripts/Model/BehavioursMap` |  +1 |
 | SkillSystem | `Assets/Scripts/Model/EntitySkills` | BehavioursMap, Core +1 |
@@ -137,8 +133,7 @@ References are resolved from GUIDs; `+N` is the number of package assemblies out
 | Audio | `Assets/Scripts/SFX` | BehavioursMap, Core, LitMotion, UniTask |
 | Info | `Assets/Scripts/ScriptableData/Item` | BehavioursMap, Inventory |
 | Rive | `Assets/Scripts/Terminal/Rive/Core` | Core, UniTask |
-| UIInventory | `Assets/Scripts/UI` | Audio, BehavioursMap, Core, EntitySystem, EventSystem, Info, Inventory, LitMotion, ObjectSystem, SkillSystem, Tayx.Graphy, UniTask, UniTask.Addressables, UniTask.Linq, View, undream.llmunity.Runtime +5 |
-| View | `Assets/Scripts/View` | UniTask +1 |
+| UIInventory | `Assets/Scripts/UI` | Audio, BehavioursMap, Core, EntitySystem, EventSystem, Info, Inventory, LitMotion, ObjectSystem, SkillSystem, Tayx.Graphy, UniTask, UniTask.Addressables, UniTask.Linq, undream.llmunity.Runtime +5 |
 | EntitySystem.Tests.EditMode | `Assets/Tests/EditMode` | BehavioursMap, Core, EntitySystem, Info, Inventory, ObjectSystem, Rive, UIInventory, UniTask +5 |
 
 Folders compiled into `Assembly-CSharp` (no asmdef above them): `Assets/Scripts/Editor`, `Assets/Scripts/GameSceneManagerSystem`, `Assets/Scripts/Terminal`, `Assets/Scripts/Test`.
