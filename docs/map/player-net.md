@@ -26,7 +26,6 @@ Open security findings: `docs/audit/security_audit.md`.
 | `NetworkConnectionManager` | `Assets/Scripts/GameSceneManagerSystem/NetworkConnectionManager.cs` | Starts host / server / client |
 | `NetworkTransportConfig` | `Assets/Scripts/GameSceneManagerSystem/NetworkTransportConfig.cs` | Transport settings |
 | `NetworkUIController` | `Assets/Scripts/GameSceneManagerSystem/NetworkUIController.cs` | Mode and address UI |
-| `CurrencyNetworkComponent` | `Assets/Scripts/EntitySystem/Currency/CurrencyNetworkComponent.cs` | Server-written currency; `TryServerAdd` |
 | `WorldEdits` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | `TryPlace`, `TryPickUp` validation on the server |
 
 `PlayerController.cs` is over 500 lines: take the member's line from `docs/map/LARGE_FILES.md`.

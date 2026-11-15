@@ -5,7 +5,7 @@ One map per subsystem. Open only the map of the area the task touches; the routi
 | File | Covers |
 |---|---|
 | `docs/map/core.md` | Entry point, scene lifecycle, services, saves, settings, timers, input, sound, day cycle |
-| `docs/map/entities.md` | `AEntity`, components, player / bot / mob entities, mob streaming, small gameplay modules |
+| `docs/map/entities.md` | `AEntity`, components, player / mob entities, mob streaming, small gameplay modules |
 | `docs/map/player-net.md` | Player controller, Netcode, server authority, camera input |
 | `docs/map/ai.md` | Agents, colonies, shared brain, learning, perception, speech, debug |
 | `docs/map/virology.md` | Genome tape, ribosome, strains, infection |
