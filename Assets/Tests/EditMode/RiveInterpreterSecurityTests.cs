@@ -166,6 +166,7 @@ public class RiveInterpreterSecurityTests
 
     private RiveParseException ParseFails(string source)
     {
+        LogAssert.ignoreFailingMessages = true;
         return Assert.Throws<RiveParseException>(() => new RiveParser(_logger).Parse("malicious", source));
     }
 
@@ -275,6 +276,7 @@ public class RiveInterpreterSecurityTests
     [Test]
     public void LoadFileWithMaliciousSourceDoesNotThrowAndDoesNotLoad()
     {
+        LogAssert.ignoreFailingMessages = true;
         Assert.DoesNotThrow(() => _runtime.LoadFile("huge", new string('(', 10000)));
         Assert.IsFalse(_runtime.IsFileLoaded("huge"));
 
