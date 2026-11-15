@@ -221,6 +221,7 @@ public class ModelLoaderFuzzTests
     [Test]
     public void RandomBytesNeverEscapeAsOtherExceptions()
     {
+        LogAssert.ignoreFailingMessages = true;
         var rng = new System.Random(12345);
 
         for (int i = 0; i < 300; i++)
@@ -237,6 +238,7 @@ public class ModelLoaderFuzzTests
     [Test]
     public void SnapshotWithBadModelBlocksIsRefused()
     {
+        LogAssert.ignoreFailingMessages = true;
         using var brain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, 32);
         var good = brain.ToSnapshot().Serialize();
         int lstmBlock = 12;

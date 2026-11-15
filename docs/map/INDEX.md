@@ -117,7 +117,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 945 |
 | `Assets/Scripts/View` | 2 | 23 |
-| `Assets/Tests/EditMode` | 62 | 9036 |
+| `Assets/Tests/EditMode` | 62 | 9042 |
 
 ## Assemblies
 
