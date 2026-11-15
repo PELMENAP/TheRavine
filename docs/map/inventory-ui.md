@@ -72,4 +72,6 @@ None.
 - Data: `SkillGraphQuery.Fill(ISkillGraphSource, SkillGraphSnapshot)` in `Assets/Scripts/EntitySystem/AI/Skills/`; the fog rule lives there, hidden vertices and edges are never written.
 - Commands go through `ISkillGraphCommands`, implemented by `PlayerSkillGraph` (host: direct, client: `SkillGraphCommandServerRpc`).
 - Refresh: a scheduled item every 250 ms compares `Revision`, `StateVersion` and a level checksum; closing the panel destroys it, so nothing runs while it is closed.
-- Open: `Terminal` command `~skills`; opening switches the input map to Inventory through `ActionMapController`, closing returns to Gameplay.
+- Open: key `I` and a corner button (`SkillGraphLauncher`, created once by `Terminal.Setup`, DontDestroyOnLoad, the key is a runtime `InputAction`, not part of `InputAction.inputactions`), or the `~skills` command.
+- The key and the button act only while the Gameplay map is active and a local player graph exists; opening disables all maps and enables UI, closing returns to Gameplay.
+- `PanelSettings` fallback carries an empty `ThemeStyleSheet`; controls are styled in the USS file (class `skill-button`).

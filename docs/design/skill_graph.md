@@ -1,7 +1,7 @@
 # Skill graph and neuroplasticity — design
 
 Source: the v3.0 math model, translated to English and bound to the code of this repository.
-Stage prompts that implement it: `docs/design/skill_graph_prompts.md`.
+Implemented in `Assets/Scripts/EntitySystem/AI/Skills/`; map: `docs/map/ai.md`, section Skills.
 Every number below is a default of a `SimulationRules` field or of the atlas asset, never a literal in logic.
 
 ## 1. Facts of the codebase the design is built on

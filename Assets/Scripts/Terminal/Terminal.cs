@@ -61,6 +61,7 @@ namespace TheRavine.Base
         {
             this.logger = logger;
             this.actionMapController = actionMapController;
+            SkillGraphLauncher.Ensure();
             actionMapController.DisableAll();
             actionMapController.EnableUI();
             actionMapController.SwitchToGameplay();

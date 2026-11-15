@@ -10,7 +10,7 @@ Files and lines of `.cs` directly in the folder.
 | Folder | Files | Lines |
 |---|---|---|
 | `Assets/Scripts/Core` | 16 | 1335 |
-| `Assets/Scripts/Core/NewInputSystem` | 2 | 2128 |
+| `Assets/Scripts/Core/NewInputSystem` | 2 | 2129 |
 | `Assets/Scripts/Core/ServiceLocator` | 3 | 310 |
 | `Assets/Scripts/Core/Settings` | 4 | 793 |
 | `Assets/Scripts/Core/Settings/GameSettings` | 2 | 109 |
@@ -51,7 +51,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts` | 10 | 986 |
 | `Assets/Scripts/EntitySystem/Entityes/Mob` | 4 | 456 |
 | `Assets/Scripts/EntitySystem/Entityes/Player` | 7 | 1559 |
-| `Assets/Scripts/EntitySystem/Entityes/Player/Components` | 8 | 789 |
+| `Assets/Scripts/EntitySystem/Entityes/Player/Components` | 8 | 790 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/Joystick Pack` | 2 | 116 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerBehaviours` | 3 | 79 |
 | `Assets/Scripts/EntitySystem/Info` | 1 | 24 |
@@ -105,7 +105,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/SFX/UISounds` | 3 | 145 |
 | `Assets/Scripts/ScriptableData/Item` | 5 | 161 |
 | `Assets/Scripts/ScriptableData/Item/Descriprtion` | 2 | 83 |
-| `Assets/Scripts/Terminal` | 9 | 830 |
+| `Assets/Scripts/Terminal` | 9 | 821 |
 | `Assets/Scripts/Terminal/PDollar/Scripts` | 7 | 736 |
 | `Assets/Scripts/Terminal/Rive` | 5 | 825 |
 | `Assets/Scripts/Terminal/Rive/Core` | 9 | 2163 |
@@ -115,7 +115,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory` | 8 | 1358 |
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
-| `Assets/Scripts/UI/SkillGraph` | 5 | 611 |
+| `Assets/Scripts/UI/SkillGraph` | 6 | 743 |
 | `Assets/Scripts/View` | 2 | 23 |
 | `Assets/Tests/EditMode` | 62 | 8947 |
 
