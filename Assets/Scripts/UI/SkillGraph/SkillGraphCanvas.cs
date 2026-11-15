@@ -18,6 +18,7 @@ public sealed class SkillGraphCanvas : VisualElement
     public event Action<int> NodeHovered;
     public event Action<int> NodeUnhovered;
     public event Action<int, int, SkillEdgeKind> EdgeClicked;
+    public event Action BackgroundPressed;
 
     public float Zoom => _zoom;
     public Vector2 Pan => _pan;
@@ -38,7 +39,7 @@ public sealed class SkillGraphCanvas : VisualElement
         RegisterCallback<WheelEvent>(OnWheel);
     }
 
-    public void Bind(SkillGraphSnapshot snapshot)
+    public void Bind(SkillGraphSnapshot snapshot, SkillAtlas atlas = null)
     {
         _snapshot = snapshot;
         while (_nodes.Count < snapshot.VertexCount) _nodes.Add(CreateNode());
@@ -46,7 +47,7 @@ public sealed class SkillGraphCanvas : VisualElement
         {
             bool used = i < snapshot.VertexCount;
             _nodes[i].style.display = used ? DisplayStyle.Flex : DisplayStyle.None;
-            if (used) _nodes[i].Set(snapshot, i);
+            if (used) _nodes[i].Set(snapshot, i, atlas != null ? atlas.SkillAt(snapshot.Skill[i]).Name : string.Empty);
         }
         LayoutNodes();
     }
@@ -76,6 +77,8 @@ public sealed class SkillGraphCanvas : VisualElement
         return node;
     }
 
+    public Vector2 SlotPosition(int slot) => UnitToLocal(_snapshot.Position[slot]);
+
     private Vector2 SlotToScreen(int slot) => UnitToLocal(_snapshot.Position[slot]);
 
     private void LayoutNodes()
@@ -90,6 +93,7 @@ public sealed class SkillGraphCanvas : VisualElement
         if (evt.button != 0 || evt.target != this) return;
         _dragging = true;
         _moved = false;
+        BackgroundPressed?.Invoke();
         _downPosition = evt.localPosition;
         this.CapturePointer(evt.pointerId);
         evt.StopPropagation();

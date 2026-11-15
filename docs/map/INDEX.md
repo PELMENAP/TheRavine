@@ -39,7 +39,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Population` | 4 | 753 |
 | `Assets/Scripts/EntitySystem/AI/Rules` | 10 | 3088 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI` | 21 | 3445 |
-| `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2155 |
+| `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2174 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 7 | 1099 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
@@ -115,9 +115,9 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory` | 8 | 1358 |
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
-| `Assets/Scripts/UI/SkillGraph` | 6 | 743 |
+| `Assets/Scripts/UI/SkillGraph` | 8 | 945 |
 | `Assets/Scripts/View` | 2 | 23 |
-| `Assets/Tests/EditMode` | 62 | 8947 |
+| `Assets/Tests/EditMode` | 62 | 9030 |
 
 ## Assemblies
 

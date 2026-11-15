@@ -68,6 +68,8 @@ None.
 - `SkillGraphPanel`: MonoBehaviour created and destroyed by the `~skills` command; `UIDocument` with a fallback `PanelSettings` when none is assigned; the tree is built in C#.
 - `SkillGraphCanvas`: pan by drag with pointer capture, zoom by wheel, edges in `generateVisualContent` (`Painter2D`), nearest-edge picking through `SkillGraphGeometry`.
 - `SkillNodeElement`: pooled node, progress ring by `Painter2D.Arc`, state classes `skill-node--open`, `--available`, `--silhouette`, `--island`, `--pruned`.
+- `SkillGraphMenu`: context menu opened by a click on a node or an edge (build, restore, prune, with the cost and the reason a command is refused); `SkillGraphText`: effect and XP-source lines of the card.
+- Node labels show the skill name; the corner block shows how many links can be added and the peak sum of the next edge point.
 - `SkillGraphPalette`: colours and pixel sizes of the view; no simulation constant is repeated there.
 - Data: `SkillGraphQuery.Fill(ISkillGraphSource, SkillGraphSnapshot)` in `Assets/Scripts/EntitySystem/AI/Skills/`; the fog rule lives there, hidden vertices and edges are never written.
 - Commands go through `ISkillGraphCommands`, implemented by `PlayerSkillGraph` (host: direct, client: `SkillGraphCommandServerRpc`).

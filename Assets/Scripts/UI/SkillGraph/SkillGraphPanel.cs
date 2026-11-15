@@ -17,6 +17,8 @@ public sealed class SkillGraphPanel : MonoBehaviour
     private UIDocument _document;
     private VisualElement _shell;
     private Label _budget;
+    private Label _stats;
+    private SkillGraphMenu _menu;
     private Button _auto;
     private SkillGraphCanvas _canvas;
     private Label _cardTitle;
@@ -168,7 +170,13 @@ public sealed class SkillGraphPanel : MonoBehaviour
         _canvas.NodeUnhovered += OnNodeUnhovered;
         _canvas.NodeClicked += OnNodeClicked;
         _canvas.EdgeClicked += OnEdgeClicked;
+        _canvas.BackgroundPressed += OnBackgroundPressed;
         body.Add(_canvas);
+
+        _stats = new Label();
+        _stats.AddToClassList("skill-stats");
+        _stats.pickingMode = PickingMode.Ignore;
+        body.Add(_stats);
 
         var card = new VisualElement();
         card.AddToClassList("skill-card");
@@ -180,6 +188,9 @@ public sealed class SkillGraphPanel : MonoBehaviour
         card.Add(_cardBody);
         body.Add(card);
         _shell.Add(body);
+
+        _menu = new SkillGraphMenu();
+        _shell.Add(_menu);
 
         _confirm = new VisualElement();
         _confirm.AddToClassList("skill-confirm");
@@ -218,11 +229,29 @@ public sealed class SkillGraphPanel : MonoBehaviour
         _version = version;
         _checksum = checksum;
         SkillGraphQuery.Fill(_graph, _snapshot);
-        _canvas.Bind(_snapshot);
+        _canvas.Bind(_snapshot, _graph.Atlas);
         _auto.text = _snapshot.AutoMode ? "Auto: on" : "Auto: off";
         _budget.text = "Edge points " + _snapshot.Available + " / " + _snapshot.Earned + "    Peak " + _snapshot.PhiPeak.ToString("0.0");
+        _stats.text = StatsText();
         if (_hoveredSkill >= 0) ShowCard(_hoveredSkill);
     }
+
+    private string StatsText()
+        => "You can add: " + _snapshot.Available + (_snapshot.Available == 1 ? " link" : " links") + "\n" +
+           "Earned " + _snapshot.Earned + "  /  spent " + _snapshot.Spent + "\n" +
+           "Next point at peak sum " + _snapshot.NextPointPhi.ToString("0.0") + " (now " + _snapshot.PhiPeak.ToString("0.0") + ")\n" +
+           "Build costs " + SkillGraphTopology.BuildCost + "  /  restore costs " + SkillGraphTopology.RestoreCost;
+
+    private string Name(int skill) => _graph.Atlas.SkillAt(skill).Name;
+
+    private string Blocker()
+        => _snapshot.Available <= 0
+            ? "No edge points left. The next one comes at peak sum " + _snapshot.NextPointPhi.ToString("0.0") + "."
+            : "One end of the link must be a skill you have already learned.";
+
+    private Vector2 MenuPoint(Vector2 canvasPoint) => _canvas.ChangeCoordinatesTo(_shell, canvasPoint);
+
+    private void OnBackgroundPressed() => _menu.Hide();
 
     private void OnAutoClicked()
     {
@@ -246,23 +275,26 @@ public sealed class SkillGraphPanel : MonoBehaviour
         int slot = _snapshot.SlotOf(skill);
         if (slot < 0) return;
 
-        var info = _graph.Atlas.SkillAt(skill);
-        _cardTitle.text = info.Name;
+        var atlas = _graph.Atlas;
+        _cardTitle.text = Name(skill);
         var state = _snapshot.State[slot];
+        string effect = SkillGraphText.EffectLine(atlas, _snapshot, slot);
+        string sources = SkillGraphText.SourcesLine(atlas, skill);
         if (state == SkillVertexState.Silhouette || state == SkillVertexState.Island)
         {
-            _cardBody.text = "Not explored yet.";
+            _cardBody.text = "Not learned yet. Connect it to a skill you have learned to start training it.\n\n" + effect + "\n" + sources;
             return;
         }
 
         _cardBody.text =
             "Level " + _snapshot.Level[slot] + " (" + (_snapshot.Fraction[slot] * 100f).ToString("0") + "%)\n" +
-            "Peak " + _snapshot.Peak[slot].ToString("0.0") + "\n" +
-            "Floor " + _snapshot.Floor[slot].ToString("0.0") + "\n" +
+            effect + "\n\n" +
+            "Peak " + _snapshot.Peak[slot].ToString("0.0") + "   Floor " + _snapshot.Floor[slot].ToString("0.0") + "\n" +
             "Talent " + _snapshot.Talent[slot].ToString("0.00") + "\n" +
             "XP bonuses: clique x" + _snapshot.CliqueBoost[slot].ToString("0.00") +
             ", pull x" + _snapshot.LogicBoost[slot].ToString("0.00") +
-            ", focus x" + _snapshot.FocusBoost.ToString("0.00");
+            ", focus x" + _snapshot.FocusBoost.ToString("0.00") + "\n" +
+            sources;
     }
 
     private void OnNodeClicked(int skill)
@@ -271,47 +303,81 @@ public sealed class SkillGraphPanel : MonoBehaviour
         if (slot < 0) return;
 
         var state = _snapshot.State[slot];
-        if (state == SkillVertexState.Silhouette || state == SkillVertexState.Island)
+        _menu.Begin(Name(skill), SkillGraphText.EffectLine(_graph.Atlas, _snapshot, slot));
+        if (state == SkillVertexState.Silhouette || state == SkillVertexState.Island || state == SkillVertexState.Pruned)
         {
-            if (TryOnEdgeOfNode(skill, build: true)) Refresh();
-        }
-        else if (state == SkillVertexState.Pruned)
-        {
-            if (TryOnEdgeOfNode(skill, build: false)) Refresh();
-        }
-    }
+            bool restore = state == SkillVertexState.Pruned;
+            bool offered = false, usable = false;
+            for (int e = 0; e < _snapshot.EdgeCount; e++)
+            {
+                if (_snapshot.EdgeKind[e] != SkillEdgeKind.Potential) continue;
+                int from = _snapshot.EdgeFrom[e], to = _snapshot.EdgeTo[e];
+                if (from != skill && to != skill) continue;
 
-    private bool TryOnEdgeOfNode(int skill, bool build)
-    {
-        for (int e = 0; e < _snapshot.EdgeCount; e++)
-        {
-            if (_snapshot.EdgeKind[e] != SkillEdgeKind.Potential) continue;
-            int from = _snapshot.EdgeFrom[e], to = _snapshot.EdgeTo[e];
-            if (from != skill && to != skill) continue;
+                int other = from == skill ? to : from;
+                int otherSlot = _snapshot.SlotOf(other);
+                if (otherSlot < 0 || _snapshot.State[otherSlot] != SkillVertexState.Open) continue;
 
-            int other = from == skill ? to : from;
-            if (build ? _commands.CanBuild(other, skill) && _commands.Build(other, skill)
-                      : _commands.CanRestore(other, skill) && _commands.Restore(other, skill))
-                return true;
+                bool can = restore ? _commands.CanRestore(other, skill) : _commands.CanBuild(other, skill);
+                int cost = restore ? SkillGraphTopology.RestoreCost : SkillGraphTopology.BuildCost;
+                string label = (restore ? "Restore branch via " : "Learn via ") + Name(other) + " (cost " + cost + ")";
+                int from0 = other, to0 = skill;
+                _menu.AddOption(label, can, () =>
+                {
+                    if (restore) _commands.Restore(from0, to0);
+                    else _commands.Build(from0, to0);
+                    Refresh();
+                });
+                offered = true;
+                usable |= can;
+            }
+            if (!offered) _menu.AddNote("No learned skill is linked to this one yet.");
+            else if (!usable) _menu.AddNote(Blocker());
         }
-        return false;
+        else
+        {
+            _menu.AddNote("Already part of your graph.");
+            _menu.AddNote(SkillGraphText.SourcesLine(_graph.Atlas, skill));
+        }
+        _menu.Present(MenuPoint(_canvas.SlotPosition(slot)), _shell.contentRect.size);
     }
 
     private void OnEdgeClicked(int u, int v, SkillEdgeKind kind)
     {
+        int slotU = _snapshot.SlotOf(u), slotV = _snapshot.SlotOf(v);
+        if (slotU < 0 || slotV < 0) return;
+
+        string title = Name(u) + " - " + Name(v);
         if (kind == SkillEdgeKind.Potential)
         {
-            if (_commands.CanBuild(u, v)) _commands.Build(u, v);
-            else if (_commands.CanBuild(v, u)) _commands.Build(v, u);
-            else if (_commands.CanRestore(u, v)) _commands.Restore(u, v);
-            Refresh();
+            bool pruned = _snapshot.State[slotU] == SkillVertexState.Pruned || _snapshot.State[slotV] == SkillVertexState.Pruned;
+            bool can = pruned ? _commands.CanRestore(u, v) : _commands.CanBuild(u, v);
+            _menu.Begin(title, pruned ? "A pruned branch hangs on this link." : "A link you can build to learn the skill on the other end.");
+            _menu.AddOption(pruned ? "Restore branch (cost " + SkillGraphTopology.RestoreCost + ")" : "Build link (cost " + SkillGraphTopology.BuildCost + ")", can, () =>
+            {
+                if (pruned) _commands.Restore(u, v);
+                else _commands.Build(u, v);
+                Refresh();
+            });
+            if (!can) _menu.AddNote(Blocker());
         }
-        else if (kind == SkillEdgeKind.Bridge && _commands.CanPrune(u, v))
+        else if (kind == SkillEdgeKind.Bridge)
         {
-            _pendingU = u;
-            _pendingV = v;
-            _confirm.style.display = DisplayStyle.Flex;
+            bool can = _commands.CanPrune(u, v);
+            _menu.Begin(title, "A bridge: the only link to its branch. Pruning freezes that branch and focuses training on the rest.");
+            _menu.AddOption("Prune branch (free)", can, () =>
+            {
+                _pendingU = u;
+                _pendingV = v;
+                _confirm.style.display = DisplayStyle.Flex;
+            });
+            if (!can) _menu.AddNote("This branch cannot be pruned: it holds your root or an island.");
         }
+        else
+        {
+            _menu.Begin(title, "Part of a cycle: slows skill decay at both ends and can form a clique that speeds up training.");
+        }
+        _menu.Present(MenuPoint((_canvas.SlotPosition(slotU) + _canvas.SlotPosition(slotV)) * 0.5f), _shell.contentRect.size);
     }
 
     private void ConfirmPrune()

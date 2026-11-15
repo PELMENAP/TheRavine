@@ -15,6 +15,9 @@ public static class SkillGraphPalette
     public const float MinZoom = 0.5f;
     public const float MaxZoom = 3f;
     public const float ZoomSpeed = 0.1f;
+    public const float MenuWidth = 300f;
+    public const float MenuHeightGuess = 240f;
+    public const float NameWidth = 120f;
 
     public static readonly Color EdgeActive = new(0.74f, 0.84f, 0.96f, 1f);
     public static readonly Color EdgeBridge = new(0.96f, 0.80f, 0.45f, 1f);

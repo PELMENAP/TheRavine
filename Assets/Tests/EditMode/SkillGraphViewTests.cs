@@ -268,4 +268,87 @@ public class SkillGraphViewTests
         Vector2 mid = canvas.UnitToLocal(new Vector2(0.5f, 0.5f));
         Assert.AreEqual(0, SkillGraphGeometry.NearestEdge(snapshot, slot => canvas.UnitToLocal(snapshot.Position[slot]), mid, SkillGraphPalette.PickTolerance));
     }
+
+    [Test]
+    public void NextPointThresholdAndPrunedCountAreFilled()
+    {
+        SkillGraphQuery.Fill(_source, _snapshot);
+        Assert.AreEqual(0, _snapshot.PrunedCount);
+        Assert.AreEqual(_rules.SkillEdgeCostScale * Mathf.Pow(_snapshot.Earned + 1, _rules.SkillEdgeCostExp), _snapshot.NextPointPhi, 1e-3f);
+        Assert.Greater(_snapshot.NextPointPhi, _snapshot.PhiPeak);
+    }
+
+    [Test]
+    public void ChannelSkillsReportTheirEffectAndTheNextLevel()
+    {
+        var grid = SkillGraphTestAtlas.BuildGrid(SkillChannel.Attack, false);
+        var topology = SkillGraphTopology.Create(grid, default);
+        var store = new SkillGraphStore(1, grid.Count);
+        try
+        {
+            store.Reset(0, grid.PositionOf(0), topology, grid);
+            int root = store.Root(0);
+            store.SetLevel(0, root, 40f, 0f);
+            var source = new Source { Atlas = grid, Topology = topology, Store = store };
+            SkillGraphQuery.Fill(source, _snapshot);
+            int slot = _snapshot.SlotOf(root);
+
+            Assert.Greater(_snapshot.Effect[slot], 1f);
+            Assert.Greater(_snapshot.NextEffect[slot], _snapshot.Effect[slot]);
+            for (int i = 0; i < _snapshot.VertexCount; i++)
+                if (_snapshot.State[i] == SkillVertexState.Silhouette || _snapshot.State[i] == SkillVertexState.Island)
+                    Assert.AreEqual(1f, _snapshot.Effect[i]);
+            StringAssert.Contains("Attack damage", SkillGraphText.EffectLine(grid, _snapshot, slot));
+        }
+        finally
+        {
+            store.Dispose();
+            topology.Dispose();
+            Object.DestroyImmediate(grid);
+        }
+    }
+
+    [Test]
+    public void TextHelpersDescribeEffectsAndSources()
+    {
+        Assert.AreEqual("+37%", SkillGraphText.Percent(1.37f));
+        Assert.AreEqual("-38%", SkillGraphText.Percent(0.62f));
+        Assert.AreEqual(string.Empty, SkillGraphText.ChannelLabel(SkillChannel.None));
+        Assert.AreEqual("Move speed", SkillGraphText.ChannelLabel(SkillChannel.Speed));
+        StringAssert.Contains("MoveTo", SkillGraphText.SourcesLine(_atlas, 0));
+        StringAssert.Contains("No action", SkillGraphText.SourcesLine(_atlas, 16));
+    }
+
+    [Test]
+    public void MenuCollectsOptionsAndHides()
+    {
+        var menu = new SkillGraphMenu();
+        menu.Begin("Title", "Info");
+        menu.AddOption("Build", true, null);
+        menu.AddOption("Prune", false, null);
+        menu.AddNote("Note");
+        Assert.AreEqual(3, menu.OptionCount);
+        Assert.IsFalse(menu.IsShown);
+
+        menu.Present(new Vector2(5000f, 5000f), new Vector2(800f, 600f));
+        Assert.IsTrue(menu.IsShown);
+        Assert.LessOrEqual(menu.style.left.value.value, 800f - SkillGraphPalette.MenuWidth);
+        menu.Begin("Other", "Info");
+        Assert.AreEqual(0, menu.OptionCount);
+        menu.Hide();
+        Assert.IsFalse(menu.IsShown);
+    }
+
+    [Test]
+    public void CanvasNodesCarryTheSkillNames()
+    {
+        SkillGraphQuery.Fill(_source, _snapshot);
+        var canvas = new SkillGraphCanvas();
+        canvas.Bind(_snapshot, _atlas);
+        for (int i = 0; i < _snapshot.VertexCount; i++)
+        {
+            var node = (SkillNodeElement)canvas[i];
+            Assert.AreEqual(_atlas.SkillAt(_snapshot.Skill[i]).Name, node.Q<Label>(className: "skill-node__name").text);
+        }
+    }
 }
