@@ -20,7 +20,6 @@ public class RavineLoggerTests
     [TearDown]
     public void TearDown()
     {
-        LogAssert.ignoreFailingMessages = false;
         string path = Path.Combine(Application.persistentDataPath, _fileName);
         if (File.Exists(path)) File.Delete(path);
     }

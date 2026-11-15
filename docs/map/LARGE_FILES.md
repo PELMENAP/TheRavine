@@ -16,7 +16,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 775 |
 | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 743 |
 | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | 730 |
-| `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs` | 687 |
+| `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs` | 681 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs` | 643 |
 | `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs` | 621 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 621 |
@@ -632,67 +632,66 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs`
 
-- 12–687 class RiveInterpreterSecurityTests
+- 12–681 class RiveInterpreterSecurityTests
   - 17 SetUp
-  - 25 TearDown
-  - 31 Load
-  - 33 InterleavedRunsKeepIsolatedVariables
-  - 53 CalleeDoesNotOverwriteCallerVariable
-  - 65 CalleeDoesNotReadCallerVariable
-  - 77 RunsKeepIndependentOperationCounters
-  - 105 CalleeSharesOperationBudgetWithCaller
-  - 122 ReferencePow
-  - 129 PowWithHugeExponentReturnsImmediately
-  - 143 PowMatchesRepeatedMultiplicationForSmallArguments
-  - 158 PowRejectsNegativeExponent
-  - 165 AbsOfIntMinValueWrapsWithoutException
-  - 173 ParseFails
-  - 178 DeeplyNestedParenthesesAreRejected
-  - 186 TenThousandNestedParenthesesAreRejected
-  - 192 DeeplyNestedUnaryOperatorsAreRejected
-  - 199 DeeplyNestedBlocksAreRejected
-  - 210 TenThousandNestedIfBlocksAreRejected
-  - 220 OversizedSourceIsRejectedBeforeLexing
-  - 227 TooManyTokensAreRejected
-  - 234 OversizedArrayLiteralIsRejected
-  - 242 TooManyCallArgumentsAreRejected
-  - 250 TooManyParametersAreRejected
-  - 257 OutOfRangeNumberIsParseErrorNotOverflow
-  - 263 UnexpectedCharacterOnFirstParseIsParseError
-  - 269 SourceAtTheLimitsStillParses
-  - 281 LoadFileWithMaliciousSourceDoesNotThrowAndDoesNotLoad
-  - 291 NewExecutor
-  - 296 InputReadTimesOut
-  - 308 InputReadIsCancelledByToken
-  - 325 InputReadStillReturnsPushedValue
-  - 336 GetFailsWhenTotalWaitBudgetRunsOut
-  - 349 GetWithNoBudgetLeftFailsWithoutWaiting
-  - 363 WaitFailsWhenTotalWaitBudgetIsExceeded
-  - 375 WaitsAreAccumulatedAcrossStatements
-  - 387 CancelAllTerminatesScriptInsideWait
-  - 400 CancelAllTerminatesScriptInsideGet
-  - 415 CancelAllTerminatesBusyLoop
-  - 428 CancelAllStopsCallerWhenCalleeIsCancelled
-  - 443 RuntimeRunsScriptsAfterCancelAll
-  - 455 DisposedRuntimeRefusesScripts
-  - 466 ConcurrentRunsAreCapped
-  - 489 RunWithArgs
-  - 494 SelfRecursionFailsOnCallDepth
-  - 505 MutualRecursionFailsOnCallDepth
-  - 517 RecursionWithBranchesFailsCleanly
-  - 527 RecursionAtTheDepthLimitStillWorks
-  - 541 RecursionDepthIsReleasedAfterCalls
-  - 553 LongLeftDeepExpressionFailsWithoutStackOverflow
-  - 566 ModerateExpressionStillEvaluates
-  - 577 EmptyLoopToIntMaxValueFailsOnOperationBudget
-  - 589 EmptyLoopCountsOneOperationPerIteration
-  - 601 LoopUpToIntMaxValueTerminates
-  - 613 LoopVariableStillIteratesInclusively
-  - 624 LoopWithStatementsStaysInsideBudget
-  - 636 CommandRuntime
-  - 647 VariableSubstitutionDoesNotRewriteCommandWords
-  - 661 VariableSubstitutionIsSinglePassAndKeepsUnknownPlaceholders
-  - 673 SubstitutionOfManyBracesIsLinear
+  - 25 Load
+  - 27 InterleavedRunsKeepIsolatedVariables
+  - 47 CalleeDoesNotOverwriteCallerVariable
+  - 59 CalleeDoesNotReadCallerVariable
+  - 71 RunsKeepIndependentOperationCounters
+  - 99 CalleeSharesOperationBudgetWithCaller
+  - 116 ReferencePow
+  - 123 PowWithHugeExponentReturnsImmediately
+  - 137 PowMatchesRepeatedMultiplicationForSmallArguments
+  - 152 PowRejectsNegativeExponent
+  - 159 AbsOfIntMinValueWrapsWithoutException
+  - 167 ParseFails
+  - 172 DeeplyNestedParenthesesAreRejected
+  - 180 TenThousandNestedParenthesesAreRejected
+  - 186 DeeplyNestedUnaryOperatorsAreRejected
+  - 193 DeeplyNestedBlocksAreRejected
+  - 204 TenThousandNestedIfBlocksAreRejected
+  - 214 OversizedSourceIsRejectedBeforeLexing
+  - 221 TooManyTokensAreRejected
+  - 228 OversizedArrayLiteralIsRejected
+  - 236 TooManyCallArgumentsAreRejected
+  - 244 TooManyParametersAreRejected
+  - 251 OutOfRangeNumberIsParseErrorNotOverflow
+  - 257 UnexpectedCharacterOnFirstParseIsParseError
+  - 263 SourceAtTheLimitsStillParses
+  - 275 LoadFileWithMaliciousSourceDoesNotThrowAndDoesNotLoad
+  - 285 NewExecutor
+  - 290 InputReadTimesOut
+  - 302 InputReadIsCancelledByToken
+  - 319 InputReadStillReturnsPushedValue
+  - 330 GetFailsWhenTotalWaitBudgetRunsOut
+  - 343 GetWithNoBudgetLeftFailsWithoutWaiting
+  - 357 WaitFailsWhenTotalWaitBudgetIsExceeded
+  - 369 WaitsAreAccumulatedAcrossStatements
+  - 381 CancelAllTerminatesScriptInsideWait
+  - 394 CancelAllTerminatesScriptInsideGet
+  - 409 CancelAllTerminatesBusyLoop
+  - 422 CancelAllStopsCallerWhenCalleeIsCancelled
+  - 437 RuntimeRunsScriptsAfterCancelAll
+  - 449 DisposedRuntimeRefusesScripts
+  - 460 ConcurrentRunsAreCapped
+  - 483 RunWithArgs
+  - 488 SelfRecursionFailsOnCallDepth
+  - 499 MutualRecursionFailsOnCallDepth
+  - 511 RecursionWithBranchesFailsCleanly
+  - 521 RecursionAtTheDepthLimitStillWorks
+  - 535 RecursionDepthIsReleasedAfterCalls
+  - 547 LongLeftDeepExpressionFailsWithoutStackOverflow
+  - 560 ModerateExpressionStillEvaluates
+  - 571 EmptyLoopToIntMaxValueFailsOnOperationBudget
+  - 583 EmptyLoopCountsOneOperationPerIteration
+  - 595 LoopUpToIntMaxValueTerminates
+  - 607 LoopVariableStillIteratesInclusively
+  - 618 LoopWithStatementsStaysInsideBudget
+  - 630 CommandRuntime
+  - 641 VariableSubstitutionDoesNotRewriteCommandWords
+  - 655 VariableSubstitutionIsSinglePassAndKeepsUnknownPlaceholders
+  - 667 SubstitutionOfManyBracesIsLinear
 
 ## `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs`
 
