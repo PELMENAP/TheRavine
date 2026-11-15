@@ -6,16 +6,18 @@ using TheRavine.EntityControl;
 public sealed class SkillGraphPanel : MonoBehaviour
 {
     private const int RefreshMs = 250;
+    private const int PanelSortingOrder = 100;
     private const string StyleSheetPath = "UI/SkillGraph";
     private const string BuiltinFont = "LegacyRuntime.ttf";
 
     [SerializeField] private PanelSettings panelSettings;
 
     private PanelSettings _fallbackSettings;
+    private ThemeStyleSheet _fallbackTheme;
     private UIDocument _document;
     private VisualElement _shell;
     private Label _budget;
-    private Toggle _auto;
+    private Button _auto;
     private SkillGraphCanvas _canvas;
     private Label _cardTitle;
     private Label _cardBody;
@@ -35,6 +37,31 @@ public sealed class SkillGraphPanel : MonoBehaviour
     private int _checksum;
 
     public bool IsOpen { get; private set; }
+
+    public static bool TryGetLocalGraph(out PlayerSkillGraph graph)
+    {
+        graph = null;
+        var players = ServiceLocator.Players.GetAllPlayers();
+        if (players.Count < 1 || players[0] is not PlayerEntity player) return false;
+
+        graph = player.SkillGraph;
+        return graph != null;
+    }
+
+    public static void ToggleLocal()
+    {
+        var existing = FindFirstObjectByType<SkillGraphPanel>();
+        if (existing != null && existing.IsOpen)
+        {
+            existing.Close();
+            return;
+        }
+        if (!TryGetLocalGraph(out var graph)) return;
+
+        ServiceLocator.Services.TryGet(out ActionMapController input);
+        if (input != null && !input.IsGameplayActive) return;
+        Obtain().Open(graph, input);
+    }
 
     public static SkillGraphPanel Obtain()
     {
@@ -65,7 +92,11 @@ public sealed class SkillGraphPanel : MonoBehaviour
         BuildTree(_document.rootVisualElement);
 
         IsOpen = true;
-        _input?.SwitchToInventory();
+        if (_input != null)
+        {
+            _input.DisableAll();
+            _input.EnableUI();
+        }
         _revision = int.MinValue;
         Refresh();
         _refresh = _shell.schedule.Execute(Refresh).Every(RefreshMs);
@@ -77,17 +108,22 @@ public sealed class SkillGraphPanel : MonoBehaviour
         IsOpen = false;
         _refresh?.Pause();
         _input?.SwitchToGameplay();
+        gameObject.SetActive(false);
         Destroy(gameObject);
     }
 
     private void OnDestroy()
     {
         if (_fallbackSettings != null) Destroy(_fallbackSettings);
+        if (_fallbackTheme != null) Destroy(_fallbackTheme);
     }
 
     private static PanelSettings CreateFallbackSettings()
     {
+        _fallbackTheme = ScriptableObject.CreateInstance<ThemeStyleSheet>();
         var settings = ScriptableObject.CreateInstance<PanelSettings>();
+        settings.themeStyleSheet = _fallbackTheme;
+        settings.sortingOrder = PanelSortingOrder;
         settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
         settings.referenceResolution = new Vector2Int(1280, 720);
         settings.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
@@ -112,9 +148,10 @@ public sealed class SkillGraphPanel : MonoBehaviour
         title.AddToClassList("skill-panel__title");
         _budget = new Label();
         _budget.AddToClassList("skill-panel__budget");
-        _auto = new Toggle("Auto");
-        _auto.RegisterValueChangedCallback(OnAutoChanged);
+        _auto = new Button(OnAutoClicked);
+        _auto.AddToClassList("skill-button");
         var close = new Button(Close) { text = "Close" };
+        close.AddToClassList("skill-button");
         header.Add(title);
         header.Add(_budget);
         header.Add(_auto);
@@ -150,8 +187,12 @@ public sealed class SkillGraphPanel : MonoBehaviour
         _confirmText.AddToClassList("skill-card__body");
         var row = new VisualElement();
         row.AddToClassList("skill-confirm__row");
-        row.Add(new Button(ConfirmPrune) { text = "Prune" });
-        row.Add(new Button(CancelPrune) { text = "Cancel" });
+        var prune = new Button(ConfirmPrune) { text = "Prune" };
+        prune.AddToClassList("skill-button");
+        var cancel = new Button(CancelPrune) { text = "Cancel" };
+        cancel.AddToClassList("skill-button");
+        row.Add(prune);
+        row.Add(cancel);
         box.Add(_confirmText);
         box.Add(row);
         _confirm.Add(box);
@@ -160,7 +201,11 @@ public sealed class SkillGraphPanel : MonoBehaviour
 
     private void Refresh()
     {
-        if (_graph == null) return;
+        if (_graph == null || _graph.IsDisposed)
+        {
+            Close();
+            return;
+        }
         int revision = _graph.Revision;
         int version = _graph.StateVersion;
         int checksum = SkillGraphQuery.Checksum(_graph);
@@ -171,14 +216,14 @@ public sealed class SkillGraphPanel : MonoBehaviour
         _checksum = checksum;
         SkillGraphQuery.Fill(_graph, _snapshot);
         _canvas.Bind(_snapshot);
-        _auto.SetValueWithoutNotify(_snapshot.AutoMode);
+        _auto.text = _snapshot.AutoMode ? "Auto: on" : "Auto: off";
         _budget.text = "Edge points " + _snapshot.Available + " / " + _snapshot.Earned + "    Peak " + _snapshot.PhiPeak.ToString("0.0");
         if (_hoveredSkill >= 0) ShowCard(_hoveredSkill);
     }
 
-    private void OnAutoChanged(ChangeEvent<bool> evt)
+    private void OnAutoClicked()
     {
-        if (evt.newValue != _commands.AutoMode) _commands.ToggleAutoMode();
+        _commands.ToggleAutoMode();
         Refresh();
     }
 

@@ -134,3 +134,17 @@
     bottom: -4px;
     color: rgb(150, 220, 255);
 }
+
+.skill-button {
+    margin-left: 8px;
+    padding: 4px 12px;
+    color: rgb(228, 234, 245);
+    background-color: rgb(44, 54, 78);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.skill-button:hover {
+    background-color: rgb(62, 78, 112);
+}

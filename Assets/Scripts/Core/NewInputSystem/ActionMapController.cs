@@ -78,6 +78,7 @@ public class ActionMapController
     }
 
     public bool IsActive(string mapName) => _currentMapName.Value == mapName;
+    public bool IsGameplayActive => _currentMapName.Value == gamePlay;
 
     public bool IsGamePlayActive() => _currentMapName.Value == gamePlay;
 

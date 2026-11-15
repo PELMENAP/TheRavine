@@ -47,7 +47,8 @@ namespace TheRavine.EntityControl
         public SkillGraphStore Store => _store;
         public bool AutoMode => _auto;
         public int StateVersion => _stateVersion;
-        public int Revision => _topology.Revision;
+        public int Revision => _topology != null ? _topology.Revision : 0;
+        public bool IsDisposed => _topology == null;
         public ref readonly SkillModifiers Modifiers => ref _modifiers;
         public GeneticParameters Genes => _genes;
         int ISkillGraphSource.StoreIndex => Slot;

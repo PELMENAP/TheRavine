@@ -16,7 +16,7 @@ namespace TheRavine.Base
 
         public bool Validate(CommandContext context)
         {
-            if (TryGetLocalGraph(out _)) return true;
+            if (SkillGraphPanel.TryGetLocalGraph(out _)) return true;
 
             context.Display("Игрок ещё не инициализирован");
             return false;
@@ -24,19 +24,9 @@ namespace TheRavine.Base
 
         public UniTask ExecuteAsync(string[] args, CommandContext context)
         {
-            if (TryGetLocalGraph(out var graph))
+            if (SkillGraphPanel.TryGetLocalGraph(out var graph))
                 SkillGraphPanel.Obtain().Toggle(graph, _input);
             return UniTask.CompletedTask;
-        }
-
-        private static bool TryGetLocalGraph(out PlayerSkillGraph graph)
-        {
-            graph = null;
-            var players = ServiceLocator.Players.GetAllPlayers();
-            if (players.Count < 1 || players[0] is not PlayerEntity player) return false;
-
-            graph = player.SkillGraph;
-            return graph != null;
         }
     }
 }
