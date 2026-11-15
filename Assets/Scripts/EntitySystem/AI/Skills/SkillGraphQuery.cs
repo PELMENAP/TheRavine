@@ -71,6 +71,19 @@ public static class SkillGraphQuery
             snapshot.CliqueBoost[slot] = SkillGraphMath.CliqueBoost(topology.CliqueSize(v), in f);
             float pull = SkillGraphMath.EnvironmentDelta(level, peak, v, active[v], in levels, baseIndex, in positions, atlas.MeanEdgeLength);
             snapshot.LogicBoost[slot] = SkillGraphMath.LogicBoost(pull, level, in f);
+            ref readonly var info = ref atlas.SkillAt(v);
+            bool usable = state == SkillVertexState.Open || state == SkillVertexState.Available;
+            if (usable && info.Channel != SkillChannel.None)
+            {
+                var curve = new float3(info.Curve.P, info.Curve.L0, info.Curve.C);
+                snapshot.Effect[slot] = SkillGraphMath.Effect(level, curve, info.IsDivider);
+                snapshot.NextEffect[slot] = SkillGraphMath.Effect(floor + 1f, curve, info.IsDivider);
+            }
+            else
+            {
+                snapshot.Effect[slot] = 1f;
+                snapshot.NextEffect[slot] = 1f;
+            }
         }
 
         for (ulong rest = visible; rest != 0ul; rest &= rest - 1ul)
@@ -94,6 +107,8 @@ public static class SkillGraphQuery
         snapshot.Earned = topology.Earned(in f);
         snapshot.Spent = topology.SpentEdgePoints;
         snapshot.Available = math.max(snapshot.Earned - snapshot.Spent, 0);
+        snapshot.NextPointPhi = f.SkillEdgeCostScale * math.pow(snapshot.Earned + 1, f.SkillEdgeCostExp);
+        snapshot.PrunedCount = math.countbits(pruned);
         snapshot.LevelChecksum = Checksum(source);
     }
 }

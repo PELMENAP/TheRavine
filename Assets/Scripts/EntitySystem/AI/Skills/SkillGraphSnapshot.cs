@@ -33,6 +33,8 @@ public sealed class SkillGraphSnapshot
     public int Available;
     public float PhiPeak;
     public float FocusBoost;
+    public float NextPointPhi;
+    public int PrunedCount;
 
     public readonly int[] Skill = new int[MaxVertices];
     public readonly Vector2[] Position = new Vector2[MaxVertices];
@@ -46,6 +48,8 @@ public sealed class SkillGraphSnapshot
     public readonly float[] Decay = new float[MaxVertices];
     public readonly float[] CliqueBoost = new float[MaxVertices];
     public readonly float[] LogicBoost = new float[MaxVertices];
+    public readonly float[] Effect = new float[MaxVertices];
+    public readonly float[] NextEffect = new float[MaxVertices];
 
     public readonly int[] EdgeFrom = new int[MaxEdges];
     public readonly int[] EdgeTo = new int[MaxEdges];

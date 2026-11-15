@@ -17,6 +17,7 @@ public sealed class SkillNodeElement : VisualElement
     private readonly Label _level = new();
     private readonly Label _clique = new();
     private readonly Label _decay = new();
+    private readonly Label _name = new();
     private float _fraction;
     private Color _ring = SkillGraphPalette.TalentLow;
 
@@ -46,6 +47,12 @@ public sealed class SkillNodeElement : VisualElement
         Add(_level);
         Add(_clique);
         Add(_decay);
+        _name.AddToClassList("skill-node__name");
+        _name.pickingMode = PickingMode.Ignore;
+        _name.style.width = SkillGraphPalette.NameWidth;
+        _name.style.left = (SkillGraphPalette.NodeSize - SkillGraphPalette.NameWidth) * 0.5f;
+        _name.style.top = SkillGraphPalette.NodeSize + 2f;
+        Add(_name);
 
         generateVisualContent += OnGenerate;
         RegisterCallback<ClickEvent>(_ => Clicked?.Invoke(Skill));
@@ -53,8 +60,9 @@ public sealed class SkillNodeElement : VisualElement
         RegisterCallback<PointerLeaveEvent>(_ => Unhovered?.Invoke(Skill));
     }
 
-    public void Set(SkillGraphSnapshot snapshot, int slot)
+    public void Set(SkillGraphSnapshot snapshot, int slot, string skillName)
     {
+        _name.text = skillName;
         Skill = snapshot.Skill[slot];
         State = snapshot.State[slot];
         for (int i = 1; i < StateClasses.Length; i++) EnableInClassList(StateClasses[i], i == (int)State);
