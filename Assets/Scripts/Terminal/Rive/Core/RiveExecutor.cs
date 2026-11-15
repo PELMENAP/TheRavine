@@ -12,6 +12,7 @@ namespace TheRavine.Base
         private readonly InputStreamManager _inputStream;
         private readonly InteractorRegistry _interactorRegistry;
         private const int MAX_OPERATIONS = 10000;
+        private const int YieldEveryOperations = 10;
         public const int MaxCallDepth = 32;
         public const int MaxStackDepth = 128;
         public const int MaxInputWaitMs = 60000;
@@ -101,8 +102,11 @@ namespace TheRavine.Base
                     if (result.Action != ExecutionAction.Continue)
                         return result;
 
-                    if (run.OperationCount % 10 == 0)
+                    if (++run.OperationsSinceYield >= YieldEveryOperations)
+                    {
+                        run.OperationsSinceYield = 0;
                         await UniTask.Yield(run.Token);
+                    }
                 }
 
                 return ExecutionResult.CreateSuccess();
@@ -197,8 +201,11 @@ namespace TheRavine.Base
                     if (result.Action == ExecutionAction.Return || result.Action == ExecutionAction.Stop)
                         return result;
                     
-                    if (node.Body.Count == 0 && run.OperationCount % 10 == 0)
+                    if (++run.OperationsSinceYield >= YieldEveryOperations)
+                    {
+                        run.OperationsSinceYield = 0;
                         await UniTask.Yield(run.Token);
+                    }
                 }
             }
             finally

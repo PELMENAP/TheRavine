@@ -26,7 +26,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
 | `Assets/Scripts/EntitySystem/AI/Colony` | 7 | 798 |
 | `Assets/Scripts/EntitySystem/AI/Debug` | 3 | 1615 |
-| `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 784 |
+| `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 787 |
 | `Assets/Scripts/EntitySystem/AI/Entity` | 18 | 2732 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1460 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 713 |
@@ -38,7 +38,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 567 |
 | `Assets/Scripts/EntitySystem/AI/Population` | 4 | 753 |
 | `Assets/Scripts/EntitySystem/AI/Rules` | 10 | 3088 |
-| `Assets/Scripts/EntitySystem/AI/SharedAI` | 21 | 3445 |
+| `Assets/Scripts/EntitySystem/AI/SharedAI` | 21 | 3447 |
 | `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2174 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 7 | 1099 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
@@ -108,7 +108,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Terminal` | 9 | 821 |
 | `Assets/Scripts/Terminal/PDollar/Scripts` | 7 | 736 |
 | `Assets/Scripts/Terminal/Rive` | 5 | 825 |
-| `Assets/Scripts/Terminal/Rive/Core` | 9 | 2163 |
+| `Assets/Scripts/Terminal/Rive/Core` | 9 | 2171 |
 | `Assets/Scripts/Test` | 5 | 781 |
 | `Assets/Scripts/UI` | 2 | 171 |
 | `Assets/Scripts/UI/Console` | 1 | 14 |
@@ -117,7 +117,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 945 |
 | `Assets/Scripts/View` | 2 | 23 |
-| `Assets/Tests/EditMode` | 62 | 9030 |
+| `Assets/Tests/EditMode` | 62 | 9036 |
 
 ## Assemblies
 
@@ -231,8 +231,8 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | EnumerableSnapshotExtensions | class | `Assets/Scripts/Core/Utilities/EnumerableSnapshot.cs` | 64 |
 | ErosionBudget | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 15 |
 | ExecuteScriptCommand | class | `Assets/Scripts/Terminal/Rive/RiveRedactorCommands.cs` | 7 |
-| ExecutionAction | enum | `Assets/Scripts/Terminal/Rive/Core/RiveExecutor.cs` | 483 |
-| ExecutionResult | struct | `Assets/Scripts/Terminal/Rive/Core/RiveExecutor.cs` | 466 |
+| ExecutionAction | enum | `Assets/Scripts/Terminal/Rive/Core/RiveExecutor.cs` | 490 |
+| ExecutionResult | struct | `Assets/Scripts/Terminal/Rive/Core/RiveExecutor.cs` | 473 |
 | ExpressionNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 15 |
 | ExpressionStatementNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 121 |
 | Extension | class | `Assets/Scripts/Core/Utilities/Extentions.cs` | 7 |
@@ -390,7 +390,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | RichTextExtensions | class | `Assets/Scripts/EntitySystem/AI/Entity/EntityView.cs` | 208 |
 | RingBuffer | class | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 707 |
 | RiveExtensions | class | `Assets/Scripts/Terminal/Rive/Core/RiveExtentions.cs` | 1 |
-| RiveFrame | class | `Assets/Scripts/Terminal/Rive/Core/RiveRun.cs` | 16 |
+| RiveFrame | class | `Assets/Scripts/Terminal/Rive/Core/RiveRun.cs` | 17 |
 | RiveParseException | class | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | 721 |
 | RiverBlendSettings | struct | `Assets/Scripts/ObjectSystem/Map/Tools/NoiseLayerSettings.cs` | 63 |
 | RiveRuntimeException | class | `Assets/Scripts/Terminal/Rive/Core/RiveRuntime.cs` | 281 |
