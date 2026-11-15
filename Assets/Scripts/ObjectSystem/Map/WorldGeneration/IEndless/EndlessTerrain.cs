@@ -147,6 +147,14 @@ namespace TheRavine.Generator
                 };
             }
 
+            private Bounds BoundsAt(float originZ)
+            {
+                float2 span = generator.Ravine.ElevationRange(originZ, originZ + BlockWorld);
+                return new Bounds(
+                    new Vector3(BlockWorld * 0.5f, (span.x + span.y) * 0.5f, BlockWorld * 0.5f),
+                    new Vector3(BlockWorld, BoundsHeight + span.y - span.x, BlockWorld));
+            }
+
             private Mesh CreateMesh(string name)
             {
                 var mesh = new Mesh { name = name, bounds = localBounds };
@@ -170,8 +178,9 @@ namespace TheRavine.Generator
                 if (!generator.TryBuildHeightWindow(center, out HeightWindow window))
                     return;
 
-                Schedule(central, window, out Mesh.MeshDataArray data).Complete();
-                Apply(central, data, MapGenerator.WindowOriginWorld(center));
+                Vector3 origin = MapGenerator.WindowOriginWorld(center);
+                Schedule(central, window, BoundsAt(origin.z), out Mesh.MeshDataArray data).Complete();
+                Apply(central, data, origin);
             }
 
             public void SetSector(ViewSector newSector)
@@ -284,8 +293,9 @@ namespace TheRavine.Generator
                     centralDirty = false;
                     if (generator.TryBuildHeightWindow(center, out HeightWindow centralWindow))
                     {
-                        Schedule(central, centralWindow, out Mesh.MeshDataArray centralData).Complete();
-                        Apply(central, centralData, MapGenerator.WindowOriginWorld(center));
+                        Vector3 centralOrigin = MapGenerator.WindowOriginWorld(center);
+                        Schedule(central, centralWindow, BoundsAt(centralOrigin.z), out Mesh.MeshDataArray centralData).Complete();
+                        Apply(central, centralData, centralOrigin);
                     }
                 }
 
@@ -301,7 +311,7 @@ namespace TheRavine.Generator
                     if (!generator.EnsureRegion(blockCenter, HeightWindow.Radius, block.Lod, deadline)) break;
                     if (!generator.TryBuildHeightWindow(blockCenter, out HeightWindow window)) break;
 
-                    handles[n] = Schedule(block, window, out pendingData[n]);
+                    handles[n] = Schedule(block, window, BoundsAt(BlockPosition(block).z), out pendingData[n]);
                     pendingBlocks[n++] = index;
                     block.Dirty = false;
                 }
@@ -333,7 +343,7 @@ namespace TheRavine.Generator
             private Vector3 BlockPosition(MeshTarget block) =>
                 MapGenerator.WindowOriginWorld(center) + BlockOffset(block);
 
-            private JobHandle Schedule(MeshTarget target, in HeightWindow window, out Mesh.MeshDataArray data)
+            private JobHandle Schedule(MeshTarget target, in HeightWindow window, Bounds bounds, out Mesh.MeshDataArray data)
             {
                 MeshLevel level = target.Level;
 
@@ -346,7 +356,7 @@ namespace TheRavine.Generator
                 meshData.subMeshCount = 1;
                 meshData.SetSubMesh(0, new SubMeshDescriptor(0, level.IndexCount)
                 {
-                    bounds = localBounds,
+                    bounds = bounds,
                     firstVertex = 0,
                     vertexCount = level.VertexCount
                 }, UpdateFlags);
@@ -368,7 +378,7 @@ namespace TheRavine.Generator
             private void Apply(MeshTarget target, Mesh.MeshDataArray data, Vector3 position)
             {
                 Mesh.ApplyAndDisposeWritableMeshData(data, target.Mesh, UpdateFlags);
-                target.Mesh.bounds = localBounds;
+                target.Mesh.bounds = BoundsAt(position.z);
                 target.Transform.position = position;
             }
 

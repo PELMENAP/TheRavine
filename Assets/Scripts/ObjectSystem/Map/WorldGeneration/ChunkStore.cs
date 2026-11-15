@@ -15,12 +15,14 @@ namespace TheRavine.Generator
     public sealed class ChunkStore
     {
         private const int Magic  = 0x4B435652;
-        private const int Format = 4;
+        private const int Format = 5;
         private const int MinFormat = 1;
+        private const int RavineFormat = 5;
         private const long MaxFileBytes = 64L + ChunkData.TotalCells * (64L + 8L);
 
         private string _directory;
         private readonly int _seed;
+        private readonly RavineProfile _ravine;
         private readonly List<ObjectInstInfo> _infos = new(64);
         private readonly List<int> _editCells = new(16);
         private readonly List<float> _editHeights = new(16);
@@ -30,17 +32,27 @@ namespace TheRavine.Generator
         private long _objectTick;
         private bool _hasClocks;
 
-        private ChunkStore(string directory, int seed)
+        private ChunkStore(string directory, int seed, RavineProfile ravine)
         {
             _directory = directory;
             _seed = seed;
+            _ravine = ravine;
         }
 
-        public static ChunkStore ForWorld(string worldId, int seed)
+        public static ChunkStore ForWorld(string worldId, int seed, RavineProfile ravine = default)
         {
             string directory = DirectoryFor(worldId);
             Directory.CreateDirectory(directory);
-            return new ChunkStore(directory, seed);
+            return new ChunkStore(directory, seed, ravine);
+        }
+
+        private bool Readable(int format, long chunkKey)
+        {
+            if (format < MinFormat || format > Format) return false;
+            if (format >= RavineFormat) return true;
+
+            float z0 = Position2Int.GetY(chunkKey) * (float)MapGenerator.chunkSize;
+            return _ravine.ElevationRange(z0, z0 + MapGenerator.chunkSize).y <= 0f;
         }
 
         public static string DirectoryFor(string worldId) =>
@@ -106,7 +118,7 @@ namespace TheRavine.Generator
                     if (reader.ReadInt32() != Magic) return 0;
 
                     int format = reader.ReadInt32();
-                    if (format < MinFormat || format > Format || reader.ReadInt32() != _seed || reader.ReadInt64() != chunkKey) return 0;
+                    if (!Readable(format, chunkKey) || reader.ReadInt32() != _seed || reader.ReadInt64() != chunkKey) return 0;
 
                     reader.ReadByte();
                     return format >= 4 ? Math.Max(reader.ReadInt32(), 1) : 1;
@@ -187,7 +199,7 @@ namespace TheRavine.Generator
                 {
                     int magic = reader.ReadInt32();
                     int format = reader.ReadInt32();
-                    if (magic != Magic || format < MinFormat || format > Format || reader.ReadInt32() != _seed || reader.ReadInt64() != chunkKey)
+                    if (magic != Magic || !Readable(format, chunkKey) || reader.ReadInt32() != _seed || reader.ReadInt64() != chunkKey)
                     {
                         RavineLog.Warning($"[ChunkStore] Chunk {chunkKey}: header mismatch, file ignored");
                         return false;

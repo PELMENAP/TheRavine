@@ -110,6 +110,7 @@ public partial class GrassSystem : MonoBehaviour
     private long pendingCenter;
     private bool hasPending;
     private Vector3 boundsSize;
+    private RavineProfile ravine;
 
     private Camera viewCamera;
     private readonly Plane[] frustumPlanes = new Plane[6];
@@ -279,6 +280,7 @@ public partial class GrassSystem : MonoBehaviour
     {
         if (map == null || !map.TryBuildHeightWindow(center, out HeightWindow window)) return;
 
+        ravine = map.Ravine;
         if (!farPoolReady) BuildFarPool(map);
 
         UploadHeights(window, nearHeightBuffer, nearClimateBuffer);
@@ -312,12 +314,16 @@ public partial class GrassSystem : MonoBehaviour
         BiomeShaderGlobals.ApplyTo(grassPlacementShader);
     }
 
-    private Bounds WindowBounds(Vector3 boundsMin) => new Bounds(
-        boundsMin + new Vector3(
-            MapGenerator.generationSize * 0.5f,
-            MapGenerator.maxTerrainHeight * 0.5f,
-            MapGenerator.generationSize * 0.5f),
-        boundsSize);
+    private Bounds WindowBounds(Vector3 boundsMin)
+    {
+        float2 span = ravine.ElevationRange(boundsMin.z, boundsMin.z + MapGenerator.generationSize);
+        return new Bounds(
+            boundsMin + new Vector3(
+                MapGenerator.generationSize * 0.5f,
+                MapGenerator.maxTerrainHeight * 0.5f + (span.x + span.y) * 0.5f,
+                MapGenerator.generationSize * 0.5f),
+            boundsSize + new Vector3(0f, span.y - span.x, 0f));
+    }
 
     private void PlaceBlock(in HeightWindow window, long blockCenter, ComputeBuffer target, int step, float widthScale, out Bounds bounds)
     {
