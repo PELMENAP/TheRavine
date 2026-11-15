@@ -138,6 +138,9 @@ public sealed class SkillGraphPanel : MonoBehaviour
         var font = Resources.GetBuiltinResource<Font>(BuiltinFont);
         if (font != null) root.style.unityFontDefinition = FontDefinition.FromFont(font);
 
+        root.style.position = Position.Absolute;
+        root.style.left = root.style.top = root.style.right = root.style.bottom = 0f;
+
         _shell = new VisualElement();
         _shell.AddToClassList("skill-panel");
         root.Add(_shell);
