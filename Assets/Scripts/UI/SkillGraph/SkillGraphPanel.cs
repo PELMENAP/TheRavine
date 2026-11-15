@@ -118,7 +118,7 @@ public sealed class SkillGraphPanel : MonoBehaviour
         if (_fallbackTheme != null) Destroy(_fallbackTheme);
     }
 
-    private static PanelSettings CreateFallbackSettings()
+    private PanelSettings CreateFallbackSettings()
     {
         _fallbackTheme = ScriptableObject.CreateInstance<ThemeStyleSheet>();
         var settings = ScriptableObject.CreateInstance<PanelSettings>();
