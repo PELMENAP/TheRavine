@@ -6,162 +6,166 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 | File | Lines |
 |---|---|
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1806 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1840 |
 | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1457 |
 | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1074 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1067 |
-| `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1013 |
+| `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1014 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 928 |
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 849 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 775 |
 | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 743 |
 | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | 730 |
 | `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs` | 683 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 662 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs` | 643 |
 | `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs` | 621 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 621 |
-| `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 603 |
+| `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 605 |
 | `Assets/Tests/EditMode/SkillGraphTests.cs` | 562 |
 | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 547 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassSystem.cs` | 509 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassSystem.cs` | 515 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering/FarObjectRenderer.cs` | 501 |
 
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs`
 
-- 24–1294 class MapGenerator
-  - 88 WorldToChunk
-  - 92 WorldToLocalIdx
-  - 96 CellToChunk
-  - 100 CellToLocalIdx
-  - 104 ChunkCoord
-  - 107 WindowChunk
-  - 111 WindowOriginWorld
-  - 116 IsInWindow
-  - 121 IsInActiveWindow
-  - 124 BlockOfChunkDelta
-  - 131 BlockCenterChunk
-  - 135 ViewRingOf
-  - 146 SimRingOf
-  - 158 ViewRingOfChunk
-  - 161 RingOfChunk
-  - 164 GetMapData
-  - 167 GetMapData
-  - 170 EnsureChunk
-  - 189 GenerateChunk
-  - 216 ErosionEpochsDue
-  - 223 RecordErosion
-  - 230 EnsureRegion
-  - 258 TryBuildHeightWindow
-  - 275 HasChunk
-  - 278 TryGetChunk
-  - 287 TouchChunk
-  - 294 EnsureWaterDistance
-  - 321 RequestChunk
-  - 330 ProcessChunkRequests
-  - 346 RemoveChunk
-  - 348 UnloadChunk
-  - 354 ReleaseChunk
-  - 379 BindWaterLevel
-  - 381 WaterModifier
-  - 385 IsHeightIsLiveAble
-  - 388 IsWaterHeight
-  - 391 ChunkForCell
-  - 394 GetRealPosition
-  - 399 GetSpeedModifier
-  - 403 SpeedFromNormal
-  - 418 SampleNormal
-  - 425 NormalFromHeights
-  - 447 ResolveObstacles
-  - 460 SupportObstacles
-  - 473 SampleHeightBilinear
-  - 479 TrySampleHeightBilinear
-  - 505 TryCellHeight
-  - 524 TryAddObject
-  - 534 TryAddObject
-  - 543 TryAddObject
-  - 558 TryAddFromInfo
-  - 571 PlacementY
-  - 586 TryPlaceSnapped
-  - 609 FillGround
-  - 620 SetTerrainHeight
-  - 627 SetTerrainHeight
-  - 640 TryAddObjectEx
-  - 691 TouchEdited
-  - 701 TryGetObject
-  - 712 TryGetObject
-  - 723 RemoveObject
-  - 725 RemoveObject
-  - 739 ContainsObject
-  - 747 IsOccupiedAt
-  - 755 TryToAddPositionToChunk
-  - 774 MarkChunkDirty
-  - 828 SetUp
-  - 896 SetupEndless
-  - 915 HorizonRingCount
-  - 928 BindFirstPlayer
-  - 940 BindPlayer
-  - 950 OnSectorChanged
-  - 964 OnBeginCameraRendering
-  - 997 TryGetViewerChunk
-  - 1004 ApplyImmediate
-  - 1007 ApplyWorldCommands
-  - 1023 Update
-  - 1052 MoveWindow
-  - 1072 RestartSimSupply
-  - 1079 SupplySimSquare
-  - 1119 ExtraUpdate
-  - 1121 FlushDirty
-  - 1132 ComputeWindowCenter
-  - 1140 BindChunkStore
-  - 1148 OnWorldRenamed
-  - 1156 SaveModifiedChunks
-  - 1171 EvictChunks
-  - 1200 IsRetained
-  - 1212 BreakUp
-  - 1218 OnDisable
-  - 1245 IgniteNearViewer
-  - 1262 OnDestroy
-  - 431–445 struct ChunkObstacles
-    - 435 TryGetObstacles
-- 1296–1759 class ChunkData
-  - 1323 SetFoodTable
-  - 1325 IsFoodPrefab
-  - 1343 ChunkData
-  - 1369 TryAddObject
-  - 1373 TryAddObject
-  - 1376 TryAddObject
-  - 1379 TryAddObject
-  - 1421 SpanMask
-  - 1424 UpperKey
-  - 1427 Validate
-  - 1452 UpperLevelsFree
-  - 1460 RegisterUpper
-  - 1476 UnregisterUpper
-  - 1492 RemapUpper
-  - 1503 AddVolume
-  - 1527 SetLevelBit
-  - 1529 ClearVolume
-  - 1539 TryGetBuilding
-  - 1545 HasLevelAt
-  - 1552 TryGetObject
-  - 1566 TryGetObject
-  - 1581 RemoveObject
-  - 1583 RemoveObject
-  - 1649 ClearDirty
-  - 1651 ClearObjects
-  - 1674 SetHeight
-  - 1686 RestoreHeight
-  - 1696 LevelsAt
-  - 1698 MarkPersisted
-  - 1700 CommitRestore
-  - 1707 ResetForReuse
-  - 1725 CommitErosion
-  - 1731 InvalidateWater
-  - 1739 CommitGeneration
-  - 1744 Dispose
-- 1761–1776 struct StructureSpawnPoint
-  - 1767 StructureSpawnPoint
-- 1778–1805 struct ObjectInstInfo
-  - 1794 ObjectInstInfo
+- 24–1328 class MapGenerator
+  - 90 WorldToChunk
+  - 94 WorldToLocalIdx
+  - 98 CellToChunk
+  - 102 CellToLocalIdx
+  - 106 ChunkCoord
+  - 109 WindowChunk
+  - 113 WindowOriginWorld
+  - 118 IsInWindow
+  - 123 IsInActiveWindow
+  - 126 BlockOfChunkDelta
+  - 133 BlockCenterChunk
+  - 137 ViewRingOf
+  - 148 SimRingOf
+  - 160 ViewRingOfChunk
+  - 163 RingOfChunk
+  - 166 GetMapData
+  - 169 GetMapData
+  - 172 EnsureChunk
+  - 191 GeneratorFor
+  - 198 GenerateChunk
+  - 226 ErosionEpochsDue
+  - 233 RecordErosion
+  - 240 EnsureRegion
+  - 268 TryBuildHeightWindow
+  - 285 HasChunk
+  - 288 TryGetChunk
+  - 297 TouchChunk
+  - 304 EnsureWaterDistance
+  - 331 RequestChunk
+  - 340 ProcessChunkRequests
+  - 356 RemoveChunk
+  - 358 UnloadChunk
+  - 364 ReleaseChunk
+  - 389 BindWaterLevel
+  - 391 AboveWater
+  - 395 WaterModifier
+  - 399 IsHeightIsLiveAble
+  - 402 IsWaterHeight
+  - 405 ChunkForCell
+  - 408 GetRealPosition
+  - 413 GetSpeedModifier
+  - 417 SpeedFromNormal
+  - 432 SampleNormal
+  - 439 NormalFromHeights
+  - 461 ResolveObstacles
+  - 474 SupportObstacles
+  - 487 SampleHeightBilinear
+  - 493 TrySampleHeightBilinear
+  - 519 TryCellHeight
+  - 538 TryAddObject
+  - 548 TryAddObject
+  - 557 TryAddObject
+  - 572 TryAddFromInfo
+  - 585 PlacementY
+  - 600 TryPlaceSnapped
+  - 623 FillGround
+  - 634 SetTerrainHeight
+  - 641 SetTerrainHeight
+  - 654 TryAddObjectEx
+  - 705 TouchEdited
+  - 715 TryGetObject
+  - 726 TryGetObject
+  - 737 RemoveObject
+  - 739 RemoveObject
+  - 753 ContainsObject
+  - 761 IsOccupiedAt
+  - 769 TryToAddPositionToChunk
+  - 788 MarkChunkDirty
+  - 843 SetUp
+  - 913 SetupEndless
+  - 932 HorizonRingCount
+  - 945 BindFirstPlayer
+  - 957 BindPlayer
+  - 967 OnSectorChanged
+  - 981 OnBeginCameraRendering
+  - 1014 TryGetViewerChunk
+  - 1021 ApplyImmediate
+  - 1024 ApplyWorldCommands
+  - 1040 Update
+  - 1069 MoveWindow
+  - 1089 RestartSimSupply
+  - 1096 SupplySimSquare
+  - 1136 ExtraUpdate
+  - 1138 FlushDirty
+  - 1149 ComputeWindowCenter
+  - 1157 PlateauSettings
+  - 1172 BindChunkStore
+  - 1180 OnWorldRenamed
+  - 1188 SaveModifiedChunks
+  - 1203 EvictChunks
+  - 1232 IsRetained
+  - 1244 BreakUp
+  - 1250 OnDisable
+  - 1277 IgniteNearViewer
+  - 1294 OnDestroy
+  - 445–459 struct ChunkObstacles
+    - 449 TryGetObstacles
+- 1330–1793 class ChunkData
+  - 1357 SetFoodTable
+  - 1359 IsFoodPrefab
+  - 1377 ChunkData
+  - 1403 TryAddObject
+  - 1407 TryAddObject
+  - 1410 TryAddObject
+  - 1413 TryAddObject
+  - 1455 SpanMask
+  - 1458 UpperKey
+  - 1461 Validate
+  - 1486 UpperLevelsFree
+  - 1494 RegisterUpper
+  - 1510 UnregisterUpper
+  - 1526 RemapUpper
+  - 1537 AddVolume
+  - 1561 SetLevelBit
+  - 1563 ClearVolume
+  - 1573 TryGetBuilding
+  - 1579 HasLevelAt
+  - 1586 TryGetObject
+  - 1600 TryGetObject
+  - 1615 RemoveObject
+  - 1617 RemoveObject
+  - 1683 ClearDirty
+  - 1685 ClearObjects
+  - 1708 SetHeight
+  - 1720 RestoreHeight
+  - 1730 LevelsAt
+  - 1732 MarkPersisted
+  - 1734 CommitRestore
+  - 1741 ResetForReuse
+  - 1759 CommitErosion
+  - 1765 InvalidateWater
+  - 1773 CommitGeneration
+  - 1778 Dispose
+- 1795–1810 struct StructureSpawnPoint
+  - 1801 StructureSpawnPoint
+- 1812–1839 struct ObjectInstInfo
+  - 1828 ObjectInstInfo
 
 ## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
 
@@ -311,7 +315,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs`
 
-- 21–1012 class PlayerController
+- 21–1013 class PlayerController
   - 127 SetInitialValues
   - 151 SetUp
   - 176 ApplyControlType
@@ -338,50 +342,50 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 425 CheckBust
   - 433 MoveServerRpc
   - 448 StepServerMovement
-  - 531 BroadcastState
-  - 542 StopMoveServerRpc
-  - 553 UpdateClientPositionClientRpc
-  - 561 OnJumpStarted
-  - 567 OnJumpCanceled
-  - 573 TryJump
-  - 581 JumpServerRpc
-  - 600 OnActionStarted
-  - 601 OnActionCanceled
-  - 603 Aim
-  - 637 UpdateAimLevel
-  - 666 SetAimAddition
-  - 678 ChangeAimMode
-  - 680 AimRaiseMobile
-  - 681 AimPlaceMobile
-  - 683 AimRaise
-  - 700 OnViewClick
-  - 702 AimPlace
-  - 709 Placing
-  - 724 RequestPlace
-  - 731 RequestSpeak
-  - 738 SpeakServerRpc
-  - 768 RequestPickUp
-  - 775 RequestCraft
-  - 782 RequestSkillCommand
-  - 791 SkillGraphCommandServerRpc
-  - 798 ApplySkillCommand
-  - 809 SkillTopologyClientRpc
-  - 816 SkillLevelsClientRpc
-  - 826 CraftRequestServerRpc
-  - 839 PlaceRequestServerRpc
-  - 859 PickUpRequestServerRpc
-  - 877 PlaceResultClientRpc
-  - 888 PickUpResultClientRpc
-  - 897 TryResolveEditor
-  - 924 TryConsumeEdit
-  - 926 TryConsumeMove
-  - 934 TryConsumeSkill
-  - 942 TryConsumeCraft
-  - 950 LatencyCompensation
-  - 977 Refuse
-  - 989 OwnerTarget
-  - 995 OnDisable
-  - 966–975 enum EditRefusal
+  - 532 BroadcastState
+  - 543 StopMoveServerRpc
+  - 554 UpdateClientPositionClientRpc
+  - 562 OnJumpStarted
+  - 568 OnJumpCanceled
+  - 574 TryJump
+  - 582 JumpServerRpc
+  - 601 OnActionStarted
+  - 602 OnActionCanceled
+  - 604 Aim
+  - 638 UpdateAimLevel
+  - 667 SetAimAddition
+  - 679 ChangeAimMode
+  - 681 AimRaiseMobile
+  - 682 AimPlaceMobile
+  - 684 AimRaise
+  - 701 OnViewClick
+  - 703 AimPlace
+  - 710 Placing
+  - 725 RequestPlace
+  - 732 RequestSpeak
+  - 739 SpeakServerRpc
+  - 769 RequestPickUp
+  - 776 RequestCraft
+  - 783 RequestSkillCommand
+  - 792 SkillGraphCommandServerRpc
+  - 799 ApplySkillCommand
+  - 810 SkillTopologyClientRpc
+  - 817 SkillLevelsClientRpc
+  - 827 CraftRequestServerRpc
+  - 840 PlaceRequestServerRpc
+  - 860 PickUpRequestServerRpc
+  - 878 PlaceResultClientRpc
+  - 889 PickUpResultClientRpc
+  - 898 TryResolveEditor
+  - 925 TryConsumeEdit
+  - 927 TryConsumeMove
+  - 935 TryConsumeSkill
+  - 943 TryConsumeCraft
+  - 951 LatencyCompensation
+  - 978 Refuse
+  - 990 OwnerTarget
+  - 996 OnDisable
+  - 967–976 enum EditRefusal
 
 ## `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs`
 
@@ -693,6 +697,31 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 657 VariableSubstitutionIsSinglePassAndKeepsUnknownPlaceholders
   - 669 SubstitutionOfManyBracesIsLinear
 
+## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs`
+
+- 15–34 class ErosionBudget
+  - 22 CanStart
+  - 33 Spend
+- 36–531 class ChunkGenerator
+  - 78 ChunkGenerator
+  - 175 ChunkSeed
+  - 178 Generate
+  - 300 RunEpochs
+  - 322 CatchUpTerrain
+  - 382 BuildWaterDistance
+  - 436 RaiseDetail
+  - 459 RunSpawn
+  - 493 CellWorldZ
+  - 496 Dispose
+- 533–609 struct WaterDistanceJob
+  - 544 Execute
+- 611–621 struct ReliefFromHeightJob
+  - 620 Execute
+- 623–633 struct HeightFromReliefJob
+  - 632 Execute
+- 635–661 struct FillChunkArraysJob
+  - 653 Execute
+
 ## `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs`
 
 - 7–643 class DelayedPerceptron
@@ -759,28 +788,6 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 564 OnDestroy
   - 570 DisposeAll
 
-## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs`
-
-- 15–34 class ErosionBudget
-  - 22 CanStart
-  - 33 Spend
-- 36–513 class ChunkGenerator
-  - 76 ChunkGenerator
-  - 171 ChunkSeed
-  - 174 Generate
-  - 291 RunEpochs
-  - 313 CatchUpTerrain
-  - 370 BuildWaterDistance
-  - 422 RaiseDetail
-  - 445 RunSpawn
-  - 478 Dispose
-- 515–584 struct WaterDistanceJob
-  - 524 Execute
-- 586–594 struct ScaleCopyJob
-  - 593 Execute
-- 596–620 struct FillChunkArraysJob
-  - 612 Execute
-
 ## `Assets/Scripts/EntitySystem/Job/MotionSystem.cs`
 
 - 12–41 struct MotionState
@@ -792,29 +799,29 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 82 SpeedModifier
   - 93 Sample
   - 136 Cell
-- 147–281 struct MotionJob
-  - 169 Execute
-  - 274 Finish
-- 283–291 struct MotionApplyJob
-  - 289 Execute
-- 293–603 class MotionSystem
-  - 327 MotionSystem
-  - 344 Inject
-  - 352 PositionOf
-  - 355 SetPosition
-  - 360 RemoveSwapBack
-  - 380 Start
-  - 414 Stop
-  - 425 VelocityOf
-  - 428 TakePending
-  - 438 Step
-  - 481 PrepareAtlas
-  - 491 WindowOf
-  - 501 AppendWindow
-  - 522 SyncAtlas
-  - 555 TouchWindow
-  - 562 Finish
-  - 585 Dispose
+- 147–282 struct MotionJob
+  - 170 Execute
+  - 275 Finish
+- 284–292 struct MotionApplyJob
+  - 290 Execute
+- 294–605 class MotionSystem
+  - 328 MotionSystem
+  - 345 Inject
+  - 353 PositionOf
+  - 356 SetPosition
+  - 361 RemoveSwapBack
+  - 381 Start
+  - 415 Stop
+  - 426 VelocityOf
+  - 429 TakePending
+  - 439 Step
+  - 483 PrepareAtlas
+  - 493 WindowOf
+  - 503 AppendWindow
+  - 524 SyncAtlas
+  - 557 TouchWindow
+  - 564 Finish
+  - 587 Dispose
 
 ## `Assets/Tests/EditMode/SkillGraphTests.cs`
 
@@ -873,23 +880,46 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassSystem.cs`
 
-- 10–494 class GrassSystem
-  - 125 Start
-  - 146 Update
-  - 174 InitializeSystem
-  - 260 MeshForRing
-  - 263 UpdateGrassPlacement
-  - 278 PlaceGrass
-  - 300 UploadHeights
-  - 315 WindowBounds
-  - 322 PlaceBlock
-  - 338 DispatchPlace
-  - 365 ResolveCamera
-  - 371 PublishView
-  - 380 ViewChanged
-  - 392 DispatchNear
-  - 447 RenderGrass
-  - 467 OnDisable
-- 496–509 class GrassCullMath
-  - 498 CellRect
+- 10–500 class GrassSystem
+  - 126 Start
+  - 147 Update
+  - 175 InitializeSystem
+  - 261 MeshForRing
+  - 264 UpdateGrassPlacement
+  - 279 PlaceGrass
+  - 302 UploadHeights
+  - 317 WindowBounds
+  - 328 PlaceBlock
+  - 344 DispatchPlace
+  - 371 ResolveCamera
+  - 377 PublishView
+  - 386 ViewChanged
+  - 398 DispatchNear
+  - 453 RenderGrass
+  - 473 OnDisable
+- 502–515 class GrassCullMath
+  - 504 CellRect
+
+## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering/FarObjectRenderer.cs`
+
+- 16–490 class FarObjectRenderer
+  - 81 FarObjectRenderer
+  - 233 CreateQuad
+  - 246 UpdateChunk
+  - 253 SetSector
+  - 260 OnChunkDirty
+  - 265 Tick
+  - 289 CollectSources
+  - 306 CollectBlock
+  - 327 Rebuild
+  - 379 Render
+  - 389 Dispose
+  - 27–32 struct ChunkSource
+  - 34–40 struct TypeInfo
+  - 42–50 class Command
+  - 410–489 struct CollectJob
+    - 427 BatchOf
+    - 445 Execute
+- 492–500 class FarBatchMath
+  - 494 BatchIndex
 

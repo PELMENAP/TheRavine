@@ -462,8 +462,9 @@ namespace TheRavine.EntityControl
 
             ref readonly var rules = ref SimulationRules.Frame;
             float ground = map.SampleHeightBilinear(playerRigidbody.position.x, playerRigidbody.position.z);
+            float aboveWater = MapGenerator.AboveWater(map.Ravine, ground, playerRigidbody.position.z, rules.WaterLevel);
             bool sprinting = stamina.Step(dt, intentSprint, direction.sqrMagnitude > 0f,
-                MapGenerator.WaterModifier(ground, rules.WaterLevel, rules.WaterDrainMul));
+                MapGenerator.WaterModifier(aboveWater, rules.WaterDrainMul));
 
             float skillSpeed = 1f, skillRun = 1f;
             if (skillGraph != null)
@@ -474,7 +475,7 @@ namespace TheRavine.EntityControl
             }
 
             float targetSpeed = inputSpeed * movementComponent.BaseSpeed * skillSpeed * (sprinting ? sprintMultiplier * skillRun : 1f)
-                * MapGenerator.WaterModifier(ground, rules.WaterLevel, rules.WaterSpeedMul);
+                * MapGenerator.WaterModifier(aboveWater, rules.WaterSpeedMul);
             float terrainModifier = 1f;
 
             if (IsOnTerrain)

@@ -281,13 +281,21 @@ namespace TheRavine.Generator
                 Vector3 origin = MapGenerator.WindowOriginWorld(center);
                 origin.y = generator.waterOffset.y;
 
-                central.Transform.position = origin;
+                PlaceBlock(central, origin);
                 for (int i = 0; i < pool.Length; i++)
                 {
                     WaterBlock block = pool[i];
                     if (block.Level < 0) continue;
-                    block.Transform.position = origin + new Vector3(block.Bx * BlockWorld, 0f, block.Bz * BlockWorld);
+                    PlaceBlock(block, origin + new Vector3(block.Bx * BlockWorld, 0f, block.Bz * BlockWorld));
                 }
+            }
+
+            private void PlaceBlock(WaterBlock block, Vector3 position)
+            {
+                float2 span = generator.Ravine.ElevationRange(position.z, position.z + BlockWorld);
+                block.Renderer.enabled = span.x == span.y;
+                position.y += span.x;
+                block.Transform.position = position;
             }
 
             public void Tick(long deadline) { }

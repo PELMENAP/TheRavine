@@ -54,6 +54,11 @@ namespace TheRavine.Generator
         [Min(0f)] public float horizonCameraBack = 35f;
         [Min(0f)] public float horizonPeakHeight = 100f;
 
+        [Header("Ravine")]
+        [Min(0f)] public float ravineHalfWidth = 10000f;
+        [Min(1f)] public float ravineWallRun = 100f;
+        [Min(0f)] public float ravineWallHeight = 5000f;
+
         [Header("Levels")]
         [Min(0.01f)] public float levelHeight = 1f;
         [Min(0.01f)] public float buildStep = 1f;

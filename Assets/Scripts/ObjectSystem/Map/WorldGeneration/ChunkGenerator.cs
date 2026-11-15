@@ -39,8 +39,10 @@ namespace TheRavine.Generator
         private const int scale          = MapGenerator.scale;
         private const int totalCells     = mapChunkSize * mapChunkSize;
         private const float maxTerrainHeight = MapGenerator.maxTerrainHeight;
+        private const float chunkWorld = MapGenerator.chunkSize;
 
         private readonly ChunkGenerationSettings settings;
+        private readonly RavineProfile ravine;
         private readonly Noise noise;
         private NativeArray<float> noiseMap;
         private NativeArray<float> deltaMap;
@@ -75,9 +77,11 @@ namespace TheRavine.Generator
 
         public ChunkGenerator(
             ChunkGenerationSettings settings,
+            RavineProfile ravine,
             int seed)
         {
             this.settings     = settings;
+            this.ravine       = ravine;
             worldSeed         = seed;
             spawnEnabled      = settings.endlessFlag != null && settings.endlessFlag.Length > 2 && settings.endlessFlag[2];
             noise = new(
@@ -177,6 +181,7 @@ namespace TheRavine.Generator
             baseEpochs = math.max(baseEpochs, 1);
             int2 chunkOrigin = new(Position2Int.GetX(centre), Position2Int.GetY(centre));
             uint hash = ChunkSeed(chunkOrigin.x, chunkOrigin.y);
+            float originZ = chunkOrigin.y * chunkWorld;
 
             JobHandle mapHandle = noise.GenerateAllMaps(
                 noiseMap, riverMap, temperatureMap, moistureMap,
@@ -240,6 +245,8 @@ namespace TheRavine.Generator
                 biomeCentersM = biomeCentersM,
 
                 mountainRegionIndex = settings.mountainRegionIndex,
+                ravine = ravine,
+                originZ = originZ,
 
                 regionMap = heightResult,
                 biomeMap = biomeResult,
@@ -254,6 +261,8 @@ namespace TheRavine.Generator
                 climateIn = climateMap,
                 riverIn = riverBlendMap,
                 heightScale = maxTerrainHeight,
+                ravine = ravine,
+                originZ = originZ,
                 heightRaw = chunkData.HeightRaw,
                 biomeMap = chunkData.BiomeMap,
                 moveCostOut = chunkData.MoveCost,
@@ -317,19 +326,20 @@ namespace TheRavine.Generator
 
             uint hash = ChunkSeed(Position2Int.GetX(centre), Position2Int.GetY(centre));
             const float invHeight = 1f / maxTerrainHeight;
+            float originZ = Position2Int.GetY(centre) * chunkWorld;
 
-            new ScaleCopyJob { source = chunkData.HeightRaw, target = biomeHeightMap, factor = invHeight }.Run(totalCells);
+            new ReliefFromHeightJob { source = chunkData.HeightRaw, target = biomeHeightMap, factor = invHeight, ravine = ravine, originZ = originZ }.Run(totalCells);
 
             int first = chunkData.ErosionEpoch;
             int applied = RunEpochs(hash, first, count, budget, out budgetHit);
             if (applied == 0) return 0;
 
-            new ScaleCopyJob { source = biomeHeightMap, target = noiseMap, factor = maxTerrainHeight }.Run(totalCells);
+            new HeightFromReliefJob { source = biomeHeightMap, target = noiseMap, factor = maxTerrainHeight, ravine = ravine, originZ = originZ }.Run(totalCells);
 
             foreach (var edit in chunkData.HeightEdits)
             {
                 noiseMap[edit.Key] = edit.Value;
-                biomeHeightMap[edit.Key] = edit.Value * invHeight;
+                biomeHeightMap[edit.Key] = (edit.Value - ravine.Elevation(CellWorldZ(originZ, edit.Key))) * invHeight;
             }
 
             for (int i = 0; i < chunkData.Objects.Length; i++)
@@ -357,6 +367,8 @@ namespace TheRavine.Generator
                 biomeCentersM = biomeCentersM,
 
                 mountainRegionIndex = settings.mountainRegionIndex,
+                ravine = ravine,
+                originZ = originZ,
 
                 regionMap = heightResult,
                 biomeMap = chunkData.BiomeMap,
@@ -367,7 +379,7 @@ namespace TheRavine.Generator
             return applied;
         }
 
-        public unsafe void BuildWaterDistance(ChunkData chunkData, ChunkData[] neighborhood, float waterLevel, int requestedRing)
+        public unsafe void BuildWaterDistance(long chunkKey, ChunkData chunkData, ChunkData[] neighborhood, float waterLevel, int requestedRing)
         {
             int ring = math.clamp(requestedRing, 1, mapChunkSize);
             int dim = mapChunkSize + 2 * ring;
@@ -412,7 +424,9 @@ namespace TheRavine.Generator
                 output = chunkData.WaterDistance,
                 size = mapChunkSize,
                 ring = ring,
-                waterLevel = waterLevel
+                waterLevel = waterLevel,
+                ravine = ravine,
+                originZ = (Position2Int.GetY(chunkKey) * mapChunkSize - ring) * (float)scale
             }.Run();
 
             chunkData.WaterLevelStamp = waterLevel;
@@ -462,6 +476,7 @@ namespace TheRavine.Generator
                 existing = chunkData.Objects.AsArray(),
                 chunkOrigin = chunkOrigin,
                 seed = hash,
+                ravine = ravine,
                 output = spawnOutput,
                 outputCount = spawnCount,
                 gridBuffer = spawnGridBuffer
@@ -474,6 +489,9 @@ namespace TheRavine.Generator
                 chunkData.TryAddObject(inst.PrimaryIdx, in inst);
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float CellWorldZ(float originZ, int cellIdx) => originZ + (cellIdx >> MapGenerator.RowShift) * (float)scale;
 
         public void Dispose()
         {
@@ -520,6 +538,8 @@ namespace TheRavine.Generator
         public int size;
         public int ring;
         public float waterLevel;
+        public RavineProfile ravine;
+        public float originZ;
 
         public void Execute()
         {
@@ -528,8 +548,13 @@ namespace TheRavine.Generator
             int far = ring + 1;
             var d = new NativeArray<byte>(cells, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 
-            for (int i = 0; i < cells; i++)
-                d[i] = padded[i] < waterLevel ? (byte)0 : (byte)far;
+            for (int z = 0; z < dim; z++)
+            {
+                float rowZ = originZ + z * (float)MapGenerator.scale;
+                int row = z * dim;
+                for (int x = 0; x < dim; x++)
+                    d[row + x] = MapGenerator.AboveWater(in ravine, padded[row + x], rowZ, waterLevel) < 0f ? (byte)0 : (byte)far;
+            }
 
             for (int z = 0; z < dim; z++)
             {
@@ -584,13 +609,27 @@ namespace TheRavine.Generator
     }
 
     [BurstCompile(FloatPrecision.Standard, FloatMode.Fast, DisableSafetyChecks = true)]
-    public struct ScaleCopyJob : IJobFor
+    public struct ReliefFromHeightJob : IJobFor
     {
         [ReadOnly] public NativeArray<float> source;
         [WriteOnly] public NativeArray<float> target;
         public float factor;
+        public RavineProfile ravine;
+        public float originZ;
 
-        public void Execute(int i) => target[i] = source[i] * factor;
+        public void Execute(int i) => target[i] = (source[i] - ravine.Elevation(ChunkGenerator.CellWorldZ(originZ, i))) * factor;
+    }
+
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Fast, DisableSafetyChecks = true)]
+    public struct HeightFromReliefJob : IJobFor
+    {
+        [ReadOnly] public NativeArray<float> source;
+        [WriteOnly] public NativeArray<float> target;
+        public float factor;
+        public RavineProfile ravine;
+        public float originZ;
+
+        public void Execute(int i) => target[i] = source[i] * factor + ravine.Elevation(ChunkGenerator.CellWorldZ(originZ, i));
     }
 
     [BurstCompile(FloatPrecision.Standard, FloatMode.Fast, DisableSafetyChecks = true)]
@@ -602,6 +641,8 @@ namespace TheRavine.Generator
         [ReadOnly] public NativeArray<float2> climateIn;
         [ReadOnly] public NativeArray<float> riverIn;
         public float heightScale;
+        public RavineProfile ravine;
+        public float originZ;
 
         [WriteOnly] public NativeArray<float> heightRaw;
         [WriteOnly] public NativeArray<int> biomeMap;
@@ -611,7 +652,7 @@ namespace TheRavine.Generator
 
         public void Execute(int i)
         {
-            heightRaw[i] = height[i] * heightScale;
+            heightRaw[i] = height[i] * heightScale + ravine.Elevation(ChunkGenerator.CellWorldZ(originZ, i));
             biomeMap[i] = biome[i];
             moveCostOut[i] = moveCostIn[i];
             climateOut[i] = climateIn[i];

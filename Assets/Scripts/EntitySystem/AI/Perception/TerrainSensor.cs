@@ -154,7 +154,7 @@ public sealed class TerrainSensor
         EncodeBiome(cd.BiomeMap[baseIdx], biome);
 
         sample = new TerrainSample(
-            math.saturate(h * InvMaxH),
+            math.saturate((h - _map.Ravine.Elevation(cellZ * MapGenerator.scale)) * InvMaxH),
             math.saturate(slopeDeg * math.rcp(rules.SlopeMaxDeg)),
             math.clamp(gx, -1f, 1f),
             math.clamp(gz, -1f, 1f),
