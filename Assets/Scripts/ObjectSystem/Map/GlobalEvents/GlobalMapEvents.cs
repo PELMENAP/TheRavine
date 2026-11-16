@@ -20,15 +20,21 @@ namespace TheRavine.Generator
         public MapEventRules Rules { get; }
         public IMapSeason Season { get; set; }
         public FireEvent Fire { get; }
+        public WildWindEvent Wind { get; }
 
         public GlobalMapEvents(MapGenerator map, ObjectInfoRegistry registry, RandomTickService ticks,
-            MapEventRules rules, FireViewSettings fireView)
+            MapEventRules rules, FireViewSettings fireView, WildWindViewSettings windView)
         {
             Rules = rules;
             Fire = new FireEvent(this, map, registry, rules.fire);
             ticks.Register(Fire);
             Add(Fire);
             if (fireView != null && fireView.enabled) Fire.AttachView(FireView.TryCreate(Fire, map, fireView));
+
+            if (map.Ravine.IsFlat || rules.wildWind == null) return;
+            Wind = new WildWindEvent(map, rules.wildWind);
+            Add(Wind);
+            Wind.AttachView(WildWindView.TryCreate(Wind, windView));
         }
 
         public void Add(IMapEvent mapEvent)

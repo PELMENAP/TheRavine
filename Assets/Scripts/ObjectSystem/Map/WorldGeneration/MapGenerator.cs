@@ -819,6 +819,7 @@ namespace TheRavine.Generator
         [SerializeField] private WorldTickRules tickRules;
         [SerializeField] private MapEventRules mapEventRules;
         [SerializeField] private FireViewSettings fireView = new();
+        [SerializeField] private WildWindViewSettings wildWindView = new();
         [SerializeField, Min(0)] private int debugIgniteRadius = 6;
         [SerializeField, Min(0.1f)] private float nalApplyBudgetMs = 1f;
         [SerializeField, Min(1)] private int chunkRequestCapacity = 32;
@@ -903,7 +904,7 @@ namespace TheRavine.Generator
                     ownsMapEventRules = true;
                     RavineLog.Warning("[MapGenerator] MapEventRules is not assigned, using defaults");
                 }
-                Events = new GlobalMapEvents(this, objectSystem.infoRegistry, randomTicks, mapEventRules, fireView);
+                Events = new GlobalMapEvents(this, objectSystem.infoRegistry, randomTicks, mapEventRules, fireView, wildWindView);
             }
 
             SetupEndless();

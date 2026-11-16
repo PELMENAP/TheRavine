@@ -9,7 +9,7 @@ public sealed class SimulationLog : IDisposable
 {
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
-    private const int DeathCount  = (int)DeathCause.Burn + 1;
+    private const int DeathCount  = (int)DeathCause.Wind + 1;
     private const int SourceCount = (int)CommandSource.Count;
     private const int AttackCount = (int)ColonyStats.AttackTarget.Count;
     private const int ActionCount = ActionCatalog.Count;
@@ -438,7 +438,7 @@ public sealed class SimulationLog : IDisposable
     {
         var sb = new StringBuilder(8192);
         sb.Append("time_s,season,winter,scope,colony_id,alive,born,died");
-        sb.Append(",deaths_killed,deaths_starved,deaths_virus,deaths_toxic,deaths_age,deaths_burn,mean_lifespan_s");
+        sb.Append(",deaths_killed,deaths_starved,deaths_virus,deaths_toxic,deaths_age,deaths_burn,deaths_wind,mean_lifespan_s");
 
         string[] actions = Enum.GetNames(typeof(EntityAction));
         for (int a = 0; a < ActionCount; a++)

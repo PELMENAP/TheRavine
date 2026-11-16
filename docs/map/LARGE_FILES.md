@@ -6,9 +6,9 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 | File | Lines |
 |---|---|
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1815 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1816 |
 | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1457 |
-| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1074 |
+| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1099 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1067 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1014 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 928 |
@@ -27,7 +27,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs`
 
-- 23–1303 class MapGenerator
+- 23–1304 class MapGenerator
   - 90 WorldToChunk
   - 94 WorldToLocalIdx
   - 98 CellToChunk
@@ -96,74 +96,74 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 761 IsOccupiedAt
   - 769 TryToAddPositionToChunk
   - 788 MarkChunkDirty
-  - 845 SetUp
-  - 914 SetupEndless
-  - 935 CreateBackdrop
-  - 955 BindFirstPlayer
-  - 967 BindPlayer
-  - 977 OnSectorChanged
-  - 991 TryGetViewerChunk
-  - 998 ApplyImmediate
-  - 1001 ApplyWorldCommands
-  - 1017 Update
-  - 1046 MoveWindow
-  - 1066 RestartSimSupply
-  - 1073 SupplySimSquare
-  - 1113 ExtraUpdate
-  - 1115 FlushDirty
-  - 1126 ComputeWindowCenter
-  - 1134 PlateauSettings
-  - 1149 BindChunkStore
-  - 1157 OnWorldRenamed
-  - 1165 SaveModifiedChunks
-  - 1180 EvictChunks
-  - 1209 IsRetained
-  - 1221 BreakUp
-  - 1227 OnDisable
-  - 1252 IgniteNearViewer
-  - 1269 OnDestroy
+  - 846 SetUp
+  - 915 SetupEndless
+  - 936 CreateBackdrop
+  - 956 BindFirstPlayer
+  - 968 BindPlayer
+  - 978 OnSectorChanged
+  - 992 TryGetViewerChunk
+  - 999 ApplyImmediate
+  - 1002 ApplyWorldCommands
+  - 1018 Update
+  - 1047 MoveWindow
+  - 1067 RestartSimSupply
+  - 1074 SupplySimSquare
+  - 1114 ExtraUpdate
+  - 1116 FlushDirty
+  - 1127 ComputeWindowCenter
+  - 1135 PlateauSettings
+  - 1150 BindChunkStore
+  - 1158 OnWorldRenamed
+  - 1166 SaveModifiedChunks
+  - 1181 EvictChunks
+  - 1210 IsRetained
+  - 1222 BreakUp
+  - 1228 OnDisable
+  - 1253 IgniteNearViewer
+  - 1270 OnDestroy
   - 445–459 struct ChunkObstacles
     - 449 TryGetObstacles
-- 1305–1768 class ChunkData
-  - 1332 SetFoodTable
-  - 1334 IsFoodPrefab
-  - 1352 ChunkData
-  - 1378 TryAddObject
-  - 1382 TryAddObject
-  - 1385 TryAddObject
-  - 1388 TryAddObject
-  - 1430 SpanMask
-  - 1433 UpperKey
-  - 1436 Validate
-  - 1461 UpperLevelsFree
-  - 1469 RegisterUpper
-  - 1485 UnregisterUpper
-  - 1501 RemapUpper
-  - 1512 AddVolume
-  - 1536 SetLevelBit
-  - 1538 ClearVolume
-  - 1548 TryGetBuilding
-  - 1554 HasLevelAt
-  - 1561 TryGetObject
-  - 1575 TryGetObject
-  - 1590 RemoveObject
-  - 1592 RemoveObject
-  - 1658 ClearDirty
-  - 1660 ClearObjects
-  - 1683 SetHeight
-  - 1695 RestoreHeight
-  - 1705 LevelsAt
-  - 1707 MarkPersisted
-  - 1709 CommitRestore
-  - 1716 ResetForReuse
-  - 1734 CommitErosion
-  - 1740 InvalidateWater
-  - 1748 CommitGeneration
-  - 1753 Dispose
-- 1770–1785 struct StructureSpawnPoint
-  - 1776 StructureSpawnPoint
-- 1787–1814 struct ObjectInstInfo
-  - 1803 ObjectInstInfo
+- 1306–1769 class ChunkData
+  - 1333 SetFoodTable
+  - 1335 IsFoodPrefab
+  - 1353 ChunkData
+  - 1379 TryAddObject
+  - 1383 TryAddObject
+  - 1386 TryAddObject
+  - 1389 TryAddObject
+  - 1431 SpanMask
+  - 1434 UpperKey
+  - 1437 Validate
+  - 1462 UpperLevelsFree
+  - 1470 RegisterUpper
+  - 1486 UnregisterUpper
+  - 1502 RemapUpper
+  - 1513 AddVolume
+  - 1537 SetLevelBit
+  - 1539 ClearVolume
+  - 1549 TryGetBuilding
+  - 1555 HasLevelAt
+  - 1562 TryGetObject
+  - 1576 TryGetObject
+  - 1591 RemoveObject
+  - 1593 RemoveObject
+  - 1659 ClearDirty
+  - 1661 ClearObjects
+  - 1684 SetHeight
+  - 1696 RestoreHeight
+  - 1706 LevelsAt
+  - 1708 MarkPersisted
+  - 1710 CommitRestore
+  - 1717 ResetForReuse
+  - 1735 CommitErosion
+  - 1741 InvalidateWater
+  - 1749 CommitGeneration
+  - 1754 Dispose
+- 1771–1786 struct StructureSpawnPoint
+  - 1777 StructureSpawnPoint
+- 1788–1815 struct ObjectInstInfo
+  - 1804 ObjectInstInfo
 
 ## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
 
@@ -192,59 +192,60 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
 
-- 15–1074 class EntityManager
-  - 77 RegisterEnergyConsumer
-  - 78 UnregisterEnergyConsumer
-  - 97 RaiseSpawned
-  - 98 RaiseDied
-  - 147 GetRandomEntity
-  - 150 SeedProbeStrain
-  - 153 SpawnEntity
-  - 156 SpawnChild
-  - 158 UpdateDiagnostics
-  - 167 EvolveGenotypes
-  - 173 SeedRandomStrain
-  - 176 Update
-  - 220 StampAgents
-  - 234 ApplyFireHeat
-  - 262 DecayWarmth
-  - 270 SampleEnergy
-  - 292 ReportThreat
-  - 303 Awake
-  - 363 CreateColonies
-  - 373 AddColony
-  - 383 SaveBrain
-  - 386 LoadBrain
-  - 389 ColonyModelName
-  - 391 SaveBestBrainAsync
-  - 401 LoadBrainAsync
-  - 437 ApplyLoadedBrain
-  - 453 Start
-  - 493 DelaySimulation
-  - 504 TickAgents
-  - 550 PromoteUrgent
-  - 600 CloseTickWindow
-  - 625 SweepSkills
-  - 640 SolveSkills
-  - 654 RunTickBatch
-  - 700 BeginColonyBatches
-  - 705 RunColonyDecisions
-  - 710 RunFlocking
-  - 728 TickColonies
-  - 784 UpdatePack
-  - 800 ChooseCaste
-  - 838 Stimulus
-  - 845 TickNests
-  - 898 SetEntityVisible
-  - 904 SetEntitiesVisible
-  - 910 RebuildTickSnapshot
-  - 941 UpdateVisibility
-  - 970 UpdateVisibilityByCamera
-  - 1000 CreateNestViews
-  - 1011 ReleaseServices
-  - 1017 UnregisterServices
-  - 1033 ResolveRules
-  - 1049 OnDestroy
+- 15–1099 class EntityManager
+  - 79 RegisterEnergyConsumer
+  - 80 UnregisterEnergyConsumer
+  - 99 RaiseSpawned
+  - 100 RaiseDied
+  - 149 GetRandomEntity
+  - 152 SeedProbeStrain
+  - 155 SpawnEntity
+  - 158 SpawnChild
+  - 160 UpdateDiagnostics
+  - 169 EvolveGenotypes
+  - 175 SeedRandomStrain
+  - 178 Update
+  - 223 StampAgents
+  - 237 ApplyFireHeat
+  - 265 ApplyWildWind
+  - 285 DecayWarmth
+  - 293 SampleEnergy
+  - 315 ReportThreat
+  - 326 Awake
+  - 386 CreateColonies
+  - 396 AddColony
+  - 406 SaveBrain
+  - 409 LoadBrain
+  - 412 ColonyModelName
+  - 414 SaveBestBrainAsync
+  - 424 LoadBrainAsync
+  - 460 ApplyLoadedBrain
+  - 476 Start
+  - 517 DelaySimulation
+  - 528 TickAgents
+  - 574 PromoteUrgent
+  - 624 CloseTickWindow
+  - 649 SweepSkills
+  - 664 SolveSkills
+  - 678 RunTickBatch
+  - 724 BeginColonyBatches
+  - 729 RunColonyDecisions
+  - 734 RunFlocking
+  - 752 TickColonies
+  - 808 UpdatePack
+  - 824 ChooseCaste
+  - 862 Stimulus
+  - 869 TickNests
+  - 922 SetEntityVisible
+  - 928 SetEntitiesVisible
+  - 934 RebuildTickSnapshot
+  - 965 UpdateVisibility
+  - 994 UpdateVisibilityByCamera
+  - 1024 CreateNestViews
+  - 1035 ReleaseServices
+  - 1041 UnregisterServices
+  - 1057 ResolveRules
+  - 1073 OnDestroy
 
 ## `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs`
 
