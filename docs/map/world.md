@@ -2,7 +2,7 @@
 
 Root: `Assets/Scripts/ObjectSystem/`. Assembly: `ObjectSystem`. Namespace: mostly `TheRavine.Generator`.
 Tests: `Assets/Tests/EditMode/` — `ChunkStoreTests`, `ChunkPlacementTests`, `BuildingVolumeTests`, `FootprintTests`, `NalRegionTests`,
-`RandomTickJobTests`, `RandomTickMathTests`, `WorldCommandBufferTests`, `GrassLodBandsTests`, `LandformBlendTests`.
+`RandomTickJobTests`, `RandomTickMathTests`, `WorldCommandBufferTests`, `GrassLodBandsTests`.
 
 Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 `MapGenerator.cs` and `ChunkGenerator.cs` are over 500 lines: take the member's line from `docs/map/LARGE_FILES.md`.
@@ -29,10 +29,7 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 - Coordinate helpers: `WorldToChunk`, `WorldToLocalIdx`, `CellToChunk`, `ChunkForCell`. Cell and chunk keys: `Position2Int.Pack`.
 - Noise: static `Noise` in `Assets/Scripts/ObjectSystem/Map/Tools/Noise.cs`; settings in `NoiseLayerSettings.cs` next to it.
 - Chunk jobs: `BiomeModifierJob`, `HydraulicErosionJob`, `TerrainFinalizeJob`; object spawn: `SpawnLayerJob` in the ObjectGenerator folder.
-- Landform layer: blended presets (`LandformPresets`) chosen by continentalness and ruggedness like biomes by temperature and moisture; settings: `ChunkGenerationSettings.landforms` and `landform*` fields.
-- `Noise.HeightRiverMapJob`, per cell at full resolution: `LandformBlend.Control`, `LandformBlend.Evaluate` (only the difference from identity is blended, so identity `Hills` or an empty array stays exact).
-- `LandformParams` drive warp, ridge, terraces, scale, offset and river warp; outputs `RiverShapeOutput` (width, carve) and `ErosionOutput`, read by `BiomeModifierJob` and `HydraulicErosionJob`.
-- `CatchUpTerrain` refills only the erosion scale with `Noise.LandformErosionJob` inside the `ErosionBudget`; `ChunkData` and `ChunkStore` do not hold it. Water level stays global.
+- Landform layer (local terrain, river and erosion rules): `docs/map/landforms.md`.
 - Ravine shape (`RavineProfile`, plateau generator `plateauSettings`, relative water `MapGenerator.AboveWater`, chunk file format 5): `docs/map/ravine.md`.
 
 ## Frame flow
