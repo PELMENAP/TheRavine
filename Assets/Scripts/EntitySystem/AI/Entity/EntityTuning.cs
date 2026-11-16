@@ -16,6 +16,7 @@ public struct CasteModifiers
     public float Health;
     public float EnergyUpkeep;
     public float Speed;
+    public float RunSpeed;
     public float EnergyCapacity;
     public float Detection;
     public float RestHeal;
@@ -27,15 +28,38 @@ public struct CasteModifiers
     public float StoreEfficiency;
     public float DamageTaken;
     public float LevyAlpha;
+    public float Range;
     public float PoiWeight;
     public float Feed;
+    public float Fear;
+    public float HuntBias;
 
     public static CasteModifiers Neutral => new()
     {
-        Attack = 1f, Health = 1f, EnergyUpkeep = 1f, Speed = 1f, EnergyCapacity = 1f, Detection = 1f,
+        Attack = 1f, Health = 1f, EnergyUpkeep = 1f, Speed = 1f, RunSpeed = 1f, EnergyCapacity = 1f, Detection = 1f,
         RestHeal = 1f, Cooldown = 1f, GroupBonus = 1f, NestFoodCost = 1f, EatSpeed = 1f, Carry = 1f,
-        StoreEfficiency = 1f, DamageTaken = 1f, LevyAlpha = 1f, PoiWeight = 1f, Feed = 1f,
+        StoreEfficiency = 1f, DamageTaken = 1f, LevyAlpha = 1f, Range = 1f, PoiWeight = 1f, Feed = 1f, Fear = 1f,
     };
+
+    public static CasteModifiers Combine(in CasteModifiers role, in SkillModifiers skills)
+    {
+        var m = role;
+        m.Attack          *= skills.Attack;
+        m.Health          *= skills.Health;
+        m.Speed           *= skills.Speed;
+        m.RunSpeed        *= skills.RunSpeed;
+        m.EnergyCapacity  *= skills.EnergyCapacity;
+        m.Detection       *= skills.Detection;
+        m.RestHeal        *= skills.RestHeal;
+        m.Cooldown        *= skills.Cooldown;
+        m.GroupBonus      *= skills.GroupBonus;
+        m.EatSpeed        *= skills.EatSpeed;
+        m.Carry           *= skills.Carry;
+        m.StoreEfficiency *= skills.StoreEfficiency;
+        m.DamageTaken     *= skills.DamageTaken;
+        m.Feed            *= skills.Feed;
+        return m;
+    }
 
     public static CasteModifiers For(Caste caste)
     {
@@ -51,6 +75,8 @@ public struct CasteModifiers
                 m.Cooldown     = r.SoldierCooldownMul;
                 m.GroupBonus   = r.SoldierGroupBonusMul;
                 m.NestFoodCost = r.SoldierNestFoodCostMul;
+                m.RunSpeed     = r.SoldierRunSpeedMul;
+                m.Detection    = r.SoldierDetectMul;
                 break;
             case Caste.Worker:
                 m.EatSpeed    = r.WorkerEatSpeedMul;
@@ -64,6 +90,7 @@ public struct CasteModifiers
                 m.EnergyCapacity = r.ScoutEnergyCapMul;
                 m.Detection      = r.ScoutDetectMul;
                 m.LevyAlpha      = r.ScoutLevyAlphaMul;
+                m.Range          = r.ScoutRangeMul;
                 m.PoiWeight      = r.ScoutPoiWeightMul;
                 m.Carry          = r.ScoutCarryMul;
                 break;
@@ -87,6 +114,8 @@ public struct CasteModifiers
         m.Detection    = r.PredatorDetectMul;
         m.EnergyUpkeep = r.PredatorUpkeepMul;
         m.Carry        = 0f;
+        m.Fear         = r.PredatorFearMul;
+        m.HuntBias     = r.PredatorHuntBias;
         return m;
     }
 }
@@ -127,6 +156,17 @@ public struct EntityTuning
     public static EntityTuning Express(in EntityTuning source, in GeneticParameters g)
         => Express(in source, in g, CasteModifiers.Neutral);
 
+    public static EntityTuning Express(in EntityTuning source, in GeneticParameters g, in CasteModifiers role, in SkillModifiers skills)
+    {
+        var combined = CasteModifiers.Combine(in role, in skills);
+        var t = Express(in source, in g, in combined);
+        t.EnergyCostMoving    *= skills.MoveEnergyCost;
+        t.EnergyCostRunning   *= skills.MoveEnergyCost;
+        t.ReproduceEnergyCost *= skills.ReproduceCost;
+        t.ReproduceHealthCost *= skills.ReproduceCost;
+        return t;
+    }
+
     public static EntityTuning Express(in EntityTuning source, in GeneticParameters g, in CasteModifiers caste)
     {
         var r = SimulationRules.Active;
@@ -142,7 +182,7 @@ public struct EntityTuning
 
         float speedCost = math.pow(speed, r.GeneSpeedCostExponent);
         t.MoveSpeed         *= speed;
-        t.RunSpeed          *= speed;
+        t.RunSpeed          *= speed * caste.RunSpeed;
         t.EnergyCostMoving  *= speedCost;
         t.EnergyCostRunning *= speedCost;
 

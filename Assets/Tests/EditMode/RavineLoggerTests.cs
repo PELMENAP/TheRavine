@@ -20,7 +20,6 @@ public class RavineLoggerTests
     [TearDown]
     public void TearDown()
     {
-        LogAssert.ignoreFailingMessages = false;
         string path = Path.Combine(Application.persistentDataPath, _fileName);
         if (File.Exists(path)) File.Delete(path);
     }
@@ -28,6 +27,7 @@ public class RavineLoggerTests
     [Test]
     public void LoggedErrorsAreBoundedByTheRingBuffer()
     {
+        LogAssert.ignoreFailingMessages = true;
         for (int i = 0; i < RavineLogger.MaxLoggedErrors + 1; i++)
             _logger.LogError("distinct error " + i);
 
@@ -42,6 +42,7 @@ public class RavineLoggerTests
     [Test]
     public void RepeatedMessageIsStoredOnce()
     {
+        LogAssert.ignoreFailingMessages = true;
         _logger.LogError("same");
         _logger.LogError("same");
         _logger.LogError("same");

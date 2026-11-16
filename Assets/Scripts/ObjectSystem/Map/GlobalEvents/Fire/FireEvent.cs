@@ -258,6 +258,48 @@ namespace TheRavine.Generator
             return best * _rules.damagePerSecond;
         }
 
+        public bool TryFindNearestBurning(float2 p, int radiusCells, out float2 center, out float distance)
+        {
+            if (_disposed)
+            {
+                center   = default;
+                distance = -1f;
+                return false;
+            }
+            return FindNearestBurning(_burning.AsReadOnly(), p, radiusCells, out center, out distance);
+        }
+
+        public static bool FindNearestBurning(NativeHashMap<long, FireCell>.ReadOnly burning, float2 p, int radiusCells,
+            out float2 center, out float distance)
+        {
+            center   = default;
+            distance = -1f;
+            if (radiusCells <= 0 || burning.IsEmpty) return false;
+
+            int cx = (int)math.floor(p.x * InvScale);
+            int cz = (int)math.floor(p.y * InvScale);
+            float limit = radiusCells * MapGenerator.scale;
+            float best  = limit * limit;
+            bool found  = false;
+
+            for (int dz = -radiusCells; dz <= radiusCells; dz++)
+            for (int dx = -radiusCells; dx <= radiusCells; dx++)
+            {
+                long cell = Position2Int.Pack(cx + dx, cz + dz);
+                if (!burning.ContainsKey(cell)) continue;
+
+                float2 c = CellCenter(cell);
+                float d2 = math.distancesq(p, c);
+                if (d2 > best) continue;
+                best   = d2;
+                center = c;
+                found  = true;
+            }
+
+            if (found) distance = math.sqrt(best);
+            return found;
+        }
+
         public static long CellOf(float wx, float wz)
             => Position2Int.Pack((int)math.floor(wx * InvScale), (int)math.floor(wz * InvScale));
 

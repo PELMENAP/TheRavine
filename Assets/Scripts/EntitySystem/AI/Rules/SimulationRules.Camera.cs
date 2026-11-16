@@ -11,7 +11,7 @@ public sealed partial class SimulationRules
     [SerializeField, Min(0f)] private float cameraYawDegreesPerSide = 180f;
     [Tooltip("Наклон за drag на всю сторону квадрата управления, градусов.")]
     [SerializeField, Min(0f)] private float cameraPitchDegreesPerSide = 60f;
-    [SerializeField, Range(0f, 89f)] private float cameraPitchMin = 15f;
+    [SerializeField, Range(-89f, 89f)] private float cameraPitchMin = 15f;
     [SerializeField, Range(0f, 89f)] private float cameraPitchMax = 65f;
     [SerializeField, Range(0f, 89f)] private float cameraPitchInitial = 40f;
     [Tooltip("Смещение указателя в пикселях, после которого нажатие становится drag и подавляет клик.")]

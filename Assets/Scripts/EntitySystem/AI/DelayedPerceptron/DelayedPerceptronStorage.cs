@@ -85,6 +85,9 @@ public partial class DelayedPerceptron : ISerializableNeuralModel
                 layerSizes[i] = size;
             }
 
+            if (layerSizes[len - 1] < PerceptronLayout.MinActionCount + 1)
+                throw new InvalidDataException($"Ошибка десериализации: выходной слой {layerSizes[len - 1]} меньше {PerceptronLayout.MinActionCount + 1}");
+
             long expectedBytes = 4 + 4L * len + SerializedBodyBytes(layerSizes);
             if (data.Length != expectedBytes)
                 throw new InvalidDataException($"Ошибка десериализации: блок перцептрона {data.Length} байт, ожидалось {expectedBytes}");

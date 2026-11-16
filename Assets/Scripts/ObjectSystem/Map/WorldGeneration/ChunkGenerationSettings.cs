@@ -55,13 +55,17 @@ namespace TheRavine.Generator
         [Min(0.1f)] public float evictionScanInterval = 5f;
         [Min(0)] public int chunkPoolCapacity = 64;
 
-        [Header("Curved World")]
-        [Min(0f)] public float curveRadius = 3000f;
-        [Min(0f)] public float curveFlat = 64f;
-        [Min(0f)] public float curveFocusDistance = 35f;
-        [Min(0f)] public float horizonCameraHeight = 30f;
-        [Min(0f)] public float horizonCameraBack = 35f;
-        [Min(0f)] public float horizonPeakHeight = 100f;
+        [Header("Ravine")]
+        [Min(0f)] public float ravineHalfWidth = 10000f;
+        [Min(1f)] public float ravineWallRun = 100f;
+        [Min(0f)] public float ravineWallHeight = 5000f;
+
+        [Header("Ravine Backdrop")]
+        [Min(8f)] public float backdropCell = 128f;
+        [Min(0f)] public float backdropReach = 20000f;
+        [Min(1)] public int backdropWallRows = 16;
+        [Min(0f)] public float backdropPlateauDepth = 2000f;
+        [Min(0f)] public float backdropHazeDensity = 0.00008f;
 
         [Header("Levels")]
         [Min(0.01f)] public float levelHeight = 1f;
@@ -69,6 +73,7 @@ namespace TheRavine.Generator
 
         [Header("Far Objects")]
         [Min(1)] public int farMaxInstances = 65536;
+        [Min(0f)] public float farShadowDistance = 500f;
         [Min(1)] public int farRebuildIntervalFrames = 30;
         [Min(1)] public int farContentRebuildIntervalFrames = 300;
 

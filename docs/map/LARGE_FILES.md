@@ -6,185 +6,246 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 | File | Lines |
 |---|---|
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1806 |
-| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1290 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1816 |
+| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1457 |
+| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1099 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1067 |
-| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 942 |
-| `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 920 |
-| `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 918 |
+| `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1014 |
+| `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 928 |
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 849 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 775 |
+| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 743 |
 | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | 730 |
-| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 703 |
-| `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs` | 687 |
+| `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs` | 683 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 678 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs` | 643 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 637 |
 | `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs` | 621 |
-| `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 603 |
-| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 526 |
+| `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 605 |
+| `Assets/Tests/EditMode/SkillGraphTests.cs` | 562 |
+| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 547 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassSystem.cs` | 515 |
 
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs`
 
-- 24–1294 class MapGenerator
-  - 88 WorldToChunk
-  - 92 WorldToLocalIdx
-  - 96 CellToChunk
-  - 100 CellToLocalIdx
-  - 104 ChunkCoord
-  - 107 WindowChunk
-  - 111 WindowOriginWorld
-  - 116 IsInWindow
-  - 121 IsInActiveWindow
-  - 124 BlockOfChunkDelta
-  - 131 BlockCenterChunk
-  - 135 ViewRingOf
-  - 146 SimRingOf
-  - 158 ViewRingOfChunk
-  - 161 RingOfChunk
-  - 164 GetMapData
-  - 167 GetMapData
-  - 170 EnsureChunk
-  - 189 GenerateChunk
-  - 216 ErosionEpochsDue
-  - 223 RecordErosion
-  - 230 EnsureRegion
-  - 258 TryBuildHeightWindow
-  - 275 HasChunk
-  - 278 TryGetChunk
-  - 287 TouchChunk
-  - 294 EnsureWaterDistance
-  - 321 RequestChunk
-  - 330 ProcessChunkRequests
-  - 346 RemoveChunk
-  - 348 UnloadChunk
-  - 354 ReleaseChunk
-  - 379 BindWaterLevel
-  - 381 WaterModifier
-  - 385 IsHeightIsLiveAble
-  - 388 IsWaterHeight
-  - 391 ChunkForCell
-  - 394 GetRealPosition
-  - 399 GetSpeedModifier
-  - 403 SpeedFromNormal
-  - 418 SampleNormal
-  - 425 NormalFromHeights
-  - 447 ResolveObstacles
-  - 460 SupportObstacles
-  - 473 SampleHeightBilinear
-  - 479 TrySampleHeightBilinear
-  - 505 TryCellHeight
-  - 524 TryAddObject
-  - 534 TryAddObject
-  - 543 TryAddObject
-  - 558 TryAddFromInfo
-  - 571 PlacementY
-  - 586 TryPlaceSnapped
-  - 609 FillGround
-  - 620 SetTerrainHeight
-  - 627 SetTerrainHeight
-  - 640 TryAddObjectEx
-  - 691 TouchEdited
-  - 701 TryGetObject
-  - 712 TryGetObject
-  - 723 RemoveObject
-  - 725 RemoveObject
-  - 739 ContainsObject
-  - 747 IsOccupiedAt
-  - 755 TryToAddPositionToChunk
-  - 774 MarkChunkDirty
-  - 828 SetUp
-  - 896 SetupEndless
-  - 915 HorizonRingCount
-  - 928 BindFirstPlayer
-  - 940 BindPlayer
-  - 950 OnSectorChanged
-  - 964 OnBeginCameraRendering
-  - 997 TryGetViewerChunk
-  - 1004 ApplyImmediate
-  - 1007 ApplyWorldCommands
-  - 1023 Update
-  - 1052 MoveWindow
-  - 1072 RestartSimSupply
-  - 1079 SupplySimSquare
-  - 1119 ExtraUpdate
-  - 1121 FlushDirty
-  - 1132 ComputeWindowCenter
-  - 1140 BindChunkStore
-  - 1148 OnWorldRenamed
-  - 1156 SaveModifiedChunks
-  - 1171 EvictChunks
-  - 1200 IsRetained
-  - 1212 BreakUp
-  - 1218 OnDisable
-  - 1245 IgniteNearViewer
-  - 1262 OnDestroy
-  - 431–445 struct ChunkObstacles
-    - 435 TryGetObstacles
-- 1296–1759 class ChunkData
-  - 1323 SetFoodTable
-  - 1325 IsFoodPrefab
-  - 1343 ChunkData
-  - 1369 TryAddObject
-  - 1373 TryAddObject
-  - 1376 TryAddObject
+- 23–1304 class MapGenerator
+  - 90 WorldToChunk
+  - 94 WorldToLocalIdx
+  - 98 CellToChunk
+  - 102 CellToLocalIdx
+  - 106 ChunkCoord
+  - 109 WindowChunk
+  - 113 WindowOriginWorld
+  - 118 IsInWindow
+  - 123 IsInActiveWindow
+  - 126 BlockOfChunkDelta
+  - 133 BlockCenterChunk
+  - 137 ViewRingOf
+  - 148 SimRingOf
+  - 160 ViewRingOfChunk
+  - 163 RingOfChunk
+  - 166 GetMapData
+  - 169 GetMapData
+  - 172 EnsureChunk
+  - 191 GeneratorFor
+  - 198 GenerateChunk
+  - 226 ErosionEpochsDue
+  - 233 RecordErosion
+  - 240 EnsureRegion
+  - 268 TryBuildHeightWindow
+  - 285 HasChunk
+  - 288 TryGetChunk
+  - 297 TouchChunk
+  - 304 EnsureWaterDistance
+  - 331 RequestChunk
+  - 340 ProcessChunkRequests
+  - 356 RemoveChunk
+  - 358 UnloadChunk
+  - 364 ReleaseChunk
+  - 389 BindWaterLevel
+  - 391 AboveWater
+  - 395 WaterModifier
+  - 399 IsHeightIsLiveAble
+  - 402 IsWaterHeight
+  - 405 ChunkForCell
+  - 408 GetRealPosition
+  - 413 GetSpeedModifier
+  - 417 SpeedFromNormal
+  - 432 SampleNormal
+  - 439 NormalFromHeights
+  - 461 ResolveObstacles
+  - 474 SupportObstacles
+  - 487 SampleHeightBilinear
+  - 493 TrySampleHeightBilinear
+  - 519 TryCellHeight
+  - 538 TryAddObject
+  - 548 TryAddObject
+  - 557 TryAddObject
+  - 572 TryAddFromInfo
+  - 585 PlacementY
+  - 600 TryPlaceSnapped
+  - 623 FillGround
+  - 634 SetTerrainHeight
+  - 641 SetTerrainHeight
+  - 654 TryAddObjectEx
+  - 705 TouchEdited
+  - 715 TryGetObject
+  - 726 TryGetObject
+  - 737 RemoveObject
+  - 739 RemoveObject
+  - 753 ContainsObject
+  - 761 IsOccupiedAt
+  - 769 TryToAddPositionToChunk
+  - 788 MarkChunkDirty
+  - 846 SetUp
+  - 915 SetupEndless
+  - 936 CreateBackdrop
+  - 956 BindFirstPlayer
+  - 968 BindPlayer
+  - 978 OnSectorChanged
+  - 992 TryGetViewerChunk
+  - 999 ApplyImmediate
+  - 1002 ApplyWorldCommands
+  - 1018 Update
+  - 1047 MoveWindow
+  - 1067 RestartSimSupply
+  - 1074 SupplySimSquare
+  - 1114 ExtraUpdate
+  - 1116 FlushDirty
+  - 1127 ComputeWindowCenter
+  - 1135 PlateauSettings
+  - 1150 BindChunkStore
+  - 1158 OnWorldRenamed
+  - 1166 SaveModifiedChunks
+  - 1181 EvictChunks
+  - 1210 IsRetained
+  - 1222 BreakUp
+  - 1228 OnDisable
+  - 1253 IgniteNearViewer
+  - 1270 OnDestroy
+  - 445–459 struct ChunkObstacles
+    - 449 TryGetObstacles
+- 1306–1769 class ChunkData
+  - 1333 SetFoodTable
+  - 1335 IsFoodPrefab
+  - 1353 ChunkData
   - 1379 TryAddObject
-  - 1421 SpanMask
-  - 1424 UpperKey
-  - 1427 Validate
-  - 1452 UpperLevelsFree
-  - 1460 RegisterUpper
-  - 1476 UnregisterUpper
-  - 1492 RemapUpper
-  - 1503 AddVolume
-  - 1527 SetLevelBit
-  - 1529 ClearVolume
-  - 1539 TryGetBuilding
-  - 1545 HasLevelAt
-  - 1552 TryGetObject
-  - 1566 TryGetObject
-  - 1581 RemoveObject
-  - 1583 RemoveObject
-  - 1649 ClearDirty
-  - 1651 ClearObjects
-  - 1674 SetHeight
-  - 1686 RestoreHeight
-  - 1696 LevelsAt
-  - 1698 MarkPersisted
-  - 1700 CommitRestore
-  - 1707 ResetForReuse
-  - 1725 CommitErosion
-  - 1731 InvalidateWater
-  - 1739 CommitGeneration
-  - 1744 Dispose
-- 1761–1776 struct StructureSpawnPoint
-  - 1767 StructureSpawnPoint
-- 1778–1805 struct ObjectInstInfo
-  - 1794 ObjectInstInfo
+  - 1383 TryAddObject
+  - 1386 TryAddObject
+  - 1389 TryAddObject
+  - 1431 SpanMask
+  - 1434 UpperKey
+  - 1437 Validate
+  - 1462 UpperLevelsFree
+  - 1470 RegisterUpper
+  - 1486 UnregisterUpper
+  - 1502 RemapUpper
+  - 1513 AddVolume
+  - 1537 SetLevelBit
+  - 1539 ClearVolume
+  - 1549 TryGetBuilding
+  - 1555 HasLevelAt
+  - 1562 TryGetObject
+  - 1576 TryGetObject
+  - 1591 RemoveObject
+  - 1593 RemoveObject
+  - 1659 ClearDirty
+  - 1661 ClearObjects
+  - 1684 SetHeight
+  - 1696 RestoreHeight
+  - 1706 LevelsAt
+  - 1708 MarkPersisted
+  - 1710 CommitRestore
+  - 1717 ResetForReuse
+  - 1735 CommitErosion
+  - 1741 InvalidateWater
+  - 1749 CommitGeneration
+  - 1754 Dispose
+- 1771–1786 struct StructureSpawnPoint
+  - 1777 StructureSpawnPoint
+- 1788–1815 struct ObjectInstInfo
+  - 1804 ObjectInstInfo
 
 ## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
 
-- 5–1290 class SimulationRules
-  - 1135 CaptureFrame
-  - 1137 Bind
-  - 1148 DeathPenaltyMul
-  - 1157 FillPlanSeconds
-  - 1164 FillCasteAffinityLog
-  - 1172 FillUtilityWeights
-  - 1180 FillPlanCasteDomain
-  - 1188 BuildEndogenousForbiddenMask
-  - 1200 BuildBoidPlanMul
-  - 1207 ColonyChannelTau
-  - 1213 BiomeFertility
-  - 1214 BiomeToxicity
-  - 1223 KindValue
-  - 1226 BiomeValue
-  - 1244 OnValidate
-  - 1287 ThrowNotBound
+- 5–1457 class SimulationRules
+  - 1267 CaptureFrame
+  - 1269 Bind
+  - 1280 DeathPenaltyMul
+  - 1289 FillPlanSeconds
+  - 1296 FillCasteAffinityLog
+  - 1304 FillUtilityWeights
+  - 1312 FillPlanCasteDomain
+  - 1320 BuildEndogenousForbiddenMask
+  - 1332 BuildBoidPlanMul
+  - 1339 ColonyChannelTau
+  - 1345 BiomeFertility
+  - 1346 BiomeToxicity
+  - 1355 KindValue
+  - 1358 BiomeValue
+  - 1378 OnValidate
+  - 1454 ThrowNotBound
   - 8–8 enum EpsilonSchedule
-  - 10–1130 struct RulesFrame
-    - 565 BiomeFertility
-    - 566 BiomeToxicity
-    - 575 RulesFrame
+  - 10–1262 struct RulesFrame
+    - 631 BiomeFertility
+    - 632 BiomeToxicity
+    - 641 RulesFrame
+
+## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
+
+- 15–1099 class EntityManager
+  - 79 RegisterEnergyConsumer
+  - 80 UnregisterEnergyConsumer
+  - 99 RaiseSpawned
+  - 100 RaiseDied
+  - 149 GetRandomEntity
+  - 152 SeedProbeStrain
+  - 155 SpawnEntity
+  - 158 SpawnChild
+  - 160 UpdateDiagnostics
+  - 169 EvolveGenotypes
+  - 175 SeedRandomStrain
+  - 178 Update
+  - 223 StampAgents
+  - 237 ApplyFireHeat
+  - 265 ApplyWildWind
+  - 285 DecayWarmth
+  - 293 SampleEnergy
+  - 315 ReportThreat
+  - 326 Awake
+  - 386 CreateColonies
+  - 396 AddColony
+  - 406 SaveBrain
+  - 409 LoadBrain
+  - 412 ColonyModelName
+  - 414 SaveBestBrainAsync
+  - 424 LoadBrainAsync
+  - 460 ApplyLoadedBrain
+  - 476 Start
+  - 517 DelaySimulation
+  - 528 TickAgents
+  - 574 PromoteUrgent
+  - 624 CloseTickWindow
+  - 649 SweepSkills
+  - 664 SolveSkills
+  - 678 RunTickBatch
+  - 724 BeginColonyBatches
+  - 729 RunColonyDecisions
+  - 734 RunFlocking
+  - 752 TickColonies
+  - 808 UpdatePack
+  - 824 ChooseCaste
+  - 862 Stimulus
+  - 869 TickNests
+  - 922 SetEntityVisible
+  - 928 SetEntitiesVisible
+  - 934 RebuildTickSnapshot
+  - 965 UpdateVisibility
+  - 994 UpdateVisibilityByCamera
+  - 1024 CreateNestViews
+  - 1035 ReleaseServices
+  - 1041 UnregisterServices
+  - 1057 ResolveRules
+  - 1073 OnDestroy
 
 ## `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs`
 
@@ -251,149 +312,105 @@ Line numbers are those of the last generation; after local edits treat them as a
     - 140 Reset
   - 173–178 struct LargeClaim
 
-## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
-
-- 15–942 class EntityManager
-  - 76 RegisterEnergyConsumer
-  - 77 UnregisterEnergyConsumer
-  - 96 RaiseSpawned
-  - 97 RaiseDied
-  - 140 GetRandomEntity
-  - 143 SeedProbeStrain
-  - 146 SpawnEntity
-  - 149 SpawnChild
-  - 151 UpdateDiagnostics
-  - 160 EvolveGenotypes
-  - 166 SeedRandomStrain
-  - 169 Update
-  - 213 StampAgents
-  - 227 ApplyFireHeat
-  - 248 DecayWarmth
-  - 256 SampleEnergy
-  - 278 ReportThreat
-  - 289 Awake
-  - 343 CreateColonies
-  - 353 AddColony
-  - 359 SaveBrain
-  - 362 LoadBrain
-  - 365 ColonyModelName
-  - 367 SaveBestBrainAsync
-  - 377 LoadBrainAsync
-  - 413 ApplyLoadedBrain
-  - 429 Start
-  - 469 DelaySimulation
-  - 480 TickAgents
-  - 524 CloseTickWindow
-  - 547 RunTickBatch
-  - 593 BeginColonyBatches
-  - 598 RunColonyDecisions
-  - 603 RunFlocking
-  - 621 TickColonies
-  - 675 ChooseCaste
-  - 713 Stimulus
-  - 720 TickNests
-  - 773 SetEntityVisible
-  - 779 SetEntitiesVisible
-  - 785 RebuildTickSnapshot
-  - 811 UpdateVisibility
-  - 840 UpdateVisibilityByCamera
-  - 870 CreateNestViews
-  - 881 ReleaseServices
-  - 887 UnregisterServices
-  - 902 ResolveRules
-  - 918 OnDestroy
-
 ## `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs`
 
-- 21–919 class PlayerController
-  - 122 SetInitialValues
-  - 146 SetUp
-  - 170 ApplyControlType
-  - 191 SavePlayerPosition
-  - 199 DelayedInit
-  - 224 GetPlayerComponents
-  - 238 AttachViewOrientation
-  - 252 InitStatePattern
-  - 262 SetZeroValues
-  - 268 Suspend
-  - 279 Resume
-  - 284 ResetAim
-  - 294 EnableComponents
-  - 300 DisableComponents
-  - 307 FixedUpdate
-  - 315 PublishVitals
-  - 325 MirrorVitals
-  - 337 StampTrample
-  - 347 Update
-  - 361 UpdateJumpIndicator
-  - 375 IsSprintHeld
-  - 377 Move
-  - 406 CheckBust
-  - 414 MoveServerRpc
-  - 429 StepServerMovement
-  - 493 BroadcastState
-  - 504 StopMoveServerRpc
-  - 515 UpdateClientPositionClientRpc
-  - 523 OnJumpStarted
-  - 529 OnJumpCanceled
-  - 535 TryJump
-  - 543 JumpServerRpc
-  - 562 OnActionStarted
-  - 563 OnActionCanceled
-  - 565 Aim
-  - 599 UpdateAimLevel
-  - 628 SetAimAddition
-  - 640 ChangeAimMode
-  - 642 AimRaiseMobile
-  - 643 AimPlaceMobile
-  - 645 AimRaise
-  - 662 OnViewClick
-  - 664 AimPlace
-  - 671 Placing
-  - 686 RequestPlace
-  - 693 RequestSpeak
-  - 700 SpeakServerRpc
-  - 729 RequestPickUp
-  - 736 RequestCraft
-  - 745 CraftRequestServerRpc
-  - 758 PlaceRequestServerRpc
-  - 777 PickUpRequestServerRpc
-  - 794 PlaceResultClientRpc
-  - 805 PickUpResultClientRpc
-  - 814 TryResolveEditor
-  - 841 TryConsumeEdit
-  - 843 TryConsumeMove
-  - 851 TryConsumeCraft
-  - 859 LatencyCompensation
-  - 885 Refuse
-  - 897 OwnerTarget
-  - 903 OnDisable
-  - 874–883 enum EditRefusal
+- 21–1013 class PlayerController
+  - 127 SetInitialValues
+  - 151 SetUp
+  - 176 ApplyControlType
+  - 197 SavePlayerPosition
+  - 205 DelayedInit
+  - 230 GetPlayerComponents
+  - 246 AttachViewOrientation
+  - 260 InitStatePattern
+  - 270 SetZeroValues
+  - 276 Suspend
+  - 287 Resume
+  - 292 ResetAim
+  - 302 EnableComponents
+  - 308 DisableComponents
+  - 315 FixedUpdate
+  - 324 PublishSkills
+  - 334 PublishVitals
+  - 344 MirrorVitals
+  - 356 StampTrample
+  - 366 Update
+  - 380 UpdateJumpIndicator
+  - 394 IsSprintHeld
+  - 396 Move
+  - 425 CheckBust
+  - 433 MoveServerRpc
+  - 448 StepServerMovement
+  - 532 BroadcastState
+  - 543 StopMoveServerRpc
+  - 554 UpdateClientPositionClientRpc
+  - 562 OnJumpStarted
+  - 568 OnJumpCanceled
+  - 574 TryJump
+  - 582 JumpServerRpc
+  - 601 OnActionStarted
+  - 602 OnActionCanceled
+  - 604 Aim
+  - 638 UpdateAimLevel
+  - 667 SetAimAddition
+  - 679 ChangeAimMode
+  - 681 AimRaiseMobile
+  - 682 AimPlaceMobile
+  - 684 AimRaise
+  - 701 OnViewClick
+  - 703 AimPlace
+  - 710 Placing
+  - 725 RequestPlace
+  - 732 RequestSpeak
+  - 739 SpeakServerRpc
+  - 769 RequestPickUp
+  - 776 RequestCraft
+  - 783 RequestSkillCommand
+  - 792 SkillGraphCommandServerRpc
+  - 799 ApplySkillCommand
+  - 810 SkillTopologyClientRpc
+  - 817 SkillLevelsClientRpc
+  - 827 CraftRequestServerRpc
+  - 840 PlaceRequestServerRpc
+  - 860 PickUpRequestServerRpc
+  - 878 PlaceResultClientRpc
+  - 889 PickUpResultClientRpc
+  - 898 TryResolveEditor
+  - 925 TryConsumeEdit
+  - 927 TryConsumeMove
+  - 935 TryConsumeSkill
+  - 943 TryConsumeCraft
+  - 951 LatencyCompensation
+  - 978 Refuse
+  - 990 OwnerTarget
+  - 996 OnDisable
+  - 967–976 enum EditRefusal
 
 ## `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs`
 
-- 7–918 class SharedHierarchicalBrain
-  - 35 UsesDirections
-  - 37 ExecAux
-  - 75 SharedHierarchicalBrain
-  - 105 ConfigureOptimizer
-  - 123 CompletePending
-  - 135 ApplyPendingGradients
-  - 151 ResolveLearningRate
-  - 162 ReportMeanFitness
-  - 173 ExplorationDecay
-  - 183 CreateContext
-  - 190 BuildContextLayouts
-  - 198 GiveReward
-  - 225 TryAddReward
-  - 235 SharedHierarchicalBrain
-  - 257 BuildGoalDurations
-  - 272 BuildBiasStride
-  - 297 BeginDecisionBatch
-  - 311 EnqueueDecision
-  - 344 BuildReservoirItem
-  - 370 TryGetDecision
-  - 381 RunDecisions
+- 7–928 class SharedHierarchicalBrain
+  - 34 DirectionAux
+  - 39 DirOffsetAux
+  - 41 ExecAux
+  - 74 SharedHierarchicalBrain
+  - 104 ConfigureOptimizer
+  - 122 CompletePending
+  - 134 ApplyPendingGradients
+  - 150 ResolveLearningRate
+  - 161 ReportMeanFitness
+  - 172 ExplorationDecay
+  - 182 CreateContext
+  - 189 BuildContextLayouts
+  - 197 GiveReward
+  - 224 TryAddReward
+  - 234 SharedHierarchicalBrain
+  - 256 BuildGoalDurations
+  - 271 BuildBiasStride
+  - 296 BeginDecisionBatch
+  - 310 EnqueueDecision
+  - 343 BuildReservoirItem
+  - 369 TryGetDecision
+  - 380 RunDecisions
   - 628 PickMasked
   - 649 ScheduleTraining
   - 662 EnsureNativeTables
@@ -404,17 +421,19 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 721 Dispose
   - 736 CompleteDecision
   - 747 CompleteTerminal
-  - 786 FlushGoalRewardToCoordinator
-  - 811 GetCoordinatorEntropy
-  - 812 GetCurrentGoal
-  - 814 GetExecutorEntropy
-  - 818 SharedHierarchicalBrain
-  - 845 FromModels
-  - 875 ToSnapshot
-  - 881 FromSnapshot
-  - 884 FromSnapshot
-  - 899 MatchesArchitecture
-  - 911 SizesMatch
+  - 786 EnergySurplus
+  - 789 RarityTerm
+  - 792 FlushGoalRewardToCoordinator
+  - 821 GetCoordinatorEntropy
+  - 822 GetCurrentGoal
+  - 824 GetExecutorEntropy
+  - 828 SharedHierarchicalBrain
+  - 855 FromModels
+  - 885 ToSnapshot
+  - 891 FromSnapshot
+  - 894 FromSnapshot
+  - 909 MatchesArchitecture
+  - 921 SizesMatch
   - 9–9 enum Goal
 
 ## `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs`
@@ -519,6 +538,55 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 743 Record
   - 734–739 struct Stats
 
+## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs`
+
+- 12–743 class EntityModel
+  - 32 Activate
+  - 33 Deactivate
+  - 48 AssignId
+  - 86 AddStress
+  - 89 AddExtrinsicReward
+  - 90 ConsumeExtrinsicReward
+  - 116 PlanRewardEma
+  - 146 ClearRecruit
+  - 147 Recruit
+  - 155 NoteFoodSite
+  - 160 TryGetFoodSite
+  - 167 RecordStored
+  - 186 SetLeader
+  - 198 SetFlock
+  - 200 BuildBoidAgent
+  - 260 SelectHuntTarget
+  - 287 AssignCaste
+  - 299 SyncCount
+  - 316 ClearCount
+  - 322 ActionMask
+  - 331 SetLastAction
+  - 341 CreateActionTimes
+  - 348 SinceAction
+  - 355 NoteThreatDisplay
+  - 359 TryGetKinTarget
+  - 391 NextPlanSide
+  - 394 Carry
+  - 395 TakeCarried
+  - 403 ReceiveFood
+  - 409 IngestFood
+  - 418 ConsumeReceivedFood
+  - 428 Warn
+  - 440 NoteVictim
+  - 461 TryGetThreatSource
+  - 514 MarkDeathPending
+  - 541 InvalidateCachedFood
+  - 568 TryStartAttackCooldown
+  - 576 SetUp
+  - 584 RequestReproduce
+  - 592 Configure
+  - 665 Init
+  - 705 InterruptCommand
+  - 707 Dispose
+  - 729 DeepClean
+  - 14–14 enum FitnessEvent
+
 ## `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs`
 
 - 8–694 class RiveParser
@@ -565,117 +633,93 @@ Line numbers are those of the last generation; after local edits treat them as a
 - 721–729 class RiveParseException
   - 725 RiveParseException
 
-## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs`
-
-- 11–703 class EntityModel
-  - 31 Activate
-  - 32 Deactivate
-  - 47 AssignId
-  - 83 AddStress
-  - 86 AddExtrinsicReward
-  - 87 ConsumeExtrinsicReward
-  - 112 PlanRewardEma
-  - 142 ClearRecruit
-  - 143 Recruit
-  - 151 NoteFoodSite
-  - 156 TryGetFoodSite
-  - 163 RecordStored
-  - 181 SetLeader
-  - 193 SetFlock
-  - 195 BuildBoidAgent
-  - 252 SelectHuntTarget
-  - 279 AssignCaste
-  - 300 SyncCount
-  - 317 ClearCount
-  - 323 ActionMask
-  - 330 SetMimickedAction
-  - 331 ConsumeMimickedAction
-  - 336 SetLastAction
-  - 346 CreateActionTimes
-  - 353 SinceAction
-  - 369 NextPlanSide
-  - 372 Carry
-  - 373 TakeCarried
-  - 381 ReceiveFood
-  - 387 IngestFood
-  - 396 ConsumeReceivedFood
-  - 406 Warn
-  - 418 TryGetThreatSource
-  - 471 MarkDeathPending
-  - 498 InvalidateCachedFood
-  - 525 TryStartAttackCooldown
-  - 533 SetUp
-  - 541 RequestReproduce
-  - 549 Configure
-  - 618 Init
-  - 667 InterruptCommand
-  - 669 Dispose
-  - 691 DeepClean
-  - 13–13 enum FitnessEvent
-
 ## `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs`
 
-- 12–687 class RiveInterpreterSecurityTests
+- 12–683 class RiveInterpreterSecurityTests
   - 17 SetUp
-  - 25 TearDown
-  - 31 Load
-  - 33 InterleavedRunsKeepIsolatedVariables
-  - 53 CalleeDoesNotOverwriteCallerVariable
-  - 65 CalleeDoesNotReadCallerVariable
-  - 77 RunsKeepIndependentOperationCounters
-  - 105 CalleeSharesOperationBudgetWithCaller
-  - 122 ReferencePow
-  - 129 PowWithHugeExponentReturnsImmediately
-  - 143 PowMatchesRepeatedMultiplicationForSmallArguments
-  - 158 PowRejectsNegativeExponent
-  - 165 AbsOfIntMinValueWrapsWithoutException
-  - 173 ParseFails
-  - 178 DeeplyNestedParenthesesAreRejected
-  - 186 TenThousandNestedParenthesesAreRejected
-  - 192 DeeplyNestedUnaryOperatorsAreRejected
-  - 199 DeeplyNestedBlocksAreRejected
-  - 210 TenThousandNestedIfBlocksAreRejected
-  - 220 OversizedSourceIsRejectedBeforeLexing
-  - 227 TooManyTokensAreRejected
-  - 234 OversizedArrayLiteralIsRejected
-  - 242 TooManyCallArgumentsAreRejected
-  - 250 TooManyParametersAreRejected
-  - 257 OutOfRangeNumberIsParseErrorNotOverflow
-  - 263 UnexpectedCharacterOnFirstParseIsParseError
-  - 269 SourceAtTheLimitsStillParses
-  - 281 LoadFileWithMaliciousSourceDoesNotThrowAndDoesNotLoad
-  - 291 NewExecutor
-  - 296 InputReadTimesOut
-  - 308 InputReadIsCancelledByToken
-  - 325 InputReadStillReturnsPushedValue
-  - 336 GetFailsWhenTotalWaitBudgetRunsOut
-  - 349 GetWithNoBudgetLeftFailsWithoutWaiting
-  - 363 WaitFailsWhenTotalWaitBudgetIsExceeded
-  - 375 WaitsAreAccumulatedAcrossStatements
-  - 387 CancelAllTerminatesScriptInsideWait
-  - 400 CancelAllTerminatesScriptInsideGet
-  - 415 CancelAllTerminatesBusyLoop
-  - 428 CancelAllStopsCallerWhenCalleeIsCancelled
-  - 443 RuntimeRunsScriptsAfterCancelAll
-  - 455 DisposedRuntimeRefusesScripts
-  - 466 ConcurrentRunsAreCapped
-  - 489 RunWithArgs
-  - 494 SelfRecursionFailsOnCallDepth
-  - 505 MutualRecursionFailsOnCallDepth
-  - 517 RecursionWithBranchesFailsCleanly
-  - 527 RecursionAtTheDepthLimitStillWorks
-  - 541 RecursionDepthIsReleasedAfterCalls
-  - 553 LongLeftDeepExpressionFailsWithoutStackOverflow
-  - 566 ModerateExpressionStillEvaluates
-  - 577 EmptyLoopToIntMaxValueFailsOnOperationBudget
-  - 589 EmptyLoopCountsOneOperationPerIteration
-  - 601 LoopUpToIntMaxValueTerminates
-  - 613 LoopVariableStillIteratesInclusively
-  - 624 LoopWithStatementsStaysInsideBudget
-  - 636 CommandRuntime
-  - 647 VariableSubstitutionDoesNotRewriteCommandWords
-  - 661 VariableSubstitutionIsSinglePassAndKeepsUnknownPlaceholders
-  - 673 SubstitutionOfManyBracesIsLinear
+  - 25 Load
+  - 27 InterleavedRunsKeepIsolatedVariables
+  - 47 CalleeDoesNotOverwriteCallerVariable
+  - 59 CalleeDoesNotReadCallerVariable
+  - 71 RunsKeepIndependentOperationCounters
+  - 99 CalleeSharesOperationBudgetWithCaller
+  - 116 ReferencePow
+  - 123 PowWithHugeExponentReturnsImmediately
+  - 137 PowMatchesRepeatedMultiplicationForSmallArguments
+  - 152 PowRejectsNegativeExponent
+  - 159 AbsOfIntMinValueWrapsWithoutException
+  - 167 ParseFails
+  - 173 DeeplyNestedParenthesesAreRejected
+  - 181 TenThousandNestedParenthesesAreRejected
+  - 187 DeeplyNestedUnaryOperatorsAreRejected
+  - 194 DeeplyNestedBlocksAreRejected
+  - 205 TenThousandNestedIfBlocksAreRejected
+  - 215 OversizedSourceIsRejectedBeforeLexing
+  - 222 TooManyTokensAreRejected
+  - 229 OversizedArrayLiteralIsRejected
+  - 237 TooManyCallArgumentsAreRejected
+  - 245 TooManyParametersAreRejected
+  - 252 OutOfRangeNumberIsParseErrorNotOverflow
+  - 258 UnexpectedCharacterOnFirstParseIsParseError
+  - 264 SourceAtTheLimitsStillParses
+  - 276 LoadFileWithMaliciousSourceDoesNotThrowAndDoesNotLoad
+  - 287 NewExecutor
+  - 292 InputReadTimesOut
+  - 304 InputReadIsCancelledByToken
+  - 321 InputReadStillReturnsPushedValue
+  - 332 GetFailsWhenTotalWaitBudgetRunsOut
+  - 345 GetWithNoBudgetLeftFailsWithoutWaiting
+  - 359 WaitFailsWhenTotalWaitBudgetIsExceeded
+  - 371 WaitsAreAccumulatedAcrossStatements
+  - 383 CancelAllTerminatesScriptInsideWait
+  - 396 CancelAllTerminatesScriptInsideGet
+  - 411 CancelAllTerminatesBusyLoop
+  - 424 CancelAllStopsCallerWhenCalleeIsCancelled
+  - 439 RuntimeRunsScriptsAfterCancelAll
+  - 451 DisposedRuntimeRefusesScripts
+  - 462 ConcurrentRunsAreCapped
+  - 485 RunWithArgs
+  - 490 SelfRecursionFailsOnCallDepth
+  - 501 MutualRecursionFailsOnCallDepth
+  - 513 RecursionWithBranchesFailsCleanly
+  - 523 RecursionAtTheDepthLimitStillWorks
+  - 537 RecursionDepthIsReleasedAfterCalls
+  - 549 LongLeftDeepExpressionFailsWithoutStackOverflow
+  - 562 ModerateExpressionStillEvaluates
+  - 573 EmptyLoopToIntMaxValueFailsOnOperationBudget
+  - 585 EmptyLoopCountsOneOperationPerIteration
+  - 597 LoopUpToIntMaxValueTerminates
+  - 609 LoopVariableStillIteratesInclusively
+  - 620 LoopWithStatementsStaysInsideBudget
+  - 632 CommandRuntime
+  - 643 VariableSubstitutionDoesNotRewriteCommandWords
+  - 657 VariableSubstitutionIsSinglePassAndKeepsUnknownPlaceholders
+  - 669 SubstitutionOfManyBracesIsLinear
+
+## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs`
+
+- 15–34 class ErosionBudget
+  - 22 CanStart
+  - 33 Spend
+- 36–547 class ChunkGenerator
+  - 80 ChunkGenerator
+  - 177 ChunkSeed
+  - 180 Generate
+  - 304 RunEpochs
+  - 326 CatchUpTerrain
+  - 396 BuildWaterDistance
+  - 450 RaiseDetail
+  - 473 RunSpawn
+  - 507 CellWorldZ
+  - 510 Dispose
+- 549–625 struct WaterDistanceJob
+  - 560 Execute
+- 627–637 struct ReliefFromHeightJob
+  - 636 Execute
+- 639–649 struct HeightFromReliefJob
+  - 648 Execute
+- 651–677 struct FillChunkArraysJob
+  - 669 Execute
 
 ## `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs`
 
@@ -710,28 +754,6 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 615 CloneWeights
   - 625 GetGeneticParameters
   - 627 Dispose
-
-## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs`
-
-- 15–34 class ErosionBudget
-  - 22 CanStart
-  - 33 Spend
-- 36–529 class ChunkGenerator
-  - 78 ChunkGenerator
-  - 173 ChunkSeed
-  - 176 Generate
-  - 295 RunEpochs
-  - 317 CatchUpTerrain
-  - 384 BuildWaterDistance
-  - 436 RaiseDetail
-  - 459 RunSpawn
-  - 492 Dispose
-- 531–600 struct WaterDistanceJob
-  - 540 Execute
-- 602–610 struct ScaleCopyJob
-  - 609 Execute
-- 612–636 struct FillChunkArraysJob
-  - 628 Execute
 
 ## `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs`
 
@@ -776,42 +798,104 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 82 SpeedModifier
   - 93 Sample
   - 136 Cell
-- 147–281 struct MotionJob
-  - 169 Execute
-  - 274 Finish
-- 283–291 struct MotionApplyJob
-  - 289 Execute
-- 293–603 class MotionSystem
-  - 327 MotionSystem
-  - 344 Inject
-  - 352 PositionOf
-  - 355 SetPosition
-  - 360 RemoveSwapBack
-  - 380 Start
-  - 414 Stop
-  - 425 VelocityOf
-  - 428 TakePending
-  - 438 Step
-  - 481 PrepareAtlas
-  - 491 WindowOf
-  - 501 AppendWindow
-  - 522 SyncAtlas
-  - 555 TouchWindow
-  - 562 Finish
-  - 585 Dispose
+- 147–282 struct MotionJob
+  - 170 Execute
+  - 275 Finish
+- 284–292 struct MotionApplyJob
+  - 290 Execute
+- 294–605 class MotionSystem
+  - 328 MotionSystem
+  - 345 Inject
+  - 353 PositionOf
+  - 356 SetPosition
+  - 361 RemoveSwapBack
+  - 381 Start
+  - 415 Stop
+  - 426 VelocityOf
+  - 429 TakePending
+  - 439 Step
+  - 483 PrepareAtlas
+  - 493 WindowOf
+  - 503 AppendWindow
+  - 524 SyncAtlas
+  - 557 TouchWindow
+  - 564 Finish
+  - 587 Dispose
+
+## `Assets/Tests/EditMode/SkillGraphTests.cs`
+
+- 6–562 class SkillGraphTests
+  - 13 SetUp
+  - 21 TearDown
+  - 31 BuildGridAtlas
+  - 34 Link
+  - 40 Topology
+  - 47 Connected
+  - 64 RowsOf
+  - 71 DefaultAtlasHasEighteenPointsInsideTheUnitSquare
+  - 84 DefaultAtlasPotentialIsSymmetricWithoutSelfLoops
+  - 95 DefaultAtlasPotentialIsConnectedAndHasNoK5
+  - 104 K5CheckFindsACompleteFiveClique
+  - 116 BuilderProducesValidAtlasesForEverySizeAndSeed
+  - 128 XpTableHasAtMostTwoSourcesPerAction
+  - 143 FreshTreeHasNoCycleFactorBelowOne
+  - 151 IslandsAreDetachedFromTheMainComponent
+  - 163 OneAddedEdgeFormingATriangleGivesCliqueThreeForExactlyThreeVertices
+  - 184 ThreeAddedEdgesFormingK4GiveCliqueFour
+  - 199 BridgeIsReportedOnlyForEdgesOutsideCycles
+  - 222 BuildIsRefusedWithoutPointsAndLeavesStateUnchanged
+  - 247 PruneAndRestoreFollowTheBridgeRules
+  - 280 PruneRefusesACycleEdgeAndAnIsland
+  - 297 TalentIsOneAtTheOriginVertexAndNeverBelowTheMinimum
+  - 315 SixtyFourSkillsAtPeakOneEarnNoEdgePoints
+  - 334 DecayNeverCrossesTheSavingsFloor
+  - 350 CycleFactorLowersDecayInsideCyclesOnly
+  - 361 FallenSkillWithoutNeighboursGetsAPullAboveOnePointSix
+  - 381 NeighbourAbovePullsAHigherDelta
+  - 403 EffectGrowsWithTheFlooredLevelAndDividersInvert
+  - 414 AddXpOnAnUnavailableSkillChangesNothing
+  - 443 AddXpOnTheRootRaisesTheLevelAndEventuallyTheFlooredLevel
+  - 469 AddXpNeverAllocates
+  - 491 ModifiersAreNeutralUntilAChannelSkillLevelsUp
+  - 521 ModifiersIgnorePrunedSkills
+  - 556–561 class AtlasHandle
+    - 559 AtlasHandle
+    - 560 Dispose
 
 ## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs`
 
-- 11–526 class EntityModel
+- 11–547 class EntityModel
   - 13 IsAliveForTick
   - 16 SubmitDecision
   - 22 BeginCycle
-  - 36 NoisyDirection
-  - 43 UpdateDormancy
-  - 60 RunCycle
-  - 424 ComputePlanHints
-  - 465 EndCycle
-  - 485 StartDecision
-  - 502 ComputeDangerLevel
-  - 515 ComputeBreedReadiness
+  - 37 NoisyDirection
+  - 44 UpdateDormancy
+  - 61 RunCycle
+  - 443 ComputePlanHints
+  - 486 EndCycle
+  - 506 StartDecision
+  - 523 ComputeDangerLevel
+  - 536 ComputeBreedReadiness
+
+## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassSystem.cs`
+
+- 10–500 class GrassSystem
+  - 126 Start
+  - 147 Update
+  - 175 InitializeSystem
+  - 261 MeshForRing
+  - 264 UpdateGrassPlacement
+  - 279 PlaceGrass
+  - 302 UploadHeights
+  - 317 WindowBounds
+  - 328 PlaceBlock
+  - 344 DispatchPlace
+  - 371 ResolveCamera
+  - 377 PublishView
+  - 386 ViewChanged
+  - 398 DispatchNear
+  - 453 RenderGrass
+  - 473 OnDisable
+- 502–515 class GrassCullMath
+  - 504 CellRect
 
