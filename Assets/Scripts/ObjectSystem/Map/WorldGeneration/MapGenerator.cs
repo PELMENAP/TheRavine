@@ -172,7 +172,10 @@ namespace TheRavine.Generator
             if (mapData.TryGetValue(chunkKey, out ChunkData data))
             {
                 if (data.DetailLevel > ring)
+                {
                     chunkGenerator.RaiseDetail(data, chunkKey, ring);
+                    streamedChunks++;
+                }
             }
             else
             {
@@ -180,6 +183,7 @@ namespace TheRavine.Generator
                 GenerateChunk(chunkKey, data, ring);
                 mapData[chunkKey] = data;
                 chunkSetVersion++;
+                streamedChunks++;
             }
 
             data.LastAccessFrame = frame;
@@ -281,6 +285,10 @@ namespace TheRavine.Generator
 
         private readonly ChunkData[] waterNeighborhood = new ChunkData[9];
         private int chunkSetVersion;
+        private int streamedChunks;
+        private int lookaheadDx, lookaheadDz;
+        private int lookaheadVersion = -1;
+        private long lookaheadWindow;
         public int UnloadStamp { get; private set; }
         public int EvictionTouchInterval => math.max(1, Settings.evictionIdleFrames / 2);
 
@@ -1040,6 +1048,8 @@ namespace TheRavine.Generator
             if (simPending)
                 SupplySimSquare(FrameBudget.Now + (deadline - FrameBudget.Now) / 2);
 
+            SupplyLookahead(FrameBudget.Now + (deadline - FrameBudget.Now) / 2);
+
             for (int i = 0; i < endless.Length; i++)
                 endless[i]?.Tick(deadline);
 
@@ -1054,8 +1064,10 @@ namespace TheRavine.Generator
             windowCenter = center;
             hasWindow = true;
 
+            int streamedBefore = streamedChunks;
             EnsureRegion(center, chunkScale, 0, FrameBudget.Unlimited);
             EnsureRegion(center, HeightWindow.Radius, 1, FrameBudget.Unlimited);
+            if (randomTicks != null) randomTicks.Stats.MoveWindowChunks += streamedChunks - streamedBefore;
 
             for (int i = 0; i < endless.Length; i++)
                 endless[i]?.UpdateChunk(center);
@@ -1114,6 +1126,64 @@ namespace TheRavine.Generator
 
             simPending = false;
             simShell = 0;
+        }
+
+        private void SupplyLookahead(long deadline)
+        {
+            float fraction = Settings.lookaheadEdgeFraction;
+            if (!hasWindow || viewer == null || !(fraction > 0f))
+            {
+                lookaheadDx = 0;
+                lookaheadDz = 0;
+                return;
+            }
+
+            Vector3 p = viewer.position + viewerOffset;
+            float u = p.x * InvChunkSize;
+            float v = p.z * InvChunkSize;
+            float fu = u - math.floor(u);
+            float fv = v - math.floor(v);
+            int dx = fu < fraction ? -1 : fu > 1f - fraction ? 1 : 0;
+            int dz = fv < fraction ? -1 : fv > 1f - fraction ? 1 : 0;
+
+            if (dx != lookaheadDx || dz != lookaheadDz || windowCenter != lookaheadWindow)
+            {
+                lookaheadDx = dx;
+                lookaheadDz = dz;
+                lookaheadWindow = windowCenter;
+                lookaheadVersion = -1;
+            }
+
+            if (dx == 0 && dz == 0) return;
+            if (lookaheadVersion == chunkSetVersion) return;
+
+            int before = streamedChunks;
+            bool complete = true;
+            if (dx != 0) complete &= EnsureShifted(dx, 0, deadline);
+            if (dz != 0) complete &= EnsureShifted(0, dz, deadline);
+            if (dx != 0 && dz != 0) complete &= EnsureShifted(dx, dz, deadline);
+
+            if (randomTicks != null) randomTicks.Stats.LookaheadChunks += streamedChunks - before;
+            if (complete) lookaheadVersion = chunkSetVersion;
+        }
+
+        private bool EnsureShifted(int dx, int dz, long deadline)
+        {
+            long shifted = Position2Int.Offset(windowCenter, dx, dz);
+            bool near = EnsureRegion(shifted, chunkScale, 0, deadline);
+            bool far = EnsureRegion(shifted, HeightWindow.Radius, 1, deadline);
+            return near && far;
+        }
+
+        private bool IsLookaheadRetained(long chunkKey)
+        {
+            if (lookaheadDx == 0 && lookaheadDz == 0) return false;
+
+            int r = HeightWindow.Radius;
+            int x = Position2Int.GetX(chunkKey) - Position2Int.GetX(windowCenter);
+            int z = Position2Int.GetY(chunkKey) - Position2Int.GetY(windowCenter);
+            return x >= math.min(0, lookaheadDx) - r && x <= math.max(0, lookaheadDx) + r
+                && z >= math.min(0, lookaheadDz) - r && z <= math.max(0, lookaheadDz) + r;
         }
 
         public void ExtraUpdate() => FlushDirty();
@@ -1205,7 +1275,7 @@ namespace TheRavine.Generator
                 math.abs(Position2Int.GetY(chunkKey) - Position2Int.GetY(windowCenter)));
 
             int near = math.max(Settings.retainRadius, HeightWindow.Radius) + hysteresis;
-            if (d <= near) return true;
+            if (d <= near || IsLookaheadRetained(chunkKey)) return true;
             return lodRingCount > 0 && d <= NalReach + hysteresis;
         }
 

@@ -28,9 +28,10 @@ The flocking of agents (not birds) is `BoidSystem` in `Assets/Scripts/EntitySyst
 4. After the step along the curve `MotionJob` calls `ObstacleQuery.ResolveSwept` from the previous to the new position; a pushed agent catches up at `ObstacleCatchUpMul` of its speed.
    A push that leaves almost no progress counts toward `BlockedSeconds`. Body size: `AgentBodyRadius`, `AgentBodyHeight`; the step-up tolerance is `AgentStepUp`.
    The height is `max(terrain, ObstacleQuery.Support)` plus `HeightOffset`: an agent stands on a shape top and drops to the terrain off its edge.
-5. Positions are read with `MotionSystem.PositionOf`; nothing in the tick reads a `Transform`.
+5. Positions are read with `MotionSystem.PositionOf`; velocity by ManagerIndex with `VelocityBySlot`; nothing in the tick reads a `Transform`.
 6. `MotionSystem.RemoveSwapBack` is called from `ColonyPopulation.RemoveEntitySwapBack`.
 7. `HeightAtlas` is synced from loaded chunks (`PrepareAtlas`, `SyncAtlas`); it is rebuilt on change, not every frame.
+   `SyncAtlas` never generates a chunk: a missing one is requested (`MapGenerator.RequestChunk`) and the agent's `MotionState.Held` stays set until the window is complete; a held agent does not move.
    `MotionSystem` is a service: `EntityManager` registers it, `MobController` reads its atlas and `Obstacles`.
 8. `MobController.Update` fills the mob velocities, prepares the atlas around the mob positions, schedules `MoveMobsJob` and completes it in the same call:
    the atlas arrays belong to `MotionSystem` and change later in the frame. `MoveMobsJob` resolves each mob like an agent and sets `y` from ground plus `GroundOffset`.

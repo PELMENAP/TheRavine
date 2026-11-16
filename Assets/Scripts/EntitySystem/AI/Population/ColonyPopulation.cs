@@ -14,6 +14,7 @@ public sealed class ColonyPopulation
     private readonly int          _maxPopulation;
     private readonly int          _capacity;
     private readonly float        _spawnRadius;
+    private readonly bool         _spawnNetworkObjects;
 
     private readonly List<EntityModel> _entities;
     private readonly ColonyRegistry    _colonies;
@@ -24,6 +25,7 @@ public sealed class ColonyPopulation
 
     private readonly MotionSystem         _motion;
     private readonly InstinctSystem       _instincts;
+    private readonly SurveySystem         _survey;
     private readonly UtilityPriorSystem   _utility;
     private readonly CasteThresholdSystem _thresholds;
     private readonly BoidSystem           _boids;
@@ -54,9 +56,10 @@ public sealed class ColonyPopulation
 
     public ColonyPopulation(GameObject prefab, Transform parent, EntityTuning tuning, int maxPopulation, int capacity, float spawnRadius,
         List<EntityModel> entities, ColonyRegistry colonies, ColonyState wild, ColonyFood food, EvolutionService evolution,
-        EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, UtilityPriorSystem utility,
-        CasteThresholdSystem thresholds, BoidSystem boids, EnergyLedger ledger, SpeechBus speech)
+        EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, SurveySystem survey, UtilityPriorSystem utility,
+        CasteThresholdSystem thresholds, BoidSystem boids, EnergyLedger ledger, SpeechBus speech, bool spawnNetworkObjects)
     {
+        _spawnNetworkObjects = spawnNetworkObjects;
         _prefab        = prefab;
         _parent        = parent;
         _tuning        = tuning;
@@ -71,6 +74,7 @@ public sealed class ColonyPopulation
         _grid          = grid;
         _motion        = motion;
         _instincts     = instincts;
+        _survey        = survey;
         _utility       = utility;
         _thresholds    = thresholds;
         _boids         = boids;
@@ -96,7 +100,7 @@ public sealed class ColonyPopulation
 
         var netObj = go.GetComponent<NetworkObject>();
         var network = NetworkManager.Singleton;
-        if (netObj != null && network != null && network.IsServer) netObj.Spawn();
+        if (_spawnNetworkObjects && netObj != null && network != null && network.IsServer) netObj.Spawn();
 
         var viewModel = go.GetComponent<EntityViewModel>();
         var view      = go.GetComponent<EntityView>();
@@ -286,6 +290,7 @@ public sealed class ColonyPopulation
         }
 
         _instincts.RemoveSwapBack(idx, last);
+        _survey.RemoveSwapBack(idx, last);
         _boids.RemoveSwapBack(idx, last);
         _utility.RemoveSwapBack(idx, last);
         _thresholds.RemoveSwapBack(idx, last);
@@ -293,6 +298,7 @@ public sealed class ColonyPopulation
         _grid.MarkStale();
         _entities.RemoveAt(last);
         model.ManagerIndex = -1;
+        model.GridSlot = -1;
     }
 
     public EntityModel ElectLeader(ColonyState colony)

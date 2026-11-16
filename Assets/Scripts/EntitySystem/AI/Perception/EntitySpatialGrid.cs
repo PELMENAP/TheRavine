@@ -20,6 +20,9 @@ public sealed class EntitySpatialGrid : IDisposable
 
     private NativeArray<int>   _ids;
     private NativeArray<int>   _colony;
+    private NativeArray<int2>  _cell;
+    private NativeArray<byte>  _alive;
+    private NativeArray<float> _hp;
     private NativeArray<float> _px;
     private NativeArray<float> _py;
     private NativeArray<float> _pz;
@@ -42,10 +45,38 @@ public sealed class EntitySpatialGrid : IDisposable
     public NativeArray<int>   Items   => _items;
     public NativeArray<int>   Ids     => _ids;
     public NativeArray<int>   Visit   => _visit;
+    public NativeArray<byte>  Alive   => _alive;
+    public NativeArray<int>   Colony  => _colony;
+    public NativeArray<int2>  Cell    => _cell;
+    public NativeArray<float> Py      => _py;
+    public NativeArray<float> HpFraction => _hp;
     public NativeArray<float> Px      => _px;
     public NativeArray<float> Pz      => _pz;
 
     public void MarkStale() => IsStale = true;
+
+    public void NoteDeath(EntityModel model)
+    {
+        int slot = model.GridSlot;
+        if ((uint)slot < (uint)_count) _alive[slot] = 0;
+    }
+
+    public void NoteHp(EntityModel model, float hp, float maxHealth)
+    {
+        int slot = model.GridSlot;
+        if ((uint)slot < (uint)_count) _hp[slot] = maxHealth > 0f ? math.saturate(hp / maxHealth) : 0f;
+    }
+
+    public float HpFractionOf(EntityModel model)
+    {
+        int slot = model.GridSlot;
+        return (uint)slot < (uint)_count ? _hp[slot] : -1f;
+    }
+
+    public EntityModel ModelAt(int slot) => (uint)slot < (uint)_count ? _models[slot] : null;
+
+    public EntityModel LiveModelAt(int slot)
+        => (uint)slot < (uint)_count && _alive[slot] != 0 ? _models[slot] : null;
 
     public unsafe int ReserveEpochs(int count)
     {
@@ -76,7 +107,12 @@ public sealed class EntitySpatialGrid : IDisposable
         for (int i = 0; i < count; i++)
         {
             var e = snapshot[i];
-            if (e == null || e.IsDisposed || e.IsDeathPending || (uint)e.ManagerIndex >= (uint)positions.Length) continue;
+            if (e == null) continue;
+            if (e.IsDisposed || e.IsDeathPending || (uint)e.ManagerIndex >= (uint)positions.Length)
+            {
+                e.GridSlot = -1;
+                continue;
+            }
 
             float3 p = positions[e.ManagerIndex];
             _px[written]     = p.x;
@@ -85,8 +121,15 @@ public sealed class EntitySpatialGrid : IDisposable
             _models[written] = e;
             _ids[written]    = e.ManagerIndex;
             _colony[written] = e.Colony != null ? e.Colony.Index : NoColony;
+            _alive[written]  = 1;
+            var stats = e.Stats;
+            _hp[written]     = stats != null && stats.MaxHealth > 0f ? math.saturate(stats.Hp / stats.MaxHealth) : 1f;
+            e.GridSlot       = written;
 
-            int b = BucketOf(CellCoord(p.x), CellCoord(p.z));
+            int cellX = CellCoord(p.x);
+            int cellZ = CellCoord(p.z);
+            _cell[written] = new int2(cellX, cellZ);
+            int b = BucketOf(cellX, cellZ);
             _bucketOf[written] = b;
             _cellEnd[b + 1]++;
             written++;
@@ -116,7 +159,8 @@ public sealed class EntitySpatialGrid : IDisposable
         int   cz   = CellCoord(origin.z);
         int   epoch = NextEpoch();
 
-        EntityModel best = null;
+        int selfSlot = self != null ? self.GridSlot : -1;
+        int bestSlot = -1;
         float minSqr = float.MaxValue;
 
         for (int dz = -ring; dz <= ring; dz++)
@@ -138,17 +182,16 @@ public sealed class EntitySpatialGrid : IDisposable
                 float ddz = _pz[i] - origin.z;
                 float sqr = ddx * ddx + ddy * ddy + ddz * ddz;
                 if (sqr > r2 || sqr >= minSqr) continue;
+                if (i == selfSlot || _alive[i] == 0) continue;
 
-                var m = _models[i];
-                if (ReferenceEquals(m, self) || m.IsDeathPending || m.IsDisposed) continue;
-
-                minSqr = sqr;
-                best   = m;
+                minSqr   = sqr;
+                bestSlot = i;
             }
         }
 
-        if (best != null) distance = math.sqrt(minSqr);
-        return best;
+        if (bestSlot < 0) return null;
+        distance = math.sqrt(minSqr);
+        return _models[bestSlot];
     }
 
     public EntityModel Survey(Vector3 origin, EntityModel self, ColonyState colony,
@@ -173,7 +216,9 @@ public sealed class EntitySpatialGrid : IDisposable
         int   cz    = CellCoord(origin.z);
         int   epoch = NextEpoch();
 
-        EntityModel best = null;
+        int selfSlot    = self != null ? self.GridSlot : -1;
+        int bestSlot    = -1;
+        int foreignSlot = -1;
         float minSqr = float.MaxValue;
         float minForeignSqr = float.MaxValue;
 
@@ -200,14 +245,12 @@ public sealed class EntitySpatialGrid : IDisposable
                 bool asCrowd   = sqr <= cr2 && crowd < crowdCap;
                 bool asForeign = sqr <= nr2 && sqr < minForeignSqr && _colony[i] != colonyIndex;
                 if (!asNearest && !asCrowd && !asForeign) continue;
-
-                var m = _models[i];
-                if (ReferenceEquals(m, self) || m.IsDeathPending || m.IsDisposed) continue;
+                if (i == selfSlot || _alive[i] == 0) continue;
 
                 if (asNearest)
                 {
-                    minSqr = sqr;
-                    best   = m;
+                    minSqr   = sqr;
+                    bestSlot = i;
                 }
                 if (asCrowd)
                 {
@@ -217,14 +260,19 @@ public sealed class EntitySpatialGrid : IDisposable
                 if (asForeign)
                 {
                     minForeignSqr = sqr;
-                    foreign       = m;
+                    foreignSlot   = i;
                 }
             }
         }
 
-        if (best != null) nearestDistance = math.sqrt(minSqr);
-        if (foreign != null) foreignDistance = math.sqrt(minForeignSqr);
-        return best;
+        if (foreignSlot >= 0)
+        {
+            foreign = _models[foreignSlot];
+            foreignDistance = math.sqrt(minForeignSqr);
+        }
+        if (bestSlot < 0) return null;
+        nearestDistance = math.sqrt(minSqr);
+        return _models[bestSlot];
     }
 
     public int FindInRadius(Vector3 origin, EntityModel self, float radius, EntityModel[] result)
@@ -239,6 +287,7 @@ public sealed class EntitySpatialGrid : IDisposable
         int   cz   = CellCoord(origin.z);
         int   epoch = NextEpoch();
         int   written = 0;
+        int   selfSlot = self != null ? self.GridSlot : -1;
 
         for (int dz = -ring; dz <= ring; dz++)
         for (int dx = -ring; dx <= ring; dx++)
@@ -258,11 +307,9 @@ public sealed class EntitySpatialGrid : IDisposable
                 float ddy = _py[i] - origin.y;
                 float ddz = _pz[i] - origin.z;
                 if (ddx * ddx + ddy * ddy + ddz * ddz > r2) continue;
+                if (i == selfSlot || _alive[i] == 0) continue;
 
-                var m = _models[i];
-                if (ReferenceEquals(m, self) || m.IsDeathPending || m.IsDisposed) continue;
-
-                result[written++] = m;
+                result[written++] = _models[i];
                 if (written == cap) return written;
             }
         }
@@ -298,6 +345,9 @@ public sealed class EntitySpatialGrid : IDisposable
         _items    = new NativeArray<int>(cap, Allocator.Persistent);
         _ids      = new NativeArray<int>(cap, Allocator.Persistent);
         _colony   = new NativeArray<int>(cap, Allocator.Persistent);
+        _cell     = new NativeArray<int2>(cap, Allocator.Persistent);
+        _alive    = new NativeArray<byte>(cap, Allocator.Persistent);
+        _hp       = new NativeArray<float>(cap, Allocator.Persistent);
         _bucketOf = new int[cap];
         _px       = new NativeArray<float>(cap, Allocator.Persistent);
         _py       = new NativeArray<float>(cap, Allocator.Persistent);
@@ -317,6 +367,9 @@ public sealed class EntitySpatialGrid : IDisposable
         if (_items.IsCreated)   _items.Dispose();
         if (_ids.IsCreated)     _ids.Dispose();
         if (_colony.IsCreated)  _colony.Dispose();
+        if (_cell.IsCreated)    _cell.Dispose();
+        if (_alive.IsCreated)   _alive.Dispose();
+        if (_hp.IsCreated)      _hp.Dispose();
         if (_px.IsCreated)      _px.Dispose();
         if (_py.IsCreated)      _py.Dispose();
         if (_pz.IsCreated)      _pz.Dispose();

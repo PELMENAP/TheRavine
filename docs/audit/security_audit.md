@@ -38,6 +38,8 @@ Severity: **Critical** — a remote client breaks equality or the world directly
 | 28 | Low | `EntitySystem/AI/NeuralModelStorage.cs`, `Terminal/PDollar/Scripts/GestureRepository.cs` | Direct `FileMode.Create` / `File.WriteAllBytes` (crash mid-write destroys the previous save); unbounded `File.ReadAllBytes`; gesture count and points not capped. | §7 | Fixed, see §6 |
 | 29 | Low | `EntitySystem/Entityes/Player/PlayerController.cs` (`StopMoveServerRpc`) | Sets `CurrentSpeed = 0` and zeroes velocity directly, bypassing server `Deceleration`; no rate limit. | §5 | Fixed, see §6 |
 | 30 | Low | `EntitySystem/Entityes/Player/PlayerController.cs` (`SpeakServerRpc`) | Two `GetEntityComponent` lookups run before token length, bit width and cooldown are checked. | §4, §5 | Fixed, see §6 |
+| 31 | Medium | `Assets/Prefabs/NPC/Mimic.prefab`, `EntitySystem/AI/Population/ColonyPopulation.cs` | Every agent was a spawned `NetworkObject` with no `NetworkTransform`: remote clients got a frozen copy at the spawn point and paid one network object per agent. | §2, §16 | Fixed in code (`AgentSnapshotStream`, `AgentPuppets`); not run in the Editor |
+| 32 | Low | `EntitySystem/AI/Population/AgentSnapshotStream.cs` | The area of interest of a client is the position of `NetworkClient.PlayerObject`; a client without a player object gets no agents. Depends on the open player identity issue. | §10 | Open |
 | 31 | Low | `EntitySystem/Entityes/Player/PlayerController.cs` | Move, Stop, Jump and Craft ServerRpcs have no per-client rate limit. | §5, §6 | Fixed, see §6 |
 
 ## 2. What already follows the principles

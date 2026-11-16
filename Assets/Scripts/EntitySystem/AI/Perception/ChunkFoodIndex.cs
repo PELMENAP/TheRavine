@@ -159,10 +159,14 @@ public sealed class ChunkFoodIndex
     private int _freeChunkCount;
 
     private FoodChunk RentChunk()
-        => _freeChunkCount > 0 ? _freeChunks[--_freeChunkCount] : new FoodChunk();
+    {
+        _keysDirty = true;
+        return _freeChunkCount > 0 ? _freeChunks[--_freeChunkCount] : new FoodChunk();
+    }
 
     private void ReturnChunk(FoodChunk fc)
     {
+        _keysDirty = true;
         _foodTotal -= fc.FoodEnergy;
         _soilTotal -= fc.SoilEnergy;
         fc.Reset();
@@ -181,6 +185,9 @@ public sealed class ChunkFoodIndex
     private int _claimCount;
 
     private long[] _pruneKeys = new long[16];
+    private long[] _ecologyKeys = new long[16];
+    private int _ecologyKeyCount;
+    private bool _keysDirty = true;
 
     public static float2 CellCenter(long cell)
         => new float2(Position2Int.GetX(cell) * MapGenerator.scale + HalfCell,
@@ -300,6 +307,7 @@ public sealed class ChunkFoodIndex
 
     private void ReleaseChunkState(long chunkKey, FoodChunk fc)
     {
+        _keysDirty = true;
         int baseX = Position2Int.GetX(chunkKey) << ChunkShift;
         int baseZ = Position2Int.GetY(chunkKey) << ChunkShift;
 
@@ -697,9 +705,15 @@ public sealed class ChunkFoodIndex
         if (_map == null || dt <= 0f) return;
         ref readonly var r = ref SimulationRules.Frame;
 
-        EnsureKeyBuffer(_chunks.Count);
-        int n = 0;
-        foreach (var kv in _chunks) _pruneKeys[n++] = kv.Key;
+        if (_keysDirty)
+        {
+            _keysDirty = false;
+            if (_ecologyKeys.Length < _chunks.Count) _ecologyKeys = new long[math.ceilpow2(_chunks.Count)];
+            int count = 0;
+            foreach (var kv in _chunks) _ecologyKeys[count++] = kv.Key;
+            _ecologyKeyCount = count;
+        }
+        int n = _ecologyKeyCount;
 
         float growth   = r.FoodGrowthRate;
         float seed     = r.FoodSeedFraction;
@@ -711,7 +725,7 @@ public sealed class ChunkFoodIndex
 
         for (int k = 0; k < n; k++)
         {
-            long key = _pruneKeys[k];
+            long key = _ecologyKeys[k];
             var fc = Resolve(key, out ChunkData cd);
             if (fc == null) continue;
 

@@ -2,7 +2,7 @@
 
 Root: `Assets/Scripts/EntitySystem/AI/`. Assembly: `EntitySystem`. Rules for this folder: `Assets/Scripts/EntitySystem/AI/CLAUDE.md`.
 Tests: `Assets/Tests/EditMode/` — `BrainAllocationTests`, `BrainLearningTests`, `BrainArchitectureVersionTests`, `SnapshotVersionTests`,
-`SoaSwapBackTests`, `TickWindowBudgetTests`, `DecisionRingTests`, `ColonyRegistryTests`, `EntitySpatialGridSurveyTests`, `RulesDefaultsTests`.
+`SoaSwapBackTests`, `TickWindowBudgetTests`, `DecisionRingTests`, `ColonyRegistryTests`, `EntitySpatialGridSurveyTests`, `SurveySystemTests`, `AgentSnapshotCodecTests`, `RulesDefaultsTests`.
 
 Tick order and hot methods: `docs/map/HOT_PATHS.md`. Existing structures to reuse: `docs/OPTIMIZATION.md` section 13.
 Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.cs`, `SimulationRules.cs`, `EntityModel.cs`): `docs/map/LARGE_FILES.md`.
@@ -64,7 +64,8 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 
 ## Perception (`Assets/Scripts/EntitySystem/AI/Perception/`)
 
-- `EntitySpatialGrid`: counting-sort buckets of agents; `Survey`, `FindNearest`, `FindInRadius`.
+- `EntitySpatialGrid`: counting-sort buckets of agents; `FindNearest`, `FindInRadius`, `Survey` (the reference for `SurveySystem`, not called in the tick).
+- The grid SoA (colony, alive, HP fraction, cell) is filled in `Rebuild`; `EntityModel.GridSlot` is its slot; death and damage write it in O(1) (`NoteDeath`, `NoteHp`).
 - `ChunkFoodIndex`: food, corpses, payloads and taboo marks per chunk; `TryFindNearestFood`, `TryClaim`, `BiteMeat`.
 - `TerrainSensor`, `TerrainSample`, `TerrainSteering`: terrain rings around an agent and the steering bias from them.
 - `WarmthField`: scalar field on hashed cells. `PlayerPresence`: players as seen by agents (`TryFindNearest`, `ReportHit`).
@@ -73,6 +74,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 
 | System | File | Output |
 |---|---|---|
+| `SurveySystem` | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | Nearest, nearest foreign, crowd and kin from the grid SoA; one job per tick batch |
 | `InstinctSystem` | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | Urges and forced actions; decides whether the brain is asked |
 | `UtilityPriorSystem` | `Assets/Scripts/EntitySystem/AI/Utility/UtilityPriorSystem.cs` | Utility prior for the action choice |
 | `BoidSystem` | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | Flocking vector per agent |
@@ -96,6 +98,7 @@ All are indexed by `EntityModel.ManagerIndex` and expose `RemoveSwapBack`. The r
 ## Invariants
 
 - Agents tick only from `EntityManager.Update`; there is no second tick path.
+- A cycle has two phases around the survey: `EntityModel.BeginCycle` (before) and `ContinueCycle` (after); `RunTickBatch` runs the survey job between the two loops.
 - Simulation time is `SimulationClock`; Unity time is read only where `SimulationClock.Advance` is called.
 - A change of `InputVectorizer.VectorSize`, `PlanCatalog.Count`, `ActionCatalog.Count` or layer sizes increments `SharedBrainSnapshot.Version`.
 - Access to a colony is explicit (`EntityManager.Colonies`, `ColonyRegistry.TryGetById`, `EntityModel.Colony`); nests are not in the `ServiceLocator`.

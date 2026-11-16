@@ -10,6 +10,17 @@ using TheRavine.EntityControl.Virology;
 
 public partial class EntityModel
 {
+    private SurveyInput _surveyInput;
+    private bool   _surveyPending;
+    private double _headNowD;
+    private float  _headDt;
+    private float  _headDayPhase;
+    private bool   _headNight;
+    private float  _headDetect;
+
+    public ref readonly SurveyInput SurveyQuery => ref _surveyInput;
+    public bool SurveyPending => _surveyPending;
+
     private bool IsAliveForTick()
         => !IsDeathPending && !IsDisposed && !Stats.IsDisposed && Stats.Hp > 0f;
 
@@ -21,14 +32,28 @@ public partial class EntityModel
 
     public bool BeginCycle()
     {
-        _cycleActive = false;
+        _cycleActive   = false;
+        _surveyPending = false;
 
         if (IsDisposed || IsDeathPending) return false;
         if (!_isActive.Value) return false;
         if (Stats.IsDisposed || Stats.Hp <= 0f) return false;
 
         Stats.Open();
-        bool ok = RunCycle();
+        bool ok = RunCycleHead();
+        Stats.Commit();
+        _surveyPending = ok;
+        return ok;
+    }
+
+    public bool ContinueCycle(in SurveyOutput survey)
+    {
+        _surveyPending = false;
+
+        if (!IsAliveForTick()) return false;
+
+        Stats.Open();
+        bool ok = RunCycleTail(in survey);
         Stats.Commit();
         return ok;
     }
@@ -57,7 +82,7 @@ public partial class EntityModel
         _dormant = true;
     }
 
-    private bool RunCycle()
+    private bool RunCycleHead()
     {
         ref readonly var rules = ref SimulationRules.Frame;
 
@@ -113,12 +138,48 @@ public partial class EntityModel
         if (!IsAliveForTick()) return false;
 
         Vector3 pos  = Motor.Position();
-        float2  self = new float2(pos.x, pos.z);
         float detect = Tuning.DetectionRadius * math.max(rules.BlindMinDetectionFraction, 1f - mods.Blind * rules.BlindStrength);
 
+        _surveyInput = new SurveyInput
+        {
+            Position      = new float3(pos.x, pos.y, pos.z),
+            NearestRadius = detect,
+            CrowdRadius   = rules.CrowdRadius,
+            ColonyIndex   = Colony != null ? Colony.Index : -1,
+            CrowdCap      = Neighbors.Length,
+            SelfSlot      = GridSlot,
+        };
+
+        _headNowD     = nowD;
+        _headDt       = dt;
+        _headDayPhase = dayPhase;
+        _headNight    = night;
+        _headDetect   = detect;
+        return true;
+    }
+
+    private bool RunCycleTail(in SurveyOutput survey)
+    {
+        ref readonly var rules = ref SimulationRules.Frame;
+        ref var mods = ref Virology.Modifiers;
+
+        double nowD     = _headNowD;
+        float  dt       = _headDt;
+        float  now      = (float)nowD;
+        float  dayPhase = _headDayPhase;
+        bool   night    = _headNight;
+        float  detect   = _headDetect;
+
+        Vector3 pos  = Motor.Position();
+        float2  self = new float2(pos.x, pos.z);
+
         PerceptionMarker.Begin();
-        _nearest = Perception.Survey(pos, this, Colony, detect, rules.CrowdRadius, Neighbors.Length, out _nearestDistance, out _crowd, out _kinCrowd,
-            out _nearestForeign, out _nearestForeignDistance);
+        _nearest         = Perception.ResolveSlot(survey.NearestSlot);
+        _nearestDistance = _nearest != null ? survey.NearestDistance : -1f;
+        _crowd           = survey.Crowd;
+        _kinCrowd        = survey.Kin;
+        _nearestForeign  = Perception.ResolveSlot(survey.ForeignSlot);
+        _nearestForeignDistance = _nearestForeign != null ? survey.ForeignDistance : -1f;
 
         _foodValid    = false;
         _foodDistance = -1f;
@@ -479,8 +540,11 @@ public partial class EntityModel
             StartDecision(in decision);
         }
 
-        _onUpdate.Execute(R3.Unit.Default);
+        var culling = VisualCulling;
+        if (culling == null || culling.IsVisible) _onUpdate.Execute(R3.Unit.Default);
     }
+
+    public void NotifyView() => _onUpdate.Execute(R3.Unit.Default);
 
     private void StartDecision(in BrainDecision decision)
     {

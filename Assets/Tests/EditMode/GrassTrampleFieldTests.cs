@@ -45,6 +45,48 @@ public class GrassTrampleFieldTests
     }
 
     [Test]
+    public void StampBoundsIsEmptyBeforeRecenter()
+    {
+        var field = new GrassTrampleField(null, new GrassTrampleSettings { stampCapacity = 8 });
+        try
+        {
+            float4 b = field.StampBounds;
+            Assert.Greater(b.x, b.z);
+            Assert.Greater(b.y, b.w);
+        }
+        finally
+        {
+            field.Dispose();
+        }
+    }
+
+    [Test]
+    public void PointOutsideStampBoundsIsNeverStamped()
+    {
+        var field = Create(64);
+        try
+        {
+            float4 b = field.StampBounds;
+            float2[] outside =
+            {
+                new float2(b.x - 0.01f, 100f), new float2(100f, b.y - 0.01f),
+                new float2(b.z + 0.01f, 100f), new float2(100f, b.w + 0.01f),
+                new float2(b.x - 50f, b.w + 50f)
+            };
+            for (int i = 0; i < outside.Length; i++) field.Stamp(outside[i], 100f, 0.5f);
+            Assert.AreEqual(0, field.StampCount);
+
+            field.Stamp(new float2(b.x + 0.01f, b.y + 0.01f), 100f, 0.5f);
+            field.Stamp(new float2(b.z - 0.01f, b.w - 0.01f), 100f, 0.5f);
+            Assert.AreEqual(2, field.StampCount);
+        }
+        finally
+        {
+            field.Dispose();
+        }
+    }
+
+    [Test]
     public void OverflowIsDroppedAtCapacity()
     {
         var field = Create(4);
