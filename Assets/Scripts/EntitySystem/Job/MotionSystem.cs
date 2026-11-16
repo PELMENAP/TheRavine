@@ -38,6 +38,7 @@ public struct MotionState
     public byte   Blocked;
     public byte   Obstructed;
     public byte   Stalled;
+    public byte   Held;
 }
 
 public unsafe struct HeightChunk
@@ -185,6 +186,13 @@ public struct MotionJob : IJobParallelFor
         if (Now >= s.Deadline)
         {
             Finish(ref s, 0, 0);
+            States[index] = s;
+            return;
+        }
+
+        if (s.Held != 0)
+        {
+            s.Velocity = float2.zero;
             States[index] = s;
             return;
         }
@@ -425,6 +433,13 @@ public sealed unsafe class MotionSystem : IDisposable
     internal float2 VelocityOf(int index)
         => (uint)index < (uint)_count ? _states[index].Velocity : float2.zero;
 
+    public float2 VelocityBySlot(int slot)
+    {
+        if (!_motionOf.IsCreated || (uint)slot >= (uint)_motionOf.Length) return float2.zero;
+        int motion = _motionOf[slot];
+        return (uint)motion < (uint)_count ? _states[motion].Velocity : float2.zero;
+    }
+
     internal float TakePending(int index)
     {
         if ((uint)index >= (uint)_count) return 0f;
@@ -498,17 +513,21 @@ public sealed unsafe class MotionSystem : IDisposable
             (int)math.floor((z + margin) * invChunk));
     }
 
-    private unsafe void AppendWindow(int4 w, bool generate)
+    private unsafe bool AppendWindow(int4 w, bool request)
     {
+        bool complete = true;
         for (int cz = w.y; cz <= w.w; cz++)
         for (int cx = w.x; cx <= w.z; cx++)
         {
             long key = Position2Int.Pack(cx, cz);
             if (_atlasIndex.ContainsKey(key)) continue;
 
-            ChunkData chunk;
-            if (generate) chunk = _map.GetMapData(cx, cz);
-            else if (!_map.TryGetChunk(key, out chunk) || chunk == null) continue;
+            if (!_map.TryGetChunk(key, out ChunkData chunk) || chunk == null)
+            {
+                if (request) _map.RequestChunk(key);
+                complete = false;
+                continue;
+            }
 
             _atlasIndex.Add(key, _atlasChunks.Length);
             _atlasChunks.Add(new HeightChunk
@@ -517,6 +536,16 @@ public sealed unsafe class MotionSystem : IDisposable
                 Obstacles = chunk.ObstacleView()
             });
         }
+        return complete;
+    }
+
+    private void SetHeld(int motion, bool held)
+    {
+        MotionState s = _states[motion];
+        byte flag = held ? (byte)1 : (byte)0;
+        if (s.Held == flag) return;
+        s.Held = flag;
+        _states[motion] = s;
     }
 
     private void SyncAtlas()
@@ -540,8 +569,9 @@ public sealed unsafe class MotionSystem : IDisposable
                 float3 p = _positions[_owners[i]];
                 int4 w = WindowOf(p.x, p.z, margin);
                 if (math.all(w == _windows[i])) continue;
-                AppendWindow(w, true);
-                _windows[i] = w;
+                bool complete = AppendWindow(w, true);
+                _windows[i] = complete ? w : Unwindowed;
+                SetHeld(i, !complete);
             }
         }
         while (stamp != _map.UnloadStamp);

@@ -38,6 +38,8 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 4. Missing chunks of the simulated square are supplied by `SupplySimSquare`, inside out, with half of the remaining `FrameBudget`.
 5. Each endless layer gets `Tick(deadline)`; then `ProcessChunkRequests(deadline)`.
 6. Far chunks are evicted (`EvictChunks`) unless they need saving, were used recently, or `IsRetained`.
+7. `SupplyLookahead` (before the endless layers, half of the remaining budget): within `lookaheadEdgeFraction` of a chunk edge the neighbour window is ensured; `IsRetained` keeps it.
+8. `MoveWindow` is the fallback for a teleport; the chunks it streams are counted in `RandomTickStats.MoveWindowChunks`, lookahead ones in `LookaheadChunks`.
 
 ## Endless layers (`Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/`)
 

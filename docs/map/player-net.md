@@ -11,6 +11,7 @@ Open security findings: `docs/audit/security_audit.md`.
 
 | Type | File | Role |
 |---|---|---|
+| `AgentSnapshotStream` | `Assets/Scripts/EntitySystem/AI/Population/AgentSnapshotStream.cs` | Server: agents by area of interest to every remote client |
 | `PlayerController` | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | All player RPCs, server movement integration, world edits |
 | `PlayerModelView` | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerModelView.cs` | Player view model; `OnNetworkSpawn` initialisation; camera request |
 | `PlayerEntity` | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerEntity.cs` | Player entity; metabolism on the authority; `ApplyServerVitals` on clients |
@@ -29,6 +30,13 @@ Open security findings: `docs/audit/security_audit.md`.
 | `WorldEdits` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | `TryPlace`, `TryPickUp` validation on the server |
 
 `PlayerController.cs` is over 500 lines: take the member's line from `docs/map/LARGE_FILES.md`.
+
+## Agent replication
+
+- Agents are not `NetworkObject`s (`EntityManager.snapshotStream`): the server sends each remote client the agents inside `snapshotRadius` of its player.
+- `AgentSnapshotStream` (server, `Assets/Scripts/EntitySystem/AI/Population/AgentSnapshotStream.cs`): named message `ravine.agents`, unreliable sequenced, at most 64 agents of 12 bytes each.
+- `AgentSnapshotCodec` is the wire format; `AgentPuppets` (client) validates every message, keeps a bounded pool of bodies and removes a body when its time to live passes.
+- The host sees the real bodies. Clients send nothing: the area of interest is taken from the server's own position of the player.
 
 ## Data flow
 

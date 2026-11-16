@@ -181,6 +181,7 @@ Every RPC of the project is in this table. A new RPC is added here in the same c
 | `PlayerController.PlaceResultClientRpc` | server → client | — | one per request | owner |
 | `PlayerController.PickUpResultClientRpc` | server → client | — | one per request | owner |
 | `PlayerModelView.NotifyCameraCreatedClientRpc` | server → clients | — | one per camera | all |
+| `AgentSnapshotStream` named message `ravine.agents` | server → clients; no client input | the area of interest is the server's own position of the player; the client checks sender, length, version, count, time to live, finite origin, id > 0 | one message per ≤ 64 agents; `snapshotAgentsPerTick` per client per `snapshotInterval`; client pool is `maxPopulation + PredatorCount` | each client, by its own area |
 
 Rows that do not meet the principles yet (edit results reaching only the owner) are open gaps, tracked in the audit. The table states what the code does, not what it should do.
 

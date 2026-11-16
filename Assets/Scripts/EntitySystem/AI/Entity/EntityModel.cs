@@ -467,8 +467,13 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public ref readonly TerrainSample LastTerrain => ref _lastTerrain;
 
     public float2 DeathPosition;
+    public int GridSlot = -1;
     public bool IsDeathPending { get; private set; }
-    public void MarkDeathPending() => IsDeathPending = true;
+    public void MarkDeathPending()
+    {
+        IsDeathPending = true;
+        _grid?.NoteDeath(this);
+    }
 
     private int _managerIndex = -1;
     public int ManagerIndex
@@ -670,6 +675,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     {
         if (IsDisposed) return;
         IsDisposed = true;
+        _grid?.NoteDeath(this);
 
         DeepClean();
 

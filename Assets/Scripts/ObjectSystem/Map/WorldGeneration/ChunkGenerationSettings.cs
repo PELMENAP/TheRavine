@@ -45,6 +45,7 @@ namespace TheRavine.Generator
         [Min(0)] public int evictionIdleFrames = 120;
         [Min(0.1f)] public float evictionScanInterval = 5f;
         [Min(0)] public int chunkPoolCapacity = 64;
+        [Range(0f, 0.5f)] public float lookaheadEdgeFraction = 0.35f;
 
         [Header("Curved World")]
         [Min(0f)] public float curveRadius = 3000f;

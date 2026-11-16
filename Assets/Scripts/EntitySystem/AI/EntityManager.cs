@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Unity.Netcode;
 
+using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
@@ -45,6 +46,15 @@ public class EntityManager : MonoBehaviour
     [Header("Speech audio")]
     [SerializeField] private bool speechAudio = true;
     [SerializeField] private bool speechLabels = true;
+
+    [Header("Snapshot stream")]
+    [SerializeField] private bool  snapshotStream = true;
+    [SerializeField, Min(0.02f)] private float snapshotInterval = 0.1f;
+    [SerializeField, Min(1f)] private float snapshotRadius = 320f;
+    [SerializeField, Min(1)] private int snapshotAgentsPerTick = 256;
+    [SerializeField, Min(0f)] private float puppetSmoothing = 12f;
+    private AgentSnapshotStream _snapshots;
+    private AgentPuppets _puppets;
 
     [Header("Visual culling")]
     [SerializeField] private bool cullOutsideActiveChunks = true;
@@ -100,6 +110,7 @@ public class EntityManager : MonoBehaviour
     public ColonyRegistry Colonies => _colonies;
 
     private InstinctSystem _instincts;
+    private SurveySystem _survey;
     private BoidSystem _boids;
     private readonly PlayerPresence _players = new();
     public PlayerPresence Players => _players;
@@ -173,7 +184,11 @@ public class EntityManager : MonoBehaviour
 
         if (_rulesMissing) return;
 
-        if (!TheRavine.Base.WorldAuthority.IsAuthority) return;
+        if (!TheRavine.Base.WorldAuthority.IsAuthority)
+        {
+            TickPuppets();
+            return;
+        }
 
         if (_simulationStarted)
         {
@@ -208,19 +223,46 @@ public class EntityManager : MonoBehaviour
         _planner.Flush();
         _motion.Step();
         StampAgents(SimulationClock.DeltaTime);
+        TickSnapshots();
+    }
+
+    private void TickSnapshots()
+    {
+        if (!snapshotStream) return;
+
+        _snapshots ??= new AgentSnapshotStream(_capacity);
+        _snapshots.Tick(SimulationClock.TimeD, _motion, _entities, snapshotInterval, snapshotRadius, snapshotAgentsPerTick);
+    }
+
+    private void TickPuppets()
+    {
+        if (!snapshotStream) return;
+
+        NetworkManager network = NetworkManager.Singleton;
+        if (network == null || !network.IsListening || !network.IsClient || network.IsServer) return;
+
+        _puppets ??= new AgentPuppets(entityPrefab, transform, _capacity);
+        _puppets.Tick(SimulationClock.TimeD, Time.deltaTime, puppetSmoothing);
     }
 
     private void StampAgents(float dt)
     {
-        if (dt <= 0f || _entities.Count == 0) return;
+        int count = _entities.Count;
+        if (dt <= 0f || count == 0) return;
         if ((_trample == null || _trample.IsDisposed) && !ServiceLocator.Services.TryGet(out _trample)) return;
 
-        for (int i = 0; i < _entities.Count; i++)
+        NativeArray<float3> positions = _motion.Positions;
+        if (!positions.IsCreated) return;
+
+        float4 bounds = _trample.StampBounds;
+        for (int i = 0; i < count; i++)
         {
+            float3 p = positions[i];
+            if (p.x < bounds.x || p.z < bounds.y || p.x > bounds.z || p.z > bounds.w) continue;
+
             var e = _entities[i];
             if (e == null || e.IsDisposed || e.IsDeathPending) continue;
-            Vector3 v = e.Motor is IVelocitySource source ? source.Velocity : Vector3.zero;
-            _trample.StampCreature(e.Position2D, new float2(v.x, v.z), e.Stats.MaxEnergy, dt);
+            _trample.StampCreature(p.xz, _motion.VelocityBySlot(i), e.Stats.MaxEnergy, dt);
         }
     }
 
@@ -303,6 +345,7 @@ public class EntityManager : MonoBehaviour
         _motion = new MotionSystem(_capacity);
         ServiceLocator.Register(_motion);
         _instincts = new InstinctSystem(_capacity);
+        _survey    = new SurveySystem(_capacity);
         _boids     = new BoidSystem(_capacity);
         _utility    = new UtilityPriorSystem(_capacity);
         _thresholds = new CasteThresholdSystem(_capacity);
@@ -332,7 +375,7 @@ public class EntityManager : MonoBehaviour
         _soilFeed   = new SoilShaderFeed();
         _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue));
         _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, _capacity, spawnRadius,
-            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _utility, _thresholds, _boids, _ledger, _speech);
+            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _survey, _utility, _thresholds, _boids, _ledger, _speech, !snapshotStream);
         _population.Spawned += RaiseSpawned;
         _population.Died    += RaiseDied;
 
@@ -550,7 +593,7 @@ public class EntityManager : MonoBehaviour
         BeginColonyBatches();
         _players.Refresh();
 
-        int lo = int.MaxValue, hi = -1;
+        int surveyLo = int.MaxValue, surveyHi = -1;
         for (int i = start; i < end; i++)
         {
             var e = _tickSnapshot[i];
@@ -558,6 +601,22 @@ public class EntityManager : MonoBehaviour
             if (!e.BeginCycle()) continue;
 
             int idx = e.ManagerIndex;
+            _survey.Write(idx, in e.SurveyQuery);
+            if (idx < surveyLo) surveyLo = idx;
+            if (idx > surveyHi) surveyHi = idx;
+        }
+
+        if (surveyHi >= surveyLo) _survey.Schedule(_grid, surveyLo, surveyHi + 1).Complete();
+
+        int lo = int.MaxValue, hi = -1;
+        for (int i = start; i < end; i++)
+        {
+            var e = _tickSnapshot[i];
+            if (e == null || e.IsDisposed || !e.SurveyPending) continue;
+
+            int idx = e.ManagerIndex;
+            if (!e.ContinueCycle(_survey.Output(idx))) continue;
+
             _instincts.Write(idx, in e.InstinctInput);
             _utility.Write(idx, in e.UtilityInput);
             if (idx < lo) lo = idx;
@@ -773,7 +832,12 @@ public class EntityManager : MonoBehaviour
     public void SetEntityVisible(EntityModel model, bool visible)
     {
         if (model == null || model.IsDisposed) return;
-        model.VisualCulling?.SetVisible(visible);
+        var culling = model.VisualCulling;
+        if (culling == null) return;
+
+        bool wasVisible = culling.IsVisible;
+        culling.SetVisible(visible);
+        if (visible && !wasVisible && culling.IsVisible) model.NotifyView();
     }
 
     public void SetEntitiesVisible(IReadOnlyList<EntityModel> targets, bool visible)
@@ -920,6 +984,7 @@ public class EntityManager : MonoBehaviour
         SimulationRules.ReleaseVariant();
         _soilFeed?.Dispose();
         _simulationLog?.Dispose();
+        _puppets?.Dispose();
         UnregisterServices();
         for (int i = 0; i < _nestViews.Count; i++)
             if (_nestViews[i] != null) Destroy(_nestViews[i].gameObject);
@@ -931,6 +996,7 @@ public class EntityManager : MonoBehaviour
         _planner?.Dispose();
         _motion?.Dispose();
         _instincts?.Dispose();
+        _survey?.Dispose();
         _boids?.Dispose();
         _utility?.Dispose();
         _thresholds?.Dispose();

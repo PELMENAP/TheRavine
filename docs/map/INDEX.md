@@ -22,21 +22,21 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 18 | 2252 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
-| `Assets/Scripts/EntitySystem/AI` | 10 | 1970 |
+| `Assets/Scripts/EntitySystem/AI` | 10 | 2036 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
 | `Assets/Scripts/EntitySystem/AI/Colony` | 7 | 749 |
 | `Assets/Scripts/EntitySystem/AI/Debug` | 3 | 1601 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 784 |
-| `Assets/Scripts/EntitySystem/AI/Entity` | 16 | 2449 |
+| `Assets/Scripts/EntitySystem/AI/Entity` | 16 | 2520 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 23 | 1384 |
-| `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 692 |
+| `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 676 |
 | `Assets/Scripts/EntitySystem/AI/Flock` | 1 | 230 |
 | `Assets/Scripts/EntitySystem/AI/Instinct` | 1 | 382 |
 | `Assets/Scripts/EntitySystem/AI/LSTM` | 2 | 198 |
 | `Assets/Scripts/EntitySystem/AI/Nest` | 1 | 385 |
-| `Assets/Scripts/EntitySystem/AI/Perception` | 8 | 1999 |
+| `Assets/Scripts/EntitySystem/AI/Perception` | 9 | 2271 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 489 |
-| `Assets/Scripts/EntitySystem/AI/Population` | 4 | 722 |
+| `Assets/Scripts/EntitySystem/AI/Population` | 7 | 1210 |
 | `Assets/Scripts/EntitySystem/AI/Rules` | 9 | 2722 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI` | 21 | 3442 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 7 | 1099 |
@@ -56,7 +56,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/Info` | 1 | 24 |
 | `Assets/Scripts/EntitySystem/Info/InteractionComponent` | 2 | 55 |
 | `Assets/Scripts/EntitySystem/InteractionSystem` | 1 | 8 |
-| `Assets/Scripts/EntitySystem/Job` | 9 | 3108 |
+| `Assets/Scripts/EntitySystem/Job` | 9 | 3138 |
 | `Assets/Scripts/EntitySystem/PlayerTasks` | 3 | 92 |
 | `Assets/Scripts/EntitySystem/StaticNPC` | 1 | 1 |
 | `Assets/Scripts/EntitySystem/Virology` | 16 | 2523 |
@@ -82,16 +82,16 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents` | 3 | 151 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire` | 3 | 791 |
 | `Assets/Scripts/ObjectSystem/Map/Tools` | 3 | 2780 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 13 | 3796 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 13 | 3867 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs` | 5 | 742 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision` | 7 | 396 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator` | 5 | 628 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator` | 5 | 639 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless` | 7 | 1506 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator` | 4 | 400 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering` | 3 | 621 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/RippleSystem` | 3 | 169 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/StructGenerator` | 5 | 446 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Ticks` | 5 | 496 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Ticks` | 5 | 497 |
 | `Assets/Scripts/ObjectSystem/ObjectInfo` | 3 | 184 |
 | `Assets/Scripts/ObjectSystem/ObjectInfo/NAL` | 2 | 20 |
 | `Assets/Scripts/ObjectSystem/TreeGenerator` | 2 | 145 |
@@ -115,7 +115,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/View` | 2 | 23 |
-| `Assets/Tests/EditMode` | 46 | 5742 |
+| `Assets/Tests/EditMode` | 48 | 6339 |
 
 ## Assemblies
 
@@ -185,7 +185,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | CasteModifiers | struct | `Assets/Scripts/EntitySystem/AI/Entity/EntityTuning.cs` | 13 |
 | Cell | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/StructGenerator/WaveFunctionCollapseAlgorithm.cs` | 17 |
 | ChecksumInteractor | class | `Assets/Scripts/Terminal/Rive/Core/RiveInteractors.cs` | 102 |
-| ChunkData | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1296 |
+| ChunkData | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1366 |
 | ChunkEntityData | class | `Assets/Scripts/EntitySystem/MobGenerator.cs` | 249 |
 | ChunkObjects | struct | `Assets/Scripts/EntitySystem/Job/BirdPerchIndex.cs` | 24 |
 | ChunkTickSource | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Ticks/RandomTickJob.cs` | 10 |
@@ -252,8 +252,8 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | GetInputNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 47 |
 | GrassTextureArrayFactory | class | `Assets/Scripts/Editor/GrassTextureArrayBaker.cs` | 32 |
 | GrassTrampleSettings | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassTrampleField.cs` | 8 |
-| HeightAtlas | struct | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 49 |
-| HeightChunk | struct | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 43 |
+| HeightAtlas | struct | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 50 |
+| HeightChunk | struct | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 44 |
 | HeightWindow | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/TerrainMeshJobs.cs` | 12 |
 | HelpCommand | class | `Assets/Scripts/Terminal/BaseCommands.cs` | 11 |
 | HostState | struct | `Assets/Scripts/EntitySystem/Virology/Ribosome.cs` | 72 |
@@ -319,8 +319,8 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | MimicWork | struct | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/MimicLegJob.cs` | 6 |
 | MobNAL | class | `Assets/Scripts/EntitySystem/MobGenerator.cs` | 274 |
 | MobSpawnData | struct | `Assets/Scripts/EntitySystem/MobGenerator.cs` | 267 |
-| MotionApplyJob | struct | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 283 |
-| MotionJob | struct | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 147 |
+| MotionApplyJob | struct | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 291 |
+| MotionJob | struct | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 148 |
 | MotionState | struct | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 12 |
 | MoveIntent | enum | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | 8 |
 | MoveMobsJob | struct | `Assets/Scripts/EntitySystem/Job/MoveJob.cs` | 253 |
@@ -333,7 +333,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | NegativePoint | struct | `Assets/Scripts/EntitySystem/AI/Entity/Components/PointsOfInterestComponent.cs` | 10 |
 | NetWeights | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 21 |
 | NewScriptCommand | class | `Assets/Scripts/Terminal/Rive/RiveRedactorCommands.cs` | 329 |
-| ObjectInstInfo | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1778 |
+| ObjectInstInfo | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1848 |
 | ObjectSpawnConfig | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator/ObjectGeneratorStructures.cs` | 36 |
 | ObjectViewMotionSettings | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/ObjectViewMotion.cs` | 7 |
 | Pair | struct | `Assets/Scripts/Core/Utilities/Extentions.cs` | 97 |
@@ -417,7 +417,10 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | SpeechSyllableJob | struct | `Assets/Scripts/EntitySystem/AI/Speech/SpeechVoiceBank.cs` | 7 |
 | StatementNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 55 |
 | StringBuilderNumeric | class | `Assets/Scripts/EntitySystem/AI/Debug/NestDebugView.cs` | 305 |
-| StructureSpawnPoint | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1761 |
+| StructureSpawnPoint | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1831 |
+| SurveyInput | struct | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | 8 |
+| SurveyJob | struct | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | 37 |
+| SurveyOutput | struct | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | 19 |
 | TeleportCommand | class | `Assets/Scripts/Terminal/SetPlayerCommand.cs` | 26 |
 | TerminalCommandNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 89 |
 | TerrainIndexBuilder | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/TerrainMeshJobs.cs` | 168 |

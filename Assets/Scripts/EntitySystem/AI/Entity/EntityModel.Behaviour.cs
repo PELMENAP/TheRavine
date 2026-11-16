@@ -109,6 +109,7 @@ public partial class EntityModel
         if (source != null) Points?.MarkNegative(Position2D, r.NegativePoiHit);
         Mortality?.NoteHarm(cause, Stats.Hp - amount);
         Stats.Hp -= amount;
+        _grid?.NoteHp(this, Stats.Hp, Stats.MaxHealth);
         if (source != null && !ReferenceEquals(source, this))
         {
             _lastAttacker   = source;
