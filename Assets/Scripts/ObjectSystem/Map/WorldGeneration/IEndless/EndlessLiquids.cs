@@ -66,11 +66,9 @@ namespace TheRavine.Generator
                 sector = generator.Sector;
                 ringCount = generator.LodRingCount;
                 baseCells = math.clamp(math.ceilpow2(settings.waterCells), MinCells, MaxCells);
-                float reach = (ringCount * MapGenerator.WindowSide + 2) * MapGenerator.chunkSize * 1.4143f;
-                float boundsHeight = BoundsHeight + 2f * CurvedWorld.MaxDrop(reach);
                 localBounds = new Bounds(
                     new Vector3(BlockWorld * 0.5f, 0f, BlockWorld * 0.5f),
-                    new Vector3(BlockWorld, boundsHeight, BlockWorld));
+                    new Vector3(BlockWorld, BoundsHeight, BlockWorld));
 
                 Transform central0 = generator.waterTransform;
                 central0.localScale = Vector3.one;
@@ -281,13 +279,21 @@ namespace TheRavine.Generator
                 Vector3 origin = MapGenerator.WindowOriginWorld(center);
                 origin.y = generator.waterOffset.y;
 
-                central.Transform.position = origin;
+                PlaceBlock(central, origin);
                 for (int i = 0; i < pool.Length; i++)
                 {
                     WaterBlock block = pool[i];
                     if (block.Level < 0) continue;
-                    block.Transform.position = origin + new Vector3(block.Bx * BlockWorld, 0f, block.Bz * BlockWorld);
+                    PlaceBlock(block, origin + new Vector3(block.Bx * BlockWorld, 0f, block.Bz * BlockWorld));
                 }
+            }
+
+            private void PlaceBlock(WaterBlock block, Vector3 position)
+            {
+                float2 span = generator.Ravine.ElevationRange(position.z, position.z + BlockWorld);
+                block.Renderer.enabled = span.x == span.y;
+                position.y += span.x;
+                block.Transform.position = position;
             }
 
             public void Tick(long deadline) { }

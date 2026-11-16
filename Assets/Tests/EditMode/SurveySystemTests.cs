@@ -13,7 +13,8 @@ public class SurveySystemTests
     [TearDown]
     public void TearDown() => TestRules.Release(_rules);
 
-    private static SurveyInput Query(EntityModel self, NativeArray<float3> positions, float nearest, float crowd, int cap)
+    private static SurveyInput Query(EntityModel self, NativeArray<float3> positions, float nearest, float crowd, int cap,
+        EntityModel victim = null, float stickMul = 1f, float lowHpMul = 1f, EntityModel familiar = null, float familiarMul = 1f)
         => new SurveyInput
         {
             Position      = positions[self.ManagerIndex],
@@ -22,7 +23,20 @@ public class SurveySystemTests
             ColonyIndex   = self.Colony != null ? self.Colony.Index : -1,
             CrowdCap      = cap,
             SelfSlot      = self.GridSlot,
+            VictimSlot    = victim != null ? victim.GridSlot : -1,
+            FamiliarSlot  = familiar != null ? familiar.GridSlot : -1,
+            StickMul      = stickMul,
+            LowHpMul      = lowHpMul,
+            FamiliarMul   = familiarMul,
         };
+
+    private static void SetStats(EntityModel model, float hp, float max)
+    {
+        var stats = new StatsComponent();
+        stats.FillComponent(max, max);
+        stats.Hp = hp;
+        typeof(EntityModel).GetProperty("Stats").GetSetMethod(true).Invoke(model, new object[] { stats });
+    }
 
     [Test]
     public void JobMatchesManagedSurveyOnRandomPopulations()
@@ -51,6 +65,7 @@ public class SurveySystemTests
                     models[i] = new EntityModel { ManagerIndex = i };
                     int pick = rng.Next(4);
                     if (pick < 3) EntitySpatialGridSurveyTests.SetColony(models[i], colonies[pick]);
+                    if (rng.Next(5) != 0) SetStats(models[i], 1f + (float)rng.NextDouble() * 99f, 100f);
                 }
 
                 grid.Rebuild(models, n, 100f, positions);
@@ -63,12 +78,24 @@ public class SurveySystemTests
 
                 var radii = new float[n];
                 var crowdRadii = new float[n];
+                var victims = new EntityModel[n];
+                var familiars = new EntityModel[n];
+                var sticks = new float[n];
+                var lowHp = new float[n];
+                var familiarMul = new float[n];
                 for (int i = 0; i < n; i++)
                 {
                     if (models[i].IsDeathPending) continue;
                     radii[i]      = 20f + (float)rng.NextDouble() * 150f;
                     crowdRadii[i] = 5f + (float)rng.NextDouble() * 60f;
-                    system.Write(i, Query(models[i], positions, radii[i], crowdRadii[i], 4096));
+                    victims[i]    = rng.Next(3) == 0 ? models[rng.Next(n)] : null;
+                    familiars[i]  = rng.Next(3) == 0 ? models[rng.Next(n)] : null;
+                    if (familiars[i] != null && familiars[i].Stats == null) familiars[i] = null;
+                    sticks[i]     = 0.4f + (float)rng.NextDouble();
+                    lowHp[i]      = 0.5f + (float)rng.NextDouble() * 0.5f;
+                    familiarMul[i] = 0.5f + (float)rng.NextDouble();
+                    system.Write(i, Query(models[i], positions, radii[i], crowdRadii[i], 4096,
+                        victims[i], sticks[i], lowHp[i], familiars[i], familiarMul[i]));
                 }
 
                 system.Schedule(grid, 0, n).Complete();
@@ -80,7 +107,8 @@ public class SurveySystemTests
                     var o = system.Output(i);
 
                     var nearest = grid.Survey((Vector3)positions[i], self, self.Colony, radii[i], crowdRadii[i], 4096,
-                        out float nearestDistance, out int crowd, out int kin, out var foreign, out float foreignDistance);
+                        out float nearestDistance, out int crowd, out int kin, out var foreign, out float foreignDistance,
+                        victims[i], sticks[i], lowHp[i], familiars[i]?.Stats, familiarMul[i]);
 
                     string what = $"seed {seed} agent {i}";
                     Assert.AreSame(nearest, grid.ModelAt(o.NearestSlot), what);
@@ -185,7 +213,11 @@ public class SurveySystemTests
         var system = new SurveySystem(8);
         try
         {
-            var input = new SurveyInput { Position = new float3(1f, 2f, 3f), NearestRadius = 10f, CrowdRadius = 5f, CrowdCap = 16, SelfSlot = -1 };
+            var input = new SurveyInput
+            {
+                Position = new float3(1f, 2f, 3f), NearestRadius = 10f, CrowdRadius = 5f, CrowdCap = 16,
+                SelfSlot = -1, VictimSlot = -1, FamiliarSlot = -1, StickMul = 1f, LowHpMul = 1f, FamiliarMul = 1f
+            };
             int sink = 0;
             AllocationAssert.Zero(() =>
             {

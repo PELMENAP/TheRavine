@@ -64,7 +64,7 @@ public sealed class EntitySpatialGrid : IDisposable
     public void NoteHp(EntityModel model, float hp, float maxHealth)
     {
         int slot = model.GridSlot;
-        if ((uint)slot < (uint)_count) _hp[slot] = maxHealth > 0f ? math.saturate(hp / maxHealth) : 0f;
+        if ((uint)slot < (uint)_count) _hp[slot] = maxHealth > 0f ? math.saturate(hp / maxHealth) : 1f;
     }
 
     public float HpFractionOf(EntityModel model)
@@ -77,6 +77,14 @@ public sealed class EntitySpatialGrid : IDisposable
 
     public EntityModel LiveModelAt(int slot)
         => (uint)slot < (uint)_count && _alive[slot] != 0 ? _models[slot] : null;
+
+    private int SlotOfStats(StatsComponent key)
+    {
+        if (key == null) return -1;
+        for (int i = 0; i < _count; i++)
+            if (ReferenceEquals(_models[i].Stats, key)) return i;
+        return -1;
+    }
 
     public unsafe int ReserveEpochs(int count)
     {
@@ -123,7 +131,7 @@ public sealed class EntitySpatialGrid : IDisposable
             _colony[written] = e.Colony != null ? e.Colony.Index : NoColony;
             _alive[written]  = 1;
             var stats = e.Stats;
-            _hp[written]     = stats != null && stats.MaxHealth > 0f ? math.saturate(stats.Hp / stats.MaxHealth) : 1f;
+            _hp[written]     = stats != null && !stats.IsDisposed && stats.MaxHealth > 0f ? math.saturate(stats.Hp / stats.MaxHealth) : 1f;
             e.GridSlot       = written;
 
             int cellX = CellCoord(p.x);
@@ -197,7 +205,9 @@ public sealed class EntitySpatialGrid : IDisposable
     public EntityModel Survey(Vector3 origin, EntityModel self, ColonyState colony,
         float nearestRadius, float crowdRadius, int crowdCap,
         out float nearestDistance, out int crowd, out int kin,
-        out EntityModel foreign, out float foreignDistance)
+        out EntityModel foreign, out float foreignDistance,
+        EntityModel lastVictim = null, float stickMul = 1f, float lowHpMul = 1f,
+        StatsComponent familiarKey = null, float familiarMul = 1f)
     {
         using var scope = SurveyMarker.Auto();
         nearestDistance = -1f;
@@ -216,11 +226,14 @@ public sealed class EntitySpatialGrid : IDisposable
         int   cz    = CellCoord(origin.z);
         int   epoch = NextEpoch();
 
-        int selfSlot    = self != null ? self.GridSlot : -1;
-        int bestSlot    = -1;
-        int foreignSlot = -1;
+        int selfSlot     = self != null ? self.GridSlot : -1;
+        int victimSlot   = lastVictim != null ? lastVictim.GridSlot : -1;
+        int familiarSlot = SlotOfStats(familiarKey);
+        int bestSlot     = -1;
+        int foreignSlot  = -1;
         float minSqr = float.MaxValue;
         float minForeignSqr = float.MaxValue;
+        float minForeignScore = float.MaxValue;
 
         for (int dz = -ring; dz <= ring; dz++)
         for (int dx = -ring; dx <= ring; dx++)
@@ -243,7 +256,7 @@ public sealed class EntitySpatialGrid : IDisposable
 
                 bool asNearest = sqr <= nr2 && sqr < minSqr;
                 bool asCrowd   = sqr <= cr2 && crowd < crowdCap;
-                bool asForeign = sqr <= nr2 && sqr < minForeignSqr && _colony[i] != colonyIndex;
+                bool asForeign = sqr <= nr2 && _colony[i] != colonyIndex;
                 if (!asNearest && !asCrowd && !asForeign) continue;
                 if (i == selfSlot || _alive[i] == 0) continue;
 
@@ -259,8 +272,14 @@ public sealed class EntitySpatialGrid : IDisposable
                 }
                 if (asForeign)
                 {
-                    minForeignSqr = sqr;
-                    foreignSlot   = i;
+                    float score = math.sqrt(sqr) * (i == victimSlot ? stickMul : 1f) * math.lerp(lowHpMul, 1f, _hp[i])
+                                * (i == familiarSlot ? familiarMul : 1f);
+                    if (score < minForeignScore)
+                    {
+                        minForeignScore = score;
+                        minForeignSqr   = sqr;
+                        foreignSlot     = i;
+                    }
                 }
             }
         }

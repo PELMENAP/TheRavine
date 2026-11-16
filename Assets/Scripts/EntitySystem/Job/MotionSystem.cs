@@ -164,6 +164,7 @@ public struct MotionJob : IJobParallelFor
     public float  BlockedSpeedThreshold;
     public float  BlockedSeconds;
     public float  WaterLevel;
+    public RavineProfile Ravine;
     public float  WaterSpeedMul;
     public float  WaterDrainMul;
 
@@ -206,9 +207,9 @@ public struct MotionJob : IJobParallelFor
         if (s.Frame == 0)
         {
             s.SpeedModifier = Atlas.SpeedModifier(pos.x, pos.z, dir);
-            float ground = Atlas.SampleHeight(pos.x, pos.z);
-            s.WaterSpeed = MapGenerator.WaterModifier(ground, WaterLevel, WaterSpeedMul);
-            s.WaterDrain = MapGenerator.WaterModifier(ground, WaterLevel, WaterDrainMul);
+            float aboveWater = MapGenerator.AboveWater(in Ravine, Atlas.SampleHeight(pos.x, pos.z), pos.z, WaterLevel);
+            s.WaterSpeed = MapGenerator.WaterModifier(aboveWater, WaterSpeedMul);
+            s.WaterDrain = MapGenerator.WaterModifier(aboveWater, WaterDrainMul);
         }
         if (++s.Frame >= SpeedResampleFrames) s.Frame = 0;
 
@@ -483,6 +484,7 @@ public sealed unsafe class MotionSystem : IDisposable
             BlockedSpeedThreshold = SimulationRules.Frame.BlockedSpeedThreshold,
             BlockedSeconds        = SimulationRules.Frame.BlockedSeconds,
             WaterLevel            = SimulationRules.Frame.WaterLevel,
+            Ravine                = _map.Ravine,
             WaterSpeedMul         = SimulationRules.Frame.WaterSpeedMul,
             WaterDrainMul         = SimulationRules.Frame.WaterDrainMul,
         }.Schedule(_count, JobBatch);

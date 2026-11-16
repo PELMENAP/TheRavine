@@ -17,6 +17,14 @@ public static class ObjectGrowthMath
         return Vector3.one;
     }
 
+    public static Vector3 ApplyFraction(Vector3 ratio, float fraction)
+    {
+        return new Vector3(
+            Mathf.Max(1f, ratio.x * fraction),
+            Mathf.Max(1f, ratio.y * fraction),
+            Mathf.Max(1f, ratio.z * fraction));
+    }
+
     public static Vector3 SizeAtBase(Vector3 boundsSize, Vector3 localScale, Vector3 baseScale)
     {
         return new Vector3(

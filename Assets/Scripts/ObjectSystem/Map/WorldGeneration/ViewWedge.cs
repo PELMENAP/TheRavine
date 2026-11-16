@@ -109,6 +109,23 @@ namespace TheRavine.Generator
             return max;
         }
 
+        public static int MaxBlocksInRing(int ring)
+        {
+            if (ring < 1 || ring > MaxBlockRadius) return 0;
+
+            int max = 0;
+            for (int s = 0; s < ViewSector.Count; s++)
+            {
+                ViewSector sector = ViewSector.FromIndex(s);
+                int n = 0;
+                for (int bz = -ring; bz <= ring; bz++)
+                for (int bx = -ring; bx <= ring; bx++)
+                    if (Ring(bx, bz) == ring && Contains(sector, bx, bz)) n++;
+                max = math.max(max, n);
+            }
+            return max;
+        }
+
         private static bool Before(in ViewBlock a, in ViewBlock b) =>
             a.Ring != b.Ring ? a.Ring < b.Ring : a.Lateral < b.Lateral;
     }

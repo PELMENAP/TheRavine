@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Mathematics;
+using UnityEngine;
 
 public class SoaSwapBackTests
 {
@@ -71,7 +72,8 @@ public class SoaSwapBackTests
             {
                 system.Write(i, new SurveyInput
                 {
-                    Position = positions[i], NearestRadius = 20f, CrowdRadius = 20f, ColonyIndex = -1, CrowdCap = 16, SelfSlot = models[i].GridSlot
+                    Position = positions[i], NearestRadius = 20f, CrowdRadius = 20f, ColonyIndex = -1, CrowdCap = 16, SelfSlot = models[i].GridSlot,
+                    VictimSlot = -1, FamiliarSlot = -1, StickMul = 1f, LowHpMul = 1f, FamiliarMul = 1f
                 });
             }
             system.Schedule(grid, 0, n).Complete();
@@ -114,6 +116,62 @@ public class SoaSwapBackTests
         finally
         {
             system.Dispose();
+        }
+    }
+
+    [Test]
+    public void SkillGraphStoreMovesEveryBufferOnSwapBack()
+    {
+        var atlas = SkillAtlas.BuildDefault();
+        var topology = SkillGraphTopology.Create(atlas, default);
+        var store = new SkillGraphStore(3, atlas.Count);
+        try
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                store.Reset(i, atlas.PositionOf(i), topology, atlas);
+                store.SetLevel(i, 2, 10f * (i + 1), 5f * (i + 1));
+                store.ClearDirty(i);
+            }
+            store.MarkDirty(2);
+            var genes = GeneticParameters.Default;
+            genes.PlastNeed = 1.75f;
+            store.Retarget(2, in genes, topology, atlas);
+            store.SetColony(2, 5);
+            int lastRoot = store.Root(2);
+            float lastTalent = store.Talent(2, 4);
+
+            store.RemoveSwapBack(0, 2);
+
+            Assert.AreEqual(30f, store.Level(0, 2));
+            Assert.AreEqual(30f, store.Peak(0, 2));
+            Assert.AreEqual(15f, store.LastUsed[0 * atlas.Count + 2]);
+            Assert.AreEqual(lastTalent, store.Talent(0, 4));
+            Assert.AreEqual(lastRoot, store.Root(0));
+            Assert.AreEqual(5, store.ColonyOf(0));
+            Assert.AreEqual(1.75f, store.PlasticityOf(0).w);
+            Assert.IsTrue(store.IsDirty(0));
+            Assert.AreEqual(20f, store.Level(1, 2));
+
+            Assert.AreEqual(0f, store.Level(2, 2));
+            Assert.AreEqual(0f, store.Peak(2, 2));
+            Assert.AreEqual(0f, store.LastUsed[2 * atlas.Count + 2]);
+            Assert.AreEqual(0f, store.Talent(2, 4));
+            Assert.AreEqual(0, store.Root(2));
+            Assert.AreEqual(0, store.ColonyOf(2));
+            Assert.AreEqual(0f, store.PlasticityOf(2).w);
+            Assert.IsFalse(store.IsDirty(2));
+
+            store.RemoveSwapBack(1, 1);
+            Assert.AreEqual(0f, store.Level(1, 2));
+            store.RemoveSwapBack(0, 9);
+            Assert.AreEqual(30f, store.Level(0, 2));
+        }
+        finally
+        {
+            store.Dispose();
+            topology.Dispose();
+            Object.DestroyImmediate(atlas);
         }
     }
 }

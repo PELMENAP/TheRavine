@@ -10,6 +10,7 @@ namespace TheRavine.Generator
     {
         [ReadOnly] public NativeArray<float> heightIn;
         [ReadOnly] public NativeArray<float> riverMap;
+        [ReadOnly] public NativeArray<float2> riverShape;
         [ReadOnly] public NativeArray<float> temperatureMap;
         [ReadOnly] public NativeArray<float> moistureMap;
 
@@ -23,13 +24,14 @@ namespace TheRavine.Generator
 
         [ReadOnly] public NativeArray<float> riverBedHeight;
         [ReadOnly] public NativeArray<float> riverCenter;
-        [ReadOnly] public NativeArray<float> riverRadius;
         [ReadOnly] public NativeArray<float> riverRadiusRcp;
         [WriteOnly] public NativeArray<float> heightOut;
         [WriteOnly] public NativeArray<float2> climateOut;
         [WriteOnly] public NativeArray<float> riverBlendOut;
         public float blendRadiusRcp2;
         public float altitudeCooling;
+
+        private const float MinRiverWidth = 0.0001f;
 
         public void Execute(int idx)
         {
@@ -42,6 +44,9 @@ namespace TheRavine.Generator
 
             float moisture = moistureMap[idx];
             float riverValue = riverMap[idx];
+            float2 shape = riverShape[idx];
+            float widthRcp = 1f / math.max(shape.x, MinRiverWidth);
+            float hasWidth = math.select(0f, 1f, shape.x >= MinRiverWidth);
 
             climateOut[idx] = new float2(temp, moisture);
 
@@ -70,10 +75,10 @@ namespace TheRavine.Generator
                 float dist = math.abs(riverValue - riverCenter[b]);
                 float hasRiver = biomeHasRiver[b];
                 
-                float riverT = math.saturate(1f - dist * riverRadiusRcp[b]);
+                float riverT = math.saturate(1f - dist * riverRadiusRcp[b] * widthRcp);
                 riverT = riverT * riverT * (3f - 2f * riverT);
 
-                riverWeightSum += weight * riverT * hasRiver;
+                riverWeightSum += weight * riverT * hasRiver * hasWidth;
                 riverBedSum += weight * riverBedHeight[b] * hasRiver;
             }
 
@@ -94,7 +99,7 @@ namespace TheRavine.Generator
                     offsetSum * rcpWeight;
 
             float riverBlend =
-                riverWeightSum * rcpWeight;
+                riverWeightSum * rcpWeight * shape.y;
 
             riverBlendOut[idx] = math.saturate(riverBlend);
 

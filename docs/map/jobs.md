@@ -55,6 +55,7 @@ The flocking of agents (not birds) is `BoidSystem` in `Assets/Scripts/EntitySyst
 ## Menu boids
 
 - Fully on GPU: `Assets/Shaders/Boids/BoidsStep.compute`; drawn with `Graphics.RenderMeshIndirect`.
+- Driver shared with the wild winds: `BoidFlockGpu` (`Assets/Scripts/ObjectSystem/Map/GlobalEvents/Wind/BoidFlockGpu.cs`, assembly `ObjectSystem`): buffers, grid scan, dispatch, mesh.
 - Time is `Time.unscaledDeltaTime`: `SimulationClock` does not advance in the menu scene.
 
 ## Invariants

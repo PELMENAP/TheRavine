@@ -1,7 +1,7 @@
 # Entities: base classes, components, mobs, small modules
 
 Root: `Assets/Scripts/Model/`, `Assets/Scripts/EntitySystem/` without its AI, Virology and Job folders.
-Assemblies: `BehavioursMap`, `EventSystem`, `SkillSystem`, `DetectorSystem`, `EntitySystem`.
+Assemblies: `BehavioursMap`, `EventSystem`, `SkillSystem`, `EntitySystem`.
 Tests: `Assets/Tests/EditMode/MimicLegJobTests.cs`.
 
 AI agents are a separate family (`EntityModel`): `docs/map/ai.md`. The player: `docs/map/player-net.md`.
@@ -38,7 +38,6 @@ AI agents are a separate family (`EntityModel`): `docs/map/ai.md`. The player: `
 | Entity | Folder | Notes |
 |---|---|---|
 | `PlayerEntity` | `Assets/Scripts/EntitySystem/Entityes/Player/` | Initialised in `PlayerModelView.OnNetworkSpawn` |
-| `BotEntity` | `Assets/Scripts/EntitySystem/Entityes/Bot/` | NPC with FSM behaviours |
 | `MobEntity` | `Assets/Scripts/EntitySystem/Entityes/Mob/` | Movement through `RoamMoveController` and `MobController`; body size from `EntityInfo` (`BodyRadius`, `BodyHeight`, `GroundOffset`) |
 | `Mimic` | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/` | Procedural legs: `LegPlanner`, `LegStore`, `MimicLegJob` (Burst), `SurfaceMotor` |
 
@@ -61,12 +60,9 @@ AI agents are a separate family (`EntityModel`): `docs/map/ai.md`. The player: `
 | Module | Folder | Contents |
 |---|---|---|
 | Casino | `Assets/Scripts/EntitySystem/Casino/` | `CasinoSlots`, `CalculateWin`, `UICasinoSlots` |
-| Player tasks | `Assets/Scripts/EntitySystem/PlayerTasks/` | `ITask`, `TaskManager`, `TaskOfDelivery` |
 | Static NPC | `Assets/Scripts/EntitySystem/StaticNPC/` | `IsaNPCchatBot.cs` (one line, empty) |
 | Interaction | `Assets/Scripts/EntitySystem/InteractionSystem/`, `Assets/Scripts/EntitySystem/Info/InteractionComponent/` | `IInteractable`, `InteractionComponent` |
-| Detector | `Assets/Scripts/Model/DetectorModel/` | `IDetector`, `IDetectableObject`, `Detector`, `DetectableObject` |
-| Skills | `Assets/Scripts/Model/EntitySkills/` | `ISkill`, `SkillBuilder`, `FlyingSkill`, `SwimmingSkill` |
-| View | `Assets/Scripts/View/` | `ParallaxEffect`, `ChangeRandomSprite` |
+| Skills | `Assets/Scripts/Model/EntitySkills/` | `ISkill` |
 | Experiments | `Assets/Scripts/Test/` | `PointDraw`, `PriceChart`, `Market`, `MarketCore`, `MarketSimulator`; referenced from a test scene and a prefab |
 | Editor tools | `Assets/Scripts/Editor/` | `TreeMeshBaker`, `SimulationRulesEditor`, `StrainCodonTableBuilder`, grass bakers |
 
@@ -91,4 +87,3 @@ AI agents are a separate family (`EntityModel`): `docs/map/ai.md`. The player: `
 
 - Spawn desync: `EntitySystem.CreateMob` finds the view model with `GetComponentInChildren`, `MobGenerator` with `GetComponent` on the root.
   If the two disagree, the entity is created but not reported as spawned.
-- `CurrencyNetworkComponent.TryServerAdd` exists, but `Initialize` is never called; the initial amount comes from the local `WorldState`.

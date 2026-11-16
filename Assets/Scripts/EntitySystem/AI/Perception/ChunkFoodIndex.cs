@@ -591,7 +591,7 @@ public sealed class ChunkFoodIndex
         if (cd.Occupancy[idx] != 0) return false;
 
         float h = cd.HeightRaw[idx];
-        if (h <= SimulationRules.Frame.WaterLevel) return false;
+        if (MapGenerator.AboveWater(_map.Ravine, h, cellZ * MapGenerator.scale, SimulationRules.Frame.WaterLevel) <= 0f) return false;
 
         ObjectInfo food = FoodByKind(kind);
         if (food == null) return false;

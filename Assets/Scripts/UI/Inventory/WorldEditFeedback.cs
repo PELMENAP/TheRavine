@@ -177,7 +177,7 @@ namespace TheRavine.Inventory
             world.z += MapGenerator.scale * 0.5f;
             world.y += 0.5f;
 
-            Vector3 point = cam.WorldToScreenPoint(CurvedWorld.Bend(world));
+            Vector3 point = cam.WorldToScreenPoint(world);
             if (point.z <= 0f) return false;
 
             screen = new Vector2(point.x, point.y);
