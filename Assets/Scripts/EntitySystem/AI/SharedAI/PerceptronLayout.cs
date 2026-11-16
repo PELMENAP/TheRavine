@@ -2,6 +2,8 @@ using System.Runtime.CompilerServices;
 
 public sealed class PerceptronLayout
 {
+    public const int MinActionCount = 2;
+
     public readonly int[] LayerSizes;
     public readonly int   L;
     public readonly int   InputSize;
@@ -63,7 +65,7 @@ public sealed class PerceptronLayout
         DecisionCapacity = decisionCapacity;
         HistoryDepth     = decisionCapacity + truncWindow;
 
-        if (ActionCount < 2)
+        if (ActionCount < MinActionCount)
             throw new System.ArgumentException(
                 $"PerceptronLayout: выходной слой {OutputSize} мал для {auxOutputs} доп. выходов");
 

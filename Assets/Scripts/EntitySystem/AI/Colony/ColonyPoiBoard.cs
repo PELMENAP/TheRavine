@@ -54,6 +54,20 @@ public sealed class ColonyPoiBoard
         if (Value(in poi, now, in r) > worstScore) _points[worst] = poi;
     }
 
+    public void ReportEmpty(float2 position)
+    {
+        ref readonly var r = ref SimulationRules.Frame;
+        float merge2 = r.ColonyPoiMergeRadius * r.ColonyPoiMergeRadius;
+        for (int i = 0; i < _count; i++)
+        {
+            ref var p = ref _points[i];
+            if (math.distancesq(p.Position, position) > merge2) continue;
+            p.EnergyEma = math.lerp(p.EnergyEma, 0f, r.PoiEnergyEmaAlpha);
+            p.Updated   = SimulationClock.TimeD;
+            return;
+        }
+    }
+
     public bool TryPickBest(float2 self, out float2 target, out float score)
     {
         ref readonly var r = ref SimulationRules.Frame;

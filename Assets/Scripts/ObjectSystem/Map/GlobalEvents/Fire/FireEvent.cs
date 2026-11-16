@@ -12,6 +12,7 @@ namespace TheRavine.Generator
         public float Left;
         public float Total;
         public float Size;
+        public int   Slot;
     }
 
     public sealed class FireEvent : IMapEvent, IRandomTickHandler
@@ -27,6 +28,7 @@ namespace TheRavine.Generator
 
         private NativeHashMap<long, FireCell> _burning;
         private NativeList<long> _keys;
+        private NativeList<long> _cells;
         private NativeArray<float2> _windFallback;
         private WindField _wind;
         private FireView _view;
@@ -67,6 +69,7 @@ namespace TheRavine.Generator
             int burning = math.max(rules.maxBurning, 16);
             _burning      = new NativeHashMap<long, FireCell>(burning, Allocator.Persistent);
             _keys         = new NativeList<long>(burning, Allocator.Persistent);
+            _cells        = new NativeList<long>(burning, Allocator.Persistent);
             _windFallback = new NativeArray<float2>(1, Allocator.Persistent);
         }
 
@@ -111,7 +114,8 @@ namespace TheRavine.Generator
         {
             if (_burning.Count >= _rules.maxBurning) return false;
             float total = FireMath.BurnSeconds(size, _rules);
-            if (!_burning.TryAdd(cell, new FireCell { Left = total, Total = total, Size = size })) return false;
+            if (!_burning.TryAdd(cell, new FireCell { Left = total, Total = total, Size = size, Slot = _cells.Length })) return false;
+            _cells.Add(cell);
             Version++;
             return true;
         }
@@ -171,7 +175,7 @@ namespace TheRavine.Generator
                     || !_map.TryGetObject(packed, out ObjectInstInfo inst)
                     || SizeOf(inst.PrefabID) <= 0f)
                 {
-                    _burning.Remove(cell);
+                    Extinguish(cell, fire.Slot);
                     continue;
                 }
 
@@ -185,7 +189,7 @@ namespace TheRavine.Generator
                         PrefabId = inst.PrefabID,
                         ExpectedPrefabId = inst.PrefabID
                     });
-                    _burning.Remove(cell);
+                    Extinguish(cell, fire.Slot);
                     continue;
                 }
 
@@ -201,6 +205,18 @@ namespace TheRavine.Generator
             _heatBounds = bounds;
             LastStep = step;
             StepIndex++;
+        }
+
+        private void Extinguish(long cell, int slot)
+        {
+            _burning.Remove(cell);
+            _cells.RemoveAtSwapBack(slot);
+            if (slot >= _cells.Length) return;
+
+            long moved = _cells[slot];
+            FireCell movedFire = _burning[moved];
+            movedFire.Slot = slot;
+            _burning[moved] = movedFire;
         }
 
         private void Spread(long cell, float size, in WindSampler sampler)
@@ -258,6 +274,87 @@ namespace TheRavine.Generator
             return best * _rules.damagePerSecond;
         }
 
+        public bool TryFindNearestBurning(float2 p, int radiusCells, out float2 center, out float distance)
+        {
+            if (_disposed)
+            {
+                center   = default;
+                distance = -1f;
+                return false;
+            }
+            long span = 2L * radiusCells + 1L;
+            if (radiusCells > 0 && _cells.Length < span * span)
+                return FindNearestBurningDense(_cells.AsArray(), p, radiusCells, out center, out distance);
+            return FindNearestBurning(_burning.AsReadOnly(), p, radiusCells, out center, out distance);
+        }
+
+        public static bool FindNearestBurningDense(NativeArray<long> cells, float2 p, int radiusCells,
+            out float2 center, out float distance)
+        {
+            center   = default;
+            distance = -1f;
+            if (radiusCells <= 0 || cells.Length == 0) return false;
+
+            int cx = (int)math.floor(p.x * InvScale);
+            int cz = (int)math.floor(p.y * InvScale);
+            float limit = radiusCells * MapGenerator.scale;
+            float best  = limit * limit;
+            bool found  = false;
+            int bestX = 0, bestZ = 0;
+
+            for (int i = 0; i < cells.Length; i++)
+            {
+                long cell = cells[i];
+                int x = Position2Int.GetX(cell);
+                int z = Position2Int.GetY(cell);
+                if (math.abs(x - cx) > radiusCells || math.abs(z - cz) > radiusCells) continue;
+
+                float2 c = CellCenter(cell);
+                float d2 = math.distancesq(p, c);
+                if (d2 > best) continue;
+                if (found && d2 == best && (z < bestZ || (z == bestZ && x < bestX))) continue;
+                best   = d2;
+                center = c;
+                found  = true;
+                bestX  = x;
+                bestZ  = z;
+            }
+
+            if (found) distance = math.sqrt(best);
+            return found;
+        }
+
+        public static bool FindNearestBurning(NativeHashMap<long, FireCell>.ReadOnly burning, float2 p, int radiusCells,
+            out float2 center, out float distance)
+        {
+            center   = default;
+            distance = -1f;
+            if (radiusCells <= 0 || burning.IsEmpty) return false;
+
+            int cx = (int)math.floor(p.x * InvScale);
+            int cz = (int)math.floor(p.y * InvScale);
+            float limit = radiusCells * MapGenerator.scale;
+            float best  = limit * limit;
+            bool found  = false;
+
+            for (int dz = -radiusCells; dz <= radiusCells; dz++)
+            for (int dx = -radiusCells; dx <= radiusCells; dx++)
+            {
+                long cell = Position2Int.Pack(cx + dx, cz + dz);
+                if (!burning.ContainsKey(cell)) continue;
+
+                float2 c = CellCenter(cell);
+                float d2 = math.distancesq(p, c);
+                if (d2 > best) continue;
+                best   = d2;
+                center = c;
+                found  = true;
+            }
+
+            if (found) distance = math.sqrt(best);
+            return found;
+        }
+
         public static long CellOf(float wx, float wz)
             => Position2Int.Pack((int)math.floor(wx * InvScale), (int)math.floor(wz * InvScale));
 
@@ -276,6 +373,7 @@ namespace TheRavine.Generator
             _view = null;
             if (_burning.IsCreated) _burning.Dispose();
             if (_keys.IsCreated) _keys.Dispose();
+            if (_cells.IsCreated) _cells.Dispose();
             if (_windFallback.IsCreated) _windFallback.Dispose();
             _wind = null;
         }

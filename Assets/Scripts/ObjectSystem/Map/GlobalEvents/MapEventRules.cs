@@ -7,9 +7,12 @@ namespace TheRavine.Generator
     public sealed class MapEventRules : ScriptableObject
     {
         public FireRules fire = new();
+        public WildWindRules wildWind = new();
 
         private void OnValidate()
         {
+            wildWind ??= new WildWindRules();
+            wildWind.Validate();
             fire ??= new FireRules();
             fire.maxSize = Mathf.Max(fire.maxSize, fire.minSize);
             fire.defaultSize = Mathf.Clamp(fire.defaultSize, fire.minSize, fire.maxSize);

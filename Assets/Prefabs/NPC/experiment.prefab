@@ -55,14 +55,14 @@ MonoBehaviour:
     MaxHealth: 200
     MaxEnergy: 200
     EnergyRegenRate: 1000
-    MoveSpeed: 7
-    RunSpeed: 15
-    EnergyCostMoving: 1
-    EnergyCostRunning: 3
+    MoveSpeed: 10
+    RunSpeed: 20
+    EnergyCostMoving: 0.6
+    EnergyCostRunning: 2
     DetectionRadius: 30
     AttackRange: 10
     AttackDamage: 30
-    AttackCooldown: 10
+    AttackCooldown: 2
     AttackEnergyCost: 10
     ReproduceEnergyCost: 80
     ReproduceHealthCost: 30

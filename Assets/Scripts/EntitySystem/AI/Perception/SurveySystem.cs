@@ -13,6 +13,11 @@ public struct SurveyInput
     public int    ColonyIndex;
     public int    CrowdCap;
     public int    SelfSlot;
+    public int    VictimSlot;
+    public int    FamiliarSlot;
+    public float  StickMul;
+    public float  LowHpMul;
+    public float  FamiliarMul;
     public byte   Active;
 }
 
@@ -45,6 +50,7 @@ public struct SurveyJob : IJobFor
     [ReadOnly] public NativeArray<int2>   Cell;
     [ReadOnly] public NativeArray<int>    Colony;
     [ReadOnly] public NativeArray<byte>   Alive;
+    [ReadOnly] public NativeArray<float>  Hp;
     [ReadOnly] public NativeArray<float>  Px;
     [ReadOnly] public NativeArray<float>  Py;
     [ReadOnly] public NativeArray<float>  Pz;
@@ -68,6 +74,7 @@ public struct SurveyJob : IJobFor
         var result = SurveyOutput.None;
         float minSqr = float.MaxValue;
         float minForeignSqr = float.MaxValue;
+        float minForeignScore = float.MaxValue;
 
         for (int dz = -ring; dz <= ring; dz++)
         for (int dx = -ring; dx <= ring; dx++)
@@ -91,7 +98,7 @@ public struct SurveyJob : IJobFor
 
                 bool asNearest = sqr <= nr2 && sqr < minSqr;
                 bool asCrowd   = sqr <= cr2 && result.Crowd < q.CrowdCap;
-                bool asForeign = sqr <= nr2 && sqr < minForeignSqr && Colony[n] != q.ColonyIndex;
+                bool asForeign = sqr <= nr2 && Colony[n] != q.ColonyIndex;
                 if (!asNearest && !asCrowd && !asForeign) continue;
                 if (n == q.SelfSlot || Alive[n] == 0) continue;
 
@@ -107,8 +114,14 @@ public struct SurveyJob : IJobFor
                 }
                 if (asForeign)
                 {
-                    minForeignSqr = sqr;
-                    result.ForeignSlot = n;
+                    float score = math.sqrt(sqr) * (n == q.VictimSlot ? q.StickMul : 1f) * math.lerp(q.LowHpMul, 1f, Hp[n])
+                                * (n == q.FamiliarSlot ? q.FamiliarMul : 1f);
+                    if (score < minForeignScore)
+                    {
+                        minForeignScore = score;
+                        minForeignSqr   = sqr;
+                        result.ForeignSlot = n;
+                    }
                 }
             }
         }
@@ -177,6 +190,7 @@ public sealed class SurveySystem : IDisposable
             Cell       = grid.Cell,
             Colony     = grid.Colony,
             Alive      = grid.Alive,
+            Hp         = grid.HpFraction,
             Px         = grid.Px,
             Py         = grid.Py,
             Pz         = grid.Pz,

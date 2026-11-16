@@ -282,6 +282,15 @@ public sealed unsafe class NestState : IDisposable
         return worst - best;
     }
 
+    public bool TryGetDangerCentroid(float minMass, out float2 position)
+    {
+        position = default;
+        if (_decayScheduled || !_stats.IsCreated || _stats[ColonyFieldStats.DangerMass] <= minMass) return false;
+
+        position = _origin + new float2(_stats[ColonyFieldStats.DangerX], _stats[ColonyFieldStats.DangerY]) * _cell;
+        return true;
+    }
+
     public void RelieveHunger(float amount) => Hunger = math.max(0f, Hunger - math.max(0f, amount));
 
     public void RaiseAlarm(float amount) => Alarm = math.min(1f, Alarm + math.max(0f, amount));
@@ -308,7 +317,7 @@ public sealed unsafe class NestState : IDisposable
         _decayScheduled = true;
     }
 
-    public void EndTick(float dt, int membersNearNest, float scarcity = 0f)
+    public void EndTick(float dt, int membersNearNest, float scarcity = 0f, float pressure = 0f)
     {
         if (!_decayScheduled) return;
         _decayScheduled = false;
@@ -325,10 +334,10 @@ public sealed unsafe class NestState : IDisposable
         AlarmHunt = membersNearNest >= r.AlarmHuntMinMembers;
         DangerAtNest = FieldAt(ColonyChannel.Danger, Position);
 
-        UpdateMigration(dt, r, scarcity);
+        UpdateMigration(dt, r, scarcity, pressure);
     }
 
-    private void UpdateMigration(float dt, SimulationRules r, float scarcity)
+    private void UpdateMigration(float dt, SimulationRules r, float scarcity, float pressure)
     {
         float2 toFood = float2.zero;
         if (_stats[ColonyFieldStats.FoodMass] > 1e-3f)
@@ -339,7 +348,7 @@ public sealed unsafe class NestState : IDisposable
             fromDanger = math.normalizesafe(Position - (_origin + new float2(_stats[ColonyFieldStats.DangerX], _stats[ColonyFieldStats.DangerY]) * _cell));
 
         float hunger = r.MigrationHungerWeight * math.max(Hunger, scarcity);
-        float danger = r.MigrationDangerWeight * math.saturate(DangerAtNest);
+        float danger = r.MigrationDangerWeight * math.saturate(DangerAtNest + pressure);
         float2 target = hunger * toFood + danger * fromDanger;
 
         float k = 1f - math.exp(-dt / math.max(r.MigrationTau, 1e-3f));

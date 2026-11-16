@@ -16,6 +16,7 @@ namespace TheRavine.Base
         public long lastSaveTime;
         public SerializableInventorySlot[] inventory;
         public float[] rulesMultipliers;
+        public PlayerSkillSave playerSkills;
 
         public WorldState Clone()
         {
@@ -28,7 +29,8 @@ namespace TheRavine.Base
                 gameWon = this.gameWon,
                 lastSaveTime = this.lastSaveTime,
                 inventory = this.inventory != null ? (SerializableInventorySlot[])this.inventory.Clone() : null,
-                rulesMultipliers = this.rulesMultipliers != null ? (float[])this.rulesMultipliers.Clone() : null
+                rulesMultipliers = this.rulesMultipliers != null ? (float[])this.rulesMultipliers.Clone() : null,
+                playerSkills = this.playerSkills?.Clone()
             };
         }
 

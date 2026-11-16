@@ -6,6 +6,7 @@ namespace TheRavine.Base
     public sealed class RiveRun
     {
         public int OperationCount;
+        public int OperationsSinceYield;
         public int CallDepth;
         public int StackDepth;
         public int WaitedMilliseconds;

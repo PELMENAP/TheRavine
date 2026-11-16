@@ -176,8 +176,11 @@ Every RPC of the project is in this table. A new RPC is added here in the same c
 | `PlayerController.CraftRequestServerRpc` | recipe index | remote players only; index in `CraftModel.Shared`; ingredients in the ledger | `craftRate` / `craftBurst`; recipe time × `craftTimeTolerance` | nobody (ledger only) |
 | `PlayerController.PlaceRequestServerRpc` | cell, object id, level | active; alive; reach + latency compensation; item in the ledger; `WorldEdits.TryPlace` | `editRate` / `editBurst` | owner only |
 | `PlayerController.PickUpRequestServerRpc` | cell, level | active; alive; reach + latency compensation; `WorldEdits.TryPickUp` | `editRate` / `editBurst` | owner only |
+| `PlayerController.SkillGraphCommandServerRpc` | op (build, prune, restore, toggle auto, sync), skill indices u and v | op below `SkillCommandOp.Count`; indices below the atlas count and different; edge in the atlas potential frame; one open endpoint for a build; edge points, bridge and island rules of `SkillGraphTopology`; active; alive; identity from the transport | `skillCommandRate` / `skillCommandBurst`; the host goes through the same budget | owner only, through the two rows below |
 | `PlayerModelView.RequestCameraServerRpc` | — | owner from transport | one camera per owner | all |
 | `PlayerController.UpdateClientPositionClientRpc` | server → clients | — | `sendInterval`, skipped when unchanged | all |
+| `PlayerController.SkillTopologyClientRpc` | server → owner | — | sent when `PlayerSkillGraph.StateVersion` changes; resent on a sync request | owner |
+| `PlayerController.SkillLevelsClientRpc` | server → owner | — | every `SkillReplicateInterval`, skipped when the 16-bit levels did not change | owner |
 | `PlayerController.PlaceResultClientRpc` | server → client | — | one per request | owner |
 | `PlayerController.PickUpResultClientRpc` | server → client | — | one per request | owner |
 | `PlayerModelView.NotifyCameraCreatedClientRpc` | server → clients | — | one per camera | all |
