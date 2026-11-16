@@ -356,11 +356,10 @@ namespace TheRavine.Generator.EndlessGenerators
                 batchProps[b].SetFloat(InstanceOffsetId, offsets[b]);
 
             float reach = (generator.LodRingCount * MapGenerator.WindowSide + 2) * MapGenerator.chunkSize;
-            float drop = CurvedWorld.MaxDrop(reach * 1.4143f);
             float2 span = generator.Ravine.ElevationRange(mid.z - reach, mid.z + reach);
             var bounds = new Bounds(
-                mid + new Vector3(0f, (MapGenerator.maxTerrainHeight - drop + span.x + span.y) * 0.5f, 0f),
-                new Vector3(reach * 2f, MapGenerator.maxTerrainHeight * 4f + drop + span.y - span.x, reach * 2f));
+                mid + new Vector3(0f, (MapGenerator.maxTerrainHeight + span.x + span.y) * 0.5f, 0f),
+                new Vector3(reach * 2f, MapGenerator.maxTerrainHeight * 4f + span.y - span.x, reach * 2f));
 
             for (int i = 0; i < commands.Length; i++)
             {

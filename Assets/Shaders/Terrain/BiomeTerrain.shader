@@ -13,6 +13,7 @@ Shader "The Ravine/Terrain/BiomeTerrain"
         _RockScale ("Rock Scale", Float) = 0.08
         _RockSlopeMin ("Rock Slope Min", Range(0, 1)) = 0.25
         _RockSlopeMax ("Rock Slope Max", Range(0, 1)) = 0.45
+        _RockSideSlope ("Rock Side Projection Slope", Range(0, 1)) = 0.6
 
         [Header(Snow)]
         _SnowTex ("Snow", 2D) = "white" {}

@@ -5,7 +5,6 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Rendering;
 
 using TheRavine.Extensions;
 using TheRavine.Base;
@@ -69,6 +68,7 @@ namespace TheRavine.Generator
 
         public ChunkGenerationSettings Settings => activeSettings ?? chunkGenerationSettings;
         public RavineProfile Ravine { get; private set; }
+        private static readonly int RavineProfileId = Shader.PropertyToID("_RavineProfile");
         public long WindowCenter => windowCenter;
         public ViewSector Sector => sector;
         public int LodRingCount => lodRingCount;
@@ -823,6 +823,8 @@ namespace TheRavine.Generator
         [SerializeField, Min(0.1f)] private float nalApplyBudgetMs = 1f;
         [SerializeField, Min(1)] private int chunkRequestCapacity = 32;
         [SerializeField] private ObjectViewMotionSettings objectMotion = new();
+        [SerializeField] private Shader ravineBackdropShader;
+        [SerializeField] private Material ravineBackdropMaterial;
 
         public int ViewRingCount => math.min(lodRingCount, ObjectInfo.MaxVisibleRings);
         public int NalRingCount => tickRules != null ? math.min(ViewRingCount, tickRules.nalRings) : ViewRingCount;
@@ -861,12 +863,11 @@ namespace TheRavine.Generator
             Ravine = RavineProfile.From(Settings);
             chunkGenerator = new ChunkGenerator(Settings, Ravine, seed);
             plateauGenerator = Ravine.IsFlat ? null : new ChunkGenerator(PlateauSettings(), Ravine, seed);
+            Shader.SetGlobalVector(RavineProfileId, new Vector4(Ravine.HalfWidth, Ravine.InvRun, Ravine.Height, 0f));
             if (worldLoaded) BindChunkStore(worldRegistry);
 
-            CurvedWorld.Configure(Settings.curveRadius, Settings.curveFlat, Settings.curveFocusDistance);
             sector = ViewOrientation.Sector;
             ViewOrientation.SectorChanged += OnSectorChanged;
-            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
             BiomeShaderGlobals.Apply(Settings, biomeAlbedo);
 
             BindFirstPlayer();
@@ -914,9 +915,9 @@ namespace TheRavine.Generator
         {
             bool terrain = Settings.endlessFlag[0];
             int[] steps = Settings.lodSteps;
-            lodRingCount = terrain ? math.min(math.min(Settings.maxLodRing, steps?.Length ?? 0), HorizonRingCount()) : 0;
+            lodRingCount = terrain ? math.min(Settings.maxLodRing, steps?.Length ?? 0) : 0;
 
-            endless = new IEndless[4];
+            endless = new IEndless[5];
             if (terrain)
                 endless[0] = new EndlessTerrain(this, Settings);
             if (Settings.endlessFlag[1])
@@ -927,19 +928,28 @@ namespace TheRavine.Generator
                 if (lodRingCount > 0)
                     endless[3] = new FarObjectRenderer(this, objectSystem, Settings);
             }
+            if (terrain && !Ravine.IsFlat)
+                endless[4] = CreateBackdrop();
         }
 
-        private int HorizonRingCount()
+        private RavineBackdrop CreateBackdrop()
         {
-            float distance = CurvedWorld.VisibleDistance(
-                Settings.horizonCameraHeight,
-                Settings.horizonCameraBack,
-                Settings.horizonPeakHeight);
+            if (ravineBackdropMaterial != null)
+                return new RavineBackdrop(this, Settings, ravineBackdropMaterial, false);
 
-            if (float.IsInfinity(distance)) return int.MaxValue;
+            Shader shader = ravineBackdropShader != null ? ravineBackdropShader : Shader.Find(RavineBackdrop.ShaderName);
+            if (shader == null)
+            {
+                RavineLog.Warning("[MapGenerator] Ravine backdrop shader is not assigned, distant walls are not drawn");
+                return null;
+            }
 
-            float beyondWindow = distance - (chunkScale + 0.5f) * chunkSize;
-            return math.max(1, (int)math.ceil(beyondWindow / (WindowSide * chunkSize)));
+            var material = new Material(shader) { name = "RavineBackdrop" };
+            Material terrainMaterial = terrainFilter != null && terrainFilter.TryGetComponent(out MeshRenderer terrainRenderer)
+                ? terrainRenderer.sharedMaterial
+                : null;
+            if (terrainMaterial != null) material.CopyMatchingPropertiesFromMaterial(terrainMaterial);
+            return new RavineBackdrop(this, Settings, material, true);
         }
 
         private void BindFirstPlayer()
@@ -976,39 +986,6 @@ namespace TheRavine.Generator
                         directional.SetSector(sector);
             }
             evictionPending = true;
-        }
-
-        private void OnBeginCameraRendering(ScriptableRenderContext context, Camera camera)
-        {
-            if (camera.cameraType != CameraType.Game && camera.cameraType != CameraType.SceneView)
-            {
-                CurvedWorld.PushFlat();
-                return;
-            }
-
-            Vector3 position = camera.transform.position;
-            float2 focus;
-            float fallbackHeight;
-            if (camera.cameraType == CameraType.Game && ViewOrientation.HasPivot)
-            {
-                Vector3 pivot = ViewOrientation.Pivot;
-                focus = new float2(pivot.x, pivot.z);
-                fallbackHeight = pivot.y;
-            }
-            else
-            {
-                Vector3 look = camera.transform.forward;
-                float2 flat = new float2(look.x, look.z);
-                float length = math.length(flat);
-                float2 ahead = length > 1e-4f ? flat / length : float2.zero;
-                focus = new float2(position.x, position.z) + ahead * CurvedWorld.FocusDistance;
-                fallbackHeight = position.y;
-            }
-
-            if (!TrySampleHeightBilinear(focus.x, focus.y, out float referenceHeight))
-                referenceHeight = fallbackHeight;
-
-            CurvedWorld.Push(focus, referenceHeight);
         }
 
         public bool TryGetViewerChunk(out int x, out int z)
@@ -1253,9 +1230,7 @@ namespace TheRavine.Generator
             disposed = true;
             ready = false;
 
-            RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
             ViewOrientation.SectorChanged -= OnSectorChanged;
-            CurvedWorld.PushFlat();
 
             playerSubscription?.Dispose();
             playerSubscription = null;

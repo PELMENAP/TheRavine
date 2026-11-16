@@ -75,7 +75,7 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 - After a window-centre change far blocks are rebuilt nearest first, `lodBlocksPerFrame` per frame, once `MapGenerator.TryBuildHeightWindow` finds all chunks; blocks leaving the wedge keep their buffer.
 - One draw for the window and one per built far block; mesh by ring from `lodMeshes` (empty falls back to `grassMesh`); only ring 0 casts shadows; beyond the last grass ring there is no grass.
 - The grass LOD is drawing only: placement rules, trample and soil do not depend on it. Far grass lies outside `GrassTrampleField`, whose texture clamps at its edge.
-- World bend: `Assets/Shaders/Include/CurvedWorld.hlsl` bends radially around the camera pivot (`_CurveParams`, `_CurveFocus`), pushed by `CurvedWorld`; the focus is `ViewOrientation.Pivot`.
+- No world bend: geometry is drawn where it is. Beyond the streamed terrain the walls come from `RavineBackdrop` (`docs/map/ravine.md`).
 - A view-dependent component implements `IViewOriented` (called on every `ViewChanged`, O(1)) and registers with `ViewOrientation`; a plain transform uses `ViewOrientedTransform.Attach`.
 - Far billboards: `BakedSides` sides in a circle (column k looks with yaw k * 360 / N); atlas baked by `Assets/Scripts/Editor/TreeMeshBaker.cs`; atlases baked with another side count must be re-baked.
 
