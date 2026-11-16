@@ -14,6 +14,8 @@ namespace TheRavine.Generator
         [ReadOnly] public NativeArray<float> biomeCentersT;
         [ReadOnly] public NativeArray<float> biomeCentersM;
         [ReadOnly] public int mountainRegionIndex;
+        [ReadOnly] public RavineProfile ravine;
+        [ReadOnly] public float originZ;
         private const float cellWorldDist = 1f / (MapGenerator.scale * 2f);
 
         [WriteOnly] public NativeArray<int> regionMap;
@@ -25,6 +27,14 @@ namespace TheRavine.Generator
 
         public void Execute(int index)
         {
+            if (RavineProfile.IsWall(ravine.Blend(ChunkGenerator.CellWorldZ(originZ, index))))
+            {
+                regionMap[index] = mountainRegionIndex;
+                biomeMap[index] = 0;
+                moveCost[index] = 0;
+                return;
+            }
+
             float h = heightValues[index];
             int regionIndex = 0;
             for (int i = 0; i < regionThresholds.Length; i++)

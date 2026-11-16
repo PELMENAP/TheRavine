@@ -1,25 +1,17 @@
 public static class ActionDurationTable
 {
-    private static readonly float[] MinSeconds =
-    {
-        0.30f, 0.50f, 0.10f, 1.00f, 0.50f, 0.50f, 0.20f,
-        0.50f, 0.40f, 0.10f, 1.00f, 0.30f, 0.30f,
-        0.50f, 1.00f, 0.20f, 0.20f, 1.00f, 0.20f, 0.50f
-    };
-
-    private static readonly float[] MaxSeconds =
-    {
-        2.00f, 4.00f, 0.30f, 6.00f, 4.00f, 5.00f, 4.00f,
-        2.00f, 2.50f, 0.50f, 6.00f, 1.50f, 1.50f,
-        4.00f, 8.00f, 1.00f, 1.00f, 6.00f, 1.00f, 2.00f
-    };
-
     public const float MinGoalSeconds = 2f;
     public const float MaxGoalSeconds = 10f;
 
-    public static float Min(int action) =>
-        (uint)action < (uint)MinSeconds.Length ? MinSeconds[action] : 0.3f;
+    public static float Min(int action)
+    {
+        var table = SimulationRules.Frame.ActionMinSeconds;
+        return table != null && (uint)action < (uint)table.Length ? table[action] : 0.3f;
+    }
 
-    public static float Max(int action) =>
-        (uint)action < (uint)MaxSeconds.Length ? MaxSeconds[action] : 2f;
+    public static float Max(int action)
+    {
+        var table = SimulationRules.Frame.ActionMaxSeconds;
+        return table != null && (uint)action < (uint)table.Length ? table[action] : 2f;
+    }
 }

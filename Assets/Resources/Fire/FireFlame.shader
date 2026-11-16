@@ -196,7 +196,6 @@ Shader "The Ravine/Effects/Fire Flame"
                 }
 
                 Varyings o;
-                positionWS = BendWorld(positionWS);
                 o.positionCS = TransformWorldToHClip(positionWS);
                 o.uv = corner;
                 o.data = data;

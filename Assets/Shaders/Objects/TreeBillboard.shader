@@ -8,6 +8,7 @@ Shader "The Ravine/Objects/TreeBillboard"
         _BillboardPitch ("Bake Pitch", Range(0, 89)) = 30
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
         _Translucency ("Translucency", Range(0, 1)) = 0.3
+        [Toggle] _AlphaToMask ("Alpha To Mask", Float) = 1
 
         [MainColor] _AlbedoTint ("Albedo Tint", Color) = (1, 1, 1, 1)
         _AmbientStrength ("Ambient Strength", Range(0, 2)) = 1
@@ -91,10 +92,6 @@ Shader "The Ravine/Objects/TreeBillboard"
             positionWS = center
                 + frame.right * (quad.x - 0.5) * _BillboardBox.x * instance.w
                 + frame.up * (quad.y - 0.5) * _BillboardBox.y * instance.w;
-            frame.right = BendNormal(positionWS, frame.right);
-            frame.up = BendNormal(positionWS, frame.up);
-            frame.back = BendNormal(positionWS, frame.back);
-            positionWS = BendWorld(positionWS);
 
             atlasUV = (float2(frame.column, _BillboardCell) + quad) / _AtlasGrid.xy;
         }
@@ -112,7 +109,7 @@ Shader "The Ravine/Objects/TreeBillboard"
 
             ZWrite On
             ZTest LEqual
-            AlphaToMask On
+            AlphaToMask [_AlphaToMask]
 
             HLSLPROGRAM
             #pragma vertex vert

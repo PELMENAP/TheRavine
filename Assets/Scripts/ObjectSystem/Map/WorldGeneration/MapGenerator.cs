@@ -5,7 +5,6 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Rendering;
 
 using TheRavine.Extensions;
 using TheRavine.Base;
@@ -24,6 +23,7 @@ namespace TheRavine.Generator
     public class MapGenerator : MonoBehaviour, ISetAble, IWorldCommandTarget
     {
         [SerializeField] private ChunkGenerationSettings chunkGenerationSettings;
+        [SerializeField] private ChunkGenerationSettings plateauSettings;
         private ChunkGenerationSettings activeSettings;
 
         public const int mapChunkSize = 64, chunkScale = 1, scale = 2;
@@ -67,6 +67,8 @@ namespace TheRavine.Generator
         private AEntity boundPlayer;
 
         public ChunkGenerationSettings Settings => activeSettings ?? chunkGenerationSettings;
+        public RavineProfile Ravine { get; private set; }
+        private static readonly int RavineProfileId = Shader.PropertyToID("_RavineProfile");
         public long WindowCenter => windowCenter;
         public ViewSector Sector => sector;
         public int LodRingCount => lodRingCount;
@@ -172,7 +174,7 @@ namespace TheRavine.Generator
             if (mapData.TryGetValue(chunkKey, out ChunkData data))
             {
                 if (data.DetailLevel > ring)
-                    chunkGenerator.RaiseDetail(data, chunkKey, ring);
+                    GeneratorFor(chunkKey).RaiseDetail(data, chunkKey, ring);
             }
             else
             {
@@ -186,8 +188,16 @@ namespace TheRavine.Generator
             return data;
         }
 
+        private ChunkGenerator GeneratorFor(long chunkKey)
+        {
+            if (plateauGenerator == null) return chunkGenerator;
+            float centreZ = (Position2Int.GetY(chunkKey) + 0.5f) * chunkSize;
+            return RavineProfile.IsPlateau(Ravine.Blend(centreZ)) ? plateauGenerator : chunkGenerator;
+        }
+
         private void GenerateChunk(long chunkKey, ChunkData data, int ring)
         {
+            ChunkGenerator generator = GeneratorFor(chunkKey);
             long worldTick = WorldTick;
             long epochTicks = tickRules.erosionEpochTicks;
             erosionBudget.LimitTicks = FrameBudget.TicksFromMs(tickRules.erosionEpochBudgetMs);
@@ -196,19 +206,19 @@ namespace TheRavine.Generator
             if (stored <= 0)
             {
                 int due = ErosionEpochsDue(0L, worldTick);
-                int applied = chunkGenerator.Generate(data, chunkKey, ring, 1, due, erosionBudget, out bool hit);
+                int applied = generator.Generate(data, chunkKey, ring, 1, due, erosionBudget, out bool hit);
                 data.LastTick = applied * epochTicks;
                 RecordErosion(applied, hit);
                 return;
             }
 
-            chunkGenerator.Generate(data, chunkKey, ring, stored, 0, erosionBudget, out _);
+            generator.Generate(data, chunkKey, ring, stored, 0, erosionBudget, out _);
             data.LastTick = (stored - 1) * epochTicks;
             chunkStore.TryRestore(chunkKey, data, worldTick, objectSystem != null ? objectSystem.infoRegistry : null);
 
             if (data.LastTick > worldTick) data.LastTick = worldTick;
             int remaining = ErosionEpochsDue(data.LastTick, worldTick);
-            int done = chunkGenerator.CatchUpTerrain(data, chunkKey, remaining, erosionBudget, out bool budgetHit);
+            int done = generator.CatchUpTerrain(data, chunkKey, remaining, erosionBudget, out bool budgetHit);
             data.LastTick += done * epochTicks;
             RecordErosion(done, budgetHit);
         }
@@ -315,7 +325,7 @@ namespace TheRavine.Generator
             if (stamped && cd.WaterHoodMask == mask) return;
 
             cd.WaterHoodMask = mask;
-            chunkGenerator.BuildWaterDistance(cd, waterNeighborhood, level, ring);
+            chunkGenerator.BuildWaterDistance(chunkKey, cd, waterNeighborhood, level, ring);
         }
 
         public void RequestChunk(long chunkKey)
@@ -379,14 +389,18 @@ namespace TheRavine.Generator
         public void BindWaterLevel(float level) => WaterLevel = level;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float WaterModifier(float height, float waterLevel, float inWaterMul)
-            => height < waterLevel ? inWaterMul : 1f;
+        public static float AboveWater(in RavineProfile ravine, float height, float z, float waterLevel)
+            => height - ravine.Elevation(z) - waterLevel;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float WaterModifier(float aboveWater, float inWaterMul)
+            => aboveWater < 0f ? inWaterMul : 1f;
 
         public bool IsHeightIsLiveAble(long position) =>
-            GetRealPosition(position).y > WaterLevel;
+            AboveWater(Ravine, GetRealPosition(position).y, Position2Int.GetY(position), WaterLevel) > 0f;
 
         public bool IsWaterHeight(long position) =>
-            GetRealPosition(position).y < WaterLevel;
+            AboveWater(Ravine, GetRealPosition(position).y, Position2Int.GetY(position), WaterLevel) < 0f;
 
         private ChunkData ChunkForCell(long chunkKey) =>
             mapData.TryGetValue(chunkKey, out ChunkData data) ? data : GetMapData(chunkKey);
@@ -805,10 +819,13 @@ namespace TheRavine.Generator
         [SerializeField] private WorldTickRules tickRules;
         [SerializeField] private MapEventRules mapEventRules;
         [SerializeField] private FireViewSettings fireView = new();
+        [SerializeField] private WildWindViewSettings wildWindView = new();
         [SerializeField, Min(0)] private int debugIgniteRadius = 6;
         [SerializeField, Min(0.1f)] private float nalApplyBudgetMs = 1f;
         [SerializeField, Min(1)] private int chunkRequestCapacity = 32;
         [SerializeField] private ObjectViewMotionSettings objectMotion = new();
+        [SerializeField] private Shader ravineBackdropShader;
+        [SerializeField] private Material ravineBackdropMaterial;
 
         public int ViewRingCount => math.min(lodRingCount, ObjectInfo.MaxVisibleRings);
         public int NalRingCount => tickRules != null ? math.min(ViewRingCount, tickRules.nalRings) : ViewRingCount;
@@ -821,6 +838,7 @@ namespace TheRavine.Generator
         public WorldCommandStats ImmediateStats { get; } = new();
 
         public ChunkGenerator chunkGenerator;
+        private ChunkGenerator plateauGenerator;
         public Vector3 waterOffset;
 
         private IEndless[] endless;
@@ -843,13 +861,14 @@ namespace TheRavine.Generator
             budgetTicks = FrameBudget.TicksFromMs(Settings.frameBudgetMs);
 
             objectSystem = ServiceLocator.GetService<ObjectSystem>();
-            chunkGenerator = new ChunkGenerator(Settings, seed);
+            Ravine = RavineProfile.From(Settings);
+            chunkGenerator = new ChunkGenerator(Settings, Ravine, seed);
+            plateauGenerator = Ravine.IsFlat ? null : new ChunkGenerator(PlateauSettings(), Ravine, seed);
+            Shader.SetGlobalVector(RavineProfileId, new Vector4(Ravine.HalfWidth, Ravine.InvRun, Ravine.Height, 0f));
             if (worldLoaded) BindChunkStore(worldRegistry);
 
-            CurvedWorld.Configure(Settings.curveRadius, Settings.curveFlat, Settings.curveFocusDistance);
             sector = ViewOrientation.Sector;
             ViewOrientation.SectorChanged += OnSectorChanged;
-            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
             BiomeShaderGlobals.Apply(Settings, biomeAlbedo);
 
             BindFirstPlayer();
@@ -885,7 +904,7 @@ namespace TheRavine.Generator
                     ownsMapEventRules = true;
                     RavineLog.Warning("[MapGenerator] MapEventRules is not assigned, using defaults");
                 }
-                Events = new GlobalMapEvents(this, objectSystem.infoRegistry, randomTicks, mapEventRules, fireView);
+                Events = new GlobalMapEvents(this, objectSystem.infoRegistry, randomTicks, mapEventRules, fireView, wildWindView);
             }
 
             SetupEndless();
@@ -897,9 +916,9 @@ namespace TheRavine.Generator
         {
             bool terrain = Settings.endlessFlag[0];
             int[] steps = Settings.lodSteps;
-            lodRingCount = terrain ? math.min(math.min(Settings.maxLodRing, steps?.Length ?? 0), HorizonRingCount()) : 0;
+            lodRingCount = terrain ? math.min(Settings.maxLodRing, steps?.Length ?? 0) : 0;
 
-            endless = new IEndless[4];
+            endless = new IEndless[5];
             if (terrain)
                 endless[0] = new EndlessTerrain(this, Settings);
             if (Settings.endlessFlag[1])
@@ -910,19 +929,28 @@ namespace TheRavine.Generator
                 if (lodRingCount > 0)
                     endless[3] = new FarObjectRenderer(this, objectSystem, Settings);
             }
+            if (terrain && !Ravine.IsFlat)
+                endless[4] = CreateBackdrop();
         }
 
-        private int HorizonRingCount()
+        private RavineBackdrop CreateBackdrop()
         {
-            float distance = CurvedWorld.VisibleDistance(
-                Settings.horizonCameraHeight,
-                Settings.horizonCameraBack,
-                Settings.horizonPeakHeight);
+            if (ravineBackdropMaterial != null)
+                return new RavineBackdrop(this, Settings, ravineBackdropMaterial, false);
 
-            if (float.IsInfinity(distance)) return int.MaxValue;
+            Shader shader = ravineBackdropShader != null ? ravineBackdropShader : Shader.Find(RavineBackdrop.ShaderName);
+            if (shader == null)
+            {
+                RavineLog.Warning("[MapGenerator] Ravine backdrop shader is not assigned, distant walls are not drawn");
+                return null;
+            }
 
-            float beyondWindow = distance - (chunkScale + 0.5f) * chunkSize;
-            return math.max(1, (int)math.ceil(beyondWindow / (WindowSide * chunkSize)));
+            var material = new Material(shader) { name = "RavineBackdrop" };
+            Material terrainMaterial = terrainFilter != null && terrainFilter.TryGetComponent(out MeshRenderer terrainRenderer)
+                ? terrainRenderer.sharedMaterial
+                : null;
+            if (terrainMaterial != null) material.CopyMatchingPropertiesFromMaterial(terrainMaterial);
+            return new RavineBackdrop(this, Settings, material, true);
         }
 
         private void BindFirstPlayer()
@@ -959,39 +987,6 @@ namespace TheRavine.Generator
                         directional.SetSector(sector);
             }
             evictionPending = true;
-        }
-
-        private void OnBeginCameraRendering(ScriptableRenderContext context, Camera camera)
-        {
-            if (camera.cameraType != CameraType.Game && camera.cameraType != CameraType.SceneView)
-            {
-                CurvedWorld.PushFlat();
-                return;
-            }
-
-            Vector3 position = camera.transform.position;
-            float2 focus;
-            float fallbackHeight;
-            if (camera.cameraType == CameraType.Game && ViewOrientation.HasPivot)
-            {
-                Vector3 pivot = ViewOrientation.Pivot;
-                focus = new float2(pivot.x, pivot.z);
-                fallbackHeight = pivot.y;
-            }
-            else
-            {
-                Vector3 look = camera.transform.forward;
-                float2 flat = new float2(look.x, look.z);
-                float length = math.length(flat);
-                float2 ahead = length > 1e-4f ? flat / length : float2.zero;
-                focus = new float2(position.x, position.z) + ahead * CurvedWorld.FocusDistance;
-                fallbackHeight = position.y;
-            }
-
-            if (!TrySampleHeightBilinear(focus.x, focus.y, out float referenceHeight))
-                referenceHeight = fallbackHeight;
-
-            CurvedWorld.Push(focus, referenceHeight);
         }
 
         public bool TryGetViewerChunk(out int x, out int z)
@@ -1137,11 +1132,26 @@ namespace TheRavine.Generator
             return Position2Int.Pack(ChunkCoord(p.x), ChunkCoord(p.z));
         }
 
+        private ChunkGenerationSettings PlateauSettings()
+        {
+            ChunkGenerationSettings source = plateauSettings;
+            if (source == null || source.regions == null || source.regions.Length == 0)
+            {
+                RavineLog.Warning("[MapGenerator] Plateau settings are not set, the plateau uses the valley settings");
+                source = Settings;
+            }
+
+            ChunkGenerationSettings plateau = source.ShallowCopy();
+            plateau.endlessFlag = Settings.endlessFlag;
+            plateau.isRiver = Settings.isRiver;
+            return plateau;
+        }
+
         private void BindChunkStore(WorldRegistry registry)
         {
             boundRegistry = registry;
             boundWorldId = registry.GetCurrentWorldId();
-            chunkStore = ChunkStore.ForWorld(boundWorldId, seed);
+            chunkStore = ChunkStore.ForWorld(boundWorldId, seed, Ravine);
             registry.WorldRenamed += OnWorldRenamed;
         }
 
@@ -1221,9 +1231,7 @@ namespace TheRavine.Generator
             disposed = true;
             ready = false;
 
-            RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
             ViewOrientation.SectorChanged -= OnSectorChanged;
-            CurvedWorld.PushFlat();
 
             playerSubscription?.Dispose();
             playerSubscription = null;
@@ -1290,6 +1298,8 @@ namespace TheRavine.Generator
             Collision?.Dispose();
             Collision = null;
             chunkGenerator?.Dispose();
+            plateauGenerator?.Dispose();
+            plateauGenerator = null;
         }
     }
 

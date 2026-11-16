@@ -7,7 +7,6 @@ public enum ActionFlags : byte
     IsMove      = 1 << 0,
     NeedsTarget = 1 << 1,
     EnergyGated = 1 << 2,
-    InstinctOnly = 1 << 3,
     PlanOnly     = 1 << 4,
     Communal     = 1 << 5,
 }
@@ -30,7 +29,7 @@ public readonly struct ActionInfo
 
 public static class ActionCatalog
 {
-    public const int Count = (int)EntityAction.Groom + 1;
+    public const int Count = (int)EntityAction.MoveNest + 1;
 
     private const byte Survive = 1 << (int)SharedHierarchicalBrain.Goal.Survive;
     private const byte Hunt    = 1 << (int)SharedHierarchicalBrain.Goal.Hunt;
@@ -44,26 +43,17 @@ public static class ActionCatalog
     private static ActionInfo[] BuildTable()
     {
         var t = new ActionInfo[Count];
-        Set(t, EntityAction.Idle,          ActionFlags.None,                              Survive | Hunt | Social);
-        Set(t, EntityAction.Wander,        ActionFlags.IsMove,                            Survive | Forage);
-        Set(t, EntityAction.RememberPoint, ActionFlags.None,                              Forage);
-        Set(t, EntityAction.GoToPoint,     ActionFlags.IsMove | ActionFlags.NeedsTarget,  Survive | Forage);
-        Set(t, EntityAction.Attack,        ActionFlags.IsMove | ActionFlags.NeedsTarget | ActionFlags.EnergyGated, Hunt);
-        Set(t, EntityAction.Flee,          ActionFlags.IsMove,                            Survive | Hunt);
-        Set(t, EntityAction.Eat,           ActionFlags.None,                              Survive | Forage);
-        Set(t, EntityAction.Reproduce,     ActionFlags.EnergyGated | ActionFlags.Communal, Social);
-        Set(t, EntityAction.Speech,        ActionFlags.Communal,                          Social);
-        Set(t, EntityAction.Mimic,         ActionFlags.NeedsTarget | ActionFlags.Communal, Social);
-        Set(t, EntityAction.Rest,          ActionFlags.None,                              Survive);
-        Set(t, EntityAction.Threaten,      ActionFlags.NeedsTarget,                       Hunt);
-        Set(t, EntityAction.ShareFood,     ActionFlags.NeedsTarget | ActionFlags.Communal, Social);
-        Set(t, EntityAction.ApproachFood,  ActionFlags.IsMove | ActionFlags.NeedsTarget,  Survive | Hunt | Forage);
-        Set(t, EntityAction.ReturnNest,    ActionFlags.IsMove,                            Survive | Forage | Social);
-        Set(t, EntityAction.PickUp,        ActionFlags.NeedsTarget | ActionFlags.Communal, Forage);
-        Set(t, EntityAction.StoreFood,     ActionFlags.Communal,                          Forage);
-        Set(t, EntityAction.Follow,        ActionFlags.IsMove | ActionFlags.NeedsTarget | ActionFlags.InstinctOnly, 0);
-        Set(t, EntityAction.MoveNest,      ActionFlags.PlanOnly | ActionFlags.Communal,   0);
-        Set(t, EntityAction.Groom,         ActionFlags.NeedsTarget | ActionFlags.Communal, Social);
+        Set(t, EntityAction.Idle,     ActionFlags.None,                              Survive | Hunt | Social);
+        Set(t, EntityAction.MoveTo,   ActionFlags.IsMove | ActionFlags.NeedsTarget,  Survive | Hunt | Forage | Social);
+        Set(t, EntityAction.Attack,   ActionFlags.IsMove | ActionFlags.NeedsTarget | ActionFlags.EnergyGated, Hunt);
+        Set(t, EntityAction.Eat,      ActionFlags.None,                              Survive | Forage);
+        Set(t, EntityAction.Reproduce, ActionFlags.EnergyGated | ActionFlags.Communal, Social);
+        Set(t, EntityAction.Signal,   ActionFlags.Communal,                          Hunt | Forage | Social);
+        Set(t, EntityAction.Rest,     ActionFlags.None,                              Survive);
+        Set(t, EntityAction.Give,     ActionFlags.NeedsTarget | ActionFlags.Communal, Social);
+        Set(t, EntityAction.Take,     ActionFlags.NeedsTarget | ActionFlags.Communal, Forage);
+        Set(t, EntityAction.Put,      ActionFlags.Communal,                          Forage);
+        Set(t, EntityAction.MoveNest, ActionFlags.PlanOnly | ActionFlags.Communal,   0);
         return t;
     }
 
@@ -122,6 +112,6 @@ public static class ActionCatalog
     private static bool InSubset(int action, int goal)
     {
         ref readonly var info = ref Table[action];
-        return (info.GoalMask & (1 << goal)) != 0 && !info.Has(ActionFlags.InstinctOnly | ActionFlags.PlanOnly);
+        return (info.GoalMask & (1 << goal)) != 0 && !info.Has(ActionFlags.PlanOnly);
     }
 }

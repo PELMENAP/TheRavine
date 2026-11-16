@@ -95,7 +95,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float surpriseAlpha = 0.1f;
     [SerializeField] private float restRewardPerSecond = 0.02f;
     [SerializeField] private float planMinTravel = 15f;
-    [SerializeField] private float planMaxTravel = 60f;
+    [SerializeField] private float planMaxTravel = 120f;
     [SerializeField] private float planArriveRadius = 3f;
     [SerializeField] private int planMaxHops = 4;
     [SerializeField] private float[] planMinSecondsByPlan = { 4f, 4f, 6f, 3f, 4f, 3f, 4f, 10f, 12f };
@@ -128,6 +128,9 @@ public sealed partial class SimulationRules
     [SerializeField] private float goalRestWeight = 0.05f;
     [SerializeField] private float digestRewardWeight = 0f;
     [SerializeField] private float coordCuriosityWeight = 0.15f;
+    [SerializeField] private float curiosityEnergyGain = 1f;
+    [SerializeField] private float curiosityEnergyFloor = 0.6f;
+    [SerializeField] private float curiosityRarityWeight = 0.1f;
     [SerializeField] private float execGammaPerSecond = 0.9f;
     [SerializeField] private float coordGammaPerSecond = 0.97f;
     [SerializeField] private EpsilonSchedule epsilonScheduleMode = EpsilonSchedule.Exponential;
@@ -228,6 +231,9 @@ public sealed partial class SimulationRules
     public float GoalRestWeight => goalRestWeight;
     public float DigestRewardWeight => digestRewardWeight;
     public float CoordCuriosityWeight => coordCuriosityWeight;
+    public float CuriosityEnergyGain => curiosityEnergyGain;
+    public float CuriosityEnergyFloor => curiosityEnergyFloor;
+    public float CuriosityRarityWeight => curiosityRarityWeight;
     public float ExecGammaPerSecond => execGammaPerSecond;
     public float CoordGammaPerSecond => coordGammaPerSecond;
 }

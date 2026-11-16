@@ -15,6 +15,7 @@ public class EntityBrainContext : System.IDisposable
     public bool  SkipExec;
     public float GoalBonus;
     public float ColonyStorage;
+    public float EndedPlanShare;
     public int   CasteMask = -1;
     public Unity.Mathematics.float2 CoordAux;
     public readonly float[] PlanProbs = new float[SharedHierarchicalBrain.PlanCount];
@@ -47,7 +48,7 @@ public class EntityBrainContext : System.IDisposable
     public int   NoveltyCount;
     public float EnergyNorm;
     public float IntrinsicReward;
-    public byte  DirectionMask;
+    public ushort DirectionMask;
     public float Surprise;
     public int   DecodeTarget;
     public float DecodeTime;

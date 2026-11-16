@@ -21,6 +21,10 @@ Shader "The Ravine/VolumetricFog"
         _SelfShadowPower                 ("Self Shadow Power",       Float)   = 1.0
         _SelfShadowRemapMin              ("Self Shadow Remap Min",   Float)   = 0.0
         _SelfShadowRemapMax              ("Self Shadow Remap Max",   Float)   = 1.0
+        [IntRange] _RayStepCount         ("Ray Steps",               Range(1, 32)) = 16
+        _TransmittanceCutoff             ("Transmittance Cutoff",    Range(0, 0.2)) = 0.001
+        [Toggle] _AdditionalLightScatter ("Additional Light Scatter", Float) = 1
+        _LightMinContribution            ("Light Min Contribution",  Range(0, 1)) = 0
     }
 
     SubShader
@@ -46,6 +50,8 @@ Shader "The Ravine/VolumetricFog"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
 
+            #define FOG_MAX_STEPS 32
+
             TEXTURE2D(_HeightMaskTexture);
             SAMPLER(sampler_HeightMaskTexture);
 
@@ -69,6 +75,10 @@ Shader "The Ravine/VolumetricFog"
                 half   _SelfShadowPower;
                 half   _SelfShadowRemapMin;
                 half   _SelfShadowRemapMax;
+                float  _RayStepCount;
+                half   _TransmittanceCutoff;
+                float  _AdditionalLightScatter;
+                half   _LightMinContribution;
             CBUFFER_END
 
             struct FogParams
@@ -114,18 +124,21 @@ Shader "The Ravine/VolumetricFog"
             half3 AdditionalLightScatter(uint lightIndex, float3 pos, FogParams p)
             {
                 Light al = GetAdditionalLight(lightIndex, pos);
+                half alDist = (half)al.distanceAttenuation;
+                half3 alColor = (half3)al.color;
+
+                if (alDist <= 0.00001h || max(alColor.r, max(alColor.g, alColor.b)) * alDist < _LightMinContribution) return 0.0h;
+
                 half alShadow = (half)AdditionalLightShadow(lightIndex, pos, al.direction, half4(1,1,1,1), half4(1,1,1,1));
                 alShadow = lerp(1.0h, alShadow, _ShadowColor.a);
-                half alDist = (half)al.distanceAttenuation;
 
-                if (alShadow <= 0.001h || alDist <= 0.00001h) return 0.0h;
+                if (alShadow <= 0.001h) return 0.0h;
 
                 half alSelf = ComputeSelfShadow(pos, al.direction, _AdditionalLightSelfShadowDistance, p);
                 alSelf = lerp(1.0h, alSelf, alShadow * _SelfShadowColor.a);
                 alSelf = (half)smoothstep((float)_SelfShadowRemapMin, (float)_SelfShadowRemapMax, (float)alSelf);
                 alSelf = pow(alSelf, _SelfShadowPower);
 
-                half3 alColor = (half3)al.color;
                 alColor = lerp(alColor, _ShadowColor.rgb,     1.0h - alShadow);
                 alColor = lerp(alColor, _SelfShadowColor.rgb, 1.0h - alSelf);
                 return alColor * alDist;
@@ -198,17 +211,23 @@ Shader "The Ravine/VolumetricFog"
 
                 half3 lighting      = 0.0h;
                 half  transmittance = 1.0h;
-                half shadow         = 1.0h;
-                
+
+                int stepCount = clamp((int)(_RayStepCount + 0.5), 1, FOG_MAX_STEPS);
+                bool additionalOn = _AdditionalLightScatter > 0.5;
+                float t = GetRayDistance(0, stepCount, maxDist, noise);
+
+                InputData inputData = (InputData)0;
+                inputData.normalizedScreenSpaceUV = uvSS;
+
+                #if defined(_ADDITIONAL_LIGHTS) || USE_CLUSTER_LIGHT_LOOP
+                uint lightCount = min(GetAdditionalLightsCount(), 8);
+                #endif
 
                 [loop]
-                for (int i = 0; i < 16; ++i)
+                for (int i = 0; i < stepCount; ++i)
                 {
-                    float t      = GetRayDistance(i,     16, maxDist, noise);
-                    float nextT  = GetRayDistance(i + 1, 16, maxDist, noise);
+                    float nextT  = GetRayDistance(i + 1, stepCount, maxDist, noise);
                     float stepLength = nextT - t;
-
-                    if (t > maxDist) break;
 
                     float3 pos     = rayOrigin + dirWS * t;
                     half   fogDens = EvaluateDensity(pos, fp) * _Density * (half)stepLength;
@@ -216,31 +235,34 @@ Shader "The Ravine/VolumetricFog"
                     half scatter = (1.0h - stepTrans) * (fogDens > 0.0001h); 
                     half3 stepLight = mainLightColor * scatter;
 
-                    InputData inputData = (InputData)0;
-                    inputData.positionWS = pos;
-                    inputData.normalizedScreenSpaceUV = uvSS;
-
                     #if defined(_ADDITIONAL_LIGHTS) || USE_CLUSTER_LIGHT_LOOP
-                    #if USE_CLUSTER_LIGHT_LOOP
-                    UNITY_LOOP for (uint dirIndex = 0; dirIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); dirIndex++)
-                        stepLight += AdditionalLightScatter(dirIndex, pos, fp);
-                    #endif
+                    UNITY_BRANCH
+                    if (additionalOn)
+                    {
+                        inputData.positionWS = pos;
 
-                    uint lightCount = min(GetAdditionalLightsCount(), 8);
-                    LIGHT_LOOP_BEGIN(lightCount)
-                        stepLight += AdditionalLightScatter(lightIndex, pos, fp);
-                    LIGHT_LOOP_END
+                        #if USE_CLUSTER_LIGHT_LOOP
+                        UNITY_LOOP for (uint dirIndex = 0; dirIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); dirIndex++)
+                            stepLight += AdditionalLightScatter(dirIndex, pos, fp);
+                        #endif
+
+                        LIGHT_LOOP_BEGIN(lightCount)
+                            stepLight += AdditionalLightScatter(lightIndex, pos, fp);
+                        LIGHT_LOOP_END
+                    }
                     #endif
 
                     stepLight     *= scatter;
                     lighting      += stepLight * transmittance;
                     transmittance *= stepTrans;
 
-                    if (transmittance < 0.001h)
+                    if (transmittance < _TransmittanceCutoff)
                     {
                         transmittance = 0.0h;
                         break;
                     }
+
+                    t = nextT;
                 }
 
                 lighting *= _Color.rgb;

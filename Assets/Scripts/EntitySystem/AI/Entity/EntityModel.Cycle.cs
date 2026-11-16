@@ -27,6 +27,7 @@ public partial class EntityModel
         if (!_isActive.Value) return false;
         if (Stats.IsDisposed || Stats.Hp <= 0f) return false;
 
+        RefreshSkillTuning();
         Stats.Open();
         bool ok = RunCycle();
         Stats.Commit();
@@ -118,13 +119,18 @@ public partial class EntityModel
 
         PerceptionMarker.Begin();
         _nearest = Perception.Survey(pos, this, Colony, detect, rules.CrowdRadius, Neighbors.Length, out _nearestDistance, out _crowd, out _kinCrowd,
-            out _nearestForeign, out _nearestForeignDistance);
+            out _nearestForeign, out _nearestForeignDistance, RecentVictim, rules.HuntStickMul, rules.HuntLowHpMul,
+            _harmKey, 1f + rules.FamiliarityHuntMul * _familiarity);
+        float outnumbered = math.saturate((_crowd - _kinCrowd - _kinCrowd) / math.max(rules.OutnumberedNorm, 1e-3f));
+        if (outnumbered > 0f) AddStress(rules.OutnumberedStress * outnumbered * dt * _casteMods.Fear);
 
         _foodValid    = false;
         _foodDistance = -1f;
         if (_foodIndex != null &&
             _foodIndex.TryFindNearestFood(pos.x, pos.z, detect, out _foodCell, out _foodDistance, Colony.ColonyId))
             _foodValid = true;
+
+        ScanObject(in self, in rules);
 
         FoodTraits foodTraits = default;
         bool foodInfected = false;
@@ -168,12 +174,15 @@ public partial class EntityModel
 
         ReadForeignVitals(playerStats, playerVirology, out float foreignHp, out float foreignEnergy, out float foreignViral,
             out StatsComponent foreignSource);
+        _targetWeak = foreignSource != null && foreignHp < rules.HuntFinishHp;
+        bool sameStranger = foreignSource != null && ReferenceEquals(foreignSource, _harmKey);
+        _familiarity = sameStranger ? FamiliarityMath.Grow(_familiarity, dt, rules.FamiliarityTau) : 0f;
         float foreignHarm = ReferenceEquals(foreignSource, _harmKey) ? math.max(0f, _harmPrevHp - foreignHp) : 0f;
         _harmKey    = foreignSource;
         _harmPrevHp = foreignHp;
         if (foreignHarm > 0f)
         {
-            AddStress(rules.ForeignHarmStress * foreignHarm);
+            AddStress(rules.ForeignHarmStress * foreignHarm * _casteMods.Fear);
             Colony?.Stats.RecordForeignHarm();
         }
 
@@ -196,6 +205,10 @@ public partial class EntityModel
             NestDir           = NoisyDirection(HasHome ? DirectionTo(in self, HomePosition) : float2.zero, dirNoise),
             PoiDir            = NoisyDirection(Points.TryGetNearest(in self, out float2 poi) ? DirectionTo(in self, in poi) : float2.zero, dirNoise),
             NestFoodDir       = nest != null && nest.HasFoodPeak ? DirectionTo(in self, nest.FoodPeak) : float2.zero,
+            ObjectDir         = NoisyDirection(DirectionVector(DirectionKind.Object), dirNoise),
+            DangerDir         = DirectionVector(DirectionKind.Danger),
+            ObjectDist        = _objectValid ? _objectDistance : -1f,
+            HeldObject        = HasHeldObject ? 1f : 0f,
             Stomach           = Digestion.Fill,
             WellFed           = Digestion.WellFed,
             FoodToxicity      = foodTraits.Toxicity,
@@ -223,7 +236,7 @@ public partial class EntityModel
             SpeechDist        = Speech.Dist,
             SpeechKin         = Speech.Kin,
             SpeechAge         = Speech.Age,
-            MimickedAction    = MimickedActionIndex,
+            MimickedAction    = nearest != null ? nearest.LastActionIndex : -1,
             Now               = nowD,
             PlanRewardEma     = _planRewardEma,
             Season            = _season,
@@ -235,8 +248,6 @@ public partial class EntityModel
         UpdateHormones(dt, in rules);
 
         LastInput = Vectorizer.Vectorize(in frame, _actionTimes, in _lastTerrain);
-
-        ConsumeMimickedAction();
 
         bool resting = LastAction == EntityAction.Idle || LastAction == EntityAction.Rest;
         float digestMul = Tuning.DigestionMul;
@@ -332,6 +343,9 @@ public partial class EntityModel
         brainCtx.CoordBias[(int)PlanKind.Migrate] += rules.ScarcityMigrateBias * scarcity;
         if (Colony != null && Colony.QuorumReady && CasteFixed && !IsJuvenile)
             brainCtx.CoordBias[(int)PlanKind.Migrate] += rules.QuorumMigrateBias;
+        if (Colony != null && !IsWild && CasteFixed && !IsJuvenile)
+            brainCtx.CoordBias[(int)PlanKind.Migrate] += rules.PressureMigrateBias * Colony.Pressure;
+        brainCtx.CoordBias[(int)PlanKind.Hunt] += _casteMods.HuntBias;
 
         ref readonly var genes = ref brainCtx.CoordMLP.Params;
         bool adult = CasteFixed && !IsJuvenile && !IsWild;
@@ -351,10 +365,12 @@ public partial class EntityModel
         _threatResolved = ResolveThreatSource(in self, frame.LocalDanger, in rules, out _threatSource);
         bool hasThreat = _threatResolved || frame.LocalDanger > rules.ThreatMinDanger;
         _hasThreat = hasThreat;
+        ComputeEscapeDirection(in self, in rules);
 
         brainCtx.EnergyNorm    = EffectiveEnergyNorm;
         brainCtx.PlanHints     = PlanHints;
         brainCtx.ColonyStorage = frame.NestStorage;
+        brainCtx.EndedPlanShare = Colony != null && brainCtx.CurrentPlan < PlanKind.Count ? Colony.Stats.PlanShare(brainCtx.CurrentPlan) : 0f;
         brainCtx.DirectionMask = _dirMask;
         brainCtx.SetTemperatureScale(TemperatureScale(brainCtx, in rules));
 
@@ -401,7 +417,9 @@ public partial class EntityModel
             HasThreat       = hasThreat ? (byte)1 : (byte)0,
             Busy            = _runner.IsRunning ? (byte)1 : (byte)0,
             RunningAction   = running >= 0 ? (byte)running : InstinctBits.NoReflex,
+            RunningDirection = _runner.CurrentDirection,
             RunningInstinct = _runner.IsRunning && _runner.CurrentSource == CommandSource.Instinct ? (byte)1 : (byte)0,
+            EatFailed       = _eatFailed ? (byte)1 : (byte)0,
             PlanActive      = _plan.IsActive ? (byte)1 : (byte)0,
             PlanKind        = (byte)_plan.Kind,
             Caste           = (byte)Caste,
@@ -413,6 +431,7 @@ public partial class EntityModel
             Recruited       = IsRecruited ? (byte)1 : (byte)0,
             Colonial        = nest != null ? (byte)1 : (byte)0,
             Dt              = dt,
+            PackDistance    = Colony != null && Colony.PackCount > 1 ? math.distance(self, Colony.PackCentre) : -1f,
         };
 
         _cycleNow    = now;
@@ -451,6 +470,7 @@ public partial class EntityModel
         if (_nearestForeign != null) h |= PlanHint.ForeignNear;
         var nest = Nest;
         if (nest != null && nest.MigrationPressure > r.MigrationMinPressure) h |= PlanHint.MigrationUrge;
+        else if (nest != null && !IsWild && Colony.Pressure > r.PressureMigrateMin) h |= PlanHint.MigrationUrge;
         if (nest != null && nest.HasFoodPeak) h |= PlanHint.FoodPeak;
         if (nest != null && nest.Storage < r.SeekStorageLow * r.NestStorageNorm) h |= PlanHint.StorageLow;
         var colony = Colony;
@@ -458,6 +478,7 @@ public partial class EntityModel
         if (colony != null && CasteFixed && !IsJuvenile && colony.QuorumReady) h |= PlanHint.QuorumReady;
         if (nest != null && Caste == Caste.Worker && CasteFixed && !IsJuvenile && !IsHungry) h |= PlanHint.PreferPickUp;
         if (_kinSick) h |= PlanHint.KinSick;
+        if (_targetWeak) h |= PlanHint.TargetWeak;
         if (_night) h |= PlanHint.Night;
         return h;
     }

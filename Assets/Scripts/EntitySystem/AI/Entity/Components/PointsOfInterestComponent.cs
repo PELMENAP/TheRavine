@@ -100,6 +100,13 @@ public class PointsOfInterestComponent : IComponent
         return i >= 0;
     }
 
+    public bool TryGetNear(in float2 pos, float radius, out PointOfInterest point)
+    {
+        int i = NearestIndex(in pos, radius);
+        point = i >= 0 ? _points[i] : default;
+        return i >= 0;
+    }
+
     public bool TryPickBest(in float2 self, out float2 target)
     {
         ref readonly var r = ref SimulationRules.Frame;
@@ -113,7 +120,7 @@ public class PointsOfInterestComponent : IComponent
             float since   = (float)(now - p.LastVisit);
             float novelty = r.PoiRevisitWeight * math.saturate(since / math.max(r.PoiRevisitTau, 1e-3f));
             float score   = p.EnergyEma + novelty - math.distance(p.Position, self) * r.PoiDistanceCost
-                          - r.NegativePoiWeight * NegativeAt(in p.Position);
+                          - r.NegativePoiWeight * NegativeAt(in p.Position) * r.EatEnergyFood;
             if (score <= best) continue;
             best = score;
             pick = i;
@@ -122,6 +129,8 @@ public class PointsOfInterestComponent : IComponent
         target = pick >= 0 ? _points[pick].Position : default;
         return pick >= 0;
     }
+
+    public bool HasPointNear(in float2 pos, float radius) => NearestIndex(in pos, radius) >= 0;
 
     public void Visit(in float2 pos)
     {
@@ -137,6 +146,15 @@ public class PointsOfInterestComponent : IComponent
         ref var p = ref _points[i];
         p.EnergyEma = math.lerp(p.EnergyEma, energy, r.PoiEnergyEmaAlpha);
         p.LastVisit = SimulationClock.TimeD;
+    }
+
+    public void ReportEmpty(in float2 pos)
+    {
+        ref readonly var r = ref SimulationRules.Frame;
+        int i = NearestIndex(in pos, r.PoiVisitRadius);
+        if (i < 0) return;
+        ref var p = ref _points[i];
+        p.EnergyEma = math.lerp(p.EnergyEma, 0f, r.PoiEnergyEmaAlpha);
     }
 
     private int NearestIndex(in float2 pos, float radius)
