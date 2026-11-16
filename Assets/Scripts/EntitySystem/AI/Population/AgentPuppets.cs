@@ -67,8 +67,9 @@ public sealed class AgentPuppets : IDisposable
             return;
         }
 
-        reader.ReadBytesSafe(ref _read, length);
-        if (!AgentSnapshotCodec.TryReadHeader(_read, length, out AgentSnapshotCodec.Header header))
+        byte[] read = _read;
+        reader.ReadBytesSafe(ref read, length);
+        if (!AgentSnapshotCodec.TryReadHeader(read, length, out AgentSnapshotCodec.Header header))
         {
             Rejected++;
             return;
@@ -77,7 +78,7 @@ public sealed class AgentPuppets : IDisposable
         double expire = SimulationClock.TimeD + header.TtlMs * 0.001;
         for (int i = 0; i < header.Count; i++)
         {
-            if (!AgentSnapshotCodec.TryReadEntry(_read, i, in header, out int id, out float3 position, out byte yaw, out _))
+            if (!AgentSnapshotCodec.TryReadEntry(read, i, in header, out int id, out float3 position, out byte yaw, out _))
             {
                 Rejected++;
                 continue;

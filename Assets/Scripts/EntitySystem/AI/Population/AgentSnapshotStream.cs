@@ -120,7 +120,7 @@ public sealed class AgentSnapshotStream
         int length = AgentSnapshotCodec.HeaderSize + filled * AgentSnapshotCodec.EntrySize;
 
         using var writer = new FastBufferWriter(length, Allocator.Temp);
-        writer.WriteBytes(_buffer, length);
+        writer.WriteBytesSafe(_buffer, length);
         network.CustomMessagingManager.SendNamedMessage(AgentSnapshotCodec.MessageName, clientId, writer, NetworkDelivery.UnreliableSequenced);
 
         MessagesSent++;
