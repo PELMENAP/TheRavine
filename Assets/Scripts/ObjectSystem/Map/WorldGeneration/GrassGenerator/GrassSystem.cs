@@ -433,7 +433,7 @@ public partial class GrassSystem : MonoBehaviour
             grassPlacementShader.SetVectorArray(CullPlanesId, cullPlaneVectors);
             grassPlacementShader.SetVector(ViewOriginId, position);
             grassPlacementShader.SetVector(GrassFadeId, new Vector4(limited ? thinStartDistance : unlimitedReach, reach, thinPower, thinWiden));
-            grassPlacementShader.SetFloat(CullMarginId, cullMargin + CurvedWorld.MaxDrop(math.min(reach, MapGenerator.generationSize)));
+            grassPlacementShader.SetFloat(CullMarginId, cullMargin);
 
             any = GrassCullMath.CellRect(
                 new float2(position.x, position.z), reach,

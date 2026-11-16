@@ -6,7 +6,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 | File | Lines |
 |---|---|
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1840 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1815 |
 | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1457 |
 | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1074 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1067 |
@@ -24,11 +24,10 @@ Line numbers are those of the last generation; after local edits treat them as a
 | `Assets/Tests/EditMode/SkillGraphTests.cs` | 562 |
 | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 547 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassSystem.cs` | 515 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering/FarObjectRenderer.cs` | 501 |
 
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs`
 
-- 24–1328 class MapGenerator
+- 23–1303 class MapGenerator
   - 90 WorldToChunk
   - 94 WorldToLocalIdx
   - 98 CellToChunk
@@ -97,75 +96,74 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 761 IsOccupiedAt
   - 769 TryToAddPositionToChunk
   - 788 MarkChunkDirty
-  - 843 SetUp
-  - 913 SetupEndless
-  - 932 HorizonRingCount
-  - 945 BindFirstPlayer
-  - 957 BindPlayer
-  - 967 OnSectorChanged
-  - 981 OnBeginCameraRendering
-  - 1014 TryGetViewerChunk
-  - 1021 ApplyImmediate
-  - 1024 ApplyWorldCommands
-  - 1040 Update
-  - 1069 MoveWindow
-  - 1089 RestartSimSupply
-  - 1096 SupplySimSquare
-  - 1136 ExtraUpdate
-  - 1138 FlushDirty
-  - 1149 ComputeWindowCenter
-  - 1157 PlateauSettings
-  - 1172 BindChunkStore
-  - 1180 OnWorldRenamed
-  - 1188 SaveModifiedChunks
-  - 1203 EvictChunks
-  - 1232 IsRetained
-  - 1244 BreakUp
-  - 1250 OnDisable
-  - 1277 IgniteNearViewer
-  - 1294 OnDestroy
+  - 845 SetUp
+  - 914 SetupEndless
+  - 935 CreateBackdrop
+  - 955 BindFirstPlayer
+  - 967 BindPlayer
+  - 977 OnSectorChanged
+  - 991 TryGetViewerChunk
+  - 998 ApplyImmediate
+  - 1001 ApplyWorldCommands
+  - 1017 Update
+  - 1046 MoveWindow
+  - 1066 RestartSimSupply
+  - 1073 SupplySimSquare
+  - 1113 ExtraUpdate
+  - 1115 FlushDirty
+  - 1126 ComputeWindowCenter
+  - 1134 PlateauSettings
+  - 1149 BindChunkStore
+  - 1157 OnWorldRenamed
+  - 1165 SaveModifiedChunks
+  - 1180 EvictChunks
+  - 1209 IsRetained
+  - 1221 BreakUp
+  - 1227 OnDisable
+  - 1252 IgniteNearViewer
+  - 1269 OnDestroy
   - 445–459 struct ChunkObstacles
     - 449 TryGetObstacles
-- 1330–1793 class ChunkData
-  - 1357 SetFoodTable
-  - 1359 IsFoodPrefab
-  - 1377 ChunkData
-  - 1403 TryAddObject
-  - 1407 TryAddObject
-  - 1410 TryAddObject
-  - 1413 TryAddObject
-  - 1455 SpanMask
-  - 1458 UpperKey
-  - 1461 Validate
-  - 1486 UpperLevelsFree
-  - 1494 RegisterUpper
-  - 1510 UnregisterUpper
-  - 1526 RemapUpper
-  - 1537 AddVolume
-  - 1561 SetLevelBit
-  - 1563 ClearVolume
-  - 1573 TryGetBuilding
-  - 1579 HasLevelAt
-  - 1586 TryGetObject
-  - 1600 TryGetObject
-  - 1615 RemoveObject
-  - 1617 RemoveObject
-  - 1683 ClearDirty
-  - 1685 ClearObjects
-  - 1708 SetHeight
-  - 1720 RestoreHeight
-  - 1730 LevelsAt
-  - 1732 MarkPersisted
-  - 1734 CommitRestore
-  - 1741 ResetForReuse
-  - 1759 CommitErosion
-  - 1765 InvalidateWater
-  - 1773 CommitGeneration
-  - 1778 Dispose
-- 1795–1810 struct StructureSpawnPoint
-  - 1801 StructureSpawnPoint
-- 1812–1839 struct ObjectInstInfo
-  - 1828 ObjectInstInfo
+- 1305–1768 class ChunkData
+  - 1332 SetFoodTable
+  - 1334 IsFoodPrefab
+  - 1352 ChunkData
+  - 1378 TryAddObject
+  - 1382 TryAddObject
+  - 1385 TryAddObject
+  - 1388 TryAddObject
+  - 1430 SpanMask
+  - 1433 UpperKey
+  - 1436 Validate
+  - 1461 UpperLevelsFree
+  - 1469 RegisterUpper
+  - 1485 UnregisterUpper
+  - 1501 RemapUpper
+  - 1512 AddVolume
+  - 1536 SetLevelBit
+  - 1538 ClearVolume
+  - 1548 TryGetBuilding
+  - 1554 HasLevelAt
+  - 1561 TryGetObject
+  - 1575 TryGetObject
+  - 1590 RemoveObject
+  - 1592 RemoveObject
+  - 1658 ClearDirty
+  - 1660 ClearObjects
+  - 1683 SetHeight
+  - 1695 RestoreHeight
+  - 1705 LevelsAt
+  - 1707 MarkPersisted
+  - 1709 CommitRestore
+  - 1716 ResetForReuse
+  - 1734 CommitErosion
+  - 1740 InvalidateWater
+  - 1748 CommitGeneration
+  - 1753 Dispose
+- 1770–1785 struct StructureSpawnPoint
+  - 1776 StructureSpawnPoint
+- 1787–1814 struct ObjectInstInfo
+  - 1803 ObjectInstInfo
 
 ## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
 
@@ -899,27 +897,4 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 473 OnDisable
 - 502–515 class GrassCullMath
   - 504 CellRect
-
-## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering/FarObjectRenderer.cs`
-
-- 16–490 class FarObjectRenderer
-  - 81 FarObjectRenderer
-  - 233 CreateQuad
-  - 246 UpdateChunk
-  - 253 SetSector
-  - 260 OnChunkDirty
-  - 265 Tick
-  - 289 CollectSources
-  - 306 CollectBlock
-  - 327 Rebuild
-  - 379 Render
-  - 389 Dispose
-  - 27–32 struct ChunkSource
-  - 34–40 struct TypeInfo
-  - 42–50 class Command
-  - 410–489 struct CollectJob
-    - 427 BatchOf
-    - 445 Execute
-- 492–500 class FarBatchMath
-  - 494 BatchIndex
 

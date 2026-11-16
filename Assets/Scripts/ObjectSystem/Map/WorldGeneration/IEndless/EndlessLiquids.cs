@@ -66,11 +66,9 @@ namespace TheRavine.Generator
                 sector = generator.Sector;
                 ringCount = generator.LodRingCount;
                 baseCells = math.clamp(math.ceilpow2(settings.waterCells), MinCells, MaxCells);
-                float reach = (ringCount * MapGenerator.WindowSide + 2) * MapGenerator.chunkSize * 1.4143f;
-                float boundsHeight = BoundsHeight + 2f * CurvedWorld.MaxDrop(reach);
                 localBounds = new Bounds(
                     new Vector3(BlockWorld * 0.5f, 0f, BlockWorld * 0.5f),
-                    new Vector3(BlockWorld, boundsHeight, BlockWorld));
+                    new Vector3(BlockWorld, BoundsHeight, BlockWorld));
 
                 Transform central0 = generator.waterTransform;
                 central0.localScale = Vector3.one;

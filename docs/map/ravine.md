@@ -10,6 +10,7 @@ Tests: `Assets/Tests/EditMode/RavineProfileTests.cs`, `Assets/Tests/EditMode/Chu
 | `RavineProfile` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/RavineProfile.cs` | Elevation by world z: `Blend`, `Elevation`, `ElevationRange`, `IsValley`, `IsWall`, `IsPlateau` |
 | `ChunkGenerationSettings` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerationSettings.cs` | Header `Ravine`: `ravineHalfWidth`, `ravineWallRun`, `ravineWallHeight` |
 | `MapGenerator` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | `Ravine` (one instance), `plateauSettings`, `AboveWater` |
+| `RavineBackdrop` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering/RavineBackdrop.cs` | Analytic walls, plateau strip and valley floor beyond the streamed terrain |
 
 ## Data flow
 
@@ -26,6 +27,16 @@ Tests: `Assets/Tests/EditMode/RavineProfileTests.cs`, `Assets/Tests/EditMode/Chu
 10. `EndlessLiquids` lifts a block's water by the block's elevation and hides water on a block that contains wall.
 11. Bounds of terrain blocks, grass windows, liquids and far objects are centred on `ElevationRange` of their block and cover its span.
 
+## Backdrop
+
+- Shader `Assets/Shaders/Terrain/RavineBackdrop.shader`; the profile on the GPU is `Assets/Shaders/Include/RavineProfile.hlsl`, global `_RavineProfile` set once in `MapGenerator.SetUp`.
+- Created by `MapGenerator` as `endless[4]` with terrain on and a non-flat profile: `ravineBackdropMaterial`, else `ravineBackdropShader` + terrain material properties.
+- One static grid mesh for one side (|z| from 0 to the plateau strip), drawn twice by `Graphics.RenderMesh` with `_BackdropSide` ±1; columns follow `Camera.main` along x in steps of `backdropCell`.
+- The vertex shader takes height from `RavineElevation` plus value noise; fragments inside the terrain reach (`_BackdropReach`, Chebyshev from the window centre) are clipped.
+- A vertex beyond `_PullStart` of the far plane is pulled along its view ray toward `_PullLimit`; the far plane is not changed. No shadows; no chunk data.
+- Haze: `1 - exp(-backdropHazeDensity * true distance)` toward `unity_FogColor`. Settings: header `Ravine Backdrop` of `ChunkGenerationSettings`.
+- Steep terrain: `BiomeTerrainCommon.hlsl` samples far rock in a side projection above `_RockSideSlope`; the near path is triplanar.
+
 ## Saving
 
 - Chunk files store absolute heights and object y. Format 5 marks files written with the profile.
@@ -40,8 +51,3 @@ Tests: `Assets/Tests/EditMode/RavineProfileTests.cs`, `Assets/Tests/EditMode/Chu
 ## Hot paths
 
 `docs/map/HOT_PATHS.md`, sections World and Rendering.
-
-## Open issues
-
-- Relief of the two generators differs, so the plateau border has a seam of up to `maxTerrainHeight`.
-- `GrassSystem` filters blades by absolute height (`globalMinHeight`, `globalMaxHeight`): no grass on the plateau.

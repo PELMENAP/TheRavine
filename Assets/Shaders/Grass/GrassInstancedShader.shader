@@ -64,7 +64,6 @@ Shader "The Ravine/ChunkGrassShader"
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-        #include "Assets/Shaders/Include/CurvedWorld.hlsl"
 
         struct InstanceData
         {
@@ -261,7 +260,7 @@ Shader "The Ravine/ChunkGrassShader"
             windOffset = SampleWindOffset(positionWS, heightFactor, instancePos);
             float3 trampleOffset = ApplyTrampleBend(heightFactor, trample);
 
-            return BendWorld(positionWS + windOffset + trampleOffset);
+            return positionWS + windOffset + trampleOffset;
         }
 
         float3 TransformInstanceVertex(

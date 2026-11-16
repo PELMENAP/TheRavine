@@ -102,7 +102,6 @@ Shader "The Ravine/Water/WaterShader"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
-            #include "Assets/Shaders/Include/CurvedWorld.hlsl"
             
             TEXTURE2D(NormalMap);       SAMPLER(samplerNormalMap);
             TEXTURE2D(FoamTexture);     SAMPLER(samplerFoamTexture);
@@ -440,8 +439,8 @@ Shader "The Ravine/Water/WaterShader"
 
                                 
                 // === TRANSFORM ===
-                float3 bentPositionWS = BendWorld(TransformObjectToWorld(displacedPos));
-                float4 positionCS = TransformWorldToHClip(bentPositionWS);
+                float3 displacedPositionWS = TransformObjectToWorld(displacedPos);
+                float4 positionCS = TransformWorldToHClip(displacedPositionWS);
                 float4 ndc = positionCS * 0.5;
                 float4 positionNDC;
                 positionNDC.xy = float2(ndc.x, ndc.y * _ProjectionParams.x) + ndc.w;
@@ -450,13 +449,13 @@ Shader "The Ravine/Water/WaterShader"
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
                 
                 output.positionCS = positionCS;
-                output.positionWS = bentPositionWS;
+                output.positionWS = displacedPositionWS;
                 output.normalWS = normalInputs.normalWS;
                 output.tangentWS = float4(normalInputs.tangentWS, input.tangentOS.w);
                 output.uv0 = worldPos.xz * RippleWindow.z;
                 output.positionNDC = positionNDC;
                 output.screenPos = ComputeScreenPos(positionCS);
-                output.viewDirWS = GetWorldSpaceNormalizeViewDir(bentPositionWS);
+                output.viewDirWS = GetWorldSpaceNormalizeViewDir(displacedPositionWS);
                 output.fogFactor = ComputeFogFactor(positionCS.z);
                 output.shadowCoord = TransformWorldToShadowCoord(output.positionWS);
                 
