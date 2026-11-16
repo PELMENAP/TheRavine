@@ -13,6 +13,7 @@ namespace TheRavine.Generator
         [ReadOnly] public int epochIndex;
         [ReadOnly] public ErosionSettings settings;
         public NativeArray<float> heightMap, deltaMap;
+        [ReadOnly] public NativeArray<float> erosionScale;
 
         private const float MinDirection = 0.0001f;
 
@@ -33,7 +34,7 @@ namespace TheRavine.Generator
 
             for (int i = 0; i < heightMap.Length; i++)
             {
-                heightMap[i] += deltaMap[i] * settings.amplify;
+                heightMap[i] += deltaMap[i] * settings.amplify * erosionScale[i];
             }
         }
 
