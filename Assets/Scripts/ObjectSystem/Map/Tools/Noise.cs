@@ -15,7 +15,8 @@ public class Noise
     private FastNoiseLite continentalnessNoise;
     private FastNoiseLite ruggednessNoise;
     private FastNoiseLite ridgeNoise;
-    private FastNoiseLite warpNoise;
+    private FastNoiseLite warpNoiseX;
+    private FastNoiseLite warpNoiseY;
     private readonly float landformContrast;
     private readonly float landformBlendRadiusRcp2;
     private readonly float landformBaseWeight;
@@ -34,8 +35,8 @@ public class Noise
         continentalnessNoise = BuildNoise(settings.continentalnessSettings, seed * 6);
         ruggednessNoise      = BuildNoise(settings.ruggednessSettings,      seed * 7);
         ridgeNoise           = BuildNoise(settings.ridgeNoiseSettings,      seed * 8);
-        warpNoise            = BuildNoise(settings.landformWarpSettings,    seed * 9);
-        warpNoise.SetDomainWarpAmp(1f);
+        warpNoiseX           = BuildNoise(settings.landformWarpSettings,    seed * 9);
+        warpNoiseY           = BuildNoise(settings.landformWarpSettings,    seed * 10);
 
         landformContrast = settings.landformContrast;
         landformBlendRadiusRcp2 = 1f / (settings.landformBlendRadius * settings.landformBlendRadius);
@@ -78,7 +79,8 @@ public class Noise
             ContinentalnessNoise = continentalnessNoise,
             RuggednessNoise = ruggednessNoise,
             RidgeNoise = ridgeNoise,
-            WarpNoise = warpNoise,
+            WarpNoiseX = warpNoiseX,
+            WarpNoiseY = warpNoiseY,
             Landforms = landforms,
             Contrast = landformContrast,
             BlendRadiusRcp2 = landformBlendRadiusRcp2,
@@ -142,7 +144,8 @@ public class Noise
         [ReadOnly] public FastNoiseLite ContinentalnessNoise;
         [ReadOnly] public FastNoiseLite RuggednessNoise;
         [ReadOnly] public FastNoiseLite RidgeNoise;
-        [ReadOnly] public FastNoiseLite WarpNoise;
+        [ReadOnly] public FastNoiseLite WarpNoiseX;
+        [ReadOnly] public FastNoiseLite WarpNoiseY;
         [ReadOnly] public NativeArray<LandformParams> Landforms;
         [ReadOnly] public float Contrast;
         [ReadOnly] public float BlendRadiusRcp2;
@@ -180,11 +183,8 @@ public class Noise
                 float dy = 0f;
                 if (p.warpAmplitude != 0f || p.riverWarp != 0f)
                 {
-                    float ux = wx;
-                    float uy = wy;
-                    WarpNoise.DomainWarp(ref ux, ref uy);
-                    dx = ux - wx;
-                    dy = uy - wy;
+                    dx = WarpNoiseX.GetNoise(wx, wy);
+                    dy = WarpNoiseY.GetNoise(wx, wy);
                 }
 
                 float hx = wx + dx * p.warpAmplitude;
