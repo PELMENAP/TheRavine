@@ -9,7 +9,7 @@ Read only what the task touches. The Philosophy and Project constraints sections
 |---|---|
 | Agent AI, colonies, learning, speech | [docs/map/ai.md](docs/map/ai.md) |
 | Virology | [docs/map/virology.md](docs/map/virology.md) |
-| World, chunks, NAL, random ticks, camera rings, rendering; ravine shape, plateau | [docs/map/world.md](docs/map/world.md), [docs/map/ravine.md](docs/map/ravine.md) |
+| World, chunks, NAL, random ticks, camera rings, rendering; ravine shape, plateau; terrain landforms, rivers, erosion | [docs/map/world.md](docs/map/world.md), [docs/map/ravine.md](docs/map/ravine.md), [docs/map/landforms.md](docs/map/landforms.md) |
 | Map events: fire, later weather | [docs/map/map-events.md](docs/map/map-events.md) |
 | Player, Netcode | [docs/map/player-net.md](docs/map/player-net.md) |
 | Agent motion, birds, other jobs | [docs/map/jobs.md](docs/map/jobs.md) |
