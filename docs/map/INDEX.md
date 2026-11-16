@@ -81,9 +81,9 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/ObjectSystem` | 3 | 212 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents` | 3 | 151 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire` | 3 | 791 |
-| `Assets/Scripts/ObjectSystem/Map/Tools` | 3 | 2780 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 13 | 3796 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs` | 5 | 742 |
+| `Assets/Scripts/ObjectSystem/Map/Tools` | 3 | 2970 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 13 | 3821 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs` | 7 | 944 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision` | 7 | 396 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator` | 5 | 628 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless` | 7 | 1506 |
@@ -115,7 +115,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/View` | 2 | 23 |
-| `Assets/Tests/EditMode` | 46 | 5742 |
+| `Assets/Tests/EditMode` | 47 | 6059 |
 
 ## Assemblies
 
@@ -162,7 +162,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | BehaviourType | enum | `Assets/Scripts/ObjectSystem/ObjectInfo/ObjectInfo.cs` | 120 |
 | BinaryOperator | enum | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 34 |
 | BinaryOpNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 27 |
-| BiomeSettings | struct | `Assets/Scripts/ObjectSystem/Map/Tools/NoiseLayerSettings.cs` | 85 |
+| BiomeSettings | struct | `Assets/Scripts/ObjectSystem/Map/Tools/NoiseLayerSettings.cs` | 125 |
 | BirdCanopyStampJob | struct | `Assets/Scripts/EntitySystem/Job/BirdHeightField.cs` | 105 |
 | BirdGrid | struct | `Assets/Scripts/EntitySystem/Job/AccelerationJob.cs` | 10 |
 | BirdGridJob | struct | `Assets/Scripts/EntitySystem/Job/AccelerationJob.cs` | 18 |
@@ -236,7 +236,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | Extension | class | `Assets/Scripts/Core/Utilities/Extentions.cs` | 7 |
 | FaderOnTransit | class | `Assets/Scripts/Core/Fader.cs` | 9 |
 | FarMode | enum | `Assets/Scripts/ObjectSystem/ObjectInfo/ObjectInfo.cs` | 139 |
-| FillChunkArraysJob | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 596 |
+| FillChunkArraysJob | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 612 |
 | FireCell | struct | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireEvent.cs` | 10 |
 | FireRules | class | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/MapEventRules.cs` | 20 |
 | FireViewSettings | class | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireView.cs` | 13 |
@@ -307,6 +307,8 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | IValidatedCommand | interface | `Assets/Scripts/Terminal/ICommand.cs` | 20 |
 | IViewDirectional | interface | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/IEndless.cs` | 12 |
 | IWorldCommandTarget | interface | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | 33 |
+| LandformParams | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs/LandformBlend.cs` | 6 |
+| LandformSettings | struct | `Assets/Scripts/ObjectSystem/Map/Tools/NoiseLayerSettings.cs` | 148 |
 | LayoutHelpers | class | `Assets/Scripts/Core/Utilities/CodeHelpers.cs` | 318 |
 | LegParams | struct | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/LegStore.cs` | 9 |
 | LegState | enum | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/LegStore.cs` | 7 |
@@ -385,13 +387,13 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | RiveExtensions | class | `Assets/Scripts/Terminal/Rive/Core/RiveExtentions.cs` | 1 |
 | RiveFrame | class | `Assets/Scripts/Terminal/Rive/Core/RiveRun.cs` | 16 |
 | RiveParseException | class | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | 721 |
-| RiverBlendSettings | struct | `Assets/Scripts/ObjectSystem/Map/Tools/NoiseLayerSettings.cs` | 63 |
+| RiverBlendSettings | struct | `Assets/Scripts/ObjectSystem/Map/Tools/NoiseLayerSettings.cs` | 107 |
 | RiveRuntimeException | class | `Assets/Scripts/Terminal/Rive/Core/RiveRuntime.cs` | 281 |
 | RndInferJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/RandomNetworkDistillation.cs` | 136 |
 | RndTrainJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/RandomNetworkDistillation.cs` | 170 |
 | RotateCommand | class | `Assets/Scripts/Terminal/GeneratorCommands.cs` | 12 |
 | SaveScriptCommand | class | `Assets/Scripts/Terminal/Rive/RiveRedactorCommands.cs` | 286 |
-| ScaleCopyJob | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 586 |
+| ScaleCopyJob | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 602 |
 | SceneLoader | class | `Assets/Scripts/Core/SceneTransition.cs` | 6 |
 | ScriptInfoCommand | class | `Assets/Scripts/Terminal/Rive/RiveRedactorCommands.cs` | 146 |
 | SendToInteractorNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 49 |
@@ -458,7 +460,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | ViewOrientMode | enum | `Assets/Scripts/Model/BehavioursMap/View/ViewOrientedTransform.cs` | 5 |
 | ViralPayload | struct | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 14 |
 | WaitNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 101 |
-| WaterDistanceJob | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 515 |
+| WaterDistanceJob | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 531 |
 | WindParams | struct | `Assets/Scripts/ObjectSystem/Wind/WindField.cs` | 8 |
 | WindSampler | struct | `Assets/Scripts/ObjectSystem/Wind/WindField.cs` | 15 |
 | WorldCommand | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | 10 |

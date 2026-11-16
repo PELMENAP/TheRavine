@@ -18,8 +18,8 @@ Line numbers are those of the last generation; after local edits treat them as a
 | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 703 |
 | `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs` | 687 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs` | 643 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 637 |
 | `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs` | 621 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 621 |
 | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 603 |
 | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 526 |
 
@@ -711,6 +711,28 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 625 GetGeneticParameters
   - 627 Dispose
 
+## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs`
+
+- 15–34 class ErosionBudget
+  - 22 CanStart
+  - 33 Spend
+- 36–529 class ChunkGenerator
+  - 78 ChunkGenerator
+  - 173 ChunkSeed
+  - 176 Generate
+  - 295 RunEpochs
+  - 317 CatchUpTerrain
+  - 384 BuildWaterDistance
+  - 436 RaiseDetail
+  - 459 RunSpawn
+  - 492 Dispose
+- 531–600 struct WaterDistanceJob
+  - 540 Execute
+- 602–610 struct ScaleCopyJob
+  - 609 Execute
+- 612–636 struct FillChunkArraysJob
+  - 628 Execute
+
 ## `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs`
 
 - 15–620 class BoidsBehaviour
@@ -742,28 +764,6 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 562 OnDisable
   - 564 OnDestroy
   - 570 DisposeAll
-
-## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs`
-
-- 15–34 class ErosionBudget
-  - 22 CanStart
-  - 33 Spend
-- 36–513 class ChunkGenerator
-  - 76 ChunkGenerator
-  - 171 ChunkSeed
-  - 174 Generate
-  - 291 RunEpochs
-  - 313 CatchUpTerrain
-  - 370 BuildWaterDistance
-  - 422 RaiseDetail
-  - 445 RunSpawn
-  - 478 Dispose
-- 515–584 struct WaterDistanceJob
-  - 524 Execute
-- 586–594 struct ScaleCopyJob
-  - 593 Execute
-- 596–620 struct FillChunkArraysJob
-  - 612 Execute
 
 ## `Assets/Scripts/EntitySystem/Job/MotionSystem.cs`
 

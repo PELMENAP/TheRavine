@@ -2,7 +2,7 @@
 
 Root: `Assets/Scripts/ObjectSystem/`. Assembly: `ObjectSystem`. Namespace: mostly `TheRavine.Generator`.
 Tests: `Assets/Tests/EditMode/` — `ChunkStoreTests`, `ChunkPlacementTests`, `BuildingVolumeTests`, `FootprintTests`, `NalRegionTests`,
-`RandomTickJobTests`, `RandomTickMathTests`, `WorldCommandBufferTests`.
+`RandomTickJobTests`, `RandomTickMathTests`, `WorldCommandBufferTests`, `LandformBlendTests`.
 
 Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 `MapGenerator.cs` and `ChunkGenerator.cs` are over 500 lines: take the member's line from `docs/map/LARGE_FILES.md`.
@@ -29,6 +29,14 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 - Coordinate helpers: `WorldToChunk`, `WorldToLocalIdx`, `CellToChunk`, `ChunkForCell`. Cell and chunk keys: `Position2Int.Pack`.
 - Noise: static `Noise` in `Assets/Scripts/ObjectSystem/Map/Tools/Noise.cs`; settings in `NoiseLayerSettings.cs` next to it.
 - Chunk jobs: `BiomeModifierJob`, `HydraulicErosionJob`, `TerrainFinalizeJob`; object spawn: `SpawnLayerJob` in the ObjectGenerator folder.
+- Landform layer: a second blended preset space (`LandformPresets`, `LandformSettings`) picked by continentalness and ruggedness, the way biomes are picked by temperature and moisture.
+- `Noise.HeightRiverMapJob` runs per cell at full resolution: `LandformBlend.Control` (two low-frequency noises, contrast), `LandformBlend.Evaluate` (smoothstep kernel, identity added with `landformBaseWeight`).
+- The blended `LandformParams` drive domain warp, ridge mix, terraces, height scale and offset, river warp; they also write `RiverShapeOutput` (river width, carve) and `ErosionOutput`.
+- Identity landform (`Hills`, or an empty array) reproduces the old height and river formulas; `Evaluate` adds only the difference from identity, so identity stays exact.
+- `BiomeModifierJob` scales the river band by `riverWidth` (0 means no river) and the river blend by `riverCarve`; `HydraulicErosionJob` multiplies its delta by `erosionScale`.
+- `CatchUpTerrain` has no noise maps: `Noise.LandformErosionJob` refills only `erosionScale` for the chunk, inside the `ErosionBudget`; `ChunkStore` and `ChunkData` do not hold it.
+- Settings: `ChunkGenerationSettings.landforms`, `continentalnessSettings`, `ruggednessSettings`, `ridgeNoiseSettings`, `landformWarpSettings`, `landformBlendRadius`, `landformBaseWeight`, `landformContrast`.
+- Water level stays global. Tests: `LandformBlendTests`.
 
 ## Frame flow
 

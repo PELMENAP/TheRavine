@@ -48,6 +48,9 @@ namespace TheRavine.Generator
         private NativeArray<float> biomeHeightMap;
         private readonly NativeArray<float2> climateMap;
         private readonly NativeArray<float> riverBlendMap;
+        private readonly NativeArray<float2> riverShapeMap;
+        private readonly NativeArray<float> erosionScaleMap;
+        private NativeArray<LandformParams> landforms;
         private readonly NativeArray<int>   heightResult, biomeResult;
         private readonly NativeArray<float> biomeCentersT, biomeCentersM, regionThresholds;
 
@@ -57,7 +60,6 @@ namespace TheRavine.Generator
         private readonly NativeArray<byte> biomeHasRiver;
 
         private readonly NativeArray<float> riverCenter;
-        private readonly NativeArray<float> riverRadius;
         private readonly NativeArray<float> riverRadiusRcp;
         private readonly NativeArray<float> riverBedHeight;
 
@@ -80,17 +82,19 @@ namespace TheRavine.Generator
             this.settings     = settings;
             worldSeed         = seed;
             spawnEnabled      = settings.endlessFlag != null && settings.endlessFlag.Length > 2 && settings.endlessFlag[2];
-            noise = new(
-                settings.heightNoiseSettings,
-                settings.riverNoiseSettings,
-                settings.temperatureSettings,
-                settings.moistureSettings,
-                seed);
+            noise = new(settings, seed);
+
+            int landformCount = settings.landforms?.Length ?? 0;
+            landforms = new NativeArray<LandformParams>(landformCount, Allocator.Persistent);
+            for (int i = 0; i < landformCount; i++)
+                landforms[i] = LandformParams.From(settings.landforms[i]);
 
             noiseMap       = new NativeArray<float>(totalCells, Allocator.Persistent);
             deltaMap       = new NativeArray<float>(totalCells, Allocator.Persistent);
 
             riverMap       = new NativeArray<float>(totalCells, Allocator.Persistent);
+            riverShapeMap  = new NativeArray<float2>(totalCells, Allocator.Persistent);
+            erosionScaleMap = new NativeArray<float>(totalCells, Allocator.Persistent);
             temperatureMap = new NativeArray<float>(totalCells, Allocator.Persistent);
             moistureMap    = new NativeArray<float>(totalCells, Allocator.Persistent);
 
@@ -123,7 +127,6 @@ namespace TheRavine.Generator
             biomeHasRiver = new NativeArray<byte>(biomeCount, Allocator.Persistent);
 
             riverCenter = new NativeArray<float>(biomeCount, Allocator.Persistent);
-            riverRadius = new NativeArray<float>(biomeCount, Allocator.Persistent);
             riverRadiusRcp = new NativeArray<float>(biomeCount, Allocator.Persistent);
 
             riverBedHeight = new NativeArray<float>(biomeCount, Allocator.Persistent);
@@ -150,7 +153,6 @@ namespace TheRavine.Generator
                     rs.influenceWidth;
 
                 riverCenter[i] = center;
-                riverRadius[i] = radius;
                 riverRadiusRcp[i] =
                     radius > 0f
                         ? math.rcp(radius)
@@ -179,7 +181,8 @@ namespace TheRavine.Generator
             uint hash = ChunkSeed(chunkOrigin.x, chunkOrigin.y);
 
             JobHandle mapHandle = noise.GenerateAllMaps(
-                noiseMap, riverMap, temperatureMap, moistureMap,
+                noiseMap, riverMap, riverShapeMap, erosionScaleMap, temperatureMap, moistureMap,
+                landforms,
                 Position2Int.UnpackToVector(centre));
 
             JobHandle biomeHandle =
@@ -187,6 +190,7 @@ namespace TheRavine.Generator
                 {
                     heightIn = noiseMap,
                     riverMap = riverMap,
+                    riverShape = riverShapeMap,
 
                     temperatureMap = temperatureMap,
                     moistureMap = moistureMap,
@@ -200,7 +204,6 @@ namespace TheRavine.Generator
                     biomeHasRiver = biomeHasRiver,
 
                     riverCenter = riverCenter,
-                    riverRadius = riverRadius,
                     riverRadiusRcp = riverRadiusRcp,
                     riverBedHeight = riverBedHeight,
 
@@ -285,7 +288,8 @@ namespace TheRavine.Generator
                 settings = settings.erosion,
 
                 heightMap = biomeHeightMap,
-                deltaMap = deltaMap
+                deltaMap = deltaMap,
+                erosionScale = erosionScaleMap
             }.Schedule(dependency);
 
         private int RunEpochs(uint hash, int firstEpoch, int count, ErosionBudget budget, out bool budgetHit)
@@ -317,6 +321,16 @@ namespace TheRavine.Generator
 
             uint hash = ChunkSeed(Position2Int.GetX(centre), Position2Int.GetY(centre));
             const float invHeight = 1f / maxTerrainHeight;
+
+            if (!budget.CanStart())
+            {
+                budgetHit = true;
+                return 0;
+            }
+
+            long scaleStart = FrameBudget.Now;
+            noise.GenerateErosionScale(erosionScaleMap, landforms, Position2Int.UnpackToVector(centre)).Complete();
+            budget.Spend(FrameBudget.Now - scaleStart);
 
             new ScaleCopyJob { source = chunkData.HeightRaw, target = biomeHeightMap, factor = invHeight }.Run(totalCells);
 
@@ -481,6 +495,9 @@ namespace TheRavine.Generator
             if (deltaMap.IsCreated)         deltaMap.Dispose();
 
             if (riverMap.IsCreated)         riverMap.Dispose();
+            if (riverShapeMap.IsCreated)    riverShapeMap.Dispose();
+            if (erosionScaleMap.IsCreated)  erosionScaleMap.Dispose();
+            if (landforms.IsCreated)        landforms.Dispose();
             if (temperatureMap.IsCreated)   temperatureMap.Dispose();
             if (moistureMap.IsCreated)      moistureMap.Dispose();
             if (heightResult.IsCreated)     heightResult.Dispose();
@@ -497,7 +514,6 @@ namespace TheRavine.Generator
             if (biomeHeightOffset.IsCreated)biomeHeightOffset.Dispose();
             if (biomeHasRiver.IsCreated)    biomeHasRiver.Dispose();
             if (riverCenter.IsCreated)      riverCenter.Dispose();
-            if (riverRadius.IsCreated)      riverRadius.Dispose();
             if (riverRadiusRcp.IsCreated)   riverRadiusRcp.Dispose();
             if (riverBedHeight.IsCreated)   riverBedHeight.Dispose();
 

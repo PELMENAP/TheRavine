@@ -21,6 +21,15 @@ namespace TheRavine.Generator
         public NoiseLayerSettings temperatureSettings = NoiseLayerSettings.DefaultTemperature;
         public NoiseLayerSettings moistureSettings    = NoiseLayerSettings.DefaultMoisture;
 
+        public NoiseLayerSettings continentalnessSettings = NoiseLayerSettings.DefaultContinentalness;
+        public NoiseLayerSettings ruggednessSettings      = NoiseLayerSettings.DefaultRuggedness;
+        public NoiseLayerSettings ridgeNoiseSettings      = NoiseLayerSettings.DefaultRidge;
+        public NoiseLayerSettings landformWarpSettings    = NoiseLayerSettings.DefaultLandformWarp;
+        public LandformSettings[] landforms = LandformPresets.All;
+        public float landformBlendRadius = 0.3f;
+        public float landformBaseWeight  = 0.05f;
+        public float landformContrast    = 1.6f;
+
         public int mountainRegionIndex = 8;
 
         public TerrainType[] regions;
