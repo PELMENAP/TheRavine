@@ -21,7 +21,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 9. Third loop: `EntityModel.EndCycle`.
 10. `MovePlanner.Flush`, then `InfectionCoordinator.Spread` on the batch.
 11. At the end of a window, `CloseTickWindow`: deaths, extinctions, predators, `ApplyPendingGradients`, nests, castes, `SweepSkills`, `SolveSkills`, visibility.
-12. Every frame after the tick: `EntityManager.ApplyFireHeat` (once per fire step), `SpeechBus.Flush`, `MovePlanner.Flush`, `MotionSystem.Step`.
+12. Every frame after the tick: `EntityManager.ApplyFireHeat` (once per fire step), `EntityManager.ApplyWildWind` (once per wind step while active), `SpeechBus.Flush`, `MovePlanner.Flush`, `MotionSystem.Step`.
 
 | Area | File | Hot methods |
 |---|---|---|

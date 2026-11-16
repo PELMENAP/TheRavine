@@ -22,14 +22,14 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 19 | 2317 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
-| `Assets/Scripts/EntitySystem/AI` | 11 | 2158 |
+| `Assets/Scripts/EntitySystem/AI` | 11 | 2183 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
 | `Assets/Scripts/EntitySystem/AI/Colony` | 7 | 798 |
 | `Assets/Scripts/EntitySystem/AI/Debug` | 3 | 1615 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 787 |
 | `Assets/Scripts/EntitySystem/AI/Entity` | 18 | 2732 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1460 |
-| `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 713 |
+| `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 714 |
 | `Assets/Scripts/EntitySystem/AI/Flock` | 1 | 230 |
 | `Assets/Scripts/EntitySystem/AI/Instinct` | 1 | 441 |
 | `Assets/Scripts/EntitySystem/AI/LSTM` | 2 | 198 |
@@ -48,7 +48,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/Entityes/Bot/BotBehavious` | 3 | 55 |
 | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts` | 10 | 986 |
 | `Assets/Scripts/EntitySystem/Entityes/Mob` | 4 | 456 |
-| `Assets/Scripts/EntitySystem/Entityes/Player` | 7 | 1560 |
+| `Assets/Scripts/EntitySystem/Entityes/Player` | 7 | 1583 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/Components` | 8 | 790 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/Joystick Pack` | 2 | 116 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerBehaviours` | 3 | 79 |
@@ -61,7 +61,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/GameSceneManagerSystem` | 3 | 295 |
 | `Assets/Scripts/GameSceneManagerSystem/IStates & IStatesBehaviour` | 1 | 15 |
 | `Assets/Scripts/GameSceneManagerSystem/MainSceneManagerSystem` | 2 | 274 |
-| `Assets/Scripts/GameSceneManagerSystem/Menu` | 2 | 540 |
+| `Assets/Scripts/GameSceneManagerSystem/Menu` | 2 | 363 |
 | `Assets/Scripts/GameSceneManagerSystem/StateMachine` | 4 | 341 |
 | `Assets/Scripts/GameSceneManagerSystem/States` | 4 | 144 |
 | `Assets/Scripts/Model/Actions&Events` | 3 | 65 |
@@ -77,10 +77,11 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Model/InventoryModel` | 12 | 938 |
 | `Assets/Scripts/Model/InventoryModel/IInventory` | 3 | 28 |
 | `Assets/Scripts/ObjectSystem` | 2 | 196 |
-| `Assets/Scripts/ObjectSystem/Map/GlobalEvents` | 3 | 151 |
+| `Assets/Scripts/ObjectSystem/Map/GlobalEvents` | 3 | 160 |
 | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire` | 3 | 833 |
+| `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Wind` | 5 | 790 |
 | `Assets/Scripts/ObjectSystem/Map/Tools` | 3 | 2780 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 14 | 3929 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration` | 14 | 3930 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs` | 5 | 752 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision` | 7 | 396 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator` | 7 | 1124 |
@@ -113,7 +114,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 945 |
-| `Assets/Tests/EditMode` | 63 | 9156 |
+| `Assets/Tests/EditMode` | 64 | 9238 |
 
 ## Assemblies
 
@@ -171,7 +172,8 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | BirdState | class | `Assets/Scripts/EntitySystem/Job/BirdData.cs` | 5 |
 | BoidAgent | struct | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | 7 |
 | BoidBucketJob | struct | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | 26 |
-| BoidGpu | struct | `Assets/Scripts/GameSceneManagerSystem/Menu/BoidsMenuBackground.cs` | 9 |
+| BoidFlockWeights | struct | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Wind/BoidFlockGpu.cs` | 16 |
+| BoidGpu | struct | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Wind/BoidFlockGpu.cs` | 5 |
 | BoidHash | class | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | 63 |
 | BoidJob | struct | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | 68 |
 | BoidOutput | struct | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | 18 |
@@ -182,7 +184,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | CasteModifiers | struct | `Assets/Scripts/EntitySystem/AI/Entity/EntityTuning.cs` | 13 |
 | Cell | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/StructGenerator/WaveFunctionCollapseAlgorithm.cs` | 17 |
 | ChecksumInteractor | class | `Assets/Scripts/Terminal/Rive/Core/RiveInteractors.cs` | 102 |
-| ChunkData | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1305 |
+| ChunkData | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1306 |
 | ChunkEntityData | class | `Assets/Scripts/EntitySystem/MobGenerator.cs` | 249 |
 | ChunkObjects | struct | `Assets/Scripts/EntitySystem/Job/BirdPerchIndex.cs` | 24 |
 | ChunkTickSource | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Ticks/RandomTickJob.cs` | 10 |
@@ -238,7 +240,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | FeedingLatchTests | class | `Assets/Tests/EditMode/StartleTests.cs` | 82 |
 | FillChunkArraysJob | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 635 |
 | FireCell | struct | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireEvent.cs` | 10 |
-| FireRules | class | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/MapEventRules.cs` | 20 |
+| FireRules | class | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/MapEventRules.cs` | 23 |
 | FireViewSettings | class | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireView.cs` | 13 |
 | FoodClaim | struct | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 29 |
 | FoodKind | enum | `Assets/Scripts/ObjectSystem/ObjectInfo/ObjectInfo.cs` | 146 |
@@ -335,7 +337,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | NegativePoint | struct | `Assets/Scripts/EntitySystem/AI/Entity/Components/PointsOfInterestComponent.cs` | 10 |
 | NetWeights | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 21 |
 | NewScriptCommand | class | `Assets/Scripts/Terminal/Rive/RiveRedactorCommands.cs` | 329 |
-| ObjectInstInfo | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1787 |
+| ObjectInstInfo | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1788 |
 | ObjectSpawnConfig | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator/ObjectGeneratorStructures.cs` | 36 |
 | ObjectViewMotionSettings | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/ObjectViewMotion.cs` | 7 |
 | PackLeashTests | class | `Assets/Tests/EditMode/PredatorPressureTests.cs` | 54 |
@@ -423,7 +425,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | SpeechSyllableJob | struct | `Assets/Scripts/EntitySystem/AI/Speech/SpeechVoiceBank.cs` | 7 |
 | StatementNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 55 |
 | StringBuilderNumeric | class | `Assets/Scripts/EntitySystem/AI/Debug/NestDebugView.cs` | 305 |
-| StructureSpawnPoint | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1770 |
+| StructureSpawnPoint | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1771 |
 | TeleportCommand | class | `Assets/Scripts/Terminal/SetPlayerCommand.cs` | 26 |
 | TerminalCommandNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 89 |
 | TerrainIndexBuilder | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/TerrainMeshJobs.cs` | 168 |
@@ -465,6 +467,8 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | ViralPayload | struct | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 14 |
 | WaitNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 101 |
 | WaterDistanceJob | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 533 |
+| WildWindStepJob | struct | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Wind/WildWindEvent.cs` | 177 |
+| WildWindViewSettings | class | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Wind/WildWindView.cs` | 8 |
 | WindParams | struct | `Assets/Scripts/ObjectSystem/Wind/WindField.cs` | 8 |
 | WindSampler | struct | `Assets/Scripts/ObjectSystem/Wind/WindField.cs` | 15 |
 | WorldCommand | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | 10 |

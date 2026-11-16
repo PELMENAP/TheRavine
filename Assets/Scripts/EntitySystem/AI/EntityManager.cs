@@ -55,6 +55,8 @@ public class EntityManager : MonoBehaviour
     private MapGenerator _map;
     private FireEvent _fire;
     private int _fireStepSeen = -1;
+    private WildWindEvent _wind;
+    private int _windStepSeen = -1;
 
     [Header("Nest views")]
     [SerializeField] private bool showNestViews = true;
@@ -209,6 +211,7 @@ public class EntityManager : MonoBehaviour
             }
             if (now >= _tickStartTime) TickAgents(SimulationClock.DeltaTime);
             ApplyFireHeat();
+            ApplyWildWind();
         }
 
         _speech.Flush(_grid, SimulationClock.TimeD);
@@ -256,6 +259,26 @@ public class EntityManager : MonoBehaviour
             if (p.x < bounds.x || p.y < bounds.y || p.x > bounds.z || p.y > bounds.w) continue;
             float damage = fire.HeatDamageAt(p) * step;
             if (damage > 0f) e.TakeDamage(damage, null, DeathCause.Burn);
+        }
+    }
+
+    private void ApplyWildWind()
+    {
+        WildWindEvent wind = _wind;
+        if (wind == null || wind.IsDisposed || !wind.Active || wind.StepIndex == _windStepSeen) return;
+        _windStepSeen = wind.StepIndex;
+
+        float step = wind.LastStep;
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            EntityModel e = _entities[i];
+            if (e.IsDisposed || e.IsDeathPending) continue;
+
+            float3 p = e.Motor.Position();
+            if (!wind.InBand(p.y)) continue;
+            wind.ReportCreature(p);
+            float damage = wind.DamageAt(p) * step;
+            if (damage > 0f) e.TakeDamage(damage, null, DeathCause.Wind);
         }
     }
 
@@ -466,6 +489,7 @@ public class EntityManager : MonoBehaviour
         {
             map.Events.Season = SeasonClockSource.Instance;
             _fire = map.Events.Fire;
+            _wind = map.Events.Wind;
         }
 
         for (int i = 0; i < initialCount; i++)
@@ -1056,6 +1080,7 @@ public class EntityManager : MonoBehaviour
             if (_nestViews[i] != null) Destroy(_nestViews[i].gameObject);
         _nestViews.Clear();
         _fire = null;
+        _wind = null;
         _infection?.Dispose();
         _population?.ProcessPendingDeaths();
         _population?.FlushDeferredDisposals();

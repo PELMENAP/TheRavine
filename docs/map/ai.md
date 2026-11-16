@@ -117,6 +117,7 @@ All are indexed by `EntityModel.ManagerIndex` and expose `RemoveSwapBack`. The r
 ## Other
 
 - Fire is a map event: `docs/map/map-events.md`. `EntityManager` sets `GlobalMapEvents.Season` to `SeasonClockSource` and, once per fire step (`ApplyFireHeat`), applies `FireEvent.HeatDamageAt` to agents and calls `EntityModel.ReportHazard` for agents within `fireSenseRadius` of a burning cell (threat source, stress, negative memory mark, colony `Danger` mark).
+- Wild winds are a map event: `docs/map/map-events.md`. `EntityManager.ApplyWildWind` runs once per wind step while `WildWindEvent.Active`: an agent in the band reports itself and takes `DamageAt` with `DeathCause.Wind`.
 - Debug, off the hot path: `SimulationDebugDashboard`, `SimulationLog`, `NestDebugView` in `Assets/Scripts/EntitySystem/AI/Debug/`.
 - Log columns: `docs/simulation_log.md`. Action and property audits: `docs/audit/action_census.md`, `docs/audit/property_system_matrix.md`.
 - Rules are partial files `SimulationRules.<Area>.cs` in `Assets/Scripts/EntitySystem/AI/Rules/`; the asset is `Assets/Scripts/EntitySystem/AI/SimulationRules.asset`.

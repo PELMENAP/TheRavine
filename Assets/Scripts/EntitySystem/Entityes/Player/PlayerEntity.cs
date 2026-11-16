@@ -24,6 +24,7 @@ namespace TheRavine.EntityControl
         private float baseMaxHealth;
         private float baseMaxEnergy;
         private double lastCycleTime;
+        private int windStepSeen = -1;
         private ulong clientId;
         private readonly RavineLogger logger;
         public PlayerEntity(RavineLogger logger)
@@ -142,6 +143,12 @@ namespace TheRavine.EntityControl
                 mortality.NoteHarm(DeathCause.Burn, stats.Hp - burn);
                 stats.Hp -= burn;
             }
+            float gust = WindDamage(dt);
+            if (gust > 0f)
+            {
+                mortality.NoteHarm(DeathCause.Wind, stats.Hp - gust);
+                stats.Hp -= gust;
+            }
             stats.Commit();
             energy.Sync();
         }
@@ -178,6 +185,22 @@ namespace TheRavine.EntityControl
 
             var p = transformComponent.GetEntityPosition();
             return fire.HeatDamageAt(new float2(p.x, p.z)) * dt;
+        }
+
+        private float WindDamage(float dt)
+        {
+            if (map == null && !ServiceLocator.Services.TryGet(out map)) return 0f;
+            WildWindEvent wind = map.Events?.Wind;
+            if (wind == null || wind.IsDisposed || !wind.Active || transformComponent == null) return 0f;
+
+            float3 p = transformComponent.GetEntityPosition();
+            if (!wind.InBand(p.y)) return 0f;
+            if (wind.StepIndex != windStepSeen)
+            {
+                windStepSeen = wind.StepIndex;
+                wind.ReportCreature(p);
+            }
+            return wind.DamageAt(p) * dt;
         }
 
         private void OnDied()
