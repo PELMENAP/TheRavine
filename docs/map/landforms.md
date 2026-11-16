@@ -13,7 +13,8 @@ Read `docs/map/world.md` first; do not read `Assets/Scripts/ObjectSystem/Map/Too
 ## Flow
 
 - `Noise.HeightRiverMapJob` runs per cell at full resolution, no 2x2 duplication: `LandformBlend.Control` gives (c, r) with contrast, `LandformBlend.Evaluate` gives `LandformParams`.
-- The same job warps coordinates by one `DomainWarp` call (skipped when warp and river warp are zero), mixes the ridge noise, terraces, then applies scale and offset.
+- The same job warps coordinates by two plain `GetNoise` samples (skipped when warp and river warp are zero), mixes the ridge noise, terraces, then applies scale and offset.
+- `FastNoiseLite.DomainWarp` is not used in jobs: it reads `RandVecs2D`, which fails inside Burst here.
 - `LandformBlend.Evaluate` uses the smoothstep kernel of `BiomeModifierJob`; only the difference from identity is summed, so identity and an empty array stay exact and there is no fallback branch.
 - `BiomeModifierJob` reads `riverShape`: river band radius times `riverWidth` (0 means no river), river blend times `riverCarve`.
 - `HydraulicErosionJob` multiplies its delta by `erosionScale`; droplets are unchanged.
