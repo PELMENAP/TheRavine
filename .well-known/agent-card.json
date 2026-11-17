@@ -33,7 +33,7 @@
     "agents": {
       "brain": "SharedHierarchicalBrain: one per colony; coordinator LSTM picks a goal, executor LSTM picks an action; online reward-weighted truncated BPTT, TD critic, random network distillation novelty reward",
       "goals": ["Survive", "Hunt", "Forage", "Social"],
-      "actions": ["Idle", "Wander", "RememberPoint", "GoToPoint", "Attack", "Flee", "Eat", "Reproduce", "Speech", "Mimic", "Rest", "Threaten", "ShareFood", "ApproachFood", "ReturnNest", "PickUp", "StoreFood", "Follow", "MoveNest", "Groom"],
+      "actions": ["Idle", "MoveTo", "Attack", "Eat", "Reproduce", "Signal", "Rest", "Give", "Take", "Put", "MoveNest"],
       "castes": ["Worker", "Soldier", "Scout", "Nurse"],
       "colonyChannels": ["Food", "Danger", "Trail", "KinDeath", "Explored", "Sickness", "Territory"],
       "observation": "InputVectorizer builds the input vector from perception; see docs/map/ai.md",

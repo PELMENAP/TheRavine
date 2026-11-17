@@ -422,13 +422,93 @@ def check_identifiers():
     return bad
 
 
+LLMS_PATH = "llms.txt"
+CARD_PATH = ".well-known/agent-card.json"
+DISCOVERY_ENUMS = [
+    ("goals", "Goals", "Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs", "Goal"),
+    ("actions", "Actions", "Assets/Scripts/EntitySystem/AI/EntityAction.cs", "EntityAction"),
+    ("castes", "Castes", "Assets/Scripts/EntitySystem/AI/Entity/EntityTuning.cs", "Caste"),
+    ("colonyChannels", "Colony channels", "Assets/Scripts/EntitySystem/AI/Nest/NestState.cs", "ColonyChannel"),
+]
+
+
+def enum_members(path, name):
+    text = blank_noise(read(path))
+    m = re.search(r"\benum\s+%s\b[^{]*\{([^}]*)\}" % re.escape(name), text)
+    if not m:
+        raise SystemExit("enum %s not found in %s" % (name, path))
+    out = []
+    for part in m.group(1).split(","):
+        member = part.split("=")[0].strip()
+        if member and member != "Count":
+            out.append(member)
+    return out
+
+
+def discovery_lists():
+    return [(key, label, enum_members(path, name)) for key, label, path, name in DISCOVERY_ENUMS]
+
+
+def llms_line_rx(label):
+    return re.compile(r"^- %s: (.*)\.$" % re.escape(label), re.M)
+
+
+def json_text(value, indent=0):
+    pad = "  " * indent
+    if isinstance(value, dict) and value:
+        items = ["%s  %s: %s" % (pad, json.dumps(k, ensure_ascii=False), json_text(v, indent + 1)) for k, v in value.items()]
+        return "{\n" + ",\n".join(items) + "\n" + pad + "}"
+    if isinstance(value, list) and value:
+        if all(isinstance(v, (str, int, float, bool)) and len(str(v)) <= 40 for v in value):
+            return "[" + ", ".join(json.dumps(v, ensure_ascii=False) for v in value) + "]"
+        items = ["%s  %s" % (pad, json_text(v, indent + 1)) for v in value]
+        return "[\n" + ",\n".join(items) + "\n" + pad + "]"
+    return json.dumps(value, ensure_ascii=False)
+
+
+def gen_discovery():
+    lists = discovery_lists()
+    text = read(LLMS_PATH)
+    for _, label, members in lists:
+        rx = llms_line_rx(label)
+        if not rx.search(text):
+            raise SystemExit("%s: line '- %s: ...' not found" % (LLMS_PATH, label))
+        text = rx.sub(lambda _: "- %s: %s." % (label, ", ".join(members)), text, count=1)
+    write(LLMS_PATH, text)
+    card = json.loads(read(CARD_PATH))
+    agents = card["environment"]["agents"]
+    for key, _, members in lists:
+        agents[key] = members
+    write(CARD_PATH, json_text(card) + "\n")
+
+
+def check_discovery():
+    bad = []
+    lists = discovery_lists()
+    text = read(LLMS_PATH)
+    for _, label, members in lists:
+        m = llms_line_rx(label).search(text)
+        found = [w.strip() for w in m.group(1).split(",")] if m else None
+        if found != members:
+            bad.append("%s: %s" % (LLMS_PATH, label))
+    try:
+        agents = json.loads(read(CARD_PATH))["environment"]["agents"]
+    except (ValueError, KeyError, TypeError):
+        return bad + ["%s: environment.agents" % CARD_PATH]
+    for key, _, members in lists:
+        if agents.get(key) != members:
+            bad.append("%s: environment.agents.%s" % (CARD_PATH, key))
+    return bad
+
+
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
     if cmd == "gen":
         index, large = build()
         write(INDEX_PATH, index)
         write(LARGE_PATH, large)
-        print("written %s, %s" % (INDEX_PATH, LARGE_PATH))
+        gen_discovery()
+        print("written %s, %s, %s, %s" % (INDEX_PATH, LARGE_PATH, LLMS_PATH, CARD_PATH))
         return 0
     if cmd == "check":
         strict = "--strict" in sys.argv
@@ -442,6 +522,11 @@ def main():
         for u in unknown:
             print("unknown name  " + u)
         if unknown:
+            code = 1
+        drift = check_discovery()
+        for d in drift:
+            print("out of sync   %s (run: python3 tools/docmap.py gen)" % d)
+        if drift:
             code = 1
         index, large = build()
         for path, text in ((INDEX_PATH, index), (LARGE_PATH, large)):
