@@ -1,0 +1,38 @@
+# The Ravine
+
+> The Ravine is an open-source (Apache-2.0) multi-agent artificial-life sandbox built in Unity 6 and C#. Humans and AI agents live in one world under the same rules: the player is one creature among others, with no hidden advantages. Behaviour emerges from learning and adaptation, not from scripts. Colonies of agents share a learning neural brain, communicate, reproduce, evolve and compete for resources in an infinite streamed world.
+
+Status: in active development. There is no public hosted server, no headless build and no external agent API yet. External AI agents can read the source and the documentation; connecting an agent to a running world is planned, not available.
+
+Key facts:
+
+- Engine: Unity 6000.3 (URP), C#, Netcode for GameObjects, server-authoritative.
+- Equality rule: every rule that works for the player works for all creatures, and vice versa. The host has no hidden powers.
+- Rules are data: simulation constants live in the SimulationRules ScriptableObject, not in code.
+- Agent brain: one SharedHierarchicalBrain per colony; a coordinator picks a goal (Survive, Hunt, Forage, Social), an executor picks an action; each level is an LSTM with a delayed perceptron, trained online with reward-weighted truncated BPTT, a TD critic and a novelty reward (random network distillation).
+- Actions: Idle, Wander, RememberPoint, GoToPoint, Attack, Flee, Eat, Reproduce, Speech, Mimic, Rest, Threaten, ShareFood, ApproachFood, ReturnNest, PickUp, StoreFood, Follow, MoveNest, Groom.
+- Colonies: castes (Worker, Soldier, Scout, Nurse), a nest with field channels (Food, Danger, Trail, KinDeath, Explored, Sickness, Territory), shared points of interest, evolution of genetic parameters, a virology model.
+- World: infinite chunk streaming, Wave Function Collapse, map events such as fire, procedural audio, an in-game scripting language (Rive) running in a budgeted sandbox.
+- Determinism is not a goal: the world must be alive, not repeatable.
+- Simulation log: optional CSV with per-world and per-colony counters.
+
+## Docs
+
+- [README](https://github.com/PELMENAP/TheRavine/blob/main/README.md): overview, stack, systems, document index
+- [Philosophy](https://github.com/PELMENAP/TheRavine/blob/main/PHILOSOPHY.md): what the world is and what it must not become
+- [Environment passport](https://github.com/PELMENAP/TheRavine/blob/main/.well-known/agent-card.json): machine-readable description of the environment and its interface status
+- [AI map](https://github.com/PELMENAP/TheRavine/blob/main/docs/map/ai.md): agents, colonies, shared brain, perception, learning
+- [Simulation log](https://github.com/PELMENAP/TheRavine/blob/main/docs/simulation_log.md): columns of the simulation CSV
+- [Architecture maps](https://github.com/PELMENAP/TheRavine/blob/main/docs/map/README.md): one map per subsystem
+
+## Contributing with AI
+
+- [CLAUDE.md](https://github.com/PELMENAP/TheRavine/blob/main/CLAUDE.md): rules for AI contributors, routing table, constraints
+- [Hot paths](https://github.com/PELMENAP/TheRavine/blob/main/docs/map/HOT_PATHS.md): tick order and the zero-allocation rule
+- [Security](https://github.com/PELMENAP/TheRavine/blob/main/docs/SECURITY.md): server authority, RPC registry, Rive sandbox
+
+## Optional
+
+- [Optimization](https://github.com/PELMENAP/TheRavine/blob/main/docs/OPTIMIZATION.md): optimization principles and catalog
+- [Source](https://github.com/PELMENAP/TheRavine/tree/main/Assets/Scripts): own C# code
+- [License](https://github.com/PELMENAP/TheRavine/blob/main/LICENSE): Apache-2.0
