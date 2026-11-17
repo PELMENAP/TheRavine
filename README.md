@@ -88,8 +88,8 @@ The architecture is described only in `docs/map`. This file does not repeat it.
 
 ## Checks
 
-- `python3 tools/docmap.py gen` regenerates `docs/map/INDEX.md` and `docs/map/LARGE_FILES.md`.
-- `python3 tools/docmap.py check` verifies that every path and code name in the documentation exists.
+- `python3 tools/docmap.py gen` regenerates `docs/map/INDEX.md` and `docs/map/LARGE_FILES.md`, and writes the goal, action, caste and colony channel lists of [llms.txt](llms.txt) and [.well-known/agent-card.json](.well-known/agent-card.json) from the C# enums.
+- `python3 tools/docmap.py check` verifies that every path and code name in the documentation exists and that those lists match the enums.
 
 ## License
 

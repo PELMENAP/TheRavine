@@ -9,9 +9,12 @@ Key facts:
 - Engine: Unity 6000.3 (URP), C#, Netcode for GameObjects, server-authoritative.
 - Equality rule: every rule that works for the player works for all creatures, and vice versa. The host has no hidden powers.
 - Rules are data: simulation constants live in the SimulationRules ScriptableObject, not in code.
-- Agent brain: one SharedHierarchicalBrain per colony; a coordinator picks a goal (Survive, Hunt, Forage, Social), an executor picks an action; each level is an LSTM with a delayed perceptron, trained online with reward-weighted truncated BPTT, a TD critic and a novelty reward (random network distillation).
-- Actions: Idle, Wander, RememberPoint, GoToPoint, Attack, Flee, Eat, Reproduce, Speech, Mimic, Rest, Threaten, ShareFood, ApproachFood, ReturnNest, PickUp, StoreFood, Follow, MoveNest, Groom.
-- Colonies: castes (Worker, Soldier, Scout, Nurse), a nest with field channels (Food, Danger, Trail, KinDeath, Explored, Sickness, Territory), shared points of interest, evolution of genetic parameters, a virology model.
+- Agent brain: one SharedHierarchicalBrain per colony; a coordinator picks a goal, an executor picks an action; each level is an LSTM with a delayed perceptron, trained online with reward-weighted truncated BPTT, a TD critic and a novelty reward (random network distillation).
+- Goals: Survive, Hunt, Forage, Social.
+- Actions: Idle, MoveTo, Attack, Eat, Reproduce, Signal, Rest, Give, Take, Put, MoveNest.
+- Colonies: castes emerge per agent from thresholds; a nest keeps field channels; colonies share points of interest, evolve genetic parameters and carry a virology model.
+- Castes: Worker, Soldier, Scout, Nurse.
+- Colony channels: Food, Danger, Trail, KinDeath, Explored, Sickness, Territory.
 - World: infinite chunk streaming, Wave Function Collapse, map events such as fire, procedural audio, an in-game scripting language (Rive) running in a budgeted sandbox.
 - Determinism is not a goal: the world must be alive, not repeatable.
 - Simulation log: optional CSV with per-world and per-colony counters.
