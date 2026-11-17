@@ -47,8 +47,9 @@ Not only humans can play, but also artificial intelligence.
 - What is perceived is enough; exact geometry is not required.
 - Resources go to what the viewer actually notices.
 - Graphics serve the feeling of a living world and do not compete with it on detail.
-- The world is the same from every side: the camera looks along any of the four axes (±Z, ±X), and no side is privileged.
+- The viewer looks in any direction: rotation around the vertical is free, pitch is limited; no direction is privileged.
 - Flat things adapt to the view: sprites, billboards and labels turn toward the viewer; the world, the rules and the creatures' perception do not depend on the view angle.
+- What stays flat is what has no orientation of its own in the world; what has a front and a side (buildings, walls) keeps its volume.
 
 ## 6. Liveliness Over Detail
 

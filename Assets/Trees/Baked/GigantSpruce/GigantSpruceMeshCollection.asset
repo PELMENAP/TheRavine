@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GigantSpruceMeshCollection
   m_EditorClassIdentifier: ObjectSystem::TreeMeshCollection
   variants:
-  - mesh: {fileID: 4300000, guid: b73f01a42a8dd7745887a91ebb614ecd, type: 2}
+  - mesh: {fileID: 4300000, guid: 8dbed449db03e7a4f85b93a62591d22b, type: 2}
     perchRadius: 0
     ranges:
     - start: 0
@@ -32,9 +32,10 @@ MonoBehaviour:
       count: 1170
     - start: 14118
       count: 1092
-    billboardBox: {x: 40.238968, y: 135.79831, z: 63.937542, w: 0.4159937}
+    billboardBox: {x: 47.85681, y: 135.79831, z: 63.937542, w: 0.4159937}
+    billboardCenterX: -0.19192123
     billboardCell: 0
-  - mesh: {fileID: 4300000, guid: 98594143123af0a4eb1256f0fc354ac6, type: 2}
+  - mesh: {fileID: 4300000, guid: d57b0072309fc8146b137b3d51ff55c8, type: 2}
     perchRadius: 0
     ranges:
     - start: 0
@@ -53,9 +54,10 @@ MonoBehaviour:
       count: 1188
     - start: 14547
       count: 984
-    billboardBox: {x: 44.39433, y: 131.93747, z: 62.308346, w: -0.42185307}
+    billboardBox: {x: 45.52085, y: 131.93747, z: 62.308346, w: -0.42185307}
+    billboardCenterX: 0.15265465
     billboardCell: 1
-  - mesh: {fileID: 4300000, guid: 0fde2cbbd6a2c714386fe818423fe761, type: 2}
+  - mesh: {fileID: 4300000, guid: dcedff1208e941543909d8540ca9676d, type: 2}
     perchRadius: 0
     ranges:
     - start: 0
@@ -74,9 +76,10 @@ MonoBehaviour:
       count: 1242
     - start: 14571
       count: 1068
-    billboardBox: {x: 45.97926, y: 132.69185, z: 62.989613, w: 0.46630955}
+    billboardBox: {x: 45.97926, y: 133.37462, z: 62.989613, w: 0.46630955}
+    billboardCenterX: -0.42074394
     billboardCell: 2
-  - mesh: {fileID: 4300000, guid: 9003c070e1fe86b479979e5fb6fdf56d, type: 2}
+  - mesh: {fileID: 4300000, guid: 6ae989d2348c9dc4cabac597a70b6ee3, type: 2}
     perchRadius: 0
     ranges:
     - start: 0
@@ -95,16 +98,18 @@ MonoBehaviour:
       count: 1314
     - start: 14841
       count: 876
-    billboardBox: {x: 41.09126, y: 133.13936, z: 63.559937, w: -0.88559246}
+    billboardBox: {x: 42.1575, y: 133.13936, z: 63.559937, w: -0.88559246}
+    billboardCenterX: -0.06925011
     billboardCell: 3
   lodCount: 4
   ringLod: 0000000001000000020000000300000003000000
   billboardFromRing: 2
   farMaterials:
-  - {fileID: 2100000, guid: dc096035af852e9419c5e4f9bca1623e, type: 2}
-  - {fileID: 2100000, guid: 852aea451257a2d409b115380ec8c09d, type: 2}
-  billboardMaterial: {fileID: 2100000, guid: a8be57eeb53178d46a7f31dd48189131, type: 2}
-  billboardAlbedo: {fileID: 2800000, guid: f11abdc833841be428cc59812ce2b7de, type: 3}
-  billboardNormal: {fileID: 2800000, guid: ab6880897744fb64e995bbd4546dd6f6, type: 3}
+  - {fileID: 2100000, guid: 721b1d3ae1cacd842b20770ed00c0ea3, type: 2}
+  - {fileID: 2100000, guid: e8b02875cb63e784f8f26246a6f47456, type: 2}
+  billboardMaterial: {fileID: 2100000, guid: b952eddc13aa15645a7ac7d197efe1f8, type: 2}
+  billboardAlbedo: {fileID: 2800000, guid: a877d173aefe02e448359ed9841a1cc8, type: 3}
+  billboardNormal: {fileID: 2800000, guid: 5e544f8b45254a249af4243e74936bae, type: 3}
   billboardPitch: 20
+  billboardSides: 8
   _entries: []

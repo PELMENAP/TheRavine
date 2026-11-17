@@ -1,0 +1,15 @@
+*.meta
+*.prefab
+*.unity
+*.asset
+*.mat
+*.anim
+*.controller
+*.mesh
+*.dll
+*.png~
+Assets/Plugins/
+Assets/Packages/
+Assets/LLMUnity/
+Assets/Scripts/Core/NewInputSystem/GameInput.cs
+Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs

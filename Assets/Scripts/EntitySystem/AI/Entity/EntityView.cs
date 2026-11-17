@@ -46,6 +46,59 @@ public class EntityView : AEntityView
 
     private readonly StringBuilder _sb = new(256);
 
+    private struct LabelKey : System.IEquatable<LabelKey>
+    {
+        public int  Colony, Kind, Leader, Plan, Source, Action;
+        public int  Hp, HpBucket, En, EnBucket, Carry, Flags, Stress;
+        public int  Speech, Viral, ViralTamed, ViralSign, ViralMagnitude;
+
+        public bool Equals(LabelKey o)
+            => Colony == o.Colony && Kind == o.Kind && Leader == o.Leader && Plan == o.Plan && Source == o.Source
+            && Action == o.Action && Hp == o.Hp && HpBucket == o.HpBucket && En == o.En && EnBucket == o.EnBucket
+            && Carry == o.Carry && Flags == o.Flags && Stress == o.Stress && Speech == o.Speech && Viral == o.Viral
+            && ViralTamed == o.ViralTamed && ViralSign == o.ViralSign && ViralMagnitude == o.ViralMagnitude;
+    }
+
+    private LabelKey _key;
+    private bool     _hasKey;
+
+    private LabelKey KeyOf(EntityModel model)
+    {
+        var stats = model.Stats;
+        float hp = stats.Hp, en = stats.En;
+        var own = model.Speech.Own;
+        var plan = model.Plan != null ? model.Plan.Kind : PlanKind.Count;
+        bool running = model.IsCommandRunning;
+
+        var key = new LabelKey
+        {
+            Colony   = model.Colony != null ? model.Colony.ColonyId : 0,
+            Kind     = model.IsWild ? 1 : model.IsJuvenile ? 2 : 3 + (int)model.Caste,
+            Leader   = model.IsLeader ? 1 : 0,
+            Plan     = plan < PlanKind.Count ? (int)plan : (int)PlanKind.Count + (int)model.Brain.CurrentGoal,
+            Source   = running ? (int)model.CurrentSource : -1,
+            Action   = running ? (int)model.LastAction : -1,
+            Hp       = (int)hp,
+            HpBucket = math.clamp((int)math.round(hp / stats.MaxHealth * 10f), 0, 10),
+            En       = (int)en,
+            EnBucket = math.clamp((int)math.round(en / stats.MaxEnergy * 10f), 0, 10),
+            Carry    = model.Carrying > 0f ? (int)model.Carrying + 1 : 0,
+            Flags    = (model.IsHungry ? 1 : 0) | ((model.InstinctLatches & InstinctBits.Panic) != 0 ? 2 : 0) | (model.IsSated ? 4 : 0),
+            Stress   = model.Stress > stressVisibleThreshold ? (int)(model.Stress * 100f) + 1 : 0,
+            Speech   = own.Len > 0 ? (own.Tokens << 8 | own.Len) + 1 : 0,
+        };
+
+        var virology = model.Virology;
+        if (virology != null && virology.TryGetViralSummary(out float net, out int viralCount, out bool allTamed))
+        {
+            key.Viral          = viralCount;
+            key.ViralTamed     = allTamed ? 1 : 0;
+            key.ViralSign      = net > 0f ? 1 : net < 0f ? -1 : 0;
+            key.ViralMagnitude = (int)math.abs(net * 10f);
+        }
+        return key;
+    }
+
     private static string[] BuildGradient()
     {
         var g = new string[11];
@@ -70,6 +123,12 @@ public class EntityView : AEntityView
     private void Render(EntityModel model)
     {
         if (!label.gameObject.activeInHierarchy) return;
+
+        var key = KeyOf(model);
+        if (_hasKey && key.Equals(_key)) return;
+        _key    = key;
+        _hasKey = true;
+
         var sb = _sb;
         sb.Clear();
 

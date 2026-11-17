@@ -19,6 +19,7 @@ public static class NeuralModelStorage
 {
     private const string DefaultModelsDirectory = "NeuralModels";
     private const string ColonySuffix = "_c";
+    public const long MaxModelBytes = 128L * 1024 * 1024;
 
     public static string BaseDirectory => Path.Combine(Application.persistentDataPath, DefaultModelsDirectory);
 
@@ -61,10 +62,7 @@ public static class NeuralModelStorage
         {
             try 
             {
-                using var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, 
-                    bufferSize: 4096, useAsync: true);
-                await fileStream.WriteAsync(data, 0, data.Length, cancellationToken);
-                await fileStream.FlushAsync(cancellationToken);
+                await AtomicFile.WriteAllBytesAsync(path, data, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -102,6 +100,12 @@ public static class NeuralModelStorage
             {
                 using var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 
                     bufferSize: 4096, useAsync: true);
+                if (fileStream.Length > MaxModelBytes)
+                {
+                    RavineLog.Error($"Файл модели {modelType} больше {MaxModelBytes} байт, загрузка отменена: {path}");
+                    return;
+                }
+
                 data = new byte[fileStream.Length];
                 await fileStream.ReadAsync(data, 0, data.Length, cancellationToken);
             }

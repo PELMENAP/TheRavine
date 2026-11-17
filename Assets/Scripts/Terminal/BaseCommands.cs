@@ -37,11 +37,14 @@ namespace TheRavine.Base
         }
     }
 
-    public class DebugCommand : ICommand
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    public class DebugCommand : IValidatedCommand
     {
         public string Name => "~debug";
         public string ShortName => "~dbg";
         public string Description => "Показывает информацию о FPS, Памяти и системе";
+
+        public bool Validate(CommandContext context) => DebugCommandGate.TryEnter(context);
 
         public UniTask ExecuteAsync(string[] args, CommandContext context)
         {
@@ -66,7 +69,7 @@ namespace TheRavine.Base
             return UniTask.CompletedTask;
         }
     }
-    
+#endif
 
     public class PrintCommand : ICommand
     {
@@ -87,11 +90,14 @@ namespace TheRavine.Base
         }
     }
 
-    public class ShowServiceLocatorCommand : ICommand
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    public class ShowServiceLocatorCommand : IValidatedCommand
     {
         public string Name => "~showSLRS";
         public string ShortName => "~SSLRS";
         public string Description => "Показывает список зарегистрированных игровых сервисов";
+
+        public bool Validate(CommandContext context) => DebugCommandGate.TryEnter(context);
 
         public UniTask ExecuteAsync(string[] args, CommandContext context)
         {
@@ -106,4 +112,5 @@ namespace TheRavine.Base
             return UniTask.CompletedTask;
         }
     }
+#endif
 }

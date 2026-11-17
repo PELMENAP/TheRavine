@@ -59,14 +59,6 @@ public partial class EntityModel
         return best;
     }
 
-    private bool HasForeignEntities()
-    {
-        int populated = 0;
-        for (int c = 0; c < _registry.Count; c++)
-            if (_registry[c].MemberCount > 0 && ++populated > 1) return true;
-        return false;
-    }
-
     private bool ComputeNestFood(NestState nest, in SimulationRules.RulesFrame r)
     {
         if (nest == null || !IsAtNest) return false;
@@ -87,17 +79,13 @@ public partial class EntityModel
             return true;
         }
 
-        var foreign = ValidForeign;
-        if (foreign != null && (!_playerValid || _nearestForeignDistance <= _playerDistance))
+        if (SimulationClock.TimeD < _hazardUntil)
         {
-            source = foreign.Position2D;
+            source = _hazardSource;
             return true;
         }
-        if (_playerValid)
-        {
-            source = _playerPos;
-            return true;
-        }
+
+        if (ThreateningStranger(out source)) return true;
 
         if (IsWarned)
         {
@@ -116,16 +104,66 @@ public partial class EntityModel
         return true;
     }
 
+    private bool ThreateningStranger(out float2 source)
+    {
+        var foreign = ValidForeign;
+        bool foreignFirst = foreign != null && (!_playerValid || _nearestForeignDistance <= _playerDistance);
+        bool calm = _familiarity > SimulationRules.Frame.FamiliarityCalm;
+        if (foreignFirst && !calm)
+        {
+            source = foreign.Position2D;
+            return true;
+        }
+        if (_playerValid && (foreignFirst || !calm))
+        {
+            source = _playerPos;
+            return true;
+        }
+        if (foreign != null && !foreignFirst)
+        {
+            source = foreign.Position2D;
+            return true;
+        }
+        source = default;
+        return false;
+    }
+
+    public void NoteGift(StatsComponent giver)
+    {
+        if (giver == null || !ReferenceEquals(giver, _harmKey)) return;
+        _familiarity = FamiliarityMath.Gift(_familiarity, SimulationRules.Frame.FamiliarityGift);
+    }
+
+    public void BreakFamiliarity(StatsComponent harmer)
+    {
+        if (harmer != null && ReferenceEquals(harmer, _harmKey)) _familiarity = 0f;
+    }
+
+    private void NotifyKinOfHarm(StatsComponent harmer)
+    {
+        if (Perception == null) return;
+        int found = Perception.FindEntitiesInRadius(Motor.Position(), this, Tuning.DetectionRadius, Neighbors);
+        for (int i = 0; i < found; i++)
+        {
+            var e = Neighbors[i];
+            Neighbors[i] = null;
+            if (e == null || e.IsDisposed || e.IsDeathPending || e.Colony != Colony) continue;
+            e.BreakFamiliarity(harmer);
+        }
+    }
+
     private void ReadForeignVitals(StatsComponent playerStats, VirologyComponent playerVirology,
         out float hp, out float energy, out float viral, out StatsComponent source)
     {
         StatsComponent    stats    = null;
         VirologyComponent virology = null;
         var foreign = ValidForeign;
+        _foreignSourceModel = null;
         if (foreign != null && (!_playerValid || _nearestForeignDistance <= _playerDistance))
         {
             stats    = foreign.Stats;
             virology = foreign.Virology;
+            _foreignSourceModel = foreign;
         }
         else if (_playerValid)
         {
@@ -134,29 +172,6 @@ public partial class EntityModel
         }
         CreatureCore.ReadVitals(stats, virology, out hp, out energy, out viral);
         source = stats;
-    }
-
-    private EntityModel FindNearestForeign(Vector3 pos, float radius, out float distance)
-    {
-        distance = -1f;
-        if (_registry == null) ServiceLocator.Services.TryGet(out _registry);
-        if (_registry == null || !HasForeignEntities()) return null;
-
-        int found = Perception.FindEntitiesInRadius(pos, this, radius, ForeignScratch);
-        EntityModel best = null;
-        float bestD = float.MaxValue;
-        for (int i = 0; i < found; i++)
-        {
-            var e = ForeignScratch[i];
-            ForeignScratch[i] = null;
-            if (e == null || e.Colony == Colony) continue;
-            float d = math.distancesq((float3)e.Motor.Position(), (float3)pos);
-            if (d >= bestD) continue;
-            bestD = d;
-            best  = e;
-        }
-        if (best != null) distance = math.sqrt(bestD);
-        return best;
     }
 
     private static int CountAndRelease(int found)
@@ -218,4 +233,12 @@ public partial class EntityModel
         }
         return best;
     }
+}
+
+public static class FamiliarityMath
+{
+    public static float Grow(float value, float dt, float tau)
+        => value + (1f - value) * (1f - math.exp(-math.max(dt, 0f) / math.max(tau, 1e-3f)));
+
+    public static float Gift(float value, float gift) => math.saturate(value + gift);
 }

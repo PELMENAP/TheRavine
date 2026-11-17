@@ -5,13 +5,13 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Unity.Netcode;
 
+using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using TheRavine.Generator;
 using TheRavine.ObjectControl;
 using TheRavine.EntityControl.Virology;
-using TheRavine.ViewControl;
 
 public class EntityManager : MonoBehaviour
 {
@@ -42,10 +42,20 @@ public class EntityManager : MonoBehaviour
 
     [Header("Rules")]
     [SerializeField] private SimulationRules rules;
+    [SerializeField] private SkillAtlas skillAtlas;
 
     [Header("Speech audio")]
     [SerializeField] private bool speechAudio = true;
     [SerializeField] private bool speechLabels = true;
+
+    [Header("Snapshot stream")]
+    [SerializeField] private bool  snapshotStream = true;
+    [SerializeField, Min(0.02f)] private float snapshotInterval = 0.1f;
+    [SerializeField, Min(1f)] private float snapshotRadius = 320f;
+    [SerializeField, Min(1)] private int snapshotAgentsPerTick = 256;
+    [SerializeField, Min(0f)] private float puppetSmoothing = 12f;
+    private AgentSnapshotStream _snapshots;
+    private AgentPuppets _puppets;
 
     [Header("Visual culling")]
     [SerializeField] private bool cullOutsideActiveChunks = true;
@@ -53,7 +63,10 @@ public class EntityManager : MonoBehaviour
     [SerializeField] private float cullAxisMargin = 8f;
     private Camera _cullCamera;
     private MapGenerator _map;
-    private FireTickHandler _fire;
+    private FireEvent _fire;
+    private int _fireStepSeen = -1;
+    private WildWindEvent _wind;
+    private int _windStepSeen = -1;
 
     [Header("Nest views")]
     [SerializeField] private bool showNestViews = true;
@@ -100,11 +113,16 @@ public class EntityManager : MonoBehaviour
     public ColonyRegistry Colonies => _colonies;
 
     private InstinctSystem _instincts;
+    private SurveySystem _survey;
     private BoidSystem _boids;
     private readonly PlayerPresence _players = new();
     public PlayerPresence Players => _players;
     private UtilityPriorSystem   _utility;
     private CasteThresholdSystem _thresholds;
+    private SkillGraphStore _skills;
+    private SkillGraphSolver _skillSolver;
+    private float _lastSkillSweep;
+    private int _skillSweepCursor;
     private SpeechBus            _speech;
     public SpeechBus Speech => _speech;
     private ColonyState _wild;
@@ -127,12 +145,17 @@ public class EntityManager : MonoBehaviour
     private double _tickStartTime;
     private double _nextFitnessStatsTime;
     private double _nextEnergySampleTime;
+    private double _nextSoilFeedTime;
+    private SoilShaderFeed _soilFeed;
+    private GrassTrampleField _trample;
     private TickWindowBudget _tickBudget;
+    private UrgentTickQueue _urgent;
 
     private static readonly ProfilerMarker TickAgentsMarker  = new("EntityManager.TickAgents");
     private static readonly ProfilerMarker SnapshotMarker    = new("EntityManager.RebuildTickSnapshot");
     private static readonly ProfilerMarker BatchMarker       = new("EntityManager.RunTickBatch");
     private static readonly ProfilerMarker CloseWindowMarker = new("EntityManager.CloseTickWindow");
+    private static readonly ProfilerMarker SkillSweepMarker  = new("EntityManager.SkillDecaySweep");
 
     public EntityModel GetRandomEntity()
         => _entities.Count == 0 ? null : _entities[RavineRandom.RangeInt(0, _entities.Count)];
@@ -168,7 +191,13 @@ public class EntityManager : MonoBehaviour
         SimulationClock.Advance(Time.deltaTime * simulationTimeScale);
         _speech?.ClearAudible();
 
-        if (_rulesMissing || !TheRavine.Base.WorldAuthority.IsAuthority) return;
+        if (_rulesMissing) return;
+
+        if (!TheRavine.Base.WorldAuthority.IsAuthority)
+        {
+            TickPuppets();
+            return;
+        }
 
         if (_simulationStarted)
         {
@@ -184,6 +213,11 @@ public class EntityManager : MonoBehaviour
                 if (EnergySamplingRequired) SampleEnergy();
                 _nextEnergySampleTime = now + SimulationRules.Active.EcologyTickInterval;
             }
+            if (now >= _nextSoilFeedTime)
+            {
+                _soilFeed.Update(FoodIndex, _map);
+                _nextSoilFeedTime = now + SimulationRules.Active.EcologyTickInterval;
+            }
             if (SimulationRules.Active.SimulationLogEnabled && now >= _nextSimulationLogTime)
             {
                 _simulationLog ??= new SimulationLog();
@@ -191,12 +225,103 @@ public class EntityManager : MonoBehaviour
                 _nextSimulationLogTime = now + SimulationRules.Active.SimulationLogIntervalSeconds;
             }
             if (now >= _tickStartTime) TickAgents(SimulationClock.DeltaTime);
-            _fire?.Step(now, SimulationClock.DeltaTime, _entities);
+            ApplyFireHeat();
+            ApplyWildWind();
         }
 
         _speech.Flush(_grid, SimulationClock.TimeD);
         _planner.Flush();
         _motion.Step();
+        StampAgents(SimulationClock.DeltaTime);
+        TickSnapshots();
+    }
+
+    private void TickSnapshots()
+    {
+        if (!snapshotStream) return;
+
+        _snapshots ??= new AgentSnapshotStream(_capacity);
+        _snapshots.Tick(SimulationClock.TimeD, _motion, _entities, snapshotInterval, snapshotRadius, snapshotAgentsPerTick);
+    }
+
+    private void TickPuppets()
+    {
+        if (!snapshotStream) return;
+
+        NetworkManager network = NetworkManager.Singleton;
+        if (network == null || !network.IsListening || !network.IsClient || network.IsServer) return;
+
+        _puppets ??= new AgentPuppets(entityPrefab, transform, _capacity);
+        _puppets.Tick(SimulationClock.TimeD, Time.deltaTime, puppetSmoothing);
+    }
+
+    private void StampAgents(float dt)
+    {
+        int count = _entities.Count;
+        if (dt <= 0f || count == 0) return;
+        if ((_trample == null || _trample.IsDisposed) && !ServiceLocator.Services.TryGet(out _trample)) return;
+
+        NativeArray<float3> positions = _motion.Positions;
+        if (!positions.IsCreated) return;
+
+        float4 bounds = _trample.StampBounds;
+        for (int i = 0; i < count; i++)
+        {
+            float3 p = positions[i];
+            if (p.x < bounds.x || p.z < bounds.y || p.x > bounds.z || p.z > bounds.w) continue;
+
+            var e = _entities[i];
+            if (e == null || e.IsDisposed || e.IsDeathPending) continue;
+            _trample.StampCreature(p.xz, _motion.VelocityBySlot(i), e.Stats.MaxEnergy, dt);
+        }
+    }
+
+    private void ApplyFireHeat()
+    {
+        FireEvent fire = _fire;
+        if (fire == null || fire.IsDisposed || fire.StepIndex == _fireStepSeen) return;
+        _fireStepSeen = fire.StepIndex;
+        if (fire.BurningCount == 0) return;
+
+        float step = fire.LastStep;
+        float4 bounds = fire.HeatBounds;
+        int senseCells = SimulationRules.Frame.FireSenseRadius;
+        float sense = senseCells * MapGenerator.scale;
+        float4 reach = new float4(bounds.x - sense, bounds.y - sense, bounds.z + sense, bounds.w + sense);
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            EntityModel e = _entities[i];
+            if (e.IsDisposed || e.IsDeathPending) continue;
+
+            float2 p = e.Position2D;
+            if (p.x < reach.x || p.y < reach.y || p.x > reach.z || p.y > reach.w) continue;
+            if (sense > 0f && fire.TryFindNearestBurning(p, senseCells, out float2 source, out float distance))
+                e.ReportHazard(source, 1f - distance / sense);
+
+            if (p.x < bounds.x || p.y < bounds.y || p.x > bounds.z || p.y > bounds.w) continue;
+            float damage = fire.HeatDamageAt(p) * step;
+            if (damage > 0f) e.TakeDamage(damage, null, DeathCause.Burn);
+        }
+    }
+
+    private void ApplyWildWind()
+    {
+        WildWindEvent wind = _wind;
+        if (wind == null || wind.IsDisposed || !wind.Active || wind.StepIndex == _windStepSeen) return;
+        _windStepSeen = wind.StepIndex;
+
+        float step = wind.LastStep;
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            EntityModel e = _entities[i];
+            if (e.IsDisposed || e.IsDeathPending) continue;
+
+            float3 p = e.Motor.Position();
+            if (!wind.InBand(p.y)) continue;
+            wind.ReportCreature(p);
+            float damage = wind.DamageAt(p) * step;
+            if (damage > 0f) e.TakeDamage(damage, null, DeathCause.Wind);
+        }
     }
 
     private void DecayWarmth(double now)
@@ -255,10 +380,16 @@ public class EntityManager : MonoBehaviour
         _capacity = maxPopulation + math.max(0, SimulationRules.Active.PredatorCount);
         ContextSlabs.Reserve(_capacity);
         _motion = new MotionSystem(_capacity);
+        ServiceLocator.Register(_motion);
         _instincts = new InstinctSystem(_capacity);
+        _survey    = new SurveySystem(_capacity);
         _boids     = new BoidSystem(_capacity);
         _utility    = new UtilityPriorSystem(_capacity);
         _thresholds = new CasteThresholdSystem(_capacity);
+        SkillAtlas.Bind(skillAtlas);
+        _skills      = new SkillGraphStore(_capacity, SkillAtlas.Active.Count);
+        _skillSolver = new SkillGraphSolver();
+        ServiceLocator.Register(_skills);
         _speech     = new SpeechBus(_capacity, _entities);
         SpeechMetrics.Reset();
         ServiceLocator.Register(_thresholds);
@@ -282,11 +413,14 @@ public class EntityManager : MonoBehaviour
         _infection = new InfectionCoordinator((uint)UnityEngine.Random.Range(1, int.MaxValue));
         ServiceLocator.Register(_infection.Service);
         _food       = new ColonyFood(maxFood, _ledger);
-        _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue));
+        _soilFeed   = new SoilShaderFeed();
+        _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue), _skills);
         _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, _capacity, spawnRadius,
-            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _utility, _thresholds, _boids, _ledger, _speech);
+            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _survey, _utility, _thresholds, _skills, _boids, _ledger, _speech, !snapshotStream);
         _population.Spawned += RaiseSpawned;
         _population.Died    += RaiseDied;
+        _urgent = new UrgentTickQueue(_capacity);
+        _population.TickUrgent += _urgent.Enqueue;
 
         if (useSavedBrain)
             LoadBrain();
@@ -303,8 +437,12 @@ public class EntityManager : MonoBehaviour
     }
 
     private ColonyState AddColony(Vector3 position, bool wild = false)
-        => _colonies.Add(new Unity.Mathematics.float2(position.x, position.z),
+    {
+        var colony = _colonies.Add(new Unity.Mathematics.float2(position.x, position.z),
             new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden), _capacity, wild);
+        _skills.PublishColony(colony.Index, colony.SkillTopology);
+        return colony;
+    }
 
 
 
@@ -390,10 +528,11 @@ public class EntityManager : MonoBehaviour
         var foodIndex = await ServiceLocator.WaitUntilServiceReady<ChunkFoodIndex>();
         _food.Bind(foodIndex, SimulationClock.Time);
 
-        if (map.RandomTicks != null && ServiceLocator.Services.TryGet(out ObjectSystem objects))
+        if (map.Events != null)
         {
-            _fire = new FireTickHandler(map, objects.infoRegistry, foodIndex);
-            map.RandomTicks.Register(_fire);
+            map.Events.Season = SeasonClockSource.Instance;
+            _fire = map.Events.Fire;
+            _wind = map.Events.Wind;
         }
 
         for (int i = 0; i < initialCount; i++)
@@ -410,6 +549,7 @@ public class EntityManager : MonoBehaviour
 
         _nextFitnessStatsTime = SimulationClock.TimeD;
         _nextEnergySampleTime = SimulationClock.TimeD;
+        _nextSoilFeedTime     = SimulationClock.TimeD;
         _lastWarmthDecayTime  = SimulationClock.TimeD;
         _nextSimulationLogTime = SimulationClock.TimeD;
         _tickStartTime        = SimulationClock.TimeD + SimulationRules.Active.TickLoopWarmupSeconds;
@@ -453,6 +593,8 @@ public class EntityManager : MonoBehaviour
                 _windowOpen = true;
             }
 
+            PromoteUrgent(batch);
+
             int end = _tickCursor + batch;
             if (end > _tickCount) end = _tickCount;
 
@@ -472,6 +614,56 @@ public class EntityManager : MonoBehaviour
         _food.Tick();
     }
 
+    private void PromoteUrgent(int batch)
+    {
+        int due = _urgent.Count;
+        if (due == 0) return;
+
+        int batchEnd = _tickCursor + batch;
+        int slot = _tickCursor;
+        int keep = 0;
+        for (int i = 0; i < due; i++)
+        {
+            var e = _urgent.At(i);
+            int from = e.TickSlot;
+            bool placed = !e.IsDisposed && !e.IsDeathPending && from >= 0 && from < _tickCount
+                       && ReferenceEquals(_tickSnapshot[from], e);
+            if (!placed || (from >= _tickCursor && from < batchEnd))
+            {
+                e.ClearTickDue();
+                continue;
+            }
+            if (slot >= batchEnd)
+            {
+                _urgent.Keep(keep++, e);
+                continue;
+            }
+
+            var displaced = _tickSnapshot[slot];
+            if (from >= batchEnd)
+            {
+                _tickSnapshot[from] = displaced;
+                if (displaced != null) displaced.TickSlot = from;
+            }
+            else if (_tickCount < _tickSnapshot.Length)
+            {
+                _tickSnapshot[_tickCount] = displaced;
+                if (displaced != null) displaced.TickSlot = _tickCount;
+                _tickCount++;
+            }
+            else
+            {
+                e.ClearTickDue();
+                continue;
+            }
+            _tickSnapshot[slot] = e;
+            e.TickSlot = slot;
+            slot++;
+            e.ClearTickDue();
+        }
+        _urgent.Truncate(keep);
+    }
+
     private void CloseTickWindow()
     {
         using var scope = CloseWindowMarker.Auto();
@@ -485,6 +677,8 @@ public class EntityManager : MonoBehaviour
         _food.PruneUnloaded();
         TickNests();
         TickColonies();
+        SweepSkills();
+        SolveSkills();
         UpdateVisibility();
 
         float now = SimulationClock.Time;
@@ -495,13 +689,42 @@ public class EntityManager : MonoBehaviour
         }
     }
 
+    private void SweepSkills()
+    {
+        int live = _entities.Count;
+        float now = SimulationClock.Time;
+        float dt = now - _lastSkillSweep;
+        if (live == 0 || !(dt > 0f)) return;
+        using var scope = SkillSweepMarker.Auto();
+        ref readonly var r = ref SimulationRules.Frame;
+        _lastSkillSweep = now;
+        int length = math.clamp((int)math.ceil(live * dt / math.max(r.SkillSweepInterval, 1e-3f)), 1, live);
+        if (_skillSweepCursor >= live) _skillSweepCursor = 0;
+        _skills.ScheduleDecay(_skillSweepCursor, length, live, now, r.SkillDecayRate, r.SkillSavingsFloor).Complete();
+        _skillSweepCursor = (_skillSweepCursor + length) % live;
+    }
+
+    private void SolveSkills()
+    {
+        double now = SimulationClock.TimeD;
+        var active = SimulationRules.Active;
+        var atlas = SkillAtlas.Active;
+        for (int c = 0; c < _colonies.Count; c++)
+        {
+            var colony = _colonies[c];
+            if (now < colony.NextSkillSolve) continue;
+            colony.NextSkillSolve = now + active.SkillSolverInterval;
+            _skillSolver.Step(colony, _skills, atlas, active);
+        }
+    }
+
     private void RunTickBatch(int start, int end)
     {
         using var scope = BatchMarker.Auto();
         BeginColonyBatches();
         _players.Refresh();
 
-        int lo = int.MaxValue, hi = -1;
+        int surveyLo = int.MaxValue, surveyHi = -1;
         for (int i = start; i < end; i++)
         {
             var e = _tickSnapshot[i];
@@ -509,6 +732,22 @@ public class EntityManager : MonoBehaviour
             if (!e.BeginCycle()) continue;
 
             int idx = e.ManagerIndex;
+            _survey.Write(idx, in e.SurveyQuery);
+            if (idx < surveyLo) surveyLo = idx;
+            if (idx > surveyHi) surveyHi = idx;
+        }
+
+        if (surveyHi >= surveyLo) _survey.Schedule(_grid, surveyLo, surveyHi + 1).Complete();
+
+        int lo = int.MaxValue, hi = -1;
+        for (int i = start; i < end; i++)
+        {
+            var e = _tickSnapshot[i];
+            if (e == null || e.IsDisposed || !e.SurveyPending) continue;
+
+            int idx = e.ManagerIndex;
+            if (!e.ContinueCycle(_survey.Output(idx))) continue;
+
             _instincts.Write(idx, in e.InstinctInput);
             _utility.Write(idx, in e.UtilityInput);
             if (idx < lo) lo = idx;
@@ -581,15 +820,10 @@ public class EntityManager : MonoBehaviour
             var colony  = _colonies[c];
             var members = colony.Members;
             colony.TickEma(dt);
-            if (colony.IsWild) continue;
-
-            Array.Clear(colony.CasteCounts, 0, colony.CasteCounts.Length);
-            colony.JuvenileCount = 0;
-            for (int i = 0; i < members.Length; i++)
+            if (colony.IsWild)
             {
-                var e = _entities[members[i]];
-                if (e.IsJuvenile) colony.JuvenileCount++;
-                else if (e.CasteFixed) colony.CasteCounts[(int)e.Caste]++;
+                UpdatePack(colony, members);
+                continue;
             }
 
             for (int i = 0; i < members.Length; i++)
@@ -599,10 +833,8 @@ public class EntityManager : MonoBehaviour
 
                 if (!e.CasteFixed)
                 {
-                    var caste = ChooseCaste(colony, members.Length, e, false);
-                    e.AssignCaste(caste);
+                    e.AssignCaste(ChooseCaste(colony, members.Length, e, false));
                     e.NextCasteReview = now + r.CasteReviewInterval;
-                    colony.CasteCounts[(int)caste]++;
                     continue;
                 }
 
@@ -611,8 +843,8 @@ public class EntityManager : MonoBehaviour
                     e.NextCasteReview = now + r.CasteReviewInterval;
                     colony.CasteCounts[(int)e.Caste]--;
                     var review = ChooseCaste(colony, members.Length, e, true);
+                    colony.CasteCounts[(int)e.Caste]++;
                     if (review != e.Caste) e.AssignCaste(review);
-                    colony.CasteCounts[(int)review]++;
                 }
 
                 var virology = e.Virology;
@@ -620,10 +852,7 @@ public class EntityManager : MonoBehaviour
                 if (now - e.LastCasteShift < r.CasteShiftCooldown) continue;
 
                 e.LastCasteShift = now;
-                colony.CasteCounts[(int)e.Caste]--;
-                var shifted = (Caste)(((int)e.Caste + 1) % (int)Caste.Count);
-                e.AssignCaste(shifted);
-                colony.CasteCounts[(int)shifted]++;
+                e.AssignCaste((Caste)(((int)e.Caste + 1) % (int)Caste.Count));
             }
 
             var leader = colony.Leader;
@@ -633,6 +862,20 @@ public class EntityManager : MonoBehaviour
             colony.NextElection = now + r.LeaderElectionInterval;
             colony.SetLeader(_population.ElectLeader(colony));
         }
+    }
+
+    private void UpdatePack(ColonyState colony, ReadOnlySpan<int> members)
+    {
+        float2 sum = float2.zero;
+        int count = 0;
+        for (int i = 0; i < members.Length; i++)
+        {
+            var e = _entities[members[i]];
+            if (e.IsDisposed || e.IsDeathPending) continue;
+            sum += e.Position2D;
+            count++;
+        }
+        colony.SetPack(count > 0 ? sum / count : float2.zero, count);
     }
 
     private readonly float[] _casteWeights = new float[(int)Caste.Count];
@@ -652,7 +895,7 @@ public class EntityManager : MonoBehaviour
         float winter = SeasonClock.WinterApproach(SimulationClock.Time) * r.PreWinterWorkerStimulus;
 
         float storage = math.saturate(nest.Storage / math.max(r.NestStorageNorm, 1e-3f));
-        Stimulus(Caste.Soldier, math.saturate(nest.Alarm + nest.DangerAtNest) + old, th[(int)Caste.Soldier], colony, inv);
+        Stimulus(Caste.Soldier, math.saturate(nest.Alarm + nest.DangerAtNest + colony.Pressure * r.PressureSoldierGain) + old, th[(int)Caste.Soldier], colony, inv);
         Stimulus(Caste.Worker,  1f - storage + mid + winter,                   th[(int)Caste.Worker],  colony, inv);
         Stimulus(Caste.Scout,   math.saturate(nest.Hunger + (nest.HasFoodPeak ? 0f : r.CasteScoutNoFoodStimulus)) + old, th[(int)Caste.Scout], colony, inv);
         Stimulus(Caste.Nurse,   math.saturate(colony.JuvenileCount * r.CasteNurseGain / math.max(members, 1)) + young, th[(int)Caste.Nurse], colony, inv);
@@ -724,7 +967,7 @@ public class EntityManager : MonoBehaviour
                 ? 0f
                 : foodIndex.NestScarcity(nestPos, r.ScarcityChunkRadius);
 
-            colony.Nest.EndTick(dt, atNest, colony.Scarcity);
+            colony.Nest.EndTick(dt, atNest, colony.Scarcity, colony.Pressure);
             colony.RefreshQuorum();
 
             float inv = members.Length > 0 ? 1f / members.Length : 0f;
@@ -738,7 +981,12 @@ public class EntityManager : MonoBehaviour
     public void SetEntityVisible(EntityModel model, bool visible)
     {
         if (model == null || model.IsDisposed) return;
-        model.VisualCulling?.SetVisible(visible);
+        var culling = model.VisualCulling;
+        if (culling == null) return;
+
+        bool wasVisible = culling.IsVisible;
+        culling.SetVisible(visible);
+        if (visible && !wasVisible && culling.IsVisible) model.NotifyView();
     }
 
     public void SetEntitiesVisible(IReadOnlyList<EntityModel> targets, bool visible)
@@ -752,15 +1000,20 @@ public class EntityManager : MonoBehaviour
         using var scope = SnapshotMarker.Auto();
         int count = _entities.Count;
 
-        if (count > _tickSnapshot.Length)
+        int required = count + (count >> 3) + 1;
+        if (required > _tickSnapshot.Length)
         {
             int cap = _tickSnapshot.Length;
-            while (cap < count) cap <<= 1;
+            while (cap < required) cap <<= 1;
             _tickSnapshot = new EntityModel[cap];
         }
 
         for (int i = 0; i < count; i++)
-            _tickSnapshot[i] = _entities[i];
+        {
+            var e = _entities[i];
+            _tickSnapshot[i] = e;
+            e.TickSlot = i;
+        }
 
         if (_tickCount > count)
             Array.Clear(_tickSnapshot, count, _tickCount - count);
@@ -768,7 +1021,7 @@ public class EntityManager : MonoBehaviour
         _tickCount = count;
 
         SimulationRules.CaptureFrame();
-        _grid.Rebuild(_tickSnapshot, _tickCount, tuning.DetectionRadius);
+        _grid.Rebuild(_tickSnapshot, _tickCount, tuning.DetectionRadius, _motion.Positions);
         _speech.Flush(_grid, SimulationClock.TimeD);
         RunFlocking();
     }
@@ -805,8 +1058,9 @@ public class EntityManager : MonoBehaviour
     private void UpdateVisibilityByCamera(Camera cam)
     {
         Vector3 cp = cam.transform.position;
-        int2 forwardAxis = _map.Facing.Forward();
-        int2 rightAxis = _map.Facing.Right();
+        math.sincos(math.radians(cam.transform.eulerAngles.y), out float yawSin, out float yawCos);
+        float2 forwardAxis = new float2(yawSin, yawCos);
+        float2 rightAxis = new float2(yawCos, -yawSin);
         float margin = cullAxisMargin;
         bool ortho = cam.orthographic;
         float orthoHalf = cam.orthographicSize * cam.aspect;
@@ -842,10 +1096,17 @@ public class EntityManager : MonoBehaviour
         }
     }
 
+    public void ReleaseServices()
+    {
+        enabled = false;
+        UnregisterServices();
+    }
+
     private void UnregisterServices()
     {
         var services = ServiceLocator.Services;
         services.Unregister(_thresholds);
+        services.Unregister(_skills);
         services.Unregister(_grid);
         services.Unregister(_speech);
         services.Unregister(_players);
@@ -853,6 +1114,7 @@ public class EntityManager : MonoBehaviour
         services.Unregister(_warmth);
         services.Unregister(_colonies);
         services.Unregister(_planner);
+        services.Unregister(_motion);
         services.Unregister(_infection?.Service);
     }
 
@@ -875,21 +1137,26 @@ public class EntityManager : MonoBehaviour
     private void OnDestroy()
     {
         SimulationRules.ReleaseVariant();
+        _soilFeed?.Dispose();
         _simulationLog?.Dispose();
+        _puppets?.Dispose();
         UnregisterServices();
         for (int i = 0; i < _nestViews.Count; i++)
             if (_nestViews[i] != null) Destroy(_nestViews[i].gameObject);
         _nestViews.Clear();
-        _fire?.Dispose();
+        _fire = null;
+        _wind = null;
         _infection?.Dispose();
         _population?.ProcessPendingDeaths();
         _population?.FlushDeferredDisposals();
         _planner?.Dispose();
         _motion?.Dispose();
         _instincts?.Dispose();
+        _survey?.Dispose();
         _boids?.Dispose();
         _utility?.Dispose();
         _thresholds?.Dispose();
+        _skills?.Dispose();
         _speech?.Dispose();
         _grid.Dispose();
         _colonies?.Dispose();

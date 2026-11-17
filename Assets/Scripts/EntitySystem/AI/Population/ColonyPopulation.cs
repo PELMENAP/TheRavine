@@ -14,6 +14,7 @@ public sealed class ColonyPopulation
     private readonly int          _maxPopulation;
     private readonly int          _capacity;
     private readonly float        _spawnRadius;
+    private readonly bool         _spawnNetworkObjects;
 
     private readonly List<EntityModel> _entities;
     private readonly ColonyRegistry    _colonies;
@@ -24,8 +25,10 @@ public sealed class ColonyPopulation
 
     private readonly MotionSystem         _motion;
     private readonly InstinctSystem       _instincts;
+    private readonly SurveySystem         _survey;
     private readonly UtilityPriorSystem   _utility;
     private readonly CasteThresholdSystem _thresholds;
+    private readonly SkillGraphStore     _skills;
     private readonly BoidSystem           _boids;
     private readonly EnergyLedger         _ledger;
     private readonly SpeechBus            _speech;
@@ -40,6 +43,7 @@ public sealed class ColonyPopulation
 
     public event Action<EntityModel> Spawned;
     public event Action<EntityModel> Died;
+    public event Action<EntityModel> TickUrgent;
 
     public int CivilCount => _colonies.Count - (_wild != null ? 1 : 0);
     public int CivilPopulation => _entities.Count - (_wild != null ? _wild.MemberCount : 0);
@@ -54,9 +58,10 @@ public sealed class ColonyPopulation
 
     public ColonyPopulation(GameObject prefab, Transform parent, EntityTuning tuning, int maxPopulation, int capacity, float spawnRadius,
         List<EntityModel> entities, ColonyRegistry colonies, ColonyState wild, ColonyFood food, EvolutionService evolution,
-        EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, UtilityPriorSystem utility,
-        CasteThresholdSystem thresholds, BoidSystem boids, EnergyLedger ledger, SpeechBus speech)
+        EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, SurveySystem survey, UtilityPriorSystem utility,
+        CasteThresholdSystem thresholds, SkillGraphStore skills, BoidSystem boids, EnergyLedger ledger, SpeechBus speech, bool spawnNetworkObjects)
     {
+        _spawnNetworkObjects = spawnNetworkObjects;
         _prefab        = prefab;
         _parent        = parent;
         _tuning        = tuning;
@@ -71,8 +76,10 @@ public sealed class ColonyPopulation
         _grid          = grid;
         _motion        = motion;
         _instincts     = instincts;
+        _survey        = survey;
         _utility       = utility;
         _thresholds    = thresholds;
+        _skills        = skills;
         _boids         = boids;
         _ledger        = ledger;
         _speech        = speech;
@@ -96,7 +103,7 @@ public sealed class ColonyPopulation
 
         var netObj = go.GetComponent<NetworkObject>();
         var network = NetworkManager.Singleton;
-        if (netObj != null && network != null && network.IsServer) netObj.Spawn();
+        if (_spawnNetworkObjects && netObj != null && network != null && network.IsServer) netObj.Spawn();
 
         var viewModel = go.GetComponent<EntityViewModel>();
         var view      = go.GetComponent<EntityView>();
@@ -119,14 +126,19 @@ public sealed class ColonyPopulation
 
         model.Mortality.Died += () => HandleEntityDied(model);
         model.OnReproduceRequest += SpawnChild;
+        model.OnUrgentTick += RaiseTickUrgent;
 
         model.ManagerIndex = _entities.Count;
+        _motion.SetPosition(model.ManagerIndex, position);
         _entities.Add(model);
         colony.AddMember(model);
+        model.SyncCount();
         colony.Stats.RecordBirth();
         _instincts.Reset(model.ManagerIndex, InstinctGenes.From(in ctx.CoordMLP.Params));
         _utility.Write(model.ManagerIndex, default);
         _thresholds.Reset(model.ManagerIndex, CasteThresholdSystem.Initial());
+        _skills.Reset(model.ManagerIndex, in ctx.CoordMLP.Params, colony.SkillTopology, SkillAtlas.Active);
+        _skills.SetColony(model.ManagerIndex, colony.Index);
         ref readonly var rules = ref SimulationRules.Frame;
         bool muted = rules.SpeechMuteSampling && !colony.IsWild && RavineRandom.RangeFloat() < rules.SpeechMuteFraction;
         model.Speech.SetMuted(muted);
@@ -176,6 +188,8 @@ public sealed class ColonyPopulation
         return new Vector3(home.x + v.x, _parent.position.y, home.y + v.y);
     }
 
+    private void RaiseTickUrgent(EntityModel model) => TickUrgent?.Invoke(model);
+
     private void HandleEntityDied(EntityModel model)
     {
         if (model == null || model.IsDisposed || model.IsDeathPending) return;
@@ -222,6 +236,7 @@ public sealed class ColonyPopulation
             ? r.ColonyPoiDeathDanger : 0f;
         if (poiDanger > 0f) colony.Pois.Offer(at, 0f, poiDanger);
 
+        if (cause == DeathCause.Killed) colony.RaisePressure(r.PressureFromKill);
         if (cause == DeathCause.Killed || cause == DeathCause.Virus)
         {
             nest.Mark(ColonyChannel.Danger, at, r.KinDeathDangerMark);
@@ -269,9 +284,12 @@ public sealed class ColonyPopulation
             if (idx < 0) { model.ManagerIndex = -1; return; }
         }
 
+        model.ClearCount();
         model.Colony?.RemoveMember(model, _entities);
+        model.Motor.BindSlot(-1);
 
         int last = _entities.Count - 1;
+        _motion.RemoveSwapBack(idx, last);
         if (idx != last)
         {
             var moved = _entities[last];
@@ -281,13 +299,16 @@ public sealed class ColonyPopulation
         }
 
         _instincts.RemoveSwapBack(idx, last);
+        _survey.RemoveSwapBack(idx, last);
         _boids.RemoveSwapBack(idx, last);
         _utility.RemoveSwapBack(idx, last);
         _thresholds.RemoveSwapBack(idx, last);
+        _skills.RemoveSwapBack(idx, last);
         _speech.RemoveSwapBack(idx, last);
         _grid.MarkStale();
         _entities.RemoveAt(last);
         model.ManagerIndex = -1;
+        model.GridSlot = -1;
     }
 
     public EntityModel ElectLeader(ColonyState colony)
@@ -395,11 +416,22 @@ public sealed class ColonyPopulation
         if (now < _nextPredatorTime || wild.MemberCount >= r.PredatorCount || CivilCount == 0) return;
         _nextPredatorTime = now + r.PredatorRespawnInterval;
 
-        var home = _colonies[RavineRandom.RangeInt(0, CivilCount)].Nest.Position;
+        var members = wild.Members;
+        float2 home;
+        float  spread;
+        if (members.Length > 0)
+        {
+            home   = _entities[members[RavineRandom.RangeInt(0, members.Length)]].Position2D;
+            spread = r.PredatorPackSpread;
+        }
+        else
+        {
+            home   = _colonies[RavineRandom.RangeInt(0, CivilCount)].Nest.Position;
+            spread = r.PredatorSpawnDistance;
+        }
         float a = RavineRandom.RangeFloat(0f, 2f * math.PI);
         math.sincos(a, out float sa, out float ca);
-        var p = home + new float2(ca, sa) * r.PredatorSpawnDistance;
-        var members = wild.Members;
+        var p = home + new float2(ca, sa) * spread;
         var ctx = members.Length > 0
             ? wild.Brain.CreateContext(_entities[members[RavineRandom.RangeInt(0, members.Length)]].Brain.Context.CoordMLP.Params.GetMutatedGeneticParameters())
             : null;

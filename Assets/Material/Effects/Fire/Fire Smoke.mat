@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Fire Smoke
+  m_Shader: {fileID: 4800000, guid: eef2b09bff9b4310b5eadec5112de4ce, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _PuffsPerSize: 3
+    - _ScorchHold: 40
+    - _ScorchOpacity: 0.9
+    - _ScorchSeconds: 60
+    - _ScorchSize: 10
+    - _SizeStart: 0.4
+    - _SmokeDensity: 0.9
+    - _SmokeDrift: 5
+    - _SmokeLife: 6
+    - _SmokeLinger: 10
+    - _SmokeRise: 9
+    - _SmokeSizeMax: 30
+    - _SmokeSizeMin: 1
+    - _SmokeStart: 1.6
+    - _UnderGlowStrength: 0.8
+    m_Colors:
+    - _AshColor: {r: 0.31999996, g: 0.29999998, b: 0.27999997, a: 1}
+    - _ScorchColor: {r: 0.049999982, g: 0.044999972, b: 0.04, a: 1}
+    - _SmokeColorOld: {r: 0.45999992, g: 0.45, b: 0.43999997, a: 1}
+    - _SmokeColorYoung: {r: 0.12999997, g: 0.11999995, b: 0.10999996, a: 1}
+    - _UnderGlowColor: {r: 1, g: 0.45, b: 0.14999998, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

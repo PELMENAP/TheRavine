@@ -10,7 +10,10 @@ public class RavineLogger
 {
     private readonly string logFilePath;
     private readonly Action<string> onMessageDisplayTerminal;
-    private readonly HashSet<string> loggedErrors = new();
+    public const int MaxLoggedErrors = 128;
+    private readonly string[] loggedErrors = new string[MaxLoggedErrors];
+    private int loggedErrorsNext;
+    private int loggedErrorsCount;
     private byte criticalErrorNumber;
     private readonly byte maxCriticalNumber = 10;
 
@@ -50,9 +53,30 @@ public class RavineLogger
         Application.quitting += Flush;
     }
 
+    public int LoggedErrorCount => loggedErrorsCount;
+
+    private bool WasLogged(string message)
+    {
+        for (int i = 0; i < loggedErrorsCount; i++)
+        {
+            if (string.Equals(loggedErrors[i], message, StringComparison.Ordinal))
+                return true;
+        }
+        return false;
+    }
+
+    private void RememberError(string message)
+    {
+        loggedErrors[loggedErrorsNext] = message;
+        loggedErrorsNext = (loggedErrorsNext + 1) % MaxLoggedErrors;
+        if (loggedErrorsCount < MaxLoggedErrors)
+            loggedErrorsCount++;
+    }
+
     public void LogError(string message)
     {
-        if (loggedErrors.Contains(message))
+        bool seen = WasLogged(message);
+        if (seen)
         {
             criticalErrorNumber++;
         }
@@ -68,7 +92,8 @@ public class RavineLogger
         WriteToFile(logMessage, true);
         DisplayInGameConsole(styledMessage);
 
-        loggedErrors.Add(message);
+        if (!seen)
+            RememberError(message);
 
         if (criticalErrorNumber > maxCriticalNumber)
             StopApplication();

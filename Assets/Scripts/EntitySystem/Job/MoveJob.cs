@@ -254,14 +254,35 @@ namespace TheRavine.EntityControl
     public struct MoveMobsJob : IJobParallelForTransform
     {
         [ReadOnly] public NativeArray<float2> Velocities;
+        [ReadOnly] public NativeArray<float3> Bodies;
+        public NativeArray<float2> Positions;
+        public HeightAtlas Atlas;
+        public ObstacleSet Obstacles;
         [ReadOnly] public float DeltaTime;
+        public float StepUp;
 
         public void Execute(int index, TransformAccess transform)
         {
             float3 position = transform.position;
-            position.x += Velocities[index].x * DeltaTime;
-            position.z += Velocities[index].y * DeltaTime;
+            float2 origin = new float2(position.x, position.z);
+            float2 next = origin + Velocities[index] * DeltaTime;
+
+            if (Atlas.Covers(next.x, next.y))
+            {
+                float3 body = Bodies[index];
+                float feet = position.y - body.z;
+                ObstacleQuery.ResolveSwept(ref Atlas, in Obstacles, origin, ref next, body.x, feet, feet + body.y, StepUp, out _);
+
+                float ground = Atlas.SampleHeight(next.x, next.y);
+                if (ObstacleQuery.Support(ref Atlas, in Obstacles, next, body.x, feet, StepUp, out float top) && top > ground)
+                    ground = top;
+                position.y = ground + body.z;
+            }
+
+            position.x = next.x;
+            position.z = next.y;
             transform.position = position;
+            Positions[index] = next;
         }
     }
 }

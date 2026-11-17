@@ -9,7 +9,7 @@ public sealed class SimulationLog : IDisposable
 {
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
-    private const int DeathCount  = (int)DeathCause.Burn + 1;
+    private const int DeathCount  = (int)DeathCause.Wind + 1;
     private const int SourceCount = (int)CommandSource.Count;
     private const int AttackCount = (int)ColonyStats.AttackTarget.Count;
     private const int ActionCount = ActionCatalog.Count;
@@ -32,12 +32,15 @@ public sealed class SimulationLog : IDisposable
 
     private static readonly EntityAction[] SourceActions =
     {
-        EntityAction.Flee, EntityAction.Attack, EntityAction.ApproachFood, EntityAction.Wander,
-        EntityAction.ReturnNest, EntityAction.Eat, EntityAction.Rest,
+        EntityAction.MoveTo, EntityAction.Attack, EntityAction.Eat, EntityAction.Rest,
+        EntityAction.Signal, EntityAction.Take, EntityAction.Put,
     };
 
     private static readonly int OffPlanKinds = OffSourceStarts + SourceActions.Length * SourceCount;
-    private static readonly int Stride = OffPlanKinds + PlanCatalog.Count * 2;
+    private const int EatFailCount  = (int)ColonyStats.EatFail.Count;
+    private const int TakeFailCount = (int)ColonyStats.TakeFail.Count;
+    private static readonly int OffFeedFails = OffPlanKinds + PlanCatalog.Count * 2;
+    private static readonly int Stride = OffFeedFails + EatFailCount + TakeFailCount;
 
     private const int ResidualColumns = 8;
 
@@ -171,6 +174,7 @@ public sealed class SimulationLog : IDisposable
             WriteAttackFails(_world, 0);
             WriteWorldDiagnostics(colonies, n);
             WritePlanKinds(_world, 0);
+            WriteFeedFails(_world, 0);
             _writer.WriteLine();
             ledger?.ResetWindow();
 
@@ -185,6 +189,7 @@ public sealed class SimulationLog : IDisposable
                 WriteAttackFails(_delta, c * Stride);
                 WriteColonyDiagnostics(colony);
                 WritePlanKinds(_delta, c * Stride);
+                WriteFeedFails(_delta, c * Stride);
                 _writer.WriteLine();
             }
             _writer.Flush();
@@ -283,6 +288,8 @@ public sealed class SimulationLog : IDisposable
             dst[OffPlanKinds + p * 2]     = s.PlansStarted[p];
             dst[OffPlanKinds + p * 2 + 1] = s.PlansCompleted[p];
         }
+        for (int i = 0; i < EatFailCount; i++)  dst[OffFeedFails + i] = s.EatFails[i];
+        for (int i = 0; i < TakeFailCount; i++) dst[OffFeedFails + EatFailCount + i] = s.TakeFails[i];
         for (int k = 0; k < SourceActions.Length; k++)
         {
             int action = (int)SourceActions[k];
@@ -352,6 +359,11 @@ public sealed class SimulationLog : IDisposable
     private void WritePlanKinds(int[] d, int o)
     {
         for (int i = 0; i < PlanCatalog.Count * 2; i++) WriteNext(d[o + OffPlanKinds + i]);
+    }
+
+    private void WriteFeedFails(int[] d, int o)
+    {
+        for (int i = 0; i < EatFailCount + TakeFailCount; i++) WriteNext(d[o + OffFeedFails + i]);
     }
 
     private void WriteAttackFails(int[] d, int o)
@@ -426,7 +438,7 @@ public sealed class SimulationLog : IDisposable
     {
         var sb = new StringBuilder(8192);
         sb.Append("time_s,season,winter,scope,colony_id,alive,born,died");
-        sb.Append(",deaths_killed,deaths_starved,deaths_virus,deaths_toxic,deaths_age,deaths_burn,mean_lifespan_s");
+        sb.Append(",deaths_killed,deaths_starved,deaths_virus,deaths_toxic,deaths_age,deaths_burn,deaths_wind,mean_lifespan_s");
 
         string[] actions = Enum.GetNames(typeof(EntityAction));
         for (int a = 0; a < ActionCount; a++)
@@ -458,6 +470,8 @@ public sealed class SimulationLog : IDisposable
             string name = SnakeCase(PlanCatalog.Names[p]);
             sb.Append(",plan_").Append(name).Append("_started,plan_").Append(name).Append("_completed");
         }
+        sb.Append(",eat_fail_no_food,eat_fail_claim,eat_fail_empty,eat_fail_large_no_partner");
+        sb.Append(",take_fail_no_food,take_fail_kind,take_fail_claim");
         return sb.ToString();
     }
 

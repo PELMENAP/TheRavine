@@ -4,10 +4,11 @@ Shader "The Ravine/Objects/TreeBillboard"
     {
         [NoScaleOffset] _BillboardAlbedo ("Atlas Albedo", 2D) = "white" {}
         [NoScaleOffset] _BillboardNormal ("Atlas View Normal", 2D) = "gray" {}
-        _AtlasGrid ("Atlas Grid (Columns, Rows)", Vector) = (4, 1, 0, 0)
+        _AtlasGrid ("Atlas Grid (Columns, Rows)", Vector) = (8, 1, 0, 0)
         _BillboardPitch ("Bake Pitch", Range(0, 89)) = 30
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
         _Translucency ("Translucency", Range(0, 1)) = 0.3
+        [Toggle] _AlphaToMask ("Alpha To Mask", Float) = 1
 
         [MainColor] _AlbedoTint ("Albedo Tint", Color) = (1, 1, 1, 1)
         _AmbientStrength ("Ambient Strength", Range(0, 2)) = 1
@@ -76,7 +77,7 @@ Shader "The Ravine/Objects/TreeBillboard"
             frame.right = float3(r.x, 0.0, r.y);
             frame.up = float3(s * f.x, c, s * f.y);
             frame.back = float3(-c * f.x, s, -c * f.y);
-            frame.column = _AtlasGrid.x < 4.0 && _ViewColumn >= _AtlasGrid.x ? _ViewColumn - 2.0 : _ViewColumn;
+            frame.column = _ViewColumn;
             return frame;
         }
 
@@ -91,10 +92,6 @@ Shader "The Ravine/Objects/TreeBillboard"
             positionWS = center
                 + frame.right * (quad.x - 0.5) * _BillboardBox.x * instance.w
                 + frame.up * (quad.y - 0.5) * _BillboardBox.y * instance.w;
-            frame.right = BendNormal(positionWS, frame.right);
-            frame.up = BendNormal(positionWS, frame.up);
-            frame.back = BendNormal(positionWS, frame.back);
-            positionWS = BendWorld(positionWS);
 
             atlasUV = (float2(frame.column, _BillboardCell) + quad) / _AtlasGrid.xy;
         }
@@ -112,7 +109,7 @@ Shader "The Ravine/Objects/TreeBillboard"
 
             ZWrite On
             ZTest LEqual
-            AlphaToMask On
+            AlphaToMask [_AlphaToMask]
 
             HLSLPROGRAM
             #pragma vertex vert

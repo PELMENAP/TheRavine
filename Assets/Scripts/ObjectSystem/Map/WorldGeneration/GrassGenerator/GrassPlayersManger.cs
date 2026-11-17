@@ -1,41 +1,49 @@
 using UnityEngine;
+using TheRavine.Base;
 
 public class GrassPlayersManger : MonoBehaviour
 {
-    [Header("Player Interaction")]
-    [SerializeField] private Material grassMaterial;
+    [Header("Trample Field")]
+    [SerializeField] private ComputeShader trampleCompute;
+    [SerializeField] private GrassTrampleSettings trample = new();
 
-    private Transform player = null;
-    private Vector3 playerPosition;
+    private const string ResourcePath = "Grass/GrassTrample";
 
-    private void FixedUpdate()
+    private GrassTrampleField field;
+
+    private void OnEnable()
     {
-        if (player == null) TryBindFirstPlayer();
-        UpdatePlayerPositions();
+        ComputeShader compute = trampleCompute != null ? trampleCompute : Resources.Load<ComputeShader>(ResourcePath);
+        if (compute == null)
+        {
+            RavineLog.Warning("Grass trample compute shader not found: grass will not react to creatures");
+            return;
+        }
+
+        bool grass = true;
+        try
+        {
+            grass = ServiceLocator.GetService<GlobalSettingsController>().GetCurrent().enableGrass;
+        }
+        catch (System.Exception)
+        {
+        }
+        if (!grass) return;
+
+        field = new GrassTrampleField(compute, trample);
+        ServiceLocator.Register(field);
     }
 
-    private void TryBindFirstPlayer()
+    private void LateUpdate()
     {
-        var players = ServiceLocator.Players.GetAllPlayers();
-        if (players.Count == 0 || players[0].IsDisposed) return;
-
-        TransformComponent transformComponent = players[0].GetEntityComponent<TransformComponent>();
-        if (transformComponent == null) return;
-
-        player = transformComponent.GetEntityTransform();
+        field?.Tick(SimulationClock.DeltaTime);
     }
 
-    private void UpdatePlayerPositions()
+    private void OnDisable()
     {
-        if (player != null)
-        {
-            playerPosition = player.position;
-        }
-        else
-        {
-            playerPosition = new Vector3(0, -10000, 0);
-        }
-        
-        grassMaterial.SetVector("_PlayerPosition", playerPosition);
+        if (field == null) return;
+        ServiceLocator.Services.Unregister(field);
+        field.Dispose();
+        field = null;
     }
 }

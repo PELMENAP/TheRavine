@@ -1,0 +1,21 @@
+public enum SkillChannel : byte
+{
+    None = 0,
+    Speed,
+    RunSpeed,
+    MoveEnergyCost,
+    Attack,
+    Cooldown,
+    GroupBonus,
+    DamageTaken,
+    Health,
+    RestHeal,
+    EnergyCapacity,
+    EatSpeed,
+    Detection,
+    Carry,
+    StoreEfficiency,
+    Feed,
+    ReproduceCost,
+    Count,
+}

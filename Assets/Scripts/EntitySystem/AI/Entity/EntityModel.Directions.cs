@@ -32,6 +32,7 @@ public partial class EntityModel
         if (foreign != null && nest.FieldAt(ColonyChannel.Territory, foreign.Position2D) > r.TerritoryThreshold)
             nest.RaiseAlarm(r.TerritoryAlarm * dt);
 
+        if (_registry == null) ServiceLocator.Services.TryGet(out _registry);
         if (_registry == null) return;
         for (int c = 0; c < _registry.Count; c++)
         {
@@ -62,8 +63,20 @@ public partial class EntityModel
                 SetDirection(DirectionKind.Migration, math.normalizesafe(nest.Migration), r.MigrateLegRadius);
         }
 
-        if (_flock.Neighbors > 0 && !IsWild) SetDirection(DirectionKind.Flock, in _flock.CentroidDir, r.BoidRadius * r.FlockDirectionRadiusMul);
-        _dirMask |= 1 << (int)DirectionKind.Levy;
+        if (_flock.Neighbors > 0) SetDirection(DirectionKind.Flock, in _flock.CentroidDir, r.BoidRadius * r.FlockDirectionRadiusMul);
+        _dirMask |= (ushort)(1 << (int)DirectionKind.Levy);
+
+        if (HasHome) SetDirectionTarget(DirectionKind.Nest, in self, HomePosition, in r);
+        if (TryGetKinTarget(out float2 kin)) SetDirectionTarget(DirectionKind.Kin, in self, in kin, in r);
+        if (nest != null && !IsWild && nest.TryGetDangerCentroid(r.DangerDirectionMinMass, out float2 danger))
+            SetDirectionTarget(DirectionKind.Danger, in self, in danger, in r);
+        if (_objectValid && !HasHeldObject) SetDirectionTarget(DirectionKind.Object, in self, in _objectPos, in r);
+    }
+
+    private void ComputeEscapeDirection(in float2 self, in SimulationRules.RulesFrame r)
+    {
+        if (!_threatResolved) return;
+        SetDirection(DirectionKind.Escape, math.normalizesafe(self - _threatSource), Tuning.DetectionRadius * r.FleeDistanceMul);
     }
 
     private void SetDirectionTarget(DirectionKind kind, in float2 self, in float2 target, in SimulationRules.RulesFrame r)
@@ -79,8 +92,11 @@ public partial class EntityModel
         if (math.lengthsq(dir) < 1e-6f) return;
         _dirVec[(int)kind]    = dir;
         _dirRadius[(int)kind] = radius;
-        _dirMask |= (byte)(1 << (int)kind);
+        _dirMask |= (ushort)(1 << (int)kind);
     }
+
+    private float2 DirectionVector(DirectionKind kind)
+        => (_dirMask & (1 << (int)kind)) != 0 ? _dirVec[(int)kind] : float2.zero;
 
     public bool TryResolveDirection(byte kind, float offset, out float2 dir, out float radius)
     {
@@ -94,13 +110,14 @@ public partial class EntityModel
             float a = RavineRandom.RangeFloat(0f, 2f * math.PI);
             math.sincos(a, out float sa, out float ca);
             dir    = new float2(ca, sa);
-            radius = math.min(LevyStep(in r), r.PlannerRadiusMax);
+            radius = math.min(LevyStep(in r) * _casteMods.Range, r.PlannerRadiusMax);
         }
         else
         {
             if ((_dirMask & (1 << kind)) == 0) return false;
             dir    = _dirVec[kind];
             radius = _dirRadius[kind];
+            if (kind == (byte)DirectionKind.Frontier) radius = math.min(radius * _casteMods.Range, r.PlannerRadiusMax);
         }
 
         math.sincos(offset + _ouAngle, out float s, out float c);

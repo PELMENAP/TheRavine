@@ -7,21 +7,29 @@ using UnityEngine.Jobs;
 using Unity.Mathematics;
 using Unity.Jobs;
 
+using TheRavine.Generator;
 
 namespace TheRavine.EntityControl
 {
     public class MobController : MonoBehaviour, ISetAble
     {
+        private const float AtlasMargin = (ObstacleQuery.MaxCellReach + 1) * MapGenerator.scale;
+
         private RavineLogger logger;
         public int GetEntityCount() => mobEntities.Length;
         private NativeList<IntPtr> mobEntities;
+        private MovementComponent[] mobMovement = Array.Empty<MovementComponent>();
         private List<GCHandle> gcHandles;
         private TransformAccessArray transformAccessArray;
         private NativeArray<float2> velocities;
         private NativeList<int> mobIntervals;
         private NativeList<float> mobAccumulated;
+        private NativeList<float3> mobBodies;
+        private NativeList<float2> mobPositions;
+        private float2[] atlasPoints = Array.Empty<float2>();
         private Dictionary<AEntity, int> mobIndex;
         private int updateFrame;
+        private bool motionMissingReported;
 
         private MoveMobsJob moveMobsJob;
         private JobHandle moveJobHandle;
@@ -39,6 +47,8 @@ namespace TheRavine.EntityControl
             velocities = new NativeArray<float2>(0, Allocator.Persistent);
             mobIntervals = new NativeList<int>(Allocator.Persistent);
             mobAccumulated = new NativeList<float>(Allocator.Persistent);
+            mobBodies = new NativeList<float3>(Allocator.Persistent);
+            mobPositions = new NativeList<float2>(Allocator.Persistent);
             mobIndex = new Dictionary<AEntity, int>();
 
             callback?.Invoke();
@@ -51,17 +61,26 @@ namespace TheRavine.EntityControl
                 logger.LogError("Mob entity is null!");
                 return;
             }
+            if (!mobEntities.IsCreated) return;
 
             try
             {
                 GCHandle handle = GCHandle.Alloc(mobEntity, GCHandleType.Pinned);
                 gcHandles.Add(handle);
                 mobIndex[mobEntity] = mobEntities.Length;
+                int slot = mobEntities.Length;
                 mobEntities.Add(GCHandle.ToIntPtr(handle));
+                if (slot == mobMovement.Length)
+                    Array.Resize(ref mobMovement, math.max(8, slot << 1));
+                if (slot >= atlasPoints.Length)
+                    Array.Resize(ref atlasPoints, math.max(8, slot << 1));
+                mobMovement[slot] = mobEntity.GetEntityComponent<MovementComponent>();
                 mobIntervals.Add(1);
                 mobAccumulated.Add(0f);
 
                 var transformComponent = mobEntity.GetEntityComponent<TransformComponent>();
+                mobBodies.Add(BodyOf(mobEntity));
+                mobPositions.Add(PositionOf(transformComponent));
 
                 if (transformComponent == null)
                 {
@@ -85,6 +104,7 @@ namespace TheRavine.EntityControl
                 logger.LogError("Mob entity is null!");
                 return;
             }
+            if (!mobEntities.IsCreated) return;
 
             if (mobIndex.TryGetValue(mobEntity, out int i))
             {
@@ -99,9 +119,13 @@ namespace TheRavine.EntityControl
                     if (i != last)
                         mobIndex[(AEntity)GCHandle.FromIntPtr(mobEntities[last]).Target] = i;
 
+                    mobMovement[i] = mobMovement[last];
+                    mobMovement[last] = null;
                     mobEntities.RemoveAtSwapBack(i);
                     mobIntervals.RemoveAtSwapBack(i);
                     mobAccumulated.RemoveAtSwapBack(i);
+                    mobBodies.RemoveAtSwapBack(i);
+                    mobPositions.RemoveAtSwapBack(i);
                     transformAccessArray.RemoveAtSwapBack(i);
                     ReallocateVelocities();
                     return;
@@ -140,18 +164,38 @@ namespace TheRavine.EntityControl
                 }
 
                 mobAccumulated[i] = 0f;
-                GCHandle handle = GCHandle.FromIntPtr(mobEntities[i]);
-                AEntity mob = (AEntity)handle.Target;
-                velocities[i] = mob.GetEntityComponent<MovementComponent>().GetEntityVelocity() * accumulated;
+                var movement = mobMovement[i];
+                velocities[i] = movement != null ? movement.GetEntityVelocity() * accumulated : float2.zero;
             }
+
+            if (!ServiceLocator.Services.TryGet(out MotionSystem motion) || !motion.IsAlive)
+            {
+                if (!motionMissingReported)
+                {
+                    motionMissingReported = true;
+                    logger?.LogWarning("MobController: MotionSystem is not available, mobs hold their position");
+                }
+                return;
+            }
+            motionMissingReported = false;
+
+            int count = mobEntities.Length;
+            for (int i = 0; i < count; i++) atlasPoints[i] = mobPositions[i];
 
             moveMobsJob = new MoveMobsJob
             {
                 Velocities = velocities,
-                DeltaTime = 1f
+                Bodies = mobBodies.AsArray(),
+                Positions = mobPositions.AsArray(),
+                Atlas = motion.PrepareAtlas(atlasPoints, count, AtlasMargin),
+                Obstacles = motion.Obstacles,
+                DeltaTime = 1f,
+                StepUp = SimulationRules.Frame.AgentStepUp
             };
 
             moveJobHandle = moveMobsJob.Schedule(transformAccessArray, moveJobHandle);
+            moveJobHandle.Complete();
+            moveJobHandle = default;
         }
 
         private void LateUpdate()
@@ -164,29 +208,54 @@ namespace TheRavine.EntityControl
         {
             try
             {
-                foreach (var handle in gcHandles)
+                moveJobHandle.Complete();
+                moveJobHandle = default;
+                if (gcHandles != null)
                 {
-                    if (handle.IsAllocated) handle.Free();
+                    foreach (var handle in gcHandles)
+                    {
+                        if (handle.IsAllocated) handle.Free();
+                    }
+                    gcHandles.Clear();
                 }
-                gcHandles.Clear();
-                mobEntities.Dispose();
+                Array.Clear(mobMovement, 0, mobMovement.Length);
+                if (mobEntities.IsCreated) mobEntities.Dispose();
                 if (mobIntervals.IsCreated) mobIntervals.Dispose();
                 if (mobAccumulated.IsCreated) mobAccumulated.Dispose();
+                if (mobBodies.IsCreated) mobBodies.Dispose();
+                if (mobPositions.IsCreated) mobPositions.Dispose();
                 mobIndex?.Clear();
-                transformAccessArray.Dispose();
-                velocities.Dispose();
+                if (transformAccessArray.isCreated) transformAccessArray.Dispose();
+                if (velocities.IsCreated) velocities.Dispose();
                 logger?.LogInfo("MobController service is disabled");
-                callback?.Invoke();
             }
             catch (Exception ex)
             {
                 logger?.LogError($"Error during break up: {ex.Message}");
             }
+            callback?.Invoke();
         }
 
         private void OnDisable()
         {
             BreakUp(null);
+        }
+
+        private static float3 BodyOf(AEntity mobEntity)
+        {
+            var main = mobEntity.GetEntityComponent<MainComponent>();
+            if (main != null
+                && ServiceLocator.Services.TryGet(out EntitySystem entities)
+                && entities.TryGetMobInfo(main.GetPrefabID(), out EntityInfo info))
+                return new float3(info.BodyRadius, info.BodyHeight, info.GroundOffset);
+
+            return new float3(SimulationRules.Frame.AgentBodyRadius, SimulationRules.Frame.AgentBodyHeight, 0f);
+        }
+
+        private static float2 PositionOf(TransformComponent transformComponent)
+        {
+            Transform tr = transformComponent?.GetEntityTransform();
+            return tr != null ? new float2(tr.position.x, tr.position.z) : float2.zero;
         }
 
         private void ReallocateVelocities()

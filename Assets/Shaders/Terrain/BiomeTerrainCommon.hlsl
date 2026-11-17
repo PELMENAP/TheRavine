@@ -3,7 +3,6 @@
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-#include "Assets/Shaders/Include/CurvedWorld.hlsl"
 #include "Assets/Shaders/Include/BiomeCommon.hlsl"
 
 CBUFFER_START(UnityPerMaterial)
@@ -14,11 +13,13 @@ CBUFFER_START(UnityPerMaterial)
     float _RockScale;
     float _RockSlopeMin;
     float _RockSlopeMax;
+    float _RockSideSlope;
     float4 _RockColor;
 
     float _SnowTempMin;
     float _SnowTempMax;
     float _SnowFlatness;
+    float _SnowSeasonShift;
     float4 _SnowColor;
 
     float _WaterLevel;
@@ -42,6 +43,7 @@ TEXTURE2D(_SandTex); SAMPLER(sampler_SandTex);
 
 float3 _LightDirection;
 float3 _LightPosition;
+float _Season;
 
 struct TerrainAttributes
 {
@@ -57,7 +59,6 @@ void TerrainVertexWorld(TerrainAttributes input, out float3 flatPositionWS, out 
     flatNormalWS = TransformObjectToWorldNormal(input.normalOS);
     positionWS = flatPositionWS;
     normalWS = flatNormalWS;
-    BendWorld(positionWS, normalWS);
 }
 
 float4 TerrainShadowPositionCS(float3 positionWS, float3 normalWS)
@@ -134,13 +135,17 @@ void TerrainSurface(float3 flatPositionWS, float3 normalWS, float2 climate, floa
     UNITY_BRANCH
     if (rockMask > 0.001)
     {
+        float2 farUV = slope >= _RockSideSlope
+            ? (abs(normalWS.x) > abs(normalWS.z) ? flatPositionWS.zy : flatPositionWS.xy)
+            : flatPositionWS.xz;
         float3 rock = far
-            ? SAMPLE_TEXTURE2D(_RockTex, sampler_RockTex, flatPositionWS.xz * _RockScale).rgb
+            ? SAMPLE_TEXTURE2D(_RockTex, sampler_RockTex, farUV * _RockScale).rgb
             : SampleTriplanar(TEXTURE2D_ARGS(_RockTex, sampler_RockTex), flatPositionWS, normalWS, _RockScale);
         albedo = lerp(albedo, rock * _RockColor.rgb, rockMask);
     }
 
-    float snowMask = smoothstep(_SnowTempMax, _SnowTempMin, climate.x) * smoothstep(1.0 - _SnowFlatness, 1.0, saturate(normalWS.y));
+    float snowShift = -_Season * _SnowSeasonShift;
+    float snowMask = smoothstep(_SnowTempMax + snowShift, _SnowTempMin + snowShift, climate.x) * smoothstep(1.0 - _SnowFlatness, 1.0, saturate(normalWS.y));
     UNITY_BRANCH
     if (snowMask > 0.001)
     {
