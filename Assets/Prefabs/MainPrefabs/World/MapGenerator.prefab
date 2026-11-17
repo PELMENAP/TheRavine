@@ -81,6 +81,146 @@ MonoBehaviour:
       lacunarity: 2
       gain: 0.45
       weightedStrength: 0.1
+    continentalnessSettings:
+      noiseType: 0
+      fractalType: 1
+      frequency: 0.0007
+      octaves: 2
+      lacunarity: 2
+      gain: 0.5
+      weightedStrength: 0
+    ruggednessSettings:
+      noiseType: 0
+      fractalType: 1
+      frequency: 0.0011
+      octaves: 2
+      lacunarity: 2
+      gain: 0.5
+      weightedStrength: 0
+    ridgeNoiseSettings:
+      noiseType: 0
+      fractalType: 2
+      frequency: 0.004
+      octaves: 4
+      lacunarity: 2
+      gain: 0.5
+      weightedStrength: 0
+    landformWarpSettings:
+      noiseType: 0
+      fractalType: 0
+      frequency: 0.012
+      octaves: 1
+      lacunarity: 2
+      gain: 0.5
+      weightedStrength: 0
+    landforms:
+    - name: Hills
+      continentalness: 0.55
+      ruggedness: 0.5
+      heightScale: 1
+      heightOffset: 0
+      ridgeWeight: 0
+      warpAmplitude: 0
+      terraceWeight: 0
+      terraceStep: 0
+      riverWidth: 1
+      riverCarve: 1
+      riverWarp: 0
+      erosion: 1
+    - name: Ocean
+      continentalness: 0.1
+      ruggedness: 0.25
+      heightScale: 0.35
+      heightOffset: -0.7
+      ridgeWeight: 0
+      warpAmplitude: 0
+      terraceWeight: 0
+      terraceStep: 0
+      riverWidth: 0
+      riverCarve: 0
+      riverWarp: 0
+      erosion: 0.2
+    - name: Archipelago
+      continentalness: 0.15
+      ruggedness: 0.8
+      heightScale: 0.9
+      heightOffset: -0.55
+      ridgeWeight: 0.5
+      warpAmplitude: 30
+      terraceWeight: 0
+      terraceStep: 0
+      riverWidth: 0.5
+      riverCarve: 0.5
+      riverWarp: 0
+      erosion: 0.6
+    - name: Floodplain
+      continentalness: 0.4
+      ruggedness: 0.12
+      heightScale: 0.25
+      heightOffset: -0.05
+      ridgeWeight: 0
+      warpAmplitude: 0
+      terraceWeight: 0
+      terraceStep: 0
+      riverWidth: 1.8
+      riverCarve: 1
+      riverWarp: 40
+      erosion: 0.5
+    - name: Plains
+      continentalness: 0.6
+      ruggedness: 0.2
+      heightScale: 0.45
+      heightOffset: 0.05
+      ridgeWeight: 0
+      warpAmplitude: 10
+      terraceWeight: 0
+      terraceStep: 0
+      riverWidth: 1.2
+      riverCarve: 1
+      riverWarp: 20
+      erosion: 0.8
+    - name: Plateau
+      continentalness: 0.85
+      ruggedness: 0.3
+      heightScale: 0.6
+      heightOffset: 0.45
+      ridgeWeight: 0.1
+      warpAmplitude: 15
+      terraceWeight: 0.8
+      terraceStep: 0.12
+      riverWidth: 0.6
+      riverCarve: 1
+      riverWarp: 10
+      erosion: 1.2
+    - name: Badlands
+      continentalness: 0.5
+      ruggedness: 0.85
+      heightScale: 1
+      heightOffset: 0.1
+      ridgeWeight: 0.35
+      warpAmplitude: 45
+      terraceWeight: 0.5
+      terraceStep: 0.08
+      riverWidth: 0.7
+      riverCarve: 1
+      riverWarp: 25
+      erosion: 2
+    - name: Mountains
+      continentalness: 0.9
+      ruggedness: 0.85
+      heightScale: 1.7
+      heightOffset: 0.35
+      ridgeWeight: 0.8
+      warpAmplitude: 25
+      terraceWeight: 0
+      terraceStep: 0
+      riverWidth: 0.5
+      riverCarve: 0.6
+      riverWarp: 5
+      erosion: 1.5
+    landformBlendRadius: 0.3
+    landformBaseWeight: 0.05
+    landformContrast: 1.6
     mountainRegionIndex: 8
     regions:
     - height: 0
@@ -102,24 +242,12 @@ MonoBehaviour:
       maxMoisture: 1
       heightScale: 0.5
       heightOffset: 0.18
-      hasDetailLayer: 1
-      detailNoise:
-        noiseType: 2
-        fractalType: 1
-        frequency: 0.06
-        octaves: 2
-        lacunarity: 2
-        gain: 0.4
-        weightedStrength: 0
-      detailStrength: 0.06
       hasRivers: 0
       riverBlend:
         riverMin: 0
         riverMax: 0
         influenceWidth: 0
         riverBedHeight: 0
-        minTerrainHeight: 0
-        domainWarpAmplitude: 0
       albedoLayer: 5
       tint: {r: 0, g: 0, b: 0, a: 0}
       grassTint: {r: 0, g: 0.9367821, b: 1, a: 1}
@@ -130,24 +258,12 @@ MonoBehaviour:
       maxMoisture: 0.75
       heightScale: 0.75
       heightOffset: 0.08
-      hasDetailLayer: 1
-      detailNoise:
-        noiseType: 0
-        fractalType: 1
-        frequency: 0.015
-        octaves: 3
-        lacunarity: 2
-        gain: 0.5
-        weightedStrength: 0.2
-      detailStrength: 0.1
       hasRivers: 1
       riverBlend:
         riverMin: 0.47
         riverMax: 0.53
         influenceWidth: 0.08
         riverBedHeight: 0.06
-        minTerrainHeight: 0.2
-        domainWarpAmplitude: 0
       albedoLayer: 7
       tint: {r: 0, g: 0.2830189, b: 0.021770699, a: 0}
       grassTint: {r: 0, g: 0.28235295, b: 0.023529412, a: 1}
@@ -158,24 +274,12 @@ MonoBehaviour:
       maxMoisture: 0.38
       heightScale: 0.65
       heightOffset: 0.1
-      hasDetailLayer: 0
-      detailNoise:
-        noiseType: 0
-        fractalType: 0
-        frequency: 0
-        octaves: 0
-        lacunarity: 0
-        gain: 0
-        weightedStrength: 0
-      detailStrength: 0
       hasRivers: 1
       riverBlend:
         riverMin: 0.47
         riverMax: 0.53
         influenceWidth: 0.08
         riverBedHeight: 0.06
-        minTerrainHeight: 0.2
-        domainWarpAmplitude: 0
       albedoLayer: 1
       tint: {r: 1, g: 0.9696857, b: 0, a: 0}
       grassTint: {r: 1, g: 0.88739085, b: 0, a: 1}
@@ -186,24 +290,12 @@ MonoBehaviour:
       maxMoisture: 0.72
       heightScale: 0.9
       heightOffset: 0.06
-      hasDetailLayer: 1
-      detailNoise:
-        noiseType: 0
-        fractalType: 1
-        frequency: 0.015
-        octaves: 3
-        lacunarity: 2
-        gain: 0.5
-        weightedStrength: 0.2
-      detailStrength: 0.14
       hasRivers: 1
       riverBlend:
         riverMin: 0.42
         riverMax: 0.58
         influenceWidth: 0.18
         riverBedHeight: 0.04
-        minTerrainHeight: 0.15
-        domainWarpAmplitude: 30
       albedoLayer: 6
       tint: {r: 0, g: 0, b: 0, a: 0}
       grassTint: {r: 0, g: 0, b: 0, a: 0}
@@ -214,24 +306,12 @@ MonoBehaviour:
       maxMoisture: 1
       heightScale: 1.1
       heightOffset: 0.04
-      hasDetailLayer: 1
-      detailNoise:
-        noiseType: 0
-        fractalType: 1
-        frequency: 0.015
-        octaves: 3
-        lacunarity: 2
-        gain: 0.5
-        weightedStrength: 0.2
-      detailStrength: 0.2
       hasRivers: 1
       riverBlend:
         riverMin: 0.42
         riverMax: 0.58
         influenceWidth: 0.18
         riverBedHeight: 0.04
-        minTerrainHeight: 0.15
-        domainWarpAmplitude: 30
       albedoLayer: 2
       tint: {r: 0, g: 1, b: 0.6880622, a: 0}
       grassTint: {r: 0, g: 1, b: 0.6862745, a: 1}
@@ -242,24 +322,12 @@ MonoBehaviour:
       maxMoisture: 0.28
       heightScale: 0.55
       heightOffset: 0.12
-      hasDetailLayer: 1
-      detailNoise:
-        noiseType: 0
-        fractalType: 1
-        frequency: 0.04
-        octaves: 2
-        lacunarity: 2.5
-        gain: 0.4
-        weightedStrength: 0
-      detailStrength: 0.18
       hasRivers: 1
       riverBlend:
         riverMin: 0.48
         riverMax: 0.52
         influenceWidth: 0.05
         riverBedHeight: 0.02
-        minTerrainHeight: 0.25
-        domainWarpAmplitude: 0
       albedoLayer: 3
       tint: {r: 1, g: 0.80950654, b: 0.5518868, a: 0}
       grassTint: {r: 1, g: 0.80784315, b: 0.5529412, a: 1}
@@ -270,24 +338,12 @@ MonoBehaviour:
       maxMoisture: 0.52
       heightScale: 0.62
       heightOffset: 0.09
-      hasDetailLayer: 0
-      detailNoise:
-        noiseType: 0
-        fractalType: 0
-        frequency: 0
-        octaves: 0
-        lacunarity: 0
-        gain: 0
-        weightedStrength: 0
-      detailStrength: 0
       hasRivers: 1
       riverBlend:
         riverMin: 0.47
         riverMax: 0.53
         influenceWidth: 0.08
         riverBedHeight: 0.06
-        minTerrainHeight: 0.2
-        domainWarpAmplitude: 0
       albedoLayer: 4
       tint: {r: 1, g: 0.41228476, b: 0, a: 0}
       grassTint: {r: 1, g: 0.4117647, b: 0, a: 1}
@@ -298,24 +354,12 @@ MonoBehaviour:
       maxMoisture: 0.72
       heightScale: 0.85
       heightOffset: 0.07
-      hasDetailLayer: 1
-      detailNoise:
-        noiseType: 0
-        fractalType: 1
-        frequency: 0.015
-        octaves: 3
-        lacunarity: 2
-        gain: 0.5
-        weightedStrength: 0.2
-      detailStrength: 0.12
       hasRivers: 1
       riverBlend:
         riverMin: 0.42
         riverMax: 0.58
         influenceWidth: 0.18
         riverBedHeight: 0.04
-        minTerrainHeight: 0.15
-        domainWarpAmplitude: 30
       albedoLayer: 1
       tint: {r: 0, g: 0, b: 0, a: 0}
       grassTint: {r: 0, g: 0, b: 0, a: 0}
@@ -326,24 +370,12 @@ MonoBehaviour:
       maxMoisture: 1
       heightScale: 1.15
       heightOffset: 0.05
-      hasDetailLayer: 1
-      detailNoise:
-        noiseType: 0
-        fractalType: 1
-        frequency: 0.015
-        octaves: 3
-        lacunarity: 2
-        gain: 0.5
-        weightedStrength: 0.2
-      detailStrength: 0.22
       hasRivers: 1
       riverBlend:
         riverMin: 0.42
         riverMax: 0.58
         influenceWidth: 0.18
         riverBedHeight: 0.04
-        minTerrainHeight: 0.15
-        domainWarpAmplitude: 30
       albedoLayer: 0
       tint: {r: 0, g: 0.8862745, b: 0.44379663, a: 0}
       grassTint: {r: 0, g: 0.8862745, b: 0.44313726, a: 1}
@@ -354,24 +386,12 @@ MonoBehaviour:
       maxMoisture: 1
       heightScale: 0.45
       heightOffset: 0.05
-      hasDetailLayer: 1
-      detailNoise:
-        noiseType: 0
-        fractalType: 1
-        frequency: 0.025
-        octaves: 2
-        lacunarity: 2
-        gain: 0.6
-        weightedStrength: 0.3
-      detailStrength: 0.08
       hasRivers: 1
       riverBlend:
         riverMin: 0.38
         riverMax: 0.62
         influenceWidth: 0.22
         riverBedHeight: 0.08
-        minTerrainHeight: 0.05
-        domainWarpAmplitude: 45
       albedoLayer: 4
       tint: {r: 0.19926937, g: 0.15566039, b: 1, a: 0}
       grassTint: {r: 0.2, g: 0.15686275, b: 1, a: 1}
@@ -417,13 +437,354 @@ MonoBehaviour:
     evictionIdleFrames: 120
     evictionScanInterval: 5
     chunkPoolCapacity: 64
-    curveRadius: 10000
-    curveFlat: 100
-    curveFocusDistance: 30
-    horizonCameraHeight: 30
-    horizonCameraBack: 35
-    horizonPeakHeight: 100
+    ravineHalfWidth: 10000
+    ravineWallRun: 100
+    ravineWallHeight: 5000
+    backdropCell: 128
+    backdropReach: 20000
+    backdropWallRows: 16
+    backdropPlateauDepth: 2000
+    backdropHazeDensity: 0.00008
     farMaxInstances: 65536
+    farShadowDistance: 500
+    farRebuildIntervalFrames: 30
+    farContentRebuildIntervalFrames: 300
+  plateauSettings:
+    isRiver: 1
+    endlessFlag: 01010100
+    heightNoiseSettings:
+      noiseType: 0
+      fractalType: 1
+      frequency: 0.001
+      octaves: 3
+      lacunarity: 2
+      gain: 0.5
+      weightedStrength: 0
+    riverNoiseSettings:
+      noiseType: 1
+      fractalType: 2
+      frequency: 0.001
+      octaves: 2
+      lacunarity: 2
+      gain: 0.5
+      weightedStrength: 0
+    temperatureSettings:
+      noiseType: 0
+      fractalType: 1
+      frequency: 0.001
+      octaves: 2
+      lacunarity: 2
+      gain: 0.3
+      weightedStrength: 0
+    moistureSettings:
+      noiseType: 0
+      fractalType: 1
+      frequency: 0.001
+      octaves: 2
+      lacunarity: 2
+      gain: 0.45
+      weightedStrength: 0.1
+    continentalnessSettings:
+      noiseType: 0
+      fractalType: 1
+      frequency: 0.0007
+      octaves: 2
+      lacunarity: 2
+      gain: 0.5
+      weightedStrength: 0
+    ruggednessSettings:
+      noiseType: 0
+      fractalType: 1
+      frequency: 0.0011
+      octaves: 2
+      lacunarity: 2
+      gain: 0.5
+      weightedStrength: 0
+    ridgeNoiseSettings:
+      noiseType: 0
+      fractalType: 2
+      frequency: 0.004
+      octaves: 4
+      lacunarity: 2
+      gain: 0.5
+      weightedStrength: 0
+    landformWarpSettings:
+      noiseType: 0
+      fractalType: 0
+      frequency: 0.012
+      octaves: 1
+      lacunarity: 2
+      gain: 0.5
+      weightedStrength: 0
+    landforms:
+    - name: Hills
+      continentalness: 0.55
+      ruggedness: 0.5
+      heightScale: 1
+      heightOffset: 0
+      ridgeWeight: 0
+      warpAmplitude: 0
+      terraceWeight: 0
+      terraceStep: 0
+      riverWidth: 1
+      riverCarve: 1
+      riverWarp: 0
+      erosion: 1
+    - name: Plains
+      continentalness: 0.6
+      ruggedness: 0.2
+      heightScale: 0.45
+      heightOffset: 0.05
+      ridgeWeight: 0
+      warpAmplitude: 10
+      terraceWeight: 0
+      terraceStep: 0
+      riverWidth: 1.2
+      riverCarve: 1
+      riverWarp: 20
+      erosion: 0.8
+    - name: Plateau
+      continentalness: 0.85
+      ruggedness: 0.3
+      heightScale: 0.6
+      heightOffset: 0.45
+      ridgeWeight: 0.1
+      warpAmplitude: 15
+      terraceWeight: 0.8
+      terraceStep: 0.12
+      riverWidth: 0.6
+      riverCarve: 1
+      riverWarp: 10
+      erosion: 1.2
+    landformBlendRadius: 0.3
+    landformBaseWeight: 0.05
+    landformContrast: 1.6
+    mountainRegionIndex: 8
+    regions:
+    - height: 0
+    - height: 0.1
+    - height: 0.15
+    - height: 0.2
+    - height: 0.23
+    - height: 0.26
+    - height: 0.3
+    - height: 0.45
+    - height: 0.7
+    - height: 0.8
+    - height: 0.95
+    biomesSettings:
+    - name: Tundra
+      minTemperature: 0
+      maxTemperature: 0.25
+      minMoisture: 0
+      maxMoisture: 1
+      heightScale: 0.5
+      heightOffset: 0.18
+      hasRivers: 0
+      riverBlend:
+        riverMin: 0
+        riverMax: 0
+        influenceWidth: 0
+        riverBedHeight: 0
+      albedoLayer: 5
+      tint: {r: 0, g: 0, b: 0, a: 0}
+      grassTint: {r: 0, g: 0.9367821, b: 1, a: 1}
+    - name: Boreal Forest (Taiga)
+      minTemperature: 0.1
+      maxTemperature: 0.38
+      minMoisture: 0.35
+      maxMoisture: 0.75
+      heightScale: 0.75
+      heightOffset: 0.08
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.47
+        riverMax: 0.53
+        influenceWidth: 0.08
+        riverBedHeight: 0.06
+      albedoLayer: 7
+      tint: {r: 0, g: 0.2830189, b: 0.021770699, a: 0}
+      grassTint: {r: 0, g: 0.28235295, b: 0.023529412, a: 1}
+    - name: Temperate Grassland / Steppe
+      minTemperature: 0.28
+      maxTemperature: 0.6
+      minMoisture: 0
+      maxMoisture: 0.38
+      heightScale: 0.65
+      heightOffset: 0.1
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.47
+        riverMax: 0.53
+        influenceWidth: 0.08
+        riverBedHeight: 0.06
+      albedoLayer: 1
+      tint: {r: 1, g: 0.9696857, b: 0, a: 0}
+      grassTint: {r: 1, g: 0.88739085, b: 0, a: 1}
+    - name: Temperate Deciduous Forest
+      minTemperature: 0.3
+      maxTemperature: 0.62
+      minMoisture: 0.38
+      maxMoisture: 0.72
+      heightScale: 0.9
+      heightOffset: 0.06
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.42
+        riverMax: 0.58
+        influenceWidth: 0.18
+        riverBedHeight: 0.04
+      albedoLayer: 6
+      tint: {r: 0, g: 0, b: 0, a: 0}
+      grassTint: {r: 0, g: 0, b: 0, a: 0}
+    - name: Temperate Rainforest
+      minTemperature: 0.22
+      maxTemperature: 0.52
+      minMoisture: 0.7
+      maxMoisture: 1
+      heightScale: 1.1
+      heightOffset: 0.04
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.42
+        riverMax: 0.58
+        influenceWidth: 0.18
+        riverBedHeight: 0.04
+      albedoLayer: 2
+      tint: {r: 0, g: 1, b: 0.6880622, a: 0}
+      grassTint: {r: 0, g: 1, b: 0.6862745, a: 1}
+    - name: Hot Desert
+      minTemperature: 0.62
+      maxTemperature: 1
+      minMoisture: 0
+      maxMoisture: 0.28
+      heightScale: 0.55
+      heightOffset: 0.12
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.48
+        riverMax: 0.52
+        influenceWidth: 0.05
+        riverBedHeight: 0.02
+      albedoLayer: 3
+      tint: {r: 1, g: 0.80950654, b: 0.5518868, a: 0}
+      grassTint: {r: 1, g: 0.80784315, b: 0.5529412, a: 1}
+    - name: Savanna
+      minTemperature: 0.6
+      maxTemperature: 0.92
+      minMoisture: 0.22
+      maxMoisture: 0.52
+      heightScale: 0.62
+      heightOffset: 0.09
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.47
+        riverMax: 0.53
+        influenceWidth: 0.08
+        riverBedHeight: 0.06
+      albedoLayer: 4
+      tint: {r: 1, g: 0.41228476, b: 0, a: 0}
+      grassTint: {r: 1, g: 0.4117647, b: 0, a: 1}
+    - name: Tropical Forest
+      minTemperature: 0.72
+      maxTemperature: 1
+      minMoisture: 0.45
+      maxMoisture: 0.72
+      heightScale: 0.85
+      heightOffset: 0.07
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.42
+        riverMax: 0.58
+        influenceWidth: 0.18
+        riverBedHeight: 0.04
+      albedoLayer: 1
+      tint: {r: 0, g: 0, b: 0, a: 0}
+      grassTint: {r: 0, g: 0, b: 0, a: 0}
+    - name: Tropical Rainforest
+      minTemperature: 0.78
+      maxTemperature: 1
+      minMoisture: 0.7
+      maxMoisture: 1
+      heightScale: 1.15
+      heightOffset: 0.05
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.42
+        riverMax: 0.58
+        influenceWidth: 0.18
+        riverBedHeight: 0.04
+      albedoLayer: 0
+      tint: {r: 0, g: 0.8862745, b: 0.44379663, a: 0}
+      grassTint: {r: 0, g: 0.8862745, b: 0.44313726, a: 1}
+    - name: Wetlands / Swamp
+      minTemperature: 0.38
+      maxTemperature: 0.78
+      minMoisture: 0.78
+      maxMoisture: 1
+      heightScale: 0.45
+      heightOffset: 0.05
+      hasRivers: 1
+      riverBlend:
+        riverMin: 0.38
+        riverMax: 0.62
+        influenceWidth: 0.22
+        riverBedHeight: 0.08
+      albedoLayer: 4
+      tint: {r: 0.19926937, g: 0.15566039, b: 1, a: 0}
+      grassTint: {r: 0.2, g: 0.15686275, b: 1, a: 1}
+    biomeBlendRadius: 0.2
+    altitudeCooling: 0.4
+    erosion:
+      allowInfiniteErosionDepth: 1
+      dropletCount: 2000
+      lifetime: 4
+      amplify: 0.8
+      inertia: 0.2
+      gravity: 0.4
+      evaporation: 0.02
+      sedimentCapacity: 0.5
+      depositSpeed: 0.3
+      erodeSpeed: 0.3
+      minSlope: 0.01
+      radius: 2
+    spawnProfiles:
+    - {fileID: 11400000, guid: 96f499582d3dbe697b687c3e809f554c, type: 2}
+    - {fileID: 11400000, guid: 7178aaac348288190aa54977c022b19c, type: 2}
+    - {fileID: 11400000, guid: d20218df78aa5ba1aaeb00ecd69e65ef, type: 2}
+    - {fileID: 11400000, guid: 8e0686d9f3893db69bd046162d8a517b, type: 2}
+    - {fileID: 11400000, guid: 01c48c86e88f32c72aeb139bd0cf7365, type: 2}
+    - {fileID: 11400000, guid: 758ceeda71f0ff0f2a70072cbc4547db, type: 2}
+    - {fileID: 11400000, guid: ded54e767c0e86991a28de119f447a37, type: 2}
+    - {fileID: 11400000, guid: 5bf5dc94d107352459d91417b4205333, type: 2}
+    - {fileID: 11400000, guid: 43781b3da7a8a518cbbb49258117df72, type: 2}
+    - {fileID: 11400000, guid: 5441b32d67647eae39f3a7081e8d01e8, type: 2}
+    - {fileID: 11400000, guid: dde9072d55570448694395cfce1b3e60, type: 2}
+    - {fileID: 11400000, guid: abc25fcce611099e994dc689110fdc05, type: 2}
+    - {fileID: 11400000, guid: 7fc5d30b50c3ae1bf898b2fc24db6183, type: 2}
+    - {fileID: 11400000, guid: 42c5f2ac4ddf8f5fa92f939f203a8a99, type: 2}
+    - {fileID: 11400000, guid: a2e5f77f50fa5ed4bbd69a55acc8b957, type: 2}
+    maxObjectsPerChunk: 2048
+    frameBudgetMs: 4
+    maxLodRing: 4
+    lodSteps: 04000000080000001000000020000000
+    skirtDepth: 1.5
+    waterCells: 128
+    retainRadius: 3
+    evictionHysteresis: 2
+    evictionIdleFrames: 120
+    evictionScanInterval: 5
+    chunkPoolCapacity: 64
+    ravineHalfWidth: 10000
+    ravineWallRun: 100
+    ravineWallHeight: 5000
+    backdropCell: 128
+    backdropReach: 20000
+    backdropWallRows: 16
+    backdropPlateauDepth: 2000
+    backdropHazeDensity: 0.00008
+    farMaxInstances: 65536
+    farShadowDistance: 500
     farRebuildIntervalFrames: 30
     farContentRebuildIntervalFrames: 300
   terrainTransform: {fileID: 0}
@@ -437,6 +798,28 @@ MonoBehaviour:
   nalApplyBudgetMs: 1
   chunkRequestCapacity: 32
   waterOffset: {x: 0, y: 5, z: 0}
+  wildWindView:
+    enabled: 1
+    compute: {fileID: 7200000, guid: c341bb8a553741f4797d96307db7aef3, type: 3}
+    material: {fileID: 2100000, guid: 370c515114304d2dbf6f01c7cee3216f, type: 2}
+    boidsPerGust: 512
+    extents: {x: 30, y: 15, z: 30}
+    perception: 3
+    viewDistance: 800
+    maxDeltaTime: 0.033
+    trail: 0.5
+    weights:
+      separationRadius: 1.1
+      separationMin: 0.25
+      maxNeighbors: 24
+      separation: 3
+      alignment: 1.2
+      cohesion: 0.6
+      bounds: 6
+      target: 1.5
+      noise: 1.5
+      speedRange: {x: 4, y: 9}
+      maxSteer: 14
 --- !u!114 &6195408856844743971
 MonoBehaviour:
   m_ObjectHideFlags: 0

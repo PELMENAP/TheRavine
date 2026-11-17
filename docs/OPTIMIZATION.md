@@ -140,7 +140,7 @@ Before writing a structure, check this table. A second spatial index or a second
 
 | Need | Use | Where |
 |---|---|---|
-| Neighbours of an agent within a radius | `EntitySpatialGrid`: counting-sort buckets, epoch dedupe; `Survey`, `FindNearest`, `FindInRadius` | `EntitySystem/AI/Perception/EntitySpatialGrid.cs` |
+| Neighbours of an agent within a radius | `EntitySpatialGrid`: counting-sort buckets, epoch dedupe; `Survey` (reference), `FindNearest`, `FindInRadius`; the tick uses `SurveySystem` | `EntitySystem/AI/Perception/` |
 | Nearest food, food per chunk | `ChunkFoodIndex`: 64-bit row masks, `math.tzcnt` | `EntitySystem/AI/Perception/ChunkFoodIndex.cs` |
 | Per-agent Burst computation | `InstinctSystem`, `UtilityPriorSystem` as the template: `Write(index, in input)`, `Schedule(lo, hi)`, `Output(index)`, `RemoveSwapBack` | `EntitySystem/AI/Instinct/`, `EntitySystem/AI/Utility/` |
 | Flocking | `BoidSystem`: bucket job + parallel job over 9 cells | `EntitySystem/AI/Flock/BoidSystem.cs` |
@@ -163,13 +163,15 @@ Before writing a structure, check this table. A second spatial index or a second
 Every per-agent array is indexed by `EntityModel.ManagerIndex` and sized from the capacity `maxPopulation + PredatorCount`. Removal is swap-back in one place, `ColonyPopulation.RemoveEntitySwapBack`, which today synchronizes:
 
 - `InstinctSystem`
+- `SurveySystem` (inputs and outputs by ManagerIndex; reads the grid SoA, which is indexed by grid slot, not by ManagerIndex)
 - `BoidSystem`
 - `UtilityPriorSystem`
 - `CasteThresholdSystem`
+- `SkillGraphStore` (levels, peaks, last-used, talent, root, dirty flag, colony index, plasticity; per-colony cycle factors are published by colony index and are not swapped)
 - `MotionSystem` (`Positions` by ManagerIndex, slot map to the motion list; `Transform` is written only by `MotionApplyJob`)
 - `SpeechBus`
 - colony membership (`ColonyState.RemoveMember`, `RemapMember`)
-- `EntitySpatialGrid` (marked stale, rebuilt at the next tick window; holds colony index in an SoA next to positions)
+- `EntitySpatialGrid` (marked stale, rebuilt at the next tick window; colony index, alive flag, HP fraction and cell in an SoA next to positions; `EntityModel.GridSlot` is set at `Rebuild`)
 
 Rules:
 
@@ -194,6 +196,7 @@ The frame is also spent outside agents. The same budget applies.
 
 - Rendering: shader properties are set through ids cached with `Shader.PropertyToID`, never by string per frame. Mass geometry is drawn instanced and indirect (as `GrassSystem`, `FarObjectRenderer`). Culling runs before any view update: a hidden label costs nothing.
 - Network: one replication channel per piece of state — a `NetworkTransform` or an RPC, not both. State is sent at the server cadence (`sendInterval`), skipped when unchanged, and never broadcast per incoming call.
+- Agents are not `NetworkObject`s: `AgentSnapshotStream` sends each client the agents inside its area of interest, `AgentPuppets` draws them (`docs/map/player-net.md`).
 - Storage: file and `PlayerPrefs` writes do not run in the tick. Serialization and encryption go to the thread pool; there is no synchronous flush per event; writes are atomic (SECURITY §7).
 - World generation: work is resumable and stops at the `FrameBudget` deadline (as `MapGenerator.SupplySimSquare`); dirty keys are collected and flushed once per frame.
 - Text: a log or console line is not formatted when it will be dropped; a console redraws once per frame at most, not once per line.

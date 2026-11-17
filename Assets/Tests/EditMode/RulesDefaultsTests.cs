@@ -85,6 +85,53 @@ public class RulesDefaultsTests
         Assert.AreEqual(_rules.TamedThreshold, frame.TamedThreshold);
         Assert.AreEqual(_rules.InfectionTargetedAmp, frame.InfectionTargetedAmp);
         Assert.AreEqual(_rules.ExecExplorationEpsilon, frame.ExecExplorationEpsilon);
+        Assert.AreEqual(_rules.ObjectSenseRadius, frame.ObjectSenseRadius);
+        Assert.AreEqual(_rules.ObjectReach, frame.ObjectReach);
+        Assert.AreEqual(_rules.AgentEditRate, frame.AgentEditRate);
+        Assert.AreEqual(_rules.AgentEditBurst, frame.AgentEditBurst);
+        Assert.AreEqual(_rules.AgentEditsPerFrame, frame.AgentEditsPerFrame);
+        Assert.AreEqual(_rules.HeldObjectSpeedMul, frame.HeldObjectSpeedMul);
+        Assert.AreEqual(_rules.DangerDirectionMinMass, frame.DangerDirectionMinMass);
+        CollectionAssert.AreEqual(_rules.ActionMinSeconds, frame.ActionMinSeconds);
+        CollectionAssert.AreEqual(_rules.ActionMaxSeconds, frame.ActionMaxSeconds);
+    }
+
+    [Test]
+    public void VerbRulesHaveDefaults()
+    {
+        var r = _rules;
+        Assert.AreEqual(ActionCatalog.Count, r.ActionMinSeconds.Length);
+        Assert.AreEqual(ActionCatalog.Count, r.ActionMaxSeconds.Length);
+        CollectionAssert.AreEqual(
+            new[] { 0.30f, 0.50f, 0.50f, 0.20f, 0.50f, 0.10f, 1.00f, 0.30f, 0.20f, 0.20f, 0.20f }, r.ActionMinSeconds);
+        CollectionAssert.AreEqual(
+            new[] { 2.00f, 8.00f, 4.00f, 4.00f, 2.00f, 2.50f, 6.00f, 2.00f, 1.00f, 1.00f, 1.00f }, r.ActionMaxSeconds);
+        for (int a = 0; a < ActionCatalog.Count; a++) Assert.LessOrEqual(r.ActionMinSeconds[a], r.ActionMaxSeconds[a]);
+
+        Assert.AreEqual(3, r.ObjectSenseRadius);
+        Assert.AreEqual(1.5f, r.ObjectReach);
+        Assert.AreEqual(2f, r.AgentEditRate);
+        Assert.AreEqual(2f, r.AgentEditBurst);
+        Assert.AreEqual(4, r.AgentEditsPerFrame);
+        Assert.AreEqual(0.6f, r.HeldObjectSpeedMul);
+        Assert.AreEqual(0.25f, r.DangerDirectionMinMass);
+    }
+
+    [Test]
+    public void DurationTableReadsTheRules()
+    {
+        SimulationRules.Bind(_rules);
+        try
+        {
+            Assert.AreEqual(_rules.ActionMinSeconds[(int)EntityAction.MoveTo], ActionDurationTable.Min((int)EntityAction.MoveTo));
+            Assert.AreEqual(_rules.ActionMaxSeconds[(int)EntityAction.MoveTo], ActionDurationTable.Max((int)EntityAction.MoveTo));
+            Assert.AreEqual(0.3f, ActionDurationTable.Min(ActionCatalog.Count));
+            Assert.AreEqual(2f, ActionDurationTable.Max(-1));
+        }
+        finally
+        {
+            SimulationRules.Bind(null);
+        }
     }
 
     [Test]
@@ -94,5 +141,56 @@ public class RulesDefaultsTests
         float used = r.MutationPointWeight + r.MutationInsertWeight + r.MutationDeleteWeight;
         Assert.LessOrEqual(used, 1f);
         Assert.AreEqual(0.15f, 1f - used, 1e-6f);
+    }
+
+    [Test]
+    public void SkillGraphDefaultsMatchTheDesign()
+    {
+        var r = _rules;
+        Assert.AreEqual(0.25f, r.SkillTalentMin);
+        Assert.AreEqual(2.5f, r.SkillTalentDecay);
+        Assert.AreEqual(0.65f, r.SkillTalentEuclidShare);
+        Assert.AreEqual(6f, r.SkillPhiRefLevel);
+        Assert.AreEqual(3.5f, r.SkillEdgeCostScale);
+        Assert.AreEqual(1.35f, r.SkillEdgeCostExp);
+        Assert.AreEqual(1.10f, r.SkillClique3Boost);
+        Assert.AreEqual(1.40f, r.SkillClique4Boost);
+        Assert.AreEqual(0.25f, r.SkillCycleMinFactor);
+        Assert.AreEqual(0.35f, r.SkillCycleScale);
+        Assert.AreEqual(0.60f, r.SkillLogicScale);
+        Assert.AreEqual(10f, r.SkillLogicOffset);
+        Assert.AreEqual(0.45f, r.SkillPruneFocusScale);
+        Assert.AreEqual(0.25f, r.SkillSavingsFloor);
+        Assert.AreEqual(4f, r.SkillXpLevelOffset);
+        Assert.AreEqual(100f, r.SkillSolverNormLevel);
+        Assert.AreEqual(0.5f, r.SkillSolverIslandBonus);
+        Assert.AreEqual(4, r.SkillPruneMinSize);
+        Assert.AreEqual(2, r.SkillIslandDropMax);
+        Assert.AreEqual(0.25f, r.SkillForestGeneRange);
+        Assert.AreEqual(0.15f, r.SkillK4Quantile);
+        Assert.AreEqual(1f, r.SkillReplicateInterval);
+        Assert.AreEqual(100f, r.SkillLevelFixedScale);
+        Assert.Greater(r.SkillDecayRate, 0f);
+        Assert.Greater(r.SkillSweepInterval, 0f);
+        Assert.Greater(r.SkillSolverInterval, 0f);
+    }
+
+    [Test]
+    public void SkillGraphFrameMirrorsTheRules()
+    {
+        SimulationRules.Bind(_rules);
+        try
+        {
+            ref readonly var f = ref SimulationRules.Frame;
+            Assert.AreEqual(_rules.SkillDecayRate, f.SkillDecayRate);
+            Assert.AreEqual(_rules.SkillSavingsFloor, f.SkillSavingsFloor);
+            Assert.AreEqual(_rules.SkillLogicScale, f.SkillLogicScale);
+            Assert.AreEqual(_rules.SkillClique4Boost, f.SkillClique4Boost);
+            Assert.AreEqual(_rules.SkillSweepInterval, f.SkillSweepInterval);
+        }
+        finally
+        {
+            SimulationRules.Bind(null);
+        }
     }
 }

@@ -70,6 +70,17 @@ public sealed class GrassTrampleField : IDisposable
     public int StampCount => _stampCount;
     public float2 Origin => _origin;
 
+    public float4 StampBounds
+    {
+        get
+        {
+            if (_disposed || !_hasOrigin) return new float4(float.MaxValue, float.MaxValue, float.MinValue, float.MinValue);
+            float margin = MaxRadiusTexels * _texel;
+            float extent = _size * _texel + margin;
+            return new float4(_origin.x - margin, _origin.y - margin, _origin.x + extent, _origin.y + extent);
+        }
+    }
+
     public GrassTrampleField(ComputeShader compute, GrassTrampleSettings settings)
     {
         _settings = settings ?? new GrassTrampleSettings();

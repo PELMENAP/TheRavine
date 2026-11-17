@@ -157,7 +157,6 @@ Shader "The Ravine/Effects/Fire Smoke"
                 }
 
                 Varyings o;
-                positionWS = BendWorld(positionWS);
                 o.positionCS = TransformWorldToHClip(positionWS);
                 o.uv = corner;
                 o.data = data;

@@ -2,7 +2,7 @@
 
 Root: `Assets/Scripts/ObjectSystem/`. Assembly: `ObjectSystem`. Namespace: mostly `TheRavine.Generator`.
 Tests: `Assets/Tests/EditMode/` — `ChunkStoreTests`, `ChunkPlacementTests`, `BuildingVolumeTests`, `FootprintTests`, `NalRegionTests`,
-`RandomTickJobTests`, `RandomTickMathTests`, `WorldCommandBufferTests`.
+`RandomTickJobTests`, `RandomTickMathTests`, `WorldCommandBufferTests`, `GrassLodBandsTests`.
 
 Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 `MapGenerator.cs` and `ChunkGenerator.cs` are over 500 lines: take the member's line from `docs/map/LARGE_FILES.md`.
@@ -29,6 +29,8 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 - Coordinate helpers: `WorldToChunk`, `WorldToLocalIdx`, `CellToChunk`, `ChunkForCell`. Cell and chunk keys: `Position2Int.Pack`.
 - Noise: static `Noise` in `Assets/Scripts/ObjectSystem/Map/Tools/Noise.cs`; settings in `NoiseLayerSettings.cs` next to it.
 - Chunk jobs: `BiomeModifierJob`, `HydraulicErosionJob`, `TerrainFinalizeJob`; object spawn: `SpawnLayerJob` in the ObjectGenerator folder.
+- Landform layer (local terrain, river and erosion rules): `docs/map/landforms.md`.
+- Ravine shape (`RavineProfile`, plateau generator `plateauSettings`, relative water `MapGenerator.AboveWater`, chunk file format 5): `docs/map/ravine.md`.
 
 ## Frame flow
 
@@ -38,6 +40,7 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 4. Missing chunks of the simulated square are supplied by `SupplySimSquare`, inside out, with half of the remaining `FrameBudget`.
 5. Each endless layer gets `Tick(deadline)`; then `ProcessChunkRequests(deadline)`.
 6. Far chunks are evicted (`EvictChunks`) unless they need saving, were used recently, or `IsRetained`.
+7. `SupplyLookahead` ensures the neighbour window near a chunk edge (`lookaheadEdgeFraction`); `MoveWindow` is the teleport fallback, its chunks counted in `RandomTickStats.MoveWindowChunks`.
 
 ## Endless layers (`Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/`)
 
@@ -47,7 +50,7 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 - `EndlessObjects` animates only an existing view whose `ChunkData.Version` changed; streaming a new view never animates.
 - `ObjectViewMotion` (`Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/ObjectViewMotion.cs`): LitMotion slots, fixed budget; over budget a change is instant.
 - A new object pops in, a removed one shrinks and is then released; `ReleaseView` cancels motions and releases at once. `PooledObject.BaseScale` is restored in `Pool.Get`.
-- NAL growth: a `BehaviourType.GROW` object whose cell turns into its `EvolutionStep` keeps its pooled instance and scales to the next size over `growthDuration`, then the next stage is taken.
+- NAL growth: a `BehaviourType.GROW` object whose cell turns into its `EvolutionStep` keeps its pooled instance and scales to `growthFraction` of the next size over `growthDuration`, then the next stage is taken.
 - Growth ratio: `ObjectGrowthMath.Resolve`: renderer bounds per axis (cached per pool pair), else `CollisionTable` heights, else 1. The data already holds the next stage.
 - Soil and trample on grass: `GrassInstancedShader.shader` reads `SoilShaderFeed` (`_SoilBuffer`) and `GrassTrampleField` (`_GrassTrample`) at render time; placement is untouched.
 - `GrassSoilBuffer` owns `_SoilBuffer` and keeps a neutral one bound while `GrassSystem` runs, because D3D12 skips draws with an unbound SRV; `SoilShaderFeed` only fills it.
@@ -65,8 +68,16 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 - `MapGenerator.ViewRingOf` / `ViewRingOfChunk` describe only what the camera draws. `SimRingOf` describes what is simulated and does not depend on the sector.
 - `IViewDirectional.SetSector`: `EndlessTerrain` and `EndlessLiquids` build only the blocks that entered (nearest rings and nearest to the view axis first); blocks that left are hidden and keep their mesh in the pool. `EndlessTerrain.BuiltBlocks` counts builds.
 - `FarObjectRenderer` rebuilds its instance buffer on a sector or window change at its existing rate limit; the pool, `sources` and the `farMaxInstances` budget are sized from `ViewWedge.MaxBlocks`.
-- `GrassSystem` lays out the whole window and re-places it only when the window centre changes; grass does not depend on the view sector.
-- World bend: `Assets/Shaders/Include/CurvedWorld.hlsl` bends radially around the camera pivot (`_CurveParams`, `_CurveFocus`), pushed by `CurvedWorld`; the focus is `ViewOrientation.Pivot`.
+- Far types with `CastShadowsFar` get two batches: within `ChunkGenerationSettings.farShadowDistance` of the window centre they cast shadows, beyond it they do not.
+- `GrassSystem` ring 0: heights are uploaded when the window centre changes; the placement compute re-runs when `Camera.main` moves by `replaceMoveStep` or turns by `replaceTurnDegrees`.
+- Ring 0 placement culls by the camera frustum (`cullMargin`); with `drawDistance` above zero it also thins density to zero at that distance. Far blocks are not culled this way.
+- Ring 0 casts grass shadows only within `shadowDistance` of the camera (`_GrassView`, tested in the `ShadowCaster` vertex stage).
+- Grass rings 1 to `GrassLodBands.FarRings`: one pool slot per wedge block (`ViewWedge.MaxBlocksInRing`), on the same block lattice as the terrain and following the view sector.
+- A far block runs the same `PlaceGrass` kernel on a coarser cell grid (`lodCellSteps`, 4 and 8 units) with wider blades (`lodWidthScales`); buffer size is `GrassLodBands.Capacity`.
+- After a window-centre change far blocks are rebuilt nearest first, `lodBlocksPerFrame` per frame, once `MapGenerator.TryBuildHeightWindow` finds all chunks; blocks leaving the wedge keep their buffer.
+- One draw for the window and one per built far block; mesh by ring from `lodMeshes` (empty falls back to `grassMesh`); only ring 0 casts shadows; beyond the last grass ring there is no grass.
+- The grass LOD is drawing only: placement rules, trample and soil do not depend on it. Far grass lies outside `GrassTrampleField`, whose texture clamps at its edge.
+- No world bend: geometry is drawn where it is. Beyond the streamed terrain the walls come from `RavineBackdrop` (`docs/map/ravine.md`).
 - A view-dependent component implements `IViewOriented` (called on every `ViewChanged`, O(1)) and registers with `ViewOrientation`; a plain transform uses `ViewOrientedTransform.Attach`.
 - Far billboards: `BakedSides` sides in a circle (column k looks with yaw k * 360 / N); atlas baked by `Assets/Scripts/Editor/TreeMeshBaker.cs`; atlases baked with another side count must be re-baked.
 

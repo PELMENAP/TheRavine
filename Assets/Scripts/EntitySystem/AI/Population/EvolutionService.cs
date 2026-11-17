@@ -8,6 +8,7 @@ public sealed class EvolutionService
 {
     private readonly List<EntityModel> _entities;
     private readonly ColonyRegistry    _colonies;
+    private readonly SkillGraphStore   _skills;
 
     private float[] _fitnessScratch = new float[64];
     private float   _fitnessMedian;
@@ -31,8 +32,9 @@ public sealed class EvolutionService
     public float FitnessMax { get; private set; }
     public int   FitnessOutliers { get; private set; }
 
-    public EvolutionService(List<EntityModel> entities, ColonyRegistry colonies, uint seed)
+    public EvolutionService(List<EntityModel> entities, ColonyRegistry colonies, uint seed, SkillGraphStore skills = null)
     {
+        _skills        = skills;
         _entities      = entities;
         _colonies      = colonies;
         _tournamentRng = new XorShift32(seed);
@@ -182,11 +184,19 @@ public sealed class EvolutionService
 
             var ctx = target.Brain.Context;
             var own = ctx.CoordMLP.Params;
+            var before = own;
             GeneticParameters.CopyLearningGenes(in child, ref own);
 
             ctx.CoordMLP.Params = own;
             for (int g = 0; g < ctx.ExecMLPs.Length; g++)
                 ctx.ExecMLPs[g].Params = own;
+            if (_skills != null && target.Colony?.SkillTopology != null && SkillGenesChanged(in before, in own))
+                _skills.Retarget(target.ManagerIndex, in own, target.Colony.SkillTopology, SkillAtlas.Active);
         }
     }
+
+    private static bool SkillGenesChanged(in GeneticParameters a, in GeneticParameters b)
+        => a.SkillOriginX != b.SkillOriginX || a.SkillOriginY != b.SkillOriginY
+        || a.PlastHebb != b.PlastHebb || a.PlastStruct != b.PlastStruct
+        || a.PlastExplore != b.PlastExplore || a.PlastNeed != b.PlastNeed;
 }

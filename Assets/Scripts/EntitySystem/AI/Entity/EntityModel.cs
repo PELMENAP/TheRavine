@@ -6,6 +6,7 @@ using Unity.Mathematics;
 using TheRavine.Base;
 using TheRavine.Extensions;
 using TheRavine.Generator;
+using TheRavine.ObjectControl;
 using TheRavine.EntityControl.Virology;
 
 public partial class EntityModel : IEntity, IFoodReceiver
@@ -51,6 +52,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private InstinctInput _instinctInput;
     public ref readonly InstinctInput InstinctInput => ref _instinctInput;
     public uint InstinctLatches { get; private set; }
+    private bool _eatFailed;
     public bool IsHungry => (InstinctLatches & InstinctBits.Hungry) != 0;
     public bool IsSated  => Digestion != null && Digestion.Fill >= Brain.Context.CoordMLP.Params.SatedFill;
 
@@ -77,6 +79,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private PlanRunner _plan;
     public PlanRunner Plan => _plan;
     private bool _hasThreat;
+    private bool _targetWeak;
     public PlanHint PlanHints => ComputePlanHints(_hasThreat);
 
     public float Stress { get; private set; }
@@ -97,15 +100,16 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public ulong LineageId => Virology != null ? Virology.EndogenousLineage : 0UL;
     public float CarryCapacity => Stats.MaxEnergy * SimulationRules.Frame.StomachCapacityFraction * _casteMods.Carry;
 
+    private CasteModifiers _roleMods = CasteModifiers.Neutral;
     private CasteModifiers _casteMods = CasteModifiers.Neutral;
     public ref readonly CasteModifiers CasteMods => ref _casteMods;
     public bool IsWild => Colony != null && Colony.IsWild;
 
     private readonly float2[] _dirVec    = new float2[(int)DirectionKind.Count];
     private readonly float[]  _dirRadius = new float[(int)DirectionKind.Count];
-    private byte  _dirMask;
-    private float _ouAngle;
-    public byte  DirectionMask => _dirMask;
+    private ushort _dirMask;
+    private float  _ouAngle;
+    public ushort DirectionMask => _dirMask;
     public float OuAngle => _ouAngle;
 
     private readonly float[] _planRewardEma = new float[PlanCatalog.Count];
@@ -168,6 +172,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private FoodTraits _foodTraits;
 
     private CasteThresholdSystem _thresholds;
+    private SkillGraphStore _skills;
 
     private double _lastAlarmCry = double.NegativeInfinity;
 
@@ -199,11 +204,12 @@ public partial class EntityModel : IEntity, IFoodReceiver
         float isolate = Virology != null ? Virology.Modifiers.Isolate * SimulationRules.Frame.IsolateStrength : 0f;
         float social  = math.max(0f, (1f + aux.x) * (1f - isolate));
         float spacing = (1f + aux.y) * (1f + isolate);
+        ref readonly var r = ref SimulationRules.Frame;
         return new BoidAgent
         {
             Position = Position2D,
             Heading  = Heading,
-            Weights  = IsWild ? float3.zero : new float3(g.BoidSeparation * spacing, g.BoidAlignment * social, g.BoidCohesion * social),
+            Weights  = IsWild ? new float3(r.PackBoidSeparation, r.PackBoidAlignment, r.PackBoidCohesion) : new float3(g.BoidSeparation * spacing, g.BoidAlignment * social, g.BoidCohesion * social),
             Colony   = ColonyIndex,
             Active   = (byte)(IsDisposed || IsDeathPending ? 0 : 1),
             Plan     = (byte)(_plan != null ? _plan.Kind : PlanKind.Count),
@@ -214,7 +220,11 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private EntityModel _nearestForeign;
     private float       _nearestForeignDistance = -1f;
     private StatsComponent _harmKey;
+    private EntityModel    _harmModel;
+    private EntityModel    _foreignSourceModel;
     private float          _harmPrevHp;
+    private float          _familiarity;
+    public float Familiarity => _familiarity;
     private PlayerPresence _players;
     private bool      _playerValid;
     private float2    _playerPos;
@@ -280,17 +290,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
     {
         Caste      = caste;
         CasteFixed = true;
-        var mods   = CasteModifiers.For(caste);
-        _casteMods = mods;
-        RestHealMul = mods.RestHeal;
-
-        var tuning = EntityTuning.Express(in _baseTuning, in Brain.Context.CoordMLP.Params, in mods);
-        Tuning = tuning;
-        float bodyBefore = BodyEnergy;
-        Stats.Rescale(tuning.MaxHealth, tuning.MaxEnergy);
-        Digestion.Resize(tuning.MaxEnergy * SimulationRules.Active.StomachCapacityFraction);
-        _ledger.Flows.RescaleNet += BodyEnergy - bodyBefore;
-        Vectorizer?.SetMaxima(tuning.MaxHealth, tuning.MaxEnergy);
+        _roleMods  = CasteModifiers.For(caste);
+        ApplyTuning();
         Brain.Context.CasteMask = ActionMask(caste);
         SyncCount();
     }
@@ -326,10 +327,6 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
     public InputVectorizer Vectorizer;
 
-    public int MimickedActionIndex { get; private set; } = -1;
-    public void SetMimickedAction(int index) => MimickedActionIndex = index;
-    public void ConsumeMimickedAction() => MimickedActionIndex = -1;
-
     public float[] LastInput;
     public int LastActionIndex;
     public EntityAction LastAction { get; private set; }
@@ -354,6 +351,33 @@ public partial class EntityModel : IEntity, IFoodReceiver
     {
         double t = _actionTimes[(int)action];
         return double.IsNegativeInfinity(t) ? float.MaxValue : (float)(SimulationClock.TimeD - t);
+    }
+
+    private double _threatDisplayTime = double.NegativeInfinity;
+    public void NoteThreatDisplay() => _threatDisplayTime = SimulationClock.TimeD;
+    public float SinceThreatDisplay
+        => double.IsNegativeInfinity(_threatDisplayTime) ? float.MaxValue : (float)(SimulationClock.TimeD - _threatDisplayTime);
+
+    public bool TryGetKinTarget(out float2 position)
+    {
+        if (IsJuvenile && Parent.TryGet(out var parent))
+        {
+            position = parent.Position2D;
+            return true;
+        }
+        var kin = CachedNearest;
+        if (kin != null && kin.Colony == Colony)
+        {
+            position = kin.Position2D;
+            return true;
+        }
+        if (IsWild && Colony.PackCount > 1)
+        {
+            position = Colony.PackCentre;
+            return true;
+        }
+        position = default;
+        return false;
     }
 
     public float TimeAlive { get; private set; }
@@ -410,6 +434,27 @@ public partial class EntityModel : IEntity, IFoodReceiver
         _warnSource  = source;
     }
 
+    private double _hazardUntil = double.NegativeInfinity;
+    private float2 _hazardSource;
+
+    private EntityModel _lastVictim;
+    private double      _lastVictimTime = double.NegativeInfinity;
+    public void NoteVictim(EntityModel victim)
+    {
+        _lastVictim     = victim;
+        _lastVictimTime = SimulationClock.TimeD;
+    }
+
+    private EntityModel RecentVictim
+    {
+        get
+        {
+            var v = _lastVictim;
+            if (v == null || v.IsDisposed || v.IsDeathPending) return null;
+            return SimulationClock.TimeD - _lastVictimTime < SimulationRules.Frame.WarnWindow ? v : null;
+        }
+    }
+
     private EntityModel _lastAttacker;
     private double      _lastAttackTime = double.NegativeInfinity;
     private bool        _threatResolved;
@@ -431,7 +476,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         }
     }
 
-    public bool HasDirectThreat => RecentAttacker != null || ValidForeign != null || _playerValid;
+    public bool HasDirectThreat => RecentAttacker != null || ThreateningStranger(out _);
 
     private bool  _nestFood;
     public bool   CanEatFromNest => _nestFood;
@@ -446,7 +491,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         {
             ref readonly var r = ref SimulationRules.Frame;
             float lethargy = Virology != null ? Virology.Modifiers.Lethargy : 0f;
-            float mul = (1f - lethargy * r.LethargySlow) * (Carrying > 0f ? r.CarrySpeedMul : 1f)
+            float mul = (1f - lethargy * r.LethargySlow) * (Carrying > 0f ? r.CarrySpeedMul : 1f) * (HasHeldObject ? r.HeldObjectSpeedMul : 1f)
                       * (1f - r.SenescenceSpeedLoss * _senescence);
             return math.max(mul, r.MinSpeedMul);
         }
@@ -467,8 +512,13 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public ref readonly TerrainSample LastTerrain => ref _lastTerrain;
 
     public float2 DeathPosition;
+    public int GridSlot = -1;
     public bool IsDeathPending { get; private set; }
-    public void MarkDeathPending() => IsDeathPending = true;
+    public void MarkDeathPending()
+    {
+        IsDeathPending = true;
+        _grid?.NoteDeath(this);
+    }
 
     private int _managerIndex = -1;
     public int ManagerIndex
@@ -558,7 +608,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
         _trail = new float2[math.max(1, SimulationRules.Active.TrailCapacity)];
         ctx.CasteMask = ActionMask(Caste);
         var rulesA = SimulationRules.Active;
-        _casteMods = colony.IsWild ? CasteModifiers.Predator() : CasteModifiers.For(Caste);
+        _roleMods = colony.IsWild ? CasteModifiers.Predator() : CasteModifiers.For(Caste);
+        _casteMods = _roleMods;
         if (colony.IsWild) CasteFixed = true;
         var tuning = EntityTuning.Express(in baseTuning, in ctx.CoordMLP.Params, _casteMods);
         MaxAge = rulesA.BaseMaxAge * ctx.CoordMLP.Params.MaxAgeMul;
@@ -580,10 +631,13 @@ public partial class EntityModel : IEntity, IFoodReceiver
         ServiceLocator.Services.TryGet(out _foodIndex);
         if (!ServiceLocator.Services.TryGet(out _ledger)) _ledger = new EnergyLedger();
         ServiceLocator.Services.TryGet(out _warmth);
+        ServiceLocator.Services.TryGet(out _map);
+        if (ServiceLocator.Services.TryGet(out ObjectSystem objectSystem)) _objectRegistry = objectSystem.infoRegistry;
 
         ServiceLocator.Services.TryGet(out MovePlanner planner);
         ServiceLocator.Services.TryGet(out _players);
         ServiceLocator.Services.TryGet(out _thresholds);
+        ServiceLocator.Services.TryGet(out _skills);
         ServiceLocator.Services.TryGet(out InfectionService infection);
         Nest      = colony.IsWild ? null : colony.Nest;
         Planner   = planner;
@@ -617,26 +671,17 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
     public void Init()
     {
-        _commands[(int)EntityAction.Idle]          = new IdleCommand(this);
-        _commands[(int)EntityAction.Wander]        = new WanderCommand(this);
-        _commands[(int)EntityAction.RememberPoint] = new RememberPointCommand(this);
-        _commands[(int)EntityAction.GoToPoint]     = new GoToPointCommand(this);
-        _commands[(int)EntityAction.Attack]        = new AttackCommand(this);
-        _commands[(int)EntityAction.Flee]          = new FleeCommand(this);
-        _commands[(int)EntityAction.Eat]           = new EatCommand(this);
-        _commands[(int)EntityAction.Reproduce]     = new ReproduceCommand(this);
-        _commands[(int)EntityAction.Speech]        = new SpeechCommand(this);
-        _commands[(int)EntityAction.Mimic]         = new MimicCommand(this);
-        _commands[(int)EntityAction.Rest]          = new RestCommand(this);
-        _commands[(int)EntityAction.Threaten]      = new ThreatenCommand(this);
-        _commands[(int)EntityAction.ShareFood]     = new ShareFoodCommand(this);
-        _commands[(int)EntityAction.ApproachFood]  = new ApproachFoodCommand(this);
-        _commands[(int)EntityAction.ReturnNest]    = new ReturnNestCommand(this);
-        _commands[(int)EntityAction.PickUp]        = new PickUpCommand(this);
-        _commands[(int)EntityAction.StoreFood]     = new StoreFoodCommand(this);
-        _commands[(int)EntityAction.Follow]        = new FollowCommand(this);
-        _commands[(int)EntityAction.MoveNest]      = new MoveNestCommand(this);
-        _commands[(int)EntityAction.Groom]         = new GroomCommand(this);
+        _commands[(int)EntityAction.Idle]      = new IdleCommand(this);
+        _commands[(int)EntityAction.MoveTo]    = new MoveToCommand(this);
+        _commands[(int)EntityAction.Attack]    = new AttackCommand(this);
+        _commands[(int)EntityAction.Eat]       = new EatCommand(this);
+        _commands[(int)EntityAction.Reproduce] = new ReproduceCommand(this);
+        _commands[(int)EntityAction.Signal]    = new SignalCommand(this);
+        _commands[(int)EntityAction.Rest]      = new RestCommand(this);
+        _commands[(int)EntityAction.Give]      = new GiveCommand(this);
+        _commands[(int)EntityAction.Take]      = new TakeCommand(this);
+        _commands[(int)EntityAction.Put]       = new PutCommand(this);
+        _commands[(int)EntityAction.MoveNest]  = new MoveNestCommand(this);
     }
 
     private static readonly Unity.Profiling.ProfilerMarker PerceptionMarker = new("EntityModel.Perception");
@@ -670,6 +715,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     {
         if (IsDisposed) return;
         IsDisposed = true;
+        _grid?.NoteDeath(this);
 
         DeepClean();
 
@@ -695,7 +741,11 @@ public partial class EntityModel : IEntity, IFoodReceiver
         _nearest = null;
         _nearestForeign = null;
         _harmKey = null;
+        _harmModel = null;
+        _foreignSourceModel = null;
+        _familiarity = 0f;
         _lastAttacker = null;
+        _lastVictim = null;
         _playerTransform = null;
         Vectorizer?.Dispose();
         Vectorizer = null;

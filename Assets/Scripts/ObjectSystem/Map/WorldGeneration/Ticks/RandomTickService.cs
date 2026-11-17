@@ -15,6 +15,7 @@ namespace TheRavine.Generator
         public int Ticks, Events, EventsDropped;
         public int CatchUpEpochs, CatchUpBudgetHits, CatchUpTicksSimulated;
         public int RegionChunks;
+        public int MoveWindowChunks, LookaheadChunks;
         public float JobMs, DispatchMs;
     }
 
