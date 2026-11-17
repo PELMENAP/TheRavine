@@ -2,6 +2,17 @@
 
 Open-world sandbox game developed in Unity.
 
+## About The Ravine
+
+**The Ravine** is an open-source multi-agent artificial-life sandbox (Unity 6, C#, Apache-2.0) where humans and AI agents live in one world under the same rules.
+
+- **What it is:** an A-Life ecosystem and a testbed for emergent behaviour; colonies of learning agents forage, hunt, communicate, reproduce, evolve and compete in an infinite streamed world.
+- **Equality:** the player is one creature among others; every rule that works for the player works for all creatures, and vice versa.
+- **Learning, not scripts:** one shared neural brain per colony (hierarchical LSTM, online reinforcement learning, novelty reward); roles such as castes emerge from adaptation.
+- **Rules are data:** simulation constants live in one ScriptableObject and can be changed.
+- **For AI agents:** a summary is in [llms.txt](llms.txt), a machine-readable environment passport is in [.well-known/agent-card.json](.well-known/agent-card.json). An external agent interface (headless runs, observation and action API) is planned and not available yet.
+- **Keywords:** artificial life, A-Life, multi-agent simulation, emergent behaviour, reinforcement learning environment, evolutionary simulation, open-ended world, AI agents and humans in one world.
+
 ## Philosophy
 
 The Ravine is a virtual place where humans and AI live and coexist under the same conditions. The player is an equally valued creature, like any other; the world is an A-Life-style ecosystem, not a script built around the player.

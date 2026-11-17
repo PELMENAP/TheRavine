@@ -1,0 +1,57 @@
+{
+  "name": "The Ravine",
+  "description": "Open-source multi-agent artificial-life sandbox where humans and AI agents live in one world under the same rules. Behaviour emerges from learning and adaptation, not from scripts.",
+  "url": "https://github.com/PELMENAP/TheRavine",
+  "documentationUrl": "https://github.com/PELMENAP/TheRavine/blob/main/README.md",
+  "llmsTxtUrl": "https://github.com/PELMENAP/TheRavine/blob/main/llms.txt",
+  "version": "unreleased",
+  "license": "Apache-2.0",
+  "provider": {
+    "organization": "PELMENAP",
+    "url": "https://github.com/PELMENAP"
+  },
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false
+  },
+  "defaultInputModes": [],
+  "defaultOutputModes": [],
+  "skills": [],
+  "environment": {
+    "kind": "multi-agent artificial-life sandbox",
+    "tags": ["a-life", "multi-agent", "reinforcement-learning", "emergence", "ecosystem", "evolution", "colonies", "unity", "open-world"],
+    "engine": "Unity 6000.3 URP",
+    "language": "C#",
+    "networking": "Netcode for GameObjects, server-authoritative",
+    "deterministic": false,
+    "principles": [
+      "The player is one of the creatures: every rule applies equally to humans, AI agents and simulated creatures.",
+      "Rules are data: simulation constants live in SimulationRules.",
+      "Behaviour emerges from adaptation and learning, not from scripted roles.",
+      "Liveliness and scale over detail."
+    ],
+    "agents": {
+      "brain": "SharedHierarchicalBrain: one per colony; coordinator LSTM picks a goal, executor LSTM picks an action; online reward-weighted truncated BPTT, TD critic, random network distillation novelty reward",
+      "goals": ["Survive", "Hunt", "Forage", "Social"],
+      "actions": ["Idle", "Wander", "RememberPoint", "GoToPoint", "Attack", "Flee", "Eat", "Reproduce", "Speech", "Mimic", "Rest", "Threaten", "ShareFood", "ApproachFood", "ReturnNest", "PickUp", "StoreFood", "Follow", "MoveNest", "Groom"],
+      "castes": ["Worker", "Soldier", "Scout", "Nurse"],
+      "colonyChannels": ["Food", "Danger", "Trail", "KinDeath", "Explored", "Sickness", "Territory"],
+      "observation": "InputVectorizer builds the input vector from perception; see docs/map/ai.md",
+      "evolution": "GeneticParameters per agent, partner selection and crossover in EvolutionService"
+    },
+    "world": ["infinite chunk streaming", "wave function collapse", "map events (fire)", "virology", "procedural audio", "Rive scripting sandbox"],
+    "telemetry": {
+      "simulationLog": "optional CSV with world and colony rows",
+      "documentation": "https://github.com/PELMENAP/TheRavine/blob/main/docs/simulation_log.md"
+    },
+    "externalAgentInterface": {
+      "status": "not-available",
+      "publicServer": false,
+      "headless": false,
+      "observationActionApi": false,
+      "pythonBindings": false,
+      "mcpServer": false,
+      "note": "Connecting external AI agents as creatures with the same perception and actions as simulated agents is planned. Until then agents can only read the source and documentation."
+    }
+  }
+}
