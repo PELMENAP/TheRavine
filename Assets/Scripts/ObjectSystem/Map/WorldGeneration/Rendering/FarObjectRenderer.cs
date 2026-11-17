@@ -36,6 +36,7 @@ namespace TheRavine.Generator.EndlessGenerators
             public int BatchBase;
             public int VariantCount;
             public int SlotsPerVariant;
+            public int Stride;
         }
 
         private sealed class Command
@@ -70,7 +71,8 @@ namespace TheRavine.Generator.EndlessGenerators
         private GraphicsBuffer commandBuffer;
 
         private long center;
-        private ViewFacing facing;
+        private ViewSector sector;
+        private readonly ViewBlock[] wanted;
         private bool hasCenter;
         private bool dirty;
         private bool contentChanged;
@@ -80,12 +82,17 @@ namespace TheRavine.Generator.EndlessGenerators
         {
             this.generator = generator;
             this.settings = settings;
-            facing = generator.Facing;
-            capacity = math.max(1, settings.farMaxInstances);
+            sector = generator.Sector;
 
             ObjectInfoRegistry registry = objectSystem.infoRegistry;
             int typeCount = registry.Count;
             int rings = math.min(generator.LodRingCount, ObjectInfo.MaxVisibleRings);
+
+            int wedgeBlocks = rings > 0 ? ViewWedge.MaxBlocks(rings) : 0;
+            int firBlocks = 2;
+            for (int r = 1; r <= rings; r++) firBlocks += 2 * r + 1;
+            long scaledCapacity = (long)settings.farMaxInstances * math.max(wedgeBlocks, firBlocks) / firBlocks;
+            capacity = (int)System.Math.Min(System.Math.Max(1L, scaledCapacity), int.MaxValue / 16);
 
             denseById = new NativeArray<int>(math.max(registry.IdCapacity, 1), Allocator.Persistent);
             for (int id = 0; id < denseById.Length; id++)
@@ -127,19 +134,22 @@ namespace TheRavine.Generator.EndlessGenerators
                     slots[d * RingStride + r] = slot;
                 }
 
+                int stride = info.CastShadowsFar ? 2 : 1;
+
                 types[d] = new TypeInfo
                 {
                     BatchBase = batch,
                     VariantCount = set.VariantCount,
-                    SlotsPerVariant = slotKeys.Count
+                    SlotsPerVariant = slotKeys.Count,
+                    Stride = stride
                 };
-
-                ShadowCastingMode shadows = info.CastShadowsFar ? ShadowCastingMode.On : ShadowCastingMode.Off;
 
                 for (int v = 0; v < set.VariantCount; v++)
                 {
-                    for (int s = 0; s < slotKeys.Count; s++, batch++)
+                    for (int s = 0; s < slotKeys.Count; s++)
+                    for (int pass = 0; pass < stride; pass++, batch++)
                     {
+                        ShadowCastingMode shadows = pass == 0 && info.CastShadowsFar ? ShadowCastingMode.On : ShadowCastingMode.Off;
                         var props = new MaterialPropertyBlock();
                         propList.Add(props);
 
@@ -193,11 +203,8 @@ namespace TheRavine.Generator.EndlessGenerators
             instances = new NativeArray<float4>(capacity, Allocator.Persistent);
             total = new NativeReference<int>(0, Allocator.Persistent);
 
-            int sourceCapacity = 0;
-            for (int r = 1; r <= rings; r++)
-                sourceCapacity += (2 * r + 1) * MapGenerator.WindowSide * MapGenerator.WindowSide;
-            if (rings >= MapGenerator.SideBlockRing)
-                sourceCapacity += 2 * MapGenerator.WindowSide * MapGenerator.WindowSide;
+            wanted = new ViewBlock[math.max(wedgeBlocks, 1)];
+            int sourceCapacity = wedgeBlocks * MapGenerator.WindowSide * MapGenerator.WindowSide;
             sources = new NativeArray<ChunkSource>(math.max(sourceCapacity, 1), Allocator.Persistent);
 
             args = new NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs>(math.max(commands.Length, 1), Allocator.Persistent);
@@ -243,10 +250,10 @@ namespace TheRavine.Generator.EndlessGenerators
             dirty = true;
         }
 
-        public void SetFacing(ViewFacing newFacing)
+        public void SetSector(ViewSector newSector)
         {
-            if (newFacing == facing) return;
-            facing = newFacing;
+            if (newSector == sector) return;
+            sector = newSector;
             dirty = true;
         }
 
@@ -284,32 +291,16 @@ namespace TheRavine.Generator.EndlessGenerators
             int n = 0;
             int missing = 0;
             int rings = math.min(generator.LodRingCount, ObjectInfo.MaxVisibleRings);
+            int blocks = rings > 0 ? ViewWedge.Collect(sector, rings, wanted) : 0;
 
-            for (int ring = 1; ring <= rings; ring++)
+            for (int i = 0; i < blocks; i++)
             {
-                for (int dx = -ring; dx <= ring; dx++)
-                    CollectBlock(BlockCenter(dx, ring), ring, ref n, ref missing);
-            }
-
-            if (rings >= MapGenerator.SideBlockRing)
-            {
-                CollectBlock(BlockCenter(-1, 0), MapGenerator.SideBlockRing, ref n, ref missing);
-                CollectBlock(BlockCenter(1, 0), MapGenerator.SideBlockRing, ref n, ref missing);
+                ViewBlock block = wanted[i];
+                CollectBlock(MapGenerator.BlockCenterChunk(center, block.X, block.Z), block.Ring, ref n, ref missing);
             }
 
             sourceCount = n;
             return missing;
-        }
-
-        private long BlockCenter(int dx, int ahead)
-        {
-            int2 right = facing.Right();
-            int2 forward = facing.Forward();
-            int lateral = dx * MapGenerator.WindowSide;
-            int distance = ahead * MapGenerator.WindowSide;
-            return Position2Int.Offset(center,
-                right.x * lateral + forward.x * distance,
-                right.y * lateral + forward.y * distance);
         }
 
         private unsafe void CollectBlock(long block, int ring, ref int n, ref int missing)
@@ -337,8 +328,13 @@ namespace TheRavine.Generator.EndlessGenerators
         {
             framesSinceBuild = 0;
 
+            Vector3 origin = MapGenerator.WindowOriginWorld(center);
+            Vector3 mid = origin + new Vector3(MapGenerator.generationSize * 0.5f, 0f, MapGenerator.generationSize * 0.5f);
+
             new CollectJob
             {
+                ShadowCenter = new float2(mid.x, mid.z),
+                ShadowDistanceSq = settings.farShadowDistance * settings.farShadowDistance,
                 Sources = sources,
                 SourceCount = sourceCount,
                 DenseById = denseById,
@@ -360,12 +356,10 @@ namespace TheRavine.Generator.EndlessGenerators
                 batchProps[b].SetFloat(InstanceOffsetId, offsets[b]);
 
             float reach = (generator.LodRingCount * MapGenerator.WindowSide + 2) * MapGenerator.chunkSize;
-            float drop = CurvedWorld.MaxDrop(reach);
-            Vector3 origin = MapGenerator.WindowOriginWorld(center);
-            Vector3 mid = origin + new Vector3(MapGenerator.generationSize * 0.5f, 0f, MapGenerator.generationSize * 0.5f);
+            float2 span = generator.Ravine.ElevationRange(mid.z - reach, mid.z + reach);
             var bounds = new Bounds(
-                mid + new Vector3(0f, (MapGenerator.maxTerrainHeight - drop) * 0.5f, 0f),
-                new Vector3(reach * 2f, MapGenerator.maxTerrainHeight * 4f + drop, reach * 2f));
+                mid + new Vector3(0f, (MapGenerator.maxTerrainHeight + span.x + span.y) * 0.5f, 0f),
+                new Vector3(reach * 2f, MapGenerator.maxTerrainHeight * 4f + span.y - span.x, reach * 2f));
 
             for (int i = 0; i < commands.Length; i++)
             {
@@ -426,6 +420,8 @@ namespace TheRavine.Generator.EndlessGenerators
             [WriteOnly] public NativeArray<float4> Instances;
             public NativeReference<int> Total;
             public int BatchCount;
+            public float2 ShadowCenter;
+            public float ShadowDistanceSq;
 
             private int BatchOf(in ObjectInstInfo info, int ring)
             {
@@ -441,7 +437,8 @@ namespace TheRavine.Generator.EndlessGenerators
                 TypeInfo t = Types[dense];
                 float3 p = info.Position;
                 int seed = (int)(math.hash(p) & 0x7FFFFFFFu);
-                return t.BatchBase + (seed % t.VariantCount) * t.SlotsPerVariant + slot;
+                return FarBatchMath.BatchIndex(t.BatchBase, seed % t.VariantCount, t.SlotsPerVariant, slot, t.Stride,
+                    p.xz, ShadowCenter, ShadowDistanceSq);
             }
 
             public void Execute()
@@ -488,6 +485,16 @@ namespace TheRavine.Generator.EndlessGenerators
 
                 Total.Value = running;
             }
+        }
+    }
+
+    public static class FarBatchMath
+    {
+        public static int BatchIndex(int batchBase, int variant, int slotsPerVariant, int slot, int stride,
+            float2 position, float2 shadowCenter, float shadowDistanceSq)
+        {
+            int beyond = stride > 1 && math.lengthsq(position - shadowCenter) > shadowDistanceSq ? 1 : 0;
+            return batchBase + (variant * slotsPerVariant + slot) * stride + beyond;
         }
     }
 }

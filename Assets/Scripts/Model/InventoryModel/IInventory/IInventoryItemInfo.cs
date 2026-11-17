@@ -5,7 +5,7 @@ public interface IInventoryItemInfo
     bool isPlaceable { get; }
     string id { get; }
     string title { get; }
-    string description { get; set; }
+    string description { get; }
     int maxItemsInInventorySlot { get; }
     Sprite spriteIcon { get; }
     Sprite infoSprite { get; }

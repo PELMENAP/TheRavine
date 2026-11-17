@@ -11,5 +11,5 @@ public interface IEndless : IDisposable
 
 public interface IViewDirectional
 {
-    void SetFacing(ViewFacing facing);
+    void SetSector(ViewSector sector);
 }

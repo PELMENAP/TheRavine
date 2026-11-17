@@ -1,22 +1,28 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 using TheRavine.Base;
 using TheRavine.Extensions;
+using TheRavine.ObjectControl;
 
 namespace TheRavine.Generator
 {
     public sealed class ChunkStore
     {
         private const int Magic  = 0x4B435652;
-        private const int Format = 4;
+        private const int Format = 5;
         private const int MinFormat = 1;
+        private const int RavineFormat = 5;
+        private const long MaxFileBytes = 64L + ChunkData.TotalCells * (64L + 8L);
 
         private string _directory;
         private readonly int _seed;
+        private readonly RavineProfile _ravine;
         private readonly List<ObjectInstInfo> _infos = new(64);
         private readonly List<int> _editCells = new(16);
         private readonly List<float> _editHeights = new(16);
@@ -26,17 +32,27 @@ namespace TheRavine.Generator
         private long _objectTick;
         private bool _hasClocks;
 
-        private ChunkStore(string directory, int seed)
+        private ChunkStore(string directory, int seed, RavineProfile ravine)
         {
             _directory = directory;
             _seed = seed;
+            _ravine = ravine;
         }
 
-        public static ChunkStore ForWorld(string worldId, int seed)
+        public static ChunkStore ForWorld(string worldId, int seed, RavineProfile ravine = default)
         {
             string directory = DirectoryFor(worldId);
             Directory.CreateDirectory(directory);
-            return new ChunkStore(directory, seed);
+            return new ChunkStore(directory, seed, ravine);
+        }
+
+        private bool Readable(int format, long chunkKey)
+        {
+            if (format < MinFormat || format > Format) return false;
+            if (format >= RavineFormat) return true;
+
+            float z0 = Position2Int.GetY(chunkKey) * (float)MapGenerator.chunkSize;
+            return _ravine.ElevationRange(z0, z0 + MapGenerator.chunkSize).y <= 0f;
         }
 
         public static string DirectoryFor(string worldId) =>
@@ -51,13 +67,12 @@ namespace TheRavine.Generator
         public bool TrySave(long chunkKey, ChunkData chunk)
         {
             string path = PathOf(chunkKey);
-            string temp = path + ".tmp";
 
             try
             {
-                using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write))
-                using (var writer = new BinaryWriter(stream))
+                AtomicFile.Write(path, stream =>
                 {
+                    using var writer = new BinaryWriter(stream, Encoding.UTF8, true);
                     writer.Write(Magic);
                     writer.Write(Format);
                     writer.Write(_seed);
@@ -79,10 +94,8 @@ namespace TheRavine.Generator
                         writer.Write(edits.Values[i]);
                     }
                     edits.Dispose();
-                }
+                });
 
-                if (File.Exists(path)) File.Delete(path);
-                File.Move(temp, path);
                 return true;
             }
             catch (IOException e)
@@ -105,7 +118,7 @@ namespace TheRavine.Generator
                     if (reader.ReadInt32() != Magic) return 0;
 
                     int format = reader.ReadInt32();
-                    if (format < MinFormat || format > Format || reader.ReadInt32() != _seed || reader.ReadInt64() != chunkKey) return 0;
+                    if (!Readable(format, chunkKey) || reader.ReadInt32() != _seed || reader.ReadInt64() != chunkKey) return 0;
 
                     reader.ReadByte();
                     return format >= 4 ? Math.Max(reader.ReadInt32(), 1) : 1;
@@ -117,10 +130,10 @@ namespace TheRavine.Generator
             }
         }
 
-        public bool TryRestore(long chunkKey, ChunkData chunk, long worldTick = 0L)
+        public bool TryRestore(long chunkKey, ChunkData chunk, long worldTick = 0L, ObjectInfoRegistry catalog = null)
         {
             string path = PathOf(chunkKey);
-            if (!File.Exists(path) || !TryRead(path, chunkKey)) return false;
+            if (!File.Exists(path) || !TryRead(path, chunkKey, catalog)) return false;
 
             chunk.ClearObjects();
 
@@ -164,7 +177,7 @@ namespace TheRavine.Generator
         private static unsafe bool ApplyObject(ChunkData chunk, ObjectInstInfo info) =>
             chunk.TryAddObject(info.PrimaryIdx, in info, new ReadOnlySpan<int>(info.SecondaryIdxs, info.SecondaryCount), info.Levels, info.BaseLevel);
 
-        private unsafe bool TryRead(string path, long chunkKey)
+        private unsafe bool TryRead(string path, long chunkKey, ObjectInfoRegistry catalog)
         {
             _infos.Clear();
             _editCells.Clear();
@@ -176,11 +189,17 @@ namespace TheRavine.Generator
 
             try
             {
+                if (new FileInfo(path).Length > MaxFileBytes)
+                {
+                    RavineLog.Warning($"[ChunkStore] Chunk {chunkKey}: file is larger than {MaxFileBytes} bytes, file ignored");
+                    return false;
+                }
+
                 using (var reader = new BinaryReader(new MemoryStream(File.ReadAllBytes(path))))
                 {
                     int magic = reader.ReadInt32();
                     int format = reader.ReadInt32();
-                    if (magic != Magic || format < MinFormat || format > Format || reader.ReadInt32() != _seed || reader.ReadInt64() != chunkKey)
+                    if (magic != Magic || !Readable(format, chunkKey) || reader.ReadInt32() != _seed || reader.ReadInt64() != chunkKey)
                     {
                         RavineLog.Warning($"[ChunkStore] Chunk {chunkKey}: header mismatch, file ignored");
                         return false;
@@ -198,6 +217,8 @@ namespace TheRavine.Generator
                     int count = reader.ReadInt32();
                     if (count < 0 || count > ChunkData.TotalCells) return false;
 
+                    int unknown = 0;
+
                     for (int i = 0; i < count; i++)
                     {
                         int prefab = reader.ReadInt32();
@@ -214,6 +235,11 @@ namespace TheRavine.Generator
                         if (primary < 0 || primary >= ChunkData.TotalCells) return false;
                         if (levels < 1 || secondaryCount > ObjectInstInfo.MaxSecondary) return false;
                         if (baseLevel + levels > ObjectInfo.MaxLevels) return false;
+                        if (!math.isfinite(x) || !math.isfinite(y) || !math.isfinite(z))
+                        {
+                            RavineLog.Warning($"[ChunkStore] Chunk {chunkKey}: object position is not finite, file ignored");
+                            return false;
+                        }
 
                         var info = new ObjectInstInfo(new Vector3(x, y, z), prefab, amount);
                         info.PrimaryIdx = primary;
@@ -224,8 +250,17 @@ namespace TheRavine.Generator
                         for (int k = 0; k < secondaryCount; k++)
                             info.SecondaryIdxs[k] = reader.ReadInt32();
 
+                        if (catalog != null && catalog.Get(prefab) == null)
+                        {
+                            unknown++;
+                            continue;
+                        }
+
                         _infos.Add(info);
                     }
+
+                    if (unknown > 0)
+                        RavineLog.Warning($"[ChunkStore] Chunk {chunkKey}: {unknown} objects with ids missing from the catalog were skipped");
 
                     if (format >= 3)
                     {
@@ -237,6 +272,11 @@ namespace TheRavine.Generator
                             int cell = reader.ReadInt32();
                             float height = reader.ReadSingle();
                             if (cell < 0 || cell >= ChunkData.TotalCells) return false;
+                            if (!math.isfinite(height))
+                            {
+                                RavineLog.Warning($"[ChunkStore] Chunk {chunkKey}: terrain edit height is not finite, file ignored");
+                                return false;
+                            }
 
                             _editCells.Add(cell);
                             _editHeights.Add(height);

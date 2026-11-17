@@ -11,7 +11,6 @@ using TheRavine.Generator;
 
 public struct MotionState
 {
-    public float3 Position;
     public float2 Start;
     public float2 Control;
     public float2 Goal;
@@ -37,19 +36,62 @@ public struct MotionState
     public byte   Done;
     public byte   Arrived;
     public byte   Blocked;
+    public byte   Obstructed;
+    public byte   Stalled;
+    public byte   Held;
 }
 
 public unsafe struct HeightChunk
 {
     public float* Heights;
+    public ObstacleChunk Obstacles;
 }
 
-public unsafe struct HeightAtlas
+public unsafe struct HeightAtlas : IObstacleLookup
 {
     [ReadOnly] public NativeParallelHashMap<long, int> Index;
     [ReadOnly] public NativeArray<HeightChunk> Chunks;
 
+    public bool TryGetObstacles(long chunkKey, out ObstacleChunk chunk)
+    {
+        if (Index.TryGetValue(chunkKey, out int slot))
+        {
+            chunk = Chunks[slot].Obstacles;
+            return true;
+        }
+        chunk = default;
+        return false;
+    }
+
     public float SampleHeight(float wx, float wz)
+    {
+        long key  = long.MinValue;
+        int  slot = -1;
+        return Sample(wx, wz, ref key, ref slot);
+    }
+
+    public bool Covers(float wx, float wz)
+    {
+        int x = (int)math.floor(wx * MapGenerator.InvScale);
+        int z = (int)math.floor(wz * MapGenerator.InvScale);
+        return Index.ContainsKey(MapGenerator.CellToChunk(x, z))
+            && Index.ContainsKey(MapGenerator.CellToChunk(x + 1, z))
+            && Index.ContainsKey(MapGenerator.CellToChunk(x, z + 1))
+            && Index.ContainsKey(MapGenerator.CellToChunk(x + 1, z + 1));
+    }
+
+    public float SpeedModifier(float x, float z, float2 dir)
+    {
+        const float s = MapGenerator.scale;
+        long key  = long.MinValue;
+        int  slot = -1;
+        float3 normal = MapGenerator.NormalFromHeights(
+            Sample(x - s, z, ref key, ref slot), Sample(x + s, z, ref key, ref slot),
+            Sample(x, z - s, ref key, ref slot), Sample(x, z + s, ref key, ref slot));
+        return MapGenerator.SpeedFromNormal(normal, dir);
+    }
+
+    private float Sample(float wx, float wz, ref long cachedKey, ref int cachedSlot)
     {
         const int size = MapGenerator.mapChunkSize;
 
@@ -68,19 +110,28 @@ public unsafe struct HeightAtlas
         float tx = lxf - x0;
         float tz = lzf - z0;
 
+        if ((uint)x0 < (uint)(size - 1) && (uint)z0 < (uint)(size - 1))
+        {
+            long key = Position2Int.Pack(cx, cz);
+            if (key != cachedKey)
+            {
+                cachedKey  = key;
+                cachedSlot = Index.TryGetValue(key, out int found) ? found : -1;
+            }
+            if (cachedSlot < 0) return 0f;
+
+            float* h = Chunks[cachedSlot].Heights;
+            int i0 = z0 * size + x0;
+            return math.lerp(
+                math.lerp(h[i0],        h[i0 + 1],        tx),
+                math.lerp(h[i0 + size], h[i0 + size + 1], tx),
+                tz);
+        }
+
         return math.lerp(
             math.lerp(Cell(cx, cz, x0,     z0),     Cell(cx, cz, x0 + 1, z0),     tx),
             math.lerp(Cell(cx, cz, x0,     z0 + 1), Cell(cx, cz, x0 + 1, z0 + 1), tx),
             tz);
-    }
-
-    public float SpeedModifier(float x, float z, float2 dir)
-    {
-        const float s = MapGenerator.scale;
-        float3 normal = MapGenerator.NormalFromHeights(
-            SampleHeight(x - s, z), SampleHeight(x + s, z),
-            SampleHeight(x, z - s), SampleHeight(x, z + s));
-        return MapGenerator.SpeedFromNormal(normal, dir);
     }
 
     private float Cell(int cx, int cz, int lx, int lz)
@@ -98,7 +149,14 @@ public unsafe struct HeightAtlas
 public struct MotionJob : IJobParallelFor
 {
     public NativeArray<MotionState> States;
+    [ReadOnly] public NativeArray<int> Owners;
+    [NativeDisableParallelForRestriction] public NativeArray<float3> Positions;
     public HeightAtlas Atlas;
+    public ObstacleSet Obstacles;
+    public float  BodyRadius;
+    public float  BodyHeight;
+    public float  StepUp;
+    public float  CatchUpMul;
     public double Now;
     public float  Dt;
     public float  MinSpeedModifier;
@@ -106,6 +164,7 @@ public struct MotionJob : IJobParallelFor
     public float  BlockedSpeedThreshold;
     public float  BlockedSeconds;
     public float  WaterLevel;
+    public RavineProfile Ravine;
     public float  WaterSpeedMul;
     public float  WaterDrainMul;
 
@@ -114,7 +173,8 @@ public struct MotionJob : IJobParallelFor
         var s = States[index];
         if (s.Done != 0) return;
 
-        float3 pos = s.Position;
+        int    owner = Owners[index];
+        float3 pos   = Positions[owner];
         float2 toGoal = s.Goal - pos.xz;
 
         if (s.T >= 1f || math.lengthsq(toGoal) <= s.Arrive2)
@@ -131,6 +191,13 @@ public struct MotionJob : IJobParallelFor
             return;
         }
 
+        if (s.Held != 0)
+        {
+            s.Velocity = float2.zero;
+            States[index] = s;
+            return;
+        }
+
         float  t   = s.T;
         float  u   = 1f - t;
         float2 tan = 2f * (u * (s.Control - s.Start) + t * (s.Goal - s.Control));
@@ -140,13 +207,13 @@ public struct MotionJob : IJobParallelFor
         if (s.Frame == 0)
         {
             s.SpeedModifier = Atlas.SpeedModifier(pos.x, pos.z, dir);
-            float ground = Atlas.SampleHeight(pos.x, pos.z);
-            s.WaterSpeed = MapGenerator.WaterModifier(ground, WaterLevel, WaterSpeedMul);
-            s.WaterDrain = MapGenerator.WaterModifier(ground, WaterLevel, WaterDrainMul);
+            float aboveWater = MapGenerator.AboveWater(in Ravine, Atlas.SampleHeight(pos.x, pos.z), pos.z, WaterLevel);
+            s.WaterSpeed = MapGenerator.WaterModifier(aboveWater, WaterSpeedMul);
+            s.WaterDrain = MapGenerator.WaterModifier(aboveWater, WaterDrainMul);
         }
         if (++s.Frame >= SpeedResampleFrames) s.Frame = 0;
 
-        if (s.SpeedModifier < BlockedSpeedThreshold) s.LowSpeedTime += Dt;
+        if (s.SpeedModifier < BlockedSpeedThreshold || s.Stalled != 0) s.LowSpeedTime += Dt;
         else s.LowSpeedTime = 0f;
 
         if (s.LowSpeedTime >= BlockedSeconds)
@@ -168,11 +235,36 @@ public struct MotionJob : IJobParallelFor
         float2 next = u * u * s.Start + 2f * u * t * s.Control + t * t * s.Goal;
         float2 step = next - pos.xz;
 
+        if (s.Obstructed != 0)
+        {
+            float limit = advance * CatchUpMul;
+            float step2 = math.lengthsq(step);
+            if (step2 > limit * limit) step *= limit * math.rsqrt(step2);
+            else s.Obstructed = 0;
+            next = pos.xz + step;
+        }
+
+        s.Stalled = 0;
+        float feet = pos.y - s.HeightOffset;
+        if (Obstacles.Any)
+        {
+            if (ObstacleQuery.ResolveSwept(ref Atlas, in Obstacles, pos.xz, ref next, BodyRadius, feet, feet + BodyHeight, StepUp, out _))
+            {
+                s.Obstructed = 1;
+                step = next - pos.xz;
+                float stall = advance * BlockedSpeedThreshold;
+                if (math.lengthsq(step) < stall * stall) s.Stalled = 1;
+            }
+        }
+
         s.Velocity = step * (1f / math.max(Dt, 1e-5f));
         pos.x = next.x;
         pos.z = next.y;
-        pos.y = Atlas.SampleHeight(pos.x, pos.z) + s.HeightOffset;
-        s.Position = pos;
+        float groundY = Atlas.SampleHeight(pos.x, pos.z);
+        if (ObstacleQuery.Support(ref Atlas, in Obstacles, next, BodyRadius, feet, StepUp, out float top) && top > groundY)
+            groundY = top;
+        pos.y = groundY + s.HeightOffset;
+        Positions[owner] = pos;
 
         float len = math.length(step);
         s.Distance += len;
@@ -200,10 +292,11 @@ public struct MotionJob : IJobParallelFor
 [BurstCompile]
 public struct MotionApplyJob : IJobParallelForTransform
 {
-    [ReadOnly] public NativeArray<MotionState> States;
+    [ReadOnly] public NativeArray<int> Owners;
+    [ReadOnly] public NativeArray<float3> Positions;
 
     public void Execute(int index, TransformAccess transform)
-        => transform.position = States[index].Position;
+        => transform.position = Positions[Owners[index]];
 }
 
 public sealed unsafe class MotionSystem : IDisposable
@@ -213,12 +306,21 @@ public sealed unsafe class MotionSystem : IDisposable
     private const float AtlasMarginCells    = 3f;
     private const int   JobBatch            = 16;
 
+    private static readonly int4 Unwindowed = new int4(int.MinValue);
+
     private NativeList<MotionState>          _states;
+    private NativeList<int>                  _owners;
+    private NativeArray<float3>              _positions;
+    private NativeArray<int>                 _motionOf;
     private TransformAccessArray             _transforms;
     private NativeParallelHashMap<long, int> _atlasIndex;
     private NativeList<HeightChunk>          _atlasChunks;
+    private NativeArray<CollisionShape>      _noShapes;
 
     private SurfaceMotor[] _motors;
+    private int4[]         _windows;
+    private int            _atlasStamp;
+    private int            _lastTouchFrame;
     private MapGenerator   _map;
     private int    _count;
     private double _lastTime;
@@ -226,22 +328,68 @@ public sealed unsafe class MotionSystem : IDisposable
 
     public int Count => _count;
 
+    public bool IsAlive => !_disposed && _map != null;
+
+    public ObstacleSet Obstacles
+        => _map != null && _map.Collision != null ? _map.Collision.Set : new ObstacleSet { Shapes = _noShapes };
+
     public MotionSystem(int capacity)
     {
         if (capacity < 1) capacity = 1;
         _states      = new NativeList<MotionState>(capacity, Allocator.Persistent);
+        _owners      = new NativeList<int>(capacity, Allocator.Persistent);
+        _positions   = new NativeArray<float3>(capacity, Allocator.Persistent);
+        _motionOf    = new NativeArray<int>(capacity, Allocator.Persistent);
+        for (int i = 0; i < capacity; i++) _motionOf[i] = -1;
         _transforms  = new TransformAccessArray(capacity);
         _atlasIndex  = new NativeParallelHashMap<long, int>(capacity, Allocator.Persistent);
         _atlasChunks = new NativeList<HeightChunk>(capacity, Allocator.Persistent);
+        _noShapes    = new NativeArray<CollisionShape>(1, Allocator.Persistent);
         _motors      = new SurfaceMotor[capacity];
+        _windows     = new int4[capacity];
         _lastTime    = SimulationClock.TimeD;
     }
 
-    public void Inject(MapGenerator map) => _map = map;
+    public void Inject(MapGenerator map)
+    {
+        _map        = map;
+        _atlasStamp = int.MinValue;
+    }
+
+    public NativeArray<float3> Positions => _positions;
+
+    public float3 PositionOf(int slot)
+        => _positions.IsCreated && (uint)slot < (uint)_positions.Length ? _positions[slot] : float3.zero;
+
+    public void SetPosition(int slot, float3 position)
+    {
+        if (_positions.IsCreated && (uint)slot < (uint)_positions.Length) _positions[slot] = position;
+    }
+
+    public void RemoveSwapBack(int index, int last)
+    {
+        if (_disposed || !_positions.IsCreated) return;
+        int cap = _positions.Length;
+        if ((uint)index >= (uint)cap || (uint)last >= (uint)cap) return;
+
+        int moving = _motionOf[index];
+        if (moving >= 0) Finish(moving);
+
+        if (index != last)
+        {
+            _positions[index] = _positions[last];
+            int movedMotion = _motionOf[last];
+            _motionOf[index] = movedMotion;
+            if (movedMotion >= 0) _owners[movedMotion] = index;
+        }
+        _motionOf[last]  = -1;
+        _positions[last] = default;
+    }
 
     internal bool Start(SurfaceMotor motor, Transform tr, in MotionState state)
     {
-        if (_disposed || _map == null) return false;
+        int slot = motor.Slot;
+        if (_disposed || _map == null || (uint)slot >= (uint)_positions.Length) return false;
 
         int idx = motor.MotionIndex;
         if ((uint)idx < (uint)_count && ReferenceEquals(_motors[idx], motor))
@@ -255,11 +403,18 @@ public sealed unsafe class MotionSystem : IDisposable
         }
 
         if (_count == _motors.Length)
-            Array.Resize(ref _motors, Math.Max(_motors.Length << 1, _count + 1));
+        {
+            int cap = Math.Max(_motors.Length << 1, _count + 1);
+            Array.Resize(ref _motors, cap);
+            Array.Resize(ref _windows, cap);
+        }
 
         _states.Add(state);
+        _owners.Add(slot);
         _transforms.Add(tr);
+        _motionOf[slot] = _count;
         _motors[_count] = motor;
+        _windows[_count] = Unwindowed;
         motor.MotionIndex = _count;
         _count++;
         return true;
@@ -278,6 +433,13 @@ public sealed unsafe class MotionSystem : IDisposable
 
     internal float2 VelocityOf(int index)
         => (uint)index < (uint)_count ? _states[index].Velocity : float2.zero;
+
+    public float2 VelocityBySlot(int slot)
+    {
+        if (!_motionOf.IsCreated || (uint)slot >= (uint)_motionOf.Length) return float2.zero;
+        int motion = _motionOf[slot];
+        return (uint)motion < (uint)_count ? _states[motion].Velocity : float2.zero;
+    }
 
     internal float TakePending(int index)
     {
@@ -300,14 +462,21 @@ public sealed unsafe class MotionSystem : IDisposable
         float maxDt = SimulationRules.Frame.MaxCycleDt;
         if (dt > maxDt) dt = maxDt;
 
-        BuildAtlas();
+        SyncAtlas();
 
         var states = _states.AsArray();
 
         var move = new MotionJob
         {
             States              = states,
+            Owners              = _owners.AsArray(),
+            Positions           = _positions,
             Atlas               = new HeightAtlas { Index = _atlasIndex, Chunks = _atlasChunks.AsArray() },
+            Obstacles           = Obstacles,
+            BodyRadius          = SimulationRules.Frame.AgentBodyRadius,
+            BodyHeight          = SimulationRules.Frame.AgentBodyHeight,
+            StepUp              = SimulationRules.Frame.AgentStepUp,
+            CatchUpMul          = SimulationRules.Frame.ObstacleCatchUpMul,
             Now                 = now,
             Dt                  = dt,
             MinSpeedModifier      = MinSpeedModifier,
@@ -315,11 +484,12 @@ public sealed unsafe class MotionSystem : IDisposable
             BlockedSpeedThreshold = SimulationRules.Frame.BlockedSpeedThreshold,
             BlockedSeconds        = SimulationRules.Frame.BlockedSeconds,
             WaterLevel            = SimulationRules.Frame.WaterLevel,
+            Ravine                = _map.Ravine,
             WaterSpeedMul         = SimulationRules.Frame.WaterSpeedMul,
             WaterDrainMul         = SimulationRules.Frame.WaterDrainMul,
         }.Schedule(_count, JobBatch);
 
-        new MotionApplyJob { States = states }.Schedule(_transforms, move).Complete();
+        new MotionApplyJob { Owners = _owners.AsArray(), Positions = _positions }.Schedule(_transforms, move).Complete();
 
         for (int i = _count - 1; i >= 0; i--)
             if (_states[i].Done != 0) Finish(i);
@@ -329,48 +499,96 @@ public sealed unsafe class MotionSystem : IDisposable
     {
         if (!_disposed && _map != null)
         {
-            BuildAtlas();
-            for (int i = 0; i < count; i++) AppendAtlas(points[i].x, points[i].y, margin, false);
+            SyncAtlas();
+            for (int i = 0; i < count; i++) AppendWindow(WindowOf(points[i].x, points[i].y, margin), false);
         }
         return new HeightAtlas { Index = _atlasIndex, Chunks = _atlasChunks.AsArray() };
     }
 
-    private unsafe void AppendAtlas(float x, float z, float margin, bool generate)
+    private static int4 WindowOf(float x, float z, float margin)
     {
         const float invChunk = 1f / MapGenerator.chunkSize;
+        return new int4(
+            (int)math.floor((x - margin) * invChunk),
+            (int)math.floor((z - margin) * invChunk),
+            (int)math.floor((x + margin) * invChunk),
+            (int)math.floor((z + margin) * invChunk));
+    }
 
-        int x0 = (int)math.floor((x - margin) * invChunk);
-        int x1 = (int)math.floor((x + margin) * invChunk);
-        int z0 = (int)math.floor((z - margin) * invChunk);
-        int z1 = (int)math.floor((z + margin) * invChunk);
-
-        for (int cz = z0; cz <= z1; cz++)
-        for (int cx = x0; cx <= x1; cx++)
+    private unsafe bool AppendWindow(int4 w, bool request)
+    {
+        bool complete = true;
+        for (int cz = w.y; cz <= w.w; cz++)
+        for (int cx = w.x; cx <= w.z; cx++)
         {
             long key = Position2Int.Pack(cx, cz);
             if (_atlasIndex.ContainsKey(key)) continue;
 
-            ChunkData chunk;
-            if (generate) chunk = _map.GetMapData(cx, cz);
-            else if (!_map.TryGetChunk(key, out chunk) || chunk == null) continue;
+            if (!_map.TryGetChunk(key, out ChunkData chunk) || chunk == null)
+            {
+                if (request) _map.RequestChunk(key);
+                complete = false;
+                continue;
+            }
 
             _atlasIndex.Add(key, _atlasChunks.Length);
-            _atlasChunks.Add(new HeightChunk { Heights = (float*)chunk.HeightRaw.GetUnsafeReadOnlyPtr() });
+            _atlasChunks.Add(new HeightChunk
+            {
+                Heights   = (float*)chunk.HeightRaw.GetUnsafeReadOnlyPtr(),
+                Obstacles = chunk.ObstacleView()
+            });
         }
+        return complete;
     }
 
-    private void BuildAtlas()
+    private void SetHeld(int motion, bool held)
     {
-        _atlasIndex.Clear();
-        _atlasChunks.Clear();
+        MotionState s = _states[motion];
+        byte flag = held ? (byte)1 : (byte)0;
+        if (s.Held == flag) return;
+        s.Held = flag;
+        _states[motion] = s;
+    }
 
+    private void SyncAtlas()
+    {
         const float margin = AtlasMarginCells * MapGenerator.scale;
 
-        for (int i = 0; i < _count; i++)
+        int stamp;
+        do
         {
-            float3 p = _states[i].Position;
-            AppendAtlas(p.x, p.z, margin, true);
+            stamp = _map.UnloadStamp;
+            if (stamp != _atlasStamp)
+            {
+                _atlasStamp = stamp;
+                _atlasIndex.Clear();
+                _atlasChunks.Clear();
+                for (int i = 0; i < _count; i++) _windows[i] = Unwindowed;
+            }
+
+            for (int i = 0; i < _count; i++)
+            {
+                float3 p = _positions[_owners[i]];
+                int4 w = WindowOf(p.x, p.z, margin);
+                if (math.all(w == _windows[i])) continue;
+                bool complete = AppendWindow(w, true);
+                _windows[i] = complete ? w : Unwindowed;
+                SetHeld(i, !complete);
+            }
         }
+        while (stamp != _map.UnloadStamp);
+
+        int frame = Time.frameCount;
+        if (frame - _lastTouchFrame < _map.EvictionTouchInterval) return;
+        _lastTouchFrame = frame;
+        for (int i = 0; i < _count; i++) TouchWindow(_windows[i]);
+    }
+
+    private void TouchWindow(int4 w)
+    {
+        for (int cz = w.y; cz <= w.w; cz++)
+        for (int cx = w.x; cx <= w.z; cx++)
+            _map.TouchChunk(Position2Int.Pack(cx, cz));
     }
 
     private void Finish(int idx)
@@ -379,14 +597,18 @@ public sealed unsafe class MotionSystem : IDisposable
         motor.OnMotionFinished(_states[idx]);
 
         int last = --_count;
+        _motionOf[_owners[idx]] = -1;
         _states.RemoveAtSwapBack(idx);
+        _owners.RemoveAtSwapBack(idx);
         _transforms.RemoveAtSwapBack(idx);
 
         if (idx != last)
         {
             var moved = _motors[last];
             _motors[idx] = moved;
+            _windows[idx] = _windows[last];
             moved.MotionIndex = idx;
+            _motionOf[_owners[idx]] = idx;
         }
         _motors[last] = null;
         motor.MotionIndex = -1;
@@ -402,8 +624,12 @@ public sealed unsafe class MotionSystem : IDisposable
         _count = 0;
 
         if (_states.IsCreated)       _states.Dispose();
+        if (_owners.IsCreated)       _owners.Dispose();
+        if (_positions.IsCreated)    _positions.Dispose();
+        if (_motionOf.IsCreated)     _motionOf.Dispose();
         if (_transforms.isCreated)   _transforms.Dispose();
         if (_atlasIndex.IsCreated)   _atlasIndex.Dispose();
         if (_atlasChunks.IsCreated)  _atlasChunks.Dispose();
+        if (_noShapes.IsCreated)     _noShapes.Dispose();
     }
 }

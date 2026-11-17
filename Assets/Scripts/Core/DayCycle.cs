@@ -21,6 +21,8 @@ namespace TheRavine.Base
         [SerializeField] private Material skyboxMaterial;
         private readonly static int nightBlendId = Shader.PropertyToID("_NightBlend");
         [SerializeField] private int awakeDelay = 1000;
+        [SerializeField, Min(0.1f)] private float environmentUpdateInterval = 1.5f;
+        private float nextEnvironmentUpdate;
         private readonly float rotationSpeedX = 360f; 
 
         private readonly NetworkVariable<float> serverTime = new(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -122,6 +124,12 @@ namespace TheRavine.Base
             skyboxMaterial.SetFloat(
                 nightBlendId,
                 nightBlendCurve.Evaluate(t));
+
+            if (Time.unscaledTime >= nextEnvironmentUpdate)
+            {
+                nextEnvironmentUpdate = Time.unscaledTime + environmentUpdateInterval;
+                DynamicGI.UpdateEnvironment();
+            }
         }
     }
 

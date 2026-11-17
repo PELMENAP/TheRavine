@@ -4,6 +4,7 @@ using Unity.Mathematics;
 
 using TheRavine.Base;
 using TheRavine.EntityControl.Virology;
+using TheRavine.Generator;
 
 namespace TheRavine.EntityControl
 {
@@ -16,8 +17,14 @@ namespace TheRavine.EntityControl
         private VirologyComponent virology;
         private EnergyComponent energy;
         private DayCycle dayCycle;
+        private TransformComponent transformComponent;
+        private MapGenerator map;
         private float immuneUpkeepMul = 1f;
+        private PlayerSkillGraph skills;
+        private float baseMaxHealth;
+        private float baseMaxEnergy;
         private double lastCycleTime;
+        private int windStepSeen = -1;
         private ulong clientId;
         private readonly RavineLogger logger;
         public PlayerEntity(RavineLogger logger)
@@ -32,18 +39,26 @@ namespace TheRavine.EntityControl
             base.AddComponentToEntity(statePatternComponent);
             base.AddComponentToEntity(new EventBusComponent());
             base.AddComponentToEntity(new SkillComponent());
-            AddCreatureComponents(entityInfo.EnergyInfo);
+            AddCreatureComponents(entityInfo.EnergyInfo, aEntityModelView is Unity.Netcode.NetworkBehaviour network && network.IsServer && network.IsOwner);
             base.AddComponentToEntity(new MainComponent(entityInfo.name, entityInfo.Prefab.GetInstanceID(), clientId));
             base.AddComponentToEntity(new MovementComponent(entityInfo.MovementInfo));
             base.AddComponentToEntity(new AimComponent(entityInfo.AimStatsInfo));
-            base.AddComponentToEntity(new TransformComponent(aEntityModelView.transform, aEntityModelView.transform));
+            transformComponent = new TransformComponent(aEntityModelView.transform, aEntityModelView.transform);
+            base.AddComponentToEntity(transformComponent);
             this.clientId = clientId;
         }
 
-        private void AddCreatureComponents(EnergyInfo energyInfo)
+        private void AddCreatureComponents(EnergyInfo energyInfo, bool savesSkills)
         {
             var rules = SimulationRules.Active;
             var genes = GeneticParameters.Default;
+
+            PlayerSkillSave saved = null;
+            if (savesSkills && ServiceLocator.Services.TryGet(out WorldRegistry registry) && registry.HasLoadedWorld)
+                saved = registry.GetCurrentState().playerSkills;
+            skills = PlayerSkillGraph.Create(SkillAtlas.Active, ref genes, saved, WorldAuthority.IsAuthority);
+            baseMaxHealth = rules.BaseMaxHealth;
+            baseMaxEnergy = energyInfo.MaxEnergy;
 
             stats = new StatsComponent();
             stats.FillComponent(rules.BaseMaxHealth, energyInfo.MaxEnergy);
@@ -59,6 +74,7 @@ namespace TheRavine.EntityControl
             base.AddComponentToEntity(energy);
             base.AddComponentToEntity(mortality);
             base.AddComponentToEntity(virology);
+            base.AddComponentToEntity(skills);
         }
 
         public void AddWorldComponents(WorldRegistry worldRegistry)
@@ -79,7 +95,12 @@ namespace TheRavine.EntityControl
         public override void UpdateEntityCycle()
         {
             if (!base.IsActive.Value) return;
-            if (WorldAuthority.IsAuthority) TickMetabolism();
+            if (WorldAuthority.IsAuthority)
+            {
+                TickMetabolism();
+                skills.Tick(SimulationClock.Time);
+            }
+            RefreshSkillEffects();
             if (playerController.IsOwner && statePatternComponent.behaviourCurrent != null)
                 statePatternComponent.behaviourCurrent.Update();
             base.OnUpdate.Execute(Unit.Default);
@@ -116,8 +137,70 @@ namespace TheRavine.EntityControl
             CreatureCore.Metabolize(stats, mortality, dt, 0f, mods.MetabolismMultiplier, basalMul,
                 in rules, out float metabolismCredit);
             virology.CreditDurableEffects(0f, metabolismCredit, stats.MaxEnergy);
+            float burn = BurnDamage(dt);
+            if (burn > 0f)
+            {
+                mortality.NoteHarm(DeathCause.Burn, stats.Hp - burn);
+                stats.Hp -= burn;
+            }
+            float gust = WindDamage(dt);
+            if (gust > 0f)
+            {
+                mortality.NoteHarm(DeathCause.Wind, stats.Hp - gust);
+                stats.Hp -= gust;
+            }
             stats.Commit();
             energy.Sync();
+        }
+
+        private void RefreshSkillEffects()
+        {
+            skills.Refresh();
+            if (!skills.ConsumeModifiersChanged() || stats == null || stats.IsDisposed) return;
+
+            ref readonly var mods = ref skills.Modifiers;
+            stats.Rescale(baseMaxHealth * mods.Health, baseMaxEnergy * mods.EnergyCapacity);
+            energy.Sync();
+        }
+
+        public PlayerSkillGraph SkillGraph => skills;
+
+        public void AwardSkillXp(EntityAction action) => skills?.Award(action, SimulationClock.Time);
+
+        public void CaptureSkills(WorldRegistry registry)
+        {
+            if (skills == null || !skills.IsAuthority) return;
+            registry.UpdateState(s =>
+            {
+                s.playerSkills ??= new PlayerSkillSave();
+                skills.Capture(s.playerSkills, SimulationClock.Time);
+            });
+        }
+
+        private float BurnDamage(float dt)
+        {
+            if (map == null && !ServiceLocator.Services.TryGet(out map)) return 0f;
+            FireEvent fire = map.Events?.Fire;
+            if (fire == null || fire.BurningCount == 0 || transformComponent == null) return 0f;
+
+            var p = transformComponent.GetEntityPosition();
+            return fire.HeatDamageAt(new float2(p.x, p.z)) * dt;
+        }
+
+        private float WindDamage(float dt)
+        {
+            if (map == null && !ServiceLocator.Services.TryGet(out map)) return 0f;
+            WildWindEvent wind = map.Events?.Wind;
+            if (wind == null || wind.IsDisposed || !wind.Active || transformComponent == null) return 0f;
+
+            float3 p = transformComponent.GetEntityPosition();
+            if (!wind.InBand(p.y)) return 0f;
+            if (wind.StepIndex != windStepSeen)
+            {
+                windStepSeen = wind.StepIndex;
+                wind.ReportCreature(p);
+            }
+            return wind.DamageAt(p) * dt;
         }
 
         private void OnDied()

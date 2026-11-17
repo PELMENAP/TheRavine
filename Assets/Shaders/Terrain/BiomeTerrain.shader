@@ -13,6 +13,7 @@ Shader "The Ravine/Terrain/BiomeTerrain"
         _RockScale ("Rock Scale", Float) = 0.08
         _RockSlopeMin ("Rock Slope Min", Range(0, 1)) = 0.25
         _RockSlopeMax ("Rock Slope Max", Range(0, 1)) = 0.45
+        _RockSideSlope ("Rock Side Projection Slope", Range(0, 1)) = 0.6
 
         [Header(Snow)]
         _SnowTex ("Snow", 2D) = "white" {}
@@ -20,6 +21,7 @@ Shader "The Ravine/Terrain/BiomeTerrain"
         _SnowTempMin ("Snow Full Temperature", Range(0, 1)) = 0.05
         _SnowTempMax ("Snow Start Temperature", Range(0, 1)) = 0.2
         _SnowFlatness ("Snow Flatness", Range(0.01, 1)) = 0.5
+        _SnowSeasonShift ("Snow Season Shift", Range(0, 0.5)) = 0.08
 
         [Header(Sand)]
         _SandTex ("Sand", 2D) = "white" {}

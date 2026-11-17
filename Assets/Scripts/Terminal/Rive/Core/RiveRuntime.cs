@@ -1,0 +1,286 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using ZLinq;
+
+namespace TheRavine.Base
+{
+    public class RiveRuntime : IDisposable
+    {
+        private readonly RiveParser _parser;
+        private readonly RavineLogger _logger;
+        private readonly Dictionary<string, ProgramNode> _compiledPrograms = new();
+        private readonly InputStreamManager _inputStream;
+        private readonly InteractorRegistry _interactorRegistry;
+        private RiveExecutor _executor;
+        private CancellationTokenSource _lifetime = new();
+        private int _activeRuns;
+        private bool _disposed;
+
+        public const int MaxConcurrentRuns = 4;
+        
+        public delegate UniTask<bool> TerminalCommandDelegate(string command);
+        private TerminalCommandDelegate _terminalCommandHandler;
+        
+        public RiveRuntime(TerminalCommandDelegate terminalCommandHandler, RavineLogger logger)
+        {
+            _terminalCommandHandler = terminalCommandHandler;
+            _logger = logger;
+            _parser = new(logger);
+            _inputStream = new InputStreamManager();
+            _interactorRegistry = new InteractorRegistry(logger);
+            _executor = new RiveExecutor(this, _inputStream, _interactorRegistry);
+        }
+        
+        public void LoadFile(string fileName, string content)
+        {
+            if (RiveBuiltInFunctions.IsReserved(fileName))
+            {
+                _logger.LogError($"Cannot load file '{fileName}': this name is reserved");
+                throw new RiveRuntimeException($"File name '{fileName}' is reserved");
+            }
+
+            try
+            {
+                var program = _parser.Parse(fileName, content);
+                _compiledPrograms[fileName] = program;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to load {fileName}: {ex.Message}");
+            }
+        }
+        
+        public void UnloadFile(string fileName)
+        {
+            _compiledPrograms.Remove(fileName);
+        }
+        
+        public bool IsFileLoaded(string fileName)
+        {
+            return _compiledPrograms.ContainsKey(fileName);
+        }
+
+        public List<string> GetLoadedFileNames()
+        {
+            return _compiledPrograms.Keys.AsValueEnumerable().ToList();
+        }
+        
+        public ProgramInfo GetFileInfo(string fileName)
+        {
+            if (RiveBuiltInFunctions.IsBuiltIn(fileName))
+            {
+                return new ProgramInfo
+                {
+                    Name = fileName,
+                    Parameters = new List<string> { "..." },
+                    StatementCount = 0,
+                    IsLoaded = true,
+                    IsBuiltIn = true
+                };
+            }
+
+            if (!_compiledPrograms.TryGetValue(fileName, out var program))
+            {
+                return new ProgramInfo
+                {
+                    Name = "null",
+                    Parameters = new List<string>(),
+                    StatementCount = 0,
+                    IsLoaded = false,
+                    IsBuiltIn = false
+                };
+            }
+            
+            return new ProgramInfo
+            {
+                Name = program.Name,
+                Parameters = program.Parameters,
+                StatementCount = program.Statements.Count,
+                IsLoaded = true,
+                IsBuiltIn = false
+            };
+        }
+
+        public UniTask<ScriptResult> ExecuteScriptAsync(string fileName, params object[] args)
+        {
+            return RunScriptAsync(fileName, null, args);
+        }
+
+        private async UniTask<ScriptResult> RunScriptAsync(string fileName, RiveRun run, object[] args)
+        {
+            if (RiveBuiltInFunctions.IsBuiltIn(fileName))
+            {
+                try
+                {
+                    var result = await RiveBuiltInFunctions.CallAsync(fileName, args);
+                    return new ScriptResult
+                    {
+                        Success = true,
+                        ReturnValue = result,
+                        ErrorMessage = null
+                    };
+                }
+                catch (Exception ex)
+                {
+                    return new ScriptResult
+                    {
+                        Success = false,
+                        ReturnValue = 0,
+                        ErrorMessage = ex.Message
+                    };
+                }
+            }
+
+            if (!_compiledPrograms.TryGetValue(fileName, out var program))
+            {
+                return new ScriptResult
+                {
+                    Success = false,
+                    ErrorMessage = $"File {fileName} not found"
+                };
+            }
+            
+            var intArgs = new int[args.Length];
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] is int iv)
+                    intArgs[i] = iv;
+            }
+            
+            var execResult = run != null
+                ? await _executor.ExecuteAsync(program, intArgs, run)
+                : await ExecuteTopLevelAsync(program, intArgs);
+            
+            return new ScriptResult
+            {
+                Success = execResult.Success,
+                ReturnValue = execResult.Action == ExecutionAction.Return ? execResult.ReturnValue : 0,
+                ErrorMessage = execResult.ErrorMessage
+            };
+        }
+
+        private async UniTask<ExecutionResult> ExecuteTopLevelAsync(ProgramNode program, int[] args)
+        {
+            if (_disposed)
+                return ExecutionResult.CreateError("Script runtime is disposed");
+
+            if (_activeRuns >= MaxConcurrentRuns)
+                return ExecutionResult.CreateError($"Too many running scripts (max {MaxConcurrentRuns})");
+
+            _activeRuns++;
+            try
+            {
+                return await _executor.ExecuteAsync(program, args, new RiveRun { Token = _lifetime.Token });
+            }
+            finally
+            {
+                _activeRuns--;
+            }
+        }
+
+        public void CancelAll()
+        {
+            if (_disposed) return;
+
+            var previous = _lifetime;
+            _lifetime = new CancellationTokenSource();
+            Cancel(previous);
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+
+            _disposed = true;
+            Cancel(_lifetime);
+        }
+
+        private void Cancel(CancellationTokenSource source)
+        {
+            try
+            {
+                source.Cancel();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to cancel scripts: {ex.Message}");
+            }
+            finally
+            {
+                source.Dispose();
+            }
+        }
+
+        internal async UniTask<bool> ExecuteTerminalCommandAsync(string command)
+        {
+            if (_terminalCommandHandler == null)
+                return false;
+            
+            return await _terminalCommandHandler(command);
+        }
+
+        internal UniTask<ScriptResult> CallFunctionAsync(string functionName, RiveRun run, object[] args)
+        {
+            return RunScriptAsync(functionName, run, args);
+        }
+
+        public IReadOnlyCollection<string> GetBuiltInFunctionNames()
+        {
+            return RiveBuiltInFunctions.GetFunctionNames();
+        }
+
+        public void PushInput(int value)
+        {
+            _inputStream.PushInput(value);
+        }
+
+        public int GetWaitingInputReaders()
+        {
+            return _inputStream.GetWaitingReadersCount();
+        }
+
+        public void RegisterInteractor(IInteractor interactor)
+        {
+            _interactorRegistry.Register(interactor);
+        }
+
+        public void UnregisterInteractor(string name)
+        {
+            _interactorRegistry.Unregister(name);
+        }
+
+        public IReadOnlyCollection<string> GetRegisteredInteractors()
+        {
+            return _interactorRegistry.GetRegisteredNames();
+        }
+
+        public IInteractor GetInteractor(string name)
+        {
+            return _interactorRegistry.Get(name);
+        }
+        
+        public struct ProgramInfo
+        {
+            public string Name;
+            public List<string> Parameters;
+            public int StatementCount;
+            public bool IsLoaded;
+            public bool IsBuiltIn;
+        }
+        
+        public struct ScriptResult
+        {
+            public bool Success;
+            public object ReturnValue;
+            public string ErrorMessage;
+        }
+    }
+    
+    public class RiveRuntimeException : Exception
+    {
+        public RiveRuntimeException(string message) : base(message) { }
+        public RiveRuntimeException(string message, Exception inner) : base(message, inner) { }
+    }
+}

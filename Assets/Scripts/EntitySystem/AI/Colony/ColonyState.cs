@@ -16,8 +16,31 @@ public sealed class ColonyState : IDisposable
     public double NextElection;
     public readonly int[] CasteCounts = new int[(int)Caste.Count];
     public int JuvenileCount;
+    public SkillGraphTopology SkillTopology { get; private set; }
+    public double NextSkillSolve;
+
+    public const int NoBucket       = -1;
+    public const int JuvenileBucket = (int)Caste.Count;
+
+    public void Count(int bucket, int delta)
+    {
+        if (bucket == NoBucket) return;
+        if (bucket == JuvenileBucket) JuvenileCount += delta;
+        else CasteCounts[bucket] += delta;
+    }
     public readonly bool IsWild;
     public float Scarcity;
+    public float Pressure { get; private set; }
+    public float2 PackCentre { get; private set; }
+    public int    PackCount  { get; private set; }
+
+    public void RaisePressure(float amount) => Pressure = math.saturate(Pressure + math.max(0f, amount));
+
+    public void SetPack(float2 centre, int count)
+    {
+        PackCentre = centre;
+        PackCount  = count;
+    }
     public bool  QuorumReady { get; private set; }
 
     public float StorageEma;
@@ -38,6 +61,7 @@ public sealed class ColonyState : IDisposable
     public void TickEma(float dt)
     {
         ref readonly var r = ref SimulationRules.Frame;
+        Pressure *= math.exp(-math.max(dt, 0f) / math.max(r.PressureTau, 1e-3f));
         float storage = math.saturate(Nest.Storage / math.max(r.NestStorageNorm, 1e-3f));
         if (!EmaPrimed)
         {
@@ -59,6 +83,17 @@ public sealed class ColonyState : IDisposable
     private double[] _siteUpdated;
     private int[]    _siteVoters;
     private int      _voterStride;
+
+    public static float SiteScore(in SimulationRules.RulesFrame r, in TerrainSample terrain, float foodField, float nestDistance)
+    {
+        if (nestDistance < r.QuorumMinDistance) return 0f;
+        float flat   = math.saturate(1f - terrain.Slope / math.max(r.QuorumSlopeLimit, 1e-3f));
+        float height = math.saturate(1f + math.min(terrain.RelativeHeight, 0f) * r.QuorumDepressionMul);
+        float food   = math.saturate(foodField / math.max(r.QuorumFoodNorm, 1e-3f));
+        float total  = r.QuorumSlopeWeight + r.QuorumHeightWeight + r.QuorumFoodWeight;
+        if (total <= 0f) return 1f;
+        return (flat * r.QuorumSlopeWeight + height * r.QuorumHeightWeight + food * r.QuorumFoodWeight) / total;
+    }
 
     public void VoteNestSite(float2 position, int voterId, float weight = 1f)
     {
@@ -106,10 +141,11 @@ public sealed class ColonyState : IDisposable
     {
         ref readonly var r = ref SimulationRules.Frame;
         double now = SimulationClock.TimeD;
+        float needed = math.max(1f, r.QuorumSize * (1f - Pressure * r.PressureQuorumRelief));
         int best = -1;
         for (int i = 0; i < _sitePos.Length; i++)
         {
-            if (_siteWeight[i] < math.max(r.QuorumSize, 1) || now - _siteUpdated[i] > r.QuorumWindow) continue;
+            if (_siteWeight[i] < needed || now - _siteUpdated[i] > r.QuorumWindow) continue;
             if (best < 0 || _siteWeight[i] > _siteWeight[best]) best = i;
         }
         site = best >= 0 ? _sitePos[best] : default;
@@ -176,6 +212,7 @@ public sealed class ColonyState : IDisposable
         Pois     = new ColonyPoiBoard(SimulationRules.Active.ColonyPoiCount);
         Brain    = brain;
         _members = new int[math.max(capacity, 4)];
+        SkillTopology = SkillGraphTopology.Create(SkillAtlas.Active, SkillGraphTopology.DrawForestGenes());
     }
 
     public void ReplaceBrain(SharedHierarchicalBrain brain) => Brain = brain;
@@ -237,6 +274,8 @@ public sealed class ColonyState : IDisposable
     public void Dispose()
     {
         Nest.Dispose();
+        SkillTopology?.Dispose();
+        SkillTopology = null;
         Brain?.Dispose();
         Brain = null;
         _memberCount = 0;

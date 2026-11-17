@@ -76,6 +76,9 @@ public sealed class ChunkFoodIndex
     private bool[] _foodTable = System.Array.Empty<bool>();
     private readonly LongDictionary<FoodChunk> _chunks = new(64);
     private readonly LongDictionary<float> _meat = new(32);
+    private double _foodTotal;
+    private double _meatTotal;
+    private double _soilTotal;
     private readonly LongDictionary<ViralPayload> _payloads = new(16);
     private readonly LongDictionary<int> _taboo = new(16);
     private readonly LongDictionary<double> _unreachable = new(16);
@@ -130,6 +133,7 @@ public sealed class ChunkFoodIndex
         public float Fertility = -1f;
         public float Depletion;
         public float SoilEnergy;
+        public double FoodEnergy;
         public float GrowthBudget;
         public float MaturityBudget;
 
@@ -145,6 +149,7 @@ public sealed class ChunkFoodIndex
             Fertility      = -1f;
             Depletion      = 0f;
             SoilEnergy     = 0f;
+            FoodEnergy     = 0.0;
             GrowthBudget   = 0f;
             MaturityBudget = 0f;
         }
@@ -154,10 +159,16 @@ public sealed class ChunkFoodIndex
     private int _freeChunkCount;
 
     private FoodChunk RentChunk()
-        => _freeChunkCount > 0 ? _freeChunks[--_freeChunkCount] : new FoodChunk();
+    {
+        _keysDirty = true;
+        return _freeChunkCount > 0 ? _freeChunks[--_freeChunkCount] : new FoodChunk();
+    }
 
     private void ReturnChunk(FoodChunk fc)
     {
+        _keysDirty = true;
+        _foodTotal -= fc.FoodEnergy;
+        _soilTotal -= fc.SoilEnergy;
         fc.Reset();
         if (_freeChunkCount == _freeChunks.Length) System.Array.Resize(ref _freeChunks, _freeChunks.Length << 1);
         _freeChunks[_freeChunkCount++] = fc;
@@ -174,6 +185,9 @@ public sealed class ChunkFoodIndex
     private int _claimCount;
 
     private long[] _pruneKeys = new long[16];
+    private long[] _ecologyKeys = new long[16];
+    private int _ecologyKeyCount;
+    private bool _keysDirty = true;
 
     public static float2 CellCenter(long cell)
         => new float2(Position2Int.GetX(cell) * MapGenerator.scale + HalfCell,
@@ -191,7 +205,7 @@ public sealed class ChunkFoodIndex
         var fc = Resolve(Position2Int.Pack(Position2Int.GetX(cell) >> ChunkShift, Position2Int.GetY(cell) >> ChunkShift), out _);
         if (fc == null) return 0f;
 
-        fc.SoilEnergy += stored;
+        AddSoil(fc, stored);
         return stored;
     }
 
@@ -274,6 +288,7 @@ public sealed class ChunkFoodIndex
             fc.BuiltEpoch        = cd.Epoch;
             fc.Source            = cd;
 
+            AddFood(fc, ScanFood(fc, cd) - fc.FoodEnergy);
             FoodCount += fc.Count - oldCount;
         }
 
@@ -284,7 +299,7 @@ public sealed class ChunkFoodIndex
     {
         fc.Infected[idx / Size] &= ~(1UL << (idx & ChunkMask));
         fc.Maturity[idx] = 0;
-        _meat.Remove(cell);
+        RemoveMeat(cell);
         _taboo.Remove(cell);
         _unreachable.Remove(cell);
         DropPayload(cell);
@@ -292,6 +307,7 @@ public sealed class ChunkFoodIndex
 
     private void ReleaseChunkState(long chunkKey, FoodChunk fc)
     {
+        _keysDirty = true;
         int baseX = Position2Int.GetX(chunkKey) << ChunkShift;
         int baseZ = Position2Int.GetY(chunkKey) << ChunkShift;
 
@@ -510,8 +526,8 @@ public sealed class ChunkFoodIndex
         ref readonly var r = ref SimulationRules.Frame;
         if (!_meat.TryGetValue(cell, out float left))
         {
-            left        = r.CorpseFallbackEnergy;
-            _meat[cell] = left;
+            left = r.CorpseFallbackEnergy;
+            SetMeat(cell, left);
         }
         int  lz        = idx / Size;
         ulong bit      = 1UL << (idx & ChunkMask);
@@ -523,7 +539,7 @@ public sealed class ChunkFoodIndex
 
         if (bite.Stays)
         {
-            _meat[cell]     = bite.Remaining;
+            SetMeat(cell, bite.Remaining);
             fc.Infected[lz] &= ~bit;
             return true;
         }
@@ -545,6 +561,7 @@ public sealed class ChunkFoodIndex
         int lx = idx & ChunkMask;
         infected = (fc.Infected[lz] & (1UL << lx)) != 0UL;
 
+        double energy = TryFoodKind(cd, idx, out FoodKind kind) && kind != FoodKind.Meat ? NutritionOf(fc, idx, kind) : 0.0;
         if (!cd.RemoveObject(idx)) return false;
         _map.Commands?.TouchCell(cell);
 
@@ -554,8 +571,9 @@ public sealed class ChunkFoodIndex
         fc.Count--;
         fc.BuiltFoodRevision = cd.FoodRevision;
         fc.Depletion = math.min(1f, fc.Depletion + SimulationRules.Frame.PastureDepletionPerEat);
+        AddFood(fc, -energy);
 
-        _meat.Remove(cell);
+        RemoveMeat(cell);
         _taboo.Remove(cell);
         _unreachable.Remove(cell);
         if (!infected) DropPayload(cell);
@@ -573,7 +591,7 @@ public sealed class ChunkFoodIndex
         if (cd.Occupancy[idx] != 0) return false;
 
         float h = cd.HeightRaw[idx];
-        if (h <= SimulationRules.Frame.WaterLevel) return false;
+        if (MapGenerator.AboveWater(_map.Ravine, h, cellZ * MapGenerator.scale, SimulationRules.Frame.WaterLevel) <= 0f) return false;
 
         ObjectInfo food = FoodByKind(kind);
         if (food == null) return false;
@@ -589,6 +607,7 @@ public sealed class ChunkFoodIndex
         fc.Maturity[idx] = 0;
         fc.Count++;
         fc.BuiltFoodRevision = cd.FoodRevision;
+        if (kind != FoodKind.Meat) AddFood(fc, NutritionOf(fc, idx, kind));
 
         FoodCount++;
         return true;
@@ -656,7 +675,7 @@ public sealed class ChunkFoodIndex
             if (fc == null || !AddAt(fc, cd, x, z, FoodKind.Meat)) continue;
 
             long cell = Position2Int.Pack(x, z);
-            _meat[cell] = energy;
+            SetMeat(cell, energy);
             if (tabooColony != 0) _taboo[cell] = tabooColony;
             if (hasPayload && payload.Codons != null && payload.Count > 0)
             {
@@ -686,9 +705,15 @@ public sealed class ChunkFoodIndex
         if (_map == null || dt <= 0f) return;
         ref readonly var r = ref SimulationRules.Frame;
 
-        EnsureKeyBuffer(_chunks.Count);
-        int n = 0;
-        foreach (var kv in _chunks) _pruneKeys[n++] = kv.Key;
+        if (_keysDirty)
+        {
+            _keysDirty = false;
+            if (_ecologyKeys.Length < _chunks.Count) _ecologyKeys = new long[math.ceilpow2(_chunks.Count)];
+            int count = 0;
+            foreach (var kv in _chunks) _ecologyKeys[count++] = kv.Key;
+            _ecologyKeyCount = count;
+        }
+        int n = _ecologyKeyCount;
 
         float growth   = r.FoodGrowthRate;
         float seed     = r.FoodSeedFraction;
@@ -700,7 +725,7 @@ public sealed class ChunkFoodIndex
 
         for (int k = 0; k < n; k++)
         {
-            long key = _pruneKeys[k];
+            long key = _ecologyKeys[k];
             var fc = Resolve(key, out ChunkData cd);
             if (fc == null) continue;
 
@@ -718,7 +743,7 @@ public sealed class ChunkFoodIndex
             {
                 float wilted = WiltPlants(fc, cd, key, wiltP, in r);
                 float stored = wilted * r.SoilReturnFraction;
-                fc.SoilEnergy += stored;
+                AddSoil(fc, stored);
                 soilStored    += stored;
                 wiltedEnergy  += wilted - stored;
             }
@@ -728,7 +753,7 @@ public sealed class ChunkFoodIndex
             {
                 recovered = math.min(math.min(recovery, fc.Depletion), fc.SoilEnergy / r.SoilPerDepletion);
                 float used = math.min(fc.SoilEnergy, recovered * r.SoilPerDepletion);
-                fc.SoilEnergy -= used;
+                AddSoil(fc, -used);
                 soilReleased  += used;
             }
             fc.Depletion = math.max(0f, fc.Depletion - recovered);
@@ -758,6 +783,21 @@ public sealed class ChunkFoodIndex
         spoiledEnergy = TickMeat(dt, in r, ref soilStored);
         ExpireClaims(now, r.LargeFoodWindow);
         ExpireUnreachable(now);
+    }
+
+    public bool TryGetSoil(long chunkKey, out float fertility, out float depletion, out float soilEnergy)
+    {
+        if (_chunks.TryGetValue(chunkKey, out FoodChunk fc) && fc.Fertility >= 0f)
+        {
+            fertility  = fc.Fertility;
+            depletion  = fc.Depletion;
+            soilEnergy = fc.SoilEnergy;
+            return true;
+        }
+        fertility  = 0f;
+        depletion  = 0f;
+        soilEnergy = 0f;
+        return false;
     }
 
     public float NestScarcity(float2 position, int radiusChunks)
@@ -865,10 +905,18 @@ public sealed class ChunkFoodIndex
                 else if (food.FoodKind == FoodKind.Toxic) gained += grown * perStep * r.ToxicNutritionMul;
             }
         }
+        AddFood(fc, gained);
         return gained;
     }
 
     public void SumEnergy(out float foodEnergy, out float corpseEnergy, out float soilEnergy)
+    {
+        foodEnergy   = (float)math.max(_foodTotal, 0.0);
+        corpseEnergy = (float)math.max(_meatTotal, 0.0);
+        soilEnergy   = (float)math.max(_soilTotal, 0.0);
+    }
+
+    public void SumEnergyScan(out float foodEnergy, out float corpseEnergy, out float soilEnergy)
     {
         foodEnergy   = 0f;
         corpseEnergy = 0f;
@@ -902,6 +950,56 @@ public sealed class ChunkFoodIndex
         foreach (var kv in _meat) corpseEnergy += kv.Value;
     }
 
+    private void SetMeat(long cell, float value)
+    {
+        _meatTotal += (double)value - (_meat.TryGetValue(cell, out float old) ? old : 0f);
+        _meat[cell] = value;
+    }
+
+    private void RemoveMeat(long cell)
+    {
+        if (_meat.TryRemove(cell, out float old)) _meatTotal -= old;
+    }
+
+    private void AddFood(FoodChunk fc, double delta)
+    {
+        fc.FoodEnergy += delta;
+        _foodTotal    += delta;
+    }
+
+    private void AddSoil(FoodChunk fc, float delta)
+    {
+        fc.SoilEnergy += delta;
+        _soilTotal    += delta;
+    }
+
+    private bool TryFoodKind(ChunkData cd, int idx, out FoodKind kind)
+    {
+        kind = default;
+        if (!cd.TryGetObject(idx, out ObjectInstInfo info)) return false;
+        ObjectInfo food = FoodInfoOf(info.PrefabID);
+        if (food == null) return false;
+        kind = food.FoodKind;
+        return true;
+    }
+
+    private double ScanFood(FoodChunk fc, ChunkData cd)
+    {
+        double sum = 0.0;
+        for (int lz = 0; lz < Size; lz++)
+        {
+            ulong row = fc.Rows[lz];
+            while (row != 0UL)
+            {
+                int lx = math.tzcnt(row);
+                row &= row - 1UL;
+                int idx = lz * Size + lx;
+                if (TryFoodKind(cd, idx, out FoodKind kind) && kind != FoodKind.Meat) sum += NutritionOf(fc, idx, kind);
+            }
+        }
+        return sum;
+    }
+
     private float TickMeat(float dt, in SimulationRules.RulesFrame r, ref float soilStored)
     {
         if (_meat.Count == 0) return 0f;
@@ -922,13 +1020,13 @@ public sealed class ChunkFoodIndex
             e *= keep;
             if (e >= min)
             {
-                _meat[cell] = e;
+                SetMeat(cell, e);
                 spoiled += before - e - SpoilToSoil(cell, before - e, ref soilStored);
                 continue;
             }
 
             spoiled += before - SpoilToSoil(cell, before, ref soilStored);
-            _meat.Remove(cell);
+            RemoveMeat(cell);
             RemoveSpoiledCorpse(cell);
         }
         return spoiled;

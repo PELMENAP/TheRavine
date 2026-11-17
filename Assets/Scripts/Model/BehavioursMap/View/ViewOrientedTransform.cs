@@ -23,7 +23,7 @@ namespace TheRavine.ViewControl
             {
                 if (mode == value) return;
                 mode = value;
-                if (isActiveAndEnabled) OnViewChanged(ViewOrientation.Facing, ViewOrientation.Rotation);
+                if (isActiveAndEnabled) OnViewChanged(ViewOrientation.Rotation);
             }
         }
 
@@ -39,7 +39,7 @@ namespace TheRavine.ViewControl
 
         private void OnDisable() => ViewOrientation.Unregister(this);
 
-        public void OnViewChanged(ViewFacing facing, Quaternion rotation) =>
+        public void OnViewChanged(Quaternion rotation) =>
             transform.rotation = mode == ViewOrientMode.Full ? rotation : ViewOrientation.YawRotation;
     }
 }

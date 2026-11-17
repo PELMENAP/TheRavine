@@ -11,13 +11,13 @@ public class LegRenderer
 
     private Mesh mesh;
     private MeshFilter meshFilter;
-    private Vector3[] vertices;
+    private MeshRenderer meshRenderer;
     private int[] triangles;
-    private int baseVertexCount;
-    private int resolution;
     private int maxLegs;
     private float boundsExtent;
 
+    private int baseSamples;
+    private int baseRing;
     private int renderSamples;
     private int renderRing;
     private int verticesPerLeg;
@@ -25,33 +25,52 @@ public class LegRenderer
 
     private int activeLegs = -1;
     private int uploadedVertices;
+    private bool shown = true;
+
+    public int MaxVertices { get; private set; }
+    public int Samples => renderSamples;
+    public int Ring => renderRing;
 
     public void Initialize(Mimic mimic)
     {
-        baseVertexCount = mimic.verticeCount;
-        resolution = mimic.legResolution;
+        int ring = mimic.verticeCount;
+        int resolution = mimic.legResolution;
         maxLegs = mimic.maxLegs;
 
         float quality = Mathf.Clamp01(mimic.MeshQuality);
-        renderSamples = math.clamp((int)math.round(resolution * quality), 3, math.max(resolution, 3));
-        renderRing = math.clamp((int)math.round(baseVertexCount * quality), 3, math.max(baseVertexCount, 3));
-        verticesPerLeg = (renderSamples - 1) * renderRing + 1;
-        trianglesPerLeg = (renderSamples - 2) * renderRing * 6 + (renderRing - 1) * 3;
+        baseSamples = math.clamp((int)math.round(resolution * quality), 3, math.max(resolution, 3));
+        baseRing = math.clamp((int)math.round(ring * quality), 3, math.max(ring, 3));
 
-        vertices = new Vector3[verticesPerLeg * maxLegs];
+        MaxVertices = ((baseSamples - 1) * baseRing + 1) * maxLegs;
         boundsExtent = mimic.maxLegDistance + mimic.newLegRadius + mimic.legMaxHeight + mimic.legWidth;
 
         mesh = new Mesh { name = "ProceduralLegs" };
         mesh.MarkDynamic();
 
         meshFilter = mimic.GetComponent<MeshFilter>();
-        var renderer = mimic.GetComponent<MeshRenderer>();
+        meshRenderer = mimic.GetComponent<MeshRenderer>();
 
         meshFilter.sharedMesh = mesh;
-        renderer.sharedMaterial = mimic.legMaterial;
+        meshRenderer.sharedMaterial = mimic.legMaterial;
 
         activeLegs = -1;
         uploadedVertices = 0;
+
+        renderSamples = 0;
+        renderRing = 0;
+        SetDetail(1f);
+    }
+
+    public void SetDetail(float scale)
+    {
+        int samples = math.clamp((int)math.round(baseSamples * scale), 3, math.max(baseSamples, 3));
+        int ring = math.clamp((int)math.round(baseRing * scale), 3, math.max(baseRing, 3));
+        if (samples == renderSamples && ring == renderRing) return;
+
+        renderSamples = samples;
+        renderRing = ring;
+        verticesPerLeg = (renderSamples - 1) * renderRing + 1;
+        trianglesPerLeg = (renderSamples - 2) * renderRing * 6 + (renderRing - 1) * 3;
 
         var key = (maxLegs, renderSamples, renderRing);
         if (!TriangleCache.TryGetValue(key, out triangles))
@@ -59,6 +78,20 @@ public class LegRenderer
             triangles = PrecomputeTriangles();
             TriangleCache[key] = triangles;
         }
+
+        activeLegs = -1;
+    }
+
+    public void SetShown(bool visible)
+    {
+        if (shown == visible) return;
+        shown = visible;
+        if (meshRenderer != null) meshRenderer.enabled = visible;
+    }
+
+    public void ApplyShown()
+    {
+        if (meshRenderer != null) meshRenderer.enabled = shown;
     }
 
     public void Dispose()
@@ -68,7 +101,7 @@ public class LegRenderer
 
         mesh = null;
         meshFilter = null;
-        vertices = null;
+        meshRenderer = null;
         triangles = null;
     }
 
@@ -110,76 +143,37 @@ public class LegRenderer
         return triangles;
     }
 
-    public void UpdateMesh(Mimic mimic)
+    public void Upload(LegStore store, int vertexCount, int legs)
     {
-        bool structural = false;
+        if (mesh == null) return;
 
-        int vIdx = 0;
-        int legs = 0;
-        float legWidth = mimic.legWidth;
-        int last = resolution - 1;
+        var vertices = store.VertexView;
+        var normals = store.NormalView;
 
-        math.sincos(2f * math.PI / renderRing, out float sinTheta, out float cosTheta);
-        float oneMinusCos = 1f - cosTheta;
-
-        Vector3 mimicPosition = mimic.transform.position;
-        var all = mimic.Pool.GetAll();
-
-        for (int l = 0; l < all.Count; l++)
-        {
-            var leg = all[l];
-            if (leg.state == LegState.Disabled) continue;
-            legs++;
-
-            Vector3[] samples = leg.sampleBuffer;
-            for (int k = 0; k < renderSamples - 1; k++)
-            {
-                Vector3 p1 = samples[k * last / (renderSamples - 1)];
-                Vector3 p2 = samples[(k + 1) * last / (renderSamples - 1)];
-                Vector3 dir = (p2 - p1).normalized;
-                if (dir.sqrMagnitude < 0.001f) dir = Vector3.up;
-
-                Vector3 perp = Vector3.Cross(dir, Vector3.up).normalized * (legWidth * 0.5f);
-                if (perp.sqrMagnitude < 0.001f) perp = Vector3.right * (legWidth * 0.5f);
-
-                for (int j = 0; j < renderRing; j++)
-                {
-                    vertices[vIdx++] = p1 + perp - mimicPosition;
-                    Vector3 cross = Vector3.Cross(dir, perp);
-                    float dot = Vector3.Dot(dir, perp);
-                    perp = perp * cosTheta + cross * sinTheta + dir * (dot * oneMinusCos);
-                }
-            }
-            vertices[vIdx++] = samples[last] - mimicPosition;
-        }
-
-        if (legs != activeLegs)
-        {
-            activeLegs = legs;
-            structural = true;
-        }
+        bool structural = legs != activeLegs;
+        activeLegs = legs;
 
         if (!structural)
         {
-            mesh.SetVertices(vertices, 0, vIdx, VertexFlags);
-            mesh.RecalculateNormals();
+            mesh.SetVertices(vertices, 0, vertexCount, VertexFlags);
+            mesh.SetNormals(normals, 0, vertexCount, VertexFlags);
             return;
         }
 
         int indexCount = legs * trianglesPerLeg;
-        if (vIdx >= uploadedVertices)
+        if (vertexCount >= uploadedVertices)
         {
-            mesh.SetVertices(vertices, 0, vIdx, VertexFlags);
+            mesh.SetVertices(vertices, 0, vertexCount, VertexFlags);
             mesh.SetIndices(triangles, 0, indexCount, MeshTopology.Triangles, 0, false);
         }
         else
         {
             mesh.SetIndices(triangles, 0, indexCount, MeshTopology.Triangles, 0, false);
-            mesh.SetVertices(vertices, 0, vIdx, VertexFlags);
+            mesh.SetVertices(vertices, 0, vertexCount, VertexFlags);
         }
-        uploadedVertices = vIdx;
+        mesh.SetNormals(normals, 0, vertexCount, VertexFlags);
+        uploadedVertices = vertexCount;
 
         mesh.bounds = legs > 0 ? new Bounds(Vector3.zero, Vector3.one * (2f * boundsExtent)) : default;
-        mesh.RecalculateNormals();
     }
 }

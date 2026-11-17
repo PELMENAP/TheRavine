@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Mathematics;
 using TheRavine.Generator;
 
 [RequireComponent(typeof(IVelocitySource))]
@@ -34,7 +35,7 @@ public class Mimic : MonoBehaviour
     public int minimumAnchoredParts;
     public int maxLegs;
 
-    public LegPool Pool { get; private set; }
+    public LegStore Legs { get; private set; }
     public MapGenerator MapGenerator { get; private set; }
 
     private LegPlanner planner;
@@ -47,6 +48,31 @@ public class Mimic : MonoBehaviour
     [SerializeField, Range(0.1f, 1f)] private float meshQuality = 1f;
 
     public float MeshQuality => meshQuality;
+
+    [Header("LOD")]
+    [SerializeField] private float lodNearDistance = 40f;
+    [SerializeField] private float lodFarDistance = 90f;
+    [SerializeField] private float lodCullDistance = 200f;
+    [SerializeField, Range(0.1f, 1f)] private float lodMidQuality = 0.5f;
+    [SerializeField, Range(0.1f, 1f)] private float lodFarQuality = 0.3f;
+
+    private const int   CullLevel   = 3;
+    private const float MaxAccumDt  = 0.25f;
+    private const float LodHysteresis = 0.9f;
+
+    private static readonly int[] LodInterval = { 1, 2, 3, 8 };
+
+    private static int    _nextId;
+    private static Camera _lodCamera;
+    private static int    _lodCameraFrame = -1;
+    private static bool   _lodCameraValid;
+    private static Vector3 _lodCameraPosition;
+
+    private float _jobDt;
+    private bool  _emitMesh;
+    private int   _id;
+    private int   _lod;
+    private float _accumDt;
     private IVelocitySource velocitySource;
 
     public Vector3 Velocity { get; private set; }
@@ -59,6 +85,7 @@ public class Mimic : MonoBehaviour
 
     private void Awake()
     {
+        _id = _nextId++;
         velocitySource = velocitySourceBehaviour as IVelocitySource ?? GetComponent<IVelocitySource>();
     }
 
@@ -84,16 +111,67 @@ public class Mimic : MonoBehaviour
     {
         _structuresReady = true;
 
-        Pool = new LegPool(maxLegs, legResolution);
         planner = new LegPlanner();
         animator = new LegAnimator();
         legRenderer = new LegRenderer();
         legRenderer.Initialize(this);
+        Legs = new LegStore(maxLegs, legRenderer.MaxVertices);
     }
 
     private void OnDestroy()
     {
+        Queued = false;
         legRenderer?.Dispose();
+        Legs?.Dispose();
+    }
+
+    private void OnEnable() => legRenderer?.ApplyShown();
+
+    private void OnDisable() => Queued = false;
+
+    internal bool Queued { get; private set; }
+
+    internal MimicWork BuildWork()
+        => Legs.MakeWork(transform.position, _jobDt, legWidth * 0.5f, _emitMesh ? legRenderer.Samples : 0, legRenderer.Ring, legResolution);
+
+    internal void ApplyWork(in MimicWork work)
+    {
+        Queued = false;
+        if (_emitMesh) legRenderer.Upload(Legs, work.VertexCount, work.ActiveLegs);
+    }
+
+    private static bool TryGetCameraPosition(out Vector3 position)
+    {
+        int frame = Time.frameCount;
+        if (frame != _lodCameraFrame)
+        {
+            _lodCameraFrame = frame;
+            if (_lodCamera == null) _lodCamera = Camera.main;
+            _lodCameraValid = _lodCamera != null;
+            if (_lodCameraValid) _lodCameraPosition = _lodCamera.transform.position;
+        }
+        position = _lodCameraPosition;
+        return _lodCameraValid;
+    }
+
+    private float LodThreshold(int level) => level == 0 ? lodNearDistance : level == 1 ? lodFarDistance : lodCullDistance;
+
+    private void UpdateLod()
+    {
+        int level = 0;
+        if (TryGetCameraPosition(out Vector3 cameraPosition))
+        {
+            float distance = math.distance((float3)cameraPosition, (float3)transform.position);
+            level = _lod;
+            while (level < CullLevel && distance >= LodThreshold(level)) level++;
+            while (level > 0 && distance < LodThreshold(level - 1) * LodHysteresis) level--;
+        }
+
+        if (level == _lod) return;
+        _lod = level;
+
+        legRenderer.SetShown(level < CullLevel);
+        legRenderer.SetDetail(level == 0 ? 1f : level == 1 ? lodMidQuality : lodFarQuality);
     }
 
     private void Update()
@@ -101,14 +179,27 @@ public class Mimic : MonoBehaviour
         if (!_structuresReady) InitializeStructures();
         if (MapGenerator == null || velocitySource == null) return;
 
+        _accumDt += Time.deltaTime;
+        if ((Time.frameCount + _id) % LodInterval[_lod] != 0) return;
+
+        float dt = math.min(_accumDt, MaxAccumDt);
+        _accumDt = 0f;
+
+        UpdateLod();
+
         Velocity = velocitySource.Velocity;
         if (Velocity.sqrMagnitude > 0.01f)
             lastForward = Velocity.normalized;
 
         legPlacerOrigin = transform.position + lastForward * newLegRadius;
 
-        planner.Update(this, Time.deltaTime);
-        animator.Update(this, Time.deltaTime);
-        legRenderer.UpdateMesh(this);
+        planner.Update(this, dt);
+        animator.UpdateStates(this, dt);
+
+        _jobDt = dt;
+        _emitMesh = _lod < CullLevel;
+        if (Queued) return;
+        Queued = true;
+        MimicLegSystem.Enqueue(this);
     }
 }

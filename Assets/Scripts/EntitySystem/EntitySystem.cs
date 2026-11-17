@@ -32,6 +32,11 @@ namespace TheRavine.EntityControl
         [SerializeField] private BoidsBehaviour boidsBehaviour;
         private Dictionary<int, EntityInfo> mobInfo;
         public EntityInfo GetMobInfo(int id) => mobInfo[id];
+        public bool TryGetMobInfo(int id, out EntityInfo info)
+        {
+            info = null;
+            return mobInfo != null && mobInfo.TryGetValue(id, out info);
+        }
         private RavineLogger logger;
         private System.IDisposable playersSubscription;
         private ChunkFoodIndex foodIndex;
@@ -84,11 +89,11 @@ namespace TheRavine.EntityControl
             if (!ServiceLocator.Services.TryGet(out ActionMapController actions)) return;
 
             var player = ServiceLocator.Players.GetAllPlayers()[0];
+            ServiceLocator.Services.TryGet(out TheRavine.Base.GlobalSettingsController settings);
             cameraInput = new CameraInputController(
                 actions.GetActionFrom("Gameplay", "Camera Scroll"),
-                actions.GetActionFrom("Gameplay", "Camera Rotate Right"),
-                actions.GetActionFrom("Gameplay", "Camera Rotate Left"),
-                player.GetEntityComponent<EventBusComponent>().EventBus);
+                player.GetEntityComponent<EventBusComponent>().EventBus,
+                settings);
             ServiceLocator.Register(cameraInput);
             cameraInput.Start();
         }

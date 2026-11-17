@@ -30,6 +30,7 @@ The file is `simulation_log_<yyyyMMdd_HHmmss>.csv` in `Application.persistentDat
 | `deaths_toxic` | both | creatures | Δ `DeathsByCause[Toxic]` |
 | `deaths_age` | both | creatures | Δ `DeathsByCause[Age]` |
 | `deaths_burn` | both | creatures | Δ `DeathsByCause[Burn]` |
+| `deaths_wind` | both | creatures | Δ `DeathsByCause[Wind]` |
 | `mean_lifespan_s` | both | s | Δ `LifespanSum` / Δ `Died` over the window; 0 when nobody died |
 | `<action>_started` | both | commands | Δ `ActionsStarted[action]`, counted in `EntityCommandRunner.Start` |
 | `<action>_completed` | both | commands | Δ `ActionsCompleted[action]`, counted in `EntityCommandRunner.Finish` with status `Completed` |
@@ -57,7 +58,7 @@ The file is `simulation_log_<yyyyMMdd_HHmmss>.csv` in `Application.persistentDat
 | `avg_fitness` | world | fitness | `EvolutionService.AvgFitness` |
 | `avg_entropy` | world | nats | `EvolutionService.AvgEntropy`, mean coordinator policy entropy |
 
-`<action>` is every `EntityAction` name in enum order, in snake case: `idle`, `wander`, `remember_point`, `go_to_point`, `attack`, `flee`, `eat`, `reproduce`, `speech`, `mimic`, `rest`, `threaten`, `share_food`, `approach_food`, `return_nest`, `pick_up`, `store_food`, `follow`, `move_nest`, `groom`. That makes 60 columns. The full header has 97 columns.
+`<action>` is every `EntityAction` name in enum order, in snake case: `idle`, `move_to`, `attack`, `eat`, `reproduce`, `signal`, `rest`, `give`, `take`, `put`, `move_nest`. That makes 33 columns for started, completed and failed; the interrupted columns follow in the same order. The header is built by `SimulationLog.BuildHeader`.
 
 ## Success metrics
 
@@ -128,10 +129,31 @@ Every `Failed` status of `AttackCommand` records exactly one of the four reasons
 
 | Column | Scope | Unit | Meaning and computation |
 |---|---|---|---|
-| `<action>_started_brain`, `<action>_started_instinct`, `<action>_started_plan` | both | commands | Δ `ColonyStats.ActionsStartedBySource[action × CommandSource.Count + source]`, counted in `EntityCommandRunner.Start`. Actions, in column order: `flee`, `attack`, `approach_food`, `wander`, `return_nest`, `eat`, `rest`. The block of 21 columns follows `attack_fail_lurk_timeout` |
+| `<action>_started_brain`, `<action>_started_instinct`, `<action>_started_plan` | both | commands | Δ `ColonyStats.ActionsStartedBySource[action × CommandSource.Count + source]`, counted in `EntityCommandRunner.Start`. Actions, in column order: `move_to`, `attack`, `eat`, `rest`, `signal`, `take`, `put`. The block of 21 columns follows `attack_fail_lurk_timeout` |
 
 The three columns of an action sum to `<action>_started` in the same window.
 
 | Metric | Formula |
 |---|---|
 | attack failure reason share | `attack_fail_<reason> / attack_failed` |
+
+## Columns added in revision 5
+
+The seven columns are appended at the end of every row, after the last `plan_<name>_completed` column, so no earlier column changes position. They are written in both scopes.
+
+| Column | Scope | Unit | Meaning and computation |
+|---|---|---|---|
+| `eat_fail_no_food` | both | commands | Δ `ColonyStats.EatFails[NoFood]`: `EatCommand.OnBegin` found no food within `EatRange` and no nest food to eat |
+| `eat_fail_claim` | both | commands | Δ `EatFails[Claim]`: `TryClaim` refused the cached cell (another creature took it first) and the one retry on the next nearest food within `EatRange` also found nothing or was refused. Finishes with the neutral failure reward (0), not `FailureReward` |
+| `eat_fail_empty` | both | commands | Δ `EatFails[Empty]`: the portion to eat was zero (`StartEating`) |
+| `eat_fail_large_no_partner` | both | commands | Δ `EatFails[LargeNoPartner]`: large food was claimed, no partner arrived within `LargeFoodWindow` |
+| `take_fail_no_food` | both | commands | Δ `TakeFails[NoFood]`: `TakeCommand` found no cached food within `EatRange` |
+| `take_fail_kind` | both | commands | Δ `TakeFails[Kind]`: the food kind cannot be taken (large food, or the cell has no kind any more), or the take was aimed at an object (`DirectionKind.Object`) that this command does not serve |
+| `take_fail_claim` | both | commands | Δ `TakeFails[Claim]`: `TryClaim` refused the cell (neutral failure reward), or the claim gave zero energy (`FailureReward`) |
+
+Every `Failed` status of `EatCommand` records exactly one of its four reasons and every `Failed` status of `TakeCommand` exactly one of its three, so per window `Σ eat_fail_<reason> = eat_failed` and `Σ take_fail_<reason> = take_failed`, up to commands that straddle a window boundary.
+
+| Metric | Formula |
+|---|---|
+| eat failure reason share | `eat_fail_<reason> / eat_failed` |
+| take failure reason share | `take_fail_<reason> / take_failed` |

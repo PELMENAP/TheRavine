@@ -27,15 +27,6 @@ public sealed partial class SimulationRules
     [SerializeField] private float preWinterWorkerStimulus = 0.4f;
     [SerializeField] private float winterGrowthMul = 0.3f;
     [SerializeField] private float winterDrainMul = 1.3f;
-    [SerializeField] private float fireIgnitionChance = 0.002f;
-    [SerializeField] private float fireSeasonBias = 0.5f;
-    [SerializeField] private float fireSpreadChance = 0.3f;
-    [SerializeField] private float fireWindBias = 0.8f;
-    [SerializeField] private float fireBurnSeconds = 6f;
-    [SerializeField] private float fireDamagePerSecond = 8f;
-    [SerializeField] private float fireStepInterval = 0.5f;
-    [SerializeField] private int fireMaxBurning = 512;
-    [SerializeField] private float[] foodFlammability = { 1f, 0.6f, 0.8f, 0f };
     [SerializeField] private float[] foodToxicity     = { 0f, 1f, 0f, 0f };
     [SerializeField] private float[] foodSize         = { 0f, 0f, 1f, 0f };
     [SerializeField] private float[] foodMeat         = { 0f, 0f, 0f, 1f };
@@ -48,9 +39,9 @@ public sealed partial class SimulationRules
     [SerializeField] private float restNightMul = 2f;
     [SerializeField] private float nightRestBias = 1.5f;
     [SerializeField] private float digestRateRest = 4f;
-    [SerializeField] private float digestRateActive = 1.5f;
+    [SerializeField] private float digestRateActive = 2.5f;
     [SerializeField] private float digestEffRest = 0.95f;
-    [SerializeField] private float digestEffActive = 0.7f;
+    [SerializeField] private float digestEffActive = 0.85f;
     [SerializeField] private float stomachCapacityFraction = 0.6f;
     [SerializeField] private float wellFedGainPerSecond = 0.05f;
     [SerializeField] private float wellFedDecayPerSecond = 0.02f;
@@ -92,8 +83,8 @@ public sealed partial class SimulationRules
     [SerializeField] private float[] biomeToxicity  = { 0.02f, 0.08f, 0.25f, 0.04f };
     [SerializeField] private float hungerForageBias = 2f;
     [SerializeField] private float hungerRestDrop = 3f;
-    [SerializeField] private float dietPlantFloor = 0.4f;
-    [SerializeField] private float dietMeatFloor = 0.4f;
+    [SerializeField] private float dietPlantFloor = 0.7f;
+    [SerializeField] private float dietMeatFloor = 0.7f;
     [SerializeField] private float winterWiltTau = 120f;
     [SerializeField] private float unreachableFoodSeconds = 120f;
 
@@ -120,14 +111,6 @@ public sealed partial class SimulationRules
     public float PreWinterWorkerStimulus => preWinterWorkerStimulus;
     public float WinterGrowthMul => winterGrowthMul;
     public float WinterDrainMul => winterDrainMul;
-    public float FireIgnitionChance => fireIgnitionChance;
-    public float FireSeasonBias => fireSeasonBias;
-    public float FireSpreadChance => fireSpreadChance;
-    public float FireWindBias => fireWindBias;
-    public float FireBurnSeconds => fireBurnSeconds;
-    public float FireDamagePerSecond => fireDamagePerSecond;
-    public float FireStepInterval => fireStepInterval;
-    public int FireMaxBurning => fireMaxBurning;
     public float WaterSpeedMul => waterSpeedMul;
     public float WaterDrainMul => waterDrainMul;
     public float HibernateEnterEnergy => hibernateEnterEnergy;

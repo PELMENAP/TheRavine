@@ -17,7 +17,12 @@ Shader "The Ravine/Water/WaterShader"
         SSRMaxDistance("SSR Max Camera Distance", Float) = 120
         SSRBlur("SSR Blur", Range(0, 2)) = 0.5
         SSRRayFade("SSR Ray Fade Distance", Float) = 80
+        [IntRange] SSRStepCount("SSR Steps", Range(1, 32)) = 16
+        [IntRange] SSRRefineCount("SSR Refine Steps", Range(0, 8)) = 4
+        SSRMinWeight("SSR Min Reflection Weight", Range(0, 0.5)) = 0.01
+        [Toggle(_WATER_SSR_DISABLED)] SSRDisabled("Disable SSR", Float) = 0
         ReflectionDistortion("Reflection Distortion", Range(0, 1)) = 0.3
+        ReflectionGain("Reflection Gain", Range(0, 8)) = 1
 
         NightFloor("Night Floor", Range(0, 0.1)) = 0.01
         BodyBoost("Body Boost", Range(0, 1)) = 0.5
@@ -32,6 +37,8 @@ Shader "The Ravine/Water/WaterShader"
         CausticDepth("Caustic Depth", Float) = 6
 
         ShoreSoftness("Shore Softness", Float) = 0.4
+
+        DebugView("Debug View (0 off, 1 reflection, 2 fresnel, 3 scene color, 4 depth fade, 5 normal)", Range(0, 5)) = 0
         
         [Normal][NoScaleOffset] NormalMap("Normal Map", 2D) = "bump" {}
         UV1("UV1 (TilingXY, OffsetZW)", Vector) = (1, 1, 0, 0)
@@ -51,8 +58,11 @@ Shader "The Ravine/Water/WaterShader"
         FoamShoreStrength("Shore Foam", Range(0,10)) = 3
         FoamCrestStrength("Crest Foam", Range(0,10)) = 2
         FoamRippleStrength("Ripple Foam", Range(0,10)) = 1
+        FoamIntensity("Foam Intensity", Range(0, 1)) = 1
+        FoamThreshold("Foam Threshold", Range(0, 0.95)) = 0.1
         
         RippleRefraction("Ripple Refraction", Float) = 0.1
+        RippleShading("Ripple Shading", Range(0, 1)) = 0.35
         [NoScaleOffset] RippleTex("Ripple Height Map", 2D) = "white" {}
         
         Displacement("Displacement", Float) = 0.3
@@ -83,13 +93,15 @@ Shader "The Ravine/Water/WaterShader"
             #pragma vertex vert
             #pragma fragment frag
             
-            #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX
+            #pragma multi_compile_local_fragment _ _WATER_SSR_DISABLED
+
+            #define SSR_MAX_STEPS 32
+            #define SSR_MAX_REFINE 8
             
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
-            #include "Assets/Shaders/Include/CurvedWorld.hlsl"
             
             TEXTURE2D(NormalMap);       SAMPLER(samplerNormalMap);
             TEXTURE2D(FoamTexture);     SAMPLER(samplerFoamTexture);
@@ -122,7 +134,10 @@ Shader "The Ravine/Water/WaterShader"
                 float FoamShoreStrength;
                 float FoamCrestStrength;
                 float FoamRippleStrength;
+                float FoamIntensity;
+                float FoamThreshold;
                 float RippleRefraction;
+                float RippleShading;
                 float4 RippleTex_TexelSize;
                 float Displacement;
                 float Scale;
@@ -138,7 +153,11 @@ Shader "The Ravine/Water/WaterShader"
                 float SSRMaxDistance;
                 float SSRBlur;
                 float SSRRayFade;
+                float SSRStepCount;
+                float SSRRefineCount;
+                float SSRMinWeight;
                 float ReflectionDistortion;
+                float ReflectionGain;
                 float NightFloor;
                 float BodyBoost;
                 float4 Absorption;
@@ -148,6 +167,7 @@ Shader "The Ravine/Water/WaterShader"
                 float CausticSpeed;
                 float CausticDepth;
                 float ShoreSoftness;
+                float DebugView;
             CBUFFER_END
             
             // ----------------------------------------------------------------
@@ -263,12 +283,17 @@ Shader "The Ravine/Water/WaterShader"
                 return clip.w > 0.0 && all(uv > 0.0) && all(uv < 1.0);
             }
 
+            float SSRDepthDiff(float2 uv, float eyeDepth)
+            {
+                float rawDepth = SAMPLE_TEXTURE2D_LOD(_CameraDepthTexture, sampler_CameraDepthTexture, uv, 0).r;
+                return eyeDepth - LinearEyeDepth(rawDepth, _ZBufferParams);
+            }
+
             float SSRDiff(float3 posWS, out float2 uv)
             {
                 float eyeDepth;
                 if (!SSRProject(posWS, uv, eyeDepth)) return -1e4;
-                float rawDepth = SAMPLE_TEXTURE2D_LOD(_CameraDepthTexture, sampler_CameraDepthTexture, uv, 0).r;
-                return eyeDepth - LinearEyeDepth(rawDepth, _ZBufferParams);
+                return SSRDepthDiff(uv, eyeDepth);
             }
 
             float3 SSRColor(float2 uv)
@@ -280,9 +305,11 @@ Shader "The Ravine/Water/WaterShader"
             {
                 float stepLen = SSRStep;
                 float t = stepLen * jitter;
+                int stepCount = clamp((int)(SSRStepCount + 0.5), 1, SSR_MAX_STEPS);
+                int refineCount = clamp((int)(SSRRefineCount + 0.5), 0, SSR_MAX_REFINE);
 
                 [loop]
-                for (int i = 0; i < 16; i++)
+                for (int i = 0; i < stepCount; i++)
                 {
                     float prevT = t;
                     t += stepLen;
@@ -292,13 +319,13 @@ Shader "The Ravine/Water/WaterShader"
                     float eyeDepth;
                     if (!SSRProject(posWS + dirWS * t, uv, eyeDepth)) break;
 
-                    float diff = SSRDiff(posWS + dirWS * t, uv);
+                    float diff = SSRDepthDiff(uv, eyeDepth);
                     if (diff > 0.0 && diff < SSRThickness + stepLen)
                     {
                         float lo = prevT;
                         float hi = t;
-                        [unroll]
-                        for (int j = 0; j < 4; j++)
+                        [loop]
+                        for (int j = 0; j < refineCount; j++)
                         {
                             float mid = 0.5 * (lo + hi);
                             float2 midUV;
@@ -309,11 +336,16 @@ Shader "The Ravine/Water/WaterShader"
                         SSRDiff(posWS + dirWS * hi, hitUV);
                         float2 e = saturate(min(hitUV, 1.0 - hitUV) * 8.0);
                         float radius = SSRBlur * 0.01 * saturate(hi / 40.0);
-                        float3 color = SSRColor(hitUV) * 0.4
-                            + (SSRColor(hitUV + float2(radius, 0.0))
-                            + SSRColor(hitUV - float2(radius, 0.0))
-                            + SSRColor(hitUV + float2(0.0, radius))
-                            + SSRColor(hitUV - float2(0.0, radius))) * 0.15;
+                        float3 color = SSRColor(hitUV);
+                        [branch]
+                        if (radius > 1e-5)
+                        {
+                            color = color * 0.4
+                                + (SSRColor(hitUV + float2(radius, 0.0))
+                                + SSRColor(hitUV - float2(radius, 0.0))
+                                + SSRColor(hitUV + float2(0.0, radius))
+                                + SSRColor(hitUV - float2(0.0, radius))) * 0.15;
+                        }
                         float rayFade = 1.0 - saturate(hi / max(SSRRayFade, 1e-3));
                         return float4(color, e.x * e.y * rayFade);
                     }
@@ -407,8 +439,8 @@ Shader "The Ravine/Water/WaterShader"
 
                                 
                 // === TRANSFORM ===
-                float3 bentPositionWS = BendWorld(TransformObjectToWorld(displacedPos));
-                float4 positionCS = TransformWorldToHClip(bentPositionWS);
+                float3 displacedPositionWS = TransformObjectToWorld(displacedPos);
+                float4 positionCS = TransformWorldToHClip(displacedPositionWS);
                 float4 ndc = positionCS * 0.5;
                 float4 positionNDC;
                 positionNDC.xy = float2(ndc.x, ndc.y * _ProjectionParams.x) + ndc.w;
@@ -417,13 +449,13 @@ Shader "The Ravine/Water/WaterShader"
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
                 
                 output.positionCS = positionCS;
-                output.positionWS = bentPositionWS;
+                output.positionWS = displacedPositionWS;
                 output.normalWS = normalInputs.normalWS;
                 output.tangentWS = float4(normalInputs.tangentWS, input.tangentOS.w);
                 output.uv0 = worldPos.xz * RippleWindow.z;
                 output.positionNDC = positionNDC;
                 output.screenPos = ComputeScreenPos(positionCS);
-                output.viewDirWS = GetWorldSpaceNormalizeViewDir(bentPositionWS);
+                output.viewDirWS = GetWorldSpaceNormalizeViewDir(displacedPositionWS);
                 output.fogFactor = ComputeFogFactor(positionCS.z);
                 output.shadowCoord = TransformWorldToShadowCoord(output.positionWS);
                 
@@ -527,8 +559,9 @@ Shader "The Ravine/Water/WaterShader"
                 // === NORMALS TO WORLD SPACE ===
                 float3x3 tangentToWorld = CreateTangentToWorld(
                     input.normalWS, input.tangentWS.xyz, input.tangentWS.w);
-                float3 normalWS = TransformTangentToWorld(finalNormalTS, tangentToWorld);
-                normalWS = NormalizeNormalPerPixel(normalWS);
+                float3 baseNormalWS = NormalizeNormalPerPixel(TransformTangentToWorld(normalTS, tangentToWorld));
+                float3 rippleNormalWS = NormalizeNormalPerPixel(TransformTangentToWorld(finalNormalTS, tangentToWorld));
+                float3 normalWS = NormalizeNormalPerPixel(lerp(baseNormalWS, rippleNormalWS, RippleShading));
                 
                 // === FOAM ===
                 // Foam texture
@@ -562,6 +595,7 @@ Shader "The Ravine/Water/WaterShader"
                     rippleFoam * FoamRippleStrength;
 
                 foamMask = saturate(foamMask);
+                foamMask = saturate((foamMask - FoamThreshold) / max(1.0 - FoamThreshold, 1e-3)) * FoamIntensity;
                 
                 // FoamTex * foamMask + 0.2 * foamMask (базовая пена)
                 float4 foam = foamTex * foamMask + 0.2 * foamMask;
@@ -580,19 +614,21 @@ Shader "The Ravine/Water/WaterShader"
                 float3 reflectDir = reflect(-viewDirWS, reflectNormal);
                 reflectDir.y = abs(reflectDir.y);
 
-                half3 reflColor = GlossyEnvironmentReflection(reflectDir, input.positionWS, 1.0 - Smoothness, 1.0);
+                half3 reflColor = GlossyEnvironmentReflection(reflectDir, input.positionWS, 1.0 - Smoothness, 1.0) * ReflectionGain;
 
                 float NdotV = saturate(dot(reflectNormal, viewDirWS));
                 float fresnel = (FresnelF0 + (1.0 - FresnelF0) * pow(1.0 - NdotV, 5.0)) * ReflectionStrength * isFrontFace;
 
+                #if !defined(_WATER_SSR_DISABLED)
                 float ssrCamDist = length(input.positionWS - _WorldSpaceCameraPos);
                 float ssrFade = saturate((SSRMaxDistance - ssrCamDist) / max(SSRMaxDistance * 0.3, 1e-3)) * SSRIntensity;
-                if (fresnel > 0.01 && ssrFade > 0.0)
+                if (fresnel > SSRMinWeight && ssrFade > 0.0)
                 {
                     float jitter = frac(52.9829189 * frac(dot(input.positionCS.xy, float2(0.06711056, 0.00583715))));
                     float4 ssr = SSRTrace(input.positionWS, reflectDir, jitter);
                     reflColor = lerp(reflColor, ssr.rgb, ssr.a * ssrFade);
                 }
+                #endif
 
                 // === РУЧНОЕ ОСВЕЩЕНИЕ (вместо UniversalFragmentPBR) ===
 
@@ -641,9 +677,6 @@ Shader "The Ravine/Water/WaterShader"
                 // 5. Сборка финального цвета
                 float3 finalColor = ambient + mainDiffuse + mainSpecular + addDiffuse + addSpecular + scattering;
 
-                float ao = SampleAmbientOcclusion(screenUV);
-                finalColor *= ao;
-
                 // 6. Дистанс фейд
                 float dist = length(input.positionWS - _WorldSpaceCameraPos);
                 float distFade = saturate((dist - 50.0) / 100.0);
@@ -669,6 +702,17 @@ Shader "The Ravine/Water/WaterShader"
                 float waterAlpha = lerp(0.2, 0.9, depthFade);
                 float alpha = lerp(0.5, waterAlpha, isFrontFace);
                 alpha = lerp(alpha, 1.0, fresnel);
+
+                if (DebugView > 0.5)
+                {
+                    int view = (int)(DebugView + 0.5);
+                    float3 debugColor = view == 1 ? (float3)reflColor
+                        : view == 2 ? fresnel.xxx
+                        : view == 3 ? sceneColor
+                        : view == 4 ? depthFade.xxx
+                        : normalWS * 0.5 + 0.5;
+                    return float4(debugColor, 1.0);
+                }
 
                 float shoreEdge = smoothstep(0.0, max(ShoreSoftness, 1e-3), foamDepth);
                 float shoreMask = lerp(1.0, max(shoreEdge, foamMask), isFrontFace);

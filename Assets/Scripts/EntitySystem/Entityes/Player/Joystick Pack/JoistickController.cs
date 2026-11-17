@@ -15,7 +15,7 @@ public class JoistickController : IController
     public Vector2 GetMove() => joystick.Movement;
     public Vector2 GetAim()
     {
-        float2 world = ViewOrientation.Facing.ToWorld(joystick.Aim);
+        float2 world = ViewOrientation.ToWorld(joystick.Aim);
         return new Vector2(world.x, world.y);
     }
     public void EnableView()

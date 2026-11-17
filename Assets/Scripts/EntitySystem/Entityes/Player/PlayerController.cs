@@ -22,6 +22,7 @@ namespace TheRavine.EntityControl
     public class PlayerController : NetworkBehaviour
     {
         private const float SpawnHeightY = 200f;
+        private const float JumpMaxChargeTime = 1f;
 
         [SerializeField] private int placeObjectDelay;
         [SerializeField] private float reachTolerance = 2f;
@@ -30,8 +31,13 @@ namespace TheRavine.EntityControl
         [SerializeField] private float movementMinimum, sendInterval = 0.1f, maxStepHeight = 0.6f;
         [SerializeField] private float intentTimeout = 0.6f;
         [SerializeField] private float editRate = 20f, editBurst = 16f, refuseLogInterval = 5f;
+        [SerializeField] private float moveRateMargin = 2f, moveBurst = 8f;
+        [SerializeField] private float craftRate = 5f, craftBurst = 5f;
         [SerializeField] private float craftTimeTolerance = 0.9f;
-        [SerializeField] private InputActionReference Movement, Raise, RightClick, LeftClick, Jump;
+        [SerializeField] private float skillCommandRate = 4f, skillCommandBurst = 6f;
+        [SerializeField] private float skillMoveXpDistance = 10f;
+        [SerializeField] private float jumpChargeSlack = 0.2f;
+        [SerializeField] private InputActionReference Movement, Raise, RightClick, Jump;
         [SerializeField] private Joystick joystick;
         [SerializeField] private Transform crosshair;
         [SerializeField] private PlayerAnimator playerAnimator;
@@ -52,6 +58,7 @@ namespace TheRavine.EntityControl
         [SerializeField] private float staminaIndicatorXOffset = 2f, staminaIndicatorYOffset = 2f;
 
         [SerializeField] private float characterHalfHeight = 1f;
+        [SerializeField] private float bodyRadius = 0.4f;
         private TerrainPhysicsResolver terrainResolver;
 
         private bool IsOnTerrain => terrainResolver.IsGrounded;
@@ -83,7 +90,7 @@ namespace TheRavine.EntityControl
         private AEntity playerEntity;
 
         private readonly DoubleTapDetector forwardTap = new();
-        private readonly JumpChargeDetector jumpCharge = new(maxChargeTime: 1f);
+        private readonly JumpChargeDetector jumpCharge = new(maxChargeTime: JumpMaxChargeTime);
         private PlayerStamina stamina;
         private NetworkVariable<float> staminaRatio = new(1f);
         private IDisposable unsubscribe;
@@ -91,17 +98,26 @@ namespace TheRavine.EntityControl
         private readonly CompositeDisposable settingsSubscriptions = new();
 
         private Vector2 intentDirection;
+        private Vector2 brakeDirection;
         private float intentSpeed;
         private bool intentSprint;
         private double intentTime;
         private float broadcastTimer;
         private Vector3 lastBroadcastPosition;
         private Vector3 lastBroadcastVelocity;
-        private double editReadyTime;
+        private RateBudget editBudget;
+        private RateBudget moveBudget;
+        private RateBudget craftBudget;
+        private RateBudget skillBudget;
+        private PlayerSkillGraph skillGraph;
+        private float moveXpDistance;
+        private double lastJumpTime;
         private double refuseLogTime;
         private int refusedEdits;
         private float vitalsTimer;
         private double craftReadyTime;
+        private MortalityComponent mortalityComponent;
+        private EnergyComponent energyComponent;
         private float mirroredHealth = float.NaN, mirroredEnergy = float.NaN;
         private StatsComponent stats;
         private readonly PlayerItemLedger ledger = new();
@@ -112,6 +128,7 @@ namespace TheRavine.EntityControl
         {
             playerEntity = entity;
             this.logger = logger;
+            lastJumpTime = Time.timeAsDouble;
 
             playerAnimator.SetUpAsync().Forget();
             GetPlayerComponents();
@@ -122,7 +139,6 @@ namespace TheRavine.EntityControl
                 staminaRegenFraction, staminaRecoveryDelay, energyPerStamina);
 
             Raise.action.performed += AimRaise;
-            LeftClick.action.performed += AimPlace;
 
             RightClick.action.started += OnActionStarted;
             RightClick.action.canceled += OnActionCanceled;
@@ -135,7 +151,7 @@ namespace TheRavine.EntityControl
         public void SetUp()
         {
             map = ServiceLocator.GetService<MapGenerator>();
-            terrainResolver = new TerrainPhysicsResolver(map, playerRigidbody, characterHalfHeight, maxStepHeight);
+            terrainResolver = new TerrainPhysicsResolver(map, playerRigidbody, characterHalfHeight, maxStepHeight, bodyRadius);
             WorldRegistry worldRegistry = ServiceLocator.GetService<WorldRegistry>();
 
             if (IsOwner)
@@ -151,6 +167,7 @@ namespace TheRavine.EntityControl
                 unsubscribe = ServiceLocator.GetService<AutosaveCoordinator>().SubscribeBeforeSave(() =>
                 {
                     SavePlayerPosition(worldRegistry);
+                    if (IsServer) (playerEntity as PlayerEntity)?.CaptureSkills(worldRegistry);
                 });
             }
             DelayedInit(worldRegistry).Forget();
@@ -215,9 +232,14 @@ namespace TheRavine.EntityControl
             playerRigidbody = GetComponent<Rigidbody>();
 
             entityEventBus = playerEntity.GetEntityComponent<EventBusComponent>().EventBus;
+            entityEventBus.Subscribe<ViewClick>(OnViewClick);
             movementComponent = playerEntity.GetEntityComponent<MovementComponent>();
             aimComponent = playerEntity.GetEntityComponent<AimComponent>();
             stats = playerEntity.GetEntityComponent<StatsComponent>();
+            skillGraph = playerEntity.GetEntityComponent<PlayerSkillGraph>();
+            skillGraph?.BindCommandSender(RequestSkillCommand);
+            mortalityComponent = playerEntity.GetEntityComponent<MortalityComponent>();
+            energyComponent = playerEntity.GetEntityComponent<EnergyComponent>();
             InitStatePattern(playerEntity.GetEntityComponent<StatePatternComponent>());
         }
 
@@ -296,6 +318,17 @@ namespace TheRavine.EntityControl
             terrainResolver?.Resolve();
             StepServerMovement(Time.fixedDeltaTime);
             PublishVitals(Time.fixedDeltaTime);
+            PublishSkills();
+        }
+
+        private void PublishSkills()
+        {
+            if (skillGraph == null || IsOwner) return;
+
+            if (skillGraph.TryTakeTopology(out SkillTopologyPacket topology))
+                SkillTopologyClientRpc(topology, OwnerTarget());
+            if (skillGraph.TryTakeLevels(SimulationClock.Time, out SkillLevelsPacket levels))
+                SkillLevelsClientRpc(levels, OwnerTarget());
         }
 
         private void PublishVitals(float dt)
@@ -320,8 +353,19 @@ namespace TheRavine.EntityControl
             player.ApplyServerVitals(health, energyValue);
         }
 
+        private void StampTrample()
+        {
+            if (playerRigidbody == null || !ServiceLocator.Services.TryGet(out GrassTrampleField field) || field.IsDisposed) return;
+
+            Vector3 position = transform.position;
+            Vector3 velocity = playerRigidbody.linearVelocity;
+            float maxEnergy = stats != null && !stats.IsDisposed ? stats.MaxEnergy : 0f;
+            field.StampCreature(new float2(position.x, position.z), new float2(velocity.x, velocity.z), maxEnergy, Time.deltaTime);
+        }
+
         private void Update()
         {
+            StampTrample();
             if (IsSpawned && !IsServer) MirrorVitals();
             if (!IsOwner) return;
 
@@ -354,7 +398,7 @@ namespace TheRavine.EntityControl
             if (isAimMode || !IsOwner || inputSuspended) return;
 
             Vector2 screenInput = currentController.GetMove();
-            float2 world = ViewOrientation.Facing.ToWorld(screenInput);
+            float2 world = ViewOrientation.ToWorld(screenInput);
             movementDirection = new Vector2(world.x, world.y);
             float movementMagnitude = movementDirection.magnitude;
 
@@ -389,6 +433,7 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void MoveServerRpc(Vector2 direction, float inputSpeed, bool sprint)
         {
+            if (!TryConsumeMove()) return;
             if (!math.isfinite(direction.x) || !math.isfinite(direction.y) || !math.isfinite(inputSpeed)) return;
 
             float directionSq = direction.sqrMagnitude;
@@ -413,14 +458,24 @@ namespace TheRavine.EntityControl
 
             Vector2 direction = intentDirection;
             float inputSpeed = intentSpeed;
+            if (direction.sqrMagnitude > 0f) brakeDirection = Vector2.zero;
 
             ref readonly var rules = ref SimulationRules.Frame;
             float ground = map.SampleHeightBilinear(playerRigidbody.position.x, playerRigidbody.position.z);
+            float aboveWater = MapGenerator.AboveWater(map.Ravine, ground, playerRigidbody.position.z, rules.WaterLevel);
             bool sprinting = stamina.Step(dt, intentSprint, direction.sqrMagnitude > 0f,
-                MapGenerator.WaterModifier(ground, rules.WaterLevel, rules.WaterDrainMul));
+                MapGenerator.WaterModifier(aboveWater, rules.WaterDrainMul));
 
-            float targetSpeed = inputSpeed * movementComponent.BaseSpeed * (sprinting ? sprintMultiplier : 1f)
-                * MapGenerator.WaterModifier(ground, rules.WaterLevel, rules.WaterSpeedMul);
+            float skillSpeed = 1f, skillRun = 1f;
+            if (skillGraph != null)
+            {
+                ref readonly var skillMods = ref skillGraph.Modifiers;
+                skillSpeed = skillMods.Speed;
+                skillRun = skillMods.RunSpeed;
+            }
+
+            float targetSpeed = inputSpeed * movementComponent.BaseSpeed * skillSpeed * (sprinting ? sprintMultiplier * skillRun : 1f)
+                * MapGenerator.WaterModifier(aboveWater, rules.WaterSpeedMul);
             float terrainModifier = 1f;
 
             if (IsOnTerrain)
@@ -445,10 +500,25 @@ namespace TheRavine.EntityControl
                 CurrentSpeed = math.abs(delta) <= step ? targetSpeed : CurrentSpeed + math.sign(delta) * step;
             }
 
+            if (skillGraph != null && direction.sqrMagnitude > 0f)
+            {
+                moveXpDistance += CurrentSpeed * dt;
+                float unit = math.max(skillMoveXpDistance, 0.01f);
+                if (moveXpDistance >= unit)
+                {
+                    moveXpDistance = math.min(moveXpDistance - unit, unit);
+                    skillGraph.Award(EntityAction.MoveTo, SimulationClock.Time);
+                }
+            }
+
+            Vector2 travel = direction.sqrMagnitude > 0f ? direction : brakeDirection;
+            float velocityX = travel.x * CurrentSpeed;
+            float velocityZ = travel.y * CurrentSpeed;
+            terrainResolver.ClipVelocity(ref velocityX, ref velocityZ);
             playerRigidbody.linearVelocity = new Vector3(
-                direction.x * CurrentSpeed,
+                velocityX,
                 playerRigidbody.linearVelocity.y,
-                direction.y * CurrentSpeed
+                velocityZ
             );
 
             broadcastTimer += dt;
@@ -473,13 +543,12 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void StopMoveServerRpc()
         {
+            if (!TryConsumeMove()) return;
+
+            if (intentDirection.sqrMagnitude > 0f) brakeDirection = intentDirection;
             intentDirection = Vector2.zero;
             intentSpeed = 0f;
             intentSprint = false;
-            CurrentSpeed = 0f;
-            if (playerRigidbody == null) return;
-
-            playerRigidbody.linearVelocity = new Vector3(0f, playerRigidbody.linearVelocity.y, 0f);
         }
 
         [ClientRpc]
@@ -513,12 +582,17 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void JumpServerRpc(float charge)
         {
+            if (!TryConsumeMove()) return;
             if (!math.isfinite(charge)) return;
             if (terrainResolver == null || !terrainResolver.IsGrounded) return;
             terrainResolver.ConsumeGround();
 
+            double now = Time.timeAsDouble;
+            charge = JumpChargeLimit.Clamp(charge, now - lastJumpTime, JumpMaxChargeTime, jumpChargeSlack);
+            lastJumpTime = now;
+
             Vector3 vel = playerRigidbody.linearVelocity;
-            vel.y = baseJumpForce * jumpForceCurve.Evaluate(math.saturate(charge));
+            vel.y = baseJumpForce * jumpForceCurve.Evaluate(charge);
             playerRigidbody.linearVelocity = vel;
 
             BroadcastState();
@@ -624,6 +698,8 @@ namespace TheRavine.EntityControl
             }
         }
 
+        private void OnViewClick(AEntity sender, ViewClick e) => AimPlace(new InputAction.CallbackContext());
+
         private void AimPlace(InputAction.CallbackContext obj)
         {
             if (inputSuspended) return;
@@ -663,17 +739,17 @@ namespace TheRavine.EntityControl
         [ServerRpc]
         private void SpeakServerRpc(ushort tokens, byte len)
         {
-            if (playerEntity == null || playerEntity.IsDisposed || !playerEntity.IsActive.Value) return;
-
-            MortalityComponent mortality = playerEntity.GetEntityComponent<MortalityComponent>();
-            if (mortality != null && mortality.IsDead) return;
-
             if (len == 0 || len > SimulationRules.SpeechLen) return;
             if ((tokens >> (len * SimulationRules.SpeechTokenBits)) != 0) return;
-
-            EnergyComponent energy = playerEntity.GetEntityComponent<EnergyComponent>();
-            if (energy == null || !ServiceLocator.Services.TryGet(out SpeechBus bus)) return;
             if (!SpeechBus.TryStartCooldown(ref speechReadyTime)) return;
+
+            if (playerEntity == null || playerEntity.IsDisposed || !playerEntity.IsActive.Value) return;
+
+            MortalityComponent mortality = mortalityComponent ??= playerEntity.GetEntityComponent<MortalityComponent>();
+            if (mortality != null && mortality.IsDead) return;
+
+            EnergyComponent energy = energyComponent ??= playerEntity.GetEntityComponent<EnergyComponent>();
+            if (energy == null || !ServiceLocator.Services.TryGet(out SpeechBus bus)) return;
             if (!energy.TryConsume(SimulationRules.Active.SpeechEnergyCost)) return;
 
             Vector3 p = transform.position;
@@ -687,6 +763,7 @@ namespace TheRavine.EntityControl
                 Time     = SimulationClock.Time,
             };
             bus.Emit(in utterance);
+            skillGraph?.Award(EntityAction.Signal, SimulationClock.Time);
         }
 
         public bool RequestPickUp(long position, byte level = 0)
@@ -703,12 +780,55 @@ namespace TheRavine.EntityControl
             return true;
         }
 
+        public bool RequestSkillCommand(SkillCommandOp op, int u, int v)
+        {
+            if (!IsSpawned || !IsOwner || (uint)op >= (uint)SkillCommandOp.Count || (uint)u > byte.MaxValue || (uint)v > byte.MaxValue) return false;
+            if (IsServer) return TryConsumeSkill() && ApplySkillCommand((byte)op, (byte)u, (byte)v);
+
+            SkillGraphCommandServerRpc((byte)op, (byte)u, (byte)v);
+            return true;
+        }
+
+        [ServerRpc]
+        private void SkillGraphCommandServerRpc(byte op, byte u, byte v)
+        {
+            if (!TryConsumeSkill()) return;
+            ApplySkillCommand(op, u, v);
+        }
+
+        private bool ApplySkillCommand(byte op, byte u, byte v)
+        {
+            if (op >= (byte)SkillCommandOp.Count || skillGraph == null) return false;
+            if (playerEntity == null || playerEntity.IsDisposed || !playerEntity.IsActive.Value) return false;
+
+            MortalityComponent mortality = mortalityComponent ??= playerEntity.GetEntityComponent<MortalityComponent>();
+            if (mortality != null && mortality.IsDead) return false;
+
+            return skillGraph.TryExecute((SkillCommandOp)op, u, v, SimulationClock.Time);
+        }
+
+        [ClientRpc]
+        private void SkillTopologyClientRpc(SkillTopologyPacket packet, ClientRpcParams rpcParams = default)
+        {
+            if (!IsOwner || IsServer || skillGraph == null) return;
+            skillGraph.ApplyTopology(in packet);
+        }
+
+        [ClientRpc]
+        private void SkillLevelsClientRpc(SkillLevelsPacket packet, ClientRpcParams rpcParams = default)
+        {
+            if (!IsOwner || IsServer || skillGraph == null) return;
+            if (skillGraph.IsStale(in packet)) RequestSkillCommand(SkillCommandOp.Sync, 0, 0);
+            else skillGraph.ApplyLevels(in packet, SimulationClock.Time);
+        }
+
         private bool UsesLedger => IsServer && !IsOwner;
 
         [ServerRpc]
         private void CraftRequestServerRpc(int recipeIndex)
         {
-            if (!UsesLedger || !CraftModel.Shared.TryGet(recipeIndex, out CraftRecipe recipe)) return;
+            if (!UsesLedger || !TryConsumeCraft()) return;
+            if (!CraftModel.Shared.TryGet(recipeIndex, out CraftRecipe recipe)) return;
 
             double now = Time.unscaledTimeAsDouble;
             if (now < craftReadyTime) return;
@@ -731,6 +851,7 @@ namespace TheRavine.EntityControl
                     result = WorldEdits.TryPlace(generator, objects, position, level, objectId, out placement);
 
                 if (result == WorldEditResult.Ok && UsesLedger) ledger.TryDebit(item, 1);
+                if (result == WorldEditResult.Ok) skillGraph?.Award(EntityAction.Put, SimulationClock.Time);
                 if (result != WorldEditResult.Ok) Refuse(position, EditRefusal.Place, result, placement);
             }
             PlaceResultClientRpc(position, level, objectId, (byte)result, (byte)placement, OwnerTarget());
@@ -748,6 +869,7 @@ namespace TheRavine.EntityControl
                 WorldEditResult result = WorldEdits.TryPickUp(generator, objects, position, level, out prefabId, out amount);
                 ok = result == WorldEditResult.Ok;
                 if (ok && UsesLedger) ledger.Credit(objects.GetInfo(prefabId)?.InventoryItemInfo, amount);
+                if (ok) skillGraph?.Award(EntityAction.Take, SimulationClock.Time);
                 if (!ok) Refuse(position, EditRefusal.PickUp, result);
             }
             PickUpResultClientRpc(position, level, prefabId, amount, ok, OwnerTarget());
@@ -784,7 +906,7 @@ namespace TheRavine.EntityControl
             if (playerEntity == null || playerEntity.IsDisposed || !playerEntity.IsActive.Value)
                 return Refuse(position, EditRefusal.Inactive);
 
-            MortalityComponent mortality = playerEntity.GetEntityComponent<MortalityComponent>();
+            MortalityComponent mortality = mortalityComponent ??= playerEntity.GetEntityComponent<MortalityComponent>();
             if (mortality != null && mortality.IsDead)
                 return Refuse(position, EditRefusal.Dead);
 
@@ -800,13 +922,30 @@ namespace TheRavine.EntityControl
             return true;
         }
 
-        private bool TryConsumeEdit()
+        private bool TryConsumeEdit() => editBudget.TryConsume(Time.unscaledTimeAsDouble, editRate, editBurst);
+
+        private bool TryConsumeMove()
         {
-            double now = Time.unscaledTimeAsDouble;
-            double ready = math.max(editReadyTime, now);
-            if (ready - now > editBurst / editRate) return false;
-            editReadyTime = ready + 1.0 / editRate;
-            return true;
+            if (moveBudget.TryConsume(Time.unscaledTimeAsDouble, moveRateMargin / math.max(sendInterval, 0.001f), moveBurst)) return true;
+
+            refusedEdits++;
+            return false;
+        }
+
+        private bool TryConsumeSkill()
+        {
+            if (skillBudget.TryConsume(Time.unscaledTimeAsDouble, skillCommandRate, skillCommandBurst)) return true;
+
+            refusedEdits++;
+            return false;
+        }
+
+        private bool TryConsumeCraft()
+        {
+            if (craftBudget.TryConsume(Time.unscaledTimeAsDouble, craftRate, craftBurst)) return true;
+
+            refusedEdits++;
+            return false;
         }
 
         private float LatencyCompensation()
@@ -814,7 +953,8 @@ namespace TheRavine.EntityControl
             if (movementComponent == null || playerRigidbody == null) return 0f;
 
             Vector3 velocity = playerRigidbody.linearVelocity;
-            float maxSpeed = math.max(0f, movementComponent.BaseSpeed * sprintMultiplier);
+            float skillScale = skillGraph != null ? skillGraph.Modifiers.Speed * math.max(skillGraph.Modifiers.RunSpeed, 1f) : 1f;
+            float maxSpeed = math.max(0f, movementComponent.BaseSpeed * sprintMultiplier * skillScale);
             float speedXZ = math.clamp(math.length(new float2(velocity.x, velocity.z)), 0f, maxSpeed);
             if (speedXZ <= 0f) return 0f;
 
@@ -855,8 +995,9 @@ namespace TheRavine.EntityControl
 
         public void OnDisable()
         {
+            skillGraph?.BindCommandSender(null);
             Raise.action.performed -= AimRaise;
-            LeftClick.action.performed -= AimPlace;
+            entityEventBus?.Unsubscribe<ViewClick>(OnViewClick);
 
             RightClick.action.started -= OnActionStarted;
             RightClick.action.canceled -= OnActionCanceled;

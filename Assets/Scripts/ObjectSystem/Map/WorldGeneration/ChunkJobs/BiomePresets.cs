@@ -12,58 +12,12 @@ using TheRavine.Generator;
 
 public static class BiomePresets
 {   
-    private static NoiseLayerSettings DuneDetail => new()
-    {
-        noiseType         = FastNoiseLite.NoiseType.OpenSimplex2,
-        fractalType       = FastNoiseLite.FractalType.FBm,
-        frequency         = 0.04f,
-        octaves           = 2,
-        lacunarity        = 2.5f,
-        gain              = 0.4f,
-        weightedStrength  = 0f
-    };
-
-    private static NoiseLayerSettings HillDetail => new()
-    {
-        noiseType         = FastNoiseLite.NoiseType.OpenSimplex2,
-        fractalType       = FastNoiseLite.FractalType.FBm,
-        frequency         = 0.015f,
-        octaves           = 3,
-        lacunarity        = 2f,
-        gain              = 0.5f,
-        weightedStrength  = 0.2f
-    };
-
-    private static NoiseLayerSettings TundraDetail => new()
-    {
-        noiseType         = FastNoiseLite.NoiseType.Cellular,
-        fractalType       = FastNoiseLite.FractalType.FBm,
-        frequency         = 0.06f,
-        octaves           = 2,
-        lacunarity        = 2f,
-        gain              = 0.4f,
-        weightedStrength  = 0f
-    };
-
-    private static NoiseLayerSettings SwampDetail => new()
-    {
-        noiseType         = FastNoiseLite.NoiseType.OpenSimplex2,
-        fractalType       = FastNoiseLite.FractalType.FBm,
-        frequency         = 0.025f,
-        octaves           = 2,
-        lacunarity        = 2f,
-        gain              = 0.6f,
-        weightedStrength  = 0.3f
-    };
-
     private static RiverBlendSettings WideRiver => new()
     {
         riverMin          = 0.42f,
         riverMax          = 0.58f,
         influenceWidth    = 0.18f,
-        riverBedHeight    = 0.04f,
-        minTerrainHeight  = 0.15f,
-        domainWarpAmplitude = 30f
+        riverBedHeight    = 0.04f
     };
 
     private static RiverBlendSettings NarrowRiver => new()
@@ -71,9 +25,7 @@ public static class BiomePresets
         riverMin          = 0.47f,
         riverMax          = 0.53f,
         influenceWidth    = 0.08f,
-        riverBedHeight    = 0.06f,
-        minTerrainHeight  = 0.20f,
-        domainWarpAmplitude = 0f
+        riverBedHeight    = 0.06f
     };
 
     private static RiverBlendSettings WadiRiver => new()
@@ -81,9 +33,7 @@ public static class BiomePresets
         riverMin          = 0.48f,
         riverMax          = 0.52f,
         influenceWidth    = 0.05f,
-        riverBedHeight    = 0.02f,
-        minTerrainHeight  = 0.25f,
-        domainWarpAmplitude = 0f
+        riverBedHeight    = 0.02f
     };
 
     private static RiverBlendSettings SwampRiver => new()
@@ -91,9 +41,7 @@ public static class BiomePresets
         riverMin          = 0.38f,
         riverMax          = 0.62f,
         influenceWidth    = 0.22f,
-        riverBedHeight    = 0.08f,
-        minTerrainHeight  = 0.05f,
-        domainWarpAmplitude = 45f
+        riverBedHeight    = 0.08f
     };
 
     public static BiomeSettings Tundra => new()
@@ -105,9 +53,6 @@ public static class BiomePresets
         maxMoisture      = 1.00f,
         heightScale      = 0.50f,
         heightOffset     = 0.18f,
-        hasDetailLayer   = true,
-        detailNoise      = TundraDetail,
-        detailStrength   = 0.06f,
         hasRivers        = false,
         riverBlend       = default
     };
@@ -121,9 +66,6 @@ public static class BiomePresets
         maxMoisture      = 0.75f,
         heightScale      = 0.75f,
         heightOffset     = 0.08f,
-        hasDetailLayer   = true,
-        detailNoise      = HillDetail,
-        detailStrength   = 0.10f,
         hasRivers        = true,
         riverBlend       = NarrowRiver
     };
@@ -137,9 +79,6 @@ public static class BiomePresets
         maxMoisture      = 0.38f,
         heightScale      = 0.65f,
         heightOffset     = 0.10f,
-        hasDetailLayer   = false,
-        detailNoise      = default,
-        detailStrength   = 0f,
         hasRivers        = true,
         riverBlend       = NarrowRiver
     };
@@ -153,9 +92,6 @@ public static class BiomePresets
         maxMoisture      = 0.72f,
         heightScale      = 0.90f,
         heightOffset     = 0.06f,
-        hasDetailLayer   = true,
-        detailNoise      = HillDetail,
-        detailStrength   = 0.14f,
         hasRivers        = true,
         riverBlend       = WideRiver
     };
@@ -169,9 +105,6 @@ public static class BiomePresets
         maxMoisture      = 1.00f,
         heightScale      = 1.10f,
         heightOffset     = 0.04f,
-        hasDetailLayer   = true,
-        detailNoise      = HillDetail,
-        detailStrength   = 0.20f,
         hasRivers        = true,
         riverBlend       = WideRiver
     };
@@ -185,9 +118,6 @@ public static class BiomePresets
         maxMoisture      = 0.28f,
         heightScale      = 0.55f,
         heightOffset     = 0.12f,
-        hasDetailLayer   = true,
-        detailNoise      = DuneDetail,
-        detailStrength   = 0.18f,
         hasRivers        = true,
         riverBlend       = WadiRiver
     };
@@ -201,9 +131,6 @@ public static class BiomePresets
         maxMoisture      = 0.52f,
         heightScale      = 0.62f,
         heightOffset     = 0.09f,
-        hasDetailLayer   = false,
-        detailNoise      = default,
-        detailStrength   = 0f,
         hasRivers        = true,
         riverBlend       = NarrowRiver
     };
@@ -217,9 +144,6 @@ public static class BiomePresets
         maxMoisture      = 0.72f,
         heightScale      = 0.85f,
         heightOffset     = 0.07f,
-        hasDetailLayer   = true,
-        detailNoise      = HillDetail,
-        detailStrength   = 0.12f,
         hasRivers        = true,
         riverBlend       = WideRiver
     };
@@ -233,9 +157,6 @@ public static class BiomePresets
         maxMoisture      = 1.00f,
         heightScale      = 1.15f,
         heightOffset     = 0.05f,
-        hasDetailLayer   = true,
-        detailNoise      = HillDetail,
-        detailStrength   = 0.22f,
         hasRivers        = true,
         riverBlend       = WideRiver
     };
@@ -249,9 +170,6 @@ public static class BiomePresets
         maxMoisture      = 1.00f,
         heightScale      = 0.45f,
         heightOffset     = 0.05f,
-        hasDetailLayer   = true,
-        detailNoise      = SwampDetail,
-        detailStrength   = 0.08f,
         hasRivers        = true,
         riverBlend       = SwampRiver
     };

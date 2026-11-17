@@ -5,16 +5,15 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEditor;
 using TheRavine.ViewControl;
-using int2 = Unity.Mathematics.int2;
 
 public class TreeMeshBaker : EditorWindow
 {
     private const string BakeShaderName = "Hidden/TreeBillboardBake";
-    private const int BillboardSides = 4;
 
     private MtreeComponent _source;
     private TreeMeshCollection _targetCollection;
     private int _count = 4;
+    private int _sides = ViewOrientation.BakedSides;
     private string _savePath = "Assets/Trees/Baked";
     private float _billboardPitch = 20f;
     private int _cellResolution = 256;
@@ -29,6 +28,11 @@ public class TreeMeshBaker : EditorWindow
         _targetCollection = (TreeMeshCollection)EditorGUILayout.ObjectField("Collection", _targetCollection, typeof(TreeMeshCollection), false);
         DrawMaterialSettings();
         _count = Mathf.Max(1, EditorGUILayout.IntField("Variant Count", _count));
+        _sides = Mathf.Clamp(EditorGUILayout.IntField("Billboard Sides", _sides), 4, 32);
+        if (_sides != ViewOrientation.BakedSides)
+            EditorGUILayout.HelpBox(
+                $"Runtime picks the atlas column for ViewOrientation.BakedSides = {ViewOrientation.BakedSides}. Change that constant together with the sides, otherwise columns will not match the view.",
+                MessageType.Warning);
         _billboardPitch = EditorGUILayout.Slider("Billboard Pitch", _billboardPitch, 0f, 89f);
         _cellResolution = Mathf.ClosestPowerOfTwo(Mathf.Clamp(EditorGUILayout.IntField("Billboard Cell", _cellResolution), 32, 2048));
         _dilationPasses = Mathf.Clamp(EditorGUILayout.IntField("Dilation Passes", _dilationPasses), 0, 64);
@@ -70,7 +74,7 @@ public class TreeMeshBaker : EditorWindow
             originalSeeds[i] = _source.treeFunctionsAssets[i].seed;
 
         int lodCount = Mathf.Max(1, _source.LODs.Count);
-        int atlasWidth = _cellResolution * BillboardSides;
+        int atlasWidth = _cellResolution * _sides;
         int atlasHeight = _cellResolution * _count;
         var atlasAlbedo = new Color32[atlasWidth * atlasHeight];
         var atlasNormal = new Color32[atlasWidth * atlasHeight];
@@ -103,9 +107,10 @@ public class TreeMeshBaker : EditorWindow
                 Bounds bounds = lodMeshes[0].bounds;
                 Material[] materials = renderer.sharedMaterials;
 
-                for (int k = 0; k < BillboardSides; k++)
+                for (int k = 0; k < _sides; k++)
                 {
-                    RenderView(lodMeshes[0], materials, bounds, ((ViewFacing)k).Forward(), bakeMaterial,
+                    float yaw = k * 360f / _sides * Mathf.Deg2Rad;
+                    RenderView(lodMeshes[0], materials, bounds, new Vector2(Mathf.Sin(yaw), Mathf.Cos(yaw)), bakeMaterial,
                         out Color32[] albedo, out Color32[] normal);
                     Dilate(albedo, normal, _cellResolution, _dilationPasses);
                     Blit(albedo, atlasAlbedo, k * _cellResolution, i * _cellResolution, atlasWidth);
@@ -149,7 +154,7 @@ public class TreeMeshBaker : EditorWindow
                 albedoAtlas,
                 normalAtlas,
                 _billboardPitch,
-                BillboardSides);
+                _sides);
 
             _targetCollection.ApplyBillboardMaterial();
 
@@ -157,7 +162,7 @@ public class TreeMeshBaker : EditorWindow
             AssetDatabase.SaveAssets();
 
 
-            _targetCollection.SetBakeResult(variants, lodCount, albedoAtlas, normalAtlas, _billboardPitch, BillboardSides);
+            _targetCollection.SetBakeResult(variants, lodCount, albedoAtlas, normalAtlas, _billboardPitch, _sides);
             _targetCollection.ApplyBillboardMaterial();
             EditorUtility.SetDirty(_targetCollection);
             AssetDatabase.SaveAssets();
@@ -245,7 +250,7 @@ public class TreeMeshBaker : EditorWindow
             target.Add(indices[i] + offset);
     }
 
-    private void RenderView(Mesh mesh, Material[] materials, Bounds bounds, int2 forward, Material bakeMaterial,
+    private void RenderView(Mesh mesh, Material[] materials, Bounds bounds, Vector2 forward, Material bakeMaterial,
         out Color32[] albedo, out Color32[] normal)
     {
         float p = _billboardPitch * Mathf.Deg2Rad;

@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using System;
+using R3;
 using TMPro;
 
 using TheRavine.Extensions;
@@ -21,6 +22,7 @@ namespace TheRavine.Base
         [SerializeField] private ScriptEditorPresenter scriptEditor;
         [SerializeField] private RiveInputUI inputUI;
         private RiveRuntime interpreter;
+        private IDisposable _worldSubscription;
 
         public CommandManager CommandManager { get; private set; }
         private CommandContext _context;
@@ -59,6 +61,7 @@ namespace TheRavine.Base
         {
             this.logger = logger;
             this.actionMapController = actionMapController;
+            SkillGraphLauncher.Ensure();
             actionMapController.DisableAll();
             actionMapController.EnableUI();
             actionMapController.SwitchToGameplay();
@@ -70,12 +73,18 @@ namespace TheRavine.Base
                 new HelpCommand(),
                 new PrintCommand(),
                 new ClearCommand(),
+                new RotateCommand(),
+                new SkillGraphCommand(actionMapController)
+            );
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            CommandManager.Register(
                 new TeleportCommand(),
                 new SetValueCommand(),
-                new RotateCommand(),
                 new DebugCommand(),
                 new ShowServiceLocatorCommand()
             );
+#endif
 
             graphyManager.SetActive(false);
             _context = new CommandContext(outputWindow, CommandManager, null, graphyManager, scriptEditor, interpreter);
@@ -104,6 +113,15 @@ namespace TheRavine.Base
 
             ProcessInput("~clear");
             WaitForDependencies().Forget();
+            BindWorldLifetimeAsync().Forget();
+        }
+
+        private async UniTaskVoid BindWorldLifetimeAsync()
+        {
+            var registry = await ServiceLocator.WaitUntilServiceReady<WorldRegistry>();
+            if (this == null) return;
+
+            _worldSubscription = registry.CurrentWorldId.Subscribe(_ => interpreter.CancelAll());
         }
 
         private void RegisterInteractors()
@@ -233,6 +251,12 @@ namespace TheRavine.Base
         }
 
         public void Display(string message) => _context.Display(message);
+
+        private void OnDestroy()
+        {
+            _worldSubscription?.Dispose();
+            interpreter?.Dispose();
+        }
 
         private void OnDisable()
         {

@@ -18,6 +18,10 @@ public static class InstinctBits
     public const uint Troph  = 1u << 9;
     public const uint Recruit = 1u << 10;
     public const uint Nursery = 1u << 11;
+    public const uint Feeding = 1u << 12;
+    public const uint Threat  = 1u << 13;
+    public const uint Startle = 1u << 14;
+    public const uint Pack    = 1u << 15;
 
     public const byte NoReflex = byte.MaxValue;
 }
@@ -41,6 +45,7 @@ public struct InstinctInput
     public float PanicBias;
     public float FoodToxicity;
     public float Dt;
+    public float PackDistance;
     public byte  Colonial;
     public byte  Sick;
     public byte  HungryKin;
@@ -53,7 +58,9 @@ public struct InstinctInput
     public byte  HasThreat;
     public byte  Busy;
     public byte  RunningAction;
+    public byte  RunningDirection;
     public byte  RunningInstinct;
+    public byte  EatFailed;
     public byte  PlanActive;
     public byte  PlanKind;
 }
@@ -92,6 +99,7 @@ public struct InstinctState
 {
     public uint  Latches;
     public float NextHungerInterrupt;
+    public float NextStartle;
 }
 
 public struct InstinctOutput
@@ -99,8 +107,10 @@ public struct InstinctOutput
     public uint Mask;
     public uint Latches;
     public byte Reflex;
+    public byte Direction;
     public byte Interrupt;
     public byte NeedsDecision;
+    public float StartleStress;
 }
 
 public struct InstinctRules
@@ -119,6 +129,10 @@ public struct InstinctRules
     public float NurseryRate;
     public float TetherRate;
     public float NightHomeRate;
+    public float StartleStress;
+    public float StartleCooldown;
+    public float PackRadius;
+    public float PackRate;
 
     public static InstinctRules Capture()
     {
@@ -139,6 +153,10 @@ public struct InstinctRules
             NurseryRate        = r.NurseryRate,
             TetherRate         = r.TetherRate,
             NightHomeRate      = r.NightHomeRate,
+            StartleStress      = r.StartleStress,
+            StartleCooldown    = r.StartleCooldown,
+            PackRadius         = r.PackRadius,
+            PackRate           = r.PackRate,
         };
     }
 }
@@ -163,6 +181,7 @@ public struct InstinctJob : IJobFor
 
         bool wasHungry = (latches & InstinctBits.Hungry) != 0;
         bool wasPanic  = (latches & InstinctBits.Panic) != 0;
+        bool wasFeeding = (latches & InstinctBits.Feeding) != 0;
 
         float hungerOn  = g.HungerOn + x.HungerBias;
         float hungerOff = math.max(g.HungerOff + x.HungerBias, hungerOn);
@@ -183,6 +202,8 @@ public struct InstinctJob : IJobFor
         bool atNest     = x.AtNest != 0;
         bool nestFood   = atNest && x.NestFood != 0;
         bool hasThreat  = x.HasThreat != 0;
+        bool startle    = hasThreat && (state.Latches & InstinctBits.Threat) == 0 && x.Now >= state.NextStartle;
+        latches        |= hasThreat ? InstinctBits.Threat : 0u;
         bool young      = x.Age < R.JuvenileTime;
         bool juvenile   = young && x.ParentDistance >= 0f;
         bool grazing    = x.PlanActive != 0 && (x.PlanKind == (byte)PlanKind.Graze || x.PlanKind == (byte)PlanKind.Harvest
@@ -193,47 +214,55 @@ public struct InstinctJob : IJobFor
 
         uint mask   = 0u;
         byte reflex = InstinctBits.NoReflex;
+        byte dir    = NoDirection;
         int  prio   = 0;
 
         if (panic && hasThreat)
-            Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.Flee, 7, InstinctBits.Panic);
+            Pick(ref reflex, ref prio, ref mask, ref dir, Move, Escape, 7, InstinctBits.Panic);
         else if (x.Carrying >= math.min(R.CarryFull * g.CarryFull, 1f) && !atNest)
-            Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ReturnNest, 6, InstinctBits.Carry);
+            Pick(ref reflex, ref prio, ref mask, ref dir, Move, Nest, 6, InstinctBits.Carry);
         else if (x.Carrying > 0f && atNest)
-            Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.StoreFood, 6, InstinctBits.Carry);
+            Pick(ref reflex, ref prio, ref mask, ref dir, Put, NoDirection, 6, InstinctBits.Carry);
         else if (sick && atNest)
-            Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.Wander, 5, InstinctBits.Sick);
+            Pick(ref reflex, ref prio, ref mask, ref dir, Move, NoDirection, 5, InstinctBits.Sick);
         else if (panic && !wasPanic && !atNest && !sick && x.NestDistance >= 0f && rng.NextFloat() < g.PanicHome)
-            Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ReturnNest, 5, InstinctBits.Panic);
+            Pick(ref reflex, ref prio, ref mask, ref dir, Move, Nest, 5, InstinctBits.Panic);
         else if (x.Night != 0 && !atNest && !sick && !forage && x.NestDistance >= 0f
                  && Urge(ref rng, R.NightHomeRate * g.Home, x.Dt))
-            Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ReturnNest, 5, InstinctBits.Night);
+            Pick(ref reflex, ref prio, ref mask, ref dir, Move, Nest, 5, InstinctBits.Night);
         else if (x.Caste == (byte)global::Caste.Nurse && !juvenile && !sick && x.NestDistance > R.NurseLeash
                  && Urge(ref rng, R.NurseLeashRate * g.Home, x.Dt))
-            Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ReturnNest, 5, InstinctBits.Leash);
+            Pick(ref reflex, ref prio, ref mask, ref dir, Move, Nest, 5, InstinctBits.Leash);
         else if (young && x.Colonial != 0 && !forage && !sick && x.NestDistance > R.NurseryRadius
                  && Urge(ref rng, R.NurseryRate * g.Nursery, x.Dt))
-            Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ReturnNest, 4, InstinctBits.Nursery);
+            Pick(ref reflex, ref prio, ref mask, ref dir, Move, Nest, 4, InstinctBits.Nursery);
         else if (juvenile && !forage && x.ParentDistance > R.TetherRadius
                  && Urge(ref rng, R.TetherRate * g.Tether, x.Dt))
-            Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.Follow, 4, InstinctBits.Tether);
+            Pick(ref reflex, ref prio, ref mask, ref dir, Move, Kin, 4, InstinctBits.Tether);
+        else if (x.PackDistance > R.PackRadius && !forage && !hasThreat && !sick
+                 && Urge(ref rng, R.PackRate * g.Tether, x.Dt))
+            Pick(ref reflex, ref prio, ref mask, ref dir, Move, Kin, 4, InstinctBits.Pack);
         else if (atNest && !hungry && !sick && x.HungryKin != 0 && x.Stomach >= R.TrophallaxisMinFill
                  && x.PlanActive == 0 && x.Busy == 0)
-            Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ShareFood, 3, InstinctBits.Troph);
+            Pick(ref reflex, ref prio, ref mask, ref dir, Give, NoDirection, 3, InstinctBits.Troph);
         else if (x.Recruited != 0 && !hungry && !hasThreat && x.PlanActive == 0)
-            Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.GoToPoint, 3, InstinctBits.Recruit);
+            Pick(ref reflex, ref prio, ref mask, ref dir, Move, OwnPoi, 3, InstinctBits.Recruit);
         else if (hungry && !sated && foodFar && !nestFood && !hasThreat && !grazing)
-            Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.ApproachFood, 2, InstinctBits.Seek);
-        else if (hungry && !sated && (foodNear || nestFood))
-            Pick(ref reflex, ref prio, ref mask, (byte)EntityAction.Eat, 1, InstinctBits.Eat);
+            Pick(ref reflex, ref prio, ref mask, ref dir, Move, Food, 2, InstinctBits.Seek);
+        else if ((hungry || (wasFeeding && x.EatFailed == 0)) && !sated && (foodNear || nestFood))
+            Pick(ref reflex, ref prio, ref mask, ref dir, Eat, NoDirection, 1, InstinctBits.Eat);
+
+        bool feeding = x.EatFailed == 0 && !sated && (foodNear || nestFood) && (reflex == Eat || wasFeeding);
+        if (feeding) latches |= InstinctBits.Feeding;
 
         if (reflex != InstinctBits.NoReflex)
         {
-            bool same      = x.Busy != 0 && x.RunningAction == reflex;
-            bool dominated = x.Busy != 0 && x.RunningInstinct != 0 && Priority(x.RunningAction) >= prio;
+            bool same      = x.Busy != 0 && x.RunningAction == reflex && (reflex != Move || x.RunningDirection == dir);
+            bool dominated = x.Busy != 0 && x.RunningInstinct != 0 && Priority(x.RunningAction, x.RunningDirection) >= prio;
             if (same || dominated)
             {
                 reflex = InstinctBits.NoReflex;
+                dir    = NoDirection;
                 mask   = 0u;
             }
         }
@@ -257,9 +286,19 @@ public struct InstinctJob : IJobFor
                 interrupt = 1;
                 mask |= InstinctBits.Panic;
             }
+            if (startle && x.PlanKind != (byte)PlanKind.Flee)
+            {
+                interrupt = 1;
+                mask |= InstinctBits.Startle;
+            }
         }
 
-        States[i] = new InstinctState { Latches = latches, NextHungerInterrupt = nextHunger };
+        States[i] = new InstinctState
+        {
+            Latches = latches,
+            NextHungerInterrupt = nextHunger,
+            NextStartle = startle ? x.Now + R.StartleCooldown : state.NextStartle,
+        };
 
         bool idle = x.Busy == 0 && x.PlanActive == 0;
         Outputs[i] = new InstinctOutput
@@ -267,34 +306,54 @@ public struct InstinctJob : IJobFor
             Mask          = mask,
             Latches       = latches,
             Reflex        = reflex,
+            Direction     = dir,
             Interrupt     = interrupt,
             NeedsDecision = (byte)(reflex == InstinctBits.NoReflex && (interrupt != 0 || idle) ? 1 : 0),
+            StartleStress = startle ? R.StartleStress : 0f,
         };
     }
 
     private static bool Urge(ref Unity.Mathematics.Random rng, float rate, float dt)
         => rate > 0f && rng.NextFloat() < 1f - math.exp(-rate * math.max(dt, 0f));
 
-    private static void Pick(ref byte reflex, ref int prio, ref uint mask, byte action, int priority, uint bit)
+    private const byte Move        = (byte)EntityAction.MoveTo;
+    private const byte Put         = (byte)EntityAction.Put;
+    private const byte Give        = (byte)EntityAction.Give;
+    private const byte Eat         = (byte)EntityAction.Eat;
+    private const byte NoDirection = (byte)DirectionKind.None;
+    private const byte Escape      = (byte)DirectionKind.Escape;
+    private const byte Nest        = (byte)DirectionKind.Nest;
+    private const byte Kin         = (byte)DirectionKind.Kin;
+    private const byte OwnPoi      = (byte)DirectionKind.OwnPoi;
+    private const byte Food        = (byte)DirectionKind.Food;
+
+    private static void Pick(ref byte reflex, ref int prio, ref uint mask, ref byte direction,
+        byte action, byte actionDirection, int priority, uint bit)
     {
-        reflex = action;
-        prio   = priority;
-        mask  |= bit;
+        reflex    = action;
+        direction = actionDirection;
+        prio      = priority;
+        mask     |= bit;
     }
 
-    private static int Priority(byte action) => action switch
+    private static int Priority(byte action, byte direction)
     {
-        (byte)EntityAction.Flee         => 7,
-        (byte)EntityAction.StoreFood    => 6,
-        (byte)EntityAction.ReturnNest   => 5,
-        (byte)EntityAction.Wander       => 5,
-        (byte)EntityAction.Follow       => 4,
-        (byte)EntityAction.ShareFood    => 3,
-        (byte)EntityAction.GoToPoint    => 3,
-        (byte)EntityAction.ApproachFood => 2,
-        (byte)EntityAction.Eat          => 1,
-        _                             => 0,
-    };
+        if (action == Put) return 6;
+        if (action == Give) return 3;
+        if (action == Eat) return 1;
+        if (action != Move) return 0;
+        switch (direction)
+        {
+            case Escape:      return 7;
+            case Nest:        return 5;
+            case NoDirection: return 5;
+            case Kin:         return 4;
+            case OwnPoi:
+            case (byte)DirectionKind.ColonyPoi: return 3;
+            case Food:        return 2;
+            default:          return 0;
+        }
+    }
 }
 
 public sealed class InstinctSystem : IDisposable

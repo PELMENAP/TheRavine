@@ -30,6 +30,8 @@ namespace TheRavine.Inventory
         private WorldRegistry worldRegistry;
         private RavineLogger logger;
         private PlayerEntity player;
+        private WorldEditFeedback feedback;
+        private UIInventorySlot[] uiSlots;
         private readonly Queue<PendingPlace> pendingPlaces = new();
         private readonly Dictionary<(long Position, byte Level), PendingPickUp> pendingPickUps = new();
         private readonly PickUpReservation pickUpReservation = new();
@@ -49,7 +51,7 @@ namespace TheRavine.Inventory
         }
 
         public bool HasItem(InventoryItemInfo info) => 
-            eventDrivenInventoryProxy.HasItem(infoManager.GetItemType(info));
+            info != null && eventDrivenInventoryProxy.HasItem(info.id);
 
         public void SetUp(ISetAble.Callback callback)
         {            
@@ -88,7 +90,9 @@ namespace TheRavine.Inventory
             ServiceLocator.Register<IPlacementSource>(this);
 
             infoManager = new InfoManager(dataItems);
-            tester = new InventoryTester(slotList.ToArray(), infoManager, eventDrivenInventoryProxy);
+            uiSlots = slotList.ToArray();
+            tester = new InventoryTester(uiSlots, infoManager, eventDrivenInventoryProxy);
+            feedback = new WorldEditFeedback(generator);
             
 
             PlayerEntity playerData = (PlayerEntity) ServiceLocator.Players.GetAllPlayers()[0];
@@ -225,6 +229,7 @@ namespace TheRavine.Inventory
 
         private void OnPlaceResult(AEntity entity, PlaceResultEvent e)
         {
+            if (!e.Ok) feedback?.Refused(e.Position, WorldEditFeedback.ReasonOf(e.Edit, e.Placement));
             if (pendingPlaces.Count == 0) return;
 
             PendingPlace pending = pendingPlaces.Dequeue();
@@ -269,18 +274,43 @@ namespace TheRavine.Inventory
         {
             if (pendingPickUps.Remove((e.Position, e.Level), out PendingPickUp pendingPickUp))
                 pickUpReservation.Release(pendingPickUp.Info, pendingPickUp.Amount);
-            if (!e.Ok) return;
+            if (!e.Ok)
+            {
+                feedback?.Refused(e.Position, WorldEditFeedback.PickUpRefusal);
+                return;
+            }
 
             ObjectInfo data = objectSystem.GetInfo(e.PrefabId);
             if (data == null || data.InventoryItemInfo == null) return;
 
-            IInventoryItem item = infoManager.GetInventoryItemByInfo(
-                data.InventoryItemInfo.id,
-                data.InventoryItemInfo,
-                e.Amount);
+            IInventoryItem item = infoManager.GetInventoryItemByInfo(data.InventoryItemInfo, e.Amount);
 
             if (!eventDrivenInventoryProxy.TryToAdd(this, item))
+            {
                 logger.LogWarning($"[UIInventory] Нет места для {data.InventoryItemInfo.id}, подобранный предмет потерян");
+                return;
+            }
+
+            if (feedback != null && TryFindSlotRect(data.InventoryItemInfo.id, out RectTransform target))
+                feedback.FlyIcon(e.Position, data.InventoryItemInfo.spriteIcon, target);
+        }
+
+        private bool TryFindSlotRect(string itemId, out RectTransform rect)
+        {
+            rect = null;
+            if (uiSlots == null) return false;
+
+            for (int i = 0; i < uiSlots.Length; i++)
+            {
+                UIInventorySlot candidate = uiSlots[i];
+                if (candidate == null || candidate.rectTransform == null || candidate.slot == null || candidate.slot.isEmpty) continue;
+                if (candidate.Kind != SlotKind.Bag && candidate.Kind != SlotKind.Hotbar) continue;
+                if (!candidate.gameObject.activeInHierarchy || candidate.slot.item.info.id != itemId) continue;
+
+                rect = candidate.rectTransform;
+                return true;
+            }
+            return false;
         }
 
         private void SaveInventory()
@@ -306,6 +336,8 @@ namespace TheRavine.Inventory
             pendingPickUps.Clear();
             pendingPlaces.Clear();
             pickUpReservation.Clear();
+            feedback?.Dispose();
+            feedback = null;
 
             ServiceLocator.Services.Unregister<IPlacementSource>(this);
             eventDrivenInventoryProxy.OnInventoryStateChangedEventOnce -= OnInventoryStateChanged;

@@ -7,31 +7,14 @@ public class EntityViewModel : AEntityViewModel, IEntityMotor, IEntityDeathHandl
     [SerializeField] private SurfaceMotor motor;
     public void BindMotion(MotionSystem system) => motor.BindMotion(system);
 
-    private Transform _tr;
-    private Vector3   _lastPosition;
-    private bool      _destroyed;
-
-    private void Awake() => _tr = transform;
-
-    public override void OnDestroy()
-    {
-        _destroyed = true;
-        base.OnDestroy();
-    }
-
     public void OnDeath()
     {
-        if (!_destroyed) _lastPosition = _tr.position;
-        _destroyed = true;
         gameObject.SetActive(false);
         Destroy(gameObject);
     }
 
-    public Vector3 Position()
-    {
-        if (_destroyed || _tr == null) return _lastPosition;
-        return _lastPosition = _tr.position;
-    }
+    public Vector3 Position() => motor.Position();
+    public void BindSlot(int slot) => motor.BindSlot(slot);
 
     public void BeginMove(Vector3 target, float speed, float energyCostPerSec, double deadline)
         => motor.BeginMove(target, speed, energyCostPerSec, deadline);

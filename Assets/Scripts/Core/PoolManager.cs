@@ -13,13 +13,16 @@ namespace TheRavine.ObjectControl
         private readonly IPlaceable placeable;
 
         public Vector3 Position { get; private set; }
+        public Vector3 BaseScale { get; }
         public bool IsActive { get; internal set; }
+        internal int ActiveIndex = -1;
 
         internal PooledObject(GameObject gameObject, PoolManager.Pool owner)
         {
             GameObject = gameObject;
             Transform = gameObject.transform;
             Owner = owner;
+            BaseScale = Transform.localScale;
             placeable = gameObject.GetComponent<IPlaceable>();
             gameObject.SetActive(false);
         }
@@ -43,6 +46,7 @@ namespace TheRavine.ObjectControl
             private readonly GameObject prefab;
             private readonly Transform holder;
             private readonly Stack<PooledObject> inactive;
+            private readonly List<PooledObject> active;
 
             public int ActiveCount { get; private set; }
             public int InactiveCount => inactive.Count;
@@ -53,6 +57,13 @@ namespace TheRavine.ObjectControl
                 this.prefab = prefab;
                 this.holder = holder;
                 inactive = new Stack<PooledObject>(math.max(capacity, 4));
+                active = new List<PooledObject>(math.max(capacity, 4));
+            }
+
+            public bool TryGetFirstActive(out PooledObject obj)
+            {
+                obj = active.Count > 0 ? active[0] : null;
+                return obj != null;
             }
 
             public void Prewarm(int count)
@@ -64,8 +75,11 @@ namespace TheRavine.ObjectControl
             public PooledObject Get(Vector3 position)
             {
                 PooledObject obj = inactive.Count > 0 ? inactive.Pop() : Create();
+                obj.Transform.localScale = obj.BaseScale;
                 obj.Place(position);
                 obj.IsActive = true;
+                obj.ActiveIndex = active.Count;
+                active.Add(obj);
                 obj.GameObject.SetActive(true);
                 ActiveCount++;
                 return obj;
@@ -80,6 +94,12 @@ namespace TheRavine.ObjectControl
             public void Release(PooledObject obj)
             {
                 if (obj == null || !obj.IsActive || obj.Owner != this) return;
+                int last = active.Count - 1;
+                PooledObject moved = active[last];
+                active[obj.ActiveIndex] = moved;
+                moved.ActiveIndex = obj.ActiveIndex;
+                active.RemoveAt(last);
+                obj.ActiveIndex = -1;
                 obj.IsActive = false;
                 obj.GameObject.SetActive(false);
                 inactive.Push(obj);

@@ -13,49 +13,41 @@ namespace TheRavine.Inventory
             data = new Dictionary<string, InventoryItemInfo>();
             for (int i = 0; i < _dataItems.data.Count; i++) 
             {
-                data[_dataItems.data[i].title] = _dataItems.data[i];
+                InventoryItemInfo info = _dataItems.data[i];
+                if (info == null || string.IsNullOrEmpty(info.id))
+                {
+                    Debug.LogError($"[InfoManager] {_dataItems.name}: empty entry or id at index {i}");
+                    continue;
+                }
+                if (!data.TryAdd(info.id, info))
+                    Debug.LogError($"[InfoManager] duplicate item id {info.id} ({data[info.id].name}, {info.name})");
             }
         }
-        public IInventoryItem GetInventoryItem(string title, int amount = 1)
+        public IInventoryItem GetInventoryItem(string id, int amount = 1)
         {   
-            Type itemType = InventoryTypeCache.GetType(title);
-            
-            if (itemType == null)
+            if (id == null || !data.TryGetValue(id, out var itemInfo))
             {
-                Debug.LogError($"Type {title} not found in cache");
+                Debug.LogError($"[InfoManager] there's no item with id {id} in DataItems");
                 return null;
             }
-            
-            if (!data.TryGetValue(title, out var itemInfo))
-            {
-                Debug.Log($"there's no {title}");
-                return null;
-            }
-            
-            IInventoryItem item = (IInventoryItem)System.Activator.CreateInstance(itemType, new object[] { itemInfo });
-            item.state.amount = amount;
-            return item;
+
+            return Create(itemInfo, amount);
         }
 
-        public IInventoryItem GetInventoryItemByInfo(string title, InventoryItemInfo itemInfo, int amount = 1)
-        {
-            if (itemInfo == null) return null;
-
-            Type itemType = InventoryTypeCache.GetType(title);
-
-            if (itemType != null)
-            {
-                IInventoryItem item = (IInventoryItem)Activator.CreateInstance(itemType, new object[] { itemInfo });
-                item.state.amount = amount;
-                return item;
-            }
-            return null;
-        }
-
-        public Type GetItemType(InventoryItemInfo itemInfo)
+        public IInventoryItem GetInventoryItemByInfo(InventoryItemInfo itemInfo, int amount = 1)
         {
             if (itemInfo == null || string.IsNullOrEmpty(itemInfo.id)) return null;
-            return Type.GetType(itemInfo.id, false, true);
+            return Create(itemInfo, amount);
+        }
+
+        private static IInventoryItem Create(InventoryItemInfo itemInfo, int amount)
+        {
+            Type itemType = InventoryTypeCache.Resolve(itemInfo.id);
+            IInventoryItem item = itemType == typeof(DefaultItem)
+                ? new DefaultItem(itemInfo)
+                : (IInventoryItem)Activator.CreateInstance(itemType, new object[] { itemInfo });
+            item.state.amount = amount;
+            return item;
         }
         public InventoryCraftInfo[] GetAllCraftRecepts() => Resources.LoadAll("CraftInfo", typeof(InventoryCraftInfo)).Cast<InventoryCraftInfo>().ToArray();
     }
