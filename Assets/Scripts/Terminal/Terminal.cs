@@ -61,6 +61,7 @@ namespace TheRavine.Base
         {
             this.logger = logger;
             this.actionMapController = actionMapController;
+            SkillGraphLauncher.Ensure();
             actionMapController.DisableAll();
             actionMapController.EnableUI();
             actionMapController.SwitchToGameplay();
@@ -72,7 +73,8 @@ namespace TheRavine.Base
                 new HelpCommand(),
                 new PrintCommand(),
                 new ClearCommand(),
-                new RotateCommand()
+                new RotateCommand(),
+                new SkillGraphCommand(actionMapController)
             );
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

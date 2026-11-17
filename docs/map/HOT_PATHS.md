@@ -14,19 +14,19 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 2. Periodic, not per agent: `UpdateDiagnostics`, `DecayWarmth`, `SampleEnergy`, `SimulationLog.Sample`.
 3. `TickAgents`: `TickWindowBudget.Take` decides how many agents tick this frame.
 4. At the start of a window: `RebuildTickSnapshot` (snapshot, spatial grid, flocking).
-5. `RunTickBatch`, first loop: `EntityModel.BeginCycle`, then `InstinctSystem.Write` and `UtilityPriorSystem.Write`.
-6. `InstinctSystem.Schedule` and `UtilityPriorSystem.Schedule`, combined, one `Complete`.
-7. Second loop: `ApplyUtilityPrior`, `ApplyInstinct`, `SubmitDecision`.
+5. `RunTickBatch`, first loop: `EntityModel.BeginCycle` (phase A), then `SurveySystem.Write`; `SurveySystem.Schedule`, one `Complete`.
+6. Second loop: `EntityModel.ContinueCycle` (phase B), then `InstinctSystem.Write` and `UtilityPriorSystem.Write`; both `Schedule`, combined, one `Complete`.
+7. Third loop: `ApplyUtilityPrior`, `ApplyInstinct`, `SubmitDecision`.
 8. `SharedHierarchicalBrain.RunDecisions` for every colony.
-9. Third loop: `EntityModel.EndCycle`.
+9. Fourth loop: `EntityModel.EndCycle` (the view is notified only while the agent is visible).
 10. `MovePlanner.Flush`, then `InfectionCoordinator.Spread` on the batch.
-11. At the end of a window, `CloseTickWindow`: deaths, extinctions, predators, `ApplyPendingGradients`, nests, castes, visibility.
-12. Every frame after the tick: `EntityManager.ApplyFireHeat` (once per fire step), `SpeechBus.Flush`, `MovePlanner.Flush`, `MotionSystem.Step`.
+11. At the end of a window, `CloseTickWindow`: deaths, extinctions, predators, `ApplyPendingGradients`, nests, castes, `SweepSkills`, `SolveSkills`, visibility.
+12. Every frame after the tick: `EntityManager.ApplyFireHeat` (once per fire step), `EntityManager.ApplyWildWind` (once per wind step while active), `SpeechBus.Flush`, `MovePlanner.Flush`, `MotionSystem.Step`, `StampAgents`, `AgentSnapshotStream.Tick`.
 
 | Area | File | Hot methods |
 |---|---|---|
-| Tick driver | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | `Update`, `TickAgents`, `RunTickBatch`, `RebuildTickSnapshot`, `RunFlocking`, `CloseTickWindow` |
-| Agent cycle | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | `BeginCycle`, `RunCycle`, `EndCycle`, `SubmitDecision`, `StartDecision`, `ComputePlanHints` |
+| Tick driver | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | `Update`, `TickAgents`, `RunTickBatch`, `RebuildTickSnapshot`, `PromoteUrgent`, `RunFlocking`, `CloseTickWindow` |
+| Agent cycle | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | `BeginCycle`, `ContinueCycle`, `EndCycle`, `SubmitDecision`, `StartDecision`, `ComputePlanHints` |
 | Agent behaviour | `Assets/Scripts/EntitySystem/AI/Entity/` | Other `EntityModel.*.cs` partial files when called from the cycle |
 | Agent commands | `Assets/Scripts/EntitySystem/AI/Entity/Commands/` | The tick method of every command; `EntityCommandRunner` |
 | Plans | `Assets/Scripts/EntitySystem/AI/Plans/PlanRunner.cs` | `Tick`, `Advance`, `ResolveDestination` |
@@ -49,14 +49,19 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 
 | Area | File | Hot methods |
 |---|---|---|
-| Neighbours | `Assets/Scripts/EntitySystem/AI/Perception/EntitySpatialGrid.cs` | `Rebuild`, `Survey`, `FindNearest`, `FindInRadius` |
+| Neighbours | `Assets/Scripts/EntitySystem/AI/Perception/EntitySpatialGrid.cs` | `Rebuild`, `NoteDeath`, `NoteHp`, `FindNearest`, `FindInRadius` (`Survey` is the reference) |
+| Survey | `Assets/Scripts/EntitySystem/AI/Perception/SurveySystem.cs` | `Write`, `Schedule`, `Output`, `SurveyJob` |
 | Food | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | `TryFindNearestFood`, `TryLocate`, `TryClaim`, `BiteMeat`, `TryTakePayload` |
 | Terrain | `Assets/Scripts/EntitySystem/AI/Perception/TerrainSensor.cs`, `Assets/Scripts/EntitySystem/AI/Perception/TerrainSteering.cs` | whole files |
+| Objects | `Assets/Scripts/EntitySystem/AI/Perception/ObjectSensor.cs`, `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Objects.cs` | `TryFindNearest`, `ScanObject` |
 | Fields | `Assets/Scripts/EntitySystem/AI/Perception/WarmthField.cs`, `Assets/Scripts/EntitySystem/AI/Perception/PlayerPresence.cs` | `Read`, `Add`; `TryFindNearest` |
 | Instincts | `Assets/Scripts/EntitySystem/AI/Instinct/InstinctSystem.cs` | `Write`, `Schedule`, `Output`, `InstinctJob` |
 | Utility | `Assets/Scripts/EntitySystem/AI/Utility/UtilityPriorSystem.cs` | `Write`, `Schedule`, `Output`, `UtilityPriorJob` |
 | Flocking | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | `Write`, `Run`, `Output`, `BoidJob` |
 | Castes | `Assets/Scripts/EntitySystem/AI/Caste/CasteThresholdSystem.cs` | `Get`, `Reinforce` |
+| Skills | `Assets/Scripts/EntitySystem/AI/Skills/SkillGraphStore.cs`, `SkillGraphMath.cs`, `SkillGraphXp.cs` | `AddXp`, `Award`, `Materialize`, math functions; `EntityModel.AwardSkillXp`, `RefreshSkillTuning` |
+| Skill sweep | `Assets/Scripts/EntitySystem/AI/Skills/SkillDecayJob.cs` | `SkillDecayJob`, `SkillGraphStore.ScheduleDecay`; marker `EntityManager.SkillDecaySweep` |
+| Skill solver | `Assets/Scripts/EntitySystem/AI/Skills/SkillGraphSolver.cs` | `Step`, once per `SkillSolverInterval` per colony, scratch buffers only; marker `SkillGraphSolver.Step` |
 | Colony fields | `Assets/Scripts/EntitySystem/AI/Nest/NestState.cs` | `Mark`, `MarkPair`, `FieldAt`, `SampleDirection`, decay and shift jobs |
 | Points of interest | `Assets/Scripts/EntitySystem/AI/Colony/ColonyPoiBoard.cs` | `Offer`, `TryPickBest` |
 | Speech | `Assets/Scripts/EntitySystem/AI/Speech/SpeechBus.cs` | `Emit`, `TryStartCooldown`, `InboxAt`, `Flush`, `SpeechDeliverJob` |
@@ -65,7 +70,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 
 | Area | File | Hot methods |
 |---|---|---|
-| Agent motion | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | `Step`, `MotionJob`, `MotionApplyJob`, `PositionOf`, `SetPosition` |
+| Agent motion | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | `Step`, `MotionJob`, `MotionApplyJob`, `PositionOf`, `SetPosition`, `VelocityBySlot`, `SyncAtlas` |
 | Move planning | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | `Enqueue`, `Flush`, `PlanJob` |
 | Obstacles | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision/ObstacleQuery.cs` | whole file (`Resolve`, `ResolveSwept`, `Support`, `Walk`); per agent and per mob per frame, per player per physics step |
 | Player ground | `Assets/Scripts/EntitySystem/Entityes/Player/Components/TerrainPhysicsResolver.cs` | `Resolve`, `ResolveObstacles`, `ResolveGround`; `MapGenerator.ResolveObstacles`, `MapGenerator.SupportObstacles` |
@@ -90,12 +95,19 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 
 ## Rendering
 
-`FarObjectRenderer`, `GrassSystem`, `EndlessTerrain`, `EndlessLiquids`: per-frame `Tick` and `Render`. Shader properties by cached id only.
+`FarObjectRenderer`, `GrassSystem`, `EndlessTerrain`, `EndlessLiquids`, `RavineBackdrop`: per-frame `Tick` and `Render`. Shader properties by cached id only.
+`GrassSystem.Update` also runs `ApplySector` and `BuildFar` (at most `lodBlocksPerFrame` far blocks per frame) and `DispatchNear` when the camera moved: cached ids, no allocation, one draw per built block.
 `GrassTrampleField.Stamp` and `StampCreature`, `EntityManager.StampAgents`, `SoilShaderFeed.Publish`: no allocation; tests `GrassTrampleFieldTests`, `SoilShaderFeedTests`.
+
+## Replication
+
+`Assets/Scripts/EntitySystem/AI/Population/AgentSnapshotStream.cs`: `Tick` on the server per `snapshotInterval`; `AgentPuppets.Tick` on a client per frame.
+`AgentSnapshotCodec`: whole file. Allocation test: `AgentSnapshotCodecTests`.
 
 ## Server request path
 
 RPC handlers in `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs`: no allocation and no formatting on the success path.
+`PlayerSkillGraph.Award` (called from the place, pick-up and speak handlers and from `StepServerMovement`) and `PlayerSkillGraph.TryExecute` (`SkillGraphCommandServerRpc`) are on that path.
 
 ## Guards
 

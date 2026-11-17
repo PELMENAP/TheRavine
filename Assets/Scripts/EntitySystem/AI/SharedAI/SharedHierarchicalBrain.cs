@@ -27,19 +27,18 @@ public class SharedHierarchicalBrain : IDisposable
     public const int CurvatureAux     = HeadingOutputs;
     public const int SpeechAux        = HeadingOutputs + CurvatureOutputs;
     public const int DirectionOutputs = (int)DirectionKind.Count;
-    public const int DirOffsetAux     = DirectionOutputs;
     public const int StyleOutputs     = (int)AttackStyle.Count;
     public const int StyleAux         = HeadingOutputs + CurvatureOutputs;
     public const int TempoAux         = StyleAux + StyleOutputs;
 
-    public static bool UsesDirections(int goal) => goal == (int)Goal.Survive || goal == (int)Goal.Forage;
+    public static int DirectionAux(int goal)
+        => goal == (int)Goal.Social ? SpeechAux + SpeechOutputs
+         : goal == (int)Goal.Hunt   ? TempoAux + 1
+         : 0;
 
-    public static int ExecAux(int goal)
-        => DecodeOutputs + (UsesDirections(goal)
-            ? DirectionOutputs + 1
-            : HeadingOutputs + CurvatureOutputs
-              + (goal == (int)Goal.Social ? SpeechOutputs : 0)
-              + (goal == (int)Goal.Hunt ? StyleOutputs + 1 : 0));
+    public static int DirOffsetAux(int goal) => DirectionAux(goal) + DirectionOutputs;
+
+    public static int ExecAux(int goal) => DecodeOutputs + DirOffsetAux(goal) + 1;
 
     public static int[] BuildExecSizes(int combined, int goal)
         => new[] { combined, 64, 32, 32, ActionSubsets[goal].Length + 1 + ExecAux(goal) };
@@ -250,8 +249,8 @@ public class SharedHierarchicalBrain : IDisposable
         ApplyPendingGradients();
     }
 
-    private static readonly float[] GoalMinDuration = BuildGoalDurations(false);
-    private static readonly float[] GoalMaxDuration = BuildGoalDurations(true);
+    private readonly float[] _goalMinDuration = BuildGoalDurations(false);
+    private readonly float[] _goalMaxDuration = BuildGoalDurations(true);
     private static readonly int     BiasStride      = BuildBiasStride();
 
     private static float[] BuildGoalDurations(bool max)
@@ -557,7 +556,7 @@ public class SharedHierarchicalBrain : IDisposable
 
             var ticket = executors[g].FinishDecide(combined, ctx.ExecMLPs[g], item.Slot,
                 batch.BiasRow(d).Slice(0, ActionSubsets[g].Length), ExecDelaySteps, execCritics[g], execGamma,
-                simTime, GoalMinDuration[g], GoalMaxDuration[g], execEps, decay, ctx.ExecForced);
+                simTime, _goalMinDuration[g], _goalMaxDuration[g], execEps, decay, ctx.ExecForced);
 
             int action    = ActionSubsets[g][ticket.Predicted];
             float clamped = math.clamp(ticket.Duration,
@@ -588,12 +587,13 @@ public class SharedHierarchicalBrain : IDisposable
                 SpeechMetrics.RecordDecode(correct, ctx.DecodeTarget);
             }
 
-            if (UsesDirections(g))
-            {
-                direction = PickMasked(ticket, 0, DirectionOutputs, ctx.DirectionMask);
-                offset    = aux[DirOffsetAux] * frame.DirMaxOffset;
-            }
-            else
+            ushort planDirections = PlanCatalog.DirectionMask(ctx.CurrentPlan, ctx.PlanHints);
+            ushort availableDirections = (ushort)(ctx.DirectionMask & planDirections);
+            if (availableDirections == 0) availableDirections = ctx.DirectionMask;
+            direction = PickMasked(ticket, DirectionAux(g), DirectionOutputs, availableDirections);
+            offset    = aux[DirOffsetAux(g)] * frame.DirMaxOffset;
+
+            if (g == (int)Goal.Hunt || g == (int)Goal.Social)
             {
                 heading   = new float2(ticket.HeadingSin, ticket.HeadingCos);
                 curvature = aux[CurvatureAux];
@@ -783,6 +783,12 @@ public class SharedHierarchicalBrain : IDisposable
         ctx.BeginGoal(0f);
     }
 
+    public static float EnergySurplus(float energyNorm, float floor)
+        => math.saturate((energyNorm - floor) / math.max(1f - floor, 1e-3f));
+
+    public static float RarityTerm(float weight, float surplus, float share)
+        => weight * surplus / math.sqrt(1f + share * PlanCatalog.Count);
+
     private void FlushGoalRewardToCoordinator(EntityBrainContext ctx)
     {
         if (ctx.CoordDecisionId == 0) return;
@@ -792,15 +798,19 @@ public class SharedHierarchicalBrain : IDisposable
 
         var r = SimulationRules.Active;
         ctx.GoalNovelty = ctx.NoveltyCount > 0 ? ctx.NoveltySum / ctx.NoveltyCount : 0f;
+        ref readonly var frame = ref SimulationRules.Frame;
+        float surplus = EnergySurplus(ctx.EnergyNorm, frame.CuriosityEnergyFloor);
         float curiosity = r.CoordCuriosityWeight * ExplorationDecay()
-                        * (1f - r.CuriosityStorageDamp * math.saturate(ctx.ColonyStorage));
+                        * (1f - r.CuriosityStorageDamp * math.saturate(ctx.ColonyStorage))
+                        * (1f + frame.CuriosityEnergyGain * surplus);
         float goal = ctx.GoalDiscountedReturn
                    + ctx.GoalBonus
                    + r.GoalFoodWeight   * ctx.GoalFoodEaten
                    + r.DigestRewardWeight * ctx.GoalDigested
                    + r.GoalEnergyWeight * (ctx.EnergyNorm - ctx.GoalStartEnergy)
                    + r.GoalRestWeight   * ctx.GoalRestScore
-                   + curiosity * ctx.GoalNovelty;
+                   + curiosity * ctx.GoalNovelty
+                   + RarityTerm(frame.CuriosityRarityWeight, surplus, ctx.EndedPlanShare);
 
         float clip = r.RewardClipSigma;
         item.Evaluation    = math.clamp(goal, -clip, clip);

@@ -50,7 +50,6 @@ Shader "The Ravine/Objects/FarInstanced"
             float4 instance = FarInstance(input.instanceID);
             positionWS = instance.xyz + input.positionOS.xyz * instance.w;
             normalWS = normalize(input.normalOS);
-            BendWorld(positionWS, normalWS);
         }
 
         float SampleAlpha(float2 uv)

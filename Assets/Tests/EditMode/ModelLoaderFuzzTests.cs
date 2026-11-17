@@ -7,7 +7,7 @@ public class ModelLoaderFuzzTests
 {
     private const int LstmInput = 8;
     private const int LstmHidden = 4;
-    private static readonly int[] PerceptronSizes = { 6, 4, 3, 3, 2 };
+    private static readonly int[] PerceptronSizes = { 6, 4, 3, 3, 3 };
 
     private SimulationRules _rules;
 
@@ -21,7 +21,6 @@ public class ModelLoaderFuzzTests
     [TearDown]
     public void TearDown()
     {
-        LogAssert.ignoreFailingMessages = false;
         ContextSlabs.DisposeAll();
         TestRules.Release(_rules);
     }
@@ -141,7 +140,7 @@ public class ModelLoaderFuzzTests
 
         Assert.NotNull(plain);
         Assert.NotNull(expected);
-        Assert.Throws<InvalidDataException>(() => DelayedPerceptron.Deserialize(data, new[] { 6, 4, 3, 3, 3 }));
+        Assert.Throws<InvalidDataException>(() => DelayedPerceptron.Deserialize(data, new[] { 6, 4, 3, 3, 4 }));
         Assert.Throws<InvalidDataException>(() => DelayedPerceptron.Deserialize(data, new[] { 6, 4, 3, 3 }));
     }
 
@@ -167,6 +166,20 @@ public class ModelLoaderFuzzTests
             long bytes = Measure(() => Assert.Throws<InvalidDataException>(() => DelayedPerceptron.Deserialize(data), string.Join(",", h)));
             Assert.Less(bytes, 1 << 20, $"{string.Join(",", h)}: {bytes} байт");
         }
+    }
+
+    [Test]
+    public void PerceptronOutputTooSmallForActionsIsRejected()
+    {
+        int[] sizes = { 6, 4, 3, 3, PerceptronLayout.MinActionCount };
+        long body = 0;
+        for (int l = 0; l < sizes.Length - 1; l++)
+            body += sizes[l + 1] * (4 + 4L * sizes[l]) + 4 + 4L * sizes[l + 1];
+
+        var data = new byte[4 + 4 * sizes.Length + 2 * body];
+        Header(5, sizes[0], sizes[1], sizes[2], sizes[3], sizes[4]).CopyTo(data, 0);
+
+        Assert.Throws<InvalidDataException>(() => DelayedPerceptron.Deserialize(data));
     }
 
     [Test]
@@ -208,6 +221,7 @@ public class ModelLoaderFuzzTests
     [Test]
     public void RandomBytesNeverEscapeAsOtherExceptions()
     {
+        LogAssert.ignoreFailingMessages = true;
         var rng = new System.Random(12345);
 
         for (int i = 0; i < 300; i++)
@@ -224,6 +238,7 @@ public class ModelLoaderFuzzTests
     [Test]
     public void SnapshotWithBadModelBlocksIsRefused()
     {
+        LogAssert.ignoreFailingMessages = true;
         using var brain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, 32);
         var good = brain.ToSnapshot().Serialize();
         int lstmBlock = 12;

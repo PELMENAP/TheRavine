@@ -610,7 +610,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &252649109
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -639,7 +639,7 @@ MonoBehaviour:
   slope: 2
   bias: 18.5
   saveTreeFolder: Assets
-  polycount: 2070
+  polycount: 730
   template: {fileID: 11400000, guid: ddbb875fa548217609d321fb78226073, type: 2}
   MtreeVersion: 020000000500000000000000
   savedFunction: {fileID: 0}

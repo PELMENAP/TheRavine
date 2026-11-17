@@ -19,6 +19,7 @@ namespace TheRavine.Generator
         [ReadOnly] public NativeArray<ObjectInstInfo> existing;
         [ReadOnly] public int2 chunkOrigin;
         public uint seed;
+        public RavineProfile ravine;
         [WriteOnly] public NativeArray<ObjectInstInfo> output;
         public NativeReference<int> outputCount;
         public NativeArray<byte> gridBuffer;
@@ -29,9 +30,9 @@ namespace TheRavine.Generator
         private const float InvMaxHeight = 1f / MapGenerator.maxTerrainHeight;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private float SampleDensityMask(float2 localPos, int idx, in ObjectSpawnConfig cfg)
+        private float SampleDensityMask(float2 localPos, int idx, float elevation, in ObjectSpawnConfig cfg)
         {
-            float hFactor = RangeFactor(heightRaw[idx] * InvMaxHeight, cfg.heightRange.x, cfg.heightRange.y);
+            float hFactor = RangeFactor((heightRaw[idx] - elevation) * InvMaxHeight, cfg.heightRange.x, cfg.heightRange.y);
             float2 c = climate[idx];
             float tFactor = RangeFactor(c.x, cfg.tempRange.x, cfg.tempRange.y);
             float mFactor = RangeFactor(c.y, cfg.moistRange.x, cfg.moistRange.y);
@@ -70,8 +71,13 @@ namespace TheRavine.Generator
             if (!grid.Check(cell, cfg.radiusCells))
                 return false;
 
+            float cellZ = chunkOrigin.y * ChunkWorld + cell.y * (float)MapGenerator.scale;
+            float t = ravine.Blend(cellZ);
+            if (RavineProfile.IsWall(t))
+                return false;
+
             int idx = (cell.y << MapGenerator.RowShift) | cell.x;
-            float prob = SampleDensityMask(localPos, idx, cfg);
+            float prob = SampleDensityMask(localPos, idx, ravine.Height * t, cfg);
             if (rng.GetFloat() > prob)
                 return false;
 

@@ -219,4 +219,29 @@ public class ChunkStoreTests
             _restored.ClearObjects();
         }
     }
+
+    [Test]
+    public void PreRavineFileIsReadOnlyInTheValley()
+    {
+        var ravine = new RavineProfile(1000f, 100f, 5000f);
+        var store = ChunkStore.ForWorld(_worldId, Seed, ravine);
+        long valley = Position2Int.Pack(0, 2);
+        long plateau = Position2Int.Pack(0, 20);
+
+        foreach (long key in new[] { valley, plateau })
+        {
+            Assert.IsTrue(_source.TryAddObject(5, Info(1)));
+            Assert.IsTrue(store.TrySave(key, _source));
+            byte[] data = File.ReadAllBytes(FileOf(key));
+            BitConverter.GetBytes(4).CopyTo(data, 4);
+            File.WriteAllBytes(FileOf(key), data);
+            _source.ClearObjects();
+        }
+
+        Assert.IsTrue(store.TryRestore(valley, _restored));
+        _restored.ClearObjects();
+        Assert.AreEqual(0, store.PeekErosionEpoch(plateau));
+        Assert.IsFalse(store.TryRestore(plateau, _restored));
+        Assert.AreEqual(0, _restored.Objects.Length);
+    }
 }

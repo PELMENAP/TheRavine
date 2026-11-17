@@ -1,3 +1,5 @@
+Consolidation of this census (11 verbs, `DirectionKind` Nest/Escape/Kin/Danger/Object/Task, `SharedBrainSnapshot.Version` 11) was implemented in commit `530f934`.
+
 # Action census and consolidation proposal
 
 Snapshot: commit `66ba120` (branch `claude/practical-mendel-c5lbxd`). Offline audit, no code change. Paths are relative to `Assets/Scripts/EntitySystem/AI/` unless they start with `Assets/`.

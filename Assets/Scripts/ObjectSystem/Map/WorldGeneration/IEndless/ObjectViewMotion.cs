@@ -11,6 +11,7 @@ public sealed class ObjectViewMotionSettings
     [Min(0.01f)] public float popDuration = 0.2f;
     [Min(0.01f)] public float shrinkDuration = 0.15f;
     [Min(0.1f)] public float growthDuration = 4f;
+    [Range(0.1f, 1.5f)] public float growthFraction = 0.8f;
 }
 
 public interface IObjectViewMotionHost
@@ -126,7 +127,7 @@ public sealed class ObjectViewMotion
         slot.ViewKey = viewKey;
         slot.Cell = cell;
         slot.From = from.Transform.localScale;
-        slot.To = Vector3.Scale(from.BaseScale, ratio);
+        slot.To = Vector3.Scale(from.BaseScale, ObjectGrowthMath.ApplyFraction(ratio, settings.growthFraction));
         slot.NextPool = next;
         slot.NextPosition = nextPosition;
         Start(slot, settings.growthDuration, Ease.OutQuad);
