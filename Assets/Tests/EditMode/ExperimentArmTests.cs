@@ -62,11 +62,10 @@ public class ExperimentArmTests
     }
 
     [Test]
-    public void UnknownArmValueLoadsAsControl()
+    public void ArmNamesAreStableAndUnknownFallsBackToControl()
     {
-        Assert.AreEqual(ColonyArm.NullPolicy, ColonyArms.FromByte((byte)ColonyArm.NullPolicy));
-        Assert.AreEqual(ColonyArm.Control, ColonyArms.FromByte(200));
-        Assert.AreEqual(ColonyArm.Control, ColonyArms.FromByte((byte)ColonyArm.Count));
+        Assert.AreEqual("null_policy", ColonyArms.Name(ColonyArm.NullPolicy));
+        Assert.AreEqual("orthogonal_reservoir", ColonyArms.Name(ColonyArm.OrthogonalReservoir));
         Assert.AreEqual("control", ColonyArms.Name((ColonyArm)99));
     }
 
@@ -365,7 +364,7 @@ public class ExperimentArmTests
     {
         ContextSlabs.Reserve(8);
         var brain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, LstmHidden);
-        brain.SetNullPolicy(true);
+        brain.SetArm(ColonyArm.NullPolicy, false);
         var ctx = brain.CreateContext();
         try
         {

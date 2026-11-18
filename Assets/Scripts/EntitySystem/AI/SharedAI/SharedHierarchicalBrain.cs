@@ -133,8 +133,6 @@ public class SharedHierarchicalBrain : IDisposable
         return _conflictCycle;
     }
 
-    public void SetNullPolicy(bool value) => NullPolicy = value;
-
     private NoveltyProgressSystem _progress;
     private bool _progressNovelty;
 

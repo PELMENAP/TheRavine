@@ -214,7 +214,7 @@ public sealed class ColonyState : IDisposable
         Nest     = new NestState(position);
         Pois     = new ColonyPoiBoard(SimulationRules.Active.ColonyPoiCount);
         Brain    = brain;
-        Genome = ColonyGenome.Random();
+        Genome = ColonyGenome.Initial(rules.ColonyGenomeInitialSpread);
         brain?.SetArm(Arm, true);
         brain?.SetLearningGenes(Genome);
         _members = new int[math.max(capacity, 4)];

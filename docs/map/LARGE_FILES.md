@@ -10,7 +10,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1471 |
 | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1237 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1081 |
-| `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 1056 |
+| `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 1054 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1014 |
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 859 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 775 |
@@ -324,61 +324,60 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs`
 
-- 7–1056 class SharedHierarchicalBrain
+- 7–1054 class SharedHierarchicalBrain
   - 34 DirectionAux
   - 39 DirOffsetAux
   - 41 ExecAux
   - 74 SharedHierarchicalBrain
   - 104 ConfigureOptimizer
   - 127 ConflictCycle
-  - 136 SetNullPolicy
-  - 143 SetNoveltyProgress
-  - 149 SetLearningGenes
-  - 156 SetArm
-  - 181 CompletePending
-  - 193 ApplyPendingGradients
-  - 211 MeasureConflict
-  - 219 ResolveLearningRate
-  - 230 ReportMeanFitness
-  - 241 ExplorationDecay
-  - 251 CreateContext
-  - 258 BuildContextLayouts
-  - 266 GiveReward
-  - 293 TryAddReward
-  - 303 SharedHierarchicalBrain
-  - 325 BuildGoalDurations
-  - 340 BuildBiasStride
-  - 365 BeginDecisionBatch
-  - 379 EnqueueDecision
-  - 412 BuildReservoirItem
-  - 438 TryGetDecision
-  - 449 RunDecisions
-  - 709 DrawUniformPlan
-  - 725 DrawUniformAction
-  - 741 PickMasked
-  - 762 ScheduleTraining
-  - 776 EnsureNativeTables
-  - 798 ReadIntrinsic
-  - 804 ApplyProgress
-  - 817 AccumulateNovelty
-  - 828 EnsureRndCapacity
-  - 836 EnsureDeciderCapacity
-  - 849 Dispose
-  - 864 CompleteDecision
-  - 875 CompleteTerminal
-  - 914 EnergySurplus
-  - 917 RarityTerm
-  - 920 FlushGoalRewardToCoordinator
-  - 949 GetCoordinatorEntropy
-  - 950 GetCurrentGoal
-  - 952 GetExecutorEntropy
-  - 956 SharedHierarchicalBrain
-  - 983 FromModels
-  - 1013 ToSnapshot
-  - 1019 FromSnapshot
-  - 1022 FromSnapshot
-  - 1037 MatchesArchitecture
-  - 1049 SizesMatch
+  - 141 SetNoveltyProgress
+  - 147 SetLearningGenes
+  - 154 SetArm
+  - 179 CompletePending
+  - 191 ApplyPendingGradients
+  - 209 MeasureConflict
+  - 217 ResolveLearningRate
+  - 228 ReportMeanFitness
+  - 239 ExplorationDecay
+  - 249 CreateContext
+  - 256 BuildContextLayouts
+  - 264 GiveReward
+  - 291 TryAddReward
+  - 301 SharedHierarchicalBrain
+  - 323 BuildGoalDurations
+  - 338 BuildBiasStride
+  - 363 BeginDecisionBatch
+  - 377 EnqueueDecision
+  - 410 BuildReservoirItem
+  - 436 TryGetDecision
+  - 447 RunDecisions
+  - 707 DrawUniformPlan
+  - 723 DrawUniformAction
+  - 739 PickMasked
+  - 760 ScheduleTraining
+  - 774 EnsureNativeTables
+  - 796 ReadIntrinsic
+  - 802 ApplyProgress
+  - 815 AccumulateNovelty
+  - 826 EnsureRndCapacity
+  - 834 EnsureDeciderCapacity
+  - 847 Dispose
+  - 862 CompleteDecision
+  - 873 CompleteTerminal
+  - 912 EnergySurplus
+  - 915 RarityTerm
+  - 918 FlushGoalRewardToCoordinator
+  - 947 GetCoordinatorEntropy
+  - 948 GetCurrentGoal
+  - 950 GetExecutorEntropy
+  - 954 SharedHierarchicalBrain
+  - 981 FromModels
+  - 1011 ToSnapshot
+  - 1017 FromSnapshot
+  - 1020 FromSnapshot
+  - 1035 MatchesArchitecture
+  - 1047 SizesMatch
   - 9–9 enum Goal
 
 ## `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs`

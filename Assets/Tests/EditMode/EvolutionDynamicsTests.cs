@@ -36,35 +36,103 @@ public class EvolutionDynamicsTests
         => target.GetType().GetField(name, BindingFlags.NonPublic | BindingFlags.Instance).SetValue(target, value);
 
     [Test]
-    public void ColonyGenomeStartsInRangeAndIsInheritedWithMutation()
+    public void ColonyGenomeStartsAtTheCentreAndSpreadWidensIt()
     {
+        var lr = GeneticParameters.ParameterRanges[GeneticParameters.IdxBaseLearningRate];
+        var gn = GeneticParameters.ParameterRanges[GeneticParameters.IdxMaxGradientNorm];
+        var er = GeneticParameters.ParameterRanges[GeneticParameters.IdxEntropyRegularization];
+
+        var centre = ColonyGenome.Initial(0f);
+        Assert.AreEqual(0.5f * (lr.min + lr.max), centre.BaseLearningRate, 1e-6f);
+        Assert.AreEqual(0.5f * (gn.min + gn.max), centre.MaxGradientNorm, 1e-6f);
+        Assert.AreEqual(0.5f * (er.min + er.max), centre.EntropyRegularization, 1e-6f);
+
+        bool differs = false;
         for (int i = 0; i < 50; i++)
         {
-            var g = ColonyGenome.Random();
-            var lr = GeneticParameters.ParameterRanges[GeneticParameters.IdxBaseLearningRate];
-            var gn = GeneticParameters.ParameterRanges[GeneticParameters.IdxMaxGradientNorm];
-            var er = GeneticParameters.ParameterRanges[GeneticParameters.IdxEntropyRegularization];
+            var g = ColonyGenome.Initial(1f);
             Assert.That(g.BaseLearningRate, Is.InRange(lr.min, lr.max));
             Assert.That(g.MaxGradientNorm, Is.InRange(gn.min, gn.max));
             Assert.That(g.EntropyRegularization, Is.InRange(er.min, er.max));
+            differs |= g.BaseLearningRate != centre.BaseLearningRate;
         }
+        Assert.IsTrue(differs);
+    }
 
-        var parent = ColonyGenome.Random();
+    [Test]
+    public void ColonyGenomeIsInheritedWithMutation()
+    {
+        var parent = ColonyGenome.Initial(1f);
         var same = parent.Inherited(0f);
         Assert.AreEqual(parent.BaseLearningRate, same.BaseLearningRate);
         Assert.AreEqual(parent.MaxGradientNorm, same.MaxGradientNorm);
         Assert.AreEqual(parent.EntropyRegularization, same.EntropyRegularization);
 
+        var lr = GeneticParameters.ParameterRanges[GeneticParameters.IdxBaseLearningRate];
         bool moved = false;
         for (int i = 0; i < 20; i++)
         {
             var child = parent.Inherited(1f);
-            var lr = GeneticParameters.ParameterRanges[GeneticParameters.IdxBaseLearningRate];
             Assert.That(child.BaseLearningRate, Is.InRange(lr.min, lr.max));
             moved |= child.BaseLearningRate != parent.BaseLearningRate || child.MaxGradientNorm != parent.MaxGradientNorm
                   || child.EntropyRegularization != parent.EntropyRegularization;
         }
         Assert.IsTrue(moved);
+    }
+
+    [Test]
+    public void ColoniesStartWithTheSameGenomeUnlessSpreadIsSet()
+    {
+        SimulationRules.Bind(_baseRules);
+        var registry = new ColonyRegistry();
+        try
+        {
+            var a = registry.Add(new float2(0f, 0f), null, 4);
+            var b = registry.Add(new float2(50f, 0f), null, 4);
+            Assert.AreEqual(a.Genome.BaseLearningRate, b.Genome.BaseLearningRate);
+            Assert.AreEqual(a.Genome.MaxGradientNorm, b.Genome.MaxGradientNorm);
+            Assert.AreEqual(a.Genome.EntropyRegularization, b.Genome.EntropyRegularization);
+
+            SetField(_baseRules, "colonyGenomeInitialSpread", 1f);
+            bool differs = false;
+            for (int i = 0; i < 10 && !differs; i++)
+                differs |= registry.Add(new float2(100f + i, 0f), null, 4).Genome.BaseLearningRate != a.Genome.BaseLearningRate;
+            Assert.IsTrue(differs);
+        }
+        finally
+        {
+            registry.Dispose();
+        }
+    }
+
+    [Test]
+    public void ReseedDonorIsChosenInsideTheSameArm()
+    {
+        SimulationRules.Bind(_baseRules);
+        var registry = new ColonyRegistry();
+        try
+        {
+            SetField(_baseRules, "armNullPolicyFraction", 1f);
+            var nullA = registry.Add(new float2(0f, 0f), null, 4);
+            var nullB = registry.Add(new float2(10f, 0f), null, 4);
+            SetField(_baseRules, "armNullPolicyFraction", 0f);
+            var controlA = registry.Add(new float2(20f, 0f), null, 4);
+            var controlB = registry.Add(new float2(30f, 0f), null, 4);
+            Assert.AreEqual(ColonyArm.NullPolicy, nullA.Arm);
+            Assert.AreEqual(ColonyArm.Control, controlA.Arm);
+
+            controlB.AddMember(new EntityModel { ManagerIndex = 0 });
+            Assert.IsNull(ColonyPopulation.PickDonor(registry, nullA));
+            Assert.AreSame(controlB, ColonyPopulation.PickDonor(registry, controlA));
+
+            nullB.AddMember(new EntityModel { ManagerIndex = 1 });
+            Assert.AreSame(nullB, ColonyPopulation.PickDonor(registry, nullA));
+            Assert.AreSame(controlB, ColonyPopulation.PickDonor(registry, controlA));
+        }
+        finally
+        {
+            registry.Dispose();
+        }
     }
 
     [Test]

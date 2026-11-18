@@ -6,21 +6,15 @@ public struct ColonyGenome
     public float MaxGradientNorm;
     public float EntropyRegularization;
 
-    public static ColonyGenome Random()
+    public static ColonyGenome Initial(float spread)
     {
+        spread = math.saturate(spread);
         var g = default(ColonyGenome);
-        g.BaseLearningRate      = Draw(GeneticParameters.IdxBaseLearningRate);
-        g.MaxGradientNorm       = Draw(GeneticParameters.IdxMaxGradientNorm);
-        g.EntropyRegularization = Draw(GeneticParameters.IdxEntropyRegularization);
+        g.BaseLearningRate      = Start(GeneticParameters.IdxBaseLearningRate, spread);
+        g.MaxGradientNorm       = Start(GeneticParameters.IdxMaxGradientNorm, spread);
+        g.EntropyRegularization = Start(GeneticParameters.IdxEntropyRegularization, spread);
         return g;
     }
-
-    public static ColonyGenome FromAgent(in GeneticParameters p) => new ColonyGenome
-    {
-        BaseLearningRate      = p.BaseLearningRate,
-        MaxGradientNorm       = p.MaxGradientNorm,
-        EntropyRegularization = p.EntropyRegularization,
-    };
 
     public ColonyGenome Inherited(float chance)
     {
@@ -31,10 +25,12 @@ public struct ColonyGenome
         return g;
     }
 
-    private static float Draw(int index)
+    private static float Start(int index, float spread)
     {
         var (min, max, _) = GeneticParameters.ParameterRanges[index];
-        return RavineRandom.RangeFloat(min, max);
+        float mid = 0.5f * (min + max);
+        if (spread <= 0f) return mid;
+        return math.lerp(mid, RavineRandom.RangeFloat(min, max), spread);
     }
 
     private static float Mutate(float value, int index, float chance)

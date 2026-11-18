@@ -18,8 +18,6 @@ public sealed class LifeEventLog : IDisposable
     private int _pending;
     private bool _disposed;
 
-    public bool IsOpen => _writer != null;
-
     public LifeEventLog()
     {
         var fields = typeof(GeneticParameters).GetFields(BindingFlags.Public | BindingFlags.Instance);
