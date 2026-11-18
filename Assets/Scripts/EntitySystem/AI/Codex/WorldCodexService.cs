@@ -15,6 +15,9 @@ public sealed class WorldCodexService
     private readonly float[] _theta;
     private readonly float[] _applied;
     private readonly float[] _multipliers;
+    private readonly float[] _perturb;
+    private readonly float[] _perturbApplied;
+    private readonly float[] _effective;
     private readonly float[] _thetaTime;
     private readonly CodexPriceEstimator _prices;
     private int _count;
@@ -27,6 +30,7 @@ public sealed class WorldCodexService
 
     public int Version { get; private set; }
     public int LawCount => _count;
+    public int PerturbationActive { get; private set; }
     public int Axes => _axes;
     public bool NeedsEnergySamples => _count > 0;
     public ReadOnlySpan<LawRecord> Laws => new(_laws, 0, _count);
@@ -47,6 +51,9 @@ public sealed class WorldCodexService
         _theta = new float[_axes];
         _applied = new float[_axes];
         _multipliers = new float[_axes];
+        _perturb = new float[_axes];
+        _perturbApplied = new float[_axes];
+        _effective = new float[_axes];
         _thetaTime = new float[_axes];
         _prices = new CodexPriceEstimator(_axes, rules.CodexPriceForgetting, rules.CodexPriceMinSamples,
             rules.CodexPriceMinExcitation, rules.CodexPriceInitCov, rules.CodexPricePrior);
@@ -209,8 +216,31 @@ public sealed class WorldCodexService
             _dirty = true;
         }
 
+        UpdatePerturbation();
         if (_dirty) Reaggregate();
         SamplePrices(dt);
+    }
+
+    private void UpdatePerturbation()
+    {
+        var schedule = _rules.PerturbationSchedule;
+        if (schedule.Length == 0 && PerturbationActive == 0) return;
+
+        float now = SimulationClock.Time;
+        Array.Clear(_perturb, 0, _perturb.Length);
+        int active = 0;
+        for (int i = 0; i < schedule.Length; i++)
+        {
+            var e = schedule[i];
+            if (now < e.startTime || now >= e.startTime + e.duration) continue;
+            if (!(e.multiplier > 0f) || !math.isfinite(e.multiplier) || (uint)e.axis >= (uint)_axes) continue;
+            _perturb[(int)e.axis] += math.log(e.multiplier);
+            active++;
+        }
+        PerturbationActive = active;
+
+        for (int k = 0; k < _axes; k++)
+            if (_perturb[k] != _perturbApplied[k]) { _dirty = true; break; }
     }
 
     private void Reaggregate()
@@ -219,11 +249,16 @@ public sealed class WorldCodexService
         CodexMath.Aggregate(Laws, _opposition, _rules.CodexInertia, _rules.CodexAxisMin, _rules.CodexAxisMax, _theta);
 
         bool changed = false;
-        for (int k = 0; k < _axes; k++) changed |= _theta[k] != _applied[k];
+        for (int k = 0; k < _axes; k++) changed |= _theta[k] != _applied[k] || _perturb[k] != _perturbApplied[k];
         if (!changed) return;
 
-        for (int k = 0; k < _axes; k++) _applied[k] = _theta[k];
-        CodexMath.Multipliers(_applied, _multipliers);
+        for (int k = 0; k < _axes; k++)
+        {
+            _applied[k]        = _theta[k];
+            _perturbApplied[k] = _perturb[k];
+            _effective[k]      = _theta[k] + _perturb[k];
+        }
+        CodexMath.Multipliers(_effective, _multipliers);
         _rules.ApplyLaws(_multipliers);
         Version++;
     }

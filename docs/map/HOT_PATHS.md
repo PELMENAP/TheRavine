@@ -33,7 +33,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 | Vectorisation | `Assets/Scripts/EntitySystem/AI/InputVectorizer.cs` | whole file |
 | Metabolism | `Assets/Scripts/EntitySystem/AI/Entity/CreatureCore.cs` | `Metabolize`, `StepVirology`, `ReadVitals` |
 | Virology | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs`, `Assets/Scripts/EntitySystem/Virology/Ribosome.cs` | `VirologyComponent.Step`, `Ribosome.Step`, `Relax` |
-| Infection | `Assets/Scripts/EntitySystem/Virology/InfectionService.cs` | `ProcessSpread` and the `TryTransmit` family |
+| Infection | `Assets/Scripts/EntitySystem/Virology/InfectionService.cs`, `Assets/Scripts/EntitySystem/Virology/VirologyEvents.cs` | `ProcessSpread` and the `TryTransmit` family; `VirologyEvents.Note*` (integer increments) |
 
 ## Decide, forward pass, train
 

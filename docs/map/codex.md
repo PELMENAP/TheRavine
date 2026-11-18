@@ -26,6 +26,9 @@ Tests: `Assets/Tests/EditMode/CodexMathTests.cs`, `Assets/Tests/EditMode/WorldCo
 7. `ColonyLegislator.Tick` runs at window close: per window it compares `ColonyState.Score`, proposes a Rademacher perturbation, invests while the trend is positive, otherwise tries the mirrored perturbation once.
 8. Save: `AutosaveCoordinator` hook writes `WorldState.codex`; on load `Restore` validates and θ is recomputed by the first `Step`. A missing or invalid block loads an empty codex.
 
+## Perturbation schedule
+`SimulationRules.PerturbationSchedule` (`PerturbationEntry`: `startTime`, `duration`, `axis`, `multiplier`; empty by default) is applied inside `WorldCodexService.Step`, the same window-open path as the laws: `UpdatePerturbation` sums `log(multiplier)` of the entries active at `SimulationClock.Time` per axis, `Reaggregate` applies `exp(θ + perturbation)` through `SimulationRules.ApplyLaws`. Entries with a non-positive or non-finite multiplier or an unknown axis are ignored. The perturbation is not part of `Theta`, of the laws or of the price estimate. `WorldCodexService.PerturbationActive` is the number of active entries (log column `perturbation_active`).
+
 ## Invariants
 - The frame never changes inside a tick window: `Step` is the only writer of the law-applied rules and runs at window open.
 - Spent energy leaves the investor and appears once in `EnergyFlows.Codex`; a refused call changes neither energy nor laws.

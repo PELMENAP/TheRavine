@@ -30,6 +30,7 @@ public sealed class ColonyState : IDisposable
     }
     public readonly bool IsWild;
     public readonly ColonyArm Arm;
+    public ColonyGenome Genome { get; private set; }
     public float Scarcity;
     public float Pressure { get; private set; }
     public float2 PackCentre { get; private set; }
@@ -213,7 +214,9 @@ public sealed class ColonyState : IDisposable
         Nest     = new NestState(position);
         Pois     = new ColonyPoiBoard(SimulationRules.Active.ColonyPoiCount);
         Brain    = brain;
+        Genome = ColonyGenome.Random();
         brain?.SetArm(Arm, true);
+        brain?.SetLearningGenes(Genome);
         _members = new int[math.max(capacity, 4)];
         SkillTopology = SkillGraphTopology.Create(SkillAtlas.Active, SkillGraphTopology.DrawForestGenes());
     }
@@ -222,6 +225,13 @@ public sealed class ColonyState : IDisposable
     {
         Brain = brain;
         brain?.SetArm(Arm, false);
+        brain?.SetLearningGenes(Genome);
+    }
+
+    public void InheritGenome(in ColonyGenome parent)
+    {
+        Genome = parent.Inherited(math.saturate(SimulationRules.Active.ColonyGenomeMutationChance));
+        Brain?.SetLearningGenes(Genome);
     }
 
     public void Relocate(float2 position, ChunkFoodIndex food)
