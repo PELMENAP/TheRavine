@@ -28,6 +28,7 @@ Read `docs/SECURITY.md` section 8 before changing the interpreter.
 - Debug commands call `DebugCommandGate.TryEnter`, which refuses while `WorldAuthority.HasRemotePeers`.
 - `RotateCommand`: `Assets/Scripts/Terminal/GeneratorCommands.cs`.
 - `SkillGraphCommand` (`~skills`, `~sk`): `Assets/Scripts/Terminal/SkillGraphCommand.cs`; toggles `SkillGraphPanel` for the local player; a normal command, not a debug one. Key `I` and a button do the same, see `docs/map/inventory-ui.md`.
+- `CodexCommand` (`~codex`, `~cx`): `Assets/Scripts/Terminal/CodexCommand.cs`; `list`, `explain`, `propose`, `vote`; a normal command refused while `WorldAuthority.HasRemotePeers`; author is the local player's `CodexAuthor`, see `docs/map/codex.md`.
 - Script commands: `Assets/Scripts/Terminal/Rive/RiveRedactorCommands.cs` (eight classes), `Assets/Scripts/Terminal/Rive/InteractorCommands.cs`.
 - Script files: `ScriptFileManager`; editor UI: `ScriptEditorPresenter`, `RiveInputUI`.
 

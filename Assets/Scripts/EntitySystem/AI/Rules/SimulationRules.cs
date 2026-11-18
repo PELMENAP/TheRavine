@@ -1438,6 +1438,7 @@ public sealed partial class SimulationRules : ScriptableObject
         if (!(heldObjectSpeedMul > 0f)) heldObjectSpeedMul = 1f;
         if (!(dangerDirectionMinMass >= 0f)) dangerDirectionMinMass = 0f;
         ValidateSkills();
+        ValidateCodex();
     }
 
     private static SimulationRules _active;

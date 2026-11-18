@@ -84,7 +84,13 @@ public class EntityManager : MonoBehaviour
     private double _lastWarmthDecayTime;
     private int _energyConsumers;
     public EnergyLedger Energy => _ledger;
-    public bool EnergySamplingRequired => _energyConsumers > 0 || SimulationRules.Active.SimulationLogEnabled;
+    public bool EnergySamplingRequired => _energyConsumers > 0 || SimulationRules.Active.SimulationLogEnabled
+        || (_codex != null && _codex.NeedsEnergySamples);
+    private WorldCodexService _codex;
+    private ColonyLegislator _legislator;
+    private IDisposable _codexSave;
+    private double _lastCodexTime;
+    public WorldCodexService Codex => _codex;
 
     public void RegisterEnergyConsumer() => _energyConsumers++;
     public void UnregisterEnergyConsumer() => _energyConsumers = Math.Max(_energyConsumers - 1, 0);
@@ -349,6 +355,7 @@ public class EntityManager : MonoBehaviour
         if (index != null) index.SumEnergy(out food, out corpses, out soil);
 
         _ledger.Sample(body, nest, food, corpses, soil, _warmth.Total);
+        _codex?.NoteEnergy(in _ledger.Last);
     }
 
     private MovePlanner _planner;
@@ -369,7 +376,7 @@ public class EntityManager : MonoBehaviour
     {
         SimulationRules.ReleaseVariant();
         SimulationRules resolved = ResolveRules();
-        SimulationRules.Bind(resolved);
+        SimulationRules.Bind(resolved != null ? resolved.CreateLawApplied() : null);
         if (resolved == null)
         {
             _rulesMissing = true;
@@ -406,6 +413,7 @@ public class EntityManager : MonoBehaviour
         _colonies = new ColonyRegistry();
         CreateColonies();
         ServiceLocator.Register(_colonies);
+        CreateCodex();
         _planner = new MovePlanner(_motion);
         _planner.BindColonies(_colonies);
         ServiceLocator.Register(_planner);
@@ -424,6 +432,43 @@ public class EntityManager : MonoBehaviour
 
         if (useSavedBrain)
             LoadBrain();
+    }
+
+    private void CreateCodex()
+    {
+        _codex = new WorldCodexService(SimulationRules.Active, _ledger, new EntityCodexPurse(_colonies, _entities));
+        _legislator = new ColonyLegislator(_codex);
+        ServiceLocator.Register(_codex);
+
+        if (ServiceLocator.Services.TryGet(out TheRavine.Base.WorldRegistry registry) && registry.HasLoadedWorld)
+        {
+            var saved = registry.GetCurrentState().codex;
+            if (saved != null && !_codex.Restore(saved))
+                RavineLog.Warning("[EntityManager] Saved codex is invalid or from another rule set: the world starts with an empty codex");
+
+            if (ServiceLocator.Services.TryGet(out TheRavine.Base.AutosaveCoordinator autosave))
+                _codexSave = autosave.SubscribeBeforeSave(() => CaptureCodex(registry));
+        }
+
+        _codex.Step(0f);
+        SimulationRules.CaptureFrame();
+    }
+
+    private void CaptureCodex(TheRavine.Base.WorldRegistry registry)
+    {
+        if (_codex == null || !TheRavine.Base.WorldAuthority.IsAuthority || !registry.HasLoadedWorld) return;
+
+        var save = new TheRavine.Base.CodexSave();
+        _codex.Capture(save);
+        registry.UpdateState(state => state.codex = save);
+    }
+
+    private void StepCodex()
+    {
+        double now = SimulationClock.TimeD;
+        float dt = (float)(now - _lastCodexTime);
+        _lastCodexTime = now;
+        _codex.Step(dt);
     }
 
     private void CreateColonies()
@@ -542,6 +587,7 @@ public class EntityManager : MonoBehaviour
         }
         _population.StartPredatorClock(SimulationClock.TimeD);
         _lastColonyTime   = SimulationClock.Time;
+        _lastCodexTime    = SimulationClock.TimeD;
         CreateNestViews();
 
         _nextGenerationTime = SimulationClock.Time + SimulationRules.Active.GenerationInterval;
@@ -573,6 +619,7 @@ public class EntityManager : MonoBehaviour
         using var scope = TickAgentsMarker.Auto();
         if (!_windowOpen && _entities.Count == 0)
         {
+            StepCodex();
             _tickBudget.Reset();
             _population.ProcessPendingDeaths();
             BeginColonyBatches();
@@ -589,6 +636,7 @@ public class EntityManager : MonoBehaviour
         {
             if (!_windowOpen)
             {
+                StepCodex();
                 RebuildTickSnapshot();
                 _windowOpen = true;
             }
@@ -677,6 +725,7 @@ public class EntityManager : MonoBehaviour
         _food.PruneUnloaded();
         TickNests();
         TickColonies();
+        _legislator.Tick(_colonies, SimulationClock.TimeD);
         SweepSkills();
         SolveSkills();
         UpdateVisibility();
@@ -1113,6 +1162,7 @@ public class EntityManager : MonoBehaviour
         services.Unregister(_ledger);
         services.Unregister(_warmth);
         services.Unregister(_colonies);
+        services.Unregister(_codex);
         services.Unregister(_planner);
         services.Unregister(_motion);
         services.Unregister(_infection?.Service);
@@ -1136,6 +1186,7 @@ public class EntityManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        _codexSave?.Dispose();
         SimulationRules.ReleaseVariant();
         _soilFeed?.Dispose();
         _simulationLog?.Dispose();
