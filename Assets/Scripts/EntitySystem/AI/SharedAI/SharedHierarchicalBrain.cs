@@ -146,6 +146,13 @@ public class SharedHierarchicalBrain : IDisposable
         _progressNovelty = enabled;
     }
 
+    public void SetLearningGenes(in ColonyGenome genome)
+    {
+        CompletePending();
+        coordinator.SetLearningGenes(in genome);
+        for (int g = 0; g < GoalCount; g++) executors[g].SetLearningGenes(in genome);
+    }
+
     public unsafe void SetArm(ColonyArm arm, bool freshReservoir)
     {
         CompletePending();

@@ -36,6 +36,10 @@ public unsafe partial class DelayedPerceptron : IDisposable
     private bool _managedStale;
 
     private NativeArray<KernelLayout> _kernel;
+    private bool  _hasColonyLearning;
+    private float _colonyLr;
+    private float _colonyGradNorm;
+    private float _colonyEntropyReg;
     private bool  _ltcBounded;
     private float _tauMin = TauEpsilon;
     private float _tauMax = float.MaxValue;
@@ -122,6 +126,14 @@ public unsafe partial class DelayedPerceptron : IDisposable
         k.LtcBounded = _ltcBounded ? 1 : 0;
         k.TauMin     = _tauMin;
         k.TauMax     = _tauMax;
+    }
+
+    internal void SetLearningGenes(in ColonyGenome genome)
+    {
+        _hasColonyLearning = true;
+        _colonyLr          = genome.BaseLearningRate;
+        _colonyGradNorm    = genome.MaxGradientNorm;
+        _colonyEntropyReg  = genome.EntropyRegularization;
     }
 
     internal void SetLtc(LtcMode mode, float tauMin, float tauMax)
@@ -398,9 +410,9 @@ public unsafe partial class DelayedPerceptron : IDisposable
             DurationNoise         = item.DurationNoise,
             Dt                    = ctx.DeltaTime,
             Temperature           = item.Temperature > 0f ? item.Temperature : p.SoftmaxTemperature,
-            EntropyRegularization = p.EntropyRegularization,
-            MaxGradNorm           = p.MaxGradientNorm,
-            LrMul                 = p.BaseLearningRate * InvBaseLearningRateReference,
+            EntropyRegularization = _hasColonyLearning ? _colonyEntropyReg : p.EntropyRegularization,
+            MaxGradNorm           = _hasColonyLearning ? _colonyGradNorm : p.MaxGradientNorm,
+            LrMul                 = (_hasColonyLearning ? _colonyLr : p.BaseLearningRate) * InvBaseLearningRateReference,
         };
 
         int ac = ctx.Layout.ActionCount;

@@ -132,6 +132,7 @@ public class EntityManager : MonoBehaviour
     private SpeechBus            _speech;
     private BehaviourDescriptorLog _descriptors;
     private NoveltyProgressSystem _noveltyProgress;
+    private LifeEventLog _lifeLog;
     public SpeechBus Speech => _speech;
     private ColonyState _wild;
     private float  _lastColonyTime;
@@ -401,6 +402,7 @@ public class EntityManager : MonoBehaviour
         ServiceLocator.Register(_skills);
         _speech     = new SpeechBus(_capacity, _entities);
         SpeechMetrics.Reset();
+        TheRavine.EntityControl.Virology.VirologyEvents.Reset();
         ServiceLocator.Register(_thresholds);
         ServiceLocator.Register(_speech);
         _noveltyProgress = new NoveltyProgressSystem(_capacity);
@@ -435,6 +437,11 @@ public class EntityManager : MonoBehaviour
         _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, _capacity, spawnRadius,
             _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _survey, _utility, _thresholds, _skills, _boids, _ledger, _speech, !snapshotStream, _descriptors, _noveltyProgress);
         _population.Spawned += RaiseSpawned;
+        if (SimulationRules.Active.LifeLogEnabled)
+        {
+            _lifeLog = new LifeEventLog();
+            _population.LifeLog = _lifeLog;
+        }
         _population.Died    += RaiseDied;
         _urgent = new UrgentTickQueue(_capacity);
         _population.TickUrgent += _urgent.Enqueue;
@@ -1221,6 +1228,7 @@ public class EntityManager : MonoBehaviour
         _skills?.Dispose();
         _speech?.Dispose();
         _noveltyProgress?.Dispose();
+        _lifeLog?.Dispose();
         _descriptors?.Dispose();
         _grid.Dispose();
         _colonies?.Dispose();

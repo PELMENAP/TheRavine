@@ -22,12 +22,12 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 19 | 2317 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
-| `Assets/Scripts/EntitySystem/AI` | 11 | 2334 |
+| `Assets/Scripts/EntitySystem/AI` | 11 | 2342 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
-| `Assets/Scripts/EntitySystem/AI/Codex` | 10 | 891 |
-| `Assets/Scripts/EntitySystem/AI/Colony` | 8 | 850 |
-| `Assets/Scripts/EntitySystem/AI/Debug` | 4 | 1990 |
-| `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 885 |
+| `Assets/Scripts/EntitySystem/AI/Codex` | 10 | 926 |
+| `Assets/Scripts/EntitySystem/AI/Colony` | 9 | 906 |
+| `Assets/Scripts/EntitySystem/AI/Debug` | 6 | 2293 |
+| `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 897 |
 | `Assets/Scripts/EntitySystem/AI/Entity` | 18 | 2837 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1461 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 695 |
@@ -37,9 +37,9 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Nest` | 1 | 394 |
 | `Assets/Scripts/EntitySystem/AI/Perception` | 10 | 2346 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 567 |
-| `Assets/Scripts/EntitySystem/AI/Population` | 7 | 1291 |
-| `Assets/Scripts/EntitySystem/AI/Rules` | 11 | 3311 |
-| `Assets/Scripts/EntitySystem/AI/SharedAI` | 24 | 3807 |
+| `Assets/Scripts/EntitySystem/AI/Population` | 7 | 1296 |
+| `Assets/Scripts/EntitySystem/AI/Rules` | 11 | 3328 |
+| `Assets/Scripts/EntitySystem/AI/SharedAI` | 24 | 3814 |
 | `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2174 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 8 | 1273 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
@@ -58,7 +58,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/InteractionSystem` | 1 | 8 |
 | `Assets/Scripts/EntitySystem/Job` | 9 | 3140 |
 | `Assets/Scripts/EntitySystem/StaticNPC` | 1 | 1 |
-| `Assets/Scripts/EntitySystem/Virology` | 16 | 2523 |
+| `Assets/Scripts/EntitySystem/Virology` | 17 | 2553 |
 | `Assets/Scripts/GameSceneManagerSystem` | 3 | 295 |
 | `Assets/Scripts/GameSceneManagerSystem/IStates & IStatesBehaviour` | 1 | 15 |
 | `Assets/Scripts/GameSceneManagerSystem/MainSceneManagerSystem` | 2 | 274 |
@@ -115,7 +115,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 945 |
-| `Assets/Tests/EditMode` | 75 | 12127 |
+| `Assets/Tests/EditMode` | 76 | 12280 |
 
 ## Assemblies
 
@@ -354,6 +354,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | PerchCollectIdsJob | struct | `Assets/Scripts/EntitySystem/Job/BirdPerchIndex.cs` | 56 |
 | PerchRemapJob | struct | `Assets/Scripts/EntitySystem/Job/BirdPerchIndex.cs` | 152 |
 | PeriodicEvent | class | `Assets/Scripts/Test/MarketSimulator.cs` | 54 |
+| PerturbationEntry | struct | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.Variance.cs` | 24 |
 | PickUpEvent | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 9 |
 | PickUpResultEvent | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 11 |
 | PlaceEvent | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 10 |

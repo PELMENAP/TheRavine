@@ -209,3 +209,36 @@ Appended after `listener_shift` and before the optional `grad_*` columns, in thi
 | `predisposition_dist` | both | distance | Mean Euclidean distance between the inherited predisposition vectors of colony members: all pairs of at most 64 members taken at an even stride (`EvolutionService.MeanPredispositionDistance`); world row: member-weighted mean over colonies with at least 2 members |
 
 The descriptor file gets `predisposition_0 … predisposition_<PredispositionSize−1>` after `energy_surplus`. `tools/simlog_analyze.py` prints `h_sat` and `pre_dist` per arm, and, with the descriptor file, the correlation ratio η² of each predisposition dimension on the shared cluster label (pooled and per arm) and its strongest Pearson correlation with a behavioural feature.
+
+## Columns added in revision 8 (stage 3: evolutionary dynamics)
+
+The columns are the last ones of every row, after the optional `grad_*` columns, in the order below. World-only columns are empty in colony rows and the other way round.
+
+| Column | Scope | Unit | Meaning and computation |
+|---|---|---|---|
+| `colony_lr`, `colony_grad_norm`, `colony_entropy_reg` | colony | — | `ColonyState.Genome`: `BaseLearningRate`, `MaxGradientNorm`, `EntropyRegularization` that train the colony's shared brain. Empty in the world row |
+| `perturbation_active` | both | entries | `WorldCodexService.PerturbationActive` at the sample: schedule entries whose window contains the time |
+| `is_wild` | colony | 0/1 | `ColonyState.IsWild`; empty in the world row |
+| `strike_success` | both | 0…1 | (Δ `Attacks[Foreign]` + Δ `Attacks[Player]`) / Δ `attack_started` of the row; empty when no attack started. In the wild colony row it is the predators' success |
+| `escape_rate` | both | 0…1 | (Δ `attack_fail_target_lost` + Δ `attack_fail_lurk_timeout`) / Δ `attack_started`: attack commands that ended because the target was lost or left the detection radius; empty when no attack started |
+| `gene_speed_mean`, `gene_detect_mean` | colony | multiplier | Mean `MoveSpeedMul` and `DetectionRadiusMul` genes of the colony's living agents at the sample |
+| `virus_strains`, `virus_lineages` | world | count | Distinct `StrainId` and `LineageId` of non-endogenous segments over the hosts in `EntityManager.Entities` (`VirologyCensus`) |
+| `virus_strains_new`, `virus_strains_lost` | world | count | Strains present now and not at the previous sample, and the reverse |
+| `virus_dominant_strain` | world | id | `StrainId` carried by the most hosts (lowest id on a tie); 0 when none |
+| `virus_dominant_prevalence` | world | 0…1 | Hosts carrying the dominant strain / hosts |
+| `virus_immune_dominant_share` | world | 0…1 | Hosts for which `VirologyComponent.IsImmune(signature of the dominant strain)` / hosts |
+| `virus_mean_integrity` | world | 0…1 | Mean `Segment.Integrity` of non-endogenous segments |
+| `virus_infections`, `virus_recoveries`, `virus_infections_blocked` | world | count | Window deltas of `VirologyEvents`: viral segments inserted, hosts left without a viral segment by an excision, insertions refused by immunity |
+
+## Life log
+
+With `lifeLogEnabled` the file `life_log_<yyyyMMdd_HHmmss>.csv` has one row per event: `event` (`birth` or `death`), `time_s`, `agent_id` (`EntityModel.EntityId`), `parent_id` and `mate_id` (births from reproduction; empty for founders, reseeds and predator spawns), `colony_id`, `cause` (`DeathCause` on death), `age_s` (death), then one column per gene of `GeneticParameters` except the three colony learning genes, including `Predisposition0…2`; gene columns are filled in birth rows only. The descriptor cluster of an agent is not in the file: clusters are computed offline from `behaviour_descriptors_<stamp>.csv`.
+
+## Offline analysis of stage 3
+
+`python3 tools/simlog_analyze.py simulation_log.csv [descriptors.csv] [--life life_log.csv]` prints, in addition to the earlier sections:
+
+- predator–prey: lagged cross-correlation `corr(a[t], b[t+lag])`, lags ±`--max-lag` samples, of the predators' `strike_success` with `escape_rate` and with the civil colonies' `deaths_killed` per member, and the slope per 1000 s of the predator and prey trait means (prey is the member-weighted mean of civil colonies); both slopes positive marks an arms race;
+- virus–immune: the lagged correlation of `virus_immune_dominant_share` with `virus_dominant_prevalence`, strain turnover (share of consecutive samples in which the dominant strain changed, mean dominant tenure, mean `(new + lost) / alive`);
+- perturbation: for each window with `perturbation_active > 0`, the recovery time after the window end of each colony's population and of the world `avg_fitness` to stay within `--band` of the mean of the `--pre-window` samples before the shock for `--hold` samples, medians per arm; "not recovered" when it never does;
+- Bedau–Packard (with `--life`): gene values are cut into `--bins` equal bins between their observed minimum and maximum, a component is a (gene, bin) pair; on a grid of `--life-steps` times the activity of a present component grows by one per step, `new activity` counts components whose activity first exceeds `--activity-threshold`, diversity is the number of present components, and the abundance-weighted activity adds the share of living agents carrying the component. The neutral shadow replays the same births and deaths of the same agent slots by colony, but every newborn with a known parent copies a random living agent of its colony and re-draws each gene bin with the per-gene rate at which real children differ from their parents. Real and shadow are printed side by side.

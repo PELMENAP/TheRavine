@@ -35,6 +35,8 @@ public sealed class ColonyPopulation
     private readonly BehaviourDescriptorLog _descriptors;
     private readonly NoveltyProgressSystem  _novelty;
 
+    public LifeEventLog LifeLog { get; set; }
+
     private readonly Queue<EntityModel> _pendingDeath = new();
     private EntityModel[] _deferredDispose = Array.Empty<EntityModel>();
     private int _deferredCount;
@@ -92,7 +94,7 @@ public sealed class ColonyPopulation
 
     public void StartPredatorClock(double now) => _nextPredatorTime = now;
 
-    public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null)
+    public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null, EntityModel mate = null)
     {
         if (!TheRavine.Base.WorldAuthority.IsAuthority || !HasFreeSlot(colony))
         {
@@ -150,6 +152,7 @@ public sealed class ColonyPopulation
         _speech.Reset(model.ManagerIndex, model.ColonyIndex, model.EntityId, muted, colony.Arm);
         _descriptors?.Reset(model.ManagerIndex);
         _novelty?.Reset(model.ManagerIndex);
+        LifeLog?.Birth(model, parent, mate);
         Spawned?.Invoke(model);
         return model;
     }
@@ -185,7 +188,7 @@ public sealed class ColonyPopulation
                      + (Vector3)RavineRandom.GetInsideCircle().normalized * rules.ChildSpawnOffset
                      + Vector3.up * rules.ChildSpawnLift;
 
-        return SpawnEntity(pos, colony, childCtx, parent) != null;
+        return SpawnEntity(pos, colony, childCtx, parent, mate) != null;
     }
 
     public Vector3 RandomPosition(ColonyState colony)
@@ -220,6 +223,7 @@ public sealed class ColonyPopulation
             BroadcastDeath(model, cause);
             _food.DropCorpse(model, cause);
             model.Brain?.CompleteTerminal(_evolution.TerminalPenaltyFor(model, cause), SimulationClock.Time);
+            LifeLog?.Death(model, cause);
             RemoveEntitySwapBack(model);
             Died?.Invoke(model);
 
@@ -399,6 +403,7 @@ public sealed class ColonyPopulation
 
         if (donor != null)
         {
+            colony.InheritGenome(donor.Genome);
             var old = colony.Brain;
             colony.ReplaceBrain(new SharedHierarchicalBrain(donor.Brain));
             old?.Dispose();

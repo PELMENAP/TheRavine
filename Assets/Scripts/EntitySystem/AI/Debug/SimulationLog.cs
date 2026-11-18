@@ -86,6 +86,7 @@ public sealed class SimulationLog : IDisposable
 
     private static readonly int WorldOnlyColumns = ResidualColumns + FlowColumns.Length + StockColumns.Length;
     private static readonly string WorldOnlyPlaceholder = new string(',', WorldOnlyColumns);
+    private static readonly string VirusPlaceholder = new string(',', 11);
     private static readonly string SaturationPlaceholder = new string(',', (int)ColonyArm.Count);
     private static readonly string ConflictPlaceholder = new string(',', GradientConflict.Pairs + GradientConflict.Groups);
 
@@ -96,6 +97,13 @@ public sealed class SimulationLog : IDisposable
     private readonly int[]   _current       = new int[Stride];
     private readonly int[]   _world         = new int[Stride];
     private readonly ColonySpeechTables _worldSpeech = new();
+    private readonly VirologyCensus _census = new();
+    private readonly float[] _geneSpeed  = new float[ColonyRegistry.MaxColonies];
+    private readonly float[] _geneDetect = new float[ColonyRegistry.MaxColonies];
+    private readonly int[]   _geneCount  = new int[ColonyRegistry.MaxColonies];
+    private long _prevInfections, _prevRecoveries, _prevBlocked;
+    private long _infections, _recoveries, _blocked;
+    private int  _perturbation;
     private const float SaturationThreshold = 0.95f;
     private readonly long[] _saturated   = new long[(int)ColonyArm.Count];
     private readonly long[] _activations = new long[(int)ColonyArm.Count];
@@ -140,6 +148,8 @@ public sealed class SimulationLog : IDisposable
         float season = SeasonClock.Value(time);
         bool  winter = SeasonClock.IsWinter(time);
         bool  night  = IsNight();
+
+        SampleStage3(entities);
 
         Array.Clear(_world, 0, Stride);
         float worldLifespan = 0f, fill = 0f, rest = 0f, storage = 0f;
@@ -195,6 +205,7 @@ public sealed class SimulationLog : IDisposable
             WriteSaturation(entities);
             WritePredisposition(colonies, n, evolution);
             if (_conflictColumns) WriteConflictWorld(colonies, n);
+            WriteStage3(null, _world, 0, true);
             _writer.WriteLine();
             ledger?.ResetWindow();
 
@@ -215,6 +226,7 @@ public sealed class SimulationLog : IDisposable
                 WriteComma();
                 WriteFloat(evolution != null ? evolution.MeanPredispositionDistance(colony) : 0f);
                 if (_conflictColumns) _writer.Write(ConflictPlaceholder);
+                WriteStage3(colony, _delta, c * Stride, false);
                 _writer.WriteLine();
             }
             for (int c = 0; c < n; c++) speech?.TablesOf(colonies[c].Index)?.Clear();
@@ -562,10 +574,94 @@ public sealed class SimulationLog : IDisposable
                     sb.Append(",grad_cos_").Append(CasteName(a)).Append('_').Append(CasteName(b));
             for (int a = 0; a < GradientConflict.Groups; a++) sb.Append(",grad_norm_").Append(CasteName(a));
         }
+        sb.Append(",colony_lr,colony_grad_norm,colony_entropy_reg,perturbation_active,is_wild,strike_success,escape_rate,gene_speed_mean,gene_detect_mean");
+        sb.Append(",virus_strains,virus_lineages,virus_strains_new,virus_strains_lost,virus_dominant_strain,virus_dominant_prevalence");
+        sb.Append(",virus_immune_dominant_share,virus_mean_integrity,virus_infections,virus_recoveries,virus_infections_blocked");
         return sb.ToString();
     }
 
     private static string CasteName(int caste) => SnakeCase(((Caste)caste).ToString());
+
+    private void SampleStage3(System.Collections.Generic.List<EntityModel> entities)
+    {
+        Array.Clear(_geneSpeed, 0, _geneSpeed.Length);
+        Array.Clear(_geneDetect, 0, _geneDetect.Length);
+        Array.Clear(_geneCount, 0, _geneCount.Length);
+        if (entities != null)
+        {
+            for (int i = 0; i < entities.Count; i++)
+            {
+                var e = entities[i];
+                if (e == null || e.IsDisposed || e.Colony == null || e.Brain == null) continue;
+                int c = e.Colony.Index;
+                if ((uint)c >= (uint)_geneCount.Length) continue;
+                var genes = e.Brain.Context.CoordMLP.Params;
+                _geneSpeed[c]  += genes.MoveSpeedMul;
+                _geneDetect[c] += genes.DetectionRadiusMul;
+                _geneCount[c]++;
+            }
+            _census.Sample(entities);
+        }
+
+        _infections = TheRavine.EntityControl.Virology.VirologyEvents.Infections - _prevInfections;
+        _recoveries = TheRavine.EntityControl.Virology.VirologyEvents.Recoveries - _prevRecoveries;
+        _blocked    = TheRavine.EntityControl.Virology.VirologyEvents.Blocked - _prevBlocked;
+        _prevInfections = TheRavine.EntityControl.Virology.VirologyEvents.Infections;
+        _prevRecoveries = TheRavine.EntityControl.Virology.VirologyEvents.Recoveries;
+        _prevBlocked    = TheRavine.EntityControl.Virology.VirologyEvents.Blocked;
+
+        _perturbation = ServiceLocator.Services.TryGet(out WorldCodexService codex) ? codex.PerturbationActive : 0;
+    }
+
+    private void WriteStage3(ColonyState colony, int[] d, int o, bool world)
+    {
+        if (colony != null)
+        {
+            var genome = colony.Genome;
+            WriteComma(); WriteFloat(genome.BaseLearningRate);
+            WriteComma(); WriteFloat(genome.MaxGradientNorm);
+            WriteComma(); WriteFloat(genome.EntropyRegularization);
+        }
+        else _writer.Write(",,,");
+
+        WriteNext(_perturbation);
+        WriteComma();
+        if (colony != null) _writer.Write(colony.IsWild ? '1' : '0');
+
+        int attempts = d[o + OffActions + ActionFields * (int)EntityAction.Attack];
+        float inv = attempts > 0 ? 1f / attempts : 0f;
+        int strikes = d[o + OffAttacks + (int)ColonyStats.AttackTarget.Foreign] + d[o + OffAttacks + (int)ColonyStats.AttackTarget.Player];
+        int escaped = d[o + OffAttackFails + 1] + d[o + OffAttackFails + 3];
+        WriteComma();
+        if (attempts > 0) WriteFloat(strikes * inv);
+        WriteComma();
+        if (attempts > 0) WriteFloat(escaped * inv);
+
+        int count = colony != null ? _geneCount[colony.Index] : 0;
+        WriteComma();
+        if (count > 0) WriteFloat(_geneSpeed[colony.Index] / count);
+        WriteComma();
+        if (count > 0) WriteFloat(_geneDetect[colony.Index] / count);
+
+        if (!world)
+        {
+            _writer.Write(VirusPlaceholder);
+            return;
+        }
+
+        WriteNext(_census.Strains);
+        WriteNext(_census.Lineages);
+        WriteNext(_census.StrainsNew);
+        WriteNext(_census.StrainsLost);
+        WriteComma();
+        _writer.Write(_census.Dominant.ToString(Inv));
+        WriteComma(); WriteFloat(_census.DominantPrevalence);
+        WriteComma(); WriteFloat(_census.ImmuneDominantShare);
+        WriteComma(); WriteFloat(_census.MeanIntegrity);
+        WriteComma(); _writer.Write(_infections.ToString(Inv));
+        WriteComma(); _writer.Write(_recoveries.ToString(Inv));
+        WriteComma(); _writer.Write(_blocked.ToString(Inv));
+    }
 
     private void WriteConflictWorld(ColonyRegistry colonies, int n)
     {
