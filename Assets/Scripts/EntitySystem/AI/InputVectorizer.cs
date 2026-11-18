@@ -50,6 +50,7 @@ public struct VectorizerFrame
     public float  IsLeader;
     public int    Caste;
     public float[] SpeechBag;
+    public float[] Predisposition;
     public float2 SpeechDir;
     public float  SpeechDist;
     public float  SpeechKin;
@@ -75,7 +76,8 @@ public class InputVectorizer : IDisposable
     public const int TailSlots       = 45 + SpeechSlots;
     public const int PlanEmaOffset   = TailOffset + TailSlots;
     public const int SeasonOffset    = PlanEmaOffset + PlanCatalog.Count;
-    public const int VectorSize      = SeasonOffset + 2;
+    public const int PredispositionOffset = SeasonOffset + 2;
+    public const int VectorSize      = PredispositionOffset + SimulationRules.PredispositionSize;
 
     private float _maxHealth;
     private float _maxEnergy;
@@ -204,6 +206,10 @@ public class InputVectorizer : IDisposable
 
         v[SeasonOffset]     = f.Season;
         v[SeasonOffset + 1] = f.WinterApproach;
+
+        var pre = f.Predisposition;
+        for (int i = 0; i < SimulationRules.PredispositionSize; i++)
+            v[PredispositionOffset + i] = pre != null && i < pre.Length ? pre[i] : 0f;
         return v;
     }
 

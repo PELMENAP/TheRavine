@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class BrainArchitectureVersionTests
 {
-    private const int ExpectedVersion          = 11;
-    private const int ExpectedInputSize        = 126;
+    private const int ExpectedVersion          = 12;
+    private const int ExpectedInputSize        = 129;
     private const int ExpectedPlanCount        = 9;
     private const int ExpectedCoordAux         = 2;
     private const int ExpectedActionCount      = 11;
@@ -16,14 +16,14 @@ public class BrainArchitectureVersionTests
     private const int ExpectedLstmWeights      = 4 * ExpectedLstmHidden * (ExpectedInputSize + ExpectedLstmHidden);
     private const int ExpectedLstmBiases       = 4 * ExpectedLstmHidden;
 
-    private static readonly int[] ExpectedCoordLayers = { 158, 32, 16, 16, 12 };
+    private static readonly int[] ExpectedCoordLayers = { 161, 32, 16, 16, 12 };
 
     private static readonly int[][] ExpectedExecLayers =
     {
-        new[] { 158, 64, 32, 32, 26 },
-        new[] { 158, 64, 32, 32, 33 },
-        new[] { 158, 64, 32, 32, 27 },
-        new[] { 158, 64, 32, 32, 62 },
+        new[] { 161, 64, 32, 32, 26 },
+        new[] { 161, 64, 32, 32, 33 },
+        new[] { 161, 64, 32, 32, 27 },
+        new[] { 161, 64, 32, 32, 62 },
     };
 
     private static readonly int[] ExpectedSubsetSizes = { 4, 4, 5, 5 };

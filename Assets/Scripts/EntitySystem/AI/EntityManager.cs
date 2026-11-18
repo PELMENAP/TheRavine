@@ -131,6 +131,7 @@ public class EntityManager : MonoBehaviour
     private int _skillSweepCursor;
     private SpeechBus            _speech;
     private BehaviourDescriptorLog _descriptors;
+    private NoveltyProgressSystem _noveltyProgress;
     public SpeechBus Speech => _speech;
     private ColonyState _wild;
     private float  _lastColonyTime;
@@ -402,6 +403,8 @@ public class EntityManager : MonoBehaviour
         SpeechMetrics.Reset();
         ServiceLocator.Register(_thresholds);
         ServiceLocator.Register(_speech);
+        _noveltyProgress = new NoveltyProgressSystem(_capacity);
+        ServiceLocator.Register(_noveltyProgress);
         if (SimulationRules.Active.SimulationLogEnabled && SimulationRules.Active.BehaviourDescriptorsEnabled)
         {
             _descriptors = new BehaviourDescriptorLog(_capacity);
@@ -430,7 +433,7 @@ public class EntityManager : MonoBehaviour
         _soilFeed   = new SoilShaderFeed();
         _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue), _skills);
         _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, _capacity, spawnRadius,
-            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _survey, _utility, _thresholds, _skills, _boids, _ledger, _speech, !snapshotStream, _descriptors);
+            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _survey, _utility, _thresholds, _skills, _boids, _ledger, _speech, !snapshotStream, _descriptors, _noveltyProgress);
         _population.Spawned += RaiseSpawned;
         _population.Died    += RaiseDied;
         _urgent = new UrgentTickQueue(_capacity);
@@ -1164,6 +1167,7 @@ public class EntityManager : MonoBehaviour
         services.Unregister(_skills);
         services.Unregister(_grid);
         services.Unregister(_speech);
+        services.Unregister(_noveltyProgress);
         if (_descriptors != null) services.Unregister(_descriptors);
         services.Unregister(_players);
         services.Unregister(_ledger);
@@ -1216,6 +1220,7 @@ public class EntityManager : MonoBehaviour
         _thresholds?.Dispose();
         _skills?.Dispose();
         _speech?.Dispose();
+        _noveltyProgress?.Dispose();
         _descriptors?.Dispose();
         _grid.Dispose();
         _colonies?.Dispose();

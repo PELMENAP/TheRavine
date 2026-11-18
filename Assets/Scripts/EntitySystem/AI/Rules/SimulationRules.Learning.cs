@@ -58,6 +58,10 @@ public sealed partial class SimulationRules
     [SerializeField] private float epsilonPlateauThresholdGrowth = 1.2f;
     [SerializeField] private float epsilonPlateauThresholdStep = 0f;
     [SerializeField] private float reservoirSpectralRadius = 0.9f;
+    [SerializeField] private float ltcTauMin = DelayedPerceptron.TauEpsilon;
+    [SerializeField] private float ltcTauMax = float.MaxValue;
+    [SerializeField] private float noveltyFastRate = 0.2f;
+    [SerializeField] private float noveltySlowRate = 0.02f;
     [SerializeField] private float reservoirHz = 0f;
     [SerializeField] private float exploreTemperature = 3f;
     [SerializeField] private float curiosityStorageDamp = 0.5f;
@@ -191,6 +195,10 @@ public sealed partial class SimulationRules
     public float EpsilonPlateauThresholdGrowth => epsilonPlateauThresholdGrowth;
     public float EpsilonPlateauThresholdStep => epsilonPlateauThresholdStep;
     public float ReservoirSpectralRadius => reservoirSpectralRadius;
+    public float LtcTauMin => ltcTauMin;
+    public float LtcTauMax => ltcTauMax;
+    public float NoveltyFastRate => noveltyFastRate;
+    public float NoveltySlowRate => noveltySlowRate;
     public float ReservoirHz => reservoirHz;
     public float ExploreTemperature => exploreTemperature;
     public float CuriosityStorageDamp => curiosityStorageDamp;

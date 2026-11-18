@@ -198,3 +198,14 @@ With `simulationLogEnabled` and `behaviourDescriptorsEnabled`, every `simulation
 ## Offline analysis
 
 `python3 tools/simlog_analyze.py simulation_log_<stamp>.csv [behaviour_descriptors_<stamp>.csv]` (standard library and numpy). Per arm it prints the population curve (sum of `alive` of the arm's colonies), births, deaths, mean lifespan, entropy of the action mix (bits, from the summed `<action>_started`), `brain_share`, mean `speech_mi_bits` and `listener_shift`, and the mean gradient-conflict columns of the world rows. With the descriptor file it z-scores the behavioural columns (`log1p` of `distance`, `attacks`, `food_eaten`; wild rows dropped unless `--include-wild`), runs k-means (k-means++ start, 5 restarts) for k = 2…8 on each arm with the silhouette score, prints the silhouette difference to the `null_policy` arm at each k, and then clusters all arms together at the k with the best mean silhouette and prints each arm's cluster mix with its total variation distance from the null arm. Silhouette uses at most `--max-rows` rows per arm (random sample, `--seed`).
+
+## Columns added in revision 7 (stage 2 experiments)
+
+Appended after `listener_shift` and before the optional `grad_*` columns, in this order; written in both scopes (colony rows leave the saturation columns empty).
+
+| Column | Scope | Unit | Meaning and computation |
+|---|---|---|---|
+| `h_saturated_<arm>` | world | 0…1 | One column per arm name in enum order (`control`, `speech_muted`, `speech_shuffled`, `null_policy`, `bounded_ltc`, `progress_novelty`, `orthogonal_reservoir`). Share of hidden states `h` of the coordinator and the four executors with `|h| > 0.95`, over all living agents of colonies of that arm, at the sample (`PerceptronContext.CountSaturated`). Empty when the arm has no agent. In `bounded_ltc` colonies `|h| ≤ 1` always |
+| `predisposition_dist` | both | distance | Mean Euclidean distance between the inherited predisposition vectors of colony members: all pairs of at most 64 members taken at an even stride (`EvolutionService.MeanPredispositionDistance`); world row: member-weighted mean over colonies with at least 2 members |
+
+The descriptor file gets `predisposition_0 … predisposition_<PredispositionSize−1>` after `energy_surplus`. `tools/simlog_analyze.py` prints `h_sat` and `pre_dist` per arm, and, with the descriptor file, the correlation ratio η² of each predisposition dimension on the shared cluster label (pooled and per arm) and its strongest Pearson correlation with a behavioural feature.

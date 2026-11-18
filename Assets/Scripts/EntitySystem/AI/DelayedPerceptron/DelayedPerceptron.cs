@@ -36,6 +36,9 @@ public unsafe partial class DelayedPerceptron : IDisposable
     private bool _managedStale;
 
     private NativeArray<KernelLayout> _kernel;
+    private bool  _ltcBounded;
+    private float _tauMin = TauEpsilon;
+    private float _tauMax = float.MaxValue;
 
     private NativeList<TrainTicket>  _tickets;
     private NativeArray<TrainResult> _results;
@@ -108,9 +111,25 @@ public unsafe partial class DelayedPerceptron : IDisposable
             {
                 _kernel = new NativeArray<KernelLayout>(1, Allocator.Persistent);
                 _kernel[0] = KernelLayout.Build(_ctxLayout ?? _layout, _residual);
+                ApplyLtc(ref *(KernelLayout*)_kernel.GetUnsafePtr());
             }
             return (KernelLayout*)_kernel.GetUnsafePtr();
         }
+    }
+
+    private void ApplyLtc(ref KernelLayout k)
+    {
+        k.LtcBounded = _ltcBounded ? 1 : 0;
+        k.TauMin     = _tauMin;
+        k.TauMax     = _tauMax;
+    }
+
+    internal void SetLtc(LtcMode mode, float tauMin, float tauMax)
+    {
+        _ltcBounded = mode == LtcMode.Bounded;
+        _tauMin     = tauMin;
+        _tauMax     = tauMax;
+        if (_kernel.IsCreated) ApplyLtc(ref *(KernelLayout*)_kernel.GetUnsafePtr());
     }
 
     internal void EnsureNative()

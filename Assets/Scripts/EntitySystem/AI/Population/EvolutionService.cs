@@ -24,6 +24,9 @@ public sealed class EvolutionService
     private XorShift32 _tournamentRng;
     private readonly EntityModel[] _mateCandidates = new EntityModel[InfectionService.MaxNeighbors];
 
+    private const int PredispositionSample = 64;
+    private readonly float[] _predispositionScratch = new float[PredispositionSample * SimulationRules.PredispositionSize];
+
     public float AvgEntropy { get; private set; }
     public float AvgFitness { get; private set; }
     public float FitnessP10 { get; private set; }
@@ -110,6 +113,43 @@ public sealed class EvolutionService
     {
         float z = _fitnessStatsReady ? (model.FinalFitness - _fitnessMedian) / _fitnessSpread : 0f;
         return TerminalPenaltyMath.For(SimulationRules.Active, cause, _fitnessStatsReady, z);
+    }
+
+    public float MeanPredispositionDistance(ColonyState colony)
+    {
+        const int size = SimulationRules.PredispositionSize;
+        var members = colony.Members;
+        int n = members.Length;
+        int take = Math.Min(n, PredispositionSample);
+        if (take < 2) return 0f;
+
+        int got = 0;
+        for (int i = 0; i < take; i++)
+        {
+            var model = _entities[members[(int)((long)i * n / take)]];
+            if (model == null || model.IsDisposed) continue;
+            var genes = model.Brain.Context.CoordMLP.Params;
+            var span = GeneticParameters.AsReadOnlySpan(in genes);
+            for (int k = 0; k < size; k++) _predispositionScratch[got * size + k] = span[GeneticParameters.IdxPredisposition0 + k];
+            got++;
+        }
+        if (got < 2) return 0f;
+
+        double sum = 0d;
+        int pairs = 0;
+        for (int a = 0; a < got; a++)
+            for (int b = a + 1; b < got; b++)
+            {
+                float sq = 0f;
+                for (int k = 0; k < size; k++)
+                {
+                    float d = _predispositionScratch[a * size + k] - _predispositionScratch[b * size + k];
+                    sq += d * d;
+                }
+                sum += math.sqrt(sq);
+                pairs++;
+            }
+        return (float)(sum / pairs);
     }
 
     public EntityModel SelectMate(EntityModel self)

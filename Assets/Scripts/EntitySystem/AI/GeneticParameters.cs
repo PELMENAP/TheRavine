@@ -55,6 +55,7 @@ public struct GeneticParameters
     public float PlastStruct;
     public float PlastExplore;
     public float PlastNeed;
+    public float Predisposition0, Predisposition1, Predisposition2;
 
     public const int IdxMoveSpeedMul = 0;
     public const int IdxBaseLearningRate = 1;
@@ -99,6 +100,8 @@ public struct GeneticParameters
     public const int IdxPlastStruct = IdxPlastHebb + 1;
     public const int IdxPlastExplore = IdxPlastStruct + 1;
     public const int IdxPlastNeed = IdxPlastExplore + 1;
+    public const int IdxPredisposition0 = IdxPlastNeed + 1;
+    public const int PredispositionCount = 3;
 
     public const float DefaultSkillOrigin = 0.5f;
     public const float DefaultPlasticity = 1f;
@@ -148,6 +151,9 @@ public struct GeneticParameters
         (0f, 2f, 0.15f),
         (0f, 2f, 0.15f),
         (0f, 2f, 0.15f),
+        (-1f, 1f, 0.1f),
+        (-1f, 1f, 0.1f),
+        (-1f, 1f, 0.1f),
     };
 
     public static bool IsPhenotypic(int index)
@@ -163,6 +169,13 @@ public struct GeneticParameters
         var dst = AsSpan(ref target);
         for (int i = 0; i < dst.Length; i++)
             if (!IsPhenotypic(i)) dst[i] = src[i];
+    }
+
+    public static void ReadPredisposition(in GeneticParameters p, float[] destination)
+    {
+        var src = AsReadOnlySpan(in p);
+        int n = Math.Min(destination.Length, SimulationRules.PredispositionSize);
+        for (int i = 0; i < n; i++) destination[i] = src[IdxPredisposition0 + i];
     }
 
     public readonly float PlanBias(int plan)
@@ -233,6 +246,8 @@ public struct GeneticParameters
 
         for (int i = 0; i < sc.Length; i++)
             sc[i] = RavineRandom.RangeBool() ? sa[i] : sb[i];
+        for (int i = 0; i < PredispositionCount; i++)
+            sc[IdxPredisposition0 + i] = 0.5f * (sa[IdxPredisposition0 + i] + sb[IdxPredisposition0 + i]);
 
         Mutate(ref child);
     }

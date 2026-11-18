@@ -22,24 +22,24 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 19 | 2317 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
-| `Assets/Scripts/EntitySystem/AI` | 11 | 2308 |
+| `Assets/Scripts/EntitySystem/AI` | 11 | 2334 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
 | `Assets/Scripts/EntitySystem/AI/Codex` | 10 | 891 |
-| `Assets/Scripts/EntitySystem/AI/Colony` | 8 | 844 |
-| `Assets/Scripts/EntitySystem/AI/Debug` | 4 | 1931 |
-| `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 866 |
-| `Assets/Scripts/EntitySystem/AI/Entity` | 18 | 2833 |
+| `Assets/Scripts/EntitySystem/AI/Colony` | 8 | 850 |
+| `Assets/Scripts/EntitySystem/AI/Debug` | 4 | 1990 |
+| `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 885 |
+| `Assets/Scripts/EntitySystem/AI/Entity` | 18 | 2837 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1461 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 695 |
 | `Assets/Scripts/EntitySystem/AI/Flock` | 1 | 230 |
 | `Assets/Scripts/EntitySystem/AI/Instinct` | 1 | 441 |
-| `Assets/Scripts/EntitySystem/AI/LSTM` | 2 | 198 |
+| `Assets/Scripts/EntitySystem/AI/LSTM` | 2 | 257 |
 | `Assets/Scripts/EntitySystem/AI/Nest` | 1 | 394 |
 | `Assets/Scripts/EntitySystem/AI/Perception` | 10 | 2346 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 567 |
-| `Assets/Scripts/EntitySystem/AI/Population` | 7 | 1247 |
-| `Assets/Scripts/EntitySystem/AI/Rules` | 11 | 3275 |
-| `Assets/Scripts/EntitySystem/AI/SharedAI` | 22 | 3612 |
+| `Assets/Scripts/EntitySystem/AI/Population` | 7 | 1291 |
+| `Assets/Scripts/EntitySystem/AI/Rules` | 11 | 3311 |
+| `Assets/Scripts/EntitySystem/AI/SharedAI` | 24 | 3807 |
 | `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2174 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 8 | 1273 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
@@ -115,7 +115,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 945 |
-| `Assets/Tests/EditMode` | 71 | 11472 |
+| `Assets/Tests/EditMode` | 75 | 12127 |
 
 ## Assemblies
 
@@ -195,7 +195,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | ClusterSettingsAuthoring | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator/ObjectGeneratorStructures.cs` | 27 |
 | CollatzInteractor | class | `Assets/Scripts/Terminal/Rive/Core/RiveInteractors.cs` | 132 |
 | CollectionHelpers | class | `Assets/Scripts/Core/Utilities/CodeHelpers.cs` | 212 |
-| ColonyArms | class | `Assets/Scripts/EntitySystem/AI/Colony/ColonyArm.cs` | 12 |
+| ColonyArms | class | `Assets/Scripts/EntitySystem/AI/Colony/ColonyArm.cs` | 15 |
 | ColonyChannel | enum | `Assets/Scripts/EntitySystem/AI/Nest/NestState.cs` | 8 |
 | ColonyFieldDecayJob | struct | `Assets/Scripts/EntitySystem/AI/Nest/NestState.cs` | 54 |
 | ColonyFieldShiftJob | struct | `Assets/Scripts/EntitySystem/AI/Nest/NestState.cs` | 126 |
@@ -322,6 +322,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | LiteralNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 17 |
 | LogNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 95 |
 | LSTMMemory | class | `Assets/Scripts/EntitySystem/AI/LSTM/LSTMMemoryStorage.cs` | 5 |
+| LtcMode | enum | `Assets/Scripts/EntitySystem/AI/SharedAI/LtcNeuron.cs` | 4 |
 | MenuSection | enum | `Assets/Scripts/GameSceneManagerSystem/MainSceneManagerSystem/MenuMainScript.cs` | 11 |
 | MenuSectionData | struct | `Assets/Scripts/GameSceneManagerSystem/MainSceneManagerSystem/MenuMainScript.cs` | 18 |
 | MimicWork | struct | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/MimicLegJob.cs` | 6 |
@@ -482,7 +483,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | WorldCommandStats | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | 27 |
 | WorldEditResult | enum | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | 205 |
 | WorldEdits | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | 217 |
-| XorShift32 | struct | `Assets/Scripts/EntitySystem/AI/GeneticParameters.cs` | 259 |
+| XorShift32 | struct | `Assets/Scripts/EntitySystem/AI/GeneticParameters.cs` | 274 |
 
 ## Files not to read
 

@@ -41,6 +41,20 @@ public sealed unsafe class PerceptronContext : IDisposable
 
     public float* Ptr => _pool.Ptr + _base;
 
+    public void CountSaturated(float threshold, ref long saturated, ref long total)
+    {
+        if (IsDisposed) return;
+        float* p = Ptr;
+        for (int l = 0; l < Layout.L; l++)
+        {
+            int n = Layout.LayerSizes[l + 1];
+            float* h = p + Layout.HidOffset[l];
+            for (int i = 0; i < n; i++)
+                if (MathF.Abs(h[i]) > threshold) saturated++;
+            total += n;
+        }
+    }
+
     public PerceptronContext(PerceptronLayout layout, GeneticParameters p)
     {
         Layout = layout;

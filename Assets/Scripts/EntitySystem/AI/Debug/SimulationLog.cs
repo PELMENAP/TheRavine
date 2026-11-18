@@ -86,6 +86,7 @@ public sealed class SimulationLog : IDisposable
 
     private static readonly int WorldOnlyColumns = ResidualColumns + FlowColumns.Length + StockColumns.Length;
     private static readonly string WorldOnlyPlaceholder = new string(',', WorldOnlyColumns);
+    private static readonly string SaturationPlaceholder = new string(',', (int)ColonyArm.Count);
     private static readonly string ConflictPlaceholder = new string(',', GradientConflict.Pairs + GradientConflict.Groups);
 
     private readonly int[]   _prev          = new int[ColonyRegistry.MaxColonies * Stride];
@@ -95,6 +96,9 @@ public sealed class SimulationLog : IDisposable
     private readonly int[]   _current       = new int[Stride];
     private readonly int[]   _world         = new int[Stride];
     private readonly ColonySpeechTables _worldSpeech = new();
+    private const float SaturationThreshold = 0.95f;
+    private readonly long[] _saturated   = new long[(int)ColonyArm.Count];
+    private readonly long[] _activations = new long[(int)ColonyArm.Count];
     private readonly bool    _conflictColumns = SimulationRules.Active.GradientConflictEnabled;
     private readonly double[] _conflictSum = new double[GradientConflict.Pairs + GradientConflict.Groups];
     private readonly int[]    _conflictN   = new int[GradientConflict.Pairs + GradientConflict.Groups];
@@ -188,6 +192,8 @@ public sealed class SimulationLog : IDisposable
             WritePlanKinds(_world, 0);
             WriteFeedFails(_world, 0);
             WriteSpeechMetrics(null, _worldSpeech);
+            WriteSaturation(entities);
+            WritePredisposition(colonies, n, evolution);
             if (_conflictColumns) WriteConflictWorld(colonies, n);
             _writer.WriteLine();
             ledger?.ResetWindow();
@@ -205,6 +211,9 @@ public sealed class SimulationLog : IDisposable
                 WritePlanKinds(_delta, c * Stride);
                 WriteFeedFails(_delta, c * Stride);
                 WriteSpeechMetrics(colony, speech?.TablesOf(colony.Index));
+                _writer.Write(SaturationPlaceholder);
+                WriteComma();
+                WriteFloat(evolution != null ? evolution.MeanPredispositionDistance(colony) : 0f);
                 if (_conflictColumns) _writer.Write(ConflictPlaceholder);
                 _writer.WriteLine();
             }
@@ -384,6 +393,49 @@ public sealed class SimulationLog : IDisposable
         for (int i = 0; i < EatFailCount + TakeFailCount; i++) WriteNext(d[o + OffFeedFails + i]);
     }
 
+    private void WritePredisposition(ColonyRegistry colonies, int n, EvolutionService evolution)
+    {
+        double sum = 0d;
+        int members = 0;
+        if (evolution != null)
+        {
+            for (int c = 0; c < n; c++)
+            {
+                int m = colonies[c].MemberCount;
+                if (m < 2) continue;
+                sum += evolution.MeanPredispositionDistance(colonies[c]) * m;
+                members += m;
+            }
+        }
+        WriteComma();
+        if (members > 0) WriteFloat((float)(sum / members));
+    }
+
+    private void WriteSaturation(System.Collections.Generic.List<EntityModel> entities)
+    {
+        Array.Clear(_saturated, 0, _saturated.Length);
+        Array.Clear(_activations, 0, _activations.Length);
+        if (entities != null)
+        {
+            for (int i = 0; i < entities.Count; i++)
+            {
+                var e = entities[i];
+                if (e == null || e.IsDisposed || e.Colony == null || e.Brain == null) continue;
+                var ctx = e.Brain.Context;
+                if (ctx == null) continue;
+                int arm = (int)e.Colony.Arm;
+                ctx.CoordMLP.CountSaturated(SaturationThreshold, ref _saturated[arm], ref _activations[arm]);
+                for (int g = 0; g < ctx.ExecMLPs.Length; g++)
+                    ctx.ExecMLPs[g].CountSaturated(SaturationThreshold, ref _saturated[arm], ref _activations[arm]);
+            }
+        }
+        for (int a = 0; a < _saturated.Length; a++)
+        {
+            WriteComma();
+            if (_activations[a] > 0) WriteFloat((float)_saturated[a] / _activations[a]);
+        }
+    }
+
     private void WriteSpeechMetrics(ColonyState colony, ColonySpeechTables tables)
     {
         WriteComma();
@@ -501,6 +553,8 @@ public sealed class SimulationLog : IDisposable
         sb.Append(",eat_fail_no_food,eat_fail_claim,eat_fail_empty,eat_fail_large_no_partner");
         sb.Append(",take_fail_no_food,take_fail_kind,take_fail_claim");
         sb.Append(",arm,speech_mi_bits,listener_shift");
+        for (int a = 0; a < (int)ColonyArm.Count; a++) sb.Append(",h_saturated_").Append(ColonyArms.Name((ColonyArm)a));
+        sb.Append(",predisposition_dist");
         if (conflict)
         {
             for (int a = 0; a < GradientConflict.Groups; a++)

@@ -27,6 +27,7 @@ public partial class EntityModel
     public void SubmitDecision(bool allowDecision)
     {
         if (!_cycleActive) return;
+        Brain.Context.NoveltyIndex = ManagerIndex;
         Brain.EnqueueDecision(LastInput, _cycleNow, _cycleDt, allowDecision);
     }
 
@@ -301,6 +302,7 @@ public partial class EntityModel
             IsLeader          = IsLeader ? 1f : 0f,
             Caste             = (int)Caste,
             SpeechBag         = Speech.Bag,
+            Predisposition    = _predisposition,
             SpeechDir         = Speech.Dir,
             SpeechDist        = Speech.Dist,
             SpeechKin         = Speech.Kin,

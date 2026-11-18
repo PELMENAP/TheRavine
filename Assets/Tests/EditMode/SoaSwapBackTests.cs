@@ -216,4 +216,31 @@ public class SoaSwapBackTests
             log.Dispose();
         }
     }
+    [Test]
+    public void NoveltyProgressFollowsSwapBack()
+    {
+        var system = new NoveltyProgressSystem(3);
+        try
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                system.Reset(i);
+                system.Step(i, 1f + i, 0.2f, 0.02f);
+                system.Step(i, 3f + i, 0.2f, 0.02f);
+            }
+            float fast = system.Fast(2);
+            float slow = system.Slow(2);
+
+            system.RemoveSwapBack(0, 2);
+
+            Assert.AreEqual(fast, system.Fast(0));
+            Assert.AreEqual(slow, system.Slow(0));
+            Assert.AreEqual(0f, system.Fast(2));
+            Assert.AreEqual(0f, system.Slow(2));
+        }
+        finally
+        {
+            system.Dispose();
+        }
+    }
 }
