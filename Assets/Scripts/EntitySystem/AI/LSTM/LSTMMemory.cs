@@ -81,6 +81,65 @@ public unsafe partial class LSTMMemory : IDisposable
         }
     }
 
+    public void OrthogonalizeRecurrent(float radius)
+    {
+        int cols = inputSize + hiddenSize;
+        int n    = hiddenSize;
+        var q    = new float[n * n];
+
+        for (int g = 0; g < 4; g++)
+        {
+            for (int r = 0; r < n; r++)
+            {
+                for (int pass = 0; pass < 3; pass++)
+                {
+                    if (pass == 0)
+                    {
+                        for (int c = 0; c < n; c++)
+                        {
+                            float u1 = math.max(UnityEngine.Random.value, 1e-7f);
+                            float u2 = UnityEngine.Random.value;
+                            q[r * n + c] = math.sqrt(-2f * math.log(u1)) * math.cos(2f * math.PI * u2);
+                        }
+                    }
+                    for (int p = 0; p < r; p++)
+                    {
+                        float dot = 0f;
+                        for (int c = 0; c < n; c++) dot += q[r * n + c] * q[p * n + c];
+                        for (int c = 0; c < n; c++) q[r * n + c] -= dot * q[p * n + c];
+                    }
+                }
+
+                float norm = 0f;
+                for (int c = 0; c < n; c++) norm += q[r * n + c] * q[r * n + c];
+                norm = math.sqrt(norm);
+                if (norm < 1e-6f)
+                {
+                    for (int c = 0; c < n; c++) q[r * n + c] = c == r ? 1f : 0f;
+                    norm = 1f;
+                }
+                float inv = 1f / norm;
+                for (int c = 0; c < n; c++) q[r * n + c] *= inv;
+            }
+
+            for (int r = 0; r < n; r++)
+            {
+                int off = (g * n + r) * cols + inputSize;
+                for (int c = 0; c < n; c++) W[off + c] = q[r * n + c] * radius;
+            }
+        }
+
+        if (_wN.IsCreated) _wN.CopyFrom(W);
+    }
+
+    public void StepManaged(float[] input, float[] state)
+    {
+        EnsureNative();
+        fixed (float* x = input)
+        fixed (float* s = state)
+            NeuralKernels.ReservoirStep(WeightsPtr, BiasesPtr, x, s, inputSize, hiddenSize);
+    }
+
     internal int InputSize  => inputSize;
     internal int HiddenSize => hiddenSize;
 
@@ -115,4 +174,4 @@ public unsafe partial class LSTMMemory : IDisposable
         if (_wN.IsCreated) _wN.Dispose();
         if (_bN.IsCreated) _bN.Dispose();
     }
-}
+}

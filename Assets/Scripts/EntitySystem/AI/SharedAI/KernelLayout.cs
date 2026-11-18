@@ -26,6 +26,9 @@ public unsafe struct KernelLayout
     public int WeightTotal;
     public int BiasTotal;
     public int ActTotal;
+    public int LtcBounded;
+    public float TauMin;
+    public float TauMax;
 
     public fixed int  Sizes[MaxLayers + 1];
     public fixed int  ActOffset[MaxLayers + 1];
@@ -73,6 +76,9 @@ public unsafe struct KernelLayout
             WeightTotal        = lay.WeightTotal,
             BiasTotal          = lay.BiasTotal,
             ActTotal           = lay.ActOffset[lay.L] + lay.LayerSizes[lay.L],
+            LtcBounded         = 0,
+            TauMin             = DelayedPerceptron.TauEpsilon,
+            TauMax             = float.MaxValue,
         };
 
         for (int i = 0; i <= lay.L; i++)

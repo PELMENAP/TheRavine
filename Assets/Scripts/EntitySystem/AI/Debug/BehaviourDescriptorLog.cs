@@ -169,6 +169,10 @@ public sealed class BehaviourDescriptorLog : IDisposable
                 sb.Append(',').Append(_attacks[i].ToString(Inv));
                 sb.Append(',').Append(_food[i].ToString(Inv));
                 sb.Append(',').Append(SharedHierarchicalBrain.EnergySurplus(e.Stats.En / maxEnergy, floor).ToString("G6", Inv));
+                var genes = e.Brain.Context.CoordMLP.Params;
+                var span = GeneticParameters.AsReadOnlySpan(in genes);
+                for (int k = 0; k < SimulationRules.PredispositionSize; k++)
+                    sb.Append(',').Append(span[GeneticParameters.IdxPredisposition0 + k].ToString("G6", Inv));
                 _writer.WriteLine(sb.ToString());
 
                 ClearRow(i);
@@ -219,6 +223,7 @@ public sealed class BehaviourDescriptorLog : IDisposable
         string[] goals = Enum.GetNames(typeof(SharedHierarchicalBrain.Goal));
         for (int g = 0; g < Goals; g++) sb.Append(",goal_").Append(SnakeCase(goals[g])).Append("_share");
         sb.Append(",distance,speech_rate,attacks,food_eaten,energy_surplus");
+        for (int i = 0; i < SimulationRules.PredispositionSize; i++) sb.Append(",predisposition_").Append(i);
         return sb.ToString();
     }
 

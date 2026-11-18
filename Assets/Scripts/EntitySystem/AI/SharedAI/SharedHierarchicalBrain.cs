@@ -135,6 +135,39 @@ public class SharedHierarchicalBrain : IDisposable
 
     public void SetNullPolicy(bool value) => NullPolicy = value;
 
+    private NoveltyProgressSystem _progress;
+    private bool _progressNovelty;
+
+    public bool ProgressNovelty => _progressNovelty && _progress != null;
+
+    public void SetNoveltyProgress(NoveltyProgressSystem system, bool enabled)
+    {
+        _progress = system;
+        _progressNovelty = enabled;
+    }
+
+    public unsafe void SetArm(ColonyArm arm, bool freshReservoir)
+    {
+        CompletePending();
+        NullPolicy = arm == ColonyArm.NullPolicy;
+
+        var rules = SimulationRules.Active;
+        var mode  = arm == ColonyArm.BoundedLtc ? LtcMode.Bounded : LtcMode.Legacy;
+        coordinator.SetLtc(mode, rules.LtcTauMin, rules.LtcTauMax);
+        for (int g = 0; g < GoalCount; g++) executors[g].SetLtc(mode, rules.LtcTauMin, rules.LtcTauMax);
+        if (_kernels.IsCreated)
+        {
+            _kernels[0] = *coordinator.KernelPtr;
+            for (int g = 0; g < GoalCount; g++) _kernels[1 + g] = *executors[g].KernelPtr;
+        }
+
+        _progressNovelty = arm == ColonyArm.ProgressNovelty;
+        if (_progressNovelty && _progress == null) ServiceLocator.Services.TryGet(out _progress);
+
+        if (freshReservoir && arm == ColonyArm.OrthogonalReservoir)
+            reservoir.OrthogonalizeRecurrent(rules.ReservoirSpectralRadius);
+    }
+
     private JobHandle _pending;
     private bool      _trainingScheduled;
 
@@ -758,6 +791,20 @@ public class SharedHierarchicalBrain : IDisposable
     private void ReadIntrinsic(int count)
     {
         for (int k = 0; k < count; k++) _rndReward[k] = _rnd.IntrinsicReward(k);
+        if (_progressNovelty && _progress != null) ApplyProgress(count);
+    }
+
+    private void ApplyProgress(int count)
+    {
+        ref readonly var frame = ref SimulationRules.Frame;
+        float fastRate = frame.NoveltyFastRate;
+        float slowRate = frame.NoveltySlowRate;
+        for (int k = 0; k < count; k++)
+        {
+            var ctx = _rndCtx[k];
+            if (ctx == null) continue;
+            _rndReward[k] = _progress.Step(ctx.NoveltyIndex, _rndReward[k], fastRate, slowRate);
+        }
     }
 
     private void AccumulateNovelty(int count)

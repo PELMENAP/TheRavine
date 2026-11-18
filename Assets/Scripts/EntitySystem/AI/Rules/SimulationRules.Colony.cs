@@ -22,6 +22,9 @@ public sealed partial class SimulationRules
     [SerializeField] private float armSpeechMutedFraction;
     [SerializeField] private float armSpeechShuffledFraction;
     [SerializeField] private float armNullPolicyFraction;
+    [SerializeField] private float armBoundedLtcFraction;
+    [SerializeField] private float armProgressNoveltyFraction;
+    [SerializeField] private float armOrthogonalReservoirFraction;
     [SerializeField] private float kinColonyWeight = 0.5f;
     [SerializeField] private float kinLineageWeight = 0.5f;
     [SerializeField] private float witnessPenalty = -0.2f;
@@ -219,6 +222,23 @@ public sealed partial class SimulationRules
     public float ArmSpeechMutedFraction => armSpeechMutedFraction;
     public float ArmSpeechShuffledFraction => armSpeechShuffledFraction;
     public float ArmNullPolicyFraction => armNullPolicyFraction;
+    public float ArmBoundedLtcFraction => armBoundedLtcFraction;
+    public float ArmProgressNoveltyFraction => armProgressNoveltyFraction;
+    public float ArmOrthogonalReservoirFraction => armOrthogonalReservoirFraction;
+
+    public float ArmFraction(ColonyArm arm)
+    {
+        switch (arm)
+        {
+            case ColonyArm.SpeechMuted:         return armSpeechMutedFraction;
+            case ColonyArm.SpeechShuffled:      return armSpeechShuffledFraction;
+            case ColonyArm.NullPolicy:          return armNullPolicyFraction;
+            case ColonyArm.BoundedLtc:          return armBoundedLtcFraction;
+            case ColonyArm.ProgressNovelty:     return armProgressNoveltyFraction;
+            case ColonyArm.OrthogonalReservoir: return armOrthogonalReservoirFraction;
+            default:                            return 0f;
+        }
+    }
     public float KinColonyWeight => kinColonyWeight;
     public float KinLineageWeight => kinLineageWeight;
     public float WitnessPenalty => witnessPenalty;

@@ -33,6 +33,7 @@ public sealed class ColonyPopulation
     private readonly EnergyLedger         _ledger;
     private readonly SpeechBus            _speech;
     private readonly BehaviourDescriptorLog _descriptors;
+    private readonly NoveltyProgressSystem  _novelty;
 
     private readonly Queue<EntityModel> _pendingDeath = new();
     private EntityModel[] _deferredDispose = Array.Empty<EntityModel>();
@@ -61,7 +62,7 @@ public sealed class ColonyPopulation
         List<EntityModel> entities, ColonyRegistry colonies, ColonyState wild, ColonyFood food, EvolutionService evolution,
         EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, SurveySystem survey, UtilityPriorSystem utility,
         CasteThresholdSystem thresholds, SkillGraphStore skills, BoidSystem boids, EnergyLedger ledger, SpeechBus speech, bool spawnNetworkObjects,
-        BehaviourDescriptorLog descriptors = null)
+        BehaviourDescriptorLog descriptors = null, NoveltyProgressSystem novelty = null)
     {
         _spawnNetworkObjects = spawnNetworkObjects;
         _prefab        = prefab;
@@ -86,6 +87,7 @@ public sealed class ColonyPopulation
         _ledger        = ledger;
         _speech        = speech;
         _descriptors   = descriptors;
+        _novelty       = novelty;
     }
 
     public void StartPredatorClock(double now) => _nextPredatorTime = now;
@@ -147,6 +149,7 @@ public sealed class ColonyPopulation
         model.Speech.SetMuted(muted);
         _speech.Reset(model.ManagerIndex, model.ColonyIndex, model.EntityId, muted, colony.Arm);
         _descriptors?.Reset(model.ManagerIndex);
+        _novelty?.Reset(model.ManagerIndex);
         Spawned?.Invoke(model);
         return model;
     }
@@ -310,6 +313,7 @@ public sealed class ColonyPopulation
         _skills.RemoveSwapBack(idx, last);
         _speech.RemoveSwapBack(idx, last);
         _descriptors?.RemoveSwapBack(idx, last);
+        _novelty?.RemoveSwapBack(idx, last);
         _grid.MarkStale();
         _entities.RemoveAt(last);
         model.ManagerIndex = -1;

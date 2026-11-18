@@ -96,10 +96,10 @@ def print_population(arm_rows):
         print("  curve: " + " ".join(f"{times[i]:.0f}s:{values[i]:.0f}" for i in points))
 
 
-def print_behaviour(arm_rows, started):
+def print_behaviour(arm_rows, started, rows_world=None):
     print()
     print("== per arm: births, deaths, action-mix entropy, decision source, speech ==")
-    header = f"{'arm':<16}{'born':>8}{'died':>8}{'lifespan_s':>12}{'act_H_bits':>12}{'brain_sh':>10}{'speech_mi':>11}{'listen_shift':>14}"
+    header = f"{'arm':<16}{'born':>8}{'died':>8}{'lifespan_s':>12}{'act_H_bits':>12}{'brain_sh':>10}{'speech_mi':>11}{'listen_shift':>14}{'h_sat':>11}{'pre_dist':>11}"
     print(header)
     for arm in sorted(arm_rows, key=arm_sort_key):
         rows = arm_rows[arm]
@@ -119,7 +119,9 @@ def print_behaviour(arm_rows, started):
         brain = nanmean([num(r["brain_share"]) for r in rows]) if "brain_share" in rows[0] else math.nan
         mi = nanmean([num(r["speech_mi_bits"]) for r in rows])
         shift = nanmean([num(r["listener_shift"]) for r in rows])
-        print(f"{arm:<16}{born:>8.0f}{died:>8.0f}{fmt(lifespan, 1):>12}{fmt(entropy):>12}{fmt(brain):>10}{fmt(mi):>11}{fmt(shift):>14}")
+        sat = nanmean([num(r.get(f"h_saturated_{arm}")) for r in rows_world]) if rows_world is not None else math.nan
+        dist = nanmean([num(r.get("predisposition_dist")) for r in rows])
+        print(f"{arm:<16}{born:>8.0f}{died:>8.0f}{fmt(lifespan, 1):>12}{fmt(entropy):>12}{fmt(brain):>10}{fmt(mi):>11}{fmt(shift):>14}{fmt(sat):>11}{fmt(dist):>11}")
 
 
 def print_world(columns, rows):
@@ -145,20 +147,27 @@ def load_descriptors(path, include_wild, min_age):
     names = feature_names()
     need(columns, ["arm", "caste", "age_s"] + names, path)
 
+    pre_names = sorted(c for c in columns if c.startswith("predisposition_"))
     by_arm = {}
+    pre_by_arm = {}
     for row in rows:
         if row["caste"] == "wild" and not include_wild:
             continue
         if num(row["age_s"]) < min_age:
             continue
         values = [num(row[n]) for n in names]
-        if any(math.isnan(v) for v in values):
+        pre = [num(row[n]) for n in pre_names]
+        if any(math.isnan(v) for v in values) or any(math.isnan(v) for v in pre):
             continue
         for i, n in enumerate(names):
             if n in LOG1P_COLUMNS:
                 values[i] = math.log1p(max(values[i], 0.0))
-        by_arm.setdefault(row["arm"] or CONTROL_ARM, []).append(values)
-    return names, {arm: np.array(v, dtype=float) for arm, v in by_arm.items() if v}
+        arm = row["arm"] or CONTROL_ARM
+        by_arm.setdefault(arm, []).append(values)
+        pre_by_arm.setdefault(arm, []).append(pre)
+    arms = {arm: np.array(v, dtype=float) for arm, v in by_arm.items() if v}
+    pres = {arm: np.array(pre_by_arm[arm], dtype=float) for arm in arms}
+    return names, arms, pre_names, pres
 
 
 def kmeans(x, k, rng, n_init=5, iterations=100):
@@ -229,7 +238,42 @@ def total_variation(p, q):
     return 0.5 * float(np.abs(p - q).sum())
 
 
-def print_clusters(names, arms, k_max, max_rows, seed):
+def correlation_ratio(values, labels, k):
+    total = ((values - values.mean()) ** 2).sum()
+    if total <= 1e-12:
+        return math.nan
+    between = 0.0
+    for c in range(k):
+        members = values[labels == c]
+        if len(members):
+            between += len(members) * (members.mean() - values.mean()) ** 2
+    return float(between / total)
+
+
+def print_predisposition(names, raw, pre_raw, pre_names, labels, k, offsets_by_arm):
+    if not pre_names:
+        print("(no predisposition columns in the descriptor file)")
+        return
+    print(f"== inherited predisposition vs behaviour (shared clusters k={k}) ==")
+    print("correlation ratio eta^2 of each predisposition dimension on the cluster label (0 = unrelated, 1 = fully determined):")
+    for j, name in enumerate(pre_names):
+        line = f"  {name}: all arms eta2={fmt(correlation_ratio(pre_raw[:, j], labels, k))}"
+        for arm, (lo, hi) in offsets_by_arm.items():
+            line += f" {arm}={fmt(correlation_ratio(pre_raw[lo:hi, j], labels[lo:hi], k))}"
+        print(line)
+    print("strongest Pearson correlation of each dimension with a behavioural feature (pooled rows):")
+    for j, name in enumerate(pre_names):
+        best, best_r = None, 0.0
+        for i, feature in enumerate(names):
+            if raw[:, i].std() < 1e-9 or pre_raw[:, j].std() < 1e-9:
+                continue
+            r = float(np.corrcoef(raw[:, i], pre_raw[:, j])[0, 1])
+            if abs(r) > abs(best_r):
+                best, best_r = feature, r
+        print(f"  {name}: {best if best else '-'} r={fmt(best_r)}")
+
+
+def print_clusters(names, arms, k_max, max_rows, seed, pre_names=(), pres=None):
     pooled = np.vstack([arms[a] for a in arms])
     mean = pooled.mean(axis=0)
     std = pooled.std(axis=0)
@@ -290,8 +334,18 @@ def print_clusters(names, arms, k_max, max_rows, seed):
             if arm != NULL_ARM:
                 print(f"{arm:<16}{fmt(total_variation(shares[arm], shares[NULL_ARM]))}")
 
+    ordered = sorted(sample, key=arm_sort_key)
+    raw = np.vstack([arms[a][picked[a]] for a in ordered])
+    if pres is not None and pre_names:
+        pre_raw = np.vstack([pres[a][picked[a]] for a in ordered])
+        offsets, at = {}, 0
+        for a in ordered:
+            offsets[a] = (at, at + len(sample[a]))
+            at += len(sample[a])
+        print()
+        print_predisposition(names, raw, pre_raw, list(pre_names), labels, best_k, offsets)
+        print()
     print("== cluster centres (original units: shares, log1p counts, rates), pooled over the sampled rows ==")
-    raw = np.vstack([arms[a][picked[a]] for a in sorted(sample, key=arm_sort_key)])
     for c in range(best_k):
         members = raw[labels == c]
         if not len(members):
@@ -318,15 +372,15 @@ def main():
         raise SystemExit("no colony rows in the simulation log")
 
     print_population(arm_rows)
-    print_behaviour(arm_rows, started)
+    print_behaviour(arm_rows, started, [r for r in rows if r["scope"] == "world"])
     print_world(columns, rows)
 
     if args.descriptors:
-        names, arms = load_descriptors(args.descriptors, args.include_wild, args.min_age)
+        names, arms, pre_names, pres = load_descriptors(args.descriptors, args.include_wild, args.min_age)
         if not arms:
             print("\nno usable descriptor rows")
         else:
-            print_clusters(names, arms, max(args.k_max, 2), args.max_rows, args.seed)
+            print_clusters(names, arms, max(args.k_max, 2), args.max_rows, args.seed, pre_names, pres)
     else:
         print("\n(no descriptor file given: clustering skipped)")
     return 0

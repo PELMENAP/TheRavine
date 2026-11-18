@@ -213,7 +213,7 @@ public sealed class ColonyState : IDisposable
         Nest     = new NestState(position);
         Pois     = new ColonyPoiBoard(SimulationRules.Active.ColonyPoiCount);
         Brain    = brain;
-        brain?.SetNullPolicy(Arm == ColonyArm.NullPolicy);
+        brain?.SetArm(Arm, true);
         _members = new int[math.max(capacity, 4)];
         SkillTopology = SkillGraphTopology.Create(SkillAtlas.Active, SkillGraphTopology.DrawForestGenes());
     }
@@ -221,7 +221,7 @@ public sealed class ColonyState : IDisposable
     public void ReplaceBrain(SharedHierarchicalBrain brain)
     {
         Brain = brain;
-        brain?.SetNullPolicy(Arm == ColonyArm.NullPolicy);
+        brain?.SetArm(Arm, false);
     }
 
     public void Relocate(float2 position, ChunkFoodIndex food)

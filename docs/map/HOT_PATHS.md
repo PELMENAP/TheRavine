@@ -40,10 +40,10 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 | Area | File | Hot methods |
 |---|---|---|
 | Brain | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | `EnqueueDecision`, `RunDecisions`, `GiveReward`, `CompleteDecision`, `ScheduleTraining`, `ApplyPendingGradients` |
-| Kernels and jobs | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralKernels.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | whole files |
+| Kernels and jobs | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralKernels.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/LtcNeuron.cs` | whole files |
 | Batch and contexts | `Assets/Scripts/EntitySystem/AI/SharedAI/` | `PerceptronBatch`, `EntityBrainContext`, `LSTMContext`, `PerceptronContext`, `DecisionRing`, `ContextSlabs`, `FloatSlabPool` |
 | Networks | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs`, `Assets/Scripts/EntitySystem/AI/LSTM/` | forward and backward passes |
-| Critic and novelty | `Assets/Scripts/EntitySystem/AI/SharedAI/ValueCritic.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/RandomNetworkDistillation.cs` | whole files |
+| Critic and novelty | `Assets/Scripts/EntitySystem/AI/SharedAI/ValueCritic.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/RandomNetworkDistillation.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/NoveltyProgressSystem.cs` | whole files; `SharedHierarchicalBrain.ApplyProgress` |
 
 ## Perception, instincts, colony blackboard
 

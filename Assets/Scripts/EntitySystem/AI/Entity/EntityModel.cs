@@ -538,6 +538,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private EntitySpatialGrid _grid;
     private SpeechBus _speechBus;
     private BehaviourDescriptorLog _descriptors;
+    private readonly float[] _predisposition = new float[SimulationRules.PredispositionSize];
     private static readonly EntityModel[] Neighbors = new EntityModel[16];
 
     private long  _foodCell;
@@ -609,6 +610,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         _baseTuning = baseTuning;
         _trail = new float2[math.max(1, SimulationRules.Active.TrailCapacity)];
         ctx.CasteMask = ActionMask(Caste);
+        GeneticParameters.ReadPredisposition(in ctx.CoordMLP.Params, _predisposition);
         var rulesA = SimulationRules.Active;
         _roleMods = colony.IsWild ? CasteModifiers.Predator() : CasteModifiers.For(Caste);
         _casteMods = _roleMods;
