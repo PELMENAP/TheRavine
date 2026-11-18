@@ -124,6 +124,7 @@ public class EntityManager : MonoBehaviour
     private float _lastSkillSweep;
     private int _skillSweepCursor;
     private SpeechBus            _speech;
+    private BehaviourDescriptorLog _descriptors;
     public SpeechBus Speech => _speech;
     private ColonyState _wild;
     private float  _lastColonyTime;
@@ -221,7 +222,7 @@ public class EntityManager : MonoBehaviour
             if (SimulationRules.Active.SimulationLogEnabled && now >= _nextSimulationLogTime)
             {
                 _simulationLog ??= new SimulationLog();
-                _simulationLog.Sample(now, _colonies, _entities.Count, _ledger, _evolution);
+                _simulationLog.Sample(now, _colonies, _entities.Count, _ledger, _evolution, _speech, _descriptors, _entities);
                 _nextSimulationLogTime = now + SimulationRules.Active.SimulationLogIntervalSeconds;
             }
             if (now >= _tickStartTime) TickAgents(SimulationClock.DeltaTime);
@@ -394,6 +395,11 @@ public class EntityManager : MonoBehaviour
         SpeechMetrics.Reset();
         ServiceLocator.Register(_thresholds);
         ServiceLocator.Register(_speech);
+        if (SimulationRules.Active.SimulationLogEnabled && SimulationRules.Active.BehaviourDescriptorsEnabled)
+        {
+            _descriptors = new BehaviourDescriptorLog(_capacity);
+            ServiceLocator.Register(_descriptors);
+        }
         if (speechAudio && FindFirstObjectByType<SpeechAudioPlayer>() == null)
             gameObject.AddComponent<SpeechAudioPlayer>().Bind(_speech);
         if (speechLabels && FindFirstObjectByType<SpeechLabelFeed>() == null)
@@ -416,7 +422,7 @@ public class EntityManager : MonoBehaviour
         _soilFeed   = new SoilShaderFeed();
         _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue), _skills);
         _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, _capacity, spawnRadius,
-            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _survey, _utility, _thresholds, _skills, _boids, _ledger, _speech, !snapshotStream);
+            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _survey, _utility, _thresholds, _skills, _boids, _ledger, _speech, !snapshotStream, _descriptors);
         _population.Spawned += RaiseSpawned;
         _population.Died    += RaiseDied;
         _urgent = new UrgentTickQueue(_capacity);
@@ -1109,6 +1115,7 @@ public class EntityManager : MonoBehaviour
         services.Unregister(_skills);
         services.Unregister(_grid);
         services.Unregister(_speech);
+        if (_descriptors != null) services.Unregister(_descriptors);
         services.Unregister(_players);
         services.Unregister(_ledger);
         services.Unregister(_warmth);
@@ -1158,6 +1165,7 @@ public class EntityManager : MonoBehaviour
         _thresholds?.Dispose();
         _skills?.Dispose();
         _speech?.Dispose();
+        _descriptors?.Dispose();
         _grid.Dispose();
         _colonies?.Dispose();
         ContextSlabs.DisposeAll();

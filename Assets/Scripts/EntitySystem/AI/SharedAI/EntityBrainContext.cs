@@ -26,6 +26,11 @@ public class EntityBrainContext : System.IDisposable
         for (int i = 0; i < ExecMLPs.Length; i++) ExecMLPs[i].TemperatureScale = scale;
     }
 
+    public void SetGroup(int group)
+    {
+        for (int i = 0; i < ExecMLPs.Length; i++) ExecMLPs[i].Group = group;
+    }
+
     public void SetPositiveAdvantageScale(float scale)
     {
         CoordMLP.PositiveAdvantageScale = scale;

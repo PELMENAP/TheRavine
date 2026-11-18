@@ -8,6 +8,8 @@ public sealed partial class SimulationRules
     [SerializeField] private float interruptionReward = -0.1f;
     [SerializeField] private float failureReward = -0.2f;
     [SerializeField] private float ppoClipEpsilon = 0.2f;
+    [SerializeField] private bool gradientConflictEnabled;
+    [SerializeField] private int gradientConflictInterval = 8;
     [SerializeField] private float rewardClipSigma = 5f;
     [SerializeField] private float criticLearningRate = 0.004f;
     [SerializeField] private float criticHuberDelta = 1f;
@@ -139,6 +141,8 @@ public sealed partial class SimulationRules
     public float InterruptionReward => interruptionReward;
     public float FailureReward => failureReward;
     public float PpoClipEpsilon => ppoClipEpsilon;
+    public bool GradientConflictEnabled => gradientConflictEnabled;
+    public int GradientConflictInterval => gradientConflictInterval;
     public float RewardClipSigma => rewardClipSigma;
     public float CriticLearningRate => criticLearningRate;
     public float CriticHuberDelta => criticHuberDelta;

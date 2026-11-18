@@ -32,6 +32,7 @@ public sealed class ColonyPopulation
     private readonly BoidSystem           _boids;
     private readonly EnergyLedger         _ledger;
     private readonly SpeechBus            _speech;
+    private readonly BehaviourDescriptorLog _descriptors;
 
     private readonly Queue<EntityModel> _pendingDeath = new();
     private EntityModel[] _deferredDispose = Array.Empty<EntityModel>();
@@ -59,7 +60,8 @@ public sealed class ColonyPopulation
     public ColonyPopulation(GameObject prefab, Transform parent, EntityTuning tuning, int maxPopulation, int capacity, float spawnRadius,
         List<EntityModel> entities, ColonyRegistry colonies, ColonyState wild, ColonyFood food, EvolutionService evolution,
         EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, SurveySystem survey, UtilityPriorSystem utility,
-        CasteThresholdSystem thresholds, SkillGraphStore skills, BoidSystem boids, EnergyLedger ledger, SpeechBus speech, bool spawnNetworkObjects)
+        CasteThresholdSystem thresholds, SkillGraphStore skills, BoidSystem boids, EnergyLedger ledger, SpeechBus speech, bool spawnNetworkObjects,
+        BehaviourDescriptorLog descriptors = null)
     {
         _spawnNetworkObjects = spawnNetworkObjects;
         _prefab        = prefab;
@@ -83,6 +85,7 @@ public sealed class ColonyPopulation
         _boids         = boids;
         _ledger        = ledger;
         _speech        = speech;
+        _descriptors   = descriptors;
     }
 
     public void StartPredatorClock(double now) => _nextPredatorTime = now;
@@ -142,7 +145,8 @@ public sealed class ColonyPopulation
         ref readonly var rules = ref SimulationRules.Frame;
         bool muted = rules.SpeechMuteSampling && !colony.IsWild && RavineRandom.RangeFloat() < rules.SpeechMuteFraction;
         model.Speech.SetMuted(muted);
-        _speech.Reset(model.ManagerIndex, model.ColonyIndex, model.EntityId, muted);
+        _speech.Reset(model.ManagerIndex, model.ColonyIndex, model.EntityId, muted, colony.Arm);
+        _descriptors?.Reset(model.ManagerIndex);
         Spawned?.Invoke(model);
         return model;
     }
@@ -305,6 +309,7 @@ public sealed class ColonyPopulation
         _thresholds.RemoveSwapBack(idx, last);
         _skills.RemoveSwapBack(idx, last);
         _speech.RemoveSwapBack(idx, last);
+        _descriptors?.RemoveSwapBack(idx, last);
         _grid.MarkStale();
         _entities.RemoveAt(last);
         model.ManagerIndex = -1;

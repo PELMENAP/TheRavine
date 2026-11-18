@@ -52,6 +52,7 @@ public unsafe struct TrainTicket
     public float  LrMul;
     public float  ExploreProb;
     public int    Forced;
+    public int    Group;
     public int    HasBias;
     public int    DecodeValid;
     public int    DecodeTarget;
@@ -143,7 +144,11 @@ public unsafe struct PerceptronTrainJob : IJobParallelFor
     [NativeDisableUnsafePtrRestriction] public byte*  AccumTouched;
     [NativeDisableUnsafePtrRestriction] public byte*  ScratchTouched;
     [NativeDisableUnsafePtrRestriction] public int*   Contrib;
+    [NativeDisableUnsafePtrRestriction] public float* GroupAccum;
+    [NativeDisableUnsafePtrRestriction] public byte*  GroupTouched;
+    [NativeDisableUnsafePtrRestriction] public int*   GroupContrib;
 
+    public int   Groups;
     public int   ParamStride;
     public int   WorkStride;
     public int   NeuronTotal;
@@ -169,6 +174,12 @@ public unsafe struct PerceptronTrainJob : IJobParallelFor
         {
             float clipNorm = math.min(math.max(tk->MaxGradNorm, 1e-3f), OptimizerMaxGradNorm);
             float scale    = math.min(1f, clipNorm / (norm + 1e-8f)) * tk->LrMul;
+            if (GroupAccum != null && (uint)tk->Group < (uint)Groups)
+            {
+                int slot = th * Groups + tk->Group;
+                NeuralKernels.AccumulateCopy(Layout, grad, gT, GroupAccum + slot * ParamStride, GroupTouched + slot * NeuronTotal, scale);
+                GroupContrib[slot]++;
+            }
             NeuralKernels.AccumulateAndClear(Layout, grad, gT, acc, aT, scale);
             Contrib[th]++;
         }
