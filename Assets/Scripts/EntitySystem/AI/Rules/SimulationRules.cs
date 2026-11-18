@@ -19,6 +19,8 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float InterruptionReward;
         public readonly float FailureReward;
         public readonly float PpoClipEpsilon;
+        public readonly bool GradientConflictEnabled;
+        public readonly int GradientConflictInterval;
         public readonly float RewardClipSigma;
         public readonly float CriticLearningRate;
         public readonly float CriticHuberDelta;
@@ -650,6 +652,8 @@ public sealed partial class SimulationRules : ScriptableObject
             InterruptionReward = r.interruptionReward;
             FailureReward = r.failureReward;
             PpoClipEpsilon = r.ppoClipEpsilon;
+            GradientConflictEnabled = r.gradientConflictEnabled;
+            GradientConflictInterval = math.max(r.gradientConflictInterval, 1);
             RewardClipSigma = r.rewardClipSigma;
             CriticLearningRate = r.criticLearningRate;
             CriticHuberDelta = r.criticHuberDelta;
@@ -1373,6 +1377,7 @@ public sealed partial class SimulationRules : ScriptableObject
     public const int   SpeechContextBits = 6;
     public const int   SpeechCreditRing = 256;
     public const int   SpeechCreditListeners = 8;
+    public const int   SpeechShuffleRing = 64;
     private const int  SpeechLayoutCheck = 1 / (SpeechLen * SpeechTokenBits <= 16 && SpeechVocab == 1 << SpeechTokenBits && (SpeechInbox & (SpeechInbox - 1)) == 0 && SpeechContextBits <= 8 ? 1 : 0);
 
     private void OnValidate()

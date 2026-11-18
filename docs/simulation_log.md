@@ -157,3 +157,44 @@ Every `Failed` status of `EatCommand` records exactly one of its four reasons an
 |---|---|
 | eat failure reason share | `eat_fail_<reason> / eat_failed` |
 | take failure reason share | `take_fail_<reason> / take_failed` |
+
+## Columns added in revision 6
+
+The three columns are appended at the end of every row, after `take_fail_claim`, so no earlier column changes position. They are written in both scopes. The ten gradient columns follow them only when `SimulationRules.gradientConflictEnabled` is on at the moment the file is opened.
+
+| Column | Scope | Unit | Meaning and computation |
+|---|---|---|---|
+| `arm` | colony | text | `ColonyArms.Name(ColonyState.Arm)`: `control`, `speech_muted`, `speech_shuffled` or `null_policy`. Drawn once at colony creation from `armSpeechMutedFraction`, `armSpeechShuffledFraction`, `armNullPolicyFraction` (all 0 by default). The wild colony is `control`. Empty in the world row |
+| `speech_mi_bits` | both | bits | Mutual information between the speaker's `SpeechContextBits` context (64 values) and the emitted token, from the window's context×token count table of the colony (one sample per token slot of every non-reflex utterance, counted in `SpeechBus.ApplyArm` before mute or shuffle changes it). Plug-in estimate minus the Miller–Madow term `(Kc−1)(Kt−1)/(2N ln 2)` (Kc, Kt: used contexts and tokens), clamped at 0; 0 for an empty table. World row: the sum of the colony tables |
+| `listener_shift` | both | 0…1 | Total variation distance `½ Σ |P(action | fresh token) − P(action | no token)|` over the actions started by agents of the colony in the window. "Fresh token" is `SpeechComponent.HasLoudest` at the moment the command starts (`EntityCommandRunner.Start`, every source); 0 when either side has no sample. World row: the sum of the colony tables. In a `speech_muted` colony the colony's own speech never arrives, so it measures only what other colonies' speech does |
+| `grad_cos_<a>_<b>` | world | −1…1 | Only with `gradientConflictEnabled`. Cosine similarity of the summed executor gradients of caste `<a>` and caste `<b>` (`worker`, `soldier`, `scout`, `nurse`; pairs in the order worker–soldier, worker–scout, worker–nurse, soldier–scout, soldier–nurse, scout–nurse), taken over all four executors as one vector. Measured in one training application out of `gradientConflictInterval`; the world value is the mean over colonies measured since the previous row; empty when none was measured or a caste had no contribution |
+| `grad_norm_<caste>` | world | gradient units | Only with `gradientConflictEnabled`. L2 norm of the caste's summed executor gradients (already scaled by the clip and the learning-rate multiplier of the ticket) divided by the caste's number of contributing tickets; same sampling and averaging as the cosines |
+
+The split gradients are a diagnostic copy made in the train job; the applied update is the unchanged sum of all contributions. Adult agents are grouped by `Caste`; juveniles before `AssignCaste` and the wild colony are not in any group.
+
+| Metric | Formula |
+|---|---|
+| speech sensitivity of a colony | `listener_shift` of a `control` colony against the same column of `speech_shuffled` and `null_policy` colonies |
+| speech information against the zero model | `speech_mi_bits` of `control` against `speech_shuffled` (should be near 0 for the shuffled channel as listeners see it, but the column counts the speakers' intent, so it stays comparable to `control`) |
+
+## Behavioural descriptor file
+
+With `simulationLogEnabled` and `behaviourDescriptorsEnabled`, every `simulation_log_<stamp>.csv` sample is followed by one row per living agent in `behaviour_descriptors_<stamp>.csv` (same directory, same stamp). Counters are window counters of the agent: they start at spawn and are cleared at each sample. With the flag off nothing is allocated and no row is written.
+
+| Column | Unit | Meaning and computation |
+|---|---|---|
+| `time_s` | s | `SimulationClock.TimeD` at the sample |
+| `colony_id`, `arm` | id, text | `ColonyState.ColonyId`, `ColonyArms.Name(ColonyState.Arm)` |
+| `caste` | text | `worker`, `soldier`, `scout`, `nurse`; `juvenile` before the caste is fixed or while `IsJuvenile`; `wild` for the predator colony |
+| `age_s` | s | `EntityModel.TimeAlive` |
+| `<action>_share` | 0…1 | commands of this action started in the window / all commands started (all sources); 0 when none started. One column per `EntityAction` in enum order |
+| `goal_<goal>_share` | 0…1 | share of the started commands by `Brain.Context.CurrentGoal` at the start (`survive`, `hunt`, `forage`, `social`) |
+| `distance` | cells | path length: sum of the distances between consecutive cycle positions (`RunCycleTail`) in the window; the first cycle after spawn adds 0 |
+| `speech_rate` | 1/s | utterances emitted in the window / `min(window length, age)` |
+| `attacks` | strikes | `FitnessEvent.DamageDealt` events in the window |
+| `food_eaten` | bites | `FitnessEvent.FoodEaten` events in the window |
+| `energy_surplus` | 0…1 | `SharedHierarchicalBrain.EnergySurplus(En / MaxEnergy, CuriosityEnergyFloor)` at the sample |
+
+## Offline analysis
+
+`python3 tools/simlog_analyze.py simulation_log_<stamp>.csv [behaviour_descriptors_<stamp>.csv]` (standard library and numpy). Per arm it prints the population curve (sum of `alive` of the arm's colonies), births, deaths, mean lifespan, entropy of the action mix (bits, from the summed `<action>_started`), `brain_share`, mean `speech_mi_bits` and `listener_shift`, and the mean gradient-conflict columns of the world rows. With the descriptor file it z-scores the behavioural columns (`log1p` of `distance`, `attacks`, `food_eaten`; wild rows dropped unless `--include-wild`), runs k-means (k-means++ start, 5 restarts) for k = 2…8 on each arm with the silhouette score, prints the silhouette difference to the `null_policy` arm at each k, and then clusters all arms together at the k with the best mean silhouette and prints each arm's cluster mix with its total variation distance from the null arm. Silhouette uses at most `--max-rows` rows per arm (random sample, `--seed`).

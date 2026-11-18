@@ -293,6 +293,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         _roleMods  = CasteModifiers.For(caste);
         ApplyTuning();
         Brain.Context.CasteMask = ActionMask(caste);
+        Brain.Context.SetGroup((int)caste);
         SyncCount();
     }
 
@@ -536,6 +537,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
     private EntitySpatialGrid _grid;
     private SpeechBus _speechBus;
+    private BehaviourDescriptorLog _descriptors;
     private static readonly EntityModel[] Neighbors = new EntityModel[16];
 
     private long  _foodCell;
@@ -644,6 +646,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         Infection = infection;
 
         ServiceLocator.Services.TryGet(out _speechBus);
+        ServiceLocator.Services.TryGet(out _descriptors);
         Speech = new SpeechComponent();
         _voice = SpeechVoiceBank.ClassOf(in ctx.CoordMLP.Params);
         Points = new PointsOfInterestComponent();

@@ -86,6 +86,7 @@ public sealed class SimulationLog : IDisposable
 
     private static readonly int WorldOnlyColumns = ResidualColumns + FlowColumns.Length + StockColumns.Length;
     private static readonly string WorldOnlyPlaceholder = new string(',', WorldOnlyColumns);
+    private static readonly string ConflictPlaceholder = new string(',', GradientConflict.Pairs + GradientConflict.Groups);
 
     private readonly int[]   _prev          = new int[ColonyRegistry.MaxColonies * Stride];
     private readonly int[]   _delta         = new int[ColonyRegistry.MaxColonies * Stride];
@@ -93,10 +94,15 @@ public sealed class SimulationLog : IDisposable
     private readonly float[] _deltaLifespan = new float[ColonyRegistry.MaxColonies];
     private readonly int[]   _current       = new int[Stride];
     private readonly int[]   _world         = new int[Stride];
+    private readonly ColonySpeechTables _worldSpeech = new();
+    private readonly bool    _conflictColumns = SimulationRules.Active.GradientConflictEnabled;
+    private readonly double[] _conflictSum = new double[GradientConflict.Pairs + GradientConflict.Groups];
+    private readonly int[]    _conflictN   = new int[GradientConflict.Pairs + GradientConflict.Groups];
     private float _prevResidualSum;
 
     private StreamWriter _writer;
     private bool _disposed;
+    private string _stamp;
 
     public bool IsOpen => _writer != null;
 
@@ -106,9 +112,10 @@ public sealed class SimulationLog : IDisposable
         {
             string dir = NeuralModelStorage.BaseDirectory;
             if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-            string path = Path.Combine(dir, $"simulation_log_{DateTime.Now.ToString("yyyyMMdd_HHmmss", Inv)}.csv");
+            _stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss", Inv);
+            string path = Path.Combine(dir, $"simulation_log_{_stamp}.csv");
             _writer = new StreamWriter(path, false, new UTF8Encoding(false));
-            _writer.WriteLine(BuildHeader());
+            _writer.WriteLine(BuildHeader(_conflictColumns));
             _writer.Flush();
             Application.quitting += Dispose;
         }
@@ -120,7 +127,8 @@ public sealed class SimulationLog : IDisposable
         }
     }
 
-    public void Sample(double now, ColonyRegistry colonies, int alive, EnergyLedger ledger, EvolutionService evolution)
+    public void Sample(double now, ColonyRegistry colonies, int alive, EnergyLedger ledger, EvolutionService evolution, SpeechBus speech,
+        BehaviourDescriptorLog descriptors = null, System.Collections.Generic.List<EntityModel> entities = null)
     {
         if (_writer == null || colonies == null) return;
 
@@ -167,6 +175,10 @@ public sealed class SimulationLog : IDisposable
         float residual    = residualSum - _prevResidualSum;
         _prevResidualSum  = residualSum;
 
+        _worldSpeech.Clear();
+        if (speech != null)
+            for (int c = 0; c < n; c++) _worldSpeech.Add(speech.TablesOf(colonies[c].Index));
+
         try
         {
             WriteCommon(time, season, winter, night, "world", -1, alive, _world, 0, worldLifespan, fill * inv, rest * inv, storage * inv);
@@ -175,6 +187,8 @@ public sealed class SimulationLog : IDisposable
             WriteWorldDiagnostics(colonies, n);
             WritePlanKinds(_world, 0);
             WriteFeedFails(_world, 0);
+            WriteSpeechMetrics(null, _worldSpeech);
+            if (_conflictColumns) WriteConflictWorld(colonies, n);
             _writer.WriteLine();
             ledger?.ResetWindow();
 
@@ -190,9 +204,13 @@ public sealed class SimulationLog : IDisposable
                 WriteColonyDiagnostics(colony);
                 WritePlanKinds(_delta, c * Stride);
                 WriteFeedFails(_delta, c * Stride);
+                WriteSpeechMetrics(colony, speech?.TablesOf(colony.Index));
+                if (_conflictColumns) _writer.Write(ConflictPlaceholder);
                 _writer.WriteLine();
             }
+            for (int c = 0; c < n; c++) speech?.TablesOf(colonies[c].Index)?.Clear();
             _writer.Flush();
+            descriptors?.Sample(_stamp, now, entities);
         }
         catch (Exception e)
         {
@@ -366,6 +384,16 @@ public sealed class SimulationLog : IDisposable
         for (int i = 0; i < EatFailCount + TakeFailCount; i++) WriteNext(d[o + OffFeedFails + i]);
     }
 
+    private void WriteSpeechMetrics(ColonyState colony, ColonySpeechTables tables)
+    {
+        WriteComma();
+        if (colony != null) _writer.Write(ColonyArms.Name(colony.Arm));
+        WriteComma();
+        WriteFloat(tables != null ? tables.MutualInformationBits() : 0f);
+        WriteComma();
+        WriteFloat(tables != null ? tables.ListenerShift() : 0f);
+    }
+
     private void WriteAttackFails(int[] d, int o)
     {
         for (int i = 0; i < AttackFailCount; i++) WriteNext(d[o + OffAttackFails + i]);
@@ -434,7 +462,7 @@ public sealed class SimulationLog : IDisposable
 
     private void WriteFloat(float value) => _writer.Write(value.ToString("G6", Inv));
 
-    private static string BuildHeader()
+    private static string BuildHeader(bool conflict)
     {
         var sb = new StringBuilder(8192);
         sb.Append("time_s,season,winter,scope,colony_id,alive,born,died");
@@ -472,7 +500,43 @@ public sealed class SimulationLog : IDisposable
         }
         sb.Append(",eat_fail_no_food,eat_fail_claim,eat_fail_empty,eat_fail_large_no_partner");
         sb.Append(",take_fail_no_food,take_fail_kind,take_fail_claim");
+        sb.Append(",arm,speech_mi_bits,listener_shift");
+        if (conflict)
+        {
+            for (int a = 0; a < GradientConflict.Groups; a++)
+                for (int b = a + 1; b < GradientConflict.Groups; b++)
+                    sb.Append(",grad_cos_").Append(CasteName(a)).Append('_').Append(CasteName(b));
+            for (int a = 0; a < GradientConflict.Groups; a++) sb.Append(",grad_norm_").Append(CasteName(a));
+        }
         return sb.ToString();
+    }
+
+    private static string CasteName(int caste) => SnakeCase(((Caste)caste).ToString());
+
+    private void WriteConflictWorld(ColonyRegistry colonies, int n)
+    {
+        Array.Clear(_conflictSum, 0, _conflictSum.Length);
+        Array.Clear(_conflictN, 0, _conflictN.Length);
+        for (int c = 0; c < n; c++)
+        {
+            var conflict = colonies[c].Brain?.Conflict;
+            if (conflict == null || !conflict.Fresh) continue;
+            for (int i = 0; i < GradientConflict.Pairs; i++) AddConflict(i, conflict.Cos[i]);
+            for (int i = 0; i < GradientConflict.Groups; i++) AddConflict(GradientConflict.Pairs + i, conflict.Norm[i]);
+            conflict.Consume();
+        }
+        for (int i = 0; i < _conflictSum.Length; i++)
+        {
+            WriteComma();
+            if (_conflictN[i] > 0) WriteFloat((float)(_conflictSum[i] / _conflictN[i]));
+        }
+    }
+
+    private void AddConflict(int slot, float value)
+    {
+        if (float.IsNaN(value)) return;
+        _conflictSum[slot] += value;
+        _conflictN[slot]++;
     }
 
     private static string SnakeCase(string name)

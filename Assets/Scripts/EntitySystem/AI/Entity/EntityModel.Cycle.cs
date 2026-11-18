@@ -180,6 +180,7 @@ public partial class EntityModel
 
         Vector3 pos  = Motor.Position();
         float2  self = new float2(pos.x, pos.z);
+        _descriptors?.NoteMove(ManagerIndex, self);
 
         PerceptionMarker.Begin();
         _nearest         = Perception.ResolveSlot(survey.NearestSlot);

@@ -425,6 +425,33 @@ public static unsafe class NeuralKernels
         return sq;
     }
 
+    public static void AccumulateCopy(KernelLayout* lay, float* grad, byte* gTouched,
+        float* acc, byte* aTouched, float scale)
+    {
+        int wTotal = lay->WeightTotal;
+
+        for (int l = 0; l < lay->L; l++)
+        {
+            int neurons = lay->Sizes[l + 1];
+            int rowLen  = lay->Sizes[l] << 1;
+            int nOff    = lay->NeuronOffset[l];
+
+            for (int n = 0; n < neurons; n++)
+            {
+                int id = nOff + n;
+                if (gTouched[id] == 0) continue;
+                aTouched[id] = 1;
+
+                int wi = lay->WeightRowOffset[l] + n * rowLen;
+                for (int k = 0; k < rowLen; k++) acc[wi + k] += grad[wi + k] * scale;
+
+                int bi = wTotal + lay->BiasRowOffset[l] + (n << 1);
+                acc[bi]     += grad[bi] * scale;
+                acc[bi + 1] += grad[bi + 1] * scale;
+            }
+        }
+    }
+
     public static void AccumulateAndClear(KernelLayout* lay, float* grad, byte* gTouched,
         float* acc, byte* aTouched, float scale)
     {
