@@ -54,7 +54,7 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 - `WorldStateRepository` key `world_data_{id}`; `WorldConfigRepository` key `world_settings_{id}`.
 - `GlobalSettingsRepository` key `global_game_settings`; `ScriptFileManager` key `script_file_{name}`.
 - `GlobalSettings`: quality, grass, control type, smooth camera rotation.
-- `WorldState`: seed, player position, cycle count, inventory, last save time.
+- `WorldState`: seed, player position, cycle count, inventory, last save time, rule multipliers, player skills, `CodexSave` (laws, opposition, price estimator; see `docs/map/codex.md`).
 - `WorldConfiguration`: world name, difficulty, autosave interval, time scale.
 - File writes go through `AtomicFile` (`Assets/Scripts/Core/Storage/AtomicFile.cs`): temp file, then move.
 - Chunk files are written by `ChunkStore`; see `docs/map/world.md`.

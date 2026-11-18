@@ -14,7 +14,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Core/ServiceLocator` | 3 | 310 |
 | `Assets/Scripts/Core/Settings` | 4 | 793 |
 | `Assets/Scripts/Core/Settings/GameSettings` | 2 | 109 |
-| `Assets/Scripts/Core/Settings/WorldData` | 4 | 349 |
+| `Assets/Scripts/Core/Settings/WorldData` | 5 | 392 |
 | `Assets/Scripts/Core/Settings/WorldSettings` | 2 | 142 |
 | `Assets/Scripts/Core/Storage` | 5 | 351 |
 | `Assets/Scripts/Core/Timer` | 4 | 271 |
@@ -22,9 +22,10 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 19 | 2317 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
-| `Assets/Scripts/EntitySystem/AI` | 11 | 2249 |
+| `Assets/Scripts/EntitySystem/AI` | 11 | 2300 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
-| `Assets/Scripts/EntitySystem/AI/Colony` | 7 | 798 |
+| `Assets/Scripts/EntitySystem/AI/Codex` | 10 | 891 |
+| `Assets/Scripts/EntitySystem/AI/Colony` | 7 | 800 |
 | `Assets/Scripts/EntitySystem/AI/Debug` | 3 | 1615 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 787 |
 | `Assets/Scripts/EntitySystem/AI/Entity` | 18 | 2816 |
@@ -37,7 +38,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Perception` | 10 | 2346 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 567 |
 | `Assets/Scripts/EntitySystem/AI/Population` | 7 | 1242 |
-| `Assets/Scripts/EntitySystem/AI/Rules` | 10 | 3088 |
+| `Assets/Scripts/EntitySystem/AI/Rules` | 11 | 3258 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI` | 21 | 3447 |
 | `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2174 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 7 | 1099 |
@@ -103,7 +104,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/SFX/UISounds` | 3 | 145 |
 | `Assets/Scripts/ScriptableData/Item` | 5 | 161 |
 | `Assets/Scripts/ScriptableData/Item/Descriprtion` | 2 | 83 |
-| `Assets/Scripts/Terminal` | 9 | 821 |
+| `Assets/Scripts/Terminal` | 10 | 1046 |
 | `Assets/Scripts/Terminal/PDollar/Scripts` | 7 | 736 |
 | `Assets/Scripts/Terminal/Rive` | 5 | 825 |
 | `Assets/Scripts/Terminal/Rive/Core` | 9 | 2171 |
@@ -114,7 +115,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 945 |
-| `Assets/Tests/EditMode` | 68 | 10335 |
+| `Assets/Tests/EditMode` | 70 | 10950 |
 
 ## Assemblies
 

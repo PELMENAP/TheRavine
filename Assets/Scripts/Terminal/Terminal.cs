@@ -74,7 +74,8 @@ namespace TheRavine.Base
                 new PrintCommand(),
                 new ClearCommand(),
                 new RotateCommand(),
-                new SkillGraphCommand(actionMapController)
+                new SkillGraphCommand(actionMapController),
+                new CodexCommand()
             );
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

@@ -81,7 +81,9 @@ public sealed partial class SimulationRules
         if (active == null || !active.isVariant) return;
 
         _active = null;
+        var parent = active.lawBase;
         Destroy(active);
+        if (parent != null && parent.isVariant) Destroy(parent);
     }
 
     private void ApplyVariance(float[] m)
