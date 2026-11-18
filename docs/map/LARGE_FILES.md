@@ -7,8 +7,8 @@ Line numbers are those of the last generation; after local edits treat them as a
 | File | Lines |
 |---|---|
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1886 |
-| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1462 |
-| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1173 |
+| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1463 |
+| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1224 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1081 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1014 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 1002 |
@@ -172,7 +172,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
 
-- 5–1462 class SimulationRules
+- 5–1463 class SimulationRules
   - 1271 CaptureFrame
   - 1273 Bind
   - 1284 DeathPenaltyMul
@@ -188,7 +188,7 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 1359 KindValue
   - 1362 BiomeValue
   - 1383 OnValidate
-  - 1459 ThrowNotBound
+  - 1460 ThrowNotBound
   - 8–8 enum EpsilonSchedule
   - 10–1266 struct RulesFrame
     - 633 BiomeFertility
@@ -197,62 +197,65 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
 
-- 16–1173 class EntityManager
-  - 89 RegisterEnergyConsumer
-  - 90 UnregisterEnergyConsumer
-  - 109 RaiseSpawned
-  - 110 RaiseDied
-  - 161 GetRandomEntity
-  - 164 SeedProbeStrain
-  - 167 SpawnEntity
-  - 170 SpawnChild
-  - 172 UpdateDiagnostics
-  - 181 EvolveGenotypes
-  - 187 SeedRandomStrain
-  - 190 Update
-  - 240 TickSnapshots
-  - 248 TickPuppets
-  - 259 StampAgents
-  - 280 ApplyFireHeat
-  - 308 ApplyWildWind
-  - 328 DecayWarmth
-  - 336 SampleEnergy
-  - 358 ReportThreat
-  - 369 Awake
-  - 435 CreateColonies
-  - 445 AddColony
-  - 455 SaveBrain
-  - 458 LoadBrain
-  - 461 ColonyModelName
-  - 463 SaveBestBrainAsync
-  - 473 LoadBrainAsync
-  - 509 ApplyLoadedBrain
-  - 525 Start
-  - 566 DelaySimulation
-  - 577 TickAgents
-  - 623 PromoteUrgent
-  - 673 CloseTickWindow
-  - 698 SweepSkills
-  - 713 SolveSkills
-  - 727 RunTickBatch
-  - 789 BeginColonyBatches
-  - 794 RunColonyDecisions
-  - 799 RunFlocking
-  - 817 TickColonies
-  - 873 UpdatePack
-  - 889 ChooseCaste
-  - 927 Stimulus
-  - 934 TickNests
-  - 987 SetEntityVisible
-  - 998 SetEntitiesVisible
-  - 1004 RebuildTickSnapshot
-  - 1035 UpdateVisibility
-  - 1064 UpdateVisibilityByCamera
-  - 1094 CreateNestViews
-  - 1105 ReleaseServices
-  - 1111 UnregisterServices
-  - 1128 ResolveRules
-  - 1144 OnDestroy
+- 16–1224 class EntityManager
+  - 95 RegisterEnergyConsumer
+  - 96 UnregisterEnergyConsumer
+  - 115 RaiseSpawned
+  - 116 RaiseDied
+  - 167 GetRandomEntity
+  - 170 SeedProbeStrain
+  - 173 SpawnEntity
+  - 176 SpawnChild
+  - 178 UpdateDiagnostics
+  - 187 EvolveGenotypes
+  - 193 SeedRandomStrain
+  - 196 Update
+  - 246 TickSnapshots
+  - 254 TickPuppets
+  - 265 StampAgents
+  - 286 ApplyFireHeat
+  - 314 ApplyWildWind
+  - 334 DecayWarmth
+  - 342 SampleEnergy
+  - 365 ReportThreat
+  - 376 Awake
+  - 443 CreateCodex
+  - 463 CaptureCodex
+  - 472 StepCodex
+  - 480 CreateColonies
+  - 490 AddColony
+  - 500 SaveBrain
+  - 503 LoadBrain
+  - 506 ColonyModelName
+  - 508 SaveBestBrainAsync
+  - 518 LoadBrainAsync
+  - 554 ApplyLoadedBrain
+  - 570 Start
+  - 612 DelaySimulation
+  - 623 TickAgents
+  - 671 PromoteUrgent
+  - 721 CloseTickWindow
+  - 747 SweepSkills
+  - 762 SolveSkills
+  - 776 RunTickBatch
+  - 838 BeginColonyBatches
+  - 843 RunColonyDecisions
+  - 848 RunFlocking
+  - 866 TickColonies
+  - 922 UpdatePack
+  - 938 ChooseCaste
+  - 976 Stimulus
+  - 983 TickNests
+  - 1036 SetEntityVisible
+  - 1047 SetEntitiesVisible
+  - 1053 RebuildTickSnapshot
+  - 1084 UpdateVisibility
+  - 1113 UpdateVisibilityByCamera
+  - 1143 CreateNestViews
+  - 1154 ReleaseServices
+  - 1160 UnregisterServices
+  - 1178 ResolveRules
+  - 1194 OnDestroy
 
 ## `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs`
 

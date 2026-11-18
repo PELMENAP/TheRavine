@@ -129,6 +129,7 @@ All are indexed by `EntityModel.ManagerIndex` and expose `RemoveSwapBack`. The r
 - Debug, off the hot path: `SimulationDebugDashboard`, `SimulationLog`, `BehaviourDescriptorLog`, `NestDebugView` in `Assets/Scripts/EntitySystem/AI/Debug/`.
 - `BehaviourDescriptorLog` (flag `behaviourDescriptorsEnabled`, needs `simulationLogEnabled`): created by `EntityManager` only when both are on and registered in the `ServiceLocator`; per-agent window counters in SoA `NativeArray` by `ManagerIndex` (actions started, goal at start, path length from `RunCycleTail`, utterances, strikes, foods eaten), fed from `EntityModel.NoteCommandStart`, `Emit`, `RegisterFitnessEvent`; `SimulationLog.Sample` calls `Sample`, which writes one row per living agent to `behaviour_descriptors_<same stamp>.csv` and clears the counters. Analysis: `tools/simlog_analyze.py`.
 - Log columns: `docs/simulation_log.md`. Action and property audits: `docs/audit/action_census.md`, `docs/audit/property_system_matrix.md`.
+- Laws that change rule axes at run time (codex): `docs/map/codex.md`; `EnergyFlows.Codex` is the outflow of spent votes.
 - Rules are partial files `SimulationRules.<Area>.cs` in `Assets/Scripts/EntitySystem/AI/Rules/`; the asset is `Assets/Scripts/EntitySystem/AI/SimulationRules.asset`.
 
 ## Invariants

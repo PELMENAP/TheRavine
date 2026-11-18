@@ -7,7 +7,7 @@ Read only what the task touches. The Philosophy and Project constraints sections
 
 | The change touches | Read first |
 |---|---|
-| Agent AI, colonies, learning, speech | [docs/map/ai.md](docs/map/ai.md) |
+| Agent AI, colonies, learning, speech; laws over rule axes (codex) | [docs/map/ai.md](docs/map/ai.md), [docs/map/codex.md](docs/map/codex.md) |
 | Virology | [docs/map/virology.md](docs/map/virology.md) |
 | World, chunks, NAL, random ticks, camera rings, rendering; ravine shape, plateau; terrain landforms, rivers, erosion | [docs/map/world.md](docs/map/world.md), [docs/map/ravine.md](docs/map/ravine.md), [docs/map/landforms.md](docs/map/landforms.md) |
 | Map events: fire, later weather | [docs/map/map-events.md](docs/map/map-events.md) |
