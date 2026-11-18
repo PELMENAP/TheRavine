@@ -9,8 +9,6 @@ public sealed class NoveltyProgressSystem : IDisposable
     private NativeArray<float> _slow;
     private NativeArray<byte>  _primed;
 
-    public int Capacity => _capacity;
-
     public NoveltyProgressSystem(int capacity)
     {
         _capacity = math.max(capacity, 1);

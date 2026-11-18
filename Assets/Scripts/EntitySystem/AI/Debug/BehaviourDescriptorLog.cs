@@ -31,8 +31,6 @@ public sealed class BehaviourDescriptorLog : IDisposable
     private double _windowStart;
     private bool _disposed;
 
-    public int Capacity => _capacity;
-
     public BehaviourDescriptorLog(int capacity)
     {
         _capacity = math.max(capacity, 1);

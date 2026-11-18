@@ -21,8 +21,6 @@ public static class ColonyArms
 
     public static string Name(ColonyArm arm) => (uint)arm < (uint)Names.Length ? Names[(int)arm] : Names[0];
 
-    public static ColonyArm FromByte(byte value) => value < (byte)ColonyArm.Count ? (ColonyArm)value : ColonyArm.Control;
-
     public static ColonyArm Draw(SimulationRules rules, bool wild)
     {
         if (wild) return ColonyArm.Control;

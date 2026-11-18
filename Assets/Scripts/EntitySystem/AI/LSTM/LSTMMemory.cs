@@ -174,4 +174,4 @@ public unsafe partial class LSTMMemory : IDisposable
         if (_wN.IsCreated) _wN.Dispose();
         if (_bN.IsCreated) _bN.Dispose();
     }
-}
+}

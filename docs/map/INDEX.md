@@ -25,8 +25,8 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI` | 11 | 2342 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
 | `Assets/Scripts/EntitySystem/AI/Codex` | 10 | 926 |
-| `Assets/Scripts/EntitySystem/AI/Colony` | 9 | 906 |
-| `Assets/Scripts/EntitySystem/AI/Debug` | 6 | 2293 |
+| `Assets/Scripts/EntitySystem/AI/Colony` | 9 | 900 |
+| `Assets/Scripts/EntitySystem/AI/Debug` | 6 | 2289 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 897 |
 | `Assets/Scripts/EntitySystem/AI/Entity` | 18 | 2837 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1461 |
@@ -38,8 +38,8 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Perception` | 10 | 2346 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 567 |
 | `Assets/Scripts/EntitySystem/AI/Population` | 7 | 1296 |
-| `Assets/Scripts/EntitySystem/AI/Rules` | 11 | 3328 |
-| `Assets/Scripts/EntitySystem/AI/SharedAI` | 24 | 3814 |
+| `Assets/Scripts/EntitySystem/AI/Rules` | 11 | 3330 |
+| `Assets/Scripts/EntitySystem/AI/SharedAI` | 24 | 3810 |
 | `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2174 |
 | `Assets/Scripts/EntitySystem/AI/Speech` | 8 | 1273 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
@@ -115,7 +115,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 945 |
-| `Assets/Tests/EditMode` | 76 | 12280 |
+| `Assets/Tests/EditMode` | 76 | 12347 |
 
 ## Assemblies
 

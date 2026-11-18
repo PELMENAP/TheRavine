@@ -375,18 +375,18 @@ public sealed class ColonyPopulation
             }
             if (double.IsNaN(colony.ExtinctSince)) { colony.ExtinctSince = now; continue; }
             if (now - colony.ExtinctSince < r.ColonyRespawnDelay) continue;
-            ReseedColony(colony, BestDonor(colony));
+            ReseedColony(colony, PickDonor(_colonies, colony));
         }
     }
 
-    private ColonyState BestDonor(ColonyState exclude)
+    public static ColonyState PickDonor(ColonyRegistry colonies, ColonyState exclude)
     {
         ColonyState best = null;
         float bestScore = float.MinValue;
-        for (int c = 0; c < _colonies.Count; c++)
+        for (int c = 0; c < colonies.Count; c++)
         {
-            var colony = _colonies[c];
-            if (colony == exclude || colony.IsWild || colony.MemberCount == 0) continue;
+            var colony = colonies[c];
+            if (colony == exclude || colony.IsWild || colony.MemberCount == 0 || colony.Arm != exclude.Arm) continue;
             float score = colony.Score;
             if (score <= bestScore) continue;
             bestScore = score;

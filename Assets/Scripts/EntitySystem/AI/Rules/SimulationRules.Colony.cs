@@ -21,6 +21,7 @@ public sealed partial class SimulationRules
     [SerializeField] private bool behaviourDescriptorsEnabled;
     [SerializeField] private bool lifeLogEnabled;
     [SerializeField] private float colonyGenomeMutationChance = 0.5f;
+    [SerializeField] private float colonyGenomeInitialSpread;
     [SerializeField] private float armSpeechMutedFraction;
     [SerializeField] private float armSpeechShuffledFraction;
     [SerializeField] private float armNullPolicyFraction;
@@ -222,6 +223,7 @@ public sealed partial class SimulationRules
     public float SimulationLogIntervalSeconds => simulationLogIntervalSeconds;
     public bool LifeLogEnabled => lifeLogEnabled;
     public bool BehaviourDescriptorsEnabled => behaviourDescriptorsEnabled;
+    public float ColonyGenomeInitialSpread => colonyGenomeInitialSpread;
     public float ColonyGenomeMutationChance => colonyGenomeMutationChance;
     public float ArmSpeechMutedFraction => armSpeechMutedFraction;
     public float ArmSpeechShuffledFraction => armSpeechShuffledFraction;
