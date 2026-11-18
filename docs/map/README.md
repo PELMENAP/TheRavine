@@ -8,6 +8,7 @@ One map per subsystem. Open only the map of the area the task touches; the routi
 | `docs/map/entities.md` | `AEntity`, components, player / mob entities, mob streaming, small gameplay modules |
 | `docs/map/player-net.md` | Player controller, Netcode, server authority, camera input |
 | `docs/map/ai.md` | Agents, colonies, shared brain, learning, perception, speech, debug |
+| `docs/map/codex.md` | Laws over rule axes: price-bounded admissibility, support, aggregation, colony legislator |
 | `docs/map/virology.md` | Genome tape, ribosome, strains, infection |
 | `docs/map/world.md` | Chunks, terrain, objects, random ticks, NAL, camera rings, rendering |
 | `docs/map/ravine.md` | Ravine profile: elevation by world z, wall, plateau generator, relative water |
