@@ -24,6 +24,7 @@ namespace TheRavine.Base
             return new WorldState
             {
                 seed = this.seed,
+                currency = this.currency,
                 playerPosition = this.playerPosition,
                 cycleCount = this.cycleCount,
                 startTime = this.startTime,

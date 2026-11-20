@@ -205,11 +205,11 @@ public sealed class ColonyState : IDisposable
     private readonly ColonyRegistry _registry;
 
     public ColonyState(ColonyRegistry registry, int index, int colonyId, float2 position, SharedHierarchicalBrain brain, int capacity,
-        bool wild = false)
+        bool wild = false, TheRavine.Base.PopulationSnapshot.Colony? saved = null)
     {
         IsWild = wild;
         var rules = SimulationRules.Active;
-        Arm = ColonyArms.Draw(rules, wild);
+        Arm = saved.HasValue ? (ColonyArm)saved.Value.Arm : ColonyArms.Draw(rules, wild);
         int sites = math.max(rules.QuorumSites, 1);
         _voterStride = math.max(rules.QuorumSize, 1) * 2;
         _sitePos     = new float2[sites];
@@ -223,7 +223,13 @@ public sealed class ColonyState : IDisposable
         Nest     = new NestState(position);
         Pois     = new ColonyPoiBoard(SimulationRules.Active.ColonyPoiCount);
         Brain    = brain;
-        Genome = ColonyGenome.Initial(rules.ColonyGenomeInitialSpread);
+        if (saved is { } c)
+        {
+            Genome = new ColonyGenome { BaseLearningRate = c.LearningRate, MaxGradientNorm = c.GradientNorm, EntropyRegularization = c.Entropy };
+            Nest.Storage = c.Storage;
+            Nest.RaiseHunger(c.Hunger);
+        }
+        else Genome = ColonyGenome.Initial(rules.ColonyGenomeInitialSpread);
         brain?.SetArm(Arm, true);
         brain?.SetLearningGenes(Genome);
         _members = new int[math.max(capacity, 4)];

@@ -61,6 +61,18 @@ public partial class EntityModel
         return heat;
     }
 
+    public bool SettleFuel()
+    {
+        if (!HasHeldObject) return true;
+        if (!WorldAuthority.IsAuthority || _map == null) return false;
+        var info = _objectRegistry?.Get(HeldObject);
+        if (info == null) return false;
+        _map.GetMapData(MapGenerator.WorldToChunk(_heldOrigin));
+        if (_map.TryPlaceSnapped(_heldOrigin, info, HeldAmount, 0) != PlacementResult.Ok) return false;
+        ClearHeldObject();
+        return true;
+    }
+
     public void DropHeldObject(float2 position)
     {
         if (!WorldAuthority.IsAuthority || !HasHeldObject || _map == null) return;

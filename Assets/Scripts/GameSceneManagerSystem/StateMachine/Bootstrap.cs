@@ -77,6 +77,22 @@ namespace TheRavine.Base
 
             _transitStarted = true;
             toMenuPauseButton.interactable = false;
+            SaveAndLeaveAsync().Forget();
+        }
+
+        private async UniTask SaveAndLeaveAsync()
+        {
+            var entities = FindAnyObjectByType<EntityManager>();
+            bool resume = entities != null && entities.enabled;
+            if (resume) entities.enabled = false;
+            if (WorldAuthority.IsAuthority && ServiceLocator.Services.TryGet(out WorldRegistry registry) &&
+                registry.HasLoadedWorld && !await registry.SaveCurrentWorldAsync())
+            {
+                if (resume) entities.enabled = true;
+                _transitStarted = false;
+                toMenuPauseButton.interactable = true;
+                return;
+            }
             AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
             sceneLoader.LoadScene(0, () => ReleaseServices(restoreGlobalServices: true)).Forget();
         }

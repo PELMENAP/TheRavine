@@ -49,6 +49,8 @@ public sealed class ColonyPopulation
     public event Action<EntityModel> Died;
     public event Action<EntityModel> TickUrgent;
 
+    internal void RestoreLastId(int id) => _nextEntityId = id;
+    public int LastId => _nextEntityId;
     public int CivilCount => _colonies.Count - (_wild != null ? 1 : 0);
     public int CivilPopulation => _entities.Count - (_wild != null ? _wild.MemberCount : 0);
 
@@ -94,7 +96,8 @@ public sealed class ColonyPopulation
 
     public void StartPredatorClock(double now) => _nextPredatorTime = now;
 
-    public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null, EntityModel mate = null, float2? birthVitals = null)
+    public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null, EntityModel mate = null, float2? birthVitals = null,
+        TheRavine.Base.PopulationSnapshot.Agent? saved = null)
     {
         if (!TheRavine.Base.WorldAuthority.IsAuthority || !HasFreeSlot(colony) ||
             (parent != null && !birthVitals.HasValue && SimulationRules.Active.ReproductionTransferEnabled))
@@ -103,9 +106,28 @@ public sealed class ColonyPopulation
             return null;
         }
 
-        var go  = UnityEngine.Object.Instantiate(_prefab, position, Quaternion.identity, _parent);
         var ctx = inheritedCtx ?? colony.Brain.CreateContext();
+        var model = new EntityModel();
+        GameObject go = null;
+        try
+        {
+            go = UnityEngine.Object.Instantiate(_prefab, position, Quaternion.identity, _parent);
+            RegisterEntity(go, model, position, colony, ctx, parent, mate, birthVitals, saved);
+            return model;
+        }
+        catch
+        {
+            if (_entities.Contains(model)) RemoveEntitySwapBack(model);
+            if (model.Brain == null) ctx.Dispose();
+            model.Dispose();
+            if (go != null) UnityEngine.Object.Destroy(go);
+            throw;
+        }
+    }
 
+    private void RegisterEntity(GameObject go, EntityModel model, Vector3 position, ColonyState colony, EntityBrainContext ctx,
+        EntityModel parent, EntityModel mate, float2? birthVitals, TheRavine.Base.PopulationSnapshot.Agent? saved)
+    {
         foreach (var expressible in go.GetComponents<IGeneticPhenotype>())
             expressible.ApplyGeneticPhenotype(ctx.CoordMLP.Params);
 
@@ -118,8 +140,7 @@ public sealed class ColonyPopulation
 
         viewModel.BindMotion(_motion);
 
-        var model = new EntityModel();
-        model.AssignId(++_nextEntityId);
+        model.AssignId(saved?.Id ?? ++_nextEntityId);
 
         model.Configure(colony, ctx, viewModel, viewModel, go, _tuning, parent);
         if (birthVitals.HasValue)
@@ -134,7 +155,8 @@ public sealed class ColonyPopulation
         model.SetUp();
 
         float startEnergy = model.BodyEnergy;
-        if (parent != null)
+        if (saved.HasValue) model.RestoreCondition(saved.Value);
+        else if (parent != null)
         {
             float energyCost = parent.Tuning.ReproduceEnergyCost;
             parent.Stats.En -= energyCost;
@@ -161,7 +183,7 @@ public sealed class ColonyPopulation
         _entities.Add(model);
         colony.AddMember(model);
         model.SyncCount();
-        colony.Stats.RecordBirth();
+        if (!saved.HasValue) colony.Stats.RecordBirth();
         _instincts.Reset(model.ManagerIndex, InstinctGenes.From(in ctx.CoordMLP.Params));
         _utility.Write(model.ManagerIndex, default);
         _thresholds.Reset(model.ManagerIndex, CasteThresholdSystem.Initial());
@@ -173,9 +195,11 @@ public sealed class ColonyPopulation
         _speech.Reset(model.ManagerIndex, model.ColonyIndex, model.EntityId, muted, colony.Arm);
         _descriptors?.Reset(model.ManagerIndex);
         _novelty?.Reset(model.ManagerIndex);
-        LifeLog?.Birth(model, parent, mate);
-        Spawned?.Invoke(model);
-        return model;
+        if (!saved.HasValue)
+        {
+            LifeLog?.Birth(model, parent, mate);
+            Spawned?.Invoke(model);
+        }
     }
 
     public bool SpawnChild(EntityModel parent)
@@ -340,6 +364,17 @@ public sealed class ColonyPopulation
         _deferredCount = 0;
     }
 
+    internal void DiscardEntities()
+    {
+        while (_entities.Count > 0)
+        {
+            var model = _entities[_entities.Count - 1];
+            RemoveEntitySwapBack(model);
+            model.Dispose();
+            if (model.SelfObject != null) UnityEngine.Object.Destroy(model.SelfObject);
+        }
+    }
+
     private void RemoveEntitySwapBack(EntityModel model)
     {
         int idx = model.ManagerIndex;
@@ -495,7 +530,8 @@ public sealed class ColonyPopulation
         }
         else
         {
-            home   = _colonies[RavineRandom.RangeInt(0, CivilCount)].Nest.Position;
+            int civil = RavineRandom.RangeInt(0, CivilCount);
+            home = _colonies[civil < wild.Index ? civil : civil + 1].Nest.Position;
             spread = r.PredatorSpawnDistance;
         }
         float a = RavineRandom.RangeFloat(0f, 2f * math.PI);

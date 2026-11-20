@@ -882,7 +882,7 @@ namespace TheRavine.Generator
             BindFirstPlayer();
 
             if (chunkStore != null && ServiceLocator.Services.TryGet(out AutosaveCoordinator autosave))
-                autosaveSubscription = autosave.SubscribeBeforeSave(SaveModifiedChunks);
+                autosaveSubscription = autosave.SubscribeBeforeSave(() => SaveModifiedChunks(true));
 
             Commands = new WorldCommandBuffer(256);
             Collision?.Dispose();
@@ -1233,7 +1233,7 @@ namespace TheRavine.Generator
             chunkStore.Rebind(newId);
         }
 
-        private void SaveModifiedChunks()
+        private void SaveModifiedChunks(bool checkpoint = false)
         {
             if (chunkStore == null) return;
 
@@ -1245,6 +1245,7 @@ namespace TheRavine.Generator
                 randomTicks?.StampActive(kv.Key, cd);
                 if (chunkStore.TrySave(kv.Key, cd))
                     cd.MarkPersisted();
+                else if (checkpoint) throw new System.IO.IOException($"Failed to save chunk {kv.Key}");
             }
         }
 

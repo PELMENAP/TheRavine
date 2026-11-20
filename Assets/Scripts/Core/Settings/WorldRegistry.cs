@@ -10,13 +10,14 @@ using ZLinq;
 
 namespace TheRavine.Base
 {
-    public class WorldRegistry : IDisposable
+    public partial class WorldRegistry : IDisposable
     {
         public const int MaxWorldNameLength = 32;
 
         private static readonly char[] InvalidNameChars = Path.GetInvalidFileNameChars();
 
         private readonly WorldStorage storage;
+        private readonly Action<PopulationSnapshot> checkPopulation;
         private readonly RavineLogger logger;
         
         private readonly ReactiveProperty<string> currentWorldId;
@@ -25,9 +26,12 @@ namespace TheRavine.Base
         private readonly CancellationTokenSource lifetime = new();
         private bool disposed;
 
+        public PopulationSnapshot LoadedPopulation { get; private set; }
         private WorldState currentState;
         private WorldConfiguration currentConfig;
         private bool hasUnsavedChanges;
+        private long revision;
+        internal object WorldSession => currentState;
 
         public ObservableList<string> AvailableWorlds { get; }
         public ReadOnlyReactiveProperty<string> CurrentWorldId { get; }
@@ -36,14 +40,23 @@ namespace TheRavine.Base
         public bool HasLoadedWorld => !string.IsNullOrEmpty(currentWorldId.Value);
         public string CurrentWorldName => currentConfig?.worldName ?? currentWorldId.Value;
 
+        public string LastLoadError { get; private set; }
+
+        public void ReportLoadError(string cause)
+        {
+            LastLoadError = cause;
+            logger.LogError($"[WorldRegistry] World load failed: {cause}");
+        }
+
         public WorldRegistry(
             IAsyncPersistentStorage persistenceStorage,
-            RavineLogger logger)
+            RavineLogger logger, Action<PopulationSnapshot> checkPopulation = null)
         {
             WorldStateRepository worldStateRepo = new(persistenceStorage);
             WorldConfigRepository worldConfigRepo = new(persistenceStorage);
             storage = new WorldStorage(worldStateRepo, worldConfigRepo);
             this.logger = logger;
+            this.checkPopulation = checkPopulation;
             
             currentWorldId = new ReactiveProperty<string>();
             isLoading = new ReactiveProperty<bool>(false);
@@ -130,17 +143,21 @@ namespace TheRavine.Base
                 return false;
             }
 
-            if (hasUnsavedChanges)
-            {
-                await SaveCurrentWorldAsync();
-            }
+            if ((hasUnsavedChanges || populationProvider != null || checkpointGate.CurrentCount == 0) && !await SaveCurrentWorldAsync()) return false;
 
-            isLoading.Value = true;
-
+            await checkpointGate.WaitAsync();
             try
             {
+                if (disposed || !AvailableWorlds.Contains(worldId)) return false;
+                isLoading.Value = true;
                 var (state, config) = await storage.LoadFullAsync(worldId);
+                if (disposed) return false;
                 
+                var population = PopulationRepository.Load(worldId, state.seed, config.createdTime);
+                if (population != null) checkPopulation?.Invoke(population);
+                LastLoadError = null;
+                LoadedPopulation = population;
+                populationProvider = null;
                 currentState = state;
                 currentConfig = config;
                 hasUnsavedChanges = false;
@@ -152,12 +169,13 @@ namespace TheRavine.Base
             }
             catch (Exception ex)
             {
-                logger.LogError($"[WorldRegistry] Ошибка загрузки '{worldId}': {ex.Message}");
+                ReportLoadError(ex.Message);
                 return false;
             }
             finally
             {
-                isLoading.Value = false;
+                checkpointGate.Release();
+                if (!disposed) isLoading.Value = false;
             }
         }
 
@@ -165,18 +183,26 @@ namespace TheRavine.Base
         {
             if (!HasLoadedWorld) return true;
 
-            if (hasUnsavedChanges)
+            if ((hasUnsavedChanges || populationProvider != null || checkpointGate.CurrentCount == 0) && !await SaveCurrentWorldAsync()) return false;
+
+            var unloading = currentState;
+            await checkpointGate.WaitAsync();
+            try
             {
-                await SaveCurrentWorldAsync();
+                if (disposed || !ReferenceEquals(currentState, unloading)) return false;
+                populationProvider = null;
+                LoadedPopulation = null;
+                currentState = null;
+                currentConfig = null;
+                hasUnsavedChanges = false;
+                currentWorldId.Value = null;
+                logger.LogInfo("[WorldRegistry] Мир выгружен");
+                return true;
             }
-
-            currentWorldId.Value = null;
-            currentState = default;
-            currentConfig = null;
-            hasUnsavedChanges = false;
-
-            logger.LogInfo("[WorldRegistry] Мир выгружен");
-            return true;
+            finally
+            {
+                checkpointGate.Release();
+            }
         }
 
         public async UniTask<bool> DeleteWorldAsync(string worldId)
@@ -193,7 +219,7 @@ namespace TheRavine.Base
             {
                 if (currentWorldId.Value == worldId)
                 {
-                    await UnloadWorldAsync();
+                    if (!await UnloadWorldAsync()) return false;
                 }
 
                 await storage.DeleteAsync(worldId);
@@ -252,18 +278,14 @@ namespace TheRavine.Base
                 return false;
             }
 
-            isLoading.Value = true;
+            if (currentWorldId.Value == oldName && !await SaveCurrentWorldAsync()) return false;
 
+            await checkpointGate.WaitAsync();
             try
             {
+                if (disposed || !AvailableWorlds.Contains(oldName) || AvailableWorlds.Contains(newName)) return false;
+                isLoading.Value = true;
                 bool isCurrent = currentWorldId.Value == oldName;
-
-                if (isCurrent && hasUnsavedChanges && !await SaveCurrentWorldAsync())
-                {
-                    logger.LogWarning($"[WorldRegistry] Не удалось сохранить мир '{oldName}' перед переименованием");
-                    return false;
-                }
-
                 WorldState state;
                 WorldConfiguration config;
                 if (isCurrent)
@@ -305,7 +327,8 @@ namespace TheRavine.Base
             }
             finally
             {
-                isLoading.Value = false;
+                checkpointGate.Release();
+                if (!disposed) isLoading.Value = false;
             }
         }
 
@@ -368,6 +391,7 @@ namespace TheRavine.Base
             }
 
             modifier(currentState);
+            revision++;
             hasUnsavedChanges = true;
         }
 
@@ -382,31 +406,8 @@ namespace TheRavine.Base
             modifier(currentConfig);
             currentConfig.lastModifiedTime = DateTimeOffset.Now.ToUnixTimeSeconds();
             currentConfig.Validate();
+            revision++;
             hasUnsavedChanges = true;
-        }
-
-        public async UniTask<bool> SaveCurrentWorldAsync()
-        {
-            if (!HasLoadedWorld)
-            {
-                logger.LogWarning("[WorldRegistry] Нет загруженного мира для сохранения");
-                return false;
-            }
-
-            try
-            {
-                currentState.lastSaveTime = DateTimeOffset.Now.ToUnixTimeSeconds();
-
-                await storage.SaveFullAsync(currentWorldId.Value, currentState, currentConfig);
-                hasUnsavedChanges = false;
-                
-                return true;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError($"[WorldRegistry] Ошибка сохранения: {ex.Message}");
-                return false;
-            }
         }
 
         public async UniTask<(WorldState state, WorldConfiguration config)> LoadWorldDataAsync(string worldId)

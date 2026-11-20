@@ -24,6 +24,16 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 | `TickWindowBudget` | `Assets/Scripts/EntitySystem/AI/TickWindowBudget.cs` | How many agents tick this frame |
 | `UrgentTickQueue` | `Assets/Scripts/EntitySystem/AI/UrgentTickQueue.cs` | Creatures that took damage and are due for an early tick; `EntityManager.PromoteUrgent` moves them to the front of the current batch inside the same window |
 
+## Population checkpoints
+
+- World authority captures live agents from motion slots and skips pending deaths. Colony IDs identify codex authors and optional brain files.
+- Population version 1 stores colony and agent ID high-water marks, experiment arm, learning genome, nest location, food, hunger and leader.
+- Agent records store identity, parent ID, position, simulation age, caste, phenotype, health, energy, stomach and carried food.
+- Startup checks scene capacity and gene ranges, prepares chunks, restores colonies and brains, then registers agent slots and resolves leaders and parents.
+- Restore uses current phenotype capacities, without birth or initial energy credit. A missing parent keeps its ancestral ID and has no live target.
+- Colony fields, membership, observations, plans, migration votes and skill topology are rebuilt. Attack, caste review and election timers resume on the simulation clock.
+- Missing population starts founders. An empty checkpoint starts with zero agents. Missing or incompatible neural weights use initialized brains.
+
 ## Agent (`Assets/Scripts/EntitySystem/AI/Entity/`)
 
 - `EntityModel` partial files: `.Cycle` (tick), `.Behaviour`, `.Social`, `.Directions`, `.Homeostasis`, `.Wild`, `.Fitness`, `.Skills`.
