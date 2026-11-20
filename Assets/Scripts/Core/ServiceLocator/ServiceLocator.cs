@@ -1,3 +1,4 @@
+using System.Threading;
 using R3;
 using Cysharp.Threading.Tasks;
 public static class ServiceLocator
@@ -31,12 +32,12 @@ public static class ServiceLocator
         return Players.OnPlayersBecameNonEmpty;
     }
 
-    public static async UniTask<T> WaitUntilServiceReady<T>() where T : class
+    public static async UniTask<T> WaitUntilServiceReady<T>(CancellationToken cancellationToken = default) where T : class
     {
         T service;
         while (!ServiceLocator.Services.TryGet(out service))
         {
-            await UniTask.Yield();
+            await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
         }
         return service;
     }

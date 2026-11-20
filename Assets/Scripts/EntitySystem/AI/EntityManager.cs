@@ -13,7 +13,7 @@ using TheRavine.Generator;
 using TheRavine.ObjectControl;
 using TheRavine.EntityControl.Virology;
 
-public class EntityManager : MonoBehaviour
+public partial class EntityManager : MonoBehaviour
 {
     
     [Header("Prefabs")]
@@ -173,9 +173,13 @@ public class EntityManager : MonoBehaviour
         => _infection != null && _infection.SeedRecipe(target, recipe);
 
     public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null)
-        => _population.SpawnEntity(position, colony, inheritedCtx, parent);
+    {
+        if (_population != null) return _population.SpawnEntity(position, colony, inheritedCtx, parent);
+        inheritedCtx?.Dispose();
+        return null;
+    }
 
-    public bool SpawnChild(EntityModel parent) => _population.SpawnChild(parent);
+    public bool SpawnChild(EntityModel parent) => _population != null && _population.SpawnChild(parent);
 
     private void UpdateDiagnostics()
     {
@@ -188,7 +192,7 @@ public class EntityManager : MonoBehaviour
 
     public void EvolveGenotypes()
     {
-        if (_tickCursor != 0) return;
+        if (_tickCursor != 0 || _evolution == null) return;
         _evolution.Evolve();
     }
 
@@ -422,9 +426,13 @@ public class EntityManager : MonoBehaviour
         _warmth = new WarmthField(SimulationRules.Active.WarmthCellSize, SimulationRules.Active.WarmthBuckets);
         ServiceLocator.Register(_warmth);
         _colonies = new ColonyRegistry();
-        CreateColonies();
         ServiceLocator.Register(_colonies);
         CreateCodex();
+        if (TheRavine.Base.WorldAuthority.IsAuthority && ServiceLocator.Services.TryGet(out TheRavine.Base.WorldRegistry registry) && registry.HasLoadedWorld)
+        {
+            _checkpointRegistry = registry;
+            registry.RegisterPopulation(CapturePopulation);
+        }
         _planner = new MovePlanner(_motion);
         _planner.BindColonies(_colonies);
         ServiceLocator.Register(_planner);
@@ -433,6 +441,10 @@ public class EntityManager : MonoBehaviour
         ServiceLocator.Register(_infection.Service);
         _food       = new ColonyFood(maxFood, _ledger);
         _soilFeed   = new SoilShaderFeed();
+    }
+
+    private void InitializePopulation()
+    {
         _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue), _skills);
         _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, _capacity, spawnRadius,
             _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _survey, _utility, _thresholds, _skills, _boids, _ledger, _speech, !snapshotStream, _descriptors, _noveltyProgress);
@@ -445,9 +457,6 @@ public class EntityManager : MonoBehaviour
         _population.Died    += RaiseDied;
         _urgent = new UrgentTickQueue(_capacity);
         _population.TickUrgent += _urgent.Enqueue;
-
-        if (useSavedBrain)
-            LoadBrain();
     }
 
     private void CreateCodex()
@@ -497,10 +506,10 @@ public class EntityManager : MonoBehaviour
         if (SimulationRules.Active.PredatorCount > 0) _wild = AddColony(transform.position, true);
     }
 
-    private ColonyState AddColony(Vector3 position, bool wild = false)
+    private ColonyState AddColony(Vector3 position, bool wild = false, TheRavine.Base.PopulationSnapshot.Colony? saved = null)
     {
         var colony = _colonies.Add(new Unity.Mathematics.float2(position.x, position.z),
-            new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden, SimulationRules.Active.WideSocialExecutor), _capacity, wild);
+            new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden, SimulationRules.Active.WideSocialExecutor), _capacity, wild, saved);
         _skills.PublishColony(colony.Index, colony.SkillTopology);
         return colony;
     }
@@ -528,7 +537,7 @@ public class EntityManager : MonoBehaviour
         }
     }
 
-    private async UniTaskVoid LoadBrainAsync()
+    private async UniTask LoadBrainAsync()
     {
         SharedHierarchicalBrain fallback = null;
 
@@ -586,11 +595,13 @@ public class EntityManager : MonoBehaviour
         if (_rulesMissing) return;
         if (await DelaySimulation(SimulationRules.Active.StartupDelaySeconds, destroyCancellationToken)) return;
 
-        var map = await ServiceLocator.WaitUntilServiceReady<MapGenerator>();
+        var (mapCancelled, map) = await ServiceLocator.WaitUntilServiceReady<MapGenerator>(destroyCancellationToken).SuppressCancellationThrow();
+        if (mapCancelled) return;
         _motion.Inject(map);
         _map = map;
 
-        var foodIndex = await ServiceLocator.WaitUntilServiceReady<ChunkFoodIndex>();
+        var (foodCancelled, foodIndex) = await ServiceLocator.WaitUntilServiceReady<ChunkFoodIndex>(destroyCancellationToken).SuppressCancellationThrow();
+        if (foodCancelled) return;
         _food.Bind(foodIndex, SimulationClock.Time);
 
         if (map.Events != null)
@@ -600,10 +611,37 @@ public class EntityManager : MonoBehaviour
             _wind = map.Events.Wind;
         }
 
-        for (int i = 0; i < initialCount; i++)
+        if (!TheRavine.Base.WorldAuthority.IsAuthority || !isActiveAndEnabled) return;
+        var registry = _checkpointRegistry;
+        if (registry != null && !registry.OwnsPopulation(CapturePopulation)) return;
+        var saved = registry?.LoadedPopulation;
+        try
         {
-            var colony = _colonies[i % _population.CivilCount];
-            SpawnEntity(_population.RandomPosition(colony), colony);
+            if (saved == null) CreateColonies();
+            else RestoreColonies(saved);
+            InitializePopulation();
+            if (useSavedBrain)
+            {
+                try { await LoadBrainAsync(); }
+                catch (OperationCanceledException) { return; }
+                catch (Exception ex) { RavineLog.Warning($"[EntityManager] Using initialized brain: {ex.Message}"); }
+            }
+            if (this == null || !isActiveAndEnabled || (registry != null && !registry.OwnsPopulation(CapturePopulation))) return;
+            if (saved != null) RestoreAgents(saved);
+            else for (int i = 0; i < initialCount; i++)
+            {
+                var colony = _colonies[i % _population.CivilCount];
+                SpawnEntity(_population.RandomPosition(colony), colony);
+            }
+        }
+        catch (Exception ex)
+        {
+            if (registry != null) registry.ReportLoadError(ex.Message);
+            else RavineLog.Error($"[EntityManager] Population startup failed: {ex.Message}");
+            _population?.DiscardEntities();
+            ReleaseServices();
+            Destroy(this);
+            return;
         }
         _population.StartPredatorClock(SimulationClock.TimeD);
         _lastColonyTime   = SimulationClock.Time;
@@ -642,6 +680,8 @@ public class EntityManager : MonoBehaviour
             StepCodex();
             _tickBudget.Reset();
             _population.ProcessPendingDeaths();
+            _population.CheckExtinctions();
+            _population.TickPredators();
             BeginColonyBatches();
             RunColonyDecisions();
             _population.FlushDeferredDisposals();
@@ -1181,6 +1221,9 @@ public class EntityManager : MonoBehaviour
 
     private void UnregisterServices()
     {
+        _checkpointRegistry?.ReleasePopulation(CapturePopulation);
+        _checkpointRegistry = null;
+        _codexSave?.Dispose();
         var services = ServiceLocator.Services;
         services.Unregister(_thresholds);
         services.Unregister(_skills);
@@ -1216,19 +1259,17 @@ public class EntityManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        _codexSave?.Dispose();
-        SimulationRules.ReleaseVariant();
+        UnregisterServices();
+        _population?.DiscardEntities();
         _soilFeed?.Dispose();
         _simulationLog?.Dispose();
         _puppets?.Dispose();
-        UnregisterServices();
         for (int i = 0; i < _nestViews.Count; i++)
             if (_nestViews[i] != null) Destroy(_nestViews[i].gameObject);
         _nestViews.Clear();
         _fire = null;
         _wind = null;
         _infection?.Dispose();
-        _population?.ProcessPendingDeaths();
         _population?.FlushDeferredDisposals();
         _planner?.Dispose();
         _motion?.Dispose();
@@ -1245,5 +1286,6 @@ public class EntityManager : MonoBehaviour
         _grid.Dispose();
         _colonies?.Dispose();
         ContextSlabs.DisposeAll();
+        SimulationRules.ReleaseVariant();
     }
 }

@@ -24,7 +24,7 @@ Tests: `Assets/Tests/EditMode/CodexMathTests.cs`, `Assets/Tests/EditMode/WorldCo
 5. Price per axis: `EntityManager.SampleEnergy` feeds `NoteEnergy` (net balance over turnover, own spending excluded); at each `codexWindow` the pair (mean θ, balance) goes to the estimator; until `codexPriceMinSamples` the prior is used.
 6. A law is admissible if every delta is inside `[L, U]` and `Cost = p·δ ≤ codexFreeBudget`; the same check runs again on `TryInvest`.
 7. `ColonyLegislator.Tick` runs at window close: per window it compares `ColonyState.Score`, proposes a Rademacher perturbation, invests while the trend is positive, otherwise tries the mirrored perturbation once.
-8. Save: `AutosaveCoordinator` hook writes `WorldState.codex`; on load `Restore` validates and θ is recomputed by the first `Step`. A missing or invalid block loads an empty codex.
+8. Save: world checkpoint hook writes `WorldState.codex`; on load `Restore` validates and θ is recomputed by the first `Step`. A missing or invalid block loads an empty codex.
 
 ## Perturbation schedule
 `SimulationRules.PerturbationSchedule` (`PerturbationEntry`: `startTime`, `duration`, `axis`, `multiplier`; empty by default) is applied inside `WorldCodexService.Step`, the same window-open path as the laws: `UpdatePerturbation` sums `log(multiplier)` of the entries active at `SimulationClock.Time` per axis, `Reaggregate` applies `exp(θ + perturbation)` through `SimulationRules.ApplyLaws`. Entries with a non-positive or non-finite multiplier or an unknown axis are ignored. The perturbation is not part of `Theta`, of the laws or of the price estimate. `WorldCodexService.PerturbationActive` is the number of active entries (log column `perturbation_active`).

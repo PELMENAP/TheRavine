@@ -22,7 +22,7 @@ public partial class EntityModel
         return SkillModifiers.From(_skills, ManagerIndex, colony.SkillTopology, SkillAtlas.Active);
     }
 
-    private void ApplyTuning()
+    private void ApplyTuning(bool recordFlow = true)
     {
         var skills = CurrentSkillModifiers();
         _casteMods = CasteModifiers.Combine(in _roleMods, in skills);
@@ -33,7 +33,7 @@ public partial class EntityModel
         float bodyBefore = BodyEnergy;
         Stats.Rescale(tuning.MaxHealth, tuning.MaxEnergy);
         Digestion.Resize(tuning.MaxEnergy * SimulationRules.Active.StomachCapacityFraction);
-        _ledger.Flows.RescaleNet += BodyEnergy - bodyBefore;
+        if (recordFlow) _ledger.Flows.RescaleNet += BodyEnergy - bodyBefore;
         Vectorizer?.SetMaxima(tuning.MaxHealth, tuning.MaxEnergy);
     }
 }

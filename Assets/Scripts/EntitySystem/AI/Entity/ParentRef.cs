@@ -6,10 +6,10 @@ public readonly struct ParentRef
     public readonly int EntityId;
     public readonly int ColonyId;
 
-    public ParentRef(EntityModel parent)
+    public ParentRef(EntityModel parent, int ancestorId = 0)
     {
         _ref     = parent != null ? new WeakReference<EntityModel>(parent) : null;
-        EntityId = parent != null ? parent.EntityId : 0;
+        EntityId = parent != null ? parent.EntityId : ancestorId;
         ColonyId = parent?.Colony != null ? parent.Colony.ColonyId : 0;
     }
 

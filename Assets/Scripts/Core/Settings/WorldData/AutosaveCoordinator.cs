@@ -22,12 +22,16 @@ namespace TheRavine.Base
         {
             _worldRegistry = worldRegistry;
             _logger = logger;
+            _worldRegistry.BeforeSave = InvokeBeforeSaveHandlersAsync;
         }
 
         public IDisposable SubscribeBeforeSave(Func<CancellationToken, UniTask> handler)
         {
-            _beforeSaveHandlers.Add(handler);
-            return new HandlerUnsubscriber(_beforeSaveHandlers, handler);
+            var session = _worldRegistry.WorldSession;
+            Func<CancellationToken, UniTask> bound = ct => ReferenceEquals(session, _worldRegistry.WorldSession)
+                ? handler(ct) : UniTask.CompletedTask;
+            _beforeSaveHandlers.Add(bound);
+            return new HandlerUnsubscriber(_beforeSaveHandlers, bound);
         }
         public IDisposable SubscribeBeforeSave(Action handler)
         {
@@ -44,18 +48,8 @@ namespace TheRavine.Base
             var handlers = _beforeSaveHandlers.ToArray();
             foreach (var handler in handlers)
             {
-                try
-                {
-                    await handler(ct);
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"[Autosave] Ошибка в BeforeSave-обработчике: {ex.Message}");
-                }
+                ct.ThrowIfCancellationRequested();
+                await handler(ct);
             }
         }
 
@@ -112,11 +106,7 @@ namespace TheRavine.Base
 
                     if (_worldRegistry.HasLoadedWorld)
                     {
-                        await InvokeBeforeSaveHandlersAsync(ct);
-
-                        if (ct.IsCancellationRequested) break;
-
-                        var success = await _worldRegistry.SaveCurrentWorldAsync();
+                        var success = await _worldRegistry.SaveCurrentWorldAsync(ct);
                         if (success)
                         {
                             _logger.LogInfo("[Autosave] Автосохранение выполнено");
@@ -137,6 +127,7 @@ namespace TheRavine.Base
         public void Dispose()
         {
             Stop();
+            _worldRegistry.BeforeSave = null;
             _beforeSaveHandlers.Clear();
         }
         private sealed class HandlerUnsubscriber : IDisposable

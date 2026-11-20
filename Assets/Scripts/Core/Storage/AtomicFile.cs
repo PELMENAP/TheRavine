@@ -68,8 +68,8 @@ public static class AtomicFile
 
     private static void Commit(string temp, string path)
     {
-        if (File.Exists(path)) File.Delete(path);
-        File.Move(temp, path);
+        if (File.Exists(path)) File.Replace(temp, path, null);
+        else File.Move(temp, path);
     }
 
     private static void DeleteQuietly(string path)

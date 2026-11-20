@@ -286,6 +286,29 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private int      _trailCount;
     private double   _nextTrailSample;
 
+    internal void RestoreCondition(in PopulationSnapshot.Agent saved)
+    {
+        TimeAlive = saved.Age;
+        Caste = (Caste)saved.Caste;
+        CasteFixed = saved.Fixed;
+        if (CasteFixed && !IsWild)
+        {
+            _roleMods = CasteModifiers.For(Caste);
+            ApplyTuning(false);
+            Brain.Context.CasteMask = ActionMask(Caste);
+            Brain.Context.SetGroup((int)Caste);
+        }
+        Stats.Hp = math.min(saved.Health, Stats.MaxHealth);
+        Stats.En = math.min(saved.Energy, Stats.MaxEnergy);
+        Digestion.Ingest(saved.Stomach);
+        Carry(saved.Carrying);
+        _attackReadyTime = SimulationClock.TimeD + saved.AttackRemaining;
+        NextCasteReview = SimulationClock.TimeD + saved.ReviewRemaining;
+        BeginHomeostasis();
+    }
+
+    internal void RestoreParent(EntityModel parent, int id) => Parent = new ParentRef(parent, id);
+
     public void AssignCaste(Caste caste)
     {
         Caste      = caste;

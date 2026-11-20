@@ -11,18 +11,22 @@ public sealed class ColonyRegistry : IDisposable
     private int _nextId;
     private NativeArray<ColonyFieldView> _views;
 
+    public int LastId => _nextId;
     public int Count => _count;
     public ColonyState this[int index] => _colonies[index];
     public NativeArray<ColonyFieldView> Views => _views;
 
-    public ColonyState Add(float2 position, SharedHierarchicalBrain brain, int memberCapacity, bool wild = false)
+    internal void RestoreLastId(int id) => _nextId = id;
+
+    public ColonyState Add(float2 position, SharedHierarchicalBrain brain, int memberCapacity, bool wild = false,
+        TheRavine.Base.PopulationSnapshot.Colony? saved = null)
     {
         if (_count >= MaxColonies)
             throw new InvalidOperationException($"ColonyRegistry: превышен лимит {MaxColonies} колоний");
 
         if (_count == _colonies.Length) Array.Resize(ref _colonies, math.max(4, _colonies.Length << 1));
 
-        var colony = new ColonyState(this, _count, ++_nextId, position, brain, memberCapacity, wild);
+        var colony = new ColonyState(this, _count, saved?.Id ?? ++_nextId, position, brain, memberCapacity, wild, saved);
         _colonies[_count++] = colony;
         RebuildViews();
         return colony;
