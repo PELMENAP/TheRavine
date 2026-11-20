@@ -22,7 +22,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 19 | 2317 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
-| `Assets/Scripts/EntitySystem/AI` | 12 | 2527 |
+| `Assets/Scripts/EntitySystem/AI` | 12 | 2541 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
 | `Assets/Scripts/EntitySystem/AI/Codex` | 10 | 936 |
 | `Assets/Scripts/EntitySystem/AI/Colony` | 9 | 941 |
