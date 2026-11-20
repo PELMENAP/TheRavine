@@ -119,6 +119,7 @@ namespace TheRavine.EntityControl.Virology
             if (_immuneCount > 0 && IsImmune(Segment.ComputeSignature(source, 0, count)))
             {
                 ImmuneBlocks++;
+                VirologyEvents.NoteBlocked();
                 return false;
             }
 
@@ -150,6 +151,7 @@ namespace TheRavine.EntityControl.Virology
             RebuildSegmentMap();
             _segments[_segmentCount - 1].DominantAction = ResolveDominant(index, count);
             _segmentsDirty = true;
+            if (strainId != 0UL) VirologyEvents.NoteInfection();
             return true;
         }
 
@@ -506,7 +508,15 @@ namespace TheRavine.EntityControl.Virology
             RebuildSegmentMap();
             _lastCodonIndex = -1;
             _segmentsDirty = true;
+            if (!HasViralSegment()) VirologyEvents.NoteRecovery();
             return true;
+        }
+
+        private bool HasViralSegment()
+        {
+            for (int i = 0; i < _segmentCount; i++)
+                if (!_segments[i].IsEndogenous) return true;
+            return false;
         }
 
         private bool TryReplicate(int index)

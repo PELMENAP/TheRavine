@@ -32,6 +32,10 @@ public sealed class ColonyPopulation
     private readonly BoidSystem           _boids;
     private readonly EnergyLedger         _ledger;
     private readonly SpeechBus            _speech;
+    private readonly BehaviourDescriptorLog _descriptors;
+    private readonly NoveltyProgressSystem  _novelty;
+
+    public LifeEventLog LifeLog { get; set; }
 
     private readonly Queue<EntityModel> _pendingDeath = new();
     private EntityModel[] _deferredDispose = Array.Empty<EntityModel>();
@@ -59,7 +63,8 @@ public sealed class ColonyPopulation
     public ColonyPopulation(GameObject prefab, Transform parent, EntityTuning tuning, int maxPopulation, int capacity, float spawnRadius,
         List<EntityModel> entities, ColonyRegistry colonies, ColonyState wild, ColonyFood food, EvolutionService evolution,
         EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, SurveySystem survey, UtilityPriorSystem utility,
-        CasteThresholdSystem thresholds, SkillGraphStore skills, BoidSystem boids, EnergyLedger ledger, SpeechBus speech, bool spawnNetworkObjects)
+        CasteThresholdSystem thresholds, SkillGraphStore skills, BoidSystem boids, EnergyLedger ledger, SpeechBus speech, bool spawnNetworkObjects,
+        BehaviourDescriptorLog descriptors = null, NoveltyProgressSystem novelty = null)
     {
         _spawnNetworkObjects = spawnNetworkObjects;
         _prefab        = prefab;
@@ -83,11 +88,13 @@ public sealed class ColonyPopulation
         _boids         = boids;
         _ledger        = ledger;
         _speech        = speech;
+        _descriptors   = descriptors;
+        _novelty       = novelty;
     }
 
     public void StartPredatorClock(double now) => _nextPredatorTime = now;
 
-    public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null)
+    public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null, EntityModel mate = null)
     {
         if (!TheRavine.Base.WorldAuthority.IsAuthority || !HasFreeSlot(colony))
         {
@@ -142,7 +149,10 @@ public sealed class ColonyPopulation
         ref readonly var rules = ref SimulationRules.Frame;
         bool muted = rules.SpeechMuteSampling && !colony.IsWild && RavineRandom.RangeFloat() < rules.SpeechMuteFraction;
         model.Speech.SetMuted(muted);
-        _speech.Reset(model.ManagerIndex, model.ColonyIndex, model.EntityId, muted);
+        _speech.Reset(model.ManagerIndex, model.ColonyIndex, model.EntityId, muted, colony.Arm);
+        _descriptors?.Reset(model.ManagerIndex);
+        _novelty?.Reset(model.ManagerIndex);
+        LifeLog?.Birth(model, parent, mate);
         Spawned?.Invoke(model);
         return model;
     }
@@ -178,7 +188,7 @@ public sealed class ColonyPopulation
                      + (Vector3)RavineRandom.GetInsideCircle().normalized * rules.ChildSpawnOffset
                      + Vector3.up * rules.ChildSpawnLift;
 
-        return SpawnEntity(pos, colony, childCtx, parent) != null;
+        return SpawnEntity(pos, colony, childCtx, parent, mate) != null;
     }
 
     public Vector3 RandomPosition(ColonyState colony)
@@ -213,6 +223,7 @@ public sealed class ColonyPopulation
             BroadcastDeath(model, cause);
             _food.DropCorpse(model, cause);
             model.Brain?.CompleteTerminal(_evolution.TerminalPenaltyFor(model, cause), SimulationClock.Time);
+            LifeLog?.Death(model, cause);
             RemoveEntitySwapBack(model);
             Died?.Invoke(model);
 
@@ -305,6 +316,8 @@ public sealed class ColonyPopulation
         _thresholds.RemoveSwapBack(idx, last);
         _skills.RemoveSwapBack(idx, last);
         _speech.RemoveSwapBack(idx, last);
+        _descriptors?.RemoveSwapBack(idx, last);
+        _novelty?.RemoveSwapBack(idx, last);
         _grid.MarkStale();
         _entities.RemoveAt(last);
         model.ManagerIndex = -1;
@@ -362,18 +375,18 @@ public sealed class ColonyPopulation
             }
             if (double.IsNaN(colony.ExtinctSince)) { colony.ExtinctSince = now; continue; }
             if (now - colony.ExtinctSince < r.ColonyRespawnDelay) continue;
-            ReseedColony(colony, BestDonor(colony));
+            ReseedColony(colony, PickDonor(_colonies, colony));
         }
     }
 
-    private ColonyState BestDonor(ColonyState exclude)
+    public static ColonyState PickDonor(ColonyRegistry colonies, ColonyState exclude)
     {
         ColonyState best = null;
         float bestScore = float.MinValue;
-        for (int c = 0; c < _colonies.Count; c++)
+        for (int c = 0; c < colonies.Count; c++)
         {
-            var colony = _colonies[c];
-            if (colony == exclude || colony.IsWild || colony.MemberCount == 0) continue;
+            var colony = colonies[c];
+            if (colony == exclude || colony.IsWild || colony.MemberCount == 0 || colony.Arm != exclude.Arm) continue;
             float score = colony.Score;
             if (score <= bestScore) continue;
             bestScore = score;
@@ -390,6 +403,7 @@ public sealed class ColonyPopulation
 
         if (donor != null)
         {
+            colony.InheritGenome(donor.Genome);
             var old = colony.Brain;
             colony.ReplaceBrain(new SharedHierarchicalBrain(donor.Brain));
             old?.Dispose();

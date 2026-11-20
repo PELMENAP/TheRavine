@@ -22,26 +22,26 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 19 | 2317 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
-| `Assets/Scripts/EntitySystem/AI` | 11 | 2298 |
+| `Assets/Scripts/EntitySystem/AI` | 11 | 2340 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
-| `Assets/Scripts/EntitySystem/AI/Codex` | 10 | 891 |
-| `Assets/Scripts/EntitySystem/AI/Colony` | 7 | 800 |
-| `Assets/Scripts/EntitySystem/AI/Debug` | 3 | 1615 |
-| `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 787 |
-| `Assets/Scripts/EntitySystem/AI/Entity` | 18 | 2816 |
-| `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1460 |
+| `Assets/Scripts/EntitySystem/AI/Codex` | 10 | 926 |
+| `Assets/Scripts/EntitySystem/AI/Colony` | 9 | 900 |
+| `Assets/Scripts/EntitySystem/AI/Debug` | 6 | 2289 |
+| `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 897 |
+| `Assets/Scripts/EntitySystem/AI/Entity` | 18 | 2837 |
+| `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1461 |
 | `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 695 |
 | `Assets/Scripts/EntitySystem/AI/Flock` | 1 | 230 |
 | `Assets/Scripts/EntitySystem/AI/Instinct` | 1 | 441 |
-| `Assets/Scripts/EntitySystem/AI/LSTM` | 2 | 198 |
+| `Assets/Scripts/EntitySystem/AI/LSTM` | 2 | 257 |
 | `Assets/Scripts/EntitySystem/AI/Nest` | 1 | 394 |
 | `Assets/Scripts/EntitySystem/AI/Perception` | 10 | 2346 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 567 |
-| `Assets/Scripts/EntitySystem/AI/Population` | 7 | 1263 |
-| `Assets/Scripts/EntitySystem/AI/Rules` | 11 | 3258 |
-| `Assets/Scripts/EntitySystem/AI/SharedAI` | 21 | 3447 |
+| `Assets/Scripts/EntitySystem/AI/Population` | 7 | 1317 |
+| `Assets/Scripts/EntitySystem/AI/Rules` | 11 | 3330 |
+| `Assets/Scripts/EntitySystem/AI/SharedAI` | 24 | 3810 |
 | `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2174 |
-| `Assets/Scripts/EntitySystem/AI/Speech` | 7 | 1099 |
+| `Assets/Scripts/EntitySystem/AI/Speech` | 8 | 1273 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
 | `Assets/Scripts/EntitySystem/Command` | 4 | 153 |
@@ -58,7 +58,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/InteractionSystem` | 1 | 8 |
 | `Assets/Scripts/EntitySystem/Job` | 9 | 3140 |
 | `Assets/Scripts/EntitySystem/StaticNPC` | 1 | 1 |
-| `Assets/Scripts/EntitySystem/Virology` | 16 | 2523 |
+| `Assets/Scripts/EntitySystem/Virology` | 17 | 2553 |
 | `Assets/Scripts/GameSceneManagerSystem` | 3 | 295 |
 | `Assets/Scripts/GameSceneManagerSystem/IStates & IStatesBehaviour` | 1 | 15 |
 | `Assets/Scripts/GameSceneManagerSystem/MainSceneManagerSystem` | 2 | 274 |
@@ -115,7 +115,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 945 |
-| `Assets/Tests/EditMode` | 70 | 10962 |
+| `Assets/Tests/EditMode` | 76 | 12359 |
 
 ## Assemblies
 
@@ -178,7 +178,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | BoidHash | class | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | 63 |
 | BoidJob | struct | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | 68 |
 | BoidOutput | struct | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | 18 |
-| BrainForwardJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 72 |
+| BrainForwardJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 73 |
 | CameraPlace | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 14 |
 | CasinoSlotPref | class | `Assets/Scripts/EntitySystem/Casino/CasinoSlotsPref.cs` | 3 |
 | Caste | enum | `Assets/Scripts/EntitySystem/AI/Entity/EntityTuning.cs` | 4 |
@@ -195,6 +195,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | ClusterSettingsAuthoring | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator/ObjectGeneratorStructures.cs` | 27 |
 | CollatzInteractor | class | `Assets/Scripts/Terminal/Rive/Core/RiveInteractors.cs` | 132 |
 | CollectionHelpers | class | `Assets/Scripts/Core/Utilities/CodeHelpers.cs` | 212 |
+| ColonyArms | class | `Assets/Scripts/EntitySystem/AI/Colony/ColonyArm.cs` | 15 |
 | ColonyChannel | enum | `Assets/Scripts/EntitySystem/AI/Nest/NestState.cs` | 8 |
 | ColonyFieldDecayJob | struct | `Assets/Scripts/EntitySystem/AI/Nest/NestState.cs` | 54 |
 | ColonyFieldShiftJob | struct | `Assets/Scripts/EntitySystem/AI/Nest/NestState.cs` | 126 |
@@ -321,6 +322,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | LiteralNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 17 |
 | LogNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 95 |
 | LSTMMemory | class | `Assets/Scripts/EntitySystem/AI/LSTM/LSTMMemoryStorage.cs` | 5 |
+| LtcMode | enum | `Assets/Scripts/EntitySystem/AI/SharedAI/LtcNeuron.cs` | 4 |
 | MenuSection | enum | `Assets/Scripts/GameSceneManagerSystem/MainSceneManagerSystem/MenuMainScript.cs` | 11 |
 | MenuSectionData | struct | `Assets/Scripts/GameSceneManagerSystem/MainSceneManagerSystem/MenuMainScript.cs` | 18 |
 | MimicWork | struct | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/MimicLegJob.cs` | 6 |
@@ -345,13 +347,14 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | ObjectViewMotionSettings | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/ObjectViewMotion.cs` | 7 |
 | PackLeashTests | class | `Assets/Tests/EditMode/PredatorPressureTests.cs` | 54 |
 | Pair | struct | `Assets/Scripts/Core/Utilities/Extentions.cs` | 97 |
-| PerceptronApplyJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 184 |
-| PerceptronTrainJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 131 |
+| PerceptronApplyJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 195 |
+| PerceptronTrainJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 132 |
 | PerchBucketJob | struct | `Assets/Scripts/EntitySystem/Job/BirdPerchIndex.cs` | 125 |
 | PerchBuildJob | struct | `Assets/Scripts/EntitySystem/Job/BirdPerchIndex.cs` | 77 |
 | PerchCollectIdsJob | struct | `Assets/Scripts/EntitySystem/Job/BirdPerchIndex.cs` | 56 |
 | PerchRemapJob | struct | `Assets/Scripts/EntitySystem/Job/BirdPerchIndex.cs` | 152 |
 | PeriodicEvent | class | `Assets/Scripts/Test/MarketSimulator.cs` | 54 |
+| PerturbationEntry | struct | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.Variance.cs` | 24 |
 | PickUpEvent | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 9 |
 | PickUpResultEvent | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 11 |
 | PlaceEvent | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 10 |
@@ -386,7 +389,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | ReactiveHelpers | class | `Assets/Scripts/Core/Utilities/CodeHelpers.cs` | 225 |
 | ReliefFromHeightJob | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 627 |
 | ReservoirItem | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 27 |
-| ReservoirJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 102 |
+| ReservoirJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 103 |
 | Result | struct | `Assets/Scripts/Terminal/PDollar/Scripts/PointCloudRecognizer.cs` | 89 |
 | ReturnNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 69 |
 | RichTextExtensions | class | `Assets/Scripts/EntitySystem/AI/Entity/EntityView.cs` | 208 |
@@ -446,7 +449,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | TradeHistory | class | `Assets/Scripts/Test/MarketCore.cs` | 321 |
 | TradeLot | class | `Assets/Scripts/Test/MarketCore.cs` | 299 |
 | Trader | class | `Assets/Scripts/Test/MarketCore.cs` | 271 |
-| TrainResult | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 65 |
+| TrainResult | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 66 |
 | TrainTicket | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 37 |
 | TranslationLutJob | struct | `Assets/Scripts/EntitySystem/Virology/TranslationTable.cs` | 80 |
 | TranslationResult | struct | `Assets/Scripts/EntitySystem/Virology/Ribosome.cs` | 83 |
@@ -481,7 +484,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | WorldCommandStats | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | 27 |
 | WorldEditResult | enum | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | 205 |
 | WorldEdits | class | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | 217 |
-| XorShift32 | struct | `Assets/Scripts/EntitySystem/AI/GeneticParameters.cs` | 259 |
+| XorShift32 | struct | `Assets/Scripts/EntitySystem/AI/GeneticParameters.cs` | 274 |
 
 ## Files not to read
 

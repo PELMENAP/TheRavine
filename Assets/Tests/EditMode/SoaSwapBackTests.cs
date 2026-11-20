@@ -174,4 +174,73 @@ public class SoaSwapBackTests
             Object.DestroyImmediate(atlas);
         }
     }
+    [Test]
+    public void BehaviourDescriptorsFollowSwapBack()
+    {
+        var log = new BehaviourDescriptorLog(3);
+        try
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                log.Reset(i);
+                log.NoteAction(i, (int)EntityAction.Eat, (int)SharedHierarchicalBrain.Goal.Forage);
+                for (int k = 0; k < i; k++) log.NoteAction(i, (int)EntityAction.Idle, (int)SharedHierarchicalBrain.Goal.Survive);
+                for (int k = 0; k <= i; k++) { log.NoteSpeech(i); log.NoteAttack(i); log.NoteFood(i); }
+                log.NoteMove(i, new float2(0f, 0f));
+                log.NoteMove(i, new float2(10f * (i + 1), 0f));
+            }
+
+            log.RemoveSwapBack(0, 2);
+
+            Assert.AreEqual(1, log.ActionCount(0, (int)EntityAction.Eat));
+            Assert.AreEqual(2, log.ActionCount(0, (int)EntityAction.Idle));
+            Assert.AreEqual(2, log.GoalCount(0, (int)SharedHierarchicalBrain.Goal.Survive));
+            Assert.AreEqual(30f, log.Distance(0), 1e-4f);
+            Assert.AreEqual(3, log.SpeechCount(0));
+            Assert.AreEqual(3, log.AttackCount(0));
+            Assert.AreEqual(3, log.FoodCount(0));
+
+            Assert.AreEqual(1, log.ActionCount(1, (int)EntityAction.Idle));
+            Assert.AreEqual(0, log.ActionCount(2, (int)EntityAction.Eat));
+            Assert.AreEqual(0f, log.Distance(2));
+            Assert.AreEqual(0, log.SpeechCount(2));
+
+            log.NoteMove(2, new float2(5f, 0f));
+            Assert.AreEqual(0f, log.Distance(2), 1e-6f);
+
+            log.RemoveSwapBack(0, 9);
+            Assert.AreEqual(3, log.SpeechCount(0));
+        }
+        finally
+        {
+            log.Dispose();
+        }
+    }
+    [Test]
+    public void NoveltyProgressFollowsSwapBack()
+    {
+        var system = new NoveltyProgressSystem(3);
+        try
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                system.Reset(i);
+                system.Step(i, 1f + i, 0.2f, 0.02f);
+                system.Step(i, 3f + i, 0.2f, 0.02f);
+            }
+            float fast = system.Fast(2);
+            float slow = system.Slow(2);
+
+            system.RemoveSwapBack(0, 2);
+
+            Assert.AreEqual(fast, system.Fast(0));
+            Assert.AreEqual(slow, system.Slow(0));
+            Assert.AreEqual(0f, system.Fast(2));
+            Assert.AreEqual(0f, system.Slow(2));
+        }
+        finally
+        {
+            system.Dispose();
+        }
+    }
 }

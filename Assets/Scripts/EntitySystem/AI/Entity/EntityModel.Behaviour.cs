@@ -217,6 +217,12 @@ public partial class EntityModel
         AddExtrinsicReward(reward);
     }
 
+    public void NoteCommandStart(int action)
+    {
+        _speechBus?.RecordListen(ColonyIndex, Speech.HasLoudest, action);
+        _descriptors?.NoteAction(ManagerIndex, action, (int)Brain.Context.CurrentGoal);
+    }
+
     public bool TryStartSpeechCooldown() => SpeechBus.TryStartCooldown(ref _speechReadyTime);
 
     public void Emit(in Utterance utterance)
@@ -224,6 +230,7 @@ public partial class EntityModel
         Speech.SetOwn(in utterance);
         _speechBus?.Emit(in utterance);
         SpeechMetrics.RecordEmission(in utterance);
+        _descriptors?.NoteSpeech(ManagerIndex);
         PropagateWarn();
     }
 

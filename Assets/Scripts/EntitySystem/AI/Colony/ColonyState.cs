@@ -29,6 +29,8 @@ public sealed class ColonyState : IDisposable
         else CasteCounts[bucket] += delta;
     }
     public readonly bool IsWild;
+    public readonly ColonyArm Arm;
+    public ColonyGenome Genome { get; private set; }
     public float Scarcity;
     public float Pressure { get; private set; }
     public float2 PackCentre { get; private set; }
@@ -198,6 +200,7 @@ public sealed class ColonyState : IDisposable
     {
         IsWild = wild;
         var rules = SimulationRules.Active;
+        Arm = ColonyArms.Draw(rules, wild);
         int sites = math.max(rules.QuorumSites, 1);
         _voterStride = math.max(rules.QuorumSize, 1) * 2;
         _sitePos     = new float2[sites];
@@ -211,11 +214,25 @@ public sealed class ColonyState : IDisposable
         Nest     = new NestState(position);
         Pois     = new ColonyPoiBoard(SimulationRules.Active.ColonyPoiCount);
         Brain    = brain;
+        Genome = ColonyGenome.Initial(rules.ColonyGenomeInitialSpread);
+        brain?.SetArm(Arm, true);
+        brain?.SetLearningGenes(Genome);
         _members = new int[math.max(capacity, 4)];
         SkillTopology = SkillGraphTopology.Create(SkillAtlas.Active, SkillGraphTopology.DrawForestGenes());
     }
 
-    public void ReplaceBrain(SharedHierarchicalBrain brain) => Brain = brain;
+    public void ReplaceBrain(SharedHierarchicalBrain brain)
+    {
+        Brain = brain;
+        brain?.SetArm(Arm, false);
+        brain?.SetLearningGenes(Genome);
+    }
+
+    public void InheritGenome(in ColonyGenome parent)
+    {
+        Genome = parent.Inherited(math.saturate(SimulationRules.Active.ColonyGenomeMutationChance));
+        Brain?.SetLearningGenes(Genome);
+    }
 
     public void Relocate(float2 position, ChunkFoodIndex food)
     {
