@@ -135,11 +135,19 @@ public sealed class SpeechBus : IDisposable
     private NativeArray<Utterance>   _inbox;
     private NativeArray<byte>        _inboxHead;
     private NativeArray<byte>        _muted;
+    private NativeArray<byte>        _arm;
     private NativeArray<int>         _colony;
     private NativeArray<int>         _entityId;
     private NativeArray<float>       _fitness;
     private NativeArray<SpeechCredit> _credits;
     private NativeArray<int>         _delivered;
+
+    private readonly ushort[] _ringTokens  = new ushort[ColonyRegistry.MaxColonies * SimulationRules.SpeechShuffleRing];
+    private readonly byte[]   _ringContext = new byte[ColonyRegistry.MaxColonies * SimulationRules.SpeechShuffleRing];
+    private readonly int[]    _ringCount   = new int[ColonyRegistry.MaxColonies];
+    private readonly int[]    _ringHead    = new int[ColonyRegistry.MaxColonies];
+    private readonly ColonySpeechTables[] _tables = new ColonySpeechTables[ColonyRegistry.MaxColonies];
+    private Unity.Mathematics.Random _rng = new Unity.Mathematics.Random(0x9E3779B9u);
 
     private int  _creditHead;
     private int  _creditTail;
@@ -167,6 +175,7 @@ public sealed class SpeechBus : IDisposable
         _inbox     = new NativeArray<Utterance>(_capacity * SimulationRules.SpeechInbox, Allocator.Persistent);
         _inboxHead = new NativeArray<byte>(_capacity, Allocator.Persistent);
         _muted     = new NativeArray<byte>(_capacity, Allocator.Persistent);
+        _arm       = new NativeArray<byte>(_capacity, Allocator.Persistent);
         _colony    = new NativeArray<int>(_capacity, Allocator.Persistent);
         _entityId  = new NativeArray<int>(_capacity, Allocator.Persistent);
         _fitness   = new NativeArray<float>(_capacity, Allocator.Persistent);
@@ -174,13 +183,28 @@ public sealed class SpeechBus : IDisposable
         _delivered = new NativeArray<int>(1, Allocator.Persistent);
     }
 
-    public void Reset(int index, int colony, int entityId, bool muted)
+    public void Reset(int index, int colony, int entityId, bool muted, ColonyArm arm = ColonyArm.Control)
     {
         if ((uint)index >= (uint)_capacity) return;
         ClearRow(index);
         _colony[index]   = colony;
         _entityId[index] = entityId;
         _muted[index]    = muted ? (byte)1 : (byte)0;
+        _arm[index]      = (byte)arm;
+    }
+
+    public ColonyArm ArmOf(int index) => (uint)index < (uint)_capacity ? (ColonyArm)_arm[index] : ColonyArm.Control;
+
+    public ColonySpeechTables TablesOf(int colony)
+    {
+        if ((uint)colony >= (uint)_tables.Length) return null;
+        return _tables[colony] ??= new ColonySpeechTables();
+    }
+
+    public void RecordListen(int colony, bool fresh, int action)
+    {
+        if ((uint)colony >= (uint)_tables.Length) return;
+        (_tables[colony] ??= new ColonySpeechTables()).RecordListen(fresh, action);
     }
 
     public void SetFitness(int index, float fitness)
@@ -227,6 +251,7 @@ public sealed class SpeechBus : IDisposable
 
         int n = _batch.Length;
         int baseSlot = _creditHead;
+        for (int e = 0; e < n; e++) ApplyArm(e);
         for (int e = 0; e < n; e++)
         {
             var u = _batch[e];
@@ -241,7 +266,13 @@ public sealed class SpeechBus : IDisposable
         if (_audibleUsers > 0)
         {
             int room = _audible.Capacity - _audible.Length;
-            for (int e = 0; e < n && e < room; e++) _audible.AddNoResize(_batch[e]);
+            for (int e = 0; e < n && room > 0; e++)
+            {
+                var u = _batch[e];
+                if (u.Len == 0) continue;
+                _audible.AddNoResize(u);
+                room--;
+            }
         }
 
         _creditHead += n;
@@ -276,6 +307,51 @@ public sealed class SpeechBus : IDisposable
             CreditMask  = CreditMask,
             Delivered   = _delivered,
         }.Run();
+    }
+
+    private void ApplyArm(int e)
+    {
+        var u = _batch[e];
+        int speaker = u.Speaker;
+        if ((uint)speaker >= (uint)_capacity) return;
+
+        int colony = _colony[speaker];
+        if ((uint)colony >= (uint)_tables.Length) return;
+
+        if (!u.IsReflex && u.Len > 0) (_tables[colony] ??= new ColonySpeechTables()).RecordEmission(in u);
+
+        var arm = (ColonyArm)_arm[speaker];
+        if (arm == ColonyArm.SpeechMuted)
+        {
+            u.Len = 0;
+            _batch[e] = u;
+            return;
+        }
+        if (arm != ColonyArm.SpeechShuffled || u.Len == 0) return;
+
+        int count = _ringCount[colony];
+        int row   = colony * SimulationRules.SpeechShuffleRing;
+        int len   = math.min((int)u.Len, SimulationRules.SpeechLen);
+        ushort tokens = u.Tokens;
+        byte context  = 0;
+        for (int s = 0; s < len; s++)
+        {
+            int token = count == 0
+                ? _rng.NextInt(SimulationRules.SpeechVocab)
+                : (_ringTokens[row + _rng.NextInt(count)] >> (s * SimulationRules.SpeechTokenBits)) & (SimulationRules.SpeechVocab - 1);
+            tokens = Utterance.SetToken(tokens, s, token);
+        }
+        if (count > 0) context = _ringContext[row + _rng.NextInt(count)];
+
+        int head = _ringHead[colony];
+        _ringTokens[row + head]  = u.Tokens;
+        _ringContext[row + head] = u.Context;
+        _ringHead[colony]  = (head + 1) % SimulationRules.SpeechShuffleRing;
+        if (count < SimulationRules.SpeechShuffleRing) _ringCount[colony] = count + 1;
+
+        u.Tokens  = tokens;
+        u.Context = context;
+        _batch[e] = u;
     }
 
     public void RetainAudible() => _audibleUsers++;
@@ -338,6 +414,7 @@ public sealed class SpeechBus : IDisposable
             for (int s = 0; s < SimulationRules.SpeechInbox; s++) _inbox[dst + s] = _inbox[src + s];
             _inboxHead[index] = _inboxHead[last];
             _muted[index]     = _muted[last];
+            _arm[index]       = _arm[last];
             _colony[index]    = _colony[last];
             _entityId[index]  = _entityId[last];
             _fitness[index]   = _fitness[last];
@@ -351,6 +428,7 @@ public sealed class SpeechBus : IDisposable
         for (int s = 0; s < SimulationRules.SpeechInbox; s++) _inbox[row + s] = default;
         _inboxHead[index] = 0;
         _muted[index]     = 0;
+        _arm[index]       = 0;
         _colony[index]    = 0;
         _entityId[index]  = 0;
         _fitness[index]   = 0f;
@@ -364,6 +442,7 @@ public sealed class SpeechBus : IDisposable
         if (_inbox.IsCreated)      _inbox.Dispose();
         if (_inboxHead.IsCreated)  _inboxHead.Dispose();
         if (_muted.IsCreated)      _muted.Dispose();
+        if (_arm.IsCreated)        _arm.Dispose();
         if (_colony.IsCreated)     _colony.Dispose();
         if (_entityId.IsCreated)   _entityId.Dispose();
         if (_fitness.IsCreated)    _fitness.Dispose();

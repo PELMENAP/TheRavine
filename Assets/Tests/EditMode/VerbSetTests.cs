@@ -138,7 +138,8 @@ public class VerbSetTests
         Assert.AreEqual(InputVectorizer.StateOffset + InputVectorizer.StateSlots, InputVectorizer.TailOffset);
         Assert.AreEqual(InputVectorizer.TailOffset + InputVectorizer.TailSlots, InputVectorizer.PlanEmaOffset);
         Assert.AreEqual(InputVectorizer.PlanEmaOffset + PlanCatalog.Count, InputVectorizer.SeasonOffset);
-        Assert.AreEqual(InputVectorizer.SeasonOffset + 2, InputVectorizer.VectorSize);
+        Assert.AreEqual(InputVectorizer.SeasonOffset + 2, InputVectorizer.PredispositionOffset);
+        Assert.AreEqual(InputVectorizer.PredispositionOffset + SimulationRules.PredispositionSize, InputVectorizer.VectorSize);
     }
 
     [Test]

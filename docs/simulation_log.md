@@ -157,3 +157,88 @@ Every `Failed` status of `EatCommand` records exactly one of its four reasons an
 |---|---|
 | eat failure reason share | `eat_fail_<reason> / eat_failed` |
 | take failure reason share | `take_fail_<reason> / take_failed` |
+
+## Columns added in revision 6
+
+The three columns are appended at the end of every row, after `take_fail_claim`, so no earlier column changes position. They are written in both scopes. The ten gradient columns follow them only when `SimulationRules.gradientConflictEnabled` is on at the moment the file is opened.
+
+| Column | Scope | Unit | Meaning and computation |
+|---|---|---|---|
+| `arm` | colony | text | `ColonyArms.Name(ColonyState.Arm)`: `control`, `speech_muted`, `speech_shuffled` or `null_policy`. Drawn once at colony creation from `armSpeechMutedFraction`, `armSpeechShuffledFraction`, `armNullPolicyFraction` (all 0 by default). The wild colony is `control`. Empty in the world row |
+| `speech_mi_bits` | both | bits | Mutual information between the speaker's `SpeechContextBits` context (64 values) and the emitted token, from the window's context×token count table of the colony (one sample per token slot of every non-reflex utterance, counted in `SpeechBus.ApplyArm` before mute or shuffle changes it). Plug-in estimate minus the Miller–Madow term `(Kc−1)(Kt−1)/(2N ln 2)` (Kc, Kt: used contexts and tokens), clamped at 0; 0 for an empty table. World row: the sum of the colony tables |
+| `listener_shift` | both | 0…1 | Total variation distance `½ Σ |P(action | fresh token) − P(action | no token)|` over the actions started by agents of the colony in the window. "Fresh token" is `SpeechComponent.HasLoudest` at the moment the command starts (`EntityCommandRunner.Start`, every source); 0 when either side has no sample. World row: the sum of the colony tables. In a `speech_muted` colony the colony's own speech never arrives, so it measures only what other colonies' speech does |
+| `grad_cos_<a>_<b>` | world | −1…1 | Only with `gradientConflictEnabled`. Cosine similarity of the summed executor gradients of caste `<a>` and caste `<b>` (`worker`, `soldier`, `scout`, `nurse`; pairs in the order worker–soldier, worker–scout, worker–nurse, soldier–scout, soldier–nurse, scout–nurse), taken over all four executors as one vector. Measured in one training application out of `gradientConflictInterval`; the world value is the mean over colonies measured since the previous row; empty when none was measured or a caste had no contribution |
+| `grad_norm_<caste>` | world | gradient units | Only with `gradientConflictEnabled`. L2 norm of the caste's summed executor gradients (already scaled by the clip and the learning-rate multiplier of the ticket) divided by the caste's number of contributing tickets; same sampling and averaging as the cosines |
+
+The split gradients are a diagnostic copy made in the train job; the applied update is the unchanged sum of all contributions. Adult agents are grouped by `Caste`; juveniles before `AssignCaste` and the wild colony are not in any group.
+
+| Metric | Formula |
+|---|---|
+| speech sensitivity of a colony | `listener_shift` of a `control` colony against the same column of `speech_shuffled` and `null_policy` colonies |
+| speech information against the zero model | `speech_mi_bits` of `control` against `speech_shuffled` (should be near 0 for the shuffled channel as listeners see it, but the column counts the speakers' intent, so it stays comparable to `control`) |
+
+## Behavioural descriptor file
+
+With `simulationLogEnabled` and `behaviourDescriptorsEnabled`, every `simulation_log_<stamp>.csv` sample is followed by one row per living agent in `behaviour_descriptors_<stamp>.csv` (same directory, same stamp). Counters are window counters of the agent: they start at spawn and are cleared at each sample. With the flag off nothing is allocated and no row is written.
+
+| Column | Unit | Meaning and computation |
+|---|---|---|
+| `time_s` | s | `SimulationClock.TimeD` at the sample |
+| `colony_id`, `arm` | id, text | `ColonyState.ColonyId`, `ColonyArms.Name(ColonyState.Arm)` |
+| `caste` | text | `worker`, `soldier`, `scout`, `nurse`; `juvenile` before the caste is fixed or while `IsJuvenile`; `wild` for the predator colony |
+| `age_s` | s | `EntityModel.TimeAlive` |
+| `<action>_share` | 0…1 | commands of this action started in the window / all commands started (all sources); 0 when none started. One column per `EntityAction` in enum order |
+| `goal_<goal>_share` | 0…1 | share of the started commands by `Brain.Context.CurrentGoal` at the start (`survive`, `hunt`, `forage`, `social`) |
+| `distance` | cells | path length: sum of the distances between consecutive cycle positions (`RunCycleTail`) in the window; the first cycle after spawn adds 0 |
+| `speech_rate` | 1/s | utterances emitted in the window / `min(window length, age)` |
+| `attacks` | strikes | `FitnessEvent.DamageDealt` events in the window |
+| `food_eaten` | bites | `FitnessEvent.FoodEaten` events in the window |
+| `energy_surplus` | 0…1 | `SharedHierarchicalBrain.EnergySurplus(En / MaxEnergy, CuriosityEnergyFloor)` at the sample |
+
+## Offline analysis
+
+`python3 tools/simlog_analyze.py simulation_log_<stamp>.csv [behaviour_descriptors_<stamp>.csv]` (standard library and numpy). Per arm it prints the population curve (sum of `alive` of the arm's colonies), births, deaths, mean lifespan, entropy of the action mix (bits, from the summed `<action>_started`), `brain_share`, mean `speech_mi_bits` and `listener_shift`, and the mean gradient-conflict columns of the world rows. With the descriptor file it z-scores the behavioural columns (`log1p` of `distance`, `attacks`, `food_eaten`; wild rows dropped unless `--include-wild`), runs k-means (k-means++ start, 5 restarts) for k = 2…8 on each arm with the silhouette score, prints the silhouette difference to the `null_policy` arm at each k, and then clusters all arms together at the k with the best mean silhouette and prints each arm's cluster mix with its total variation distance from the null arm. Silhouette uses at most `--max-rows` rows per arm (random sample, `--seed`).
+
+## Columns added in revision 7 (stage 2 experiments)
+
+Appended after `listener_shift` and before the optional `grad_*` columns, in this order; written in both scopes (colony rows leave the saturation columns empty).
+
+| Column | Scope | Unit | Meaning and computation |
+|---|---|---|---|
+| `h_saturated_<arm>` | world | 0…1 | One column per arm name in enum order (`control`, `speech_muted`, `speech_shuffled`, `null_policy`, `bounded_ltc`, `progress_novelty`, `orthogonal_reservoir`). Share of hidden states `h` of the coordinator and the four executors with `|h| > 0.95`, over all living agents of colonies of that arm, at the sample (`PerceptronContext.CountSaturated`). Empty when the arm has no agent. In `bounded_ltc` colonies `|h| ≤ 1` always |
+| `predisposition_dist` | both | distance | Mean Euclidean distance between the inherited predisposition vectors of colony members: all pairs of at most 64 members taken at an even stride (`EvolutionService.MeanPredispositionDistance`); world row: member-weighted mean over colonies with at least 2 members |
+
+The descriptor file gets `predisposition_0 … predisposition_<PredispositionSize−1>` after `energy_surplus`. `tools/simlog_analyze.py` prints `h_sat` and `pre_dist` per arm, and, with the descriptor file, the correlation ratio η² of each predisposition dimension on the shared cluster label (pooled and per arm) and its strongest Pearson correlation with a behavioural feature.
+
+## Columns added in revision 8 (stage 3: evolutionary dynamics)
+
+The columns are the last ones of every row, after the optional `grad_*` columns, in the order below. World-only columns are empty in colony rows and the other way round.
+
+| Column | Scope | Unit | Meaning and computation |
+|---|---|---|---|
+| `colony_lr`, `colony_grad_norm`, `colony_entropy_reg` | colony | — | `ColonyState.Genome`: `BaseLearningRate`, `MaxGradientNorm`, `EntropyRegularization` that train the colony's shared brain. Empty in the world row |
+| `perturbation_active` | both | entries | `WorldCodexService.PerturbationActive` at the sample: schedule entries whose window contains the time |
+| `is_wild` | colony | 0/1 | `ColonyState.IsWild`; empty in the world row |
+| `strike_success` | both | 0…1 | (Δ `Attacks[Foreign]` + Δ `Attacks[Player]`) / Δ `attack_started` of the row; empty when no attack started. In the wild colony row it is the predators' success |
+| `escape_rate` | both | 0…1 | (Δ `attack_fail_target_lost` + Δ `attack_fail_lurk_timeout`) / Δ `attack_started`: attack commands that ended because the target was lost or left the detection radius; empty when no attack started |
+| `gene_speed_mean`, `gene_detect_mean` | colony | multiplier | Mean `MoveSpeedMul` and `DetectionRadiusMul` genes of the colony's living agents at the sample |
+| `virus_strains`, `virus_lineages` | world | count | Distinct `StrainId` and `LineageId` of non-endogenous segments over the hosts in `EntityManager.Entities` (`VirologyCensus`) |
+| `virus_strains_new`, `virus_strains_lost` | world | count | Strains present now and not at the previous sample, and the reverse |
+| `virus_dominant_strain` | world | id | `StrainId` carried by the most hosts (lowest id on a tie); 0 when none |
+| `virus_dominant_prevalence` | world | 0…1 | Hosts carrying the dominant strain / hosts |
+| `virus_immune_dominant_share` | world | 0…1 | Hosts for which `VirologyComponent.IsImmune(signature of the dominant strain)` / hosts |
+| `virus_mean_integrity` | world | 0…1 | Mean `Segment.Integrity` of non-endogenous segments |
+| `virus_infections`, `virus_recoveries`, `virus_infections_blocked` | world | count | Window deltas of `VirologyEvents`: viral segments inserted, hosts left without a viral segment by an excision, insertions refused by immunity |
+
+## Life log
+
+With `lifeLogEnabled` the file `life_log_<yyyyMMdd_HHmmss>.csv` has one row per event: `event` (`birth` or `death`), `time_s`, `agent_id` (`EntityModel.EntityId`), `parent_id` and `mate_id` (births from reproduction; empty for founders, reseeds and predator spawns), `colony_id`, `cause` (`DeathCause` on death), `age_s` (death), then one column per gene of `GeneticParameters` except the three colony learning genes, including `Predisposition0…2`; gene columns are filled in birth rows only. The descriptor cluster of an agent is not in the file: clusters are computed offline from `behaviour_descriptors_<stamp>.csv`.
+
+## Offline analysis of stage 3
+
+`python3 tools/simlog_analyze.py simulation_log.csv [descriptors.csv] [--life life_log.csv]` prints, in addition to the earlier sections:
+
+- predator–prey: lagged cross-correlation `corr(a[t], b[t+lag])`, lags ±`--max-lag` samples, of the predators' `strike_success` with `escape_rate` and with the civil colonies' `deaths_killed` per member, and the slope per 1000 s of the predator and prey trait means (prey is the member-weighted mean of civil colonies); both slopes positive marks an arms race;
+- virus–immune: the lagged correlation of `virus_immune_dominant_share` with `virus_dominant_prevalence`, strain turnover (share of consecutive samples in which the dominant strain changed, mean dominant tenure, mean `(new + lost) / alive`);
+- perturbation: for each window with `perturbation_active > 0`, the recovery time after the window end of each colony's population and of the world `avg_fitness` to stay within `--band` of the mean of the `--pre-window` samples before the shock for `--hold` samples, medians per arm; "not recovered" when it never does;
+- Bedau–Packard (with `--life`): gene values are cut into `--bins` equal bins between their observed minimum and maximum, a component is a (gene, bin) pair; on a grid of `--life-steps` times the activity of a present component grows by one per step, `new activity` counts components whose activity first exceeds `--activity-threshold`, diversity is the number of present components, and the abundance-weighted activity adds the share of living agents carrying the component. The neutral shadow replays the same births and deaths of the same agent slots by colony, but every newborn with a known parent copies a random living agent of its colony and re-draws each gene bin with the per-gene rate at which real children differ from their parents. Real and shadow are printed side by side.

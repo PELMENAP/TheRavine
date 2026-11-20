@@ -19,6 +19,8 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float InterruptionReward;
         public readonly float FailureReward;
         public readonly float PpoClipEpsilon;
+        public readonly bool GradientConflictEnabled;
+        public readonly int GradientConflictInterval;
         public readonly float RewardClipSigma;
         public readonly float CriticLearningRate;
         public readonly float CriticHuberDelta;
@@ -100,6 +102,8 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float EpsilonPlateauThresholdStep;
         public readonly float ActionTraceHorizon;
         public readonly float ReservoirSpectralRadius;
+        public readonly float NoveltyFastRate;
+        public readonly float NoveltySlowRate;
         public readonly float BlockedSpeedThreshold;
         public readonly float BlockedSeconds;
         public readonly float AgentBodyRadius;
@@ -650,6 +654,8 @@ public sealed partial class SimulationRules : ScriptableObject
             InterruptionReward = r.interruptionReward;
             FailureReward = r.failureReward;
             PpoClipEpsilon = r.ppoClipEpsilon;
+            GradientConflictEnabled = r.gradientConflictEnabled;
+            GradientConflictInterval = math.max(r.gradientConflictInterval, 1);
             RewardClipSigma = r.rewardClipSigma;
             CriticLearningRate = r.criticLearningRate;
             CriticHuberDelta = r.criticHuberDelta;
@@ -731,6 +737,8 @@ public sealed partial class SimulationRules : ScriptableObject
             EpsilonPlateauThresholdStep = r.epsilonPlateauThresholdStep;
             ActionTraceHorizon = r.actionTraceHorizon;
             ReservoirSpectralRadius = r.reservoirSpectralRadius;
+            NoveltyFastRate = math.saturate(r.noveltyFastRate);
+            NoveltySlowRate = math.saturate(r.noveltySlowRate);
             BlockedSpeedThreshold = r.blockedSpeedThreshold;
             BlockedSeconds = r.blockedSeconds;
             AgentBodyRadius = r.agentBodyRadius;
@@ -1373,6 +1381,9 @@ public sealed partial class SimulationRules : ScriptableObject
     public const int   SpeechContextBits = 6;
     public const int   SpeechCreditRing = 256;
     public const int   SpeechCreditListeners = 8;
+    public const int   PredispositionSize = 3;
+    private const int  PredispositionLayoutCheck = 1 / (PredispositionSize == GeneticParameters.PredispositionCount ? 1 : 0);
+    public const int   SpeechShuffleRing = 64;
     private const int  SpeechLayoutCheck = 1 / (SpeechLen * SpeechTokenBits <= 16 && SpeechVocab == 1 << SpeechTokenBits && (SpeechInbox & (SpeechInbox - 1)) == 0 && SpeechContextBits <= 8 ? 1 : 0);
 
     private void OnValidate()
@@ -1425,6 +1436,8 @@ public sealed partial class SimulationRules : ScriptableObject
         if (warmthBuckets < 1) warmthBuckets = 1;
         if (!(warmthDecayPerSecond >= 0f)) warmthDecayPerSecond = 0f;
         if (!(simulationLogIntervalSeconds >= 1f)) simulationLogIntervalSeconds = 1f;
+        if (!(ltcTauMin > 0f)) ltcTauMin = DelayedPerceptron.TauEpsilon;
+        if (!(ltcTauMax >= ltcTauMin)) ltcTauMax = float.MaxValue;
         if (!(nurseLeashRate >= 0f)) nurseLeashRate = 0f;
         if (!(nurseryRate >= 0f)) nurseryRate = 0f;
         if (!(tetherRate >= 0f)) tetherRate = 0f;

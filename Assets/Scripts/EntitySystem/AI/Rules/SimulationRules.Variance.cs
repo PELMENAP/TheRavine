@@ -21,8 +21,21 @@ public enum VarianceAxis
     Count
 }
 
+[Serializable]
+public struct PerturbationEntry
+{
+    public float startTime;
+    public float duration;
+    public VarianceAxis axis;
+    public float multiplier;
+}
+
 public sealed partial class SimulationRules
 {
+    [SerializeField] private PerturbationEntry[] perturbationSchedule = Array.Empty<PerturbationEntry>();
+
+    public ReadOnlySpan<PerturbationEntry> PerturbationSchedule => perturbationSchedule;
+
     [SerializeField] private float[] varianceSpread =
     {
         0.25f, 0.5f, 0.3f, 0.3f, 0.5f, 0.25f, 0.5f,

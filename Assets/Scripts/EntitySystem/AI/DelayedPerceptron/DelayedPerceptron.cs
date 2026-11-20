@@ -36,6 +36,13 @@ public unsafe partial class DelayedPerceptron : IDisposable
     private bool _managedStale;
 
     private NativeArray<KernelLayout> _kernel;
+    private bool  _hasColonyLearning;
+    private float _colonyLr;
+    private float _colonyGradNorm;
+    private float _colonyEntropyReg;
+    private bool  _ltcBounded;
+    private float _tauMin = TauEpsilon;
+    private float _tauMax = float.MaxValue;
 
     private NativeList<TrainTicket>  _tickets;
     private NativeArray<TrainResult> _results;
@@ -48,6 +55,9 @@ public unsafe partial class DelayedPerceptron : IDisposable
     private NativeArray<byte>  _scratchTouched;
     private NativeArray<int>   _contrib;
     private NativeArray<int>   _applyNonFinite;
+    private NativeArray<float> _groupAccum;
+    private NativeArray<byte>  _groupTouched;
+    private NativeArray<int>   _groupContrib;
     private int _threads;
 
     public DelayedPerceptron(int inputSize, int h1, int h2, int h3, int outputSize)
@@ -105,9 +115,33 @@ public unsafe partial class DelayedPerceptron : IDisposable
             {
                 _kernel = new NativeArray<KernelLayout>(1, Allocator.Persistent);
                 _kernel[0] = KernelLayout.Build(_ctxLayout ?? _layout, _residual);
+                ApplyLtc(ref *(KernelLayout*)_kernel.GetUnsafePtr());
             }
             return (KernelLayout*)_kernel.GetUnsafePtr();
         }
+    }
+
+    private void ApplyLtc(ref KernelLayout k)
+    {
+        k.LtcBounded = _ltcBounded ? 1 : 0;
+        k.TauMin     = _tauMin;
+        k.TauMax     = _tauMax;
+    }
+
+    internal void SetLearningGenes(in ColonyGenome genome)
+    {
+        _hasColonyLearning = true;
+        _colonyLr          = genome.BaseLearningRate;
+        _colonyGradNorm    = genome.MaxGradientNorm;
+        _colonyEntropyReg  = genome.EntropyRegularization;
+    }
+
+    internal void SetLtc(LtcMode mode, float tauMin, float tauMax)
+    {
+        _ltcBounded = mode == LtcMode.Bounded;
+        _tauMin     = tauMin;
+        _tauMax     = tauMax;
+        if (_kernel.IsCreated) ApplyLtc(ref *(KernelLayout*)_kernel.GetUnsafePtr());
     }
 
     internal void EnsureNative()
@@ -376,9 +410,9 @@ public unsafe partial class DelayedPerceptron : IDisposable
             DurationNoise         = item.DurationNoise,
             Dt                    = ctx.DeltaTime,
             Temperature           = item.Temperature > 0f ? item.Temperature : p.SoftmaxTemperature,
-            EntropyRegularization = p.EntropyRegularization,
-            MaxGradNorm           = p.MaxGradientNorm,
-            LrMul                 = p.BaseLearningRate * InvBaseLearningRateReference,
+            EntropyRegularization = _hasColonyLearning ? _colonyEntropyReg : p.EntropyRegularization,
+            MaxGradNorm           = _hasColonyLearning ? _colonyGradNorm : p.MaxGradientNorm,
+            LrMul                 = (_hasColonyLearning ? _colonyLr : p.BaseLearningRate) * InvBaseLearningRateReference,
         };
 
         int ac = ctx.Layout.ActionCount;
@@ -397,6 +431,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
 
         t.ExploreProb = item.ExploreProb;
         t.Forced      = item.ActionForced ? 1 : 0;
+        t.Group       = ctx.Group;
         t.HasBias     = item.HasBias ? 1 : 0;
         if (item.HasBias)
             for (int i = 0; i < ac; i++) t.Bias[i] = item.Bias[i];
@@ -447,7 +482,74 @@ public unsafe partial class DelayedPerceptron : IDisposable
         _applyNonFinite = new NativeArray<int>(k->NeuronTotal,             Allocator.Persistent, NativeArrayOptions.ClearMemory);
     }
 
-    internal JobHandle ScheduleTraining(float clipEps)
+    private void EnsureGroupBuffers(KernelLayout* k)
+    {
+        if (_groupAccum.IsCreated) return;
+
+        int slots = _threads * GradientConflict.Groups;
+        _groupAccum   = new NativeArray<float>(slots * k->ParamTotal, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        _groupTouched = new NativeArray<byte>(slots * k->NeuronTotal, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        _groupContrib = new NativeArray<int>(slots,                   Allocator.Persistent, NativeArrayOptions.ClearMemory);
+    }
+
+    internal unsafe void AccumulateGroupConflict(GradientConflict result)
+    {
+        if (!_groupAccum.IsCreated) return;
+
+        const int G = GradientConflict.Groups;
+        var k       = KernelPtr;
+        int stride  = k->ParamTotal;
+        int neurons = k->NeuronTotal;
+        int slots   = _threads * G;
+        float* acc  = (float*)_groupAccum.GetUnsafePtr();
+        byte*  tch  = (byte*)_groupTouched.GetUnsafePtr();
+        int*   cnt  = (int*)_groupContrib.GetUnsafePtr();
+
+        float** sums   = stackalloc float*[G];
+        int*    totals = stackalloc int[G];
+        for (int g = 0; g < G; g++)
+        {
+            sums[g]   = null;
+            totals[g] = 0;
+            for (int th = 0; th < _threads; th++)
+            {
+                int slot = th * G + g;
+                if (cnt[slot] == 0) continue;
+
+                float* a = acc + (long)slot * stride;
+                totals[g] += cnt[slot];
+                if (sums[g] == null) { sums[g] = a; continue; }
+                float* dst = sums[g];
+                for (int i = 0; i < stride; i++) dst[i] += a[i];
+            }
+        }
+
+        for (int a = 0; a < G; a++)
+        {
+            if (sums[a] == null) continue;
+            result.Count[a] += totals[a];
+            for (int b = a; b < G; b++)
+            {
+                if (sums[b] == null) continue;
+                double dot = 0d;
+                float* pa = sums[a];
+                float* pb = sums[b];
+                for (int i = 0; i < stride; i++) dot += (double)pa[i] * pb[i];
+                if (a == b) result.Sq[a] += dot;
+                else result.Dot[a * G + b] += dot;
+            }
+        }
+
+        for (int slot = 0; slot < slots; slot++)
+        {
+            if (cnt[slot] == 0) continue;
+            UnsafeUtility.MemClear(acc + (long)slot * stride, (long)stride * sizeof(float));
+            UnsafeUtility.MemClear(tch + (long)slot * neurons, neurons);
+            cnt[slot] = 0;
+        }
+    }
+
+    internal JobHandle ScheduleTraining(float clipEps, bool groups = false)
     {
         int n = _tickets.IsCreated ? _tickets.Length : 0;
         if (n == 0) return default;
@@ -455,6 +557,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
         EnsureNative();
         var k = KernelPtr;
         EnsureTrainingBuffers(k);
+        if (groups) EnsureGroupBuffers(k);
 
         if (!_results.IsCreated || _results.Length < n)
         {
@@ -479,6 +582,10 @@ public unsafe partial class DelayedPerceptron : IDisposable
             AccumTouched         = (byte*)_accumTouched.GetUnsafePtr(),
             ScratchTouched       = (byte*)_scratchTouched.GetUnsafePtr(),
             Contrib              = (int*)_contrib.GetUnsafePtr(),
+            GroupAccum           = groups ? (float*)_groupAccum.GetUnsafePtr() : null,
+            GroupTouched         = groups ? (byte*)_groupTouched.GetUnsafePtr() : null,
+            GroupContrib         = groups ? (int*)_groupContrib.GetUnsafePtr() : null,
+            Groups               = GradientConflict.Groups,
             ParamStride          = k->ParamTotal,
             WorkStride           = k->WorkStride,
             NeuronTotal          = k->NeuronTotal,
@@ -638,6 +745,9 @@ public unsafe partial class DelayedPerceptron : IDisposable
         if (_scratchTouched.IsCreated) _scratchTouched.Dispose();
         if (_contrib.IsCreated)        _contrib.Dispose();
         if (_applyNonFinite.IsCreated) _applyNonFinite.Dispose();
+        if (_groupAccum.IsCreated)     _groupAccum.Dispose();
+        if (_groupTouched.IsCreated)   _groupTouched.Dispose();
+        if (_groupContrib.IsCreated)   _groupContrib.Dispose();
         _nativeStale = true;
     }
 }

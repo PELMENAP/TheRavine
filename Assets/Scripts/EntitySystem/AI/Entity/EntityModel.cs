@@ -293,6 +293,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         _roleMods  = CasteModifiers.For(caste);
         ApplyTuning();
         Brain.Context.CasteMask = ActionMask(caste);
+        Brain.Context.SetGroup((int)caste);
         SyncCount();
     }
 
@@ -536,6 +537,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
     private EntitySpatialGrid _grid;
     private SpeechBus _speechBus;
+    private BehaviourDescriptorLog _descriptors;
+    private readonly float[] _predisposition = new float[SimulationRules.PredispositionSize];
     private static readonly EntityModel[] Neighbors = new EntityModel[16];
 
     private long  _foodCell;
@@ -607,6 +610,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         _baseTuning = baseTuning;
         _trail = new float2[math.max(1, SimulationRules.Active.TrailCapacity)];
         ctx.CasteMask = ActionMask(Caste);
+        GeneticParameters.ReadPredisposition(in ctx.CoordMLP.Params, _predisposition);
         var rulesA = SimulationRules.Active;
         _roleMods = colony.IsWild ? CasteModifiers.Predator() : CasteModifiers.For(Caste);
         _casteMods = _roleMods;
@@ -644,6 +648,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         Infection = infection;
 
         ServiceLocator.Services.TryGet(out _speechBus);
+        ServiceLocator.Services.TryGet(out _descriptors);
         Speech = new SpeechComponent();
         _voice = SpeechVoiceBank.ClassOf(in ctx.CoordMLP.Params);
         Points = new PointsOfInterestComponent();

@@ -65,7 +65,8 @@ public static unsafe class NeuralKernels
     }
 
     private static void Layer(float* inp, float* h, float* act, float* w, float* b,
-        int inputs, int neurons, bool residual, float dt, float* fOut, float* tauOut, float* aOut)
+        int inputs, int neurons, bool residual, float dt, bool bounded, float tauMin, float tauMax,
+        float* fOut, float* tauOut, float* aOut)
     {
         int rowLen = inputs << 1;
         for (int n = 0; n < neurons; n++)
@@ -82,17 +83,16 @@ public static unsafe class NeuralKernels
             }
 
             float f   = math.tanh(preF);
-            float tau = math.max(Softplus(preT), DelayedPerceptron.TauEpsilon);
-            float A   = 1f + dt / tau;
+            float tau = LtcNeuron.Tau(preT, tauMin, tauMax);
+            float hv  = LtcNeuron.Forward(h[n], f, tau, dt, bounded, out float stored);
 
             if (fOut != null)
             {
                 fOut[n]   = f;
                 tauOut[n] = tau;
-                aOut[n]   = A;
+                aOut[n]   = stored;
             }
 
-            float hv = (h[n] + dt * f) / A;
             h[n]   = hv;
             act[n] = residual ? hv + inp[n] : hv;
         }
@@ -122,7 +122,7 @@ public static unsafe class NeuralKernels
 
             Layer(inp, h, act,
                 w + lay->WeightRowOffset[l], b + lay->BiasRowOffset[l],
-                inputs, neurons, lay->Residual[l] != 0, dt,
+                inputs, neurons, lay->Residual[l] != 0, dt, lay->LtcBounded != 0, lay->TauMin, lay->TauMax,
                 sH + hs, sH + 2 * hs, sH + 3 * hs);
         }
 
@@ -162,7 +162,7 @@ public static unsafe class NeuralKernels
 
             Layer(inp, h, act,
                 w + lay->WeightRowOffset[l], b + lay->BiasRowOffset[l],
-                inputs, neurons, lay->Residual[l] != 0, dt, null, null, null);
+                inputs, neurons, lay->Residual[l] != 0, dt, lay->LtcBounded != 0, lay->TauMin, lay->TauMax, null, null, null);
         }
 
         int ac = lay->ActionCount;
@@ -282,6 +282,10 @@ public static unsafe class NeuralKernels
         float* wd = deltaA;
         float* td = deltaB;
 
+        bool  bounded = lay->LtcBounded != 0;
+        float tauMin  = lay->TauMin;
+        float tauMax  = lay->TauMax;
+
         int history = lay->HistoryDepth;
         int steps   = tk->Steps;
         int wTotal  = lay->WeightTotal;
@@ -333,14 +337,8 @@ public static unsafe class NeuralKernels
                     if (dH == 0f) continue;
                     if (!math.isfinite(dH)) { wDH[n] = 0f; nonFinite++; continue; }
 
-                    float fn   = fArr[n];
-                    float taun = math.max(tauArr[n], DelayedPerceptron.TauEpsilon);
-                    float An   = aArr[n];
-
-                    float dPreF = dH * (dt / An) * (1f - fn * fn);
-                    float hNew  = (hBef[n] + dt * fn) / An;
-                    float dTau  = dH * hNew * dt / (An * taun * taun);
-                    float dPreT = dTau * (1f - math.exp(-taun));
+                    LtcNeuron.Backward(dH, hBef[n], fArr[n], tauArr[n], aArr[n], dt, bounded, tauMin, tauMax,
+                        out float dPreF, out float dPreT, out float dHBefore);
 
                     if (!math.isfinite(dPreF) || !math.isfinite(dPreT))
                     {
@@ -349,7 +347,7 @@ public static unsafe class NeuralKernels
                         continue;
                     }
 
-                    tempDH[n] = dH / An;
+                    tempDH[n] = dHBefore;
 
                     float* wRow = wl + n * rowLen;
                     float* gRow = gl + n * rowLen;
@@ -423,6 +421,33 @@ public static unsafe class NeuralKernels
             }
         }
         return sq;
+    }
+
+    public static void AccumulateCopy(KernelLayout* lay, float* grad, byte* gTouched,
+        float* acc, byte* aTouched, float scale)
+    {
+        int wTotal = lay->WeightTotal;
+
+        for (int l = 0; l < lay->L; l++)
+        {
+            int neurons = lay->Sizes[l + 1];
+            int rowLen  = lay->Sizes[l] << 1;
+            int nOff    = lay->NeuronOffset[l];
+
+            for (int n = 0; n < neurons; n++)
+            {
+                int id = nOff + n;
+                if (gTouched[id] == 0) continue;
+                aTouched[id] = 1;
+
+                int wi = lay->WeightRowOffset[l] + n * rowLen;
+                for (int k = 0; k < rowLen; k++) acc[wi + k] += grad[wi + k] * scale;
+
+                int bi = wTotal + lay->BiasRowOffset[l] + (n << 1);
+                acc[bi]     += grad[bi] * scale;
+                acc[bi + 1] += grad[bi + 1] * scale;
+            }
+        }
     }
 
     public static void AccumulateAndClear(KernelLayout* lay, float* grad, byte* gTouched,

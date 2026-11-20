@@ -116,6 +116,63 @@ public class SharedHierarchicalBrain : IDisposable
 
     public float CurrentLearningRate { get; private set; }
 
+    public bool NullPolicy { get; private set; }
+
+    private GradientConflict _conflict;
+    private int  _conflictStep = -1;
+    private bool _conflictCycle;
+
+    public GradientConflict Conflict => _conflict;
+
+    private bool ConflictCycle()
+    {
+        if (_conflictStep == GlobalTrainingSteps) return _conflictCycle;
+        _conflictStep = GlobalTrainingSteps;
+        ref readonly var frame = ref SimulationRules.Frame;
+        _conflictCycle = frame.GradientConflictEnabled && GlobalTrainingSteps % frame.GradientConflictInterval == 0;
+        return _conflictCycle;
+    }
+
+    private NoveltyProgressSystem _progress;
+    private bool _progressNovelty;
+
+    public bool ProgressNovelty => _progressNovelty && _progress != null;
+
+    public void SetNoveltyProgress(NoveltyProgressSystem system, bool enabled)
+    {
+        _progress = system;
+        _progressNovelty = enabled;
+    }
+
+    public void SetLearningGenes(in ColonyGenome genome)
+    {
+        CompletePending();
+        coordinator.SetLearningGenes(in genome);
+        for (int g = 0; g < GoalCount; g++) executors[g].SetLearningGenes(in genome);
+    }
+
+    public unsafe void SetArm(ColonyArm arm, bool freshReservoir)
+    {
+        CompletePending();
+        NullPolicy = arm == ColonyArm.NullPolicy;
+
+        var rules = SimulationRules.Active;
+        var mode  = arm == ColonyArm.BoundedLtc ? LtcMode.Bounded : LtcMode.Legacy;
+        coordinator.SetLtc(mode, rules.LtcTauMin, rules.LtcTauMax);
+        for (int g = 0; g < GoalCount; g++) executors[g].SetLtc(mode, rules.LtcTauMin, rules.LtcTauMax);
+        if (_kernels.IsCreated)
+        {
+            _kernels[0] = *coordinator.KernelPtr;
+            for (int g = 0; g < GoalCount; g++) _kernels[1 + g] = *executors[g].KernelPtr;
+        }
+
+        _progressNovelty = arm == ColonyArm.ProgressNovelty;
+        if (_progressNovelty && _progress == null) ServiceLocator.Services.TryGet(out _progress);
+
+        if (freshReservoir && arm == ColonyArm.OrthogonalReservoir)
+            reservoir.OrthogonalizeRecurrent(rules.ReservoirSpectralRadius);
+    }
+
     private JobHandle _pending;
     private bool      _trainingScheduled;
 
@@ -139,12 +196,22 @@ public class SharedHierarchicalBrain : IDisposable
         float decay = rules.OptimizerWeightDecay;
         CurrentLearningRate = lr;
 
+        if (ConflictCycle()) MeasureConflict();
+
         coordinator.ApplyAccumulatedGradients(lr, decay, GlobalDiagnostics);
         for (int i = 0; i < GoalCount; i++)
             executors[i].ApplyAccumulatedGradients(lr, decay, GlobalDiagnostics);
 
         _rnd.TrainSweep();
         GlobalTrainingSteps++;
+    }
+
+    private void MeasureConflict()
+    {
+        _conflict ??= new GradientConflict();
+        _conflict.Begin();
+        for (int g = 0; g < GoalCount; g++) executors[g].AccumulateGroupConflict(_conflict);
+        _conflict.Finish();
     }
 
     public static float ResolveLearningRate(float time, float baseLearningRate, float decayPerSecond, float minLearningRate)
@@ -323,7 +390,7 @@ public class SharedHierarchicalBrain : IDisposable
         EnsureRndCapacity(k + 1);
         _rndRows.Add(row);
         _rndCtx[k] = ctx;
-        _rnd.Collect(input);
+        if (!NullPolicy) _rnd.Collect(input);
         if (!decider) return -1;
 
         int d = _dCount;
@@ -470,6 +537,12 @@ public class SharedHierarchicalBrain : IDisposable
                 batch.BiasRow(d).Slice(0, PlanCount), CoordDelaySteps, coordCritic, coordGamma, simTime,
                 frame.PlanMinSeconds, frame.PlanMaxSeconds, coordEps, decay, false);
 
+            if (NullPolicy)
+            {
+                planTicket.Predicted = DrawUniformPlan(ctx, planTicket.Predicted);
+                planTicket.Trained   = true;
+            }
+
             var plan = (PlanKind)planTicket.Predicted;
             planTicket.Duration = DelayedPerceptron.DurationFromLogit(planTicket.DurationLogit + planTicket.DurationNoise,
                 frame.PlanMinSecondsByPlan[(int)plan], frame.PlanMaxSecondsByPlan[(int)plan]);
@@ -558,6 +631,12 @@ public class SharedHierarchicalBrain : IDisposable
                 batch.BiasRow(d).Slice(0, ActionSubsets[g].Length), ExecDelaySteps, execCritics[g], execGamma,
                 simTime, _goalMinDuration[g], _goalMaxDuration[g], execEps, decay, ctx.ExecForced);
 
+            if (NullPolicy)
+            {
+                ticket.Predicted = DrawUniformAction(ctx.ExecMask, ActionSubsets[g], ticket.Predicted);
+                ticket.Trained   = true;
+            }
+
             int action    = ActionSubsets[g][ticket.Predicted];
             float clamped = math.clamp(ticket.Duration,
                 ActionDurationTable.Min(action), ActionDurationTable.Max(action));
@@ -625,6 +704,38 @@ public class SharedHierarchicalBrain : IDisposable
         ScheduleTraining();
     }
 
+    private static int DrawUniformPlan(EntityBrainContext ctx, int fallback)
+    {
+        int count = 0;
+        for (int p = 0; p < PlanCount; p++)
+            if (PlanCatalog.IsFeasible((PlanKind)p, ctx.PlanHints, ctx.CasteMask)) count++;
+        if (count == 0) return fallback;
+
+        int pick = RavineRandom.RangeInt(0, count);
+        for (int p = 0; p < PlanCount; p++)
+        {
+            if (!PlanCatalog.IsFeasible((PlanKind)p, ctx.PlanHints, ctx.CasteMask)) continue;
+            if (pick-- == 0) return p;
+        }
+        return fallback;
+    }
+
+    private static int DrawUniformAction(int mask, int[] subset, int fallback)
+    {
+        int count = 0;
+        for (int j = 0; j < subset.Length; j++)
+            if ((mask & (1 << subset[j])) != 0) count++;
+        if (count == 0) return fallback;
+
+        int pick = RavineRandom.RangeInt(0, count);
+        for (int j = 0; j < subset.Length; j++)
+        {
+            if ((mask & (1 << subset[j])) == 0) continue;
+            if (pick-- == 0) return j;
+        }
+        return fallback;
+    }
+
     private static byte PickMasked(DelayedItem ticket, int start, int count, int mask)
     {
         var aux   = ticket.AuxValue;
@@ -650,9 +761,10 @@ public class SharedHierarchicalBrain : IDisposable
     {
         float clip = SimulationRules.Frame.PpoClipEpsilon;
 
+        bool groups = ConflictCycle();
         var handle = coordinator.ScheduleTraining(clip);
         for (int g = 0; g < GoalCount; g++)
-            handle = JobHandle.CombineDependencies(handle, executors[g].ScheduleTraining(clip));
+            handle = JobHandle.CombineDependencies(handle, executors[g].ScheduleTraining(clip, groups));
 
         _pending = JobHandle.CombineDependencies(_pending, handle);
         _trainingScheduled = true;
@@ -684,6 +796,20 @@ public class SharedHierarchicalBrain : IDisposable
     private void ReadIntrinsic(int count)
     {
         for (int k = 0; k < count; k++) _rndReward[k] = _rnd.IntrinsicReward(k);
+        if (_progressNovelty && _progress != null) ApplyProgress(count);
+    }
+
+    private void ApplyProgress(int count)
+    {
+        ref readonly var frame = ref SimulationRules.Frame;
+        float fastRate = frame.NoveltyFastRate;
+        float slowRate = frame.NoveltySlowRate;
+        for (int k = 0; k < count; k++)
+        {
+            var ctx = _rndCtx[k];
+            if (ctx == null) continue;
+            _rndReward[k] = _progress.Step(ctx.NoveltyIndex, _rndReward[k], fastRate, slowRate);
+        }
     }
 
     private void AccumulateNovelty(int count)
