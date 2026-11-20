@@ -141,6 +141,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float quorumWindow = 120f;
     [SerializeField] private float quorumMaxDanger = 0.3f;
     [SerializeField] private float quorumMinDistance = 20f;
+    [SerializeField] private float quorumMaxDistance = 60f;
     [SerializeField] private float quorumSlopeLimit = 0.5f;
     [SerializeField] private float quorumDepressionMul = 2f;
     [SerializeField] private float quorumFoodNorm = 0.2f;
@@ -369,6 +370,7 @@ public sealed partial class SimulationRules
     public float QuorumWindow => quorumWindow;
     public float QuorumMaxDanger => quorumMaxDanger;
     public float QuorumMinDistance => quorumMinDistance;
+    public float QuorumMaxDistance => quorumMaxDistance;
     public float QuorumSlopeLimit => quorumSlopeLimit;
     public float QuorumDepressionMul => quorumDepressionMul;
     public float QuorumFoodNorm => quorumFoodNorm;

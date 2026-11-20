@@ -70,7 +70,7 @@ public class MoveToCommand : PlannedMoveCommand
     {
         switch (_mode)
         {
-            case Mode.Explore: return ArrivedExplore();
+            case Mode.Explore: return ArrivedExplore(in move);
             case Mode.Poi:     return ArrivedPoi();
             case Mode.Food:    return ArrivedFood(in move);
             case Mode.Object:  return InObjectReach() ? Complete() : Fail();
@@ -135,11 +135,11 @@ public class MoveToCommand : PlannedMoveCommand
         return spread > r.WanderGradientMin;
     }
 
-    private EntityCommandStatus ArrivedExplore()
+    private EntityCommandStatus ArrivedExplore(in MoveResult move)
     {
         if (decision.HasDestination)
             _reached = math.distance(model.Position2D, decision.Destination) <= SimulationRules.Frame.PlanArriveRadius;
-        if (decision.Plan != PlanKind.Migrate || !model.CasteFixed || model.IsJuvenile) return Complete();
+        if (move.Blocked || decision.Plan != PlanKind.Migrate || !model.CasteFixed || model.IsJuvenile) return Complete();
         var colony = model.Colony;
         if (colony == null || colony.IsWild) return Complete();
 
@@ -150,7 +150,7 @@ public class MoveToCommand : PlannedMoveCommand
 
         float score = ColonyState.SiteScore(in r, in model.LastTerrain, nest.FieldAt(ColonyChannel.Food, here),
             math.distance(here, nest.Position));
-        if (score > 0f)
+        if (score > 0f && model.IsDryNestSite(here))
             colony.VoteNestSite(here, model.EntityId, (model.Caste == Caste.Scout ? r.ScoutVoteWeight : 1f) * score);
         return Complete();
     }

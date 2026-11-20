@@ -457,6 +457,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float QuorumWindow;
         public readonly float QuorumMaxDanger;
         public readonly float QuorumMinDistance;
+        public readonly float QuorumMaxDistance;
         public readonly float QuorumSlopeLimit;
         public readonly float QuorumDepressionMul;
         public readonly float QuorumFoodNorm;
@@ -1094,6 +1095,7 @@ public sealed partial class SimulationRules : ScriptableObject
             QuorumWindow = r.quorumWindow;
             QuorumMaxDanger = r.quorumMaxDanger;
             QuorumMinDistance = r.quorumMinDistance;
+            QuorumMaxDistance = math.max(r.quorumMinDistance, r.quorumMaxDistance);
             QuorumSlopeLimit = r.quorumSlopeLimit;
             QuorumDepressionMul = r.quorumDepressionMul;
             QuorumFoodNorm = r.quorumFoodNorm;

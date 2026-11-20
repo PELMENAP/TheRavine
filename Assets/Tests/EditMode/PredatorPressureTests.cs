@@ -18,13 +18,23 @@ public class PredatorPressureTests
     {
         var registry = new ColonyRegistry();
         var colony = registry.Add(new float2(0f, 0f), null, 8);
-        var site = new float2(100f, 0f);
+        var site = new float2(_rules.QuorumMaxDistance, 0f);
         colony.VoteNestSite(site, 1, 1f);
         colony.VoteNestSite(site, 2, 1f);
 
         Assert.IsFalse(colony.TryGetQuorumSite(out _));
         colony.RaisePressure(1f);
         Assert.IsTrue(colony.TryGetQuorumSite(out _));
+    }
+
+    [Test]
+    public void PressureCannotApproveSiteBeyondMaximumDistance()
+    {
+        using var registry = new ColonyRegistry();
+        var colony = registry.Add(float2.zero, null, 8);
+        colony.RaisePressure(1f);
+        colony.VoteNestSite(new float2(_rules.QuorumMaxDistance + 1f, 0f), 1, _rules.QuorumSize);
+        Assert.IsFalse(colony.TryGetQuorumSite(out _));
     }
 
     [Test]

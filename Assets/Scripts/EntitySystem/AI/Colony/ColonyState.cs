@@ -97,7 +97,7 @@ public sealed class ColonyState : IDisposable
 
     public static float SiteScore(in SimulationRules.RulesFrame r, in TerrainSample terrain, float foodField, float nestDistance)
     {
-        if (nestDistance < r.QuorumMinDistance) return 0f;
+        if (!(nestDistance >= r.QuorumMinDistance && nestDistance <= r.QuorumMaxDistance)) return 0f;
         float flat   = math.saturate(1f - terrain.Slope / math.max(r.QuorumSlopeLimit, 1e-3f));
         float height = math.saturate(1f + math.min(terrain.RelativeHeight, 0f) * r.QuorumDepressionMul);
         float food   = math.saturate(foodField / math.max(r.QuorumFoodNorm, 1e-3f));
@@ -157,6 +157,9 @@ public sealed class ColonyState : IDisposable
         for (int i = 0; i < _sitePos.Length; i++)
         {
             if (_siteWeight[i] < needed || now - _siteUpdated[i] > r.QuorumWindow) continue;
+            float distanceSq = math.distancesq(Nest.Position, _sitePos[i]);
+            if (!(distanceSq >= r.QuorumMinDistance * r.QuorumMinDistance &&
+                  distanceSq <= r.QuorumMaxDistance * r.QuorumMaxDistance)) continue;
             if (best < 0 || _siteWeight[i] > _siteWeight[best]) best = i;
         }
         site = best >= 0 ? _sitePos[best] : default;

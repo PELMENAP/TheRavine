@@ -65,6 +65,15 @@ public class NestSiteScoreTests
     }
 
     [Test]
+    public void SiteOutsideMaximumDistanceScoresZero()
+    {
+        var flat = Terrain(0f, 0f);
+        float limit = _frame.QuorumMaxDistance;
+        Assert.Greater(ColonyState.SiteScore(in _frame, in flat, _frame.QuorumFoodNorm, limit), 0f);
+        Assert.AreEqual(0f, ColonyState.SiteScore(in _frame, in flat, _frame.QuorumFoodNorm, limit + 1f));
+    }
+
+    [Test]
     public void ScoreStaysInUnitRange()
     {
         for (float slope = 0f; slope <= 1f; slope += 0.25f)
@@ -72,7 +81,7 @@ public class NestSiteScoreTests
         for (float food = 0f; food <= 2f; food += 0.5f)
         {
             var t = Terrain(slope, rel);
-            float s = ColonyState.SiteScore(in _frame, in t, food, 1000f);
+            float s = ColonyState.SiteScore(in _frame, in t, food, _frame.QuorumMaxDistance);
             Assert.GreaterOrEqual(s, 0f);
             Assert.LessOrEqual(s, 1f);
         }

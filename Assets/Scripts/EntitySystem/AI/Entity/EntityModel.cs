@@ -517,6 +517,10 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
     public float2 Position2D => Extension.Flat(Motor.Position());
 
+    internal bool IsDryNestSite(float2 site)
+        => _map != null && _map.TrySampleHeightBilinear(site.x, site.y, out float height)
+           && MapGenerator.AboveWater(_map.Ravine, height, site.y, _map.WaterLevel) > 0f;
+
     public float SpeedMul
     {
         get
