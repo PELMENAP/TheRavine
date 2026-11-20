@@ -35,7 +35,7 @@ Open security findings: `docs/audit/security_audit.md`.
 
 - Agents are not `NetworkObject`s (`EntityManager.snapshotStream`): the server sends each remote client the agents inside `snapshotRadius` of its player.
 - `AgentSnapshotStream` (server, `Assets/Scripts/EntitySystem/AI/Population/AgentSnapshotStream.cs`): named message `ravine.agents`, unreliable sequenced, at most 64 agents of 12 bytes each.
-- `AgentSnapshotCodec` is the wire format; `AgentPuppets` (client) validates every message, keeps a bounded pool of bodies and removes a body when its time to live passes.
+- `AgentSnapshotCodec` v2 uses a 22-byte header with a 32-bit lifetime in milliseconds; `AgentPuppets` (client) validates every message, keeps a bounded pool of bodies and removes a body when its time to live passes.
 - The host sees the real bodies. Clients send nothing: the area of interest is taken from the server's own position of the player.
 
 ## Data flow

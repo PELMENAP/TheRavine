@@ -10,6 +10,8 @@ public sealed class AgentSnapshotStream
 
     private readonly byte[] _buffer = new byte[AgentSnapshotCodec.MaxMessageSize];
     private readonly int[]  _candidates;
+    private readonly int[] _nextInCell;
+    private readonly Dictionary<int2, int> _cellHeads;
 
     private ulong[] _clients = new ulong[InitialClients];
     private int[]   _cursors = new int[InitialClients];
@@ -25,6 +27,8 @@ public sealed class AgentSnapshotStream
     public AgentSnapshotStream(int capacity)
     {
         _candidates = new int[math.max(capacity, 1)];
+        _nextInCell = new int[_candidates.Length];
+        _cellHeads = new Dictionary<int2, int>(_candidates.Length);
     }
 
     public void Tick(double now, MotionSystem motion, List<EntityModel> entities, float interval, float radius, int budget)
@@ -47,6 +51,7 @@ public sealed class AgentSnapshotStream
 
         IReadOnlyList<ulong> ids = network.ConnectedClientsIds;
         ClientsWithoutPlayer = 0;
+        bool indexed = false;
         for (int c = 0; c < ids.Count; c++)
         {
             ulong clientId = ids[c];
@@ -58,7 +63,12 @@ public sealed class AgentSnapshotStream
                 continue;
             }
 
-            SendTo(network, clientId, center, positions, motion, entities, count, radius, budget, interval);
+            if (!indexed)
+            {
+                IndexPositions(positions, count, radius);
+                indexed = true;
+            }
+            SendTo(network, clientId, center, positions, motion, entities, radius, budget, interval);
         }
     }
 
@@ -72,17 +82,29 @@ public sealed class AgentSnapshotStream
         _cursors[slot] = _cursors[_clientCount];
     }
 
+    private void IndexPositions(NativeArray<float3> positions, int count, float radius)
+    {
+        _cellHeads.Clear();
+        for (int i = count - 1; i >= 0; i--)
+        {
+            int2 cell = (int2)math.floor(positions[i].xz / radius);
+            _nextInCell[i] = _cellHeads.TryGetValue(cell, out int head) ? head : -1;
+            _cellHeads[cell] = i;
+        }
+    }
+
     private void SendTo(NetworkManager network, ulong clientId, float3 center, NativeArray<float3> positions,
-        MotionSystem motion, List<EntityModel> entities, int count, float radius, int budget, float interval)
+        MotionSystem motion, List<EntityModel> entities, float radius, int budget, float interval)
     {
         float r2 = radius * radius;
         int found = 0;
-        for (int i = 0; i < count; i++)
+        int2 origin = (int2)math.floor(center.xz / radius);
+        for (int dz = -1; dz <= 1; dz++)
+        for (int dx = -1; dx <= 1; dx++)
         {
-            float3 p = positions[i];
-            float dx = p.x - center.x;
-            float dz = p.z - center.z;
-            if (dx * dx + dz * dz <= r2) _candidates[found++] = i;
+            if (!_cellHeads.TryGetValue(origin + new int2(dx, dz), out int head)) continue;
+            for (int i = head; i >= 0; i = _nextInCell[i])
+                if (math.distancesq(positions[i].xz, center.xz) <= r2) _candidates[found++] = i;
         }
         if (found == 0) return;
 
@@ -92,7 +114,7 @@ public sealed class AgentSnapshotStream
         _cursors[slot] = (start + toSend) % found;
 
         int cycles = (found + budget - 1) / budget;
-        int ttlMs  = (int)(math.max(interval, 0.02f) * 1000f * (cycles + 2));
+        int ttlMs  = (int)System.Math.Min(int.MaxValue, System.Math.Ceiling(math.max(interval, 0.02f) * 1000d * (cycles + 2d)));
 
         int filled = 0;
         for (int k = 0; k < toSend; k++)

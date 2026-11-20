@@ -8,7 +8,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 |---|---|
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1886 |
 | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1458 |
-| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1216 |
+| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1214 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1081 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1014 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 928 |
@@ -195,7 +195,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
 
-- 16–1216 class EntityManager
+- 16–1214 class EntityManager
   - 95 RegisterEnergyConsumer
   - 96 UnregisterEnergyConsumer
   - 115 RaiseSpawned
@@ -236,24 +236,24 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 741 SweepSkills
   - 756 SolveSkills
   - 770 RunTickBatch
-  - 832 BeginColonyBatches
-  - 837 RunColonyDecisions
-  - 842 RunFlocking
-  - 860 TickColonies
-  - 916 UpdatePack
-  - 932 ChooseCaste
-  - 970 Stimulus
-  - 977 TickNests
-  - 1030 SetEntityVisible
-  - 1041 SetEntitiesVisible
-  - 1047 RebuildTickSnapshot
-  - 1078 UpdateVisibility
-  - 1107 UpdateVisibilityByCamera
-  - 1137 CreateNestViews
-  - 1148 ReleaseServices
-  - 1154 UnregisterServices
-  - 1171 ResolveRules
-  - 1187 OnDestroy
+  - 830 BeginColonyBatches
+  - 835 RunColonyDecisions
+  - 840 RunFlocking
+  - 858 TickColonies
+  - 914 UpdatePack
+  - 930 ChooseCaste
+  - 968 Stimulus
+  - 975 TickNests
+  - 1028 SetEntityVisible
+  - 1039 SetEntitiesVisible
+  - 1045 RebuildTickSnapshot
+  - 1076 UpdateVisibility
+  - 1105 UpdateVisibilityByCamera
+  - 1135 CreateNestViews
+  - 1146 ReleaseServices
+  - 1152 UnregisterServices
+  - 1169 ResolveRules
+  - 1185 OnDestroy
 
 ## `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs`
 

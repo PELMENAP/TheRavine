@@ -163,7 +163,7 @@ Before writing a structure, check this table. A second spatial index or a second
 Every per-agent array is indexed by `EntityModel.ManagerIndex` and sized from the capacity `maxPopulation + PredatorCount`. Removal is swap-back in one place, `ColonyPopulation.RemoveEntitySwapBack`, which today synchronizes:
 
 - `InstinctSystem`
-- `SurveySystem` (inputs and outputs by ManagerIndex; reads the grid SoA, which is indexed by grid slot, not by ManagerIndex)
+- `SurveySystem` (batch-local inputs and outputs indexed by offset in the tick batch; reads neighbour data by grid slot)
 - `BoidSystem`
 - `UtilityPriorSystem`
 - `CasteThresholdSystem`

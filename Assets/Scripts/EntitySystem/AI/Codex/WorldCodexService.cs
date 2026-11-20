@@ -170,7 +170,7 @@ public sealed class WorldCodexService
 
     public void NoteEnergy(in EnergyFlows last)
     {
-        float turnover = last.Inflow + last.Outflow - 2f * last.Codex;
+        float turnover = last.Inflow + last.Outflow - last.Codex;
         float net = last.Inflow - last.Outflow + last.Codex;
         if (!math.isfinite(turnover) || !math.isfinite(net) || !(turnover > 0f)) return;
 
