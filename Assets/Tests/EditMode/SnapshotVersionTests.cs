@@ -40,10 +40,48 @@ public class SnapshotVersionTests
     }
 
     [Test]
+    public void StandardVersion12RemainsReadable()
+    {
+        byte[] current = _brain.ToSnapshot().Serialize();
+        int oldHeader = sizeof(uint) + sizeof(int);
+        byte[] old = new byte[current.Length - (SharedBrainSnapshot.HeaderSize - oldHeader)];
+        Array.Copy(current, 0, old, 0, oldHeader);
+        BitConverter.GetBytes(12).CopyTo(old, sizeof(uint));
+        Array.Copy(current, SharedBrainSnapshot.HeaderSize, old, oldHeader, old.Length - oldHeader);
+
+        var snapshot = SharedBrainSnapshot.Deserialize(old);
+        Assert.NotNull(snapshot);
+        using var model = snapshot.Brain;
+        Assert.IsTrue(model.MatchesArchitecture(InputVectorizer.VectorSize, 32));
+    }
+
+    [Test]
+    public void WideSocialSnapshotKeepsItsProfile()
+    {
+        using var brain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, 32, true);
+        for (int g = 0; g < SharedHierarchicalBrain.GoalCount; g++)
+        {
+            int[] expected = SharedHierarchicalBrain.BuildExecSizes(InputVectorizer.VectorSize + 32, g);
+            if (g == (int)SharedHierarchicalBrain.Goal.Social)
+            {
+                expected[1] = 96;
+                expected[2] = 48;
+                expected[3] = 48;
+            }
+            CollectionAssert.AreEqual(expected, brain.ExecLayerSizes[g]);
+        }
+        var snapshot = SharedBrainSnapshot.Deserialize(brain.ToSnapshot().Serialize());
+        Assert.NotNull(snapshot);
+        using var model = snapshot.Brain;
+        Assert.IsTrue(model.MatchesArchitecture(InputVectorizer.VectorSize, 32, true));
+        Assert.IsFalse(model.MatchesArchitecture(InputVectorizer.VectorSize, 32));
+    }
+
+    [Test]
     public void OtherVersionIsRefusedWithError()
     {
         byte[] data = _brain.ToSnapshot().Serialize();
-        BitConverter.GetBytes(SharedBrainSnapshot.Version - 1).CopyTo(data, 4);
+        BitConverter.GetBytes(SharedBrainSnapshot.Version - 2).CopyTo(data, 4);
 
         LogAssert.Expect(LogType.Error, new Regex("версия .* загрузка отменена"));
         Assert.IsNull(SharedBrainSnapshot.Deserialize(data));

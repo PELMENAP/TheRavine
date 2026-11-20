@@ -8,6 +8,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float[] actionMinSeconds = { 0.30f, 0.50f, 0.50f, 0.20f, 0.50f, 0.10f, 1.00f, 0.30f, 0.20f, 0.20f, 0.20f };
     [SerializeField] private float[] actionMaxSeconds = { 2.00f, 8.00f, 4.00f, 4.00f, 2.00f, 2.50f, 6.00f, 2.00f, 1.00f, 1.00f, 1.00f };
     [SerializeField] private int objectSenseRadius = 3;
+    [SerializeField, Min(0f)] private float objectFuelHeatPerUnit = 8f;
     [SerializeField] private float objectReach = 1.5f;
     [SerializeField] private float agentEditRate = 2f;
     [SerializeField] private float agentEditBurst = 2f;

@@ -7,9 +7,13 @@ public class TakeCommand : EntityCommand
     public override bool CanExecute()
         => model.Carrying < model.CarryCapacity * model.CarryFullFraction;
 
+    public override bool CanExecute(in BrainDecision d)
+        => d.Direction == (byte)DirectionKind.Object ? model.CachedObjectValid && !model.HasHeldObject : CanExecute();
+
     protected override EntityCommandStatus OnBegin()
     {
-        if (decision.Direction == (byte)DirectionKind.Object) return Fail(ColonyStats.TakeFail.Kind);
+        if (decision.Direction == (byte)DirectionKind.Object)
+            return model.TryTakeObject() ? Complete() : Fail(ColonyStats.TakeFail.Kind);
 
         var r = SimulationRules.Active;
         var index = model.FoodIndex;

@@ -35,7 +35,7 @@ public enum DirectionKind : byte
 }
 
 [Flags]
-public enum PlanHint : uint
+public enum PlanHint : ulong
 {
     None         = 0,
     FoodVisible  = 1 << 0,
@@ -69,6 +69,9 @@ public enum PlanHint : uint
     HasHome      = 1 << 28,
     RestBlocked  = 1 << 29,
     TargetWeak   = 1 << 30,
+    ObjectVisible = 1UL << 31,
+    ObjectInRange = 1UL << 32,
+    HoldingObject = 1UL << 33,
 }
 
 public struct PlanProgress
@@ -174,9 +177,10 @@ public static class PlanCatalog
                 return Dir(DirectionKind.Food);
 
             case PlanKind.Harvest:
-                return Has(h, PlanHint.Carrying) && (Has(h, PlanHint.CarryFull) || !Has(h, PlanHint.FoodVisible))
-                    ? Dir(DirectionKind.Nest)
-                    : Dir(DirectionKind.Food);
+                if (HarvestReturning(h)) return Dir(DirectionKind.Nest);
+                bool taking = Has(h, PlanHint.FoodInRange) || Has(h, PlanHint.ObjectInRange);
+                return (ushort)((Has(h, taking ? PlanHint.FoodInRange : PlanHint.FoodVisible) ? Dir(DirectionKind.Food) : 0)
+                    | (Has(h, taking ? PlanHint.ObjectInRange : PlanHint.ObjectVisible) ? Dir(DirectionKind.Object) : 0));
 
             case PlanKind.Patrol:
                 return ExploreDirections;
@@ -209,6 +213,10 @@ public static class PlanCatalog
     private static bool Has(PlanHint h, PlanHint flag) => (h & flag) != 0;
     private static int Bit(EntityAction a) => 1 << (int)a;
 
+    private static bool HarvestReturning(PlanHint h)
+        => Has(h, PlanHint.HoldingObject) ||
+           (Has(h, PlanHint.Carrying) && (Has(h, PlanHint.CarryFull) || !Has(h, PlanHint.FoodVisible)));
+
     public static bool IsFeasible(PlanKind plan, PlanHint h, int casteMask) => (EntryMask(plan, h) & casteMask) != 0;
 
     public static int EntryMask(PlanKind plan, PlanHint h)
@@ -222,10 +230,10 @@ public static class PlanCatalog
 
             case PlanKind.Harvest:
                 if (!Has(h, PlanHint.HasNest)) return 0;
-                if (Has(h, PlanHint.Carrying) && (Has(h, PlanHint.CarryFull) || !Has(h, PlanHint.FoodVisible)))
-                    return Has(h, PlanHint.AtNest) ? Bit(EntityAction.Put) : Bit(EntityAction.MoveTo);
-                if (Has(h, PlanHint.FoodInRange)) return Bit(EntityAction.Take);
-                return Has(h, PlanHint.FoodVisible) ? Bit(EntityAction.MoveTo) : 0;
+                if (HarvestReturning(h)) return Has(h, PlanHint.AtNest) ? Bit(EntityAction.Put) : Bit(EntityAction.MoveTo);
+                if (Has(h, PlanHint.FoodInRange) || Has(h, PlanHint.ObjectInRange))
+                    return Bit(EntityAction.Take);
+                return Has(h, PlanHint.FoodVisible) || Has(h, PlanHint.ObjectVisible) ? Bit(EntityAction.MoveTo) : 0;
 
             case PlanKind.Patrol:
                 return Bit(EntityAction.MoveTo);
@@ -284,15 +292,19 @@ public static class PlanCatalog
                 }
                 if (p.Phase == 0)
                 {
-                    bool carrying = Has(h, PlanHint.Carrying);
-                    if (Has(h, PlanHint.CarryFull) || (carrying && !Has(h, PlanHint.FoodVisible))) p.Phase = 1;
+                    if (HarvestReturning(h)) p.Phase = 1;
+                    else if (p.VariantDirection == (byte)DirectionKind.Object && Has(h, PlanHint.ObjectVisible))
+                        return Has(h, PlanHint.ObjectInRange) ? Step(ref p, EntityAction.Take, DirectionKind.Object)
+                            : Step(ref p, EntityAction.MoveTo, DirectionKind.Object);
                     else if (Has(h, PlanHint.FoodInRange)) return Step(ref p, EntityAction.Take, DirectionKind.Food);
                     else if (Has(h, PlanHint.FoodVisible)) return Step(ref p, EntityAction.MoveTo, DirectionKind.Food);
+                    else if (Has(h, PlanHint.ObjectInRange)) return Step(ref p, EntityAction.Take, DirectionKind.Object);
+                    else if (Has(h, PlanHint.ObjectVisible)) return Step(ref p, EntityAction.MoveTo, DirectionKind.Object);
                     else return Fail;
                 }
                 if (p.Phase == 1)
                 {
-                    if (!Has(h, PlanHint.Carrying)) return Fail;
+                    if (!Has(h, PlanHint.Carrying) && !Has(h, PlanHint.HoldingObject)) return Fail;
                     if (!Has(h, PlanHint.AtNest)) return Step(ref p, EntityAction.MoveTo, DirectionKind.Nest);
                     p.Phase = 2;
                     return Step(ref p, EntityAction.Put);

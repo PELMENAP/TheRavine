@@ -37,6 +37,8 @@ public sealed class EntityCommandRunner
         stats?.RecordCommand(source);
         stats?.RecordAction(decision.Action);
         stats?.RecordActionSource(decision.Action, source);
+        if (source == CommandSource.Brain && decision.RareAction)
+            stats?.RecordInteraction(ColonyStats.Interaction.RareActionStarted);
         _model.NoteCommandStart(decision.Action);
 
         var status = command.Begin(in decision, source);
@@ -83,6 +85,11 @@ public sealed class EntityCommandRunner
         if (stats != null)
         {
             int action = _decision.Action;
+            if (_source == CommandSource.Brain && _decision.RareAction)
+            {
+                if (status == EntityCommandStatus.Completed) stats.RecordInteraction(ColonyStats.Interaction.RareActionCompleted);
+                stats.RecordInteraction(ColonyStats.Interaction.RareActionReward, command.Reward);
+            }
             if (status == EntityCommandStatus.Completed)
             {
                 stats.RecordCompleted(action);

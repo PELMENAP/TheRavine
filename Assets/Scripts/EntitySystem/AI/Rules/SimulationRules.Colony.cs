@@ -158,6 +158,17 @@ public sealed partial class SimulationRules
     [SerializeField] private float workerAgeEnd = 0.5f;
     [SerializeField] private float polyethismStimulus = 0.4f;
     [SerializeField] private float juvenileHealthMul = 0.5f;
+    [SerializeField] private bool reproductionTransferEnabled = true;
+    [SerializeField, Range(0f, 1f)] private float birthEnergyTransfer = 0.8f;
+    [SerializeField, Range(0f, 1f)] private float birthHealthTransfer = 0.8f;
+    [SerializeField, Range(0f, 1f)] private float birthParentReserve = 0.05f;
+    [SerializeField, Range(0f, 1f)] private float birthChildReserve = 0.05f;
+
+    public bool ReproductionTransferEnabled => reproductionTransferEnabled;
+    public float BirthEnergyTransfer => math.saturate(birthEnergyTransfer);
+    public float BirthHealthTransfer => math.saturate(birthHealthTransfer);
+    public float BirthParentReserve => math.saturate(birthParentReserve);
+    public float BirthChildReserve => math.saturate(birthChildReserve);
     [SerializeField] private float territoryMark = 0.2f;
     [SerializeField] private float territoryThreshold = 0.5f;
     [SerializeField] private float territoryAlarm = 0.3f;

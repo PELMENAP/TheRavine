@@ -72,8 +72,7 @@ public class BrainLearningTests
     {
         byte[] data = _brain.ToSnapshot().Serialize();
         using var br = new BinaryReader(new MemoryStream(data));
-        br.ReadUInt32();
-        br.ReadInt32();
+        br.BaseStream.Position = SharedBrainSnapshot.HeaderSize;
         br.ReadBytes(br.ReadInt32());
 
         using var cr = new BinaryReader(new MemoryStream(br.ReadBytes(br.ReadInt32())));

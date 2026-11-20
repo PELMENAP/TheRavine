@@ -230,7 +230,7 @@ public class EntityManager : MonoBehaviour
             if (SimulationRules.Active.SimulationLogEnabled && now >= _nextSimulationLogTime)
             {
                 _simulationLog ??= new SimulationLog();
-                _simulationLog.Sample(now, _colonies, _entities.Count, _ledger, _evolution, _speech, _descriptors, _entities);
+                _simulationLog.Sample(now, _colonies, _entities.Count, _ledger, _evolution, _speech, _descriptors, _entities, maxPopulation);
                 _nextSimulationLogTime = now + SimulationRules.Active.SimulationLogIntervalSeconds;
             }
             if (now >= _tickStartTime) TickAgents(SimulationClock.DeltaTime);
@@ -500,7 +500,7 @@ public class EntityManager : MonoBehaviour
     private ColonyState AddColony(Vector3 position, bool wild = false)
     {
         var colony = _colonies.Add(new Unity.Mathematics.float2(position.x, position.z),
-            new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden), _capacity, wild);
+            new SharedHierarchicalBrain(InputVectorizer.VectorSize, lstmHidden, SimulationRules.Active.WideSocialExecutor), _capacity, wild);
         _skills.PublishColony(colony.Index, colony.SkillTopology);
         return colony;
     }
@@ -513,7 +513,10 @@ public class EntityManager : MonoBehaviour
     [ContextMenu("Load Brain")]
     private void LoadBrain() => LoadBrainAsync().Forget();
 
-    private string ColonyModelName(ColonyState colony) => NeuralModelStorage.ColonyFileName(savedModelName, colony.ColonyId);
+    private string BrainModelName(bool wideSocial) => wideSocial ? savedModelName + "_wide_social" : savedModelName;
+
+    private string ColonyModelName(ColonyState colony)
+        => NeuralModelStorage.ColonyFileName(BrainModelName(colony.Brain.WideSocialExecutor), colony.ColonyId);
 
     private async UniTaskVoid SaveBestBrainAsync()
     {
@@ -532,19 +535,20 @@ public class EntityManager : MonoBehaviour
         for (int c = 0; c < _colonies.Count; c++)
         {
             var colony   = _colonies[c];
+            bool wideSocial = colony.Brain.WideSocialExecutor;
             string file  = ColonyModelName(colony);
             var snapshot = await NeuralModelStorage.LoadAsync<SharedBrainSnapshot>(file, destroyCancellationToken);
             var brain    = snapshot != null
-                ? SharedHierarchicalBrain.FromSnapshot(snapshot, InputVectorizer.VectorSize, lstmHidden)
+                ? SharedHierarchicalBrain.FromSnapshot(snapshot, InputVectorizer.VectorSize, lstmHidden, wideSocial)
                 : null;
 
             if (brain == null)
             {
                 if (fallback == null)
                 {
-                    var shared = await NeuralModelStorage.LoadAsync<SharedBrainSnapshot>(savedModelName, destroyCancellationToken);
+                    var shared = await NeuralModelStorage.LoadAsync<SharedBrainSnapshot>(BrainModelName(wideSocial), destroyCancellationToken);
                     fallback = shared != null
-                        ? SharedHierarchicalBrain.FromSnapshot(shared, InputVectorizer.VectorSize, lstmHidden)
+                        ? SharedHierarchicalBrain.FromSnapshot(shared, InputVectorizer.VectorSize, lstmHidden, wideSocial)
                         : null;
                     if (fallback == null)
                     {
@@ -554,17 +558,17 @@ public class EntityManager : MonoBehaviour
                     brain = fallback;
                 }
                 else brain = new SharedHierarchicalBrain(fallback);
-                RavineLog.Warning($"Колония {colony.ColonyId}: снапшот {file} не загружен, взят общий {savedModelName}");
+                RavineLog.Warning($"Колония {colony.ColonyId}: снапшот {file} не загружен, взят общий {BrainModelName(wideSocial)}");
             }
 
-            if (!ReferenceEquals(brain, colony.Brain)) ApplyLoadedBrain(colony, brain);
+            if (!ReferenceEquals(brain, colony.Brain)) ApplyLoadedBrain(colony, brain, snapshot != null && ReferenceEquals(brain, snapshot.Brain) ? "saved" : "fallback");
         }
     }
 
-    private void ApplyLoadedBrain(ColonyState colony, SharedHierarchicalBrain brain)
+    private void ApplyLoadedBrain(ColonyState colony, SharedHierarchicalBrain brain, string origin)
     {
         var old = colony.Brain;
-        colony.ReplaceBrain(brain);
+        colony.ReplaceBrain(brain, origin);
 
         var members = colony.Members;
         for (int i = 0; i < members.Length; i++)
@@ -1156,6 +1160,16 @@ public class EntityManager : MonoBehaviour
             var view = nestViewPrefab != null ? Instantiate(nestViewPrefab) : NestDebugView.Create(null);
             view.Bind(_colonies[c], this);
             _nestViews.Add(view);
+        }
+    }
+
+    public void DropCarriedObjects()
+    {
+        for (int i = 0; i < _entities.Count; i++)
+        {
+            var agent = _entities[i];
+            if (!agent.IsDisposed && agent.HasHeldObject)
+                agent.DropHeldObject(agent.IsDeathPending ? agent.DeathPosition : agent.Position2D);
         }
     }
 

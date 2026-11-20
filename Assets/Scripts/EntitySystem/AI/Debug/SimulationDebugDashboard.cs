@@ -250,6 +250,9 @@ public class SimulationDebugDashboard : MonoBehaviour
             ? "none"
             : $"#{colonyIndex} C{colony.ColonyId}{(colony.IsWild ? " (wild)" : "")} [{colony.MemberCount}]";
 
+        if (colony != null && !colony.IsWild && _manager.Codex != null)
+            _colonyLabel += $"  Codex: {colony.Nest.Storage:F1}/{SimulationRules.Active.CodexMinColonyStore:F1} E";
+
         var brain = colony?.Brain;
         _hasBrain = brain != null;
         if (_hasBrain)

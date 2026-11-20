@@ -28,20 +28,28 @@ public class GiveCommand : EntityCommand
     {
         bool troph = Source == CommandSource.Instinct;
         var victim = model.FindHungriestKin(r.EatRange * r.KinSearchRangeMul);
-        if (victim == null || math.distance(model.Position2D, victim.Position2D) > r.EatRange * r.KinSearchRangeMul) return Fail();
+        if (victim == null || math.distance(model.Position2D, victim.Position2D) > r.EatRange * r.KinSearchRangeMul)
+            return FailInteraction(ColonyStats.Interaction.FeedNoTarget);
 
         float own   = model.Stats.En / model.Stats.MaxEnergy;
         float their = victim.Stats.En / victim.Stats.MaxEnergy;
-        if (their >= own * r.ShareFoodVictimRatio) return Fail();
+        if (their >= own * r.ShareFoodVictimRatio) return FailInteraction(ColonyStats.Interaction.FeedRecipientSated);
 
         float portion;
         if (model.Carrying > 0f) portion = model.TakeCarried();
         else portion = model.Digestion.Withdraw(model.Digestion.Capacity * r.ShareFoodTransferFraction * model.CasteMods.Feed);
-        if (portion <= 0f) return Fail();
+        if (portion <= 0f) return FailInteraction(ColonyStats.Interaction.FeedEmpty);
 
         float given = victim.Digestion.Ingest(portion);
         _given = given;
-        if (given > 0f) victim.NoteGift(model.Stats);
+        if (given > 0f)
+        {
+            victim.NoteGift(model.Stats);
+            var stats = model.Colony?.Stats;
+            stats?.RecordInteraction(ColonyStats.Interaction.Fed);
+            stats?.RecordInteraction(ColonyStats.Interaction.GiftEnergy, given);
+        }
+        else model.Colony?.Stats.RecordInteraction(ColonyStats.Interaction.FeedEmpty);
         float rest  = portion - given;
         if (rest > 0f) model.Digestion.Ingest(rest);
         if (troph && model.Nest != null)
@@ -52,13 +60,20 @@ public class GiveCommand : EntityCommand
         return EntityCommandStatus.Running;
     }
 
+    private EntityCommandStatus FailInteraction(ColonyStats.Interaction reason)
+    {
+        model.Colony?.Stats.RecordInteraction(reason);
+        return Fail();
+    }
+
     private EntityCommandStatus BeginGroom(SimulationRules r)
     {
         var patient = model.FindSickestKin(r.EatRange * r.KinSearchRangeMul, r.GroomMinLoad);
-        if (patient == null) return Fail();
+        if (patient == null) return FailInteraction(ColonyStats.Interaction.GroomNoPatient);
 
         model.Motor.Stop();
         patient.Virology?.Groom(r.GroomAmount);
+        model.Colony?.Stats.RecordInteraction(ColonyStats.Interaction.Groomed);
         model.Infection?.TryTransmitContact(patient, model, r.GroomInfectChance);
         _holdEnd = HoldUntil(model.Tuning.IdleTime);
         return EntityCommandStatus.Running;
