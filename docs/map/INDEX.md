@@ -12,11 +12,11 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Core` | 16 | 1335 |
 | `Assets/Scripts/Core/NewInputSystem` | 2 | 2129 |
 | `Assets/Scripts/Core/ServiceLocator` | 3 | 310 |
-| `Assets/Scripts/Core/Settings` | 4 | 793 |
-| `Assets/Scripts/Core/Settings/GameSettings` | 2 | 109 |
-| `Assets/Scripts/Core/Settings/WorldData` | 5 | 392 |
+| `Assets/Scripts/Core/Settings` | 4 | 824 |
+| `Assets/Scripts/Core/Settings/GameSettings` | 2 | 110 |
+| `Assets/Scripts/Core/Settings/WorldData` | 5 | 397 |
 | `Assets/Scripts/Core/Settings/WorldSettings` | 2 | 142 |
-| `Assets/Scripts/Core/Storage` | 5 | 351 |
+| `Assets/Scripts/Core/Storage` | 5 | 352 |
 | `Assets/Scripts/Core/Timer` | 4 | 271 |
 | `Assets/Scripts/Core/Utilities` | 10 | 1922 |
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |

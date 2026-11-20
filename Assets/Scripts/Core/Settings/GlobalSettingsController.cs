@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using R3;
 using UnityEngine;
@@ -11,6 +12,8 @@ namespace TheRavine.Base
         private readonly RavineLogger _logger;
         private readonly ReactiveProperty<GlobalSettings> _settings;
         private readonly CompositeDisposable _disposables = new();
+        private readonly CancellationTokenSource _lifetime = new();
+        private bool _disposed;
 
         public ReadOnlyReactiveProperty<GlobalSettings> Settings { get; }
 
@@ -26,7 +29,7 @@ namespace TheRavine.Base
 
             _settings.Subscribe(ApplyDisplayAndGraphics).AddTo(_disposables);
 
-            LoadAsync().Forget();
+            LoadAsync(_lifetime.Token).Forget();
         }
 
         private static void ApplyDisplayAndGraphics(GlobalSettings s)
@@ -50,17 +53,20 @@ namespace TheRavine.Base
                 Screen.fullScreenMode = mode;
         }
 
-        private async UniTask LoadAsync()
+        private async UniTask LoadAsync(CancellationToken ct)
         {
             try
             {
-                if (await _repository.ExistsAsync())
+                bool exists = await _repository.ExistsAsync(ct);
+                ct.ThrowIfCancellationRequested();
+                if (exists)
                 {
-                    var settings = await _repository.LoadAsync();
+                    var settings = await _repository.LoadAsync(ct);
+                    ct.ThrowIfCancellationRequested();
                     if (settings != null)
                     {
                         _settings.Value = settings;
-                        _logger.LogInfo("[GlobalSettings] Настройки загружены");
+                        if (!ct.IsCancellationRequested) _logger.LogInfo("[GlobalSettings] Настройки загружены");
                     }
                     else
                     {
@@ -71,6 +77,9 @@ namespace TheRavine.Base
                 {
                     _logger.LogInfo("[GlobalSettings] Используются настройки по умолчанию");
                 }
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
             }
             catch (Exception ex)
             {
@@ -117,7 +126,11 @@ namespace TheRavine.Base
 
         public void Dispose()
         {
-            _disposables?.Dispose();
+            if (_disposed) return;
+            _disposed = true;
+            _lifetime.Cancel();
+            _lifetime.Dispose();
+            _disposables.Dispose();
             _settings?.Dispose();
         }
     }

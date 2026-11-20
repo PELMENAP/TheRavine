@@ -92,6 +92,7 @@ namespace TheRavine.Base
             }
             catch (Exception ex)
             {
+                ct.ThrowIfCancellationRequested();
                 ServiceLocator.GetService<RavineLogger>()
                     .LogError($"Decrypt/Deserialize error for '{key}': {ex.Message}");
                 return default;

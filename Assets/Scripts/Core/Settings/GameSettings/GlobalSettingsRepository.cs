@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using System.Threading;
 
 namespace TheRavine.Base
 {
@@ -12,10 +13,10 @@ namespace TheRavine.Base
             _storage = storage;
         }
 
-        public UniTask<bool> ExistsAsync() => _storage.ExistsAsync(Key);
+        public UniTask<bool> ExistsAsync(CancellationToken ct = default) => _storage.ExistsAsync(Key, ct);
 
-        public UniTask<GlobalSettings> LoadAsync()
-            => _storage.LoadAsync<GlobalSettings>(Key);
+        public UniTask<GlobalSettings> LoadAsync(CancellationToken ct = default)
+            => _storage.LoadAsync<GlobalSettings>(Key, ct);
 
         public UniTask SaveAsync(GlobalSettings settings)
             => _storage.SaveAsync(Key, settings);

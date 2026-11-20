@@ -31,8 +31,8 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 4. Game scene: `Bootstrap` → `GameStateMachine`; states in `Assets/Scripts/GameSceneManagerSystem/States/`.
 5. State order: `BootstrapState` → `InitialState` → `LoadingState` → `GameState`.
 6. Service order, roughly: Bootstrap `DayCycle`, `AmbientSystem`; Initial `ObjectSystem`, `EntitySystem`, `MobController`; Loading `MapGenerator`, `MobGenerator`, `UIInventory`, `PauseUI`.
-7. Return to menu: `Bootstrap.SwitchToMainMenu` → `SceneLoader.LoadScene(0, ReleaseServices)`; the callback runs after `FadeIn`, before `LoadSceneAsync`.
-8. `ReleaseServices`: `EntityManager` disabled → `BreakUpServices` → `EntityManager.ReleaseServices` → Netcode `Shutdown` → `ClearAll` → `InitializeServices`.
+7. Return to menu: `Bootstrap.SwitchToMainMenu` → `SceneLoader.LoadScene(0, () => ReleaseServices(true))`; the callback runs after `FadeIn`, before `LoadSceneAsync`.
+8. `ReleaseServices`: `EntityManager` disabled → `BreakUpServices` → `EntityManager.ReleaseServices` → Netcode `Shutdown` → `ClearAll`. It then runs `InitializeServices` for an explicit return to the menu.
 9. Each step of `ReleaseServices` is guarded: a failing step is logged and the next ones still run.
 10. The game scene keeps running for several frames after `ReleaseServices`, until the menu scene activates.
 11. `GameInitializer.OnDestroy` (active `Instance` only): `ServiceLocator.ClearAll()` and `RavineLog.Shutdown()`.
@@ -91,7 +91,7 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 
 - Simulation code reads time from `SimulationClock`, never from Unity time.
 - Nothing registers a service by writing into the container directly.
-- `OnDisable` of `Bootstrap` also calls `ReleaseServices`; a repeated call has no effect.
+- `OnDisable` of `Bootstrap` releases services without creating replacements. A repeated release has no effect.
 - `BreakUp` never frees memory that an `Update` of a still-loaded scene object can reach; it stops work and unsubscribes.
 - `BreakUp` always invokes its callback, also after a failure; otherwise the services after it are not broken up.
 - `SceneLoader.LoadScene` loads the scene even if the fade does not report completion or the `beforeLoad` callback throws.
