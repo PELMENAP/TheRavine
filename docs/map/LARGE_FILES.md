@@ -7,14 +7,14 @@ Line numbers are those of the last generation; after local edits treat them as a
 | File | Lines |
 |---|---|
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1887 |
-| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1475 |
+| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1477 |
 | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1305 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 1088 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1081 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1014 |
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 859 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationLog.cs` | 831 |
-| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 789 |
+| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 793 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 778 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs` | 762 |
 | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | 730 |
@@ -173,28 +173,28 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
 
-- 5–1475 class SimulationRules
-  - 1279 CaptureFrame
-  - 1281 Bind
-  - 1292 DeathPenaltyMul
-  - 1301 FillPlanSeconds
-  - 1308 FillCasteAffinityLog
-  - 1316 FillUtilityWeights
-  - 1324 FillPlanCasteDomain
-  - 1332 BuildEndogenousForbiddenMask
-  - 1344 BuildBoidPlanMul
-  - 1351 ColonyChannelTau
-  - 1357 BiomeFertility
-  - 1358 BiomeToxicity
-  - 1367 KindValue
-  - 1370 BiomeValue
-  - 1393 OnValidate
-  - 1472 ThrowNotBound
+- 5–1477 class SimulationRules
+  - 1281 CaptureFrame
+  - 1283 Bind
+  - 1294 DeathPenaltyMul
+  - 1303 FillPlanSeconds
+  - 1310 FillCasteAffinityLog
+  - 1318 FillUtilityWeights
+  - 1326 FillPlanCasteDomain
+  - 1334 BuildEndogenousForbiddenMask
+  - 1346 BuildBoidPlanMul
+  - 1353 ColonyChannelTau
+  - 1359 BiomeFertility
+  - 1360 BiomeToxicity
+  - 1369 KindValue
+  - 1372 BiomeValue
+  - 1395 OnValidate
+  - 1474 ThrowNotBound
   - 8–8 enum EpsilonSchedule
-  - 10–1274 struct RulesFrame
-    - 637 BiomeFertility
-    - 638 BiomeToxicity
-    - 647 RulesFrame
+  - 10–1276 struct RulesFrame
+    - 638 BiomeFertility
+    - 639 BiomeToxicity
+    - 648 RulesFrame
 
 ## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
 
@@ -552,7 +552,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs`
 
-- 12–789 class EntityModel
+- 12–793 class EntityModel
   - 32 Activate
   - 33 Deactivate
   - 48 AssignId
@@ -589,16 +589,17 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 462 Warn
   - 474 NoteVictim
   - 495 TryGetThreatSource
-  - 549 MarkDeathPending
-  - 582 InvalidateCachedFood
-  - 609 TryStartAttackCooldown
-  - 617 SetUp
-  - 625 RequestReproduce
-  - 633 Configure
-  - 708 Init
-  - 748 InterruptCommand
-  - 750 Dispose
-  - 773 DeepClean
+  - 520 IsDryNestSite
+  - 553 MarkDeathPending
+  - 586 InvalidateCachedFood
+  - 613 TryStartAttackCooldown
+  - 621 SetUp
+  - 629 RequestReproduce
+  - 637 Configure
+  - 712 Init
+  - 752 InterruptCommand
+  - 754 Dispose
+  - 777 DeepClean
   - 14–14 enum FitnessEvent
 
 ## `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs`
