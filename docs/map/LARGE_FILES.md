@@ -8,7 +8,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 |---|---|
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1887 |
 | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1475 |
-| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1291 |
+| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1305 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 1088 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1081 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1014 |
@@ -198,68 +198,69 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
 
-- 16–1291 class EntityManager
+- 16–1305 class EntityManager
   - 95 RegisterEnergyConsumer
   - 96 UnregisterEnergyConsumer
   - 115 RaiseSpawned
   - 116 RaiseDied
-  - 169 GetRandomEntity
-  - 172 SeedProbeStrain
-  - 175 SpawnEntity
-  - 182 SpawnChild
-  - 184 UpdateDiagnostics
-  - 193 EvolveGenotypes
-  - 199 SeedRandomStrain
-  - 202 Update
-  - 252 TickSnapshots
-  - 260 TickPuppets
-  - 271 StampAgents
-  - 292 ApplyFireHeat
-  - 320 ApplyWildWind
-  - 340 DecayWarmth
-  - 348 SampleEnergy
-  - 371 ReportThreat
-  - 382 Awake
-  - 446 InitializePopulation
-  - 462 CreateCodex
-  - 482 CaptureCodex
-  - 491 StepCodex
-  - 499 CreateColonies
-  - 509 AddColony
-  - 519 SaveBrain
-  - 522 LoadBrain
-  - 525 BrainModelName
-  - 527 ColonyModelName
-  - 530 SaveBestBrainAsync
-  - 540 LoadBrainAsync
-  - 577 ApplyLoadedBrain
-  - 593 Start
-  - 664 DelaySimulation
-  - 675 TickAgents
-  - 725 PromoteUrgent
-  - 775 CloseTickWindow
-  - 801 SweepSkills
-  - 816 SolveSkills
-  - 830 RunTickBatch
-  - 890 BeginColonyBatches
-  - 895 RunColonyDecisions
-  - 900 RunFlocking
-  - 918 TickColonies
-  - 974 UpdatePack
-  - 990 ChooseCaste
-  - 1028 Stimulus
-  - 1035 TickNests
-  - 1088 SetEntityVisible
-  - 1099 SetEntitiesVisible
-  - 1105 RebuildTickSnapshot
-  - 1136 UpdateVisibility
-  - 1165 UpdateVisibilityByCamera
-  - 1195 CreateNestViews
-  - 1206 DropCarriedObjects
-  - 1216 ReleaseServices
-  - 1222 UnregisterServices
-  - 1244 ResolveRules
-  - 1260 OnDestroy
+  - 170 GetRandomEntity
+  - 173 SeedProbeStrain
+  - 176 SpawnEntity
+  - 183 SpawnChild
+  - 185 UpdateDiagnostics
+  - 194 EvolveGenotypes
+  - 200 SeedRandomStrain
+  - 203 Update
+  - 253 TickSnapshots
+  - 261 TickPuppets
+  - 272 StampAgents
+  - 293 ApplyFireHeat
+  - 321 ApplyWildWind
+  - 341 DecayWarmth
+  - 349 SampleEnergy
+  - 372 ReportThreat
+  - 383 Awake
+  - 447 InitializePopulation
+  - 463 CreateCodex
+  - 483 CaptureCodex
+  - 492 StepCodex
+  - 500 CreateColonies
+  - 510 AddColony
+  - 520 SaveBrain
+  - 523 LoadBrain
+  - 526 BrainModelName
+  - 528 ColonyModelName
+  - 531 SaveBestBrainAsync
+  - 541 LoadBrainAsync
+  - 578 ApplyLoadedBrain
+  - 594 Start
+  - 667 DelaySimulation
+  - 678 TickAgents
+  - 728 PromoteUrgent
+  - 778 CloseTickWindow
+  - 804 SweepSkills
+  - 819 SolveSkills
+  - 833 RunTickBatch
+  - 893 BeginColonyBatches
+  - 898 RunColonyDecisions
+  - 903 RunFlocking
+  - 921 TickColonies
+  - 977 UpdatePack
+  - 993 ChooseCaste
+  - 1031 Stimulus
+  - 1038 TickNests
+  - 1091 SetEntityVisible
+  - 1102 SetEntitiesVisible
+  - 1108 RebuildTickSnapshot
+  - 1139 UpdateVisibility
+  - 1168 UpdateVisibilityByCamera
+  - 1198 CreateNestViews
+  - 1209 DropCarriedObjects
+  - 1219 ReleaseServices
+  - 1225 UnregisterServices
+  - 1247 ResolveRules
+  - 1263 OnDestroy
+  - 1269 DisposeSimulation
 
 ## `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs`
 

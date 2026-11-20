@@ -150,6 +150,7 @@ public partial class EntityManager : MonoBehaviour
     private int _tickCursor;
     private bool _windowOpen;
     private bool _simulationStarted;
+    private bool _simulationDisposed;
     private bool _rulesMissing;
     private double _tickStartTime;
     private double _nextFitnessStatsTime;
@@ -638,9 +639,11 @@ public partial class EntityManager : MonoBehaviour
         {
             if (registry != null) registry.ReportLoadError(ex.Message);
             else RavineLog.Error($"[EntityManager] Population startup failed: {ex.Message}");
-            _population?.DiscardEntities();
-            ReleaseServices();
-            Destroy(this);
+            enabled = false;
+            if (TryGetComponent(out SimulationDebugDashboard dashboard)) dashboard.enabled = false;
+            if (TryGetComponent(out SpeechAudioPlayer audio)) audio.enabled = false;
+            if (TryGetComponent(out SpeechLabelFeed labels)) labels.enabled = false;
+            DisposeSimulation();
             return;
         }
         _population.StartPredatorClock(SimulationClock.TimeD);
@@ -1259,6 +1262,17 @@ public partial class EntityManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        DisposeSimulation();
+        SimulationRules.ReleaseVariant();
+    }
+
+    private void DisposeSimulation()
+    {
+        if (_simulationDisposed) return;
+        _simulationDisposed = true;
+        _simulationStarted = false;
+        OnEntitySpawned = null;
+        OnEntityDied = null;
         UnregisterServices();
         _population?.DiscardEntities();
         _soilFeed?.Dispose();
@@ -1271,6 +1285,7 @@ public partial class EntityManager : MonoBehaviour
         _wind = null;
         _infection?.Dispose();
         _population?.FlushDeferredDisposals();
+        _population = null;
         _planner?.Dispose();
         _motion?.Dispose();
         _instincts?.Dispose();
@@ -1286,6 +1301,5 @@ public partial class EntityManager : MonoBehaviour
         _grid.Dispose();
         _colonies?.Dispose();
         ContextSlabs.DisposeAll();
-        SimulationRules.ReleaseVariant();
     }
 }
