@@ -773,20 +773,18 @@ public class EntityManager : MonoBehaviour
         BeginColonyBatches();
         _players.Refresh();
 
-        int surveyLo = int.MaxValue, surveyHi = -1;
+        int surveyLength = 0;
         for (int i = start; i < end; i++)
         {
             var e = _tickSnapshot[i];
             if (e == null || e.IsDisposed || e.IsDeathPending) continue;
             if (!e.BeginCycle()) continue;
 
-            int idx = e.ManagerIndex;
-            _survey.Write(idx, in e.SurveyQuery);
-            if (idx < surveyLo) surveyLo = idx;
-            if (idx > surveyHi) surveyHi = idx;
+            _survey.Write(i - start, in e.SurveyQuery);
+            surveyLength = i - start + 1;
         }
 
-        if (surveyHi >= surveyLo) _survey.Schedule(_grid, surveyLo, surveyHi + 1).Complete();
+        if (surveyLength > 0) _survey.Schedule(_grid, 0, surveyLength).Complete();
 
         int lo = int.MaxValue, hi = -1;
         for (int i = start; i < end; i++)
@@ -795,7 +793,7 @@ public class EntityManager : MonoBehaviour
             if (e == null || e.IsDisposed || !e.SurveyPending) continue;
 
             int idx = e.ManagerIndex;
-            if (!e.ContinueCycle(_survey.Output(idx))) continue;
+            if (!e.ContinueCycle(_survey.Output(i - start))) continue;
 
             _instincts.Write(idx, in e.InstinctInput);
             _utility.Write(idx, in e.UtilityInput);

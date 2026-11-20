@@ -232,6 +232,10 @@ public class WorldCodexServiceTests
         _codex.Step(window * 0.5f);
         Assert.AreEqual(1, _codex.PriceSamples);
 
+        var save = new CodexSave();
+        _codex.Capture(save);
+        Assert.AreEqual(0.25f, save.priceMeanFlux, 1e-6f);
+
         _codex.NoteEnergy(in bad);
         _codex.Step(window);
         Assert.AreEqual(1, _codex.PriceSamples);
