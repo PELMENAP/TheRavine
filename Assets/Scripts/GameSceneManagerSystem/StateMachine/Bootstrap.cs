@@ -78,10 +78,10 @@ namespace TheRavine.Base
             _transitStarted = true;
             toMenuPauseButton.interactable = false;
             AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
-            sceneLoader.LoadScene(0, ReleaseServices).Forget();
+            sceneLoader.LoadScene(0, () => ReleaseServices(restoreGlobalServices: true)).Forget();
         }
 
-        private void ReleaseServices()
+        private void ReleaseServices(bool restoreGlobalServices)
         {
             if (_servicesReleased) return;
             _servicesReleased = true;
@@ -93,7 +93,7 @@ namespace TheRavine.Base
             if (entities != null) RunStep(entities.ReleaseServices, "entity services");
             RunStep(ShutdownNetwork, "network shutdown");
             RunStep(ServiceLocator.ClearAll, "clear services");
-            RunStep(RestoreGlobalServices, "global services");
+            if (restoreGlobalServices) RunStep(RestoreGlobalServices, "global services");
         }
 
         private void BreakUpSceneServices()
@@ -125,7 +125,7 @@ namespace TheRavine.Base
 
         private void OnDisable()
         {
-            ReleaseServices();
+            ReleaseServices(restoreGlobalServices: false);
             if (toMenuPauseButton != null) toMenuPauseButton.onClick.RemoveAllListeners();
         }
     }

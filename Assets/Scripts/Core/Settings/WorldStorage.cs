@@ -1,5 +1,6 @@
 using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace TheRavine.Base
 {
@@ -45,9 +46,9 @@ namespace TheRavine.Base
         public async UniTask SaveSettingsAsync(string worldId, WorldConfiguration settings)
             => await worldConfigRepository.SaveAsync(worldId, settings);
 
-        public async UniTask<bool> ExistsAsync(string worldId)
+        public async UniTask<bool> ExistsAsync(string worldId, CancellationToken ct = default)
         {
-            return await worldStateRepository.ExistsAsync(worldId);
+            return await worldStateRepository.ExistsAsync(worldId, ct);
         }
 
         public async UniTask DeleteAsync(string worldId)
@@ -56,9 +57,9 @@ namespace TheRavine.Base
             await worldConfigRepository.DeleteAsync(worldId);
         }
 
-        public async UniTask<IReadOnlyList<string>> GetAllWorldIdsAsync()
+        public async UniTask<IReadOnlyList<string>> GetAllWorldIdsAsync(CancellationToken ct = default)
         {
-            return await worldStateRepository.ListIdsAsync();
+            return await worldStateRepository.ListIdsAsync(ct);
         }
     }
 }

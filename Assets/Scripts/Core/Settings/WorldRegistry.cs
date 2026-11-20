@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Collections.Generic;
 using System.IO;
 using Cysharp.Threading.Tasks;
@@ -21,6 +22,8 @@ namespace TheRavine.Base
         private readonly ReactiveProperty<string> currentWorldId;
         private readonly ReactiveProperty<bool> isLoading;
         private readonly CompositeDisposable disposables = new();
+        private readonly CancellationTokenSource lifetime = new();
+        private bool disposed;
 
         private WorldState currentState;
         private WorldConfiguration currentConfig;
@@ -418,11 +421,15 @@ namespace TheRavine.Base
 
         public async UniTask RefreshWorldListAsync()
         {
-            isLoading.Value = true;
+            if (disposed) return;
+            var ct = lifetime.Token;
 
             try
             {
-                var worldIds = await storage.GetAllWorldIdsAsync();
+                isLoading.Value = true;
+                ct.ThrowIfCancellationRequested();
+                var worldIds = await storage.GetAllWorldIdsAsync(ct);
+                ct.ThrowIfCancellationRequested();
                 var validWorlds = new List<string>();
 
                 foreach (var worldId in worldIds)
@@ -433,7 +440,9 @@ namespace TheRavine.Base
                         continue;
                     }
 
-                    if (await storage.ExistsAsync(worldId))
+                    bool exists = await storage.ExistsAsync(worldId, ct);
+                    ct.ThrowIfCancellationRequested();
+                    if (exists)
                     {
                         validWorlds.Add(worldId);
                     }
@@ -442,20 +451,28 @@ namespace TheRavine.Base
                 AvailableWorlds.Clear();
                 foreach (var worldId in validWorlds.AsValueEnumerable().OrderBy(x => x))
                 {
+                    ct.ThrowIfCancellationRequested();
                     AvailableWorlds.Add(worldId);
                 }
 
-                logger.LogInfo($"[WorldRegistry] Найдено миров: {validWorlds.Count}");
+                if (!ct.IsCancellationRequested) logger.LogInfo($"[WorldRegistry] Найдено миров: {validWorlds.Count}");
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
             }
             finally
             {
-                isLoading.Value = false;
+                if (!disposed) isLoading.Value = false;
             }
         }
 
         public void Dispose()
         {
-            disposables?.Dispose();
+            if (disposed) return;
+            disposed = true;
+            lifetime.Cancel();
+            lifetime.Dispose();
+            disposables.Dispose();
             currentWorldId?.Dispose();
             isLoading?.Dispose();
             AvailableWorlds?.Clear();
