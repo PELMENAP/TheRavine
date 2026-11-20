@@ -109,6 +109,40 @@ public class VerbSetTests
     }
 
     [Test]
+    public void BirthTransferUsesTheDebitAndChildCapacity()
+    {
+        Assert.IsTrue(ColonyPopulation.TryBirthTransfer(new float2(80f, 30f), new float2(100f, 20f), _rules, out var transfer));
+        Assert.AreEqual(64f, transfer.x, 1e-5f);
+        Assert.AreEqual(20f, transfer.y);
+        Assert.IsFalse(ColonyPopulation.TryBirthTransfer(new float2(80f, 0f), new float2(100f, 20f), _rules, out _));
+        Assert.IsFalse(ColonyPopulation.TryBirthTransfer(new float2(1f, 30f), new float2(100f, 20f), _rules, out _));
+    }
+
+    [Test]
+    public void HarvestCanDeliverFuelAndKeepsTheSelectedObjectDirection()
+    {
+        var p = new PlanProgress { Kind = PlanKind.Harvest, MaxFailures = 3 };
+        PlanCatalog.Init(ref p);
+        p.VariantDirection = (byte)DirectionKind.Object;
+        var hints = PlanHint.HasNest | PlanHint.FoodVisible | PlanHint.ObjectVisible;
+        Assert.AreEqual(1 << (int)EntityAction.MoveTo, PlanCatalog.EntryMask(p.Kind, hints));
+        Assert.AreNotEqual(0, PlanCatalog.DirectionMask(p.Kind, hints) & (1 << (int)DirectionKind.Object));
+
+        hints |= PlanHint.ObjectInRange;
+        Assert.AreEqual(1 << (int)EntityAction.Take, PlanCatalog.EntryMask(p.Kind, hints));
+        Assert.AreEqual(1 << (int)DirectionKind.Object, PlanCatalog.DirectionMask(p.Kind, hints));
+        Assert.AreEqual((int)EntityAction.Take, PlanCatalog.Next(ref p, hints, EntityCommandStatus.Completed, (int)EntityAction.MoveTo));
+        Assert.AreEqual((byte)DirectionKind.Object, p.Direction);
+
+        hints = PlanHint.HasNest | PlanHint.HoldingObject;
+        Assert.AreEqual((int)EntityAction.MoveTo, PlanCatalog.Next(ref p, hints, EntityCommandStatus.Completed, (int)EntityAction.Take));
+        Assert.AreEqual((byte)DirectionKind.Nest, p.Direction);
+        hints |= PlanHint.AtNest;
+        Assert.AreEqual((int)EntityAction.Put, PlanCatalog.Next(ref p, hints, EntityCommandStatus.Completed, (int)EntityAction.MoveTo));
+        Assert.AreEqual(PlanCatalog.Complete, PlanCatalog.Next(ref p, PlanHint.HasNest, EntityCommandStatus.Completed, (int)EntityAction.Put));
+    }
+
+    [Test]
     public void ExecAuxBlocksDoNotOverlap()
     {
         for (int g = 0; g < SharedHierarchicalBrain.GoalCount; g++)

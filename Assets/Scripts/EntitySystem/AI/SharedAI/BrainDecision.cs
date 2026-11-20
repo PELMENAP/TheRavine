@@ -25,16 +25,18 @@ public readonly struct BrainDecision
     public readonly bool   HasDestination;
     public readonly AttackStyle Style;
     public readonly float  Tempo;
+    public readonly bool RareAction;
 
     public BrainDecision(int action, int execDecisionId, int coordDecisionId,
         SharedHierarchicalBrain.Goal goal, float startTime, float duration, in float2 heading,
         float curvature = 0f, ushort tokens = 0, PlanKind plan = PlanKind.Count, float planEnd = 0f,
         byte direction = (byte)DirectionKind.None, float dirOffset = 0f, byte speechLen = 0,
         float2 destination = default, bool hasDestination = false,
-        AttackStyle style = AttackStyle.Pursue, float tempo = 0f)
+        AttackStyle style = AttackStyle.Pursue, float tempo = 0f, bool rareAction = false)
     {
         Style = style;
         Tempo = tempo;
+        RareAction = rareAction;
         Destination = destination;
         HasDestination = hasDestination;
         Direction = direction;
@@ -63,16 +65,16 @@ public readonly struct BrainDecision
     {
         float2 heading = keepHeading ? Heading : float2.zero;
         return new(action, ExecDecisionId, CoordDecisionId, Goal, startTime, duration, in heading,
-                   Curvature, Tokens, Plan, PlanEnd, Direction, DirOffset, SpeechLen, Destination, HasDestination, Style, Tempo);
+                   Curvature, Tokens, Plan, PlanEnd, Direction, DirOffset, SpeechLen, Destination, HasDestination, Style, Tempo, keepHeading && RareAction);
     }
 
     public BrainDecision WithDirection(byte direction)
         => new(Action, ExecDecisionId, CoordDecisionId, Goal, StartTime, Duration, in Heading,
-               Curvature, Tokens, Plan, PlanEnd, direction, DirOffset, SpeechLen, Destination, HasDestination, Style, Tempo);
+               Curvature, Tokens, Plan, PlanEnd, direction, DirOffset, SpeechLen, Destination, HasDestination, Style, Tempo, RareAction);
 
     public BrainDecision WithDestination(float2 destination)
         => new(Action, ExecDecisionId, CoordDecisionId, Goal, StartTime, Duration, in Heading,
-               Curvature, Tokens, Plan, PlanEnd, Direction, DirOffset, SpeechLen, destination, true, Style, Tempo);
+               Curvature, Tokens, Plan, PlanEnd, Direction, DirOffset, SpeechLen, destination, true, Style, Tempo, RareAction);
 }
 
 public struct DecisionWindow

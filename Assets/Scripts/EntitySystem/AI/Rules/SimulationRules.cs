@@ -131,6 +131,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float CuriosityEnergyGain;
         public readonly float CuriosityEnergyFloor;
         public readonly float CuriosityRarityWeight;
+        public readonly float RareActionChance;
         public readonly float ExecGammaPerSecond;
         public readonly float CoordGammaPerSecond;
         public readonly float SynergyWindow;
@@ -592,6 +593,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float[] ActionMinSeconds;
         public readonly float[] ActionMaxSeconds;
         public readonly int   ObjectSenseRadius;
+        public readonly float ObjectFuelHeatPerUnit;
         public readonly float ObjectReach;
         public readonly float AgentEditRate;
         public readonly float AgentEditBurst;
@@ -766,6 +768,7 @@ public sealed partial class SimulationRules : ScriptableObject
             CuriosityEnergyGain = r.curiosityEnergyGain;
             CuriosityEnergyFloor = r.curiosityEnergyFloor;
             CuriosityRarityWeight = r.curiosityRarityWeight;
+            RareActionChance = math.saturate(r.rareActionChance);
             ExecGammaPerSecond = r.execGammaPerSecond;
             CoordGammaPerSecond = r.coordGammaPerSecond;
             SynergyWindow = r.synergyWindow;
@@ -1227,6 +1230,7 @@ public sealed partial class SimulationRules : ScriptableObject
             ActionMinSeconds = r.actionMinSeconds;
             ActionMaxSeconds = r.actionMaxSeconds;
             ObjectSenseRadius = math.clamp(r.objectSenseRadius, 0, MaxObjectSenseRadius);
+            ObjectFuelHeatPerUnit = math.max(0f, r.objectFuelHeatPerUnit);
             ObjectReach = r.objectReach;
             AgentEditRate = r.agentEditRate;
             AgentEditBurst = r.agentEditBurst;

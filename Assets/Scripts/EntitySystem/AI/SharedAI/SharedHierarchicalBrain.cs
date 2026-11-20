@@ -40,8 +40,13 @@ public class SharedHierarchicalBrain : IDisposable
 
     public static int ExecAux(int goal) => DecodeOutputs + DirOffsetAux(goal) + 1;
 
-    public static int[] BuildExecSizes(int combined, int goal)
-        => new[] { combined, 64, 32, 32, ActionSubsets[goal].Length + 1 + ExecAux(goal) };
+    public static int[] BuildExecSizes(int combined, int goal, bool wideSocial = false)
+    {
+        int output = ActionSubsets[goal].Length + 1 + ExecAux(goal);
+        return wideSocial && goal == (int)Goal.Social
+            ? new[] { combined, 96, 48, 48, output }
+            : new[] { combined, 64, 32, 32, output };
+    }
 
 
     private readonly LSTMMemory          reservoir;
@@ -57,6 +62,7 @@ public class SharedHierarchicalBrain : IDisposable
 
     public readonly int   InputSize;
     public readonly int   LstmHidden;
+    public readonly bool  WideSocialExecutor;
     public readonly int[] CoordLayerSizes;
     public readonly int[][] ExecLayerSizes;
 
@@ -64,6 +70,8 @@ public class SharedHierarchicalBrain : IDisposable
 
     public readonly BrainDiagnostics GlobalDiagnostics = new();
     public int GlobalTrainingSteps { get; private set; }
+    private readonly int[] _rareAvailable = new int[PlanCount * ActionCatalog.Count];
+    private readonly int[] _rareSelected = new int[PlanCount * ActionCatalog.Count];
 
     private RunningMeanStd _rewardNorm;
 
@@ -71,8 +79,11 @@ public class SharedHierarchicalBrain : IDisposable
     private PerceptronLayout[] _execCtxLayouts;
     
 
-    public SharedHierarchicalBrain(int inputSize, int lstmHidden = 32)
+    public SharedHierarchicalBrain(int inputSize, int lstmHidden = 32) : this(inputSize, lstmHidden, false) { }
+
+    public SharedHierarchicalBrain(int inputSize, int lstmHidden, bool wideSocialExecutor)
     {
+        WideSocialExecutor = wideSocialExecutor;
         InputSize  = inputSize;
         LstmHidden = lstmHidden;
         int combined = inputSize + lstmHidden;
@@ -80,7 +91,7 @@ public class SharedHierarchicalBrain : IDisposable
         CoordLayerSizes = BuildCoordSizes(combined);
         ExecLayerSizes  = new int[GoalCount][];
         for (int i = 0; i < GoalCount; i++)
-            ExecLayerSizes[i] = BuildExecSizes(combined, i);
+            ExecLayerSizes[i] = BuildExecSizes(combined, i, WideSocialExecutor);
 
         reservoir   = new LSTMMemory(inputSize, lstmHidden, SimulationRules.Active.ReservoirSpectralRadius);
         coordinator = new DelayedPerceptron(CoordLayerSizes);
@@ -298,7 +309,7 @@ public class SharedHierarchicalBrain : IDisposable
         return true;
     }
 
-    public SharedHierarchicalBrain(SharedHierarchicalBrain src) : this(src.InputSize, src.LstmHidden)
+    public SharedHierarchicalBrain(SharedHierarchicalBrain src) : this(src.InputSize, src.LstmHidden, src.WideSocialExecutor)
     {
         src.CompletePending();
         reservoir.Dispose();
@@ -627,9 +638,12 @@ public class SharedHierarchicalBrain : IDisposable
             var combined = ctx.ExecCombined[g];
             ctx.ExecMLPs[g].Activation(0).CopyTo(combined);
 
+            bool trackRarity = !NullPolicy && frame.RareActionChance > 0f;
+            int rare = trackRarity ? LeastSelectedAction(ctx.CurrentPlan, ctx.ExecMask, ActionSubsets[g]) : -1;
+            float rareChance = rare >= 0 ? frame.RareActionChance * EnergySurplus(ctx.EnergyNorm, frame.CuriosityEnergyFloor) : 0f;
             var ticket = executors[g].FinishDecide(combined, ctx.ExecMLPs[g], item.Slot,
                 batch.BiasRow(d).Slice(0, ActionSubsets[g].Length), ExecDelaySteps, execCritics[g], execGamma,
-                simTime, _goalMinDuration[g], _goalMaxDuration[g], execEps, decay, ctx.ExecForced);
+                simTime, _goalMinDuration[g], _goalMaxDuration[g], execEps, decay, ctx.ExecForced, rare, rareChance);
 
             if (NullPolicy)
             {
@@ -638,6 +652,7 @@ public class SharedHierarchicalBrain : IDisposable
             }
 
             int action    = ActionSubsets[g][ticket.Predicted];
+            if (trackRarity) _rareSelected[(int)ctx.CurrentPlan * ActionCatalog.Count + action]++;
             float clamped = math.clamp(ticket.Duration,
                 ActionDurationTable.Min(action), ActionDurationTable.Max(action));
             ticket.Duration = clamped;
@@ -697,11 +712,29 @@ public class SharedHierarchicalBrain : IDisposable
             _dDecision[d] = new BrainDecision(action, ticket.DecisionId, ctx.CoordDecisionId,
                 ctx.CurrentGoal, simTime, clamped, in heading,
                 curvature, tokens, ctx.CurrentPlan, ctx.GoalEndTime, direction, offset, speechLen,
-                style: style, tempo: tempo);
+                style: style, tempo: tempo, rareAction: ticket.RareAction);
             _dMade[d] = true;
         }
 
         ScheduleTraining();
+    }
+
+    private int LeastSelectedAction(PlanKind plan, int mask, int[] subset)
+    {
+        int offset = (int)plan * ActionCatalog.Count;
+        int rare = -1;
+        float lowest = float.MaxValue;
+        for (int i = 0; i < subset.Length; i++)
+        {
+            int action = subset[i];
+            if ((mask & (1 << action)) == 0) continue;
+            int slot = offset + action;
+            float share = (_rareSelected[slot] + 1f) / (++_rareAvailable[slot] + 1f);
+            if (share >= lowest) continue;
+            lowest = share;
+            rare = i;
+        }
+        return rare;
     }
 
     private static int DrawUniformPlan(EntityBrainContext ctx, int fallback)
@@ -955,6 +988,7 @@ public class SharedHierarchicalBrain : IDisposable
     {
         InputSize  = reservoir.InputSize;
         LstmHidden = reservoir.HiddenSize;
+        WideSocialExecutor = executors[(int)Goal.Social].LayerSizes[1] != 64;
 
         this.reservoir   = reservoir;
         this.coordinator = coordinator;
@@ -1017,14 +1051,14 @@ public class SharedHierarchicalBrain : IDisposable
     public static SharedHierarchicalBrain FromSnapshot(byte[] data, int inputSize, int lstmHidden)
         => FromSnapshot(SharedBrainSnapshot.Deserialize(data), inputSize, lstmHidden);
 
-    public static SharedHierarchicalBrain FromSnapshot(SharedBrainSnapshot snapshot, int inputSize, int lstmHidden)
+    public static SharedHierarchicalBrain FromSnapshot(SharedBrainSnapshot snapshot, int inputSize, int lstmHidden, bool wideSocial = false)
     {
         if (snapshot == null || snapshot.Brain == null) return null;
 
-        if (!snapshot.Brain.MatchesArchitecture(inputSize, lstmHidden))
+        if (!snapshot.Brain.MatchesArchitecture(inputSize, lstmHidden, wideSocial))
         {
-            RavineLog.Error($"Архитектура снапшота ({snapshot.Brain.InputSize}/{snapshot.Brain.LstmHidden}) " +
-                            $"не совпадает с текущей ({inputSize}/{lstmHidden}), загрузка отменена");
+            RavineLog.Error($"Архитектура снапшота ({snapshot.Brain.InputSize}/{snapshot.Brain.LstmHidden}, wideSocial={snapshot.Brain.WideSocialExecutor}) " +
+                            $"не совпадает с текущей ({inputSize}/{lstmHidden}, wideSocial={wideSocial}), загрузка отменена");
             snapshot.Brain.Dispose();
             return null;
         }
@@ -1032,15 +1066,15 @@ public class SharedHierarchicalBrain : IDisposable
         return snapshot.Brain;
     }
 
-    public bool MatchesArchitecture(int inputSize, int lstmHidden)
+    public bool MatchesArchitecture(int inputSize, int lstmHidden, bool wideSocial = false)
     {
-        if (InputSize != inputSize || LstmHidden != lstmHidden) return false;
+        if (InputSize != inputSize || LstmHidden != lstmHidden || WideSocialExecutor != wideSocial) return false;
 
         int combined = inputSize + lstmHidden;
         if (!SizesMatch(CoordLayerSizes, BuildCoordSizes(combined))) return false;
 
         for (int i = 0; i < GoalCount; i++)
-            if (!SizesMatch(ExecLayerSizes[i], BuildExecSizes(combined, i))) return false;
+            if (!SizesMatch(ExecLayerSizes[i], BuildExecSizes(combined, i, wideSocial))) return false;
 
         return true;
     }

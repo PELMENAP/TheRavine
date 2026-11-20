@@ -89,11 +89,7 @@ public sealed class ColonyLegislator
 
     private void Propose(int author, State state)
     {
-        if (_codex.Check(state.Delta) == CodexError.Inadmissible)
-        {
-            Negate(state.Delta);
-            if (_codex.Check(state.Delta) != CodexError.None) return;
-        }
+        if (_codex.Check(state.Delta) == CodexError.Inadmissible) Negate(state.Delta);
 
         if (_codex.TryPropose(author, state.Delta, out int lawId, out _)) state.LawId = lawId;
     }

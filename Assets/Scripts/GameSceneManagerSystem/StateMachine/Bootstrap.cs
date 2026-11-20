@@ -87,7 +87,11 @@ namespace TheRavine.Base
             _servicesReleased = true;
 
             EntityManager entities = FindAnyObjectByType<EntityManager>();
-            if (entities != null) entities.enabled = false;
+            if (entities != null)
+            {
+                entities.enabled = false;
+                RunStep(entities.DropCarriedObjects, "drop carried objects");
+            }
 
             RunStep(BreakUpSceneServices, "break up");
             if (entities != null) RunStep(entities.ReleaseServices, "entity services");

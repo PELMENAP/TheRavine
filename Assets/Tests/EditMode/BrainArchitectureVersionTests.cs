@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class BrainArchitectureVersionTests
 {
-    private const int ExpectedVersion          = 12;
+    private const int ExpectedVersion          = 13;
     private const int ExpectedInputSize        = 129;
     private const int ExpectedPlanCount        = 9;
     private const int ExpectedCoordAux         = 2;

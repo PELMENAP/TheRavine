@@ -78,10 +78,22 @@ public class BrainAllocationTests
         AllocationAssert.Zero(step, 200, "ValueCritic.Predict/TrainTD");
     }
 
-    [Test]
-    public void WarmDecisionWithRewardCompletionDoesNotAllocate()
+    [TestCase(false)]
+    [TestCase(true)]
+    public void WarmDecisionWithRewardCompletionDoesNotAllocate(bool rareActions)
     {
+        if (rareActions)
+        {
+            typeof(SimulationRules).GetField("rareActionChance", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(_rules, 0.05f);
+            SimulationRules.CaptureFrame();
+            _brain.Dispose();
+            _brain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, LstmHidden, true);
+        }
+
         var ctx = NewContext();
+        ctx.EnergyNorm = 1f;
+        if (rareActions) ctx.PlanHints = PlanHint.AtNest | PlanHint.EntityNear | PlanHint.CanReproduce | PlanHint.Threat;
         var x   = Input(7f);
         float t = 0f;
 
@@ -174,7 +186,13 @@ public class BrainAllocationTests
         typeof(ObjectInfo).GetField("id", flags).SetValue(info, id);
         typeof(ObjectInfo).GetField("isFood", flags).SetValue(info, food);
         if (pickable)
-            typeof(ObjectInfo).GetField("inventoryItemInfo", flags).SetValue(info, ScriptableObject.CreateInstance<InventoryItemInfo>());
+        {
+            var item = ScriptableObject.CreateInstance<InventoryItemInfo>();
+            typeof(InventoryItemInfo).GetField("_isPlaceable", flags).SetValue(item, true);
+            typeof(ObjectInfo).GetField("inventoryItemInfo", flags).SetValue(info, item);
+            typeof(ObjectInfo).GetField("instanceType", flags).SetValue(info, InstanceType.Interactable);
+            typeof(ObjectInfo).GetField("objectCanBurn", flags).SetValue(info, true);
+        }
         return info;
     }
 
@@ -200,30 +218,40 @@ public class BrainAllocationTests
             world.Objects[Position2Int.Pack(cx, cy - 1)] = 3;
             world.Objects[Position2Int.Pack(cx + 40, cy)] = 1;
 
-            bool found = ObjectSensor.TryFindNearest(world, registry, in self, _rules.ObjectSenseRadius, out float2 pos, out float dist);
+            bool found = ObjectSensor.TryFindNearest(world, registry, in self, _rules.ObjectSenseRadius, out float2 pos, out float dist, out int prefabId);
             Assert.IsTrue(found);
+            Assert.AreEqual(1, prefabId);
             Assert.AreEqual(ChunkFoodIndex.CellCenter(near).x, pos.x, 1e-4f);
             Assert.AreEqual(ChunkFoodIndex.CellCenter(near).y, pos.y, 1e-4f);
             Assert.AreEqual(math.distance(self, pos), dist, 1e-4f);
 
-            Assert.IsFalse(ObjectSensor.TryFindNearest(world, registry, in self, 0, out _, out float none));
+            Assert.IsFalse(ObjectSensor.TryFindNearest(world, registry, in self, 0, out _, out float none, out _));
             Assert.AreEqual(-1f, none);
 
             float sink = 0f;
             int radius = _rules.ObjectSenseRadius;
             TestDelegate step = () =>
             {
-                ObjectSensor.TryFindNearest(world, registry, in self, radius, out float2 p, out float d);
+                ObjectSensor.TryFindNearest(world, registry, in self, radius, out float2 p, out float d, out _);
                 sink += p.x + d;
             };
 
             Warm(step);
             AllocationAssert.Zero(step, 200, "ObjectSensor.TryFindNearest");
+            Assert.IsFalse(ObjectSensor.TryTakeFuel(world, registry, near, 2, out _));
+            Assert.IsTrue(ObjectSensor.TryTakeFuel(world, registry, near, prefabId, out var load));
+            Assert.AreEqual(1, load.Amount);
+            Assert.IsFalse(ObjectSensor.TryTakeFuel(world, registry, near, prefabId, out _));
+            Assert.IsTrue(world.Objects.ContainsKey(nearest));
         }
         finally
         {
             UnityEngine.Object.DestroyImmediate(registry);
-            for (int i = 0; i < infos.Length; i++) UnityEngine.Object.DestroyImmediate(infos[i]);
+            for (int i = 0; i < infos.Length; i++)
+            {
+                if (infos[i].InventoryItemInfo != null) UnityEngine.Object.DestroyImmediate(infos[i].InventoryItemInfo);
+                UnityEngine.Object.DestroyImmediate(infos[i]);
+            }
         }
     }
 }

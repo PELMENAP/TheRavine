@@ -394,7 +394,15 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public float NextPlanSide() => _planSide = -_planSide;
 
     public float Carrying { get; private set; }
-    public void Carry(float energy) => Carrying += math.max(0f, energy);
+    private double _carryStarted;
+    public double CarryDuration => Carrying > 0f ? SimulationClock.TimeD - _carryStarted : 0d;
+
+    public void Carry(float energy)
+    {
+        if (!(energy > 0f) || !math.isfinite(energy)) return;
+        if (Carrying <= 0f) _carryStarted = SimulationClock.TimeD;
+        Carrying += energy;
+    }
     public float TakeCarried()
     {
         float c = Carrying;

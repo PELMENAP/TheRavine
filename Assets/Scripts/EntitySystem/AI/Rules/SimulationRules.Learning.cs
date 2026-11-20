@@ -137,6 +137,9 @@ public sealed partial class SimulationRules
     [SerializeField] private float curiosityEnergyGain = 1f;
     [SerializeField] private float curiosityEnergyFloor = 0.6f;
     [SerializeField] private float curiosityRarityWeight = 0.1f;
+    [SerializeField, Range(0f, 1f)] private float rareActionChance;
+    [SerializeField] private bool wideSocialExecutor;
+    public bool WideSocialExecutor => wideSocialExecutor;
     [SerializeField] private float execGammaPerSecond = 0.9f;
     [SerializeField] private float coordGammaPerSecond = 0.97f;
     [SerializeField] private EpsilonSchedule epsilonScheduleMode = EpsilonSchedule.Exponential;

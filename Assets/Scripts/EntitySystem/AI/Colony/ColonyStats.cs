@@ -50,6 +50,21 @@ public sealed class ColonyStats
 
     public float MeanLifespan => Died > 0 ? LifespanSum / Died : 0f;
 
+    public enum BirthFailure : byte { Capacity, ParentReserve, ChildReserve, Incompatibility, Spawn, Count }
+    public readonly int[] BirthFailures = new int[(int)BirthFailure.Count];
+
+    public enum Interaction : byte
+    {
+        Fed, Groomed, GiftEnergy, FeedNoTarget, FeedRecipientSated, FeedEmpty, GroomNoPatient,
+        Spoken, Marked, Threatened, Delivered, DeliveredEnergy, DeliverySeconds,
+        RareActionStarted, RareActionCompleted, RareActionReward,
+        ObjectsTaken, ObjectsPlaced, ObjectDeliveryEnergy, Count
+    }
+
+    public readonly double[] Interactions = new double[(int)Interaction.Count];
+
+    public void RecordInteraction(Interaction kind, double amount = 1d) => Interactions[(int)kind] += amount;
+
     public void RecordBirth() => Born++;
 
     public void RecordDeath(float lifespan, DeathCause cause)

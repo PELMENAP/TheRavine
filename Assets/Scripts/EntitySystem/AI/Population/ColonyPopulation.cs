@@ -94,9 +94,10 @@ public sealed class ColonyPopulation
 
     public void StartPredatorClock(double now) => _nextPredatorTime = now;
 
-    public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null, EntityModel mate = null)
+    public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null, EntityModel mate = null, float2? birthVitals = null)
     {
-        if (!TheRavine.Base.WorldAuthority.IsAuthority || !HasFreeSlot(colony))
+        if (!TheRavine.Base.WorldAuthority.IsAuthority || !HasFreeSlot(colony) ||
+            (parent != null && !birthVitals.HasValue && SimulationRules.Active.ReproductionTransferEnabled))
         {
             inheritedCtx?.Dispose();
             return null;
@@ -121,6 +122,11 @@ public sealed class ColonyPopulation
         model.AssignId(++_nextEntityId);
 
         model.Configure(colony, ctx, viewModel, viewModel, go, _tuning, parent);
+        if (birthVitals.HasValue)
+        {
+            model.Stats.En = birthVitals.Value.x;
+            model.Stats.Hp = birthVitals.Value.y;
+        }
         model.Init();
         viewModel.Initialize(model);
         view.Initialize(viewModel);
@@ -128,7 +134,22 @@ public sealed class ColonyPopulation
         model.SetUp();
 
         float startEnergy = model.BodyEnergy;
-        if (parent != null) _ledger.Flows.ChildStart += startEnergy;
+        if (parent != null)
+        {
+            float energyCost = parent.Tuning.ReproduceEnergyCost;
+            parent.Stats.En -= energyCost;
+            parent.Stats.Hp -= parent.Tuning.ReproduceHealthCost;
+            if (birthVitals.HasValue)
+            {
+                _ledger.Flows.BirthTransfer += startEnergy;
+                _ledger.Flows.Reproduce += energyCost - startEnergy;
+            }
+            else
+            {
+                _ledger.Flows.ChildStart += startEnergy;
+                _ledger.Flows.Reproduce += energyCost;
+            }
+        }
         else _ledger.Flows.SpawnStart += startEnergy;
 
         model.Mortality.Died += () => HandleEntityDied(model);
@@ -160,7 +181,17 @@ public sealed class ColonyPopulation
     public bool SpawnChild(EntityModel parent)
     {
         var colony = parent.Colony;
-        if (parent.IsWild || !HasFreeSlot(colony)) return false;
+        if (parent.IsWild || colony == null) return false;
+        var rules = SimulationRules.Active;
+        if (!HasFreeSlot(colony)) return RejectBirth(colony, ColonyStats.BirthFailure.Capacity);
+        float energyCost = parent.Tuning.ReproduceEnergyCost;
+        float healthCost = parent.Tuning.ReproduceHealthCost;
+        float reserve = rules.ReproductionTransferEnabled ? rules.BirthParentReserve : 0f;
+        float remainingEnergy = parent.Stats.En - energyCost;
+        float remainingHealth = parent.Stats.Hp - healthCost;
+        if (!(remainingEnergy >= reserve * parent.Stats.MaxEnergy && remainingHealth >= reserve * parent.Stats.MaxHealth) ||
+            (rules.ReproductionTransferEnabled && (remainingEnergy <= 0f || remainingHealth <= 0f)))
+            return RejectBirth(colony, ColonyStats.BirthFailure.ParentReserve);
 
         var parentParams = parent.Brain.Context.CoordMLP.Params;
         var mate         = _evolution.SelectMate(parent);
@@ -169,7 +200,7 @@ public sealed class ColonyPopulation
         if (mate != null && parentVirology != null
             && parentVirology.Modifiers.CytoIncompat >= SimulationRules.Active.CytoIncompatThreshold
             && mate.LineageId != parent.LineageId)
-            return false;
+            return RejectBirth(colony, ColonyStats.BirthFailure.Incompatibility);
 
         GeneticParameters childParams;
         if (mate != null)
@@ -182,13 +213,36 @@ public sealed class ColonyPopulation
             childParams = parentParams.GetMutatedGeneticParameters();
         }
 
+        float2? birthVitals = null;
+        if (rules.ReproductionTransferEnabled)
+        {
+            var child = EntityTuning.Express(in _tuning, in childParams, CasteModifiers.For(Caste.Worker));
+            float2 limits = new(child.MaxEnergy, child.MaxHealth * rules.JuvenileHealthMul);
+            if (!TryBirthTransfer(new float2(energyCost, healthCost), limits, rules, out float2 transferred))
+                return RejectBirth(colony, ColonyStats.BirthFailure.ChildReserve);
+            birthVitals = transferred;
+        }
+
         var childCtx = colony.Brain.CreateContext(childParams);
-        var rules    = SimulationRules.Active;
         var pos      = parent.Motor.Position()
                      + (Vector3)RavineRandom.GetInsideCircle().normalized * rules.ChildSpawnOffset
                      + Vector3.up * rules.ChildSpawnLift;
 
-        return SpawnEntity(pos, colony, childCtx, parent, mate) != null;
+        return SpawnEntity(pos, colony, childCtx, parent, mate, birthVitals) != null
+            || RejectBirth(colony, ColonyStats.BirthFailure.Spawn);
+    }
+
+    public static bool TryBirthTransfer(float2 costs, float2 childLimits, SimulationRules rules, out float2 transfer)
+    {
+        transfer = math.min(childLimits, costs * new float2(rules.BirthEnergyTransfer, rules.BirthHealthTransfer));
+        return math.all(math.isfinite(transfer)) && math.all(transfer > 0f)
+            && math.all(transfer >= childLimits * rules.BirthChildReserve);
+    }
+
+    private static bool RejectBirth(ColonyState colony, ColonyStats.BirthFailure reason)
+    {
+        colony.Stats.BirthFailures[(int)reason]++;
+        return false;
     }
 
     public Vector3 RandomPosition(ColonyState colony)
@@ -221,6 +275,7 @@ public sealed class ColonyPopulation
             model.Colony?.Stats.RecordDeath(model.TimeAlive, cause);
             HandleLeaderDeath(model);
             BroadcastDeath(model, cause);
+            model.DropHeldObject(model.DeathPosition);
             _food.DropCorpse(model, cause);
             model.Brain?.CompleteTerminal(_evolution.TerminalPenaltyFor(model, cause), SimulationClock.Time);
             LifeLog?.Death(model, cause);

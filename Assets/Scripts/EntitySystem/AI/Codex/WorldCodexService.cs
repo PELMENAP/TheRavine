@@ -30,6 +30,11 @@ public sealed class WorldCodexService
 
     public int Version { get; private set; }
     public int LawCount => _count;
+    public int ProposalsAccepted { get; private set; }
+    public int ProposalsAttempted { get; private set; }
+    private readonly int[] _proposalRefusals = new int[(int)CodexError.Count];
+    public int ProposalRefusals(CodexError error) => _proposalRefusals[(int)error];
+    public float EffectiveMultiplier(int axis) => math.exp(_effective[axis]);
     public int PerturbationActive { get; private set; }
     public int Axes => _axes;
     public bool NeedsEnergySamples => _count > 0;
@@ -101,6 +106,15 @@ public sealed class WorldCodexService
     }
 
     public bool TryPropose(int authorId, ReadOnlySpan<float> delta, out int lawId, out CodexError error)
+    {
+        ProposalsAttempted++;
+        bool accepted = TryCreateLaw(authorId, delta, out lawId, out error);
+        if (accepted) ProposalsAccepted++;
+        else _proposalRefusals[(int)error]++;
+        return accepted;
+    }
+
+    private bool TryCreateLaw(int authorId, ReadOnlySpan<float> delta, out int lawId, out CodexError error)
     {
         lawId = 0;
         error = authorId == CodexAuthor.None || _purse == null ? CodexError.NoPurse : Check(delta);

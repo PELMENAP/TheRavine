@@ -31,6 +31,7 @@ public sealed class DelayedItem
     public float ExplorationEpsilon;
     public float ExploreProb;
     public bool  ActionForced;
+    public bool  RareAction;
     public bool  HasBias;
     public readonly float[] Bias;
 
@@ -52,6 +53,7 @@ public sealed class DelayedItem
         LogProbability = 0f;
         ExplorationEpsilon = 0f;
         ExploreProb = 0f;
+        RareAction = false;
         ActionForced = false;
         HasBias = false;
         DurationLogit = 0f;

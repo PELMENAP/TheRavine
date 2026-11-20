@@ -518,6 +518,12 @@ public partial class EntityModel
         if (_foodValid) h |= PlanHint.FoodVisible;
         if (_foodValid && _foodDistance <= r.EatRange) h |= PlanHint.FoodInRange;
         if (Carrying > 0f) h |= PlanHint.Carrying;
+        if (HasHeldObject) h |= PlanHint.HoldingObject;
+        if (_objectValid && !HasHeldObject)
+        {
+            h |= PlanHint.ObjectVisible;
+            if (_objectDistance <= r.EatRange) h |= PlanHint.ObjectInRange;
+        }
         if (Carrying >= CarryCapacity * CarryFullFraction) h |= PlanHint.CarryFull;
         if (IsAtNest) h |= PlanHint.AtNest;
         if (Nest != null) h |= PlanHint.HasNest;

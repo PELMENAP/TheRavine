@@ -8,6 +8,15 @@ public sealed class ColonyState : IDisposable
     public readonly int ColonyId;
     public readonly NestState Nest;
     public SharedHierarchicalBrain Brain { get; private set; }
+    public string BrainOrigin { get; private set; } = "fresh";
+    public const int TrainingGroups = 1 + SharedHierarchicalBrain.GoalCount;
+    private readonly long[] _previousTraining = new long[TrainingGroups];
+
+    public long TrainingSteps(int group)
+        => _previousTraining[group] + CurrentTrainingSteps(group);
+
+    private long CurrentTrainingSteps(int group)
+        => Brain == null ? 0 : group == 0 ? Brain.Coordinator.TotalTrainingSteps : Brain.Executors[group - 1].TotalTrainingSteps;
     public readonly ColonyStats Stats = new();
     public readonly ColonyPoiBoard Pois;
     public readonly float[] LeaderPlanProbs = new float[PlanCatalog.Count];
@@ -221,8 +230,11 @@ public sealed class ColonyState : IDisposable
         SkillTopology = SkillGraphTopology.Create(SkillAtlas.Active, SkillGraphTopology.DrawForestGenes());
     }
 
-    public void ReplaceBrain(SharedHierarchicalBrain brain)
+    public void ReplaceBrain(SharedHierarchicalBrain brain, string origin = "reseeded")
     {
+        if (ReferenceEquals(Brain, brain)) return;
+        for (int i = 0; i < TrainingGroups; i++) _previousTraining[i] += CurrentTrainingSteps(i);
+        BrainOrigin = origin;
         Brain = brain;
         brain?.SetArm(Arm, false);
         brain?.SetLearningGenes(Genome);

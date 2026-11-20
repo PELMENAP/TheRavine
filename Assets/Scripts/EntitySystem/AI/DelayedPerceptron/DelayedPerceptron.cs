@@ -179,7 +179,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
 
     public DelayedItem FinishDecide(float[] input, PerceptronContext ctx, int slot, ReadOnlySpan<float> bias,
         int delaySteps, ValueCritic critic, float gamma, float simTime,
-        float minDuration, float maxDuration, float epsilon, float decay, bool forced)
+        float minDuration, float maxDuration, float epsilon, float decay, bool forced, int rareAction = -1, float rareChance = 0f)
     {
         bool biased = !bias.IsEmpty;
         ref readonly var rules = ref SimulationRules.Frame;
@@ -226,9 +226,17 @@ public unsafe partial class DelayedPerceptron : IDisposable
             for (int i = 0; i < actionCount; i++) explore[i] = 1f / actionCount;
         }
 
-        int pred = isExploration
-            ? RouletteWheelSelection(explore, actionCount)
+        bool rare = !forced && rareAction >= 0 && rareChance > 0f && RavineRandom.RangeFloat() < rareChance;
+        int pred = rare ? rareAction
+            : isExploration ? RouletteWheelSelection(explore, actionCount)
             : RouletteWheelSelection(behaviour, actionCount);
+        float exploreProbability = explore[pred];
+        if (!forced && rareAction >= 0 && rareChance > 0f)
+        {
+            float regularExplore = (1f - rareChance) * adaptiveEpsilon;
+            adaptiveEpsilon = regularExplore + rareChance;
+            exploreProbability = (regularExplore * exploreProbability + (pred == rareAction ? rareChance : 0f)) / adaptiveEpsilon;
+        }
 
         float entropy      = CalculateOutputEntropy(outAct, actionCount);
         ctx.AverageEntropy = ctx.AverageEntropy * (1f - ctx.Params.EntropyAlpha)
@@ -242,7 +250,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
 
         float pBehaviour = forced
             ? 1f
-            : (1f - adaptiveEpsilon) * behaviour[pred] + adaptiveEpsilon * explore[pred];
+            : (1f - adaptiveEpsilon) * behaviour[pred] + adaptiveEpsilon * exploreProbability;
 
         var item = ctx.Decisions.Push(ctx.NextDecisionId());
         item.Evaluation         = 0f;
@@ -252,7 +260,8 @@ public unsafe partial class DelayedPerceptron : IDisposable
         item.Temperature        = ctx.EffectiveTemperature;
         item.ValueEstimate      = vNow;
         item.ExplorationEpsilon = adaptiveEpsilon;
-        item.ExploreProb        = explore[pred];
+        item.ExploreProb        = exploreProbability;
+        item.RareAction         = rare;
         item.ActionForced       = forced;
         item.HasBias            = biased;
         if (biased) bias.Slice(0, actionCount).CopyTo(item.Bias);

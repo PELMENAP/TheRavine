@@ -31,7 +31,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
   `MortalityComponent`, `PerceptionComponent`, `PointsOfInterestComponent`, `SpeechComponent`, `StatsComponent`, `VisualCullingComponent`.
 - Commands, one file each, in `Assets/Scripts/EntitySystem/AI/Entity/Commands/`; they run through `EntityCommandRunner`.
 - One command per verb. `MoveToCommand` picks its behaviour from the decision's `DirectionKind`; `SignalCommand` from the goal of the decision; `GiveCommand` from the receiver; `TakeCommand` and `PutCommand` from the direction and the carried load.
-- Held object: `EntityModel.HeldObject` and `HeldAmount` (`EntityModel.Objects.cs`). `Take` with direction `Object` does not edit the world, so `HeldObject` stays empty; the object direction and proximity inputs are filled from `ObjectSensor`.
+- `ObjectSensor` finds portable fuel. Harvest can approach and pick it up from the map, then deposit it in the nest as heat.
 - `CreatureCore`: metabolism, vitals and virology step shared by agents and the player.
 - `EntityTuning`: per-agent multipliers by `Caste` (`Worker`, `Soldier`, `Scout`, `Nurse`) and for predators; `CasteModifiers.Range` scales the radius of `Frontier` and `Levy` directions.
 - View side: `EntityViewModel`, `EntityView` in the same folder.
@@ -47,7 +47,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 - LTC update mode (`LtcMode`, math in `Assets/Scripts/EntitySystem/AI/SharedAI/LtcNeuron.cs`, called by `NeuralKernels.Layer` and the backward pass): `Legacy` is `h' = (h + dt·f)/(1 + dt/tau)`; `Bounded` (arm `BoundedLtc`) is `z = dt/(tau + dt)`, `h' = (1 − z)·h + z·f`, whose state stays in [-1, 1], with the exact backward pass (no `tau` gradient where `tau` is clamped). `tau` is clamped to `[ltcTauMin, ltcTauMax]` (defaults `TauEpsilon` and `float.MaxValue`, so `Legacy` is unchanged). The mode and clamp live in `KernelLayout` (`LtcBounded`, `TauMin`, `TauMax`) per `DelayedPerceptron`, set by `SetLtc`.
 - Novelty mode: `Error` is the raw `RandomNetworkDistillation` error; the arm `ProgressNovelty` replaces it in `SharedHierarchicalBrain.ReadIntrinsic` by `max(0, slow − fast)` of two EMAs of the error per agent (`NoveltyProgressSystem`, SoA by `ManagerIndex`, rates `noveltyFastRate`, `noveltySlowRate`; `EntityBrainContext.NoveltyIndex` is set in `EntityModel.SubmitDecision`). The system is registered in the `ServiceLocator` by `EntityManager`.
 - Reservoir init: the arm `OrthogonalReservoir` replaces the recurrent block of each gate of a newly created `LSTMMemory` by a random orthogonal matrix scaled to `reservoirSpectralRadius` (`LSTMMemory.OrthogonalizeRecurrent`); a brain loaded from a file keeps its saved reservoir.
-- Genetic predisposition: `GeneticParameters.Predisposition0..2` (`SimulationRules.PredispositionSize`, range [-1, 1]) are phenotypic genes: random for a founder (`Default`), mean of both parents plus the usual mutation in `Crossover`, mutation of the copy for a clonal child; `EvolveColony` does not overwrite them. `EntityModel` copies them into a per-agent array that `VectorizerFrame.Predisposition` passes to `InputVectorizer`, which writes them at `PredispositionOffset` (the last `PredispositionSize` inputs) for every agent. Input size is 129, `SharedBrainSnapshot.Version` is 12.
+- Genetic predisposition: `GeneticParameters.Predisposition0..2` (`SimulationRules.PredispositionSize`, range [-1, 1]) are phenotypic genes: random for a founder (`Default`), mean of both parents plus the usual mutation in `Crossover`, mutation of the copy for a clonal child; `EvolveColony` does not overwrite them. `EntityModel` copies them into a per-agent array that `VectorizerFrame.Predisposition` passes to `InputVectorizer`, which writes them at `PredispositionOffset` (the last `PredispositionSize` inputs) for every agent. Input size is 129.
 - Each level is an LSTM plus a `DelayedPerceptron` (`Assets/Scripts/EntitySystem/AI/LSTM/`, `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/`).
 - Per-agent state: `EntityBrainContext`, `LSTMContext`, `PerceptronContext`; buffers from `ContextSlabs` and `FloatSlabPool`.
 - Batched inference: `BeginDecisionBatch` → `EnqueueDecision` → `RunDecisions`; kernels in `NeuralKernels.cs`, jobs in `NeuralJobs.cs`.
@@ -60,7 +60,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 
 ## Saving
 
-- `SharedBrainSnapshot` holds `Version`; one file per colony, named by `NeuralModelStorage.ColonyFileName`.
+- `SharedBrainSnapshot` v13 records the executor profile and reads v12 as standard. Wide Social uses a separate model filename suffix.
 - An unknown version, truncated data or another architecture is refused with an error; the colony keeps a new brain.
 - Model loaders check sizes against the expected architecture before allocating and reject non-finite weights.
 
