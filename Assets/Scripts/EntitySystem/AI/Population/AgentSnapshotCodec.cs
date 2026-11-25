@@ -3,9 +3,9 @@ using Unity.Mathematics;
 public static class AgentSnapshotCodec
 {
     public const string MessageName = "ravine.agents";
-    public const byte   Version     = 1;
+    public const byte   Version     = 2;
 
-    public const int HeaderSize     = 20;
+    public const int HeaderSize     = 22;
     public const int EntrySize      = 12;
     public const int MaxEntries     = 64;
     public const int MaxMessageSize = HeaderSize + MaxEntries * EntrySize;
@@ -15,12 +15,11 @@ public static class AgentSnapshotCodec
     public const float MaxOrigin     = 1.0e7f;
     public const byte  YawNone       = 255;
     public const int   MinTtlMs      = 100;
-    public const int   MaxTtlMs      = 10000;
 
     public struct Header
     {
         public byte   Count;
-        public ushort TtlMs;
+        public int TtlMs;
         public uint   Tick;
         public float3 Origin;
     }
@@ -29,11 +28,11 @@ public static class AgentSnapshotCodec
     {
         buffer[0] = Version;
         buffer[1] = (byte)count;
-        WriteU16(buffer, 2, (ushort)math.clamp(ttlMs, MinTtlMs, MaxTtlMs));
-        WriteU32(buffer, 4, tick);
-        WriteF32(buffer, 8, origin.x);
-        WriteF32(buffer, 12, origin.y);
-        WriteF32(buffer, 16, origin.z);
+        WriteU32(buffer, 2, (uint)math.max(ttlMs, MinTtlMs));
+        WriteU32(buffer, 6, tick);
+        WriteF32(buffer, 10, origin.x);
+        WriteF32(buffer, 14, origin.y);
+        WriteF32(buffer, 18, origin.z);
     }
 
     public static void WriteEntry(byte[] buffer, int index, int id, float3 origin, float3 position, byte yaw, byte colony)
@@ -55,13 +54,13 @@ public static class AgentSnapshotCodec
         int count = buffer[1];
         if (count > MaxEntries || length != HeaderSize + count * EntrySize) return false;
 
-        int ttl = ReadU16(buffer, 2);
-        if (ttl < MinTtlMs || ttl > MaxTtlMs) return false;
+        int ttl = (int)ReadU32(buffer, 2);
+        if (ttl < MinTtlMs) return false;
 
-        float3 origin = new float3(ReadF32(buffer, 8), ReadF32(buffer, 12), ReadF32(buffer, 16));
+        float3 origin = new float3(ReadF32(buffer, 10), ReadF32(buffer, 14), ReadF32(buffer, 18));
         if (!math.all(math.isfinite(origin)) || math.any(math.abs(origin) > MaxOrigin)) return false;
 
-        header = new Header { Count = (byte)count, TtlMs = (ushort)ttl, Tick = ReadU32(buffer, 4), Origin = origin };
+        header = new Header { Count = (byte)count, TtlMs = ttl, Tick = ReadU32(buffer, 6), Origin = origin };
         return true;
     }
 

@@ -163,13 +163,15 @@ Before writing a structure, check this table. A second spatial index or a second
 Every per-agent array is indexed by `EntityModel.ManagerIndex` and sized from the capacity `maxPopulation + PredatorCount`. Removal is swap-back in one place, `ColonyPopulation.RemoveEntitySwapBack`, which today synchronizes:
 
 - `InstinctSystem`
-- `SurveySystem` (inputs and outputs by ManagerIndex; reads the grid SoA, which is indexed by grid slot, not by ManagerIndex)
+- `SurveySystem` (batch-local inputs and outputs indexed by offset in the tick batch; reads neighbour data by grid slot)
 - `BoidSystem`
 - `UtilityPriorSystem`
 - `CasteThresholdSystem`
 - `SkillGraphStore` (levels, peaks, last-used, talent, root, dirty flag, colony index, plasticity; per-colony cycle factors are published by colony index and are not swapped)
 - `MotionSystem` (`Positions` by ManagerIndex, slot map to the motion list; `Transform` is written only by `MotionApplyJob`)
-- `SpeechBus`
+- `SpeechBus` (inbox, mute flag, colony, entity id, fitness, experiment arm)
+- `NoveltyProgressSystem` (fast and slow error EMA, primed flag; used by the brain only in the `ProgressNovelty` arm, reset at spawn)
+- `BehaviourDescriptorLog` (only while `behaviourDescriptorsEnabled`; counters by action and goal, distance, last position, utterances, strikes, foods)
 - colony membership (`ColonyState.RemoveMember`, `RemapMember`)
 - `EntitySpatialGrid` (marked stale, rebuilt at the next tick window; colony index, alive flag, HP fraction and cell in an SoA next to positions; `EntityModel.GridSlot` is set at `Rebuild`)
 

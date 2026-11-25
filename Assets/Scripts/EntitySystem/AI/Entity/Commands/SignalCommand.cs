@@ -45,6 +45,7 @@ public class SignalCommand : EntityCommand
         var colony = model.Colony;
         if (colony != null && !colony.IsWild && model.Points.TryGetNear(in pos, r.RememberPointMinSpacing, out var point))
             colony.Pois.Offer(point.Position, point.EnergyEma * model.CasteMods.PoiWeight, 0f);
+        if (added) colony?.Stats.RecordInteraction(ColonyStats.Interaction.Marked);
         return added && model.CachedFoodValid ? Complete(r.RememberFoodReward) : Complete();
     }
 
@@ -60,6 +61,7 @@ public class SignalCommand : EntityCommand
 
         var utterance = model.MakeUtterance(decision.Tokens, decision.SpeechLen);
         model.Emit(in utterance);
+        model.Colony?.Stats.RecordInteraction(ColonyStats.Interaction.Spoken);
         model.NoteSpeechDecision(in decision);
 
         _until = SimulationClock.TimeD + decision.SpeechLen * SimulationRules.Frame.SpeechSyllableSeconds;
@@ -80,6 +82,7 @@ public class SignalCommand : EntityCommand
         stats.En = math.max(0f, stats.En - r.ThreatenEnergyCost);
         model.Ledger.Flows.Threaten += enBefore - stats.En;
         model.NoteThreatDisplay();
+        model.Colony?.Stats.RecordInteraction(ColonyStats.Interaction.Threatened);
         _target  = target;
         _facing  = float2.zero;
         _until   = HoldUntil(r.ThreatenDuration);

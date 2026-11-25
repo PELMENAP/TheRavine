@@ -40,8 +40,13 @@ public class SharedHierarchicalBrain : IDisposable
 
     public static int ExecAux(int goal) => DecodeOutputs + DirOffsetAux(goal) + 1;
 
-    public static int[] BuildExecSizes(int combined, int goal)
-        => new[] { combined, 64, 32, 32, ActionSubsets[goal].Length + 1 + ExecAux(goal) };
+    public static int[] BuildExecSizes(int combined, int goal, bool wideSocial = false)
+    {
+        int output = ActionSubsets[goal].Length + 1 + ExecAux(goal);
+        return wideSocial && goal == (int)Goal.Social
+            ? new[] { combined, 96, 48, 48, output }
+            : new[] { combined, 64, 32, 32, output };
+    }
 
 
     private readonly LSTMMemory          reservoir;
@@ -57,6 +62,7 @@ public class SharedHierarchicalBrain : IDisposable
 
     public readonly int   InputSize;
     public readonly int   LstmHidden;
+    public readonly bool  WideSocialExecutor;
     public readonly int[] CoordLayerSizes;
     public readonly int[][] ExecLayerSizes;
 
@@ -64,6 +70,8 @@ public class SharedHierarchicalBrain : IDisposable
 
     public readonly BrainDiagnostics GlobalDiagnostics = new();
     public int GlobalTrainingSteps { get; private set; }
+    private readonly int[] _rareAvailable = new int[PlanCount * ActionCatalog.Count];
+    private readonly int[] _rareSelected = new int[PlanCount * ActionCatalog.Count];
 
     private RunningMeanStd _rewardNorm;
 
@@ -71,8 +79,11 @@ public class SharedHierarchicalBrain : IDisposable
     private PerceptronLayout[] _execCtxLayouts;
     
 
-    public SharedHierarchicalBrain(int inputSize, int lstmHidden = 32)
+    public SharedHierarchicalBrain(int inputSize, int lstmHidden = 32) : this(inputSize, lstmHidden, false) { }
+
+    public SharedHierarchicalBrain(int inputSize, int lstmHidden, bool wideSocialExecutor)
     {
+        WideSocialExecutor = wideSocialExecutor;
         InputSize  = inputSize;
         LstmHidden = lstmHidden;
         int combined = inputSize + lstmHidden;
@@ -80,7 +91,7 @@ public class SharedHierarchicalBrain : IDisposable
         CoordLayerSizes = BuildCoordSizes(combined);
         ExecLayerSizes  = new int[GoalCount][];
         for (int i = 0; i < GoalCount; i++)
-            ExecLayerSizes[i] = BuildExecSizes(combined, i);
+            ExecLayerSizes[i] = BuildExecSizes(combined, i, WideSocialExecutor);
 
         reservoir   = new LSTMMemory(inputSize, lstmHidden, SimulationRules.Active.ReservoirSpectralRadius);
         coordinator = new DelayedPerceptron(CoordLayerSizes);
@@ -116,6 +127,63 @@ public class SharedHierarchicalBrain : IDisposable
 
     public float CurrentLearningRate { get; private set; }
 
+    public bool NullPolicy { get; private set; }
+
+    private GradientConflict _conflict;
+    private int  _conflictStep = -1;
+    private bool _conflictCycle;
+
+    public GradientConflict Conflict => _conflict;
+
+    private bool ConflictCycle()
+    {
+        if (_conflictStep == GlobalTrainingSteps) return _conflictCycle;
+        _conflictStep = GlobalTrainingSteps;
+        ref readonly var frame = ref SimulationRules.Frame;
+        _conflictCycle = frame.GradientConflictEnabled && GlobalTrainingSteps % frame.GradientConflictInterval == 0;
+        return _conflictCycle;
+    }
+
+    private NoveltyProgressSystem _progress;
+    private bool _progressNovelty;
+
+    public bool ProgressNovelty => _progressNovelty && _progress != null;
+
+    public void SetNoveltyProgress(NoveltyProgressSystem system, bool enabled)
+    {
+        _progress = system;
+        _progressNovelty = enabled;
+    }
+
+    public void SetLearningGenes(in ColonyGenome genome)
+    {
+        CompletePending();
+        coordinator.SetLearningGenes(in genome);
+        for (int g = 0; g < GoalCount; g++) executors[g].SetLearningGenes(in genome);
+    }
+
+    public unsafe void SetArm(ColonyArm arm, bool freshReservoir)
+    {
+        CompletePending();
+        NullPolicy = arm == ColonyArm.NullPolicy;
+
+        var rules = SimulationRules.Active;
+        var mode  = arm == ColonyArm.BoundedLtc ? LtcMode.Bounded : LtcMode.Legacy;
+        coordinator.SetLtc(mode, rules.LtcTauMin, rules.LtcTauMax);
+        for (int g = 0; g < GoalCount; g++) executors[g].SetLtc(mode, rules.LtcTauMin, rules.LtcTauMax);
+        if (_kernels.IsCreated)
+        {
+            _kernels[0] = *coordinator.KernelPtr;
+            for (int g = 0; g < GoalCount; g++) _kernels[1 + g] = *executors[g].KernelPtr;
+        }
+
+        _progressNovelty = arm == ColonyArm.ProgressNovelty;
+        if (_progressNovelty && _progress == null) ServiceLocator.Services.TryGet(out _progress);
+
+        if (freshReservoir && arm == ColonyArm.OrthogonalReservoir)
+            reservoir.OrthogonalizeRecurrent(rules.ReservoirSpectralRadius);
+    }
+
     private JobHandle _pending;
     private bool      _trainingScheduled;
 
@@ -139,12 +207,22 @@ public class SharedHierarchicalBrain : IDisposable
         float decay = rules.OptimizerWeightDecay;
         CurrentLearningRate = lr;
 
+        if (ConflictCycle()) MeasureConflict();
+
         coordinator.ApplyAccumulatedGradients(lr, decay, GlobalDiagnostics);
         for (int i = 0; i < GoalCount; i++)
             executors[i].ApplyAccumulatedGradients(lr, decay, GlobalDiagnostics);
 
         _rnd.TrainSweep();
         GlobalTrainingSteps++;
+    }
+
+    private void MeasureConflict()
+    {
+        _conflict ??= new GradientConflict();
+        _conflict.Begin();
+        for (int g = 0; g < GoalCount; g++) executors[g].AccumulateGroupConflict(_conflict);
+        _conflict.Finish();
     }
 
     public static float ResolveLearningRate(float time, float baseLearningRate, float decayPerSecond, float minLearningRate)
@@ -231,7 +309,7 @@ public class SharedHierarchicalBrain : IDisposable
         return true;
     }
 
-    public SharedHierarchicalBrain(SharedHierarchicalBrain src) : this(src.InputSize, src.LstmHidden)
+    public SharedHierarchicalBrain(SharedHierarchicalBrain src) : this(src.InputSize, src.LstmHidden, src.WideSocialExecutor)
     {
         src.CompletePending();
         reservoir.Dispose();
@@ -323,7 +401,7 @@ public class SharedHierarchicalBrain : IDisposable
         EnsureRndCapacity(k + 1);
         _rndRows.Add(row);
         _rndCtx[k] = ctx;
-        _rnd.Collect(input);
+        if (!NullPolicy) _rnd.Collect(input);
         if (!decider) return -1;
 
         int d = _dCount;
@@ -470,6 +548,12 @@ public class SharedHierarchicalBrain : IDisposable
                 batch.BiasRow(d).Slice(0, PlanCount), CoordDelaySteps, coordCritic, coordGamma, simTime,
                 frame.PlanMinSeconds, frame.PlanMaxSeconds, coordEps, decay, false);
 
+            if (NullPolicy)
+            {
+                planTicket.Predicted = DrawUniformPlan(ctx, planTicket.Predicted);
+                planTicket.Trained   = true;
+            }
+
             var plan = (PlanKind)planTicket.Predicted;
             planTicket.Duration = DelayedPerceptron.DurationFromLogit(planTicket.DurationLogit + planTicket.DurationNoise,
                 frame.PlanMinSecondsByPlan[(int)plan], frame.PlanMaxSecondsByPlan[(int)plan]);
@@ -554,11 +638,21 @@ public class SharedHierarchicalBrain : IDisposable
             var combined = ctx.ExecCombined[g];
             ctx.ExecMLPs[g].Activation(0).CopyTo(combined);
 
+            bool trackRarity = !NullPolicy && frame.RareActionChance > 0f;
+            int rare = trackRarity ? LeastSelectedAction(ctx.CurrentPlan, ctx.ExecMask, ActionSubsets[g]) : -1;
+            float rareChance = rare >= 0 ? frame.RareActionChance * EnergySurplus(ctx.EnergyNorm, frame.CuriosityEnergyFloor) : 0f;
             var ticket = executors[g].FinishDecide(combined, ctx.ExecMLPs[g], item.Slot,
                 batch.BiasRow(d).Slice(0, ActionSubsets[g].Length), ExecDelaySteps, execCritics[g], execGamma,
-                simTime, _goalMinDuration[g], _goalMaxDuration[g], execEps, decay, ctx.ExecForced);
+                simTime, _goalMinDuration[g], _goalMaxDuration[g], execEps, decay, ctx.ExecForced, rare, rareChance);
+
+            if (NullPolicy)
+            {
+                ticket.Predicted = DrawUniformAction(ctx.ExecMask, ActionSubsets[g], ticket.Predicted);
+                ticket.Trained   = true;
+            }
 
             int action    = ActionSubsets[g][ticket.Predicted];
+            if (trackRarity) _rareSelected[(int)ctx.CurrentPlan * ActionCatalog.Count + action]++;
             float clamped = math.clamp(ticket.Duration,
                 ActionDurationTable.Min(action), ActionDurationTable.Max(action));
             ticket.Duration = clamped;
@@ -618,11 +712,61 @@ public class SharedHierarchicalBrain : IDisposable
             _dDecision[d] = new BrainDecision(action, ticket.DecisionId, ctx.CoordDecisionId,
                 ctx.CurrentGoal, simTime, clamped, in heading,
                 curvature, tokens, ctx.CurrentPlan, ctx.GoalEndTime, direction, offset, speechLen,
-                style: style, tempo: tempo);
+                style: style, tempo: tempo, rareAction: ticket.RareAction);
             _dMade[d] = true;
         }
 
         ScheduleTraining();
+    }
+
+    private int LeastSelectedAction(PlanKind plan, int mask, int[] subset)
+    {
+        int offset = (int)plan * ActionCatalog.Count;
+        int rare = -1;
+        float lowest = float.MaxValue;
+        for (int i = 0; i < subset.Length; i++)
+        {
+            int action = subset[i];
+            if ((mask & (1 << action)) == 0) continue;
+            int slot = offset + action;
+            float share = (_rareSelected[slot] + 1f) / (++_rareAvailable[slot] + 1f);
+            if (share >= lowest) continue;
+            lowest = share;
+            rare = i;
+        }
+        return rare;
+    }
+
+    private static int DrawUniformPlan(EntityBrainContext ctx, int fallback)
+    {
+        int count = 0;
+        for (int p = 0; p < PlanCount; p++)
+            if (PlanCatalog.IsFeasible((PlanKind)p, ctx.PlanHints, ctx.CasteMask)) count++;
+        if (count == 0) return fallback;
+
+        int pick = RavineRandom.RangeInt(0, count);
+        for (int p = 0; p < PlanCount; p++)
+        {
+            if (!PlanCatalog.IsFeasible((PlanKind)p, ctx.PlanHints, ctx.CasteMask)) continue;
+            if (pick-- == 0) return p;
+        }
+        return fallback;
+    }
+
+    private static int DrawUniformAction(int mask, int[] subset, int fallback)
+    {
+        int count = 0;
+        for (int j = 0; j < subset.Length; j++)
+            if ((mask & (1 << subset[j])) != 0) count++;
+        if (count == 0) return fallback;
+
+        int pick = RavineRandom.RangeInt(0, count);
+        for (int j = 0; j < subset.Length; j++)
+        {
+            if ((mask & (1 << subset[j])) == 0) continue;
+            if (pick-- == 0) return j;
+        }
+        return fallback;
     }
 
     private static byte PickMasked(DelayedItem ticket, int start, int count, int mask)
@@ -650,9 +794,10 @@ public class SharedHierarchicalBrain : IDisposable
     {
         float clip = SimulationRules.Frame.PpoClipEpsilon;
 
+        bool groups = ConflictCycle();
         var handle = coordinator.ScheduleTraining(clip);
         for (int g = 0; g < GoalCount; g++)
-            handle = JobHandle.CombineDependencies(handle, executors[g].ScheduleTraining(clip));
+            handle = JobHandle.CombineDependencies(handle, executors[g].ScheduleTraining(clip, groups));
 
         _pending = JobHandle.CombineDependencies(_pending, handle);
         _trainingScheduled = true;
@@ -684,6 +829,20 @@ public class SharedHierarchicalBrain : IDisposable
     private void ReadIntrinsic(int count)
     {
         for (int k = 0; k < count; k++) _rndReward[k] = _rnd.IntrinsicReward(k);
+        if (_progressNovelty && _progress != null) ApplyProgress(count);
+    }
+
+    private void ApplyProgress(int count)
+    {
+        ref readonly var frame = ref SimulationRules.Frame;
+        float fastRate = frame.NoveltyFastRate;
+        float slowRate = frame.NoveltySlowRate;
+        for (int k = 0; k < count; k++)
+        {
+            var ctx = _rndCtx[k];
+            if (ctx == null) continue;
+            _rndReward[k] = _progress.Step(ctx.NoveltyIndex, _rndReward[k], fastRate, slowRate);
+        }
     }
 
     private void AccumulateNovelty(int count)
@@ -829,6 +988,7 @@ public class SharedHierarchicalBrain : IDisposable
     {
         InputSize  = reservoir.InputSize;
         LstmHidden = reservoir.HiddenSize;
+        WideSocialExecutor = executors[(int)Goal.Social].LayerSizes[1] != 64;
 
         this.reservoir   = reservoir;
         this.coordinator = coordinator;
@@ -891,14 +1051,14 @@ public class SharedHierarchicalBrain : IDisposable
     public static SharedHierarchicalBrain FromSnapshot(byte[] data, int inputSize, int lstmHidden)
         => FromSnapshot(SharedBrainSnapshot.Deserialize(data), inputSize, lstmHidden);
 
-    public static SharedHierarchicalBrain FromSnapshot(SharedBrainSnapshot snapshot, int inputSize, int lstmHidden)
+    public static SharedHierarchicalBrain FromSnapshot(SharedBrainSnapshot snapshot, int inputSize, int lstmHidden, bool wideSocial = false)
     {
         if (snapshot == null || snapshot.Brain == null) return null;
 
-        if (!snapshot.Brain.MatchesArchitecture(inputSize, lstmHidden))
+        if (!snapshot.Brain.MatchesArchitecture(inputSize, lstmHidden, wideSocial))
         {
-            RavineLog.Error($"Архитектура снапшота ({snapshot.Brain.InputSize}/{snapshot.Brain.LstmHidden}) " +
-                            $"не совпадает с текущей ({inputSize}/{lstmHidden}), загрузка отменена");
+            RavineLog.Error($"Архитектура снапшота ({snapshot.Brain.InputSize}/{snapshot.Brain.LstmHidden}, wideSocial={snapshot.Brain.WideSocialExecutor}) " +
+                            $"не совпадает с текущей ({inputSize}/{lstmHidden}, wideSocial={wideSocial}), загрузка отменена");
             snapshot.Brain.Dispose();
             return null;
         }
@@ -906,15 +1066,15 @@ public class SharedHierarchicalBrain : IDisposable
         return snapshot.Brain;
     }
 
-    public bool MatchesArchitecture(int inputSize, int lstmHidden)
+    public bool MatchesArchitecture(int inputSize, int lstmHidden, bool wideSocial = false)
     {
-        if (InputSize != inputSize || LstmHidden != lstmHidden) return false;
+        if (InputSize != inputSize || LstmHidden != lstmHidden || WideSocialExecutor != wideSocial) return false;
 
         int combined = inputSize + lstmHidden;
         if (!SizesMatch(CoordLayerSizes, BuildCoordSizes(combined))) return false;
 
         for (int i = 0; i < GoalCount; i++)
-            if (!SizesMatch(ExecLayerSizes[i], BuildExecSizes(combined, i))) return false;
+            if (!SizesMatch(ExecLayerSizes[i], BuildExecSizes(combined, i, wideSocial))) return false;
 
         return true;
     }

@@ -39,6 +39,14 @@ public class AgentSnapshotCodecTests
     }
 
     [Test]
+    public void SparseUpdatesRetainTheirFullLifetime()
+    {
+        var buffer = Build(1, float3.zero, 150200);
+        Assert.IsTrue(AgentSnapshotCodec.TryReadHeader(buffer, LengthOf(1), out var header));
+        Assert.AreEqual(150200, header.TtlMs);
+    }
+
+    [Test]
     public void FullMessageFitsTheSingleDatagramBudget()
     {
         Assert.LessOrEqual(AgentSnapshotCodec.MaxMessageSize, 1200);
@@ -110,7 +118,7 @@ public class AgentSnapshotCodecTests
         Assert.IsFalse(AgentSnapshotCodec.TryReadHeader(low, LengthOf(1), out _));
 
         var high = Build(1, float3.zero);
-        high[2] = 0xFF; high[3] = 0xFF;
+        high[5] = 0x80;
         Assert.IsFalse(AgentSnapshotCodec.TryReadHeader(high, LengthOf(1), out _));
     }
 

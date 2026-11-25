@@ -8,6 +8,8 @@ public sealed partial class SimulationRules
     [SerializeField] private float interruptionReward = -0.1f;
     [SerializeField] private float failureReward = -0.2f;
     [SerializeField] private float ppoClipEpsilon = 0.2f;
+    [SerializeField] private bool gradientConflictEnabled;
+    [SerializeField] private int gradientConflictInterval = 8;
     [SerializeField] private float rewardClipSigma = 5f;
     [SerializeField] private float criticLearningRate = 0.004f;
     [SerializeField] private float criticHuberDelta = 1f;
@@ -56,6 +58,10 @@ public sealed partial class SimulationRules
     [SerializeField] private float epsilonPlateauThresholdGrowth = 1.2f;
     [SerializeField] private float epsilonPlateauThresholdStep = 0f;
     [SerializeField] private float reservoirSpectralRadius = 0.9f;
+    [SerializeField] private float ltcTauMin = DelayedPerceptron.TauEpsilon;
+    [SerializeField] private float ltcTauMax = float.MaxValue;
+    [SerializeField] private float noveltyFastRate = 0.2f;
+    [SerializeField] private float noveltySlowRate = 0.02f;
     [SerializeField] private float reservoirHz = 0f;
     [SerializeField] private float exploreTemperature = 3f;
     [SerializeField] private float curiosityStorageDamp = 0.5f;
@@ -131,6 +137,9 @@ public sealed partial class SimulationRules
     [SerializeField] private float curiosityEnergyGain = 1f;
     [SerializeField] private float curiosityEnergyFloor = 0.6f;
     [SerializeField] private float curiosityRarityWeight = 0.1f;
+    [SerializeField, Range(0f, 1f)] private float rareActionChance;
+    [SerializeField] private bool wideSocialExecutor;
+    public bool WideSocialExecutor => wideSocialExecutor;
     [SerializeField] private float execGammaPerSecond = 0.9f;
     [SerializeField] private float coordGammaPerSecond = 0.97f;
     [SerializeField] private EpsilonSchedule epsilonScheduleMode = EpsilonSchedule.Exponential;
@@ -139,6 +148,8 @@ public sealed partial class SimulationRules
     public float InterruptionReward => interruptionReward;
     public float FailureReward => failureReward;
     public float PpoClipEpsilon => ppoClipEpsilon;
+    public bool GradientConflictEnabled => gradientConflictEnabled;
+    public int GradientConflictInterval => gradientConflictInterval;
     public float RewardClipSigma => rewardClipSigma;
     public float CriticLearningRate => criticLearningRate;
     public float CriticHuberDelta => criticHuberDelta;
@@ -187,6 +198,10 @@ public sealed partial class SimulationRules
     public float EpsilonPlateauThresholdGrowth => epsilonPlateauThresholdGrowth;
     public float EpsilonPlateauThresholdStep => epsilonPlateauThresholdStep;
     public float ReservoirSpectralRadius => reservoirSpectralRadius;
+    public float LtcTauMin => ltcTauMin;
+    public float LtcTauMax => ltcTauMax;
+    public float NoveltyFastRate => noveltyFastRate;
+    public float NoveltySlowRate => noveltySlowRate;
     public float ReservoirHz => reservoirHz;
     public float ExploreTemperature => exploreTemperature;
     public float CuriosityStorageDamp => curiosityStorageDamp;

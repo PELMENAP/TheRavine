@@ -52,7 +52,7 @@ public class GameInitializer : MonoBehaviour
         GlobalSettingsController globalSettings = new(persistenceStorage, logger);
         ServiceLocator.Register(globalSettings);
 
-        WorldRegistry worldRegistry = new(persistenceStorage, logger);
+        WorldRegistry worldRegistry = new(persistenceStorage, logger, EntityManager.ValidatePopulationGenes);
         ServiceLocator.Register(worldRegistry);
 
         AutosaveCoordinator autosave = new(worldRegistry, logger);

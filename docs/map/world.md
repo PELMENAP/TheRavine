@@ -124,8 +124,11 @@ Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
 
 ## Saving
 
-- `ChunkStore` writes chunks with `ChunkData.NeedsSave` to `worlds/{worldId}/chunks/` on autosave and on leaving the scene.
+- `ChunkStore` writes chunks with `ChunkData.NeedsSave` to `worlds/{worldId}/chunks/` during world checkpoints and on leaving the scene.
 - On generation the file is applied on top of the procedural result (`TryRestore`).
+- Before a population checkpoint, held fuel returns to its source cell. A blocked placement leaves it with the agent and fails the save.
+- Fuel pickup and settlement modify the same chunk. A failed write leaves the chunk dirty for retry and keeps the previous population file available.
+- Once placement succeeds, the map owns the fuel. Agent records store carried food energy and carry no copy of settled fuel.
 - File: header with magic, version, seed, chunk key, then objects with their levels; writes through `AtomicFile`.
 - Non-finite values or an oversized file reject the whole file; unknown object ids are skipped.
 

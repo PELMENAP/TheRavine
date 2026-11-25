@@ -17,6 +17,7 @@ public class EntityBrainContext : System.IDisposable
     public float ColonyStorage;
     public float EndedPlanShare;
     public int   CasteMask = -1;
+    public int   NoveltyIndex = -1;
     public Unity.Mathematics.float2 CoordAux;
     public readonly float[] PlanProbs = new float[SharedHierarchicalBrain.PlanCount];
 
@@ -24,6 +25,11 @@ public class EntityBrainContext : System.IDisposable
     {
         CoordMLP.TemperatureScale = scale;
         for (int i = 0; i < ExecMLPs.Length; i++) ExecMLPs[i].TemperatureScale = scale;
+    }
+
+    public void SetGroup(int group)
+    {
+        for (int i = 0; i < ExecMLPs.Length; i++) ExecMLPs[i].Group = group;
     }
 
     public void SetPositiveAdvantageScale(float scale)

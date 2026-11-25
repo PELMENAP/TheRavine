@@ -3,6 +3,8 @@ public struct EnergyFlows
     public float FoodSpawn;
     public float FoodMaturation;
     public float ChildStart;
+    public float BirthTransfer;
+    public float FuelHeat;
     public float SpawnStart;
     public float StarvationReturn;
     public float ClampGain;
@@ -27,23 +29,26 @@ public struct EnergyFlows
     public float SoilRelease;
     public float WarmthDraw;
     public float WarmthDecay;
+    public float Codex;
 
     public float SoilReturn;
     public float WarmthEmit;
     public float MetabolismCredit;
 
     public readonly float Inflow
-        => FoodSpawn + FoodMaturation + ChildStart + SpawnStart + StarvationReturn + ClampGain + ViralNet + RescaleNet;
+        => FoodSpawn + FoodMaturation + ChildStart + FuelHeat + SpawnStart + StarvationReturn + ClampGain + ViralNet + RescaleNet;
 
     public readonly float Outflow
         => Basal + Movement + DigestionLoss + Speech + Threaten + Dash + Strike + Reproduce + RestHeal
-         + CorpseSpoil + DeathLoss + YieldLoss + OverflowLoss + StoreLoss + Wilt + SoilRelease + WarmthDraw + WarmthDecay;
+         + CorpseSpoil + DeathLoss + YieldLoss + OverflowLoss + StoreLoss + Wilt + SoilRelease + WarmthDraw + WarmthDecay + Codex;
 
     public void Add(in EnergyFlows o)
     {
         FoodSpawn        += o.FoodSpawn;
         FoodMaturation   += o.FoodMaturation;
         ChildStart       += o.ChildStart;
+        BirthTransfer    += o.BirthTransfer;
+        FuelHeat         += o.FuelHeat;
         SpawnStart       += o.SpawnStart;
         StarvationReturn += o.StarvationReturn;
         ClampGain        += o.ClampGain;
@@ -68,6 +73,7 @@ public struct EnergyFlows
         SoilRelease   += o.SoilRelease;
         WarmthDraw    += o.WarmthDraw;
         WarmthDecay   += o.WarmthDecay;
+        Codex         += o.Codex;
 
         SoilReturn       += o.SoilReturn;
         WarmthEmit       += o.WarmthEmit;

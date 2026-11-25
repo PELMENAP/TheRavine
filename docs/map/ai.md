@@ -3,7 +3,7 @@
 Root: `Assets/Scripts/EntitySystem/AI/`. Assembly: `EntitySystem`. Rules for this folder: `Assets/Scripts/EntitySystem/AI/CLAUDE.md`.
 Tests: `Assets/Tests/EditMode/` — `BrainAllocationTests`, `BrainLearningTests`, `BrainArchitectureVersionTests`, `SnapshotVersionTests`,
 `SoaSwapBackTests`, `TickWindowBudgetTests`, `DecisionRingTests`, `ColonyRegistryTests`, `EntitySpatialGridSurveyTests`, `SurveySystemTests`, `AgentSnapshotCodecTests`, `RulesDefaultsTests`,
-`NestSiteScoreTests`, `FamiliarityTests`, `CuriositySurplusTests`, `StartleTests`, `FoodLookupAllocationTests`, `PredatorPressureTests`, `SkillGraphTests`, `SkillGraphAgentTests`.
+`ExperimentArmTests`, `EvolutionDynamicsTests`, `LtcNeuronTests`, `NoveltyProgressTests`, `PredispositionTests`, `ReservoirMemoryCapacityTests`, `NestSiteScoreTests`, `FamiliarityTests`, `CuriositySurplusTests`, `StartleTests`, `FoodLookupAllocationTests`, `PredatorPressureTests`, `SkillGraphTests`, `SkillGraphAgentTests`.
 
 Tick order and hot methods: `docs/map/HOT_PATHS.md`. Existing structures to reuse: `docs/OPTIMIZATION.md` section 13.
 Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.cs`, `SimulationRules.cs`, `EntityModel.cs`): `docs/map/LARGE_FILES.md`.
@@ -24,6 +24,16 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 | `TickWindowBudget` | `Assets/Scripts/EntitySystem/AI/TickWindowBudget.cs` | How many agents tick this frame |
 | `UrgentTickQueue` | `Assets/Scripts/EntitySystem/AI/UrgentTickQueue.cs` | Creatures that took damage and are due for an early tick; `EntityManager.PromoteUrgent` moves them to the front of the current batch inside the same window |
 
+## Population checkpoints
+
+- World authority captures live agents from motion slots and skips pending deaths. Colony IDs identify codex authors and optional brain files.
+- Population version 1 stores colony and agent ID high-water marks, experiment arm, learning genome, nest location, food, hunger and leader.
+- Agent records store identity, parent ID, position, simulation age, caste, phenotype, health, energy, stomach and carried food.
+- Startup checks scene capacity and gene ranges, prepares chunks, restores colonies and brains, then registers agent slots and resolves leaders and parents.
+- Restore uses current phenotype capacities, without birth or initial energy credit. A missing parent keeps its ancestral ID and has no live target.
+- Colony fields, membership, observations, plans, migration votes and skill topology are rebuilt. Attack, caste review and election timers resume on the simulation clock.
+- Missing population starts founders. An empty checkpoint starts with zero agents. Missing or incompatible neural weights use initialized brains.
+
 ## Agent (`Assets/Scripts/EntitySystem/AI/Entity/`)
 
 - `EntityModel` partial files: `.Cycle` (tick), `.Behaviour`, `.Social`, `.Directions`, `.Homeostasis`, `.Wild`, `.Fitness`, `.Skills`.
@@ -31,7 +41,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
   `MortalityComponent`, `PerceptionComponent`, `PointsOfInterestComponent`, `SpeechComponent`, `StatsComponent`, `VisualCullingComponent`.
 - Commands, one file each, in `Assets/Scripts/EntitySystem/AI/Entity/Commands/`; they run through `EntityCommandRunner`.
 - One command per verb. `MoveToCommand` picks its behaviour from the decision's `DirectionKind`; `SignalCommand` from the goal of the decision; `GiveCommand` from the receiver; `TakeCommand` and `PutCommand` from the direction and the carried load.
-- Held object: `EntityModel.HeldObject` and `HeldAmount` (`EntityModel.Objects.cs`). `Take` with direction `Object` does not edit the world, so `HeldObject` stays empty; the object direction and proximity inputs are filled from `ObjectSensor`.
+- `ObjectSensor` finds portable fuel. Harvest can approach and pick it up from the map, then deposit it in the nest as heat.
 - `CreatureCore`: metabolism, vitals and virology step shared by agents and the player.
 - `EntityTuning`: per-agent multipliers by `Caste` (`Worker`, `Soldier`, `Scout`, `Nurse`) and for predators; `CasteModifiers.Range` scales the radius of `Frontier` and `Levy` directions.
 - View side: `EntityViewModel`, `EntityView` in the same folder.
@@ -42,6 +52,12 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 - Verbs (`EntityAction`, 11): `Idle`, `MoveTo`, `Attack`, `Eat`, `Reproduce`, `Signal`, `Rest`, `Give`, `Take`, `Put`, `MoveNest` (`PlanOnly`). Subsets: Survive `Idle MoveTo Eat Rest`; Hunt `Idle MoveTo Attack Signal`; Forage `MoveTo Eat Signal Take Put`; Social `Idle MoveTo Reproduce Signal Give`.
 - Directions (`DirectionKind`, 14 kinds): `Food`, `NestFood`, `OwnPoi`, `ColonyPoi`, `Frontier`, `Migration`, `Flock`, `Levy`, `Nest`, `Escape`, `Kin`, `Danger`, `Object`, `Task`. Every executor outputs a direction choice and an offset; the available kinds are a `ushort` mask (`EntityModel.ComputeDirections`), narrowed per plan by `PlanCatalog.DirectionMask`. `Task` is reserved for the colony task board and is never set yet.
 - Exec aux layout per goal: Hunt and Social keep heading, curvature, style, tempo and speech first, then the direction block, then the offset, then the speech-context decode bits (`SharedHierarchicalBrain.DirectionAux`, `DirOffsetAux`, `ExecAux`).
+- Null policy: when `SharedHierarchicalBrain.NullPolicy` is set (colony arm `NullPolicy`), `RunDecisions` replaces the sampled plan by a uniform draw over `PlanCatalog.IsFeasible` plans and the sampled executor verb by a uniform draw over the verbs of `ctx.ExecMask`; direction, heading and speech tokens still come from the brain's outputs. Both tickets are created with `Trained = true`, so no critic update and no gradient ticket follows, and `_rnd.Collect` is skipped; instincts, plans and rules are untouched.
+- Gradient conflict (diagnostic, `SimulationRules.gradientConflictEnabled`, interval `gradientConflictInterval` applications): in a conflict cycle `PerceptronTrainJob` additionally accumulates each executor ticket's scaled gradient into per-thread, per-caste buffers (`TrainTicket.Group` = `PerceptronContext.Group`, set by `EntityBrainContext.SetGroup` in `EntityModel.AssignCaste`; juveniles and the wild colony have group -1 and are skipped). `SharedHierarchicalBrain.ApplyPendingGradients` reduces them in `DelayedPerceptron.AccumulateGroupConflict` into `GradientConflict` (`Cos` of each caste pair over all four executors, `Norm` = norm of the summed gradients divided by the caste's ticket count) before the real apply, which is unchanged. With the flag off nothing is allocated. `SharedGradientAccumulator` is not on this path.
+- LTC update mode (`LtcMode`, math in `Assets/Scripts/EntitySystem/AI/SharedAI/LtcNeuron.cs`, called by `NeuralKernels.Layer` and the backward pass): `Legacy` is `h' = (h + dt·f)/(1 + dt/tau)`; `Bounded` (arm `BoundedLtc`) is `z = dt/(tau + dt)`, `h' = (1 − z)·h + z·f`, whose state stays in [-1, 1], with the exact backward pass (no `tau` gradient where `tau` is clamped). `tau` is clamped to `[ltcTauMin, ltcTauMax]` (defaults `TauEpsilon` and `float.MaxValue`, so `Legacy` is unchanged). The mode and clamp live in `KernelLayout` (`LtcBounded`, `TauMin`, `TauMax`) per `DelayedPerceptron`, set by `SetLtc`.
+- Novelty mode: `Error` is the raw `RandomNetworkDistillation` error; the arm `ProgressNovelty` replaces it in `SharedHierarchicalBrain.ReadIntrinsic` by `max(0, slow − fast)` of two EMAs of the error per agent (`NoveltyProgressSystem`, SoA by `ManagerIndex`, rates `noveltyFastRate`, `noveltySlowRate`; `EntityBrainContext.NoveltyIndex` is set in `EntityModel.SubmitDecision`). The system is registered in the `ServiceLocator` by `EntityManager`.
+- Reservoir init: the arm `OrthogonalReservoir` replaces the recurrent block of each gate of a newly created `LSTMMemory` by a random orthogonal matrix scaled to `reservoirSpectralRadius` (`LSTMMemory.OrthogonalizeRecurrent`); a brain loaded from a file keeps its saved reservoir.
+- Genetic predisposition: `GeneticParameters.Predisposition0..2` (`SimulationRules.PredispositionSize`, range [-1, 1]) are phenotypic genes: random for a founder (`Default`), mean of both parents plus the usual mutation in `Crossover`, mutation of the copy for a clonal child; `EvolveColony` does not overwrite them. `EntityModel` copies them into a per-agent array that `VectorizerFrame.Predisposition` passes to `InputVectorizer`, which writes them at `PredispositionOffset` (the last `PredispositionSize` inputs) for every agent. Input size is 129.
 - Each level is an LSTM plus a `DelayedPerceptron` (`Assets/Scripts/EntitySystem/AI/LSTM/`, `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/`).
 - Per-agent state: `EntityBrainContext`, `LSTMContext`, `PerceptronContext`; buffers from `ContextSlabs` and `FloatSlabPool`.
 - Batched inference: `BeginDecisionBatch` → `EnqueueDecision` → `RunDecisions`; kernels in `NeuralKernels.cs`, jobs in `NeuralJobs.cs`.
@@ -54,13 +70,16 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 
 ## Saving
 
-- `SharedBrainSnapshot` holds `Version`; one file per colony, named by `NeuralModelStorage.ColonyFileName`.
+- `SharedBrainSnapshot` v13 records the executor profile and reads v12 as standard. Wide Social uses a separate model filename suffix.
 - An unknown version, truncated data or another architecture is refused with an error; the colony keeps a new brain.
 - Model loaders check sizes against the expected architecture before allocating and reject non-finite weights.
 
 ## Colony (`Assets/Scripts/EntitySystem/AI/Colony/` and the Nest, Caste, Population folders next to it)
 
-- `ColonyState`: `Index`, `ColonyId`, `Brain`, `Nest`, `Pois`, `Stats`, members, leader, nest-site quorum. A nest-site vote is weighted by `ColonyState.SiteScore` (slope, relative height, food field, distance from the nest).
+- `ColonyState`: `Index`, `ColonyId`, `Arm`, `Genome`, `Brain`, `Nest`, `Pois`, `Stats`, members, leader, nest-site quorum. A nest-site vote is weighted by `ColonyState.SiteScore` (slope, relative height, food field, distance from the nest).
+- Migration votes require dry ground within the configured distance band. The final site must be dry and within one nest radius of the agent committing the move.
+- Colony genome (`ColonyGenome` in `Assets/Scripts/EntitySystem/AI/Colony/ColonyGenome.cs`): `BaseLearningRate`, `MaxGradientNorm`, `EntropyRegularization`, the genes that only the shared training reads (`DelayedPerceptron.EnqueueTraining`). `ColonyState` starts it at the middle of the `GeneticParameters.ParameterRanges` of each gene, moved towards a random point by `colonyGenomeInitialSpread` (0 by default, so colonies do not differ before selection; 1 is the full range), and pushes it to the brain (`SharedHierarchicalBrain.SetLearningGenes`) for a new brain and in `ReplaceBrain`; when an extinct colony is re-founded from the best donor colony of the same arm (`ColonyPopulation.PickDonor`, `ReseedColony`; without such a donor the colony keeps its brain and gets default founders) `ColonyState.InheritGenome` copies the donor genome with mutation (`colonyGenomeMutationChance`, step from `ParameterRanges`). The per-agent copies of these three genes stay in `GeneticParameters` but the training no longer reads them while the brain has a colony genome. Behavioural genes (including `SoftmaxTemperature` and `EntropyAlpha`) stay per agent.
+- Experiment arm (`ColonyArm` in `Assets/Scripts/EntitySystem/AI/Colony/ColonyArm.cs`): `Control`, `SpeechMuted`, `SpeechShuffled`, `NullPolicy`, `BoundedLtc`, `ProgressNovelty`, `OrthogonalReservoir`. `ColonyState` draws it once in its constructor through `ColonyArms.Draw` from `SimulationRules.arm<Name>Fraction` (`SimulationRules.ArmFraction`; all 0: every colony is `Control`); the wild colony is always `Control`. Colony state is not saved, so the arm is not either. The arm reaches the speech bus through `SpeechBus.Reset(..., arm)` per agent and the brain through `SharedHierarchicalBrain.SetArm` (called by `ColonyState` for a new brain and by `ReplaceBrain`); the log column is `arm`. The older per-agent `speechMuteSampling` (listener deafness) is separate and unchanged.
 - `ColonyState.Pressure`: 0..1, raised by damage from a foreign attacker and by `Killed` deaths, decays with `pressureTau`. It raises the soldier stimulus in `EntityManager.ChooseCaste`, lowers the vote weight the quorum needs (`pressureQuorumRelief`), adds to the nest danger term of migration and to the `Migrate` plan bias.
 - Wild colony: `ColonyState.PackCentre` and `PackCount` are refreshed once per window by `EntityManager.UpdatePack`; the instinct `InstinctBits.Pack` pulls a creature farther than `packRadius` back toward the pack (`DirectionKind.Kin`); predators spawn within `predatorPackSpread` of a pack member; boid weights come from `packBoid*`. `CasteModifiers.Fear` (`predatorFearMul`) scales outnumbered, startle and foreign-harm stress; `CasteModifiers.HuntBias` (`predatorHuntBias`) biases the `Hunt` plan.
 - `NestState` (`Assets/Scripts/EntitySystem/AI/Nest/NestState.cs`): channel fields in `NativeArray`, read through `ColonyFieldView`.
@@ -116,13 +135,20 @@ All are indexed by `EntityModel.ManagerIndex` and expose `RemoveSwapBack`. The r
 - `Utterance`: a short token sequence. `SpeechLexicon`: token labels and encoding. `SpeechMetrics`: entropy, mutual information, decode accuracy.
 - `SpeechVoiceBank`: Burst synthesis of syllables. `SpeechAudioPlayer`: plays audible utterances. `SpeechLabelFeed`: text labels.
 - Players speak through the same bus (`PlayerController.SpeakServerRpc`).
+- Arms in the bus: `SpeechBus.ApplyArm` runs on the main thread over the batch before the credit pass and the deliver job. A `SpeechMuted` speaker's utterance gets `Len = 0` (nothing is delivered or made audible; the speaker still pays and emits). A `SpeechShuffled` speaker's utterance keeps time, loudness, length, position and speaker; each token slot is replaced by the same slot of a random entry of the colony's ring (`SimulationRules.SpeechShuffleRing`, fixed arrays by colony index) and the context byte by the context of another random entry; an empty ring gives a uniform token. The ring stores the true tokens, so it follows the colony's own distribution. Listeners of other colonies get the changed utterance.
+- `ColonySpeechTables` (`Assets/Scripts/EntitySystem/AI/Speech/ColonySpeechTables.cs`, one per colony inside `SpeechBus`, cleared by `SimulationLog` after each sample): context×token count table of the speakers, filled in `ApplyArm` from the true utterance (reflex cries excluded), and fresh/no-token × action table of the listeners, filled by `EntityModel.NoteCommandStart` from `EntityCommandRunner.Start`. It gives `speech_mi_bits` and `listener_shift` of the log.
 
 ## Other
 
 - Fire is a map event: `docs/map/map-events.md`. `EntityManager` sets `GlobalMapEvents.Season` to `SeasonClockSource` and, once per fire step (`ApplyFireHeat`), applies `FireEvent.HeatDamageAt` to agents and calls `EntityModel.ReportHazard` for agents within `fireSenseRadius` of a burning cell (threat source, stress, negative memory mark, colony `Danger` mark).
 - Wild winds are a map event: `docs/map/map-events.md`. `EntityManager.ApplyWildWind` runs once per wind step while `WildWindEvent.Active`: an agent in the band reports itself and takes `DamageAt` with `DeathCause.Wind`.
-- Debug, off the hot path: `SimulationDebugDashboard`, `SimulationLog`, `NestDebugView` in `Assets/Scripts/EntitySystem/AI/Debug/`.
+- Debug, off the hot path: `SimulationDebugDashboard`, `SimulationLog`, `BehaviourDescriptorLog`, `NestDebugView` in `Assets/Scripts/EntitySystem/AI/Debug/`.
+- `SimulationLog` writes `h_saturated_<arm>` (share of hidden states with `|h| > 0.95` over the coordinator and executor contexts of the agents of each arm, via `PerceptronContext.CountSaturated`) and `predisposition_dist` (`EvolutionService.MeanPredispositionDistance`).
+- `LifeEventLog` (flag `lifeLogEnabled`, independent of `simulationLogEnabled`): created by `EntityManager`, held by `ColonyPopulation.LifeLog`; one row per birth (`SpawnEntity`, with parent and mate ids) and per death (`ProcessPendingDeaths`) in `life_log_<stamp>.csv`.
+- `VirologyCensus` (`Assets/Scripts/EntitySystem/AI/Debug/VirologyCensus.cs`): strain, lineage and immunity census over the host list at log time; event counters come from `VirologyEvents` (`docs/map/virology.md`).
+- `BehaviourDescriptorLog` (flag `behaviourDescriptorsEnabled`, needs `simulationLogEnabled`): created by `EntityManager` only when both are on and registered in the `ServiceLocator`; per-agent window counters in SoA `NativeArray` by `ManagerIndex` (actions started, goal at start, path length from `RunCycleTail`, utterances, strikes, foods eaten), fed from `EntityModel.NoteCommandStart`, `Emit`, `RegisterFitnessEvent`; `SimulationLog.Sample` calls `Sample`, which writes one row per living agent to `behaviour_descriptors_<same stamp>.csv` and clears the counters. Analysis: `tools/simlog_analyze.py`.
 - Log columns: `docs/simulation_log.md`. Action and property audits: `docs/audit/action_census.md`, `docs/audit/property_system_matrix.md`.
+- Laws that change rule axes at run time (codex): `docs/map/codex.md`; `EnergyFlows.Codex` is the outflow of spent votes.
 - Rules are partial files `SimulationRules.<Area>.cs` in `Assets/Scripts/EntitySystem/AI/Rules/`; the asset is `Assets/Scripts/EntitySystem/AI/SimulationRules.asset`.
 
 ## Invariants

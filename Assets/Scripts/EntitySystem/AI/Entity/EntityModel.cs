@@ -286,6 +286,29 @@ public partial class EntityModel : IEntity, IFoodReceiver
     private int      _trailCount;
     private double   _nextTrailSample;
 
+    internal void RestoreCondition(in PopulationSnapshot.Agent saved)
+    {
+        TimeAlive = saved.Age;
+        Caste = (Caste)saved.Caste;
+        CasteFixed = saved.Fixed;
+        if (CasteFixed && !IsWild)
+        {
+            _roleMods = CasteModifiers.For(Caste);
+            ApplyTuning(false);
+            Brain.Context.CasteMask = ActionMask(Caste);
+            Brain.Context.SetGroup((int)Caste);
+        }
+        Stats.Hp = math.min(saved.Health, Stats.MaxHealth);
+        Stats.En = math.min(saved.Energy, Stats.MaxEnergy);
+        Digestion.Ingest(saved.Stomach);
+        Carry(saved.Carrying);
+        _attackReadyTime = SimulationClock.TimeD + saved.AttackRemaining;
+        NextCasteReview = SimulationClock.TimeD + saved.ReviewRemaining;
+        BeginHomeostasis();
+    }
+
+    internal void RestoreParent(EntityModel parent, int id) => Parent = new ParentRef(parent, id);
+
     public void AssignCaste(Caste caste)
     {
         Caste      = caste;
@@ -293,6 +316,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         _roleMods  = CasteModifiers.For(caste);
         ApplyTuning();
         Brain.Context.CasteMask = ActionMask(caste);
+        Brain.Context.SetGroup((int)caste);
         SyncCount();
     }
 
@@ -393,7 +417,15 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public float NextPlanSide() => _planSide = -_planSide;
 
     public float Carrying { get; private set; }
-    public void Carry(float energy) => Carrying += math.max(0f, energy);
+    private double _carryStarted;
+    public double CarryDuration => Carrying > 0f ? SimulationClock.TimeD - _carryStarted : 0d;
+
+    public void Carry(float energy)
+    {
+        if (!(energy > 0f) || !math.isfinite(energy)) return;
+        if (Carrying <= 0f) _carryStarted = SimulationClock.TimeD;
+        Carrying += energy;
+    }
     public float TakeCarried()
     {
         float c = Carrying;
@@ -485,6 +517,10 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
     public float2 Position2D => Extension.Flat(Motor.Position());
 
+    internal bool IsDryNestSite(float2 site)
+        => _map != null && _map.TrySampleHeightBilinear(site.x, site.y, out float height)
+           && MapGenerator.AboveWater(_map.Ravine, height, site.y, _map.WaterLevel) > 0f;
+
     public float SpeedMul
     {
         get
@@ -536,6 +572,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
     private EntitySpatialGrid _grid;
     private SpeechBus _speechBus;
+    private BehaviourDescriptorLog _descriptors;
+    private readonly float[] _predisposition = new float[SimulationRules.PredispositionSize];
     private static readonly EntityModel[] Neighbors = new EntityModel[16];
 
     private long  _foodCell;
@@ -607,6 +645,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         _baseTuning = baseTuning;
         _trail = new float2[math.max(1, SimulationRules.Active.TrailCapacity)];
         ctx.CasteMask = ActionMask(Caste);
+        GeneticParameters.ReadPredisposition(in ctx.CoordMLP.Params, _predisposition);
         var rulesA = SimulationRules.Active;
         _roleMods = colony.IsWild ? CasteModifiers.Predator() : CasteModifiers.For(Caste);
         _casteMods = _roleMods;
@@ -644,6 +683,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
         Infection = infection;
 
         ServiceLocator.Services.TryGet(out _speechBus);
+        ServiceLocator.Services.TryGet(out _descriptors);
         Speech = new SpeechComponent();
         _voice = SpeechVoiceBank.ClassOf(in ctx.CoordMLP.Params);
         Points = new PointsOfInterestComponent();

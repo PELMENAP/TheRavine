@@ -27,6 +27,7 @@ public partial class EntityModel
     public void SubmitDecision(bool allowDecision)
     {
         if (!_cycleActive) return;
+        Brain.Context.NoveltyIndex = ManagerIndex;
         Brain.EnqueueDecision(LastInput, _cycleNow, _cycleDt, allowDecision);
     }
 
@@ -180,6 +181,7 @@ public partial class EntityModel
 
         Vector3 pos  = Motor.Position();
         float2  self = new float2(pos.x, pos.z);
+        _descriptors?.NoteMove(ManagerIndex, self);
 
         PerceptionMarker.Begin();
         _nearest         = Perception.ResolveSlot(survey.NearestSlot);
@@ -300,6 +302,7 @@ public partial class EntityModel
             IsLeader          = IsLeader ? 1f : 0f,
             Caste             = (int)Caste,
             SpeechBag         = Speech.Bag,
+            Predisposition    = _predisposition,
             SpeechDir         = Speech.Dir,
             SpeechDist        = Speech.Dist,
             SpeechKin         = Speech.Kin,
@@ -515,6 +518,12 @@ public partial class EntityModel
         if (_foodValid) h |= PlanHint.FoodVisible;
         if (_foodValid && _foodDistance <= r.EatRange) h |= PlanHint.FoodInRange;
         if (Carrying > 0f) h |= PlanHint.Carrying;
+        if (HasHeldObject) h |= PlanHint.HoldingObject;
+        if (_objectValid && !HasHeldObject)
+        {
+            h |= PlanHint.ObjectVisible;
+            if (_objectDistance <= r.EatRange) h |= PlanHint.ObjectInRange;
+        }
         if (Carrying >= CarryCapacity * CarryFullFraction) h |= PlanHint.CarryFull;
         if (IsAtNest) h |= PlanHint.AtNest;
         if (Nest != null) h |= PlanHint.HasNest;

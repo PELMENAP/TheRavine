@@ -8,6 +8,15 @@ public sealed class ColonyState : IDisposable
     public readonly int ColonyId;
     public readonly NestState Nest;
     public SharedHierarchicalBrain Brain { get; private set; }
+    public string BrainOrigin { get; private set; } = "fresh";
+    public const int TrainingGroups = 1 + SharedHierarchicalBrain.GoalCount;
+    private readonly long[] _previousTraining = new long[TrainingGroups];
+
+    public long TrainingSteps(int group)
+        => _previousTraining[group] + CurrentTrainingSteps(group);
+
+    private long CurrentTrainingSteps(int group)
+        => Brain == null ? 0 : group == 0 ? Brain.Coordinator.TotalTrainingSteps : Brain.Executors[group - 1].TotalTrainingSteps;
     public readonly ColonyStats Stats = new();
     public readonly ColonyPoiBoard Pois;
     public readonly float[] LeaderPlanProbs = new float[PlanCatalog.Count];
@@ -29,6 +38,8 @@ public sealed class ColonyState : IDisposable
         else CasteCounts[bucket] += delta;
     }
     public readonly bool IsWild;
+    public readonly ColonyArm Arm;
+    public ColonyGenome Genome { get; private set; }
     public float Scarcity;
     public float Pressure { get; private set; }
     public float2 PackCentre { get; private set; }
@@ -86,7 +97,7 @@ public sealed class ColonyState : IDisposable
 
     public static float SiteScore(in SimulationRules.RulesFrame r, in TerrainSample terrain, float foodField, float nestDistance)
     {
-        if (nestDistance < r.QuorumMinDistance) return 0f;
+        if (!(nestDistance >= r.QuorumMinDistance && nestDistance <= r.QuorumMaxDistance)) return 0f;
         float flat   = math.saturate(1f - terrain.Slope / math.max(r.QuorumSlopeLimit, 1e-3f));
         float height = math.saturate(1f + math.min(terrain.RelativeHeight, 0f) * r.QuorumDepressionMul);
         float food   = math.saturate(foodField / math.max(r.QuorumFoodNorm, 1e-3f));
@@ -146,6 +157,9 @@ public sealed class ColonyState : IDisposable
         for (int i = 0; i < _sitePos.Length; i++)
         {
             if (_siteWeight[i] < needed || now - _siteUpdated[i] > r.QuorumWindow) continue;
+            float distanceSq = math.distancesq(Nest.Position, _sitePos[i]);
+            if (!(distanceSq >= r.QuorumMinDistance * r.QuorumMinDistance &&
+                  distanceSq <= r.QuorumMaxDistance * r.QuorumMaxDistance)) continue;
             if (best < 0 || _siteWeight[i] > _siteWeight[best]) best = i;
         }
         site = best >= 0 ? _sitePos[best] : default;
@@ -194,10 +208,11 @@ public sealed class ColonyState : IDisposable
     private readonly ColonyRegistry _registry;
 
     public ColonyState(ColonyRegistry registry, int index, int colonyId, float2 position, SharedHierarchicalBrain brain, int capacity,
-        bool wild = false)
+        bool wild = false, TheRavine.Base.PopulationSnapshot.Colony? saved = null)
     {
         IsWild = wild;
         var rules = SimulationRules.Active;
+        Arm = saved.HasValue ? (ColonyArm)saved.Value.Arm : ColonyArms.Draw(rules, wild);
         int sites = math.max(rules.QuorumSites, 1);
         _voterStride = math.max(rules.QuorumSize, 1) * 2;
         _sitePos     = new float2[sites];
@@ -211,11 +226,34 @@ public sealed class ColonyState : IDisposable
         Nest     = new NestState(position);
         Pois     = new ColonyPoiBoard(SimulationRules.Active.ColonyPoiCount);
         Brain    = brain;
+        if (saved is { } c)
+        {
+            Genome = new ColonyGenome { BaseLearningRate = c.LearningRate, MaxGradientNorm = c.GradientNorm, EntropyRegularization = c.Entropy };
+            Nest.Storage = c.Storage;
+            Nest.RaiseHunger(c.Hunger);
+        }
+        else Genome = ColonyGenome.Initial(rules.ColonyGenomeInitialSpread);
+        brain?.SetArm(Arm, true);
+        brain?.SetLearningGenes(Genome);
         _members = new int[math.max(capacity, 4)];
         SkillTopology = SkillGraphTopology.Create(SkillAtlas.Active, SkillGraphTopology.DrawForestGenes());
     }
 
-    public void ReplaceBrain(SharedHierarchicalBrain brain) => Brain = brain;
+    public void ReplaceBrain(SharedHierarchicalBrain brain, string origin = "reseeded")
+    {
+        if (ReferenceEquals(Brain, brain)) return;
+        for (int i = 0; i < TrainingGroups; i++) _previousTraining[i] += CurrentTrainingSteps(i);
+        BrainOrigin = origin;
+        Brain = brain;
+        brain?.SetArm(Arm, false);
+        brain?.SetLearningGenes(Genome);
+    }
+
+    public void InheritGenome(in ColonyGenome parent)
+    {
+        Genome = parent.Inherited(math.saturate(SimulationRules.Active.ColonyGenomeMutationChance));
+        Brain?.SetLearningGenes(Genome);
+    }
 
     public void Relocate(float2 position, ChunkFoodIndex food)
     {

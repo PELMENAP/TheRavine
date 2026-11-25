@@ -8,7 +8,9 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
     internal SharedBrainSnapshot(SharedHierarchicalBrain brain) => Brain = brain;
 
     private const uint Magic   = 0x4E414C45;
-    public const int   Version = 11;
+    public const int   Version = 13;
+    public const int   HeaderSize = sizeof(uint) + sizeof(int) + sizeof(byte);
+    private const int StandardOnlyVersion = 12;
 
     public byte[] Serialize()
     {
@@ -25,6 +27,7 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
         {
             bw.Write(Magic);
             bw.Write(Version);
+            bw.Write((byte)(Brain.WideSocialExecutor ? 1 : 0));
 
             WriteBlock(bw, reservoir);
             WriteBlock(bw, coordMlp);
@@ -57,7 +60,7 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
             return null;
         }
 
-        if (version != Version)
+        if (version != Version && version != StandardOnlyVersion)
         {
             RavineLog.Error($"Снапшот мозга: версия {version}, ожидалась {Version} (координатор: {PlanCatalog.Count} планов + {SharedHierarchicalBrain.CoordAux} aux стайности, вход {InputVectorizer.VectorSize}, {ActionCatalog.Count} действий, речь {SimulationRules.SpeechLen}x{SimulationRules.SpeechVocab} токенов, inbox {SimulationRules.SpeechInbox}, декодер контекста {SimulationRules.SpeechContextBits} бит), сохранённый мозг несовместим, загрузка отменена, переобучение обязательно");
             return null;
@@ -65,7 +68,7 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
 
         try
         {
-            return ReadModels(data);
+            return ReadModels(data, version);
         }
         catch (Exception ex)
         {
@@ -74,13 +77,16 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
         }
     }
 
-    private static SharedBrainSnapshot ReadModels(byte[] data)
+    private static SharedBrainSnapshot ReadModels(byte[] data, int version)
     {
         using (var ms = new MemoryStream(data))
         using (var br = new BinaryReader(ms))
         {
             br.ReadUInt32();
             br.ReadInt32();
+            byte profile = version == Version ? br.ReadByte() : (byte)0;
+            if (profile > 1) throw new InvalidDataException("Unknown executor profile");
+            bool wideSocial = profile == 1;
 
             int goalCount = SharedHierarchicalBrain.GoalCount;
             LSTMMemory reservoir = null;
@@ -94,7 +100,7 @@ public class SharedBrainSnapshot : ISerializableNeuralModel
 
                 coordMlp = DelayedPerceptron.Deserialize(ReadBlock(br), SharedHierarchicalBrain.BuildCoordSizes(combined));
                 for (int i = 0; i < goalCount; i++)
-                    executors[i] = DelayedPerceptron.Deserialize(ReadBlock(br), SharedHierarchicalBrain.BuildExecSizes(combined, i));
+                    executors[i] = DelayedPerceptron.Deserialize(ReadBlock(br), SharedHierarchicalBrain.BuildExecSizes(combined, i, wideSocial));
 
                 var brain = SharedHierarchicalBrain.FromModels(reservoir, coordMlp, executors);
                 if (brain != null) return new SharedBrainSnapshot(brain);

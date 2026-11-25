@@ -32,6 +32,10 @@ public sealed class ColonyPopulation
     private readonly BoidSystem           _boids;
     private readonly EnergyLedger         _ledger;
     private readonly SpeechBus            _speech;
+    private readonly BehaviourDescriptorLog _descriptors;
+    private readonly NoveltyProgressSystem  _novelty;
+
+    public LifeEventLog LifeLog { get; set; }
 
     private readonly Queue<EntityModel> _pendingDeath = new();
     private EntityModel[] _deferredDispose = Array.Empty<EntityModel>();
@@ -45,6 +49,8 @@ public sealed class ColonyPopulation
     public event Action<EntityModel> Died;
     public event Action<EntityModel> TickUrgent;
 
+    internal void RestoreLastId(int id) => _nextEntityId = id;
+    public int LastId => _nextEntityId;
     public int CivilCount => _colonies.Count - (_wild != null ? 1 : 0);
     public int CivilPopulation => _entities.Count - (_wild != null ? _wild.MemberCount : 0);
 
@@ -59,7 +65,8 @@ public sealed class ColonyPopulation
     public ColonyPopulation(GameObject prefab, Transform parent, EntityTuning tuning, int maxPopulation, int capacity, float spawnRadius,
         List<EntityModel> entities, ColonyRegistry colonies, ColonyState wild, ColonyFood food, EvolutionService evolution,
         EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, SurveySystem survey, UtilityPriorSystem utility,
-        CasteThresholdSystem thresholds, SkillGraphStore skills, BoidSystem boids, EnergyLedger ledger, SpeechBus speech, bool spawnNetworkObjects)
+        CasteThresholdSystem thresholds, SkillGraphStore skills, BoidSystem boids, EnergyLedger ledger, SpeechBus speech, bool spawnNetworkObjects,
+        BehaviourDescriptorLog descriptors = null, NoveltyProgressSystem novelty = null)
     {
         _spawnNetworkObjects = spawnNetworkObjects;
         _prefab        = prefab;
@@ -83,21 +90,44 @@ public sealed class ColonyPopulation
         _boids         = boids;
         _ledger        = ledger;
         _speech        = speech;
+        _descriptors   = descriptors;
+        _novelty       = novelty;
     }
 
     public void StartPredatorClock(double now) => _nextPredatorTime = now;
 
-    public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null)
+    public EntityModel SpawnEntity(Vector3 position, ColonyState colony, EntityBrainContext inheritedCtx = null, EntityModel parent = null, EntityModel mate = null, float2? birthVitals = null,
+        TheRavine.Base.PopulationSnapshot.Agent? saved = null)
     {
-        if (!TheRavine.Base.WorldAuthority.IsAuthority || !HasFreeSlot(colony))
+        if (!TheRavine.Base.WorldAuthority.IsAuthority || !HasFreeSlot(colony) ||
+            (parent != null && !birthVitals.HasValue && SimulationRules.Active.ReproductionTransferEnabled))
         {
             inheritedCtx?.Dispose();
             return null;
         }
 
-        var go  = UnityEngine.Object.Instantiate(_prefab, position, Quaternion.identity, _parent);
         var ctx = inheritedCtx ?? colony.Brain.CreateContext();
+        var model = new EntityModel();
+        GameObject go = null;
+        try
+        {
+            go = UnityEngine.Object.Instantiate(_prefab, position, Quaternion.identity, _parent);
+            RegisterEntity(go, model, position, colony, ctx, parent, mate, birthVitals, saved);
+            return model;
+        }
+        catch
+        {
+            if (_entities.Contains(model)) RemoveEntitySwapBack(model);
+            if (model.Brain == null) ctx.Dispose();
+            model.Dispose();
+            if (go != null) UnityEngine.Object.Destroy(go);
+            throw;
+        }
+    }
 
+    private void RegisterEntity(GameObject go, EntityModel model, Vector3 position, ColonyState colony, EntityBrainContext ctx,
+        EntityModel parent, EntityModel mate, float2? birthVitals, TheRavine.Base.PopulationSnapshot.Agent? saved)
+    {
         foreach (var expressible in go.GetComponents<IGeneticPhenotype>())
             expressible.ApplyGeneticPhenotype(ctx.CoordMLP.Params);
 
@@ -110,10 +140,14 @@ public sealed class ColonyPopulation
 
         viewModel.BindMotion(_motion);
 
-        var model = new EntityModel();
-        model.AssignId(++_nextEntityId);
+        model.AssignId(saved?.Id ?? ++_nextEntityId);
 
         model.Configure(colony, ctx, viewModel, viewModel, go, _tuning, parent);
+        if (birthVitals.HasValue)
+        {
+            model.Stats.En = birthVitals.Value.x;
+            model.Stats.Hp = birthVitals.Value.y;
+        }
         model.Init();
         viewModel.Initialize(model);
         view.Initialize(viewModel);
@@ -121,7 +155,23 @@ public sealed class ColonyPopulation
         model.SetUp();
 
         float startEnergy = model.BodyEnergy;
-        if (parent != null) _ledger.Flows.ChildStart += startEnergy;
+        if (saved.HasValue) model.RestoreCondition(saved.Value);
+        else if (parent != null)
+        {
+            float energyCost = parent.Tuning.ReproduceEnergyCost;
+            parent.Stats.En -= energyCost;
+            parent.Stats.Hp -= parent.Tuning.ReproduceHealthCost;
+            if (birthVitals.HasValue)
+            {
+                _ledger.Flows.BirthTransfer += startEnergy;
+                _ledger.Flows.Reproduce += energyCost - startEnergy;
+            }
+            else
+            {
+                _ledger.Flows.ChildStart += startEnergy;
+                _ledger.Flows.Reproduce += energyCost;
+            }
+        }
         else _ledger.Flows.SpawnStart += startEnergy;
 
         model.Mortality.Died += () => HandleEntityDied(model);
@@ -133,7 +183,7 @@ public sealed class ColonyPopulation
         _entities.Add(model);
         colony.AddMember(model);
         model.SyncCount();
-        colony.Stats.RecordBirth();
+        if (!saved.HasValue) colony.Stats.RecordBirth();
         _instincts.Reset(model.ManagerIndex, InstinctGenes.From(in ctx.CoordMLP.Params));
         _utility.Write(model.ManagerIndex, default);
         _thresholds.Reset(model.ManagerIndex, CasteThresholdSystem.Initial());
@@ -142,15 +192,30 @@ public sealed class ColonyPopulation
         ref readonly var rules = ref SimulationRules.Frame;
         bool muted = rules.SpeechMuteSampling && !colony.IsWild && RavineRandom.RangeFloat() < rules.SpeechMuteFraction;
         model.Speech.SetMuted(muted);
-        _speech.Reset(model.ManagerIndex, model.ColonyIndex, model.EntityId, muted);
-        Spawned?.Invoke(model);
-        return model;
+        _speech.Reset(model.ManagerIndex, model.ColonyIndex, model.EntityId, muted, colony.Arm);
+        _descriptors?.Reset(model.ManagerIndex);
+        _novelty?.Reset(model.ManagerIndex);
+        if (!saved.HasValue)
+        {
+            LifeLog?.Birth(model, parent, mate);
+            Spawned?.Invoke(model);
+        }
     }
 
     public bool SpawnChild(EntityModel parent)
     {
         var colony = parent.Colony;
-        if (parent.IsWild || !HasFreeSlot(colony)) return false;
+        if (parent.IsWild || colony == null) return false;
+        var rules = SimulationRules.Active;
+        if (!HasFreeSlot(colony)) return RejectBirth(colony, ColonyStats.BirthFailure.Capacity);
+        float energyCost = parent.Tuning.ReproduceEnergyCost;
+        float healthCost = parent.Tuning.ReproduceHealthCost;
+        float reserve = rules.ReproductionTransferEnabled ? rules.BirthParentReserve : 0f;
+        float remainingEnergy = parent.Stats.En - energyCost;
+        float remainingHealth = parent.Stats.Hp - healthCost;
+        if (!(remainingEnergy >= reserve * parent.Stats.MaxEnergy && remainingHealth >= reserve * parent.Stats.MaxHealth) ||
+            (rules.ReproductionTransferEnabled && (remainingEnergy <= 0f || remainingHealth <= 0f)))
+            return RejectBirth(colony, ColonyStats.BirthFailure.ParentReserve);
 
         var parentParams = parent.Brain.Context.CoordMLP.Params;
         var mate         = _evolution.SelectMate(parent);
@@ -159,7 +224,7 @@ public sealed class ColonyPopulation
         if (mate != null && parentVirology != null
             && parentVirology.Modifiers.CytoIncompat >= SimulationRules.Active.CytoIncompatThreshold
             && mate.LineageId != parent.LineageId)
-            return false;
+            return RejectBirth(colony, ColonyStats.BirthFailure.Incompatibility);
 
         GeneticParameters childParams;
         if (mate != null)
@@ -172,13 +237,36 @@ public sealed class ColonyPopulation
             childParams = parentParams.GetMutatedGeneticParameters();
         }
 
+        float2? birthVitals = null;
+        if (rules.ReproductionTransferEnabled)
+        {
+            var child = EntityTuning.Express(in _tuning, in childParams, CasteModifiers.For(Caste.Worker));
+            float2 limits = new(child.MaxEnergy, child.MaxHealth * rules.JuvenileHealthMul);
+            if (!TryBirthTransfer(new float2(energyCost, healthCost), limits, rules, out float2 transferred))
+                return RejectBirth(colony, ColonyStats.BirthFailure.ChildReserve);
+            birthVitals = transferred;
+        }
+
         var childCtx = colony.Brain.CreateContext(childParams);
-        var rules    = SimulationRules.Active;
         var pos      = parent.Motor.Position()
                      + (Vector3)RavineRandom.GetInsideCircle().normalized * rules.ChildSpawnOffset
                      + Vector3.up * rules.ChildSpawnLift;
 
-        return SpawnEntity(pos, colony, childCtx, parent) != null;
+        return SpawnEntity(pos, colony, childCtx, parent, mate, birthVitals) != null
+            || RejectBirth(colony, ColonyStats.BirthFailure.Spawn);
+    }
+
+    public static bool TryBirthTransfer(float2 costs, float2 childLimits, SimulationRules rules, out float2 transfer)
+    {
+        transfer = math.min(childLimits, costs * new float2(rules.BirthEnergyTransfer, rules.BirthHealthTransfer));
+        return math.all(math.isfinite(transfer)) && math.all(transfer > 0f)
+            && math.all(transfer >= childLimits * rules.BirthChildReserve);
+    }
+
+    private static bool RejectBirth(ColonyState colony, ColonyStats.BirthFailure reason)
+    {
+        colony.Stats.BirthFailures[(int)reason]++;
+        return false;
     }
 
     public Vector3 RandomPosition(ColonyState colony)
@@ -211,8 +299,10 @@ public sealed class ColonyPopulation
             model.Colony?.Stats.RecordDeath(model.TimeAlive, cause);
             HandleLeaderDeath(model);
             BroadcastDeath(model, cause);
+            model.DropHeldObject(model.DeathPosition);
             _food.DropCorpse(model, cause);
             model.Brain?.CompleteTerminal(_evolution.TerminalPenaltyFor(model, cause), SimulationClock.Time);
+            LifeLog?.Death(model, cause);
             RemoveEntitySwapBack(model);
             Died?.Invoke(model);
 
@@ -274,6 +364,17 @@ public sealed class ColonyPopulation
         _deferredCount = 0;
     }
 
+    internal void DiscardEntities()
+    {
+        while (_entities.Count > 0)
+        {
+            var model = _entities[_entities.Count - 1];
+            RemoveEntitySwapBack(model);
+            model.Dispose();
+            if (model.SelfObject != null) UnityEngine.Object.Destroy(model.SelfObject);
+        }
+    }
+
     private void RemoveEntitySwapBack(EntityModel model)
     {
         int idx = model.ManagerIndex;
@@ -305,6 +406,8 @@ public sealed class ColonyPopulation
         _thresholds.RemoveSwapBack(idx, last);
         _skills.RemoveSwapBack(idx, last);
         _speech.RemoveSwapBack(idx, last);
+        _descriptors?.RemoveSwapBack(idx, last);
+        _novelty?.RemoveSwapBack(idx, last);
         _grid.MarkStale();
         _entities.RemoveAt(last);
         model.ManagerIndex = -1;
@@ -362,18 +465,18 @@ public sealed class ColonyPopulation
             }
             if (double.IsNaN(colony.ExtinctSince)) { colony.ExtinctSince = now; continue; }
             if (now - colony.ExtinctSince < r.ColonyRespawnDelay) continue;
-            ReseedColony(colony, BestDonor(colony));
+            ReseedColony(colony, PickDonor(_colonies, colony));
         }
     }
 
-    private ColonyState BestDonor(ColonyState exclude)
+    public static ColonyState PickDonor(ColonyRegistry colonies, ColonyState exclude)
     {
         ColonyState best = null;
         float bestScore = float.MinValue;
-        for (int c = 0; c < _colonies.Count; c++)
+        for (int c = 0; c < colonies.Count; c++)
         {
-            var colony = _colonies[c];
-            if (colony == exclude || colony.IsWild || colony.MemberCount == 0) continue;
+            var colony = colonies[c];
+            if (colony == exclude || colony.IsWild || colony.MemberCount == 0 || colony.Arm != exclude.Arm) continue;
             float score = colony.Score;
             if (score <= bestScore) continue;
             bestScore = score;
@@ -390,6 +493,7 @@ public sealed class ColonyPopulation
 
         if (donor != null)
         {
+            colony.InheritGenome(donor.Genome);
             var old = colony.Brain;
             colony.ReplaceBrain(new SharedHierarchicalBrain(donor.Brain));
             old?.Dispose();
@@ -426,7 +530,8 @@ public sealed class ColonyPopulation
         }
         else
         {
-            home   = _colonies[RavineRandom.RangeInt(0, CivilCount)].Nest.Position;
+            int civil = RavineRandom.RangeInt(0, CivilCount);
+            home = _colonies[civil < wild.Index ? civil : civil + 1].Nest.Position;
             spread = r.PredatorSpawnDistance;
         }
         float a = RavineRandom.RangeFloat(0f, 2f * math.PI);

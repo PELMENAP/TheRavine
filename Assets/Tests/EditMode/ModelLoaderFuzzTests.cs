@@ -241,7 +241,7 @@ public class ModelLoaderFuzzTests
         LogAssert.ignoreFailingMessages = true;
         using var brain = new SharedHierarchicalBrain(InputVectorizer.VectorSize, 32);
         var good = brain.ToSnapshot().Serialize();
-        int lstmBlock = 12;
+        int lstmBlock = SharedBrainSnapshot.HeaderSize + sizeof(int);
         int firstWeight = lstmBlock + 8 + 4;
 
         var nan = (byte[])good.Clone();

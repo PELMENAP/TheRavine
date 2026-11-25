@@ -31,11 +31,12 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 4. Game scene: `Bootstrap` → `GameStateMachine`; states in `Assets/Scripts/GameSceneManagerSystem/States/`.
 5. State order: `BootstrapState` → `InitialState` → `LoadingState` → `GameState`.
 6. Service order, roughly: Bootstrap `DayCycle`, `AmbientSystem`; Initial `ObjectSystem`, `EntitySystem`, `MobController`; Loading `MapGenerator`, `MobGenerator`, `UIInventory`, `PauseUI`.
-7. Return to menu: `Bootstrap.SwitchToMainMenu` → `SceneLoader.LoadScene(0, ReleaseServices)`; the callback runs after `FadeIn`, before `LoadSceneAsync`.
-8. `ReleaseServices`: `EntityManager` disabled → `BreakUpServices` → `EntityManager.ReleaseServices` → Netcode `Shutdown` → `ClearAll` → `InitializeServices`.
-9. Each step of `ReleaseServices` is guarded: a failing step is logged and the next ones still run.
-10. The game scene keeps running for several frames after `ReleaseServices`, until the menu scene activates.
-11. `GameInitializer.OnDestroy` (active `Instance` only): `ServiceLocator.ClearAll()` and `RavineLog.Shutdown()`.
+7. Bootstrap.SwitchToMainMenu saves the world before starting the fade. A failed checkpoint leaves the scene running.
+8. ReleaseServices runs after the fade and before LoadSceneAsync.
+9. `ReleaseServices`: `EntityManager` disabled → `BreakUpServices` → `EntityManager.ReleaseServices` → Netcode `Shutdown` → `ClearAll`. It then runs `InitializeServices` for an explicit return to the menu.
+10. Each step of `ReleaseServices` is guarded: a failing step is logged and the next ones still run.
+11. The game scene keeps running for several frames after `ReleaseServices`, until the menu scene activates.
+12. `GameInitializer.OnDestroy` (active `Instance` only): `ServiceLocator.ClearAll()` and `RavineLog.Shutdown()`.
 
 ## Services
 
@@ -51,10 +52,14 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 - Storage layer: `IAsyncPersistentStorage` in `Assets/Scripts/Core/Storage/IAsyncPersistentStorage.cs`.
 - Default implementation: `EncryptedPlayerPrefsStorage` (AES-CBC + MemoryPack); `EncryptionUtility` is obfuscation, not security.
 - Repository layer: `IFileManager` in `Assets/Scripts/Core/Storage/IFileManager.cs`.
+- `WorldRegistry` serializes checkpoint requests from autosave, explicit save, pause and orderly scene exit. Before-save hooks bind to the loaded world session.
+- A population provider captures on the main thread before chunk flush. Population publication follows successful player, codex, configuration and chunk saves.
+- `PopulationRepository` stores version 1 in `worlds/{worldId}/population.bin`. Seed and world creation time bind the file across renames.
+- A missing file is legacy state. Invalid bounds, references or versions cause a load error and preserve the file. A valid empty file is a saved population.
 - `WorldStateRepository` key `world_data_{id}`; `WorldConfigRepository` key `world_settings_{id}`.
 - `GlobalSettingsRepository` key `global_game_settings`; `ScriptFileManager` key `script_file_{name}`.
 - `GlobalSettings`: quality, grass, control type, smooth camera rotation.
-- `WorldState`: seed, player position, cycle count, inventory, last save time.
+- `WorldState`: seed, player position, cycle count, inventory, last save time, rule multipliers, player skills, `CodexSave` (laws, opposition, price estimator; see `docs/map/codex.md`).
 - `WorldConfiguration`: world name, difficulty, autosave interval, time scale.
 - File writes go through `AtomicFile` (`Assets/Scripts/Core/Storage/AtomicFile.cs`): temp file, then move.
 - Chunk files are written by `ChunkStore`; see `docs/map/world.md`.
@@ -91,7 +96,7 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 
 - Simulation code reads time from `SimulationClock`, never from Unity time.
 - Nothing registers a service by writing into the container directly.
-- `OnDisable` of `Bootstrap` also calls `ReleaseServices`; a repeated call has no effect.
+- `OnDisable` of `Bootstrap` releases services without creating replacements. A repeated release has no effect.
 - `BreakUp` never frees memory that an `Update` of a still-loaded scene object can reach; it stops work and unsubscribes.
 - `BreakUp` always invokes its callback, also after a failure; otherwise the services after it are not broken up.
 - `SceneLoader.LoadScene` loads the scene even if the fade does not report completion or the `beforeLoad` callback throws.

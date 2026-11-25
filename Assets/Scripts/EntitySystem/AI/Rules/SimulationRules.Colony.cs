@@ -18,6 +18,16 @@ public sealed partial class SimulationRules
     [SerializeField] private float kinDeathStress = 0.5f;
     [SerializeField] private bool simulationLogEnabled = false;
     [SerializeField] private float simulationLogIntervalSeconds = 10f;
+    [SerializeField] private bool behaviourDescriptorsEnabled;
+    [SerializeField] private bool lifeLogEnabled;
+    [SerializeField] private float colonyGenomeMutationChance = 0.5f;
+    [SerializeField] private float colonyGenomeInitialSpread;
+    [SerializeField] private float armSpeechMutedFraction;
+    [SerializeField] private float armSpeechShuffledFraction;
+    [SerializeField] private float armNullPolicyFraction;
+    [SerializeField] private float armBoundedLtcFraction;
+    [SerializeField] private float armProgressNoveltyFraction;
+    [SerializeField] private float armOrthogonalReservoirFraction;
     [SerializeField] private float kinColonyWeight = 0.5f;
     [SerializeField] private float kinLineageWeight = 0.5f;
     [SerializeField] private float witnessPenalty = -0.2f;
@@ -131,6 +141,7 @@ public sealed partial class SimulationRules
     [SerializeField] private float quorumWindow = 120f;
     [SerializeField] private float quorumMaxDanger = 0.3f;
     [SerializeField] private float quorumMinDistance = 20f;
+    [SerializeField] private float quorumMaxDistance = 60f;
     [SerializeField] private float quorumSlopeLimit = 0.5f;
     [SerializeField] private float quorumDepressionMul = 2f;
     [SerializeField] private float quorumFoodNorm = 0.2f;
@@ -148,6 +159,17 @@ public sealed partial class SimulationRules
     [SerializeField] private float workerAgeEnd = 0.5f;
     [SerializeField] private float polyethismStimulus = 0.4f;
     [SerializeField] private float juvenileHealthMul = 0.5f;
+    [SerializeField] private bool reproductionTransferEnabled = true;
+    [SerializeField, Range(0f, 1f)] private float birthEnergyTransfer = 0.8f;
+    [SerializeField, Range(0f, 1f)] private float birthHealthTransfer = 0.8f;
+    [SerializeField, Range(0f, 1f)] private float birthParentReserve = 0.05f;
+    [SerializeField, Range(0f, 1f)] private float birthChildReserve = 0.05f;
+
+    public bool ReproductionTransferEnabled => reproductionTransferEnabled;
+    public float BirthEnergyTransfer => math.saturate(birthEnergyTransfer);
+    public float BirthHealthTransfer => math.saturate(birthHealthTransfer);
+    public float BirthParentReserve => math.saturate(birthParentReserve);
+    public float BirthChildReserve => math.saturate(birthChildReserve);
     [SerializeField] private float territoryMark = 0.2f;
     [SerializeField] private float territoryThreshold = 0.5f;
     [SerializeField] private float territoryAlarm = 0.3f;
@@ -211,6 +233,30 @@ public sealed partial class SimulationRules
     public float KinDeathStress => kinDeathStress;
     public bool SimulationLogEnabled => simulationLogEnabled;
     public float SimulationLogIntervalSeconds => simulationLogIntervalSeconds;
+    public bool LifeLogEnabled => lifeLogEnabled;
+    public bool BehaviourDescriptorsEnabled => behaviourDescriptorsEnabled;
+    public float ColonyGenomeInitialSpread => colonyGenomeInitialSpread;
+    public float ColonyGenomeMutationChance => colonyGenomeMutationChance;
+    public float ArmSpeechMutedFraction => armSpeechMutedFraction;
+    public float ArmSpeechShuffledFraction => armSpeechShuffledFraction;
+    public float ArmNullPolicyFraction => armNullPolicyFraction;
+    public float ArmBoundedLtcFraction => armBoundedLtcFraction;
+    public float ArmProgressNoveltyFraction => armProgressNoveltyFraction;
+    public float ArmOrthogonalReservoirFraction => armOrthogonalReservoirFraction;
+
+    public float ArmFraction(ColonyArm arm)
+    {
+        switch (arm)
+        {
+            case ColonyArm.SpeechMuted:         return armSpeechMutedFraction;
+            case ColonyArm.SpeechShuffled:      return armSpeechShuffledFraction;
+            case ColonyArm.NullPolicy:          return armNullPolicyFraction;
+            case ColonyArm.BoundedLtc:          return armBoundedLtcFraction;
+            case ColonyArm.ProgressNovelty:     return armProgressNoveltyFraction;
+            case ColonyArm.OrthogonalReservoir: return armOrthogonalReservoirFraction;
+            default:                            return 0f;
+        }
+    }
     public float KinColonyWeight => kinColonyWeight;
     public float KinLineageWeight => kinLineageWeight;
     public float WitnessPenalty => witnessPenalty;
@@ -324,6 +370,7 @@ public sealed partial class SimulationRules
     public float QuorumWindow => quorumWindow;
     public float QuorumMaxDanger => quorumMaxDanger;
     public float QuorumMinDistance => quorumMinDistance;
+    public float QuorumMaxDistance => quorumMaxDistance;
     public float QuorumSlopeLimit => quorumSlopeLimit;
     public float QuorumDepressionMul => quorumDepressionMul;
     public float QuorumFoodNorm => quorumFoodNorm;

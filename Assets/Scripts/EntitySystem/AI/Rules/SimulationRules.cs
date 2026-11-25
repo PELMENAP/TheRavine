@@ -19,6 +19,8 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float InterruptionReward;
         public readonly float FailureReward;
         public readonly float PpoClipEpsilon;
+        public readonly bool GradientConflictEnabled;
+        public readonly int GradientConflictInterval;
         public readonly float RewardClipSigma;
         public readonly float CriticLearningRate;
         public readonly float CriticHuberDelta;
@@ -100,6 +102,8 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float EpsilonPlateauThresholdStep;
         public readonly float ActionTraceHorizon;
         public readonly float ReservoirSpectralRadius;
+        public readonly float NoveltyFastRate;
+        public readonly float NoveltySlowRate;
         public readonly float BlockedSpeedThreshold;
         public readonly float BlockedSeconds;
         public readonly float AgentBodyRadius;
@@ -127,6 +131,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float CuriosityEnergyGain;
         public readonly float CuriosityEnergyFloor;
         public readonly float CuriosityRarityWeight;
+        public readonly float RareActionChance;
         public readonly float ExecGammaPerSecond;
         public readonly float CoordGammaPerSecond;
         public readonly float SynergyWindow;
@@ -452,6 +457,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float QuorumWindow;
         public readonly float QuorumMaxDanger;
         public readonly float QuorumMinDistance;
+        public readonly float QuorumMaxDistance;
         public readonly float QuorumSlopeLimit;
         public readonly float QuorumDepressionMul;
         public readonly float QuorumFoodNorm;
@@ -588,6 +594,7 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float[] ActionMinSeconds;
         public readonly float[] ActionMaxSeconds;
         public readonly int   ObjectSenseRadius;
+        public readonly float ObjectFuelHeatPerUnit;
         public readonly float ObjectReach;
         public readonly float AgentEditRate;
         public readonly float AgentEditBurst;
@@ -650,6 +657,8 @@ public sealed partial class SimulationRules : ScriptableObject
             InterruptionReward = r.interruptionReward;
             FailureReward = r.failureReward;
             PpoClipEpsilon = r.ppoClipEpsilon;
+            GradientConflictEnabled = r.gradientConflictEnabled;
+            GradientConflictInterval = math.max(r.gradientConflictInterval, 1);
             RewardClipSigma = r.rewardClipSigma;
             CriticLearningRate = r.criticLearningRate;
             CriticHuberDelta = r.criticHuberDelta;
@@ -731,6 +740,8 @@ public sealed partial class SimulationRules : ScriptableObject
             EpsilonPlateauThresholdStep = r.epsilonPlateauThresholdStep;
             ActionTraceHorizon = r.actionTraceHorizon;
             ReservoirSpectralRadius = r.reservoirSpectralRadius;
+            NoveltyFastRate = math.saturate(r.noveltyFastRate);
+            NoveltySlowRate = math.saturate(r.noveltySlowRate);
             BlockedSpeedThreshold = r.blockedSpeedThreshold;
             BlockedSeconds = r.blockedSeconds;
             AgentBodyRadius = r.agentBodyRadius;
@@ -758,6 +769,7 @@ public sealed partial class SimulationRules : ScriptableObject
             CuriosityEnergyGain = r.curiosityEnergyGain;
             CuriosityEnergyFloor = r.curiosityEnergyFloor;
             CuriosityRarityWeight = r.curiosityRarityWeight;
+            RareActionChance = math.saturate(r.rareActionChance);
             ExecGammaPerSecond = r.execGammaPerSecond;
             CoordGammaPerSecond = r.coordGammaPerSecond;
             SynergyWindow = r.synergyWindow;
@@ -1083,6 +1095,7 @@ public sealed partial class SimulationRules : ScriptableObject
             QuorumWindow = r.quorumWindow;
             QuorumMaxDanger = r.quorumMaxDanger;
             QuorumMinDistance = r.quorumMinDistance;
+            QuorumMaxDistance = math.max(r.quorumMinDistance, r.quorumMaxDistance);
             QuorumSlopeLimit = r.quorumSlopeLimit;
             QuorumDepressionMul = r.quorumDepressionMul;
             QuorumFoodNorm = r.quorumFoodNorm;
@@ -1219,6 +1232,7 @@ public sealed partial class SimulationRules : ScriptableObject
             ActionMinSeconds = r.actionMinSeconds;
             ActionMaxSeconds = r.actionMaxSeconds;
             ObjectSenseRadius = math.clamp(r.objectSenseRadius, 0, MaxObjectSenseRadius);
+            ObjectFuelHeatPerUnit = math.max(0f, r.objectFuelHeatPerUnit);
             ObjectReach = r.objectReach;
             AgentEditRate = r.agentEditRate;
             AgentEditBurst = r.agentEditBurst;
@@ -1373,6 +1387,9 @@ public sealed partial class SimulationRules : ScriptableObject
     public const int   SpeechContextBits = 6;
     public const int   SpeechCreditRing = 256;
     public const int   SpeechCreditListeners = 8;
+    public const int   PredispositionSize = 3;
+    private const int  PredispositionLayoutCheck = 1 / (PredispositionSize == GeneticParameters.PredispositionCount ? 1 : 0);
+    public const int   SpeechShuffleRing = 64;
     private const int  SpeechLayoutCheck = 1 / (SpeechLen * SpeechTokenBits <= 16 && SpeechVocab == 1 << SpeechTokenBits && (SpeechInbox & (SpeechInbox - 1)) == 0 && SpeechContextBits <= 8 ? 1 : 0);
 
     private void OnValidate()
@@ -1425,6 +1442,8 @@ public sealed partial class SimulationRules : ScriptableObject
         if (warmthBuckets < 1) warmthBuckets = 1;
         if (!(warmthDecayPerSecond >= 0f)) warmthDecayPerSecond = 0f;
         if (!(simulationLogIntervalSeconds >= 1f)) simulationLogIntervalSeconds = 1f;
+        if (!(ltcTauMin > 0f)) ltcTauMin = DelayedPerceptron.TauEpsilon;
+        if (!(ltcTauMax >= ltcTauMin)) ltcTauMax = float.MaxValue;
         if (!(nurseLeashRate >= 0f)) nurseLeashRate = 0f;
         if (!(nurseryRate >= 0f)) nurseryRate = 0f;
         if (!(tetherRate >= 0f)) tetherRate = 0f;
@@ -1438,6 +1457,7 @@ public sealed partial class SimulationRules : ScriptableObject
         if (!(heldObjectSpeedMul > 0f)) heldObjectSpeedMul = 1f;
         if (!(dangerDirectionMinMass >= 0f)) dangerDirectionMinMass = 0f;
         ValidateSkills();
+        ValidateCodex();
     }
 
     private static SimulationRules _active;

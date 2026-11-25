@@ -17,12 +17,14 @@ namespace TheRavine.Base
         public SerializableInventorySlot[] inventory;
         public float[] rulesMultipliers;
         public PlayerSkillSave playerSkills;
+        public CodexSave codex;
 
         public WorldState Clone()
         {
             return new WorldState
             {
                 seed = this.seed,
+                currency = this.currency,
                 playerPosition = this.playerPosition,
                 cycleCount = this.cycleCount,
                 startTime = this.startTime,
@@ -30,7 +32,8 @@ namespace TheRavine.Base
                 lastSaveTime = this.lastSaveTime,
                 inventory = this.inventory != null ? (SerializableInventorySlot[])this.inventory.Clone() : null,
                 rulesMultipliers = this.rulesMultipliers != null ? (float[])this.rulesMultipliers.Clone() : null,
-                playerSkills = this.playerSkills?.Clone()
+                playerSkills = this.playerSkills?.Clone(),
+                codex = this.codex?.Clone()
             };
         }
 

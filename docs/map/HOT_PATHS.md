@@ -33,17 +33,17 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 | Vectorisation | `Assets/Scripts/EntitySystem/AI/InputVectorizer.cs` | whole file |
 | Metabolism | `Assets/Scripts/EntitySystem/AI/Entity/CreatureCore.cs` | `Metabolize`, `StepVirology`, `ReadVitals` |
 | Virology | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs`, `Assets/Scripts/EntitySystem/Virology/Ribosome.cs` | `VirologyComponent.Step`, `Ribosome.Step`, `Relax` |
-| Infection | `Assets/Scripts/EntitySystem/Virology/InfectionService.cs` | `ProcessSpread` and the `TryTransmit` family |
+| Infection | `Assets/Scripts/EntitySystem/Virology/InfectionService.cs`, `Assets/Scripts/EntitySystem/Virology/VirologyEvents.cs` | `ProcessSpread` and the `TryTransmit` family; `VirologyEvents.Note*` (integer increments) |
 
 ## Decide, forward pass, train
 
 | Area | File | Hot methods |
 |---|---|---|
 | Brain | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | `EnqueueDecision`, `RunDecisions`, `GiveReward`, `CompleteDecision`, `ScheduleTraining`, `ApplyPendingGradients` |
-| Kernels and jobs | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralKernels.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | whole files |
+| Kernels and jobs | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralKernels.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/LtcNeuron.cs` | whole files |
 | Batch and contexts | `Assets/Scripts/EntitySystem/AI/SharedAI/` | `PerceptronBatch`, `EntityBrainContext`, `LSTMContext`, `PerceptronContext`, `DecisionRing`, `ContextSlabs`, `FloatSlabPool` |
 | Networks | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs`, `Assets/Scripts/EntitySystem/AI/LSTM/` | forward and backward passes |
-| Critic and novelty | `Assets/Scripts/EntitySystem/AI/SharedAI/ValueCritic.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/RandomNetworkDistillation.cs` | whole files |
+| Critic and novelty | `Assets/Scripts/EntitySystem/AI/SharedAI/ValueCritic.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/RandomNetworkDistillation.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/NoveltyProgressSystem.cs` | whole files; `SharedHierarchicalBrain.ApplyProgress` |
 
 ## Perception, instincts, colony blackboard
 
@@ -64,7 +64,8 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 | Skill solver | `Assets/Scripts/EntitySystem/AI/Skills/SkillGraphSolver.cs` | `Step`, once per `SkillSolverInterval` per colony, scratch buffers only; marker `SkillGraphSolver.Step` |
 | Colony fields | `Assets/Scripts/EntitySystem/AI/Nest/NestState.cs` | `Mark`, `MarkPair`, `FieldAt`, `SampleDirection`, decay and shift jobs |
 | Points of interest | `Assets/Scripts/EntitySystem/AI/Colony/ColonyPoiBoard.cs` | `Offer`, `TryPickBest` |
-| Speech | `Assets/Scripts/EntitySystem/AI/Speech/SpeechBus.cs` | `Emit`, `TryStartCooldown`, `InboxAt`, `Flush`, `SpeechDeliverJob` |
+| Speech | `Assets/Scripts/EntitySystem/AI/Speech/SpeechBus.cs`, `Assets/Scripts/EntitySystem/AI/Speech/ColonySpeechTables.cs` | `Emit`, `TryStartCooldown`, `InboxAt`, `Flush`, `ApplyArm`, `RecordListen`, `SpeechDeliverJob`; `ColonySpeechTables.RecordEmission`, `RecordListen` |
+| Experiment diagnostics | `Assets/Scripts/EntitySystem/AI/Debug/BehaviourDescriptorLog.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/GradientConflict.cs` | `BehaviourDescriptorLog.Note*` (null-checked, off by default); `DelayedPerceptron.AccumulateGroupConflict` only in a conflict cycle |
 
 ## Motion
 

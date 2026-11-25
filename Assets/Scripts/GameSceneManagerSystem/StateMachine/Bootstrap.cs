@@ -77,23 +77,43 @@ namespace TheRavine.Base
 
             _transitStarted = true;
             toMenuPauseButton.interactable = false;
-            AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
-            sceneLoader.LoadScene(0, ReleaseServices).Forget();
+            SaveAndLeaveAsync().Forget();
         }
 
-        private void ReleaseServices()
+        private async UniTask SaveAndLeaveAsync()
+        {
+            var entities = FindAnyObjectByType<EntityManager>();
+            bool resume = entities != null && entities.enabled;
+            if (resume) entities.enabled = false;
+            if (WorldAuthority.IsAuthority && ServiceLocator.Services.TryGet(out WorldRegistry registry) &&
+                registry.HasLoadedWorld && !await registry.SaveCurrentWorldAsync())
+            {
+                if (resume) entities.enabled = true;
+                _transitStarted = false;
+                toMenuPauseButton.interactable = true;
+                return;
+            }
+            AddCameraToStack(FaderOnTransit.Instance.GetFaderCamera());
+            sceneLoader.LoadScene(0, () => ReleaseServices(restoreGlobalServices: true)).Forget();
+        }
+
+        private void ReleaseServices(bool restoreGlobalServices)
         {
             if (_servicesReleased) return;
             _servicesReleased = true;
 
             EntityManager entities = FindAnyObjectByType<EntityManager>();
-            if (entities != null) entities.enabled = false;
+            if (entities != null)
+            {
+                entities.enabled = false;
+                RunStep(entities.DropCarriedObjects, "drop carried objects");
+            }
 
             RunStep(BreakUpSceneServices, "break up");
             if (entities != null) RunStep(entities.ReleaseServices, "entity services");
             RunStep(ShutdownNetwork, "network shutdown");
             RunStep(ServiceLocator.ClearAll, "clear services");
-            RunStep(RestoreGlobalServices, "global services");
+            if (restoreGlobalServices) RunStep(RestoreGlobalServices, "global services");
         }
 
         private void BreakUpSceneServices()
@@ -125,7 +145,7 @@ namespace TheRavine.Base
 
         private void OnDisable()
         {
-            ReleaseServices();
+            ReleaseServices(restoreGlobalServices: false);
             if (toMenuPauseButton != null) toMenuPauseButton.onClick.RemoveAllListeners();
         }
     }

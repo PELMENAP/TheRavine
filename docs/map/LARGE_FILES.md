@@ -6,28 +6,31 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 | File | Lines |
 |---|---|
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1886 |
-| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1457 |
-| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1165 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1887 |
+| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1477 |
+| `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1305 |
+| `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 1088 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1081 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1014 |
-| `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 928 |
-| `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 849 |
-| `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 775 |
-| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 753 |
+| `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 859 |
+| `Assets/Scripts/EntitySystem/AI/Debug/SimulationLog.cs` | 831 |
+| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 793 |
+| `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 778 |
+| `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs` | 762 |
 | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | 730 |
 | `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs` | 683 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 678 |
-| `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs` | 643 |
 | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 635 |
+| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 627 |
 | `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs` | 621 |
-| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 618 |
 | `Assets/Tests/EditMode/SkillGraphTests.cs` | 562 |
+| `Assets/Scripts/EntitySystem/AI/Population/ColonyPopulation.cs` | 545 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassSystem.cs` | 515 |
+| `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralKernels.cs` | 510 |
 
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs`
 
-- 23–1374 class MapGenerator
+- 23–1375 class MapGenerator
   - 90 WorldToChunk
   - 94 WorldToLocalIdx
   - 98 CellToChunk
@@ -119,138 +122,206 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 1220 BindChunkStore
   - 1228 OnWorldRenamed
   - 1236 SaveModifiedChunks
-  - 1251 EvictChunks
-  - 1280 IsRetained
-  - 1292 BreakUp
-  - 1298 OnDisable
-  - 1323 IgniteNearViewer
-  - 1340 OnDestroy
+  - 1252 EvictChunks
+  - 1281 IsRetained
+  - 1293 BreakUp
+  - 1299 OnDisable
+  - 1324 IgniteNearViewer
+  - 1341 OnDestroy
   - 453–467 struct ChunkObstacles
     - 457 TryGetObstacles
-- 1376–1839 class ChunkData
-  - 1403 SetFoodTable
-  - 1405 IsFoodPrefab
-  - 1423 ChunkData
-  - 1449 TryAddObject
-  - 1453 TryAddObject
-  - 1456 TryAddObject
-  - 1459 TryAddObject
-  - 1501 SpanMask
-  - 1504 UpperKey
-  - 1507 Validate
-  - 1532 UpperLevelsFree
-  - 1540 RegisterUpper
-  - 1556 UnregisterUpper
-  - 1572 RemapUpper
-  - 1583 AddVolume
-  - 1607 SetLevelBit
-  - 1609 ClearVolume
-  - 1619 TryGetBuilding
-  - 1625 HasLevelAt
-  - 1632 TryGetObject
-  - 1646 TryGetObject
-  - 1661 RemoveObject
-  - 1663 RemoveObject
-  - 1729 ClearDirty
-  - 1731 ClearObjects
-  - 1754 SetHeight
-  - 1766 RestoreHeight
-  - 1776 LevelsAt
-  - 1778 MarkPersisted
-  - 1780 CommitRestore
-  - 1787 ResetForReuse
-  - 1805 CommitErosion
-  - 1811 InvalidateWater
-  - 1819 CommitGeneration
-  - 1824 Dispose
-- 1841–1856 struct StructureSpawnPoint
-  - 1847 StructureSpawnPoint
-- 1858–1885 struct ObjectInstInfo
-  - 1874 ObjectInstInfo
+- 1377–1840 class ChunkData
+  - 1404 SetFoodTable
+  - 1406 IsFoodPrefab
+  - 1424 ChunkData
+  - 1450 TryAddObject
+  - 1454 TryAddObject
+  - 1457 TryAddObject
+  - 1460 TryAddObject
+  - 1502 SpanMask
+  - 1505 UpperKey
+  - 1508 Validate
+  - 1533 UpperLevelsFree
+  - 1541 RegisterUpper
+  - 1557 UnregisterUpper
+  - 1573 RemapUpper
+  - 1584 AddVolume
+  - 1608 SetLevelBit
+  - 1610 ClearVolume
+  - 1620 TryGetBuilding
+  - 1626 HasLevelAt
+  - 1633 TryGetObject
+  - 1647 TryGetObject
+  - 1662 RemoveObject
+  - 1664 RemoveObject
+  - 1730 ClearDirty
+  - 1732 ClearObjects
+  - 1755 SetHeight
+  - 1767 RestoreHeight
+  - 1777 LevelsAt
+  - 1779 MarkPersisted
+  - 1781 CommitRestore
+  - 1788 ResetForReuse
+  - 1806 CommitErosion
+  - 1812 InvalidateWater
+  - 1820 CommitGeneration
+  - 1825 Dispose
+- 1842–1857 struct StructureSpawnPoint
+  - 1848 StructureSpawnPoint
+- 1859–1886 struct ObjectInstInfo
+  - 1875 ObjectInstInfo
 
 ## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
 
-- 5–1457 class SimulationRules
-  - 1267 CaptureFrame
-  - 1269 Bind
-  - 1280 DeathPenaltyMul
-  - 1289 FillPlanSeconds
-  - 1296 FillCasteAffinityLog
-  - 1304 FillUtilityWeights
-  - 1312 FillPlanCasteDomain
-  - 1320 BuildEndogenousForbiddenMask
-  - 1332 BuildBoidPlanMul
-  - 1339 ColonyChannelTau
-  - 1345 BiomeFertility
-  - 1346 BiomeToxicity
-  - 1355 KindValue
-  - 1358 BiomeValue
-  - 1378 OnValidate
-  - 1454 ThrowNotBound
+- 5–1477 class SimulationRules
+  - 1281 CaptureFrame
+  - 1283 Bind
+  - 1294 DeathPenaltyMul
+  - 1303 FillPlanSeconds
+  - 1310 FillCasteAffinityLog
+  - 1318 FillUtilityWeights
+  - 1326 FillPlanCasteDomain
+  - 1334 BuildEndogenousForbiddenMask
+  - 1346 BuildBoidPlanMul
+  - 1353 ColonyChannelTau
+  - 1359 BiomeFertility
+  - 1360 BiomeToxicity
+  - 1369 KindValue
+  - 1372 BiomeValue
+  - 1395 OnValidate
+  - 1474 ThrowNotBound
   - 8–8 enum EpsilonSchedule
-  - 10–1262 struct RulesFrame
-    - 631 BiomeFertility
-    - 632 BiomeToxicity
-    - 641 RulesFrame
+  - 10–1276 struct RulesFrame
+    - 638 BiomeFertility
+    - 639 BiomeToxicity
+    - 648 RulesFrame
 
 ## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
 
-- 16–1165 class EntityManager
-  - 89 RegisterEnergyConsumer
-  - 90 UnregisterEnergyConsumer
-  - 109 RaiseSpawned
-  - 110 RaiseDied
-  - 160 GetRandomEntity
-  - 163 SeedProbeStrain
-  - 166 SpawnEntity
-  - 169 SpawnChild
-  - 171 UpdateDiagnostics
-  - 180 EvolveGenotypes
-  - 186 SeedRandomStrain
-  - 189 Update
-  - 239 TickSnapshots
-  - 247 TickPuppets
-  - 258 StampAgents
-  - 279 ApplyFireHeat
-  - 307 ApplyWildWind
-  - 327 DecayWarmth
-  - 335 SampleEnergy
-  - 357 ReportThreat
-  - 368 Awake
-  - 429 CreateColonies
-  - 439 AddColony
-  - 449 SaveBrain
-  - 452 LoadBrain
-  - 455 ColonyModelName
-  - 457 SaveBestBrainAsync
-  - 467 LoadBrainAsync
-  - 503 ApplyLoadedBrain
-  - 519 Start
-  - 560 DelaySimulation
-  - 571 TickAgents
-  - 617 PromoteUrgent
-  - 667 CloseTickWindow
-  - 692 SweepSkills
-  - 707 SolveSkills
-  - 721 RunTickBatch
-  - 783 BeginColonyBatches
-  - 788 RunColonyDecisions
-  - 793 RunFlocking
-  - 811 TickColonies
-  - 867 UpdatePack
-  - 883 ChooseCaste
-  - 921 Stimulus
-  - 928 TickNests
-  - 981 SetEntityVisible
-  - 992 SetEntitiesVisible
-  - 998 RebuildTickSnapshot
-  - 1029 UpdateVisibility
-  - 1058 UpdateVisibilityByCamera
-  - 1088 CreateNestViews
-  - 1099 ReleaseServices
-  - 1105 UnregisterServices
-  - 1121 ResolveRules
-  - 1137 OnDestroy
+- 16–1305 class EntityManager
+  - 95 RegisterEnergyConsumer
+  - 96 UnregisterEnergyConsumer
+  - 115 RaiseSpawned
+  - 116 RaiseDied
+  - 170 GetRandomEntity
+  - 173 SeedProbeStrain
+  - 176 SpawnEntity
+  - 183 SpawnChild
+  - 185 UpdateDiagnostics
+  - 194 EvolveGenotypes
+  - 200 SeedRandomStrain
+  - 203 Update
+  - 253 TickSnapshots
+  - 261 TickPuppets
+  - 272 StampAgents
+  - 293 ApplyFireHeat
+  - 321 ApplyWildWind
+  - 341 DecayWarmth
+  - 349 SampleEnergy
+  - 372 ReportThreat
+  - 383 Awake
+  - 447 InitializePopulation
+  - 463 CreateCodex
+  - 483 CaptureCodex
+  - 492 StepCodex
+  - 500 CreateColonies
+  - 510 AddColony
+  - 520 SaveBrain
+  - 523 LoadBrain
+  - 526 BrainModelName
+  - 528 ColonyModelName
+  - 531 SaveBestBrainAsync
+  - 541 LoadBrainAsync
+  - 578 ApplyLoadedBrain
+  - 594 Start
+  - 667 DelaySimulation
+  - 678 TickAgents
+  - 728 PromoteUrgent
+  - 778 CloseTickWindow
+  - 804 SweepSkills
+  - 819 SolveSkills
+  - 833 RunTickBatch
+  - 893 BeginColonyBatches
+  - 898 RunColonyDecisions
+  - 903 RunFlocking
+  - 921 TickColonies
+  - 977 UpdatePack
+  - 993 ChooseCaste
+  - 1031 Stimulus
+  - 1038 TickNests
+  - 1091 SetEntityVisible
+  - 1102 SetEntitiesVisible
+  - 1108 RebuildTickSnapshot
+  - 1139 UpdateVisibility
+  - 1168 UpdateVisibilityByCamera
+  - 1198 CreateNestViews
+  - 1209 DropCarriedObjects
+  - 1219 ReleaseServices
+  - 1225 UnregisterServices
+  - 1247 ResolveRules
+  - 1263 OnDestroy
+  - 1269 DisposeSimulation
+
+## `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs`
+
+- 7–1088 class SharedHierarchicalBrain
+  - 34 DirectionAux
+  - 39 DirOffsetAux
+  - 41 ExecAux
+  - 43 BuildExecSizes
+  - 82 SharedHierarchicalBrain
+  - 84 SharedHierarchicalBrain
+  - 115 ConfigureOptimizer
+  - 138 ConflictCycle
+  - 152 SetNoveltyProgress
+  - 158 SetLearningGenes
+  - 165 SetArm
+  - 190 CompletePending
+  - 202 ApplyPendingGradients
+  - 220 MeasureConflict
+  - 228 ResolveLearningRate
+  - 239 ReportMeanFitness
+  - 250 ExplorationDecay
+  - 260 CreateContext
+  - 267 BuildContextLayouts
+  - 275 GiveReward
+  - 302 TryAddReward
+  - 312 SharedHierarchicalBrain
+  - 334 BuildGoalDurations
+  - 349 BuildBiasStride
+  - 374 BeginDecisionBatch
+  - 388 EnqueueDecision
+  - 421 BuildReservoirItem
+  - 447 TryGetDecision
+  - 458 RunDecisions
+  - 722 LeastSelectedAction
+  - 740 DrawUniformPlan
+  - 756 DrawUniformAction
+  - 772 PickMasked
+  - 793 ScheduleTraining
+  - 807 EnsureNativeTables
+  - 829 ReadIntrinsic
+  - 835 ApplyProgress
+  - 848 AccumulateNovelty
+  - 859 EnsureRndCapacity
+  - 867 EnsureDeciderCapacity
+  - 880 Dispose
+  - 895 CompleteDecision
+  - 906 CompleteTerminal
+  - 945 EnergySurplus
+  - 948 RarityTerm
+  - 951 FlushGoalRewardToCoordinator
+  - 980 GetCoordinatorEntropy
+  - 981 GetCurrentGoal
+  - 983 GetExecutorEntropy
+  - 987 SharedHierarchicalBrain
+  - 1015 FromModels
+  - 1045 ToSnapshot
+  - 1051 FromSnapshot
+  - 1054 FromSnapshot
+  - 1069 MatchesArchitecture
+  - 1081 SizesMatch
+  - 9–9 enum Goal
 
 ## `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs`
 
@@ -391,59 +462,9 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 996 OnDisable
   - 967–976 enum EditRefusal
 
-## `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs`
-
-- 7–928 class SharedHierarchicalBrain
-  - 34 DirectionAux
-  - 39 DirOffsetAux
-  - 41 ExecAux
-  - 74 SharedHierarchicalBrain
-  - 104 ConfigureOptimizer
-  - 122 CompletePending
-  - 134 ApplyPendingGradients
-  - 150 ResolveLearningRate
-  - 161 ReportMeanFitness
-  - 172 ExplorationDecay
-  - 182 CreateContext
-  - 189 BuildContextLayouts
-  - 197 GiveReward
-  - 224 TryAddReward
-  - 234 SharedHierarchicalBrain
-  - 256 BuildGoalDurations
-  - 271 BuildBiasStride
-  - 296 BeginDecisionBatch
-  - 310 EnqueueDecision
-  - 343 BuildReservoirItem
-  - 369 TryGetDecision
-  - 380 RunDecisions
-  - 628 PickMasked
-  - 649 ScheduleTraining
-  - 662 EnsureNativeTables
-  - 684 ReadIntrinsic
-  - 689 AccumulateNovelty
-  - 700 EnsureRndCapacity
-  - 708 EnsureDeciderCapacity
-  - 721 Dispose
-  - 736 CompleteDecision
-  - 747 CompleteTerminal
-  - 786 EnergySurplus
-  - 789 RarityTerm
-  - 792 FlushGoalRewardToCoordinator
-  - 821 GetCoordinatorEntropy
-  - 822 GetCurrentGoal
-  - 824 GetExecutorEntropy
-  - 828 SharedHierarchicalBrain
-  - 855 FromModels
-  - 885 ToSnapshot
-  - 891 FromSnapshot
-  - 894 FromSnapshot
-  - 909 MatchesArchitecture
-  - 921 SizesMatch
-  - 9–9 enum Goal
-
 ## `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs`
 
-- 6–848 class VirologyComponent
+- 6–858 class VirologyComponent
   - 51 ConsumeSegmentsDirty
   - 61 ConsumeValuesDirty
   - 63 SegmentIndexAt
@@ -453,99 +474,85 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 97 FirstCodonOf
   - 99 TryFindLineageMatch
   - 113 TryInsertSegment
-  - 156 AppendEndogenous
-  - 174 SeedEndogenous
-  - 191 Step
-  - 215 StepCodon
-  - 301 Remember
-  - 313 SetImmuneStrength
-  - 315 Groom
-  - 333 IsImmune
-  - 341 Immunize
-  - 353 TryCapture
-  - 382 TryExtractPayload
-  - 408 RandomViralSegment
-  - 424 DegradeCodon
-  - 437 DecayIntegrity
-  - 453 CreditDurableEffects
-  - 462 CreditSegment
-  - 470 RemapOwner
-  - 476 ShiftSegments
-  - 482 TryExcise
-  - 512 TryReplicate
-  - 547 SplitAt
-  - 576 IsForbidden
-  - 583 TranslateAt
-  - 588 InsertTranslated
-  - 596 ShiftCaches
-  - 604 OnInserted
-  - 611 OnRemoved
-  - 619 RebuildSegmentMap
-  - 631 Allocate
-  - 657 FillComponent
-  - 668 FillFromParent
-  - 715 ResolveDominant
-  - 739 TryGetViralInputs
-  - 765 BuildInfectionViews
-  - 789 RefreshInfectionValues
-  - 806 TryGetViralSummary
-  - 824 ShortHex
-  - 827 Restrict
-  - 828 LineageOf
-  - 841 Dispose
+  - 158 AppendEndogenous
+  - 176 SeedEndogenous
+  - 193 Step
+  - 217 StepCodon
+  - 303 Remember
+  - 315 SetImmuneStrength
+  - 317 Groom
+  - 335 IsImmune
+  - 343 Immunize
+  - 355 TryCapture
+  - 384 TryExtractPayload
+  - 410 RandomViralSegment
+  - 426 DegradeCodon
+  - 439 DecayIntegrity
+  - 455 CreditDurableEffects
+  - 464 CreditSegment
+  - 472 RemapOwner
+  - 478 ShiftSegments
+  - 484 TryExcise
+  - 515 HasViralSegment
+  - 522 TryReplicate
+  - 557 SplitAt
+  - 586 IsForbidden
+  - 593 TranslateAt
+  - 598 InsertTranslated
+  - 606 ShiftCaches
+  - 614 OnInserted
+  - 621 OnRemoved
+  - 629 RebuildSegmentMap
+  - 641 Allocate
+  - 667 FillComponent
+  - 678 FillFromParent
+  - 725 ResolveDominant
+  - 749 TryGetViralInputs
+  - 775 BuildInfectionViews
+  - 799 RefreshInfectionValues
+  - 816 TryGetViralSummary
+  - 834 ShortHex
+  - 837 Restrict
+  - 838 LineageOf
+  - 851 Dispose
 
-## `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs`
+## `Assets/Scripts/EntitySystem/AI/Debug/SimulationLog.cs`
 
-- 6–705 class SimulationDebugDashboard
-  - 100 SampleMetrics
-  - 167 FormatSpeech
-  - 201 BuildTexts
-  - 245 BuildSelectionTexts
-  - 269 BuildLedgerText
-  - 303 CompareEntropyDescending
-  - 306 BuildTopEntities
-  - 324 SelectedColony
-  - 332 DrawColonySelector
-  - 352 DrawWindow
-  - 399 FormatDropRatio
-  - 406 OnEnable
-  - 408 OnDisable
-  - 410 OnDestroy
-  - 412 SyncEnergyConsumer
-  - 421 ReleaseEnergyConsumer
-  - 429 Awake
-  - 439 Update
-  - 450 OnGUI
-  - 458 DrawHeader
-  - 465 DrawSection
-  - 473 DrawKV
-  - 480 DrawHLine
-  - 489 DrawMiniGraph
-  - 515 DrawDualGraph
-  - 533 DrawGraphLine
-  - 547 DrawGoalBars
-  - 568 DrawGoalStackedGraph
-  - 601 DrawGenerationInfo
-  - 607 DrawFitnessDistribution
-  - 614 DrawEnergyLedger
-  - 624 DrawTopEntities
-  - 633 DrawGraphBackground
-  - 647 DrawLine
-  - 662 FormatTime
-  - 669 InitStylesIfNeeded
-  - 696 MakeTex
-- 707–730 class RingBuffer
-  - 713 RingBuffer
-  - 715 Push
-  - 717 ToArray
-  - 725 LastOrDefault
-- 732–775 class GenerationTracker
-  - 743 Record
-  - 734–739 struct Stats
+- 8–831 class SimulationLog
+  - 134 SimulationLog
+  - 155 Sample
+  - 286 WriteWorldOnly
+  - 328 IsNight
+  - 336 Fill
+  - 384 WriteColonyDiagnostics
+  - 403 WriteWorldDiagnostics
+  - 442 WritePlanKinds
+  - 447 WriteFeedFails
+  - 452 WritePredisposition
+  - 470 WriteSaturation
+  - 495 WriteSpeechMetrics
+  - 505 WriteAttackFails
+  - 512 WriteCommon
+  - 561 WriteComma
+  - 563 WriteNext
+  - 569 WriteInt
+  - 571 WriteFloat
+  - 573 BuildHeader
+  - 639 WriteInteractions
+  - 648 WriteCodex
+  - 681 WriteBirthFailures
+  - 686 WriteTraining
+  - 702 CasteName
+  - 704 SampleStage3
+  - 735 WriteStage3
+  - 785 WriteConflictWorld
+  - 804 AddConflict
+  - 811 SnakeCase
+  - 823 Dispose
 
 ## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs`
 
-- 12–753 class EntityModel
+- 12–793 class EntityModel
   - 32 Activate
   - 33 Deactivate
   - 48 AssignId
@@ -562,35 +569,126 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 198 SetFlock
   - 200 BuildBoidAgent
   - 262 SelectHuntTarget
-  - 289 AssignCaste
-  - 301 SyncCount
-  - 318 ClearCount
-  - 324 ActionMask
-  - 333 SetLastAction
-  - 343 CreateActionTimes
-  - 350 SinceAction
-  - 357 NoteThreatDisplay
-  - 361 TryGetKinTarget
-  - 393 NextPlanSide
-  - 396 Carry
-  - 397 TakeCarried
-  - 405 ReceiveFood
-  - 411 IngestFood
-  - 420 ConsumeReceivedFood
-  - 430 Warn
-  - 442 NoteVictim
-  - 463 TryGetThreatSource
-  - 517 MarkDeathPending
-  - 548 InvalidateCachedFood
-  - 575 TryStartAttackCooldown
-  - 583 SetUp
-  - 591 RequestReproduce
-  - 599 Configure
-  - 672 Init
-  - 712 InterruptCommand
-  - 714 Dispose
-  - 737 DeepClean
+  - 289 RestoreCondition
+  - 310 RestoreParent
+  - 312 AssignCaste
+  - 325 SyncCount
+  - 342 ClearCount
+  - 348 ActionMask
+  - 357 SetLastAction
+  - 367 CreateActionTimes
+  - 374 SinceAction
+  - 381 NoteThreatDisplay
+  - 385 TryGetKinTarget
+  - 417 NextPlanSide
+  - 423 Carry
+  - 429 TakeCarried
+  - 437 ReceiveFood
+  - 443 IngestFood
+  - 452 ConsumeReceivedFood
+  - 462 Warn
+  - 474 NoteVictim
+  - 495 TryGetThreatSource
+  - 520 IsDryNestSite
+  - 553 MarkDeathPending
+  - 586 InvalidateCachedFood
+  - 613 TryStartAttackCooldown
+  - 621 SetUp
+  - 629 RequestReproduce
+  - 637 Configure
+  - 712 Init
+  - 752 InterruptCommand
+  - 754 Dispose
+  - 777 DeepClean
   - 14–14 enum FitnessEvent
+
+## `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs`
+
+- 6–708 class SimulationDebugDashboard
+  - 100 SampleMetrics
+  - 167 FormatSpeech
+  - 201 BuildTexts
+  - 245 BuildSelectionTexts
+  - 272 BuildLedgerText
+  - 306 CompareEntropyDescending
+  - 309 BuildTopEntities
+  - 327 SelectedColony
+  - 335 DrawColonySelector
+  - 355 DrawWindow
+  - 402 FormatDropRatio
+  - 409 OnEnable
+  - 411 OnDisable
+  - 413 OnDestroy
+  - 415 SyncEnergyConsumer
+  - 424 ReleaseEnergyConsumer
+  - 432 Awake
+  - 442 Update
+  - 453 OnGUI
+  - 461 DrawHeader
+  - 468 DrawSection
+  - 476 DrawKV
+  - 483 DrawHLine
+  - 492 DrawMiniGraph
+  - 518 DrawDualGraph
+  - 536 DrawGraphLine
+  - 550 DrawGoalBars
+  - 571 DrawGoalStackedGraph
+  - 604 DrawGenerationInfo
+  - 610 DrawFitnessDistribution
+  - 617 DrawEnergyLedger
+  - 627 DrawTopEntities
+  - 636 DrawGraphBackground
+  - 650 DrawLine
+  - 665 FormatTime
+  - 672 InitStylesIfNeeded
+  - 699 MakeTex
+- 710–733 class RingBuffer
+  - 716 RingBuffer
+  - 718 Push
+  - 720 ToArray
+  - 728 LastOrDefault
+- 735–778 class GenerationTracker
+  - 746 Record
+  - 737–742 struct Stats
+
+## `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs`
+
+- 7–762 class DelayedPerceptron
+  - 63 DelayedPerceptron
+  - 66 DelayedPerceptron
+  - 74 DelayedPerceptron
+  - 82 BuildResidualMask
+  - 90 HasResidual
+  - 92 BuildContextLayout
+  - 99 CreateContext
+  - 104 DurationFromLogit
+  - 124 ApplyLtc
+  - 131 SetLearningGenes
+  - 139 SetLtc
+  - 147 EnsureNative
+  - 166 SyncManaged
+  - 174 BeginForward
+  - 180 FinishDecide
+  - 312 FlushTerminal
+  - 370 FlushOldest
+  - 392 EnqueueTraining
+  - 456 ResolveBpttSteps
+  - 479 EnsureTrainingBuffers
+  - 494 EnsureGroupBuffers
+  - 504 AccumulateGroupConflict
+  - 561 ScheduleTraining
+  - 606 CompleteTraining
+  - 624 ApplyAccumulatedGradients
+  - 661 RouletteWheelSelection
+  - 672 CalculateOutputEntropy
+  - 680 SampleGaussian
+  - 687 DiscountTime
+  - 690 TerminalReward
+  - 693 Softplus
+  - 696 InitWeightsAndBiases
+  - 731 CloneWeights
+  - 741 GetGeneticParameters
+  - 743 Dispose
 
 ## `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs`
 
@@ -726,40 +824,6 @@ Line numbers are those of the last generation; after local edits treat them as a
 - 651–677 struct FillChunkArraysJob
   - 669 Execute
 
-## `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs`
-
-- 7–643 class DelayedPerceptron
-  - 53 DelayedPerceptron
-  - 56 DelayedPerceptron
-  - 64 DelayedPerceptron
-  - 72 BuildResidualMask
-  - 80 HasResidual
-  - 82 BuildContextLayout
-  - 89 CreateContext
-  - 94 DurationFromLogit
-  - 113 EnsureNative
-  - 132 SyncManaged
-  - 140 BeginForward
-  - 146 FinishDecide
-  - 269 FlushTerminal
-  - 327 FlushOldest
-  - 349 EnqueueTraining
-  - 412 ResolveBpttSteps
-  - 435 EnsureTrainingBuffers
-  - 450 ScheduleTraining
-  - 490 CompleteTraining
-  - 508 ApplyAccumulatedGradients
-  - 545 RouletteWheelSelection
-  - 556 CalculateOutputEntropy
-  - 564 SampleGaussian
-  - 571 DiscountTime
-  - 574 TerminalReward
-  - 577 Softplus
-  - 580 InitWeightsAndBiases
-  - 615 CloneWeights
-  - 625 GetGeneticParameters
-  - 627 Dispose
-
 ## `Assets/Scripts/EntitySystem/Job/MotionSystem.cs`
 
 - 12–42 struct MotionState
@@ -797,6 +861,24 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 594 Finish
   - 617 Dispose
 
+## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs`
+
+- 11–627 class EntityModel
+  - 24 IsAliveForTick
+  - 27 SubmitDecision
+  - 34 BeginCycle
+  - 51 ContinueCycle
+  - 63 NoisyDirection
+  - 70 UpdateDormancy
+  - 87 RunCycleHead
+  - 170 RunCycleTail
+  - 514 ComputePlanHints
+  - 563 EndCycle
+  - 584 NotifyView
+  - 586 StartDecision
+  - 603 ComputeDangerLevel
+  - 616 ComputeBreedReadiness
+
 ## `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs`
 
 - 15–620 class BoidsBehaviour
@@ -828,24 +910,6 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 562 OnDisable
   - 564 OnDestroy
   - 570 DisposeAll
-
-## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs`
-
-- 11–618 class EntityModel
-  - 24 IsAliveForTick
-  - 27 SubmitDecision
-  - 33 BeginCycle
-  - 50 ContinueCycle
-  - 62 NoisyDirection
-  - 69 UpdateDormancy
-  - 86 RunCycleHead
-  - 169 RunCycleTail
-  - 511 ComputePlanHints
-  - 554 EndCycle
-  - 575 NotifyView
-  - 577 StartDecision
-  - 594 ComputeDangerLevel
-  - 607 ComputeBreedReadiness
 
 ## `Assets/Tests/EditMode/SkillGraphTests.cs`
 
@@ -887,6 +951,33 @@ Line numbers are those of the last generation; after local edits treat them as a
     - 559 AtlasHandle
     - 560 Dispose
 
+## `Assets/Scripts/EntitySystem/AI/Population/ColonyPopulation.cs`
+
+- 9–545 class ColonyPopulation
+  - 52 RestoreLastId
+  - 57 HasFreeSlot
+  - 65 ColonyPopulation
+  - 97 StartPredatorClock
+  - 99 SpawnEntity
+  - 128 RegisterEntity
+  - 205 SpawnChild
+  - 259 TryBirthTransfer
+  - 266 RejectBirth
+  - 272 RandomPosition
+  - 279 RaiseTickUrgent
+  - 281 HandleEntityDied
+  - 289 ProcessPendingDeaths
+  - 315 BroadcastDeath
+  - 357 FlushDeferredDisposals
+  - 367 DiscardEntities
+  - 378 RemoveEntitySwapBack
+  - 417 ElectLeader
+  - 434 HandleLeaderDeath
+  - 453 CheckExtinctions
+  - 472 PickDonor
+  - 488 ReseedColony
+  - 514 TickPredators
+
 ## `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator/GrassSystem.cs`
 
 - 10–500 class GrassSystem
@@ -908,4 +999,22 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 473 OnDisable
 - 502–515 class GrassCullMath
   - 504 CellRect
+
+## `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralKernels.cs`
+
+- 4–510 class NeuralKernels
+  - 8 Softplus
+  - 10 FastSigmoid
+  - 11 FastTanh
+  - 13 Softmax
+  - 30 ReservoirStep
+  - 61 Combine
+  - 67 Layer
+  - 101 Forward
+  - 144 EvaluatePolicy
+  - 174 Train
+  - 401 SquaredNorm
+  - 426 AccumulateCopy
+  - 453 AccumulateAndClear
+  - 487 ClearGrad
 

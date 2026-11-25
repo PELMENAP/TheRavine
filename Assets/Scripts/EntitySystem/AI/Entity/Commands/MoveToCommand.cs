@@ -2,7 +2,7 @@ using Unity.Mathematics;
 
 public class MoveToCommand : PlannedMoveCommand
 {
-    private enum Mode : byte { Explore, Poi, Food, Nest, Escape, Kin }
+    private enum Mode : byte { Explore, Poi, Food, Nest, Escape, Kin, Object }
 
     private Mode   _mode;
     private bool   _reached;
@@ -30,6 +30,7 @@ public class MoveToCommand : PlannedMoveCommand
             case (byte)DirectionKind.OwnPoi:
             case (byte)DirectionKind.ColonyPoi: return Mode.Poi;
             case (byte)DirectionKind.Food:      return Mode.Food;
+            case (byte)DirectionKind.Object:    return Mode.Object;
             case (byte)DirectionKind.Nest:      return Mode.Nest;
             case (byte)DirectionKind.Escape:    return Mode.Escape;
             case (byte)DirectionKind.Kin:       return Mode.Kin;
@@ -43,6 +44,7 @@ public class MoveToCommand : PlannedMoveCommand
         {
             case Mode.Poi:  return model.IsRecruited || model.Points.Count > 0 || (model.Colony != null && model.Colony.Pois.Count > 0);
             case Mode.Food: return model.CachedFoodValid;
+            case Mode.Object: return model.CachedObjectValid;
             case Mode.Nest: return model.HasHome;
             case Mode.Kin:  return model.TryGetKinTarget(out _);
             default:        return true;
@@ -56,6 +58,7 @@ public class MoveToCommand : PlannedMoveCommand
         {
             case Mode.Poi:    return BeginPoi();
             case Mode.Food:   return BeginFood();
+            case Mode.Object: return BeginObject();
             case Mode.Nest:   return BeginNest();
             case Mode.Escape: return BeginEscape();
             case Mode.Kin:    return BeginKin();
@@ -67,9 +70,10 @@ public class MoveToCommand : PlannedMoveCommand
     {
         switch (_mode)
         {
-            case Mode.Explore: return ArrivedExplore();
+            case Mode.Explore: return ArrivedExplore(in move);
             case Mode.Poi:     return ArrivedPoi();
             case Mode.Food:    return ArrivedFood(in move);
+            case Mode.Object:  return InObjectReach() ? Complete() : Fail();
             case Mode.Escape:  return ArrivedEscape();
             default:           return Complete();
         }
@@ -131,11 +135,11 @@ public class MoveToCommand : PlannedMoveCommand
         return spread > r.WanderGradientMin;
     }
 
-    private EntityCommandStatus ArrivedExplore()
+    private EntityCommandStatus ArrivedExplore(in MoveResult move)
     {
         if (decision.HasDestination)
             _reached = math.distance(model.Position2D, decision.Destination) <= SimulationRules.Frame.PlanArriveRadius;
-        if (decision.Plan != PlanKind.Migrate || !model.CasteFixed || model.IsJuvenile) return Complete();
+        if (move.Blocked || decision.Plan != PlanKind.Migrate || !model.CasteFixed || model.IsJuvenile) return Complete();
         var colony = model.Colony;
         if (colony == null || colony.IsWild) return Complete();
 
@@ -146,7 +150,7 @@ public class MoveToCommand : PlannedMoveCommand
 
         float score = ColonyState.SiteScore(in r, in model.LastTerrain, nest.FieldAt(ColonyChannel.Food, here),
             math.distance(here, nest.Position));
-        if (score > 0f)
+        if (score > 0f && model.IsDryNestSite(here))
             colony.VoteNestSite(here, model.EntityId, (model.Caste == Caste.Scout ? r.ScoutVoteWeight : 1f) * score);
         return Complete();
     }
@@ -194,6 +198,18 @@ public class MoveToCommand : PlannedMoveCommand
         var colony = model.Colony;
         if (_fromBoard && colony != null && !colony.IsWild) colony.Pois.ReportEmpty(self);
         return Complete();
+    }
+
+    private bool InObjectReach()
+        => model.CachedObjectValid && math.distance(model.Position2D, model.CachedObjectPosition) <= SimulationRules.Frame.EatRange;
+
+    private EntityCommandStatus BeginObject()
+    {
+        if (!model.CachedObjectValid) return Fail();
+        if (InObjectReach()) return Complete();
+        float2 target = model.CachedObjectPosition;
+        return BeginPlanned(MoveIntent.ApproachFood, target - model.Position2D, target, true,
+            model.Tuning.DetectionRadius, model.Tuning.MoveSpeed, model.Tuning.EnergyCostMoving);
     }
 
     private EntityCommandStatus BeginFood()
