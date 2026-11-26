@@ -23,6 +23,62 @@ public static class CreatureCore
          * (1f + fever * r.FeverDrainMul)
          * (dormant ? r.HibernateDrainMul : winter ? r.WinterDrainMul : 1f);
 
+    public const int StressCalm = 0;
+    public const int StressStressed = 1;
+    public const int StressHigh = 2;
+
+    public static float HungerStressRate(float energyFraction, in SimulationRules.RulesFrame r)
+    {
+        if (!r.StressSourcesEnabled || r.StressHungerThreshold <= 0f) return 0f;
+        return r.StressHungerRate * math.saturate(1f - energyFraction / r.StressHungerThreshold);
+    }
+
+    public static float ColdStressRate(float environmentDrainMul, bool exposed, in SimulationRules.RulesFrame r)
+        => r.StressSourcesEnabled && exposed ? r.StressColdRate * math.max(0f, environmentDrainMul - 1f) : 0f;
+
+    public static float LonelyStressRate(float aloneSeconds, in SimulationRules.RulesFrame r)
+        => r.StressSourcesEnabled && aloneSeconds > r.LonelinessWindow ? r.StressLonelyRate : 0f;
+
+    public static float StepAloneSeconds(float aloneSeconds, bool hasKin, float dt)
+        => hasKin ? 0f : aloneSeconds + dt;
+
+    public static float SmoothStress(float smooth, float raw, float dt, in SimulationRules.RulesFrame r)
+    {
+        if (r.StressSmoothTau <= 0f) return raw;
+        return smooth + (raw - smooth) * (1f - math.exp(-dt / r.StressSmoothTau));
+    }
+
+    public static int NextStressLevel(int level, float smooth, in SimulationRules.RulesFrame r)
+    {
+        if (level >= StressHigh)
+        {
+            if (smooth >= r.StressHighExit) return StressHigh;
+            level = StressStressed;
+        }
+        else if (level == StressStressed && smooth >= r.StressHighEnter) return StressHigh;
+
+        if (level == StressStressed) return smooth >= r.StressStressedExit ? StressStressed : StressCalm;
+        return smooth >= r.StressStressedEnter ? (smooth >= r.StressHighEnter ? StressHigh : StressStressed) : StressCalm;
+    }
+
+    public static float StressEffect(float smooth, int level, in SimulationRules.RulesFrame r)
+        => r.StressSourcesEnabled && level > StressCalm ? math.saturate(smooth) : 0f;
+
+    public static float StressDrainMul(float effect, in SimulationRules.RulesFrame r)
+        => 1f + r.StressDrainMul * effect;
+
+    public static float StressRadiusMul(float effect, in SimulationRules.RulesFrame r)
+        => math.max(1f - r.StressRadiusShrink * effect, 0.05f);
+
+    public static float StressDiscountPower(float effect, in SimulationRules.RulesFrame r)
+        => 1f + r.StressDiscountMul * effect;
+
+    public static float StressLearningScale(float effect, in SimulationRules.RulesFrame r)
+        => math.max(r.StressLrFloor, 1f - r.StressLrMul * effect);
+
+    public static float StressAbandonChance(float effect, in SimulationRules.RulesFrame r)
+        => r.StressAbandonChance * effect;
+
     public static float ImmuneUpkeepMul(in GeneticParameters genes, SimulationRules r)
         => 1f + genes.ImmuneInvestment * r.ImmuneUpkeep;
 

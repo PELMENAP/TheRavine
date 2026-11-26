@@ -7,7 +7,8 @@ namespace TheRavine.Base
 {
     public sealed class PopulationSnapshot
     {
-        public const int Version = 1;
+        public const int Version = 2;
+        public const int MinVersion = 1;
         public const int GeneCount = 53;
         public const int MaxAgents = 65536;
         public const int MaxColonies = 256;
@@ -29,6 +30,8 @@ namespace TheRavine.Base
             public double AttackRemaining, ReviewRemaining;
             public byte Caste;
             public bool Fixed;
+            public float Stress, LonelySeconds;
+            public byte StressLevel;
             public float[] Genes;
         }
 
@@ -73,6 +76,7 @@ namespace TheRavine.Base
                 Require(a.Caste < 4 && WorldCoordinate(a.Position.x) && WorldCoordinate(a.Position.y) && WorldCoordinate(a.Position.z), "invalid caste or position");
                 Require(PositiveOrZero(a.Age) && a.Health > 0 && Finite(a.Health) && PositiveOrZero(a.Energy) &&
                     PositiveOrZero(a.Stomach) && PositiveOrZero(a.Carrying) && Duration(a.AttackRemaining) && Duration(a.ReviewRemaining), "invalid vitals");
+                Require(Finite(a.Stress) && a.Stress >= 0 && a.Stress <= 1 && PositiveOrZero(a.LonelySeconds) && a.StressLevel <= 2, "invalid stress state");
                 Require(a.Genes != null && a.Genes.Length == GeneCount, "unexpected phenotype shape");
                 foreach (float gene in a.Genes) Require(Finite(gene), "non-finite phenotype");
             }

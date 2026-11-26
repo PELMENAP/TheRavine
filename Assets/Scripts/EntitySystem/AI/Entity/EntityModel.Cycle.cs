@@ -140,7 +140,8 @@ public partial class EntityModel
         if (!IsAliveForTick()) return false;
 
         Vector3 pos  = Motor.Position();
-        float detect = Tuning.DetectionRadius * math.max(rules.BlindMinDetectionFraction, 1f - mods.Blind * rules.BlindStrength);
+        float detect = Tuning.DetectionRadius * math.max(rules.BlindMinDetectionFraction, 1f - mods.Blind * rules.BlindStrength)
+                     * CreatureCore.StressRadiusMul(StressEffect, in rules);
 
         var victim   = RecentVictim;
         var familiar = _harmModel;
@@ -149,6 +150,7 @@ public partial class EntityModel
             Position      = new float3(pos.x, pos.y, pos.z),
             NearestRadius = detect,
             CrowdRadius   = rules.CrowdRadius,
+            KinRadius     = rules.StressSourcesEnabled ? rules.LonelinessRadius : 0f,
             ColonyIndex   = Colony != null ? Colony.Index : -1,
             CrowdCap      = Neighbors.Length,
             SelfSlot      = GridSlot,
@@ -188,6 +190,7 @@ public partial class EntityModel
         _nearestDistance = _nearest != null ? survey.NearestDistance : -1f;
         _crowd           = survey.Crowd;
         _kinCrowd        = survey.Kin;
+        _kinNear         = survey.KinNear;
         _nearestForeign  = Perception.ResolveSlot(survey.ForeignSlot);
         _nearestForeignDistance = _nearestForeign != null ? survey.ForeignDistance : -1f;
         float outnumbered = math.saturate((_crowd - _kinCrowd - _kinCrowd) / math.max(rules.OutnumberedNorm, 1e-3f));
@@ -329,8 +332,11 @@ public partial class EntityModel
         float digested = Digestion.Tick(Stats, dt, resting, digestMul, mods.RegenMultiplier, in rules, out float regenCredit, out float digestLoss);
         Brain.Context.GoalDigested += digested - digestLoss;
 
+        float environmentMul = CreatureCore.EnvironmentDrainMul(Digestion.WellFed, night && !IsAtNest, mods.Fever, _winter, in rules, _dormant);
+        UpdateStress(dt, environmentMul, night, in rules);
         float basalMul = Tuning.BasalDrainMul
-                       * CreatureCore.EnvironmentDrainMul(Digestion.WellFed, night && !IsAtNest, mods.Fever, _winter, in rules, _dormant)
+                       * environmentMul
+                       * CreatureCore.StressDrainMul(StressEffect, in rules)
                        * SenescenceMul(in rules)
                        * _immuneUpkeepMul;
 

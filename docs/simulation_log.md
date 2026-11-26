@@ -284,3 +284,13 @@ Reading a stall: `population_capped = 1` with a low `starvation_death_share`, lo
 ## Run file
 
 When the log is opened (first sample), `run_<yyyyMMdd_HHmmss>.json` is written next to `simulation_log_<same stamp>.csv`. Fields: `stamp`, `scenario` (`ExperimentScenario` asset name, `none` without one), `flags` (the ten system flags and signal masks of `SimulationRules` as `name=0/1`), `time_s`, `season_value` (−1…1), `season_phase` (0…1 of `seasonPeriod`), `winter`, `brain_origin` (`fresh`, `loaded`, `mixed` or `none` over the civil colonies; per colony the raw `ColonyState.BrainOrigin`), and `colonies`: `colony_id`, `wild`, `nest_x`, `nest_z`, `arm`, `brain_origin` and, for civil colonies of a scenario, the food modifier of that colony (`food_multiplier`, `food_radius`, `food_start_s`, `food_active_s`, `food_inactive_s`).
+
+## Columns added in revision 10 (stage 1a: stress)
+
+The six columns follow `anomaly_vote_concentration`. Window columns are deltas of `ColonyStats` since the previous sample; the world row sums all colonies, the wild colony included.
+
+| Column | Scope | Unit | Kind | Meaning and computation |
+|---|---|---|---|---|
+| `stress_src_hunger`, `stress_src_cold`, `stress_src_lonely`, `stress_src_task`, `stress_src_threat` | both | stress units (dimensionless, sum of 0..1 increments) | window | Stress actually added to creatures by the source, summed over creatures: after saturation at 1, so a creature at 1 adds 0. `threat` is every older source (startle, fire, outnumbered, foreign harm, kin death, leader succession). The five columns add up to the total stress added in the window. `hunger`, `cold`, `lonely` and `task` are 0 while `stressSourcesEnabled` is off |
+| `stress_high_time_share` | both | 0…1 | window | Creature-seconds at `StressLevel` 2 / creature-seconds measured. Measured once per cycle while `stressSourcesEnabled` is on; empty otherwise |
+

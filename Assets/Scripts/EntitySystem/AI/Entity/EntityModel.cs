@@ -83,7 +83,20 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public PlanHint PlanHints => ComputePlanHints(_hasThreat);
 
     public float Stress { get; private set; }
-    public void AddStress(float amount) => Stress = math.saturate(Stress + math.max(0f, amount));
+    private float _stressSmooth;
+    private float _aloneSeconds;
+    private int _kinNear;
+    public int StressLevel { get; private set; }
+    public float StressSmooth => _stressSmooth;
+    public float LonelySeconds => _aloneSeconds;
+    public float StressEffect => CreatureCore.StressEffect(_stressSmooth, StressLevel, in SimulationRules.Frame);
+
+    public void AddStress(float amount, ColonyStats.StressSource source = ColonyStats.StressSource.Threat)
+    {
+        float before = Stress;
+        Stress = math.saturate(Stress + math.max(0f, amount));
+        if (Stress > before) Colony?.Stats.RecordStress(source, Stress - before);
+    }
 
     private float _extrinsicReward;
     public void AddExtrinsicReward(float reward) => _extrinsicReward += reward;
@@ -298,6 +311,10 @@ public partial class EntityModel : IEntity, IFoodReceiver
             Brain.Context.CasteMask = ActionMask(Caste);
             Brain.Context.SetGroup((int)Caste);
         }
+        Stress = math.saturate(saved.Stress);
+        _stressSmooth = Stress;
+        _aloneSeconds = math.max(saved.LonelySeconds, 0f);
+        StressLevel = math.min((int)saved.StressLevel, CreatureCore.StressHigh);
         Stats.Hp = math.min(saved.Health, Stats.MaxHealth);
         Stats.En = math.min(saved.Energy, Stats.MaxEnergy);
         Digestion.Ingest(saved.Stomach);

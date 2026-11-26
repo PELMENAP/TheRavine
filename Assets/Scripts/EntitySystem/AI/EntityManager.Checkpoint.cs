@@ -47,6 +47,7 @@ public partial class EntityManager
             {
                 Id = e.EntityId, Parent = e.Parent.EntityId, ColonyId = e.ColonyId,
                 Position = _motion.PositionOf(e.ManagerIndex), Age = e.TimeAlive, Caste = (byte)e.Caste, Fixed = e.CasteFixed,
+                Stress = e.Stress, LonelySeconds = e.LonelySeconds, StressLevel = (byte)e.StressLevel,
                 Health = e.Stats.Hp, Energy = e.Stats.En, Stomach = e.Digestion.Stomach, Carrying = e.Carrying,
                 AttackRemaining = Math.Max(0, e.AttackReadyTime - now),
                 ReviewRemaining = Math.Max(0, e.NextCasteReview - now),

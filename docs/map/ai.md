@@ -3,7 +3,7 @@
 Root: `Assets/Scripts/EntitySystem/AI/`. Assembly: `EntitySystem`. Rules for this folder: `Assets/Scripts/EntitySystem/AI/CLAUDE.md`.
 Tests: `Assets/Tests/EditMode/` — `BrainAllocationTests`, `BrainLearningTests`, `BrainArchitectureVersionTests`, `SnapshotVersionTests`,
 `SoaSwapBackTests`, `TickWindowBudgetTests`, `DecisionRingTests`, `ColonyRegistryTests`, `EntitySpatialGridSurveyTests`, `SurveySystemTests`, `AgentSnapshotCodecTests`, `RulesDefaultsTests`,
-`ExperimentArmTests`, `SignalMaskTests`, `AnomalyDetectorTests`, `ExperimentScenarioTests`, `EvolutionDynamicsTests`, `LtcNeuronTests`, `NoveltyProgressTests`, `PredispositionTests`, `ReservoirMemoryCapacityTests`, `NestSiteScoreTests`, `FamiliarityTests`, `CuriositySurplusTests`, `StartleTests`, `FoodLookupAllocationTests`, `PredatorPressureTests`, `SkillGraphTests`, `SkillGraphAgentTests`.
+`ExperimentArmTests`, `StressTests`, `SignalMaskTests`, `AnomalyDetectorTests`, `ExperimentScenarioTests`, `EvolutionDynamicsTests`, `LtcNeuronTests`, `NoveltyProgressTests`, `PredispositionTests`, `ReservoirMemoryCapacityTests`, `NestSiteScoreTests`, `FamiliarityTests`, `CuriositySurplusTests`, `StartleTests`, `FoodLookupAllocationTests`, `PredatorPressureTests`, `SkillGraphTests`, `SkillGraphAgentTests`.
 
 Tick order and hot methods: `docs/map/HOT_PATHS.md`. Existing structures to reuse: `docs/OPTIMIZATION.md` section 13.
 Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.cs`, `SimulationRules.cs`, `EntityModel.cs`): `docs/map/LARGE_FILES.md`.
@@ -27,8 +27,8 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 ## Population checkpoints
 
 - World authority captures live agents from motion slots and skips pending deaths. Colony IDs identify codex authors and optional brain files.
-- Population version 1 stores colony and agent ID high-water marks, experiment arm, learning genome, nest location, food, hunger and leader.
-- Agent records store identity, parent ID, position, simulation age, caste, phenotype, health, energy, stomach and carried food.
+- Population version 2 stores colony and agent ID high-water marks, experiment arm, learning genome, nest location, food, hunger and leader. Version 1 files load with zero stress.
+- Agent records store identity, parent ID, position, simulation age, caste, phenotype, health, energy, stomach, carried food, stress, the loneliness timer and the stress level.
 - Startup checks scene capacity and gene ranges, prepares chunks, restores colonies and brains, then registers agent slots and resolves leaders and parents.
 - Restore uses current phenotype capacities, without birth or initial energy credit. A missing parent keeps its ancestral ID and has no live target.
 - Colony fields, membership, observations, plans, migration votes and skill topology are rebuilt. Attack, caste review and election timers resume on the simulation clock.
@@ -36,7 +36,7 @@ Large files (`EntityManager.cs`, `SharedHierarchicalBrain.cs`, `ChunkFoodIndex.c
 
 ## Agent (`Assets/Scripts/EntitySystem/AI/Entity/`)
 
-- `EntityModel` partial files: `.Cycle` (tick), `.Behaviour`, `.Social`, `.Directions`, `.Homeostasis`, `.Wild`, `.Fitness`, `.Skills`.
+- `EntityModel` partial files: `.Cycle` (tick), `.Behaviour`, `.Social`, `.Directions`, `.Homeostasis`, `.Wild`, `.Fitness`, `.Skills`, `.Stress`.
 - Components in `Assets/Scripts/EntitySystem/AI/Entity/Components/`: `BrainComponent`, `DigestionComponent`, `FitnessComponent`,
   `MortalityComponent`, `PerceptionComponent`, `PointsOfInterestComponent`, `SpeechComponent`, `StatsComponent`, `VisualCullingComponent`.
 - Commands, one file each, in `Assets/Scripts/EntitySystem/AI/Entity/Commands/`; they run through `EntityCommandRunner`.
@@ -145,6 +145,14 @@ All are indexed by `EntityModel.ManagerIndex` and expose `RemoveSwapBack`. The r
 - `ExperimentScenario` (`Assets/Scripts/EntitySystem/AI/Population/ExperimentScenario.cs`): ScriptableObject assigned to `EntityManager.scenario`. Per civil colony: nest offset from the spawn point and a food modifier (`foodMultiplier` inside `foodRadius` of the nest, on in the window `foodStartSeconds`, `foodActiveSeconds` on / `foodInactiveSeconds` off, in `SimulationClock` time; active 0 or inactive 0 means always on after the start). `foundersPerColony` founders are spawned per civil colony. Without a scenario `colonyOrigins` and `initialCount` work as before. Only initial conditions: no behaviour is scripted.
 - `FoodZone` (same file): a modifier built by `ExperimentScenario.BuildZones` and given to `ChunkFoodIndex.SetFoodZones`; `TickEcology` multiplies the chunk capacity `K` by the product of the zones that contain the chunk centre and are on. Zones stay at the nest positions of the scenario even if a nest relocates. Colonies with multiplier 1 build no zone.
 - `AnomalyDetector` (`Assets/Scripts/EntitySystem/AI/Debug/AnomalyDetector.cs`): counts transfer loops, relief farming and law-investment concentration; never blocks. Created by `EntityManager` only with `simulationLogEnabled`, bound as `AnomalyDetector.Current` (null otherwise), also set as `WorldCodexService.Anomalies`. Fed by `GiveCommand` (`NoteTransfer`), `WorldCodexService.TryPropose/TryInvest` (`NoteInvestment`); `NoteRelief(giverId, receiverId, amount)` is the entry point for relief systems. `SimulationLog` calls `ConsumeWindow` and `SampleConcentration` once per sample.
+
+## Stress
+
+- `EntityModel.Stress` (0..1, raw) is raised by `AddStress(amount, source)` and decays in `RunCycleHead` (`stressTau`, faster at the nest). `ColonyStats.RecordStress` adds the amount actually added (after saturation) to the source `Threat` (startle, fire, outnumbered, foreign harm, kin death, leader succession), `Hunger`, `Cold`, `Lonely` or `Task`.
+- With `stressSourcesEnabled` (`EntityModel.Stress.cs`, `UpdateStress`, called in `RunCycleTail` after the environment drain multiplier): hunger `stressHungerRate × (1 − energy / stressHungerThreshold)` below the threshold; cold `stressColdRate × max(0, EnvironmentDrainMul − 1)` outside the nest at night or in winter; loneliness `stressLonelyRate` once the agent has had no kin within `lonelinessRadius` for `lonelinessWindow` seconds (`SurveyOutput.KinNear`, counted by the survey job within `SurveyInput.KinRadius`, set only with the flag; timer `EntityModel.LonelySeconds`); task failure `stressTaskFailure` when a plan ends `Failed` (`PlanRunner.End` → `NoteTaskFailure`). All rates are per second of cycle `dt`.
+- `StressSmooth` is an EMA of the raw value (`stressSmoothTau`). `StressLevel` (0 calm, 1 stressed, 2 high) uses two pairs of thresholds with hysteresis on the smoothed value: `stressStressedEnter`/`Exit`, `stressHighEnter`/`Exit`. `StressEffect` is the smoothed value while the level is above calm and 0 otherwise or with the flag off; all consequences read it.
+- Consequences (formulas in `CreatureCore`, all neutral at effect 0): basal drain `× (1 + stressDrainMul × s)`; detection radius `× (1 − stressRadiusShrink × s)`; discount `gamma ^ (1 + stressDiscountMul × s)` per agent through `EntityBrainContext.Gamma` (coordinator and executor TD, goal return, terminal flush, plan return); learning rate of each training ticket `× max(stressLrFloor, 1 − stressLrMul × s)` through `PerceptronContext.LearningScale` (the colony genome is not touched); plan abandon chance `stressAbandonChance × s` at each plan step (the plan ends `Interrupted`). `EntityBrainContext.SetStressScales` is written every cycle. The input size is unchanged.
+- The player has no stress state; `PlayerEntity` still calls `CreatureCore.EnvironmentDrainMul` without it.
 
 ## Other
 

@@ -60,6 +60,24 @@ public sealed partial class SimulationRules
 
     private void ValidateSystems()
     {
+        stressHungerRate = Mathf.Max(stressHungerRate, 0f);
+        stressHungerThreshold = Mathf.Clamp01(stressHungerThreshold);
+        stressColdRate = Mathf.Max(stressColdRate, 0f);
+        lonelinessRadius = Mathf.Max(lonelinessRadius, 0f);
+        lonelinessWindow = Mathf.Max(lonelinessWindow, 0f);
+        stressLonelyRate = Mathf.Max(stressLonelyRate, 0f);
+        stressTaskFailure = Mathf.Max(stressTaskFailure, 0f);
+        stressSmoothTau = Mathf.Max(stressSmoothTau, 0f);
+        stressStressedEnter = Mathf.Clamp01(stressStressedEnter);
+        stressStressedExit = Mathf.Clamp(stressStressedExit, 0f, stressStressedEnter);
+        stressHighEnter = Mathf.Clamp(stressHighEnter, stressStressedEnter, 1f);
+        stressHighExit = Mathf.Clamp(stressHighExit, stressStressedEnter, stressHighEnter);
+        stressDrainMul = Mathf.Max(stressDrainMul, 0f);
+        stressRadiusShrink = Mathf.Clamp01(stressRadiusShrink);
+        stressDiscountMul = Mathf.Max(stressDiscountMul, 0f);
+        stressLrMul = Mathf.Max(stressLrMul, 0f);
+        stressLrFloor = Mathf.Clamp01(stressLrFloor);
+        stressAbandonChance = Mathf.Clamp01(stressAbandonChance);
         stressHighThreshold = Mathf.Clamp01(stressHighThreshold);
         anomalyLoopWindow = Mathf.Max(anomalyLoopWindow, 0f);
         anomalyReliefPairThreshold = Mathf.Max(anomalyReliefPairThreshold, 0f);

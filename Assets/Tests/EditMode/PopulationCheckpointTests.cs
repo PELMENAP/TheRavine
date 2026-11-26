@@ -28,6 +28,7 @@ public class PopulationCheckpointTests
             {
                 Id = 7, ColonyId = 65, Parent = 3, Age = 130, Health = 8, Energy = 12, Stomach = 5, Carrying = 2,
                 Position = new Vector3(-20, 31, 42), Caste = (byte)Caste.Scout, Fixed = true, AttackRemaining = 0.75, ReviewRemaining = 3.25,
+                Stress = 0.55f, LonelySeconds = 42.5f, StressLevel = 1,
                 Genes = GeneticParameters.AsReadOnlySpan(in genes).ToArray()
             } }
         };
@@ -60,6 +61,96 @@ public class PopulationCheckpointTests
         Assert.IsEmpty(PopulationRepository.Load(world, s.Seed, s.WorldCreated).Agents);
     }
 
+    [Test]
+    public void StressStateSurvivesTheRoundTrip()
+    {
+        var s = Example();
+        using var stream = new MemoryStream();
+        PopulationRepository.Write(stream, s);
+        stream.Position = 0;
+        var loaded = PopulationRepository.Read(stream, s.Seed, s.WorldCreated);
+        Assert.AreEqual(0.55f, loaded.Agents[0].Stress);
+        Assert.AreEqual(42.5f, loaded.Agents[0].LonelySeconds);
+        Assert.AreEqual(1, loaded.Agents[0].StressLevel);
+    }
+
+    [Test]
+    public void VersionOneCheckpointLoadsWithZeroStress()
+    {
+        var s = Example();
+        using var stream = new MemoryStream();
+        WriteVersionOne(stream, s);
+        stream.Position = 0;
+        var loaded = PopulationRepository.Read(stream, s.Seed, s.WorldCreated);
+        Assert.AreEqual(1, loaded.Agents.Length);
+        Assert.AreEqual(s.Agents[0].Energy, loaded.Agents[0].Energy);
+        Assert.AreEqual(0f, loaded.Agents[0].Stress);
+        Assert.AreEqual(0f, loaded.Agents[0].LonelySeconds);
+        Assert.AreEqual(0, loaded.Agents[0].StressLevel);
+        CollectionAssert.AreEqual(s.Agents[0].Genes, loaded.Agents[0].Genes);
+    }
+
+    [TestCase(1.5f, 0f, (byte)0)]
+    [TestCase(float.NaN, 0f, (byte)0)]
+    [TestCase(0.5f, -1f, (byte)0)]
+    [TestCase(0.5f, 0f, (byte)3)]
+    public void RefusesInvalidStressState(float stress, float lonely, byte level)
+    {
+        var s = Example();
+        s.Agents[0].Stress = stress;
+        s.Agents[0].LonelySeconds = lonely;
+        s.Agents[0].StressLevel = level;
+        Assert.Throws<InvalidDataException>(() => s.Validate(s.Seed, s.WorldCreated));
+    }
+
+    private static void WriteVersionOne(Stream stream, PopulationSnapshot s)
+    {
+        using var w = new BinaryWriter(stream, System.Text.Encoding.UTF8, true);
+        w.Write(0x31504F50u);
+        w.Write(1);
+        w.Write(s.Seed);
+        w.Write(s.WorldCreated);
+        w.Write(s.Captured);
+        w.Write(s.LastEntityId);
+        w.Write(s.LastColonyId);
+        w.Write(s.Colonies.Length);
+        w.Write(s.Agents.Length);
+        foreach (var c in s.Colonies)
+        {
+            w.Write(c.Id);
+            w.Write(c.Leader);
+            w.Write(c.Wild);
+            w.Write(c.Arm);
+            w.Write(c.X);
+            w.Write(c.Z);
+            w.Write(c.Storage);
+            w.Write(c.Hunger);
+            w.Write(c.LearningRate);
+            w.Write(c.GradientNorm);
+            w.Write(c.Entropy);
+            w.Write(c.ElectionRemaining);
+        }
+        foreach (var a in s.Agents)
+        {
+            w.Write(a.Id);
+            w.Write(a.ColonyId);
+            w.Write(a.Parent);
+            w.Write(a.Position.x);
+            w.Write(a.Position.y);
+            w.Write(a.Position.z);
+            w.Write(a.Age);
+            w.Write(a.Health);
+            w.Write(a.Energy);
+            w.Write(a.Stomach);
+            w.Write(a.Carrying);
+            w.Write(a.AttackRemaining);
+            w.Write(a.ReviewRemaining);
+            w.Write(a.Caste);
+            w.Write(a.Fixed);
+            foreach (float gene in a.Genes) w.Write(gene);
+        }
+    }
+
     [TestCase("duplicate")]
     [TestCase("orphan")]
     [TestCase("nan")]
@@ -76,7 +167,7 @@ public class PopulationCheckpointTests
         Assert.AreEqual(7, PopulationRepository.Load(world, s.Seed, s.WorldCreated).Agents[0].Id);
     }
 
-    [TestCase(4, 2)]
+    [TestCase(4, 3)]
     [TestCase(36, -1)]
     [TestCase(40, int.MaxValue)]
     [TestCase(40, 0)]

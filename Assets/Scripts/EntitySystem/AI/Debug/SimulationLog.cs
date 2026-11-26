@@ -147,6 +147,20 @@ public sealed class SimulationLog : IDisposable
     private readonly ExperimentScenario _scenario;
     private readonly AnomalyDetector _anomalies;
     private bool _runWritten;
+    private const int StressSourceCount = (int)ColonyStats.StressSource.Count;
+    private static readonly ColonyStats.StressSource[] StressColumnOrder =
+    {
+        ColonyStats.StressSource.Hunger, ColonyStats.StressSource.Cold, ColonyStats.StressSource.Lonely,
+        ColonyStats.StressSource.Task, ColonyStats.StressSource.Threat,
+    };
+    private readonly double[] _prevStressAdded   = new double[ColonyRegistry.MaxColonies * StressSourceCount];
+    private readonly double[] _stressAddedDelta  = new double[ColonyRegistry.MaxColonies * StressSourceCount];
+    private readonly double[] _prevStressSeconds = new double[ColonyRegistry.MaxColonies];
+    private readonly double[] _stressSecondsDelta = new double[ColonyRegistry.MaxColonies];
+    private readonly double[] _prevStressHigh    = new double[ColonyRegistry.MaxColonies];
+    private readonly double[] _stressHighDelta   = new double[ColonyRegistry.MaxColonies];
+    private readonly double[] _worldStressAdded  = new double[StressSourceCount];
+    private double _worldStressSeconds, _worldStressHigh;
 
     private StreamWriter _writer;
     private bool _disposed;
@@ -223,6 +237,9 @@ public sealed class SimulationLog : IDisposable
         int   civil = 0;
         Array.Clear(_worldTraining, 0, _worldTraining.Length);
         Array.Clear(_worldInteractions, 0, _worldInteractions.Length);
+        Array.Clear(_worldStressAdded, 0, _worldStressAdded.Length);
+        _worldStressSeconds = 0d;
+        _worldStressHigh = 0d;
 
         int n = Math.Min(colonies.Count, ColonyRegistry.MaxColonies);
         for (int c = 0; c < n; c++)
@@ -248,6 +265,21 @@ public sealed class SimulationLog : IDisposable
                 _interactionDelta[slot] = delta;
                 _worldInteractions[k] += delta;
             }
+            for (int k = 0; k < StressSourceCount; k++)
+            {
+                int slot = c * StressSourceCount + k;
+                double value = s.StressAdded[k];
+                double delta = value - _prevStressAdded[slot];
+                _prevStressAdded[slot] = value;
+                _stressAddedDelta[slot] = delta;
+                _worldStressAdded[k] += delta;
+            }
+            _stressSecondsDelta[c] = s.StressSeconds - _prevStressSeconds[c];
+            _prevStressSeconds[c] = s.StressSeconds;
+            _stressHighDelta[c] = s.StressHighSeconds - _prevStressHigh[c];
+            _prevStressHigh[c] = s.StressHighSeconds;
+            _worldStressSeconds += _stressSecondsDelta[c];
+            _worldStressHigh += _stressHighDelta[c];
             if (!colony.IsWild) civil += colony.MemberCount;
 
             int b = c * Stride;
@@ -299,6 +331,7 @@ public sealed class SimulationLog : IDisposable
             WriteCodex(ServiceLocator.Services.TryGet(out WorldCodexService codex) ? codex : null, null);
             WriteInteractions(_worldInteractions, 0);
             WriteBaseline(null, _world, 0, _worldInteractions[(int)ColonyStats.Interaction.DeliveredEnergy], civil, colonies, n);
+            WriteStressWindow(-1);
             _writer.WriteLine();
             ledger?.ResetWindow();
 
@@ -326,6 +359,7 @@ public sealed class SimulationLog : IDisposable
                 WriteInteractions(_interactionDelta, c * InteractionCount);
                 WriteBaseline(colony, _delta, c * Stride, _interactionDelta[c * InteractionCount + (int)ColonyStats.Interaction.DeliveredEnergy],
                     colony.MemberCount, colonies, n);
+                WriteStressWindow(c);
                 _writer.WriteLine();
             }
             for (int c = 0; c < n; c++) speech?.TablesOf(colonies[c].Index)?.Clear();
@@ -697,6 +731,7 @@ public sealed class SimulationLog : IDisposable
         sb.Append(",tick_ms_mean,tick_ms_p95,gc_alloc_bytes,stress_mean,stress_p90,stress_high_share");
         sb.Append(",social_action_share,delivery_energy_per_agent_min,starvation_death_share,population_capped");
         sb.Append(",anomaly_transfer_loops,anomaly_relief_farm,anomaly_vote_concentration");
+        sb.Append(",stress_src_hunger,stress_src_cold,stress_src_lonely,stress_src_task,stress_src_threat,stress_high_time_share");
         return sb.ToString();
     }
 
@@ -886,6 +921,20 @@ public sealed class SimulationLog : IDisposable
             if (_anomalyLaws > 0) WriteFloat(_anomalyConcentration);
         }
         else _writer.Write(",,,");
+    }
+
+    private void WriteStressWindow(int colony)
+    {
+        for (int k = 0; k < StressColumnOrder.Length; k++)
+        {
+            int source = (int)StressColumnOrder[k];
+            WriteComma();
+            WriteFloat((float)(colony < 0 ? _worldStressAdded[source] : _stressAddedDelta[colony * StressSourceCount + source]));
+        }
+        double seconds = colony < 0 ? _worldStressSeconds : _stressSecondsDelta[colony];
+        double high = colony < 0 ? _worldStressHigh : _stressHighDelta[colony];
+        WriteComma();
+        if (seconds > 0d) WriteFloat((float)(high / seconds));
     }
 
     private void WriteRunSidecar(double now, ColonyRegistry colonies)

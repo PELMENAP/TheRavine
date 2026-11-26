@@ -21,6 +21,7 @@ public sealed unsafe class PerceptronContext : IDisposable
     public int   TrainingSteps;
     public float DeltaTime = 0.05f;
     public float PositiveAdvantageScale = 1f;
+    public float LearningScale = 1f;
     public int   Group = -1;
     public float TemperatureScale = 1f;
     public float EffectiveTemperature => Params.SoftmaxTemperature * TemperatureScale;

@@ -9,7 +9,9 @@ namespace TheRavine.Base
         private const uint Magic = 0x31504F50;
         private const int HeaderBytes = 44;
         private const int ColonyBytes = 46;
-        private const int AgentBytes = 62 + sizeof(float) * GeneCount;
+        private const int AgentBytesV1 = 62 + sizeof(float) * GeneCount;
+        private const int StressBytes = 2 * sizeof(float) + sizeof(byte);
+        private const int AgentBytes = AgentBytesV1 + StressBytes;
 
         private static string FilePath(string world)
         {
@@ -42,7 +44,10 @@ namespace TheRavine.Base
         {
             Require(stream.Length >= HeaderBytes && stream.Length <= HeaderBytes + ColonyBytes * MaxColonies + AgentBytes * MaxAgents, "invalid file size");
             using var r = new BinaryReader(stream, System.Text.Encoding.UTF8, true);
-            Require(r.ReadUInt32() == Magic && r.ReadInt32() == Version, "unknown format or version");
+            Require(r.ReadUInt32() == Magic, "unknown format or version");
+            int version = r.ReadInt32();
+            Require(version >= MinVersion && version <= Version, "unknown format or version");
+            int agentBytes = version >= 2 ? AgentBytes : AgentBytesV1;
             var s = new PopulationSnapshot
             {
                 Seed = r.ReadInt32(), WorldCreated = r.ReadInt64(), Captured = r.ReadInt64(),
@@ -50,7 +55,7 @@ namespace TheRavine.Base
             };
             int nc = r.ReadInt32(), na = r.ReadInt32();
             Require((uint)nc <= MaxColonies && (uint)na <= MaxAgents &&
-                stream.Length == HeaderBytes + nc * ColonyBytes + na * AgentBytes, "invalid record counts or length");
+                stream.Length == HeaderBytes + nc * ColonyBytes + na * agentBytes, "invalid record counts or length");
             Require(s.Seed == seed && s.WorldCreated == created, "world binding mismatch");
             s.Colonies = new Colony[nc];
             s.Agents = new Agent[na];
@@ -77,6 +82,12 @@ namespace TheRavine.Base
                 a.ReviewRemaining = r.ReadDouble();
                 a.Caste = r.ReadByte();
                 a.Fixed = ReadFlag(r);
+                if (version >= 2)
+                {
+                    a.Stress = r.ReadSingle();
+                    a.LonelySeconds = r.ReadSingle();
+                    a.StressLevel = r.ReadByte();
+                }
                 a.Genes = new float[GeneCount];
                 for (int g = 0; g < GeneCount; g++) a.Genes[g] = r.ReadSingle();
             }
@@ -135,6 +146,9 @@ namespace TheRavine.Base
                 w.Write(a.ReviewRemaining);
                 w.Write(a.Caste);
                 w.Write(a.Fixed);
+                w.Write(a.Stress);
+                w.Write(a.LonelySeconds);
+                w.Write(a.StressLevel);
                 foreach (float gene in a.Genes) w.Write(gene);
             }
         }

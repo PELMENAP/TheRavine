@@ -7,21 +7,21 @@ Line numbers are those of the last generation; after local edits treat them as a
 | File | Lines |
 |---|---|
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1887 |
-| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1482 |
+| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1520 |
 | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1349 |
-| `Assets/Scripts/EntitySystem/AI/Debug/SimulationLog.cs` | 1104 |
+| `Assets/Scripts/EntitySystem/AI/Debug/SimulationLog.cs` | 1153 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1092 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 1088 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1014 |
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 859 |
-| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 793 |
+| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 810 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 778 |
 | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs` | 762 |
 | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | 730 |
 | `Assets/Tests/EditMode/RiveInterpreterSecurityTests.cs` | 683 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | 678 |
 | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 635 |
-| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 628 |
+| `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs` | 634 |
 | `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs` | 621 |
 | `Assets/Tests/EditMode/SkillGraphTests.cs` | 562 |
 | `Assets/Scripts/EntitySystem/AI/Population/ColonyPopulation.cs` | 545 |
@@ -173,28 +173,28 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
 
-- 5–1482 class SimulationRules
-  - 1285 CaptureFrame
-  - 1287 Bind
-  - 1298 DeathPenaltyMul
-  - 1307 FillPlanSeconds
-  - 1314 FillCasteAffinityLog
-  - 1322 FillUtilityWeights
-  - 1330 FillPlanCasteDomain
-  - 1338 BuildEndogenousForbiddenMask
-  - 1350 BuildBoidPlanMul
-  - 1357 ColonyChannelTau
-  - 1363 BiomeFertility
-  - 1364 BiomeToxicity
-  - 1373 KindValue
-  - 1376 BiomeValue
-  - 1399 OnValidate
-  - 1479 ThrowNotBound
+- 5–1520 class SimulationRules
+  - 1323 CaptureFrame
+  - 1325 Bind
+  - 1336 DeathPenaltyMul
+  - 1345 FillPlanSeconds
+  - 1352 FillCasteAffinityLog
+  - 1360 FillUtilityWeights
+  - 1368 FillPlanCasteDomain
+  - 1376 BuildEndogenousForbiddenMask
+  - 1388 BuildBoidPlanMul
+  - 1395 ColonyChannelTau
+  - 1401 BiomeFertility
+  - 1402 BiomeToxicity
+  - 1411 KindValue
+  - 1414 BiomeValue
+  - 1437 OnValidate
+  - 1517 ThrowNotBound
   - 8–8 enum EpsilonSchedule
-  - 10–1280 struct RulesFrame
-    - 640 BiomeFertility
-    - 641 BiomeToxicity
-    - 650 RulesFrame
+  - 10–1318 struct RulesFrame
+    - 659 BiomeFertility
+    - 660 BiomeToxicity
+    - 669 RulesFrame
 
 ## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
 
@@ -265,43 +265,44 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Debug/SimulationLog.cs`
 
-- 8–1104 class SimulationLog
-  - 157 SimulationLog
-  - 183 NoteTick
-  - 195 Sample
-  - 347 WriteWorldOnly
-  - 389 IsNight
-  - 397 Fill
-  - 445 WriteColonyDiagnostics
-  - 464 WriteWorldDiagnostics
-  - 503 WritePlanKinds
-  - 508 WriteFeedFails
-  - 513 WritePredisposition
-  - 531 WriteSaturation
-  - 556 WriteSpeechMetrics
-  - 566 WriteAttackFails
-  - 573 WriteCommon
-  - 622 WriteComma
-  - 624 WriteNext
-  - 630 WriteInt
-  - 632 WriteFloat
-  - 634 BuildHeader
-  - 703 WriteInteractions
-  - 712 WriteCodex
-  - 745 WriteBirthFailures
-  - 750 WriteTraining
-  - 766 SampleStress
-  - 790 WriteStress
-  - 839 WriteBaseline
-  - 891 WriteRunSidecar
-  - 957 JsonText
-  - 975 CasteName
-  - 977 SampleStage3
-  - 1008 WriteStage3
-  - 1058 WriteConflictWorld
-  - 1077 AddConflict
-  - 1084 SnakeCase
-  - 1096 Dispose
+- 8–1153 class SimulationLog
+  - 171 SimulationLog
+  - 197 NoteTick
+  - 209 Sample
+  - 381 WriteWorldOnly
+  - 423 IsNight
+  - 431 Fill
+  - 479 WriteColonyDiagnostics
+  - 498 WriteWorldDiagnostics
+  - 537 WritePlanKinds
+  - 542 WriteFeedFails
+  - 547 WritePredisposition
+  - 565 WriteSaturation
+  - 590 WriteSpeechMetrics
+  - 600 WriteAttackFails
+  - 607 WriteCommon
+  - 656 WriteComma
+  - 658 WriteNext
+  - 664 WriteInt
+  - 666 WriteFloat
+  - 668 BuildHeader
+  - 738 WriteInteractions
+  - 747 WriteCodex
+  - 780 WriteBirthFailures
+  - 785 WriteTraining
+  - 801 SampleStress
+  - 825 WriteStress
+  - 874 WriteBaseline
+  - 926 WriteStressWindow
+  - 940 WriteRunSidecar
+  - 1006 JsonText
+  - 1024 CasteName
+  - 1026 SampleStage3
+  - 1057 WriteStage3
+  - 1107 WriteConflictWorld
+  - 1126 AddConflict
+  - 1133 SnakeCase
+  - 1145 Dispose
 
 ## `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs`
 
@@ -560,54 +561,54 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs`
 
-- 12–793 class EntityModel
+- 12–810 class EntityModel
   - 32 Activate
   - 33 Deactivate
   - 48 AssignId
-  - 86 AddStress
-  - 89 AddExtrinsicReward
-  - 90 ConsumeExtrinsicReward
-  - 116 PlanRewardEma
-  - 146 ClearRecruit
-  - 147 Recruit
-  - 155 NoteFoodSite
-  - 160 TryGetFoodSite
-  - 167 RecordStored
-  - 186 SetLeader
-  - 198 SetFlock
-  - 200 BuildBoidAgent
-  - 262 SelectHuntTarget
-  - 289 RestoreCondition
-  - 310 RestoreParent
-  - 312 AssignCaste
-  - 325 SyncCount
-  - 342 ClearCount
-  - 348 ActionMask
-  - 357 SetLastAction
-  - 367 CreateActionTimes
-  - 374 SinceAction
-  - 381 NoteThreatDisplay
-  - 385 TryGetKinTarget
-  - 417 NextPlanSide
-  - 423 Carry
-  - 429 TakeCarried
-  - 437 ReceiveFood
-  - 443 IngestFood
-  - 452 ConsumeReceivedFood
-  - 462 Warn
-  - 474 NoteVictim
-  - 495 TryGetThreatSource
-  - 520 IsDryNestSite
-  - 553 MarkDeathPending
-  - 586 InvalidateCachedFood
-  - 613 TryStartAttackCooldown
-  - 621 SetUp
-  - 629 RequestReproduce
-  - 637 Configure
-  - 712 Init
-  - 752 InterruptCommand
-  - 754 Dispose
-  - 777 DeepClean
+  - 94 AddStress
+  - 102 AddExtrinsicReward
+  - 103 ConsumeExtrinsicReward
+  - 129 PlanRewardEma
+  - 159 ClearRecruit
+  - 160 Recruit
+  - 168 NoteFoodSite
+  - 173 TryGetFoodSite
+  - 180 RecordStored
+  - 199 SetLeader
+  - 211 SetFlock
+  - 213 BuildBoidAgent
+  - 275 SelectHuntTarget
+  - 302 RestoreCondition
+  - 327 RestoreParent
+  - 329 AssignCaste
+  - 342 SyncCount
+  - 359 ClearCount
+  - 365 ActionMask
+  - 374 SetLastAction
+  - 384 CreateActionTimes
+  - 391 SinceAction
+  - 398 NoteThreatDisplay
+  - 402 TryGetKinTarget
+  - 434 NextPlanSide
+  - 440 Carry
+  - 446 TakeCarried
+  - 454 ReceiveFood
+  - 460 IngestFood
+  - 469 ConsumeReceivedFood
+  - 479 Warn
+  - 491 NoteVictim
+  - 512 TryGetThreatSource
+  - 537 IsDryNestSite
+  - 570 MarkDeathPending
+  - 603 InvalidateCachedFood
+  - 630 TryStartAttackCooldown
+  - 638 SetUp
+  - 646 RequestReproduce
+  - 654 Configure
+  - 729 Init
+  - 769 InterruptCommand
+  - 771 Dispose
+  - 794 DeepClean
   - 14–14 enum FitnessEvent
 
 ## `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs`
@@ -871,7 +872,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 
 ## `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.Cycle.cs`
 
-- 11–628 class EntityModel
+- 11–634 class EntityModel
   - 24 IsAliveForTick
   - 27 SubmitDecision
   - 34 BeginCycle
@@ -879,13 +880,13 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 63 NoisyDirection
   - 70 UpdateDormancy
   - 87 RunCycleHead
-  - 170 RunCycleTail
-  - 515 ComputePlanHints
-  - 564 EndCycle
-  - 585 NotifyView
-  - 587 StartDecision
-  - 604 ComputeDangerLevel
-  - 617 ComputeBreedReadiness
+  - 172 RunCycleTail
+  - 521 ComputePlanHints
+  - 570 EndCycle
+  - 591 NotifyView
+  - 593 StartDecision
+  - 610 ComputeDangerLevel
+  - 623 ComputeBreedReadiness
 
 ## `Assets/Scripts/EntitySystem/Job/BoidsBehaviour.cs`
 

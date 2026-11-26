@@ -295,7 +295,7 @@ public class SharedHierarchicalBrain : IDisposable
 
         ctx.GoalTotalReward      += scaled;
         ctx.GoalDiscountedReturn += scaled * DelayedPerceptron.DiscountTime(
-            SimulationRules.Frame.CoordGammaPerSecond, SimulationClock.Time - ctx.GoalStartTime);
+            ctx.Gamma(SimulationRules.Frame.CoordGammaPerSecond), SimulationClock.Time - ctx.GoalStartTime);
         ctx.GoalRewardCount++;
     }
 
@@ -545,7 +545,7 @@ public class SharedHierarchicalBrain : IDisposable
             ctx.CoordMLP.Activation(0).CopyTo(ctx.CoordCombined);
 
             var planTicket = coordinator.FinishDecide(ctx.CoordCombined, ctx.CoordMLP, item.Slot,
-                batch.BiasRow(d).Slice(0, PlanCount), CoordDelaySteps, coordCritic, coordGamma, simTime,
+                batch.BiasRow(d).Slice(0, PlanCount), CoordDelaySteps, coordCritic, ctx.Gamma(coordGamma), simTime,
                 frame.PlanMinSeconds, frame.PlanMaxSeconds, coordEps, decay, false);
 
             if (NullPolicy)
@@ -642,7 +642,7 @@ public class SharedHierarchicalBrain : IDisposable
             int rare = trackRarity ? LeastSelectedAction(ctx.CurrentPlan, ctx.ExecMask, ActionSubsets[g]) : -1;
             float rareChance = rare >= 0 ? frame.RareActionChance * EnergySurplus(ctx.EnergyNorm, frame.CuriosityEnergyFloor) : 0f;
             var ticket = executors[g].FinishDecide(combined, ctx.ExecMLPs[g], item.Slot,
-                batch.BiasRow(d).Slice(0, ActionSubsets[g].Length), ExecDelaySteps, execCritics[g], execGamma,
+                batch.BiasRow(d).Slice(0, ActionSubsets[g].Length), ExecDelaySteps, execCritics[g], ctx.Gamma(execGamma),
                 simTime, _goalMinDuration[g], _goalMaxDuration[g], execEps, decay, ctx.ExecForced, rare, rareChance);
 
             if (NullPolicy)
@@ -930,11 +930,11 @@ public class SharedHierarchicalBrain : IDisposable
         int   passes  = frame.DeathReplayPasses;
         float weight  = frame.DeathReplayWeight;
         for (int i = 0; i < GoalCount; i++)
-            executors[i].FlushTerminal(ctx.ExecMLPs[i], execCritics[i], frame.ExecGammaPerSecond,
+            executors[i].FlushTerminal(ctx.ExecMLPs[i], execCritics[i], ctx.Gamma(frame.ExecGammaPerSecond),
                                        scaled, deathTime, replay, passes, weight);
 
         FlushGoalRewardToCoordinator(ctx);
-        coordinator.FlushTerminal(ctx.CoordMLP, coordCritic, frame.CoordGammaPerSecond, scaled, deathTime,
+        coordinator.FlushTerminal(ctx.CoordMLP, coordCritic, ctx.Gamma(frame.CoordGammaPerSecond), scaled, deathTime,
                                   replay, passes, weight);
 
         ctx.CoordDecisionId = 0;
