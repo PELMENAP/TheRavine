@@ -34,6 +34,7 @@ public sealed class ColonyPopulation
     private readonly SpeechBus            _speech;
     private readonly BehaviourDescriptorLog _descriptors;
     private readonly NoveltyProgressSystem  _novelty;
+    private readonly HelpLog _helpLog;
 
     public LifeEventLog LifeLog { get; set; }
 
@@ -66,7 +67,7 @@ public sealed class ColonyPopulation
         List<EntityModel> entities, ColonyRegistry colonies, ColonyState wild, ColonyFood food, EvolutionService evolution,
         EntitySpatialGrid grid, MotionSystem motion, InstinctSystem instincts, SurveySystem survey, UtilityPriorSystem utility,
         CasteThresholdSystem thresholds, SkillGraphStore skills, BoidSystem boids, EnergyLedger ledger, SpeechBus speech, bool spawnNetworkObjects,
-        BehaviourDescriptorLog descriptors = null, NoveltyProgressSystem novelty = null)
+        BehaviourDescriptorLog descriptors = null, NoveltyProgressSystem novelty = null, HelpLog helpLog = null)
     {
         _spawnNetworkObjects = spawnNetworkObjects;
         _prefab        = prefab;
@@ -92,6 +93,7 @@ public sealed class ColonyPopulation
         _speech        = speech;
         _descriptors   = descriptors;
         _novelty       = novelty;
+        _helpLog       = helpLog;
     }
 
     public void StartPredatorClock(double now) => _nextPredatorTime = now;
@@ -195,6 +197,8 @@ public sealed class ColonyPopulation
         _speech.Reset(model.ManagerIndex, model.ColonyIndex, model.EntityId, muted, colony.Arm);
         _descriptors?.Reset(model.ManagerIndex);
         _novelty?.Reset(model.ManagerIndex);
+        _helpLog?.Reset(model.ManagerIndex);
+        if (saved.HasValue) model.RestoreHelp(saved.Value);
         if (!saved.HasValue)
         {
             LifeLog?.Birth(model, parent, mate);
@@ -408,6 +412,7 @@ public sealed class ColonyPopulation
         _speech.RemoveSwapBack(idx, last);
         _descriptors?.RemoveSwapBack(idx, last);
         _novelty?.RemoveSwapBack(idx, last);
+        _helpLog?.RemoveSwapBack(idx, last);
         _grid.MarkStale();
         _entities.RemoveAt(last);
         model.ManagerIndex = -1;

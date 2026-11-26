@@ -131,6 +131,56 @@ public class SurveySystemTests
     }
 
     [Test]
+    public void KinNearCountsSameColonyWithinItsOwnRadius()
+    {
+        const int n = 80;
+        var registry  = new ColonyRegistry();
+        var grid      = new EntitySpatialGrid();
+        var system    = new SurveySystem(n);
+        var positions = new NativeArray<float3>(n, Allocator.Persistent);
+        var models    = new EntityModel[n];
+        try
+        {
+            var colonies = new[] { registry.Add(new float2(0f, 0f), null, n), registry.Add(new float2(300f, 0f), null, n) };
+            var rng = new System.Random(7);
+            for (int i = 0; i < n; i++)
+            {
+                positions[i] = new float3((float)rng.NextDouble() * 120f, 0f, (float)rng.NextDouble() * 120f);
+                models[i] = new EntityModel { ManagerIndex = i };
+                EntitySpatialGridSurveyTests.SetColony(models[i], colonies[i % 2]);
+                SetStats(models[i], 50f, 100f);
+            }
+            grid.Rebuild(models, n, 100f, positions);
+
+            var radii = new float[n];
+            for (int i = 0; i < n; i++)
+            {
+                radii[i] = i % 5 == 0 ? 0f : 4f + (float)rng.NextDouble() * 40f;
+                var q = Query(models[i], positions, 10f, 4f, 4096);
+                q.KinRadius = radii[i];
+                system.Write(i, q);
+            }
+            system.Schedule(grid, 0, n).Complete();
+
+            for (int i = 0; i < n; i++)
+            {
+                int expected = 0;
+                for (int j = 0; j < n && radii[i] > 0f; j++)
+                    if (j != i && j % 2 == i % 2 && math.distancesq(positions[i], positions[j]) <= radii[i] * radii[i]) expected++;
+                Assert.AreEqual(expected, system.Output(i).KinNear, $"agent {i}");
+            }
+        }
+        finally
+        {
+            for (int i = 0; i < n; i++) models[i]?.Dispose();
+            positions.Dispose();
+            system.Dispose();
+            grid.Dispose();
+            registry.Dispose();
+        }
+    }
+
+    [Test]
     public void EmptyGridAndSingleAgentGiveNoNeighbours()
     {
         var registry  = new ColonyRegistry();

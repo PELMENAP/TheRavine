@@ -68,7 +68,7 @@ public sealed class PlanRunner
     public void OnStepFinished(EntityCommandStatus status, float reward, int action)
     {
         if (!_active) return;
-        _return += DelayedPerceptron.DiscountTime(SimulationRules.Frame.ExecGammaPerSecond,
+        _return += DelayedPerceptron.DiscountTime(_model.Brain.Context.Gamma(SimulationRules.Frame.ExecGammaPerSecond),
             (float)(SimulationClock.TimeD - _start)) * reward;
         if (_ending) return;
         Advance(status, action);
@@ -82,6 +82,7 @@ public sealed class PlanRunner
         if (now != _instantTick) { _instantTick = now; _instantSteps = 0; }
         if (++_instantSteps > SimulationRules.Active.PlanMaxInstantSteps) { End(EntityCommandStatus.Failed); return; }
         if (SimulationClock.Time >= _decision.PlanEnd) { End(EntityCommandStatus.Completed); return; }
+        if (AbandonUnderStress()) { End(EntityCommandStatus.Interrupted); return; }
 
         for (int attempt = 0; attempt < MaxStartAttempts; attempt++)
         {
@@ -101,6 +102,12 @@ public sealed class PlanRunner
         }
 
         End(EntityCommandStatus.Failed);
+    }
+
+    private bool AbandonUnderStress()
+    {
+        float chance = CreatureCore.StressAbandonChance(_model.StressEffect, in SimulationRules.Frame);
+        return chance > 0f && RavineRandom.RangeFloat() < chance;
     }
 
     private PlanHint CurrentHints()
@@ -167,6 +174,8 @@ public sealed class PlanRunner
         if (!_active) return;
         _active = false;
         _ending = false;
+
+        if (status == EntityCommandStatus.Failed) _model.NoteTaskFailure();
 
         var r = SimulationRules.Active;
         float total = _return + _model.HomeostaticReturn() + _model.ConsumeExtrinsicReward() + ColonyReward();

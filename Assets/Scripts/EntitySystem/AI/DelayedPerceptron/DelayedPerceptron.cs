@@ -421,7 +421,7 @@ public unsafe partial class DelayedPerceptron : IDisposable
             Temperature           = item.Temperature > 0f ? item.Temperature : p.SoftmaxTemperature,
             EntropyRegularization = _hasColonyLearning ? _colonyEntropyReg : p.EntropyRegularization,
             MaxGradNorm           = _hasColonyLearning ? _colonyGradNorm : p.MaxGradientNorm,
-            LrMul                 = (_hasColonyLearning ? _colonyLr : p.BaseLearningRate) * InvBaseLearningRateReference,
+            LrMul                 = (_hasColonyLearning ? _colonyLr : p.BaseLearningRate) * InvBaseLearningRateReference * ctx.LearningScale,
         };
 
         int ac = ctx.Layout.ActionCount;

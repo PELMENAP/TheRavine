@@ -47,6 +47,8 @@ public partial class EntityManager
             {
                 Id = e.EntityId, Parent = e.Parent.EntityId, ColonyId = e.ColonyId,
                 Position = _motion.PositionOf(e.ManagerIndex), Age = e.TimeAlive, Caste = (byte)e.Caste, Fixed = e.CasteFixed,
+                Stress = e.Stress, LonelySeconds = e.LonelySeconds, StressLevel = (byte)e.StressLevel,
+                Help = CaptureHelp(e),
                 Health = e.Stats.Hp, Energy = e.Stats.En, Stomach = e.Digestion.Stomach, Carrying = e.Carrying,
                 AttackRemaining = Math.Max(0, e.AttackReadyTime - now),
                 ReviewRemaining = Math.Max(0, e.NextCasteReview - now),
@@ -55,6 +57,31 @@ public partial class EntityManager
         }
         return snapshot;
     }
+
+    private PopulationSnapshot.HelpRecord[] CaptureHelp(EntityModel e)
+    {
+        var log = _helpLog;
+        if (log == null) return null;
+        int count = log.Count(e.ManagerIndex);
+        if (count == 0) return null;
+        float now = SimulationClock.Time;
+        var records = new PopulationSnapshot.HelpRecord[count];
+        int n = 0;
+        for (int i = 0; i < log.Size && n < count; i++)
+        {
+            var h = log.Read(e.ManagerIndex, i);
+            if (h.Partner == 0) continue;
+            records[n++] = new PopulationSnapshot.HelpRecord
+            {
+                Partner = h.Partner, Balance = h.Balance, ComfortAccum = h.ComfortAccum,
+                BalanceAge = HelpAge(now, h.BalanceTime), ComfortAge = HelpAge(now, h.ComfortTime), GaveAge = HelpAge(now, h.GaveTime),
+                ReceivedAge = HelpAge(now, h.ReceivedTime), MetAge = HelpAge(now, h.MetTime),
+            };
+        }
+        return records;
+    }
+
+    private static float HelpAge(float now, float time) => float.IsNegativeInfinity(time) ? -1f : Math.Max(0f, now - time);
 
     private void RestoreColonies(PopulationSnapshot snapshot)
     {

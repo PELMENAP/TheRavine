@@ -32,6 +32,26 @@ public class SoaSwapBackTests
     }
 
     [Test]
+    public void HelpLogRowsFollowSwapBack()
+    {
+        var log = new HelpLog(4, 2);
+        try
+        {
+            for (int i = 0; i < 4; i++) log.NoteReceived(i, 10 + i, 1f + i, 0f, 300f);
+            log.RemoveSwapBack(0, 3);
+
+            Assert.AreEqual(4f, log.Balance(0, 13, 0f, 300f), 1e-5f);
+            Assert.AreEqual(0f, log.Balance(0, 10, 0f, 300f));
+            Assert.AreEqual(2f, log.Balance(1, 11, 0f, 300f), 1e-5f);
+            Assert.AreEqual(0, log.Count(3));
+        }
+        finally
+        {
+            log.Dispose();
+        }
+    }
+
+    [Test]
     public void InstinctSlotIsResetAfterSwapBack()
     {
         var system = new InstinctSystem(4);

@@ -216,6 +216,37 @@ public partial class EntityModel
         return best;
     }
 
+    public EntityModel FindMostStressedKin(float radius, float minStress, float cooldown, float tieEpsilon)
+    {
+        var log = _helpLog;
+        float now = SimulationClock.Time;
+        float tau = SimulationRules.Active.HelpBalanceTau;
+        int found = Perception.FindEntitiesInRadius(Motor.Position(), this, radius, Neighbors);
+        EntityModel best = null;
+        float bestStress = 0f, bestBalance = 0f;
+        for (int i = 0; i < found; i++)
+        {
+            var e = Neighbors[i];
+            Neighbors[i] = null;
+            if (e == null || e.Colony != Colony || e.IsDisposed || e.IsDeathPending) continue;
+            float stress = e.Stress;
+            if (stress < minStress) continue;
+            float balance = 0f;
+            if (log != null && ManagerIndex >= 0)
+            {
+                if (!log.ComfortReady(ManagerIndex, e.EntityId, now, cooldown)) continue;
+                balance = log.Balance(ManagerIndex, e.EntityId, now, tau);
+            }
+            if (best == null || stress > bestStress + tieEpsilon || (stress >= bestStress - tieEpsilon && balance > bestBalance))
+            {
+                best = e;
+                bestStress = stress;
+                bestBalance = balance;
+            }
+        }
+        return best;
+    }
+
     public EntityModel FindSickestKin(float radius, float minLoad)
     {
         int found = Perception.FindEntitiesInRadius(Motor.Position(), this, radius, Neighbors);

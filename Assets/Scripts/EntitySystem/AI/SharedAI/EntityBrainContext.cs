@@ -32,6 +32,18 @@ public class EntityBrainContext : System.IDisposable
         for (int i = 0; i < ExecMLPs.Length; i++) ExecMLPs[i].Group = group;
     }
 
+    public float DiscountPower = 1f;
+
+    public void SetStressScales(float learningScale, float discountPower)
+    {
+        CoordMLP.LearningScale = learningScale;
+        for (int i = 0; i < ExecMLPs.Length; i++) ExecMLPs[i].LearningScale = learningScale;
+        DiscountPower = discountPower;
+    }
+
+    public float Gamma(float gammaPerSecond)
+        => DiscountPower == 1f ? gammaPerSecond : Unity.Mathematics.math.pow(gammaPerSecond, DiscountPower);
+
     public void SetPositiveAdvantageScale(float scale)
     {
         CoordMLP.PositiveAdvantageScale = scale;

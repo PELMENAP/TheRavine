@@ -152,7 +152,7 @@ public class InputVectorizer : IDisposable
         v[s + 9]  = f.Alarm;
         v[s + 10] = f.AtNest;
         v[s + 11] = f.NeighborViralLoad;
-        v[s + 12] = f.Stress;
+        v[s + 12] = rules.MaskStressInput ? 0f : f.Stress;
         v[s + 13] = f.HeldObject;
 
         int idx = TailOffset;

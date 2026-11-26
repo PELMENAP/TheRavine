@@ -187,6 +187,8 @@ public sealed class ChunkFoodIndex
     private long[] _pruneKeys = new long[16];
     private long[] _ecologyKeys = new long[16];
     private int _ecologyKeyCount;
+    private FoodZone[] _zones = System.Array.Empty<FoodZone>();
+    private int _zoneCount;
     private bool _keysDirty = true;
 
     public static float2 CellCenter(long cell)
@@ -692,6 +694,12 @@ public sealed class ChunkFoodIndex
         return false;
     }
 
+    public void SetFoodZones(FoodZone[] zones, int count)
+    {
+        _zones = zones ?? System.Array.Empty<FoodZone>();
+        _zoneCount = zones == null ? 0 : math.clamp(count, 0, zones.Length);
+    }
+
     public void TickEcology(float dt, double now, float season, int maxFood, bool winter,
         out float spawnedEnergy, out float maturedEnergy, out float spoiledEnergy, out float soilReleased,
         out float wiltedEnergy, out float soilStored)
@@ -758,7 +766,12 @@ public sealed class ChunkFoodIndex
             }
             fc.Depletion = math.max(0f, fc.Depletion - recovered);
 
+            int baseX = Position2Int.GetX(key) << ChunkShift;
+            int baseZ = Position2Int.GetY(key) << ChunkShift;
             float K = r.FoodChunkCapacity * fc.Fertility * season * (1f - fc.Depletion);
+            if (_zoneCount > 0)
+                K *= FoodZone.MultiplierAt(_zones, _zoneCount,
+                    new float2((baseX + Size * 0.5f) * MapGenerator.scale, (baseZ + Size * 0.5f) * MapGenerator.scale), now);
             int   N = fc.Count;
             if (K <= 0f || N >= K || FoodCount >= maxFood) { fc.GrowthBudget = 0f; continue; }
 
@@ -767,8 +780,6 @@ public sealed class ChunkFoodIndex
             if (spawn <= 0) continue;
             fc.GrowthBudget -= spawn;
 
-            int baseX = Position2Int.GetX(key) << ChunkShift;
-            int baseZ = Position2Int.GetY(key) << ChunkShift;
             for (int s = 0; s < spawn && FoodCount < maxFood; s++)
             {
                 int lx = RavineRandom.RangeInt(0, Size);

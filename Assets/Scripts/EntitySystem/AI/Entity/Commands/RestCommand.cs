@@ -30,6 +30,7 @@ public class RestCommand : EntityCommand
         {
             _prev = t;
             _rested += step;
+            if (SimulationRules.Frame.SocialReliefEnabled && model.Plan.Kind == PlanKind.Rest) RelieveWithKin(r, step);
             float hp     = stats.Hp;
             float en     = stats.En;
             float cost   = r.RestHealEnergyCost;
@@ -56,7 +57,15 @@ public class RestCommand : EntityCommand
         return Complete(r.RestRewardPerSecond * _rested * factor);
     }
 
-    private float RestFactor(SimulationRules r)
+    private void RelieveWithKin(SimulationRules r, float step)
+    {
+        int resting = RestingKin(r);
+        if (resting <= 0) return;
+        float rate = math.min(r.RestReliefCap, r.RestReliefRate * resting);
+        model.RelieveStress(rate * step, ColonyStats.ReliefKind.Rest);
+    }
+
+    private int RestingKin(SimulationRules r)
     {
         int found = model.Perception.FindEntitiesInRadius(model.Motor.Position(), model, r.CrowdRadius, Nearby);
         int resting = 0;
@@ -67,6 +76,12 @@ public class RestCommand : EntityCommand
             if (e == null || e.Colony != model.Colony || !e.IsCommandRunning || e.LastAction != EntityAction.Rest) continue;
             resting++;
         }
+        return resting;
+    }
+
+    private float RestFactor(SimulationRules r)
+    {
+        int resting = RestingKin(r);
         float social = 1f + r.RestSocialBonus * math.min(resting, r.RestSocialMax);
         return social * (model.IsNight && model.IsAtNest ? r.RestNightMul : 1f);
     }
