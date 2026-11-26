@@ -15,7 +15,7 @@ Read only what the task touches. The Philosophy and Project constraints sections
 | Agent motion, birds, other jobs | [docs/map/jobs.md](docs/map/jobs.md) |
 | Entity base classes, mobs, small modules | [docs/map/entities.md](docs/map/entities.md) |
 | Lifecycle, services, saves, settings, timers, input, sound | [docs/map/core.md](docs/map/core.md) |
-| Inventory, craft, UI | [docs/map/inventory-ui.md](docs/map/inventory-ui.md) |
+| Inventory, craft, UI | [docs/map/inventory-ui.md](docs/map/inventory-ui.md), [docs/UI_STYLE.md](docs/UI_STYLE.md) |
 | Terminal, Rive, gestures | [docs/map/terminal.md](docs/map/terminal.md) |
 | A hot path (list: [docs/map/HOT_PATHS.md](docs/map/HOT_PATHS.md)) | [docs/OPTIMIZATION.md](docs/OPTIMIZATION.md) |
 | RPCs, loaders, the Rive interpreter, external input | [docs/SECURITY.md](docs/SECURITY.md), open rows of [docs/audit/security_audit.md](docs/audit/security_audit.md) |

@@ -1,0 +1,43 @@
+:root {
+    --ravine-bg-backdrop: rgba(12, 13, 11, 0.5);
+    --ravine-surface-panel: rgba(21, 23, 20, 0.88);
+    --ravine-surface-elevated: rgba(31, 34, 30, 0.94);
+    --ravine-surface-slot: rgba(16, 18, 15, 0.72);
+    --ravine-surface-hover: rgba(44, 48, 42, 0.96);
+    --ravine-surface-canvas: rgb(16, 18, 15);
+
+    --ravine-border-subtle: rgba(214, 210, 196, 0.16);
+    --ravine-border-frame: rgba(214, 210, 196, 0.38);
+    --ravine-reticle-bracket: #DCD7C7;
+    --ravine-reticle-active: #F2EDE0;
+
+    --ravine-ink-primary: #EAE6DA;
+    --ravine-ink-secondary: #A3A094;
+    --ravine-ink-muted: #7A786E;
+
+    --ravine-zone-equip: #C9A65B;
+    --ravine-zone-pouch: #B8614B;
+    --ravine-zone-craft: #6299A3;
+    --ravine-zone-bag: #8A8C84;
+    --ravine-zone-analysis: #947EA8;
+
+    --ravine-stat-vitality: #A64444;
+    --ravine-stat-energy: #BFB052;
+    --ravine-stat-thermal: #D17A42;
+    --ravine-stat-viral: #7D9B5A;
+
+    --ravine-signal-refusal: #D0925C;
+
+    --ravine-graph-clique-k3: rgba(98, 153, 163, 0.18);
+    --ravine-graph-clique-k4: rgba(201, 166, 91, 0.24);
+    --ravine-graph-bridge: #D17A42;
+    --ravine-graph-pruned: rgba(122, 120, 110, 0.35);
+    --ravine-graph-badge-clique: #C9A65B;
+    --ravine-graph-badge-decay: #6299A3;
+
+    --ravine-node-base: rgba(31, 34, 30, 0.96);
+    --ravine-node-available: rgb(44, 48, 42);
+    --ravine-node-open: rgb(38, 60, 64);
+    --ravine-node-island: rgb(48, 44, 54);
+    --ravine-node-pruned: rgb(60, 42, 36);
+}
