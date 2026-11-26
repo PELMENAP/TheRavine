@@ -1,0 +1,104 @@
+#pragma kernel ClearAll
+#pragma kernel ClearStrip
+#pragma kernel StepAndStamp
+
+struct StampData
+{
+    float2 center;
+    float invRadius;
+    float strength;
+};
+
+StructuredBuffer<StampData> Stamps;
+int StampCount;
+
+Texture2D<float4> StateIn;
+RWTexture2D<float4> StateOut;
+RWTexture2D<float4> ClearTarget;
+
+uint2 TexSize;
+uint2 TexMask;
+int2 CenterTexel;
+float WaveC2;
+float Damping;
+
+int ClearXStart;
+int ClearXCount;
+int ClearZStart;
+int ClearZCount;
+
+[numthreads(8, 8, 1)]
+void ClearAll(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= TexSize.x || id.y >= TexSize.y) return;
+    ClearTarget[id.xy] = 0;
+}
+
+[numthreads(8, 8, 1)]
+void ClearStrip(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= TexSize.x || id.y >= TexSize.y) return;
+
+    bool inX = ClearXCount > 0 && ((int)((id.x - (uint)ClearXStart) & TexMask.x) < ClearXCount);
+    bool inZ = ClearZCount > 0 && ((int)((id.y - (uint)ClearZStart) & TexMask.y) < ClearZCount);
+
+    if (inX || inZ)
+        ClearTarget[id.xy] = 0;
+}
+
+[numthreads(8, 8, 1)]
+void StepAndStamp(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= TexSize.x || id.y >= TexSize.y) return;
+
+    uint xL = (id.x - 1u) & TexMask.x;
+    uint xR = (id.x + 1u) & TexMask.x;
+    uint yD = (id.y - 1u) & TexMask.y;
+    uint yU = (id.y + 1u) & TexMask.y;
+
+    float4 center = StateIn[id.xy];
+    float hC = center.a;
+    float hPrev = center.r;
+
+    float hL = StateIn[uint2(xL, id.y)].a;
+    float hR = StateIn[uint2(xR, id.y)].a;
+    float hD = StateIn[uint2(id.x, yD)].a;
+    float hU = StateIn[uint2(id.x, yU)].a;
+
+    float lap = (hL + hR + hD + hU) - 4.0 * hC;
+    float hNext = (2.0 * hC - hPrev + WaveC2 * lap) * Damping;
+
+    float dHdx = (hR - hL) * 0.5;
+    float dHdz = (hU - hD) * 0.5;
+
+    if (StampCount > 0)
+    {
+        float2 uv = (float2(id.xy) + 0.5) / float2(TexSize);
+        float stampVal = 0.0;
+
+        for (int i = 0; i < StampCount; i++)
+        {
+            float2 delta = uv - Stamps[i].center;
+            delta -= round(delta);
+            float d2 = dot(delta, delta) * Stamps[i].invRadius * Stamps[i].invRadius;
+            float s = saturate(1.0 - d2);
+            stampVal += Stamps[i].strength * (s * s);
+        }
+
+        hNext += stampVal;
+    }
+
+    int halfX = (int)(TexSize.x >> 1);
+    int halfY = (int)(TexSize.y >> 1);
+    int dx = (int)(((uint)((int)id.x - CenterTexel.x + halfX + (int)TexSize.x)) & TexMask.x) - halfX;
+    int dy = (int)(((uint)((int)id.y - CenterTexel.y + halfY + (int)TexSize.y)) & TexMask.y) - halfY;
+    int edgeDist = min(halfX - abs(dx), halfY - abs(dy));
+    float borderMask = saturate((float)edgeDist / 8.0);
+
+    hNext = clamp(hNext * borderMask, -2.0, 2.0);
+    hC *= borderMask;
+    dHdx *= borderMask;
+    dHdz *= borderMask;
+
+    StateOut[id.xy] = float4(hC, dHdx, dHdz, hNext);
+}

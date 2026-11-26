@@ -88,6 +88,7 @@ Material:
     - FoamShoreStrength: 0.3
     - FoamThreshold: 0.1
     - FresnelF0: 0.1
+    - LocalCaustics: 0
     - Metallic: 0.084
     - NightFloor: 0.1
     - NormalStrength: 0.3
@@ -99,10 +100,14 @@ Material:
     - RippleShading: 0.3
     - RippleStrength: 20
     - SSRBlur: 0.2
+    - SSRDisabled: 0
     - SSRIntensity: 1
     - SSRMaxDistance: 300
+    - SSRMinWeight: 0.01
     - SSRRayFade: 100
+    - SSRRefineCount: 4
     - SSRStep: 1
+    - SSRStepCount: 16
     - SSRThickness: 3
     - Scale: 10
     - ShoreSoftness: 1

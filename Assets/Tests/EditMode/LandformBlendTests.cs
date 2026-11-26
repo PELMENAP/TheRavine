@@ -2,6 +2,8 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+using Unity.Jobs;
+
 using TheRavine.Generator;
 
 public class LandformBlendTests
