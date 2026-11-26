@@ -68,7 +68,7 @@ If a task item contradicts the philosophy, do not perform it: describe the confl
 - If an item lacks the content of a file, request that specific file (path) and stop at that item without guessing its content. Perform the other items.
 
 ## Verification
-- Verify the changes by reading; state explicitly in the report that compilation was not checked.
+- Verify by reading. CI `.github/workflows/unity-tests.yml` compiles and runs EditMode tests on push to `claude/**`; the agent does not wait for it, the author tests locally. State that compilation was not checked locally.
 - Re-read your own diff: check for allocations on hot paths, comments, hard-coded simulation constants, and special paths for the player.
 - Do not claim something is "verified" if the verification was not performed.
 

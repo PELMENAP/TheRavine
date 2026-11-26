@@ -20,7 +20,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Core/Timer` | 4 | 271 |
 | `Assets/Scripts/Core/Utilities` | 10 | 1922 |
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
-| `Assets/Scripts/Editor` | 19 | 2317 |
+| `Assets/Scripts/Editor` | 20 | 2622 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
 | `Assets/Scripts/EntitySystem/AI` | 12 | 2673 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
@@ -87,10 +87,10 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs` | 7 | 954 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision` | 7 | 396 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/GrassGenerator` | 7 | 1135 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless` | 7 | 1531 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless` | 7 | 1527 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ObjectGenerator` | 4 | 406 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering` | 3 | 721 |
-| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/RippleSystem` | 3 | 169 |
+| `Assets/Scripts/ObjectSystem/Map/WorldGeneration/RippleSystem` | 3 | 465 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/StructGenerator` | 5 | 446 |
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Ticks` | 5 | 497 |
 | `Assets/Scripts/ObjectSystem/ObjectInfo` | 3 | 184 |
@@ -116,7 +116,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 948 |
-| `Assets/Tests/EditMode` | 86 | 14282 |
+| `Assets/Tests/EditMode` | 86 | 14284 |
 
 ## Assemblies
 
@@ -434,6 +434,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | SpeechCredit | struct | `Assets/Scripts/EntitySystem/AI/Speech/SpeechBus.cs` | 9 |
 | SpeechDeliverJob | struct | `Assets/Scripts/EntitySystem/AI/Speech/SpeechBus.cs` | 20 |
 | SpeechSyllableJob | struct | `Assets/Scripts/EntitySystem/AI/Speech/SpeechVoiceBank.cs` | 7 |
+| SplashEvent | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/RippleSystem/RippleStampSystem.cs` | 5 |
 | StatementNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 55 |
 | StringBuilderNumeric | class | `Assets/Scripts/EntitySystem/AI/Debug/NestDebugView.cs` | 305 |
 | StructureSpawnPoint | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1842 |

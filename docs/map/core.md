@@ -92,6 +92,10 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 - `Position2Int.Pack` is the cell and chunk key used across the project.
 - `RavineRandom` is declared in `Assets/Scripts/Model/BehavioursMap/Random/FastRandom.cs`.
 
+## Tooling
+
+- CI: `.github/workflows/unity-tests.yml` compiles the project and runs the EditMode tests on push to `claude/**`; it is skipped without the UNITY_LICENSE secret.
+
 ## Invariants
 
 - Simulation code reads time from `SimulationClock`, never from Unity time.
