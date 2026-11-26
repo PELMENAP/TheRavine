@@ -83,6 +83,7 @@ public partial class EntityManager : MonoBehaviour
     private WarmthField _warmth;
     private SimulationLog _simulationLog;
     private AnomalyDetector _anomalies;
+    private HelpLog _helpLog;
     private double _nextSimulationLogTime;
     private double _lastWarmthDecayTime;
     private int _energyConsumers;
@@ -425,6 +426,11 @@ public partial class EntityManager : MonoBehaviour
             _descriptors = new BehaviourDescriptorLog(_capacity);
             ServiceLocator.Register(_descriptors);
         }
+        if (SimulationRules.Active.HelpLogEnabled)
+        {
+            _helpLog = new HelpLog(_capacity, SimulationRules.Active.HelpLogSize);
+            ServiceLocator.Register(_helpLog);
+        }
         if (speechAudio && FindFirstObjectByType<SpeechAudioPlayer>() == null)
             gameObject.AddComponent<SpeechAudioPlayer>().Bind(_speech);
         if (speechLabels && FindFirstObjectByType<SpeechLabelFeed>() == null)
@@ -462,7 +468,7 @@ public partial class EntityManager : MonoBehaviour
     {
         _evolution  = new EvolutionService(_entities, _colonies, (uint)UnityEngine.Random.Range(1, int.MaxValue), _skills);
         _population = new ColonyPopulation(entityPrefab, transform, tuning, maxPopulation, _capacity, spawnRadius,
-            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _survey, _utility, _thresholds, _skills, _boids, _ledger, _speech, !snapshotStream, _descriptors, _noveltyProgress);
+            _entities, _colonies, _wild, _food, _evolution, _grid, _motion, _instincts, _survey, _utility, _thresholds, _skills, _boids, _ledger, _speech, !snapshotStream, _descriptors, _noveltyProgress, _helpLog);
         _population.Spawned += RaiseSpawned;
         if (SimulationRules.Active.LifeLogEnabled)
         {
@@ -1277,6 +1283,7 @@ public partial class EntityManager : MonoBehaviour
         services.Unregister(_speech);
         services.Unregister(_noveltyProgress);
         if (_descriptors != null) services.Unregister(_descriptors);
+        if (_helpLog != null) services.Unregister(_helpLog);
         services.Unregister(_players);
         services.Unregister(_ledger);
         services.Unregister(_warmth);
@@ -1342,6 +1349,7 @@ public partial class EntityManager : MonoBehaviour
         _noveltyProgress?.Dispose();
         _lifeLog?.Dispose();
         _descriptors?.Dispose();
+        _helpLog?.Dispose();
         _grid.Dispose();
         _colonies?.Dispose();
         ContextSlabs.DisposeAll();

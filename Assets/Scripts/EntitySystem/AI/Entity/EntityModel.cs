@@ -83,6 +83,8 @@ public partial class EntityModel : IEntity, IFoodReceiver
     public PlanHint PlanHints => ComputePlanHints(_hasThreat);
 
     public float Stress { get; private set; }
+    private HelpLog _helpLog;
+    public HelpLog Help => _helpLog;
     private float _stressSmooth;
     private float _aloneSeconds;
     private int _kinNear;
@@ -701,6 +703,7 @@ public partial class EntityModel : IEntity, IFoodReceiver
 
         ServiceLocator.Services.TryGet(out _speechBus);
         ServiceLocator.Services.TryGet(out _descriptors);
+        ServiceLocator.Services.TryGet(out _helpLog);
         Speech = new SpeechComponent();
         _voice = SpeechVoiceBank.ClassOf(in ctx.CoordMLP.Params);
         Points = new PointsOfInterestComponent();

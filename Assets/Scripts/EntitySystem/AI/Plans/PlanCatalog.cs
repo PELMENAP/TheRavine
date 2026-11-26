@@ -72,6 +72,7 @@ public enum PlanHint : ulong
     ObjectVisible = 1UL << 31,
     ObjectInRange = 1UL << 32,
     HoldingObject = 1UL << 33,
+    KinStressed  = 1UL << 34,
 }
 
 public struct PlanProgress
@@ -262,7 +263,7 @@ public static class PlanCatalog
 
             case PlanKind.Court:
                 return Bit(EntityAction.Signal)
-                     | (Has(h, PlanHint.EntityNear) || Has(h, PlanHint.KinSick) ? Bit(EntityAction.Give) : 0)
+                     | (Has(h, PlanHint.EntityNear) || Has(h, PlanHint.KinSick) || Has(h, PlanHint.KinStressed) ? Bit(EntityAction.Give) : 0)
                      | (Has(h, PlanHint.CanReproduce) ? Bit(EntityAction.Reproduce) : 0);
         }
         return 0;

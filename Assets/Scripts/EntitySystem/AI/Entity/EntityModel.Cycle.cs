@@ -106,7 +106,11 @@ public partial class EntityModel
         }
         UpdateHeading();
         float stressTau = IsAtNest ? rules.StressTau / math.max(rules.StressNestRecoveryMul, 1f) : rules.StressTau;
+        float stressBefore = Stress;
         Stress    *= math.exp(-dt / math.max(stressTau, 1e-3f));
+        if (IsAtNest && stressBefore > 0f)
+            Colony?.Stats.RecordRelief(ColonyStats.ReliefKind.Nest,
+                stressBefore * (math.exp(-dt / math.max(rules.StressTau, 1e-3f)) - math.exp(-dt / math.max(stressTau, 1e-3f))));
         UpdateOrnsteinUhlenbeck(dt, in rules);
 
         _season         = SeasonClock.Value(now);
@@ -562,6 +566,8 @@ public partial class EntityModel
         if (colony != null && CasteFixed && !IsJuvenile && colony.QuorumReady) h |= PlanHint.QuorumReady;
         if (nest != null && Caste == Caste.Worker && CasteFixed && !IsJuvenile && !IsHungry) h |= PlanHint.PreferPickUp;
         if (_kinSick) h |= PlanHint.KinSick;
+        if (r.SocialReliefEnabled && CachedNearest != null && CachedNearest.Colony == Colony && CachedNearest.Stress >= r.ComfortMinStress)
+            h |= PlanHint.KinStressed;
         if (_targetWeak) h |= PlanHint.TargetWeak;
         if (_night) h |= PlanHint.Night;
         return h;

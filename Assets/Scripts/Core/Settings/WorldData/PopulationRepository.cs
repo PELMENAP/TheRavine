@@ -11,7 +11,10 @@ namespace TheRavine.Base
         private const int ColonyBytes = 46;
         private const int AgentBytesV1 = 62 + sizeof(float) * GeneCount;
         private const int StressBytes = 2 * sizeof(float) + sizeof(byte);
-        private const int AgentBytes = AgentBytesV1 + StressBytes;
+        private const int AgentBytesV2 = AgentBytesV1 + StressBytes;
+        private const int HelpEntryBytes = sizeof(int) + 7 * sizeof(float);
+        private const int AgentBytesV3Min = AgentBytesV2 + sizeof(byte);
+        private const int AgentBytes = AgentBytesV3Min + MaxHelpEntries * HelpEntryBytes;
 
         private static string FilePath(string world)
         {
@@ -47,15 +50,18 @@ namespace TheRavine.Base
             Require(r.ReadUInt32() == Magic, "unknown format or version");
             int version = r.ReadInt32();
             Require(version >= MinVersion && version <= Version, "unknown format or version");
-            int agentBytes = version >= 2 ? AgentBytes : AgentBytesV1;
+            int agentBytes = version >= 3 ? AgentBytesV3Min : version >= 2 ? AgentBytesV2 : AgentBytesV1;
             var s = new PopulationSnapshot
             {
                 Seed = r.ReadInt32(), WorldCreated = r.ReadInt64(), Captured = r.ReadInt64(),
                 LastEntityId = r.ReadInt32(), LastColonyId = r.ReadInt32()
             };
             int nc = r.ReadInt32(), na = r.ReadInt32();
-            Require((uint)nc <= MaxColonies && (uint)na <= MaxAgents &&
-                stream.Length == HeaderBytes + nc * ColonyBytes + na * agentBytes, "invalid record counts or length");
+            Require((uint)nc <= MaxColonies && (uint)na <= MaxAgents, "invalid record counts or length");
+            long fixedLength = HeaderBytes + (long)nc * ColonyBytes + (long)na * agentBytes;
+            Require(version >= 3
+                ? stream.Length >= fixedLength && stream.Length <= fixedLength + (long)na * MaxHelpEntries * HelpEntryBytes
+                : stream.Length == fixedLength, "invalid record counts or length");
             Require(s.Seed == seed && s.WorldCreated == created, "world binding mismatch");
             s.Colonies = new Colony[nc];
             s.Agents = new Agent[na];
@@ -88,9 +94,23 @@ namespace TheRavine.Base
                     a.LonelySeconds = r.ReadSingle();
                     a.StressLevel = r.ReadByte();
                 }
+                if (version >= 3)
+                {
+                    int helpCount = r.ReadByte();
+                    Require(helpCount <= MaxHelpEntries && stream.Length - stream.Position >= (long)helpCount * HelpEntryBytes, "invalid help entry count");
+                    a.Help = new HelpRecord[helpCount];
+                    for (int h = 0; h < helpCount; h++)
+                        a.Help[h] = new HelpRecord
+                        {
+                            Partner = r.ReadInt32(), Balance = r.ReadSingle(), ComfortAccum = r.ReadSingle(),
+                            BalanceAge = r.ReadSingle(), ComfortAge = r.ReadSingle(), GaveAge = r.ReadSingle(),
+                            ReceivedAge = r.ReadSingle(), MetAge = r.ReadSingle()
+                        };
+                }
                 a.Genes = new float[GeneCount];
                 for (int g = 0; g < GeneCount; g++) a.Genes[g] = r.ReadSingle();
             }
+            Require(stream.Position == stream.Length, "trailing data");
             s.Validate(seed, created);
             return s;
         }
@@ -149,6 +169,21 @@ namespace TheRavine.Base
                 w.Write(a.Stress);
                 w.Write(a.LonelySeconds);
                 w.Write(a.StressLevel);
+                int helpCount = a.Help != null ? a.Help.Length : 0;
+                Require(helpCount <= MaxHelpEntries, "too many help entries");
+                w.Write((byte)helpCount);
+                for (int h = 0; h < helpCount; h++)
+                {
+                    var e = a.Help[h];
+                    w.Write(e.Partner);
+                    w.Write(e.Balance);
+                    w.Write(e.ComfortAccum);
+                    w.Write(e.BalanceAge);
+                    w.Write(e.ComfortAge);
+                    w.Write(e.GaveAge);
+                    w.Write(e.ReceivedAge);
+                    w.Write(e.MetAge);
+                }
                 foreach (float gene in a.Genes) w.Write(gene);
             }
         }

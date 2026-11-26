@@ -294,3 +294,16 @@ The six columns follow `anomaly_vote_concentration`. Window columns are deltas o
 | `stress_src_hunger`, `stress_src_cold`, `stress_src_lonely`, `stress_src_task`, `stress_src_threat` | both | stress units (dimensionless, sum of 0..1 increments) | window | Stress actually added to creatures by the source, summed over creatures: after saturation at 1, so a creature at 1 adds 0. `threat` is every older source (startle, fire, outnumbered, foreign harm, kin death, leader succession). The five columns add up to the total stress added in the window. `hunger`, `cold`, `lonely` and `task` are 0 while `stressSourcesEnabled` is off |
 | `stress_high_time_share` | both | 0…1 | window | Creature-seconds at `StressLevel` 2 / creature-seconds measured. Measured once per cycle while `stressSourcesEnabled` is on; empty otherwise |
 
+## Columns added in revision 11 (stage 1b: social relief)
+
+The nine columns follow `stress_high_time_share`. Window columns are deltas of `ColonyStats` counters; the world row sums all colonies. All are 0 for the relief kinds that are switched off, so a run with `socialReliefEnabled` off and one with it on can be compared column by column at the same `maxPopulation`.
+
+| Column | Scope | Unit | Kind | Meaning and computation |
+|---|---|---|---|---|
+| `relief_comfort`, `relief_feed`, `relief_rest` | both | stress units (dimensionless) | window | Stress removed by comfort (partner and giver), by feeding (receiver and giver) and by joint rest. 0 with `socialReliefEnabled` off |
+| `relief_nest` | both | stress units | window | Extra stress decay at the nest over the ordinary `stressTau`; it exists whatever the flags |
+| `comfort_started`, `comfort_completed` | both | commands | window | `Give` commands that began the comfort branch, and those that reached the end with the partner alive and in range |
+| `give_reciprocal_share` | both | 0…1 | window | Transfers counted as reciprocal (same pair, opposite direction, within `helpReciprocalWindow`) / all transfers with a positive amount; empty with no transfer. Counted with the help log on or off |
+| `help_balance_asym` | both | energy | snapshot | Mean of `|balance|` over all help-log entries of the living agents of the colony, each balance decayed to the sample time; empty without a help log |
+| `flow_social` | world | energy | window | `EnergyLedger.Window.Social`: comfort energy cost plus the transfer loss (`giveTransferLoss`); also part of `flow_outflow` |
+

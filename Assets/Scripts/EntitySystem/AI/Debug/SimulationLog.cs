@@ -161,6 +161,12 @@ public sealed class SimulationLog : IDisposable
     private readonly double[] _stressHighDelta   = new double[ColonyRegistry.MaxColonies];
     private readonly double[] _worldStressAdded  = new double[StressSourceCount];
     private double _worldStressSeconds, _worldStressHigh;
+    private const int SocialFields = 8;
+    private readonly double[] _prevSocial   = new double[ColonyRegistry.MaxColonies * SocialFields];
+    private readonly double[] _socialDelta  = new double[ColonyRegistry.MaxColonies * SocialFields];
+    private readonly double[] _worldSocial  = new double[SocialFields];
+    private readonly double[] _helpAbs      = new double[ColonyRegistry.MaxColonies];
+    private readonly int[]    _helpEntries  = new int[ColonyRegistry.MaxColonies];
 
     private StreamWriter _writer;
     private bool _disposed;
@@ -225,6 +231,7 @@ public sealed class SimulationLog : IDisposable
         }
         SampleStage3(entities);
         SampleStress(entities);
+        SampleHelp(entities, time);
         if (_anomalies != null)
         {
             _anomalies.ConsumeWindow(out _anomalyLoops, out _anomalyFarm);
@@ -240,6 +247,7 @@ public sealed class SimulationLog : IDisposable
         Array.Clear(_worldStressAdded, 0, _worldStressAdded.Length);
         _worldStressSeconds = 0d;
         _worldStressHigh = 0d;
+        Array.Clear(_worldSocial, 0, _worldSocial.Length);
 
         int n = Math.Min(colonies.Count, ColonyRegistry.MaxColonies);
         for (int c = 0; c < n; c++)
@@ -278,6 +286,15 @@ public sealed class SimulationLog : IDisposable
             _prevStressSeconds[c] = s.StressSeconds;
             _stressHighDelta[c] = s.StressHighSeconds - _prevStressHigh[c];
             _prevStressHigh[c] = s.StressHighSeconds;
+            for (int k = 0; k < SocialFields; k++)
+            {
+                int slot = c * SocialFields + k;
+                double value = SocialCounter(s, k);
+                double delta = value - _prevSocial[slot];
+                _prevSocial[slot] = value;
+                _socialDelta[slot] = delta;
+                _worldSocial[k] += delta;
+            }
             _worldStressSeconds += _stressSecondsDelta[c];
             _worldStressHigh += _stressHighDelta[c];
             if (!colony.IsWild) civil += colony.MemberCount;
@@ -332,6 +349,7 @@ public sealed class SimulationLog : IDisposable
             WriteInteractions(_worldInteractions, 0);
             WriteBaseline(null, _world, 0, _worldInteractions[(int)ColonyStats.Interaction.DeliveredEnergy], civil, colonies, n);
             WriteStressWindow(-1);
+            WriteSocialWindow(-1, ledger);
             _writer.WriteLine();
             ledger?.ResetWindow();
 
@@ -360,6 +378,7 @@ public sealed class SimulationLog : IDisposable
                 WriteBaseline(colony, _delta, c * Stride, _interactionDelta[c * InteractionCount + (int)ColonyStats.Interaction.DeliveredEnergy],
                     colony.MemberCount, colonies, n);
                 WriteStressWindow(c);
+                WriteSocialWindow(c, null);
                 _writer.WriteLine();
             }
             for (int c = 0; c < n; c++) speech?.TablesOf(colonies[c].Index)?.Clear();
@@ -732,6 +751,7 @@ public sealed class SimulationLog : IDisposable
         sb.Append(",social_action_share,delivery_energy_per_agent_min,starvation_death_share,population_capped");
         sb.Append(",anomaly_transfer_loops,anomaly_relief_farm,anomaly_vote_concentration");
         sb.Append(",stress_src_hunger,stress_src_cold,stress_src_lonely,stress_src_task,stress_src_threat,stress_high_time_share");
+        sb.Append(",relief_comfort,relief_feed,relief_rest,relief_nest,comfort_started,comfort_completed,give_reciprocal_share,help_balance_asym,flow_social");
         return sb.ToString();
     }
 
@@ -935,6 +955,71 @@ public sealed class SimulationLog : IDisposable
         double high = colony < 0 ? _worldStressHigh : _stressHighDelta[colony];
         WriteComma();
         if (seconds > 0d) WriteFloat((float)(high / seconds));
+    }
+
+    private static double SocialCounter(ColonyStats s, int field) => field switch
+    {
+        0 => s.ReliefSum[(int)ColonyStats.ReliefKind.Comfort],
+        1 => s.ReliefSum[(int)ColonyStats.ReliefKind.Feed],
+        2 => s.ReliefSum[(int)ColonyStats.ReliefKind.Rest],
+        3 => s.ReliefSum[(int)ColonyStats.ReliefKind.Nest],
+        4 => s.ComfortStarted,
+        5 => s.ComfortCompleted,
+        6 => s.GiveTransfers,
+        _ => s.GiveReciprocal,
+    };
+
+    private void SampleHelp(System.Collections.Generic.List<EntityModel> entities, float now)
+    {
+        Array.Clear(_helpAbs, 0, _helpAbs.Length);
+        Array.Clear(_helpEntries, 0, _helpEntries.Length);
+        if (entities == null || !ServiceLocator.Services.TryGet(out HelpLog log)) return;
+
+        float tau = SimulationRules.Active.HelpBalanceTau;
+        for (int i = 0; i < entities.Count; i++)
+        {
+            var e = entities[i];
+            if (e == null || e.IsDisposed || e.Colony == null || e.ManagerIndex < 0) continue;
+            int c = e.Colony.Index;
+            if ((uint)c >= (uint)_helpEntries.Length) continue;
+            _helpAbs[c] += log.SumAbsBalance(e.ManagerIndex, now, tau, out int n);
+            _helpEntries[c] += n;
+        }
+    }
+
+    private void WriteSocialWindow(int colony, EnergyLedger ledger)
+    {
+        for (int k = 0; k < 6; k++)
+        {
+            WriteComma();
+            WriteFloat((float)(colony < 0 ? _worldSocial[k] : _socialDelta[colony * SocialFields + k]));
+        }
+
+        double transfers = colony < 0 ? _worldSocial[6] : _socialDelta[colony * SocialFields + 6];
+        double reciprocal = colony < 0 ? _worldSocial[7] : _socialDelta[colony * SocialFields + 7];
+        WriteComma();
+        if (transfers > 0d) WriteFloat((float)(reciprocal / transfers));
+
+        double abs = 0d;
+        int entries = 0;
+        if (colony < 0)
+        {
+            for (int c = 0; c < _helpAbs.Length; c++)
+            {
+                abs += _helpAbs[c];
+                entries += _helpEntries[c];
+            }
+        }
+        else
+        {
+            abs = _helpAbs[colony];
+            entries = _helpEntries[colony];
+        }
+        WriteComma();
+        if (entries > 0) WriteFloat((float)(abs / entries));
+
+        WriteComma();
+        if (colony < 0) WriteFloat(ledger != null ? ledger.Window.Social : 0f);
     }
 
     private void WriteRunSidecar(double now, ColonyRegistry colonies)

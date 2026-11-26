@@ -29,6 +29,11 @@ public class PopulationCheckpointTests
                 Id = 7, ColonyId = 65, Parent = 3, Age = 130, Health = 8, Energy = 12, Stomach = 5, Carrying = 2,
                 Position = new Vector3(-20, 31, 42), Caste = (byte)Caste.Scout, Fixed = true, AttackRemaining = 0.75, ReviewRemaining = 3.25,
                 Stress = 0.55f, LonelySeconds = 42.5f, StressLevel = 1,
+                Help = new[]
+                {
+                    new PopulationSnapshot.HelpRecord { Partner = 12, Balance = 3.5f, ComfortAccum = 0.25f, BalanceAge = 4f, ComfortAge = 8f, GaveAge = -1f, ReceivedAge = 4f, MetAge = 4f },
+                    new PopulationSnapshot.HelpRecord { Partner = -5, Balance = -1f, ComfortAccum = 0f, BalanceAge = 30f, ComfortAge = -1f, GaveAge = 30f, ReceivedAge = -1f, MetAge = 30f },
+                },
                 Genes = GeneticParameters.AsReadOnlySpan(in genes).ToArray()
             } }
         };
@@ -52,6 +57,8 @@ public class PopulationCheckpointTests
         var agent = loaded.Agents[0];
         CollectionAssert.AreEqual(s.Agents[0].Genes, agent.Genes);
         agent.Genes = s.Agents[0].Genes;
+        CollectionAssert.AreEqual(s.Agents[0].Help, agent.Help);
+        agent.Help = s.Agents[0].Help;
         Assert.AreEqual(s.Agents[0], agent);
         Assert.AreEqual(s.LastEntityId, loaded.LastEntityId);
         Assert.AreEqual(s.LastColonyId, loaded.LastColonyId);
@@ -72,6 +79,66 @@ public class PopulationCheckpointTests
         Assert.AreEqual(0.55f, loaded.Agents[0].Stress);
         Assert.AreEqual(42.5f, loaded.Agents[0].LonelySeconds);
         Assert.AreEqual(1, loaded.Agents[0].StressLevel);
+    }
+
+    [Test]
+    public void HelpLogSurvivesTheRoundTripAndAgentsWithoutEntriesStayEmpty()
+    {
+        var s = Example();
+        s.Agents[0].Help = null;
+        using var empty = new MemoryStream();
+        PopulationRepository.Write(empty, s);
+        empty.Position = 0;
+        Assert.IsEmpty(PopulationRepository.Read(empty, s.Seed, s.WorldCreated).Agents[0].Help);
+
+        s = Example();
+        using var stream = new MemoryStream();
+        PopulationRepository.Write(stream, s);
+        stream.Position = 0;
+        var help = PopulationRepository.Read(stream, s.Seed, s.WorldCreated).Agents[0].Help;
+        Assert.AreEqual(2, help.Length);
+        Assert.AreEqual(12, help[0].Partner);
+        Assert.AreEqual(3.5f, help[0].Balance);
+        Assert.AreEqual(-1f, help[0].GaveAge);
+        Assert.AreEqual(-5, help[1].Partner);
+    }
+
+    [Test]
+    public void VersionTwoCheckpointLoadsWithStressAndNoHelp()
+    {
+        var s = Example();
+        using var stream = new MemoryStream();
+        WriteVersionTwo(stream, s);
+        stream.Position = 0;
+        var loaded = PopulationRepository.Read(stream, s.Seed, s.WorldCreated);
+        Assert.AreEqual(0.55f, loaded.Agents[0].Stress);
+        Assert.AreEqual(1, loaded.Agents[0].StressLevel);
+        Assert.IsNull(loaded.Agents[0].Help);
+    }
+
+    [TestCase("count")]
+    [TestCase("partner")]
+    [TestCase("age")]
+    [TestCase("balance")]
+    public void RefusesInvalidHelpEntries(string fault)
+    {
+        var s = Example();
+        if (fault == "count") s.Agents[0].Help = new PopulationSnapshot.HelpRecord[PopulationSnapshot.MaxHelpEntries + 1];
+        if (fault == "partner") s.Agents[0].Help[0].Partner = 0;
+        if (fault == "age") s.Agents[0].Help[0].MetAge = -3f;
+        if (fault == "balance") s.Agents[0].Help[0].Balance = float.NaN;
+        Assert.Throws<InvalidDataException>(() => s.Validate(s.Seed, s.WorldCreated));
+    }
+
+    [Test]
+    public void TruncatedHelpRecordsAreRefused()
+    {
+        var s = Example();
+        using var stream = new MemoryStream();
+        PopulationRepository.Write(stream, s);
+        stream.SetLength(stream.Length - 5);
+        stream.Position = 0;
+        Assert.Throws<InvalidDataException>(() => PopulationRepository.Read(stream, s.Seed, s.WorldCreated));
     }
 
     [Test]
@@ -103,11 +170,15 @@ public class PopulationCheckpointTests
         Assert.Throws<InvalidDataException>(() => s.Validate(s.Seed, s.WorldCreated));
     }
 
-    private static void WriteVersionOne(Stream stream, PopulationSnapshot s)
+    private static void WriteVersionTwo(Stream stream, PopulationSnapshot s) => WriteLegacy(stream, s, 2);
+
+    private static void WriteVersionOne(Stream stream, PopulationSnapshot s) => WriteLegacy(stream, s, 1);
+
+    private static void WriteLegacy(Stream stream, PopulationSnapshot s, int version)
     {
         using var w = new BinaryWriter(stream, System.Text.Encoding.UTF8, true);
         w.Write(0x31504F50u);
-        w.Write(1);
+        w.Write(version);
         w.Write(s.Seed);
         w.Write(s.WorldCreated);
         w.Write(s.Captured);
@@ -147,6 +218,12 @@ public class PopulationCheckpointTests
             w.Write(a.ReviewRemaining);
             w.Write(a.Caste);
             w.Write(a.Fixed);
+            if (version >= 2)
+            {
+                w.Write(a.Stress);
+                w.Write(a.LonelySeconds);
+                w.Write(a.StressLevel);
+            }
             foreach (float gene in a.Genes) w.Write(gene);
         }
     }
@@ -167,7 +244,7 @@ public class PopulationCheckpointTests
         Assert.AreEqual(7, PopulationRepository.Load(world, s.Seed, s.WorldCreated).Agents[0].Id);
     }
 
-    [TestCase(4, 3)]
+    [TestCase(4, 4)]
     [TestCase(36, -1)]
     [TestCase(40, int.MaxValue)]
     [TestCase(40, 0)]

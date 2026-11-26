@@ -628,6 +628,9 @@ public sealed partial class SimulationRules : ScriptableObject
         public readonly float SkillSolverInterval;
         public readonly float SkillSweepInterval;
         public readonly bool StressSourcesEnabled;
+        public readonly bool SocialReliefEnabled;
+        public readonly bool HelpLogEnabled;
+        public readonly float ComfortMinStress;
         public readonly float StressHungerRate;
         public readonly float StressHungerThreshold;
         public readonly float StressColdRate;
@@ -1287,6 +1290,9 @@ public sealed partial class SimulationRules : ScriptableObject
             SkillSolverInterval = r.skillSolverInterval;
             SkillSweepInterval = r.skillSweepInterval;
             StressSourcesEnabled = r.stressSourcesEnabled;
+            SocialReliefEnabled = r.socialReliefEnabled;
+            HelpLogEnabled = r.helpLogEnabled;
+            ComfortMinStress = r.comfortMinStress;
             StressHungerRate = r.stressHungerRate;
             StressHungerThreshold = r.stressHungerThreshold;
             StressColdRate = r.stressColdRate;
@@ -1501,6 +1507,7 @@ public sealed partial class SimulationRules : ScriptableObject
         ValidateSkills();
         ValidateCodex();
         ValidateSystems();
+        ValidateSocial();
     }
 
     private static SimulationRules _active;
