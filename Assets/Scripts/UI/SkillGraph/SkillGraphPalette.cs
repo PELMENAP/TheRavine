@@ -19,12 +19,12 @@ public static class SkillGraphPalette
     public const float MenuHeightGuess = 240f;
     public const float NameWidth = 120f;
 
-    public static readonly Color EdgeActive = new(0.74f, 0.84f, 0.96f, 1f);
-    public static readonly Color EdgeBridge = new(0.96f, 0.80f, 0.45f, 1f);
-    public static readonly Color EdgePotential = new(0.55f, 0.60f, 0.70f, 0.7f);
-    public static readonly Color RingTrack = new(1f, 1f, 1f, 0.15f);
-    public static readonly Color TalentLow = new(0.55f, 0.55f, 0.65f, 1f);
-    public static readonly Color TalentHigh = new(0.45f, 0.95f, 0.65f, 1f);
+    public static readonly Color EdgeActive = new(0.863f, 0.843f, 0.780f, 1f);
+    public static readonly Color EdgeBridge = new(0.820f, 0.478f, 0.259f, 1f);
+    public static readonly Color EdgePotential = new(0.478f, 0.471f, 0.431f, 0.7f);
+    public static readonly Color RingTrack = new(0.839f, 0.824f, 0.769f, 0.16f);
+    public static readonly Color TalentLow = new(0.478f, 0.471f, 0.431f, 1f);
+    public static readonly Color TalentHigh = new(0.384f, 0.600f, 0.639f, 1f);
 
     public static Color TalentColor(float talent) => Color.Lerp(TalentLow, TalentHigh, Mathf.Clamp01(talent));
 

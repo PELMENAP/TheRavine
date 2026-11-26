@@ -7,6 +7,7 @@ public sealed class SkillGraphPanel : MonoBehaviour
 {
     private const int RefreshMs = 250;
     private const int PanelSortingOrder = 100;
+    private const string TokensPath = "UI/DesignTokens";
     private const string StyleSheetPath = "UI/SkillGraph";
     private const string BuiltinFont = "LegacyRuntime.ttf";
 
@@ -135,6 +136,8 @@ public sealed class SkillGraphPanel : MonoBehaviour
 
     private void BuildTree(VisualElement root)
     {
+        var tokens = Resources.Load<StyleSheet>(TokensPath);
+        if (tokens != null) root.styleSheets.Add(tokens);
         var sheet = Resources.Load<StyleSheet>(StyleSheetPath);
         if (sheet != null) root.styleSheets.Add(sheet);
         var font = Resources.GetBuiltinResource<Font>(BuiltinFont);
