@@ -29,17 +29,17 @@ AI agents are a separate family (`EntityModel`): `docs/map/ai.md`. The player: `
 | `EnergyComponent` | `Assets/Scripts/Model/BehavioursMap/Energy/EnergyComponent.cs` | energy, max energy (reactive) |
 | `CurrencyComponent` | `Assets/Scripts/Model/BehavioursMap/Currency/CurrencyComponent.cs` | currency (`SafeInt`, reactive) |
 | `AimComponent` | `Assets/Scripts/Model/BehavioursMap/Aim/AimComponent.cs` | crosshair distance, pick distance |
-| `EventBusComponent` | `Assets/Scripts/Model/Actions&Events/EventBusComponent.cs` | per-entity event bus |
+| `EventBusComponent` | `Assets/Scripts/Model/ActionsEvents/EventBusComponent.cs` | per-entity event bus |
 | `SkillComponent` | `Assets/Scripts/Model/EntitySkills/SkillComponent.cs` | marker component added to the player entity |
-| `CameraComponent` | `Assets/Scripts/EntitySystem/Entityes/CameraComponent.cs` | smoothed pivot with aim offset, rigid orbit by yaw, pitch and distance; local player only |
+| `CameraComponent` | `Assets/Scripts/EntitySystem/Entities/CameraComponent.cs` | smoothed pivot with aim offset, rigid orbit by yaw, pitch and distance; local player only |
 
 ## Concrete entities
 
 | Entity | Folder | Notes |
 |---|---|---|
-| `PlayerEntity` | `Assets/Scripts/EntitySystem/Entityes/Player/` | Initialised in `PlayerModelView.OnNetworkSpawn` |
-| `MobEntity` | `Assets/Scripts/EntitySystem/Entityes/Mob/` | Movement through `RoamMoveController` and `MobController`; body size from `EntityInfo` (`BodyRadius`, `BodyHeight`, `GroundOffset`) |
-| `Mimic` | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/` | Procedural legs: `LegPlanner`, `LegStore`, `MimicLegJob` (Burst), `SurfaceMotor` |
+| `PlayerEntity` | `Assets/Scripts/EntitySystem/Entities/Player/` | Initialised in `PlayerModelView.OnNetworkSpawn` |
+| `MobEntity` | `Assets/Scripts/EntitySystem/Entities/Mob/` | Movement through `RoamMoveController` and `MobController`; body size from `EntityInfo` (`BodyRadius`, `BodyHeight`, `GroundOffset`) |
+| `Mimic` | `Assets/Scripts/EntitySystem/Entities/Mimic/Scripts/` | Procedural legs: `LegPlanner`, `LegStore`, `MimicLegJob` (Burst), `SurfaceMotor` |
 
 ## Data flow
 
@@ -51,7 +51,7 @@ AI agents are a separate family (`EntityModel`): `docs/map/ai.md`. The player: `
 
 ## Shared types
 
-- Events and their payload structs: `Assets/Scripts/Model/Actions&Events/EventNames.cs` (several types in one file).
+- Events and their payload structs: `Assets/Scripts/Model/ActionsEvents/EventNames.cs` (several types in one file).
 - `ViewSector`, `ViewOrientation`, `IViewOriented`, `ViewOrientedTransform`: `Assets/Scripts/Model/BehavioursMap/View/`; described in `docs/map/world.md`.
 - `IController`: `Assets/Scripts/Model/BehavioursMap/Movement/IController.cs`.
 

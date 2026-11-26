@@ -46,26 +46,25 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
 | `Assets/Scripts/EntitySystem/Command` | 4 | 153 |
-| `Assets/Scripts/EntitySystem/Entityes` | 1 | 121 |
-| `Assets/Scripts/EntitySystem/Entityes/Bot/BotBehavious` | 3 | 55 |
-| `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts` | 10 | 986 |
-| `Assets/Scripts/EntitySystem/Entityes/Mob` | 4 | 456 |
-| `Assets/Scripts/EntitySystem/Entityes/Player` | 7 | 1583 |
-| `Assets/Scripts/EntitySystem/Entityes/Player/Components` | 8 | 790 |
-| `Assets/Scripts/EntitySystem/Entityes/Player/Joystick Pack` | 2 | 116 |
-| `Assets/Scripts/EntitySystem/Entityes/Player/PlayerBehaviours` | 3 | 79 |
+| `Assets/Scripts/EntitySystem/Entities` | 1 | 121 |
+| `Assets/Scripts/EntitySystem/Entities/Bot/BotBehavious` | 3 | 55 |
+| `Assets/Scripts/EntitySystem/Entities/Mimic/Scripts` | 10 | 986 |
+| `Assets/Scripts/EntitySystem/Entities/Mob` | 4 | 456 |
+| `Assets/Scripts/EntitySystem/Entities/Player` | 7 | 1583 |
+| `Assets/Scripts/EntitySystem/Entities/Player/Components` | 8 | 790 |
+| `Assets/Scripts/EntitySystem/Entities/Player/JoystickPack` | 2 | 116 |
+| `Assets/Scripts/EntitySystem/Entities/Player/PlayerBehaviours` | 3 | 79 |
 | `Assets/Scripts/EntitySystem/Info` | 1 | 24 |
 | `Assets/Scripts/EntitySystem/Info/InteractionComponent` | 2 | 29 |
 | `Assets/Scripts/EntitySystem/Job` | 9 | 3140 |
 | `Assets/Scripts/EntitySystem/StaticNPC` | 1 | 1 |
 | `Assets/Scripts/EntitySystem/Virology` | 17 | 2553 |
 | `Assets/Scripts/GameSceneManagerSystem` | 3 | 295 |
-| `Assets/Scripts/GameSceneManagerSystem/IStates & IStatesBehaviour` | 1 | 15 |
 | `Assets/Scripts/GameSceneManagerSystem/MainSceneManagerSystem` | 2 | 274 |
 | `Assets/Scripts/GameSceneManagerSystem/Menu` | 2 | 363 |
 | `Assets/Scripts/GameSceneManagerSystem/StateMachine` | 4 | 361 |
-| `Assets/Scripts/GameSceneManagerSystem/States` | 4 | 144 |
-| `Assets/Scripts/Model/Actions&Events` | 3 | 65 |
+| `Assets/Scripts/GameSceneManagerSystem/States` | 5 | 159 |
+| `Assets/Scripts/Model/ActionsEvents` | 3 | 65 |
 | `Assets/Scripts/Model/BehavioursMap` | 5 | 321 |
 | `Assets/Scripts/Model/BehavioursMap/Aim` | 2 | 63 |
 | `Assets/Scripts/Model/BehavioursMap/Currency` | 3 | 50 |
@@ -103,7 +102,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/SFX/SFXSounds` | 2 | 124 |
 | `Assets/Scripts/SFX/UISounds` | 3 | 145 |
 | `Assets/Scripts/ScriptableData/Item` | 5 | 161 |
-| `Assets/Scripts/ScriptableData/Item/Descriprtion` | 2 | 83 |
+| `Assets/Scripts/ScriptableData/Item/Description` | 2 | 83 |
 | `Assets/Scripts/Terminal` | 10 | 1046 |
 | `Assets/Scripts/Terminal/PDollar/Scripts` | 7 | 736 |
 | `Assets/Scripts/Terminal/Rive` | 5 | 825 |
@@ -126,7 +125,7 @@ References are resolved from GUIDs; `+N` is the number of package assemblies out
 | Core | `Assets/Scripts/Core` | BehavioursMap, LitMotion, LitMotion.Extensions, Tayx.Graphy, UniTask, UniTask.Addressables, UniTask.Linq +8 |
 | DialogGraph | `Assets/Scripts/DialogueSystem` | BehavioursMap |
 | EntitySystem | `Assets/Scripts/EntitySystem` | Audio, BehavioursMap, Core, DialogGraph, EventSystem, Inventory, LitMotion, LitMotion.Extensions, ObjectSystem, SkillSystem, UniTask, UniTask.Addressables, UniTask.Linq +8 |
-| EventSystem | `Assets/Scripts/Model/Actions&Events` | BehavioursMap |
+| EventSystem | `Assets/Scripts/Model/ActionsEvents` | BehavioursMap |
 | BehavioursMap | `Assets/Scripts/Model/BehavioursMap` |  +1 |
 | SkillSystem | `Assets/Scripts/Model/EntitySkills` | BehavioursMap, Core +1 |
 | Inventory | `Assets/Scripts/Model/InventoryModel` | BehavioursMap |
@@ -148,7 +147,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 |---|---|---|---|
 | ActionFlags | enum | `Assets/Scripts/EntitySystem/AI/ActionCatalog.cs` | 3 |
 | ActionInfo | struct | `Assets/Scripts/EntitySystem/AI/ActionCatalog.cs` | 14 |
-| AimAddition | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 13 |
+| AimAddition | struct | `Assets/Scripts/Model/ActionsEvents/EventNames.cs` | 13 |
 | AmbientConfig | class | `Assets/Scripts/SFX/AmbientSounds/AmbientLibrary.cs` | 49 |
 | AmbientLayer | class | `Assets/Scripts/SFX/AmbientSounds/AmbientLibrary.cs` | 16 |
 | AmbientType | enum | `Assets/Scripts/SFX/AmbientSounds/AmbientLibrary.cs` | 5 |
@@ -179,7 +178,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | BoidJob | struct | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | 68 |
 | BoidOutput | struct | `Assets/Scripts/EntitySystem/AI/Flock/BoidSystem.cs` | 18 |
 | BrainForwardJob | struct | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralJobs.cs` | 73 |
-| CameraPlace | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 14 |
+| CameraPlace | struct | `Assets/Scripts/Model/ActionsEvents/EventNames.cs` | 14 |
 | CasinoSlotPref | class | `Assets/Scripts/EntitySystem/Casino/CasinoSlotsPref.cs` | 3 |
 | Caste | enum | `Assets/Scripts/EntitySystem/AI/Entity/EntityTuning.cs` | 4 |
 | CasteModifiers | struct | `Assets/Scripts/EntitySystem/AI/Entity/EntityTuning.cs` | 13 |
@@ -265,20 +264,20 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | HelpEntry | struct | `Assets/Scripts/EntitySystem/AI/Social/HelpLog.cs` | 5 |
 | HostState | struct | `Assets/Scripts/EntitySystem/Virology/Ribosome.cs` | 72 |
 | IAimComponent | interface | `Assets/Scripts/Model/BehavioursMap/Aim/AimComponent.cs` | 13 |
-| ICameraComponent | interface | `Assets/Scripts/EntitySystem/Entityes/CameraComponent.cs` | 8 |
+| ICameraComponent | interface | `Assets/Scripts/EntitySystem/Entities/CameraComponent.cs` | 8 |
 | IEnergyComponent | interface | `Assets/Scripts/Model/BehavioursMap/Energy/EnergyComponent.cs` | 4 |
 | IEnergySink | interface | `Assets/Scripts/EntitySystem/AI/Entity/IEntityInterfaces.cs` | 3 |
 | IEnergyStore | interface | `Assets/Scripts/Model/BehavioursMap/Energy/EnergyComponent.cs` | 13 |
-| IEnterable | interface | `Assets/Scripts/GameSceneManagerSystem/IStates & IStatesBehaviour/IState & IStateMethods.cs` | 5 |
+| IEnterable | interface | `Assets/Scripts/GameSceneManagerSystem/States/IState.cs` | 5 |
 | IEntityCommand | interface | `Assets/Scripts/EntitySystem/AI/Entity/Commands/EntityCommand.cs` | 5 |
 | IEntityDeathHandler | interface | `Assets/Scripts/EntitySystem/AI/Entity/IEntityInterfaces.cs` | 19 |
-| IEntityEvent | interface | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 4 |
+| IEntityEvent | interface | `Assets/Scripts/Model/ActionsEvents/EventNames.cs` | 4 |
 | IEntityMotor | interface | `Assets/Scripts/EntitySystem/AI/Entity/IEntityInterfaces.cs` | 7 |
-| IEventBusComponent | interface | `Assets/Scripts/Model/Actions&Events/EventBusComponent.cs` | 2 |
-| IExitable | interface | `Assets/Scripts/GameSceneManagerSystem/IStates & IStatesBehaviour/IState & IStateMethods.cs` | 13 |
+| IEventBusComponent | interface | `Assets/Scripts/Model/ActionsEvents/EventBusComponent.cs` | 2 |
+| IExitable | interface | `Assets/Scripts/GameSceneManagerSystem/States/IState.cs` | 13 |
 | IfNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 74 |
 | IFoodReceiver | interface | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 9 |
-| IGameEvent | interface | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 3 |
+| IGameEvent | interface | `Assets/Scripts/Model/ActionsEvents/EventNames.cs` | 3 |
 | IGeneticPhenotype | interface | `Assets/Scripts/EntitySystem/AI/GeneticParameters.cs` | 7 |
 | IInteractionComponent | interface | `Assets/Scripts/EntitySystem/Info/InteractionComponent/InteractionComponent.cs` | 2 |
 | IInteractor | interface | `Assets/Scripts/Terminal/Rive/Core/RiveInteractors.cs` | 7 |
@@ -306,10 +305,9 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | IReadOnlyAimComponent | interface | `Assets/Scripts/Model/BehavioursMap/Aim/AimComponent.cs` | 5 |
 | ISerializableNeuralModel | interface | `Assets/Scripts/EntitySystem/AI/NeuralModelStorage.cs` | 8 |
 | ISkillComponent | interface | `Assets/Scripts/Model/EntitySkills/SkillComponent.cs` | 1 |
-| IState | interface | `Assets/Scripts/GameSceneManagerSystem/IStates & IStatesBehaviour/IState & IStateMethods.cs` | 1 |
 | IStatePatternComponent | interface | `Assets/Scripts/EntitySystem/StatePatternComponent.cs` | 6 |
 | ItemContext | struct | `Assets/Scripts/Model/BehavioursMap/EntityBaseComponents/Contexts.cs` | 20 |
-| ITickable | interface | `Assets/Scripts/GameSceneManagerSystem/IStates & IStatesBehaviour/IState & IStateMethods.cs` | 9 |
+| ITickable | interface | `Assets/Scripts/GameSceneManagerSystem/States/IState.cs` | 9 |
 | ITransformComponent | interface | `Assets/Scripts/Model/BehavioursMap/EntityBaseComponents/TransformComponent.cs` | 2 |
 | IValidatedCommand | interface | `Assets/Scripts/Terminal/ICommand.cs` | 20 |
 | IViewDirectional | interface | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/IEndless.cs` | 12 |
@@ -317,8 +315,8 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | LandformParams | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs/LandformBlend.cs` | 6 |
 | LandformSettings | struct | `Assets/Scripts/ObjectSystem/Map/Tools/NoiseLayerSettings.cs` | 148 |
 | LayoutHelpers | class | `Assets/Scripts/Core/Utilities/CodeHelpers.cs` | 318 |
-| LegParams | struct | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/LegStore.cs` | 9 |
-| LegState | enum | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/LegStore.cs` | 7 |
+| LegParams | struct | `Assets/Scripts/EntitySystem/Entities/Mimic/Scripts/LegStore.cs` | 9 |
+| LegState | enum | `Assets/Scripts/EntitySystem/Entities/Mimic/Scripts/LegStore.cs` | 7 |
 | LevelCell | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/BuildingVolume.cs` | 3 |
 | LiteralNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 17 |
 | LogNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 95 |
@@ -326,7 +324,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | LtcMode | enum | `Assets/Scripts/EntitySystem/AI/SharedAI/LtcNeuron.cs` | 4 |
 | MenuSection | enum | `Assets/Scripts/GameSceneManagerSystem/MainSceneManagerSystem/MenuMainScript.cs` | 11 |
 | MenuSectionData | struct | `Assets/Scripts/GameSceneManagerSystem/MainSceneManagerSystem/MenuMainScript.cs` | 18 |
-| MimicWork | struct | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/MimicLegJob.cs` | 6 |
+| MimicWork | struct | `Assets/Scripts/EntitySystem/Entities/Mimic/Scripts/MimicLegJob.cs` | 6 |
 | MobNAL | class | `Assets/Scripts/EntitySystem/MobGenerator.cs` | 274 |
 | MobSpawnData | struct | `Assets/Scripts/EntitySystem/MobGenerator.cs` | 267 |
 | MotionApplyJob | struct | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | 292 |
@@ -355,11 +353,11 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | PerchRemapJob | struct | `Assets/Scripts/EntitySystem/Job/BirdPerchIndex.cs` | 152 |
 | PeriodicEvent | class | `Assets/Scripts/Test/MarketSimulator.cs` | 54 |
 | PerturbationEntry | struct | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.Variance.cs` | 24 |
-| PickUpEvent | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 9 |
-| PickUpResultEvent | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 11 |
-| PlaceEvent | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 10 |
+| PickUpEvent | struct | `Assets/Scripts/Model/ActionsEvents/EventNames.cs` | 9 |
+| PickUpResultEvent | struct | `Assets/Scripts/Model/ActionsEvents/EventNames.cs` | 11 |
+| PlaceEvent | struct | `Assets/Scripts/Model/ActionsEvents/EventNames.cs` | 10 |
 | PlacementKind | enum | `Assets/Scripts/ObjectSystem/ObjectInfo/ObjectInfo.cs` | 127 |
-| PlaceResultEvent | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 12 |
+| PlaceResultEvent | struct | `Assets/Scripts/Model/ActionsEvents/EventNames.cs` | 12 |
 | PlanHint | enum | `Assets/Scripts/EntitySystem/AI/Plans/PlanCatalog.cs` | 37 |
 | PlanJob | struct | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | 53 |
 | PlanKind | enum | `Assets/Scripts/EntitySystem/AI/Plans/PlanCatalog.cs` | 3 |
@@ -367,9 +365,9 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | PlanRequest | struct | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | 10 |
 | PlanResult | struct | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | 28 |
 | PlanWeights | struct | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | 34 |
-| PlayerBehaviourDialogue | class | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerBehaviours/PlayerBehaviourDialoge.cs` | 1 |
+| PlayerBehaviourDialogue | class | `Assets/Scripts/EntitySystem/Entities/Player/PlayerBehaviours/PlayerBehaviourDialoge.cs` | 1 |
 | PlayerContext | struct | `Assets/Scripts/Model/BehavioursMap/EntityBaseComponents/Contexts.cs` | 2 |
-| PlayerDialogInput | class | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerDialoginput.cs` | 6 |
+| PlayerDialogInput | class | `Assets/Scripts/EntitySystem/Entities/Player/PlayerDialoginput.cs` | 6 |
 | Point | struct | `Assets/Scripts/Terminal/PDollar/Scripts/PointCloudRecognizer.cs` | 76 |
 | PointCloudRecognizerPlus | class | `Assets/Scripts/Terminal/PDollar/Scripts/PointCloudRecognizer.cs` | 5 |
 | PointOfInterest | struct | `Assets/Scripts/EntitySystem/AI/Entity/Components/PointsOfInterestComponent.cs` | 3 |
@@ -416,7 +414,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | SharedCentroids | class | `Assets/Scripts/EntitySystem/Virology/TranslationTable.cs` | 10 |
 | ShowServiceLocatorCommand | class | `Assets/Scripts/Terminal/BaseCommands.cs` | 94 |
 | SimpleUnitAnimator | class | `Assets/Scripts/Core/Utilities/SimpleUnitAnimation.cs` | 3 |
-| SkillCommandOp | enum | `Assets/Scripts/EntitySystem/Entityes/Player/Components/PlayerSkillGraph.cs` | 7 |
+| SkillCommandOp | enum | `Assets/Scripts/EntitySystem/Entities/Player/Components/PlayerSkillGraph.cs` | 7 |
 | SkillEdgeKind | enum | `Assets/Scripts/EntitySystem/AI/Skills/SkillGraphSnapshot.cs` | 13 |
 | SkillVertexState | enum | `Assets/Scripts/EntitySystem/AI/Skills/SkillGraphSnapshot.cs` | 3 |
 | SlotCell | struct | `Assets/Scripts/EntitySystem/Casino/CasinoSlotsPref.cs` | 9 |
@@ -474,7 +472,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | VarianceAxis | enum | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.Variance.cs` | 5 |
 | VectorizerFrame | struct | `Assets/Scripts/EntitySystem/AI/InputVectorizer.cs` | 5 |
 | ViewBlock | struct | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ViewWedge.cs` | 8 |
-| ViewClick | struct | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 15 |
+| ViewClick | struct | `Assets/Scripts/Model/ActionsEvents/EventNames.cs` | 15 |
 | ViewOrientMode | enum | `Assets/Scripts/Model/BehavioursMap/View/ViewOrientedTransform.cs` | 5 |
 | ViralPayload | struct | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 14 |
 | WaitNode | class | `Assets/Scripts/Terminal/Rive/Core/RiveHelpStructs.cs` | 101 |

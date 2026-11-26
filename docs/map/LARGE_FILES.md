@@ -9,7 +9,7 @@ Line numbers are those of the last generation; after local edits treat them as a
 | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1410 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationLog.cs` | 1296 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1092 |
-| `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | 1014 |
+| `Assets/Scripts/EntitySystem/Entities/Player/PlayerController.cs` | 1014 |
 | `Assets/Scripts/EntitySystem/Virology/VirologyComponent.cs` | 859 |
 | `Assets/Scripts/EntitySystem/AI/Entity/EntityModel.cs` | 815 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationDebugDashboard.cs` | 778 |
@@ -204,7 +204,7 @@ Line numbers are those of the last generation; after local edits treat them as a
     - 140 Reset
   - 177–182 struct LargeClaim
 
-## `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs`
+## `Assets/Scripts/EntitySystem/Entities/Player/PlayerController.cs`
 
 - 21–1013 class PlayerController
   - 127 SetInitialValues

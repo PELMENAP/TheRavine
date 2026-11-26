@@ -81,10 +81,10 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 | Agent motion | `Assets/Scripts/EntitySystem/Job/MotionSystem.cs` | `Step`, `MotionJob`, `MotionApplyJob`, `PositionOf`, `SetPosition`, `VelocityBySlot`, `SyncAtlas` |
 | Move planning | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | `Enqueue`, `Flush`, `PlanJob` |
 | Obstacles | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision/ObstacleQuery.cs` | whole file (`Resolve`, `ResolveSwept`, `Support`, `Walk`); agents, mobs: frame; player: physics step |
-| Player ground | `Assets/Scripts/EntitySystem/Entityes/Player/Components/TerrainPhysicsResolver.cs` | `Resolve`, `ResolveObstacles`, `ResolveGround` |
+| Player ground | `Assets/Scripts/EntitySystem/Entities/Player/Components/TerrainPhysicsResolver.cs` | `Resolve`, `ResolveObstacles`, `ResolveGround` |
 | Map obstacle queries | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.Terrain.cs` | `MapGenerator.ResolveObstacles`, `MapGenerator.SupportObstacles` |
-| Mobs | `Assets/Scripts/EntitySystem/Entityes/Mob/MobController.cs` | `Update`, `LateUpdate`, `MoveMobsJob`; `HeightAtlas.Covers`, `MotionSystem.PrepareAtlas` |
-| Mimic legs | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/MimicLegJob.cs` | whole file |
+| Mobs | `Assets/Scripts/EntitySystem/Entities/Mob/MobController.cs` | `Update`, `LateUpdate`, `MoveMobsJob`; `HeightAtlas.Covers`, `MotionSystem.PrepareAtlas` |
+| Mimic legs | `Assets/Scripts/EntitySystem/Entities/Mimic/Scripts/MimicLegJob.cs` | whole file |
 
 ## Birds
 
@@ -118,7 +118,7 @@ cached ids, no allocation, one draw per built block.
 
 ## Server request path
 
-RPC handlers in `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs`: no allocation and no formatting on the success path.
+RPC handlers in `Assets/Scripts/EntitySystem/Entities/Player/PlayerController.cs`: no allocation and no formatting on the success path.
 `PlayerSkillGraph.Award` (called from the place, pick-up and speak handlers and from `StepServerMovement`) and `PlayerSkillGraph.TryExecute` (`SkillGraphCommandServerRpc`) are on that path.
 
 ## Guards

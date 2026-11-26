@@ -1,6 +1,6 @@
 # Player and networking
 
-Root: `Assets/Scripts/EntitySystem/Entityes/Player/`, `Assets/Scripts/GameSceneManagerSystem/`.
+Root: `Assets/Scripts/EntitySystem/Entities/Player/`, `Assets/Scripts/GameSceneManagerSystem/`.
 Assembly: `EntitySystem`; the connection classes are in `Assembly-CSharp`.
 Tests: `Assets/Tests/EditMode/RateBudgetTests.cs`, `Assets/Tests/EditMode/JumpChargeLimitTests.cs`, `Assets/Tests/EditMode/PlayerSkillGraphTests.cs`.
 
@@ -12,17 +12,17 @@ Open security findings: `docs/audit/security_audit.md`.
 | Type | File | Role |
 |---|---|---|
 | `AgentSnapshotStream` | `Assets/Scripts/EntitySystem/AI/Population/AgentSnapshotStream.cs` | Server: agents by area of interest to every remote client |
-| `PlayerController` | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerController.cs` | All player RPCs, server movement integration, world edits |
-| `PlayerModelView` | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerModelView.cs` | Player view model; `OnNetworkSpawn` initialisation; camera request |
-| `PlayerEntity` | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerEntity.cs` | Player entity; metabolism on the authority; `ApplyServerVitals` on clients |
-| `PlayerItemLedger` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/PlayerItemLedger.cs` | Server-side item ledger of a remote player (session only) |
-| `RateBudget` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/RateBudget.cs` | GCRA rate limit per player |
-| `JumpChargeLimit` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/JumpChargeLimit.cs` | Caps a jump charge by server time |
-| `PlayerSkillGraph` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/PlayerSkillGraph.cs` | Player skill graph: store of capacity 1, own topology, commands, replication packets, save |
-| `PlayerStamina` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/PlayerStamina.cs` | Stamina integration |
-| `TerrainPhysicsResolver` | `Assets/Scripts/EntitySystem/Entityes/Player/Components/TerrainPhysicsResolver.cs` | Terrain contact for the player body |
-| `PCController` | `Assets/Scripts/EntitySystem/Entityes/Player/PCController.cs` | Mouse and keyboard `IController` |
-| `JoistickController` | `Assets/Scripts/EntitySystem/Entityes/Player/Joystick Pack/JoistickController.cs` | Touch `IController` |
+| `PlayerController` | `Assets/Scripts/EntitySystem/Entities/Player/PlayerController.cs` | All player RPCs, server movement integration, world edits |
+| `PlayerModelView` | `Assets/Scripts/EntitySystem/Entities/Player/PlayerModelView.cs` | Player view model; `OnNetworkSpawn` initialisation; camera request |
+| `PlayerEntity` | `Assets/Scripts/EntitySystem/Entities/Player/PlayerEntity.cs` | Player entity; metabolism on the authority; `ApplyServerVitals` on clients |
+| `PlayerItemLedger` | `Assets/Scripts/EntitySystem/Entities/Player/Components/PlayerItemLedger.cs` | Server-side item ledger of a remote player (session only) |
+| `RateBudget` | `Assets/Scripts/EntitySystem/Entities/Player/Components/RateBudget.cs` | GCRA rate limit per player |
+| `JumpChargeLimit` | `Assets/Scripts/EntitySystem/Entities/Player/Components/JumpChargeLimit.cs` | Caps a jump charge by server time |
+| `PlayerSkillGraph` | `Assets/Scripts/EntitySystem/Entities/Player/Components/PlayerSkillGraph.cs` | Player skill graph: store of capacity 1, own topology, commands, replication packets, save |
+| `PlayerStamina` | `Assets/Scripts/EntitySystem/Entities/Player/Components/PlayerStamina.cs` | Stamina integration |
+| `TerrainPhysicsResolver` | `Assets/Scripts/EntitySystem/Entities/Player/Components/TerrainPhysicsResolver.cs` | Terrain contact for the player body |
+| `PCController` | `Assets/Scripts/EntitySystem/Entities/Player/PCController.cs` | Mouse and keyboard `IController` |
+| `JoistickController` | `Assets/Scripts/EntitySystem/Entities/Player/JoystickPack/JoistickController.cs` | Touch `IController` |
 | `CameraInputController` | `Assets/Scripts/EntitySystem/CameraInputController.cs` | Camera zoom and 90° turns |
 | `NetworkConnectionManager` | `Assets/Scripts/GameSceneManagerSystem/NetworkConnectionManager.cs` | Starts host / server / client |
 | `NetworkTransportConfig` | `Assets/Scripts/GameSceneManagerSystem/NetworkTransportConfig.cs` | Transport settings |
@@ -73,7 +73,7 @@ Open security findings: `docs/audit/security_audit.md`.
 
 - `PlayerEntity` ticks in `EntitySystem.FixedUpdate`: every player on the server, only its own on a client.
 - Metabolism runs only where `WorldAuthority.IsAuthority`; behaviour runs only for the owner.
-- Player behaviours: `Assets/Scripts/EntitySystem/Entityes/Player/PlayerBehaviours/`.
+- Player behaviours: `Assets/Scripts/EntitySystem/Entities/Player/PlayerBehaviours/`.
 
 ## Camera
 

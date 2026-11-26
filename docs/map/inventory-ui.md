@@ -16,7 +16,7 @@ Assemblies: `Inventory`, `UIInventory`, `Info`. Tests: `Assets/Tests/EditMode/Cr
 | `CraftPresenter` | `Assets/Scripts/UI/CraftPresenter.cs` | Presenter of the craft panel |
 | `UIDragger` | `Assets/Scripts/UI/Inventory/UIDragger.cs` | Drag and drop, mouse and touch |
 | `LLMItemDescriptionService` | `Assets/Scripts/UI/Inventory/Extensions/LLMItemDescriptionService.cs` | Item descriptions from the local LLM, debounced |
-| `ItemDescriptionRegistry` | `Assets/Scripts/ScriptableData/Item/Descriprtion/ItemDescriptionRegistry.cs` | Cache of generated descriptions |
+| `ItemDescriptionRegistry` | `Assets/Scripts/ScriptableData/Item/Description/ItemDescriptionRegistry.cs` | Cache of generated descriptions |
 | `InfoManager` | `Assets/Scripts/ScriptableData/Item/InfoManager.cs` | Access to item data assets |
 
 ## Data flow
