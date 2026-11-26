@@ -55,8 +55,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/Entityes/Player/Joystick Pack` | 2 | 116 |
 | `Assets/Scripts/EntitySystem/Entityes/Player/PlayerBehaviours` | 3 | 79 |
 | `Assets/Scripts/EntitySystem/Info` | 1 | 24 |
-| `Assets/Scripts/EntitySystem/Info/InteractionComponent` | 2 | 55 |
-| `Assets/Scripts/EntitySystem/InteractionSystem` | 1 | 8 |
+| `Assets/Scripts/EntitySystem/Info/InteractionComponent` | 2 | 29 |
 | `Assets/Scripts/EntitySystem/Job` | 9 | 3140 |
 | `Assets/Scripts/EntitySystem/StaticNPC` | 1 | 1 |
 | `Assets/Scripts/EntitySystem/Virology` | 17 | 2553 |
@@ -75,7 +74,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/Model/BehavioursMap/Movement` | 3 | 48 |
 | `Assets/Scripts/Model/BehavioursMap/Random` | 2 | 136 |
 | `Assets/Scripts/Model/BehavioursMap/View` | 4 | 288 |
-| `Assets/Scripts/Model/EntitySkills` | 3 | 34 |
+| `Assets/Scripts/Model/EntitySkills` | 2 | 19 |
 | `Assets/Scripts/Model/InventoryModel` | 12 | 938 |
 | `Assets/Scripts/Model/InventoryModel/IInventory` | 3 | 28 |
 | `Assets/Scripts/ObjectSystem` | 2 | 196 |
@@ -281,7 +280,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | IFoodReceiver | interface | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 9 |
 | IGameEvent | interface | `Assets/Scripts/Model/Actions&Events/EventNames.cs` | 3 |
 | IGeneticPhenotype | interface | `Assets/Scripts/EntitySystem/AI/GeneticParameters.cs` | 7 |
-| IInteractionComponent | interface | `Assets/Scripts/EntitySystem/Info/InteractionComponent/InteractionComponent.cs` | 4 |
+| IInteractionComponent | interface | `Assets/Scripts/EntitySystem/Info/InteractionComponent/InteractionComponent.cs` | 2 |
 | IInteractor | interface | `Assets/Scripts/Terminal/Rive/Core/RiveInteractors.cs` | 7 |
 | IMainComponent | interface | `Assets/Scripts/Model/BehavioursMap/EntityBaseComponents/MainComponent.cs` | 1 |
 | IMapSeason | interface | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/IMapEvent.cs` | 12 |
@@ -306,7 +305,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | IObjectViewMotionHost | interface | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/IEndless/ObjectViewMotion.cs` | 17 |
 | IReadOnlyAimComponent | interface | `Assets/Scripts/Model/BehavioursMap/Aim/AimComponent.cs` | 5 |
 | ISerializableNeuralModel | interface | `Assets/Scripts/EntitySystem/AI/NeuralModelStorage.cs` | 8 |
-| ISkillComponent | interface | `Assets/Scripts/Model/EntitySkills/SkillComponent.cs` | 3 |
+| ISkillComponent | interface | `Assets/Scripts/Model/EntitySkills/SkillComponent.cs` | 1 |
 | IState | interface | `Assets/Scripts/GameSceneManagerSystem/IStates & IStatesBehaviour/IState & IStateMethods.cs` | 1 |
 | IStatePatternComponent | interface | `Assets/Scripts/EntitySystem/StatePatternComponent.cs` | 6 |
 | ItemContext | struct | `Assets/Scripts/Model/BehavioursMap/EntityBaseComponents/Contexts.cs` | 20 |

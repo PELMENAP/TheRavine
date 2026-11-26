@@ -78,3 +78,4 @@ Applied when a file is created or touched for another reason; no mass refactor.
 4. In hot systems split by tick phase, so the file name says whether the code is hot (`EntityModel.Cycle.cs`).
 5. A new top-level folder under `Assets/Scripts` gets its own asmdef.
 6. A renamed or moved file is moved with `git mv` together with its `.meta`.
+7. A new interface needs a second implementation or a test double; otherwise use the concrete type.

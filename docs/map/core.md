@@ -41,6 +41,9 @@ Tests: `Assets/Tests/EditMode/ServiceContainerTests.cs`, `Assets/Tests/EditMode/
 
 ## Services
 
+- New services register in `ServiceLocator`.
+- Legacy static `Instance` classes, not a pattern for new code: `MusicSystem`, `AmbientSystem`, `AudioService`, `SFXSystem`, `UISoundSystem`,
+  `RippleStampSystem`, `GameInitializer`, `FaderOnTransit`, `DialogSystem`.
 - `ServiceContainer.Register` returns `false` on a repeated type or on `null`; it never replaces.
 - All registrations go through `ServiceLocator.Register`, which logs a failure through `RavineLogger`.
 - Scene services leave through `ServiceContainer.Unregister(instance)`, which removes only that instance.

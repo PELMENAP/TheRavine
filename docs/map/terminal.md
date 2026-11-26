@@ -12,7 +12,7 @@ Read `docs/SECURITY.md` section 8 before changing the interpreter.
 |---|---|---|
 | `Terminal` | `Assets/Scripts/Terminal/Terminal.cs` | Console UI with history; registers commands in `Setup`; `ProcessInput` |
 | `CommandManager` | `Assets/Scripts/Terminal/CommandManager.cs` | Commands by name and alias |
-| `ICommand`, `IValidatedCommand` | `Assets/Scripts/Terminal/ICommand.cs` | Terminal command contract (not the entity `ICommand`) |
+| `ICommand`, `IValidatedCommand` | `Assets/Scripts/Terminal/ICommand.cs` | Terminal command contract (not `IScheduledCommand`) |
 | `CommandContext` | `Assets/Scripts/Terminal/CommandContext.cs` | What a command may reach |
 | `RiveRuntime` | `Assets/Scripts/Terminal/Rive/Core/RiveRuntime.cs` | Program registry, run limits, cancellation |
 | `RiveParser` | `Assets/Scripts/Terminal/Rive/Core/RiveParser.cs` | Source → AST, with limits |

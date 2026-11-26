@@ -30,7 +30,7 @@ AI agents are a separate family (`EntityModel`): `docs/map/ai.md`. The player: `
 | `CurrencyComponent` | `Assets/Scripts/Model/BehavioursMap/Currency/CurrencyComponent.cs` | currency (`SafeInt`, reactive) |
 | `AimComponent` | `Assets/Scripts/Model/BehavioursMap/Aim/AimComponent.cs` | crosshair distance, pick distance |
 | `EventBusComponent` | `Assets/Scripts/Model/Actions&Events/EventBusComponent.cs` | per-entity event bus |
-| `SkillComponent` | `Assets/Scripts/Model/EntitySkills/SkillComponent.cs` | skills by name (`ISkill`) |
+| `SkillComponent` | `Assets/Scripts/Model/EntitySkills/SkillComponent.cs` | marker component added to the player entity |
 | `CameraComponent` | `Assets/Scripts/EntitySystem/Entityes/CameraComponent.cs` | smoothed pivot with aim offset, rigid orbit by yaw, pitch and distance; local player only |
 
 ## Concrete entities
@@ -47,7 +47,7 @@ AI agents are a separate family (`EntityModel`): `docs/map/ai.md`. The player: `
 2. It calls `EntitySystem.CreateMob`, which instantiates the prefab and calls `AEntity.Init`.
 3. The entity's view model subscribes to the entity; despawn clears the subscriptions (`DisposableBag`).
 4. `EntitySystem.FixedUpdate` ticks the entities in `global`; today these are players only.
-5. Entity commands: `ICommand` in `Assets/Scripts/EntitySystem/Command/ICommand.cs`, with `MoveAlongPathCommand`, `PrintMessageCommand`.
+5. Entity commands: `IScheduledCommand` in `Assets/Scripts/EntitySystem/Command/IScheduledCommand.cs`, with `MoveAlongPathCommand`, `PrintMessageCommand`.
 
 ## Shared types
 
@@ -61,14 +61,14 @@ AI agents are a separate family (`EntityModel`): `docs/map/ai.md`. The player: `
 |---|---|---|
 | Casino | `Assets/Scripts/EntitySystem/Casino/` | `CasinoSlots`, `CalculateWin`, `UICasinoSlots` |
 | Static NPC | `Assets/Scripts/EntitySystem/StaticNPC/` | `IsaNPCchatBot.cs` (one line, empty) |
-| Interaction | `Assets/Scripts/EntitySystem/InteractionSystem/`, `Assets/Scripts/EntitySystem/Info/InteractionComponent/` | `IInteractable`, `InteractionComponent` |
-| Skills | `Assets/Scripts/Model/EntitySkills/` | `ISkill` |
+| Interaction | `Assets/Scripts/EntitySystem/Info/InteractionComponent/` | `InteractionComponent`, `BindInfo` |
+| Skills | `Assets/Scripts/Model/EntitySkills/` | `SkillComponent`, `SkillData` |
 | Experiments | `Assets/Scripts/Test/` | `PointDraw`, `PriceChart`, `Market`, `MarketCore`, `MarketSimulator`; referenced from a test scene and a prefab |
 | Editor tools | `Assets/Scripts/Editor/` | `TreeMeshBaker`, `SimulationRulesEditor`, `StrainCodonTableBuilder`, grass bakers |
 
 ## Invariants
 
-- Two unrelated interfaces are both named `ICommand`: entity commands here, terminal commands in `Assets/Scripts/Terminal/ICommand.cs`.
+- Three unrelated command contracts: `IScheduledCommand` (entity commands here), `IEntityCommand` (agent commands, `EntityCommandRunner`), `ICommand` (terminal, `Assets/Scripts/Terminal/ICommand.cs`).
 - R3 stays where it is (`AEntity.IsActive`, `OnUpdate`, `EnergyComponent`, `CurrencyComponent`); agent hot paths do not use it.
 - A disposed `PlayerEntity` removes itself from `ServiceLocator.Players`; `EntitySystem` skips disposed entities.
 

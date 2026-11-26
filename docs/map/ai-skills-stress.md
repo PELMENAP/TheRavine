@@ -26,7 +26,7 @@ Design: `docs/design/skill_graph.md`. Rules: `SimulationRules.Skills.cs`; `Rules
 - `SkillGraphSolver.Step`: per-colony plasticity (build, prune) once per `SkillSolverInterval` from `EntityManager.SolveSkills`;
   `ColonyState.SkillTopology` is the colony graph, the wild colony owns one too.
 - Skill genes (`SkillOriginX/Y`, `Plast*`) are phenotypic: `CopyLearningGenes` never overwrites them. Saved brains do not hold genes.
-- `SkillAtlas.Skill` is a graph vertex; the ability skills of `Assets/Scripts/Model/EntitySkills/` (`ISkill`) are unrelated.
+- `SkillAtlas.Skill` is a graph vertex; the ability skills of `Assets/Scripts/Model/EntitySkills/` (`SkillComponent`) are unrelated.
 
 ## Stress
 
