@@ -38,7 +38,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/EntitySystem/AI/Perception` | 10 | 2377 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 589 |
 | `Assets/Scripts/EntitySystem/AI/Population` | 8 | 1667 |
-| `Assets/Scripts/EntitySystem/AI/Rules` | 17 | 3775 |
+| `Assets/Scripts/EntitySystem/AI/Rules` | 17 | 3776 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI` | 27 | 3926 |
 | `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2174 |
 | `Assets/Scripts/EntitySystem/AI/Social` | 2 | 296 |
