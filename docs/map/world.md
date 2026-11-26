@@ -5,7 +5,9 @@ Tests: `Assets/Tests/EditMode/` — `ChunkStoreTests`, `ChunkPlacementTests`, `B
 `RandomTickJobTests`, `RandomTickMathTests`, `WorldCommandBufferTests`.
 
 Do not read `Assets/Scripts/ObjectSystem/Map/Tools/FastNoiseLite.cs` (vendored).
-`MapGenerator.cs` and `ChunkGenerator.cs` are over 500 lines: take the member's line from `docs/map/LARGE_FILES.md`.
+`ChunkGenerator.cs` is over 500 lines: take the member's line from `docs/map/LARGE_FILES.md`.
+`MapGenerator` partial files in `Assets/Scripts/ObjectSystem/Map/WorldGeneration/`: `MapGenerator.Coordinates.cs`, `.Chunks.cs`, `.Terrain.cs`, `.Objects.cs`, `.Window.cs`, `.Persistence.cs`.
+Fields and lifecycle of `MapGenerator` stay in `MapGenerator.cs`.
 Camera rings and rendering: `docs/map/world-camera.md`.
 
 ## Entry points
@@ -13,7 +15,7 @@ Camera rings and rendering: `docs/map/world-camera.md`.
 | Type | File | Role |
 |---|---|---|
 | `MapGenerator` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | Chunk window, chunk supply and eviction, object placement, height queries |
-| `ChunkData` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | One chunk: heights, objects, level mask, buildings, dirty flags |
+| `ChunkData` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkData.cs` | One chunk: heights, objects, level mask, buildings, dirty flags |
 | `ChunkGenerator` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerator.cs` | Builds a chunk with the Burst jobs of `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkJobs/` |
 | `ChunkStore` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkStore.cs` | Saves and restores modified chunks |
 | `WorldCommandBuffer` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/WorldCommandBuffer.cs` | Queue of world changes; also `WorldEdits`, `WorldEditResult` |

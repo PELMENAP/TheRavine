@@ -9,7 +9,7 @@ Tests: `Assets/Tests/EditMode/RavineProfileTests.cs`, `Assets/Tests/EditMode/Chu
 |---|---|---|
 | `RavineProfile` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/RavineProfile.cs` | Elevation by world z: `Blend`, `Elevation`, `ElevationRange`, `IsValley`, `IsWall`, `IsPlateau` |
 | `ChunkGenerationSettings` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/ChunkGenerationSettings.cs` | Header `Ravine`: `ravineHalfWidth`, `ravineWallRun`, `ravineWallHeight` |
-| `MapGenerator` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | `Ravine` (one instance), `plateauSettings`, `AboveWater` |
+| `MapGenerator` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs`, `MapGenerator.Terrain.cs` | `Ravine` (one instance), `plateauSettings`, `AboveWater` |
 | `RavineBackdrop` | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Rendering/RavineBackdrop.cs` | Analytic walls, plateau strip and valley floor beyond the streamed terrain |
 
 ## Data flow

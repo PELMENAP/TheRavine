@@ -40,7 +40,8 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 
 | Area | File | Hot methods |
 |---|---|---|
-| Brain | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | `EnqueueDecision`, `RunDecisions`, `GiveReward`, `CompleteDecision`, `ScheduleTraining`, `ApplyPendingGradients` |
+| Brain decisions | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.Decide.cs` | `EnqueueDecision`, `RunDecisions`, `ScheduleTraining` |
+| Brain learning | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.Learning.cs` | `GiveReward`, `CompleteDecision`, `ApplyPendingGradients` |
 | Kernels and jobs | `Assets/Scripts/EntitySystem/AI/SharedAI/NeuralKernels.cs`, `NeuralJobs.cs`, `LtcNeuron.cs` | whole files |
 | Batch and contexts | `Assets/Scripts/EntitySystem/AI/SharedAI/` | `PerceptronBatch`, `EntityBrainContext`, `LSTMContext`, `PerceptronContext`, `DecisionRing`, `ContextSlabs`, `FloatSlabPool` |
 | Networks | `Assets/Scripts/EntitySystem/AI/DelayedPerceptron/DelayedPerceptron.cs`, `Assets/Scripts/EntitySystem/AI/LSTM/` | forward and backward passes |
@@ -81,7 +82,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 | Move planning | `Assets/Scripts/EntitySystem/Job/MovePlanner.cs` | `Enqueue`, `Flush`, `PlanJob` |
 | Obstacles | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Collision/ObstacleQuery.cs` | whole file (`Resolve`, `ResolveSwept`, `Support`, `Walk`); agents, mobs: frame; player: physics step |
 | Player ground | `Assets/Scripts/EntitySystem/Entityes/Player/Components/TerrainPhysicsResolver.cs` | `Resolve`, `ResolveObstacles`, `ResolveGround` |
-| Map obstacle queries | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | `MapGenerator.ResolveObstacles`, `MapGenerator.SupportObstacles` |
+| Map obstacle queries | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.Terrain.cs` | `MapGenerator.ResolveObstacles`, `MapGenerator.SupportObstacles` |
 | Mobs | `Assets/Scripts/EntitySystem/Entityes/Mob/MobController.cs` | `Update`, `LateUpdate`, `MoveMobsJob`; `HeightAtlas.Covers`, `MotionSystem.PrepareAtlas` |
 | Mimic legs | `Assets/Scripts/EntitySystem/Entityes/Mimic/Scripts/MimicLegJob.cs` | whole file |
 
@@ -94,7 +95,9 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 
 | Area | File | Hot methods |
 |---|---|---|
-| Frame | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | `Update`, `ApplyWorldCommands`, `FlushDirty`, `SupplySimSquare`, height and occupancy queries |
+| Frame | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | `Update`, `ApplyWorldCommands` |
+| Chunk supply | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.Window.cs`, `MapGenerator.Persistence.cs` | `SupplySimSquare`, `FlushDirty` |
+| Height and occupancy queries | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.Terrain.cs`, `MapGenerator.Objects.cs` | height sampling, `IsOccupiedAt`, `TryGetObject` |
 | Random ticks | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/Ticks/RandomTickService.cs` | `Update`, `Tick`, `Dispatch`; `RandomTickJob` |
 | Tick handlers | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/NAL_PC.cs`, `Assets/Scripts/ObjectSystem/Map/GlobalEvents/Fire/FireEvent.cs` | `OnRandomTick`, `Step`, `Spread`, `HeatDamageAt` |
 | Map events | `Assets/Scripts/ObjectSystem/Map/GlobalEvents/GlobalMapEvents.cs` | `Tick` |
