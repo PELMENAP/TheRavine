@@ -193,6 +193,11 @@ public sealed class SpeechBus : IDisposable
         _arm[index]      = (byte)arm;
     }
 
+    public void SetColony(int index, int colony)
+    {
+        if ((uint)index < (uint)_capacity) _colony[index] = colony;
+    }
+
     public ColonyArm ArmOf(int index) => (uint)index < (uint)_capacity ? (ColonyArm)_arm[index] : ColonyArm.Control;
 
     public ColonySpeechTables TablesOf(int colony)

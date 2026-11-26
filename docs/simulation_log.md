@@ -195,6 +195,8 @@ With `simulationLogEnabled` and `behaviourDescriptorsEnabled`, every `simulation
 | `food_eaten` | bites | `FitnessEvent.FoodEaten` events in the window |
 | `energy_surplus` | 0…1 | `SharedHierarchicalBrain.EnergySurplus(En / MaxEnergy, CuriosityEnergyFloor)` at the sample |
 
+Since revision 12 `agent_id` (`EntityModel.EntityId`) is the second column, after `time_s`: a descriptor row joins `life_log_<stamp>.csv` on `agent_id`.
+
 ## Offline analysis
 
 `python3 tools/simlog_analyze.py simulation_log_<stamp>.csv [behaviour_descriptors_<stamp>.csv]` (standard library and numpy). Per arm it prints the population curve (sum of `alive` of the arm's colonies), births, deaths, mean lifespan, entropy of the action mix (bits, from the summed `<action>_started`), `brain_share`, mean `speech_mi_bits` and `listener_shift`, and the mean gradient-conflict columns of the world rows. With the descriptor file it z-scores the behavioural columns (`log1p` of `distance`, `attacks`, `food_eaten`; wild rows dropped unless `--include-wild`), runs k-means (k-means++ start, 5 restarts) for k = 2…8 on each arm with the silhouette score, prints the silhouette difference to the `null_policy` arm at each k, and then clusters all arms together at the k with the best mean silhouette and prints each arm's cluster mix with its total variation distance from the null arm. Silhouette uses at most `--max-rows` rows per arm (random sample, `--seed`).
@@ -307,3 +309,72 @@ The nine columns follow `stress_high_time_share`. Window columns are deltas of `
 | `help_balance_asym` | both | energy | snapshot | Mean of `|balance|` over all help-log entries of the living agents of the colony, each balance decayed to the sample time; empty without a help log |
 | `flow_social` | world | energy | window | `EnergyLedger.Window.Social`: comfort energy cost plus the transfer loss (`giveTransferLoss`); also part of `flow_outflow` |
 
+
+## Columns added in revision 12 (stage 4: lineage and composition)
+
+The fourteen columns are the last ones of every row, after `flow_social`, in the order below. `brain_donor` and the caste shares are empty in the world row.
+
+| Column | Scope | Unit | Meaning and computation |
+|---|---|---|---|
+| `brain_donor` | colony | colony id | `ColonyState.BrainDonorId`: id of the colony whose brain was copied at the last brain replacement of this colony (`ColonyPopulation.ReseedColony`, every reseed mode). Empty for a fresh brain, a brain loaded from the colony's own file and a `fallback` load (a copy of the shared model file, not of a colony). It stays until the next replacement |
+| `caste_worker_share`, `caste_soldier_share`, `caste_scout_share`, `caste_nurse_share` | colony | 0…1 | `ColonyState.CasteCounts[caste]` / sum of the four counts at the sample: adult members only; juveniles and the wild colony are not counted. Empty when the colony has no adult with a fixed caste |
+
+| `goal_survive_started`, `goal_hunt_started`, `goal_forage_started`, `goal_social_started` | both | commands | Δ `ColonyStats.GoalsStarted[goal]`: commands started in the window by `Brain.Context.CurrentGoal` at the start (all sources), counted in `EntityModel.NoteCommandStart`. Follow the caste shares. World row: sum over all colonies |
+| `guests_alive` | colony | creatures | snapshot | `ColonyState.GuestCount`: living members of this colony that came from another colony by a transplant and still decide with the brain of their origin colony. Empty in the world row |
+| `guest_deaths` | both | creatures | window | Δ `ColonyStats.GuestDeaths`: deaths of guests of this colony. Also counted in `died` and the `deaths_*` columns |
+| `guest_mean_lifespan_s` | both | s | window | Δ `GuestLifespanSum` / Δ `guest_deaths`; 0 when no guest died. Also counted in `mean_lifespan_s` |
+| `guest_interactions_failed` | both | commands | window | Δ `GuestFailed`: commands of guests that ended with status `Failed`, any action. Also counted in `<action>_failed` |
+
+The four guest columns follow the goal columns. The guest values are included in the colony's own totals, so the residents' values are the difference: residents' deaths = `died − guest_deaths`; residents' mean lifespan = `(mean_lifespan_s · died − guest_mean_lifespan_s · guest_deaths) / (died − guest_deaths)`; residents' failed commands = `Σ <action>_failed − guest_interactions_failed`. A guest is a member of the colony it was moved to (membership, nest, food, caste bucket, speech colony, skill graph) and decides with the brain of the colony it came from (`BrainComponent` keeps its own brain reference). It keeps the experiment arm of its origin colony. Guest status is not saved: a restored world has no guests.
+
+`brain_origin` of the colony row is `fresh`, `saved` (the colony's own model file), `fallback` (a copy of the shared model file after the colony's own file was missing), `reseeded` (`CloneBest`) or `fission`; the modes `MutatedClone` and `Fresh` append `_mutated` and `_fresh`. `run_<stamp>.json` has `brain_donor` per colony and `brain_fallback_colonies`, the number of civil colonies that started from the shared file; the top-level `brain_origin` of the run file still reads `loaded` for `saved` and `fallback` together.
+
+### Per-colony speech tables and brain distance (stage 4)
+
+Both files are written at each sample next to `simulation_log_<stamp>.csv`, with the same stamp, only while `simulationLogEnabled` is on and their own flag is. Like the other logs they are append-only streams (an atomic replace cannot append); whole-file writes (`run_<stamp>.json`, the canvas PNG files) go through `AtomicFile`.
+
+| File | Flag | Rows |
+|---|---|---|
+| `speech_tables_<stamp>.csv` | `colonySpeechTableEnabled` | One row per colony with members and at least one emitted token in the window: `time_s`, `colony_id`, `arm`, `tokens` (sum of the cells) and `cells`, the window's non-zero context×token counts of `ColonySpeechTables` as `context:token:count` joined by `;`. The table is the one behind `speech_mi_bits`: one count per token slot of every non-reflex utterance, taken from the true utterance before mute or shuffle |
+| `brain_distance_<stamp>.csv` | `brainDistanceEnabled` | One row per pair `colony_a < colony_b` of civil colonies (at most `brainDistanceMaxColonies`, in registry order) per sample: `time_s`, `colony_a`, `colony_b`, `distance` = 1 − cosine similarity of the flattened executor weights (weights and tau entries of the four executors; biases and the reservoir are not included). Computed on the main thread at the log interval, off the tick; independent initialisations give a value near 1, a copy gives 0. A pair file is used instead of world columns because the number of pairs grows with the square of the colony count |
+
+## Offline analysis of stage 4
+
+`python3 tools/simlog_analyze.py simulation_log.csv [descriptors.csv] [--speech-tables speech_tables.csv] [--brain-distance brain_distance.csv] [--div-block N] [--div-min-count M]` prints, in addition to the earlier sections:
+
+- inter-colony divergence of the action mix (`<action>_started`), the goal mix (`goal_<goal>_started`) and the token-given-context distribution (speech tables; per context the Jensen–Shannon divergence of the two colonies' token distributions, weighted by the mean share of the context in the two colonies, over contexts used by both). Samples are pooled into blocks of `--div-block` (default 1: the log's own windows); a block with fewer than `--div-min-count` events in either colony is skipped. Each modality prints the colony×colony matrix (bits, `*` marks a `null_policy` colony) and three references: the mean pair divergence of colonies that are not `null_policy`, the same colonies against themselves one block earlier (the noise reference: sampling noise plus drift) and against the `null_policy` colonies. The ratios pair / self-lag and pair / null_policy follow. A ratio pair / self-lag near 1 means colonies differ no more than one colony differs from itself between two blocks; the windows are finite samples, so every value includes a positive sampling bias that is equal in the pair and in the self-lag values;
+- `--brain-distance`: mean pair distance at the first sample, the last sample and over the run, and the pair matrix of the last sample.
+
+## Transplant schedule (stage 4)
+
+`SimulationRules.transplantSchedule` is empty by default. Each entry `{time, fromColonyId, toColonyId, count}` runs once when `SimulationClock` reaches `time` (checked at the end of each tick window, `ColonyPopulation.TickTransplants`): `count` random adult residents (fixed caste, not juvenile, not already a guest) of the `from` colony are moved to the `to` colony by `ColonyPopulation.MoveMember` and placed near its nest. Their decisions come from the brain of the `from` colony. `transplantTrainGuests` (default off) decides whether guests train that brain: with it off their decision tickets are created trained, as in the `NullPolicy` arm (no critic update, no gradient, no novelty-predictor sample); with it on they train it like residents. The rule is read when a guest is moved.
+
+Controls: an entry between two colonies that hold copies of one lineage (a colony and its reseed or fission clone, see `brain_donor`) is the same-lineage transplant; an entry between independent lineages is the foreign one. Compare the guest columns of the receiving colony with the residents' values (formulas above) in both cases. When the colony that owns a guest's brain is reseeded, its guests are re-pointed to the new brain.
+
+## Behavioural motifs (stage 4)
+
+With `simulationLogEnabled` and `motifTopK` above 0 (at most 32), every sample is followed by rows in `behaviour_motifs_<stamp>.csv` (same directory and stamp): `time_s`, `agent_id` (`EntityModel.EntityId`, joins `life_log`), `colony_id`, `motifs` = the agent's `motifTopK` most frequent motifs of the window as `id:count` joined by `;`, highest count first. Agents with no motif in the window have no row. With `motifTopK` 0 nothing is allocated and no row is written.
+
+- A motif is an action trigram plus the coarse context at the start of the trigram. Every command started in `EntityCommandRunner.Start` (all sources) is one action. When an agent starts its third action in a row, `BehaviourMotifLog` counts `(first, second, third, bucket)`, where `bucket` is the context bucket recorded when `first` started. The id is `((first · 11 + second) · 11 + third) · 16 + bucket`, with actions in `EntityAction` order.
+- The bucket is taken from `EntityModel.SpeechContext()` (the `SpeechContextBits`): bit 0 threat, bit 1 food visible, bit 2 carrying, bit 3 `AtNest`; the sick and can-reproduce bits are dropped. That gives 16 buckets.
+- State per agent (SoA by `ManagerIndex`, `RemoveSwapBack`): the last two actions with their buckets, and a fixed table of 32 slots (key, count) with linear probing. A new motif in a full table replaces the slot with the lowest count, so the counts of rare motifs are approximate; the table is cleared at each sample, the last two actions are not. The history is reset at spawn and a new agent has no motif until its third command.
+- The motif space is finite: 11 · 11 · 11 · 16 = 21 296 ids, of which only the triples that the goal subsets and plans allow can occur. It is far larger than the set of motifs a run observes in practice; the analysis prints the number of distinct motifs seen, so saturation would show as a flat diversity curve.
+
+`python3 tools/simlog_analyze.py simulation_log.csv --life life_log.csv --motifs behaviour_motifs.csv [--motif-k K]` adds a second Bedau–Packard section after the gene one. An agent's motif set is its `K` most frequent motifs over all its rows (default: as many as the file has per row). A component is a motif id; it is present at a time step if a living agent carries it; activity, new activity, diversity and abundance-weighted activity are computed as for gene bins, on the same time grid. The neutral shadow replays the same births and deaths by colony: a newborn with a known parent takes the motif set of a random living agent of its colony and re-draws each motif, at the rate at which real children's motifs are absent from their parents' sets, from the motifs seen in the run; founders keep their real sets. Real and shadow values are printed side by side.
+
+## Colony canvas (stage 4)
+
+An observer view, not a column set. `ColonyCanvas` builds one 100×100 RGBA image per civil colony with members, with one layout and one normalisation for all colonies, in `SimulationLog.Sample` (so only with `simulationLogEnabled`). It runs only while `ColonyCanvasView` has its window open or `canvasExportEnabled` is on; otherwise there is no accumulation, no texture and no work. The buffers are allocated once per colony (lazily, at the first build), textures only by the open view. No creature or player perceives the canvas and it changes nothing in the world.
+
+| Quadrant (50×50) | Content |
+|---|---|
+| top-left, language | x = speech context (64 contexts merged into 50 columns), y = token (16, three pixel rows each). Colour = P(token \| context) on a viridis colormap; brightness = log(1 + count of the column) over the log of the largest column count of any colony |
+| top-right, habits | 11×11 matrix of 4×4 pixel blocks, row = previous action, column = next action (`EntityAction` order), colour = P(next \| previous), brightness by the row count as above |
+| bottom-left, rhythm | x = 50 bins of `DayCycle.NormalizedTime`, rows 0–39 = the four goals (10 px each; green survive, red hunt, yellow forage, blue social), brightness = P(goal \| bin); rows 40–49 = season band: cool to warm by `SeasonClock.Value` at the sample, brightness = bin count over the largest bin |
+| bottom-right, territory | 50×50 samples of the colony fields around the nest (north up), span `canvasTerritorySpan` (0: the nest map extent): R = `Food`, G = `Trail`, B = `Territory`, each divided by the maximum of that channel over all colonies at this sample |
+
+Data: the language table is the window of `ColonySpeechTables` (the table behind `speech_mi_bits` and the speech table file); the action, goal, bigram and rhythm counts are the deltas of the cumulative `ColonyStats` counters since the previous build (`ActionsStarted` and `GoalsStarted` are the counters behind `<action>_started` and `goal_<goal>_started`; `ActionBigrams` counts consecutive commands of one agent, `GoalPhase` the goal at each command start by day-phase bin). Language, habits and rhythm are accumulated with a decay of `canvasDecay` per build (default 0.9; 0 makes each canvas one window); the territory quadrant is the current field. The first build after the view opens only primes the counters, so history before the opening is not shown.
+
+The view shows every canvas in a grid (left click selects colony A, right click colony B), A now, A one sample earlier, the first `null_policy` colony, B now and the difference |A − B| (gain `differenceGain`), and under the difference six Jensen–Shannon values in bits, each as pair A–B, A against its previous sample and A against the `null_policy` canvas: language (token given context), habits (action mix and P(next | previous)), rhythm (goal mix and goal × phase), territory (the three channels as one distribution). Token given context, action mix and goal mix use the formulas of the analysis script (`tools/simlog_analyze.py`: the context-weighted divergence and the plain divergence of the counts), so with `canvasDecay` 0 the canvas values equal the script's values at `--div-block 1` for the same sample. P(next | previous), goal × phase and the territory value have no counterpart in the script.
+
+With `canvasExportEnabled` each build also writes one PNG per colony to `canvas_<stamp>/colony_<colony_id>_<time_s, 8 digits>.png` in the log directory through `AtomicFile`, ready for a time-lapse.

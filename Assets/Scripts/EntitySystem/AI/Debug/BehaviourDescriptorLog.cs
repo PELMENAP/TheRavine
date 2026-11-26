@@ -143,6 +143,7 @@ public sealed class BehaviourDescriptorLog : IDisposable
 
                 sb.Clear();
                 sb.Append(time.ToString("G6", Inv)).Append(',');
+                sb.Append(e.EntityId.ToString(Inv)).Append(',');
                 sb.Append(colony.ColonyId.ToString(Inv)).Append(',');
                 sb.Append(ColonyArms.Name(colony.Arm)).Append(',');
                 sb.Append(CasteLabel(e)).Append(',');
@@ -215,7 +216,7 @@ public sealed class BehaviourDescriptorLog : IDisposable
     private static string BuildHeader()
     {
         var sb = new StringBuilder(512);
-        sb.Append("time_s,colony_id,arm,caste,age_s");
+        sb.Append("time_s,agent_id,colony_id,arm,caste,age_s");
         string[] actions = Enum.GetNames(typeof(EntityAction));
         for (int a = 0; a < Actions; a++) sb.Append(',').Append(SnakeCase(actions[a])).Append("_share");
         string[] goals = Enum.GetNames(typeof(SharedHierarchicalBrain.Goal));

@@ -18,12 +18,19 @@ public sealed class ColonyStats
     public readonly int[] PlansCompleted  = new int[PlanCatalog.Count];
     public readonly int[] Attacks         = new int[(int)AttackTarget.Count];
     public readonly int[] ActionsStarted  = new int[ActionCatalog.Count];
+    public const int PhaseBins = 50;
+    public readonly int[] GoalsStarted    = new int[SharedHierarchicalBrain.GoalCount];
+    public readonly int[] ActionBigrams   = new int[ActionCatalog.Count * ActionCatalog.Count];
+    public readonly int[] GoalPhase       = new int[SharedHierarchicalBrain.GoalCount * PhaseBins];
     public readonly int[] ActionsStartedBySource = new int[ActionCatalog.Count * (int)CommandSource.Count];
     public readonly int[] ActionsCompleted   = new int[ActionCatalog.Count];
     public readonly int[] ActionsFailed      = new int[ActionCatalog.Count];
     public readonly int[] ActionsInterrupted = new int[ActionCatalog.Count];
     public readonly int[] PlansByCaste    = new int[(int)Caste.Count * PlanCatalog.Count];
     public float FarShare;
+    public int   GuestDeaths;
+    public float GuestLifespanSum;
+    public int   GuestFailed;
     public int   Reseeds;
     public int   ForeignHarmTicks;
     public int   WarmthDrawTicks;
@@ -117,6 +124,22 @@ public sealed class ColonyStats
     public void RecordForeignHarm() => ForeignHarmTicks++;
     public void RecordWarmthDraw() => WarmthDrawTicks++;
     public void RecordAction(int action) { if ((uint)action < (uint)ActionsStarted.Length) ActionsStarted[action]++; }
+    public void RecordGuestDeath(float lifespan)
+    {
+        GuestDeaths++;
+        GuestLifespanSum += lifespan;
+    }
+
+    public void RecordGuestFailed() => GuestFailed++;
+    public void RecordHabit(int previous, int action, int goal, float dayPhase)
+    {
+        if ((uint)goal >= (uint)GoalsStarted.Length) return;
+        GoalsStarted[goal]++;
+        int bin = math.clamp((int)(math.frac(dayPhase) * PhaseBins), 0, PhaseBins - 1);
+        GoalPhase[goal * PhaseBins + bin]++;
+        if ((uint)previous < (uint)ActionCatalog.Count && (uint)action < (uint)ActionCatalog.Count)
+            ActionBigrams[previous * ActionCatalog.Count + action]++;
+    }
     public void RecordActionSource(int action, CommandSource source) { if ((uint)action < (uint)ActionsStarted.Length) ActionsStartedBySource[action * (int)CommandSource.Count + (int)source]++; }
     public void RecordCompleted(int action) { if ((uint)action < (uint)ActionsCompleted.Length) ActionsCompleted[action]++; }
     public void RecordFailed(int action) { if ((uint)action < (uint)ActionsFailed.Length) ActionsFailed[action]++; }

@@ -22,27 +22,27 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/DialogueSystem` | 2 | 38 |
 | `Assets/Scripts/Editor` | 19 | 2317 |
 | `Assets/Scripts/EntitySystem` | 8 | 966 |
-| `Assets/Scripts/EntitySystem/AI` | 12 | 2620 |
+| `Assets/Scripts/EntitySystem/AI` | 12 | 2673 |
 | `Assets/Scripts/EntitySystem/AI/Caste` | 1 | 49 |
 | `Assets/Scripts/EntitySystem/AI/Codex` | 10 | 939 |
-| `Assets/Scripts/EntitySystem/AI/Colony` | 9 | 972 |
-| `Assets/Scripts/EntitySystem/AI/Debug` | 7 | 3025 |
-| `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 2 | 906 |
-| `Assets/Scripts/EntitySystem/AI/Entity` | 19 | 3139 |
-| `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1602 |
-| `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 695 |
+| `Assets/Scripts/EntitySystem/AI/Colony` | 11 | 1076 |
+| `Assets/Scripts/EntitySystem/AI/Debug` | 13 | 4235 |
+| `Assets/Scripts/EntitySystem/AI/DelayedPerceptron` | 3 | 966 |
+| `Assets/Scripts/EntitySystem/AI/Entity` | 20 | 3163 |
+| `Assets/Scripts/EntitySystem/AI/Entity/Commands` | 14 | 1606 |
+| `Assets/Scripts/EntitySystem/AI/Entity/Components` | 9 | 697 |
 | `Assets/Scripts/EntitySystem/AI/Flock` | 1 | 230 |
 | `Assets/Scripts/EntitySystem/AI/Instinct` | 1 | 441 |
 | `Assets/Scripts/EntitySystem/AI/LSTM` | 2 | 257 |
 | `Assets/Scripts/EntitySystem/AI/Nest` | 1 | 394 |
 | `Assets/Scripts/EntitySystem/AI/Perception` | 10 | 2377 |
 | `Assets/Scripts/EntitySystem/AI/Plans` | 2 | 589 |
-| `Assets/Scripts/EntitySystem/AI/Population` | 8 | 1505 |
-| `Assets/Scripts/EntitySystem/AI/Rules` | 13 | 3590 |
-| `Assets/Scripts/EntitySystem/AI/SharedAI` | 24 | 3867 |
+| `Assets/Scripts/EntitySystem/AI/Population` | 8 | 1667 |
+| `Assets/Scripts/EntitySystem/AI/Rules` | 14 | 3673 |
+| `Assets/Scripts/EntitySystem/AI/SharedAI` | 24 | 3901 |
 | `Assets/Scripts/EntitySystem/AI/Skills` | 19 | 2174 |
 | `Assets/Scripts/EntitySystem/AI/Social` | 2 | 296 |
-| `Assets/Scripts/EntitySystem/AI/Speech` | 8 | 1273 |
+| `Assets/Scripts/EntitySystem/AI/Speech` | 8 | 1298 |
 | `Assets/Scripts/EntitySystem/AI/Utility` | 1 | 113 |
 | `Assets/Scripts/EntitySystem/Casino` | 4 | 806 |
 | `Assets/Scripts/EntitySystem/Command` | 4 | 153 |
@@ -116,9 +116,7 @@ Files and lines of `.cs` directly in the folder.
 | `Assets/Scripts/UI/Inventory/Extensions` | 2 | 181 |
 | `Assets/Scripts/UI/Settings` | 5 | 1076 |
 | `Assets/Scripts/UI/SkillGraph` | 8 | 948 |
-| `Assets/Tests/EditMode` | 77 | 12691 |
-| `Assets/Scripts/UI/SkillGraph` | 8 | 945 |
-| `Assets/Tests/EditMode` | 83 | 13840 |
+| `Assets/Tests/EditMode` | 86 | 14282 |
 
 ## Assemblies
 
@@ -461,6 +459,7 @@ Top-level types only. A type missing here lives in `<TypeName>.cs`.
 | TranslationLutJob | struct | `Assets/Scripts/EntitySystem/Virology/TranslationTable.cs` | 80 |
 | TranslationResult | struct | `Assets/Scripts/EntitySystem/Virology/Ribosome.cs` | 83 |
 | TranslationTableRegistry | class | `Assets/Scripts/EntitySystem/Virology/TranslationTable.cs` | 116 |
+| TransplantEntry | struct | `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.Culture.cs` | 5 |
 | TreePerch | struct | `Assets/Scripts/EntitySystem/Job/BirdPerchIndex.cs` | 15 |
 | UIBindingHelpers | class | `Assets/Scripts/Core/Utilities/CodeHelpers.cs` | 10 |
 | UISetupHelpers | class | `Assets/Scripts/Core/Utilities/CodeHelpers.cs` | 181 |

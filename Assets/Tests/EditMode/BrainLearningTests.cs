@@ -210,4 +210,20 @@ public class BrainLearningTests
         for (int i = 0; i < 40; i++) batch();
         AllocationAssert.Zero(batch, 20, "EnqueueDecision/RunDecisions/ApplyPendingGradients");
     }
+
+    [Test]
+    public void ContextWithTrainingOffQueuesNoTraining()
+    {
+        var ctx = NewContext();
+        ctx.TrainOff = true;
+        Step(ctx, Input(1f), 0f);
+
+        var item = ctx.CoordMLP.Decisions.Find(ctx.CoordDecisionId);
+        Assert.NotNull(item);
+        Assert.IsTrue(item.Trained, "тикет гостя не помечен как обученный");
+
+        int stepsBefore = ctx.CoordMLP.TrainingSteps;
+        _brain.CompleteTerminal(ctx, -5f, 0f);
+        Assert.AreEqual(stepsBefore, ctx.CoordMLP.TrainingSteps, "гость с выключенным обучением поставил обучение мозга");
+    }
 }

@@ -217,10 +217,16 @@ public partial class EntityModel
         AddExtrinsicReward(reward);
     }
 
+    private int _lastStartedAction = -1;
+
     public void NoteCommandStart(int action)
     {
         _speechBus?.RecordListen(ColonyIndex, Speech.HasLoudest, action);
-        _descriptors?.NoteAction(ManagerIndex, action, (int)Brain.Context.CurrentGoal);
+        int goal = (int)Brain.Context.CurrentGoal;
+        _descriptors?.NoteAction(ManagerIndex, action, goal);
+        Colony?.Stats.RecordHabit(_lastStartedAction, action, goal, _headDayPhase);
+        _lastStartedAction = action;
+        _motifs?.NoteAction(ManagerIndex, action, SpeechContext());
     }
 
     public bool TryStartSpeechCooldown() => SpeechBus.TryStartCooldown(ref _speechReadyTime);

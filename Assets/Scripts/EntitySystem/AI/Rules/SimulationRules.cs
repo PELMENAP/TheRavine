@@ -1508,6 +1508,7 @@ public sealed partial class SimulationRules : ScriptableObject
         ValidateCodex();
         ValidateSystems();
         ValidateSocial();
+        ValidateCulture();
     }
 
     private static SimulationRules _active;

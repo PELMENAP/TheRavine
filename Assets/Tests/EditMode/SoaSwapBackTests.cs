@@ -263,4 +263,76 @@ public class SoaSwapBackTests
             system.Dispose();
         }
     }
+
+    [Test]
+    public void BehaviourMotifsFollowSwapBack()
+    {
+        var log = new BehaviourMotifLog(3, 4);
+        try
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                log.Reset(i);
+                log.NoteAction(i, (int)EntityAction.Idle, 0);
+                log.NoteAction(i, (int)EntityAction.MoveTo, 0);
+                for (int k = 0; k <= i; k++) log.NoteAction(i, (int)EntityAction.Eat, 0);
+            }
+
+            int motif = BehaviourMotifLog.MotifId((int)EntityAction.Idle, (int)EntityAction.MoveTo, (int)EntityAction.Eat, 0);
+            Assert.AreEqual(1, log.CountOf(2, motif));
+            Assert.AreEqual((int)EntityAction.Eat, log.LastAction(2));
+
+            log.RemoveSwapBack(0, 2);
+
+            Assert.AreEqual(1, log.CountOf(0, motif));
+            Assert.AreEqual((int)EntityAction.Eat, log.LastAction(0));
+            Assert.AreEqual(0, log.CountOf(2, motif));
+            Assert.AreEqual(-1, log.LastAction(2));
+
+            log.NoteAction(2, (int)EntityAction.Rest, 0);
+            Assert.AreEqual(0, log.CountOf(2, BehaviourMotifLog.MotifId((int)EntityAction.Eat, (int)EntityAction.Eat, (int)EntityAction.Rest, 0)));
+
+            log.RemoveSwapBack(0, 9);
+            Assert.AreEqual(1, log.CountOf(0, motif));
+        }
+        finally
+        {
+            log.Dispose();
+        }
+    }
+
+    [Test]
+    public void BehaviourMotifsCountTrigramsWithTheContextAtTheirStartAndDoNotAllocate()
+    {
+        var log = new BehaviourMotifLog(2, 4);
+        try
+        {
+            log.Reset(0);
+            byte threat = 1;
+            byte atNest = 1 << 4;
+            log.NoteAction(0, (int)EntityAction.Idle, threat);
+            log.NoteAction(0, (int)EntityAction.Rest, atNest);
+            log.NoteAction(0, (int)EntityAction.Eat, 0);
+
+            int bucketOfFirst = BehaviourMotifLog.Bucket(threat);
+            int motif = BehaviourMotifLog.MotifId((int)EntityAction.Idle, (int)EntityAction.Rest, (int)EntityAction.Eat, bucketOfFirst);
+            Assert.AreEqual(1, log.CountOf(0, motif));
+            BehaviourMotifLog.Decode(motif, out int a, out int b, out int c, out int bucket);
+            Assert.AreEqual((int)EntityAction.Idle, a);
+            Assert.AreEqual((int)EntityAction.Rest, b);
+            Assert.AreEqual((int)EntityAction.Eat, c);
+            Assert.AreEqual(bucketOfFirst, bucket);
+
+            int step = 0;
+            AllocationAssert.Zero(() =>
+            {
+                step++;
+                log.NoteAction(0, step % ActionCatalog.Count, (byte)(step & 63));
+            }, 200, "BehaviourMotifLog.NoteAction");
+        }
+        finally
+        {
+            log.Dispose();
+        }
+    }
 }

@@ -639,6 +639,28 @@ def activity_curves(birth_t, death_t, colony, bins, parent_row, grid, rng, shado
     return out
 
 
+GENE_NOTE = "Founder genes usually cover every bin, so new activity saturates; read abundance and diversity."
+
+
+def print_curves(real, shadow, note=GENE_NOTE):
+    print(f"{'time_s':>10}{'D real':>9}{'D shadow':>10}{'meanA real':>12}{'meanA shad':>12}{'new real':>10}{'new shad':>10}{'cumNew real':>13}{'cumNew shad':>13}{'abund real':>12}{'abund shad':>12}")
+    picks = np.linspace(0, len(real) - 1, num=min(10, len(real))).astype(int)
+    for i in picks:
+        r, s = real[i], shadow[i]
+        print(f"{r[0]:>10.0f}{r[1]:>9d}{s[1]:>10d}{r[2]:>12.2f}{s[2]:>12.2f}{r[3]:>10d}{s[3]:>10d}{r[4]:>13d}{s[4]:>13d}{r[5]:>12.2f}{s[5]:>12.2f}")
+    r_new, s_new = real[-1][4], shadow[-1][4]
+    r_mean = float(np.mean([x[2] for x in real]))
+    s_mean = float(np.mean([x[2] for x in shadow]))
+    r_div = float(np.mean([x[1] for x in real]))
+    s_div = float(np.mean([x[1] for x in shadow]))
+    r_ab = float(np.mean([x[5] for x in real]))
+    s_ab = float(np.mean([x[5] for x in shadow]))
+    print(f"abundance-weighted mean activity (cumulative share of living agents carrying the component): real={fmt(r_ab, 2)} shadow={fmt(s_ab, 2)}")
+    print(f"totals: new activity real={r_new} shadow={s_new} (ratio {fmt(r_new / s_new if s_new else math.nan, 2)}); "
+          f"mean cumulative activity real={fmt(r_mean, 2)} shadow={fmt(s_mean, 2)}; mean diversity real={fmt(r_div, 1)} shadow={fmt(s_div, 1)}")
+    print("real above shadow in new activity, mean cumulative activity and abundance-weighted activity, with lower diversity, indicates selected components; equal values indicate drift. " + note)
+
+
 def print_activity(path, n_bins, steps, threshold, seed):
     genes, births, deaths = read_life(path)
     print()
@@ -674,22 +696,323 @@ def print_activity(path, n_bins, steps, threshold, seed):
     real = activity_curves(birth_t, death_t, colony, bins, parent_row, grid, rng, False, mutation, n_bins, threshold)
     shadow = activity_curves(birth_t, death_t, colony, bins, parent_row, grid, np.random.default_rng(seed + 1), True, mutation, n_bins, threshold)
 
-    print(f"{'time_s':>10}{'D real':>9}{'D shadow':>10}{'meanA real':>12}{'meanA shad':>12}{'new real':>10}{'new shad':>10}{'cumNew real':>13}{'cumNew shad':>13}{'abund real':>12}{'abund shad':>12}")
-    picks = np.linspace(0, len(real) - 1, num=min(10, len(real))).astype(int)
-    for i in picks:
-        r, s = real[i], shadow[i]
-        print(f"{r[0]:>10.0f}{r[1]:>9d}{s[1]:>10d}{r[2]:>12.2f}{s[2]:>12.2f}{r[3]:>10d}{s[3]:>10d}{r[4]:>13d}{s[4]:>13d}{r[5]:>12.2f}{s[5]:>12.2f}")
-    r_new, s_new = real[-1][4], shadow[-1][4]
-    r_mean = float(np.mean([x[2] for x in real]))
-    s_mean = float(np.mean([x[2] for x in shadow]))
-    r_div = float(np.mean([x[1] for x in real]))
-    s_div = float(np.mean([x[1] for x in shadow]))
-    r_ab = float(np.mean([x[5] for x in real]))
-    s_ab = float(np.mean([x[5] for x in shadow]))
-    print(f"abundance-weighted mean activity (cumulative share of living agents carrying the component): real={fmt(r_ab, 2)} shadow={fmt(s_ab, 2)}")
-    print(f"totals: new activity real={r_new} shadow={s_new} (ratio {fmt(r_new / s_new if s_new else math.nan, 2)}); "
-          f"mean cumulative activity real={fmt(r_mean, 2)} shadow={fmt(s_mean, 2)}; mean diversity real={fmt(r_div, 1)} shadow={fmt(s_div, 1)}")
-    print("real above shadow in new activity, mean cumulative activity and abundance-weighted activity, with lower diversity, indicates selected components; equal values indicate drift. Founder genes usually cover every bin, so new activity saturates; read abundance and diversity.")
+    print_curves(real, shadow)
+
+
+GOALS = ["survive", "hunt", "forage", "social"]
+BEHAVIOUR_MOTIF_SPACE = len(ACTIONS) ** 3 * 16
+SPEECH_CONTEXTS = 64
+SPEECH_VOCAB = 16
+
+
+def js_divergence(p, q):
+    p = np.asarray(p, dtype=float)
+    q = np.asarray(q, dtype=float)
+    sp, sq = p.sum(), q.sum()
+    if sp <= 0 or sq <= 0:
+        return math.nan
+    p = p / sp
+    q = q / sq
+    m = 0.5 * (p + q)
+
+    def kl(a):
+        mask = a > 0
+        return float((a[mask] * np.log2(a[mask] / m[mask])).sum())
+
+    return 0.5 * kl(p) + 0.5 * kl(q)
+
+
+def conditional_js(a, b):
+    ra, rb = a.sum(axis=1), b.sum(axis=1)
+    na, nb = ra.sum(), rb.sum()
+    if na <= 0 or nb <= 0:
+        return math.nan
+    mask = (ra > 0) & (rb > 0)
+    if not mask.any():
+        return math.nan
+    rows = np.nonzero(mask)[0]
+    weights = 0.5 * (ra[rows] / na + rb[rows] / nb)
+    values = np.array([js_divergence(a[c], b[c]) for c in rows])
+    return float((weights * values).sum() / weights.sum())
+
+
+def read_speech_tables(path):
+    columns, rows = read_rows(path)
+    need(columns, ["time_s", "colony_id", "cells"], path)
+    tables = {}
+    top_ctx, top_tok = SPEECH_CONTEXTS - 1, SPEECH_VOCAB - 1
+    parsed = []
+    for row in rows:
+        cells = []
+        for item in row["cells"].split(";"):
+            if not item:
+                continue
+            ctx, tok, count = item.split(":")
+            cells.append((int(ctx), int(tok), int(count)))
+            top_ctx = max(top_ctx, int(ctx))
+            top_tok = max(top_tok, int(tok))
+        parsed.append((num(row["time_s"]), int(row["colony_id"]), cells))
+    for t, cid, cells in parsed:
+        table = tables.setdefault((round(t, 3), cid), np.zeros((top_ctx + 1, top_tok + 1)))
+        for ctx, tok, count in cells:
+            table[ctx, tok] += count
+    return tables
+
+
+def colony_series(columns, rows, block, speech_tables):
+    need(columns, ["time_s", "scope", "colony_id", "arm"], "simulation log")
+    colony_rows = [r for r in rows if r["scope"] == "colony" and r.get("is_wild", "0") != "1"]
+    times = sorted({round(num(r["time_s"]), 3) for r in colony_rows})
+    index = {t: i for i, t in enumerate(times)}
+    blocks = (len(times) + block - 1) // block
+    arms = {}
+    actions = {}
+    goals = {}
+    goal_columns = [f"goal_{g}_started" for g in GOALS]
+    has_goals = all(c in columns for c in goal_columns)
+    for row in colony_rows:
+        cid = int(row["colony_id"])
+        arms[cid] = row["arm"] or CONTROL_ARM
+        b = index[round(num(row["time_s"]), 3)] // block
+        vec = actions.setdefault(cid, np.zeros((blocks, len(ACTIONS))))
+        for i, a in enumerate(ACTIONS):
+            value = num(row[f"{a}_started"])
+            if not math.isnan(value):
+                vec[b, i] += value
+        if has_goals:
+            gvec = goals.setdefault(cid, np.zeros((blocks, len(GOALS))))
+            for i, name in enumerate(goal_columns):
+                value = num(row[name])
+                if not math.isnan(value):
+                    gvec[b, i] += value
+    speech = {}
+    if speech_tables:
+        top_ctx = max(t.shape[0] for t in speech_tables.values())
+        top_tok = max(t.shape[1] for t in speech_tables.values())
+        for (t, cid), table in speech_tables.items():
+            if t not in index or cid not in arms:
+                continue
+            vec = speech.setdefault(cid, np.zeros((blocks, top_ctx, top_tok)))
+            vec[index[t] // block, :table.shape[0], :table.shape[1]] += table
+    return arms, actions, goals, speech
+
+
+def divergence_matrix(series, ids, dist, total, min_count):
+    blocks = next(iter(series.values())).shape[0]
+    matrix = np.full((len(ids), len(ids)), math.nan)
+    for i in range(len(ids)):
+        for j in range(i + 1, len(ids)):
+            values = []
+            for t in range(blocks):
+                a, b = series[ids[i]][t], series[ids[j]][t]
+                if total(a) < min_count or total(b) < min_count:
+                    continue
+                values.append(dist(a, b))
+            matrix[i, j] = matrix[j, i] = nanmean(values)
+    return matrix
+
+
+def self_lag(series, cid, dist, total, min_count):
+    values = []
+    for t in range(1, series[cid].shape[0]):
+        a, b = series[cid][t], series[cid][t - 1]
+        if total(a) < min_count or total(b) < min_count:
+            continue
+        values.append(dist(a, b))
+    return nanmean(values)
+
+
+def print_divergence(title, series, arms, dist, total, min_count):
+    ids = sorted(series)
+    print()
+    print(f"== inter-colony divergence: {title} (Jensen-Shannon, bits) ==")
+    if len(ids) < 2:
+        print("fewer than two colonies with data")
+        return
+    matrix = divergence_matrix(series, ids, dist, total, min_count)
+    labels = [f"{cid}{'*' if arms.get(cid) == NULL_ARM else ''}" for cid in ids]
+    print("      " + "".join(f"{label:>7}" for label in labels))
+    for i, label in enumerate(labels):
+        print(f"{label:>6}" + "".join(f"{fmt(matrix[i, j], 3):>7}" for j in range(len(ids))))
+    print("(* = null_policy colony)")
+
+    real = [i for i, cid in enumerate(ids) if arms.get(cid) != NULL_ARM]
+    null = [i for i, cid in enumerate(ids) if arms.get(cid) == NULL_ARM]
+    pair_values = [matrix[i, j] for a, i in enumerate(real) for j in real[a + 1:]]
+    pair_mean = nanmean(pair_values)
+    lag_mean = nanmean([self_lag(series, ids[i], dist, total, min_count) for i in real])
+    null_values = [matrix[i, j] for i in real for j in null]
+    null_mean = nanmean(null_values) if null_values else math.nan
+    print(f"mean pair divergence {fmt(pair_mean, 4)}; against itself one block earlier {fmt(lag_mean, 4)}; against null_policy colonies {fmt(null_mean, 4)}")
+    ratio_lag = pair_mean / lag_mean if lag_mean and not math.isnan(lag_mean) else math.nan
+    ratio_null = pair_mean / null_mean if null_mean and not math.isnan(null_mean) else math.nan
+    print(f"ratio pair / self-lag = {fmt(ratio_lag, 2)}; ratio pair / null_policy = {fmt(ratio_null, 2)}"
+          + ("" if null else " (no null_policy colony in this run)"))
+
+
+def print_inter_colony(columns, rows, speech_path, block, min_count):
+    tables = read_speech_tables(speech_path) if speech_path else None
+    arms, actions, goals, speech = colony_series(columns, rows, max(block, 1), tables)
+    if len(actions) < 2:
+        print()
+        print("== inter-colony divergence: fewer than two civil colonies in the log ==")
+        return
+    vector_total = lambda v: float(np.sum(v))
+    print_divergence("action mix", actions, arms, js_divergence, vector_total, min_count)
+    if goals:
+        print_divergence("goal mix", goals, arms, js_divergence, vector_total, min_count)
+    else:
+        print("\n(no goal_<goal>_started columns: goal mix skipped)")
+    if speech:
+        print_divergence("token given context (context-weighted)", speech, arms, conditional_js, vector_total, min_count)
+    elif speech_path:
+        print("\n(speech table file has no usable rows)")
+    else:
+        print("\n(no --speech-tables file: token-given-context divergence skipped)")
+
+
+def print_brain_distance(path):
+    columns, rows = read_rows(path)
+    need(columns, ["time_s", "colony_a", "colony_b", "distance"], path)
+    by_time = {}
+    for row in rows:
+        by_time.setdefault(num(row["time_s"]), {})[(int(row["colony_a"]), int(row["colony_b"]))] = num(row["distance"])
+    print()
+    print("== brain distance (cosine distance of flattened executor weights) ==")
+    if not by_time:
+        print("no rows")
+        return
+    times = sorted(by_time)
+    means = [nanmean(list(by_time[t].values())) for t in times]
+    print(f"{len(times)} samples; mean pair distance first={fmt(means[0], 4)} last={fmt(means[-1], 4)} overall={fmt(nanmean(means), 4)}")
+    last = by_time[times[-1]]
+    ids = sorted({c for pair in last for c in pair})
+    print("      " + "".join(f"{cid:>7}" for cid in ids))
+    for a in ids:
+        cells = []
+        for b in ids:
+            key = (a, b) if (a, b) in last else (b, a)
+            cells.append(fmt(last[key], 3) if a != b and key in last else "-")
+        print(f"{a:>6}" + "".join(f"{c:>7}" for c in cells))
+
+
+
+def read_motifs(path):
+    columns, rows = read_rows(path)
+    need(columns, ["time_s", "agent_id", "colony_id", "motifs"], path)
+    totals = {}
+    for r in rows:
+        agent = int(num(r["agent_id"]))
+        table = totals.setdefault(agent, {})
+        for item in r["motifs"].split(";"):
+            if not item:
+                continue
+            motif, count = item.split(":")
+            table[int(motif)] = table.get(int(motif), 0) + int(count)
+    return totals
+
+
+def motif_activity_curves(birth_t, death_t, colony, sets, parent_row, grid, rng, shadow, rate, pool, threshold):
+    n = len(sets)
+    events = [(birth_t[i], 1, i) for i in range(n)] + [(death_t[i], 0, i) for i in range(n) if np.isfinite(death_t[i])]
+    events.sort(key=lambda e: (e[0], e[1]))
+    state = [list(x) for x in sets]
+    alive_lists, position, alive = {}, {}, np.zeros(n, bool)
+    carriers = {}
+    activity, abundance = {}, {}
+    cumulative_new = set()
+    living = 0
+    ptr = 0
+    out = []
+    for t in grid:
+        while ptr < len(events) and events[ptr][0] <= t:
+            _, kind, i = events[ptr]
+            ptr += 1
+            lst = alive_lists.setdefault(colony[i], [])
+            if kind == 1:
+                if shadow and parent_row[i] >= 0 and lst and len(pool) > 0:
+                    p = lst[rng.integers(len(lst))]
+                    child = list(state[p])
+                    for slot in range(len(child)):
+                        if rng.random() < rate:
+                            child[slot] = int(pool[rng.integers(len(pool))])
+                    state[i] = sorted(set(child))
+                position[i] = len(lst)
+                lst.append(i)
+                alive[i] = True
+                living += 1
+                for m in state[i]:
+                    carriers[m] = carriers.get(m, 0) + 1
+            elif alive[i]:
+                j = position.pop(i)
+                last = lst[-1]
+                lst[j] = last
+                position[last] = j
+                lst.pop()
+                if last == i:
+                    position.pop(i, None)
+                alive[i] = False
+                living -= 1
+                for m in state[i]:
+                    carriers[m] -= 1
+        present = [m for m, c in carriers.items() if c > 0]
+        crossed = 0
+        for m in present:
+            activity[m] = activity.get(m, 0) + 1
+            abundance[m] = abundance.get(m, 0.0) + carriers[m] / living
+            if activity[m] > threshold and m not in cumulative_new:
+                cumulative_new.add(m)
+                crossed += 1
+        d = len(present)
+        mean_a = sum(activity[m] for m in present) / d if d else 0.0
+        mean_w = sum(abundance[m] for m in present) / d if d else 0.0
+        out.append((float(t), d, mean_a, crossed, len(cumulative_new), mean_w))
+    return out
+
+
+def print_motif_activity(motif_path, life_path, steps, threshold, seed, top_k):
+    totals = read_motifs(motif_path)
+    genes, births, deaths = read_life(life_path)
+    print()
+    print("== Bedau-Packard evolutionary activity of behavioural motifs (real against neutral shadow) ==")
+    if len(births) < 10 or not totals:
+        print("not enough birth rows in the life log or no motif rows")
+        return
+    births.sort(key=lambda b: b[0])
+    ids = {b[1]: i for i, b in enumerate(births)}
+    n = len(births)
+    birth_t = np.array([b[0] for b in births])
+    death_t = np.array([deaths.get(b[1], math.inf) for b in births])
+    colony = [b[3] for b in births]
+    parent_row = np.array([ids.get(b[2], -1) for b in births])
+
+    limit = top_k if top_k > 0 else max((len(t) for t in totals.values()), default=1)
+    sets = []
+    for b in births:
+        table = totals.get(b[1], {})
+        top = sorted(table.items(), key=lambda kv: (-kv[1], kv[0]))[:limit]
+        sets.append(sorted(m for m, _ in top))
+    pool = np.array(sorted({m for s in sets for m in s}), dtype=int)
+    if len(pool) == 0:
+        print("no motifs for the agents of the life log")
+        return
+
+    rates = []
+    for i in range(n):
+        p = parent_row[i]
+        if p >= 0 and sets[i] and sets[p]:
+            rates.append(1.0 - len(set(sets[i]) & set(sets[p])) / len(sets[i]))
+    rate = float(np.clip(np.mean(rates), 0.0, 1.0)) if rates else 0.05
+
+    t0 = float(birth_t[0])
+    t1 = float(max(birth_t[-1], np.nanmax(np.where(np.isfinite(death_t), death_t, 0.0))))
+    grid = np.linspace(t0, t1, steps + 1)[1:]
+    with_motifs = sum(1 for s in sets if s)
+    print(f"{n} births, {with_motifs} agents with motif rows, {len(pool)} distinct motifs of {BEHAVIOUR_MOTIF_SPACE} possible ids, up to {limit} per agent, {steps} steps, activity threshold {threshold} steps")
+    print(f"mean share of an agent's motifs absent from its parent's set (shadow re-draw rate): {fmt(rate, 3)}")
+    real = motif_activity_curves(birth_t, death_t, colony, sets, parent_row, grid, np.random.default_rng(seed), False, rate, pool, threshold)
+    shadow = motif_activity_curves(birth_t, death_t, colony, sets, parent_row, grid, np.random.default_rng(seed + 1), True, rate, pool, threshold)
+    print_curves(real, shadow, "An agent's motif set is its most frequent motifs over its lifetime; the shadow copies the set of a random living agent of the colony at each birth with a known parent and re-draws each motif at the observed rate from the motifs seen in the run; founders keep their real sets.")
 
 
 def main():
@@ -709,6 +1032,12 @@ def main():
     parser.add_argument("--band", type=float, default=0.1, help="recovery band, fraction of the pre-shock mean")
     parser.add_argument("--pre-window", type=int, default=6)
     parser.add_argument("--hold", type=int, default=2)
+    parser.add_argument("--motifs", help="behaviour_motifs_<stamp>.csv; with --life adds motif components to the Bedau-Packard activity")
+    parser.add_argument("--motif-k", type=int, default=0, help="motifs kept per agent for the activity (0: as many as the file has per row)")
+    parser.add_argument("--speech-tables", help="speech_tables_<stamp>.csv (per-colony context x token counts)")
+    parser.add_argument("--brain-distance", help="brain_distance_<stamp>.csv (pairwise cosine distance of executor weights)")
+    parser.add_argument("--div-block", type=int, default=1, help="samples pooled into one block for the inter-colony divergence (1: the log's own windows)")
+    parser.add_argument("--div-min-count", type=float, default=20.0, help="skip a block with fewer events than this in either colony")
     args = parser.parse_args()
 
     columns, rows = read_rows(args.simlog)
@@ -722,8 +1051,15 @@ def main():
     print_predator_prey(columns, rows, args.max_lag)
     print_virus(columns, rows, args.max_lag)
     print_recovery(columns, rows, arm_rows, args.band, args.pre_window, args.hold)
+    print_inter_colony(columns, rows, args.speech_tables, args.div_block, args.div_min_count)
+    if args.brain_distance:
+        print_brain_distance(args.brain_distance)
     if args.life:
         print_activity(args.life, max(args.bins, 2), max(args.life_steps, 10), args.activity_threshold, args.seed)
+        if args.motifs:
+            print_motif_activity(args.motifs, args.life, max(args.life_steps, 10), args.activity_threshold, args.seed, args.motif_k)
+    elif args.motifs:
+        print("\n(--motifs needs --life for births, deaths and parents: motif activity skipped)")
 
     if args.descriptors:
         names, arms, pre_names, pres = load_descriptors(args.descriptors, args.include_wild, args.min_age)

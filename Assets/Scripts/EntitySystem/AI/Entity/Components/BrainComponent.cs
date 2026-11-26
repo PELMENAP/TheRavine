@@ -13,6 +13,8 @@ public class BrainComponent : IComponent
         Context = ctx;
     }
 
+    public bool Uses(SharedHierarchicalBrain brain) => ReferenceEquals(_brain, brain);
+
     public void ReplaceBrain(SharedHierarchicalBrain brain)
     {
         _brain = brain;

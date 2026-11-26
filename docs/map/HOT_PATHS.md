@@ -65,7 +65,7 @@ Driver: `EntityManager.Update` in `Assets/Scripts/EntitySystem/AI/EntityManager.
 | Colony fields | `Assets/Scripts/EntitySystem/AI/Nest/NestState.cs` | `Mark`, `MarkPair`, `FieldAt`, `SampleDirection`, decay and shift jobs |
 | Points of interest | `Assets/Scripts/EntitySystem/AI/Colony/ColonyPoiBoard.cs` | `Offer`, `TryPickBest` |
 | Speech | `Assets/Scripts/EntitySystem/AI/Speech/SpeechBus.cs`, `Assets/Scripts/EntitySystem/AI/Speech/ColonySpeechTables.cs` | `Emit`, `TryStartCooldown`, `InboxAt`, `Flush`, `ApplyArm`, `RecordListen`, `SpeechDeliverJob`; `ColonySpeechTables.RecordEmission`, `RecordListen` |
-| Experiment diagnostics | `Assets/Scripts/EntitySystem/AI/Debug/BehaviourDescriptorLog.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/GradientConflict.cs` | `BehaviourDescriptorLog.Note*` (null-checked, off by default); `DelayedPerceptron.AccumulateGroupConflict` only in a conflict cycle |
+| Experiment diagnostics | `Assets/Scripts/EntitySystem/AI/Debug/BehaviourDescriptorLog.cs`, `Assets/Scripts/EntitySystem/AI/Debug/BehaviourMotifLog.cs`, `Assets/Scripts/EntitySystem/AI/Colony/ColonyStats.cs`, `Assets/Scripts/EntitySystem/AI/SharedAI/GradientConflict.cs` | `BehaviourDescriptorLog.Note*`, `BehaviourMotifLog.NoteAction` (null-checked, off by default); `ColonyStats.RecordHabit`; `DelayedPerceptron.AccumulateGroupConflict` only in a conflict cycle |
 
 ## Motion
 

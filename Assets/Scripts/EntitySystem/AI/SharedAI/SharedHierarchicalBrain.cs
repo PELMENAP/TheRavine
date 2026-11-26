@@ -401,7 +401,7 @@ public class SharedHierarchicalBrain : IDisposable
         EnsureRndCapacity(k + 1);
         _rndRows.Add(row);
         _rndCtx[k] = ctx;
-        if (!NullPolicy) _rnd.Collect(input);
+        if (!NullPolicy && !ctx.TrainOff) _rnd.Collect(input);
         if (!decider) return -1;
 
         int d = _dCount;
@@ -553,6 +553,7 @@ public class SharedHierarchicalBrain : IDisposable
                 planTicket.Predicted = DrawUniformPlan(ctx, planTicket.Predicted);
                 planTicket.Trained   = true;
             }
+            else if (ctx.TrainOff) planTicket.Trained = true;
 
             var plan = (PlanKind)planTicket.Predicted;
             planTicket.Duration = DelayedPerceptron.DurationFromLogit(planTicket.DurationLogit + planTicket.DurationNoise,
@@ -650,6 +651,7 @@ public class SharedHierarchicalBrain : IDisposable
                 ticket.Predicted = DrawUniformAction(ctx.ExecMask, ActionSubsets[g], ticket.Predicted);
                 ticket.Trained   = true;
             }
+            else if (ctx.TrainOff) ticket.Trained = true;
 
             int action    = ActionSubsets[g][ticket.Predicted];
             if (trackRarity) _rareSelected[(int)ctx.CurrentPlan * ActionCatalog.Count + action]++;
@@ -1040,6 +1042,37 @@ public class SharedHierarchicalBrain : IDisposable
         }
 
         return new SharedHierarchicalBrain(reservoir, coordinator, executors);
+    }
+
+    public void AddWeightNoise(float relativeSigma)
+    {
+        CompletePending();
+        coordinator.AddWeightNoise(relativeSigma);
+        for (int g = 0; g < GoalCount; g++) executors[g].AddWeightNoise(relativeSigma);
+    }
+
+    public double ExecutorDot(SharedHierarchicalBrain other)
+    {
+        CompletePending();
+        other.CompletePending();
+        double dot = 0d;
+        for (int g = 0; g < GoalCount; g++) dot += executors[g].WeightDot(other.executors[g]);
+        return dot;
+    }
+
+    public double ExecutorNormSq()
+    {
+        CompletePending();
+        double sum = 0d;
+        for (int g = 0; g < GoalCount; g++) sum += executors[g].WeightNormSq();
+        return sum;
+    }
+
+    public float ExecutorCosineDistance(SharedHierarchicalBrain other)
+    {
+        if (other == null) return float.NaN;
+        double norm = Math.Sqrt(ExecutorNormSq() * other.ExecutorNormSq());
+        return norm > 0d ? (float)(1d - ExecutorDot(other) / norm) : float.NaN;
     }
 
     public SharedBrainSnapshot ToSnapshot()

@@ -173,6 +173,7 @@ Every per-agent array is indexed by `EntityModel.ManagerIndex` and sized from th
 - `NoveltyProgressSystem` (fast and slow error EMA, primed flag; used by the brain only in the `ProgressNovelty` arm, reset at spawn)
 - `HelpLog` (only while `helpLogEnabled`; `helpLogSize` entries per agent, reset at spawn)
 - `BehaviourDescriptorLog` (only while `behaviourDescriptorsEnabled`; counters by action and goal, distance, last position, utterances, strikes, foods)
+- `BehaviourMotifLog` (only while `motifTopK` is above 0; last two actions with their context buckets, a 32-slot motif hash per agent)
 - colony membership (`ColonyState.RemoveMember`, `RemapMember`)
 - `EntitySpatialGrid` (marked stale, rebuilt at the next tick window; colony index, alive flag, HP fraction and cell in an SoA next to positions; `EntityModel.GridSlot` is set at `Rebuild`)
 

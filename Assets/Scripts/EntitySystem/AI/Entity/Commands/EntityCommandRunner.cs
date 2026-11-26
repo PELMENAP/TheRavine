@@ -95,7 +95,11 @@ public sealed class EntityCommandRunner
                 stats.RecordCompleted(action);
                 _model.AwardSkillXp(action);
             }
-            else if (status == EntityCommandStatus.Failed) stats.RecordFailed(action);
+            else if (status == EntityCommandStatus.Failed)
+            {
+                stats.RecordFailed(action);
+                if (_model.IsGuest) stats.RecordGuestFailed();
+            }
             else if (status == EntityCommandStatus.Interrupted) stats.RecordInterrupted(action);
         }
         _model.OnCommandFinished(_source, status, command.Reward, _decision.Action);

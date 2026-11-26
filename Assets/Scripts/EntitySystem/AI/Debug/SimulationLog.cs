@@ -41,7 +41,9 @@ public sealed class SimulationLog : IDisposable
     private const int TakeFailCount = (int)ColonyStats.TakeFail.Count;
     private static readonly int OffFeedFails = OffPlanKinds + PlanCatalog.Count * 2;
     private static readonly int OffBirthFails = OffFeedFails + EatFailCount + TakeFailCount;
-    private static readonly int Stride = OffBirthFails + (int)ColonyStats.BirthFailure.Count;
+    private static readonly int OffGoals = OffBirthFails + (int)ColonyStats.BirthFailure.Count;
+    private static readonly int OffGuests = OffGoals + SharedHierarchicalBrain.GoalCount;
+    private static readonly int Stride = OffGuests + 2;
 
     private const int ResidualColumns = 8;
 
@@ -98,6 +100,8 @@ public sealed class SimulationLog : IDisposable
     private readonly int[]   _delta         = new int[ColonyRegistry.MaxColonies * Stride];
     private readonly float[] _prevLifespan  = new float[ColonyRegistry.MaxColonies];
     private readonly float[] _deltaLifespan = new float[ColonyRegistry.MaxColonies];
+    private readonly float[] _prevGuestLifespan  = new float[ColonyRegistry.MaxColonies];
+    private readonly float[] _deltaGuestLifespan = new float[ColonyRegistry.MaxColonies];
     private readonly int[]   _current       = new int[Stride];
     private readonly int[]   _world         = new int[Stride];
     private readonly ColonySpeechTables _worldSpeech = new();
@@ -171,6 +175,8 @@ public sealed class SimulationLog : IDisposable
     private StreamWriter _writer;
     private bool _disposed;
     private string _stamp;
+    private ColonySpeechTableLog _speechTables;
+    private BrainDistanceLog _brainDistance;
 
     public bool IsOpen => _writer != null;
 
@@ -190,6 +196,9 @@ public sealed class SimulationLog : IDisposable
             _writer = new StreamWriter(path, false, new UTF8Encoding(false));
             _writer.WriteLine(BuildHeader(_conflictColumns));
             _writer.Flush();
+            var rules = SimulationRules.Active;
+            if (rules.ColonySpeechTableEnabled) _speechTables = new ColonySpeechTableLog(_stamp);
+            if (rules.BrainDistanceEnabled) _brainDistance = new BrainDistanceLog(_stamp, rules.BrainDistanceMaxColonies);
             Application.quitting += Dispose;
         }
         catch (Exception e)
@@ -213,7 +222,8 @@ public sealed class SimulationLog : IDisposable
     }
 
     public void Sample(double now, ColonyRegistry colonies, int alive, EnergyLedger ledger, EvolutionService evolution, SpeechBus speech,
-        BehaviourDescriptorLog descriptors = null, System.Collections.Generic.List<EntityModel> entities = null, int populationLimit = 0)
+        BehaviourDescriptorLog descriptors = null, System.Collections.Generic.List<EntityModel> entities = null, int populationLimit = 0,
+        BehaviourMotifLog motifs = null, ColonyCanvas canvas = null)
     {
         if (_writer == null || colonies == null) return;
 
@@ -239,7 +249,7 @@ public sealed class SimulationLog : IDisposable
         }
 
         Array.Clear(_world, 0, Stride);
-        float worldLifespan = 0f, fill = 0f, rest = 0f, storage = 0f;
+        float worldLifespan = 0f, worldGuestLifespan = 0f, fill = 0f, rest = 0f, storage = 0f;
         int   members = 0;
         int   civil = 0;
         Array.Clear(_worldTraining, 0, _worldTraining.Length);
@@ -312,6 +322,9 @@ public sealed class SimulationLog : IDisposable
             _deltaLifespan[c] = lifespan - _prevLifespan[c];
             _prevLifespan[c]  = lifespan;
             worldLifespan    += _deltaLifespan[c];
+            _deltaGuestLifespan[c] = s.GuestLifespanSum - _prevGuestLifespan[c];
+            _prevGuestLifespan[c]  = s.GuestLifespanSum;
+            worldGuestLifespan    += _deltaGuestLifespan[c];
 
             int m = colony.MemberCount;
             if (m <= 0) continue;
@@ -350,6 +363,7 @@ public sealed class SimulationLog : IDisposable
             WriteBaseline(null, _world, 0, _worldInteractions[(int)ColonyStats.Interaction.DeliveredEnergy], civil, colonies, n);
             WriteStressWindow(-1);
             WriteSocialWindow(-1, ledger);
+            WriteLineage(null, _world, 0, worldGuestLifespan);
             _writer.WriteLine();
             ledger?.ResetWindow();
 
@@ -379,11 +393,18 @@ public sealed class SimulationLog : IDisposable
                     colony.MemberCount, colonies, n);
                 WriteStressWindow(c);
                 WriteSocialWindow(c, null);
+                WriteLineage(colony, _delta, c * Stride, _deltaGuestLifespan[c]);
                 _writer.WriteLine();
             }
+            if (canvas != null && canvas.IsActive) canvas.Update(time, colonies, speech, _stamp);
+            if (_speechTables != null && speech != null)
+                for (int c = 0; c < n; c++)
+                    if (colonies[c].MemberCount > 0) _speechTables.Write(time, colonies[c], speech.TablesOf(colonies[c].Index));
+            _brainDistance?.Write(time, colonies, n);
             for (int c = 0; c < n; c++) speech?.TablesOf(colonies[c].Index)?.Clear();
             _writer.Flush();
             descriptors?.Sample(_stamp, now, entities);
+            motifs?.Sample(_stamp, now, entities);
             Array.Clear(_tickBins, 0, _tickBins.Length);
             _tickSamples = 0;
             _tickMsSum = 0d;
@@ -487,6 +508,9 @@ public sealed class SimulationLog : IDisposable
         for (int i = 0; i < EatFailCount; i++)  dst[OffFeedFails + i] = s.EatFails[i];
         for (int i = 0; i < TakeFailCount; i++) dst[OffFeedFails + EatFailCount + i] = s.TakeFails[i];
         for (int i = 0; i < (int)ColonyStats.BirthFailure.Count; i++) dst[OffBirthFails + i] = s.BirthFailures[i];
+        for (int g = 0; g < SharedHierarchicalBrain.GoalCount; g++) dst[OffGoals + g] = s.GoalsStarted[g];
+        dst[OffGuests]     = s.GuestDeaths;
+        dst[OffGuests + 1] = s.GuestFailed;
         for (int k = 0; k < SourceActions.Length; k++)
         {
             int action = (int)SourceActions[k];
@@ -752,6 +776,11 @@ public sealed class SimulationLog : IDisposable
         sb.Append(",anomaly_transfer_loops,anomaly_relief_farm,anomaly_vote_concentration");
         sb.Append(",stress_src_hunger,stress_src_cold,stress_src_lonely,stress_src_task,stress_src_threat,stress_high_time_share");
         sb.Append(",relief_comfort,relief_feed,relief_rest,relief_nest,comfort_started,comfort_completed,give_reciprocal_share,help_balance_asym,flow_social");
+        sb.Append(",brain_donor");
+        for (int c = 0; c < (int)Caste.Count; c++) sb.Append(",caste_").Append(CasteName(c)).Append("_share");
+        for (int g = 0; g < SharedHierarchicalBrain.GoalCount; g++)
+            sb.Append(",goal_").Append(SnakeCase(((SharedHierarchicalBrain.Goal)g).ToString())).Append("_started");
+        sb.Append(",guests_alive,guest_deaths,guest_mean_lifespan_s,guest_interactions_failed");
         return sb.ToString();
     }
 
@@ -1029,12 +1058,13 @@ public sealed class SimulationLog : IDisposable
             ref readonly var r = ref SimulationRules.Frame;
             float time = (float)now;
             float period = Mathf.Max(r.SeasonPeriod, 1f);
-            int civil = 0, loaded = 0;
+            int civil = 0, loaded = 0, fallback = 0;
             for (int c = 0; c < colonies.Count; c++)
             {
                 if (colonies[c].IsWild) continue;
                 civil++;
                 if (colonies[c].BrainOrigin != "fresh") loaded++;
+                if (colonies[c].BrainOrigin == "fallback") fallback++;
             }
 
             var sb = new StringBuilder(1024);
@@ -1047,6 +1077,7 @@ public sealed class SimulationLog : IDisposable
             sb.Append("  \"season_phase\": ").Append((time / period - Mathf.Floor(time / period)).ToString("G6", Inv)).Append(",\n");
             sb.Append("  \"winter\": ").Append(SeasonClock.IsWinter(time) ? "true" : "false").Append(",\n");
             sb.Append("  \"brain_origin\": ").Append(JsonText(civil == 0 ? "none" : loaded == 0 ? "fresh" : loaded == civil ? "loaded" : "mixed")).Append(",\n");
+            sb.Append("  \"brain_fallback_colonies\": ").Append(fallback.ToString(Inv)).Append(",\n");
             sb.Append("  \"colonies\": [");
 
             int ordinal = 0;
@@ -1062,6 +1093,7 @@ public sealed class SimulationLog : IDisposable
                 sb.Append(", \"nest_z\": ").Append(colony.Nest.Position.y.ToString("G6", Inv));
                 sb.Append(", \"arm\": ").Append(JsonText(ColonyArms.Name(colony.Arm)));
                 sb.Append(", \"brain_origin\": ").Append(JsonText(colony.BrainOrigin));
+                sb.Append(", \"brain_donor\": ").Append(colony.BrainDonorId.ToString(Inv));
                 if (!colony.IsWild)
                 {
                     if (_scenario != null && ordinal < _scenario.ColonyCount)
@@ -1080,7 +1112,7 @@ public sealed class SimulationLog : IDisposable
             sb.Append("\n  ]\n}\n");
 
             string path = Path.Combine(NeuralModelStorage.BaseDirectory, $"run_{_stamp}.json");
-            File.WriteAllText(path, sb.ToString(), new UTF8Encoding(false));
+            AtomicFile.WriteAllBytes(path, new UTF8Encoding(false).GetBytes(sb.ToString()));
         }
         catch (Exception e)
         {
@@ -1189,6 +1221,28 @@ public sealed class SimulationLog : IDisposable
         WriteComma(); _writer.Write(_blocked.ToString(Inv));
     }
 
+    private void WriteLineage(ColonyState colony, int[] d, int o, float guestLifespan)
+    {
+        WriteComma();
+        if (colony != null && colony.BrainDonorId != 0) WriteInt(colony.BrainDonorId);
+
+        int adults = colony != null ? colony.AdultCount : 0;
+        for (int c = 0; c < (int)Caste.Count; c++)
+        {
+            WriteComma();
+            if (adults > 0) WriteFloat((float)colony.CasteCounts[c] / adults);
+        }
+        for (int g = 0; g < SharedHierarchicalBrain.GoalCount; g++) WriteNext(d[o + OffGoals + g]);
+
+        int guestDeaths = d[o + OffGuests];
+        WriteComma();
+        if (colony != null) WriteInt(colony.GuestCount);
+        WriteNext(guestDeaths);
+        WriteComma();
+        WriteFloat(guestDeaths > 0 ? guestLifespan / guestDeaths : 0f);
+        WriteNext(d[o + OffGuests + 1]);
+    }
+
     private void WriteConflictWorld(ColonyRegistry colonies, int n)
     {
         Array.Clear(_conflictSum, 0, _conflictSum.Length);
@@ -1234,5 +1288,9 @@ public sealed class SimulationLog : IDisposable
         Application.quitting -= Dispose;
         _writer?.Dispose();
         _writer = null;
+        _speechTables?.Dispose();
+        _speechTables = null;
+        _brainDistance?.Dispose();
+        _brainDistance = null;
     }
 }
