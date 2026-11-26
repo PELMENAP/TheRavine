@@ -64,16 +64,19 @@ None.
 
 ## Skill graph view
 
-- Runtime UI Toolkit (the only one in the project, the rest is uGUI): `Assets/Scripts/UI/SkillGraph/`, assembly `UIInventory`. Style: `Assets/Resources/UI/SkillGraph.uss` over the tokens of `Assets/Resources/UI/DesignTokens.uss`, loaded first; rules: `docs/UI_STYLE.md`.
+- Runtime UI Toolkit (the only one in the project, the rest is uGUI): `Assets/Scripts/UI/SkillGraph/`, assembly `UIInventory`.
+  Style: `Assets/Resources/UI/SkillGraph.uss` over the tokens of `Assets/Resources/UI/DesignTokens.uss`, loaded first; rules: `docs/UI_STYLE.md`.
 - `SkillGraphPanel`: MonoBehaviour created and destroyed by the `~skills` command; `UIDocument` with a fallback `PanelSettings` when none is assigned; the tree is built in C#.
 - `SkillGraphCanvas`: pan by drag with pointer capture, zoom by wheel, edges in `generateVisualContent` (`Painter2D`), nearest-edge picking through `SkillGraphGeometry`.
 - `SkillNodeElement`: pooled node, progress ring by `Painter2D.Arc`, state classes `skill-node--open`, `--available`, `--silhouette`, `--island`, `--pruned`.
-- `SkillGraphMenu`: context menu opened by a click on a node or an edge (build, restore, prune, with the cost and the reason a command is refused); `SkillGraphText`: effect and XP-source lines of the card.
+- `SkillGraphMenu`: context menu opened by a click on a node or an edge (build, restore, prune, with the cost and the reason a command is refused);
+  `SkillGraphText`: effect and XP-source lines of the card.
 - Node labels show the skill name; the corner block shows how many links can be added and the peak sum of the next edge point.
 - `SkillGraphPalette`: pixel sizes and the `Painter2D` colours, a mirror of the graph tokens; no simulation constant is repeated there.
 - Data: `SkillGraphQuery.Fill(ISkillGraphSource, SkillGraphSnapshot)` in `Assets/Scripts/EntitySystem/AI/Skills/`; the fog rule lives there, hidden vertices and edges are never written.
 - Commands go through `ISkillGraphCommands`, implemented by `PlayerSkillGraph` (host: direct, client: `SkillGraphCommandServerRpc`).
 - Refresh: a scheduled item every 250 ms compares `Revision`, `StateVersion` and a level checksum; closing the panel destroys it, so nothing runs while it is closed.
-- Open: key `I` and a corner button (`SkillGraphLauncher`, created once by `Terminal.Setup`, DontDestroyOnLoad, the key is a runtime `InputAction`, not part of `InputAction.inputactions`), or the `~skills` command.
+- Open: key `I` and a corner button (`SkillGraphLauncher`, created once by `Terminal.Setup`, DontDestroyOnLoad, the key is a runtime `InputAction`, not part of `InputAction.inputactions`),
+  or the `~skills` command.
 - The key and the button act only while the Gameplay map is active and a local player graph exists; opening disables all maps and enables UI, closing returns to Gameplay.
 - `PanelSettings` fallback carries an empty `ThemeStyleSheet`; controls are styled in the USS file (class `skill-button`).
