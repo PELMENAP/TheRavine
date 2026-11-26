@@ -26,7 +26,8 @@ One map per subsystem. Open only the map of the area the task touches; the routi
 - `python3 tools/docmap.py gen` rewrites `INDEX.md` and `LARGE_FILES.md`.
 - `python3 tools/docmap.py check` fails on a path that does not exist and on a backticked name that does not occur in the code.
 - `python3 tools/docmap.py check --strict` also fails when the generated files are stale.
-- CI runs the check on every push: `.github/workflows/docs.yml`.
+- `python3 tools/rulesframe.py gen` rewrites `SimulationRules.Frame.g.cs` (`RulesFrame`) from the `[FrameField]` fields; `check` fails on a stale file, a field without a member or a member without a source.
+- CI runs both checks on every push: `.github/workflows/docs.yml`.
 
 ## Rules for these files
 

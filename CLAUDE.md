@@ -55,7 +55,7 @@ If a task item contradicts the philosophy, do not perform it: describe the confl
 - Unity.Mathematics instead of Mathf in new hot-path code.
 - NativeArray/NativeList: explicit Dispose and IsCreated checks.
 - Mass per-agent computations (instincts, boids, colony fields): SoA NativeArray indexed by ManagerIndex + Burst job; keep indices synchronised on swap-back removal.
-- New numeric constants of agent simulation — only in SimulationRules (plus a RulesFrame field if read on a hot path), never hard-coded. Player tuning and UI — [SerializeField] next to existing fields; name such an exception in the report.
+- New numeric constants of agent simulation — only in SimulationRules (plus `[FrameField]` on the field if read on a hot path, then `python3 tools/rulesframe.py gen`), never hard-coded. Player tuning and UI — [SerializeField] next to existing fields; name such an exception in the report.
 - Simulation time — only SimulationClock. Time.time, Time.deltaTime and UniTask.Delay(ms) are forbidden in agent logic. For player input and physics, Time.unscaledTime and Time.deltaTime are allowed if the file already uses them.
 - Do not create a PR unless asked. Do not multiply commits — only when meaningful; do not write the model identifier in commit messages.
 - Tests (EditMode/PlayMode, Assets/Tests/) may be written and modified. Do not delete, skip or weaken an existing test to make it pass; change a test only together with the behaviour it checks. State in the report whether tests were run.

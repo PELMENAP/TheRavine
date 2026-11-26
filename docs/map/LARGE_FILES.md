@@ -7,8 +7,8 @@ Line numbers are those of the last generation; after local edits treat them as a
 | File | Lines |
 |---|---|
 | `Assets/Scripts/ObjectSystem/Map/WorldGeneration/MapGenerator.cs` | 1887 |
-| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs` | 1528 |
 | `Assets/Scripts/EntitySystem/AI/EntityManager.cs` | 1410 |
+| `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.Frame.g.cs` | 1314 |
 | `Assets/Scripts/EntitySystem/AI/Debug/SimulationLog.cs` | 1296 |
 | `Assets/Scripts/EntitySystem/AI/SharedAI/SharedHierarchicalBrain.cs` | 1121 |
 | `Assets/Scripts/EntitySystem/AI/Perception/ChunkFoodIndex.cs` | 1092 |
@@ -171,31 +171,6 @@ Line numbers are those of the last generation; after local edits treat them as a
 - 1859–1886 struct ObjectInstInfo
   - 1875 ObjectInstInfo
 
-## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.cs`
-
-- 5–1528 class SimulationRules
-  - 1329 CaptureFrame
-  - 1331 Bind
-  - 1342 DeathPenaltyMul
-  - 1351 FillPlanSeconds
-  - 1358 FillCasteAffinityLog
-  - 1366 FillUtilityWeights
-  - 1374 FillPlanCasteDomain
-  - 1382 BuildEndogenousForbiddenMask
-  - 1394 BuildBoidPlanMul
-  - 1401 ColonyChannelTau
-  - 1407 BiomeFertility
-  - 1408 BiomeToxicity
-  - 1417 KindValue
-  - 1420 BiomeValue
-  - 1443 OnValidate
-  - 1525 ThrowNotBound
-  - 8–8 enum EpsilonSchedule
-  - 10–1324 struct RulesFrame
-    - 662 BiomeFertility
-    - 663 BiomeToxicity
-    - 672 RulesFrame
-
 ## `Assets/Scripts/EntitySystem/AI/EntityManager.cs`
 
 - 16–1410 class EntityManager
@@ -264,6 +239,12 @@ Line numbers are those of the last generation; after local edits treat them as a
   - 1349 ResolveRules
   - 1365 OnDestroy
   - 1371 DisposeSimulation
+
+## `Assets/Scripts/EntitySystem/AI/Rules/SimulationRules.Frame.g.cs`
+
+- 5–1314 class SimulationRules
+  - 7–1313 struct RulesFrame
+    - 660 RulesFrame
 
 ## `Assets/Scripts/EntitySystem/AI/Debug/SimulationLog.cs`
 
